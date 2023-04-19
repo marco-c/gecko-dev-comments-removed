@@ -325,7 +325,6 @@
 
 namespace js {
 
-class AutoLockGC;
 class ZoneAllocator;
 
 namespace gc {
@@ -765,6 +764,9 @@ class HeapThreshold {
         sliceBytes_(SIZE_MAX) {}
 
   
+  
+  
+  
   MainThreadOrGCTaskData<size_t> startBytes_;
 
   
@@ -804,13 +806,11 @@ class GCHeapThreshold : public HeapThreshold {
  public:
   void updateStartThreshold(size_t lastBytes,
                             const GCSchedulingTunables& tunables,
-                            const GCSchedulingState& state, bool isAtomsZone,
-                            const AutoLockGC& lock);
+                            const GCSchedulingState& state, bool isAtomsZone);
 
  private:
   static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
-                                        const GCSchedulingTunables& tunables,
-                                        const AutoLockGC& lock);
+                                        const GCSchedulingTunables& tunables);
 };
 
 
@@ -820,13 +820,11 @@ class MallocHeapThreshold : public HeapThreshold {
  public:
   void updateStartThreshold(size_t lastBytes,
                             const GCSchedulingTunables& tunables,
-                            const GCSchedulingState& state,
-                            const AutoLockGC& lock);
+                            const GCSchedulingState& state);
 
  private:
   static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
-                                        size_t baseBytes,
-                                        const AutoLockGC& lock);
+                                        size_t baseBytes);
 };
 
 
