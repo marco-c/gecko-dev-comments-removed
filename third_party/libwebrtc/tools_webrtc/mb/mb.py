@@ -912,8 +912,7 @@ class MetaBuildWrapper(object):
         extra_files.append('../../tools_webrtc/ensure_webcam_is_running.py')
 
       
-      
-      use_x11 = is_linux and not 'use_ozone=true' in vals['gn_args']
+      use_x11 = is_linux
 
       xvfb = use_x11 and test_type == 'windowed_test_launcher'
       if xvfb:
