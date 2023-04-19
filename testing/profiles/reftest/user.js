@@ -26,8 +26,6 @@ user_pref("browser.startup.page", 0);
 user_pref("browser.viewport.desktopWidth", 800);
 user_pref("datareporting.healthreport.uploadEnabled", false);
 
-user_pref("dom.allow_XUL_XBL_for_file", true);
-
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 
 
