@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+#include "test/run_test.h"
+
+namespace webrtc {
+namespace test {
+
+void RunTest(void (*test)()) {
+  (*test)();
+}
+
+}  
+}  

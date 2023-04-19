@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#include "test/mock_transport.h"
+
+namespace webrtc {
+
+MockTransport::MockTransport() = default;
+MockTransport::~MockTransport() = default;
+
+}  

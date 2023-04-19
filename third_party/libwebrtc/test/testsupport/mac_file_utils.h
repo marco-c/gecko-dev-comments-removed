@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef TEST_TESTSUPPORT_MAC_FILE_UTILS_H_
+#define TEST_TESTSUPPORT_MAC_FILE_UTILS_H_
+
+#include <string>
+
+namespace webrtc {
+namespace test {
+
+void GetNSExecutablePath(std::string* path);
+
+}  
+}  
+
+#endif  

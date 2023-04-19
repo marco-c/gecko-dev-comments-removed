@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef TEST_IOS_COVERAGE_UTIL_IOS_H_
+#define TEST_IOS_COVERAGE_UTIL_IOS_H_
+
+namespace rtc {
+namespace test {
+
+
+
+void ConfigureCoverageReportPath();
+
+}  
+}  
+
+#endif  
