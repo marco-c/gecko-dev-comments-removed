@@ -1376,9 +1376,13 @@ bool gfxHarfBuzzShaper::ShapeText(DrawTarget* aDrawTarget,
     } else if (features[i].value) {
       
       
-      if (features.IndexOf(alt, 0, Cmp()) == NoIndex) {
-        features.AppendElement(hb_feature_t{alt, 1, HB_FEATURE_GLOBAL_START,
-                                            HB_FEATURE_GLOBAL_END});
+      
+      
+      if (!entry->FamilyName().EqualsLiteral("Yu Gothic UI")) {
+        if (features.IndexOf(alt, 0, Cmp()) == NoIndex) {
+          features.AppendElement(hb_feature_t{alt, 1, HB_FEATURE_GLOBAL_START,
+                                              HB_FEATURE_GLOBAL_END});
+        }
       }
     }
   }
