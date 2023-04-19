@@ -19,7 +19,6 @@
 #ifndef wasm_valtype_h
 #define wasm_valtype_h
 
-#include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 
 #include <type_traits>
@@ -34,7 +33,6 @@ namespace wasm {
 
 using mozilla::Maybe;
 
-class RecGroup;
 class TypeDef;
 class TypeContext;
 
@@ -203,91 +201,6 @@ static_assert(sizeof(SerializableTypeCode) == sizeof(uintptr_t), "packed");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-union MatchTypeCode {
-  using PackedRepr = uint64_t;
-
-  static constexpr size_t NullableBits = 1;
-  static constexpr size_t TypeCodeBits = 8;
-  static constexpr size_t TypeRefBits = 48;
-
-  PackedRepr bits;
-  struct {
-    PackedRepr nullable : NullableBits;
-    PackedRepr typeCode : TypeCodeBits;
-    PackedRepr typeRef : TypeRefBits;
-  };
-
-  WASM_CHECK_CACHEABLE_POD(bits);
-
-  static_assert(NullableBits + TypeCodeBits + TypeRefBits <=
-                    (sizeof(PackedRepr) * 8),
-                "enough bits");
-
-  
-  static inline MatchTypeCode forMatch(PackedTypeCode ptc,
-                                       const RecGroup* recGroup);
-
-  bool operator==(MatchTypeCode other) const { return bits == other.bits; }
-  bool operator!=(MatchTypeCode other) const { return bits != other.bits; }
-  HashNumber hash() const { return HashNumber(bits); }
-};
-
-
-
-
 enum class TableRepr { Ref, Func };
 
 
@@ -376,9 +289,6 @@ class RefType {
     }
     MOZ_CRASH("switch is exhaustive");
   }
-
-  
-  static bool isSubTypeOf(RefType subType, RefType superType);
 
   bool operator==(const RefType& that) const { return ptc_ == that.ptc_; }
   bool operator!=(const RefType& that) const { return ptc_ != that.ptc_; }
@@ -617,10 +527,6 @@ class PackedType : public T {
     return T::isValidTypeCode(tc_.typeCode());
   }
 
-  MatchTypeCode forMatch(const RecGroup* recGroup) const {
-    return MatchTypeCode::forMatch(tc_, recGroup);
-  }
-
   PackedTypeCode packed() const {
     MOZ_ASSERT(isValid());
     return tc_;
@@ -787,20 +693,6 @@ class PackedType : public T {
   PackedType<FieldTypeTraits> fieldType() const {
     MOZ_ASSERT(isValid());
     return PackedType<FieldTypeTraits>(tc_);
-  }
-
-  static bool isSubTypeOf(PackedType subType, PackedType superType) {
-    
-    if (subType == superType) {
-      return true;
-    }
-
-    
-    if (subType.isRefType() && superType.isRefType()) {
-      return RefType::isSubTypeOf(subType.refType(), superType.refType());
-    }
-
-    return false;
   }
 
   bool operator==(const PackedType& that) const {

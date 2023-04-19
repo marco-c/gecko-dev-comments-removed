@@ -305,10 +305,10 @@ CoderResult CodeRefPtr(Coder<mode>& coder, CoderArg<mode, RefPtr<T>> item) {
     }
 
     
-    *item = allocated;
+    MOZ_TRY(CodeT(coder, allocated));
 
     
-    MOZ_TRY(CodeT(coder, allocated));
+    *item = allocated;
     return Ok();
   } else {
     
@@ -576,57 +576,21 @@ CoderResult CodeTypeDef(Coder<mode>& coder, CoderArg<mode, TypeDef> item) {
 template <CoderMode mode>
 CoderResult CodeTypeContext(Coder<mode>& coder,
                             CoderArg<mode, TypeContext> item) {
+  
   if constexpr (mode == MODE_DECODE) {
-    
-    
     MOZ_ASSERT(!coder.types_);
     coder.types_ = item;
+  }
 
-    
-    uint32_t numRecGroups;
-    MOZ_TRY(CodePod(coder, &numRecGroups));
-
-    
-    for (uint32_t recGroupIndex = 0; recGroupIndex < numRecGroups;
-         recGroupIndex++) {
-      
-      uint32_t numTypes;
-      MOZ_TRY(CodePod(coder, &numTypes));
-
-      MutableRecGroup recGroup = item->startRecGroup(numTypes);
-      if (!recGroup) {
-        return Err(OutOfMemory());
-      }
-
-      
-      for (uint32_t groupTypeIndex = 0; groupTypeIndex < numTypes;
-           groupTypeIndex++) {
-        MOZ_TRY(CodeTypeDef(coder, &recGroup->type(groupTypeIndex)));
-      }
-
-      
-      if (!item->endRecGroup()) {
-        return Err(OutOfMemory());
-      }
+  size_t length = item->length();
+  MOZ_TRY(CodePod(coder, &length));
+  if constexpr (mode == MODE_DECODE) {
+    if (!item->addTypes(length)) {
+      return Err(OutOfMemory());
     }
-  } else {
-    
-    uint32_t numRecGroups = item->groups().length();
-    MOZ_TRY(CodePod(coder, &numRecGroups));
-
-    
-    for (uint32_t groupIndex = 0; groupIndex < numRecGroups; groupIndex++) {
-      SharedRecGroup group = item->groups()[groupIndex];
-
-      
-      uint32_t numTypes = group->numTypes();
-      MOZ_TRY(CodePod(coder, &numTypes));
-
-      
-      for (uint32_t i = 0; i < numTypes; i++) {
-        MOZ_TRY(CodeTypeDef(coder, &group->type(i)));
-      }
-    }
+  }
+  for (uint32_t typeIndex = 0; typeIndex < item->length(); typeIndex++) {
+    MOZ_TRY(CodeTypeDef(coder, &item->type(typeIndex)));
   }
   return Ok();
 }

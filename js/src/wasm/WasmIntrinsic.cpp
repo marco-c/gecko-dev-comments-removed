@@ -110,10 +110,6 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
   
   ModuleEnvironment moduleEnv(compileArgs->features);
-  if (!moduleEnv.init()) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
 
   
   CacheableName emptyString;
@@ -131,17 +127,23 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   moduleEnv.memory = Some(MemoryDesc(Limits(0, Nothing(), sharedMemory)));
 
   
+  if (!moduleEnv.initTypes(ids.size())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
   
   for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
     const IntrinsicId& id = ids[funcIndex];
     const Intrinsic& intrinsic = Intrinsic::getFromId(id);
 
     FuncType type;
-    if (!intrinsic.funcType(&type) ||
-        !moduleEnv.types->addType(std::move(type))) {
+    if (!intrinsic.funcType(&type)) {
       ReportOutOfMemory(cx);
       return false;
     }
+    (*moduleEnv.types)[funcIndex] = std::move(type);
   }
 
   
