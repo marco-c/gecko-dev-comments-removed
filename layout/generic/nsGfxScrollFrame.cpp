@@ -1341,11 +1341,8 @@ nscoord nsHTMLScrollFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
   
   LogicalMargin border = GetLogicalUsedBorder(aWritingMode);
 
-  
-  return std::clamp(
-      border.BStart(aWritingMode) +
-          mHelper.mScrolledFrame->GetLogicalBaseline(aWritingMode),
-      0, GetLogicalSize().BSize(aWritingMode));
+  return border.BStart(aWritingMode) +
+         mHelper.mScrolledFrame->GetLogicalBaseline(aWritingMode);
 }
 
 void nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {

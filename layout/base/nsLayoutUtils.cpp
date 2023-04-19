@@ -5866,8 +5866,11 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
     }
 
     
-    if (nsIScrollableFrame* sFrame =
-            do_QueryFrame(const_cast<nsIFrame*>(aFrame))) {
+    if (fType == LayoutFrameType::Scroll) {
+      nsIScrollableFrame* sFrame = do_QueryFrame(const_cast<nsIFrame*>(aFrame));
+      if (!sFrame) {
+        MOZ_ASSERT_UNREACHABLE("not scroll frame");
+      }
       LinePosition kidPosition;
       if (GetFirstLinePosition(aWM, sFrame->GetScrolledFrame(), &kidPosition)) {
         
@@ -5875,10 +5878,6 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
         
         
         *aResult = kidPosition + aFrame->GetLogicalUsedBorder(aWM).BStart(aWM);
-        
-        
-        aResult->mBaseline = std::clamp(aResult->mBaseline, 0,
-                                        aFrame->GetLogicalSize(aWM).BSize(aWM));
         return true;
       }
       return false;
@@ -5949,8 +5948,8 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
       *aResult += aFrame->GetLogicalUsedBorder(aWM).BStart(aWM);
       const auto maxBaseline = aFrame->GetLogicalSize(aWM).BSize(aWM);
       
-      *aResult = std::clamp(*aResult, 0, maxBaseline);
-      return true;
+      
+      return *aResult <= maxBaseline && *aResult >= 0;
     }
     
     return false;
@@ -5968,8 +5967,7 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
         *aResult = kidBaseline +
                    kid->GetLogicalNormalPosition(aWM, containerSize).B(aWM);
         return true;
-      }
-      if (kid->IsScrollFrame()) {
+      } else if (kid->IsScrollFrame()) {
         
         
         kidBaseline = kid->GetLogicalBaseline(aWM);
