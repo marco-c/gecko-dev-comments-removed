@@ -32,4 +32,8 @@ pref("network.cookie.noPersistentStorage", true);
 pref("toolkit.shutdown.fastShutdownStage", 0);
 
 
+
+pref("gfx.font-list-omt.enabled", false);
+
+
 pref("security.nocertdb", true);
