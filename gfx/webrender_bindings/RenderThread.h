@@ -282,7 +282,8 @@ class RenderThread final {
   
   bool SyncObjectNeeded();
 
-  size_t RendererCount();
+  size_t RendererCount() const;
+  size_t ActiveRendererCount() const;
 
   void BeginRecordingForWindow(wr::WindowId aWindowId,
                                const TimeStamp& aRecordingStart,
