@@ -32,16 +32,25 @@ class VadLevelAnalyzer {
    public:
     virtual ~VoiceActivityDetector() = default;
     
+    virtual void Reset() = 0;
+    
     virtual float ComputeProbability(AudioFrameView<const float> frame) = 0;
   };
 
   
   VadLevelAnalyzer();
-  VadLevelAnalyzer(float vad_probability_attack,
+  
+  
+  
+  
+  VadLevelAnalyzer(int vad_reset_period_ms,
+                   float vad_probability_attack,
                    const AvailableCpuFeatures& cpu_features);
   
-  VadLevelAnalyzer(float vad_probability_attack,
+  VadLevelAnalyzer(int vad_reset_period_ms,
+                   float vad_probability_attack,
                    std::unique_ptr<VoiceActivityDetector> vad);
+
   VadLevelAnalyzer(const VadLevelAnalyzer&) = delete;
   VadLevelAnalyzer& operator=(const VadLevelAnalyzer&) = delete;
   ~VadLevelAnalyzer();
@@ -51,8 +60,10 @@ class VadLevelAnalyzer {
 
  private:
   std::unique_ptr<VoiceActivityDetector> vad_;
+  const int vad_reset_period_frames_;
   const float vad_probability_attack_;
-  float vad_probability_ = 0.f;
+  int time_to_vad_reset_;
+  float vad_probability_;
 };
 
 }  
