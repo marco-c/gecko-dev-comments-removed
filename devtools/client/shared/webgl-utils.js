@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-
 const WEBGL_CONTEXT_NAME = "experimental-webgl";
 
 function isWebGLForceEnabled() {

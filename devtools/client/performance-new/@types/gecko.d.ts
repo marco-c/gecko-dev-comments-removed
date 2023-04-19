@@ -371,7 +371,6 @@ declare var ChromeUtils: MockedExports.ChromeUtils;
 declare var PathUtils: PathUtilsInterface;
 
 
-
 declare var Cu: MockedExports.Cu;
 declare var Cc: MockedExports.Cc;
 declare var Ci: MockedExports.Ci;

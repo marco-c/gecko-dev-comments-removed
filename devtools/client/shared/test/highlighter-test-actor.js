@@ -8,7 +8,6 @@
 
 
 
-const { Ci, Cc } = require("chrome");
 const { getRect, getAdjustedQuads } = require("devtools/shared/layout/utils");
 
 

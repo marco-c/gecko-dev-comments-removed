@@ -8,8 +8,6 @@
 
 
 
-const { Ci } = require("chrome");
-
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(
   this,

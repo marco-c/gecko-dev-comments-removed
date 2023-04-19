@@ -6,7 +6,6 @@
 
 const { extend } = require("devtools/shared/extend");
 var { Pool } = require("devtools/shared/protocol/Pool");
-const { Cu } = require("chrome");
 
 
 

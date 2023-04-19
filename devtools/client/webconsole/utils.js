@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-
 
 const CONSOLE_ENTRY_THRESHOLD = 5;
 

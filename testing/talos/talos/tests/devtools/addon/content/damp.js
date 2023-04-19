@@ -6,7 +6,6 @@
 
 
 
-const { Ci, Cc, Cu } = require("chrome");
 const { gBrowser, MozillaFileLogger, requestIdleCallback } = dampWindow;
 
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");

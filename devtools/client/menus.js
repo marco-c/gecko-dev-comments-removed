@@ -25,8 +25,6 @@
 
 
 
-const { Cu } = require("chrome");
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserToolboxLauncher:

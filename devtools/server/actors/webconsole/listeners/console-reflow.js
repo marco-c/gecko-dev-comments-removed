@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { components } = require("chrome");
-
 
 
 
@@ -42,7 +40,7 @@ ConsoleReflowListener.prototype = {
 
 
   sendReflow(start, end, interruptible) {
-    const frame = components.stack.caller.caller;
+    const frame = Components.stack.caller.caller;
 
     let filename = frame ? frame.filename : null;
 

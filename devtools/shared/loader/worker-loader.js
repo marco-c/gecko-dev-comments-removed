@@ -382,9 +382,10 @@ var {
 } = function() {
   
   if (typeof Components === "object") {
-    const { Constructor: CC } = Components;
-
-    const principal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
+    const principal = Components.Constructor(
+      "@mozilla.org/systemprincipal;1",
+      "nsIPrincipal"
+    )();
 
     
     

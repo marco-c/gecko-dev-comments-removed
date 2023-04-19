@@ -8,8 +8,6 @@ const {
   TYPES: { NETWORK_EVENT_STACKTRACE },
 } = require("devtools/server/actors/resources/index");
 
-const { Ci, components } = require("chrome");
-
 loader.lazyRequireGetter(
   this,
   "ChannelEventSinkFactory",
@@ -135,7 +133,7 @@ class NetworkEventStackTracesWatcher {
         
         
         
-        let frame = components.stack;
+        let frame = Components.stack;
         if (frame?.caller) {
           frame = frame.caller;
           while (frame) {

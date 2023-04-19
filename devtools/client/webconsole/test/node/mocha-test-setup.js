@@ -109,7 +109,11 @@ global.ChromeUtils = {
   addProfilerMarker: () => {},
 };
 
-global.Cu = { isInAutomation: true };
+global.Cc = {};
+global.Ci = {};
+global.Cu = { isInAutomation: true, now: () => {} };
+global.Components = { stack: { caller: "" } };
+
 global.define = function() {};
 
 
@@ -138,8 +142,6 @@ requireHacker.global_hook("default", (path, module) => {
         "devtools/client/webconsole/test/browser/stub-generator-helpers"
       ),
 
-    chrome: () =>
-      `module.exports = { Cc: {}, Ci: {}, Cu: { now: () => {}}, components: {stack: {caller: ""}} }`,
     
     
     "devtools/server/devtools-server": () =>

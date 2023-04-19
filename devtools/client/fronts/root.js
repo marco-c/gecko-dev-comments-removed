@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
 const { rootSpec } = require("devtools/shared/specs/root");
 const {
   FrontClassWithSpec,

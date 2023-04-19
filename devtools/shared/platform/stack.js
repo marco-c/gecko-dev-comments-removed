@@ -7,8 +7,6 @@
 
 "use strict";
 
-const { Cu, components } = require("chrome");
-
 
 
 
@@ -18,7 +16,7 @@ const { Cu, components } = require("chrome");
 
 
 function getNthPathExcluding(n, substr) {
-  let stack = components.stack.formattedStack.split("\n");
+  let stack = Components.stack.formattedStack.split("\n");
 
   
   stack = stack.splice(1);
@@ -47,7 +45,7 @@ function getNthPathExcluding(n, substr) {
 
 
 function getStack() {
-  return components.stack.caller;
+  return Components.stack.caller;
 }
 
 

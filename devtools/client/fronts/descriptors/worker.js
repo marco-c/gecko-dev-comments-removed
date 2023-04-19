@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
 const {
   workerDescriptorSpec,
 } = require("devtools/shared/specs/descriptors/worker");

@@ -12,8 +12,6 @@
 
 const DEBUG_PLATFORM_EVENTS = false;
 
-const { Cc, Ci } = require("chrome");
-
 loader.lazyRequireGetter(
   this,
   "ChannelMap",

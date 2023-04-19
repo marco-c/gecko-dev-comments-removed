@@ -13,7 +13,6 @@
 
 
 
-const { Ci } = require("chrome");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
   getChildDocShells,

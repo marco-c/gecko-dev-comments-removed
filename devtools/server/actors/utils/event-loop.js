@@ -5,7 +5,6 @@
 "use strict";
 
 const xpcInspector = require("xpcInspector");
-const { Cu } = require("chrome");
 
 
 

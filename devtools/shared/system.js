@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-
 loader.lazyRequireGetter(
   this,
   "DevToolsServer",

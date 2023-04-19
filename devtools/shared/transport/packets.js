@@ -24,7 +24,6 @@
 
 
 
-const { Cc, Ci } = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { dumpn, dumpv } = DevToolsUtils;
 const flags = require("devtools/shared/flags");

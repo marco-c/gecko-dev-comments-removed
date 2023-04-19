@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const PANE_APPEARANCE_DELAY = 50;

@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
-
 const EventEmitter = require("devtools/shared/event-emitter");
 
 

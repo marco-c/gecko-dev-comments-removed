@@ -8,7 +8,6 @@
 
 
 
-const { Ci, Cc } = require("chrome");
 const {
   CanvasFrameAnonymousContentHelper,
 } = require("devtools/server/actors/highlighters/utils/markup");
