@@ -11,12 +11,8 @@
 
 #ifdef XP_WIN
 #  include <stdlib.h>  
-#  include <synchapi.h>
 #else
 #  include <unistd.h>  
-#  include <time.h>
-#  include "base/eintr_wrapper.h"
-#  include "prenv.h"
 #endif
 
 #include "nsAppRunner.h"
@@ -73,36 +69,7 @@ bool ProcessChild::InitPrefs(int aArgc, char* aArgv[]) {
                                                   *prefsLen, *prefMapSize);
 }
 
-#ifdef ENABLE_TESTS
-
-
-#  ifdef XP_UNIX
-static void ReallySleep(int aSeconds) {
-  struct ::timespec snooze = {aSeconds, 0};
-  HANDLE_EINTR(nanosleep(&snooze, &snooze));
-}
-#  elif defined(XP_WIN)
-static void ReallySleep(int aSeconds) { ::Sleep(aSeconds * 1000); }
-#  endif  
-static void SleepIfEnv(const char* aName) {
-  if (auto* value = PR_GetEnv(aName)) {
-    ReallySleep(atoi(value));
-  }
-}
-#else  
-static void SleepIfEnv(const char* aName) {}
-#endif
-
-ProcessChild::~ProcessChild() {
-#ifdef NS_FREE_PERMANENT_DATA
-  
-  
-  
-  
-  SleepIfEnv("MOZ_TEST_CHILD_EXIT_HANG");
-#endif
-  gProcessChild = nullptr;
-}
+ProcessChild::~ProcessChild() { gProcessChild = nullptr; }
 
 
 void ProcessChild::NotifiedImpendingShutdown() {
@@ -116,16 +83,7 @@ void ProcessChild::NotifiedImpendingShutdown() {
 bool ProcessChild::ExpectingShutdown() { return sExpectingShutdown; }
 
 
-void ProcessChild::QuickExit() {
-#ifndef NS_FREE_PERMANENT_DATA
-  
-  
-  
-  
-  SleepIfEnv("MOZ_TEST_CHILD_EXIT_HANG");
-#endif
-  AppShutdown::DoImmediateExit();
-}
+void ProcessChild::QuickExit() { AppShutdown::DoImmediateExit(); }
 
 UntypedEndpoint ProcessChild::TakeInitialEndpoint() {
   return UntypedEndpoint{PrivateIPDLInterface{},
