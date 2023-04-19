@@ -48,6 +48,35 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
   return nullptr;
 }
 
+Accessible* FocusManager::FocusedAccessible() const {
+  if (Accessible* focusedAcc = FocusedLocalAccessible()) {
+    return focusedAcc;
+  }
+
+  if (!XRE_IsParentProcess()) {
+    
+    
+    
+    return nullptr;
+  }
+
+  nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();
+  if (!focusManagerDOM) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  dom::BrowsingContext* focusedContext =
+      focusManagerDOM->GetFocusedBrowsingContextInChrome();
+
+  DocAccessibleParent* focusedDoc =
+      DocAccessibleParent::GetFrom(focusedContext);
+  return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
+}
+
 bool FocusManager::IsFocused(const LocalAccessible* aAccessible) const {
   if (mActiveItem) return mActiveItem == aAccessible;
 

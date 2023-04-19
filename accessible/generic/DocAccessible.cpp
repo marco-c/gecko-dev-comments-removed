@@ -273,31 +273,7 @@ void DocAccessible::ApplyARIAState(uint64_t* aState) const {
 Accessible* DocAccessible::FocusedChild() {
   
   
-  if (Accessible* focusedAcc = FocusMgr()->FocusedLocalAccessible()) {
-    return focusedAcc;
-  }
-  nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();
-
-  if (!focusManagerDOM) {
-    return nullptr;
-  }
-
-  if (!XRE_IsParentProcess()) {
-    
-    
-    
-    return nullptr;
-  }
-  
-  
-  
-  
-  dom::BrowsingContext* focusedContext =
-      focusManagerDOM->GetFocusedBrowsingContextInChrome();
-
-  DocAccessibleParent* focusedDoc =
-      DocAccessibleParent::GetFrom(focusedContext);
-  return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
+  return FocusMgr()->FocusedAccessible();
 }
 
 void DocAccessible::TakeFocus() const {

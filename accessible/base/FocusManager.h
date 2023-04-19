@@ -17,6 +17,7 @@ class Document;
 
 namespace a11y {
 
+class Accessible;
 class AccEvent;
 class LocalAccessible;
 class DocAccessible;
@@ -33,6 +34,11 @@ class FocusManager {
 
 
   LocalAccessible* FocusedLocalAccessible() const;
+
+  
+
+
+  Accessible* FocusedAccessible() const;
 
   
 
