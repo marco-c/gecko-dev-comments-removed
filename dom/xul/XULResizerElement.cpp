@@ -108,6 +108,20 @@ nsresult XULResizerElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   return nsXULElement::PostHandleEvent(aVisitor);
 }
 
+Maybe<nsSize> XULResizerElement::GetCurrentSize() const {
+  nsIContent* contentToResize = GetContentToResize();
+  if (!contentToResize) {
+    return Nothing();
+  }
+  nsIFrame* frame = contentToResize->GetPrimaryFrame();
+  if (!frame) {
+    return Nothing();
+  }
+  return Some(frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content
+                ? frame->GetContentRect().Size()
+                : frame->GetRect().Size());
+}
+
 void XULResizerElement::PostHandleEventInternal(
     EventChainPostVisitor& aVisitor) {
   bool doDefault = true;
@@ -118,22 +132,15 @@ void XULResizerElement::PostHandleEventInternal(
       if (event.mClass == eTouchEventClass ||
           (event.mClass == eMouseEventClass &&
            event.AsMouseEvent()->mButton == MouseButton::ePrimary)) {
-        nsIContent* contentToResize = GetContentToResize();
-        if (!contentToResize) {
+        auto size = GetCurrentSize();
+        if (!size) {
           break;  
         }
-        auto* guiEvent = event.AsGUIEvent();
-        nsIFrame* frame = contentToResize->GetPrimaryFrame();
-        if (!frame) {
-          break;
-        }
         
-        mMouseDownSize =
-            frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content
-                ? frame->GetContentRect().Size()
-                : frame->GetRect().Size();
+        mMouseDownSize = *size;
 
         
+        auto* guiEvent = event.AsGUIEvent();
         if (!GetEventPoint(guiEvent, mMouseDownPoint)) {
           break;
         }
@@ -178,39 +185,50 @@ void XULResizerElement::PostHandleEventInternal(
         
         Direction direction = GetDirection();
 
-        nsSize newSize = mMouseDownSize;
-
-        
-        newSize.width += direction.mHorizontal * mouseMove.x;
-        newSize.height += direction.mVertical * mouseMove.y;
-
-        if (newSize.width < AppUnitsPerCSSPixel() && mouseMove.x != 0) {
-          newSize.width = AppUnitsPerCSSPixel();
-        }
-
-        if (newSize.height < AppUnitsPerCSSPixel() && mouseMove.y != 0) {
-          newSize.height = AppUnitsPerCSSPixel();
-        }
-
-        
-        
-        
-        
-        if (auto* resizerFrame = GetPrimaryFrame()) {
-          nsRect resizerRect = resizerFrame->GetRect();
-          if (newSize.width < resizerRect.width && mouseMove.x != 0) {
-            newSize.width = resizerRect.width;
+        const CSSIntSize newSize = [&] {
+          nsSize newAuSize = mMouseDownSize;
+          
+          newAuSize.width += direction.mHorizontal * mouseMove.x;
+          newAuSize.height += direction.mVertical * mouseMove.y;
+          if (newAuSize.width < AppUnitsPerCSSPixel() && mouseMove.x != 0) {
+            newAuSize.width = AppUnitsPerCSSPixel();
           }
-          if (newSize.height < resizerRect.height && mouseMove.y != 0) {
-            newSize.height = resizerRect.height;
+          if (newAuSize.height < AppUnitsPerCSSPixel() && mouseMove.y != 0) {
+            newAuSize.height = AppUnitsPerCSSPixel();
+          }
+
+          
+          
+          
+          if (auto* resizerFrame = GetPrimaryFrame()) {
+            nsRect resizerRect = resizerFrame->GetRect();
+            if (newAuSize.width < resizerRect.width && mouseMove.x != 0) {
+              newAuSize.width = resizerRect.width;
+            }
+            if (newAuSize.height < resizerRect.height && mouseMove.y != 0) {
+              newAuSize.height = resizerRect.height;
+            }
+          }
+
+          
+          return CSSIntSize::FromAppUnitsRounded(newAuSize);
+        }();
+
+        
+        
+        if (auto currentSize = GetCurrentSize()) {
+          auto newAuSize = CSSIntSize::ToAppUnits(newSize);
+          if (newAuSize.width == currentSize->width) {
+            direction.mHorizontal = 0;
+          }
+          if (newAuSize.height == currentSize->height) {
+            direction.mVertical = 0;
           }
         }
-
-        auto cssSize = CSSIntSize::FromAppUnitsRounded(newSize);
 
         SizeInfo sizeInfo, originalSizeInfo;
-        sizeInfo.width.AppendInt(cssSize.width);
-        sizeInfo.height.AppendInt(cssSize.height);
+        sizeInfo.width.AppendInt(newSize.width);
+        sizeInfo.height.AppendInt(newSize.height);
         ResizeContent(contentToResize, direction, sizeInfo, &originalSizeInfo);
         MaybePersistOriginalSize(contentToResize, originalSizeInfo);
 
