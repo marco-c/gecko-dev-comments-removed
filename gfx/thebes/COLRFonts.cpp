@@ -1069,10 +1069,10 @@ struct PaintRadialGradient : public PaintPatternBase {
         
         if (r1 < r2) {
           
-          TruncateGradientStops(stopArray, 1.0f, 1.0f);
+          stopArray.RemoveElementsAt(0, stopArray.Length() - 1);
         } else {
           
-          TruncateGradientStops(stopArray, 0.0f, 0.0f);
+          stopArray.RemoveElementsAt(1, stopArray.Length() - 1);
         }
       } else {
         
