@@ -14,7 +14,6 @@
 
 #include <algorithm>  
 
-#include "api/audio_codecs/audio_decoder.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/background_noise.h"
@@ -49,6 +48,13 @@ int Normal::Process(const int16_t* input,
   
   
   const int fs_shift = 30 - WebRtcSpl_NormW32(fs_mult);
+
+  
+  
+  
+  if (last_mode == NetEq::Mode::kCodecPlc) {
+    statistics_->EndExpandEvent(fs_hz_);
+  }
 
   
   
