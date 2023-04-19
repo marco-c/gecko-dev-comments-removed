@@ -3,7 +3,7 @@
 
 from __future__ import absolute_import
 
-import re
+import pathlib
 
 
 class PerfDocLogger(object):
@@ -52,12 +52,12 @@ class PerfDocLogger(object):
         
         for file in files:
             
-            fpath = re.sub(PerfDocLogger.TOP_DIR, "", file)
+            fpath = str(file).replace(str(PerfDocLogger.TOP_DIR), "")
 
             
             
             for path in PerfDocLogger.PATHS:
-                if path not in file:
+                if str(path) not in str(file):
                     continue
 
                 
@@ -65,7 +65,7 @@ class PerfDocLogger(object):
                     message=msg,
                     lineno=0,
                     column=None,
-                    path=fpath,
+                    path=str(pathlib.PurePosixPath(fpath)),
                     linter="perfdocs",
                     rule="Flawless performance docs.",
                 )
