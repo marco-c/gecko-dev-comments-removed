@@ -739,7 +739,7 @@ nsIFrame* nsInlineFrame::PullOneFrame(nsPresContext* aPresContext,
         }
         
         
-        nextInFlow->mFrames.SetFrames(frame);
+        nextInFlow->mFrames = nsFrameList(frame, frame);
       }
     }
 
