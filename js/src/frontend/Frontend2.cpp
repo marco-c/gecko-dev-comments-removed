@@ -323,7 +323,7 @@ bool ConvertRegExpData(JSContext* cx, ErrorContext* ec,
     
 
     LifoAllocScope regExpAllocScope(&cx->tempLifoAlloc());
-    if (!irregexp::CheckPatternSyntax(cx, ts, range, flags)) {
+    if (!irregexp::CheckPatternSyntax(cx, stackLimit, ts, range, flags)) {
       return false;
     }
 
