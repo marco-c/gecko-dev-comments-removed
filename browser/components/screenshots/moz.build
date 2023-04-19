@@ -5,8 +5,8 @@
 
 
 EXTRA_JS_MODULES += [
-    "ScreenshotsOverlayChild.jsm",
-    "ScreenshotsUtils.jsm",
+    "ScreenshotsOverlayChild.sys.mjs",
+    "ScreenshotsUtils.sys.mjs",
 ]
 
 JAR_MANIFESTS += ["jar.mn"]
