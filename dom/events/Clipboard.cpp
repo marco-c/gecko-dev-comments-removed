@@ -208,17 +208,17 @@ Clipboard::HandleReadTextRequestWhichRequiresPasteButton(Promise& aPromise) {
   return runnable.forget();
 }
 
-already_AddRefed<Promise> Clipboard::ReadHelper(
-    nsIPrincipal& aSubjectPrincipal, ClipboardReadType aClipboardReadType,
-    ErrorResult& aRv) {
+already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
+                                                ReadRequestType aType,
+                                                ErrorResult& aRv) {
   
   RefPtr<Promise> p = dom::Promise::Create(GetOwnerGlobal(), aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
 
-  switch (aClipboardReadType) {
-    case eReadText: {
+  switch (aType) {
+    case ReadRequestType::eReadText: {
       RefPtr<nsIRunnable> runnable =
           CheckReadTextPermissionAndHandleRequest(*p, aSubjectPrincipal);
 
@@ -228,7 +228,7 @@ already_AddRefed<Promise> Clipboard::ReadHelper(
 
       break;
     }
-    case eRead: {
+    case ReadRequestType::eRead: {
       
       
       
@@ -360,12 +360,12 @@ void Clipboard::TransientUserPasteState::OnUserReactedToPasteMenuPopup(
 
 already_AddRefed<Promise> Clipboard::Read(nsIPrincipal& aSubjectPrincipal,
                                           ErrorResult& aRv) {
-  return ReadHelper(aSubjectPrincipal, eRead, aRv);
+  return ReadHelper(aSubjectPrincipal, ReadRequestType::eRead, aRv);
 }
 
 already_AddRefed<Promise> Clipboard::ReadText(nsIPrincipal& aSubjectPrincipal,
                                               ErrorResult& aRv) {
-  return ReadHelper(aSubjectPrincipal, eReadText, aRv);
+  return ReadHelper(aSubjectPrincipal, ReadRequestType::eReadText, aRv);
 }
 
 namespace {
