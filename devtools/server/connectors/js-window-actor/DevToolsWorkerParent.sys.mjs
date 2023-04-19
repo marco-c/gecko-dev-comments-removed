@@ -1,19 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DevToolsWorkerParent"];
 const { loader } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
 const { EventEmitter } = ChromeUtils.import(
   "resource://gre/modules/EventEmitter.jsm"
 );
-const { WatcherRegistry } = ChromeUtils.import(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.jsm"
-);
+import { WatcherRegistry } from "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs";
 
 const lazy = {};
 
@@ -24,37 +19,37 @@ loader.lazyRequireGetter(
   true
 );
 
-class DevToolsWorkerParent extends JSWindowActorParent {
+export class DevToolsWorkerParent extends JSWindowActorParent {
   constructor() {
     super();
 
     this._destroyed = false;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Map of DevToolsServerConnection's used to forward the messages from/to
+    // the client. The connections run in the parent process, as this code. We
+    // may have more than one when there is more than one client debugging the
+    // same worker. For example, a content toolbox and the browser toolbox.
+    //
+    // The map is indexed by the connection prefix, and the values are object with the
+    // following properties:
+    // - watcher: The WatcherActor
+    // - actors: A Map of the worker target actors form, indexed by WorkerTarget actorID
+    // - transport: the JsWindowActorTransport
+    //
+    // Reminder about prefixes: all DevToolsServerConnections have a `prefix`
+    // which can be considered as a kind of id. On top of this, parent process
+    // DevToolsServerConnections also have forwarding prefixes because they are
+    // responsible for forwarding messages to content process connections.
     this._connections = new Map();
 
     this._onConnectionClosed = this._onConnectionClosed.bind(this);
     EventEmitter.decorate(this);
   }
 
-  
-
-
-
+  /**
+   * Request the content process to create Worker Targets if workers matching the context
+   * are already available.
+   */
   async instantiateWorkerTargets({
     watcherActorID,
     connectionPrefix,
@@ -89,9 +84,9 @@ class DevToolsWorkerParent extends JSWindowActorParent {
     });
   }
 
-  
-
-
+  /**
+   * Communicate to the content process that some data have been added.
+   */
   async addSessionDataEntry({ watcherActorID, sessionContext, type, entries }) {
     try {
       await this.sendQuery("DevToolsWorkerParent:addSessionDataEntry", {
@@ -111,9 +106,9 @@ class DevToolsWorkerParent extends JSWindowActorParent {
     }
   }
 
-  
-
-
+  /**
+   * Communicate to the content process that some data have been removed.
+   */
   removeSessionDataEntry({ watcherActorID, sessionContext, type, entries }) {
     this.sendAsyncMessage("DevToolsWorkerParent:removeSessionDataEntry", {
       watcherActorID,
@@ -145,7 +140,7 @@ class DevToolsWorkerParent extends JSWindowActorParent {
     if (!this._connections.has(prefix)) {
       connection.on("closed", this._onConnectionClosed);
 
-      
+      // Create a js-window-actor based transport.
       const transport = new lazy.JsWindowActorTransport(this, forwardingPrefix);
       transport.hooks = {
         onPacket: connection.send.bind(connection),
@@ -213,8 +208,8 @@ class DevToolsWorkerParent extends JSWindowActorParent {
 
     connection.off("closed", this._onConnectionClosed);
     if (transport) {
-      
-      
+      // If we have a child transport, the actor has already
+      // been created. We need to stop using this transport.
       connection.cancelForwarding(transport._prefix);
       transport.close();
     }
@@ -241,20 +236,20 @@ class DevToolsWorkerParent extends JSWindowActorParent {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Part of JSActor API
+   * https://searchfox.org/mozilla-central/rev/d9f92154813fbd4a528453c33886dc3a74f27abb/dom/chrome-webidl/JSActor.webidl#41-42,52
+   *
+   * > The didDestroy method, if present, will be called after the (JSWindow)actor is no
+   * > longer able to receive any more messages.
+   */
   didDestroy() {
     this._destroy();
   }
 
-  
-
-
+  /**
+   * Supported Queries
+   */
 
   async sendPacket(packet, prefix) {
     return this.sendAsyncMessage("DevToolsWorkerParent:packet", {
@@ -263,9 +258,9 @@ class DevToolsWorkerParent extends JSWindowActorParent {
     });
   }
 
-  
-
-
+  /**
+   * JsWindowActor API
+   */
 
   async sendQuery(msg, args) {
     try {
