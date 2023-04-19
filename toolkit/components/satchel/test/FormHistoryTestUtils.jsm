@@ -72,13 +72,7 @@ var FormHistoryTestUtils = {
 
 
   async count(fieldname, filters = {}) {
-    let results = await new Promise((resolve, reject) => {
-      lazy.FormHistory.count(
-        Object.assign({ fieldname }, filters),
-        this.makeListener(resolve, reject)
-      );
-    });
-    return results[0];
+    return lazy.FormHistory.count(Object.assign({ fieldname }, filters));
   },
 
   

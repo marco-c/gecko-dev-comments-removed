@@ -142,22 +142,8 @@ add_task(async function() {
     
     
     
-    deferred = PromiseUtils.defer();
-    await FormHistory.count(
-      { fieldname: null, value: null },
-      {
-        handleResult: result => checkNotExists(result),
-        handleError(error) {
-          do_throw("Error occurred searching form history: " + error);
-        },
-        handleCompletion(reason) {
-          if (!reason) {
-            deferred.resolve();
-          }
-        },
-      }
-    );
-    await deferred.promise;
+    let count = await FormHistory.count({ fieldname: null, value: null });
+    checkNotExists(count);
 
     
     
