@@ -305,6 +305,8 @@ var interfaceNamesInGlobalScope = [
   
   "TextEncoder",
   
+  "TextMetrics",
+  
   "TransformStream",
   
   "TransformStreamDefaultController",

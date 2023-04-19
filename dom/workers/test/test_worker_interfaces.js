@@ -289,6 +289,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "TextEncoder", insecureContext: true },
   
+  { name: "TextMetrics", insecureContext: true },
+  
   { name: "TransformStream", insecureContext: true },
   
   {
