@@ -254,15 +254,6 @@ static cairo_surface_t* GetAsImageSurface(cairo_surface_t* aSurface) {
   return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
 static cairo_surface_t* CreateSubImageForData(unsigned char* aData,
                                               const IntRect& aRect, int aStride,
                                               SurfaceFormat aFormat) {
@@ -270,11 +261,13 @@ static cairo_surface_t* CreateSubImageForData(unsigned char* aData,
     gfxWarning() << "DrawTargetCairo.CreateSubImageForData null aData";
     return nullptr;
   }
-  unsigned char* data = aData + aRect.Y() * aStride;
+  unsigned char* data =
+      aData + aRect.Y() * aStride + aRect.X() * BytesPerPixel(aFormat);
 
   cairo_surface_t* image = cairo_image_surface_create_for_data(
       data, GfxFormatToCairoFormat(aFormat), aRect.Width(), aRect.Height(),
       aStride);
+  
   
   cairo_surface_set_device_offset(image, -aRect.X(), -aRect.Y());
   return image;
