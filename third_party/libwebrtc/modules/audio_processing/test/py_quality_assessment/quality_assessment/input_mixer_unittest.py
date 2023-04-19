@@ -5,7 +5,6 @@
 
 
 
-
 """Unit tests for the input mixer module.
 """
 
@@ -23,122 +22,119 @@ from . import signal_processing
 
 
 class TestApmInputMixer(unittest.TestCase):
-  """Unit tests for the ApmInputMixer class.
+    """Unit tests for the ApmInputMixer class.
   """
 
-  
-  _FILENAMES = ['capture', 'echo_1', 'echo_2', 'shorter', 'longer']
-
-  
-  
-  
-  
-  _MAX_PEAK_POWER_LEVELS = [-10.0, -5.0, 0.0, None, None]
-
-  
-  _DURATIONS = [1000, 1000, 1000, 800, 1200]
-
-  _SAMPLE_RATE = 48000
-
-  def setUp(self):
-    """Creates temporary data."""
-    self._tmp_path = tempfile.mkdtemp()
+    
+    _FILENAMES = ['capture', 'echo_1', 'echo_2', 'shorter', 'longer']
 
     
-    self._audio_tracks = {}
-    for filename, peak_power, duration in zip(
-        self._FILENAMES, self._MAX_PEAK_POWER_LEVELS, self._DURATIONS):
-      audio_track_filepath = os.path.join(self._tmp_path, '{}.wav'.format(
-          filename))
+    
+    
+    
+    _MAX_PEAK_POWER_LEVELS = [-10.0, -5.0, 0.0, None, None]
 
-      
-      template = signal_processing.SignalProcessingUtils.GenerateSilence(
-          duration=duration, sample_rate=self._SAMPLE_RATE)
-      signal = signal_processing.SignalProcessingUtils.GeneratePureTone(
-          template)
-      if peak_power is not None:
-        signal = signal.apply_gain(-signal.max_dBFS + peak_power)
+    
+    _DURATIONS = [1000, 1000, 1000, 800, 1200]
 
-      signal_processing.SignalProcessingUtils.SaveWav(
-        audio_track_filepath, signal)
-      self._audio_tracks[filename] = {
-          'filepath': audio_track_filepath,
-          'num_samples': signal_processing.SignalProcessingUtils.CountSamples(
-              signal)
-      }
+    _SAMPLE_RATE = 48000
 
-  def tearDown(self):
-    """Recursively deletes temporary folders."""
-    shutil.rmtree(self._tmp_path)
+    def setUp(self):
+        """Creates temporary data."""
+        self._tmp_path = tempfile.mkdtemp()
 
-  def testCheckMixSameDuration(self):
-    """Checks the duration when mixing capture and echo with same duration."""
-    mix_filepath = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['echo_1']['filepath'])
-    self.assertTrue(os.path.exists(mix_filepath))
+        
+        self._audio_tracks = {}
+        for filename, peak_power, duration in zip(self._FILENAMES,
+                                                  self._MAX_PEAK_POWER_LEVELS,
+                                                  self._DURATIONS):
+            audio_track_filepath = os.path.join(self._tmp_path,
+                                                '{}.wav'.format(filename))
 
-    mix = signal_processing.SignalProcessingUtils.LoadWav(mix_filepath)
-    self.assertEqual(self._audio_tracks['capture']['num_samples'],
-                     signal_processing.SignalProcessingUtils.CountSamples(mix))
+            
+            template = signal_processing.SignalProcessingUtils.GenerateSilence(
+                duration=duration, sample_rate=self._SAMPLE_RATE)
+            signal = signal_processing.SignalProcessingUtils.GeneratePureTone(
+                template)
+            if peak_power is not None:
+                signal = signal.apply_gain(-signal.max_dBFS + peak_power)
 
-  def testRejectShorterEcho(self):
-    """Rejects echo signals that are shorter than the capture signal."""
-    try:
-      _ = input_mixer.ApmInputMixer.Mix(
-          self._tmp_path,
-          self._audio_tracks['capture']['filepath'],
-          self._audio_tracks['shorter']['filepath'])
-      self.fail('no exception raised')
-    except exceptions.InputMixerException:
-      pass
+            signal_processing.SignalProcessingUtils.SaveWav(
+                audio_track_filepath, signal)
+            self._audio_tracks[filename] = {
+                'filepath':
+                audio_track_filepath,
+                'num_samples':
+                signal_processing.SignalProcessingUtils.CountSamples(signal)
+            }
 
-  def testCheckMixDurationWithLongerEcho(self):
-    """Checks the duration when mixing an echo longer than the capture."""
-    mix_filepath = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['longer']['filepath'])
-    self.assertTrue(os.path.exists(mix_filepath))
+    def tearDown(self):
+        """Recursively deletes temporary folders."""
+        shutil.rmtree(self._tmp_path)
 
-    mix = signal_processing.SignalProcessingUtils.LoadWav(mix_filepath)
-    self.assertEqual(self._audio_tracks['capture']['num_samples'],
-                     signal_processing.SignalProcessingUtils.CountSamples(mix))
+    def testCheckMixSameDuration(self):
+        """Checks the duration when mixing capture and echo with same duration."""
+        mix_filepath = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['echo_1']['filepath'])
+        self.assertTrue(os.path.exists(mix_filepath))
 
-  def testCheckOutputFileNamesConflict(self):
-    """Checks that different echo files lead to different output file names."""
-    mix1_filepath = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['echo_1']['filepath'])
-    self.assertTrue(os.path.exists(mix1_filepath))
+        mix = signal_processing.SignalProcessingUtils.LoadWav(mix_filepath)
+        self.assertEqual(
+            self._audio_tracks['capture']['num_samples'],
+            signal_processing.SignalProcessingUtils.CountSamples(mix))
 
-    mix2_filepath = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['echo_2']['filepath'])
-    self.assertTrue(os.path.exists(mix2_filepath))
+    def testRejectShorterEcho(self):
+        """Rejects echo signals that are shorter than the capture signal."""
+        try:
+            _ = input_mixer.ApmInputMixer.Mix(
+                self._tmp_path, self._audio_tracks['capture']['filepath'],
+                self._audio_tracks['shorter']['filepath'])
+            self.fail('no exception raised')
+        except exceptions.InputMixerException:
+            pass
 
-    self.assertNotEqual(mix1_filepath, mix2_filepath)
+    def testCheckMixDurationWithLongerEcho(self):
+        """Checks the duration when mixing an echo longer than the capture."""
+        mix_filepath = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['longer']['filepath'])
+        self.assertTrue(os.path.exists(mix_filepath))
 
-  def testHardClippingLogExpected(self):
-    """Checks that hard clipping warning is raised when occurring."""
-    logging.warning = mock.MagicMock(name='warning')
-    _ = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['echo_2']['filepath'])
-    logging.warning.assert_called_once_with(
-        input_mixer.ApmInputMixer.HardClippingLogMessage())
+        mix = signal_processing.SignalProcessingUtils.LoadWav(mix_filepath)
+        self.assertEqual(
+            self._audio_tracks['capture']['num_samples'],
+            signal_processing.SignalProcessingUtils.CountSamples(mix))
 
-  def testHardClippingLogNotExpected(self):
-    """Checks that hard clipping warning is not raised when not occurring."""
-    logging.warning = mock.MagicMock(name='warning')
-    _ = input_mixer.ApmInputMixer.Mix(
-        self._tmp_path,
-        self._audio_tracks['capture']['filepath'],
-        self._audio_tracks['echo_1']['filepath'])
-    self.assertNotIn(
-        mock.call(input_mixer.ApmInputMixer.HardClippingLogMessage()),
-        logging.warning.call_args_list)
+    def testCheckOutputFileNamesConflict(self):
+        """Checks that different echo files lead to different output file names."""
+        mix1_filepath = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['echo_1']['filepath'])
+        self.assertTrue(os.path.exists(mix1_filepath))
+
+        mix2_filepath = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['echo_2']['filepath'])
+        self.assertTrue(os.path.exists(mix2_filepath))
+
+        self.assertNotEqual(mix1_filepath, mix2_filepath)
+
+    def testHardClippingLogExpected(self):
+        """Checks that hard clipping warning is raised when occurring."""
+        logging.warning = mock.MagicMock(name='warning')
+        _ = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['echo_2']['filepath'])
+        logging.warning.assert_called_once_with(
+            input_mixer.ApmInputMixer.HardClippingLogMessage())
+
+    def testHardClippingLogNotExpected(self):
+        """Checks that hard clipping warning is not raised when not occurring."""
+        logging.warning = mock.MagicMock(name='warning')
+        _ = input_mixer.ApmInputMixer.Mix(
+            self._tmp_path, self._audio_tracks['capture']['filepath'],
+            self._audio_tracks['echo_1']['filepath'])
+        self.assertNotIn(
+            mock.call(input_mixer.ApmInputMixer.HardClippingLogMessage()),
+            logging.warning.call_args_list)

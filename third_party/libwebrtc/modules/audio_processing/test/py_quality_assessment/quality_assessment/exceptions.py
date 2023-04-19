@@ -5,42 +5,41 @@
 
 
 
-
 """Exception classes.
 """
 
 
 class FileNotFoundError(Exception):
-  """File not found exception.
+    """File not found exception.
   """
-  pass
+    pass
 
 
 class SignalProcessingException(Exception):
-  """Signal processing exception.
+    """Signal processing exception.
   """
-  pass
+    pass
 
 
 class InputMixerException(Exception):
-  """Input mixer exception.
+    """Input mixer exception.
   """
-  pass
+    pass
 
 
 class InputSignalCreatorException(Exception):
-  """Input signal creator exception.
+    """Input signal creator exception.
   """
-  pass
+    pass
 
 
 class EvaluationScoreException(Exception):
-  """Evaluation score exception.
+    """Evaluation score exception.
   """
-  pass
+    pass
 
 
 class InitializationException(Exception):
-  """Initialization exception.
+    """Initialization exception.
   """
-  pass
+    pass

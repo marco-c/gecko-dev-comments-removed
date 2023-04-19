@@ -5,7 +5,6 @@
 
 
 
-
 """Unit tests for the export module.
 """
 
@@ -27,60 +26,61 @@ from . import test_data_generation_factory
 
 
 class TestExport(unittest.TestCase):
-  """Unit tests for the export module.
+    """Unit tests for the export module.
   """
 
-  _CLEAN_TMP_OUTPUT = True
+    _CLEAN_TMP_OUTPUT = True
 
-  def setUp(self):
-    """Creates temporary data to export."""
-    self._tmp_path = tempfile.mkdtemp()
+    def setUp(self):
+        """Creates temporary data to export."""
+        self._tmp_path = tempfile.mkdtemp()
 
-    
-    simulator = simulation.ApmModuleSimulator(
-        test_data_generator_factory=(
-            test_data_generation_factory.TestDataGeneratorFactory(
-                aechen_ir_database_path='',
-                noise_tracks_path='',
-                copy_with_identity=False)),
-        evaluation_score_factory=(
-          eval_scores_factory.EvaluationScoreWorkerFactory(
-              polqa_tool_bin_path=os.path.join(
-                  os.path.dirname(os.path.abspath(__file__)), 'fake_polqa'),
-              echo_metric_tool_bin_path=None
-          )),
-        ap_wrapper=audioproc_wrapper.AudioProcWrapper(
-            audioproc_wrapper.AudioProcWrapper.DEFAULT_APM_SIMULATOR_BIN_PATH),
-        evaluator=evaluation.ApmModuleEvaluator())
-    simulator.Run(
-        config_filepaths=['apm_configs/default.json'],
-        capture_input_filepaths=[
-            os.path.join(self._tmp_path, 'pure_tone-440_1000.wav'),
-            os.path.join(self._tmp_path, 'pure_tone-880_1000.wav'),
-        ],
-        test_data_generator_names=['identity', 'white_noise'],
-        eval_score_names=['audio_level_peak', 'audio_level_mean'],
-        output_dir=self._tmp_path)
+        
+        simulator = simulation.ApmModuleSimulator(
+            test_data_generator_factory=(
+                test_data_generation_factory.TestDataGeneratorFactory(
+                    aechen_ir_database_path='',
+                    noise_tracks_path='',
+                    copy_with_identity=False)),
+            evaluation_score_factory=(
+                eval_scores_factory.EvaluationScoreWorkerFactory(
+                    polqa_tool_bin_path=os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        'fake_polqa'),
+                    echo_metric_tool_bin_path=None)),
+            ap_wrapper=audioproc_wrapper.AudioProcWrapper(
+                audioproc_wrapper.AudioProcWrapper.
+                DEFAULT_APM_SIMULATOR_BIN_PATH),
+            evaluator=evaluation.ApmModuleEvaluator())
+        simulator.Run(
+            config_filepaths=['apm_configs/default.json'],
+            capture_input_filepaths=[
+                os.path.join(self._tmp_path, 'pure_tone-440_1000.wav'),
+                os.path.join(self._tmp_path, 'pure_tone-880_1000.wav'),
+            ],
+            test_data_generator_names=['identity', 'white_noise'],
+            eval_score_names=['audio_level_peak', 'audio_level_mean'],
+            output_dir=self._tmp_path)
 
-    
-    p = collect_data.InstanceArgumentsParser()
-    args = p.parse_args(['--output_dir', self._tmp_path])
-    src_path = collect_data.ConstructSrcPath(args)
-    self._data_to_export = collect_data.FindScores(src_path, args)
+        
+        p = collect_data.InstanceArgumentsParser()
+        args = p.parse_args(['--output_dir', self._tmp_path])
+        src_path = collect_data.ConstructSrcPath(args)
+        self._data_to_export = collect_data.FindScores(src_path, args)
 
-  def tearDown(self):
-    """Recursively deletes temporary folders."""
-    if self._CLEAN_TMP_OUTPUT:
-      shutil.rmtree(self._tmp_path)
-    else:
-      logging.warning(self.id() + ' did not clean the temporary path ' + (
-          self._tmp_path))
+    def tearDown(self):
+        """Recursively deletes temporary folders."""
+        if self._CLEAN_TMP_OUTPUT:
+            shutil.rmtree(self._tmp_path)
+        else:
+            logging.warning(self.id() + ' did not clean the temporary path ' +
+                            (self._tmp_path))
 
-  def testCreateHtmlReport(self):
-    fn_out = os.path.join(self._tmp_path, 'results.html')
-    exporter = export.HtmlExport(fn_out)
-    exporter.Export(self._data_to_export)
+    def testCreateHtmlReport(self):
+        fn_out = os.path.join(self._tmp_path, 'results.html')
+        exporter = export.HtmlExport(fn_out)
+        exporter.Export(self._data_to_export)
 
-    document = pq.PyQuery(filename=fn_out)
-    self.assertIsInstance(document, pq.PyQuery)
-    
+        document = pq.PyQuery(filename=fn_out)
+        self.assertIsInstance(document, pq.PyQuery)
+        
