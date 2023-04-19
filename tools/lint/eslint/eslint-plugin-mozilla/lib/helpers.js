@@ -927,4 +927,23 @@ module.exports = {
     }
     return null;
   },
+
+  
+
+
+
+
+
+
+
+
+  maybeGetMemberPropertyName(node) {
+    if (node.type === "MemberExpression") {
+      return node.property.name;
+    }
+    if (node.type === "Identifier") {
+      return node.name;
+    }
+    return null;
+  },
 };
