@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 
 namespace webrtc {
@@ -21,6 +22,21 @@ namespace webrtc {
 
 class TransientSuppressor {
  public:
+  
+  
+  enum class VadMode {
+    
+    
+    kDefault = 0,
+    
+    
+    kRnnVad,
+    
+    
+    
+    kNoVad,
+  };
+
   virtual ~TransientSuppressor() {}
 
   virtual int Initialize(int sample_rate_hz,

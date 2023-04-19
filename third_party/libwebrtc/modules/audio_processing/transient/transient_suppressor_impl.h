@@ -27,30 +27,13 @@ class TransientDetector;
 
 class TransientSuppressorImpl : public TransientSuppressor {
  public:
-  TransientSuppressorImpl();
+  explicit TransientSuppressorImpl(VadMode vad_mode);
   ~TransientSuppressorImpl() override;
 
   int Initialize(int sample_rate_hz,
                  int detector_rate_hz,
                  int num_channels) override;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   int Suppress(float* data,
                size_t data_length,
                int num_channels,
@@ -74,7 +57,11 @@ class TransientSuppressorImpl : public TransientSuppressor {
   void HardRestoration(float* spectral_mean);
   void SoftRestoration(float* spectral_mean);
 
+  const VadMode vad_mode_;
+
   std::unique_ptr<TransientDetector> detector_;
+
+  bool analyzed_audio_is_silent_;
 
   size_t data_length_;
   size_t detection_length_;

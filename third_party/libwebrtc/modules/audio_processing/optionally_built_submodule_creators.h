@@ -31,7 +31,8 @@ struct ApmSubmoduleCreationOverrides {
 
 
 std::unique_ptr<TransientSuppressor> CreateTransientSuppressor(
-    const ApmSubmoduleCreationOverrides& overrides);
+    const ApmSubmoduleCreationOverrides& overrides,
+    TransientSuppressor::VadMode vad_mode);
 
 }  
 

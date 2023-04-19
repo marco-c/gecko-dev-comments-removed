@@ -8,17 +8,22 @@
 
 
 
-#include "modules/audio_processing/transient/transient_suppressor_impl.h"
+#include "modules/audio_processing/transient/transient_suppressor.h"
 
 #include "modules/audio_processing/transient/common.h"
+#include "modules/audio_processing/transient/transient_suppressor_impl.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
-TEST(TransientSuppressorImplTest, TypingDetectionLogicWorksAsExpectedForMono) {
+class TransientSuppressorImplTest
+    : public ::testing::TestWithParam<TransientSuppressor::VadMode> {};
+
+TEST_P(TransientSuppressorImplTest,
+       TypingDetectionLogicWorksAsExpectedForMono) {
   static const int kNumChannels = 1;
 
-  TransientSuppressorImpl ts;
+  TransientSuppressorImpl ts(GetParam());
   ts.Initialize(ts::kSampleRate16kHz, ts::kSampleRate16kHz, kNumChannels);
 
   
@@ -81,5 +86,12 @@ TEST(TransientSuppressorImplTest, TypingDetectionLogicWorksAsExpectedForMono) {
     EXPECT_FALSE(ts.suppression_enabled_);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    TransientSuppressorImplTest,
+    ::testing::Values(TransientSuppressor::VadMode::kDefault,
+                      TransientSuppressor::VadMode::kRnnVad,
+                      TransientSuppressor::VadMode::kNoVad));
 
 }  
