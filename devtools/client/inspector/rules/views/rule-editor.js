@@ -211,36 +211,23 @@ RuleEditor.prototype = {
     }
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
-      
-      (async function() {
-        let selector;
-
-        if (this.rule.domRule.selectors) {
-          
-          selector = this.rule.domRule.selectors.join(", ");
-        } else if (this.rule.inherited) {
-          
-          
-          selector = await this.rule.inherited.getUniqueSelector();
-        } else {
-          
-          selector = await this.ruleView.inspector.selection.nodeFront.getUniqueSelector();
-        }
-
-        const isHighlighted = this.ruleView.isSelectorHighlighted(selector);
+      let selector = "";
+      if (this.rule.domRule.selectors) {
         
-        createChild(header, "span", {
-          class:
-            "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
-            (isHighlighted ? " highlighted" : ""),
-          "data-selector": selector,
-          title: l10n("rule.selectorHighlighter.tooltip"),
-        });
+        selector = this.rule.domRule.selectors.join(", ");
+        
+        
       }
-        .bind(this)()
-        .catch(error => {
-          console.error("Exception while getting unique selector", error);
-        }));
+
+      const isHighlighted = this.ruleView.isSelectorHighlighted(selector);
+      
+      createChild(header, "span", {
+        class:
+          "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
+          (isHighlighted ? " highlighted" : ""),
+        "data-selector": selector,
+        title: l10n("rule.selectorHighlighter.tooltip"),
+      });
     }
 
     this.openBrace = createChild(header, "span", {

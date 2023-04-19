@@ -38,13 +38,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "getNodeInfo",
-  "resource://devtools/client/inspector/rules/utils/utils.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "getNodeCompatibilityInfo",
+  ["getNodeInfo", "getNodeCompatibilityInfo", "getRuleFromNode"],
   "resource://devtools/client/inspector/rules/utils/utils.js",
   true
 );
@@ -417,31 +411,55 @@ CssRuleView.prototype = {
 
 
 
-  handleClickEvent(event) {
+  async handleClickEvent(event) {
     const target = event.target;
 
     
     if (target.classList.contains("js-toggle-selector-highlighter")) {
-      this.toggleSelectorHighlighter(target.dataset.selector);
       event.stopPropagation();
+      let selector = target.dataset.selector;
+      
+      
+      
+      if (selector === "") {
+        try {
+          const rule = getRuleFromNode(target, this._elementStyle);
+          if (rule.inherited) {
+            
+            
+            selector = await rule.inherited.getUniqueSelector();
+          } else {
+            
+            selector = await this.inspector.selection.nodeFront.getUniqueSelector();
+          }
+
+          
+          
+          target.dataset.selector = selector;
+        } finally {
+          
+        }
+      }
+
+      this.toggleSelectorHighlighter(selector);
     }
 
     
     if (target.classList.contains("js-toggle-flexbox-highlighter")) {
+      event.stopPropagation();
       this.inspector.highlighters.toggleFlexboxHighlighter(
         this.inspector.selection.nodeFront,
         "rule"
       );
-      event.stopPropagation();
     }
 
     
     if (target.classList.contains("js-toggle-grid-highlighter")) {
+      event.stopPropagation();
       this.inspector.highlighters.toggleGridHighlighter(
         this.inspector.selection.nodeFront,
         "rule"
       );
-      event.stopPropagation();
     }
   },
 

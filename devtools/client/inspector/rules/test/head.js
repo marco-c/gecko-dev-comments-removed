@@ -595,8 +595,6 @@ async function clickSelectorIcon(view, selectorText, index = 0) {
   const { inspector } = view;
   const rule = getRuleViewRule(view, selectorText, index);
 
-  
-  
   info(`Waiting for icon to be available for selector: ${selectorText}`);
   const icon = await waitFor(() => {
     return rule.querySelector(".js-toggle-selector-highlighter");
