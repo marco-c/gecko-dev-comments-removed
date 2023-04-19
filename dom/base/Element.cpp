@@ -3495,6 +3495,11 @@ static const char* GetFullscreenError(CallerType aCallerType,
     return nullptr;
   }
 
+  if (nsContentUtils::IsPDFJS(aDocument->GetPrincipal())) {
+    
+    return nullptr;
+  }
+
   if (const char* error = aDocument->GetFullscreenError(aCallerType)) {
     return error;
   }
