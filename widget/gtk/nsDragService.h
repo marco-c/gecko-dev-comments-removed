@@ -104,6 +104,10 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void ReplyToDragMotion();
 
+  void EventLoopEnter() { mEventLoopDepth++; };
+  void EventLoopLeave() { mEventLoopDepth--; };
+  int GetLoopDepth() { return mEventLoopDepth; };
+
  protected:
   virtual ~nsDragService();
 
@@ -232,6 +236,8 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   nsCOMArray<nsIFile> mTemporaryFiles;
   
   guint mTempFileTimerID;
+  
+  int mEventLoopDepth;
 };
 
 #endif  

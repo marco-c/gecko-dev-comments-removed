@@ -173,6 +173,7 @@ nsDragService::nsDragService()
   mTargetDragData = 0;
   mTargetDragDataLen = 0;
   mTempFileTimerID = 0;
+  mEventLoopDepth = 0;
 }
 
 nsDragService::~nsDragService() {
@@ -614,6 +615,8 @@ static void GetTextUriListItem(const char* data, uint32_t datalen,
     UTF8ToNewUTF16(data, datalen, convertedText, convertedTextLen);
   }
 }
+
+
 
 NS_IMETHODIMP
 nsDragService::GetNumDropItems(uint32_t* aNumItems) {
@@ -1135,6 +1138,9 @@ bool nsDragService::IsTargetContextList(void) {
 
   return retval;
 }
+
+
+
 
 void nsDragService::GetTargetDragData(GdkAtom aFlavor,
                                       nsTArray<nsCString>& aDropFlavors) {
