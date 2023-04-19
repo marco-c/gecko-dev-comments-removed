@@ -4213,18 +4213,25 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     channels.push_back(std::make_pair(channel, content_desc));
   }
 
-  if (!channels.empty()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const auto& entry : channels) {
     RTCError error =
         pc_->worker_thread()->Invoke<RTCError>(RTC_FROM_HERE, [&]() {
           std::string error;
-          for (const auto& entry : channels) {
-            bool success =
-                (source == cricket::CS_LOCAL)
-                    ? entry.first->SetLocalContent(entry.second, type, &error)
-                    : entry.first->SetRemoteContent(entry.second, type, &error);
-            if (!success) {
-              LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
-            }
+          bool success =
+              (source == cricket::CS_LOCAL)
+                  ? entry.first->SetLocalContent(entry.second, type, &error)
+                  : entry.first->SetRemoteContent(entry.second, type, &error);
+          if (!success) {
+            LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
           }
           return RTCError::OK();
         });
