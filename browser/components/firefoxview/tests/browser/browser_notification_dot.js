@@ -169,10 +169,6 @@ add_task(async function testNotificationDot() {
 
 
 add_task(async function testNotificationDotOnMultipleWindows() {
-  
-  
-  return;
-
   const sandbox = setupRecentDeviceListMocks();
   const syncedTabsMock = sandbox.stub(SyncedTabs, "getRecentTabs");
 
