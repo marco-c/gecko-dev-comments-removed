@@ -513,7 +513,7 @@ add_task(async function test_countryAndStateFieldLabels() {
     
     doc.querySelector("#country").focus();
 
-    let mutatableLabels = [
+    let mutableLabels = [
       "postal-code-container",
       "address-level1-container",
       "address-level2-container",
@@ -529,7 +529,7 @@ add_task(async function test_countryAndStateFieldLabels() {
       }
 
       
-      for (let labelEl of mutatableLabels) {
+      for (let labelEl of mutableLabels) {
         labelEl.textContent = "";
         delete labelEl.dataset.localization;
       }
@@ -538,7 +538,7 @@ add_task(async function test_countryAndStateFieldLabels() {
       EventUtils.synthesizeKey(countryOption.label, {}, win);
 
       
-      for (let labelEl of mutatableLabels) {
+      for (let labelEl of mutableLabels) {
         if (!labelEl.textContent) {
           
           
