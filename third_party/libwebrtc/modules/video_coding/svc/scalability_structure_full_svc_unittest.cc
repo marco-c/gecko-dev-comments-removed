@@ -59,13 +59,30 @@ TEST(ScalabilityStructureL3T3Test, SkipT1FrameByEncoderKeepsReferencesValid) {
   
   wrapper.GenerateFrames(1, frames);
 
-  ASSERT_THAT(frames, SizeIs(9));
-  EXPECT_EQ(frames[0].temporal_id, 0);
-  EXPECT_EQ(frames[3].temporal_id, 2);
-  
-  EXPECT_EQ(frames[6].temporal_id, 2);
-
   EXPECT_TRUE(wrapper.FrameReferencesAreValid(frames));
+}
+
+TEST(ScalabilityStructureL3T3Test,
+     SkippingFrameReusePreviousFrameConfiguration) {
+  std::vector<GenericFrameInfo> frames;
+  ScalabilityStructureL3T3 structure;
+  ScalabilityStructureWrapper wrapper(structure);
+
+  
+  wrapper.GenerateFrames(2, frames);
+  ASSERT_THAT(frames, SizeIs(6));
+  ASSERT_EQ(frames[0].temporal_id, 0);
+  ASSERT_EQ(frames[3].temporal_id, 2);
+
+  
+  
+  structure.NextFrameConfig(false);
+  
+  wrapper.GenerateFrames(2, frames);
+  ASSERT_THAT(frames, SizeIs(12));
+  
+  EXPECT_EQ(frames[6].temporal_id, 1);
+  EXPECT_EQ(frames[9].temporal_id, 2);
 }
 
 TEST(ScalabilityStructureL3T3Test, SwitchSpatialLayerBeforeT1Frame) {
