@@ -275,10 +275,10 @@ void nsCanvasFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
 #ifdef DEBUG
   MOZ_ASSERT(aListID == kPrincipalList, "unexpected child list");
   if (!mFrames.IsEmpty()) {
-    for (nsFrameList::Enumerator e(aFrameList); !e.AtEnd(); e.Next()) {
+    for (nsIFrame* f : aFrameList) {
       
       
-      MOZ_ASSERT(e.get()->GetContent()->IsInNativeAnonymousSubtree(),
+      MOZ_ASSERT(f->GetContent()->IsInNativeAnonymousSubtree(),
                  "invalid child list");
     }
   }

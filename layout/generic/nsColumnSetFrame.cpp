@@ -1236,8 +1236,8 @@ void nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   
-  for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
-    BuildDisplayListForChild(aBuilder, e.get(), aLists);
+  for (nsIFrame* f : mFrames) {
+    BuildDisplayListForChild(aBuilder, f, aLists);
   }
 }
 
