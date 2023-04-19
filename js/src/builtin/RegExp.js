@@ -121,6 +121,7 @@ function AdvanceStringIndex(S, index) {
 }
 
 
+
 function RegExpMatch(string) {
   
   var rx = this;
@@ -154,6 +155,7 @@ function RegExpMatch(string) {
   
   return RegExpMatchSlowPath(rx, S);
 }
+
 
 
 
@@ -284,6 +286,7 @@ function IsRegExpMethodOptimizable(rx) {
 }
 
 
+
 function RegExpReplace(string, replaceValue) {
   
   var rx = this;
@@ -318,6 +321,7 @@ function RegExpReplace(string, replaceValue) {
 
   
   if (IsRegExpMethodOptimizable(rx)) {
+    
     var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
 
     
@@ -387,6 +391,7 @@ function RegExpReplace(string, replaceValue) {
     firstDollarIndex
   );
 }
+
 
 
 
@@ -474,7 +479,7 @@ function RegExpReplaceSlowPath(
       0
     );
 
-    var n, capN, replacement;
+    var replacement;
     if (functionalReplace || firstDollarIndex !== -1) {
       
       replacement = RegExpGetComplexReplacement(
@@ -490,15 +495,16 @@ function RegExpReplaceSlowPath(
     } else {
       
       
-      for (n = 1; n <= nCaptures; n++) {
+      for (var n = 1; n <= nCaptures; n++) {
         
-        capN = result[n];
+        var capN = result[n];
 
         
         if (capN !== undefined) {
           ToString(capN);
         }
       }
+
       
       
       var namedCaptures = result.groups;
@@ -506,6 +512,7 @@ function RegExpReplaceSlowPath(
         ToObject(namedCaptures);
       }
 
+      
       replacement = replaceValue;
     }
 
@@ -532,6 +539,7 @@ function RegExpReplaceSlowPath(
     Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
   );
 }
+
 
 
 
@@ -631,6 +639,7 @@ function RegExpGetComplexReplacement(
           );
       }
     }
+
     
     DefineDataProperty(captures, capturesLength++, position);
     DefineDataProperty(captures, capturesLength++, S);
@@ -655,6 +664,7 @@ function RegExpGetComplexReplacement(
     namedCaptures
   );
 }
+
 
 
 
@@ -759,6 +769,7 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
 
 
 
+
 function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
   
   var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
@@ -816,6 +827,7 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
     Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
   );
 }
+
 
 
 
