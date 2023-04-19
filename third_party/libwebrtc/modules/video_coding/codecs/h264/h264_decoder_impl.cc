@@ -294,13 +294,9 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   
   RTC_DCHECK_EQ(av_frame_->reordered_opaque, frame_timestamp_us);
 
-  absl::optional<uint8_t> qp;
   
-  h264_bitstream_parser_.ParseBitstream(input_image.data(), input_image.size());
-  int qp_int;
-  if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
-    qp.emplace(qp_int);
-  }
+  h264_bitstream_parser_.ParseBitstream(input_image);
+  absl::optional<int> qp = h264_bitstream_parser_.GetLastSliceQp();
 
   
   VideoFrame* input_frame =
