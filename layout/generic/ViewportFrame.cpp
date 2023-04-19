@@ -176,6 +176,11 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
     if (!frame) {
       continue;
     }
+
+    if (frame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+      continue;
+    }
+
     
     
     
