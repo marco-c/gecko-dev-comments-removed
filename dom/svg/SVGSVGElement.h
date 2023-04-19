@@ -252,18 +252,17 @@ class MOZ_RAII AutoSVGTimeSetRestore {
 
 class MOZ_RAII AutoPreserveAspectRatioOverride {
  public:
-  AutoPreserveAspectRatioOverride(const Maybe<SVGImageContext>& aSVGContext,
+  AutoPreserveAspectRatioOverride(const SVGImageContext& aSVGContext,
                                   dom::SVGSVGElement* aRootElem)
       : mRootElem(aRootElem), mDidOverride(false) {
     MOZ_ASSERT(mRootElem, "No SVG/Symbol node to manage?");
 
-    if (aSVGContext.isSome() &&
-        aSVGContext->GetPreserveAspectRatio().isSome()) {
+    if (aSVGContext.GetPreserveAspectRatio().isSome()) {
       
       
       
       mRootElem->SetImageOverridePreserveAspectRatio(
-          *aSVGContext->GetPreserveAspectRatio());
+          *aSVGContext.GetPreserveAspectRatio());
       mDidOverride = true;
     }
   }

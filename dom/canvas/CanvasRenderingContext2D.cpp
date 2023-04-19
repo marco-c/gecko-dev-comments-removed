@@ -5187,16 +5187,14 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   
   uint32_t modifiedFlags = aImage.mDrawingFlags | imgIContainer::FLAG_CLAMP;
 
-  CSSIntSize sz(
-      scaledImageSize.width,
-      scaledImageSize
-          .height);  
+  
+  CSSIntSize sz(scaledImageSize.width, scaledImageSize.height);
   SVGImageContext svgContext(Some(sz));
 
   auto result = aImage.mImgContainer->Draw(
       context, scaledImageSize,
       ImageRegion::Create(gfxRect(aSrc.x, aSrc.y, aSrc.width, aSrc.height)),
-      aImage.mWhichFrame, SamplingFilter::GOOD, Some(svgContext), modifiedFlags,
+      aImage.mWhichFrame, SamplingFilter::GOOD, svgContext, modifiedFlags,
       CurrentState().globalAlpha);
 
   if (result != ImgDrawResult::SUCCESS) {

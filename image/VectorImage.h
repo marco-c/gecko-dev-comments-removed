@@ -82,12 +82,10 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
 
 
   Tuple<RefPtr<gfx::SourceSurface>, gfx::IntSize> LookupCachedSurface(
-      const gfx::IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
+      const gfx::IntSize& aSize, const SVGImageContext& aSVGContext,
       uint32_t aFlags);
 
-  bool MaybeRestrictSVGContext(Maybe<SVGImageContext>& aNewSVGContext,
-                               const Maybe<SVGImageContext>& aSVGContext,
-                               uint32_t aFlags);
+  bool MaybeRestrictSVGContext(SVGImageContext& aSVGContext, uint32_t aFlags);
 
   
   already_AddRefed<gfxDrawable> CreateSVGDrawable(

@@ -3218,7 +3218,7 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
         }
 
         
-        Maybe<SVGImageContext> svgContext;
+        SVGImageContext svgContext;
         SVGImageContext::MaybeStoreContextPaint(svgContext, *aPresContext,
                                                 *twistyContext, image);
 
@@ -3592,7 +3592,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCheckbox(int32_t aRowIndex,
     }
 
     
-    Maybe<SVGImageContext> svgContext;
+    SVGImageContext svgContext;
     SVGImageContext::MaybeStoreContextPaint(svgContext, *aPresContext,
                                             *checkboxContext, image);
     
