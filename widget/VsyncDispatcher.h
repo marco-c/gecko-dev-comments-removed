@@ -141,11 +141,15 @@ class VsyncDispatcher final {
     
     RefPtr<gfx::VsyncSource> mCurrentVsyncSource;
 
+    
+    
+    
+    int32_t mVsyncSkipCounter = 0;
+
     bool mIsObservingVsync = false;
   };
 
   DataMutex<State> mState;
-  int32_t mVsyncSkipCounter = 0;
 };
 
 }  
