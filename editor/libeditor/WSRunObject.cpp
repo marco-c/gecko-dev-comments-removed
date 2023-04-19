@@ -492,13 +492,13 @@ EditActionResult WhiteSpaceVisibilityKeeper::
     
     
 
-    EditorDOMPoint atPreviousContent;
+    EditorDOMPoint pointToMoveFirstLineContent;
     if (&aLeftContentInBlock == leftBlockElement) {
       
       
       
       
-      atPreviousContent = atLeftBlockChild;
+      pointToMoveFirstLineContent = atLeftBlockChild;
     } else {
       
       
@@ -509,13 +509,10 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       
       
       
-      atPreviousContent.Set(&aLeftContentInBlock);
-
-      
-      atPreviousContent.AdvanceOffset();
+      pointToMoveFirstLineContent.SetAfter(&aLeftContentInBlock);
     }
 
-    MOZ_ASSERT(atPreviousContent.IsSetAndValid());
+    MOZ_ASSERT(pointToMoveFirstLineContent.IsSetAndValid());
 
     
     
@@ -526,15 +523,11 @@ EditActionResult WhiteSpaceVisibilityKeeper::
             EditorDOMPoint(&aRightBlockElement, 0u), aEditingHost);
 #endif  
 
-    Element* editingHost =
-        aHTMLEditor.ComputeEditingHost(HTMLEditor::LimitInBodyElement::No);
-    if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
-      return EditActionResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
-    if (&aLeftContentInBlock != editingHost) {
+    if (&aLeftContentInBlock != &aEditingHost) {
       SplitNodeResult splitResult =
-          aHTMLEditor.SplitAncestorStyledInlineElementsAt(atPreviousContent,
-                                                          nullptr, nullptr);
+          aHTMLEditor.SplitAncestorStyledInlineElementsAt(
+              pointToMoveFirstLineContent, nullptr, nullptr,
+              HTMLEditor::SplitAtEdges::eDoNotCreateEmptyContainer);
       if (splitResult.isErr()) {
         NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
         return EditActionResult(splitResult.unwrapErr());
@@ -546,29 +539,47 @@ EditActionResult WhiteSpaceVisibilityKeeper::
         NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
         return EditActionResult(rv);
       }
-      if (splitResult.Handled()) {
+      if (!splitResult.DidSplit()) {
+        
+        
+        for (EditorDOMPoint parentPoint = pointToMoveFirstLineContent;
+             pointToMoveFirstLineContent.IsEndOfContainer() &&
+             pointToMoveFirstLineContent.IsInContentNode();
+             pointToMoveFirstLineContent = EditorDOMPoint::After(
+                 *pointToMoveFirstLineContent.ContainerAs<nsIContent>())) {
+          if (pointToMoveFirstLineContent.GetContainer() ==
+                  &aLeftBlockElement ||
+              NS_WARN_IF(pointToMoveFirstLineContent.GetContainer() ==
+                         &aEditingHost)) {
+            break;
+          }
+        }
+      } else if (splitResult.Handled()) {
+        
+        
         if (nsIContent* nextContentAtSplitPoint =
                 splitResult.GetNextContent()) {
-          atPreviousContent.Set(nextContentAtSplitPoint);
-          if (!atPreviousContent.IsSet()) {
+          pointToMoveFirstLineContent.Set(nextContentAtSplitPoint);
+          if (!pointToMoveFirstLineContent.IsSet()) {
             NS_WARNING("Next node of split point was orphaned");
             return EditActionResult(NS_ERROR_NULL_POINTER);
           }
         } else {
-          atPreviousContent = splitResult.AtSplitPoint<EditorDOMPoint>();
-          if (!atPreviousContent.IsSet()) {
+          pointToMoveFirstLineContent =
+              splitResult.AtSplitPoint<EditorDOMPoint>();
+          if (!pointToMoveFirstLineContent.IsSet()) {
             NS_WARNING("Split node was orphaned");
             return EditActionResult(NS_ERROR_NULL_POINTER);
           }
         }
       }
-      MOZ_DIAGNOSTIC_ASSERT(atPreviousContent.IsSetAndValid());
+      MOZ_DIAGNOSTIC_ASSERT(pointToMoveFirstLineContent.IsSetAndValid());
     }
 
     MoveNodeResult moveNodeResult =
         aHTMLEditor.MoveOneHardLineContentsWithTransaction(
-            EditorDOMPoint(&aRightBlockElement, 0u), atPreviousContent,
-            aEditingHost);
+            EditorDOMPoint(&aRightBlockElement, 0u),
+            pointToMoveFirstLineContent, aEditingHost);
     if (moveNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::MoveOneHardLineContentsWithTransaction() failed");
       return EditActionResult(moveNodeResult.unwrapErr());

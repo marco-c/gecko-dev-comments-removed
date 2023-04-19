@@ -888,6 +888,18 @@ class HTMLEditor final : public EditorBase,
   SetInlinePropertyOnNode(nsIContent& aContent, nsAtom& aProperty,
                           nsAtom* aAttribute, const nsAString& aValue);
 
+  enum class SplitAtEdges {
+    
+    
+    
+    eDoNotCreateEmptyContainer,
+    
+    
+    
+    
+    eAllowToCreateEmptyContainer,
+  };
+
   
 
 
@@ -919,9 +931,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitNodeResult
   SplitAncestorStyledInlineElementsAt(const EditorDOMPoint& aPointToSplit,
-                                      nsAtom* aProperty, nsAtom* aAttribute);
+                                      nsAtom* aProperty, nsAtom* aAttribute,
+                                      SplitAtEdges aSplitAtEdges);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlinePropertyBase(
       nsStaticAtom& aHTMLProperty, nsAtom* aAttribute, const nsAString* aValue,
@@ -2008,18 +2023,6 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitNodeResult
   SplitNodeWithTransaction(const EditorDOMPoint& aStartOfRightNode);
-
-  enum class SplitAtEdges {
-    
-    
-    
-    eDoNotCreateEmptyContainer,
-    
-    
-    
-    
-    eAllowToCreateEmptyContainer,
-  };
 
   
 
