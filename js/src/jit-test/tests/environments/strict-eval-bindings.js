@@ -20,7 +20,7 @@ function assertBytecode(actual, expected, message) {
   
   let actualOps =
       actual.split('\n')
-      .map(s => /^\d{5}:  (.*)$/.exec(s)?.[1])
+      .map(s => /^\d{5}: +\d+ +(.*)$/.exec(s)?.[1])
       .filter(x => x !== undefined);
 
   
