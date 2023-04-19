@@ -1941,9 +1941,9 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
     }
 
     aState.mHit = GetTouchInputBlockAPZC(aInput, &touchBehaviors);
+    RecursiveMutexAutoLock lock(mTreeLock);
     
-    mTouchBlockHitResult = aState.mHit.CopyWithoutScrollbarNode();
-    hitScrollbarNode = std::move(aState.mHit.mScrollbarNode);
+    mTouchBlockHitResult = mHitTester->CloneHitTestResult(lock, aState.mHit);
 
     
     
@@ -1968,7 +1968,8 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
   } else if (mTouchBlockHitResult.mTargetApzc) {
     APZCTM_LOG("Re-using APZC %p as continuation of event block\n",
                mTouchBlockHitResult.mTargetApzc.get());
-    aState.mHit = mTouchBlockHitResult.CopyWithoutScrollbarNode();
+    RecursiveMutexAutoLock lock(mTreeLock);
+    aState.mHit = mHitTester->CloneHitTestResult(lock, mTouchBlockHitResult);
   }
 
   if (mInScrollbarTouchDrag) {

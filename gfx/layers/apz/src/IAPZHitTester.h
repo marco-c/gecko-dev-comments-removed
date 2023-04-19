@@ -47,21 +47,24 @@ class IAPZHitTester {
     SideBits mFixedPosSides = SideBits::eNone;
     
     
+    
+    HitTestingTreeNodeAutoLock mNode;
+    
+    
     bool mHitOverscrollGutter = false;
 
     HitTestResult() = default;
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
-
-    
-    
-    HitTestResult CopyWithoutScrollbarNode() const;
   };
 
   virtual HitTestResult GetAPZCAtPoint(
       const ScreenPoint& aHitTestPoint,
       const RecursiveMutexAutoLock& aProofOfTreeLock) = 0;
+
+  HitTestResult CloneHitTestResult(RecursiveMutexAutoLock& aProofOfTreeLock,
+                                   const HitTestResult& aHitTestResult) const;
 
  protected:
   APZCTreeManager* mTreeManager = nullptr;
@@ -79,7 +82,7 @@ class IAPZHitTester {
   void InitializeHitTestingTreeNodeAutoLock(
       HitTestingTreeNodeAutoLock& aAutoLock,
       const RecursiveMutexAutoLock& aProofOfTreeLock,
-      RefPtr<HitTestingTreeNode>& aNode);
+      RefPtr<HitTestingTreeNode>& aNode) const;
 };
 
 }  

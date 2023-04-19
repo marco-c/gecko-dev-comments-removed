@@ -312,19 +312,22 @@ impl HitTesterRequest {
 
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct HitTestItem {
+pub struct HitTestResultItem {
     
     pub pipeline: PipelineId,
 
     
     pub tag: ItemTag,
+
+    
+    pub animation_id: u64,
 }
 
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct HitTestResult {
     
-    pub items: Vec<HitTestItem>,
+    pub items: Vec<HitTestResultItem>,
 }
 
 impl Drop for NotificationRequest {
@@ -367,6 +370,11 @@ impl PropertyBindingId {
             uid: value as u32,
         }
     }
+
+    
+    pub fn to_u64(&self) -> u64 {
+        ((self.namespace.0 as u64) << 32) | self.uid as u64
+    }
 }
 
 
@@ -385,6 +393,12 @@ impl<T: Copy> PropertyBindingKey<T> {
     
     pub fn with(self, value: T) -> PropertyValue<T> {
         PropertyValue { key: self, value }
+    }
+}
+
+impl<T> Into<u64> for PropertyBindingKey<T> {
+    fn into(self) -> u64 {
+        self.id.to_u64()
     }
 }
 
