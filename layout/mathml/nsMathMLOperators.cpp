@@ -309,7 +309,7 @@ static OperatorData* GetOperatorData(const nsString& aOperator,
   return gOperatorTable->Get(key);
 }
 
-void nsMathMLOperators::LookupOperator(const nsString& aOperator,
+bool nsMathMLOperators::LookupOperator(const nsString& aOperator,
                                        const uint8_t aForm,
                                        nsOperatorFlags* aFlags,
                                        float* aLeadingSpace,
@@ -321,66 +321,39 @@ void nsMathMLOperators::LookupOperator(const nsString& aOperator,
     InitOperatorGlobals();
   }
   if (gOperatorTable) {
-    
-    
-    
-    
-
-    OperatorData* found;
-    if (!(found = GetOperatorData(aOperator, aForm))) {
-      for (const auto& form :
-           {NS_MATHML_OPERATOR_FORM_INFIX, NS_MATHML_OPERATOR_FORM_POSTFIX,
-            NS_MATHML_OPERATOR_FORM_PREFIX}) {
-        if (form == aForm) {
-          
-          continue;
-        }
-        if ((found = GetOperatorData(aOperator, form))) {
-          break;
-        }
-      }
-    }
-    if (found) {
-      NS_ASSERTION(found->mStr.Equals(aOperator), "bad setup");
-      *aLeadingSpace = found->mLeadingSpace;
-      *aTrailingSpace = found->mTrailingSpace;
-      *aFlags &= ~NS_MATHML_OPERATOR_FORM;  
-      *aFlags |= found->mFlags;             
+    if (OperatorData* data = GetOperatorData(aOperator, aForm)) {
+      NS_ASSERTION(data->mStr.Equals(aOperator), "bad setup");
+      *aFlags = data->mFlags;
+      *aLeadingSpace = data->mLeadingSpace;
+      *aTrailingSpace = data->mTrailingSpace;
+      return true;
     }
   }
+
+  return false;
 }
 
-void nsMathMLOperators::LookupOperators(const nsString& aOperator,
-                                        nsOperatorFlags* aFlags,
-                                        float* aLeadingSpace,
-                                        float* aTrailingSpace) {
-  if (!gGlobalsInitialized) {
-    InitOperatorGlobals();
+bool nsMathMLOperators::LookupOperatorWithFallback(const nsString& aOperator,
+                                                   const uint8_t aForm,
+                                                   nsOperatorFlags* aFlags,
+                                                   float* aLeadingSpace,
+                                                   float* aTrailingSpace) {
+  if (LookupOperator(aOperator, aForm, aFlags, aLeadingSpace, aTrailingSpace)) {
+    return true;
   }
-
-  aFlags[NS_MATHML_OPERATOR_FORM_INFIX] = 0;
-  aLeadingSpace[NS_MATHML_OPERATOR_FORM_INFIX] = 0.0f;
-  aTrailingSpace[NS_MATHML_OPERATOR_FORM_INFIX] = 0.0f;
-
-  aFlags[NS_MATHML_OPERATOR_FORM_POSTFIX] = 0;
-  aLeadingSpace[NS_MATHML_OPERATOR_FORM_POSTFIX] = 0.0f;
-  aTrailingSpace[NS_MATHML_OPERATOR_FORM_POSTFIX] = 0.0f;
-
-  aFlags[NS_MATHML_OPERATOR_FORM_PREFIX] = 0;
-  aLeadingSpace[NS_MATHML_OPERATOR_FORM_PREFIX] = 0.0f;
-  aTrailingSpace[NS_MATHML_OPERATOR_FORM_PREFIX] = 0.0f;
-
-  if (gOperatorTable) {
-    for (const auto& form :
-         {NS_MATHML_OPERATOR_FORM_INFIX, NS_MATHML_OPERATOR_FORM_POSTFIX,
-          NS_MATHML_OPERATOR_FORM_PREFIX}) {
-      if (OperatorData* found = GetOperatorData(aOperator, form)) {
-        aFlags[form] = found->mFlags;
-        aLeadingSpace[form] = found->mLeadingSpace;
-        aTrailingSpace[form] = found->mTrailingSpace;
-      }
+  for (const auto& form :
+       {NS_MATHML_OPERATOR_FORM_INFIX, NS_MATHML_OPERATOR_FORM_POSTFIX,
+        NS_MATHML_OPERATOR_FORM_PREFIX}) {
+    if (form == aForm) {
+      
+      continue;
+    }
+    if (LookupOperator(aOperator, form, aFlags, aLeadingSpace,
+                       aTrailingSpace)) {
+      return true;
     }
   }
+  return false;
 }
 
 
@@ -405,17 +378,20 @@ nsStretchDirection nsMathMLOperators::GetStretchyDirection(
     const nsString& aOperator) {
   
   
-  
-  nsOperatorFlags flags = 0;
-  float dummy;
-  nsMathMLOperators::LookupOperator(aOperator, NS_MATHML_OPERATOR_FORM_INFIX,
-                                    &flags, &dummy, &dummy);
-
-  if (NS_MATHML_OPERATOR_IS_DIRECTION_VERTICAL(flags)) {
-    return NS_STRETCH_DIRECTION_VERTICAL;
-  } else if (NS_MATHML_OPERATOR_IS_DIRECTION_HORIZONTAL(flags)) {
-    return NS_STRETCH_DIRECTION_HORIZONTAL;
-  } else {
-    return NS_STRETCH_DIRECTION_UNSUPPORTED;
+  for (const auto& form :
+       {NS_MATHML_OPERATOR_FORM_INFIX, NS_MATHML_OPERATOR_FORM_POSTFIX,
+        NS_MATHML_OPERATOR_FORM_PREFIX}) {
+    nsOperatorFlags flags;
+    float dummy;
+    if (nsMathMLOperators::LookupOperator(aOperator, form, &flags, &dummy,
+                                          &dummy)) {
+      if (NS_MATHML_OPERATOR_IS_DIRECTION_VERTICAL(flags)) {
+        return NS_STRETCH_DIRECTION_VERTICAL;
+      }
+      if (NS_MATHML_OPERATOR_IS_DIRECTION_HORIZONTAL(flags)) {
+        return NS_STRETCH_DIRECTION_HORIZONTAL;
+      }
+    }
   }
+  return NS_STRETCH_DIRECTION_UNSUPPORTED;
 }
