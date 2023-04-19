@@ -466,6 +466,7 @@ pub mod unsync {
         
         
         
+        
         pub fn get_mut(&mut self) -> Option<&mut T> {
             
             unsafe { &mut *self.inner.get() }.as_mut()
@@ -739,6 +740,23 @@ pub mod unsync {
                 Some(f) => f(),
                 None => panic!("Lazy instance has previously been poisoned"),
             })
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn get(this: &Lazy<T, F>) -> Option<&T> {
+            this.cell.get()
         }
     }
 
@@ -1212,6 +1230,23 @@ pub mod sync {
                 Some(f) => f(),
                 None => panic!("Lazy instance has previously been poisoned"),
             })
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn get(this: &Lazy<T, F>) -> Option<&T> {
+            this.cell.get()
         }
     }
 
