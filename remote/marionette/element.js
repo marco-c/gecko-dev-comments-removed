@@ -11,7 +11,7 @@ const EXPORTED_SYMBOLS = [
   "ContentWebFrame",
   "ContentWebWindow",
   "element",
-  "WebElement",
+  "WebReference",
 ];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -158,9 +158,9 @@ element.ReferenceStore = class {
       );
     }
     if (this.domRefs.has(elId.id)) {
-      return WebElement.fromJSON(this.domRefs.get(elId.id));
+      return WebReference.fromJSON(this.domRefs.get(elId.id));
     }
-    const webEl = WebElement.fromJSON(elId.webElRef);
+    const webEl = WebReference.fromJSON(elId.webElRef);
     this.refs.set(webEl.uuid, elId);
     this.domRefs.set(elId.id, elId.webElRef);
     return webEl;
@@ -182,7 +182,7 @@ element.ReferenceStore = class {
 
 
   has(webEl) {
-    if (!(webEl instanceof WebElement)) {
+    if (!(webEl instanceof WebReference)) {
       throw new TypeError(lazy.pprint`Expected web element, got: ${webEl}`);
     }
     return this.refs.has(webEl.uuid);
@@ -205,7 +205,7 @@ element.ReferenceStore = class {
 
 
   get(webEl) {
-    if (!(webEl instanceof WebElement)) {
+    if (!(webEl instanceof WebReference)) {
       throw new TypeError(lazy.pprint`Expected web element, got: ${webEl}`);
     }
     const elId = this.refs.get(webEl.uuid);
@@ -643,7 +643,7 @@ element.getElementId = function(el) {
     );
   }
 
-  const webEl = WebElement.from(el);
+  const webEl = WebReference.from(el);
 
   const id = lazy.ContentDOMReference.get(el);
   const browsingContext = BrowsingContext.get(id.browsingContextId);
@@ -1460,7 +1460,7 @@ element.isBooleanAttribute = function(el, attr) {
 
 
 
-class WebElement {
+class WebReference {
   
 
 
@@ -1482,7 +1482,7 @@ class WebElement {
 
 
   is(other) {
-    return other instanceof WebElement && this.uuid === other.uuid;
+    return other instanceof WebReference && this.uuid === other.uuid;
   }
 
   toString() {
@@ -1504,7 +1504,7 @@ class WebElement {
 
 
   static from(node) {
-    const uuid = WebElement.generateUUID();
+    const uuid = WebReference.generateUUID();
 
     if (element.isShadowRoot(node) && !element.isInPrivilegedDocument(node)) {
       
@@ -1547,7 +1547,7 @@ class WebElement {
 
   static fromJSON(json) {
     lazy.assert.object(json);
-    if (json instanceof WebElement) {
+    if (json instanceof WebReference) {
       return json;
     }
     let keys = Object.keys(json);
@@ -1660,7 +1660,7 @@ class WebElement {
 
 
 
-class ContentWebElement extends WebElement {
+class ContentWebElement extends WebReference {
   toJSON() {
     return { [ContentWebElement.Identifier]: this.uuid };
   }
@@ -1684,7 +1684,7 @@ ContentWebElement.Identifier = "element-6066-11e4-a52e-4f735466cecf";
 
 
 
-class ContentShadowRoot extends WebElement {
+class ContentShadowRoot extends WebReference {
   toJSON() {
     return { [ContentShadowRoot.Identifier]: this.uuid };
   }
@@ -1709,7 +1709,7 @@ ContentShadowRoot.Identifier = "shadow-6066-11e4-a52e-4f735466cecf";
 
 
 
-class ContentWebWindow extends WebElement {
+class ContentWebWindow extends WebReference {
   toJSON() {
     return { [ContentWebWindow.Identifier]: this.uuid };
   }
@@ -1731,7 +1731,7 @@ ContentWebWindow.Identifier = "window-fcc6-11e5-b4f8-330a88ab9d7f";
 
 
 
-class ContentWebFrame extends WebElement {
+class ContentWebFrame extends WebReference {
   toJSON() {
     return { [ContentWebFrame.Identifier]: this.uuid };
   }
@@ -1752,7 +1752,7 @@ ContentWebFrame.Identifier = "frame-075b-4da1-b6ba-e579c2d3230a";
 
 
 
-class ChromeWebElement extends WebElement {
+class ChromeWebElement extends WebReference {
   toJSON() {
     return { [ChromeWebElement.Identifier]: this.uuid };
   }

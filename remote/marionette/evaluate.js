@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   element: "chrome://remote/content/marionette/element.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
-  WebElement: "chrome://remote/content/marionette/element.js",
+  WebReference: "chrome://remote/content/marionette/element.js",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
@@ -253,7 +253,7 @@ evaluate.fromJSON = function(options = {}) {
         return obj.map(e => evaluate.fromJSON({ obj: e, seenEls, win }));
 
         
-      } else if (lazy.WebElement.isReference(obj.webElRef)) {
+      } else if (lazy.WebReference.isReference(obj.webElRef)) {
         if (seenEls instanceof lazy.element.ReferenceStore) {
           
           return seenEls.add(obj);
@@ -336,12 +336,12 @@ evaluate.toJSON = function(obj, seenEls) {
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
     
-  } else if (lazy.WebElement.isReference(obj)) {
+  } else if (lazy.WebReference.isReference(obj)) {
     
-    return seenEls.get(lazy.WebElement.fromJSON(obj));
+    return seenEls.get(lazy.WebReference.fromJSON(obj));
 
     
-  } else if (lazy.WebElement.isReference(obj.webElRef)) {
+  } else if (lazy.WebReference.isReference(obj.webElRef)) {
     
     return obj;
 
