@@ -1,24 +1,32 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+
+
+"use strict";
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
-import {
-  MigrationUtils,
-  MigratorPrototype,
-} from "resource:///modules/MigrationUtils.sys.mjs";
-import { MSMigrationUtils } from "resource:///modules/MSMigrationUtils.sys.mjs";
-
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const { MigrationUtils, MigratorPrototype } = ChromeUtils.import(
+  "resource:///modules/MigrationUtils.jsm"
+);
+const { MSMigrationUtils } = ChromeUtils.import(
+  "resource:///modules/MSMigrationUtils.jsm"
+);
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  ESEDBReader: "resource:///modules/ESEDBReader.sys.mjs",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "ESEDBReader",
+  "resource:///modules/ESEDBReader.jsm"
+);
 
 const kEdgeRegistryRoot =
   "SOFTWARE\\Classes\\Local Settings\\Software\\" +
@@ -47,28 +55,28 @@ XPCOMUtils.defineLazyGetter(lazy, "gEdgeDatabase", function() {
     expectedLocation.normalize();
     return expectedLocation;
   }
-  // We used to recurse into arbitrary subdirectories here, but that code
-  // went unused, so it likely isn't necessary, even if we don't understand
-  // where the magic folders above come from, they seem to be the same for
-  // everyone. Just return null if they're not there:
+  
+  
+  
+  
   return null;
 });
 
-/**
- * Get rows from a table in the Edge DB as an array of JS objects.
- *
- * @param {String}            tableName the name of the table to read.
- * @param {String[]|function} columns   a list of column specifiers
- *                                      (see ESEDBReader.jsm) or a function that
- *                                      generates them based on the database
- *                                      reference once opened.
- * @param {nsIFile}           dbFile    the database file to use. Defaults to
- *                                      the main Edge database.
- * @param {function}          filterFn  Optional. A function that is called for each row.
- *                                      Only rows for which it returns a truthy
- *                                      value are included in the result.
- * @returns {Array} An array of row objects.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function readTableFromEdgeDB(
   tableName,
   columns,
@@ -101,7 +109,7 @@ function readTableFromEdgeDB(
         " due to the following error: " +
         ex
     );
-    // Deliberately make this fail so we expose failure in the UI:
+    
     throw ex;
   } finally {
     if (database) {
@@ -201,21 +209,21 @@ EdgeTypedURLDBMigrator.prototype = {
     try {
       typedUrls = readTableFromEdgeDB("TypedUrls", columns, this.db);
     } catch (ex) {
-      // Maybe the table doesn't exist (older versions of Win10).
-      // Just fall through and we'll return because there's no data.
-      // The `readTableFromEdgeDB` helper will report errors to the
-      // console anyway.
+      
+      
+      
+      
     }
     if (!typedUrls.length) {
       return;
     }
 
     let pageInfos = [];
-    // Sometimes the values are bogus (e.g. 0 becomes some date in 1600),
-    // and places will throw *everything* away, not just the bogus ones,
-    // so deal with that by having a cutoff date. Also, there's not much
-    // point importing really old entries. The cut-off date is related to
-    // Edge's launch date.
+    
+    
+    
+    
+    
     const kDateCutOff = new Date("2016", 0, 1);
     for (let typedUrlInfo of typedUrls) {
       try {
@@ -284,7 +292,7 @@ EdgeReadingListMigrator.prototype = {
         { name: "AddedDate", type: "date" },
       ];
 
-      // Later versions have an IsDeleted column:
+      
       let isDeletedColumn = db.checkForColumn("ReadingList", "IsDeleted");
       if (
         isDeletedColumn &&
@@ -313,7 +321,7 @@ EdgeReadingListMigrator.prototype = {
     let bookmarks = [];
     for (let item of readingListItems) {
       let dateAdded = item.AddedDate || new Date();
-      // Avoid including broken URLs:
+      
       try {
         new URL(item.URL);
       } catch (ex) {
@@ -420,7 +428,7 @@ EdgeBookmarksMigrator.prototype = {
       toolbarBMs = [];
     for (let bookmark of bookmarks) {
       let bmToInsert;
-      // Ignore invalid URLs:
+      
       if (!bookmark.IsFolder) {
         try {
           new URL(bookmark.URL);
@@ -435,8 +443,8 @@ EdgeBookmarksMigrator.prototype = {
           title: bookmark.Title,
           url: bookmark.URL,
         };
-      } /* bookmark.IsFolder */ else {
-        // Ignore the favorites bar bookmark itself.
+      }  else {
+        
         if (bookmark.Title == "_Favorites_Bar_") {
           continue;
         }
@@ -469,7 +477,7 @@ EdgeBookmarksMigrator.prototype = {
   },
 };
 
-export function EdgeProfileMigrator() {
+function EdgeProfileMigrator() {
   this.wrappedJSObject = this;
 }
 
@@ -502,8 +510,8 @@ EdgeProfileMigrator.prototype.getResources = function() {
 };
 
 EdgeProfileMigrator.prototype.getLastUsedDate = async function() {
-  // Don't do this if we don't have a single profile (see the comment for
-  // sourceProfiles) or if we can't find the database file:
+  
+  
   let sourceProfiles = await this.getSourceProfiles();
   if (sourceProfiles !== null || !lazy.gEdgeDatabase) {
     return Promise.resolve(new Date(0));
@@ -532,7 +540,7 @@ EdgeProfileMigrator.prototype.getLastUsedDate = async function() {
         typedURLs = MSMigrationUtils.getTypedURLs(kEdgeRegistryRoot);
       } catch (ex) {}
       let times = [0, ...typedURLs.values()];
-      // dates is an array of PRTimes, which are in microseconds - convert to milliseconds
+      
       resolve(Math.max.apply(Math, times) / 1000);
     })
   );
@@ -541,18 +549,18 @@ EdgeProfileMigrator.prototype.getLastUsedDate = async function() {
   });
 };
 
-/* Somewhat counterintuitively, this returns:
- * - |null| to indicate "There is only 1 (default) profile" (on win10+)
- * - |[]| to indicate "There are no profiles" (on <=win8.1) which will avoid using this migrator.
- * See MigrationUtils.jsm for slightly more info on how sourceProfiles is used.
- */
+
+
+
+
+
 EdgeProfileMigrator.prototype.getSourceProfiles = function() {
   let isWin10OrHigher = AppConstants.isPlatformAndVersionAtLeast("win", "10");
   return isWin10OrHigher ? null : [];
 };
 
 EdgeProfileMigrator.prototype.__defineGetter__("sourceLocked", function() {
-  // There is an exclusive lock on some databases. Assume they are locked for now.
+  
   return true;
 });
 
@@ -562,3 +570,5 @@ EdgeProfileMigrator.prototype.contractID =
 EdgeProfileMigrator.prototype.classID = Components.ID(
   "{62e8834b-2d17-49f5-96ff-56344903a2ae}"
 );
+
+var EXPORTED_SYMBOLS = ["EdgeProfileMigrator"];

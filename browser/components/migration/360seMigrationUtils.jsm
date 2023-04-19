@@ -1,10 +1,17 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import { MigrationUtils } from "resource:///modules/MigrationUtils.sys.mjs";
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Qihoo360seMigrationUtils"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const { MigrationUtils } = ChromeUtils.import(
+  "resource:///modules/MigrationUtils.jsm"
+);
 
 const lazy = {};
 
@@ -115,7 +122,7 @@ Bookmarks.prototype = {
   },
 };
 
-export var Qihoo360seMigrationUtils = {
+var Qihoo360seMigrationUtils = {
   async getAlternativeBookmarks({ bookmarksPath, localState }) {
     let lastModificationDate = new Date(0);
     let path = bookmarksPath;
@@ -130,7 +137,7 @@ export var Qihoo360seMigrationUtils = {
       }
     }
 
-    // Somewhat similar to source profiles, but for bookmarks only
+    
     let subDir =
       (localState.sync_login_info && localState.sync_login_info.filepath) || "";
 
