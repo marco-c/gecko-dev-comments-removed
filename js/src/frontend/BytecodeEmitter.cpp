@@ -2534,21 +2534,29 @@ bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode) {
 
 bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
                                               size_t* emitted) {
+  *emitted = 0;
+
+  if (target->isKind(ParseNodeKind::Spread)) {
+    target = target->as<UnaryNode>().kid();
+  } else if (target->isKind(ParseNodeKind::AssignExpr)) {
+    target = target->as<AssignmentNode>().left();
+  }
+
+  
+  
+  
+  
+  if (target->isKind(ParseNodeKind::Name) ||
+      target->isKind(ParseNodeKind::ArrayExpr) ||
+      target->isKind(ParseNodeKind::ObjectExpr)) {
+    return true;
+  }
+
 #ifdef DEBUG
   int depth = bytecodeSection().stackDepth();
 #endif
 
   switch (target->getKind()) {
-    case ParseNodeKind::Name:
-    case ParseNodeKind::ArrayExpr:
-    case ParseNodeKind::ObjectExpr:
-      
-      
-      
-      
-      *emitted = 0;
-      break;
-
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &target->as<PropertyAccess>();
       bool isSuper = prop->isSuper();
@@ -2564,11 +2572,14 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
           
           return false;
         }
+        
+        *emitted = 2;
       } else {
         if (!emitTree(&prop->expression())) {
           
           return false;
         }
+        *emitted = 1;
       }
       if (!poe.prepareForRhs()) {
         
@@ -2577,9 +2588,6 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         
         return false;
       }
-
-      
-      *emitted = 1 + isSuper;
       break;
     }
 
@@ -2597,6 +2605,12 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         
         return false;
       }
+      if (isSuper) {
+        
+        *emitted = 3;
+      } else {
+        *emitted = 2;
+      }
       if (!eoe.prepareForRhs()) {
         
         
@@ -2604,9 +2618,6 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
         
         return false;
       }
-
-      
-      *emitted = 2 + isSuper;
       break;
     }
 
@@ -2631,6 +2642,7 @@ bool BytecodeEmitter::emitDestructuringLHSRef(ParseNode* target,
           "Parser::reportIfNotValidSimpleAssignmentTarget "
           "rejects function calls as assignment "
           "targets in destructuring assignments");
+      break;
 
     default:
       MOZ_CRASH("emitDestructuringLHSRef: bad lhs kind");
@@ -2647,6 +2659,11 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
   
   
   
+  if (target->isKind(ParseNodeKind::Spread)) {
+    target = target->as<UnaryNode>().kid();
+  } else if (target->isKind(ParseNodeKind::AssignExpr)) {
+    target = target->as<AssignmentNode>().left();
+  }
 
   switch (target->getKind()) {
     case ParseNodeKind::ArrayExpr:
@@ -2771,6 +2788,7 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
           "Parser::reportIfNotValidSimpleAssignmentTarget "
           "rejects function calls as assignment "
           "targets in destructuring assignments");
+      break;
 
     default:
       MOZ_CRASH("emitSetOrInitializeDestructuring: bad lhs kind");
@@ -3262,26 +3280,14 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
     bool isFirst = member == pattern->head();
     DebugOnly<bool> hasNext = !!member->pn_next;
 
-    ParseNode* subpattern;
-    if (member->isKind(ParseNodeKind::Spread)) {
-      subpattern = member->as<UnaryNode>().kid();
-
-      MOZ_ASSERT(!subpattern->isKind(ParseNodeKind::AssignExpr));
-    } else {
-      subpattern = member;
-    }
-
-    ParseNode* lhsPattern = subpattern;
-    ParseNode* pndefault = nullptr;
-    if (subpattern->isKind(ParseNodeKind::AssignExpr)) {
-      lhsPattern = subpattern->as<AssignmentNode>().left();
-      pndefault = subpattern->as<AssignmentNode>().right();
-    }
-
-    
     size_t emitted = 0;
 
     
+    ParseNode* lhsPattern = member;
+    if (lhsPattern->isKind(ParseNodeKind::AssignExpr)) {
+      lhsPattern = lhsPattern->as<AssignmentNode>().left();
+    }
+
     bool isElision = lhsPattern->isKind(ParseNodeKind::Elision);
     if (!isElision) {
       auto emitLHSRef = [lhsPattern, &emitted](BytecodeEmitter* bce) {
@@ -3370,13 +3376,13 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
         return false;
       }
-      if (!emitUnpickN(emitted + 1)) {
+      if (!emit2(JSOp::Unpick, emitted + 1)) {
         
         return false;
       }
 
-      auto emitAssignment = [lhsPattern, flav](BytecodeEmitter* bce) {
-        return bce->emitSetOrInitializeDestructuring(lhsPattern, flav);
+      auto emitAssignment = [member, flav](BytecodeEmitter* bce) {
+        return bce->emitSetOrInitializeDestructuring(member, flav);
         
       };
       if (!wrapWithDestructuringTryNote(tryNoteDepth, emitAssignment)) {
@@ -3386,6 +3392,13 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
       MOZ_ASSERT(!hasNext);
       break;
     }
+
+    ParseNode* pndefault = nullptr;
+    if (member->isKind(ParseNodeKind::AssignExpr)) {
+      pndefault = member->as<AssignmentNode>().right();
+    }
+
+    MOZ_ASSERT(!member->isKind(ParseNodeKind::Spread));
 
     InternalIfEmitter ifAlreadyDone(this);
     if (!isFirst) {
@@ -3410,7 +3423,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
         return false;
       }
-      if (!emitUnpickN(emitted + 1)) {
+      if (!emit2(JSOp::Unpick, emitted + 1)) {
         
         return false;
       }
@@ -3442,7 +3455,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
       
       return false;
     }
-    if (!emitUnpickN(emitted + 2)) {
+    if (!emit2(JSOp::Unpick, emitted + 2)) {
       
       return false;
     }
@@ -3588,8 +3601,6 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     if (member->isKind(ParseNodeKind::MutateProto) ||
         member->isKind(ParseNodeKind::Spread)) {
       subpattern = member->as<UnaryNode>().kid();
-
-      MOZ_ASSERT(!subpattern->isKind(ParseNodeKind::AssignExpr));
     } else {
       MOZ_ASSERT(member->isKind(ParseNodeKind::PropertyDefinition) ||
                  member->isKind(ParseNodeKind::Shorthand));
@@ -3597,16 +3608,13 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     }
 
     ParseNode* lhs = subpattern;
-    ParseNode* pndefault = nullptr;
-    if (subpattern->isKind(ParseNodeKind::AssignExpr)) {
-      lhs = subpattern->as<AssignmentNode>().left();
-      pndefault = subpattern->as<AssignmentNode>().right();
+    MOZ_ASSERT_IF(member->isKind(ParseNodeKind::Spread),
+                  !lhs->isKind(ParseNodeKind::AssignExpr));
+    if (lhs->isKind(ParseNodeKind::AssignExpr)) {
+      lhs = lhs->as<AssignmentNode>().left();
     }
 
-    
-    size_t emitted = 0;
-
-    
+    size_t emitted;
     if (!emitDestructuringLHSRef(lhs, &emitted)) {
       
       return false;
@@ -3663,81 +3671,84 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     
     
     
+    bool needsGetElem = true;
+
     if (member->isKind(ParseNodeKind::MutateProto)) {
       if (!emitAtomOp(JSOp::GetProp,
                       TaggedParserAtomIndex::WellKnown::proto())) {
         
         return false;
       }
+      needsGetElem = false;
     } else {
       MOZ_ASSERT(member->isKind(ParseNodeKind::PropertyDefinition) ||
                  member->isKind(ParseNodeKind::Shorthand));
 
       ParseNode* key = member->as<BinaryNode>().left();
-      if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-          key->isKind(ParseNodeKind::StringExpr)) {
+      if (key->isKind(ParseNodeKind::NumberExpr)) {
+        if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+          
+          return false;
+        }
+      } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
+        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
+          
+          return false;
+        }
+      } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+                 key->isKind(ParseNodeKind::StringExpr)) {
         if (!emitAtomOp(JSOp::GetProp, key->as<NameNode>().atom())) {
           
           return false;
         }
+        needsGetElem = false;
       } else {
-        if (key->isKind(ParseNodeKind::NumberExpr)) {
-          if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-            
-            return false;
-          }
-        } else {
+        if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
           
-          
-          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
-
-          if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
-            
-            return false;
-          }
-
-          
-          if (needsRestPropertyExcludedSet) {
-            if (!emitDupAt(emitted + 3)) {
-              
-              return false;
-            }
-            if (!emitDupAt(1)) {
-              
-              return false;
-            }
-            if (!emit1(JSOp::Undefined)) {
-              
-              return false;
-            }
-            if (!emit1(JSOp::InitElem)) {
-              
-              return false;
-            }
-            if (!emit1(JSOp::Pop)) {
-              
-              return false;
-            }
-          }
+          return false;
         }
 
         
-        if (!emitElemOpBase(JSOp::GetElem)) {
-          
-          return false;
+        if (needsRestPropertyExcludedSet) {
+          if (!emitDupAt(emitted + 3)) {
+            
+            return false;
+          }
+          if (!emitDupAt(1)) {
+            
+            return false;
+          }
+          if (!emit1(JSOp::Undefined)) {
+            
+            return false;
+          }
+          if (!emit1(JSOp::InitElem)) {
+            
+            return false;
+          }
+          if (!emit1(JSOp::Pop)) {
+            
+            return false;
+          }
         }
       }
     }
 
-    if (pndefault) {
-      if (!emitDefault(pndefault, lhs)) {
+    
+    if (needsGetElem && !emitElemOpBase(JSOp::GetElem)) {
+      
+      return false;
+    }
+
+    if (subpattern->isKind(ParseNodeKind::AssignExpr)) {
+      if (!emitDefault(subpattern->as<AssignmentNode>().right(), lhs)) {
         
         return false;
       }
     }
 
     
-    if (!emitSetOrInitializeDestructuring(lhs, flav)) {
+    if (!emitSetOrInitializeDestructuring(subpattern, flav)) {
       
       return false;
     }
@@ -3801,26 +3812,32 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
     }
   }
 
+  TaggedParserAtomIndex pnatom;
   for (ParseNode* member : pattern->contents()) {
     if (member->isKind(ParseNodeKind::Spread)) {
       MOZ_ASSERT(!member->pn_next, "unexpected trailing element after spread");
       break;
     }
 
-    TaggedParserAtomIndex pnatom;
+    bool isIndex = false;
     if (member->isKind(ParseNodeKind::MutateProto)) {
       pnatom = TaggedParserAtomIndex::WellKnown::proto();
     } else {
       ParseNode* key = member->as<BinaryNode>().left();
-      if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-          key->isKind(ParseNodeKind::StringExpr)) {
-        pnatom = key->as<NameNode>().atom();
-      } else if (key->isKind(ParseNodeKind::NumberExpr)) {
+      if (key->isKind(ParseNodeKind::NumberExpr)) {
         if (!emitNumberOp(key->as<NumericLiteral>().value())) {
           return false;
         }
+        isIndex = true;
+      } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
+        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
+          return false;
+        }
+        isIndex = true;
+      } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+                 key->isKind(ParseNodeKind::StringExpr)) {
+        pnatom = key->as<NameNode>().atom();
       } else {
-        
         
         
         MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
@@ -3833,7 +3850,7 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
       return false;
     }
 
-    if (!pnatom) {
+    if (isIndex) {
       if (!emit1(JSOp::InitElem)) {
         return false;
       }
@@ -8866,22 +8883,23 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       if (propVal->isDirectRHSAnonFunction()) {
         
         
-        if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-            key->isKind(ParseNodeKind::StringExpr)) {
-          MOZ_ASSERT(accessorType == AccessorType::None);
-
-          auto keyAtom = key->as<NameNode>().atom();
-          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
-            
-            return false;
-          }
-        } else if (key->isKind(ParseNodeKind::NumberExpr)) {
+        
+        if (key->isKind(ParseNodeKind::NumberExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
 
           auto keyAtom = key->as<NumericLiteral>().toAtom(ec, parserAtoms());
           if (!keyAtom) {
             return false;
           }
+          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
+            
+            return false;
+          }
+        } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+                   key->isKind(ParseNodeKind::StringExpr)) {
+          MOZ_ASSERT(accessorType == AccessorType::None);
+
+          auto keyAtom = key->as<NameNode>().atom();
           if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
             
             return false;
@@ -8912,9 +8930,17 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
             }
           }
         } else {
+          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName) ||
+                     key->isKind(ParseNodeKind::BigIntExpr));
+
           
           
-          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
+          if (key->isKind(ParseNodeKind::BigIntExpr)) {
+            MOZ_ASSERT(accessorType == AccessorType::None);
+            if (!emit1(JSOp::ToString)) {
+              return false;
+            }
+          }
 
           FunctionPrefixKind prefix =
               accessorType == AccessorType::None     ? FunctionPrefixKind::None
@@ -8947,6 +8973,41 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         (type == ClassBody && propdef->as<ClassMethod>().isStatic())
             ? PropertyEmitter::Kind::Static
             : PropertyEmitter::Kind::Prototype;
+    if (key->isKind(ParseNodeKind::NumberExpr) ||
+        key->isKind(ParseNodeKind::BigIntExpr)) {
+      
+      if (!pe.prepareForIndexPropKey(propdef->pn_pos.begin, kind)) {
+        
+        return false;
+      }
+      if (key->isKind(ParseNodeKind::NumberExpr)) {
+        if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+          
+          return false;
+        }
+      } else {
+        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
+          
+          return false;
+        }
+      }
+      if (!pe.prepareForIndexPropValue()) {
+        
+        return false;
+      }
+      if (!emitValue()) {
+        
+        return false;
+      }
+
+      if (!pe.emitInitIndexOrComputed(accessorType)) {
+        
+        return false;
+      }
+
+      continue;
+    }
+
     if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
         key->isKind(ParseNodeKind::StringExpr)) {
       
@@ -8978,37 +9039,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       continue;
     }
 
-    if (key->isKind(ParseNodeKind::NumberExpr)) {
-      
-      if (!pe.prepareForIndexPropKey(propdef->pn_pos.begin, kind)) {
-        
-        return false;
-      }
-      if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-        
-        return false;
-      }
-      if (!pe.prepareForIndexPropValue()) {
-        
-        return false;
-      }
-      if (!emitValue()) {
-        
-        return false;
-      }
-
-      if (!pe.emitInitIndexOrComputed(accessorType)) {
-        
-        return false;
-      }
-
-      continue;
-    }
-
     if (key->isKind(ParseNodeKind::ComputedName)) {
-      
-      
-
       
 
       if (!pe.prepareForComputedPropKey(propdef->pn_pos.begin, kind)) {

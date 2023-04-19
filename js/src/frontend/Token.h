@@ -130,6 +130,10 @@ struct Token {
 
  public:
   
+  
+  
+
+  
   TokenKind type;
 
   

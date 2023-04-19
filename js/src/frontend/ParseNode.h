@@ -1596,6 +1596,10 @@ class NumericLiteral : public ParseNode {
 
   DecimalPoint decimalPoint() const { return decimalPoint_; }
 
+  void setValue(double v) { value_ = v; }
+
+  void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
+
   
   TaggedParserAtomIndex toAtom(ErrorContext* ec,
                                ParserAtomsTable& parserAtoms) const;
