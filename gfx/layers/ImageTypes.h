@@ -41,11 +41,7 @@ enum class ImageFormat {
 
 
 
-
-
-
-
-  CAIRO_SURFACE,
+  MOZ2D_SURFACE,
 
   
 
