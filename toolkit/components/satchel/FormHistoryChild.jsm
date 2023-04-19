@@ -95,10 +95,17 @@ class FormHistoryChild extends JSWindowActorChild {
         continue;
       }
 
-      let value = input.value.trim();
+      const value = input.lastInteractiveValue?.trim();
 
       
-      if (!value || value == input.defaultValue.trim()) {
+      
+      
+      if (!value) {
+        continue;
+      }
+
+      
+      if (value != input.value.trim()) {
         continue;
       }
 
