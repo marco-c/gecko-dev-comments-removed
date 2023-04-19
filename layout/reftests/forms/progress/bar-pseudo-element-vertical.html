@@ -5,6 +5,7 @@
     progress {
       margin: 10px;
       -moz-orient: vertical;
+      overflow: visible;
     }
     body > progress:nth-child(1)::-moz-progress-bar { margin: 4px; padding: 0px; }
     body > progress:nth-child(2)::-moz-progress-bar { margin: 0px; padding: 4px; }
@@ -24,7 +25,7 @@
     body > progress:nth-of-type(16)::-moz-progress-bar { margin: 64px; padding: 64px; }
   </style>
   <body>
-    
+    <!-- Those will be used to change padding/margin on ::-moz-progress-bar -->
     <progress value='1'></progress>
     <progress value='1'></progress>
     <progress value='1'></progress>
@@ -37,7 +38,7 @@
     <progress value='1'></progress>
     <progress value='1'></progress>
     <progress value='1'></progress>
-    
+    <!-- Those will be used to change width. -->
     <progress value='1'></progress>
     <progress value='1'></progress>
     <progress value='1'></progress>
