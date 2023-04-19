@@ -921,7 +921,6 @@ void gfxPlatform::Init() {
   gPlatform->InitWebGLConfig();
   gPlatform->InitWebGPUConfig();
   gPlatform->InitWindowOcclusionConfig();
-  gPlatform->InitBackdropFilterConfig();
 
   
   
@@ -3040,54 +3039,6 @@ void gfxPlatform::InitWindowOcclusionConfig() {
           StaticPrefs::
               GetPrefName_widget_windows_window_occlusion_tracking_enabled()));
 #endif
-}
-
-static void BackdropFilterPrefChangeCallback(const char*, void*) {
-  FeatureState& feature = gfxConfig::GetFeature(Feature::BACKDROP_FILTER);
-
-  
-  
-  
-  feature.Reset();
-  feature.EnableByDefault();
-
-  if (StaticPrefs::layout_css_backdrop_filter_force_enabled()) {
-    feature.UserForceEnable("Force enabled by pref");
-  }
-
-  nsCString message;
-  nsCString failureId;
-  if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_BACKDROP_FILTER,
-                                        &message, failureId)) {
-    feature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-  }
-
-  
-  
-  
-  gfxVars::SetAllowBackdropFilter(feature.IsEnabled());
-}
-
-void gfxPlatform::InitBackdropFilterConfig() {
-  
-  
-  
-  gfxVars::AddReceiver(&nsCSSProps::GfxVarReceiver());
-
-  if (!XRE_IsParentProcess()) {
-    
-    
-    nsCSSProps::RecomputeEnabledState(
-        StaticPrefs::GetPrefName_layout_css_backdrop_filter_enabled());
-    return;
-  }
-
-  BackdropFilterPrefChangeCallback(nullptr, nullptr);
-
-  Preferences::RegisterCallback(
-      BackdropFilterPrefChangeCallback,
-      nsDependentCString(
-          StaticPrefs::GetPrefName_layout_css_backdrop_filter_force_enabled()));
 }
 
 bool gfxPlatform::CanUseHardwareVideoDecoding() {

@@ -1188,9 +1188,6 @@ static bool OnlyAllowFeatureOnWhitelistedVendor(int32_t aFeature) {
     
     
     case nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS:
-    
-    
-    case nsIGfxInfo::FEATURE_BACKDROP_FILTER:
       return false;
     default:
       return true;
@@ -1874,17 +1871,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBRENDER_SCISSORED_CACHE_CLEARS,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_FAILURE_BUG_1603515");
-
-    
-    
-
-    
-    APPEND_TO_DRIVER_BLOCKLIST_RANGE(
-        OperatingSystem::Windows, DeviceFamily::IntelHDGraphicsToIvyBridge,
-        nsIGfxInfo::FEATURE_BACKDROP_FILTER,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_BETWEEN_EXCLUSIVE,
-        V(8, 15, 10, 2879), V(10, 18, 10, 4425), "FEATURE_FAILURE_BUG_1785366",
-        "Intel driver >= 10.18.10.4425");
   }
   return *sDriverInfo;
 }
