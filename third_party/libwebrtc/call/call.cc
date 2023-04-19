@@ -346,6 +346,9 @@ class Call final : public webrtc::Call,
   DeliveryStatus DeliverRtp(MediaType media_type,
                             rtc::CopyOnWriteBuffer packet,
                             int64_t packet_time_us) RTC_RUN_ON(worker_thread_);
+
+  AudioReceiveStream* FindAudioStreamForSyncGroup(const std::string& sync_group)
+      RTC_RUN_ON(worker_thread_);
   void ConfigureSync(const std::string& sync_group) RTC_RUN_ON(worker_thread_);
 
   void NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
@@ -395,9 +398,6 @@ class Call final : public webrtc::Call,
       RTC_GUARDED_BY(worker_thread_);
   std::set<VideoReceiveStream2*> video_receive_streams_
       RTC_GUARDED_BY(worker_thread_);
-  std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
-      RTC_GUARDED_BY(worker_thread_);
-
   
   
   RtpStreamReceiverController audio_receiver_controller_
@@ -998,11 +998,11 @@ void Call::DestroyAudioReceiveStream(
 
   audio_receive_streams_.erase(audio_receive_stream);
 
-  const auto it = sync_stream_mapping_.find(config.sync_group);
-  if (it != sync_stream_mapping_.end() && it->second == audio_receive_stream) {
-    sync_stream_mapping_.erase(it);
-    ConfigureSync(config.sync_group);
-  }
+  
+  
+  
+  ConfigureSync(audio_receive_stream->config().sync_group);
+
   UnregisterReceiveStream(ssrc);
 
   UpdateAggregateNetworkState();
@@ -1448,51 +1448,37 @@ void Call::OnAllocationLimitsChanged(BitrateAllocationLimits limits) {
 }
 
 
-void Call::ConfigureSync(const std::string& sync_group) {
-  
-  
-  if (sync_group.empty())
-    return;
-
-  AudioReceiveStream* sync_audio_stream = nullptr;
-  
-  const auto it = sync_stream_mapping_.find(sync_group);
-  if (it != sync_stream_mapping_.end()) {
-    sync_audio_stream = it->second;
-  } else {
-    
+AudioReceiveStream* Call::FindAudioStreamForSyncGroup(
+    const std::string& sync_group) {
+  RTC_DCHECK_RUN_ON(&receive_11993_checker_);
+  if (!sync_group.empty()) {
     for (AudioReceiveStream* stream : audio_receive_streams_) {
-      if (stream->config().sync_group == sync_group) {
-        if (sync_audio_stream != nullptr) {
-          RTC_LOG(LS_WARNING)
-              << "Attempting to sync more than one audio stream "
-                 "within the same sync group. This is not "
-                 "supported in the current implementation.";
-          break;
-        }
-        sync_audio_stream = stream;
-      }
+      if (stream->config().sync_group == sync_group)
+        return stream;
     }
   }
-  if (sync_audio_stream)
-    sync_stream_mapping_[sync_group] = sync_audio_stream;
+
+  return nullptr;
+}
+
+
+
+void Call::ConfigureSync(const std::string& sync_group) {
+  
+  AudioReceiveStream* audio_stream = FindAudioStreamForSyncGroup(sync_group);
+
   size_t num_synced_streams = 0;
   for (VideoReceiveStream2* video_stream : video_receive_streams_) {
     if (video_stream->sync_group() != sync_group)
       continue;
     ++num_synced_streams;
-    if (num_synced_streams > 1) {
-      
-      
-      RTC_LOG(LS_WARNING)
-          << "Attempting to sync more than one audio/video pair "
-             "within the same sync group. This is not supported in "
-             "the current implementation.";
-    }
+    
+    
+    
     
     if (num_synced_streams == 1) {
       
-      video_stream->SetSync(sync_audio_stream);
+      video_stream->SetSync(audio_stream);
     } else {
       video_stream->SetSync(nullptr);
     }
