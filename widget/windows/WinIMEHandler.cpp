@@ -425,7 +425,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
   
   NotifyIME(aWindow, IMENotification(REQUEST_TO_COMMIT_COMPOSITION));
 
-  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
+  if (aInputContext.mHTMLInputMode.EqualsLiteral("none")) {
     IMEHandler::MaybeDismissOnScreenKeyboard(aWindow, Sync::Yes);
   } else if (aAction.UserMightRequestOpenVKB()) {
     IMEHandler::MaybeShowOnScreenKeyboard(aWindow, aInputContext);
@@ -453,7 +453,7 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
   } else {
     
     SetInputScopeForIMM32(aWindow, aInputContext.mHTMLInputType,
-                          aInputContext.mHTMLInputInputmode,
+                          aInputContext.mHTMLInputMode,
                           aInputContext.mInPrivateBrowsing);
   }
 
@@ -571,7 +571,7 @@ void IMEHandler::OnKeyboardLayoutChanged() {
 
 void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
                                        const nsAString& aHTMLInputType,
-                                       const nsAString& aHTMLInputInputmode,
+                                       const nsAString& aHTMLInputMode,
                                        bool aInPrivateBrowsing) {
   if (sIsInTSFMode || !sSetInputScopes || aWindow->Destroyed()) {
     return;
@@ -581,7 +581,7 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   
   
   AppendInputScopeFromType(aHTMLInputType, scopes);
-  AppendInputScopeFromInputmode(aHTMLInputInputmode, scopes);
+  AppendInputScopeFromInputMode(aHTMLInputMode, scopes);
 
   if (aInPrivateBrowsing) {
     scopes.AppendElement(IS_PRIVATE);
@@ -597,9 +597,9 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
 }
 
 
-void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
+void IMEHandler::AppendInputScopeFromInputMode(const nsAString& aHTMLInputMode,
                                                nsTArray<InputScope>& aScopes) {
-  if (aInputmode.EqualsLiteral("mozAwesomebar")) {
+  if (aHTMLInputMode.EqualsLiteral("mozAwesomebar")) {
     
     
     
@@ -627,19 +627,19 @@ void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
   }
 
   
-  if (aInputmode.EqualsLiteral("url")) {
+  if (aHTMLInputMode.EqualsLiteral("url")) {
     if (!aScopes.Contains(IS_SEARCH)) {
       aScopes.AppendElement(IS_URL);
     }
     return;
   }
-  if (aInputmode.EqualsLiteral("email")) {
+  if (aHTMLInputMode.EqualsLiteral("email")) {
     if (!aScopes.Contains(IS_EMAIL_SMTPEMAILADDRESS)) {
       aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
     }
     return;
   }
-  if (aInputmode.EqualsLiteral("tel")) {
+  if (aHTMLInputMode.EqualsLiteral("tel")) {
     if (!aScopes.Contains(IS_TELEPHONE_FULLTELEPHONENUMBER)) {
       aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
     }
@@ -648,19 +648,19 @@ void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
     }
     return;
   }
-  if (aInputmode.EqualsLiteral("numeric")) {
+  if (aHTMLInputMode.EqualsLiteral("numeric")) {
     if (!aScopes.Contains(IS_DIGITS)) {
       aScopes.AppendElement(IS_DIGITS);
     }
     return;
   }
-  if (aInputmode.EqualsLiteral("decimal")) {
+  if (aHTMLInputMode.EqualsLiteral("decimal")) {
     if (!aScopes.Contains(IS_NUMBER)) {
       aScopes.AppendElement(IS_NUMBER);
     }
     return;
   }
-  if (aInputmode.EqualsLiteral("search")) {
+  if (aHTMLInputMode.EqualsLiteral("search")) {
     if (NeedsSearchInputScope() && !aScopes.Contains(IS_SEARCH)) {
       aScopes.AppendElement(IS_SEARCH);
     }
@@ -753,7 +753,7 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
 
 void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
                                            const InputContext& aInputContext) {
-  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
+  if (aInputContext.mHTMLInputMode.EqualsLiteral("none")) {
     return;
   }
 

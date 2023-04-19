@@ -1869,7 +1869,7 @@ bool TSFTextStore::Init(nsWindow* aWidget, const InputContext& aContext) {
   }
 
   mInPrivateBrowsing = aContext.mInPrivateBrowsing;
-  SetInputScope(aContext.mHTMLInputType, aContext.mHTMLInputInputmode);
+  SetInputScope(aContext.mHTMLInputType, aContext.mHTMLInputMode);
 
   if (aContext.mURI) {
     
@@ -3917,13 +3917,13 @@ bool TSFTextStore::ShouldSetInputScopeOfURLBarToDefault() {
 }
 
 void TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
-                                 const nsString& aHTMLInputInputMode) {
+                                 const nsString& aHTMLInputMode) {
   mInputScopes.Clear();
 
   
   
   IMEHandler::AppendInputScopeFromType(aHTMLInputType, mInputScopes);
-  IMEHandler::AppendInputScopeFromInputmode(aHTMLInputInputMode, mInputScopes);
+  IMEHandler::AppendInputScopeFromInputMode(aHTMLInputMode, mInputScopes);
 
   if (mInPrivateBrowsing) {
     mInputScopes.AppendElement(IS_PRIVATE);
@@ -6700,7 +6700,7 @@ void TSFTextStore::SetInputContext(nsWindow* aWidget,
         RefPtr<TSFTextStore> textStore(sEnabledTextStore);
         textStore->mInPrivateBrowsing = aContext.mInPrivateBrowsing;
         textStore->SetInputScope(aContext.mHTMLInputType,
-                                 aContext.mHTMLInputInputmode);
+                                 aContext.mHTMLInputMode);
         if (aContext.mURI) {
           nsAutoCString spec;
           if (NS_SUCCEEDED(aContext.mURI->GetSpec(spec))) {
