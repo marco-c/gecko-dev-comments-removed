@@ -85,7 +85,7 @@ class RTC_EXPORT RTCStatsReport : public rtc::RefCountInterface {
   
   std::unique_ptr<const RTCStats> Take(const std::string& id);
   
-  void TakeMembersFrom(rtc::scoped_refptr<RTCStatsReport> victim);
+  void TakeMembersFrom(rtc::scoped_refptr<RTCStatsReport> other);
 
   
   ConstIterator begin() const;
