@@ -62,8 +62,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 var PrintUtils = {
   SAVE_TO_PDF_PRINTER: "Mozilla Save to PDF",
 
@@ -321,11 +319,14 @@ var PrintUtils = {
         
         
         
-        let dest = await OS.File.getCurrentDirectory();
+        let dest = undefined;
+        try {
+          dest = Services.dirsvc.get("CurWorkD", Ci.nsIFile).path;
+        } catch (e) {}
         if (!dest) {
-          dest = OS.Constants.Path.homeDir;
+          dest = Services.dirsvc.get("Home", Ci.nsIFile).path;
         }
-        settings.toFileName = OS.Path.join(dest || "", "mozilla.pdf");
+        settings.toFileName = PathUtils.join(dest, "mozilla.pdf");
       }
 
       if (useSystemDialog) {
