@@ -18,7 +18,9 @@ const {
   UrlbarUtils,
 } = ChromeUtils.import("resource:///modules/UrlbarUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   clearInterval: "resource://gre/modules/Timer.jsm",
   CONTEXTUAL_SERVICES_PING_TYPES:
@@ -108,19 +110,21 @@ class ProviderQuickSuggest extends UrlbarProvider {
   constructor(...args) {
     super(...args);
 
-    UrlbarQuickSuggest.init();
-    UrlbarQuickSuggest.on("config-set", () => this._validateImpressionStats());
+    lazy.UrlbarQuickSuggest.init();
+    lazy.UrlbarQuickSuggest.on("config-set", () =>
+      this._validateImpressionStats()
+    );
 
     this._updateFeatureState();
-    NimbusFeatures.urlbar.onUpdate(() => this._updateFeatureState());
+    lazy.NimbusFeatures.urlbar.onUpdate(() => this._updateFeatureState());
 
-    UrlbarPrefs.addObserver(this);
+    lazy.UrlbarPrefs.addObserver(this);
 
     
     this._setImpressionCountersResetInterval();
 
     
-    AsyncShutdown.profileChangeTeardown.addBlocker(
+    lazy.AsyncShutdown.profileChangeTeardown.addBlocker(
       "UrlbarProviderQuickSuggest: Record impression counters reset telemetry",
       () => this._resetElapsedImpressionCounters()
     );
@@ -209,10 +213,10 @@ class ProviderQuickSuggest extends UrlbarProvider {
       queryContext.trimmedSearchString &&
       !queryContext.searchMode &&
       !queryContext.isPrivate &&
-      UrlbarPrefs.get("quickSuggestEnabled") &&
-      (UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") ||
-        UrlbarPrefs.get("suggest.quicksuggest.sponsored") ||
-        UrlbarPrefs.get("quicksuggest.dataCollection.enabled"))
+      lazy.UrlbarPrefs.get("quickSuggestEnabled") &&
+      (lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") ||
+        lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored") ||
+        lazy.UrlbarPrefs.get("quicksuggest.dataCollection.enabled"))
     );
   }
 
@@ -234,14 +238,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     let promises = [];
-    if (UrlbarPrefs.get("quickSuggestRemoteSettingsEnabled")) {
+    if (lazy.UrlbarPrefs.get("quickSuggestRemoteSettingsEnabled")) {
       promises.push(
         this._fetchRemoteSettingsSuggestions(queryContext, searchString)
       );
     }
     if (
-      UrlbarPrefs.get("merinoEnabled") &&
-      UrlbarPrefs.get("quicksuggest.dataCollection.enabled") &&
+      lazy.UrlbarPrefs.get("merinoEnabled") &&
+      lazy.UrlbarPrefs.get("quicksuggest.dataCollection.enabled") &&
       queryContext.allowRemoteResults()
     ) {
       promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
@@ -298,8 +302,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let isSuggestionBestMatch = false;
     if (typeof suggestion._test_is_best_match == "boolean") {
       isSuggestionBestMatch = suggestion._test_is_best_match;
-    } else if (UrlbarQuickSuggest.config.best_match) {
-      let { best_match } = UrlbarQuickSuggest.config;
+    } else if (lazy.UrlbarQuickSuggest.config.best_match) {
+      let { best_match } = lazy.UrlbarQuickSuggest.config;
       isSuggestionBestMatch =
         best_match.min_search_string_length <= searchString.length &&
         !best_match.blocked_suggestion_ids.includes(suggestion.block_id);
@@ -308,8 +312,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     let isResultBestMatch =
       isSuggestionBestMatch &&
-      UrlbarPrefs.get("bestMatchEnabled") &&
-      UrlbarPrefs.get("suggest.bestmatch");
+      lazy.UrlbarPrefs.get("bestMatchEnabled") &&
+      lazy.UrlbarPrefs.get("suggest.bestmatch");
     if (isResultBestMatch) {
       
       
@@ -324,10 +328,13 @@ class ProviderQuickSuggest extends UrlbarProvider {
       ];
     }
 
-    let result = new UrlbarResult(
+    let result = new lazy.UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.SEARCH,
-      ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
+      ...lazy.UrlbarResult.payloadAndSimpleHighlights(
+        queryContext.tokens,
+        payload
+      )
     );
 
     if (isResultBestMatch) {
@@ -335,12 +342,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
       result.suggestedIndex = 1;
     } else if (
       !isNaN(suggestion.position) &&
-      UrlbarPrefs.get("quickSuggestAllowPositionInSuggestions")
+      lazy.UrlbarPrefs.get("quickSuggestAllowPositionInSuggestions")
     ) {
       result.suggestedIndex = suggestion.position;
     } else {
       result.isSuggestedIndexRelativeToGroup = true;
-      result.suggestedIndex = UrlbarPrefs.get(
+      result.suggestedIndex = lazy.UrlbarPrefs.get(
         suggestion.is_sponsored
           ? "quickSuggestSponsoredIndex"
           : "quickSuggestNonSponsoredIndex"
@@ -364,18 +371,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     if (
-      UrlbarPrefs.get("isBestMatchExperiment") ||
-      UrlbarPrefs.get("experimentType") === "best-match"
+      lazy.UrlbarPrefs.get("isBestMatchExperiment") ||
+      lazy.UrlbarPrefs.get("experimentType") === "best-match"
     ) {
       if (
         isSuggestionBestMatch &&
-        (!UrlbarPrefs.get("bestMatchEnabled") ||
-          UrlbarPrefs.get("suggest.bestmatch"))
+        (!lazy.UrlbarPrefs.get("bestMatchEnabled") ||
+          lazy.UrlbarPrefs.get("suggest.bestmatch"))
       ) {
-        UrlbarQuickSuggest.ensureExposureEventRecorded();
+        lazy.UrlbarQuickSuggest.ensureExposureEventRecorded();
       }
-    } else if (UrlbarPrefs.get("experimentType") !== "modal") {
-      UrlbarQuickSuggest.ensureExposureEventRecorded();
+    } else if (lazy.UrlbarPrefs.get("experimentType") !== "modal") {
+      lazy.UrlbarQuickSuggest.ensureExposureEventRecorded();
     }
   }
 
@@ -394,8 +401,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
   blockResult(queryContext, result) {
     if (
       (!result.isBestMatch &&
-        !UrlbarPrefs.get("quickSuggestBlockingEnabled")) ||
-      (result.isBestMatch && !UrlbarPrefs.get("bestMatchBlockingEnabled"))
+        !lazy.UrlbarPrefs.get("quickSuggestBlockingEnabled")) ||
+      (result.isBestMatch && !lazy.UrlbarPrefs.get("bestMatchBlockingEnabled"))
     ) {
       this.logger.info("Blocking disabled, ignoring block");
       return false;
@@ -423,7 +430,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       let json = JSON.stringify([...this._blockedDigests]);
       this._updatingBlockedDigests = true;
       try {
-        UrlbarPrefs.set("quicksuggest.blockedDigests", json);
+        lazy.UrlbarPrefs.set("quicksuggest.blockedDigests", json);
       } finally {
         this._updatingBlockedDigests = false;
       }
@@ -459,7 +466,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     await this._blockTaskQueue.queue(() => {
       this.logger.info(`Clearing all blocked suggestions`);
       this._blockedDigests.clear();
-      UrlbarPrefs.clear("quicksuggest.blockedDigests");
+      lazy.UrlbarPrefs.clear("quicksuggest.blockedDigests");
     });
   }
 
@@ -631,7 +638,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
         
         advertiser: result.payload.sponsoredAdvertiser.toLocaleLowerCase(),
         block_id: result.payload.sponsoredBlockId,
-        improve_suggest_experience_checked: UrlbarPrefs.get(
+        improve_suggest_experience_checked: lazy.UrlbarPrefs.get(
           "quicksuggest.dataCollection.enabled"
         ),
         position: telemetryResultIndex,
@@ -639,34 +646,34 @@ class ProviderQuickSuggest extends UrlbarProvider {
       };
 
       
-      PartnerLinkAttribution.sendContextualServicesPing(
+      lazy.PartnerLinkAttribution.sendContextualServicesPing(
         {
           ...payload,
           is_clicked,
           reporting_url: result.payload.sponsoredImpressionUrl,
         },
-        CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION
+        lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION
       );
 
       
       if (is_clicked) {
-        PartnerLinkAttribution.sendContextualServicesPing(
+        lazy.PartnerLinkAttribution.sendContextualServicesPing(
           {
             ...payload,
             reporting_url: result.payload.sponsoredClickUrl,
           },
-          CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION
+          lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION
         );
       }
 
       
       if (selType == "block") {
-        PartnerLinkAttribution.sendContextualServicesPing(
+        lazy.PartnerLinkAttribution.sendContextualServicesPing(
           {
             ...payload,
             iab_category: result.payload.sponsoredIabCategory,
           },
-          CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK
+          lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK
         );
       }
     }
@@ -697,29 +704,29 @@ class ProviderQuickSuggest extends UrlbarProvider {
         }
         break;
       case "quicksuggest.dataCollection.enabled":
-        if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
+        if (!lazy.UrlbarPrefs.updatingFirefoxSuggestScenario) {
           Services.telemetry.recordEvent(
             TELEMETRY_EVENT_CATEGORY,
             "data_collect_toggled",
-            UrlbarPrefs.get(pref) ? "enabled" : "disabled"
+            lazy.UrlbarPrefs.get(pref) ? "enabled" : "disabled"
           );
         }
         break;
       case "suggest.quicksuggest.nonsponsored":
-        if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
+        if (!lazy.UrlbarPrefs.updatingFirefoxSuggestScenario) {
           Services.telemetry.recordEvent(
             TELEMETRY_EVENT_CATEGORY,
             "enable_toggled",
-            UrlbarPrefs.get(pref) ? "enabled" : "disabled"
+            lazy.UrlbarPrefs.get(pref) ? "enabled" : "disabled"
           );
         }
         break;
       case "suggest.quicksuggest.sponsored":
-        if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
+        if (!lazy.UrlbarPrefs.updatingFirefoxSuggestScenario) {
           Services.telemetry.recordEvent(
             TELEMETRY_EVENT_CATEGORY,
             "sponsored_toggled",
-            UrlbarPrefs.get(pref) ? "enabled" : "disabled"
+            lazy.UrlbarPrefs.get(pref) ? "enabled" : "disabled"
           );
         }
         break;
@@ -815,7 +822,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let suggestions;
     TelemetryStopwatch.start(TELEMETRY_REMOTE_SETTINGS_LATENCY, queryContext);
     try {
-      suggestions = await UrlbarQuickSuggest.query(searchString);
+      suggestions = await lazy.UrlbarQuickSuggest.query(searchString);
       TelemetryStopwatch.finish(
         TELEMETRY_REMOTE_SETTINGS_LATENCY,
         queryContext
@@ -866,7 +873,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     
     
-    let endpointString = UrlbarPrefs.get("merino.endpointURL");
+    let endpointString = lazy.UrlbarPrefs.get("merino.endpointURL");
     if (!endpointString) {
       return null;
     }
@@ -884,17 +891,17 @@ class ProviderQuickSuggest extends UrlbarProvider {
       this._merinoSequenceNumber
     );
 
-    let clientVariants = UrlbarPrefs.get("merino.clientVariants");
+    let clientVariants = lazy.UrlbarPrefs.get("merino.clientVariants");
     if (clientVariants) {
       url.searchParams.set(MERINO_PARAMS.CLIENT_VARIANTS, clientVariants);
     }
 
-    let providers = UrlbarPrefs.get("merino.providers");
+    let providers = lazy.UrlbarPrefs.get("merino.providers");
     if (providers) {
       url.searchParams.set(MERINO_PARAMS.PROVIDERS, providers);
     } else if (
-      !UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") &&
-      !UrlbarPrefs.get("suggest.quicksuggest.sponsored")
+      !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") &&
+      !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")
     ) {
       
       
@@ -910,7 +917,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     };
 
     
-    let timeout = UrlbarPrefs.get("merinoTimeoutMs");
+    let timeout = lazy.UrlbarPrefs.get("merinoTimeoutMs");
     let timer = (this._merinoTimeoutTimer = new SkippableTimer({
       name: "Merino timeout",
       time: timeout,
@@ -1036,9 +1043,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     if (
       (suggestion.is_sponsored &&
-        !UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
+        !lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
       (!suggestion.is_sponsored &&
-        !UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))
+        !lazy.UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))
     ) {
       this.logger.info("Suggestions disabled, not adding suggestion");
       return false;
@@ -1047,9 +1054,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     if (
       (suggestion.is_sponsored &&
-        UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
+        lazy.UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
       (!suggestion.is_sponsored &&
-        UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
+        lazy.UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
     ) {
       this._resetElapsedImpressionCounters();
       let type = suggestion.is_sponsored ? "sponsored" : "nonsponsored";
@@ -1130,16 +1137,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
       JSON.stringify({
         isSponsored,
         currentStats: this._impressionStats,
-        impression_caps: UrlbarQuickSuggest.config.impression_caps,
+        impression_caps: lazy.UrlbarQuickSuggest.config.impression_caps,
       })
     );
 
     
     if (
       (isSponsored &&
-        !UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
+        !lazy.UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
       (!isSponsored &&
-        !UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
+        !lazy.UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
     ) {
       this.logger.info("Impression caps disabled, skipping update");
       return;
@@ -1175,7 +1182,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     this._updatingImpressionStats = true;
     try {
-      UrlbarPrefs.set(
+      lazy.UrlbarPrefs.set(
         "quicksuggest.impressionCaps.stats",
         JSON.stringify(this._impressionStats)
       );
@@ -1191,7 +1198,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   _loadImpressionStats() {
-    let json = UrlbarPrefs.get("quicksuggest.impressionCaps.stats");
+    let json = lazy.UrlbarPrefs.get("quicksuggest.impressionCaps.stats");
     if (!json) {
       this._impressionStats = {};
     } else {
@@ -1218,7 +1225,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   _validateImpressionStats() {
-    let { impression_caps } = UrlbarQuickSuggest.config;
+    let { impression_caps } = lazy.UrlbarQuickSuggest.config;
 
     this.logger.info("Validating impression stats");
     this.logger.debug(
@@ -1339,7 +1346,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     this.logger.debug(
       JSON.stringify({
         currentStats: this._impressionStats,
-        impression_caps: UrlbarQuickSuggest.config.impression_caps,
+        impression_caps: lazy.UrlbarQuickSuggest.config.impression_caps,
       })
     );
 
@@ -1462,9 +1469,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     ms = IMPRESSION_COUNTERS_RESET_INTERVAL_MS
   ) {
     if (this._impressionCountersResetInterval) {
-      clearInterval(this._impressionCountersResetInterval);
+      lazy.clearInterval(this._impressionCountersResetInterval);
     }
-    this._impressionCountersResetInterval = setInterval(
+    this._impressionCountersResetInterval = lazy.setInterval(
       () => this._resetElapsedImpressionCounters(),
       ms
     );
@@ -1489,7 +1496,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     this.logger.debug(`Queueing _loadBlockedDigests`);
     await this._blockTaskQueue.queue(() => {
       this.logger.info(`Loading blocked suggestion digests`);
-      let json = UrlbarPrefs.get("quicksuggest.blockedDigests");
+      let json = lazy.UrlbarPrefs.get("quicksuggest.blockedDigests");
       this.logger.debug(
         `browser.urlbar.quicksuggest.blockedDigests value: ${json}`
       );
@@ -1527,7 +1534,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   _updateFeatureState() {
-    let enabled = UrlbarPrefs.get("quickSuggestEnabled");
+    let enabled = lazy.UrlbarPrefs.get("quickSuggestEnabled");
     if (enabled == this._quickSuggestEnabled) {
       
       

@@ -65,13 +65,6 @@ module.exports = {
       },
     },
     {
-      
-      files: ["browser/components/urlbar/**"],
-      rules: {
-        "mozilla/reject-global-this": "off",
-      },
-    },
-    {
       files: ["**/*.mjs", "**/*.jsm"],
       rules: {
         

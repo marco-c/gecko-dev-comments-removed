@@ -20,7 +20,9 @@ const { UrlbarProvider, UrlbarUtils } = ChromeUtils.import(
   "resource:///modules/UrlbarUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
   DefaultBrowserCheck: "resource:///modules/BrowserGlue.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
@@ -31,7 +33,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
 });
 
-XPCOMUtils.defineLazyGetter(this, "updateManager", () => {
+XPCOMUtils.defineLazyGetter(lazy, "updateManager", () => {
   return (
     Cc["@mozilla.org/updates/update-manager;1"] &&
     Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager)
@@ -39,7 +41,7 @@ XPCOMUtils.defineLazyGetter(this, "updateManager", () => {
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "cfrFeaturesUserPref",
   "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
   true
@@ -99,7 +101,10 @@ class ProviderSearchTips extends UrlbarProvider {
     
     this.disableTipsForCurrentSession = true;
     for (let tip of Object.values(TIPS)) {
-      if (tip && UrlbarPrefs.get(`tipShownCount.${tip}`) < MAX_SHOWN_COUNT) {
+      if (
+        tip &&
+        lazy.UrlbarPrefs.get(`tipShownCount.${tip}`) < MAX_SHOWN_COUNT
+      ) {
         this.disableTipsForCurrentSession = false;
         break;
       }
@@ -121,7 +126,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
   get PRIORITY() {
     
-    return UrlbarProviderTopSites.PRIORITY + 1;
+    return lazy.UrlbarProviderTopSites.PRIORITY + 1;
   }
 
   
@@ -147,7 +152,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return this.currentTip && cfrFeaturesUserPref;
+    return this.currentTip && lazy.cfrFeaturesUserPref;
   }
 
   
@@ -176,7 +181,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
     let defaultEngine = await Services.search.getDefault();
 
-    let result = new UrlbarResult(
+    let result = new lazy.UrlbarResult(
       UrlbarUtils.RESULT_TYPE.TIP,
       UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       {
@@ -222,7 +227,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   pickResult(result) {
-    let window = BrowserWindowTracker.getTopWindow();
+    let window = lazy.BrowserWindowTracker.getTopWindow();
     window.gURLBar.value = "";
     window.gURLBar.setPageProxyState("invalid");
     window.gURLBar.removeAttribute("suppress-focus-border");
@@ -255,7 +260,7 @@ class ProviderSearchTips extends UrlbarProvider {
       
       
       
-      UrlbarPrefs.set(
+      lazy.UrlbarPrefs.set(
         `tipShownCount.${this.showedTipTypeInCurrentEngagement}`,
         MAX_SHOWN_COUNT
       );
@@ -318,9 +323,9 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     if (
-      !cfrFeaturesUserPref ||
+      !lazy.cfrFeaturesUserPref ||
       (this.disableTipsForCurrentSession &&
-        !UrlbarPrefs.get("searchTips.test.ignoreShowLimits"))
+        !lazy.UrlbarPrefs.get("searchTips.test.ignoreShowLimits"))
     ) {
       return;
     }
@@ -354,11 +359,13 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
-    let ignoreShowLimits = UrlbarPrefs.get("searchTips.test.ignoreShowLimits");
+    let ignoreShowLimits = lazy.UrlbarPrefs.get(
+      "searchTips.test.ignoreShowLimits"
+    );
 
     
     
-    let shownCount = UrlbarPrefs.get(`tipShownCount.${tip}`);
+    let shownCount = lazy.UrlbarPrefs.get(`tipShownCount.${tip}`);
     if (shownCount >= MAX_SHOWN_COUNT && !ignoreShowLimits) {
       return;
     }
@@ -370,12 +377,12 @@ class ProviderSearchTips extends UrlbarProvider {
     }
 
     
-    setTimeout(async () => {
+    lazy.setTimeout(async () => {
       if (this._maybeShowTipForUrlInstance != instance) {
         return;
       }
 
-      let window = BrowserWindowTracker.getTopWindow();
+      let window = lazy.BrowserWindowTracker.getTopWindow();
       
       
       if (
@@ -398,7 +405,7 @@ class ProviderSearchTips extends UrlbarProvider {
       this.disableTipsForCurrentSession = true;
 
       
-      UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
+      lazy.UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
 
       this.currentTip = tip;
       window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
@@ -407,7 +414,7 @@ class ProviderSearchTips extends UrlbarProvider {
 }
 
 async function isBrowserShowingNotification() {
-  let window = BrowserWindowTracker.getTopWindow();
+  let window = lazy.BrowserWindowTracker.getTopWindow();
 
   
   if (
@@ -420,9 +427,9 @@ async function isBrowserShowingNotification() {
 
   
   if (
-    AppMenuNotifications.activeNotification &&
-    !AppMenuNotifications.activeNotification.dismissed &&
-    !AppMenuNotifications.activeNotification.options.badgeOnly
+    lazy.AppMenuNotifications.activeNotification &&
+    !lazy.AppMenuNotifications.activeNotification.dismissed &&
+    !lazy.AppMenuNotifications.activeNotification.options.badgeOnly
   ) {
     return true;
   }
@@ -467,7 +474,7 @@ async function isBrowserShowingNotification() {
   
   
   
-  const willPrompt = await DefaultBrowserCheck.willCheckDefaultBrowser(
+  const willPrompt = await lazy.DefaultBrowserCheck.willCheckDefaultBrowser(
      false
   );
   if (willPrompt) {
@@ -518,12 +525,12 @@ async function lastBrowserUpdateDate() {
   
   
   
-  if (updateManager && updateManager.getUpdateCount()) {
-    let update = updateManager.getUpdateAt(0);
+  if (lazy.updateManager && lazy.updateManager.getUpdateCount()) {
+    let update = lazy.updateManager.getUpdateAt(0);
     return update.installDate;
   }
   
-  let age = await ProfileAge();
+  let age = await lazy.ProfileAge();
   return (await age.firstUse) || age.created;
 }
 
