@@ -102,19 +102,19 @@ bool WebTask::Run() {
 
   error.WouldReportJSException();
 
+#ifdef DEBUG
   Promise::PromiseState promiseState = mPromise->State();
 
   
   
   MOZ_ASSERT_IF(promiseState != Promise::PromiseState::Pending,
                 promiseState == Promise::PromiseState::Rejected);
+#endif
 
-  if (promiseState == Promise::PromiseState::Pending) {
-    if (error.Failed()) {
-      mPromise->MaybeReject(std::move(error));
-    } else {
-      mPromise->MaybeResolve(returnVal);
-    }
+  if (error.Failed()) {
+    mPromise->MaybeReject(std::move(error));
+  } else {
+    mPromise->MaybeResolve(returnVal);
   }
 
   MOZ_ASSERT(!isInList());
