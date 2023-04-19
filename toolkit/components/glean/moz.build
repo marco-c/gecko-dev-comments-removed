@@ -176,12 +176,13 @@ GeneratedFile(
 
 
 
+
 GeneratedFile(
     "api/src/factory.rs",
     script="build_scripts/glean_parser_ext/run_glean_parser.py",
     entry_point="jog_factory",
     flags=[CONFIG["MOZ_APP_VERSION"]],
-    inputs=deps + metrics_yamls + tags_yamls,
+    inputs=deps + pings_yamls + metrics_yamls + tags_yamls,
 )
 
 
