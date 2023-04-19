@@ -31,23 +31,23 @@ namespace mozilla {
 
 
 
-constexpr bool IsAscii(unsigned char aChar) { return aChar < 0x80; }
+inline constexpr bool IsAscii(unsigned char aChar) { return aChar < 0x80; }
 
 
-constexpr bool IsAscii(signed char aChar) {
+inline constexpr bool IsAscii(signed char aChar) {
   return IsAscii(static_cast<unsigned char>(aChar));
 }
 
 
-constexpr bool IsAscii(char aChar) {
+inline constexpr bool IsAscii(char aChar) {
   return IsAscii(static_cast<unsigned char>(aChar));
 }
 
 
-constexpr bool IsAscii(char16_t aChar) { return aChar < 0x80; }
+inline constexpr bool IsAscii(char16_t aChar) { return aChar < 0x80; }
 
 
-constexpr bool IsAscii(char32_t aChar) { return aChar < 0x80; }
+inline constexpr bool IsAscii(char32_t aChar) { return aChar < 0x80; }
 
 
 
