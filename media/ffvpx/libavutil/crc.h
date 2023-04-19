@@ -30,7 +30,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "attributes.h"
-#include "version.h"
 
 
 

@@ -23,9 +23,13 @@
 
 #include "packet.h"
 
-typedef struct PacketList {
+typedef struct PacketListEntry {
+    struct PacketListEntry *next;
     AVPacket pkt;
-    struct PacketList *next;
+} PacketListEntry;
+
+typedef struct PacketList {
+    PacketListEntry *head, *tail;
 } PacketList;
 
 
@@ -40,9 +44,7 @@ typedef struct PacketList {
 
 
 
-
-int avpriv_packet_list_put(PacketList **head, PacketList **tail,
-                           AVPacket *pkt,
+int avpriv_packet_list_put(PacketList *list, AVPacket *pkt,
                            int (*copy)(AVPacket *dst, const AVPacket *src),
                            int flags);
 
@@ -57,17 +59,12 @@ int avpriv_packet_list_put(PacketList **head, PacketList **tail,
 
 
 
-
-int avpriv_packet_list_get(PacketList **head, PacketList **tail,
-                           AVPacket *pkt);
+int avpriv_packet_list_get(PacketList *list, AVPacket *pkt);
 
 
 
 
-
-
-
-void avpriv_packet_list_free(PacketList **head, PacketList **tail);
+void avpriv_packet_list_free(PacketList *list);
 
 int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, int error_count, int pict_type);
 

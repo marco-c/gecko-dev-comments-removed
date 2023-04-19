@@ -30,6 +30,7 @@
 
 #include "avutil.h"
 #include "buffer.h"
+#include "channel_layout.h"
 #include "dict.h"
 #include "rational.h"
 #include "samplefmt.h"
@@ -142,23 +143,6 @@ enum AVFrameSideDataType {
 
     AV_FRAME_DATA_ICC_PROFILE,
 
-#if FF_API_FRAME_QP
-    
-
-
-
-
-
-    AV_FRAME_DATA_QP_TABLE_PROPERTIES,
-
-    
-
-
-
-
-    AV_FRAME_DATA_QP_TABLE_DATA,
-#endif
-
     
 
 
@@ -198,6 +182,33 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_FILM_GRAIN_PARAMS,
+
+    
+
+
+
+    AV_FRAME_DATA_DETECTION_BBOXES,
+
+    
+
+
+
+
+    AV_FRAME_DATA_DOVI_RPU_BUFFER,
+
+    
+
+
+
+
+    AV_FRAME_DATA_DOVI_METADATA,
+
+    
+
+
+
+
+    AV_FRAME_DATA_DYNAMIC_HDR_VIVID,
 };
 
 enum AVActiveFormatDescription {
@@ -220,11 +231,7 @@ enum AVActiveFormatDescription {
 typedef struct AVFrameSideData {
     enum AVFrameSideDataType type;
     uint8_t *data;
-#if FF_API_BUFFER_SIZE_T
-    int      size;
-#else
     size_t   size;
-#endif
     AVDictionary *metadata;
     AVBufferRef *buf;
 } AVFrameSideData;
@@ -329,9 +336,23 @@ typedef struct AVFrame {
 
 
 
+
+
+
+
+
+
+
     uint8_t *data[AV_NUM_DATA_POINTERS];
 
     
+
+
+
+
+
+
+
 
 
 
@@ -410,21 +431,20 @@ typedef struct AVFrame {
 
     int64_t pts;
 
-#if FF_API_PKT_PTS
-    
-
-
-
-    attribute_deprecated
-    int64_t pkt_pts;
-#endif
-
     
 
 
 
 
     int64_t pkt_dts;
+
+    
+
+
+
+
+
+    AVRational time_base;
 
     
 
@@ -444,14 +464,6 @@ typedef struct AVFrame {
 
 
     void *opaque;
-
-#if FF_API_ERROR_FRAME
-    
-
-
-    attribute_deprecated
-    uint64_t error[AV_NUM_DATA_POINTERS];
-#endif
 
     
 
@@ -489,10 +501,14 @@ typedef struct AVFrame {
 
     int sample_rate;
 
+#if FF_API_OLD_CHANNEL_LAYOUT
     
 
 
+
+    attribute_deprecated
     uint64_t channel_layout;
+#endif
 
     
 
@@ -616,12 +632,16 @@ typedef struct AVFrame {
 #define FF_DECODE_ERROR_CONCEALMENT_ACTIVE  4
 #define FF_DECODE_ERROR_DECODE_SLICES       8
 
+#if FF_API_OLD_CHANNEL_LAYOUT
     
 
 
 
 
+
+    attribute_deprecated
     int channels;
+#endif
 
     
 
@@ -632,24 +652,6 @@ typedef struct AVFrame {
 
     int pkt_size;
 
-#if FF_API_FRAME_QP
-    
-
-
-    attribute_deprecated
-    int8_t *qscale_table;
-    
-
-
-    attribute_deprecated
-    int qstride;
-
-    attribute_deprecated
-    int qscale_type;
-
-    attribute_deprecated
-    AVBufferRef *qp_table_buf;
-#endif
     
 
 
@@ -695,71 +697,23 @@ typedef struct AVFrame {
 
 
     AVBufferRef *private_ref;
+
+    
+
+
+    AVChannelLayout ch_layout;
 } AVFrame;
 
-#if FF_API_FRAME_GET_SET
 
-
-
-
-attribute_deprecated
-int64_t av_frame_get_best_effort_timestamp(const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_best_effort_timestamp(AVFrame *frame, int64_t val);
-attribute_deprecated
-int64_t av_frame_get_pkt_duration         (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_pkt_duration         (AVFrame *frame, int64_t val);
-attribute_deprecated
-int64_t av_frame_get_pkt_pos              (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_pkt_pos              (AVFrame *frame, int64_t val);
-attribute_deprecated
-int64_t av_frame_get_channel_layout       (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_channel_layout       (AVFrame *frame, int64_t val);
-attribute_deprecated
-int     av_frame_get_channels             (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_channels             (AVFrame *frame, int     val);
-attribute_deprecated
-int     av_frame_get_sample_rate          (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_sample_rate          (AVFrame *frame, int     val);
-attribute_deprecated
-AVDictionary *av_frame_get_metadata       (const AVFrame *frame);
-attribute_deprecated
-void          av_frame_set_metadata       (AVFrame *frame, AVDictionary *val);
-attribute_deprecated
-int     av_frame_get_decode_error_flags   (const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_decode_error_flags   (AVFrame *frame, int     val);
-attribute_deprecated
-int     av_frame_get_pkt_size(const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_pkt_size(AVFrame *frame, int val);
-#if FF_API_FRAME_QP
-attribute_deprecated
-int8_t *av_frame_get_qp_table(AVFrame *f, int *stride, int *type);
-attribute_deprecated
-int av_frame_set_qp_table(AVFrame *f, AVBufferRef *buf, int stride, int type);
-#endif
-attribute_deprecated
-enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_colorspace(AVFrame *frame, enum AVColorSpace val);
-attribute_deprecated
-enum AVColorRange av_frame_get_color_range(const AVFrame *frame);
-attribute_deprecated
-void    av_frame_set_color_range(AVFrame *frame, enum AVColorRange val);
-#endif
+#if FF_API_COLORSPACE_NAME
 
 
 
 
 
+attribute_deprecated
 const char *av_get_colorspace_name(enum AVColorSpace val);
-
+#endif
 
 
 
@@ -917,11 +871,7 @@ AVBufferRef *av_frame_get_plane_buffer(AVFrame *frame, int plane);
 
 AVFrameSideData *av_frame_new_side_data(AVFrame *frame,
                                         enum AVFrameSideDataType type,
-#if FF_API_BUFFER_SIZE_T
-                                        int size);
-#else
                                         size_t size);
-#endif
 
 
 
@@ -994,4 +944,4 @@ const char *av_frame_side_data_name(enum AVFrameSideDataType type);
 
 
 
-#endif
+#endif 

@@ -131,7 +131,7 @@ int ff_flac_get_max_frame_size(int blocksize, int ch, int bps);
 int ff_flac_decode_frame_header(AVCodecContext *avctx, GetBitContext *gb,
                                 FLACFrameInfo *fi, int log_level_offset);
 
-void ff_flac_set_channel_layout(AVCodecContext *avctx);
+void ff_flac_set_channel_layout(AVCodecContext *avctx, int channels);
 
 
 
@@ -152,4 +152,4 @@ static av_always_inline void flac_parse_block_header(const uint8_t *block_header
         *size = bytestream_get_be24(&block_header);
 }
 
-#endif 
+#endif

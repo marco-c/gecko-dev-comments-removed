@@ -28,8 +28,9 @@
 #include "libavutil/buffer.h"
 #include "libavutil/dict.h"
 #include "libavutil/rational.h"
+#include "libavutil/version.h"
 
-#include "libavcodec/version.h"
+#include "libavcodec/version_major.h"
 
 
 
@@ -296,6 +297,14 @@ enum AVPacketSideDataType {
 
 
 
+    AV_PKT_DATA_DYNAMIC_HDR10_PLUS,
+
+    
+
+
+
+
+
 
 
     AV_PKT_DATA_NB
@@ -305,11 +314,7 @@ enum AVPacketSideDataType {
 
 typedef struct AVPacketSideData {
     uint8_t *data;
-#if FF_API_BUFFER_SIZE_T
-    int      size;
-#else
     size_t   size;
-#endif
     enum AVPacketSideDataType type;
 } AVPacketSideData;
 
@@ -388,15 +393,29 @@ typedef struct AVPacket {
 
     int64_t pos;                            
 
-#if FF_API_CONVERGENCE_DURATION
+    
+
+
+    void *opaque;
+
     
 
 
 
 
-    attribute_deprecated
-    int64_t convergence_duration;
-#endif
+
+
+
+
+    AVBufferRef *opaque_ref;
+
+    
+
+
+
+
+
+    AVRational time_base;
 } AVPacket;
 
 #if FF_API_INIT_PACKET
@@ -429,8 +448,13 @@ typedef struct AVPacketList {
 #define AV_PKT_FLAG_DISPOSABLE 0x0010
 
 enum AVSideDataParamChangeFlags {
+#if FF_API_OLD_CHANNEL_LAYOUT
+    
+
+
     AV_SIDE_DATA_PARAM_CHANGE_CHANNEL_COUNT  = 0x0001,
     AV_SIDE_DATA_PARAM_CHANGE_CHANNEL_LAYOUT = 0x0002,
+#endif
     AV_SIDE_DATA_PARAM_CHANGE_SAMPLE_RATE    = 0x0004,
     AV_SIDE_DATA_PARAM_CHANGE_DIMENSIONS     = 0x0008,
 };
@@ -529,45 +553,6 @@ int av_grow_packet(AVPacket *pkt, int grow_by);
 
 int av_packet_from_data(AVPacket *pkt, uint8_t *data, int size);
 
-#if FF_API_AVPACKET_OLD_API
-
-
-
-
-
-
-attribute_deprecated
-int av_dup_packet(AVPacket *pkt);
-
-
-
-
-
-
-
-attribute_deprecated
-int av_copy_packet(AVPacket *dst, const AVPacket *src);
-
-
-
-
-
-
-
-
-attribute_deprecated
-int av_copy_packet_side_data(AVPacket *dst, const AVPacket *src);
-
-
-
-
-
-
-
-
-attribute_deprecated
-void av_free_packet(AVPacket *pkt);
-#endif
 
 
 
@@ -577,11 +562,7 @@ void av_free_packet(AVPacket *pkt);
 
 
 uint8_t* av_packet_new_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
-#if FF_API_BUFFER_SIZE_T
-                                 int size);
-#else
                                  size_t size);
-#endif
 
 
 
@@ -608,11 +589,7 @@ int av_packet_add_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
 
 
 int av_packet_shrink_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
-#if FF_API_BUFFER_SIZE_T
-                               int size);
-#else
                                size_t size);
-#endif
 
 
 
@@ -624,19 +601,7 @@ int av_packet_shrink_side_data(AVPacket *pkt, enum AVPacketSideDataType type,
 
 
 uint8_t* av_packet_get_side_data(const AVPacket *pkt, enum AVPacketSideDataType type,
-#if FF_API_BUFFER_SIZE_T
-                                 int *size);
-#else
                                  size_t *size);
-#endif
-
-#if FF_API_MERGE_SD_API
-attribute_deprecated
-int av_packet_merge_side_data(AVPacket *pkt);
-
-attribute_deprecated
-int av_packet_split_side_data(AVPacket *pkt);
-#endif
 
 const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
@@ -647,11 +612,7 @@ const char *av_packet_side_data_name(enum AVPacketSideDataType type);
 
 
 
-#if FF_API_BUFFER_SIZE_T
-uint8_t *av_packet_pack_dictionary(AVDictionary *dict, int *size);
-#else
 uint8_t *av_packet_pack_dictionary(AVDictionary *dict, size_t *size);
-#endif
 
 
 
@@ -660,12 +621,8 @@ uint8_t *av_packet_pack_dictionary(AVDictionary *dict, size_t *size);
 
 
 
-#if FF_API_BUFFER_SIZE_T
-int av_packet_unpack_dictionary(const uint8_t *data, int size, AVDictionary **dict);
-#else
 int av_packet_unpack_dictionary(const uint8_t *data, size_t size,
                                 AVDictionary **dict);
-#endif
 
 
 
@@ -771,4 +728,4 @@ void av_packet_rescale_ts(AVPacket *pkt, AVRational tb_src, AVRational tb_dst);
 
 
 
-#endif
+#endif 
