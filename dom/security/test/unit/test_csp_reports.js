@@ -117,22 +117,31 @@ function run_test() {
   );
 
   
-  makeTest(0, { "blocked-uri": "inline" }, false, function(csp) {
-    let inlineOK = true;
-    inlineOK = csp.getAllowsInline(
-      Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
-      "", 
-      false, 
-      null, 
-      null, 
-      "", 
-      0, 
-      0
-    ); 
+  makeTest(
+    0,
+    {
+      "blocked-uri": "inline",
+      "effective-directive": "script-src-elem",
+      disposition: "enforce",
+    },
+    false,
+    function(csp) {
+      let inlineOK = true;
+      inlineOK = csp.getAllowsInline(
+        Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
+        "", 
+        false, 
+        null, 
+        null, 
+        "", 
+        0, 
+        0
+      ); 
 
-    
-    Assert.ok(!inlineOK);
-  });
+      
+      Assert.ok(!inlineOK);
+    }
+  );
 
   
   makeTest(
@@ -189,22 +198,27 @@ function run_test() {
   });
 
   
-  makeTest(3, { "blocked-uri": "inline" }, true, function(csp) {
-    let inlineOK = true;
-    inlineOK = csp.getAllowsInline(
-      Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
-      "", 
-      false, 
-      null, 
-      null, 
-      "", 
-      0, 
-      0
-    ); 
+  makeTest(
+    3,
+    { "blocked-uri": "inline", disposition: "report" },
+    true,
+    function(csp) {
+      let inlineOK = true;
+      inlineOK = csp.getAllowsInline(
+        Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
+        "", 
+        false, 
+        null, 
+        null, 
+        "", 
+        0, 
+        0
+      ); 
 
-    
-    Assert.ok(inlineOK);
-  });
+      
+      Assert.ok(inlineOK);
+    }
+  );
 
   
   makeTest(4, { "blocked-uri": "inline" }, true, function(csp) {
