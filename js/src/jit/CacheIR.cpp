@@ -6149,15 +6149,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachToObject(
-    InlinableNative native) {
+AttachDecision InlinableNativeIRGenerator::tryAttachToObject() {
   
-  MOZ_ASSERT_IF(native == InlinableNative::IntrinsicToObject, argc_ == 1);
+  MOZ_ASSERT(argc_ == 1);
 
   
   
-  
-  if (argc_ != 1 || !args_[0].isObject()) {
+  if (!args_[0].isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -6165,10 +6163,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToObject(
   initializeInputOperand();
 
   
-  
-  if (native == InlinableNative::Object) {
-    emitNativeCalleeGuard();
-  }
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -6178,12 +6172,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToObject(
   writer.loadObjectResult(objId);
   writer.returnFromIC();
 
-  if (native == InlinableNative::IntrinsicToObject) {
-    trackAttached("ToObject");
-  } else {
-    MOZ_ASSERT(native == InlinableNative::Object);
-    trackAttached("Object");
-  }
+  trackAttached("ToObject");
   return AttachDecision::Attach;
 }
 
@@ -9220,25 +9209,28 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
 
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   
-  if (argc_ != 0) {
+  
+  if (argc_ > 1) {
+    return AttachDecision::NoAction;
+  }
+  if (argc_ == 1 && !args_[0].isObject()) {
     return AttachDecision::NoAction;
   }
 
-  
-  if (cx_->realm()->hasAllocationMetadataBuilder()) {
-    return AttachDecision::NoAction;
-  }
+  PlainObject* templateObj = nullptr;
+  if (argc_ == 0) {
+    
+    if (cx_->realm()->hasAllocationMetadataBuilder()) {
+      return AttachDecision::NoAction;
+    }
 
-  
-  auto* templateObj = NewPlainObjectWithAllocKind(cx_, NewObjectGCKind());
-  if (!templateObj) {
-    cx_->recoverFromOutOfMemory();
-    return AttachDecision::NoAction;
+    
+    templateObj = NewPlainObjectWithAllocKind(cx_, NewObjectGCKind());
+    if (!templateObj) {
+      cx_->recoverFromOutOfMemory();
+      return AttachDecision::NoAction;
+    }
   }
-
-  
-  gc::AllocSite* site = script()->zone()->unknownAllocSite();
-  MOZ_ASSERT(site);
 
   
   initializeInputOperand();
@@ -9247,15 +9239,36 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   
   emitNativeCalleeGuard();
 
-  uint32_t numFixedSlots = templateObj->numUsedFixedSlots();
-  uint32_t numDynamicSlots = templateObj->numDynamicSlots();
-  gc::AllocKind allocKind = templateObj->allocKindForTenure();
-  Shape* shape = templateObj->shape();
+  if (argc_ == 0) {
+    
+    gc::AllocSite* site = script()->zone()->unknownAllocSite();
+    MOZ_ASSERT(site);
 
-  writer.guardNoAllocationMetadataBuilder(
-      cx_->realm()->addressOfMetadataBuilder());
-  writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind, shape,
-                              site);
+    uint32_t numFixedSlots = templateObj->numUsedFixedSlots();
+    uint32_t numDynamicSlots = templateObj->numDynamicSlots();
+    gc::AllocKind allocKind = templateObj->allocKindForTenure();
+    Shape* shape = templateObj->shape();
+
+    writer.guardNoAllocationMetadataBuilder(
+        cx_->realm()->addressOfMetadataBuilder());
+    writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind,
+                                shape, site);
+  } else {
+    
+    
+    CallFlags flags = flags_;
+    if (flags.getArgFormat() == CallFlags::FunCall) {
+      flags = CallFlags(CallFlags::Standard);
+    }
+
+    
+    ValOperandId argId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_, flags);
+    ObjOperandId objId = writer.guardToObject(argId);
+
+    
+    writer.loadObjectResult(objId);
+  }
 
   writer.returnFromIC();
 
@@ -9814,7 +9827,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     case InlinableNative::IntrinsicIsSuspendedGenerator:
       return tryAttachIsSuspendedGenerator();
     case InlinableNative::IntrinsicToObject:
-      return tryAttachToObject(native);
+      return tryAttachToObject();
     case InlinableNative::IntrinsicToInteger:
       return tryAttachToInteger();
     case InlinableNative::IntrinsicToLength:
@@ -9986,7 +9999,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 
     
     case InlinableNative::Object:
-      return tryAttachToObject(native);
+      return tryAttachObjectConstructor();
     case InlinableNative::ObjectCreate:
       return tryAttachObjectCreate();
     case InlinableNative::ObjectIs:
