@@ -34,7 +34,7 @@ function summarize(symbol) {
 
   return `${loc} ${expression} ${name}${params} ${klass} ${names} ${values} ${index}`.trim(); 
 }
-const bools = ["hasJsx", "hasTypes", "loading"];
+const bools = ["hasJsx", "hasTypes"];
 const strings = ["framework"];
 function formatBool(name, symbols) {
   return `${name}: ${symbols[name] ? "true" : "false"}`;
