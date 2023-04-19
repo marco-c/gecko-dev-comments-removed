@@ -189,9 +189,6 @@ bool wasm::ToIndexType(JSContext* cx, HandleValue value, IndexType* indexType) {
 
 
 
-
-
-
 static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
 
 
@@ -246,27 +243,12 @@ static_assert(MaxInlineMemoryCopyLength < MinOffsetGuardLimit, "precondition");
 static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
 
 #ifdef JS_64BIT
-#  ifdef ENABLE_WASM_CRANELIFT
-
-
-
-
-
-
-
-wasm::Pages wasm::MaxMemoryPages(IndexType) {
-  size_t desired = MaxMemory32LimitField - 2;
-  size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
-  return wasm::Pages(std::min(desired, actual));
-}
-#  else
 wasm::Pages wasm::MaxMemoryPages(IndexType t) {
   MOZ_ASSERT_IF(t == IndexType::I64, !IsHugeMemoryEnabled(t));
   size_t desired = MaxMemoryLimitField(t);
   size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
   return wasm::Pages(std::min(desired, actual));
 }
-#  endif
 
 size_t wasm::MaxMemoryBoundsCheckLimit(IndexType t) {
   return MaxMemoryPages(t).byteLength();
@@ -334,16 +316,6 @@ Pages wasm::ClampedMaxPages(IndexType t, Pages initialPages,
     
     
     clampedMaxPages = std::min(*sourceMaxPages, wasm::MaxMemoryPages(t));
-
-#if defined(JS_64BIT) && defined(ENABLE_WASM_CRANELIFT)
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(!useHugeMemory,
-                  clampedMaxPages.byteLength() + wasm::PageSize < UINT32_MAX);
-#endif
 
 #ifndef JS_64BIT
     static_assert(sizeof(uintptr_t) == 4, "assuming not 64 bit implies 32 bit");

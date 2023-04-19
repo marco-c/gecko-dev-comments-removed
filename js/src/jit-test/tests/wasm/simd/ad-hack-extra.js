@@ -19,8 +19,6 @@ load(scriptdir + "ad-hack-preamble.js")
 
 
 
-
-
 function makeExtMulTest(wide, narrow, part, signed) {
     let widener = (wide == 'i64x2') ?
         `call $${wide}_extend_${part}_${narrow}_${signed}` :

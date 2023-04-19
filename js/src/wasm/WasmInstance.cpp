@@ -1385,7 +1385,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
   memoryBase_ =
       memory_ ? memory_->buffer().dataPointerEither().unwrap() : nullptr;
   size_t limit = memory_ ? memory_->boundsCheckLimit() : 0;
-#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
+#if !defined(JS_64BIT)
   
   MOZ_ASSERT(limit <= UINT32_MAX);
 #endif
@@ -1756,13 +1756,6 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
   
   
   
-  
-  
-  
-  
-  
-  
-
   
   
   
@@ -2302,7 +2295,7 @@ void Instance::onMovingGrowMemory() {
   ArrayBufferObject& buffer = memory_->buffer().as<ArrayBufferObject>();
   memoryBase_ = buffer.dataPointer();
   size_t limit = memory_->boundsCheckLimit();
-#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
+#if !defined(JS_64BIT)
   
   MOZ_ASSERT(limit <= UINT32_MAX);
 #endif

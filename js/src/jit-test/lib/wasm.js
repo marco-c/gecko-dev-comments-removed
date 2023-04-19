@@ -31,16 +31,10 @@ function canRunHugeMemoryTests() {
 
 
 
-
-
 var PageSizeInBytes = 65536;
 var MaxBytesIn32BitMemory = 0;
 if (largeArrayBufferEnabled()) {
-    if (wasmCompilersPresent().indexOf("cranelift") != -1) {
-        MaxBytesIn32BitMemory = 65534*PageSizeInBytes;
-    } else {
-        MaxBytesIn32BitMemory = 65536*PageSizeInBytes;
-    }
+    MaxBytesIn32BitMemory = 65536*PageSizeInBytes;
 } else {
     
     

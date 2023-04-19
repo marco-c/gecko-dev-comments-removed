@@ -15,7 +15,6 @@
 #include "vm/TypedArrayObject.h"
 
 #include "wasm/WasmCompile.h"
-#include "wasm/WasmCraneliftCompile.h"
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmTable.h"
@@ -183,30 +182,18 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
 
       
       
-      
       bool enableWasmBaseline = ((optByte & 0xF0) == (1 << 7));
-      bool enableWasmOptimizing = false;
-#ifdef ENABLE_WASM_CRANELIFT
-      
-      enableWasmOptimizing =
-          CraneliftPlatformSupport() && ((optByte & 0xF0) == (1 << 5));
-#else
-      enableWasmOptimizing =
+      bool enableWasmOptimizing =
           IonPlatformSupport() && ((optByte & 0xF0) == (1 << 6));
-#endif
-      bool enableWasmAwaitTier2 = (IonPlatformSupport()
-#ifdef ENABLE_WASM_CRANELIFT
-                                   || CraneliftPlatformSupport()
-#endif
-                                       ) &&
-                                  ((optByte & 0xF) == (1 << 3));
+      bool enableWasmAwaitTier2 =
+          (IonPlatformSupport()) && ((optByte & 0xF) == (1 << 3));
 
       if (!enableWasmBaseline && !enableWasmOptimizing) {
         
         
         
         
-        if (IonPlatformSupport() || CraneliftPlatformSupport()) {
+        if (IonPlatformSupport()) {
           enableWasmOptimizing = true;
         } else {
           enableWasmBaseline = true;
@@ -224,13 +211,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
 
       JS::ContextOptionsRef(gCx)
           .setWasmBaseline(enableWasmBaseline)
-#ifdef ENABLE_WASM_CRANELIFT
-          .setWasmCranelift(enableWasmOptimizing)
-          .setWasmIon(false)
-#else
-          .setWasmCranelift(false)
           .setWasmIon(enableWasmOptimizing)
-#endif
           .setTestWasmAwaitTier2(enableWasmAwaitTier2);
     }
 

@@ -57,7 +57,6 @@
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCompile.h"
-#include "wasm/WasmCraneliftCompile.h"
 #include "wasm/WasmDebug.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmIntrinsic.h"
@@ -103,12 +102,7 @@ using mozilla::Span;
 
 static inline bool IsFuzzingIon(JSContext* cx) {
   return IsFuzzing() && !cx->options().wasmBaseline() &&
-         cx->options().wasmIon() && !cx->options().wasmCranelift();
-}
-
-static inline bool IsFuzzingCranelift(JSContext* cx) {
-  return IsFuzzing() && !cx->options().wasmBaseline() &&
-         !cx->options().wasmIon() && cx->options().wasmCranelift();
+         cx->options().wasmIon();
 }
 
 
@@ -128,36 +122,11 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE, WASM_FEATURE);
 #undef WASM_FEATURE
 
 static inline bool WasmDebuggerActive(JSContext* cx) {
-  if (IsFuzzingIon(cx) || IsFuzzingCranelift(cx)) {
+  if (IsFuzzingIon(cx)) {
     return false;
   }
   return cx->realm() && cx->realm()->debuggerObservesWasm();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -247,11 +216,10 @@ bool wasm::IonAvailable(JSContext* cx) {
   }
   bool isDisabled = false;
   MOZ_ALWAYS_TRUE(IonDisabledByFeatures(cx, &isDisabled));
-  return !isDisabled && !CraneliftAvailable(cx);
+  return !isDisabled;
 }
 
 bool wasm::WasmCompilerForAsmJSAvailable(JSContext* cx) {
-  
   return IonAvailable(cx);
 }
 
@@ -301,59 +269,8 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
   return true;
 }
 
-bool wasm::CraneliftAvailable(JSContext* cx) {
-  if (!cx->options().wasmCranelift() || !CraneliftPlatformSupport()) {
-    return false;
-  }
-  bool isDisabled = false;
-  MOZ_ALWAYS_TRUE(CraneliftDisabledByFeatures(cx, &isDisabled));
-  return !isDisabled;
-}
-
-bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
-                                       JSStringBuilder* reason) {
-  
-  
-  bool debug = WasmDebuggerActive(cx);
-  bool testSerialization = WasmTestSerializationFlag(cx);
-  bool functionReferences = WasmFunctionReferencesFlag(cx);
-  bool gc = WasmGcFlag(cx);
-  
-#if !defined(ENABLE_WASM_SIMD) || defined(JS_CODEGEN_ARM64)
-  bool simdOnNonAarch64 = false;
-#else
-  bool simdOnNonAarch64 = true;
-#endif
-  bool exn = WasmExceptionsFlag(cx);
-  if (reason) {
-    char sep = 0;
-    if (debug && !Append(reason, "debug", &sep)) {
-      return false;
-    }
-    if (testSerialization && !Append(reason, "testSerialization", &sep)) {
-      return false;
-    }
-    if (functionReferences && !Append(reason, "function-references", &sep)) {
-      return false;
-    }
-    if (gc && !Append(reason, "gc", &sep)) {
-      return false;
-    }
-    if (simdOnNonAarch64 && !Append(reason, "simd", &sep)) {
-      return false;
-    }
-    if (exn && !Append(reason, "exceptions", &sep)) {
-      return false;
-    }
-  }
-  *isDisabled = debug || testSerialization || functionReferences || gc ||
-                simdOnNonAarch64 || exn;
-  return true;
-}
-
 bool wasm::AnyCompilerAvailable(JSContext* cx) {
-  return wasm::BaselineAvailable(cx) || wasm::IonAvailable(cx) ||
-         wasm::CraneliftAvailable(cx);
+  return wasm::BaselineAvailable(cx) || wasm::IonAvailable(cx);
 }
 
 
@@ -422,8 +339,7 @@ bool wasm::HasPlatformSupport(JSContext* cx) {
 
   
   
-  return BaselinePlatformSupport() || IonPlatformSupport() ||
-         CraneliftPlatformSupport();
+  return BaselinePlatformSupport() || IonPlatformSupport();
 #endif
 }
 
@@ -2852,7 +2768,7 @@ size_t WasmMemoryObject::boundsCheckLimit() const {
     return buffer().byteLength();
   }
   size_t mappedSize = buffer().wasmMappedSize();
-#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
+#if !defined(JS_64BIT)
   
   
   
@@ -2914,8 +2830,7 @@ uint64_t WasmMemoryObject::grow(Handle<WasmMemoryObject*> memory,
 
   RootedArrayBufferObject oldBuf(cx, &memory->buffer().as<ArrayBufferObject>());
 
-#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
-  
+#if !defined(JS_64BIT)
   
   
   MOZ_ASSERT(MaxMemoryBytes(memory->indexType()) <= UINT32_MAX,
