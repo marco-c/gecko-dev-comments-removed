@@ -21,6 +21,7 @@ const kDumpAllStacks = false;
 const known_scripts = {
   modules: new Set([
     "chrome://mochikit/content/ShutdownLeaksCollector.jsm",
+    "resource:///modules/StartupRecorder.jsm",
 
     
     "resource://gre/modules/AppConstants.jsm",
