@@ -938,17 +938,6 @@ class _UnionMember(_CompoundTypeComponent):
         """Return an expression of type self.ptrToSelfType()"""
         return ExprCall(ExprVar(self.getPtrName()))
 
-    def callOperatorEq(self, rhs):
-        if self.ipdltype.isIPDL() and self.ipdltype.isActor():
-            rhs = ExprCast(rhs, self.bareType(), const=True)
-        elif (
-            self.ipdltype.isIPDL()
-            and self.ipdltype.isArray()
-            and not isinstance(rhs, ExprMove)
-        ):
-            rhs = ExprCall(ExprSelect(rhs, ".", "Clone"), args=[])
-        return ExprAssn(ExprDeref(self.callGetPtr()), rhs)
-
     def callCtor(self, expr=None):
         assert not isinstance(expr, list)
 
@@ -2823,16 +2812,8 @@ def _generateCxxUnion(ud):
             args.append(expectTypeVar)
         return ExprCall(func, args=args)
 
-    def callMaybeDestroy(newTypeVar):
-        return ExprCall(maybedtorvar, args=[newTypeVar])
-
-    def maybeReconstruct(memb, newTypeVar):
-        ifdied = StmtIf(callMaybeDestroy(newTypeVar))
-        ifdied.addifstmt(StmtExpr(memb.callCtor()))
-        return ifdied
-
-    def voidCast(expr):
-        return ExprCast(expr, Type.VOID, static=True)
+    def maybeDestroy():
+        return StmtExpr(ExprCall(maybedtorvar))
 
     
     gettypedeps = _ComputeTypeDeps(ud.decl.type)
@@ -2897,18 +2878,10 @@ def _generateCxxUnion(ud):
     
     
     
-    newtypevar = ExprVar("aNewType")
-    maybedtor = MethodDefn(
-        MethodDecl(
-            maybedtorvar.name, params=[Decl(typetype, newtypevar.name)], ret=Type.BOOL
-        )
-    )
+    maybedtor = MethodDefn(MethodDecl(maybedtorvar.name, ret=Type.VOID))
     
     ifnone = StmtIf(ExprBinary(mtypevar, "==", tnonevar))
-    ifnone.addifstmt(StmtReturn.TRUE)
-    
-    ifnochange = StmtIf(ExprBinary(mtypevar, "==", newtypevar))
-    ifnochange.addifstmt(StmtReturn.FALSE)
+    ifnone.addifstmt(StmtReturn())
     
     dtorswitch = StmtSwitch(mtypevar)
     for c in ud.components:
@@ -2918,7 +2891,7 @@ def _generateCxxUnion(ud):
     dtorswitch.addcase(
         DefaultLabel(), StmtBlock([_logicError("not reached"), StmtBreak()])
     )
-    maybedtor.addstmts([ifnone, ifnochange, dtorswitch, StmtReturn.TRUE])
+    maybedtor.addstmts([ifnone, dtorswitch])
     cls.addstmts([maybedtor, Whitespace.NL])
 
     
@@ -3068,13 +3041,7 @@ def _generateCxxUnion(ud):
                         )
                     ),
                     
-                    StmtExpr(
-                        voidCast(
-                            ExprCall(
-                                ExprSelect(othervar, ".", maybedtorvar), args=[tnonevar]
-                            )
-                        )
-                    ),
+                    StmtExpr(ExprCall(ExprSelect(othervar, ".", maybedtorvar))),
                 ]
             )
         case.addstmts([StmtBreak()])
@@ -3096,9 +3063,7 @@ def _generateCxxUnion(ud):
 
     
     dtor = DestructorDefn(DestructorDecl(ud.name))
-    
-    
-    dtor.addstmt(StmtExpr(voidCast(callMaybeDestroy(tnonevar))))
+    dtor.addstmt(maybeDestroy())
     cls.addstmts([dtor, Whitespace.NL])
 
     
@@ -3123,8 +3088,8 @@ def _generateCxxUnion(ud):
             opeq.addstmts(
                 [
                     
-                    maybeReconstruct(c, c.enumvar()),
-                    StmtExpr(c.callOperatorEq(rhsvar)),
+                    maybeDestroy(),
+                    StmtExpr(c.callCtor(rhsvar)),
                     StmtExpr(ExprAssn(mtypevar, c.enumvar())),
                     StmtReturn(ExprDeref(ExprVar.THIS)),
                 ]
@@ -3145,8 +3110,8 @@ def _generateCxxUnion(ud):
         opeq.addstmts(
             [
                 
-                maybeReconstruct(c, c.enumvar()),
-                StmtExpr(c.callOperatorEq(ExprMove(rhsvar))),
+                maybeDestroy(),
+                StmtExpr(c.callCtor(ExprMove(rhsvar))),
                 StmtExpr(ExprAssn(mtypevar, c.enumvar())),
                 StmtReturn(ExprDeref(ExprVar.THIS)),
             ]
@@ -3166,9 +3131,9 @@ def _generateCxxUnion(ud):
             case = StmtBlock()
             case.addstmts(
                 [
-                    maybeReconstruct(c, rhstypevar),
+                    maybeDestroy(),
                     StmtExpr(
-                        c.callOperatorEq(
+                        c.callCtor(
                             ExprCall(ExprSelect(rhsvar, ".", c.getConstTypeName()))
                         )
                     ),
@@ -3178,16 +3143,7 @@ def _generateCxxUnion(ud):
             opeqswitch.addcase(CaseLabel(c.enum()), case)
         opeqswitch.addcase(
             CaseLabel(tnonevar.name),
-            
-            
-            StmtBlock(
-                [
-                    StmtExpr(
-                        ExprCast(callMaybeDestroy(rhstypevar), Type.VOID, static=True)
-                    ),
-                    StmtBreak(),
-                ]
-            ),
+            StmtBlock([maybeDestroy(), StmtBreak()]),
         )
         opeqswitch.addcase(
             DefaultLabel(), StmtBlock([_logicError("unreached"), StmtBreak()])
@@ -3216,7 +3172,7 @@ def _generateCxxUnion(ud):
         if c.recursive:
             case.addstmts(
                 [
-                    StmtExpr(voidCast(callMaybeDestroy(tnonevar))),
+                    maybeDestroy(),
                     StmtExpr(
                         ExprAssn(
                             c.callGetPtr(),
@@ -3228,29 +3184,21 @@ def _generateCxxUnion(ud):
         else:
             case.addstmts(
                 [
-                    maybeReconstruct(c, rhstypevar),
+                    maybeDestroy(),
                     StmtExpr(
-                        c.callOperatorEq(
+                        c.callCtor(
                             ExprMove(ExprCall(ExprSelect(rhsvar, ".", c.getTypeName())))
                         )
                     ),
                     
-                    StmtExpr(
-                        voidCast(
-                            ExprCall(
-                                ExprSelect(rhsvar, ".", maybedtorvar), args=[tnonevar]
-                            )
-                        )
-                    ),
+                    StmtExpr(ExprCall(ExprSelect(rhsvar, ".", maybedtorvar))),
                 ]
             )
         case.addstmts([StmtBreak()])
         opeqswitch.addcase(CaseLabel(c.enum()), case)
     opeqswitch.addcase(
         CaseLabel(tnonevar.name),
-        
-        
-        StmtBlock([StmtExpr(voidCast(callMaybeDestroy(rhstypevar))), StmtBreak()]),
+        StmtBlock([maybeDestroy(), StmtBreak()]),
     )
     opeqswitch.addcase(
         DefaultLabel(), StmtBlock([_logicError("unreached"), StmtBreak()])
