@@ -352,7 +352,8 @@ VideoEncoder::EncoderInfo GetEncoderInfoWithBitrateLimitUpdate(
   
   VideoEncoder::EncoderInfo new_info = info;
   new_info.resolution_bitrate_limits =
-      EncoderInfoSettings::GetDefaultSinglecastBitrateLimits();
+      EncoderInfoSettings::GetDefaultSinglecastBitrateLimits(
+          encoder_config.codec_type);
   return new_info;
 }
 
