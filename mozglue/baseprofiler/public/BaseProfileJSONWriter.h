@@ -430,38 +430,45 @@ class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
   
   
   const ChunkedJSONWriteFunc& ChunkedWriteFunc() const {
-    MOZ_ASSERT(!mTaken);
-    
-    
-    return static_cast<const ChunkedJSONWriteFunc&>(WriteFunc());
+    return ChunkedWriteFuncRef();
   }
 
   
   
   ChunkedJSONWriteFunc&& TakeChunkedWriteFunc() {
+    ChunkedJSONWriteFunc& ref = ChunkedWriteFuncRef();
 #ifdef DEBUG
-    MOZ_ASSERT(!mTaken);
     mTaken = true;
 #endif  
-    
-    
-    return std::move(static_cast<ChunkedJSONWriteFunc&>(WriteFunc()));
+    return std::move(ref);
   }
 
   
   void TakeAndSplice(ChunkedJSONWriteFunc&& aFunc) override {
     MOZ_ASSERT(!mTaken);
     Separator();
-    
-    
-    static_cast<ChunkedJSONWriteFunc&>(WriteFunc()).Take(std::move(aFunc));
+    ChunkedWriteFuncRef().Take(std::move(aFunc));
     mNeedComma[mDepth] = true;
   }
 
-#ifdef DEBUG
  private:
+  const ChunkedJSONWriteFunc& ChunkedWriteFuncRef() const {
+    MOZ_ASSERT(!mTaken);
+    
+    
+    return static_cast<const ChunkedJSONWriteFunc&>(WriteFunc());
+  }
+
+  ChunkedJSONWriteFunc& ChunkedWriteFuncRef() {
+    MOZ_ASSERT(!mTaken);
+    
+    
+    return static_cast<ChunkedJSONWriteFunc&>(WriteFunc());
+  }
+
+#ifdef DEBUG
   bool mTaken = false;
-#endif  
+#endif
 };
 
 class JSONSchemaWriter {
