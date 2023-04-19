@@ -1265,6 +1265,12 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
   }
 
   
+  if (!aSVGImageElement.HasValidDimensions()) {
+    aRv.ThrowInvalidStateError("The SVG does not have valid dimensions");
+    return nullptr;
+  }
+
+  
   
   SurfaceFromElementResult res = nsLayoutUtils::SurfaceFromElement(
       &aSVGImageElement, nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE);
@@ -1279,8 +1285,6 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
     aRv.ThrowInvalidStateError("The SVG's surface acquisition failed");
     return nullptr;
   }
-  
-  
 
   if (!aInit.mTimestamp.WasPassed()) {
     aRv.ThrowTypeError("Missing timestamp");
