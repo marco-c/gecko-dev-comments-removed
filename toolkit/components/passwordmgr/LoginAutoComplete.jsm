@@ -550,7 +550,7 @@ class LoginAutoComplete {
       
       
       if (this.#autoCompleteLookupPromise !== autoCompleteLookupPromise) {
-        lazy.log.debug("Ignoring result from previous search.");
+        lazy.log.debug("ignoring result from previous search");
         return;
       }
 
