@@ -1028,7 +1028,7 @@ void HTMLImageElement::PictureSourceDimensionChanged(
   
   
   
-  if (mResponsiveSelector->Content() == aSourceNode) {
+  if (mResponsiveSelector && mResponsiveSelector->Content() == aSourceNode) {
     InvalidateAttributeMapping();
   }
 }
