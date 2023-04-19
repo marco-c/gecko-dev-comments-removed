@@ -1980,7 +1980,7 @@ nsDocumentViewer::SetBoundsWithFlags(const nsIntRect& aBounds,
     
     
     if (mPresContext->DeviceContext()->CheckDPIChange()) {
-      mPresContext->UIResolutionChanged();
+      mPresContext->UIResolutionChangedSync();
     }
 
     int32_t p2a = mPresContext->AppUnitsPerDevPixel();
