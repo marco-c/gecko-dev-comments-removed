@@ -429,6 +429,12 @@ impl Rng {
 
     
     #[inline]
+    pub fn get_seed(&self) -> u64 {
+        self.0.get()
+    }
+
+    
+    #[inline]
     pub fn shuffle<T>(&self, slice: &mut [T]) {
         for i in 1..slice.len() {
             slice.swap(i, self.usize(..=i));
@@ -583,6 +589,12 @@ impl Rng {
 #[inline]
 pub fn seed(seed: u64) {
     RNG.with(|rng| rng.seed(seed))
+}
+
+
+#[inline]
+pub fn get_seed() -> u64 {
+    RNG.with(|rng| rng.get_seed())
 }
 
 
