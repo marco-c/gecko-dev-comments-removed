@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -116,6 +117,49 @@ class DataTracker {
     
     kImmediate,
   };
+
+  
+  
+  
+  
+  class AdditionalTsnBlocks {
+   public:
+    
+    struct TsnRange {
+      TsnRange(UnwrappedTSN first, UnwrappedTSN last)
+          : first(first), last(last) {}
+      UnwrappedTSN first;
+      UnwrappedTSN last;
+    };
+
+    
+    
+    
+    
+    
+    
+    bool Add(UnwrappedTSN tsn);
+
+    
+    
+    
+    
+    void EraseTo(UnwrappedTSN tsn);
+
+    
+    void PopFront();
+
+    const std::vector<TsnRange>& blocks() const { return blocks_; }
+
+    bool empty() const { return blocks_.empty(); }
+
+    const TsnRange& front() const { return blocks_.front(); }
+
+   private:
+    
+    std::vector<TsnRange> blocks_;
+  };
+
   std::vector<SackChunk::GapAckBlock> CreateGapAckBlocks() const;
   void UpdateAckState(AckState new_state, absl::string_view reason);
   static absl::string_view ToString(AckState ack_state);
@@ -130,7 +174,7 @@ class DataTracker {
   
   UnwrappedTSN last_cumulative_acked_tsn_;
   
-  std::set<UnwrappedTSN> additional_tsns_;
+  AdditionalTsnBlocks additional_tsn_blocks_;
   std::set<TSN> duplicate_tsns_;
 };
 }  
