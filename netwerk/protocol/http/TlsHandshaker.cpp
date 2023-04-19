@@ -138,29 +138,22 @@ nsresult TlsHandshaker::InitSSLParams(bool connectingToProxy,
 nsresult TlsHandshaker::SetupNPNList(nsISSLSocketControl* ssl, uint32_t caps) {
   nsTArray<nsCString> protocolArray;
 
-  nsCString npnToken = mConnInfo->GetNPNToken();
-  if (npnToken.IsEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-    protocolArray.AppendElement("http/1.1"_ns);
+  
+  
+  
+  
+  
+  
+  
+  protocolArray.AppendElement("http/1.1"_ns);
 
-    if (StaticPrefs::network_http_http2_enabled() &&
-        !(caps & NS_HTTP_DISALLOW_SPDY)) {
-      LOG(("nsHttpConnection::SetupSSL Allow SPDY NPN selection"));
-      const SpdyInformation* info = gHttpHandler->SpdyInfo();
-      if (info->ALPNCallbacks(ssl)) {
-        protocolArray.AppendElement(info->VersionString);
-      }
+  if (StaticPrefs::network_http_http2_enabled() &&
+      !(caps & NS_HTTP_DISALLOW_SPDY)) {
+    LOG(("nsHttpConnection::SetupSSL Allow SPDY NPN selection"));
+    const SpdyInformation* info = gHttpHandler->SpdyInfo();
+    if (info->ALPNCallbacks(ssl)) {
+      protocolArray.AppendElement(info->VersionString);
     }
-  } else {
-    LOG(("nsHttpConnection::SetupSSL limiting NPN selection to %s",
-         npnToken.get()));
-    protocolArray.AppendElement(npnToken);
   }
 
   nsresult rv = ssl->SetNPNList(protocolArray);
