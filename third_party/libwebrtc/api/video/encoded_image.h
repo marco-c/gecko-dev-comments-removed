@@ -72,9 +72,8 @@ class RTC_EXPORT EncodedImage {
  public:
   EncodedImage();
   EncodedImage(EncodedImage&&);
-  
   EncodedImage(const EncodedImage&);
-  EncodedImage(uint8_t* buffer, size_t length, size_t capacity);
+  RTC_DEPRECATED EncodedImage(uint8_t* buffer, size_t length, size_t capacity);
 
   ~EncodedImage();
 
@@ -200,11 +199,11 @@ class RTC_EXPORT EncodedImage {
   
   
   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
-  size_t size_;  
+  size_t size_ = 0;  
   
-  uint8_t* buffer_;
+  uint8_t* buffer_ = nullptr;
   
-  size_t capacity_;
+  size_t capacity_ = 0;
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;
   std::map<int, size_t> spatial_layer_frame_size_bytes_;

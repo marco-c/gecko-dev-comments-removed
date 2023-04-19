@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/configurable_frame_size_encoder.h"
 
@@ -27,18 +27,14 @@ namespace test {
 ConfigurableFrameSizeEncoder::ConfigurableFrameSizeEncoder(
     size_t max_frame_size)
     : callback_(NULL),
-      max_frame_size_(max_frame_size),
       current_frame_size_(max_frame_size),
-      buffer_(new uint8_t[max_frame_size]),
-      codec_type_(kVideoCodecGeneric) {
-  memset(buffer_.get(), 0, max_frame_size);
-}
+      codec_type_(kVideoCodecGeneric) {}
 
 ConfigurableFrameSizeEncoder::~ConfigurableFrameSizeEncoder() {}
 
 void ConfigurableFrameSizeEncoder::SetFecControllerOverride(
     FecControllerOverride* fec_controller_override) {
-  // Ignored.
+  
 }
 
 int32_t ConfigurableFrameSizeEncoder::InitEncode(
@@ -50,8 +46,10 @@ int32_t ConfigurableFrameSizeEncoder::InitEncode(
 int32_t ConfigurableFrameSizeEncoder::Encode(
     const VideoFrame& inputImage,
     const std::vector<VideoFrameType>* frame_types) {
-  EncodedImage encodedImage(buffer_.get(), current_frame_size_,
-                            max_frame_size_);
+  EncodedImage encodedImage;
+  auto buffer = EncodedImageBuffer::Create(current_frame_size_);
+  memset(buffer->data(), 0, current_frame_size_);
+  encodedImage.SetEncodedData(buffer);
   encodedImage._completeFrame = true;
   encodedImage._encodedHeight = inputImage.height();
   encodedImage._encodedWidth = inputImage.width();
@@ -81,7 +79,6 @@ void ConfigurableFrameSizeEncoder::SetRates(
     const RateControlParameters& parameters) {}
 
 int32_t ConfigurableFrameSizeEncoder::SetFrameSize(size_t size) {
-  RTC_DCHECK_LE(size, max_frame_size_);
   current_frame_size_ = size;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -95,5 +92,5 @@ void ConfigurableFrameSizeEncoder::RegisterPostEncodeCallback(
   post_encode_callback_ = std::move(post_encode_callback);
 }
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  
