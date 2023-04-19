@@ -2525,6 +2525,8 @@ BrowserGlue.prototype = {
         condition:
           AppConstants.platform == "win" &&
           
+          lazy.PrivateBrowsingUtils.enabled &&
+          
           
           
           lazy.NimbusFeatures.majorRelease2022.getVariable(
