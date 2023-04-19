@@ -31,11 +31,11 @@ namespace wasm {
 
 
 struct V128 {
-  uint8_t bytes[16];  
+  uint8_t bytes[16] = {};  
 
   WASM_CHECK_CACHEABLE_POD(bytes);
 
-  V128() { memset(bytes, 0, sizeof(bytes)); }
+  V128() = default;
 
   explicit V128(uint8_t splatValue) {
     memset(bytes, int(splatValue), sizeof(bytes));
