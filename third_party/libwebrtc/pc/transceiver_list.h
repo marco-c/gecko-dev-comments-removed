@@ -21,9 +21,14 @@
 #include "absl/types/optional.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/sequence_checker.h"
 #include "pc/rtp_transceiver.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/system/no_unique_address.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -68,14 +73,36 @@ class TransceiverStableState {
   bool newly_created_ = false;
 };
 
+
+
+
+
 class TransceiverList {
  public:
-  std::vector<RtpTransceiverProxyRefPtr> List() const { return transceivers_; }
+  
+  
+  
+  std::vector<RtpTransceiverProxyRefPtr> List() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return transceivers_;
+  }
+  
+  
+  std::vector<RtpTransceiverProxyRefPtr> UnsafeList() const {
+    return transceivers_;
+  }
+
+  
+  
+  
+  std::vector<RtpTransceiver*> ListInternal() const;
 
   void Add(RtpTransceiverProxyRefPtr transceiver) {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     transceivers_.push_back(transceiver);
   }
   void Remove(RtpTransceiverProxyRefPtr transceiver) {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     transceivers_.erase(
         std::remove(transceivers_.begin(), transceivers_.end(), transceiver),
         transceivers_.end());
@@ -87,26 +114,33 @@ class TransceiverList {
 
   
   TransceiverStableState* StableState(RtpTransceiverProxyRefPtr transceiver) {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return &(transceiver_stable_states_by_transceivers_[transceiver]);
   }
 
   void DiscardStableStates() {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     transceiver_stable_states_by_transceivers_.clear();
   }
 
   std::map<RtpTransceiverProxyRefPtr, TransceiverStableState>& StableStates() {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return transceiver_stable_states_by_transceivers_;
   }
 
  private:
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
   std::vector<RtpTransceiverProxyRefPtr> transceivers_;
+  
+
   
   
   std::map<RtpTransceiverProxyRefPtr, TransceiverStableState>
-      transceiver_stable_states_by_transceivers_;
+      transceiver_stable_states_by_transceivers_
+          RTC_GUARDED_BY(sequence_checker_);
   
   std::map<RtpTransceiverProxyRefPtr, std::vector<std::string>>
-      remote_stream_ids_by_transceivers_;
+      remote_stream_ids_by_transceivers_ RTC_GUARDED_BY(sequence_checker_);
 };
 
 }  

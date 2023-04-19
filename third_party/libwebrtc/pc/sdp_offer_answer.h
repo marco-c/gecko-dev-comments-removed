@@ -13,7 +13,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
 #include <functional>
 #include <map>
 #include <memory>
@@ -176,15 +175,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   void UpdateNegotiationNeeded();
 
   
-  
-  
-  
-  const cricket::ContentInfo* FindMediaSectionForTransceiver(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-          transceiver,
-      const SessionDescriptionInterface* sdesc) const;
-
-  
   void DestroyAllChannels();
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams();
@@ -323,6 +313,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   
   
+  const cricket::ContentInfo* FindMediaSectionForTransceiver(
+      const RtpTransceiver* transceiver,
+      const SessionDescriptionInterface* sdesc) const;
+
+  
+  
+  
+  
   
   RTCErrorOr<const cricket::ContentGroup*> GetEarlyBundleGroup(
       const cricket::SessionDescription& desc) const
@@ -420,7 +418,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   
   void ProcessRemovalOfRemoteTrack(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+      const rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
       std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
