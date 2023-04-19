@@ -21,6 +21,15 @@ use std::borrow::Cow;
 
 
 
+const MAX_BUFFER_SIZE: wgt::BufferAddress = 1 << 30;
+
+const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
+
+
+
+
+
+
 
 
 
@@ -315,6 +324,14 @@ pub extern "C" fn wgpu_server_device_create_buffer(
             return;
         }
     };
+
+    
+    if size > MAX_BUFFER_SIZE {
+        error_buf.init_str("Out of memory");
+        gfx_select!(self_id => global.create_buffer_error(buffer_id, label));
+        return;
+    }
+
     let desc = wgc::resource::BufferDescriptor {
         label,
         size,
@@ -391,6 +408,12 @@ impl Global {
     ) {
         match action {
             DeviceAction::CreateTexture(id, desc) => {
+                let max = MAX_TEXTURE_EXTENT;
+                if desc.size.width > max || desc.size.height > max || desc.size.depth_or_array_layers > max {
+                    gfx_select!(self_id => self.create_texture_error(id, desc.label));
+                    error_buf.init_str("Out of memory");
+                    return;
+                }
                 let (_, error) = self.device_create_texture::<A>(self_id, &desc, id);
                 if let Some(err) = error {
                     error_buf.init(err);
