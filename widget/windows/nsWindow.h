@@ -64,6 +64,7 @@ class nsIRollupListener;
 class imgIContainer;
 
 namespace mozilla {
+class WidgetMouseEvent;
 namespace widget {
 class NativeKey;
 class InProcessWinCompositorWidget;
@@ -875,6 +876,28 @@ class nsWindow final : public nsBaseWidget {
   
   
   bool mRequestFxrOutputPending = false;
+
+  
+  
+  
+  
+  
+  class MOZ_STACK_CLASS ContextMenuPreventer final {
+   public:
+    explicit ContextMenuPreventer(nsWindow* aWindow)
+        : mWindow(aWindow), mNeedsToPreventContextMenu(false){};
+    ~ContextMenuPreventer() {
+      mWindow->mNeedsToPreventContextMenu = mNeedsToPreventContextMenu;
+    }
+    void Update(const mozilla::WidgetMouseEvent& aEvent,
+                const nsIWidget::ContentAndAPZEventStatus& aEventStatus);
+
+   private:
+    nsWindow* mWindow;
+    bool mNeedsToPreventContextMenu = false;
+  };
+  friend class ContextMenuPreventer;
+  bool mNeedsToPreventContextMenu = false;
 
   mozilla::UniquePtr<mozilla::widget::DirectManipulationOwner> mDmOwner;
 
