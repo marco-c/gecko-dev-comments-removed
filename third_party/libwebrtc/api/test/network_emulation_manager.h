@@ -266,7 +266,7 @@ class NetworkEmulationManager {
   
   
   virtual void GetStats(
-      rtc::ArrayView<EmulatedEndpoint*> endpoints,
+      rtc::ArrayView<EmulatedEndpoint* const> endpoints,
       std::function<void(std::unique_ptr<EmulatedNetworkStats>)>
           stats_callback) = 0;
 
