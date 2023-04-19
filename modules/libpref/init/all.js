@@ -3475,13 +3475,6 @@ pref("image.http.accept", "");
 
 
 
-pref("webgl.renderer-string-override", "");
-pref("webgl.vendor-string-override", "");
-
-
-
-
-
 
 
 pref("network.tcp.keepalive.enabled", true);
