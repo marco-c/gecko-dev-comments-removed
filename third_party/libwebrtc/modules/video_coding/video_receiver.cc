@@ -279,7 +279,7 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   
   const VCMPacket packet(incomingPayload, payloadLength, rtp_header,
                          video_header, 0,
-                         clock_->TimeInMilliseconds());
+                         clock_->CurrentTime());
   int32_t ret = _receiver.InsertPacket(packet);
 
   
