@@ -27,20 +27,16 @@ namespace webrtc {
 namespace rnn_vad {
 
 
+constexpr int kFullyConnectedLayerMaxUnits = 24;
 
 
+constexpr int kGruLayerMaxUnits = 24;
 
-constexpr int kFullyConnectedLayersMaxUnits = 24;
-
-
-
-
-
-constexpr int kRecurrentLayersMaxUnits = 24;
 
 
 class FullyConnectedLayer {
  public:
+  
   FullyConnectedLayer(int input_size,
                       int output_size,
                       rtc::ArrayView<const int8_t> bias,
@@ -50,9 +46,14 @@ class FullyConnectedLayer {
   FullyConnectedLayer(const FullyConnectedLayer&) = delete;
   FullyConnectedLayer& operator=(const FullyConnectedLayer&) = delete;
   ~FullyConnectedLayer();
+
+  
   int input_size() const { return input_size_; }
-  int output_size() const { return output_size_; }
-  rtc::ArrayView<const float> GetOutput() const;
+  
+  const float* data() const { return output_.data(); }
+  
+  int size() const { return output_size_; }
+
   
   void ComputeOutput(rtc::ArrayView<const float> input);
 
@@ -64,14 +65,16 @@ class FullyConnectedLayer {
   rtc::FunctionView<float(float)> activation_function_;
   
   
-  std::array<float, kFullyConnectedLayersMaxUnits> output_;
+  std::array<float, kFullyConnectedLayerMaxUnits> output_;
   const AvailableCpuFeatures cpu_features_;
 };
 
 
 
+
 class GatedRecurrentLayer {
  public:
+  
   GatedRecurrentLayer(int input_size,
                       int output_size,
                       rtc::ArrayView<const int8_t> bias,
@@ -80,9 +83,15 @@ class GatedRecurrentLayer {
   GatedRecurrentLayer(const GatedRecurrentLayer&) = delete;
   GatedRecurrentLayer& operator=(const GatedRecurrentLayer&) = delete;
   ~GatedRecurrentLayer();
+
+  
   int input_size() const { return input_size_; }
-  int output_size() const { return output_size_; }
-  rtc::ArrayView<const float> GetOutput() const;
+  
+  const float* data() const { return state_.data(); }
+  
+  int size() const { return output_size_; }
+
+  
   void Reset();
   
   void ComputeOutput(rtc::ArrayView<const float> input);
@@ -95,26 +104,28 @@ class GatedRecurrentLayer {
   const std::vector<float> recurrent_weights_;
   
   
-  std::array<float, kRecurrentLayersMaxUnits> state_;
+  std::array<float, kGruLayerMaxUnits> state_;
 };
 
 
-class RnnBasedVad {
+
+class RnnVad {
  public:
-  explicit RnnBasedVad(const AvailableCpuFeatures& cpu_features);
-  RnnBasedVad(const RnnBasedVad&) = delete;
-  RnnBasedVad& operator=(const RnnBasedVad&) = delete;
-  ~RnnBasedVad();
+  explicit RnnVad(const AvailableCpuFeatures& cpu_features);
+  RnnVad(const RnnVad&) = delete;
+  RnnVad& operator=(const RnnVad&) = delete;
+  ~RnnVad();
   void Reset();
+  
   
   float ComputeVadProbability(
       rtc::ArrayView<const float, kFeatureVectorSize> feature_vector,
       bool is_silence);
 
  private:
-  FullyConnectedLayer input_layer_;
-  GatedRecurrentLayer hidden_layer_;
-  FullyConnectedLayer output_layer_;
+  FullyConnectedLayer input_;
+  GatedRecurrentLayer hidden_;
+  FullyConnectedLayer output_;
 };
 
 }  
