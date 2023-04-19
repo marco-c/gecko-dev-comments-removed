@@ -1837,7 +1837,11 @@ var BrowserTestUtils = {
 
 
 
-  async overflowTabs(registerCleanupFunction, win) {
+
+
+
+  async overflowTabs(registerCleanupFunction, win, overflowAtStart = true) {
+    let index = overflowAtStart ? 0 : undefined;
     let { gBrowser } = win;
     let arrowScrollbox = gBrowser.tabContainer.arrowScrollbox;
     const originalSmoothScroll = arrowScrollbox.smoothScroll;
@@ -1856,14 +1860,9 @@ var BrowserTestUtils = {
     while (gBrowser.tabs.length < tabCountForOverflow) {
       BrowserTestUtils.addTab(gBrowser, "about:blank", {
         skipAnimation: true,
-        index: 0,
+        index,
       });
     }
-
-    
-    await new Promise(resolve => {
-      arrowScrollbox.addEventListener("scrollend", resolve, { once: true });
-    });
   },
 
   
