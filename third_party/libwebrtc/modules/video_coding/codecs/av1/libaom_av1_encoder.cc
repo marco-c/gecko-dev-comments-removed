@@ -820,17 +820,8 @@ VideoEncoder::EncoderInfo LibaomAv1Encoder::GetEncoderInfo() const {
 
 }  
 
-const bool kIsLibaomAv1EncoderSupported = true;
-
 std::unique_ptr<VideoEncoder> CreateLibaomAv1Encoder() {
   return std::make_unique<LibaomAv1Encoder>();
-}
-
-bool LibaomAv1EncoderSupportsScalabilityMode(
-    absl::string_view scalability_mode) {
-  
-  
-  return ScalabilityStructureConfig(scalability_mode) != absl::nullopt;
 }
 
 }  
