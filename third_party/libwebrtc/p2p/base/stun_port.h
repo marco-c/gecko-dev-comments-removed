@@ -11,6 +11,7 @@
 #ifndef P2P_BASE_STUN_PORT_H_
 #define P2P_BASE_STUN_PORT_H_
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -19,8 +20,6 @@
 #include "p2p/base/port.h"
 #include "p2p/base/stun_request.h"
 #include "rtc_base/async_packet_socket.h"
-
-
 
 namespace cricket {
 
@@ -183,18 +182,15 @@ class UDPPort : public Port {
   
   class AddressResolver : public sigslot::has_slots<> {
    public:
-    explicit AddressResolver(rtc::PacketSocketFactory* factory);
+    explicit AddressResolver(
+        rtc::PacketSocketFactory* factory,
+        std::function<void(const rtc::SocketAddress&, int)> done_callback);
     ~AddressResolver() override;
 
     void Resolve(const rtc::SocketAddress& address);
     bool GetResolvedAddress(const rtc::SocketAddress& input,
                             int family,
                             rtc::SocketAddress* output) const;
-
-    
-    
-    
-    sigslot::signal2<const rtc::SocketAddress&, int> SignalDone;
 
    private:
     typedef std::map<rtc::SocketAddress, rtc::AsyncResolverInterface*>
@@ -204,6 +200,10 @@ class UDPPort : public Port {
 
     rtc::PacketSocketFactory* socket_factory_;
     ResolverMap resolvers_;
+    
+    
+    
+    std::function<void(const rtc::SocketAddress&, int)> done_;
   };
 
   
