@@ -4019,7 +4019,7 @@ const BrowserSearch = {
     );
   },
 
-  addEngine(browser, engine, uri) {
+  addEngine(browser, engine) {
     if (!this._searchInitComplete) {
       
       
@@ -4035,8 +4035,6 @@ const BrowserSearch = {
     }
 
     var hidden = false;
-    
-    
     
     
     if (Services.search.getEngineByName(engine.title)) {
