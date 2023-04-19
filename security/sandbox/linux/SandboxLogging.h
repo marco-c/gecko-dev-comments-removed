@@ -31,9 +31,21 @@
 #  include "base/strings/safe_sprintf.h"
 #endif
 
+#include <errno.h>
+
 namespace mozilla {
 
 void SandboxLogError(const char* aMessage);
+
+
+
+
+
+
+
+
+
+ssize_t GetLibcErrorName(char* aBuf, size_t aSize, int aErr);
 }  
 
 #define SANDBOX_LOG_LEN 256
@@ -49,5 +61,21 @@ void SandboxLogError(const char* aMessage);
     ::base::strings::SafeSPrintf(_sandboxLogBuf, fmt, ##args); \
     ::mozilla::SandboxLogError(_sandboxLogBuf);                \
   } while (0)
+
+#define SANDBOX_LOG_WITH_ERROR(errnum, fmt, args...)                       \
+  do {                                                                     \
+    char _sandboxLogBuf[SANDBOX_LOG_LEN];                                  \
+    ssize_t _sandboxLogOff =                                               \
+        ::base::strings::SafeSPrintf(_sandboxLogBuf, fmt ": ", ##args);    \
+    if (static_cast<size_t>(_sandboxLogOff) < sizeof(_sandboxLogBuf)) {    \
+      ::mozilla::GetLibcErrorName(_sandboxLogBuf + _sandboxLogOff,         \
+                                  sizeof(_sandboxLogBuf) - _sandboxLogOff, \
+                                  errnum);                                 \
+    }                                                                      \
+    ::mozilla::SandboxLogError(_sandboxLogBuf);                            \
+  } while (0)
+
+#define SANDBOX_LOG_ERRNO(fmt, args...) \
+  SANDBOX_LOG_WITH_ERROR(errno, fmt, ##args)
 
 #endif  
