@@ -176,12 +176,13 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
 
 
 
+  Zone* zone = thing->zoneFromAnyThread();
   if (IsOwnedByOtherRuntime(trc->runtime(), thing)) {
+    MOZ_ASSERT(!zone->wasGCStarted());
     MOZ_ASSERT(thing->isMarkedBlack());
     return;
   }
 
-  Zone* zone = thing->zoneFromAnyThread();
   JSRuntime* rt = trc->runtime();
   MOZ_ASSERT(zone->runtimeFromAnyThread() == rt);
 
@@ -909,18 +910,15 @@ template void GCMarker::markImplicitEdges(BaseScript*);
 template <typename T>
 static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
   
-  if (IsOwnedByOtherRuntime(gcmarker->runtime(), thing)) {
-    return false;
-  }
-
-  
   
   if (!thing->isTenured()) {
     return false;
   }
 
   
-  return thing->asTenured().zone()->shouldMarkInZone();
+  
+  
+  return thing->asTenured().zoneFromAnyThread()->shouldMarkInZone();
 }
 
 template <typename T>
@@ -931,6 +929,8 @@ void DoMarking(GCMarker* gcmarker, T* thing) {
                js::gc::CellColor::Black);
     return;
   }
+
+  MOZ_ASSERT(!IsOwnedByOtherRuntime(gcmarker->runtime(), thing));
 
   
   
@@ -1155,6 +1155,9 @@ inline void GCMarker::checkTraversedEdge(S source, T* target) {
 
   
   if (target->isPermanentAndMayBeShared()) {
+    Zone* zone = target->zoneFromAnyThread();
+    MOZ_ASSERT(!zone->wasGCStarted());
+    MOZ_ASSERT(!zone->needsIncrementalBarrier());
     MOZ_ASSERT(target->isMarkedBlack());
     MOZ_ASSERT(!target->maybeCompartment());
     return;
@@ -2741,7 +2744,10 @@ static inline void CheckIsMarkedThing(T* thing) {
   MOZ_ASSERT(thing);
 
   
+  Zone* zone = thing->zoneFromAnyThread();
   if (thing->isPermanentAndMayBeShared()) {
+    MOZ_ASSERT(!zone->wasGCStarted());
+    MOZ_ASSERT(!zone->needsIncrementalBarrier());
     MOZ_ASSERT(thing->isMarkedBlack());
     return;
   }
@@ -2751,7 +2757,6 @@ static inline void CheckIsMarkedThing(T* thing) {
   JS::GCContext* gcx = TlsGCContext.get();
   MOZ_ASSERT(gcx->gcUse() != GCUse::Finalizing);
   if (gcx->gcUse() == GCUse::Sweeping || gcx->gcUse() == GCUse::Marking) {
-    Zone* zone = thing->zoneFromAnyThread();
     MOZ_ASSERT_IF(gcx->gcSweepZone(),
                   gcx->gcSweepZone() == zone || zone->isAtomsZone());
     return;
@@ -2772,21 +2777,19 @@ bool js::gc::IsMarkedInternal(JSRuntime* rt, T* thing) {
   MOZ_ASSERT(thing);
   CheckIsMarkedThing(thing);
 
-  if (IsOwnedByOtherRuntime(rt, thing)) {
-    return true;
-  }
-
   
   MOZ_ASSERT(!IsForwarded(thing));
 
   
-  
-#ifdef DEBUG
-  MOZ_ASSERT_IF(!thing->isTenured(), thing->isMarkedBlack());
-#endif
-
   TenuredCell* cell = &thing->asTenured();
   Zone* zone = cell->zoneFromAnyThread();
+#ifdef DEBUG
+  if (IsOwnedByOtherRuntime(rt, thing)) {
+    MOZ_ASSERT(!zone->wasGCStarted());
+    MOZ_ASSERT(thing->isMarkedBlack());
+  }
+#endif
+
   return !zone->isGCMarking() || cell->isMarkedAny();
 }
 
@@ -2798,21 +2801,23 @@ bool js::gc::IsAboutToBeFinalizedInternal(T* thing) {
   CheckIsMarkedThing(thing);
 
   
-  
-#ifdef DEBUG
-  JSRuntime* rt = TlsGCContext.get()->runtimeFromAnyThread();
-  MOZ_ASSERT_IF(IsOwnedByOtherRuntime(rt, thing), thing->isMarkedBlack());
-#endif
-
-  
   MOZ_ASSERT(!IsForwarded(thing));
 
   if (!thing->isTenured()) {
     return false;
   }
 
+  
   TenuredCell* cell = &thing->asTenured();
   Zone* zone = cell->zoneFromAnyThread();
+#ifdef DEBUG
+  JSRuntime* rt = TlsGCContext.get()->runtimeFromAnyThread();
+  if (IsOwnedByOtherRuntime(rt, thing)) {
+    MOZ_ASSERT(!zone->wasGCStarted());
+    MOZ_ASSERT(thing->isMarkedBlack());
+  }
+#endif
+
   return zone->isGCSweeping() && !cell->isMarkedAny();
 }
 
@@ -2832,17 +2837,26 @@ template <typename T>
 inline T* SweepingTracer::onEdge(T* thing) {
   CheckIsMarkedThing(thing);
 
+  if (!thing->isTenured()) {
+    return thing;
+  }
+
   
-  
-  MOZ_ASSERT_IF(IsOwnedByOtherRuntime(runtime(), thing),
-                thing->isMarkedBlack());
+  TenuredCell* cell = &thing->asTenured();
+  Zone* zone = cell->zoneFromAnyThread();
+#ifdef DEBUG
+  if (IsOwnedByOtherRuntime(runtime(), thing)) {
+    MOZ_ASSERT(!zone->wasGCStarted());
+    MOZ_ASSERT(thing->isMarkedBlack());
+  }
+#endif
 
   
   
   
   
   
-  if (thing->zoneFromAnyThread()->isGCSweeping() && !thing->isMarkedAny()) {
+  if (zone->isGCSweeping() && !cell->isMarkedAny()) {
     return nullptr;
   }
 
