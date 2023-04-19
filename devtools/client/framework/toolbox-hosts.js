@@ -72,10 +72,11 @@ BottomHost.prototype = {
       ownerDocument,
       "devtools-toolbox-bottom-iframe"
     );
-    this.frame.height = Math.min(
-      Services.prefs.getIntPref(this.heightPref),
-      this._browserContainer.clientHeight - MIN_PAGE_SIZE
-    );
+    this.frame.style.height =
+      Math.min(
+        Services.prefs.getIntPref(this.heightPref),
+        this._browserContainer.clientHeight - MIN_PAGE_SIZE
+      ) + "px";
 
     this._browserContainer.appendChild(this._splitter);
     this._browserContainer.appendChild(this.frame);
@@ -104,7 +105,10 @@ BottomHost.prototype = {
     if (!this._destroyed) {
       this._destroyed = true;
 
-      Services.prefs.setIntPref(this.heightPref, this.frame.height);
+      Services.prefs.setIntPref(
+        this.heightPref,
+        parseInt(this.frame.style.height, 10)
+      );
       this._browserContainer.removeChild(this._splitter);
       this._browserContainer.removeChild(this.frame);
       this.frame = null;
