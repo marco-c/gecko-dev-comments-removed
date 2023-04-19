@@ -47,6 +47,9 @@ user_pref("gfx.logging.level", 1);
 user_pref("image.downscale-during-decode.enabled", false);
 
 
+user_pref("image.decode-sync.enabled", true);
+
+
 
 
 
