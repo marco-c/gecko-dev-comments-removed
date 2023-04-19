@@ -843,12 +843,17 @@ EngineView.prototype = {
   },
 
   isEngineSelectedAndRemovable() {
+    let defaultEngine = Services.search.defaultEngine;
+    let defaultPrivateEngine = Services.search.defaultPrivateEngine;
+    
     
     
     return (
       this.selectedIndex != -1 &&
       this.lastEngineIndex != 0 &&
-      !this._getLocalShortcut(this.selectedIndex)
+      !this._getLocalShortcut(this.selectedIndex) &&
+      this.selectedEngine.name != defaultEngine.name &&
+      this.selectedEngine.name != defaultPrivateEngine.name
     );
   },
 

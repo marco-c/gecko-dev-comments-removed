@@ -148,6 +148,11 @@ add_task(async function test_removeOutOfOrder() {
   
   for (let i = 0; i < defaultEngines.length - 3; i++) {
     tree.view.selection.select(0);
+
+    if (defaultEngines[0].name == Services.search.defaultEngine.name) {
+      tree.view.selection.select(1);
+    }
+
     let updatedPromise = SearchTestUtils.promiseSearchNotification(
       SearchUtils.MODIFIED_TYPE.CHANGED,
       SearchUtils.TOPIC_ENGINE_MODIFIED
