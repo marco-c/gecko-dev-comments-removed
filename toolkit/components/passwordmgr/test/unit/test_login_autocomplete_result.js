@@ -82,7 +82,7 @@ matchingLogins.push(
   )
 );
 
-add_task(async function setup() {
+add_setup(async () => {
   
   do_get_profile();
   matchingLogins = await Services.logins.addLogins(matchingLogins);

@@ -21,7 +21,7 @@ let nsLoginInfo = SpecialPowers.wrap(SpecialPowers.Components).Constructor("@moz
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 </div>
 
@@ -46,7 +46,7 @@ async function prepareLoginsAndProcessForm(url, logins = []) {
   await processedPromise;
 }
 
-add_task(async function setup() {
+add_setup(async () => {
   await SpecialPowers.pushPrefEnv({"set": [
     ["signon.schemeUpgrades", true],
     ["signon.includeOtherSubdomainsInLookup", true],

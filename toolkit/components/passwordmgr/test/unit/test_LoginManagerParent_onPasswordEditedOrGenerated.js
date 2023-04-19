@@ -196,7 +196,7 @@ function assertLoginProperties(actualLogin, expected) {
   equal(actualLogin.password, expected.password, "Compare password");
 }
 
-add_task(async function setup() {
+add_setup(async () => {
   
   do_get_profile();
 

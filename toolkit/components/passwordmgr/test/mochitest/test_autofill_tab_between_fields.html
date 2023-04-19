@@ -18,7 +18,7 @@ let readyPromise = registerRunTests();
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 </div>
 
@@ -82,7 +82,7 @@ const tests = [
   },
 ];
 
-add_task(async function setup() {
+add_setup(async () => {
   ok(readyPromise, "check promise is available");
   await readyPromise;
   win = window.open("about:blank");

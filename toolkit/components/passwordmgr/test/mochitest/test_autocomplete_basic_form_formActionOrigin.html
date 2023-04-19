@@ -20,10 +20,10 @@ addLoginsInParent([window.location.origin, "https://differentFormSubmitURL", nul
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 
-  
+  <!-- form1 tests multiple matching logins -->
   <form id="form1" action="https://autocomplete:8888/formtest.js" onsubmit="return false;">
     <input  type="text"       name="uname">
     <input  type="password"   name="pword">
@@ -49,7 +49,7 @@ function spinEventLoop() {
   return Promise.resolve();
 }
 
-add_task(async function setup() {
+add_setup(async () => {
   listenForUnexpectedPopupShown();
 });
 
