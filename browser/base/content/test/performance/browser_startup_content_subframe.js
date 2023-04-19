@@ -36,8 +36,6 @@ const known_scripts = {
     
     actorModuleURI,
 
-    "resource:///modules/StartupRecorder.jsm",
-
     
     "resource://gre/modules/AppConstants.jsm",
     "resource://gre/modules/DeferredTask.jsm",
