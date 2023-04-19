@@ -338,15 +338,6 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
 
   bool isDrained();
 
-  
-  
-  enum MarkQueueProgress {
-    QueueYielded,   
-    QueueComplete,  
-    QueueSuspended  
-  };
-  MarkQueueProgress processMarkQueue();
-
   enum ShouldReportMarkTime : bool {
     ReportMarkTime = true,
     DontReportMarkTime = false
@@ -379,7 +370,16 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   template <typename T>
   void markImplicitEdges(T* oldThing);
 
+  bool isRegularMarking() const {
+    return state == MarkingState::RegularMarking;
+  }
   bool isWeakMarking() const { return state == MarkingState::WeakMarking; }
+
+  bool isMarkStackEmpty() { return stack.isEmpty(); }
+
+  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+
+  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
 
  private:
 #ifdef DEBUG
@@ -429,13 +429,8 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   inline void pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
                              size_t start, size_t end);
 
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
-
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
-
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
-
-  inline void processMarkStackTop(SliceBudget& budget);
+  void processMarkStackTop(SliceBudget& budget);
+  friend class gc::GCRuntime;
 
   void markDelayedChildren(gc::Arena* arena);
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
@@ -493,9 +488,6 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   MainThreadOrGCTaskData<bool> checkAtomMarking;
 
   
-  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
-
-  
 
 
 
@@ -509,21 +501,6 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
 
   MainThreadOrGCTaskData<Compartment*> tracingCompartment;
   MainThreadOrGCTaskData<Zone*> tracingZone;
-
-  
-
-
-
-
-
-
-
-
-
-  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>> markQueue;
-
-  
-  size_t queuePos;
 #endif  
 };
 
