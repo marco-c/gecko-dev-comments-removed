@@ -41,13 +41,23 @@ namespace dcsctp {
 
 
 
-
 class CallbackDeferrer : public DcSctpSocketCallbacks {
  public:
+  class ScopedDeferrer {
+   public:
+    explicit ScopedDeferrer(CallbackDeferrer& callback_deferrer)
+        : callback_deferrer_(callback_deferrer) {
+      callback_deferrer_.Prepare();
+    }
+
+    ~ScopedDeferrer() { callback_deferrer_.TriggerDeferred(); }
+
+   private:
+    CallbackDeferrer& callback_deferrer_;
+  };
+
   explicit CallbackDeferrer(DcSctpSocketCallbacks& underlying)
       : underlying_(underlying) {}
-
-  void TriggerDeferred();
 
   
   SendPacketStatus SendPacketWithStatus(
@@ -71,7 +81,11 @@ class CallbackDeferrer : public DcSctpSocketCallbacks {
   void OnTotalBufferedAmountLow() override;
 
  private:
+  void Prepare();
+  void TriggerDeferred();
+
   DcSctpSocketCallbacks& underlying_;
+  bool prepared_ = false;
   std::vector<std::function<void(DcSctpSocketCallbacks& cb)>> deferred_;
 };
 }  
