@@ -16,9 +16,10 @@
 
 
 
-#include "modules/audio_coding/codecs/ilbc/defines.h"
-#include "modules/audio_coding/codecs/ilbc/constants.h"
+#include "modules/audio_coding/codecs/ilbc/poly_to_lsp.h"
+
 #include "modules/audio_coding/codecs/ilbc/chebyshev.h"
+#include "modules/audio_coding/codecs/ilbc/constants.h"
 
 
 

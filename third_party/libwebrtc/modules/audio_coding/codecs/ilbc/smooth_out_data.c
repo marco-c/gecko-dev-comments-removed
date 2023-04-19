@@ -16,8 +16,10 @@
 
 
 
-#include "modules/audio_coding/codecs/ilbc/defines.h"
+#include "modules/audio_coding/codecs/ilbc/smooth_out_data.h"
+
 #include "modules/audio_coding/codecs/ilbc/constants.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 #include "rtc_base/sanitizer.h"
 
 
