@@ -166,7 +166,8 @@ impl PrimitiveValType {
         matches!(self, Self::String)
     }
 
-    pub(crate) fn is_subtype_of(&self, other: &Self) -> bool {
+    
+    pub fn is_subtype_of(&self, other: &Self) -> bool {
         
         
         self == other

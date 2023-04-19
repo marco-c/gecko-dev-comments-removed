@@ -1,53 +1,122 @@
-use crate::core::HeapType;
+use crate::core::{HeapType, V128Const};
 use crate::kw;
-use crate::parser::{Parse, Parser, Result};
+use crate::parser::{Cursor, Parse, Parser, Peek, Result};
 use crate::token::{Float32, Float64, Index};
-
-
-
-
-
-
 
 
 
 #[derive(Debug)]
 #[allow(missing_docs)]
-pub enum AssertExpression<'a> {
+pub enum WastArgCore<'a> {
+    I32(i32),
+    I64(i64),
+    F32(Float32),
+    F64(Float64),
+    V128(V128Const),
+    RefNull(HeapType<'a>),
+    RefExtern(u32),
+}
+
+static ARGS: &[(&str, fn(Parser<'_>) -> Result<WastArgCore<'_>>)] = {
+    use WastArgCore::*;
+    &[
+        ("i32.const", |p| Ok(I32(p.parse()?))),
+        ("i64.const", |p| Ok(I64(p.parse()?))),
+        ("f32.const", |p| Ok(F32(p.parse()?))),
+        ("f64.const", |p| Ok(F64(p.parse()?))),
+        ("v128.const", |p| Ok(V128(p.parse()?))),
+        ("ref.null", |p| Ok(RefNull(p.parse()?))),
+        ("ref.extern", |p| Ok(RefExtern(p.parse()?))),
+    ]
+};
+
+impl<'a> Parse<'a> for WastArgCore<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let parse = parser.step(|c| {
+            if let Some((kw, rest)) = c.keyword() {
+                if let Some(i) = ARGS.iter().position(|(name, _)| *name == kw) {
+                    return Ok((ARGS[i].1, rest));
+                }
+            }
+            Err(c.error("expected a [type].const expression"))
+        })?;
+        parse(parser)
+    }
+}
+
+impl Peek for WastArgCore<'_> {
+    fn peek(cursor: Cursor<'_>) -> bool {
+        let kw = match cursor.keyword() {
+            Some((kw, _)) => kw,
+            None => return false,
+        };
+        ARGS.iter().find(|(name, _)| *name == kw).is_some()
+    }
+
+    fn display() -> &'static str {
+        "core wasm argument"
+    }
+}
+
+
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub enum WastRetCore<'a> {
     I32(i32),
     I64(i64),
     F32(NanPattern<Float32>),
     F64(NanPattern<Float64>),
     V128(V128Pattern),
 
+    
     RefNull(Option<HeapType<'a>>),
+    
+    
     RefExtern(u32),
+    
     RefFunc(Option<Index<'a>>),
-
-    
-    LegacyArithmeticNaN,
-    
-    LegacyCanonicalNaN,
 }
 
-impl<'a> Parse<'a> for AssertExpression<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let keyword = parser.step(|c| match c.keyword() {
-            Some(pair) => Ok(pair),
-            None => Err(c.error("expected a keyword")),
-        })?;
+static RETS: &[(&str, fn(Parser<'_>) -> Result<WastRetCore<'_>>)] = {
+    use WastRetCore::*;
+    &[
+        ("i32.const", |p| Ok(I32(p.parse()?))),
+        ("i64.const", |p| Ok(I64(p.parse()?))),
+        ("f32.const", |p| Ok(F32(p.parse()?))),
+        ("f64.const", |p| Ok(F64(p.parse()?))),
+        ("v128.const", |p| Ok(V128(p.parse()?))),
+        ("ref.null", |p| Ok(RefNull(p.parse()?))),
+        ("ref.extern", |p| Ok(RefExtern(p.parse()?))),
+        ("ref.func", |p| Ok(RefFunc(p.parse()?))),
+    ]
+};
 
-        match keyword {
-            "i32.const" => Ok(AssertExpression::I32(parser.parse()?)),
-            "i64.const" => Ok(AssertExpression::I64(parser.parse()?)),
-            "f32.const" => Ok(AssertExpression::F32(parser.parse()?)),
-            "f64.const" => Ok(AssertExpression::F64(parser.parse()?)),
-            "v128.const" => Ok(AssertExpression::V128(parser.parse()?)),
-            "ref.null" => Ok(AssertExpression::RefNull(parser.parse()?)),
-            "ref.extern" => Ok(AssertExpression::RefExtern(parser.parse()?)),
-            "ref.func" => Ok(AssertExpression::RefFunc(parser.parse()?)),
-            _ => Err(parser.error("expected a [type].const expression")),
-        }
+impl<'a> Parse<'a> for WastRetCore<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let parse = parser.step(|c| {
+            if let Some((kw, rest)) = c.keyword() {
+                if let Some(i) = RETS.iter().position(|(name, _)| *name == kw) {
+                    return Ok((RETS[i].1, rest));
+                }
+            }
+            Err(c.error("expected a [type].const expression"))
+        })?;
+        parse(parser)
+    }
+}
+
+impl Peek for WastRetCore<'_> {
+    fn peek(cursor: Cursor<'_>) -> bool {
+        let kw = match cursor.keyword() {
+            Some((kw, _)) => kw,
+            None => return false,
+        };
+        RETS.iter().find(|(name, _)| *name == kw).is_some()
+    }
+
+    fn display() -> &'static str {
+        "core wasm return value"
     }
 }
 

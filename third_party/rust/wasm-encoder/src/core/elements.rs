@@ -1,4 +1,4 @@
-use crate::{encode_section, Encode, Instruction, Section, SectionId, ValType};
+use crate::{encode_section, ConstExpr, Encode, Section, SectionId, ValType};
 
 
 
@@ -47,16 +47,7 @@ pub enum Elements<'a> {
     
     Functions(&'a [u32]),
     
-    Expressions(&'a [Element]),
-}
-
-
-#[derive(Clone, Copy, Debug)]
-pub enum Element {
-    
-    Null,
-    
-    Func(u32),
+    Expressions(&'a [ConstExpr]),
 }
 
 
@@ -79,7 +70,7 @@ pub enum ElementMode<'a> {
         
         table: Option<u32>,
         
-        offset: &'a Instruction<'a>,
+        offset: &'a ConstExpr,
     },
 }
 
@@ -123,7 +114,6 @@ impl ElementSection {
             } => {
                 (expr_bit).encode(&mut self.bytes);
                 offset.encode(&mut self.bytes);
-                Instruction::End.encode(&mut self.bytes);
             }
             ElementMode::Passive => {
                 (0x01 | expr_bit).encode(&mut self.bytes);
@@ -140,7 +130,6 @@ impl ElementSection {
                 (0x02 | expr_bit).encode(&mut self.bytes);
                 i.encode(&mut self.bytes);
                 offset.encode(&mut self.bytes);
-                Instruction::End.encode(&mut self.bytes);
                 if expr_bit == 0 {
                     self.bytes.push(0x00); 
                 } else {
@@ -164,13 +153,7 @@ impl ElementSection {
             Elements::Expressions(e) => {
                 e.len().encode(&mut self.bytes);
                 for expr in e {
-                    match expr {
-                        Element::Func(i) => Instruction::RefFunc(*i).encode(&mut self.bytes),
-                        Element::Null => {
-                            Instruction::RefNull(segment.element_type).encode(&mut self.bytes)
-                        }
-                    }
-                    Instruction::End.encode(&mut self.bytes);
+                    expr.encode(&mut self.bytes);
                 }
             }
         }
@@ -187,7 +170,7 @@ impl ElementSection {
     pub fn active(
         &mut self,
         table_index: Option<u32>,
-        offset: &Instruction<'_>,
+        offset: &ConstExpr,
         element_type: ValType,
         elements: Elements<'_>,
     ) -> &mut Self {

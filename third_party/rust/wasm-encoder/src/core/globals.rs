@@ -1,4 +1,4 @@
-use crate::{encode_section, Encode, Instruction, Section, SectionId, ValType};
+use crate::{encode_section, ConstExpr, Encode, Section, SectionId, ValType};
 
 
 
@@ -46,10 +46,9 @@ impl GlobalSection {
     }
 
     
-    pub fn global(&mut self, global_type: GlobalType, init_expr: &Instruction<'_>) -> &mut Self {
+    pub fn global(&mut self, global_type: GlobalType, init_expr: &ConstExpr) -> &mut Self {
         global_type.encode(&mut self.bytes);
         init_expr.encode(&mut self.bytes);
-        Instruction::End.encode(&mut self.bytes);
         self.num_added += 1;
         self
     }

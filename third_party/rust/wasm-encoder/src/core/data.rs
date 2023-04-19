@@ -1,4 +1,4 @@
-use crate::{encode_section, encoding_size, Encode, Instruction, Section, SectionId};
+use crate::{encode_section, encoding_size, ConstExpr, Encode, Section, SectionId};
 
 
 
@@ -56,7 +56,7 @@ pub enum DataSegmentMode<'a> {
         
         memory_index: u32,
         
-        offset: &'a Instruction<'a>,
+        offset: &'a ConstExpr,
     },
     
     
@@ -96,7 +96,6 @@ impl DataSection {
             } => {
                 self.bytes.push(0x00);
                 offset.encode(&mut self.bytes);
-                Instruction::End.encode(&mut self.bytes);
             }
             DataSegmentMode::Active {
                 memory_index,
@@ -105,7 +104,6 @@ impl DataSection {
                 self.bytes.push(0x02);
                 memory_index.encode(&mut self.bytes);
                 offset.encode(&mut self.bytes);
-                Instruction::End.encode(&mut self.bytes);
             }
         }
 
@@ -118,7 +116,7 @@ impl DataSection {
     }
 
     
-    pub fn active<D>(&mut self, memory_index: u32, offset: &Instruction, data: D) -> &mut Self
+    pub fn active<D>(&mut self, memory_index: u32, offset: &ConstExpr, data: D) -> &mut Self
     where
         D: IntoIterator<Item = u8>,
         D::IntoIter: ExactSizeIterator,

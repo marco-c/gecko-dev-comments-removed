@@ -88,7 +88,7 @@ pub enum ItemSigKind<'a> {
     
     Instance(ComponentTypeUse<'a, InstanceType<'a>>),
     
-    Value(ComponentValType<'a>),
+    Value(ComponentValTypeUse<'a>),
     
     Type(TypeBounds<'a>),
 }
