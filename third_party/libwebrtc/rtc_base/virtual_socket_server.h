@@ -130,9 +130,9 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   typedef std::pair<double, double> Point;
   typedef std::vector<Point> Function;
 
-  static Function* CreateDistribution(uint32_t mean,
-                                      uint32_t stddev,
-                                      uint32_t samples);
+  static std::unique_ptr<Function> CreateDistribution(uint32_t mean,
+                                                      uint32_t stddev,
+                                                      uint32_t samples);
 
   
   
@@ -222,14 +222,13 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   uint32_t GetTransitDelay(Socket* socket);
 
   
-  
-  static Function* Accumulate(Function* f);
-  static Function* Invert(Function* f);
-  static Function* Resample(Function* f,
-                            double x1,
-                            double x2,
-                            uint32_t samples);
-  static double Evaluate(Function* f, double x);
+  static std::unique_ptr<Function> Accumulate(std::unique_ptr<Function> f);
+  static std::unique_ptr<Function> Invert(std::unique_ptr<Function> f);
+  static std::unique_ptr<Function> Resample(std::unique_ptr<Function> f,
+                                            double x1,
+                                            double x2,
+                                            uint32_t samples);
+  static double Evaluate(const Function* f, double x);
 
   
   
@@ -294,8 +293,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   std::map<rtc::IPAddress, int> delay_by_ip_;
   std::map<rtc::IPAddress, rtc::IPAddress> alternative_address_mapping_;
   std::unique_ptr<Function> delay_dist_;
-
-  RecursiveCriticalSection delay_crit_;
 
   double drop_prob_;
   bool sending_blocked_ = false;
