@@ -233,13 +233,15 @@ void DocAccessibleParent::ShutdownOrPrepareForMove(RemoteAccessible* aAcc) {
   }
   
   
-  aAcc->SetParent(nullptr);
   if (aAcc->IsTable() || aAcc->IsTableCell()) {
+    
+    
     CachedTableAccessible::Invalidate(aAcc);
   }
   if (aAcc->IsHyperText()) {
     aAcc->InvalidateCachedHyperTextOffsets();
   }
+  aAcc->SetParent(nullptr);
   mMovingIDs.EnsureRemoved(id);
   if (aAcc->IsOuterDoc()) {
     
