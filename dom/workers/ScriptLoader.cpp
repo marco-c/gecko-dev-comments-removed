@@ -391,10 +391,10 @@ WorkerScriptLoader::WorkerScriptLoader(
     : mOriginStack(std::move(aOriginStack)),
       mSyncLoopTarget(aSyncLoopTarget),
       mWorkerScriptType(aWorkerScriptType),
-      mCancelMainThread(Nothing()),
       mRv(aRv),
       mCleanedUp(false),
-      mCleanUpLock("cleanUpLock") {
+      mCleanUpLock("cleanUpLock"),
+      mCancelMainThread(Nothing()) {
   aWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_ASSERT(aSyncLoopTarget);
 
@@ -656,6 +656,9 @@ nsresult WorkerScriptLoader::OnStreamComplete(ScriptLoadRequest* aRequest,
                                               nsresult aStatus) {
   AssertIsOnMainThread();
 
+  
+  MOZ_ASSERT(!IsCancelled());
+
   LoadingFinished(aRequest, aStatus);
   return NS_OK;
 }
@@ -688,6 +691,10 @@ void WorkerScriptLoader::CancelMainThread(
         loadContext->mCachePromise->MaybeReject(NS_BINDING_ABORTED);
         loadContext->mCachePromise = nullptr;
       }
+      if (!loadContext->mLoadingFinished) {
+        
+        LoadingFinished(loadContext->mRequest, aCancelResult);
+      }
     }
   }
 }
@@ -708,7 +715,9 @@ nsresult WorkerScriptLoader::LoadScripts(
       nsresult rv = LoadScript(loadContext->mRequest);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         LoadingFinished(loadContext->mRequest, rv);
-        CancelMainThread(rv, &aContextList);
+        
+        
+        
         return rv;
       }
     }
@@ -1010,7 +1019,6 @@ void WorkerScriptLoader::TryShutdown() {
 }
 
 void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
   MOZ_ASSERT(AllScriptsExecuted());
 
   if (!aResult) {
@@ -1042,10 +1050,13 @@ void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   {
     MutexAutoLock lock(CleanUpLock());
 
-    mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
-
+    if (!CleanedUp()) {
+      mWorkerRef->Private()->AssertIsOnWorkerThread();
+      mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
+    }
     
     mCleanedUp = true;
+
     
     mWorkerRef = nullptr;
   }
