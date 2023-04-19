@@ -74,6 +74,7 @@ for (const type of [
   "DISCOVERY_STREAM_SPOCS_UPDATE",
   "DISCOVERY_STREAM_SPOC_BLOCKED",
   "DISCOVERY_STREAM_SPOC_IMPRESSION",
+  "DISCOVERY_STREAM_USER_EVENT",
   "DOWNLOAD_CHANGED",
   "FAKE_FOCUS_SEARCH",
   "FILL_SEARCH_TERM",
@@ -297,6 +298,20 @@ function UserEvent(data) {
 
 
 
+function DiscoveryStreamUserEvent(data) {
+  return AlsoToMain({
+    type: actionTypes.DISCOVERY_STREAM_USER_EVENT,
+    data,
+  });
+}
+
+
+
+
+
+
+
+
 function ASRouterUserEvent(data) {
   return AlsoToMain({
     type: actionTypes.AS_ROUTER_TELEMETRY_USER_EVENT,
@@ -373,6 +388,7 @@ function WebExtEvent(type, data, importContext = globalImportContext) {
 const actionCreators = {
   BroadcastToContent,
   UserEvent,
+  DiscoveryStreamUserEvent,
   ASRouterUserEvent,
   ImpressionStats,
   AlsoToOneContent,

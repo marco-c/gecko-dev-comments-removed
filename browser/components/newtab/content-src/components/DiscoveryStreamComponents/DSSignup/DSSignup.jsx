@@ -56,7 +56,7 @@ export class DSSignup extends React.PureComponent {
       // Grab the first item in the array as we only have 1 spoc position.
       const [spoc] = data.spocs;
       this.props.dispatch(
-        ac.UserEvent({
+        ac.DiscoveryStreamUserEvent({
           event: "CLICK",
           source,
           action_position: 0,
@@ -88,7 +88,7 @@ export class DSSignup extends React.PureComponent {
     }
     // Grab the first item in the array as we only have 1 spoc position.
     const [spoc] = data.spocs;
-    const { title, url, context, flight_id, id, shim } = spoc;
+    const { title, url, excerpt, flight_id, id, shim } = spoc;
 
     const SIGNUP_CONTEXT_MENU_OPTIONS = [
       "OpenInNewWindow",
@@ -118,7 +118,7 @@ export class DSSignup extends React.PureComponent {
               onLinkClick={this.onLinkClick}
               url={url}
             >
-              {context}
+              {excerpt}
             </SafeAnchor>
           </span>
           <ImpressionStats
@@ -146,6 +146,7 @@ export class DSSignup extends React.PureComponent {
             onShow={this.onMenuShow}
             options={SIGNUP_CONTEXT_MENU_OPTIONS}
             shouldSendImpressionStats={true}
+            userEvent={ac.DiscoveryStreamUserEvent}
             site={{
               referrer: "https://getpocket.com/recommendations",
               title,
