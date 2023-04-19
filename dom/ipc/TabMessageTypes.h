@@ -10,12 +10,6 @@
 #include "mozilla/RefPtr.h"
 
 namespace mozilla::dom {
-class Event;
-
-struct RemoteDOMEvent {
-  
-  RefPtr<Event> mEvent;
-};
 
 enum class EmbedderElementEventType {
   NoEvent,

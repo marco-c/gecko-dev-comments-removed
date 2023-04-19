@@ -273,8 +273,6 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvDropLinks(nsTArray<nsString>&& aLinks);
 
-  mozilla::ipc::IPCResult RecvEvent(const RemoteDOMEvent& aEvent);
-
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvReplyKeyEvent(
       const WidgetKeyboardEvent& aEvent, const nsID& aUUID);

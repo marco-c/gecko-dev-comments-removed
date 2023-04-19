@@ -133,17 +133,6 @@ class BrowserChildMessageManager : public ContentFrameMessageManager,
   ~BrowserChildMessageManager();
 };
 
-class ContentListener final : public nsIDOMEventListener {
- public:
-  explicit ContentListener(BrowserChild* aBrowserChild)
-      : mBrowserChild(aBrowserChild) {}
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIDOMEVENTLISTENER
- protected:
-  ~ContentListener() = default;
-  BrowserChild* mBrowserChild;
-};
-
 
 
 
