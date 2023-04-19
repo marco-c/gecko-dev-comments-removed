@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#include "HttpLog.h"
+
+
+#undef LOG
+#define LOG(args) LOG5(args)
+#undef LOG_ENABLED
+#define LOG_ENABLED() LOG5_ENABLED()
+
+#include "Http2StreamTunnel.h"
+
+namespace mozilla {
+namespace net {}  
+}  

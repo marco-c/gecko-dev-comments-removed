@@ -10,7 +10,7 @@
 
 
 #include "Http2Session.h"
-#include "Http2Stream.h"
+#include "Http2StreamBase.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
@@ -25,19 +25,21 @@ namespace net {
 
 class Http2PushTransactionBuffer;
 
-class Http2PushedStream final : public Http2Stream {
+class Http2PushedStream final : public Http2StreamBase {
  public:
   Http2PushedStream(Http2PushTransactionBuffer* aTransaction,
-                    Http2Session* aSession, Http2Stream* aAssociatedStream,
+                    Http2Session* aSession, Http2StreamBase* aAssociatedStream,
                     uint32_t aID,
                     uint64_t aCurrentForegroundTabOuterContentWindowId);
 
   bool GetPushComplete();
 
   
-  virtual Http2Stream* GetConsumerStream() override { return mConsumerStream; };
+  virtual Http2StreamBase* GetConsumerStream() override {
+    return mConsumerStream;
+  };
 
-  void SetConsumerStream(Http2Stream* consumer);
+  void SetConsumerStream(Http2StreamBase* consumer);
   [[nodiscard]] bool GetHashKey(nsCString& key);
 
   
@@ -48,10 +50,10 @@ class Http2PushedStream final : public Http2Stream {
   void AdjustInitialWindow() override;
 
   nsIRequestContext* RequestContext() override { return mRequestContext; };
-  void ConnectPushedStream(Http2Stream* stream);
+  void ConnectPushedStream(Http2StreamBase* stream);
 
   [[nodiscard]] bool TryOnPush();
-  [[nodiscard]] static bool TestOnPush(Http2Stream* stream);
+  [[nodiscard]] static bool TestOnPush(Http2StreamBase* stream);
 
   virtual bool DeferCleanup(nsresult status) override;
   void SetDeferCleanupOnSuccess(bool val) { mDeferCleanupOnSuccess = val; }
@@ -77,7 +79,7 @@ class Http2PushedStream final : public Http2Stream {
   virtual ~Http2PushedStream() = default;
   
   
-  Http2Stream* mConsumerStream{nullptr};
+  Http2StreamBase* mConsumerStream{nullptr};
 
   nsCOMPtr<nsIRequestContext> mRequestContext;
 
@@ -152,7 +154,7 @@ class Http2PushedStreamWrapper : public nsISupports {
   nsCString mRequestString;
   nsCString mResourceUrl;
   uint32_t mStreamID;
-  WeakPtr<Http2Stream> mStream;
+  WeakPtr<Http2StreamBase> mStream;
 };
 
 }  
