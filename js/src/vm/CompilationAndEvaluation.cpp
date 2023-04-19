@@ -1,42 +1,42 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* Same-thread compilation and evaluation APIs. */
 
 #include "js/CompilationAndEvaluation.h"
 
-#include "mozilla/Maybe.h"      
-#include "mozilla/TextUtils.h"  
-#include "mozilla/Utf8.h"       
+#include "mozilla/Maybe.h"      // mozilla::None, mozilla::Some
+#include "mozilla/TextUtils.h"  // mozilla::IsAscii
+#include "mozilla/Utf8.h"       // mozilla::Utf8Unit
 
-#include <utility>  
+#include <utility>  // std::move
 
-#include "jsapi.h"    
-#include "jstypes.h"  
+#include "jsapi.h"    // JS_WrapValue
+#include "jstypes.h"  // JS_PUBLIC_API
 
-#include "frontend/BytecodeCompilation.h"  
-#include "frontend/CompilationStencil.h"  
-#include "frontend/Parser.h"       
-#include "js/CharacterEncoding.h"  
-#include "js/experimental/JSStencil.h"  
-#include "js/friend/ErrorMessages.h"    
-#include "js/RootingAPI.h"              
-#include "js/SourceText.h"              
-#include "js/TypeDecls.h"          
-#include "js/Utility.h"            
-#include "js/Value.h"              
-#include "util/CompleteFile.h"     
-#include "util/StringBuffer.h"     
-#include "vm/EnvironmentObject.h"  
-#include "vm/FunctionFlags.h"      
-#include "vm/Interpreter.h"        
-#include "vm/JSContext.h"          
+#include "frontend/BytecodeCompilation.h"  // frontend::CompileGlobalScript
+#include "frontend/CompilationStencil.h"  // for frontened::{CompilationStencil, BorrowingCompilationStencil, CompilationGCOutput}
+#include "frontend/Parser.h"       // frontend::Parser, frontend::ParseGoal
+#include "js/CharacterEncoding.h"  // JS::UTF8Chars, JS::UTF8CharsToNewTwoByteCharsZ
+#include "js/experimental/JSStencil.h"  // JS::Stencil
+#include "js/friend/ErrorMessages.h"    // js::GetErrorMessage, JSMSG_*
+#include "js/RootingAPI.h"              // JS::Rooted
+#include "js/SourceText.h"              // JS::SourceText
+#include "js/TypeDecls.h"          // JS::HandleObject, JS::MutableHandleScript
+#include "js/Utility.h"            // js::MallocArena, JS::UniqueTwoByteChars
+#include "js/Value.h"              // JS::Value
+#include "util/CompleteFile.h"     // js::FileContents, js::ReadCompleteFile
+#include "util/StringBuffer.h"     // js::StringBuffer
+#include "vm/EnvironmentObject.h"  // js::CreateNonSyntacticEnvironmentChain
+#include "vm/FunctionFlags.h"      // js::FunctionFlags
+#include "vm/Interpreter.h"        // js::Execute
+#include "vm/JSContext.h"          // JSContext
 
-#include "debugger/DebugAPI-inl.h"  
-#include "vm/JSContext-inl.h"       
+#include "debugger/DebugAPI-inl.h"  // js::DebugAPI
+#include "vm/JSContext-inl.h"       // JSContext::check
 
 using mozilla::Utf8Unit;
 
@@ -209,8 +209,8 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     return true;
   }
 
-  
-  
+  // Return true on any out-of-memory error or non-EOF-related syntax error, so
+  // our caller doesn't try to collect more buffered source.
   bool result = true;
 
   using frontend::FullParseHandler;
@@ -230,15 +230,16 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
     return false;
   }
 
+  GeneralErrorContext ec(cx);
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
-  Parser<FullParseHandler, char16_t> parser(cx, options, chars.get(), length,
-                                             true,
-                                            compilationState,
-                                             nullptr);
+  Parser<FullParseHandler, char16_t> parser(
+      cx, &ec, options, chars.get(), length,
+      /* foldConstants = */ true, compilationState,
+      /* syntaxParser = */ nullptr);
   if (!parser.checkOptions() || !parser.parse()) {
-    
-    
-    
+    // We ran into an error. If it was because we ran out of source, we
+    // return false so our caller knows to try to collect more buffered
+    // source.
     if (parser.isUnexpectedEOF()) {
       result = false;
     }
@@ -283,8 +284,8 @@ class FunctionCompiler {
         return false;
       }
 
-      
-      
+      // If the name is an identifier, we can just add it to source text.
+      // Otherwise we'll have to set it manually later.
       nameIsIdentifier_ = js::frontend::IsIdentifier(
           reinterpret_cast<const Latin1Char*>(name), nameLen);
       if (nameIsIdentifier_) {
@@ -309,7 +310,7 @@ class FunctionCompiler {
       }
     }
 
-    
+    // Remember the position of ")".
     parameterListEnd_ = funStr_.length();
     static_assert(FunctionConstructorMedialSigils[0] == ')');
 
@@ -345,9 +346,9 @@ class FunctionCompiler {
     RootedObject enclosingEnv(cx_);
     ScopeKind kind;
     if (envChain.empty()) {
-      
-      
-      
+      // A compiled function has a burned-in environment chain, so if no exotic
+      // environment was requested, we can use the global lexical environment
+      // directly and not need to worry about any potential non-syntactic scope.
       enclosingEnv.set(&cx_->global()->lexicalEnvironment());
       kind = ScopeKind::Global;
     } else {
@@ -359,8 +360,8 @@ class FunctionCompiler {
 
     cx_->check(enclosingEnv);
 
-    
-    
+    // Make sure the static scope chain matches up when we have a
+    // non-syntactic scope.
     MOZ_ASSERT_IF(!IsGlobalLexicalEnvironment(enclosingEnv),
                   kind == ScopeKind::NonSyntactic);
 
@@ -388,8 +389,8 @@ class FunctionCompiler {
       return nullptr;
     }
 
-    
-    
+    // When the function name isn't a valid identifier, the generated function
+    // source in srcBuf won't include the name, so name the function manually.
     if (!nameIsIdentifier_) {
       fun->setAtom(nameAtom_);
     }
@@ -459,10 +460,10 @@ JS_PUBLIC_API bool JS::UpdateDebugMetadata(
     return false;
   }
 
-  
-  
-  
-  
+  // There is no equivalent of cross-compartment wrappers for scripts. If the
+  // introduction script and ScriptSourceObject are in different compartments,
+  // we would be creating a cross-compartment script reference, which is
+  // forbidden. We can still store a CCW to the script source object though.
   RootedValue introductionScript(cx);
   if (introScript) {
     if (introScript->compartment() == cx->compartment()) {
@@ -473,8 +474,8 @@ JS_PUBLIC_API bool JS::UpdateDebugMetadata(
 
   RootedValue privateValueStore(cx, UndefinedValue());
   if (privateValue.isUndefined()) {
-    
-    
+    // Set the private value to that of the script or module that this source is
+    // part of, if any.
     if (scriptOrModule) {
       privateValueStore = scriptOrModule->sourceObject()->getPrivate();
     }
