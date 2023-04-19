@@ -37,7 +37,7 @@ var gPermissionPanel = {
 
 
   _popupAnchorNode: null,
-  _popupPosition: "bottomcenter topleft",
+  _popupPosition: "bottomleft topleft",
   setAnchor(anchorNode, popupPosition) {
     this._popupAnchorNode = anchorNode;
     this._popupPosition = popupPosition;

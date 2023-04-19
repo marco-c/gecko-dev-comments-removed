@@ -1204,7 +1204,7 @@ var gIdentityHandler = {
 
     
     PanelMultiView.openPopup(this._identityPopup, this._identityIconBox, {
-      position: "bottomcenter topleft",
+      position: "bottomleft topleft",
       triggerEvent: event,
     }).catch(Cu.reportError);
   },
