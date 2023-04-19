@@ -9,23 +9,17 @@
 
 namespace mozilla::gfx {
 
-SourceSurfaceWebgl::SourceSurfaceWebgl() = default;
+SourceSurfaceWebgl::SourceSurfaceWebgl(DrawTargetWebgl* aDT)
+    : mFormat(aDT->GetFormat()),
+      mSize(aDT->GetSize()),
+      mDT(aDT),
+      mSharedContext(aDT->mSharedContext) {}
 
 SourceSurfaceWebgl::~SourceSurfaceWebgl() {
   if (mHandle) {
     
     mHandle->SetSurface(nullptr);
   }
-}
-
-bool SourceSurfaceWebgl::Init(DrawTargetWebgl* aDT) {
-  MOZ_ASSERT(!mDT);
-  MOZ_ASSERT(aDT);
-  mDT = aDT;
-  mSharedContext = aDT->mSharedContext;
-  mSize = aDT->GetSize();
-  mFormat = aDT->GetFormat();
-  return true;
 }
 
 

@@ -650,27 +650,28 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot() {
   return mSharedContext->CopySnapshot();
 }
 
+
+
+already_AddRefed<SourceSurface> DrawTargetWebgl::GetDataSnapshot() {
+  if (!mSkiaValid) {
+    ReadIntoSkia();
+  } else if (mSkiaLayer) {
+    FlattenSkia();
+  }
+  return mSkia->Snapshot(mFormat);
+}
+
 already_AddRefed<SourceSurface> DrawTargetWebgl::Snapshot() {
   
   if (mSkiaValid) {
-    if (mSkiaLayer) {
-      FlattenSkia();
-    }
-    return mSkia->Snapshot(mFormat);
+    return GetDataSnapshot();
   }
 
   
   
   if (!mSnapshot) {
     
-    RefPtr<SourceSurfaceWebgl> snapshot = new SourceSurfaceWebgl;
-    if (snapshot->Init(this)) {
-      mSnapshot = snapshot;
-    } else {
-      
-      
-      mSnapshot = ReadSnapshot();
-    }
+    mSnapshot = new SourceSurfaceWebgl(this);
   }
   return do_AddRef(mSnapshot);
 }
