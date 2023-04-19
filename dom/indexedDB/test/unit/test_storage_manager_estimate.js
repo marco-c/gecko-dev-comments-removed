@@ -68,14 +68,6 @@ async function setup(isXOrigin) {
   
   
   if (isXOrigin) {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [
-          "privacy.partition.always_partition_third_party_non_cookie_storage",
-          false,
-        ],
-      ],
-    });
     SpecialPowers.wrap(document).notifyUserGestureActivation();
     await SpecialPowers.addPermission(
       "storageAccessAPI",

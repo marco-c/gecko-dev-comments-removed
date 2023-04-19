@@ -277,10 +277,6 @@ add_task(async function() {
       ["privacy.trackingprotection.annotate_channels", true],
       
       ["network.cookie.sameSite.laxByDefault", false],
-      [
-        "privacy.partition.always_partition_third_party_non_cookie_storage",
-        false,
-      ],
     ],
   });
 

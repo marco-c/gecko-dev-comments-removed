@@ -9,13 +9,7 @@
 add_task(async function() {
   await SpecialPowers.pushPrefEnv({
     
-    set: [
-      ["network.cookie.sameSite.laxByDefault", false],
-      [
-        "privacy.partition.always_partition_third_party_non_cookie_storage",
-        false,
-      ],
-    ],
+    set: [["network.cookie.sameSite.laxByDefault", false]],
   });
 
   const URL_IFRAME = buildURLWithContent(
