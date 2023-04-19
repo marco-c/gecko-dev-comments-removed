@@ -186,6 +186,9 @@ class PeerConnection : public PeerConnectionInternal,
   SignalingState signaling_state() override;
 
   IceConnectionState ice_connection_state() override;
+  IceConnectionState ice_connection_state_internal() override {
+    return ice_connection_state();
+  }
   IceConnectionState standardized_ice_connection_state() override;
   PeerConnectionState peer_connection_state() override;
   IceGatheringState ice_gathering_state() override;
@@ -265,6 +268,10 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   
+  rtc::Thread* signaling_thread_internal() const final {
+    return context_->signaling_thread();
+  }
+
   rtc::Thread* network_thread() const final {
     return context_->network_thread();
   }
@@ -313,71 +320,74 @@ class PeerConnection : public PeerConnectionInternal,
   
   void NoteDataAddedEvent() { NoteUsageEvent(UsageEvent::DATA_ADDED); }
   
-  PeerConnectionObserver* Observer() const;
-  bool IsClosed() const {
+  PeerConnectionObserver* Observer() const override;
+  bool IsClosed() const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return !sdp_handler_ ||
            sdp_handler_->signaling_state() == PeerConnectionInterface::kClosed;
   }
   
-  bool GetSctpSslRole(rtc::SSLRole* role);
+  bool GetSctpSslRole(rtc::SSLRole* role) override;
   
   void OnSctpDataChannelClosed(DataChannelInterface* channel);
 
   bool ShouldFireNegotiationNeededEvent(uint32_t event_id) override;
 
   
-  StatsCollector* stats() {
+  StatsCollector* stats() override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return stats_.get();
   }
-  DataChannelController* data_channel_controller() {
+  DataChannelController* data_channel_controller() override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return &data_channel_controller_;
   }
-  bool dtls_enabled() const {
+  bool dtls_enabled() const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return dtls_enabled_;
   }
-  const PeerConnectionInterface::RTCConfiguration* configuration() const {
+  const PeerConnectionInterface::RTCConfiguration* configuration()
+      const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return &configuration_;
   }
-  PeerConnectionMessageHandler* message_handler() {
+  PeerConnectionMessageHandler* message_handler() override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return &message_handler_;
   }
 
-  RtpTransmissionManager* rtp_manager() { return rtp_manager_.get(); }
-  const RtpTransmissionManager* rtp_manager() const {
+  RtpTransmissionManager* rtp_manager() override { return rtp_manager_.get(); }
+  const RtpTransmissionManager* rtp_manager() const override {
     return rtp_manager_.get();
   }
-  cricket::ChannelManager* channel_manager() const;
+  cricket::ChannelManager* channel_manager() override;
 
-  JsepTransportController* transport_controller() {
+  JsepTransportController* transport_controller() override {
     return transport_controller_.get();
   }
-  cricket::PortAllocator* port_allocator() { return port_allocator_.get(); }
-  Call* call_ptr() { return call_ptr_; }
+  cricket::PortAllocator* port_allocator() override {
+    return port_allocator_.get();
+  }
+  Call* call_ptr() override { return call_ptr_; }
 
   ConnectionContext* context() { return context_.get(); }
-  const PeerConnectionFactoryInterface::Options* options() const {
+  const PeerConnectionFactoryInterface::Options* options() const override {
     return &options_;
   }
-  void SetIceConnectionState(IceConnectionState new_state);
-  void NoteUsageEvent(UsageEvent event);
+  void SetIceConnectionState(IceConnectionState new_state) override;
+  void NoteUsageEvent(UsageEvent event) override;
 
   
   void AddRemoteCandidate(const std::string& mid,
-                          const cricket::Candidate& candidate);
+                          const cricket::Candidate& candidate) override;
 
   
   void ReportSdpFormatReceived(
-      const SessionDescriptionInterface& remote_description);
+      const SessionDescriptionInterface& remote_description) override;
 
   
   void ReportSdpBundleUsage(
-      const SessionDescriptionInterface& remote_description);
+      const SessionDescriptionInterface& remote_description) override;
 
   
   
@@ -385,34 +395,34 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  bool IsUnifiedPlan() const {
+  bool IsUnifiedPlan() const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return is_unified_plan_;
   }
   bool ValidateBundleSettings(
       const cricket::SessionDescription* desc,
       const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+          bundle_groups_by_mid) override;
 
   
   
   
-  absl::optional<std::string> GetDataMid() const;
+  absl::optional<std::string> GetDataMid() const override;
 
-  void SetSctpDataMid(const std::string& mid);
+  void SetSctpDataMid(const std::string& mid) override;
 
-  void ResetSctpDataMid();
+  void ResetSctpDataMid() override;
 
   
   
   void StartSctpTransport(int local_port,
                           int remote_port,
-                          int max_message_size);
+                          int max_message_size) override;
 
   
   
   
-  CryptoOptions GetCryptoOptions();
+  CryptoOptions GetCryptoOptions() override;
 
   
   
@@ -420,18 +430,18 @@ class PeerConnection : public PeerConnectionInternal,
       cricket::MediaType media_type,
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
       const RtpTransceiverInit& init,
-      bool fire_callback = true);
+      bool fire_callback = true) override;
 
   
   RtpTransportInternal* GetRtpTransport(const std::string& mid);
 
   
   
-  bool SrtpRequired() const;
+  bool SrtpRequired() const override;
 
-  bool SetupDataChannelTransport_n(const std::string& mid)
+  bool SetupDataChannelTransport_n(const std::string& mid) override
       RTC_RUN_ON(network_thread());
-  void TeardownDataChannelTransport_n() RTC_RUN_ON(network_thread());
+  void TeardownDataChannelTransport_n() override RTC_RUN_ON(network_thread());
   cricket::ChannelInterface* GetChannel(const std::string& mid)
       RTC_RUN_ON(network_thread());
 
