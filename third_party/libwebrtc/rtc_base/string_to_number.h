@@ -15,13 +15,10 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace rtc {
-
-
-
-
 
 
 
@@ -47,17 +44,17 @@ namespace string_to_number_internal {
 using unsigned_type = unsigned long long;  
 using signed_type = long long;             
 
-absl::optional<signed_type> ParseSigned(const char* str, int base);
-absl::optional<unsigned_type> ParseUnsigned(const char* str, int base);
+absl::optional<signed_type> ParseSigned(absl::string_view str, int base);
+absl::optional<unsigned_type> ParseUnsigned(absl::string_view str, int base);
 
 template <typename T>
-absl::optional<T> ParseFloatingPoint(const char* str);
+absl::optional<T> ParseFloatingPoint(absl::string_view str);
 }  
 
 template <typename T>
 typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value,
                         absl::optional<T>>::type
-StringToNumber(const char* str, int base = 10) {
+StringToNumber(absl::string_view str, int base = 10) {
   using string_to_number_internal::signed_type;
   static_assert(
       std::numeric_limits<T>::max() <=
@@ -78,7 +75,7 @@ template <typename T>
 typename std::enable_if<std::is_integral<T>::value &&
                             std::is_unsigned<T>::value,
                         absl::optional<T>>::type
-StringToNumber(const char* str, int base = 10) {
+StringToNumber(absl::string_view str, int base = 10) {
   using string_to_number_internal::unsigned_type;
   static_assert(std::numeric_limits<T>::max() <=
                     std::numeric_limits<unsigned_type>::max(),
@@ -95,20 +92,12 @@ StringToNumber(const char* str, int base = 10) {
 template <typename T>
 typename std::enable_if<std::is_floating_point<T>::value,
                         absl::optional<T>>::type
-StringToNumber(const char* str, int base = 10) {
+StringToNumber(absl::string_view str, int base = 10) {
   static_assert(
       std::numeric_limits<T>::max() <= std::numeric_limits<long double>::max(),
       "StringToNumber only supports floating-point numbers as large "
       "as long double");
   return string_to_number_internal::ParseFloatingPoint<T>(str);
-}
-
-
-
-template <typename T>
-auto StringToNumber(const std::string& str, int base = 10)
-    -> decltype(StringToNumber<T>(str.c_str(), base)) {
-  return StringToNumber<T>(str.c_str(), base);
 }
 
 }  
