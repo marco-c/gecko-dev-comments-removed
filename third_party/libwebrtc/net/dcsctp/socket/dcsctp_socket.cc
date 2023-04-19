@@ -280,6 +280,8 @@ void DcSctpSocket::Shutdown() {
     
     
     SetState(State::kShutdownPending, "Shutdown called");
+    t1_init_->Stop();
+    t1_cookie_->Stop();
     MaybeSendShutdownOrAck();
   } else {
     
