@@ -120,6 +120,7 @@ impl Utf8PathBuf {
     
     
     
+    #[must_use]
     pub fn new() -> Utf8PathBuf {
         Utf8PathBuf(PathBuf::new())
     }
@@ -177,6 +178,7 @@ impl Utf8PathBuf {
     
     
     
+    #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_std_path_buf(self) -> PathBuf {
         self.into()
     }
@@ -202,6 +204,7 @@ impl Utf8PathBuf {
     
     
     #[cfg(path_buf_capacity)]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Utf8PathBuf {
         Utf8PathBuf(PathBuf::with_capacity(capacity))
     }
@@ -216,6 +219,7 @@ impl Utf8PathBuf {
     
     
     
+    #[must_use]
     pub fn as_path(&self) -> &Utf8Path {
         
         unsafe { Utf8Path::assume_utf8(&*self.0) }
@@ -347,6 +351,7 @@ impl Utf8PathBuf {
     
     
     
+    #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_string(self) -> String {
         self.into_os_string().into_string().unwrap()
     }
@@ -363,11 +368,13 @@ impl Utf8PathBuf {
     
     
     
+    #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_os_string(self) -> OsString {
         self.0.into_os_string()
     }
 
     
+    #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_boxed_path(self) -> Box<Utf8Path> {
         let ptr = Box::into_raw(self.0.into_boxed_path()) as *mut Utf8Path;
         
@@ -384,6 +391,7 @@ impl Utf8PathBuf {
     
     
     #[cfg(path_buf_capacity)]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.0.capacity()
     }
@@ -413,6 +421,20 @@ impl Utf8PathBuf {
     
     
     
+    #[cfg(try_reserve_2)]
+    #[inline]
+    pub fn try_reserve(
+        &mut self,
+        additional: usize,
+    ) -> Result<(), std::collections::TryReserveError> {
+        self.0.try_reserve(additional)
+    }
+
+    
+    
+    
+    
+    
     #[cfg(path_buf_capacity)]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.0.reserve_exact(additional)
@@ -423,9 +445,34 @@ impl Utf8PathBuf {
     
     
     
+    #[cfg(try_reserve_2)]
+    #[inline]
+    pub fn try_reserve_exact(
+        &mut self,
+        additional: usize,
+    ) -> Result<(), std::collections::TryReserveError> {
+        self.0.try_reserve_exact(additional)
+    }
+
+    
+    
+    
+    
+    
     #[cfg(path_buf_capacity)]
     pub fn shrink_to_fit(&mut self) {
         self.0.shrink_to_fit()
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(shrink_to)]
+    #[inline]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.0.shrink_to(min_capacity)
     }
 }
 
@@ -586,6 +633,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn as_str(&self) -> &str {
         
         unsafe { assume_utf8(self.as_os_str()) }
@@ -601,6 +649,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn as_os_str(&self) -> &OsStr {
         self.0.as_os_str()
     }
@@ -615,6 +664,8 @@ impl Utf8Path {
     
     
     
+    #[must_use = "this returns the result of the operation, \
+                  without modifying the original"]
     pub fn to_path_buf(&self) -> Utf8PathBuf {
         Utf8PathBuf(self.0.to_path_buf())
     }
@@ -637,6 +688,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn is_absolute(&self) -> bool {
         self.0.is_absolute()
     }
@@ -654,6 +706,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn is_relative(&self) -> bool {
         self.0.is_relative()
     }
@@ -674,6 +727,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn has_root(&self) -> bool {
         self.0.has_root()
     }
@@ -695,6 +749,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn parent(&self) -> Option<&Utf8Path> {
         self.0.parent().map(|path| {
             
@@ -753,6 +808,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn file_name(&self) -> Option<&str> {
         self.0.file_name().map(|s| {
             
@@ -818,6 +874,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn starts_with(&self, base: impl AsRef<Path>) -> bool {
         self.0.starts_with(base)
     }
@@ -840,6 +897,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn ends_with(&self, base: impl AsRef<Path>) -> bool {
         self.0.ends_with(base)
     }
@@ -863,6 +921,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn file_stem(&self) -> Option<&str> {
         self.0.file_stem().map(|s| {
             
@@ -889,6 +948,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn extension(&self) -> Option<&str> {
         self.0.extension().map(|s| {
             
@@ -907,6 +967,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn join(&self, path: impl AsRef<Utf8Path>) -> Utf8PathBuf {
         Utf8PathBuf(self.0.join(&path.as_ref().0))
     }
@@ -923,6 +984,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn join_os(&self, path: impl AsRef<Path>) -> PathBuf {
         self.0.join(path)
     }
@@ -942,6 +1004,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn with_file_name(&self, file_name: impl AsRef<str>) -> Utf8PathBuf {
         Utf8PathBuf(self.0.with_file_name(file_name.as_ref()))
     }
@@ -1240,6 +1303,12 @@ impl Utf8Path {
     
     
     
+    
+    
+    
+    
+    
+    #[must_use]
     pub fn exists(&self) -> bool {
         self.0.exists()
     }
@@ -1266,11 +1335,50 @@ impl Utf8Path {
     
     
     
+    #[inline]
+    pub fn try_exists(&self) -> io::Result<bool> {
+        
+        
+        match fs::metadata(self) {
+            Ok(_) => Ok(true),
+            Err(error) => {
+                if error.kind() == io::ErrorKind::NotFound {
+                    Ok(false)
+                } else {
+                    Err(error)
+                }
+            }
+        }
+    }
+
     
     
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
     pub fn is_file(&self) -> bool {
         self.0.is_file()
     }
@@ -1296,6 +1404,7 @@ impl Utf8Path {
     
     
     
+    #[must_use]
     pub fn is_dir(&self) -> bool {
         self.0.is_dir()
     }
@@ -1334,6 +1443,7 @@ impl Utf8Path {
     }
 
     
+    #[must_use = "`self` will be dropped if the result is not used"]
     pub fn into_path_buf(self: Box<Utf8Path>) -> Utf8PathBuf {
         let ptr = Box::into_raw(self) as *mut Path;
         
@@ -1397,6 +1507,7 @@ impl fmt::Debug for Utf8Path {
 
 
 #[derive(Copy, Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 #[repr(transparent)]
 pub struct Utf8Ancestors<'a>(Ancestors<'a>);
 
@@ -1439,6 +1550,7 @@ impl<'a> FusedIterator for Utf8Ancestors<'a> {}
 
 
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Utf8Components<'a>(Components<'a>);
 
 impl<'a> Utf8Components<'a> {
@@ -1455,6 +1567,7 @@ impl<'a> Utf8Components<'a> {
     
     
     
+    #[must_use]
     pub fn as_path(&self) -> &'a Utf8Path {
         
         
@@ -1523,6 +1636,7 @@ impl AsRef<OsStr> for Utf8Components<'_> {
 
 
 #[derive(Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a> {
     inner: Utf8Components<'a>,
 }
@@ -1557,6 +1671,7 @@ impl<'a> Iter<'a> {
     
     
     
+    #[must_use]
     pub fn as_path(&self) -> &'a Utf8Path {
         self.inner.as_path()
     }
@@ -1674,6 +1789,7 @@ impl<'a> Utf8Component<'a> {
     
     
     
+    #[must_use]
     pub fn as_str(&self) -> &'a str {
         
         
@@ -1691,6 +1807,7 @@ impl<'a> Utf8Component<'a> {
     
     
     
+    #[must_use]
     pub fn as_os_str(&self) -> &'a OsStr {
         match *self {
             Utf8Component::Prefix(prefix) => prefix.as_os_str(),
@@ -1821,6 +1938,7 @@ impl<'a> Utf8Prefix<'a> {
     
     
     
+    #[must_use]
     pub fn is_verbatim(&self) -> bool {
         use Utf8Prefix::*;
         match self {
@@ -1872,6 +1990,7 @@ impl<'a> Utf8PrefixComponent<'a> {
     
     
     
+    #[must_use]
     pub fn kind(&self) -> Utf8Prefix<'a> {
         
         
@@ -1894,6 +2013,7 @@ impl<'a> Utf8PrefixComponent<'a> {
     }
 
     
+    #[must_use]
     pub fn as_str(&self) -> &'a str {
         
         
@@ -1901,6 +2021,7 @@ impl<'a> Utf8PrefixComponent<'a> {
     }
 
     
+    #[must_use]
     pub fn as_os_str(&self) -> &'a OsStr {
         self.0.as_os_str()
     }
@@ -2596,6 +2717,7 @@ impl<'a> IntoIterator for &'a Utf8Path {
 
 macro_rules! impl_cmp {
     ($lhs:ty, $rhs: ty) => {
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
             #[inline]
             fn eq(&self, other: &$rhs) -> bool {
@@ -2603,6 +2725,7 @@ macro_rules! impl_cmp {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
@@ -2610,6 +2733,7 @@ macro_rules! impl_cmp {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$rhs> for $lhs {
             #[inline]
             fn partial_cmp(&self, other: &$rhs) -> Option<Ordering> {
@@ -2617,6 +2741,7 @@ macro_rules! impl_cmp {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$lhs> for $rhs {
             #[inline]
             fn partial_cmp(&self, other: &$lhs) -> Option<Ordering> {
@@ -2634,6 +2759,7 @@ impl_cmp!(Cow<'a, Utf8Path>, Utf8PathBuf);
 
 macro_rules! impl_cmp_std_path {
     ($lhs:ty, $rhs: ty) => {
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
             #[inline]
             fn eq(&self, other: &$rhs) -> bool {
@@ -2641,6 +2767,7 @@ macro_rules! impl_cmp_std_path {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
@@ -2648,6 +2775,7 @@ macro_rules! impl_cmp_std_path {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$rhs> for $lhs {
             #[inline]
             fn partial_cmp(&self, other: &$rhs) -> Option<std::cmp::Ordering> {
@@ -2655,6 +2783,7 @@ macro_rules! impl_cmp_std_path {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$lhs> for $rhs {
             #[inline]
             fn partial_cmp(&self, other: &$lhs) -> Option<std::cmp::Ordering> {
@@ -2679,6 +2808,7 @@ impl_cmp_std_path!(&'a Utf8Path, PathBuf);
 
 macro_rules! impl_cmp_str {
     ($lhs:ty, $rhs: ty) => {
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
             #[inline]
             fn eq(&self, other: &$rhs) -> bool {
@@ -2686,6 +2816,7 @@ macro_rules! impl_cmp_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
@@ -2693,6 +2824,7 @@ macro_rules! impl_cmp_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$rhs> for $lhs {
             #[inline]
             fn partial_cmp(&self, other: &$rhs) -> Option<std::cmp::Ordering> {
@@ -2700,6 +2832,7 @@ macro_rules! impl_cmp_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$lhs> for $rhs {
             #[inline]
             fn partial_cmp(&self, other: &$lhs) -> Option<std::cmp::Ordering> {
@@ -2724,6 +2857,7 @@ impl_cmp_str!(&'a Utf8Path, String);
 
 macro_rules! impl_cmp_os_str {
     ($lhs:ty, $rhs: ty) => {
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
             #[inline]
             fn eq(&self, other: &$rhs) -> bool {
@@ -2731,6 +2865,7 @@ macro_rules! impl_cmp_os_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
@@ -2738,6 +2873,7 @@ macro_rules! impl_cmp_os_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$rhs> for $lhs {
             #[inline]
             fn partial_cmp(&self, other: &$rhs) -> Option<std::cmp::Ordering> {
@@ -2745,6 +2881,7 @@ macro_rules! impl_cmp_os_str {
             }
         }
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b> PartialOrd<$lhs> for $rhs {
             #[inline]
             fn partial_cmp(&self, other: &$lhs) -> Option<std::cmp::Ordering> {
