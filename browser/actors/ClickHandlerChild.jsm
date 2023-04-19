@@ -181,6 +181,13 @@ class ClickHandlerChild extends JSWindowActorChild {
       json.originStoragePrincipal = ownerDoc.effectiveStoragePrincipal;
       json.triggeringPrincipal = ownerDoc.nodePrincipal;
 
+      if (
+        (ownerDoc.URL === "about:newtab" || ownerDoc.URL === "about:home") &&
+        node.dataset.isSponsoredLink === "true"
+      ) {
+        json.globalHistoryOptions = { triggeringSponsoredURL: href };
+      }
+
       
       
       
