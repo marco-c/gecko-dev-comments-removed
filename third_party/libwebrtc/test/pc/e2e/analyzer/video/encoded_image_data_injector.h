@@ -30,8 +30,7 @@ class EncodedImageDataInjector {
   
   virtual EncodedImage InjectData(uint16_t id,
                                   bool discard,
-                                  const EncodedImage& source,
-                                  int coding_entity_id) = 0;
+                                  const EncodedImage& source) = 0;
 };
 
 struct EncodedImageExtractionResult {
@@ -59,8 +58,8 @@ class EncodedImageDataExtractor {
   
   
   
-  virtual EncodedImageExtractionResult ExtractData(const EncodedImage& source,
-                                                   int coding_entity_id) = 0;
+  virtual EncodedImageExtractionResult ExtractData(
+      const EncodedImage& source) = 0;
 };
 
 }  
