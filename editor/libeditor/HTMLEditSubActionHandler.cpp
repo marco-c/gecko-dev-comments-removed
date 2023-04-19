@@ -1877,10 +1877,8 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
       return result;
     }
     
-    MOZ_ASSERT(!result.Canceled(),
-               "HandleInsertParagraphInParagraph() canceled this edit action, "
-               "InsertParagraphSeparatorAsSubAction() needs to handle this "
-               "action instead");
+    MOZ_ASSERT(!result.Canceled());
+    MOZ_ASSERT(result.Rv() == NS_SUCCESS_DOM_NO_OPERATION);
   }
 
   
@@ -7236,14 +7234,14 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     return aCandidatePointToSplit;
   }();
 
-  bool doesCRCreateNewP = GetReturnInParagraphCreatesNewParagraph();
+  const bool createNewParagraph = GetReturnInParagraphCreatesNewParagraph();
   bool splitAfterNewBR = false;
   RefPtr<HTMLBRElement> brElement;
 
   EditorDOMPoint pointToSplitParentDivOrP(pointToSplitAvoidingEmptyNewLink);
 
   EditorDOMPoint pointToInsertBR;
-  if (doesCRCreateNewP &&
+  if (createNewParagraph &&
       pointToSplitAvoidingEmptyNewLink.GetContainer() == &aParentDivOrP) {
     
     brElement = nullptr;
@@ -7259,7 +7257,13 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
+        
+        
+        if (!createNewParagraph) {
+          return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
+        }
         pointToInsertBR.Set(pointToSplitAvoidingEmptyNewLink.GetContainer());
+        MOZ_ASSERT(pointToInsertBR.IsSet());
         brElement = nullptr;
       }
     } else if (pointToSplitAvoidingEmptyNewLink.IsEndOfContainer()) {
@@ -7273,56 +7277,64 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
+        
+        
+        if (!createNewParagraph) {
+          return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
+        }
         pointToInsertBR.SetAfter(
             pointToSplitAvoidingEmptyNewLink.GetContainer());
-        NS_WARNING_ASSERTION(
-            pointToInsertBR.IsSet(),
-            "Failed to set to after the container  of selection start");
+        MOZ_ASSERT(pointToInsertBR.IsSet());
         brElement = nullptr;
       }
     } else {
-      if (doesCRCreateNewP) {
-        
-        
-        
-        
-        
-        
-        Result<EditorDOMPoint, nsresult> pointToSplitOrError =
-            WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
-                *this, pointToSplitParentDivOrP, aParentDivOrP);
-        if (NS_WARN_IF(Destroyed())) {
-          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
-          NS_WARNING(
-              "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() "
-              "failed");
-          return EditActionResult(pointToSplitOrError.unwrapErr());
-        }
-        MOZ_ASSERT(pointToSplitOrError.inspect().IsSetAndValid());
-        if (pointToSplitOrError.inspect().IsSet()) {
-          pointToSplitParentDivOrP = pointToSplitOrError.unwrap();
-        }
-        const SplitNodeResult splitParentDivOrPResult =
-            SplitNodeWithTransaction(pointToSplitParentDivOrP);
-        if (splitParentDivOrPResult.isErr()) {
-          NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-          return EditActionResult(splitParentDivOrPResult.unwrapErr());
-        }
-        nsresult rv = splitParentDivOrPResult.SuggestCaretPointTo(
-            *this, {SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-        if (NS_FAILED(rv)) {
-          NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-          return EditActionHandled(rv);
-        }
-        pointToSplitParentDivOrP.SetToEndOf(
-            splitParentDivOrPResult.GetPreviousContent());
+      
+      
+      if (!createNewParagraph) {
+        return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
       }
 
       
       
+      
+      
+      
+      
+      Result<EditorDOMPoint, nsresult> pointToSplitOrError =
+          WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
+              *this, pointToSplitParentDivOrP, aParentDivOrP);
+      if (NS_WARN_IF(Destroyed())) {
+        return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (MOZ_UNLIKELY(pointToSplitOrError.isErr())) {
+        NS_WARNING(
+            "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() "
+            "failed");
+        return EditActionResult(pointToSplitOrError.unwrapErr());
+      }
+      MOZ_ASSERT(pointToSplitOrError.inspect().IsSetAndValid());
+      if (pointToSplitOrError.inspect().IsSet()) {
+        pointToSplitParentDivOrP = pointToSplitOrError.unwrap();
+      }
+      const SplitNodeResult splitParentDivOrPResult =
+          SplitNodeWithTransaction(pointToSplitParentDivOrP);
+      if (splitParentDivOrPResult.isErr()) {
+        NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+        return EditActionResult(splitParentDivOrPResult.unwrapErr());
+      }
+      nsresult rv = splitParentDivOrPResult.SuggestCaretPointTo(
+          *this, {SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+      if (NS_FAILED(rv)) {
+        NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+        return EditActionHandled(rv);
+      }
+      pointToSplitParentDivOrP.SetToEndOf(
+          splitParentDivOrPResult.GetPreviousContent());
+
+      
+      
       pointToInsertBR.SetAfter(pointToSplitParentDivOrP.GetContainer());
+      MOZ_ASSERT(pointToInsertBR.IsSet());
     }
   } else {
     
@@ -7344,6 +7356,11 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
+        
+        
+        if (!createNewParagraph) {
+          return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
+        }
         pointToInsertBR = pointToSplitAvoidingEmptyNewLink;
         splitAfterNewBR = true;
         brElement = nullptr;
@@ -7351,11 +7368,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     }
   }
   if (pointToInsertBR.IsSet()) {
-    
-    if (NS_WARN_IF(!doesCRCreateNewP)) {
-      return EditActionResult(NS_OK);
-    }
-
+    MOZ_ASSERT(createNewParagraph);
     CreateElementResult insertBRElementResult =
         InsertBRElement(WithTransaction::Yes, pointToInsertBR);
     if (insertBRElementResult.isErr()) {
