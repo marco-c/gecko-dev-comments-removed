@@ -959,7 +959,7 @@ function CssRule(cssSheet, domRule, element) {
   if (this._cssSheet) {
     
     this._selectors = null;
-    this.line = InspectorUtils.getRuleLine(this.domRule);
+    this.line = InspectorUtils.getRelativeRuleLine(this.domRule);
     this.column = InspectorUtils.getRuleColumn(this.domRule);
     this.source = this._cssSheet.shortSource + ":" + this.line;
     if (this.mediaText) {
