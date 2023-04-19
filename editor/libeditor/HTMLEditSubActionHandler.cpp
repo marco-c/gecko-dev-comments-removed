@@ -7152,115 +7152,129 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     return EditActionResult(NS_ERROR_FAILURE);
   }
 
-  EditorDOMPoint atStartOfSelection(firstRange->StartRef());
-  if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+  
+  const EditorDOMPoint aCandidatePointToSplit(firstRange->StartRef());
+  if (NS_WARN_IF(!aCandidatePointToSplit.IsSet())) {
     return EditActionResult(NS_ERROR_FAILURE);
   }
-  MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
+  MOZ_ASSERT(aCandidatePointToSplit.IsSetAndValid());
 
-  
-  
-  
-  
-  
-  
-  
-  if (atStartOfSelection.IsStartOfContainer()) {
-    for (nsIContent* container = atStartOfSelection.GetContainerAsContent();
-         container && container != &aParentDivOrP;
-         container = container->GetParent()) {
-      if (HTMLEditUtils::IsLink(container)) {
-        
-        
-        atStartOfSelection.Set(container);
-        
-        
-      }
-      
-      if (container->GetPreviousSibling()) {
-        
-        
-        break;
-      }
-    }
-  }
-  
-  
-  
-  
-  
-  
-  else if (atStartOfSelection.IsEndOfContainer() ||
-           atStartOfSelection.IsBRElementAtEndOfContainer()) {
+  const EditorDOMPoint pointToSplitAvoidingEmptyNewLink = [&]() {
     
     
     
     
-    bool foundBRElement = atStartOfSelection.IsBRElementAtEndOfContainer();
-    for (nsIContent* container = atStartOfSelection.GetContainerAsContent();
-         container && container != &aParentDivOrP;
-         container = container->GetParent()) {
-      if (HTMLEditUtils::IsLink(container)) {
-        
-        atStartOfSelection.SetAfter(container);
-        
-        
-      }
-      
-      if (nsIContent* nextSibling = container->GetNextSibling()) {
-        if (foundBRElement) {
+    
+    
+    
+    if (aCandidatePointToSplit.IsStartOfContainer()) {
+      EditorDOMPoint candidatePoint(aCandidatePointToSplit);
+      for (nsIContent* container =
+               aCandidatePointToSplit.GetContainerAsContent();
+           container && container != &aParentDivOrP;
+           container = container->GetParent()) {
+        if (HTMLEditUtils::IsLink(container)) {
           
+          
+          candidatePoint.Set(container);
+          
+          
+        }
+        
+        if (container->GetPreviousSibling()) {
           
           
           break;
         }
-
-        
-        if (!nextSibling->IsHTMLElement(nsGkAtoms::br)) {
-          break;
-        }
-        foundBRElement = true;
       }
+      return candidatePoint;
     }
-  }
+
+    
+    
+    
+    
+    
+    
+    if (aCandidatePointToSplit.IsEndOfContainer() ||
+        aCandidatePointToSplit.IsBRElementAtEndOfContainer()) {
+      
+      
+      
+      
+      bool foundBRElement =
+          aCandidatePointToSplit.IsBRElementAtEndOfContainer();
+      EditorDOMPoint candidatePoint(aCandidatePointToSplit);
+      for (nsIContent* container =
+               aCandidatePointToSplit.GetContainerAsContent();
+           container && container != &aParentDivOrP;
+           container = container->GetParent()) {
+        if (HTMLEditUtils::IsLink(container)) {
+          
+          candidatePoint.SetAfter(container);
+          
+          
+        }
+        
+        if (nsIContent* nextSibling = container->GetNextSibling()) {
+          if (foundBRElement) {
+            
+            
+            
+            break;
+          }
+
+          
+          if (!nextSibling->IsHTMLElement(nsGkAtoms::br)) {
+            break;
+          }
+          foundBRElement = true;
+        }
+      }
+      return candidatePoint;
+    }
+    return aCandidatePointToSplit;
+  }();
 
   bool doesCRCreateNewP = GetReturnInParagraphCreatesNewParagraph();
   bool splitAfterNewBR = false;
   RefPtr<HTMLBRElement> brElement;
 
-  EditorDOMPoint pointToSplitParentDivOrP(atStartOfSelection);
+  EditorDOMPoint pointToSplitParentDivOrP(pointToSplitAvoidingEmptyNewLink);
 
   EditorDOMPoint pointToInsertBR;
-  if (doesCRCreateNewP && atStartOfSelection.GetContainer() == &aParentDivOrP) {
+  if (doesCRCreateNewP &&
+      pointToSplitAvoidingEmptyNewLink.GetContainer() == &aParentDivOrP) {
     
     brElement = nullptr;
-  } else if (atStartOfSelection.IsInTextNode()) {
+  } else if (pointToSplitAvoidingEmptyNewLink.IsInTextNode()) {
     
-    if (atStartOfSelection.IsStartOfContainer()) {
+    if (pointToSplitAvoidingEmptyNewLink.IsStartOfContainer()) {
       
       brElement = HTMLBRElement::FromNodeOrNull(
-          atStartOfSelection.IsInContentNode()
+          pointToSplitAvoidingEmptyNewLink.IsInContentNode()
               ? HTMLEditUtils::GetPreviousSibling(
-                    *atStartOfSelection.ContainerAsContent(),
+                    *pointToSplitAvoidingEmptyNewLink.ContainerAsContent(),
                     {WalkTreeOption::IgnoreNonEditableNode})
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        pointToInsertBR.Set(atStartOfSelection.GetContainer());
+        pointToInsertBR.Set(pointToSplitAvoidingEmptyNewLink.GetContainer());
         brElement = nullptr;
       }
-    } else if (atStartOfSelection.IsEndOfContainer()) {
+    } else if (pointToSplitAvoidingEmptyNewLink.IsEndOfContainer()) {
       
       
       brElement = HTMLBRElement::FromNodeOrNull(
-          atStartOfSelection.IsInContentNode()
+          pointToSplitAvoidingEmptyNewLink.IsInContentNode()
               ? HTMLEditUtils::GetNextSibling(
-                    *atStartOfSelection.ContainerAsContent(),
+                    *pointToSplitAvoidingEmptyNewLink.ContainerAsContent(),
                     {WalkTreeOption::IgnoreNonEditableNode})
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        pointToInsertBR.SetAfter(atStartOfSelection.GetContainer());
+        pointToInsertBR.SetAfter(
+            pointToSplitAvoidingEmptyNewLink.GetContainer());
         NS_WARNING_ASSERTION(
             pointToInsertBR.IsSet(),
             "Failed to set to after the container  of selection start");
@@ -7316,7 +7330,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     Element* editingHost = ComputeEditingHost();
     brElement = HTMLBRElement::FromNodeOrNull(
         editingHost ? HTMLEditUtils::GetPreviousContent(
-                          atStartOfSelection,
+                          pointToSplitAvoidingEmptyNewLink,
                           {WalkTreeOption::IgnoreNonEditableNode}, editingHost)
                     : nullptr);
     if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
@@ -7325,12 +7339,12 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
       brElement = HTMLBRElement::FromNodeOrNull(
           editingHost
               ? HTMLEditUtils::GetNextContent(
-                    atStartOfSelection, {WalkTreeOption::IgnoreNonEditableNode},
-                    editingHost)
+                    pointToSplitAvoidingEmptyNewLink,
+                    {WalkTreeOption::IgnoreNonEditableNode}, editingHost)
               : nullptr);
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        pointToInsertBR = atStartOfSelection;
+        pointToInsertBR = pointToSplitAvoidingEmptyNewLink;
         splitAfterNewBR = true;
         brElement = nullptr;
       }
