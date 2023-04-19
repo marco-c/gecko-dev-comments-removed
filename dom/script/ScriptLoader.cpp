@@ -1123,6 +1123,23 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   
+  
+  if (aScriptKind == ScriptKind::eImportMap) {
+    
+    
+    
+    
+    
+    if (!mModuleLoader->IsImportMapAllowed()) {
+      NS_WARNING("ScriptLoader: import maps allowed is false.");
+      NS_DispatchToCurrentThread(
+          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                            &nsIScriptElement::FireErrorEvent));
+      return false;
+    }
+  }
+
+  
   CORSMode corsMode = CORS_NONE;
   if (aScriptKind == ScriptKind::eModule) {
     corsMode = aElement->GetCORSMode();
@@ -1190,15 +1207,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     
     
-    
-    
-    if (!mModuleLoader->IsImportMapAllowed()) {
-      NS_WARNING("ScriptLoader: import maps allowed is false.");
-      NS_DispatchToCurrentThread(
-          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
-                            &nsIScriptElement::FireErrorEvent));
-      return false;
-    }
+    MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
 
     
     mModuleLoader->DisallowImportMaps();
