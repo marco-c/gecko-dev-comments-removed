@@ -590,7 +590,16 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
           static_cast<uint32_t>(spa_buffer->datas[i].chunk->offset)};
       plane_datas.push_back(data);
     }
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     src_unique_ptr = egl_dmabuf_->ImageFromDmaBuf(
         desktop_size_, spa_video_format_.format, plane_datas, modifier_);
     if (src_unique_ptr) {
@@ -666,8 +675,19 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
                           ? video_metadata->region.position.x
                           : 0;
 
-  uint8_t* updated_src = src + (spa_buffer->datas[0].chunk->stride * y_offset) +
-                         (kBytesPerPixel * x_offset);
+  const uint32_t frame_stride = kBytesPerPixel * video_size_.width();
+  uint32_t stride = spa_buffer->datas[0].chunk->stride;
+
+  if (spa_buffer->datas[0].type == SPA_DATA_DmaBuf && stride > frame_stride) {
+    
+    
+    
+    
+    stride = frame_stride;
+  }
+
+  uint8_t* updated_src =
+      src + (stride * y_offset) + (kBytesPerPixel * x_offset);
 
   webrtc::MutexLock lock(&queue_lock_);
 
@@ -689,8 +709,7 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
   }
 
   queue_.current_frame()->CopyPixelsFrom(
-      updated_src,
-      (spa_buffer->datas[0].chunk->stride - (kBytesPerPixel * x_offset)),
+      updated_src, (stride - (kBytesPerPixel * x_offset)),
       DesktopRect::MakeWH(video_size_.width(), video_size_.height()));
 
   if (spa_video_format_.format == SPA_VIDEO_FORMAT_RGBx ||
