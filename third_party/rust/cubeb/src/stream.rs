@@ -3,61 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use cubeb_core;
 use ffi;
 use std::ffi::CString;
@@ -68,8 +13,38 @@ use std::slice::{from_raw_parts, from_raw_parts_mut};
 use std::{ops, panic, ptr};
 use {ContextRef, DeviceId, Error, Result, State, StreamParamsRef};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub type DataCallback<F> = dyn FnMut(&[F], &mut [F]) -> isize + Send + Sync + 'static;
+
+
+
+
+
+
 pub type StateCallback = dyn FnMut(State) + Send + Sync + 'static;
+
+
 pub type DeviceChangedCallback = dyn FnMut() + Send + Sync + 'static;
 
 pub struct StreamCallbacks<F> {
@@ -77,6 +52,60 @@ pub struct StreamCallbacks<F> {
     pub(crate) state: Box<StateCallback>,
     pub(crate) device_changed: Option<Box<DeviceChangedCallback>>,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub struct Stream<F>(ManuallyDrop<cubeb_core::Stream>, PhantomData<*const F>);
 
@@ -102,6 +131,53 @@ impl<F> ops::Deref for Stream<F> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct StreamBuilder<'a, F> {
     name: Option<CString>,
     input: Option<(DeviceId, &'a StreamParamsRef)>,
@@ -117,6 +193,7 @@ impl<'a, F> StreamBuilder<'a, F> {
         Default::default()
     }
 
+    
     pub fn data_callback<D>(&mut self, cb: D) -> &mut Self
     where
         D: FnMut(&[F], &mut [F]) -> isize + Send + Sync + 'static,
@@ -124,6 +201,8 @@ impl<'a, F> StreamBuilder<'a, F> {
         self.data_cb = Some(Box::new(cb) as Box<DataCallback<F>>);
         self
     }
+
+    
     pub fn state_callback<S>(&mut self, cb: S) -> &mut Self
     where
         S: FnMut(State) + Send + Sync + 'static,
@@ -132,36 +211,57 @@ impl<'a, F> StreamBuilder<'a, F> {
         self
     }
 
+    
     pub fn name<T: Into<Vec<u8>>>(&mut self, name: T) -> &mut Self {
         self.name = Some(CString::new(name).unwrap());
         self
     }
 
+    
+    
+    
     pub fn default_input(&mut self, params: &'a StreamParamsRef) -> &mut Self {
         self.input = Some((ptr::null(), params));
         self
     }
 
+    
+    
+    
     pub fn input(&mut self, device: DeviceId, params: &'a StreamParamsRef) -> &mut Self {
         self.input = Some((device, params));
         self
     }
 
+    
+    
+    
     pub fn default_output(&mut self, params: &'a StreamParamsRef) -> &mut Self {
         self.output = Some((ptr::null(), params));
         self
     }
 
+    
+    
+    
     pub fn output(&mut self, device: DeviceId, params: &'a StreamParamsRef) -> &mut Self {
         self.output = Some((device, params));
         self
     }
 
+    
+    
+    
     pub fn latency(&mut self, latency: u32) -> &mut Self {
         self.latency = Some(latency);
         self
     }
 
+    
+    
+    
+    
+    
     pub fn device_changed_cb<CB>(&mut self, cb: CB) -> &mut Self
     where
         CB: FnMut() + Send + Sync + 'static,
@@ -170,6 +270,7 @@ impl<'a, F> StreamBuilder<'a, F> {
         self
     }
 
+    
     pub fn init(self, ctx: &ContextRef) -> Result<Stream<F>> {
         if self.data_cb.is_none() || self.state_cb.is_none() {
             return Err(Error::error());
