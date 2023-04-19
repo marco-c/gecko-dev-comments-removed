@@ -134,9 +134,10 @@ TEST_F(AudioIngressTest, GetAudioFrameAfterRtpReceived) {
   EXPECT_EQ(audio_frame.elapsed_time_ms_, 0);
 }
 
-TEST_F(AudioIngressTest, GetSpeechOutputLevelFullRange) {
+TEST_F(AudioIngressTest, TestSpeechOutputLevelAndEnergyDuration) {
   
-  constexpr int kNumRtp = 11;
+  
+  constexpr int kNumRtp = 6;
   int rtp_count = 0;
   rtc::Event event;
   auto handle_rtp = [&](const uint8_t* packet, size_t length, Unused) {
@@ -153,13 +154,19 @@ TEST_F(AudioIngressTest, GetSpeechOutputLevelFullRange) {
   }
   event.Wait(1000);
 
-  for (int i = 0; i < kNumRtp; ++i) {
+  for (int i = 0; i < kNumRtp * 2; ++i) {
     AudioFrame audio_frame;
     EXPECT_EQ(
         ingress_->GetAudioFrameWithInfo(kPcmuFormat.clockrate_hz, &audio_frame),
         AudioMixer::Source::AudioFrameInfo::kNormal);
   }
-  EXPECT_EQ(ingress_->GetSpeechOutputLevelFullRange(), kAudioLevel);
+  EXPECT_EQ(ingress_->GetOutputAudioLevel(), kAudioLevel);
+
+  constexpr double kExpectedEnergy = 0.00016809565587789564;
+  constexpr double kExpectedDuration = 0.11999999999999998;
+
+  EXPECT_DOUBLE_EQ(ingress_->GetOutputTotalEnergy(), kExpectedEnergy);
+  EXPECT_DOUBLE_EQ(ingress_->GetOutputTotalDuration(), kExpectedDuration);
 }
 
 TEST_F(AudioIngressTest, PreferredSampleRate) {
@@ -221,7 +228,7 @@ TEST_F(AudioIngressTest, GetMutedAudioFrameAfterRtpReceivedAndStopPlay) {
 
   
   
-  EXPECT_EQ(ingress_->GetSpeechOutputLevelFullRange(), kAudioLevel);
+  EXPECT_EQ(ingress_->GetOutputAudioLevel(), kAudioLevel);
 }
 
 }  

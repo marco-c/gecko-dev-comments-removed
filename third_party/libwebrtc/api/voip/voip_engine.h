@@ -18,6 +18,7 @@ class VoipCodec;
 class VoipNetwork;
 class VoipDtmf;
 class VoipStatistics;
+class VoipVolumeControl;
 
 
 
@@ -89,6 +90,9 @@ class VoipEngine {
   
   
   virtual VoipStatistics& Statistics() = 0;
+
+  
+  virtual VoipVolumeControl& VolumeControl() = 0;
 };
 
 }  

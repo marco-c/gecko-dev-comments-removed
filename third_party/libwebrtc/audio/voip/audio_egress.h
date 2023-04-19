@@ -16,6 +16,7 @@
 
 #include "api/audio_codecs/audio_format.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "audio/audio_level.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/audio_sender.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -90,6 +91,16 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   bool SendTelephoneEvent(int dtmf_event, int duration_ms);
 
   
+  
+  int GetInputAudioLevel() const { return input_audio_level_.LevelFullRange(); }
+  double GetInputTotalEnergy() const {
+    return input_audio_level_.TotalEnergy();
+  }
+  double GetInputTotalDuration() const {
+    return input_audio_level_.TotalDuration();
+  }
+
+  
   void SendAudioData(std::unique_ptr<AudioFrame> audio_frame) override;
 
   
@@ -137,6 +148,9 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   
   
   rtc::TaskQueue encoder_queue_;
+
+  
+  voe::AudioLevel input_audio_level_;
 };
 
 }  
