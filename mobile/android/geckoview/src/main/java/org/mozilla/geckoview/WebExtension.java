@@ -1350,6 +1350,8 @@ public class WebExtension {
     }
 
     
+
+
     private Action(final Action source, final Action defaultValue) {
       if (source.type != defaultValue.type) {
         throw new IllegalArgumentException("defaultValue must be of the same type.");
@@ -2449,12 +2451,16 @@ public class WebExtension {
       }
 
       
+
+
       @UiThread
       default boolean fileExists() {
         return false;
       }
 
       
+
+
       @NonNull
       @UiThread
       default String filename() {
@@ -2471,6 +2477,8 @@ public class WebExtension {
       }
 
       
+
+
       @NonNull
       @UiThread
       default String mime() {
@@ -2487,6 +2495,8 @@ public class WebExtension {
       }
 
       
+
+
       @NonNull
       @UiThread
       default String referrer() {
@@ -2494,6 +2504,8 @@ public class WebExtension {
       }
 
       
+
+
       @UiThread
       default long startTime() {
         return -1;

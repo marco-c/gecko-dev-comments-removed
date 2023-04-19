@@ -2823,6 +2823,8 @@ public class GeckoSession {
   }
 
   
+
+
   @AnyThread
   public @Nullable HistoryDelegate getHistoryDelegate() {
     return mHistoryHandler.getDelegate();
@@ -6497,6 +6499,8 @@ public class GeckoSession {
   }
 
   
+
+
   @UiThread
   public @Nullable Autofill.Delegate getAutofillDelegate() {
     return getAutofillSupport().getDelegate();

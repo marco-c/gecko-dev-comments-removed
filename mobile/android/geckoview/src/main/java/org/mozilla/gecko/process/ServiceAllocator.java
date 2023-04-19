@@ -391,6 +391,8 @@ import org.mozilla.gecko.util.XPCOMEventTarget;
 
   private interface ContentAllocationPolicy {
     
+
+
     BindServiceDelegate getBindServiceDelegate(InstanceInfo info);
 
     
@@ -460,6 +462,8 @@ import org.mozilla.gecko.util.XPCOMEventTarget;
     }
 
     
+
+
     private static int getContentServiceCount() {
       return ServiceUtils.getServiceCount(
           GeckoAppShell.getApplicationContext(), GeckoProcessType.CONTENT);

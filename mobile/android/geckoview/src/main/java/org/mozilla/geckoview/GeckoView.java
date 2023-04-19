@@ -940,6 +940,8 @@ public class GeckoView extends FrameLayout {
   }
 
   
+
+
   @TargetApi(26)
   public boolean getAutofillEnabled() {
     return mAutofillEnabled;

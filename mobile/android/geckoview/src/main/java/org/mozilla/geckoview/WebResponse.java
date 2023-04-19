@@ -137,6 +137,8 @@ public class WebResponse extends WebMessage {
     }
 
     
+
+
     @WrapForJNI(exceptionMode = "nsresult")
     private void certificateBytes(final @NonNull byte[] encodedCert) {
       try {
@@ -172,6 +174,8 @@ public class WebResponse extends WebMessage {
     }
 
     
+
+
     public @NonNull WebResponse build() {
       return new WebResponse(this);
     }

@@ -364,6 +364,8 @@ public class GeckoSessionTestRule implements TestRule {
   @Retention(RetentionPolicy.RUNTIME)
   public @interface IgnoreCrash {
     
+
+
     boolean value() default true;
   }
 
@@ -2703,6 +2705,8 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+
+
   public <T> void addExternalDelegateUntilTestEnd(
       @NonNull final KClass<T> delegate,
       @NonNull final DelegateRegistrar<T> register,
