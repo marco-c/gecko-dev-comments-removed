@@ -80,14 +80,7 @@ class FinalRefCountedObject final : public T {
  private:
   ~FinalRefCountedObject() = default;
 
-  
-  
-  
-  
-  class ZeroBasedRefCounter : public webrtc::webrtc_impl::RefCounter {
-   public:
-    ZeroBasedRefCounter() : RefCounter(0) {}
-  } mutable ref_count_;
+  mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
 };
 
 }  
