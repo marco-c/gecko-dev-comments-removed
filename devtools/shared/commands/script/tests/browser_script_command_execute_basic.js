@@ -37,6 +37,8 @@ add_task(async () => {
     }
 
     var originalExec = RegExp.prototype.exec;
+
+    var promptIterable = { [Symbol.iterator]() { return { next: prompt } } };
   </script>`);
 
   const commands = await CommandsFactory.forTab(tab);
@@ -285,6 +287,9 @@ async function doEagerEvalWithSideEffect(commands) {
     
     "Reflect.apply(prompt, null, []);",
     "'aaaaaaaa'.replace(/(a)(a)(a)(a)(a)(a)(a)(a)/, prompt)",
+
+    
+    "Array.from(promptIterable)",
   ];
 
   for (const code of testData) {
