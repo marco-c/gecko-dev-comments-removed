@@ -962,33 +962,6 @@ nsWindowsShellService::CreateShortcut(
 
 
 
-static nsresult GetShortcutPath(int aCSIDL, const nsAString& aShortcutName,
-                                 nsAutoString& aPath) {
-  wchar_t folderPath[MAX_PATH] = {};
-  HRESULT hr = SHGetFolderPathW(nullptr, aCSIDL, nullptr, SHGFP_TYPE_CURRENT,
-                                folderPath);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  aPath.Assign(folderPath);
-  if (NS_WARN_IF(aPath.IsEmpty())) {
-    return NS_ERROR_FAILURE;
-  }
-  if (aPath[aPath.Length() - 1] != '\\') {
-    aPath.AppendLiteral("\\");
-  }
-  aPath.Append(aShortcutName);
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
 
 
 
@@ -1011,88 +984,125 @@ static nsresult GetShortcutPath(int aCSIDL, const nsAString& aShortcutName,
 
 static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
                                     const wchar_t aExePath[MAXPATHLEN],
-                                    const nsAString& aShortcutName,
+                                    const nsAString& aShortcutSubstring,
                                      nsAutoString& aShortcutPath) {
   nsresult result = NS_ERROR_FAILURE;
 
-  nsAutoString path;
-  nsresult rv = GetShortcutPath(aCSIDL, aShortcutName, path);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return result;
+  wchar_t folderPath[MAX_PATH] = {};
+  HRESULT hr = SHGetFolderPathW(nullptr, aCSIDL, nullptr, SHGFP_TYPE_CURRENT,
+                                folderPath);
+  if (NS_WARN_IF(FAILED(hr))) {
+    return NS_ERROR_FAILURE;
+  }
+  if (wcscat_s(folderPath, MAX_PATH, L"\\") != 0) {
+    return NS_ERROR_FAILURE;
   }
 
   
-  RefPtr<IShellLinkW> link;
-  HRESULT hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                                IID_IShellLinkW, getter_AddRefs(link));
-  if (NS_WARN_IF(FAILED(hr))) {
-    return result;
+  nsAutoString pattern(folderPath);
+  pattern.AppendLiteral("*.lnk");
+
+  WIN32_FIND_DATAW findData = {};
+  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
+  if (hFindFile == INVALID_HANDLE_VALUE) {
+    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    return NS_ERROR_FILE_NOT_FOUND;
   }
+  
+  
 
   
-  RefPtr<IPersistFile> persist;
-  hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
-  if (NS_WARN_IF(FAILED(hr))) {
-    return result;
-  }
-
-  hr = persist->Load(path.get(), STGM_READ);
-  if (FAILED(hr)) {
-    if (NS_WARN_IF(hr != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))) {
-      
-    } else {
-      result = NS_ERROR_FILE_NOT_FOUND;
+  do {
+    
+    
+    
+    
+    if (StrStrIW(findData.cFileName, aShortcutSubstring.Data()) == NULL) {
+      continue;
     }
-    return result;
-  }
-  result = NS_ERROR_FILE_ALREADY_EXISTS;
 
-  
-  RefPtr<IPropertyStore> propStore;
-  hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
-  if (NS_WARN_IF(FAILED(hr))) {
-    return result;
-  }
+    nsAutoString path(folderPath);
+    path.Append(findData.cFileName);
 
-  PROPVARIANT pv;
-  hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return result;
-  }
+    
+    RefPtr<IShellLinkW> link;
+    HRESULT hr =
+        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLinkW, getter_AddRefs(link));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
 
-  wchar_t storedAUMID[MAX_PATH];
-  hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
-  PropVariantClear(&pv);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return result;
-  }
+    
+    RefPtr<IPersistFile> persist;
+    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
 
-  if (!aAUMID.Equals(storedAUMID)) {
-    return result;
-  }
+    hr = persist->Load(path.get(), STGM_READ);
+    if (FAILED(hr)) {
+      if (NS_WARN_IF(hr != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))) {
+        
+      } else {
+        
+        
+        
+        if (result != NS_ERROR_FILE_ALREADY_EXISTS) {
+          result = NS_ERROR_FILE_NOT_FOUND;
+        }
+      }
+      continue;
+    }
+    result = NS_ERROR_FILE_ALREADY_EXISTS;
 
-  
-  static_assert(MAXPATHLEN == MAX_PATH);
-  wchar_t storedExePath[MAX_PATH] = {};
-  
-  hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
-  if (FAILED(hr) || hr == S_FALSE) {
-    return result;
-  }
-  
-  if (wcsnicmp(storedExePath, aExePath, MAXPATHLEN) != 0) {
-    return result;
-  }
+    
+    RefPtr<IPropertyStore> propStore;
+    hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
 
-  
-  aShortcutPath.Assign(path);
-  result = NS_OK;
+    PROPVARIANT pv;
+    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    wchar_t storedAUMID[MAX_PATH];
+    hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+    PropVariantClear(&pv);
+    if (NS_WARN_IF(FAILED(hr))) {
+      continue;
+    }
+
+    if (!aAUMID.Equals(storedAUMID)) {
+      continue;
+    }
+
+    
+    static_assert(MAXPATHLEN == MAX_PATH);
+    wchar_t storedExePath[MAX_PATH] = {};
+    
+    hr = link->GetPath(storedExePath, ArrayLength(storedExePath), nullptr, 0);
+    if (FAILED(hr) || hr == S_FALSE) {
+      continue;
+    }
+    
+    if (wcsnicmp(storedExePath, aExePath, MAXPATHLEN) == 0) {
+      aShortcutPath.Assign(path);
+      result = NS_OK;
+      break;
+    }
+  } while (FindNextFileW(hFindFile, &findData));
+
+  FindClose(hFindFile);
 
   return result;
 }
 
 static nsresult FindMatchingShortcut(const nsAString& aAppUserModelId,
-                                     const nsAString& aShortcutName,
+                                     const nsAString& aShortcutSubstring,
                                      const bool aPrivateBrowsing,
                                      nsAutoString& aShortcutPath) {
   wchar_t exePath[MAXPATHLEN] = {};
@@ -1117,7 +1127,7 @@ static nsresult FindMatchingShortcut(const nsAString& aAppUserModelId,
     
     
     nsresult rv = GetMatchingShortcut(shortcutCSIDL, aAppUserModelId, exePath,
-                                      aShortcutName, aShortcutPath);
+                                      aShortcutSubstring, aShortcutPath);
     if (NS_SUCCEEDED(rv)) {
       return NS_OK;
     }
@@ -1128,10 +1138,10 @@ static nsresult FindMatchingShortcut(const nsAString& aAppUserModelId,
 
 static bool HasMatchingShortcutImpl(const nsAString& aAppUserModelId,
                                     const bool aPrivateBrowsing,
-                                    const nsAutoString& aShortcutName) {
+                                    const nsAutoString& aShortcutSubstring) {
   
   nsAutoString shortcutPath;
-  nsresult rv = FindMatchingShortcut(aAppUserModelId, aShortcutName,
+  nsresult rv = FindMatchingShortcut(aAppUserModelId, aShortcutSubstring,
                                      aPrivateBrowsing, shortcutPath);
   if (SUCCEEDED(rv)) {
     return true;
@@ -1155,35 +1165,6 @@ NS_IMETHODIMP nsWindowsShellService::HasMatchingShortcut(
     return rv.StealNSResult();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString shortcutName;
-  if (aPrivateBrowsing) {
-    nsTArray<nsCString> resIds = {
-        "branding/brand.ftl"_ns,
-        "browser/browser.ftl"_ns,
-    };
-    RefPtr<Localization> l10n = Localization::Create(resIds, true);
-    nsAutoCString pbStr;
-    IgnoredErrorResult rv;
-    l10n->FormatValueSync("private-browsing-shortcut-text-2"_ns, {}, pbStr, rv);
-    shortcutName.Append(NS_ConvertUTF8toUTF16(pbStr));
-    shortcutName.AppendLiteral(".lnk");
-  } else {
-    shortcutName.AppendLiteral(MOZ_APP_DISPLAYNAME ".lnk");
-  }
-
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "HasMatchingShortcut promise", promise);
 
@@ -1191,13 +1172,15 @@ NS_IMETHODIMP nsWindowsShellService::HasMatchingShortcut(
       NS_NewRunnableFunction(
           "HasMatchingShortcut",
           [aAppUserModelId = nsString{aAppUserModelId}, aPrivateBrowsing,
-           shortcutName, promiseHolder = std::move(promiseHolder)] {
+           promiseHolder = std::move(promiseHolder)] {
             bool rv = false;
             HRESULT hr = CoInitialize(nullptr);
 
             if (SUCCEEDED(hr)) {
+              nsAutoString shortcutSubstring;
+              shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
               rv = HasMatchingShortcutImpl(aAppUserModelId, aPrivateBrowsing,
-                                           shortcutName);
+                                           shortcutSubstring);
               CoUninitialize();
             }
 
@@ -1418,14 +1401,14 @@ static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
 
 static nsresult PinCurrentAppToTaskbarImpl(
     bool aCheckOnly, bool aPrivateBrowsing, const nsAString& aAppUserModelId,
-    const nsAString& aShortcutName, nsIFile* aShortcutsLogDir, nsIFile* aGreDir,
-    nsIFile* aProgramsDir) {
+    const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
+    nsIFile* aShortcutsLogDir, nsIFile* aGreDir, nsIFile* aProgramsDir) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "PinCurrentAppToTaskbarImpl should be called off main thread only");
 
   nsAutoString shortcutPath;
-  nsresult rv = FindMatchingShortcut(aAppUserModelId, aShortcutName,
+  nsresult rv = FindMatchingShortcut(aAppUserModelId, aShortcutSubstring,
                                      aPrivateBrowsing, shortcutPath);
   if (NS_FAILED(rv)) {
     shortcutPath.Truncate();
@@ -1461,6 +1444,7 @@ static nsresult PinCurrentAppToTaskbarImpl(
 
     nsCOMPtr<nsIFile> shortcutFile(aProgramsDir);
     shortcutFile->Append(aShortcutName);
+    shortcutPath.Assign(shortcutFile->NativePath());
 
     nsTArray<nsString> arguments;
     rv = CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
@@ -1560,9 +1544,12 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
             HRESULT hr = CoInitialize(nullptr);
 
             if (SUCCEEDED(hr)) {
+              nsAutoString shortcutSubstring;
+              shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
               rv = PinCurrentAppToTaskbarImpl(
                   aCheckOnly, aPrivateBrowsing, aumid, shortcutName,
-                  shortcutsLogDir.get(), greDir.get(), programsDir.get());
+                  shortcutSubstring, shortcutsLogDir.get(), greDir.get(),
+                  programsDir.get());
               CoUninitialize();
             }
 
