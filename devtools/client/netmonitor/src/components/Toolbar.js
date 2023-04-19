@@ -506,9 +506,6 @@ class Toolbar extends Component {
       autocompleteProvider: this.autocompleteProvider,
       learnMoreUrl: LEARN_MORE_URL,
       learnMoreTitle: LEARN_MORE_TITLE,
-      
-      
-      shouldNotFocus: event => !!event.target.closest(".CodeMirror"),
     });
   }
 
