@@ -1124,7 +1124,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
 
 
   mozilla::StyleImageOrientation UsedImageOrientation(
-      imgIRequest* aRequest) const;
+      imgIRequest* aRequest) const {
+    return UsedImageOrientation(aRequest, mImageOrientation);
+  }
 
   
 
