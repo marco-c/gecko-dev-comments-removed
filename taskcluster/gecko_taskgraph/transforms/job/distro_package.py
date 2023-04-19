@@ -171,7 +171,7 @@ def common_package(config, job, taskdesc, distro, version):
         
         "(cd ..; mk-build-deps -i -r {package}/debian/control -t '{resolver}' || exit 100) && "
         
-        'DEB_BUILD_OPTIONS="parallel=$(nproc) nocheck" dpkg-buildpackage && '
+        'DEB_BUILD_OPTIONS="parallel=$(nproc) nocheck" dpkg-buildpackage -sa && '
         
         "mkdir -p {artifacts}/apt && "
         "dcmd cp ../{package}_*.changes {artifacts}/apt/ && "
