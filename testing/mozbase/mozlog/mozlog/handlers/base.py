@@ -6,6 +6,7 @@ from __future__ import absolute_import
 
 from threading import Lock
 import codecs
+import locale
 
 from mozlog.structuredlog import log_levels
 import six
@@ -78,16 +79,37 @@ class StreamHandler(BaseHandler):
                 import io
                 import mozfile
 
+                source_enc = "utf-8"
+                target_enc = "utf-8"
+                if isinstance(self.stream, io.BytesIO):
+                    target_enc = self.stream.encoding
+                if target_enc is None:
+                    target_enc = locale.getpreferredencoding()
+
                 if isinstance(self.stream, io.StringIO) and isinstance(
                     formatted, bytes
                 ):
-                    formatted = formatted.decode()
+                    formatted = formatted.decode(source_enc, "replace")
                 elif (
                     isinstance(self.stream, io.BytesIO)
                     or isinstance(self.stream, mozfile.NamedTemporaryFile)
                 ) and isinstance(formatted, str):
-                    formatted = formatted.encode()
-                self.stream.write(formatted)
+                    formatted = formatted.encode(target_enc, "replace")
+                elif isinstance(formatted, str):
+                    
+                    
+                    
+                    formatted_bin = formatted.encode(target_enc, "replace")
+                    formatted = formatted_bin.decode(target_enc, "ignore")
+
+                
+                
+                
+                
+                try:
+                    self.stream.write(formatted)
+                except (UnicodeEncodeError):
+                    return
             else:
                 if isinstance(formatted, six.text_type):
                     self.stream.write(formatted.encode("utf-8", "replace"))
