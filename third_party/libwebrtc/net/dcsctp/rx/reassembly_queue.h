@@ -27,6 +27,7 @@
 #include "net/dcsctp/packet/data.h"
 #include "net/dcsctp/packet/parameter/outgoing_ssn_reset_request_parameter.h"
 #include "net/dcsctp/packet/parameter/reconfiguration_response_parameter.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/rx/reassembly_streams.h"
 
@@ -70,7 +71,8 @@ class ReassemblyQueue {
 
   ReassemblyQueue(absl::string_view log_prefix,
                   TSN peer_initial_tsn,
-                  size_t max_size_bytes);
+                  size_t max_size_bytes,
+                  const DcSctpSocketHandoverState* handover_state = nullptr);
 
   
   
@@ -118,6 +120,10 @@ class ReassemblyQueue {
   
   size_t watermark_bytes() const { return watermark_bytes_; }
 
+  HandoverReadinessStatus GetHandoverReadiness() const;
+
+  void AddHandoverState(DcSctpSocketHandoverState& state);
+
  private:
   bool IsConsistent() const;
   void AddReassembledMessage(rtc::ArrayView<const UnwrappedTSN> tsns,
@@ -150,7 +156,7 @@ class ReassemblyQueue {
 
   
   
-  ReconfigRequestSN last_completed_reset_req_seq_nbr_ = ReconfigRequestSN(0);
+  ReconfigRequestSN last_completed_reset_req_seq_nbr_;
 
   
   size_t queued_bytes_ = 0;
