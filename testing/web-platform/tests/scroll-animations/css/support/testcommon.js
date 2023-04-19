@@ -1,0 +1,14 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+async function waitForCSSScrollTimelineStyle() {
+  await waitForNextFrame();
+  await waitForNextFrame();
+}
