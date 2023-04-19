@@ -26,6 +26,11 @@ namespace {
 constexpr size_t kMaxMediaPackets = 48;  
 
 
+
+
+constexpr size_t kMaxTrackedMediaPackets = 4 * kMaxMediaPackets;
+
+
 constexpr size_t kMaxFecPackets = kMaxMediaPackets;
 
 
@@ -72,7 +77,7 @@ size_t FlexfecHeaderSize(size_t packet_mask_size) {
 }  
 
 FlexfecHeaderReader::FlexfecHeaderReader()
-    : FecHeaderReader(kMaxMediaPackets, kMaxFecPackets) {}
+    : FecHeaderReader(kMaxTrackedMediaPackets, kMaxFecPackets) {}
 
 FlexfecHeaderReader::~FlexfecHeaderReader() = default;
 

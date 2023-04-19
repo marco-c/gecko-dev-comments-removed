@@ -25,6 +25,11 @@ namespace {
 constexpr size_t kMaxMediaPackets = 48;
 
 
+
+
+constexpr size_t kMaxTrackedMediaPackets = 4 * kMaxMediaPackets;
+
+
 constexpr size_t kMaxFecPackets = kMaxMediaPackets;
 
 
@@ -51,7 +56,7 @@ size_t UlpfecHeaderSize(size_t packet_mask_size) {
 }  
 
 UlpfecHeaderReader::UlpfecHeaderReader()
-    : FecHeaderReader(kMaxMediaPackets, kMaxFecPackets) {}
+    : FecHeaderReader(kMaxTrackedMediaPackets, kMaxFecPackets) {}
 
 UlpfecHeaderReader::~UlpfecHeaderReader() = default;
 

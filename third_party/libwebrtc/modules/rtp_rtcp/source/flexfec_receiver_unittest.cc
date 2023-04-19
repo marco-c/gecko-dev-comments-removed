@@ -374,7 +374,8 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
 TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
   
   
-  const size_t kNumFrames = 48;
+  
+  const size_t kNumFrames = 192;
   const size_t kNumMediaPacketsPerFrame = 1;
   const size_t kNumFecPackets = 1;
 
@@ -412,7 +413,9 @@ TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
 TEST_F(FlexfecReceiverTest, TooDelayedFecPacketDoesNotHelp) {
   
   
-  const size_t kNumFrames = 49;
+  
+  
+  const size_t kNumFrames = 193;
   const size_t kNumMediaPacketsPerFrame = 1;
   const size_t kNumFecPackets = 1;
 
@@ -671,7 +674,7 @@ TEST_F(FlexfecReceiverTest, DoesNotDecodeWrappedMediaSequenceUsingOldFec) {
   
   
   auto media_it = media_packets.begin();
-  for (size_t i = 0; i < (kFirstFrameNumMediaPackets + 48); i++) {
+  for (size_t i = 0; i < (kFirstFrameNumMediaPackets + 192); i++) {
     if (i == 1) {
       
       media_it++;
