@@ -206,7 +206,9 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
     return false;
   }
 
-  CollectPerfSpewerJitCodeProfile(trampolineCode_, "Trampolines");
+#ifdef JS_ION_PERF
+  writePerfSpewerJitCodeProfile(trampolineCode_, "Trampolines");
+#endif
 #ifdef MOZ_VTUNE
   vtune::MarkStub(trampolineCode_, "Trampolines");
 #endif
@@ -615,7 +617,6 @@ void JitCode::finalize(JS::GCContext* gcx) {
   }
   setHeaderPtr(nullptr);
 
-#ifdef JS_ION_PERF
   
   
   
@@ -623,9 +624,6 @@ void JitCode::finalize(JS::GCContext* gcx) {
   if (!PerfEnabled()) {
     pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
   }
-#else
-  pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
-#endif
 
   zone()->decJitMemory(headerSize_ + bufferSize_);
 
