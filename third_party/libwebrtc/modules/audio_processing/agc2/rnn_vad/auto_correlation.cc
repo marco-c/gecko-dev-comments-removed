@@ -20,7 +20,7 @@ namespace {
 
 constexpr int kAutoCorrelationFftOrder = 9;  
 static_assert(1 << kAutoCorrelationFftOrder >
-                  kNumLags12kHz + kBufSize12kHz - kMaxPitch12kHz,
+                  kNumInvertedLags12kHz + kBufSize12kHz - kMaxPitch12kHz,
               "");
 
 }  
@@ -45,7 +45,7 @@ AutoCorrelationCalculator::~AutoCorrelationCalculator() = default;
 
 void AutoCorrelationCalculator::ComputeOnPitchBuffer(
     rtc::ArrayView<const float, kBufSize12kHz> pitch_buf,
-    rtc::ArrayView<float, kNumLags12kHz> auto_corr) {
+    rtc::ArrayView<float, kNumInvertedLags12kHz> auto_corr) {
   RTC_DCHECK_LT(auto_corr.size(), kMaxPitch12kHz);
   RTC_DCHECK_GT(pitch_buf.size(), kMaxPitch12kHz);
   constexpr int kFftFrameSize = 1 << kAutoCorrelationFftOrder;
@@ -53,7 +53,7 @@ void AutoCorrelationCalculator::ComputeOnPitchBuffer(
   static_assert(kConvolutionLength == kFrameSize20ms12kHz,
                 "Mismatch between pitch buffer size, frame size and maximum "
                 "pitch period.");
-  static_assert(kFftFrameSize > kNumLags12kHz + kConvolutionLength,
+  static_assert(kFftFrameSize > kNumInvertedLags12kHz + kConvolutionLength,
                 "The FFT length is not sufficiently big to avoid cyclic "
                 "convolution errors.");
   auto tmp = tmp_->GetView();
@@ -70,9 +70,10 @@ void AutoCorrelationCalculator::ComputeOnPitchBuffer(
   
   
   std::copy(pitch_buf.begin(),
-            pitch_buf.begin() + kConvolutionLength + kNumLags12kHz,
+            pitch_buf.begin() + kConvolutionLength + kNumInvertedLags12kHz,
             tmp.begin());
-  std::fill(tmp.begin() + kNumLags12kHz + kConvolutionLength, tmp.end(), 0.f);
+  std::fill(tmp.begin() + kNumInvertedLags12kHz + kConvolutionLength, tmp.end(),
+            0.f);
   fft_.ForwardTransform(*tmp_, X_.get(), false);
 
   
@@ -83,7 +84,7 @@ void AutoCorrelationCalculator::ComputeOnPitchBuffer(
 
   
   std::copy(tmp.begin() + kConvolutionLength - 1,
-            tmp.begin() + kConvolutionLength + kNumLags12kHz - 1,
+            tmp.begin() + kConvolutionLength + kNumInvertedLags12kHz - 1,
             auto_corr.begin());
 }
 

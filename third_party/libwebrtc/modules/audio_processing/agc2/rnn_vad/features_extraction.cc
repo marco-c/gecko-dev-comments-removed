@@ -67,12 +67,13 @@ bool FeaturesExtractor::CheckSilenceComputeFeatures(
   ComputeLpResidual(lpc_coeffs, pitch_buf_24kHz_view_, lp_residual_view_);
   
   
-  pitch_period_48kHz_ = pitch_estimator_.Estimate(lp_residual_view_);
-  feature_vector[kFeatureVectorSize - 2] = 0.01f * (pitch_period_48kHz_ - 300);
+  pitch_info_48kHz_ = pitch_estimator_.Estimate(lp_residual_view_);
+  feature_vector[kFeatureVectorSize - 2] =
+      0.01f * (pitch_info_48kHz_.period - 300);
   
-  RTC_DCHECK_LE(pitch_period_48kHz_ / 2, kMaxPitch24kHz);
+  RTC_DCHECK_LE(pitch_info_48kHz_.period / 2, kMaxPitch24kHz);
   auto lagged_frame = pitch_buf_24kHz_view_.subview(
-      kMaxPitch24kHz - pitch_period_48kHz_ / 2, kFrameSize20ms24kHz);
+      kMaxPitch24kHz - pitch_info_48kHz_.period / 2, kFrameSize20ms24kHz);
   
   
   return spectral_features_extractor_.CheckSilenceComputeFeatures(

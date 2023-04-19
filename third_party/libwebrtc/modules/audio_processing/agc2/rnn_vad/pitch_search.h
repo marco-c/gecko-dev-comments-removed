@@ -17,8 +17,8 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/auto_correlation.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
+#include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
-#include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -31,20 +31,16 @@ class PitchEstimator {
   PitchEstimator& operator=(const PitchEstimator&) = delete;
   ~PitchEstimator();
   
-  int Estimate(rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer);
+  
+  PitchInfo Estimate(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf);
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(RnnVadTest, PitchSearchWithinTolerance);
-  float GetLastPitchStrengthForTesting() const {
-    return last_pitch_48kHz_.strength;
-  }
-
-  PitchInfo last_pitch_48kHz_{};
+  PitchInfo last_pitch_48kHz_;
   AutoCorrelationCalculator auto_corr_calculator_;
   std::vector<float> pitch_buf_decimated_;
   rtc::ArrayView<float, kBufSize12kHz> pitch_buf_decimated_view_;
   std::vector<float> auto_corr_;
-  rtc::ArrayView<float, kNumLags12kHz> auto_corr_view_;
+  rtc::ArrayView<float, kNumInvertedLags12kHz> auto_corr_view_;
 };
 
 }  
