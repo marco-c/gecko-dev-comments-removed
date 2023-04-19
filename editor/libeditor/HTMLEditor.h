@@ -1135,7 +1135,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult HandleInsertBRElement(
-      const EditorDOMPoint& aInsertToBreak, const Element& aEditingHost);
+      const EditorDOMPoint& aPointToBreak, const Element& aEditingHost);
 
   
 

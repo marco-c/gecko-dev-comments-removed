@@ -2022,9 +2022,10 @@ CreateElementResult HTMLEditor::HandleInsertBRElement(
     
     
     
-    return CreateElementResult(
-        std::move(brElement),
-        EditorDOMPoint(brElement, InterlinePosition::StartOfNextLine));
+    EditorDOMPoint pointToPutCaret(brElement,
+                                   InterlinePosition::StartOfNextLine);
+    return CreateElementResult(std::move(brElement),
+                               std::move(pointToPutCaret));
   }
 
   auto afterBRElement = EditorDOMPoint::After(brElement);
