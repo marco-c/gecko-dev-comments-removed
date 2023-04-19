@@ -1365,102 +1365,6 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 }
 
 
-#ifdef XP_WIN
-
-
-static bool sShouldAlwaysStall = true;
-MOZ_JEMALLOC_API void mozjemalloc_experiment_set_always_stall(bool aVal) {
-  sShouldAlwaysStall = aVal;
-}
-
-#  ifdef MOZ_STALL_ON_OOM
-
-
-namespace MozAllocRetries {
-
-
-constexpr size_t kMaxAttempts = 10;
-
-
-constexpr size_t kDelayMs = 50;
-
-Atomic<bool> sHasStalled{false};
-static bool ShouldStallAndRetry() {
-  if (sShouldAlwaysStall) {
-    return true;
-  }
-  
-  return sHasStalled.compareExchange(false, true);
-}
-
-
-
-
-
-
-[[nodiscard]] void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
-                                    DWORD flAllocationType, DWORD flProtect) {
-  constexpr auto IsOOMError = [] {
-    switch (::GetLastError()) {
-      
-      case ERROR_COMMITMENT_LIMIT:
-      
-      
-      
-      
-      case ERROR_NOT_ENOUGH_MEMORY:
-        return true;
-    }
-    return false;
-  };
-
-  {
-    void* ptr = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
-    if (MOZ_LIKELY(ptr)) return ptr;
-
-    
-    if (!IsOOMError()) return nullptr;
-    
-    
-    if (!(flAllocationType & MEM_COMMIT)) return nullptr;
-  }
-
-  
-  
-  if (!ShouldStallAndRetry()) return nullptr;
-
-  
-  for (size_t i = 0; i < kMaxAttempts; ++i) {
-    ::Sleep(kDelayMs);
-    void* ptr = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
-
-    if (ptr) {
-      
-      
-      if (IsOOMError()) {
-        ::SetLastError(0);
-      }
-      return ptr;
-    }
-
-    
-    if (!IsOOMError()) {
-      return nullptr;
-    }
-  }
-
-  
-  return nullptr;
-}
-}  
-
-using MozAllocRetries::MozVirtualAlloc;
-#  else
-using MozVirtualAlloc = VirtualAlloc;
-#  endif  
-#endif    
-
-
 
 static inline void pages_decommit(void* aAddr, size_t aSize) {
 #ifdef XP_WIN
@@ -1509,7 +1413,7 @@ static inline void pages_decommit(void* aAddr, size_t aSize) {
   
   size_t pages_size = std::min(aSize, kChunkSize - GetChunkOffsetForPtr(aAddr));
   while (aSize > 0) {
-    if (!MozVirtualAlloc(aAddr, pages_size, MEM_COMMIT, PAGE_READWRITE)) {
+    if (!VirtualAlloc(aAddr, pages_size, MEM_COMMIT, PAGE_READWRITE)) {
       return false;
     }
     aAddr = (void*)((uintptr_t)aAddr + pages_size);
@@ -1654,7 +1558,7 @@ using UniqueBaseNode =
 
 static void* pages_map(void* aAddr, size_t aSize) {
   void* ret = nullptr;
-  ret = MozVirtualAlloc(aAddr, aSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ret = VirtualAlloc(aAddr, aSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   return ret;
 }
 
@@ -1865,11 +1769,11 @@ bool AddressRadixTree<Bits>::Set(void* aKey, void* aValue) {
 
 
 #define ALIGNMENT_ADDR2OFFSET(a, alignment) \
-  ((size_t)((uintptr_t)(a) & ((alignment)-1)))
+  ((size_t)((uintptr_t)(a) & (alignment - 1)))
 
 
 #define ALIGNMENT_CEILING(s, alignment) \
-  (((s) + ((alignment)-1)) & (~((alignment)-1)))
+  (((s) + (alignment - 1)) & (~(alignment - 1)))
 
 static void* pages_trim(void* addr, size_t alloc_size, size_t leadsize,
                         size_t size) {
@@ -2049,7 +1953,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed) {
 
 
 
-#  define CAN_RECYCLE(size) ((size) == kChunkSize)
+#  define CAN_RECYCLE(size) (size == kChunkSize)
 #else
 #  define CAN_RECYCLE(size) true
 #endif
@@ -4087,6 +3991,7 @@ static size_t GetKernelPageSize() {
 static bool malloc_init_hard() {
   unsigned i;
   const char* opts;
+  long result;
 
   AutoLock<StaticMutex> lock(gInitLock);
 
@@ -4101,18 +4006,18 @@ static bool malloc_init_hard() {
   }
 
   
-  const size_t result = GetKernelPageSize();
+  result = GetKernelPageSize();
   
   MOZ_ASSERT(((result - 1) & result) == 0);
 #ifdef MALLOC_STATIC_PAGESIZE
-  if (gPageSize % result) {
+  if (gPageSize % (size_t)result) {
     _malloc_message(
         _getprogname(),
         "Compile-time page size does not divide the runtime one.\n");
     MOZ_CRASH();
   }
 #else
-  gRealPageSize = gPageSize = result;
+  gRealPageSize = gPageSize = (size_t)result;
 #endif
 
   

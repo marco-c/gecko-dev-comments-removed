@@ -274,23 +274,14 @@ void XRE_SetProcessType(const char* aProcessTypeString) {
   }
   called = true;
 
-  sChildProcessType = [&] {
-    for (GeckoProcessType t :
-         MakeEnumeratedRange(GeckoProcessType::GeckoProcessType_End)) {
-      if (!strcmp(XRE_GeckoProcessTypeToString(t), aProcessTypeString)) {
-        return t;
-      }
+  sChildProcessType = GeckoProcessType_Invalid;
+  for (GeckoProcessType t :
+       MakeEnumeratedRange(GeckoProcessType::GeckoProcessType_End)) {
+    if (!strcmp(XRE_GeckoProcessTypeToString(t), aProcessTypeString)) {
+      sChildProcessType = t;
+      return;
     }
-    return GeckoProcessType_Invalid;
-  }();
-
-  
-  
-  
-  
-  
-  mozjemalloc_experiment_set_always_stall(sChildProcessType ==
-                                          GeckoProcessType_Default);
+  }
 }
 
 #if defined(XP_WIN)
