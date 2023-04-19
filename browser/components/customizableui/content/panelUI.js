@@ -391,6 +391,7 @@ const PanelUI = {
 
 
   async showSubView(aViewId, aAnchor, aEvent) {
+    let domEvent = null;
     if (aEvent) {
       
       
@@ -407,6 +408,31 @@ const PanelUI = {
         aEvent.key != "Enter"
       ) {
         return;
+      }
+      if (aEvent.type == "command" && aEvent.inputSource != null) {
+        
+        domEvent = document.createEvent("MouseEvent");
+        domEvent.initNSMouseEvent(
+          "click",
+          true,
+          true,
+          null,
+          0,
+          aEvent.screenX,
+          aEvent.screenY,
+          0,
+          0,
+          false,
+          false,
+          false,
+          false,
+          0,
+          aEvent.target,
+          0,
+          aEvent.inputSource
+        );
+      } else if (aEvent.mozInputSource != null || aEvent.type == "keypress") {
+        domEvent = aEvent;
       }
     }
 
@@ -490,7 +516,7 @@ const PanelUI = {
       try {
         viewShown = await PanelMultiView.openPopup(tempPanel, anchor, {
           position: "bottomcenter topright",
-          triggerEvent: aEvent,
+          triggerEvent: domEvent,
         });
       } catch (ex) {
         Cu.reportError(ex);
