@@ -669,6 +669,15 @@ void HTMLImageElement::NodeInfoChanged(Document* aOldDoc) {
   
   
   
+  
+  
+  if (InResponsiveMode()) {
+    UpdateResponsiveSource();
+  }
+
+  
+  
+  
   StartLoadingIfNeeded();
 }
 
@@ -844,12 +853,7 @@ void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
     return;
   }
 
-  RefPtr<ImageLoadTask> task =
-      new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
-  
-  
-  mPendingImageLoadTask = task;
-  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
+  QueueImageLoadTask(alwaysLoad);
 }
 
 bool HTMLImageElement::HaveSrcsetOrInPicture() {
@@ -1302,19 +1306,20 @@ void HTMLImageElement::SetLazyLoading() {
 }
 
 void HTMLImageElement::StartLoadingIfNeeded() {
-  if (LoadingEnabled() && ShouldLoadImage()) {
-    
-    
-    nsContentUtils::AddScriptRunner(
-        InResponsiveMode()
-            ? NewRunnableMethod<bool, const HTMLSourceElement*>(
-                  "dom::HTMLImageElement::UpdateSourceSyncAndQueueImageTask",
-                  this, &HTMLImageElement::UpdateSourceSyncAndQueueImageTask,
-                  true, nullptr)
-            : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
-                                      this, &HTMLImageElement::MaybeLoadImage,
-                                      true));
+  if (!LoadingEnabled() || !ShouldLoadImage()) {
+    return;
   }
+
+  
+  
+  nsContentUtils::AddScriptRunner(
+      InResponsiveMode()
+          ? NewRunnableMethod<bool>("dom::HTMLImageElement::QueueImageLoadTask",
+                                    this, &HTMLImageElement::QueueImageLoadTask,
+                                    true)
+          : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
+                                    this, &HTMLImageElement::MaybeLoadImage,
+                                    true));
 }
 
 void HTMLImageElement::StopLazyLoading(StartLoading aStartLoading) {
@@ -1327,7 +1332,7 @@ void HTMLImageElement::StopLazyLoading(StartLoading aStartLoading) {
     obs->Unobserve(*this);
   }
 
-  if (bool(aStartLoading)) {
+  if (aStartLoading == StartLoading::Yes) {
     StartLoadingIfNeeded();
   }
 }
@@ -1399,6 +1404,15 @@ void HTMLImageElement::SetDensity(double aDensity) {
   if (nsImageFrame* f = do_QueryFrame(GetPrimaryFrame())) {
     f->ResponsiveContentDensityChanged();
   }
+}
+
+void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
+  RefPtr<ImageLoadTask> task =
+      new ImageLoadTask(this, aAlwaysLoad, mUseUrgentStartForChannel);
+  
+  
+  mPendingImageLoadTask = task;
+  CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
 }
 
 }  
