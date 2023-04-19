@@ -927,10 +927,6 @@ public class GeckoSession {
 
             delegate.onHideAction(GeckoSession.this, reason);
           } else if ("GeckoView:ShowMagnifier".equals(event)) {
-            
-            
-            mCompositor.blockSurfaceControl();
-
             final GeckoBundle ptBundle = message.getBundle("clientPoint");
             if (ptBundle == null) {
               throw new IllegalArgumentException("Invalid argument");
@@ -944,8 +940,6 @@ public class GeckoSession {
 
             GeckoSession.this.getMagnifier().show(new PointF(origin[0], origin[1]));
           } else if ("GeckoView:HideMagnifier".equals(event)) {
-            
-            mCompositor.allowSurfaceControl();
             GeckoSession.this.getMagnifier().dismiss();
           }
         }
