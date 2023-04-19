@@ -15,6 +15,7 @@
 #include "mozilla/dom/SanitizerBinding.h"
 
 class nsIContent;
+class nsIGlobalObject;
 class nsINode;
 
 namespace mozilla {
@@ -62,7 +63,8 @@ class nsTreeSanitizer {
 
 
 
-  void WithWebSanitizerOptions(const mozilla::dom::SanitizerConfig& aOptions);
+  void WithWebSanitizerOptions(nsIGlobalObject* aGlobal,
+                               const mozilla::dom::SanitizerConfig& aOptions);
 
   
 
@@ -109,6 +111,9 @@ class nsTreeSanitizer {
 
 
   bool mLogRemovals;
+
+  
+  uint64_t mInnerWindowID = 0;
 
   
 
