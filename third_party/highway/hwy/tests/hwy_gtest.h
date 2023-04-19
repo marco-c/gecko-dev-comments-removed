@@ -12,6 +12,7 @@
 
 
 
+
 #ifndef HWY_TESTS_HWY_GTEST_H_
 #define HWY_TESTS_HWY_GTEST_H_
 
@@ -43,7 +44,7 @@ namespace hwy {
 
 
 
-class TestWithParamTarget : public testing::TestWithParam<uint32_t> {
+class TestWithParamTarget : public testing::TestWithParam<int64_t> {
  protected:
   void SetUp() override { SetSupportedTargetsForTest(GetParam()); }
 
@@ -52,7 +53,7 @@ class TestWithParamTarget : public testing::TestWithParam<uint32_t> {
     
     
 #if (HWY_TARGETS & (HWY_TARGETS - 1)) != 0
-    EXPECT_TRUE(SupportedTargetsCalledForTest())
+    EXPECT_TRUE(GetChosenTarget().IsInitialized())
         << "This hwy target parametric test doesn't use dynamic-dispatch and "
            "doesn't need to be parametric.";
 #endif
@@ -63,7 +64,7 @@ class TestWithParamTarget : public testing::TestWithParam<uint32_t> {
 
 
 static inline std::string TestParamTargetName(
-    const testing::TestParamInfo<uint32_t>& info) {
+    const testing::TestParamInfo<int64_t>& info) {
   return TargetName(info.param);
 }
 
@@ -84,7 +85,7 @@ static inline std::string TestParamTargetName(
 
 template <typename T>
 class TestWithParamTargetAndT
-    : public ::testing::TestWithParam<std::tuple<uint32_t, T>> {
+    : public ::testing::TestWithParam<std::tuple<int64_t, T>> {
  public:
   
   
@@ -93,7 +94,7 @@ class TestWithParamTargetAndT
  protected:
   void SetUp() override {
     SetSupportedTargetsForTest(std::get<0>(
-        ::testing::TestWithParam<std::tuple<uint32_t, T>>::GetParam()));
+        ::testing::TestWithParam<std::tuple<int64_t, T>>::GetParam()));
   }
 
   void TearDown() override {
@@ -101,7 +102,7 @@ class TestWithParamTargetAndT
     
     
 #if (HWY_TARGETS & (HWY_TARGETS - 1)) != 0
-    EXPECT_TRUE(SupportedTargetsCalledForTest())
+    EXPECT_TRUE(GetChosenTarget().IsInitialized())
         << "This hwy target parametric test doesn't use dynamic-dispatch and "
            "doesn't need to be parametric.";
 #endif
@@ -110,13 +111,13 @@ class TestWithParamTargetAndT
 
   T GetParam() {
     return std::get<1>(
-        ::testing::TestWithParam<std::tuple<uint32_t, T>>::GetParam());
+        ::testing::TestWithParam<std::tuple<int64_t, T>>::GetParam());
   }
 };
 
 template <typename T>
 std::string TestParamTargetNameAndT(
-    const testing::TestParamInfo<std::tuple<uint32_t, T>>& info) {
+    const testing::TestParamInfo<std::tuple<int64_t, T>>& info) {
   return std::string(TargetName(std::get<0>(info.param))) + "_" +
          ::testing::PrintToString(std::get<1>(info.param));
 }

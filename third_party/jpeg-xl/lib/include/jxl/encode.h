@@ -1063,7 +1063,7 @@ JxlEncoderOptionsSetLossless(JxlEncoderFrameSettings*, JXL_BOOL);
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus
+JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus
 JxlEncoderOptionsSetEffort(JxlEncoderFrameSettings* frame_settings, int effort);
 
 
@@ -1076,7 +1076,7 @@ JxlEncoderOptionsSetEffort(JxlEncoderFrameSettings* frame_settings, int effort);
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus JxlEncoderOptionsSetDecodingSpeed(
+JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetDecodingSpeed(
     JxlEncoderFrameSettings* frame_settings, int tier);
 
 
@@ -1098,7 +1098,7 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameDistance(
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlEncoderStatus
+JXL_DEPRECATED JXL_EXPORT JxlEncoderStatus
 JxlEncoderOptionsSetDistance(JxlEncoderFrameSettings*, float);
 
 
@@ -1121,7 +1121,7 @@ JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderFrameSettingsCreate(
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlEncoderFrameSettings* JxlEncoderOptionsCreate(
+JXL_DEPRECATED JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderOptionsCreate(
     JxlEncoder*, const JxlEncoderFrameSettings*);
 
 

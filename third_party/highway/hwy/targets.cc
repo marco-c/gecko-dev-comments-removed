@@ -12,8 +12,10 @@
 
 
 
+
 #include "hwy/targets.h"
 
+#include <inttypes.h>  
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -21,7 +23,7 @@
 
 #include <atomic>
 
-#include "hwy/base.h"
+#include "hwy/per_target.h"
 
 #if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
 #include "sanitizer/common_interface_defs.h"  
@@ -36,6 +38,10 @@
 #else  
 #include <cpuid.h>
 #endif  
+
+#elif HWY_ARCH_ARM && HWY_OS_LINUX
+#include <asm/hwcap.h>
+#include <sys/auxv.h>
 #endif  
 
 namespace hwy {
@@ -57,7 +63,7 @@ HWY_INLINE void Cpuid(const uint32_t level, const uint32_t count,
   for (int i = 0; i < 4; ++i) {
     abcd[i] = regs[i];
   }
-#else  
+#else   
   uint32_t a;
   uint32_t b;
   uint32_t c;
@@ -75,7 +81,7 @@ HWY_INLINE void Cpuid(const uint32_t level, const uint32_t count,
 uint32_t ReadXCR0() {
 #if HWY_COMPILER_MSVC
   return static_cast<uint32_t>(_xgetbv(0));
-#else  
+#else   
   uint32_t xcr0, xcr0_high;
   const uint32_t index = 0;
   asm volatile(".byte 0x0F, 0x01, 0xD0"
@@ -88,14 +94,11 @@ uint32_t ReadXCR0() {
 #endif  
 
 
-std::atomic<uint32_t> supported_{0};  
+
+int64_t supported_targets_for_test_ = 0;
 
 
-
-uint32_t supported_targets_for_test_ = 0;
-
-
-uint32_t supported_mask_{LimitsMax<uint32_t>()};
+int64_t supported_mask_ = LimitsMax<int64_t>();
 
 #if HWY_ARCH_X86
 
@@ -126,6 +129,7 @@ enum class FeatureIndex : uint32_t {
 
   kVNNI,
   kVPCLMULQDQ,
+  kVBMI,
   kVBMI2,
   kVAES,
   kPOPCNTDQ,
@@ -176,77 +180,19 @@ constexpr uint64_t kGroupAVX3 =
 
 constexpr uint64_t kGroupAVX3_DL =
     Bit(FeatureIndex::kVNNI) | Bit(FeatureIndex::kVPCLMULQDQ) |
-    Bit(FeatureIndex::kVBMI2) | Bit(FeatureIndex::kVAES) |
-    Bit(FeatureIndex::kPOPCNTDQ) | Bit(FeatureIndex::kBITALG) | kGroupAVX3;
+    Bit(FeatureIndex::kVBMI) | Bit(FeatureIndex::kVBMI2) |
+    Bit(FeatureIndex::kVAES) | Bit(FeatureIndex::kPOPCNTDQ) |
+    Bit(FeatureIndex::kBITALG) | kGroupAVX3;
 
 #endif  
 
-}  
-
-HWY_NORETURN void HWY_FORMAT(3, 4)
-    Abort(const char* file, int line, const char* format, ...) {
-  char buf[2000];
-  va_list args;
-  va_start(args, format);
-  vsnprintf(buf, sizeof(buf), format, args);
-  va_end(args);
-
-  fprintf(stderr, "Abort at %s:%d: %s\n", file, line, buf);
 
 
-#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
-  __sanitizer_print_stack_trace();
-#endif  
-  fflush(stderr);
 
-
-#if HWY_ARCH_RVV
-  exit(1);  
-#elif HWY_IS_DEBUG_BUILD && !HWY_COMPILER_MSVC
+int64_t DetectTargets() {
   
   
-  __builtin_trap();
-#else
-  abort();  
-#endif
-}
-
-void DisableTargets(uint32_t disabled_targets) {
-  supported_mask_ = ~(disabled_targets & ~uint32_t(HWY_ENABLED_BASELINE));
-  
-  
-  
-  GetChosenTarget().DeInit();
-}
-
-void SetSupportedTargetsForTest(uint32_t targets) {
-  
-  
-  
-  supported_.store(0, std::memory_order_release);
-  supported_targets_for_test_ = targets;
-  GetChosenTarget().DeInit();
-}
-
-bool SupportedTargetsCalledForTest() {
-  return supported_.load(std::memory_order_acquire) != 0;
-}
-
-uint32_t SupportedTargets() {
-  uint32_t bits = supported_.load(std::memory_order_acquire);
-  
-  if (HWY_LIKELY(bits != 0)) {
-    return bits & supported_mask_;
-  }
-
-  
-  if (HWY_UNLIKELY(supported_targets_for_test_ != 0)) {
-    
-    supported_.store(supported_targets_for_test_, std::memory_order_release);
-    return supported_targets_for_test_ & supported_mask_;
-  }
-
-  bits = HWY_SCALAR;
+  int64_t bits = HWY_SCALAR | HWY_EMU128;
 
 #if HWY_ARCH_X86
   bool has_osxsave = false;
@@ -288,6 +234,7 @@ uint32_t SupportedTargets() {
       flags |= IsBitSet(abcd[1], 30) ? Bit(FeatureIndex::kAVX512BW) : 0;
       flags |= IsBitSet(abcd[1], 31) ? Bit(FeatureIndex::kAVX512VL) : 0;
 
+      flags |= IsBitSet(abcd[2], 1) ? Bit(FeatureIndex::kVBMI) : 0;
       flags |= IsBitSet(abcd[2], 6) ? Bit(FeatureIndex::kVBMI2) : 0;
       flags |= IsBitSet(abcd[2], 9) ? Bit(FeatureIndex::kVAES) : 0;
       flags |= IsBitSet(abcd[2], 10) ? Bit(FeatureIndex::kVPCLMULQDQ) : 0;
@@ -318,48 +265,167 @@ uint32_t SupportedTargets() {
   
   if (has_osxsave) {
     const uint32_t xcr0 = ReadXCR0();
+    const int64_t min_avx3 = HWY_AVX3 | HWY_AVX3_DL;
+    const int64_t min_avx2 = HWY_AVX2 | min_avx3;
     
     if (!IsBitSet(xcr0, 1)) {
-      bits &=
-          ~uint32_t(HWY_SSSE3 | HWY_SSE4 | HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL);
+      bits &= ~(HWY_SSSE3 | HWY_SSE4 | min_avx2);
     }
     
     if (!IsBitSet(xcr0, 2)) {
-      bits &= ~uint32_t(HWY_AVX2 | HWY_AVX3 | HWY_AVX3_DL);
+      bits &= ~min_avx2;
     }
     
-    if ((xcr0 & 0x70) != 0x70) {
-      bits &= ~uint32_t(HWY_AVX3 | HWY_AVX3_DL);
+    if (!IsBitSet(xcr0, 5) || !IsBitSet(xcr0, 6) || !IsBitSet(xcr0, 7)) {
+      bits &= ~min_avx3;
     }
   }
 
-#else
-  
-  bits = HWY_ENABLED_BASELINE;
-#endif  
-
   if ((bits & HWY_ENABLED_BASELINE) != HWY_ENABLED_BASELINE) {
-    fprintf(stderr, "WARNING: CPU supports %zx but software requires %x\n",
-            size_t(bits), HWY_ENABLED_BASELINE);
+    fprintf(stderr,
+            "WARNING: CPU supports %" PRIx64 " but software requires %" PRIx64
+            "\n",
+            bits, static_cast<int64_t>(HWY_ENABLED_BASELINE));
   }
 
-  supported_.store(bits, std::memory_order_release);
-  return bits & supported_mask_;
+#elif HWY_ARCH_ARM && HWY_HAVE_RUNTIME_DISPATCH
+  using CapBits = unsigned long;  
+  const CapBits hw = getauxval(AT_HWCAP);
+  (void)hw;
+
+#if HWY_ARCH_ARM_A64
+
+#if defined(HWCAP_AES)
+  
+  
+  if (hw & HWCAP_AES) {
+    bits |= HWY_NEON;
+  }
+#endif  
+
+#if defined(HWCAP_SVE)
+  if (hw & HWCAP_SVE) {
+    bits |= HWY_SVE;
+  }
+#endif
+
+#if defined(HWCAP2_SVE2) && defined(HWCAP2_SVEAES)
+  const CapBits hw2 = getauxval(AT_HWCAP2);
+  if ((hw2 & HWCAP2_SVE2) && (hw2 & HWCAP2_SVEAES)) {
+    bits |= HWY_SVE2;
+  }
+#endif
+
+#else  
+
+
+
+#if defined(HWCAP_NEON) && defined(HWCAP_VFPv4)
+  if ((hw & HWCAP_NEON) && (hw & HWCAP_VFPv4)) {
+    bits |= HWY_NEON;
+  }
+#endif
+
+#endif  
+  if ((bits & HWY_ENABLED_BASELINE) != HWY_ENABLED_BASELINE) {
+    fprintf(stderr,
+            "WARNING: CPU supports %" PRIx64 " but software requires %" PRIx64
+            "\n",
+            bits, static_cast<int64_t>(HWY_ENABLED_BASELINE));
+  }
+#else   
+  
+  
+  
+  
+  bits |= HWY_ENABLED_BASELINE;
+#endif  
+
+  return bits;
+}
+
+}  
+
+HWY_DLLEXPORT HWY_NORETURN void HWY_FORMAT(3, 4)
+    Abort(const char* file, int line, const char* format, ...) {
+  char buf[2000];
+  va_list args;
+  va_start(args, format);
+  vsnprintf(buf, sizeof(buf), format, args);
+  va_end(args);
+
+  fprintf(stderr, "Abort at %s:%d: %s\n", file, line, buf);
+
+
+#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
+  __sanitizer_print_stack_trace();
+#endif  
+  fflush(stderr);
+
+
+#if HWY_ARCH_RVV
+  exit(1);  
+#elif HWY_IS_DEBUG_BUILD && !HWY_COMPILER_MSVC
+  
+  
+  __builtin_trap();
+#else
+  abort();  
+#endif
+}
+
+HWY_DLLEXPORT void DisableTargets(int64_t disabled_targets) {
+  supported_mask_ = static_cast<int64_t>(~disabled_targets);
+  
+  
+  
+  
+  
+  GetChosenTarget().DeInit();
+}
+
+HWY_DLLEXPORT void SetSupportedTargetsForTest(int64_t targets) {
+  supported_targets_for_test_ = targets;
+  GetChosenTarget().DeInit();  
+}
+
+HWY_DLLEXPORT int64_t SupportedTargets() {
+  int64_t targets = supported_targets_for_test_;
+  if (HWY_LIKELY(targets == 0)) {
+    
+    
+    
+    
+    targets = DetectTargets();
+
+    
+    
+    
+    GetChosenTarget().Update(targets);
+
+    
+    if (HWY_ARCH_ARM_A64) {
+      const size_t vec_bytes = VectorBytes();  
+      if ((targets & HWY_SVE) && vec_bytes == 32) {
+        targets = static_cast<int64_t>(targets | HWY_SVE_256);
+      } else {
+        targets = static_cast<int64_t>(targets & ~HWY_SVE_256);
+      }
+      if ((targets & HWY_SVE2) && vec_bytes == 16) {
+        targets = static_cast<int64_t>(targets | HWY_SVE2_128);
+      } else {
+        targets = static_cast<int64_t>(targets & ~HWY_SVE2_128);
+      }
+    }  
+  }
+
+  targets &= supported_mask_;
+  return targets == 0 ? HWY_STATIC_TARGET : targets;
 }
 
 HWY_DLLEXPORT ChosenTarget& GetChosenTarget() {
   static ChosenTarget chosen_target;
   return chosen_target;
-}
-
-void ChosenTarget::Update() {
-  
-  
-  
-  
-  uint32_t supported = HWY_CHOSEN_TARGET_SHIFT(hwy::SupportedTargets()) |
-                       HWY_CHOSEN_TARGET_MASK_SCALAR;
-  mask_.store(supported);
 }
 
 }  

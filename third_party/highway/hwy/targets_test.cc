@@ -12,15 +12,17 @@
 
 
 
+
 #include "hwy/targets.h"
 
 #include "hwy/tests/test_util-inl.h"
 
 namespace fake {
 
-#define DECLARE_FUNCTION(TGT)                        \
-  namespace N_##TGT {                                \
-    uint32_t FakeFunction(int) { return HWY_##TGT; } \
+#define DECLARE_FUNCTION(TGT)                                                \
+  namespace N_##TGT {                                                        \
+    /* Function argument is just to ensure/demonstrate they are possible. */ \
+    int64_t FakeFunction(int) { return HWY_##TGT; }                          \
   }
 
 DECLARE_FUNCTION(AVX3_DL)
@@ -31,41 +33,62 @@ DECLARE_FUNCTION(SSSE3)
 DECLARE_FUNCTION(NEON)
 DECLARE_FUNCTION(SVE)
 DECLARE_FUNCTION(SVE2)
+DECLARE_FUNCTION(SVE_256)
+DECLARE_FUNCTION(SVE2_128)
 DECLARE_FUNCTION(PPC8)
 DECLARE_FUNCTION(WASM)
 DECLARE_FUNCTION(RVV)
 DECLARE_FUNCTION(SCALAR)
+DECLARE_FUNCTION(EMU128)
 
 HWY_EXPORT(FakeFunction);
 
+void CallFunctionForTarget(int64_t target, int line) {
+  if ((HWY_TARGETS & target) == 0) return;
+  hwy::SetSupportedTargetsForTest(target);
+
+  
+  
+  hwy::GetChosenTarget().Update(hwy::SupportedTargets());
+
+  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+
+  
+  
+  hwy::GetChosenTarget().DeInit();
+
+#if HWY_DISPATCH_WORKAROUND
+  EXPECT_EQ(HWY_STATIC_TARGET, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+#else
+  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+#endif
+
+  
+  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+}
+
 void CheckFakeFunction() {
-#define CHECK_ARRAY_ENTRY(TGT)                                              \
-  if ((HWY_TARGETS & HWY_##TGT) != 0) {                                     \
-    hwy::SetSupportedTargetsForTest(HWY_##TGT);                             \
-    /* Calling Update() first to make &HWY_DYNAMIC_DISPATCH() return */     \
-    /* the pointer to the already cached function. */                       \
-    hwy::GetChosenTarget().Update();                                        \
-    EXPECT_EQ(uint32_t(HWY_##TGT), HWY_DYNAMIC_DISPATCH(FakeFunction)(42)); \
-    /* Calling DeInit() will test that the initializer function */          \
-    /* also calls the right function. */                                    \
-    hwy::GetChosenTarget().DeInit();                                        \
-    EXPECT_EQ(uint32_t(HWY_##TGT), HWY_DYNAMIC_DISPATCH(FakeFunction)(42)); \
-    /* Second call uses the cached value from the previous call. */         \
-    EXPECT_EQ(uint32_t(HWY_##TGT), HWY_DYNAMIC_DISPATCH(FakeFunction)(42)); \
-  }
-  CHECK_ARRAY_ENTRY(AVX3_DL)
-  CHECK_ARRAY_ENTRY(AVX3)
-  CHECK_ARRAY_ENTRY(AVX2)
-  CHECK_ARRAY_ENTRY(SSE4)
-  CHECK_ARRAY_ENTRY(SSSE3)
-  CHECK_ARRAY_ENTRY(NEON)
-  CHECK_ARRAY_ENTRY(SVE)
-  CHECK_ARRAY_ENTRY(SVE2)
-  CHECK_ARRAY_ENTRY(PPC8)
-  CHECK_ARRAY_ENTRY(WASM)
-  CHECK_ARRAY_ENTRY(RVV)
-  CHECK_ARRAY_ENTRY(SCALAR)
-#undef CHECK_ARRAY_ENTRY
+  
+  CallFunctionForTarget(HWY_AVX3_DL, __LINE__);
+  CallFunctionForTarget(HWY_AVX3, __LINE__);
+  CallFunctionForTarget(HWY_AVX2, __LINE__);
+  CallFunctionForTarget(HWY_SSE4, __LINE__);
+  CallFunctionForTarget(HWY_SSSE3, __LINE__);
+  CallFunctionForTarget(HWY_NEON, __LINE__);
+  CallFunctionForTarget(HWY_SVE, __LINE__);
+  CallFunctionForTarget(HWY_SVE2, __LINE__);
+  CallFunctionForTarget(HWY_SVE_256, __LINE__);
+  CallFunctionForTarget(HWY_SVE2_128, __LINE__);
+  CallFunctionForTarget(HWY_PPC8, __LINE__);
+  CallFunctionForTarget(HWY_WASM, __LINE__);
+  CallFunctionForTarget(HWY_RVV, __LINE__);
+  
+  
+#if defined(HWY_COMPILE_ONLY_SCALAR) || HWY_BROKEN_EMU128
+  CallFunctionForTarget(HWY_SCALAR, __LINE__);
+#else
+  CallFunctionForTarget(HWY_EMU128, __LINE__);
+#endif
 }
 
 }  
@@ -86,31 +109,27 @@ class HwyTargetsTest : public testing::Test {
 TEST_F(HwyTargetsTest, ChosenTargetOrderTest) { fake::CheckFakeFunction(); }
 
 TEST_F(HwyTargetsTest, DisabledTargetsTest) {
-  DisableTargets(~0u);
+  DisableTargets(~0LL);
   
-  HWY_ASSERT(HWY_ENABLED_BASELINE == SupportedTargets());
+  HWY_ASSERT(HWY_STATIC_TARGET == SupportedTargets());
 
   DisableTargets(0);  
-  uint32_t current_targets = SupportedTargets();
-  if ((current_targets & ~uint32_t(HWY_ENABLED_BASELINE)) == 0) {
+  const int64_t current_targets = SupportedTargets();
+  const int64_t enabled_baseline = static_cast<int64_t>(HWY_ENABLED_BASELINE);
+  
+  const int64_t fallback = HWY_SCALAR | HWY_EMU128;
+  if ((current_targets & ~enabled_baseline & ~fallback) == 0) {
     
     return;
   }
-  
-  uint32_t lowest_target = current_targets & (~current_targets + 1);
-  
-  HWY_ASSERT((lowest_target & ~uint32_t(HWY_ENABLED_BASELINE)) != 0);
-  DisableTargets(lowest_target);
 
   
-  HWY_ASSERT((lowest_target ^ current_targets) == SupportedTargets());
+  const int64_t best_target = current_targets & (~current_targets + 1);
+  DisableTargets(best_target);
+
+  
+  HWY_ASSERT((best_target ^ current_targets) == SupportedTargets());
   DisableTargets(0);  
 }
 
 }  
-
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

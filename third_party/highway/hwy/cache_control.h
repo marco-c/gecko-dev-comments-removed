@@ -12,6 +12,7 @@
 
 
 
+
 #ifndef HIGHWAY_HWY_CACHE_CONTROL_H_
 #define HIGHWAY_HWY_CACHE_CONTROL_H_
 
@@ -76,7 +77,7 @@ template <typename T>
 HWY_INLINE HWY_ATTR_CACHE void Prefetch(const T* p) {
 #if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
   _mm_prefetch(reinterpret_cast<const char*>(p), _MM_HINT_T0);
-#elif HWY_COMPILER_GCC || HWY_COMPILER_CLANG
+#elif HWY_COMPILER_GCC  
   
   
   __builtin_prefetch(p, 0, 3);

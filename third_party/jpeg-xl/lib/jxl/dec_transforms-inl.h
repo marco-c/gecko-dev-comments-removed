@@ -24,6 +24,9 @@ namespace HWY_NAMESPACE {
 namespace {
 
 
+using hwy::HWY_NAMESPACE::MulAdd;
+
+
 
 
 template <size_t DCT_ROWS, size_t DCT_COLS, size_t LF_ROWS, size_t LF_COLS,

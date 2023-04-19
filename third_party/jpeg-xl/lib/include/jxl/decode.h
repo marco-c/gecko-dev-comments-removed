@@ -428,7 +428,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSkipCurrentFrame(JxlDecoder* dec);
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus
+JXL_DEPRECATED JXL_EXPORT JxlDecoderStatus
 JxlDecoderDefaultPixelFormat(const JxlDecoder* dec, JxlPixelFormat* format);
 
 
@@ -954,7 +954,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetExtraChannelBlendInfo(
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
+JXL_DEPRECATED JXL_EXPORT JxlDecoderStatus JxlDecoderDCOutBufferSize(
     const JxlDecoder* dec, const JxlPixelFormat* format, size_t* size);
 
 
@@ -975,7 +975,7 @@ JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
 
 
 
-JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderSetDCOutBuffer(
+JXL_DEPRECATED JXL_EXPORT JxlDecoderStatus JxlDecoderSetDCOutBuffer(
     JxlDecoder* dec, const JxlPixelFormat* format, void* buffer, size_t size);
 
 

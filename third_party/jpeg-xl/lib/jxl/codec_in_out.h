@@ -210,7 +210,6 @@ class CodecInOut {
 
   std::vector<ImageBundle> frames;  
 
-  bool use_sjpeg = false;
   
   size_t jpeg_quality;
 };

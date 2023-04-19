@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef HIGHWAY_HWY_PER_TARGET_H_
+#define HIGHWAY_HWY_PER_TARGET_H_
+
+#include <stddef.h>
+
+
+
+namespace hwy {
+
+
+
+
+
+
+
+
+
+size_t VectorBytes();
+
+}  
+
+#endif  

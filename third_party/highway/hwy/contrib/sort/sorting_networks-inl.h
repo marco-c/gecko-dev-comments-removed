@@ -13,6 +13,7 @@
 
 
 
+
 #if defined(HIGHWAY_HWY_CONTRIB_SORT_SORTING_NETWORKS_TOGGLE) == \
     defined(HWY_TARGET_TOGGLE)
 #ifdef HIGHWAY_HWY_CONTRIB_SORT_SORTING_NETWORKS_TOGGLE
@@ -21,7 +22,6 @@
 #define HIGHWAY_HWY_CONTRIB_SORT_SORTING_NETWORKS_TOGGLE
 #endif
 
-#include "hwy/contrib/sort/disabled_targets.h"
 #include "hwy/contrib/sort/shared-inl.h"  
 #include "hwy/highway.h"
 
@@ -29,6 +29,8 @@ HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 namespace detail {
+
+#if VQSORT_ENABLED
 
 using Constants = hwy::SortConstants;
 
@@ -598,8 +600,10 @@ HWY_INLINE void Merge16(D d, Traits st, V& v0, V& v1, V& v2, V& v3, V& v4,
 
 
 
+
+
 template <class Traits, typename T>
-HWY_INLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
+HWY_NOINLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
   const CappedTag<T, Constants::kMaxCols> d;
   using V = decltype(Zero(d));
 
@@ -647,7 +651,7 @@ HWY_INLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
                ve, vf);
 
         
-#if !HWY_COMPILER_MSVC
+#if !HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD
         if (HWY_LIKELY(keys >= 16 && kMaxKeys >= 16)) {
           Merge16(d, st, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, va, vb, vc, vd,
                   ve, vf);
@@ -676,6 +680,11 @@ HWY_INLINE void SortingNetwork(Traits st, T* HWY_RESTRICT buf, size_t cols) {
   StoreU(ve, d, buf + 0xe * cols);
   StoreU(vf, d, buf + 0xf * cols);
 }
+
+#else
+template <class Base>
+struct SharedTraits : public Base {};
+#endif  
 
 }  
 

@@ -12,6 +12,7 @@
 
 
 
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>  
@@ -20,7 +21,7 @@
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/crypto_test.cc"
-#include "hwy/foreach_target.h"
+#include "hwy/foreach_target.h"  
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -548,11 +549,5 @@ HWY_BEFORE_TEST(HwyCryptoTest);
 HWY_EXPORT_AND_TEST_P(HwyCryptoTest, TestAllAES);
 HWY_EXPORT_AND_TEST_P(HwyCryptoTest, TestAllCLMul);
 }  
-
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
 
 #endif

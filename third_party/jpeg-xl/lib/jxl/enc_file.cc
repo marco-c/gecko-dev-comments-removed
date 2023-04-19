@@ -20,7 +20,6 @@
 #include "lib/jxl/enc_cache.h"
 #include "lib/jxl/enc_frame.h"
 #include "lib/jxl/enc_icc_codec.h"
-#include "lib/jxl/exif.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/headers.h"
 #include "lib/jxl/image_bundle.h"
@@ -28,42 +27,6 @@
 namespace jxl {
 
 namespace {
-
-
-PassDefinition progressive_passes_dc_vlf[] = {
-    {2, 0, false,
-     4}};
-
-PassDefinition progressive_passes_dc_lf[] = {
-    {2, 0, false,
-     4},
-    {3, 0, false,
-     2}};
-
-PassDefinition progressive_passes_dc_lf_salient_ac[] = {
-    {2, 0, false,
-     4},
-    {3, 0, false,
-     2},
-    {8, 0, true,
-     0}};
-
-PassDefinition progressive_passes_dc_lf_salient_ac_other_ac[] = {
-    {2, 0, false,
-     4},
-    {3, 0, false,
-     2},
-    {8, 0, true,
-     0},
-    {8, 0, false,
-     0}};
-
-PassDefinition progressive_passes_dc_quant_ac_full_ac[] = {
-    {8, 1, false,
-     2},
-    {8, 0, false,
-     0},
-};
 
 Status PrepareCodecMetadataFromIO(const CompressParams& cparams,
                                   const CodecInOut* io,
@@ -84,8 +47,8 @@ Status PrepareCodecMetadataFromIO(const CompressParams& cparams,
   metadata->m.xyb_encoded =
       cparams.color_transform == ColorTransform::kXYB ? true : false;
 
-  InterpretExif(io->blobs.exif, metadata);
-
+  
+  
   return true;
 }
 
@@ -173,47 +136,6 @@ Status EncodeFile(const CompressParams& params, const CodecInOut* io,
   BitWriter::Allotment allotment(&writer, 8);
   writer.ZeroPadToByte();
   ReclaimAndCharge(&writer, &allotment, kLayerHeader, aux_out);
-
-  if (cparams.progressive_mode || cparams.qprogressive_mode) {
-    if (cparams.saliency_map != nullptr) {
-      passes_enc_state->progressive_splitter.SetSaliencyMap(
-          cparams.saliency_map);
-    }
-    passes_enc_state->progressive_splitter.SetSaliencyThreshold(
-        cparams.saliency_threshold);
-    if (cparams.qprogressive_mode) {
-      passes_enc_state->progressive_splitter.SetProgressiveMode(
-          ProgressiveMode{progressive_passes_dc_quant_ac_full_ac});
-    } else {
-      switch (cparams.saliency_num_progressive_steps) {
-        case 1:
-          passes_enc_state->progressive_splitter.SetProgressiveMode(
-              ProgressiveMode{progressive_passes_dc_vlf});
-          break;
-        case 2:
-          passes_enc_state->progressive_splitter.SetProgressiveMode(
-              ProgressiveMode{progressive_passes_dc_lf});
-          break;
-        case 3:
-          passes_enc_state->progressive_splitter.SetProgressiveMode(
-              ProgressiveMode{progressive_passes_dc_lf_salient_ac});
-          break;
-        case 4:
-          if (cparams.saliency_threshold == 0.0f) {
-            
-            
-            passes_enc_state->progressive_splitter.SetProgressiveMode(
-                ProgressiveMode{progressive_passes_dc_lf_salient_ac});
-          } else {
-            passes_enc_state->progressive_splitter.SetProgressiveMode(
-                ProgressiveMode{progressive_passes_dc_lf_salient_ac_other_ac});
-          }
-          break;
-        default:
-          return JXL_FAILURE("Invalid saliency_num_progressive_steps.");
-      }
-    }
-  }
 
   for (size_t i = 0; i < io->frames.size(); i++) {
     FrameInfo info;

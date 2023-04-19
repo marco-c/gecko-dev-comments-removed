@@ -14,6 +14,7 @@
 
 
 
+
 #include <cmath>
 
 #include "hwy/base.h"
@@ -98,21 +99,21 @@ struct Simd {
 
 namespace detail {
 
-#if HWY_HAVE_SCALABLE
-
 template <typename T, size_t N, int kPow2>
 constexpr bool IsFull(Simd<T, N, kPow2> ) {
   return N == HWY_LANES(T) && kPow2 == 0;
 }
-
-#endif
 
 
 
 
 
 constexpr size_t ScaleByPower(size_t N, int pow2) {
+#if HWY_TARGET == HWY_RVV
   return pow2 >= 0 ? (N << pow2) : (N >> (-pow2));
+#else
+  return pow2 >= 0 ? N : (N >> (-pow2));
+#endif
 }
 
 
@@ -136,17 +137,16 @@ struct ScalableTagChecker {
 template <typename T, size_t kLimit>
 struct CappedTagChecker {
   static_assert(kLimit != 0, "Does not make sense to have zero lanes");
-  using type = Simd<T, HWY_MIN(kLimit, HWY_MAX_BYTES / sizeof(T)), 0>;
+  
+  
+  static constexpr size_t kLimitPow2 = size_t{1} << hwy::FloorLog2(kLimit);
+  using type = Simd<T, HWY_MIN(kLimitPow2, HWY_LANES(T)), 0>;
 };
 
 template <typename T, size_t kNumLanes>
 struct FixedTagChecker {
   static_assert(kNumLanes != 0, "Does not make sense to have zero lanes");
-  static_assert(kNumLanes * sizeof(T) <= HWY_MAX_BYTES, "Too many lanes");
-#if HWY_TARGET == HWY_SCALAR
-  
-  static_assert(kNumLanes == 1, "Scalar only supports one lane");
-#endif
+  static_assert(kNumLanes <= HWY_LANES(T), "Too many lanes");
   using type = Simd<T, kNumLanes, 0>;
 };
 
@@ -218,6 +218,15 @@ using Half = typename D::Half;
 template <class D>
 using Twice = typename D::Twice;
 
+template <typename T>
+using Full32 = Simd<T, 4 / sizeof(T), 0>;
+
+template <typename T>
+using Full64 = Simd<T, 8 / sizeof(T), 0>;
+
+template <typename T>
+using Full128 = Simd<T, 16 / sizeof(T), 0>;
+
 
 #define HWY_IF_UNSIGNED_D(D) HWY_IF_UNSIGNED(TFromD<D>)
 #define HWY_IF_SIGNED_D(D) HWY_IF_SIGNED(TFromD<D>)
@@ -237,10 +246,7 @@ using Twice = typename D::Twice;
 #define HWY_IF_SIGNED_V(V) HWY_IF_SIGNED(TFromV<V>)
 #define HWY_IF_FLOAT_V(V) HWY_IF_FLOAT(TFromV<V>)
 #define HWY_IF_LANE_SIZE_V(V, bytes) HWY_IF_LANE_SIZE(TFromV<V>, bytes)
-
-
-
-#define HWY_IF_LANES_ARE(T, V) EnableIf<IsSameT<T, TFromV<V>>::value>* = nullptr
+#define HWY_IF_NOT_LANE_SIZE_V(V, bytes) HWY_IF_NOT_LANE_SIZE(TFromV<V>, bytes)
 
 template <class D>
 HWY_INLINE HWY_MAYBE_UNUSED constexpr int Pow2(D ) {
@@ -291,8 +297,7 @@ HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N, kPow2>) {
 
 
 
-#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && \
-    ((defined(_WIN32) || defined(_WIN64)) || HWY_ARCH_ARM_A64)
+#if HWY_COMPILER_GCC_ACTUAL && (HWY_OS_WIN || HWY_ARCH_ARM_A64)
 template <class V>
 using VecArg = const V&;
 #else

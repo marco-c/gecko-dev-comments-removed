@@ -24,7 +24,9 @@ namespace jxl {
 namespace HWY_NAMESPACE {
 
 
+using hwy::HWY_NAMESPACE::Or;
 using hwy::HWY_NAMESPACE::ShiftRight;
+using hwy::HWY_NAMESPACE::Sub;
 
 
 #define PRINT_RESULTS 0
@@ -310,8 +312,8 @@ void TestFloat() {
                 Load(du, reinterpret_cast<const uint32_t*>(batch) + i);
             
             const auto rand12 =
-                BitCast(df, ShiftRight<9>(bits) | Set(du, 0x3F800000));
-            const auto rand01 = rand12 - Set(df, 1.0f);
+                BitCast(df, Or(ShiftRight<9>(bits), Set(du, 0x3F800000)));
+            const auto rand01 = Sub(rand12, Set(df, 1.0f));
             Store(rand01, df, lanes);
             for (float lane : lanes) {
               sum += lane;

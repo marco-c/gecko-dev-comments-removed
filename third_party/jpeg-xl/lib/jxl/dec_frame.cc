@@ -857,13 +857,11 @@ Status FrameDecoder::FinalizeFrame() {
     
     return true;
   }
-  if (!finalized_dc_) {
-    
-    
-    return JXL_FAILURE("FinalizeFrame called before DC was fully decoded");
-  }
 
-  JXL_RETURN_IF_ERROR(Flush());
+  
+  JXL_RETURN_IF_ERROR(
+      modular_frame_decoder_.FinalizeDecoding(dec_state_, pool_,
+                                              true));
 
   if (frame_header_.CanBeReferenced()) {
     auto& info = dec_state_->shared_storage
