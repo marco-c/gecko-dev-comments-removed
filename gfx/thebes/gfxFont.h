@@ -2253,12 +2253,8 @@ class gfxFont {
                         mozilla::layout::TextDrawTarget* aTextDrawer,
                         mozilla::gfx::ScaledFont* scaledFont,
                         mozilla::gfx::DrawOptions drawOptions,
-                        const mozilla::gfx::Point& aPoint, uint32_t aGlyphId);
-
-  
-  
-  
-  virtual bool UseNativeColrFontSupport() const { return false; }
+                        const mozilla::gfx::Point& aPoint,
+                        uint32_t aGlyphId) const;
 
   
   
