@@ -654,7 +654,7 @@ pref("browser.dataFeatureRecommendations.enabled", false);
 
 
 
-pref("browser.privacySegmentation.windowSeparation.enabled", true);
+pref("browser.privateWindowSeparation.enabled", true);
 
 
 
