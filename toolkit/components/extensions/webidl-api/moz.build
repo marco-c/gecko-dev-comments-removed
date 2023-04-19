@@ -66,3 +66,5 @@ REQUIRES_UNIFIED_BUILD = True
 
 
 PYTHON_UNITTEST_MANIFESTS += ["test/python.ini"]
+
+include("/tools/fuzzing/libfuzzer-config.mozbuild")
