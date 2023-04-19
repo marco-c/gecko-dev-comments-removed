@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 #ifndef TEST_DRIFTING_CLOCK_H_
 #define TEST_DRIFTING_CLOCK_H_
 
@@ -32,7 +32,6 @@ class DriftingClock : public Clock {
 
   Timestamp CurrentTime() override;
   NtpTime CurrentNtpTime() override;
-  int64_t CurrentNtpInMilliseconds() override;
 
  private:
   TimeDelta Drift() const;
@@ -41,7 +40,7 @@ class DriftingClock : public Clock {
   const float drift_;
   const Timestamp start_time_;
 };
-}  // namespace test
-}  // namespace webrtc
+}  
+}  
 
-#endif  // TEST_DRIFTING_CLOCK_H_
+#endif  
