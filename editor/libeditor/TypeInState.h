@@ -39,15 +39,19 @@ struct PropItem {
   
   
   MOZ_KNOWN_LIVE const RefPtr<nsAtom> mAttribute;
-  nsString value;
   
-  SpecifiedStyle specifiedStyle = SpecifiedStyle::Preserve;
+  
+  
+  
+  nsString mAttributeValueOrCSSValue;
+  
+  SpecifiedStyle mSpecifiedStyle = SpecifiedStyle::Preserve;
 
-  PropItem() { MOZ_COUNT_CTOR(PropItem); }
+  PropItem() = delete;
   PropItem(nsStaticAtom* aTag, nsAtom* aAttribute, const nsAString& aValue)
       : mTag(aTag),
         mAttribute(aAttribute != nsGkAtoms::_empty ? aAttribute : nullptr),
-        value(aValue) {
+        mAttributeValueOrCSSValue(aValue) {
     MOZ_COUNT_CTOR(PropItem);
   }
   MOZ_COUNTED_DTOR(PropItem)
@@ -58,16 +62,18 @@ class StyleCache final {
   StyleCache() = delete;
   StyleCache(nsStaticAtom& aTag, nsStaticAtom* aAttribute,
              const nsAString& aValue)
-      : mTag(aTag), mAttribute(aAttribute), mValue(aValue) {}
+      : mTag(aTag), mAttribute(aAttribute), mAttributeValueOrCSSValue(aValue) {}
 
   MOZ_KNOWN_LIVE nsStaticAtom& TagRef() const { return mTag; }
   MOZ_KNOWN_LIVE nsStaticAtom* GetAttribute() const { return mAttribute; }
-  const nsString& Value() const { return mValue; }
+  const nsString& AttributeValueOrCSSValueRef() const {
+    return mAttributeValueOrCSSValue;
+  }
 
  private:
   MOZ_KNOWN_LIVE nsStaticAtom& mTag;
   MOZ_KNOWN_LIVE nsStaticAtom* const mAttribute;
-  const nsString mValue;
+  const nsString mAttributeValueOrCSSValue;
 };
 
 class MOZ_STACK_CLASS AutoStyleCacheArray final
