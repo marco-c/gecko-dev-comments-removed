@@ -152,6 +152,26 @@ event.synthesizeTouchAtPoint = function(left, top, opts, win) {
   return _getEventUtils(win).synthesizeTouchAtPoint(left, top, opts, win);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+event.synthesizeWheelAtPoint = function(left, top, opts, win) {
+  return _getEventUtils(win).synthesizeWheelAtPoint(left, top, opts, win);
+};
+
 event.synthesizeMultiTouch = function(opts, win) {
   const modifiers = _getEventUtils(win)._parseModifiers(opts);
   win.windowUtils.sendTouchEvent(
