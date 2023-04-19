@@ -54,6 +54,9 @@ module.exports = {
         "mozilla/reject-eager-module-in-lazy-getter": "error",
         "mozilla/reject-global-this": "error",
         "mozilla/reject-globalThis-modification": "error",
+        
+        
+        "mozilla/reject-importGlobalProperties": ["error", "everything"],
         "mozilla/reject-top-level-await": "error",
         
         
