@@ -3984,7 +3984,7 @@ var SessionStoreInternal = {
     }
 
     if (
-      tabbrowser.selectedTab.hidden &&
+      tabbrowser.tabs.length > tabbrowser.visibleTabs.length &&
       tabbrowser.visibleTabs.length === removableTabs.length
     ) {
       
