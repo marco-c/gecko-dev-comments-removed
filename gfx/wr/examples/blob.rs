@@ -276,7 +276,7 @@ fn main() {
 
     let workers = Arc::new(workers.unwrap());
 
-    let opts = webrender::RendererOptions {
+    let opts = webrender::WebRenderOptions {
         workers: Some(Arc::clone(&workers)),
         
         
