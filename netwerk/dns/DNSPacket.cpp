@@ -490,15 +490,6 @@ Result<uint8_t, nsresult> DNSPacket::GetRCode() const {
   return mResponse[3] & 0x0F;
 }
 
-Result<bool, nsresult> DNSPacket::RecursionAvailable() const {
-  if (mBodySize < 12) {
-    LOG(("DNSPacket::GetRCode - packet too small"));
-    return Err(NS_ERROR_ILLEGAL_VALUE);
-  }
-
-  return mResponse[3] & 0x80;
-}
-
 nsresult DNSPacket::DecodeInternal(
     nsCString& aHost, enum TrrType aType, nsCString& aCname, bool aAllowRFC1918,
     DOHresp& aResp, TypeRecordResultType& aTypeResult,
@@ -818,11 +809,6 @@ nsresult DNSPacket::DecodeInternal(
             parsed.mSvcFieldValue.AppendElement(value);
           }
 
-          if (aType != TRRTYPE_HTTPSSVC) {
-            
-            break;
-          }
-
           
           if (aCname.IsEmpty() && parsed.mSvcFieldPriority == 0) {
             
@@ -830,11 +816,14 @@ nsresult DNSPacket::DecodeInternal(
               return NS_ERROR_UNEXPECTED;
             }
             aCname = parsed.mSvcDomainName;
-            
-            aTypeResult = mozilla::AsVariant(Nothing());
             ToLowerCase(aCname);
             LOG(("DNSPacket::DohDecode HTTPSSVC AliasForm host %s => %s\n",
                  host.get(), aCname.get()));
+            break;
+          }
+
+          if (aType != TRRTYPE_HTTPSSVC) {
+            
             break;
           }
 
