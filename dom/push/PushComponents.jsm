@@ -1,24 +1,28 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * This file exports XPCOM components for C++ and chrome JavaScript callers to
- * interact with the Push service.
- */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+
+"use strict";
+
+
+
+
+
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 var isParent =
   Services.appinfo.processType === Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
 
 const lazy = {};
 
-// The default Push service implementation.
+
 XPCOMUtils.defineLazyGetter(lazy, "PushService", function() {
   if (Services.prefs.getBoolPref("dom.push.enabled")) {
-    const { PushService } = ChromeUtils.importESModule(
-      "resource://gre/modules/PushService.sys.mjs"
+    const { PushService } = ChromeUtils.import(
+      "resource://gre/modules/PushService.jsm"
     );
     PushService.init();
     return PushService;
@@ -27,25 +31,25 @@ XPCOMUtils.defineLazyGetter(lazy, "PushService", function() {
   throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
 });
 
-// Observer notification topics for push messages and subscription status
-// changes. These are duplicated and used in `nsIPushNotifier`. They're exposed
-// on `nsIPushService` so that JS callers only need to import this service.
+
+
+
 const OBSERVER_TOPIC_PUSH = "push-message";
 const OBSERVER_TOPIC_SUBSCRIPTION_CHANGE = "push-subscription-change";
 const OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED = "push-subscription-modified";
 
-/**
- * `PushServiceBase`, `PushServiceParent`, and `PushServiceContent` collectively
- * implement the `nsIPushService` interface. This interface provides calls
- * similar to the Push DOM API, but does not require service workers.
- *
- * Push service methods may be called from the parent or content process. The
- * parent process implementation loads `PushService.jsm` at app startup, and
- * calls its methods directly. The content implementation forwards calls to
- * the parent Push service via IPC.
- *
- * The implementations share a class and contract ID.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 function PushServiceBase() {
   this.wrappedJSObject = this;
   this._addListeners();
@@ -80,7 +84,7 @@ PushServiceBase.prototype = {
 
   observe(subject, topic, data) {
     if (topic === "android-push-service") {
-      // Load PushService immediately.
+      
       this.ensureReady();
     }
   },
@@ -100,11 +104,11 @@ PushServiceBase.prototype = {
   },
 };
 
-/**
- * The parent process implementation of `nsIPushService`. This version loads
- * `PushService.jsm` at startup and calls its methods directly. It also
- * receives and responds to requests from the content process.
- */
+
+
+
+
+
 let parentInstance;
 function PushServiceParent() {
   if (parentInstance) {
@@ -135,7 +139,7 @@ Object.assign(PushServiceParent.prototype, {
     "Push:ReportError",
   ],
 
-  // nsIPushService methods
+  
 
   subscribe(scope, principal, callback) {
     this.subscribeWithKey(scope, principal, [], callback);
@@ -202,7 +206,7 @@ Object.assign(PushServiceParent.prototype, {
       .catch(Cu.reportError);
   },
 
-  // nsIPushQuotaManager methods
+  
 
   notificationForOriginShown(origin) {
     this.service.notificationForOriginShown(origin);
@@ -212,7 +216,7 @@ Object.assign(PushServiceParent.prototype, {
     this.service.notificationForOriginClosed(origin);
   },
 
-  // nsIPushErrorReporter methods
+  
 
   reportDeliveryError(messageId, reason) {
     this.service.reportDeliveryError(messageId, reason);
@@ -268,9 +272,9 @@ Object.assign(PushServiceParent.prototype, {
       throw new Error("Invalid page record: unsupported principal");
     }
 
-    // System subscriptions can only be created by chrome callers, and are
-    // exempt from the background message quota and permission checks. They
-    // also do not fire service worker events.
+    
+    
+    
     data.systemRecord = principal.isSystemPrincipal;
 
     data.originAttributes = ChromeUtils.originAttributesToSuffix(
@@ -310,7 +314,7 @@ Object.assign(PushServiceParent.prototype, {
     return "PushService:" + name + ":" + suffix;
   },
 
-  // Methods used for mocking in tests.
+  
 
   replaceServiceBackend(options) {
     return this.service.changeTestServer(options.serverURI, options);
@@ -322,7 +326,7 @@ Object.assign(PushServiceParent.prototype, {
   },
 });
 
-// Used to replace the implementation with a mock.
+
 Object.defineProperty(PushServiceParent.prototype, "service", {
   get() {
     return this._service || lazy.PushService;
@@ -333,12 +337,12 @@ Object.defineProperty(PushServiceParent.prototype, "service", {
 });
 
 let contentInstance;
-/**
- * The content process implementation of `nsIPushService`. This version
- * uses the child message manager to forward calls to the parent process.
- * The parent Push service instance handles the request, and responds with a
- * message containing the result.
- */
+
+
+
+
+
+
 function PushServiceContent() {
   if (contentInstance) {
     return contentInstance;
@@ -371,7 +375,7 @@ Object.assign(PushServiceContent.prototype, {
     "PushService:Clear:KO",
   ],
 
-  // nsIPushService methods
+  
 
   subscribe(scope, principal, callback) {
     this.subscribeWithKey(scope, principal, [], callback);
@@ -413,7 +417,7 @@ Object.assign(PushServiceContent.prototype, {
     });
   },
 
-  // nsIPushQuotaManager methods
+  
 
   notificationForOriginShown(origin) {
     this._mm.sendAsyncMessage("Push:NotificationForOriginShown", origin);
@@ -423,7 +427,7 @@ Object.assign(PushServiceContent.prototype, {
     this._mm.sendAsyncMessage("Push:NotificationForOriginClosed", origin);
   },
 
-  // nsIPushErrorReporter methods
+  
 
   reportDeliveryError(messageId, reason) {
     this._mm.sendAsyncMessage("Push:ReportError", {
@@ -492,7 +496,7 @@ Object.assign(PushServiceContent.prototype, {
   },
 });
 
-/** `PushSubscription` instances are passed to all subscription callbacks. */
+
 function PushSubscription(props) {
   this._props = props;
 }
@@ -500,64 +504,64 @@ function PushSubscription(props) {
 PushSubscription.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIPushSubscription"]),
 
-  /** The URL for sending messages to this subscription. */
+  
   get endpoint() {
     return this._props.endpoint;
   },
 
-  /** The last time a message was sent to this subscription. */
+  
   get lastPush() {
     return this._props.lastPush;
   },
 
-  /** The total number of messages sent to this subscription. */
+  
   get pushCount() {
     return this._props.pushCount;
   },
 
-  /** The number of remaining background messages that can be sent to this
-   * subscription, or -1 of the subscription is exempt from the quota.
-   */
+  
+
+
   get quota() {
     return this._props.quota;
   },
 
-  /**
-   * Indicates whether this subscription was created with the system principal.
-   * System subscriptions are exempt from the background message quota and
-   * permission checks.
-   */
+  
+
+
+
+
   get isSystemSubscription() {
     return !!this._props.systemRecord;
   },
 
-  /** The private key used to decrypt incoming push messages, in JWK format */
+  
   get p256dhPrivateKey() {
     return this._props.p256dhPrivateKey;
   },
 
-  /**
-   * Indicates whether this subscription is subject to the background message
-   * quota.
-   */
+  
+
+
+
   quotaApplies() {
     return this.quota >= 0;
   },
 
-  /**
-   * Indicates whether this subscription exceeded the background message quota,
-   * or the user revoked the notification permission. The caller must request a
-   * new subscription to continue receiving push messages.
-   */
+  
+
+
+
+
   isExpired() {
     return this.quota === 0;
   },
 
-  /**
-   * Returns a key for encrypting messages sent to this subscription. JS
-   * callers receive the key buffer as a return value, while C++ callers
-   * receive the key size and buffer as out parameters.
-   */
+  
+
+
+
+
   getKey(name) {
     switch (name) {
       case "p256dh":
@@ -580,6 +584,8 @@ PushSubscription.prototype = {
   },
 };
 
-// Export the correct implementation depending on whether we're running in
-// the parent or content process.
-export let Service = isParent ? PushServiceParent : PushServiceContent;
+
+
+let Service = isParent ? PushServiceParent : PushServiceContent;
+
+const EXPORTED_SYMBOLS = ["Service"];

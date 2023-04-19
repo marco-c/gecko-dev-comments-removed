@@ -1,9 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+
+
+"use strict";
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const { DOMRequestIpcHelper } = ChromeUtils.import(
   "resource://gre/modules/DOMRequestHelper.jsm"
 );
@@ -29,12 +32,12 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const PUSH_CID = Components.ID("{cde1d019-fad8-4044-b141-65fb4fb7a245}");
 
-/**
- * The Push component runs in the child process and exposes the Push API
- * to the web application. The PushService running in the parent process is the
- * one actually performing all operations.
- */
-export function Push() {
+
+
+
+
+
+function Push() {
   lazy.console.debug("Push()");
 }
 
@@ -58,8 +61,8 @@ Push.prototype = {
 
     this.initDOMRequestHelper(win);
 
-    // Get the client principal from the window. This won't be null because the
-    // service worker should be available when accessing the push manager.
+    
+    
     this._principal = win.clientPrincipal;
 
     if (!this._principal) {
@@ -69,7 +72,7 @@ Push.prototype = {
     try {
       this._topLevelPrincipal = win.top.document.nodePrincipal;
     } catch (error) {
-      // Accessing the top-level document might fails if cross-origin
+      
       this._topLevelPrincipal = undefined;
     }
   },
@@ -155,7 +158,7 @@ Push.prototype = {
     } else if (this._window.ArrayBuffer.isView(appServerKey)) {
       key = appServerKey.buffer;
     } else {
-      // `appServerKey` is an array buffer.
+      
       key = appServerKey;
     }
     return new this._window.Uint8Array(key);
@@ -214,7 +217,7 @@ Push.prototype = {
     allowCallback,
     cancelCallback
   ) {
-    // Create an array with a single nsIContentPermissionType element.
+    
     let type = {
       type: "desktop-notification",
       options: [],
@@ -225,7 +228,7 @@ Push.prototype = {
     );
     typeArray.appendElement(type);
 
-    // create a nsIContentPermissionRequest
+    
     let request = {
       QueryInterface: ChromeUtils.generateQI(["nsIContentPermissionRequest"]),
       types: typeArray,
@@ -237,8 +240,8 @@ Push.prototype = {
       window: this._window,
     };
 
-    // Using askPermission from nsIDOMWindowUtils that takes care of the
-    // remoting if needed.
+    
+    
     let windowUtils = this._window.windowUtils;
     windowUtils.askPermission(request);
   },
@@ -275,7 +278,7 @@ PushSubscriptionCallback.prototype = {
     };
     let appServerKey = this._getKey(subscription, "appServer");
     if (appServerKey) {
-      // Avoid passing null keys to work around bug 1256449.
+      
       options.appServerKey = appServerKey;
     }
     let sub = new pushManager._window.PushSubscription(options);
@@ -323,3 +326,5 @@ PushSubscriptionCallback.prototype = {
     this.reject(error);
   },
 };
+
+const EXPORTED_SYMBOLS = ["Push"];
