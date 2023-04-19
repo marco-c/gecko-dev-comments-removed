@@ -63,10 +63,6 @@ struct RTC_EXPORT AudioOptions {
   
   
   
-  absl::optional<bool> residual_echo_detector;
-  
-  
-  
   
   absl::optional<bool> combined_audio_video_bwe;
   
