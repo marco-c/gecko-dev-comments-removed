@@ -280,8 +280,6 @@ class nsContentUtils {
   static bool IsCallerChromeOrElementTransformGettersEnabled(JSContext* aCx,
                                                              JSObject*);
 
-  static bool IsCallerChromeOrErrorPage(JSContext*, JSObject*);
-
   
   
   

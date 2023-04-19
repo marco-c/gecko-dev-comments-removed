@@ -99,7 +99,7 @@ async function renderSpotlight(ready) {
     
     
     requestAnimationFrame(() => {
-      primaryBtn.focus({ preventFocusRing: true });
+      primaryBtn.focus({ focusVisible: false });
     });
   }
   if (secondaryBtn) {

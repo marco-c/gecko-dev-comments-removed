@@ -19,7 +19,7 @@ var ContentAreaDownloadsView = {
         
         document
           .getElementById("downloadsListBox")
-          .focus({ preventFocusRing: true });
+          .focus({ focusVisible: false });
         
         if (document.visibilityState === "visible") {
           DownloadsCommon.getIndicatorData(

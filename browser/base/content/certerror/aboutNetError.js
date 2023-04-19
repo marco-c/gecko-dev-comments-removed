@@ -1176,7 +1176,7 @@ function setFocus(selector, position = "afterbegin") {
     
     
     requestAnimationFrame(() => {
-      button.focus({ preventFocusRing: true });
+      button.focus({ focusVisible: false });
     });
   }
 }
