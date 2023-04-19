@@ -335,11 +335,21 @@ struct AllocSiteInput
 class MacroAssembler : public MacroAssemblerSpecific {
  private:
   
+  
+  CompileRuntime* maybeRuntime_ = nullptr;
+
+  
+  
+  CompileRealm* maybeRealm_ = nullptr;
+
+  
   NonAssertingLabel failureLabel_;
 
  protected:
   
-  explicit MacroAssembler(TempAllocator& alloc);
+  explicit MacroAssembler(TempAllocator& alloc,
+                          CompileRuntime* maybeRuntime = nullptr,
+                          CompileRealm* maybeRealm = nullptr);
 
  public:
   MoveResolver& moveResolver() {
@@ -352,6 +362,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   }
 
   size_t instructionsSize() const { return size(); }
+
+  CompileRealm* realm() const {
+    MOZ_ASSERT(maybeRealm_);
+    return maybeRealm_;
+  }
+  CompileRuntime* runtime() const {
+    MOZ_ASSERT(maybeRuntime_);
+    return maybeRuntime_;
+  }
 
 #ifdef JS_HAS_HIDDEN_SP
   void Push(RegisterOrSP reg);
@@ -5265,7 +5284,7 @@ class MOZ_RAII StackMacroAssembler : public MacroAssembler {
   JS::AutoCheckCannotGC nogc;
 
  public:
-  explicit StackMacroAssembler(TempAllocator& alloc) : MacroAssembler(alloc) {}
+  StackMacroAssembler(JSContext* cx, TempAllocator& alloc);
 };
 
 
@@ -5283,9 +5302,7 @@ class MOZ_RAII WasmMacroAssembler : public MacroAssembler {
 
 class IonHeapMacroAssembler : public MacroAssembler {
  public:
-  explicit IonHeapMacroAssembler(TempAllocator& alloc) : MacroAssembler(alloc) {
-    MOZ_ASSERT(CurrentThreadIsIonCompiling());
-  }
+  IonHeapMacroAssembler(TempAllocator& alloc, CompileRealm* realm);
 };
 
 

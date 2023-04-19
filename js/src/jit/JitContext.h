@@ -80,8 +80,6 @@ static_assert(sizeof(AbortReasonOr<uint16_t*>) == sizeof(uintptr_t),
 
 
 class JitContext {
-  CompileRealm* realm_ = nullptr;
-
 #ifdef DEBUG
   
   
@@ -104,18 +102,12 @@ class JitContext {
   explicit JitContext(JSContext* cx);
 
   
-  JitContext(CompileRuntime* rt, CompileRealm* realm);
+  explicit JitContext(CompileRuntime* rt);
 
   
   JitContext();
 
   ~JitContext();
-
-  CompileRealm* maybeRealm() const { return realm_; }
-  CompileRealm* realm() const {
-    MOZ_ASSERT(maybeRealm());
-    return maybeRealm();
-  }
 
 #ifdef DEBUG
   bool isCompilingWasm() { return isCompilingWasm_; }

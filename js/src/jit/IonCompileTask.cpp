@@ -47,7 +47,7 @@ void IonCompileTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
 void IonCompileTask::runTask() {
   
 
-  jit::JitContext jctx(mirGen_.realm->runtime(), mirGen_.realm);
+  jit::JitContext jctx(mirGen_.realm->runtime());
   setBackgroundCodegen(jit::CompileBackEnd(&mirGen_, snapshot_));
 }
 
