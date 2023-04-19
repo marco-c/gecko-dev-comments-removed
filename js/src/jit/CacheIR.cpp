@@ -754,11 +754,14 @@ static void TestMatchingHolder(CacheIRWriter& writer, NativeObject* obj,
   writer.guardShapeForOwnProperties(objId, obj->shape());
 }
 
+enum class IsCrossCompartment { No, Yes };
 
 
 
 
 
+
+template <IsCrossCompartment MaybeCrossCompartment = IsCrossCompartment::No>
 static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
                                  ObjOperandId objId) {
   uint32_t depth = 0;
@@ -777,7 +780,9 @@ static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
     
     
     
-    if (depth < MAX_CACHED_LOADS) {
+    
+    if (depth < MAX_CACHED_LOADS &&
+        MaybeCrossCompartment == IsCrossCompartment::No) {
       objId = writer.loadObject(obj);
     } else {
       objId = writer.loadProto(objId);
@@ -812,11 +817,9 @@ static ObjOperandId ShapeGuardProtoChainForCrossCompartmentHolder(
   }
 }
 
-enum class SlotReadType { Normal, CrossCompartment };
 
 
-
-template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
+template <IsCrossCompartment MaybeCrossCompartment = IsCrossCompartment::No>
 static ObjOperandId EmitReadSlotGuard(CacheIRWriter& writer, NativeObject* obj,
                                       NativeObject* holder,
                                       ObjOperandId objId) {
@@ -827,7 +830,7 @@ static ObjOperandId EmitReadSlotGuard(CacheIRWriter& writer, NativeObject* obj,
     return objId;
   }
 
-  if (MaybeCrossCompartment == SlotReadType::CrossCompartment) {
+  if (MaybeCrossCompartment == IsCrossCompartment::Yes) {
     
     
     
@@ -844,6 +847,7 @@ static ObjOperandId EmitReadSlotGuard(CacheIRWriter& writer, NativeObject* obj,
   return holderId;
 }
 
+template <IsCrossCompartment MaybeCrossCompartment = IsCrossCompartment::No>
 static void EmitMissingPropGuard(CacheIRWriter& writer, NativeObject* obj,
                                  ObjOperandId objId) {
   TestMatchingNativeReceiver(writer, obj, objId);
@@ -851,10 +855,10 @@ static void EmitMissingPropGuard(CacheIRWriter& writer, NativeObject* obj,
   
   
   
-  ShapeGuardProtoChain(writer, obj, objId);
+  ShapeGuardProtoChain<MaybeCrossCompartment>(writer, obj, objId);
 }
 
-template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
+template <IsCrossCompartment MaybeCrossCompartment = IsCrossCompartment::No>
 static void EmitReadSlotResult(CacheIRWriter& writer, NativeObject* obj,
                                NativeObject* holder, PropertyInfo prop,
                                ObjOperandId objId) {
@@ -867,9 +871,10 @@ static void EmitReadSlotResult(CacheIRWriter& writer, NativeObject* obj,
   EmitLoadSlotResult(writer, holderId, holder, prop);
 }
 
+template <IsCrossCompartment MaybeCrossCompartment = IsCrossCompartment::No>
 static void EmitMissingPropResult(CacheIRWriter& writer, NativeObject* obj,
                                   ObjOperandId objId) {
-  EmitMissingPropGuard(writer, obj, objId);
+  EmitMissingPropGuard<MaybeCrossCompartment>(writer, obj, objId);
   writer.loadUndefinedResult();
 }
 
@@ -1312,13 +1317,14 @@ AttachDecision GetPropIRGenerator::tryAttachCrossCompartmentWrapper(
 
   ObjOperandId unwrappedId = wrapperTargetId;
   if (holder) {
-    EmitReadSlotResult<SlotReadType::CrossCompartment>(
-        writer, unwrappedNative, holder, *prop, unwrappedId);
+    EmitReadSlotResult<IsCrossCompartment::Yes>(writer, unwrappedNative, holder,
+                                                *prop, unwrappedId);
     writer.wrapResult();
     writer.returnFromIC();
     trackAttached("CCWSlot");
   } else {
-    EmitMissingPropResult(writer, unwrappedNative, unwrappedId);
+    EmitMissingPropResult<IsCrossCompartment::Yes>(writer, unwrappedNative,
+                                                   unwrappedId);
     writer.returnFromIC();
     trackAttached("CCWMissing");
   }
