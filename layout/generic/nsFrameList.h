@@ -117,7 +117,9 @@ class nsFrameList {
     VerifyList();
   }
   nsFrameList& operator=(nsFrameList&& aOther) {
-    SetFrames(aOther);
+    if (this != &aOther) {
+      SetFrames(aOther);
+    }
     return *this;
   }
 
