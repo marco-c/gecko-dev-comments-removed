@@ -322,23 +322,25 @@ ImgDrawResult nsFieldSetFrame::PaintBorder(nsDisplayListBuilder* aBuilder,
 
 nscoord nsFieldSetFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
                                            IntrinsicISizeType aType) {
-  nscoord legendWidth = 0;
-  nscoord contentWidth = 0;
-  if (!StyleDisplay()->GetContainSizeAxes().mIContained) {
-    
-    
-    if (nsIFrame* legend = GetLegend()) {
-      legendWidth = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
-                                                         legend, aType);
-    }
+  
+  
+  if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
+    return *containISize;
+  }
 
-    if (nsIFrame* inner = GetInner()) {
-      
-      
-      
-      contentWidth = nsLayoutUtils::IntrinsicForContainer(
-          aRenderingContext, inner, aType, nsLayoutUtils::IGNORE_PADDING);
-    }
+  nscoord legendWidth = 0;
+  if (nsIFrame* legend = GetLegend()) {
+    legendWidth =
+        nsLayoutUtils::IntrinsicForContainer(aRenderingContext, legend, aType);
+  }
+
+  nscoord contentWidth = 0;
+  if (nsIFrame* inner = GetInner()) {
+    
+    
+    
+    contentWidth = nsLayoutUtils::IntrinsicForContainer(
+        aRenderingContext, inner, aType, nsLayoutUtils::IGNORE_PADDING);
   }
 
   return std::max(legendWidth, contentWidth);
@@ -719,8 +721,8 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   LogicalSize finalSize(
       wm, contentRect.ISize(wm) + border.IStartEnd(wm),
       mLegendSpace + border.BStartEnd(wm) + (inner ? inner->BSize(wm) : 0));
-  if (aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
-    
+  if (Maybe<nscoord> containBSize =
+          aReflowInput.mFrame->ContainIntrinsicBSize()) {
     
     
     
@@ -729,7 +731,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     
     nscoord contentBoxBSize =
         aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE
-            ? aReflowInput.ApplyMinMaxBSize(0)
+            ? aReflowInput.ApplyMinMaxBSize(*containBSize)
             : aReflowInput.ComputedBSize();
     finalSize.BSize(wm) =
         contentBoxBSize +
