@@ -18,6 +18,8 @@
 
 namespace js {
 
+class ErrorContext;
+
 
 
 
@@ -84,41 +86,6 @@ class MOZ_STACK_CLASS ReportExceptionClosure final
 
 
 extern void CallWarningReporter(JSContext* cx, JSErrorReport* report);
-
-class ErrorContext {
- public:
-  virtual ~ErrorContext() = default;
-  virtual bool addPendingError(js::CompileError** error) = 0;
-
-  virtual void reportError(js::CompileError* err) = 0;
-  virtual void reportWarning(js::CompileError* err) = 0;
-};
-
-class GeneralErrorContext : public ErrorContext {
- private:
-  JSContext* cx_;
-
- public:
-  explicit GeneralErrorContext(JSContext* cx);
-
-  bool addPendingError(js::CompileError** error) override;
-
-  virtual void reportError(js::CompileError* err) override;
-  virtual void reportWarning(js::CompileError* err) override;
-};
-
-class OffThreadErrorContext : public ErrorContext {
- private:
-  JSContext* cx_;
-
- public:
-  explicit OffThreadErrorContext(JSContext* cx);
-
-  bool addPendingError(js::CompileError** error) override;
-
-  virtual void reportError(js::CompileError* err) override;
-  virtual void reportWarning(js::CompileError* err) override;
-};
 
 
 

@@ -36,6 +36,7 @@
 #include "vm/BigIntType.h"   
 #include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
+#include "vm/ErrorContext.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/HelperThreads.h"          
 #include "vm/HelperThreadState.h"

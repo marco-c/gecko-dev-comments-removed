@@ -23,6 +23,7 @@
 #include "js/RootingAPI.h"         
 #include "js/Value.h"              
 #include "vm/EnvironmentObject.h"  
+#include "vm/ErrorContext.h"       
 #include "vm/JSContext.h"          
 #include "vm/JSObject.h"           
 #include "vm/Runtime.h"            

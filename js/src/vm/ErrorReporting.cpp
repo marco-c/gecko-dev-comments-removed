@@ -15,6 +15,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"                
 #include "js/Warnings.h"              
+#include "vm/ErrorContext.h"  
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"  
@@ -48,25 +49,47 @@ void GeneralErrorContext::reportWarning(CompileError* err) {
   }
 }
 
-OffThreadErrorContext::OffThreadErrorContext(JSContext* cx) : cx_(cx) {}
+OffThreadErrorContext::OffThreadErrorContext(JSAllocator* alloc)
+    : alloc_(alloc) {}
 
 bool OffThreadErrorContext::addPendingError(CompileError** error) {
   
   
-  return cx_->addPendingCompileError(error);
+  auto errorPtr = alloc_->make_unique<js::CompileError>();
+  if (!errorPtr) {
+    return false;
+  }
+  if (!errors_.errors.append(std::move(errorPtr))) {
+    ReportOutOfMemory();
+    return false;
+  }
+  *error = errors_.errors.back().get();
+  return true;
 }
 
 void OffThreadErrorContext::reportError(CompileError* err) {
-  if (MOZ_UNLIKELY(
-          !cx_->runtime()
-               ->hasInitializedSelfHosting())) {  
-                                                  
-    selfHosting_ErrorReporter(err);
-    return;
-  }
+  
 }
 
 void OffThreadErrorContext::reportWarning(CompileError* err) {}
+
+void OffThreadErrorContext::ReportOutOfMemory() {
+  
+
+
+
+
+  if (js::SupportDifferentialTesting()) {
+    fprintf(stderr, "ReportOutOfMemory called\n");
+  }
+
+  return addPendingOutOfMemory();
+}
+
+void OffThreadErrorContext::addPendingOutOfMemory() {
+  
+  errors_.outOfMemory = true;
+}
 
 void js::CallWarningReporter(JSContext* cx, JSErrorReport* reportp) {
   MOZ_ASSERT(reportp->isWarning());

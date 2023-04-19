@@ -53,6 +53,7 @@
 #include "vm/BytecodeUtil.h"               
 #include "vm/Compartment.h"                
 #include "vm/EnvironmentObject.h"          
+#include "vm/ErrorContext.h"               
 #include "vm/GeneratorObject.h"            
 #include "vm/GlobalObject.h"               
 #include "vm/Interpreter.h"                
