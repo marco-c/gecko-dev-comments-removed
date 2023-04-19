@@ -64,7 +64,10 @@ RTC_EXPORT std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
 
 
 
-bool ValidateRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions);
+
+bool ValidateRtpExtensions(
+    rtc::ArrayView<const webrtc::RtpExtension> extennsions,
+    rtc::ArrayView<const webrtc::RtpExtension> old_extensions);
 
 
 

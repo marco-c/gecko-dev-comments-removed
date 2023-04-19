@@ -10,6 +10,7 @@
 
 #include "media/engine/webrtc_media_engine.h"
 
+#include <map>
 #include <memory>
 #include <utility>
 
@@ -74,7 +75,8 @@ void DiscardRedundantExtensions(
 }  
 
 bool ValidateRtpExtensions(
-    const std::vector<webrtc::RtpExtension>& extensions) {
+    rtc::ArrayView<const webrtc::RtpExtension> extensions,
+    rtc::ArrayView<const webrtc::RtpExtension> old_extensions) {
   bool id_used[1 + webrtc::RtpExtension::kMaxId] = {false};
   for (const auto& extension : extensions) {
     if (extension.id < webrtc::RtpExtension::kMinId ||
@@ -89,6 +91,45 @@ bool ValidateRtpExtensions(
     }
     id_used[extension.id] = true;
   }
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!old_extensions.empty()) {
+    absl::string_view urimap[1 + webrtc::RtpExtension::kMaxId];
+    std::map<absl::string_view, int> idmap;
+    for (const auto& old_extension : old_extensions) {
+      urimap[old_extension.id] = old_extension.uri;
+      idmap[old_extension.uri] = old_extension.id;
+    }
+    for (const auto& extension : extensions) {
+      if (!urimap[extension.id].empty() &&
+          urimap[extension.id] != extension.uri) {
+        RTC_LOG(LS_ERROR) << "Extension negotiation failure: " << extension.id
+                          << " was mapped to " << urimap[extension.id]
+                          << " but is proposed changed to " << extension.uri;
+        return false;
+      }
+      const auto& it = idmap.find(extension.uri);
+      if (it != idmap.end() && it->second != extension.id) {
+        RTC_LOG(LS_ERROR) << "Extension negotation failure: " << extension.uri
+                          << " was identified by " << it->second
+                          << " but is proposed changed to " << extension.id;
+        return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -97,7 +138,8 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     bool (*supported)(absl::string_view),
     bool filter_redundant_extensions,
     const webrtc::WebRtcKeyValueConfig& trials) {
-  RTC_DCHECK(ValidateRtpExtensions(extensions));
+  
+  RTC_DCHECK(ValidateRtpExtensions(extensions, {}));
   RTC_DCHECK(supported);
   std::vector<webrtc::RtpExtension> result;
 
