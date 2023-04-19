@@ -316,6 +316,15 @@ double RemoteAccessibleBase<Derived>::Step() const {
 template <class Derived>
 Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
     int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
+  if (IsOuterDoc() && aWhichChild == EWhichChildAtPoint::DirectChild) {
+    
+    
+    if (Bounds().Contains(aX, aY)) {
+      return RemoteFirstChild();
+    }
+    return nullptr;
+  }
+
   RemoteAccessible* lastMatch = nullptr;
   
   
@@ -338,7 +347,26 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           continue;
         }
 
+        if (acc->IsOuterDoc() &&
+            aWhichChild == EWhichChildAtPoint::DeepestChild &&
+            acc->Bounds().Contains(aX, aY)) {
+          
+          
+          RemoteAccessible* innerDoc = acc->RemoteFirstChild();
+          if (innerDoc) {
+            MOZ_ASSERT(innerDoc->IsDoc());
+            
+            
+            return innerDoc->ChildAtPoint(aX, aY,
+                                          EWhichChildAtPoint::DeepestChild);
+          }
+          
+          
+          return acc;
+        }
+
         if (acc == this) {
+          MOZ_ASSERT(!acc->IsOuterDoc());
           
           
           
@@ -347,14 +375,6 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
         }
 
         if (acc->Bounds().Contains(aX, aY)) {
-          if (acc->IsDoc()) {
-            
-            
-            
-            
-            return acc->ChildAtPoint(aX, aY, aWhichChild);
-          }
-
           if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
             
             
