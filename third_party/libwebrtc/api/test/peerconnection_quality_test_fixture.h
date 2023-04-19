@@ -139,6 +139,11 @@ class PeerConnectionE2EQualityTestFixture {
   
   
   
+  
+  
+  
+  
+  
   struct VideoSimulcastConfig {
     explicit VideoSimulcastConfig(int simulcast_streams_count)
         : simulcast_streams_count(simulcast_streams_count) {
@@ -256,6 +261,14 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     absl::optional<VideoSimulcastConfig> simulcast_config;
+    
+    
+    
+    
+    
+    
+    
+    std::vector<RtpEncodingParameters> encoding_params;
     
     
     
