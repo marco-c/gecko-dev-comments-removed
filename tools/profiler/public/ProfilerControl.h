@@ -42,6 +42,7 @@ static inline void profiler_shutdown(
 
 #else  
 
+#  include "BaseProfiler.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/MozPromise.h"
@@ -53,28 +54,14 @@ static inline void profiler_shutdown(
 
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
-#  if !defined(GP_PLAT_arm_android)
-    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
-#  else
-    mozilla::MakePowerOfTwo32<2 * 1024 * 1024>();  // 2M entries = 16MB
-#  endif
-
-
-
-
+    mozilla::baseprofiler::BASE_PROFILER_DEFAULT_ENTRIES;
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
-#  if !defined(GP_PLAT_arm_android)
-    mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
-#  else
-    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
-#  endif
+    mozilla::baseprofiler::BASE_PROFILER_DEFAULT_STARTUP_ENTRIES;
 
-#  define PROFILER_DEFAULT_DURATION 20 /* seconds, for tests only */
+#  define PROFILER_DEFAULT_INTERVAL BASE_PROFILER_DEFAULT_INTERVAL
+#  define PROFILER_MAX_INTERVAL BASE_PROFILER_MAX_INTERVAL
 
-
-#  define PROFILER_DEFAULT_INTERVAL 1  /* millisecond */
-#  define PROFILER_MAX_INTERVAL 5000   /* milliseconds */
 #  define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
 
 
@@ -198,6 +185,6 @@ class MOZ_RAII AutoProfilerInit2 {
 
 }  
 
-#endif
+#endif  
 
-#endif
+#endif  
