@@ -685,6 +685,11 @@ ClientWebGLContext::SetDimensions(const int32_t signedWidth,
   return NS_OK;
 }
 
+void ClientWebGLContext::ResetBitmap() {
+  const auto size = DrawingBufferSize();
+  Run<RPROC(Resize)>(size);  
+}
+
 static bool IsWebglOutOfProcessEnabled() {
   if (StaticPrefs::webgl_out_of_process_force()) {
     return true;
