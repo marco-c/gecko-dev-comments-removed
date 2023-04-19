@@ -22,7 +22,7 @@
 
 
 
-const {setTimeout} = ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
+const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 const browser = Services.appShell.createWindowlessBrowser(true);

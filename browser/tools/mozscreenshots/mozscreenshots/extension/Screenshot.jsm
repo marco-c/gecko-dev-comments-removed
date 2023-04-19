@@ -15,7 +15,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 
 
-
 const PREF_LOG_LEVEL = "extensions.mozscreenshots@mozilla.org.loglevel";
 const lazy = {};
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {

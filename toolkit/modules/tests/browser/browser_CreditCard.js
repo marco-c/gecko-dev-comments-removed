@@ -26,6 +26,13 @@ add_setup(function() {
   registerCleanupFunction(async () => {
     OSKeyStore.__defineGetter__("isLoggedIn", oldGetters.isLoggedIn);
     await OSKeyStoreTestUtils.cleanup();
+
+    
+    
+    
+    delete window.OSKeyStore;
+    delete window.CreditCard;
+    delete window.OSKeyStoreTestUtils;
   });
 });
 

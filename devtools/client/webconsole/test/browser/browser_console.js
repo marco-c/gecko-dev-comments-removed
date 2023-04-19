@@ -193,7 +193,7 @@ async function testMessages() {
     const logger = Log.repository.getLogger("TEST_LOGGER_" + Date.now());
     logger.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
     logger.level = Log.Level.Info;
-    logger.info("Log.sys.mjs content process messsage");
+    logger.info("Log.jsm content process messsage");
   });
 
   
@@ -241,7 +241,7 @@ async function testMessages() {
   await checkUniqueMessageExists(hud, "test-image.png", ".network");
   await checkUniqueMessageExists(
     hud,
-    "Log.sys.mjs content process messsage",
+    "Log.jsm content process messsage",
     ".console-api"
   );
   await checkUniqueMessageExists(
