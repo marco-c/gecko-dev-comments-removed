@@ -667,6 +667,7 @@ void TRR::SaveAdditionalRecords(
     
     
     
+    hostRecord->Reset();
     hostRecord->mResolving++;
     hostRecord->mEffectiveTRRMode = mRec->mEffectiveTRRMode;
     LOG(("Completing lookup for additional: %s",
