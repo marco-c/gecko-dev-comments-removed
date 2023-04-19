@@ -585,7 +585,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
   void MoveFlexItemToFinalPosition(const FlexItem& aItem,
-                                   mozilla::LogicalPoint& aFramePos,
+                                   const mozilla::LogicalPoint& aFramePos,
                                    const nsSize& aContainerSize);
   
 
