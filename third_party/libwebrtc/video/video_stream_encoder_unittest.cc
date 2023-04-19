@@ -844,7 +844,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
     VideoEncoder::EncoderInfo GetEncoderInfo() const override {
       MutexLock lock(&local_mutex_);
-      EncoderInfo info;
+      EncoderInfo info = FakeEncoder::GetEncoderInfo();
       if (initialized_ == EncoderState::kInitialized) {
         if (quality_scaling_) {
           info.scaling_settings = VideoEncoder::ScalingSettings(
@@ -4017,10 +4017,8 @@ TEST_F(VideoStreamEncoderTest, ReportsVideoBitrateAllocation) {
   EXPECT_EQ(sink_.GetLastVideoBitrateAllocation(), expected_bitrate);
   EXPECT_EQ(sink_.number_of_bitrate_allocations(), 1);
 
-  VideoBitrateAllocation bitrate_allocation =
-      fake_encoder_.GetAndResetLastRateControlSettings()->bitrate;
   
-  EXPECT_EQ(bitrate_allocation.get_sum_bps(), kLowTargetBitrateBps);
+  EXPECT_TRUE(fake_encoder_.GetAndResetLastRateControlSettings().has_value());
   AdvanceTime(TimeDelta::Seconds(1) / kDefaultFps);
 
   
@@ -4065,7 +4063,7 @@ TEST_F(VideoStreamEncoderTest, ReportsVideoLayersAllocationForV8Simulcast) {
   ASSERT_EQ(last_layer_allocation.active_spatial_layers.size(), 1u);
 
   VideoBitrateAllocation bitrate_allocation =
-      fake_encoder_.GetAndResetLastRateControlSettings()->bitrate;
+      fake_encoder_.GetAndResetLastRateControlSettings()->target_bitrate;
   
   EXPECT_EQ(bitrate_allocation.get_sum_bps(), kLowTargetBitrateBps);
   AdvanceTime(TimeDelta::Seconds(1) / kDefaultFps);
@@ -4077,7 +4075,6 @@ TEST_F(VideoStreamEncoderTest, ReportsVideoLayersAllocationForV8Simulcast) {
     video_source_.IncomingCapturedFrame(
         CreateFrame(CurrentTimeMs(), codec_width_, codec_height_));
     WaitForEncodedFrame(CurrentTimeMs());
-    AdvanceTime(TimeDelta::Millis(1) / kDefaultFps);
     if (number_of_layers_allocation != sink_.number_of_layers_allocations()) {
       number_of_layers_allocation = sink_.number_of_layers_allocations();
       VideoLayersAllocation new_allocation =
@@ -5592,10 +5589,20 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
   
   
   double overshoot_factor = 2.0;
-  if (RateControlSettings::ParseFromFieldTrials().UseEncoderBitrateAdjuster()) {
+  const RateControlSettings trials =
+      RateControlSettings::ParseFromFieldTrials();
+  if (trials.UseEncoderBitrateAdjuster()) {
     
     
-    overshoot_factor *= 2;
+    
+    
+    
+    
+    if (trials.BitrateAdjusterCanUseNetworkHeadroom()) {
+      overshoot_factor = 2.4;
+    } else {
+      overshoot_factor = 4.0;
+    }
   }
   fake_encoder_.SimulateOvershoot(overshoot_factor);
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(

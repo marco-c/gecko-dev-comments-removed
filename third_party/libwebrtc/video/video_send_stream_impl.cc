@@ -49,6 +49,13 @@ static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
 constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds(2);
 
+
+
+
+
+
+static constexpr double kStrictPacingMultiplier = 1.1;
+
 bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
   const std::vector<RtpExtension>& extensions = config.rtp.extensions;
   return absl::c_any_of(extensions, [](const RtpExtension& ext) {
@@ -175,7 +182,7 @@ bool SameStreamsEnabled(const VideoBitrateAllocation& lhs,
 }  
 
 PacingConfig::PacingConfig()
-    : pacing_factor("factor", PacedSender::kDefaultPaceMultiplier),
+    : pacing_factor("factor", kStrictPacingMultiplier),
       max_pacing_delay("max_delay",
                        TimeDelta::Millis(PacedSender::kMaxQueueLengthMs)) {
   ParseFieldTrial({&pacing_factor, &max_pacing_delay},

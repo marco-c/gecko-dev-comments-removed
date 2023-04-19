@@ -568,22 +568,21 @@ DataRate AverageBitrateAfterCrossInducedLoss(std::string name) {
 }
 
 TEST_F(GoogCcNetworkControllerTest,
-       NoLossBasedRecoversSlowerAfterCrossInducedLoss) {
-  
-  
-  DataRate average_bitrate =
-      AverageBitrateAfterCrossInducedLoss("googcc_unit/no_cross_loss_based");
-  RTC_DCHECK_LE(average_bitrate, DataRate::KilobitsPerSec(625));
-}
-
-TEST_F(GoogCcNetworkControllerTest,
        LossBasedRecoversFasterAfterCrossInducedLoss) {
   
   
+  DataRate average_bitrate_without_loss_based =
+      AverageBitrateAfterCrossInducedLoss("googcc_unit/no_cross_loss_based");
+
+  
+  
   ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
-  DataRate average_bitrate =
+  SetUp();
+  DataRate average_bitrate_with_loss_based =
       AverageBitrateAfterCrossInducedLoss("googcc_unit/cross_loss_based");
-  RTC_DCHECK_GE(average_bitrate, DataRate::KilobitsPerSec(725));
+
+  EXPECT_GE(average_bitrate_with_loss_based,
+            average_bitrate_without_loss_based * 1.1);
 }
 
 TEST_F(GoogCcNetworkControllerTest, LossBasedEstimatorCapsRateAtModerateLoss) {
@@ -698,7 +697,7 @@ TEST_F(GoogCcNetworkControllerTest, DetectsHighRateInSafeResetTrial) {
       {s.CreateSimulationNode(NetworkSimulationConfig())});
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
   
-  s.RunFor(TimeDelta::Millis(1000));
+  s.RunFor(TimeDelta::Millis(2000));
   EXPECT_NEAR(client->send_bandwidth().kbps(), kInitialLinkCapacity.kbps(), 50);
   s.ChangeRoute(route->forward(), {new_net});
   
