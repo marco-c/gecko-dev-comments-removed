@@ -110,9 +110,15 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
     const webrtc::WebRtcKeyValueConfig& trials) {
   if (input_formats.empty())
     return std::vector<VideoCodec>();
-  static const int kFirstDynamicPayloadType = 96;
-  static const int kLastDynamicPayloadType = 127;
-  int payload_type = kFirstDynamicPayloadType;
+  
+  
+  static const int kFirstDynamicPayloadTypeLowerRange = 35;
+  static const int kLastDynamicPayloadTypeLowerRange = 65;
+
+  static const int kFirstDynamicPayloadTypeUpperRange = 96;
+  static const int kLastDynamicPayloadTypeUpperRange = 127;
+  int payload_type_upper = kFirstDynamicPayloadTypeUpperRange;
+  int payload_type_lower = kFirstDynamicPayloadTypeLowerRange;
 
   input_formats.push_back(webrtc::SdpVideoFormat(kRedCodecName));
   input_formats.push_back(webrtc::SdpVideoFormat(kUlpfecCodecName));
@@ -130,27 +136,54 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
   std::vector<VideoCodec> output_codecs;
   for (const webrtc::SdpVideoFormat& format : input_formats) {
     VideoCodec codec(format);
-    codec.id = payload_type;
+    bool isCodecValidForLowerRange =
+        absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName);
+    if (!isCodecValidForLowerRange) {
+      codec.id = payload_type_upper++;
+    } else {
+      codec.id = payload_type_lower++;
+    }
     AddDefaultFeedbackParams(&codec, trials);
     output_codecs.push_back(codec);
 
-    
-    ++payload_type;
-    if (payload_type > kLastDynamicPayloadType) {
-      RTC_LOG(LS_ERROR) << "Out of dynamic payload types, skipping the rest.";
+    if (payload_type_upper > kLastDynamicPayloadTypeUpperRange) {
+      RTC_LOG(LS_ERROR)
+          << "Out of dynamic payload types [96,127], skipping the rest.";
+      
+      
+      break;
+    }
+    if (payload_type_lower > kLastDynamicPayloadTypeLowerRange) {
+      
+      
+      RTC_LOG(LS_ERROR)
+          << "Out of dynamic payload types [35,65], skipping the rest.";
       break;
     }
 
     
     if (!absl::EqualsIgnoreCase(codec.name, kUlpfecCodecName) &&
         !absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName)) {
-      output_codecs.push_back(
-          VideoCodec::CreateRtxCodec(payload_type, codec.id));
+      if (!isCodecValidForLowerRange) {
+        output_codecs.push_back(
+            VideoCodec::CreateRtxCodec(payload_type_upper++, codec.id));
+      } else {
+        output_codecs.push_back(
+            VideoCodec::CreateRtxCodec(payload_type_lower++, codec.id));
+      }
 
-      
-      ++payload_type;
-      if (payload_type > kLastDynamicPayloadType) {
-        RTC_LOG(LS_ERROR) << "Out of dynamic payload types, skipping the rest.";
+      if (payload_type_upper > kLastDynamicPayloadTypeUpperRange) {
+        RTC_LOG(LS_ERROR)
+            << "Out of dynamic payload types [96,127], skipping rtx.";
+        
+        
+        break;
+      }
+      if (payload_type_lower > kLastDynamicPayloadTypeLowerRange) {
+        
+        
+        RTC_LOG(LS_ERROR)
+            << "Out of dynamic payload types [35,65], skipping rtx.";
         break;
       }
     }
