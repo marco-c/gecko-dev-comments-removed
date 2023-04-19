@@ -36,6 +36,7 @@
 #  include "MacLaunchHelper.h"
 #  include "updaterfileutils_osx.h"
 #  include "mozilla/Monitor.h"
+#  include "gfxPlatformMac.h"
 #endif
 
 #if defined(XP_WIN)
@@ -432,6 +433,12 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
   }
 
 #if defined(XP_MACOSX)
+  
+  
+  if (restart) {
+    gfxPlatformMac::WaitForFontRegistration();
+  }
+
   
   
   
