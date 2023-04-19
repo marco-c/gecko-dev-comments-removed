@@ -17,7 +17,6 @@
 #    define HREPORT HANDLE
 #    define PWER_SUBMIT_RESULT WER_SUBMIT_RESULT*
 #    define WER_MAX_PREFERRED_MODULES_BUFFER (256)
-#    define WER_FAULT_REPORTING_DISABLE_SNAPSHOT_HANG (256)
 #  endif               
 #  include <werapi.h>  
 #  include <stdlib.h>
@@ -94,11 +93,6 @@ void RegisterRuntimeExceptionModule() {
     
     *sModulePath = L'\0';
     return;
-  }
-
-  DWORD dwFlags = 0;
-  if (WerGetFlags(GetCurrentProcess(), &dwFlags) == S_OK) {
-    Unused << WerSetFlags(dwFlags | WER_FAULT_REPORTING_DISABLE_SNAPSHOT_HANG);
   }
 #endif  
 }
