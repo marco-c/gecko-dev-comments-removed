@@ -4,6 +4,7 @@
 
 
 const path = require("path");
+const projectRoot = path.resolve(__dirname, "../../../../");
 
 
 
@@ -11,8 +12,10 @@ const path = require("path");
 module.exports = {
   stories: [
     "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
+    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    `${projectRoot}/toolkit/**/*.stories.@(js|jsx|mjs|ts|tsx)`,
   ],
+  staticDirs: ["../../../../toolkit/content/widgets/"],
   addons: ["@storybook/addon-links", "@storybook/addon-essentials"],
   framework: "@storybook/web-components",
   webpackFinal: async (config, { configType }) => {
@@ -21,7 +24,6 @@ module.exports = {
     
 
     
-    const projectRoot = path.resolve(__dirname, "../../../../");
     config.resolve.alias.browser = `${projectRoot}/browser`;
     config.resolve.alias.toolkit = `${projectRoot}/toolkit`;
     config.resolve.alias[
