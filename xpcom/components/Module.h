@@ -8,10 +8,29 @@
 #define mozilla_Module_h
 
 #include "nscore.h"
+#include "nsID.h"
+#include "nsIFactory.h"
+#include "nsCOMPtr.h"  
 
 namespace mozilla {
 
-namespace Module {
+
+
+
+
+struct Module {
+  static const unsigned int kVersion = 103;
+
+  struct CIDEntry;
+
+  typedef already_AddRefed<nsIFactory> (*GetFactoryProcPtr)(
+      const Module& module, const CIDEntry& entry);
+
+  typedef nsresult (*ConstructorProcPtr)(const nsIID& aIID, void** aResult);
+
+  typedef nsresult (*LoadFuncPtr)();
+  typedef void (*UnloadFuncPtr)();
+
   
 
 
@@ -69,6 +88,76 @@ namespace Module {
     NO_TASKS = 0x0,
     ALL_TASKS = 0xFFFF,
   };
+
+  
+
+
+
+  struct CIDEntry {
+    const nsCID* cid;
+    bool service;
+    GetFactoryProcPtr getFactoryProc;
+    ConstructorProcPtr constructorProc;
+    ProcessSelector processSelector;
+  };
+
+  struct ContractIDEntry {
+    const char* contractid;
+    nsID const* cid;
+    ProcessSelector processSelector;
+  };
+
+  struct CategoryEntry {
+    const char* category;
+    const char* entry;
+    const char* value;
+  };
+
+  
+
+
+  unsigned int mVersion;
+
+  
+
+
+
+  const CIDEntry* mCIDs;
+
+  
+
+
+
+  const ContractIDEntry* mContractIDs;
+
+  
+
+
+
+  const CategoryEntry* mCategoryEntries;
+
+  
+
+
+
+
+
+
+  GetFactoryProcPtr getFactoryProc;
+
+  
+
+
+
+
+  LoadFuncPtr loadProc;
+  UnloadFuncPtr unloadProc;
+
+  
+
+
+
+  ProcessSelector selector;
 };
 
 }  
