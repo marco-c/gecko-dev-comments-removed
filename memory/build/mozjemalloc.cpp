@@ -1374,7 +1374,6 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 }
 
 
-
 #ifdef XP_WIN
 
 
@@ -1393,19 +1392,14 @@ struct StallSpecs {
 
 static constexpr StallSpecs maxStall = {.maxAttempts = kMaxAttempts,
                                         .delayMs = kDelayMs};
-static constexpr StallSpecs doNotStall
-    [[maybe_unused]] = {.maxAttempts = 0, .delayMs = 0};
 
-Atomic<bool> sHasStalled{false};
 static inline StallSpecs GetStallSpecs() {
 #  if defined(JS_STANDALONE)
   
   
   
   return maxStall;
-#  elif defined(NIGHTLY_BUILD)
-  
-  
+#  else
   switch (GetGeckoProcessType()) {
     
     
@@ -1416,13 +1410,6 @@ static inline StallSpecs GetStallSpecs() {
     default:
       return {.maxAttempts = kMaxAttempts / 2, .delayMs = kDelayMs};
   }
-#  else
-  
-  if (GetGeckoProcessType() == GeckoProcessType::GeckoProcessType_Default) {
-    return maxStall;
-  }
-  
-  return sHasStalled.compareExchange(false, true) ? maxStall : doNotStall;
 #  endif
 }
 
