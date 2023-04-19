@@ -1,8 +1,3 @@
-ChromeUtils.defineModuleGetter(
-  this,
-  "NetUtil",
-  "resource://gre/modules/NetUtil.jsm"
-);
 
 var gHttpServ = null;
 
@@ -12,17 +7,6 @@ var gDbService = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
 
 
 var gTables = {};
-
-
-function readFileToString(aFilename) {
-  let f = do_get_file(aFilename);
-  let stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
-    Ci.nsIFileInputStream
-  );
-  stream.init(f, -1, 0, 0);
-  let buf = NetUtil.readInputStreamToString(stream, stream.available());
-  return buf;
-}
 
 
 
