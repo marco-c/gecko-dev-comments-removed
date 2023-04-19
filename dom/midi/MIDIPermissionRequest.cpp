@@ -59,10 +59,18 @@ MIDIPermissionRequest::GetTypes(nsIArray** aTypes) {
 
 NS_IMETHODIMP
 MIDIPermissionRequest::Cancel() {
-  mPromise->MaybeRejectWithSecurityError(
-      "WebMIDI requires a site permission add-on to activate — see "
-      "https://extensionworkshop.com/documentation/publish/"
-      "site-permission-add-on/ for details.");
+  if (StaticPrefs::dom_sitepermsaddon_provider_enabled()) {
+    mPromise->MaybeRejectWithSecurityError(
+        "WebMIDI requires a site permission add-on to activate");
+  } else {
+    
+    
+    
+    mPromise->MaybeRejectWithSecurityError(
+        "WebMIDI requires a site permission add-on to activate — see "
+        "https://extensionworkshop.com/documentation/publish/"
+        "site-permission-add-on/ for details.");
+  }
   return NS_OK;
 }
 
@@ -110,8 +118,19 @@ MIDIPermissionRequest::Run() {
   }
 
   
+  
   if (StaticPrefs::dom_webmidi_gated() &&
+      !StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
       !nsContentUtils::HasSitePerm(mPrincipal, kPermName) &&
+      !mPrincipal->GetIsLoopbackHost()) {
+    Cancel();
+    return NS_OK;
+  }
+
+  
+  
+  if (StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
+      nsContentUtils::IsSitePermDeny(mPrincipal, "install"_ns) &&
       !mPrincipal->GetIsLoopbackHost()) {
     Cancel();
     return NS_OK;
