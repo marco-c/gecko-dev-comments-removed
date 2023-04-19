@@ -1,20 +1,17 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ContextMenuParent"];
-
-class ContextMenuParent extends JSWindowActorParent {
+export class ContextMenuParent extends JSWindowActorParent {
   receiveMessage(message) {
     let browser = this.manager.rootFrameLoader.ownerElement;
     let win = browser.ownerGlobal;
-    
-    
-    
-    
-    
+    // It's possible that the <xul:browser> associated with this
+    // ContextMenu message doesn't belong to a window that actually
+    // loads nsContextMenu.js. In that case, try to find the chromeEventHandler,
+    // since that'll likely be the "top" <xul:browser>, and then use its window's
+    // nsContextMenu instance instead.
     if (!win.openContextMenu) {
       let topBrowser = browser.ownerGlobal.docShell.chromeEventHandler;
       win = topBrowser.ownerGlobal;
@@ -27,8 +24,8 @@ class ContextMenuParent extends JSWindowActorParent {
     try {
       this.sendAsyncMessage("ContextMenu:Hiding", {});
     } catch (e) {
-      
-      
+      // This will throw if the content goes away while the
+      // context menu is still open.
     }
   }
 
