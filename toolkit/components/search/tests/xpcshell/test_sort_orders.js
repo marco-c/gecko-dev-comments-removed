@@ -61,7 +61,7 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
 
   
   
-  Services.search.wrappedJSObject._settings.setAttribute(
+  Services.search.wrappedJSObject._settings.setMetaDataAttribute(
     "useSavedOrder",
     false
   );
