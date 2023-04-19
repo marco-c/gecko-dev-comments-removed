@@ -347,10 +347,6 @@ uint32_t SecMap::AddPfxInstr(PfxInstr pfxi) {
   return mPfxInstrs.size() - 1;
 }
 
-static bool CmpExtentsByOffsetLE(const Extent& ext1, const Extent& ext2) {
-  return ext1.offset() < ext2.offset();
-}
-
 
 
 
@@ -400,7 +396,10 @@ void SecMap::PrepareRuleSets() {
 #endif
 
   
-  std::sort(mExtents.begin(), mExtents.end(), CmpExtentsByOffsetLE);
+  std::sort(mExtents.begin(), mExtents.end(),
+            [](const Extent& ext1, const Extent& ext2) {
+              return ext1.offset() < ext2.offset();
+            });
 
   
   
