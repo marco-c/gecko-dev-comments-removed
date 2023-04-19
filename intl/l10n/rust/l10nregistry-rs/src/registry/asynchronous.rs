@@ -3,12 +3,12 @@ use std::{
     task::{Context, Poll},
 };
 
-use super::{BundleAdapter, L10nRegistry};
-use crate::solver::{AsyncTester, ParallelProblemSolver};
 use crate::{
     env::ErrorReporter,
-    errors::L10nRegistryError,
+    errors::{L10nRegistryError, L10nRegistrySetupError},
     fluent::{FluentBundle, FluentError},
+    registry::{BundleAdapter, L10nRegistry, MetaSources},
+    solver::{AsyncTester, ParallelProblemSolver},
     source::{ResourceOption, ResourceStatus},
 };
 
@@ -31,10 +31,16 @@ where
         &self,
         langid: LanguageIdentifier,
         resource_ids: Vec<ResourceId>,
-    ) -> GenerateBundles<P, B> {
+    ) -> Result<GenerateBundles<P, B>, L10nRegistrySetupError> {
         let lang_ids = vec![langid];
 
-        GenerateBundles::new(self.clone(), lang_ids.into_iter(), resource_ids)
+        Ok(GenerateBundles::new(
+            self.clone(),
+            lang_ids.into_iter(),
+            resource_ids,
+            
+            self.try_borrow_metasources()?.clone(),
+        ))
     }
 
     
@@ -42,8 +48,14 @@ where
         &self,
         locales: std::vec::IntoIter<LanguageIdentifier>,
         resource_ids: Vec<ResourceId>,
-    ) -> GenerateBundles<P, B> {
-        GenerateBundles::new(self.clone(), locales, resource_ids)
+    ) -> Result<GenerateBundles<P, B>, L10nRegistrySetupError> {
+        Ok(GenerateBundles::new(
+            self.clone(),
+            locales,
+            resource_ids,
+            
+            self.try_borrow_metasources()?.clone(),
+        ))
     }
 }
 
@@ -89,7 +101,13 @@ impl<P, B> State<P, B> {
 }
 
 pub struct GenerateBundles<P, B> {
+    
+    
     reg: L10nRegistry<P, B>,
+    
+    
+    
+    metasources: MetaSources,
     locales: std::vec::IntoIter<LanguageIdentifier>,
     current_metasource: usize,
     resource_ids: Vec<ResourceId>,
@@ -101,9 +119,11 @@ impl<P, B> GenerateBundles<P, B> {
         reg: L10nRegistry<P, B>,
         locales: std::vec::IntoIter<LanguageIdentifier>,
         resource_ids: Vec<ResourceId>,
+        metasources: MetaSources,
     ) -> Self {
         Self {
             reg,
+            metasources,
             locales,
             current_metasource: 0,
             resource_ids,
@@ -132,13 +152,13 @@ impl<'l, P, B> AsyncTester for GenerateBundles<P, B> {
 
     fn test_async(&self, query: Vec<(usize, usize)>) -> Self::Result {
         let locale = self.state.get_locale();
-        let lock = self.reg.lock();
 
         let stream = query
             .iter()
             .map(|(res_idx, source_idx)| {
                 let resource_id = &self.resource_ids[*res_idx];
-                lock.filesource(self.current_metasource, *source_idx)
+                self.metasources
+                    .filesource(self.current_metasource, *source_idx)
                     .fetch_file(locale, resource_id)
             })
             .collect::<FuturesOrdered<_>>();
@@ -165,7 +185,7 @@ where
     
     
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.reg.lock().number_of_metasources() == 0 {
+        if self.metasources.is_empty() {
             
             return None.into();
         }
@@ -187,7 +207,7 @@ where
                         
                         
 
-                        let bundle = self.reg.lock().bundle_from_order(
+                        let bundle = self.metasources.bundle_from_order(
                             self.current_metasource,
                             self.state.get_locale().clone(),
                             &order,
@@ -216,7 +236,7 @@ where
                         self.current_metasource -= 1;
                         let solver = ParallelProblemSolver::new(
                             self.resource_ids.len(),
-                            self.reg.lock().metasource_len(self.current_metasource),
+                            self.metasources.get(self.current_metasource).len(),
                         );
                         self.state = State::Solver {
                             locale: self.state.get_locale().clone(),
@@ -253,12 +273,12 @@ where
             if let Some(locale) = self.locales.next() {
                 
                 
-                let last_metasource_idx = self.reg.lock().number_of_metasources() - 1;
+                let last_metasource_idx = self.metasources.len() - 1;
                 self.current_metasource = last_metasource_idx;
 
                 let solver = ParallelProblemSolver::new(
                     self.resource_ids.len(),
-                    self.reg.lock().metasource_len(self.current_metasource),
+                    self.metasources.get(self.current_metasource).len(),
                 );
                 self.state = State::Solver { locale, solver };
 
