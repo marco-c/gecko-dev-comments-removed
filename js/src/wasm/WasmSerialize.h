@@ -80,7 +80,7 @@ namespace wasm {
 struct OutOfMemory {};
 
 
-typedef mozilla::Result<mozilla::Ok, OutOfMemory> CoderResult;
+using CoderResult = mozilla::Result<mozilla::Ok, OutOfMemory>;
 
 
 enum CoderMode {
