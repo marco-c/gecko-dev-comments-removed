@@ -1223,8 +1223,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     }
 
     
-    MOZ_ASSERT(aElement->GetScriptIsImportMap());
-
+    
+    
+    
+    
+    
+    
+    
     
     mModuleLoader->RegisterImportMap(std::move(importMap));
     return false;
