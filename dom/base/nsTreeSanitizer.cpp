@@ -968,6 +968,97 @@ const nsStaticAtom* const kURLAttributesMathML[] = {
     
 };
 
+
+constexpr const nsStaticAtom* const kBaselineElementAllowlist[] = {
+    nsGkAtoms::a,          nsGkAtoms::abbr,      nsGkAtoms::acronym,
+    nsGkAtoms::address,    nsGkAtoms::area,      nsGkAtoms::article,
+    nsGkAtoms::aside,      nsGkAtoms::audio,     nsGkAtoms::b,
+    nsGkAtoms::basefont,   nsGkAtoms::bdi,       nsGkAtoms::bdo,
+    nsGkAtoms::bgsound,    nsGkAtoms::big,       nsGkAtoms::blockquote,
+    nsGkAtoms::body,       nsGkAtoms::br,        nsGkAtoms::button,
+    nsGkAtoms::canvas,     nsGkAtoms::caption,   nsGkAtoms::center,
+    nsGkAtoms::cite,       nsGkAtoms::code,      nsGkAtoms::col,
+    nsGkAtoms::colgroup,   nsGkAtoms::command,   nsGkAtoms::data,
+    nsGkAtoms::datalist,   nsGkAtoms::dd,        nsGkAtoms::del,
+    nsGkAtoms::details,    nsGkAtoms::dfn,       nsGkAtoms::dialog,
+    nsGkAtoms::dir,        nsGkAtoms::div,       nsGkAtoms::dl,
+    nsGkAtoms::dt,         nsGkAtoms::em,        nsGkAtoms::fieldset,
+    nsGkAtoms::figcaption, nsGkAtoms::figure,    nsGkAtoms::font,
+    nsGkAtoms::footer,     nsGkAtoms::form,      nsGkAtoms::h1,
+    nsGkAtoms::h2,         nsGkAtoms::h3,        nsGkAtoms::h4,
+    nsGkAtoms::h5,         nsGkAtoms::h6,        nsGkAtoms::head,
+    nsGkAtoms::header,     nsGkAtoms::hgroup,    nsGkAtoms::hr,
+    nsGkAtoms::html,       nsGkAtoms::i,         nsGkAtoms::image,
+    nsGkAtoms::img,        nsGkAtoms::input,     nsGkAtoms::ins,
+    nsGkAtoms::kbd,        nsGkAtoms::keygen,    nsGkAtoms::label,
+    nsGkAtoms::layer,      nsGkAtoms::legend,    nsGkAtoms::li,
+    nsGkAtoms::link,       nsGkAtoms::listing,   nsGkAtoms::main,
+    nsGkAtoms::map,        nsGkAtoms::mark,      nsGkAtoms::marquee,
+    nsGkAtoms::menu,       nsGkAtoms::meta,      nsGkAtoms::meter,
+    nsGkAtoms::nav,        nsGkAtoms::nobr,      nsGkAtoms::ol,
+    nsGkAtoms::optgroup,   nsGkAtoms::option,    nsGkAtoms::output,
+    nsGkAtoms::p,          nsGkAtoms::picture,   nsGkAtoms::plaintext,
+    nsGkAtoms::popup,      nsGkAtoms::portal,    nsGkAtoms::pre,
+    nsGkAtoms::progress,   nsGkAtoms::q,         nsGkAtoms::rb,
+    nsGkAtoms::rp,         nsGkAtoms::rt,        nsGkAtoms::rtc,
+    nsGkAtoms::ruby,       nsGkAtoms::s,         nsGkAtoms::samp,
+    nsGkAtoms::section,    nsGkAtoms::select,    nsGkAtoms::selectmenu,
+    nsGkAtoms::slot,       nsGkAtoms::small,     nsGkAtoms::source,
+    nsGkAtoms::span,       nsGkAtoms::strike,    nsGkAtoms::strong,
+    nsGkAtoms::style,      nsGkAtoms::sub,       nsGkAtoms::summary,
+    nsGkAtoms::sup,        nsGkAtoms::table,     nsGkAtoms::tbody,
+    nsGkAtoms::td,         nsGkAtoms::_template, nsGkAtoms::textarea,
+    nsGkAtoms::tfoot,      nsGkAtoms::th,        nsGkAtoms::thead,
+    nsGkAtoms::time,       nsGkAtoms::title,     nsGkAtoms::tr,
+    nsGkAtoms::track,      nsGkAtoms::tt,        nsGkAtoms::u,
+    nsGkAtoms::ul,         nsGkAtoms::var,       nsGkAtoms::video,
+    nsGkAtoms::wbr,        nsGkAtoms::xmp,
+};
+
+
+
+constexpr const nsStaticAtom* const kDefaultConfigurationElementAllowlist[] = {
+    nsGkAtoms::a,          nsGkAtoms::abbr,       nsGkAtoms::acronym,
+    nsGkAtoms::address,    nsGkAtoms::area,       nsGkAtoms::article,
+    nsGkAtoms::aside,      nsGkAtoms::audio,      nsGkAtoms::b,
+    nsGkAtoms::bdi,        nsGkAtoms::bdo,        nsGkAtoms::bgsound,
+    nsGkAtoms::big,        nsGkAtoms::blockquote, nsGkAtoms::body,
+    nsGkAtoms::br,         nsGkAtoms::button,     nsGkAtoms::canvas,
+    nsGkAtoms::caption,    nsGkAtoms::center,     nsGkAtoms::cite,
+    nsGkAtoms::code,       nsGkAtoms::col,        nsGkAtoms::colgroup,
+    nsGkAtoms::datalist,   nsGkAtoms::dd,         nsGkAtoms::del,
+    nsGkAtoms::details,    nsGkAtoms::dfn,        nsGkAtoms::dialog,
+    nsGkAtoms::dir,        nsGkAtoms::div,        nsGkAtoms::dl,
+    nsGkAtoms::dt,         nsGkAtoms::em,         nsGkAtoms::fieldset,
+    nsGkAtoms::figcaption, nsGkAtoms::figure,     nsGkAtoms::font,
+    nsGkAtoms::footer,     nsGkAtoms::form,       nsGkAtoms::h1,
+    nsGkAtoms::h2,         nsGkAtoms::h3,         nsGkAtoms::h4,
+    nsGkAtoms::h5,         nsGkAtoms::h6,         nsGkAtoms::head,
+    nsGkAtoms::header,     nsGkAtoms::hgroup,     nsGkAtoms::hr,
+    nsGkAtoms::html,       nsGkAtoms::i,          nsGkAtoms::img,
+    nsGkAtoms::input,      nsGkAtoms::ins,        nsGkAtoms::kbd,
+    nsGkAtoms::keygen,     nsGkAtoms::label,      nsGkAtoms::layer,
+    nsGkAtoms::legend,     nsGkAtoms::li,         nsGkAtoms::link,
+    nsGkAtoms::listing,    nsGkAtoms::main,       nsGkAtoms::map,
+    nsGkAtoms::mark,       nsGkAtoms::marquee,    nsGkAtoms::menu,
+    nsGkAtoms::meta,       nsGkAtoms::meter,      nsGkAtoms::nav,
+    nsGkAtoms::nobr,       nsGkAtoms::ol,         nsGkAtoms::optgroup,
+    nsGkAtoms::option,     nsGkAtoms::output,     nsGkAtoms::p,
+    nsGkAtoms::picture,    nsGkAtoms::popup,      nsGkAtoms::pre,
+    nsGkAtoms::progress,   nsGkAtoms::q,          nsGkAtoms::rb,
+    nsGkAtoms::rp,         nsGkAtoms::rt,         nsGkAtoms::rtc,
+    nsGkAtoms::ruby,       nsGkAtoms::s,          nsGkAtoms::samp,
+    nsGkAtoms::section,    nsGkAtoms::select,     nsGkAtoms::selectmenu,
+    nsGkAtoms::small,      nsGkAtoms::source,     nsGkAtoms::span,
+    nsGkAtoms::strike,     nsGkAtoms::strong,     nsGkAtoms::style,
+    nsGkAtoms::sub,        nsGkAtoms::summary,    nsGkAtoms::sup,
+    nsGkAtoms::table,      nsGkAtoms::tbody,      nsGkAtoms::td,
+    nsGkAtoms::tfoot,      nsGkAtoms::th,         nsGkAtoms::thead,
+    nsGkAtoms::time,       nsGkAtoms::tr,         nsGkAtoms::track,
+    nsGkAtoms::tt,         nsGkAtoms::u,          nsGkAtoms::ul,
+    nsGkAtoms::var,        nsGkAtoms::video,      nsGkAtoms::wbr,
+};
+
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsHTML = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sAttributesHTML = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sPresAttributesHTML = nullptr;
@@ -975,6 +1066,10 @@ nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsSVG = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sAttributesSVG = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsMathML = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sAttributesMathML = nullptr;
+nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sBaselineElementAllowlist =
+    nullptr;
+nsTreeSanitizer::AtomsTable*
+    nsTreeSanitizer::sDefaultConfigurationElementAllowlist = nullptr;
 nsIPrincipal* nsTreeSanitizer::sNullPrincipal = nullptr;
 
 nsTreeSanitizer::nsTreeSanitizer(uint32_t aFlags)
@@ -992,9 +1087,6 @@ nsTreeSanitizer::nsTreeSanitizer(uint32_t aFlags)
     mAllowStyles = false;
   }
 
-  mAllowedElements = nullptr;
-  mBlockedElements = nullptr;
-
   if (!sElementsHTML) {
     
     
@@ -1003,13 +1095,11 @@ nsTreeSanitizer::nsTreeSanitizer(uint32_t aFlags)
 }
 
 bool nsTreeSanitizer::MustFlatten(int32_t aNamespace, nsAtom* aLocal) {
+  if (mIsForSanitizerAPI) {
+    return MustFlattenForSanitizerAPI(aNamespace, aLocal);
+  }
+
   if (aNamespace == kNameSpaceID_XHTML) {
-    if (mIsCustomized) {
-      
-      
-      return ((mAllowedElements && !mAllowedElements->Contains(aLocal)) ||
-              ((mBlockedElements && mBlockedElements->Contains(aLocal))));
-    }
     if (mDropNonCSSPresentation &&
         (nsGkAtoms::font == aLocal || nsGkAtoms::center == aLocal)) {
       return true;
@@ -1043,6 +1133,46 @@ bool nsTreeSanitizer::MustFlatten(int32_t aNamespace, nsAtom* aLocal) {
   return true;
 }
 
+bool nsTreeSanitizer::MustFlattenForSanitizerAPI(int32_t aNamespace,
+                                                 nsAtom* aLocal) {
+  
+  
+  
+
+  
+  
+  
+  if (mBlockElements && mBlockElements->Contains(aLocal)) {
+    return true;
+  }
+
+  
+  
+  
+  if (mAllowElements) {
+    
+    
+    
+    if (!mAllowElements->Contains(aLocal)) {
+      return true;
+    }
+
+  } else {
+    
+    
+
+    
+    
+    
+    if (!sDefaultConfigurationElementAllowlist->Contains(aLocal)) {
+      return true;
+    }
+  }
+
+  
+  return false;
+}
+
 bool nsTreeSanitizer::IsURL(const nsStaticAtom* const* aURLs,
                             nsAtom* aLocalName) {
   const nsStaticAtom* atom;
@@ -1057,6 +1187,10 @@ bool nsTreeSanitizer::IsURL(const nsStaticAtom* const* aURLs,
 
 bool nsTreeSanitizer::MustPrune(int32_t aNamespace, nsAtom* aLocal,
                                 mozilla::dom::Element* aElement) {
+  if (mIsForSanitizerAPI) {
+    return MustPruneForSanitizerAPI(aNamespace, aLocal, aElement);
+  }
+
   
   
   
@@ -1104,6 +1238,38 @@ bool nsTreeSanitizer::MustPrune(int32_t aNamespace, nsAtom* aLocal,
   if (nsGkAtoms::style == aLocal) {
     return true;
   }
+  return false;
+}
+
+bool nsTreeSanitizer::MustPruneForSanitizerAPI(
+    int32_t aNamespace, nsAtom* aLocal, mozilla::dom::Element* aElement) {
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  if (!sBaselineElementAllowlist->Contains(aLocal)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (mDropElements && mDropElements->Contains(aLocal)) {
+    return true;
+  }
+
   return false;
 }
 
@@ -1195,7 +1361,7 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
     int32_t attrNs = attrName->NamespaceID();
     RefPtr<nsAtom> attrLocal = attrName->LocalName();
 
-    if (mIsCustomized) {
+    if (mIsForSanitizerAPI) {
       bool shouldRemove = true;
       RefPtr<nsAtom> elemName = aElement->NodeInfo()->NameAtom();
 
@@ -1222,6 +1388,11 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
       }
       if (shouldRemove) {
         aElement->UnsetAttr(kNameSpaceID_None, attrLocal, false);
+        if (mLogRemovals) {
+          LogMessage("Removed unsafe attribute.", aElement->OwnerDoc(),
+                     aElement, attrLocal);
+        }
+
         
         
         --ac;
@@ -1440,7 +1611,7 @@ void nsTreeSanitizer::SanitizeChildren(nsINode* aRoot) {
         SanitizeChildren(frag);
         mFullDocument = wasFullDocument;
       }
-      if (nsGkAtoms::style == localName) {
+      if (!mIsForSanitizerAPI && nsGkAtoms::style == localName) {
         
         
         
@@ -1597,6 +1768,18 @@ void nsTreeSanitizer::InitializeStatics() {
     sAttributesMathML->Insert(kAttributesMathML[i]);
   }
 
+  sBaselineElementAllowlist =
+      new AtomsTable(ArrayLength(kBaselineElementAllowlist));
+  for (const auto* atom : kBaselineElementAllowlist) {
+    sBaselineElementAllowlist->Insert(atom);
+  }
+
+  sDefaultConfigurationElementAllowlist =
+      new AtomsTable(ArrayLength(kDefaultConfigurationElementAllowlist));
+  for (const auto* atom : kDefaultConfigurationElementAllowlist) {
+    sDefaultConfigurationElementAllowlist->Insert(atom);
+  }
+
   nsCOMPtr<nsIPrincipal> principal =
       NullPrincipal::CreateWithoutOriginAttributes();
   principal.forget(&sNullPrincipal);
@@ -1624,49 +1807,64 @@ void nsTreeSanitizer::ReleaseStatics() {
   delete sAttributesMathML;
   sAttributesMathML = nullptr;
 
+  delete sBaselineElementAllowlist;
+  sBaselineElementAllowlist = nullptr;
+
+  delete sDefaultConfigurationElementAllowlist;
+  sDefaultConfigurationElementAllowlist = nullptr;
+
   NS_IF_RELEASE(sNullPrincipal);
 }
 
 void nsTreeSanitizer::WithWebSanitizerOptions(
     const mozilla::dom::SanitizerConfig& aOptions) {
-  if (!aOptions.IsAnyMemberPresent()) {
+  if (!StaticPrefs::dom_security_sanitizer_rewrite_no_bounty()) {
     return;
   }
+
+  mIsForSanitizerAPI = true;
+
   if (aOptions.mAllowComments.WasPassed()) {
     mAllowComments = aOptions.mAllowComments.Value();
   }
+
   if (aOptions.mAllowElements.WasPassed()) {
-    mIsCustomized = true;
     const Sequence<nsString>& allowedElements = aOptions.mAllowElements.Value();
-    mAllowedElements = MakeUnique<DynamicAtomsTable>(allowedElements.Length());
+    mAllowElements = MakeUnique<DynamicAtomsTable>(allowedElements.Length());
     for (const nsString& elem : allowedElements) {
       nsAutoString lowercaseElem;
       nsContentUtils::ASCIIToLower(elem, lowercaseElem);
-      RefPtr<nsAtom> elAsAtom = NS_Atomize(lowercaseElem);
-      mAllowedElements->Insert(elAsAtom);
+      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(lowercaseElem);
+      mAllowElements->Insert(elAsAtom);
     }
-  } else {
-    mAllowedElements = nullptr;
   }
+
   if (aOptions.mBlockElements.WasPassed()) {
-    mIsCustomized = true;
     const Sequence<nsString>& blockedElements = aOptions.mBlockElements.Value();
-    mBlockedElements = MakeUnique<DynamicAtomsTable>(blockedElements.Length());
+    mBlockElements = MakeUnique<DynamicAtomsTable>(blockedElements.Length());
     for (const nsString& elem : blockedElements) {
       nsAutoString lowercaseElem;
       nsContentUtils::ASCIIToLower(elem, lowercaseElem);
-      RefPtr<nsAtom> elAsAtom = NS_Atomize(lowercaseElem);
-      mBlockedElements->Insert(elAsAtom);
+      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(lowercaseElem);
+      mBlockElements->Insert(elAsAtom);
     }
-  } else {
-    mBlockedElements = nullptr;
   }
+
+  if (aOptions.mDropElements.WasPassed()) {
+    const Sequence<nsString>& dropElements = aOptions.mDropElements.Value();
+    mDropElements = MakeUnique<DynamicAtomsTable>(dropElements.Length());
+    for (const nsString& elem : dropElements) {
+      nsAutoString lowercaseElem;
+      nsContentUtils::ASCIIToLower(elem, lowercaseElem);
+      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(lowercaseElem);
+      mDropElements->Insert(elAsAtom);
+    }
+  }
+
   if (aOptions.mAllowAttributes.WasPassed()) {
-    mIsCustomized = true;
     const Record<nsString, Sequence<nsString>>& allowedAttributes =
         aOptions.mAllowAttributes.Value();
-    mAllowedAttributes = MakeUnique<
-        nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>();
+    mAllowedAttributes = MakeUnique<ElementToAttributeSetTable>();
     nsAutoString name;
     for (const auto& entries : allowedAttributes.Entries()) {
       UniquePtr<DynamicAtomsTable> elems =
@@ -1682,15 +1880,12 @@ void nsTreeSanitizer::WithWebSanitizerOptions(
       RefPtr<nsAtom> attrAtom = NS_Atomize(attrName);
       mAllowedAttributes->InsertOrUpdate(attrAtom, std::move(elems));
     }
-  } else {
-    mAllowedAttributes = nullptr;
   }
+
   if (aOptions.mDropAttributes.WasPassed()) {
-    mIsCustomized = true;
     const Record<nsString, Sequence<nsString>>& droppedAttributes =
         aOptions.mDropAttributes.Value();
-    mDroppedAttributes = MakeUnique<
-        nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>();
+    mDroppedAttributes = MakeUnique<ElementToAttributeSetTable>();
     nsAutoString name;
     for (const auto& entries : droppedAttributes.Entries()) {
       UniquePtr<DynamicAtomsTable> elems =
@@ -1706,8 +1901,7 @@ void nsTreeSanitizer::WithWebSanitizerOptions(
       RefPtr<nsAtom> attrAtom = NS_Atomize(attrName);
       mDroppedAttributes->InsertOrUpdate(attrAtom, std::move(elems));
     }
-  } else {
-    mDroppedAttributes = nullptr;
   }
+
   
 }

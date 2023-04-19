@@ -143,6 +143,7 @@ class nsTreeSanitizer {
 
 
   bool MustFlatten(int32_t aNamespace, nsAtom* aLocal);
+  bool MustFlattenForSanitizerAPI(int32_t aNamespace, nsAtom* aLocal);
 
   
 
@@ -154,6 +155,8 @@ class nsTreeSanitizer {
 
   bool MustPrune(int32_t aNamespace, nsAtom* aLocal,
                  mozilla::dom::Element* aElement);
+  bool MustPruneForSanitizerAPI(int32_t aNamespace, nsAtom* aLocal,
+                                mozilla::dom::Element* aElement);
 
   
 
@@ -286,26 +289,40 @@ class nsTreeSanitizer {
   
 
 
+  static AtomsTable* sBaselineElementAllowlist;
+
+  
+
+
+  static AtomsTable* sDefaultConfigurationElementAllowlist;
+
+  
+
+
   static nsIPrincipal* sNullPrincipal;
 
   
-  bool mIsCustomized = false;
 
   
-  mozilla::UniquePtr<DynamicAtomsTable> mAllowedElements;
+  bool mIsForSanitizerAPI = false;
 
   
-  mozilla::UniquePtr<DynamicAtomsTable> mBlockedElements;
+  mozilla::UniquePtr<DynamicAtomsTable> mAllowElements;
 
   
-  mozilla::UniquePtr<
-      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>
-      mAllowedAttributes;
+  mozilla::UniquePtr<DynamicAtomsTable> mBlockElements;
 
   
-  mozilla::UniquePtr<
-      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>
-      mDroppedAttributes;
+  mozilla::UniquePtr<DynamicAtomsTable> mDropElements;
+
+  using ElementToAttributeSetTable =
+      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>;
+
+  
+  mozilla::UniquePtr<ElementToAttributeSetTable> mAllowedAttributes;
+
+  
+  mozilla::UniquePtr<ElementToAttributeSetTable> mDroppedAttributes;
 };
 
 #endif  
