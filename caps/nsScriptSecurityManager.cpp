@@ -451,13 +451,33 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     JSContext* cx, JS::RuntimeCode aKind, JS::Handle<JSString*> aCode) {
   MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
 
+  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
+
+  
+  bool contextForbidsEval =
+      (subjectPrincipal->IsSystemPrincipal() || XRE_IsE10sParentProcess());
+#if defined(ANDROID)
+  contextForbidsEval = false;
+#endif
+
+  if (contextForbidsEval) {
+    nsAutoJSString scriptSample;
+    if (NS_WARN_IF(!scriptSample.init(cx, aCode))) {
+      return false;
+    }
+
+    if (!nsContentSecurityUtils::IsEvalAllowed(
+            cx, subjectPrincipal->IsSystemPrincipal(), scriptSample)) {
+      return false;
+    }
+  }
+
   
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   if (nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx)) {
     csp = win->GetCsp();
   }
 
-  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
   if (!csp) {
     
     
@@ -484,29 +504,8 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
 
   bool evalOK = true;
   bool reportViolation = false;
-  nsAutoJSString scriptSample;
   if (aKind == JS::RuntimeCode::JS) {
     nsresult rv = csp->GetAllowsEval(&reportViolation, &evalOK);
-
-    
-    
-    
-    
-    if (reportViolation || subjectPrincipal->IsSystemPrincipal() ||
-        XRE_IsE10sParentProcess()) {
-      if (NS_WARN_IF(!scriptSample.init(cx, aCode))) {
-        JS_ClearPendingException(cx);
-        return false;
-      }
-    }
-
-#if !defined(ANDROID)
-    if (!nsContentSecurityUtils::IsEvalAllowed(
-            cx, subjectPrincipal->IsSystemPrincipal(), scriptSample)) {
-      return false;
-    }
-#endif
-
     if (NS_FAILED(rv)) {
       NS_WARNING("CSP: failed to get allowsEval");
       return true;  
@@ -541,6 +540,12 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
       MOZ_ASSERT(!JS_IsExceptionPending(cx));
     }
 
+    nsAutoJSString scriptSample;
+    if (aKind == JS::RuntimeCode::JS &&
+        NS_WARN_IF(!scriptSample.init(cx, aCode))) {
+      JS_ClearPendingException(cx);
+      return false;
+    }
     uint16_t violationType =
         aKind == JS::RuntimeCode::JS
             ? nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL
