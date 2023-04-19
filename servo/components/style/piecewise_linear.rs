@@ -77,13 +77,21 @@ impl PiecewiseLinearFunction {
     ) -> ValueType {
         
         
+        if x.approx_eq(&next.x) {
+            return next.y;
+        }
+        if x.approx_eq(&prev.x) {
+            return prev.y;
+        }
+        
         if prev.x.approx_eq(&next.x) {
-            return asymptote.y;
+            return next.y;
         }
         let slope = (next.y - prev.y) / (next.x - prev.x);
         return slope * (x - asymptote.x) + asymptote.y;
     }
 
+    
     
     pub fn at(&self, x: ValueType) -> ValueType {
         if !x.is_finite() {
@@ -108,24 +116,19 @@ impl PiecewiseLinearFunction {
         }
         let mut rev_iter = self.entries.iter().rev();
         let last = rev_iter.next().unwrap();
-        if x > last.x {
+        if x >= last.x {
             let second_last = rev_iter.next().unwrap();
             return Self::interpolate(x, *second_last, *last, last);
         }
 
         
-        for (prev, next) in self.entries.iter().tuple_windows() {
-            if x > next.x {
+        for (point_b, point_a) in self.entries.iter().rev().tuple_windows() {
+            
+            
+            if x < point_a.x {
                 continue;
             }
-            
-            if x.approx_eq(&prev.x) {
-                return prev.y;
-            }
-            if x.approx_eq(&next.x) {
-                return next.y;
-            }
-            return Self::interpolate(x, *prev, *next, prev);
+            return Self::interpolate(x, *point_a, *point_b, point_a);
         }
         unreachable!("Input is supposed to be within the entries' min & max!");
     }
