@@ -95,6 +95,9 @@ enum : int {
   kVideoTimingExtensionId,
 };
 
+
+enum class WaitUntil : bool { kZero = false, kNonZero = true };
+
 constexpr int64_t kRtcpIntervalMs = 1000;
 
 enum VideoFormat {
@@ -2162,7 +2165,7 @@ class StartStopBitrateObserver : public test::FakeEncoder {
     return encoder_init_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
   }
 
-  bool WaitBitrateChanged(bool non_zero) {
+  bool WaitBitrateChanged(WaitUntil until) {
     do {
       absl::optional<int> bitrate_kbps;
       {
@@ -2172,8 +2175,8 @@ class StartStopBitrateObserver : public test::FakeEncoder {
       if (!bitrate_kbps)
         continue;
 
-      if ((non_zero && *bitrate_kbps > 0) ||
-          (!non_zero && *bitrate_kbps == 0)) {
+      if ((until == WaitUntil::kNonZero && *bitrate_kbps > 0) ||
+          (until == WaitUntil::kZero && *bitrate_kbps == 0)) {
         return true;
       }
     } while (bitrate_changed_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
@@ -2220,15 +2223,15 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
 
   SendTask(RTC_FROM_HERE, task_queue(),
            [this]() { GetVideoSendStream()->Start(); });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   SendTask(RTC_FROM_HERE, task_queue(),
            [this]() { GetVideoSendStream()->Stop(); });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(false));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kZero));
 
   SendTask(RTC_FROM_HERE, task_queue(),
            [this]() { GetVideoSendStream()->Start(); });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   SendTask(RTC_FROM_HERE, task_queue(), [this]() {
     DestroyStreams();
@@ -2277,7 +2280,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     GetVideoSendStream()->UpdateActiveSimulcastLayers({true, true});
     EXPECT_TRUE(GetVideoSendStream()->started());
   });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   GetVideoEncoderConfig()->simulcast_layers[0].active = true;
   GetVideoEncoderConfig()->simulcast_layers[1].active = false;
@@ -2285,7 +2288,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     GetVideoSendStream()->ReconfigureVideoEncoder(
         GetVideoEncoderConfig()->Copy());
   });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   
   GetVideoEncoderConfig()->simulcast_layers[0].active = false;
@@ -2294,7 +2297,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     GetVideoSendStream()->UpdateActiveSimulcastLayers({false, false});
     EXPECT_FALSE(GetVideoSendStream()->started());
   });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(false));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kZero));
 
   
   GetVideoEncoderConfig()->simulcast_layers[0].active = true;
@@ -2302,12 +2305,23 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     GetVideoSendStream()->UpdateActiveSimulcastLayers({true, false});
     EXPECT_TRUE(GetVideoSendStream()->started());
   });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   
-  SendTask(RTC_FROM_HERE, task_queue(),
-           [this]() { GetVideoSendStream()->Stop(); });
-  EXPECT_TRUE(encoder.WaitBitrateChanged(false));
+  SendTask(RTC_FROM_HERE, task_queue(), [this]() {
+    GetVideoSendStream()->Stop();
+    EXPECT_FALSE(GetVideoSendStream()->started());
+  });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kZero));
+
+  
+  
+  
+  SendTask(RTC_FROM_HERE, task_queue(), [this]() {
+    GetVideoSendStream()->UpdateActiveSimulcastLayers({true, true});
+    EXPECT_TRUE(GetVideoSendStream()->started());
+  });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(WaitUntil::kNonZero));
 
   SendTask(RTC_FROM_HERE, task_queue(), [this]() {
     DestroyStreams();

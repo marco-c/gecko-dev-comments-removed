@@ -244,7 +244,10 @@ void VideoSendStream::Stop() {
   RTC_DLOG(LS_INFO) << "VideoSendStream::Stop";
   running_ = false;
   rtp_transport_queue_->PostTask(ToQueuedTask(transport_queue_safety_, [this] {
-    transport_queue_safety_->SetNotAlive();
+    
+    
+    
+    
     send_stream_.Stop();
   }));
 }
