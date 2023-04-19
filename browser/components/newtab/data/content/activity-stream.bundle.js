@@ -7761,11 +7761,11 @@ class _DSCard extends (external_React_default()).PureComponent {
     }, this.props.context_type === "pocket" ? external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
       className: "story-badge-icon icon icon-pocket"
     }), external_React_default().createElement("span", {
-      "data-l10n-id": "newtab-pocket-saved-to-pocket"
+      "data-l10n-id": "newtab-pocket-saved"
     })) : external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("span", {
       className: "story-badge-icon icon icon-pocket-save"
     }), external_React_default().createElement("span", {
-      "data-l10n-id": "newtab-pocket-save-to-pocket"
+      "data-l10n-id": "newtab-pocket-save"
     }))), external_React_default().createElement(DSLinkMenu, {
       id: this.props.id,
       index: this.props.pos,
