@@ -1021,6 +1021,7 @@ class AsyncPanZoomController {
   
   
   
+  
   mutable RecursiveMutex mRecursiveMutex MOZ_UNANNOTATED;
 
  private:
@@ -1754,6 +1755,7 @@ class AsyncPanZoomController {
   
   TimeDuration mTouchStartRestingTimeBeforePan;
   Maybe<ParentLayerCoord> mMinimumVelocityDuringPan;
+  
   ScrollSnapTargetIds mLastSnapTargetIds;
   
   CSSPoint mTestAsyncScrollOffset;
