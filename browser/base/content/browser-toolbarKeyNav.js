@@ -64,15 +64,21 @@ ToolbarKeyboardNavigator = {
       }
 
       
-      if (
-        aNode.hidden ||
-        aNode.disabled ||
-        aNode.style.visibility == "hidden"
-      ) {
+      if (aNode.disabled) {
         return NodeFilter.FILTER_REJECT;
       }
+
       
-      let bounds = window.windowUtils.getBoundsWithoutFlushing(aNode);
+      const visible = aNode.checkVisibility({
+        checkVisibilityCSS: true,
+        flush: false,
+      });
+      if (!visible) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      
+      const bounds = window.windowUtils.getBoundsWithoutFlushing(aNode);
       if (bounds.width == 0) {
         return NodeFilter.FILTER_SKIP;
       }

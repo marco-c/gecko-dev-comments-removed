@@ -148,8 +148,12 @@ add_task(async function testTabStopsNoPageWithHomeButton() {
   RemoveHomeButton();
 });
 
+async function doTestTabStopsPageLoaded(aPageActionsVisible) {
+  info(`doTestTabStopsPageLoaded(${aPageActionsVisible})`);
 
-add_task(async function testTabStopsPageLoaded() {
+  BrowserPageActions.mainButtonNode.style.visibility = aPageActionsVisible
+    ? "visible"
+    : "";
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     await waitUntilReloadEnabled();
     startFromUrlBar();
@@ -164,10 +168,24 @@ add_task(async function testTabStopsPageLoaded() {
     await expectFocusAfterKey("Tab", "reload-button");
     await expectFocusAfterKey("Tab", "tracking-protection-icon-container");
     await expectFocusAfterKey("Tab", gURLBar.inputField);
-    await expectFocusAfterKey("Tab", "pageActionButton");
+    await expectFocusAfterKey(
+      "Tab",
+      aPageActionsVisible ? "pageActionButton" : "star-button-box"
+    );
     await expectFocusAfterKey("Tab", afterUrlBarButton);
     await expectFocusAfterKey("Tab", gBrowser.selectedBrowser);
   });
+}
+
+
+add_task(async function testTabStopsPageLoaded() {
+  is(
+    BrowserPageActions.mainButtonNode.style.visibility,
+    "visible",
+    "explicitly shown at the beginning of test"
+  );
+  await doTestTabStopsPageLoaded(false);
+  await doTestTabStopsPageLoaded(true);
 });
 
 
