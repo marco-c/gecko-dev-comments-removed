@@ -4623,57 +4623,61 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   aReflowOutput.SetOverflowAreasToDesiredBounds();
-  for (nsIFrame* childFrame : mFrames) {
-    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool isScrolledContent =
+      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
+  MOZ_ASSERT(
+      !isScrolledContent || aReflowInput.ComputedLogicalBorderPadding(wm) ==
+                                aReflowInput.ComputedLogicalPadding(wm),
+      "A scrolled inner frame shouldn't have any border!");
+
+  bool anyScrolledContentItem = false;
+  
+  nsRect itemMarginBoxes;
+  
+  nsRect relPosItemMarginBoxes;
+  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
+  for (nsIFrame* f : mFrames) {
+    if (useMozBoxCollapseBehavior && f->StyleVisibility()->IsCollapse()) {
+      continue;
+    }
+    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, f);
+    if (!isScrolledContent) {
+      continue;
+    }
+    if (f->IsPlaceholderFrame()) {
+      continue;
+    }
+    anyScrolledContentItem = true;
+    if (MOZ_UNLIKELY(f->IsRelativelyOrStickyPositioned())) {
+      const nsRect marginRect = f->GetMarginRectRelativeToSelf();
+      itemMarginBoxes =
+          itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
+      relPosItemMarginBoxes =
+          relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
+    } else {
+      itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
+    }
   }
 
-  MOZ_ASSERT(!flr.mLines.IsEmpty(),
-             "Flex container should have at least one FlexLine!");
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent &&
-      !flr.mLines.IsEmpty() && !flr.mLines[0].IsEmpty()) {
-    MOZ_ASSERT(aReflowInput.ComputedLogicalBorderPadding(wm) ==
-                   aReflowInput.ComputedLogicalPadding(wm),
-               "A scrolled inner frame shouldn't have any border!");
-    const LogicalMargin& padding = borderPadding;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    nsRect itemMarginBoxes;
-    
-    nsRect relPosItemMarginBoxes;
-
-    for (const FlexLine& line : flr.mLines) {
-      for (const FlexItem& item : line.Items()) {
-        const nsIFrame* f = item.Frame();
-        if (MOZ_UNLIKELY(f->IsRelativelyOrStickyPositioned())) {
-          const nsRect marginRect = f->GetMarginRectRelativeToSelf();
-          itemMarginBoxes =
-              itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
-          relPosItemMarginBoxes =
-              relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
-        } else {
-          itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
-        }
-      }
-    }
-
-    itemMarginBoxes.Inflate(padding.GetPhysicalMargin(wm));
+  if (anyScrolledContentItem) {
+    itemMarginBoxes.Inflate(borderPadding.GetPhysicalMargin(wm));
     aReflowOutput.mOverflowAreas.UnionAllWith(itemMarginBoxes);
     aReflowOutput.mOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
   }
