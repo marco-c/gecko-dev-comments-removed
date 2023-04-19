@@ -24,19 +24,14 @@ namespace {
 
 
 
-
-
-
-void ComputeCrossCorrelation(
+void ComputeAutoCorrelation(
     rtc::ArrayView<const float> x,
-    rtc::ArrayView<const float> y,
-    rtc::ArrayView<float, kNumLpcCoefficients> x_corr) {
-  constexpr size_t max_lag = x_corr.size();
-  RTC_DCHECK_EQ(x.size(), y.size());
+    rtc::ArrayView<float, kNumLpcCoefficients> auto_corr) {
+  constexpr size_t max_lag = auto_corr.size();
   RTC_DCHECK_LT(max_lag, x.size());
   for (size_t lag = 0; lag < max_lag; ++lag) {
-    x_corr[lag] =
-        std::inner_product(x.begin(), x.end() - lag, y.begin() + lag, 0.f);
+    auto_corr[lag] =
+        std::inner_product(x.begin(), x.end() - lag, x.begin() + lag, 0.f);
   }
 }
 
@@ -91,12 +86,12 @@ void ComputeAndPostProcessLpcCoefficients(
     rtc::ArrayView<const float> x,
     rtc::ArrayView<float, kNumLpcCoefficients> lpc_coeffs) {
   std::array<float, kNumLpcCoefficients> auto_corr;
-  ComputeCrossCorrelation(x, x, {auto_corr.data(), auto_corr.size()});
+  ComputeAutoCorrelation(x, auto_corr);
   if (auto_corr[0] == 0.f) {  
     std::fill(lpc_coeffs.begin(), lpc_coeffs.end(), 0);
     return;
   }
-  DenoiseAutoCorrelation({auto_corr.data(), auto_corr.size()});
+  DenoiseAutoCorrelation(auto_corr);
   std::array<float, kNumLpcCoefficients - 1> lpc_coeffs_pre{};
   ComputeInitialInverseFilterCoefficients(auto_corr, lpc_coeffs_pre);
   
