@@ -114,7 +114,7 @@ void BaseLocalIter::settle() {
         
         
         ASSERT_ANYREF_IS_JSOBJECT;
-        mirType_ = locals_[index_].toMIRType();
+        mirType_ = ToMIRType(locals_[index_]);
         frameOffset_ = pushLocal(MIRTypeToSize(mirType_));
         break;
       default:

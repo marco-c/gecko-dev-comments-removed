@@ -1042,6 +1042,12 @@ static const unsigned MaxVarU32DecodedBytes = 5;
 
 
 
+enum class OptimizedBackend {
+  Ion,
+};
+
+
+
 
 enum class CompileMode { Once, Tier1, Tier2 };
 

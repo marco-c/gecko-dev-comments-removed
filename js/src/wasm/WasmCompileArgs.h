@@ -191,6 +191,7 @@ struct CompilerEnvironment {
     struct {
       CompileMode mode_;
       Tier tier_;
+      OptimizedBackend optimizedBackend_;
       DebugEnabled debug_;
     };
   };
@@ -203,7 +204,9 @@ struct CompilerEnvironment {
   
   
   
-  CompilerEnvironment(CompileMode mode, Tier tier, DebugEnabled debugEnabled);
+  CompilerEnvironment(CompileMode mode, Tier tier,
+                      OptimizedBackend optimizedBackend,
+                      DebugEnabled debugEnabled);
 
   
   void computeParameters(Decoder& d);
@@ -221,6 +224,10 @@ struct CompilerEnvironment {
   Tier tier() const {
     MOZ_ASSERT(isComputed());
     return tier_;
+  }
+  OptimizedBackend optimizedBackend() const {
+    MOZ_ASSERT(isComputed());
+    return optimizedBackend_;
   }
   DebugEnabled debug() const {
     MOZ_ASSERT(isComputed());

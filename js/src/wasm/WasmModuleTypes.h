@@ -342,7 +342,7 @@ using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
 
 
 
-using TagOffsetVector = Vector<uint32_t, 2, SystemAllocPolicy>;
+using TagOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
 
 struct TagType : AtomicRefCounted<TagType> {
   ValTypeVector argTypes_;
