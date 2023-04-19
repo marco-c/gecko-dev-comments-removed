@@ -16,10 +16,7 @@
 #include <functional>
 
 #include "absl/types/optional.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/task_utils/pending_task_safety_flag.h"
-#include "system_wrappers/include/clock.h"
 #include "video/frame_decode_timing.h"
 
 namespace webrtc {
@@ -30,25 +27,23 @@ class FrameDecodeScheduler {
   using FrameReleaseCallback =
       std::function<void(uint32_t rtp_timestamp, Timestamp render_time)>;
 
-  FrameDecodeScheduler(Clock* clock,
-                       TaskQueueBase* const bookkeeping_queue,
-                       FrameReleaseCallback callback);
-  ~FrameDecodeScheduler();
-  FrameDecodeScheduler(const FrameDecodeScheduler&) = delete;
-  FrameDecodeScheduler& operator=(const FrameDecodeScheduler&) = delete;
+  virtual ~FrameDecodeScheduler() = default;
 
-  absl::optional<uint32_t> scheduled_rtp() const { return scheduled_rtp_; }
+  
+  
+  virtual absl::optional<uint32_t> ScheduledRtpTimestamp() = 0;
 
-  void ScheduleFrame(uint32_t rtp, FrameDecodeTiming::FrameSchedule schedule);
-  void CancelOutstanding();
+  
+  
+  virtual void ScheduleFrame(uint32_t rtp,
+                             FrameDecodeTiming::FrameSchedule schedule,
+                             FrameReleaseCallback callback) = 0;
 
- private:
-  Clock* const clock_;
-  TaskQueueBase* const bookkeeping_queue_;
-  const FrameReleaseCallback callback_;
+  
+  virtual void CancelOutstanding() = 0;
 
-  absl::optional<uint32_t> scheduled_rtp_;
-  ScopedTaskSafetyDetached task_safety_;
+  
+  virtual void Stop() = 0;
 };
 
 }  
