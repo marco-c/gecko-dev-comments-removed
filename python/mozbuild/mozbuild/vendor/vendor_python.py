@@ -164,8 +164,7 @@ def _purge_vendor_dir(vendor_dir):
         
         "gyp",
         
-        
-        "virtualenv",
+        "_venv",
         
         
         "vsdownload",
