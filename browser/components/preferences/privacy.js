@@ -332,7 +332,7 @@ function initTCPRolloutSection() {
   let updateTCPRolloutSectionVisibilityState = () => {
     
     
-    if (NimbusFeatures.tcpByDefault.isEnabled()) {
+    if (NimbusFeatures.tcpByDefault.getVariable("enabled")) {
       document.getElementById("etpStandardTCPRolloutBox").hidden = true;
       return;
     }

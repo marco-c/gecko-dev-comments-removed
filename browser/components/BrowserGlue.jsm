@@ -1780,7 +1780,7 @@ BrowserGlue.prototype = {
     
     
     if (
-      lazy.NimbusFeatures.tcpByDefault.isEnabled() &&
+      lazy.NimbusFeatures.tcpByDefault.getVariable("enabled") &&
       !hasCookieBehaviorPolicy()
     ) {
       Services.telemetry.scalarSet(
