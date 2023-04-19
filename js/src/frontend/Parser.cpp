@@ -2335,7 +2335,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
     return null();
   }
 
-  ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, pos());
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(pos());
   if (!argsbody) {
     return null();
   }
@@ -2653,7 +2653,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
     
     setFunctionStartAtCurrentToken(funbox);
 
-    ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, pos());
+    ParamsBodyNodeType argsbody = handler_.newParamsBody(pos());
     if (!argsbody) {
       return false;
     }
@@ -2688,7 +2688,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
   
   setFunctionStartAtCurrentToken(funbox);
 
-  ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, pos());
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(pos());
   if (!argsbody) {
     return false;
   }
@@ -8422,8 +8422,8 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructorBody(
   MOZ_ASSERT(funbox->isClassConstructor());
 
   
-  ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, synthesizedBodyPos);
+  
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(synthesizedBodyPos);
   if (!argsbody) {
     return null();
   }
@@ -8584,8 +8584,7 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
   pc_->functionScope().useAsVarScope(pc_);
 
   
-  ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, propNamePos);
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(propNamePos);
   if (!argsbody) {
     return null();
   }
@@ -8728,8 +8727,8 @@ GeneralParser<ParseHandler, Unit>::staticClassBlock(
   setFunctionEndFromCurrentToken(funbox);
 
   
-  ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, wholeBodyPos);
+  
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(wholeBodyPos);
   if (!argsbody) {
     return null();
   }
@@ -8836,8 +8835,8 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
   setFunctionEndFromCurrentToken(funbox);
 
   
-  ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, wholeInitializerPos);
+  
+  ParamsBodyNodeType argsbody = handler_.newParamsBody(wholeInitializerPos);
   if (!argsbody) {
     return null();
   }
