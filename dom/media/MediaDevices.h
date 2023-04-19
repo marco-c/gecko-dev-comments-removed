@@ -109,6 +109,8 @@ class MediaDevices final : public DOMEventTargetHelper {
 
   nsTHashSet<nsString> mExplicitlyGrantedAudioOutputRawIds;
   nsTArray<RefPtr<Promise>> mPendingEnumerateDevicesPromises;
+  
+  mutable nsString mDefaultOutputLabel;
 
   
   MediaEventListener mDeviceChangeListener;
