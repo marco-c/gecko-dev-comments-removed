@@ -492,7 +492,7 @@ class IDLExposureMixins:
         
         
         if len(scope.globalNames) != 0:
-            if len(self._exposureGlobalNames) == 0 and not self.isPseudoInterface():
+            if len(self._exposureGlobalNames) == 0:
                 raise WebIDLError(
                     (
                         "'%s' is not exposed anywhere even though we have "
@@ -527,9 +527,6 @@ class IDLExposureMixins:
             return False
         workerScopes = self.parentScope.globalNameMapping["Worker"]
         return len(workerScopes.difference(self.exposureSet)) > 0
-
-    def isExposedInShadowRealms(self):
-        return "ShadowRealmGlobalScope" in self.exposureSet
 
     def getWorkerExposureSet(self):
         workerScopes = self._globalScope.globalNameMapping["Worker"]
@@ -962,9 +959,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         self.interfacesBasedOnSelf = set([self])
         self._hasChildInterfaces = False
         self._isOnGlobalProtoChain = False
-        
-        self._isPseudo = False
-
         
         
         self.totalMembersInSlots = 0
@@ -1719,14 +1713,13 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
     def hasInterfaceObject(self):
         if self.isCallback():
             return self.hasConstants()
-        return not hasattr(self, "_noInterfaceObject") and not self.isPseudoInterface()
+        return not hasattr(self, "_noInterfaceObject")
 
     def hasInterfacePrototypeObject(self):
         return (
             not self.isCallback()
             and not self.isNamespace()
             and self.getUserData("hasConcreteDescendant", False)
-            and not self.isPseudoInterface()
         )
 
     def addIncludedMixin(self, includedMixin):
@@ -1789,9 +1782,6 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
 
     def isOnGlobalProtoChain(self):
         return self._isOnGlobalProtoChain
-
-    def isPseudoInterface(self):
-        return self._isPseudo
 
     def _getDependentObjects(self):
         deps = set(self.members)

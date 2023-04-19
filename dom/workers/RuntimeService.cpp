@@ -46,7 +46,6 @@
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/ShadowRealmGlobalScope.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
@@ -898,7 +897,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     
     
     
-    if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
+    if (IsWorkerGlobal(global)) {
       microTaskQueue = &GetMicroTaskQueue();
     } else {
       MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
