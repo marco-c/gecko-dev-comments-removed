@@ -204,16 +204,8 @@ bool nsCSPContext::permitsInternal(
       
       
       
-      
-      nsAutoString effectiveDirective(violatedDirective);
-      if ((StaticPrefs::security_csp_script_src_attr_elem_enabled() &&
-           (aDir == SCRIPT_SRC_ELEM_DIRECTIVE ||
-            aDir == SCRIPT_SRC_ATTR_DIRECTIVE)) ||
-          (StaticPrefs::security_csp_style_src_attr_elem_enabled() &&
-           (aDir == STYLE_SRC_ELEM_DIRECTIVE ||
-            aDir == STYLE_SRC_ATTR_DIRECTIVE))) {
-        effectiveDirective.AssignASCII(CSP_CSPDirectiveToString(aDir));
-      }
+      nsAutoString effectiveDirective;
+      effectiveDirective.AssignASCII(CSP_CSPDirectiveToString(aDir));
 
       
       
@@ -645,16 +637,8 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, const nsAString& aNonce,
       
       
       
-      
-      nsAutoString effectiveDirective(violatedDirective);
-      if ((StaticPrefs::security_csp_script_src_attr_elem_enabled() &&
-           (aDirective == SCRIPT_SRC_ELEM_DIRECTIVE ||
-            aDirective == SCRIPT_SRC_ATTR_DIRECTIVE)) ||
-          (StaticPrefs::security_csp_style_src_attr_elem_enabled() &&
-           (aDirective == STYLE_SRC_ELEM_DIRECTIVE ||
-            aDirective == STYLE_SRC_ATTR_DIRECTIVE))) {
-        effectiveDirective.AssignASCII(CSP_CSPDirectiveToString(aDirective));
-      }
+      nsAutoString effectiveDirective;
+      effectiveDirective.AssignASCII(CSP_CSPDirectiveToString(aDirective));
 
       reportInlineViolation(aDirective, aTriggeringElement, aCSPEventListener,
                             aNonce, reportSample ? content : EmptyString(),
