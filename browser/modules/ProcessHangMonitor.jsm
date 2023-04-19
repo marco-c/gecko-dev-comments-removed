@@ -558,7 +558,12 @@ var ProcessHangMonitor = {
       return;
     }
 
-    if (AppConstants.MOZ_DEV_EDITION) {
+    
+    
+    if (
+      AppConstants.MOZ_DEV_EDITION ||
+      report.scriptBrowser.browsingContext.watchedByDevTools
+    ) {
       buttons.push({
         label: bundle.getString("processHang.button_debug.label"),
         accessKey: bundle.getString("processHang.button_debug.accessKey"),
