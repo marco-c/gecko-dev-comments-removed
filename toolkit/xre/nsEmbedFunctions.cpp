@@ -152,8 +152,6 @@ using mozilla::gmp::GMPProcessChild;
 using mozilla::ipc::TestShellCommandParent;
 using mozilla::ipc::TestShellParent;
 
-using mozilla::startup::sChildProcessType;
-
 namespace mozilla::_ipdltest {
 
 UniquePtr<mozilla::ipc::ProcessChild> (*gMakeIPDLUnitTestProcessChild)(
@@ -269,14 +267,16 @@ void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds) {
 void XRE_SetProcessType(const char* aProcessTypeString) {
   SetGeckoProcessType(aProcessTypeString);
 
-#ifdef MOZ_MEMORY
+#if defined(MOZ_MEMORY) && defined(XP_WIN)
+  GeckoProcessType const processType = GetGeckoProcessType();
+
   
   
   
   
   
-  mozjemalloc_experiment_set_always_stall(sChildProcessType ==
-                                          GeckoProcessType_Default);
+  mozjemalloc_experiment_win_set_always_stall(processType ==
+                                              GeckoProcessType_Default);
 #endif
 }
 
@@ -766,7 +766,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 }
 
 MessageLoop* XRE_GetIOMessageLoop() {
-  if (sChildProcessType == GeckoProcessType_Default) {
+  if (GetGeckoProcessType() == GeckoProcessType_Default) {
     return BrowserProcessSubThread::GetMessageLoop(BrowserProcessSubThread::IO);
   }
   return IOThreadChild::message_loop();
