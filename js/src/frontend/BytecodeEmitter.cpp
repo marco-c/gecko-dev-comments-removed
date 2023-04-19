@@ -3811,26 +3811,24 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
     }
   }
 
-  TaggedParserAtomIndex pnatom;
   for (ParseNode* member : pattern->contents()) {
     if (member->isKind(ParseNodeKind::Spread)) {
       MOZ_ASSERT(!member->pn_next, "unexpected trailing element after spread");
       break;
     }
 
-    bool isIndex = false;
+    TaggedParserAtomIndex pnatom;
     if (member->isKind(ParseNodeKind::MutateProto)) {
       pnatom = TaggedParserAtomIndex::WellKnown::proto();
     } else {
       ParseNode* key = member->as<BinaryNode>().left();
-      if (key->isKind(ParseNodeKind::NumberExpr)) {
+      if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+          key->isKind(ParseNodeKind::StringExpr)) {
+        pnatom = key->as<NameNode>().atom();
+      } else if (key->isKind(ParseNodeKind::NumberExpr)) {
         if (!emitNumberOp(key->as<NumericLiteral>().value())) {
           return false;
         }
-        isIndex = true;
-      } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-                 key->isKind(ParseNodeKind::StringExpr)) {
-        pnatom = key->as<NameNode>().atom();
       } else {
         
         
@@ -3845,7 +3843,7 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
       return false;
     }
 
-    if (isIndex) {
+    if (!pnatom) {
       if (!emit1(JSOp::InitElem)) {
         return false;
       }
@@ -8878,23 +8876,22 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       if (propVal->isDirectRHSAnonFunction()) {
         
         
-        
-        if (key->isKind(ParseNodeKind::NumberExpr)) {
+        if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+            key->isKind(ParseNodeKind::StringExpr)) {
+          MOZ_ASSERT(accessorType == AccessorType::None);
+
+          auto keyAtom = key->as<NameNode>().atom();
+          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
+            
+            return false;
+          }
+        } else if (key->isKind(ParseNodeKind::NumberExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
 
           auto keyAtom = key->as<NumericLiteral>().toAtom(ec, parserAtoms());
           if (!keyAtom) {
             return false;
           }
-          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
-            
-            return false;
-          }
-        } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-                   key->isKind(ParseNodeKind::StringExpr)) {
-          MOZ_ASSERT(accessorType == AccessorType::None);
-
-          auto keyAtom = key->as<NameNode>().atom();
           if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
             
             return false;
@@ -8960,33 +8957,6 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         (type == ClassBody && propdef->as<ClassMethod>().isStatic())
             ? PropertyEmitter::Kind::Static
             : PropertyEmitter::Kind::Prototype;
-    if (key->isKind(ParseNodeKind::NumberExpr)) {
-      
-      if (!pe.prepareForIndexPropKey(propdef->pn_pos.begin, kind)) {
-        
-        return false;
-      }
-      if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-        
-        return false;
-      }
-      if (!pe.prepareForIndexPropValue()) {
-        
-        return false;
-      }
-      if (!emitValue()) {
-        
-        return false;
-      }
-
-      if (!pe.emitInitIndexOrComputed(accessorType)) {
-        
-        return false;
-      }
-
-      continue;
-    }
-
     if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
         key->isKind(ParseNodeKind::StringExpr)) {
       
@@ -9011,6 +8981,33 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       }
 
       if (!pe.emitInit(accessorType, keyAtom)) {
+        
+        return false;
+      }
+
+      continue;
+    }
+
+    if (key->isKind(ParseNodeKind::NumberExpr)) {
+      
+      if (!pe.prepareForIndexPropKey(propdef->pn_pos.begin, kind)) {
+        
+        return false;
+      }
+      if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+        
+        return false;
+      }
+      if (!pe.prepareForIndexPropValue()) {
+        
+        return false;
+      }
+      if (!emitValue()) {
+        
+        return false;
+      }
+
+      if (!pe.emitInitIndexOrComputed(accessorType)) {
         
         return false;
       }
