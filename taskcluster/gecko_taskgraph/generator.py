@@ -249,15 +249,15 @@ class TaskGraphGenerator:
                     continue
 
     def _run(self):
-        
-        verifications("initial")
-
         logger.info("Loading graph configuration.")
         graph_config = load_graph_config(self.root_dir)
 
         yield ("graph_config", graph_config)
 
         graph_config.register()
+
+        
+        verifications("initial")
 
         if callable(self._parameters):
             parameters = self._parameters(graph_config)
