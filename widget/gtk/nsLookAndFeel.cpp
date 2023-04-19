@@ -982,7 +982,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     }
     case IntID::PanelAnimations:
       
-      aResult = 0;
+      aResult = sCSDAvailable;
       break;
     case IntID::UseOverlayScrollbars: {
       aResult = StaticPrefs::widget_gtk_overlay_scrollbars_enabled();
