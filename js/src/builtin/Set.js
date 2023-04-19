@@ -505,7 +505,13 @@ function SetForEach(callbackfn, thisArg = undefined) {
 
   
   if (!IsObject(S) || (S = GuardToSetObject(S)) === null) {
-    return callFunction(CallSetMethodIfWrapped, this, callbackfn, thisArg, "SetForEach");
+    return callFunction(
+      CallSetMethodIfWrapped,
+      this,
+      callbackfn,
+      thisArg,
+      "SetForEach"
+    );
   }
 
   
@@ -552,7 +558,11 @@ function SetIteratorNext() {
 
   
   if (!IsObject(O) || (O = GuardToSetIterator(O)) === null) {
-    return callFunction(CallSetIteratorMethodIfWrapped, this, "SetIteratorNext");
+    return callFunction(
+      CallSetIteratorMethodIfWrapped,
+      this,
+      "SetIteratorNext"
+    );
   }
 
   

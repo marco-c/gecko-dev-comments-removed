@@ -83,7 +83,10 @@ function AdvanceStringIndex(S, index) {
   assert(typeof S === "string", "Expected string as 1st argument");
 
   
-  assert(index >= 0 && index <= MAX_NUMERIC_INDEX, "Expected integer as 2nd argument");
+  assert(
+    index >= 0 && index <= MAX_NUMERIC_INDEX,
+    "Expected integer as 2nd argument"
+  );
 
   
 
@@ -191,7 +194,9 @@ function RegExpMatchSlowPath(rx, S) {
     
     if (matchStr === "") {
       var lastIndex = ToLength(rx.lastIndex);
-      rx.lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
+      rx.lastIndex = fullUnicode
+        ? AdvanceStringIndex(S, lastIndex)
+        : lastIndex + 1;
     }
 
     
@@ -235,7 +240,9 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
 
     
     if (matchStr === "") {
-      lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
+      lastIndex = fullUnicode
+        ? AdvanceStringIndex(S, lastIndex)
+        : lastIndex + 1;
       if (lastIndex > lengthS) {
         return A;
       }
@@ -321,13 +328,27 @@ function RegExpReplace(string, replaceValue) {
         if (lengthS > 5000) {
           var elemBase = GetElemBaseForLambda(replaceValue);
           if (IsObject(elemBase)) {
-            return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue, flags, elemBase);
+            return RegExpGlobalReplaceOptElemBase(
+              rx,
+              S,
+              lengthS,
+              replaceValue,
+              flags,
+              elemBase
+            );
           }
         }
         return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue, flags);
       }
       if (firstDollarIndex !== -1) {
-        return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue, flags, firstDollarIndex);
+        return RegExpGlobalReplaceOptSubst(
+          rx,
+          S,
+          lengthS,
+          replaceValue,
+          flags,
+          firstDollarIndex
+        );
       }
       if (lengthS < 0x7fff) {
         return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags);
@@ -339,7 +360,13 @@ function RegExpReplace(string, replaceValue) {
       return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue);
     }
     if (firstDollarIndex !== -1) {
-      return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
+      return RegExpLocalReplaceOptSubst(
+        rx,
+        S,
+        lengthS,
+        replaceValue,
+        firstDollarIndex
+      );
     }
     if (lengthS < 0x7fff) {
       return RegExpLocalReplaceOptShort(rx, S, lengthS, replaceValue);
@@ -348,13 +375,27 @@ function RegExpReplace(string, replaceValue) {
   }
 
   
-  return RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, firstDollarIndex);
+  return RegExpReplaceSlowPath(
+    rx,
+    S,
+    lengthS,
+    replaceValue,
+    functionalReplace,
+    firstDollarIndex
+  );
 }
 
 
 
 
-function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, firstDollarIndex) {
+function RegExpReplaceSlowPath(
+  rx,
+  S,
+  lengthS,
+  replaceValue,
+  functionalReplace,
+  firstDollarIndex
+) {
   
   var global = !!rx.global;
 
@@ -396,7 +437,9 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, 
     
     if (matchStr === "") {
       var lastIndex = ToLength(rx.lastIndex);
-      rx.lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
+      rx.lastIndex = fullUnicode
+        ? AdvanceStringIndex(S, lastIndex)
+        : lastIndex + 1;
     }
   }
 
@@ -420,7 +463,10 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, 
     var matchLength = matched.length;
 
     
-    var position = std_Math_max(std_Math_min(ToInteger(result.index), lengthS), 0);
+    var position = std_Math_max(
+      std_Math_min(ToInteger(result.index), lengthS),
+      0
+    );
 
     var n, capN, replacement;
     if (functionalReplace || firstDollarIndex !== -1) {
@@ -461,7 +507,8 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, 
     if (position >= nextSourcePosition) {
       
       accumulatedResult +=
-        Substring(S, nextSourcePosition, position - nextSourcePosition) + replacement;
+        Substring(S, nextSourcePosition, position - nextSourcePosition) +
+        replacement;
 
       
       nextSourcePosition = position + matchLength;
@@ -474,7 +521,10 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue, functionalReplace, 
   }
 
   
-  return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
+  return (
+    accumulatedResult +
+    Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
+  );
 }
 
 
@@ -525,23 +575,53 @@ function RegExpGetComplexReplacement(
       switch (nCaptures) {
         case 0:
           return ToString(
-            callContentFunction(replaceValue, undefined, SPREAD(captures, 1), position, S)
+            callContentFunction(
+              replaceValue,
+              undefined,
+              SPREAD(captures, 1),
+              position,
+              S
+            )
           );
         case 1:
           return ToString(
-            callContentFunction(replaceValue, undefined, SPREAD(captures, 2), position, S)
+            callContentFunction(
+              replaceValue,
+              undefined,
+              SPREAD(captures, 2),
+              position,
+              S
+            )
           );
         case 2:
           return ToString(
-            callContentFunction(replaceValue, undefined, SPREAD(captures, 3), position, S)
+            callContentFunction(
+              replaceValue,
+              undefined,
+              SPREAD(captures, 3),
+              position,
+              S
+            )
           );
         case 3:
           return ToString(
-            callContentFunction(replaceValue, undefined, SPREAD(captures, 4), position, S)
+            callContentFunction(
+              replaceValue,
+              undefined,
+              SPREAD(captures, 4),
+              position,
+              S
+            )
           );
         case 4:
           return ToString(
-            callContentFunction(replaceValue, undefined, SPREAD(captures, 5), position, S)
+            callContentFunction(
+              replaceValue,
+              undefined,
+              SPREAD(captures, 5),
+              position,
+              S
+            )
           );
       }
     }
@@ -551,7 +631,9 @@ function RegExpGetComplexReplacement(
     if (namedCaptures !== undefined) {
       DefineDataProperty(captures, capturesLength++, namedCaptures);
     }
-    return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
+    return ToString(
+      callFunction(std_Function_apply, replaceValue, undefined, captures)
+    );
   }
 
   
@@ -589,23 +671,53 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
     switch (nCaptures) {
       case 0:
         return ToString(
-          callContentFunction(replaceValue, undefined, SPREAD(result, 1), position, S)
+          callContentFunction(
+            replaceValue,
+            undefined,
+            SPREAD(result, 1),
+            position,
+            S
+          )
         );
       case 1:
         return ToString(
-          callContentFunction(replaceValue, undefined, SPREAD(result, 2), position, S)
+          callContentFunction(
+            replaceValue,
+            undefined,
+            SPREAD(result, 2),
+            position,
+            S
+          )
         );
       case 2:
         return ToString(
-          callContentFunction(replaceValue, undefined, SPREAD(result, 3), position, S)
+          callContentFunction(
+            replaceValue,
+            undefined,
+            SPREAD(result, 3),
+            position,
+            S
+          )
         );
       case 3:
         return ToString(
-          callContentFunction(replaceValue, undefined, SPREAD(result, 4), position, S)
+          callContentFunction(
+            replaceValue,
+            undefined,
+            SPREAD(result, 4),
+            position,
+            S
+          )
         );
       case 4:
         return ToString(
-          callContentFunction(replaceValue, undefined, SPREAD(result, 5), position, S)
+          callContentFunction(
+            replaceValue,
+            undefined,
+            SPREAD(result, 5),
+            position,
+            S
+          )
         );
     }
   }
@@ -630,7 +742,9 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
   }
 
   
-  return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
+  return ToString(
+    callFunction(std_Function_apply, replaceValue, undefined, captures)
+  );
 }
 
 
@@ -668,14 +782,17 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
     
     accumulatedResult +=
-      Substring(S, nextSourcePosition, position - nextSourcePosition) + replaceValue;
+      Substring(S, nextSourcePosition, position - nextSourcePosition) +
+      replaceValue;
 
     
     nextSourcePosition = lastIndex;
 
     
     if (lastIndex === position) {
-      lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
+      lastIndex = fullUnicode
+        ? AdvanceStringIndex(S, lastIndex)
+        : lastIndex + 1;
       if (lastIndex > lengthS) {
         break;
       }
@@ -688,7 +805,10 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
   }
 
   
-  return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
+  return (
+    accumulatedResult +
+    Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
+  );
 }
 
 
@@ -886,7 +1006,8 @@ function RegExpSplit(string, limit) {
   var C = SpeciesConstructor(rx, GetBuiltinConstructor("RegExp"));
 
   var optimizable =
-    IsRegExpSplitOptimizable(rx, C) && (limit === undefined || typeof limit == "number");
+    IsRegExpSplitOptimizable(rx, C) &&
+    (limit === undefined || typeof limit == "number");
 
   var flags, unicodeMatching, splitter;
   if (optimizable) {
@@ -1077,7 +1198,12 @@ function RegExp_prototype_Exec(string) {
   
   var R = this;
   if (!IsObject(R) || !IsRegExpObject(R)) {
-    return callFunction(CallRegExpMethodIfWrapped, R, string, "RegExp_prototype_Exec");
+    return callFunction(
+      CallRegExpMethodIfWrapped,
+      R,
+      string,
+      "RegExp_prototype_Exec"
+    );
   }
 
   
@@ -1188,7 +1314,13 @@ function RegExpBuiltinExec(R, S, forTest) {
 }
 
 function UnwrapAndCallRegExpBuiltinExec(R, S, forTest) {
-  return callFunction(CallRegExpMethodIfWrapped, R, S, forTest, "CallRegExpBuiltinExec");
+  return callFunction(
+    CallRegExpMethodIfWrapped,
+    R,
+    S,
+    forTest,
+    "CallRegExpBuiltinExec"
+  );
 }
 
 function CallRegExpBuiltinExec(S, forTest) {
@@ -1228,7 +1360,10 @@ function IsRegExpMatchAllOptimizable(rx, C) {
   }
 
   var RegExpProto = RegExpCtor.prototype;
-  return RegExpPrototypeOptimizable(RegExpProto) && RegExpInstanceOptimizable(rx, RegExpProto);
+  return (
+    RegExpPrototypeOptimizable(RegExpProto) &&
+    RegExpInstanceOptimizable(rx, RegExpProto)
+  );
 }
 
 
@@ -1305,7 +1440,11 @@ function CreateRegExpStringIterator(regexp, string, source, flags, lastIndex) {
   UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_STRING_SLOT, string);
   UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_SOURCE_SLOT, source);
   UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_FLAGS_SLOT, flags | 0);
-  UnsafeSetReservedSlot(iterator, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT, lastIndex);
+  UnsafeSetReservedSlot(
+    iterator,
+    REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+    lastIndex
+  );
 
   
   return iterator;
@@ -1315,7 +1454,10 @@ function IsRegExpStringIteratorNextOptimizable() {
   var RegExpProto = GetBuiltinPrototype("RegExp");
   
   
-  return RegExpPrototypeOptimizable(RegExpProto) && RegExpProto.exec === RegExp_prototype_Exec;
+  return (
+    RegExpPrototypeOptimizable(RegExpProto) &&
+    RegExpProto.exec === RegExp_prototype_Exec
+  );
 }
 
 
@@ -1325,45 +1467,70 @@ function RegExpStringIteratorNext() {
   
   var obj = this;
   if (!IsObject(obj) || (obj = GuardToRegExpStringIterator(obj)) === null) {
-    return callFunction(CallRegExpStringIteratorMethodIfWrapped, this, "RegExpStringIteratorNext");
+    return callFunction(
+      CallRegExpStringIteratorMethodIfWrapped,
+      this,
+      "RegExpStringIteratorNext"
+    );
   }
 
   var result = { value: undefined, done: false };
 
   
-  var lastIndex = UnsafeGetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT);
+  var lastIndex = UnsafeGetReservedSlot(
+    obj,
+    REGEXP_STRING_ITERATOR_LASTINDEX_SLOT
+  );
   if (lastIndex === REGEXP_STRING_ITERATOR_LASTINDEX_DONE) {
     result.done = true;
     return result;
   }
 
   
-  var regexp = UnsafeGetObjectFromReservedSlot(obj, REGEXP_STRING_ITERATOR_REGEXP_SLOT);
+  var regexp = UnsafeGetObjectFromReservedSlot(
+    obj,
+    REGEXP_STRING_ITERATOR_REGEXP_SLOT
+  );
 
   
-  var string = UnsafeGetStringFromReservedSlot(obj, REGEXP_STRING_ITERATOR_STRING_SLOT);
+  var string = UnsafeGetStringFromReservedSlot(
+    obj,
+    REGEXP_STRING_ITERATOR_STRING_SLOT
+  );
 
   
-  var flags = UnsafeGetInt32FromReservedSlot(obj, REGEXP_STRING_ITERATOR_FLAGS_SLOT);
+  var flags = UnsafeGetInt32FromReservedSlot(
+    obj,
+    REGEXP_STRING_ITERATOR_FLAGS_SLOT
+  );
   var global = !!(flags & REGEXP_GLOBAL_FLAG);
   var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
 
   if (lastIndex >= 0) {
     assert(IsRegExpObject(regexp), "|regexp| is a RegExp object");
 
-    var source = UnsafeGetStringFromReservedSlot(obj, REGEXP_STRING_ITERATOR_SOURCE_SLOT);
+    var source = UnsafeGetStringFromReservedSlot(
+      obj,
+      REGEXP_STRING_ITERATOR_SOURCE_SLOT
+    );
     if (
       IsRegExpStringIteratorNextOptimizable() &&
       UnsafeGetStringFromReservedSlot(regexp, REGEXP_SOURCE_SLOT) === source &&
       UnsafeGetInt32FromReservedSlot(regexp, REGEXP_FLAGS_SLOT) === flags
     ) {
       
-      var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
+      var globalOrSticky = !!(
+        flags &
+        (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG)
+      );
       if (!globalOrSticky) {
         lastIndex = 0;
       }
 
-      var match = lastIndex <= string.length ? RegExpMatcher(regexp, string, lastIndex) : null;
+      var match =
+        lastIndex <= string.length
+          ? RegExpMatcher(regexp, string, lastIndex)
+          : null;
 
       
       if (match === null) {
@@ -1388,10 +1555,16 @@ function RegExpStringIteratorNext() {
         
         if (matchLength === 0) {
           
-          lastIndex = fullUnicode ? AdvanceStringIndex(string, lastIndex) : lastIndex + 1;
+          lastIndex = fullUnicode
+            ? AdvanceStringIndex(string, lastIndex)
+            : lastIndex + 1;
         }
 
-        UnsafeSetReservedSlot(obj, REGEXP_STRING_ITERATOR_LASTINDEX_SLOT, lastIndex);
+        UnsafeSetReservedSlot(
+          obj,
+          REGEXP_STRING_ITERATOR_LASTINDEX_SLOT,
+          lastIndex
+        );
       } else {
         
         UnsafeSetReservedSlot(
@@ -1447,7 +1620,9 @@ function RegExpStringIteratorNext() {
       var thisIndex = ToLength(regexp.lastIndex);
 
       
-      var nextIndex = fullUnicode ? AdvanceStringIndex(string, thisIndex) : thisIndex + 1;
+      var nextIndex = fullUnicode
+        ? AdvanceStringIndex(string, thisIndex)
+        : thisIndex + 1;
 
       
       regexp.lastIndex = nextIndex;

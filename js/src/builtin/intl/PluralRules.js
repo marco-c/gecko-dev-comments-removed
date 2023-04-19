@@ -51,15 +51,25 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
   internalProps.minimumIntegerDigits = lazyPluralRulesData.minimumIntegerDigits;
 
   if ("minimumFractionDigits" in lazyPluralRulesData) {
-    assert("maximumFractionDigits" in lazyPluralRulesData, "min/max frac digits mismatch");
-    internalProps.minimumFractionDigits = lazyPluralRulesData.minimumFractionDigits;
-    internalProps.maximumFractionDigits = lazyPluralRulesData.maximumFractionDigits;
+    assert(
+      "maximumFractionDigits" in lazyPluralRulesData,
+      "min/max frac digits mismatch"
+    );
+    internalProps.minimumFractionDigits =
+      lazyPluralRulesData.minimumFractionDigits;
+    internalProps.maximumFractionDigits =
+      lazyPluralRulesData.maximumFractionDigits;
   }
 
   if ("minimumSignificantDigits" in lazyPluralRulesData) {
-    assert("maximumSignificantDigits" in lazyPluralRulesData, "min/max sig digits mismatch");
-    internalProps.minimumSignificantDigits = lazyPluralRulesData.minimumSignificantDigits;
-    internalProps.maximumSignificantDigits = lazyPluralRulesData.maximumSignificantDigits;
+    assert(
+      "maximumSignificantDigits" in lazyPluralRulesData,
+      "min/max sig digits mismatch"
+    );
+    internalProps.minimumSignificantDigits =
+      lazyPluralRulesData.minimumSignificantDigits;
+    internalProps.maximumSignificantDigits =
+      lazyPluralRulesData.maximumSignificantDigits;
   }
 
   
@@ -82,7 +92,10 @@ function getPluralRulesInternals(obj) {
   );
 
   var internals = getIntlObjectInternals(obj);
-  assert(internals.type === "PluralRules", "bad type escaped getIntlObjectInternals");
+  assert(
+    internals.type === "PluralRules",
+    "bad type escaped getIntlObjectInternals"
+  );
 
   var internalProps = maybeInternalProperties(internals);
   if (internalProps) {
@@ -157,11 +170,23 @@ function InitializePluralRules(pluralRules, locales, options) {
   lazyPluralRulesData.opt = opt;
 
   
-  let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  let matcher = GetOption(
+    options,
+    "localeMatcher",
+    "string",
+    ["lookup", "best fit"],
+    "best fit"
+  );
   opt.localeMatcher = matcher;
 
   
-  const type = GetOption(options, "type", "string", ["cardinal", "ordinal"], "cardinal");
+  const type = GetOption(
+    options,
+    "type",
+    "string",
+    ["cardinal", "ordinal"],
+    "cardinal"
+  );
   lazyPluralRulesData.type = type;
 
   
@@ -206,7 +231,10 @@ function Intl_PluralRules_select(value) {
   let pluralRules = this;
 
   
-  if (!IsObject(pluralRules) || (pluralRules = intl_GuardToPluralRules(pluralRules)) === null) {
+  if (
+    !IsObject(pluralRules) ||
+    (pluralRules = intl_GuardToPluralRules(pluralRules)) === null
+  ) {
     return callFunction(
       intl_CallPluralRulesMethodIfWrapped,
       this,
@@ -235,7 +263,10 @@ function Intl_PluralRules_selectRange(start, end) {
   var pluralRules = this;
 
   
-  if (!IsObject(pluralRules) || (pluralRules = intl_GuardToPluralRules(pluralRules)) === null) {
+  if (
+    !IsObject(pluralRules) ||
+    (pluralRules = intl_GuardToPluralRules(pluralRules)) === null
+  ) {
     return callFunction(
       intl_CallPluralRulesMethodIfWrapped,
       this,
@@ -275,7 +306,10 @@ function Intl_PluralRules_resolvedOptions() {
   var pluralRules = this;
 
   
-  if (!IsObject(pluralRules) || (pluralRules = intl_GuardToPluralRules(pluralRules)) === null) {
+  if (
+    !IsObject(pluralRules) ||
+    (pluralRules = intl_GuardToPluralRules(pluralRules)) === null
+  ) {
     return callFunction(
       intl_CallPluralRulesMethodIfWrapped,
       this,
@@ -294,24 +328,42 @@ function Intl_PluralRules_resolvedOptions() {
 
   
   assert(
-    hasOwn("minimumFractionDigits", internals) === hasOwn("maximumFractionDigits", internals),
+    hasOwn("minimumFractionDigits", internals) ===
+      hasOwn("maximumFractionDigits", internals),
     "minimumFractionDigits is present iff maximumFractionDigits is present"
   );
 
   if (hasOwn("minimumFractionDigits", internals)) {
-    DefineDataProperty(result, "minimumFractionDigits", internals.minimumFractionDigits);
-    DefineDataProperty(result, "maximumFractionDigits", internals.maximumFractionDigits);
+    DefineDataProperty(
+      result,
+      "minimumFractionDigits",
+      internals.minimumFractionDigits
+    );
+    DefineDataProperty(
+      result,
+      "maximumFractionDigits",
+      internals.maximumFractionDigits
+    );
   }
 
   
   assert(
-    hasOwn("minimumSignificantDigits", internals) === hasOwn("maximumSignificantDigits", internals),
+    hasOwn("minimumSignificantDigits", internals) ===
+      hasOwn("maximumSignificantDigits", internals),
     "minimumSignificantDigits is present iff maximumSignificantDigits is present"
   );
 
   if (hasOwn("minimumSignificantDigits", internals)) {
-    DefineDataProperty(result, "minimumSignificantDigits", internals.minimumSignificantDigits);
-    DefineDataProperty(result, "maximumSignificantDigits", internals.maximumSignificantDigits);
+    DefineDataProperty(
+      result,
+      "minimumSignificantDigits",
+      internals.minimumSignificantDigits
+    );
+    DefineDataProperty(
+      result,
+      "maximumSignificantDigits",
+      internals.maximumSignificantDigits
+    );
   }
 
   

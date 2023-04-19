@@ -220,14 +220,24 @@ function TupleConcat() {
 
 function TupleIncludes(valueToFind ) {
   var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-  return callFunction(std_Array_includes, ThisTupleValue(this), valueToFind, fromIndex);
+  return callFunction(
+    std_Array_includes,
+    ThisTupleValue(this),
+    valueToFind,
+    fromIndex
+  );
 }
 
 
 
 function TupleIndexOf(valueToFind ) {
   var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-  return callFunction(std_Array_indexOf, ThisTupleValue(this), valueToFind, fromIndex);
+  return callFunction(
+    std_Array_indexOf,
+    ThisTupleValue(this),
+    valueToFind,
+    fromIndex
+  );
 }
 
 
@@ -241,7 +251,9 @@ function TupleJoin(separator) {
   
   var sep = ",";
   if (separator != undefined && separator !== null) {
-    let toString = IsCallable(separator.toString) ? separator.toString : std_Object_toString;
+    let toString = IsCallable(separator.toString)
+      ? separator.toString
+      : std_Object_toString;
     sep = callContentFunction(toString, separator);
   }
 
@@ -262,7 +274,9 @@ function TupleJoin(separator) {
     
     var next = "";
     if (element != undefined && element != null) {
-      let toString = IsCallable(element.toString) ? element.toString : std_Object_toString;
+      let toString = IsCallable(element.toString)
+        ? element.toString
+        : std_Object_toString;
       next = callContentFunction(toString, element);
     }
     
@@ -278,9 +292,18 @@ function TupleJoin(separator) {
 
 function TupleLastIndexOf(valueToFind ) {
   if (arguments.length < 2) {
-    return callFunction(std_Array_lastIndexOf, ThisTupleValue(this), valueToFind);
+    return callFunction(
+      std_Array_lastIndexOf,
+      ThisTupleValue(this),
+      valueToFind
+    );
   }
-  return callFunction(std_Array_lastIndexOf, ThisTupleValue(this), valueToFind, arguments[1]);
+  return callFunction(
+    std_Array_lastIndexOf,
+    ThisTupleValue(this),
+    valueToFind,
+    arguments[1]
+  );
 }
 
 
@@ -301,7 +324,12 @@ function TupleToString() {
 
 function TupleToLocaleString(locales, options) {
   var T = ThisTupleValue(this);
-  return callContentFunction(ArrayToLocaleString, TupleToArray(T), locales, options);
+  return callContentFunction(
+    ArrayToLocaleString,
+    TupleToArray(T),
+    locales,
+    options
+  );
 }
 
 
@@ -360,7 +388,9 @@ function TupleFilter(callbackfn) {
     
     var kValue = list[k];
     
-    var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, list));
+    var selected = ToBoolean(
+      callContentFunction(callbackfn, T, kValue, k, list)
+    );
     
     if (selected) {
       
@@ -434,16 +464,30 @@ function TupleReduce(callbackfn ) {
   if (arguments.length < 2) {
     return callContentFunction(ArrayReduce, ThisTupleValue(this), callbackfn);
   }
-  return callContentFunction(ArrayReduce, ThisTupleValue(this), callbackfn, arguments[1]);
+  return callContentFunction(
+    ArrayReduce,
+    ThisTupleValue(this),
+    callbackfn,
+    arguments[1]
+  );
 }
 
 
 
 function TupleReduceRight(callbackfn ) {
   if (arguments.length < 2) {
-    return callContentFunction(ArrayReduceRight, ThisTupleValue(this), callbackfn);
+    return callContentFunction(
+      ArrayReduceRight,
+      ThisTupleValue(this),
+      callbackfn
+    );
   }
-  return callContentFunction(ArrayReduceRight, ThisTupleValue(this), callbackfn, arguments[1]);
+  return callContentFunction(
+    ArrayReduceRight,
+    ThisTupleValue(this),
+    callbackfn,
+    arguments[1]
+  );
 }
 
 
@@ -483,7 +527,13 @@ function FlattenIntoTuple(target, source, depth) {
     
     if (mapperIsPresent) {
       
-      element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
+      element = callContentFunction(
+        mapperFunction,
+        thisArg,
+        element,
+        sourceIndex,
+        source
+      );
       
       if (IsObject(element)) {
         ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
@@ -624,7 +674,9 @@ function TupleFrom(items ) {
     
     let kValue = arrayLike[k];
     
-    let mappedValue = mapping ? callContentFunction(mapfn, thisArg, kValue, k) : kValue;
+    let mappedValue = mapping
+      ? callContentFunction(mapfn, thisArg, kValue, k)
+      : kValue;
     
     if (IsObject(mappedValue)) {
       ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);

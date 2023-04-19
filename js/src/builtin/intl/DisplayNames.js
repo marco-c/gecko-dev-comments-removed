@@ -95,7 +95,10 @@ function getDisplayNamesInternals(obj) {
   );
 
   var internals = getIntlObjectInternals(obj);
-  assert(internals.type === "DisplayNames", "bad type escaped getIntlObjectInternals");
+  assert(
+    internals.type === "DisplayNames",
+    "bad type escaped getIntlObjectInternals"
+  );
 
   
   var internalProps = maybeInternalProperties(internals);
@@ -121,7 +124,10 @@ function getDisplayNamesInternals(obj) {
 
 
 function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
-  assert(IsObject(displayNames), "InitializeDisplayNames called with non-object");
+  assert(
+    IsObject(displayNames),
+    "InitializeDisplayNames called with non-object"
+  );
   assert(
     intl_GuardToDisplayNames(displayNames) !== null,
     "InitializeDisplayNames called with non-DisplayNames"
@@ -165,7 +171,10 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
 
   
   if (!IsObject(options)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED,
+      options === null ? "null" : typeof options
+    );
   }
 
   
@@ -174,14 +183,30 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
   lazyDisplayNamesData.mozExtensions = mozExtensions;
 
   
-  var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  var matcher = GetOption(
+    options,
+    "localeMatcher",
+    "string",
+    ["lookup", "best fit"],
+    "best fit"
+  );
   opt.localeMatcher = matcher;
 
   if (mozExtensions) {
-    var calendar = GetOption(options, "calendar", "string", undefined, undefined);
+    var calendar = GetOption(
+      options,
+      "calendar",
+      "string",
+      undefined,
+      undefined
+    );
 
     if (calendar !== undefined) {
-      calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(calendar, "calendar", "ca");
+      calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(
+        calendar,
+        "calendar",
+        "ca"
+      );
     }
 
     opt.ca = calendar;
@@ -198,7 +223,13 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
       "long"
     );
   } else {
-    style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
+    style = GetOption(
+      options,
+      "style",
+      "string",
+      ["narrow", "short", "long"],
+      "long"
+    );
   }
 
   
@@ -244,7 +275,13 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
   lazyDisplayNamesData.type = type;
 
   
-  var fallback = GetOption(options, "fallback", "string", ["code", "none"], "code");
+  var fallback = GetOption(
+    options,
+    "fallback",
+    "string",
+    ["code", "none"],
+    "code"
+  );
 
   
   lazyDisplayNamesData.fallback = fallback;
@@ -294,8 +331,15 @@ function Intl_DisplayNames_of(code) {
   var displayNames = this;
 
   
-  if (!IsObject(displayNames) || (displayNames = intl_GuardToDisplayNames(displayNames)) === null) {
-    return callFunction(intl_CallDisplayNamesMethodIfWrapped, this, "Intl_DisplayNames_of");
+  if (
+    !IsObject(displayNames) ||
+    (displayNames = intl_GuardToDisplayNames(displayNames)) === null
+  ) {
+    return callFunction(
+      intl_CallDisplayNamesMethodIfWrapped,
+      this,
+      "Intl_DisplayNames_of"
+    );
   }
 
   code = ToString(code);
@@ -304,7 +348,14 @@ function Intl_DisplayNames_of(code) {
 
   
   
-  var { locale, calendar = "", style, type, languageDisplay = "", fallback } = internals;
+  var {
+    locale,
+    calendar = "",
+    style,
+    type,
+    languageDisplay = "",
+    fallback,
+  } = internals;
 
   
   return intl_ComputeDisplayName(
@@ -327,7 +378,10 @@ function Intl_DisplayNames_resolvedOptions() {
   var displayNames = this;
 
   
-  if (!IsObject(displayNames) || (displayNames = intl_GuardToDisplayNames(displayNames)) === null) {
+  if (
+    !IsObject(displayNames) ||
+    (displayNames = intl_GuardToDisplayNames(displayNames)) === null
+  ) {
     return callFunction(
       intl_CallDisplayNamesMethodIfWrapped,
       this,

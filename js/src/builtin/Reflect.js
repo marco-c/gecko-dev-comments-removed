@@ -8,7 +8,10 @@ function CreateListFromArrayLikeForArgs(obj) {
   
 
   
-  assert(IsObject(obj), "object must be passed to CreateListFromArrayLikeForArgs");
+  assert(
+    IsObject(obj),
+    "object must be passed to CreateListFromArrayLikeForArgs"
+  );
 
   
   var len = ToLength(obj.length);
@@ -143,7 +146,12 @@ function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
 function Reflect_has(target, propertyKey) {
   
   if (!IsObject(target)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.has", ToSource(target));
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED_ARG,
+      "`target`",
+      "Reflect.has",
+      ToSource(target)
+    );
   }
 
   
@@ -155,7 +163,12 @@ function Reflect_has(target, propertyKey) {
 function Reflect_get(target, propertyKey ) {
   
   if (!IsObject(target)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.get", ToSource(target));
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED_ARG,
+      "`target`",
+      "Reflect.get",
+      ToSource(target)
+    );
   }
 
   

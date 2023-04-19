@@ -281,7 +281,9 @@ function ArrayGroup(callbackfn ) {
 
 
 
-    var propertyKey = TO_PROPERTY_KEY(callContentFunction(callbackfn, T, kValue, k, O));
+    var propertyKey = TO_PROPERTY_KEY(
+      callContentFunction(callbackfn, T, kValue, k, O)
+    );
 
     
     if (!groups[propertyKey]) {
@@ -440,7 +442,14 @@ function ArrayReduce(callbackfn ) {
     
     if (k in O) {
       
-      accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+      accumulator = callContentFunction(
+        callbackfn,
+        undefined,
+        accumulator,
+        O[k],
+        k,
+        O
+      );
     }
   }
 
@@ -503,7 +512,14 @@ function ArrayReduceRight(callbackfn ) {
     
     if (k in O) {
       
-      accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+      accumulator = callContentFunction(
+        callbackfn,
+        undefined,
+        accumulator,
+        O[k],
+        k,
+        O
+      );
     }
   }
 
@@ -591,20 +607,27 @@ function ArrayCopyWithin(target, start, end = undefined) {
 
   
   var to =
-    relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0) : std_Math_min(relativeTarget, len);
+    relativeTarget < 0
+      ? std_Math_max(len + relativeTarget, 0)
+      : std_Math_min(relativeTarget, len);
 
   
   var relativeStart = ToInteger(start);
 
   
   var from =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   var count = std_Math_min(final - from, len - to);
@@ -660,13 +683,18 @@ function ArrayFill(value, start = 0, end = undefined) {
 
   
   var k =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   for (; k < final; k++) {
@@ -693,7 +721,11 @@ function ArrayIteratorNext() {
   
   var obj = this;
   if (!IsObject(obj) || (obj = GuardToArrayIterator(obj)) === null) {
-    return callFunction(CallArrayIteratorMethodIfWrapped, this, "ArrayIteratorNext");
+    return callFunction(
+      CallArrayIteratorMethodIfWrapped,
+      this,
+      "ArrayIteratorNext"
+    );
   }
 
   
@@ -821,7 +853,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
 
       
-      var mappedValue = mapping ? callContentFunction(mapfn, T, nextValue, k) : nextValue;
+      var mappedValue = mapping
+        ? callContentFunction(mapfn, T, nextValue, k)
+        : nextValue;
 
       
       DefineDataProperty(A, k++, mappedValue);
@@ -842,7 +876,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
   var len = ToLength(arrayLike.length);
 
   
-  var A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
+  var A = IsConstructor(C)
+    ? constructContentFunction(C, C, len)
+    : std_Array(len);
 
   
   for (var k = 0; k < len; k++) {
@@ -850,7 +886,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     var kValue = items[k];
 
     
-    var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+    var mappedValue = mapping
+      ? callContentFunction(mapfn, T, kValue, k)
+      : kValue;
 
     
     DefineDataProperty(A, k, mappedValue);
@@ -919,9 +957,18 @@ function ArrayToLocaleString(locales, options) {
     R = "";
   } else {
 #if JS_HAS_INTL_API
-    R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
+    R = ToString(
+      callContentFunction(
+        firstElement.toLocaleString,
+        firstElement,
+        locales,
+        options
+      )
+    );
 #else
-    R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+    R = ToString(
+      callContentFunction(firstElement.toLocaleString, firstElement)
+    );
 #endif
   }
 
@@ -938,9 +985,18 @@ function ArrayToLocaleString(locales, options) {
     R += separator;
     if (!(nextElement === undefined || nextElement === null)) {
 #if JS_HAS_INTL_API
-      R += ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
+      R += ToString(
+        callContentFunction(
+          nextElement.toLocaleString,
+          nextElement,
+          locales,
+          options
+        )
+      );
 #else
-      R += ToString(callContentFunction(nextElement.toLocaleString, nextElement));
+      R += ToString(
+        callContentFunction(nextElement.toLocaleString, nextElement)
+      );
 #endif
     }
   }
@@ -1184,7 +1240,15 @@ function ArrayFlat() {
 
 
 
-function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunction, thisArg) {
+function FlattenIntoArray(
+  target,
+  source,
+  sourceLen,
+  start,
+  depth,
+  mapperFunction,
+  thisArg
+) {
   
   var targetIndex = start;
 
@@ -1200,7 +1264,13 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
         assert(arguments.length === 7, "thisArg is present");
 
         
-        element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
+        element = callContentFunction(
+          mapperFunction,
+          thisArg,
+          element,
+          sourceIndex,
+          source
+        );
       }
 
       
@@ -1218,7 +1288,13 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
         var elementLen = ToLength(element.length);
 
         
-        targetIndex = FlattenIntoArray(target, element, elementLen, targetIndex, depth - 1);
+        targetIndex = FlattenIntoArray(
+          target,
+          element,
+          elementLen,
+          targetIndex,
+          depth - 1
+        );
       } else {
         
         if (targetIndex >= MAX_NUMERIC_INDEX) {

@@ -81,7 +81,12 @@ function FUNC_NAME(
     
     var replacement;
 #if defined(FUNCTIONAL)
-    replacement = RegExpGetFunctionalReplacement(result, S, position, replaceValue);
+    replacement = RegExpGetFunctionalReplacement(
+      result,
+      S,
+      position,
+      replaceValue
+    );
 #elif defined(SUBSTITUTION)
     
     var namedCaptures = result.groups;
@@ -112,7 +117,12 @@ function FUNC_NAME(
     }
 
     if (!IsObject(elemBase)) {
-      replacement = RegExpGetFunctionalReplacement(result, S, position, replaceValue);
+      replacement = RegExpGetFunctionalReplacement(
+        result,
+        S,
+        position,
+        replaceValue
+      );
     }
 #else
     replacement = replaceValue;
@@ -120,14 +130,17 @@ function FUNC_NAME(
 
     
     accumulatedResult +=
-      Substring(S, nextSourcePosition, position - nextSourcePosition) + replacement;
+      Substring(S, nextSourcePosition, position - nextSourcePosition) +
+      replacement;
 
     
     nextSourcePosition = lastIndex;
 
     
     if (matchLength === 0) {
-      lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
+      lastIndex = fullUnicode
+        ? AdvanceStringIndex(S, lastIndex)
+        : lastIndex + 1;
       if (lastIndex > lengthS) {
         break;
       }
@@ -138,7 +151,8 @@ function FUNC_NAME(
     
     
     if (
-      UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT) !== originalSource ||
+      UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT) !==
+        originalSource ||
       UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT) !== originalFlags
     ) {
       rx = RegExpConstructRaw(originalSource, originalFlags);
@@ -152,5 +166,8 @@ function FUNC_NAME(
   }
 
   
-  return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
+  return (
+    accumulatedResult +
+    Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
+  );
 }

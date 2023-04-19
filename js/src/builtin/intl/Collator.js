@@ -19,7 +19,9 @@ function resolveCollatorInternals(lazyCollatorData) {
 
   
   var collatorIsSorting = lazyCollatorData.usage === "sort";
-  var localeData = collatorIsSorting ? Collator.sortLocaleData : Collator.searchLocaleData;
+  var localeData = collatorIsSorting
+    ? Collator.sortLocaleData
+    : Collator.searchLocaleData;
 
   
   
@@ -81,10 +83,16 @@ function resolveCollatorInternals(lazyCollatorData) {
 
 function getCollatorInternals(obj) {
   assert(IsObject(obj), "getCollatorInternals called with non-object");
-  assert(intl_GuardToCollator(obj) !== null, "getCollatorInternals called with non-Collator");
+  assert(
+    intl_GuardToCollator(obj) !== null,
+    "getCollatorInternals called with non-Collator"
+  );
 
   var internals = getIntlObjectInternals(obj);
-  assert(internals.type === "Collator", "bad type escaped getIntlObjectInternals");
+  assert(
+    internals.type === "Collator",
+    "bad type escaped getIntlObjectInternals"
+  );
 
   
   var internalProps = maybeInternalProperties(internals);
@@ -111,7 +119,10 @@ function getCollatorInternals(obj) {
 
 function InitializeCollator(collator, locales, options) {
   assert(IsObject(collator), "InitializeCollator called with non-object");
-  assert(intl_GuardToCollator(collator) != null, "InitializeCollator called with non-Collator");
+  assert(
+    intl_GuardToCollator(collator) != null,
+    "InitializeCollator called with non-Collator"
+  );
 
   
   
@@ -159,18 +170,40 @@ function InitializeCollator(collator, locales, options) {
   lazyCollatorData.opt = opt;
 
   
-  var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  var matcher = GetOption(
+    options,
+    "localeMatcher",
+    "string",
+    ["lookup", "best fit"],
+    "best fit"
+  );
   opt.localeMatcher = matcher;
 
   
-  var collation = GetOption(options, "collation", "string", undefined, undefined);
+  var collation = GetOption(
+    options,
+    "collation",
+    "string",
+    undefined,
+    undefined
+  );
   if (collation !== undefined) {
-    collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(collation, "collation", "co");
+    collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(
+      collation,
+      "collation",
+      "co"
+    );
   }
   opt.co = collation;
 
   
-  var numericValue = GetOption(options, "numeric", "boolean", undefined, undefined);
+  var numericValue = GetOption(
+    options,
+    "numeric",
+    "boolean",
+    undefined,
+    undefined
+  );
   if (numericValue !== undefined) {
     numericValue = numericValue ? "true" : "false";
   }
@@ -372,8 +405,15 @@ function $Intl_Collator_compare_get() {
   var collator = this;
 
   
-  if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
-    return callFunction(intl_CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
+  if (
+    !IsObject(collator) ||
+    (collator = intl_GuardToCollator(collator)) === null
+  ) {
+    return callFunction(
+      intl_CallCollatorMethodIfWrapped,
+      this,
+      "$Intl_Collator_compare_get"
+    );
   }
 
   var internals = getCollatorInternals(collator);
@@ -399,8 +439,15 @@ function Intl_Collator_resolvedOptions() {
   var collator = this;
 
   
-  if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
-    return callFunction(intl_CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
+  if (
+    !IsObject(collator) ||
+    (collator = intl_GuardToCollator(collator)) === null
+  ) {
+    return callFunction(
+      intl_CallCollatorMethodIfWrapped,
+      this,
+      "Intl_Collator_resolvedOptions"
+    );
   }
 
   var internals = getCollatorInternals(collator);

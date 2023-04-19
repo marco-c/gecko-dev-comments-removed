@@ -11,7 +11,8 @@ function ViewedArrayBufferIfReified(tarray) {
   assert(
     buf === null ||
       (IsObject(buf) &&
-        (GuardToArrayBuffer(buf) !== null || GuardToSharedArrayBuffer(buf) !== null)),
+        (GuardToArrayBuffer(buf) !== null ||
+          GuardToSharedArrayBuffer(buf) !== null)),
     "unexpected value in buffer slot"
   );
   return buf;
@@ -25,7 +26,8 @@ function IsDetachedBuffer(buffer) {
   }
 
   assert(
-    GuardToArrayBuffer(buffer) !== null || GuardToSharedArrayBuffer(buffer) !== null,
+    GuardToArrayBuffer(buffer) !== null ||
+      GuardToSharedArrayBuffer(buffer) !== null,
     "non-ArrayBuffer passed to IsDetachedBuffer"
   );
 
@@ -71,7 +73,11 @@ function IsTypedArrayEnsuringArrayBuffer(arg) {
     return true;
   }
 
-  callFunction(CallTypedArrayMethodIfWrapped, arg, "GetAttachedArrayBufferMethod");
+  callFunction(
+    CallTypedArrayMethodIfWrapped,
+    arg,
+    "GetAttachedArrayBufferMethod"
+  );
   return false;
 }
 
@@ -112,7 +118,10 @@ function TypedArraySpeciesConstructor(obj) {
   }
 
   
-  ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
+  ThrowTypeError(
+    JSMSG_NOT_CONSTRUCTOR,
+    "@@species property of object's constructor"
+  );
 }
 
 
@@ -143,7 +152,11 @@ function ValidateTypedArray(obj) {
 
 function TypedArrayCreateWithLength(constructor, length) {
   
-  var newTypedArray = constructContentFunction(constructor, constructor, length);
+  var newTypedArray = constructContentFunction(
+    constructor,
+    constructor,
+    length
+  );
 
   
   var isTypedArray = ValidateTypedArray(newTypedArray);
@@ -153,7 +166,11 @@ function TypedArrayCreateWithLength(constructor, length) {
   if (isTypedArray) {
     len = TypedArrayLength(newTypedArray);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, newTypedArray, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      newTypedArray,
+      "TypedArrayLengthMethod"
+    );
   }
 
   if (len < length) {
@@ -199,7 +216,12 @@ function TypedArraySpeciesCreateWithLength(exemplar, length) {
 
 
 
-function TypedArraySpeciesCreateWithBuffer(exemplar, buffer, byteOffset, length) {
+function TypedArraySpeciesCreateWithBuffer(
+  exemplar,
+  buffer,
+  byteOffset,
+  length
+) {
   
 
   
@@ -250,7 +272,11 @@ function TypedArrayEvery(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -288,7 +314,14 @@ SetIsInlinableLargeFunction(TypedArrayEvery);
 function TypedArrayFill(value, start = 0, end = undefined) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, value, start, end, "TypedArrayFill");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      value,
+      start,
+      end,
+      "TypedArrayFill"
+    );
   }
 
   
@@ -313,13 +346,18 @@ function TypedArrayFill(value, start = 0, end = undefined) {
 
   
   var k =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   if (buffer === null) {
@@ -359,7 +397,11 @@ function TypedArrayFilter(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -424,7 +466,11 @@ function TypedArrayFind(predicate ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -469,12 +515,20 @@ function TypedArrayFindIndex(predicate ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
   if (arguments.length === 0) {
-    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findIndex");
+    ThrowTypeError(
+      JSMSG_MISSING_FUN_ARG,
+      0,
+      "%TypedArray%.prototype.findIndex"
+    );
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
@@ -511,7 +565,11 @@ function TypedArrayForEach(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -621,7 +679,12 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
 function TypedArrayJoin(separator) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, separator, "TypedArrayJoin");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      separator,
+      "TypedArrayJoin"
+    );
   }
 
   GetAttachedArrayBuffer(this);
@@ -778,7 +841,11 @@ function TypedArrayMap(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -827,7 +894,11 @@ function TypedArrayReduce(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -851,7 +922,14 @@ function TypedArrayReduce(callbackfn ) {
 
   
   for (; k < len; k++) {
-    accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+    accumulator = callContentFunction(
+      callbackfn,
+      undefined,
+      accumulator,
+      O[k],
+      k,
+      O
+    );
   }
 
   
@@ -875,12 +953,20 @@ function TypedArrayReduceRight(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
   if (arguments.length === 0) {
-    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduceRight");
+    ThrowTypeError(
+      JSMSG_MISSING_FUN_ARG,
+      0,
+      "%TypedArray%.prototype.reduceRight"
+    );
   }
   if (!IsCallable(callbackfn)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
@@ -899,7 +985,14 @@ function TypedArrayReduceRight(callbackfn ) {
 
   
   for (; k >= 0; k--) {
-    accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+    accumulator = callContentFunction(
+      callbackfn,
+      undefined,
+      accumulator,
+      O[k],
+      k,
+      O
+    );
   }
 
   
@@ -912,7 +1005,11 @@ function TypedArrayReduceRight(callbackfn ) {
 function TypedArrayReverse() {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayReverse");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayReverse"
+    );
   }
 
   GetAttachedArrayBuffer(this);
@@ -954,7 +1051,13 @@ function TypedArraySlice(start, end) {
 
   
   if (!IsObject(O) || !IsTypedArray(O)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, O, start, end, "TypedArraySlice");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      start,
+      end,
+      "TypedArraySlice"
+    );
   }
 
   var buffer = GetAttachedArrayBuffer(O);
@@ -967,13 +1070,18 @@ function TypedArraySlice(start, end) {
 
   
   var k =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   var count = std_Math_max(final - k, 0);
@@ -1031,7 +1139,11 @@ function TypedArraySome(callbackfn ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -1087,7 +1199,11 @@ function TypedArraySort(comparefn) {
   if (isTypedArray) {
     len = TypedArrayLength(obj);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, obj, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      obj,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -1136,7 +1252,11 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
   if (isTypedArray) {
     len = TypedArrayLength(array);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, array, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      array,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -1152,10 +1272,17 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
   
 #if JS_HAS_INTL_API
   var R = ToString(
-    callContentFunction(firstElement.toLocaleString, firstElement, locales, options)
+    callContentFunction(
+      firstElement.toLocaleString,
+      firstElement,
+      locales,
+      options
+    )
   );
 #else
-  var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+  var R = ToString(
+    callContentFunction(firstElement.toLocaleString, firstElement)
+  );
 #endif
 
   
@@ -1179,7 +1306,14 @@ function TypedArrayToLocaleString(locales = undefined, options = undefined) {
 
     
 #if JS_HAS_INTL_API
-    R = ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
+    R = ToString(
+      callContentFunction(
+        nextElement.toLocaleString,
+        nextElement,
+        locales,
+        options
+      )
+    );
 #else
     R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
 #endif
@@ -1201,7 +1335,13 @@ function TypedArraySubarray(begin, end) {
   
   
   if (!IsObject(obj) || !IsTypedArray(obj)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, begin, end, "TypedArraySubarray");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      begin,
+      end,
+      "TypedArraySubarray"
+    );
   }
 
   
@@ -1245,7 +1385,12 @@ function TypedArraySubarray(begin, end) {
   var beginByteOffset = srcByteOffset + beginIndex * elementSize;
 
   
-  return TypedArraySpeciesCreateWithBuffer(obj, buffer, beginByteOffset, newLength);
+  return TypedArraySpeciesCreateWithBuffer(
+    obj,
+    buffer,
+    beginByteOffset,
+    newLength
+  );
 }
 
 
@@ -1257,7 +1402,12 @@ function TypedArrayAt(index) {
   
   
   if (!IsObject(obj) || !IsTypedArray(obj)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, obj, index, "TypedArrayAt");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      obj,
+      index,
+      "TypedArrayAt"
+    );
   }
   GetAttachedArrayBuffer(obj);
 
@@ -1304,7 +1454,11 @@ function TypedArrayFindLast(predicate ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
@@ -1348,12 +1502,20 @@ function TypedArrayFindLastIndex(predicate ) {
   if (isTypedArray) {
     len = TypedArrayLength(O);
   } else {
-    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
   }
 
   
   if (arguments.length === 0) {
-    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLastIndex");
+    ThrowTypeError(
+      JSMSG_MISSING_FUN_ARG,
+      0,
+      "%TypedArray%.prototype.findLastIndex"
+    );
   }
   if (!IsCallable(predicate)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
@@ -1555,7 +1717,9 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
       var kValue = values[k];
 
       
-      var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+      var mappedValue = mapping
+        ? callContentFunction(mapfn, T, kValue, k)
+        : kValue;
 
       
       targetObj[k] = mappedValue;
@@ -1588,7 +1752,9 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
     var kValue = arrayLike[k];
 
     
-    var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+    var mappedValue = mapping
+      ? callContentFunction(mapfn, T, kValue, k)
+      : kValue;
 
     
     targetObj[k] = mappedValue;
@@ -1685,7 +1851,13 @@ function ArrayBufferSlice(start, end) {
   
   
   if (!IsObject(O) || (O = GuardToArrayBuffer(O)) === null) {
-    return callFunction(CallArrayBufferMethodIfWrapped, this, start, end, "ArrayBufferSlice");
+    return callFunction(
+      CallArrayBufferMethodIfWrapped,
+      this,
+      start,
+      end,
+      "ArrayBufferSlice"
+    );
   }
 
   
@@ -1701,13 +1873,18 @@ function ArrayBufferSlice(start, end) {
 
   
   var first =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   var newLen = std_Math_max(final - first, 0);
@@ -1737,7 +1914,13 @@ function ArrayBufferSlice(start, end) {
     isWrapped = true;
 
     
-    if (callFunction(CallArrayBufferMethodIfWrapped, newBuffer, "IsDetachedBufferThis")) {
+    if (
+      callFunction(
+        CallArrayBufferMethodIfWrapped,
+        newBuffer,
+        "IsDetachedBufferThis"
+      )
+    ) {
       ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
     }
   }
@@ -1809,13 +1992,18 @@ function SharedArrayBufferSlice(start, end) {
 
   
   var first =
-    relativeStart < 0 ? std_Math_max(len + relativeStart, 0) : std_Math_min(relativeStart, len);
+    relativeStart < 0
+      ? std_Math_max(len + relativeStart, 0)
+      : std_Math_min(relativeStart, len);
 
   
   var relativeEnd = end === undefined ? len : ToInteger(end);
 
   
-  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0) : std_Math_min(relativeEnd, len);
+  var final =
+    relativeEnd < 0
+      ? std_Math_max(len + relativeEnd, 0)
+      : std_Math_min(relativeEnd, len);
 
   
   var newLen = std_Math_max(final - first, 0);
@@ -1882,7 +2070,11 @@ function TypedArrayCreateSameType(exemplar, length) {
 function TypedArrayToReversed() {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToReversed");
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayToReversed"
+    );
   }
 
   
@@ -1928,7 +2120,13 @@ function isValidIntegerIndex(a, index) {
 function TypedArrayWith(index, value) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWith", index, value);
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayWith",
+      index,
+      value
+    );
   }
 
   
@@ -1980,7 +2178,12 @@ function TypedArrayWith(index, value) {
 function TypedArrayToSorted(comparefn) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSorted", comparefn);
+    return callFunction(
+      CallTypedArrayMethodIfWrapped,
+      this,
+      "TypedArrayToSorted",
+      comparefn
+    );
   }
 
   
@@ -2010,7 +2213,12 @@ function TypedArrayToSorted(comparefn) {
   }
 
   
-  return callFunction(CallTypedArrayMethodIfWrapped, A, comparefn, "TypedArraySort");
+  return callFunction(
+    CallTypedArrayMethodIfWrapped,
+    A,
+    comparefn,
+    "TypedArraySort"
+  );
 }
 
 

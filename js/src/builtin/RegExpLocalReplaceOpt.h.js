@@ -122,7 +122,12 @@ function FUNC_NAME(
   var replacement;
   
 #if defined(FUNCTIONAL)
-  replacement = RegExpGetFunctionalReplacement(result, S, position, replaceValue);
+  replacement = RegExpGetFunctionalReplacement(
+    result,
+    S,
+    position,
+    replaceValue
+  );
 #elif defined(SUBSTITUTION)
   
   var namedCaptures = result.groups;
@@ -151,5 +156,8 @@ function FUNC_NAME(
   }
 
   
-  return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
+  return (
+    accumulatedResult +
+    Substring(S, nextSourcePosition, lengthS - nextSourcePosition)
+  );
 }
