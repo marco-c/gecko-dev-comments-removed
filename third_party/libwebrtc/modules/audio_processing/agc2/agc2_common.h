@@ -51,6 +51,7 @@ constexpr float kInitialSpeechLevelEstimateDbfs = -30.f;
 
 
 constexpr float kDefaultSmoothedVadProbabilityAttack = 1.f;
+constexpr int kDefaultAdjacentSpeechFramesThreshold = 1;
 
 
 constexpr bool kDefaultUseSaturationProtector = true;
