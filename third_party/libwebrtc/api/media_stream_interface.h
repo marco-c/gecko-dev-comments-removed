@@ -216,6 +216,11 @@ class AudioTrackSinkInterface {
                   number_of_frames);
   }
 
+  
+  
+  
+  virtual int NumPreferredChannels() const { return -1; }
+
  protected:
   virtual ~AudioTrackSinkInterface() {}
 };

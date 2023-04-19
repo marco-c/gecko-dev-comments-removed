@@ -36,6 +36,11 @@ class AudioSource {
     
     virtual void OnClose() = 0;
 
+    
+    
+    
+    virtual int NumPreferredChannels() const = 0;
+
    protected:
     virtual ~Sink() {}
   };
