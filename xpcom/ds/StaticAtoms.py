@@ -2394,6 +2394,8 @@ STATIC_ATOMS = [
     
     Atom("_moz_mathml_core_maction_and_semantics", "-moz-mathml-core-maction-and-semantics"),
     
+    Atom("_moz_mathml_core_ms", "-moz-mathml-core-ms"),
+    
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),
     
