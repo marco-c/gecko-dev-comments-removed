@@ -3585,6 +3585,11 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
 
 
 LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
+  
+  
+  if (IsWaylandPopup() && !mPopupUseMoveToRect) {
+    return mBounds.TopLeft();
+  }
   nsIntPoint origin(0, 0);
   if (mGdkWindow) {
     gdk_window_get_origin(mGdkWindow, &origin.x, &origin.y);
