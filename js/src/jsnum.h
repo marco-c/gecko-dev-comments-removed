@@ -36,9 +36,6 @@ class StringBuffer;
 extern void FinishRuntimeNumberState(JSRuntime* rt);
 
 
-extern JSObject* InitNumberClass(JSContext* cx, Handle<GlobalObject*> global);
-
-
 
 
 
@@ -63,8 +60,6 @@ extern JSAtom* Int32ToAtom(JSContext* cx, int32_t si);
 frontend::TaggedParserAtomIndex Int32ToParserAtom(
     JSContext* cx, frontend::ParserAtomsTable& parserAtoms, int32_t si);
 
-
-extern bool IsInteger(const Value& val);
 
 extern bool IsInteger(double d);
 
