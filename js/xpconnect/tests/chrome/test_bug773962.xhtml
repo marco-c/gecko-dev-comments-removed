@@ -46,7 +46,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=773962
     win2.document.adoptNode(node1);
 
     // Navigate win1. This causes win1 to be transplanted.
-    win1.location = 'http://test2.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html';
+    win1.location = "https://test2.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html";
 
     // The above happens async. Our onload handler will call finishTest() when we're ready.
   }
@@ -60,13 +60,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=773962
     ok(true, "Didn't crash!");
 
     // Now, make sure everything is set up how we expect.
-    const {AppConstants} = SpecialPowers.Cu.import("resource://gre/modules/AppConstants.jsm", {});
-    if (AppConstants.NIGHTLY_BUILD) {
-      ok(Cu.isDeadWrapper(win1Waiver), "window waiver should go away after navigation");
-    } else {
-      ok(win1Waiver === win1.wrappedJSObject, "waivers still work");
-      ok(XPCNativeWrapper(win1Waiver) === win1, "waivers still work");
-    }
+    ok(Cu.isDeadWrapper(win1Waiver), "window waiver should go away after navigation");
     ok(node1Waiver === node1.wrappedJSObject, "waivers still work");
     ok(XPCNativeWrapper(node1Waiver) === node1, "waivers still work");
 
@@ -81,6 +75,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=773962
 
   ]]>
   </script>
-  <iframe id="frame1" onload="frameLoaded();" type="content" src="http://test1.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html" />
-  <iframe id="frame2" onload="frameLoaded();" type="content" src="http://test1.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html" />
+  <iframe id="frame1" onload="frameLoaded();" type="content" src="https://test1.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html" />
+  <iframe id="frame2" onload="frameLoaded();" type="content" src="https://test1.example.org/tests/js/xpconnect/tests/mochitest/file_empty.html" />
 </window>
