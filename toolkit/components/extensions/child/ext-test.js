@@ -64,6 +64,45 @@ const errorMatches = (error, expectedError, context) => {
 };
 
 
+function useStringInsteadOfJSON(v) {
+  return (
+    
+    v === undefined ||
+    
+    (typeof v === "number" && (isNaN(v) || !isFinite(v)))
+  );
+}
+
+
+
+function deepEquals(a, b) {
+  
+  
+  const NON_JSON_PREFIX = "#NOT_JSON_SERIALIZABLE#";
+
+  function replacer(key, value) {
+    if (typeof value == "object" && value !== null && !Array.isArray(value)) {
+      const cls = ChromeUtils.getClassName(value);
+      if (cls === "Object") {
+        
+        return Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map(k => [k, value[k]])
+        );
+      }
+      
+      throw new ExtensionUtils.ExtensionError(`Unsupported obj type: ${cls}`);
+    }
+
+    if (useStringInsteadOfJSON(value)) {
+      return `${NON_JSON_PREFIX}${value}`;
+    }
+    return value;
+  }
+  return JSON.stringify(a, replacer) === JSON.stringify(b, replacer);
+}
+
 
 
 
@@ -71,18 +110,23 @@ const errorMatches = (error, expectedError, context) => {
 
 
 const toSource = value => {
-  if (value === null) {
-    return "null";
+  function cannotJSONserialize(v) {
+    return (
+      useStringInsteadOfJSON(v) ||
+      
+      (typeof v == "object" &&
+        v !== null &&
+        !Array.isArray(v) &&
+        ChromeUtils.getClassName(v) !== "Object")
+    );
   }
-  if (value === undefined) {
-    return "undefined";
-  }
-  if (typeof value === "string") {
-    return JSON.stringify(value);
-  }
-
   try {
-    return String(value);
+    if (cannotJSONserialize(value)) {
+      return String(value);
+    }
+
+    const replacer = (k, v) => (cannotJSONserialize(v) ? String(v) : v);
+    return JSON.stringify(value, replacer);
   } catch (e) {
     return "<unknown>";
   }
@@ -204,6 +248,37 @@ this.test = class extends ExtensionAPI {
 
         assertFalse(value, msg) {
           assertTrue(!value, msg);
+        },
+
+        assertDeepEq(expected, actual, msg) {
+          
+          
+          
+          
+          
+          function ensureStructurallyCloneable(v) {
+            if (typeof v == "object" && v !== null) {
+              
+              
+              v = ChromeUtils.waiveXrays(v);
+            }
+            new StructuredCloneHolder(v, globalThis);
+          }
+          
+          
+          if (!context.useWebIDLBindings) {
+            ensureStructurallyCloneable(expected);
+            ensureStructurallyCloneable(actual);
+          }
+
+          extension.emit(
+            "test-eq",
+            deepEquals(actual, expected),
+            String(msg),
+            toSource(expected),
+            toSource(actual),
+            getStack(context.getCaller())
+          );
         },
 
         assertEq(expected, actual, msg) {

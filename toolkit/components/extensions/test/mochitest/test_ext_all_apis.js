@@ -41,6 +41,7 @@ let expectedCommonApis = [
   "runtime.sendMessage",
   
   
+  "test.assertDeepEq",
   "test.assertEq",
   "test.assertFalse",
   "test.assertRejects",
