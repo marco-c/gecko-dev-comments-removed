@@ -96,8 +96,10 @@ struct StreamStats {
   
   Timestamp stream_started_time;
 
+  
   SamplesStatsCounter psnr;
   SamplesStatsCounter ssim;
+
   
   
   SamplesStatsCounter transport_time_ms;
@@ -128,6 +130,14 @@ struct StreamStats {
   int64_t total_encoded_images_payload = 0;
   
   std::map<FrameDropPhase, int64_t> dropped_by_phase;
+
+  
+  int64_t num_send_key_frames = 0;
+  int64_t num_recv_key_frames = 0;
+
+  
+  SamplesStatsCounter recv_key_frame_size_bytes;
+  SamplesStatsCounter recv_delta_frame_size_bytes;
 
   
   std::vector<StreamCodecInfo> encoders;
@@ -214,6 +224,9 @@ struct DefaultVideoQualityAnalyzerOptions {
   bool compute_ssim = true;
   
   bool use_weighted_psnr = false;
+  
+  
+  bool report_detailed_frame_stats = false;
   
   
   
