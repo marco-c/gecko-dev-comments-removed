@@ -10,6 +10,14 @@
 const PAGE_URL =
   "https://example.com/browser/dom/media/test/browser/file_media.html";
 
+
+
+
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const reportsColorDepthFromVideoData = AppConstants.platform == "macosx";
+
 add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
   const originalTab = gBrowser.selectedTab;
   const mediaTab = await openMediaTab(PAGE_URL);
@@ -19,6 +27,7 @@ add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
     mediaTab,
     shouldAccumulateTime: true,
     shouldAccumulateInvisibleTime: false,
+    shouldAccumulateHDRTime: reportsColorDepthFromVideoData,
   });
   await pauseMedia(mediaTab);
 
@@ -28,6 +37,7 @@ add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {
     mediaTab,
     shouldAccumulateTime: true,
     shouldAccumulateInvisibleTime: true,
+    shouldAccumulateHDRTime: reportsColorDepthFromVideoData,
   });
   await pauseMedia(mediaTab);
 
@@ -95,11 +105,16 @@ function startMedia({
   mediaTab,
   shouldAccumulateTime,
   shouldAccumulateInvisibleTime,
+  shouldAccumulateHDRTime,
 }) {
   return SpecialPowers.spawn(
     mediaTab.linkedBrowser,
-    [shouldAccumulateTime, shouldAccumulateInvisibleTime],
-    async (accumulateTime, accumulateInvisibleTime) => {
+    [
+      shouldAccumulateTime,
+      shouldAccumulateInvisibleTime,
+      shouldAccumulateHDRTime,
+    ],
+    async (accumulateTime, accumulateInvisibleTime, accumulateHDRTime) => {
       const video = content.document.getElementById("video");
       ok(
         await video.play().then(
@@ -131,6 +146,53 @@ function startMedia({
           "invisiblePlayTime"
         );
       }
+
+      const videoHDR = content.document.getElementById("videoHDR");
+
+      
+      
+      
+      
+      let didDecode = true;
+      const playPromise = videoHDR.play().then(
+        () => true,
+        () => false
+      );
+      
+      const tooSlowPromise = new Promise(resolve =>
+        setTimeout(() => {
+          info("videoHDR timed out.");
+          didDecode = false;
+          resolve(false);
+        }, 1000)
+      );
+      
+
+      let didPlay = await Promise.race(playPromise, tooSlowPromise).catch(
+        err => {
+          info("videoHDR failed to decode with error: " + err.message);
+          didDecode = false;
+          return false;
+        }
+      );
+
+      if (!didDecode) {
+        return;
+      }
+
+      ok(didPlay, "videoHDR started playing");
+      const videoHDRChrome = SpecialPowers.wrap(videoHDR);
+      if (accumulateHDRTime) {
+        await content.assertValueConstantlyIncreases(
+          videoHDRChrome,
+          "totalVideoHDRPlayTime"
+        );
+      } else {
+        await content.assertValueKeptUnchanged(
+          videoHDRChrome,
+          "totalVideoHDRPlayTime"
+        );
+      }
     }
   );
 }
@@ -143,5 +205,14 @@ function pauseMedia(tab) {
     const videoChrome = SpecialPowers.wrap(video);
     await content.assertValueKeptUnchanged(videoChrome, "totalVideoPlayTime");
     await content.assertValueKeptUnchanged(videoChrome, "invisiblePlayTime");
+
+    const videoHDR = content.document.getElementById("videoHDR");
+    videoHDR.pause();
+    ok(true, "videoHDR paused");
+    const videoHDRChrome = SpecialPowers.wrap(videoHDR);
+    await content.assertValueKeptUnchanged(
+      videoHDRChrome,
+      "totalVideoHDRPlayTime"
+    );
   });
 }
