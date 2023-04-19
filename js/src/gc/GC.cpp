@@ -876,6 +876,7 @@ bool GCRuntime::init(uint32_t maxbytes) {
 
 void GCRuntime::finish() {
   MOZ_ASSERT(inPageLoadCount == 0);
+  MOZ_ASSERT(!sharedAtomsZone_);
 
   
   if (nursery().isEnabled()) {
@@ -923,16 +924,8 @@ void GCRuntime::finish() {
   stats().printTotalProfileTimes();
 }
 
-#ifdef DEBUG
-void GCRuntime::assertNoPermanentSharedThings() {
-  MOZ_ASSERT(atomsZone()->cellIterUnsafe<JSAtom>(AllocKind::ATOM).done());
-  MOZ_ASSERT(
-      atomsZone()->cellIterUnsafe<JSAtom>(AllocKind::FAT_INLINE_ATOM).done());
-  MOZ_ASSERT(atomsZone()->cellIterUnsafe<JS::Symbol>(AllocKind::SYMBOL).done());
-}
-#endif
-
-void GCRuntime::freezePermanentSharedThings() {
+bool GCRuntime::freezeSharedAtomsZone() {
+  
   
   
   
@@ -943,43 +936,58 @@ void GCRuntime::freezePermanentSharedThings() {
   
   
 
-  MOZ_ASSERT(atomsZone());
+  MOZ_ASSERT(rt->isMainRuntime());
+  MOZ_ASSERT(!sharedAtomsZone_);
   MOZ_ASSERT(zones().length() == 1);
+  MOZ_ASSERT(atomsZone());
+  MOZ_ASSERT(!atomsZone()->wasGCStarted());
+  MOZ_ASSERT(!atomsZone()->needsIncrementalBarrier());
 
-  atomsZone()->arenas.clearFreeLists();
-  freezeAtomsZoneArenas<JSAtom>(AllocKind::ATOM, permanentAtoms.ref());
-  freezeAtomsZoneArenas<JSAtom>(AllocKind::FAT_INLINE_ATOM,
-                                permanentFatInlineAtoms.ref());
-  freezeAtomsZoneArenas<JS::Symbol>(AllocKind::SYMBOL,
-                                    permanentWellKnownSymbols.ref());
-}
+  sharedAtomsZone_ = atomsZone();
+  zones().clear();
 
-template <typename T>
-void GCRuntime::freezeAtomsZoneArenas(AllocKind kind, ArenaList& arenaList) {
-  for (auto thing = atomsZone()->cellIterUnsafe<T>(kind); !thing.done();
-       thing.next()) {
-    MOZ_ASSERT(thing->isPermanentAndMayBeShared());
-    thing->asTenured().markBlack();
+  sharedAtomsZone_->arenas.clearFreeLists();
+
+  for (auto kind : AllAllocKinds()) {
+    for (auto thing = sharedAtomsZone_->cellIterUnsafe<TenuredCell>(kind);
+         !thing.done(); thing.next()) {
+      TenuredCell* cell = thing.getCell();
+      MOZ_ASSERT((cell->is<JSString>() &&
+                  cell->as<JSString>()->isPermanentAndMayBeShared()) ||
+                 (cell->is<JS::Symbol>() &&
+                  cell->as<JS::Symbol>()->isPermanentAndMayBeShared()));
+      cell->markBlack();
+    }
   }
 
-  arenaList = std::move(atomsZone()->arenas.arenaList(kind));
+  UniquePtr<Zone> zone = MakeUnique<Zone>(rt, Zone::AtomsZone);
+  if (!zone || !zone->init()) {
+    return false;
+  }
+
+  MOZ_ASSERT(zone->isAtomsZone());
+  zones().infallibleAppend(zone.release());
+
+  return true;
 }
 
-void GCRuntime::restorePermanentSharedThings() {
-  
+void GCRuntime::restoreSharedAtomsZone() {
   
   
 
-  MOZ_ASSERT(heapState() == JS::HeapState::MajorCollecting);
+  if (!sharedAtomsZone_) {
+    return;
+  }
 
-  restoreAtomsZoneArenas(AllocKind::ATOM, permanentAtoms.ref());
-  restoreAtomsZoneArenas(AllocKind::FAT_INLINE_ATOM,
-                         permanentFatInlineAtoms.ref());
-  restoreAtomsZoneArenas(AllocKind::SYMBOL, permanentWellKnownSymbols.ref());
-}
+  MOZ_ASSERT(rt->isMainRuntime());
+  MOZ_ASSERT(rt->childRuntimeCount == 0);
 
-void GCRuntime::restoreAtomsZoneArenas(AllocKind kind, ArenaList& arenaList) {
-  atomsZone()->arenas.arenaList(kind).insertListWithCursorAtEnd(arenaList);
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!zones().append(sharedAtomsZone_)) {
+    oomUnsafe.crash("restoreSharedAtomsZone");
+  }
+
+  sharedAtomsZone_ = nullptr;
 }
 
 bool GCRuntime::setParameter(JSGCParamKey key, uint32_t value) {
@@ -1992,7 +2000,7 @@ void Zone::destroy(JS::GCContext* gcx) {
 
 void Zone::sweepCompartments(JS::GCContext* gcx, bool keepAtleastOne,
                              bool destroyingRuntime) {
-  MOZ_ASSERT(!compartments().empty());
+  MOZ_ASSERT_IF(!isAtomsZone(), !compartments().empty());
   MOZ_ASSERT_IF(destroyingRuntime, !keepAtleastOne);
 
   Compartment** read = compartments().begin();
@@ -2471,10 +2479,6 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
 
   if (!prepareZonesForCollection(reason, &isFull.ref())) {
     return false;
-  }
-
-  if (reason == JS::GCReason::DESTROY_RUNTIME) {
-    restorePermanentSharedThings();
   }
 
   
@@ -3661,6 +3665,10 @@ static void ScheduleZones(GCRuntime* gc, JS::GCReason reason) {
         reason == JS::GCReason::ALLOC_TRIGGER &&
         zone->gcHeapSize.bytes() < zone->gcHeapThreshold.startBytes()) {
       zone->unscheduleGC();  
+    }
+
+    if (gc->isShutdownGC()) {
+      zone->scheduleGC();
     }
 
     if (!gc->isPerZoneGCEnabled()) {

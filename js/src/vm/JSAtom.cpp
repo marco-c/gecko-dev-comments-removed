@@ -214,10 +214,6 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
     return bool(atoms_);
   }
 
-#ifdef DEBUG
-  gc.assertNoPermanentSharedThings();
-#endif
-
   
   
   Rooted<UniquePtr<AtomSet>> atomSet(cx,
@@ -312,7 +308,9 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
     wellKnownSymbols = wks;
   }
 
-  gc.freezePermanentSharedThings();
+  if (!gc.freezeSharedAtomsZone()) {
+    return false;
+  }
 
   
   permanentAtoms_ =
