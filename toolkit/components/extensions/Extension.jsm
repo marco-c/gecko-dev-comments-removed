@@ -210,6 +210,9 @@ if (
   }
 }
 
+const PREF_DNR_ENABLED = "extensions.dnr.enabled";
+const PREF_DNR_FEEDBACK = "extensions.dnr.feedback";
+
 
 
 
@@ -263,6 +266,23 @@ function isMozillaExtension(extension) {
   return isSigned && isMozillaLineExtension;
 }
 
+function isDNRPermissionAllowed(perm) {
+  
+  if (!Services.prefs.getBoolPref(PREF_DNR_ENABLED, false)) {
+    return false;
+  }
+
+  
+  
+  if (
+    perm === "declarativeNetRequestFeedback" &&
+    !Services.prefs.getBoolPref(PREF_DNR_FEEDBACK, false)
+  ) {
+    return false;
+  }
+  return true;
+}
+
 
 
 
@@ -295,6 +315,11 @@ function classifyPermission(perm, restrictSchemes, isPrivileged) {
     return { api: match[2] };
   } else if (!isPrivileged && PRIVILEGED_PERMS.has(match[1])) {
     return { invalid: perm, privileged: true };
+  } else if (
+    perm.startsWith("declarativeNetRequest") &&
+    !isDNRPermissionAllowed(perm)
+  ) {
+    return { invalid: perm };
   }
   return { permission: perm };
 }
