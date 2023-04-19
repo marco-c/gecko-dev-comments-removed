@@ -214,9 +214,15 @@ const ContentProcessTargetActor = TargetActorMixin(
     },
 
     destroy: function() {
-      if (this.isDestroyed()) {
+      
+      
+      if (this.destroying) {
         return;
       }
+      this.destroying = true;
+
+      
+      
       Resources.unwatchAllResources(this);
 
       this.emit("destroyed");
