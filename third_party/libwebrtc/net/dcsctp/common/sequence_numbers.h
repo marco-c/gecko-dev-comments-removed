@@ -137,13 +137,13 @@ class UnwrappedSequenceNumber {
 };
 
 
-using TSN = UnwrappedSequenceNumber<uint32_t>;
+using UnwrappedTSN = UnwrappedSequenceNumber<uint32_t>;
 
 
-using SSN = UnwrappedSequenceNumber<uint16_t>;
+using UnwrappedSSN = UnwrappedSequenceNumber<uint16_t>;
 
 
-using MID = UnwrappedSequenceNumber<uint32_t>;
+using UnwrappedMID = UnwrappedSequenceNumber<uint32_t>;
 
 }  
 

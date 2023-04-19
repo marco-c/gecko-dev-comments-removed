@@ -14,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "net/dcsctp/common/internal_types.h"
+#include "net/dcsctp/public/types.h"
+
 namespace dcsctp {
 
 
@@ -29,15 +32,23 @@ namespace dcsctp {
 
 
 struct Data {
-  Data(uint16_t stream_id,
-       uint16_t ssn,
-       uint32_t message_id,
-       uint32_t fsn,
-       uint32_t ppid,
+  
+  
+  using IsBeginning = StrongAlias<class IsBeginningTag, bool>;
+
+  
+  
+  using IsEnd = StrongAlias<class IsEndTag, bool>;
+
+  Data(StreamID stream_id,
+       SSN ssn,
+       MID message_id,
+       FSN fsn,
+       PPID ppid,
        std::vector<uint8_t> payload,
-       bool is_beginning,
-       bool is_end,
-       bool is_unordered)
+       IsBeginning is_beginning,
+       IsEnd is_end,
+       IsUnordered is_unordered)
       : stream_id(stream_id),
         ssn(ssn),
         message_id(message_id),
@@ -62,30 +73,30 @@ struct Data {
   size_t size() const { return payload.size(); }
 
   
-  uint16_t stream_id;
+  StreamID stream_id;
 
   
   
-  uint16_t ssn;
+  SSN ssn;
 
   
   
   
-  uint32_t message_id;
+  MID message_id;
   
-  uint32_t fsn;
+  FSN fsn;
 
   
-  uint32_t ppid;
+  PPID ppid;
 
   
   std::vector<uint8_t> payload;
 
   
-  bool is_beginning;
-  bool is_end;
+  IsBeginning is_beginning;
+  IsEnd is_end;
   
-  bool is_unordered;
+  IsUnordered is_unordered;
 };
 }  
 
