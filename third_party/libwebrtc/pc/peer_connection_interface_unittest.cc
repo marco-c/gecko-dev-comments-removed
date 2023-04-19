@@ -2672,7 +2672,7 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
     EXPECT_EQ(1u, pc_->remote_streams()->count());
   } else {
     
-    EXPECT_EQ(0u, pc_->GetTransceivers().size());
+    EXPECT_EQ(2u, pc_->GetTransceivers().size());
   }
 
   auto audio_receiver = GetFirstReceiverOfType(cricket::MEDIA_TYPE_AUDIO);

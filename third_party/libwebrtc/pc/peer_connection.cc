@@ -1987,13 +1987,7 @@ PeerConnection::GetTransceivers() const {
       << "GetTransceivers is only supported with Unified Plan SdpSemantics.";
   std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> all_transceivers;
   for (const auto& transceiver : transceivers_) {
-    
-    
-    
-    
-    if (!transceiver->stopped()) {
-      all_transceivers.push_back(transceiver);
-    }
+    all_transceivers.push_back(transceiver);
   }
   return all_transceivers;
 }
@@ -2533,6 +2527,47 @@ void PeerConnection::SetLocalDescription(
       });
 }
 
+void PeerConnection::RemoveStoppedTransceivers() {
+  
+  
+  if (!IsUnifiedPlan())
+    return;
+  for (auto it = transceivers_.begin(); it != transceivers_.end();) {
+    const auto& transceiver = *it;
+    
+    
+    
+    
+    
+    if (!transceiver->stopped()) {
+      ++it;
+      continue;
+    }
+    const ContentInfo* local_content =
+        FindMediaSectionForTransceiver(transceiver, local_description());
+    const ContentInfo* remote_content =
+        FindMediaSectionForTransceiver(transceiver, remote_description());
+    if ((local_content && local_content->rejected) ||
+        (remote_content && remote_content->rejected)) {
+      RTC_LOG(LS_INFO) << "Dissociating transceiver"
+                       << " since the media section is being recycled.";
+      (*it)->internal()->set_mid(absl::nullopt);
+      (*it)->internal()->set_mline_index(absl::nullopt);
+      it = transceivers_.erase(it);
+      continue;
+    }
+    if (!local_content && !remote_content) {
+      
+      
+      RTC_LOG(LS_INFO)
+          << "Dropping stopped transceiver that was never associated";
+      it = transceivers_.erase(it);
+      continue;
+    }
+    ++it;
+  }
+}
+
 void PeerConnection::DoSetLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
@@ -2604,34 +2639,7 @@ void PeerConnection::DoSetLocalDescription(
   RTC_DCHECK(local_description());
 
   if (local_description()->GetType() == SdpType::kAnswer) {
-    
-    
-    if (IsUnifiedPlan()) {
-      for (auto it = transceivers_.begin(); it != transceivers_.end();) {
-        const auto& transceiver = *it;
-        
-        
-        
-        
-        
-        if (transceiver->stopped()) {
-          const ContentInfo* content =
-              FindMediaSectionForTransceiver(transceiver, local_description());
-
-          if (content && content->rejected) {
-            RTC_LOG(LS_INFO) << "Dissociating transceiver"
-                             << " since the media section is being recycled.";
-            (*it)->internal()->set_mid(absl::nullopt);
-            (*it)->internal()->set_mline_index(absl::nullopt);
-            it = transceivers_.erase(it);
-          } else {
-            ++it;
-          }
-        } else {
-          ++it;
-        }
-      }
-    }
+    RemoveStoppedTransceivers();
 
     
     
@@ -3099,6 +3107,7 @@ void PeerConnection::DoSetRemoteDescription(
   RTC_DCHECK(remote_description());
 
   if (type == SdpType::kAnswer) {
+    RemoveStoppedTransceivers();
     
     
     network_thread()->Invoke<void>(
@@ -3766,21 +3775,15 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
   
   
   
-  
   if (IsMediaSectionBeingRecycled(type, content, old_local_content,
                                   old_remote_content)) {
-    
     const std::string& old_mid =
         (old_local_content && old_local_content->rejected)
             ? old_local_content->name
             : old_remote_content->name;
     auto old_transceiver = GetAssociatedTransceiver(old_mid);
-    if (old_transceiver) {
-      RTC_LOG(LS_INFO) << "Dissociating transceiver for MID=" << old_mid
-                       << " since the media section is being recycled.";
-      old_transceiver->internal()->set_mid(absl::nullopt);
-      old_transceiver->internal()->set_mline_index(absl::nullopt);
-    }
+    
+    RTC_DCHECK(!old_transceiver);
   }
   const MediaContentDescription* media_desc = content.media_description();
   auto transceiver = GetAssociatedTransceiver(content.name);
