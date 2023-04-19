@@ -2,8 +2,8 @@
 
 
 
-#ifndef MEDIAENGINEDEFAULT_H_
-#define MEDIAENGINEDEFAULT_H_
+#ifndef MEDIAENGINEFAKE_H_
+#define MEDIAENGINEFAKE_H_
 
 #include "nsTArrayForwardDeclare.h"
 #include "MediaEngine.h"
@@ -16,9 +16,9 @@ class MediaEventProducer;
 
 
 
-class MediaEngineDefault : public MediaEngine {
+class MediaEngineFake : public MediaEngine {
  public:
-  MediaEngineDefault();
+  MediaEngineFake();
 
   void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
                         nsTArray<RefPtr<MediaDevice>>*) override;
@@ -31,7 +31,7 @@ class MediaEngineDefault : public MediaEngine {
   bool IsFake() const override { return true; }
 
  private:
-  ~MediaEngineDefault();
+  ~MediaEngineFake();
   MediaEventProducer<void> mDeviceListChangeEvent;
 };
 
