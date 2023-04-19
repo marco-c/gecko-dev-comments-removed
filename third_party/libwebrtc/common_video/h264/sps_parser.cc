@@ -71,14 +71,14 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   
   
   uint8_t profile_idc;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadUInt8(&profile_idc));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadUInt8(profile_idc));
   
   
   RETURN_EMPTY_ON_FAIL(buffer->ConsumeBytes(1));
   
   RETURN_EMPTY_ON_FAIL(buffer->ConsumeBytes(1));
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.id));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.id));
   sps.separate_colour_plane_flag = 0;
   
   if (profile_idc == 100 || profile_idc == 110 || profile_idc == 122 ||
@@ -86,21 +86,20 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
       profile_idc == 86 || profile_idc == 118 || profile_idc == 128 ||
       profile_idc == 138 || profile_idc == 139 || profile_idc == 134) {
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&chroma_format_idc));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(chroma_format_idc));
     if (chroma_format_idc == 3) {
       
-      RETURN_EMPTY_ON_FAIL(
-          buffer->ReadBits(&sps.separate_colour_plane_flag, 1));
+      RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.separate_colour_plane_flag));
     }
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&golomb_ignored));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&golomb_ignored));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
     
     RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
     
     uint32_t seq_scaling_matrix_present_flag;
-    RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&seq_scaling_matrix_present_flag, 1));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, seq_scaling_matrix_present_flag));
     if (seq_scaling_matrix_present_flag) {
       
       
@@ -110,7 +109,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
         
         uint32_t seq_scaling_list_present_flags;
         RETURN_EMPTY_ON_FAIL(
-            buffer->ReadBits(&seq_scaling_list_present_flags, 1));
+            buffer->ReadBits(1, seq_scaling_list_present_flags));
         if (seq_scaling_list_present_flags != 0) {
           int last_scale = 8;
           int next_scale = 8;
@@ -120,7 +119,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
               int32_t delta_scale;
               
               RETURN_EMPTY_ON_FAIL(
-                  buffer->ReadSignedExponentialGolomb(&delta_scale));
+                  buffer->ReadSignedExponentialGolomb(delta_scale));
               RETURN_EMPTY_ON_FAIL(delta_scale >= kScalingDeltaMin &&
                                    delta_scale <= kScaldingDeltaMax);
               next_scale = (last_scale + delta_scale + 256) % 256;
@@ -140,18 +139,18 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
 
   
   uint32_t log2_max_frame_num_minus4;
-  if (!buffer->ReadExponentialGolomb(&log2_max_frame_num_minus4) ||
+  if (!buffer->ReadExponentialGolomb(log2_max_frame_num_minus4) ||
       log2_max_frame_num_minus4 > kMaxLog2Minus4) {
     return OptionalSps();
   }
   sps.log2_max_frame_num = log2_max_frame_num_minus4 + 4;
 
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.pic_order_cnt_type));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.pic_order_cnt_type));
   if (sps.pic_order_cnt_type == 0) {
     
     uint32_t log2_max_pic_order_cnt_lsb_minus4;
-    if (!buffer->ReadExponentialGolomb(&log2_max_pic_order_cnt_lsb_minus4) ||
+    if (!buffer->ReadExponentialGolomb(log2_max_pic_order_cnt_lsb_minus4) ||
         log2_max_pic_order_cnt_lsb_minus4 > kMaxLog2Minus4) {
       return OptionalSps();
     }
@@ -159,22 +158,22 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   } else if (sps.pic_order_cnt_type == 1) {
     
     RETURN_EMPTY_ON_FAIL(
-        buffer->ReadBits(&sps.delta_pic_order_always_zero_flag, 1));
+        buffer->ReadBits(1, sps.delta_pic_order_always_zero_flag));
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&golomb_ignored));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&golomb_ignored));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
     
     uint32_t num_ref_frames_in_pic_order_cnt_cycle;
     RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(&num_ref_frames_in_pic_order_cnt_cycle));
+        buffer->ReadExponentialGolomb(num_ref_frames_in_pic_order_cnt_cycle));
     for (size_t i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; ++i) {
       
-      RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&golomb_ignored));
+      RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
     }
   }
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.max_num_ref_frames));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.max_num_ref_frames));
   
   RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
   
@@ -185,13 +184,13 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   
   
   uint32_t pic_width_in_mbs_minus1;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&pic_width_in_mbs_minus1));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(pic_width_in_mbs_minus1));
   
   uint32_t pic_height_in_map_units_minus1;
   RETURN_EMPTY_ON_FAIL(
-      buffer->ReadExponentialGolomb(&pic_height_in_map_units_minus1));
+      buffer->ReadExponentialGolomb(pic_height_in_map_units_minus1));
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&sps.frame_mbs_only_flag, 1));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.frame_mbs_only_flag));
   if (!sps.frame_mbs_only_flag) {
     
     RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
@@ -207,19 +206,18 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   uint32_t frame_crop_right_offset = 0;
   uint32_t frame_crop_top_offset = 0;
   uint32_t frame_crop_bottom_offset = 0;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&frame_cropping_flag, 1));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, frame_cropping_flag));
   if (frame_cropping_flag) {
     
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(frame_crop_left_offset));
     RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(&frame_crop_left_offset));
+        buffer->ReadExponentialGolomb(frame_crop_right_offset));
+    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(frame_crop_top_offset));
     RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(&frame_crop_right_offset));
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&frame_crop_top_offset));
-    RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(&frame_crop_bottom_offset));
+        buffer->ReadExponentialGolomb(frame_crop_bottom_offset));
   }
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&sps.vui_params_present, 1));
+  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.vui_params_present));
 
   
 

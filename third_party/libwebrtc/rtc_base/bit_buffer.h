@@ -14,6 +14,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "absl/base/attributes.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace rtc {
@@ -38,46 +39,72 @@ class BitBuffer {
 
   
   
-  bool ReadUInt8(uint8_t* val);
-  bool ReadUInt16(uint16_t* val);
-  bool ReadUInt32(uint32_t* val);
+  bool ReadUInt8(uint8_t& val);
+  bool ReadUInt16(uint16_t& val);
+  bool ReadUInt32(uint32_t& val);
+  ABSL_DEPRECATED("") bool ReadUInt8(uint8_t* val) {
+    return val ? ReadUInt8(*val) : false;
+  }
+  ABSL_DEPRECATED("") bool ReadUInt16(uint16_t* val) {
+    return val ? ReadUInt16(*val) : false;
+  }
+  ABSL_DEPRECATED("") bool ReadUInt32(uint32_t* val) {
+    return val ? ReadUInt32(*val) : false;
+  }
 
   
   
-  bool ReadBits(uint32_t* val, size_t bit_count);
-  bool ReadBits(uint64_t* val, size_t bit_count);
-
-  
-  
-  
-  bool PeekBits(uint32_t* val, size_t bit_count);
-  bool PeekBits(uint64_t* val, size_t bit_count);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ReadNonSymmetric(uint32_t* val, uint32_t num_values);
+  bool ReadBits(size_t bit_count, uint32_t& val);
+  bool ReadBits(size_t bit_count, uint64_t& val);
+  ABSL_DEPRECATED("") bool ReadBits(uint32_t* val, size_t bit_count) {
+    return val ? ReadBits(bit_count, *val) : false;
+  }
 
   
   
   
+  bool PeekBits(size_t bit_count, uint32_t& val);
+  bool PeekBits(size_t bit_count, uint64_t& val);
+  ABSL_DEPRECATED("") bool PeekBits(uint32_t* val, size_t bit_count) {
+    return val ? PeekBits(bit_count, *val) : false;
+  }
+
   
   
   
   
   
-  bool ReadExponentialGolomb(uint32_t* val);
   
   
   
-  bool ReadSignedExponentialGolomb(int32_t* val);
+  
+  
+  bool ReadNonSymmetric(uint32_t num_values, uint32_t& val);
+  ABSL_DEPRECATED("")
+  bool ReadNonSymmetric(uint32_t* val, uint32_t num_values) {
+    return val ? ReadNonSymmetric(num_values, *val) : false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ReadExponentialGolomb(uint32_t& val);
+  ABSL_DEPRECATED("") bool ReadExponentialGolomb(uint32_t* val) {
+    return val ? ReadExponentialGolomb(*val) : false;
+  }
+
+  
+  
+  
+  bool ReadSignedExponentialGolomb(int32_t& val);
+  ABSL_DEPRECATED("") bool ReadSignedExponentialGolomb(int32_t* val) {
+    return val ? ReadSignedExponentialGolomb(*val) : false;
+  }
 
   
   
