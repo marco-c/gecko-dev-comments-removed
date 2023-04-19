@@ -443,12 +443,7 @@ class AppUpdater {
   
   
   get #updateDisabledByPackage() {
-    try {
-      return Services.sysinfo.getProperty("hasWinPackageId");
-    } catch (_ex) {
-      
-    }
-    return false;
+    return Services.sysinfo.getProperty("isPackagedApp");
   }
 
   
