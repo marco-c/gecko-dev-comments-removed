@@ -291,16 +291,7 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   }
 
   
-  if (!metadata_->types.resize(moduleEnv_->types->length())) {
-    return false;
-  }
-
-  for (uint32_t i = 0; i < moduleEnv_->types->length(); i++) {
-    const TypeDef& typeDef = (*moduleEnv_->types)[i];
-    if (!metadata_->types[i].clone(typeDef)) {
-      return false;
-    }
-  }
+  metadata_->types = moduleEnv_->types;
 
   
   
