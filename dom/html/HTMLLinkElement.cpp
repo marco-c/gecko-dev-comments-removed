@@ -489,9 +489,6 @@ void HTMLLinkElement::
   }
 
   if (linkTypes & eMODULE_PRELOAD) {
-    
-    
-    
     if (!OwnerDoc()->ScriptLoader()->GetModuleLoader()) {
       
       
@@ -502,8 +499,9 @@ void HTMLLinkElement::
       return;
     }
 
-    OwnerDoc()->ScriptLoader()->GetModuleLoader()->SetAcquiringImportMaps(
-        false);
+    
+    
+    OwnerDoc()->ScriptLoader()->GetModuleLoader()->DisallowImportMaps();
     return;
   }
 

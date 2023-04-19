@@ -331,9 +331,7 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader) {
     if (linkTypes & LinkStyle::eMODULE_PRELOAD) {
       
       
-      
-      mDocument->ScriptLoader()->GetModuleLoader()->SetAcquiringImportMaps(
-          false);
+      mDocument->ScriptLoader()->GetModuleLoader()->DisallowImportMaps();
     }
   }
 

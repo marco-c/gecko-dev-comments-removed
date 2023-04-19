@@ -112,13 +112,9 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
 
   
   
-  
-  
-  
-  
   if (!aRequest->GetScriptLoadContext()->IsPreload()) {
-    LOG(("ScriptLoadRequest (%p): SetAcquiringImportMaps false", aRequest));
-    SetAcquiringImportMaps(false);
+    LOG(("ScriptLoadRequest (%p): Disallow further import maps.", aRequest));
+    DisallowImportMaps();
   }
 
   LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));

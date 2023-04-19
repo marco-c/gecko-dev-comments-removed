@@ -955,11 +955,10 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
     
     
-    
     if (request->IsModuleRequest()) {
-      LOG(("ScriptLoadRequest (%p): Set acquiring import maps to false",
+      LOG(("ScriptLoadRequest (%p): Disallow further import maps.",
            request.get()));
-      mModuleLoader->SetAcquiringImportMaps(false);
+      mModuleLoader->DisallowImportMaps();
     }
 
     
@@ -1155,7 +1154,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   if (request->IsModuleRequest()) {
     
     
-    mModuleLoader->SetAcquiringImportMaps(false);
+    mModuleLoader->DisallowImportMaps();
 
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
@@ -1190,9 +1189,8 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     
     
-    
-    if (!mModuleLoader->GetAcquiringImportMaps()) {
-      NS_WARNING("ScriptLoader: acquiring import maps is false.");
+    if (!mModuleLoader->IsImportMapAllowed()) {
+      NS_WARNING("ScriptLoader: import maps allowed is false.");
       NS_DispatchToCurrentThread(
           NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
                             &nsIScriptElement::FireErrorEvent));
@@ -1200,7 +1198,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     }
 
     
-    mModuleLoader->SetAcquiringImportMaps(false);
+    mModuleLoader->DisallowImportMaps();
 
     UniquePtr<ImportMap> importMap = mModuleLoader->ParseImportMap(request);
 
