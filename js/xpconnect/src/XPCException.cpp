@@ -9,6 +9,8 @@
 #include "xpcprivate.h"
 #include "nsError.h"
 
+#include <iterator>
+
 
 
 
@@ -29,7 +31,7 @@ static const struct ResultMap {
     {NS_OK, 0, 0}  
 };
 
-#define RESULT_COUNT ((sizeof(map) / sizeof(map[0])) - 1)
+#define RESULT_COUNT (std::size(map) - 1)
 
 
 bool nsXPCException::NameAndFormatForNSResult(nsresult rv, const char** name,
