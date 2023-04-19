@@ -39,6 +39,11 @@ class FirefoxDataProvider {
     this.commands = commands;
     this.actions = actions || {};
     this.actionsEnabled = true;
+
+    
+    
+    this.requestDataEnabled = true;
+
     this.owner = owner;
 
     
@@ -87,6 +92,7 @@ class FirefoxDataProvider {
     this.pendingRequests.clear();
     this.lazyRequestData.clear();
     this.stackTraceRequestInfoByActorID.clear();
+    this.requestDataEnabled = false;
   }
 
   
@@ -378,6 +384,10 @@ class FirefoxDataProvider {
   async onNetworkResourceAvailable(resource) {
     const { actor, stacktraceResourceId, cause } = resource;
 
+    if (!this.requestDataEnabled) {
+      this.requestDataEnabled = true;
+    }
+
     
     if (this.stackTraces.has(stacktraceResourceId)) {
       const {
@@ -505,6 +515,11 @@ class FirefoxDataProvider {
 
 
   requestData(actor, method) {
+    
+    
+    if (!this.requestDataEnabled) {
+      return Promise.resolve();
+    }
     
     
     const key = `${actor}-${method}`;

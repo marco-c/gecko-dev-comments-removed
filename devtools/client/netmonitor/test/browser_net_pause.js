@@ -58,6 +58,7 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
   await waitForPauseButtonToChange(document, true);
 
+  await waitForAllNetworkUpdateEvents();
   
   await reloadBrowser();
   await waitForPauseButtonToChange(document, false);

@@ -22,6 +22,7 @@ add_task(async function() {
 
   store.dispatch(Actions.batchEnable(false));
 
+  await waitForAllNetworkUpdateEvents();
   
   Services.telemetry.clearEvents();
 
@@ -31,6 +32,7 @@ add_task(async function() {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
+  await waitForAllNetworkUpdateEvents();
   await navigateTo(HTTPS_SIMPLE_URL);
   await wait;
 
