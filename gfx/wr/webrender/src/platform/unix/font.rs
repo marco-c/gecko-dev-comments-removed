@@ -4,7 +4,7 @@
 
 use api::{ColorU, GlyphDimensions, FontKey, FontRenderMode};
 use api::{FontInstancePlatformOptions, FontLCDFilter, FontHinting};
-use api::{FontInstanceFlags, FontTemplate, FontVariation, NativeFontHandle};
+use api::{FontInstanceFlags, FontVariation, NativeFontHandle};
 use freetype::freetype::{FT_BBox, FT_Outline_Translate, FT_Pixel_Mode, FT_Render_Mode};
 use freetype::freetype::{FT_Done_Face, FT_Error, FT_Get_Char_Index, FT_Int32};
 use freetype::freetype::{FT_Done_FreeType, FT_Library_SetLcdFilter, FT_Pos};
@@ -28,8 +28,9 @@ use libc::{dlsym, RTLD_DEFAULT};
 use libc::free;
 use std::{cmp, mem, ptr, slice};
 use std::cmp::max;
+use std::collections::hash_map::Entry;
 use std::ffi::CString;
-use std::sync::{Arc, Condvar, Mutex, MutexGuard};
+use std::sync::Arc;
 
 
 
@@ -149,18 +150,25 @@ pub extern "C" fn mozilla_glyphslot_embolden_less(slot: FT_GlyphSlot) {
     slot_.metrics.horiBearingY += strength;
 }
 
-struct CachedFont {
-    template: FontTemplate,
-    face: FT_Face,
-    mm_var: *mut FT_MM_Var,
-    variations: Vec<FontVariation>,
+enum FontFile {
+    Pathname(CString),
+    Data(Arc<Vec<u8>>),
 }
 
-impl Drop for CachedFont {
+struct FontFace {
+    
+    
+    file: FontFile,
+    index: u32,
+    face: FT_Face,
+    mm_var: *mut FT_MM_Var,
+}
+
+impl Drop for FontFace {
     fn drop(&mut self) {
         unsafe {
             if !self.mm_var.is_null() &&
-                unimplemented(FT_Done_MM_Var((*(*self.face).glyph).library, self.mm_var)) {
+               unimplemented(FT_Done_MM_Var((*(*self.face).glyph).library, self.mm_var)) {
                 free(self.mm_var as _);
             }
 
@@ -169,121 +177,53 @@ impl Drop for CachedFont {
     }
 }
 
-struct FontCache {
-    lib: FT_Library,
-    
-    fonts: FastHashMap<FontTemplate, Arc<Mutex<CachedFont>>>,
-    
-    lcd_filter: FontLCDFilter,
-    
-    lcd_filter_uses: usize,
-}
+struct VariationFace(FT_Face);
 
-
-
-
-unsafe impl Send for CachedFont {}
-unsafe impl Send for FontCache {}
-
-impl FontCache {
-    fn new() -> Self {
-        let mut lib: FT_Library = ptr::null_mut();
-        let result = unsafe { FT_Init_FreeType(&mut lib) };
-        if succeeded(result) {
-            
-            unsafe { FT_Library_SetLcdFilter(lib, FT_LcdFilter::FT_LCD_FILTER_DEFAULT) };
-        } else {
-            
-            
-            
-            panic!("Failed to initialize FreeType - {}", result)
-        }
-
-        FontCache {
-            lib,
-            fonts: FastHashMap::default(),
-            lcd_filter: FontLCDFilter::Default,
-            lcd_filter_uses: 0,
-        }
-    }
-
-    fn add_font(&mut self, template: FontTemplate) -> Result<Arc<Mutex<CachedFont>>, FT_Error> {
-        if let Some(cached) = self.fonts.get(&template) {
-            return Ok(cached.clone());
-        }
-        unsafe {
-            let mut face: FT_Face = ptr::null_mut();
-            let result = match template {
-                FontTemplate::Raw(ref bytes, index) => {
-                    FT_New_Memory_Face(
-                        self.lib,
-                        bytes.as_ptr(),
-                        bytes.len() as FT_Long,
-                        index as FT_Long,
-                        &mut face,
-                    )
-                }
-                FontTemplate::Native(NativeFontHandle { ref path, index }) => {
-                    let str = path.as_os_str().to_str().unwrap();
-                    let cstr = CString::new(str).unwrap();
-                    FT_New_Face(
-                        self.lib,
-                        cstr.as_ptr(),
-                        index as FT_Long,
-                        &mut face,
-                    )
-                }
-            };
-            if !succeeded(result) || face.is_null() {
-                return Err(result);
-            }
-            let mut mm_var = ptr::null_mut();
-            if ((*face).face_flags & (FT_FACE_FLAG_MULTIPLE_MASTERS as FT_Long)) != 0 &&
-               succeeded(FT_Get_MM_Var(face, &mut mm_var)) {
-                
-                
-                
-                let mut tmp = [0; 16];
-                let res = FT_Get_Var_Design_Coordinates(
-                    face,
-                    (*mm_var).num_axis.min(16),
-                    tmp.as_mut_ptr()
-                );
-                debug_assert!(succeeded(res));
-            }
-            let cached = Arc::new(Mutex::new(CachedFont {
-                template: template.clone(),
-                face,
-                mm_var,
-                variations: Vec::new(),
-            }));
-            self.fonts.insert(template, cached.clone());
-            Ok(cached)
-        }
-    }
-
-    fn delete_font(&mut self, cached: Arc<Mutex<CachedFont>>) {
-        self.fonts.remove(&cached.lock().unwrap().template);
-    }
-}
-
-impl Drop for FontCache {
+impl Drop for VariationFace {
     fn drop(&mut self) {
-        self.fonts.clear();
-        unsafe {
-            FT_Done_FreeType(self.lib);
-        }
+        unsafe { FT_Done_Face(self.0) };
     }
 }
 
-lazy_static! {
-    static ref FONT_CACHE: Mutex<FontCache> = Mutex::new(FontCache::new());
-    static ref LCD_FILTER_UNUSED: Condvar = Condvar::new();
+fn new_ft_face(font_key: &FontKey, lib: FT_Library, file: &FontFile, index: u32) -> Result<FT_Face, FT_Error> {
+    unsafe {
+        let mut face: FT_Face = ptr::null_mut();
+        let result = match file {
+            FontFile::Pathname(ref cstr) => FT_New_Face(
+                lib,
+                cstr.as_ptr(),
+                index as FT_Long,
+                &mut face,
+            ),
+            FontFile::Data(ref bytes) => FT_New_Memory_Face(
+                lib,
+                bytes.as_ptr(),
+                bytes.len() as FT_Long,
+                index as FT_Long,
+                &mut face,
+            ),
+        };
+        if succeeded(result) && !face.is_null() {
+            Ok(face)
+        } else {
+            warn!("WARN: webrender failed to load font");
+            debug!("font={:?}, result={:?}", font_key, result);
+            Err(result)
+        }
+    }
 }
 
 pub struct FontContext {
-    fonts: FastHashMap<FontKey, Arc<Mutex<CachedFont>>>,
+    lib: FT_Library,
+    faces: FastHashMap<FontKey, FontFace>,
+    variations: FastHashMap<(FontKey, Vec<FontVariation>), VariationFace>,
+    lcd_extra_pixels: i64,
 }
+
+
+
+
+unsafe impl Send for FontContext {}
 
 fn get_skew_bounds(bottom: i32, top: i32, skew_factor: f32, _vertical: bool) -> (f32, f32) {
     let skew_min = (bottom as f32 + 0.5) * skew_factor;
@@ -374,79 +314,133 @@ fn flip_bitmap_y(bitmap: &mut [u8], width: usize, height: usize) {
 }
 
 impl FontContext {
-    pub fn distribute_across_threads() -> bool {
-        false
+    pub fn new() -> Result<FontContext, ResourceCacheError> {
+        let mut lib: FT_Library = ptr::null_mut();
+
+        
+        
+        
+        
+        
+        let lcd_extra_pixels = 1;
+
+        let result = unsafe {
+            FT_Init_FreeType(&mut lib)
+        };
+
+        if succeeded(result) {
+            Ok(FontContext {
+                lib,
+                faces: FastHashMap::default(),
+                variations: FastHashMap::default(),
+                lcd_extra_pixels,
+            })
+        } else {
+            
+            
+            
+            panic!("Failed to initialize FreeType - {}", result)
+        }
     }
 
-    pub fn new() -> Result<FontContext, ResourceCacheError> {
-        Ok(FontContext {
-            fonts: FastHashMap::default(),
-        })
+    pub fn has_font(&self, font_key: &FontKey) -> bool {
+        self.faces.contains_key(font_key)
     }
 
     pub fn add_raw_font(&mut self, font_key: &FontKey, bytes: Arc<Vec<u8>>, index: u32) {
-        if !self.fonts.contains_key(font_key) {
+        if !self.faces.contains_key(font_key) {
             let len = bytes.len();
-            match FONT_CACHE.lock().unwrap().add_font(FontTemplate::Raw(bytes, index)) {
-                Ok(font) => self.fonts.insert(*font_key, font),
-                Err(result) => panic!("adding raw font failed: {} bytes, err={:?}", len, result),
-            };
+            let file = FontFile::Data(bytes);
+            if let Ok(face) = new_ft_face(font_key, self.lib, &file, index) {
+                self.faces.insert(*font_key, FontFace { file, index, face, mm_var: ptr::null_mut() });
+            } else {
+                panic!("adding raw font failed: {} bytes", len);
+            }
         }
     }
 
     pub fn add_native_font(&mut self, font_key: &FontKey, native_font_handle: NativeFontHandle) {
-        if !self.fonts.contains_key(font_key) {
-            let path = native_font_handle.path.to_string_lossy().into_owned();
-            match FONT_CACHE.lock().unwrap().add_font(FontTemplate::Native(native_font_handle)) {
-                Ok(font) => self.fonts.insert(*font_key, font),
-                Err(result) => panic!("adding native font failed: file={} err={:?}", path, result),
+        if !self.faces.contains_key(font_key) {
+            let str = native_font_handle.path.as_os_str().to_str().unwrap();
+            let cstr = CString::new(str).unwrap();
+            let file = FontFile::Pathname(cstr);
+            let index = native_font_handle.index;
+            match new_ft_face(font_key, self.lib, &file, index) {
+                Ok(face) => self.faces.insert(*font_key, FontFace { file, index, face, mm_var: ptr::null_mut() }),
+                Err(result) => panic!("adding native font failed: file={} err={:?}", str, result),
             };
         }
     }
 
     pub fn delete_font(&mut self, font_key: &FontKey) {
-        if let Some(cached) = self.fonts.remove(font_key) {
-            
-            
-            if Arc::strong_count(&cached) <= 2 {
-                FONT_CACHE.lock().unwrap().delete_font(cached);
-            }
+        if self.faces.remove(font_key).is_some() {
+            self.variations.retain(|k, _| k.0 != *font_key);
         }
     }
 
-    pub fn delete_font_instance(&mut self, _instance: &FontInstance) {
+    pub fn delete_font_instance(&mut self, instance: &FontInstance) {
+        
+        if !instance.variations.is_empty() {
+            self.variations.remove(&(instance.font_key, instance.variations.clone()));
+        }
     }
 
-    fn load_glyph(&mut self, font: &FontInstance, glyph: &GlyphKey)
-        -> Option<(MutexGuard<CachedFont>, FT_GlyphSlot, f32)> {
-        let mut cached = self.fonts.get(&font.font_key)?.lock().ok()?;
-        let face = cached.face;
-
-        let mm_var = cached.mm_var;
-        if !mm_var.is_null() && font.variations != cached.variations {
-            cached.variations.clear();
-            cached.variations.extend_from_slice(&font.variations);
-
-            unsafe {
-                let num_axis = (*mm_var).num_axis;
-                let mut coords: Vec<FT_Fixed> = Vec::with_capacity(num_axis as usize);
-                for i in 0 .. num_axis {
-                    let axis = (*mm_var).axis.offset(i as isize);
-                    let mut value = (*axis).def;
-                    for var in &font.variations {
-                        if var.tag as FT_ULong == (*axis).tag {
-                            value = (var.value * 65536.0 + 0.5) as FT_Fixed;
-                            value = cmp::min(value, (*axis).maximum);
-                            value = cmp::max(value, (*axis).minimum);
-                            break;
-                        }
-                    }
-                    coords.push(value);
+    fn get_ft_face(&mut self, font: &FontInstance) -> Option<FT_Face> {
+        if font.variations.is_empty() {
+            return Some(self.faces.get(&font.font_key)?.face);
+        }
+        match self.variations.entry((font.font_key, font.variations.clone())) {
+            Entry::Occupied(entry) => Some(entry.get().0),
+            Entry::Vacant(entry) => unsafe {
+                let normal_face = self.faces.get_mut(&font.font_key)?;
+                if ((*normal_face.face).face_flags & (FT_FACE_FLAG_MULTIPLE_MASTERS as FT_Long)) == 0 {
+                    return Some(normal_face.face);
                 }
-                let res = FT_Set_Var_Design_Coordinates(face, num_axis, coords.as_mut_ptr());
-                debug_assert!(succeeded(res));
+                
+                
+                let var_face = new_ft_face(&font.font_key, self.lib, &normal_face.file, normal_face.index).ok()?;
+                if !normal_face.mm_var.is_null() ||
+                   succeeded(FT_Get_MM_Var(normal_face.face, &mut normal_face.mm_var)) {
+                    let mm_var = normal_face.mm_var;
+                    let num_axis = (*mm_var).num_axis;
+                    let mut coords: Vec<FT_Fixed> = Vec::with_capacity(num_axis as usize);
+
+                    
+                    
+                    
+                    let mut tmp = [0; 16];
+                    let res = FT_Get_Var_Design_Coordinates(
+                        normal_face.face,
+                        num_axis.min(16),
+                        tmp.as_mut_ptr()
+                    );
+                    debug_assert!(succeeded(res));
+
+
+                    for i in 0 .. num_axis {
+                        let axis = (*mm_var).axis.offset(i as isize);
+                        let mut value = (*axis).def;
+                        for var in &font.variations {
+                            if var.tag as FT_ULong == (*axis).tag {
+                                value = (var.value * 65536.0 + 0.5) as FT_Fixed;
+                                value = cmp::min(value, (*axis).maximum);
+                                value = cmp::max(value, (*axis).minimum);
+                                break;
+                            }
+                        }
+                        coords.push(value);
+                    }
+                    let res = FT_Set_Var_Design_Coordinates(var_face, num_axis, coords.as_mut_ptr());
+                    debug_assert!(succeeded(res));
+                }
+                entry.insert(VariationFace(var_face));
+                Some(var_face)
             }
         }
+    }
+
+    fn load_glyph(&mut self, font: &FontInstance, glyph: &GlyphKey) -> Option<(FT_GlyphSlot, f32)> {
+        let face = self.get_ft_face(font)?;
 
         let mut load_flags = FT_LOAD_DEFAULT;
         let FontInstancePlatformOptions { mut hinting, .. } = font.platform_options.unwrap_or_default();
@@ -586,9 +580,9 @@ impl FontContext {
         match format {
             FT_Glyph_Format::FT_GLYPH_FORMAT_BITMAP => {
                 let bitmap_size = unsafe { (*(*(*slot).face).size).metrics.y_ppem };
-                Some((cached, slot, req_size as f32 / bitmap_size as f32))
+                Some((slot, req_size as f32 / bitmap_size as f32))
             }
-            FT_Glyph_Format::FT_GLYPH_FORMAT_OUTLINE => Some((cached, slot, 1.0)),
+            FT_Glyph_Format::FT_GLYPH_FORMAT_OUTLINE => Some((slot, 1.0)),
             _ => {
                 error!("Unsupported format");
                 debug!("format={:?}", format);
@@ -597,16 +591,10 @@ impl FontContext {
         }
     }
 
-    fn pad_bounding_box(font: &FontInstance, cbox: &mut FT_BBox) {
+    fn pad_bounding_box(&self, font: &FontInstance, cbox: &mut FT_BBox) {
         
         if font.render_mode == FontRenderMode::Subpixel {
-            
-            
-            
-            
-            
-            let lcd_extra_pixels = 1;
-            let padding = (lcd_extra_pixels * 64) as FT_Pos;
+            let padding = (self.lcd_extra_pixels * 64) as FT_Pos;
             if font.flags.contains(FontInstanceFlags::LCD_VERTICAL) {
                 cbox.yMin -= padding;
                 cbox.yMax += padding;
@@ -619,6 +607,7 @@ impl FontContext {
 
     
     fn get_bounding_box(
+        &self,
         slot: FT_GlyphSlot,
         font: &FontInstance,
         glyph: &GlyphKey,
@@ -636,7 +625,7 @@ impl FontContext {
             return cbox;
         }
 
-        Self::pad_bounding_box(font, &mut cbox);
+        self.pad_bounding_box(font, &mut cbox);
 
         
         
@@ -660,6 +649,7 @@ impl FontContext {
     }
 
     fn get_glyph_dimensions_impl(
+        &self,
         slot: FT_GlyphSlot,
         font: &FontInstance,
         glyph: &GlyphKey,
@@ -677,7 +667,7 @@ impl FontContext {
                 ) }
             }
             FT_Glyph_Format::FT_GLYPH_FORMAT_OUTLINE => {
-                let cbox = Self::get_bounding_box(slot, font, glyph, scale);
+                let cbox = self.get_bounding_box(slot, font, glyph, scale);
                 (
                     (cbox.xMin >> 6) as i32,
                     (cbox.yMax >> 6) as i32,
@@ -737,8 +727,7 @@ impl FontContext {
     }
 
     pub fn get_glyph_index(&mut self, font_key: FontKey, ch: char) -> Option<u32> {
-        let cached = self.fonts.get(&font_key)?.lock().ok()?;
-        let face = cached.face;
+        let face = self.faces.get(&font_key)?.face;
         unsafe {
             let idx = FT_Get_Char_Index(face, ch as _);
             if idx != 0 {
@@ -754,8 +743,8 @@ impl FontContext {
         font: &FontInstance,
         key: &GlyphKey,
     ) -> Option<GlyphDimensions> {
-        let (_cached, slot, scale) = self.load_glyph(font, key)?;
-        Self::get_glyph_dimensions_impl(slot, &font, key, scale, true)
+        let slot = self.load_glyph(font, key);
+        slot.and_then(|(slot, scale)| self.get_glyph_dimensions_impl(slot, &font, key, scale, true))
     }
 
     fn choose_bitmap_size(&self, face: FT_Face, requested_size: f64) -> FT_Error {
@@ -791,6 +780,7 @@ impl FontContext {
     }
 
     fn rasterize_glyph_outline(
+        &mut self,
         slot: FT_GlyphSlot,
         font: &FontInstance,
         key: &GlyphKey,
@@ -809,7 +799,7 @@ impl FontContext {
             let outline = &(*slot).outline;
             let mut cbox = FT_BBox { xMin: 0, yMin: 0, xMax: 0, yMax: 0 };
             FT_Outline_Get_CBox(outline, &mut cbox);
-            Self::pad_bounding_box(font, &mut cbox);
+            self.pad_bounding_box(font, &mut cbox);
             FT_Outline_Translate(
                 outline,
                 dx - ((cbox.xMin + dx) & !63),
@@ -817,6 +807,16 @@ impl FontContext {
             );
         }
 
+        if font.render_mode == FontRenderMode::Subpixel {
+            let FontInstancePlatformOptions { lcd_filter, .. } = font.platform_options.unwrap_or_default();
+            let filter = match lcd_filter {
+                FontLCDFilter::None => FT_LcdFilter::FT_LCD_FILTER_NONE,
+                FontLCDFilter::Default => FT_LcdFilter::FT_LCD_FILTER_DEFAULT,
+                FontLCDFilter::Light => FT_LcdFilter::FT_LCD_FILTER_LIGHT,
+                FontLCDFilter::Legacy => FT_LcdFilter::FT_LCD_FILTER_LEGACY,
+            };
+            unsafe { FT_Library_SetLcdFilter(self.lib, filter) };
+        }
         let render_mode = match font.render_mode {
             FontRenderMode::Mono => FT_Render_Mode::FT_RENDER_MODE_MONO,
             FontRenderMode::Alpha => FT_Render_Mode::FT_RENDER_MODE_NORMAL,
@@ -841,57 +841,13 @@ impl FontContext {
         }
     }
 
-    pub fn begin_rasterize(font: &FontInstance) {
-        
-        if font.render_mode == FontRenderMode::Subpixel {
-            let mut cache = FONT_CACHE.lock().unwrap();
-            let FontInstancePlatformOptions { lcd_filter, .. } = font.platform_options.unwrap_or_default();
-            
-            if cache.lcd_filter != lcd_filter {
-                
-                
-                while cache.lcd_filter_uses != 0 {
-                    cache = LCD_FILTER_UNUSED.wait(cache).unwrap();
-                }
-                
-                cache.lcd_filter = lcd_filter;
-                let filter = match lcd_filter {
-                    FontLCDFilter::None => FT_LcdFilter::FT_LCD_FILTER_NONE,
-                    FontLCDFilter::Default => FT_LcdFilter::FT_LCD_FILTER_DEFAULT,
-                    FontLCDFilter::Light => FT_LcdFilter::FT_LCD_FILTER_LIGHT,
-                    FontLCDFilter::Legacy => FT_LcdFilter::FT_LCD_FILTER_LEGACY,
-                };
-                unsafe {
-                    let result = FT_Library_SetLcdFilter(cache.lib, filter);
-                    
-                    if !succeeded(result) {
-                        FT_Library_SetLcdFilter(cache.lib, FT_LcdFilter::FT_LCD_FILTER_DEFAULT);
-                    }
-                }
-            }
-            cache.lcd_filter_uses += 1;
-        }
-    }
-
-    pub fn end_rasterize(font: &FontInstance) {
-        if font.render_mode == FontRenderMode::Subpixel {
-            let mut cache = FONT_CACHE.lock().unwrap();
-            
-            cache.lcd_filter_uses -= 1;
-            if cache.lcd_filter_uses == 0 {
-                LCD_FILTER_UNUSED.notify_all();
-            }
-        }
-    }
-
     pub fn rasterize_glyph(&mut self, font: &FontInstance, key: &GlyphKey) -> GlyphRasterResult {
-        let (_cached, slot, scale) = self.load_glyph(font, key)
-                                         .ok_or(GlyphRasterError::LoadFailed)?;
+        let (slot, scale) = self.load_glyph(font, key).ok_or(GlyphRasterError::LoadFailed)?;
 
         
         
         
-        let dimensions = Self::get_glyph_dimensions_impl(slot, font, key, scale, false)
+        let dimensions = self.get_glyph_dimensions_impl(slot, font, key, scale, false)
                              .ok_or(GlyphRasterError::LoadFailed)?;
         let GlyphDimensions { mut left, mut top, width, height, .. } = dimensions;
 
@@ -904,7 +860,7 @@ impl FontContext {
         match format {
             FT_Glyph_Format::FT_GLYPH_FORMAT_BITMAP => {}
             FT_Glyph_Format::FT_GLYPH_FORMAT_OUTLINE => {
-                if !Self::rasterize_glyph_outline(slot, font, key, scale) {
+                if !self.rasterize_glyph_outline(slot, font, key, scale) {
                     return Err(GlyphRasterError::LoadFailed);
                 }
             }
@@ -1099,3 +1055,12 @@ impl FontContext {
     }
 }
 
+impl Drop for FontContext {
+    fn drop(&mut self) {
+        self.variations.clear();
+        self.faces.clear();
+        unsafe {
+            FT_Done_FreeType(self.lib);
+        }
+    }
+}
