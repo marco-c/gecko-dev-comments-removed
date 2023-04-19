@@ -1683,22 +1683,42 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
  private:
   StyleContain EffectiveContainment() const {
+    auto contain = mContain;
     
     
-    
+    if (MOZ_LIKELY(!mContainerType) &&
+        MOZ_LIKELY(mContentVisibility == StyleContentVisibility::Visible)) {
+      return contain;
+    }
+
     switch (mContentVisibility) {
       case StyleContentVisibility::Visible:
-        
-        return mContain;
+        break;
       case StyleContentVisibility::Auto:
-        return mContain | StyleContain::LAYOUT | StyleContain::PAINT |
-               StyleContain::STYLE;
+        contain |=
+            StyleContain::LAYOUT | StyleContain::PAINT | StyleContain::STYLE;
+        break;
       case StyleContentVisibility::Hidden:
-        return mContain | StyleContain::LAYOUT | StyleContain::PAINT |
-               StyleContain::SIZE | StyleContain::STYLE;
+        contain |= StyleContain::LAYOUT | StyleContain::PAINT |
+                   StyleContain::SIZE | StyleContain::STYLE;
+        break;
     }
-    MOZ_ASSERT_UNREACHABLE("Invalid content visibility.");
-    return mContain;
+
+    if (mContainerType & mozilla::StyleContainerType::SIZE) {
+      
+      
+      
+      contain |= mozilla::StyleContain::LAYOUT | mozilla::StyleContain::STYLE |
+                 mozilla::StyleContain::SIZE;
+    } else if (mContainerType & mozilla::StyleContainerType::INLINE_SIZE) {
+      
+      
+      
+      contain |= mozilla::StyleContain::LAYOUT | mozilla::StyleContain::STYLE |
+                 mozilla::StyleContain::INLINE_SIZE;
+    }
+
+    return contain;
   }
 };
 
