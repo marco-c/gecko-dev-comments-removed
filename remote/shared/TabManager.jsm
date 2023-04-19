@@ -115,9 +115,6 @@ var TabManager = {
       
     } else if ("gBrowser" in win) {
       return win.gBrowser;
-      
-    } else if (win.document.getElementById("tabmail")) {
-      return win.document.getElementById("tabmail");
     }
 
     return null;
