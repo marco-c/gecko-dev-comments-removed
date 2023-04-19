@@ -87,6 +87,8 @@ namespace rtc {
 
 
 
+
+
 class DEPRECATED_AsyncInvoker : public MessageHandlerAutoCleanup {
  public:
   DEPRECATED_AsyncInvoker();
@@ -156,7 +158,6 @@ class DEPRECATED_AsyncInvoker : public MessageHandlerAutoCleanup {
   
   
   
-  
   rtc::Ref<Event>::Ptr invocation_complete_;
 
   
@@ -168,9 +169,6 @@ class DEPRECATED_AsyncInvoker : public MessageHandlerAutoCleanup {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DEPRECATED_AsyncInvoker);
 };
-
-using AsyncInvoker ABSL_DEPRECATED("bugs.webrtc.org/12339") =
-    DEPRECATED_AsyncInvoker;
 
 }  
 
