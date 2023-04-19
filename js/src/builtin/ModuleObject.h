@@ -19,7 +19,7 @@
 #include "js/Class.h"                    
 #include "js/GCVector.h"                 
 #include "js/Id.h"                       
-#include "js/Modules.h"                  
+#include "js/Modules.h"
 #include "js/PropertyDescriptor.h"       
 #include "js/Proxy.h"                    
 #include "js/RootingAPI.h"               
@@ -445,14 +445,6 @@ bool FinishDynamicModuleImport(JSContext* cx, HandleObject evaluationPromise,
                                HandleValue referencingPrivate,
                                HandleObject moduleRequest,
                                HandleObject promise);
-
-
-
-bool FinishDynamicModuleImport_NoTLA(JSContext* cx,
-                                     JS::DynamicImportStatus status,
-                                     HandleValue referencingPrivate,
-                                     HandleObject moduleRequest,
-                                     HandleObject promise);
 
 }  
 

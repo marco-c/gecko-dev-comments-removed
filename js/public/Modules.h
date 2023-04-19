@@ -111,31 +111,12 @@ extern JS_PUBLIC_API void SetModuleDynamicImportHook(
 
 
 
-enum class DynamicImportStatus { Failed = 0, Ok };
-
-
-
-
-
 
 
 extern JS_PUBLIC_API bool FinishDynamicModuleImport(
     JSContext* cx, Handle<JSObject*> evaluationPromise,
     Handle<Value> referencingPrivate, Handle<JSObject*> moduleRequest,
     Handle<JSObject*> promise);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishDynamicModuleImport_NoTLA(
-    JSContext* cx, DynamicImportStatus status, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<JSObject*> promise);
 
 
 
