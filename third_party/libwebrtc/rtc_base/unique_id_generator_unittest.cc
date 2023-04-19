@@ -187,6 +187,9 @@ TEST(UniqueNumberGeneratorDeathTest, FailsWhenUsedInWrongContext) {
   
   
   UniqueNumberGenerator<uint32_t> generator;
+
+  
+  FakeTaskQueue initial_fake_task_queue;
   
   
   generator.GenerateNumber();
