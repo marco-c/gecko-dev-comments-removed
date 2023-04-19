@@ -236,7 +236,7 @@ function TypedArrayEntries() {
 
 
 
-function TypedArrayEvery(callbackfn) {
+function TypedArrayEvery(callbackfn ) {
   
   var O = this;
 
@@ -343,7 +343,7 @@ function TypedArrayFill(value, start = 0, end = undefined) {
 
 
 
-function TypedArrayFilter(callbackfn) {
+function TypedArrayFilter(callbackfn ) {
   
   var O = this;
 
@@ -410,7 +410,7 @@ function TypedArrayFilter(callbackfn) {
 
 
 
-function TypedArrayFind(predicate) {
+function TypedArrayFind(predicate ) {
   
   var O = this;
 
@@ -455,7 +455,7 @@ function TypedArrayFind(predicate) {
 
 
 
-function TypedArrayFindIndex(predicate) {
+function TypedArrayFindIndex(predicate ) {
   
   var O = this;
 
@@ -497,7 +497,7 @@ function TypedArrayFindIndex(predicate) {
 
 
 
-function TypedArrayForEach(callbackfn) {
+function TypedArrayForEach(callbackfn ) {
   
   var O = this;
 
@@ -697,7 +697,7 @@ function TypedArrayKeys() {
 
 
 
-function TypedArrayLastIndexOf(searchElement) {
+function TypedArrayLastIndexOf(searchElement ) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
     if (arguments.length > 1) {
@@ -762,7 +762,7 @@ function TypedArrayLastIndexOf(searchElement) {
 
 
 
-function TypedArrayMap(callbackfn) {
+function TypedArrayMap(callbackfn ) {
   
   var O = this;
 
@@ -813,7 +813,7 @@ SetIsInlinableLargeFunction(TypedArrayMap);
 
 
 
-function TypedArrayReduce(callbackfn) {
+function TypedArrayReduce(callbackfn ) {
   
   var O = this;
 
@@ -861,7 +861,7 @@ function TypedArrayReduce(callbackfn) {
 
 
 
-function TypedArrayReduceRight(callbackfn) {
+function TypedArrayReduceRight(callbackfn ) {
   
   var O = this;
 
@@ -1017,7 +1017,7 @@ function TypedArraySlice(start, end) {
 
 
 
-function TypedArraySome(callbackfn) {
+function TypedArraySome(callbackfn ) {
   
   var O = this;
 
@@ -1290,7 +1290,7 @@ SetIsInlinableLargeFunction(TypedArrayAt);
 
 
 
-function TypedArrayFindLast(predicate) {
+function TypedArrayFindLast(predicate ) {
   
   var O = this;
 
@@ -1334,7 +1334,7 @@ function TypedArrayFindLast(predicate) {
 
 
 
-function TypedArrayFindLastIndex(predicate) {
+function TypedArrayFindLastIndex(predicate ) {
   
   var O = this;
 
@@ -2005,7 +2005,7 @@ function TypedArrayToSorted(comparefn) {
 
 
   
-  for(var k = 0; k < len; k++) {
+  for (var k = 0; k < len; k++) {
     A[k] = O[k];
   }
 
@@ -2092,7 +2092,7 @@ function TypedArrayToSpliced(start, deleteCount, ...items) {
 
   
   
-  for(var j = 0; j < insertCount; j++) {
+  for (var j = 0; j < insertCount; j++) {
     
     
     
@@ -2102,7 +2102,7 @@ function TypedArrayToSpliced(start, deleteCount, ...items) {
 
   
   
-  while(i < newLen) {
+  while (i < newLen) {
     
     
     
