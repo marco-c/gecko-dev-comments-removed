@@ -160,6 +160,8 @@ public final class GeckoRuntime implements Parcelable {
       }
       mPaused = false;
       
+      GeckoAppShell.resumeLocation();
+      
       
       GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
     }
@@ -168,6 +170,8 @@ public final class GeckoRuntime implements Parcelable {
     void onPause() {
       Log.d(LOGTAG, "Lifecycle: onPause");
       mPaused = true;
+      
+      GeckoAppShell.pauseLocation();
       
       GeckoNetworkManager.getInstance().stop();
       GeckoThread.onPause();

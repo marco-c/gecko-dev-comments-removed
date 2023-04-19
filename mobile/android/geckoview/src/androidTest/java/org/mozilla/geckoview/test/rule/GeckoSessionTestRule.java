@@ -12,6 +12,9 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
@@ -2065,6 +2068,65 @@ public class GeckoSessionTestRule implements TestRule {
             InputDevice.SOURCE_MOUSE,
             0);
     session.getPanZoomController().onTouchEvent(moveEvent);
+  }
+
+  
+
+
+
+
+
+
+  public void addMockLocationProvider(LocationManager locationManager, String mockproviderName) {
+    
+    removeMockLocationProvider(locationManager, mockproviderName);
+    locationManager.addTestProvider(
+        mockproviderName,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        Criteria.POWER_LOW,
+        Criteria.ACCURACY_FINE);
+    locationManager.setTestProviderEnabled(mockproviderName, true);
+  }
+
+  
+
+
+
+
+
+  public void removeMockLocationProvider(LocationManager locationManager, String mockproviderName) {
+    try {
+      locationManager.removeTestProvider(mockproviderName);
+    } catch (Exception e) {
+      
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  public void setMockLocation(
+      LocationManager locationManager, String mockproviderName, double latitude, double longitude) {
+    Location location = new Location(mockproviderName);
+    
+    location.setAccuracy(.000001f);
+    location.setLatitude(latitude);
+    location.setLongitude(longitude);
+    location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+    location.setTime(System.currentTimeMillis());
+    locationManager.setTestProviderLocation(mockproviderName, location);
   }
 
   Map<GeckoSession, WebExtension.Port> mPorts = new HashMap<>();
