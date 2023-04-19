@@ -178,6 +178,9 @@ class AudioReceiveStream {
   
   virtual void Stop() = 0;
 
+  
+  virtual bool IsRunning() const = 0;
+
   virtual Stats GetStats(bool get_and_clear_legacy_stats) const = 0;
   Stats GetStats() { return GetStats(true); }
 
