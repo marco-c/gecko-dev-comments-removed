@@ -315,6 +315,9 @@ function remoteSettingsFunction() {
         reportStatus = lazy.UptakeTelemetry.STATUS.CONTENT_ERROR;
       } else if (/Server/.test(e.message)) {
         reportStatus = lazy.UptakeTelemetry.STATUS.SERVER_ERROR;
+        
+        
+        lazy.gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
       } else if (/Timeout/.test(e.message)) {
         reportStatus = lazy.UptakeTelemetry.STATUS.TIMEOUT_ERROR;
       } else if (/NetworkError/.test(e.message)) {
