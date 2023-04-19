@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "api/video/encoded_frame.h"
@@ -28,7 +29,29 @@ class RtpVideoFrameAssembler {
  public:
   
   
-  using FrameVector = absl::InlinedVector<std::unique_ptr<EncodedFrame>, 3>;
+  
+  class AssembledFrame {
+   public:
+    AssembledFrame(uint16_t rtp_seq_num_start,
+                   uint16_t rtp_seq_num_end,
+                   std::unique_ptr<EncodedFrame> frame)
+        : rtp_seq_num_start_(rtp_seq_num_start),
+          rtp_seq_num_end_(rtp_seq_num_end),
+          frame_(std::move(frame)) {}
+
+    uint16_t RtpSeqNumStart() const { return rtp_seq_num_start_; }
+    uint16_t RtpSeqNumEnd() const { return rtp_seq_num_end_; }
+    std::unique_ptr<EncodedFrame> ExtractFrame() { return std::move(frame_); }
+
+   private:
+    uint16_t rtp_seq_num_start_;
+    uint16_t rtp_seq_num_end_;
+    std::unique_ptr<EncodedFrame> frame_;
+  };
+
+  
+  
+  using FrameVector = absl::InlinedVector<AssembledFrame, 3>;
   enum PayloadFormat { kRaw, kH264, kVp8, kVp9, kAv1, kGeneric };
 
   explicit RtpVideoFrameAssembler(PayloadFormat payload_format);
