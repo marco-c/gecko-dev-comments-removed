@@ -604,14 +604,14 @@ class nsWindow final : public nsBaseWidget {
   void UserActivity();
 
   int32_t GetHeight(int32_t aProposedHeight);
-  const wchar_t* GetWindowClass() const;
-  const wchar_t* GetWindowPopupClass() const;
+
   DWORD WindowStyle();
   DWORD WindowExStyle();
 
+  static const wchar_t* ChooseWindowClass(nsWindowType, bool aForMenupopupFrame);
   
-  const wchar_t* RegisterWindowClass(const wchar_t* aClassName,
-                                     UINT aExtraStyle, LPWSTR aIconID) const;
+  static const wchar_t* RegisterWindowClass(const wchar_t* aClassName,
+                                            UINT aExtraStyle, LPWSTR aIconID);
 
   
 
@@ -768,6 +768,7 @@ class nsWindow final : public nsBaseWidget {
   bool mIsEarlyBlankWindow = false;
   bool mIsShowingPreXULSkeletonUI = false;
   bool mResizable = false;
+  bool mForMenupopupFrame = false;
   DWORD_PTR mOldStyle = 0;
   DWORD_PTR mOldExStyle = 0;
   nsNativeDragTarget* mNativeDragTarget = nullptr;
