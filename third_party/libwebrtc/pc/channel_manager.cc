@@ -61,18 +61,14 @@ ChannelManager::ChannelManager(
 
 ChannelManager::~ChannelManager() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  
-  
-  
-  
-  
-  
-  
-  
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(worker_thread_);
     RTC_DCHECK(voice_channels_.empty());
     RTC_DCHECK(video_channels_.empty());
+    
+    
+    
+    
     const_cast<std::unique_ptr<MediaEngineInterface>&>(media_engine_).reset();
   });
 }
@@ -254,9 +250,8 @@ void ChannelManager::DestroyChannel(ChannelInterface* channel) {
     
     
     
-    
-    
-    worker_thread_->PostTask([this, channel] { DestroyChannel(channel); });
+    worker_thread_->Invoke<void>(RTC_FROM_HERE,
+                                 [&] { DestroyChannel(channel); });
     return;
   }
 
