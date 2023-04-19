@@ -264,9 +264,12 @@ function ArrayGroup(callbackfn ) {
   }
 
   
-  var groups = new_List();
+  
 
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  
+  var object = std_Object_create(null);
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
 
   
   for (var k = 0; k < len; k++) {
@@ -282,29 +285,23 @@ function ArrayGroup(callbackfn ) {
 
 
     var propertyKey = TO_PROPERTY_KEY(
-      callContentFunction(callbackfn, T, kValue, k, O)
+      callContentFunction(callbackfn, thisArg, kValue, k, O)
     );
 
     
-    if (!groups[propertyKey]) {
-      var elements = [kValue];
-      DefineDataProperty(groups, propertyKey, elements);
+    var elements = object[propertyKey];
+    if (elements === undefined) {
+      DefineDataProperty(object, propertyKey, [kValue]);
     } else {
-      var lenElements = groups[propertyKey].length;
-      DefineDataProperty(groups[propertyKey], lenElements, kValue);
+      DefineDataProperty(elements, elements.length, kValue);
     }
   }
 
   
-  var object = std_Object_create(null);
+
+
 
   
-
-
-
-  for (var propertyKey in groups) {
-    DefineDataProperty(object, propertyKey, groups[propertyKey]);
-  }
 
   
   return object;
@@ -338,7 +335,7 @@ function ArrayGroupToMap(callbackfn ) {
   var C = GetBuiltinConstructor("Map");
   var map = new C();
 
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
 
   
 
@@ -358,7 +355,7 @@ function ArrayGroupToMap(callbackfn ) {
     
 
 
-    var propertyKey = callContentFunction(callbackfn, T, kValue, k, O);
+    var key = callContentFunction(callbackfn, thisArg, kValue, k, O);
 
     
 
@@ -372,11 +369,10 @@ function ArrayGroupToMap(callbackfn ) {
 
 
 
-    if (!callFunction(std_Map_get, map, propertyKey)) {
-      var elements = [kValue];
-      callFunction(std_Map_set, map, propertyKey, elements);
+    var elements = callFunction(std_Map_get, map, key);
+    if (elements === undefined) {
+      callFunction(std_Map_set, map, key, [kValue]);
     } else {
-      var elements = callFunction(std_Map_get, map, propertyKey);
       DefineDataProperty(elements, elements.length, kValue);
     }
   }
