@@ -1,10 +1,10 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=958646
 
-
-
-
-
+Debugger.Script.prototype.global should return innerize globals, not WindowProxies.
+-->
 <head>
   <meta charset="utf-8">
   <title>Debugger.Script.prototype.global should return inner windows</title>
@@ -17,7 +17,7 @@
 "use strict";
 
 const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
-addDebuggerToGlobal(this);
+addDebuggerToGlobal(globalThis);
 
 window.onload = function() {
   SimpleTest.waitForExplicitFinish();

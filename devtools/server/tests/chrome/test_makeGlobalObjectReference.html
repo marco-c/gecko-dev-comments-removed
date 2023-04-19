@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=914405
 
-
-
-
-
-
+Debugger.prototype.makeGlobalObjectReference should dereference WindowProxy
+(outer window) objects.
+-->
 <head>
   <meta charset="utf-8">
   <title>Mozilla Bug 914405</title>
@@ -18,7 +18,7 @@
 "use strict";
 
 const {addSandboxedDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
-addSandboxedDebuggerToGlobal(this);
+addSandboxedDebuggerToGlobal(globalThis);
 
 window.onload = function() {
   SimpleTest.waitForExplicitFinish();
