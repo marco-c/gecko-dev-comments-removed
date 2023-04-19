@@ -65,6 +65,15 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
   static constexpr media::TimeUnit EOS_FUZZ =
       media::TimeUnit::FromMicroseconds(500000);
 
+  
+  
+  
+  
+  
+  
+  static constexpr media::TimeUnit EOS_FUZZ_START =
+      media::TimeUnit::FromMicroseconds(550000);
+
  private:
   ~MediaSourceDemuxer();
   friend class MediaSourceTrackDemuxer;

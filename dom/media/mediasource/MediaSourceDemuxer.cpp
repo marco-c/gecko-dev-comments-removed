@@ -32,6 +32,7 @@ MediaSourceDemuxer::MediaSourceDemuxer(AbstractThread* aAbstractMainThread)
 }
 
 constexpr TimeUnit MediaSourceDemuxer::EOS_FUZZ;
+constexpr TimeUnit MediaSourceDemuxer::EOS_FUZZ_START;
 
 RefPtr<MediaSourceDemuxer::InitPromise> MediaSourceDemuxer::Init() {
   RefPtr<MediaSourceDemuxer> self = this;
@@ -419,12 +420,17 @@ MediaSourceTrackDemuxer::DoGetSamples(int32_t aNumSamples) {
     
     
     TimeIntervals buffered = mManager->Buffered(mType);
-    buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
-
     if (buffered.IsEmpty() && mManager->IsEnded()) {
       return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
                                              __func__);
     }
+
+    
+    
+    
+    
+    
+    buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ_START);
     if (!buffered.ContainsWithStrictEnd(TimeUnit::Zero())) {
       return SamplesPromise::CreateAndReject(
           NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA, __func__);
