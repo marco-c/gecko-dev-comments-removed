@@ -143,10 +143,12 @@ export default function update(state = initialSourcesTreeState(), action) {
         addThread(state, action.mainThread);
       }
       return state;
+
     case "INSERT_THREAD":
       state = { ...state };
       addThread(state, action.newThread);
       return state;
+
     case "REMOVE_THREAD": {
       const index = state.threadItems.findIndex(item => {
         return item.threadActorID == action.threadActorID;
@@ -197,7 +199,9 @@ function addThread(state, thread) {
   }
   
   
+  
   threadItem.thread = thread;
+  state.threadItems.sort(sortThreadItems);
 }
 
 function updateExpanded(state, action) {
@@ -255,6 +259,7 @@ function addSource(threadItems, thread, source) {
     
     
     threadItems.push(threadItem);
+    threadItems.sort(sortThreadItems);
   }
 
   
@@ -312,6 +317,63 @@ function sortItems(a, b) {
       b.source.displayURL.filename
     );
   }
+  return 0;
+}
+
+function sortThreadItems(a, b) {
+  
+  
+  if (!a.thread || !b.thread) {
+    return 0;
+  }
+
+  
+  if (a.thread.isTopLevel) {
+    return -1;
+  } else if (b.thread.isTopLevel) {
+    return 1;
+  }
+
+  
+  if (a.thread.targetType == "process" && b.thread.targetType == "frame") {
+    return -1;
+  } else if (
+    a.thread.targetType == "frame" &&
+    b.thread.targetType == "process"
+  ) {
+    return 1;
+  }
+
+  
+  if (
+    a.thread.targetType.endsWith("worker") &&
+    !b.thread.targetType.endsWith("worker")
+  ) {
+    return 1;
+  } else if (
+    !a.thread.targetType.endsWith("worker") &&
+    b.thread.targetType.endsWith("worker")
+  ) {
+    return -1;
+  }
+
+  
+  if (a.thread.processID > b.thread.processID) {
+    return 1;
+  } else if (a.thread.processID < b.thread.processID) {
+    return 0;
+  }
+
+  
+  if (a.thread.targetType == "frame" && b.thread.targetType == "frame") {
+    return a.thread.name.localeCompare(b.thread.name);
+  } else if (
+    a.thread.targetType.endsWith("worker") &&
+    b.thread.targetType.endsWith("worker")
+  ) {
+    return a.thread.name.localeCompare(b.thread.name);
+  }
+
   return 0;
 }
 
