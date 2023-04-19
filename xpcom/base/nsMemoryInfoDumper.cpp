@@ -385,11 +385,11 @@ static void MakeFilename(const char* aPrefix, const nsAString& aIdentifier,
 
 
 
-class GZWriterWrapper : public JSONWriteFunc {
+class GZWriterWrapper final : public JSONWriteFunc {
  public:
   explicit GZWriterWrapper(nsGZFileWriter* aGZWriter) : mGZWriter(aGZWriter) {}
 
-  void Write(const Span<const char>& aStr) override {
+  void Write(const Span<const char>& aStr) final {
     
     
     Unused << mGZWriter->Write(aStr.data(), aStr.size());
