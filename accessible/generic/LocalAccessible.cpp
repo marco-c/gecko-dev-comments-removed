@@ -3429,19 +3429,32 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 
       if (frame && frame->IsTextFrame()) {
         nsTArray<int32_t> charData;
-        nsIFrame* currTextFrame = frame;
+        nsTextFrame* currTextFrame = do_QueryFrame(frame);
+        bool isFirstContinuation = true;
         while (currTextFrame) {
+          nsRect t = currTextFrame->GetRect();
           nsTArray<nsRect> charBounds;
           currTextFrame->GetCharacterRectsInRange(
-              0, static_cast<nsTextFrame*>(currTextFrame)->GetContentLength(),
+              currTextFrame->GetContentOffset(), currTextFrame->GetContentEnd(),
               charBounds);
           for (const nsRect& rect : charBounds) {
-            charData.AppendElement(rect.x);
-            charData.AppendElement(rect.y);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            charData.AppendElement(rect.x + (isFirstContinuation ? 0 : t.x));
+            charData.AppendElement(rect.y + (isFirstContinuation ? 0 : t.y));
             charData.AppendElement(rect.width);
             charData.AppendElement(rect.height);
           }
           currTextFrame = currTextFrame->GetNextContinuation();
+          isFirstContinuation = false;
         }
 
         if (charData.Length()) {
