@@ -323,7 +323,7 @@ var promiseForEachSessionRestoreFile = async function(cb) {
       });
     } catch (ex) {
       
-      if (!(ex instanceof DOMException && ex.name == "NotFoundError")) {
+      if (!(DOMException.isInstance(ex) && ex.name == "NotFoundError")) {
         throw ex;
       }
     }

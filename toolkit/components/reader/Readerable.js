@@ -34,7 +34,7 @@ var Readerable = {
     
     if (
       doc.mozSyntheticDocument ||
-      !(doc instanceof doc.defaultView.HTMLDocument)
+      !doc.defaultView.HTMLDocument.isInstance(doc)
     ) {
       return false;
     }

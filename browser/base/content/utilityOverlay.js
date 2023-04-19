@@ -901,7 +901,7 @@ function gatherTextUnder(root) {
     if (node.nodeType == Node.TEXT_NODE) {
       
       text += " " + node.data;
-    } else if (node instanceof HTMLImageElement) {
+    } else if (HTMLImageElement.isInstance(node)) {
       
       var altText = node.getAttribute("alt");
       if (altText && altText != "") {
