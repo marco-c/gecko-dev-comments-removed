@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
     "resource:///modules/QuickActionsLoaderDefault.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
 });
 
 
@@ -80,12 +79,7 @@ class ProviderQuickActions extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return (
-      lazy.UrlbarPrefs.get(ENABLED_PREF) &&
-      (!queryContext.restrictSource ||
-        queryContext.restrictSource == lazy.UrlbarTokenizer.RESTRICT.ACTIONS) &&
-      !queryContext.searchMode
-    );
+    return lazy.UrlbarPrefs.get(ENABLED_PREF);
   }
 
   
