@@ -75,6 +75,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                      const VideoStreamEncoderSettings& settings,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector,
                      TaskQueueFactory* task_queue_factory,
+                     TaskQueueBase* network_queue,
                      BitrateAllocationCallbackType allocation_cb_type);
   ~VideoStreamEncoder() override;
 
@@ -231,7 +232,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   void MaybeReportFrameRateConstraintUmas() RTC_RUN_ON(&encoder_queue_);
 
-  TaskQueueBase* const main_queue_;
+  TaskQueueBase* const worker_queue_;
+  TaskQueueBase* const network_queue_;
 
   const uint32_t number_of_cores_;
 
@@ -246,7 +248,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   
   absl::optional<VideoTrackSourceConstraints> source_constraints_
-      RTC_GUARDED_BY(main_queue_);
+      RTC_GUARDED_BY(worker_queue_);
   bool has_reported_screenshare_frame_rate_umas_
       RTC_GUARDED_BY(&encoder_queue_) = false;
 
@@ -410,7 +412,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   
   VideoSourceSinkController video_source_sink_controller_
-      RTC_GUARDED_BY(main_queue_);
+      RTC_GUARDED_BY(worker_queue_);
 
   
   const bool default_limits_allowed_;
