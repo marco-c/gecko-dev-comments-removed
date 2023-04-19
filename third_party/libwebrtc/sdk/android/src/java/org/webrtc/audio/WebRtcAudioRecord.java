@@ -17,6 +17,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioRecordingConfiguration;
+import android.media.AudioTimestamp;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
@@ -130,6 +131,10 @@ class WebRtcAudioRecord {
       doAudioRecordStateCallback(AUDIO_RECORD_START);
 
       long lastTime = System.nanoTime();
+      AudioTimestamp audioTimestamp = null;
+      if (Build.VERSION.SDK_INT >= 24) {
+        audioTimestamp = new AudioTimestamp();
+      }
       while (keepAlive) {
         int bytesRead = audioRecord.read(byteBuffer, byteBuffer.capacity());
         if (bytesRead == byteBuffer.capacity()) {
@@ -141,7 +146,14 @@ class WebRtcAudioRecord {
           
           
           if (keepAlive) {
-            nativeDataIsRecorded(nativeAudioRecord, bytesRead);
+            long captureTimeNs = 0;
+            if (Build.VERSION.SDK_INT >= 24) {
+              if (audioRecord.getTimestamp(audioTimestamp, AudioTimestamp.TIMEBASE_MONOTONIC)
+                  == AudioRecord.SUCCESS) {
+                captureTimeNs = audioTimestamp.nanoTime;
+              }
+            }
+            nativeDataIsRecorded(nativeAudioRecord, bytesRead, captureTimeNs);
           }
           if (audioSamplesReadyCallback != null) {
             
@@ -489,7 +501,8 @@ class WebRtcAudioRecord {
 
   private native void nativeCacheDirectBufferAddress(
       long nativeAudioRecordJni, ByteBuffer byteBuffer);
-  private native void nativeDataIsRecorded(long nativeAudioRecordJni, int bytes);
+  private native void nativeDataIsRecorded(
+      long nativeAudioRecordJni, int bytes, long captureTimestampNs);
 
   
   

@@ -23,6 +23,7 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
+#include "rtc_base/timestamp_aligner.h"
 
 namespace webrtc {
 
@@ -226,6 +227,10 @@ class AudioDeviceBuffer {
   
   
   bool log_stats_ RTC_GUARDED_BY(task_queue_);
+
+  
+  
+  rtc::TimestampAligner timestamp_aligner_;
 
 
 

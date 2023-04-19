@@ -246,8 +246,17 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
     RTC_LOG(LS_INFO) << "Size of recording buffer: " << rec_buffer_.size();
   }
 
-  capture_timestamp_ns_ = capture_timestamp_ns;
-
+  
+  
+  
+  
+  capture_timestamp_ns_ =
+      (capture_timestamp_ns > 0)
+          ? rtc::kNumNanosecsPerMicrosec *
+                timestamp_aligner_.TranslateTimestamp(
+                    capture_timestamp_ns_ / rtc::kNumNanosecsPerMicrosec,
+                    rtc::TimeMicros())
+          : capture_timestamp_ns;
   
   int16_t max_abs = 0;
   RTC_DCHECK_LT(rec_stat_count_, 50);
