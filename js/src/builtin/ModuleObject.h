@@ -248,7 +248,15 @@ class ModuleNamespaceObject : public ProxyObject {
 };
 
 
-using ModuleStatus = int32_t;
+
+enum class ModuleStatus : int32_t {
+  Unlinked,
+  Linking,
+  Linked,
+  Evaluating,
+  Evaluated,
+  Evaluated_Error  
+};
 
 class ModuleObject : public NativeObject {
  public:
