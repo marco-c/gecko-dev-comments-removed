@@ -6,7 +6,7 @@
 
 
 "use strict";
-const { ELLIPSIS } = require("devtools/shared/l10n");
+const { ELLIPSIS } = require("resource://devtools/shared/l10n.js");
 
 const SMALL_EXPRESSION = `function fib(n) {
   if (n <= 1)

@@ -4,7 +4,7 @@
 "use strict";
 
 
-const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
+const { MESSAGE_CATEGORY } = require("resource://devtools/shared/constants.js");
 
 const TEST_URI =
   "data:text/html;charset=utf-8,<!DOCTYPE html>Web Console test for " +
