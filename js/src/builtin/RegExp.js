@@ -9,39 +9,47 @@
 function $RegExpFlagsGetter() {
     
     var R = this;
-    if (!IsObject(R))
+    if (!IsObject(R)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
+    }
 
     
     var result = "";
 
     
-    if (R.hasIndices)
+    if (R.hasIndices) {
         result += "d";
+    }
 
     
-    if (R.global)
+    if (R.global) {
         result += "g";
+    }
 
     
-    if (R.ignoreCase)
+    if (R.ignoreCase) {
         result += "i";
+    }
 
     
-    if (R.multiline)
+    if (R.multiline) {
         result += "m";
+    }
 
     
-    if (R.dotAll)
+    if (R.dotAll) {
         result += "s";
+    }
 
     
-    if (R.unicode)
+    if (R.unicode) {
          result += "u";
+    }
 
     
-    if (R.sticky)
+    if (R.sticky) {
         result += "y";
+    }
 
     
     return result;
@@ -55,8 +63,9 @@ function $RegExpToString()
     var R = this;
 
     
-    if (!IsObject(R))
+    if (!IsObject(R)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
+    }
 
     
     var pattern = ToString(R.source);
@@ -85,22 +94,25 @@ function AdvanceStringIndex(S, index) {
     var length = S.length;
 
     
-    if (index + 1 >= length)
+    if (index + 1 >= length) {
         return index + 1;
+    }
 
     
     var first = callFunction(std_String_charCodeAt, S, index);
 
     
-    if (first < 0xD800 || first > 0xDBFF)
+    if (first < 0xD800 || first > 0xDBFF) {
         return index + 1;
+    }
 
     
     var second = callFunction(std_String_charCodeAt, S, index + 1);
 
     
-    if (second < 0xDC00 || second > 0xDFFF)
+    if (second < 0xDC00 || second > 0xDFFF) {
         return index + 1;
+    }
 
     
     return index + 2;
@@ -112,8 +124,9 @@ function RegExpMatch(string) {
     var rx = this;
 
     
-    if (!IsObject(rx))
+    if (!IsObject(rx)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
+    }
 
     
     var S = ToString(string);
@@ -144,8 +157,9 @@ function RegExpMatch(string) {
 
 function RegExpMatchSlowPath(rx, S) {
     
-    if (!rx.global)
+    if (!rx.global) {
         return RegExpExec(rx, S, false);
+    }
 
     
     var fullUnicode = !!rx.unicode;
@@ -165,8 +179,9 @@ function RegExpMatchSlowPath(rx, S) {
         var result = RegExpExec(rx, S, false);
 
         
-        if (result === null)
+        if (result === null) {
           return (n === 0) ? null : A;
+        }
 
         
         var matchStr = ToString(result[0]);
@@ -207,8 +222,9 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
         var result = RegExpMatcher(rx, S, lastIndex);
 
         
-        if (result === null)
+        if (result === null) {
             return (n === 0) ? null : A;
+        }
 
         lastIndex = result.index + result[0].length;
 
@@ -221,8 +237,9 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
         
         if (matchStr === "") {
             lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
-            if (lastIndex > lengthS)
+            if (lastIndex > lengthS) {
                 return A;
+            }
         }
 
         
@@ -243,8 +260,9 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
 
 
 function IsRegExpMethodOptimizable(rx) {
-    if (!IsRegExpObject(rx))
+    if (!IsRegExpObject(rx)) {
         return false;
+    }
 
     var RegExpProto = GetBuiltinPrototype("RegExp");
     
@@ -260,8 +278,9 @@ function RegExpReplace(string, replaceValue) {
     var rx = this;
 
     
-    if (!IsObject(rx))
+    if (!IsObject(rx)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
+    }
 
     
     var S = ToString(string);
@@ -281,8 +300,9 @@ function RegExpReplace(string, replaceValue) {
         
         
         
-        if (replaceValue.length > 1)
+        if (replaceValue.length > 1) {
             firstDollarIndex = GetFirstDollarIndex(replaceValue);
+        }
     }
 
     
@@ -310,17 +330,21 @@ function RegExpReplace(string, replaceValue) {
                 return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue, flags,
                                                    firstDollarIndex);
             }
-            if (lengthS < 0x7fff)
+            if (lengthS < 0x7fff) {
                 return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags);
+            }
             return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue, flags);
         }
 
-        if (functionalReplace)
+        if (functionalReplace) {
             return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue);
-        if (firstDollarIndex !== -1)
+        }
+        if (firstDollarIndex !== -1) {
             return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
-        if (lengthS < 0x7fff)
+        }
+        if (lengthS < 0x7fff) {
             return RegExpLocalReplaceOptShort(rx, S, lengthS, replaceValue);
+        }
         return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
     }
 
@@ -358,15 +382,17 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
         var result = RegExpExec(rx, S, false);
 
         
-        if (result === null)
+        if (result === null) {
             break;
+        }
 
         
         DefineDataProperty(results, nResults++, result);
 
         
-        if (!global)
+        if (!global) {
             break;
+        }
 
         
         var matchStr = ToString(result[0]);
@@ -414,14 +440,16 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
                 capN = result[n];
 
                 
-                if (capN !== undefined)
+                if (capN !== undefined) {
                     ToString(capN);
+                }
             }
             
             
             var namedCaptures = result.groups;
-            if (namedCaptures !== undefined)
+            if (namedCaptures !== undefined) {
                 ToObject(namedCaptures);
+            }
 
             replacement = replaceValue;
         }
@@ -438,8 +466,9 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
     }
 
     
-    if (nextSourcePosition >= lengthS)
+    if (nextSourcePosition >= lengthS) {
         return accumulatedResult;
+    }
 
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
@@ -468,8 +497,9 @@ function RegExpGetComplexReplacement(result, matched, S, position,
         var capN = result[n];
 
         
-        if (capN !== undefined)
+        if (capN !== undefined) {
             capN = ToString(capN);
+        }
 
         
         DefineDataProperty(captures, capturesLength++, capN);
@@ -613,8 +643,9 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags)
         var result = RegExpSearcher(rx, S, lastIndex);
 
         
-        if (result === -1)
+        if (result === -1) {
             break;
+        }
 
         var position = result & 0x7fff;
         lastIndex = (result >> 15) & 0x7fff;
@@ -629,14 +660,16 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags)
         
         if (lastIndex === position) {
             lastIndex = fullUnicode ? AdvanceStringIndex(S, lastIndex) : lastIndex + 1;
-            if (lastIndex > lengthS)
+            if (lastIndex > lengthS) {
                 break;
+            }
         }
     }
 
     
-    if (nextSourcePosition >= lengthS)
+    if (nextSourcePosition >= lengthS) {
         return accumulatedResult;
+    }
 
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
@@ -722,8 +755,9 @@ function RegExpSearch(string) {
     var rx = this;
 
     
-    if (!IsObject(rx))
+    if (!IsObject(rx)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
+    }
 
     
     var S = ToString(string);
@@ -733,8 +767,9 @@ function RegExpSearch(string) {
 
     
     var lastIndexIsZero = SameValue(previousLastIndex, 0);
-    if (!lastIndexIsZero)
+    if (!lastIndexIsZero) {
         rx.lastIndex = 0;
+    }
 
     if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
         
@@ -757,13 +792,15 @@ function RegExpSearch(string) {
             rx.lastIndex = previousLastIndex;
         } else {
             var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
-            if (flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG))
+            if (flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG)) {
                 rx.lastIndex = previousLastIndex;
+            }
         }
 
         
-        if (result === -1)
+        if (result === -1) {
             return -1;
+        }
 
         
         return result & 0x7fff;
@@ -783,24 +820,28 @@ function RegExpSearchSlowPath(rx, S, previousLastIndex) {
     var currentLastIndex = rx.lastIndex;
 
     
-    if (!SameValue(currentLastIndex, previousLastIndex))
+    if (!SameValue(currentLastIndex, previousLastIndex)) {
         rx.lastIndex = previousLastIndex;
+    }
 
     
-    if (result === null)
+    if (result === null) {
         return -1;
+    }
 
     
     return result.index;
 }
 
 function IsRegExpSplitOptimizable(rx, C) {
-    if (!IsRegExpObject(rx))
+    if (!IsRegExpObject(rx)) {
         return false;
+    }
 
     var RegExpCtor = GetBuiltinConstructor("RegExp");
-    if (C !== RegExpCtor)
+    if (C !== RegExpCtor) {
         return false;
+    }
 
     var RegExpProto = RegExpCtor.prototype;
     
@@ -816,8 +857,9 @@ function RegExpSplit(string, limit) {
     var rx = this;
 
     
-    if (!IsObject(rx))
+    if (!IsObject(rx)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
+    }
 
     
     var S = ToString(string);
@@ -853,10 +895,11 @@ function RegExpSplit(string, limit) {
 
         
         var newFlags;
-        if (callFunction(std_String_includes, flags, "y"))
+        if (callFunction(std_String_includes, flags, "y")) {
             newFlags = flags;
-        else
+        } else {
             newFlags = flags + "y";
+        }
 
         
         splitter = constructContentFunction(C, C, rx, newFlags);
@@ -870,17 +913,19 @@ function RegExpSplit(string, limit) {
 
     
     var lim;
-    if (limit === undefined)
+    if (limit === undefined) {
         lim = MAX_UINT32;
-    else
+    } else {
         lim = limit >>> 0;
+    }
 
     
     var p = 0;
 
     
-    if (lim === 0)
+    if (lim === 0) {
         return A;
+    }
 
     
     var size = S.length;
@@ -889,14 +934,16 @@ function RegExpSplit(string, limit) {
     if (size === 0) {
         
         var z;
-        if (optimizable)
+        if (optimizable) {
             z = RegExpMatcher(splitter, S, 0);
-        else
+        } else {
             z = RegExpExec(splitter, S, false);
+        }
 
         
-        if (z !== null)
+        if (z !== null) {
             return A;
+        }
 
         
         DefineDataProperty(A, 0, S);
@@ -919,13 +966,15 @@ function RegExpSplit(string, limit) {
             z = RegExpMatcher(splitter, S, q);
 
             
-            if (z === null)
+            if (z === null) {
                 break;
+            }
 
             
             q = z.index;
-            if (q >= size)
+            if (q >= size) {
                 break;
+            }
 
             
             e = q + z[0].length;
@@ -959,8 +1008,9 @@ function RegExpSplit(string, limit) {
         lengthA++;
 
         
-        if (lengthA === lim)
+        if (lengthA === lim) {
             return A;
+        }
 
         
         p = e;
@@ -983,8 +1033,9 @@ function RegExpSplit(string, limit) {
             lengthA++;
 
             
-            if (lengthA === lim)
+            if (lengthA === lim) {
                 return A;
+            }
         }
 
         
@@ -992,10 +1043,11 @@ function RegExpSplit(string, limit) {
     }
 
     
-    if (p >= size)
+    if (p >= size) {
         DefineDataProperty(A, lengthA, "");
-    else
+    } else {
         DefineDataProperty(A, lengthA, Substring(S, p, size - p));
+    }
 
     
     return A;
@@ -1006,8 +1058,9 @@ function RegExpSplit(string, limit) {
 function RegExp_prototype_Exec(string) {
     
     var R = this;
-    if (!IsObject(R) || !IsRegExpObject(R))
+    if (!IsObject(R) || !IsRegExpObject(R)) {
         return callFunction(CallRegExpMethodIfWrapped, R, string, "RegExp_prototype_Exec");
+    }
 
     
     var S = ToString(string);
@@ -1037,8 +1090,9 @@ function RegExpExec(R, S, forTest) {
     var result = callContentFunction(exec, R, S);
 
     
-    if (result !== null && !IsObject(result))
+    if (result !== null && !IsObject(result)) {
         ThrowTypeError(JSMSG_EXEC_NOT_OBJORNULL);
+    }
 
     
     return forTest ? result !== null : result;
@@ -1050,8 +1104,9 @@ function RegExpBuiltinExec(R, S, forTest) {
     
     
     
-    if (!IsRegExpObject(R))
+    if (!IsRegExpObject(R)) {
         return UnwrapAndCallRegExpBuiltinExec(R, S, forTest);
+    }
 
     
 
@@ -1071,8 +1126,9 @@ function RegExpBuiltinExec(R, S, forTest) {
         
         if (lastIndex > S.length) {
             
-            if (globalOrSticky)
+            if (globalOrSticky) {
                 R.lastIndex = 0;
+            }
             return forTest ? false : null;
         }
     }
@@ -1082,14 +1138,16 @@ function RegExpBuiltinExec(R, S, forTest) {
         var endIndex = RegExpTester(R, S, lastIndex);
         if (endIndex == -1) {
             
-            if (globalOrSticky)
+            if (globalOrSticky) {
                 R.lastIndex = 0;
+            }
             return false;
         }
 
         
-        if (globalOrSticky)
+        if (globalOrSticky) {
             R.lastIndex = endIndex;
+        }
 
         return true;
     }
@@ -1098,12 +1156,14 @@ function RegExpBuiltinExec(R, S, forTest) {
     var result = RegExpMatcher(R, S, lastIndex);
     if (result === null) {
         
-        if (globalOrSticky)
+        if (globalOrSticky) {
             R.lastIndex = 0;
+        }
     } else {
         
-        if (globalOrSticky)
+        if (globalOrSticky) {
             R.lastIndex = result.index + result[0].length;
+        }
     }
 
     return result;
@@ -1121,8 +1181,9 @@ function CallRegExpBuiltinExec(S, forTest) {
 function RegExpTest(string) {
     
     var R = this;
-    if (!IsObject(R))
+    if (!IsObject(R)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, R === null ? "null" : typeof R);
+    }
 
     
     var S = ToString(string);
@@ -1139,12 +1200,14 @@ function $RegExpSpecies() {
 SetCanonicalName($RegExpSpecies, "get [Symbol.species]");
 
 function IsRegExpMatchAllOptimizable(rx, C) {
-    if (!IsRegExpObject(rx))
+    if (!IsRegExpObject(rx)) {
         return false;
+    }
 
     var RegExpCtor = GetBuiltinConstructor("RegExp");
-    if (C !== RegExpCtor)
+    if (C !== RegExpCtor) {
         return false;
+    }
 
     var RegExpProto = RegExpCtor.prototype;
     return RegExpPrototypeOptimizable(RegExpProto) &&
@@ -1159,8 +1222,9 @@ function RegExpMatchAll(string) {
     var rx = this;
 
     
-    if (!IsObject(rx))
+    if (!IsObject(rx)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, rx === null ? "null" : typeof rx);
+    }
 
     
     var str = ToString(string);
@@ -1278,8 +1342,9 @@ function RegExpStringIteratorNext() {
         {
             
             var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
-            if (!globalOrSticky)
+            if (!globalOrSticky) {
                 lastIndex = 0;
+            }
 
             var match = (lastIndex <= string.length)
                         ? RegExpMatcher(regexp, string, lastIndex)
