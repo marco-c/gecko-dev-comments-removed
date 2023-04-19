@@ -911,11 +911,7 @@ class Dumper_Mac(Dumper):
         
         if dsymbundle:
             
-            return (
-                [self.dump_syms]
-                + arch.split()
-                + ["--type", "macho", "-j", "2", dsymbundle, file]
-            )
+            return [self.dump_syms] + arch.split() + ["-j", "2", dsymbundle, file]
         return Dumper.dump_syms_cmdline(self, file, arch)
 
     def GenerateDSYM(self, file):
