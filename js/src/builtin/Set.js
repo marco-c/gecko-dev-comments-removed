@@ -563,7 +563,7 @@ function SetIteratorNext() {
     setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
   }
 
-  var retVal = {value: undefined, done: true};
+  var retVal = { value: undefined, done: true };
 
   
   var done = GetNextSetEntryForIterator(O, setIterationResult);

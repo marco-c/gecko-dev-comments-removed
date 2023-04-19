@@ -6,7 +6,7 @@ function TupleToArray(obj) {
   var len = TupleLength(obj);
   var items = std_Array(len);
 
-  for(var k = 0; k < len; k++) {
+  for (var k = 0; k < len; k++) {
     DefineDataProperty(items, k, obj[k]);
   }
   return items;
@@ -31,7 +31,7 @@ function TupleToSorted(comparefn) {
 
 
 
-function TupleToSpliced(start, deleteCount, ) {
+function TupleToSpliced(start, deleteCount ) {
   
   var list = ThisTupleValue(this);
 
@@ -73,7 +73,6 @@ function TupleToSpliced(start, deleteCount, ) {
     ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
   }
 
-
   
   var k = 0;
   
@@ -84,7 +83,7 @@ function TupleToSpliced(start, deleteCount, ) {
   var newList = [];
 
   
-  while(k < actualStart) {
+  while (k < actualStart) {
     
     let E = list[k];
     
@@ -96,7 +95,7 @@ function TupleToSpliced(start, deleteCount, ) {
   
   var itemK = 0;
   
-  while(itemK < itemCount) {
+  while (itemK < itemCount) {
     
     let E = arguments[itemK + 2];
     
@@ -113,7 +112,7 @@ function TupleToSpliced(start, deleteCount, ) {
   
   itemK = actualStart + actualDeleteCount;
   
-  while(itemK < len) {
+  while (itemK < len) {
     
     let E = list[itemK];
     
@@ -144,7 +143,7 @@ function TupleToReversed() {
     
     let E = T[k];
     
-    DefineDataProperty(newList, (len - k) - 1, E);
+    DefineDataProperty(newList, len - k - 1, E);
   }
 
   
@@ -162,7 +161,7 @@ function TupleConcat() {
   var n = list.length;
   
   
-  for(var i = 0; i < arguments.length; i++) {
+  for (var i = 0; i < arguments.length; i++) {
     
     let E = arguments[i];
     
@@ -178,7 +177,7 @@ function TupleConcat() {
         ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
       }
       
-      while(k < len) {
+      while (k < len) {
         
         var exists = E[k] !== undefined;
         
@@ -197,9 +196,8 @@ function TupleConcat() {
         
         k++;
       }
-    }
-    
-    else {
+    } else {
+      
       
       if (n >= MAX_NUMERIC_INDEX) {
         ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
@@ -322,7 +320,7 @@ function TupleKeys() {
 
 function $TupleValues() {
   return CreateArrayIterator(this, ITEM_KIND_VALUE);
-};
+}
 
 SetCanonicalName($TupleValues, "values");
 
@@ -358,7 +356,7 @@ function TupleFilter(callbackfn) {
 
   
   var T = arguments.length > 1 ? arguments[1] : undefined;
-  while(k < len) {
+  while (k < len) {
     
     var kValue = list[k];
     
@@ -413,7 +411,7 @@ function TupleMap(callbackfn) {
 
   
   var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-  for(var k = 0; k < len; k++) {
+  for (var k = 0; k < len; k++) {
     
     var kValue = list[k];
     
@@ -558,7 +556,7 @@ function TupleFlatMap(mapperFunction ) {
   return std_Tuple_unchecked(flat);
 }
 
-function TupleFrom(items, ) {
+function TupleFrom(items ) {
   
   var mapping;
   var mapfn = arguments.length < 2 ? undefined : arguments[1];
