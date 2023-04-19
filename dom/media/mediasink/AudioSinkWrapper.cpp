@@ -114,7 +114,8 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
     
     
     
-    if (mLastPacketEndTime && pos > mLastPacketEndTime.value() && CheckIfEnded()) {
+    if (mLastPacketEndTime && pos > mLastPacketEndTime.value() &&
+        CheckIfEnded()) {
       pos = mLastPacketEndTime.value();
       mEndedPromiseHolder.ResolveIfExists(true, __func__);
     } else if (!mLastPacketEndTime && CheckIfEnded()) {
