@@ -1288,6 +1288,8 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   
   
   
+  
+  
   return ImportMap::ParseString(jsapi.cx(), text, aRequest->mBaseURL, warning);
 }
 
