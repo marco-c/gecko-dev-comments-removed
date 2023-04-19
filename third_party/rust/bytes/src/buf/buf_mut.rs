@@ -56,6 +56,10 @@ pub unsafe trait BufMut {
     
     
     
+    
+    
+    
+    
     fn remaining_mut(&self) -> usize;
 
     

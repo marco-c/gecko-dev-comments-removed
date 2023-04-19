@@ -8,6 +8,7 @@ use alloc::{
     borrow::{Borrow, BorrowMut},
     boxed::Box,
     string::String,
+    vec,
     vec::Vec,
 };
 
@@ -15,7 +16,7 @@ use crate::buf::{IntoIter, UninitSlice};
 use crate::bytes::Vtable;
 #[allow(unused)]
 use crate::loom::sync::atomic::AtomicMut;
-use crate::loom::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
+use crate::loom::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use crate::{Buf, BufMut, Bytes};
 
 
@@ -252,10 +253,26 @@ impl BytesMut {
 
             let ptr = self.ptr.as_ptr();
             let len = self.len;
-            let data = AtomicPtr::new(self.data as _);
+            let data = AtomicPtr::new(self.data.cast());
             mem::forget(self);
             unsafe { Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE) }
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn zeroed(len: usize) -> BytesMut {
+        BytesMut::from_vec(vec![0; len])
     }
 
     
@@ -536,6 +553,15 @@ impl BytesMut {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         let len = self.len();
@@ -562,17 +588,34 @@ impl BytesMut {
             
             
             
+            
+            
+            
             unsafe {
                 let (off, prev) = self.get_vec_pos();
 
                 
-                if self.capacity() - self.len() + off >= additional {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if self.capacity() - self.len() + off >= additional && off >= self.len() {
+                    
                     
                     
                     
                     
                     let base_ptr = self.ptr.as_ptr().offset(-(off as isize));
-                    ptr::copy(self.ptr.as_ptr(), base_ptr, self.len);
+                    
+                    ptr::copy_nonoverlapping(self.ptr.as_ptr(), base_ptr, self.len);
                     self.ptr = vptr(base_ptr);
                     self.set_vec_pos(0, prev);
 
@@ -581,12 +624,13 @@ impl BytesMut {
                     self.cap += off;
                 } else {
                     
+                    
                     let mut v =
                         ManuallyDrop::new(rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, off));
                     v.reserve(additional);
 
                     
-                    self.ptr = vptr(v.as_mut_ptr().offset(off as isize));
+                    self.ptr = vptr(v.as_mut_ptr().add(off));
                     self.len = v.len() - off;
                     self.cap = v.capacity() - off;
                 }
@@ -596,7 +640,7 @@ impl BytesMut {
         }
 
         debug_assert_eq!(kind, KIND_ARC);
-        let shared: *mut Shared = self.data as _;
+        let shared: *mut Shared = self.data;
 
         
         
@@ -619,29 +663,56 @@ impl BytesMut {
                 
                 let v = &mut (*shared).vec;
 
-                if v.capacity() >= new_cap {
-                    
-                    let ptr = v.as_mut_ptr();
+                let v_capacity = v.capacity();
+                let ptr = v.as_mut_ptr();
 
-                    ptr::copy(self.ptr.as_ptr(), ptr, len);
+                let offset = offset_from(self.ptr.as_ptr(), ptr);
+
+                
+                
+                if v_capacity >= new_cap + offset {
+                    self.cap = new_cap;
+                    
+                } else if v_capacity >= new_cap && offset >= len {
+                    
+                    
+
+                    
+                    ptr::copy_nonoverlapping(self.ptr.as_ptr(), ptr, len);
 
                     self.ptr = vptr(ptr);
                     self.cap = v.capacity();
+                } else {
+                    
+                    let off = (self.ptr.as_ptr() as usize) - (v.as_ptr() as usize);
 
-                    return;
+                    
+                    
+                    
+                    
+                    new_cap = new_cap.checked_add(off).expect("overflow");
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let double = v.capacity().checked_shl(1).unwrap_or(new_cap);
+
+                    new_cap = cmp::max(double, new_cap);
+
+                    
+                    v.reserve(new_cap - v.len());
+
+                    
+                    self.ptr = vptr(v.as_mut_ptr().add(off));
+                    self.cap = v.capacity() - off;
                 }
 
-                
-                
-                
-                
-                
-                
-                
-                
-                let double = v.capacity().checked_shl(1).unwrap_or(new_cap);
-
-                new_cap = cmp::max(cmp::max(double, new_cap), original_capacity);
+                return;
             } else {
                 new_cap = cmp::max(new_cap, original_capacity);
             }
@@ -659,7 +730,7 @@ impl BytesMut {
 
         
         let data = (original_capacity_repr << ORIGINAL_CAPACITY_OFFSET) | KIND_VEC;
-        self.data = data as _;
+        self.data = invalid_ptr(data);
         self.ptr = vptr(v.as_mut_ptr());
         self.len = v.len();
         self.cap = v.capacity();
@@ -690,7 +761,7 @@ impl BytesMut {
             
             debug_assert!(dst.len() >= cnt);
 
-            ptr::copy_nonoverlapping(extend.as_ptr(), dst.as_mut_ptr() as *mut u8, cnt);
+            ptr::copy_nonoverlapping(extend.as_ptr(), dst.as_mut_ptr(), cnt);
         }
 
         unsafe {
@@ -698,6 +769,7 @@ impl BytesMut {
         }
     }
 
+    
     
     
     
@@ -754,7 +826,7 @@ impl BytesMut {
             ptr,
             len,
             cap,
-            data: data as *mut _,
+            data: invalid_ptr(data),
         }
     }
 
@@ -801,7 +873,7 @@ impl BytesMut {
         
         
         
-        self.ptr = vptr(self.ptr.as_ptr().offset(start as isize));
+        self.ptr = vptr(self.ptr.as_ptr().add(start));
 
         if self.len >= start {
             self.len -= start;
@@ -825,7 +897,7 @@ impl BytesMut {
             return Ok(());
         }
 
-        let ptr = unsafe { self.ptr.as_ptr().offset(self.len as isize) };
+        let ptr = unsafe { self.ptr.as_ptr().add(self.len) };
         if ptr == other.ptr.as_ptr()
             && self.kind() == KIND_ARC
             && other.kind() == KIND_ARC
@@ -875,7 +947,7 @@ impl BytesMut {
         
         debug_assert_eq!(shared as usize & KIND_MASK, KIND_ARC);
 
-        self.data = shared as _;
+        self.data = shared;
     }
 
     
@@ -908,13 +980,13 @@ impl BytesMut {
         debug_assert_eq!(self.kind(), KIND_VEC);
         debug_assert!(pos <= MAX_VEC_POS);
 
-        self.data = ((pos << VEC_POS_OFFSET) | (prev & NOT_VEC_POS_MASK)) as *mut _;
+        self.data = invalid_ptr((pos << VEC_POS_OFFSET) | (prev & NOT_VEC_POS_MASK));
     }
 
     #[inline]
     fn uninit_slice(&mut self) -> &mut UninitSlice {
         unsafe {
-            let ptr = self.ptr.as_ptr().offset(self.len as isize);
+            let ptr = self.ptr.as_ptr().add(self.len);
             let len = self.cap - self.len;
 
             UninitSlice::from_raw_parts_mut(ptr, len)
@@ -934,7 +1006,7 @@ impl Drop for BytesMut {
                 let _ = rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, off);
             }
         } else if kind == KIND_ARC {
-            unsafe { release_shared(self.data as _) };
+            unsafe { release_shared(self.data) };
         }
     }
 }
@@ -1161,7 +1233,7 @@ impl<'a> IntoIterator for &'a BytesMut {
     type IntoIter = core::slice::Iter<'a, u8>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.as_ref().into_iter()
+        self.as_ref().iter()
     }
 }
 
@@ -1190,7 +1262,18 @@ impl<'a> Extend<&'a u8> for BytesMut {
     where
         T: IntoIterator<Item = &'a u8>,
     {
-        self.extend(iter.into_iter().map(|b| *b))
+        self.extend(iter.into_iter().copied())
+    }
+}
+
+impl Extend<Bytes> for BytesMut {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Bytes>,
+    {
+        for bytes in iter {
+            self.extend_from_slice(&bytes)
+        }
     }
 }
 
@@ -1202,7 +1285,7 @@ impl FromIterator<u8> for BytesMut {
 
 impl<'a> FromIterator<&'a u8> for BytesMut {
     fn from_iter<T: IntoIterator<Item = &'a u8>>(into_iter: T) -> Self {
-        BytesMut::from_iter(into_iter.into_iter().map(|b| *b))
+        BytesMut::from_iter(into_iter.into_iter().copied())
     }
 }
 
@@ -1243,10 +1326,13 @@ unsafe fn release_shared(ptr: *mut Shared) {
     
     
     
-    atomic::fence(Ordering::Acquire);
+    
+    
+    
+    (*ptr).ref_count.load(Ordering::Acquire);
 
     
-    Box::from_raw(ptr);
+    drop(Box::from_raw(ptr));
 }
 
 impl Shared {
@@ -1392,7 +1478,7 @@ impl PartialOrd<BytesMut> for str {
 
 impl PartialEq<Vec<u8>> for BytesMut {
     fn eq(&self, other: &Vec<u8>) -> bool {
-        *self == &other[..]
+        *self == other[..]
     }
 }
 
@@ -1416,7 +1502,7 @@ impl PartialOrd<BytesMut> for Vec<u8> {
 
 impl PartialEq<String> for BytesMut {
     fn eq(&self, other: &String) -> bool {
-        *self == &other[..]
+        *self == other[..]
     }
 }
 
@@ -1482,13 +1568,51 @@ impl PartialOrd<BytesMut> for &str {
 
 impl PartialEq<BytesMut> for Bytes {
     fn eq(&self, other: &BytesMut) -> bool {
-        &other[..] == &self[..]
+        other[..] == self[..]
     }
 }
 
 impl PartialEq<Bytes> for BytesMut {
     fn eq(&self, other: &Bytes) -> bool {
-        &other[..] == &self[..]
+        other[..] == self[..]
+    }
+}
+
+impl From<BytesMut> for Vec<u8> {
+    fn from(mut bytes: BytesMut) -> Self {
+        let kind = bytes.kind();
+
+        let mut vec = if kind == KIND_VEC {
+            unsafe {
+                let (off, _) = bytes.get_vec_pos();
+                rebuild_vec(bytes.ptr.as_ptr(), bytes.len, bytes.cap, off)
+            }
+        } else if kind == KIND_ARC {
+            let shared = bytes.data as *mut Shared;
+
+            if unsafe { (*shared).is_unique() } {
+                let vec = mem::replace(unsafe { &mut (*shared).vec }, Vec::new());
+
+                unsafe { release_shared(shared) };
+
+                vec
+            } else {
+                return bytes.deref().to_vec();
+            }
+        } else {
+            return bytes.deref().to_vec();
+        };
+
+        let len = bytes.len;
+
+        unsafe {
+            ptr::copy(bytes.ptr.as_ptr(), vec.as_mut_ptr(), len);
+            vec.set_len(len);
+        }
+
+        mem::forget(bytes);
+
+        vec
     }
 }
 
@@ -1499,6 +1623,35 @@ fn vptr(ptr: *mut u8) -> NonNull<u8> {
     } else {
         unsafe { NonNull::new_unchecked(ptr) }
     }
+}
+
+
+
+
+
+
+#[inline]
+fn invalid_ptr<T>(addr: usize) -> *mut T {
+    let ptr = core::ptr::null_mut::<u8>().wrapping_add(addr);
+    debug_assert_eq!(ptr as usize, addr);
+    ptr.cast::<T>()
+}
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+fn offset_from(dst: *mut u8, original: *mut u8) -> usize {
+    debug_assert!(dst >= original);
+
+    dst as usize - original as usize
 }
 
 unsafe fn rebuild_vec(ptr: *mut u8, mut len: usize, mut cap: usize, off: usize) -> Vec<u8> {
@@ -1513,6 +1666,7 @@ unsafe fn rebuild_vec(ptr: *mut u8, mut len: usize, mut cap: usize, off: usize) 
 
 static SHARED_VTABLE: Vtable = Vtable {
     clone: shared_v_clone,
+    to_vec: shared_v_to_vec,
     drop: shared_v_drop,
 };
 
@@ -1520,8 +1674,30 @@ unsafe fn shared_v_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> By
     let shared = data.load(Ordering::Relaxed) as *mut Shared;
     increment_shared(shared);
 
-    let data = AtomicPtr::new(shared as _);
+    let data = AtomicPtr::new(shared as *mut ());
     Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE)
+}
+
+unsafe fn shared_v_to_vec(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Vec<u8> {
+    let shared: *mut Shared = data.load(Ordering::Relaxed).cast();
+
+    if (*shared).is_unique() {
+        let shared = &mut *shared;
+
+        
+        let mut vec = mem::replace(&mut shared.vec, Vec::new());
+        release_shared(shared);
+
+        
+        ptr::copy(ptr, vec.as_mut_ptr(), len);
+        vec.set_len(len);
+
+        vec
+    } else {
+        let v = slice::from_raw_parts(ptr, len).to_vec();
+        release_shared(shared);
+        v
+    }
 }
 
 unsafe fn shared_v_drop(data: &mut AtomicPtr<()>, _ptr: *const u8, _len: usize) {

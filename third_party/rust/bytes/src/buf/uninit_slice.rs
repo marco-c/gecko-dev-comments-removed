@@ -137,6 +137,32 @@ impl UninitSlice {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn as_uninit_slice_mut<'a>(&'a mut self) -> &'a mut [MaybeUninit<u8>] {
+        &mut *(self as *mut _ as *mut [MaybeUninit<u8>])
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn len(&self) -> usize {
         self.0.len()
