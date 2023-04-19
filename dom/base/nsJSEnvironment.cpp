@@ -1703,10 +1703,10 @@ void nsJSContext::MaybePokeGC() {
     MOZ_ASSERT(reason == JS::GCReason::EAGER_NURSERY_COLLECTION);
     sScheduler.PokeMinorGC(reason);
   }
-
-  
-  
-  
+  reason = JS::WantEagerMajorGC(rt);
+  if (reason != JS::GCReason::NO_REASON) {
+    PokeGC(reason, nullptr, 0);
+  }
 }
 
 void nsJSContext::DoLowMemoryGC() {
