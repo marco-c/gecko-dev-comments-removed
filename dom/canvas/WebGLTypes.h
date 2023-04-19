@@ -359,7 +359,7 @@ struct FloatOrInt final
 
 
 
-struct WebGLContextOptions {
+struct WebGLContextOptions final {
   bool alpha = true;
   bool depth = true;
   bool stencil = false;
@@ -372,8 +372,8 @@ struct WebGLContextOptions {
 
   dom::WebGLPowerPreference powerPreference =
       dom::WebGLPowerPreference::Default;
+  bool ignoreColorSpace = true;
   dom::PredefinedColorSpace colorSpace = dom::PredefinedColorSpace::Srgb;
-  bool ignoreColorSpace = true;  
   bool shouldResistFingerprinting = true;
 
   bool enableDebugRendererInfo = false;
@@ -399,6 +399,8 @@ struct WebGLContextOptions {
       enableDebugRendererInfo);
     
   }
+
+  
 
   WebGLContextOptions();
   WebGLContextOptions(const WebGLContextOptions&) = default;
