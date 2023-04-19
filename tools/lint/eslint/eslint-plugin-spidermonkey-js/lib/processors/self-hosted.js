@@ -8,17 +8,65 @@
 
 "use strict";
 
-var path = require("path");
+const path = require("path");
+const fs = require("fs");
 
 const selfHostedRegex = /js\/src\/builtin\/.*?\.js$/;
 const macroRegex = /\s*\#(if|ifdef|else|elif|endif|include|define|undef).*/;
 
+function isSelfHostedFile(filename) {
+  if (path.win32) {
+    filename = filename.split(path.sep).join("/");
+  }
+  return selfHostedRegex.test(filename);
+}
+
+function tryReadFile(filePath) {
+  if (!path.isAbsolute(filePath)) {
+    return "";
+  }
+  if (!fs.existsSync(filePath)) {
+    
+    
+    return "";
+  }
+  return fs.readFileSync(filePath, "utf-8");
+}
+
+
+function createFix(lines, message) {
+  let { line, column, fix } = message;
+
+  
+  if (line <= 0 || column <= 0) {
+    return null;
+  }
+
+  
+  if (line > lines.length) {
+    return null;
+  }
+
+  
+  let startOfLine = 0;
+  for (let i = 0; i < line - 1; ++i) {
+    
+    startOfLine += lines[i].length + "\n".length;
+  }
+
+  
+  let start = startOfLine + (column - 1);
+
+  
+  let end = start + (fix.range[1] - fix.range[0]);
+
+  
+  return { text: fix.text, range: [start, end] };
+}
+
 module.exports = {
   preprocess(text, filename) {
-    if (path.win32) {
-      filename = filename.split(path.sep).join("/");
-    }
-    if (!selfHostedRegex.test(filename)) {
+    if (!isSelfHostedFile(filename)) {
       return [text];
     }
 
@@ -46,6 +94,35 @@ module.exports = {
   },
 
   postprocess(messages, filename) {
-    return Array.prototype.concat.apply([], messages);
+    
+    if (!isSelfHostedFile(filename)) {
+      return [].concat(...messages);
+    }
+
+    let lines = null;
+
+    let result = [];
+    for (let message of messages.flat()) {
+      if (message.fix) {
+        if (lines === null) {
+          lines = tryReadFile(filename).split(/\n/);
+        }
+
+        let fix = createFix(lines, message);
+        if (fix) {
+          message.fix = fix;
+        } else {
+          
+          
+          
+          delete message.fix;
+        }
+      }
+
+      result.push(message);
+    }
+    return result;
   },
+
+  supportsAutofix: true,
 };
