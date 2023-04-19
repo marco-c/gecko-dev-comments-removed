@@ -3,8 +3,8 @@
 
 
 function closeWindow(aClose, aPromptFunction, aSource) {
-  let { AppConstants } = ChromeUtils.import(
-    "resource://gre/modules/AppConstants.jsm"
+  let { AppConstants } = ChromeUtils.importESModule(
+    "resource://gre/modules/AppConstants.sys.mjs"
   );
 
   

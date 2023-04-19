@@ -44,11 +44,9 @@ loader.lazyRequireGetter(
 
 const lazy = {};
 if (!isWorker) {
-  ChromeUtils.defineModuleGetter(
-    lazy,
-    "ContentDOMReference",
-    "resource://gre/modules/ContentDOMReference.jsm"
-  );
+  ChromeUtils.defineESModuleGetters(lazy, {
+    ContentDOMReference: "resource://gre/modules/ContentDOMReference.sys.mjs",
+  });
 }
 
 const {

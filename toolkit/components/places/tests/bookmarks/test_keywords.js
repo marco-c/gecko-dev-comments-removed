@@ -1,11 +1,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Preferences",
-  "resource://gre/modules/Preferences.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  Preferences: "resource://gre/modules/Preferences.sys.mjs",
+});
 
 const URI1 = "http://test1.mozilla.org/";
 const URI2 = "http://test2.mozilla.org/";

@@ -30,7 +30,9 @@ add_task(async function run_test() {
   await sendCommandAsync(CRASH_THEN_WAIT);
 
   
-  let { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+  let { setTimeout } = ChromeUtils.importESModule(
+    "resource://gre/modules/Timer.sys.mjs"
+  );
   
   await new Promise(resolve => setTimeout(resolve, 100));
 

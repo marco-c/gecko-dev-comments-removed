@@ -30,6 +30,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   getAddonIdForWindowGlobal:
     "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+  Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
 });
 
 const EXTENSION_STORAGE_ENABLED_PREF =
@@ -59,12 +60,6 @@ const SAFE_HOSTS_PREFIXES_REGEX = /^(about\+|https?\+|file\+|moz-extension\+)/;
 
 
 const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "Sqlite",
-  "resource://gre/modules/Sqlite.jsm"
-);
 
 
 

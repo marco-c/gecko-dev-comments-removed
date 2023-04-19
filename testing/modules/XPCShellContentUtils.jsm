@@ -19,7 +19,7 @@ ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
 
 
 
-ChromeUtils.import("resource://gre/modules/ActorManagerParent.jsm");
+ChromeUtils.importESModule("resource://gre/modules/ActorManagerParent.sys.mjs");
 
 const lazy = {};
 

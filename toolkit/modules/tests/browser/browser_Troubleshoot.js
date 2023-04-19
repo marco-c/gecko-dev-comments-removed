@@ -6,8 +6,8 @@
 
 
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
 );
 const { Troubleshoot } = ChromeUtils.importESModule(
   "resource://gre/modules/Troubleshoot.sys.mjs"

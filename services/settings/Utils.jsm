@@ -10,8 +10,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const { ServiceRequest } = ChromeUtils.importESModule(
   "resource://gre/modules/ServiceRequest.sys.mjs"
 );
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
 );
 
 const lazy = {};
@@ -36,8 +36,8 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 const log = (() => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
+  const { ConsoleAPI } = ChromeUtils.importESModule(
+    "resource://gre/modules/Console.sys.mjs"
   );
   return new ConsoleAPI({
     maxLogLevel: "warn",

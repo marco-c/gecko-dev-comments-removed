@@ -1,11 +1,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Preferences",
-  "resource://gre/modules/Preferences.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  Preferences: "resource://gre/modules/Preferences.sys.mjs",
+});
 
 add_task(async function insert_separator_notification() {
   let observer = expectPlacesObserverNotifications(["bookmark-added"]);

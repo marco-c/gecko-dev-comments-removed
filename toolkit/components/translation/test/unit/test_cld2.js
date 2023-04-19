@@ -567,7 +567,9 @@ const kTestPairs = [
   ["az", "AZERBAIJANI", kTeststr_version], 
 ];
 
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
 let { LanguageDetector, workerManager } = ChromeUtils.import(
   "resource://gre/modules/translation/LanguageDetector.jsm"
 );

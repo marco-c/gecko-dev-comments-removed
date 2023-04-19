@@ -16,7 +16,7 @@ const {
   setIntervalWithTarget,
   setTimeout,
   setTimeoutWithTarget,
-} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+} = ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
 
 const obj = {
   global: {

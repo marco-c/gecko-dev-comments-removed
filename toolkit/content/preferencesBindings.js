@@ -7,16 +7,14 @@
 
 
 const Preferences = (window.Preferences = (function() {
-  const { EventEmitter } = ChromeUtils.import(
-    "resource://gre/modules/EventEmitter.jsm"
+  const { EventEmitter } = ChromeUtils.importESModule(
+    "resource://gre/modules/EventEmitter.sys.mjs"
   );
 
   const lazy = {};
-  ChromeUtils.defineModuleGetter(
-    lazy,
-    "DeferredTask",
-    "resource://gre/modules/DeferredTask.jsm"
-  );
+  ChromeUtils.defineESModuleGetters(lazy, {
+    DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  });
 
   function getElementsByAttribute(name, value) {
     

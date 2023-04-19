@@ -1,8 +1,8 @@
 
 
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
 );
 
 const { BrowserUtils } = ChromeUtils.importESModule(
@@ -21,8 +21,8 @@ const { updateAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );
 
-const { Preferences } = ChromeUtils.import(
-  "resource://gre/modules/Preferences.jsm"
+const { Preferences } = ChromeUtils.importESModule(
+  "resource://gre/modules/Preferences.sys.mjs"
 );
 
 

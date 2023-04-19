@@ -1,7 +1,7 @@
 
 
 
-const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = ChromeUtils.importESModule("resource://gre/modules/AppConstants.sys.mjs");
 
 add_task(function test_methods_calling() {
   const l10nReg = new L10nRegistry();

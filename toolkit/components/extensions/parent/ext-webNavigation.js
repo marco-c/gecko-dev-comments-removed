@@ -8,11 +8,14 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   MatchURLFilters: "resource://gre/modules/MatchURLFilters.jsm",
   WebNavigation: "resource://gre/modules/WebNavigation.jsm",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
 
 var { ExtensionError } = ExtensionUtils;

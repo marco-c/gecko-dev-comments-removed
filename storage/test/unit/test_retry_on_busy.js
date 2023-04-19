@@ -3,7 +3,9 @@
 
 
 
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
 
 function getProfileFile(name) {
   let file = do_get_profile();
