@@ -91,6 +91,8 @@ class gfxPlatformMac : public gfxPlatform {
   
   static uint32_t ReadAntiAliasingThreshold();
 
+  static void FontRegistrationCallback(void* aUnused);
+
   uint32_t mFontAntiAliasingThreshold;
 
   static PRThread* sFontRegistrationThread;

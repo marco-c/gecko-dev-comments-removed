@@ -84,56 +84,6 @@ static void DisableFontActivation() {
 }
 
 
-static void ActivateFontsFromDir(const nsACString& aDir) {
-  AutoCFRelease<CFURLRef> directory = CFURLCreateFromFileSystemRepresentation(
-      kCFAllocatorDefault, (const UInt8*)nsPromiseFlatCString(aDir).get(),
-      aDir.Length(), true);
-  if (!directory) {
-    return;
-  }
-  AutoCFRelease<CFURLEnumeratorRef> enumerator =
-      CFURLEnumeratorCreateForDirectoryURL(kCFAllocatorDefault, directory,
-                                           kCFURLEnumeratorDefaultBehavior,
-                                           nullptr);
-  if (!enumerator) {
-    return;
-  }
-  AutoCFRelease<CFMutableArrayRef> urls =
-      ::CFArrayCreateMutable(kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
-  if (!urls) {
-    return;
-  }
-
-  CFURLRef url;
-  CFURLEnumeratorResult result;
-  do {
-    result = CFURLEnumeratorGetNextURL(enumerator, &url, nullptr);
-    if (result == kCFURLEnumeratorSuccess) {
-      CFArrayAppendValue(urls, url);
-    }
-  } while (result != kCFURLEnumeratorEnd);
-
-  CTFontManagerRegisterFontsForURLs(urls, kCTFontManagerScopeProcess, nullptr);
-}
-
-#ifdef MOZ_BUNDLED_FONTS
-static void ActivateBundledFonts() {
-  nsCOMPtr<nsIFile> localDir;
-  if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(localDir)))) {
-    return;
-  }
-  if (NS_FAILED(localDir->Append(u"fonts"_ns))) {
-    return;
-  }
-  nsAutoCString path;
-  if (NS_FAILED(localDir->GetNativePath(path))) {
-    return;
-  }
-  ActivateFontsFromDir(path);
-}
-#endif
-
-
 
 
 
@@ -141,12 +91,13 @@ static const nsLiteralCString kLangFontsDirs[] = {
     "/Library/Application Support/Apple/Fonts/Language Support"_ns,
     "/System/Library/Fonts/Supplemental"_ns};
 
-static void FontRegistrationCallback(void* aUnused) {
+
+void gfxPlatformMac::FontRegistrationCallback(void* aUnused) {
   AUTO_PROFILER_REGISTER_THREAD("RegisterFonts");
   PR_SetCurrentThreadName("RegisterFonts");
 
   for (const auto& dir : kLangFontsDirs) {
-    ActivateFontsFromDir(dir);
+    gfxMacPlatformFontList::ActivateFontsFromDir(dir);
   }
 }
 
@@ -173,7 +124,7 @@ void gfxPlatformMac::RegisterSupplementalFonts() {
     
     
     for (const auto& dir : kLangFontsDirs) {
-      ActivateFontsFromDir(dir);
+      gfxMacPlatformFontList::ActivateFontsFromDir(dir);
     }
   }
 }
@@ -183,22 +134,6 @@ void gfxPlatformMac::WaitForFontRegistration() {
   if (sFontRegistrationThread) {
     PR_JoinThread(sFontRegistrationThread);
     sFontRegistrationThread = nullptr;
-
-#ifdef MOZ_BUNDLED_FONTS
-    
-    
-    
-    
-    
-    
-    if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
-      TimeStamp start = TimeStamp::Now();
-      ActivateBundledFonts();
-      TimeStamp end = TimeStamp::Now();
-      Telemetry::Accumulate(Telemetry::FONTLIST_BUNDLEDFONTS_ACTIVATE,
-                            (end - start).ToMilliseconds());
-    }
-#endif
   }
 }
 
