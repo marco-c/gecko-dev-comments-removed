@@ -46,7 +46,8 @@ class VoiceProcessingAudioUnitObserver {
 
 class VoiceProcessingAudioUnit {
  public:
-  explicit VoiceProcessingAudioUnit(VoiceProcessingAudioUnitObserver* observer);
+  VoiceProcessingAudioUnit(bool bypass_voice_processing,
+                           VoiceProcessingAudioUnitObserver* observer);
   ~VoiceProcessingAudioUnit();
 
   
@@ -129,6 +130,7 @@ class VoiceProcessingAudioUnit {
   
   void DisposeAudioUnit();
 
+  const bool bypass_voice_processing_;
   VoiceProcessingAudioUnitObserver* observer_;
   AudioUnit vpio_unit_;
   VoiceProcessingAudioUnit::State state_;

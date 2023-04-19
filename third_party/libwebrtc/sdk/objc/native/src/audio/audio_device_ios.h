@@ -48,7 +48,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
                        public VoiceProcessingAudioUnitObserver,
                        public rtc::MessageHandler {
  public:
-  AudioDeviceIOS();
+  explicit AudioDeviceIOS(bool bypass_voice_processing);
   ~AudioDeviceIOS() override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
@@ -204,6 +204,9 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   void PrepareForNewStart();
+
+  
+  const bool bypass_voice_processing_;
 
   
   
