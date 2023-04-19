@@ -60,7 +60,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
   
   static void MaybeCreateAndInsertPreload(
       OngoingEarlyHints* aOngoingEarlyHints, const LinkHeader& aHeader,
-      nsIURI* aBaseURI, nsIPrincipal* aTriggeringPrincipal,
+      nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
       nsICookieJarSettings* aCookieJarSettings);
 
   
@@ -81,8 +81,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
                                               bool aIsModule);
 
   
-  nsresult OpenChannel(nsIPrincipal* aTriggeringPrincipal,
-                       nsSecurityFlags aSecurityFlags,
+  nsresult OpenChannel(nsIPrincipal* aPrincipal, nsSecurityFlags aSecurityFlags,
                        nsContentPolicyType aContentPolicyType,
                        nsIReferrerInfo* aReferrerInfo,
                        nsICookieJarSettings* aCookieJarSettings);

@@ -9,11 +9,13 @@
 #include "EarlyHintPreloader.h"
 #include "mozilla/PreloadHashKey.h"
 #include "mozilla/Telemetry.h"
+#include "nsContentUtils.h"
+#include "nsIChannel.h"
 #include "nsICookieJarSettings.h"
+#include "nsILoadInfo.h"
+#include "nsIPrincipal.h"
 #include "nsNetUtil.h"
 #include "nsString.h"
-#include "nsIPrincipal.h"
-#include "nsILoadInfo.h"
 
 namespace mozilla::net {
 
@@ -26,17 +28,45 @@ EarlyHintsService::EarlyHintsService()
 EarlyHintsService::~EarlyHintsService() = default;
 
 void EarlyHintsService::EarlyHint(const nsACString& aLinkHeader,
-                                  nsIURI* aBaseURI, nsILoadInfo* aLoadInfo) {
+                                  nsIURI* aBaseURI, nsIChannel* aChannel) {
   mEarlyHintsCount++;
   if (!mFirstEarlyHint) {
     mFirstEarlyHint.emplace(TimeStamp::NowLoRes());
   }
 
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() !=
+      ExtContentPolicy::TYPE_DOCUMENT) {
+    MOZ_ASSERT(false, "Early Hint on non-document channel");
+    return;
+  }
+  nsCOMPtr<nsIPrincipal> principal;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+      aChannel, getter_AddRefs(principal));
+  NS_ENSURE_SUCCESS_VOID(rv);
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   if (NS_FAILED(
-          aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings)))) {
+          loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings)))) {
     return;
   }
 
@@ -46,8 +76,7 @@ void EarlyHintsService::EarlyHint(const nsACString& aLinkHeader,
 
   for (auto& linkHeader : linkHeaders) {
     EarlyHintPreloader::MaybeCreateAndInsertPreload(
-        mOngoingEarlyHints, linkHeader, aBaseURI, triggeringPrincipal,
-        cookieJarSettings);
+        mOngoingEarlyHints, linkHeader, aBaseURI, principal, cookieJarSettings);
   }
 }
 
