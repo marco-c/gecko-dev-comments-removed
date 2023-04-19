@@ -95,14 +95,11 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
 
   
   void PostTask(std::unique_ptr<webrtc::QueuedTask> task);
-
-  
-  
-  
-  
   
   void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
                        uint32_t milliseconds);
+  void PostDelayedHighPrecisionTask(std::unique_ptr<webrtc::QueuedTask> task,
+                                    uint32_t milliseconds);
 
   
   
@@ -114,8 +111,6 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   void PostTask(Closure&& closure) {
     PostTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)));
   }
-
-  
   template <class Closure,
             typename std::enable_if<!std::is_convertible<
                 Closure,
@@ -123,6 +118,14 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   void PostDelayedTask(Closure&& closure, uint32_t milliseconds) {
     PostDelayedTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)),
                     milliseconds);
+  }
+  template <class Closure,
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
+  void PostDelayedHighPrecisionTask(Closure&& closure, uint32_t milliseconds) {
+    PostDelayedHighPrecisionTask(
+        webrtc::ToQueuedTask(std::forward<Closure>(closure)), milliseconds);
   }
 
  private:
