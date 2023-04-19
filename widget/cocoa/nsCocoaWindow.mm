@@ -2159,27 +2159,6 @@ void nsCocoaWindow::PauseCompositor() {
     return;
   }
   remoteRenderer->SendPause();
-
-  
-  
-  
-  
-  if (!mWidgetListener) {
-    return;
-  }
-  PresShell* presShell = mWidgetListener->GetPresShell();
-  if (!presShell) {
-    return;
-  }
-  nsPresContext* presContext = presShell->GetPresContext();
-  if (!presContext) {
-    return;
-  }
-  BrowsingContext* bc = presContext->Document()->GetBrowsingContext();
-  if (!bc) {
-    return;
-  }
-  Unused << bc->SetExplicitActive(ExplicitActiveStatus::Inactive);
 }
 
 void nsCocoaWindow::ResumeCompositor() {
@@ -2192,27 +2171,6 @@ void nsCocoaWindow::ResumeCompositor() {
     return;
   }
   remoteRenderer->SendResume();
-
-  
-  
-  
-  
-  if (!mWidgetListener) {
-    return;
-  }
-  PresShell* presShell = mWidgetListener->GetPresShell();
-  if (!presShell) {
-    return;
-  }
-  nsPresContext* presContext = presShell->GetPresContext();
-  if (!presContext) {
-    return;
-  }
-  BrowsingContext* bc = presContext->Document()->GetBrowsingContext();
-  if (!bc) {
-    return;
-  }
-  Unused << bc->SetExplicitActive(ExplicitActiveStatus::Active);
 }
 
 void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
