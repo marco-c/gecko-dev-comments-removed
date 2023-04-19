@@ -84,13 +84,7 @@ async function run_test() {
     Assert.equal(failureId.value, "");
 
     status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_OPENGL_LAYERS);
-    if (OS == "Android") {
-      
-      
-      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
-    } else {
-      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
-    }
+    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
 
     status = gfxInfo.getFeatureStatus(
       Ci.nsIGfxInfo.FEATURE_WEBGL_OPENGL,
