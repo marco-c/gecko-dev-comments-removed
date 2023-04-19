@@ -18,6 +18,7 @@
 
 #include "modules/audio_coding/codecs/ilbc/enhancer_interface.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "modules/audio_coding/codecs/ilbc/constants.h"
@@ -204,10 +205,10 @@ size_t
 
     
     
-    
     max16 = regressor[WebRtcSpl_MaxAbsIndexW16(regressor, plc_blockl + 3 - 1)];
-
-    const int64_t max_val = plc_blockl * max16 * max16;
+    const int16_t max_target =
+        target[WebRtcSpl_MaxAbsIndexW16(target, plc_blockl + 3 - 1)];
+    const int64_t max_val = plc_blockl * abs(max16 * max_target);
     const int32_t factor = max_val >> 31;
     shifts = factor == 0 ? 0 : 31 - WebRtcSpl_NormW32(factor);
 
