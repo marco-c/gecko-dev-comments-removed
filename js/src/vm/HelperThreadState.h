@@ -688,7 +688,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   frontend::CompilationStencilMerger merger;
 
   
-  OffThreadFrontendErrors errors_;
+  OffThreadErrorContext ec_;
 
   
   static UniquePtr<DelazifyTask> Create(

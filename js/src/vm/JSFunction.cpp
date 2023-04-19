@@ -49,6 +49,7 @@
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/BooleanObject.h"
+#include "vm/ErrorContext.h"           
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/GlobalObject.h"
@@ -1419,7 +1420,8 @@ bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
   }
 
   
-  if (!frontend::DelazifyCanonicalScriptedFunction(cx, fun)) {
+  MainThreadErrorContext ec(cx);
+  if (!frontend::DelazifyCanonicalScriptedFunction(cx, &ec, fun)) {
     
     
     MOZ_ASSERT(fun->baseScript() == lazy);
