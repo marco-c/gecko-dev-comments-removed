@@ -953,7 +953,13 @@ PlacesController.prototype = {
     }
 
     if (URIs.size) {
-      await PlacesUtils.history.remove([...URIs]);
+      await PlacesUIUtils.batchUpdatesForNode(
+        this._view.result,
+        URIs.size,
+        async () => {
+          await PlacesUtils.history.remove([...URIs]);
+        }
+      );
     }
   },
 
@@ -974,6 +980,8 @@ PlacesController.prototype = {
         (aContainerNode.title == PlacesUtils.getString("localhost")
           ? ""
           : aContainerNode.title);
+      
+      aContainerNode.containerOpen = false;
       await PlacesUtils.history.removeByFilter({ host });
     } else if (PlacesUtils.nodeIsDay(aContainerNode)) {
       
@@ -983,6 +991,8 @@ PlacesController.prototype = {
       if (!query || !beginTime || !endTime) {
         throw new Error("A valid date container query should exist!");
       }
+      
+      aContainerNode.containerOpen = false;
       
       
       

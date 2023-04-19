@@ -170,6 +170,10 @@ class nsNavHistoryResult final
 
   void HandlePlacesEvent(const PlacesEventSequence& aEvents) override;
 
+  
+  
+  bool IsBulkPageRemovedEvent(const PlacesEventSequence& aEvents);
+
   void OnMobilePrefChanged();
 
   bool IsBatching() const { return mBatchInProgress > 0; };

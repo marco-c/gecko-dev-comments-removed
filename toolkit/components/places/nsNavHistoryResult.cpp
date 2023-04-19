@@ -65,6 +65,10 @@
 
 #define MAX_BATCH_CHANGES_BEFORE_REFRESH 5
 
+
+
+#define MAX_PAGE_REMOVES_BEFORE_REFRESH 10
+
 using namespace mozilla;
 using namespace mozilla::places;
 
@@ -4209,7 +4213,23 @@ void nsNavHistoryResult::OnIconChanged(nsIURI* aURI, nsIURI* aFaviconURI,
   }
 }
 
+bool nsNavHistoryResult::IsBulkPageRemovedEvent(
+    const PlacesEventSequence& aEvents) {
+  if (IsBatching() || aEvents.Length() <= MAX_PAGE_REMOVES_BEFORE_REFRESH) {
+    return false;
+  }
+  for (const auto& event : aEvents) {
+    if (event->Type() != PlacesEventType::Page_removed) return false;
+  }
+  return true;
+}
+
 void nsNavHistoryResult::HandlePlacesEvent(const PlacesEventSequence& aEvents) {
+  if (IsBulkPageRemovedEvent(aEvents)) {
+    ENUMERATE_HISTORY_OBSERVERS(Refresh());
+    return;
+  }
+
   for (const auto& event : aEvents) {
     switch (event->Type()) {
       case PlacesEventType::Favicon_changed: {
