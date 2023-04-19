@@ -13,10 +13,10 @@
 
 #include <stdint.h>
 
+#include <atomic>
 #include <memory>
 
 #include "api/units/timestamp.h"
-#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/system/rtc_export.h"
 #include "system_wrappers/include/ntp_time.h"
 
@@ -75,8 +75,12 @@ class SimulatedClock : public Clock {
   void AdvanceTime(TimeDelta delta);
 
  private:
-  Timestamp time_;
-  std::unique_ptr<RWLockWrapper> lock_;
+  
+  
+  
+  
+  
+  std::atomic<int64_t> time_us_;
 };
 
 }  
