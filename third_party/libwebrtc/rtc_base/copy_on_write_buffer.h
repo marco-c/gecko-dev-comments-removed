@@ -96,14 +96,6 @@ class RTC_EXPORT CopyOnWriteBuffer {
   }
 
   
-  template <typename T = uint8_t,
-            typename std::enable_if<
-                internal::BufferCompat<uint8_t, T>::value>::type* = nullptr>
-  T* data() {
-    return MutableData<T>();
-  }
-
-  
   
   template <typename T = uint8_t,
             typename std::enable_if<
@@ -152,12 +144,6 @@ class RTC_EXPORT CopyOnWriteBuffer {
 
   bool operator!=(const CopyOnWriteBuffer& buf) const {
     return !(*this == buf);
-  }
-
-  
-  uint8_t& operator[](size_t index) {
-    RTC_DCHECK_LT(index, size());
-    return MutableData()[index];
   }
 
   uint8_t operator[](size_t index) const {

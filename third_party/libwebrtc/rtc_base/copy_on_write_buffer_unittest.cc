@@ -261,46 +261,33 @@ TEST(CopyOnWriteBufferTest, ClearDoesntChangeCapacity) {
   EXPECT_EQ(10u, buf2.capacity());
 }
 
-TEST(CopyOnWriteBufferTest, TestConstDataAccessor) {
+TEST(CopyOnWriteBufferTest, DataAccessorDoesntCloneData) {
   CopyOnWriteBuffer buf1(kTestData, 3, 10);
   CopyOnWriteBuffer buf2(buf1);
 
-  
-  const uint8_t* cdata1 = buf1.cdata();
-  const uint8_t* cdata2 = buf2.cdata();
-  EXPECT_EQ(cdata1, cdata2);
-
-  
-  const uint8_t* data1 = buf1.data();
-  const uint8_t* data2 = buf2.data();
-  EXPECT_NE(data1, data2);
-  
-  EXPECT_NE(data1, cdata1);
-  
-  EXPECT_EQ(data2, cdata1);
+  EXPECT_EQ(buf1.data(), buf2.data());
 }
 
+TEST(CopyOnWriteBufferTest, MutableDataClonesDataWhenShared) {
+  CopyOnWriteBuffer buf1(kTestData, 3, 10);
+  CopyOnWriteBuffer buf2(buf1);
+  const uint8_t* cdata = buf1.data();
+
+  uint8_t* data1 = buf1.MutableData();
+  uint8_t* data2 = buf2.MutableData();
+  
+  EXPECT_NE(data1, cdata);
+  
+  EXPECT_EQ(data2, cdata);
+}
 
 TEST(CopyOnWriteBufferTest, SeveralReads) {
   CopyOnWriteBuffer buf1(kTestData, 3, 10);
   CopyOnWriteBuffer buf2(buf1);
 
   EnsureBuffersShareData(buf1, buf2);
-  
   for (size_t i = 0; i != 3u; ++i) {
     EXPECT_EQ(buf1[i], kTestData[i]);
-  }
-  EnsureBuffersDontShareData(buf1, buf2);
-}
-
-TEST(CopyOnWriteBufferTest, SeveralConstReads) {
-  CopyOnWriteBuffer buf1(kTestData, 3, 10);
-  CopyOnWriteBuffer buf2(buf1);
-
-  EnsureBuffersShareData(buf1, buf2);
-  const CopyOnWriteBuffer& cbuf1 = buf1;
-  for (size_t i = 0; i != 3u; ++i) {
-    EXPECT_EQ(cbuf1[i], kTestData[i]);
   }
   EnsureBuffersShareData(buf1, buf2);
 }
