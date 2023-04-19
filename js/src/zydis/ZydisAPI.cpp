@@ -49,8 +49,8 @@ void zydisDisassemble(const uint8_t* code, size_t codeLen,
   while (ZYAN_SUCCESS(ZydisDecoderDecodeBuffer(&decoder, code + offset, length - offset,
                                                &instruction)))
   {
-#  define LIMIT 36
-#  define LIMSTR "36"
+#  define LIMIT 48
+#  define LIMSTR "48"
 
     
     
