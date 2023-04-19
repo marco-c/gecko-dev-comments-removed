@@ -46,7 +46,7 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
   
   
   
-  ::LoadLibraryW(L"winmm.dll");
+  LoadLibraryOrCrash(L"winmm.dll");
 
   if (*sandboxingKind == SandboxingKind::GENERIC_UTILITY) {
     
