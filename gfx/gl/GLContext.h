@@ -3442,7 +3442,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
 
 
-  bool IsOwningThreadCurrent();
+  bool IsOwningThread() const;
 
   static void PlatformStartup();
 
@@ -3569,7 +3569,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   RefPtr<GLContext> mSharedContext;
 
   
-  PlatformThreadId mOwningThreadId;
+  const PlatformThreadId mOwningThreadId;
 
   GLContextSymbols mSymbols = {};
 
