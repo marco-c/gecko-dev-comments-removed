@@ -6,6 +6,9 @@ const testPath = getRootDirectory(gTestPath).replace(
   "http://example.com"
 );
 
+const UPGRADE_DISPLAY_CONTENT =
+  "security.mixed_content.upgrade_display_content";
+
 let threeMessagesArrived = 0;
 let messageImageSeen = false;
 
@@ -44,6 +47,26 @@ function on_console_message(msgObj) {
     );
     threeMessagesArrived++;
   }
+  
+  
+  else if (
+    Services.prefs.getBoolPref(UPGRADE_DISPLAY_CONTENT) &&
+    message.includes("Mixed Content: Upgrading")
+  ) {
+    ok(
+      message.includes("insecure display request"),
+      "display content got load"
+    );
+    ok(
+      message.includes(
+        "‘http://example.com/browser/dom/security/test/https-first/auto_upgrading_identity.png’ to use ‘https’"
+      ),
+      "img loaded secure"
+    );
+    threeMessagesArrived++;
+    messageImageSeen = true;
+  }
+  
   
   
   
