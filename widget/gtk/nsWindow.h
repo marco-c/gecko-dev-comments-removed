@@ -433,8 +433,6 @@ class nsWindow final : public nsBaseWidget {
     
     COMPOSITOR_ENABLED,
     
-    COMPOSITOR_PAUSED_INITIALLY,
-    
     
     COMPOSITOR_PAUSED_FLICKERING
   } WindowCompositorState;
@@ -455,9 +453,7 @@ class nsWindow final : public nsBaseWidget {
   void DispatchPanGesture(mozilla::PanGestureInput& aPanInput);
 
   void RegisterTouchWindow() override;
-  bool CompositorInitiallyPaused() override {
-    return mCompositorState == COMPOSITOR_PAUSED_INITIALLY;
-  }
+
   nsCOMPtr<nsIWidget> mParent;
   nsPopupType mPopupHint{};
   int mWindowScaleFactor = 1;
@@ -525,7 +521,7 @@ class nsWindow final : public nsBaseWidget {
   GdkWindow* mGdkWindow = nullptr;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
   mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState{
-      COMPOSITOR_PAUSED_INITIALLY};
+      COMPOSITOR_ENABLED};
   
   
   int mCompositorPauseTimeoutID = 0;
@@ -768,6 +764,7 @@ class nsWindow final : public nsBaseWidget {
   
   void ConfigureGdkWindow();
   void ReleaseGdkWindow();
+  void ConfigureCompositor();
 
   
   WindowRenderer* GetWindowRenderer() override;
