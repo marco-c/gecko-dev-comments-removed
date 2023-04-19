@@ -27,6 +27,8 @@ namespace JS {
 
 class Symbol
     : public js::gc::CellWithTenuredGCPointer<js::gc::TenuredCell, JSAtom> {
+  friend struct js::gc::CellAllocator;
+
  public:
   
   JSAtom* description() const { return headerPtr(); }
@@ -38,7 +40,7 @@ class Symbol
   
   js::HashNumber hash_;
 
-  Symbol(SymbolCode code, js::HashNumber hash, JSAtom* desc)
+  Symbol(SymbolCode code, js::HashNumber hash, Handle<JSAtom*> desc)
       : CellWithTenuredGCPointer(desc), code_(code), hash_(hash) {}
 
   Symbol(const Symbol&) = delete;

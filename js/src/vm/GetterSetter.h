@@ -7,8 +7,9 @@
 #ifndef vm_GetterSetter_h
 #define vm_GetterSetter_h
 
-#include "gc/Barrier.h"  
-#include "gc/Cell.h"     
+#include "gc/Allocator.h"  
+#include "gc/Barrier.h"    
+#include "gc/Cell.h"       
 
 #include "js/TypeDecls.h"  
 #include "js/UbiNode.h"    
@@ -55,6 +56,8 @@ namespace js {
 
 
 class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
+  friend struct gc::CellAllocator;
+
  public:
   
   JSObject* getter() const { return headerPtr(); }
@@ -67,7 +70,7 @@ class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
 #endif
 
  private:
-  GetterSetter(JSObject* getter, JSObject* setter);
+  GetterSetter(HandleObject getter, HandleObject setter);
 
  public:
   static GetterSetter* create(JSContext* cx, HandleObject getter,

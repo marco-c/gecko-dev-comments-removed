@@ -262,6 +262,13 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void onOverRecursed();
 
   
+  template <typename T, js::AllowGC allowGC = js::CanGC, typename... Args>
+  T* newCell(Args&&... args) {
+    return js::gc::CellAllocator::template NewCell<T, allowGC>(
+        this, std::forward<Args>(args)...);
+  }
+
+  
   void recoverFromOutOfMemory();
 
   void reportAllocationOverflow();

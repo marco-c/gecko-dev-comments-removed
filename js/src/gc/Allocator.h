@@ -7,18 +7,14 @@
 #ifndef gc_Allocator_h
 #define gc_Allocator_h
 
-#include <stddef.h>
+#include "mozilla/OperatorNewExtensions.h"
+
+#include <stdint.h>
 
 #include "gc/AllocKind.h"
 #include "js/TypeDecls.h"
 
 namespace js {
-
-namespace gc {
-class AllocSite;
-struct Cell;
-class TenuredCell;
-}  
 
 
 
@@ -36,6 +32,35 @@ class TenuredCell;
 
 enum AllowGC { NoGC = 0, CanGC = 1 };
 
+namespace gc {
+class AllocSite;
+struct Cell;
+class TenuredCell;
+
+
+
+
+struct CellAllocator {
+  
+  template <typename T, js::AllowGC allowGC = CanGC, typename... Args>
+  static T* NewCell(JSContext* cx, Args&&... args);
+};
+
+namespace detail {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template <AllowGC allowGC = CanGC>
 gc::TenuredCell* AllocateTenuredImpl(JSContext* cx, gc::AllocKind kind,
@@ -43,20 +68,6 @@ gc::TenuredCell* AllocateTenuredImpl(JSContext* cx, gc::AllocKind kind,
 template <AllowGC allowGC = CanGC>
 gc::Cell* AllocateStringCell(JSContext* cx, gc::AllocKind kind, size_t size,
                              gc::InitialHeap heap);
-
-
-
-
-
-
-
-template <typename T, AllowGC allowGC = CanGC>
-gc::TenuredCell* Allocate(JSContext* cx) {
-  static_assert(std::is_base_of_v<gc::Cell, T>);
-  gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
-  return AllocateTenuredImpl<allowGC>(cx, kind, sizeof(T));
-}
-
 
 
 
@@ -71,8 +82,10 @@ JSObject* AllocateObject(JSContext* cx, gc::AllocKind kind,
 
 
 
+
 template <typename StringT, AllowGC allowGC = CanGC>
-StringT* AllocateString(JSContext* cx, gc::InitialHeap heap) {
+StringT* AllocateString(JSContext* cx,
+                        gc::InitialHeap heap = gc::InitialHeap::TenuredHeap) {
   static_assert(std::is_base_of_v<JSString, StringT>);
   gc::AllocKind kind = gc::MapTypeToAllocKind<StringT>::kind;
   gc::Cell* cell = AllocateStringCell<allowGC>(cx, kind, sizeof(StringT), heap);
@@ -87,6 +100,43 @@ StringT* AllocateString(JSContext* cx, gc::InitialHeap heap) {
 
 template <AllowGC allowGC = CanGC>
 JS::BigInt* AllocateBigInt(JSContext* cx, gc::InitialHeap heap);
+
+}  
+}  
+
+
+
+template <typename T, AllowGC allowGC, typename... Args>
+T* gc::CellAllocator::NewCell(JSContext* cx, Args&&... args) {
+  static_assert(std::is_base_of_v<gc::Cell, T>);
+  if constexpr (std::is_base_of_v<JSString, T> &&
+                !std::is_base_of_v<JSAtom, T> &&
+                !std::is_base_of_v<JSExternalString, T>) {
+    return gc::detail::AllocateString<T, allowGC>(cx,
+                                                  std::forward<Args>(args)...);
+  } else if constexpr (std::is_base_of_v<JS::BigInt, T>) {
+    return gc::detail::AllocateBigInt<allowGC>(cx, args...);
+  } else if constexpr (std::is_base_of_v<JSObject, T>) {
+    return static_cast<T*>(
+        gc::detail::AllocateObject<allowGC>(cx, std::forward<Args>(args)...));
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
+    gc::TenuredCell* cell =
+        gc::detail::AllocateTenuredImpl<allowGC>(cx, kind, sizeof(T));
+    if (!cell) {
+      return nullptr;
+    }
+    return new (mozilla::KnownNotNull, cell) T(std::forward<Args>(args)...);
+  }
+}
 
 }  
 
