@@ -295,10 +295,13 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  void MaybeUpdateDemuxerAndRtpExtensions_w(
+  
+  
+  
+  bool MaybeUpdateDemuxerAndRtpExtensions_w(
       bool update_demuxer,
-      absl::optional<RtpHeaderExtensions> extensions)
-      RTC_RUN_ON(worker_thread());
+      absl::optional<RtpHeaderExtensions> extensions,
+      std::string& error_desc) RTC_RUN_ON(worker_thread());
 
   bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
 
