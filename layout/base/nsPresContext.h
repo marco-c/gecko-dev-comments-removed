@@ -92,6 +92,9 @@ class Document;
 class Element;
 enum class PrefersColorSchemeOverride : uint8_t;
 }  
+namespace gfx {
+class FontPaletteValueSet;
+}  
 }  
 
 
@@ -923,6 +926,9 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void FlushFontFeatureValues();
   void MarkFontFeatureValuesDirty() { mFontFeatureValuesDirty = true; }
 
+  void FlushFontPaletteValues();
+  void MarkFontPaletteValuesDirty() { mFontPaletteValuesDirty = true; }
+
   
   
   
@@ -1084,6 +1090,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     return mFontFeatureValuesLookup;
   }
 
+  mozilla::gfx::FontPaletteValueSet* GetFontPaletteValueSet() const {
+    return mFontPaletteValueSet;
+  }
+
  protected:
   friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
@@ -1185,6 +1195,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   const nsStaticAtom* mMedium;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
+  RefPtr<mozilla::gfx::FontPaletteValueSet> mFontPaletteValueSet;
 
   
   
@@ -1339,6 +1350,9 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   
   unsigned mFontFeatureValuesDirty : 1;
+
+  
+  unsigned mFontPaletteValuesDirty : 1;
 
   unsigned mIsVisual : 1;
 
