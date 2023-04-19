@@ -886,61 +886,53 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
   bool isEmpty;
   if (frameType == LayoutFrameType::None) {
     isEmpty = pfd->mFrame->IsEmpty();
-  } else {
-    if (LayoutFrameType::Placeholder == frameType) {
-      isEmpty = true;
-      pfd->mIsPlaceholder = true;
-      pfd->mSkipWhenTrimmingWhitespace = true;
-      nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
-      if (outOfFlowFrame) {
-        if (psd->mNoWrap &&
-            
-            !LineIsEmpty() &&
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            !outOfFlowFrame->IsLetterFrame() &&
-            !GetOutermostLineLayout()
-                 ->mBlockRS->mFlags.mCanHaveOverflowMarkers) {
+  } else if (LayoutFrameType::Placeholder == frameType) {
+    isEmpty = true;
+    pfd->mIsPlaceholder = true;
+    pfd->mSkipWhenTrimmingWhitespace = true;
+    nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
+    if (outOfFlowFrame) {
+      if (psd->mNoWrap &&
           
-          RecordNoWrapFloat(outOfFlowFrame);
-        } else {
-          placedFloat = TryToPlaceFloat(outOfFlowFrame);
-        }
-      }
-    } else if (isText) {
-      
-      pfd->mIsTextFrame = true;
-      nsTextFrame* textFrame = static_cast<nsTextFrame*>(pfd->mFrame);
-      isEmpty = !textFrame->HasNoncollapsedCharacters();
-      if (!isEmpty) {
-        pfd->mIsNonEmptyTextFrame = true;
-        nsIContent* content = textFrame->GetContent();
-
-        const nsTextFragment* frag = content->GetText();
-        if (frag) {
-          pfd->mIsNonWhitespaceTextFrame = !content->TextIsOnlyWhitespace();
-        }
-      }
-    } else if (LayoutFrameType::Br == frameType) {
-      pfd->mSkipWhenTrimmingWhitespace = true;
-      isEmpty = false;
-    } else {
-      if (LayoutFrameType::Letter == frameType) {
-        pfd->mIsLetterFrame = true;
-      }
-      if (pfd->mSpan) {
-        isEmpty =
-            !pfd->mSpan->mHasNonemptyContent && pfd->mFrame->IsSelfEmpty();
+          !LineIsEmpty() &&
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          !outOfFlowFrame->IsLetterFrame() &&
+          !GetOutermostLineLayout()->mBlockRS->mFlags.mCanHaveOverflowMarkers) {
+        
+        RecordNoWrapFloat(outOfFlowFrame);
       } else {
-        isEmpty = pfd->mFrame->IsEmpty();
+        placedFloat = TryToPlaceFloat(outOfFlowFrame);
       }
+    }
+  } else if (isText) {
+    
+    pfd->mIsTextFrame = true;
+    auto* textFrame = static_cast<nsTextFrame*>(pfd->mFrame);
+    isEmpty = !textFrame->HasNoncollapsedCharacters();
+    if (!isEmpty) {
+      pfd->mIsNonEmptyTextFrame = true;
+      pfd->mIsNonWhitespaceTextFrame =
+          !textFrame->GetContent()->TextIsOnlyWhitespace();
+    }
+  } else if (LayoutFrameType::Br == frameType) {
+    pfd->mSkipWhenTrimmingWhitespace = true;
+    isEmpty = false;
+  } else {
+    if (LayoutFrameType::Letter == frameType) {
+      pfd->mIsLetterFrame = true;
+    }
+    if (pfd->mSpan) {
+      isEmpty = !pfd->mSpan->mHasNonemptyContent && pfd->mFrame->IsSelfEmpty();
+    } else {
+      isEmpty = pfd->mFrame->IsEmpty();
     }
   }
   pfd->mIsEmpty = isEmpty;
@@ -1003,8 +995,7 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
     
     
     if (aReflowStatus.IsComplete()) {
-      nsIFrame* kidNextInFlow = aFrame->GetNextInFlow();
-      if (nullptr != kidNextInFlow) {
+      if (nsIFrame* kidNextInFlow = aFrame->GetNextInFlow()) {
         
         
         
@@ -1240,7 +1231,7 @@ bool nsLineLayout::CanPlaceFrame(PerFrameData* pfd, bool aNotSafeToBreak,
   }
 
 #ifdef NOISY_CAN_PLACE_FRAME
-  if (nullptr != psd->mFrame) {
+  if (psd->mFrame) {
     psd->mFrame->mFrame->ListTag(stdout);
   }
   printf(": aNotSafeToBreak=%s frame=", aNotSafeToBreak ? "true" : "false");
