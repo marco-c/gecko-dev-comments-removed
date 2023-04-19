@@ -166,6 +166,13 @@ def bindgen_clang_compiler(
     if sysroot_path:
         flags.extend(("--sysroot", sysroot_path))
     info = check_compiler([clang_path] + flags, "C++", target)
+    
+    
+    
+    
+    if info.flags:
+        flags += info.flags
+        info = check_compiler([clang_path] + flags, "C++", target)
     return namespace(
         path=clang_path,
         flags=flags + info.flags,
