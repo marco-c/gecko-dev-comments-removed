@@ -1561,8 +1561,8 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackRemoveTrack) {
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
   
-  EXPECT_TRUE(pc_->RemoveTrack(audio_sender));
-  EXPECT_TRUE(pc_->RemoveTrack(video_sender));
+  EXPECT_TRUE(pc_->RemoveTrackOrError(audio_sender).ok());
+  EXPECT_TRUE(pc_->RemoveTrackOrError(video_sender).ok());
 
   
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
@@ -1579,8 +1579,8 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackRemoveTrack) {
 
   
   
-  EXPECT_FALSE(pc_->RemoveTrack(audio_sender));
-  EXPECT_FALSE(pc_->RemoveTrack(video_sender));
+  EXPECT_FALSE(pc_->RemoveTrackOrError(audio_sender).ok());
+  EXPECT_FALSE(pc_->RemoveTrackOrError(video_sender).ok());
 }
 
 
@@ -1867,7 +1867,7 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
 
   
   
-  pc_->RemoveTrack(pc_->GetSenders()[0]);
+  pc_->RemoveTrackOrError(pc_->GetSenders()[0]);
   
   CreateOfferReceiveAnswer();
 

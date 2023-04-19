@@ -829,22 +829,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   
   
   
-  ABSL_DEPRECATED("Use RemoveTrackOrError")
-  virtual bool RemoveTrack(RtpSenderInterface* sender) {
-    return RemoveTrackOrError(rtc::scoped_refptr<RtpSenderInterface>(sender))
-        .ok();
-  }
-
-  
-  ABSL_DEPRECATED("Use RemoveTrackOrError")
-  virtual RTCError RemoveTrackNew(
-      rtc::scoped_refptr<RtpSenderInterface> sender) {
-    return RemoveTrackOrError(sender);
-  }
-
-  
-  
-  
   
   
   

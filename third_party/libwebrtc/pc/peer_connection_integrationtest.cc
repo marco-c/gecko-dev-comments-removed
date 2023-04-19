@@ -473,7 +473,7 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
 
   
-  callee()->pc()->RemoveTrack(callee_sender);
+  callee()->pc()->RemoveTrackOrError(callee_sender);
 
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
@@ -505,7 +505,7 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
 
   
-  caller()->pc()->RemoveTrack(caller_sender);
+  caller()->pc()->RemoveTrackOrError(caller_sender);
 
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
@@ -963,7 +963,7 @@ TEST_F(PeerConnectionIntegrationTestPlanB, EnableAudioAfterRejecting) {
 
   
   
-  caller()->pc()->RemoveTrack(sender);
+  caller()->pc()->RemoveTrackOrError(sender);
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   options.offer_to_receive_audio = 0;
   caller()->SetOfferAnswerOptions(options);
@@ -2956,7 +2956,7 @@ TEST_F(PeerConnectionIntegrationTestPlanB, RemoveAndAddTrackWithNewStreamId) {
     ASSERT_TRUE(ExpectNewFrames(media_expectations));
   }
   
-  caller()->pc()->RemoveTrack(sender);
+  caller()->pc()->RemoveTrackOrError(sender);
   sender = caller()->AddTrack(track, {"stream_2"});
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
