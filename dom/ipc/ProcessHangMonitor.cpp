@@ -22,6 +22,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/TaskFactory.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
@@ -110,6 +111,7 @@ class HangMonitorChild : public PProcessHangMonitorChild,
   void MaybeStartPaintWhileInterruptingJS();
 
   mozilla::ipc::IPCResult RecvTerminateScript() override;
+  mozilla::ipc::IPCResult RecvRequestContentJSInterrupt() override;
   mozilla::ipc::IPCResult RecvBeginStartingDebugger() override;
   mozilla::ipc::IPCResult RecvEndStartingDebugger() override;
 
@@ -344,6 +346,18 @@ HangMonitorChild::~HangMonitorChild() {
 bool HangMonitorChild::InterruptCallback() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  if (StaticPrefs::dom_abort_script_on_child_shutdown() &&
+      mozilla::ipc::ProcessChild::ExpectingShutdown()) {
+    
+    if (!nsContentUtils::IsCallerChrome()) {
+      NS_WARNING(
+          "HangMonitorChild::InterruptCallback: ExpectingShutdown, "
+          "canceling content JS execution.\n");
+      return false;
+    }
+    return true;
+  }
+
   
   
   
@@ -492,6 +506,18 @@ mozilla::ipc::IPCResult HangMonitorChild::RecvTerminateScript() {
 
   MonitorAutoLock lock(mMonitor);
   mTerminateScript = true;
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult HangMonitorChild::RecvRequestContentJSInterrupt() {
+  MOZ_RELEASE_ASSERT(IsOnThread());
+
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::IPCShutdownState,
+      "HangMonitorChild::RecvRequestContentJSInterrupt"_ns);
+  
+  
+  JS_RequestInterruptCallback(mContext);
   return IPC_OK();
 }
 
