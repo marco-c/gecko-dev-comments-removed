@@ -21,10 +21,11 @@ const EXPERIMENT_TYPE = "nimbus";
 const EVENT_FILTER = { category: TELEMETRY_CATEGORY };
 
 add_setup(async function() {
-  let sandbox = sinon.createSandbox();
+  const sandbox = sinon.createSandbox();
   
   
   sandbox.stub(ExperimentManager, "observe");
+
   await SpecialPowers.pushPrefEnv({
     set: [["app.shield.optoutstudies.enabled", true]],
   });
