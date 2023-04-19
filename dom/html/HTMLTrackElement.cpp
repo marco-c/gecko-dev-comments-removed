@@ -60,7 +60,7 @@ static constexpr nsAttrValue::EnumTable kKindTable[] = {
 
 
 
-static const nsAttrValue::EnumTable* const kKindTableInvalidValueDefault =
+static constexpr const nsAttrValue::EnumTable* kKindTableInvalidValueDefault =
     &kKindTable[4];
 
 class WindowDestroyObserver final : public nsIObserver {
