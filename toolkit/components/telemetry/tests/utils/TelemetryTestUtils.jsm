@@ -112,6 +112,65 @@ var TelemetryTestUtils = {
 
 
 
+  getEvents(filter = {}, { process = "parent" } = {}) {
+    
+    let snapshots = Services.telemetry.snapshotEvents(
+      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+      false
+    );
+
+    if (!(process in snapshots)) {
+      return [];
+    }
+
+    let snapshot = snapshots[process];
+
+    
+    
+    let {
+      category: filterCategory,
+      method: filterMethod,
+      object: filterObject,
+    } = filter;
+    let matches = (expected, actual) => {
+      if (expected === undefined) {
+        return true;
+      } else if (expected && expected.test) {
+        
+        return expected.test(actual);
+      } else if (typeof expected === "function") {
+        return expected(actual);
+      }
+      return expected === actual;
+    };
+
+    return snapshot
+      .map(([,  category, method, object, value, extra]) => {
+        
+        
+        return [category, method, object, value, extra];
+      })
+      .filter(([category, method, object]) => {
+        return (
+          matches(filterCategory, category) &&
+          matches(filterMethod, method) &&
+          matches(filterObject, object)
+        );
+      })
+      .map(([category, method, object, value, extra]) => {
+        return { category, method, object, value, extra };
+      });
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -145,6 +204,7 @@ var TelemetryTestUtils = {
     );
     let snapshot = snapshots[process];
 
+    
     
     let {
       category: filterCategory,
