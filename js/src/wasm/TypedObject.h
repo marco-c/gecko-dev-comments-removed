@@ -156,37 +156,16 @@ class TypedObject : public JSObject {
   static T* create(JSContext* cx, gc::AllocKind allocKind,
                    gc::InitialHeap heap);
 
-  void initDefault();
-
   bool loadValue(JSContext* cx, const RttValue::PropOffset& offset,
                  wasm::FieldType type, MutableHandleValue vp);
 
-  template <typename V>
-  void visitReferences(V& visitor);
-
  public:
-  
-  
-  static TypedObject* createStruct(JSContext* cx, Handle<RttValue*> rtt,
-                                   gc::InitialHeap heap = gc::DefaultHeap);
-
-  
-  
-  
-  static TypedObject* createArray(JSContext* cx, Handle<RttValue*> rtt,
-                                  uint32_t numElements,
-                                  gc::InitialHeap heap = gc::DefaultHeap);
-
   RttValue& rttValue() const {
     MOZ_ASSERT(rttValue_);
     return *rttValue_;
   }
 
   [[nodiscard]] bool isRuntimeSubtype(js::Handle<RttValue*> rtt) const;
-
-  static constexpr size_t offsetOfRttValue() {
-    return offsetof(TypedObject, rttValue_);
-  }
 
   [[nodiscard]] static bool obj_newEnumerate(JSContext* cx, HandleObject obj,
                                              MutableHandleIdVector properties,
@@ -201,27 +180,26 @@ class TypedObject : public JSObject {
 
 class WasmArrayObject : public TypedObject {
  public:
+  static const JSClass class_;
+
   
   uint32_t numElements_;
 
- private:
   
   
   
   uint8_t* data_;
 
-  friend class TypedObject;
-
- public:
-  static const JSClass class_;
-
   
   static gc::AllocKind allocKind();
 
   
-  uint32_t numElements() const { return numElements_; }
-  void setNumElements(uint32_t numElements) { numElements_ = numElements; }
-  uint8_t* data() const { return data_; }
+  
+  
+  
+  static WasmArrayObject* createArray(JSContext* cx, Handle<RttValue*> rtt,
+                                      uint32_t numElements,
+                                      gc::InitialHeap heap = gc::DefaultHeap);
 
   
   static constexpr size_t offsetOfNumElements() {
@@ -250,6 +228,9 @@ class WasmArrayObject : public TypedObject {
 
 
 class WasmStructObject : public TypedObject {
+ public:
+  static const JSClass class_;
+
   
   
   uint8_t* outlineData_;
@@ -267,12 +248,6 @@ class WasmStructObject : public TypedObject {
   
   alignas(8) uint8_t inlineData_[0];
 
- protected:
-  friend class TypedObject;
-
- public:
-  static const JSClass class_;
-
   
   
   static inline size_t sizeOfIncludingInlineData(size_t sizeOfInlineData) {
@@ -283,6 +258,11 @@ class WasmStructObject : public TypedObject {
 
   
   static inline gc::AllocKind allocKindForRttValue(RttValue* rtt);
+
+  
+  
+  static WasmStructObject* createStruct(JSContext* cx, Handle<RttValue*> rtt,
+                                        gc::InitialHeap heap = gc::DefaultHeap);
 
   
   
@@ -304,10 +284,10 @@ class WasmStructObject : public TypedObject {
                                        uint32_t fieldOffset);
 
   
-  static size_t offsetOfOutlineData() {
+  static constexpr size_t offsetOfOutlineData() {
     return offsetof(WasmStructObject, outlineData_);
   }
-  static size_t offsetOfInlineData() {
+  static constexpr size_t offsetOfInlineData() {
     return offsetof(WasmStructObject, inlineData_);
   }
 
