@@ -275,8 +275,8 @@ int LibvpxVp9Decoder::ReturnFrame(
   
   
   
-  rtc::scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer> img_buffer =
-      static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv);
+  rtc::scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer> img_buffer(
+      static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv));
 
   
   

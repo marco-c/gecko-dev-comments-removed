@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/mac_capturer.h"
 
@@ -26,7 +26,7 @@
     didCaptureVideoFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   const int64_t timestamp_us = frame.timeStampNs / rtc::kNumNanosecsPerMicrosec;
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(frame.buffer);
+      rtc::make_ref_counted<webrtc::ObjCFrameBuffer>(frame.buffer);
   _capturer->OnFrame(webrtc::VideoFrame::Builder()
                          .set_video_frame_buffer(buffer)
                          .set_rotation(webrtc::kVideoRotation_0)
@@ -55,7 +55,7 @@ AVCaptureDeviceFormat *SelectClosestFormat(AVCaptureDevice *device, size_t width
   return selectedFormat;
 }
 
-}  // namespace
+}  
 
 namespace webrtc {
 namespace test {
@@ -103,5 +103,5 @@ void MacCapturer::OnFrame(const VideoFrame &frame) {
   TestVideoCapturer::OnFrame(frame);
 }
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  

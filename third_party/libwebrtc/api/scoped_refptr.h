@@ -75,6 +75,8 @@ class scoped_refptr {
 
   scoped_refptr() : ptr_(nullptr) {}
 
+  
+  
   scoped_refptr(T* p) : ptr_(p) {  
     if (ptr_)
       ptr_->AddRef();
