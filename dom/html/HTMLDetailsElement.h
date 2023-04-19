@@ -13,8 +13,6 @@
 
 namespace mozilla::dom {
 
-class HTMLSummaryElement;
-
 
 
 
@@ -24,18 +22,22 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
  public:
   using NodeInfo = mozilla::dom::NodeInfo;
 
-  explicit HTMLDetailsElement(already_AddRefed<NodeInfo>&& aNodeInfo);
+  explicit HTMLDetailsElement(already_AddRefed<NodeInfo>&& aNodeInfo)
+      : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLDetailsElement, details)
 
-  HTMLSummaryElement* GetFirstSummary() const;
+  nsIContent* GetFirstSummary() const;
 
   nsresult Clone(NodeInfo* aNodeInfo, nsINode** aResult) const override;
 
-  nsresult AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                        const nsAttrValue* aValue, const nsAttrValue* aOldValue,
-                        nsIPrincipal* aMaybeScriptedPrincipal,
-                        bool aNotify) override;
+  
+  nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
+                                      int32_t aModType) const override;
+
+  nsresult BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                         const nsAttrValueOrString* aValue,
+                         bool aNotify) override;
 
   bool IsInteractiveHTMLContent() const override { return true; }
 
@@ -46,13 +48,16 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
     SetHTMLBoolAttr(nsGkAtoms::open, aOpen, aError);
   }
 
-  void ToggleOpen() { SetOpen(!Open(), IgnoreErrors()); }
+  void ToggleOpen() {
+    ErrorResult rv;
+    SetOpen(!Open(), rv);
+    rv.SuppressException();
+  }
 
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
 
  protected:
   virtual ~HTMLDetailsElement();
-  void SetupShadowTree();
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
