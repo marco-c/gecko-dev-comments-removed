@@ -25,7 +25,7 @@ class GainApplier {
   float GetGainFactor() const { return current_gain_factor_; }
 
  private:
-  void Initialize(size_t samples_per_channel);
+  void Initialize(int samples_per_channel);
 
   
   
