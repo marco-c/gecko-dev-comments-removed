@@ -145,7 +145,7 @@ function checkDateTimeString(dateString) {
 
 
 
-function deserializeValueList( serializedValueList) {
+function deserializeValueList(realm, serializedValueList) {
   lazy.assert.array(
     serializedValueList,
     `Expected "serializedValueList" to be an array, got ${serializedValueList}`
@@ -154,7 +154,7 @@ function deserializeValueList( serializedValueList) {
   const deserializedValues = [];
 
   for (const item of serializedValueList) {
-    deserializedValues.push(deserialize( item));
+    deserializedValues.push(deserialize(realm, item));
   }
 
   return deserializedValues;
@@ -174,7 +174,7 @@ function deserializeValueList( serializedValueList) {
 
 
 
-function deserializeKeyValueList( serializedKeyValueList) {
+function deserializeKeyValueList(realm, serializedKeyValueList) {
   lazy.assert.array(
     serializedKeyValueList,
     `Expected "serializedKeyValueList" to be an array, got ${serializedKeyValueList}`
@@ -192,8 +192,8 @@ function deserializeKeyValueList( serializedKeyValueList) {
     const deserializedKey =
       typeof serializedKey == "string"
         ? serializedKey
-        : deserialize( serializedKey);
-    const deserializedValue = deserialize( serializedValue);
+        : deserialize(realm, serializedKey);
+    const deserializedValue = deserialize(realm, serializedValue);
 
     deserializedKeyValueList.push([deserializedKey, deserializedValue]);
   }
@@ -211,21 +211,24 @@ function deserializeKeyValueList( serializedKeyValueList) {
 
 
 
-function deserialize( serializedValue) {
-  const { objectId, type, value } = serializedValue;
+function deserialize(realm, serializedValue) {
+  const { handle, type, value } = serializedValue;
 
   
-  if (objectId !== undefined) {
+  if (handle !== undefined) {
     lazy.assert.string(
-      objectId,
-      `Expected "objectId" to be a string, got ${objectId}`
+      handle,
+      `Expected "handle" to be a string, got ${handle}`
     );
 
-    
-    lazy.logger.warn(
-      `Unsupported type remote reference with objectId ${objectId}`
-    );
-    return undefined;
+    const object = realm.getObjectForHandle(handle);
+    if (!object) {
+      throw new lazy.error.InvalidArgumentError(
+        `Unable to find an object reference for "handle" ${handle}`
+      );
+    }
+
+    return object;
   }
 
   lazy.assert.string(type, `Expected "type" to be a string, got ${type}`);
@@ -276,7 +279,7 @@ function deserialize( serializedValue) {
 
     
     case "array":
-      return deserializeValueList( value);
+      return deserializeValueList(realm, value);
     case "date":
       
       
@@ -284,9 +287,9 @@ function deserialize( serializedValue) {
 
       return new Date(value);
     case "map":
-      return new Map(deserializeKeyValueList(value));
+      return new Map(deserializeKeyValueList(realm, value));
     case "object":
-      return Object.fromEntries(deserializeKeyValueList(value));
+      return Object.fromEntries(deserializeKeyValueList(realm, value));
     case "regexp":
       lazy.assert.object(
         value,
@@ -311,7 +314,7 @@ function deserialize( serializedValue) {
         );
       }
     case "set":
-      return new Set(deserializeValueList( value));
+      return new Set(deserializeValueList(realm, value));
   }
 
   lazy.logger.warn(`Unsupported type for local value ${type}`);
