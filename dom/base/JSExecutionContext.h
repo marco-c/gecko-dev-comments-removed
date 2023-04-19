@@ -11,6 +11,7 @@
 #include "js/OffThreadScriptCompilation.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "js/experimental/JSStencil.h"
 #include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -76,12 +77,15 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   bool mScriptUsed;
 #endif
 
-  bool UpdateDebugMetadata();
-
  private:
   
   template <typename Unit>
   nsresult InternalCompile(JS::SourceText<Unit>& aSrcBuf);
+
+  
+  
+  nsresult InstantiateStencil(RefPtr<JS::Stencil>&& aStencil,
+                              JS::InstantiationStorage* aStorage = nullptr);
 
  public:
   
@@ -126,7 +130,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  [[nodiscard]] nsresult JoinCompile(JS::OffThreadToken** aOffThreadToken);
+  [[nodiscard]] nsresult JoinOffThread(JS::OffThreadToken** aOffThreadToken);
 
   
   nsresult Compile(JS::SourceText<char16_t>& aSrcBuf);
@@ -138,11 +142,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   nsresult Decode(mozilla::Vector<uint8_t>& aBytecodeBuf,
                   size_t aBytecodeIndex);
-
-  
-  
-  
-  nsresult JoinDecode(JS::OffThreadToken** aOffThreadToken);
 
   
   JSScript* GetScript();
