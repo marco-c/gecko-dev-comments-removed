@@ -396,14 +396,6 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
  protected:
   
   
-  
-  
-  static void IPCDataTransferTextItemsToDataTransfer(
-      const IPCDataTransfer& aIpcDataTransfer, bool aHidden,
-      DataTransfer& aDataTransfer);
-
-  
-  
   nsresult CacheExternalData(const char* aFormat, uint32_t aIndex,
                              nsIPrincipal* aPrincipal, bool aHidden);
 

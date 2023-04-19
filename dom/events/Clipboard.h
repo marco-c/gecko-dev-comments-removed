@@ -77,30 +77,17 @@ class Clipboard : public DOMEventTargetHelper {
 
   
   already_AddRefed<nsIRunnable> HandleReadTextRequestWhichRequiresPasteButton(
-      Promise& aPromise, nsIPrincipal& aSubjectPrincipal);
+      Promise& aPromise);
 
   already_AddRefed<Promise> ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                        ClipboardReadType aClipboardReadType,
                                        ErrorResult& aRv);
 
-  
-  
-  
-  
-  
-  static void ProcessDataTransfer(DataTransfer& aDataTransfer,
-                                  Promise& aPromise,
-                                  ClipboardReadType aClipboardReadType,
-                                  nsPIDOMWindowInner* aOwner,
-                                  nsIPrincipal& aSubjectPrincipal,
-                                  bool aNeedToFill);
-
   ~Clipboard();
 
   class ReadTextRequest final {
    public:
-    ReadTextRequest(Promise& aPromise, nsIPrincipal& aSubjectPrincipal)
-        : mPromise{&aPromise}, mSubjectPrincipal{&aSubjectPrincipal} {}
+    explicit ReadTextRequest(Promise& aPromise) : mPromise{&aPromise} {}
 
     
     already_AddRefed<nsIRunnable> Answer();
@@ -111,9 +98,6 @@ class Clipboard : public DOMEventTargetHelper {
     
     
     RefPtr<Promise> mPromise;
-    
-    
-    RefPtr<nsIPrincipal> mSubjectPrincipal;
   };
 
   AutoTArray<UniquePtr<ReadTextRequest>, 1> mReadTextRequests;
