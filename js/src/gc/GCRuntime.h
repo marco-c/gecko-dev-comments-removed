@@ -944,7 +944,7 @@ class GCRuntime {
   MainThreadOrGCTaskData<ZoneVector> zones_;
 
   
-  mozilla::Atomic<JS::HeapState, mozilla::SequentiallyConsistent> heapState_;
+  MainThreadOrGCTaskData<JS::HeapState> heapState_;
   friend class AutoHeapSession;
   friend class JS::AutoEnterCycleCollection;
 
@@ -1022,7 +1022,7 @@ class GCRuntime {
   MainThreadData<RootedValueMap> rootsHash;
 
   
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
+  MainThreadData<uint64_t> nextCellUniqueId_;
 
   
 
