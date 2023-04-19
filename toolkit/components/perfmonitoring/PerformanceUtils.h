@@ -25,10 +25,6 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo();
 
 
 RefPtr<MemoryPromise> CollectMemoryInfo(
-    const RefPtr<dom::BrowsingContext>& aContext,
-    const RefPtr<AbstractThread>& aEventTarget);
-
-RefPtr<MemoryPromise> CollectMemoryInfo(
     const RefPtr<dom::DocGroup>& aDocGroup,
     const RefPtr<AbstractThread>& aEventTarget);
 
