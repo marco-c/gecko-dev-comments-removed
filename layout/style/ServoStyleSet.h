@@ -153,6 +153,8 @@ class ServoStyleSet {
 
   bool GetAuthorStyleDisabled() const { return mAuthorStyleDisabled; }
 
+  bool UsesFontMetrics() const;
+
   void SetAuthorStyleDisabled(bool aStyleDisabled);
 
   

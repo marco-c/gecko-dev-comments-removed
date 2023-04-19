@@ -75,14 +75,12 @@ type WorkUnit<N> = ArrayVec<SendNode<N>, WORK_UNIT_MAX>;
 
 
 #[inline(never)]
-fn create_thread_local_context<'scope, E, D>(
-    traversal: &'scope D,
+fn create_thread_local_context<'scope, E>(
     slot: &mut Option<ThreadLocalStyleContext<E>>,
 ) where
     E: TElement + 'scope,
-    D: DomTraversal<E>,
 {
-    *slot = Some(ThreadLocalStyleContext::new(traversal.shared_context()));
+    *slot = Some(ThreadLocalStyleContext::new());
 }
 
 
@@ -127,7 +125,7 @@ fn top_down_dom<'a, 'scope, E, D>(
         
         
         let mut tlc = tls.ensure(|slot: &mut Option<ThreadLocalStyleContext<E>>| {
-            create_thread_local_context(traversal, slot)
+            create_thread_local_context(slot)
         });
 
         

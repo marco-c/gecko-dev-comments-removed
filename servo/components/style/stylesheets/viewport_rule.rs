@@ -9,7 +9,6 @@
 
 use crate::context::QuirksMode;
 use crate::error_reporting::ContextualParseError;
-use crate::font_metrics::get_metrics_provider_for_product;
 use crate::media_queries::Device;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::StyleBuilder;
@@ -673,14 +672,11 @@ impl MaybeNew for ViewportConstraints {
         
         let initial_viewport = device.au_viewport_size();
 
-        let provider = get_metrics_provider_for_product();
-
         let mut conditions = RuleCacheConditions::default();
         let context = Context {
             
             
             builder: StyleBuilder::for_inheritance(device, None, None),
-            font_metrics_provider: &provider,
             cached_system_font: None,
             in_media_query: false,
             quirks_mode,

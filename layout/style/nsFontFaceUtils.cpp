@@ -172,6 +172,8 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
   nsPresContext* pc = aSubtreeRoot->PresContext();
   PresShell* presShell = pc->PresShell();
 
+  const bool usesMetricsFromStyle = pc->StyleSet()->UsesFontMetrics();
+
   
   
   NS_ConvertUTF8toUTF16 familyName(aFont->FamilyName());
@@ -210,7 +212,7 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
       }
 
       if (alreadyScheduled == ReflowAlreadyScheduled::No ||
-          pc->UsesFontMetricDependentFontUnits()) {
+          usesMetricsFromStyle) {
         if (f->IsPlaceholderFrame()) {
           nsIFrame* oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
           if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {

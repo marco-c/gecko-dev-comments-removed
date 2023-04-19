@@ -12,7 +12,6 @@ use crate::context::SharedStyleContext;
 #[cfg(feature = "gecko")]
 use crate::context::{PostAnimationTasks, UpdateAnimationsTasks};
 use crate::data::ElementData;
-use crate::font_metrics::FontMetricsProvider;
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
 use crate::selector_parser::{AttrValue, Lang, PseudoElement, SelectorImpl};
@@ -362,12 +361,6 @@ pub trait TElement:
     
     
     type TraversalChildrenIterator: Iterator<Item = Self::ConcreteNode>;
-
-    
-    
-    
-    
-    type FontMetricsProvider: FontMetricsProvider + Send;
 
     
     fn as_node(&self) -> Self::ConcreteNode;
