@@ -152,9 +152,6 @@ add_task(async function test_setup() {
   await new Promise(resolve =>
     Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve))
   );
-
-  
-  Services.fog.initializeFOG();
 });
 
 add_task(async function asyncSetup() {
@@ -1218,41 +1215,6 @@ add_task(function test_scalar_filtering() {
     !(KEYED_ID in keyedSnapshot),
     "test keyed scalars should not be snapshotted"
   );
-});
-
-add_task(function test_pseudo_main() {
-  const PING_REASON = "test-reason";
-  const PROFILE_SUBSESSION_COUNTER = 42;
-
-  
-  TelemetryController.testReset();
-  Services.fog.testResetFOG();
-
-  
-  Assert.ok(!Glean.legacyTelemetry.profileSubsessionCounter.testGetValue());
-
-  
-  let pingSubmitted = false;
-  GleanPings.pseudoMain.testBeforeNextSubmit(reason => {
-    pingSubmitted = true;
-    Assert.equal(reason, PING_REASON.replaceAll("-", "_"));
-    Assert.equal(
-      Glean.legacyTelemetry.profileSubsessionCounter.testGetValue(),
-      PROFILE_SUBSESSION_COUNTER
-    );
-  });
-
-  
-  const payload = {
-    info: {
-      reason: PING_REASON,
-      profileSubsessionCounter: PROFILE_SUBSESSION_COUNTER,
-    },
-  };
-  TelemetryController.submitExternalPing("main", payload, {});
-
-  
-  Assert.ok(pingSubmitted, "'pseudo-main' ping was actually submitted");
 });
 
 add_task(async function stopServer() {
