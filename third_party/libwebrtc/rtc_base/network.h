@@ -526,6 +526,9 @@ class RTC_EXPORT Network {
     SignalNetworkPreferenceChanged(this);
   }
 
+  static std::pair<rtc::AdapterType, bool >
+  GuessAdapterFromNetworkCost(int network_cost);
+
   
   std::string ToString() const;
 
