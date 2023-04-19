@@ -32,7 +32,7 @@ static constexpr size_t kRedLastHeaderLength =
     1;  
 
 static constexpr size_t kRedNumberOfRedundantEncodings =
-    2;  
+    1;  
 
 AudioEncoderCopyRed::Config::Config() = default;
 AudioEncoderCopyRed::Config::Config(Config&&) = default;
