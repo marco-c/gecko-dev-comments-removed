@@ -88,7 +88,9 @@ static const char* CSPStrDirectives[] = {
     "block-all-mixed-content",    
     "sandbox",                    
     "worker-src",                 
-    "navigate-to"                 
+    "navigate-to",                
+    "script-src-elem",            
+    "script-src-attr",            
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
@@ -510,11 +512,15 @@ class nsCSPScriptSrcDirective : public nsCSPDirective {
   virtual ~nsCSPScriptSrcDirective();
 
   void setRestrictWorkers() { mRestrictWorkers = true; }
+  void setRestrictScriptElem() { mRestrictScriptElem = true; }
+  void setRestrictScriptAttr() { mRestrictScriptAttr = true; }
 
   virtual bool equals(CSPDirective aDirective) const override;
 
  private:
   bool mRestrictWorkers;
+  bool mRestrictScriptElem;
+  bool mRestrictScriptAttr;
 };
 
 
