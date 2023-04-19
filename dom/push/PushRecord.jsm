@@ -1,8 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
+
+
+"use strict";
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 
 const lazy = {};
 
@@ -17,12 +21,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+const EXPORTED_SYMBOLS = ["PushRecord"];
+
 const prefs = Services.prefs.getBranch("dom.push.");
 
-/**
- * The push subscription record, stored in IndexedDB.
- */
-export function PushRecord(props) {
+
+
+
+function PushRecord(props) {
   this.pushEndpoint = props.pushEndpoint;
   this.scope = props.scope;
   this.originAttributes = props.originAttributes;
@@ -57,20 +63,20 @@ PushRecord.prototype = {
 
   updateQuota(lastVisit) {
     if (this.isExpired() || !this.quotaApplies()) {
-      // Ignore updates if the registration is already expired, or isn't
-      // subject to quota.
+      
+      
       return;
     }
     if (lastVisit < 0) {
-      // If the user cleared their history, but retained the push permission,
-      // mark the registration as expired.
+      
+      
       this.quota = 0;
       return;
     }
     if (lastVisit > this.lastPush) {
-      // If the user visited the site since the last time we received a
-      // notification, reset the quota. `Math.max(0, ...)` ensures the
-      // last visit date isn't in the future.
+      
+      
+      
       let daysElapsed = Math.max(
         0,
         (Date.now() - lastVisit) / 24 / 60 / 60 / 1000
@@ -88,18 +94,18 @@ PushRecord.prototype = {
     this.lastPush = Date.now();
   },
 
-  /**
-   * Records a message ID sent to this push registration. We track the last few
-   * messages sent to each registration to avoid firing duplicate events for
-   * unacknowledged messages.
-   */
+  
+
+
+
+
   noteRecentMessageID(id) {
     if (this.recentMessageIDs) {
       this.recentMessageIDs.unshift(id);
     } else {
       this.recentMessageIDs = [id];
     }
-    // Drop older message IDs from the end of the list.
+    
     let maxRecentMessageIDs = Math.min(
       this.recentMessageIDs.length,
       Math.max(prefs.getIntPref("maxRecentMessageIDsPerSubscription"), 0)
@@ -118,18 +124,18 @@ PushRecord.prototype = {
     this.quota = Math.max(this.quota - 1, 0);
   },
 
-  /**
-   * Queries the Places database for the last time a user visited the site
-   * associated with a push registration.
-   *
-   * @returns {Promise} A promise resolved with either the last time the user
-   *  visited the site, or `-Infinity` if the site is not in the user's history.
-   *  The time is expressed in milliseconds since Epoch.
-   */
+  
+
+
+
+
+
+
+
   async getLastVisit() {
     if (!this.quotaApplies() || this.isTabOpen()) {
-      // If the registration isn't subject to quota, or the user already
-      // has the site open, skip expensive database queries.
+      
+      
       return Date.now();
     }
 
@@ -141,10 +147,10 @@ PushRecord.prototype = {
       return result == 0 ? -Infinity : result;
     }
 
-    // Places History transition types that can fire a
-    // `pushsubscriptionchange` event when the user visits a site with expired push
-    // registrations. Visits only count if the user sees the origin in the address
-    // bar. This excludes embedded resources, downloads, and framed links.
+    
+    
+    
+    
     const QUOTA_REFRESH_TRANSITIONS_SQL = [
       Ci.nsINavHistoryService.TRANSITION_LINK,
       Ci.nsINavHistoryService.TRANSITION_TYPED,
@@ -154,11 +160,11 @@ PushRecord.prototype = {
     ].join(",");
 
     let db = await lazy.PlacesUtils.promiseDBConnection();
-    // We're using a custom query instead of `nsINavHistoryQueryOptions`
-    // because the latter doesn't expose a way to filter by transition type:
-    // `setTransitions` performs a logical "and," but we want an "or." We
-    // also avoid an unneeded left join with favicons, and an `ORDER BY`
-    // clause that emits a suboptimal index warning.
+    
+    
+    
+    
+    
     let rows = await db.executeCached(
       `SELECT MAX(visit_date) AS lastVisit
        FROM moz_places p
@@ -168,7 +174,7 @@ PushRecord.prototype = {
          AND visit_type IN (${QUOTA_REFRESH_TRANSITIONS_SQL})
       `,
       {
-        // Restrict the query to all pages for this origin.
+        
         host: this.uri.host,
         prePath: this.uri.prePath,
       }
@@ -177,7 +183,7 @@ PushRecord.prototype = {
     if (!rows.length) {
       return -Infinity;
     }
-    // Places records times in microseconds.
+    
     let lastVisit = rows[0].getResultByName("lastVisit");
 
     return lastVisit / 1000;
@@ -198,11 +204,11 @@ PushRecord.prototype = {
     return false;
   },
 
-  /**
-   * Indicates whether the registration can deliver push messages to its
-   * associated service worker. System subscriptions are exempt from the
-   * permission check.
-   */
+  
+
+
+
+
   hasPermission() {
     if (
       this.systemRecord ||
@@ -276,8 +282,8 @@ PushRecord.prototype = {
   },
 };
 
-// Define lazy getters for the principal and scope URI. IndexedDB can't store
-// `nsIPrincipal` objects, so we keep them in a private weak map.
+
+
 var principals = new WeakMap();
 Object.defineProperties(PushRecord.prototype, {
   principal: {
@@ -288,7 +294,7 @@ Object.defineProperties(PushRecord.prototype, {
       let principal = principals.get(this);
       if (!principal) {
         let uri = Services.io.newURI(this.scope);
-        // Allow tests to omit origin attributes.
+        
         let originSuffix = this.originAttributes || "";
         principal = Services.scriptSecurityManager.createContentPrincipal(
           uri,

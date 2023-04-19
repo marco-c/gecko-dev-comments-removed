@@ -1,17 +1,26 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { PushDB } from "resource://gre/modules/PushDB.sys.mjs";
-import { PushRecord } from "resource://gre/modules/PushRecord.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+
+
+"use strict";
+
+const { PushDB } = ChromeUtils.import("resource://gre/modules/PushDB.jsm");
+const { PushRecord } = ChromeUtils.import(
+  "resource://gre/modules/PushRecord.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const { clearTimeout, setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
 
-import { PushCrypto } from "resource://gre/modules/PushCrypto.sys.mjs";
+const { PushCrypto } = ChromeUtils.import(
+  "resource://gre/modules/PushCrypto.jsm"
+);
+
+var EXPORTED_SYMBOLS = ["PushServiceHttp2"];
 
 const lazy = {};
 
@@ -28,17 +37,17 @@ XPCOMUtils.defineLazyGetter(lazy, "console", () => {
 const prefs = Services.prefs.getBranch("dom.push.");
 
 const kPUSHHTTP2DB_DB_NAME = "pushHttp2";
-const kPUSHHTTP2DB_DB_VERSION = 5; // Change this if the IndexedDB format changes
+const kPUSHHTTP2DB_DB_VERSION = 5; 
 const kPUSHHTTP2DB_STORE_NAME = "pushHttp2";
 
-/**
- * A proxy between the PushService and connections listening for incoming push
- * messages. The PushService can silence messages from the connections by
- * setting PushSubscriptionListener._pushService to null. This is required
- * because it can happen that there is an outstanding push message that will
- * be send on OnStopRequest but the PushService may not be interested in these.
- * It's easier to stop listening than to have checks at specific points.
- */
+
+
+
+
+
+
+
+
 var PushSubscriptionListener = function(pushService, uri) {
   lazy.console.debug("PushSubscriptionListener()");
   this._pushService = pushService;
@@ -57,13 +66,13 @@ PushSubscriptionListener.prototype = {
 
   onStartRequest(aRequest) {
     lazy.console.debug("PushSubscriptionListener: onStartRequest()");
-    // We do not do anything here.
+    
   },
 
   onDataAvailable(aRequest, aStream, aOffset, aCount) {
     lazy.console.debug("PushSubscriptionListener: onDataAvailable()");
-    // Nobody should send data, but just to be sure, otherwise necko will
-    // complain.
+    
+    
     if (aCount === 0) {
       return;
     }
@@ -100,10 +109,10 @@ PushSubscriptionListener.prototype = {
   },
 };
 
-/**
- * The listener for pushed messages. The message data is collected in
- * OnDataAvailable and send to the app in OnStopRequest.
- */
+
+
+
+
 var PushChannelListener = function(pushSubscriptionListener) {
   lazy.console.debug("PushChannelListener()");
   this._mainListener = pushSubscriptionListener;
@@ -166,7 +175,7 @@ function getHeaderField(aRequest, name) {
   try {
     return aRequest.getRequestHeader(name);
   } catch (e) {
-    // getRequestHeader can throw.
+    
     return null;
   }
 }
@@ -180,8 +189,8 @@ PushServiceDelete.prototype = {
   onStartRequest(aRequest) {},
 
   onDataAvailable(aRequest, aStream, aOffset, aCount) {
-    // Nobody should send data, but just to be sure, otherwise necko will
-    // complain.
+    
+    
     if (aCount === 0) {
       return;
     }
@@ -228,7 +237,7 @@ SubscriptionListener.prototype = {
   onStopRequest(aRequest, aStatus) {
     lazy.console.debug("SubscriptionListener: onStopRequest()");
 
-    // Check if pushService is still active.
+    
     if (!this._service.hasmainPushService()) {
       this._reject(new Error("Push service unavailable"));
       return;
@@ -376,7 +385,7 @@ function linkParser(linkHeader, serverURI) {
 
   lazy.console.debug("linkParser: pushEndpoint", pushEndpoint);
   lazy.console.debug("linkParser: pushReceiptEndpoint", pushReceiptEndpoint);
-  // Missing pushReceiptEndpoint is allowed.
+  
   if (!pushEndpoint) {
     throw new Error("Missing push endpoint");
   }
@@ -393,18 +402,18 @@ function linkParser(linkHeader, serverURI) {
   };
 }
 
-/**
- * The implementation of the WebPush.
- */
-export var PushServiceHttp2 = {
+
+
+
+var PushServiceHttp2 = {
   _mainPushService: null,
   _serverURI: null,
 
-  // Keep information about all connections, e.g. the channel, listener...
+  
   _conns: {},
   _started: false,
 
-  // Set of SubscriptionListeners that are pending a subscription retry attempt.
+  
   _listenersPendingRetry: new Set(),
 
   newPushDB() {
@@ -427,7 +436,7 @@ export var PushServiceHttp2 = {
   },
 
   async sendSubscribeBroadcast(serviceId, version) {
-    // Not implemented yet
+    
   },
 
   isConnected() {
@@ -451,9 +460,9 @@ export var PushServiceHttp2 = {
     return chan;
   },
 
-  /**
-   * Subscribe new resource.
-   */
+  
+
+
   register(aRecord) {
     lazy.console.debug("subscribeResource()");
 
@@ -509,19 +518,19 @@ export var PushServiceHttp2 = {
     });
   },
 
-  /**
-   * Unsubscribe the resource with a subscription uri aSubscriptionUri.
-   * We can't do anything about it if it fails, so we don't listen for response.
-   */
+  
+
+
+
   _unsubscribeResource(aSubscriptionUri) {
     lazy.console.debug("unsubscribeResource()");
 
     return this._deleteResource(aSubscriptionUri);
   },
 
-  /**
-   * Start listening for messages.
-   */
+  
+
+
   _listenForMsgs(aSubscriptionUri) {
     lazy.console.debug("listenForMsgs()", aSubscriptionUri);
     if (!this._conns[aSubscriptionUri]) {
@@ -576,7 +585,7 @@ export var PushServiceHttp2 = {
     lazy.console.debug("retryAfterBackoff()");
 
     var resetRetryCount = prefs.getIntPref("http2.reset_retry_count_after_ms");
-    // If it was running for some time, reset retry counter.
+    
     if (
       Date.now() - this._conns[aSubscriptionUri].lastStartListening >
       resetRetryCount
@@ -592,7 +601,7 @@ export var PushServiceHttp2 = {
     }
 
     if (retryAfter !== -1) {
-      // This is a 5xx response.
+      
       this._conns[aSubscriptionUri].countUnableToConnect++;
       this._conns[aSubscriptionUri].retryTimerID = setTimeout(
         _ => this._listenForMsgs(aSubscriptionUri),
@@ -605,7 +614,7 @@ export var PushServiceHttp2 = {
       prefs.getIntPref("http2.retryInterval") *
       Math.pow(2, this._conns[aSubscriptionUri].countUnableToConnect);
 
-    retryAfter = retryAfter * (0.8 + Math.random() * 0.4); // add +/-20%.
+    retryAfter = retryAfter * (0.8 + Math.random() * 0.4); 
 
     this._conns[aSubscriptionUri].countUnableToConnect++;
     this._conns[aSubscriptionUri].retryTimerID = setTimeout(
@@ -616,7 +625,7 @@ export var PushServiceHttp2 = {
     lazy.console.debug("retryAfterBackoff: Retry in", retryAfter);
   },
 
-  // Close connections.
+  
   _shutdownConnections(deleteInfo) {
     lazy.console.debug("shutdownConnections()");
 
@@ -645,7 +654,7 @@ export var PushServiceHttp2 = {
     }
   },
 
-  // Start listening if subscriptions present.
+  
   startConnections(aSubscriptions) {
     lazy.console.debug("startConnections()", aSubscriptions.length);
 
@@ -681,7 +690,7 @@ export var PushServiceHttp2 = {
     }
   },
 
-  // Close connection and notify apps that subscription are gone.
+  
   _shutdownSubscription(aSubscriptionUri) {
     lazy.console.debug("shutdownSubscriptions()");
 
@@ -724,12 +733,12 @@ export var PushServiceHttp2 = {
     );
   },
 
-  /** Push server has deleted subscription.
-   *  Re-subscribe - if it succeeds send update db record and send
-   *                 pushsubscriptionchange,
-   *               - on error delete record and send pushsubscriptionchange
-   *  TODO: maybe pushsubscriptionerror will be included.
-   */
+  
+
+
+
+
+
   _resubscribe(aSubscriptionUri) {
     this._mainPushService.getByKeyID(aSubscriptionUri).then(record =>
       this.register(record).then(
@@ -756,9 +765,9 @@ export var PushServiceHttp2 = {
 
     var conn = this._conns[aSubscriptionUri];
     if (!conn) {
-      // there is no connection description that means that we closed
-      // connection, so do nothing. But we should have already deleted
-      // the listener.
+      
+      
+      
       return;
     }
 
@@ -774,7 +783,7 @@ export var PushServiceHttp2 = {
       this._shutdownSubscription(aSubscriptionUri);
       this._resubscribe(aSubscriptionUri);
     } else if (Math.floor(aRequest.responseStatus / 100) == 2) {
-      // This should be 204
+      
       setTimeout(_ => this._listenForMsgs(aSubscriptionUri), 0);
     } else {
       this._retryAfterBackoff(aSubscriptionUri, -1);
@@ -796,7 +805,7 @@ export var PushServiceHttp2 = {
 
     this._mainPushService
       .receivedPushMessage(aUri, "", aHeaders, aMessage, record => {
-        // Always update the stored record.
+        
         return record;
       })
       .then(_ => this._ackMsgRecv(aAckUri))

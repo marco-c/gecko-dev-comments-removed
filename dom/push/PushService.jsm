@@ -1,16 +1,20 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+
+
+"use strict";
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { clearTimeout, setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
-export var PushServiceWebSocket;
-export var PushServiceHttp2;
+var PushServiceWebSocket, PushServiceHttp2;
 
 const lazy = {};
 
@@ -20,24 +24,41 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/push/Notifier;1",
   "nsIPushNotifier"
 );
-ChromeUtils.defineESModuleGetters(lazy, {
-  PushCrypto: "resource://gre/modules/PushCrypto.sys.mjs",
-  PushServiceAndroidGCM: "resource://gre/modules/PushServiceAndroidGCM.sys.mjs",
-  pushBroadcastService: "resource://gre/modules/PushBroadcastService.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "pushBroadcastService",
+  "resource://gre/modules/PushBroadcastService.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "PushCrypto",
+  "resource://gre/modules/PushCrypto.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "PushServiceAndroidGCM",
+  "resource://gre/modules/PushServiceAndroidGCM.jsm"
+);
 
 const CONNECTION_PROTOCOLS = (function() {
   if ("android" != AppConstants.MOZ_WIDGET_TOOLKIT) {
-    ({ PushServiceWebSocket } = ChromeUtils.importESModule(
-      "resource://gre/modules/PushServiceWebSocket.sys.mjs"
+    ({ PushServiceWebSocket } = ChromeUtils.import(
+      "resource://gre/modules/PushServiceWebSocket.jsm"
     ));
-    ({ PushServiceHttp2 } = ChromeUtils.importESModule(
-      "resource://gre/modules/PushServiceHttp2.sys.mjs"
+    ({ PushServiceHttp2 } = ChromeUtils.import(
+      "resource://gre/modules/PushServiceHttp2.jsm"
     ));
     return [PushServiceWebSocket, PushServiceHttp2];
   }
   return [lazy.PushServiceAndroidGCM];
 })();
+
+const EXPORTED_SYMBOLS = [
+  "PushService",
+  
+  "PushServiceHttp2",
+  "PushServiceWebSocket",
+];
 
 XPCOMUtils.defineLazyGetter(lazy, "console", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
@@ -52,37 +73,37 @@ XPCOMUtils.defineLazyGetter(lazy, "console", () => {
 const prefs = Services.prefs.getBranch("dom.push.");
 
 const PUSH_SERVICE_UNINIT = 0;
-const PUSH_SERVICE_INIT = 1; // No serverURI
-const PUSH_SERVICE_ACTIVATING = 2; // activating db
+const PUSH_SERVICE_INIT = 1; 
+const PUSH_SERVICE_ACTIVATING = 2; 
 const PUSH_SERVICE_CONNECTION_DISABLE = 3;
 const PUSH_SERVICE_ACTIVE_OFFLINE = 4;
 const PUSH_SERVICE_RUNNING = 5;
 
-/**
- * State is change only in couple of functions:
- *   init - change state to PUSH_SERVICE_INIT if state was PUSH_SERVICE_UNINIT
- *   changeServerURL - change state to PUSH_SERVICE_ACTIVATING if serverURL
- *                     present or PUSH_SERVICE_INIT if not present.
- *   changeStateConnectionEnabledEvent - it is call on pref change or during
- *                                       the service activation and it can
- *                                       change state to
- *                                       PUSH_SERVICE_CONNECTION_DISABLE
- *   changeStateOfflineEvent - it is called when offline state changes or during
- *                             the service activation and it change state to
- *                             PUSH_SERVICE_ACTIVE_OFFLINE or
- *                             PUSH_SERVICE_RUNNING.
- *   uninit - change state to PUSH_SERVICE_UNINIT.
- **/
 
-// This is for starting and stopping service.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const STARTING_SERVICE_EVENT = 0;
 const CHANGING_SERVICE_EVENT = 1;
 const STOPPING_SERVICE_EVENT = 2;
 const UNINIT_EVENT = 3;
 
-// Returns the backend for the given server URI.
+
 function getServiceForServerURI(uri) {
-  // Insecure server URLs are allowed for development and testing.
+  
   let allowInsecure = prefs.getBoolPref(
     "testing.allowInsecureServerURL",
     false
@@ -102,38 +123,38 @@ function getServiceForServerURI(uri) {
   return null;
 }
 
-/**
- * Annotates an error with an XPCOM result code. We use this helper
- * instead of `Components.Exception` because the latter can assert in
- * `nsXPCComponents_Exception::HasInstance` when inspected at shutdown.
- */
+
+
+
+
+
 function errorWithResult(message, result = Cr.NS_ERROR_FAILURE) {
   let error = new Error(message);
   error.result = result;
   return error;
 }
 
-/**
- * The implementation of the push system. It uses WebSockets
- * (PushServiceWebSocket) to communicate with the server and PushDB (IndexedDB)
- * for persistence.
- */
-export var PushService = {
+
+
+
+
+
+var PushService = {
   _service: null,
   _state: PUSH_SERVICE_UNINIT,
   _db: null,
   _options: null,
   _visibleNotifications: new Map(),
 
-  // Callback that is called after attempting to
-  // reduce the quota for a record. Used for testing purposes.
+  
+  
   _updateQuotaTestCallback: null,
 
-  // Set of timeout ID of tasks to reduce quota.
+  
   _updateQuotaTimeouts: new Set(),
 
-  // When serverURI changes (this is used for testing), db is cleaned up and a
-  // a new db is started. This events must be sequential.
+  
+  
   _stateChangeProcessQueue: null,
   _stateChangeProcessEnqueue(op) {
     if (!this._stateChangeProcessQueue) {
@@ -158,9 +179,9 @@ export var PushService = {
     return this._stateChangeProcessQueue;
   },
 
-  // Pending request. If a worker try to register for the same scope again, do
-  // not send a new registration request. Therefore we need queue of pending
-  // register requests. This is the list of scopes which pending registration.
+  
+  
+  
   _pendingRegisterRequest: {},
   _notifyActivated: null,
   _activated: null,
@@ -215,8 +236,8 @@ export var PushService = {
     }
 
     if (this._state == PUSH_SERVICE_ACTIVATING) {
-      // It is not important what is the new state as soon as we leave
-      // PUSH_SERVICE_ACTIVATING
+      
+      
       if (this._notifyActivated) {
         if (aNewState < PUSH_SERVICE_ACTIVATING) {
           this._notifyActivated.reject(new Error("Push service not active"));
@@ -250,22 +271,22 @@ export var PushService = {
     }
 
     if (this._state == PUSH_SERVICE_RUNNING) {
-      // PushService was not in the offline state, but got notification to
-      // go online (a offline notification has not been sent).
-      // Disconnect first.
+      
+      
+      
       this._service.disconnect();
     }
 
     let broadcastListeners = await lazy.pushBroadcastService.getListeners();
 
-    // In principle, a listener could be added to the
-    // pushBroadcastService here, after we have gotten listeners and
-    // before we're RUNNING, but this can't happen in practice because
-    // the only caller that can add listeners is PushBroadcastService,
-    // and it waits on the same promise we are before it can add
-    // listeners. If PushBroadcastService gets woken first, it will
-    // update the value that is eventually returned from
-    // getListeners.
+    
+    
+    
+    
+    
+    
+    
+    
     this._setState(PUSH_SERVICE_RUNNING);
 
     this._service.connect(broadcastListeners);
@@ -292,7 +313,7 @@ export var PushService = {
     return Promise.resolve();
   },
 
-  // Used for testing.
+  
   changeTestServer(url, options = {}) {
     lazy.console.debug("changeTestServer()");
 
@@ -308,11 +329,11 @@ export var PushService = {
 
   observe: function observe(aSubject, aTopic, aData) {
     switch (aTopic) {
-      /*
-       * We need to call uninit() on shutdown to clean up things that modules
-       * aren't very good at automatically cleaning up, so we don't get shutdown
-       * leaks on browser shutdown.
-       */
+      
+
+
+
+
       case "quit-application":
         this.uninit();
         break;
@@ -385,14 +406,14 @@ export var PushService = {
     );
   },
 
-  /**
-   * Sends an unregister request to the server in the background. If the
-   * service is not connected, this function is a no-op.
-   *
-   * @param {PushRecord} record The record to unregister.
-   * @param {Number} reason An `nsIPushErrorReporter` unsubscribe reason,
-   *  indicating why this record was removed.
-   */
+  
+
+
+
+
+
+
+
   _backgroundUnregister(record, reason) {
     lazy.console.debug("backgroundUnregister()");
 
@@ -461,7 +482,7 @@ export var PushService = {
         if (service) {
           if (this._state == PUSH_SERVICE_INIT) {
             this._setState(PUSH_SERVICE_ACTIVATING);
-            // The service has not been running - start it.
+            
             return this._startService(service, uri, options).then(_ =>
               this._changeStateConnectionEnabledEvent(
                 prefs.getBoolPref("connection.enabled")
@@ -469,9 +490,9 @@ export var PushService = {
             );
           }
           this._setState(PUSH_SERVICE_ACTIVATING);
-          // If we already had running service - stop service, start the new
-          // one and check connection.enabled and offline state(offline state
-          // check is called in changeStateConnectionEnabledEvent function)
+          
+          
+          
           return this._stopService(CHANGING_SERVICE_EVENT)
             .then(_ => this._startService(service, uri, options))
             .then(_ =>
@@ -483,7 +504,7 @@ export var PushService = {
         if (this._state == PUSH_SERVICE_INIT) {
           return Promise.resolve();
         }
-        // The new serverUri is empty or misconfigured - stop service.
+        
         this._setState(PUSH_SERVICE_INIT);
         return this._stopService(STOPPING_SERVICE_EVENT);
 
@@ -493,21 +514,21 @@ export var PushService = {
     }
   },
 
-  /**
-   * PushService initialization is divided into 4 parts:
-   * init() - start listening for quit-application and serverURL changes.
-   *          state is change to PUSH_SERVICE_INIT
-   * startService() - if serverURL is present this function is called. It starts
-   *                  listening for broadcasted messages, starts db and
-   *                  PushService connection (WebSocket).
-   *                  state is change to PUSH_SERVICE_ACTIVATING.
-   * startObservers() - start other observers.
-   * changeStateConnectionEnabledEvent  - checks prefs and offline state.
-   *                                      It changes state to:
-   *                                        PUSH_SERVICE_RUNNING,
-   *                                        PUSH_SERVICE_ACTIVE_OFFLINE or
-   *                                        PUSH_SERVICE_CONNECTION_DISABLE.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async init(options = {}) {
     lazy.console.debug("init()");
 
@@ -521,7 +542,7 @@ export var PushService = {
     Services.obs.addObserver(this, "quit-application");
 
     if (options.serverURI) {
-      // this is use for xpcshell test.
+      
 
       await this._stateChangeProcessEnqueue(_ =>
         this._changeServerURL(
@@ -531,8 +552,8 @@ export var PushService = {
         )
       );
     } else {
-      // This is only used for testing. Different tests require connecting to
-      // slightly different URLs.
+      
+      
       await this._stateChangeProcessEnqueue(_ =>
         this._changeServerURL(
           prefs.getStringPref("serverURL"),
@@ -551,19 +572,19 @@ export var PushService = {
 
     Services.obs.addObserver(this, "clear-origin-attributes-data");
 
-    // The offline-status-changed event is used to know
-    // when to (dis)connect. It may not fire if the underlying OS changes
-    // networks; in such a case we rely on timeout.
+    
+    
+    
     Services.obs.addObserver(this, "network:offline-status-changed");
 
-    // Used to monitor if the user wishes to disable Push.
+    
     prefs.addObserver("connection.enabled", this);
 
-    // Prunes expired registrations and notifies dormant service workers.
+    
     Services.obs.addObserver(this, "idle-daily");
 
-    // Prunes registrations for sites for which the user revokes push
-    // permissions.
+    
+    
     Services.obs.addObserver(this, "perm-changed");
   },
 
@@ -587,15 +608,15 @@ export var PushService = {
     });
   },
 
-  /**
-   * PushService uninitialization is divided into 3 parts:
-   * stopObservers() - stot observers started in startObservers.
-   * stopService() - It stops listening for broadcasted messages, stops db and
-   *                 PushService connection (WebSocket).
-   *                 state is changed to PUSH_SERVICE_INIT.
-   * uninit() - stop listening for quit-application and serverURL changes.
-   *            state is change to PUSH_SERVICE_UNINIT
-   */
+  
+
+
+
+
+
+
+
+
   _stopService(event) {
     lazy.console.debug("stopService()");
 
@@ -616,7 +637,7 @@ export var PushService = {
       return Promise.resolve();
     }
     if (event == UNINIT_EVENT) {
-      // If it is uninitialized just close db.
+      
       this._db.close();
       this._db = null;
       return Promise.resolve();
@@ -669,17 +690,17 @@ export var PushService = {
     await this._stateChangeProcessEnqueue(_ => this._shutdownService());
   },
 
-  /**
-   * Drops all active registrations and notifies the associated service
-   * workers. This function is called when the user switches Push servers,
-   * or when the server invalidates all existing registrations.
-   *
-   * We ignore expired registrations because they're already handled in other
-   * code paths. Registrations that expired after exceeding their quotas are
-   * evicted at startup, or on the next `idle-daily` event. Registrations that
-   * expired because the user revoked the notification permission are evicted
-   * once the permission is reinstated.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   dropUnexpiredRegistrations() {
     return this._db.clearIf(record => {
       if (record.isExpired()) {
@@ -697,38 +718,38 @@ export var PushService = {
     lazy.gPushNotifier.notifySubscriptionChange(record.scope, record.principal);
   },
 
-  /**
-   * Drops a registration and notifies the associated service worker. If the
-   * registration does not exist, this function is a no-op.
-   *
-   * @param {String} keyID The registration ID to remove.
-   * @returns {Promise} Resolves once the worker has been notified.
-   */
+  
+
+
+
+
+
+
   dropRegistrationAndNotifyApp(aKeyID) {
     return this._db
       .delete(aKeyID)
       .then(record => this._notifySubscriptionChangeObservers(record));
   },
 
-  /**
-   * Replaces an existing registration and notifies the associated service
-   * worker.
-   *
-   * @param {String} aOldKey The registration ID to replace.
-   * @param {PushRecord} aNewRecord The new record.
-   * @returns {Promise} Resolves once the worker has been notified.
-   */
+  
+
+
+
+
+
+
+
   updateRegistrationAndNotifyApp(aOldKey, aNewRecord) {
     return this.updateRecordAndNotifyApp(aOldKey, _ => aNewRecord);
   },
-  /**
-   * Updates a registration and notifies the associated service worker.
-   *
-   * @param {String} keyID The registration ID to update.
-   * @param {Function} updateFunc Returns the updated record.
-   * @returns {Promise} Resolves with the updated record once the worker
-   *  has been notified.
-   */
+  
+
+
+
+
+
+
+
   updateRecordAndNotifyApp(aKeyID, aUpdateFunc) {
     return this._db.update(aKeyID, aUpdateFunc).then(record => {
       this._notifySubscriptionChangeObservers(record);
@@ -749,8 +770,8 @@ export var PushService = {
     if (!record.p256dhPublicKey || !record.p256dhPrivateKey) {
       keygen = lazy.PushCrypto.generateKeys();
     }
-    // We do not have a encryption key. so we need to generate it. This
-    // is only going to happen on db upgrade from version 4 to higher.
+    
+    
     return keygen.then(
       ([pubKey, privKey]) => {
         return this.updateRecordAndNotifyApp(record.keyID, record => {
@@ -772,34 +793,34 @@ export var PushService = {
     );
   },
 
-  /**
-   * Dispatches an incoming message to a service worker, recalculating the
-   * quota for the associated push registration. If the quota is exceeded,
-   * the registration and message will be dropped, and the worker will not
-   * be notified.
-   *
-   * @param {String} keyID The push registration ID.
-   * @param {String} messageID The message ID, used to report service worker
-   *  delivery failures. For Web Push messages, this is the version. If empty,
-   *  failures will not be reported.
-   * @param {Object} headers The encryption headers.
-   * @param {ArrayBuffer|Uint8Array} data The encrypted message data.
-   * @param {Function} updateFunc A function that receives the existing
-   *  registration record as its argument, and returns a new record. If the
-   *  function returns `null` or `undefined`, the record will not be updated.
-   *  `PushServiceWebSocket` uses this to drop incoming updates with older
-   *  versions.
-   * @returns {Promise} Resolves with an `nsIPushErrorReporter` ack status
-   *  code, indicating whether the message was delivered successfully.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   receivedPushMessage(keyID, messageID, headers, data, updateFunc) {
     lazy.console.debug("receivedPushMessage()");
 
     return this._updateRecordAfterPush(keyID, updateFunc)
       .then(record => {
         if (record.quotaApplies()) {
-          // Update quota after the delay, at which point
-          // we check for visible notifications.
+          
+          
           let timeoutID = setTimeout(_ => {
             this._updateQuota(keyID);
             if (!this._updateQuotaTimeouts.delete(timeoutID)) {
@@ -818,13 +839,13 @@ export var PushService = {
       });
   },
 
-  /**
-   * Dispatches a broadcast notification to the BroadcastService.
-   *
-   * @param {Object} message The reply received by PushServiceWebSocket
-   * @param {Object} context Additional information about the context in which the
-   *  notification was received.
-   */
+  
+
+
+
+
+
+
   receivedBroadcastMessage(message, context) {
     lazy.pushBroadcastService
       .receivedBroadcastMessage(message.broadcasts, context)
@@ -833,14 +854,14 @@ export var PushService = {
       });
   },
 
-  /**
-   * Updates a registration record after receiving a push message.
-   *
-   * @param {String} keyID The push registration ID.
-   * @param {Function} updateFunc The function passed to `receivedPushMessage`.
-   * @returns {Promise} Resolves with the updated record, or rejects if the
-   *  record was not updated.
-   */
+  
+
+
+
+
+
+
+
   _updateRecordAfterPush(keyID, updateFunc) {
     return this.getByKeyID(keyID)
       .then(record => {
@@ -850,25 +871,25 @@ export var PushService = {
         return record
           .getLastVisit()
           .then(lastVisit => {
-            // As a special case, don't notify the service worker if the user
-            // cleared their history.
+            
+            
             if (!isFinite(lastVisit)) {
               throw new Error("Ignoring message sent to unvisited origin");
             }
             return lastVisit;
           })
           .then(lastVisit => {
-            // Update the record, resetting the quota if the user has visited the
-            // site since the last push.
+            
+            
             return this._db.update(keyID, record => {
               let newRecord = updateFunc(record);
               if (!newRecord) {
                 return null;
               }
-              // Because `unregister` is advisory only, we can still receive messages
-              // for stale Simple Push registrations from the server. To work around
-              // this, we check if the record has expired before *and* after updating
-              // the quota.
+              
+              
+              
+              
               if (newRecord.isExpired()) {
                 return null;
               }
@@ -886,15 +907,15 @@ export var PushService = {
       });
   },
 
-  /**
-   * Decrypts an incoming message and notifies the associated service worker.
-   *
-   * @param {PushRecord} record The receiving registration.
-   * @param {String} messageID The message ID.
-   * @param {Object} headers The encryption headers.
-   * @param {ArrayBuffer|Uint8Array} data The encrypted message data.
-   * @returns {Promise} Resolves with an ack status code.
-   */
+  
+
+
+
+
+
+
+
+
   _decryptAndNotifyApp(record, messageID, headers, data) {
     return lazy.PushCrypto.decrypt(
       record.p256dhPrivateKey,
@@ -929,7 +950,7 @@ export var PushService = {
 
     this._db
       .update(keyID, record => {
-        // Record may have expired from an earlier quota update.
+        
         if (record.isExpired()) {
           lazy.console.debug(
             "updateQuota: Trying to update quota for expired record",
@@ -937,8 +958,8 @@ export var PushService = {
           );
           return null;
         }
-        // If there are visible notifications, don't apply the quota penalty
-        // for the message.
+        
+        
         if (record.uri && !this._visibleNotifications.has(record.uri.prePath)) {
           record.reduceQuota();
         }
@@ -946,9 +967,9 @@ export var PushService = {
       })
       .then(record => {
         if (record.isExpired()) {
-          // Drop the registration in the background. If the user returns to the
-          // site, the service worker will be notified on the next `idle-daily`
-          // event.
+          
+          
+          
           this._backgroundUnregister(
             record,
             Ci.nsIPushErrorReporter.UNSUBSCRIBE_QUOTA_EXCEEDED
@@ -960,7 +981,7 @@ export var PushService = {
           );
         }
         if (this._updateQuotaTestCallback) {
-          // Callback so that test may be notified when the quota update is complete.
+          
           this._updateQuotaTestCallback();
         }
       })
@@ -1004,7 +1025,7 @@ export var PushService = {
   reportDeliveryError(messageID, reason) {
     lazy.console.debug("reportDeliveryError()", messageID, reason);
     if (this._state == PUSH_SERVICE_RUNNING && this._service.isConnected()) {
-      // Only report errors if we're initialized and connected.
+      
       this._service.reportDeliveryError(messageID, reason);
     }
   },
@@ -1021,7 +1042,7 @@ export var PushService = {
 
     lazy.console.debug("notifyApp()", aPushRecord.scope);
 
-    // If permission has been revoked, trash the message.
+    
     if (!aPushRecord.hasPermission()) {
       lazy.console.warn("notifyApp: Missing push permission", aPushRecord);
       return Ci.nsIPushErrorReporter.ACK_NOT_DELIVERED;
@@ -1032,7 +1053,7 @@ export var PushService = {
       : message;
 
     if (aPushRecord.quotaApplies()) {
-      // Don't record telemetry for chrome push messages.
+      
       Services.telemetry.getHistogramById("PUSH_API_NOTIFY").add();
     }
 
@@ -1069,9 +1090,9 @@ export var PushService = {
     if (this._state == PUSH_SERVICE_ACTIVE_OFFLINE) {
       return Promise.reject(new Error("Push service offline"));
     }
-    // Ensure the backend is ready. `getByPageRecord` already checks this, but
-    // we need to check again here in case the service was restarted in the
-    // meantime.
+    
+    
+    
     return this._checkActivated().then(_ => {
       switch (action) {
         case "register":
@@ -1083,10 +1104,10 @@ export var PushService = {
     });
   },
 
-  /**
-   * Called on message from the child process. aPageRecord is an object sent by
-   * the push manager, identifying the sending page and other fields.
-   */
+  
+
+
+
   _registerWithServer(aPageRecord) {
     lazy.console.debug("registerWithServer()", aPageRecord);
 
@@ -1115,15 +1136,15 @@ export var PushService = {
     return this._sendRequest("unregister", aRecord, aReason);
   },
 
-  /**
-   * Exceptions thrown in _onRegisterSuccess are caught by the promise obtained
-   * from _service.request, causing the promise to be rejected instead.
-   */
+  
+
+
+
   _onRegisterSuccess(aRecord) {
     lazy.console.debug("_onRegisterSuccess()");
 
     return this._db.put(aRecord).catch(error => {
-      // Unable to save. Destroy the subscription in the background.
+      
       this._backgroundUnregister(
         aRecord,
         Ci.nsIPushErrorReporter.UNSUBSCRIBE_MANUAL
@@ -1132,10 +1153,10 @@ export var PushService = {
     });
   },
 
-  /**
-   * Exceptions thrown in _onRegisterError are caught by the promise obtained
-   * from _service.request, causing the promise to be rejected instead.
-   */
+  
+
+
+
   _onRegisterError(reply) {
     lazy.console.debug("_onRegisterError()");
 
@@ -1167,9 +1188,9 @@ export var PushService = {
       let keyView = new Uint8Array(aPageRecord.appServerKey);
       keyPromise = lazy.PushCrypto.validateAppServerKey(keyView).catch(
         error => {
-          // Normalize Web Crypto exceptions. `nsIPushService` will forward the
-          // error result to the DOM API implementation in `PushManager.cpp` or
-          // `Push.js`, which will convert it to the correct `DOMException`.
+          
+          
+          
           throw errorWithResult(
             "Invalid app server key",
             Cr.NS_ERROR_DOM_PUSH_INVALID_KEY_ERR
@@ -1197,8 +1218,8 @@ export var PushService = {
             .quotaChanged()
             .then(isChanged => {
               if (isChanged) {
-                // If the user revisited the site, drop the expired push
-                // registration and re-register.
+                
+                
                 return this.dropRegistrationAndNotifyApp(record.keyID);
               }
               throw new Error("Push subscription expired");
@@ -1210,46 +1231,46 @@ export var PushService = {
     );
   },
 
-  /*
-   * Called only by the PushBroadcastService on the receipt of a new
-   * subscription. Don't call this directly. Go through PushBroadcastService.
-   */
+  
+
+
+
   async subscribeBroadcast(broadcastId, version) {
     if (this._state != PUSH_SERVICE_RUNNING) {
-      // Ignore any request to subscribe before we send a hello.
-      // We'll send all the broadcast listeners as part of the hello
-      // anyhow.
+      
+      
+      
       return;
     }
 
     await this._service.sendSubscribeBroadcast(broadcastId, version);
   },
 
-  /**
-   * Called on message from the child process.
-   *
-   * Why is the record being deleted from the local database before the server
-   * is told?
-   *
-   * Unregistration is for the benefit of the app and the AppServer
-   * so that the AppServer does not keep pinging a channel the UserAgent isn't
-   * watching The important part of the transaction in this case is left to the
-   * app, to tell its server of the unregistration.  Even if the request to the
-   * PushServer were to fail, it would not affect correctness of the protocol,
-   * and the server GC would just clean up the channelID/subscription
-   * eventually.  Since the appserver doesn't ping it, no data is lost.
-   *
-   * If rather we were to unregister at the server and update the database only
-   * on success: If the server receives the unregister, and deletes the
-   * channelID/subscription, but the response is lost because of network
-   * failure, the application is never informed. In addition the application may
-   * retry the unregister when it fails due to timeout (websocket) or any other
-   * reason at which point the server will say it does not know of this
-   * unregistration.  We'll have to make the registration/unregistration phases
-   * have retries and attempts to resend messages from the server, and have the
-   * client acknowledge. On a server, data is cheap, reliable notification is
-   * not.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   unregister(aPageRecord) {
     lazy.console.debug("unregister()", aPageRecord);
 
@@ -1324,8 +1345,8 @@ export var PushService = {
             .quotaChanged()
             .then(isChanged => {
               if (isChanged) {
-                // If the user revisited the site, drop the expired push
-                // registration and notify the associated service worker.
+                
+                
                 this.dropRegistrationAndNotifyApp(record.keyID);
               }
             })
@@ -1361,7 +1382,7 @@ export var PushService = {
 
     return this._db.clearIf(record => {
       if (!record.quotaApplies()) {
-        // Only drop registrations that are subject to quota.
+        
         return false;
       }
       this._backgroundUnregister(
@@ -1379,15 +1400,15 @@ export var PushService = {
     let isChange = type == "added" || type == "changed";
 
     if (isAllow && isChange) {
-      // Permission set to "allow". Drop all expired registrations for this
-      // site, notify the associated service workers, and reset the quota
-      // for active registrations.
+      
+      
+      
       return this._forEachPrincipal(permission.principal, (record, cursor) =>
         this._permissionAllowed(record, cursor)
       );
     } else if (isChange || (isAllow && type == "deleted")) {
-      // Permission set to "block" or "always ask," or "allow" permission
-      // removed. Expire all registrations for this site.
+      
+      
       return this._forEachPrincipal(permission.principal, (record, cursor) =>
         this._permissionDenied(record, cursor)
       );
@@ -1404,24 +1425,24 @@ export var PushService = {
     );
   },
 
-  /**
-   * The update function called for each registration record if the push
-   * permission is revoked. We only expire the record so we can notify the
-   * service worker as soon as the permission is reinstated. If we just
-   * deleted the record, the worker wouldn't be notified until the next visit
-   * to the site.
-   *
-   * @param {PushRecord} record The record to expire.
-   * @param {IDBCursor} cursor The IndexedDB cursor.
-   */
+  
+
+
+
+
+
+
+
+
+
   _permissionDenied(record, cursor) {
     lazy.console.debug("permissionDenied()");
 
     if (!record.quotaApplies() || record.isExpired()) {
-      // Ignore already-expired records.
+      
       return;
     }
-    // Drop the registration in the background.
+    
     this._backgroundUnregister(
       record,
       Ci.nsIPushErrorReporter.UNSUBSCRIBE_PERMISSION_REVOKED
@@ -1430,14 +1451,14 @@ export var PushService = {
     cursor.update(record);
   },
 
-  /**
-   * The update function called for each registration record if the push
-   * permission is granted. If the record has expired, it will be dropped;
-   * otherwise, its quota will be reset to the default value.
-   *
-   * @param {PushRecord} record The record to update.
-   * @param {IDBCursor} cursor The IndexedDB cursor.
-   */
+  
+
+
+
+
+
+
+
   _permissionAllowed(record, cursor) {
     lazy.console.debug("permissionAllowed()");
 
@@ -1445,8 +1466,8 @@ export var PushService = {
       return;
     }
     if (record.isExpired()) {
-      // If the registration has expired, drop and notify the worker
-      // unconditionally.
+      
+      
       this._notifySubscriptionChangeObservers(record);
       cursor.delete();
       return;
@@ -1455,28 +1476,28 @@ export var PushService = {
     cursor.update(record);
   },
 
-  /**
-   * Drops all matching registrations from the database. Notifies the
-   * associated service workers if permission is granted, and removes
-   * unexpired registrations from the server.
-   *
-   * @param {Function} predicate A function called for each record.
-   * @returns {Promise} Resolves once the registrations have been dropped.
-   */
+  
+
+
+
+
+
+
+
   _dropRegistrationsIf(predicate) {
     return this._db.clearIf(record => {
       if (!predicate(record)) {
         return false;
       }
       if (record.hasPermission()) {
-        // "Clear Recent History" and the Forget button remove permissions
-        // before clearing registrations, but it's possible for the worker to
-        // resubscribe if the "dom.push.testing.ignorePermission" pref is set.
+        
+        
+        
         this._notifySubscriptionChangeObservers(record);
       }
       if (!record.isExpired()) {
-        // Only unregister active registrations, since we already told the
-        // server about expired ones.
+        
+        
         this._backgroundUnregister(
           record,
           Ci.nsIPushErrorReporter.UNSUBSCRIBE_MANUAL
