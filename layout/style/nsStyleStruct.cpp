@@ -2381,16 +2381,16 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
          changed(aOld.mOverflowY, aNew.mOverflowY);
 }
 
-static bool AppearanceValueAffectsFrames(StyleAppearance aDefaultAppearance,
-                                         StyleAppearance aAppearance) {
+static bool AppearanceValueAffectsFrames(StyleAppearance aAppearance,
+                                         StyleAppearance aDefaultAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Textfield:
       
       
       
       
-      
-      return aDefaultAppearance == StyleAppearance::NumberInput;
+      return aDefaultAppearance == StyleAppearance::NumberInput ||
+             aDefaultAppearance == StyleAppearance::Searchfield;
     case StyleAppearance::Menulist:
       
       return aDefaultAppearance == StyleAppearance::Menulist;
