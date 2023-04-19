@@ -78,6 +78,29 @@ SetIsInlinableLargeFunction(ArraySome);
 
 
 
+function ArraySortCompare(comparefn) {
+  return function(x, y) {
+    
+    if (x === undefined) {
+      if (y === undefined) {
+        return 0;
+      }
+      return 1;
+    }
+    if (y === undefined) {
+      return -1;
+    }
+
+    
+    var v = ToNumber(callContentFunction(comparefn, undefined, x, y));
+
+    
+    return v !== v ? 0 : v;
+  };
+}
+
+
+
 function ArraySort(comparefn) {
   
   if (comparefn !== undefined) {
@@ -98,32 +121,16 @@ function ArraySort(comparefn) {
   
   var len = ToLength(O.length);
 
+  
   if (len <= 1) {
     return O;
   }
 
   
-  var wrappedCompareFn = comparefn;
-  comparefn = function(x, y) {
-    
-    if (x === undefined) {
-      if (y === undefined) {
-        return 0;
-      }
-      return 1;
-    }
-    if (y === undefined) {
-      return -1;
-    }
+  var wrappedCompareFn = ArraySortCompare(comparefn);
 
-    
-    var v = ToNumber(callContentFunction(wrappedCompareFn, undefined, x, y));
-
-    
-    return v !== v ? 0 : v;
-  };
-
-  return MergeSort(O, len, comparefn);
+  
+  return MergeSort(O, len, wrappedCompareFn);
 }
 
 
@@ -1379,10 +1386,22 @@ function ArrayToSorted(comparefn) {
     DefineDataProperty(items, k, O[k]);
   }
 
-  callFunction(ArraySort, items, comparefn);
+  
+  if (len <= 1) {
+    return items;
+  }
 
   
-  return items;
+  
+  if (callFunction(ArrayNativeSort, items, comparefn)) {
+    return items;
+  }
+
+  
+  var wrappedCompareFn = ArraySortCompare(comparefn);
+
+  
+  return MergeSort(items, len, wrappedCompareFn);
 }
 
 #endif
