@@ -4583,17 +4583,19 @@ static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
   
   
   
+  
+  
+  
+  auto style = aFrame->Style()->UserSelect();
+  if (style != StyleUserSelect::Auto) {
+    return style;
+  }
 
   if (aFrame->IsTextInputFrame() || IsEditingHost(aFrame)) {
     
     
     
     return StyleUserSelect::Text;
-  }
-
-  auto style = aFrame->Style()->UserSelect();
-  if (style != StyleUserSelect::Auto) {
-    return style;
   }
 
   auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(aFrame);
