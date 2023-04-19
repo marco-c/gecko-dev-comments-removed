@@ -200,6 +200,18 @@ async function processUpdateStep(step) {
   }
 
   const { panelId, checkActiveUpdate, continueFile, downloadInfo } = step;
+
+  if (
+    panelId == "downloading" &&
+    gAUS.currentState == Ci.nsIApplicationUpdateService.STATE_IDLE
+  ) {
+    
+    
+    
+    
+    await gAUS.stateTransition;
+  }
+
   if (checkActiveUpdate) {
     let whichUpdate =
       checkActiveUpdate.state == STATE_DOWNLOADING
