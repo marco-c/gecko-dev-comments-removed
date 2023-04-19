@@ -180,7 +180,6 @@ WebExtensionPolicy::WebExtensionPolicy(GlobalObject& aGlobal,
                                        const WebExtensionInit& aInit,
                                        ErrorResult& aRv)
     : mId(NS_AtomizeMainThread(aInit.mId)),
-      mHostname(aInit.mMozExtensionHostname),
       mName(aInit.mName),
       mManifestVersion(aInit.mManifestVersion),
       mExtensionPageCSP(aInit.mExtensionPageCSP),
@@ -190,6 +189,10 @@ WebExtensionPolicy::WebExtensionPolicy(GlobalObject& aGlobal,
       mPermissions(new AtomSet(aInit.mPermissions)) {
   MatchPatternOptions options;
   options.mRestrictSchemes = !HasPermission(nsGkAtoms::mozillaAddons);
+
+  
+  
+  ToLowerCase(aInit.mMozExtensionHostname, mHostname);
 
   mHostPermissions = ParseMatches(aGlobal, aInit.mAllowedOrigins, options,
                                   ErrorBehavior::CreateEmptyPattern, aRv);
