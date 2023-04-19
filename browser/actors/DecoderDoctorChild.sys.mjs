@@ -4,11 +4,7 @@
 
 
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DecoderDoctorChild"];
-
-class DecoderDoctorChild extends JSWindowActorChild {
+export class DecoderDoctorChild extends JSWindowActorChild {
   
   
   

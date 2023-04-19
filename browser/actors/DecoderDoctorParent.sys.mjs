@@ -4,16 +4,10 @@
 
 
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DecoderDoctorParent"];
-
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -36,7 +30,7 @@ function LOG_DD(message) {
   }
 }
 
-class DecoderDoctorParent extends JSWindowActorParent {
+export class DecoderDoctorParent extends JSWindowActorParent {
   getLabelForNotificationBox({ type, decoderDoctorReportId }) {
     if (type == "platform-decoder-not-found") {
       if (decoderDoctorReportId == "MediaWMFNeeded") {
