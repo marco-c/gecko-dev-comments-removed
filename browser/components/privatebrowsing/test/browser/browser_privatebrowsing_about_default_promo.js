@@ -4,6 +4,14 @@
 
 
 
+add_setup(async function() {
+  ASRouter.resetMessageState();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.promo.pin.enabled", false]],
+  });
+  await ASRouter.onPrefChange();
+});
+
 add_task(async function test_default_promo() {
   ASRouter.resetMessageState();
 
