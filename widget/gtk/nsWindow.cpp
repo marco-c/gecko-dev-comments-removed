@@ -1844,7 +1844,11 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       if (!useIt) {
         return false;
       }
-      if (popup->WaylandPopupFitsToplevelWindow()) {
+      if (popup->WaylandPopupIsFirst() &&
+          popup->WaylandPopupFitsToplevelWindow()) {
+        
+        
+        
         
         
         
