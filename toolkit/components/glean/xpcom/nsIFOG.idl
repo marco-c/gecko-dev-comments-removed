@@ -157,22 +157,4 @@ interface nsIFOG : nsISupports
                                  in ACString aLifetime,
                                  in boolean aDisabled,
                                  [optional] in ACString aExtraArgs);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  uint32_t testRegisterRuntimePing(in ACString aName,
-                                   in boolean aIncludeClientId,
-                                   in boolean aSendIfEmpty,
-                                   in Array<ACString> aReasonCodes);
 };
