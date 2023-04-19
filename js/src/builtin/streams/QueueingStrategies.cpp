@@ -15,6 +15,7 @@
 #include "js/PropertySpec.h"  
 #include "js/ProtoKey.h"          
 #include "js/RootingAPI.h"        
+#include "vm/Interpreter.h"       
 #include "vm/JSObject.h"          
 #include "vm/ObjectOperations.h"  
 #include "vm/Runtime.h"           

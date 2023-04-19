@@ -7,7 +7,6 @@
 #ifndef vm_GeckoProfiler_h
 #define vm_GeckoProfiler_h
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 
@@ -19,7 +18,6 @@
 #include "js/AllocPolicy.h"
 #include "js/HashTable.h"
 #include "js/ProfilingCategory.h"
-#include "js/ProfilingStack.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 #include "threading/ProtectedData.h"
@@ -105,6 +103,8 @@
 
 
 
+
+class JS_PUBLIC_API ProfilingStack;
 
 namespace js {
 

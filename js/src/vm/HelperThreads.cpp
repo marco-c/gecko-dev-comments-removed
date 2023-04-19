@@ -6,8 +6,6 @@
 
 #include "vm/HelperThreads.h"
 
-#include "mozilla/DebugOnly.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ReverseIterator.h"  
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"  
@@ -18,8 +16,10 @@
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
+#include "gc/GC.h"
 #include "jit/IonCompileTask.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitScript.h"
 #include "js/CompileOptions.h"  
 #include "js/ContextOptions.h"  
 #include "js/experimental/JSStencil.h"
@@ -38,21 +38,10 @@
 #include "vm/HelperThreadState.h"
 #include "vm/InternalThreadPool.h"
 #include "vm/MutexIDs.h"
-#include "vm/SharedImmutableStringsCache.h"
-#include "vm/Time.h"
 #include "wasm/WasmGenerator.h"
-
-#include "debugger/DebugAPI-inl.h"
-#include "gc/ArenaList-inl.h"
-#include "vm/JSContext-inl.h"
-#include "vm/JSObject-inl.h"
-#include "vm/JSScript-inl.h"
-#include "vm/NativeObject-inl.h"
-#include "vm/Realm-inl.h"
 
 using namespace js;
 
-using mozilla::Maybe;
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
 using mozilla::Utf8Unit;

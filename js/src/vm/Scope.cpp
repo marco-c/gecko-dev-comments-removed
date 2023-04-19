@@ -6,13 +6,10 @@
 
 #include "vm/Scope.h"
 
-#include "mozilla/OperatorNewExtensions.h"  
-#include "mozilla/ScopeExit.h"
-
-#include <memory>
 #include <new>
 
-#include "builtin/ModuleObject.h"
+#include "jsnum.h"
+
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  
@@ -27,7 +24,6 @@
 
 #include "gc/GCContext-inl.h"
 #include "gc/ObjectKind-inl.h"
-#include "vm/Shape-inl.h"
 #include "wasm/WasmInstance-inl.h"
 
 using namespace js;

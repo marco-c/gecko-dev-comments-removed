@@ -14,19 +14,19 @@
 
 #include <stdint.h>  
 
-#include "js/Class.h"  
-#include "js/Id.h"     
+#include "js/Id.h"  
 #include "js/PropertyDescriptor.h"  
 #include "js/RootingAPI.h"          
-#include "js/Value.h"               
-#include "vm/JSContext.h"           
-#include "vm/JSObject.h"            
+#include "js/TypeDecls.h"           
 #include "vm/StringType.h"          
-#include "vm/SymbolType.h"          
+
+namespace JS {
+class ObjectOpResult;
+}
 
 namespace js {
 
-class PropertyName;
+class PropertyResult;
 
 
 

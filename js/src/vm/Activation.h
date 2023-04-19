@@ -16,10 +16,8 @@
 #include "jstypes.h"  
 
 #include "jit/CalleeToken.h"  
-#include "js/CallArgs.h"      
 #include "js/RootingAPI.h"    
 #include "js/TypeDecls.h"     
-#include "js/UniquePtr.h"     
 #include "js/Value.h"         
 #include "vm/SavedFrame.h"    
 #include "vm/Stack.h"         
@@ -32,6 +30,7 @@ class JSScript;
 
 namespace JS {
 
+class CallArgs;
 class JS_PUBLIC_API Compartment;
 
 namespace dbg {
@@ -43,11 +42,9 @@ class JS_PUBLIC_API AutoEntryMonitor;
 namespace js {
 
 class InterpreterActivation;
-class InterpreterFrame;
 
 namespace jit {
 class JitActivation;
-class JitFrameLayout;
 }  
 
 

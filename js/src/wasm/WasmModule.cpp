@@ -28,6 +28,7 @@
 #include "js/PropertyAndElement.h"  
 #include "js/StreamConsumer.h"
 #include "threading/LockGuard.h"
+#include "threading/Thread.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        
 #include "wasm/WasmBaselineCompile.h"

@@ -9,6 +9,7 @@
 
 #include "mozilla/Array.h"
 #include "js/TypeDecls.h"
+#include "vm/Runtime.h"
 
 
 

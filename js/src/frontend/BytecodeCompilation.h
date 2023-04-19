@@ -7,6 +7,7 @@
 #ifndef frontend_BytecodeCompilation_h
 #define frontend_BytecodeCompilation_h
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Utf8.h"  
 
 #include "frontend/ScriptIndex.h"  

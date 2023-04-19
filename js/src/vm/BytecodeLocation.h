@@ -16,7 +16,6 @@
 #include "vm/CompletionKind.h"      
 #include "vm/FunctionPrefixKind.h"  
 #include "vm/GeneratorResumeKind.h"
-#include "vm/StringType.h"
 
 namespace js {
 

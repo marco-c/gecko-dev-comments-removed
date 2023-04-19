@@ -15,14 +15,12 @@
 #include "jit/CalleeToken.h"
 #include "jit/JitFrames.h"
 #include "util/BitArray.h"
-#include "vm/AsyncFunction.h"
 #include "vm/GlobalObject.h"
 #include "vm/Stack.h"
 #include "vm/WellKnownAtom.h"  
 
 #include "gc/Nursery-inl.h"
 #include "vm/FrameIter-inl.h"  
-#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/Stack-inl.h"
 

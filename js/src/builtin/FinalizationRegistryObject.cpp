@@ -14,8 +14,10 @@
 
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GlobalObject.h"
+#include "vm/Interpreter.h"
 #include "vm/WellKnownAtom.h"  
 
+#include "gc/GCContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 

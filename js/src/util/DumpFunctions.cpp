@@ -33,6 +33,7 @@
 #include "js/Wrapper.h"           
 #include "vm/BigIntType.h"        
 #include "vm/FrameIter.h"         
+#include "vm/Interpreter.h"       
 #include "vm/JSContext.h"         
 #include "vm/JSFunction.h"        
 #include "vm/JSObject.h"          

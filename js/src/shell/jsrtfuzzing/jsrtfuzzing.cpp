@@ -17,6 +17,7 @@
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
+#include "js/Conversions.h"               
 #include "js/ErrorReport.h"               
 #include "js/Exception.h"                 
 #include "js/experimental/TypedData.h"  
@@ -130,7 +131,7 @@ int js::shell::FuzzJSRuntimeFuzz(const uint8_t* buf, size_t size) {
   CrashOnPendingException();
 
   int32_t ret = 0;
-  if (!ToInt32(gCx, v, &ret)) {
+  if (!JS::ToInt32(gCx, v, &ret)) {
     MOZ_CRASH("Must return an int32 compatible return value!");
   }
 

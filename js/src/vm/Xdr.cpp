@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"   
 #include "mozilla/EndianUtils.h"  
-#include "mozilla/RefPtr.h"       
 #include "mozilla/Result.h"       
 #include "mozilla/Utf8.h"         
 

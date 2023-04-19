@@ -17,21 +17,20 @@
 #include "NamespaceImports.h"
 
 #include "gc/Barrier.h"
-#include "gc/Marking.h"
 #include "gc/MaybeRooted.h"
 #include "gc/ZoneAllocator.h"
 #include "js/shadow/Object.h"  
 #include "js/shadow/Zone.h"    
 #include "js/Value.h"
 #include "vm/GetterSetter.h"
+#include "vm/JSAtom.h"
 #include "vm/JSObject.h"
-#include "vm/PropertyResult.h"
 #include "vm/Shape.h"
 #include "vm/StringType.h"
 
 namespace js {
 
-class Shape;
+class PropertyResult;
 class TenuringTracer;
 
 #ifdef ENABLE_RECORD_TUPLE
@@ -502,9 +501,6 @@ extern HeapSlot* const emptyObjectSlotsForDictionaryObject[];
 
 class AutoCheckShapeConsistency;
 class GCMarker;
-class Shape;
-
-class NewObjectCache;
 
 
 
@@ -720,7 +716,6 @@ class NativeObject : public JSObject {
   friend class DictionaryPropMap;
   friend class GCMarker;
   friend class Shape;
-  friend class NewObjectCache;
 
   void invalidateSlotRange(uint32_t start, uint32_t end) {
 #ifdef DEBUG

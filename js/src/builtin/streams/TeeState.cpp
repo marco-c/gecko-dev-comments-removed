@@ -11,6 +11,7 @@
 #include "builtin/streams/ReadableStream.h"  
 #include "js/Class.h"          
 #include "js/RootingAPI.h"     
+#include "vm/Compartment.h"    
 #include "vm/JSContext.h"      
 #include "vm/PromiseObject.h"  
 
