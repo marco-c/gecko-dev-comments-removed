@@ -417,8 +417,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint64_t> header_bytes_received;
   RTCStatsMember<int32_t> packets_lost;  
   RTCStatsMember<double> last_packet_received_timestamp;
-  
-  
   RTCStatsMember<double> jitter;
   RTCStatsMember<double> jitter_buffer_delay;
   RTCStatsMember<uint64_t> jitter_buffer_emitted_count;
