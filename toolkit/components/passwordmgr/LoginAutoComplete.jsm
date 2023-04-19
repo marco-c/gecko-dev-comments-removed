@@ -350,7 +350,7 @@ class LoginAutoCompleteResult {
     this.searchString = aSearchString;
 
     
-    if (!isSecure) {
+    if (!isSecure && lazy.LoginHelper.showInsecureFieldWarning) {
       this.#rows.push(new InsecureLoginFormAutocompleteItem());
     }
 

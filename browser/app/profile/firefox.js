@@ -1645,6 +1645,9 @@ pref("security.app_menu.recordEventTelemetry", true);
 pref("security.mixed_content.block_active_content", true);
 
 
+pref("security.insecure_field_warning.contextual.enabled", true);
+
+
 pref("security.insecure_connection_icon.enabled", true);
 
 pref("security.insecure_connection_icon.pbmode.enabled", true);

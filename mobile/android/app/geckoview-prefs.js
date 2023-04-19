@@ -75,6 +75,7 @@ pref("dom.ipc.processPriorityManager.enabled", true);
 
 pref("signon.debug", false);
 pref("signon.showAutoCompleteFooter", true);
+pref("security.insecure_field_warning.contextual.enabled", true);
 pref("toolkit.autocomplete.delegate", true);
 
 

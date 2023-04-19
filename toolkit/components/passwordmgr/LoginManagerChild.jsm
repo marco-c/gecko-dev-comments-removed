@@ -2867,7 +2867,8 @@ class LoginManagerChild extends JSWindowActorChild {
       if (
         !foundLogins.length &&
         !(importable?.state === "import" && importable?.browsers) &&
-        lazy.InsecurePasswordUtils.isFormSecure(form)
+        (lazy.InsecurePasswordUtils.isFormSecure(form) ||
+          !lazy.LoginHelper.showInsecureFieldWarning)
       ) {
         
         autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;

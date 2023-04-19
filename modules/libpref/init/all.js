@@ -2054,6 +2054,7 @@ pref("security.notification_enable_delay", 500);
 #endif
 
 
+pref("security.insecure_field_warning.contextual.enabled", false);
 pref("security.insecure_field_warning.ignore_local_ip_address", true);
 
 
