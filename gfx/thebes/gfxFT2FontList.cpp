@@ -425,6 +425,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   }
   if (setCharMap) {
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
+      
       Unused << charmap.forget();
     }
   }
