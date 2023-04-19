@@ -6,6 +6,8 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
+#include "mozilla/RefPtr.h"
+#include "nsDebug.h"
 #include "nsICookieBannerService.h"
 #include "nsICookieManager.h"
 #include "nsIObserverService.h"
@@ -227,20 +229,20 @@ nsresult nsCookieInjector::InjectCookiesFromRules(
 
     
     
-    bool exists = false;
-    rv = cookieManager->CookieExistsNative(c->Host(), c->Path(), c->Name(),
-                                           &aOriginAttributes, &exists);
+    nsCOMPtr<nsICookie> existingCookie;
+    rv = cookieManager->GetCookieNative(c->Host(), c->Path(), c->Name(),
+                                        &aOriginAttributes,
+                                        getter_AddRefs(existingCookie));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     
     
-    if (exists) {
+    if (existingCookie) {
       nsCString unsetValue;
       rv = cookieRule->GetUnsetValue(unsetValue);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      
       
       if (unsetValue.IsEmpty()) {
         MOZ_LOG(
@@ -251,12 +253,24 @@ nsresult nsCookieInjector::InjectCookiesFromRules(
         continue;
       }
 
+      nsAutoCString existingCookieValue;
+      rv = existingCookie->GetValue(existingCookieValue);
+      NS_ENSURE_SUCCESS(rv, rv);
+
       
       
-      
-      
-      
-      
+      if (!unsetValue.Equals(existingCookieValue)) {
+        MOZ_LOG(gCookieInjectorLog, LogLevel::Info,
+                ("Skip setting already existing cookie. Cookie: %s, %s, %s, "
+                 "%s. Rule unset value: %s",
+                 c->Host().get(), c->Name().get(), c->Path().get(),
+                 c->Value().get(), unsetValue.get()));
+        continue;
+      }
+
+      MOZ_LOG(gCookieInjectorLog, LogLevel::Info,
+              ("Overwriting cookie because of known unset value state %s.",
+               unsetValue.get()));
     }
 
     MOZ_LOG(gCookieInjectorLog, LogLevel::Info,
