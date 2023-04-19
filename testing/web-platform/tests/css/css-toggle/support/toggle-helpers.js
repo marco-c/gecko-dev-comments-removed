@@ -1,7 +1,10 @@
 async function wait_for_toggle_creation(element) {
   
   
-  getComputedStyle(element).toggleRoot;
+  
+  
+  
+  document.elementFromPoint(10, 10);
 }
 
 async function set_up_single_toggle_in(container, toggle_style) {
