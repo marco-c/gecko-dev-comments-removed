@@ -154,6 +154,8 @@ RtpTransceiver::~RtpTransceiver() {
     RTC_DCHECK_RUN_ON(thread_);
     StopInternal();
   }
+
+  RTC_CHECK(!channel_) << "Missing call to SetChannel(nullptr)?";
 }
 
 void RtpTransceiver::SetChannel(
@@ -161,7 +163,7 @@ void RtpTransceiver::SetChannel(
     std::function<RtpTransportInternal*(const std::string&)> transport_lookup) {
   RTC_DCHECK_RUN_ON(thread_);
   
-  if (stopped_ && channel) {
+  if ((stopped_ && channel) || channel == channel_) {
     return;
   }
 
@@ -180,6 +182,8 @@ void RtpTransceiver::SetChannel(
     signaling_thread_safety_ = PendingTaskSafetyFlag::Create();
   }
 
+  cricket::ChannelInterface* channel_to_delete = nullptr;
+
   
   
   
@@ -193,6 +197,7 @@ void RtpTransceiver::SetChannel(
     if (channel_) {
       channel_->SetFirstPacketReceivedCallback(nullptr);
       channel_->SetRtpTransport(nullptr);
+      channel_to_delete = channel_;
     }
 
     channel_ = channel;
@@ -220,6 +225,12 @@ void RtpTransceiver::SetChannel(
     } else {
       receiver->internal()->SetMediaChannel(channel_->media_channel());
     }
+  }
+
+  
+  
+  if (channel_to_delete) {
+    channel_manager_->DestroyChannel(channel_to_delete);
   }
 }
 

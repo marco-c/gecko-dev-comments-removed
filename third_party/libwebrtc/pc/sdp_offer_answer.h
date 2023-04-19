@@ -535,12 +535,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  void DestroyTransceiverChannel(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-          transceiver);
-
-  
-  
   void DestroyDataChannelTransport(RTCError error);
 
   

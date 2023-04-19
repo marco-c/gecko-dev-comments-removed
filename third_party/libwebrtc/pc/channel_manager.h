@@ -43,7 +43,7 @@ namespace cricket {
 
 
 
-class ChannelManager final : public ChannelFactoryInterface {
+class ChannelManager : public ChannelFactoryInterface {
  public:
   
   
@@ -110,7 +110,7 @@ class ChannelManager final : public ChannelFactoryInterface {
   
   void StopAecDump();
 
- private:
+ protected:
   ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
                  bool enable_rtx,
                  rtc::Thread* worker_thread,
@@ -122,6 +122,7 @@ class ChannelManager final : public ChannelFactoryInterface {
   
   void DestroyVideoChannel(VideoChannel* video_channel);
 
+ private:
   const std::unique_ptr<MediaEngineInterface> media_engine_;  
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
