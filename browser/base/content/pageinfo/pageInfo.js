@@ -931,71 +931,70 @@ function makePreview(row) {
         isBG) &&
       isProtocolAllowed
     ) {
-      function loadOrErrorListener() {
-        newImage.removeEventListener("load", loadOrErrorListener);
-        newImage.removeEventListener("error", loadOrErrorListener);
-        physWidth = newImage.width || 0;
-        physHeight = newImage.height || 0;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!isBG) {
-          newImage.width =
-            ("width" in item && item.width) || newImage.naturalWidth;
-          newImage.height =
-            ("height" in item && item.height) || newImage.naturalHeight;
-        } else {
-          
-          
-          newImage.width = item.naturalWidth || newImage.naturalWidth;
-          newImage.height = item.naturalHeight || newImage.naturalHeight;
-        }
-
-        if (item.SVGImageElement) {
-          newImage.width = item.SVGImageElementWidth;
-          newImage.height = item.SVGImageElementHeight;
-        }
-
-        width = newImage.width;
-        height = newImage.height;
-
-        document.getElementById("theimagecontainer").collapsed = false;
-        document.getElementById("brokenimagecontainer").collapsed = true;
-
-        if (url) {
-          if (width != physWidth || height != physHeight) {
-            document.l10n.setAttributes(
-              document.getElementById("imagedimensiontext"),
-              "media-dimensions-scaled",
-              {
-                dimx: formatNumber(physWidth),
-                dimy: formatNumber(physHeight),
-                scaledx: formatNumber(width),
-                scaledy: formatNumber(height),
-              }
-            );
-          } else {
-            document.l10n.setAttributes(
-              document.getElementById("imagedimensiontext"),
-              "media-dimensions",
-              { dimx: formatNumber(width), dimy: formatNumber(height) }
-            );
-          }
-        }
-      }
-
       
-      newImage.addEventListener("load", loadOrErrorListener);
-      newImage.addEventListener("error", loadOrErrorListener);
+      newImage.addEventListener(
+        "loadend",
+        function() {
+          physWidth = newImage.width || 0;
+          physHeight = newImage.height || 0;
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!isBG) {
+            newImage.width =
+              ("width" in item && item.width) || newImage.naturalWidth;
+            newImage.height =
+              ("height" in item && item.height) || newImage.naturalHeight;
+          } else {
+            
+            
+            newImage.width = item.naturalWidth || newImage.naturalWidth;
+            newImage.height = item.naturalHeight || newImage.naturalHeight;
+          }
+
+          if (item.SVGImageElement) {
+            newImage.width = item.SVGImageElementWidth;
+            newImage.height = item.SVGImageElementHeight;
+          }
+
+          width = newImage.width;
+          height = newImage.height;
+
+          document.getElementById("theimagecontainer").collapsed = false;
+          document.getElementById("brokenimagecontainer").collapsed = true;
+
+          if (url) {
+            if (width != physWidth || height != physHeight) {
+              document.l10n.setAttributes(
+                document.getElementById("imagedimensiontext"),
+                "media-dimensions-scaled",
+                {
+                  dimx: formatNumber(physWidth),
+                  dimy: formatNumber(physHeight),
+                  scaledx: formatNumber(width),
+                  scaledy: formatNumber(height),
+                }
+              );
+            } else {
+              document.l10n.setAttributes(
+                document.getElementById("imagedimensiontext"),
+                "media-dimensions",
+                { dimx: formatNumber(width), dimy: formatNumber(height) }
+              );
+            }
+          }
+        },
+        { once: true }
+      );
 
       newImage.setAttribute("triggeringprincipal", triggeringPrinStr);
       newImage.setAttribute("src", url);

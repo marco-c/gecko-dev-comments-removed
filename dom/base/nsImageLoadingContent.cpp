@@ -252,8 +252,15 @@ void nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest,
   
   if (NS_SUCCEEDED(aStatus)) {
     FireEvent(u"load"_ns);
+
+    
+    bool isMultipart;
+    if (NS_FAILED(aRequest->GetMultipart(&isMultipart)) || !isMultipart) {
+      FireEvent(u"loadend"_ns);
+    }
   } else {
     FireEvent(u"error"_ns);
+    FireEvent(u"loadend"_ns);
   }
 
   SVGObserverUtils::InvalidateDirectRenderingObservers(
@@ -980,6 +987,7 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
   if (!mCurrentRequest) aChannel->GetURI(getter_AddRefs(mCurrentURI));
 
   FireEvent(u"error"_ns);
+  FireEvent(u"loadend"_ns);
   return rv;
 }
 
@@ -1055,10 +1063,14 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     return NS_OK;
   }
 
+  
+  FireEvent(u"loadstart"_ns);
+
   if (!mLoadingEnabled) {
     
     
     FireEvent(u"error"_ns);
+    FireEvent(u"loadend"_ns);
     return NS_OK;
   }
 
@@ -1088,6 +1100,7 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     ClearPendingRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
 
     FireEvent(u"error"_ns);
+    FireEvent(u"loadend"_ns);
     return NS_OK;
   }
 
@@ -1194,6 +1207,7 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     }
 
     FireEvent(u"error"_ns);
+    FireEvent(u"loadend"_ns);
   }
 
   return NS_OK;
