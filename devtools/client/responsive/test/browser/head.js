@@ -70,7 +70,6 @@ Services.prefs.setBoolPref(
 );
 
 Services.prefs.setBoolPref("devtools.responsive.show-setting-tooltip", false);
-Services.prefs.setBoolPref("devtools.responsive.showUserAgentInput", true);
 
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref(

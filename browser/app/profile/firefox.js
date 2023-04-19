@@ -2587,12 +2587,7 @@ pref("devtools.responsive.touchSimulation.enabled", false);
 
 pref("devtools.responsive.userAgent", "");
 
-
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.responsive.showUserAgentInput", true);
-#else
-  pref("devtools.responsive.showUserAgentInput", false);
-#endif
+pref("devtools.responsive.showUserAgentInput", true);
 
 
 #ifdef MOZILLA_OFFICIAL
