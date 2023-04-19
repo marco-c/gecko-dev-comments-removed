@@ -1330,7 +1330,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     }
 
     
-    if (stack.empty()) {
+    if (stack.empty() && !module->hadEvaluationError()) {
       module->setEvaluationError(error);
     }
 
