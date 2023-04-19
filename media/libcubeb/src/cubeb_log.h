@@ -35,7 +35,7 @@ extern cubeb_log_callback g_cubeb_log_callback PRINTF_FORMAT(1, 2);
 void
 cubeb_async_log(const char * fmt, ...);
 void
-cubeb_async_log_reset_threads(void);
+cubeb_async_log_reset_threads();
 
 #ifdef __cplusplus
 }
@@ -43,13 +43,6 @@ cubeb_async_log_reset_threads(void);
 
 #define LOGV(msg, ...) LOG_INTERNAL(CUBEB_LOG_VERBOSE, msg, ##__VA_ARGS__)
 #define LOG(msg, ...) LOG_INTERNAL(CUBEB_LOG_NORMAL, msg, ##__VA_ARGS__)
-
-#define LOG_INTERNAL_NO_FORMAT(level, fmt, ...)                                \
-  do {                                                                         \
-    if (g_cubeb_log_callback && level <= g_cubeb_log_level) {                  \
-      g_cubeb_log_callback(fmt, __VA_ARGS__);                                  \
-    }                                                                          \
-  } while (0)
 
 #define LOG_INTERNAL(level, fmt, ...)                                          \
   do {                                                                         \
@@ -59,16 +52,11 @@ cubeb_async_log_reset_threads(void);
     }                                                                          \
   } while (0)
 
-#define ALOG_INTERNAL(level, fmt, ...)                                         \
+
+
+#define ALOGV(fmt, ...)                                                        \
   do {                                                                         \
-    if (level <= g_cubeb_log_level) {                                          \
-      cubeb_async_log(fmt, ##__VA_ARGS__);                                     \
-    }                                                                          \
+    cubeb_async_log(fmt, ##__VA_ARGS__);                                       \
   } while (0)
-
-
-
-#define ALOGV(msg, ...) ALOG_INTERNAL(CUBEB_LOG_VERBOSE, msg, ##__VA_ARGS__)
-#define ALOG(msg, ...) ALOG_INTERNAL(CUBEB_LOG_NORMAL, msg, ##__VA_ARGS__)
 
 #endif 
