@@ -3,11 +3,10 @@
 
 
 
-import os
 import gzip
+import os
 import stat
 import tarfile
-
 
 
 DEFAULT_MTIME = 1451606400

@@ -8,13 +8,13 @@ import io
 import json
 import os
 import re
-import requests_unixsocket
 import sys
 import urllib.parse
 
+import requests_unixsocket
+
 from .archive import create_tar_gz_from_files
 from .memoize import memoize
-
 
 IMAGE_DIR = os.path.join(".", "taskcluster", "docker")
 
@@ -247,13 +247,13 @@ def stream_context_tar(topsrcdir, context_dir, out_file, image_name=None, args=N
 
     
     content = []
-    with open(os.path.join(context_dir, "Dockerfile"), "r") as fh:
+    with open(os.path.join(context_dir, "Dockerfile")) as fh:
         for line in fh:
             if line.startswith("# %ARG"):
                 p = line[len("# %ARG ") :].strip()
                 if not args or p not in args:
                     raise Exception(f"missing argument: {p}")
-                replace.append((re.compile(fr"\${p}\b"), args[p]))
+                replace.append((re.compile(rf"\${p}\b"), args[p]))
                 continue
 
             for regexp, s in replace:

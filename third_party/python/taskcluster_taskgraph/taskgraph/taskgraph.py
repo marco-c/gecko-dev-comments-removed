@@ -3,10 +3,10 @@
 
 
 
+import attr
+
 from .graph import Graph
 from .task import Task
-
-import attr
 
 
 @attr.s(frozen=True)
