@@ -190,7 +190,6 @@
 #include "nsHyphenationManager.h"
 #include "nsIAlertsService.h"
 #include "nsIAppShell.h"
-#include "nsIAppStartup.h"
 #include "nsIAppWindow.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIBidiKeyboard.h"
@@ -4280,8 +4279,8 @@ void ContentParent::GeneratePairedMinidump(const char* aReason) {
   
   
   
-  nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
-  if (mCrashReporter && !appStartup->GetShuttingDown() &&
+  if (mCrashReporter &&
+      !AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) &&
       StaticPrefs::dom_ipc_tabs_createKillHardCrashReports_AtStartup()) {
     
     

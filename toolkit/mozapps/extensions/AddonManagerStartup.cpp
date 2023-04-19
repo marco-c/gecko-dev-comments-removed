@@ -16,6 +16,7 @@
 #include "js/TracingAPI.h"
 #include "xpcpublic.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Components.h"
@@ -32,7 +33,6 @@
 #include "nsAppRunner.h"
 #include "nsContentUtils.h"
 #include "nsChromeRegistry.h"
-#include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"  
 #include "nsIFileURL.h"
 #include "nsIIOService.h"
@@ -756,8 +756,7 @@ RegistryEntries::Destruct() {
 
     
     
-    nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
-    if (!appStartup || appStartup->GetShuttingDown()) {
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
       return NS_OK;
     }
 
