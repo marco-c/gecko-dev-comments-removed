@@ -28,6 +28,8 @@ class FontFaceSetWorkerImpl final : public FontFaceSetImpl {
 
   already_AddRefed<URLExtraData> GetURLExtraData() override;
 
+  void FlushUserFontSet() override;
+
   
 
   nsresult StartLoad(gfxUserFontEntry* aUserFontEntry,
