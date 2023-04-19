@@ -2659,6 +2659,12 @@ MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
         
         
         
+
+        
+        
+        auto* otherOp = operand == other->lhs() ? other->rhs() : other->lhs();
+        otherOp->setGuardRangeBailoutsUnchecked();
+
         return operand;
       }
     }
