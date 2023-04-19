@@ -547,34 +547,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gScreenshotsDisabled",
-  "extensions.screenshots.disabled",
-  false,
-  () => {
-    Services.obs.notifyObservers(
-      window,
-      "toggle-screenshot-disable",
-      gScreenshots.shouldScreenshotsButtonBeDisabled()
-    );
-  }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gScreenshotsComponentEnabled",
-  "screenshots.browser.component.enabled",
-  false,
-  () => {
-    Services.obs.notifyObservers(
-      window,
-      "toggle-screenshot-disable",
-      gScreenshots.shouldScreenshotsButtonBeDisabled()
-    );
-  }
-);
-
 customElements.setElementCreationCallback("translation-notification", () => {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/translation-notification.js",
@@ -704,21 +676,6 @@ var gNavigatorBundle = {
   },
   getFormattedString(key, array) {
     return gBrowserBundle.formatStringFromName(key, array);
-  },
-};
-
-var gScreenshots = {
-  shouldScreenshotsButtonBeDisabled() {
-    
-    
-    let uri = gBrowser.currentURI;
-    let shouldBeDisabled =
-      gScreenshotsDisabled ||
-      (!gScreenshotsComponentEnabled &&
-        uri.scheme === "about" &&
-        !uri.spec.startsWith("about:reader"));
-
-    return shouldBeDisabled;
   },
 };
 
@@ -5484,11 +5441,14 @@ var XULBrowserWindow = {
       closeOpenPanels("panel[locationspecific='true']");
     }
 
-    let screenshotsButtonsDisabled = gScreenshots.shouldScreenshotsButtonBeDisabled();
+    
+    
     Services.obs.notifyObservers(
       window,
       "toggle-screenshot-disable",
-      screenshotsButtonsDisabled
+      (aLocationURI.scheme == "about" &&
+        !aLocationURI.spec.startsWith("about:reader")) ||
+        Services.prefs.getBoolPref("extensions.screenshots.disabled")
     );
 
     gPermissionPanel.onLocationChange();
