@@ -513,15 +513,17 @@ FontFaceSetImpl::FindOrCreateUserFontEntryFromFontFace(
           face->mURI = uri ? new gfxFontSrcURI(uri) : nullptr;
           const URLExtraData& extraData = url->ExtraData();
           face->mReferrerInfo = extraData.ReferrerInfo();
-          face->mOriginPrincipal = new gfxFontSrcPrincipal(
-              extraData.Principal(), extraData.Principal());
 
           
           
           
           
-          face->mUseOriginPrincipal =
-              aOrigin == StyleOrigin::User || aOrigin == StyleOrigin::UserAgent;
+          if (aOrigin == StyleOrigin::User ||
+              aOrigin == StyleOrigin::UserAgent) {
+            face->mUseOriginPrincipal = true;
+            face->mOriginPrincipal = new gfxFontSrcPrincipal(
+                extraData.Principal(), extraData.Principal());
+          }
 
           face->mLocalName.Truncate();
           face->mFormatFlags = 0;
