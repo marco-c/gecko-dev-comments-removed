@@ -302,13 +302,6 @@ async function pressKey(element, key) {
 
 
 
-function addListenersAndTap(element, events) {
-  addListeners(element, events);
-  return tap(element);
-}
-
-
-
 async function addListenersAndPress(element, key, events) {
   addListeners(element, events);
   return pressKey(element, key);
@@ -329,4 +322,34 @@ function filterAndAddToMap(events, map) {
     }
     return false;
   }
+}
+
+function createPerformanceObserverPromise(observeTypes, callback, readyToResolve) {
+  return new Promise(resolve => {
+    new PerformanceObserver(entryList => {
+      callback(entryList);
+
+      if (readyToResolve())
+        resolve();
+    }).observe({ entryTypes: observeTypes });
+  });
+}
+
+
+
+function interactAndObserve(interactionType, element, observerPromise) {
+  let interactionPromise;
+  switch (interactionType) {
+    case 'tap': {
+      addListeners(element, ['pointerdown', 'pointerup']);
+      interactionPromise = tap(element);
+      break;
+    }
+    case 'click': {
+      addListeners(element, ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'click']);
+      interactionPromise = test_driver.click(element);
+      break;
+    }
+  }
+  return Promise.all([interactionPromise, observerPromise]);
 }
