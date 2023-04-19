@@ -46,9 +46,16 @@ struct TimerOptions {
   TimerOptions(DurationMs duration,
                TimerBackoffAlgorithm backoff_algorithm,
                absl::optional<int> max_restarts)
+      : TimerOptions(duration, backoff_algorithm, max_restarts, absl::nullopt) {
+  }
+  TimerOptions(DurationMs duration,
+               TimerBackoffAlgorithm backoff_algorithm,
+               absl::optional<int> max_restarts,
+               absl::optional<DurationMs> max_backoff_duration)
       : duration(duration),
         backoff_algorithm(backoff_algorithm),
-        max_restarts(max_restarts) {}
+        max_restarts(max_restarts),
+        max_backoff_duration(max_backoff_duration) {}
 
   
   const DurationMs duration;
@@ -58,6 +65,8 @@ struct TimerOptions {
   
   
   const absl::optional<int> max_restarts;
+  
+  const absl::optional<DurationMs> max_backoff_duration;
 };
 
 

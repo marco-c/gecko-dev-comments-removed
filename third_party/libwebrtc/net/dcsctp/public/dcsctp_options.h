@@ -114,6 +114,14 @@ struct DcSctpOptions {
   DurationMs t2_shutdown_timeout = DurationMs(1000);
 
   
+  
+  
+  
+  
+  
+  absl::optional<DurationMs> max_timer_backoff_duration = absl::nullopt;
+
+  
   DurationMs heartbeat_interval = DurationMs(30000);
 
   
