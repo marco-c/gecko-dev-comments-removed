@@ -775,9 +775,11 @@ static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
 
 
 
-static void ShapeGuardProtoChainForCrossCompartmentHolder(
+
+
+static ObjOperandId ShapeGuardProtoChainForCrossCompartmentHolder(
     CacheIRWriter& writer, NativeObject* obj, ObjOperandId objId,
-    NativeObject* holder, Maybe<ObjOperandId>* holderId) {
+    NativeObject* holder) {
   MOZ_ASSERT(obj != holder);
   MOZ_ASSERT(holder);
   while (true) {
@@ -787,65 +789,71 @@ static void ShapeGuardProtoChainForCrossCompartmentHolder(
     objId = writer.loadProto(objId);
     if (obj == holder) {
       TestMatchingHolder(writer, obj, objId);
-      holderId->emplace(objId);
-      return;
-    } else {
-      writer.guardShapeForOwnProperties(objId, obj->shape());
+      return objId;
     }
+    writer.guardShapeForOwnProperties(objId, obj->shape());
   }
 }
 
 enum class SlotReadType { Normal, CrossCompartment };
 
+
+
 template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
-static void EmitReadSlotGuard(CacheIRWriter& writer, NativeObject* obj,
-                              NativeObject* holder, ObjOperandId objId,
-                              Maybe<ObjOperandId>* holderId) {
+static ObjOperandId EmitReadSlotGuard(CacheIRWriter& writer, NativeObject* obj,
+                                      NativeObject* holder,
+                                      ObjOperandId objId) {
+  MOZ_ASSERT(holder);
   TestMatchingNativeReceiver(writer, obj, objId);
 
-  if (obj != holder) {
-    if (holder) {
-      if (MaybeCrossCompartment == SlotReadType::CrossCompartment) {
-        
-        
-        
-        ShapeGuardProtoChainForCrossCompartmentHolder(writer, obj, objId,
-                                                      holder, holderId);
-      } else {
-        
-        GeneratePrototypeGuards(writer, obj, holder, objId);
-
-        
-        holderId->emplace(writer.loadObject(holder));
-        TestMatchingHolder(writer, holder, holderId->ref());
-      }
-    } else {
-      
-      
-      
-      ShapeGuardProtoChain(writer, obj, objId);
-    }
-  } else {
-    holderId->emplace(objId);
+  if (obj == holder) {
+    return objId;
   }
+
+  if (MaybeCrossCompartment == SlotReadType::CrossCompartment) {
+    
+    
+    
+    return ShapeGuardProtoChainForCrossCompartmentHolder(writer, obj, objId,
+                                                         holder);
+  }
+
+  
+  GeneratePrototypeGuards(writer, obj, holder, objId);
+
+  
+  ObjOperandId holderId = writer.loadObject(holder);
+  TestMatchingHolder(writer, holder, holderId);
+  return holderId;
+}
+
+static void EmitMissingPropGuard(CacheIRWriter& writer, NativeObject* obj,
+                                 ObjOperandId objId) {
+  TestMatchingNativeReceiver(writer, obj, objId);
+
+  
+  
+  
+  ShapeGuardProtoChain(writer, obj, objId);
 }
 
 template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
 static void EmitReadSlotResult(CacheIRWriter& writer, NativeObject* obj,
-                               NativeObject* holder, Maybe<PropertyInfo> prop,
+                               NativeObject* holder, PropertyInfo prop,
                                ObjOperandId objId) {
-  Maybe<ObjOperandId> holderId;
-  EmitReadSlotGuard<MaybeCrossCompartment>(writer, obj, holder, objId,
-                                           &holderId);
+  MOZ_ASSERT(holder);
 
-  
-  if (holder) {
-    MOZ_ASSERT(holderId->valid());
-    EmitLoadSlotResult(writer, *holderId, holder, *prop);
-  } else {
-    MOZ_ASSERT(holderId.isNothing());
-    writer.loadUndefinedResult();
-  }
+  ObjOperandId holderId =
+      EmitReadSlotGuard<MaybeCrossCompartment>(writer, obj, holder, objId);
+
+  MOZ_ASSERT(holderId.valid());
+  EmitLoadSlotResult(writer, holderId, holder, prop);
+}
+
+static void EmitMissingPropResult(CacheIRWriter& writer, NativeObject* obj,
+                                  ObjOperandId objId) {
+  EmitMissingPropGuard(writer, obj, objId);
+  writer.loadUndefinedResult();
 }
 
 static void EmitCallGetterResultNoGuards(JSContext* cx, CacheIRWriter& writer,
@@ -1059,10 +1067,15 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
       }
 
       maybeEmitIdGuard(id);
-      EmitReadSlotResult(writer, nobj, holder, prop, objId);
-      writer.returnFromIC();
-
-      trackAttached("NativeSlot");
+      if (kind == NativeGetPropKind::Slot) {
+        EmitReadSlotResult(writer, nobj, holder, *prop, objId);
+        writer.returnFromIC();
+        trackAttached("NativeSlot");
+      } else {
+        EmitMissingPropResult(writer, nobj, objId);
+        writer.returnFromIC();
+        trackAttached("Missing");
+      }
       return AttachDecision::Attach;
     }
     case NativeGetPropKind::ScriptedGetter:
@@ -1156,15 +1169,25 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
     case NativeGetPropKind::None:
       return AttachDecision::NoAction;
 
-    case NativeGetPropKind::Missing:
     case NativeGetPropKind::Slot: {
       maybeEmitIdGuard(id);
       ObjOperandId windowObjId =
           GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
-      EmitReadSlotResult(writer, windowObj, holder, prop, windowObjId);
+      EmitReadSlotResult(writer, windowObj, holder, *prop, windowObjId);
       writer.returnFromIC();
 
       trackAttached("WindowProxySlot");
+      return AttachDecision::Attach;
+    }
+
+    case NativeGetPropKind::Missing: {
+      maybeEmitIdGuard(id);
+      ObjOperandId windowObjId =
+          GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
+      EmitMissingPropResult(writer, windowObj, windowObjId);
+      writer.returnFromIC();
+
+      trackAttached("WindowProxyMissing");
       return AttachDecision::Attach;
     }
 
@@ -1273,12 +1296,17 @@ AttachDecision GetPropIRGenerator::tryAttachCrossCompartmentWrapper(
                           unwrappedNative->compartment());
 
   ObjOperandId unwrappedId = wrapperTargetId;
-  EmitReadSlotResult<SlotReadType::CrossCompartment>(writer, unwrappedNative,
-                                                     holder, prop, unwrappedId);
-  writer.wrapResult();
-  writer.returnFromIC();
-
-  trackAttached("CCWSlot");
+  if (holder) {
+    EmitReadSlotResult<SlotReadType::CrossCompartment>(
+        writer, unwrappedNative, holder, *prop, unwrappedId);
+    writer.wrapResult();
+    writer.returnFromIC();
+    trackAttached("CCWSlot");
+  } else {
+    EmitMissingPropResult(writer, unwrappedNative, unwrappedId);
+    writer.returnFromIC();
+    trackAttached("CCWMissing");
+  }
   return AttachDecision::Attach;
 }
 
@@ -2190,10 +2218,15 @@ AttachDecision GetPropIRGenerator::tryAttachPrimitive(ValOperandId valId,
       maybeEmitIdGuard(id);
 
       ObjOperandId protoId = writer.loadObject(nproto);
-      EmitReadSlotResult(writer, nproto, holder, prop, protoId);
-      writer.returnFromIC();
-
-      trackAttached("PrimitiveSlot");
+      if (kind == NativeGetPropKind::Slot) {
+        EmitReadSlotResult(writer, nproto, holder, *prop, protoId);
+        writer.returnFromIC();
+        trackAttached("PrimitiveSlot");
+      } else {
+        EmitMissingPropResult(writer, nproto, protoId);
+        writer.returnFromIC();
+        trackAttached("PrimitiveMissing");
+      }
       return AttachDecision::Attach;
     }
     case NativeGetPropKind::ScriptedGetter:
@@ -3353,9 +3386,8 @@ AttachDecision HasPropIRGenerator::tryAttachNative(NativeObject* obj,
     return AttachDecision::NoAction;
   }
 
-  Maybe<ObjOperandId> tempId;
   emitIdGuard(keyId, idVal_, key);
-  EmitReadSlotGuard(writer, obj, holder, objId, &tempId);
+  EmitReadSlotGuard(writer, obj, holder, objId);
   writer.loadBooleanResult(true);
   writer.returnFromIC();
 
@@ -3393,8 +3425,7 @@ AttachDecision HasPropIRGenerator::tryAttachSlotDoesNotExist(
   if (hasOwn) {
     TestMatchingNativeReceiver(writer, obj, objId);
   } else {
-    Maybe<ObjOperandId> tempId;
-    EmitReadSlotGuard(writer, obj, nullptr, objId, &tempId);
+    EmitMissingPropGuard(writer, obj, objId);
   }
   writer.loadBooleanResult(false);
   writer.returnFromIC();
@@ -11965,9 +11996,7 @@ AttachDecision CloseIterIRGenerator::tryAttachNoReturnMethod() {
 
   ObjOperandId objId(writer.setInputOperandId(0));
 
-  Maybe<ObjOperandId> holderId;
-  EmitReadSlotGuard(writer, &iter_->as<NativeObject>(), nullptr,
-                    objId, &holderId);
+  EmitMissingPropGuard(writer, &iter_->as<NativeObject>(), objId);
 
   
   writer.returnFromIC();
@@ -12009,18 +12038,16 @@ AttachDecision CloseIterIRGenerator::tryAttachScriptedReturn() {
 
   ObjOperandId objId(writer.setInputOperandId(0));
 
-  Maybe<ObjOperandId> holderId;
-  EmitReadSlotGuard(writer, &iter_->as<NativeObject>(), holder, objId,
-                    &holderId);
-  MOZ_ASSERT(holderId.isSome());
+  ObjOperandId holderId =
+      EmitReadSlotGuard(writer, &iter_->as<NativeObject>(), holder, objId);
 
   ValOperandId calleeValId;
   if (holder->isFixedSlot(slot)) {
     size_t offset = NativeObject::getFixedSlotOffset(slot);
-    calleeValId = writer.loadFixedSlot(*holderId, offset);
+    calleeValId = writer.loadFixedSlot(holderId, offset);
   } else {
     size_t index = holder->dynamicSlotIndex(slot);
-    calleeValId = writer.loadDynamicSlot(*holderId, index);
+    calleeValId = writer.loadDynamicSlot(holderId, index);
   }
   ObjOperandId calleeId = writer.guardToObject(calleeValId);
   emitCalleeGuard(calleeId, callee);
