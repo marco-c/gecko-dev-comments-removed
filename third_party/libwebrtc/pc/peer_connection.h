@@ -378,12 +378,8 @@ class PeerConnection : public PeerConnectionInternal,
   }
   cricket::PortAllocator* port_allocator() { return port_allocator_.get(); }
   Call* call_ptr() { return call_ptr_; }
-  rtc::UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
-  const cricket::AudioOptions& audio_options() { return audio_options_; }
-  const cricket::VideoOptions& video_options() { return video_options_; }
-  VideoBitrateAllocatorFactory* video_bitrate_allocator_factory() {
-    return video_bitrate_allocator_factory_.get();
-  }
+
+  ConnectionContext* context() { return context_.get(); }
 
   cricket::DataChannelType data_channel_type() const;
   void SetIceConnectionState(IceConnectionState new_state);
@@ -391,19 +387,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
-  
-  void OnAudioTrackAdded(AudioTrackInterface* track,
-                         MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnAudioTrackRemoved(AudioTrackInterface* track,
-                           MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackAdded(VideoTrackInterface* track,
-                         MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackRemoved(VideoTrackInterface* track,
-                           MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
 
   
   
@@ -556,11 +539,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void OnCertificateReady(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
-
-  
-  
   static bool GetTransportDescription(
       const cricket::SessionDescription* description,
       const std::string& content_name,
@@ -663,7 +641,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   std::unique_ptr<AsyncResolverFactory> async_resolver_factory_
       RTC_GUARDED_BY(signaling_thread());
-  std::unique_ptr<rtc::PacketSocketFactory> packet_socket_factory_;
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  
                         
@@ -715,28 +692,9 @@ class PeerConnection : public PeerConnectionInternal,
 
   bool dtls_enabled_ RTC_GUARDED_BY(signaling_thread()) = false;
 
-  
-  cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
-  cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
-
   UsagePattern usage_pattern_ RTC_GUARDED_BY(signaling_thread());
   bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
       false;
-
-  
-  
-  
-  
-  rtc::UniqueRandomIdGenerator ssrc_generator_
-      RTC_GUARDED_BY(signaling_thread());
-
-  
-  
-  
-  
-  
-  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory_;
 
   DataChannelController data_channel_controller_;
 

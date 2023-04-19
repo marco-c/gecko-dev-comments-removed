@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/audio_options.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/jsep_ice_candidate.h"
@@ -36,6 +37,7 @@
 #include "api/set_remote_description_observer_interface.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "api/turn_customizer.h"
+#include "media/base/media_channel.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/port_allocator.h"
 #include "pc/channel.h"
@@ -52,6 +54,7 @@
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
 #include "pc/rtp_transceiver.h"
+#include "pc/rtp_transmission_manager.h"
 #include "pc/sctp_transport.h"
 #include "pc/session_description.h"
 #include "pc/stats_collector.h"
@@ -85,16 +88,17 @@ class WebRtcSessionDescriptionFactory;
 
 
 
-class SdpOfferAnswerHandler {
+class SdpOfferAnswerHandler : public sigslot::has_slots<> {
  public:
   explicit SdpOfferAnswerHandler(PeerConnection* pc);
   ~SdpOfferAnswerHandler();
 
-  void SetSessionDescFactory(
-      std::unique_ptr<WebRtcSessionDescriptionFactory> factory) {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    webrtc_session_desc_factory_ = std::move(factory);
-  }
+  
+  
+  void Initialize(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies* dependencies);
+
   void ResetSessionDescFactory() {
     RTC_DCHECK_RUN_ON(signaling_thread());
     webrtc_session_desc_factory_.reset();
@@ -254,6 +258,20 @@ class SdpOfferAnswerHandler {
                               const cricket::SessionDescription* description);
 
   bool IsUnifiedPlan() const RTC_RUN_ON(signaling_thread());
+
+  
+  void OnAudioTrackAdded(AudioTrackInterface* track,
+                         MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnAudioTrackRemoved(AudioTrackInterface* track,
+                           MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnVideoTrackAdded(VideoTrackInterface* track,
+                         MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnVideoTrackRemoved(VideoTrackInterface* track,
+                           MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
 
   
   RTCError Rollback(SdpType desc_type);
@@ -528,6 +546,11 @@ class SdpOfferAnswerHandler {
 
   
   
+  void OnCertificateReady(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
+
+  
+  
   cricket::ChannelManager* channel_manager() const;
   TransceiverList* transceivers();
   const TransceiverList* transceivers() const;
@@ -538,6 +561,8 @@ class SdpOfferAnswerHandler {
   RtpTransmissionManager* rtp_manager();
   const RtpTransmissionManager* rtp_manager() const;
   
+  const cricket::AudioOptions& audio_options() { return audio_options_; }
+  const cricket::VideoOptions& video_options() { return video_options_; }
 
   PeerConnection* const pc_;
 
@@ -615,6 +640,25 @@ class SdpOfferAnswerHandler {
   SessionError session_error_ RTC_GUARDED_BY(signaling_thread()) =
       SessionError::kNone;
   std::string session_error_desc_ RTC_GUARDED_BY(signaling_thread());
+
+  
+  cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
+  cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
+
+  
+  
+  
+  
+  rtc::UniqueRandomIdGenerator ssrc_generator_
+      RTC_GUARDED_BY(signaling_thread());
+
+  
+  
+  
+  
+  
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory_;
 
   rtc::WeakPtrFactory<SdpOfferAnswerHandler> weak_ptr_factory_
       RTC_GUARDED_BY(signaling_thread());
