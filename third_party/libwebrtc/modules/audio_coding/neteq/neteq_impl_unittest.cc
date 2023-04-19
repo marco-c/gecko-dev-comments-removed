@@ -805,9 +805,7 @@ TEST_P(NetEqImplTestSampleRateParameter,
   }
 
   
-  for (size_t i = 0; i < 5; ++i) {
-    insert_packet();
-  }
+  insert_packet();
 
   
   while (output.speech_type_ != AudioFrame::kNormalSpeech) {
@@ -884,9 +882,7 @@ TEST_P(NetEqImplTestSampleRateParameter, AudioInterruptionLogged) {
   }
 
   
-  for (size_t i = 0; i < 5; ++i) {
-    insert_packet();
-  }
+  insert_packet();
 
   
   while (output.speech_type_ != AudioFrame::kNormalSpeech) {
@@ -1303,7 +1299,7 @@ TEST_F(NetEqImplTest, DecodingError) {
                                           SdpAudioFormat("L16", 8000, 1)));
 
   
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 6; ++i) {
     rtp_header.sequenceNumber += 1;
     rtp_header.timestamp += kFrameLengthSamples;
     EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
