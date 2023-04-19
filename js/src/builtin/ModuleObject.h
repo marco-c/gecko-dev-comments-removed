@@ -259,6 +259,28 @@ enum class ModuleStatus : int32_t {
   Evaluated_Error  
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_FALSE = 0;
+
+
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
+
 class ModuleObject : public NativeObject {
  public:
   enum ModuleSlot {

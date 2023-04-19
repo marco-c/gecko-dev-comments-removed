@@ -979,6 +979,15 @@ struct JSRuntime {
   js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
 
   
+  
+  
+  
+  
+  
+  
+  js::MainThreadData<uint32_t> moduleAsyncEvaluatingPostOrder;
+
+  
   js::MainThreadData<JS::ModuleResolveHook> moduleResolveHook;
 
   
