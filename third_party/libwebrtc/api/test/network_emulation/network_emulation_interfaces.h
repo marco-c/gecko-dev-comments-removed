@@ -225,7 +225,16 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   virtual absl::optional<uint16_t> BindReceiver(
       uint16_t desired_port,
       EmulatedNetworkReceiverInterface* receiver) = 0;
+  
+  
   virtual void UnbindReceiver(uint16_t port) = 0;
+  
+  
+  virtual void BindDefaultReceiver(
+      EmulatedNetworkReceiverInterface* receiver) = 0;
+  
+  
+  virtual void UnbindDefaultReceiver() = 0;
   virtual rtc::IPAddress GetPeerLocalAddress() const = 0;
 
  private:

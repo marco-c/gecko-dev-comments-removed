@@ -49,15 +49,12 @@ struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
   TaskQueueForTest task_queue_;
-  EmulatedEndpointImpl endpoint{
-      1,
-      absl::nullopt,
-      rtc::IPAddress(kTestIpAddress),
-      EmulatedEndpointConfig::StatsGatheringMode::kDefault,
-      true,
-      rtc::AdapterType::ADAPTER_TYPE_UNKNOWN,
-      &task_queue_,
-      &clock};
+  EmulatedEndpointImpl endpoint{EmulatedEndpointImpl::Options{
+                                    1,
+                                    rtc::IPAddress(kTestIpAddress),
+                                    EmulatedEndpointConfig(),
+                                },
+                                true, &task_queue_, &clock};
 };
 
 }  

@@ -68,6 +68,14 @@ struct EmulatedEndpointConfig {
   
   rtc::AdapterType type = rtc::AdapterType::ADAPTER_TYPE_UNKNOWN;
   StatsGatheringMode stats_gathering_mode = StatsGatheringMode::kDefault;
+  
+  
+  
+  bool allow_send_packet_with_different_source_ip = false;
+  
+  
+  
+  bool allow_receive_packets_with_different_dest_ip = false;
 };
 
 struct EmulatedTURNServerConfig {
@@ -225,6 +233,35 @@ class NetworkEmulationManager {
   
   virtual EmulatedRoute* CreateRoute(
       const std::vector<EmulatedNetworkNode*>& via_nodes) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual EmulatedRoute* CreateDefaultRoute(
+      EmulatedEndpoint* from,
+      const std::vector<EmulatedNetworkNode*>& via_nodes,
+      EmulatedEndpoint* to) = 0;
 
   
   
