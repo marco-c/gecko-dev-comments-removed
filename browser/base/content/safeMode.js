@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const appStartup = Services.startup;
 
 const { ResetProfile } = ChromeUtils.import(

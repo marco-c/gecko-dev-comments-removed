@@ -1,7 +1,5 @@
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const { SyncHistory } = ChromeUtils.import(
   "resource://services-settings/SyncHistory.jsm"
 );

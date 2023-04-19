@@ -5,8 +5,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function run_test() {
   let greD = Services.dirsvc.get("GreD", Ci.nsIFile);
   let defaultPrefD = Services.dirsvc.get("PrfDef", Ci.nsIFile);

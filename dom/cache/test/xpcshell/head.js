@@ -9,8 +9,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const NS_APP_USER_PROFILE_50_DIR = "ProfD";
 const osWindowsName = "WINNT";
 const pathDelimiter = "/";

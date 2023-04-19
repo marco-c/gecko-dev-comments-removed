@@ -7,7 +7,6 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );

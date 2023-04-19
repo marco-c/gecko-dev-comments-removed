@@ -1,8 +1,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function run_test() {
   test_methods_presence();
   test_methods_calling();

@@ -1,6 +1,5 @@
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const path = "data/test_bug333423.zip";
 

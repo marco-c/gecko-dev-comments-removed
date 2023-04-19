@@ -2,6 +2,5 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 var gProfD = do_get_profile().QueryInterface(Ci.nsIFile);

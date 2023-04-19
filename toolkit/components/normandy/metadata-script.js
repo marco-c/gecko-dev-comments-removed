@@ -5,7 +5,6 @@
 
 
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { RecipeRunner } = ChromeUtils.import(
   "resource://normandy/lib/RecipeRunner.jsm"
 );

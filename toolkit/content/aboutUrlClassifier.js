@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const UPDATE_BEGIN = "safebrowsing-update-begin";
 const UPDATE_FINISH = "safebrowsing-update-finished";
 const JSLOG_PREF = "browser.safebrowsing.debug";

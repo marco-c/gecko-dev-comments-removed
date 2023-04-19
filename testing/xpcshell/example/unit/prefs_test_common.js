@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function isValidPref(prefName) {
   return Services.prefs.getPrefType(prefName) !== Services.prefs.PREF_INVALID;
 }

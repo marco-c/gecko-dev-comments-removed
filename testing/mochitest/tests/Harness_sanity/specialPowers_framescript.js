@@ -1,7 +1,5 @@
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var permChangedObs = {
   observe(subject, topic, data) {
     if (topic == "perm-changed") {

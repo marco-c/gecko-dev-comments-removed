@@ -6,8 +6,6 @@ const { CookieXPCShellUtils } = ChromeUtils.import(
   "resource://testing-common/CookieXPCShellUtils.jsm"
 );
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 CookieXPCShellUtils.init(this);
 
 

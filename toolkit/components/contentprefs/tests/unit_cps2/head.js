@@ -2,8 +2,6 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 let loadContext = Cu.createLoadContext();
 let privateLoadContext = Cu.createPrivateLoadContext();
 

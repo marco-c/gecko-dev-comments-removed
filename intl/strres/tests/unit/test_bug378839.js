@@ -1,8 +1,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const name_file = "file";
 const value_file = "File";
 

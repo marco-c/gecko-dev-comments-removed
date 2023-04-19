@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const localeService = Services.locale;
 
 const data = {

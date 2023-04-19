@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function run_test() {
   
   let base = Services.dirsvc.get("TmpD", Ci.nsIFile);

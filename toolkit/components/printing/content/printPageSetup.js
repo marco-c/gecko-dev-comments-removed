@@ -4,8 +4,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var gDialog;
 var paramBlock;
 var gPrintService = null;

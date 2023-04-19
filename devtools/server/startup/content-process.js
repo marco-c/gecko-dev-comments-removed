@@ -14,8 +14,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function onInit(message) {
   
   if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {

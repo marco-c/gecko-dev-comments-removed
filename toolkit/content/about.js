@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 var releaseNotesURL = Services.urlFormatter.formatURLPref(
   "app.releaseNotesURL"

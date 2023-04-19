@@ -1,8 +1,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const fs = [
   {
     path: "resource://mock_source/toolkit/intl/languageNames.ftl",

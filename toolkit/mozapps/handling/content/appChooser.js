@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );

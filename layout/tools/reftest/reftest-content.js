@@ -22,7 +22,6 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 const { onSpellCheck } = ChromeUtils.import(
     "resource://reftest/AsyncSpellCheckTestHelper.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");

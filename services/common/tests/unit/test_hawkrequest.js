@@ -7,7 +7,6 @@ const {
   HAWKAuthenticatedRESTRequest,
   deriveHawkCredentials,
 } = ChromeUtils.import("resource://services-common/hawkrequest.js");
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Async } = ChromeUtils.import("resource://services-common/async.js");
 
 

@@ -1,7 +1,6 @@
 
 
 Cu.importGlobalProperties(["File"]);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 function createProfDFile() {
   return Services.dirsvc
     .QueryInterface(Ci.nsIProperties)

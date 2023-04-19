@@ -18,8 +18,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
 class ContentProcessStartup {

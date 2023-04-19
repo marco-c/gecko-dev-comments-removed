@@ -2,8 +2,6 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function test() {
   waitForExplicitFinish();
   const connectionURL =

@@ -10,7 +10,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function run_test() {
   let ioService = Services.io;

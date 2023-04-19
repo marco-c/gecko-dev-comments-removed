@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { RecommendedPreferences } = ChromeUtils.import(
   "chrome://remote/content/shared/RecommendedPreferences.jsm"
 );

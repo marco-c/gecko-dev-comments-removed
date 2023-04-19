@@ -9,8 +9,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const { updateAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );

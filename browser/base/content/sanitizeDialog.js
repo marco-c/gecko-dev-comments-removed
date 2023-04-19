@@ -6,7 +6,6 @@
 
 
 var { Sanitizer } = ChromeUtils.import("resource:///modules/Sanitizer.jsm");
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 Preferences.addAll([
   { id: "privacy.cpd.history", type: "bool" },

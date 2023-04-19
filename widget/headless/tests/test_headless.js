@@ -1,7 +1,6 @@
 
 
 "use strict";
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 do_get_profile();

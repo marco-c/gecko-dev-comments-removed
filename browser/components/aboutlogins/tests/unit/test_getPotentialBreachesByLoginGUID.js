@@ -7,7 +7,6 @@
 const { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 do_get_profile();

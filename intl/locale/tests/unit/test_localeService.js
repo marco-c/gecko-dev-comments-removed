@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(
   Ci.mozIOSPreferences
 );

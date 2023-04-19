@@ -103,7 +103,6 @@ const MAX_TRIM_LENGTH = 100;
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

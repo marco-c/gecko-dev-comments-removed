@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { getAddonAndLocalAPIsMocker } = ChromeUtils.import(
   "resource://testing-common/LangPackMatcherTestUtils.jsm"
 );

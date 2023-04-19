@@ -16,7 +16,6 @@ const INTERVAL_END = 3;
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const defaultSettings = {
   entries: 8 * 1024 * 1024, 

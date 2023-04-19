@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { webrtcUI } = ChromeUtils.import("resource:///modules/webrtcUI.jsm");
 
 const BUNDLE_URL = "chrome://browser/locale/webrtcIndicator.properties";

@@ -2,8 +2,6 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 add_task(function instanceof_xrays() {
   let sandbox = Cu.Sandbox(null);
   Cu.evalInSandbox(`

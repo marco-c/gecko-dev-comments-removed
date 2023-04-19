@@ -4,7 +4,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function test_basics() {
   var item = Cc["@mozilla.org/windows-jumplistitem;1"].createInstance(

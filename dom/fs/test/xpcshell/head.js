@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 async function require_module(id) {
   if (!require_module.moduleLoader) {
     const { ModuleLoader } = ChromeUtils.import(
