@@ -124,12 +124,11 @@ class BaseChannel : public ChannelInterface,
   rtc::Thread* network_thread() const { return network_thread_; }
   const std::string& content_name() const override { return content_name_; }
   
-  const std::string& transport_name() const override {
+  absl::string_view transport_name() const override {
     RTC_DCHECK_RUN_ON(network_thread());
     if (rtp_transport_)
       return rtp_transport_->transport_name();
-    
-    return transport_name_;
+    return "";
   }
 
   
@@ -303,14 +302,6 @@ class BaseChannel : public ChannelInterface,
 
   std::function<void()> on_first_packet_received_
       RTC_GUARDED_BY(network_thread());
-
-  
-  
-  
-  
-  
-  
-  std::string transport_name_;
 
   webrtc::RtpTransportInternal* rtp_transport_
       RTC_GUARDED_BY(network_thread()) = nullptr;

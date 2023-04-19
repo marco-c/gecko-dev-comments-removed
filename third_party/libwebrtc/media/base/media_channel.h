@@ -187,7 +187,7 @@ class MediaChannel {
   virtual void OnReadyToSend(bool ready) = 0;
   
   virtual void OnNetworkRouteChanged(
-      const std::string& transport_name,
+      absl::string_view transport_name,
       const rtc::NetworkRoute& network_route) = 0;
   
   
