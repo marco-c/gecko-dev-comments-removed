@@ -42,8 +42,8 @@ namespace {
 
 constexpr int kQpMin = 10;
 constexpr int kUsageProfile = 1;  
-constexpr int kMinQindex = 58;    
-constexpr int kMaxQindex = 180;   
+constexpr int kMinQindex = 145;   
+constexpr int kMaxQindex = 205;   
 constexpr int kBitDepth = 8;
 constexpr int kLagInFrames = 0;  
 constexpr int kRtpTicksPerSecond = 90000;
@@ -58,7 +58,7 @@ int GetCpuSpeed(int width, int height, int number_of_cores) {
     return 6;
   else if (width * height >= 1280 * 720)
     return 9;
-  else if (width * height >= 640 * 480)
+  else if (width * height >= 640 * 360)
     return 8;
   else
     return 7;
@@ -312,11 +312,23 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  ret = aom_codec_control(&ctx_, AV1E_SET_TILE_COLUMNS, cfg_.g_threads >> 1);
-  if (ret != AOM_CODEC_OK) {
-    RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
-                        << " on control AV1E_SET_TILE_COLUMNS.";
-    return WEBRTC_VIDEO_CODEC_ERROR;
+  if (cfg_.g_threads == 4 && cfg_.g_w == 640 &&
+      (cfg_.g_h == 360 || cfg_.g_h == 480)) {
+    ret = aom_codec_control(&ctx_, AV1E_SET_TILE_ROWS,
+                            static_cast<int>(log2(cfg_.g_threads)));
+    if (ret != AOM_CODEC_OK) {
+      RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
+                          << " on control AV1E_SET_TILE_ROWS.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+  } else {
+    ret = aom_codec_control(&ctx_, AV1E_SET_TILE_COLUMNS,
+                            static_cast<int>(log2(cfg_.g_threads)));
+    if (ret != AOM_CODEC_OK) {
+      RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
+                          << " on control AV1E_SET_TILE_COLUMNS.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   ret = aom_codec_control(&ctx_, AV1E_SET_ROW_MT, 1);
@@ -378,9 +390,10 @@ int LibaomAv1Encoder::NumberOfThreads(int width,
                                       int number_of_cores) {
   
   
-  if (width * height >= 960 * 540 && number_of_cores > 4) {
+  
+  if (width * height >= 640 * 360 && number_of_cores > 4) {
     return 4;
-  } else if (width * height >= 640 * 360 && number_of_cores > 2) {
+  } else if (width * height >= 320 * 180 && number_of_cores > 2) {
     return 2;
   } else {
 
