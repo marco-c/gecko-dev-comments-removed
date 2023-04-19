@@ -655,10 +655,6 @@ void WorkerScriptLoader::CancelMainThread(nsresult aCancelResult) {
 nsresult WorkerScriptLoader::LoadScripts() {
   AssertIsOnMainThread();
 
-  if (IsMainWorkerScript()) {
-    mWorkerRef->Private()->SetLoadingWorkerScript(true);
-  }
-
   
   
   
@@ -968,10 +964,6 @@ void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
 
   MOZ_ASSERT(AllScriptsExecuted());
-
-  if (IsMainWorkerScript()) {
-    mWorkerRef->Private()->SetLoadingWorkerScript(false);
-  }
 
   if (!aResult) {
     

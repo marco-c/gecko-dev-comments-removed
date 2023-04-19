@@ -899,16 +899,6 @@ class WorkerPrivate final
 
   bool IsWatchedByDevTools() const { return mLoadInfo.mWatchedByDevTools; }
 
-  
-  bool IsLoadingWorkerScript() const { return mLoadingWorkerScript; }
-
-  
-  
-  void SetLoadingWorkerScript(bool aLoadingWorkerScript) {
-    
-    mLoadingWorkerScript = aLoadingWorkerScript;
-  }
-
   RemoteWorkerChild* GetRemoteWorkerController();
 
   void SetRemoteWorkerController(RemoteWorkerChild* aController);
@@ -1303,8 +1293,6 @@ class WorkerPrivate final
   
   
   Atomic<uint64_t> mBusyCount;
-
-  Atomic<bool> mLoadingWorkerScript;
 
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
