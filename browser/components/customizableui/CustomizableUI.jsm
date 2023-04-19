@@ -50,7 +50,6 @@ const kPrefProtonToolbarVersion = "browser.proton.toolbar.version";
 const kPrefHomeButtonUsed = "browser.engagement.home-button.has-used";
 const kPrefLibraryButtonUsed = "browser.engagement.library-button.has-used";
 const kPrefSidebarButtonUsed = "browser.engagement.sidebar-button.has-used";
-const kPrefUnifiedExtensionsEnabled = "extensions.unifiedExtensions.enabled";
 
 const kExpectedWindowURL = AppConstants.BROWSER_CHROME_URL;
 
@@ -194,13 +193,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       lazy.log.maxLogLevel = newVal ? "all" : "log";
     }
   }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "gUnifiedExtensionsEnabled",
-  kPrefUnifiedExtensionsEnabled,
-  false
 );
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
@@ -3395,15 +3387,9 @@ var CustomizableUIInternal = {
     }
     addUnskippedChildren(this.getCustomizationTarget(container));
     if (container.getAttribute("overflowing") == "true") {
-      let overflowTarget = container.getAttribute("default-overflowtarget");
+      let overflowTarget = container.getAttribute("overflowtarget");
       addUnskippedChildren(
         container.ownerDocument.getElementById(overflowTarget)
-      );
-      let webExtOverflowTarget = container.getAttribute(
-        "addon-webext-overflowtarget"
-      );
-      addUnskippedChildren(
-        container.ownerDocument.getElementById(webExtOverflowTarget)
       );
     }
     
@@ -5002,18 +4988,6 @@ function XULWidgetSingleWrapper(aWidgetId, aNode, aDocument) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class OverflowableToolbar {
   
 
@@ -5047,7 +5021,7 @@ class OverflowableToolbar {
 
 
 
-  #overflowedInfo = new Map();
+  #collapsed = new Map();
 
   
 
@@ -5064,7 +5038,7 @@ class OverflowableToolbar {
 
 
 
-  #defaultList = null;
+  #list = null;
 
   
 
@@ -5072,7 +5046,7 @@ class OverflowableToolbar {
 
 
 
-  #defaultListButton = null;
+  #chevron = null;
 
   
 
@@ -5080,16 +5054,7 @@ class OverflowableToolbar {
 
 
 
-  #defaultListPanel = null;
-
-  
-
-
-
-
-
-
-  #webExtList = null;
+  #panel = null;
 
   
 
@@ -5141,16 +5106,6 @@ class OverflowableToolbar {
 
 
 
-
-
-
-
-
-
-
-
-
-
   constructor(aToolbarNode) {
     this.#toolbar = aToolbarNode;
     this.#target = CustomizableUI.getCustomizationTarget(this.#toolbar);
@@ -5162,13 +5117,12 @@ class OverflowableToolbar {
 
     this.#toolbar.setAttribute("overflowable", "true");
     let doc = this.#toolbar.ownerDocument;
-    this.#defaultList = doc.getElementById(
-      this.#toolbar.getAttribute("default-overflowtarget")
+    this.#list = doc.getElementById(
+      this.#toolbar.getAttribute("overflowtarget")
     );
-    this.#defaultList._customizationTarget = this.#defaultList;
+    this.#list._customizationTarget = this.#list;
 
     let window = this.#toolbar.ownerGlobal;
-
     if (window.gBrowserInit.delayedStartupFinished) {
       this.init();
     } else {
@@ -5188,19 +5142,17 @@ class OverflowableToolbar {
     window.gNavToolbox.addEventListener("customizationstarting", this);
     window.gNavToolbox.addEventListener("aftercustomization", this);
 
-    let defaultListButton = this.#toolbar.getAttribute(
-      "default-overflowbutton"
-    );
-    this.#defaultListButton = doc.getElementById(defaultListButton);
-    this.#defaultListButton.addEventListener("mousedown", this);
-    this.#defaultListButton.addEventListener("keypress", this);
-    this.#defaultListButton.addEventListener("dragover", this);
-    this.#defaultListButton.addEventListener("dragend", this);
+    let chevronId = this.#toolbar.getAttribute("overflowbutton");
+    this.#chevron = doc.getElementById(chevronId);
+    this.#chevron.addEventListener("mousedown", this);
+    this.#chevron.addEventListener("keypress", this);
+    this.#chevron.addEventListener("dragover", this);
+    this.#chevron.addEventListener("dragend", this);
 
-    let panelId = this.#toolbar.getAttribute("default-overflowpanel");
-    this.#defaultListPanel = doc.getElementById(panelId);
-    this.#defaultListPanel.addEventListener("popuphiding", this);
-    CustomizableUIInternal.addPanelCloseListeners(this.#defaultListPanel);
+    let panelId = this.#toolbar.getAttribute("overflowpanel");
+    this.#panel = doc.getElementById(panelId);
+    this.#panel.addEventListener("popuphiding", this);
+    CustomizableUIInternal.addPanelCloseListeners(this.#panel);
 
     CustomizableUI.addListener(this);
 
@@ -5227,14 +5179,13 @@ class OverflowableToolbar {
     window.removeEventListener("resize", this);
     window.gNavToolbox.removeEventListener("customizationstarting", this);
     window.gNavToolbox.removeEventListener("aftercustomization", this);
-    this.#defaultListButton.removeEventListener("mousedown", this);
-    this.#defaultListButton.removeEventListener("keypress", this);
-    this.#defaultListButton.removeEventListener("dragover", this);
-    this.#defaultListButton.removeEventListener("dragend", this);
-    this.#defaultListPanel.removeEventListener("popuphiding", this);
-
+    this.#chevron.removeEventListener("mousedown", this);
+    this.#chevron.removeEventListener("keypress", this);
+    this.#chevron.removeEventListener("dragover", this);
+    this.#chevron.removeEventListener("dragend", this);
+    this.#panel.removeEventListener("popuphiding", this);
     CustomizableUI.removeListener(this);
-    CustomizableUIInternal.removePanelCloseListeners(this.#defaultListPanel);
+    CustomizableUIInternal.removePanelCloseListeners(this.#panel);
   }
 
   
@@ -5245,26 +5196,26 @@ class OverflowableToolbar {
 
 
   show(aEvent) {
-    if (this.#defaultListPanel.state == "open") {
+    if (this.#panel.state == "open") {
       return Promise.resolve();
     }
     return new Promise(resolve => {
-      let doc = this.#defaultListPanel.ownerDocument;
-      this.#defaultListPanel.hidden = false;
-      let multiview = this.#defaultListPanel.querySelector("panelmultiview");
+      let doc = this.#panel.ownerDocument;
+      this.#panel.hidden = false;
+      let multiview = this.#panel.querySelector("panelmultiview");
       let mainViewId = multiview.getAttribute("mainViewId");
       let mainView = doc.getElementById(mainViewId);
       let contextMenu = doc.getElementById(mainView.getAttribute("context"));
       Services.els.addSystemEventListener(contextMenu, "command", this, true);
-      let anchor = this.#defaultListButton.icon;
+      let anchor = this.#chevron.icon;
 
       let popupshown = false;
-      this.#defaultListPanel.addEventListener(
+      this.#panel.addEventListener(
         "popupshown",
         () => {
           popupshown = true;
-          this.#defaultListPanel.addEventListener("dragover", this);
-          this.#defaultListPanel.addEventListener("dragend", this);
+          this.#panel.addEventListener("dragover", this);
+          this.#panel.addEventListener("dragend", this);
           
           
           
@@ -5276,7 +5227,7 @@ class OverflowableToolbar {
       let openPanel = () => {
         
         
-        this.#defaultListPanel.addEventListener(
+        this.#panel.addEventListener(
           "popupshowing",
           () => {
             doc.defaultView.updateEditUIVisibility();
@@ -5284,7 +5235,7 @@ class OverflowableToolbar {
           { once: true }
         );
 
-        this.#defaultListPanel.addEventListener(
+        this.#panel.addEventListener(
           "popuphidden",
           () => {
             if (!popupshown) {
@@ -5296,14 +5247,10 @@ class OverflowableToolbar {
           { once: true }
         );
 
-        lazy.PanelMultiView.openPopup(
-          this.#defaultListPanel,
-          anchor || this.#defaultListButton,
-          {
-            triggerEvent: aEvent,
-          }
-        );
-        this.#defaultListButton.open = true;
+        lazy.PanelMultiView.openPopup(this.#panel, anchor || this.#chevron, {
+          triggerEvent: aEvent,
+        });
+        this.#chevron.open = true;
       };
 
       openPanel();
@@ -5358,11 +5305,11 @@ class OverflowableToolbar {
         
         if (
           newNodeCanOverflow &&
-          this.#overflowedInfo.has(nextNodeId) &&
+          this.#collapsed.has(nextNodeId) &&
           nextNode &&
-          nextNode.parentNode == this.#defaultList
+          nextNode.parentNode == this.#list
         ) {
-          return [this.#defaultList, nextNode];
+          return [this.#list, nextNode];
         }
         
         
@@ -5379,18 +5326,13 @@ class OverflowableToolbar {
         ) {
           return [this.#target, nextNode];
         }
-      } else if (
-        loopIndex < nodeIndex &&
-        this.#overflowedInfo.has(nextNodeId)
-      ) {
+      } else if (loopIndex < nodeIndex && this.#collapsed.has(nextNodeId)) {
         nodeBeforeNewNodeIsOverflown = true;
       }
     }
 
     let containerForAppending =
-      this.#overflowedInfo.size && newNodeCanOverflow
-        ? this.#defaultList
-        : this.#target;
+      this.#collapsed.size && newNodeCanOverflow ? this.#list : this.#target;
     return [containerForAppending, null];
   }
 
@@ -5407,7 +5349,7 @@ class OverflowableToolbar {
 
   getContainerFor(aNode) {
     if (aNode.getAttribute("overflowedItem") == "true") {
-      return this.#defaultList;
+      return this.#list;
     }
     return this.#target;
   }
@@ -5426,9 +5368,6 @@ class OverflowableToolbar {
 
     let win = this.#target.ownerGlobal;
     let checkOverflowHandle = this.#checkOverflowHandle;
-    let webExtButtonID = this.#toolbar.getAttribute(
-      "addon-webext-overflowbutton"
-    );
 
     let { isOverflowing, targetContentWidth } = await this.#getOverflowInfo();
 
@@ -5439,15 +5378,14 @@ class OverflowableToolbar {
       return;
     }
 
-    let webExtList = this.#getWebExtList();
-
     let child = this.#target.lastElementChild;
     while (child && isOverflowing) {
       let prevChild = child.previousElementSibling;
 
       if (child.getAttribute("overflows") != "false") {
-        this.#overflowedInfo.set(child.id, targetContentWidth);
+        this.#collapsed.set(child.id, targetContentWidth);
         child.setAttribute("overflowedItem", true);
+        child.setAttribute("cui-anchorid", this.#chevron.id);
         CustomizableUIInternal.ensureButtonContextMenu(
           child,
           this.#toolbar,
@@ -5459,28 +5397,15 @@ class OverflowableToolbar {
           this.#target
         );
 
-        if (
-          lazy.gUnifiedExtensionsEnabled &&
-          webExtList &&
-          child.classList.contains("webextension-browser-action")
-        ) {
-          child.setAttribute("cui-anchorid", webExtButtonID);
-          webExtList.insertBefore(child, webExtList.firstElementChild);
-        } else {
-          child.setAttribute("cui-anchorid", this.#defaultListButton.id);
-          this.#defaultList.insertBefore(
-            child,
-            this.#defaultList.firstElementChild
-          );
-          if (!CustomizableUI.isSpecialWidget(child.id)) {
-            this.#toolbar.setAttribute("overflowing", "true");
-          }
+        this.#list.insertBefore(child, this.#list.firstElementChild);
+        if (!CustomizableUI.isSpecialWidget(child.id)) {
+          this.#toolbar.setAttribute("overflowing", "true");
         }
       }
       child = prevChild;
       ({ isOverflowing, targetContentWidth } = await this.#getOverflowInfo());
-      
-      
+      // Stop if the window has closed or if we re-enter while waiting for
+      // layout.
       if (win.closed || this.#checkOverflowHandle != checkOverflowHandle) {
         lazy.log.debug("Window closed or another overflow handler started.");
         return;
@@ -5490,21 +5415,21 @@ class OverflowableToolbar {
     win.UpdateUrlbarSearchSplitterState();
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a Promise that resolves to a an object that describes the state
+   * that this OverflowableToolbar is currently in.
+   *
+   * @returns {Promise}
+   * @resolves {Object}
+   *   An object with the following properties:
+   *
+   *   isOverflowing: {boolean} True if at least one toolbar item has overflowed
+   *     into an overflow panel.
+   *   targetContentWidth: {number} The total width of the items within the
+   *     customization target area of the toolbar.
+   *   totalAvailWidth: {number} The maximum width items in the toolbar may
+   *     occupy before causing an overflow.
+   */
   async #getOverflowInfo() {
     function getInlineSize(aElement) {
       return aElement.getBoundingClientRect().width;
@@ -5586,31 +5511,11 @@ class OverflowableToolbar {
     );
     let placements = gPlacements.get(this.#toolbar.id);
     let win = this.#target.ownerGlobal;
-    let doc = this.#target.ownerDocument;
     let checkOverflowHandle = this.#checkOverflowHandle;
 
-    let overflowedItemStack = Array.from(this.#overflowedInfo.entries());
-
-    for (let i = overflowedItemStack.length - 1; i >= 0; --i) {
-      let [childID, minSize] = overflowedItemStack[i];
-
-      
-      
-      
-      
-      let child = lazy.PanelMultiView.getViewNode(doc, childID);
-
-      if (!child) {
-        
-        
-        
-        lazy.log.error(
-          `Could not find item with ID ${childID} in the DOM when putting ` +
-            `items back into the toolbar.`
-        );
-        continue;
-      }
-
+    while (this.#list.firstElementChild) {
+      let child = this.#list.firstElementChild;
+      let minSize = this.#collapsed.get(child.id);
       lazy.log.debug(
         `Considering moving ${child.id} back, minSize: ${minSize}`
       );
@@ -5635,7 +5540,7 @@ class OverflowableToolbar {
       }
 
       lazy.log.debug(`Moving ${child.id} back`);
-      this.#overflowedInfo.delete(child.id);
+      this.#collapsed.delete(child.id);
       let beforeNodeIndex = placements.indexOf(child.id) + 1;
       
       
@@ -5673,8 +5578,7 @@ class OverflowableToolbar {
 
     win.UpdateUrlbarSearchSplitterState();
 
-    let defaultListItems = Array.from(this.#defaultList.children);
-    let collapsedWidgetIds = defaultListItems.map(item => item.id);
+    let collapsedWidgetIds = Array.from(this.#collapsed.keys());
     if (collapsedWidgetIds.every(w => CustomizableUI.isSpecialWidget(w))) {
       this.#toolbar.removeAttribute("overflowing");
     }
@@ -5763,8 +5667,8 @@ class OverflowableToolbar {
         window.clearTimeout(this.#hideTimeoutId);
       }
       this.#hideTimeoutId = window.setTimeout(() => {
-        if (!this.#defaultListPanel.firstElementChild.matches(":hover")) {
-          lazy.PanelMultiView.hidePopup(this.#defaultListPanel);
+        if (!this.#panel.firstElementChild.matches(":hover")) {
+          lazy.PanelMultiView.hidePopup(this.#panel);
         }
       }, OVERFLOW_PANEL_HIDE_DELAY_MS);
     });
@@ -5774,40 +5678,16 @@ class OverflowableToolbar {
 
 
 
-
-
-
-
-
-  #getWebExtList() {
-    if (!this.#webExtList) {
-      let targetID = this.#toolbar.getAttribute("addon-webext-overflowtarget");
-      if (targetID) {
-        let win = this.#toolbar.ownerGlobal;
-        let { panel } = win.gUnifiedExtensions;
-        this.#webExtList = panel.querySelector(`#${targetID}`);
-      }
-    }
-    return this.#webExtList;
-  }
-
-  
-
-
-
   
 
 
 
 
-  #onClickDefaultListButton(aEvent) {
-    if (this.#defaultListButton.open) {
-      this.#defaultListButton.open = false;
-      lazy.PanelMultiView.hidePopup(this.#defaultListPanel);
-    } else if (
-      this.#defaultListPanel.state != "hiding" &&
-      !this.#defaultListButton.disabled
-    ) {
+  #onClickChevron(aEvent) {
+    if (this.#chevron.open) {
+      this.#chevron.open = false;
+      lazy.PanelMultiView.hidePopup(this.#panel);
+    } else if (this.#panel.state != "hiding" && !this.#chevron.disabled) {
       this.show(aEvent);
     }
   }
@@ -5819,16 +5699,16 @@ class OverflowableToolbar {
 
 
   #onPanelHiding(aEvent) {
-    if (aEvent.target != this.#defaultListPanel) {
+    if (aEvent.target != this.#panel) {
       
       return;
     }
-    this.#defaultListButton.open = false;
-    this.#defaultListPanel.removeEventListener("dragover", this);
-    this.#defaultListPanel.removeEventListener("dragend", this);
+    this.#chevron.open = false;
+    this.#panel.removeEventListener("dragover", this);
+    this.#panel.removeEventListener("dragend", this);
     let doc = aEvent.target.ownerDocument;
     doc.defaultView.updateEditUIVisibility();
-    let contextMenuId = this.#defaultListPanel.getAttribute("context");
+    let contextMenuId = this.#panel.getAttribute("context");
     if (contextMenuId) {
       let contextMenu = doc.getElementById(contextMenuId);
       Services.els.removeSystemEventListener(
@@ -5865,26 +5745,24 @@ class OverflowableToolbar {
     
     if (
       !this.#enabled ||
-      (aContainer != this.#target && aContainer != this.#defaultList)
+      (aContainer != this.#target && aContainer != this.#list)
     ) {
       return;
     }
     
     
     
-    if (aNode.parentNode == this.#defaultList) {
+    if (aNode.parentNode == this.#list) {
       let updatedMinSize;
       if (aNode.previousElementSibling) {
-        updatedMinSize = this.#overflowedInfo.get(
-          aNode.previousElementSibling.id
-        );
+        updatedMinSize = this.#collapsed.get(aNode.previousElementSibling.id);
       } else {
         
         updatedMinSize = 1;
       }
       let nextItem = aNode.nextElementSibling;
       while (nextItem) {
-        this.#overflowedInfo.set(nextItem.id, updatedMinSize);
+        this.#collapsed.set(nextItem.id, updatedMinSize);
         nextItem = nextItem.nextElementSibling;
       }
     }
@@ -5897,13 +5775,13 @@ class OverflowableToolbar {
     
     if (
       !this.#enabled ||
-      (aContainer != this.#target && aContainer != this.#defaultList)
+      (aContainer != this.#target && aContainer != this.#list)
     ) {
       return;
     }
 
-    let nowOverflowed = aNode.parentNode == this.#defaultList;
-    let wasOverflowed = this.#overflowedInfo.has(aNode.id);
+    let nowOverflowed = aNode.parentNode == this.#list;
+    let wasOverflowed = this.#collapsed.has(aNode.id);
 
     
     if (!wasOverflowed) {
@@ -5916,10 +5794,10 @@ class OverflowableToolbar {
         
         let sourceOfMinSize = aNode.previousElementSibling;
         let minSize = sourceOfMinSize
-          ? this.#overflowedInfo.get(sourceOfMinSize.id)
+          ? this.#collapsed.get(sourceOfMinSize.id)
           : 1;
-        this.#overflowedInfo.set(aNode.id, minSize);
-        aNode.setAttribute("cui-anchorid", this.#defaultListButton.id);
+        this.#collapsed.set(aNode.id, minSize);
+        aNode.setAttribute("cui-anchorid", this.#chevron.id);
         aNode.setAttribute("overflowedItem", true);
         CustomizableUIInternal.ensureButtonContextMenu(aNode, aContainer, true);
         CustomizableUIInternal.notifyListeners(
@@ -5931,7 +5809,7 @@ class OverflowableToolbar {
     } else if (!nowOverflowed) {
       
       
-      this.#overflowedInfo.delete(aNode.id);
+      this.#collapsed.delete(aNode.id);
       aNode.removeAttribute("cui-anchorid");
       aNode.removeAttribute("overflowedItem");
       CustomizableUIInternal.ensureButtonContextMenu(aNode, aContainer);
@@ -5941,15 +5819,15 @@ class OverflowableToolbar {
         this.#target
       );
 
-      let collapsedWidgetIds = Array.from(this.#overflowedInfo.keys());
+      let collapsedWidgetIds = Array.from(this.#collapsed.keys());
       if (collapsedWidgetIds.every(w => CustomizableUI.isSpecialWidget(w))) {
         this.#toolbar.removeAttribute("overflowing");
       }
     } else if (aNode.previousElementSibling) {
       
       let prevId = aNode.previousElementSibling.id;
-      let minSize = this.#overflowedInfo.get(prevId);
-      this.#overflowedInfo.set(aNode.id, minSize);
+      let minSize = this.#collapsed.get(prevId);
+      this.#collapsed.set(aNode.id, minSize);
     }
 
     
@@ -5961,7 +5839,7 @@ class OverflowableToolbar {
 
 
   isInOverflowList(node) {
-    return node.parentNode == this.#defaultList;
+    return node.parentNode == this.#list;
   }
 
   
@@ -5994,19 +5872,19 @@ class OverflowableToolbar {
         if (aEvent.button != 0) {
           break;
         }
-        if (aEvent.target == this.#defaultListButton) {
-          this.#onClickDefaultListButton(aEvent);
+        if (aEvent.target == this.#chevron) {
+          this.#onClickChevron(aEvent);
         } else {
-          lazy.PanelMultiView.hidePopup(this.#defaultListPanel);
+          lazy.PanelMultiView.hidePopup(this.#panel);
         }
         break;
       }
       case "keypress": {
         if (
-          aEvent.target == this.#defaultListButton &&
+          aEvent.target == this.#chevron &&
           (aEvent.key == " " || aEvent.key == "Enter")
         ) {
-          this.#onClickDefaultListButton(aEvent);
+          this.#onClickChevron(aEvent);
         }
         break;
       }
@@ -6021,7 +5899,7 @@ class OverflowableToolbar {
         break;
       }
       case "dragend": {
-        lazy.PanelMultiView.hidePopup(this.#defaultListPanel);
+        lazy.PanelMultiView.hidePopup(this.#panel);
         break;
       }
       case "popuphiding": {
