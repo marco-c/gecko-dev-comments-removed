@@ -144,9 +144,11 @@ std::unique_ptr<Timer> TimerManager::CreateTimer(absl::string_view name,
   
   
   RTC_CHECK_NE(*id, std::numeric_limits<uint32_t>::max());
+  std::unique_ptr<Timeout> timeout = create_timeout_();
+  RTC_CHECK(timeout != nullptr);
   auto timer = absl::WrapUnique(new Timer(
       id, name, std::move(on_expired), [this, id]() { timers_.erase(id); },
-      create_timeout_(), options));
+      std::move(timeout), options));
   timers_[id] = timer.get();
   return timer;
 }
