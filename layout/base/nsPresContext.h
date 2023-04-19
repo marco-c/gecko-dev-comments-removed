@@ -1356,6 +1356,12 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   unsigned mIsVisual : 1;
 
+  
+  
+  
+  
+  unsigned mUnused : 1;
+
   unsigned mHasWarnedAboutTooLargeDashedOrDottedRadius : 1;
 
   
