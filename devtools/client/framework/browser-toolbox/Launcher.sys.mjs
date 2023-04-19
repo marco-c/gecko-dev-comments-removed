@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-
-
+// Keep this synchronized with the value of the same name in
+// toolkit/xre/nsAppRunner.cpp.
 const BROWSER_TOOLBOX_WINDOW_URL =
   "chrome://devtools/content/framework/browser-toolbox/window.html";
 const CHROME_DEBUGGER_PROFILE_NAME = "chrome_debugger_profile";
@@ -22,9 +22,8 @@ const { Subprocess } = ChromeUtils.import(
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineModuleGetter(
   lazy,
@@ -48,31 +47,30 @@ const Telemetry = require("devtools/client/shared/telemetry");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const Services = require("Services");
+
 const env = Cc["@mozilla.org/process/environment;1"].getService(
   Ci.nsIEnvironment
 );
 
-const EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
-
 const processes = new Set();
 
+/**
+ * @typedef {Object} BrowserToolboxLauncherArgs
+ * @property {function} onRun - A function called when the process starts running.
+ * @property {boolean} overwritePreferences - Set to force overwriting the toolbox
+ *                     profile's preferences with the current set of preferences.
+ * @property {boolean} forceMultiprocess - Set to force the Browser Toolbox to be in
+ *                     multiprocess mode.
+ */
 
-
-
-
-
-
-
-
-
-class BrowserToolboxLauncher extends EventEmitter {
-  
-
-
-
-
-
-
+export class BrowserToolboxLauncher extends EventEmitter {
+  /**
+   * Initializes and starts a chrome toolbox process if the appropriated prefs are enabled
+   *
+   * @param {BrowserToolboxLauncherArgs} args
+   * @return {BrowserToolboxLauncher|null} The created instance, or null if the required prefs
+   *         are not set.
+   */
   static init(args) {
     if (
       !Services.prefs.getBoolPref("devtools.chrome.enabled") ||
@@ -84,10 +82,10 @@ class BrowserToolboxLauncher extends EventEmitter {
     return new BrowserToolboxLauncher(args);
   }
 
-  
-
-
-
+  /**
+   * Figure out if there are any open Browser Toolboxes that'll need to be restored.
+   * @return {boolean}
+   */
   static getBrowserToolboxSessionState() {
     return processes.size !== 0;
   }
@@ -101,11 +99,11 @@ class BrowserToolboxLauncher extends EventEmitter {
   #port;
   #telemetry = new Telemetry();
 
-  
-
-
-
-
+  /**
+   * Constructor for creating a process that will hold a chrome toolbox.
+   *
+   * @param {...BrowserToolboxLauncherArgs} args
+   */
   constructor({ forceMultiprocess, onRun, overwritePreferences } = {}) {
     super();
 
@@ -122,9 +120,9 @@ class BrowserToolboxLauncher extends EventEmitter {
     processes.add(this);
   }
 
-  
-
-
+  /**
+   * Initializes the devtools server.
+   */
   #initServer() {
     if (this.#devToolsServer) {
       dumpn("The chrome toolbox server is already running.");
@@ -133,11 +131,11 @@ class BrowserToolboxLauncher extends EventEmitter {
 
     dumpn("Initializing the chrome toolbox server.");
 
-    
-    
-    
-    
-    
+    // Create a separate loader instance, so that we can be sure to receive a
+    // separate instance of the DebuggingServer from the rest of the devtools.
+    // This allows us to safely use the tools against even the actors and
+    // DebuggingServer itself, especially since we can mark this loader as
+    // invisible to the debugger (unlike the usual loader settings).
     this.#loader = useDistinctSystemPrincipalLoader(this);
     const { DevToolsServer } = this.#loader.require(
       "devtools/server/devtools-server"
@@ -163,7 +161,7 @@ class BrowserToolboxLauncher extends EventEmitter {
       // A special root actor, just for background tasks invoked with
       // `--backgroundtask TASK --jsdebugger`.
       const { createRootActor } = this.#loader.require(
-        "resource:
+        "resource://gre/modules/backgroundtasks/dbg-actors.js"
       );
       this.#devToolsServer.setRootActor(createRootActor);
     }
@@ -245,16 +243,16 @@ class BrowserToolboxLauncher extends EventEmitter {
 
     this.#dbgProfilePath = debuggingProfileDir.path;
 
-    
+    // We would like to copy prefs into this new profile...
     const prefsFile = debuggingProfileDir.clone();
     prefsFile.append("prefs.js");
 
     if (bts?.isBackgroundTaskMode) {
-      
-      
-      
-      
-      
+      // Background tasks run under a temporary profile.  In order to set
+      // preferences for the launched browser toolbox, take the preferences from
+      // the default profile.  This is the standard pattern for controlling
+      // background task settings.  Without this, there'd be no way to increase
+      // logging in the browser toolbox process, etc.
       const defaultProfile = lazy.BackgroundTasksUtils.getDefaultProfile();
       if (!defaultProfile) {
         throw new Error(
@@ -271,13 +269,13 @@ class BrowserToolboxLauncher extends EventEmitter {
           ` from default profiles prefs at '${defaultPrefsFile.path}'`
       );
     } else {
-      
-      
-      
-      
-      
-      
-      
+      // ... but unfortunately, when we run tests, it seems the starting profile
+      // clears out the prefs file before re-writing it, and in practice the
+      // file is empty when we get here. So just copying doesn't work in that
+      // case.
+      // We could force a sync pref flush and then copy it... but if we're doing
+      // that, we might as well just flush directly to the new profile, which
+      // always works:
       Services.prefs.savePrefFile(prefsFile);
     }
 
@@ -287,24 +285,24 @@ class BrowserToolboxLauncher extends EventEmitter {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Creates and initializes the profile & process for the remote debugger.
+   *
+   * @param {Object} options
+   * @param {boolean} options.forceMultiprocess: Set to true to force the Browser Toolbox to be in
+   *                    multiprocess mode.
+   */
   #create({ forceMultiprocess } = {}) {
     dumpn("Initializing chrome debugging process.");
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
     let profilePath = this.#dbgProfilePath;
 
-    
-    
-    
-    
-    
+    // MOZ_BROWSER_TOOLBOX_BINARY is an absolute file path to a custom firefox binary.
+    // This is especially useful when debugging debug builds which are really slow
+    // so that you could pass an optimized build for the browser toolbox.
+    // This is also useful when debugging a patch that break devtools,
+    // so that you could use a build that works for the browser toolbox.
     const customBinaryPath = env.get("MOZ_BROWSER_TOOLBOX_BINARY");
     if (customBinaryPath) {
       command = customBinaryPath;
@@ -334,27 +332,27 @@ class BrowserToolboxLauncher extends EventEmitter {
       false
     );
     const environment = {
-      
-      
+      // Allow recording the startup of the browser toolbox when setting
+      // MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP=1 when running firefox.
       MOZ_PROFILER_STARTUP: env.get("MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"),
-      
+      // And prevent profiling any subsequent toolbox
       MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP: "0",
 
-      
-      
+      // Will be read by the Browser Toolbox Firefox instance to update the
+      // devtools.browsertoolbox.fission pref on the Browser Toolbox profile.
       MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",
       MOZ_BROWSER_TOOLBOX_FORCE_MULTIPROCESS: forceMultiprocess ? "1" : "0",
-      
+      // Similar, but for the WebConsole input context dropdown.
       MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT: isInputContextEnabled ? "1" : "0",
-      
-      
+      // Disable safe mode for the new process in case this was opened via the
+      // keyboard shortcut.
       MOZ_DISABLE_SAFE_MODE_KEY: "1",
       MOZ_BROWSER_TOOLBOX_PORT: String(this.#port),
       MOZ_HEADLESS: null,
-      
+      // Never enable Marionette for the new process.
       MOZ_MARIONETTE: null,
-      
-      
+      // Don't inherit debug settings from the process launching us.  This can
+      // cause errors when log files collide.
       MOZ_LOG: null,
       MOZ_LOG_FILE: null,
       XPCOM_MEM_BLOAT_LOG: null,
@@ -365,13 +363,13 @@ class BrowserToolboxLauncher extends EventEmitter {
       XRE_PROFILE_LOCAL_PATH: null,
     };
 
-    
-    
-    
-    
-    
-    
-    
+    // During local development, incremental builds can trigger the main process
+    // to clear its startup cache with the "flag file" .purgecaches, but this
+    // file is removed during app startup time, so we aren't able to know if it
+    // was present in order to also clear the child profile's startup cache as
+    // well.
+    //
+    // As an approximation of "isLocalBuild", check for an unofficial build.
     if (!AppConstants.MOZILLA_OFFICIAL) {
       args.push("-purgecaches");
     }
@@ -387,8 +385,8 @@ class BrowserToolboxLauncher extends EventEmitter {
       proc => {
         this.#dbgProcess = proc;
 
-        
-        
+        // jsbrowserdebugger is not connected with a toolbox so we pass -1 as the
+        // toolbox session id.
         this.#telemetry.toolOpened("jsbrowserdebugger", -1, this);
 
         dumpn("Chrome toolbox is now running...");
@@ -428,9 +426,9 @@ class BrowserToolboxLauncher extends EventEmitter {
     );
   }
 
-  
-
-
+  /**
+   * Closes the remote debugging server and kills the toolbox process.
+   */
   async close() {
     if (this.#closed) {
       return;
@@ -442,22 +440,22 @@ class BrowserToolboxLauncher extends EventEmitter {
 
     Services.obs.removeObserver(this.close, "quit-application");
 
-    
-    
+    // We tear down before killing the browser toolbox process to avoid leaking
+    // socket connection objects.
     if (this.#listener) {
       this.#listener.close();
     }
 
-    
-    
-    
+    // Note that the DevToolsServer can be shared with the DevToolsServer
+    // spawned by DevToolsFrameChild. We shouldn't destroy it from here.
+    // Instead we should let it auto-destroy itself once the last connection is closed.
     this.#devToolsServer = null;
 
     this.#dbgProcess.stdout.close();
     await this.#dbgProcess.kill();
 
-    
-    
+    // jsbrowserdebugger is not connected with a toolbox so we pass -1 as the
+    // toolbox session id.
     this.#telemetry.toolClosed("jsbrowserdebugger", -1, this);
 
     dumpn("Chrome toolbox is now closed...");
@@ -472,10 +470,10 @@ class BrowserToolboxLauncher extends EventEmitter {
   }
 }
 
-
-
-
-
+/**
+ * Helper method for debugging.
+ * @param string
+ */
 function dumpn(str) {
   if (wantLogging) {
     dump("DBG-FRONTEND: " + str + "\n");
