@@ -960,7 +960,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
 #if defined(XP_WIN)
           
           
-          bool sync = text.Contains(L'\xfffc') &&
+          
+          bool sync = !StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+                      text.Contains(L'\xfffc') &&
                       nsAccUtils::IsARIALive(aEvent->GetAccessible());
 #endif
           ipcDoc->SendTextChangeEvent(id, text, event->GetStartOffset(),
