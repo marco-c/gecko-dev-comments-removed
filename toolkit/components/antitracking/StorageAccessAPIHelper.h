@@ -163,7 +163,8 @@ class StorageAccessAPIHelper final {
   
   
   
-  static RefPtr<StorageAccessPermissionGrantPromise> RequestStorageAccessAsyncHelper(
+  static RefPtr<StorageAccessPermissionGrantPromise>
+  RequestStorageAccessAsyncHelper(
       dom::Document* aDocument, nsPIDOMWindowInner* aInnerWindow,
       dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
       bool aHasUserInteraction,

@@ -986,8 +986,8 @@ StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
       aInnerWindow, principal, aHasUserInteraction, Nothing());
 
   
-  return StorageAccessAPIHelper::AllowAccessFor(principal, aBrowsingContext,
-                                                aNotifier, performPermissionGrant);
+  return StorageAccessAPIHelper::AllowAccessFor(
+      principal, aBrowsingContext, aNotifier, performPermissionGrant);
 }
 
 
