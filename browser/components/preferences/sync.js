@@ -445,6 +445,9 @@ var gSyncPane = {
   },
 
   async signIn() {
+    if (!(await FxAccounts.canConnectAccount())) {
+      return;
+    }
     const url = await FxAccounts.config.promiseConnectAccountURI(
       this._getEntryPoint()
     );
@@ -456,6 +459,10 @@ var gSyncPane = {
     
     
     
+    if (!(await FxAccounts.canConnectAccount())) {
+      return;
+    }
+
     let entryPoint = this._getEntryPoint();
     const url =
       (await FxAccounts.config.promiseForceSigninURI(entryPoint)) ||

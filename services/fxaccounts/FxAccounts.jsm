@@ -89,6 +89,15 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/FxAccountsTelemetry.jsm"
 );
 
+XPCOMUtils.defineLazyGetter(lazy, "mpLocked", () => {
+  return ChromeUtils.import("resource://services-sync/util.js").Utils.mpLocked;
+});
+
+XPCOMUtils.defineLazyGetter(lazy, "ensureMPUnlocked", () => {
+  return ChromeUtils.import("resource://services-sync/util.js").Utils
+    .ensureMPUnlocked;
+});
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.jsm",
 });
@@ -627,6 +636,23 @@ class FxAccounts {
       let data = await state.getUserAccountData(["sessionToken"]);
       return !!(data && data.sessionToken);
     });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static canConnectAccount() {
+    return Promise.resolve(!lazy.mpLocked() || lazy.ensureMPUnlocked());
   }
 
   
