@@ -588,6 +588,9 @@ class nsIFrame : public nsQueryFrame {
         mHasModifiedDescendants(false),
         mHasOverrideDirtyRegion(false),
         mMayHaveWillChangeBudget(false),
+#ifdef DEBUG
+        mWasVisitedByAutoFrameConstructionPageName(false),
+#endif
         mIsPrimaryFrame(false),
         mMayHaveTransformAnimation(false),
         mMayHaveOpacityAnimation(false),
@@ -1302,6 +1305,22 @@ class nsIFrame : public nsQueryFrame {
     RefPtr<const nsAtom> mEndPageValue = nullptr;
   };
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PageValuesProperty, PageValues)
+
+  const nsAtom* GetStartPageValue() const {
+    if (const PageValues* const values =
+            FirstInFlow()->GetProperty(PageValuesProperty())) {
+      return values->mStartPageValue;
+    }
+    return nullptr;
+  }
+
+  const nsAtom* GetEndPageValue() const {
+    if (const PageValues* const values =
+            FirstInFlow()->GetProperty(PageValuesProperty())) {
+      return values->mEndPageValue;
+    }
+    return nullptr;
+  }
 
  private:
   
@@ -5181,6 +5200,18 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mMayHaveWillChangeBudget : 1;
+
+#ifdef DEBUG
+ public:
+  
+
+
+
+
+
+
+  bool mWasVisitedByAutoFrameConstructionPageName : 1;
+#endif
 
  private:
   

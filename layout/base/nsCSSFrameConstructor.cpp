@@ -1413,6 +1413,11 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
                "Page name should not have been set");
     return;
   }
+#ifdef DEBUG
+  MOZ_ASSERT(!aFrame->mWasVisitedByAutoFrameConstructionPageName,
+             "Frame should only have been visited once");
+  aFrame->mWasVisitedByAutoFrameConstructionPageName = true;
+#endif
 
   EnsureAutoPageName(aState, aFrame->GetParent());
   mNameToRestore = aState.mAutoPageNameValue;
@@ -1421,20 +1426,6 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
              "Page name should have been found by EnsureAutoPageName");
   MaybeApplyPageName(aState, aFrame->StylePage()->mPage);
   aFrame->SetAutoPageValue(aState.mAutoPageNameValue);
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIFrame::PageValues* pageValues =
-      aFrame->GetProperty(nsIFrame::PageValuesProperty());
-  if (!pageValues) {
-    pageValues = new nsIFrame::PageValues();
-    aFrame->AddProperty(nsIFrame::PageValuesProperty(), pageValues);
-  }
 }
 
 nsCSSFrameConstructor::AutoFrameConstructionPageName::
@@ -9367,6 +9358,51 @@ static bool FrameHasOnlyPlaceholderNextSiblings(const nsIFrame* aFrame) {
   return !nextSibling;
 }
 
+static void SetPageValues(nsIFrame* const aFrame,
+                          const nsAtom* const aAutoValue,
+                          const nsAtom* const aStartValue,
+                          const nsAtom* const aEndValue) {
+  MOZ_ASSERT(aAutoValue, "Auto page value should never be null");
+  MOZ_ASSERT(aStartValue || aEndValue, "Should not have called with no values");
+  nsIFrame::PageValues* pageValues =
+      aFrame->GetProperty(nsIFrame::PageValuesProperty());
+
+  if (aStartValue) {
+    if (aStartValue == aAutoValue) {
+      
+      
+      if (pageValues) {
+        pageValues->mStartPageValue = nullptr;
+      }
+    } else {
+      
+      
+      if (!pageValues) {
+        pageValues = new nsIFrame::PageValues();
+        aFrame->SetProperty(nsIFrame::PageValuesProperty(), pageValues);
+      }
+      pageValues->mStartPageValue = aStartValue;
+    }
+  }
+  if (aEndValue) {
+    if (aEndValue == aAutoValue) {
+      
+      
+      if (pageValues) {
+        pageValues->mEndPageValue = nullptr;
+      }
+    } else {
+      
+      
+      if (!pageValues) {
+        pageValues = new nsIFrame::PageValues();
+        aFrame->SetProperty(nsIFrame::PageValuesProperty(), pageValues);
+      }
+      pageValues->mEndPageValue = aEndValue;
+    }
+  }
+}
+
 inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     nsFrameConstructorState& aState, FrameConstructionItemList& aItems,
     nsContainerFrame* aParentFrame, bool aParentIsWrapperAnonBox,
@@ -9450,6 +9486,15 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     
     
     
+    MOZ_ASSERT(aState.mAutoPageNameValue == aParentFrame->GetAutoPageValue(),
+               "aState.mAutoPageNameValue should have been equivalent to "
+               "the auto value stored on our parent frame.");
+    
+    
+    
+    
+    
+    
     const nsAtom* startPageValue = nullptr;
     const nsAtom* endPageValue = nullptr;
     for (nsIFrame* f : aFrameList) {
@@ -9484,25 +9529,34 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
               : aState.mAutoPageNameValue;
       nsIFrame::PageValues* pageValues =
           f->GetProperty(nsIFrame::PageValuesProperty());
-      if (!pageValues) {
-        pageValues = new nsIFrame::PageValues();
-        f->AddProperty(nsIFrame::PageValuesProperty(), pageValues);
+      
+      
+      
+      
+      
+      
+      
+      if (pageNameAtom != aState.mAutoPageNameValue && !pageValues) {
+        pageValues = new nsIFrame::PageValues{pageNameAtom, pageNameAtom};
+        f->SetProperty(nsIFrame::PageValuesProperty(), pageValues);
       }
-      MOZ_ASSERT(!pageValues->mStartPageValue == !pageValues->mEndPageValue,
-                 "Both or neither mStartPageValue and mEndPageValue should "
-                 "have been set");
-      if (!pageValues->mStartPageValue) {
-        pageValues->mStartPageValue = pageNameAtom;
-        pageValues->mEndPageValue = pageNameAtom;
-      }
+      
+      
       if (!startPageValue) {
-        startPageValue = pageValues->mStartPageValue;
+        startPageValue = (pageValues && pageValues->mStartPageValue)
+                             ? pageValues->mStartPageValue.get()
+                             : aState.mAutoPageNameValue;
       }
-      endPageValue = pageValues->mEndPageValue;
+      endPageValue = (pageValues && pageValues->mEndPageValue)
+                         ? pageValues->mEndPageValue.get()
+                         : aState.mAutoPageNameValue;
+      MOZ_ASSERT(startPageValue && endPageValue,
+                 "Should have found start/end page value");
     }
     MOZ_ASSERT(!startPageValue == !endPageValue,
                "Should have set both or neither page values");
     if (startPageValue) {
+      
       
       
       
@@ -9517,31 +9571,32 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
            ancestorFrame = ancestorFrame->GetParent()) {
         MOZ_ASSERT(!ancestorFrame->GetPrevInFlow(),
                    "Should not have fragmentation yet");
-
-        nsIFrame::PageValues* const ancestorPageValues =
-            ancestorFrame->GetProperty(nsIFrame::PageValuesProperty());
-
-        if (!ancestorPageValues) {
-          break;
+        MOZ_ASSERT(ancestorFrame->mWasVisitedByAutoFrameConstructionPageName,
+                   "Frame should have been visited by "
+                   "AutoFrameConstructionPageName");
+        {
+          
+          
+          const nsContainerFrame* const parent = ancestorFrame->GetParent();
+          const nsAtom* const parentAuto = MOZ_LIKELY(parent)
+                                               ? parent->GetAutoPageValue()
+                                               : nsGkAtoms::_empty;
+          SetPageValues(ancestorFrame, parentAuto, startPageValue,
+                        endPageValue);
         }
-
         
         
         
         
         
         
-        if (startPageValue) {
-          ancestorPageValues->mStartPageValue = startPageValue;
-          if (!FrameHasOnlyPlaceholderPrevSiblings(ancestorFrame)) {
-            startPageValue = nullptr;
-          }
+        if (startPageValue &&
+            !FrameHasOnlyPlaceholderPrevSiblings(ancestorFrame)) {
+          startPageValue = nullptr;
         }
-        if (endPageValue) {
-          ancestorPageValues->mEndPageValue = endPageValue;
-          if (!FrameHasOnlyPlaceholderNextSiblings(ancestorFrame)) {
-            endPageValue = nullptr;
-          }
+        if (endPageValue &&
+            !FrameHasOnlyPlaceholderNextSiblings(ancestorFrame)) {
+          endPageValue = nullptr;
         }
       }
     }
