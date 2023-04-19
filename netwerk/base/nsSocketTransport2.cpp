@@ -2390,6 +2390,13 @@ nsSocketTransport::Close(nsresult reason) {
 
   mDoNotRetryToConnect = true;
 
+  if (mCondition == NS_ERROR_NET_RESET && mDNSRecord &&
+      mOutput.ByteCount() == 0) {
+    
+    
+    mDNSRecord->ReportUnusable(SocketPort());
+  }
+
   mInput.CloseWithStatus(reason);
   mOutput.CloseWithStatus(reason);
   return NS_OK;
