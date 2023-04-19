@@ -38,8 +38,8 @@
 #ifdef WEBRTC_WIN
 #include "modules/audio_device/include/audio_device_factory.h"
 #include "modules/audio_device/win/core_audio_utility_win.h"
-
-#endif
+#include "rtc_base/win/scoped_com_initializer.h"
+#endif  
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -596,8 +596,8 @@ class MAYBE_AudioDeviceTest
       
       
       
-      com_initializer_ = std::make_unique<webrtc_win::ScopedCOMInitializer>(
-          webrtc_win::ScopedCOMInitializer::kMTA);
+      com_initializer_ =
+          std::make_unique<ScopedCOMInitializer>(ScopedCOMInitializer::kMTA);
       EXPECT_TRUE(com_initializer_->Succeeded());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsSupported());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsMMCSSSupported());
@@ -656,7 +656,7 @@ class MAYBE_AudioDeviceTest
  private:
 #ifdef WEBRTC_WIN
   
-  std::unique_ptr<webrtc_win::ScopedCOMInitializer> com_initializer_;
+  std::unique_ptr<ScopedCOMInitializer> com_initializer_;
 #endif
   AudioDeviceModule::AudioLayer audio_layer_;
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;
@@ -691,8 +691,7 @@ TEST(MAYBE_AudioDeviceTestWin, ConstructDestructWithFactory) {
   
   
   
-  webrtc_win::ScopedCOMInitializer com_initializer(
-      webrtc_win::ScopedCOMInitializer::kMTA);
+  ScopedCOMInitializer com_initializer(ScopedCOMInitializer::kMTA);
   EXPECT_TRUE(com_initializer.Succeeded());
   audio_device =
       CreateWindowsCoreAudioAudioDeviceModule(task_queue_factory.get());

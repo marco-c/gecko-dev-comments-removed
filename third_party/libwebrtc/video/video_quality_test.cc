@@ -1348,8 +1348,8 @@ rtc::scoped_refptr<AudioDeviceModule> VideoQualityTest::CreateAudioDevice() {
   
   
   
-  com_initializer_ = std::make_unique<webrtc_win::ScopedCOMInitializer>(
-      webrtc_win::ScopedCOMInitializer::kMTA);
+  com_initializer_ =
+      std::make_unique<ScopedCOMInitializer>(ScopedCOMInitializer::kMTA);
   RTC_CHECK(com_initializer_->Succeeded());
   RTC_CHECK(webrtc_win::core_audio_utility::IsSupported());
   RTC_CHECK(webrtc_win::core_audio_utility::IsMMCSSSupported());

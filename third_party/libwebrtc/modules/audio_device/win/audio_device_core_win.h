@@ -8,8 +8,8 @@
 
 
 
-#ifndef AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
-#define AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H_
+#ifndef MODULES_AUDIO_DEVICE_WIN_AUDIO_DEVICE_CORE_WIN_H_
+#define MODULES_AUDIO_DEVICE_WIN_AUDIO_DEVICE_CORE_WIN_H_
 
 #if (_MSC_VER >= 1400)  
 
@@ -28,6 +28,7 @@
 
 #include "api/scoped_refptr.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/win/scoped_com_initializer.h"
 
 
 #pragma comment(lib, "avrt.lib")
@@ -44,37 +45,6 @@ const float MAX_CORE_MICROPHONE_VOLUME = 255.0f;
 const float MIN_CORE_MICROPHONE_VOLUME = 0.0f;
 const uint16_t CORE_SPEAKER_VOLUME_STEP_SIZE = 1;
 const uint16_t CORE_MICROPHONE_VOLUME_STEP_SIZE = 1;
-
-
-
-class ScopedCOMInitializer {
- public:
-  
-  enum SelectMTA { kMTA };
-
-  
-  ScopedCOMInitializer() { Initialize(COINIT_APARTMENTTHREADED); }
-
-  
-  explicit ScopedCOMInitializer(SelectMTA mta) {
-    Initialize(COINIT_MULTITHREADED);
-  }
-
-  ~ScopedCOMInitializer() {
-    if (SUCCEEDED(hr_))
-      CoUninitialize();
-  }
-
-  bool succeeded() const { return SUCCEEDED(hr_); }
-
- private:
-  void Initialize(COINIT init) { hr_ = CoInitializeEx(NULL, init); }
-
-  HRESULT hr_;
-
-  ScopedCOMInitializer(const ScopedCOMInitializer&);
-  void operator=(const ScopedCOMInitializer&);
-};
 
 class AudioDeviceWindowsCore : public AudioDeviceGeneric {
  public:

@@ -38,6 +38,7 @@
 
 #include <iomanip>
 
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_utils.h"
@@ -226,7 +227,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported() {
   
   
   ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
-  if (!comInit.succeeded()) {
+  if (!comInit.Succeeded()) {
     
     
     return false;
@@ -395,7 +396,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _inputDeviceIndex(0),
       _outputDeviceIndex(0) {
   RTC_LOG(LS_INFO) << __FUNCTION__ << " created";
-  assert(_comInit.succeeded());
+  RTC_DCHECK(_comInit.Succeeded());
 
   
   if (!_avrtLibrary) {
@@ -2364,7 +2365,6 @@ int32_t AudioDeviceWindowsCore::StartRecording() {
 
     
     SetThreadPriority(_hRecThread, THREAD_PRIORITY_TIME_CRITICAL);
-
   }  
 
   DWORD ret = WaitForSingleObject(_hCaptureStartedEvent, 1000);
@@ -2652,7 +2652,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
 
   
   ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
-  if (!comInit.succeeded()) {
+  if (!comInit.Succeeded()) {
     RTC_LOG(LS_ERROR) << "failed to initialize COM in render thread";
     return 1;
   }
@@ -2959,7 +2959,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO() {
 
   
   ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
-  if (!comInit.succeeded()) {
+  if (!comInit.Succeeded()) {
     RTC_LOG(LS_ERROR) << "failed to initialize COM in polling DMO thread";
     return 1;
   }
@@ -3091,7 +3091,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread() {
 
   
   ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
-  if (!comInit.succeeded()) {
+  if (!comInit.Succeeded()) {
     RTC_LOG(LS_ERROR) << "failed to initialize COM in capture thread";
     return 1;
   }
