@@ -2801,7 +2801,10 @@ function BrowserHome(aEvent) {
   var notifyObservers;
 
   
-  if (where == "current" && gBrowser && gBrowser.selectedTab.pinned) {
+  if (
+    where == "current" &&
+    (gBrowser?.selectedTab.pinned || gBrowser?.selectedTab.hidden)
+  ) {
     where = "tab";
   }
 
