@@ -39,15 +39,6 @@ namespace mozilla::dom::fs::test {
 using data::FileSystemDatabaseManagerVersion001;
 using data::FileSystemFileManager;
 
-namespace {
-
-const Origin& getTestOrigin() {
-  static const Origin orig = "http://example.com"_ns;
-  return orig;
-}
-
-}  
-
 
 
 class MockFileSystemDataManager final : public data::FileSystemDataManager {
@@ -65,8 +56,8 @@ class MockFileSystemDataManager final : public data::FileSystemDataManager {
 };
 
 static void MakeDatabaseManagerVersion001(
-    FileSystemDatabaseManagerVersion001*& aResult,
-    RefPtr<MockFileSystemDataManager>& aDataManager) {
+    RefPtr<MockFileSystemDataManager>& aDataManager,
+    FileSystemDatabaseManagerVersion001*& aDatabaseManager) {
   TEST_TRY_UNWRAP(auto storageService,
                   MOZ_TO_RESULT_GET_TYPED(nsCOMPtr<mozIStorageService>,
                                           MOZ_SELECT_OVERLOAD(do_GetService),
@@ -80,7 +71,7 @@ static void MakeDatabaseManagerVersion001(
                                                     getter_AddRefs(connection));
   ASSERT_NSEQ(NS_OK, rv);
 
-  const Origin& testOrigin = getTestOrigin();
+  const Origin& testOrigin = GetTestOrigin();
 
   TEST_TRY_UNWRAP(
       DatabaseVersion version,
@@ -92,7 +83,7 @@ static void MakeDatabaseManagerVersion001(
                               getter_AddRefs(testPath));
   ASSERT_NSEQ(NS_OK, rv);
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
   auto fmRes =
       FileSystemFileManager::CreateFileSystemFileManager(std::move(testPath));
@@ -111,27 +102,27 @@ static void MakeDatabaseManagerVersion001(
   RefPtr<TaskQueue> ioTaskQueue =
       TaskQueue::Create(do_AddRef(streamTransportService), taskQueueName.get());
 
-  auto dataManager = MakeRefPtr<MockFileSystemDataManager>(
+  aDataManager = MakeRefPtr<MockFileSystemDataManager>(
       originMetadata, WrapMovingNotNull(streamTransportService),
       WrapMovingNotNull(ioTaskQueue));
 
-  aResult = new FileSystemDatabaseManagerVersion001(
-      dataManager, std::move(connection),
+  aDatabaseManager = new FileSystemDatabaseManagerVersion001(
+      aDataManager, std::move(connection),
       MakeUnique<FileSystemFileManager>(fmRes.unwrap()), rootId);
 }
 
 TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveDirectories)
 {
   nsresult rv = NS_OK;
-  FileSystemDatabaseManagerVersion001* rdm = nullptr;
   
   RefPtr<MockFileSystemDataManager> dataManager;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm, dataManager));
+  FileSystemDatabaseManagerVersion001* rdm = nullptr;
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(dataManager, rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
   
   auto autoClose = MakeScopeExit([rdm] { rdm->Close(); });
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
   FileSystemChildMetadata firstChildMeta(rootId, u"First"_ns);
   TEST_TRY_UNWRAP_ERR(
@@ -208,10 +199,10 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles)
   
   RefPtr<MockFileSystemDataManager> datamanager;
   FileSystemDatabaseManagerVersion001* rdm = nullptr;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm, datamanager));
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
   FileSystemChildMetadata firstChildMeta(rootId, u"First"_ns);
   
@@ -340,11 +331,11 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
   
   RefPtr<MockFileSystemDataManager> datamanager;
   FileSystemDatabaseManagerVersion001* rdm = nullptr;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm, datamanager));
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
   auto closeAtExit = MakeScopeExit([&dm]() { dm->Close(); });
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
 
   FileSystemEntryMetadata rootMeta{rootId, u"root"_ns,  true};
 
