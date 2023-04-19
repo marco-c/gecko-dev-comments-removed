@@ -44,11 +44,6 @@ using ::webrtc::PendingTaskSafetyFlag;
 using ::webrtc::SdpType;
 using ::webrtc::ToQueuedTask;
 
-struct SendPacketMessageData : public rtc::MessageData {
-  rtc::CopyOnWriteBuffer packet;
-  rtc::PacketOptions options;
-};
-
 
 
 struct StreamFinder {
@@ -83,13 +78,6 @@ struct StreamFinder {
 };
 
 }  
-
-enum {
-  MSG_SEND_RTP_PACKET = 1,
-  MSG_SEND_RTCP_PACKET,
-  MSG_READYTOSENDDATA,
-  MSG_DATARECEIVED,
-};
 
 static void SafeSetError(const std::string& message, std::string* error_desc) {
   if (error_desc) {
@@ -224,13 +212,10 @@ void BaseChannel::Deinit() {
   network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(network_thread());
     media_channel_->SetInterface(nullptr);
-    FlushRtcpMessages_n();
 
     if (rtp_transport_) {
       DisconnectFromRtpTransport();
     }
-    
-    network_thread_->Clear(this);
   });
 }
 
@@ -340,15 +325,7 @@ bool BaseChannel::SendRtcp(rtc::CopyOnWriteBuffer* packet,
 int BaseChannel::SetOption(SocketType type,
                            rtc::Socket::Option opt,
                            int value) {
-  return network_thread_->Invoke<int>(RTC_FROM_HERE, [this, type, opt, value] {
-    RTC_DCHECK_RUN_ON(network_thread());
-    return SetOption_n(type, opt, value);
-  });
-}
-
-int BaseChannel::SetOption_n(SocketType type,
-                             rtc::Socket::Option opt,
-                             int value) {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(rtp_transport_);
   switch (type) {
     case ST_RTP:
@@ -403,6 +380,7 @@ void BaseChannel::OnTransportReadyToSend(bool ready) {
 bool BaseChannel::SendPacket(bool rtcp,
                              rtc::CopyOnWriteBuffer* packet,
                              const rtc::PacketOptions& options) {
+  RTC_DCHECK_RUN_ON(network_thread());
   
   RtpPacketType packet_type = rtcp ? RtpPacketType::kRtcp : RtpPacketType::kRtp;
   
@@ -412,16 +390,6 @@ bool BaseChannel::SendPacket(bool rtcp,
   
   
   
-  if (!network_thread_->IsCurrent()) {
-    
-    int message_id = rtcp ? MSG_SEND_RTCP_PACKET : MSG_SEND_RTP_PACKET;
-    SendPacketMessageData* data = new SendPacketMessageData;
-    data->packet = std::move(*packet);
-    data->options = options;
-    network_thread_->Post(RTC_FROM_HERE, this, message_id, data);
-    return true;
-  }
-  RTC_DCHECK_RUN_ON(network_thread());
 
   TRACE_EVENT0("webrtc", "BaseChannel::SendPacket");
 
@@ -794,22 +762,6 @@ RtpHeaderExtensions BaseChannel::GetFilteredRtpHeaderExtensions(
   return webrtc::RtpExtension::FilterDuplicateNonEncrypted(extensions);
 }
 
-void BaseChannel::OnMessage(rtc::Message* pmsg) {
-  TRACE_EVENT0("webrtc", "BaseChannel::OnMessage");
-  switch (pmsg->message_id) {
-    case MSG_SEND_RTP_PACKET:
-    case MSG_SEND_RTCP_PACKET: {
-      RTC_DCHECK_RUN_ON(network_thread());
-      SendPacketMessageData* data =
-          static_cast<SendPacketMessageData*>(pmsg->pdata);
-      bool rtcp = pmsg->message_id == MSG_SEND_RTCP_PACKET;
-      SendPacket(rtcp, &data->packet, data->options);
-      delete data;
-      break;
-    }
-  }
-}
-
 void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
   if (payload_type_demuxing_enabled_) {
     demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
@@ -822,17 +774,6 @@ void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
 void BaseChannel::ClearHandledPayloadTypes() {
   demuxer_criteria_.payload_types.clear();
   payload_types_.clear();
-}
-
-void BaseChannel::FlushRtcpMessages_n() {
-  
-  
-  rtc::MessageList rtcp_messages;
-  network_thread_->Clear(this, MSG_SEND_RTCP_PACKET, &rtcp_messages);
-  for (const auto& message : rtcp_messages) {
-    network_thread_->Send(RTC_FROM_HERE, this, MSG_SEND_RTCP_PACKET,
-                          message.pdata);
-  }
 }
 
 void BaseChannel::SignalSentPacket_n(const rtc::SentPacket& sent_packet) {

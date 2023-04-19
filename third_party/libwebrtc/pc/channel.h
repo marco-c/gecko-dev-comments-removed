@@ -54,7 +54,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/location.h"
-#include "rtc_base/message_handler.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
@@ -93,8 +92,6 @@ struct CryptoParams;
 
 
 class BaseChannel : public ChannelInterface,
-                    
-                    public rtc::MessageHandler,
                     
                     public sigslot::has_slots<>,
                     
@@ -186,8 +183,6 @@ class BaseChannel : public ChannelInterface,
 
   
   int SetOption(SocketType type, rtc::Socket::Option o, int val) override;
-  int SetOption_n(SocketType type, rtc::Socket::Option o, int val)
-      RTC_RUN_ON(network_thread());
 
   
   void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
@@ -222,8 +217,6 @@ class BaseChannel : public ChannelInterface,
   bool IsReadyToReceiveMedia_w() const RTC_RUN_ON(worker_thread());
   bool IsReadyToSendMedia_w() const RTC_RUN_ON(worker_thread());
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
-
-  void FlushRtcpMessages_n() RTC_RUN_ON(network_thread());
 
   
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -284,9 +277,6 @@ class BaseChannel : public ChannelInterface,
   
   RtpHeaderExtensions GetFilteredRtpHeaderExtensions(
       const RtpHeaderExtensions& extensions);
-
-  
-  void OnMessage(rtc::Message* pmsg) override;
 
   
   

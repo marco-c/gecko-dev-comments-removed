@@ -50,7 +50,7 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 
 namespace rtc {
 class Timing;
@@ -176,8 +176,7 @@ class MediaChannel {
   virtual cricket::MediaType media_type() const = 0;
 
   
-  virtual void SetInterface(NetworkInterface* iface)
-      RTC_LOCKS_EXCLUDED(network_interface_mutex_);
+  virtual void SetInterface(NetworkInterface* iface);
   
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                 int64_t packet_time_us) = 0;
@@ -249,7 +248,7 @@ class MediaChannel {
 
   int SetOption(NetworkInterface::SocketType type,
                 rtc::Socket::Option opt,
-                int option) RTC_LOCKS_EXCLUDED(network_interface_mutex_);
+                int option);
 
   
   
@@ -273,40 +272,42 @@ class MediaChannel {
  protected:
   int SetOptionLocked(NetworkInterface::SocketType type,
                       rtc::Socket::Option opt,
-                      int option)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(network_interface_mutex_);
+                      int option) RTC_RUN_ON(network_thread_);
 
   bool DscpEnabled() const;
 
   
   
-  rtc::DiffServCodePoint PreferredDscp() const
-      RTC_LOCKS_EXCLUDED(network_interface_mutex_);
+  rtc::DiffServCodePoint PreferredDscp() const;
+  void SetPreferredDscp(rtc::DiffServCodePoint new_dscp);
 
-  int SetPreferredDscp(rtc::DiffServCodePoint preferred_dscp)
-      RTC_LOCKS_EXCLUDED(network_interface_mutex_);
+  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> network_safety();
+
+  
+  
+  void SendRtp(const uint8_t* data,
+               size_t len,
+               const webrtc::PacketOptions& options);
+
+  void SendRtcp(const uint8_t* data, size_t len);
 
  private:
   
   
-  int UpdateDscp() RTC_EXCLUSIVE_LOCKS_REQUIRED(network_interface_mutex_);
+  void UpdateDscp() RTC_RUN_ON(network_thread_);
 
   bool DoSendPacket(rtc::CopyOnWriteBuffer* packet,
                     bool rtcp,
-                    const rtc::PacketOptions& options)
-      RTC_LOCKS_EXCLUDED(network_interface_mutex_);
+                    const rtc::PacketOptions& options);
 
   const bool enable_dscp_;
+  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> network_safety_
+      RTC_PT_GUARDED_BY(network_thread_);
   webrtc::TaskQueueBase* const network_thread_;
-
-  
-  
-  
-  mutable webrtc::Mutex network_interface_mutex_;
-  NetworkInterface* network_interface_
-      RTC_GUARDED_BY(network_interface_mutex_) = nullptr;
-  rtc::DiffServCodePoint preferred_dscp_
-      RTC_GUARDED_BY(network_interface_mutex_) = rtc::DSCP_DEFAULT;
+  NetworkInterface* network_interface_ RTC_GUARDED_BY(network_thread_) =
+      nullptr;
+  rtc::DiffServCodePoint preferred_dscp_ RTC_GUARDED_BY(network_thread_) =
+      rtc::DSCP_DEFAULT;
   bool extmap_allow_mixed_ = false;
 };
 
