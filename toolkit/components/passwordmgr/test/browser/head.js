@@ -231,7 +231,7 @@ async function getFormSubmitResponseResult(
 function testSubmittingLoginForm(
   aPageFile,
   aTaskFn,
-  aOrigin = "http://example.com"
+  aOrigin = "https://example.com"
 ) {
   return BrowserTestUtils.withNewTab(
     {
@@ -251,6 +251,22 @@ function testSubmittingLoginForm(
       return fieldValues;
     }
   );
+}
+
+
+
+
+
+
+
+
+
+function testSubmittingLoginFormHTTP(
+  aPageFile,
+  aTaskFn,
+  aOrigin = "http://example.com"
+) {
+  return testSubmittingLoginForm(aPageFile, aTaskFn, aOrigin);
 }
 
 function checkOnlyLoginWasUsedTwice({ justChanged }) {
