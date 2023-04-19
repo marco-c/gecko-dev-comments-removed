@@ -112,6 +112,7 @@ namespace css {
 struct URLValue;
 }  
 namespace dom {
+struct CheckVisibilityOptions;
 struct CustomElementData;
 struct SetHTMLOptions;
 struct GetAnimationsOptions;
@@ -1330,6 +1331,9 @@ class Element : public FragmentOrElement {
   bool HasLastRememberedISize() const {
     return GetLastRememberedISize().isSome();
   }
+
+  
+  MOZ_CAN_RUN_SCRIPT bool CheckVisibility(const CheckVisibilityOptions&);
 
  private:
   

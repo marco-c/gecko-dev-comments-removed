@@ -706,6 +706,37 @@ nsIScrollableFrame* Element::GetScrollFrame(nsIFrame** aFrame,
   return nullptr;
 }
 
+bool Element::CheckVisibility(const CheckVisibilityOptions& aOptions) {
+  nsIFrame* f =
+      GetPrimaryFrame(aOptions.mFlush ? FlushType::Frames : FlushType::None);
+  if (!f) {
+    
+    return false;
+  }
+
+  if (f->AncestorHidesContent()) {
+    
+    
+    return false;
+  }
+
+  if (aOptions.mCheckOpacity && f->Style()->IsInOpacityZeroSubtree()) {
+    
+    
+    
+    return false;
+  }
+
+  if (aOptions.mCheckVisibilityCSS && !f->StyleVisibility()->IsVisible()) {
+    
+    
+    return false;
+  }
+
+  
+  return true;
+}
+
 void Element::ScrollIntoView(const BooleanOrScrollIntoViewOptions& aObject) {
   if (aObject.IsScrollIntoViewOptions()) {
     return ScrollIntoView(aObject.GetAsScrollIntoViewOptions());
