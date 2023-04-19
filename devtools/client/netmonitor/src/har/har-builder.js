@@ -471,20 +471,35 @@ HarBuilder.prototype = {
     const cache = {};
 
     if (typeof cacheEntry !== "undefined") {
-      cache.expires = findKeys(cacheEntry, ["expires"]);
+      
+      
+      cache.expires = findKeys(cacheEntry, ["expirationTime", "expires"]);
       cache.lastFetched = findKeys(cacheEntry, ["lastFetched"]);
-      cache.eTag = findKeys(cacheEntry, ["eTag"]);
+
+      
+      
+      
+      
+
       cache.fetchCount = findKeys(cacheEntry, ["fetchCount"]);
 
       
       
       
-      cache._dataSize = findKeys(cacheEntry, ["dataSize", "_dataSize"]);
+      
+      
+      cache._dataSize = findKeys(cacheEntry, [
+        "storageDataSize",
+        "dataSize",
+        "_dataSize",
+      ]);
       cache._lastModified = findKeys(cacheEntry, [
         "lastModified",
         "_lastModified",
       ]);
-      cache._device = findKeys(cacheEntry, ["device", "_device"]);
+      
+      
+      cache._device = findKeys(cacheEntry, ["deviceID", "device", "_device"]);
     }
 
     return cache;
