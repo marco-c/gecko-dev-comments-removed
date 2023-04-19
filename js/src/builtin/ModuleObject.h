@@ -281,7 +281,9 @@ enum class ModuleStatus : int32_t {
 
 
 
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_FALSE = 0;
+
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_TRUE = 0;
 
 
 
@@ -369,9 +371,7 @@ class ModuleObject : public NativeObject {
                                                  Handle<ModuleObject*> module);
   bool hasTopLevelAwait() const;
   bool isAsyncEvaluating() const;
-  bool wasAsyncEvaluating() const;
   void setAsyncEvaluating();
-  void setAsyncEvaluatingFalse();
   void setEvaluationError(HandleValue newValue);
   void setPendingAsyncDependencies(uint32_t newValue);
   void setInitialTopLevelCapability(Handle<PromiseObject*> capability);
@@ -381,8 +381,10 @@ class ModuleObject : public NativeObject {
   ListObject* asyncParentModules() const;
   mozilla::Maybe<uint32_t> maybePendingAsyncDependencies() const;
   uint32_t pendingAsyncDependencies() const;
+  bool hasAsyncEvaluatingPostOrder() const;
   mozilla::Maybe<uint32_t> maybeAsyncEvaluatingPostOrder() const;
   uint32_t getAsyncEvaluatingPostOrder() const;
+  void clearAsyncEvaluatingPostOrder();
   void setCycleRoot(ModuleObject* cycleRoot);
   ModuleObject* getCycleRoot() const;
 

@@ -1485,7 +1485,7 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   if (module->pendingAsyncDependencies() > 0 || module->hasTopLevelAwait()) {
     
     
-    MOZ_ASSERT(!module->isAsyncEvaluating() && !module->wasAsyncEvaluating());
+    MOZ_ASSERT(!module->isAsyncEvaluating());
 
     
     
@@ -1711,10 +1711,8 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   ModuleObject::onTopLevelEvaluationFinished(module);
 
   
-  module->setAsyncEvaluatingFalse();
-
-  
   module->setStatus(ModuleStatus::Evaluated);
+  module->clearAsyncEvaluatingPostOrder();
 
   
   if (module->hasTopLevelCapability()) {
@@ -1756,11 +1754,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
         
         
         m->setStatus(ModuleStatus::Evaluated);
-
-        
-        
-        
-        m->setAsyncEvaluatingFalse();
+        m->clearAsyncEvaluatingPostOrder();
 
         
         if (m->hasTopLevelCapability()) {
@@ -1813,10 +1807,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   
   MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
-  
-  
-  
-  module->setAsyncEvaluatingFalse();
+  module->clearAsyncEvaluatingPostOrder();
 
   
   
