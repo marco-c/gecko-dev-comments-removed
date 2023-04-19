@@ -86,7 +86,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.39")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.43")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -120,6 +120,7 @@ extern crate proc_macro;
 
 mod marker;
 mod parse;
+mod rcvec;
 
 #[cfg(wrap_proc_macro)]
 mod detection;
@@ -136,15 +137,15 @@ use crate::fallback as imp;
 mod imp;
 
 use crate::marker::Marker;
-use std::cmp::Ordering;
+use core::cmp::Ordering;
+use core::fmt::{self, Debug, Display};
+use core::hash::{Hash, Hasher};
+use core::iter::FromIterator;
+use core::ops::RangeBounds;
+use core::str::FromStr;
 use std::error::Error;
-use std::fmt::{self, Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
-use std::ops::RangeBounds;
 #[cfg(procmacro2_semver_exempt)]
 use std::path::PathBuf;
-use std::str::FromStr;
 
 
 
@@ -955,8 +956,8 @@ impl Ident {
     
     
     
-    #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
+    
+    
     pub fn new_raw(string: &str, span: Span) -> Self {
         Ident::_new_raw(string, span)
     }
@@ -1270,7 +1271,7 @@ impl Display for Literal {
 pub mod token_stream {
     use crate::marker::Marker;
     use crate::{imp, TokenTree};
-    use std::fmt::{self, Debug};
+    use core::fmt::{self, Debug};
 
     pub use crate::TokenStream;
 
@@ -1290,11 +1291,16 @@ pub mod token_stream {
         fn next(&mut self) -> Option<TokenTree> {
             self.inner.next()
         }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.inner.size_hint()
+        }
     }
 
     impl Debug for IntoIter {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            Debug::fmt(&self.inner, f)
+            f.write_str("TokenStream ")?;
+            f.debug_list().entries(self.clone()).finish()
         }
     }
 
