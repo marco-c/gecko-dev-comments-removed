@@ -477,12 +477,6 @@ module.exports = {
       },
     },
     {
-      files: ["netwerk/**"],
-      rules: {
-        "mozilla/prefer-boolean-length-check": "off",
-      },
-    },
-    {
       
       
       extends: ["plugin:react-hooks/recommended"],
