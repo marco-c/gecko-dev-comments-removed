@@ -297,6 +297,9 @@ class DcSctpSocketInterface {
   virtual const DcSctpOptions& options() const = 0;
 
   
+  virtual void SetMaxMessageSize(size_t max_message_size) = 0;
+
+  
   
   
   
