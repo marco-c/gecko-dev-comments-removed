@@ -183,10 +183,6 @@ class ScreenshotsHelper {
     });
   }
 
-  clickDownloadButton() {
-    mouse.click(this.endX - 60, this.endY + 30);
-  }
-
   clickCopyButton(overrideX = null, overrideY = null) {
     
     
