@@ -3015,7 +3015,8 @@ static void AssertNoFramesOrStyleDataInDescendants(Element& aElement) {
     if (c == &aElement) {
       continue;
     }
-    MOZ_ASSERT(!c->GetPrimaryFrame());
+    
+    MOZ_ASSERT(!c->GetPrimaryFrame() || c->IsHTMLElement(nsGkAtoms::area));
     MOZ_ASSERT(!c->IsElement() || !c->AsElement()->HasServoData());
   }
 }
