@@ -352,16 +352,12 @@ class Call final : public webrtc::Call,
         RTC_GUARDED_BY(sequence_checker_);
   };
 
-  DeliveryStatus DeliverRtcp(MediaType media_type,
-                             const uint8_t* packet,
-                             size_t length)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_thread_);
+  void DeliverRtcp(MediaType media_type, rtc::CopyOnWriteBuffer packet)
+      RTC_RUN_ON(network_thread_);
   DeliveryStatus DeliverRtp(MediaType media_type,
                             rtc::CopyOnWriteBuffer packet,
-                            int64_t packet_time_us)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_thread_);
-  void ConfigureSync(const std::string& sync_group)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_thread_);
+                            int64_t packet_time_us) RTC_RUN_ON(worker_thread_);
+  void ConfigureSync(const std::string& sync_group) RTC_RUN_ON(worker_thread_);
 
   void NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
                                  MediaType media_type)
@@ -371,7 +367,7 @@ class Call final : public webrtc::Call,
 
   
   
-  void EnsureStarted() RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_thread_);
+  void EnsureStarted() RTC_RUN_ON(worker_thread_);
 
   rtc::TaskQueue* send_transport_queue() const {
     return transport_send_ptr_->GetWorkerQueue();
@@ -1409,9 +1405,8 @@ void Call::ConfigureSync(const std::string& sync_group) {
   }
 }
 
-PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
-                                                 const uint8_t* packet,
-                                                 size_t length) {
+
+void Call::DeliverRtcp(MediaType media_type, rtc::CopyOnWriteBuffer packet) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtcp");
 
   
@@ -1430,40 +1425,37 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
 
   
   
-  
-  receive_stats_.AddReceivedRtcpBytes(static_cast<int>(length));
-  bool rtcp_delivered = false;
-  if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
-    for (VideoReceiveStream2* stream : video_receive_streams_) {
-      if (stream->DeliverRtcp(packet, length))
-        rtcp_delivered = true;
-    }
-  }
-  if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
-    for (AudioReceiveStream* stream : audio_receive_streams_) {
-      stream->DeliverRtcp(packet, length);
-      rtcp_delivered = true;
-    }
-  }
-  if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
-    for (VideoSendStream* stream : video_send_streams_) {
-      stream->DeliverRtcp(packet, length);
-      rtcp_delivered = true;
-    }
-  }
-  if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
-    for (auto& kv : audio_send_ssrcs_) {
-      kv.second->DeliverRtcp(packet, length);
-      rtcp_delivered = true;
-    }
-  }
+  worker_thread_->PostTask(
+      ToQueuedTask(task_safety_, [this, packet = std::move(packet)]() {
+        RTC_DCHECK_RUN_ON(worker_thread_);
 
-  if (rtcp_delivered) {
-    event_log_->Log(std::make_unique<RtcEventRtcpPacketIncoming>(
-        rtc::MakeArrayView(packet, length)));
-  }
+        receive_stats_.AddReceivedRtcpBytes(static_cast<int>(packet.size()));
+        bool rtcp_delivered = false;
+        for (VideoReceiveStream2* stream : video_receive_streams_) {
+          if (stream->DeliverRtcp(packet.cdata(), packet.size()))
+            rtcp_delivered = true;
+        }
 
-  return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
+        for (AudioReceiveStream* stream : audio_receive_streams_) {
+          stream->DeliverRtcp(packet.cdata(), packet.size());
+          rtcp_delivered = true;
+        }
+
+        for (VideoSendStream* stream : video_send_streams_) {
+          stream->DeliverRtcp(packet.cdata(), packet.size());
+          rtcp_delivered = true;
+        }
+
+        for (auto& kv : audio_send_ssrcs_) {
+          kv.second->DeliverRtcp(packet.cdata(), packet.size());
+          rtcp_delivered = true;
+        }
+
+        if (rtcp_delivered) {
+          event_log_->Log(std::make_unique<RtcEventRtcpPacketIncoming>(
+              rtc::MakeArrayView(packet.cdata(), packet.size())));
+        }
+      }));
 }
 
 PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
@@ -1540,11 +1532,13 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
     int64_t packet_time_us) {
+  if (IsRtcp(packet.cdata(), packet.size())) {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    DeliverRtcp(media_type, std::move(packet));
+    return DELIVERY_OK;
+  }
+
   RTC_DCHECK_RUN_ON(worker_thread_);
-
-  if (IsRtcp(packet.cdata(), packet.size()))
-    return DeliverRtcp(media_type, packet.cdata(), packet.size());
-
   return DeliverRtp(media_type, std::move(packet), packet_time_us);
 }
 
