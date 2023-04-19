@@ -31,22 +31,10 @@ enum class NotificationAction {
   NoAction,  
 };
 
-enum class NotificationNotShownReason {
-  NotApplicable,  
-  NoValueSet,  
-  WrongOS,
-  UserRequest,
-  NoDefaultBrowserTransition,
-  FollowupSuppressed,
-  NotTimeForFollowup,
-  NoFollowupScheduled,
-};
-
 struct NotificationActivities {
   NotificationType type;
   NotificationShown shown;
   NotificationAction action;
-  NotificationNotShownReason notShownReason;
 };
 
 NotificationActivities MaybeShowNotification(
@@ -56,8 +44,6 @@ NotificationActivities MaybeShowNotification(
 std::string GetStringForNotificationType(NotificationType type);
 std::string GetStringForNotificationShown(NotificationShown shown);
 std::string GetStringForNotificationAction(NotificationAction action);
-std::string GetStringForNotificationNotShownReason(
-    NotificationNotShownReason notShownAction);
 
 
 
