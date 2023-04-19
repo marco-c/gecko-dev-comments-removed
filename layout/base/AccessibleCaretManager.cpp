@@ -820,9 +820,23 @@ already_AddRefed<nsFrameSelection> AccessibleCaretManager::GetFrameSelection()
     return nullptr;
   }
 
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  MOZ_ASSERT(fm);
+
+  nsIContent* focusedContent = fm->GetFocusedElement();
+  if (!focusedContent) {
+    
+    return mPresShell->FrameSelection();
+  }
+
+  nsIFrame* focusFrame = focusedContent->GetPrimaryFrame();
+  if (!focusFrame) {
+    return nullptr;
+  }
+
   
   
-  RefPtr<nsFrameSelection> fs = mPresShell->GetLastFocusedFrameSelection();
+  RefPtr<nsFrameSelection> fs = focusFrame->GetFrameSelection();
   if (!fs || fs->GetPresShell() != mPresShell) {
     return nullptr;
   }
