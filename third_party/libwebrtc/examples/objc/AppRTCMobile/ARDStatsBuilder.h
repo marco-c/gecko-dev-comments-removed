@@ -10,9 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "sdk/objc/api/peerconnection/RTCStatisticsReport.h"
 #import "sdk/objc/base/RTCMacros.h"
-
-@class RTC_OBJC_TYPE(RTCLegacyStatsReport);
 
 
 
@@ -22,10 +21,6 @@
 
 
 @property(nonatomic, readonly) NSString *statsString;
-
-
-
-
-- (void)parseStatsReport:(RTC_OBJC_TYPE(RTCLegacyStatsReport) *)statsReport;
+@property(nonatomic) RTC_OBJC_TYPE(RTCStatisticsReport) * stats;
 
 @end
