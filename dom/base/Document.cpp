@@ -15074,7 +15074,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   
   
   
-  if (aRequest->mShouldNotifyNewOrigin && previousFullscreenDoc &&
+  if (aRequest->mShouldNotifyNewOrigin &&
       !nsContentUtils::HaveEqualPrincipals(previousFullscreenDoc, this)) {
     DispatchFullscreenNewOriginEvent(this);
   }
