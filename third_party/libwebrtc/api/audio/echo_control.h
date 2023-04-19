@@ -49,6 +49,13 @@ class EchoControl {
   virtual void SetAudioBufferDelay(int delay_ms) = 0;
 
   
+  
+  
+  
+  
+  virtual void SetCaptureOutputUsage(bool capture_output_used) {}
+
+  
   virtual bool ActiveProcessing() const = 0;
 
   virtual ~EchoControl() {}

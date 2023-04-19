@@ -344,6 +344,12 @@ class AudioProcessingImpl : public AudioProcessing {
 
   
   
+  
+  void HandleOverrunInCaptureRuntimeSettingsQueue()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_capture_);
+
+  
+  
   std::unique_ptr<AecDump> aec_dump_;
 
   
