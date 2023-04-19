@@ -14,11 +14,13 @@
 #include <memory>
 #include <set>
 
+#include "absl/types/optional.h"
 #include "api/transport/field_trial_based_config.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -29,6 +31,11 @@
 #include "test/time_controller/simulated_time_controller.h"
 
 using ::testing::ElementsAre;
+using ::testing::Eq;
+using ::testing::Field;
+using ::testing::Gt;
+using ::testing::Not;
+using ::testing::Optional;
 
 namespace webrtc {
 namespace {
@@ -629,6 +636,104 @@ TEST_F(RtpRtcpImpl2Test, StoresPacketInfoForSentPackets) {
                                           2 - kStartTimestamp,
                                           0,
                                           1)));
+}
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsNotAvailable) {
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(), Eq(absl::nullopt));
+}
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsAvailable) {
+  
+  SendFrame(&sender_, sender_video_.get(), kBaseLayerTid);
+  
+  ASSERT_THAT(sender_.impl_->SendRTCP(kRtcpReport), Eq(0));
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(), Not(Eq(absl::nullopt)));
+}
+
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsNotUpdatedWithUnexpectedSsrc) {
+  constexpr uint32_t kUnexpectedSenderSsrc = 0x87654321;
+  static_assert(kUnexpectedSenderSsrc != kSenderSsrc, "");
+  
+  
+  rtcp::SenderReport sr;
+  sr.SetSenderSsrc(kUnexpectedSenderSsrc);
+  sr.SetNtp({1u, 1u << 31});
+  sr.SetPacketCount(123u);
+  sr.SetOctetCount(456u);
+  auto raw_packet = sr.Build();
+  receiver_.impl_->IncomingRtcpPacket(raw_packet.data(), raw_packet.size());
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(), Eq(absl::nullopt));
+}
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsCheckStatsFromLastReport) {
+  using SenderReportStats = RtpRtcpInterface::SenderReportStats;
+  const NtpTime ntp(1u, 1u << 31);
+  constexpr uint32_t kPacketCount = 123u;
+  constexpr uint32_t kOctetCount = 456u;
+  
+  
+  rtcp::SenderReport sr;
+  sr.SetSenderSsrc(kSenderSsrc);
+  sr.SetNtp(ntp);
+  sr.SetPacketCount(kPacketCount);
+  sr.SetOctetCount(kOctetCount);
+  auto raw_packet = sr.Build();
+  receiver_.impl_->IncomingRtcpPacket(raw_packet.data(), raw_packet.size());
+
+  EXPECT_THAT(
+      receiver_.impl_->GetSenderReportStats(),
+      Optional(AllOf(Field(&SenderReportStats::last_remote_timestamp, Eq(ntp)),
+                     Field(&SenderReportStats::packets_sent, Eq(kPacketCount)),
+                     Field(&SenderReportStats::bytes_sent, Eq(kOctetCount)))));
+}
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsCount) {
+  using SenderReportStats = RtpRtcpInterface::SenderReportStats;
+  
+  SendFrame(&sender_, sender_video_.get(), kBaseLayerTid);
+  
+  ASSERT_THAT(sender_.impl_->SendRTCP(kRtcpReport), Eq(0));
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(),
+              Optional(Field(&SenderReportStats::reports_count, Eq(1u))));
+  
+  ASSERT_THAT(sender_.impl_->SendRTCP(kRtcpReport), Eq(0));
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(),
+              Optional(Field(&SenderReportStats::reports_count, Eq(2u))));
+}
+
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsArrivalTimestampSet) {
+  
+  SendFrame(&sender_, sender_video_.get(), kBaseLayerTid);
+  
+  ASSERT_THAT(sender_.impl_->SendRTCP(kRtcpReport), Eq(0));
+  auto stats = receiver_.impl_->GetSenderReportStats();
+  ASSERT_THAT(stats, Not(Eq(absl::nullopt)));
+  EXPECT_TRUE(stats->last_arrival_timestamp.Valid());
+}
+
+
+
+TEST_F(RtpRtcpImpl2Test, SenderReportStatsPacketByteCounters) {
+  using SenderReportStats = RtpRtcpInterface::SenderReportStats;
+  
+  SendFrame(&sender_, sender_video_.get(), kBaseLayerTid);
+  ASSERT_THAT(sender_.transport_.rtp_packets_sent_, Gt(0));
+  
+  
+  AdvanceTimeMs(1);
+  
+  ASSERT_THAT(sender_.impl_->SendRTCP(kRtcpReport), Eq(0));
+  EXPECT_THAT(receiver_.impl_->GetSenderReportStats(),
+              Optional(AllOf(Field(&SenderReportStats::packets_sent, Gt(0u)),
+                             Field(&SenderReportStats::bytes_sent, Gt(0u)))));
 }
 
 }  

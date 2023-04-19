@@ -698,8 +698,10 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (0 !=
-      rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL, &rtp_timestamp)) {
+  if (rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac,
+                           nullptr,
+                           nullptr,
+                           &rtp_timestamp) != 0) {
     
     return;
   }
@@ -756,7 +758,6 @@ void ChannelReceive::ResetReceiverCongestionControlObjects() {
 
 CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  
   CallReceiveStatistics stats;
 
   
@@ -771,7 +772,6 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
   stats.cumulativeLost = rtp_stats.packets_lost;
   stats.jitterSamples = rtp_stats.jitter;
 
-  
   stats.rttMs = GetRTT();
 
   
@@ -933,7 +933,9 @@ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
   RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   Syncable::Info info;
   if (rtp_rtcp_->RemoteNTP(&info.capture_time_ntp_secs,
-                           &info.capture_time_ntp_frac, nullptr, nullptr,
+                           &info.capture_time_ntp_frac,
+                           nullptr,
+                           nullptr,
                            &info.capture_time_source_clock) != 0) {
     return absl::nullopt;
   }
