@@ -2717,4 +2717,4 @@ pref("browser.places.snapshots.expiration.userManaged.days", 420);
 
 
 
-pref("browser.firefox-view.feature-tour", "{\"message\":\"\",\"screen\":\"\",\"complete\":true}");
+pref("browser.firefox-view.feature-tour", "{\"message\":\"FIREFOX_VIEW_FEATURE_TOUR\",\"screen\":\"\",\"complete\":true}");
