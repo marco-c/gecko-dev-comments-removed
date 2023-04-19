@@ -124,7 +124,10 @@ class HTMLEditor final : public EditorBase,
   
   NS_DECL_NSISELECTIONLISTENER
 
-  HTMLEditor();
+  
+
+
+  explicit HTMLEditor(const Document& aDocument);
 
   
 
@@ -4484,7 +4487,7 @@ class HTMLEditor final : public EditorBase,
 
   
   
-  bool mUseGeckoTraditionalJoinSplitBehavior = true;
+  bool mUseGeckoTraditionalJoinSplitBehavior;
 
   
   bool mIsObjectResizingEnabled;
