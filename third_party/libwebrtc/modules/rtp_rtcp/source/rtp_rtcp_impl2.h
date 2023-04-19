@@ -206,9 +206,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
                             int64_t* remote_ntp_timestamp_ms) const override;
 
   
-  int32_t RemoteRTCPStat(
-      std::vector<RTCPReportBlock>* receive_blocks) const override;
-  
   
   
   

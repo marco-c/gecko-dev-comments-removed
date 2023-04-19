@@ -107,8 +107,6 @@ class RTCPReceiver final {
                                                 bool sending);
 
   
-  int32_t StatisticsReceived(std::vector<RTCPReportBlock>* receiveBlocks) const;
-  
   
   
   

@@ -396,12 +396,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
-  virtual int32_t RemoteRTCPStat(
-      std::vector<RTCPReportBlock>* receive_blocks) const = 0;
-  
-  
-  
-  
   virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
   
   virtual absl::optional<SenderReportStats> GetSenderReportStats() const = 0;
