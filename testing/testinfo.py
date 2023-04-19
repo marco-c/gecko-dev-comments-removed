@@ -308,6 +308,8 @@ class TestInfoReport(TestInfo):
         show_annotations,
         filter_values,
         filter_keys,
+        start_date,
+        end_date,
     ):
         
         what = []
@@ -339,8 +341,79 @@ class TestInfoReport(TestInfo):
                 d += " in manifest keys '%s'" % filter_keys
             else:
                 d += " in any part of manifest entry"
-        d += " as of %s." % datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        d += ", including historical run-time data for the last "
+
+        start = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        d += "%s days on trunk (autoland/m-c)" % ((end - start).days)
+        d += " as of %s." % end_date
         return d
+
+    
+    def parse_test(self, summary):
+        if summary.endswith("single tracking bug"):
+            name_part = summary.split("|")[0]  
+            name_part.strip()
+            return name_part.split()[-1]  
+        return None
+
+    def get_intermittent_failure_data(self, start, end):
+        retVal = {}
+
+        
+        
+        url = (
+            "https://treeherder.mozilla.org/api/failures/?startday=%s&endday=%s&tree=trunk"
+            % (start, end)
+        )
+        r = requests.get(url, headers={"User-agent": "mach-test-info/1.0"})
+        if_data = r.json()
+        buglist = [x["bug_id"] for x in if_data]
+
+        
+        
+        max_bugs = 800
+        bug_data = []
+        fields = ["id", "product", "component", "summary"]
+        for bug_index in range(0, len(buglist), max_bugs):
+            bugs = [str(x) for x in buglist[bug_index:max_bugs]]
+            url = "https://bugzilla.mozilla.org/rest/bug?include_fields=%s&id=%s" % (
+                ",".join(fields),
+                ",".join(bugs),
+            )
+            r = requests.get(url, headers={"User-agent": "mach-test-info/1.0"})
+            data = r.json()
+            if data and "bugs" in data.keys():
+                bug_data.extend(data["bugs"])
+
+        
+        
+        for bug in bug_data:
+            test_name = self.parse_test(bug["summary"])
+            if not test_name:
+                continue
+
+            c = int([x["bug_count"] for x in if_data if x["bug_id"] == bug["id"]][0])
+            if test_name not in retVal.keys():
+                retVal[test_name] = {
+                    "id": bug["id"],
+                    "count": 0,
+                    "product": bug["product"],
+                    "component": bug["component"],
+                }
+            retVal[test_name]["count"] += c
+
+            if bug["product"] != retVal[test_name]["product"]:
+                print(
+                    "ERROR | %s | mismatched bugzilla product, bugzilla (%s) != repo (%s)"
+                    % (bug["id"], bug["product"], retVal[test_name]["product"])
+                )
+            if bug["component"] != retVal[test_name]["component"]:
+                print(
+                    "ERROR | %s | mismatched bugzilla component, bugzilla (%s) != repo (%s)"
+                    % (bug["id"], bug["component"], retVal[test_name]["component"])
+                )
+        return retVal
 
     def report(
         self,
@@ -356,6 +429,8 @@ class TestInfoReport(TestInfo):
         filter_keys,
         show_components,
         output_file,
+        start,
+        end,
     ):
         def matches_filters(test):
             """
@@ -396,6 +471,7 @@ class TestInfoReport(TestInfo):
             filter_values = []
         display_keys = (filter_keys or []) + ["skip-if", "fail-if", "fails-if"]
         display_keys = set(display_keys)
+        ifd = self.get_intermittent_failure_data(start, end)
 
         print("Finding tests...")
         here = os.path.abspath(os.path.dirname(__file__))
@@ -537,6 +613,12 @@ class TestInfoReport(TestInfo):
                             failed_count += 1
                         if t.get("skip-if"):
                             skipped_count += 1
+
+                        
+                        if ifd.get(relpath):
+                            if_data = ifd.get(relpath)
+                            test_info["failure_count"] = if_data["count"]
+
                         if show_tests:
                             rkey = key if show_components else "all"
                             if rkey in by_component["tests"]:
@@ -566,6 +648,8 @@ class TestInfoReport(TestInfo):
             show_annotations,
             filter_values,
             filter_keys,
+            start,
+            end,
         )
 
         if show_summary:
