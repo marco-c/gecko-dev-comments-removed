@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -520,7 +521,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  void DestroyDataChannelTransport();
+  void DestroyDataChannelTransport(RTCError error);
 
   
   

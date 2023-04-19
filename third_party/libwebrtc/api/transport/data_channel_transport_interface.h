@@ -88,7 +88,7 @@ class DataChannelSink {
   
   
   
-  virtual void OnTransportClosed() {}
+  virtual void OnTransportClosed(RTCError error) {}
 };
 
 

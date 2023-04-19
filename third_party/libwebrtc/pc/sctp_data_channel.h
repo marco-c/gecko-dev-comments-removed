@@ -177,8 +177,6 @@ class SctpDataChannel : public DataChannelInterface,
   void CloseAbruptlyWithError(RTCError error);
   
   void CloseAbruptlyWithDataChannelFailure(const std::string& message);
-  void CloseAbruptlyWithSctpCauseCode(const std::string& message,
-                                      uint16_t cause_code);
 
   
   
@@ -209,7 +207,7 @@ class SctpDataChannel : public DataChannelInterface,
   
   
   
-  void OnTransportChannelClosed();
+  void OnTransportChannelClosed(RTCError error);
 
   DataChannelStats GetStats() const;
 

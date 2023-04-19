@@ -70,7 +70,7 @@ class DataChannelController : public SctpDataChannelProviderInterface,
   void OnChannelClosing(int channel_id) override;
   void OnChannelClosed(int channel_id) override;
   void OnReadyToSend() override;
-  void OnTransportClosed() override;
+  void OnTransportClosed(RTCError error) override;
 
   
   void SetupDataChannelTransport_n();
@@ -111,7 +111,7 @@ class DataChannelController : public SctpDataChannelProviderInterface,
     return SignalSctpDataChannelCreated_;
   }
   
-  void OnTransportChannelClosed();
+  void OnTransportChannelClosed(RTCError error);
 
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 

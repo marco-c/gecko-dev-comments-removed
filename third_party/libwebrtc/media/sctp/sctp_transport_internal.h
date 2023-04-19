@@ -55,6 +55,24 @@ const int kSctpDefaultPort = 5000;
 
 
 
+enum class SctpErrorCauseCode : uint16_t {
+  kInvalidStreamIdentifier = 1,
+  kMissingMandatoryParameter = 2,
+  kStaleCookieError = 3,
+  kOutOfResource = 4,
+  kUnresolvableAddress = 5,
+  kUnrecognizedChunkType = 6,
+  kInvalidMandatoryParameter = 7,
+  kUnrecognizedParameters = 8,
+  kNoUserData = 9,
+  kCookieReceivedWhileShuttingDown = 10,
+  kRestartWithNewAddresses = 11,
+  kUserInitiatedAbort = 12,
+  kProtocolViolation = 13,
+};
+
+
+
 class SctpTransportInternal {
  public:
   virtual ~SctpTransportInternal() {}
@@ -138,7 +156,7 @@ class SctpTransportInternal {
   sigslot::signal1<int> SignalClosingProcedureComplete;
   
   
-  sigslot::signal0<> SignalClosedAbruptly;
+  sigslot::signal1<webrtc::RTCError> SignalClosedAbruptly;
 
   
   virtual void set_debug_name_for_testing(const char* debug_name) = 0;
