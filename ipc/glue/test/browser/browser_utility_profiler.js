@@ -13,7 +13,7 @@ Services.scriptloader.loadSubScript(
 
 
 add_setup(async function ensureNoExistingProcess() {
-  await utilityProcessTest().stopProcess();
+  await killPendingUtilityProcess();
 });
 
 add_task(async () => {

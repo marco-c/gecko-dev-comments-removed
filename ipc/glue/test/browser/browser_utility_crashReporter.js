@@ -11,7 +11,7 @@ async function startAndCrashUtility(actors, actorsCheck) {
 
 
 add_setup(async function ensureNoExistingProcess() {
-  await utilityProcessTest().stopProcess();
+  await killPendingUtilityProcess();
 });
 
 add_task(async function utilityNoActor() {
