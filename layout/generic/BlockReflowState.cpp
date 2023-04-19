@@ -796,7 +796,7 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
       GetFloatAvailableSpaceForPlacingFloat(mBCoord);
 
   for (;;) {
-    if (mReflowInput.AvailableHeight() != NS_UNCONSTRAINEDSIZE &&
+    if (mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
         floatAvailableSpace.mRect.BSize(wm) <= 0 && !mustPlaceFloat) {
       
       PushFloatPastBreak(aFloat);
@@ -870,7 +870,16 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
 
   
   
-  if (reflowStatus.IsTruncated() || reflowStatus.IsInlineBreakBefore()) {
+  
+  
+  
+  
+  
+  const nscoord availBSize = floatRI->AvailableSize(floatWM).BSize(floatWM);
+  const bool isTruncated =
+      availBSize != NS_UNCONSTRAINEDSIZE && aFloat->BSize(floatWM) > availBSize;
+  if ((!floatRI->mFlags.mIsTopOfPage && isTruncated) ||
+      reflowStatus.IsInlineBreakBefore()) {
     PushFloatPastBreak(aFloat);
     return PlaceFloatResult::ShouldPlaceInNextContinuation;
   }
