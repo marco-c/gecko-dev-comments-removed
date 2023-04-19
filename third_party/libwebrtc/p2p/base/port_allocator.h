@@ -406,6 +406,10 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
     vpn_preference_ = preference;
   }
 
+  
+  
+  virtual void SetVpnList(const std::vector<rtc::NetworkMask>& vpn_list) {}
+
   std::unique_ptr<PortAllocatorSession> CreateSession(
       const std::string& content_name,
       int component,

@@ -663,6 +663,10 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     
     
+    std::vector<rtc::NetworkMask> vpn_list;
+
+    
+    
     
   };
 
