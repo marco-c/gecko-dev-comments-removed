@@ -56,6 +56,9 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   ~TaskQueuePacedSender() override;
 
   
+  void EnsureStarted();
+
+  
 
   
   
@@ -149,6 +152,12 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   bool stats_update_scheduled_ RTC_GUARDED_BY(task_queue_);
   
   Timestamp last_stats_time_ RTC_GUARDED_BY(task_queue_);
+
+  
+  
+  
+  
+  bool is_started_ RTC_GUARDED_BY(task_queue_) = true;
 
   
   
