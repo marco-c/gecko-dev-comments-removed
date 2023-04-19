@@ -413,6 +413,13 @@
                    nb_normals += 1;
                 }
             }
+        % if prop == "emoji":
+            else {
+                
+                
+                nb_normals += 1;
+            }
+        % endif
         % endfor
 
 
