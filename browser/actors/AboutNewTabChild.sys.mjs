@@ -1,14 +1,11 @@
-
-
-
-
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var EXPORTED_SYMBOLS = ["AboutNewTabChild"];
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -30,11 +27,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-class AboutNewTabChild extends JSWindowActorChild {
+export class AboutNewTabChild extends JSWindowActorChild {
   handleEvent(event) {
     if (event.type == "DOMContentLoaded") {
-      
-      
+      // If the separate about:welcome page is enabled, we can skip all of this,
+      // since that mode doesn't load any of the Activity Stream bits.
       if (
         (lazy.NimbusFeatures.aboutwelcome.getVariable("enabled") ?? true) &&
         this.contentWindow.location.pathname.includes("welcome")
@@ -45,7 +42,7 @@ class AboutNewTabChild extends JSWindowActorChild {
       const debug = !AppConstants.RELEASE_OR_BETA && lazy.ACTIVITY_STREAM_DEBUG;
       const debugString = debug ? "-dev" : "";
 
-      
+      // This list must match any similar ones in render-activity-stream-html.js.
       const scripts = [
         "chrome://browser/content/contentSearchUI.js",
         "chrome://browser/content/contentSearchHandoffUI.js",
@@ -65,12 +62,12 @@ class AboutNewTabChild extends JSWindowActorChild {
       }
     } else if (
       (event.type == "pageshow" || event.type == "visibilitychange") &&
-      
-      
+      // The default browser notification shouldn't be shown on about:welcome
+      // since we don't want to distract from the onboarding wizard.
       !this.contentWindow.location.pathname.includes("welcome")
     ) {
-      
-      
+      // Don't show the notification in non-permanent private windows
+      // since it is expected to have very little opt-in here.
       let contentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
         this.contentWindow
       );
@@ -82,8 +79,8 @@ class AboutNewTabChild extends JSWindowActorChild {
       ) {
         this.sendAsyncMessage("AboutNewTabVisible");
 
-        
-        
+        // Note: newtab feature info is currently being loaded in PrefsFeed.jsm,
+        // But we're recording exposure events here.
         lazy.NimbusFeatures.newtab.recordExposureEvent({ once: true });
       }
     }
