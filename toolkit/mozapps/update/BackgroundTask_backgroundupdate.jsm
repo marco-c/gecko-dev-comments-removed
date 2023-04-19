@@ -391,7 +391,10 @@ async function runBackgroundTask(commandLine) {
       
       
       
-      await lazy.BackgroundTasksUtils.enableNimbus(commandLine);
+      await lazy.BackgroundTasksUtils.enableNimbus(
+        commandLine,
+        defaultProfileTargetingSnapshot.environment
+      );
 
       await lazy.BackgroundTasksUtils.enableFirefoxMessagingSystem(
         defaultProfileTargetingSnapshot.environment

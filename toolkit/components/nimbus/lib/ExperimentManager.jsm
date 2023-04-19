@@ -60,6 +60,8 @@ class _ExperimentManager {
     this.id = id;
     this.store = store || new lazy.ExperimentStore();
     this.sessions = new Map();
+    
+    this.extraContext = {};
     Services.prefs.addObserver(UPLOAD_ENABLED_PREF, this);
     Services.prefs.addObserver(STUDIES_OPT_OUT_PREF, this);
   }
@@ -84,6 +86,7 @@ class _ExperimentManager {
   createTargetingContext() {
     let context = {
       isFirstStartup: lazy.FirstStartup.state === lazy.FirstStartup.IN_PROGRESS,
+      ...this.extraContext,
     };
     Object.defineProperty(context, "activeExperiments", {
       get: async () => {
@@ -103,8 +106,13 @@ class _ExperimentManager {
   
 
 
-  async onStartup() {
+
+
+
+  async onStartup(extraContext = {}) {
     await this.store.init();
+    this.extraContext = extraContext;
+
     const restoredExperiments = this.store.getAllActive();
     const restoredRollouts = this.store.getAllRollouts();
 

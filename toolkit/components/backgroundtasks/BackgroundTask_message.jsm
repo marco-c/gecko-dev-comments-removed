@@ -283,7 +283,10 @@ async function runBackgroundTask(commandLine) {
 
   
   
-  await BackgroundTasksUtils.enableNimbus(commandLine);
+  await BackgroundTasksUtils.enableNimbus(
+    commandLine,
+    defaultProfileTargetingSnapshot.environment
+  );
 
   await BackgroundTasksUtils.enableFirefoxMessagingSystem(
     defaultProfileTargetingSnapshot.environment

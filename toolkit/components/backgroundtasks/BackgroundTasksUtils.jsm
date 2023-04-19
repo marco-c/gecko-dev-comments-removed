@@ -30,13 +30,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIToolkitProfileService"
 );
 
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "BackgroundTasks",
-  "@mozilla.org/backgroundtasks;1",
-  "nsIBackgroundTasks"
-);
-
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   ASRouter: "resource://activity-stream/lib/ASRouter.jsm",
   ASRouterDefaultConfig:
@@ -302,9 +295,11 @@ var BackgroundTasksUtils = {
 
 
 
-  async enableNimbus(commandLine) {
+
+
+  async enableNimbus(commandLine, defaultProfile = {}) {
     try {
-      await lazy.ExperimentManager.onStartup();
+      await lazy.ExperimentManager.onStartup({ defaultProfile });
     } catch (err) {
       lazy.log.error("Failed to initialize ExperimentManager:", err);
       throw err;
@@ -403,7 +398,6 @@ var BackgroundTasksUtils = {
       browser: null,
       id: triggerId,
       context: {
-        backgroundTaskName: lazy.BackgroundTasks.backgroundTaskName(),
         defaultProfile,
       },
     });
