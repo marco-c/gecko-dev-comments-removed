@@ -200,6 +200,11 @@ bool Proxy::defineProperty(JSContext* cx, HandleObject proxy, HandleId id,
     return false;
   }
   const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
+
+  
+  
+  MOZ_ASSERT_IF(id.isPrivateName(), !handler->throwOnPrivateField());
+
   AutoEnterPolicy policy(cx, handler, proxy, id, BaseProxyHandler::SET, true);
   if (!policy.allowed()) {
     if (!policy.returnValue()) {
@@ -402,6 +407,14 @@ bool Proxy::hasOwn(JSContext* cx, HandleObject proxy, HandleId id, bool* bp) {
   }
   const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
   *bp = false;  
+
+  
+  
+  
+  if (id.isPrivateName() && handler->throwOnPrivateField()) {
+    return true;
+  }
+
   AutoEnterPolicy policy(cx, handler, proxy, id, BaseProxyHandler::GET, true);
   if (!policy.allowed()) {
     return policy.returnValue();
@@ -446,6 +459,10 @@ MOZ_ALWAYS_INLINE bool Proxy::getInternal(JSContext* cx, HandleObject proxy,
     return false;
   }
   const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
+
+  
+  MOZ_ASSERT_IF(id.isPrivateName(), !handler->throwOnPrivateField());
+
   vp.setUndefined();  
   AutoEnterPolicy policy(cx, handler, proxy, id, BaseProxyHandler::GET, true);
   if (!policy.allowed()) {
@@ -517,6 +534,10 @@ MOZ_ALWAYS_INLINE bool Proxy::setInternal(JSContext* cx, HandleObject proxy,
   }
 
   const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
+
+  
+  MOZ_ASSERT_IF(id.isPrivateName(), !handler->throwOnPrivateField());
+
   AutoEnterPolicy policy(cx, handler, proxy, id, BaseProxyHandler::SET, true);
   if (!policy.allowed()) {
     if (!policy.returnValue()) {
