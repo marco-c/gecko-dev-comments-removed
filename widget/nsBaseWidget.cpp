@@ -765,7 +765,10 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
   });
 
   
-  const auto doReposition = [&](auto rect) {
+  
+  
+  
+  const auto doReposition = [&](auto rect) -> void {
     static_assert(std::is_base_of_v<DesktopPixel,
                                     std::remove_reference_t<decltype(rect)>>,
                   "doReposition requires a rectangle using desktop pixels");
@@ -775,10 +778,11 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
   };
 
   if (aFullScreen) {
-    if (!mOriginalBounds) {
-      mOriginalBounds = mozilla::MakeUnique<DesktopRect>();
+    if (!mSavedBounds) {
+      mSavedBounds = Some(FullscreenSavedState());
     }
-    *mOriginalBounds = GetScreenBounds() / GetDesktopToDeviceScale();
+    
+    mSavedBounds->windowRect = GetScreenBounds() / GetDesktopToDeviceScale();
 
     nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
     if (!screen) {
@@ -786,17 +790,82 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
     }
 
     
-    const auto screenRect = screen->GetRectDisplayPix();
-    doReposition(screenRect);
+    doReposition(screen->GetRectDisplayPix());
+    
+    
+    mSavedBounds->screenRect = GetScreenBounds() / GetDesktopToDeviceScale();
   } else {
-    if (!mOriginalBounds) {
+    if (!mSavedBounds) {
       
       
       MOZ_ASSERT(false, "fullscreen window did not have saved position");
       return;
     }
 
-    doReposition(*mOriginalBounds);
+    
+    
+    
+    
+    
+    
+
+    const DesktopRect currentWinRect =
+        GetScreenBounds() / GetDesktopToDeviceScale();
+
+    
+    
+    if (currentWinRect == DesktopRect(mSavedBounds->screenRect)) {
+      doReposition(mSavedBounds->windowRect);
+      return;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+    const auto splat = [](auto rect) {
+      return std::tuple(rect.X(), rect.Y(), rect.Width(), rect.Height());
+    };
+
+    
+    
+    using Range = std::pair<float, float>;
+    const auto remap = [](Range dst, Range src, float val) {
+      
+      const auto lerp = [](float lo, float hi, float t) {
+        return lo + t * (hi - lo);
+      };
+      const auto invlerp = [](float lo, float hi, float mid) {
+        return (mid - lo) / (hi - lo);
+      };
+
+      const auto [dst_a, dst_b] = dst;
+      const auto [src_a, src_b] = src;
+      return lerp(dst_a, dst_b, invlerp(src_a, src_b, val));
+    };
+
+    
+    const auto [px, py, pw, ph] = splat(mSavedBounds->windowRect);
+    
+    const auto [sx, sy, sw, sh] = splat(mSavedBounds->screenRect);
+    
+    const auto [tx, ty, tw, th] = splat(currentWinRect);
+
+    const float nx = remap({tx, tx + tw}, {sx, sx + sw}, px);
+    const float ny = remap({ty, ty + th}, {sy, sy + sh}, py);
+    const float nw = remap({0, tw}, {0, sw}, pw);
+    const float nh = remap({0, th}, {0, sh}, ph);
+
+    doReposition(DesktopRect{nx, ny, nw, nh});
   }
 }
 
