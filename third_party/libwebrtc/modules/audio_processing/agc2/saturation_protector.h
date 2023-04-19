@@ -15,57 +15,67 @@
 
 #include "absl/types/optional.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
+#include "rtc_base/numerics/safe_compare.h"
 
 namespace webrtc {
+namespace saturation_protector_impl {
 
-class ApmDataDumper;
 
-class SaturationProtector {
+class RingBuffer {
  public:
-  explicit SaturationProtector(ApmDataDumper* apm_data_dumper);
-  SaturationProtector(ApmDataDumper* apm_data_dumper,
-                      float initial_saturation_margin_db);
+  bool operator==(const RingBuffer& b) const;
+  inline bool operator!=(const RingBuffer& b) const { return !(*this == b); }
+
+  
+  int Capacity() const { return buffer_.size(); }
+  
+  int Size() const { return size_; }
 
   void Reset();
-
+  
+  void PushBack(float v);
   
   
-  
-  void UpdateMargin(float speech_peak_dbfs, float speech_level_dbfs);
-
-  
-  float margin_db() const { return margin_db_; }
-
-  void DebugDumpEstimate() const;
+  absl::optional<float> Front() const;
 
  private:
+  inline int FrontIndex() const {
+    return rtc::SafeEq(size_, buffer_.size()) ? next_ : 0;
+  }
   
-  class RingBuffer {
-   public:
-    void Reset();
-    
-    void PushBack(float v);
-    
-    
-    absl::optional<float> Front() const;
-
-   private:
-    std::array<float, kPeakEnveloperBufferSize> buffer_;
-    int next_ = 0;
-    int size_ = 0;
-  };
-
-  float GetDelayedPeakDbfs() const;
-
-  ApmDataDumper* apm_data_dumper_;
   
-  const float initial_saturation_margin_db_;
-  
-  float margin_db_;
-  RingBuffer peak_delay_buffer_;
-  float max_peaks_dbfs_;
-  int time_since_push_ms_;
+  std::array<float, kPeakEnveloperBufferSize> buffer_;
+  int next_ = 0;
+  int size_ = 0;
 };
+
+}  
+
+
+
+struct SaturationProtectorState {
+  bool operator==(const SaturationProtectorState& s) const;
+  inline bool operator!=(const SaturationProtectorState& s) const {
+    return !(*this == s);
+  }
+
+  float margin_db;  
+  saturation_protector_impl::RingBuffer peak_delay_buffer;
+  float max_peaks_dbfs;
+  int time_since_push_ms;  
+};
+
+
+void ResetSaturationProtectorState(float initial_margin_db,
+                                   SaturationProtectorState& state);
+
+
+
+
+
+void UpdateSaturationProtectorState(float speech_peak_dbfs,
+                                    float speech_level_dbfs,
+                                    SaturationProtectorState& state);
 
 }  
 

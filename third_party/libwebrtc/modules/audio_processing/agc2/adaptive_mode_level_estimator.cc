@@ -49,9 +49,9 @@ AdaptiveModeLevelEstimator::AdaptiveModeLevelEstimator(
     float initial_saturation_margin_db,
     float extra_saturation_margin_db)
     : apm_data_dumper_(apm_data_dumper),
-      saturation_protector_(apm_data_dumper, initial_saturation_margin_db),
       level_estimator_type_(level_estimator),
       use_saturation_protector_(use_saturation_protector),
+      initial_saturation_margin_db_(initial_saturation_margin_db),
       extra_saturation_margin_db_(extra_saturation_margin_db),
       last_level_dbfs_(absl::nullopt) {
   Reset();
@@ -102,11 +102,11 @@ void AdaptiveModeLevelEstimator::Update(
   
   last_level_dbfs_ = state_.level_dbfs.GetRatio();
 
-  
   if (use_saturation_protector_) {
-    saturation_protector_.UpdateMargin(
+    UpdateSaturationProtectorState(
         vad_level.peak_dbfs,
-        last_level_dbfs_.value());
+        last_level_dbfs_.value(),
+        state_.saturation_protector);
   }
 
   DebugDumpEstimate();
@@ -115,7 +115,7 @@ void AdaptiveModeLevelEstimator::Update(
 float AdaptiveModeLevelEstimator::GetLevelDbfs() const {
   float level_dbfs = last_level_dbfs_.value_or(kInitialSpeechLevelEstimateDbfs);
   if (use_saturation_protector_) {
-    level_dbfs += saturation_protector_.margin_db();
+    level_dbfs += state_.saturation_protector.margin_db;
     level_dbfs += extra_saturation_margin_db_;
   }
   return rtc::SafeClamp<float>(level_dbfs, -90.f, 30.f);
@@ -127,7 +127,6 @@ bool AdaptiveModeLevelEstimator::IsConfident() const {
 }
 
 void AdaptiveModeLevelEstimator::Reset() {
-  saturation_protector_.Reset();
   ResetState(state_);
   last_level_dbfs_ = absl::nullopt;
 }
@@ -136,15 +135,17 @@ void AdaptiveModeLevelEstimator::ResetState(State& state) {
   state.time_to_full_buffer_ms = kFullBufferSizeMs;
   state.level_dbfs.numerator = 0.f;
   state.level_dbfs.denominator = 0.f;
-  
+  ResetSaturationProtectorState(initial_saturation_margin_db_,
+                                state.saturation_protector);
 }
 
 void AdaptiveModeLevelEstimator::DebugDumpEstimate() {
   if (apm_data_dumper_) {
     apm_data_dumper_->DumpRaw("agc2_adaptive_level_estimate_dbfs",
                               GetLevelDbfs());
+    apm_data_dumper_->DumpRaw("agc2_adaptive_saturation_margin_db",
+                              state_.saturation_protector.margin_db);
   }
-  saturation_protector_.DebugDumpEstimate();
 }
 
 }  

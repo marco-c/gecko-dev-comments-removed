@@ -62,18 +62,18 @@ class AdaptiveModeLevelEstimator {
     };
     int time_to_full_buffer_ms;
     Ratio level_dbfs;
-    
+    SaturationProtectorState saturation_protector;
   };
 
   void ResetState(State& state);
   void DebugDumpEstimate();
 
   ApmDataDumper* const apm_data_dumper_;
-  SaturationProtector saturation_protector_;
 
   const AudioProcessing::Config::GainController2::LevelEstimator
       level_estimator_type_;
   const bool use_saturation_protector_;
+  const float initial_saturation_margin_db_;
   const float extra_saturation_margin_db_;
   
   State state_;
