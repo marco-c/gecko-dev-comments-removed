@@ -10,21 +10,13 @@
 
 #include "pc/test/android_test_initializer.h"
 
+#include <jni.h>
 #include <pthread.h>
-
-#include "rtc_base/ignore_wundef.h"
-
-
-
-
-
-RTC_PUSH_IGNORING_WUNDEF()
-#include "base/android/jni_android.h"
-RTC_POP_IGNORING_WUNDEF()
+#include <stddef.h>
 
 #include "modules/utility/include/jvm_android.h"
 #include "rtc_base/checks.h"
-
+#include "sdk/android/src/jni/jvm.h"
 
 
 
@@ -40,8 +32,8 @@ static pthread_once_t g_initialize_once = PTHREAD_ONCE_INIT;
 
 
 void EnsureInitializedOnce() {
-  RTC_CHECK(::base::android::IsVMInitialized());
-  JNIEnv* jni = ::base::android::AttachCurrentThread();
+  RTC_CHECK(::webrtc::jni::GetJVM() != nullptr);
+  JNIEnv* jni = ::webrtc::jni::AttachCurrentThreadIfNeeded();
   JavaVM* jvm = NULL;
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
 
