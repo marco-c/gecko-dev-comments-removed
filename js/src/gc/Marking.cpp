@@ -105,6 +105,8 @@ using mozilla::PodCopy;
 
 
 
+
+
 #if defined(DEBUG)
 template <typename T>
 static inline bool IsThingPoisoned(T* thing) {
@@ -196,28 +198,6 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
   MOZ_ASSERT(MapTypeToTraceKind<std::remove_pointer_t<T>>::kind ==
              thing->getTraceKind());
 
-  if (isGcMarkingTracer) {
-    GCMarker* gcMarker = GCMarker::fromTracer(trc);
-    MOZ_ASSERT(zone->shouldMarkInZone(gcMarker->markColor()));
-
-    MOZ_ASSERT_IF(gcMarker->shouldCheckCompartments(),
-                  zone->isCollectingFromAnyThread() || zone->isAtomsZone());
-
-    MOZ_ASSERT_IF(gcMarker->markColor() == MarkColor::Gray,
-                  !zone->isGCMarkingBlackOnly() || zone->isAtomsZone());
-
-    MOZ_ASSERT(!(zone->isGCSweeping() || zone->isGCFinished() ||
-                 zone->isGCCompacting()));
-
-    
-    
-    Compartment* comp = thing->maybeCompartment();
-    MOZ_ASSERT_IF(gcMarker->tracingCompartment && comp,
-                  gcMarker->tracingCompartment == comp);
-    MOZ_ASSERT_IF(gcMarker->tracingZone,
-                  gcMarker->tracingZone == zone || zone->isAtomsZone());
-  }
-
   
 
 
@@ -241,6 +221,30 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
 template <typename T>
 void js::CheckTracedThing(JSTracer* trc, const T& thing) {
   ApplyGCThingTyped(thing, [trc](auto t) { CheckTracedThing(trc, t); });
+}
+
+template <typename T>
+static void CheckMarkedThing(GCMarker* gcMarker, T* thing) {
+  Zone* zone = thing->zoneFromAnyThread();
+
+  MOZ_ASSERT(zone->shouldMarkInZone(gcMarker->markColor()));
+
+  MOZ_ASSERT_IF(gcMarker->shouldCheckCompartments(),
+                zone->isCollectingFromAnyThread() || zone->isAtomsZone());
+
+  MOZ_ASSERT_IF(gcMarker->markColor() == MarkColor::Gray,
+                !zone->isGCMarkingBlackOnly() || zone->isAtomsZone());
+
+  MOZ_ASSERT(!(zone->isGCSweeping() || zone->isGCFinished() ||
+               zone->isGCCompacting()));
+
+  
+  
+  Compartment* comp = thing->maybeCompartment();
+  MOZ_ASSERT_IF(gcMarker->tracingCompartment && comp,
+                gcMarker->tracingCompartment == comp);
+  MOZ_ASSERT_IF(gcMarker->tracingZone,
+                gcMarker->tracingZone == zone || zone->isAtomsZone());
 }
 
 namespace js {
@@ -368,11 +372,6 @@ void js::gc::AssertRootMarkingPhase(JSTracer* trc) {
 #endif  
 
 
-
-template <typename T>
-void DoMarking(GCMarker* gcmarker, T* thing);
-template <typename T>
-void DoMarking(GCMarker* gcmarker, const T& thing);
 
 template <typename T>
 static void TraceExternalEdgeHelper(JSTracer* trc, T* thingp,
@@ -686,12 +685,6 @@ bool js::gc::TraceEdgeInternal(JSTracer* trc, T* thingp, const char* name) {
                 "marking/tracing internals");
 #undef IS_SAME_TYPE_OR
 
-  if (trc->isMarkingTracer()) {
-    DoMarking(GCMarker::fromTracer(trc), *thingp);
-    return true;
-  }
-
-  MOZ_ASSERT(trc->isGenericTracer());
   return DoCallback(trc->asGenericTracer(), thingp, name);
 }
 
@@ -903,28 +896,32 @@ static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
 }
 
 template <typename T>
-void DoMarking(GCMarker* gcmarker, T* thing) {
+void GCMarker::onEdge(T** thingp, const char* name) {
+  T* thing = *thingp;
+
   
-  if (!ShouldMark(gcmarker, thing)) {
-    MOZ_ASSERT(gc::detail::GetEffectiveColor(gcmarker, thing) ==
+  if (!ShouldMark(this, thing)) {
+    MOZ_ASSERT(gc::detail::GetEffectiveColor(this, thing) ==
                js::gc::CellColor::Black);
     return;
   }
 
-  MOZ_ASSERT(!IsOwnedByOtherRuntime(gcmarker->runtime(), thing));
+  MOZ_ASSERT(!IsOwnedByOtherRuntime(runtime(), thing));
 
-  CheckTracedThing(gcmarker, thing);
-  AutoClearTracingSource acts(gcmarker);
-  gcmarker->markAndTraverse(thing);
+#ifdef DEBUG
+  CheckMarkedThing(this, thing);
+#endif
+
+  AutoClearTracingSource acts(this);
+  markAndTraverse(thing);
 
   
   SetCompartmentHasMarkedCells(thing);
 }
 
-template <typename T>
-void DoMarking(GCMarker* gcmarker, const T& thing) {
-  ApplyGCThingTyped(thing, [gcmarker](auto t) { DoMarking(gcmarker, t); });
-}
+#define INSTANTIATE_ONEDGE_METHOD(name, type, _1, _2) \
+  template void GCMarker::onEdge<type>(type * *thingp, const char* name);
+JS_FOR_EACH_TRACEKIND(INSTANTIATE_ONEDGE_METHOD)
 
 JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   
@@ -1943,9 +1940,9 @@ inline void MarkStackIter::nextArray() {
 
 
 GCMarker::GCMarker(JSRuntime* rt)
-    : JSTracer(rt, JS::TracerKind::Marking,
-               JS::TraceOptions(JS::WeakMapTraceAction::Expand,
-                                JS::WeakEdgeTraceAction::Skip)),
+    : GenericTracerImpl(rt, JS::TracerKind::Marking,
+                        JS::TraceOptions(JS::WeakMapTraceAction::Expand,
+                                         JS::WeakEdgeTraceAction::Skip)),
       stack(),
       grayPosition(0),
       color(MarkColor::Black),
