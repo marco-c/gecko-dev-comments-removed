@@ -282,22 +282,10 @@ class WasmStructObject : public TypedObject {
   
   
   
-  uint32_t padding_[
-#if !defined(JS_64BIT) && defined(XP_WIN)
-      1
-#else
-      0
-#endif
-  ];
-
   
   
   
-  
-  
-  
-  
-  uint8_t inlineData_[0];
+  alignas(8) uint8_t inlineData_[0];
 
  protected:
   friend class TypedObject;
