@@ -1044,8 +1044,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SharedWorker", insecureContext: true },
   
-  { name: "SimpleTest", insecureContext: true },
-  
   { name: "SourceBuffer", insecureContext: true },
   
   { name: "SourceBufferList", insecureContext: true },
@@ -1518,7 +1516,16 @@ function runTest(parentName, parent, ...interfaceGroups) {
   );
 }
 
-runTest("window", window, ecmaGlobals, interfaceNamesInGlobalScope);
+
+
+let iframeWindow = document.getElementById("testframe").contentWindow;
+is(
+  window.isSecureContext,
+  iframeWindow.isSecureContext,
+  "iframe isSecureContext must match"
+);
+runTest("window", iframeWindow, ecmaGlobals, interfaceNamesInGlobalScope);
+
 if (window.WebAssembly && !entryDisabled(wasmGlobalEntry)) {
   runTest("WebAssembly", window.WebAssembly, wasmGlobalInterfaces);
 }
