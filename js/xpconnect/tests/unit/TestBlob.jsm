@@ -2,8 +2,7 @@
 
 
 
-const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
-Cu.importGlobalProperties(['Blob', 'File']);
+var EXPORTED_SYMBOLS = ["TestBlob"];
 
 const Assert = {
   ok(cond, text) {
@@ -15,11 +14,7 @@ const Assert = {
   }
 };
 
-function BlobComponent() {
-  this.wrappedJSObject = this;
-}
-BlobComponent.prototype =
-{
+var TestBlob = {
   doTest: function() {
     
     let testContent = "<a id=\"a\"><b id=\"b\">hey!<\/b><\/a>";
@@ -50,25 +45,4 @@ BlobComponent.prototype =
 
     return true;
   },
-
-  
-  
-  classDescription: "Blob in components scope code",
-  classID: Components.ID("{06215993-a3c2-41e3-bdfd-0a3a2cc0b65c}"),
-  contractID: "@mozilla.org/tests/component-blob;1",
-
-  
-  flags: 0,
-
-  interfaces: [Ci.nsIClassInfo],
-
-  getScriptableHelper: function getScriptableHelper() {
-    return null;
-  },
-
-  
-  QueryInterface: ChromeUtils.generateQI(["nsIClassInfo"])
 };
-
-var gComponentsArray = [BlobComponent];
-this.NSGetFactory = ComponentUtils.generateNSGetFactory(gComponentsArray);

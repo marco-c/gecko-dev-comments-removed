@@ -1,18 +1,10 @@
 
 
 
- 
-add_task(function() {
-  do_load_manifest("component-file.manifest");
-  const contractID = "@mozilla.org/tests/component-file;1";
-  Assert.ok(contractID in Cc);
-  var foo = Cc[contractID]
-              .createInstance(Ci.nsIClassInfo);
-  Assert.ok(Boolean(foo));
-  Assert.ok(foo.contractID == contractID);
-  Assert.ok(!!foo.wrappedJSObject);
 
-  foo.wrappedJSObject.doTest(result => {
+add_task(function() {
+  let { TestFile } = ChromeUtils.import("resource://test/TestFile.jsm");
+  TestFile.doTest(result => {
     Assert.ok(result);
     run_next_test();
   });

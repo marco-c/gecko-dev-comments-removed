@@ -2,9 +2,7 @@
 
 
 
-const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
-Cu.importGlobalProperties(['File']);
-
+var EXPORTED_SYMBOLS = ["TestFile"];
 
 const Assert = {
   ok(cond, text) {
@@ -16,11 +14,7 @@ const Assert = {
   }
 };
 
-function FileComponent() {
-  this.wrappedJSObject = this;
-}
-FileComponent.prototype =
-{
+var TestFile = {
   doTest: function(cb) {
     
 
@@ -81,25 +75,4 @@ FileComponent.prototype =
       cb(true);
     });
   },
-
-  
-  
-  classDescription: "File in components scope code",
-  classID: Components.ID("{da332370-91d4-464f-a730-018e14769cab}"),
-  contractID: "@mozilla.org/tests/component-file;1",
-
-  
-  flags: 0,
-
-  interfaces: [Ci.nsIClassInfo],
-
-  getScriptableHelper: function getScriptableHelper() {
-    return null;
-  },
-
-  
-  QueryInterface: ChromeUtils.generateQI(["nsIClassInfo"])
 };
-
-var gComponentsArray = [FileComponent];
-this.NSGetFactory = ComponentUtils.generateNSGetFactory(gComponentsArray);
