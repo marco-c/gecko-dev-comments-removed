@@ -48,10 +48,14 @@ class ContentShellTestPart(ProtocolPart):
         self.stdout_queue = parent.browser.stdout_queue
         self.stdin_queue = parent.browser.stdin_queue
 
-    def do_test(self, url, timeout=None):
-        """Sends a url to content_shell and returns the resulting text and image output.
+    def do_test(self, command, timeout=None):
+        """Send a command to content_shell and return the resulting outputs.
+
+        A command consists of a URL to navigate to, followed by an optional
+        expected image hash and 'print' mode specifier. The syntax looks like:
+            http://web-platform.test:8000/test.html['<hash>['print]]
         """
-        self._send_command(url)
+        self._send_command(command)
 
         deadline = time() + timeout if timeout else None
         
@@ -201,13 +205,30 @@ class ContentShellRefTestExecutor(RefTestExecutor):
             return _convert_exception(test, exception, self.protocol.content_shell_errors.read_errors())
 
     def screenshot(self, test, viewport_size, dpi, page_ranges):
-        _, image = self.protocol.content_shell_test.do_test(self.test_url(test),
-                test.timeout * self.timeout_multiplier)
+        
+        
+        
+        
+        assert dpi is None
+        command = self.test_url(test)
+        if self.is_print:
+            
+            
+            
+            
+            
+            command += "''print"
+        _, image = self.protocol.content_shell_test.do_test(
+            command, test.timeout * self.timeout_multiplier)
 
         if not image:
             return False, ("ERROR", self.protocol.content_shell_errors.read_errors())
 
         return True, b64encode(image).decode()
+
+
+class ContentShellPrintRefTestExecutor(ContentShellRefTestExecutor):
+    is_print = True
 
 
 class ContentShellCrashtestExecutor(CrashtestExecutor):
