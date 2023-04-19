@@ -382,7 +382,7 @@ class TSFTextStore final : public ITextStoreACP,
   HRESULT HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
                              const TS_ATTRID* aFilterAttrs);
   void SetInputScope(const nsString& aHTMLInputType,
-                     const nsString& aHTMLInputMode);
+                     const nsString& aHTMLInputInputMode);
 
   
   

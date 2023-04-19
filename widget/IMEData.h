@@ -415,7 +415,7 @@ struct InputContext final {
   void ShutDown() {
     mURI = nullptr;
     mHTMLInputType.Truncate();
-    mHTMLInputMode.Truncate();
+    mHTMLInputInputmode.Truncate();
     mActionHint.Truncate();
     mAutocapitalize.Truncate();
   }
@@ -448,7 +448,7 @@ struct InputContext final {
            
            
            mHTMLInputType != aOldContext.mHTMLInputType ||
-           mHTMLInputMode != aOldContext.mHTMLInputMode ||
+           mHTMLInputInputmode != aOldContext.mHTMLInputInputmode ||
 #endif
 #if defined(ANDROID) || defined(MOZ_WIDGET_GTK)
            
@@ -470,7 +470,7 @@ struct InputContext final {
   nsString mHTMLInputType;
 
   
-  nsString mHTMLInputMode;
+  nsString mHTMLInputInputmode;
 
   
   nsString mActionHint;
