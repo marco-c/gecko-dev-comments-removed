@@ -12,6 +12,7 @@
 #include "nsTHashMap.h"
 
 #include "nsICookieBannerService.h"
+#include "nsIObserver.h"
 
 namespace mozilla {
 
@@ -19,10 +20,12 @@ namespace mozilla {
 
 
 
-class CookieBannerDomainPrefService final : public nsIContentPrefCallback2 {
+class CookieBannerDomainPrefService final : public nsIContentPrefCallback2,
+                                            public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTPREFCALLBACK2
+  NS_DECL_NSIOBSERVER
 
   static already_AddRefed<CookieBannerDomainPrefService> GetOrCreate();
 
@@ -64,6 +67,8 @@ class CookieBannerDomainPrefService final : public nsIContentPrefCallback2 {
   
   
   void EnsureInitCompleted();
+
+  void Shutdown();
 };
 
 }  
