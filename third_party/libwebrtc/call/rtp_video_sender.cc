@@ -314,14 +314,24 @@ bool IsFirstFrameOfACodedVideoSequence(
     return false;
   }
 
-  if (codec_specific_info != nullptr &&
-      codec_specific_info->generic_frame_info.has_value()) {
-    
-    
-    
-    return absl::c_none_of(
-        codec_specific_info->generic_frame_info->encoder_buffers,
-        [](const CodecBufferUsage& buffer) { return buffer.referenced; });
+  if (codec_specific_info != nullptr) {
+    if (codec_specific_info->generic_frame_info.has_value()) {
+      
+      
+      
+      
+      return absl::c_none_of(
+          codec_specific_info->generic_frame_info->encoder_buffers,
+          [](const CodecBufferUsage& buffer) { return buffer.referenced; });
+    }
+
+    if (codec_specific_info->codecType == VideoCodecType::kVideoCodecVP8 ||
+        codec_specific_info->codecType == VideoCodecType::kVideoCodecH264 ||
+        codec_specific_info->codecType == VideoCodecType::kVideoCodecGeneric) {
+      
+      
+      return true;
+    }
   }
 
   
