@@ -6,6 +6,7 @@
 #include "nsISupports.idl"
 
 interface nsIProxyInfo;
+interface nsISSLSocketControl;
 [ptr] native PRFileDescStar(struct PRFileDesc);
 native OriginAttributes(mozilla::OriginAttributes);
 [ref] native const_OriginAttributesRef(const mozilla::OriginAttributes);
@@ -54,7 +55,7 @@ interface nsISocketProvider : nsISupports
                    in unsigned long             aFlags,
                    in unsigned long             aTlsFlags,
                    out PRFileDescStar           aFileDesc,
-                   out nsISupports              aSecurityInfo);
+                   out nsISSLSocketControl      aTLSSocketControl);
 
     
 
@@ -75,7 +76,7 @@ interface nsISocketProvider : nsISupports
                      in unsigned long             aFlags,
                      in unsigned long             aTlsFlags,
                      in PRFileDescStar            aFileDesc,
-                     out nsISupports              aSecurityInfo);
+                     out nsISSLSocketControl      aTLSSocketControl);
 
     
 
