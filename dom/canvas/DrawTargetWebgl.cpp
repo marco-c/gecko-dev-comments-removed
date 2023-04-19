@@ -219,6 +219,8 @@ DrawTargetWebgl::~DrawTargetWebgl() {
     if (mShmem.IsWritable()) {
       
       mSkia->DetachAllSnapshots();
+      
+      mSharedContext->WaitForShmem();
       auto* child = mSharedContext->mWebgl->GetChild();
       if (child && child->CanSend()) {
         child->DeallocShmem(mShmem);
