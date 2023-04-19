@@ -889,10 +889,6 @@ void HttpTransactionParent::HandleAsyncAbort() {
 
 bool HttpTransactionParent::GetSupportsHTTP3() { return mSupportsHTTP3; }
 
-void HttpTransactionParent::SetIsForWebTransport(bool SetIsForWebTransport) {
-  
-}
-
 
 mozilla::TimeStamp HttpTransactionParent::GetPendingTime() {
   return TimeStamp::Now();
