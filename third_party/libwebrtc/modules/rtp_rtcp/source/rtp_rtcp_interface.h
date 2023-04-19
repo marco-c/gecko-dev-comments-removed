@@ -18,7 +18,6 @@
 #include "absl/types/optional.h"
 #include "api/frame_transformer_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
@@ -89,11 +88,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     RtcpStatisticsCallback* rtcp_statistics_callback = nullptr;
     RtcpCnameCallback* rtcp_cname_callback = nullptr;
     ReportBlockDataObserver* report_block_data_observer = nullptr;
-
-    
-    
-    
-    TaskQueueBase* task_queue = nullptr;
 
     
     

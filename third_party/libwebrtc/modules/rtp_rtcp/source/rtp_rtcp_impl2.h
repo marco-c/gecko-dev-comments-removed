@@ -57,6 +57,13 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   
   
+  
+  
+  static std::unique_ptr<ModuleRtpRtcpImpl2> Create(
+      const Configuration& configuration);
+
+  
+  
   int64_t TimeUntilNextProcess() override;
 
   
