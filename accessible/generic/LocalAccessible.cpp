@@ -2537,6 +2537,14 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
         table->GetHeaderCache().Clear();
       }
     }
+  } else if (IsTableRow() && aParent->IsTable() &&
+             StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
+    
+    
+    
+    
+    mDoc->QueueCacheUpdate(aParent, CacheDomain::Table);
   }
 }
 
