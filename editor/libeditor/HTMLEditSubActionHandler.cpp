@@ -560,34 +560,6 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     }
 
     
-    if (TopLevelEditSubActionDataRef().mNewBlockElement &&
-        SelectionRef().IsCollapsed() && SelectionRef().RangeCount()) {
-      const auto firstRangeStartPoint =
-          GetFirstSelectionStartPoint<EditorRawDOMPoint>();
-      if (MOZ_LIKELY(firstRangeStartPoint.IsSet())) {
-        const Result<EditorRawDOMPoint, nsresult> pointToPutCaretOrError =
-            HTMLEditUtils::ComputePointToPutCaretInElementIfOutside<
-                EditorRawDOMPoint>(
-                *TopLevelEditSubActionDataRef().mNewBlockElement,
-                firstRangeStartPoint);
-        if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-          NS_WARNING(
-              "HTMLEditUtils::ComputePointToPutCaretInElementIfOutside() "
-              "failed, but ignored");
-        } else if (pointToPutCaretOrError.inspect().IsSet()) {
-          nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
-          if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            NS_WARNING("EditorBase::CollapseSelectionTo() failed");
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rv),
-              "EditorBase::CollapseSelectionTo() failed, but ignored");
-        }
-      }
-    }
-
-    
     
     
     
@@ -1815,7 +1787,6 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
       return EditActionHandled();
     }
     
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     blockElementToPutCaret = editableBlockElement;
   }
 
@@ -3277,7 +3248,6 @@ EditActionResult HTMLEditor::ConvertContentAroundRangesToList(
     }
     MOZ_ASSERT(createNewListElementResult.GetNewNode());
 
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     
     createNewListElementResult.IgnoreCaretPointSuggestion();
     aRanges.ClearSavedRanges();
@@ -3585,8 +3555,6 @@ EditActionResult HTMLEditor::ConvertContentAroundRangesToList(
 
       MOZ_ASSERT(createNewListElementResult.GetNewNode());
       listItemOrListToPutCaret = createNewListElementResult.GetNewNode();
-      TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
-
       curList = createNewListElementResult.UnwrapNewNode();
 
       
@@ -4468,7 +4436,6 @@ nsresult HTMLEditor::HandleCSSIndentAroundRanges(AutoRangeArray& aRanges,
         return rv;
       }
     }
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     aRanges.ClearSavedRanges();
     nsresult rv = aRanges.Collapse(EditorDOMPoint(newDivElement, 0u));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::Collapse() failed");
@@ -4537,7 +4504,6 @@ nsresult HTMLEditor::HandleCSSIndentAroundRanges(AutoRangeArray& aRanges,
         
         
         latestNewBlockElement = subListElement;
-        TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
       }
       if (pointToPutCaretOrError.inspect().IsSet()) {
         pointToPutCaret = pointToPutCaretOrError.unwrap();
@@ -4614,7 +4580,6 @@ nsresult HTMLEditor::HandleCSSIndentAroundRanges(AutoRangeArray& aRanges,
       }
 
       latestNewBlockElement = divElement;
-      TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     }
 
     
@@ -4760,7 +4725,6 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
       }
     }
     aRanges.ClearSavedRanges();
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     nsresult rv = aRanges.Collapse(EditorRawDOMPoint(newBlockquoteElement, 0u));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "EditorBase::CollapseSelectionToStartOf() failed");
@@ -4829,7 +4793,6 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
         
         
         latestNewBlockElement = subListElement;
-        TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
       }
       if (pointToPutCaretOrError.inspect().IsSet()) {
         pointToPutCaret = pointToPutCaretOrError.unwrap();
@@ -4947,7 +4910,6 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(AutoRangeArray& aRanges,
       MOZ_ASSERT(createNewBlockquoteElementResult.GetNewNode());
       blockquoteElement = createNewBlockquoteElementResult.UnwrapNewNode();
       latestNewBlockElement = blockquoteElement;
-      TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     }
 
     
@@ -6126,7 +6088,6 @@ nsresult HTMLEditor::AlignContentsAtRanges(AutoRangeArray& aRanges,
       return newDivElementOrError.unwrapErr();
     }
     aRanges.ClearSavedRanges();
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     EditorDOMPoint pointToPutCaret = newDivElementOrError.UnwrapCaretPoint();
     nsresult rv = aRanges.Collapse(pointToPutCaret);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::Collapse() failed");
@@ -6145,7 +6106,6 @@ nsresult HTMLEditor::AlignContentsAtRanges(AutoRangeArray& aRanges,
   aRanges.RestoreFromSavedRanges();
   
   
-  TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
   if (maybeCreateDivElementResult.GetNewNode() && aRanges.IsCollapsed() &&
       !aRanges.Ranges().IsEmpty()) {
     const auto firstRangeStartRawPoint =
@@ -10072,7 +10032,6 @@ EditActionResult HTMLEditor::SetSelectionToAbsoluteAsSubAction(
     nsresult rv = EnsureCaretInElementIfCollapsedOutside(*focusElement);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "EnsureCaretInElementIfCollapsedOutside() failed");
-    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
     return EditActionHandled(rv);
   }
 
@@ -10101,9 +10060,6 @@ EditActionResult HTMLEditor::SetSelectionToAbsoluteAsSubAction(
       return EditActionResult(error.StealNSResult());
     }
   }
-
-  
-  TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
 
   RefPtr<Element> divElement;
   rv = MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
@@ -10147,7 +10103,6 @@ EditActionResult HTMLEditor::SetSelectionToAbsoluteAsSubAction(
   rv = EnsureCaretInElementIfCollapsedOutside(*divElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EnsureCaretInElementIfCollapsedOutside() failed");
-  TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
   return EditActionHandled(rv);
 }
 

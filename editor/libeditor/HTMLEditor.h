@@ -2642,8 +2642,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   SetSelectionToAbsoluteAsSubAction(const Element& aEditingHost);
 

@@ -791,9 +791,6 @@ class EditorBase : public nsIEditor,
     friend class AutoEditActionDataSetter;
 
     
-    RefPtr<Element> mNewBlockElement;
-
-    
     
     RefPtr<RangeItem> mSelectedRange;
 
@@ -882,7 +879,6 @@ class EditorBase : public nsIEditor,
       if (!mSelectedRange) {
         return;
       }
-      mNewBlockElement = nullptr;
       mSelectedRange->Clear();
       mChangedRange->Reset();
       if (mCachedInlineStyles.isSome()) {
