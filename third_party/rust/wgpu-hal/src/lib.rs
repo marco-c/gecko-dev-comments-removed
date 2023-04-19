@@ -83,7 +83,7 @@ pub mod api {
 pub use vulkan::UpdateAfterBindTypes;
 
 use std::{
-    borrow::Borrow,
+    borrow::{Borrow, Cow},
     fmt,
     num::{NonZeroU32, NonZeroU8},
     ops::{Range, RangeInclusive},
@@ -156,7 +156,7 @@ pub trait Api: Clone + Sized {
 
     type Queue: Queue<Self>;
     type CommandEncoder: CommandEncoder<Self>;
-    type CommandBuffer: Send + Sync;
+    type CommandBuffer: Send + Sync + fmt::Debug;
 
     type Buffer: fmt::Debug + Send + Sync + 'static;
     type Texture: fmt::Debug + Send + Sync + 'static;
@@ -350,7 +350,7 @@ pub trait Queue<A: Api>: Send + Sync {
 
 
 
-pub trait CommandEncoder<A: Api>: Send + Sync {
+pub trait CommandEncoder<A: Api>: Send + Sync + fmt::Debug {
     
     unsafe fn begin_encoding(&mut self, label: Label) -> Result<(), DeviceError>;
     
@@ -612,10 +612,12 @@ impl From<wgt::TextureAspect> for FormatAspects {
 impl From<wgt::TextureFormat> for FormatAspects {
     fn from(format: wgt::TextureFormat) -> Self {
         match format {
+            
+            wgt::TextureFormat::Depth16Unorm => Self::DEPTH,
             wgt::TextureFormat::Depth32Float | wgt::TextureFormat::Depth24Plus => Self::DEPTH,
-            wgt::TextureFormat::Depth32FloatStencil8
-            | wgt::TextureFormat::Depth24PlusStencil8
-            | wgt::TextureFormat::Depth24UnormStencil8 => Self::DEPTH | Self::STENCIL,
+            wgt::TextureFormat::Depth32FloatStencil8 | wgt::TextureFormat::Depth24PlusStencil8 => {
+                Self::DEPTH | Self::STENCIL
+            }
             _ => Self::COLOR,
         }
     }
@@ -779,7 +781,7 @@ pub struct SurfaceCapabilities {
     
     
     
-    pub composite_alpha_modes: Vec<CompositeAlphaMode>,
+    pub composite_alpha_modes: Vec<wgt::CompositeAlphaMode>,
 }
 
 #[derive(Debug)]
@@ -940,7 +942,7 @@ pub struct CommandEncoderDescriptor<'a, A: Api> {
 
 pub struct NagaShader {
     
-    pub module: naga::Module,
+    pub module: Cow<'static, naga::Module>,
     
     pub info: naga::valid::ModuleInfo,
 }
@@ -1031,27 +1033,6 @@ pub struct RenderPipelineDescriptor<'a, A: Api> {
     pub multiview: Option<NonZeroU32>,
 }
 
-
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum CompositeAlphaMode {
-    
-    
-    
-    Opaque,
-    
-    
-    
-    
-    PreMultiplied,
-    
-    
-    
-    
-    
-    PostMultiplied,
-}
-
 #[derive(Debug, Clone)]
 pub struct SurfaceConfiguration {
     
@@ -1060,7 +1041,7 @@ pub struct SurfaceConfiguration {
     
     pub present_mode: wgt::PresentMode,
     
-    pub composite_alpha_mode: CompositeAlphaMode,
+    pub composite_alpha_mode: wgt::CompositeAlphaMode,
     
     pub format: wgt::TextureFormat,
     

@@ -5,7 +5,7 @@ use std::io;
 use serde::{de, ser, Deserialize, Serialize};
 
 use crate::de::Deserializer;
-use crate::error::Result;
+use crate::error::{Result, SpannedResult};
 use crate::extensions::Extensions;
 use crate::ser::{PrettyConfig, Serializer};
 
@@ -26,6 +26,7 @@ use crate::ser::{PrettyConfig, Serializer};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
+#[non_exhaustive]
 pub struct Options {
     
     
@@ -35,16 +36,12 @@ pub struct Options {
     
     
     pub default_extensions: Extensions,
-    
-    #[serde(skip)]
-    _future_proof: (),
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
             default_extensions: Extensions::empty(),
-            _future_proof: (),
         }
     }
 }
@@ -68,7 +65,7 @@ impl Options {
 impl Options {
     
     
-    pub fn from_reader<R, T>(&self, mut rdr: R) -> Result<T>
+    pub fn from_reader<R, T>(&self, mut rdr: R) -> SpannedResult<T>
     where
         R: io::Read,
         T: de::DeserializeOwned,
@@ -81,7 +78,7 @@ impl Options {
 
     
     
-    pub fn from_str<'a, T>(&self, s: &'a str) -> Result<T>
+    pub fn from_str<'a, T>(&self, s: &'a str) -> SpannedResult<T>
     where
         T: de::Deserialize<'a>,
     {
@@ -90,7 +87,7 @@ impl Options {
 
     
     
-    pub fn from_bytes<'a, T>(&self, s: &'a [u8]) -> Result<T>
+    pub fn from_bytes<'a, T>(&self, s: &'a [u8]) -> SpannedResult<T>
     where
         T: de::Deserialize<'a>,
     {
@@ -100,7 +97,7 @@ impl Options {
     
     
     
-    pub fn from_reader_seed<R, S, T>(&self, mut rdr: R, seed: S) -> Result<T>
+    pub fn from_reader_seed<R, S, T>(&self, mut rdr: R, seed: S) -> SpannedResult<T>
     where
         R: io::Read,
         S: for<'a> de::DeserializeSeed<'a, Value = T>,
@@ -114,7 +111,7 @@ impl Options {
     
     
     
-    pub fn from_str_seed<'a, S, T>(&self, s: &'a str, seed: S) -> Result<T>
+    pub fn from_str_seed<'a, S, T>(&self, s: &'a str, seed: S) -> SpannedResult<T>
     where
         S: de::DeserializeSeed<'a, Value = T>,
     {
@@ -124,15 +121,17 @@ impl Options {
     
     
     
-    pub fn from_bytes_seed<'a, S, T>(&self, s: &'a [u8], seed: S) -> Result<T>
+    pub fn from_bytes_seed<'a, S, T>(&self, s: &'a [u8], seed: S) -> SpannedResult<T>
     where
         S: de::DeserializeSeed<'a, Value = T>,
     {
         let mut deserializer = Deserializer::from_bytes_with_options(s, self.clone())?;
 
-        let value = seed.deserialize(&mut deserializer)?;
+        let value = seed
+            .deserialize(&mut deserializer)
+            .map_err(|e| deserializer.span_error(e))?;
 
-        deserializer.end()?;
+        deserializer.end().map_err(|e| deserializer.span_error(e))?;
 
         Ok(value)
     }
