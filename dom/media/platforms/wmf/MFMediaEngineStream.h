@@ -143,10 +143,6 @@ class MFMediaEngineStream
   Atomic<bool> mIsSelected;
 
   
-  
-  Atomic<bool> mReceivedEOS;
-
-  
   MediaQueue<MediaRawData> mRawDataQueue;
 
   
@@ -157,6 +153,13 @@ class MFMediaEngineStream
 
   
   MediaEventProducer<TrackInfo::TrackType> mEndedEvent;
+
+  
+  
+  bool mReceivedEOS;
+
+  
+  bool mHasDispatchedEndEvent;
 };
 
 
