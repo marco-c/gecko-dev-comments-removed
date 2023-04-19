@@ -72,7 +72,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   VideoSendStreamImpl(
       Clock* clock,
       SendStatisticsProxy* stats_proxy,
-      rtc::TaskQueue* worker_queue,
+      rtc::TaskQueue* rtp_transport_queue,
       RtcpRttStats* call_stats,
       RtpTransportControllerSendInterface* transport,
       BitrateAllocatorInterface* bitrate_allocator,
@@ -140,14 +140,14 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void StartupVideoSendStream();
   
   
-  void StopVideoSendStream() RTC_RUN_ON(worker_queue_);
+  void StopVideoSendStream() RTC_RUN_ON(rtp_transport_queue_);
 
   void ConfigureProtection();
   void ConfigureSsrcs();
   void SignalEncoderTimedOut();
   void SignalEncoderActive();
   MediaStreamAllocationConfig GetAllocationConfig() const
-      RTC_RUN_ON(worker_queue_);
+      RTC_RUN_ON(rtp_transport_queue_);
   Clock* const clock_;
   const bool has_alr_probing_;
   const PacingConfig pacing_config_;
@@ -155,13 +155,13 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   SendStatisticsProxy* const stats_proxy_;
   const VideoSendStream::Config* const config_;
 
-  rtc::TaskQueue* const worker_queue_;
+  rtc::TaskQueue* const rtp_transport_queue_;
 
   RepeatingTaskHandle check_encoder_activity_task_
-      RTC_GUARDED_BY(worker_queue_);
+      RTC_GUARDED_BY(rtp_transport_queue_);
 
   std::atomic_bool activity_;
-  bool timed_out_ RTC_GUARDED_BY(worker_queue_);
+  bool timed_out_ RTC_GUARDED_BY(rtp_transport_queue_);
 
   RtpTransportControllerSendInterface* const transport_;
   BitrateAllocatorInterface* const bitrate_allocator_;
@@ -197,7 +197,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
     int64_t last_send_time_ms;
   };
   absl::optional<VbaSendContext> video_bitrate_allocation_context_
-      RTC_GUARDED_BY(worker_queue_);
+      RTC_GUARDED_BY(rtp_transport_queue_);
   const absl::optional<float> configured_pacing_factor_;
 };
 }  
