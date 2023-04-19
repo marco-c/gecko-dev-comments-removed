@@ -72,15 +72,29 @@ add_task(async function test_primary_password_locked() {
 
     info("notifying of the primary-password unlock");
     const clearErrorSpy = sandbox.spy(TabsSetupFlowManager, "tryToClearError");
+
+    const setupContainer = document.querySelector(".sync-setup-container");
+    
+    
+    let setupHiddenPromise = BrowserTestUtils.waitForMutationCondition(
+      setupContainer,
+      {
+        attributeFilter: ["hidden"],
+      },
+      () => {
+        return BrowserTestUtils.is_hidden(setupContainer);
+      }
+    );
+
     Services.obs.notifyObservers(null, "passwordmgr-crypto-login");
-    await TestUtils.waitForTick();
+    await setupHiddenPromise;
     ok(
       clearErrorSpy.called,
       "tryToClearError was called when the primary-password unlock notification was received"
     );
-
     
     info("Setup state:" + TabsSetupFlowManager.currentSetupState.name);
+
     ok(TabsSetupFlowManager.waitingForTabs, "Now waiting for tabs");
     ok(
       document
