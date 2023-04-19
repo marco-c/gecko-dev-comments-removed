@@ -13,7 +13,6 @@
 
 #include <vector>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
@@ -68,6 +67,9 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
 
   AsyncPacketSocket();
   ~AsyncPacketSocket() override;
+
+  AsyncPacketSocket(const AsyncPacketSocket&) = delete;
+  AsyncPacketSocket& operator=(const AsyncPacketSocket&) = delete;
 
   
   
@@ -127,9 +129,6 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   
   sigslot::signal2<AsyncPacketSocket*, int> SignalClose;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncPacketSocket);
 };
 
 

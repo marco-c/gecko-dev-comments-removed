@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -34,6 +33,9 @@ class RTC_EXPORT TimestampAligner {
  public:
   TimestampAligner();
   ~TimestampAligner();
+
+  TimestampAligner(const TimestampAligner&) = delete;
+  TimestampAligner& operator=(const TimestampAligner&) = delete;
 
  public:
   
@@ -77,7 +79,6 @@ class RTC_EXPORT TimestampAligner {
   
   
   int64_t prev_time_offset_us_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(TimestampAligner);
 };
 
 }  

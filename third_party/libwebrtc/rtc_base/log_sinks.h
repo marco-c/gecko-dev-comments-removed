@@ -16,7 +16,6 @@
 #include <memory>
 #include <string>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/file_rotating_stream.h"
 #include "rtc_base/logging.h"
 
@@ -33,6 +32,9 @@ class FileRotatingLogSink : public LogSink {
                       size_t max_log_size,
                       size_t num_log_files);
   ~FileRotatingLogSink() override;
+
+  FileRotatingLogSink(const FileRotatingLogSink&) = delete;
+  FileRotatingLogSink& operator=(const FileRotatingLogSink&) = delete;
 
   
   
@@ -52,8 +54,6 @@ class FileRotatingLogSink : public LogSink {
 
  private:
   std::unique_ptr<FileRotatingStream> stream_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FileRotatingLogSink);
 };
 
 
@@ -64,8 +64,10 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
                                  size_t max_total_log_size);
   ~CallSessionFileRotatingLogSink() override;
 
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingLogSink);
+  CallSessionFileRotatingLogSink(const CallSessionFileRotatingLogSink&) =
+      delete;
+  CallSessionFileRotatingLogSink& operator=(
+      const CallSessionFileRotatingLogSink&) = delete;
 };
 
 }  

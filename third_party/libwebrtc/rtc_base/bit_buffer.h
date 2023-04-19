@@ -14,8 +14,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "rtc_base/constructor_magic.h"
-
 namespace rtc {
 
 
@@ -26,6 +24,9 @@ class BitBufferWriter {
  public:
   
   BitBufferWriter(uint8_t* bytes, size_t byte_count);
+
+  BitBufferWriter(const BitBufferWriter&) = delete;
+  BitBufferWriter& operator=(const BitBufferWriter&) = delete;
 
   
   
@@ -80,8 +81,6 @@ class BitBufferWriter {
   size_t byte_offset_;
   
   size_t bit_offset_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
 };
 
 }  

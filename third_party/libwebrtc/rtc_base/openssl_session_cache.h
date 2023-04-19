@@ -16,7 +16,6 @@
 #include <map>
 #include <string>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/ssl_stream_adapter.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
@@ -36,6 +35,10 @@ class OpenSSLSessionCache final {
   OpenSSLSessionCache(SSLMode ssl_mode, SSL_CTX* ssl_ctx);
   
   ~OpenSSLSessionCache();
+
+  OpenSSLSessionCache(const OpenSSLSessionCache&) = delete;
+  OpenSSLSessionCache& operator=(const OpenSSLSessionCache&) = delete;
+
   
   SSL_SESSION* LookupSession(const std::string& hostname) const;
   
@@ -60,7 +63,6 @@ class OpenSSLSessionCache final {
   
   std::map<std::string, SSL_SESSION*> sessions_;
   
-  RTC_DISALLOW_COPY_AND_ASSIGN(OpenSSLSessionCache);
 };
 
 }  
