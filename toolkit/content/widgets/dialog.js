@@ -343,6 +343,11 @@
         return;
       }
       try {
+        
+        
+        
+        
+        await new Promise(r => setTimeout(r, 0));
         await window.promiseDocumentFlushed(() => {});
         window.notifyDefaultButtonLoaded(defaultButton);
       } catch (e) {}
