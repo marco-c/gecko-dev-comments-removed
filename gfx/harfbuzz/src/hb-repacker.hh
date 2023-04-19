@@ -244,7 +244,7 @@ bool _process_overflows (const hb_vector_t<graph::overflow_record_t>& overflows,
     {
       
       
-      if (!sorted_graph.duplicate (r.parent, r.child)) continue;
+      if (sorted_graph.duplicate (r.parent, r.child) == (unsigned) -1) continue;
       return true;
     }
 
