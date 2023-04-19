@@ -8,8 +8,6 @@
 
 #include "mozilla/Assertions.h"  
 
-#include <stddef.h>  
-
 #include "vm/BytecodeUtil.h"  
 
 using namespace js;

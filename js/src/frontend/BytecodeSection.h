@@ -25,7 +25,6 @@
 #include "frontend/Stencil.h"      
 #include "js/TypeDecls.h"          
 #include "js/Vector.h"             
-#include "vm/Opcodes.h"            
 #include "vm/SharedStencil.h"      
 #include "vm/StencilEnums.h"       
 

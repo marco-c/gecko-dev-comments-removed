@@ -7,6 +7,8 @@
 #ifndef frontend_JumpList_h
 #define frontend_JumpList_h
 
+#include <stddef.h>  
+
 #include "frontend/BytecodeOffset.h"  
 #include "js/TypeDecls.h"             
 

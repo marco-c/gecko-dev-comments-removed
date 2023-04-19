@@ -26,7 +26,6 @@
 #include "frontend/Stencil.h"
 #include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "frontend/UsedNameTracker.h"
-#include "js/CompileOptions.h"  
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/RefCounted.h"  
@@ -34,7 +33,7 @@
 #include "js/UniquePtr.h"  
 #include "js/Vector.h"
 #include "js/WasmModule.h"
-#include "vm/ErrorContext.h"
+#include "vm/ErrorContext.h"  
 #include "vm/GlobalObject.h"  
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"  
@@ -45,6 +44,10 @@
 
 class JSAtom;
 class JSString;
+
+namespace JS {
+class JS_PUBLIC_API ReadOnlyCompileOptions;
+}
 
 namespace js {
 
