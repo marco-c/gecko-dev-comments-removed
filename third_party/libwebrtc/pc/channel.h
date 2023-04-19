@@ -142,6 +142,9 @@ class BaseChannel : public ChannelInterface,
     RTC_DCHECK_RUN_ON(network_thread());
     return srtp_active();
   }
+
+  bool writable() const { return writable_; }
+
   
   
   
@@ -164,7 +167,6 @@ class BaseChannel : public ChannelInterface,
   }
 
   
-  
   bool SetLocalContent(const MediaContentDescription* content,
                        webrtc::SdpType type,
                        std::string* error_desc) override;
@@ -179,11 +181,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  
-  
-  
-  void SetPayloadTypeDemuxingEnabled(bool enabled) override;
-  bool UpdateRtpTransport(std::string* error_desc) override;
+  bool SetPayloadTypeDemuxingEnabled(bool enabled) override;
 
   bool Enable(bool enable) override;
 
@@ -223,7 +221,7 @@ class BaseChannel : public ChannelInterface,
 
  protected:
   bool was_ever_writable() const {
-    RTC_DCHECK_RUN_ON(worker_thread());
+    RTC_DCHECK_RUN_ON(network_thread());
     return was_ever_writable_;
   }
   void set_local_content_direction(webrtc::RtpTransceiverDirection direction) {
@@ -281,7 +279,7 @@ class BaseChannel : public ChannelInterface,
   bool AddRecvStream_w(const StreamParams& sp) RTC_RUN_ON(worker_thread());
   bool RemoveRecvStream_w(uint32_t ssrc) RTC_RUN_ON(worker_thread());
   void ResetUnsignaledRecvStream_w() RTC_RUN_ON(worker_thread());
-  void SetPayloadTypeDemuxingEnabled_w(bool enabled)
+  bool SetPayloadTypeDemuxingEnabled_w(bool enabled)
       RTC_RUN_ON(worker_thread());
   bool AddSendStream_w(const StreamParams& sp) RTC_RUN_ON(worker_thread());
   bool RemoveSendStream_w(uint32_t ssrc) RTC_RUN_ON(worker_thread());
@@ -289,6 +287,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
+  void UpdateMediaSendRecvState();
   virtual void UpdateMediaSendRecvState_w() = 0;
 
   bool UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
@@ -310,9 +309,6 @@ class BaseChannel : public ChannelInterface,
   
   RtpHeaderExtensions GetFilteredRtpHeaderExtensions(
       const RtpHeaderExtensions& extensions);
-  
-  
-  void SetReceiveExtensions(const RtpHeaderExtensions& extensions);
 
   
   void OnMessage(rtc::Message* pmsg) override;
@@ -329,6 +325,13 @@ class BaseChannel : public ChannelInterface,
   void MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
 
   void ClearHandledPayloadTypes() RTC_RUN_ON(worker_thread());
+
+  void UpdateRtpHeaderExtensionMap(
+      const RtpHeaderExtensions& header_extensions);
+
+  bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
+  bool RegisterRtpDemuxerSink_n() RTC_RUN_ON(network_thread());
+
   
   std::string ToString() const;
 
@@ -342,6 +345,7 @@ class BaseChannel : public ChannelInterface,
   void DisconnectFromRtpTransport();
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet)
       RTC_RUN_ON(network_thread());
+  bool IsReadyToSendMedia_n() const RTC_RUN_ON(network_thread());
 
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
@@ -368,9 +372,10 @@ class BaseChannel : public ChannelInterface,
       RTC_GUARDED_BY(network_thread());
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_
       RTC_GUARDED_BY(network_thread());
-  bool writable_ RTC_GUARDED_BY(network_thread()) = false;
-  bool was_ever_writable_n_ RTC_GUARDED_BY(network_thread()) = false;
-  bool was_ever_writable_ RTC_GUARDED_BY(worker_thread()) = false;
+  
+  
+  bool writable_ = false;
+  bool was_ever_writable_ RTC_GUARDED_BY(network_thread()) = false;
   const bool srtp_required_ = true;
   const webrtc::CryptoOptions crypto_options_;
 
@@ -397,7 +402,6 @@ class BaseChannel : public ChannelInterface,
   
   
   webrtc::RtpDemuxerCriteria demuxer_criteria_;
-  RtpHeaderExtensions receive_rtp_header_extensions_;
   
   
   
