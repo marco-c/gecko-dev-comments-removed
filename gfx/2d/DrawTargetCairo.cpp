@@ -891,17 +891,7 @@ void DrawTargetCairo::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
   cairo_pattern_set_matrix(pat, &src_mat);
   cairo_pattern_set_filter(
       pat, GfxSamplingFilterToCairoFilter(aSurfOptions.mSamplingFilter));
-  
-  
-  
-  
-  
-  
-  
-  cairo_pattern_set_extend(
-      pat, cairo_surface_get_type(mSurface) == CAIRO_SURFACE_TYPE_PDF
-               ? CAIRO_EXTEND_NONE
-               : CAIRO_EXTEND_PAD);
+  cairo_pattern_set_extend(pat, CAIRO_EXTEND_PAD);
 
   cairo_set_antialias(mContext,
                       GfxAntialiasToCairoAntialias(aOptions.mAntialiasMode));
