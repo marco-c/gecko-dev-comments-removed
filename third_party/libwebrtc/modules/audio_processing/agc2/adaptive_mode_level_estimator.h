@@ -30,6 +30,7 @@ class AdaptiveModeLevelEstimator {
   AdaptiveModeLevelEstimator& operator=(const AdaptiveModeLevelEstimator&) =
       delete;
   
+  
   AdaptiveModeLevelEstimator(
       ApmDataDumper* apm_data_dumper,
       AudioProcessing::Config::GainController2::LevelEstimator level_estimator,
@@ -40,7 +41,6 @@ class AdaptiveModeLevelEstimator {
       ApmDataDumper* apm_data_dumper,
       AudioProcessing::Config::GainController2::LevelEstimator level_estimator,
       int adjacent_speech_frames_threshold,
-      bool use_saturation_protector,
       float initial_saturation_margin_db,
       float extra_saturation_margin_db);
 
@@ -81,7 +81,6 @@ class AdaptiveModeLevelEstimator {
   const AudioProcessing::Config::GainController2::LevelEstimator
       level_estimator_type_;
   const int adjacent_speech_frames_threshold_;
-  const bool use_saturation_protector_;
   const float initial_saturation_margin_db_;
   const float extra_saturation_margin_db_;
   LevelEstimatorState preliminary_state_;
