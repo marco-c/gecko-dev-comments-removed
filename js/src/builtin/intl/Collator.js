@@ -19,20 +19,20 @@ function resolveCollatorInternals(lazyCollatorData) {
 
   
   var collatorIsSorting = lazyCollatorData.usage === "sort";
-  var localeData = collatorIsSorting
-                   ? Collator.sortLocaleData
-                   : Collator.searchLocaleData;
+  var localeData = collatorIsSorting ? Collator.sortLocaleData : Collator.searchLocaleData;
 
   
   
   var relevantExtensionKeys = Collator.relevantExtensionKeys;
 
   
-  var r = ResolveLocale("Collator",
-                        lazyCollatorData.requestedLocales,
-                        lazyCollatorData.opt,
-                        relevantExtensionKeys,
-                        localeData);
+  var r = ResolveLocale(
+    "Collator",
+    lazyCollatorData.requestedLocales,
+    lazyCollatorData.opt,
+    relevantExtensionKeys,
+    localeData
+  );
 
   
   internalProps.locale = r.locale;
@@ -177,13 +177,24 @@ function InitializeCollator(collator, locales, options) {
   opt.kn = numericValue;
 
   
-  var caseFirstValue = GetOption(options, "caseFirst", "string", ["upper", "lower", "false"], undefined);
+  var caseFirstValue = GetOption(
+    options,
+    "caseFirst",
+    "string",
+    ["upper", "lower", "false"],
+    undefined
+  );
   opt.kf = caseFirstValue;
 
   
   
-  var s = GetOption(options, "sensitivity", "string",
-                    ["base", "accent", "case", "variant"], undefined);
+  var s = GetOption(
+    options,
+    "sensitivity",
+    "string",
+    ["base", "accent", "case", "variant"],
+    undefined
+  );
   lazyCollatorData.rawSensitivity = s;
 
   
@@ -331,7 +342,10 @@ function createCollatorCompare(collator) {
 
     
     assert(IsObject(collator), "collatorCompareToBind called with non-object");
-    assert(intl_GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
+    assert(
+      intl_GuardToCollator(collator) !== null,
+      "collatorCompareToBind called with non-Collator"
+    );
 
     
     var X = ToString(x);
