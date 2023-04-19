@@ -1381,8 +1381,8 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
 
     
     
-    if (hasDelayedChildren() && !markAllDelayedChildren(budget, reportTime)) {
-      return false;
+    if (hasDelayedChildren()) {
+      markAllDelayedChildren(reportTime);
     }
   }
 
@@ -2185,7 +2185,7 @@ void GCMarker::markDelayedChildren(Arena* arena) {
 
 
 
-bool GCMarker::processDelayedMarkingList(MarkColor color, SliceBudget& budget) {
+void GCMarker::processDelayedMarkingList(MarkColor color) {
   
   
   
@@ -2201,26 +2201,17 @@ bool GCMarker::processDelayedMarkingList(MarkColor color, SliceBudget& budget) {
       if (arena->hasDelayedMarking(color)) {
         arena->setHasDelayedMarking(color, false);
         markDelayedChildren(arena);
-        budget.step(150);
-        if (budget.isOverBudget()) {
-          return false;
-        }
       }
     }
     while ((color == MarkColor::Black && hasBlackEntries()) ||
            (color == MarkColor::Gray && hasGrayEntries())) {
+      SliceBudget budget = SliceBudget::unlimited();
       processMarkStackTop(budget);
-      if (budget.isOverBudget()) {
-        return false;
-      }
     }
   } while (delayedMarkingWorkAdded);
-
-  return true;
 }
 
-bool GCMarker::markAllDelayedChildren(SliceBudget& budget,
-                                      ShouldReportMarkTime reportTime) {
+void GCMarker::markAllDelayedChildren(ShouldReportMarkTime reportTime) {
   MOZ_ASSERT(isMarkStackEmpty());
   MOZ_ASSERT(markColor() == MarkColor::Black);
   MOZ_ASSERT(delayedMarkingList);
@@ -2237,16 +2228,12 @@ bool GCMarker::markAllDelayedChildren(SliceBudget& budget,
 
   const MarkColor colors[] = {MarkColor::Black, MarkColor::Gray};
   for (MarkColor color : colors) {
-    bool finished = processDelayedMarkingList(color, budget);
+    processDelayedMarkingList(color);
     rebuildDelayedMarkingList();
-    if (!finished) {
-      return false;
-    }
   }
 
   MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(!markLaterArenas);
-  return true;
 }
 
 void GCMarker::rebuildDelayedMarkingList() {
