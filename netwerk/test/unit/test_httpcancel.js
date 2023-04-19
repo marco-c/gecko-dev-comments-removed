@@ -10,6 +10,7 @@
 "use strict";
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+const reason = "testing";
 
 function inChildProcess() {
   return Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
@@ -26,7 +27,7 @@ var observer = {
 
   observe(subject, topic, data) {
     subject = subject.QueryInterface(Ci.nsIRequest);
-    subject.cancel(Cr.NS_BINDING_ABORTED);
+    subject.cancelWithReason(Cr.NS_BINDING_ABORTED, reason);
 
     
     try {
@@ -48,6 +49,10 @@ var observer = {
 let cancelDuringOnStartListener = {
   onStartRequest: function test_onStartR(request) {
     Assert.equal(request.status, Cr.NS_BINDING_ABORTED);
+    
+    if (!inChildProcess()) {
+      Assert.equal(request.canceledReason, reason);
+    }
 
     
     try {
