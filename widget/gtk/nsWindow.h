@@ -436,9 +436,6 @@ class nsWindow final : public nsBaseWidget {
     COMPOSITOR_PAUSED_INITIALLY,
     
     
-    COMPOSITOR_PAUSED_MISSING_WINDOW,
-    
-    
     COMPOSITOR_PAUSED_FLICKERING
   } WindowCompositorState;
 
@@ -483,9 +480,6 @@ class nsWindow final : public nsBaseWidget {
 
   void TryToShowNativeWindowMenu(GdkEventButton* aEvent);
 
-  void EnableRenderingToWindow();
-  void DisableRenderingToWindow();
-  void ResumeCompositorHiddenWindow();
   void WaylandStartVsync();
   void WaylandStopVsync();
   void DestroyChildWindows();

@@ -559,19 +559,13 @@ void nsWindow::Destroy() {
 
   LOG("nsWindow::Destroy\n");
 
-  
-  RevokeTransactionIdAllocator();
-
-  DisableRenderingToWindow();
-
   mIsDestroyed = true;
   mCreated = false;
 
-  
-  if (mWindowRenderer) {
-    mWindowRenderer->Destroy();
+  if (mCompositorPauseTimeoutID) {
+    g_source_remove(mCompositorPauseTimeoutID);
+    mCompositorPauseTimeoutID = 0;
   }
-  mWindowRenderer = nullptr;
 
 #ifdef MOZ_WAYLAND
   
@@ -583,17 +577,12 @@ void nsWindow::Destroy() {
   MozClearPointer(mXdgToken, xdg_activation_token_v1_destroy);
 #endif
 
-  if (mCompositorPauseTimeoutID) {
-    g_source_remove(mCompositorPauseTimeoutID);
-    mCompositorPauseTimeoutID = 0;
-  }
+  
+  DestroyLayerManager();
 
-  
-  
-  
-  
-  
-  DestroyCompositor();
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->DisableRendering();
+  }
 
   
   
@@ -1211,11 +1200,6 @@ void nsWindow::HideWaylandPopupWindow(bool aTemporaryHide,
   }
 
   if (mPopupClosed) {
-    
-    
-    
-    RevokeTransactionIdAllocator();
-
     LOG("Clearing mMoveToRectPopupSize\n");
     mMoveToRectPopupSize = {};
   }
@@ -5294,34 +5278,6 @@ static void GtkWidgetDisableUpdates(GtkWidget* aWidget) {
   g_signal_handlers_disconnect_by_data(frame_clock, window);
 }
 
-void nsWindow::EnableRenderingToWindow() {
-  LOG("nsWindow::EnableRenderingToWindow()");
-
-  if (GdkIsWaylandDisplay()) {
-#ifdef MOZ_WAYLAND
-    moz_container_wayland_add_initial_draw_callback(
-        mContainer, [self = RefPtr{this}, this]() -> void {
-          LOG("moz_container_wayland initial create "
-              "ResumeCompositorHiddenWindow()");
-          self->ResumeCompositorHiddenWindow();
-          self->WaylandStartVsync();
-        });
-#endif
-  } else {
-    ResumeCompositorHiddenWindow();
-    WaylandStartVsync();
-  }
-}
-
-void nsWindow::DisableRenderingToWindow() {
-  LOG("nsWindow::DisableRenderingToWindow()");
-
-  WaylandStopVsync();
-  if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->DisableRendering();
-  }
-}
-
 Window nsWindow::GetX11Window() {
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
@@ -5401,16 +5357,42 @@ void nsWindow::ConfigureGdkWindow() {
 
   RefreshWindowClass();
 
-  if (mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
-    mCompositorState = COMPOSITOR_PAUSED_MISSING_WINDOW;
-  }
-
+  
+  
+  
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
                                                GetShapedState());
   }
 
-  EnableRenderingToWindow();
+  if (mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
+    auto startCompositing = [self = RefPtr{this}, this]() -> void {
+      LOG("  start compositing");
+      WaylandStartVsync();
+
+      
+      
+      
+      (void)GetWindowRenderer();
+
+      CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
+      MOZ_ASSERT(mCompositorWidgetDelegate);
+      MOZ_ASSERT(remoteRenderer);
+
+      remoteRenderer->SendResumeAsync();
+      remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
+      mCompositorState = COMPOSITOR_ENABLED;
+    };
+
+    if (GdkIsWaylandDisplay()) {
+#ifdef MOZ_WAYLAND
+      moz_container_wayland_add_initial_draw_callback(mContainer,
+                                                      startCompositing);
+#endif
+    } else {
+      startCompositing();
+    }
+  }
 
   if (mHasMappedToplevel) {
     EnsureGrabs();
@@ -5422,8 +5404,12 @@ void nsWindow::ConfigureGdkWindow() {
 void nsWindow::ReleaseGdkWindow() {
   LOG("nsWindow::ReleaseGdkWindow() [%p]", this);
 
+  WaylandStopVsync();
   DestroyChildWindows();
-  DisableRenderingToWindow();
+
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->DisableRendering();
+  }
 
   if (mGdkWindow) {
     g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", nullptr);
@@ -6097,28 +6083,6 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   
   if (mNeedsShow && mIsShown && aResized) {
     NativeShow(true);
-  }
-}
-
-void nsWindow::ResumeCompositorHiddenWindow() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  LOG("nsWindow::ResumeCompositorHiddenWindow\n");
-  if (mIsDestroyed || mCompositorState == COMPOSITOR_ENABLED) {
-    LOG("  early quit\n");
-    return;
-  }
-
-  if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-    LOG("  resume\n");
-    MOZ_ASSERT(mCompositorWidgetDelegate);
-    if (mCompositorWidgetDelegate) {
-      mCompositorState = COMPOSITOR_ENABLED;
-      remoteRenderer->SendResumeAsync();
-    }
-    remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
-  } else {
-    LOG("  quit, failed to get remote renderer.\n");
   }
 }
 
