@@ -322,9 +322,6 @@ class ParseContext : public Nestable<ParseContext> {
 
  private:
   
-  AutoFrontendTraceLog traceLog_;
-
-  
   SharedContext* sc_;
 
   
