@@ -731,6 +731,11 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
   static const uint32_t kInitialBitrateKbps = 400;
   static const uint32_t kReconfigureThresholdKbps = 600;
 
+  
+  
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Disabled/");
+
   class VideoStreamFactory
       : public VideoEncoderConfig::VideoStreamFactoryInterface {
    public:
