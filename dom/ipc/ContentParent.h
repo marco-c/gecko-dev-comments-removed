@@ -823,13 +823,6 @@ class ContentParent final : public PContentParent,
 
 
 
-  void SignalImpendingShutdownToContentJS();
-
-  
-
-
-
-
 
 
 
