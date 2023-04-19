@@ -6,7 +6,7 @@
 
 const {
   FluentL10n,
-} = require("devtools/client/shared/fluent-l10n/fluent-l10n");
+} = require("resource://devtools/client/shared/fluent-l10n/fluent-l10n.js");
 
 
 exports.l10n = new FluentL10n();

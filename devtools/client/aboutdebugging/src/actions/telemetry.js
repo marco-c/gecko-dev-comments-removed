@@ -6,7 +6,7 @@
 
 const {
   TELEMETRY_RECORD,
-} = require("devtools/client/aboutdebugging/src/constants");
+} = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 
 

@@ -7,7 +7,7 @@
 const PREF_PREFIX = "devtools.aboutdebugging.collapsibilities.";
 const {
   DEBUG_TARGET_PANE,
-} = require("devtools/client/aboutdebugging/src/constants");
+} = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 
 

@@ -7,7 +7,7 @@
 const {
   DEBUG_TARGETS,
   REQUEST_TABS_SUCCESS,
-} = require("devtools/client/aboutdebugging/src/constants");
+} = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 
 

@@ -8,7 +8,7 @@ const {
   DEBUG_TARGET_PANE,
   PREFERENCES,
   RUNTIMES,
-} = require("devtools/client/aboutdebugging/src/constants");
+} = require("resource://devtools/client/aboutdebugging/src/constants.js");
 
 
 function isProcessDebuggingSupported() {

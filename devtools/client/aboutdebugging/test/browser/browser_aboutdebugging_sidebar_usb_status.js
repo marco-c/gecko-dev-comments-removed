@@ -5,7 +5,7 @@
 
 const {
   adbAddon,
-} = require("devtools/client/shared/remote-debugging/adb/adb-addon");
+} = require("resource://devtools/client/shared/remote-debugging/adb/adb-addon.js");
 
 
 
