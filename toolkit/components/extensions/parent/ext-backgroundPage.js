@@ -453,6 +453,10 @@ this.backgroundPage = class extends ExtensionAPI {
           pendingListeners:
             extension.backgroundContext.pendingRunListenerPromisesCount,
         });
+        
+        
+        
+        extension.backgroundContext.clearPendingRunListenerPromises();
         return;
       }
 
