@@ -232,6 +232,15 @@ TEST(RtcpPacketTest, TransportFeedbackTwoBitVectorFull) {
   test.VerifyPacket();
 }
 
+TEST(RtcpPacketTest, TransportFeedbackWithLargeBaseTimeIsConsistent) {
+  TransportFeedback tb;
+  constexpr int64_t kTimestampUs =
+      int64_t{0x7fff'ffff} * TransportFeedback::kDeltaScaleFactor;
+  tb.SetBase(0, kTimestampUs);
+  tb.AddReceivedPacket(0, kTimestampUs);
+  EXPECT_TRUE(tb.IsConsistent());
+}
+
 TEST(RtcpPacketTest, TransportFeedbackLargeAndNegativeDeltas) {
   const uint16_t kReceived[] = {1, 2, 6, 7, 8};
   const int64_t kReceiveTimes[] = {
