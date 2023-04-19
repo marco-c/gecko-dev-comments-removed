@@ -567,7 +567,7 @@ function TupleFlat() {
   var depthNum = 1;
 
   
-  if (arguments.length > 0 && arguments[0] !== undefined) {
+  if (arguments.length && arguments[0] !== undefined) {
     depthNum = ToInteger(arguments[0]);
   }
 

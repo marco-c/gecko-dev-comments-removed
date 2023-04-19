@@ -932,7 +932,7 @@ function String_toLocaleLowerCase() {
 
   
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var requestedLocale;
   if (locales === undefined) {
     
@@ -945,8 +945,7 @@ function String_toLocaleLowerCase() {
     var requestedLocales = CanonicalizeLocaleList(locales);
 
     
-    requestedLocale =
-      requestedLocales.length > 0 ? requestedLocales[0] : undefined;
+    requestedLocale = requestedLocales.length ? requestedLocales[0] : undefined;
   }
 
   
@@ -978,7 +977,7 @@ function String_toLocaleUpperCase() {
 
   
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var requestedLocale;
   if (locales === undefined) {
     
@@ -991,8 +990,7 @@ function String_toLocaleUpperCase() {
     var requestedLocales = CanonicalizeLocaleList(locales);
 
     
-    requestedLocale =
-      requestedLocales.length > 0 ? requestedLocales[0] : undefined;
+    requestedLocale = requestedLocales.length ? requestedLocales[0] : undefined;
   }
 
   

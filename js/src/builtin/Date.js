@@ -86,7 +86,7 @@ function Date_toLocaleString() {
   }
 
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var options = arguments.length > 1 ? arguments[1] : undefined;
 
   
@@ -119,7 +119,7 @@ function Date_toLocaleDateString() {
   }
 
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var options = arguments.length > 1 ? arguments[1] : undefined;
 
   
@@ -152,7 +152,7 @@ function Date_toLocaleTimeString() {
   }
 
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var options = arguments.length > 1 ? arguments[1] : undefined;
 
   

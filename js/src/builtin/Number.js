@@ -17,7 +17,7 @@ function Number_toLocaleString() {
   var x = callFunction(ThisNumberValueForToLocaleString, this);
 
   
-  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var locales = arguments.length ? arguments[0] : undefined;
   var options = arguments.length > 1 ? arguments[1] : undefined;
 
   
