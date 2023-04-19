@@ -12,13 +12,7 @@ namespace webrtc {
 
 
 
-class SharedModuleThread : public rtc::RefCountInterface {
- protected:
-  SharedModuleThread(std::unique_ptr<ProcessThread> process_thread,
-                     std::function<void()> on_one_ref_remaining);
-  friend class rtc::scoped_refptr<SharedModuleThread>;
-  ~SharedModuleThread() override;
-
+class SharedModuleThread final {
  public:
   
   static rtc::scoped_refptr<SharedModuleThread> Create(
@@ -30,8 +24,13 @@ class SharedModuleThread : public rtc::RefCountInterface {
   ProcessThread* process_thread();
 
  private:
-  void AddRef() const override;
-  rtc::RefCountReleaseStatus Release() const override;
+  friend class rtc::scoped_refptr<SharedModuleThread>;
+  SharedModuleThread(std::unique_ptr<ProcessThread> process_thread,
+                     std::function<void()> on_one_ref_remaining);
+  ~SharedModuleThread();
+
+  void AddRef() const;
+  rtc::RefCountReleaseStatus Release() const;
 
   class Impl;
   mutable std::unique_ptr<Impl> impl_;
