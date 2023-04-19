@@ -9,6 +9,7 @@
 
 #include "DocAccessible.h"
 #include "Filters.h"
+#include "nsTArray.h"
 
 #include <memory>
 
@@ -16,6 +17,7 @@ class nsITreeView;
 
 namespace mozilla {
 namespace a11y {
+class DocAccessibleParent;
 
 
 
@@ -296,6 +298,38 @@ class XULTreeItemIterator : public AccIterable {
   int32_t mRowCount;
   int32_t mContainerLevel;
   int32_t mCurrRowIdx;
+};
+
+
+
+
+
+class RemoteAccIterator : public AccIterable {
+ public:
+  
+
+
+
+  RemoteAccIterator(const nsTArray<uint64_t>& aIds, DocAccessibleParent* aDoc)
+      : mIds(aIds), mDoc(aDoc), mIndex(0) {}
+
+  
+
+
+
+
+  RemoteAccIterator(nsTArray<uint64_t>&& aIds, DocAccessibleParent* aDoc);
+
+  virtual ~RemoteAccIterator() = default;
+
+  virtual Accessible* Next() override;
+
+ private:
+  
+  nsTArray<uint64_t> mOwnedIds;
+  const nsTArray<uint64_t>& mIds;
+  DocAccessibleParent* mDoc;
+  uint32_t mIndex;
 };
 
 }  
