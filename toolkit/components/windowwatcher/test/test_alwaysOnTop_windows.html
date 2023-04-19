@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Tests the alwaysOnTop window feature for the Windows OS.
+-->
 <head>
   <meta charset="utf-8">
   <title>Test an alwaysOnTop window on Windows</title>
@@ -14,7 +14,6 @@
 
   const {BrowserTestUtils} = ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
   const {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
-  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
   function assertAlwaysOnTop(win, expected) {
     let docShell = win.docShell;

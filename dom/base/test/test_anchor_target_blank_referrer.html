@@ -6,17 +6,16 @@
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
 
-  
-
-
-
-
+  <!--
+  Testing that anchor referrer header are honoured correctly
+  * anchor tag with rel=noopener target=_blank
+  https://bugzilla.mozilla.org/show_bug.cgi?id=1502678
+  -->
 
   <script type="application/javascript">
   // We are going to open new tabs with target=_blank and rel=noopener
   // Listen a new tab is opened then close the new tab, otherwise we will lose
   // focus for the next tests
-  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
   const {BrowserTestUtils} = ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
   const gBrowser = Services.wm.getMostRecentWindow("navigator:browser").gBrowser;
   window.addEventListener("message", function(event) {

@@ -13,13 +13,13 @@
 </head>
 <body onunload="onUnload();">
 <p id="display">
-  
-
+  <!-- Use input[readonly] because it isn't affected by the partial focus
+       movement on Mac -->
   <input id="prev" readonly><br>
   <iframe id="iframe_not_editable"
           src="data:text/html,&lt;html&gt;&lt;body&gt;&lt;input id='editor'&gt;&lt;/body&gt;&lt;/html&gt;"></iframe><br>
 
-  
+  <!-- Testing IME state and focus movement, the anchor elements cannot get focus -->
   <iframe id="iframe_html"
           src="data:text/html,&lt;html id='editor' contenteditable='true'&gt;&lt;body&gt;&lt;a href='about:blank'&gt;about:blank;&lt;/a&gt;&lt;/body&gt;&lt;/html&gt;"></iframe><br>
   <iframe id="iframe_designMode"
@@ -32,8 +32,6 @@
   <input id="next" readonly><br>
 </p>
 <script class="testbody" type="application/javascript">
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 window.opener.SimpleTest.waitForFocus(runTests, window);
 
