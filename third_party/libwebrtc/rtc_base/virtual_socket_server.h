@@ -97,6 +97,16 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   
   
   
+  size_t max_udp_payload() { return max_udp_payload_; }
+  void set_max_udp_payload(size_t payload_size) {
+    max_udp_payload_ = payload_size;
+  }
+
+  size_t largest_seen_udp_payload() { return largest_seen_udp_payload_; }
+
+  
+  
+  
   
   
   
@@ -308,6 +318,13 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   std::unique_ptr<Function> delay_dist_;
 
   double drop_prob_;
+  
+  
+  
+  size_t max_udp_payload_ = 65507;
+  
+  size_t largest_seen_udp_payload_ = 0;
+
   bool sending_blocked_ = false;
   RTC_DISALLOW_COPY_AND_ASSIGN(VirtualSocketServer);
 };
