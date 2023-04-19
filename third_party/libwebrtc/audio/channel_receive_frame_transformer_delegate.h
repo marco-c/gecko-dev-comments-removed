@@ -32,7 +32,7 @@ class ChannelReceiveFrameTransformerDelegate : public TransformedFrameCallback {
   ChannelReceiveFrameTransformerDelegate(
       ReceiveFrameCallback receive_frame_callback,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
-      rtc::Thread* channel_receive_thread);
+      TaskQueueBase* channel_receive_thread);
 
   
   
@@ -67,7 +67,7 @@ class ChannelReceiveFrameTransformerDelegate : public TransformedFrameCallback {
       RTC_GUARDED_BY(sequence_checker_);
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_
       RTC_GUARDED_BY(sequence_checker_);
-  rtc::Thread* channel_receive_thread_;
+  TaskQueueBase* const channel_receive_thread_;
 };
 
 }  
