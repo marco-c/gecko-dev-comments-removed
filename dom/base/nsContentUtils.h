@@ -197,8 +197,6 @@ enum class ReferrerPolicy : uint8_t;
 namespace ipc {
 class BigBuffer;
 class IProtocol;
-class IShmemAllocator;
-class Shmem;
 }  
 
 namespace gfx {
@@ -2919,14 +2917,6 @@ class nsContentUtils {
 
   static mozilla::Maybe<mozilla::ipc::BigBuffer> GetSurfaceData(
       mozilla::gfx::DataSourceSurface&, size_t* aLength, int32_t* aStride);
-
-  
-
-
-
-  static mozilla::Maybe<mozilla::ipc::Shmem> GetSurfaceData(
-      mozilla::gfx::DataSourceSurface& aSurface, size_t* aLength,
-      int32_t* aStride, mozilla::ipc::IShmemAllocator* aAlloc);
 
   static mozilla::Maybe<mozilla::dom::IPCImage> SurfaceToIPCImage(
       mozilla::gfx::DataSourceSurface&);
