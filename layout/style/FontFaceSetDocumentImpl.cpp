@@ -95,9 +95,11 @@ void FontFaceSetDocumentImpl::Destroy() {
 
   mRuleFaces.Clear();
 
-  mDocument = nullptr;
-
+  
+  
   FontFaceSetImpl::Destroy();
+
+  mDocument = nullptr;
 }
 
 uint64_t FontFaceSetDocumentImpl::GetInnerWindowID() {
