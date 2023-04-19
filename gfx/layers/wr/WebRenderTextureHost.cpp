@@ -37,7 +37,8 @@ class ScheduleHandleRenderTextureOps : public wr::NotificationHandler {
 WebRenderTextureHost::WebRenderTextureHost(
     TextureFlags aFlags, TextureHost* aTexture,
     const wr::ExternalImageId& aExternalImageId)
-    : TextureHost(aFlags), mWrappedTextureHost(aTexture) {
+    : TextureHost(TextureHostType::Unknown, aFlags),
+      mWrappedTextureHost(aTexture) {
   MOZ_ASSERT(mWrappedTextureHost);
   
   
@@ -193,6 +194,10 @@ mozilla::ipc::FileDescriptor WebRenderTextureHost::GetAndResetReleaseFence() {
 
 AndroidHardwareBuffer* WebRenderTextureHost::GetAndroidHardwareBuffer() const {
   return mWrappedTextureHost->GetAndroidHardwareBuffer();
+}
+
+TextureHostType WebRenderTextureHost::GetTextureHostType() {
+  return mWrappedTextureHost->GetTextureHostType();
 }
 
 }  

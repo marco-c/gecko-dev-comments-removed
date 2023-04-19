@@ -252,7 +252,9 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
   
   auto backend = aSceneBuilderTxn.GetBackendType();
   bool canUpdate =
-      !!previousTexture && previousTexture->GetSize() == texture->GetSize() &&
+      !!previousTexture &&
+      previousTexture->GetTextureHostType() == texture->GetTextureHostType() &&
+      previousTexture->GetSize() == texture->GetSize() &&
       previousTexture->GetFormat() == texture->GetFormat() &&
       previousTexture->GetColorDepth() == texture->GetColorDepth() &&
       previousTexture->NeedsYFlip() == texture->NeedsYFlip() &&

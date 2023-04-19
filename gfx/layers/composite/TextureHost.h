@@ -349,6 +349,21 @@ class DataTextureSource : public TextureSource {
   uint32_t mUpdateSerial;
 };
 
+enum class TextureHostType : int8_t {
+  Unknown = 0,
+  Buffer,
+  DXGI,
+  DXGIYCbCr,
+  DcompSurface,
+  DMABUF,
+  MacIOSurface,
+  AndroidSurfaceTexture,
+  AndroidHardwareBuffer,
+  EGLImage,
+  GLTexture,
+  Last
+};
+
 
 
 
@@ -389,7 +404,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   friend class AtomicRefCountedWithFinalize<TextureHost>;
 
  public:
-  explicit TextureHost(TextureFlags aFlags);
+  TextureHost(TextureHostType aType, TextureFlags aFlags);
 
  protected:
   virtual ~TextureHost();
@@ -671,6 +686,8 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     return false;
   }
 
+  virtual TextureHostType GetTextureHostType() { return mTextureHostType; }
+
   
   
   
@@ -715,6 +732,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   
   void CallNotifyNotUsed();
 
+  TextureHostType mTextureHostType;
   PTextureParent* mActor;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
