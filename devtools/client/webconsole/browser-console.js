@@ -29,6 +29,9 @@ loader.lazyRequireGetter(
 
 
 class BrowserConsole extends WebConsole {
+  #bcInitializer = null;
+  #bcDestroyer = null;
+  #telemetry;
   
 
 
@@ -41,9 +44,7 @@ class BrowserConsole extends WebConsole {
   constructor(commands, iframeWindow, chromeWindow) {
     super(null, commands, iframeWindow, chromeWindow, true);
 
-    this._telemetry = new Telemetry();
-    this._bcInitializer = null;
-    this._bcDestroyer = null;
+    this.#telemetry = new Telemetry();
   }
 
   
@@ -53,17 +54,17 @@ class BrowserConsole extends WebConsole {
 
 
   init() {
-    if (this._bcInitializer) {
-      return this._bcInitializer;
+    if (this.#bcInitializer) {
+      return this.#bcInitializer;
     }
 
-    this._bcInitializer = (async () => {
+    this.#bcInitializer = (async () => {
       
       ShutdownObserver.init();
 
       
       
-      this._telemetry.toolOpened("browserconsole", -1, this);
+      this.#telemetry.toolOpened("browserconsole", -1, this);
 
       await super.init(false);
 
@@ -72,7 +73,7 @@ class BrowserConsole extends WebConsole {
       const id = Utils.supportsString(this.hudId);
       Services.obs.notifyObservers(id, "web-console-created");
     })();
-    return this._bcInitializer;
+    return this.#bcInitializer;
   }
 
   
@@ -82,14 +83,14 @@ class BrowserConsole extends WebConsole {
 
 
   destroy() {
-    if (this._bcDestroyer) {
-      return this._bcDestroyer;
+    if (this.#bcDestroyer) {
+      return this.#bcDestroyer;
     }
 
-    this._bcDestroyer = (async () => {
+    this.#bcDestroyer = (async () => {
       
       
-      this._telemetry.toolClosed("browserconsole", -1, this);
+      this.#telemetry.toolClosed("browserconsole", -1, this);
 
       this.commands.targetCommand.destroy();
       await super.destroy();
@@ -97,7 +98,7 @@ class BrowserConsole extends WebConsole {
       this.chromeWindow.close();
     })();
 
-    return this._bcDestroyer;
+    return this.#bcDestroyer;
   }
 }
 
