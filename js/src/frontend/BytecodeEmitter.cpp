@@ -2392,7 +2392,7 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
     switchToMain();
 
     ParseNode* scopeBody = scope->scopeBody();
-    if (!emitLexicalScopeBody(scopeBody, EMIT_LINENOTE)) {
+    if (!emitLexicalScopeBody(scopeBody)) {
       return false;
     }
 
@@ -8753,7 +8753,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
 
         ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
 
-        if (!emitTree(nameExpr, ValueUsage::WantValue, EMIT_LINENOTE)) {
+        if (!emitTree(nameExpr, ValueUsage::WantValue)) {
           
           return false;
         }
@@ -10119,37 +10119,25 @@ bool BytecodeEmitter::emitArray(ListNode* array) {
   uint32_t index = 0;
   bool afterSpread = false;
   for (ParseNode* elem : array->contents()) {
-    if (!afterSpread && elem->isKind(ParseNodeKind::Spread)) {
-      afterSpread = true;
-      if (!emitNumberOp(index)) {
-        
-        return false;
-      }
-    }
-    if (!updateSourceCoordNotes(elem->pn_pos.begin)) {
-      return false;
-    }
-
-    SelfHostedIter selfHostedIter = SelfHostedIter::Deny;
-    if (elem->isKind(ParseNodeKind::Elision)) {
-      if (!emit1(JSOp::Hole)) {
-        return false;
-      }
-    } else {
-      ParseNode* expr;
-      if (elem->isKind(ParseNodeKind::Spread)) {
-        expr = elem->as<UnaryNode>().kid();
-
-        selfHostedIter = getSelfHostedIterFor(expr);
-      } else {
-        expr = elem;
-      }
-      if (!emitTree(expr, ValueUsage::WantValue, EMIT_LINENOTE)) {
-        
-        return false;
-      }
-    }
     if (elem->isKind(ParseNodeKind::Spread)) {
+      if (!afterSpread) {
+        afterSpread = true;
+        if (!emitNumberOp(index)) {
+          
+          return false;
+        }
+      }
+
+      ParseNode* expr = elem->as<UnaryNode>().kid();
+      SelfHostedIter selfHostedIter = getSelfHostedIterFor(expr);
+
+      if (!updateSourceCoordNotes(elem->pn_pos.begin)) {
+        return false;
+      }
+      if (!emitTree(expr, ValueUsage::WantValue)) {
+        
+        return false;
+      }
       if (!emitIterator(selfHostedIter)) {
         
         return false;
@@ -10166,13 +10154,31 @@ bool BytecodeEmitter::emitArray(ListNode* array) {
         
         return false;
       }
-    } else if (afterSpread) {
-      if (!emit1(JSOp::InitElemInc)) {
+    } else {
+      if (!updateSourceCoordNotes(elem->pn_pos.begin)) {
         return false;
       }
-    } else {
-      if (!emitUint32Operand(JSOp::InitElemArray, index)) {
-        return false;
+      if (elem->isKind(ParseNodeKind::Elision)) {
+        if (!emit1(JSOp::Hole)) {
+          return false;
+        }
+      } else {
+        if (!emitTree(elem, ValueUsage::WantValue)) {
+          
+          return false;
+        }
+      }
+
+      if (afterSpread) {
+        if (!emit1(JSOp::InitElemInc)) {
+          
+          return false;
+        }
+      } else {
+        if (!emitUint32Operand(JSOp::InitElemArray, index)) {
+          
+          return false;
+        }
       }
     }
 
