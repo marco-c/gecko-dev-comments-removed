@@ -6,10 +6,11 @@
 #include "nsIRequest.idl"
 #include "nsILoadInfo.idl"
 
-interface nsIURI;
-interface nsIInterfaceRequestor;
 interface nsIInputStream;
+interface nsIInterfaceRequestor;
 interface nsIStreamListener;
+interface nsITransportSecurityInfo;
+interface nsIURI;
 
 %{C++
 #include "nsCOMPtr.h"
@@ -96,7 +97,7 @@ interface nsIChannel : nsIRequest
 
 
 
-    readonly attribute nsISupports securityInfo;
+    readonly attribute nsITransportSecurityInfo securityInfo;
 
     
 

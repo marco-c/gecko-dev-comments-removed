@@ -182,9 +182,7 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
 
   nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   if (nsCOMPtr<nsIChannel> channel = aDocument->GetChannel()) {
-    nsCOMPtr<nsISupports> securityInfoSupports;
-    channel->GetSecurityInfo(getter_AddRefs(securityInfoSupports));
-    securityInfo = do_QueryInterface(securityInfoSupports);
+    channel->GetSecurityInfo(getter_AddRefs(securityInfo));
   }
   SendUpdateDocumentSecurityInfo(securityInfo);
 
@@ -453,22 +451,16 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvGetSecurityInfo(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsISupports> securityInfoSupports;
   
   
   if (nsIChannel* failedChannel = doc->GetFailedChannel()) {
-    nsresult rv =
-        failedChannel->GetSecurityInfo(getter_AddRefs(securityInfoSupports));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return IPC_OK();
-    }
-  } else {
-    
-    
-    
-    securityInfoSupports = doc->GetSecurityInfo();
+    Unused << failedChannel->GetSecurityInfo(getter_AddRefs(securityInfo));
+    return IPC_OK();
   }
-  securityInfo = do_QueryInterface(securityInfoSupports);
+  
+  
+  
+  securityInfo = doc->GetSecurityInfo();
   return IPC_OK();
 }
 

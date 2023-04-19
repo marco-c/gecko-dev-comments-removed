@@ -87,6 +87,7 @@
 #include "nsIStreamListener.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
+#include "nsITransportSecurityInfo.h"
 #include "nsIURI.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsLiteralString.h"
@@ -2249,7 +2250,7 @@ class Document : public nsINode,
 
 
 
-  nsISupports* GetSecurityInfo() { return mSecurityInfo; }
+  nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
 
   
 
@@ -4902,7 +4903,7 @@ class Document : public nsINode,
 
  protected:
   
-  nsCOMPtr<nsISupports> mSecurityInfo;
+  nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
 
   
   
