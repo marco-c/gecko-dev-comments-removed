@@ -529,6 +529,18 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
     
     
     
+    if (
+        "vendoring" in manifest
+        and manifest["vendoring"].get("flavor", "regular") == "individual-files"
+        and manifest["vendoring"].get("tracking", "commit") == "tag"
+    ):
+        raise ValueError(
+            "You cannot use tag tracking with the individual-files flavor. (Sorry.)"
+        )
+
+    
+    
+    
     
     if (
         "vendoring" in manifest
