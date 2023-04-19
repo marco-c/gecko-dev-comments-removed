@@ -15,7 +15,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
+#include "api/video/render_resolution.h"
+#include "api/video/video_codec_type.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/system/rtc_export.h"
@@ -54,10 +57,53 @@ class RTC_EXPORT VideoDecoder {
     bool operator!=(const DecoderInfo& rhs) const { return !(*this == rhs); }
   };
 
-  virtual ~VideoDecoder() {}
+  class Settings {
+   public:
+    Settings() = default;
+    Settings(const Settings&) = default;
+    Settings& operator=(const Settings&) = default;
+    ~Settings() = default;
 
+    
+    
+    
+    
+    absl::optional<int> buffer_pool_size() const;
+    void set_buffer_pool_size(absl::optional<int> value);
+
+    
+    
+    
+    RenderResolution max_render_resolution() const;
+    void set_max_render_resolution(RenderResolution value);
+
+    
+    int number_of_cores() const { return number_of_cores_; }
+    void set_number_of_cores(int value) { number_of_cores_ = value; }
+
+    
+    VideoCodecType codec_type() const { return codec_type_; }
+    void set_codec_type(VideoCodecType value) { codec_type_ = value; }
+
+   private:
+    absl::optional<int> buffer_pool_size_;
+    RenderResolution max_resolution_;
+    int number_of_cores_ = 1;
+    VideoCodecType codec_type_ = kVideoCodecGeneric;
+  };
+
+  virtual ~VideoDecoder() = default;
+
+  
+  
+  
+  
+  virtual bool Configure(const Settings& settings);
+
+  
+  
   virtual int32_t InitDecode(const VideoCodec* codec_settings,
-                             int32_t number_of_cores) = 0;
+                             int32_t number_of_cores);
 
   virtual int32_t Decode(const EncodedImage& input_image,
                          bool missing_frames,
@@ -73,6 +119,24 @@ class RTC_EXPORT VideoDecoder {
   
   virtual const char* ImplementationName() const;
 };
+
+inline absl::optional<int> VideoDecoder::Settings::buffer_pool_size() const {
+  return buffer_pool_size_;
+}
+
+inline void VideoDecoder::Settings::set_buffer_pool_size(
+    absl::optional<int> value) {
+  buffer_pool_size_ = value;
+}
+
+inline RenderResolution VideoDecoder::Settings::max_render_resolution() const {
+  return max_resolution_;
+}
+
+inline void VideoDecoder::Settings::set_max_render_resolution(
+    RenderResolution value) {
+  max_resolution_ = value;
+}
 
 }  
 
