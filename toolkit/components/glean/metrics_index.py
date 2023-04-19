@@ -11,38 +11,82 @@
 
 
 
-metrics_yamls = [
+
+
+
+gecko_metrics = [
     "browser/base/content/metrics.yaml",
-    "browser/components/metrics.yaml",
-    "browser/components/newtab/metrics.yaml",
-    "browser/components/search/metrics.yaml",
-    "browser/modules/metrics.yaml",
     "dom/media/metrics.yaml",
     "dom/metrics.yaml",
     "gfx/metrics.yaml",
     "netwerk/metrics.yaml",
     "netwerk/protocol/http/metrics.yaml",
-    "toolkit/components/extensions/metrics.yaml",
     "toolkit/components/glean/metrics.yaml",
-    "toolkit/components/glean/tests/test_metrics.yaml",
+    "toolkit/components/processtools/metrics.yaml",
+]
+
+
+
+firefox_desktop_metrics = [
+    "browser/components/metrics.yaml",
+    "browser/components/newtab/metrics.yaml",
+    "browser/components/search/metrics.yaml",
+    "browser/modules/metrics.yaml",
+    "toolkit/components/extensions/metrics.yaml",
     "toolkit/components/nimbus/metrics.yaml",
     "toolkit/components/pdfjs/metrics.yaml",
-    "toolkit/components/processtools/metrics.yaml",
     "toolkit/components/search/metrics.yaml",
     "toolkit/components/telemetry/metrics.yaml",
-    "toolkit/mozapps/update/metrics.yaml",
     "toolkit/xre/metrics.yaml",
 ]
 
 
 
-pings_yamls = [
+background_update_metrics = [
+    "toolkit/mozapps/update/metrics.yaml",
+]
+
+
+
+test_metrics = [
+    "toolkit/components/glean/tests/test_metrics.yaml",
+]
+
+
+
+metrics_yamls = (
+    gecko_metrics + firefox_desktop_metrics + background_update_metrics + test_metrics
+)
+
+
+
+
+gecko_pings = [
+    "toolkit/components/telemetry/pings.yaml",
+]
+
+
+
+firefox_desktop_pings = [
     "browser/components/newtab/pings.yaml",
     "toolkit/components/glean/pings.yaml",
-    "toolkit/components/glean/tests/test_pings.yaml",
-    "toolkit/components/telemetry/pings.yaml",
+]
+
+
+
+background_update_pings = [
     "toolkit/mozapps/update/pings.yaml",
 ]
+
+
+
+test_pings = [
+    "toolkit/components/glean/tests/test_pings.yaml",
+]
+
+
+
+pings_yamls = gecko_pings + firefox_desktop_pings + background_update_pings + test_pings
 
 
 
