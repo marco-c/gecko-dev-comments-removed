@@ -24,11 +24,12 @@ async function syncBreakpoints() {
   const breakpointValues = Object.values(sanitizeBreakpoints(breakpoints));
   return Promise.all(
     breakpointValues.map(({ disabled, options, generatedLocation }) => {
-      if (!disabled) {
-        
-        
-        return firefox.clientCommands.setBreakpoint(generatedLocation, options);
+      if (disabled) {
+        return Promise.resolve();
       }
+      
+      
+      return firefox.clientCommands.setBreakpoint(generatedLocation, options);
     })
   );
 }

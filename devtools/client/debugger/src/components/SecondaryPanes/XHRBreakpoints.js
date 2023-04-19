@@ -236,7 +236,7 @@ class XHRBreakpoints extends Component {
 
     
     if (!path) {
-      return;
+      return null;
     }
 
     
