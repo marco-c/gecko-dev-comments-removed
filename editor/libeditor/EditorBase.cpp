@@ -112,22 +112,21 @@
 #include "nsISupports.h"               
 #include "nsISupportsUtils.h"          
 #include "nsITransferable.h"           
-#include "nsITransactionManager.h"
-#include "nsIWeakReference.h"  
-#include "nsIWidget.h"         
-#include "nsPIDOMWindow.h"     
-#include "nsPresContext.h"     
-#include "nsRange.h"           
-#include "nsReadableUtils.h"   
-#include "nsString.h"          
-#include "nsStringFwd.h"       
-#include "nsStyleConsts.h"     
-#include "nsStyleStruct.h"     
-#include "nsStyleStructFwd.h"  
-#include "nsStyleUtil.h"       
-#include "nsTextNode.h"        
-#include "nsThreadUtils.h"     
-#include "prtime.h"            
+#include "nsIWeakReference.h"          
+#include "nsIWidget.h"                 
+#include "nsPIDOMWindow.h"             
+#include "nsPresContext.h"             
+#include "nsRange.h"                   
+#include "nsReadableUtils.h"           
+#include "nsString.h"                  
+#include "nsStringFwd.h"               
+#include "nsStyleConsts.h"             
+#include "nsStyleStruct.h"             
+#include "nsStyleStructFwd.h"          
+#include "nsStyleUtil.h"               
+#include "nsTextNode.h"                
+#include "nsThreadUtils.h"             
+#include "prtime.h"                    
 
 class nsIOutputStream;
 class nsITransferable;
@@ -944,18 +943,6 @@ NS_IMETHODIMP EditorBase::ClearUndoRedoXPCOM() {
   if (MOZ_UNLIKELY(!ClearUndoRedo())) {
     return NS_ERROR_FAILURE;  
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP EditorBase::GetTransactionManager(
-    nsITransactionManager** aTransactionManager) {
-  if (NS_WARN_IF(!aTransactionManager)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  if (NS_WARN_IF(!mTransactionManager)) {
-    return NS_ERROR_FAILURE;
-  }
-  *aTransactionManager = do_AddRef(mTransactionManager).take();
   return NS_OK;
 }
 

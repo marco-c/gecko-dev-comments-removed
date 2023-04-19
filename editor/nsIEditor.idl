@@ -7,13 +7,8 @@
 #include "nsISupports.idl"
 #include "domstubs.idl"
 
-interface nsIURI;
-interface nsIContent;
 interface nsISelectionController;
 interface nsIDocumentStateListener;
-interface nsIOutputStream;
-interface nsITransactionManager;
-interface nsITransaction;
 interface nsIEditActionListener;
 interface nsIInlineSpellChecker;
 interface nsITransferable;
@@ -189,15 +184,6 @@ interface nsIEditor  : nsISupports
   void incrementModificationCount(in long aModCount);
 
   
-
-  
-
-
-
-
-
-
-  readonly attribute nsITransactionManager transactionManager;
 
   
 
