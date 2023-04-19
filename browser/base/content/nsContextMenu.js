@@ -645,7 +645,9 @@ class nsContextMenu {
     
     this.showItem(
       "context-imagetext",
-      this.onImage && TEXT_RECOGNITION_ENABLED
+      this.onImage &&
+        Services.appinfo.isTextRecognitionSupported &&
+        TEXT_RECOGNITION_ENABLED
     );
 
     
