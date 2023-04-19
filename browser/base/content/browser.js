@@ -417,14 +417,6 @@ XPCOMUtils.defineLazyGetter(this, "InlineSpellCheckerUI", () => {
   return new InlineSpellChecker();
 });
 
-XPCOMUtils.defineLazyGetter(this, "PageMenuParent", () => {
-  
-  let { PageMenuParent } = ChromeUtils.import(
-    "resource://gre/modules/PageMenu.jsm"
-  );
-  return new PageMenuParent();
-});
-
 XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
   
   let { PopupNotifications } = ChromeUtils.import(
