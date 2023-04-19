@@ -96,10 +96,10 @@ class SctpTransport : public SctpTransportInternal,
   void set_debug_name_for_testing(const char* debug_name) override {
     debug_name_ = debug_name;
   }
-  int InjectDataOrNotificationFromSctpForTesting(const void* data,
-                                                 size_t length,
-                                                 struct sctp_rcvinfo rcv,
-                                                 int flags);
+  void InjectDataOrNotificationFromSctpForTesting(const void* data,
+                                                  size_t length,
+                                                  struct sctp_rcvinfo rcv,
+                                                  int flags);
 
   
   
@@ -182,10 +182,10 @@ class SctpTransport : public SctpTransportInternal,
 
   
   
-  int OnDataOrNotificationFromSctp(const void* data,
-                                   size_t length,
-                                   struct sctp_rcvinfo rcv,
-                                   int flags);
+  void OnDataOrNotificationFromSctp(const void* data,
+                                    size_t length,
+                                    struct sctp_rcvinfo rcv,
+                                    int flags);
   
   void OnDataFromSctpToTransport(const ReceiveDataParams& params,
                                  const rtc::CopyOnWriteBuffer& buffer);
