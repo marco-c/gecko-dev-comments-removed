@@ -152,9 +152,14 @@ already_AddRefed<Promise> FileSystemHandle::Move(const fs::EntryId& aParentId,
     fs::FileSystemChildMetadata newMetadata;
     newMetadata.parentId() = aParentId;
     newMetadata.childName() = aName;
-    mRequestHandler->MoveEntry(mManager, this, mMetadata, newMetadata, promise);
+    mRequestHandler->MoveEntry(mManager, this, mMetadata, newMetadata, promise,
+                               aError);
   } else {
-    mRequestHandler->RenameEntry(mManager, this, mMetadata, name, promise);
+    mRequestHandler->RenameEntry(mManager, this, mMetadata, name, promise,
+                                 aError);
+  }
+  if (aError.Failed()) {
+    return nullptr;
   }
 
   
