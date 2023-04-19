@@ -1105,6 +1105,7 @@ add_task(async function test_onBehaviorRequestedTimeout() {
     background() {
       browser.urlbar.onBehaviorRequested.addListener(async query => {
         
+        
         await new Promise(r => setTimeout(r, 500));
         return "active";
       }, "test");
@@ -1159,6 +1160,7 @@ add_task(async function test_onResultsRequestedTimeout() {
         return "active";
       }, "test");
       browser.urlbar.onResultsRequested.addListener(async query => {
+        
         
         await new Promise(r => setTimeout(r, 600));
         return [

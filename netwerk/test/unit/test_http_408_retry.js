@@ -35,6 +35,9 @@ add_task(async function test() {
         let oldSock = global.socket;
         global.socket = resp.socket;
         if (global.socket == oldSock) {
+          
+          
+          
           setTimeout(
             arg => {
               arg.writeHead(408);

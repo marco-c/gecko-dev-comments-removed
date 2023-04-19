@@ -26,11 +26,15 @@ add_task(
         );
         
         assert.equal(response.actuallocation.source.actor, source.actor);
+        
+        
+        
         Assert.equal(response.actualLocation.line, location.line + 1);
 
         threadFront.once("paused", function(packet) {
           
           Assert.equal(packet.frame.where.actor, source.actor);
+          
           Assert.equal(packet.frame.where.line, location.line + 1);
           Assert.equal(packet.why.type, "breakpoint");
           Assert.equal(packet.why.actors[0], response.bpClient.actor);

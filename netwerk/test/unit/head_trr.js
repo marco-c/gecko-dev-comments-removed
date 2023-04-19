@@ -416,6 +416,9 @@ function trrQueryHandler(req, resp, url) {
     };
 
     if (response.delay) {
+      
+      
+      
       setTimeout(
         arg => {
           writeResponse(arg[0], arg[1], arg[2]);

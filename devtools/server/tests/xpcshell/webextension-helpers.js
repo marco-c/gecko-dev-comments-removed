@@ -176,6 +176,8 @@ async function extensionScriptWithMessageListener() {
 
     browser.test.sendMessage(`${msg}:done`, item);
   });
+  
+  
   browser.test.sendMessage("extension-origin", window.location.origin);
 }
 exports.extensionScriptWithMessageListener = extensionScriptWithMessageListener;

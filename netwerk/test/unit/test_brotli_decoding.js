@@ -159,6 +159,10 @@ add_task(async function test_http2() {
         0x3e,
       ])
     );
+
+    
+    
+    
     setTimeout(function() {
       resp.write(
         Buffer.from([
@@ -302,6 +306,9 @@ add_task(async function test_http2() {
       );
     }, 100);
 
+    
+    
+    
     setTimeout(function() {
       resp.end(
         Buffer.from([

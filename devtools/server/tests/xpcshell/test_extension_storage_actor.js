@@ -75,6 +75,8 @@ add_task(
   },
   async function test_extension_origin_matches_debugger_target() {
     async function background() {
+      
+      
       browser.test.sendMessage("extension-origin", window.location.origin);
     }
 
@@ -921,6 +923,8 @@ add_task(
   async function test_panel_live_reload_when_extension_auto_adds_items() {
     async function background() {
       await browser.storage.local.set({ a: { b: 123 }, c: { d: 456 } });
+      
+      
       browser.test.sendMessage("extension-origin", window.location.origin);
     }
     const EXTENSION_ID = "test_local_storage_live_reload@xpcshell.mozilla.org";
@@ -996,6 +1000,8 @@ add_task(
     async function background() {
       await browser.storage.local.set({ a: { b: 123 } });
       await browser.storage.sync.set({ c: { d: 456 } });
+      
+      
       browser.test.sendMessage("extension-origin", window.location.origin);
     }
 
