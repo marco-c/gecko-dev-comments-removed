@@ -449,6 +449,12 @@ void NoiseSuppressor::Process(AudioBuffer* audio) {
   }
 
   
+  
+  if (!capture_output_used_) {
+    return;
+  }
+
+  
   std::array<float, kFftSizeBy2Plus1> filter_data;
   rtc::ArrayView<const float, kFftSizeBy2Plus1> filter = filter_data;
   if (num_channels_ == 1) {
