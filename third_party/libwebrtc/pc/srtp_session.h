@@ -126,8 +126,14 @@ class SrtpSession {
 
   webrtc::SequenceChecker thread_checker_;
   srtp_ctx_t_* session_ = nullptr;
+
+  
+  
+  
+  
   int rtp_auth_tag_len_ = 0;
   int rtcp_auth_tag_len_ = 0;
+
   bool inited_ = false;
   static webrtc::GlobalMutex lock_;
   int last_send_seq_num_ = -1;

@@ -80,6 +80,10 @@ bool SrtpSession::ProtectRtp(void* p, int in_len, int max_len, int* out_len) {
     return false;
   }
 
+  
+  
+  
+  
   int need_len = in_len + rtp_auth_tag_len_;  
   if (max_len < need_len) {
     RTC_LOG(LS_WARNING) << "Failed to protect SRTP packet: The buffer length "
@@ -122,6 +126,10 @@ bool SrtpSession::ProtectRtcp(void* p, int in_len, int max_len, int* out_len) {
     return false;
   }
 
+  
+  
+  
+  
   int need_len = in_len + sizeof(uint32_t) + rtcp_auth_tag_len_;  
   if (max_len < need_len) {
     RTC_LOG(LS_WARNING) << "Failed to protect SRTCP packet: The buffer length "
