@@ -445,13 +445,6 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
 
       
       
-      
-      if (MOZ_UNLIKELY(wrapped->is<ScriptSourceObject>())) {
-        continue;
-      }
-
-      
-      
       if (nukeReferencesToWindow == DontNukeWindowReferences &&
           MOZ_LIKELY(!nukeAll) && IsWindowProxy(wrapped)) {
         continue;
@@ -469,15 +462,8 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
 JS_PUBLIC_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
   
   
-  
-  
-  
 
   MOZ_ASSERT(obj->compartment() != target);
-
-  if (obj->is<ScriptSourceObject>()) {
-    return true;
-  }
 
   if (target->nukedOutgoingWrappers ||
       obj->nonCCWRealm()->nukedIncomingWrappers) {

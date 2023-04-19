@@ -289,6 +289,9 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
 bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
                                      MutableHandleObject obj) {
   
+  MOZ_ASSERT(!obj->is<ScriptSourceObject>());
+
+  
   if (ObjectWrapperMap::Ptr p = lookupWrapper(obj)) {
     obj.set(p->value().get());
     MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
