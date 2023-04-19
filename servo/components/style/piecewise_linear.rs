@@ -230,7 +230,10 @@ impl PiecewiseLinearFunctionBuilder {
         }
         
         
-        debug_assert!(self.entries[0].x.is_some(), "Expected an entry with x defined!");
+        debug_assert!(
+            self.entries[0].x.is_some(),
+            "Expected an entry with x defined!"
+        );
         
         self.entries
             .last_mut()

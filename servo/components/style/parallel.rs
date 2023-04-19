@@ -75,9 +75,8 @@ type WorkUnit<N> = ArrayVec<SendNode<N>, WORK_UNIT_MAX>;
 
 
 #[inline(never)]
-fn create_thread_local_context<'scope, E>(
-    slot: &mut Option<ThreadLocalStyleContext<E>>,
-) where
+fn create_thread_local_context<'scope, E>(slot: &mut Option<ThreadLocalStyleContext<E>>)
+where
     E: TElement + 'scope,
 {
     *slot = Some(ThreadLocalStyleContext::new());

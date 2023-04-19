@@ -892,7 +892,11 @@ impl Animate for ComputedTransform {
             
             
             (Some(this_remainder), Some(other_remainder)) => {
-                result.push(TransformOperation::animate_mismatched_transforms(this_remainder, other_remainder, procedure)?);
+                result.push(TransformOperation::animate_mismatched_transforms(
+                    this_remainder,
+                    other_remainder,
+                    procedure,
+                )?);
             },
             
             
@@ -1121,7 +1125,10 @@ impl ComputedTransformOperation {
     ) -> Result<Self, ()> {
         let (left, _left_3d) = Transform::components_to_transform_3d_matrix(left, None)?;
         let (right, _right_3d) = Transform::components_to_transform_3d_matrix(right, None)?;
-        ComputedTransformOperation::Matrix3D(left.into()).animate(&ComputedTransformOperation::Matrix3D(right.into()), procedure)
+        ComputedTransformOperation::Matrix3D(left.into()).animate(
+            &ComputedTransformOperation::Matrix3D(right.into()),
+            procedure,
+        )
     }
 
     fn animate_mismatched_transforms(
@@ -1137,22 +1144,18 @@ impl ComputedTransformOperation {
         Ok(match procedure {
             Procedure::Add => {
                 debug_assert!(false, "Addition should've been handled earlier");
-                return Err(())
+                return Err(());
             },
-            Procedure::Interpolate { progress } => {
-                Self::InterpolateMatrix {
-                    from_list,
-                    to_list,
-                    progress: Percentage(progress as f32),
-                }
-            }
-            Procedure::Accumulate { count } => {
-                Self::AccumulateMatrix {
-                    from_list,
-                    to_list,
-                    count: cmp::min(count, i32::max_value() as u64) as i32,
-                }
-            }
+            Procedure::Interpolate { progress } => Self::InterpolateMatrix {
+                from_list,
+                to_list,
+                progress: Percentage(progress as f32),
+            },
+            Procedure::Accumulate { count } => Self::AccumulateMatrix {
+                from_list,
+                to_list,
+                count: cmp::min(count, i32::max_value() as u64) as i32,
+            },
         })
     }
 }

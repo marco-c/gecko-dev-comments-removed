@@ -186,7 +186,9 @@ impl SpecifiedValueInfo for Percentage {}
 
 pub trait ToPercentage {
     
-    fn is_calc(&self) -> bool { false }
+    fn is_calc(&self) -> bool {
+        false
+    }
     
     fn to_percentage(&self) -> CSSFloat;
 }

@@ -90,7 +90,8 @@ impl PropertyAnimation {
         
         
         
-        self.timing_function.calculate_output(progress, BeforeFlag::Unset, epsilon)
+        self.timing_function
+            .calculate_output(progress, BeforeFlag::Unset, epsilon)
     }
 
     

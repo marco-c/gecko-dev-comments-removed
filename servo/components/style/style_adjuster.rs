@@ -27,7 +27,6 @@ use crate::properties::{self, ComputedValues, StyleBuilder};
 
 
 
-
 pub struct StyleAdjuster<'a, 'b: 'a> {
     style: &'a mut StyleBuilder<'b>,
 }
@@ -158,8 +157,8 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     fn adjust_for_webkit_line_clamp(&mut self) {
         use crate::properties::longhands::_moz_box_orient::computed_value::T as BoxOrient;
-        use crate::values::specified::box_::{DisplayOutside, DisplayInside};
-        let box_style= self.style.get_box();
+        use crate::values::specified::box_::{DisplayInside, DisplayOutside};
+        let box_style = self.style.get_box();
         if box_style.clone__webkit_line_clamp().is_none() {
             return;
         }
@@ -176,7 +175,9 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             debug_assert_eq!(disp.outside(), DisplayOutside::Inline);
             Display::InlineBlock
         };
-        self.style.mutate_box().set_adjusted_display(new_display, false);
+        self.style
+            .mutate_box()
+            .set_adjusted_display(new_display, false);
     }
 
     
@@ -277,7 +278,8 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
                 .add_flags(ComputedValueFlags::IS_ROOT_ELEMENT_STYLE);
         }
 
-        if self.style
+        if self
+            .style
             .get_box()
             .clone_contain()
             .contains(SpecifiedValue::STYLE)

@@ -7,8 +7,8 @@
 use crate::parser::{Parse, ParserContext};
 use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::{
-    Angle, Context, Integer, Length, NonNegativeLength, NonNegativeNumber,
-    Number, Percentage, ToComputedValue
+    Angle, Context, Integer, Length, NonNegativeLength, NonNegativeNumber, Number, Percentage,
+    ToComputedValue,
 };
 use crate::values::generics::font::{FeatureTagValue, FontSettings, VariationValue};
 use crate::values::generics::{font as generics, NonNegative};
@@ -48,7 +48,15 @@ pub use crate::values::specified::Integer as SpecifiedInteger;
 /// cbindgen:derive-gte
 #[repr(C)]
 #[derive(
-    Clone, ComputeSquaredDistance, Copy, Debug, Hash, MallocSizeOf, PartialEq, PartialOrd, ToResolvedValue,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    ToResolvedValue,
 )]
 pub struct FixedPoint<T, const FRACTION_BITS: u16> {
     value: T,
@@ -95,7 +103,15 @@ pub type FontWeightFixedPoint = FixedPoint<u16, FONT_WEIGHT_FRACTION_BITS>;
 /// cbindgen:derive-gt
 /// cbindgen:derive-gte
 #[derive(
-    Clone, ComputeSquaredDistance, Copy, Debug, Hash, MallocSizeOf, PartialEq, PartialOrd, ToResolvedValue,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    ToResolvedValue,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
@@ -125,13 +141,19 @@ impl ToCss for FontWeight {
 
 impl FontWeight {
     
-    pub const NORMAL: FontWeight = FontWeight(FontWeightFixedPoint { value: 400 << FONT_WEIGHT_FRACTION_BITS });
+    pub const NORMAL: FontWeight = FontWeight(FontWeightFixedPoint {
+        value: 400 << FONT_WEIGHT_FRACTION_BITS,
+    });
 
     
-    pub const BOLD: FontWeight = FontWeight(FontWeightFixedPoint { value: 700 << FONT_WEIGHT_FRACTION_BITS });
+    pub const BOLD: FontWeight = FontWeight(FontWeightFixedPoint {
+        value: 700 << FONT_WEIGHT_FRACTION_BITS,
+    });
 
     
-    pub const BOLD_THRESHOLD: FontWeight = FontWeight(FontWeightFixedPoint { value: 600 << FONT_WEIGHT_FRACTION_BITS });
+    pub const BOLD_THRESHOLD: FontWeight = FontWeight(FontWeightFixedPoint {
+        value: 600 << FONT_WEIGHT_FRACTION_BITS,
+    });
 
     
     pub fn normal() -> Self {
@@ -150,7 +172,9 @@ impl FontWeight {
 
     
     pub fn from_float(v: f32) -> Self {
-        Self(FixedPoint::from_float(v.max(MIN_FONT_WEIGHT).min(MAX_FONT_WEIGHT)))
+        Self(FixedPoint::from_float(
+            v.max(MIN_FONT_WEIGHT).min(MAX_FONT_WEIGHT),
+        ))
     }
 
     
@@ -175,7 +199,7 @@ impl FontWeight {
     pub fn lighter(self) -> Self {
         let value = self.value();
         if value < 550. {
-            return Self::from_float(value.min(100.))
+            return Self::from_float(value.min(100.));
         }
         if value < 750. {
             return Self::NORMAL;
@@ -860,23 +884,37 @@ pub type FontStyleFixedPoint = FixedPoint<i16, FONT_STYLE_FRACTION_BITS>;
 /// cbindgen:derive-gt
 /// cbindgen:derive-gte
 #[derive(
-    Clone, ComputeSquaredDistance, Copy, Debug, Hash, MallocSizeOf, PartialEq, PartialOrd, ToResolvedValue,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    ToResolvedValue,
 )]
 #[repr(C)]
 pub struct FontStyle(FontStyleFixedPoint);
 
 impl FontStyle {
     
-    pub const NORMAL: FontStyle = FontStyle(FontStyleFixedPoint { value: 100 << FONT_STYLE_FRACTION_BITS });
+    pub const NORMAL: FontStyle = FontStyle(FontStyleFixedPoint {
+        value: 100 << FONT_STYLE_FRACTION_BITS,
+    });
     
-    pub const ITALIC: FontStyle = FontStyle(FontStyleFixedPoint { value: 101 << FONT_STYLE_FRACTION_BITS });
+    pub const ITALIC: FontStyle = FontStyle(FontStyleFixedPoint {
+        value: 101 << FONT_STYLE_FRACTION_BITS,
+    });
 
     
     
     pub const DEFAULT_OBLIQUE_DEGREES: i16 = 14;
 
     
-    pub const OBLIQUE: FontStyle = FontStyle(FontStyleFixedPoint { value: Self::DEFAULT_OBLIQUE_DEGREES << FONT_STYLE_FRACTION_BITS });
+    pub const OBLIQUE: FontStyle = FontStyle(FontStyleFixedPoint {
+        value: Self::DEFAULT_OBLIQUE_DEGREES << FONT_STYLE_FRACTION_BITS,
+    });
 
     
     #[inline]
@@ -889,7 +927,7 @@ impl FontStyle {
         Self(FixedPoint::from_float(
             degrees
                 .max(specified::FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES)
-                .min(specified::FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES)
+                .min(specified::FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES),
         ))
     }
 
@@ -907,10 +945,10 @@ impl ToCss for FontStyle {
         W: fmt::Write,
     {
         if *self == Self::NORMAL {
-            return dest.write_str("normal")
+            return dest.write_str("normal");
         }
         if *self == Self::ITALIC {
-            return dest.write_str("italic")
+            return dest.write_str("italic");
         }
         if *self == Self::OBLIQUE {
             return dest.write_str("oblique");
@@ -928,10 +966,10 @@ impl ToAnimatedValue for FontStyle {
     #[inline]
     fn to_animated_value(self) -> Self::AnimatedValue {
         if self == Self::NORMAL {
-            return generics::FontStyle::Normal
+            return generics::FontStyle::Normal;
         }
         if self == Self::ITALIC {
-            return generics::FontStyle::Italic
+            return generics::FontStyle::Italic;
         }
         generics::FontStyle::Oblique(Angle::from_degrees(self.oblique_degrees()))
     }
@@ -952,13 +990,11 @@ impl ToAnimatedValue for FontStyle {
 
 
 
-
 pub const FONT_STRETCH_FRACTION_BITS: u16 = 6;
 
 
 
 pub type FontStretchFixedPoint = FixedPoint<u16, FONT_STRETCH_FRACTION_BITS>;
-
 
 
 
@@ -981,23 +1017,41 @@ impl FontStretch {
     pub const HALF: u16 = 1 << (Self::FRACTION_BITS - 1);
 
     
-    pub const ULTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint { value: 50 << Self::FRACTION_BITS });
+    pub const ULTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 50 << Self::FRACTION_BITS,
+    });
     
-    pub const EXTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint { value: (62 << Self::FRACTION_BITS) + Self::HALF });
+    pub const EXTRA_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: (62 << Self::FRACTION_BITS) + Self::HALF,
+    });
     
-    pub const CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint { value: 75 << Self::FRACTION_BITS });
+    pub const CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 75 << Self::FRACTION_BITS,
+    });
     
-    pub const SEMI_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint { value: (87 << Self::FRACTION_BITS) + Self::HALF });
+    pub const SEMI_CONDENSED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: (87 << Self::FRACTION_BITS) + Self::HALF,
+    });
     
-    pub const NORMAL: FontStretch = FontStretch(FontStretchFixedPoint { value: 100 << Self::FRACTION_BITS });
+    pub const NORMAL: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 100 << Self::FRACTION_BITS,
+    });
     
-    pub const SEMI_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint { value: (112 << Self::FRACTION_BITS) + Self::HALF });
+    pub const SEMI_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: (112 << Self::FRACTION_BITS) + Self::HALF,
+    });
     
-    pub const EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint { value: 125 << Self::FRACTION_BITS });
+    pub const EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 125 << Self::FRACTION_BITS,
+    });
     
-    pub const EXTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint { value: 150 << Self::FRACTION_BITS });
+    pub const EXTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 150 << Self::FRACTION_BITS,
+    });
     
-    pub const ULTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint { value: 200 << Self::FRACTION_BITS });
+    pub const ULTRA_EXPANDED: FontStretch = FontStretch(FontStretchFixedPoint {
+        value: 200 << Self::FRACTION_BITS,
+    });
 
     
     pub fn hundred() -> Self {

@@ -25,7 +25,11 @@ pub struct NamespaceRule {
 
 impl ToCssWithGuard for NamespaceRule {
     
-    fn to_css(&self, _guard: &SharedRwLockReadGuard, dest_str: &mut CssStringWriter) -> fmt::Result {
+    fn to_css(
+        &self,
+        _guard: &SharedRwLockReadGuard,
+        dest_str: &mut CssStringWriter,
+    ) -> fmt::Result {
         let mut dest = CssWriter::new(dest_str);
         dest.write_str("@namespace ")?;
         if let Some(ref prefix) = self.prefix {

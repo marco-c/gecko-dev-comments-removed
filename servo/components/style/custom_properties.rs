@@ -126,7 +126,10 @@ static CHROME_ENVIRONMENT_VARIABLES: [EnvironmentVariable; 6] = [
         GTKCSDMaximizeButtonPosition,
         integer
     ),
-    make_variable!(atom!("-moz-content-preferred-color-scheme"), get_content_preferred_color_scheme),
+    make_variable!(
+        atom!("-moz-content-preferred-color-scheme"),
+        get_content_preferred_color_scheme
+    ),
 ];
 
 impl CssEnvironment {
@@ -783,7 +786,11 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
 
 
-fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, seen: &PrecomputedHashSet<&Name>, device: &Device) {
+fn substitute_all(
+    custom_properties_map: &mut CustomPropertiesMap,
+    seen: &PrecomputedHashSet<&Name>,
+    device: &Device,
+) {
     
     
     

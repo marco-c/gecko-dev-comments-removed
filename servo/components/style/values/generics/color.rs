@@ -4,12 +4,12 @@
 
 
 
+use crate::values::animated::color::AnimatedRGBA;
+use crate::values::animated::ToAnimatedValue;
+use crate::values::specified::percentage::ToPercentage;
+use crate::values::{Parse, Parser, ParserContext};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
-use crate::values::{Parse, ParserContext, Parser};
-use crate::values::specified::percentage::ToPercentage;
-use crate::values::animated::ToAnimatedValue;
-use crate::values::animated::color::AnimatedRGBA;
 
 
 
@@ -27,7 +27,20 @@ pub enum GenericColor<RGBA, Percentage> {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToAnimatedValue, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum ColorSpace {
     
@@ -63,7 +76,20 @@ impl ColorSpace {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToAnimatedValue, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum HueInterpolationMethod {
     
@@ -79,7 +105,18 @@ pub enum HueInterpolationMethod {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem, ToAnimatedValue, ToComputedValue, ToResolvedValue)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    ToShmem,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToResolvedValue,
+)]
 #[repr(C)]
 pub struct ColorInterpolationMethod {
     
@@ -109,11 +146,13 @@ impl Parse for ColorInterpolationMethod {
         
         
         let hue = if space.is_polar() {
-            input.try_parse(|input| -> Result<_, ParseError<'i>> {
-                let hue = HueInterpolationMethod::parse(input)?;
-                input.expect_ident_matching("hue")?;
-                Ok(hue)
-            }).unwrap_or(HueInterpolationMethod::Shorter)
+            input
+                .try_parse(|input| -> Result<_, ParseError<'i>> {
+                    let hue = HueInterpolationMethod::parse(input)?;
+                    input.expect_ident_matching("hue")?;
+                    Ok(hue)
+                })
+                .unwrap_or(HueInterpolationMethod::Shorter)
         } else {
             HueInterpolationMethod::Shorter
         };
@@ -141,7 +180,16 @@ impl ToCss for ColorInterpolationMethod {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[allow(missing_docs)]
 #[repr(C)]
 pub struct GenericColorMix<Color, Percentage> {
@@ -160,7 +208,11 @@ impl<Color: ToCss, Percentage: ToCss + ToPercentage> ToCss for ColorMix<Color, P
     where
         W: Write,
     {
-        fn can_omit<Percentage: ToPercentage>(percent: &Percentage, other: &Percentage, is_left: bool) -> bool {
+        fn can_omit<Percentage: ToPercentage>(
+            percent: &Percentage,
+            other: &Percentage,
+            is_left: bool,
+        ) -> bool {
             if percent.is_calc() {
                 return false;
             }

@@ -304,12 +304,16 @@ impl CrossFade {
 }
 
 impl CrossFadeElement {
-    fn parse_percentage<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Option<Percentage> {
+    fn parse_percentage<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Option<Percentage> {
         
         
         
         
-        input.try_parse(|input| Percentage::parse_non_negative(context, input))
+        input
+            .try_parse(|input| Percentage::parse_non_negative(context, input))
             .ok()
             .map(|p| p.clamp_to_hundred())
     }
