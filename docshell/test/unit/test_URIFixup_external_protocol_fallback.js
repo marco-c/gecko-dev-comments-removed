@@ -6,6 +6,9 @@
 
 
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { MockRegistrar } = ChromeUtils.import(
   "resource://testing-common/MockRegistrar.jsm"
 );
@@ -60,9 +63,12 @@ add_task(function basic() {
   const testData = [
     {
       input: "mailto:test@example.com",
-      expected: isSupportedInHandlerService("mailto")
-        ? "mailto:test@example.com"
-        : "http://mailto:test@example.com/",
+      expected:
+        isSupportedInHandlerService("mailto") ||
+        
+        AppConstants.MOZ_APP_NAME == "thunderbird"
+          ? "mailto:test@example.com"
+          : "http://mailto:test@example.com/",
     },
     {
       input: "keyword:search",
