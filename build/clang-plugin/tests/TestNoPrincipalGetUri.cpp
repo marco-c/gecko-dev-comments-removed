@@ -19,7 +19,7 @@ void f() {
   nsIPrincipal *a = new SomePrincipal();
   a->GetURI(0); 
 
-  nsIPrincipal *b = new NullPrincipal();
+  ::nsIPrincipal *b = new NullPrincipal();
   b->GetURI(0); 
 
   SomeURI *c = new SomeURI();
