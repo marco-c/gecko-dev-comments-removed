@@ -6,6 +6,8 @@
 #define DOM_MEDIA_PLATFORM_WMF_MFMEDIAENGINEVIDEOSTREAM_H
 
 #include "MFMediaEngineStream.h"
+#include "WMFUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 
 namespace mozilla {
@@ -46,11 +48,14 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   MFMediaEngineVideoStream* AsVideoStream() override { return this; }
 
-  layers::Image* GetDcompSurfaceImage();
-
   already_AddRefed<MediaData> OutputData(MediaRawData* aSample) override;
 
   MediaDataDecoder::ConversionRequired NeedsConversion() const override;
+
+  
+  
+  
+  void SetConfig(const TrackInfo& aConfig);
 
  private:
   HRESULT
@@ -58,18 +63,26 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   bool HasEnoughRawData() const override;
 
-  
-  
-  VideoInfo mInfo;
+  void UpdateConfig(const VideoInfo& aInfo);
 
   Mutex mMutex{"MFMediaEngineVideoStream"};
 
   HANDLE mDCompSurfaceHandle MOZ_GUARDED_BY(mMutex);
   bool mNeedRecreateImage MOZ_GUARDED_BY(mMutex);
   RefPtr<layers::KnowsCompositor> mKnowsCompositor MOZ_GUARDED_BY(mMutex);
+  gfx::IntSize mDisplay MOZ_GUARDED_BY(mMutex);
+
+  
+  WMFStreamType mStreamType;
 
   
   RefPtr<layers::DcompSurfaceImage> mDcompSurfaceImage;
+
+  
+  
+  
+  
+  bool mHasReceivedInitialCreateDecoderConfig;
 };
 
 }  
