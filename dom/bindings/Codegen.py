@@ -813,6 +813,8 @@ def InterfacePrototypeObjectProtoGetter(descriptor):
             protoGetter = "JS::GetRealmErrorPrototype"
         elif descriptor.interface.isIteratorInterface():
             protoGetter = "JS::GetRealmIteratorPrototype"
+        elif descriptor.interface.isAsyncIteratorInterface():
+            protoGetter = "JS::GetRealmAsyncIteratorPrototype"
         else:
             protoGetter = "JS::GetRealmObjectPrototype"
         protoHandleGetter = None
@@ -1475,7 +1477,10 @@ class CGHeaders(CGWrapper):
             
             
             
-            if desc.interface.isIteratorInterface():
+            if (
+                desc.interface.isIteratorInterface()
+                or desc.interface.isAsyncIteratorInterface()
+            ):
                 continue
 
             for m in desc.interface.members:
@@ -18112,7 +18117,10 @@ class CGForwardDeclarations(CGWrapper):
         for d in descriptors:
             
             
-            if d.interface.isIteratorInterface():
+            if (
+                d.interface.isIteratorInterface()
+                or d.interface.isAsyncIteratorInterface()
+            ):
                 continue
             builder.add(d.nativeType)
             if d.interface.isSerializable():
@@ -18210,7 +18218,10 @@ class CGBindingRoot(CGThing):
             d.isObject() for t in unionTypes for d in t.flatMemberTypes
         )
         bindingDeclareHeaders["mozilla/dom/IterableIterator.h"] = any(
-            d.interface.isIteratorInterface() or d.interface.isIterable()
+            d.interface.isIteratorInterface()
+            or d.interface.isAsyncIteratorInterface()
+            or d.interface.isIterable()
+            or d.interface.isAsyncIterable()
             for d in descriptors
         )
 
@@ -18286,7 +18297,9 @@ class CGBindingRoot(CGThing):
 
         def descriptorHasIteratorAlias(desc):
             def hasIteratorAlias(m):
-                return m.isMethod() and "@@iterator" in m.aliases
+                return m.isMethod() and (
+                    ("@@iterator" in m.aliases) or ("@@asyncIterator" in m.aliases)
+                )
 
             return any(hasIteratorAlias(m) for m in desc.interface.members)
 
@@ -22129,20 +22142,38 @@ class CGIterableMethodGenerator(CGGeneric):
                 ),
             )
             return
-        CGGeneric.__init__(
-            self,
-            fill(
-                """
-            typedef ${iterClass} itrType;
-            RefPtr<itrType> result(new itrType(self,
-                                                 itrType::IterableIteratorType::${itrMethod},
-                                                 &${ifaceName}Iterator_Binding::Wrap));
-            """,
-                iterClass=iteratorNativeType(descriptor),
-                ifaceName=descriptor.interface.identifier.name,
-                itrMethod=methodName.title(),
-            ),
-        )
+        if descriptor.interface.isIterable():
+            CGGeneric.__init__(
+                self,
+                fill(
+                    """
+                typedef ${iterClass} itrType;
+                RefPtr<itrType> result(new itrType(self,
+                                                   itrType::IteratorType::${itrMethod},
+                                                   &${ifaceName}Iterator_Binding::Wrap));
+                """,
+                    iterClass=iteratorNativeType(descriptor),
+                    ifaceName=descriptor.interface.identifier.name,
+                    itrMethod=methodName.title(),
+                ),
+            )
+        else:
+            assert descriptor.interface.isAsyncIterable()
+            CGGeneric.__init__(
+                self,
+                fill(
+                    """
+                typedef ${iterClass} itrType;
+                RefPtr<itrType> result(new itrType(self,
+                                                   itrType::IteratorType::${itrMethod},
+                                                   &${ifaceName}AsyncIterator_Binding::Wrap));
+                self->InitAsyncIterator(result.get());
+                """,
+                    iterClass=iteratorNativeType(descriptor),
+                    ifaceName=descriptor.interface.identifier.name,
+                    itrMethod=methodName.title(),
+                ),
+            )
 
 
 def getObservableArrayBackingObject(descriptor, attr, errorReturn="return false;\n"):
