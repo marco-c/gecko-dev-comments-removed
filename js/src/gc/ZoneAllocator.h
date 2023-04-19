@@ -166,7 +166,7 @@ class ZoneAllocator : public JS::shadow::Zone,
 
  public:
   
-  gc::HeapSize gcHeapSize;
+  gc::HeapSizeChild gcHeapSize;
 
   
   gc::GCHeapThreshold gcHeapThreshold;

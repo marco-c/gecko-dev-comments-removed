@@ -885,7 +885,8 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
     
     
     bool allArenasRelocated = ShouldRelocateAllArenas(reason);
-    arena->zone->gcHeapSize.removeBytes(ArenaSize, !allArenasRelocated);
+    arena->zone->gcHeapSize.removeBytes(ArenaSize, !allArenasRelocated,
+                                        heapSize);
 
     
     arena->release(lock);

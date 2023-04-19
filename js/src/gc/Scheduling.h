@@ -703,12 +703,6 @@ class HeapSize {
 
 
 
-  HeapSize* const parent_;
-
-  
-
-
-
 
   AtomicByteCount bytes_;
 
@@ -720,7 +714,10 @@ class HeapSize {
   AtomicByteCount retainedBytes_;
 
  public:
-  explicit HeapSize(HeapSize* parent) : parent_(parent), bytes_(0) {}
+  explicit HeapSize() {
+    MOZ_ASSERT(bytes_ == 0);
+    MOZ_ASSERT(retainedBytes_ == 0);
+  }
 
   size_t bytes() const { return bytes_; }
   size_t retainedBytes() const { return retainedBytes_; }
@@ -737,9 +734,6 @@ class HeapSize {
     mozilla::DebugOnly<size_t> initialBytes(bytes_);
     MOZ_ASSERT(initialBytes + nbytes > initialBytes);
     bytes_ += nbytes;
-    if (parent_) {
-      parent_->addBytes(nbytes);
-    }
   }
   void removeBytes(size_t nbytes, bool updateRetainedSize) {
     if (updateRetainedSize) {
@@ -748,9 +742,33 @@ class HeapSize {
     }
     MOZ_ASSERT(bytes_ >= nbytes);
     bytes_ -= nbytes;
-    if (parent_) {
-      parent_->removeBytes(nbytes, updateRetainedSize);
-    }
+  }
+};
+
+
+
+
+
+class HeapSizeChild : public HeapSize {
+ public:
+  void addGCArena(HeapSize& parent) {
+    HeapSize::addGCArena();
+    parent.addGCArena();
+  }
+
+  void removeGCArena(HeapSize& parent) {
+    HeapSize::removeGCArena();
+    parent.removeGCArena();
+  }
+
+  void addBytes(size_t nbytes, HeapSize& parent) {
+    HeapSize::addBytes(nbytes);
+    parent.addBytes(nbytes);
+  }
+
+  void removeBytes(size_t nbytes, bool updateRetainedSize, HeapSize& parent) {
+    HeapSize::removeBytes(nbytes, updateRetainedSize);
+    parent.removeBytes(nbytes, updateRetainedSize);
   }
 };
 
