@@ -322,6 +322,13 @@ class Accessible {
                                     Maybe<bool>* aAtomic,
                                     nsAString* aBusy) const = 0;
 
+  
+
+
+
+
+  virtual Maybe<bool> ARIASelected() const = 0;
+
   LayoutDeviceIntSize Size() const;
 
   LayoutDeviceIntPoint Position(uint32_t aCoordType);

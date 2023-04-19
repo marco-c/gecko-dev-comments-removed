@@ -1425,6 +1425,9 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
       RefPtr<AccEvent> event =
           new AccSelChangeEvent(widget, this, selChangeType);
       mDoc->FireDelayedEvent(event);
+      if (aAttribute == nsGkAtoms::aria_selected) {
+        mDoc->QueueCacheUpdate(this, CacheDomain::State);
+      }
     }
 
     return;
@@ -3532,12 +3535,24 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 
   
   
-  if (aCacheDomain & CacheDomain::State &&
-      aUpdateType == CacheUpdateType::Initial) {
-    uint64_t state = State();
+  if (aCacheDomain & CacheDomain::State) {
+    if (aUpdateType == CacheUpdateType::Initial) {
+      
+      
+      uint64_t state = State();
+      
+      state &= ~kRemoteCalculatedStates;
+      fields->SetAttribute(nsGkAtoms::state, state);
+    }
     
-    state &= ~kRemoteCalculatedStates;
-    fields->SetAttribute(nsGkAtoms::state, state);
+    
+    
+    
+    if (auto ariaSelected = ARIASelected()) {
+      fields->SetAttribute(nsGkAtoms::aria_selected, *ariaSelected);
+    } else if (aUpdateType == CacheUpdateType::Update) {
+      fields->SetAttribute(nsGkAtoms::aria_selected, DeleteEntry());  
+    }
   }
 
   if (aCacheDomain & CacheDomain::GroupInfo && mContent) {
@@ -3905,6 +3920,20 @@ void LocalAccessible::LiveRegionAttributes(nsAString* aLive,
   if (aBusy) {
     nsAccUtils::GetARIAAttr(el, nsGkAtoms::aria_busy, *aBusy);
   }
+}
+
+Maybe<bool> LocalAccessible::ARIASelected() const {
+  if (dom::Element* el = Elm()) {
+    nsStaticAtom* atom =
+        nsAccUtils::NormalizeARIAToken(el, nsGkAtoms::aria_selected);
+    if (atom == nsGkAtoms::_true) {
+      return Some(true);
+    }
+    if (atom == nsGkAtoms::_false) {
+      return Some(false);
+    }
+  }
+  return Nothing();
 }
 
 void LocalAccessible::StaticAsserts() const {
