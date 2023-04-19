@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#import <WebRTC/RTCVideoCodecInfo.h>
+
+@interface RTC_OBJC_TYPE (RTCVideoCodecInfo)
+(HumanReadable)
+
+    - (NSString *)humanReadableDescription;
+
+@end

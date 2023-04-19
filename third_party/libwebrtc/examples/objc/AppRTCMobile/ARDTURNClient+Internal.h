@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import "ARDTURNClient.h"
+
+@interface ARDTURNClient : NSObject <ARDTURNClient>
+
+- (instancetype)initWithURL:(NSURL *)url;
+
+@end

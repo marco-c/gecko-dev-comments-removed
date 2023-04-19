@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import <AppKit/AppKit.h>
+
+@interface APPRTCViewController : NSViewController
+
+- (void)windowWillClose:(NSNotification*)notification;
+
+@end

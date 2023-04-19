@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+#import <WebRTC/RTCMacros.h>
+
+@class RTC_OBJC_TYPE(RTCLegacyStatsReport);
+
+
+
+@interface ARDStatsBuilder : NSObject
+
+
+
+
+@property(nonatomic, readonly) NSString *statsString;
+
+
+
+
+- (void)parseStatsReport:(RTC_OBJC_TYPE(RTCLegacyStatsReport) *)statsReport;
+
+@end

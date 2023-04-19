@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import <ReplayKit/ReplayKit.h>
+#import <UIKit/UIKit.h>
+
+API_AVAILABLE(ios(11.0))
+@interface ARDBroadcastSetupViewController : UIViewController <UITextFieldDelegate>
+
+@end

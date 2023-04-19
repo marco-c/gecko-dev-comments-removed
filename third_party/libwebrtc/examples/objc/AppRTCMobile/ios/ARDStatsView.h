@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import <UIKit/UIKit.h>
+
+@interface ARDStatsView : UIView
+
+- (void)setStats:(NSArray *)stats;
+
+@end

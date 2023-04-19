@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+
+
+
+
+
+@interface ARDBitrateTracker : NSObject
+
+
+@property(nonatomic, readonly) double bitrate;
+
+@property(nonatomic, readonly) NSString *bitrateString;
+
+
++ (NSString *)bitrateStringForBitrate:(double)bitrate;
+
+- (void)updateBitrateWithCurrentByteCount:(NSInteger)byteCount;
+
+@end

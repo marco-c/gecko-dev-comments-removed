@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#import "ARDMessageResponse.h"
+
+@interface ARDMessageResponse ()
+
+@property(nonatomic, assign) ARDMessageResultType result;
+
+@end

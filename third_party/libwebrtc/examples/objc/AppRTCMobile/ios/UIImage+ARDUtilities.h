@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#import <UIKit/UIKit.h>
+
+@interface UIImage (ARDUtilities)
+
+
++ (UIImage *)imageForName:(NSString *)name color:(UIColor *)color;
+
+@end
