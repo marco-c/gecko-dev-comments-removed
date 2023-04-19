@@ -26,17 +26,15 @@ class PacketSequencer {
   
   
   
+  
   PacketSequencer(uint32_t media_ssrc,
-                  uint32_t rtx_ssrc,
+                  absl::optional<uint32_t> rtx_ssrc,
                   bool require_marker_before_media_padding,
                   Clock* clock);
 
   
   
-  
-  
-  
-  bool Sequence(RtpPacketToSend& packet);
+  void Sequence(RtpPacketToSend& packet);
 
   void set_media_sequence_number(uint16_t sequence_number) {
     media_sequence_number_ = sequence_number;
@@ -51,12 +49,16 @@ class PacketSequencer {
   uint16_t media_sequence_number() const { return media_sequence_number_; }
   uint16_t rtx_sequence_number() const { return rtx_sequence_number_; }
 
+  
+  
+  bool CanSendPaddingOnMediaSsrc() const;
+
  private:
   void UpdateLastPacketState(const RtpPacketToSend& packet);
-  bool PopulatePaddingFields(RtpPacketToSend& packet);
+  void PopulatePaddingFields(RtpPacketToSend& packet);
 
   const uint32_t media_ssrc_;
-  const uint32_t rtx_ssrc_;
+  const absl::optional<uint32_t> rtx_ssrc_;
   const bool require_marker_before_media_padding_;
   Clock* const clock_;
 
