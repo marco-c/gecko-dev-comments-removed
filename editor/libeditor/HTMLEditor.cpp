@@ -2825,20 +2825,19 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameAtSelection(
 
   
   const EditorRawDOMPoint atAnchor(SelectionRef().AnchorRef());
-  if (NS_WARN_IF(!atAnchor.IsSet()) ||
-      NS_WARN_IF(!atAnchor.GetContainerAsContent())) {
+  if (NS_WARN_IF(!atAnchor.IsInContentNode())) {
     return nullptr;
   }
 
   
   nsIContent* content = nullptr;
   if (atAnchor.GetContainer()->HasChildNodes() &&
-      atAnchor.GetContainerAsContent()) {
+      atAnchor.ContainerAsContent()) {
     content = atAnchor.GetChild();
   }
   
   if (!content) {
-    content = atAnchor.GetContainerAsContent();
+    content = atAnchor.ContainerAsContent();
     if (NS_WARN_IF(!content)) {
       return nullptr;
     }
@@ -4625,7 +4624,7 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     
-    nsIContent* splittingContent = atStartOfRightNode.GetContainerAsContent();
+    auto* splittingContent = atStartOfRightNode.GetContainerAs<nsIContent>();
     if (NS_WARN_IF(!splittingContent)) {
       lastResult.IgnoreCaretPointSuggestion();
       return SplitNodeResult(NS_ERROR_FAILURE);
@@ -4633,7 +4632,7 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     if (NS_WARN_IF(splittingContent != &aMostAncestorToSplit &&
-                   !atStartOfRightNode.GetContainerParentAsContent())) {
+                   !atStartOfRightNode.GetContainerParentAs<nsIContent>())) {
       lastResult.IgnoreCaretPointSuggestion();
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
@@ -4650,7 +4649,7 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     if ((aSplitAtEdges == SplitAtEdges::eAllowToCreateEmptyContainer &&
-         !atStartOfRightNode.GetContainerAsText()) ||
+         !atStartOfRightNode.IsInTextNode()) ||
         (!atStartOfRightNode.IsStartOfContainer() &&
          !atStartOfRightNode.IsEndOfContainer())) {
       lastResult = SplitNodeResult::MergeWithDeeperSplitNodeResult(
@@ -4761,7 +4760,7 @@ SplitNodeResult HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   
   if (!aStartOfRightNode.IsStartOfContainer()) {
     
-    Text* rightAsText = aStartOfRightNode.GetContainerAsText();
+    Text* rightAsText = aStartOfRightNode.GetContainerAs<Text>();
     Text* leftAsText = aNewNode.GetAsText();
     if (rightAsText && leftAsText) {
       
@@ -5719,7 +5718,7 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
         if (startOfRange.GetContainer()->IsHTMLElement(nsGkAtoms::body) &&
             selectionIsCollapsed) {
           if (RefPtr<nsStyledElement> styledElement =
-                  startOfRange.GetContainerAsStyledElement()) {
+                  startOfRange.GetContainerAs<nsStyledElement>()) {
             Result<int32_t, nsresult> result =
                 mCSSEditUtils->SetCSSEquivalentToHTMLStyleWithTransaction(
                     *styledElement, nullptr, nsGkAtoms::bgcolor, &aColor);

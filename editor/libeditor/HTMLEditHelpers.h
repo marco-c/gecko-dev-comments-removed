@@ -493,7 +493,7 @@ class MOZ_STACK_CLASS SplitNodeResult final {
     if (mGivenSplitPoint.IsSet()) {
       
       
-      return mGivenSplitPoint.GetContainerAsContent();
+      return mGivenSplitPoint.GetContainerAs<nsIContent>();
     }
     if (mDirection == SplitNodeDirection::LeftNodeIsNewOne) {
       return mNextNode ? mNextNode : mPreviousNode;
