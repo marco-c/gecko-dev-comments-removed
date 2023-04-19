@@ -342,6 +342,11 @@ let Player = {
             playerBottomControlsDOMRect: this.controlsBottom.getBoundingClientRect(),
           });
         }
+        
+        
+        
+        let selection = window.getSelection();
+        selection.removeAllRanges();
         break;
       }
 
