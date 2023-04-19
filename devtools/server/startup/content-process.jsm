@@ -60,7 +60,7 @@ function initContentProcessTarget(msg) {
   const response = { watcherActorID, prefix, actor: actor.form() };
   mm.sendAsyncMessage("debug:content-process-actor", response);
 
-  function onDestroy() {
+  function onDestroy(options) {
     mm.removeMessageListener(
       "debug:content-process-disconnect",
       onContentProcessDisconnect
@@ -75,7 +75,7 @@ function initContentProcessTarget(msg) {
     
     
     
-    conn.close();
+    conn.close(options);
 
     
     

@@ -659,7 +659,9 @@ const windowGlobalTargetPrototype = {
 
 
 
-  destroy({ isTargetSwitching = false } = {}) {
+
+
+  destroy({ isTargetSwitching = false, isModeSwitching = false } = {}) {
     
     
     if (this.destroying) {
@@ -727,7 +729,7 @@ const windowGlobalTargetPrototype = {
 
     
     
-    this.emit("destroyed");
+    this.emit("destroyed", { isTargetSwitching, isModeSwitching });
 
     Actor.prototype.destroy.call(this);
     TargetActorRegistry.unregisterTargetActor(this);

@@ -237,9 +237,9 @@ class DevToolsFrameChild extends JSWindowActorChild {
     const form = targetActor.form();
     
     
-    targetActor.once("destroyed", () => {
+    targetActor.once("destroyed", options => {
       
-      this._destroyTargetActor(watcherActorID);
+      this._destroyTargetActor(watcherActorID, options);
       
       try {
         this.sendAsyncMessage("DevToolsFrameChild:destroy", {
@@ -249,6 +249,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
               form,
             },
           ],
+          options,
         });
       } catch (e) {
         
@@ -295,7 +296,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
   }
 
-  _destroyTargetActor(watcherActorID) {
+  
+
+
+
+
+
+  _destroyTargetActor(watcherActorID, options) {
     const connectionInfo = this._connections.get(watcherActorID);
     
     if (!connectionInfo) {
@@ -303,10 +310,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
         `Trying to destroy a target actor that doesn't exists, or has already been destroyed. Watcher Actor ID:${watcherActorID}`
       );
     }
-    connectionInfo.connection.close();
+    connectionInfo.connection.close(options);
     this._connections.delete(watcherActorID);
     if (this._connections.size == 0) {
-      this.didDestroy();
+      this.didDestroy(options);
     }
   }
 
@@ -429,8 +436,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
         });
       }
       case "DevToolsFrameParent:destroy": {
-        const { watcherActorID } = message.data;
-        return this._destroyTargetActor(watcherActorID);
+        const { watcherActorID, options } = message.data;
+        return this._destroyTargetActor(watcherActorID, options);
       }
       case "DevToolsFrameParent:addSessionDataEntry": {
         const { watcherActorID, sessionContext, type, entries } = message.data;
@@ -672,10 +679,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
   }
 
-  didDestroy() {
+  didDestroy(options) {
     logWindowGlobal(this.manager, "Destroy WindowGlobalTarget");
     for (const [, connectionInfo] of this._connections) {
-      connectionInfo.connection.close();
+      connectionInfo.connection.close(options);
     }
     this._connections.clear();
 

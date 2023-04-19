@@ -119,7 +119,13 @@ function onMessageManagerClose(messageManager, topic, data) {
 
 
 
-function unregisterWatcherForMessageManager(watcher, messageManager) {
+
+
+
+
+
+
+function unregisterWatcherForMessageManager(watcher, messageManager, options) {
   const targetActorDescriptions = actors.get(messageManager);
   if (!targetActorDescriptions || targetActorDescriptions.length == 0) {
     return;
@@ -134,7 +140,7 @@ function unregisterWatcherForMessageManager(watcher, messageManager) {
     childTransport,
     actor,
   } of matchingTargetActorDescriptions) {
-    watcher.notifyTargetDestroyed(actor);
+    watcher.notifyTargetDestroyed(actor, options);
 
     childTransport.close();
     watcher.conn.cancelForwarding(prefix);
@@ -155,10 +161,15 @@ function unregisterWatcherForMessageManager(watcher, messageManager) {
 
 
 
-function closeWatcherTransports(watcher) {
+
+
+
+
+
+function closeWatcherTransports(watcher, options) {
   for (let i = 0; i < Services.ppmm.childCount; i++) {
     const messageManager = Services.ppmm.getChildAt(i);
-    unregisterWatcherForMessageManager(watcher, messageManager);
+    unregisterWatcherForMessageManager(watcher, messageManager, options);
   }
 }
 
@@ -189,10 +200,17 @@ function maybeRegisterMessageListeners(watcher) {
     }
   }
 }
-function maybeUnregisterMessageListeners(watcher) {
+
+
+
+
+
+
+
+function maybeUnregisterMessageListeners(watcher, options = {}) {
   const sizeBefore = watchers.size;
   watchers.delete(watcher);
-  closeWatcherTransports(watcher);
+  closeWatcherTransports(watcher, options);
 
   if (sizeBefore == 1 && watchers.size == 0) {
     Services.ppmm.removeMessageListener(
@@ -212,7 +230,9 @@ function maybeUnregisterMessageListeners(watcher) {
     
     Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
 
-    Services.ppmm.broadcastAsyncMessage("debug:destroy-process-script");
+    Services.ppmm.broadcastAsyncMessage("debug:destroy-process-script", {
+      options,
+    });
   }
 }
 
@@ -263,8 +283,14 @@ async function createTargets(watcher) {
   await onTargetsCreated;
 }
 
-function destroyTargets(watcher) {
-  maybeUnregisterMessageListeners(watcher);
+
+
+
+
+
+
+function destroyTargets(watcher, options) {
+  maybeUnregisterMessageListeners(watcher, options);
 
   Services.ppmm.broadcastAsyncMessage("debug:destroy-target", {
     watcherActorID: watcher.actorID,

@@ -70,10 +70,18 @@ class DevToolsFrameParent extends JSWindowActorParent {
     });
   }
 
-  destroyTarget({ watcherActorID, sessionContext }) {
+  
+
+
+
+
+
+
+  destroyTarget({ watcherActorID, sessionContext, options }) {
     this.sendAsyncMessage("DevToolsFrameParent:destroy", {
       watcherActorID,
       sessionContext,
+      options,
     });
   }
 
@@ -192,9 +200,13 @@ class DevToolsFrameParent extends JSWindowActorParent {
 
 
 
-  _closeAllConnections() {
+
+
+
+
+  _closeAllConnections(options) {
     for (const { actor, watcher } of this._connections.values()) {
-      watcher.notifyTargetDestroyed(actor);
+      watcher.notifyTargetDestroyed(actor, options);
       this._unregisterWatcher(watcher.conn.prefix);
     }
     this._connections.clear();
@@ -225,7 +237,7 @@ class DevToolsFrameParent extends JSWindowActorParent {
           
           
           if (watcher) {
-            watcher.notifyTargetDestroyed(form);
+            watcher.notifyTargetDestroyed(form, message.data.options);
             this._unregisterWatcher(watcher.conn.prefix);
           }
         }

@@ -157,7 +157,10 @@ class TargetCommand extends EventEmitter {
       
       
       for (const type of disabledTargetTypes) {
-        this.stopListeningForType(type, { isTargetSwitching: false });
+        this.stopListeningForType(type, {
+          isTargetSwitching: false,
+          isModeSwitching: true,
+        });
       }
     }
   }
@@ -326,9 +329,16 @@ class TargetCommand extends EventEmitter {
 
 
 
+
+
+
   _onTargetDestroyed(
     targetFront,
-    { isTargetSwitching = false, shouldDestroyTargetFront = true } = {}
+    {
+      isModeSwitching = false,
+      isTargetSwitching = false,
+      shouldDestroyTargetFront = true,
+    } = {}
   ) {
     
     
@@ -340,6 +350,7 @@ class TargetCommand extends EventEmitter {
     this._destroyListeners.emit(targetFront.targetType, {
       targetFront,
       isTargetSwitching,
+      isModeSwitching,
     });
     this._targets.delete(targetFront);
 
@@ -618,7 +629,21 @@ class TargetCommand extends EventEmitter {
     }
   }
 
-  stopListeningForType(type, { isTargetSwitching }) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  stopListeningForType(type, { isTargetSwitching, isModeSwitching }) {
     if (!this._isListening(type)) {
       return;
     }
@@ -633,10 +658,13 @@ class TargetCommand extends EventEmitter {
       
       
       if (!isTargetSwitching && !this.watcherFront.isDestroyed()) {
-        this.watcherFront.unwatchTargets(type);
+        this.watcherFront.unwatchTargets(type, { isModeSwitching });
       }
     } else if (this.legacyImplementation[type]) {
-      this.legacyImplementation[type].unlisten({ isTargetSwitching });
+      this.legacyImplementation[type].unlisten({
+        isTargetSwitching,
+        isModeSwitching,
+      });
     } else {
       throw new Error(`Unsupported target type '${type}'`);
     }

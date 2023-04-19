@@ -35,10 +35,15 @@ class JsWindowActorTransport {
     this._addListener();
   }
 
-  close() {
+  
+
+
+
+
+  close(options) {
     this._removeListener();
     if (this.hooks.onTransportClosed) {
-      this.hooks.onTransportClosed();
+      this.hooks.onTransportClosed(null, options);
     }
   }
 

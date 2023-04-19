@@ -231,17 +231,28 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  unwatchTargets(targetType) {
-    const isWatchingTargets = WatcherRegistry.unwatchTargets(this, targetType);
+
+
+
+  unwatchTargets(targetType, options = {}) {
+    const isWatchingTargets = WatcherRegistry.unwatchTargets(
+      this,
+      targetType,
+      options
+    );
     if (!isWatchingTargets) {
       return;
     }
 
     const targetHelperModule = TARGET_HELPERS[targetType];
-    targetHelperModule.destroyTargets(this);
+    targetHelperModule.destroyTargets(this, options);
 
     
-    WatcherRegistry.maybeUnregisteringJSWindowActor();
+    
+    
+    if (!options.isModeSwitching) {
+      WatcherRegistry.maybeUnregisteringJSWindowActor();
+    }
   },
 
   
@@ -296,11 +307,17 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
 
 
-  async notifyTargetDestroyed(actor) {
+
+
+
+
+
+
+  async notifyTargetDestroyed(actor, options = {}) {
     
     
     if (!actor.innerWindowId) {
-      this.emit("target-destroyed-form", actor);
+      this.emit("target-destroyed-form", actor, options);
       return;
     }
     
@@ -314,7 +331,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           form.innerWindowId != actor.innerWindowId
       );
-      childrenActors.map(form => this.notifyTargetDestroyed(form));
+      childrenActors.map(form => this.notifyTargetDestroyed(form, options));
     }
     if (this._earlyIframeTargets[actor.innerWindowId]) {
       delete this._earlyIframeTargets[actor.innerWindowId];
@@ -347,7 +364,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     ) {
       await documentEventWatcher.onceWillNavigateIsEmitted(actor.innerWindowId);
     }
-    this.emit("target-destroyed-form", actor);
+    this.emit("target-destroyed-form", actor, options);
   },
 
   

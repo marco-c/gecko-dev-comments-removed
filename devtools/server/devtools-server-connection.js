@@ -89,9 +89,9 @@ DevToolsServerConnection.prototype = {
 
   parentMessageManager: null,
 
-  close() {
+  close(options) {
     if (this._transport) {
-      this._transport.close();
+      this._transport.close(options);
     }
   },
 
@@ -472,7 +472,10 @@ DevToolsServerConnection.prototype = {
 
 
 
-  onTransportClosed(status) {
+
+
+
+  onTransportClosed(status, options) {
     dumpn("Cleaning up connection.");
     if (!this._actorPool) {
       
@@ -490,7 +493,7 @@ DevToolsServerConnection.prototype = {
     
     
     const topLevelPools = this._extraPools.filter(p => p.isTopPool());
-    topLevelPools.forEach(p => p.destroy());
+    topLevelPools.forEach(p => p.destroy(options));
 
     this._extraPools = null;
 

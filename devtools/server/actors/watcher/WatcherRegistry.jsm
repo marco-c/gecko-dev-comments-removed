@@ -188,7 +188,15 @@ const WatcherRegistry = {
 
 
 
-  removeSessionDataEntry(watcher, type, entries) {
+
+
+
+
+
+
+
+
+  removeSessionDataEntry(watcher, type, entries, options) {
     const sessionData = this.getSessionData(watcher);
     if (!sessionData) {
       return false;
@@ -207,7 +215,12 @@ const WatcherRegistry = {
     const isWatchingSomething = SUPPORTED_DATA_TYPES.some(
       dataType => sessionData[dataType] && sessionData[dataType].length > 0
     );
-    if (!isWatchingSomething) {
+
+    
+    
+    
+    
+    if (!isWatchingSomething && !options?.isModeSwitching) {
       sessionDataByWatcherActor.delete(watcher.actorID);
       watcherActors.delete(watcher.actorID);
     }
@@ -251,10 +264,18 @@ const WatcherRegistry = {
 
 
 
-  unwatchTargets(watcher, targetType) {
-    return this.removeSessionDataEntry(watcher, SUPPORTED_DATA.TARGETS, [
-      targetType,
-    ]);
+
+
+
+
+
+  unwatchTargets(watcher, targetType, options) {
+    return this.removeSessionDataEntry(
+      watcher,
+      SUPPORTED_DATA.TARGETS,
+      [targetType],
+      options
+    );
   },
 
   

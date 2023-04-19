@@ -159,7 +159,10 @@ async function createTargetForBrowsingContext({
 
 
 
-function destroyTargets(watcher) {
+
+
+
+function destroyTargets(watcher, options) {
   
   const browsingContexts = watcher.getAllBrowsingContexts();
 
@@ -178,6 +181,7 @@ function destroyTargets(watcher) {
       .destroyTarget({
         watcherActorID: watcher.actorID,
         sessionContext: watcher.sessionContext,
+        options,
       });
   }
 
