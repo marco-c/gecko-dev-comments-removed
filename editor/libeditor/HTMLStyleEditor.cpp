@@ -2720,12 +2720,14 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
         
         for (OwningNonNull<nsIContent>& content : arrayOfContents) {
           
-          
-          nsresult rv = RelativeFontChangeOnNode(aDir, MOZ_KnownLive(content));
-          if (NS_FAILED(rv)) {
-            NS_WARNING("HTMLEditor::RelativeFontChangeOnNode() failed");
-            return rv;
+          Result<EditorDOMPoint, nsresult> fontChangeOnNodeResult =
+              SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(content), aDir);
+          if (MOZ_UNLIKELY(fontChangeOnNodeResult.isErr())) {
+            NS_WARNING("HTMLEditor::SetFontSizeWithBigOrSmallElement() failed");
+            return fontChangeOnNodeResult.unwrapErr();
           }
+          
+          
         }
       }
       
@@ -2898,197 +2900,169 @@ CreateElementResult HTMLEditor::RelativeFontChangeOnTextNode(
       std::move(pointToPutCaret));
 }
 
-nsresult HTMLEditor::RelativeFontChangeHelper(FontSize aDir, nsINode* aNode) {
-  MOZ_ASSERT(aNode);
-
+Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeOfFontElementChildren(
+    nsIContent& aContent, FontSize aIncrementOrDecrement) {
+  
+  
+  
   
 
-
-
-
-
   
-  if (aNode->IsHTMLElement(nsGkAtoms::font) &&
-      aNode->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::size)) {
+  if (aContent.IsHTMLElement(nsGkAtoms::font) &&
+      aContent.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::size)) {
+    EditorDOMPoint pointToPutCaret;
+
     
-    AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
-    for (nsIContent* child = aNode->GetFirstChild(); child;
-         child = child->GetNextSibling()) {
-      childList.AppendElement(child);
-    }
-
-    for (const auto& child : childList) {
+    AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
+    HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
+    for (const auto& child : arrayOfContents) {
       
-      nsresult rv = RelativeFontChangeOnNode(aDir, MOZ_KnownLive(child));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::RelativeFontChangeOnNode() failed");
-        return rv;
+      Result<EditorDOMPoint, nsresult> setFontSizeOfChildResult =
+          SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(child),
+                                           aIncrementOrDecrement);
+      if (MOZ_UNLIKELY(setFontSizeOfChildResult.isErr())) {
+        NS_WARNING("HTMLEditor::WrapContentInBigOrSmallElement() failed");
+        return setFontSizeOfChildResult;
+      }
+      if (setFontSizeOfChildResult.inspect().IsSet()) {
+        pointToPutCaret = setFontSizeOfChildResult.unwrap();
       }
     }
 
     
     
-    return NS_OK;
+    return pointToPutCaret;
   }
 
   
-  AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
-  for (nsIContent* child = aNode->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    childList.AppendElement(child);
-  }
-
-  for (const auto& child : childList) {
+  EditorDOMPoint pointToPutCaret;
+  AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
+  HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
+  for (const auto& child : arrayOfContents) {
     
-    nsresult rv = RelativeFontChangeHelper(aDir, MOZ_KnownLive(child));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::RelativeFontChangeHelper() failed");
-      return rv;
+    Result<EditorDOMPoint, nsresult> fontSizeChangeResult =
+        SetFontSizeOfFontElementChildren(MOZ_KnownLive(child),
+                                         aIncrementOrDecrement);
+    if (MOZ_UNLIKELY(fontSizeChangeResult.isErr())) {
+      NS_WARNING("HTMLEditor::SetFontSizeOfFontElementChildren() failed");
+      return fontSizeChangeResult;
+    }
+    if (fontSizeChangeResult.inspect().IsSet()) {
+      pointToPutCaret = fontSizeChangeResult.unwrap();
     }
   }
 
-  return NS_OK;
+  return pointToPutCaret;
 }
 
-nsresult HTMLEditor::RelativeFontChangeOnNode(FontSize aDir,
-                                              nsIContent* aNode) {
-  MOZ_ASSERT(aNode);
-
+Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
+    nsIContent& aContent, FontSize aIncrementOrDecrement) {
   nsStaticAtom* const bigOrSmallTagName =
-      aDir == FontSize::incr ? nsGkAtoms::big : nsGkAtoms::small;
+      aIncrementOrDecrement == FontSize::incr ? nsGkAtoms::big
+                                              : nsGkAtoms::small;
 
   
-  if ((aDir == FontSize::incr && aNode->IsHTMLElement(nsGkAtoms::small)) ||
-      (aDir == FontSize::decr && aNode->IsHTMLElement(nsGkAtoms::big))) {
+  if ((aIncrementOrDecrement == FontSize::incr &&
+       aContent.IsHTMLElement(nsGkAtoms::small)) ||
+      (aIncrementOrDecrement == FontSize::decr &&
+       aContent.IsHTMLElement(nsGkAtoms::big))) {
     
-    nsresult rv = RelativeFontChangeHelper(aDir, aNode);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::RelativeFontChangeHelper() failed");
-      return rv;
+    Result<EditorDOMPoint, nsresult> fontSizeChangeOfDescendantsResult =
+        SetFontSizeOfFontElementChildren(aContent, aIncrementOrDecrement);
+    if (MOZ_UNLIKELY(fontSizeChangeOfDescendantsResult.isErr())) {
+      NS_WARNING("HTMLEditor::SetFontSizeOfFontElementChildren() failed");
+      return fontSizeChangeOfDescendantsResult;
     }
+    EditorDOMPoint pointToPutCaret = fontSizeChangeOfDescendantsResult.unwrap();
     
-    const Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
-        RemoveContainerWithTransaction(MOZ_KnownLive(*aNode->AsElement()));
+    Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
+        RemoveContainerWithTransaction(MOZ_KnownLive(*aContent.AsElement()));
     if (MOZ_UNLIKELY(unwrapBigOrSmallElementResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-      return unwrapBigOrSmallElementResult.inspectErr();
+      return unwrapBigOrSmallElementResult;
     }
-    const EditorDOMPoint& pointToPutCaret =
-        unwrapBigOrSmallElementResult.inspect();
-    if (!AllowsTransactionsToChangeSelection() || !pointToPutCaret.IsSet()) {
-      return NS_OK;
+    if (unwrapBigOrSmallElementResult.inspect().IsSet()) {
+      pointToPutCaret = unwrapBigOrSmallElementResult.unwrap();
     }
-    rv = CollapseSelectionTo(pointToPutCaret);
-    NS_WARNING_ASSERTION(NS_FAILED(rv),
-                         "EditorBase::CollapseSelectionTo() failed");
-    return rv;
+    return pointToPutCaret;
   }
 
-  
-  if (HTMLEditUtils::CanNodeContain(*bigOrSmallTagName, *aNode)) {
+  if (HTMLEditUtils::CanNodeContain(*bigOrSmallTagName, aContent)) {
     
-    nsresult rv = RelativeFontChangeHelper(aDir, aNode);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::RelativeFontChangeHelper() failed");
-      return rv;
+    Result<EditorDOMPoint, nsresult> fontSizeChangeOfDescendantsResult =
+        SetFontSizeOfFontElementChildren(aContent, aIncrementOrDecrement);
+    if (MOZ_UNLIKELY(fontSizeChangeOfDescendantsResult.isErr())) {
+      NS_WARNING("HTMLEditor::SetFontSizeOfFontElementChildren() failed");
+      return fontSizeChangeOfDescendantsResult;
     }
 
-    
-    
+    EditorDOMPoint pointToPutCaret = fontSizeChangeOfDescendantsResult.unwrap();
+
     
     nsCOMPtr<nsIContent> sibling = HTMLEditUtils::GetPreviousSibling(
-        *aNode, {WalkTreeOption::IgnoreNonEditableNode});
+        aContent, {WalkTreeOption::IgnoreNonEditableNode});
     if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
-      
-      
-      const MoveNodeResult moveNodeResult =
-          MoveNodeToEndWithTransaction(*aNode, *sibling);
+      MoveNodeResult moveNodeResult =
+          MoveNodeToEndWithTransaction(aContent, *sibling);
       if (moveNodeResult.isErr()) {
         NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-        return moveNodeResult.unwrapErr();
+        return Err(moveNodeResult.unwrapErr());
       }
-      nsresult rv = moveNodeResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion,
-                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                  SuggestCaret::AndIgnoreTrivialError});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-      return NS_OK;
+      moveNodeResult.MoveCaretPointTo(pointToPutCaret,
+                                      {SuggestCaret::OnlyIfHasSuggestion});
+      return pointToPutCaret;
     }
 
     sibling = HTMLEditUtils::GetNextSibling(
-        *aNode, {WalkTreeOption::IgnoreNonEditableNode});
+        aContent, {WalkTreeOption::IgnoreNonEditableNode});
     if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
-      
-      
-      const MoveNodeResult moveNodeResult =
-          MoveNodeWithTransaction(*aNode, EditorDOMPoint(sibling, 0u));
+      MoveNodeResult moveNodeResult =
+          MoveNodeWithTransaction(aContent, EditorDOMPoint(sibling, 0u));
       if (moveNodeResult.isErr()) {
         NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-        return moveNodeResult.unwrapErr();
+        return Err(moveNodeResult.unwrapErr());
       }
-      nsresult rv = moveNodeResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion,
-                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                  SuggestCaret::AndIgnoreTrivialError});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-      return NS_OK;
+      moveNodeResult.MoveCaretPointTo(pointToPutCaret,
+                                      {SuggestCaret::OnlyIfHasSuggestion});
+      return pointToPutCaret;
     }
 
     
-    const CreateElementResult wrapWithBigOrSmallElementResult =
-        InsertContainerWithTransaction(*aNode,
+    CreateElementResult wrapInBigOrSmallElementResult =
+        InsertContainerWithTransaction(aContent,
                                        MOZ_KnownLive(*bigOrSmallTagName));
-    if (wrapWithBigOrSmallElementResult.isErr()) {
+    if (wrapInBigOrSmallElementResult.isErr()) {
       NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
-      return wrapWithBigOrSmallElementResult.inspectErr();
+      return Err(wrapInBigOrSmallElementResult.unwrapErr());
     }
-    MOZ_ASSERT(wrapWithBigOrSmallElementResult.GetNewNode());
-    rv = wrapWithBigOrSmallElementResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                SuggestCaret::AndIgnoreTrivialError});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-      return rv;
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-    return rv;
+    MOZ_ASSERT(wrapInBigOrSmallElementResult.GetNewNode());
+    wrapInBigOrSmallElementResult.MoveCaretPointTo(
+        pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
+    return pointToPutCaret;
   }
 
   
   
   
   
-  AutoTArray<nsCOMPtr<nsIContent>, 10> childList;
-  for (nsIContent* child = aNode->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    childList.AppendElement(child);
-  }
-
-  for (const auto& child : childList) {
+  EditorDOMPoint pointToPutCaret;
+  AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
+  HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
+  for (const auto& child : arrayOfContents) {
     
-    nsresult rv = RelativeFontChangeOnNode(aDir, MOZ_KnownLive(child));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::RelativeFontChangeOnNode() failed");
-      return rv;
+    Result<EditorDOMPoint, nsresult> setFontSizeOfChildResult =
+        SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(child),
+                                         aIncrementOrDecrement);
+    if (MOZ_UNLIKELY(setFontSizeOfChildResult.isErr())) {
+      NS_WARNING("HTMLEditor::SetFontSizeWithBigOrSmallElement() failed");
+      return setFontSizeOfChildResult;
+    }
+    if (setFontSizeOfChildResult.inspect().IsSet()) {
+      pointToPutCaret = setFontSizeOfChildResult.unwrap();
     }
   }
 
-  return NS_OK;
+  return pointToPutCaret;
 }
 
 NS_IMETHODIMP HTMLEditor::GetFontFaceState(bool* aMixed, nsAString& outFace) {

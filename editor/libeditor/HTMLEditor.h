@@ -3882,10 +3882,32 @@ class HTMLEditor final : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT nsresult RelativeFontChange(FontSize aDir);
 
-  MOZ_CAN_RUN_SCRIPT nsresult RelativeFontChangeOnNode(FontSize aDir,
-                                                       nsIContent* aNode);
-  MOZ_CAN_RUN_SCRIPT nsresult RelativeFontChangeHelper(FontSize aDir,
-                                                       nsINode* aNode);
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  SetFontSizeWithBigOrSmallElement(nsIContent& aContent,
+                                   FontSize aIncrementOrDecrement);
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  SetFontSizeOfFontElementChildren(nsIContent& aContent,
+                                   FontSize aIncrementOrDecrement);
 
   
 
