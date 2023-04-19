@@ -49,25 +49,25 @@ interface DOMLocalization : Localization {
 
 
 
-  [Throws] void connectRoot(Node aElement);
+  [Throws] undefined connectRoot(Node aElement);
 
   
 
 
 
-  [Throws] void disconnectRoot(Node aElement);
+  [Throws] undefined disconnectRoot(Node aElement);
 
   
 
 
 
-  [Throws] void pauseObserving();
+  [Throws] undefined pauseObserving();
 
   
 
 
 
-  [Throws] void resumeObserving();
+  [Throws] undefined resumeObserving();
 
   
 
@@ -80,7 +80,7 @@ interface DOMLocalization : Localization {
 
 
 
-  [Throws] void setAttributes(Element aElement, DOMString aId, optional object? aArgs);
+  [Throws] undefined setAttributes(Element aElement, DOMString aId, optional object? aArgs);
 
   
 
@@ -135,7 +135,7 @@ interface DOMLocalization : Localization {
 
 
 
-  [NewObject] Promise<void> translateElements(sequence<Element> aElements);
+  [NewObject] Promise<undefined> translateElements(sequence<Element> aElements);
 
   
 
@@ -144,5 +144,5 @@ interface DOMLocalization : Localization {
 
 
 
-  [NewObject] Promise<void> translateRoots();
+  [NewObject] Promise<undefined> translateRoots();
 };

@@ -6,20 +6,6 @@
 def WebIDLTest(parser, harness):
 
     
-    
-    
-    
-    harness.should_throw(
-        parser,
-        """
-        interface A {
-          attribute ObservableArray<void> foo;
-        };
-        """,
-        "use void as inner type",
-    )
-
-    
     harness.should_throw(
         parser,
         """
@@ -110,7 +96,7 @@ def WebIDLTest(parser, harness):
         parser,
         """
         interface A {
-          void foo(sequence<ObservableArray<boolean>> foo);
+          undefined foo(sequence<ObservableArray<boolean>> foo);
         };
         """,
         "used in sequence",
@@ -121,7 +107,7 @@ def WebIDLTest(parser, harness):
         parser,
         """
         interface A {
-          void foo(record<DOMString, ObservableArray<boolean>> foo);
+          undefined foo(record<DOMString, ObservableArray<boolean>> foo);
         };
         """,
         "used in record",
@@ -165,7 +151,7 @@ def WebIDLTest(parser, harness):
         parser,
         """
         interface A {
-          void foo(ObservableArray<boolean> foo);
+          undefined foo(ObservableArray<boolean> foo);
         };
         """,
         "used on argument",

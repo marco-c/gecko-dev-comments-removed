@@ -81,7 +81,7 @@ interface Localization {
   
 
 
-  void addResourceIds(sequence<L10nResourceId> aResourceIds);
+  undefined addResourceIds(sequence<L10nResourceId> aResourceIds);
 
   
 
@@ -139,7 +139,7 @@ interface Localization {
 
   [NewObject] Promise<sequence<L10nMessage?>> formatMessages(sequence<L10nKey> aKeys);
 
-  void setAsync();
+  undefined setAsync();
 
   [NewObject, Throws]
   UTF8String? formatValueSync(UTF8String aId, optional L10nArgs aArgs);

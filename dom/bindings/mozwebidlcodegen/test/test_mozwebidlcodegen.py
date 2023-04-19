@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 from __future__ import unicode_literals
 
@@ -148,7 +148,7 @@ class TestWebIDLCodegenManager(unittest.TestCase):
             child = state["webidls"]["Child.webidl"]
             self.assertEqual(len(child["inputs"]), 2)
             self.assertEqual(len(child["outputs"]), 2)
-            self.assertEqual(child["sha1"], "c41527cad3bc161fa6e7909e48fa11f9eca0468b")
+            self.assertEqual(child["sha1"], "c34c40b0fa0ac57c2834ee282efe0681e4dacc35")
 
     def test_generate_build_files_load_state(self):
         """State should be equivalent when instantiating a new instance."""
@@ -242,14 +242,14 @@ class TestWebIDLCodegenManager(unittest.TestCase):
     def test_python_change_regenerate_everything(self):
         """If a Python file changes, we should attempt to rebuild everything."""
 
-        # We don't want to mutate files in the source directory because we want
-        # to be able to build from a read-only filesystem. So, we install a
-        # dummy module and rewrite the metadata to say it comes from the source
-        # directory.
-        #
-        # Hacking imp to accept a MockedFile doesn't appear possible. So for
-        # the first iteration we read from a temp file. The second iteration
-        # doesn't need to import, so we are fine with a mocked file.
+        
+        
+        
+        
+        
+        
+        
+        
         fake_path = mozpath.join(OUR_DIR, "fakemodule.py")
         with NamedTemporaryFile("wt") as fh:
             fh.write("# Original content")
@@ -279,9 +279,9 @@ class TestWebIDLCodegenManager(unittest.TestCase):
     def test_copy_input(self):
         """Ensure a copied .webidl file is handled properly."""
 
-        # This test simulates changing the type of a WebIDL from static to
-        # preprocessed. In that scenario, the original file still exists but
-        # it should no longer be consulted during codegen.
+        
+        
+        
 
         args = self._get_manager_args()
         m1 = WebIDLCodegenManager(**args)
