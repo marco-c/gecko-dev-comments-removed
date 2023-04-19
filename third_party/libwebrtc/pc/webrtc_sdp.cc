@@ -107,6 +107,15 @@ namespace webrtc {
 
 
 
+
+
+
+
+static const char kLegalTokenCharacters[] =
+    "!#$%&'*+-."                          
+    "0123456789"                          
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"          
+    "^_`abcdefghijklmnopqrstuvwxyz{|}~";  
 static const int kLinePrefixLength = 2;  
 static const char kLineTypeVersion = 'v';
 static const char kLineTypeOrigin = 'o';
@@ -615,6 +624,22 @@ static bool GetValue(const std::string& message,
       leftpart.compare(leftpart.length() - attribute.length(),
                        attribute.length(), attribute) != 0) {
     return ParseFailedGetValue(message, attribute, error);
+  }
+  return true;
+}
+
+
+static bool GetSingleTokenValue(const std::string& message,
+                                const std::string& attribute,
+                                std::string* value,
+                                SdpParseError* error) {
+  if (!GetValue(message, attribute, value, error)) {
+    return false;
+  }
+  if (strspn(value->c_str(), kLegalTokenCharacters) != value->size()) {
+    rtc::StringBuilder description;
+    description << "Illegal character found in the value of " << attribute;
+    return ParseFailed(message, description.str(), error);
   }
   return true;
 }
@@ -3099,7 +3124,7 @@ bool ParseContent(const std::string& message,
       
       
       
-      if (!GetValue(line, kAttributeMid, &mline_id, error)) {
+      if (!GetSingleTokenValue(line, kAttributeMid, &mline_id, error)) {
         return false;
       }
       *content_name = mline_id;
