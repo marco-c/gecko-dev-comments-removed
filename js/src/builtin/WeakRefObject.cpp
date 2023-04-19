@@ -65,8 +65,11 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
+  
   RootedObject wrappedWeakRef(cx, weakRef);
-  AutoRealm ar(cx, target);
+  bool sameZone = target->zone() == weakRef->zone();
+  AutoRealm ar(cx, sameZone ? weakRef : target);
   if (!JS_WrapObject(cx, &wrappedWeakRef)) {
     return false;
   }

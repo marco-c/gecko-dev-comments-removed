@@ -313,10 +313,16 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
   queue->setQueuedForCleanup(true);
 }
 
+
+
+
+
+
 bool GCRuntime::registerWeakRef(HandleObject target, HandleObject weakRef) {
   MOZ_ASSERT(!IsCrossCompartmentWrapper(target));
   MOZ_ASSERT(UncheckedUnwrap(weakRef)->is<WeakRefObject>());
-  MOZ_ASSERT(target->compartment() == weakRef->compartment());
+  MOZ_ASSERT_IF(target->zone() != weakRef->zone(),
+                target->compartment() == weakRef->compartment());
 
   Zone* zone = target->zone();
   return zone->ensureFinalizationObservers() &&
