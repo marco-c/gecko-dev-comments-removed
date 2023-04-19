@@ -57,6 +57,11 @@ class FrameBufferProxy {
 
   
   virtual void StartNextDecode(bool keyframe_required) = 0;
+
+#if defined(WEBRTC_MOZILLA_BUILD)
+  
+  virtual void Start() = 0;
+#endif
 };
 
 }  
