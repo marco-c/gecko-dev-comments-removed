@@ -3693,6 +3693,12 @@ class AddonCard extends HTMLElement {
 customElements.define("addon-card", AddonCard);
 
 class ColorwayClosetCard extends HTMLElement {
+  connectedCallback() {
+    if (this.childElementCount === 0) {
+      this.render();
+    }
+  }
+
   render() {
     let card = importTemplate("card").firstElementChild;
     let heading = card.querySelector(".addon-name-container");
@@ -4144,7 +4150,11 @@ class AddonList extends HTMLElement {
   }
 
   createSectionHeading(headingIndex) {
-    let { headingId, subheadingId } = this.sections[headingIndex];
+    let {
+      headingId,
+      subheadingId,
+      sectionPreambleCustomElement,
+    } = this.sections[headingIndex];
     let frag = document.createDocumentFragment();
     let heading = document.createElement("h2");
     heading.classList.add("list-section-heading");
@@ -4154,9 +4164,17 @@ class AddonList extends HTMLElement {
     if (subheadingId) {
       let subheading = document.createElement("h3");
       subheading.classList.add("list-section-subheading");
-      heading.className = "header-name";
       document.l10n.setAttributes(subheading, subheadingId);
+      
+      
+      if (!COLORWAY_CLOSET_ENABLED) {
+        heading.className = "header-name";
+      }
       frag.append(subheading);
+    }
+
+    if (sectionPreambleCustomElement) {
+      frag.append(document.createElement(sectionPreambleCustomElement));
     }
 
     return frag;
@@ -4192,7 +4210,10 @@ class AddonList extends HTMLElement {
   updateSectionIfEmpty(section) {
     
     
-    if (section.children.length == 1) {
+    
+    const sectionIndex = parseInt(section.getAttribute("section"));
+    const { shouldRenderIfEmpty } = this.sections[sectionIndex];
+    if (!this.getCards(section).length && !shouldRenderIfEmpty) {
       section.textContent = "";
     }
   }
@@ -4201,8 +4222,12 @@ class AddonList extends HTMLElement {
     let section = this.getSection(sectionIndex);
     let sectionCards = this.getCards(section);
 
+    const { shouldRenderIfEmpty } = this.sections[sectionIndex];
+
     
-    if (!sectionCards.length) {
+    
+    
+    if (!shouldRenderIfEmpty && !sectionCards.length) {
       section.appendChild(this.createSectionHeading(sectionIndex));
     }
 
@@ -4392,7 +4417,7 @@ class AddonList extends HTMLElement {
   }
 
   renderSection(addons, index) {
-    const { sectionClass, sectionPreambleCustomElement } = this.sections[index];
+    const { sectionClass, shouldRenderIfEmpty } = this.sections[index];
 
     let section = document.createElement("section");
     section.setAttribute("section", index);
@@ -4401,20 +4426,15 @@ class AddonList extends HTMLElement {
     }
 
     
-    if (addons.length) {
-      if (sectionPreambleCustomElement) {
-        section.appendChild(
-          document.createElement(sectionPreambleCustomElement)
-        );
-      }
+    if (shouldRenderIfEmpty || addons.length) {
       section.appendChild(this.createSectionHeading(index));
+    }
 
-      for (let addon of addons) {
-        let card = document.createElement("addon-card");
-        card.setAddon(addon);
-        card.render();
-        section.appendChild(card);
-      }
+    for (let addon of addons) {
+      let card = document.createElement("addon-card");
+      card.setAddon(addon);
+      card.render();
+      section.appendChild(card);
     }
 
     return section;
@@ -4516,22 +4536,6 @@ class AddonList extends HTMLElement {
   }
 }
 customElements.define("addon-list", AddonList);
-
-class ColorwayClosetList extends HTMLElement {
-  connectedCallback() {
-    this.appendChild(importTemplate(this.template));
-    let frag = document.createDocumentFragment();
-    let card = document.createElement("colorways-card");
-    card.render();
-    frag.append(card);
-    this.append(frag);
-  }
-
-  get template() {
-    return "colorways-list";
-  }
-}
-customElements.define("colorways-list", ColorwayClosetList);
 
 class RecommendedAddonList extends HTMLElement {
   connectedCallback() {
@@ -4828,15 +4832,12 @@ gViewController.defineView("list", async type => {
     return null;
   }
 
-  
-  
   const areColorwayThemesInstalled = async () =>
     (await AddonManager.getAllAddons()).some(
       addon =>
         BuiltInThemes.isMonochromaticTheme(addon.id) &&
         !BuiltInThemes.themeIsExpired(addon.id)
     );
-
   let frag = document.createDocumentFragment();
   let list = document.createElement("addon-list");
   list.type = type;
@@ -4848,43 +4849,68 @@ gViewController.defineView("list", async type => {
       filterFn: addon =>
         !addon.hidden && addon.isActive && !isPending(addon, "uninstall"),
     },
-    {
-      headingId: getL10nIdMapping(`${type}-disabled-heading`),
-      sectionClass: `${type}-disabled-section`,
+  ];
+
+  if (type == "theme" && COLORWAY_CLOSET_ENABLED) {
+    MozXULElement.insertFTLIfNeeded("preview/colorwaycloset.ftl");
+
+    const hasActiveColorways = !!BuiltInThemes.findActiveColorwayCollection?.();
+    sections.push({
+      headingId: "theme-monochromatic-heading",
+      subheadingId: "theme-monochromatic-subheading",
+      sectionClass: "colorways-section",
+      
+      
+      sectionPreambleCustomElement: hasActiveColorways
+        ? "colorways-card"
+        : null,
+      
+      
+      
+      
+      shouldRenderIfEmpty: hasActiveColorways,
       filterFn: addon =>
         !addon.hidden &&
         !addon.isActive &&
         !isPending(addon, "uninstall") &&
         
         
-        (!BuiltInThemes.isMonochromaticTheme(addon.id) ||
-          BuiltInThemes.isRetainedExpiredTheme(addon.id)),
-    },
-  ];
-
-  let colorwaysThemeInstalled;
-  if (type == "theme") {
-    colorwaysThemeInstalled = await areColorwayThemesInstalled();
-    if (colorwaysThemeInstalled && COLORWAY_CLOSET_ENABLED) {
-      
-      
-      const fluentResourceId = "preview/colorwaycloset.ftl";
-      if (!document.head.querySelector(`link[href='${fluentResourceId}']`)) {
-        const fluentLink = document.createElement("link");
-        fluentLink.setAttribute("rel", "localization");
-        fluentLink.setAttribute("href", fluentResourceId);
-        document.head.appendChild(fluentLink);
-      }
-      
-      
-      sections[1].sectionPreambleCustomElement = "colorways-list";
-    }
+        BuiltInThemes.isMonochromaticTheme(addon.id) &&
+        BuiltInThemes.isRetainedExpiredTheme(addon.id),
+    });
   }
+
+  const disabledAddonsFilterFn = addon =>
+    !addon.hidden && !addon.isActive && !isPending(addon, "uninstall");
+
+  const disabledThemesFilterFn = addon =>
+    disabledAddonsFilterFn(addon) &&
+    ((BuiltInThemes.isRetainedExpiredTheme(addon.id) &&
+      !COLORWAY_CLOSET_ENABLED) ||
+      !BuiltInThemes.isMonochromaticTheme(addon.id));
+
+  sections.push({
+    headingId: getL10nIdMapping(`${type}-disabled-heading`),
+    sectionClass: `${type}-disabled-section`,
+    filterFn: addon => {
+      if (addon.type === "theme") {
+        return disabledThemesFilterFn(addon);
+      }
+      return disabledAddonsFilterFn(addon);
+    },
+  });
 
   list.setSections(sections);
   frag.appendChild(list);
 
-  if (type == "theme" && colorwaysThemeInstalled) {
+  
+  
+  
+  if (
+    type == "theme" &&
+    !COLORWAY_CLOSET_ENABLED &&
+    (await areColorwayThemesInstalled())
+  ) {
     let monochromaticList = document.createElement("addon-list");
     monochromaticList.classList.add("monochromatic-addon-list");
     monochromaticList.type = type;
