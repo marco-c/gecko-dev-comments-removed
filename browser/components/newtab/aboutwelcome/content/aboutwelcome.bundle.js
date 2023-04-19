@@ -196,23 +196,27 @@ const MultiStageAboutWelcome = props => {
       }
     }); 
 
-    if (index > window.history.state) {
+    if (props.updateHistory && index > window.history.state) {
       window.history.pushState(index, "");
     }
   }, [index]);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    
-    
-    
-    const handler = ({
-      state
-    }) => setScreenIndex(Math.min(state, screens.length - 1)); 
+    if (props.updateHistory) {
+      
+      
+      
+      const handler = ({
+        state
+      }) => setScreenIndex(Math.min(state, screens.length - 1)); 
 
 
-    handler(window.history); 
+      handler(window.history); 
 
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
+      window.addEventListener("popstate", handler);
+      return () => window.removeEventListener("popstate", handler);
+    }
+
+    return false;
   }, []);
   const [flowParams, setFlowParams] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const {
@@ -1711,6 +1715,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.MultiStageAboutWelcome, {
       message_id: props.messageId,
       screens: props.screens,
+      updateHistory: !props.disableHistoryUpdates,
       metricsFlowUri: this.state.metricsFlowUri,
       utm_term: props.UTMTerm,
       transitions: props.transitions,
