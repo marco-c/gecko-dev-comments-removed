@@ -511,9 +511,6 @@ AutoSetHelperThreadContext::AutoSetHelperThreadContext(
   cx = HelperThreadState().getFirstUnusedContext(lock);
   MOZ_ASSERT(cx);
   cx->setHelperThread(options, lock);
-  
-  
-  JS_SetNativeStackQuota(cx, HelperThreadState().stackQuota);
 }
 
 AutoSetHelperThreadContext::~AutoSetHelperThreadContext() {
