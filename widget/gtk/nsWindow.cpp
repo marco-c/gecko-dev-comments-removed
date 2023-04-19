@@ -335,6 +335,11 @@ static bool gGlobalsInitialized = false;
 static bool gUseAspectRatio = true;
 static uint32_t gLastTouchID = 0;
 
+
+
+
+static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
+
 #define NS_WINDOW_TITLE_MAX_LENGTH 4095
 #define kWindowPositionSlop 20
 
@@ -609,6 +614,14 @@ void nsWindow::Destroy() {
   if (gFocusWindow == this) {
     LOG("automatically losing focus...\n");
     gFocusWindow = nullptr;
+  }
+
+  if (sStoredLeaveNotifyEvent) {
+    nsWindow* window =
+        get_window_for_gdk_window(sStoredLeaveNotifyEvent->window);
+    if (window == this) {
+      sStoredLeaveNotifyEvent = nullptr;
+    }
   }
 
   gtk_widget_destroy(mShell);
@@ -7827,8 +7840,27 @@ static gboolean enter_notify_event_cb(GtkWidget* widget,
     return TRUE;
   }
 
-  window->OnEnterNotifyEvent(event);
+  
+  
+  if (sStoredLeaveNotifyEvent) {
+    auto clearNofityEvent =
+        MakeScopeExit([&] { sStoredLeaveNotifyEvent = nullptr; });
+    if (event->x_root == sStoredLeaveNotifyEvent->x_root &&
+        event->y_root == sStoredLeaveNotifyEvent->y_root &&
+        window->ApplyEnterLeaveMutterWorkaround()) {
+      
+      
+      
+      return TRUE;
+    }
+    RefPtr<nsWindow> leftWindow =
+        get_window_for_gdk_window(sStoredLeaveNotifyEvent->window);
+    if (leftWindow) {
+      leftWindow->OnLeaveNotifyEvent(sStoredLeaveNotifyEvent.get());
+    }
+  }
 
+  window->OnEnterNotifyEvent(event);
   return TRUE;
 }
 
@@ -7851,7 +7883,15 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
   RefPtr<nsWindow> window = get_window_for_gdk_window(event->window);
   if (!window) return TRUE;
 
-  window->OnLeaveNotifyEvent(event);
+  if (window->ApplyEnterLeaveMutterWorkaround()) {
+    
+    
+    sStoredLeaveNotifyEvent.reset(reinterpret_cast<GdkEventCrossing*>(
+        gdk_event_copy(reinterpret_cast<GdkEvent*>(event))));
+  } else {
+    sStoredLeaveNotifyEvent = nullptr;
+    window->OnLeaveNotifyEvent(event);
+  }
 
   return TRUE;
 }
@@ -9610,4 +9650,43 @@ void nsWindow::ClearRenderingQueue() {
     mWidgetListener->RequestWindowClose(this);
   }
   DestroyLayerManager();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool nsWindow::ApplyEnterLeaveMutterWorkaround() {
+  
+  if (mWindowType == eWindowType_toplevel && mWaylandPopupNext &&
+      mWaylandPopupNext->mWaylandPopupNext &&
+      gtk_window_get_type_hint(GTK_WINDOW(mWaylandPopupNext->GetGtkWidget())) ==
+          GDK_WINDOW_TYPE_HINT_UTILITY) {
+    LOG("nsWindow::ApplyEnterLeaveMutterWorkaround(): leave toplevel");
+    return true;
+  }
+  
+  if (IsWaylandPopup() && mWaylandPopupNext &&
+      gtk_window_get_type_hint(GTK_WINDOW(mShell)) ==
+          GDK_WINDOW_TYPE_HINT_UTILITY) {
+    LOG("nsWindow::ApplyEnterLeaveMutterWorkaround(): leave popup");
+    return true;
+  }
+  return false;
 }

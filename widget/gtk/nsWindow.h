@@ -454,6 +454,8 @@ class nsWindow final : public nsBaseWidget {
   
   void ClearRenderingQueue();
 
+  bool ApplyEnterLeaveMutterWorkaround();
+
  protected:
   virtual ~nsWindow();
 
