@@ -742,6 +742,8 @@ class PeerConnectionImpl final
 
   already_AddRefed<nsIHttpChannelInternal> GetChannel() const;
 
+  void BreakCycles();
+
   RefPtr<WebrtcCallWrapper> mCall;
 
   

@@ -77,7 +77,9 @@ class RTCRtpTransceiver : public nsISupports,
   nsresult SyncWithMatchingVideoConduits(
       nsTArray<RefPtr<RTCRtpTransceiver>>& transceivers);
 
-  void Shutdown_m();
+  void Close();
+
+  void BreakCycles();
 
   bool ConduitHasPluginID(uint64_t aPluginID);
 
@@ -149,6 +151,8 @@ class RTCRtpTransceiver : public nsISupports,
 
   const std::string& GetJsepTransceiverId() const { return mTransceiverId; }
 
+  void SetRemovedFromPc() { mHandlingUnlink = true; }
+
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(RTCRtpTransceiver)
@@ -217,6 +221,20 @@ class RTCRtpTransceiver : public nsISupports,
   bool mHasBeenUsedToSend = false;
   bool mPrivacyNeeded = false;
   bool mIsVideo;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mHandlingUnlink = false;
 
   Canonical<std::string> mMid;
   Canonical<std::string> mSyncGroup;
