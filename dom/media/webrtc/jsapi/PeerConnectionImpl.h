@@ -464,6 +464,8 @@ class PeerConnectionImpl final
   already_AddRefed<dom::Promise> OnSetDescriptionSuccess(
       dom::RTCSdpType aSdpType, bool aRemote, ErrorResult& aError);
 
+  void OnSetDescriptionError();
+
   bool IsClosed() const;
   
   nsresult OnAlpnNegotiated(bool aPrivacyRequested);
