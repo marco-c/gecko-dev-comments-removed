@@ -53,7 +53,7 @@ bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
 
   
   audio_transport_ = std::make_unique<AudioTransportImpl>(
-      audio_mixer_.get(), audio_processing_.get());
+      audio_mixer_.get(), audio_processing_.get(), nullptr);
 
   
   if (audio_device_module_->Init() != 0) {
