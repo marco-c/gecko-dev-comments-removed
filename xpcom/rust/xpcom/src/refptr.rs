@@ -2,7 +2,7 @@
 
 
 
-use crate::interfaces::{nsISupports, nsrefcnt};
+use crate::interfaces::{nsISupports};
 use libc;
 use nserror::{nsresult, NS_OK};
 use std::cell::Cell;
@@ -14,6 +14,10 @@ use std::ops::Deref;
 use std::ptr::{self, NonNull};
 use std::sync::atomic::{self, AtomicUsize, Ordering};
 use threadbound::ThreadBound;
+
+
+
+pub type MozExternalRefCountType = u32;
 
 
 
@@ -262,7 +266,7 @@ impl Refcnt {
 
     
     
-    pub unsafe fn inc(&self) -> nsrefcnt {
+    pub unsafe fn inc(&self) -> MozExternalRefCountType {
         
         let new = self.0.get() + 1;
         self.0.set(new);
@@ -271,7 +275,7 @@ impl Refcnt {
 
     
     
-    pub unsafe fn dec(&self) -> nsrefcnt {
+    pub unsafe fn dec(&self) -> MozExternalRefCountType {
         
         let new = self.0.get() - 1;
         self.0.set(new);
@@ -301,14 +305,14 @@ impl AtomicRefcnt {
 
     
     
-    pub unsafe fn inc(&self) -> nsrefcnt {
+    pub unsafe fn inc(&self) -> MozExternalRefCountType {
         let result = self.0.fetch_add(1, Ordering::Relaxed) + 1;
         result.try_into().unwrap()
     }
 
     
     
-    pub unsafe fn dec(&self) -> nsrefcnt {
+    pub unsafe fn dec(&self) -> MozExternalRefCountType {
         let result = self.0.fetch_sub(1, Ordering::Release) - 1;
         if result == 0 {
             
