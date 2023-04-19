@@ -11,12 +11,14 @@
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIOService.h"
+#include "nsIPipe.h"
 #include "nsIURL.h"
 
 #include "nsWhitespaceTokenizer.h"
 #include "nsAlgorithm.h"
 #include "nsContentUtils.h"
 #include "nsCharSeparatedTokenizer.h"
+#include "nsStreamUtils.h"
 #include "ReferrerInfo.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -1449,6 +1451,101 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
 
 
 
+nsresult ReferrerInfo::ReadTailDataBeforeGecko100(
+    const uint32_t& aData, nsIObjectInputStream* aInputStream) {
+  MOZ_ASSERT(aInputStream);
+
+  nsCOMPtr<nsIInputStream> reader;
+  nsCOMPtr<nsIOutputStream> writer;
+
+  
+  
+  
+  nsresult rv = NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIBinaryOutputStream> binaryPipeWriter =
+      NS_NewObjectOutputStream(writer);
+
+  
+  
+  rv = binaryPipeWriter->Write32(aData);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIBinaryInputStream> binaryPipeReader =
+      NS_NewObjectInputStream(reader);
+
+  rv = binaryPipeReader->ReadBoolean(&mSendReferrer);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  bool isComputed;
+  rv = binaryPipeReader->ReadBoolean(&isComputed);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (isComputed) {
+    
+    
+    uint16_t data;
+    rv = aInputStream->Read16(&data);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    rv = binaryPipeWriter->Write16(data);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    uint32_t length;
+    rv = binaryPipeReader->Read32(&length);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    
+    nsAutoCString computedReferrer;
+    rv = NS_ConsumeStream(aInputStream, length, computedReferrer);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    mComputedReferrer.emplace(computedReferrer);
+
+    
+    uint16_t remain;
+    rv = aInputStream->Read16(&remain);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = binaryPipeWriter->Write16(remain);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  rv = binaryPipeReader->ReadBoolean(&mInitialized);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = binaryPipeReader->ReadBoolean(&mOverridePolicyByDefault);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 ReferrerInfo::Read(nsIObjectInputStream* aStream) {
   bool nonNull;
@@ -1488,6 +1585,19 @@ ReferrerInfo::Read(nsIObjectInputStream* aStream) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
+  
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(originalPolicy > 0xFF)) {
+    mOriginalPolicy = mPolicy;
+
+    return ReadTailDataBeforeGecko100(originalPolicy, aStream);
+  }
+
   mOriginalPolicy = ReferrerPolicyIDLToReferrerPolicy(
       static_cast<nsIReferrerInfo::ReferrerPolicyIDL>(originalPolicy));
 

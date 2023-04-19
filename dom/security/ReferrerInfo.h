@@ -432,6 +432,13 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
+
+  nsresult ReadTailDataBeforeGecko100(const uint32_t& aData,
+                                      nsIObjectInputStream* aInputStream);
+
+  
+
+
   void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg,
                            const nsTArray<nsString>& aParams) const;
 
