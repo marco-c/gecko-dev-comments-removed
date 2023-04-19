@@ -4430,6 +4430,11 @@ class MMinMaxArray : public MUnaryInstruction, public SingleObjectPolicy::Data {
       : MUnaryInstruction(classOpcode, array), isMax_(isMax) {
     MOZ_ASSERT(type == MIRType::Int32 || type == MIRType::Double);
     setResultType(type);
+
+    
+    
+    
+    setGuard();
   }
 
  public:
