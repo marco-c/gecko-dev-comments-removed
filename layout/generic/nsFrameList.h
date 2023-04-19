@@ -72,6 +72,9 @@ struct PostFrameDestroyData {
 
 class nsFrameList {
  public:
+  class Iterator;
+  class Slice;
+
   nsFrameList() : mFirstChild(nullptr), mLastChild(nullptr) {}
 
   nsFrameList(nsIFrame* aFirstFrame, nsIFrame* aLastFrame)
@@ -137,8 +140,6 @@ class nsFrameList {
     mLastChild = aFrameList.LastChild();
     aFrameList.Clear();
   }
-
-  class Slice;
 
   
 
@@ -259,9 +260,12 @@ class nsFrameList {
                          nsIFrame*>::value,
         "aPredicate should be of this function signature: bool(nsIFrame*)");
 
-    FrameLinkEnumerator link(*this);
-    link.Find(aPredicate);
-    return ExtractHead(link);
+    for (nsIFrame* f : *this) {
+      if (aPredicate(f)) {
+        return ExtractHead(f);
+      }
+    }
+    return std::move(*this);
   }
 
   
@@ -269,14 +273,16 @@ class nsFrameList {
 
 
 
-  nsFrameList ExtractHead(FrameLinkEnumerator& aLink);
+
+  nsFrameList ExtractHead(nsIFrame* aFrame);
 
   
 
 
 
 
-  nsFrameList ExtractTail(FrameLinkEnumerator& aLink);
+
+  nsFrameList ExtractTail(nsIFrame* aFrame);
 
   nsIFrame* FirstChild() const { return mFirstChild; }
 
