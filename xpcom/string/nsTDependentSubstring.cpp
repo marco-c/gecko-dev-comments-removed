@@ -4,6 +4,8 @@
 
 
 
+
+#include "nsTSubstring.h"
 #include "nsTDependentSubstring.h"
 
 template <typename T>
@@ -99,3 +101,6 @@ const nsTDependentSubstring<char16_t> Substring(char16ptr_t aStart,
                    static_cast<const char16_t*>(aEnd));
 }
 #endif
+
+template class nsTDependentSubstring<char>;
+template class nsTDependentSubstring<char16_t>;
