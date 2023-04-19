@@ -91,6 +91,19 @@ class Realm {
 
 
 
+
+
+
+  cloneIntoRealm(obj) {
+    return obj;
+  }
+
+  
+
+
+
+
+
   removeObjectHandle(handle) {
     this.#handleObjectMap.delete(handle);
   }
@@ -187,16 +200,8 @@ class WindowRealm extends Realm {
     return this.#window.origin;
   }
 
-  #cloneAsDebuggerObject(obj) {
-    
-    
-    
-    const proxyObject = Cu.cloneInto(
-      obj,
-      this.#globalObjectReference.unsafeDereference()
-    );
-
-    return this.#globalObjectReference.makeDebuggeeValue(proxyObject);
+  #createDebuggerObject(obj) {
+    return this.#globalObjectReference.makeDebuggeeValue(obj);
   }
 
   #createSandbox() {
@@ -209,6 +214,20 @@ class WindowRealm extends Realm {
     };
 
     return new Cu.Sandbox(win, opts);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  cloneIntoRealm(obj) {
+    return Cu.cloneInto(obj, this.#globalObject);
   }
 
   
@@ -254,11 +273,16 @@ class WindowRealm extends Realm {
   ) {
     const expression = `(${functionDeclaration}).apply(__bidi_this, __bidi_args)`;
 
+    const args = this.cloneIntoRealm([]);
+    for (const arg of functionArguments) {
+      args.push(arg);
+    }
+
     return this.#globalObjectReference.executeInGlobalWithBindings(
       expression,
       {
-        __bidi_args: this.#cloneAsDebuggerObject(functionArguments),
-        __bidi_this: this.#cloneAsDebuggerObject(thisParameter),
+        __bidi_args: this.#createDebuggerObject(args),
+        __bidi_this: this.#createDebuggerObject(thisParameter),
       },
       {
         url: this.#window.document.baseURI,
