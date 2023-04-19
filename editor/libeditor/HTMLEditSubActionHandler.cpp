@@ -68,11 +68,6 @@
 #include "nsThreadUtils.h"
 #include "nsUnicharUtils.h"
 
-
-#ifdef SetProp
-#  undef SetProp
-#endif
-
 class nsISupports;
 
 namespace mozilla {
@@ -5807,7 +5802,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
 
   
   const int32_t relFontSize = mTypeInState->TakeRelativeFontSize();
-  item = mTypeInState->TakeSetProperty();
+  item = mTypeInState->TakePreservedStyle();
 
   if (item || relFontSize) {
     
@@ -5885,7 +5880,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
       
       
       MOZ_ASSERT(pointToPutCaret.IsSet());
-      item = mTypeInState->TakeSetProperty();
+      item = mTypeInState->TakePreservedStyle();
     }
   }
 
@@ -8777,9 +8772,7 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
         styleCacheBeforeEdit.AttributeValueOrCSSValueRef() !=
             styleCacheArrayAtInsertionPoint.ElementAt(index)
                 .AttributeValueOrCSSValueRef()) {
-      mTypeInState->SetProp(styleCacheBeforeEdit.TagRef(),
-                            styleCacheBeforeEdit.GetAttribute(),
-                            styleCacheBeforeEdit.AttributeValueOrCSSValueRef());
+      mTypeInState->PreserveStyle(styleCacheBeforeEdit);
     }
   }
   return NS_OK;

@@ -18,11 +18,6 @@
 #include "nsTArray.h"
 #include "nscore.h"
 
-
-#ifdef SetProp
-#  undef SetProp
-#endif
-
 class nsAtom;
 class nsINode;
 
@@ -119,7 +114,38 @@ class TypeInState final {
 
   void OnSelectionChange(const HTMLEditor& aHTMLEditor, int16_t aReason);
 
-  void SetProp(nsStaticAtom& aProp, nsAtom* aAttr, const nsAString& aValue);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void PreserveStyle(nsStaticAtom& aHTMLProperty, nsAtom* aAttribute,
+                     const nsAString& aAttributeValueOrCSSValue);
+
+  
+
+
+
+  void PreserveStyles(
+      const nsTArray<EditorInlineStyleAndValue>& aStylesToPreserve);
+
+  
+
+
+
+  void PreserveStyle(const StyleCache& aStyleToPreserve) {
+    PreserveStyle(aStyleToPreserve.TagRef(), aStyleToPreserve.GetAttribute(),
+                  aStyleToPreserve.AttributeValueOrCSSValueRef());
+  }
 
   void ClearAllProps();
   void ClearProp(nsStaticAtom* aProp, nsAtom* aAttr,
@@ -136,7 +162,13 @@ class TypeInState final {
 
 
 
-  UniquePtr<PropItem> TakeSetProperty();
+
+  UniquePtr<PropItem> TakePreservedStyle() {
+    if (mPreservingStyles.IsEmpty()) {
+      return nullptr;
+    }
+    return mPreservingStyles.PopLastElement();
+  }
 
   
 

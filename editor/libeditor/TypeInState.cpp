@@ -25,13 +25,6 @@
 #include "nsReadableUtils.h"
 #include "nsStringFwd.h"
 
-
-#ifdef SetProp
-#  undef SetProp
-#endif
-
-class nsAtom;
-
 namespace mozilla {
 
 using namespace dom;
@@ -347,30 +340,39 @@ void TypeInState::Reset() {
   mPreservingStyles.Clear();
 }
 
-void TypeInState::SetProp(nsStaticAtom& aProp, nsAtom* aAttr,
-                          const nsAString& aValue) {
+void TypeInState::PreserveStyles(
+    const nsTArray<EditorInlineStyleAndValue>& aStylesToPreserve) {
+  for (const EditorInlineStyleAndValue& styleToPreserve : aStylesToPreserve) {
+    PreserveStyle(styleToPreserve.HTMLPropertyRef(), styleToPreserve.mAttribute,
+                  styleToPreserve.mAttributeValue);
+  }
+}
+
+void TypeInState::PreserveStyle(nsStaticAtom& aHTMLProperty, nsAtom* aAttribute,
+                                const nsAString& aAttributeValueOrCSSValue) {
   
-  if (nsGkAtoms::big == &aProp) {
+  if (nsGkAtoms::big == &aHTMLProperty) {
     mRelativeFontSize++;
     return;
   }
-  if (nsGkAtoms::small == &aProp) {
+  if (nsGkAtoms::small == &aHTMLProperty) {
     mRelativeFontSize--;
     return;
   }
 
   int32_t index;
-  if (IsPropSet(aProp, aAttr, nullptr, index)) {
+  if (IsPropSet(aHTMLProperty, aAttribute, nullptr, index)) {
     
-    mPreservingStyles[index]->mAttributeValueOrCSSValue = aValue;
+    mPreservingStyles[index]->mAttributeValueOrCSSValue =
+        aAttributeValueOrCSSValue;
     return;
   }
 
-  
-  mPreservingStyles.AppendElement(MakeUnique<PropItem>(&aProp, aAttr, aValue));
+  mPreservingStyles.AppendElement(MakeUnique<PropItem>(
+      &aHTMLProperty, aAttribute, aAttributeValueOrCSSValue));
 
   
-  RemovePropFromClearedList(&aProp, aAttr);
+  RemovePropFromClearedList(&aHTMLProperty, aAttribute);
 }
 
 void TypeInState::ClearAllProps() {
@@ -403,13 +405,6 @@ UniquePtr<PropItem> TypeInState::TakeClearProperty() {
     return nullptr;
   }
   return mClearingStyles.PopLastElement();
-}
-
-UniquePtr<PropItem> TypeInState::TakeSetProperty() {
-  if (mPreservingStyles.IsEmpty()) {
-    return nullptr;
-  }
-  return mPreservingStyles.PopLastElement();
 }
 
 
