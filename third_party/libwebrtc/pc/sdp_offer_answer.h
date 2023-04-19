@@ -46,6 +46,7 @@ class MediaStreamObserver;
 class PeerConnection;
 class VideoRtpReceiver;
 class RtcEventLog;
+class TransceiverList;
 
 
 
@@ -143,6 +144,9 @@ class SdpOfferAnswerHandler {
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       const SessionDescriptionInterface* sdesc) const;
+
+  
+  void DestroyAllChannels();
 
  private:
   class ImplicitCreateSessionDescriptionObserver;
@@ -349,7 +353,6 @@ class SdpOfferAnswerHandler {
   
   
   
-  
   void ProcessRemovalOfRemoteTrack(
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
@@ -406,6 +409,94 @@ class SdpOfferAnswerHandler {
   void ReportNegotiatedSdpSemantics(const SessionDescriptionInterface& answer);
 
   
+  
+  
+  void UpdateEndedRemoteMediaStreams();
+
+  
+  bool UseCandidatesInSessionDescription(
+      const SessionDescriptionInterface* remote_desc);
+  
+  bool UseCandidate(const IceCandidateInterface* candidate);
+  
+  
+  
+  
+  bool ReadyToUseRemoteCandidate(const IceCandidateInterface* candidate,
+                                 const SessionDescriptionInterface* remote_desc,
+                                 bool* valid);
+  void ReportRemoteIceCandidateAdded(const cricket::Candidate& candidate)
+      RTC_RUN_ON(signaling_thread());
+
+  RTCErrorOr<const cricket::ContentInfo*> FindContentInfo(
+      const SessionDescriptionInterface* description,
+      const IceCandidateInterface* candidate) RTC_RUN_ON(signaling_thread());
+
+  
+  
+  
+
+  
+  
+  
+  RTCError CreateChannels(const cricket::SessionDescription& desc);
+
+  
+  cricket::VoiceChannel* CreateVoiceChannel(const std::string& mid);
+  cricket::VideoChannel* CreateVideoChannel(const std::string& mid);
+  bool CreateDataChannel(const std::string& mid);
+
+  
+  
+  void DestroyTransceiverChannel(
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+          transceiver);
+
+  
+  
+  void DestroyDataChannelTransport();
+
+  
+  
+  void DestroyChannelInterface(cricket::ChannelInterface* channel);
+  
+  
+
+  void GenerateMediaDescriptionOptions(
+      const SessionDescriptionInterface* session_desc,
+      RtpTransceiverDirection audio_direction,
+      RtpTransceiverDirection video_direction,
+      absl::optional<size_t>* audio_index,
+      absl::optional<size_t>* video_index,
+      absl::optional<size_t>* data_index,
+      cricket::MediaSessionOptions* session_options);
+
+  
+  
+  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
+      const std::string& mid) const;
+
+  
+  
+  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
+      const std::string& mid) const;
+
+  const std::string GetTransportName(const std::string& content_name);
+  
+  
+  void UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
+
+  
+  
+  cricket::ChannelManager* channel_manager() const;
+  TransceiverList& transceivers();
+  const TransceiverList& transceivers() const;
+  JsepTransportController* transport_controller();
+  DataChannelController* data_channel_controller();
+  const DataChannelController* data_channel_controller() const;
+  cricket::PortAllocator* port_allocator();
+  const cricket::PortAllocator* port_allocator() const;
+  
 
   PeerConnection* const pc_;
 
@@ -434,6 +525,14 @@ class SdpOfferAnswerHandler {
   
   rtc::scoped_refptr<rtc::OperationsChain> operations_chain_
       RTC_GUARDED_BY(signaling_thread());
+
+  
+  
+  const std::string rtcp_cname_;
+
+  
+  
+  rtc::UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
 
   
   std::set<std::string> pending_ice_restarts_
