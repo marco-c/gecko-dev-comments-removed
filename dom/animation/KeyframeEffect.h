@@ -190,7 +190,8 @@ class KeyframeEffect : public AnimationEffect {
   virtual void SetKeyframes(JSContext* aContext,
                             JS::Handle<JSObject*> aKeyframes, ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ComputedStyle* aStyle);
+                    const ComputedStyle* aStyle,
+                    const AnimationTimeline* aTimeline);
 
   
   
@@ -257,7 +258,10 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  void UpdateProperties(const ComputedStyle* aComputedValues);
+  
+  
+  void UpdateProperties(const ComputedStyle* aStyle,
+                        const AnimationTimeline* aTimeline = nullptr);
 
   
   
@@ -410,10 +414,12 @@ class KeyframeEffect : public AnimationEffect {
 
   void EnsureBaseStyles(const ComputedStyle* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties,
+                        const AnimationTimeline* aTimeline,
                         bool* aBaseStylesChanged);
   void EnsureBaseStyle(const AnimationProperty& aProperty,
                        nsPresContext* aPresContext,
                        const ComputedStyle* aComputedValues,
+                       const AnimationTimeline* aTimeline,
                        RefPtr<const ComputedStyle>& aBaseComputedValues);
 
   OwningAnimationTarget mTarget;

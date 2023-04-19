@@ -147,6 +147,10 @@ enum class CanSkipCompose {
   IfPossible,
   No,
 };
+
+
+
+
 static AnimationHelper::SampleResult SampleAnimationForProperty(
     const APZSampler* aAPZSampler, const LayersId& aLayersId,
     const MutexAutoLock& aProofOfMapLock, TimeStamp aPreviousFrameTime,
@@ -155,6 +159,8 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
     nsTArray<PropertyAnimation>& aPropertyAnimations,
     RefPtr<RawServoAnimationValue>& aAnimationValue) {
   MOZ_ASSERT(!aPropertyAnimations.IsEmpty(), "Should have animations");
+
+  auto reason = AnimationHelper::SampleResult::Reason::None;
   bool hasInEffectAnimations = false;
 #ifdef DEBUG
   
@@ -183,12 +189,30 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
         elapsedDuration, animation.mTiming, animation.mPlaybackRate,
         progressTimelinePosition);
 
-    
-    
-    
-    
-    
     if (computedTiming.mProgress.IsNull()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (animation.mScrollTimelineOptions &&
+          !animation.mProgressOnLastCompose.IsNull() &&
+          (computedTiming.mPhase == ComputedTiming::AnimationPhase::Before ||
+           computedTiming.mPhase == ComputedTiming::AnimationPhase::After)) {
+        
+        
+        
+        
+        
+        
+        animation.ResetLastCompositionValues();
+        reason = AnimationHelper::SampleResult::Reason::ScrollToDelayPhase;
+      }
       continue;
     }
 
@@ -211,7 +235,7 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
 #ifdef DEBUG
       shouldBeSkipped = true;
 #else
-      return AnimationHelper::SampleResult::Skipped;
+      return AnimationHelper::SampleResult::Skipped();
 #endif
     }
 
@@ -246,7 +270,7 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
 #ifdef DEBUG
       shouldBeSkipped = true;
 #else
-      return AnimationHelper::SampleResult::Skipped;
+      return AnimationHelper::SampleResult::Skipped();
 #endif
     }
 
@@ -268,7 +292,7 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
 
 #ifdef DEBUG
     if (shouldBeSkipped) {
-      return AnimationHelper::SampleResult::Skipped;
+      return AnimationHelper::SampleResult::Skipped();
     }
 #endif
 
@@ -279,9 +303,15 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
     animation.mPortionInSegmentOnLastCompose.SetValue(portion);
   }
 
-  return hasInEffectAnimations ? AnimationHelper::SampleResult::Sampled
-                               : AnimationHelper::SampleResult::None;
+  auto rv = hasInEffectAnimations ? AnimationHelper::SampleResult::Sampled()
+                                  : AnimationHelper::SampleResult();
+  rv.mReason = reason;
+  return rv;
 }
+
+
+
+
 
 AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
     const APZSampler* aAPZSampler, const LayersId& aLayersId,
@@ -294,6 +324,7 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
   MOZ_ASSERT(aAnimationValues.IsEmpty(),
              "Should be called with empty aAnimationValues");
 
+  nsTArray<RefPtr<RawServoAnimationValue>> baseStyleOfDelayAnimations;
   nsTArray<RefPtr<RawServoAnimationValue>> nonAnimatingValues;
   for (PropertyAnimationGroup& group : aPropertyAnimationGroups) {
     
@@ -328,14 +359,18 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
 
     
     
-    if (result == SampleResult::Skipped) {
+    if (result.IsSkipped()) {
 #ifdef DEBUG
       aAnimationValues.AppendElement(std::move(currValue));
 #endif
-      return SampleResult::Skipped;
+      return result;
     }
 
-    if (result != SampleResult::Sampled) {
+    if (!result.IsSampled()) {
+      if (result.mReason == SampleResult::Reason::ScrollToDelayPhase) {
+        MOZ_ASSERT(currValue && currValue == group.mBaseStyle);
+        baseStyleOfDelayAnimations.AppendElement(std::move(currValue));
+      }
       continue;
     }
 
@@ -345,8 +380,17 @@ AnimationHelper::SampleResult AnimationHelper::SampleAnimationForEachNode(
   }
 
   SampleResult rv =
-      aAnimationValues.IsEmpty() ? SampleResult::None : SampleResult::Sampled;
-  if (rv == SampleResult::Sampled) {
+      aAnimationValues.IsEmpty() ? SampleResult() : SampleResult::Sampled();
+
+  
+  
+  
+  if (rv.IsNone() && !baseStyleOfDelayAnimations.IsEmpty()) {
+    aAnimationValues.AppendElements(std::move(baseStyleOfDelayAnimations));
+    rv.mReason = SampleResult::Reason::ScrollToDelayPhase;
+  }
+
+  if (!aAnimationValues.IsEmpty()) {
     aAnimationValues.AppendElements(std::move(nonAnimatingValues));
   }
   return rv;

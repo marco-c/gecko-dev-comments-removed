@@ -307,6 +307,8 @@ bool CompositorAnimationStorage::SampleAnimations(
         continue;
       }
 
+      const nsCSSPropertyID lastPropertyAnimationGroupProperty =
+          animationStorageData->mAnimation.LastElement().mProperty;
       isAnimating = true;
       AutoTArray<RefPtr<RawServoAnimationValue>, 1> animationValues;
       AnimatedValue* previousValue = GetAnimatedValue(iter.first);
@@ -316,16 +318,6 @@ bool CompositorAnimationStorage::SampleAnimations(
               aPreviousFrameTime, aCurrentFrameTime, previousValue,
               animationStorageData->mAnimation, animationValues);
 
-      if (sampleResult != AnimationHelper::SampleResult::Sampled) {
-        if (mNewAnimations.find(iter.first) != mNewAnimations.end()) {
-          mAnimatedValues.Remove(iter.first);
-        }
-        continue;
-      }
-
-      const nsCSSPropertyID lastPropertyAnimationGroupProperty =
-          animationStorageData->mAnimation.LastElement().mProperty;
-
       PROFILER_MARKER(
           "SampleAnimation", GRAPHICS,
           MarkerOptions(
@@ -333,6 +325,50 @@ bool CompositorAnimationStorage::SampleAnimations(
               MarkerInnerWindowId(mCompositorBridge->GetInnerWindowId())),
           CompositorAnimationMarker, iter.first,
           lastPropertyAnimationGroupProperty);
+
+      if (!sampleResult.IsSampled()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (mNewAnimations.find(iter.first) != mNewAnimations.end()) {
+          mAnimatedValues.Remove(iter.first);
+        } else if (sampleResult.mReason ==
+                   AnimationHelper::SampleResult::Reason::ScrollToDelayPhase) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          StoreAnimatedValue(lastPropertyAnimationGroupProperty, iter.first,
+                             animationStorageData, animationValues,
+                             aProofOfMapLock, apzSampler, previousValue,
+                             janked);
+        }
+        continue;
+      }
 
       
       StoreAnimatedValue(lastPropertyAnimationGroupProperty, iter.first,

@@ -32,9 +32,32 @@ typedef nsTArray<layers::Animation> AnimationArray;
 
 class AnimationHelper {
  public:
-  enum class SampleResult { None, Skipped, Sampled };
+  struct SampleResult {
+    enum class Type : uint8_t { None, Skipped, Sampled };
+    enum class Reason : uint8_t { None, ScrollToDelayPhase };
+    Type mType = Type::None;
+    Reason mReason = Reason::None;
+
+    SampleResult() = default;
+    SampleResult(Type aType, Reason aReason) : mType(aType), mReason(aReason) {}
+
+    static SampleResult Skipped() { return {Type::Skipped, Reason::None}; }
+    static SampleResult Sampled() { return {Type::Sampled, Reason::None}; }
+
+    bool IsNone() { return mType == Type::None; }
+    bool IsSkipped() { return mType == Type::Skipped; }
+    bool IsSampled() { return mType == Type::Sampled; }
+  };
 
   
+
+
+
+
+
+
+
+
 
 
 
@@ -80,6 +103,12 @@ class AnimationHelper {
       nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues);
 
   
+
+
+
+
+
+
 
 
 
