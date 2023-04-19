@@ -48,6 +48,17 @@ void Description(nsString& aDesc) const override;
 
 virtual already_AddRefed<AccAttributes> Attributes() override;
 
+
+
+
+nsTArray<RemoteAccessible*> RelationByType(RelationType aType) const;
+
+
+
+
+void Relations(nsTArray<RelationType>* aTypes,
+               nsTArray<nsTArray<RemoteAccessible*>>* aTargetSets) const;
+
 bool IsSearchbox() const;
 
 nsStaticAtom* ARIARoleAtom() const;

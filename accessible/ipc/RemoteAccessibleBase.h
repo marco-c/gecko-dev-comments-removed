@@ -183,8 +183,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   virtual nsRect BoundsInAppUnits() const override;
 
-  virtual nsTArray<RemoteAccessible*> RelationByType(RelationType aType) const;
-
   virtual uint64_t State() override;
 
   virtual already_AddRefed<AccAttributes> Attributes() override;
@@ -267,15 +265,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
         
         mCachedFields = new AccAttributes();
       }
-    }
-
-    
-    
-    
-    
-    const nsTArray<bool>& updatesNeeded = PreProcessRelations(aFields);
-
-    if (aUpdateType == CacheUpdateType::Update) {
       mCachedFields->Update(aFields);
       if (IsTextLeaf()) {
         Derived* parent = RemoteParent();
@@ -284,8 +273,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
         }
       }
     }
-
-    PostProcessRelations(updatesNeeded);
   }
 
   void UpdateStateCache(uint64_t aState, bool aEnabled) {
@@ -315,9 +302,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
                             uint32_t aLength = UINT32_MAX) override;
 
   virtual bool TableIsProbablyForLayout();
-
-  nsTArray<bool> PreProcessRelations(AccAttributes* aFields);
-  void PostProcessRelations(const nsTArray<bool>& aToUpdate);
 
   uint32_t GetCachedTextLength();
   Maybe<const nsTArray<int32_t>&> GetCachedTextLines();
