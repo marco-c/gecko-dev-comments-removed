@@ -19,12 +19,14 @@
 #include "rtc_base/win32.h"
 #endif
 
+#include "absl/strings/string_view.h"
+
 namespace rtc {
 
 
 
 const char* inet_ntop(int af, const void* src, char* dst, socklen_t size);
-int inet_pton(int af, const char* src, void* dst);
+int inet_pton(int af, absl::string_view src, void* dst);
 
 bool HasIPv4Enabled();
 bool HasIPv6Enabled();

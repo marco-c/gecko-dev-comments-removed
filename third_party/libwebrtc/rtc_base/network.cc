@@ -216,7 +216,7 @@ bool MatchTypeNameWithIndexPattern(absl::string_view network_name,
 
 
 
-AdapterType GetAdapterTypeFromName(const char* network_name) {
+AdapterType GetAdapterTypeFromName(absl::string_view network_name) {
   if (MatchTypeNameWithIndexPattern(network_name, "lo")) {
     
     

@@ -63,7 +63,7 @@ std::string MakeNetworkKey(absl::string_view name,
 
 
 
-RTC_EXPORT AdapterType GetAdapterTypeFromName(const char* network_name);
+RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
 
 class DefaultLocalAddressProvider {
  public:

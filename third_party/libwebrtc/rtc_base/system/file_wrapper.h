@@ -16,6 +16,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 
 
 namespace webrtc {
@@ -34,11 +36,8 @@ class FileWrapper final {
   
   
   
-  static FileWrapper OpenReadOnly(const char* file_name_utf8);
-  static FileWrapper OpenReadOnly(const std::string& file_name_utf8);
-  static FileWrapper OpenWriteOnly(const char* file_name_utf8,
-                                   int* error = nullptr);
-  static FileWrapper OpenWriteOnly(const std::string& file_name_utf8,
+  static FileWrapper OpenReadOnly(absl::string_view file_name_utf8);
+  static FileWrapper OpenWriteOnly(absl::string_view file_name_utf8,
                                    int* error = nullptr);
 
   FileWrapper() = default;

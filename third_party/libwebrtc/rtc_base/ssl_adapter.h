@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
@@ -89,7 +90,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   
   
   
-  virtual int StartSSL(const char* hostname) = 0;
+  virtual int StartSSL(absl::string_view hostname) = 0;
 
   
   

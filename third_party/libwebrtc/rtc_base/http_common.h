@@ -36,8 +36,7 @@ enum HttpAuthResult { HAR_RESPONSE, HAR_IGNORE, HAR_CREDENTIALS, HAR_ERROR };
 
 
 
-HttpAuthResult HttpAuthenticate(const char* challenge,
-                                size_t len,
+HttpAuthResult HttpAuthenticate(absl::string_view challenge,
                                 const SocketAddress& server,
                                 absl::string_view method,
                                 absl::string_view uri,

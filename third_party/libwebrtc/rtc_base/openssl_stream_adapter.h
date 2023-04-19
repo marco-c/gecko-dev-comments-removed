@@ -173,7 +173,7 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   
   
   
-  void Error(const char* context, int err, uint8_t alert, bool signal);
+  void Error(absl::string_view context, int err, uint8_t alert, bool signal);
   void Cleanup(uint8_t alert);
 
   
