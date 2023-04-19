@@ -320,7 +320,15 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
   
   get childrenUnavailable() {
     return (
-      this._form.useChildTargetToFetchChildren &&
+      
+      
+      
+      
+      !!this._form.useChildTargetToFetchChildren &&
+      
+      
+      
+      
       !this.useChildTargetToFetchChildren
     );
   }
@@ -343,7 +351,7 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
       return false;
     }
 
-    return this._form.useChildTargetToFetchChildren;
+    return !!this._form.useChildTargetToFetchChildren;
   }
   get hasEventListeners() {
     return this._form.hasEventListeners;
