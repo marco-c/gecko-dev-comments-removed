@@ -259,20 +259,6 @@ nsresult nsZipHandle::Init(nsZipArchive* zip, const char* entry,
   return NS_OK;
 }
 
-nsresult nsZipHandle::Init(const uint8_t* aData, uint32_t aLen,
-                           nsZipHandle** aRet) {
-  RefPtr<nsZipHandle> handle = new nsZipHandle();
-
-  handle->mFileStart = aData;
-  handle->mTotalLen = aLen;
-  nsresult rv = handle->findDataStart();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  handle.forget(aRet);
-  return NS_OK;
-}
-
 
 
 
@@ -308,6 +294,7 @@ nsresult nsZipHandle::findDataStart() {
       mFileData = mFileStart + headerSize;
       return NS_OK;
     }
+    return NS_ERROR_FILE_CORRUPTED;
   }
   mLen = mTotalLen;
   mFileData = mFileStart;
@@ -776,6 +763,7 @@ nsZipHandle* nsZipArchive::GetFD() const { return mFd.get(); }
 
 
 
+
 uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem) {
   MOZ_ASSERT(aItem);
 
@@ -784,9 +772,13 @@ uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem) {
   
   
   uint32_t len = mFd->mLen;
+  MOZ_DIAGNOSTIC_ASSERT(len <= UINT32_MAX, "mLen > 2GB");
   const uint8_t* data = mFd->mFileData;
   offset = aItem->LocalOffset();
   if (len < ZIPLOCAL_SIZE || offset > len - ZIPLOCAL_SIZE) return 0;
+  
+  MOZ_DIAGNOSTIC_ASSERT(offset <= mFd->mLen - 4,
+                        "Corrupt local offset in JAR file");
 
   
   
@@ -798,8 +790,11 @@ uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem) {
   
   offset += ZIPLOCAL_SIZE + xtoint(Local->filename_len) +
             xtoint(Local->extrafield_len);
+  
+  MOZ_DIAGNOSTIC_ASSERT(offset <= mFd->mLen, "Corrupt data offset in JAR file");
 
   MMAP_FAULT_HANDLER_CATCH(0)
+  
   return offset;
 }
 
