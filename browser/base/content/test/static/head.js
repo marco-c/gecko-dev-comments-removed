@@ -20,7 +20,6 @@ const IS_ALPHA = /^[a-z]+$/i;
 var { PerfTestHelpers } = ChromeUtils.import(
   "resource://testing-common/PerfTestHelpers.jsm"
 );
-var { OS, require } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -57,52 +56,43 @@ function generateURIsFromDirTree(dir, extensions) {
 
 
 
-function iterateOverPath(path, extensions) {
-  let iterator = new OS.File.DirectoryIterator(path);
-  let parentDir = new LocalFile(path);
-  let subdirs = [];
-  let files = [];
 
-  let pathEntryIterator = entry => {
-    if (entry.isDir) {
-      subdirs.push(entry.path);
-    } else if (extensions.some(extension => entry.name.endsWith(extension))) {
-      let file = parentDir.clone();
-      file.append(entry.name);
-      
-      
-      if (file.exists()) {
-        let uriSpec = getURLForFile(file);
-        files.push(Services.io.newURI(uriSpec));
+
+
+
+
+
+
+async function iterateOverPath(path, extensions) {
+  const children = await IOUtils.getChildren(path);
+
+  const files = [];
+  const subdirs = [];
+
+  for (const entry of children) {
+    const stat = await IOUtils.stat(entry);
+
+    if (stat.type === "directory") {
+      subdirs.push(entry);
+    } else if (extensions.some(extension => entry.endsWith(extension))) {
+      if (await IOUtils.exists(entry)) {
+        const spec = PathUtils.toFileURI(entry);
+        files.push(Services.io.newURI(spec));
       }
     } else if (
-      entry.name.endsWith(".ja") ||
-      entry.name.endsWith(".jar") ||
-      entry.name.endsWith(".zip") ||
-      entry.name.endsWith(".xpi")
+      entry.endsWith(".ja") ||
+      entry.endsWith(".jar") ||
+      entry.endsWith(".zip") ||
+      entry.endsWith(".xpi")
     ) {
-      let file = parentDir.clone();
-      file.append(entry.name);
-      for (let extension of extensions) {
-        let jarEntryIterator = generateEntriesFromJarFile(file, extension);
-        files.push(...jarEntryIterator);
+      const file = new LocalFile(entry);
+      for (const extension of extensions) {
+        files.push(...generateEntriesFromJarFile(file, extension));
       }
     }
-  };
+  }
 
-  return new Promise((resolve, reject) => {
-    (async function() {
-      try {
-        
-        await iterator.forEach(pathEntryIterator);
-        resolve({ files, subdirs });
-      } catch (ex) {
-        reject(ex);
-      } finally {
-        iterator.close();
-      }
-    })();
-  });
+  return { files, subdirs };
 }
 
 
