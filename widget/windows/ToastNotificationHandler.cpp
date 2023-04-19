@@ -664,8 +664,6 @@ static bool NotificationStillPresent(
 HRESULT
 ToastNotificationHandler::OnDismiss(IToastNotification* notification,
                                     IToastDismissedEventArgs* aArgs) {
-  
-  notification->AddRef();
   ComPtr<IToastNotification> comptrNotification(notification);
   
   
