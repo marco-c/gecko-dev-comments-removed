@@ -34,6 +34,10 @@ class WavBasedSimulator final : public AudioProcessingSimulator {
   
   void Process() override;
 
+  
+  
+  void Analyze() override;
+
  private:
   enum SimulationEventType {
     kProcessStream,
