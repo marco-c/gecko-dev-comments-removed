@@ -10,35 +10,11 @@
 #if defined(XP_WIN)
 #  include <windows.h>
 #elif defined(XP_DARWIN)
-#  include <libkern/OSAtomic.h>
 #  include <os/lock.h>
 #else
 #  include <pthread.h>
 #endif
 #include "mozilla/Attributes.h"
-
-#if defined(XP_DARWIN)
-
-
-
-#  define OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION (0x00010000)
-#  define OS_UNFAIR_LOCK_ADAPTIVE_SPIN (0x00040000)
-
-extern "C" {
-
-typedef uint32_t os_unfair_lock_options_t;
-OS_UNFAIR_LOCK_AVAILABILITY
-OS_EXPORT OS_NOTHROW OS_NONNULL_ALL void os_unfair_lock_lock_with_options(
-    os_unfair_lock_t lock, os_unfair_lock_options_t options);
-}
-
-static_assert(OS_UNFAIR_LOCK_INIT._os_unfair_lock_opaque == OS_SPINLOCK_INIT,
-              "OS_UNFAIR_LOCK_INIT and OS_SPINLOCK_INIT have the same "
-              "value");
-static_assert(sizeof(os_unfair_lock) == sizeof(OSSpinLock),
-              "os_unfair_lock and OSSpinLock are the same size");
-#endif  
-
 
 
 
@@ -48,10 +24,7 @@ struct Mutex {
 #if defined(XP_WIN)
   CRITICAL_SECTION mMutex;
 #elif defined(XP_DARWIN)
-  union {
-    os_unfair_lock mUnfairLock;
-    OSSpinLock mSpinLock;
-  } mMutex;
+  os_unfair_lock mMutex;
 #else
   pthread_mutex_t mMutex;
 #endif
@@ -63,10 +36,7 @@ struct Mutex {
       return false;
     }
 #elif defined(XP_DARWIN)
-    
-    
-    
-    mMutex.mUnfairLock = OS_UNFAIR_LOCK_INIT;
+    mMutex = OS_UNFAIR_LOCK_INIT;
 #elif defined(XP_LINUX) && !defined(ANDROID)
     pthread_mutexattr_t attr;
     if (pthread_mutexattr_init(&attr) != 0) {
@@ -90,20 +60,7 @@ struct Mutex {
 #if defined(XP_WIN)
     EnterCriticalSection(&mMutex);
 #elif defined(XP_DARWIN)
-    if (Mutex::gFallbackToOSSpinLock) {
-      OSSpinLockLock(&mMutex.mSpinLock);
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      os_unfair_lock_lock_with_options(
-          &mMutex.mUnfairLock,
-          OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION | OS_UNFAIR_LOCK_ADAPTIVE_SPIN);
-    }
+    os_unfair_lock_lock(&mMutex);
 #else
     pthread_mutex_lock(&mMutex);
 #endif
@@ -113,20 +70,11 @@ struct Mutex {
 #if defined(XP_WIN)
     LeaveCriticalSection(&mMutex);
 #elif defined(XP_DARWIN)
-    if (Mutex::gFallbackToOSSpinLock) {
-      OSSpinLockUnlock(&mMutex.mSpinLock);
-    } else {
-      os_unfair_lock_unlock(&mMutex.mUnfairLock);
-    }
+    os_unfair_lock_unlock(&mMutex);
 #else
     pthread_mutex_unlock(&mMutex);
 #endif
   }
-
-#if defined(XP_DARWIN)
-  static bool UseUnfairLocks();
-  static bool gFallbackToOSSpinLock;
-#endif  
 };
 
 
@@ -153,10 +101,7 @@ struct StaticMutex {
 typedef Mutex StaticMutex;
 
 #  if defined(XP_DARWIN)
-
-
-#    define STATIC_MUTEX_INIT \
-      { .mUnfairLock = OS_UNFAIR_LOCK_INIT }
+#    define STATIC_MUTEX_INIT OS_UNFAIR_LOCK_INIT
 #  elif defined(XP_LINUX) && !defined(ANDROID)
 #    define STATIC_MUTEX_INIT PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP
 #  else
