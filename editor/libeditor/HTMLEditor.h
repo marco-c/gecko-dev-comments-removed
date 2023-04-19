@@ -2514,8 +2514,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  AlignContentsAtSelectionWithEmptyDivElement(const nsAString& aAlignType);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  InsertDivElementToAlignContents(const EditorDOMPoint& aPointToInsert,
+                                  const nsAString& aAlignType,
+                                  const Element& aEditingHost);
 
   
 
