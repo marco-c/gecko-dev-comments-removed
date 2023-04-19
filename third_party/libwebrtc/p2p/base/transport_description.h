@@ -25,6 +25,17 @@
 namespace cricket {
 
 
+
+
+
+
+
+
+
+
+enum SecurePolicy { SEC_DISABLED, SEC_ENABLED, SEC_REQUIRED };
+
+
 enum IceRole { ICEROLE_CONTROLLING = 0, ICEROLE_CONTROLLED, ICEROLE_UNKNOWN };
 
 

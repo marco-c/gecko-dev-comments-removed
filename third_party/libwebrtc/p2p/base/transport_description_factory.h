@@ -40,19 +40,19 @@ class TransportDescriptionFactory {
   TransportDescriptionFactory();
   ~TransportDescriptionFactory();
 
+  SecurePolicy secure() const { return secure_; }
   
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate() const {
     return certificate_;
   }
 
   
+  void set_secure(SecurePolicy s) { secure_ = s; }
   
   void set_certificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
     certificate_ = certificate;
   }
-
-  bool IsEncrypted() const { return certificate_ != nullptr; }
 
   
   std::unique_ptr<TransportDescription> CreateOffer(
@@ -77,6 +77,7 @@ class TransportDescriptionFactory {
   bool SetSecurityInfo(TransportDescription* description,
                        ConnectionRole role) const;
 
+  SecurePolicy secure_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
 
