@@ -5917,6 +5917,14 @@ static bool ShouldSanitizePreference_Impl(const T& aPref,
     
     
     
+    if (strncmp(prefName, "$$$", 3) == 0) {
+      return false;
+    }
+
+    
+    
+    
+    
     
     for (const auto& entry : sParentOnlyPrefBranchList) {
       if (strncmp(entry.mPrefBranch, prefName, entry.mLen) == 0) {
@@ -5961,6 +5969,12 @@ namespace mozilla {
 bool ShouldSanitizePreference(const char* aPrefName,
                               bool aIsDestWebContentProcess) {
   if (!aIsDestWebContentProcess) {
+    return false;
+  }
+
+  
+  
+  if (strncmp(aPrefName, "$$$", 3) == 0) {
     return false;
   }
 
