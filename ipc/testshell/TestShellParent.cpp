@@ -7,12 +7,9 @@
 
 #include "jsfriendapi.h"
 #include "js/CallAndConstruct.h"  
-#include "mozilla/ArrayUtils.h"
 
 #include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/ScriptSettings.h"
 
-#include "xpcpublic.h"
 
 using namespace mozilla;
 using mozilla::ipc::PTestShellCommandParent;

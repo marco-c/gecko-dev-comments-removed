@@ -4,16 +4,12 @@
 
 
 
-#include <stdlib.h>
-#include <errno.h>
 #ifdef HAVE_IO_H
 #  include <io.h> 
 #endif
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h> 
 #endif
-
-#include "base/basictypes.h"
 
 #include "jsapi.h"
 #include "js/CharacterEncoding.h"
@@ -28,23 +24,19 @@
 #include "XPCShellEnvironment.h"
 
 #include "mozilla/Utf8.h"  
-#include "mozilla/XPCOM.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ScriptSettings.h"
 
 #include "nsIPrincipal.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIXPConnect.h"
+#include "nsServiceManagerUtils.h"
 
 #include "nsJSUtils.h"
-#include "nsJSPrincipals.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
 
 #include "BackstagePass.h"
 
 #include "TestShellChild.h"
-#include "TestShellParent.h"
 
 using mozilla::AutoSafeJSContext;
 using mozilla::dom::AutoEntryScript;
