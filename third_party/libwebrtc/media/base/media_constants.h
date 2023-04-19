@@ -123,8 +123,6 @@ extern const char kComfortNoiseCodecName[];
 RTC_EXPORT extern const char kVp8CodecName[];
 RTC_EXPORT extern const char kVp9CodecName[];
 RTC_EXPORT extern const char kAv1CodecName[];
-
-RTC_EXPORT extern const char kAv1xCodecName[];
 RTC_EXPORT extern const char kH264CodecName[];
 
 

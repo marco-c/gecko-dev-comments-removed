@@ -53,6 +53,10 @@ using ::webrtc::ParseRtpSsrc;
 const int kMinLayerSize = 16;
 constexpr int64_t kUnsignaledSsrcCooldownMs = rtc::kNumMillisecsPerSec / 2;
 
+
+
+constexpr char kAv1xCodecName[] = "AV1X";
+
 const char* StreamTypeToString(
     webrtc::VideoSendStream::StreamStats::StreamType type) {
   switch (type) {
