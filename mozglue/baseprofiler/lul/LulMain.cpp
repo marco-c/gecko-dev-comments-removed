@@ -1790,7 +1790,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   buf[sizeof(buf) - 1] = 0;
   aLUL->mLog(buf);
 
-  return passed;
+  return !passed;
 }
 
 
@@ -1819,7 +1819,8 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
     if (*strP == '\0') {                                                      \
       /* We've come to the end of the director string. */                     \
       /* Take a stack snapshot. */                                            \
-      return GetAndCheckStackTrace(aLUL, strPorig);                           \
+      /* We purposefully use a negation to avoid tail-call optimization */    \
+      return !GetAndCheckStackTrace(aLUL, strPorig);                          \
     } else {                                                                  \
       /* Recurse onwards.  This is a bit subtle.  The obvious */              \
       /* thing to do here is call onwards directly, from within the */        \
