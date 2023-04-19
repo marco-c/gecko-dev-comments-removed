@@ -849,6 +849,10 @@ var TelemetrySendImpl = {
     try {
       const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"];
       if (cr) {
+        
+        
+        
+        
         const crs = cr.getService(Ci.nsICrashReporter);
 
         let clientId = ClientID.getCachedClientID();

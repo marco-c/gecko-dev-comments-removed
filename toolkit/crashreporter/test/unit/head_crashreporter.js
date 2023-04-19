@@ -185,10 +185,7 @@ async function do_content_crash(setup, callback) {
 
   
   
-  let crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
-    Ci.nsICrashReporter
-  );
-  crashReporter.minidumpPath = do_get_tempdir();
+  Services.appinfo.minidumpPath = do_get_tempdir();
 
   
   
@@ -232,10 +229,7 @@ async function do_triggered_content_crash(trigger, callback) {
 
   
   
-  let crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
-    Ci.nsICrashReporter
-  );
-  crashReporter.minidumpPath = do_get_tempdir();
+  Services.appinfo.minidumpPath = do_get_tempdir();
 
   
 

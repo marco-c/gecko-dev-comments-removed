@@ -36,12 +36,9 @@ add_task(async function test_instantiation() {
 });
 
 var gMinidumpDir = do_get_tempdir();
-var gCrashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
-  Ci.nsICrashReporter
-);
 
 
-gCrashReporter.minidumpPath = gMinidumpDir;
+Services.appinfo.minidumpPath = gMinidumpDir;
 
 var gDumpFile;
 var gExtraFile;

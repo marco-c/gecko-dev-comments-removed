@@ -127,6 +127,8 @@ if (runningInParent && "mozIAsyncHistory" in Ci) {
 
 try {
   if (runningInParent && "@mozilla.org/toolkit/crash-reporter;1" in Cc) {
+    
+    
     let crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
       Ci.nsICrashReporter
     );
@@ -1328,6 +1330,8 @@ function do_get_profile(notifyProfileAfterChange = false) {
 
   
   if (runningInParent && "@mozilla.org/toolkit/crash-reporter;1" in Cc) {
+    
+    
     let crashReporter = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
       Ci.nsICrashReporter
     );
