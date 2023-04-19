@@ -462,8 +462,7 @@ void GfxInfo::GetData() {
   
   
   mIsWayland = GdkIsWaylandDisplay();
-  const char* waylandDisplay = getenv("WAYLAND_DISPLAY");
-  mIsXWayland = !mIsWayland && waylandDisplay;
+  mIsXWayland = IsXWaylandProtocol();
 
   
   

@@ -133,6 +133,9 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool mScheduledTaskIsRunning;
 
   
+  RefPtr<nsWindow> mSourceWindow;
+
+  
   
 
   
