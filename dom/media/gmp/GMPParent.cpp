@@ -790,6 +790,19 @@ static void ApplyGlibcWorkaround(nsCString& aLibs) {
 }
 #endif
 
+#if defined(XP_WIN)
+static void ApplyOleaut32(nsCString& aLibs) {
+  
+  
+  
+  
+  if (!aLibs.IsEmpty()) {
+    aLibs.AppendLiteral(", ");
+  }
+  aLibs.AppendLiteral("oleaut32.dll");
+}
+#endif
+
 RefPtr<GenericPromise> GMPParent::ReadGMPInfoFile(nsIFile* aFile) {
   MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
   GMPInfoFileParser parser;
@@ -816,6 +829,10 @@ RefPtr<GenericPromise> GMPParent::ReadGMPInfoFile(nsIFile* aFile) {
   if (!mDisplayName.EqualsASCII("clearkey")) {
     ApplyGlibcWorkaround(mLibs);
   }
+#endif
+
+#ifdef XP_WIN
+  ApplyOleaut32(mLibs);
 #endif
 
   nsTArray<nsCString> apiTokens;
@@ -946,7 +963,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     
     video.mAPITags.AppendElement(nsCString{"fake"});
 #if XP_WIN
-    mLibs = "dxva2.dll, ole32.dll, oleaut32.dll"_ns;
+    mLibs = "dxva2.dll, ole32.dll"_ns;
 #endif
   } else {
     GMP_PARENT_LOG_DEBUG("%s: Unrecognized key system: %s, failing.",
@@ -956,6 +973,10 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
 
 #ifdef XP_LINUX
   ApplyGlibcWorkaround(mLibs);
+#endif
+
+#ifdef XP_WIN
+  ApplyOleaut32(mLibs);
 #endif
 
   nsCString codecsString = NS_ConvertUTF16toUTF8(m.mX_cdm_codecs);
