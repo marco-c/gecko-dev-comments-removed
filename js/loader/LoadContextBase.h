@@ -54,7 +54,7 @@ class LoadContextBase : public nsISupports {
  public:
   explicit LoadContextBase(ContextKind kind);
 
-  void SetRequest(JS::loader::ScriptLoadRequest* aRequest);
+  virtual void SetRequest(JS::loader::ScriptLoadRequest* aRequest);
 
   
   virtual void GetProfilerLabel(nsACString& aOutString);

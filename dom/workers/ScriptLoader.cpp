@@ -352,12 +352,13 @@ namespace loader {
 
 class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   RefPtr<WorkerScriptLoader> mScriptLoader;
-  ScriptLoadRequest* mRequest;
+  RefPtr<WorkerLoadContext> mLoadContext;
 
  public:
   ScriptExecutorRunnable(WorkerScriptLoader* aScriptLoader,
+                         WorkerPrivate* aWorkerPrivate,
                          nsIEventTarget* aSyncLoopTarget,
-                         ScriptLoadRequest* aRequest);
+                         WorkerLoadContext* aLoadContext);
 
  private:
   ~ScriptExecutorRunnable() = default;
@@ -378,14 +379,13 @@ class AbruptCancellationRunnable final : public MainThreadWorkerSyncRunnable {
  public:
   AbruptCancellationRunnable(WorkerScriptLoader* aScriptLoader,
                              nsIEventTarget* aSyncLoopTarget);
+
  private:
   ~AbruptCancellationRunnable() = default;
 
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override;
-
 };
-
 
 template <typename Unit>
 static bool EvaluateSourceBuffer(JSContext* aCx,
@@ -576,6 +576,10 @@ void WorkerScriptLoader::LoadingFinished(ScriptLoadRequest* aRequest,
                                          nsresult aRv) {
   AssertIsOnMainThread();
 
+  if (IsCancelled()) {
+    return;
+  }
+
   WorkerLoadContext* loadContext = aRequest->GetWorkerLoadContext();
 
   loadContext->mLoadResult = aRv;
@@ -659,7 +663,6 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
 
   while (!mLoadedRequests.isEmpty()) {
     RefPtr<ScriptLoadRequest> req = mLoadedRequests.StealFirst();
-    WorkerLoadContext* loadInfo = req->GetWorkerLoadContext();
     
     
     
@@ -668,6 +671,7 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
     
     if (!EvaluateScript(aCx, req)) {
       mExecutionAborted = true;
+      RefPtr<WorkerLoadContext> loadInfo = req->StealWorkerLoadContext();
       mMutedErrorFlag = loadInfo->mMutedErrorFlag.valueOr(true);
       mLoadedRequests.CancelRequestsAndClear();
       break;
@@ -714,6 +718,9 @@ void WorkerScriptLoader::CancelMainThread(
       
       
       
+      if (!loadContext) {
+        continue;
+      }
       if (loadContext->IsAwaitingPromise()) {
         
         
@@ -723,6 +730,7 @@ void WorkerScriptLoader::CancelMainThread(
         loadContext->mCachePromise = nullptr;
         shouldDispatch = true;
       }
+      
       if (!loadContext->mLoadingFinished) {
         shouldDispatch = true;
       }
@@ -975,7 +983,8 @@ void WorkerScriptLoader::DispatchMaybeMoveToLoadedList(
   }
 
   RefPtr<ScriptExecutorRunnable> runnable =
-      new ScriptExecutorRunnable(this, mSyncLoopTarget, aRequest);
+      new ScriptExecutorRunnable(this, mWorkerRef->Private(), mSyncLoopTarget,
+                                 aRequest->GetWorkerLoadContext());
   if (!runnable->Dispatch()) {
     MOZ_ASSERT(false, "This should never fail!");
   }
@@ -1020,10 +1029,9 @@ void WorkerScriptLoader::AbruptShutdown() {
 
   while (!mLoadedRequests.isEmpty()) {
     RefPtr<ScriptLoadRequest> request = mLoadedRequests.StealFirst();
-    WorkerLoadContext* loadContext = request->GetWorkerLoadContext();
+    RefPtr<WorkerLoadContext> loadContext = request->StealWorkerLoadContext();
     mRv.MightThrowJSException();
     if (NS_FAILED(loadContext->mLoadResult)) {
-      
       ReportErrorToConsole(request, loadContext->mLoadResult);
       break;
     }
@@ -1041,7 +1049,6 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
 
   NS_ASSERTION(aRequest->IsReadyToRun(), "Should be scheduled!");
 
-  MOZ_ASSERT(!mRv.Failed(), "Who failed it and why?");
   mRv.MightThrowJSException();
   if (NS_FAILED(loadContext->mLoadResult)) {
     ReportErrorToConsole(aRequest, loadContext->mLoadResult);
@@ -1093,6 +1100,9 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     mRv.StealExceptionFromJSContext(aCx);
     return false;
   }
+  
+  
+  RefPtr<WorkerLoadContext> droppedContext = aRequest->StealWorkerLoadContext();
   return true;
 }
 
@@ -1208,12 +1218,11 @@ bool AbruptCancellationRunnable::WorkerRun(JSContext* aCx,
 }
 
 ScriptExecutorRunnable::ScriptExecutorRunnable(
-    WorkerScriptLoader* aScriptLoader, nsIEventTarget* aSyncLoopTarget,
-    ScriptLoadRequest* aRequest)
-    : MainThreadWorkerSyncRunnable(aScriptLoader->mWorkerRef->Private(),
-                                   aSyncLoopTarget),
+    WorkerScriptLoader* aScriptLoader, WorkerPrivate* aWorkerPrivate,
+    nsIEventTarget* aSyncLoopTarget, WorkerLoadContext* aLoadContext)
+    : MainThreadWorkerSyncRunnable(aWorkerPrivate, aSyncLoopTarget),
       mScriptLoader(aScriptLoader),
-      mRequest(aRequest) {}
+      mLoadContext(aLoadContext) {}
 
 bool ScriptExecutorRunnable::IsDebuggerRunnable() const {
   
@@ -1230,7 +1239,7 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
       mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-  if (!mRequest->GetWorkerLoadContext()->IsTopLevel()) {
+  if (!mLoadContext->IsTopLevel()) {
     return true;
   }
 
@@ -1255,7 +1264,10 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-  mScriptLoader->MaybeMoveToLoadedList(mRequest);
+  
+  MOZ_ASSERT(mLoadContext->mRequest);
+
+  mScriptLoader->MaybeMoveToLoadedList(mLoadContext->mRequest);
   return mScriptLoader->ProcessPendingRequests(aCx);
 }
 
