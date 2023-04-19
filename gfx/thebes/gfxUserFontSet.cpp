@@ -430,7 +430,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         
         
         mSeenLocalSource = true;
-        nsTArray<gfxUserFontSet*> fontSets;
+        nsTArray<RefPtr<gfxUserFontSet>> fontSets;
         GetUserFontSets(fontSets);
         for (gfxUserFontSet* fontSet : fontSets) {
           
@@ -793,7 +793,7 @@ void gfxUserFontEntry::Load() {
 }
 
 void gfxUserFontEntry::IncrementGeneration() {
-  nsTArray<gfxUserFontSet*> fontSets;
+  nsTArray<RefPtr<gfxUserFontSet>> fontSets;
   GetUserFontSets(fontSets);
   for (gfxUserFontSet* fontSet : fontSets) {
     fontSet->IncrementGeneration();
@@ -916,7 +916,8 @@ void gfxUserFontEntry::FontLoadFailed(nsIFontLoadCompleteCallback* aCallback) {
   aCallback->FontLoadComplete();
 }
 
-void gfxUserFontEntry::GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult) {
+void gfxUserFontEntry::GetUserFontSets(
+    nsTArray<RefPtr<gfxUserFontSet>>& aResult) {
   aResult.Clear();
   aResult.AppendElement(mFontSet);
 }

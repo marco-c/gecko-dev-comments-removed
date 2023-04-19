@@ -196,7 +196,7 @@ void nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure) {
   
   
   if (updateUserFontSet) {
-    nsTArray<gfxUserFontSet*> fontSets;
+    nsTArray<RefPtr<gfxUserFontSet>> fontSets;
     ufe->GetUserFontSets(fontSets);
     for (gfxUserFontSet* fontSet : fontSets) {
       nsPresContext* ctx = FontFaceSetImpl::GetPresContextFor(fontSet);
@@ -308,7 +308,7 @@ nsresult nsFontFaceLoader::FontLoadComplete() {
   }
 
   
-  nsTArray<gfxUserFontSet*> fontSets;
+  nsTArray<RefPtr<gfxUserFontSet>> fontSets;
   mUserFontEntry->GetUserFontSets(fontSets);
   for (gfxUserFontSet* fontSet : fontSets) {
     nsPresContext* ctx = FontFaceSetImpl::GetPresContextFor(fontSet);

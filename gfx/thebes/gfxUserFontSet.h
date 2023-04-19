@@ -754,7 +754,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  virtual void GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult);
+  virtual void GetUserFontSets(nsTArray<RefPtr<gfxUserFontSet>>& aResult);
 
   
   

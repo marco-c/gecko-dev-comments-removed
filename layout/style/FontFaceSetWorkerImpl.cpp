@@ -178,6 +178,20 @@ bool FontFaceSetWorkerImpl::IsOnOwningThread() {
   return mWorkerRef->Private()->IsOnCurrentThread();
 }
 
+#ifdef DEBUG
+void FontFaceSetWorkerImpl::AssertIsOnOwningThread() {
+  RecursiveMutexAutoLock lock(mMutex);
+  if (mWorkerRef) {
+    MOZ_ASSERT(mWorkerRef->Private()->IsOnCurrentThread());
+  } else {
+    
+    
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+  }
+}
+#endif
+
 void FontFaceSetWorkerImpl::DispatchToOwningThread(
     const char* aName, std::function<void()>&& aFunc) {
   RecursiveMutexAutoLock lock(mMutex);
