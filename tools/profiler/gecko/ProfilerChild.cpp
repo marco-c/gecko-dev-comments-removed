@@ -303,6 +303,8 @@ struct GatherProfileThreadParameters
 
   RefPtr<ProfilerChild> profilerChild;
 
+  FailureLatchSource failureLatchSource;
+
   
   
   
@@ -327,8 +329,8 @@ void ProfilerChild::GatherProfileThreadFunction(
       parameters->progress, "Gather-profile thread started", "Profile sent");
   using namespace mozilla::literals::ProportionValue_literals;  
 
-  auto writer = MakeUnique<SpliceableChunkedJSONWriter>(
-      FailureLatchInfallibleSource::Singleton());
+  auto writer =
+      MakeUnique<SpliceableChunkedJSONWriter>(parameters->failureLatchSource);
   if (!profiler_get_profile_json(
           *writer,
            0,
@@ -406,8 +408,15 @@ void ProfilerChild::GatherProfileThreadFunction(
                   writer = nullptr;
                 } else {
                   
-                  if (parameters->profilerChild->AllocShmem(1, &shmem)) {
-                    shmem.get<char>()[0] = '\0';
+                  const char* failure =
+                      parameters->failureLatchSource.GetFailure();
+                  const nsPrintfCString message(
+                      "*Could not generate profile from pid %u%s%s",
+                      unsigned(profiler_current_process_id().ToNumber()),
+                      failure ? ", failure: " : "", failure ? failure : "");
+                  if (parameters->profilerChild->AllocShmem(
+                          message.Length() + 1, &shmem)) {
+                    strcpy(shmem.get<char>(), message.Data());
                   }
                 }
 
