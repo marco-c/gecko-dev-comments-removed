@@ -310,11 +310,24 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvPause() {
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvSeek(
     double aTargetTimeInSecond) {
   AssertOnManagerThread();
-  if (mMediaEngine) {
-    LOG("Seek to %f", aTargetTimeInSecond);
-    NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->SetCurrentTime(aTargetTimeInSecond)),
-                   IPC_OK());
+  if (!mMediaEngine) {
+    return IPC_OK();
   }
+
+  
+  
+  
+  
+  const auto currentTimeInSeconds = mMediaEngine->GetCurrentTime();
+  if (currentTimeInSeconds == aTargetTimeInSecond) {
+    Unused << SendNotifyEvent(MF_MEDIA_ENGINE_EVENT_SEEKED);
+    return IPC_OK();
+  }
+
+  LOG("Seek to %f", aTargetTimeInSecond);
+  NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->SetCurrentTime(aTargetTimeInSecond)),
+                 IPC_OK());
+
   return IPC_OK();
 }
 
