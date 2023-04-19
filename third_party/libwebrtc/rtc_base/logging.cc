@@ -64,12 +64,14 @@ std::string LogMessage::aec_debug_filename() {
 namespace {
 
 #if !defined(NDEBUG)
-static LoggingSeverity g_min_sev = LS_INFO;
-static LoggingSeverity g_dbg_sev = LS_INFO;
+constexpr LoggingSeverity kDefaultLoggingSeverity = LS_INFO;
 #else
-static LoggingSeverity g_min_sev = LS_NONE;
-static LoggingSeverity g_dbg_sev = LS_NONE;
+constexpr LoggingSeverity kDefaultLoggingSeverity = LS_NONE;
 #endif
+
+
+LoggingSeverity g_min_sev = kDefaultLoggingSeverity;
+LoggingSeverity g_dbg_sev = kDefaultLoggingSeverity;
 
 
 const char* FilenameFromPath(const char* file) {
