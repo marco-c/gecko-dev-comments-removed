@@ -481,15 +481,8 @@ void VideoSendStreamImpl::OnBitrateAllocationUpdated(
 
 void VideoSendStreamImpl::OnVideoLayersAllocationUpdated(
     VideoLayersAllocation allocation) {
-  if (!worker_queue_->IsCurrent()) {
-    auto ptr = weak_ptr_;
-    worker_queue_->PostTask([allocation = std::move(allocation), ptr] {
-      if (!ptr.get())
-        return;
-      ptr->OnVideoLayersAllocationUpdated(allocation);
-    });
-    return;
-  }
+  
+  
   rtp_video_sender_->OnVideoLayersAllocationUpdated(allocation);
 }
 
