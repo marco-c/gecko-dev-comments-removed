@@ -492,7 +492,9 @@ if not args.nobuild:
 
 COMMAND_PREFIX = []
 
-if subprocess.call("type setarch >/dev/null 2>&1", shell=True) == 0:
+
+
+if not AUTOMATION and subprocess.call("type setarch >/dev/null 2>&1", shell=True) == 0:
     COMMAND_PREFIX.extend(["setarch", platform.machine(), "-R"])
 
 
