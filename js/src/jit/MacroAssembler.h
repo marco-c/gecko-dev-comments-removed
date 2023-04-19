@@ -3743,8 +3743,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  CodeOffset wasmCallRef(const wasm::CallSiteDesc& desc,
-                         const wasm::CalleeDesc& callee);
+  void wasmCallRef(const wasm::CallSiteDesc& desc,
+                   const wasm::CalleeDesc& callee, CodeOffset* fastCallOffset,
+                   CodeOffset* slowCallOffset);
 
   
   

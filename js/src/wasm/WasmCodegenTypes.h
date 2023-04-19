@@ -411,6 +411,7 @@ class CallSiteDesc {
     Indirect,      
     IndirectFast,  
     FuncRef,       
+    FuncRefFast,   
     Symbolic,      
     EnterFrame,    
     LeaveFrame,    

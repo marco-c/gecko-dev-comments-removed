@@ -3929,19 +3929,28 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   bind(&done);
 }
 
-CodeOffset MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
-                                       const wasm::CalleeDesc& callee) {
+void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
+                                 const wasm::CalleeDesc& callee,
+                                 CodeOffset* fastCallOffset,
+                                 CodeOffset* slowCallOffset) {
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::FuncRef);
   const Register calleeScratch = WasmCallRefCallScratchReg0;
   const Register calleeFnObj = WasmCallRefReg;
 
-  storePtr(InstanceReg,
-           Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall));
-
   
+  
+
+  Label fastCall;
+  Label done;
+  const Register newInstanceTemp = WasmCallRefCallScratchReg1;
   size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_INSTANCE_SLOT);
-  loadPtr(Address(calleeFnObj, instanceSlotOffset), InstanceReg);
+  loadPtr(Address(calleeFnObj, instanceSlotOffset), newInstanceTemp);
+  branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
+
+  storePtr(InstanceReg,
+           Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall));
+  movePtr(newInstanceTemp, InstanceReg);
   storePtr(InstanceReg,
            Address(getStackPointer(), WasmCalleeInstanceOffsetBeforeCall));
 
@@ -3955,15 +3964,30 @@ CodeOffset MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
       FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT);
   loadPtr(Address(calleeFnObj, uncheckedEntrySlotOffset), calleeScratch);
 
-  CodeOffset raOffset = call(desc, calleeScratch);
+  *slowCallOffset = call(desc, calleeScratch);
 
   
   loadPtr(Address(getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
           InstanceReg);
   loadWasmPinnedRegsFromInstance();
   switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+  jump(&done);
 
-  return raOffset;
+  
+  
+
+  bind(&fastCall);
+
+  loadPtr(Address(calleeFnObj, uncheckedEntrySlotOffset), calleeScratch);
+
+  
+  
+
+  wasm::CallSiteDesc newDesc(desc.lineOrBytecode(),
+                             wasm::CallSiteDesc::FuncRefFast);
+  *fastCallOffset = call(newDesc, calleeScratch);
+
+  bind(&done);
 }
 
 void MacroAssembler::nopPatchableToCall(const wasm::CallSiteDesc& desc) {
