@@ -27,6 +27,23 @@ module.exports = {
         "spidermonkey-js/environment": true,
       },
 
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "script",
+
+        
+        ecmaFeatures: {
+          impliedStrict: true,
+        },
+
+        
+        babelOptions: {
+          parserOpts: {
+            strictMode: true,
+          },
+        },
+      },
+
       globals: {
         
         allowContentIter: "readonly",
