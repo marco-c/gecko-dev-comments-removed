@@ -104,7 +104,13 @@ class Camera1Session implements CameraSession {
     }
 
     
-    camera.setDisplayOrientation(0 );
+    try {
+      camera.setDisplayOrientation(0 );
+    } catch (RuntimeException e) {
+      camera.release();
+      callback.onFailure(FailureType.ERROR, e.getMessage());
+      return;
+    }
 
     callback.onDone(new Camera1Session(events, captureToTexture, applicationContext,
         surfaceTextureHelper, cameraId, camera, info, captureFormat, constructionTimeNs));
