@@ -100,7 +100,7 @@ use api::{DebugFlags, ImageKey, ColorF, ColorU, PrimitiveFlags};
 use api::{ImageRendering, ColorDepth, YuvRangedColorSpace, YuvFormat, AlphaType};
 use api::units::*;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
-use crate::clip::{ClipStore, ClipChainInstance, ClipChainId, ClipInstance};
+use crate::clip::{ClipStore, ClipChainInstance, ClipLeafId, ClipNodeId, ClipTreeBuilder};
 use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::composite::{CompositorKind, CompositeState, NativeSurfaceId, NativeTileId, CompositeTileSurface, tile_kind};
 use crate::composite::{ExternalSurfaceDescriptor, ExternalSurfaceDependency, CompositeTileDescriptor, CompositeTile};
@@ -1723,9 +1723,9 @@ pub struct TileCacheParams {
     
     pub background_color: Option<ColorF>,
     
-    pub shared_clips: Vec<ClipInstance>,
+    pub shared_clip_node_id: ClipNodeId,
     
-    pub shared_clip_chain: ClipChainId,
+    pub shared_clip_leaf_id: Option<ClipLeafId>,
     
     pub virtual_surface_size: i32,
     
@@ -1894,13 +1894,9 @@ pub struct TileCacheInstance {
     
     pub subpixel_mode: SubpixelMode,
     
+    pub shared_clip_node_id: ClipNodeId,
     
-    
-    
-    pub shared_clips: Vec<ClipInstance>,
-    
-    
-    shared_clip_chain: ClipChainId,
+    pub shared_clip_leaf_id: Option<ClipLeafId>,
     
     
     
@@ -1981,8 +1977,8 @@ impl TileCacheInstance {
             background_color: params.background_color,
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
-            shared_clips: params.shared_clips,
-            shared_clip_chain: params.shared_clip_chain,
+            shared_clip_node_id: params.shared_clip_node_id,
+            shared_clip_leaf_id: params.shared_clip_leaf_id,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
             
@@ -2059,8 +2055,8 @@ impl TileCacheInstance {
         self.slice_flags = params.slice_flags;
         self.spatial_node_index = params.spatial_node_index;
         self.background_color = params.background_color;
-        self.shared_clips = params.shared_clips;
-        self.shared_clip_chain = params.shared_clip_chain;
+        self.shared_clip_leaf_id = params.shared_clip_leaf_id;
+        self.shared_clip_node_id = params.shared_clip_node_id;
 
         
         
@@ -2150,29 +2146,19 @@ impl TileCacheInstance {
         
         
         
-        if self.shared_clip_chain != ClipChainId::NONE {
-            let shared_clips = &mut frame_state.scratch.picture.clip_chain_ids;
-            shared_clips.clear();
-
+        if let Some(shared_clip_leaf_id) = self.shared_clip_leaf_id {
             let map_local_to_surface = SpaceMapper::new(
                 self.spatial_node_index,
                 pic_rect,
             );
 
-            let mut current_clip_chain_id = self.shared_clip_chain;
-            while current_clip_chain_id != ClipChainId::NONE {
-                shared_clips.push(current_clip_chain_id);
-                let clip_chain_node = &frame_state.clip_store.clip_chain_nodes[current_clip_chain_id.0 as usize];
-                current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
-            }
-
             frame_state.clip_store.set_active_clips(
-                LayoutRect::max_rect(),
                 self.spatial_node_index,
                 map_local_to_surface.ref_spatial_node_index,
-                &shared_clips,
+                shared_clip_leaf_id,
                 frame_context.spatial_tree,
                 &mut frame_state.data_stores.clip,
+                &frame_state.clip_tree,
             );
 
             let clip_chain_instance = frame_state.clip_store.build_clip_chain_instance(
@@ -3803,14 +3789,12 @@ impl TileCacheInstance {
 
 pub struct PictureScratchBuffer {
     surface_stack: Vec<SurfaceIndex>,
-    clip_chain_ids: Vec<ClipChainId>,
 }
 
 impl Default for PictureScratchBuffer {
     fn default() -> Self {
         PictureScratchBuffer {
             surface_stack: Vec::new(),
-            clip_chain_ids: Vec::new(),
         }
     }
 }
@@ -3818,7 +3802,6 @@ impl Default for PictureScratchBuffer {
 impl PictureScratchBuffer {
     pub fn begin_frame(&mut self) {
         self.surface_stack.clear();
-        self.clip_chain_ids.clear();
     }
 
     pub fn recycle(&mut self, recycler: &mut Recycler) {
@@ -4388,6 +4371,7 @@ impl PrimitiveList {
         spatial_node_index: SpatialNodeIndex,
         prim_flags: PrimitiveFlags,
         prim_instances: &mut Vec<PrimitiveInstance>,
+        clip_tree_builder: &ClipTreeBuilder,
     ) {
         let mut flags = ClusterFlags::empty();
 
@@ -4408,7 +4392,8 @@ impl PrimitiveList {
             self.compositor_surface_count += 1;
         }
 
-        let culling_rect = prim_instance.clip_set.local_clip_rect
+        let clip_leaf = clip_tree_builder.get_leaf(prim_instance.clip_leaf_id);
+        let culling_rect = clip_leaf.local_clip_rect
             .intersection(&prim_rect)
             .unwrap_or_else(LayoutRect::zero);
 
@@ -4470,9 +4455,6 @@ pub struct PicturePrimitive {
     
     pub prim_list: PrimitiveList,
 
-    
-    
-    pub apply_local_clip_rect: bool,
     
     
     pub is_backface_visible: bool,
@@ -4607,7 +4589,6 @@ impl PicturePrimitive {
     pub fn new_image(
         composite_mode: Option<PictureCompositeMode>,
         context_3d: Picture3DContext<OrderedPictureChild>,
-        apply_local_clip_rect: bool,
         prim_flags: PrimitiveFlags,
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
@@ -4622,7 +4603,6 @@ impl PicturePrimitive {
             raster_config: None,
             context_3d,
             extra_gpu_data_handles: SmallVec::new(),
-            apply_local_clip_rect,
             is_backface_visible: prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE),
             spatial_node_index,
             prev_local_rect: LayoutRect::zero(),
@@ -5827,7 +5807,6 @@ impl PicturePrimitive {
 
         let context = PictureContext {
             pic_index,
-            apply_local_clip_rect: self.apply_local_clip_rect,
             raster_spatial_node_index: frame_state.surfaces[surface_index.0].raster_spatial_node_index,
             surface_spatial_node_index,
             surface_index,

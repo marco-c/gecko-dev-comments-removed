@@ -9,9 +9,9 @@ use api::{PrimitiveKeyKind, FillRule, POLYGON_CLIP_VERTEX_MAX};
 use api::units::*;
 use euclid::{SideOffsets2D, Size2D};
 use malloc_size_of::MallocSizeOf;
+use crate::clip::ClipLeafId;
 use crate::segment::EdgeAaSegmentMask;
 use crate::border::BorderSegmentCacheKey;
-use crate::clip::{ClipChainId, ClipSet};
 use crate::debug_item::{DebugItem, DebugMessage};
 use crate::debug_colors;
 use crate::scene_building::{CreateShadow, IsVisible};
@@ -1072,9 +1072,8 @@ pub struct PrimitiveInstance {
     pub kind: PrimitiveInstanceKind,
 
     
-    pub clip_set: ClipSet,
+    pub clip_leaf_id: ClipLeafId,
 
-    
     
     
     
@@ -1083,17 +1082,13 @@ pub struct PrimitiveInstance {
 
 impl PrimitiveInstance {
     pub fn new(
-        local_clip_rect: LayoutRect,
         kind: PrimitiveInstanceKind,
-        clip_chain_id: ClipChainId,
+        clip_leaf_id: ClipLeafId,
     ) -> Self {
         PrimitiveInstance {
             kind,
             vis: PrimitiveVisibility::new(),
-            clip_set: ClipSet {
-                local_clip_rect,
-                clip_chain_id,
-            },
+            clip_leaf_id,
         }
     }
 
@@ -1444,7 +1439,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 136, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 104, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 28, "PrimitiveTemplateKind size changed");
