@@ -101,7 +101,7 @@ jxl::CodecInOut ConvertTestImage(const std::vector<uint8_t>& buf,
       color_encoding, pixel_format.num_channels,
       false,
       bitdepth, pixel_format.endianness,
-      nullptr, &io.Main(), float_in,
+      false, nullptr, &io.Main(), float_in,
       0));
   return io;
 }

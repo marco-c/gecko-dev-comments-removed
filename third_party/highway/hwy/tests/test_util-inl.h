@@ -14,16 +14,12 @@
 
 
 
-
 #include <inttypes.h>
 #include <stdint.h>
 
 #include "hwy/base.h"
 #include "hwy/tests/hwy_gtest.h"
 #include "hwy/tests/test_util.h"
-
-
-#include "hwy/print-inl.h"
 
 
 #if defined(HIGHWAY_HWY_TESTS_TEST_UTIL_INL_H_) == \
@@ -37,6 +33,41 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+
+template <typename T, HWY_IF_LANE_SIZE(T, 1)>
+HWY_NOINLINE void PrintValue(T value) {
+  uint8_t byte;
+  CopyBytes<1>(&value, &byte);  
+  fprintf(stderr, "0x%02X,", byte);
+}
+
+#if HWY_HAVE_FLOAT16
+HWY_NOINLINE void PrintValue(float16_t value) {
+  uint16_t bits;
+  CopyBytes<2>(&value, &bits);
+  fprintf(stderr, "0x%02X,", bits);
+}
+#endif
+
+
+
+template <typename T, HWY_IF_NOT_LANE_SIZE(T, 1)>
+HWY_NOINLINE void PrintValue(T value) {
+  fprintf(stderr, "%g,", double(value));
+}
+
+
+template <class D, class V = Vec<D>>
+void Print(const D d, const char* caption, VecArg<V> v, size_t lane_u = 0,
+           size_t max_lanes = 7) {
+  using T = TFromD<D>;
+  const size_t N = Lanes(d);
+  auto lanes = AllocateAligned<T>(N);
+  Store(v, d, lanes.get());
+
+  const auto info = hwy::detail::MakeTypeInfo<T>();
+  hwy::detail::PrintArray(info, caption, lanes.get(), N, lane_u, max_lanes);
+}
 
 
 
@@ -79,12 +110,10 @@ HWY_NOINLINE void AssertMaskEqual(D d, VecArg<Mask<D>> a, VecArg<Mask<D>> b,
   AssertEqual(AllTrue(d, a), AllTrue(d, b), target_name, filename, line);
   AssertEqual(AllFalse(d, a), AllFalse(d, b), target_name, filename, line);
 
+  
+#if HWY_TARGET != HWY_RVV && HWY_TARGET != HWY_SCALAR
   const size_t N = Lanes(d);
-#if HWY_TARGET == HWY_SCALAR
-  const Rebind<uint8_t, D> d8;
-#else
   const Repartition<uint8_t, D> d8;
-#endif
   const size_t N8 = Lanes(d8);
   auto bits_a = AllocateAligned<uint8_t>(HWY_MAX(8, N8));
   auto bits_b = AllocateAligned<uint8_t>(HWY_MAX(8, N8));
@@ -118,6 +147,7 @@ HWY_NOINLINE void AssertMaskEqual(D d, VecArg<Mask<D>> a, VecArg<Mask<D>> b,
       hwy::Abort(filename, line, "Masks not equal");
     }
   }
+#endif
 }
 
 
@@ -141,10 +171,6 @@ HWY_INLINE Mask<D> MaskFalse(const D d) {
   hwy::AssertEqual(expected, actual, hwy::TargetName(HWY_TARGET), __FILE__, \
                    __LINE__)
 
-#define HWY_ASSERT_ARRAY_EQ(expected, actual, count)                          \
-  hwy::AssertArrayEqual(expected, actual, count, hwy::TargetName(HWY_TARGET), \
-                        __FILE__, __LINE__)
-
 #define HWY_ASSERT_STRING_EQ(expected, actual)                          \
   hwy::AssertStringEqual(expected, actual, hwy::TargetName(HWY_TARGET), \
                          __FILE__, __LINE__)
@@ -156,8 +182,6 @@ HWY_INLINE Mask<D> MaskFalse(const D d) {
   AssertMaskEqual(d, expected, actual, __FILE__, __LINE__)
 
 #endif  
-
-namespace detail {
 
 
 
@@ -189,13 +213,22 @@ struct ForeachCappedR<T, 0, kMinArg, Test> {
 
 #if HWY_HAVE_SCALABLE
 
+constexpr int MinVectorSize() {
+#if HWY_TARGET == HWY_RVV
+  
+  
+  return 8;
+#else
+  return 16;
+#endif
+}
+
 template <typename T>
 constexpr int MinPow2() {
   
   
   
-  
-  return HWY_MAX(-3, -static_cast<int>(CeilLog2(16 / sizeof(T))));
+  return HWY_MAX(-3, -static_cast<int>(CeilLog2(MinVectorSize() / sizeof(T))));
 }
 
 
@@ -228,32 +261,14 @@ struct ForeachShiftR<T, 4, kAddPow2, Test> {
 
 #endif  
 
-}  
-
-
-
-
-
-
-
 
 
 
 
 template <class Test, int kPow2 = 1>
-class ForExtendableVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForExtendableVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForExtendableVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
     constexpr size_t kMaxCapped = HWY_LANES(T);
     
     const size_t max_lanes = Lanes(ScalableTag<T>()) >> kPow2;
@@ -262,14 +277,13 @@ class ForExtendableVectors {
 #if HWY_TARGET == HWY_SCALAR
     
 #else
-    detail::ForeachCappedR<T, (kMaxCapped >> kPow2), 1, Test>::Do(1, max_lanes);
+    ForeachCappedR<T, (kMaxCapped >> kPow2), 1, Test>::Do(1, max_lanes);
 #if HWY_TARGET == HWY_RVV
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2, -kPow2, Test>::Do(1);
+    ForeachShiftR<T, MinPow2<T>() + kPow2, -kPow2, Test>::Do(1);
 #elif HWY_HAVE_SCALABLE
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2 + 3, -kPow2 - 3,
-                          Test>::Do(1);
+    ForeachShiftR<T, MinPow2<T>() + kPow2 + 3, -kPow2 - 3, Test>::Do(1);
 #endif
 #endif  
   }
@@ -278,19 +292,9 @@ class ForExtendableVectors {
 
 
 template <class Test, int kPow2 = 1>
-class ForShrinkableVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForShrinkableVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForShrinkableVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
     constexpr size_t kMinLanes = size_t{1} << kPow2;
     constexpr size_t kMaxCapped = HWY_LANES(T);
     
@@ -302,16 +306,14 @@ class ForShrinkableVectors {
 #if HWY_TARGET == HWY_SCALAR
     
 #else
-    detail::ForeachCappedR<T, (kMaxCapped >> kPow2), kMinLanes, Test>::Do(
-        kMinLanes, max_lanes);
+    ForeachCappedR<T, (kMaxCapped >> kPow2), kMinLanes, Test>::Do(kMinLanes,
+                                                                  max_lanes);
 #if HWY_TARGET == HWY_RVV
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2, 0, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2, 0, Test>::Do(kMinLanes);
 #elif HWY_HAVE_SCALABLE
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2 + 3, -3, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2 + 3, -3, Test>::Do(kMinLanes);
 #endif
 #endif  
   }
@@ -320,19 +322,9 @@ class ForShrinkableVectors {
 
 
 template <size_t kMinBits, class Test>
-class ForGEVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForGEVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForGEVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
     constexpr size_t kMaxCapped = HWY_LANES(T);
     constexpr size_t kMinLanes = kMinBits / 8 / sizeof(T);
     
@@ -341,22 +333,22 @@ class ForGEVectors {
 #if HWY_TARGET == HWY_SCALAR
     (void)kMinLanes;  
 #else
-    detail::ForeachCappedR<T, HWY_LANES(T) / kMinLanes, kMinLanes, Test>::Do(
-        kMinLanes, max_lanes);
+    ForeachCappedR<T, HWY_LANES(T) / kMinLanes, kMinLanes, Test>::Do(kMinLanes,
+                                                                     max_lanes);
 #if HWY_TARGET == HWY_RVV
     
-    constexpr size_t kRatio = 128 / kMinBits;
+    constexpr size_t kRatio = MinVectorSize() * 8 / kMinBits;
     constexpr int kMinPow2 =
         kRatio == 0 ? 0 : -static_cast<int>(CeilLog2(kRatio));
     
-    detail::ForeachShiftR<T, kMinPow2, 0, Test>::Do(kMinLanes);
+    ForeachShiftR<T, kMinPow2, 0, Test>::Do(kMinLanes);
 #elif HWY_HAVE_SCALABLE
     
-    constexpr size_t kRatio = 128 / kMinBits;
+    constexpr size_t kRatio = MinVectorSize() * 8 / kMinBits;
     constexpr int kMinPow2 =
         kRatio == 0 ? 0 : -static_cast<int>(CeilLog2(kRatio));
     
-    detail::ForeachShiftR<T, kMinPow2 + 3, -3, Test>::Do(kMinLanes);
+    ForeachShiftR<T, kMinPow2 + 3, -3, Test>::Do(kMinLanes);
 #endif
 #endif  
   }
@@ -368,19 +360,9 @@ using ForGE128Vectors = ForGEVectors<128, Test>;
 
 
 template <class Test, int kPow2 = 1>
-class ForPromoteVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForPromoteVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForPromoteVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
     constexpr size_t kFactor = size_t{1} << kPow2;
     static_assert(kFactor >= 2 && kFactor * sizeof(T) <= sizeof(uint64_t), "");
     constexpr size_t kMaxCapped = HWY_LANES(T);
@@ -391,19 +373,16 @@ class ForPromoteVectors {
     (void)kMinLanes;
     (void)max_lanes;
 #if HWY_TARGET == HWY_SCALAR
-    detail::ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
+    ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
 #else
     
-    detail::ForeachCappedR<T, (kMaxCapped >> kPow2), 1, Test>::Do(kMinLanes,
-                                                                  max_lanes);
+    ForeachCappedR<T, (kMaxCapped >> kPow2), 1, Test>::Do(kMinLanes, max_lanes);
 #if HWY_TARGET == HWY_RVV
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2, -kPow2, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2, -kPow2, Test>::Do(kMinLanes);
 #elif HWY_HAVE_SCALABLE
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2 + 3, -kPow2 - 3,
-                          Test>::Do(kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2 + 3, -kPow2 - 3, Test>::Do(kMinLanes);
 #endif
 #endif  
   }
@@ -412,19 +391,9 @@ class ForPromoteVectors {
 
 
 template <class Test, int kPow2 = 1>
-class ForDemoteVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForDemoteVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForDemoteVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
     constexpr size_t kMinLanes = size_t{1} << kPow2;
     constexpr size_t kMaxCapped = HWY_LANES(T);
     
@@ -434,20 +403,18 @@ class ForDemoteVectors {
     (void)max_lanes;
     (void)max_lanes;
 #if HWY_TARGET == HWY_SCALAR
-    detail::ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
+    ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
 #else
-    detail::ForeachCappedR<T, (kMaxCapped >> kPow2), kMinLanes, Test>::Do(
-        kMinLanes, max_lanes);
+    ForeachCappedR<T, (kMaxCapped >> kPow2), kMinLanes, Test>::Do(kMinLanes,
+                                                                  max_lanes);
 
 
 #if HWY_TARGET == HWY_RVV
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2, 0, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2, 0, Test>::Do(kMinLanes);
 #elif HWY_HAVE_SCALABLE
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2 + 3, -3, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2 + 3, -3, Test>::Do(kMinLanes);
 #endif
 #endif  
   }
@@ -455,37 +422,30 @@ class ForDemoteVectors {
 
 
 template <class Test, int kPow2 = 1>
-class ForHalfVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForHalfVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForHalfVectors {
   template <typename T>
   void operator()(T ) const {
-    called_ = true;
-#if HWY_TARGET == HWY_SCALAR
-    detail::ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
-#else
     constexpr size_t kMinLanes = size_t{1} << kPow2;
-    
     constexpr size_t kMaxCapped = HWY_LANES(T);
-    detail::ForeachCappedR<T, (kMaxCapped >> kPow2), kMinLanes, Test>::Do(
-        kMinLanes, kMaxCapped);
+    
+    constexpr size_t max_lanes = kMaxCapped;
+
+    (void)kMinLanes;
+    (void)max_lanes;
+    (void)max_lanes;
+#if HWY_TARGET == HWY_SCALAR
+    ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
+#else
+
+
 
 
 #if HWY_TARGET == HWY_RVV
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2, 0, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2, 0, Test>::Do(kMinLanes);
 #elif HWY_HAVE_SCALABLE
     
-    detail::ForeachShiftR<T, detail::MinPow2<T>() + kPow2 + 3, -3, Test>::Do(
-        kMinLanes);
+    ForeachShiftR<T, MinPow2<T>() + kPow2 + 3, -3, Test>::Do(kMinLanes);
 #endif
 #endif  
   }
@@ -494,25 +454,10 @@ class ForHalfVectors {
 
 
 template <class Test>
-class ForPartialVectors {
-  mutable bool called_ = false;
-
- public:
-  ~ForPartialVectors() {
-    if (!called_) {
-      HWY_ABORT("Test is incorrect, ensure operator() is called");
-    }
-  }
-
+struct ForPartialVectors {
   template <typename T>
   void operator()(T t) const {
-    called_ = true;
-#if HWY_TARGET == HWY_SCALAR
-    (void)t;
-    detail::ForeachCappedR<T, 1, 1, Test>::Do(1, 1);
-#else
     ForExtendableVectors<Test, 0>()(t);
-#endif
   }
 };
 
@@ -559,69 +504,36 @@ void ForAllTypes(const Func& func) {
 }
 
 template <class Func>
-void ForUI8(const Func& func) {
-  func(uint8_t());
-  func(int8_t());
-}
-
-template <class Func>
-void ForUI16(const Func& func) {
+void ForUIF16(const Func& func) {
   func(uint16_t());
   func(int16_t());
-}
-
-template <class Func>
-void ForUIF16(const Func& func) {
-  ForUI16(func);
 #if HWY_HAVE_FLOAT16
   func(float16_t());
 #endif
 }
 
 template <class Func>
-void ForUI32(const Func& func) {
+void ForUIF32(const Func& func) {
   func(uint32_t());
   func(int32_t());
-}
-
-template <class Func>
-void ForUIF32(const Func& func) {
-  ForUI32(func);
   func(float());
 }
 
 template <class Func>
-void ForUI64(const Func& func) {
+void ForUIF64(const Func& func) {
 #if HWY_HAVE_INTEGER64
   func(uint64_t());
   func(int64_t());
 #endif
-}
-
-template <class Func>
-void ForUIF64(const Func& func) {
-  ForUI64(func);
 #if HWY_HAVE_FLOAT64
   func(double());
 #endif
 }
 
 template <class Func>
-void ForUI3264(const Func& func) {
-  ForUI32(func);
-  ForUI64(func);
-}
-
-template <class Func>
 void ForUIF3264(const Func& func) {
   ForUIF32(func);
   ForUIF64(func);
-}
-
-template <class Func>
-void ForUI163264(const Func& func) {
-  ForUI16(func);
-  ForUI3264(func);
 }
 
 template <class Func>
@@ -635,10 +547,10 @@ void ForUIF163264(const Func& func) {
 constexpr size_t AdjustedReps(size_t max_reps) {
 #if HWY_ARCH_RVV
   return HWY_MAX(max_reps / 32, 2);
-#elif HWY_IS_DEBUG_BUILD
-  return HWY_MAX(max_reps / 8, 2);
 #elif HWY_ARCH_ARM
   return HWY_MAX(max_reps / 4, 2);
+#elif HWY_IS_DEBUG_BUILD
+  return HWY_MAX(max_reps / 8, 2);
 #else
   return HWY_MAX(max_reps, 2);
 #endif
@@ -649,9 +561,9 @@ constexpr size_t AdjustedLog2Reps(size_t max_pow2) {
   
 #if HWY_ARCH_RVV
   return HWY_MIN(max_pow2 - 4, max_pow2);
-#elif HWY_IS_DEBUG_BUILD
-  return HWY_MIN(max_pow2 - 1, max_pow2);
 #elif HWY_ARCH_ARM
+  return HWY_MIN(max_pow2 - 1, max_pow2);
+#elif HWY_IS_DEBUG_BUILD
   return HWY_MIN(max_pow2 - 1, max_pow2);
 #else
   return max_pow2;

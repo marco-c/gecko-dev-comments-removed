@@ -175,6 +175,29 @@ struct CompressParams {
   Override keep_invisible = Override::kDefault;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t saliency_num_progressive_steps = 3;
+  
+  
+  
+  
+  float saliency_threshold = 0.0f;
+  
+  ImageF* saliency_map = nullptr;
+
+  
+  
+  const char* file_in = nullptr;
+  const char* file_out = nullptr;
+
+  
   bool clear_metadata = false;
 
   

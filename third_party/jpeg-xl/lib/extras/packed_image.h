@@ -32,6 +32,26 @@ class PackedImage {
  public:
   PackedImage(size_t xsize, size_t ysize, const JxlPixelFormat& format)
       : PackedImage(xsize, ysize, format, CalcStride(format, xsize)) {}
+  PackedImage(size_t xsize, size_t ysize, const JxlPixelFormat& format,
+              size_t stride)
+      : xsize(xsize),
+        ysize(ysize),
+        stride(stride),
+        format(format),
+        pixels_size(ysize * stride),
+        pixels_(malloc(std::max<size_t>(1, pixels_size)), free) {}
+  
+  
+  PackedImage(size_t xsize, size_t ysize, const JxlPixelFormat& format,
+              void* pixels, size_t pixels_size)
+      : xsize(xsize),
+        ysize(ysize),
+        stride(CalcStride(format, xsize)),
+        format(format),
+        pixels_size(pixels_size),
+        pixels_(pixels, free) {
+    JXL_ASSERT(pixels_size >= stride * ysize);
+  }
 
   
   void* pixels() const { return pixels_.get(); }
@@ -39,6 +59,15 @@ class PackedImage {
   
   size_t xsize;
   size_t ysize;
+
+  
+  bool flipped_y = false;
+
+  
+  
+  
+  
+  bool bitdepth_from_format = true;
 
   
   size_t stride;
@@ -68,15 +97,6 @@ class PackedImage {
   }
 
  private:
-  PackedImage(size_t xsize, size_t ysize, const JxlPixelFormat& format,
-              size_t stride)
-      : xsize(xsize),
-        ysize(ysize),
-        stride(stride),
-        format(format),
-        pixels_size(ysize * stride),
-        pixels_(malloc(std::max<size_t>(1, pixels_size)), free) {}
-
   static size_t CalcStride(const JxlPixelFormat& format, size_t xsize) {
     size_t stride = xsize * (BitsPerChannel(format.data_type) *
                              format.num_channels / jxl::kBitsPerByte);

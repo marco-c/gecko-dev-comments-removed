@@ -12,13 +12,12 @@
 
 
 
-
 #include <stddef.h>
 #include <stdint.h>
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/test_util_test.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -101,5 +100,11 @@ HWY_BEFORE_TEST(TestUtilTest);
 HWY_EXPORT_AND_TEST_P(TestUtilTest, TestAllName);
 HWY_EXPORT_AND_TEST_P(TestUtilTest, TestAllEqual);
 }  
+
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #endif

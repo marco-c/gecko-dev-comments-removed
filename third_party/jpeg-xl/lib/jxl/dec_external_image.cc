@@ -33,10 +33,6 @@ namespace jxl {
 namespace HWY_NAMESPACE {
 
 
-using hwy::HWY_NAMESPACE::Clamp;
-using hwy::HWY_NAMESPACE::NearestInt;
-
-
 void FloatToU32(const float* in, uint32_t* out, size_t num, float mul,
                 size_t bits_per_sample) {
   const HWY_FULL(float) d;
@@ -54,7 +50,7 @@ void FloatToU32(const float* in, uint32_t* out, size_t num, float mul,
     auto v = Load(d, in + x);
     
     v = Clamp(v, Zero(d), one);
-    auto i = NearestInt(Mul(v, scale));
+    auto i = NearestInt(v * scale);
     Store(BitCast(du, i), du, out + x);
   }
 

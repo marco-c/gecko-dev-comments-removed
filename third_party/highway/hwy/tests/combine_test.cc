@@ -12,13 +12,13 @@
 
 
 
-
 #include <stddef.h>
 #include <stdint.h>
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/combine_test.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
+
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -83,13 +83,7 @@ struct TestLowerQuarter {
 
 HWY_NOINLINE void TestAllLowerHalf() {
   ForAllTypes(ForHalfVectors<TestLowerHalf>());
-
-  
-  
-  ForHalfVectors<TestLowerQuarter, 2> test_quarter;
-  ForUI8(test_quarter);
-  ForUI16(test_quarter);  
-  ForUIF32(test_quarter);
+  ForAllTypes(ForHalfVectors<TestLowerQuarter, 2>());
 }
 
 struct TestUpperHalf {
@@ -226,7 +220,7 @@ HWY_NOINLINE void TestAllConcat() {
 struct TestConcatOddEven {
   template <class T, class D>
   HWY_NOINLINE void operator()(T , D d) {
-#if HWY_TARGET != HWY_SCALAR
+#if HWY_TARGET != HWY_RVV && HWY_TARGET != HWY_SCALAR
     const size_t N = Lanes(d);
     const auto hi = Iota(d, static_cast<T>(N));
     const auto lo = Iota(d, 0);
@@ -234,14 +228,6 @@ struct TestConcatOddEven {
     const auto odd = Add(even, Set(d, 1));
     HWY_ASSERT_VEC_EQ(d, odd, ConcatOdd(d, hi, lo));
     HWY_ASSERT_VEC_EQ(d, even, ConcatEven(d, hi, lo));
-
-    
-    const auto min = Set(d, LowestValue<T>());
-    const auto max = Set(d, HighestValue<T>());
-    HWY_ASSERT_VEC_EQ(d, max, ConcatOdd(d, max, max));
-    HWY_ASSERT_VEC_EQ(d, max, ConcatEven(d, max, max));
-    HWY_ASSERT_VEC_EQ(d, min, ConcatOdd(d, min, min));
-    HWY_ASSERT_VEC_EQ(d, min, ConcatEven(d, min, min));
 #else
     (void)d;
 #endif
@@ -249,7 +235,7 @@ struct TestConcatOddEven {
 };
 
 HWY_NOINLINE void TestAllConcatOddEven() {
-  ForAllTypes(ForShrinkableVectors<TestConcatOddEven>());
+  ForUIF3264(ForShrinkableVectors<TestConcatOddEven>());
 }
 
 
@@ -268,5 +254,11 @@ HWY_EXPORT_AND_TEST_P(HwyCombineTest, TestAllCombine);
 HWY_EXPORT_AND_TEST_P(HwyCombineTest, TestAllConcat);
 HWY_EXPORT_AND_TEST_P(HwyCombineTest, TestAllConcatOddEven);
 }  
+
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #endif  

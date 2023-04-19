@@ -14,19 +14,21 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_VQSORT_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_VQSORT_H_
 
 #include "hwy/base.h"
 
 namespace hwy {
+
+
+
+#pragma pack(push, 1)
+struct alignas(16) uint128_t {
+  uint64_t lo;  
+  uint64_t hi;
+};
+#pragma pack(pop)
 
 
 struct SortAscending {
@@ -81,9 +83,6 @@ class HWY_CONTRIB_DLLEXPORT Sorter {
 
   void operator()(uint128_t* HWY_RESTRICT keys, size_t n, SortAscending) const;
   void operator()(uint128_t* HWY_RESTRICT keys, size_t n, SortDescending) const;
-
-  void operator()(K64V64* HWY_RESTRICT keys, size_t n, SortAscending) const;
-  void operator()(K64V64* HWY_RESTRICT keys, size_t n, SortDescending) const;
 
   
   static void Fill24Bytes(const void* seed_heap, size_t seed_num, void* bytes);

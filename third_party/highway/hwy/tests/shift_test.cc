@@ -12,7 +12,6 @@
 
 
 
-
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -22,7 +21,7 @@
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/shift_test.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -44,8 +43,7 @@ struct TestLeftShifts {
     const size_t N = Lanes(d);
     auto expected = AllocateAligned<T>(N);
 
-    
-    const auto values = Iota(d, static_cast<T>(kSigned ? -TI(N) : TI(0)));
+    const auto values = Iota(d, kSigned ? -TI(N) : TI(0));  
     constexpr size_t kMaxShift = (sizeof(T) * 8) - 1;
 
     
@@ -425,5 +423,11 @@ HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllShifts);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllVariableShifts);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllRotateRight);
 }  
+
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #endif

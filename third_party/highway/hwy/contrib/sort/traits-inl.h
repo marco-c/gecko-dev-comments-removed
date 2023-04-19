@@ -13,7 +13,6 @@
 
 
 
-
 #if defined(HIGHWAY_HWY_CONTRIB_SORT_TRAITS_TOGGLE) == \
     defined(HWY_TARGET_TOGGLE)
 #ifdef HIGHWAY_HWY_CONTRIB_SORT_TRAITS_TOGGLE
@@ -22,63 +21,35 @@
 #define HIGHWAY_HWY_CONTRIB_SORT_TRAITS_TOGGLE
 #endif
 
-#include <string>
-
+#include "hwy/contrib/sort/disabled_targets.h"
 #include "hwy/contrib/sort/shared-inl.h"  
 #include "hwy/contrib/sort/vqsort.h"      
 #include "hwy/highway.h"
-#include "hwy/print.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 namespace detail {
 
-#if VQSORT_ENABLED || HWY_IDE
 
 
 
-
-template <typename T>
 struct KeyLane {
-  constexpr bool Is128() const { return false; }
   constexpr size_t LanesPerKey() const { return 1; }
 
   
-  using LaneType = T;
-  
-  using KeyType = T;
-
-  std::string KeyString() const {
-    char string100[100];
-    hwy::detail::TypeName(hwy::detail::MakeTypeInfo<KeyType>(), 1, string100);
-    return string100;
-  }
-
-  
+  template <typename T>
   HWY_INLINE void Swap(T* a, T* b) const {
     const T temp = *a;
     *a = *b;
     *b = temp;
   }
 
-  template <class V, class M>
-  HWY_INLINE V CompressKeys(V keys, M mask) const {
-    return CompressNot(keys, mask);
-  }
-
   
   template <class D>
-  HWY_INLINE Vec<D> SetKey(D d, const T* key) const {
+  HWY_INLINE Vec<D> SetKey(D d, const TFromD<D>* key) const {
     return Set(d, *key);
   }
-
-  template <class D>
-  HWY_INLINE Mask<D> EqualKeys(D , Vec<D> a, Vec<D> b) const {
-    return Eq(a, b);
-  }
-
-  HWY_INLINE bool Equal1(const T* a, const T* b) { return *a == *b; }
 
   template <class D>
   HWY_INLINE Vec<D> ReverseKeys(D d, Vec<D> v) const {
@@ -177,10 +148,10 @@ struct KeyLane {
 
 
 
-template <typename T>
-struct OrderAscending : public KeyLane<T> {
+struct OrderAscending : public KeyLane {
   using Order = SortAscending;
 
+  template <typename T>
   HWY_INLINE bool Compare1(const T* a, const T* b) {
     return *a < *b;
   }
@@ -203,31 +174,31 @@ struct OrderAscending : public KeyLane<T> {
 
   template <class D>
   HWY_INLINE Vec<D> FirstOfLanes(D d, Vec<D> v,
-                                 T* HWY_RESTRICT ) const {
+                                 TFromD<D>* HWY_RESTRICT ) const {
     return MinOfLanes(d, v);
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastOfLanes(D d, Vec<D> v,
-                                T* HWY_RESTRICT ) const {
+                                TFromD<D>* HWY_RESTRICT ) const {
     return MaxOfLanes(d, v);
   }
 
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::LowestValue<T>());
+    return Set(d, hwy::LowestValue<TFromD<D>>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::HighestValue<T>());
+    return Set(d, hwy::HighestValue<TFromD<D>>());
   }
 };
 
-template <typename T>
-struct OrderDescending : public KeyLane<T> {
+struct OrderDescending : public KeyLane {
   using Order = SortDescending;
 
+  template <typename T>
   HWY_INLINE bool Compare1(const T* a, const T* b) {
     return *b < *a;
   }
@@ -249,30 +220,32 @@ struct OrderDescending : public KeyLane<T> {
 
   template <class D>
   HWY_INLINE Vec<D> FirstOfLanes(D d, Vec<D> v,
-                                 T* HWY_RESTRICT ) const {
+                                 TFromD<D>* HWY_RESTRICT ) const {
     return MaxOfLanes(d, v);
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastOfLanes(D d, Vec<D> v,
-                                T* HWY_RESTRICT ) const {
+                                TFromD<D>* HWY_RESTRICT ) const {
     return MinOfLanes(d, v);
   }
 
   template <class D>
   HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::HighestValue<T>());
+    return Set(d, hwy::HighestValue<TFromD<D>>());
   }
 
   template <class D>
   HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::LowestValue<T>());
+    return Set(d, hwy::LowestValue<TFromD<D>>());
   }
 };
 
 
 template <class Base>
-struct TraitsLane : public Base {
+struct LaneTraits : public Base {
+  constexpr bool Is128() const { return false; }
+
   
   
   
@@ -341,66 +314,6 @@ struct TraitsLane : public Base {
     return base->OddEvenQuads(d, swapped, v);
   }
 };
-
-#else
-
-
-template <typename T>
-struct KeyLane {
-  constexpr bool Is128() const { return false; }
-  constexpr size_t LanesPerKey() const { return 1; }
-
-  using LaneType = T;
-  using KeyType = T;
-
-  std::string KeyString() const {
-    char string100[100];
-    hwy::detail::TypeName(hwy::detail::MakeTypeInfo<KeyType>(), 1, string100);
-    return string100;
-  }
-};
-
-template <typename T>
-struct OrderAscending : public KeyLane<T> {
-  using Order = SortAscending;
-
-  HWY_INLINE bool Compare1(const T* a, const T* b) { return *a < *b; }
-
-  template <class D>
-  HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
-    return Lt(a, b);
-  }
-};
-
-template <typename T>
-struct OrderDescending : public KeyLane<T> {
-  using Order = SortDescending;
-
-  HWY_INLINE bool Compare1(const T* a, const T* b) { return *b < *a; }
-
-  template <class D>
-  HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
-    return Lt(b, a);
-  }
-};
-
-template <class Order>
-struct TraitsLane : public Order {
-  
-  template <typename T>  
-  HWY_INLINE void Swap(T* a, T* b) const {
-    const T temp = *a;
-    *a = *b;
-    *b = temp;
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> SetKey(D d, const TFromD<D>* key) const {
-    return Set(d, *key);
-  }
-};
-
-#endif  
 
 }  
 

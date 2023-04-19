@@ -12,7 +12,6 @@
 
 
 
-
 #ifndef HIGHWAY_HWY_BASE_H_
 #define HIGHWAY_HWY_BASE_H_
 
@@ -21,12 +20,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
+#include <cfloat>
+
 #include "hwy/detect_compiler_arch.h"
 #include "hwy/highway_export.h"
-
-#if HWY_ARCH_X86
-#include <atomic>
-#endif
 
 
 
@@ -59,13 +57,7 @@
 #else
 
 #define HWY_RESTRICT __restrict__
-
-
-#ifdef __OPTIMIZE__
 #define HWY_INLINE inline __attribute__((always_inline))
-#else
-#define HWY_INLINE inline
-#endif
 #define HWY_NOINLINE __attribute__((noinline))
 #define HWY_FLATTEN __attribute__((flatten))
 #define HWY_NORETURN __attribute__((noreturn))
@@ -174,14 +166,6 @@
 #endif
 
 
-
-#if HWY_IS_MSAN
-#define HWY_ATTR_NO_MSAN __attribute__((no_sanitize_memory))
-#else
-#define HWY_ATTR_NO_MSAN
-#endif
-
-
 #if !defined(HWY_IS_DEBUG_BUILD)
 
 
@@ -235,16 +219,18 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 
 
 
+#if HWY_ARCH_ARM && (__ARM_FP & 2)
+#define HWY_NATIVE_FLOAT16 1
+#else
+#define HWY_NATIVE_FLOAT16 0
+#endif
+
 #pragma pack(push, 1)
 
-
-
-#if ((HWY_ARCH_ARM_A64 || (__ARM_FP & 2)) && HWY_COMPILER_GCC)
+#if HWY_NATIVE_FLOAT16
 using float16_t = __fp16;
 
 
-#elif HWY_ARCH_RVV && HWY_COMPILER_CLANG && defined(__riscv_zvfh)
-using float16_t = _Float16;
 
 #else
 struct float16_t {
@@ -260,44 +246,6 @@ struct bfloat16_t {
 
 using float32_t = float;
 using float64_t = double;
-
-#pragma pack(push, 1)
-
-
-
-struct alignas(16) uint128_t {
-  uint64_t lo;  
-  uint64_t hi;
-};
-
-
-
-struct alignas(16) K64V64 {
-  uint64_t value;  
-  uint64_t key;
-};
-
-#pragma pack(pop)
-
-static inline HWY_MAYBE_UNUSED bool operator<(const uint128_t& a,
-                                              const uint128_t& b) {
-  return (a.hi == b.hi) ? a.lo < b.lo : a.hi < b.hi;
-}
-
-static inline HWY_MAYBE_UNUSED bool operator>(const uint128_t& a,
-                                              const uint128_t& b) {
-  return b < a;
-}
-
-static inline HWY_MAYBE_UNUSED bool operator<(const K64V64& a,
-                                              const K64V64& b) {
-  return a.key < b.key;
-}
-
-static inline HWY_MAYBE_UNUSED bool operator>(const K64V64& a,
-                                              const K64V64& b) {
-  return b < a;
-}
 
 
 
@@ -351,11 +299,6 @@ HWY_API constexpr bool IsSame() {
   hwy::EnableIf<sizeof(T) == (bytes)>* = nullptr
 #define HWY_IF_NOT_LANE_SIZE(T, bytes) \
   hwy::EnableIf<sizeof(T) != (bytes)>* = nullptr
-#define HWY_IF_LANE_SIZE_LT(T, bytes) \
-  hwy::EnableIf<sizeof(T) < (bytes)>* = nullptr
-
-#define HWY_IF_LANES_PER_BLOCK(T, N, LANES) \
-  hwy::EnableIf<HWY_MIN(sizeof(T) * N, 16) / sizeof(T) == (LANES)>* = nullptr
 
 
 template <size_t N>
@@ -385,16 +328,12 @@ struct Relations<uint8_t> {
   using Unsigned = uint8_t;
   using Signed = int8_t;
   using Wide = uint16_t;
-  enum { is_signed = 0 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<int8_t> {
   using Unsigned = uint8_t;
   using Signed = int8_t;
   using Wide = int16_t;
-  enum { is_signed = 1 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<uint16_t> {
@@ -402,8 +341,6 @@ struct Relations<uint16_t> {
   using Signed = int16_t;
   using Wide = uint32_t;
   using Narrow = uint8_t;
-  enum { is_signed = 0 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<int16_t> {
@@ -411,8 +348,6 @@ struct Relations<int16_t> {
   using Signed = int16_t;
   using Wide = int32_t;
   using Narrow = int8_t;
-  enum { is_signed = 1 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<uint32_t> {
@@ -421,8 +356,6 @@ struct Relations<uint32_t> {
   using Float = float;
   using Wide = uint64_t;
   using Narrow = uint16_t;
-  enum { is_signed = 0 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<int32_t> {
@@ -431,18 +364,13 @@ struct Relations<int32_t> {
   using Float = float;
   using Wide = int64_t;
   using Narrow = int16_t;
-  enum { is_signed = 1 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<uint64_t> {
   using Unsigned = uint64_t;
   using Signed = int64_t;
   using Float = double;
-  using Wide = uint128_t;
   using Narrow = uint32_t;
-  enum { is_signed = 0 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<int64_t> {
@@ -450,15 +378,6 @@ struct Relations<int64_t> {
   using Signed = int64_t;
   using Float = double;
   using Narrow = int32_t;
-  enum { is_signed = 1 };
-  enum { is_float = 0 };
-};
-template <>
-struct Relations<uint128_t> {
-  using Unsigned = uint128_t;
-  using Narrow = uint64_t;
-  enum { is_signed = 0 };
-  enum { is_float = 0 };
 };
 template <>
 struct Relations<float16_t> {
@@ -466,16 +385,12 @@ struct Relations<float16_t> {
   using Signed = int16_t;
   using Float = float16_t;
   using Wide = float;
-  enum { is_signed = 1 };
-  enum { is_float = 1 };
 };
 template <>
 struct Relations<bfloat16_t> {
   using Unsigned = uint16_t;
   using Signed = int16_t;
   using Wide = float;
-  enum { is_signed = 1 };
-  enum { is_float = 1 };
 };
 template <>
 struct Relations<float> {
@@ -484,8 +399,6 @@ struct Relations<float> {
   using Float = float;
   using Wide = double;
   using Narrow = float16_t;
-  enum { is_signed = 1 };
-  enum { is_float = 1 };
 };
 template <>
 struct Relations<double> {
@@ -493,8 +406,6 @@ struct Relations<double> {
   using Signed = int64_t;
   using Float = double;
   using Narrow = float;
-  enum { is_signed = 1 };
-  enum { is_float = 1 };
 };
 
 template <size_t N>
@@ -521,10 +432,6 @@ struct TypeFromSize<8> {
   using Signed = int64_t;
   using Float = double;
 };
-template <>
-struct TypeFromSize<16> {
-  using Unsigned = uint128_t;
-};
 
 }  
 
@@ -549,24 +456,6 @@ template <size_t N>
 using SignedFromSize = typename detail::TypeFromSize<N>::Signed;
 template <size_t N>
 using FloatFromSize = typename detail::TypeFromSize<N>::Float;
-
-
-using UnsignedTag = SizeTag<0>;
-using SignedTag = SizeTag<0x100>;  
-using FloatTag = SizeTag<0x200>;
-
-template <typename T, class R = detail::Relations<T>>
-constexpr auto TypeTag() -> hwy::SizeTag<((R::is_signed + R::is_float) << 8)> {
-  return hwy::SizeTag<((R::is_signed + R::is_float) << 8)>();
-}
-
-
-using NonFloatTag = SizeTag<0x400>;
-
-template <typename T, class R = detail::Relations<T>>
-constexpr auto IsFloatTag() -> hwy::SizeTag<(R::is_float ? 0x200 : 0x400)> {
-  return hwy::SizeTag<(R::is_float ? 0x200 : 0x400)>();
-}
 
 
 
@@ -613,11 +502,11 @@ HWY_API constexpr T LowestValue() {
 }
 template <>
 constexpr float LowestValue<float>() {
-  return -3.402823466e+38F;
+  return -FLT_MAX;
 }
 template <>
 constexpr double LowestValue<double>() {
-  return -1.7976931348623158e+308;
+  return -DBL_MAX;
 }
 
 template <typename T>
@@ -626,51 +515,41 @@ HWY_API constexpr T HighestValue() {
 }
 template <>
 constexpr float HighestValue<float>() {
-  return 3.402823466e+38F;
+  return FLT_MAX;
 }
 template <>
 constexpr double HighestValue<double>() {
-  return 1.7976931348623158e+308;
+  return DBL_MAX;
 }
 
 
 template <typename T>
-constexpr int MantissaBits() {
+constexpr T ExponentMask() {
   static_assert(sizeof(T) == 0, "Only instantiate the specializations");
   return 0;
 }
 template <>
-constexpr int MantissaBits<float>() {
-  return 23;
+constexpr uint32_t ExponentMask<uint32_t>() {
+  return 0x7F800000;
 }
 template <>
-constexpr int MantissaBits<double>() {
-  return 52;
-}
-
-
-
-template <typename T>
-constexpr MakeSigned<T> MaxExponentTimes2() {
-  return -(MakeSigned<T>{1} << (MantissaBits<T>() + 1));
+constexpr uint64_t ExponentMask<uint64_t>() {
+  return 0x7FF0000000000000ULL;
 }
 
 
 template <typename T>
-constexpr MakeUnsigned<T> SignMask() {
-  return MakeUnsigned<T>{1} << (sizeof(T) * 8 - 1);
+constexpr T MantissaMask() {
+  static_assert(sizeof(T) == 0, "Only instantiate the specializations");
+  return 0;
 }
-
-
-template <typename T>
-constexpr MakeUnsigned<T> ExponentMask() {
-  return (~(MakeUnsigned<T>{1} << MantissaBits<T>()) + 1) & ~SignMask<T>();
+template <>
+constexpr uint32_t MantissaMask<uint32_t>() {
+  return 0x007FFFFF;
 }
-
-
-template <typename T>
-constexpr MakeUnsigned<T> MantissaMask() {
-  return (MakeUnsigned<T>{1} << MantissaBits<T>()) - 1;
+template <>
+constexpr uint64_t MantissaMask<uint64_t>() {
+  return 0x000FFFFFFFFFFFFFULL;
 }
 
 
@@ -688,21 +567,6 @@ template <>
 constexpr double MantissaEnd<double>() {
   
   return 4503599627370496.0;  
-}
-
-
-template <typename T>
-constexpr int ExponentBits() {
-  
-  return 8 * sizeof(T) - 1 - MantissaBits<T>();
-}
-
-
-
-
-template <typename T>
-constexpr MakeSigned<T> MaxExponentField() {
-  return (MakeSigned<T>{1} << ExponentBits<T>()) - 1;
 }
 
 
@@ -738,7 +602,7 @@ HWY_API size_t Num0BitsBelowLS1Bit_Nonzero64(const uint64_t x) {
 #else   
   
   uint32_t lsb = static_cast<uint32_t>(x & 0xFFFFFFFF);
-  unsigned long index;  
+  unsigned long index;
   if (lsb == 0) {
     uint32_t msb = static_cast<uint32_t>(x >> 32u);
     _BitScanForward(&index, msb);
@@ -773,7 +637,7 @@ HWY_API size_t Num0BitsAboveMS1Bit_Nonzero64(const uint64_t x) {
 #else   
   
   const uint32_t msb = static_cast<uint32_t>(x >> 32u);
-  unsigned long index;  
+  unsigned long index;
   if (msb == 0) {
     const uint32_t lsb = static_cast<uint32_t>(x & 0xFFFFFFFF);
     _BitScanReverse(&index, lsb);
@@ -789,7 +653,7 @@ HWY_API size_t Num0BitsAboveMS1Bit_Nonzero64(const uint64_t x) {
 }
 
 HWY_API size_t PopCount(uint64_t x) {
-#if HWY_COMPILER_GCC  
+#if HWY_COMPILER_CLANG || HWY_COMPILER_GCC
   return static_cast<size_t>(__builtin_popcountll(x));
   
   
@@ -798,8 +662,7 @@ HWY_API size_t PopCount(uint64_t x) {
 #elif HWY_COMPILER_MSVC && HWY_ARCH_X86_64 && defined(__AVX__)
   return _mm_popcnt_u64(x);
 #elif HWY_COMPILER_MSVC && HWY_ARCH_X86_32 && defined(__AVX__)
-  return _mm_popcnt_u32(static_cast<uint32_t>(x & 0xFFFFFFFFu)) +
-         _mm_popcnt_u32(static_cast<uint32_t>(x >> 32));
+  return _mm_popcnt_u32(uint32_t(x)) + _mm_popcnt_u32(uint32_t(x >> 32));
 #else
   x -= ((x >> 1) & 0x5555555555555555ULL);
   x = (((x >> 2) & 0x3333333333333333ULL) + (x & 0x3333333333333333ULL));
@@ -852,27 +715,19 @@ HWY_API uint64_t Mul128(uint64_t a, uint64_t b, uint64_t* HWY_RESTRICT upper) {
 #endif
 }
 
-#if HWY_COMPILER_MSVC
-#pragma intrinsic(memcpy)
-#pragma intrinsic(memset)
-#endif
-
 
 template <size_t kBytes, typename From, typename To>
 HWY_API void CopyBytes(const From* from, To* to) {
 #if HWY_COMPILER_MSVC
-  memcpy(to, from, kBytes);
+  const uint8_t* HWY_RESTRICT from_bytes =
+      reinterpret_cast<const uint8_t*>(from);
+  uint8_t* HWY_RESTRICT to_bytes = reinterpret_cast<uint8_t*>(to);
+  for (size_t i = 0; i < kBytes; ++i) {
+    to_bytes[i] = from_bytes[i];
+  }
 #else
+  
   __builtin_memcpy(to, from, kBytes);
-#endif
-}
-
-template <size_t kBytes, typename To>
-HWY_API void ZeroBytes(To* to) {
-#if HWY_COMPILER_MSVC
-  memset(to, 0, kBytes);
-#else
-  __builtin_memset(to, 0, kBytes);
 #endif
 }
 

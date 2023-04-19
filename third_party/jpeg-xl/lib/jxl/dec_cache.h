@@ -84,8 +84,6 @@ struct PassesDecoderState {
   uint8_t* rgb_output;
   size_t rgb_stride = 0;
 
-  size_t output_channels;
-
   
   bool fast_xyb_srgb8_conversion;
 
@@ -95,9 +93,6 @@ struct PassesDecoderState {
   
   
   bool unpremul_alpha;
-
-  bool swap_endianness;
-  Orientation undo_orientation;
 
   
   PixelCallback pixel_callback;
@@ -143,10 +138,7 @@ struct PassesDecoderState {
 
     rgb_output = nullptr;
     rgb_output_is_rgba = false;
-    output_channels = 3;
     unpremul_alpha = false;
-    swap_endianness = false;
-    undo_orientation = Orientation::kIdentity;
     fast_xyb_srgb8_conversion = false;
     pixel_callback = PixelCallback();
     used_acs = 0;

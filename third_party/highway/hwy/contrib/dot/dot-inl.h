@@ -13,7 +13,6 @@
 
 
 
-
 #include <cmath>
 
 #if defined(HIGHWAY_HWY_CONTRIB_DOT_DOT_INL_H_) == \
@@ -39,14 +38,18 @@ struct Dot {
     kAtLeastOneVector = 1,
     
     
-    
     kMultipleOfVector = 2,
     
     
     kPaddedToVector = 4,
+    
+    
+    
+    
+    kVectorAlignedA = 8,
+    kVectorAlignedB = 16,
   };
 
-  
   
   template <int kAssumptions, class D, typename T = TFromD<D>,
             HWY_IF_NOT_LANE_SIZE_D(D, 2)>
@@ -64,6 +67,8 @@ struct Dot {
     constexpr bool kIsMultipleOfVector =
         (kAssumptions & kMultipleOfVector) != 0;
     constexpr bool kIsPaddedToVector = (kAssumptions & kPaddedToVector) != 0;
+    constexpr bool kIsAlignedA = (kAssumptions & kVectorAlignedA) != 0;
+    constexpr bool kIsAlignedB = (kAssumptions & kVectorAlignedB) != 0;
 
     
     if (!kIsAtLeastOneVector && !kIsMultipleOfVector && !kIsPaddedToVector &&
@@ -93,28 +98,28 @@ struct Dot {
 
     
     for (; i + 4 * N <= num_elements; ) {  
-      const auto a0 = LoadU(d, pa + i);
-      const auto b0 = LoadU(d, pb + i);
+      const auto a0 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b0 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum0 = MulAdd(a0, b0, sum0);
-      const auto a1 = LoadU(d, pa + i);
-      const auto b1 = LoadU(d, pb + i);
+      const auto a1 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b1 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum1 = MulAdd(a1, b1, sum1);
-      const auto a2 = LoadU(d, pa + i);
-      const auto b2 = LoadU(d, pb + i);
+      const auto a2 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b2 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum2 = MulAdd(a2, b2, sum2);
-      const auto a3 = LoadU(d, pa + i);
-      const auto b3 = LoadU(d, pb + i);
+      const auto a3 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b3 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum3 = MulAdd(a3, b3, sum3);
     }
 
     
     for (; i + N <= num_elements; i += N) {
-      const auto a = LoadU(d, pa + i);
-      const auto b = LoadU(d, pb + i);
+      const auto a = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       sum0 = MulAdd(a, b, sum0);
     }
 
@@ -123,8 +128,8 @@ struct Dot {
       if (remaining != 0) {
         if (kIsPaddedToVector) {
           const auto mask = FirstN(d, remaining);
-          const auto a = LoadU(d, pa + i);
-          const auto b = LoadU(d, pb + i);
+          const auto a = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+          const auto b = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
           sum1 = MulAdd(IfThenElseZero(mask, a), IfThenElseZero(mask, b), sum1);
         } else {
           
@@ -148,7 +153,6 @@ struct Dot {
   }
 
   
-  
   template <int kAssumptions, class D>
   static HWY_INLINE float Compute(const D d,
                                   const bfloat16_t* const HWY_RESTRICT pa,
@@ -166,6 +170,8 @@ struct Dot {
     constexpr bool kIsMultipleOfVector =
         (kAssumptions & kMultipleOfVector) != 0;
     constexpr bool kIsPaddedToVector = (kAssumptions & kPaddedToVector) != 0;
+    constexpr bool kIsAlignedA = (kAssumptions & kVectorAlignedA) != 0;
+    constexpr bool kIsAlignedB = (kAssumptions & kVectorAlignedB) != 0;
 
     
     if (!kIsAtLeastOneVector && !kIsMultipleOfVector && !kIsPaddedToVector &&
@@ -191,20 +197,20 @@ struct Dot {
 
     
     for (; i + 2 * N <= num_elements; ) {  
-      const auto a0 = LoadU(d, pa + i);
-      const auto b0 = LoadU(d, pb + i);
+      const auto a0 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b0 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum0 = ReorderWidenMulAccumulate(df32, a0, b0, sum0, sum1);
-      const auto a1 = LoadU(d, pa + i);
-      const auto b1 = LoadU(d, pb + i);
+      const auto a1 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b1 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum2 = ReorderWidenMulAccumulate(df32, a1, b1, sum2, sum3);
     }
 
     
     if (i + N <= num_elements) {
-      const auto a0 = LoadU(d, pa + i);
-      const auto b0 = LoadU(d, pb + i);
+      const auto a0 = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+      const auto b0 = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
       i += N;
       sum0 = ReorderWidenMulAccumulate(df32, a0, b0, sum0, sum1);
     }
@@ -214,8 +220,8 @@ struct Dot {
       if (remaining != 0) {
         if (kIsPaddedToVector) {
           const auto mask = FirstN(du16, remaining);
-          const auto va = LoadU(d, pa + i);
-          const auto vb = LoadU(d, pb + i);
+          const auto va = kIsAlignedA ? Load(d, pa + i) : LoadU(d, pa + i);
+          const auto vb = kIsAlignedB ? Load(d, pb + i) : LoadU(d, pb + i);
           const auto a16 = BitCast(d, IfThenElseZero(mask, BitCast(du16, va)));
           const auto b16 = BitCast(d, IfThenElseZero(mask, BitCast(du16, vb)));
           sum2 = ReorderWidenMulAccumulate(df32, a16, b16, sum2, sum3);

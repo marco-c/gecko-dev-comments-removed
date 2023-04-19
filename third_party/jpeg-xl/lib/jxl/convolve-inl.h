@@ -26,7 +26,6 @@ using hwy::HWY_NAMESPACE::Broadcast;
 #if HWY_TARGET != HWY_SCALAR
 using hwy::HWY_NAMESPACE::CombineShiftRightBytes;
 #endif
-using hwy::HWY_NAMESPACE::TableLookupLanes;
 using hwy::HWY_NAMESPACE::Vec;
 
 

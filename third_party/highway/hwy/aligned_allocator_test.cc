@@ -12,7 +12,6 @@
 
 
 
-
 #include "hwy/aligned_allocator.h"
 
 #include <stddef.h>
@@ -23,6 +22,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "hwy/base.h"
 
 namespace {
 
@@ -69,8 +69,8 @@ class FakeAllocator {
   void Free(void* memory) {
     if (!memory) return;
     EXPECT_NE(allocs_.end(), allocs_.find(memory));
-    allocs_.erase(memory);
     free(memory);
+    allocs_.erase(memory);
   }
 
   std::set<void*> allocs_;
@@ -276,3 +276,9 @@ TEST(AlignedAllocatorTest, DefaultInit) {
 }
 
 }  
+
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

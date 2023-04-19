@@ -12,7 +12,6 @@
 
 
 
-
 #include "hwy/aligned_allocator.h"
 
 #include <stdarg.h>
@@ -63,8 +62,8 @@ size_t NextAlignedOffset() {
 
 }  
 
-HWY_DLLEXPORT void* AllocateAlignedBytes(const size_t payload_size,
-                                         AllocPtr alloc_ptr, void* opaque_ptr) {
+void* AllocateAlignedBytes(const size_t payload_size, AllocPtr alloc_ptr,
+                           void* opaque_ptr) {
   HWY_ASSERT(payload_size != 0);  
   if (payload_size >= std::numeric_limits<size_t>::max() / 2) {
     HWY_DASSERT(false && "payload_size too large");
@@ -110,8 +109,8 @@ HWY_DLLEXPORT void* AllocateAlignedBytes(const size_t payload_size,
   return HWY_ASSUME_ALIGNED(reinterpret_cast<void*>(payload), kAlignment);
 }
 
-HWY_DLLEXPORT void FreeAlignedBytes(const void* aligned_pointer,
-                                    FreePtr free_ptr, void* opaque_ptr) {
+void FreeAlignedBytes(const void* aligned_pointer, FreePtr free_ptr,
+                      void* opaque_ptr) {
   if (aligned_pointer == nullptr) return;
 
   const uintptr_t payload = reinterpret_cast<uintptr_t>(aligned_pointer);
@@ -127,10 +126,9 @@ HWY_DLLEXPORT void FreeAlignedBytes(const void* aligned_pointer,
 }
 
 
-HWY_DLLEXPORT void AlignedDeleter::DeleteAlignedArray(void* aligned_pointer,
-                                                      FreePtr free_ptr,
-                                                      void* opaque_ptr,
-                                                      ArrayDeleter deleter) {
+void AlignedDeleter::DeleteAlignedArray(void* aligned_pointer, FreePtr free_ptr,
+                                        void* opaque_ptr,
+                                        ArrayDeleter deleter) {
   if (aligned_pointer == nullptr) return;
 
   const uintptr_t payload = reinterpret_cast<uintptr_t>(aligned_pointer);

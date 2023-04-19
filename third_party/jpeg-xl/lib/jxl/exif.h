@@ -9,76 +9,18 @@
 
 
 
-#include "jxl/codestream_header.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/image_metadata.h"
 
 namespace jxl {
 
-constexpr uint16_t kExifOrientationTag = 274;
 
 
 
-inline bool IsExif(const std::vector<uint8_t>& exif, bool* bigendian) {
-  if (exif.size() < 12) return false;  
-  const uint8_t* t = exif.data();
-  if (LoadLE32(t) == 0x2A004D4D) {
-    *bigendian = true;
-    return true;
-  } else if (LoadLE32(t) == 0x002A4949) {
-    *bigendian = false;
-    return true;
-  }
-  return false;  
-}
+void InterpretExif(const std::vector<uint8_t>& exif, CodecMetadata* metadata);
 
 
-inline size_t FindExifTagPosition(const std::vector<uint8_t>& exif,
-                                  uint16_t tagname) {
-  bool bigendian;
-  if (!IsExif(exif, &bigendian)) return 0;
-  const uint8_t* t = exif.data() + 4;
-  uint32_t offset = (bigendian ? LoadBE32(t) : LoadLE32(t));
-  if (exif.size() < 12 + offset + 2 || offset < 8) return 0;
-  t += offset - 4;
-  uint16_t nb_tags = (bigendian ? LoadBE16(t) : LoadLE16(t));
-  t += 2;
-  while (nb_tags > 0) {
-    if (t + 12 >= exif.data() + exif.size()) return 0;
-    uint16_t tag = (bigendian ? LoadBE16(t) : LoadLE16(t));
-    t += 2;
-    if (tag == tagname) return static_cast<size_t>(t - exif.data());
-    t += 10;
-    nb_tags--;
-  }
-  return 0;
-}
-
-
-
-
-
-
-
-
-inline void InterpretExif(const std::vector<uint8_t>& exif,
-                          JxlOrientation* orientation) {
-  bool bigendian;
-  if (!IsExif(exif, &bigendian)) return;
-  size_t o_pos = FindExifTagPosition(exif, kExifOrientationTag);
-  if (o_pos) {
-    const uint8_t* t = exif.data() + o_pos;
-    uint16_t type = (bigendian ? LoadBE16(t) : LoadLE16(t));
-    t += 2;
-    uint32_t count = (bigendian ? LoadBE32(t) : LoadLE32(t));
-    t += 4;
-    uint16_t value = (bigendian ? LoadBE16(t) : LoadLE16(t));
-    t += 4;
-    if (type == 3 && count == 1 && value >= 1 && value <= 8) {
-      *orientation = static_cast<JxlOrientation>(value);
-    }
-  }
-}
+void ResetExifOrientation(std::vector<uint8_t>& exif);
 
 }  
 

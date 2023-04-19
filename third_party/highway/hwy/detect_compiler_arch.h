@@ -12,7 +12,6 @@
 
 
 
-
 #ifndef HIGHWAY_HWY_DETECT_COMPILER_ARCH_H_
 #define HIGHWAY_HWY_DETECT_COMPILER_ARCH_H_
 
@@ -32,16 +31,11 @@
 
 
 
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #define HWY_COMPILER_MSVC _MSC_VER
 #else
 #define HWY_COMPILER_MSVC 0
-#endif
-
-#if defined(_MSC_VER) && defined(__clang__)
-#define HWY_COMPILER_CLANGCL _MSC_VER
-#else
-#define HWY_COMPILER_CLANGCL 0
 #endif
 
 #ifdef __INTEL_COMPILER
@@ -49,8 +43,6 @@
 #else
 #define HWY_COMPILER_ICC 0
 #endif
-
-
 
 #ifdef __GNUC__
 #define HWY_COMPILER_GCC (__GNUC__ * 100 + __GNUC_MINOR__)
@@ -60,15 +52,11 @@
 
 
 #ifdef __clang__
+#ifdef __APPLE__
 
 
 
-#if defined(__APPLE__) || __clang_major__ >= 999
-#if __has_warning("-Wbitwise-instead-of-logical")
-#define HWY_COMPILER_CLANG 1400
-#elif __has_warning("-Wreserved-identifier")
-#define HWY_COMPILER_CLANG 1300
-#elif __has_warning("-Wformat-insufficient-args")
+#if __has_warning("-Wformat-insufficient-args")
 #define HWY_COMPILER_CLANG 1200
 #elif __has_warning("-Wimplicit-const-int-float-conversion")
 #define HWY_COMPILER_CLANG 1100
@@ -91,23 +79,10 @@
 #define HWY_COMPILER_CLANG 0
 #endif
 
-#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG
-#define HWY_COMPILER_GCC_ACTUAL HWY_COMPILER_GCC
-#else
-#define HWY_COMPILER_GCC_ACTUAL 0
-#endif
 
-
-#if 0 == (HWY_COMPILER_MSVC + HWY_COMPILER_CLANGCL + HWY_COMPILER_ICC + \
-          HWY_COMPILER_GCC + HWY_COMPILER_CLANG)
+#if !HWY_COMPILER_MSVC && !HWY_COMPILER_ICC && !HWY_COMPILER_GCC && \
+    !HWY_COMPILER_CLANG
 #error "Unsupported compiler"
-#endif
-
-
-#if 1 <                                                                     \
-    (!!HWY_COMPILER_MSVC + !!HWY_COMPILER_ICC + !!HWY_COMPILER_GCC_ACTUAL + \
-     !!(HWY_COMPILER_CLANGCL | HWY_COMPILER_CLANG))
-#error "Detected multiple compilers"
 #endif
 
 #ifdef __has_builtin
@@ -165,7 +140,7 @@
 #define HWY_ARCH_ARM_A64 0
 #endif
 
-#if (defined(__ARM_ARCH) && __ARM_ARCH == 7) || (defined(_M_ARM) && _M_ARM == 7)
+#if defined(__arm__) || defined(_M_ARM)
 #define HWY_ARCH_ARM_V7 1
 #else
 #define HWY_ARCH_ARM_V7 0
@@ -175,18 +150,10 @@
 #error "Cannot have both A64 and V7"
 #endif
 
-
 #if HWY_ARCH_ARM_A64 || HWY_ARCH_ARM_V7
 #define HWY_ARCH_ARM 1
 #else
 #define HWY_ARCH_ARM 0
-#endif
-
-
-#if (defined(__arm__) || defined(_M_ARM)) && !HWY_ARCH_ARM
-#define HWY_ARCH_ARM_OLD 1
-#else
-#define HWY_ARCH_ARM_OLD 0
 #endif
 
 #if defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__WASM__)
@@ -203,21 +170,9 @@
 
 
 
-#if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_ARM_OLD + \
-     HWY_ARCH_WASM + HWY_ARCH_RVV) > 1
+#if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_WASM + \
+     HWY_ARCH_RVV) > 1
 #error "Must not detect more than one architecture"
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#define HWY_OS_WIN 1
-#else
-#define HWY_OS_WIN 0
-#endif
-
-#if defined(linux) || defined(__linux__)
-#define HWY_OS_LINUX 1
-#else
-#define HWY_OS_LINUX 0
 #endif
 
 #endif  

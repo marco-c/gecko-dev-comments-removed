@@ -15,7 +15,6 @@
 
 
 
-
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_SHARED_INL_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_SHARED_INL_H_
 
@@ -28,7 +27,7 @@ namespace hwy {
 struct SortConstants {
 
 
-#if HWY_COMPILER_MSVC || HWY_IS_DEBUG_BUILD
+#if HWY_COMPILER_MSVC
   static constexpr size_t kMaxCols = 8;  
 #else
   static constexpr size_t kMaxCols = 16;  
@@ -42,7 +41,7 @@ struct SortConstants {
   static constexpr size_t kMaxRowsLog2 = 4;
   static constexpr size_t kMaxRows = size_t{1} << kMaxRowsLog2;
 
-  static constexpr HWY_INLINE size_t BaseCaseNum(size_t N) {
+  static HWY_INLINE size_t BaseCaseNum(size_t N) {
     return kMaxRows * HWY_MIN(N, kMaxCols);
   }
 
@@ -53,7 +52,7 @@ struct SortConstants {
   
   static constexpr size_t kPartitionUnroll = 4;
 
-  static constexpr HWY_INLINE size_t PartitionBufNum(size_t N) {
+  static HWY_INLINE size_t PartitionBufNum(size_t N) {
     
     
     
@@ -65,25 +64,8 @@ struct SortConstants {
   
   
   
-  static constexpr HWY_INLINE size_t LanesPerChunk(size_t sizeof_t, size_t N) {
+  static HWY_INLINE size_t LanesPerChunk(size_t sizeof_t, size_t N) {
     return HWY_MAX(64 / sizeof_t, N);
-  }
-
-  static constexpr HWY_INLINE size_t PivotBufNum(size_t sizeof_t, size_t N) {
-    
-    return (3 + 1) * LanesPerChunk(sizeof_t, N) + 2 * N;
-  }
-
-  template <typename T>
-  static constexpr HWY_INLINE size_t BufNum(size_t N) {
-    
-    return HWY_MAX(BaseCaseNum(N) + 2 * N,
-                   HWY_MAX(PartitionBufNum(N), PivotBufNum(sizeof(T), N)));
-  }
-
-  template <typename T>
-  static constexpr HWY_INLINE size_t BufBytes(size_t vector_size) {
-    return sizeof(T) * BufNum<T>(vector_size / sizeof(T));
   }
 };
 
@@ -102,23 +84,12 @@ struct SortConstants {
 
 #include "hwy/highway.h"
 
-
-
-#undef VQSORT_ENABLED
-#if (HWY_TARGET == HWY_SCALAR) ||                 \
-    (HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD) || \
-    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD)
-#define VQSORT_ENABLED 0
-#else
-#define VQSORT_ENABLED 1
-#endif
-
 namespace hwy {
 namespace HWY_NAMESPACE {
 
 
-#if HWY_TARGET == HWY_RVV
 
+#if HWY_TARGET == HWY_RVV && 0
 template <typename T>
 using SortTag = ScalableTag<T, -1>;
 #else

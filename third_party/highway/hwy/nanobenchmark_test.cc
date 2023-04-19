@@ -12,7 +12,6 @@
 
 
 
-
 #include "hwy/nanobenchmark.h"
 
 #include <inttypes.h>
@@ -58,7 +57,7 @@ std::mt19937 rng;
 
 FuncOutput Random(const void* , FuncInput in) {
   const size_t r = rng() & 0xF;
-  FuncOutput ret = static_cast<FuncOutput>(in);
+  uint32_t ret = in;
   for (size_t i = 0; i < r; ++i) {
     ret /= ((rng() & 1) + 2);
   }
@@ -89,3 +88,9 @@ TEST(NanobenchmarkTest, RunAll) {
 
 }  
 }  
+
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

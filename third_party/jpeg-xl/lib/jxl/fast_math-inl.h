@@ -21,24 +21,9 @@ namespace jxl {
 namespace HWY_NAMESPACE {
 
 
-using hwy::HWY_NAMESPACE::Abs;
-using hwy::HWY_NAMESPACE::Add;
-using hwy::HWY_NAMESPACE::Eq;
-using hwy::HWY_NAMESPACE::Floor;
-using hwy::HWY_NAMESPACE::Ge;
-using hwy::HWY_NAMESPACE::GetLane;
-using hwy::HWY_NAMESPACE::IfThenElse;
-using hwy::HWY_NAMESPACE::IfThenZeroElse;
-using hwy::HWY_NAMESPACE::Le;
-using hwy::HWY_NAMESPACE::Min;
-using hwy::HWY_NAMESPACE::Mul;
-using hwy::HWY_NAMESPACE::MulAdd;
-using hwy::HWY_NAMESPACE::NegMulAdd;
 using hwy::HWY_NAMESPACE::Rebind;
 using hwy::HWY_NAMESPACE::ShiftLeft;
 using hwy::HWY_NAMESPACE::ShiftRight;
-using hwy::HWY_NAMESPACE::Sub;
-using hwy::HWY_NAMESPACE::Xor;
 
 
 
@@ -56,13 +41,12 @@ V FastLog2f(const DF df, V x) {
   const auto x_bits = BitCast(di, x);
 
   
-  const auto exp_bits = Sub(x_bits, Set(di, 0x3f2aaaab));  
+  const auto exp_bits = x_bits - Set(di, 0x3f2aaaab);  
   
   const auto exp_shifted = ShiftRight<23>(exp_bits);
-  const auto mantissa = BitCast(df, Sub(x_bits, ShiftLeft<23>(exp_shifted)));
+  const auto mantissa = BitCast(df, x_bits - ShiftLeft<23>(exp_shifted));
   const auto exp_val = ConvertTo(df, exp_shifted);
-  return Add(EvalRationalPolynomial(df, Sub(mantissa, Set(df, 1.0f)), p, q),
-             exp_val);
+  return EvalRationalPolynomial(df, mantissa - Set(df, 1.0f), p, q) + exp_val;
 }
 
 
@@ -70,23 +54,22 @@ template <class DF, class V>
 V FastPow2f(const DF df, V x) {
   const Rebind<int32_t, DF> di;
   auto floorx = Floor(x);
-  auto exp =
-      BitCast(df, ShiftLeft<23>(Add(ConvertTo(di, floorx), Set(di, 127))));
-  auto frac = Sub(x, floorx);
-  auto num = Add(frac, Set(df, 1.01749063e+01));
+  auto exp = BitCast(df, ShiftLeft<23>(ConvertTo(di, floorx) + Set(di, 127)));
+  auto frac = x - floorx;
+  auto num = frac + Set(df, 1.01749063e+01);
   num = MulAdd(num, frac, Set(df, 4.88687798e+01));
   num = MulAdd(num, frac, Set(df, 9.85506591e+01));
-  num = Mul(num, exp);
+  num = num * exp;
   auto den = MulAdd(frac, Set(df, 2.10242958e-01), Set(df, -2.22328856e-02));
   den = MulAdd(den, frac, Set(df, -1.94414990e+01));
   den = MulAdd(den, frac, Set(df, 9.85506633e+01));
-  return Div(num, den);
+  return num / den;
 }
 
 
 template <class DF, class V>
 V FastPowf(const DF df, V base, V exponent) {
-  return FastPow2f(df, Mul(FastLog2f(df, base), exponent));
+  return FastPow2f(df, FastLog2f(df, base) * exponent);
 }
 
 
@@ -96,18 +79,18 @@ V FastCosf(const DF df, V x) {
   
   const auto pi2 = Set(df, kPi * 2.0f);
   const auto pi2_inv = Set(df, 0.5f / kPi);
-  const auto npi2 = Mul(Floor(Mul(x, pi2_inv)), pi2);
-  const auto xmodpi2 = Sub(x, npi2);
+  const auto npi2 = Floor(x * pi2_inv) * pi2;
+  const auto xmodpi2 = x - npi2;
   
-  const auto x_pi = Min(xmodpi2, Sub(pi2, xmodpi2));
+  const auto x_pi = Min(xmodpi2, pi2 - xmodpi2);
   
-  const auto above_pihalf = Ge(x_pi, Set(df, kPi / 2.0f));
-  const auto x_pihalf = IfThenElse(above_pihalf, Sub(Set(df, kPi), x_pi), x_pi);
+  const auto above_pihalf = x_pi >= Set(df, kPi / 2.0f);
+  const auto x_pihalf = IfThenElse(above_pihalf, Set(df, kPi) - x_pi, x_pi);
   
   
-  const auto xs = Mul(x_pihalf, Set(df, 0.25f));
-  const auto x2 = Mul(xs, xs);
-  const auto x4 = Mul(x2, x2);
+  const auto xs = x_pihalf * Set(df, 0.25f);
+  const auto x2 = xs * xs;
+  const auto x4 = x2 * x2;
   const auto cosx_prescaling =
       MulAdd(x4, Set(df, 0.06960438),
              MulAdd(x2, Set(df, -0.84087373), Set(df, 1.68179268)));
@@ -118,7 +101,7 @@ V FastCosf(const DF df, V x) {
   
   const Rebind<uint32_t, DF> du;
   auto signbit = ShiftLeft<31>(BitCast(du, VecFromMask(df, above_pihalf)));
-  return BitCast(df, Xor(signbit, BitCast(du, cosx_scale2)));
+  return BitCast(df, signbit ^ BitCast(du, cosx_scale2));
 }
 
 
@@ -128,7 +111,7 @@ V FastErff(const DF df, V x) {
   
   
   
-  const auto xle0 = Le(x, Zero(df));
+  const auto xle0 = x <= Zero(df);
   const auto absx = Abs(x);
   
   const auto denom1 =
@@ -136,13 +119,13 @@ V FastErff(const DF df, V x) {
   const auto denom2 = MulAdd(denom1, absx, Set(df, 2.32120216e-01));
   const auto denom3 = MulAdd(denom2, absx, Set(df, 2.77820801e-01));
   const auto denom4 = MulAdd(denom3, absx, Set(df, 1.0f));
-  const auto denom5 = Mul(denom4, denom4);
-  const auto inv_denom5 = Div(Set(df, 1.0f), denom5);
+  const auto denom5 = denom4 * denom4;
+  const auto inv_denom5 = Set(df, 1.0f) / denom5;
   const auto result = NegMulAdd(inv_denom5, inv_denom5, Set(df, 1.0f));
   
   const Rebind<uint32_t, DF> du;
   auto signbit = ShiftLeft<31>(BitCast(du, VecFromMask(df, xle0)));
-  return BitCast(df, Xor(signbit, BitCast(du, result)));
+  return BitCast(df, signbit ^ BitCast(du, result));
 }
 
 inline float FastLog2f(float f) {
@@ -184,7 +167,7 @@ V CubeRootAndAdd(const V x, const V add) {
   const auto k4_3 = Set(df, 4.0f / 3);
 
   const auto xa = x;  
-  const auto xa_3 = Mul(k1_3, xa);
+  const auto xa_3 = k1_3 * xa;
 
   
   const auto m1 = BitCast(di, xa);
@@ -192,20 +175,19 @@ V CubeRootAndAdd(const V x, const V add) {
   
   
   
-  
-  const auto m2 = IfThenZeroElse(
-      Eq(m1, Zero(di)), Sub(kExpBias, Mul((ShiftRight<23>(m1)), kExpMul)));
+  const auto m2 =
+      IfThenZeroElse(m1 == Zero(di), kExpBias - (ShiftRight<23>(m1)) * kExpMul);
   auto r = BitCast(df, m2);
 
   
   for (int i = 0; i < 3; i++) {
-    const auto r2 = Mul(r, r);
-    r = NegMulAdd(xa_3, Mul(r2, r2), Mul(k4_3, r));
+    const auto r2 = r * r;
+    r = NegMulAdd(xa_3, r2 * r2, k4_3 * r);
   }
   
-  auto r2 = Mul(r, r);
-  r = MulAdd(k1_3, NegMulAdd(xa, Mul(r2, r2), r), r);
-  r2 = Mul(r, r);
+  auto r2 = r * r;
+  r = MulAdd(k1_3, NegMulAdd(xa, r2 * r2, r), r);
+  r2 = r * r;
   r = MulAdd(r2, x, add);
 
   return r;

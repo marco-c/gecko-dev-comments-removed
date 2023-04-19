@@ -12,14 +12,14 @@
 
 
 
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "tests/demote_test.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
+
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
 
@@ -31,12 +31,12 @@ namespace hwy {
 namespace HWY_NAMESPACE {
 
 template <typename T, HWY_IF_FLOAT(T)>
-bool IsFiniteT(T t) {
+bool IsFinite(T t) {
   return std::isfinite(t);
 }
 
 template <typename T, HWY_IF_NOT_FLOAT(T)>
-bool IsFiniteT(T ) {
+bool IsFinite(T ) {
   return true;
 }
 
@@ -57,7 +57,7 @@ struct TestDemoteTo {
     const T max = LimitsMax<ToT>();
 
     const auto value_ok = [&](T& value) {
-      if (!IsFiniteT(value)) return false;
+      if (!IsFinite(value)) return false;
       return true;
     };
 
@@ -117,7 +117,7 @@ struct TestDemoteToFloat {
         do {
           const uint64_t bits = rng();
           memcpy(&from[i], &bits, sizeof(T));
-        } while (!IsFiniteT(from[i]));
+        } while (!IsFinite(from[i]));
         const T magn = std::abs(from[i]);
         const T max_abs = HighestValue<ToT>();
         
@@ -213,6 +213,7 @@ class TestReorderDemote2To {
   template <typename TF32, class DF32>
   HWY_NOINLINE void operator()(TF32 , DF32 d32) {
 #if HWY_TARGET != HWY_SCALAR
+
     size_t padded;
     auto in = ReorderBF16TestCases(d32, padded);
 
@@ -233,12 +234,11 @@ class TestReorderDemote2To {
       const auto promoted1 = PromoteTo(d32, Load(dbf16_half, temp16.get() + N));
 
       
-      const auto sum_expected = GetLane(SumOfLanes(d32, Add(f0, f1)));
-      const auto sum_actual =
+      const auto sum_expected =
           GetLane(SumOfLanes(d32, Add(promoted0, promoted1)));
-
-      HWY_ASSERT(sum_expected - 1E-4 <= sum_actual &&
-                 sum_actual <= sum_expected + 1E-4);
+      const auto sum_actual = GetLane(SumOfLanes(d32, Add(f0, f1)));
+      HWY_ASSERT(sum_actual - 1E-4 <= sum_actual &&
+                 sum_expected <= sum_actual + 1E-4);
 
       
       Store(f0, d32, expected.get() + 0);
@@ -323,5 +323,11 @@ HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllReorderDemote2To);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllI32F64);
 #endif  
 }  
+
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #endif

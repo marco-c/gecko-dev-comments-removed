@@ -12,69 +12,25 @@
 
 
 
-
 #include "hwy/contrib/sort/vqsort.h"
 
 #include <string.h>  
 
+#include "hwy/aligned_allocator.h"
+
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 
 
 #include "hwy/contrib/sort/shared-inl.h"
 
 
 
-#ifndef VQSORT_STACK
-#if HWY_ARCH_X86 || HWY_ARCH_WASM
-#define VQSORT_STACK 1
-#else
-#define VQSORT_STACK 0
-#endif
-#endif  
-
-#if !VQSORT_STACK
-#include "hwy/aligned_allocator.h"
-#endif
-
-
-
-#if defined(ANDROID) || defined(__ANDROID__) || HWY_ARCH_RVV
-#define VQSORT_GETRANDOM 0
-#endif
-
-#if !defined(VQSORT_GETRANDOM) && HWY_OS_LINUX
-#include <features.h>
-
-
-#if defined(__UCLIBC__)
-#define VQSORT_GETRANDOM 1  // added Mar 2015, before uclibc-ng 1.0
-
-#elif defined(__GLIBC__) && defined(__GLIBC_PREREQ)
-#if __GLIBC_PREREQ(2, 25)
-#define VQSORT_GETRANDOM 1
-#else
-#define VQSORT_GETRANDOM 0
-#endif
-
-#else
-
-
-#define VQSORT_GETRANDOM 1
-
-#endif  
-#endif  
-
-#if !defined(VQSORT_GETRANDOM)
-#define VQSORT_GETRANDOM 0
-#endif
-
-
-
 #ifndef VQSORT_SECURE_SEED
 
-#if VQSORT_GETRANDOM
+#if (defined(linux) || defined(__linux__)) && \
+    !(defined(ANDROID) || defined(__ANDROID__) || HWY_ARCH_RVV)
 #define VQSORT_SECURE_SEED 1
 #elif defined(_WIN32) || defined(_WIN64)
 #define VQSORT_SECURE_SEED 2
@@ -91,7 +47,7 @@
 #include <sys/random.h>
 #elif VQSORT_SECURE_SEED == 2
 #include <windows.h>
-#pragma comment(lib, "advapi32.lib")
+#pragma comment(lib, "Advapi32.lib")
 
 #include <wincrypt.h>
 #endif  
@@ -116,32 +72,40 @@ namespace {
 HWY_EXPORT(VectorSize);
 HWY_EXPORT(HaveFloat64);
 
+HWY_INLINE size_t PivotBufNum(size_t sizeof_t, size_t N) {
+  
+  const size_t lpc = SortConstants::LanesPerChunk(sizeof_t, N);
+  return (3 + 1) * lpc + 2 * N;
+}
+
 }  
 
 Sorter::Sorter() {
-#if VQSORT_STACK
-  ptr_ = nullptr;  
-#else
   
   
   
   const size_t vector_size = HWY_DYNAMIC_DISPATCH(VectorSize)();
-  const size_t max_bytes =
-      HWY_MAX(HWY_MAX(SortConstants::BufBytes<uint16_t>(vector_size),
-                      SortConstants::BufBytes<uint32_t>(vector_size)),
-              SortConstants::BufBytes<uint64_t>(vector_size));
+  size_t max_bytes = 0;
+  for (size_t sizeof_t :
+       {sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t)}) {
+    const size_t N = vector_size / sizeof_t;
+    
+    const size_t base_case = SortConstants::BaseCaseNum(N) + 2 * N;
+    const size_t partition_num = SortConstants::PartitionBufNum(N);
+    const size_t buf_lanes =
+        HWY_MAX(base_case, HWY_MAX(partition_num, PivotBufNum(sizeof_t, N)));
+    max_bytes = HWY_MAX(max_bytes, buf_lanes * sizeof_t);
+  }
+
   ptr_ = hwy::AllocateAlignedBytes(max_bytes, nullptr, nullptr);
 
   
   memset(ptr_, 0, max_bytes);
-#endif
 }
 
 void Sorter::Delete() {
-#if !VQSORT_STACK
   FreeAlignedBytes(ptr_, nullptr, nullptr);
   ptr_ = nullptr;
-#endif
 }
 
 #if !VQSORT_SECURE_RNG

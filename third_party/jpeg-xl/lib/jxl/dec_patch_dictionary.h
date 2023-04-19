@@ -106,7 +106,7 @@ class PatchDictionary {
 
   void Clear() {
     positions_.clear();
-    ComputePatchTree();
+    ComputePatchCache();
   }
 
   
@@ -117,8 +117,6 @@ class PatchDictionary {
   
   int GetReferences() const;
 
-  std::vector<size_t> GetPatchesForRow(size_t y) const;
-
  private:
   friend class PatchDictionaryEncoder;
 
@@ -128,22 +126,19 @@ class PatchDictionary {
   std::vector<PatchBlending> blendings_;
 
   
-  struct PatchTreeNode {
-    ssize_t left_child;
-    ssize_t right_child;
-    size_t y_center;
-    
-    
-    size_t start;
-    size_t num;
-  };
-  std::vector<PatchTreeNode> patch_tree_;
   
-  std::vector<size_t> num_patches_;
-  std::vector<std::pair<size_t, size_t>> sorted_patches_y0_;
-  std::vector<std::pair<size_t, size_t>> sorted_patches_y1_;
+  std::vector<size_t> sorted_patches_;
+  
+  std::vector<size_t> patch_starts_;
 
-  void ComputePatchTree();
+  
+  
+  
+  
+  
+
+  
+  void ComputePatchCache();
 };
 
 }  

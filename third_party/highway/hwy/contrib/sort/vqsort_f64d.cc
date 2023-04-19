@@ -12,12 +12,12 @@
 
 
 
-
+#include "hwy/contrib/sort/disabled_targets.h"
 #include "hwy/contrib/sort/vqsort.h"
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort_f64d.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 
 
 #include "hwy/contrib/sort/traits-inl.h"
@@ -31,7 +31,7 @@ void SortF64Desc(double* HWY_RESTRICT keys, size_t num,
                  double* HWY_RESTRICT buf) {
 #if HWY_HAVE_FLOAT64
   SortTag<double> d;
-  detail::SharedTraits<detail::TraitsLane<detail::OrderDescending<double>>> st;
+  detail::SharedTraits<detail::LaneTraits<detail::OrderDescending>> st;
   Sort(d, st, keys, num, buf);
 #else
   (void)keys;

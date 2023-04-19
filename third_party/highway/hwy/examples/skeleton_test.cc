@@ -14,14 +14,13 @@
 
 
 
-
 #include "hwy/examples/skeleton.h"
 
 #include <stdio.h>
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "examples/skeleton_test.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 
 
 #include "hwy/highway.h"
@@ -35,13 +34,13 @@ HWY_BEFORE_NAMESPACE();
 namespace skeleton {
 namespace HWY_NAMESPACE {
 
-namespace hn = hwy::HWY_NAMESPACE;
+using namespace hwy::HWY_NAMESPACE;
 
 
 struct TestFloorLog2 {
   template <class T, class DF>
   HWY_NOINLINE void operator()(T , DF df) {
-    const size_t count = 5 * hn::Lanes(df);
+    const size_t count = 5 * Lanes(df);
     auto in = hwy::AllocateAligned<uint8_t>(count);
     auto expected = hwy::AllocateAligned<uint8_t>(count);
 
@@ -71,7 +70,7 @@ struct TestSumMulAdd {
   HWY_NOINLINE void operator()(T , D d) {
     hwy::RandomState rng;
     const size_t count = 4096;
-    EXPECT_EQ(0, count % hn::Lanes(d));
+    EXPECT_TRUE(count % Lanes(d) == 0);
     auto mul = hwy::AllocateAligned<T>(count);
     auto x = hwy::AllocateAligned<T>(count);
     auto add = hwy::AllocateAligned<T>(count);
@@ -106,5 +105,11 @@ HWY_BEFORE_TEST(SkeletonTest);
 HWY_EXPORT_AND_TEST_P(SkeletonTest, TestAllFloorLog2);
 HWY_EXPORT_AND_TEST_P(SkeletonTest, TestAllSumMulAdd);
 }  
+
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 
 #endif

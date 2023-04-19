@@ -12,12 +12,12 @@
 
 
 
-
+#include "hwy/contrib/sort/disabled_targets.h"
 #include "hwy/contrib/sort/vqsort.h"
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort_u32a.cc"
-#include "hwy/foreach_target.h"  
+#include "hwy/foreach_target.h"
 
 
 #include "hwy/contrib/sort/traits-inl.h"
@@ -30,7 +30,7 @@ namespace HWY_NAMESPACE {
 void SortU32Asc(uint32_t* HWY_RESTRICT keys, size_t num,
                 uint32_t* HWY_RESTRICT buf) {
   SortTag<uint32_t> d;
-  detail::SharedTraits<detail::TraitsLane<detail::OrderAscending<uint32_t>>> st;
+  detail::SharedTraits<detail::LaneTraits<detail::OrderAscending>> st;
   Sort(d, st, keys, num, buf);
 }
 
