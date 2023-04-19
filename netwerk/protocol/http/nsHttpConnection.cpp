@@ -1087,6 +1087,15 @@ nsresult nsHttpConnection::TakeTransport(nsISocketTransport** aTransport,
     }
   }
 
+  if (mHasTLSTransportLayer) {
+    RefPtr<TLSTransportLayer> tlsTransportLayer =
+        do_QueryObject(mSocketTransport);
+    if (tlsTransportLayer) {
+      
+      tlsTransportLayer->ReleaseOwner();
+    }
+  }
+
   mSocketTransport->SetSecurityCallbacks(nullptr);
   mSocketTransport->SetEventSink(nullptr, nullptr);
 
