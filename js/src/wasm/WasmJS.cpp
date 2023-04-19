@@ -31,6 +31,7 @@
 #include "ds/IdValuePair.h"  
 #include "gc/GCContext.h"
 #include "jit/AtomicOperations.h"
+#include "jit/FlushICache.h"
 #include "jit/JitContext.h"
 #include "jit/JitOptions.h"
 #include "jit/Simulator.h"
@@ -1594,6 +1595,16 @@ WasmModuleObject* WasmModuleObject::create(JSContext* cx, const Module& module,
   if (!obj) {
     return nullptr;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  jit::FlushExecutionContext();
 
   
   

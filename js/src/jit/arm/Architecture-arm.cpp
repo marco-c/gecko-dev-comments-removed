@@ -526,5 +526,15 @@ void FlushICache(void* code, size_t size, bool codeIsThreadLocal) {
 #endif
 }
 
+void FlushExecutionContext() {
+#ifndef JS_SIMULATOR_ARM
+  
+  
+  asm volatile("isb\n" : : : "memory");
+#else
+  
+#endif
+}
+
 }  
 }  

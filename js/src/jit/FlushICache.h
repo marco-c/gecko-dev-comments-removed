@@ -40,6 +40,33 @@ inline void FlushICache(void* code, size_t size,
 #  error "Unknown architecture!"
 #endif
 
+#if (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)) ||       \
+    (defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)) || \
+    defined(JS_CODEGEN_LOONG64)
+
+inline void FlushExecutionContext() {
+  
+}
+
+#elif defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_WASM32)
+
+inline void FlushExecutionContext() { MOZ_CRASH(); }
+
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+
+
+
+
+
+
+
+
+extern void FlushExecutionContext();
+
+#else
+#  error "Unknown architecture!"
+#endif
+
 }  
 }  
 

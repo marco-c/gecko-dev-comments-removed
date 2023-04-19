@@ -173,6 +173,10 @@ class CPU {
 
   
   
+  static void FlushExecutionContext();
+
+  
+  
   
   static CPUFeatures InferCPUFeaturesFromIDRegisters();
 
