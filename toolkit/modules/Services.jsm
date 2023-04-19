@@ -2,6 +2,6 @@
 
 
 
-var EXPORTED_SYMBOLS = ["Services"];
+const Services = globalThis.Services;
 
-var Services = Cu.createServicesCache();
+var EXPORTED_SYMBOLS = ["Services"];

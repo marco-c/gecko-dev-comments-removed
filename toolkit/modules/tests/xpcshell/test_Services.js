@@ -61,20 +61,4 @@ function run_test() {
   if ("@mozilla.org/enterprisepolicies;1" in Cc) {
     checkService("policies", Ci.nsIEnterprisePolicies);
   }
-
-  
-  
-  
-  let { updateAppInfo } = ChromeUtils.import(
-    "resource://testing-common/AppInfo.jsm"
-  );
-  updateAppInfo();
-
-  
-  Cu.unload("resource://gre/modules/Services.jsm");
-  ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
-
-  checkService("appinfo", Ci.nsIXULAppInfo);
-
-  Cu.unload("resource://gre/modules/Services.jsm");
 }
