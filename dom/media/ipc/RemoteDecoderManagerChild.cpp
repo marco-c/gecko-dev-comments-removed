@@ -607,16 +607,7 @@ TrackSupportSet RemoteDecoderManagerChild::GetTrackSupport(
     RemoteDecodeIn aLocation) {
   switch (aLocation) {
     case RemoteDecodeIn::GpuProcess: {
-      TrackSupportSet s{TrackSupport::Video};
-#ifdef MOZ_WMF_MEDIA_ENGINE
-      
-      
-      
-      if (StaticPrefs::media_wmf_media_engine_enabled()) {
-        s -= TrackSupport::Video;
-      }
-#endif
-      return s;
+      return TrackSupportSet{TrackSupport::Video};
     }
     case RemoteDecodeIn::RddProcess: {
       TrackSupportSet s{TrackSupport::Video};
