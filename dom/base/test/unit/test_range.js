@@ -32,17 +32,7 @@ function getFragment(aNode) {
 }
 
 
-const serializer = new DOMSerializer();
 const parser = getParser();
-
-
-
-
-
-
-function dumpFragment(aFragment) {
-  dump(serializer.serializeToString(aFragment) + "\n\n");
-}
 
 
 

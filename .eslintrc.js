@@ -189,7 +189,6 @@ module.exports = {
         
         
         
-        "dom/base/**",
         "dom/cache/**",
         "dom/indexedDB/**",
         "dom/localstorage/**",

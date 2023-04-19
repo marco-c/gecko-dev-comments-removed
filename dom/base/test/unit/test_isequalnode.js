@@ -3,35 +3,15 @@
 
 
 
-function run_test() {
-  
 
 
+var doc; 
 
-  init();
-
-  test_isEqualNode_setAttribute();
-  test_isEqualNode_clones();
-  test_isEqualNode_variety();
-  test_isEqualNode_normalization();
-  test_isEqualNode_whitespace();
-  test_isEqualNode_namespaces();
-  test_isEqualNode_wholeDoc();
-
-  
-  
-}
-
-
-
-var doc, root; 
-
-function init() {
+add_setup(function init() {
   doc = ParseFile("isequalnode_data.xml");
-  root = doc.documentElement;
-}
+});
 
-function test_isEqualNode_setAttribute() {
+add_task(function test_isEqualNode_setAttribute() {
   
   var test1 = doc.getElementById("test_setAttribute");
   var node1 = test1.childNodes.item(1);
@@ -68,9 +48,9 @@ function test_isEqualNode_setAttribute() {
   
   node2.setAttribute("seamonkey", "rheet");
   check_neq_nodes(node1, node2);
-}
+});
 
-function test_isEqualNode_clones() {
+add_task(function test_isEqualNode_clones() {
   
   var all_elts = doc.getElementsByTagName("*");
   for (var i = 0; i < all_elts.length; i++) {
@@ -113,9 +93,9 @@ function test_isEqualNode_clones() {
   var att = doc.createAttribute("bar");
   check_eq_nodes(att, att.cloneNode(true));
   check_eq_nodes(att, att.cloneNode(false));
-}
+});
 
-function test_isEqualNode_variety() {
+add_task(function test_isEqualNode_variety() {
   const nodes = [
     doc.createElement("foo"),
     doc.createElementNS("http://example.com/", "foo"),
@@ -142,9 +122,9 @@ function test_isEqualNode_variety() {
       }
     }
   }
-}
+});
 
-function test_isEqualNode_normalization() {
+add_task(function test_isEqualNode_normalization() {
   var norm = doc.getElementById("test_normalization");
   var node1 = norm.childNodes.item(1);
   var node2 = norm.childNodes.item(3);
@@ -291,9 +271,9 @@ function test_isEqualNode_normalization() {
   node1.normalize();
   node2.normalize();
   check_eq_nodes(node1, node2);
-}
+});
 
-function test_isEqualNode_whitespace() {
+add_task(function test_isEqualNode_whitespace() {
   equality_check_kids("test_pi1", true);
   equality_check_kids("test_pi2", true);
   equality_check_kids("test_pi3", false);
@@ -320,16 +300,18 @@ function test_isEqualNode_whitespace() {
   equality_check_kids("test_cdata3", false);
   equality_check_kids("test_cdata4", false);
   equality_check_kids("test_cdata5", false);
-}
+});
 
-function test_isEqualNode_namespaces() {
+add_task(function test_isEqualNode_namespaces() {
   equality_check_kids("test_ns1", false);
   equality_check_kids("test_ns2", false);
 
   
-}
+});
 
-function test_isEqualNode_null() {
+
+
+add_task(function test_isEqualNode_null() {
   check_neq_nodes(doc, null);
 
   var elts = doc.getElementsByTagName("*");
@@ -347,9 +329,9 @@ function test_isEqualNode_null() {
       }
     }
   }
-}
+}).skip();
 
-function test_isEqualNode_wholeDoc() {
+add_task(function test_isEqualNode_wholeDoc() {
   doc = ParseFile("isequalnode_data.xml");
   var doc2 = ParseFile("isequalnode_data.xml");
   var tw1 = doc.createTreeWalker(doc, NodeFilter.SHOW_ALL, null);
@@ -358,7 +340,7 @@ function test_isEqualNode_wholeDoc() {
     check_eq_nodes(tw1.currentNode, tw2.currentNode);
     tw1.nextNode();
   } while (tw2.nextNode());
-}
+});
 
 
 
