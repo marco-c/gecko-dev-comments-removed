@@ -553,36 +553,6 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   EXPECT_TRUE_WAIT(thread_a_called.Get(), 2000);
 }
 
-
-
-
-class SetNameOnSignalQueueDestroyedTester : public sigslot::has_slots<> {
- public:
-  SetNameOnSignalQueueDestroyedTester(Thread* thread) : thread_(thread) {
-    thread->SignalQueueDestroyed.connect(
-        this, &SetNameOnSignalQueueDestroyedTester::OnQueueDestroyed);
-  }
-
-  void OnQueueDestroyed() {
-    
-    
-    thread_->SetName("foo", nullptr);
-  }
-
- private:
-  Thread* thread_;
-};
-
-TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
-  auto thread1 = Thread::CreateWithSocketServer();
-  SetNameOnSignalQueueDestroyedTester tester1(thread1.get());
-  thread1.reset();
-
-  Thread* thread2 = new AutoThread();
-  SetNameOnSignalQueueDestroyedTester tester2(thread2);
-  delete thread2;
-}
-
 class ThreadQueueTest : public ::testing::Test, public Thread {
  public:
   ThreadQueueTest() : Thread(CreateDefaultSocketServer(), true) {}

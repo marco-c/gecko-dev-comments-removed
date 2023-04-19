@@ -33,7 +33,7 @@ class SocketAddressPair;
 
 
 
-class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
+class VirtualSocketServer : public SocketServer {
  public:
   VirtualSocketServer();
   
@@ -258,11 +258,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
                                             double x2,
                                             uint32_t samples);
   static double Evaluate(const Function* f, double x);
-
-  
-  
-  
-  void OnMessageQueueDestroyed() { msg_queue_ = nullptr; }
 
   
   

@@ -36,6 +36,7 @@ class SocketServer : public SocketFactory {
   
   
   
+  
   virtual void SetMessageQueue(Thread* queue) {}
 
   

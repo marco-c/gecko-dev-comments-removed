@@ -336,10 +336,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
     }
   }
 
-  
-  
-  sigslot::signal0<> SignalQueueDestroyed;
-
   bool IsCurrent() const;
 
   
