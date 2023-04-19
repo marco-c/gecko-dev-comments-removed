@@ -179,18 +179,6 @@ class nsICanvasRenderingContextInternal : public nsISupports,
     return NS_OK;
   }
 
-  
-  
-  virtual bool GetHitRegionRect(mozilla::dom::Element* element, nsRect& rect) {
-    return false;
-  }
-
-  
-  
-  virtual nsString GetHitRegion(const mozilla::gfx::Point& point) {
-    return nsString();
-  }
-
   virtual void OnMemoryPressure() {}
 
   virtual void OnBeforePaintTransaction() {}

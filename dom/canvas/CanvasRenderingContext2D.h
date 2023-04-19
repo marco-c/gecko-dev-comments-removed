@@ -240,11 +240,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   TextMetrics* MeasureText(const nsAString& aRawText,
                            mozilla::ErrorResult& aError);
 
-  void AddHitRegion(const HitRegionOptions& aOptions,
-                    mozilla::ErrorResult& aError);
-  void RemoveHitRegion(const nsAString& aId);
-  void ClearHitRegions();
-
   void DrawImage(const CanvasImageSource& aImage, double aDx, double aDy,
                  mozilla::ErrorResult& aError) override {
     DrawImage(aImage, 0.0, 0.0, 0.0, 0.0, aDx, aDy, 0.0, 0.0, 0, aError);
@@ -519,12 +514,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   }
 
   virtual UniquePtr<uint8_t[]> GetImageBuffer(int32_t* aFormat) override;
-
-  
-  nsString GetHitRegion(const mozilla::gfx::Point& aPoint) override;
-
-  
-  bool GetHitRegionRect(Element* aElement, nsRect& aRect) override;
 
   virtual void OnShutdown();
 
@@ -824,20 +813,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   uint32_t mInvalidateCount;
   static const uint32_t kCanvasMaxInvalidateCount = 100;
-
-  
-
-
-  struct RegionInfo {
-    nsString mId;
-    
-    RefPtr<Element> mElement;
-    
-    
-    RefPtr<gfx::Path> mPath;
-  };
-
-  nsTArray<RegionInfo> mHitRegionsOptions;
 
   mozilla::intl::Bidi mBidiEngine;
 

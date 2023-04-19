@@ -118,9 +118,6 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   }
 
   
-  nsString mRegion;
-
-  
   float mPressure;
 
   
