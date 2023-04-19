@@ -129,6 +129,12 @@ class MutationObservers {
     }
   }
 
+  static void NotifyARIAAttributeDefaultWillChange(
+      mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType);
+  static void NotifyARIAAttributeDefaultChanged(mozilla::dom::Element* aElement,
+                                                nsAtom* aAttribute,
+                                                int32_t aModType);
+
   
 
 

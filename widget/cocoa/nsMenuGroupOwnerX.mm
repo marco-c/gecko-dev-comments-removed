@@ -120,6 +120,12 @@ void nsMenuGroupOwnerX::ContentInserted(nsIContent* aChild) {
 
 void nsMenuGroupOwnerX::ParentChainChanged(nsIContent* aContent) {}
 
+void nsMenuGroupOwnerX::ARIAAttributeDefaultWillChange(mozilla::dom::Element* aElement,
+                                                       nsAtom* aAttribute, int32_t aModType) {}
+
+void nsMenuGroupOwnerX::ARIAAttributeDefaultChanged(mozilla::dom::Element* aElement,
+                                                    nsAtom* aAttribute, int32_t aModType) {}
+
 
 
 

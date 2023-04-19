@@ -1148,8 +1148,7 @@ MsaaAccessible::get_accRole(
   if (content->IsElement()) {
     nsAutoString roleString;
     
-    content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role,
-                                  roleString);
+    nsAccUtils::GetARIAAttr(content->AsElement(), nsGkAtoms::role, roleString);
 
     if (roleString.IsEmpty()) {
       

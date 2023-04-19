@@ -59,13 +59,14 @@ class nsAccUtils {
 
 
   static bool HasDefinedARIAToken(nsIContent* aContent, nsAtom* aAtom);
+  static bool HasDefinedARIAToken(const AttrArray* aAttrs, nsAtom* aAtom);
 
   
 
 
 
 
-  static nsStaticAtom* NormalizeARIAToken(mozilla::dom::Element* aElement,
+  static nsStaticAtom* NormalizeARIAToken(const AttrArray* aAttrs,
                                           nsAtom* aAttr);
 
   
@@ -252,6 +253,29 @@ class nsAccUtils {
 
 
   static void DocumentURL(Accessible* aDoc, nsAString& aURL);
+
+  
+
+
+
+
+
+  static const AttrArray* GetARIADefaults(dom::Element* aElement);
+  static bool HasARIAAttr(dom::Element* aElement, const nsAtom* aName);
+  static bool GetARIAAttr(dom::Element* aElement, const nsAtom* aName,
+                          nsAString& aResult);
+  static const nsAttrValue* GetARIAAttr(dom::Element* aElement,
+                                        const nsAtom* aName);
+  static bool ARIAAttrValueIs(dom::Element* aElement, const nsAtom* aName,
+                              const nsAString& aValue,
+                              nsCaseTreatment aCaseSensitive);
+  static bool ARIAAttrValueIs(dom::Element* aElement, const nsAtom* aName,
+                              const nsAtom* aValue,
+                              nsCaseTreatment aCaseSensitive);
+  static int32_t FindARIAAttrValueIn(dom::Element* aElement,
+                                     const nsAtom* aName,
+                                     AttrArray::AttrValuesArray* aValues,
+                                     nsCaseTreatment aCaseSensitive);
 };
 
 }  
