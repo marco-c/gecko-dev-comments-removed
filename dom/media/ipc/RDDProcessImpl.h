@@ -19,15 +19,13 @@ namespace mozilla {
 
 class RDDProcessImpl final : public ipc::ProcessChild {
  public:
-  explicit RDDProcessImpl(ProcessId aParentPid);
+  using ipc::ProcessChild::ProcessChild;
   ~RDDProcessImpl();
 
   bool Init(int aArgc, char* aArgv[]) override;
   void CleanUp() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(RDDProcessImpl);
-
   RDDParent mRDD;
 
 #if defined(XP_WIN)
