@@ -14,7 +14,16 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
     super();
 
     this._menupopup = null;
+    this._menuitem = null;
+    this._delayTimer = null;
     this._pasteMenuItemClicked = false;
+    this._lastBeepTime = 0;
+  }
+
+  didDestroy() {
+    if (this._menupopup) {
+      this._menupopup.hidePopup(true);
+    }
   }
 
   
@@ -26,6 +35,10 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
       }
       case "popuphiding": {
         this.onPopupHiding();
+        break;
+      }
+      case "keydown": {
+        this.onKeyDown(aEvent);
         break;
       }
     }
@@ -40,6 +53,8 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
     
     
     this._removeMenupopupEventListeners();
+    this._clearDelayTimer();
+    this._stopWatchingForSpammyActivation();
 
     if (this._pasteMenuItemClicked) {
       
@@ -50,11 +65,30 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
     }
   }
 
+  onKeyDown(aEvent) {
+    if (!this._menuitem.disabled) {
+      return;
+    }
+
+    let accesskey = this._menuitem.getAttribute("accesskey");
+    if (
+      aEvent.key == accesskey.toLowerCase() ||
+      aEvent.key == accesskey.toUpperCase()
+    ) {
+      if (Date.now() - this._lastBeepTime > 1000) {
+        Cc["@mozilla.org/sound;1"].getService(Ci.nsISound).beep();
+        this._lastBeepTime = Date.now();
+      }
+      this._refreshDelayTimer();
+    }
+  }
+
   
   receiveMessage(value) {
     if (value.name == "ClipboardReadPaste:ShowMenupopup") {
       if (!this._menupopup) {
         this._menupopup = this._getMenupopup();
+        this._menuitem = this._menupopup.firstElementChild;
       }
 
       this._addMenupopupEventListeners();
@@ -70,6 +104,8 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
         mouseYInCSSPixels
       );
 
+      this._menuitem.disabled = true;
+      this._startWatchingForSpammyActivation();
       
       
       
@@ -87,6 +123,8 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
         mouseYInCSSPixels.value,
         true 
       );
+
+      this._refreshDelayTimer();
     }
   }
 
@@ -125,5 +163,35 @@ class ClipboardReadPasteParent extends JSWindowActorParent {
     }
 
     return menupopup;
+  }
+
+  _startWatchingForSpammyActivation() {
+    let doc = this._menuitem.ownerDocument;
+    Services.els.addSystemEventListener(doc, "keydown", this, true);
+  }
+
+  _stopWatchingForSpammyActivation() {
+    let doc = this._menuitem.ownerDocument;
+    Services.els.removeSystemEventListener(doc, "keydown", this, true);
+  }
+
+  _clearDelayTimer() {
+    if (this._delayTimer) {
+      let window = this._menuitem.ownerGlobal;
+      window.clearTimeout(this._delayTimer);
+      this._delayTimer = null;
+    }
+  }
+
+  _refreshDelayTimer() {
+    this._clearDelayTimer();
+
+    let window = this._menuitem.ownerGlobal;
+    let delay = Services.prefs.getIntPref("security.dialog_enable_delay");
+    this._delayTimer = window.setTimeout(() => {
+      this._menuitem.disabled = false;
+      this._stopWatchingForSpammyActivation();
+      this._delayTimer = null;
+    }, delay);
   }
 }
