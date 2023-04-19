@@ -40,6 +40,22 @@ if (topLevelDocument) {
   
   
   
+  promise_test(async t => {
+    let promise = RunRequestStorageAccessInDetachedFrame();
+    let description = "document.requestStorageAccess() call in a detached frame";
+    return promise.then(t.unreached_func("Should have rejected: " + description)).catch(function (e) {
+
+      assert_equals(e.name, 'SecurityError', description);
+    });
+  }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached frame");
+
+  promise_test(async t => {
+    let promise = RunRequestStorageAccessViaDomParser();
+    let description = "document.requestStorageAccess() in a detached DOMParser result";
+    return promise.then(t.unreached_func("Should have rejected: " + description)).catch(function (e) {
+      assert_equals(e.name, 'SecurityError', description);
+    });
+  }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached DOMParser document");
 
   
   let sameOriginFramePromise = RunTestsInIFrame(
@@ -57,7 +73,7 @@ if (topLevelDocument) {
   
   
   let nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
-      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false')
+      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false');
 
   
   
