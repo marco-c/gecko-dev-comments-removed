@@ -69,11 +69,18 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
                                public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
                                public KeyFrameRequestSender,
-                               public OnCompleteFrameCallback,
                                public OnDecryptedFrameCallback,
                                public OnDecryptionStatusChangeCallback,
                                public RtpVideoFrameReceiver {
  public:
+  
+  
+  class OnCompleteFrameCallback {
+   public:
+    virtual ~OnCompleteFrameCallback() {}
+    virtual void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) = 0;
+  };
+
   
   RtpVideoStreamReceiver(
       Clock* clock,
@@ -175,8 +182,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
-  
-  void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) override;
+  void OnCompleteFrames(RtpFrameReferenceFinder::ReturnVector frames);
 
   
   void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) override;
@@ -420,6 +426,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   std::map<int64_t, RtpPacketInfo> packet_infos_
       RTC_GUARDED_BY(packet_buffer_lock_);
 };
+
+
+using OnCompleteFrameCallback = RtpVideoStreamReceiver::OnCompleteFrameCallback;
 
 }  
 

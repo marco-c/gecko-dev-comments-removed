@@ -75,12 +75,13 @@ struct VideoFrameMetaData {
   const Timestamp decode_timestamp;
 };
 
-class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
-                            public rtc::VideoSinkInterface<VideoFrame>,
-                            public NackSender,
-                            public OnCompleteFrameCallback,
-                            public Syncable,
-                            public CallStatsObserver {
+class VideoReceiveStream2
+    : public webrtc::VideoReceiveStream,
+      public rtc::VideoSinkInterface<VideoFrame>,
+      public NackSender,
+      public RtpVideoStreamReceiver2::OnCompleteFrameCallback,
+      public Syncable,
+      public CallStatsObserver {
  public:
   
   

@@ -20,21 +20,12 @@ namespace internal {
 class RtpFrameReferenceFinderImpl;
 }  
 
-
-
-class OnCompleteFrameCallback {
- public:
-  virtual ~OnCompleteFrameCallback() {}
-  virtual void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) = 0;
-};
-
 class RtpFrameReferenceFinder {
  public:
   using ReturnVector = absl::InlinedVector<std::unique_ptr<RtpFrameObject>, 3>;
 
-  explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback);
-  explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback,
-                                   int64_t picture_id_offset);
+  RtpFrameReferenceFinder();
+  explicit RtpFrameReferenceFinder(int64_t picture_id_offset);
   ~RtpFrameReferenceFinder();
 
   
@@ -43,24 +34,24 @@ class RtpFrameReferenceFinder {
   
   
   
-  void ManageFrame(std::unique_ptr<RtpFrameObject> frame);
+  
+  ReturnVector ManageFrame(std::unique_ptr<RtpFrameObject> frame);
 
   
   
-  void PaddingReceived(uint16_t seq_num);
+  ReturnVector PaddingReceived(uint16_t seq_num);
 
   
   void ClearTo(uint16_t seq_num);
 
  private:
-  void HandOffFrames(ReturnVector frames);
+  void AddPictureIdOffset(ReturnVector& frames);
 
   
   
   
   int cleared_to_seq_num_ = -1;
   const int64_t picture_id_offset_;
-  OnCompleteFrameCallback* frame_callback_;
   std::unique_ptr<internal::RtpFrameReferenceFinderImpl> impl_;
 };
 
