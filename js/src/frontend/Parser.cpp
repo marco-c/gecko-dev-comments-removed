@@ -7671,53 +7671,25 @@ GeneralParser<ParseHandler, Unit>::decoratorList(YieldHandling yieldHandling) {
         return null();
       }
 
-      
-      decorator = handler_.newName(name, pos());
-
-      
-      
-      if (tt == TokenKind::Dot) {
-        ListNodeType ids =
-            handler_.newList(ParseNodeKind::DecoratorList, pos());
-        handler_.addList(ids, decorator);
-        for (;;) {
-          if (!tokenStream.getToken(&tt)) {
-            return null();
-          }
-
-          
-          if (!(tt == TokenKind::Name || TokenKindIsContextualKeyword(tt))) {
-            error(JSMSG_DECORATOR_NAME_EXPECTED);
-            return null();
-          }
-          TaggedParserAtomIndex name = anyChars.currentName();
-          Node id = handler_.newName(name, pos());
-          handler_.addList(ids, id);
-
-          if (!tokenStream.getToken(&tt)) {
-            return null();
-          }
-
-          if (tt != TokenKind::Dot) {
-            break;
-          }
-        }
-        decorator = ids;
-      }
-
-      
       if (tt == TokenKind::LeftParen) {
+        
+        Node decoratorName = handler_.newName(name, pos());
         bool isSpread = false;
         Node args = argumentList(yieldHandling, &isSpread);
         if (!args) {
           return null();
         }
-        decorator = handler_.newCall(decorator, args,
+        decorator = handler_.newCall(decoratorName, args,
                                      isSpread ? JSOp::SpreadCall : JSOp::Call);
 
         if (!tokenStream.getToken(&tt)) {
           return null();
         }
+      } else {
+        
+        
+        
+        decorator = handler_.newName(name, pos());
       }
     }
     MOZ_ASSERT(decorator, "Decorator should exist");
