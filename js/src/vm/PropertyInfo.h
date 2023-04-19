@@ -111,8 +111,8 @@ class PropertyInfoBase {
 
   template <typename U>
   friend class PropertyInfoBase;
-  template <typename U, size_t Len>
-  friend class mozilla::Array;
+  friend class CompactPropMap;
+  friend class LinkedPropMap;
 
  public:
   static constexpr size_t MaxSlotNumber =
