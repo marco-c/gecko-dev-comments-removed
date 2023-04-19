@@ -82,24 +82,6 @@ int PitchPseudoInterpolationLagPitchBuf(
 
 
 
-int PitchPseudoInterpolationInvLagAutoCorr(
-    int inverted_lag,
-    rtc::ArrayView<const float, kInitialNumLags24kHz> auto_correlation) {
-  int offset = 0;
-  
-  if (inverted_lag > 0 && inverted_lag < kInitialNumLags24kHz - 1) {
-    offset = GetPitchPseudoInterpolationOffset(
-        auto_correlation[inverted_lag + 1], auto_correlation[inverted_lag],
-        auto_correlation[inverted_lag - 1]);
-  }
-  
-  
-  return 2 * inverted_lag + offset;
-}
-
-
-
-
 
 
 
@@ -130,34 +112,74 @@ struct Range {
 };
 
 
+constexpr int kPitchNeighborhoodRadius = 2;
+
+
 
 
 Range CreateInvertedLagRange(int inverted_lag) {
-  constexpr int kRadius = 2;
-  return {std::max(inverted_lag - kRadius, 0),
-          std::min(inverted_lag + kRadius, kInitialNumLags24kHz - 1)};
+  return {std::max(inverted_lag - kPitchNeighborhoodRadius, 0),
+          std::min(inverted_lag + kPitchNeighborhoodRadius,
+                   kInitialNumLags24kHz - 1)};
 }
+
+constexpr int kNumPitchCandidates = 2;  
+
+constexpr int kMaxPitchPeriods24kHz =
+    kNumPitchCandidates * (2 * kPitchNeighborhoodRadius + 1);
+
+
+class InvertedLagsIndex {
+ public:
+  InvertedLagsIndex() : num_entries_(0) {}
+  
+  
+  void Append(int inverted_lag) {
+    RTC_DCHECK_LT(num_entries_, kMaxPitchPeriods24kHz);
+    inverted_lags_[num_entries_++] = inverted_lag;
+  }
+  const int* data() const { return inverted_lags_.data(); }
+  int size() const { return num_entries_; }
+
+ private:
+  std::array<int, kMaxPitchPeriods24kHz> inverted_lags_;
+  int num_entries_;
+};
+
 
 
 
 void ComputeAutoCorrelation(
     Range inverted_lags,
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kInitialNumLags24kHz> auto_correlation) {
+    rtc::ArrayView<float, kInitialNumLags24kHz> auto_correlation,
+    InvertedLagsIndex& inverted_lags_index) {
   
   RTC_DCHECK_LE(inverted_lags.min, inverted_lags.max);
   
+  
+  if (inverted_lags.min > 0) {
+    auto_correlation[inverted_lags.min - 1] = 0.f;
+  }
+  if (inverted_lags.max < kInitialNumLags24kHz - 1) {
+    auto_correlation[inverted_lags.max + 1] = 0.f;
+  }
+  
   RTC_DCHECK_GE(inverted_lags.min, 0);
-  RTC_DCHECK_LT(inverted_lags.max, auto_correlation.size());
+  RTC_DCHECK_LT(inverted_lags.max, kInitialNumLags24kHz);
   for (int inverted_lag = inverted_lags.min; inverted_lag <= inverted_lags.max;
        ++inverted_lag) {
     auto_correlation[inverted_lag] =
         ComputeAutoCorrelation(inverted_lag, pitch_buffer);
+    inverted_lags_index.Append(inverted_lag);
   }
 }
 
-int ComputePitchPeriod24kHz(
+
+
+int ComputePitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    rtc::ArrayView<const int> inverted_lags,
     rtc::ArrayView<const float, kInitialNumLags24kHz> auto_correlation,
     rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy) {
   static_assert(kMaxPitch24kHz > kInitialNumLags24kHz, "");
@@ -165,8 +187,7 @@ int ComputePitchPeriod24kHz(
   int best_inverted_lag = 0;     
   float best_numerator = -1.f;   
   float best_denominator = 0.f;  
-  for (int inverted_lag = 0; inverted_lag < kInitialNumLags24kHz;
-       ++inverted_lag) {
+  for (int inverted_lag : inverted_lags) {
     
     if (auto_correlation[inverted_lag] > 0.f) {
       
@@ -181,7 +202,19 @@ int ComputePitchPeriod24kHz(
       }
     }
   }
-  return best_inverted_lag;
+  
+  
+  if (best_inverted_lag == 0 || best_inverted_lag >= kInitialNumLags24kHz - 1) {
+    
+    return best_inverted_lag * 2;
+  }
+  int offset = GetPitchPseudoInterpolationOffset(
+      auto_correlation[best_inverted_lag + 1],
+      auto_correlation[best_inverted_lag],
+      auto_correlation[best_inverted_lag - 1]);
+  
+  
+  return 2 * best_inverted_lag + offset;
 }
 
 
@@ -334,8 +367,8 @@ int ComputePitchPeriod48kHz(
     CandidatePitchPeriods pitch_candidates) {
   
   
-  
-  std::array<float, kInitialNumLags24kHz> auto_correlation{};
+  std::array<float, kInitialNumLags24kHz> auto_correlation;
+  InvertedLagsIndex inverted_lags_index;
   
   const bool swap_candidates =
       pitch_candidates.best > pitch_candidates.second_best;
@@ -351,18 +384,17 @@ int ComputePitchPeriod48kHz(
   RTC_DCHECK_LE(r1.max, r2.max);
   if (r1.max + 1 >= r2.min) {
     
-    ComputeAutoCorrelation({r1.min, r2.max}, pitch_buffer, auto_correlation);
+    ComputeAutoCorrelation({r1.min, r2.max}, pitch_buffer, auto_correlation,
+                           inverted_lags_index);
   } else {
     
-    ComputeAutoCorrelation(r1, pitch_buffer, auto_correlation);
-    ComputeAutoCorrelation(r2, pitch_buffer, auto_correlation);
+    ComputeAutoCorrelation(r1, pitch_buffer, auto_correlation,
+                           inverted_lags_index);
+    ComputeAutoCorrelation(r2, pitch_buffer, auto_correlation,
+                           inverted_lags_index);
   }
-  
-  const int pitch_candidate_24kHz =
-      ComputePitchPeriod24kHz(pitch_buffer, auto_correlation, y_energy);
-  
-  return PitchPseudoInterpolationInvLagAutoCorr(pitch_candidate_24kHz,
-                                                auto_correlation);
+  return ComputePitchPeriod48kHz(pitch_buffer, inverted_lags_index,
+                                 auto_correlation, y_energy);
 }
 
 PitchInfo ComputeExtendedPitchPeriod48kHz(
