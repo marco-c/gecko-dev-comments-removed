@@ -467,6 +467,7 @@ enum class AssembleResult {
     bool useNativeCode, bool isLatin1) {
   
   
+  jit::TempAllocator temp(&cx->tempLifoAlloc());
   Maybe<jit::JitContext> jctx;
   Maybe<js::jit::StackMacroAssembler> stack_masm;
   UniquePtr<RegExpMacroAssembler> masm;
@@ -476,7 +477,7 @@ enum class AssembleResult {
                  : NativeRegExpMacroAssembler::UC16;
     
     
-    jctx.emplace(cx, nullptr);
+    jctx.emplace(cx, temp);
     stack_masm.emplace();
 #ifdef DEBUG
     

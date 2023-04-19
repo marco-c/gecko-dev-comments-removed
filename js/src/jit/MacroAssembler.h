@@ -334,9 +334,6 @@ struct AllocSiteInput
 
 
 class MacroAssembler : public MacroAssemblerSpecific {
- public:
-  mozilla::Maybe<AutoJitContextAlloc> alloc_;
-
  private:
   
   NonAssertingLabel failureLabel_;
@@ -344,10 +341,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
  protected:
   
   MacroAssembler();
-
-  
-  
-  explicit MacroAssembler(JSContext* cx);
 
   
   struct WasmToken {};
@@ -5277,8 +5270,7 @@ class MOZ_RAII StackMacroAssembler : public MacroAssembler {
   JS::AutoCheckCannotGC nogc;
 
  public:
-  StackMacroAssembler() : MacroAssembler() {}
-  explicit StackMacroAssembler(JSContext* cx) : MacroAssembler(cx) {}
+  StackMacroAssembler() = default;
 };
 
 

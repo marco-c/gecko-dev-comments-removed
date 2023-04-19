@@ -98,21 +98,20 @@ class JitContext {
   JSContext* cx = nullptr;
 
   
-  TempAllocator* temp = nullptr;
+  TempAllocator& temp;
 
   
   
   CompileRuntime* runtime = nullptr;
 
   
-  JitContext(JSContext* cx, TempAllocator* temp);
+  JitContext(JSContext* cx, TempAllocator& temp);
 
   
-  JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
+  JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator& temp);
 
   
-  explicit JitContext(TempAllocator* temp);
-  JitContext();
+  explicit JitContext(TempAllocator& temp);
 
   ~JitContext();
 
