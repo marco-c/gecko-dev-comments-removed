@@ -13,6 +13,9 @@
 
 #include <stdint.h>
 
+#include "absl/container/inlined_vector.h"
+#include "api/units/time_delta.h"
+
 namespace webrtc {
 
 class VCMRttFilter {
@@ -24,41 +27,41 @@ class VCMRttFilter {
   
   void Reset();
   
-  void Update(int64_t rttMs);
+  void Update(TimeDelta rtt);
   
-  int64_t RttMs() const;
+  TimeDelta Rtt() const;
 
  private:
   
   
   
-  enum { kMaxDriftJumpCount = 5 };
-  
-  
-  
-  
-  bool JumpDetection(int64_t rttMs);
-  
-  
-  
-  
-  bool DriftDetection(int64_t rttMs);
-  
-  void ShortRttFilter(int64_t* buf, uint32_t length);
+  static constexpr int kMaxDriftJumpCount = 5;
+  using BufferList = absl::InlinedVector<TimeDelta, kMaxDriftJumpCount>;
 
-  bool _gotNonZeroUpdate;
-  double _avgRtt;
-  double _varRtt;
-  int64_t _maxRtt;
-  uint32_t _filtFactCount;
-  const uint32_t _filtFactMax;
-  const double _jumpStdDevs;
-  const double _driftStdDevs;
-  int32_t _jumpCount;
-  int32_t _driftCount;
-  const int32_t _detectThreshold;
-  int64_t _jumpBuf[kMaxDriftJumpCount];
-  int64_t _driftBuf[kMaxDriftJumpCount];
+  
+  
+  
+  
+  bool JumpDetection(TimeDelta rtt);
+
+  
+  
+  
+  
+  bool DriftDetection(TimeDelta rtt);
+
+  
+  void ShortRttFilter(const BufferList& buf);
+
+  bool got_non_zero_update_;
+  TimeDelta avg_rtt_;
+  
+  int64_t var_rtt_;
+  TimeDelta max_rtt_;
+  uint32_t filt_fact_count_;
+  bool last_jump_positive_ = false;
+  BufferList jump_buf_;
+  BufferList drift_buf_;
 };
 
 }  
