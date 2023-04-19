@@ -128,11 +128,6 @@ class RTC_EXPORT EncodedImage {
     RTC_DCHECK_LE(new_size, new_size == 0 ? 0 : capacity());
     size_ = new_size;
   }
-  
-  size_t capacity() const {
-    return buffer_ ? capacity_ : (encoded_data_ ? encoded_data_->size() : 0);
-  }
-
   void SetEncodedData(
       rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data) {
     encoded_data_ = encoded_data;
@@ -196,6 +191,10 @@ class RTC_EXPORT EncodedImage {
   } timing_;
 
  private:
+  size_t capacity() const {
+    return buffer_ ? capacity_ : (encoded_data_ ? encoded_data_->size() : 0);
+  }
+
   
   
   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
