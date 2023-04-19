@@ -31,6 +31,7 @@ namespace net {
 
 class nsHttpHandler;
 class ASpdySession;
+class Http3WebTransportSession;
 
 
 #define HTTPCONNECTIONBASE_IID                       \
@@ -81,6 +82,11 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   [[nodiscard]] virtual nsresult TakeTransport(nsISocketTransport**,
                                                nsIAsyncInputStream**,
                                                nsIAsyncOutputStream**) = 0;
+
+  Http3WebTransportSession* GetWebTransportSession(
+      nsAHttpTransaction* aTransaction) {
+    return nullptr;
+  }
 
   virtual bool UsingSpdy() { return false; }
   virtual bool UsingHttp3() { return false; }
