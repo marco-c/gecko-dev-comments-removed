@@ -1,0 +1,13 @@
+
+
+
+
+
+
+UNIFIED_SOURCES += [
+    "TestCOLRv1.cpp",
+]
+
+include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+FINAL_LIBRARY = "xul-gtest"
