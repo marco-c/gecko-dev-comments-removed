@@ -19,6 +19,58 @@ class JOG {
 
 
   static bool HasCategory(const nsACString& aCategoryName);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool EnsureRuntimeMetricsRegistered(bool aForce = false);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool AreRuntimeMetricsComprehensive();
+
+  
+
+
+
+
+  static void GetCategoryNames(nsTArray<nsString>& aNames);
+
+  
+
+
+
+
+
+
+
+
+
+  static Maybe<uint32_t> GetMetric(const nsACString& aMetricName);
 };
 
 }  
