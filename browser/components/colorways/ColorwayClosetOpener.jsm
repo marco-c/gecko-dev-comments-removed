@@ -20,24 +20,13 @@ let ColorwayClosetOpener = {
   openModal: ({ source = "unknown" } = {}) => {
     let { gBrowser } = BrowserWindowTracker.getTopWindow();
     let dialogBox = gBrowser.getTabDialogBox(gBrowser.selectedBrowser);
-    let rv = dialogBox.open(
+    return dialogBox.open(
       "chrome://browser/content/colorways/colorwaycloset.html",
       {
         features: "resizable=no",
+        sizeTo: "available",
       },
       { source }
     );
-    let { dialog } = rv;
-    dialog._dialogReady.then(() => {
-      
-      
-      
-      
-      
-      dialog._frame.contentDocument.documentElement.style.removeProperty(
-        "width"
-      );
-    });
-    return rv;
   },
 };
