@@ -109,8 +109,8 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
   MOZ_ASSERT_IF(aWorkerKind == WorkerKind::WorkerKindService,
                 aPrincipal->GetIsContentPrincipal());
 
-  nsCOMPtr<nsIE10SUtils> e10sUtils = do_ImportModule(
-      "resource://gre/modules/E10SUtils.jsm", "E10SUtils", fallible);
+  nsCOMPtr<nsIE10SUtils> e10sUtils = do_ImportESModule(
+      "resource://gre/modules/E10SUtils.sys.mjs", "E10SUtils", fallible);
   if (NS_WARN_IF(!e10sUtils)) {
     LOG(("GetRemoteType Abort: could not import E10SUtils"));
     return Err(NS_ERROR_DOM_ABORT_ERR);
