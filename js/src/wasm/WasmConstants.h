@@ -112,8 +112,6 @@ static constexpr TypeCode AbstractReferenceTypeCode = TypeCode::ExternRef;
 
 static constexpr TypeCode AbstractReferenceTypeIndexCode = TypeCode::Ref;
 
-enum class TypeIdDescKind { None, Immediate, Global };
-
 
 
 
