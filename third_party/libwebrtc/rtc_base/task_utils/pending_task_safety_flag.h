@@ -58,10 +58,28 @@ namespace webrtc {
 class PendingTaskSafetyFlag : public rtc::RefCountInterface {
  public:
   static rtc::scoped_refptr<PendingTaskSafetyFlag> Create();
+  
+  
+  static rtc::scoped_refptr<PendingTaskSafetyFlag> CreateDetached();
 
   ~PendingTaskSafetyFlag() = default;
 
   void SetNotAlive();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void SetAlive();
   bool alive() const;
 
@@ -101,6 +119,21 @@ class ScopedTaskSafety {
  private:
   rtc::scoped_refptr<PendingTaskSafetyFlag> flag_ =
       PendingTaskSafetyFlag::Create();
+};
+
+
+
+class ScopedTaskSafetyDetached {
+ public:
+  ScopedTaskSafetyDetached() = default;
+  ~ScopedTaskSafetyDetached() { flag_->SetNotAlive(); }
+
+  
+  rtc::scoped_refptr<PendingTaskSafetyFlag> flag() const { return flag_; }
+
+ private:
+  rtc::scoped_refptr<PendingTaskSafetyFlag> flag_ =
+      PendingTaskSafetyFlag::CreateDetached();
 };
 
 }  
