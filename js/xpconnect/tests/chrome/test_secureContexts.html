@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1273687
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1430164</title>
@@ -16,6 +16,7 @@
   SimpleTest.waitForExplicitFinish();
 
   window.onload = () => {
+    /* globals t, i */
     runTest(t, true);
     runTest(i, false);
 

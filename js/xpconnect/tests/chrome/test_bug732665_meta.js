@@ -1,12 +1,16 @@
-var bottom = stackPointerInfo();
-var top = bottom;
+
+
+var stackBottom = stackPointerInfo();
+var stackTop = stackBottom;
 
 function nearNativeStackLimit() {
   function inner() {
     try {
+      
       with ({}) {
         
-        top = stackPointerInfo();
+        stackTop = stackPointerInfo();
+        
         var stepsFromLimit = eval("inner()"); 
       }
       return stepsFromLimit + 1;
@@ -21,7 +25,7 @@ function nearNativeStackLimit() {
 }
 
 var nbFrames = nearNativeStackLimit();
-var frameSize = bottom - top;
+var frameSize = stackBottom - stackTop;
 print(
   "Max stack size:",
   frameSize,

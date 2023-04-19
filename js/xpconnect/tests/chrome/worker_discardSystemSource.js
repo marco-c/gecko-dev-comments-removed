@@ -1,4 +1,5 @@
 function canary() {
+  
   var someBitOfSource = 42;
 }
 
