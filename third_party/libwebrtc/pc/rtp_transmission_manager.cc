@@ -553,7 +553,7 @@ void RtpTransmissionManager::OnRemoteSenderRemoved(
     rtc::scoped_refptr<AudioTrackInterface> audio_track =
         stream->FindAudioTrack(sender_info.sender_id);
     if (audio_track) {
-      stream->RemoveTrack(audio_track.get());
+      stream->RemoveTrack(audio_track);
     }
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     
@@ -564,7 +564,7 @@ void RtpTransmissionManager::OnRemoteSenderRemoved(
     if (video_track) {
       
       
-      stream->RemoveTrack(video_track.get());
+      stream->RemoveTrack(video_track);
     }
   } else {
     RTC_DCHECK_NOTREACHED() << "Invalid media type";
