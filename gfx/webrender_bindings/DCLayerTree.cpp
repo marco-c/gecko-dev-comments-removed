@@ -6,6 +6,7 @@
 
 #include "DCLayerTree.h"
 
+#include "GLBlitHelper.h"
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
@@ -13,6 +14,8 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/Matrix.h"
+#include "mozilla/layers/HelpersD3D11.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
 #include "mozilla/webrender/RenderTextureHost.h"
@@ -20,6 +23,7 @@
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/Telemetry.h"
 #include "nsPrintfCString.h"
+#include "ScopedGLHelpers.h"
 #include "WinUtils.h"
 
 #undef _WIN32_WINNT
@@ -497,9 +501,9 @@ void DCLayerTree::CreateExternalSurface(wr::NativeSurfaceId aId,
   auto it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
-  auto surface = MakeUnique<DCSurfaceVideo>(aIsOpaque, this);
+  auto surface = MakeUnique<DCSurfaceSwapChain>(aIsOpaque, this);
   if (!surface->Initialize()) {
-    gfxCriticalNote << "Failed to initialize DCSurfaceVideo: "
+    gfxCriticalNote << "Failed to initialize DCSurfaceSwapChain: "
                     << wr::AsUint64(aId);
     return;
   }
@@ -530,10 +534,10 @@ void DCLayerTree::AttachExternalImage(wr::NativeSurfaceId aId,
                                       wr::ExternalImageId aExternalImage) {
   auto surface_it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
-  auto* surfaceVideo = surface_it->second->AsDCSurfaceVideo();
-  MOZ_RELEASE_ASSERT(surfaceVideo);
+  auto* surfaceSc = surface_it->second->AsDCSurfaceSwapChain();
+  MOZ_RELEASE_ASSERT(surfaceSc);
 
-  surfaceVideo->AttachExternalImage(aExternalImage);
+  surfaceSc->AttachExternalImage(aExternalImage);
 }
 
 template <typename T>
@@ -560,11 +564,12 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   gfx::Matrix transform(aTransform.m11, aTransform.m12, aTransform.m21,
                         aTransform.m22, aTransform.m41, aTransform.m42);
 
-  auto* surfaceVideo = surface->AsDCSurfaceVideo();
-  if (surfaceVideo) {
-    if (surfaceVideo->CalculateSwapChainSize(transform)) {
-      surfaceVideo->PresentVideo();
-    }
+  auto* surfaceSc = surface->AsDCSurfaceSwapChain();
+  if (surfaceSc) {
+    const auto presentationTransform = surfaceSc->EnsurePresented(transform);
+    if (presentationTransform) {
+      transform = *presentationTransform;
+    }  
   }
 
   transform.PreTranslate(-virtualOffset.x, -virtualOffset.y);
@@ -646,7 +651,7 @@ GLuint DCLayerTree::GetOrCreateFbo(int aWidth, int aHeight) {
   return fboId;
 }
 
-bool DCLayerTree::EnsureVideoProcessor(const gfx::IntSize& aInputSize,
+bool DCLayerTree::EnsureVideoProcessorAtLeast(const gfx::IntSize& aInputSize,
                                        const gfx::IntSize& aOutputSize) {
   HRESULT hr;
 
@@ -835,159 +840,428 @@ DCTile* DCSurface::GetTile(int aX, int aY) const {
   return tile_it->second.get();
 }
 
-DCSurfaceVideo::DCSurfaceVideo(bool aIsOpaque, DCLayerTree* aDCLayerTree)
-    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, aIsOpaque,
-                aDCLayerTree) {}
 
-bool IsYUVSwapChainFormat(DXGI_FORMAT aFormat) {
+
+
+DCSurfaceSwapChain::DCSurfaceSwapChain(bool aIsOpaque,
+                                       DCLayerTree* aDCLayerTree)
+    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, aIsOpaque,
+                aDCLayerTree) {
+  if (mDCLayerTree->SupportsHardwareOverlays()) {
+    mOverlayFormat = Some(mDCLayerTree->GetOverlayFormatForSDR());
+  }
+}
+
+bool IsYuv(const DXGI_FORMAT aFormat) {
   if (aFormat == DXGI_FORMAT_NV12 || aFormat == DXGI_FORMAT_YUY2) {
     return true;
   }
   return false;
 }
 
-void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
+bool IsYuv(const gfx::SurfaceFormat aFormat) {
+  switch (aFormat) {
+    case gfx::SurfaceFormat::NV12:
+    case gfx::SurfaceFormat::P010:
+    case gfx::SurfaceFormat::P016:
+    case gfx::SurfaceFormat::YUV:
+    case gfx::SurfaceFormat::YUV422:
+      return true;
+
+    case gfx::SurfaceFormat::B8G8R8A8:
+    case gfx::SurfaceFormat::B8G8R8X8:
+    case gfx::SurfaceFormat::R8G8B8A8:
+    case gfx::SurfaceFormat::R8G8B8X8:
+    case gfx::SurfaceFormat::A8R8G8B8:
+    case gfx::SurfaceFormat::X8R8G8B8:
+
+    case gfx::SurfaceFormat::R8G8B8:
+    case gfx::SurfaceFormat::B8G8R8:
+
+    case gfx::SurfaceFormat::R5G6B5_UINT16:
+    case gfx::SurfaceFormat::A8:
+    case gfx::SurfaceFormat::A16:
+    case gfx::SurfaceFormat::R8G8:
+    case gfx::SurfaceFormat::R16G16:
+
+    case gfx::SurfaceFormat::HSV:
+    case gfx::SurfaceFormat::Lab:
+    case gfx::SurfaceFormat::Depth:
+    case gfx::SurfaceFormat::UNKNOWN:
+      return false;
+  }
+  MOZ_ASSERT_UNREACHABLE();
+}
+
+void DCSurfaceSwapChain::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   RenderTextureHost* texture =
       RenderThread::Get()->GetRenderTexture(aExternalImage);
   MOZ_RELEASE_ASSERT(texture);
 
-  if (mPrevTexture == texture) {
-    return;
-  }
-
-  
-  
-  if (!texture || !texture->AsRenderDXGITextureHost() ||
-      texture->AsRenderDXGITextureHost()->GetFormat() !=
-          gfx::SurfaceFormat::NV12) {
+  const auto textureDxgi = texture->AsRenderDXGITextureHost();
+  if (!textureDxgi) {
     gfxCriticalNote << "Unsupported RenderTexture for overlay: "
                     << gfx::hexa(texture);
     return;
   }
 
-  mRenderTextureHost = texture;
-}
-
-bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
-  if (!mRenderTextureHost) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-    return false;
+  if (mSrc && mSrc->texture == textureDxgi) {
+    return;  
   }
 
-  mVideoSize = mRenderTextureHost->AsRenderDXGITextureHost()->GetSize(0);
+  Src src = {};
+  src.texture = textureDxgi;
+  src.format = src.texture->GetFormat();
+  src.size = src.texture->GetSize(0);
+  src.space = {
+      src.texture->mColorSpace,
+      IsYuv(src.format) ? Some(src.texture->mColorRange) : Nothing(),
+  };
+
+  mSrc = Some(src);
+}
+
+
+
+Maybe<DCSurfaceSwapChain::Dest> CreateSwapChain(ID3D11Device&, gfx::IntSize,
+                                                DXGI_FORMAT,
+                                                DXGI_COLOR_SPACE_TYPE);
+
+
+
+static Maybe<DXGI_COLOR_SPACE_TYPE> ExactDXGIColorSpace(
+    const CspaceAndRange& space) {
+  switch (space.space) {
+    case gfx::ColorSpace2::BT601_525:
+      if (!space.yuvRange) {
+        return {};
+      } else if (*space.yuvRange == gfx::ColorRange::FULL) {
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
+      }
+    case gfx::ColorSpace2::UNKNOWN:
+    case gfx::ColorSpace2::SRGB:  
+      if (!space.yuvRange) {
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+      } else if (*space.yuvRange == gfx::ColorRange::FULL) {
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      }
+    case gfx::ColorSpace2::BT709:  
+      if (!space.yuvRange) {
+        
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+      } else if (*space.yuvRange == gfx::ColorRange::FULL) {
+        
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+      } else {
+        
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      }
+    case gfx::ColorSpace2::BT2020:
+      if (!space.yuvRange) {
+        return Some(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      } else if (*space.yuvRange == gfx::ColorRange::FULL) {
+        
+        
+        return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
+      } else {
+        return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      }
+    case gfx::ColorSpace2::DISPLAY_P3:
+      return {};
+  }
+  MOZ_ASSERT_UNREACHABLE();
+}
+
+
+
+color::ColorspaceDesc ToColorspaceDesc(const CspaceAndRange& space) {
+  color::ColorspaceDesc ret = {};
+  switch (space.space) {
+    case gfx::ColorSpace2::UNKNOWN:
+    case gfx::ColorSpace2::SRGB:
+      ret.chrom = color::Chromaticities::Srgb();
+      ret.tf = {color::PiecewiseGammaDesc::Srgb()};
+      MOZ_ASSERT(!space.yuvRange);
+      return ret;
+
+    case gfx::ColorSpace2::DISPLAY_P3:
+      ret.chrom = color::Chromaticities::DisplayP3();
+      ret.tf = {color::PiecewiseGammaDesc::DisplayP3()};
+      MOZ_ASSERT(!space.yuvRange);
+      return ret;
+
+    case gfx::ColorSpace2::BT601_525:
+      ret.chrom = color::Chromaticities::Rec601_525_Ntsc();
+      ret.tf = {color::PiecewiseGammaDesc::Rec709()};
+      if (space.yuvRange) {
+        ret.yuv = {
+            {color::YuvLumaCoeffs::Rec709(), color::YcbcrDesc::Narrow8()}};
+        if (*space.yuvRange == gfx::ColorRange::FULL) {
+          ret.yuv->ycbcr = color::YcbcrDesc::Full8();
+        }
+      }
+      return ret;
+
+    case gfx::ColorSpace2::BT709:
+      ret.chrom = color::Chromaticities::Rec709();
+      ret.tf = {color::PiecewiseGammaDesc::Rec709()};
+      if (space.yuvRange) {
+        ret.yuv = {
+            {color::YuvLumaCoeffs::Rec709(), color::YcbcrDesc::Narrow8()}};
+        if (*space.yuvRange == gfx::ColorRange::FULL) {
+          ret.yuv->ycbcr = color::YcbcrDesc::Full8();
+        }
+      }
+      return ret;
+
+    case gfx::ColorSpace2::BT2020:
+      ret.chrom = color::Chromaticities::Rec2020();
+      ret.tf = {color::PiecewiseGammaDesc::Rec2020_10bit()};
+      if (space.yuvRange) {
+        ret.yuv = {
+            {color::YuvLumaCoeffs::Rec709(), color::YcbcrDesc::Narrow8()}};
+        if (*space.yuvRange == gfx::ColorRange::FULL) {
+          ret.yuv->ycbcr = color::YcbcrDesc::Full8();
+        }
+      }
+      return ret;
+  }
+  MOZ_ASSERT_UNREACHABLE();
+}
+
+
+
+static CspaceTransformPlan ChooseCspaceTransformPlan(
+    const CspaceAndRange& srcSpace) {
+  
+  
+  
+  
+  
+  
+  if (srcSpace.yuvRange) {
+    const auto exactDxgiSpace = ExactDXGIColorSpace(srcSpace);
+    if (exactDxgiSpace) {
+      auto plan = CspaceTransformPlan::WithVideoProcessor{};
+      plan.srcSpace = *exactDxgiSpace;
+      if (srcSpace.yuvRange) {
+        plan.dstYuvSpace = Some(plan.srcSpace);
+        plan.dstRgbSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+      } else {
+        plan.dstRgbSpace = plan.srcSpace;
+      }
+      return {Some(plan), {}};
+    }
+  }
+
+  auto plan = CspaceTransformPlan::WithGLBlitHelper{
+      ToColorspaceDesc(srcSpace),
+      {color::Chromaticities::Srgb(), {color::PiecewiseGammaDesc::Srgb()}},
+      DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+      DXGI_FORMAT_B8G8R8A8_UNORM,
+  };
+  switch (srcSpace.space) {
+    case gfx::ColorSpace2::SRGB:
+    case gfx::ColorSpace2::BT601_525:
+    case gfx::ColorSpace2::BT709:
+    case gfx::ColorSpace2::UNKNOWN:
+      break;
+    case gfx::ColorSpace2::BT2020:
+    case gfx::ColorSpace2::DISPLAY_P3:
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      plan = { 
+          plan.srcSpace,
+          {color::Chromaticities::Rec2020(),
+           {color::PiecewiseGammaDesc::Srgb()}},
+          DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020,  
+                                                     
+          DXGI_FORMAT_R10G10B10A2_UNORM,
+      };
+      plan = { 
+          plan.srcSpace,
+          {color::Chromaticities::Rec709(), {}},
+          DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, 
+          DXGI_FORMAT_R16G16B16A16_FLOAT,
+      };
+      break;
+  }
+
+  return {{}, Some(plan)};
+}
+
+
+
+Maybe<gfx::Matrix> DCSurfaceSwapChain::EnsurePresented(
+    const gfx::Matrix& aTransform) {
+  MOZ_RELEASE_ASSERT(mSrc);
+  const auto& srcSize = mSrc->size;
+
+  
+
+  auto dstSize = srcSize;
+  auto presentationTransform = aTransform;
 
   
   
-  bool needsToPresent = mPrevTexture != mRenderTextureHost;
-  gfx::IntSize swapChainSize = mVideoSize;
-  gfx::Matrix transform = aTransform;
-
   
-  
-  bool scaleVideoAtVideoProcessor = false;
   if (StaticPrefs::gfx_webrender_dcomp_video_vp_scaling_win_AtStartup() &&
       aTransform.PreservesAxisAlignedRectangles()) {
-    gfx::Size scaledSize = gfx::Size(mVideoSize) * aTransform.ScaleFactors();
-    gfx::IntSize size(int32_t(std::round(scaledSize.width)),
-                      int32_t(std::round(scaledSize.height)));
-    if (gfx::FuzzyEqual(scaledSize.width, size.width, 0.1f) &&
-        gfx::FuzzyEqual(scaledSize.height, size.height, 0.1f)) {
-      scaleVideoAtVideoProcessor = true;
-      swapChainSize = size;
+    const auto absScales = aTransform.ScaleFactors(); 
+    const auto presentationTransformUnscaled = presentationTransform.Copy().PreScale(1 / absScales.xScale, 1 / absScales.yScale);
+    const auto dstSizeScaled = gfx::IntSize::Round(gfx::Size(dstSize) * aTransform.ScaleFactors());
+    const auto presentSizeOld = presentationTransform.TransformSize(gfx::Size(dstSize));
+    const auto presentSizeNew = presentationTransformUnscaled.TransformSize(gfx::Size(dstSizeScaled));
+    if (gfx::FuzzyEqual(presentSizeNew.width, presentSizeOld.width, 0.1f) &&
+        gfx::FuzzyEqual(presentSizeNew.height, presentSizeOld.height, 0.1f)) {
+      dstSize = dstSizeScaled;
+      presentationTransform = presentationTransformUnscaled;
     }
   }
 
-  if (scaleVideoAtVideoProcessor) {
-    
-    
-    if (swapChainSize.width % 2 == 1) {
-      swapChainSize.width += 1;
-    }
-    if (swapChainSize.height % 2 == 1) {
-      swapChainSize.height += 1;
-    }
-    transform = gfx::Matrix::Translation(aTransform.GetTranslation());
+  
+  
+  
+  
+  if (dstSize.width % 2 == 1) {
+    dstSize.width += 1;
+  }
+  if (dstSize.height % 2 == 1) {
+    dstSize.height += 1;
   }
 
-  if (!mVideoSwapChain || mSwapChainSize != swapChainSize) {
-    needsToPresent = true;
-    ReleaseDecodeSwapChainResources();
+  
+
+  if (mDest && mDest->dest->size != dstSize) {
+    mDest = Nothing();
+  }
+  if (mDest && mDest->srcSpace != mSrc->space) {
+    mDest = Nothing();
+  }
+
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+
+  const auto CallBlit = [&]() {
+    if (mDest->plan.videoProcessor) {
+      return CallVideoProcessorBlt();
+    }
+    MOZ_RELEASE_ASSERT(mDest->plan.blitHelper);
+    return CallBlitHelper();
+  };
+
+  bool needsPresent = mSrc->needsPresent;
+  if (!mDest || mDest->needsPresent) {
+    needsPresent = true;
+  }
+
+  if (needsPresent) {
     
-    mSwapChainSize = swapChainSize;
-
-    auto swapChainFormat = GetSwapChainFormat();
-    bool useYUVSwapChain = IsYUVSwapChainFormat(swapChainFormat);
-    if (useYUVSwapChain) {
-      
-      CreateVideoSwapChain();
-      if (!mVideoSwapChain) {
-        mFailedYuvSwapChain = true;
-        ReleaseDecodeSwapChainResources();
-
-        gfxCriticalNote << "Fallback to RGB SwapChain";
+    if (mDest) {
+      if (!CallBlit()) {
+        mDest = Nothing();
       }
     }
-    
-    if (!mVideoSwapChain) {
-      CreateVideoSwapChain();
+
+    if (!mDest) {
+      mDest.emplace();
+      mDest->srcSpace = mSrc->space;
+      mDest->plan = ChooseCspaceTransformPlan(mDest->srcSpace);
+
+      const auto device = mDCLayerTree->GetDevice();
+      if (mDest->plan.videoProcessor) {
+        const auto& plan = *mDest->plan.videoProcessor;
+        if (mOverlayFormat && plan.dstYuvSpace) {
+          mDest->dest = CreateSwapChain(*device, dstSize, *mOverlayFormat,
+                                        *plan.dstYuvSpace);
+          
+          
+          if (!CallVideoProcessorBlt()) {
+            mDest->dest.reset();
+          }
+        }
+        if (!mDest->dest) {
+          mDest->dest = CreateSwapChain(
+              *device, dstSize, DXGI_FORMAT_B8G8R8A8_UNORM, plan.dstRgbSpace);
+        }
+      } else if (mDest->plan.blitHelper) {
+        const auto& plan = *mDest->plan.blitHelper;
+        mDest->dest = CreateSwapChain(*device, dstSize, plan.dstDxgiFormat,
+                                      plan.dstDxgiSpace);
+      }
+      MOZ_ASSERT(mDest->dest);
+      mVisual->SetContent(mDest->dest->swapChain);
     }
-  }
 
-  aTransform = transform;
-
-  return needsToPresent;
-}
-
-void DCSurfaceVideo::PresentVideo() {
-  if (!mRenderTextureHost) {
-    return;
-  }
-
-  if (!mVideoSwapChain) {
-    gfxCriticalNote << "Failed to create VideoSwapChain";
-    RenderThread::Get()->NotifyWebRenderError(
-        wr::WebRenderError::VIDEO_OVERLAY);
-    return;
-  }
-
-  mVisual->SetContent(mVideoSwapChain);
-
-  if (!CallVideoProcessorBlt()) {
-    auto swapChainFormat = GetSwapChainFormat();
-    bool useYUVSwapChain = IsYUVSwapChainFormat(swapChainFormat);
-    if (useYUVSwapChain) {
-      mFailedYuvSwapChain = true;
-      ReleaseDecodeSwapChainResources();
-      return;
+    if (!CallBlit()) {
+      RenderThread::Get()->NotifyWebRenderError(
+          wr::WebRenderError::VIDEO_OVERLAY);
+      return {};
     }
-    RenderThread::Get()->NotifyWebRenderError(
-        wr::WebRenderError::VIDEO_OVERLAY);
-    return;
+
+    const auto hr = mDest->dest->swapChain->Present(0, 0);
+    if (FAILED(hr)) {
+      gfxCriticalNoteOnce << "video Present failed: " << gfx::hexa(hr);
+    }
+
+    mSrc->needsPresent = false;
+    mDest->needsPresent = false;
   }
 
-  HRESULT hr;
-  hr = mVideoSwapChain->Present(0, 0);
-  if (FAILED(hr) && hr != DXGI_STATUS_OCCLUDED) {
-    gfxCriticalNoteOnce << "video Present failed: " << gfx::hexa(hr);
-  }
+  
 
-  mPrevTexture = mRenderTextureHost;
+  return Some(presentationTransform);
 }
 
-DXGI_FORMAT DCSurfaceVideo::GetSwapChainFormat() {
-  if (mFailedYuvSwapChain || !mDCLayerTree->SupportsHardwareOverlays()) {
-    return DXGI_FORMAT_B8G8R8A8_UNORM;
-  }
-  return mDCLayerTree->GetOverlayFormatForSDR();
-}
+static Maybe<DCSurfaceSwapChain::Dest> CreateSwapChain(
+    ID3D11Device& device, const gfx::IntSize aSize, const DXGI_FORMAT aFormat,
+    const DXGI_COLOR_SPACE_TYPE aColorSpace) {
+  auto swapChain = DCSurfaceSwapChain::Dest();
+  swapChain.size = aSize;
+  swapChain.format = aFormat;
+  swapChain.space = aColorSpace;
 
-bool DCSurfaceVideo::CreateVideoSwapChain() {
-  MOZ_ASSERT(mRenderTextureHost);
-
-  const auto device = mDCLayerTree->GetDevice();
-
-  RefPtr<IDXGIDevice> dxgiDevice;
-  device->QueryInterface((IDXGIDevice**)getter_AddRefs(dxgiDevice));
+  RefPtr<IDXGIDevice2> dxgiDevice;
+  device.QueryInterface((IDXGIDevice2**)getter_AddRefs(dxgiDevice));
 
   RefPtr<IDXGIFactoryMedia> dxgiFactoryMedia;
   {
@@ -996,95 +1270,114 @@ bool DCSurfaceVideo::CreateVideoSwapChain() {
     adapter->GetParent(
         IID_PPV_ARGS((IDXGIFactoryMedia**)getter_AddRefs(dxgiFactoryMedia)));
   }
+  RefPtr<IDXGIFactory2> dxgiFactory2;
+  {
+    RefPtr<IDXGIAdapter> adapter;
+    dxgiDevice->GetAdapter(getter_AddRefs(adapter));
+    adapter->GetParent(
+        IID_PPV_ARGS((IDXGIFactory2**)getter_AddRefs(dxgiFactory2)));
+  }
 
-  mSwapChainSurfaceHandle = gfx::DeviceManagerDx::CreateDCompSurfaceHandle();
-  if (!mSwapChainSurfaceHandle) {
+  swapChain.swapChainSurfaceHandle =
+      MakeUnique<RaiiHANDLE>(gfx::DeviceManagerDx::CreateDCompSurfaceHandle());
+  if (!*swapChain.swapChainSurfaceHandle) {
     gfxCriticalNote << "Failed to create DCompSurfaceHandle";
-    return false;
+    return {};
   }
 
-  auto swapChainFormat = GetSwapChainFormat();
-
-  DXGI_SWAP_CHAIN_DESC1 desc = {};
-  desc.Width = mSwapChainSize.width;
-  desc.Height = mSwapChainSize.height;
-  desc.Format = swapChainFormat;
-  desc.Stereo = FALSE;
-  desc.SampleDesc.Count = 1;
-  desc.BufferCount = 2;
-  desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  desc.Scaling = DXGI_SCALING_STRETCH;
-  desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-  desc.Flags = DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO;
-  if (IsYUVSwapChainFormat(swapChainFormat)) {
-    desc.Flags |= DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO;
-  }
-  desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-  HRESULT hr;
-  hr = dxgiFactoryMedia->CreateSwapChainForCompositionSurfaceHandle(
-      device, mSwapChainSurfaceHandle, &desc, nullptr,
-      getter_AddRefs(mVideoSwapChain));
-
-  if (FAILED(hr)) {
-    gfxCriticalNote << "Failed to create video SwapChain: " << gfx::hexa(hr)
-                    << " " << mSwapChainSize;
-    return false;
-  }
-
-  mSwapChainFormat = swapChainFormat;
-  return true;
-}
-
-
-static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVColorSpace aYUVColorSpace,
-    const gfx::ColorRange aColorRange) {
-  if (aYUVColorSpace == gfx::YUVColorSpace::BT601) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601);
+  {
+    DXGI_SWAP_CHAIN_DESC1 desc = {};
+    desc.Width = swapChain.size.width;
+    desc.Height = swapChain.size.height;
+    desc.Format = swapChain.format;
+    desc.Stereo = FALSE;
+    desc.SampleDesc.Count = 1;
+    desc.BufferCount = 2;
+    desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    desc.Scaling = DXGI_SCALING_STRETCH;
+    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    desc.Flags = DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO;
+    if (IsYuv(desc.Format)) {
+      desc.Flags |= DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO;
     }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT709) {
-    if (aColorRange == gfx::ColorRange::FULL) {
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+    desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+    RefPtr<IDXGISwapChain1> swapChain1;
+    HRESULT hr;
+    bool useSurfaceHandle = true;
+    if (useSurfaceHandle) {
+      hr = dxgiFactoryMedia->CreateSwapChainForCompositionSurfaceHandle(
+          &device, *swapChain.swapChainSurfaceHandle, &desc, nullptr,
+          getter_AddRefs(swapChain1));
     } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
-    }
-  } else if (aYUVColorSpace == gfx::YUVColorSpace::BT2020) {
-    if (aColorRange == gfx::ColorRange::FULL) {
       
       
-      return Some(DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P2020);
-    } else {
-      return Some(DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P2020);
+      MOZ_ASSERT(!desc.Flags);
+      hr = dxgiFactory2->CreateSwapChainForComposition(
+          &device, &desc, nullptr, getter_AddRefs(swapChain1));
+    }
+    if (FAILED(hr)) {
+      gfxCriticalNote << "Failed to create output SwapChain: " << gfx::hexa(hr)
+                      << " " << swapChain.size;
+      return {};
+    }
+
+    swapChain1->QueryInterface(
+        static_cast<IDXGISwapChain3**>(getter_AddRefs(swapChain.swapChain)));
+    if (!swapChain.swapChain) {
+      gfxCriticalNote << "Failed to get IDXGISwapChain3";
+      return {};
+    }
+
+    hr = swapChain.swapChain->SetColorSpace1(aColorSpace);
+    if (FAILED(hr)) {
+      gfxCriticalNote << "SetColorSpace1 failed: " << gfx::hexa(hr);
+      return {};
     }
   }
 
-  return Nothing();
+  return Some(std::move(swapChain));
 }
 
-static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
-    const gfx::YUVRangedColorSpace aYUVColorSpace) {
-  const auto info = FromYUVRangedColorSpace(aYUVColorSpace);
-  return GetSourceDXGIColorSpace(info.space, info.range);
-}
-
-bool DCSurfaceVideo::CallVideoProcessorBlt() {
-  MOZ_ASSERT(mRenderTextureHost);
+bool DCSurfaceSwapChain::CallVideoProcessorBlt() const {
+  MOZ_RELEASE_ASSERT(mSrc);
+  MOZ_RELEASE_ASSERT(mDest);
+  MOZ_RELEASE_ASSERT(mDest->dest);
 
   HRESULT hr;
   const auto videoDevice = mDCLayerTree->GetVideoDevice();
   const auto videoContext = mDCLayerTree->GetVideoContext();
-  const auto texture = mRenderTextureHost->AsRenderDXGITextureHost();
+  const auto& texture = mSrc->texture;
 
-  Maybe<DXGI_COLOR_SPACE_TYPE> sourceColorSpace =
-      GetSourceDXGIColorSpace(texture->GetYUVColorSpace());
-  if (sourceColorSpace.isNothing()) {
-    gfxCriticalNote << "Unsupported color space";
+  if (!mDCLayerTree->EnsureVideoProcessorAtLeast(mSrc->size,
+                                                 mDest->dest->size)) {
+    gfxCriticalNote << "EnsureVideoProcessor Failed";
     return false;
   }
+  const auto videoProcessor = mDCLayerTree->GetVideoProcessor();
+  const auto videoProcessorEnumerator =
+      mDCLayerTree->GetVideoProcessorEnumerator();
+
+  
+  
+
+  {
+    RefPtr<ID3D11VideoContext1> videoContext1;
+    videoContext->QueryInterface(
+        (ID3D11VideoContext1**)getter_AddRefs(videoContext1));
+    if (!videoContext1) {
+      gfxCriticalNote << "Failed to get ID3D11VideoContext1";
+      return false;
+    }
+    const auto& plan = *mDest->plan.videoProcessor;
+    videoContext1->VideoProcessorSetStreamColorSpace1(videoProcessor, 0,
+                                                      plan.srcSpace);
+    videoContext1->VideoProcessorSetOutputColorSpace1(videoProcessor,
+                                                      mDest->dest->space);
+  }
+
+  
+  
 
   RefPtr<ID3D11Texture2D> texture2D = texture->GetD3D11Texture2DWithGL();
   if (!texture2D) {
@@ -1092,50 +1385,11 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     return false;
   }
 
-  if (!mVideoSwapChain) {
+  if (!mSrc->texture->LockInternal()) {
+    gfxCriticalNote << "CallVideoProcessorBlt LockInternal failed.";
     return false;
   }
-
-  if (!mDCLayerTree->EnsureVideoProcessor(mVideoSize, mSwapChainSize)) {
-    gfxCriticalNote << "EnsureVideoProcessor Failed";
-    return false;
-  }
-
-  RefPtr<IDXGISwapChain3> swapChain3;
-  mVideoSwapChain->QueryInterface(
-      (IDXGISwapChain3**)getter_AddRefs(swapChain3));
-  if (!swapChain3) {
-    gfxCriticalNote << "Failed to get IDXGISwapChain3";
-    return false;
-  }
-
-  RefPtr<ID3D11VideoContext1> videoContext1;
-  videoContext->QueryInterface(
-      (ID3D11VideoContext1**)getter_AddRefs(videoContext1));
-  if (!videoContext1) {
-    gfxCriticalNote << "Failed to get ID3D11VideoContext1";
-    return false;
-  }
-
-  const auto videoProcessor = mDCLayerTree->GetVideoProcessor();
-  const auto videoProcessorEnumerator =
-      mDCLayerTree->GetVideoProcessorEnumerator();
-
-  DXGI_COLOR_SPACE_TYPE inputColorSpace = sourceColorSpace.ref();
-  videoContext1->VideoProcessorSetStreamColorSpace1(videoProcessor, 0,
-                                                    inputColorSpace);
-
-  DXGI_COLOR_SPACE_TYPE outputColorSpace =
-      IsYUVSwapChainFormat(mSwapChainFormat)
-          ? inputColorSpace
-          : DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-  hr = swapChain3->SetColorSpace1(outputColorSpace);
-  if (FAILED(hr)) {
-    gfxCriticalNote << "SetColorSpace1 failed: " << gfx::hexa(hr);
-    return false;
-  }
-  videoContext1->VideoProcessorSetOutputColorSpace1(videoProcessor,
-                                                    outputColorSpace);
+  const auto unlock = MakeScopeExit([&]() { mSrc->texture->Unlock(); });
 
   D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc = {};
   inputDesc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
@@ -1151,19 +1405,15 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     return false;
   }
 
-  D3D11_VIDEO_PROCESSOR_STREAM stream = {};
-  stream.Enable = true;
-  stream.OutputIndex = 0;
-  stream.InputFrameOrField = 0;
-  stream.PastFrames = 0;
-  stream.FutureFrames = 0;
-  stream.pInputSurface = inputView.get();
+  
+  
 
   RECT destRect;
   destRect.left = 0;
   destRect.top = 0;
-  destRect.right = mSwapChainSize.width;
-  destRect.bottom = mSwapChainSize.height;
+  destRect.right = mDest->dest->size.width;
+  destRect.bottom = mDest->dest->size.height;
+  
 
   videoContext->VideoProcessorSetOutputTargetRect(videoProcessor, TRUE,
                                                   &destRect);
@@ -1172,15 +1422,16 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   RECT sourceRect;
   sourceRect.left = 0;
   sourceRect.top = 0;
-  sourceRect.right = mVideoSize.width;
-  sourceRect.bottom = mVideoSize.height;
+  sourceRect.right = mSrc->size.width;
+  sourceRect.bottom = mSrc->size.height;
   videoContext->VideoProcessorSetStreamSourceRect(videoProcessor, 0, TRUE,
                                                   &sourceRect);
 
-  if (!mOutputView) {
+  RefPtr<ID3D11VideoProcessorOutputView> outputView;
+  {
     RefPtr<ID3D11Texture2D> backBuf;
-    mVideoSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                               (void**)getter_AddRefs(backBuf));
+    mDest->dest->swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+                                      (void**)getter_AddRefs(backBuf));
 
     D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC outputDesc = {};
     outputDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
@@ -1188,7 +1439,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
 
     hr = videoDevice->CreateVideoProcessorOutputView(
         backBuf, videoProcessorEnumerator, &outputDesc,
-        getter_AddRefs(mOutputView));
+        getter_AddRefs(outputView));
     if (FAILED(hr)) {
       gfxCriticalNote << "ID3D11VideoProcessorOutputView creation failed: "
                       << gfx::hexa(hr);
@@ -1196,7 +1447,21 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     }
   }
 
-  hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
+  
+  
+
+  D3D11_VIDEO_PROCESSOR_STREAM stream = {};
+  stream.Enable = true;
+  stream.OutputIndex = 0;
+  stream.InputFrameOrField = 0;
+  stream.PastFrames = 0;
+  stream.FutureFrames = 0;
+  stream.pInputSurface = inputView.get();
+
+  
+  
+  
+  hr = videoContext->VideoProcessorBlt(videoProcessor, outputView, 0, 1,
                                        &stream);
   if (FAILED(hr)) {
     gfxCriticalNote << "VideoProcessorBlt failed: " << gfx::hexa(hr);
@@ -1206,16 +1471,128 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   return true;
 }
 
-void DCSurfaceVideo::ReleaseDecodeSwapChainResources() {
-  mOutputView = nullptr;
-  mVideoSwapChain = nullptr;
-  mDecodeSwapChain = nullptr;
-  mDecodeResource = nullptr;
-  if (mSwapChainSurfaceHandle) {
-    ::CloseHandle(mSwapChainSurfaceHandle);
-    mSwapChainSurfaceHandle = 0;
+bool DCSurfaceSwapChain::CallBlitHelper() const {
+  MOZ_RELEASE_ASSERT(mSrc);
+  MOZ_RELEASE_ASSERT(mDest);
+  MOZ_RELEASE_ASSERT(mDest->dest);
+  const auto& plan = *mDest->plan.blitHelper;
+
+  const auto gl = mDCLayerTree->GetGLContext();
+  const auto& blitHelper = gl->BlitHelper();
+
+  const auto Mat3FromImage = [](const wr::WrExternalImage& image,
+                                const gfx::IntSize& size) {
+    auto ret = gl::Mat3::I();
+    ret.at(0, 0) = (image.u1 - image.u0) / size.width;  
+    ret.at(0, 2) = image.u0 / size.width;               
+    ret.at(1, 1) = (image.v1 - image.v0) / size.height;
+    ret.at(1, 2) = image.v0 / size.height;
+    return ret;
+  };
+
+  
+  
+
+  constexpr uint8_t LUT_TEX_UNIT = 3;
+  const auto restore3D =
+      gl::ScopedSaveMultiTex{gl, {LUT_TEX_UNIT}, LOCAL_GL_TEXTURE_3D};
+  const auto restoreExt =
+      gl::ScopedSaveMultiTex{gl, {0, 1}, LOCAL_GL_TEXTURE_EXTERNAL};
+
+  if (plan.srcSpace != plan.dstSpace) {
+    if (!mDest->lut) {
+      mDest->lut = blitHelper->GetColorLutTex({ plan.srcSpace, plan.dstSpace });
+    }
+    MOZ_ASSERT(mDest->lut);
+    gl->fActiveTexture(LOCAL_GL_TEXTURE0 + LUT_TEX_UNIT);
+    gl->fBindTexture(LOCAL_GL_TEXTURE_3D, mDest->lut->name);
   }
+
+  
+  
+
+  const auto image0 = mSrc->texture->Lock(0, gl, wr::ImageRendering::Auto);
+  const auto size0 = mSrc->texture->GetSize(0);
+  const auto texCoordMat0 = Mat3FromImage(image0, size0);
+  const auto unlock = MakeScopeExit([&]() { mSrc->texture->Unlock(); });
+
+  gl->fActiveTexture(LOCAL_GL_TEXTURE0 + 0);
+  gl->fBindTexture(LOCAL_GL_TEXTURE_EXTERNAL, image0.handle);
+
+  
+  
+
+  RefPtr<ID3D11Texture2D> backBuf;
+  mDest->dest->swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+                                    (void**)getter_AddRefs(backBuf));
+  MOZ_RELEASE_ASSERT(backBuf);
+
+  bool clearForTesting = false;
+  if (clearForTesting) {
+    const auto device = mDCLayerTree->GetDevice();
+    layers::ClearResource(device, backBuf, {1, 0, 1, 1});
+    return true;
+  }
+
+  const auto gle = gl::GLContextEGL::Cast(gl);
+
+  const auto fb = gl::ScopedFramebuffer(gl);
+  const auto bindFb = gl::ScopedBindFramebuffer(gl, fb);
+
+  const auto rb = gl::ScopedRenderbuffer(gl);
+  {
+    const auto bindRb = gl::ScopedBindRenderbuffer(gl, rb);
+
+    const EGLint attribs[] = {LOCAL_EGL_NONE};
+    const auto image = gle->mEgl->fCreateImage(
+        0, LOCAL_EGL_D3D11_TEXTURE_ANGLE,
+        reinterpret_cast<EGLClientBuffer>(backBuf.get()), attribs);
+    MOZ_RELEASE_ASSERT(image);
+    gl->fEGLImageTargetRenderbufferStorage(LOCAL_GL_RENDERBUFFER, image);
+    gle->mEgl->fDestroyImage(image);  
+
+    gl->fFramebufferRenderbuffer(LOCAL_GL_FRAMEBUFFER,
+                                 LOCAL_GL_COLOR_ATTACHMENT0,
+                                 LOCAL_GL_RENDERBUFFER, rb);
+    MOZ_ASSERT(gl->IsFramebufferComplete(fb));
+  }
+
+  
+  
+
+  auto lutUintIfNeeded = Some(LUT_TEX_UNIT);
+  auto fragConvert = gl::kFragConvert_ColorLut;
+  if (!mDest->lut) {
+    lutUintIfNeeded = Nothing();
+    fragConvert = gl::kFragConvert_None;
+  }
+
+  const auto baseArgs = gl::DrawBlitProg::BaseArgs{
+      texCoordMat0, false, mDest->dest->size, {}, lutUintIfNeeded,
+  };
+  Maybe<gl::DrawBlitProg::YUVArgs> yuvArgs;
+  auto fragSample = gl::kFragSample_OnePlane;
+
+  if (IsYuv(mSrc->format)) {
+    const auto image1 = mSrc->texture->Lock(1, gl, wr::ImageRendering::Auto);
+    const auto size1 = mSrc->texture->GetSize(1);
+    const auto texCoordMat1 = Mat3FromImage(image1, size1);
+
+    gl->fActiveTexture(LOCAL_GL_TEXTURE0 + 1);
+    gl->fBindTexture(LOCAL_GL_TEXTURE_EXTERNAL, image1.handle);
+
+    yuvArgs = Some(gl::DrawBlitProg::YUVArgs{texCoordMat1, {}});
+    fragSample = gl::kFragSample_TwoPlane;
+  }
+
+  const auto dbp = blitHelper->GetDrawBlitProg(
+      {gl::kFragHeader_TexExt, {fragSample, fragConvert}});
+  dbp->Draw(baseArgs, yuvArgs.ptrOr(nullptr));
+
+  return true;
 }
+
+
 
 DCTile::DCTile(DCLayerTree* aDCLayerTree) : mDCLayerTree(aDCLayerTree) {}
 
