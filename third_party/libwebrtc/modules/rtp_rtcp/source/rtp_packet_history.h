@@ -15,9 +15,13 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/function_view.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
@@ -40,7 +44,7 @@ class RtpPacketHistory {
   
   static constexpr size_t kMaxPaddingHistory = 63;
   
-  static constexpr int64_t kMinPacketDurationMs = 1000;
+  static constexpr TimeDelta kMinPacketDuration = TimeDelta::Seconds(1);
   static constexpr int kMinPacketDurationRtt = 3;
   
   static constexpr int kPacketCullingDelayFactor = 3;
@@ -60,10 +64,19 @@ class RtpPacketHistory {
 
   
   
-  void SetRtt(int64_t rtt_ms);
+  ABSL_DEPRECATED("Use SetRtt below that takes TimeDelta")
+  void SetRtt(int64_t rtt_ms) { SetRtt(TimeDelta::Millis(rtt_ms)); }
+
+  void SetRtt(TimeDelta rtt);
+
+  ABSL_DEPRECATED("Use PutRtpPacket below that take Timestamp")
+  void PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
+                    int64_t send_time_ms) {
+    PutRtpPacket(std::move(packet), Timestamp::Millis(send_time_ms));
+  }
 
   void PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
-                    int64_t send_time_ms);
+                    Timestamp send_time);
 
   
   
@@ -120,7 +133,7 @@ class RtpPacketHistory {
    public:
     StoredPacket() = default;
     StoredPacket(std::unique_ptr<RtpPacketToSend> packet,
-                 int64_t send_time_ms,
+                 Timestamp send_time,
                  uint64_t insert_order);
     StoredPacket(StoredPacket&&);
     StoredPacket& operator=(StoredPacket&&);
@@ -131,7 +144,8 @@ class RtpPacketHistory {
     void IncrementTimesRetransmitted(PacketPrioritySet* priority_set);
 
     
-    int64_t send_time_ms_;
+    Timestamp send_time() const { return send_time_; }
+    void set_send_time(Timestamp value) { send_time_ = value; }
 
     
     std::unique_ptr<RtpPacketToSend> packet_;
@@ -140,6 +154,8 @@ class RtpPacketHistory {
     bool pending_transmission_;
 
    private:
+    Timestamp send_time_ = Timestamp::Zero();
+
     
     
     uint64_t insert_order_;
@@ -152,10 +168,10 @@ class RtpPacketHistory {
   };
 
   
-  bool VerifyRtt(const StoredPacket& packet, int64_t now_ms) const
+  bool VerifyRtt(const StoredPacket& packet) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   void Reset() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-  void CullOldPackets(int64_t now_ms) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void CullOldPackets() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   
   
   std::unique_ptr<RtpPacketToSend> RemovePacket(int packet_index)
@@ -170,7 +186,7 @@ class RtpPacketHistory {
   mutable Mutex lock_;
   size_t number_to_store_ RTC_GUARDED_BY(lock_);
   StorageMode mode_ RTC_GUARDED_BY(lock_);
-  int64_t rtt_ms_ RTC_GUARDED_BY(lock_);
+  TimeDelta rtt_ RTC_GUARDED_BY(lock_);
 
   
   
