@@ -1865,6 +1865,25 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
+      if (!popup->WaylandPopupIsFirst() &&
+          !mWaylandPopupPrev->WaylandPopupIsFirst() &&
+          !mWaylandPopupPrev->mPopupUseMoveToRect) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
       return true;
     }();
 
