@@ -97,8 +97,7 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   
   
   
-  
-  virtual bool stopping() const;
+  virtual bool stopping() const = 0;
 
   
   
@@ -147,28 +146,28 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   
   
   virtual RTCError SetCodecPreferences(
-      rtc::ArrayView<RtpCodecCapability> codecs);
-  virtual std::vector<RtpCodecCapability> codec_preferences() const;
+      rtc::ArrayView<RtpCodecCapability> codecs) = 0;
+  virtual std::vector<RtpCodecCapability> codec_preferences() const = 0;
 
   
   
   
   
   virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer()
-      const;
+      const = 0;
 
   
   
   
   virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsNegotiated()
-      const;
+      const = 0;
 
   
   
   
   virtual webrtc::RTCError SetOfferedRtpHeaderExtensions(
       rtc::ArrayView<const RtpHeaderExtensionCapability>
-          header_extensions_to_offer);
+          header_extensions_to_offer) = 0;
 
  protected:
   ~RtpTransceiverInterface() override = default;
