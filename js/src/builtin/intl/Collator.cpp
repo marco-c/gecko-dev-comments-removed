@@ -38,7 +38,6 @@ using JS::AutoStableStringChars;
 
 using js::intl::ReportInternalError;
 using js::intl::SharedIntlData;
-using js::intl::StringsAreEqual;
 
 const JSClassOps CollatorObject::classOps_ = {
     nullptr,                   
@@ -188,8 +187,9 @@ bool js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
-    if (StringsAreEqual(collation.data(), "standard") ||
-        StringsAreEqual(collation.data(), "search")) {
+    static constexpr auto standard = mozilla::MakeStringSpan("standard");
+    static constexpr auto search = mozilla::MakeStringSpan("search");
+    if (collation == standard || collation == search) {
       continue;
     }
 
