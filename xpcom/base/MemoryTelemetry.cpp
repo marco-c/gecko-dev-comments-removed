@@ -216,11 +216,9 @@ nsresult MemoryTelemetry::GatherReports(
 
   
   
-#ifndef XP_MACOSX
   if (XRE_IsParentProcess() && !mGatheringTotalMemory) {
     GatherTotalMemory();
   }
-#endif
 
   if (!Telemetry::CanRecordReleaseData()) {
     return NS_OK;
@@ -374,8 +372,13 @@ void MemoryTelemetry::GatherTotalMemory() {
         
         
         for (const auto& info : infos) {
+#ifdef XP_MACOSX
           int64_t memory =
-              nsMemoryReporterManager::ResidentUnique(info.mHandle);
+              nsMemoryReporterManager::PhysicalFootprint(info.mHandle);
+#else
+	  int64_t memory =
+	      nsMemoryReporterManager::ResidentUnique(info.mHandle);
+#endif
           if (memory > 0) {
             childSizes.AppendElement(memory);
             totalMemory += memory;

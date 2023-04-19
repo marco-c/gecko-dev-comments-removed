@@ -186,6 +186,11 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   static int64_t ResidentUnique(pid_t aPid = 0);
 #endif  
 
+#ifdef XP_MACOSX
+  
+  static int64_t PhysicalFootprint(mach_port_t aPort = 0);
+#endif
+
   
   struct SizeOfTabFns {
     mozilla::JSSizeOfTabFn mJS = nullptr;
