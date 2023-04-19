@@ -72,7 +72,7 @@ class ExternalEngineStateMachine final
       dom::MediaDecoderStateMachineDebugInfo& aInfo) override {
     
     
-    return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    return GenericPromise::CreateAndResolve(true, __func__);
   }
 
   void NotifyEvent(ExternalEngineEvent aEvent) {
