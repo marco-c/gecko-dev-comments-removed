@@ -2,12 +2,11 @@
 
 
 
-import { createThread, createFrame } from "./create";
+import { createFrame } from "./create";
 import { makePendingLocationId } from "../../utils/breakpoint";
 
 import Reps from "devtools/client/shared/components/reps/index";
 
-let targets;
 let commands;
 let breakpoints;
 
@@ -16,7 +15,6 @@ const CALL_STACK_PAGE_SIZE = 1000;
 
 function setupCommands(innerCommands) {
   commands = innerCommands;
-  targets = {};
   breakpoints = {};
 }
 
@@ -61,22 +59,15 @@ function releaseActor(actor) {
   }
 }
 
-
-function getTargetsMap() {
-  return Object.assign({}, targets);
-}
-
 function lookupTarget(thread) {
   if (thread == currentThreadFront().actor) {
     return currentTarget();
   }
 
-  const targetsMap = getTargetsMap();
-  if (!targetsMap[thread]) {
-    throw new Error(`Unknown thread front: ${thread}`);
-  }
-
-  return targetsMap[thread];
+  const targets = commands.targetCommand.getAllTargets(
+    commands.targetCommand.ALL_TYPES
+  );
+  return targets.find(target => target.targetForm.threadActor == thread);
 }
 
 function lookupThreadFront(thread) {
@@ -85,8 +76,10 @@ function lookupThreadFront(thread) {
 }
 
 function listThreadFronts() {
-  const list = Object.values(getTargetsMap());
-  return list.map(target => target.threadFront).filter(t => !!t);
+  const targets = commands.targetCommand.getAllTargets(
+    commands.targetCommand.ALL_TYPES
+  );
+  return targets.map(target => target.threadFront).filter(front => !!front);
 }
 
 function forEachThread(iteratee) {
@@ -96,7 +89,7 @@ function forEachThread(iteratee) {
   
   
 
-  const promises = [currentThreadFront(), ...listThreadFronts()].map(
+  const promises = listThreadFronts().map(
     
     
     t => iteratee(t).catch(e => console.log(e))
@@ -385,18 +378,6 @@ async function toggleEventLogging(logEventBreakpoints) {
   });
 }
 
-async function addThread(targetFront) {
-  const threadActorID = targetFront.targetForm.threadActor;
-  if (!targets[threadActorID]) {
-    targets[threadActorID] = targetFront;
-  }
-  return createThread(threadActorID, targetFront);
-}
-
-function removeThread(threadActorID) {
-  delete targets[threadActorID];
-}
-
 function getMainThread() {
   return currentThreadFront().actor;
 }
@@ -460,13 +441,10 @@ const clientCommands = {
   getFrames,
   pauseOnExceptions,
   toggleEventLogging,
-  addThread,
-  removeThread,
   getMainThread,
   setSkipPausing,
   setEventListenerBreakpoints,
   getEventListenerBreakpointTypes,
-  lookupTarget,
   getFrontByID,
   fetchAncestorFramePositions,
   toggleJavaScriptEnabled,
