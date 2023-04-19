@@ -40,9 +40,6 @@ namespace dcsctp {
 
 class RRSendQueue : public SendQueue {
  public:
-  
-  static constexpr size_t kMinimumFragmentedPayload = 10;
-
   RRSendQueue(absl::string_view log_prefix,
               size_t buffer_size,
               std::function<void(StreamID)> on_buffered_amount_low,
@@ -127,7 +124,8 @@ class RRSendQueue : public SendQueue {
              const SendOptions& send_options);
 
     
-    absl::optional<DataToSend> Produce(TimeMs now, size_t max_size);
+    
+    DataToSend Produce(TimeMs now, size_t max_size);
 
     const ThresholdWatcher& buffered_amount() const { return buffered_amount_; }
     ThresholdWatcher& buffered_amount() { return buffered_amount_; }
