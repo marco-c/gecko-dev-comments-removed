@@ -510,20 +510,34 @@ void DefaultVideoQualityAnalyzer::RegisterParticipantInCall(
   MutexLock lock1(&lock_);
   MutexLock lock2(&comparison_lock_);
   RTC_CHECK(!peers_->HasName(peer_name));
-  peers_->AddIfAbsent(peer_name);
+  size_t new_peer_index = peers_->AddIfAbsent(peer_name);
 
   
   
   
   
   for (auto& key_val : stream_to_sender_) {
-    InternalStatsKey key(key_val.first, key_val.second,
-                         peers_->index(peer_name));
-    const int64_t frames_count = captured_frames_in_flight_.size();
+    size_t stream_index = key_val.first;
+    size_t sender_peer_index = key_val.second;
+    InternalStatsKey key(stream_index, sender_peer_index, new_peer_index);
+
+    
+    
+    
+    
     FrameCounters counters;
-    counters.captured = frames_count;
-    counters.pre_encoded = frames_count;
-    counters.encoded = frames_count;
+    for (size_t i = 0; i < peers_->size(); ++i) {
+      InternalStatsKey prototype_key(stream_index, sender_peer_index, i);
+      auto it = stream_frame_counters_.find(prototype_key);
+      if (it != stream_frame_counters_.end()) {
+        counters.captured = it->second.captured;
+        counters.pre_encoded = it->second.pre_encoded;
+        counters.encoded = it->second.encoded;
+        break;
+      }
+    }
+    
+    
     stream_frame_counters_.insert({key, std::move(counters)});
 
     stream_stats_.insert({key, StreamStats()});
