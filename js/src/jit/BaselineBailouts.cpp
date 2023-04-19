@@ -1604,7 +1604,7 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 
   if (!builder.outermostFrameFormals().empty()) {
     
-    Value* argv = builder.startFrame()->argv() + 1;  
+    Value* argv = builder.startFrame()->actualArgs();
     mozilla::PodCopy(argv, builder.outermostFrameFormals().begin(),
                      builder.outermostFrameFormals().length());
   }
