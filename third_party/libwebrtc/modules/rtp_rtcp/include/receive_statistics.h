@@ -55,7 +55,12 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
  public:
   ~ReceiveStatistics() override = default;
 
+  
+  
   static std::unique_ptr<ReceiveStatistics> Create(Clock* clock);
+  
+  static std::unique_ptr<ReceiveStatistics> CreateThreadCompatible(
+      Clock* clock);
 
   
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
