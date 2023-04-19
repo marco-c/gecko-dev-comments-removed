@@ -117,26 +117,26 @@ static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
     return {LogicalPixelSize()};
   }
 
-  auto GetFrameSize = [&](nsIFrame* aFrame) {
+  auto GetFrameSize = [aBox](nsIFrame* aFrame) {
     switch (aBox) {
       case ResizeObserverBoxOptions::Border_box:
-        return CSSPixel::FromAppUnits(frame->GetSize()).ToUnknownSize();
+        return CSSPixel::FromAppUnits(aFrame->GetSize()).ToUnknownSize();
       case ResizeObserverBoxOptions::Device_pixel_content_box: {
         
         
         
         
         
-        const auto* referenceFrame = nsLayoutUtils::GetReferenceFrame(frame);
+        const auto* referenceFrame = nsLayoutUtils::GetReferenceFrame(aFrame);
         
         
         
-        const auto offset = frame->GetOffsetToCrossDoc(referenceFrame);
-        const auto contentSize = GetContentRectSize(*frame);
+        const auto offset = aFrame->GetOffsetToCrossDoc(referenceFrame);
+        const auto contentSize = GetContentRectSize(*aFrame);
         
         
         const auto appUnitsPerDevPixel =
-            static_cast<double>(frame->PresContext()->AppUnitsPerDevPixel());
+            static_cast<double>(aFrame->PresContext()->AppUnitsPerDevPixel());
         
         
         
@@ -155,16 +155,15 @@ static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
       default:
         break;
     }
-    return CSSPixel::FromAppUnits(GetContentRectSize(*frame)).ToUnknownSize();
+    return CSSPixel::FromAppUnits(GetContentRectSize(*aFrame)).ToUnknownSize();
   };
   if (!StaticPrefs::dom_resize_observer_support_fragments()) {
     return {LogicalPixelSize(frame->GetWritingMode(), GetFrameSize(frame))};
   }
   AutoTArray<LogicalPixelSize, 1> size;
-  while (frame) {
-    const WritingMode wm = frame->GetWritingMode();
-    size.AppendElement(LogicalPixelSize(wm, GetFrameSize(frame)));
-    frame = frame->GetNextContinuation();
+  for (nsIFrame* cur = frame; cur; cur = cur->GetNextContinuation()) {
+    const WritingMode wm = cur->GetWritingMode();
+    size.AppendElement(LogicalPixelSize(wm, GetFrameSize(cur)));
   }
   return size;
 }
