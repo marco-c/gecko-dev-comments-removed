@@ -54,6 +54,82 @@ class IdentityCredential final : public Credential {
       nsIPrincipal* aPrincipal,
       const IdentityCredentialRequestOptions& aOptions);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<ValidationPromise> CheckRootManifest(
+      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetManifestPromise> FetchInternalManifest(
+      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetAccountListPromise> FetchAccountList(
+      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
+      const IdentityInternalManifest& aManifest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static RefPtr<GetTokenPromise> FetchToken(
+      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider,
+      const IdentityInternalManifest& aManifest,
+      const IdentityAccount& aAccount);
+
  private:
   nsAutoString mToken;
 };
