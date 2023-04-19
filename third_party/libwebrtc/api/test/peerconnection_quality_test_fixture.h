@@ -30,6 +30,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/test/peer_network_dependencies.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/track_id_stream_info_map.h"
@@ -496,6 +497,13 @@ class PeerConnectionE2EQualityTestFixture {
   
   
   
+  
+  virtual PeerHandle* AddPeer(
+      const PeerNetworkDependencies& network_dependencies,
+      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
+    return AddPeer(network_dependencies.network_thread,
+                   network_dependencies.network_manager, configurer);
+  }
   
   
   virtual PeerHandle* AddPeer(

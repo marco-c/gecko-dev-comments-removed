@@ -20,6 +20,7 @@
 #include "api/packet_socket_factory.h"
 #include "api/test/network_emulation/cross_traffic.h"
 #include "api/test/network_emulation/network_emulation_interfaces.h"
+#include "api/test/peer_network_dependencies.h"
 #include "api/test/simulated_network.h"
 #include "api/test/time_controller.h"
 #include "api/units/timestamp.h"
@@ -130,6 +131,9 @@ class EmulatedNetworkManagerInterface {
   
   
   virtual rtc::PacketSocketFactory* packet_socket_factory() = 0;
+  webrtc::webrtc_pc_e2e::PeerNetworkDependencies network_dependencies() {
+    return {network_thread(), network_manager(), packet_socket_factory()};
+  }
   
   
   virtual std::vector<EmulatedEndpoint*> endpoints() const = 0;
