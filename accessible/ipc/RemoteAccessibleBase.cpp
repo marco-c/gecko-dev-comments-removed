@@ -441,8 +441,20 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 template <class Derived>
 void RemoteAccessibleBase<Derived>::ApplyCrossProcOffset(
     nsRect& aBounds) const {
+  Accessible* parentAcc = Parent();
+  if (!parentAcc || !parentAcc->IsRemote() || !parentAcc->IsOuterDoc()) {
+    return;
+  }
+
+  if (!IsDoc() || !AsDoc()->IsOOPIframeDoc()) {
+    
+    
+    return;
+  }
+
   Maybe<const nsTArray<int32_t>&> maybeOffset =
-      mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::crossorigin);
+      parentAcc->AsRemote()->mCachedFields->GetAttribute<nsTArray<int32_t>>(
+          nsGkAtoms::crossorigin);
   if (!maybeOffset) {
     return;
   }
@@ -463,12 +475,38 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
   if (!maybeTransform) {
     return false;
   }
+
   
   
   
   
-  
-  aBounds.MoveTo(0, 0);
+  bool isIframe = false;
+  if (IsRemote() && IsOuterDoc()) {
+    Accessible* firstChild = FirstChild();
+    if (firstChild && firstChild->IsRemote() && firstChild->IsDoc()) {
+      const RemoteAccessible* firstChildRemote = firstChild->AsRemote();
+      if (!firstChildRemote->AsDoc()->IsTopLevel()) {
+        isIframe = true;
+      }
+    }
+  }
+
+  if (isIframe) {
+    
+    
+    
+    if (Maybe<nsRect> maybeBounds = RetrieveCachedBounds()) {
+      aBounds.MoveBy(-maybeBounds.value().TopLeft());
+    }
+  } else {
+    
+    
+    
+    
+    
+    aBounds.MoveTo(0, 0);
+  }
+
   auto mtxInPixels = gfx::Matrix4x4Typed<CSSPixel, CSSPixel>::FromUnknownMatrix(
       *(*maybeTransform));
 
@@ -532,11 +570,12 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
       bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
     }
 
+    ApplyCrossProcOffset(bounds);
+
     Unused << ApplyTransform(bounds);
 
     LayoutDeviceIntRect devPxBounds;
     const Accessible* acc = Parent();
-    const RemoteAccessibleBase<Derived>* recentAcc = this;
     while (acc && acc->IsRemote()) {
       RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
 
@@ -561,16 +600,12 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           topDoc = remoteAcc->AsDoc();
         }
 
-        if (remoteAcc->IsOuterDoc()) {
-          if (recentAcc && recentAcc->IsDoc() &&
-              !recentAcc->AsDoc()->IsTopLevel() &&
-              recentAcc->AsDoc()->IsTopLevelInContentProcess()) {
-            
-            
-            
-            remoteAcc->ApplyCrossProcOffset(remoteBounds);
-          }
-        }
+        
+        
+        
+        
+        
+        remoteAcc->ApplyCrossProcOffset(remoteBounds);
 
         
         
@@ -584,7 +619,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
         Unused << remoteAcc->ApplyTransform(bounds);
       }
-      recentAcc = remoteAcc;
       acc = acc->Parent();
     }
 

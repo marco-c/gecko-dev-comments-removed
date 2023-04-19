@@ -61,6 +61,14 @@ class DocAccessibleParent : public RemoteAccessible,
   void SetTopLevelInContentProcess() { mTopLevelInContentProcess = true; }
   bool IsTopLevelInContentProcess() const { return mTopLevelInContentProcess; }
 
+  
+
+
+
+  bool IsOOPIframeDoc() const {
+    return !mTopLevel && mTopLevelInContentProcess;
+  }
+
   bool IsShutdown() const { return mShutdown; }
 
   
