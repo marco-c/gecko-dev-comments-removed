@@ -1072,8 +1072,28 @@ function getUpdateFile(pathArray) {
 
 
 
+function maybeMapErrorCode(code) {
+  switch (code) {
+    case Cr.NS_BINDING_ABORTED:
+    case Cr.NS_ERROR_ABORT:
+      return "connection_aborted";
+  }
+  return code;
+}
+
+
+
+
+
+
+
+
+
+
 
 function getStatusTextFromCode(code, defaultCode) {
+  code = maybeMapErrorCode(code);
+
   let reason;
   try {
     reason = lazy.gUpdateBundle.GetStringFromName("check_error-" + code);
@@ -1081,6 +1101,8 @@ function getStatusTextFromCode(code, defaultCode) {
       "getStatusTextFromCode - transfer error: " + reason + ", code: " + code
     );
   } catch (e) {
+    defaultCode = maybeMapErrorCode(defaultCode);
+
     
     reason = lazy.gUpdateBundle.GetStringFromName("check_error-" + defaultCode);
     LOG(
@@ -2440,15 +2462,6 @@ Update.prototype = {
     "nsIPropertyBag",
     "nsIWritablePropertyBag",
   ]),
-};
-
-const UpdateServiceFactory = {
-  _instance: null,
-  createInstance(iid) {
-    return this._instance == null
-      ? (this._instance = new UpdateService())
-      : this._instance;
-  },
 };
 
 
@@ -4517,19 +4530,41 @@ UpdateManager.prototype = {
 
 
 
-function Checker() {}
-Checker.prototype = {
+
+class CheckerService {
+  #nextUpdateCheckId = 1;
+
+  
+  
+  
+  
+  
+  #requestKeyByCheckId = {};
+
+  
+  
+  
+  
+  
+  
+  #updateCheckData = {};
+
+  #makeUpdateCheckDataObject(type, promise) {
+    return { type, promise, request: null };
+  }
+
   
 
 
-  _request: null,
 
-  
+  #validUpdateCheckType(checkType) {
+    return [
+      Ci.nsIUpdateChecker.BACKGROUND_CHECK,
+      Ci.nsIUpdateChecker.FOREGROUND_CHECK,
+    ].includes(checkType);
+  }
 
-
-  _callback: null,
-
-  _getCanMigrate: function UC__getCanMigrate() {
+  #getCanMigrate() {
     if (AppConstants.platform != "win") {
       return false;
     }
@@ -4563,7 +4598,10 @@ Checker.prototype = {
     
     
     if (regValHKCU === 1 || regValHKLM === 1) {
-      LOG("Checker:_getCanMigrate - all installations should not be migrated");
+      LOG(
+        "CheckerService:#getCanMigrate - all installations should not be " +
+          "migrated"
+      );
       return false;
     }
 
@@ -4584,27 +4622,36 @@ Checker.prototype = {
     
     
     if (regValHKCU === 1 || regValHKLM === 1) {
-      LOG("Checker:_getCanMigrate - this installation should not be migrated");
+      LOG(
+        "CheckerService:#getCanMigrate - this installation should not be " +
+          "migrated"
+      );
       return false;
     }
 
     
     
     if (regValHKCU === 0 || regValHKLM === 0) {
-      LOG("Checker:_getCanMigrate - this installation can be migrated");
+      LOG("CheckerService:#getCanMigrate - this installation can be migrated");
       return true;
     }
 
-    LOG("Checker:_getCanMigrate - no registry entries for this installation");
+    LOG(
+      "CheckerService:#getCanMigrate - no registry entries for this " +
+        "installation"
+    );
     return false;
-  },
+  }
 
   
 
 
-
-  getUpdateURL: async function UC_getUpdateURL(force) {
-    this._forced = force;
+  async getUpdateURL(checkType) {
+    LOG("CheckerService:getUpdateURL - checkType: " + checkType);
+    if (!this.#validUpdateCheckType(checkType)) {
+      LOG("CheckerService:getUpdateURL - Invalid checkType");
+      throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     let url = Services.appinfo.updateURL;
     let updatePin;
@@ -4625,17 +4672,17 @@ Checker.prototype = {
     }
 
     if (!url) {
-      LOG("Checker:getUpdateURL - update URL not defined");
+      LOG("CheckerService:getUpdateURL - update URL not defined");
       return null;
     }
 
     url = await lazy.UpdateUtils.formatUpdateURL(url);
 
-    if (force) {
+    if (checkType == Ci.nsIUpdateChecker.FOREGROUND_CHECK) {
       url += (url.includes("?") ? "&" : "?") + "force=1";
     }
 
-    if (this._getCanMigrate()) {
+    if (this.#getCanMigrate()) {
       url += (url.includes("?") ? "&" : "?") + "mig64=1";
     }
 
@@ -4646,158 +4693,194 @@ Checker.prototype = {
         encodeURIComponent(updatePin);
     }
 
-    LOG("Checker:getUpdateURL - update URL: " + url);
+    LOG("CheckerService:getUpdateURL - update URL: " + url);
     return url;
-  },
-
-  
-
-
-  checkForUpdates: function UC_checkForUpdates(listener, force) {
-    LOG("Checker: checkForUpdates, force: " + force);
-    if (!listener) {
-      throw Components.Exception("", Cr.NS_ERROR_NULL_POINTER);
-    }
-
-    let UpdateServiceInstance = UpdateServiceFactory.createInstance();
-    
-    
-    if (UpdateServiceInstance.disabled) {
-      LOG("Checker: checkForUpdates, disabled by policy");
-      return;
-    }
-    if (!UpdateServiceInstance.canCheckForUpdates && !force) {
-      return;
-    }
-
-    waitForOtherInstances()
-      .then(() => this.getUpdateURL(force))
-      .then(url => {
-        if (!url) {
-          return;
-        }
-
-        
-        
-        
-        
-        
-        
-        if (this._request) {
-          LOG(
-            "Checker: checkForUpdates: check request already active, aborting"
-          );
-          return;
-        }
-
-        this._request = new XMLHttpRequest();
-        this._request.open("GET", url, true);
-        this._request.channel.notificationCallbacks = new lazy.CertUtils.BadCertHandler(
-          false
-        );
-        
-        this._request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-        
-        this._request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
-        
-        this._request.channel.QueryInterface(
-          Ci.nsIHttpChannelInternal
-        ).beConservative = true;
-
-        this._request.overrideMimeType("text/xml");
-        
-        
-        
-        this._request.setRequestHeader("Cache-Control", "no-cache");
-        
-        
-        this._request.setRequestHeader("Pragma", "no-cache");
-
-        var self = this;
-        this._request.addEventListener("error", function(event) {
-          self.onError(event);
-        });
-        this._request.addEventListener("load", function(event) {
-          self.onLoad(event);
-        });
-
-        LOG("Checker:checkForUpdates - sending request to: " + url);
-        this._request.send(null);
-
-        this._callback = listener;
-      });
-  },
+  }
 
   
 
 
 
-  get _updates() {
-    var updatesElement = this._request.responseXML.documentElement;
-    if (!updatesElement) {
-      LOG("Checker:_updates get - empty updates document?!");
-      return [];
+  checkForUpdates(checkType) {
+    LOG("CheckerService:checkForUpdates - checkType: " + checkType);
+    if (!this.#validUpdateCheckType(checkType)) {
+      LOG("CheckerService:checkForUpdates - Invalid checkType");
+      throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
     }
 
-    if (updatesElement.nodeName != "updates") {
-      LOG("Checker:_updates get - unexpected node name!");
-      throw new Error(
-        "Unexpected node name, expected: updates, got: " +
-          updatesElement.nodeName
+    let checkId = this.#nextUpdateCheckId;
+    this.#nextUpdateCheckId += 1;
+
+    
+    
+    if (lazy.AUS.disabled) {
+      LOG("CheckerService:checkForUpdates - disabled by policy");
+      return this.#getChecksNotAllowedObject(checkId);
+    }
+    if (
+      checkType == Ci.nsIUpdateChecker.BACKGROUND_CHECK &&
+      !lazy.AUS.canCheckForUpdates
+    ) {
+      LOG("CheckerService:checkForUpdates - !canCheckForUpdates");
+      return this.#getChecksNotAllowedObject(checkId);
+    }
+
+    
+    
+    
+    
+    
+    let requestKey = checkType;
+
+    if (requestKey in this.#updateCheckData) {
+      LOG(
+        `CheckerService:checkForUpdates - Connecting check id ${checkId} to ` +
+          `existing check request.`
+      );
+    } else {
+      LOG(
+        `CheckerService:checkForUpdates - Making new check request for check ` +
+          `id ${checkId}.`
+      );
+      this.#updateCheckData[requestKey] = this.#makeUpdateCheckDataObject(
+        checkType,
+        this.#updateCheck(checkType, requestKey)
       );
     }
 
-    var updates = [];
-    for (var i = 0; i < updatesElement.childNodes.length; ++i) {
-      var updateElement = updatesElement.childNodes.item(i);
-      if (
-        updateElement.nodeType != updateElement.ELEMENT_NODE ||
-        updateElement.localName != "update"
-      ) {
-        continue;
-      }
+    this.#requestKeyByCheckId[checkId] = requestKey;
 
-      let update;
-      try {
-        update = new Update(updateElement);
-      } catch (e) {
-        LOG("Checker:_updates get - invalid <update/>, ignoring...");
-        continue;
-      }
-      update.serviceURL = this._request.responseURL;
-      update.channel = lazy.UpdateUtils.UpdateChannel;
-      updates.push(update);
-    }
+    return {
+      id: checkId,
+      result: this.#updateCheckData[requestKey].promise,
+      QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheck"]),
+    };
+  }
 
-    return updates;
-  },
+  #getChecksNotAllowedObject(checkId) {
+    return {
+      id: checkId,
+      result: Promise.resolve(
+        Object.freeze({
+          checksAllowed: false,
+          succeeded: false,
+          request: null,
+          updates: [],
+          QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckResult"]),
+        })
+      ),
+      QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheck"]),
+    };
+  }
 
-  
+  async #updateCheck(checkType, requestKey) {
+    await waitForOtherInstances();
 
-
-  _getChannelStatus: function UC__getChannelStatus(request) {
-    var status = 0;
+    let url;
     try {
-      status = request.status;
-    } catch (e) {}
+      url = await this.getUpdateURL(checkType);
+    } catch (ex) {}
 
-    if (status == 0) {
-      status = request.channel.QueryInterface(Ci.nsIRequest).status;
+    if (!url) {
+      LOG("CheckerService:#updateCheck - !url");
+      return this.#getCheckFailedObject("update_url_not_available");
     }
-    return status;
-  },
 
-  _isHttpStatusCode: function UC__isHttpStatusCode(status) {
-    return status >= 100 && status <= 599;
-  },
+    let request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.channel.notificationCallbacks = new lazy.CertUtils.BadCertHandler(
+      false
+    );
+    
+    request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
+    
+    request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
+    
+    
+    request.channel.QueryInterface(
+      Ci.nsIHttpChannelInternal
+    ).beConservative = true;
 
-  
+    request.overrideMimeType("text/xml");
+    
+    
+    
+    request.setRequestHeader("Cache-Control", "no-cache");
+    
+    
+    request.setRequestHeader("Pragma", "no-cache");
 
+    const UPDATE_CHECK_LOAD_SUCCESS = 1;
+    const UPDATE_CHECK_LOAD_ERROR = 2;
+    const UPDATE_CHECK_CANCELLED = 3;
 
+    let result = await new Promise(resolve => {
+      
+      
+      
+      
+      
+      if (!(requestKey in this.#updateCheckData)) {
+        LOG(
+          "CheckerService:#updateCheck - check was cancelled before request " +
+            "was able to start"
+        );
+        resolve(UPDATE_CHECK_CANCELLED);
+        return;
+      }
 
+      let onLoad = event => {
+        request.removeEventListener("load", onLoad);
+        LOG("CheckerService:#updateCheck - request got 'load' event");
+        resolve(UPDATE_CHECK_LOAD_SUCCESS);
+      };
+      request.addEventListener("load", onLoad);
+      let onError = event => {
+        request.removeEventListener("error", onLoad);
+        LOG("CheckerService:#updateCheck - request got 'error' event");
+        resolve(UPDATE_CHECK_LOAD_ERROR);
+      };
+      request.addEventListener("error", onError);
 
-  onLoad: function UC_onLoad(event) {
-    LOG("Checker:onLoad - request completed downloading document");
+      LOG("CheckerService:#updateCheck - sending request to: " + url);
+      request.send(null);
+      this.#updateCheckData[requestKey].request = request;
+    });
+
+    
+    
+    delete this.#updateCheckData[requestKey];
+    for (const checkId of Object.keys(this.#requestKeyByCheckId)) {
+      if (this.#requestKeyByCheckId[checkId] == requestKey) {
+        delete this.#requestKeyByCheckId[checkId];
+      }
+    }
+
+    if (result == UPDATE_CHECK_CANCELLED) {
+      return this.#getCheckFailedObject(Cr.NS_BINDING_ABORTED);
+    }
+
+    if (result == UPDATE_CHECK_LOAD_ERROR) {
+      let status = this.#getChannelStatus(request);
+      LOG("CheckerService:#updateCheck - Failed. request.status: " + status);
+
+      
+      try {
+        let secInfo = request.channel.securityInfo;
+        if (secInfo.serverCert && secInfo.serverCert.issuerName) {
+          Services.prefs.setStringPref(
+            "security.pki.mitm_canary_issuer",
+            secInfo.serverCert.issuerName
+          );
+        }
+      } catch (e) {
+        LOG("CheckerService:#updateCheck - Getting secInfo failed.");
+      }
+
+      return this.#getCheckFailedObject(status, 404, request);
+    }
+
+    LOG("CheckerService:#updateCheck - request completed downloading document");
     Services.prefs.clearUserPref("security.pki.mitm_canary_issuer");
     
     
@@ -4820,99 +4903,195 @@ Checker.prototype = {
         }
       }
     } catch (e) {
-      LOG("Checker:onLoad - Getting sslStatus failed.");
+      LOG("CheckerService:#updateCheck - Getting sslStatus failed.");
     }
 
+    let updates;
     try {
       
-      var updates = this._updates;
-      LOG("Checker:onLoad - number of updates available: " + updates.length);
-
-      if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS)) {
-        Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDERRORS);
-      }
-
-      
-      this._callback.onCheckComplete(event.target, updates);
+      updates = this.#parseUpdates(request);
     } catch (e) {
       LOG(
-        "Checker:onLoad - there was a problem checking for updates. " +
-          "Exception: " +
+        "CheckerService:#updateCheck - there was a problem checking for " +
+          "updates. Exception: " +
           e
       );
-      var request = event.target;
-      var status = this._getChannelStatus(request);
-      LOG("Checker:onLoad - request.status: " + status);
-      var update = new Update(null);
-      update.errorCode = status;
-      update.statusText = getStatusTextFromCode(status, 404);
-
-      if (this._isHttpStatusCode(status)) {
-        update.errorCode = HTTP_ERROR_OFFSET + status;
-      }
-
-      this._callback.onError(request, update);
+      let status = this.#getChannelStatus(request);
+      
+      
+      
+      return this.#getCheckFailedObject(status, 200, request);
     }
 
-    this._callback = null;
-    this._request = null;
-  },
+    LOG(
+      "CheckerService:#updateCheck - number of updates available: " +
+        updates.length
+    );
+
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_BACKGROUNDERRORS)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_BACKGROUNDERRORS);
+    }
+
+    return Object.freeze({
+      checksAllowed: true,
+      succeeded: true,
+      request,
+      updates,
+      QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckResult"]),
+    });
+  }
 
   
 
 
 
 
-  onError: function UC_onError(event) {
-    var request = event.target;
-    var status = this._getChannelStatus(request);
-    LOG("Checker:onError - request.status: " + status);
 
-    
-    try {
-      var secInfo = request.channel.securityInfo;
-      if (secInfo.serverCert && secInfo.serverCert.issuerName) {
-        Services.prefs.setStringPref(
-          "security.pki.mitm_canary_issuer",
-          secInfo.serverCert.issuerName
-        );
-      }
-    } catch (e) {
-      LOG("Checker:onError - Getting secInfo failed.");
-    }
 
-    
-    
-    
-    var update = new Update(null);
-    update.errorCode = status;
-    update.statusText = getStatusTextFromCode(status, 200);
 
-    if (status == Cr.NS_ERROR_OFFLINE) {
+
+
+
+
+
+  #getCheckFailedObject(
+    errorCode,
+    defaultCode = Cr.NS_BINDING_FAILED,
+    request = null
+  ) {
+    let update = new Update(null);
+    update.errorCode = errorCode;
+    update.statusText = getStatusTextFromCode(errorCode, defaultCode);
+
+    if (errorCode == Cr.NS_ERROR_OFFLINE) {
       
       update.errorCode = NETWORK_ERROR_OFFLINE;
-    } else if (this._isHttpStatusCode(status)) {
-      update.errorCode = HTTP_ERROR_OFFSET + status;
+    } else if (this.#isHttpStatusCode(errorCode)) {
+      update.errorCode = HTTP_ERROR_OFFSET + errorCode;
     }
 
-    this._callback.onError(request, update);
-    this._request = null;
-  },
+    return Object.freeze({
+      checksAllowed: true,
+      succeeded: false,
+      request,
+      updates: [update],
+      QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckResult"]),
+    });
+  }
 
   
 
 
-  stopCurrentCheck: function UC_stopCurrentCheck() {
-    
-    if (this._request) {
-      this._request.abort();
-    }
-    this._callback = null;
-  },
+  #getChannelStatus(request) {
+    var status = 0;
+    try {
+      status = request.status;
+    } catch (e) {}
 
-  classID: Components.ID("{898CDC9B-E43F-422F-9CC4-2F6291B415A3}"),
-  QueryInterface: ChromeUtils.generateQI(["nsIUpdateChecker"]),
-};
+    if (status == 0) {
+      status = request.channel.QueryInterface(Ci.nsIRequest).status;
+    }
+    return status;
+  }
+
+  #isHttpStatusCode(status) {
+    return status >= 100 && status <= 599;
+  }
+
+  
+
+
+
+
+
+
+  #parseUpdates(request) {
+    let updatesElement = request.responseXML.documentElement;
+    if (!updatesElement) {
+      LOG("CheckerService:#parseUpdates - empty updates document?!");
+      return [];
+    }
+
+    if (updatesElement.nodeName != "updates") {
+      LOG("CheckerService:#parseUpdates - unexpected node name!");
+      throw new Error(
+        "Unexpected node name, expected: updates, got: " +
+          updatesElement.nodeName
+      );
+    }
+
+    let updates = [];
+    for (const updateElement of updatesElement.childNodes) {
+      if (
+        updateElement.nodeType != updateElement.ELEMENT_NODE ||
+        updateElement.localName != "update"
+      ) {
+        continue;
+      }
+
+      let update;
+      try {
+        update = new Update(updateElement);
+      } catch (e) {
+        LOG("CheckerService:#parseUpdates - invalid <update/>, ignoring...");
+        continue;
+      }
+      update.serviceURL = request.responseURL;
+      update.channel = lazy.UpdateUtils.UpdateChannel;
+      updates.push(update);
+    }
+
+    return updates;
+  }
+
+  
+
+
+  stopCheck(checkId) {
+    if (!(checkId in this.#requestKeyByCheckId)) {
+      LOG(`CheckerService:stopCheck - Non-existent check id ${checkId}`);
+      return;
+    }
+    LOG(`CheckerService:stopCheck - Cancelling check id ${checkId}`);
+    let requestKey = this.#requestKeyByCheckId[checkId];
+    delete this.#requestKeyByCheckId[checkId];
+    if (Object.values(this.#requestKeyByCheckId).includes(requestKey)) {
+      LOG(
+        `CheckerService:stopCheck - Not actually cancelling request because ` +
+          `other check id's depend on it.`
+      );
+    } else {
+      LOG(
+        `CheckerService:stopCheck - This is the last check using this ` +
+          `request. Cancelling the request now.`
+      );
+      let request = this.#updateCheckData[requestKey].request;
+      delete this.#updateCheckData[requestKey];
+      if (request) {
+        LOG(`CheckerService:stopCheck - Aborting XMLHttpRequest`);
+        request.abort();
+      } else {
+        LOG(
+          `CheckerService:stopCheck - Not aborting XMLHttpRequest. It ` +
+            `doesn't appear to have started yet.`
+        );
+      }
+    }
+  }
+
+  
+
+
+  stopAllChecks() {
+    LOG("CheckerService:stopAllChecks - stopping all checks.");
+    for (const checkId of Object.keys(this.#requestKeyByCheckId)) {
+      this.stopCheck(checkId);
+    }
+  }
+
+  classID = Components.ID("{898CDC9B-E43F-422F-9CC4-2F6291B415A3}");
+  QueryInterface = ChromeUtils.generateQI(["nsIUpdateChecker"]);
+}
 
 
 
@@ -6544,4 +6723,4 @@ class RestartOnLastWindowClosed {
 
 let restartOnLastWindowClosed = new RestartOnLastWindowClosed();
 
-var EXPORTED_SYMBOLS = ["UpdateService", "Checker", "UpdateManager"];
+var EXPORTED_SYMBOLS = ["UpdateService", "CheckerService", "UpdateManager"];
