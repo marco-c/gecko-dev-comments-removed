@@ -486,9 +486,15 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
   }
 
   if (aElement.IsHTMLElement(nsGkAtoms::img)) {
-    
-    
-    return brokenChanged;
+    if (!brokenChanged) {
+      
+      
+      return false;
+    }
+    const bool needsImageFrame =
+        nsImageFrame::ImageFrameTypeFor(aElement, *aFrame.Style()) !=
+        nsImageFrame::ImageFrameType::None;
+    return needsImageFrame != aFrame.IsImageFrameOrSubclass();
   }
 
   if (aElement.IsSVGElement(nsGkAtoms::image)) {
@@ -2705,7 +2711,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   if (styleFrame && styleFrame->GetContent() != aElement) {
-    MOZ_ASSERT(static_cast<nsImageFrame*>(do_QueryFrame(styleFrame)));
+    MOZ_ASSERT(styleFrame->IsImageFrameOrSubclass());
     styleFrame = nullptr;
   }
 

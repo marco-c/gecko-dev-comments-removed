@@ -99,6 +99,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) final;
 
   void ResponsiveContentDensityChanged();
+  void ElementStateChanged(mozilla::dom::ElementState) override;
   void SetupForContentURLRequest();
   bool ShouldShowBrokenImageIcon() const;
 
@@ -140,16 +141,21 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
 
-  static bool ShouldCreateImageFrameForContent(const mozilla::dom::Element&,
-                                               const ComputedStyle&);
+  static bool ShouldCreateImageFrameForContentProperty(
+      const mozilla::dom::Element&, const ComputedStyle&);
 
   
 
 
 
 
-  static bool ShouldCreateImageFrameFor(const mozilla::dom::Element&,
-                                        const ComputedStyle&);
+  enum class ImageFrameType {
+    ForContentProperty,
+    ForElementRequest,
+    None,
+  };
+  static ImageFrameType ImageFrameTypeFor(const mozilla::dom::Element&,
+                                          const ComputedStyle&);
 
   ImgDrawResult DisplayAltFeedback(gfxContext& aRenderingContext,
                                    const nsRect& aDirtyRect, nsPoint aPt,
@@ -217,6 +223,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   void ReflowChildren(nsPresContext*, const ReflowInput&,
                       const mozilla::LogicalSize& aImageSize);
+
+  void UpdateIntrinsicSizeAndRatio();
 
  protected:
   nsImageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)

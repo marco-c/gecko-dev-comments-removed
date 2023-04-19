@@ -834,7 +834,7 @@ static bool HasAltText(const Element& aElement) {
   return aElement.HasNonEmptyAttr(nsGkAtoms::alt);
 }
 
-bool nsImageFrame::ShouldCreateImageFrameForContent(
+bool nsImageFrame::ShouldCreateImageFrameForContentProperty(
     const Element& aElement, const ComputedStyle& aStyle) {
   if (aElement.IsRootOfNativeAnonymousSubtree()) {
     return false;
@@ -850,37 +850,40 @@ bool nsImageFrame::ShouldCreateImageFrameForContent(
 
 
 
-bool nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
-                                             const ComputedStyle& aStyle) {
-  if (ShouldCreateImageFrameForContent(aElement, aStyle)) {
+auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
+                                     const ComputedStyle& aStyle)
+    -> ImageFrameType {
+  if (ShouldCreateImageFrameForContentProperty(aElement, aStyle)) {
     
-    return false;
+    return ImageFrameType::ForContentProperty;
   }
 
   if (ImageOk(aElement.State())) {
     
-    return true;
+    return ImageFrameType::ForElementRequest;
   }
 
   if (aStyle.StyleUIReset()->mMozForceBrokenImageIcon) {
-    return true;
+    return ImageFrameType::ForElementRequest;
   }
 
   
   if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
-    return false;
+    return ImageFrameType::None;
   }
 
   if (!HasAltText(aElement)) {
-    return true;
+    return ImageFrameType::ForElementRequest;
   }
 
-  if (aElement.OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks) {
-    
-    return HaveSpecifiedSize(aStyle.StylePosition());
+  
+  
+  if (aElement.OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks &&
+      HaveSpecifiedSize(aStyle.StylePosition())) {
+    return ImageFrameType::ForElementRequest;
   }
 
-  return false;
+  return ImageFrameType::None;
 }
 
 void nsImageFrame::Notify(imgIRequest* aRequest, int32_t aType,
@@ -936,7 +939,6 @@ void nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
 }
 
 void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
-  MOZ_ASSERT(aRequest);
   if (SizeIsAvailable(aRequest)) {
     
     
@@ -954,19 +956,8 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
       return;
     }
   }
-  bool intrinsicSizeOrRatioChanged = [&] {
-    
-    
-    bool intrinsicSizeChanged = UpdateIntrinsicSize();
-    bool intrinsicRatioChanged = UpdateIntrinsicRatio();
-    return intrinsicSizeChanged || intrinsicRatioChanged;
-  }();
 
-  if (intrinsicSizeOrRatioChanged) {
-    
-    
-    MaybeSendIntrinsicSizeAndRatioToEmbedder();
-  }
+  UpdateIntrinsicSizeAndRatio();
 
   if (!GotInitialReflow()) {
     return;
@@ -974,19 +965,6 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
 
   
   InvalidateFrame();
-
-  if (intrinsicSizeOrRatioChanged) {
-    
-    
-    if (!(mState & IMAGE_SIZECONSTRAINED)) {
-      PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
-                                    NS_FRAME_IS_DIRTY);
-    } else if (PresShell()->IsActive()) {
-      
-      
-      MaybeDecodeForPredictedSize();
-    }
-  }
 }
 
 void nsImageFrame::OnFrameUpdate(imgIRequest* aRequest,
@@ -1085,16 +1063,32 @@ void nsImageFrame::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus) {
   NotifyNewCurrentRequest(aRequest, aStatus);
 }
 
+void nsImageFrame::ElementStateChanged(ElementState aStates) {
+  if (!(aStates & ElementState::BROKEN)) {
+    return;
+  }
+  if (mKind != Kind::ImageElement) {
+    return;
+  }
+  if (!ImageOk(mContent->AsElement()->State())) {
+    UpdateImage(nullptr, nullptr);
+  }
+}
+
 void nsImageFrame::ResponsiveContentDensityChanged() {
-  if (!GotInitialReflow()) {
-    return;
-  }
+  UpdateIntrinsicSizeAndRatio();
+}
 
-  if (!mImage) {
-    return;
-  }
+void nsImageFrame::UpdateIntrinsicSizeAndRatio() {
+  bool intrinsicSizeOrRatioChanged = [&] {
+    
+    
+    bool intrinsicSizeChanged = UpdateIntrinsicSize();
+    bool intrinsicRatioChanged = UpdateIntrinsicRatio();
+    return intrinsicSizeChanged || intrinsicRatioChanged;
+  }();
 
-  if (!UpdateIntrinsicSize() && !UpdateIntrinsicRatio()) {
+  if (!intrinsicSizeOrRatioChanged) {
     return;
   }
 
@@ -1102,8 +1096,20 @@ void nsImageFrame::ResponsiveContentDensityChanged() {
   
   MaybeSendIntrinsicSizeAndRatioToEmbedder();
 
-  PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
-                                NS_FRAME_IS_DIRTY);
+  if (!GotInitialReflow()) {
+    return;
+  }
+
+  
+  
+  if (!HasAnyStateBits(IMAGE_SIZECONSTRAINED)) {
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
+                                  NS_FRAME_IS_DIRTY);
+  } else if (PresShell()->IsActive()) {
+    
+    
+    MaybeDecodeForPredictedSize();
+  }
 }
 
 void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,

@@ -3329,6 +3329,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  bool IsImageFrameOrSubclass() const;
+
+  
+
+
+
   inline bool IsSVGGeometryFrameOrSubclass() const;
 
   
