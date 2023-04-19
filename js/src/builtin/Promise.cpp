@@ -1015,7 +1015,7 @@ static void SetAlreadyResolvedResolutionFunction(JSFunction* resolutionFun) {
 
 
 
-static bool IsPromiseWithDefaultResolvingFunction(PromiseObject* promise) {
+bool js::IsPromiseWithDefaultResolvingFunction(PromiseObject* promise) {
   return PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS);
 }
 
@@ -1041,7 +1041,7 @@ static bool IsAlreadyResolvedPromiseWithDefaultResolvingFunction(
 
 
 
-static void SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
+void js::SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
     PromiseObject* promise) {
   MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
 
