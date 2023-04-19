@@ -2,8 +2,8 @@
 
 
 
-const { Interactions } = ChromeUtils.import(
-  "resource:///modules/Interactions.jsm"
+const { Interactions } = ChromeUtils.importESModule(
+  "resource:///modules/Interactions.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
