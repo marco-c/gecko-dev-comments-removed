@@ -45,14 +45,17 @@ class TaskQueueTimeoutFactory {
         on_expired_(std::move(on_expired)) {}
 
   
-  std::unique_ptr<Timeout> CreateTimeout() {
-    return std::make_unique<TaskQueueTimeout>(*this);
+  std::unique_ptr<Timeout> CreateTimeout(
+      webrtc::TaskQueueBase::DelayPrecision precision =
+          webrtc::TaskQueueBase::DelayPrecision::kLow) {
+    return std::make_unique<TaskQueueTimeout>(*this, precision);
   }
 
  private:
   class TaskQueueTimeout : public Timeout {
    public:
-    explicit TaskQueueTimeout(TaskQueueTimeoutFactory& parent);
+    TaskQueueTimeout(TaskQueueTimeoutFactory& parent,
+                     webrtc::TaskQueueBase::DelayPrecision precision);
     ~TaskQueueTimeout();
 
     void Start(DurationMs duration_ms, TimeoutID timeout_id) override;
@@ -60,6 +63,7 @@ class TaskQueueTimeoutFactory {
 
    private:
     TaskQueueTimeoutFactory& parent_;
+    const webrtc::TaskQueueBase::DelayPrecision precision_;
     
     
     

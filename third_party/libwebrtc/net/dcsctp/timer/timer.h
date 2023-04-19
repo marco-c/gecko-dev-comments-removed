@@ -21,6 +21,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/task_queue_base.h"
 #include "net/dcsctp/public/timeout.h"
 #include "rtc_base/strong_alias.h"
 
@@ -52,10 +53,21 @@ struct TimerOptions {
                TimerBackoffAlgorithm backoff_algorithm,
                absl::optional<int> max_restarts,
                absl::optional<DurationMs> max_backoff_duration)
+      : TimerOptions(duration,
+                     backoff_algorithm,
+                     max_restarts,
+                     max_backoff_duration,
+                     webrtc::TaskQueueBase::DelayPrecision::kLow) {}
+  TimerOptions(DurationMs duration,
+               TimerBackoffAlgorithm backoff_algorithm,
+               absl::optional<int> max_restarts,
+               absl::optional<DurationMs> max_backoff_duration,
+               webrtc::TaskQueueBase::DelayPrecision precision)
       : duration(duration),
         backoff_algorithm(backoff_algorithm),
         max_restarts(max_restarts),
-        max_backoff_duration(max_backoff_duration) {}
+        max_backoff_duration(max_backoff_duration),
+        precision(precision) {}
 
   
   const DurationMs duration;
@@ -67,6 +79,8 @@ struct TimerOptions {
   const absl::optional<int> max_restarts;
   
   const absl::optional<DurationMs> max_backoff_duration;
+  
+  const webrtc::TaskQueueBase::DelayPrecision precision;
 };
 
 
@@ -172,7 +186,8 @@ class Timer {
 class TimerManager {
  public:
   explicit TimerManager(
-      std::function<std::unique_ptr<Timeout>()> create_timeout)
+      std::function<std::unique_ptr<Timeout>(
+          webrtc::TaskQueueBase::DelayPrecision)> create_timeout)
       : create_timeout_(std::move(create_timeout)) {}
 
   
@@ -185,7 +200,9 @@ class TimerManager {
   void HandleTimeout(TimeoutID timeout_id);
 
  private:
-  const std::function<std::unique_ptr<Timeout>()> create_timeout_;
+  const std::function<std::unique_ptr<Timeout>(
+      webrtc::TaskQueueBase::DelayPrecision)>
+      create_timeout_;
   std::map<TimerID, Timer*> timers_;
   TimerID next_id_ = TimerID(0);
 };

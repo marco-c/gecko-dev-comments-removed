@@ -17,6 +17,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/task_queue/task_queue_base.h"
 #include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_message.h"
 #include "net/dcsctp/public/dcsctp_options.h"
@@ -266,7 +267,24 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual std::unique_ptr<Timeout> CreateTimeout() = 0;
+  
+  
+  
+  
+  
+  
+  
+  virtual std::unique_ptr<Timeout> CreateTimeout(
+      webrtc::TaskQueueBase::DelayPrecision precision) {
+    
+    
+    return CreateTimeout();
+  }
+  
+  
+  virtual std::unique_ptr<Timeout> CreateTimeout() {
+    return CreateTimeout(webrtc::TaskQueueBase::DelayPrecision::kLow);
+  }
 
   
   
