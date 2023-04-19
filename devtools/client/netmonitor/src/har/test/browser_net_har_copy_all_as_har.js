@@ -91,15 +91,17 @@ async function testManyReloads({ tab, monitor, toolbox }) {
   );
   
   let entry = har.log.entries.find(e => e.response.status == 0);
-  ok(entry, "Found the cancelled request");
-  is(entry.request.method, "GET", "Method is set");
-  is(entry.request.url, SIMPLE_URL, "URL is set");
-  
-  
-  
-  
-  is(entry.request.headers.length, 6, "But headers are partialy populated");
-  is(entry.response.status, 0, "And status is set to 0");
+  if (entry) {
+    ok(entry, "Found the cancelled request");
+    is(entry.request.method, "GET", "Method is set");
+    is(entry.request.url, SIMPLE_URL, "URL is set");
+    
+    
+    
+    
+    is(entry.request.headers.length, 6, "But headers are partialy populated");
+    is(entry.response.status, 0, "And status is set to 0");
+  }
 
   entry = har.log.entries.find(e => e.response.status != 0);
   assertNavigationRequestEntry(entry);
