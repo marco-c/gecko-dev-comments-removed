@@ -17,8 +17,6 @@
 
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video_track_source_proxy.h"
-#include "pc/jitter_buffer_delay.h"
-#include "pc/jitter_buffer_delay_proxy.h"
 #include "pc/video_track.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -39,7 +37,7 @@ VideoRtpReceiver::VideoRtpReceiver(
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams)
     : worker_thread_(worker_thread),
       id_(receiver_id),
-      source_(new RefCountedObject<VideoRtpTrackSource>(this)),
+      source_(rtc::make_ref_counted<VideoRtpTrackSource>(&source_callback_)),
       track_(VideoTrackProxyWithInternal<VideoTrack>::Create(
           rtc::Thread::Current(),
           worker_thread,
@@ -49,111 +47,130 @@ VideoRtpReceiver::VideoRtpReceiver(
                                             worker_thread,
                                             source_),
               worker_thread))),
-      attachment_id_(GenerateUniqueId()),
-      delay_(JitterBufferDelayProxy::Create(
-          rtc::Thread::Current(),
-          worker_thread,
-          new rtc::RefCountedObject<JitterBufferDelay>(worker_thread))) {
+      attachment_id_(GenerateUniqueId()) {
   RTC_DCHECK(worker_thread_);
   SetStreams(streams);
   source_->SetState(MediaSourceInterface::kLive);
 }
 
 VideoRtpReceiver::~VideoRtpReceiver() {
-  
-  
-  Stop();
-  
-  worker_thread_->Invoke<void>(RTC_FROM_HERE,
-                               [this] { source_->ClearCallback(); });
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  RTC_DCHECK(stopped_);
+  RTC_DCHECK(!media_channel_);
 }
 
 std::vector<std::string> VideoRtpReceiver::stream_ids() const {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   std::vector<std::string> stream_ids(streams_.size());
   for (size_t i = 0; i < streams_.size(); ++i)
     stream_ids[i] = streams_[i]->id();
   return stream_ids;
 }
 
+rtc::scoped_refptr<DtlsTransportInterface> VideoRtpReceiver::dtls_transport()
+    const {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  return dtls_transport_;
+}
+
+std::vector<rtc::scoped_refptr<MediaStreamInterface>>
+VideoRtpReceiver::streams() const {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  return streams_;
+}
+
 RtpParameters VideoRtpReceiver::GetParameters() const {
-  if (!media_channel_ || stopped_) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  if (!media_channel_)
     return RtpParameters();
-  }
-  return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    return ssrc_ ? media_channel_->GetRtpReceiveParameters(*ssrc_)
-                 : media_channel_->GetDefaultRtpReceiveParameters();
-  });
+  return ssrc_ ? media_channel_->GetRtpReceiveParameters(*ssrc_)
+               : media_channel_->GetDefaultRtpReceiveParameters();
 }
 
 void VideoRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   frame_decryptor_ = std::move(frame_decryptor);
   
-  if (media_channel_ && ssrc_.has_value() && !stopped_) {
-    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-      media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
-    });
+  if (media_channel_ && ssrc_) {
+    media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
   }
 }
 
 rtc::scoped_refptr<FrameDecryptorInterface>
 VideoRtpReceiver::GetFrameDecryptor() const {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   return frame_decryptor_;
 }
 
 void VideoRtpReceiver::SetDepacketizerToDecoderFrameTransformer(
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-    RTC_DCHECK_RUN_ON(worker_thread_);
-    frame_transformer_ = std::move(frame_transformer);
-    if (media_channel_ && !stopped_) {
-      media_channel_->SetDepacketizerToDecoderFrameTransformer(
-          ssrc_.value_or(0), frame_transformer_);
-    }
-  });
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  frame_transformer_ = std::move(frame_transformer);
+  if (media_channel_) {
+    media_channel_->SetDepacketizerToDecoderFrameTransformer(
+        ssrc_.value_or(0), frame_transformer_);
+  }
 }
 
 void VideoRtpReceiver::Stop() {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   
-  if (stopped_) {
-    return;
+
+  if (!stopped_) {
+    source_->SetState(MediaSourceInterface::kEnded);
+    stopped_ = true;
   }
-  source_->SetState(MediaSourceInterface::kEnded);
-  if (!media_channel_) {
-    RTC_LOG(LS_WARNING) << "VideoRtpReceiver::Stop: No video channel exists.";
-  } else {
-    
-    
-    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-      RTC_DCHECK_RUN_ON(worker_thread_);
+
+  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    RTC_DCHECK_RUN_ON(worker_thread_);
+    if (media_channel_) {
       SetSink(nullptr);
-    });
-  }
-  delay_->OnStop();
-  stopped_ = true;
+      SetMediaChannel_w(nullptr);
+    }
+    source_->ClearCallback();
+  });
 }
 
 void VideoRtpReceiver::StopAndEndTrack() {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   Stop();
   track_->internal()->set_ended();
 }
 
 void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
-  RTC_DCHECK(media_channel_);
-  if (!stopped_ && ssrc_ == ssrc) {
-    return;
-  }
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+
+  
+  
+  
+
+  
+  bool ok = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&, was_stopped =
+                                                                stopped_] {
     RTC_DCHECK_RUN_ON(worker_thread_);
-    if (!stopped_) {
+    if (!media_channel_) {
+      
+      
+      RTC_DCHECK(was_stopped);
+      return false;  
+    }
+
+    if (!was_stopped && ssrc_ == ssrc) {
+      
+      return true;
+    }
+
+    
+    if (!was_stopped) {
       SetSink(nullptr);
     }
+
     bool encoded_sink_enabled = saved_encoded_sink_enabled_;
     SetEncodedSinkEnabled(false);
-    stopped_ = false;
 
-    ssrc_ = ssrc;
-
+    
+    ssrc_ = std::move(ssrc);
     SetSink(source_->sink());
     if (encoded_sink_enabled) {
       SetEncodedSinkEnabled(true);
@@ -163,47 +180,62 @@ void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
       media_channel_->SetDepacketizerToDecoderFrameTransformer(
           ssrc_.value_or(0), frame_transformer_);
     }
+
+    if (media_channel_ && ssrc_) {
+      if (frame_decryptor_) {
+        media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
+      }
+
+      media_channel_->SetBaseMinimumPlayoutDelayMs(*ssrc_, delay_.GetMs());
+    }
+
+    return true;
   });
 
-  
-  MaybeAttachFrameDecryptorToMediaChannel(
-      ssrc, worker_thread_, frame_decryptor_, media_channel_, stopped_);
-  
-  
-  delay_->OnStart(media_channel_, ssrc.value_or(0));
+  if (!ok)
+    return;
+
+  stopped_ = false;
 }
 
+
 void VideoRtpReceiver::SetSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
-  RTC_DCHECK(media_channel_);
   if (ssrc_) {
     media_channel_->SetSink(*ssrc_, sink);
-    return;
+  } else {
+    media_channel_->SetDefaultSink(sink);
   }
-  media_channel_->SetDefaultSink(sink);
 }
 
 void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
-  if (!media_channel_) {
-    RTC_LOG(LS_ERROR)
-        << "VideoRtpReceiver::SetupMediaChannel: No video channel exists.";
-  }
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   RestartMediaChannel(ssrc);
 }
 
 void VideoRtpReceiver::SetupUnsignaledMediaChannel() {
-  if (!media_channel_) {
-    RTC_LOG(LS_ERROR) << "VideoRtpReceiver::SetupUnsignaledMediaChannel: No "
-                         "video channel exists.";
-  }
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   RestartMediaChannel(absl::nullopt);
 }
 
+uint32_t VideoRtpReceiver::ssrc() const {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  return ssrc_.value_or(0);
+}
+
 void VideoRtpReceiver::set_stream_ids(std::vector<std::string> stream_ids) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   SetStreams(CreateStreamsFromIds(std::move(stream_ids)));
+}
+
+void VideoRtpReceiver::set_transport(
+    rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  dtls_transport_ = std::move(dtls_transport);
 }
 
 void VideoRtpReceiver::SetStreams(
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   
   for (const auto& existing_stream : streams_) {
     bool removed = true;
@@ -236,6 +268,7 @@ void VideoRtpReceiver::SetStreams(
 }
 
 void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   observer_ = observer;
   
   if (received_first_packet_ && observer_) {
@@ -245,40 +278,57 @@ void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
 
 void VideoRtpReceiver::SetJitterBufferMinimumDelay(
     absl::optional<double> delay_seconds) {
-  delay_->Set(delay_seconds);
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  delay_.Set(delay_seconds);
+  if (media_channel_ && ssrc_)
+    media_channel_->SetBaseMinimumPlayoutDelayMs(*ssrc_, delay_.GetMs());
 }
 
 void VideoRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   RTC_DCHECK(media_channel == nullptr ||
              media_channel->media_type() == media_type());
+
+  if (stopped_ && !media_channel)
+    return;
+
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(worker_thread_);
-    bool encoded_sink_enabled = saved_encoded_sink_enabled_;
-    if (encoded_sink_enabled && media_channel_) {
-      
-      SetEncodedSinkEnabled(false);
-    }
-
-    media_channel_ = static_cast<cricket::VideoMediaChannel*>(media_channel);
-
-    if (media_channel_) {
-      if (saved_generate_keyframe_) {
-        
-        media_channel_->GenerateKeyFrame(ssrc_.value_or(0));
-        saved_generate_keyframe_ = false;
-      }
-      if (encoded_sink_enabled) {
-        SetEncodedSinkEnabled(true);
-      }
-      if (frame_transformer_) {
-        media_channel_->SetDepacketizerToDecoderFrameTransformer(
-            ssrc_.value_or(0), frame_transformer_);
-      }
-    }
+    SetMediaChannel_w(media_channel);
   });
 }
 
+
+void VideoRtpReceiver::SetMediaChannel_w(cricket::MediaChannel* media_channel) {
+  if (media_channel == media_channel_)
+    return;
+
+  bool encoded_sink_enabled = saved_encoded_sink_enabled_;
+  if (encoded_sink_enabled && media_channel_) {
+    
+    SetEncodedSinkEnabled(false);
+  }
+
+  media_channel_ = static_cast<cricket::VideoMediaChannel*>(media_channel);
+
+  if (media_channel_) {
+    if (saved_generate_keyframe_) {
+      
+      media_channel_->GenerateKeyFrame(ssrc_.value_or(0));
+      saved_generate_keyframe_ = false;
+    }
+    if (encoded_sink_enabled) {
+      SetEncodedSinkEnabled(true);
+    }
+    if (frame_transformer_) {
+      media_channel_->SetDepacketizerToDecoderFrameTransformer(
+          ssrc_.value_or(0), frame_transformer_);
+    }
+  }
+}
+
 void VideoRtpReceiver::NotifyFirstPacketReceived() {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   if (observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
@@ -286,11 +336,10 @@ void VideoRtpReceiver::NotifyFirstPacketReceived() {
 }
 
 std::vector<RtpSource> VideoRtpReceiver::GetSources() const {
-  if (!media_channel_ || !ssrc_ || stopped_) {
-    return {};
-  }
-  return worker_thread_->Invoke<std::vector<RtpSource>>(
-      RTC_FROM_HERE, [&] { return media_channel_->GetSources(*ssrc_); });
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  if (!ssrc_ || !media_channel_)
+    return std::vector<RtpSource>();
+  return media_channel_->GetSources(*ssrc_);
 }
 
 void VideoRtpReceiver::OnGenerateKeyFrame() {
@@ -316,20 +365,21 @@ void VideoRtpReceiver::OnEncodedSinkEnabled(bool enable) {
   saved_encoded_sink_enabled_ = enable;
 }
 
+
 void VideoRtpReceiver::SetEncodedSinkEnabled(bool enable) {
-  if (media_channel_) {
-    if (enable) {
-      
-      auto source = source_;
-      media_channel_->SetRecordableEncodedFrameCallback(
-          ssrc_.value_or(0),
-          [source = std::move(source)](const RecordableEncodedFrame& frame) {
-            source->BroadcastRecordableEncodedFrame(frame);
-          });
-    } else {
-      
-      media_channel_->ClearRecordableEncodedFrameCallback(ssrc_.value_or(0));
-    }
+  if (!media_channel_)
+    return;
+
+  
+  const auto ssrc = ssrc_.value_or(0);
+
+  if (enable) {
+    media_channel_->SetRecordableEncodedFrameCallback(
+        ssrc, [source = source_](const RecordableEncodedFrame& frame) {
+          source->BroadcastRecordableEncodedFrame(frame);
+        });
+  } else {
+    media_channel_->ClearRecordableEncodedFrameCallback(ssrc);
   }
 }
 

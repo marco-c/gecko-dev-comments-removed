@@ -211,14 +211,10 @@ void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
 
   for (const auto& receiver : receivers_) {
     if (!channel_) {
-      
-      
-      
       receiver->internal()->Stop();
+    } else {
+      receiver->internal()->SetMediaChannel(channel_->media_channel());
     }
-
-    receiver->internal()->SetMediaChannel(channel_ ? channel_->media_channel()
-                                                   : nullptr);
   }
 }
 
@@ -268,12 +264,8 @@ bool RtpTransceiver::RemoveReceiver(RtpReceiverInterface* receiver) {
   if (it == receivers_.end()) {
     return false;
   }
+  
   (*it)->internal()->Stop();
-  
-  
-  
-  
-  (*it)->internal()->SetMediaChannel(nullptr);
   receivers_.erase(it);
   return true;
 }

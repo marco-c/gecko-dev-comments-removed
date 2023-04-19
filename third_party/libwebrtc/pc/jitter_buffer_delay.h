@@ -14,36 +14,25 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "media/base/delayable.h"
-#include "pc/jitter_buffer_delay_interface.h"
-#include "rtc_base/thread.h"
+#include "api/sequence_checker.h"
+#include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
 
 
 
 
-
-
-class JitterBufferDelay : public JitterBufferDelayInterface {
+class JitterBufferDelay {
  public:
-  
-  explicit JitterBufferDelay(rtc::Thread* worker_thread);
+  JitterBufferDelay();
 
-  void OnStart(cricket::Delayable* media_channel, uint32_t ssrc) override;
-
-  void OnStop() override;
-
-  void Set(absl::optional<double> delay_seconds) override;
+  void Set(absl::optional<double> delay_seconds);
+  int GetMs() const;
 
  private:
-  
-  rtc::Thread* const signaling_thread_;
-  rtc::Thread* const worker_thread_;
-  
-  cricket::Delayable* media_channel_ = nullptr;
-  absl::optional<uint32_t> ssrc_;
-  absl::optional<double> cached_delay_seconds_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_thread_checker_;
+  absl::optional<double> cached_delay_seconds_
+      RTC_GUARDED_BY(&worker_thread_checker_);
 };
 
 }  

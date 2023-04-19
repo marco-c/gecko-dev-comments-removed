@@ -100,9 +100,11 @@ class RTC_EXPORT RtpReceiverInterface : public rtc::RefCountInterface {
   
   
   
+  
   virtual void SetFrameDecryptor(
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
 
+  
   
   
   virtual rtc::scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor() const;
@@ -120,27 +122,31 @@ class RTC_EXPORT RtpReceiverInterface : public rtc::RefCountInterface {
 
 
 
-BEGIN_PRIMARY_PROXY_MAP(RtpReceiver)
+BEGIN_PROXY_MAP(RtpReceiver)
 PROXY_PRIMARY_THREAD_DESTRUCTOR()
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+BYPASS_PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtlsTransportInterface>, dtls_transport)
 PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
 PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
                    streams)
 BYPASS_PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
 BYPASS_PROXY_CONSTMETHOD0(std::string, id)
-PROXY_CONSTMETHOD0(RtpParameters, GetParameters)
+PROXY_SECONDARY_CONSTMETHOD0(RtpParameters, GetParameters)
 PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*)
-PROXY_METHOD1(void, SetJitterBufferMinimumDelay, absl::optional<double>)
-PROXY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)
-PROXY_METHOD1(void,
-              SetFrameDecryptor,
-              rtc::scoped_refptr<FrameDecryptorInterface>)
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<FrameDecryptorInterface>,
-                   GetFrameDecryptor)
-PROXY_METHOD1(void,
-              SetDepacketizerToDecoderFrameTransformer,
-              rtc::scoped_refptr<FrameTransformerInterface>)
+PROXY_SECONDARY_METHOD1(void,
+                        SetJitterBufferMinimumDelay,
+                        absl::optional<double>)
+PROXY_SECONDARY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)
+
+PROXY_SECONDARY_METHOD1(void,
+                        SetFrameDecryptor,
+                        rtc::scoped_refptr<FrameDecryptorInterface>)
+
+PROXY_SECONDARY_CONSTMETHOD0(rtc::scoped_refptr<FrameDecryptorInterface>,
+                             GetFrameDecryptor)
+PROXY_SECONDARY_METHOD1(void,
+                        SetDepacketizerToDecoderFrameTransformer,
+                        rtc::scoped_refptr<FrameTransformerInterface>)
 END_PROXY_MAP()
 
 }  
