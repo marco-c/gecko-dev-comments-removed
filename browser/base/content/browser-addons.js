@@ -1215,43 +1215,31 @@ var gUnifiedExtensions = {
       return;
     }
 
-    
-    
-    
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "prefEnabled",
+    const unifiedExtensionsEnabled = Services.prefs.getBoolPref(
       "extensions.unifiedExtensions.enabled",
-      false,
-      this.onPrefChange.bind(this)
+      false
     );
 
-    MozXULElement.insertFTLIfNeeded("preview/unifiedExtensions.ftl");
+    if (unifiedExtensionsEnabled) {
+      MozXULElement.insertFTLIfNeeded("preview/unifiedExtensions.ftl");
 
-    
-    const template = document.getElementById("unified-extensions-template");
-    if (template) {
-      template.replaceWith(template.content);
+      
+      const template = document.getElementById("unified-extensions-template");
+      if (template) {
+        template.replaceWith(template.content);
+      }
+
+      let listView = document.getElementById("unified-extensions-view");
+      listView.addEventListener("ViewShowing", this);
+      listView.addEventListener("ViewHiding", this);
+
+      
+      document.getElementById(
+        "unified-extensions-button"
+      ).hidden = !unifiedExtensionsEnabled;
     }
 
-    let listView = document.getElementById("unified-extensions-view");
-    listView.addEventListener("ViewShowing", this);
-    listView.addEventListener("ViewHiding", this);
-
-    this.updateButtonState();
-
     this._initialized = true;
-  },
-
-  
-  updateButtonState() {
-    document.getElementById("unified-extensions-button").hidden = !this
-      .prefEnabled;
-  },
-
-  onPrefChange(pref, oldValue, newValue) {
-    this.prefEnabled = newValue;
-    this.updateButtonState();
   },
 
   
