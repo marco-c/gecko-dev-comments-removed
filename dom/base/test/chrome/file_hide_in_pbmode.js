@@ -20,16 +20,19 @@ function checkCaches(content, expected) {
 
 function checkIDB(content, expected) {
   check(content, expected, "indexedDB");
-  check(content, expected, "IDBCursor");
-  check(content, expected, "IDBDatabase");
   check(content, expected, "IDBFactory");
-  check(content, expected, "IDBIndex");
   check(content, expected, "IDBKeyRange");
-  check(content, expected, "IDBObjectStore");
   check(content, expected, "IDBOpenDBRequest");
   check(content, expected, "IDBRequest");
-  check(content, expected, "IDBTransaction");
   check(content, expected, "IDBVersionChangeEvent");
+
+  
+  
+  check(content, true, "IDBCursor");
+  check(content, true, "IDBDatabase");
+  check(content, true, "IDBIndex");
+  check(content, true, "IDBObjectStore");
+  check(content, true, "IDBTransaction");
 }
 
 function checkSW(content, expected) {
