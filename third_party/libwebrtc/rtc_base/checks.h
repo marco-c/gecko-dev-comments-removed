@@ -14,7 +14,7 @@
 
 
 
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+#if !defined(NDEBUG) || defined(RTC_DCHECK_ALWAYS_ON)
 #define RTC_DCHECK_IS_ON 1
 #else
 #define RTC_DCHECK_IS_ON 0
