@@ -225,7 +225,6 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   
   RTCStatsMember<std::string> candidate_type;
   RTCStatsMember<int32_t> priority;
-  
   RTCStatsMember<std::string> url;
 
  protected:
