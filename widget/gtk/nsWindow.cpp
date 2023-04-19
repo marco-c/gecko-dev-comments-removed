@@ -3991,10 +3991,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   
   
-  if (mWindowType == eWindowType_toplevel ||
-      mWindowType == eWindowType_dialog) {
-    MOZ_DIAGNOSTIC_ASSERT(mGdkWindow,
-                          "Getting configure for invisible window?");
+  if (mGdkWindow && (mWindowType == eWindowType_toplevel ||
+                     mWindowType == eWindowType_dialog)) {
     if (mWindowScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
       LOG("  scale factor changed to %d,return early",
           gdk_window_get_scale_factor(mGdkWindow));
@@ -4015,7 +4013,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   NS_ASSERTION(GTK_IS_WINDOW(aWidget),
                "Configure event on widget that is not a GtkWindow");
-  if (gtk_window_get_window_type(GTK_WINDOW(aWidget)) == GTK_WINDOW_POPUP) {
+  if (mGdkWindow &&
+      gtk_window_get_window_type(GTK_WINDOW(aWidget)) == GTK_WINDOW_POPUP) {
     
     
     
