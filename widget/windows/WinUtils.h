@@ -125,21 +125,6 @@ void EnumerateThreadWindows(F&& f)
 namespace widget {
 
 
-struct EventMsgInfo {
-  const char* mStr;
-  UINT mId;
-  std::function<nsAutoCString(WPARAM, LPARAM, bool)> mParamInfoFn;
-  std::function<void(nsAutoCString&, WPARAM, const char*, bool)> mWParamInfoFn;
-  const char* mWParamName;
-  std::function<void(nsAutoCString&, LPARAM, const char*, bool)> mLParamInfoFn;
-  const char* mLParamName;
-  void LogParameters(nsAutoCString& str, WPARAM wParam, LPARAM lParam,
-                     bool isPreCall);
-};
-extern std::unordered_map<UINT, EventMsgInfo> gAllEvents;
-extern mozilla::HashSet<UINT> gEventsToLogOriginalParams;
-
-
 
 
 #ifndef QS_RAWINPUT
@@ -249,6 +234,13 @@ class WinUtils {
 
   static bool HasSystemMetricsForDpi();
   static int GetSystemMetricsForDpi(int nIndex, UINT dpi);
+
+  
+
+
+
+
+  static const char* WinEventToEventName(UINT msg);
 
   
 
