@@ -239,8 +239,8 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  const nsPoint& GetLastOverWindowMouseLocation() const {
-    return mLastOverWindowMouseLocation;
+  const nsPoint& GetLastOverWindowPointerLocation() const {
+    return mLastOverWindowPointerLocation;
   }
 
   void Init(nsPresContext*, nsViewManager*);
@@ -1980,8 +1980,14 @@ class PresShell final : public nsStubDocumentObserver,
   };
 
   
+
+
+
+  nsPoint GetEventLocation(const WidgetMouseEvent& aEvent) const;
+
   
-  void RecordMouseLocation(WidgetGUIEvent* aEvent);
+  
+  void RecordPointerLocation(WidgetGUIEvent* aEvent);
   inline bool MouseLocationWasSetBySynthesizedMouseEventForTests() const;
   class nsSynthMouseMoveEvent final : public nsARefreshObserver {
    public:
@@ -3006,7 +3012,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsPoint mMouseLocation;
   
-  nsPoint mLastOverWindowMouseLocation;
+  
+  nsPoint mLastOverWindowPointerLocation;
   
   
   
