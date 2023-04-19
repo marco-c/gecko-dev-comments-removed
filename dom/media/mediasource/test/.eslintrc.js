@@ -2,8 +2,6 @@
 
 module.exports = {
   
-  extends: "plugin:mozilla/mochitest-test",
-  
   
   globals: {
     addMSEPrefs: false,
