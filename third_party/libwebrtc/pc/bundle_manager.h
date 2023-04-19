@@ -12,6 +12,7 @@
 #define PC_BUNDLE_MANAGER_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "pc/session_description.h"
@@ -35,12 +36,16 @@ class BundleManager {
       const {
     return bundle_groups_;
   }
-  std::vector<std::unique_ptr<cricket::ContentGroup>>& bundle_groups() {
-    return bundle_groups_;
-  }
+  
+  
+  void Update(const cricket::SessionDescription* description);
+  
+  void DeleteMid(const cricket::ContentGroup* bundle_group,
+                 const std::string& mid);
+  
+  void DeleteGroup(const cricket::ContentGroup* bundle_group);
 
  private:
-  
   std::vector<std::unique_ptr<cricket::ContentGroup>> bundle_groups_;
 };
 
