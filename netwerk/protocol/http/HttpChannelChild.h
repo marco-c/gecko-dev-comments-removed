@@ -254,7 +254,7 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
-  void CancelOnMainThread(nsresult aRv);
+  void CancelOnMainThread(nsresult aRv, const nsACString& aReason);
 
   nsresult MaybeLogCOEPError(nsresult aStatus);
 
