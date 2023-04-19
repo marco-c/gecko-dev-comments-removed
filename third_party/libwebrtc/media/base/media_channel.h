@@ -260,6 +260,10 @@ class MediaChannel {
   void SetExtmapAllowMixed(bool extmap_allow_mixed);
   bool ExtmapAllowMixed() const;
 
+  
+  
+  bool HasNetworkInterface() const;
+
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
   virtual webrtc::RTCError SetRtpSendParameters(
       uint32_t ssrc,
