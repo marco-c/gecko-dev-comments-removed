@@ -267,15 +267,16 @@ class RtpSenderTest : public ::testing::Test {
   
   
   void EnableMidSending(const std::string& mid) {
-    rtp_sender_->RegisterRtpHeaderExtension(RtpMid::kUri, kMidExtensionId);
+    rtp_sender_->RegisterRtpHeaderExtension(RtpMid::Uri(), kMidExtensionId);
     rtp_sender_->SetMid(mid);
   }
 
   
   
   void EnableRidSending(const std::string& rid) {
-    rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::kUri, kRidExtensionId);
-    rtp_sender_->RegisterRtpHeaderExtension(RepairedRtpStreamId::kUri,
+    rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(),
+                                            kRidExtensionId);
+    rtp_sender_->RegisterRtpHeaderExtension(RepairedRtpStreamId::Uri(),
                                             kRepairedRidExtensionId);
     rtp_sender_->SetRid(rid);
   }
@@ -297,15 +298,15 @@ TEST_F(RtpSenderTest, AllocatePacketSetCsrc) {
 TEST_F(RtpSenderTest, AllocatePacketReserveExtensions) {
   
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransmissionOffset::kUri, kTransmissionTimeOffsetExtensionId));
+      TransmissionOffset::Uri(), kTransmissionTimeOffsetExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      AbsoluteSendTime::kUri, kAbsoluteSendTimeExtensionId));
-  ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(AudioLevel::kUri,
+      AbsoluteSendTime::Uri(), kAbsoluteSendTimeExtensionId));
+  ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(AudioLevel::Uri(),
                                                       kAudioLevelExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      VideoOrientation::kUri, kVideoRotationExtensionId));
+      VideoOrientation::Uri(), kVideoRotationExtensionId));
 
   auto packet = rtp_sender_->AllocatePacket();
 
@@ -444,7 +445,7 @@ TEST_F(RtpSenderTest, NoPaddingAsFirstPacketWithoutBweExtensions) {
 
 TEST_F(RtpSenderTest, AllowPaddingAsFirstPacketOnRtxWithTransportCc) {
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
 
   
   
@@ -465,7 +466,7 @@ TEST_F(RtpSenderTest, AllowPaddingAsFirstPacketOnRtxWithTransportCc) {
 
 TEST_F(RtpSenderTest, AllowPaddingAsFirstPacketOnRtxWithAbsSendTime) {
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      AbsoluteSendTime::kUri, kAbsoluteSendTimeExtensionId));
+      AbsoluteSendTime::Uri(), kAbsoluteSendTimeExtensionId));
 
   
   
@@ -518,7 +519,7 @@ TEST_F(RtpSenderTest, UpdatesTimestampsOnPlainRtxPadding) {
 
 TEST_F(RtpSenderTest, KeepsTimestampsOnPayloadPadding) {
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
   EnableRtx();
   
   const int64_t start_time = clock_->TimeInMilliseconds();
@@ -892,7 +893,7 @@ TEST_F(RtpSenderTest, OnOverheadChanged) {
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
 
-  rtp_sender_->RegisterRtpHeaderExtension(TransmissionOffset::kUri,
+  rtp_sender_->RegisterRtpHeaderExtension(TransmissionOffset::Uri(),
                                           kTransmissionTimeOffsetExtensionId);
 
   
@@ -908,8 +909,8 @@ TEST_F(RtpSenderTest, CountMidOnlyUntilAcked) {
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
 
-  rtp_sender_->RegisterRtpHeaderExtension(RtpMid::kUri, kMidExtensionId);
-  rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::kUri, kRidExtensionId);
+  rtp_sender_->RegisterRtpHeaderExtension(RtpMid::Uri(), kMidExtensionId);
+  rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), kRidExtensionId);
 
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
@@ -931,15 +932,16 @@ TEST_F(RtpSenderTest, DontCountVolatileExtensionsIntoOverhead) {
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
 
-  rtp_sender_->RegisterRtpHeaderExtension(InbandComfortNoiseExtension::kUri, 1);
-  rtp_sender_->RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::kUri,
+  rtp_sender_->RegisterRtpHeaderExtension(InbandComfortNoiseExtension::Uri(),
+                                          1);
+  rtp_sender_->RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::Uri(),
                                           2);
-  rtp_sender_->RegisterRtpHeaderExtension(VideoOrientation::kUri, 3);
-  rtp_sender_->RegisterRtpHeaderExtension(PlayoutDelayLimits::kUri, 4);
-  rtp_sender_->RegisterRtpHeaderExtension(VideoContentTypeExtension::kUri, 5);
-  rtp_sender_->RegisterRtpHeaderExtension(VideoTimingExtension::kUri, 6);
-  rtp_sender_->RegisterRtpHeaderExtension(RepairedRtpStreamId::kUri, 7);
-  rtp_sender_->RegisterRtpHeaderExtension(ColorSpaceExtension::kUri, 8);
+  rtp_sender_->RegisterRtpHeaderExtension(VideoOrientation::Uri(), 3);
+  rtp_sender_->RegisterRtpHeaderExtension(PlayoutDelayLimits::Uri(), 4);
+  rtp_sender_->RegisterRtpHeaderExtension(VideoContentTypeExtension::Uri(), 5);
+  rtp_sender_->RegisterRtpHeaderExtension(VideoTimingExtension::Uri(), 6);
+  rtp_sender_->RegisterRtpHeaderExtension(RepairedRtpStreamId::Uri(), 7);
+  rtp_sender_->RegisterRtpHeaderExtension(ColorSpaceExtension::Uri(), 8);
 
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
@@ -1006,11 +1008,11 @@ TEST_F(RtpSenderTest, GeneratedPaddingHasBweExtensions) {
   EnableRtx();
 
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransmissionOffset::kUri, kTransmissionTimeOffsetExtensionId));
+      TransmissionOffset::Uri(), kTransmissionTimeOffsetExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      AbsoluteSendTime::kUri, kAbsoluteSendTimeExtensionId));
+      AbsoluteSendTime::Uri(), kAbsoluteSendTimeExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
 
   
   std::unique_ptr<RtpPacketToSend> packet =
@@ -1053,7 +1055,7 @@ TEST_F(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
       RtpPacketHistory::StorageMode::kStoreAndCull, 1);
 
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
 
   const size_t kPayloadPacketSize = kMinPaddingSize;
   std::unique_ptr<RtpPacketToSend> packet =
@@ -1103,7 +1105,7 @@ TEST_F(RtpSenderTest, LimitsPayloadPaddingSize) {
       RtpPacketHistory::StorageMode::kStoreAndCull, 1);
 
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
 
   
   const size_t kPayloadPacketSize = 1234u;
@@ -1139,11 +1141,11 @@ TEST_F(RtpSenderTest, GeneratePaddingCreatesPurePaddingWithoutRtx) {
   packet_history_->SetStorePacketsStatus(
       RtpPacketHistory::StorageMode::kStoreAndCull, 1);
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransmissionOffset::kUri, kTransmissionTimeOffsetExtensionId));
+      TransmissionOffset::Uri(), kTransmissionTimeOffsetExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      AbsoluteSendTime::kUri, kAbsoluteSendTimeExtensionId));
+      AbsoluteSendTime::Uri(), kAbsoluteSendTimeExtensionId));
   ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
-      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+      TransportSequenceNumber::Uri(), kTransportSequenceNumberExtensionId));
 
   const size_t kPayloadPacketSize = 1234;
   
@@ -1188,8 +1190,8 @@ TEST_F(RtpSenderTest, SupportsPadding) {
   bool kSendingMediaStats[] = {true, false};
   bool kEnableRedundantPayloads[] = {true, false};
   absl::string_view kBweExtensionUris[] = {
-      TransportSequenceNumber::kUri, TransportSequenceNumberV2::kUri,
-      AbsoluteSendTime::kUri, TransmissionOffset::kUri};
+      TransportSequenceNumber::Uri(), TransportSequenceNumberV2::Uri(),
+      AbsoluteSendTime::Uri(), TransmissionOffset::Uri()};
   const int kExtensionsId = 7;
 
   for (bool sending_media : kSendingMediaStats) {
