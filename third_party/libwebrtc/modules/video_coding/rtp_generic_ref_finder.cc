@@ -22,7 +22,7 @@ RtpFrameReferenceFinder::ReturnVector RtpGenericFrameRefFinder::ManageFrame(
     const RTPVideoHeader::GenericDescriptorInfo& descriptor) {
   
   
-  frame->id.picture_id = descriptor.frame_id;
+  frame->SetId(descriptor.frame_id);
   frame->SetSpatialIndex(descriptor.spatial_index);
 
   RtpFrameReferenceFinder::ReturnVector res;

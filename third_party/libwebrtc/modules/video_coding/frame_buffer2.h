@@ -58,7 +58,6 @@ class FrameBuffer {
 
   
   
-  
   int64_t InsertFrame(std::unique_ptr<EncodedFrame> frame);
 
   
@@ -99,7 +98,7 @@ class FrameBuffer {
 
     
     
-    absl::InlinedVector<VideoLayerFrameId, 8> dependent_frames;
+    absl::InlinedVector<int64_t, 8> dependent_frames;
 
     
     
@@ -119,7 +118,7 @@ class FrameBuffer {
     std::unique_ptr<EncodedFrame> frame;
   };
 
-  using FrameMap = std::map<VideoLayerFrameId, FrameInfo>;
+  using FrameMap = std::map<int64_t, FrameInfo>;
 
   
   bool ValidReferences(const EncodedFrame& frame) const;
@@ -182,8 +181,7 @@ class FrameBuffer {
   VCMJitterEstimator jitter_estimator_ RTC_GUARDED_BY(mutex_);
   VCMTiming* const timing_ RTC_GUARDED_BY(mutex_);
   VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(mutex_);
-  absl::optional<VideoLayerFrameId> last_continuous_frame_
-      RTC_GUARDED_BY(mutex_);
+  absl::optional<int64_t> last_continuous_frame_ RTC_GUARDED_BY(mutex_);
   std::vector<FrameMap::iterator> frames_to_decode_ RTC_GUARDED_BY(mutex_);
   bool stopped_ RTC_GUARDED_BY(mutex_);
   VCMVideoProtection protection_mode_ RTC_GUARDED_BY(mutex_);

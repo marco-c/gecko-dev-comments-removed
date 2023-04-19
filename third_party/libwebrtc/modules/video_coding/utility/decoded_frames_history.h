@@ -28,22 +28,22 @@ class DecodedFramesHistory {
   explicit DecodedFramesHistory(size_t window_size);
   ~DecodedFramesHistory();
   
-  void InsertDecoded(const VideoLayerFrameId& frameid, uint32_t timestamp);
+  void InsertDecoded(int64_t frame_id, uint32_t timestamp);
   
   
-  bool WasDecoded(const VideoLayerFrameId& frameid);
+  bool WasDecoded(int64_t frame_id);
 
   void Clear();
 
-  absl::optional<VideoLayerFrameId> GetLastDecodedFrameId();
+  absl::optional<int64_t> GetLastDecodedFrameId();
   absl::optional<uint32_t> GetLastDecodedFrameTimestamp();
 
  private:
-  int PictureIdToIndex(int64_t frame_id) const;
+  int FrameIdToIndex(int64_t frame_id) const;
 
   std::vector<bool> buffer_;
-  absl::optional<int64_t> last_picture_id_;
-  absl::optional<VideoLayerFrameId> last_decoded_frame_;
+  absl::optional<int64_t> last_frame_id_;
+  absl::optional<int64_t> last_decoded_frame_;
   absl::optional<uint32_t> last_decoded_frame_timestamp_;
 };
 

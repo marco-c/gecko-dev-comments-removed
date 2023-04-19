@@ -21,28 +21,7 @@ namespace video_coding {
 
 
 struct VideoLayerFrameId {
-  
-  
-  VideoLayerFrameId() : picture_id(-1) {}
-  explicit VideoLayerFrameId(int64_t picture_id) : picture_id(picture_id) {}
-
-  bool operator==(const VideoLayerFrameId& rhs) const {
-    return picture_id == rhs.picture_id;
-  }
-
-  bool operator!=(const VideoLayerFrameId& rhs) const {
-    return !(*this == rhs);
-  }
-
-  bool operator<(const VideoLayerFrameId& rhs) const {
-    return picture_id < rhs.picture_id;
-  }
-
-  bool operator<=(const VideoLayerFrameId& rhs) const { return !(rhs < *this); }
-  bool operator>(const VideoLayerFrameId& rhs) const { return rhs < *this; }
-  bool operator>=(const VideoLayerFrameId& rhs) const { return rhs <= *this; }
-
-  int64_t picture_id;
+  int64_t picture_id = -1;
 };
 
 
@@ -69,7 +48,12 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
 
   bool is_keyframe() const { return num_references == 0; }
 
+  
+  
   VideoLayerFrameId id;
+
+  void SetId(int64_t frame_id) { id.picture_id = frame_id; }
+  int64_t Id() const { return id.picture_id; }
 
   
   
