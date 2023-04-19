@@ -32,6 +32,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/intl/Localization.h"
 #include "WindowsDefaultBrowser.h"
 #include "WindowsUserChoice.h"
 #include "nsLocalFile.h"
@@ -95,6 +96,7 @@ PSSTDAPI PropVariantToString(REFPROPVARIANT propvar, PWSTR psz, UINT cch);
 
 using mozilla::IsWin8OrLater;
 using namespace mozilla;
+using mozilla::intl::Localization;
 
 struct SysFreeStringDeleter {
   void operator()(BSTR aPtr) { ::SysFreeString(aPtr); }
@@ -893,7 +895,12 @@ nsWindowsShellService::CreateShortcut(
 
 
 
-static nsresult GetShortcutPath(int aCSIDL, bool aPrivateBrowsing,
+
+
+
+
+
+static nsresult GetShortcutPath(int aCSIDL, const nsAString& aShortcutName,
                                  nsAutoString& aPath) {
   wchar_t folderPath[MAX_PATH] = {};
   HRESULT hr = SHGetFolderPathW(nullptr, aCSIDL, nullptr, SHGFP_TYPE_CURRENT,
@@ -909,36 +916,7 @@ static nsresult GetShortcutPath(int aCSIDL, bool aPrivateBrowsing,
   if (aPath[aPath.Length() - 1] != '\\') {
     aPath.AppendLiteral("\\");
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aPrivateBrowsing) {
-    
-    
-    
-    
-
-
-
-
-
-
-
-
-    aPath.AppendLiteral(MOZ_APP_DISPLAYNAME " Private Browsing.lnk");
-  } else {
-    aPath.AppendLiteral(MOZ_APP_DISPLAYNAME ".lnk");
-  }
+  aPath.Append(aShortcutName);
 
   return NS_OK;
 }
@@ -967,14 +945,16 @@ static nsresult GetShortcutPath(int aCSIDL, bool aPrivateBrowsing,
 
 
 
+
+
 static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
                                     const wchar_t aExePath[MAXPATHLEN],
-                                    bool aPrivateBrowsing,
+                                    const nsAString& aShortcutName,
                                      nsAutoString& aShortcutPath) {
   nsresult result = NS_ERROR_FAILURE;
 
   nsAutoString path;
-  nsresult rv = GetShortcutPath(aCSIDL, aPrivateBrowsing, path);
+  nsresult rv = GetShortcutPath(aCSIDL, aShortcutName, path);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return result;
   }
@@ -1050,7 +1030,7 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
 }
 
 static nsresult FindMatchingShortcut(const nsAString& aAppUserModelId,
-                                     const bool aPrivateBrowsing,
+                                     const nsAString& aShortcutName,
                                      nsAutoString& aShortcutPath) {
   wchar_t exePath[MAXPATHLEN] = {};
   if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
@@ -1065,7 +1045,7 @@ static nsresult FindMatchingShortcut(const nsAString& aAppUserModelId,
     
     
     nsresult rv = GetMatchingShortcut(shortcutCSIDL, aAppUserModelId, exePath,
-                                      aPrivateBrowsing, aShortcutPath);
+                                      aShortcutName, aShortcutPath);
     if (NS_SUCCEEDED(rv)) {
       return NS_OK;
     }
@@ -1078,9 +1058,38 @@ NS_IMETHODIMP
 nsWindowsShellService::HasMatchingShortcut(const nsAString& aAppUserModelId,
                                            const bool aPrivateBrowsing,
                                            bool* aHasMatch) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoString shortcutName;
+  if (aPrivateBrowsing) {
+    nsTArray<nsCString> resIds = {
+        "branding/brand.ftl"_ns,
+        "browser/browser.ftl"_ns,
+    };
+    RefPtr<Localization> l10n = Localization::Create(resIds, true);
+    nsAutoCString pbStr;
+    IgnoredErrorResult rv;
+    l10n->FormatValueSync("private-browsing-shortcut-text"_ns, {}, pbStr, rv);
+    shortcutName.Append(NS_ConvertUTF8toUTF16(pbStr));
+    shortcutName.AppendLiteral(".lnk");
+  } else {
+    shortcutName.AppendLiteral(MOZ_APP_DISPLAYNAME ".lnk");
+  }
+
   nsAutoString shortcutPath;
   nsresult rv =
-      FindMatchingShortcut(aAppUserModelId, aPrivateBrowsing, shortcutPath);
+      FindMatchingShortcut(aAppUserModelId, shortcutName, shortcutPath);
   if (SUCCEEDED(rv)) {
     *aHasMatch = true;
   } else {
@@ -1293,14 +1302,15 @@ static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
 
 static nsresult PinCurrentAppToTaskbarImpl(bool aCheckOnly,
                                            bool aPrivateBrowsing,
-                                           const nsAString& aAppUserModelId) {
+                                           const nsAString& aAppUserModelId,
+                                           const nsAString& aShortcutName) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "PinCurrentAppToTaskbarImpl should be called off main thread only");
 
   nsAutoString shortcutPath;
   nsresult rv =
-      FindMatchingShortcut(aAppUserModelId, aPrivateBrowsing, shortcutPath);
+      FindMatchingShortcut(aAppUserModelId, aShortcutName, shortcutPath);
   if (NS_FAILED(rv)) {
     shortcutPath.Truncate();
   }
@@ -1312,32 +1322,15 @@ static nsresult PinCurrentAppToTaskbarImpl(bool aCheckOnly,
       return NS_OK;
     }
 
-    nsAutoString desc;
     nsTArray<nsString> arguments;
 
     if (aPrivateBrowsing) {
       nsAutoString arg;
-      
-      
-      
-      
-
-
-
-
-
-
-
-
-
-      desc.AssignLiteral(MOZ_APP_DISPLAYNAME " Private Browsing");
       arg.AssignLiteral("-private-window");
       arguments.AppendElement(arg);
-    } else {
-      desc.AssignLiteral(MOZ_APP_DISPLAYNAME);
     }
 
-    nsAutoString linkName(desc);
+    nsAutoString linkName(aShortcutName);
     linkName.AppendLiteral(".lnk");
 
     wchar_t exePath[MAXPATHLEN] = {};
@@ -1358,9 +1351,9 @@ static nsresult PinCurrentAppToTaskbarImpl(bool aCheckOnly,
     
     iconIndex--;
 
-    rv = CreateShortcutImpl(exeFile, arguments, desc, exeFile, iconIndex,
-                            aAppUserModelId, FOLDERID_Programs, linkName,
-                            shortcutPath);
+    rv = CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
+                            iconIndex, aAppUserModelId, FOLDERID_Programs,
+                            linkName, shortcutPath);
     if (!NS_SUCCEEDED(rv)) {
       return NS_ERROR_FILE_NOT_FOUND;
     }
@@ -1400,20 +1393,49 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoString shortcutName;
+  if (aPrivateBrowsing) {
+    nsTArray<nsCString> resIds = {
+        "branding/brand.ftl"_ns,
+        "browser/browser.ftl"_ns,
+    };
+    RefPtr<Localization> l10n = Localization::Create(resIds, true);
+    nsAutoCString pbStr;
+    IgnoredErrorResult rv;
+    l10n->FormatValueSync("private-browsing-shortcut-text"_ns, {}, pbStr, rv);
+    shortcutName.Append(NS_ConvertUTF8toUTF16(pbStr));
+    shortcutName.AppendLiteral(".lnk");
+  } else {
+    shortcutName.AppendLiteral(MOZ_APP_DISPLAYNAME ".lnk");
+  }
+
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "CheckPinCurrentAppToTaskbarAsync promise", promise);
 
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
           "CheckPinCurrentAppToTaskbarAsync",
-          [aCheckOnly, aPrivateBrowsing, aumid = nsString{aumid},
+          [aCheckOnly, aPrivateBrowsing, shortcutName, aumid = nsString{aumid},
            promiseHolder = std::move(promiseHolder)] {
             nsresult rv = NS_ERROR_FAILURE;
             HRESULT hr = CoInitialize(nullptr);
 
             if (SUCCEEDED(hr)) {
               rv = PinCurrentAppToTaskbarImpl(aCheckOnly, aPrivateBrowsing,
-                                              aumid);
+                                              aumid, shortcutName);
               CoUninitialize();
             }
 
@@ -1439,15 +1461,15 @@ NS_IMETHODIMP
 nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
                                                    JSContext* aCx,
                                                    dom::Promise** aPromise) {
-  return PinCurrentAppToTaskbarAsyncImpl( false,
-                                         aPrivateBrowsing, aCx, aPromise);
+  return PinCurrentAppToTaskbarAsyncImpl(
+       false, aPrivateBrowsing, aCx, aPromise);
 }
 
 NS_IMETHODIMP
 nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
     bool aPrivateBrowsing, JSContext* aCx, dom::Promise** aPromise) {
-  return PinCurrentAppToTaskbarAsyncImpl( true,
-                                         aPrivateBrowsing, aCx, aPromise);
+  return PinCurrentAppToTaskbarAsyncImpl(
+       true, aPrivateBrowsing, aCx, aPromise);
 }
 
 static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
@@ -1652,10 +1674,16 @@ nsWindowsShellService::ClassifyShortcut(const nsAString& aPath,
     if (wcsnicmp(shortcutPath.get(), knownPath.get(), knownPath.Length()) ==
         0) {
       aResult.Assign(folders[i].classification);
-      
-      
-      
-      if (wcsstr(shortcutPath.get(), L"Private Browsing")) {
+      nsTArray<nsCString> resIds = {
+          "branding/brand.ftl"_ns,
+          "browser/browser.ftl"_ns,
+      };
+      RefPtr<Localization> l10n = Localization::Create(resIds, true);
+      nsAutoCString pbStr;
+      IgnoredErrorResult rv;
+      l10n->FormatValueSync("private-browsing-shortcut-text"_ns, {}, pbStr, rv);
+      NS_ConvertUTF8toUTF16 widePbStr(pbStr);
+      if (wcsstr(shortcutPath.get(), widePbStr.get())) {
         aResult.AppendLiteral("Private");
       }
       return NS_OK;
