@@ -2515,12 +2515,6 @@ void nsWindow::WaylandPopupMove() {
 
   if (!mPopupUseMoveToRect) {
     
-    if (gtk_widget_is_visible(mShell)) {
-      HideWaylandPopupWindow( true,
-                              false);
-    }
-
-    
     
     
     bool useRelativeCoordinates =
@@ -2528,14 +2522,35 @@ void nsWindow::WaylandPopupMove() {
             GDK_WINDOW_TYPE_HINT_UTILITY ||
         gtk_window_get_type_hint(GTK_WINDOW(mShell)) ==
             GDK_WINDOW_TYPE_HINT_TOOLTIP;
+
+    GdkPoint currentPopupPosition;
+    gtk_window_get_position(GTK_WINDOW(mShell), &currentPopupPosition.x,
+                            &currentPopupPosition.y);
+    LOG("  recent window position (%d, %d)", currentPopupPosition.x,
+        currentPopupPosition.y);
+
+    GdkPoint newPopupPosition =
+        useRelativeCoordinates ? mRelativePopupPosition : mPopupPosition;
+    if (newPopupPosition.x == currentPopupPosition.x &&
+        newPopupPosition.y == currentPopupPosition.y) {
+      LOG("  popup is already positioned, quit");
+      return;
+    }
+
+    
+    if (gtk_widget_is_visible(mShell)) {
+      HideWaylandPopupWindow( true,
+                              false);
+    }
+
     if (useRelativeCoordinates) {
-      LOG("  use relative gtk_window_move(%d, %d) for tooltips\n",
+      LOG("  use relative gtk_window_move(%d, %d) for utility/tooltips",
           mRelativePopupPosition.x, mRelativePopupPosition.y);
       gtk_window_move(GTK_WINDOW(mShell), mRelativePopupPosition.x,
                       mRelativePopupPosition.y);
     } else {
-      LOG("  use absolute gtk_window_move(%d, %d) for menus\n",
-          mPopupPosition.x, mPopupPosition.y);
+      LOG("  use absolute gtk_window_move(%d, %d) for menus", mPopupPosition.x,
+          mPopupPosition.y);
       gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
     }
     
