@@ -245,6 +245,7 @@ class DiscoveryStreamFeed {
     const nimbusConfig = this.store.getState().Prefs.values?.pocketConfig || {};
     const { region } = this.store.getState().Prefs.values;
 
+    this.setupSpocsCacheUpdateTime();
     const saveToPocketCardRegions = nimbusConfig.saveToPocketCardRegions
       ?.split(",")
       .map(s => s.trim());
@@ -395,6 +396,34 @@ class DiscoveryStreamFeed {
     return null;
   }
 
+  get spocsCacheUpdateTime() {
+    if (this._spocsCacheUpdateTime) {
+      return this._spocsCacheUpdateTime;
+    }
+    this.setupSpocsCacheUpdateTime();
+    return this._spocsCacheUpdateTime;
+  }
+
+  setupSpocsCacheUpdateTime() {
+    const nimbusConfig = this.store.getState().Prefs.values?.pocketConfig || {};
+    const { spocsCacheTimeout } = nimbusConfig;
+    const MAX_TIMEOUT = 30;
+    const MIN_TIMEOUT = 5;
+    
+    
+    if (
+      spocsCacheTimeout &&
+      spocsCacheTimeout <= MAX_TIMEOUT &&
+      spocsCacheTimeout >= MIN_TIMEOUT
+    ) {
+      
+      this._spocsCacheUpdateTime = spocsCacheTimeout * 60 * 1000;
+    } else {
+      
+      this._spocsCacheUpdateTime = SPOCS_FEEDS_UPDATE_TIME;
+    }
+  }
+
   
 
 
@@ -406,7 +435,7 @@ class DiscoveryStreamFeed {
     const { layout, spocs, feeds } = cachedData;
     const updateTimePerComponent = {
       layout: LAYOUT_UPDATE_TIME,
-      spocs: SPOCS_FEEDS_UPDATE_TIME,
+      spocs: this.spocsCacheUpdateTime,
       feed: COMPONENT_FEEDS_UPDATE_TIME,
     };
     const EXPIRATION_TIME = isStartup
