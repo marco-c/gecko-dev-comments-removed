@@ -172,7 +172,7 @@ class RegExpStencil {
   
   
   RegExpObject* createRegExpAndEnsureAtom(
-      JSContext* cx, ParserAtomsTable& parserAtoms,
+      JSContext* cx, ErrorContext* ec, ParserAtomsTable& parserAtoms,
       CompilationAtomCache& atomCache) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)

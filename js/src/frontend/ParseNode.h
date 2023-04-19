@@ -1936,7 +1936,8 @@ class RegExpLiteral : public ParseNode {
       : ParseNode(ParseNodeKind::RegExpExpr, pos), index_(dataIndex) {}
 
   
-  RegExpObject* create(JSContext* cx, ParserAtomsTable& parserAtoms,
+  RegExpObject* create(JSContext* cx, ErrorContext* ec,
+                       ParserAtomsTable& parserAtoms,
                        CompilationAtomCache& atomCache,
                        ExtensibleCompilationStencil& stencil) const;
 
