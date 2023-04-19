@@ -754,15 +754,16 @@ var gHistorySwipeAnimation = {
     
     let translate =
       Math.abs(aVal) * 4 * translateDistance - 0.2 * translateDistance;
-    if (!this.isLTR) {
-      translate = -translate;
-    }
 
     
     translate = Math.min(
       Math.max(-translateDistance * 0.2, translate),
       translateDistance * 0.8
     );
+
+    if (!this.isLTR) {
+      translate = -translate;
+    }
 
     if ((aVal >= 0 && this.isLTR) || (aVal <= 0 && !this.isLTR)) {
       
