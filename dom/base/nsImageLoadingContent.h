@@ -359,7 +359,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-
   nsresult FireEvent(const nsAString& aEventType, bool aIsCancelable = false);
 
   

@@ -1618,8 +1618,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onloadedmetadata", insecureContext: true },
   
-  { name: "onloadend", insecureContext: true },
-  
   { name: "onloadstart", insecureContext: true },
   
   { name: "onlostpointercapture", insecureContext: true },
