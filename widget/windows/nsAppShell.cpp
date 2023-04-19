@@ -590,8 +590,8 @@ nsresult nsAppShell::Init() {
 
 NS_IMETHODIMP
 nsAppShell::Run(void) {
+  bool wantAudio = true;
   if (XRE_IsParentProcess()) {
-    bool wantAudio = true;
 #ifdef MOZ_BACKGROUNDTASKS
     if (BackgroundTasks::IsBackgroundTaskMode()) {
       wantAudio = false;
@@ -600,13 +600,11 @@ nsAppShell::Run(void) {
     if (MOZ_LIKELY(wantAudio)) {
       mozilla::widget::StartAudioSession();
     }
-  }
 
-  
-  
-  
-  
-  if (XRE_IsParentProcess()) {
+    
+    
+    
+    
     AddScreenWakeLockListener();
   }
 
@@ -614,6 +612,10 @@ nsAppShell::Run(void) {
 
   if (XRE_IsParentProcess()) {
     RemoveScreenWakeLockListener();
+
+    if (MOZ_LIKELY(wantAudio)) {
+      mozilla::widget::StopAudioSession();
+    }
   }
 
   return rv;
