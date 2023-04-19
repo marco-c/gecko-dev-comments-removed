@@ -1531,14 +1531,14 @@ struct CompilationGCOutput {
   
   
   
-  [[nodiscard]] bool ensureReserved(JSContext* cx, size_t scriptDataLength,
+  [[nodiscard]] bool ensureReserved(ErrorContext* ec, size_t scriptDataLength,
                                     size_t scopeDataLength) {
     if (!functions.reserve(scriptDataLength)) {
-      ReportOutOfMemory(cx);
+      ReportOutOfMemory(ec);
       return false;
     }
     if (!scopes.reserve(scopeDataLength)) {
-      ReportOutOfMemory(cx);
+      ReportOutOfMemory(ec);
       return false;
     }
     return true;
@@ -1548,7 +1548,7 @@ struct CompilationGCOutput {
   
   
   
-  [[nodiscard]] bool ensureReservedWithBaseIndex(JSContext* cx,
+  [[nodiscard]] bool ensureReservedWithBaseIndex(ErrorContext* ec,
                                                  ScriptIndex scriptStart,
                                                  ScriptIndex scriptLimit,
                                                  ScopeIndex scopeStart,
@@ -1556,7 +1556,7 @@ struct CompilationGCOutput {
     this->functionsBaseIndex = scriptStart;
     this->scopesBaseIndex = scopeStart;
 
-    return ensureReserved(cx, scriptLimit - scriptStart,
+    return ensureReserved(ec, scriptLimit - scriptStart,
                           scopeLimit - scopeStart);
   }
 
