@@ -1362,19 +1362,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
       
       
       
-      if (aChildFrame->GetAspectRatio() ||
-          aChildFrame->IsFrameOfType(eReplacedSizing)) {
-        
-        
-        
-        
-        
-        
-        
-        styleFlexBaseSize.emplace(StyleSize::Auto());
-      } else {
-        styleFlexBaseSize.emplace(StyleSize::MaxContent());
-      }
+      styleFlexBaseSize.emplace(StyleSize::MaxContent());
     } else if (flexBasis.IsSize() && !flexBasis.IsAuto()) {
       
       
