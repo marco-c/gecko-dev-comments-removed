@@ -82,14 +82,18 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
   }
 
   
+  
+  
+  if (socket->SetOption(Socket::OPT_NODELAY, 1) != 0) {
+    RTC_LOG(LS_ERROR) << "Setting TCP_NODELAY option failed with error "
+                      << socket->GetError();
+  }
+
+  
   if (opts & PacketSocketFactory::OPT_TLS_FAKE) {
     RTC_DCHECK(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new AsyncSSLSocket(socket);
   }
-
-  
-  
-  socket->SetOption(Socket::OPT_NODELAY, 1);
 
   if (opts & PacketSocketFactory::OPT_STUN)
     return new cricket::AsyncStunTCPSocket(socket, true);
@@ -121,6 +125,16 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
       delete socket;
       return NULL;
     }
+  }
+
+  
+  
+  
+  
+  
+  if (socket->SetOption(Socket::OPT_NODELAY, 1) != 0) {
+    RTC_LOG(LS_ERROR) << "Setting TCP_NODELAY option failed with error "
+                      << socket->GetError();
   }
 
   
@@ -180,10 +194,6 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   } else {
     tcp_socket = new AsyncTCPSocket(socket, false);
   }
-
-  
-  
-  tcp_socket->SetOption(Socket::OPT_NODELAY, 1);
 
   return tcp_socket;
 }
