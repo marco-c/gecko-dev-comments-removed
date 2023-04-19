@@ -81,15 +81,7 @@ class WMFVideoMFTManager : public MFTManager {
   const VideoInfo mVideoInfo;
   const gfx::IntSize mImageSize;
   const WMFStreamType mStreamType;
-
-  
-  
-  gfx::IntSize mSoftwareImageSize;
-
-  
-  
-  gfx::IntSize mSoftwareDisplaySize;
-
+  gfx::IntSize mDecodedImageSize;
   uint32_t mVideoStride;
   Maybe<gfx::YUVColorSpace> mColorSpace;
   gfx::ColorRange mColorRange;
