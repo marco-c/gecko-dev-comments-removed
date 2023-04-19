@@ -194,6 +194,8 @@ ABORT_SIGNATURES = (
     "static void Abort(const char *)",
     "std::sys_common::backtrace::__rust_end_short_backtrace",
     "rust_begin_unwind",
+    
+    "MOZ_Crash",
 )
 
 
