@@ -25,7 +25,7 @@ class V8_EXPORT_PRIVATE RegExpBytecodeGenerator : public RegExpMacroAssembler {
   ~RegExpBytecodeGenerator() override;
   
   int stack_limit_slack() override { return 1; }
-  bool CanReadUnaligned() override { return false; }
+  bool CanReadUnaligned() const override { return false; }
   void Bind(Label* label) override;
   void AdvanceCurrentPosition(int by) override;  
   void PopCurrentPosition() override;
@@ -52,19 +52,36 @@ class V8_EXPORT_PRIVATE RegExpBytecodeGenerator : public RegExpMacroAssembler {
   void CheckCharacter(unsigned c, Label* on_equal) override;
   void CheckCharacterAfterAnd(unsigned c, unsigned mask,
                               Label* on_equal) override;
-  void CheckCharacterGT(uc16 limit, Label* on_greater) override;
-  void CheckCharacterLT(uc16 limit, Label* on_less) override;
+  void CheckCharacterGT(base::uc16 limit, Label* on_greater) override;
+  void CheckCharacterLT(base::uc16 limit, Label* on_less) override;
   void CheckGreedyLoop(Label* on_tos_equals_current_position) override;
   void CheckAtStart(int cp_offset, Label* on_at_start) override;
   void CheckNotAtStart(int cp_offset, Label* on_not_at_start) override;
   void CheckNotCharacter(unsigned c, Label* on_not_equal) override;
   void CheckNotCharacterAfterAnd(unsigned c, unsigned mask,
                                  Label* on_not_equal) override;
-  void CheckNotCharacterAfterMinusAnd(uc16 c, uc16 minus, uc16 mask,
+  void CheckNotCharacterAfterMinusAnd(base::uc16 c, base::uc16 minus,
+                                      base::uc16 mask,
                                       Label* on_not_equal) override;
-  void CheckCharacterInRange(uc16 from, uc16 to, Label* on_in_range) override;
-  void CheckCharacterNotInRange(uc16 from, uc16 to,
+  void CheckCharacterInRange(base::uc16 from, base::uc16 to,
+                             Label* on_in_range) override;
+  void CheckCharacterNotInRange(base::uc16 from, base::uc16 to,
                                 Label* on_not_in_range) override;
+  bool CheckCharacterInRangeArray(const ZoneList<CharacterRange>* ranges,
+                                  Label* on_in_range) override {
+    
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+  bool CheckCharacterNotInRangeArray(const ZoneList<CharacterRange>* ranges,
+                                     Label* on_not_in_range) override {
+    return false;
+  }
   void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set) override;
   void CheckNotBackReference(int start_reg, bool read_backward,
                              Label* on_no_match) override;
@@ -79,7 +96,8 @@ class V8_EXPORT_PRIVATE RegExpBytecodeGenerator : public RegExpMacroAssembler {
   Handle<HeapObject> GetCode(Handle<String> source) override;
 
  private:
-  void Expand();
+  void ExpandBuffer();
+
   
   inline void EmitOrLink(Label* label);
   inline void Emit32(uint32_t x);
@@ -92,7 +110,9 @@ class V8_EXPORT_PRIVATE RegExpBytecodeGenerator : public RegExpMacroAssembler {
   void Copy(byte* a);
 
   
-  Vector<byte> buffer_;
+  static constexpr int kInitialBufferSize = 1024;
+  ZoneVector<byte> buffer_;
+
   
   int pc_;
   Label backtrack_;
