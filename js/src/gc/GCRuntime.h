@@ -292,6 +292,12 @@ class GCRuntime {
   void assertNoPermanentSharedThings();
 #endif
 
+  Zone* atomsZone() {
+    Zone* zone = zones()[0];
+    MOZ_ASSERT(JS::shadow::Zone::from(zone)->isAtomsZone());
+    return zone;
+  }
+
   void freezePermanentSharedThings();
   template <typename T>
   void freezeAtomsZoneArenas(AllocKind kind, ArenaList& arenaList);
@@ -927,9 +933,6 @@ class GCRuntime {
 
  public:
   JSRuntime* const rt;
-
-  
-  WriteOnceData<Zone*> atomsZone;
 
   
   MainThreadData<JS::Zone*> systemZone;

@@ -643,7 +643,7 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
     return false;
   }
 
-  size_t totalZones = rt->gc.zones().length() + 1;  
+  size_t totalZones = rt->gc.zones().length();
   if (!rtStats->zoneStatsVector.reserve(totalZones)) {
     return false;
   }
