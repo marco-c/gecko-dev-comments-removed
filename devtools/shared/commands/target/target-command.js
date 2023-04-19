@@ -13,6 +13,17 @@ const BROWSERTOOLBOX_SCOPE_PREF = "devtools.browsertoolbox.scope";
 const BROWSERTOOLBOX_SCOPE_EVERYTHING = "everything";
 const BROWSERTOOLBOX_SCOPE_PARENTPROCESS = "parent-process";
 
+
+const createStore = require("devtools/client/shared/redux/create-store");
+const reducer = require("devtools/shared/commands/target/reducers/targets");
+
+loader.lazyRequireGetter(
+  this,
+  ["refreshTargets", "registerTarget", "unregisterTarget"],
+  "devtools/shared/commands/target/actions/targets",
+  true
+);
+
 class TargetCommand extends EventEmitter {
   #selectedTargetFront;
   
@@ -41,6 +52,10 @@ class TargetCommand extends EventEmitter {
     this.commands = commands;
     this.descriptorFront = descriptorFront;
     this.rootFront = descriptorFront.client.mainRoot;
+
+    this.store = createStore(reducer);
+    
+    this.storeId = "target-store";
 
     this._updateBrowserToolboxScope = this._updateBrowserToolboxScope.bind(
       this
@@ -222,6 +237,8 @@ class TargetCommand extends EventEmitter {
       return;
     }
 
+    this.store.dispatch(registerTarget(targetFront));
+
     
     await this._createListeners.emitAsync(targetType, {
       targetFront,
@@ -325,6 +342,8 @@ class TargetCommand extends EventEmitter {
       isTargetSwitching,
     });
     this._targets.delete(targetFront);
+
+    this.store.dispatch(unregisterTarget(targetFront));
 
     
     if (this.#selectedTargetFront == targetFront) {
@@ -527,6 +546,7 @@ class TargetCommand extends EventEmitter {
 
     
     this._targets.add(this.targetFront);
+    this.store.dispatch(registerTarget(this.targetFront));
   }
 
   _computeTargetTypes() {
@@ -666,6 +686,17 @@ class TargetCommand extends EventEmitter {
         }
         if (resource.url !== undefined && targetFront?.setUrl) {
           targetFront.setUrl(resource.url);
+        }
+        if (
+          !resource.isFrameSwitching &&
+          
+          
+          
+          resource.name === "dom-interactive"
+        ) {
+          
+          
+          this.store.dispatch(refreshTargets());
         }
       }
     }
