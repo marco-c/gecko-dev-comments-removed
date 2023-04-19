@@ -22,11 +22,4 @@ interface nsIUtilityProcessTest : nsISupports
 
 
   void stopProcess();
-
-  
-
-
-
-
-  void testTelemetryProbes();
 };
