@@ -128,8 +128,16 @@ void SelectionManager::RemoveDocSelectionListener(PresShell* aPresShell) {
 void SelectionManager::ProcessTextSelChangeEvent(AccEvent* aEvent) {
   
   
+  
+  
+  
   AccTextSelChangeEvent* event = downcast_accEvent(aEvent);
-  if (!event->IsCaretMoveOnly()) nsEventShell::FireEvent(aEvent);
+  if (!event->IsCaretMoveOnly() &&
+      !(event->mSel->IsCollapsed() && event->mSel != mCurrCtrlNormalSel &&
+        FocusMgr() && FocusMgr()->FocusedAccessible() &&
+        FocusMgr()->FocusedAccessible()->IsTextField())) {
+    nsEventShell::FireEvent(aEvent);
+  }
 
   
   nsINode* caretCntrNode = nsCoreUtils::GetDOMNodeFromDOMPoint(
