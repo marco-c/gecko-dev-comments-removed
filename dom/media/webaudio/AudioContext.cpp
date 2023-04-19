@@ -107,7 +107,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWorklet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromiseGripArray)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingResumePromises)
-  if (tmp->mTracksAreSuspended || !tmp->mIsStarted) {
+  if (tmp->mSuspendCalled || !tmp->mIsStarted) {
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveNodes)
   }
   
@@ -126,7 +126,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AudioContext,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWorklet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromiseGripArray)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingResumePromises)
-  if (tmp->mTracksAreSuspended || !tmp->mIsStarted) {
+  if (tmp->mSuspendCalled || !tmp->mIsStarted) {
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveNodes)
   }
   
@@ -160,14 +160,13 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
       mIsOffline(aIsOffline),
       mIsStarted(!aIsOffline),
       mIsShutDown(false),
-      mIsDisconnecting(false),
       mCloseCalled(false),
       
       
-      mTracksAreSuspended(!aIsOffline),
+      mSuspendCalled(!aIsOffline),
+      mIsDisconnecting(false),
       mWasAllowedToStart(true),
       mSuspendedByContent(false),
-      mSuspendedByChrome(false),
       mWasEverAllowedToStart(false),
       mWasEverBlockedToStart(false),
       mWouldBeAllowedToStart(true) {
@@ -187,7 +186,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
     AUTOPLAY_LOG("AudioContext %p is not allowed to start", this);
     ReportBlocked();
   } else if (!mIsOffline) {
-    ResumeInternal();
+    ResumeInternal(AudioContextOperationFlags::SendStateChange);
   }
 
   
@@ -216,7 +215,7 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
   
   
   if (isAllowedToPlay && !mSuspendedByContent) {
-    ResumeInternal();
+    ResumeInternal(AudioContextOperationFlags::SendStateChange);
   } else {
     ReportBlocked();
   }
@@ -1004,8 +1003,6 @@ void AudioContext::SuspendFromChrome() {
   if (mIsOffline || mIsShutDown) {
     return;
   }
-  MOZ_ASSERT(!mSuspendedByChrome);
-  mSuspendedByChrome = true;
   SuspendInternal(nullptr, Preferences::GetBool("dom.audiocontext.testing")
                                ? AudioContextOperationFlags::SendStateChange
                                : AudioContextOperationFlags::None);
@@ -1022,8 +1019,7 @@ void AudioContext::SuspendInternal(void* aPromise,
   
   
   
-  if (!mTracksAreSuspended) {
-    mTracksAreSuspended = true;
+  if (!mSuspendCalled) {
     tracks = GetAllTracks();
   }
   auto promise = Graph()->ApplyAudioContextOperation(
@@ -1037,18 +1033,17 @@ void AudioContext::SuspendInternal(void* aPromise,
         },
         [] { MOZ_CRASH("Unexpected rejection"); });
   }
+
+  mSuspendCalled = true;
 }
 
 void AudioContext::ResumeFromChrome() {
   if (mIsOffline || mIsShutDown) {
     return;
   }
-  MOZ_ASSERT(mSuspendedByChrome);
-  mSuspendedByChrome = false;
-  if (!mWasAllowedToStart) {
-    return;
-  }
-  ResumeInternal();
+  ResumeInternal(Preferences::GetBool("dom.audiocontext.testing")
+                     ? AudioContextOperationFlags::SendStateChange
+                     : AudioContextOperationFlags::None);
 }
 
 already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
@@ -1077,7 +1072,7 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
   AUTOPLAY_LOG("Trying to resume AudioContext %p, IsAllowedToPlay=%d", this,
                isAllowedToPlay);
   if (isAllowedToPlay) {
-    ResumeInternal();
+    ResumeInternal(AudioContextOperationFlags::SendStateChange);
   } else {
     ReportBlocked();
   }
@@ -1087,15 +1082,10 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
   return promise.forget();
 }
 
-void AudioContext::ResumeInternal() {
+void AudioContext::ResumeInternal(AudioContextOperationFlags aFlags) {
   MOZ_ASSERT(!mIsOffline);
   AUTOPLAY_LOG("Allow to resume AudioContext %p", this);
   mWasAllowedToStart = true;
-
-  if (mSuspendedByContent || mSuspendedByContent) {
-    MOZ_ASSERT(mTracksAreSuspended);
-    return;
-  }
 
   Destination()->Resume();
 
@@ -1104,21 +1094,20 @@ void AudioContext::ResumeInternal() {
   
   
   
-  if (mTracksAreSuspended) {
-    mTracksAreSuspended = false;
+  if (mSuspendCalled) {
     tracks = GetAllTracks();
   }
-  
-  
-  Graph()
-      ->ApplyAudioContextOperation(DestinationTrack(), std::move(tracks),
-                                   AudioContextOperation::Resume)
-      ->Then(
-          GetMainThread(), "AudioContext::OnStateChanged",
-          [self = RefPtr<AudioContext>(this)](AudioContextState aNewState) {
-            self->OnStateChanged(nullptr, aNewState);
-          },
-          [] {});  
+  auto promise = Graph()->ApplyAudioContextOperation(
+      DestinationTrack(), std::move(tracks), AudioContextOperation::Resume);
+  if (aFlags & AudioContextOperationFlags::SendStateChange) {
+    promise->Then(
+        GetMainThread(), "AudioContext::OnStateChanged",
+        [self = RefPtr<AudioContext>(this)](AudioContextState aNewState) {
+          self->OnStateChanged(nullptr, aNewState);
+        },
+        [] {});  
+  }
+  mSuspendCalled = false;
 }
 
 void AudioContext::UpdateAutoplayAssumptionStatus() {
@@ -1237,7 +1226,7 @@ void AudioContext::CloseInternal(void* aPromise,
     
     
     
-    if (!mTracksAreSuspended && !mCloseCalled) {
+    if (!mSuspendCalled && !mCloseCalled) {
       tracks = GetAllTracks();
     }
     auto promise = Graph()->ApplyAudioContextOperation(

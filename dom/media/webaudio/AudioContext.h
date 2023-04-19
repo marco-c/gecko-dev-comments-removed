@@ -183,9 +183,8 @@ class AudioContext final : public DOMEventTargetHelper,
 
   float SampleRate() const { return mSampleRate; }
 
-  bool ShouldSuspendNewTrack() const {
-    return mTracksAreSuspended || mCloseCalled;
-  }
+  bool ShouldSuspendNewTrack() const { return mSuspendCalled || mCloseCalled; }
+
   double CurrentTime();
 
   AudioListener* Listener();
@@ -359,7 +358,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   nsTArray<RefPtr<mozilla::MediaTrack>> GetAllTracks() const;
 
-  void ResumeInternal();
+  void ResumeInternal(AudioContextOperationFlags aFlags);
   void SuspendInternal(void* aPromise, AudioContextOperationFlags aFlags);
   void CloseInternal(void* aPromise, AudioContextOperationFlags aFlags);
 
@@ -420,26 +419,19 @@ class AudioContext final : public DOMEventTargetHelper,
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
   uint32_t mNumberOfChannels;
-  const bool mIsOffline;
-  
+  bool mIsOffline;
   bool mIsStarted;
   bool mIsShutDown;
-  bool mIsDisconnecting;
   
   bool mCloseCalled;
   
-  
-  
-  bool mTracksAreSuspended;
-  
+  bool mSuspendCalled;
+  bool mIsDisconnecting;
   
   bool mWasAllowedToStart;
-  
+
   
   bool mSuspendedByContent;
-  
-  
-  bool mSuspendedByChrome;
 
   
   
