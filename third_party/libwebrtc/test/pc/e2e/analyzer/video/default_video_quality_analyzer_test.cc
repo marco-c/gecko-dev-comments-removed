@@ -8,6 +8,8 @@
 
 
 
+#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -24,7 +26,7 @@
 #include "rtc_tools/frame_analyzer/video_geometry_aligner.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
-#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
+#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_shared_objects.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
