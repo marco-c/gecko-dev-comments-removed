@@ -8144,7 +8144,14 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     size_t tryNoteIndex = callBase->tryNoteIndex();
     wasm::TryNoteVector& tryNotes = masm.tryNotes();
     wasm::TryNote& tryNote = tryNotes[tryNoteIndex];
-    tryNote.setTryBodyEnd(masm.currentOffset());
+
+    
+    
+    
+    
+    if (!masm.oom()) {
+      tryNote.setTryBodyEnd(masm.currentOffset());
+    }
 
     
     
