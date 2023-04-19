@@ -170,7 +170,7 @@ void WindowSurfaceProvider::EndRemoteDrawingInRegion(
   if (GdkIsWaylandDisplay()) {
     
     
-    if (!mWidget) {
+    if (!mWidget || mWidget->IsDestroyed()) {
       return;
     }
     if (moz_container_wayland_is_commiting_to_parent(
@@ -179,7 +179,10 @@ void WindowSurfaceProvider::EndRemoteDrawingInRegion(
       
       NS_DispatchToMainThread(NS_NewRunnableFunction(
           "WindowSurfaceProvider::EndRemoteDrawingInRegion",
-          [RefPtr{mWidget}, this, aInvalidRegion]() {
+          [widget = RefPtr{mWidget}, this, aInvalidRegion]() {
+            if (widget->IsDestroyed()) {
+              return;
+            }
             MutexAutoLock lock(mMutex);
             
             if (mWindowSurface && mWindowSurfaceValid) {
