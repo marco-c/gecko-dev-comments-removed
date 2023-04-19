@@ -1913,40 +1913,20 @@ var PanelView = class extends AssociatedToNode {
         stop();
 
         this._doingKeyboardActivation = true;
-        
-        
-        
-        
-        
-        
-        
-        
-        let commandEvent = event.target.ownerDocument.createEvent(
-          "xulcommandevent"
-        );
-        commandEvent.initCommandEvent(
-          "command",
-          true,
-          true,
-          event.target.ownerGlobal,
-          0,
-          event.ctrlKey,
-          event.altKey,
-          event.shiftKey,
-          event.metaKey,
-          0,
-          null,
-          0
-        );
-        button.dispatchEvent(commandEvent);
-
-        let dispEvent = new event.target.ownerGlobal.MouseEvent("mousedown", {
+        const details = {
           bubbles: true,
-        });
+          ctrlKey: event.ctrlKey,
+          altKey: event.altKey,
+          shiftKey: event.shiftKey,
+          metaKey: event.metaKey,
+        };
+        let dispEvent = new event.target.ownerGlobal.MouseEvent(
+          "mousedown",
+          details
+        );
         button.dispatchEvent(dispEvent);
-        dispEvent = new event.target.ownerGlobal.MouseEvent("click", {
-          bubbles: true,
-        });
+        
+        dispEvent = new event.target.ownerGlobal.MouseEvent("click", details);
         button.dispatchEvent(dispEvent);
         this._doingKeyboardActivation = false;
         break;
