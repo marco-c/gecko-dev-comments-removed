@@ -163,18 +163,18 @@ struct nsPipeReadState {
   
   
   
-  char* mReadCursor GUARDED_VAR;
-  char* mReadLimit GUARDED_VAR;
-  int32_t mSegment GUARDED_VAR;
-  uint32_t mAvailable GUARDED_VAR;
+  char* mReadCursor MOZ_GUARDED_VAR;
+  char* mReadLimit MOZ_GUARDED_VAR;
+  int32_t mSegment MOZ_GUARDED_VAR;
+  uint32_t mAvailable MOZ_GUARDED_VAR;
 
   
-  bool mActiveRead GUARDED_VAR;
+  bool mActiveRead MOZ_GUARDED_VAR;
 
   
   
   
-  bool mNeedDrain GUARDED_VAR;
+  bool mNeedDrain MOZ_GUARDED_VAR;
 };
 
 
@@ -217,7 +217,7 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
 
   void SetNonBlocking(bool aNonBlocking) { mBlocking = !aNonBlocking; }
 
-  uint32_t Available() REQUIRES(Monitor());
+  uint32_t Available() MOZ_REQUIRES(Monitor());
 
   
   nsresult Wait();
@@ -227,10 +227,10 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   
   MonitorAction OnInputReadable(uint32_t aBytesWritten, nsPipeEvents&,
                                 const ReentrantMonitorAutoEnter& ev)
-      REQUIRES(Monitor());
+      MOZ_REQUIRES(Monitor());
   MonitorAction OnInputException(nsresult, nsPipeEvents&,
                                  const ReentrantMonitorAutoEnter& ev)
-      REQUIRES(Monitor());
+      MOZ_REQUIRES(Monitor());
 
   nsPipeReadState& ReadState() { return mReadState; }
 
@@ -240,13 +240,13 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
 
   
   nsresult Status(const ReentrantMonitorAutoEnter& ev) const
-      REQUIRES(Monitor());
+      MOZ_REQUIRES(Monitor());
 
   
   
   
   nsresult InputStatus(const ReentrantMonitorAutoEnter&) const
-      REQUIRES(Monitor()) {
+      MOZ_REQUIRES(Monitor()) {
     return mInputStatus;
   }
 
@@ -261,12 +261,12 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   
   
   
-  nsresult mInputStatus GUARDED_BY(Monitor());
+  nsresult mInputStatus MOZ_GUARDED_BY(Monitor());
   bool mBlocking;
 
   
-  bool mBlocked GUARDED_BY(Monitor());
-  CallbackHolder mCallback GUARDED_BY(Monitor());
+  bool mBlocked MOZ_GUARDED_BY(Monitor());
+  CallbackHolder mCallback MOZ_GUARDED_BY(Monitor());
 
   
   
@@ -299,15 +299,16 @@ class nsPipeOutputStream : public nsIAsyncOutputStream, public nsIClassInfo {
         mWritable(true) {}
 
   void SetNonBlocking(bool aNonBlocking) { mBlocking = !aNonBlocking; }
-  void SetWritable(bool aWritable) REQUIRES(Monitor()) {
+  void SetWritable(bool aWritable) MOZ_REQUIRES(Monitor()) {
     mWritable = aWritable;
   }
 
   
   nsresult Wait();
 
-  MonitorAction OnOutputWritable(nsPipeEvents&) REQUIRES(Monitor());
-  MonitorAction OnOutputException(nsresult, nsPipeEvents&) REQUIRES(Monitor());
+  MonitorAction OnOutputWritable(nsPipeEvents&) MOZ_REQUIRES(Monitor());
+  MonitorAction OnOutputException(nsresult, nsPipeEvents&)
+      MOZ_REQUIRES(Monitor());
 
   ReentrantMonitor& Monitor() const;
 
@@ -320,9 +321,9 @@ class nsPipeOutputStream : public nsIAsyncOutputStream, public nsIClassInfo {
   bool mBlocking;
 
   
-  bool mBlocked GUARDED_BY(Monitor());
-  bool mWritable GUARDED_BY(Monitor());
-  CallbackHolder mCallback GUARDED_BY(Monitor());
+  bool mBlocked MOZ_GUARDED_BY(Monitor());
+  bool mWritable MOZ_GUARDED_BY(Monitor());
+  CallbackHolder mCallback MOZ_GUARDED_BY(Monitor());
 };
 
 
@@ -350,23 +351,26 @@ class nsPipe final {
   
 
   void PeekSegment(const nsPipeReadState& aReadState, uint32_t aIndex,
-                   char*& aCursor, char*& aLimit) REQUIRES(mReentrantMonitor);
+                   char*& aCursor, char*& aLimit)
+      MOZ_REQUIRES(mReentrantMonitor);
   SegmentChangeResult AdvanceReadSegment(nsPipeReadState& aReadState,
                                          const ReentrantMonitorAutoEnter& ev)
-      REQUIRES(mReentrantMonitor);
+      MOZ_REQUIRES(mReentrantMonitor);
   bool ReadSegmentBeingWritten(nsPipeReadState& aReadState)
-      REQUIRES(mReentrantMonitor);
-  uint32_t CountSegmentReferences(int32_t aSegment) REQUIRES(mReentrantMonitor);
-  void SetAllNullReadCursors() REQUIRES(mReentrantMonitor);
-  bool AllReadCursorsMatchWriteCursor() REQUIRES(mReentrantMonitor);
-  void RollBackAllReadCursors(char* aWriteCursor) REQUIRES(mReentrantMonitor);
-  void UpdateAllReadCursors(char* aWriteCursor) REQUIRES(mReentrantMonitor);
-  void ValidateAllReadCursors() REQUIRES(mReentrantMonitor);
+      MOZ_REQUIRES(mReentrantMonitor);
+  uint32_t CountSegmentReferences(int32_t aSegment)
+      MOZ_REQUIRES(mReentrantMonitor);
+  void SetAllNullReadCursors() MOZ_REQUIRES(mReentrantMonitor);
+  bool AllReadCursorsMatchWriteCursor() MOZ_REQUIRES(mReentrantMonitor);
+  void RollBackAllReadCursors(char* aWriteCursor)
+      MOZ_REQUIRES(mReentrantMonitor);
+  void UpdateAllReadCursors(char* aWriteCursor) MOZ_REQUIRES(mReentrantMonitor);
+  void ValidateAllReadCursors() MOZ_REQUIRES(mReentrantMonitor);
   uint32_t GetBufferSegmentCount(const nsPipeReadState& aReadState,
                                  const ReentrantMonitorAutoEnter& ev) const
-      REQUIRES(mReentrantMonitor);
+      MOZ_REQUIRES(mReentrantMonitor);
   bool IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const
-      REQUIRES(mReentrantMonitor);
+      MOZ_REQUIRES(mReentrantMonitor);
 
   
   
@@ -397,22 +401,22 @@ class nsPipe final {
   
   
   
-  nsTArray<nsPipeInputStream*> mInputList GUARDED_BY(mReentrantMonitor);
+  nsTArray<nsPipeInputStream*> mInputList MOZ_GUARDED_BY(mReentrantMonitor);
 
   ReentrantMonitor mReentrantMonitor;
-  nsSegmentedBuffer mBuffer GUARDED_BY(mReentrantMonitor);
+  nsSegmentedBuffer mBuffer MOZ_GUARDED_BY(mReentrantMonitor);
 
   
   
   
-  uint32_t mMaxAdvanceBufferSegmentCount GUARDED_BY(mReentrantMonitor);
+  uint32_t mMaxAdvanceBufferSegmentCount MOZ_GUARDED_BY(mReentrantMonitor);
 
-  int32_t mWriteSegment GUARDED_BY(mReentrantMonitor);
-  char* mWriteCursor GUARDED_BY(mReentrantMonitor);
-  char* mWriteLimit GUARDED_BY(mReentrantMonitor);
+  int32_t mWriteSegment MOZ_GUARDED_BY(mReentrantMonitor);
+  char* mWriteCursor MOZ_GUARDED_BY(mReentrantMonitor);
+  char* mWriteLimit MOZ_GUARDED_BY(mReentrantMonitor);
 
   
-  nsresult mStatus GUARDED_BY(mReentrantMonitor);
+  nsresult mStatus MOZ_GUARDED_BY(mReentrantMonitor);
 };
 
 
@@ -424,12 +428,12 @@ class nsPipe final {
 
 
 ReentrantMonitor& nsPipeOutputStream::Monitor() const
-    RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
+    MOZ_RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
   return mPipe->mReentrantMonitor;
 }
 
 ReentrantMonitor& nsPipeInputStream::Monitor() const
-    RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
+    MOZ_RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
   return mPipe->mReentrantMonitor;
 }
 
@@ -1800,7 +1804,7 @@ nsresult NS_NewPipe(nsIInputStream** aPipeIn, nsIOutputStream** aPipeOut,
 nsresult NS_NewPipe2(nsIAsyncInputStream** aPipeIn,
                      nsIAsyncOutputStream** aPipeOut, bool aNonBlockingInput,
                      bool aNonBlockingOutput, uint32_t aSegmentSize,
-                     uint32_t aSegmentCount) NO_THREAD_SAFETY_ANALYSIS {
+                     uint32_t aSegmentCount) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   RefPtr<nsPipe> pipe =
       new nsPipe(aSegmentSize ? aSegmentSize : DEFAULT_SEGMENT_SIZE,
                  aSegmentCount ? aSegmentCount : DEFAULT_SEGMENT_COUNT);

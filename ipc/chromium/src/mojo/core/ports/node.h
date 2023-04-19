@@ -226,7 +226,7 @@ class Node {
   void ConvertToProxy(Port* port, const NodeName& to_node_name,
                       PortName* port_name,
                       Event::PortDescriptor* port_descriptor)
-      REQUIRES(ports_lock_);
+      MOZ_REQUIRES(ports_lock_);
   int AcceptPort(const PortName& port_name,
                  const Event::PortDescriptor& port_descriptor);
 
@@ -249,19 +249,19 @@ class Node {
   void UpdatePortPeerAddress(const PortName& local_port_name, Port* local_port,
                              const NodeName& new_peer_node,
                              const PortName& new_peer_port)
-      REQUIRES(ports_lock_);
+      MOZ_REQUIRES(ports_lock_);
 
   
   
   void RemoveFromPeerPortMap(const PortName& local_port_name, Port* local_port)
-      REQUIRES(ports_lock_);
+      MOZ_REQUIRES(ports_lock_);
 
   
   
   
   void SwapPortPeers(const PortName& port0_name, Port* port0,
                      const PortName& port1_name, Port* port1)
-      REQUIRES(ports_lock_);
+      MOZ_REQUIRES(ports_lock_);
 
   
   
@@ -296,7 +296,7 @@ class Node {
   
   mozilla::Mutex ports_lock_{"Ports Lock"};
   std::unordered_map<LocalPortName, RefPtr<Port>> ports_
-      GUARDED_BY(ports_lock_);
+      MOZ_GUARDED_BY(ports_lock_);
 
   
   
@@ -316,7 +316,7 @@ class Node {
   
   
   std::unordered_map<NodeName, PeerPortMap> peer_port_maps_
-      GUARDED_BY(ports_lock_);
+      MOZ_GUARDED_BY(ports_lock_);
 };
 
 }  

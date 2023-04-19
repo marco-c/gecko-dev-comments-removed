@@ -201,14 +201,14 @@ class nsZipArchive final {
 
   mozilla::Mutex mLock{"nsZipArchive"};
   
-  nsZipItem* mFiles[ZIP_TABSIZE] GUARDED_BY(mLock);
-  mozilla::ArenaAllocator<1024, sizeof(void*)> mArena GUARDED_BY(mLock);
+  nsZipItem* mFiles[ZIP_TABSIZE] MOZ_GUARDED_BY(mLock);
+  mozilla::ArenaAllocator<1024, sizeof(void*)> mArena MOZ_GUARDED_BY(mLock);
   
-  bool mBuiltSynthetics GUARDED_BY(mLock);
+  bool mBuiltSynthetics MOZ_GUARDED_BY(mLock);
 
  private:
   
-  nsZipItem* CreateZipItem() REQUIRES(mLock);
+  nsZipItem* CreateZipItem() MOZ_REQUIRES(mLock);
   nsresult BuildFileList(PRFileDesc* aFd = nullptr);
   nsresult BuildSynthetics();
 

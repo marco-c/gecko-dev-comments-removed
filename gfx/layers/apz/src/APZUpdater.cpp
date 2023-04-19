@@ -73,7 +73,7 @@ void APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId) {
 
 
 void APZUpdater::PrepareForSceneSwap(const wr::WrWindowId& aWindowId)
-    NO_THREAD_SAFETY_ANALYSIS {
+    MOZ_NO_THREAD_SAFETY_ANALYSIS {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
     updater->mApz->LockTree();
   }

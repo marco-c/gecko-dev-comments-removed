@@ -76,7 +76,7 @@ class InputStreamLengthWrapper final : public nsIAsyncInputStream,
   mozilla::Mutex mMutex;
 
   
-  nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback GUARDED_BY(mMutex);
+  nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback MOZ_GUARDED_BY(mMutex);
 };
 
 }  

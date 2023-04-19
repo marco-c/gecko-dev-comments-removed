@@ -51,7 +51,8 @@ class BrowserProcessSubThread : public base::Thread {
   
   
   
-  static BrowserProcessSubThread* sBrowserThreads[ID_COUNT] GUARDED_BY(sLock);
+  static BrowserProcessSubThread* sBrowserThreads[ID_COUNT] MOZ_GUARDED_BY(
+      sLock);
 };
 
 inline void AssertIOThread() {

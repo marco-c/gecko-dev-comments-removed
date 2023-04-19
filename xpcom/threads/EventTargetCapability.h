@@ -48,8 +48,9 @@ namespace mozilla {
 
 
 
+
 template <typename T>
-class CAPABILITY EventTargetCapability final {
+class MOZ_CAPABILITY EventTargetCapability final {
   static_assert(std::is_base_of_v<nsIEventTarget, T>,
                 "T must derive from nsIEventTarget");
 
@@ -64,7 +65,7 @@ class CAPABILITY EventTargetCapability final {
   EventTargetCapability& operator=(const EventTargetCapability&) = default;
   EventTargetCapability& operator=(EventTargetCapability&&) = default;
 
-  void AssertOnCurrentThread() const ASSERT_CAPABILITY(this) {
+  void AssertOnCurrentThread() const MOZ_ASSERT_CAPABILITY(this) {
     MOZ_ASSERT(mTarget->IsOnCurrentThread());
   }
 

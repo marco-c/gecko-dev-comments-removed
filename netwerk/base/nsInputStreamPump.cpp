@@ -464,10 +464,10 @@ uint32_t nsInputStreamPump::OnStateStart() {
     
     RecursiveMutexAutoUnlock unlock(mMutex);
     
-    PUSH_IGNORE_THREAD_SAFETY
+    MOZ_PUSH_IGNORE_THREAD_SAFETY
     AssertOnThread();
     rv = mListener->OnStartRequest(this);
-    POP_THREAD_SAFETY
+    MOZ_POP_THREAD_SAFETY
   }
 
   
@@ -540,7 +540,7 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
 
       
       
-      PUSH_IGNORE_THREAD_SAFETY
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       if (mTargetThread) {
         MOZ_ASSERT(mTargetThread->IsOnCurrentThread());
       } else {
@@ -548,7 +548,7 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
       }
       rv = mListener->OnDataAvailable(this, mAsyncStream, mStreamOffset,
                                       odaAvail);
-      POP_THREAD_SAFETY
+      MOZ_POP_THREAD_SAFETY
     }
 
     
@@ -652,10 +652,10 @@ uint32_t nsInputStreamPump::OnStateStop() {
     RecursiveMutexAutoUnlock unlock(mMutex);
     
     
-    PUSH_IGNORE_THREAD_SAFETY
+    MOZ_PUSH_IGNORE_THREAD_SAFETY
     AssertOnThread();
     mListener->OnStopRequest(this, mStatus);
-    POP_THREAD_SAFETY
+    MOZ_POP_THREAD_SAFETY
   }
   mTargetThread = nullptr;
   mListener = nullptr;

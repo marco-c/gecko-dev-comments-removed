@@ -879,12 +879,12 @@ nsresult ServiceWorkerRegistrar::ReadData() {
   
   
   
-  PUSH_IGNORE_THREAD_SAFETY
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   if (overwrite && NS_FAILED(WriteData(mData))) {
     NS_WARNING("Failed to write data for the ServiceWorker Registations.");
     DeleteData();
   }
-  POP_THREAD_SAFETY
+  MOZ_POP_THREAD_SAFETY
 
   return NS_OK;
 }

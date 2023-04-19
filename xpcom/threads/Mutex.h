@@ -34,8 +34,8 @@ namespace mozilla {
 
 
 
-class CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
-                                    BlockingResourceBase {
+class MOZ_CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
+                                        BlockingResourceBase {
  public:
   
 
@@ -62,43 +62,43 @@ class CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
   
 
 
-  void Lock() CAPABILITY_ACQUIRE() { this->lock(); }
+  void Lock() MOZ_CAPABILITY_ACQUIRE() { this->lock(); }
 
   
 
 
-  [[nodiscard]] bool TryLock() TRY_ACQUIRE(true) { return this->tryLock(); }
+  [[nodiscard]] bool TryLock() MOZ_TRY_ACQUIRE(true) { return this->tryLock(); }
 
   
 
 
-  void Unlock() CAPABILITY_RELEASE() { this->unlock(); }
-
-  
-
-
-
-
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this) {}
+  void Unlock() MOZ_CAPABILITY_RELEASE() { this->unlock(); }
 
   
 
 
 
 
+  void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {}
+
+  
 
 
 
-  void AssertNotCurrentThreadOwns() const ASSERT_CAPABILITY(!this) {}
+
+
+
+
+  void AssertNotCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(!this) {}
 
 #else
-  void Lock() CAPABILITY_ACQUIRE();
+  void Lock() MOZ_CAPABILITY_ACQUIRE();
 
-  [[nodiscard]] bool TryLock() TRY_ACQUIRE(true);
-  void Unlock() CAPABILITY_RELEASE();
+  [[nodiscard]] bool TryLock() MOZ_TRY_ACQUIRE(true);
+  void Unlock() MOZ_CAPABILITY_RELEASE();
 
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this);
-  void AssertNotCurrentThreadOwns() const ASSERT_CAPABILITY(!this) {
+  void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this);
+  void AssertNotCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(!this) {
     
   }
 #endif  
@@ -187,10 +187,10 @@ class MutexSingleWriter : public OffTheBooksMutex {
 
 
 
-  void AssertOnWritingThread() const ASSERT_CAPABILITY(this) {
+  void AssertOnWritingThread() const MOZ_ASSERT_CAPABILITY(this) {
     MOZ_ASSERT(mOwner->OnWritingThread());
   }
-  void AssertOnWritingThreadOrHeld() const ASSERT_CAPABILITY(this) {
+  void AssertOnWritingThreadOrHeld() const MOZ_ASSERT_CAPABILITY(this) {
 #ifdef DEBUG
     if (!mOwner->OnWritingThread()) {
       AssertCurrentThreadOwns();
@@ -222,7 +222,7 @@ class MOZ_RAII BaseAutoUnlock;
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
+class MOZ_RAII MOZ_SCOPED_CAPABILITY BaseAutoLock {
  public:
   
 
@@ -232,11 +232,11 @@ class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
 
 
 
-  explicit BaseAutoLock(T aLock) CAPABILITY_ACQUIRE(aLock) : mLock(aLock) {
+  explicit BaseAutoLock(T aLock) MOZ_CAPABILITY_ACQUIRE(aLock) : mLock(aLock) {
     mLock.Lock();
   }
 
-  ~BaseAutoLock(void) CAPABILITY_RELEASE() { mLock.Unlock(); }
+  ~BaseAutoLock(void) MOZ_CAPABILITY_RELEASE() { mLock.Unlock(); }
 
   
   
@@ -263,7 +263,7 @@ class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
   
   
   
-  void AssertOwns(const T& aMutex) const ASSERT_CAPABILITY(aMutex) {
+  void AssertOwns(const T& aMutex) const MOZ_ASSERT_CAPABILITY(aMutex) {
     MOZ_ASSERT(&aMutex == &mLock);
     mLock.AssertCurrentThreadOwns();
   }
@@ -293,9 +293,9 @@ typedef detail::BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
 
 
 #define MutexSingleWriterAutoLockOnThread(lock, mutex) \
-  PUSH_IGNORE_THREAD_SAFETY                            \
+  MOZ_PUSH_IGNORE_THREAD_SAFETY                        \
   MutexSingleWriterAutoLock lock(mutex);               \
-  POP_THREAD_SAFETY
+  MOZ_POP_THREAD_SAFETY
 
 namespace detail {
 
@@ -306,7 +306,7 @@ namespace detail {
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY ReleasableBaseAutoLock {
+class MOZ_RAII MOZ_SCOPED_CAPABILITY ReleasableBaseAutoLock {
  public:
   
 
@@ -316,19 +316,19 @@ class MOZ_RAII SCOPED_CAPABILITY ReleasableBaseAutoLock {
 
 
 
-  explicit ReleasableBaseAutoLock(T aLock) CAPABILITY_ACQUIRE(aLock)
+  explicit ReleasableBaseAutoLock(T aLock) MOZ_CAPABILITY_ACQUIRE(aLock)
       : mLock(aLock) {
     mLock.Lock();
     mLocked = true;
   }
 
-  ~ReleasableBaseAutoLock(void) CAPABILITY_RELEASE() {
+  ~ReleasableBaseAutoLock(void) MOZ_CAPABILITY_RELEASE() {
     if (mLocked) {
       Unlock();
     }
   }
 
-  void AssertOwns(const T& aMutex) const ASSERT_CAPABILITY(aMutex) {
+  void AssertOwns(const T& aMutex) const MOZ_ASSERT_CAPABILITY(aMutex) {
     MOZ_ASSERT(&aMutex == &mLock);
     mLock.AssertCurrentThreadOwns();
   }
@@ -343,12 +343,12 @@ class MOZ_RAII SCOPED_CAPABILITY ReleasableBaseAutoLock {
   
   
   
-  void Unlock() CAPABILITY_RELEASE() {
+  void Unlock() MOZ_CAPABILITY_RELEASE() {
     MOZ_ASSERT(mLocked);
     mLock.Unlock();
     mLocked = false;
   }
-  void Lock() CAPABILITY_ACQUIRE() {
+  void Lock() MOZ_CAPABILITY_ACQUIRE() {
     MOZ_ASSERT(!mLocked);
     mLock.Lock();
     mLocked = true;
@@ -379,9 +379,10 @@ namespace detail {
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoUnlock {
+class MOZ_RAII MOZ_SCOPED_CAPABILITY BaseAutoUnlock {
  public:
-  explicit BaseAutoUnlock(T aLock) SCOPED_UNLOCK_RELEASE(aLock) : mLock(aLock) {
+  explicit BaseAutoUnlock(T aLock) MOZ_SCOPED_UNLOCK_RELEASE(aLock)
+      : mLock(aLock) {
     mLock.Unlock();
   }
 
@@ -392,7 +393,7 @@ class MOZ_RAII SCOPED_CAPABILITY BaseAutoUnlock {
     mLock->Unlock();
   }
 
-  ~BaseAutoUnlock() SCOPED_UNLOCK_REACQUIRE() { mLock.Lock(); }
+  ~BaseAutoUnlock() MOZ_SCOPED_UNLOCK_REACQUIRE() { mLock.Lock(); }
 
  private:
   BaseAutoUnlock() = delete;
@@ -420,12 +421,12 @@ namespace detail {
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoTryLock {
+class MOZ_RAII MOZ_SCOPED_CAPABILITY BaseAutoTryLock {
  public:
-  explicit BaseAutoTryLock(T& aLock) CAPABILITY_ACQUIRE(aLock)
+  explicit BaseAutoTryLock(T& aLock) MOZ_CAPABILITY_ACQUIRE(aLock)
       : mLock(aLock.TryLock() ? &aLock : nullptr) {}
 
-  ~BaseAutoTryLock() CAPABILITY_RELEASE() {
+  ~BaseAutoTryLock() MOZ_CAPABILITY_RELEASE() {
     if (mLock) {
       mLock->Unlock();
       mLock = nullptr;

@@ -176,7 +176,7 @@ class gfxFontconfigFontFamily final : public gfxFontFamily {
   void AddFacesToFontList(Func aAddPatternFunc);
 
   void FindStyleVariationsLocked(FontInfoData* aFontInfoData = nullptr)
-      REQUIRES(mLock) override;
+      MOZ_REQUIRES(mLock) override;
 
   
   
@@ -245,8 +245,8 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   }
 
   
-  nsresult InitFontListForPlatform() REQUIRES(mLock) override;
-  void InitSharedFontListForPlatform() REQUIRES(mLock) override;
+  nsresult InitFontListForPlatform() MOZ_REQUIRES(mLock) override;
+  void InitSharedFontListForPlatform() MOZ_REQUIRES(mLock) override;
 
   void GetFontList(nsAtom* aLangGroup, const nsACString& aGenericFamily,
                    nsTArray<nsString>& aListOfFonts) override;
@@ -275,7 +275,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
       const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
       FindFamiliesFlags aFlags, gfxFontStyle* aStyle = nullptr,
       nsAtom* aLanguage = nullptr, gfxFloat aDevToCssSize = 1.0)
-      REQUIRES(mLock) override;
+      MOZ_REQUIRES(mLock) override;
 
   bool GetStandardFamilyName(const nsCString& aFontName,
                              nsACString& aFamilyName) override;
@@ -287,14 +287,14 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
                        mozilla::StyleGenericFontFamily, nsAtom* aLanguage,
                        nsTArray<FamilyAndGeneric>& aFamilyList) override;
 
-  void ClearLangGroupPrefFontsLocked() REQUIRES(mLock) override;
+  void ClearLangGroupPrefFontsLocked() MOZ_REQUIRES(mLock) override;
 
   
   void ClearGenericMappings() {
     AutoLock lock(mLock);
     ClearGenericMappingsLocked();
   }
-  void ClearGenericMappingsLocked() REQUIRES(mLock) {
+  void ClearGenericMappingsLocked() MOZ_REQUIRES(mLock) {
     mGenericMappings.Clear();
   }
 
@@ -318,29 +318,29 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   
   
   void AddFontSetFamilies(FcFontSet* aFontSet, const SandboxPolicy* aPolicy,
-                          bool aAppFonts) REQUIRES(mLock);
+                          bool aAppFonts) MOZ_REQUIRES(mLock);
 
   
   void AddPatternToFontList(FcPattern* aFont, FcChar8*& aLastFamilyName,
                             nsACString& aFamilyName,
                             RefPtr<gfxFontconfigFontFamily>& aFontFamily,
-                            bool aAppFonts) REQUIRES(mLock);
+                            bool aAppFonts) MOZ_REQUIRES(mLock);
 
   
   
   PrefFontList* FindGenericFamilies(nsPresContext* aPresContext,
                                     const nsCString& aGeneric,
-                                    nsAtom* aLanguage) REQUIRES(mLock);
+                                    nsAtom* aLanguage) MOZ_REQUIRES(mLock);
 
   
-  bool PrefFontListsUseOnlyGenerics() REQUIRES(mLock);
+  bool PrefFontListsUseOnlyGenerics() MOZ_REQUIRES(mLock);
 
   static void CheckFontUpdates(nsITimer* aTimer, void* aThis);
 
   FontFamily GetDefaultFontForPlatform(nsPresContext* aPresContext,
                                        const gfxFontStyle* aStyle,
                                        nsAtom* aLanguage = nullptr)
-      REQUIRES(mLock) override;
+      MOZ_REQUIRES(mLock) override;
 
   enum class DistroID : int8_t {
     Unknown = 0,
