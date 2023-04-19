@@ -307,6 +307,16 @@ nsresult nsProfileLock::LockWithSymlink(nsIFile* aLockFile,
   struct in_addr inaddr;
   inaddr.s_addr = htonl(INADDR_LOOPBACK);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#  ifndef MOZ_PROXY_BYPASS_PROTECTION
   char hostname[256];
   PRStatus status = PR_GetSystemInfo(PR_SI_HOSTNAME, hostname, sizeof hostname);
   if (status == PR_SUCCESS) {
@@ -315,6 +325,7 @@ nsresult nsProfileLock::LockWithSymlink(nsIFile* aLockFile,
     status = PR_GetHostByName(hostname, netdbbuf, sizeof netdbbuf, &hostent);
     if (status == PR_SUCCESS) memcpy(&inaddr, hostent.h_addr, sizeof inaddr);
   }
+#  endif
 
   mozilla::SmprintfPointer signature =
       mozilla::Smprintf("%s:%s%lu", inet_ntoa(inaddr),
