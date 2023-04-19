@@ -1759,8 +1759,14 @@
 
 
 
+
+
+
+
+
  \
     MACRO(Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
+    MACRO(CallContent, call_content, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     MACRO(CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     MACRO(CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_IC) \
     
@@ -1929,8 +1935,12 @@
 
 
 
+
+
+
  \
     MACRO(New, new_, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_IC) \
+    MACRO(NewContent, new_content, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_IC) \
     MACRO(SuperCall, super_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_IC) \
     
 
@@ -3517,15 +3527,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(224))     \
-  IF_RECORD_TUPLE(, MACRO(225))     \
   IF_RECORD_TUPLE(, MACRO(226))     \
   IF_RECORD_TUPLE(, MACRO(227))     \
   IF_RECORD_TUPLE(, MACRO(228))     \
   IF_RECORD_TUPLE(, MACRO(229))     \
   IF_RECORD_TUPLE(, MACRO(230))     \
-  MACRO(231)                                   \
-  MACRO(232)                                   \
+  IF_RECORD_TUPLE(, MACRO(231))     \
+  IF_RECORD_TUPLE(, MACRO(232))     \
   MACRO(233)                                   \
   MACRO(234)                                   \
   MACRO(235)                                   \
