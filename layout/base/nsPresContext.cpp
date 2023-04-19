@@ -931,11 +931,10 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     if (overriden != PrefersColorSchemeOverride::None) {
       return overriden;
     }
-    if (!StaticPrefs::
-            layout_css_iframe_embedder_prefers_color_scheme_content_enabled()) {
-      return top->GetEmbedderColorScheme();
-    }
-    return browsingContext->GetEmbedderColorScheme();
+    
+    
+    
+    return top->GetEmbedderColorScheme();
   }());
 
   if (doc == mDocument) {
