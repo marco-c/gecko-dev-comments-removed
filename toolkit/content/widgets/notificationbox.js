@@ -7,10 +7,6 @@
 
 
 {
-  const { Services } = ChromeUtils.import(
-    "resource://gre/modules/Services.jsm"
-  );
-
   MozElements.NotificationBox = class NotificationBox {
     
 

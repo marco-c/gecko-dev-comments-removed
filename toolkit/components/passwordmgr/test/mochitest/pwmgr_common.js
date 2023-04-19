@@ -7,6 +7,9 @@
 const { LoginTestUtils } = SpecialPowers.ChromeUtils.import(
   "resource://testing-common/LoginTestUtils.jsm"
 );
+const { Services } = SpecialPowers.ChromeUtils.import(
+  "resource://gre/modules/Services.jsm"
+);
 
 
 LoginTestUtils.setAssertReporter(
@@ -17,9 +20,6 @@ LoginTestUtils.setAssertReporter(
 
 const { LoginHelper } = SpecialPowers.ChromeUtils.import(
   "resource://gre/modules/LoginHelper.jsm"
-);
-const { Services } = SpecialPowers.ChromeUtils.import(
-  "resource://gre/modules/Services.jsm"
 );
 
 const {
@@ -731,11 +731,6 @@ function runInParent(aFunctionOrURL) {
 function addLoginsInParent(...aLogins) {
   let script = runInParent(function addLoginsInParentInner() {
     addMessageListener("addLogins", logins => {
-      
-      const { Services } = ChromeUtils.import(
-        "resource://gre/modules/Services.jsm"
-      );
-
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
         Ci.nsILoginInfo,
@@ -816,10 +811,6 @@ SimpleTest.registerCleanupFunction(() => {
   PWMGR_COMMON_PARENT.sendAsyncMessage("cleanup");
 
   runInParent(function cleanupParent() {
-    
-    const { Services } = ChromeUtils.import(
-      "resource://gre/modules/Services.jsm"
-    );
     
     const { LoginManagerParent } = ChromeUtils.import(
       "resource://gre/modules/LoginManagerParent.jsm"

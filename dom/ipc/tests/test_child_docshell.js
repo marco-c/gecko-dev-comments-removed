@@ -44,10 +44,6 @@ add_task(async function test() {
 
     
     page.loadFrameScript(async function() {
-      const { Services } = ChromeUtils.import(
-        "resource://gre/modules/Services.jsm"
-      );
-
       var chromeEventHandler = docShell.chromeEventHandler;
       sendAsyncMessage("chromeEventHandler", {
         processType: Services.appinfo.processType,

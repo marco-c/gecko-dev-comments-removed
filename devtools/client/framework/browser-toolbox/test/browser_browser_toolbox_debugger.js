@@ -73,10 +73,6 @@ add_task(async function runTest() {
 
 
 
-    const { Services } = ChromeUtils.import(
-      "resource://gre/modules/Services.jsm"
-    );
-
     Services.prefs.clearUserPref("devtools.debugger.tabs");
     Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
 

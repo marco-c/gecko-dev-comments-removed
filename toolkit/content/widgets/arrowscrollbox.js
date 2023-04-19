@@ -7,10 +7,6 @@
 
 
 {
-  const { Services } = ChromeUtils.import(
-    "resource://gre/modules/Services.jsm"
-  );
-
   class MozArrowScrollbox extends MozElements.BaseControl {
     static get inheritedAttributes() {
       return {

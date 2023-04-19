@@ -10,10 +10,6 @@
 
 
 (() => {
-  const { Services } = ChromeUtils.import(
-    "resource://gre/modules/Services.jsm"
-  );
-
   function sendMessageToBrowser(msgName, data) {
     let { AutoCompleteParent } = ChromeUtils.import(
       "resource://gre/actors/AutoCompleteParent.jsm"

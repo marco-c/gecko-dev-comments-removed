@@ -8,10 +8,6 @@
 
 
 {
-  const { Services } = ChromeUtils.import(
-    "resource://gre/modules/Services.jsm"
-  );
-
   class ScreenshotsButtons extends MozXULElement {
     static get markup() {
       return `

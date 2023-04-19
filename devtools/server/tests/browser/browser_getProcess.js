@@ -79,10 +79,6 @@ add_task(async () => {
   }
 
   function processScript() {
-    
-    const { Services } = ChromeUtils.import(
-      "resource://gre/modules/Services.jsm"
-    );
     const listener = function() {
       
       Services.obs.removeObserver(listener, "devtools:loader:destroy");
