@@ -131,7 +131,13 @@ nsresult nsCookieBannerService::Init() {
   mIsInitialized = true;
 
   
-  mListService->Init();
+  
+  
+  nsresult rv = NS_DispatchToCurrentThreadQueue(
+      NS_NewRunnableFunction("CookieBannerListService init startup",
+                             [&] { mListService->Init(); }),
+      EventQueuePriority::Idle);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   RefPtr<nsCookieInjector> injector = nsCookieInjector::GetSingleton();
