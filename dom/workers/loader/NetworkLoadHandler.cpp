@@ -58,13 +58,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
                                                      const uint8_t* aString) {
   AssertIsOnMainThread();
 
-  if (!mLoadInfo->mChannel) {
-    return NS_BINDING_ABORTED;
-  }
-
-  mLoadInfo->mChannel = nullptr;
-
-  if (mLoader->mCancelMainThread.isSome()) {
+  if (mLoader->IsCancelled()) {
     return mLoader->mCancelMainThread.ref();
   }
 
@@ -308,12 +302,6 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   }
 
   
-  
-  
-  MOZ_ASSERT_IF(mLoader->IsMainScript(), channel == mLoadInfo->mChannel);
-  mLoadInfo->mChannel = channel;
-
-  
   SafeRefPtr<mozilla::dom::InternalResponse> ir =
       MakeSafeRefPtr<mozilla::dom::InternalResponse>(200, "OK"_ns);
   ir->SetBody(mLoadInfo->mCacheReadStream, InternalResponse::UNKNOWN_BODY_SIZE);
@@ -339,7 +327,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   MOZ_TRY(PrincipalToPrincipalInfo(channelPrincipal, principalInfo.get()));
 
   ir->SetPrincipalInfo(std::move(principalInfo));
-  ir->Headers()->FillResponseHeaders(mLoadInfo->mChannel);
+  ir->Headers()->FillResponseHeaders(channel);
 
   RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
       mLoader->GetCacheCreator()->Global(), std::move(ir), nullptr);
