@@ -25,6 +25,7 @@
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -112,12 +113,16 @@ TaskQueueBase* GetCurrentTaskQueueOrThread() {
 
 }  
 
-RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
+RtpTransceiver::RtpTransceiver(
+    cricket::MediaType media_type,
+    cricket::ChannelManager* channel_manager )
     : thread_(GetCurrentTaskQueueOrThread()),
       unified_plan_(false),
-      media_type_(media_type) {
+      media_type_(media_type),
+      channel_manager_(channel_manager) {
   RTC_DCHECK(media_type == cricket::MEDIA_TYPE_AUDIO ||
              media_type == cricket::MEDIA_TYPE_VIDEO);
+  RTC_DCHECK(channel_manager_);
 }
 
 RtpTransceiver::RtpTransceiver(
@@ -136,11 +141,15 @@ RtpTransceiver::RtpTransceiver(
   RTC_DCHECK(media_type_ == cricket::MEDIA_TYPE_AUDIO ||
              media_type_ == cricket::MEDIA_TYPE_VIDEO);
   RTC_DCHECK_EQ(sender->media_type(), receiver->media_type());
+  RTC_DCHECK(channel_manager_);
   senders_.push_back(sender);
   receivers_.push_back(receiver);
 }
 
 RtpTransceiver::~RtpTransceiver() {
+  
+  
+  
   if (!stopped_) {
     RTC_DCHECK_RUN_ON(thread_);
     StopInternal();
@@ -148,34 +157,57 @@ RtpTransceiver::~RtpTransceiver() {
 }
 
 void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
+  RTC_DCHECK_RUN_ON(thread_);
   
   if (stopped_ && channel) {
     return;
   }
 
+  RTC_DCHECK(channel || channel_);
+
   RTC_LOG_THREAD_BLOCK_COUNT();
+
+  if (channel_) {
+    signaling_thread_safety_->SetNotAlive();
+    signaling_thread_safety_ = nullptr;
+  }
 
   if (channel) {
     RTC_DCHECK_EQ(media_type(), channel->media_type());
+    signaling_thread_safety_ = PendingTaskSafetyFlag::Create();
   }
 
-  if (channel_) {
-    channel_->SignalFirstPacketReceived().disconnect(this);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  channel_manager_->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+    if (channel_) {
+      channel_->SetFirstPacketReceivedCallback(nullptr);
+    }
 
-  channel_ = channel;
+    channel_ = channel;
 
-  if (channel_) {
-    channel_->SignalFirstPacketReceived().connect(
-        this, &RtpTransceiver::OnFirstPacketReceived);
-  }
+    if (channel_) {
+      channel_->SetFirstPacketReceivedCallback(
+          [thread = thread_, flag = signaling_thread_safety_, this]() mutable {
+            thread->PostTask(ToQueuedTask(
+                std::move(flag), [this]() { OnFirstPacketReceived(); }));
+          });
+    }
+  });
 
   for (const auto& sender : senders_) {
     sender->internal()->SetMediaChannel(channel_ ? channel_->media_channel()
                                                  : nullptr);
   }
 
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
 
   for (const auto& receiver : receivers_) {
     if (!channel_) {
@@ -188,12 +220,11 @@ void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
     receiver->internal()->SetMediaChannel(channel_ ? channel_->media_channel()
                                                    : nullptr);
   }
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(receivers_.size() * 2);
 }
 
 void RtpTransceiver::AddSender(
     rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_DCHECK(!stopped_);
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(sender);
@@ -219,6 +250,7 @@ bool RtpTransceiver::RemoveSender(RtpSenderInterface* sender) {
 void RtpTransceiver::AddReceiver(
     rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
         receiver) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_DCHECK(!stopped_);
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(receiver);
@@ -267,7 +299,7 @@ absl::optional<std::string> RtpTransceiver::mid() const {
   return mid_;
 }
 
-void RtpTransceiver::OnFirstPacketReceived(cricket::ChannelInterface*) {
+void RtpTransceiver::OnFirstPacketReceived() {
   for (const auto& receiver : receivers_) {
     receiver->internal()->NotifyFirstPacketReceived();
   }
@@ -304,6 +336,7 @@ void RtpTransceiver::set_fired_direction(RtpTransceiverDirection direction) {
 }
 
 bool RtpTransceiver::stopped() const {
+  RTC_DCHECK_RUN_ON(thread_);
   return stopped_;
 }
 

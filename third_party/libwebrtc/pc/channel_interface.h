@@ -41,7 +41,8 @@ class ChannelInterface {
   virtual void Enable(bool enable) = 0;
 
   
-  virtual sigslot::signal1<ChannelInterface*>& SignalFirstPacketReceived() = 0;
+  virtual void SetFirstPacketReceivedCallback(
+      std::function<void()> callback) = 0;
 
   
   virtual bool SetLocalContent(const MediaContentDescription* content,

@@ -93,8 +93,12 @@ struct CryptoParams;
 
 
 class BaseChannel : public ChannelInterface,
-                    public rtc::MessageHandlerAutoCleanup,
+                    
+                    public rtc::MessageHandler,
+                    
                     public sigslot::has_slots<>,
+                    
+                    
                     public MediaChannel::NetworkInterface,
                     public webrtc::RtpPacketSinkInterface {
  public:
@@ -175,7 +179,7 @@ class BaseChannel : public ChannelInterface,
   }
 
   
-  sigslot::signal1<ChannelInterface*>& SignalFirstPacketReceived() override;
+  void SetFirstPacketReceivedCallback(std::function<void()> callback) override;
 
   
   void OnTransportReadyToSend(bool ready);
@@ -319,12 +323,11 @@ class BaseChannel : public ChannelInterface,
   rtc::Thread* const network_thread_;
   rtc::Thread* const signaling_thread_;
   rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> alive_;
-  sigslot::signal1<ChannelInterface*> SignalFirstPacketReceived_
-      RTC_GUARDED_BY(signaling_thread_);
 
   const std::string content_name_;
 
-  bool has_received_packet_ = false;
+  std::function<void()> on_first_packet_received_
+      RTC_GUARDED_BY(network_thread());
 
   
   
