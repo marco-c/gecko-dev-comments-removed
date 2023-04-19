@@ -6,25 +6,25 @@
 
 
 function displayNamesLocaleData() {
-    
-    return {};
+  
+  return {};
 }
 var displayNamesInternalProperties = {
-    localeData: displayNamesLocaleData,
-    relevantExtensionKeys: []
+  localeData: displayNamesLocaleData,
+  relevantExtensionKeys: []
 };
 
 function mozDisplayNamesLocaleData() {
-    return {
-        ca: intl_availableCalendars,
-        default: {
-            ca: intl_defaultCalendar,
-        },
-    };
+  return {
+    ca: intl_availableCalendars,
+    default: {
+      ca: intl_defaultCalendar,
+    },
+  };
 }
 var mozDisplayNamesInternalProperties = {
-    localeData: mozDisplayNamesLocaleData,
-    relevantExtensionKeys: ["ca"]
+  localeData: mozDisplayNamesLocaleData,
+  relevantExtensionKeys: ["ca"]
 };
 
 
@@ -33,75 +33,75 @@ var mozDisplayNamesInternalProperties = {
 
 
 function resolveDisplayNamesInternals(lazyDisplayNamesData) {
-    assert(IsObject(lazyDisplayNamesData), "lazy data not an object?");
+  assert(IsObject(lazyDisplayNamesData), "lazy data not an object?");
 
-    var internalProps = std_Object_create(null);
+  var internalProps = std_Object_create(null);
 
-    var mozExtensions = lazyDisplayNamesData.mozExtensions;
+  var mozExtensions = lazyDisplayNamesData.mozExtensions;
 
-    var DisplayNames = mozExtensions ?
-                       mozDisplayNamesInternalProperties :
-                       displayNamesInternalProperties;
+  var DisplayNames = mozExtensions ?
+                     mozDisplayNamesInternalProperties :
+                     displayNamesInternalProperties;
 
-    
+  
 
-    
-    var localeData = DisplayNames.localeData;
+  
+  var localeData = DisplayNames.localeData;
 
-    
-    var r = ResolveLocale("DisplayNames",
-                          lazyDisplayNamesData.requestedLocales,
-                          lazyDisplayNamesData.opt,
-                          DisplayNames.relevantExtensionKeys,
-                          localeData);
-    
-    internalProps.style = lazyDisplayNamesData.style;
+  
+  var r = ResolveLocale("DisplayNames",
+                        lazyDisplayNamesData.requestedLocales,
+                        lazyDisplayNamesData.opt,
+                        DisplayNames.relevantExtensionKeys,
+                        localeData);
+  
+  internalProps.style = lazyDisplayNamesData.style;
 
-    
-    var type = lazyDisplayNamesData.type;
-    internalProps.type = type;
+  
+  var type = lazyDisplayNamesData.type;
+  internalProps.type = type;
 
-    
-    internalProps.fallback = lazyDisplayNamesData.fallback;
+  
+  internalProps.fallback = lazyDisplayNamesData.fallback;
 
-    
-    internalProps.locale = r.locale;
+  
+  internalProps.locale = r.locale;
 
-    
-    if (type === "language") {
-        internalProps.languageDisplay = lazyDisplayNamesData.languageDisplay;
-    }
+  
+  if (type === "language") {
+    internalProps.languageDisplay = lazyDisplayNamesData.languageDisplay;
+  }
 
-    if (mozExtensions) {
-        internalProps.calendar = r.ca;
-    }
+  if (mozExtensions) {
+    internalProps.calendar = r.ca;
+  }
 
-    
-    
-    return internalProps;
+  
+  
+  return internalProps;
 }
 
 
 
 
 function getDisplayNamesInternals(obj) {
-    assert(IsObject(obj), "getDisplayNamesInternals called with non-object");
-    assert(intl_GuardToDisplayNames(obj) !== null,
-           "getDisplayNamesInternals called with non-DisplayNames");
+  assert(IsObject(obj), "getDisplayNamesInternals called with non-object");
+  assert(intl_GuardToDisplayNames(obj) !== null,
+         "getDisplayNamesInternals called with non-DisplayNames");
 
-    var internals = getIntlObjectInternals(obj);
-    assert(internals.type === "DisplayNames", "bad type escaped getIntlObjectInternals");
+  var internals = getIntlObjectInternals(obj);
+  assert(internals.type === "DisplayNames", "bad type escaped getIntlObjectInternals");
 
-    
-    var internalProps = maybeInternalProperties(internals);
-    if (internalProps) {
-        return internalProps;
-    }
-
-    
-    internalProps = resolveDisplayNamesInternals(internals.lazyData);
-    setInternalProperties(internals, internalProps);
+  
+  var internalProps = maybeInternalProperties(internals);
+  if (internalProps) {
     return internalProps;
+  }
+
+  
+  internalProps = resolveDisplayNamesInternals(internals.lazyData);
+  setInternalProperties(internals, internalProps);
+  return internalProps;
 }
 
 
@@ -116,120 +116,120 @@ function getDisplayNamesInternals(obj) {
 
 
 function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
-    assert(IsObject(displayNames), "InitializeDisplayNames called with non-object");
-    assert(intl_GuardToDisplayNames(displayNames) !== null,
-           "InitializeDisplayNames called with non-DisplayNames");
+  assert(IsObject(displayNames), "InitializeDisplayNames called with non-object");
+  assert(intl_GuardToDisplayNames(displayNames) !== null,
+         "InitializeDisplayNames called with non-DisplayNames");
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var lazyDisplayNamesData = std_Object_create(null);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  var lazyDisplayNamesData = std_Object_create(null);
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
-    lazyDisplayNamesData.requestedLocales = requestedLocales;
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+  lazyDisplayNamesData.requestedLocales = requestedLocales;
 
-    
-    if (!IsObject(options)) {
-        ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+  
+  if (!IsObject(options)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+  }
+
+  
+  var opt = new_Record();
+  lazyDisplayNamesData.opt = opt;
+  lazyDisplayNamesData.mozExtensions = mozExtensions;
+
+  
+  var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  opt.localeMatcher = matcher;
+
+  if (mozExtensions) {
+    var calendar = GetOption(options, "calendar", "string", undefined, undefined);
+
+    if (calendar !== undefined) {
+      calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(calendar, "calendar", "ca");
     }
 
-    
-    var opt = new_Record();
-    lazyDisplayNamesData.opt = opt;
-    lazyDisplayNamesData.mozExtensions = mozExtensions;
+    opt.ca = calendar;
+  }
 
-    
-    var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
-    opt.localeMatcher = matcher;
+  
+  var style;
+  if (mozExtensions) {
+    style = GetOption(options, "style", "string", ["narrow", "short", "abbreviated", "long"], "long");
+  } else {
+    style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
+  }
 
-    if (mozExtensions) {
-        var calendar = GetOption(options, "calendar", "string", undefined, undefined);
+  
+  lazyDisplayNamesData.style = style;
 
-        if (calendar !== undefined) {
-            calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(calendar, "calendar", "ca");
-        }
+  
+  var type;
+  if (mozExtensions) {
+    type = GetOption(options, "type", "string",
+                     ["language", "region", "script", "currency", "calendar", "dateTimeField",
+                      "weekday", "month", "quarter", "dayPeriod"],
+                      undefined);
+  } else {
+    type = GetOption(options, "type", "string",
+                     ["language", "region", "script", "currency", "calendar", "dateTimeField"],
+                     undefined);
+  }
 
-        opt.ca = calendar;
-    }
+  
+  if (type === undefined) {
+    ThrowTypeError(JSMSG_UNDEFINED_TYPE);
+  }
 
-    
-    var style;
-    if (mozExtensions) {
-      style = GetOption(options, "style", "string", ["narrow", "short", "abbreviated", "long"], "long");
-    } else {
-      style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
-    }
+  
+  lazyDisplayNamesData.type = type;
 
-    
-    lazyDisplayNamesData.style = style;
+  
+  var fallback = GetOption(options, "fallback", "string", ["code", "none"], "code");
 
-    
-    var type;
-    if (mozExtensions) {
-        type = GetOption(options, "type", "string",
-                         ["language", "region", "script", "currency", "calendar", "dateTimeField",
-                          "weekday", "month", "quarter", "dayPeriod"],
-                          undefined);
-    } else {
-        type = GetOption(options, "type", "string",
-                         ["language", "region", "script", "currency", "calendar", "dateTimeField"],
-                         undefined);
-    }
+  
+  lazyDisplayNamesData.fallback = fallback;
 
-    
-    if (type === undefined) {
-        ThrowTypeError(JSMSG_UNDEFINED_TYPE);
-    }
+  
+  var languageDisplay = GetOption(options, "languageDisplay", "string", ["dialect", "standard"],
+                                  "dialect");
 
-    
-    lazyDisplayNamesData.type = type;
+  
+  if (type === "language") {
+    lazyDisplayNamesData.languageDisplay = languageDisplay;
+  }
 
-    
-    var fallback = GetOption(options, "fallback", "string", ["code", "none"], "code");
-
-    
-    lazyDisplayNamesData.fallback = fallback;
-
-    
-    var languageDisplay = GetOption(options, "languageDisplay", "string", ["dialect", "standard"],
-                                    "dialect");
-
-    
-    if (type === "language") {
-        lazyDisplayNamesData.languageDisplay = languageDisplay;
-    }
-
-    
-    
-    initializeIntlObject(displayNames, "DisplayNames", lazyDisplayNamesData);
+  
+  
+  initializeIntlObject(displayNames, "DisplayNames", lazyDisplayNamesData);
 }
 
 
@@ -238,16 +238,16 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
 
 
 function Intl_DisplayNames_supportedLocalesOf(locales ) {
-    var options = arguments.length > 1 ? arguments[1] : undefined;
+  var options = arguments.length > 1 ? arguments[1] : undefined;
 
-    
-    var availableLocales = "DisplayNames";
+  
+  var availableLocales = "DisplayNames";
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
 
-    
-    return SupportedLocales(availableLocales, requestedLocales, options);
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
 
@@ -259,7 +259,7 @@ function Intl_DisplayNames_of(code) {
 
   
   if (!IsObject(displayNames) || (displayNames = intl_GuardToDisplayNames(displayNames)) === null) {
-      return callFunction(intl_CallDisplayNamesMethodIfWrapped, this, "Intl_DisplayNames_of");
+    return callFunction(intl_CallDisplayNamesMethodIfWrapped, this, "Intl_DisplayNames_of");
   }
 
   code = ToString(code);
@@ -279,37 +279,37 @@ function Intl_DisplayNames_of(code) {
 
 
 function Intl_DisplayNames_resolvedOptions() {
-    
-    var displayNames = this;
+  
+  var displayNames = this;
 
-    
-    if (!IsObject(displayNames) || (displayNames = intl_GuardToDisplayNames(displayNames)) === null) {
-        return callFunction(intl_CallDisplayNamesMethodIfWrapped, this,
-                            "Intl_DisplayNames_resolvedOptions");
-    }
+  
+  if (!IsObject(displayNames) || (displayNames = intl_GuardToDisplayNames(displayNames)) === null) {
+    return callFunction(intl_CallDisplayNamesMethodIfWrapped, this,
+                        "Intl_DisplayNames_resolvedOptions");
+  }
 
-    var internals = getDisplayNamesInternals(displayNames);
+  var internals = getDisplayNamesInternals(displayNames);
 
-    
-    var options = {
-        locale: internals.locale,
-        style: internals.style,
-        type: internals.type,
-        fallback: internals.fallback,
-    };
+  
+  var options = {
+    locale: internals.locale,
+    style: internals.style,
+    type: internals.type,
+    fallback: internals.fallback,
+  };
 
-    
-    assert(hasOwn("languageDisplay", internals) === (internals.type === "language"),
-           "languageDisplay is present iff type is 'language'");
+  
+  assert(hasOwn("languageDisplay", internals) === (internals.type === "language"),
+         "languageDisplay is present iff type is 'language'");
 
-    if (hasOwn("languageDisplay", internals)) {
-        DefineDataProperty(options, "languageDisplay", internals.languageDisplay);
-    }
+  if (hasOwn("languageDisplay", internals)) {
+    DefineDataProperty(options, "languageDisplay", internals.languageDisplay);
+  }
 
-    if (hasOwn("calendar", internals)) {
-        DefineDataProperty(options, "calendar", internals.calendar);
-    }
+  if (hasOwn("calendar", internals)) {
+    DefineDataProperty(options, "calendar", internals.calendar);
+  }
 
-    
-    return options;
+  
+  return options;
 }

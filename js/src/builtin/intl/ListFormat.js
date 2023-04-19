@@ -6,12 +6,12 @@
 
 
 function listFormatLocaleData() {
-    
-    return {};
+  
+  return {};
 }
 var listFormatInternalProperties = {
-    localeData: listFormatLocaleData,
-    relevantExtensionKeys: []
+  localeData: listFormatLocaleData,
+  relevantExtensionKeys: []
 };
 
 
@@ -20,61 +20,61 @@ var listFormatInternalProperties = {
 
 
 function resolveListFormatInternals(lazyListFormatData) {
-    assert(IsObject(lazyListFormatData), "lazy data not an object?");
+  assert(IsObject(lazyListFormatData), "lazy data not an object?");
 
-    var internalProps = std_Object_create(null);
+  var internalProps = std_Object_create(null);
 
-    var ListFormat = listFormatInternalProperties;
+  var ListFormat = listFormatInternalProperties;
 
-    
+  
 
-    
-    var localeData = ListFormat.localeData;
+  
+  var localeData = ListFormat.localeData;
 
-    
-    var r = ResolveLocale("ListFormat",
-                          lazyListFormatData.requestedLocales,
-                          lazyListFormatData.opt,
-                          ListFormat.relevantExtensionKeys,
-                          localeData);
+  
+  var r = ResolveLocale("ListFormat",
+                        lazyListFormatData.requestedLocales,
+                        lazyListFormatData.opt,
+                        ListFormat.relevantExtensionKeys,
+                        localeData);
 
-    
-    internalProps.locale = r.locale;
+  
+  internalProps.locale = r.locale;
 
-    
-    internalProps.type = lazyListFormatData.type;
+  
+  internalProps.type = lazyListFormatData.type;
 
-    
-    internalProps.style = lazyListFormatData.style;
+  
+  internalProps.style = lazyListFormatData.style;
 
-    
+  
 
-    
-    
-    return internalProps;
+  
+  
+  return internalProps;
 }
 
 
 
 
 function getListFormatInternals(obj) {
-    assert(IsObject(obj), "getListFormatInternals called with non-object");
-    assert(intl_GuardToListFormat(obj) !== null,
-           "getListFormatInternals called with non-ListFormat");
+  assert(IsObject(obj), "getListFormatInternals called with non-object");
+  assert(intl_GuardToListFormat(obj) !== null,
+         "getListFormatInternals called with non-ListFormat");
 
-    var internals = getIntlObjectInternals(obj);
-    assert(internals.type === "ListFormat", "bad type escaped getIntlObjectInternals");
+  var internals = getIntlObjectInternals(obj);
+  assert(internals.type === "ListFormat", "bad type escaped getIntlObjectInternals");
 
-    
-    var internalProps = maybeInternalProperties(internals);
-    if (internalProps) {
-        return internalProps;
-    }
-
-    
-    internalProps = resolveListFormatInternals(internals.lazyData);
-    setInternalProperties(internals, internalProps);
+  
+  var internalProps = maybeInternalProperties(internals);
+  if (internalProps) {
     return internalProps;
+  }
+
+  
+  internalProps = resolveListFormatInternals(internals.lazyData);
+  setInternalProperties(internals, internalProps);
+  return internalProps;
 }
 
 
@@ -89,61 +89,61 @@ function getListFormatInternals(obj) {
 
 
 function InitializeListFormat(listFormat, locales, options) {
-    assert(IsObject(listFormat), "InitializeListFormat called with non-object");
-    assert(intl_GuardToListFormat(listFormat) !== null,
-           "InitializeListFormat called with non-ListFormat");
+  assert(IsObject(listFormat), "InitializeListFormat called with non-object");
+  assert(intl_GuardToListFormat(listFormat) !== null,
+         "InitializeListFormat called with non-ListFormat");
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var lazyListFormatData = std_Object_create(null);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  var lazyListFormatData = std_Object_create(null);
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
-    lazyListFormatData.requestedLocales = requestedLocales;
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+  lazyListFormatData.requestedLocales = requestedLocales;
 
-    
-    if (options === undefined) {
-        options = std_Object_create(null);
-    } else if (!IsObject(options)) {
-        ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
-    }
+  
+  if (options === undefined) {
+    options = std_Object_create(null);
+  } else if (!IsObject(options)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+  }
 
-    
-    var opt = new_Record();
-    lazyListFormatData.opt = opt;
+  
+  var opt = new_Record();
+  lazyListFormatData.opt = opt;
 
-    
-    let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
-    opt.localeMatcher = matcher;
+  
+  let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  opt.localeMatcher = matcher;
 
-    
+  
 
-    
-    var type = GetOption(options, "type", "string", ["conjunction", "disjunction", "unit"],
-                         "conjunction");
-    lazyListFormatData.type = type;
+  
+  var type = GetOption(options, "type", "string", ["conjunction", "disjunction", "unit"],
+                       "conjunction");
+  lazyListFormatData.type = type;
 
-    
-    var style = GetOption(options, "style", "string", ["long", "short", "narrow"], "long");
-    lazyListFormatData.style = style;
+  
+  var style = GetOption(options, "style", "string", ["long", "short", "narrow"], "long");
+  lazyListFormatData.style = style;
 
-    
-    
-    initializeIntlObject(listFormat, "ListFormat", lazyListFormatData);
+  
+  
+  initializeIntlObject(listFormat, "ListFormat", lazyListFormatData);
 }
 
 
@@ -152,123 +152,123 @@ function InitializeListFormat(listFormat, locales, options) {
 
 
 function Intl_ListFormat_supportedLocalesOf(locales ) {
-    var options = arguments.length > 1 ? arguments[1] : undefined;
+  var options = arguments.length > 1 ? arguments[1] : undefined;
 
-    
-    var availableLocales = "ListFormat";
+  
+  var availableLocales = "ListFormat";
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
 
-    
-    return SupportedLocales(availableLocales, requestedLocales, options);
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
 
 
 
 function StringListFromIterable(iterable, methodName) {
+  
+  if (iterable === undefined) {
+    return [];
+  }
+
+  
+  var list = [];
+
+  
+  for (var element of allowContentIter(iterable)) {
     
-    if (iterable === undefined) {
-        return [];
+    if (typeof element !== "string") {
+      ThrowTypeError(JSMSG_NOT_EXPECTED_TYPE, methodName, "string", typeof element);
     }
 
     
-    var list = [];
+    DefineDataProperty(list, list.length, element);
+  }
 
-    
-    for (var element of allowContentIter(iterable)) {
-        
-        if (typeof element !== "string") {
-            ThrowTypeError(JSMSG_NOT_EXPECTED_TYPE, methodName, "string", typeof element);
-        }
-
-        
-        DefineDataProperty(list, list.length, element);
-    }
-
-    
-    return list;
+  
+  return list;
 }
 
 
 
 
 function Intl_ListFormat_format(list) {
-    
-    var listFormat = this;
+  
+  var listFormat = this;
 
-    
-    if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
-        return callFunction(intl_CallListFormatMethodIfWrapped, this, list,
-                            "Intl_ListFormat_format");
-    }
+  
+  if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
+    return callFunction(intl_CallListFormatMethodIfWrapped, this, list,
+                        "Intl_ListFormat_format");
+  }
 
-    
-    var stringList = StringListFromIterable(list, "format");
+  
+  var stringList = StringListFromIterable(list, "format");
 
-    
-    if (stringList.length < 2) {
-        return stringList.length === 0 ? "" : stringList[0];
-    }
+  
+  if (stringList.length < 2) {
+    return stringList.length === 0 ? "" : stringList[0];
+  }
 
-    
-    getListFormatInternals(listFormat);
+  
+  getListFormatInternals(listFormat);
 
-    
-    return intl_FormatList(listFormat, stringList,  false);
+  
+  return intl_FormatList(listFormat, stringList,  false);
 }
 
 
 
 
 function Intl_ListFormat_formatToParts(list) {
-    
-    var listFormat = this;
+  
+  var listFormat = this;
 
-    
-    if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
-        return callFunction(intl_CallListFormatMethodIfWrapped, this, list,
-                            "Intl_ListFormat_formatToParts");
-    }
+  
+  if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
+    return callFunction(intl_CallListFormatMethodIfWrapped, this, list,
+                        "Intl_ListFormat_formatToParts");
+  }
 
-    
-    var stringList = StringListFromIterable(list, "formatToParts");
+  
+  var stringList = StringListFromIterable(list, "formatToParts");
 
-    
-    if (stringList.length < 2) {
-        return stringList.length === 0 ? [] : [{type: "element", value: stringList[0]}];
-    }
+  
+  if (stringList.length < 2) {
+    return stringList.length === 0 ? [] : [{type: "element", value: stringList[0]}];
+  }
 
-    
-    getListFormatInternals(listFormat);
+  
+  getListFormatInternals(listFormat);
 
-    
-    return intl_FormatList(listFormat, stringList,  true);
+  
+  return intl_FormatList(listFormat, stringList,  true);
 }
 
 
 
 
 function Intl_ListFormat_resolvedOptions() {
-    
-    var listFormat = this;
+  
+  var listFormat = this;
 
-    
-    if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
-        return callFunction(intl_CallListFormatMethodIfWrapped, this,
-                            "Intl_ListFormat_resolvedOptions");
-    }
+  
+  if (!IsObject(listFormat) || (listFormat = intl_GuardToListFormat(listFormat)) === null) {
+    return callFunction(intl_CallListFormatMethodIfWrapped, this,
+                        "Intl_ListFormat_resolvedOptions");
+  }
 
-    var internals = getListFormatInternals(listFormat);
+  var internals = getListFormatInternals(listFormat);
 
-    
-    var result = {
-        locale: internals.locale,
-        type: internals.type,
-        style: internals.style,
-    };
+  
+  var result = {
+    locale: internals.locale,
+    type: internals.type,
+    style: internals.style,
+  };
 
-    
-    return result;
+  
+  return result;
 }

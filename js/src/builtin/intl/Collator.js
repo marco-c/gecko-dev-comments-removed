@@ -8,94 +8,94 @@
 
 
 function resolveCollatorInternals(lazyCollatorData) {
-    assert(IsObject(lazyCollatorData), "lazy data not an object?");
+  assert(IsObject(lazyCollatorData), "lazy data not an object?");
 
-    var internalProps = std_Object_create(null);
+  var internalProps = std_Object_create(null);
 
-    var Collator = collatorInternalProperties;
+  var Collator = collatorInternalProperties;
 
-    
-    internalProps.usage = lazyCollatorData.usage;
+  
+  internalProps.usage = lazyCollatorData.usage;
 
-    
-    var collatorIsSorting = lazyCollatorData.usage === "sort";
-    var localeData = collatorIsSorting
-                     ? Collator.sortLocaleData
-                     : Collator.searchLocaleData;
+  
+  var collatorIsSorting = lazyCollatorData.usage === "sort";
+  var localeData = collatorIsSorting
+                   ? Collator.sortLocaleData
+                   : Collator.searchLocaleData;
 
-    
-    
-    var relevantExtensionKeys = Collator.relevantExtensionKeys;
+  
+  
+  var relevantExtensionKeys = Collator.relevantExtensionKeys;
 
-    
-    var r = ResolveLocale("Collator",
-                          lazyCollatorData.requestedLocales,
-                          lazyCollatorData.opt,
-                          relevantExtensionKeys,
-                          localeData);
+  
+  var r = ResolveLocale("Collator",
+                        lazyCollatorData.requestedLocales,
+                        lazyCollatorData.opt,
+                        relevantExtensionKeys,
+                        localeData);
 
-    
-    internalProps.locale = r.locale;
+  
+  internalProps.locale = r.locale;
 
-    
-    var collation = r.co;
+  
+  var collation = r.co;
 
-    
-    if (collation === null) {
-        collation = "default";
-    }
+  
+  if (collation === null) {
+    collation = "default";
+  }
 
-    
-    internalProps.collation = collation;
+  
+  internalProps.collation = collation;
 
-    
-    internalProps.numeric = r.kn === "true";
+  
+  internalProps.numeric = r.kn === "true";
 
-    
-    internalProps.caseFirst = r.kf;
+  
+  internalProps.caseFirst = r.kf;
 
+  
+  
+  var s = lazyCollatorData.rawSensitivity;
+  if (s === undefined) {
     
     
-    var s = lazyCollatorData.rawSensitivity;
-    if (s === undefined) {
-        
-        
-        
-        
-        s = "variant";
-    }
+    
+    
+    s = "variant";
+  }
 
-    
-    internalProps.sensitivity = s;
+  
+  internalProps.sensitivity = s;
 
-    
-    internalProps.ignorePunctuation = lazyCollatorData.ignorePunctuation;
+  
+  internalProps.ignorePunctuation = lazyCollatorData.ignorePunctuation;
 
-    
-    
-    return internalProps;
+  
+  
+  return internalProps;
 }
 
 
 
 
 function getCollatorInternals(obj) {
-    assert(IsObject(obj), "getCollatorInternals called with non-object");
-    assert(intl_GuardToCollator(obj) !== null, "getCollatorInternals called with non-Collator");
+  assert(IsObject(obj), "getCollatorInternals called with non-object");
+  assert(intl_GuardToCollator(obj) !== null, "getCollatorInternals called with non-Collator");
 
-    var internals = getIntlObjectInternals(obj);
-    assert(internals.type === "Collator", "bad type escaped getIntlObjectInternals");
+  var internals = getIntlObjectInternals(obj);
+  assert(internals.type === "Collator", "bad type escaped getIntlObjectInternals");
 
-    
-    var internalProps = maybeInternalProperties(internals);
-    if (internalProps) {
-        return internalProps;
-    }
-
-    
-    internalProps = resolveCollatorInternals(internals.lazyData);
-    setInternalProperties(internals, internalProps);
+  
+  var internalProps = maybeInternalProperties(internals);
+  if (internalProps) {
     return internalProps;
+  }
+
+  
+  internalProps = resolveCollatorInternals(internals.lazyData);
+  setInternalProperties(internals, internalProps);
+  return internalProps;
 }
 
 
@@ -110,91 +110,91 @@ function getCollatorInternals(obj) {
 
 
 function InitializeCollator(collator, locales, options) {
-    assert(IsObject(collator), "InitializeCollator called with non-object");
-    assert(intl_GuardToCollator(collator) != null, "InitializeCollator called with non-Collator");
+  assert(IsObject(collator), "InitializeCollator called with non-object");
+  assert(intl_GuardToCollator(collator) != null, "InitializeCollator called with non-Collator");
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var lazyCollatorData = std_Object_create(null);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  var lazyCollatorData = std_Object_create(null);
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
-    lazyCollatorData.requestedLocales = requestedLocales;
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+  lazyCollatorData.requestedLocales = requestedLocales;
 
-    
-    
-    
-    
-    
-    if (options === undefined) {
-        options = std_Object_create(null);
-    } else {
-        options = ToObject(options);
-    }
+  
+  
+  
+  
+  
+  if (options === undefined) {
+    options = std_Object_create(null);
+  } else {
+    options = ToObject(options);
+  }
 
-    
-    
-    var u = GetOption(options, "usage", "string", ["sort", "search"], "sort");
-    lazyCollatorData.usage = u;
+  
+  
+  var u = GetOption(options, "usage", "string", ["sort", "search"], "sort");
+  lazyCollatorData.usage = u;
 
-    
-    var opt = new_Record();
-    lazyCollatorData.opt = opt;
+  
+  var opt = new_Record();
+  lazyCollatorData.opt = opt;
 
-    
-    var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
-    opt.localeMatcher = matcher;
+  
+  var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+  opt.localeMatcher = matcher;
 
-    
-    var collation = GetOption(options, "collation", "string", undefined, undefined);
-    if (collation !== undefined) {
-        collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(collation, "collation", "co");
-    }
-    opt.co = collation;
+  
+  var collation = GetOption(options, "collation", "string", undefined, undefined);
+  if (collation !== undefined) {
+    collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(collation, "collation", "co");
+  }
+  opt.co = collation;
 
-    
-    var numericValue = GetOption(options, "numeric", "boolean", undefined, undefined);
-    if (numericValue !== undefined) {
-        numericValue = numericValue ? "true" : "false";
-    }
-    opt.kn = numericValue;
+  
+  var numericValue = GetOption(options, "numeric", "boolean", undefined, undefined);
+  if (numericValue !== undefined) {
+    numericValue = numericValue ? "true" : "false";
+  }
+  opt.kn = numericValue;
 
-    
-    var caseFirstValue = GetOption(options, "caseFirst", "string", ["upper", "lower", "false"], undefined);
-    opt.kf = caseFirstValue;
+  
+  var caseFirstValue = GetOption(options, "caseFirst", "string", ["upper", "lower", "false"], undefined);
+  opt.kf = caseFirstValue;
 
-    
-    
-    var s = GetOption(options, "sensitivity", "string",
-                      ["base", "accent", "case", "variant"], undefined);
-    lazyCollatorData.rawSensitivity = s;
+  
+  
+  var s = GetOption(options, "sensitivity", "string",
+                    ["base", "accent", "case", "variant"], undefined);
+  lazyCollatorData.rawSensitivity = s;
 
-    
-    var ip = GetOption(options, "ignorePunctuation", "boolean", undefined, false);
-    lazyCollatorData.ignorePunctuation = ip;
+  
+  var ip = GetOption(options, "ignorePunctuation", "boolean", undefined, false);
+  lazyCollatorData.ignorePunctuation = ip;
 
-    
-    
-    
-    
-    initializeIntlObject(collator, "Collator", lazyCollatorData);
+  
+  
+  
+  
+  initializeIntlObject(collator, "Collator", lazyCollatorData);
 }
 
 
@@ -205,16 +205,16 @@ function InitializeCollator(collator, locales, options) {
 
 
 function Intl_Collator_supportedLocalesOf(locales ) {
-    var options = arguments.length > 1 ? arguments[1] : undefined;
+  var options = arguments.length > 1 ? arguments[1] : undefined;
 
-    
-    var availableLocales = "Collator";
+  
+  var availableLocales = "Collator";
 
-    
-    var requestedLocales = CanonicalizeLocaleList(locales);
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
 
-    
-    return SupportedLocales(availableLocales, requestedLocales, options);
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
 }
 
 
@@ -223,21 +223,21 @@ function Intl_Collator_supportedLocalesOf(locales ) {
 
 
 var collatorInternalProperties = {
-    sortLocaleData: collatorSortLocaleData,
-    searchLocaleData: collatorSearchLocaleData,
-    relevantExtensionKeys: ["co", "kf", "kn"],
+  sortLocaleData: collatorSortLocaleData,
+  searchLocaleData: collatorSearchLocaleData,
+  relevantExtensionKeys: ["co", "kf", "kn"],
 };
 
 
 
 
 function collatorActualLocale(locale) {
-    assert(typeof locale === "string", "locale should be string");
+  assert(typeof locale === "string", "locale should be string");
 
-    
-    
-    
-    return BestAvailableLocaleIgnoringDefault("Collator", locale);
+  
+  
+  
+  return BestAvailableLocaleIgnoringDefault("Collator", locale);
 }
 
 
@@ -246,76 +246,76 @@ function collatorActualLocale(locale) {
 
 
 function collatorSortCaseFirst(locale) {
-    var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale)) {
-        return ["upper", "false", "lower"];
-    }
+  var actualLocale = collatorActualLocale(locale);
+  if (intl_isUpperCaseFirst(actualLocale)) {
+    return ["upper", "false", "lower"];
+  }
 
-    
-    return ["false", "lower", "upper"];
+  
+  return ["false", "lower", "upper"];
 }
 
 
 
 
 function collatorSortCaseFirstDefault(locale) {
-    var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale)) {
-        return "upper";
-    }
+  var actualLocale = collatorActualLocale(locale);
+  if (intl_isUpperCaseFirst(actualLocale)) {
+    return "upper";
+  }
 
-    
-    return "false";
+  
+  return "false";
 }
 
 function collatorSortLocaleData() {
-    
-    return {
-        co: intl_availableCollations,
-        kn: function() {
-            return ["false", "true"];
-        },
-        kf: collatorSortCaseFirst,
-        default: {
-            co: function() {
-                
-                
-                return null;
-            },
-            kn: function() {
-                return "false";
-            },
-            kf: collatorSortCaseFirstDefault,
-        },
-    };
-    
+  
+  return {
+    co: intl_availableCollations,
+    kn: function() {
+      return ["false", "true"];
+    },
+    kf: collatorSortCaseFirst,
+    default: {
+      co: function() {
+        
+        
+        return null;
+      },
+      kn: function() {
+        return "false";
+      },
+      kf: collatorSortCaseFirstDefault,
+    },
+  };
+  
 }
 
 function collatorSearchLocaleData() {
-    
-    return {
-        co: function() {
-            return [null];
-        },
-        kn: function() {
-            return ["false", "true"];
-        },
-        kf: function() {
-            return ["false", "lower", "upper"];
-        },
-        default: {
-            co: function() {
-                return null;
-            },
-            kn: function() {
-                return "false";
-            },
-            kf: function() {
-                return "false";
-            },
-        },
-    };
-    
+  
+  return {
+    co: function() {
+      return [null];
+    },
+    kn: function() {
+      return ["false", "true"];
+    },
+    kf: function() {
+      return ["false", "lower", "upper"];
+    },
+    default: {
+      co: function() {
+        return null;
+      },
+      kn: function() {
+        return "false";
+      },
+      kf: function() {
+        return "false";
+      },
+    },
+  };
+  
 }
 
 
@@ -324,22 +324,22 @@ function collatorSearchLocaleData() {
 
 
 function createCollatorCompare(collator) {
+  
+  
+  return function(x, y) {
     
+
     
-    return function(x, y) {
-        
+    assert(IsObject(collator), "collatorCompareToBind called with non-object");
+    assert(intl_GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
 
-        
-        assert(IsObject(collator), "collatorCompareToBind called with non-object");
-        assert(intl_GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
+    
+    var X = ToString(x);
+    var Y = ToString(y);
 
-        
-        var X = ToString(x);
-        var Y = ToString(y);
-
-        
-        return intl_CompareStrings(collator, X, Y);
-    };
+    
+    return intl_CompareStrings(collator, X, Y);
+  };
 }
 
 
@@ -354,24 +354,24 @@ function createCollatorCompare(collator) {
 
 
 function $Intl_Collator_compare_get() {
-    
-    var collator = this;
+  
+  var collator = this;
 
-    
-    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
-        return callFunction(intl_CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
-    }
+  
+  if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
+    return callFunction(intl_CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
+  }
 
-    var internals = getCollatorInternals(collator);
+  var internals = getCollatorInternals(collator);
 
+  
+  if (internals.boundCompare === undefined) {
     
-    if (internals.boundCompare === undefined) {
-        
-        internals.boundCompare = createCollatorCompare(collator);
-    }
+    internals.boundCompare = createCollatorCompare(collator);
+  }
 
-    
-    return internals.boundCompare;
+  
+  return internals.boundCompare;
 }
 SetCanonicalName($Intl_Collator_compare_get, "get compare");
 
@@ -381,27 +381,27 @@ SetCanonicalName($Intl_Collator_compare_get, "get compare");
 
 
 function Intl_Collator_resolvedOptions() {
-    
-    var collator = this;
+  
+  var collator = this;
 
-    
-    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
-        return callFunction(intl_CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
-    }
+  
+  if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
+    return callFunction(intl_CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
+  }
 
-    var internals = getCollatorInternals(collator);
+  var internals = getCollatorInternals(collator);
 
-    
-    var result = {
-        locale: internals.locale,
-        usage: internals.usage,
-        sensitivity: internals.sensitivity,
-        ignorePunctuation: internals.ignorePunctuation,
-        collation: internals.collation,
-        numeric: internals.numeric,
-        caseFirst: internals.caseFirst,
-    };
+  
+  var result = {
+    locale: internals.locale,
+    usage: internals.usage,
+    sensitivity: internals.sensitivity,
+    ignorePunctuation: internals.ignorePunctuation,
+    collation: internals.collation,
+    numeric: internals.numeric,
+    caseFirst: internals.caseFirst,
+  };
 
-    
-    return result;
+  
+  return result;
 }

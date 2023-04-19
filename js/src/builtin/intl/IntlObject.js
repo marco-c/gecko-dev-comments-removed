@@ -8,19 +8,19 @@
 
 
 function Intl_getCanonicalLocales(locales) {
-    
-    return CanonicalizeLocaleList(locales);
+  
+  return CanonicalizeLocaleList(locales);
 }
 
 
 
 
 function Intl_supportedValuesOf(key) {
-    
-    key = ToString(key);
+  
+  key = ToString(key);
 
-    
-    return intl_SupportedValuesOf(key);
+  
+  return intl_SupportedValuesOf(key);
 }
 
 
@@ -46,34 +46,34 @@ function Intl_supportedValuesOf(key) {
 
 
 function Intl_getCalendarInfo(locales) {
-    
-    const requestedLocales = CanonicalizeLocaleList(locales);
+  
+  const requestedLocales = CanonicalizeLocaleList(locales);
 
-    const DateTimeFormat = dateTimeFormatInternalProperties;
+  const DateTimeFormat = dateTimeFormatInternalProperties;
 
-    
-    const localeData = DateTimeFormat.localeData;
+  
+  const localeData = DateTimeFormat.localeData;
 
-    
-    const localeOpt = new_Record();
+  
+  const localeOpt = new_Record();
 
-    
-    localeOpt.localeMatcher = "best fit";
+  
+  localeOpt.localeMatcher = "best fit";
 
-    
-    
-    
-    const r = ResolveLocale("DateTimeFormat",
-                            requestedLocales,
-                            localeOpt,
-                            DateTimeFormat.relevantExtensionKeys,
-                            localeData);
+  
+  
+  
+  const r = ResolveLocale("DateTimeFormat",
+                          requestedLocales,
+                          localeOpt,
+                          DateTimeFormat.relevantExtensionKeys,
+                          localeData);
 
-    
-    const result = intl_GetCalendarInfo(r.locale);
-    DefineDataProperty(result, "calendar", r.ca);
-    DefineDataProperty(result, "locale", r.locale);
+  
+  const result = intl_GetCalendarInfo(r.locale);
+  DefineDataProperty(result, "calendar", r.ca);
+  DefineDataProperty(result, "locale", r.locale);
 
-    
-    return result;
+  
+  return result;
 }
