@@ -163,71 +163,50 @@ nsFrameList::Slice nsFrameList::InsertFrames(nsContainerFrame* aParent,
   return Slice(*this, firstNewFrame, nextSibling);
 }
 
-nsFrameList nsFrameList::ExtractHead(FrameLinkEnumerator& aLink) {
-  MOZ_ASSERT(&aLink.List() == this, "Unexpected list");
-  MOZ_ASSERT(!aLink.PrevFrame() ||
-                 aLink.PrevFrame()->GetNextSibling() == aLink.NextFrame(),
-             "Unexpected PrevFrame()");
-  MOZ_ASSERT(aLink.PrevFrame() || aLink.NextFrame() == FirstChild(),
-             "Unexpected NextFrame()");
-  MOZ_ASSERT(!aLink.PrevFrame() || aLink.NextFrame() != FirstChild(),
-             "Unexpected NextFrame()");
-  MOZ_ASSERT(aLink.mEnd == nullptr,
-             "Unexpected mEnd for frame link enumerator");
+nsFrameList nsFrameList::ExtractHead(nsIFrame* aFrame) {
+  MOZ_ASSERT(!aFrame || ContainsFrame(aFrame), "aFrame is not on this list!");
 
-  nsIFrame* prev = aLink.PrevFrame();
-  nsIFrame* newFirstFrame = nullptr;
-  if (prev) {
+  if (!aFrame) {
     
-    prev->SetNextSibling(nullptr);
-    newFirstFrame = mFirstChild;
-    mFirstChild = aLink.NextFrame();
-    if (!mFirstChild) {  
-      mLastChild = nullptr;
-    }
-
-    
-    aLink.mPrev = nullptr;
+    return std::move(*this);
   }
-  
 
-  return nsFrameList(newFirstFrame, prev);
+  if (aFrame == mFirstChild) {
+    
+    return nsFrameList();
+  }
+
+  
+  nsIFrame* prev = aFrame->GetPrevSibling();
+  nsIFrame* newFirstChild = mFirstChild;
+  nsIFrame* newLastChild = prev;
+
+  prev->SetNextSibling(nullptr);
+  mFirstChild = aFrame;
+
+  return nsFrameList(newFirstChild, newLastChild);
 }
 
-nsFrameList nsFrameList::ExtractTail(FrameLinkEnumerator& aLink) {
-  MOZ_ASSERT(&aLink.List() == this, "Unexpected list");
-  MOZ_ASSERT(!aLink.PrevFrame() ||
-                 aLink.PrevFrame()->GetNextSibling() == aLink.NextFrame(),
-             "Unexpected PrevFrame()");
-  MOZ_ASSERT(aLink.PrevFrame() || aLink.NextFrame() == FirstChild(),
-             "Unexpected NextFrame()");
-  MOZ_ASSERT(!aLink.PrevFrame() || aLink.NextFrame() != FirstChild(),
-             "Unexpected NextFrame()");
-  MOZ_ASSERT(aLink.mEnd == nullptr,
-             "Unexpected mEnd for frame link enumerator");
+nsFrameList nsFrameList::ExtractTail(nsIFrame* aFrame) {
+  MOZ_ASSERT(!aFrame || ContainsFrame(aFrame), "aFrame is not on this list!");
 
-  nsIFrame* prev = aLink.PrevFrame();
-  nsIFrame* newFirstFrame;
-  nsIFrame* newLastFrame;
-  if (prev) {
-    
-    prev->SetNextSibling(nullptr);
-    newFirstFrame = aLink.NextFrame();
-    newLastFrame = newFirstFrame ? mLastChild : nullptr;
-    mLastChild = prev;
-  } else {
-    
-    newFirstFrame = mFirstChild;
-    newLastFrame = mLastChild;
-    Clear();
+  if (!aFrame) {
+    return nsFrameList();
   }
 
-  
-  aLink.mFrame = nullptr;
+  if (aFrame == mFirstChild) {
+    
+    return std::move(*this);
+  }
 
-  MOZ_ASSERT(aLink.AtEnd(), "What's going on here?");
+  nsIFrame* prev = aFrame->GetPrevSibling();
+  nsIFrame* newFirstChild = aFrame;
+  nsIFrame* newLastChild = mLastChild;
 
-  return nsFrameList(newFirstFrame, newLastFrame);
+  prev->SetNextSibling(nullptr);
+  mLastChild = prev;
+
+  return nsFrameList(newFirstChild, newLastChild);
 }
 
 nsIFrame* nsFrameList::FrameAt(int32_t aIndex) const {

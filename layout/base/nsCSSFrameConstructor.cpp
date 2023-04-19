@@ -11007,13 +11007,14 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   ConstructFramesFromItemList(aState, aItem.mChildItems, newFrame,
                                false, childList);
 
-  nsFrameList::FrameLinkEnumerator firstBlockEnumerator(childList);
-  if (!aItem.mIsAllInline) {
-    firstBlockEnumerator.Find(
-        [](nsIFrame* aFrame) { return aFrame->IsBlockOutside(); });
-  }
+  auto firstBlock = aItem.mIsAllInline
+                        ? childList.end()
+                        : std::find_if(childList.begin(), childList.end(),
+                                       [](nsIFrame* aFrame) {
+                                         return aFrame->IsBlockOutside();
+                                       });
 
-  if (aItem.mIsAllInline || firstBlockEnumerator.AtEnd()) {
+  if (aItem.mIsAllInline || firstBlock == childList.end()) {
     
     
     
@@ -11029,7 +11030,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   
 
   
-  nsFrameList firstInlineKids = childList.ExtractHead(firstBlockEnumerator);
+  nsFrameList firstInlineKids = childList.ExtractHead(*firstBlock);
   newFrame->SetInitialChildList(kPrincipalList, firstInlineKids);
 
   aFrameList.AppendFrame(nullptr, newFrame);
