@@ -2388,6 +2388,8 @@ STATIC_ATOMS = [
     Atom("onpositionstatechange", "onpositionstatechange"),
     Atom("onsupportedkeyschange", "onsupportedkeyschange"),
     
+    Atom("_moz_mathml_core_maction_and_semantics", "-moz-mathml-core-maction-and-semantics"),
+    
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),
     
