@@ -340,8 +340,13 @@ var FullZoom = {
 
 
 
-  updateCommands: function FullZoom_updateCommands(forceResetEnabled = false) {
+
+
+  updateCommands: async function FullZoom_updateCommands(
+    forceResetEnabled = false
+  ) {
     let zoomLevel = ZoomManager.zoom;
+    let defaultZoomLevel = await ZoomUI.getGlobalValue();
     let reduceCmd = document.getElementById("cmd_fullZoomReduce");
     if (zoomLevel == ZoomManager.MIN) {
       reduceCmd.setAttribute("disabled", "true");
@@ -357,7 +362,7 @@ var FullZoom = {
     }
 
     let resetCmd = document.getElementById("cmd_fullZoomReset");
-    if (zoomLevel == 1 && !forceResetEnabled) {
+    if (zoomLevel == defaultZoomLevel && !forceResetEnabled) {
       resetCmd.setAttribute("disabled", "true");
     } else {
       resetCmd.removeAttribute("disabled");

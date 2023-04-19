@@ -3,6 +3,8 @@
 
 "use strict";
 
+const TEST_PAGE_URL =
+  "data:text/html;charset=utf-8,<body>test_zoom_levels</body>";
 
 
 
@@ -15,24 +17,30 @@
 
 
 
-function assertCommandEnabledState(expectedState) {
+
+
+
+
+async function waitForCommandEnabledState(expectedState) {
   const COMMAND_MAP = {
     enlarge: "cmd_fullZoomEnlarge",
     reduce: "cmd_fullZoomReduce",
     reset: "cmd_fullZoomReset",
   };
 
-  for (let commandKey in expectedState) {
-    let commandID = COMMAND_MAP[commandKey];
-    let command = document.getElementById(commandID);
-    let expectedEnabled = expectedState[commandKey];
+  await TestUtils.waitForCondition(() => {
+    for (let commandKey in expectedState) {
+      let commandID = COMMAND_MAP[commandKey];
+      let command = document.getElementById(commandID);
+      let expectedEnabled = expectedState[commandKey];
 
-    Assert.equal(
-      command.hasAttribute("disabled"),
-      !expectedEnabled,
-      `${commandID} command should have the expected enabled state.`
-    );
-  }
+      if (command.hasAttribute("disabled") == expectedEnabled) {
+        return false;
+      }
+    }
+    Assert.ok("Commands finally reached the expected state.");
+    return true;
+  }, "Waiting for commands to reach the right state.");
 }
 
 
@@ -56,10 +64,7 @@ function assertTextZoomCommandCheckedState(isChecked) {
 
 
 
-add_task(async () => {
-  const TEST_PAGE_URL =
-    "data:text/html;charset=utf-8,<body>test_zoom_levels</body>";
-
+add_task(async function test_update_browser_zoom() {
   await BrowserTestUtils.withNewTab(TEST_PAGE_URL, async browser => {
     let currentZoom = await FullZoomHelper.getGlobalValue();
     Assert.equal(
@@ -68,7 +73,7 @@ add_task(async () => {
       "We expect to start at the default zoom level."
     );
 
-    assertCommandEnabledState({
+    await waitForCommandEnabledState({
       enlarge: true,
       reduce: true,
       reset: false,
@@ -86,42 +91,113 @@ add_task(async () => {
 
       
       info("Changing default zoom by a single level");
-      await FullZoomHelper.changeDefaultZoom(120);
+      ZoomManager.zoom = 1.2;
 
-      assertCommandEnabledState({
+      await waitForCommandEnabledState({
         enlarge: true,
         reduce: true,
         reset: true,
       });
-      assertTextZoomCommandCheckedState(textZoom);
+      await assertTextZoomCommandCheckedState(textZoom);
 
       
-      await FullZoomHelper.changeDefaultZoom(500);
+      ZoomManager.zoom = ZoomManager.MAX;
 
-      assertCommandEnabledState({
+      await waitForCommandEnabledState({
         enlarge: false,
         reduce: true,
         reset: true,
       });
-      assertTextZoomCommandCheckedState(textZoom);
+      await assertTextZoomCommandCheckedState(textZoom);
 
       
-      await FullZoomHelper.changeDefaultZoom(30);
-      assertCommandEnabledState({
+      ZoomManager.zoom = ZoomManager.MIN;
+      await waitForCommandEnabledState({
         enlarge: true,
         reduce: false,
         reset: true,
       });
-      assertTextZoomCommandCheckedState(textZoom);
+      await assertTextZoomCommandCheckedState(textZoom);
 
       
-      await FullZoomHelper.changeDefaultZoom(100);
-      assertCommandEnabledState({
+      ZoomManager.zoom = 1;
+      await waitForCommandEnabledState({
         enlarge: true,
         reduce: true,
         reset: false,
       });
-      assertTextZoomCommandCheckedState(textZoom);
+      await assertTextZoomCommandCheckedState(textZoom);
     }
+  });
+});
+
+
+
+
+
+add_task(async function test_update_browser_zoom() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE_URL, async browser => {
+    let currentZoom = await FullZoomHelper.getGlobalValue();
+    Assert.equal(
+      currentZoom,
+      1,
+      "We expect to start at the default zoom level."
+    );
+
+    
+    
+    
+    
+    
+    
+    await FullZoomHelper.changeDefaultZoom(200);
+    registerCleanupFunction(async () => {
+      await FullZoomHelper.changeDefaultZoom(100);
+    });
+
+    await waitForCommandEnabledState({
+      enlarge: true,
+      reduce: true,
+      reset: false,
+    });
+
+    
+    info("Changing default zoom by a single level");
+    ZoomManager.zoom = 2.2;
+
+    await waitForCommandEnabledState({
+      enlarge: true,
+      reduce: true,
+      reset: true,
+    });
+    await assertTextZoomCommandCheckedState(false);
+
+    
+    ZoomManager.zoom = ZoomManager.MAX;
+
+    await waitForCommandEnabledState({
+      enlarge: false,
+      reduce: true,
+      reset: true,
+    });
+    await assertTextZoomCommandCheckedState(false);
+
+    
+    ZoomManager.zoom = ZoomManager.MIN;
+    await waitForCommandEnabledState({
+      enlarge: true,
+      reduce: false,
+      reset: true,
+    });
+    await assertTextZoomCommandCheckedState(false);
+
+    
+    ZoomManager.zoom = 2;
+    await waitForCommandEnabledState({
+      enlarge: true,
+      reduce: true,
+      reset: false,
+    });
+    await assertTextZoomCommandCheckedState(false);
   });
 });
