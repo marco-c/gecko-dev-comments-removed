@@ -59,8 +59,6 @@ class BaseProcess {
     this.pid = null;
     this.pipes = [];
 
-    this.stringArrays = [];
-
     this.spawn(options);
   }
 
@@ -75,31 +73,6 @@ class BaseProcess {
       this.exitPromise,
       ...this.pipes.map(pipe => pipe.closedPromise),
     ]);
-  }
-
-  
-
-
-
-
-
-
-
-
-  stringArray(strings) {
-    let result = ctypes.char.ptr.array(strings.length + 1)();
-
-    let cstrings = strings.map(str => ctypes.char.array()(str));
-    for (let [i, cstring] of cstrings.entries()) {
-      result[i] = cstring;
-    }
-
-    
-    
-    
-    this.stringArrays.push(cstrings);
-
-    return result;
   }
 }
 

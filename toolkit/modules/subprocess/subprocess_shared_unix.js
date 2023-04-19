@@ -24,12 +24,6 @@ const unix = {
     { revents: ctypes.short },
   ]),
 
-  posix_spawn_file_actions_t: ctypes.uint8_t.array(
-    LIBC.OSFILE_SIZEOF_POSIX_SPAWN_FILE_ACTIONS_T
-  ),
-
-  posix_spawnattr_t: ctypes.uint8_t.array(LIBC.OSFILE_SIZEOF_POSIX_SPAWNATTR_T),
-
   WEXITSTATUS(status) {
     return (status >> 8) & 0xff;
   },
@@ -87,63 +81,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     unix.pollfd.array() ,
     ctypes.unsigned_int ,
     ctypes.int ,
-  ],
-
-  posix_spawn: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.pid_t.ptr ,
-    ctypes.char.ptr ,
-    unix.posix_spawn_file_actions_t.ptr ,
-    ctypes.voidptr_t ,
-    ctypes.char.ptr.ptr ,
-    ctypes.char.ptr.ptr ,
-  ],
-
-  posix_spawnattr_init: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawnattr_t.ptr,
-  ],
-
-  posix_spawnattr_destroy: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawnattr_t.ptr,
-  ],
-
-  responsibility_spawnattrs_setdisclaim: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawnattr_t.ptr,
-    ctypes.int,
-  ],
-
-  posix_spawn_file_actions_addclose: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawn_file_actions_t.ptr ,
-    ctypes.int ,
-  ],
-
-  posix_spawn_file_actions_adddup2: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawn_file_actions_t.ptr ,
-    ctypes.int ,
-    ctypes.int ,
-  ],
-
-  posix_spawn_file_actions_destroy: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawn_file_actions_t.ptr ,
-  ],
-
-  posix_spawn_file_actions_init: [
-    ctypes.default_abi,
-    ctypes.int,
-    unix.posix_spawn_file_actions_t.ptr ,
   ],
 
   read: [

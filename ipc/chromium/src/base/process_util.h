@@ -106,6 +106,13 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int));
 
 typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
 typedef std::map<std::string, std::string> environment_map;
+
+
+struct FreeEnvVarsArray {
+  void operator()(char** array);
+};
+
+typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
 #endif
 
 struct LaunchOptions {
@@ -127,6 +134,16 @@ struct LaunchOptions {
 
   
   
+  
+  
+  
+  EnvironmentArray full_env;
+
+  
+  std::string workdir;
+
+  
+  
   file_handle_mapping_vector fds_to_remap;
 #endif
 
@@ -145,12 +162,18 @@ struct LaunchOptions {
   mozilla::UniquePtr<ForkDelegate> fork_delegate = nullptr;
 #endif
 
-#if defined(OS_MACOSX) && defined(__aarch64__)
+#ifdef OS_MACOSX
+  
+  
+  
+  bool disclaim = false;
+#  ifdef __aarch64__
   
   
   
   uint32_t arch = PROCESS_ARCH_INVALID;
-#endif
+#  endif  
+#endif    
 };
 
 #if defined(OS_WIN)
@@ -178,13 +201,6 @@ bool LaunchApp(const std::wstring& cmdline, const LaunchOptions& options,
 
 bool LaunchApp(const std::vector<std::string>& argv,
                const LaunchOptions& options, ProcessHandle* process_handle);
-
-
-struct FreeEnvVarsArray {
-  void operator()(char** array);
-};
-
-typedef mozilla::UniquePtr<char*[], FreeEnvVarsArray> EnvironmentArray;
 
 
 
