@@ -28,6 +28,11 @@ constexpr uint16_t kNetworkCostLow = 10;
 constexpr uint16_t kNetworkCostMin = 0;
 
 
+
+
+constexpr uint16_t kNetworkCostVpn = 1;
+
+
 constexpr uint16_t kNetworkCostHigh = kNetworkCostCellular;
 
 enum AdapterType {
