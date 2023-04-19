@@ -88,7 +88,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   
   
-  void RemoveLoader(nsFontFaceLoader* aLoader);
+  virtual void RemoveLoader(nsFontFaceLoader* aLoader);
 
   virtual bool UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) {
     MOZ_ASSERT_UNREACHABLE("Not implemented!");
@@ -112,7 +112,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
 
 
-  void OnFontFaceStatusChanged(FontFaceImpl* aFontFace);
+  virtual void OnFontFaceStatusChanged(FontFaceImpl* aFontFace);
 
   
 
@@ -145,8 +145,8 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   dom::FontFaceSetLoadStatus Status();
 
   virtual bool Add(FontFaceImpl* aFontFace, ErrorResult& aRv);
-  void Clear();
-  bool Delete(FontFaceImpl* aFontFace);
+  virtual void Clear();
+  virtual bool Delete(FontFaceImpl* aFontFace);
 
   
   virtual void CacheFontLoadability() {
@@ -159,12 +159,14 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
 
 
-  void CheckLoadingFinished();
+  virtual void CheckLoadingFinished();
 
-  void FindMatchingFontFaces(const nsACString& aFont, const nsAString& aText,
-                             nsTArray<FontFace*>& aFontFaces, ErrorResult& aRv);
+  virtual void FindMatchingFontFaces(const nsACString& aFont,
+                                     const nsAString& aText,
+                                     nsTArray<FontFace*>& aFontFaces,
+                                     ErrorResult& aRv);
 
-  void DispatchCheckLoadingFinishedAfterDelay();
+  virtual void DispatchCheckLoadingFinishedAfterDelay();
 
  protected:
   ~FontFaceSetImpl() override;
@@ -244,7 +246,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   mutable RecursiveMutex mMutex;
 
-  FontFaceSet* MOZ_NON_OWNING_REF mOwner;
+  FontFaceSet* MOZ_NON_OWNING_REF mOwner GUARDED_BY(mMutex);
 
   
   
@@ -257,42 +259,44 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   
   
   
-  mutable RefPtr<gfxFontSrcPrincipal> mStandardFontLoadPrincipal;
+  mutable RefPtr<gfxFontSrcPrincipal> mStandardFontLoadPrincipal
+      GUARDED_BY(mMutex);
 
   
   
   
-  nsTHashtable<nsPtrHashKey<nsFontFaceLoader>> mLoaders;
+  nsTHashtable<nsPtrHashKey<nsFontFaceLoader>> mLoaders GUARDED_BY(mMutex);
 
   
   
-  nsTArray<FontFaceRecord> mNonRuleFaces;
+  nsTArray<FontFaceRecord> mNonRuleFaces GUARDED_BY(mMutex);
 
   
-  dom::FontFaceSetLoadStatus mStatus;
-
-  
-  
-  
-  
-  
-  
-  nsTHashMap<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads;
-
-  
-  bool mNonRuleFacesDirty;
+  dom::FontFaceSetLoadStatus mStatus GUARDED_BY(mMutex);
 
   
   
   
-  bool mHasLoadingFontFaces;
+  
+  
+  
+  nsTHashMap<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads
+      GUARDED_BY(mMutex);
 
   
-  bool mHasLoadingFontFacesIsDirty;
+  bool mNonRuleFacesDirty GUARDED_BY(mMutex);
 
   
   
-  bool mDelayedLoadCheck;
+  
+  bool mHasLoadingFontFaces GUARDED_BY(mMutex);
+
+  
+  bool mHasLoadingFontFacesIsDirty GUARDED_BY(mMutex);
+
+  
+  
+  bool mDelayedLoadCheck GUARDED_BY(mMutex);
 
   
   
