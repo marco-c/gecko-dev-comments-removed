@@ -259,22 +259,31 @@ void FontFaceSet::Clear() {
 }
 
 bool FontFaceSet::Delete(FontFace& aFontFace) {
-  FontFaceImpl* fontImpl = aFontFace.GetImpl();
+  
+  
+  
+  RefPtr<FontFaceImpl> fontImpl = aFontFace.GetImpl();
   MOZ_ASSERT(fontImpl);
 
-  if (!mImpl->Delete(fontImpl)) {
-    return false;
-  }
-
+  
+  
+  
+  bool removed = false;
   for (size_t i = 0; i < mNonRuleFaces.Length(); i++) {
     if (mNonRuleFaces[i].mFontFace == &aFontFace) {
       mNonRuleFaces.RemoveElementAt(i);
-      return true;
+      removed = true;
+      break;
     }
   }
 
-  MOZ_ASSERT_UNREACHABLE("Missing rule present in Impl!");
-  return true;
+  if (!mImpl->Delete(fontImpl)) {
+    MOZ_ASSERT(!removed, "Missing rule present in Impl!");
+  } else {
+    MOZ_ASSERT(removed, "Rule present but missing in Impl!");
+  }
+
+  return removed;
 }
 
 bool FontFaceSet::HasAvailableFontFace(FontFace* aFontFace) {
