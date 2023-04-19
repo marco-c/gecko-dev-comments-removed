@@ -773,7 +773,7 @@ NS_IMETHODIMP nsExternalHelperAppService::CreateListener(
   }
 
   nsAutoString extension;
-  int32_t dotidx = fileName.RFind(".");
+  int32_t dotidx = fileName.RFind(u".");
   if (dotidx != -1) {
     extension = Substring(fileName, dotidx + 1);
   }
@@ -3332,7 +3332,7 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
       }
     } else {
       
-      int32_t dotidx = fileName.RFind(".");
+      int32_t dotidx = fileName.RFind(u".");
       if (dotidx != -1) {
         CopyUTF16toUTF8(Substring(fileName, dotidx + 1), extension);
       }
@@ -3438,7 +3438,7 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
           ModifyExtensionType modify =
               ShouldModifyExtension(mimeInfo, originalExtension);
           if (modify == ModifyExtension_Replace) {
-            int32_t dotidx = fileName.RFind(".");
+            int32_t dotidx = fileName.RFind(u".");
             if (dotidx != -1) {
               
               fileName.Truncate(dotidx);
@@ -3471,7 +3471,7 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
 
   
   if (!(aFlags & VALIDATE_NO_DEFAULT_FILENAME) &&
-      (fileName.Length() == 0 || fileName.RFind(".") == 0)) {
+      (fileName.Length() == 0 || fileName.RFind(u".") == 0)) {
     nsCOMPtr<nsIStringBundleService> stringService =
         mozilla::components::StringBundle::Service();
     if (stringService) {
@@ -3635,7 +3635,7 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   if (bytesLength > maxBytes && !outFileName.IsEmpty()) {
     
     nsAutoCString extension;
-    int32_t dotidx = outFileName.RFind(".");
+    int32_t dotidx = outFileName.RFind(u".");
     if (dotidx != -1) {
       extension = NS_ConvertUTF16toUTF8(Substring(outFileName, dotidx + 1));
     }

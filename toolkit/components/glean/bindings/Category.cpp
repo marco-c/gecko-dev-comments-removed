@@ -63,7 +63,7 @@ void Category::GetSupportedNames(nsTArray<nsString>& aNames) {
       
       
       
-      if (identifier.Find(mName, false, 0, 1) == 0 &&
+      if (StringBeginsWith(identifier, mName) &&
           identifier.CharAt(mName.Length()) == '.') {
         const char* metricName = &identifierBuf[mName.Length() + 1];
         aNames.AppendElement()->AssignASCII(metricName);

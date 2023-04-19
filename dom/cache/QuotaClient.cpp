@@ -281,7 +281,7 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
                 
                 if (leafName.EqualsLiteral("caches.sqlite-journal") ||
                     leafName.EqualsLiteral("caches.sqlite-shm") ||
-                    leafName.Find("caches.sqlite-mj"_ns, false, 0, 0) == 0 ||
+                    StringBeginsWith(leafName, u"caches.sqlite-mj"_ns) ||
                     leafName.EqualsLiteral("context_open.marker")) {
                   break;
                 }

@@ -436,7 +436,7 @@ nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
   
   
   int32_t start = 0;
-  int32_t offset = textstr.FindCharInSet("\n\r");
+  int32_t offset = textstr.FindCharInSet(u"\n\r");
   while (offset != kNotFound) {
     if (offset > start) {
       
@@ -447,7 +447,7 @@ nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
     DoAddText();
 
     start = offset + 1;
-    offset = textstr.FindCharInSet("\n\r", start);
+    offset = textstr.FindCharInSet(u"\n\r", start);
   }
 
   
@@ -644,13 +644,13 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
     nsAutoString style;
     int32_t whitespace;
     if (NS_SUCCEEDED(GetAttributeValue(nsGkAtoms::style, style)) &&
-        (kNotFound != (whitespace = style.Find("white-space:")))) {
-      if (kNotFound != style.Find("pre-wrap", true, whitespace)) {
+        (kNotFound != (whitespace = style.Find(u"white-space:")))) {
+      if (kNotFound != style.LowerCaseFindASCII("pre-wrap", whitespace)) {
 #ifdef DEBUG_preformatted
         printf("Set mPreFormattedMail based on style pre-wrap\n");
 #endif
         mPreFormattedMail = true;
-      } else if (kNotFound != style.Find("pre", true, whitespace)) {
+      } else if (kNotFound != style.LowerCaseFindASCII("pre", whitespace)) {
 #ifdef DEBUG_preformatted
         printf("Set mPreFormattedMail based on style pre\n");
 #endif
@@ -1583,7 +1583,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
   int32_t bol = 0;
   while (bol < totLen) {  
     
-    nextpos = str.FindCharInSet(" \t\n\r", bol);
+    nextpos = str.FindCharInSet(u" \t\n\r", bol);
 #ifdef DEBUG_wrapping
     nsAutoString remaining;
     str.Right(remaining, totLen - bol);
