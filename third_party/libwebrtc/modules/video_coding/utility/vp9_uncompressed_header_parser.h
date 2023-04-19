@@ -13,7 +13,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
+#include <array>
+#include <bitset>
+#include <string>
+
 #include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "modules/video_coding/utility/vp9_constants.h"
 
 namespace webrtc {
 
@@ -23,14 +30,16 @@ namespace vp9 {
 
 bool GetQp(const uint8_t* buf, size_t length, int* qp);
 
+}  
 
-enum class BitDept : uint8_t {
+
+enum class Vp9BitDept : uint8_t {
   k8Bit = 8,
   k10Bit = 10,
   k12Bit = 12,
 };
 
-enum class ColorSpace : uint8_t {
+enum class Vp9ColorSpace : uint8_t {
   CS_UNKNOWN = 0,    
                      
   CS_BT_601 = 1,     
@@ -42,7 +51,7 @@ enum class ColorSpace : uint8_t {
   CS_RGB = 7,        
 };
 
-enum class ColorRange {
+enum class Vp9ColorRange {
   kStudio,  
             
             
@@ -56,36 +65,94 @@ enum class ColorRange {
   kFull     
 };
 
-enum class YuvSubsampling {
+enum class Vp9YuvSubsampling {
   k444,
   k440,
   k422,
   k420,
 };
 
-struct FrameInfo {
+enum Vp9ReferenceFrame : int {
+  kNone = -1,
+  kIntra = 0,
+  kLast = 1,
+  kGolden = 2,
+  kAltref = 3,
+};
+
+enum class Vp9InterpolationFilter : uint8_t {
+  kEightTap = 0,
+  kEightTapSmooth = 1,
+  kEightTapSharp = 2,
+  kBilinear = 3,
+  kSwitchable = 4
+};
+
+struct Vp9UncompressedHeader {
   int profile = 0;  
   absl::optional<uint8_t> show_existing_frame;
   bool is_keyframe = false;
   bool show_frame = false;
   bool error_resilient = false;
-  BitDept bit_detph = BitDept::k8Bit;
-  ColorSpace color_space = ColorSpace::CS_UNKNOWN;
-  ColorRange color_range;
-  YuvSubsampling sub_sampling;
+  Vp9BitDept bit_detph = Vp9BitDept::k8Bit;
+  absl::optional<Vp9ColorSpace> color_space;
+  absl::optional<Vp9ColorRange> color_range;
+  absl::optional<Vp9YuvSubsampling> sub_sampling;
   int frame_width = 0;
   int frame_height = 0;
   int render_width = 0;
   int render_height = 0;
+  
+  size_t tile_cols_log2 = 0;  
+  size_t tile_rows_log2 = 0;  
+  struct BitstreamPosition {
+    size_t byte_offset = 0;
+    size_t bit_offset = 0;
+  };
+  absl::optional<BitstreamPosition> render_size_position;
+  Vp9InterpolationFilter interpolation_filter =
+      Vp9InterpolationFilter::kEightTap;
+  bool allow_high_precision_mv = false;
   int base_qp = 0;
+  bool is_lossless = false;
+  uint8_t frame_context_idx = 0;
+
+  bool segmentation_enabled = false;
+  absl::optional<std::array<uint8_t, 7>> segmentation_tree_probs;
+  absl::optional<std::array<uint8_t, 3>> segmentation_pred_prob;
+  bool segmentation_is_delta = false;
+  std::array<std::array<absl::optional<int>, kVp9SegLvlMax>, kVp9MaxSegments>
+      segmentation_features;
+
+  
+  
+  std::array<int, kVp9RefsPerFrame> reference_buffers = {-1, -1, -1};
+  
+  
+  
+  std::bitset<kVp9MaxRefFrames> reference_buffers_sign_bias = 0;
+
+  
+  absl::optional<int> infer_size_from_reference;
+  
+  std::bitset<kVp9NumRefFrames> updated_buffers = 0;
+
+  
+  uint32_t uncompressed_header_size = 0;
+  uint32_t compressed_header_size = 0;
+
+  bool is_intra_only() const {
+    return reference_buffers[0] == -1 && reference_buffers[1] == -1 &&
+           reference_buffers[2] == -1;
+  }
+
+  std::string ToString() const;
 };
 
 
 
-absl::optional<FrameInfo> ParseIntraFrameInfo(const uint8_t* buf,
-                                              size_t length);
-
-}  
+absl::optional<Vp9UncompressedHeader> ParseUncompressedVp9Header(
+    rtc::ArrayView<const uint8_t> buf);
 
 }  
 
