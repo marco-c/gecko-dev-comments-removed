@@ -143,8 +143,7 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   virtual bool GetIsOpaque() = 0;
 
   
-  
-  NS_IMETHOD Reset() = 0;
+  virtual void ResetBitmap() = 0;
 
   virtual already_AddRefed<mozilla::layers::Image> GetAsImage() {
     return nullptr;
