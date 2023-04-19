@@ -346,3 +346,30 @@ async function touchLastTabFetch() {
   
   await TestUtils.waitForTick();
 }
+
+
+
+
+
+
+
+
+
+async function open_then_close(url) {
+  let { updatePromise } = await BrowserTestUtils.withNewTab(
+    url,
+    async browser => {
+      return {
+        updatePromise: BrowserTestUtils.waitForSessionStoreUpdate({
+          linkedBrowser: browser,
+        }),
+      };
+    }
+  );
+  await updatePromise;
+  return TestUtils.topicObserved("sessionstore-closed-objects-changed");
+}
+
+function clearHistory() {
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
+}
