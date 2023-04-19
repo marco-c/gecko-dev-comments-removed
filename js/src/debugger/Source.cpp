@@ -25,6 +25,7 @@
 #include "js/SourceText.h"              
 #include "js/String.h"                  
 #include "vm/BytecodeUtil.h"            
+#include "vm/ErrorContext.h"            
 #include "vm/JSContext.h"               
 #include "vm/JSObject.h"                
 #include "vm/JSScript.h"                
@@ -526,7 +527,8 @@ bool DebuggerSource::CallData::setSourceMapURL() {
     return false;
   }
 
-  if (!ss->setSourceMapURL(cx, std::move(chars))) {
+  MainThreadErrorContext ec(cx);
+  if (!ss->setSourceMapURL(cx, &ec, std::move(chars))) {
     return false;
   }
 
