@@ -4,8 +4,8 @@
 
 
 
-const { BackgroundTasksUtils } = ChromeUtils.import(
-  "resource://gre/modules/BackgroundTasksUtils.jsm"
+const { BackgroundTasksUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/BackgroundTasksUtils.sys.mjs"
 );
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"

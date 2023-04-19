@@ -1,16 +1,13 @@
-
-
-
-
-
-"use strict";
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { sendStandalonePing } = ChromeUtils.import(
   "resource://gre/modules/TelemetrySend.jsm"
 );
 
-var EXPORTED_SYMBOLS = ["runBackgroundTask"];
-async function runBackgroundTask(commandLine) {
+export async function runBackgroundTask(commandLine) {
   let sends = [];
   for (let i = 0; i < commandLine.length; i += 2) {
     sends.push(
@@ -21,11 +18,11 @@ async function runBackgroundTask(commandLine) {
   return Promise.all(sends);
 }
 
-
-
-
-
-
+// The standalone pingsender utility had an allowlist of endpoints, which was
+// added to prevent it from being used as a generic exfiltration utility by
+// unrelated malware running on the same system. It's unclear whether a gecko-
+// based pingsender would be similarly desirable for that use-case, but it's
+// easy enough to implement an allowlist here as well.
 const ALLOWED_ENDPOINTS = ["localhost", "incoming.telemetry.mozilla.org"];
 
 async function sendPing(endpoint, path) {

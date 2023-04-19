@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["BackgroundTasksTestUtils"];
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
@@ -23,7 +19,7 @@ function getFirefoxExecutableFilename() {
   return AppConstants.MOZ_APP_NAME;
 }
 
-
+// Returns a nsIFile to the firefox.exe (really, application) executable file.
 function getFirefoxExecutableFile() {
   let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   file = Services.dirsvc.get("GreBinD", Ci.nsIFile);
@@ -32,7 +28,7 @@ function getFirefoxExecutableFile() {
   return file;
 }
 
-var BackgroundTasksTestUtils = {
+export var BackgroundTasksTestUtils = {
   init(scope) {
     this.testScope = scope;
   },
@@ -49,7 +45,7 @@ var BackgroundTasksTestUtils = {
     let args = ["--backgroundtask", task];
     args.push(...options.extraArgs);
 
-    
+    // Ensure `resource://testing-common` gets mapped.
     let protocolHandler = Services.io
       .getProtocolHandler("resource")
       .QueryInterface(Ci.nsIResProtocolHandler);
@@ -58,10 +54,10 @@ var BackgroundTasksTestUtils = {
     const { Assert } = this.testScope;
     Assert.ok(!!uri, "resource://testing-common is not substituted");
 
-    
+    // The equivalent of _TESTING_MODULES_DIR in xpcshell.
     options.extraEnv.XPCSHELL_TESTING_MODULES_URI = uri.spec;
 
-    
+    // Now we can actually invoke the process.
     console.info(`launching background task`, {
       command,
       args,
@@ -75,19 +71,19 @@ var BackgroundTasksTestUtils = {
       stderr: "stdout",
     }).then(p => {
       p.stdin.close().catch(() => {
-        
-        
+        // It's possible that the process exists before we close stdin.
+        // In that case, we should ignore the errors.
       });
       const dumpPipe = async pipe => {
-        
+        // We must assemble all of the string fragments from stdout.
         let leftover = "";
         let data = await pipe.readString();
         while (data) {
           data = leftover + data;
-          
-          
-          
-          
+          // When the string is empty and the separator is not empty,
+          // split() returns an array containing one empty string,
+          // rather than an empty array, i.e., we always have
+          // `lines.length > 0`.
           let lines = data.split(/\r\n|\r|\n/);
           for (let line of lines.slice(0, -1)) {
             dump(`${p.pid}> ${line}\n`);
@@ -113,7 +109,7 @@ var BackgroundTasksTestUtils = {
 
     let { exitCode } = await proc.wait();
     try {
-      
+      // Read from the output pipe.
       await readPromise;
     } catch (e) {
       if (e.message !== "File closed") {
@@ -124,8 +120,8 @@ var BackgroundTasksTestUtils = {
     return exitCode;
   },
 
-  
-  
+  // Setup that allows to use the profile service in xpcshell tests,
+  // lifted from `toolkit/profile/xpcshell/head.js`.
   setupProfileService() {
     let gProfD = this.testScope.do_get_profile();
     let gDataHome = gProfD.clone();

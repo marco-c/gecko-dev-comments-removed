@@ -1,13 +1,9 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-var EXPORTED_SYMBOLS = ["BackgroundTasksManager"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,8 +14,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.jsm for details.
     maxLogLevel: "error",
     maxLogLevelPref: "toolkit.backgroundtasks.loglevel",
     prefix: "BackgroundTasksManager",
@@ -27,9 +23,9 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
-
-
-
+// Map resource://testing-common/ to the shared test modules directory.  This is
+// a transliteration of `register_modules_protocol_handler` from
+// https://searchfox.org/mozilla-central/rev/f081504642a115cb8236bea4d8250e5cb0f39b02/testing/xpcshell/head.js#358-389.
 function registerModulesProtocolHandler() {
   let env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
@@ -47,8 +43,8 @@ function registerModulesProtocolHandler() {
     "testing-common",
     Services.io.newURI(_TESTING_MODULES_URI)
   );
-  
-  
+  // Log loudly so that when testing, we always actually use the
+  // console logging mechanism and therefore deterministically load that code.
   lazy.log.error(
     `Substitution set: resource://testing-common aliases ${_TESTING_MODULES_URI}`
   );
@@ -58,41 +54,41 @@ function registerModulesProtocolHandler() {
 
 function locationsForBackgroundTaskNamed(name) {
   const subModules = [
-    "resource:///modules", 
-    "resource://gre/modules", 
+    "resource:///modules", // App-specific first.
+    "resource://gre/modules", // Toolkit/general second.
   ];
 
   if (registerModulesProtocolHandler()) {
-    subModules.push("resource://testing-common"); 
+    subModules.push("resource://testing-common"); // Test-only third.
   }
 
   let locations = [];
   for (const subModule of subModules) {
-    let URI = `${subModule}/backgroundtasks/BackgroundTask_${name}.jsm`;
+    let URI = `${subModule}/backgroundtasks/BackgroundTask_${name}.sys.mjs`;
     locations.push(URI);
   }
 
   return locations;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Find an ES module named like `backgroundtasks/BackgroundTask_${name}.sys.mjs`,
+ * import it, and return the whole module.
+ *
+ * When testing, allow to load from `XPCSHELL_TESTING_MODULES_URI`,
+ * which is registered at `resource://testing-common`, the standard
+ * location for test-only modules.
+ *
+ * @return {Object} The imported module.
+ * @throws NS_ERROR_NOT_AVAILABLE if a background task with the given `name` is
+ * not found.
+ */
 function findBackgroundTaskModule(name) {
   for (const URI of locationsForBackgroundTaskNamed(name)) {
     lazy.log.debug(`Looking for background task at URI: ${URI}`);
 
     try {
-      const taskModule = ChromeUtils.import(URI);
+      const taskModule = ChromeUtils.importESModule(URI);
       lazy.log.info(`Found background task at URI: ${URI}`);
       return taskModule;
     } catch (ex) {
@@ -109,9 +105,9 @@ function findBackgroundTaskModule(name) {
   );
 }
 
-class BackgroundTasksManager {
-  
-  
+export class BackgroundTasksManager {
+  // Keep `BackgroundTasksManager.helpInfo` synchronized with `DevToolsStartup.helpInfo`.
+  /* eslint-disable max-len */
   helpInfo =
     "  --jsdebugger [<path>] Open the Browser Toolbox. Defaults to the local build\n" +
     "                     but can be overridden by a firefox path.\n" +
@@ -121,7 +117,7 @@ class BackgroundTasksManager {
     "  --start-debugger-server [ws:][ <port> | <path> ] Start the devtools server on\n" +
     "                     a TCP port or Unix domain socket path. Defaults to TCP port\n" +
     "                     6000. Use WebSocket protocol if ws: prefix is specified.\n";
-  
+  /* eslint-disable max-len */
 
   handle(commandLine) {
     const bts = Cc["@mozilla.org/backgroundtasks;1"].getService(
@@ -145,7 +141,7 @@ class BackgroundTasksManager {
       return;
     }
 
-    
+    // Check this before the devtools startup flow handles and removes it.
     const CASE_INSENSITIVE = false;
     if (
       commandLine.findFlag("jsdebugger", CASE_INSENSITIVE) < 0 &&
@@ -196,7 +192,7 @@ class BackgroundTasksManager {
         ` '${Services.dirsvc.get("ProfD", Ci.nsIFile).path}'`
     );
 
-    let exitCode = BackgroundTasksManager.EXIT_CODE.NOT_FOUND;
+    let exitCode = EXIT_CODE.NOT_FOUND;
     try {
       let taskModule = findBackgroundTaskModule(name);
       addMarker("BackgroundTasksManager:AfterFindRunBackgroundTask");
@@ -214,7 +210,7 @@ class BackgroundTasksManager {
           new Promise(resolve =>
             lazy.setTimeout(() => {
               lazy.log.error(`Background task named '${name}' timed out`);
-              resolve(BackgroundTasksManager.EXIT_CODE.TIMEOUT);
+              resolve(EXIT_CODE.TIMEOUT);
             }, timeoutSec * 1000)
           ),
           taskModule.runBackgroundTask(commandLine),
@@ -224,7 +220,7 @@ class BackgroundTasksManager {
         );
       } catch (e) {
         lazy.log.error(`Backgroundtask named '${name}' threw exception`, e);
-        exitCode = BackgroundTasksManager.EXIT_CODE.EXCEPTION;
+        exitCode = EXIT_CODE.EXCEPTION;
       }
     } finally {
       addMarker("BackgroundTasksManager:AfterAwaitRunBackgroundTask");
@@ -243,51 +239,51 @@ class BackgroundTasksManager {
   ]);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-BackgroundTasksManager.EXIT_CODE = {
-  
-
-
-
-
+/**
+ * Background tasks should standard exit code conventions where 0 denotes
+ * success and non-zero denotes failure and/or an error.  In addition, since
+ * background tasks have limited channels to communicate with consumers, the
+ * special values `NOT_FOUND` (integer 2) and `THREW_EXCEPTION` (integer 3) are
+ * distinguished.
+ *
+ * If you extend this to add background task-specific exit codes, use exit codes
+ * greater than 10 to allow for additional shared exit codes to be added here.
+ * Exit codes should be between 0 and 127 to be safe across platforms.
+ */
+export const EXIT_CODE = {
+  /**
+   * The task succeeded.
+   *
+   * The `runBackgroundTask(...)` promise resolved to 0.
+   */
   SUCCESS: 0,
 
-  
-
-
-
-
+  /**
+   * The task with the specified name could not be found or imported.
+   *
+   * The corresponding `runBackgroundTask` method could not be found.
+   */
   NOT_FOUND: 2,
 
-  
-
-
-
-
+  /**
+   * The task failed with an uncaught exception.
+   *
+   * The `runBackgroundTask(...)` promise rejected with an exception.
+   */
   EXCEPTION: 3,
 
-  
-
-
-
-
-
-
+  /**
+   * The task took too long and timed out.
+   *
+   * The default timeout is controlled by the pref:
+   * "toolkit.backgroundtasks.defaultTimeoutSec", but tasks can override this
+   * by exporting a non-zero `backgroundTaskTimeoutSec` value.
+   */
   TIMEOUT: 4,
 
-  
-
-
-
+  /**
+   * The last exit code reserved by this structure.  Use codes larger than this
+   * code for background task-specific exit codes.
+   */
   LAST_RESERVED: 10,
 };

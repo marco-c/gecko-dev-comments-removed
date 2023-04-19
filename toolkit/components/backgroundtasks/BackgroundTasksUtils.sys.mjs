@@ -1,21 +1,17 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-var EXPORTED_SYMBOLS = ["BackgroundTasksUtils"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.jsm for details.
     maxLogLevel: "error",
     maxLogLevelPref: "toolkit.backgroundtasks.loglevel",
     prefix: "BackgroundTasksUtils",
@@ -46,16 +42,16 @@ class CannotLockProfileError extends Error {
   }
 }
 
-var BackgroundTasksUtils = {
-  
-  
+export var BackgroundTasksUtils = {
+  // Manage our own default profile that can be overridden for testing.  It's
+  // easier to do this here rather than using the profile service itself.
   _defaultProfileInitialized: false,
   _defaultProfile: null,
 
   getDefaultProfile() {
     if (!this._defaultProfileInitialized) {
       this._defaultProfileInitialized = true;
-      
+      // This is all test-only.
       const env = Cc["@mozilla.org/process/environment;1"].getService(
         Ci.nsIEnvironment
       );
@@ -69,7 +65,7 @@ var BackgroundTasksUtils = {
         );
         var tmpd = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         tmpd.initWithPath(defaultProfilePath);
-        
+        // Sadly this writes to `profiles.ini`, but there's little to be done.
         this._defaultProfile = lazy.ProfileService.createProfile(
           tmpd,
           `MOZ_BACKGROUNDTASKS_DEFAULT_PROFILE_PATH-${Date.now()}`
@@ -96,7 +92,7 @@ var BackgroundTasksUtils = {
   currentProfileIsDefaultProfile() {
     let defaultProfile = this.getDefaultProfile();
     let currentProfile = lazy.ProfileService.currentProfile;
-    
+    // This comparison needs to accommodate null on both sides.
     let isDefaultProfile = defaultProfile && currentProfile == defaultProfile;
     return isDefaultProfile;
   },
@@ -107,9 +103,9 @@ var BackgroundTasksUtils = {
     }
 
     try {
-      
-      
-      
+      // In release builds, `.directory` throws NS_ERROR_NOT_INITIALIZED when
+      // unlocked.  In debug builds, `.directory` when the profile is not locked
+      // will crash via `NS_ERROR`.
       if (lock.directory) {
         return;
       }
@@ -126,16 +122,16 @@ var BackgroundTasksUtils = {
     throw new Error("Profile is not locked");
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Locks the given profile and provides the path to it to the callback.
+   * The callback should return a promise and once settled the profile is
+   * unlocked and then the promise returned back to the caller of this function.
+   *
+   * @template T
+   * @param {(lock: nsIProfileLock) => Promise<T>} callback
+   * @param {nsIToolkitProfile} [profile] defaults to default profile
+   * @return {Promise<T>}
+   */
   async withProfileLock(callback, profile = this.getDefaultProfile()) {
     if (!profile) {
       throw new Error("No default profile exists");
@@ -152,7 +148,7 @@ var BackgroundTasksUtils = {
     }
 
     try {
-      
+      // We must await to ensure any logging is displayed after the callback resolves.
       return await callback(lock);
     } finally {
       try {
@@ -167,19 +163,19 @@ var BackgroundTasksUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Reads the preferences from "prefs.js" out of a profile, optionally
+   * returning only names satisfying a given predicate.
+   *
+   * If no `lock` is given, the default profile is locked and the preferences
+   * read from it.  If `lock` is given, read from the given lock's directory.
+   *
+   * @param {(name: string) => boolean} [predicate] a predicate to filter
+   * preferences by; if not given, all preferences are accepted.
+   * @param {nsIProfileLock} [lock] optional lock to use
+   * @returns {object} with keys that are string preference names and values
+   * that are string|number|boolean preference values.
+   */
   async readPreferences(predicate = null, lock = null) {
     if (!lock) {
       return this.withProfileLock(profileLock =>
@@ -198,8 +194,8 @@ var BackgroundTasksUtils = {
       prefs[name] = value;
     };
 
-    
-    
+    // We ignore any "user.js" file, since usage is low and doing otherwise
+    // requires implementing a bit more of `nsIPrefsService` than feels safe.
     let prefsFile = lock.directory.clone();
     prefsFile.append("prefs.js");
     lazy.log.info(`readPreferences: will parse prefs ${prefsFile.path}`);
@@ -216,7 +212,7 @@ var BackgroundTasksUtils = {
         onIntPref: addPref,
         onBoolPref: addPref,
         onError(message) {
-          
+          // Firefox itself manages "prefs.js", so errors should be infrequent.
           lazy.log.error(message);
         },
       },
@@ -227,15 +223,15 @@ var BackgroundTasksUtils = {
     return prefs;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Reads the snapshotted Firefox Messaging System targeting out of a profile.
+   *
+   * If no `lock` is given, the default profile is locked and the preferences
+   * read from it.  If `lock` is given, read from the given lock's directory.
+   *
+   * @param {nsIProfileLock} [lock] optional lock to use
+   * @returns {string}
+   */
   async readFirefoxMessagingSystemTargetingSnapshot(lock = null) {
     if (!lock) {
       return this.withProfileLock(profileLock =>
@@ -256,15 +252,15 @@ var BackgroundTasksUtils = {
     return IOUtils.readJSON(snapshotFile.path);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Reads the Telemetry Client ID out of a profile.
+   *
+   * If no `lock` is given, the default profile is locked and the preferences
+   * read from it.  If `lock` is given, read from the given lock's directory.
+   *
+   * @param {nsIProfileLock} [lock] optional lock to use
+   * @returns {string}
+   */
   async readTelemetryClientID(lock = null) {
     if (!lock) {
       return this.withProfileLock(profileLock =>
@@ -287,16 +283,16 @@ var BackgroundTasksUtils = {
     return state.clientID;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Enable the Nimbus experimentation framework.
+   *
+   * @param {nsICommandLine} commandLine if given, accept command line parameters
+   *                                     like `--url about:studies?...` or
+   *                                     `--url file:path/to.json` to explicitly
+   *                                     opt-on to experiment branches.
+   * @param {object} defaultProfile      snapshot of Firefox Messaging System
+   *                                     targeting from default browsing profile.
+   */
   async enableNimbus(commandLine, defaultProfile = {}) {
     try {
       await lazy.ExperimentManager.onStartup({ defaultProfile });
@@ -315,20 +311,20 @@ var BackgroundTasksUtils = {
       throw err;
     }
 
-    
-    
-    
-    
-    
-    
+    // Allow manual explicit opt-in to experiment branches to facilitate testing.
+    //
+    // Process command line arguments, like
+    // `--url about:studies?optin_slug=nalexander-ms-test1&optin_branch=treatment-a&optin_collection=nimbus-preview`
+    // or
+    // `--url file:///Users/nalexander/Mozilla/gecko/experiment.json?optin_branch=treatment-a`.
     let ar;
     while ((ar = commandLine?.handleFlagWithParam("url", false))) {
       let uri = commandLine.resolveURI(ar);
       const params = new URLSearchParams(uri.query);
 
       if (uri.schemeIs("about") && uri.filePath == "studies") {
-        
-        
+        // Allow explicit opt-in.  In the future, we might take this pref from
+        // the default browsing profile.
         Services.prefs.setBoolPref("nimbus.debug", true);
 
         const data = {
@@ -346,8 +342,8 @@ var BackgroundTasksUtils = {
         let response = await fetch(uri.spec);
         let recipe = await response.json();
         if (recipe.permissions) {
-          
-          
+          // Saved directly from Experimenter, there's a top-level `data`.  Hand
+          // written, that's not the norm.
           recipe = recipe.data;
         }
         let branch = recipe.branches.find(b => b.slug == branchSlug);
@@ -358,13 +354,13 @@ var BackgroundTasksUtils = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Enable the Firefox Messaging System and, when successfully initialized,
+   * trigger a message with trigger id `backgroundTask`.
+   *
+   * @param {object} defaultProfile - snapshot of Firefox Messaging System
+   *                                  targeting from default browsing profile.
+   */
   async enableFirefoxMessagingSystem(defaultProfile = {}) {
     function logArgs(tag, ...args) {
       lazy.log.debug(`FxMS invoked ${tag}: ${JSON.stringify(args)}`);
@@ -380,11 +376,11 @@ var BackgroundTasksUtils = {
       const storage = await createStorage();
       await router.init({
         storage,
-        
+        // Background tasks never send legacy telemetry.
         sendTelemetry: logArgs.bind(null, "sendTelemetry"),
         dispatchCFRAction: messageHandler.handleCFRAction.bind(messageHandler),
-        
-        
+        // There's no child process involved in background tasks, so swallow all
+        // of these messages.
         clearChildMessages: logArgs.bind(null, "clearChildMessages"),
         clearChildProviders: logArgs.bind(null, "clearChildProviders"),
         updateAdminState: () => {},
