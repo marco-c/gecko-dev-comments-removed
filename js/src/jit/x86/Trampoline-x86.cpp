@@ -394,12 +394,10 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.push(FramePointer);       
 
   
-  constexpr size_t FrameOffset = 2 * sizeof(void*);  
-  constexpr size_t NargsOffset =
-      FrameOffset + RectifierFrameLayout::offsetOfNumActualArgs();
-  masm.loadPtr(Address(esp, NargsOffset), esi);
+  masm.loadNumActualArgs(FramePointer, esi);
 
   
+  constexpr size_t FrameOffset = 2 * sizeof(void*);  
   constexpr size_t TokenOffset =
       FrameOffset + RectifierFrameLayout::offsetOfCalleeToken();
   masm.loadPtr(Address(esp, TokenOffset), eax);

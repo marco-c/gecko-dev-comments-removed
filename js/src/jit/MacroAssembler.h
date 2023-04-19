@@ -847,6 +847,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void PushFrameDescriptor(FrameType type);
 
   
+  inline void loadNumActualArgs(Register framePtr, Register dest);
+
+  
   
   
   
