@@ -49,6 +49,11 @@ struct Slot<T> {
 }
 
 impl<T> Slot<T> {
+    const UNINIT: Self = Self {
+        msg: UnsafeCell::new(MaybeUninit::uninit()),
+        state: AtomicUsize::new(0),
+    };
+
     
     fn wait_write(&self) {
         let backoff = Backoff::new();
@@ -72,13 +77,10 @@ struct Block<T> {
 impl<T> Block<T> {
     
     fn new() -> Block<T> {
-        
-        
-        
-        
-        
-        
-        unsafe { MaybeUninit::zeroed().assume_init() }
+        Self {
+            next: AtomicPtr::new(ptr::null_mut()),
+            slots: [Slot::UNINIT; BLOCK_CAP],
+        }
     }
 
     
@@ -283,7 +285,7 @@ impl<T> Channel<T> {
         }
 
         
-        let block = token.list.block as *mut Block<T>;
+        let block = token.list.block.cast::<Block<T>>();
         let offset = token.list.offset;
         let slot = (*block).slots.get_unchecked(offset);
         slot.msg.get().write(MaybeUninit::new(msg));
@@ -634,9 +636,9 @@ impl<T> Channel<T> {
 
 impl<T> Drop for Channel<T> {
     fn drop(&mut self) {
-        let mut head = self.head.index.load(Ordering::Relaxed);
-        let mut tail = self.tail.index.load(Ordering::Relaxed);
-        let mut block = self.head.block.load(Ordering::Relaxed);
+        let mut head = *self.head.index.get_mut();
+        let mut tail = *self.tail.index.get_mut();
+        let mut block = *self.head.block.get_mut();
 
         
         head &= !((1 << SHIFT) - 1);
@@ -654,7 +656,7 @@ impl<T> Drop for Channel<T> {
                     p.as_mut_ptr().drop_in_place();
                 } else {
                     
-                    let next = (*block).next.load(Ordering::Relaxed);
+                    let next = *(*block).next.get_mut();
                     drop(Box::from_raw(block));
                     block = next;
                 }

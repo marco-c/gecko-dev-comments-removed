@@ -216,7 +216,7 @@ impl<T> Channel<T> {
             return Err(msg);
         }
 
-        let slot: &Slot<T> = &*(token.array.slot as *const Slot<T>);
+        let slot: &Slot<T> = &*token.array.slot.cast::<Slot<T>>();
 
         
         slot.msg.get().write(MaybeUninit::new(msg));
@@ -307,7 +307,7 @@ impl<T> Channel<T> {
             return Err(());
         }
 
-        let slot: &Slot<T> = &*(token.array.slot as *const Slot<T>);
+        let slot: &Slot<T> = &*token.array.slot.cast::<Slot<T>>();
 
         
         let msg = slot.msg.get().read().assume_init();
@@ -521,10 +521,24 @@ impl<T> Channel<T> {
 impl<T> Drop for Channel<T> {
     fn drop(&mut self) {
         
-        let hix = self.head.load(Ordering::Relaxed) & (self.mark_bit - 1);
+        let head = *self.head.get_mut();
+        let tail = *self.tail.get_mut();
+
+        let hix = head & (self.mark_bit - 1);
+        let tix = tail & (self.mark_bit - 1);
+
+        let len = if hix < tix {
+            tix - hix
+        } else if hix > tix {
+            self.cap - hix + tix
+        } else if (tail & !self.mark_bit) == head {
+            0
+        } else {
+            self.cap
+        };
 
         
-        for i in 0..self.len() {
+        for i in 0..len {
             
             let index = if hix + i < self.cap {
                 hix + i
