@@ -41,9 +41,9 @@ class TestBulkActor extends Actor {
     Assert.equal(length, really_long().length);
     this.conn
       .startBulkSend({
-        actor: actor,
-        type: type,
-        length: length,
+        actor,
+        type,
+        length,
       })
       .then(({ copyFrom }) => {
         
@@ -61,7 +61,7 @@ class TestBulkActor extends Actor {
     this.conn
       .startBulkSend({
         actor: to,
-        type: type,
+        type,
         length: really_long().length,
       })
       .then(({ copyFrom }) => {
@@ -111,7 +111,7 @@ function add_test_bulk_actor() {
 
 
 var replyHandlers = {
-  json: function(request) {
+  json(request) {
     
     return new Promise(resolve => {
       request.on("json-reply", reply => {
@@ -121,7 +121,7 @@ var replyHandlers = {
     });
   },
 
-  bulk: function(request) {
+  bulk(request) {
     
     return new Promise(resolve => {
       request.on("bulk-reply", ({ length, copyTo }) => {

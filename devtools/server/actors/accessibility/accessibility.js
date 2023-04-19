@@ -43,7 +43,7 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
     this.targetActor = targetActor;
   },
 
-  getTraits: function() {
+  getTraits() {
     
     
     return {

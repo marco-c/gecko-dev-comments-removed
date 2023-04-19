@@ -62,7 +62,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  _showError: function(data) {
+  _showError(data) {
     if (!this._toolbox) {
       
       return;
@@ -108,7 +108,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  selectStyleSheet: function(front, line, col) {
+  selectStyleSheet(front, line, col) {
     if (!this.UI) {
       return null;
     }
@@ -129,7 +129,7 @@ StyleEditorPanel.prototype = {
 
 
 
-  selectOriginalSheet: function(originalId, line, col) {
+  selectOriginalSheet(originalId, line, col) {
     if (!this.UI) {
       return null;
     }
@@ -138,7 +138,7 @@ StyleEditorPanel.prototype = {
     return this.UI.selectStyleSheet(originalSheet, line - 1, col ? col - 1 : 0);
   },
 
-  getStylesheetFrontForGeneratedURL: function(url) {
+  getStylesheetFrontForGeneratedURL(url) {
     if (!this.UI) {
       return null;
     }
@@ -149,7 +149,7 @@ StyleEditorPanel.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     if (this._destroyed) {
       return;
     }

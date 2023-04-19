@@ -188,7 +188,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _create: function() {
+  _create() {
     this.element = this.doc.createElementNS(HTML_NS, "li");
     this.element.classList.add("ruleview-property");
     this.element.dataset.declarationId = this.prop.id;
@@ -423,7 +423,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  getGridlineNames: async function() {
+  async getGridlineNames() {
     const gridLineNames = { cols: [], rows: [] };
     const layoutInspector = await this.ruleView.inspector.walker.getLayoutInspector();
     const gridFront = await layoutInspector.getCurrentGrid(
@@ -507,7 +507,7 @@ TextPropertyEditor.prototype = {
 
 
   
-  update: function() {
+  update() {
     if (this.ruleView.isDestroyed) {
       return;
     }
@@ -777,7 +777,7 @@ TextPropertyEditor.prototype = {
     }
   },
 
-  _onStartEditing: function() {
+  _onStartEditing() {
     this.element.classList.remove("ruleview-overridden");
     this.filterProperty.hidden = true;
     this.enable.style.visibility = "hidden";
@@ -801,7 +801,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  updatePropertyState: function() {
+  updatePropertyState() {
     if (this.prop.enabled) {
       this.enable.style.removeProperty("visibility");
     } else {
@@ -845,7 +845,7 @@ TextPropertyEditor.prototype = {
     }
   },
 
-  updatePropertyUsedIndicator: function() {
+  updatePropertyUsedIndicator() {
     const { used } = this.prop.isUsed();
 
     if (this.editing || this.prop.overridden || !this.prop.enabled || used) {
@@ -857,7 +857,7 @@ TextPropertyEditor.prototype = {
     }
   },
 
-  updatePropertyCompatibilityIndicator: async function() {
+  async updatePropertyCompatibilityIndicator() {
     const { isCompatible } = await this.prop.isCompatible();
 
     if (this.editing || isCompatible) {
@@ -871,7 +871,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateComputed: function() {
+  _updateComputed() {
     this.computed.innerHTML = "";
 
     this.expander.style.display =
@@ -888,7 +888,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateComputed: function() {
+  _populateComputed() {
     if (this._populatedComputed) {
       return;
     }
@@ -916,7 +916,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _updateShorthandOverridden: function() {
+  _updateShorthandOverridden() {
     this.shorthandOverridden.innerHTML = "";
 
     this._populatedShorthandOverridden = false;
@@ -926,7 +926,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _populateShorthandOverridden: function() {
+  _populateShorthandOverridden() {
     if (
       this._populatedShorthandOverridden ||
       this.prop.overridden ||
@@ -954,7 +954,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _createComputedListItem: function(parentEl, computed, className) {
+  _createComputedListItem(parentEl, computed, className) {
     const li = createChild(parentEl, "li", {
       class: className,
     });
@@ -1001,7 +1001,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onDraggablePreferenceChanged: function() {
+  _onDraggablePreferenceChanged() {
     if (this._isDraggableProperty(this.prop)) {
       this._addDraggingCapability();
     } else {
@@ -1012,14 +1012,14 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onEnableClicked: function(event) {
+  _onEnableClicked(event) {
     event.stopPropagation();
   },
 
   
 
 
-  _onEnableChanged: function(event) {
+  _onEnableChanged(event) {
     this.prop.setEnabled(this.enable.checked);
     event.stopPropagation();
     this.telemetry.recordEvent("edit_rule", "ruleview", null, {
@@ -1034,7 +1034,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onExpandClicked: function(event) {
+  _onExpandClicked(event) {
     if (
       this.computed.hasAttribute("filter-open") ||
       this.computed.hasAttribute("user-open")
@@ -1059,7 +1059,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  expandForFilter: function() {
+  expandForFilter() {
     if (!this.computed.hasAttribute("user-open")) {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("filter-open", "");
@@ -1070,7 +1070,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  collapseForFilter: function() {
+  collapseForFilter() {
     this.computed.removeAttribute("filter-open");
 
     if (!this.computed.hasAttribute("user-open")) {
@@ -1090,7 +1090,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onNameDone: function(value, commit, direction) {
+  _onNameDone(value, commit, direction) {
     const isNameUnchanged =
       (!commit && !this.ruleEditor.isEditing) || this.committed.name === value;
     if (this.prop.value && isNameUnchanged) {
@@ -1141,7 +1141,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  remove: function(direction) {
+  remove(direction) {
     if (this._colorSwatchSpans && this._colorSwatchSpans.length) {
       for (const span of this._colorSwatchSpans) {
         this.ruleView.tooltips.getTooltip("colorPicker").removeSwatch(span);
@@ -1178,7 +1178,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function(value = "", commit, direction) {
+  _onValueDone(value = "", commit, direction) {
     const parsedProperties = this._getValueAndExtraProperties(value);
     const val = parseSingleValue(
       this.cssProperties.isKnown,
@@ -1243,7 +1243,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchCommit: function() {
+  _onSwatchCommit() {
     this._onValueDone(this.valueSpan.textContent, true);
     this.update();
   },
@@ -1251,7 +1251,7 @@ TextPropertyEditor.prototype = {
   
 
 
-  _onSwatchPreview: function() {
+  _onSwatchPreview() {
     this._previewValue(this.valueSpan.textContent);
   },
 
@@ -1259,7 +1259,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onSwatchRevert: function() {
+  _onSwatchRevert() {
     this._previewValue(this.prop.value, true);
     this.update();
   },
@@ -1279,7 +1279,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _getValueAndExtraProperties: function(value) {
+  _getValueAndExtraProperties(value) {
     
     
     
@@ -1306,8 +1306,8 @@ TextPropertyEditor.prototype = {
     }
 
     return {
-      propertiesToAdd: propertiesToAdd,
-      firstValue: firstValue,
+      propertiesToAdd,
+      firstValue,
     };
   },
 
@@ -1319,7 +1319,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _previewValue: function(value, reverting = false) {
+  _previewValue(value, reverting = false) {
     
     
     if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
@@ -1341,7 +1341,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _hasSmallIncrementModifier: function(event) {
+  _hasSmallIncrementModifier(event) {
     const modifier = AppConstants.platform === "macosx" ? "altKey" : "ctrlKey";
     return event[modifier] === true;
   },
@@ -1354,7 +1354,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _parseDimension: function(value) {
+  _parseDimension(value) {
     
     const cssDimensionRegex = /^(?<value>[+-]?(\d*\.)?\d+(e[+-]?\d+)?)(?<unit>(%|[a-zA-Z]+))$/;
     return value.match(cssDimensionRegex);
@@ -1366,7 +1366,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _isDraggableProperty: function(textProperty) {
+  _isDraggableProperty(textProperty) {
     
     if (
       !Services.prefs.getBoolPref(
@@ -1394,7 +1394,7 @@ TextPropertyEditor.prototype = {
     return !!dimensionMatchObj;
   },
 
-  _draggingOnMouseDown: function(event) {
+  _draggingOnMouseDown(event) {
     this._isDragging = true;
     this.valueSpan.setPointerCapture(event.pointerId);
     this._draggingController = new AbortController();
@@ -1423,7 +1423,7 @@ TextPropertyEditor.prototype = {
     });
   },
 
-  _draggingOnMouseMove: function(event) {
+  _draggingOnMouseMove(event) {
     if (!this._isDragging) {
       return;
     }
@@ -1470,7 +1470,7 @@ TextPropertyEditor.prototype = {
     this._hasDragged = true;
   },
 
-  _draggingOnMouseUp: function(event) {
+  _draggingOnMouseUp(event) {
     if (!this._isDragging) {
       return;
     }
@@ -1481,7 +1481,7 @@ TextPropertyEditor.prototype = {
     this._onStopDragging(event);
   },
 
-  _draggingOnKeydown: function(event) {
+  _draggingOnKeydown(event) {
     if (event.key == "Escape") {
       this.prop.setValue(this.committed.value, this.committed.priority);
       this._onStopDragging(event);
@@ -1489,7 +1489,7 @@ TextPropertyEditor.prototype = {
     }
   },
 
-  _onStopDragging: function(event) {
+  _onStopDragging(event) {
     
     
     
@@ -1508,7 +1508,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _addDraggingCapability: function() {
+  _addDraggingCapability() {
     if (this.valueSpan.classList.contains(DRAGGABLE_VALUE_CLASSNAME)) {
       return;
     }
@@ -1516,7 +1516,7 @@ TextPropertyEditor.prototype = {
     this.valueSpan.addEventListener("mousedown", this._draggingOnMouseDown);
   },
 
-  _removeDraggingCapacity: function() {
+  _removeDraggingCapacity() {
     if (!this.valueSpan.classList.contains(DRAGGABLE_VALUE_CLASSNAME)) {
       return;
     }
@@ -1531,7 +1531,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isValid: function() {
+  isValid() {
     return this.prop.isValid();
   },
 
@@ -1539,7 +1539,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  isNameValid: function() {
+  isNameValid() {
     return this.prop.isNameValid();
   },
 };

@@ -122,7 +122,7 @@ OutputParser.prototype = {
 
 
 
-  parseCssProperty: function(name, value, options = {}) {
+  parseCssProperty(name, value, options = {}) {
     options = this._mergeOptions(options);
 
     options.expectCubicBezier = this.supportsType(name, "timing-function");
@@ -174,7 +174,7 @@ OutputParser.prototype = {
 
 
 
-  _parseMatchingParens: function(text, tokenStream, options, stopAtComma) {
+  _parseMatchingParens(text, tokenStream, options, stopAtComma) {
     let depth = 1;
     const functionData = [];
     const tokens = [];
@@ -248,7 +248,7 @@ OutputParser.prototype = {
 
 
 
-  _parseVariable: function(initialToken, text, tokenStream, options) {
+  _parseVariable(initialToken, text, tokenStream, options) {
     
     const varText = text.substring(
       initialToken.startOffset,
@@ -341,7 +341,7 @@ OutputParser.prototype = {
 
 
   
-  _doParse: function(text, options, tokenStream, stopAtCloseParen) {
+  _doParse(text, options, tokenStream, stopAtCloseParen) {
     let parenDepth = stopAtCloseParen ? 1 : 0;
     let outerMostFunctionTakesColor = false;
     const colorFunctions = [];
@@ -634,7 +634,7 @@ OutputParser.prototype = {
 
 
 
-  _parse: function(text, options = {}) {
+  _parse(text, options = {}) {
     text = text.trim();
     this.parsed.length = 0;
 
@@ -652,7 +652,7 @@ OutputParser.prototype = {
 
 
 
-  _isDisplayFlex: function(text, token, options) {
+  _isDisplayFlex(text, token, options) {
     return (
       options.expectDisplay &&
       (token.text === "flex" || token.text === "inline-flex")
@@ -669,7 +669,7 @@ OutputParser.prototype = {
 
 
 
-  _isDisplayGrid: function(text, token, options) {
+  _isDisplayGrid(text, token, options) {
     return (
       options.expectDisplay &&
       (token.text === "grid" || token.text === "inline-grid")
@@ -685,7 +685,7 @@ OutputParser.prototype = {
 
 
 
-  _appendCubicBezier: function(bezier, options) {
+  _appendCubicBezier(bezier, options) {
     const container = this._createNode("span", {
       "data-bezier": bezier,
     });
@@ -720,7 +720,7 @@ OutputParser.prototype = {
 
 
 
-  _appendHighlighterToggle: function(text, className) {
+  _appendHighlighterToggle(text, className) {
     const container = this._createNode("span", {});
 
     const toggle = this._createNode("span", {
@@ -745,7 +745,7 @@ OutputParser.prototype = {
 
 
 
-  _appendShape: function(shape, options) {
+  _appendShape(shape, options) {
     const shapeTypes = [
       {
         prefix: "polygon(",
@@ -807,7 +807,7 @@ OutputParser.prototype = {
 
 
   
-  _addPolygonPointNodes: function(coords, container) {
+  _addPolygonPointNodes(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
     let coord = "";
@@ -957,7 +957,7 @@ OutputParser.prototype = {
 
 
   
-  _addCirclePointNodes: function(coords, container) {
+  _addCirclePointNodes(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
     let depth = 0;
@@ -1118,7 +1118,7 @@ OutputParser.prototype = {
 
 
   
-  _addEllipsePointNodes: function(coords, container) {
+  _addEllipsePointNodes(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
     let depth = 0;
@@ -1288,7 +1288,7 @@ OutputParser.prototype = {
 
 
   
-  _addInsetPointNodes: function(coords, container) {
+  _addInsetPointNodes(coords, container) {
     const insetPoints = ["top", "right", "bottom", "left"];
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
@@ -1432,7 +1432,7 @@ OutputParser.prototype = {
 
 
 
-  _appendAngle: function(angle, options) {
+  _appendAngle(angle, options) {
     const angleObj = new angleUtils.CssAngle(angle);
     const container = this._createNode("span", {
       "data-angle": angle,
@@ -1480,7 +1480,7 @@ OutputParser.prototype = {
 
 
 
-  _cssPropertySupportsValue: function(name, value) {
+  _cssPropertySupportsValue(name, value) {
     
     const declaration = `${name}:${value}`;
     return this.doc.defaultView.CSS.supports(declaration);
@@ -1491,7 +1491,7 @@ OutputParser.prototype = {
 
 
 
-  _isValidColor: function(colorObj) {
+  _isValidColor(colorObj) {
     return (
       colorObj.valid &&
       (!colorObj.specialValue || colorObj.specialValue === "transparent")
@@ -1507,7 +1507,7 @@ OutputParser.prototype = {
 
 
 
-  _appendColor: function(color, options = {}) {
+  _appendColor(color, options = {}) {
     const colorObj = new colorUtils.CssColor(color, this.cssColor4);
 
     if (this._isValidColor(colorObj)) {
@@ -1591,7 +1591,7 @@ OutputParser.prototype = {
 
 
 
-  _wrapFilter: function(filters, options, nodes) {
+  _wrapFilter(filters, options, nodes) {
     const container = this._createNode("span", {
       "data-filters": filters,
     });
@@ -1614,7 +1614,7 @@ OutputParser.prototype = {
     return container;
   },
 
-  _onColorSwatchMouseDown: function(event) {
+  _onColorSwatchMouseDown(event) {
     if (!event.shiftKey) {
       return;
     }
@@ -1631,7 +1631,7 @@ OutputParser.prototype = {
     swatch.emit("unit-change", val);
   },
 
-  _onAngleSwatchMouseDown: function(event) {
+  _onAngleSwatchMouseDown(event) {
     if (!event.shiftKey) {
       return;
     }
@@ -1649,7 +1649,7 @@ OutputParser.prototype = {
   
 
 
-  _sanitizeURL: function(url) {
+  _sanitizeURL(url) {
     
     const urlTokenizer = getCSSLexer(url);
     
@@ -1671,7 +1671,7 @@ OutputParser.prototype = {
 
 
 
-  _appendURL: function(match, url, options) {
+  _appendURL(match, url, options) {
     if (options.urlClass) {
       
       
@@ -1711,7 +1711,7 @@ OutputParser.prototype = {
         {
           target: "_blank",
           class: options.urlClass,
-          href: href,
+          href,
         },
         body
       );
@@ -1731,7 +1731,7 @@ OutputParser.prototype = {
 
 
 
-  _appendFontFamily: function(fontFamily, options) {
+  _appendFontFamily(fontFamily, options) {
     let spanContents = fontFamily;
     let quoteChar = null;
     let trailingWhitespace = false;
@@ -1790,7 +1790,7 @@ OutputParser.prototype = {
 
 
 
-  _createNode: function(tagName, attributes, value = "") {
+  _createNode(tagName, attributes, value = "") {
     const node = this.doc.createElementNS(HTML_NS, tagName);
     const attrs = Object.getOwnPropertyNames(attributes);
 
@@ -1819,7 +1819,7 @@ OutputParser.prototype = {
 
 
 
-  _appendNode: function(tagName, attributes, value = "") {
+  _appendNode(tagName, attributes, value = "") {
     const node = this._createNode(tagName, attributes, value);
     this.parsed.push(node);
   },
@@ -1831,7 +1831,7 @@ OutputParser.prototype = {
 
 
 
-  _appendTextNode: function(text) {
+  _appendTextNode(text) {
     const lastItem = this.parsed[this.parsed.length - 1];
     if (typeof lastItem === "string") {
       this.parsed[this.parsed.length - 1] = lastItem + text;
@@ -1846,7 +1846,7 @@ OutputParser.prototype = {
 
 
 
-  _toDOM: function() {
+  _toDOM() {
     const frag = this.doc.createDocumentFragment();
 
     for (const item of this.parsed) {
@@ -1905,7 +1905,7 @@ OutputParser.prototype = {
 
 
 
-  _mergeOptions: function(overrides) {
+  _mergeOptions(overrides) {
     const defaults = {
       defaultColorType: true,
       angleClass: "",

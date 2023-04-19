@@ -191,7 +191,7 @@ async function fetchStylesheet(sheet) {
 
 
 var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
-  toString: function() {
+  toString() {
     return "[StyleSheetActor " + this.actorID + "]";
   },
 
@@ -264,7 +264,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     return this._styleSheetIndex;
   },
 
-  destroy: function() {
+  destroy() {
     if (this._transitionTimeout && this.window) {
       this.window.clearTimeout(this._transitionTimeout);
       removePseudoClassLock(
@@ -275,7 +275,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     protocol.Actor.prototype.destroy.call(this);
   },
 
-  initialize: function(styleSheet, parentActor) {
+  initialize(styleSheet, parentActor) {
     protocol.Actor.prototype.initialize.call(this, parentActor.conn);
 
     this.rawSheet = styleSheet;
@@ -306,7 +306,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  hasRulesModifiedByCSSOM: function() {
+  hasRulesModifiedByCSSOM() {
     return InspectorUtils.hasRulesModifiedByCSSOM(this.rawSheet);
   },
 
@@ -316,7 +316,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getCSSRules: function() {
+  getCSSRules() {
     let rules;
     try {
       rules = this.rawSheet.cssRules;
@@ -357,7 +357,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  form: function() {
+  form() {
     let docHref;
     if (this.ownerNode) {
       if (this.ownerNode.nodeType == this.ownerNode.DOCUMENT_NODE) {
@@ -406,7 +406,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  toggleDisabled: function() {
+  toggleDisabled() {
     this.rawSheet.disabled = !this.rawSheet.disabled;
     this._notifyPropertyChanged("disabled");
 
@@ -420,14 +420,14 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _notifyPropertyChanged: function(property) {
+  _notifyPropertyChanged(property) {
     this.emit("property-change", property, this.form()[property]);
   },
 
   
 
 
-  getText: function() {
+  getText() {
     return this._getText().then(text => {
       return new LongStringActor(this.conn, text || "");
     });
@@ -440,7 +440,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getText: function() {
+  _getText() {
     if (typeof this.text === "string") {
       return Promise.resolve(this.text);
     }
@@ -454,7 +454,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  getMediaRules: function() {
+  getMediaRules() {
     return this._getMediaRules();
   },
 
@@ -464,7 +464,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getMediaRules: function() {
+  _getMediaRules() {
     return this.getCSSRules().then(rules => {
       const mediaRules = [];
       for (let i = 0; i < rules.length; i++) {
@@ -489,7 +489,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  update: function(text, transition, kind = UPDATE_GENERAL, cause) {
+  update(text, transition, kind = UPDATE_GENERAL, cause) {
     InspectorUtils.parseStyleSheet(this.rawSheet, text);
 
     modifiedStyleSheets.set(this.rawSheet, text);
@@ -518,7 +518,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _startTransition: function(kind, cause) {
+  _startTransition(kind, cause) {
     if (!this._transitionSheetLoaded) {
       this._transitionSheetLoaded = true;
       
@@ -545,7 +545,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _onTransitionEnd: function(kind, cause) {
+  _onTransitionEnd(kind, cause) {
     this._transitionTimeout = null;
     removePseudoClassLock(
       this.document.documentElement,

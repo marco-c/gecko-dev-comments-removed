@@ -36,12 +36,7 @@ exports.WorkerTargetActor = TargetActorMixin(
 
 
 
-    initialize: function(
-      connection,
-      workerGlobal,
-      workerDebuggerData,
-      sessionContext
-    ) {
+    initialize(connection, workerGlobal, workerDebuggerData, sessionContext) {
       Actor.prototype.initialize.call(this, connection);
 
       

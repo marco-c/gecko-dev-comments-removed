@@ -54,7 +54,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
     
 
 
-    initialize: function(parent, typeName) {
+    initialize(parent, typeName) {
       protocol.Actor.prototype.initialize.call(this, null);
 
       this._parent = parent;
@@ -94,13 +94,13 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
       return this._parent && this._parent.conn;
     },
 
-    destroy: function() {
+    destroy() {
       protocol.Actor.prototype.destroy.call(this);
       this.finalize();
       this._parent = null;
     },
 
-    release: function() {},
+    release() {},
 
     
 
@@ -124,7 +124,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
 
 
 
-    show: function(node, options) {
+    show(node, options) {
       if (!this._highlighter) {
         return null;
       }
@@ -137,7 +137,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
     
 
 
-    hide: function() {
+    hide() {
       if (this._highlighter) {
         this._highlighter.hide();
       }
@@ -146,7 +146,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
     
 
 
-    _onHighlighterEvent: function(data) {
+    _onHighlighterEvent(data) {
       this.emit("highlighter-event", data);
     },
 
@@ -154,7 +154,7 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(
 
 
 
-    finalize: function() {
+    finalize() {
       if (this._highlighter) {
         if (this._highlighter.off) {
           this._highlighter.off(
@@ -201,14 +201,14 @@ function HighlighterEnvironment() {
 exports.HighlighterEnvironment = HighlighterEnvironment;
 
 HighlighterEnvironment.prototype = {
-  initFromTargetActor: function(targetActor) {
+  initFromTargetActor(targetActor) {
     this._targetActor = targetActor;
     this._targetActor.on("window-ready", this.relayTargetActorWindowReady);
     this._targetActor.on("navigate", this.relayTargetActorNavigate);
     this._targetActor.on("will-navigate", this.relayTargetActorWillNavigate);
   },
 
-  initFromWindow: function(win) {
+  initFromWindow(win) {
     this._win = win;
 
     
@@ -220,7 +220,7 @@ HighlighterEnvironment.prototype = {
         "nsISupportsWeakReference",
       ]),
 
-      onStateChange: function(progress, request, flag) {
+      onStateChange(progress, request, flag) {
         const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
         const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
         const isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
@@ -315,19 +315,19 @@ HighlighterEnvironment.prototype = {
     return this.docShell && this.docShell.chromeEventHandler;
   },
 
-  relayTargetActorWindowReady: function(data) {
+  relayTargetActorWindowReady(data) {
     this.emit("window-ready", data);
   },
 
-  relayTargetActorNavigate: function(data) {
+  relayTargetActorNavigate(data) {
     this.emit("navigate", data);
   },
 
-  relayTargetActorWillNavigate: function(data) {
+  relayTargetActorWillNavigate(data) {
     this.emit("will-navigate", data);
   },
 
-  destroy: function() {
+  destroy() {
     if (this._targetActor) {
       this._targetActor.off("window-ready", this.relayTargetActorWindowReady);
       this._targetActor.off("navigate", this.relayTargetActorNavigate);

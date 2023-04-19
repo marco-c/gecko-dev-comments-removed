@@ -90,7 +90,7 @@ CssLogic.prototype = {
   
 
 
-  reset: function() {
+  reset() {
     this._propertyInfos = {};
     this._ruleCount = 0;
     this._sheetIndex = 0;
@@ -107,7 +107,7 @@ CssLogic.prototype = {
 
 
 
-  highlight: function(viewedElement) {
+  highlight(viewedElement) {
     if (!viewedElement) {
       this.viewedElement = null;
       this.viewedDocument = null;
@@ -202,7 +202,7 @@ CssLogic.prototype = {
 
 
 
-  getPropertyInfo: function(property) {
+  getPropertyInfo(property) {
     if (!this.viewedElement) {
       return {};
     }
@@ -220,7 +220,7 @@ CssLogic.prototype = {
 
 
 
-  _cacheSheets: function() {
+  _cacheSheets() {
     this._passId++;
     this.reset();
 
@@ -243,7 +243,7 @@ CssLogic.prototype = {
 
 
 
-  _cacheSheet: function(domSheet) {
+  _cacheSheet(domSheet) {
     if (domSheet.disabled) {
       return;
     }
@@ -315,7 +315,7 @@ CssLogic.prototype = {
 
 
 
-  getSheet: function(domSheet, index) {
+  getSheet(domSheet, index) {
     let cacheId = "";
 
     if (domSheet.href) {
@@ -363,7 +363,7 @@ CssLogic.prototype = {
 
 
 
-  forEachSheet: function(callback, scope) {
+  forEachSheet(callback, scope) {
     for (const cacheId in this._sheets) {
       const sheets = this._sheets[cacheId];
       for (let i = 0; i < sheets.length; i++) {
@@ -419,7 +419,7 @@ CssLogic.prototype = {
 
 
 
-  processMatchedSelectors: function(callback, scope) {
+  processMatchedSelectors(callback, scope) {
     if (this._matchedSelectors) {
       if (callback) {
         this._passId++;
@@ -472,7 +472,7 @@ CssLogic.prototype = {
 
 
 
-  selectorMatchesElement: function(domRule, idx) {
+  selectorMatchesElement(domRule, idx) {
     let element = this.viewedElement;
     do {
       if (InspectorUtils.selectorMatchesElement(element, domRule, idx)) {
@@ -494,7 +494,7 @@ CssLogic.prototype = {
 
 
 
-  hasMatchedSelectors: function(properties) {
+  hasMatchedSelectors(properties) {
     if (!this._matchedRules) {
       this._buildMatchedRules();
     }
@@ -531,7 +531,7 @@ CssLogic.prototype = {
 
 
 
-  _buildMatchedRules: function() {
+  _buildMatchedRules() {
     let domRules;
     let element = this.viewedElement;
     const filter = this.sourceFilter;
@@ -611,7 +611,7 @@ CssLogic.prototype = {
 
 
 
-  mediaMatches: function(domObject) {
+  mediaMatches(domObject) {
     const mediaText = domObject.media.mediaText;
     return (
       !mediaText ||
@@ -884,7 +884,7 @@ CssSheet.prototype = {
 
 
 
-  getCssRules: function() {
+  getCssRules() {
     try {
       return this.domSheet.cssRules;
     } catch (e) {
@@ -902,7 +902,7 @@ CssSheet.prototype = {
 
 
 
-  getRule: function(domRule) {
+  getRule(domRule) {
     const cacheId = domRule.type + domRule.selectorText;
 
     let rule = null;
@@ -929,7 +929,7 @@ CssSheet.prototype = {
     return rule;
   },
 
-  toString: function() {
+  toString() {
     return "CssSheet[" + this.shortSource + "]";
   },
 };
@@ -1017,7 +1017,7 @@ CssRule.prototype = {
 
 
 
-  getPropertyValue: function(property) {
+  getPropertyValue(property) {
     return this.domRule.style.getPropertyValue(property);
   },
 
@@ -1028,7 +1028,7 @@ CssRule.prototype = {
 
 
 
-  getPropertyPriority: function(property) {
+  getPropertyPriority(property) {
     return this.domRule.style.getPropertyPriority(property);
   },
 
@@ -1059,7 +1059,7 @@ CssRule.prototype = {
     return this._selectors;
   },
 
-  toString: function() {
+  toString() {
     return "[CssRule " + this.domRule.selectorText + "]";
   },
 };
@@ -1212,7 +1212,7 @@ CssSelector.prototype = {
     return this._specificity;
   },
 
-  toString: function() {
+  toString() {
     return this.text;
   },
 };
@@ -1289,7 +1289,7 @@ CssPropertyInfo.prototype = {
 
 
 
-  _findMatchedSelectors: function() {
+  _findMatchedSelectors() {
     this._matchedSelectors = [];
     this.needRefilter = false;
 
@@ -1316,7 +1316,7 @@ CssPropertyInfo.prototype = {
 
 
 
-  _processMatchedSelector: function(selector, status, distance) {
+  _processMatchedSelector(selector, status, distance) {
     const cssRule = selector.cssRule;
     const value = cssRule.getPropertyValue(this.property);
     if (
@@ -1341,7 +1341,7 @@ CssPropertyInfo.prototype = {
 
 
 
-  _refilterSelectors: function() {
+  _refilterSelectors() {
     const passId = ++this._cssLogic._passId;
 
     const iterator = function(selectorInfo) {
@@ -1358,7 +1358,7 @@ CssPropertyInfo.prototype = {
     this.needRefilter = false;
   },
 
-  toString: function() {
+  toString() {
     return "CssPropertyInfo[" + this.property + "]";
   },
 };
@@ -1568,7 +1568,7 @@ CssSelectorInfo.prototype = {
 
 
 
-  compareTo: function(that) {
+  compareTo(that) {
     let current = null;
 
     
@@ -1620,7 +1620,7 @@ CssSelectorInfo.prototype = {
     return 0;
   },
 
-  compare: function(that, propertyName, type) {
+  compare(that, propertyName, type) {
     switch (type) {
       case COMPAREMODE.BOOLEAN:
         if (this[propertyName] && !that[propertyName]) {
@@ -1642,7 +1642,7 @@ CssSelectorInfo.prototype = {
     return 0;
   },
 
-  toString: function() {
+  toString() {
     return this.selector + " -> " + this.value;
   },
 };

@@ -102,7 +102,7 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
-  initialize: function(conn, targetActor) {
+  initialize(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
 
@@ -111,7 +111,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this.destroyEyeDropper = this.destroyEyeDropper.bind(this);
   },
 
-  destroy: function() {
+  destroy() {
     protocol.Actor.prototype.destroy.call(this);
     this.destroyEyeDropper();
 
@@ -126,7 +126,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     return this.targetActor.window;
   },
 
-  getWalker: function(options = {}) {
+  getWalker(options = {}) {
     if (this._walkerPromise) {
       return this._walkerPromise;
     }
@@ -172,7 +172,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     return this._walkerPromise;
   },
 
-  getPageStyle: function() {
+  getPageStyle() {
     if (this._pageStylePromise) {
       return this._pageStylePromise;
     }
@@ -185,7 +185,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     return this._pageStylePromise;
   },
 
-  getCompatibility: function() {
+  getCompatibility() {
     if (this._compatibility) {
       return this._compatibility;
     }
@@ -206,7 +206,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  getHighlighterByType: async function(typeName) {
+  async getHighlighterByType(typeName) {
     if (isTypeRegistered(typeName)) {
       const highlighterActor = CustomHighlighterActor(this, typeName);
       if (highlighterActor.instance.isReady) {
@@ -229,7 +229,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  getImageDataFromURL: function(url, maxDim) {
+  getImageDataFromURL(url, maxDim) {
     const img = new this.window.Image();
     img.src = url;
 
@@ -250,7 +250,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  resolveRelativeURL: function(url, node) {
+  resolveRelativeURL(url, node) {
     const document = InspectorActorUtils.isNodeDead(node)
       ? this.window.document
       : InspectorActorUtils.nodeDocument(node.rawNode);
@@ -267,7 +267,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  createEyeDropper: function() {
+  createEyeDropper() {
     this.destroyEyeDropper();
     this._highlighterEnv = new HighlighterEnvironment();
     this._highlighterEnv.initFromTargetActor(this.targetActor);
@@ -278,7 +278,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
   
 
 
-  destroyEyeDropper: function() {
+  destroyEyeDropper() {
     if (this._eyeDropper) {
       this.cancelPickColorFromPage();
       this._eyeDropper.destroy();
@@ -294,7 +294,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  pickColorFromPage: async function(options) {
+  async pickColorFromPage(options) {
     await this.createEyeDropper();
     this._eyeDropper.show(this.window.document.documentElement, options);
     this._eyeDropper.once("selected", this._onColorPicked);
@@ -307,7 +307,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  cancelPickColorFromPage: function() {
+  cancelPickColorFromPage() {
     if (this._eyeDropper) {
       this._eyeDropper.hide();
       this._eyeDropper.off("selected", this._onColorPicked);
@@ -322,7 +322,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
 
 
-  supportsHighlighters: function() {
+  supportsHighlighters() {
     const doc = this.targetActor.window.document;
     const ns = doc.documentElement.namespaceURI;
 
@@ -339,11 +339,11 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     return true;
   },
 
-  _onColorPicked: function(color) {
+  _onColorPicked(color) {
     this.emit("color-picked", color);
   },
 
-  _onColorPickCanceled: function() {
+  _onColorPickCanceled() {
     this.emit("color-pick-canceled");
   },
 });

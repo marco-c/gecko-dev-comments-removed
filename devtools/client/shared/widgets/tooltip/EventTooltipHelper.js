@@ -194,7 +194,7 @@ class EventTooltip extends EventEmitter {
       
       const editor = new Editor(config);
       this._eventEditors.set(content, {
-        editor: editor,
+        editor,
         handler: listener.handler,
         native: listener.native,
         appended: false,

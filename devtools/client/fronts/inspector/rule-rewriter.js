@@ -108,7 +108,7 @@ RuleRewriter.prototype = {
 
 
 
-  startInitialization: function(inputString) {
+  startInitialization(inputString) {
     this.inputString = inputString;
     
     this.hasNewLine = /[\r\n]/.test(this.inputString);
@@ -128,7 +128,7 @@ RuleRewriter.prototype = {
 
 
 
-  completeInitialization: function(index) {
+  completeInitialization(index) {
     if (index < 0) {
       throw new Error("Invalid index " + index + ". Expected positive integer");
     }
@@ -154,7 +154,7 @@ RuleRewriter.prototype = {
 
 
 
-  getIndentation: function(string, offset) {
+  getIndentation(string, offset) {
     let originalOffset = offset;
     for (--offset; offset >= 0; --offset) {
       const c = string[offset];
@@ -187,7 +187,7 @@ RuleRewriter.prototype = {
 
 
 
-  sanitizePropertyValue: function(text) {
+  sanitizePropertyValue(text) {
     
     
     
@@ -303,7 +303,7 @@ RuleRewriter.prototype = {
 
 
 
-  skipWhitespaceBackward: function(string, index) {
+  skipWhitespaceBackward(string, index) {
     for (
       --index;
       index >= 0 && (string[index] === " " || string[index] === "\t");
@@ -321,7 +321,7 @@ RuleRewriter.prototype = {
 
 
 
-  maybeTerminateDecl: function(index) {
+  maybeTerminateDecl(index) {
     if (
       index < 0 ||
       index >= this.declarations.length ||
@@ -372,7 +372,7 @@ RuleRewriter.prototype = {
 
 
 
-  sanitizeText: function(text, index) {
+  sanitizeText(text, index) {
     const [anySanitized, sanitizedText] = this.sanitizePropertyValue(text);
     if (anySanitized) {
       this.changedDeclarations[index] = sanitizedText;
@@ -387,7 +387,7 @@ RuleRewriter.prototype = {
 
 
 
-  renameProperty: function(index, name, newName) {
+  renameProperty(index, name, newName) {
     this.completeInitialization(index);
     this.result += CSS.escape(newName);
     
@@ -404,7 +404,7 @@ RuleRewriter.prototype = {
 
 
 
-  setPropertyEnabled: function(index, name, isEnabled) {
+  setPropertyEnabled(index, name, isEnabled) {
     this.completeInitialization(index);
     const decl = this.decl;
     const priority = decl.priority;
@@ -480,7 +480,7 @@ RuleRewriter.prototype = {
 
 
 
-  getDefaultIndentation: async function() {
+  async getDefaultIndentation() {
     if (!this.rule.parentStyleSheet) {
       return null;
     }
@@ -592,7 +592,7 @@ RuleRewriter.prototype = {
 
 
 
-  createProperty: function(index, name, value, priority, enabled) {
+  createProperty(index, name, value, priority, enabled) {
     this.editPromise = this.internalCreateProperty(
       index,
       name,
@@ -619,7 +619,7 @@ RuleRewriter.prototype = {
 
 
 
-  setProperty: function(index, name, value, priority) {
+  setProperty(index, name, value, priority) {
     this.completeInitialization(index);
     
     
@@ -650,7 +650,7 @@ RuleRewriter.prototype = {
 
 
 
-  removeProperty: function(index, name) {
+  removeProperty(index, name) {
     this.completeInitialization(index);
 
     
@@ -703,7 +703,7 @@ RuleRewriter.prototype = {
 
 
 
-  completeCopying: function(copyOffset) {
+  completeCopying(copyOffset) {
     
     this.result += this.inputString.substring(copyOffset);
   },
@@ -714,7 +714,7 @@ RuleRewriter.prototype = {
 
 
 
-  apply: function() {
+  apply() {
     return Promise.resolve(this.editPromise).then(() => {
       return this.rule.setRuleText(this.result, this.modifications);
     });
@@ -730,7 +730,7 @@ RuleRewriter.prototype = {
 
 
 
-  getResult: function() {
+  getResult() {
     return { changed: this.changedDeclarations, text: this.result };
   },
 };

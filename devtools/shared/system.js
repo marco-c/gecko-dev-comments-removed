@@ -125,10 +125,10 @@ function getSystemInfo() {
 
 
     
-    endianness: endianness,
+    endianness,
 
     
-    hostname: hostname,
+    hostname,
 
     
     

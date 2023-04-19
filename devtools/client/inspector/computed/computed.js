@@ -92,7 +92,7 @@ UpdateProcess.prototype = {
   
 
 
-  schedule: function() {
+  schedule() {
     if (this.canceled) {
       return;
     }
@@ -103,7 +103,7 @@ UpdateProcess.prototype = {
 
 
 
-  cancel: function() {
+  cancel() {
     if (this._timeout) {
       clearTimeout(this._timeout);
       this._timeout = 0;
@@ -112,7 +112,7 @@ UpdateProcess.prototype = {
     this.onCancel();
   },
 
-  _timeoutHandler: function() {
+  _timeoutHandler() {
     this._timeout = null;
     try {
       this._runBatch();
@@ -128,7 +128,7 @@ UpdateProcess.prototype = {
     }
   },
 
-  _runBatch: function() {
+  _runBatch() {
     const time = Date.now();
     while (!this.canceled) {
       const next = this._next();
@@ -144,7 +144,7 @@ UpdateProcess.prototype = {
 
 
 
-  _next: function() {
+  _next() {
     if (this.index < this.array.length) {
       return this.array[this.index++];
     }
@@ -318,7 +318,7 @@ CssComputedView.prototype = {
     );
   },
 
-  _handlePrefChange: function() {
+  _handlePrefChange() {
     if (this._computed) {
       this.refreshPanel();
     }
@@ -332,7 +332,7 @@ CssComputedView.prototype = {
 
 
 
-  selectElement: function(element) {
+  selectElement(element) {
     if (!element) {
       if (this.viewedElementPageStyle) {
         this.viewedElementPageStyle.off(
@@ -384,7 +384,7 @@ CssComputedView.prototype = {
 
 
   
-  getNodeInfo: function(node) {
+  getNodeInfo(node) {
     if (!node) {
       return null;
     }
@@ -501,7 +501,7 @@ CssComputedView.prototype = {
     };
   },
 
-  _createPropertyViews: function() {
+  _createPropertyViews() {
     if (this._createViewsPromise) {
       return this._createViewsPromise;
     }
@@ -544,7 +544,7 @@ CssComputedView.prototype = {
     return this._createViewsPromise;
   },
 
-  isPanelVisible: function() {
+  isPanelVisible() {
     return (
       this.inspector.toolbox &&
       this.inspector.sidebar &&
@@ -557,7 +557,7 @@ CssComputedView.prototype = {
 
 
 
-  refreshPanel: function() {
+  refreshPanel() {
     if (!this._viewedElement || !this.isPanelVisible()) {
       return Promise.resolve();
     }
@@ -635,7 +635,7 @@ CssComputedView.prototype = {
   
 
 
-  _onShortcut: function(name, event) {
+  _onShortcut(name, event) {
     if (!event.target.closest("#sidebar-panel-computedview")) {
       return;
     }
@@ -659,7 +659,7 @@ CssComputedView.prototype = {
 
 
 
-  setFilterStyles: function(value = "") {
+  setFilterStyles(value = "") {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
@@ -668,7 +668,7 @@ CssComputedView.prototype = {
   
 
 
-  _onFilterStyles: function() {
+  _onFilterStyles() {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
     }
@@ -687,7 +687,7 @@ CssComputedView.prototype = {
 
 
 
-  _onClearSearch: function() {
+  _onClearSearch() {
     if (this.searchField.value) {
       this.setFilterStyles("");
       return true;
@@ -699,7 +699,7 @@ CssComputedView.prototype = {
   
 
 
-  _onIncludeBrowserStyles: function() {
+  _onIncludeBrowserStyles() {
     this.refreshSourceFilter();
     this.refreshPanel();
   },
@@ -710,7 +710,7 @@ CssComputedView.prototype = {
 
 
 
-  refreshSourceFilter: function() {
+  refreshSourceFilter() {
     this._matchedProperties = null;
     this._sourceFilter = this.includeBrowserStyles
       ? CssLogic.FILTER.UA
@@ -720,7 +720,7 @@ CssComputedView.prototype = {
   
 
 
-  createStyleViews: function() {
+  createStyleViews() {
     if (CssComputedView.propertyNames) {
       return;
     }
@@ -775,14 +775,14 @@ CssComputedView.prototype = {
   
 
 
-  focusWindow: function() {
+  focusWindow() {
     this.styleWindow.focus();
   },
 
   
 
 
-  _onContextMenu: function(event) {
+  _onContextMenu(event) {
     
     
     event.stopPropagation();
@@ -790,7 +790,7 @@ CssComputedView.prototype = {
     this.contextMenu.show(event);
   },
 
-  _onClick: function(event) {
+  _onClick(event) {
     const target = event.target;
 
     if (target.nodeName === "a") {
@@ -806,7 +806,7 @@ CssComputedView.prototype = {
 
 
 
-  _onCopy: function(event) {
+  _onCopy(event) {
     const win = this.styleWindow;
     const text = win
       .getSelection()
@@ -821,7 +821,7 @@ CssComputedView.prototype = {
   
 
 
-  copySelection: function() {
+  copySelection() {
     try {
       const win = this.styleWindow;
       const text = win
@@ -838,7 +838,7 @@ CssComputedView.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     this._viewedElement = null;
     if (this.viewedElementPageStyle) {
       this.viewedElementPageStyle.off("stylesheet-updated", this.refreshPanel);
@@ -1059,7 +1059,7 @@ PropertyView.prototype = {
 
 
 
-  buildMain: function() {
+  buildMain() {
     const doc = this.tree.styleDocument;
 
     
@@ -1149,7 +1149,7 @@ PropertyView.prototype = {
     return this.element;
   },
 
-  buildSelectorContainer: function() {
+  buildSelectorContainer() {
     const doc = this.tree.styleDocument;
     const element = doc.createElementNS(HTML_NS, "div");
     element.setAttribute("class", this.propertyContentClassName);
@@ -1163,7 +1163,7 @@ PropertyView.prototype = {
   
 
 
-  refresh: function() {
+  refresh() {
     this.element.className = this.propertyHeaderClassName;
     this.element.nextElementSibling.className = this.propertyContentClassName;
 
@@ -1207,7 +1207,7 @@ PropertyView.prototype = {
   
 
 
-  refreshMatchedSelectors: function() {
+  refreshMatchedSelectors() {
     const hasMatchedSelectors = this.hasMatchedSelectors;
     this.matchedSelectorsContainer.parentNode.hidden = !hasMatchedSelectors;
 
@@ -1252,7 +1252,7 @@ PropertyView.prototype = {
     return this._matchedSelectorResponse;
   },
 
-  _buildMatchedSelectors: function() {
+  _buildMatchedSelectors() {
     const frag = this.element.ownerDocument.createDocumentFragment();
 
     for (const selector of this.matchedSelectorViews) {
@@ -1327,7 +1327,7 @@ PropertyView.prototype = {
 
 
 
-  onMatchedToggle: function(event) {
+  onMatchedToggle(event) {
     if (event.shiftKey) {
       return;
     }
@@ -1339,14 +1339,14 @@ PropertyView.prototype = {
   
 
 
-  mdnLinkClick: function(event) {
+  mdnLinkClick(event) {
     openContentLink(this.link);
   },
 
   
 
 
-  destroy: function() {
+  destroy() {
     if (this._matchedSelectorViews) {
       for (const view of this._matchedSelectorViews) {
         view.destroy();
@@ -1392,7 +1392,7 @@ function SelectorView(tree, selectorInfo) {
     this.source = CssLogic.shortSource(sheet) + ":" + rule.line;
 
     this.generatedLocation = {
-      sheet: sheet,
+      sheet,
       href: sheet.href || sheet.nodeHref,
       line: rule.line,
       column: rule.column,
@@ -1427,7 +1427,7 @@ SelectorView.prototype = {
 
 
 
-  _cacheStatusNames: function() {
+  _cacheStatusNames() {
     if (SelectorView.STATUS_NAMES.length) {
       return;
     }
@@ -1501,7 +1501,7 @@ SelectorView.prototype = {
 
 
 
-  _updateLocation: function(originalLocation) {
+  _updateLocation(originalLocation) {
     if (!this.tree.element) {
       return;
     }
@@ -1533,7 +1533,7 @@ SelectorView.prototype = {
 
 
 
-  openStyleEditor: function() {
+  openStyleEditor() {
     const inspector = this.tree.inspector;
     const rule = this.selectorInfo.rule;
 
@@ -1557,7 +1557,7 @@ SelectorView.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     if (this._unsubscribeCallback) {
       this._unsubscribeCallback();
     }
@@ -1587,18 +1587,18 @@ function ComputedViewTool(inspector, window) {
 }
 
 ComputedViewTool.prototype = {
-  isPanelVisible: function() {
+  isPanelVisible() {
     if (!this.computedView) {
       return false;
     }
     return this.computedView.isPanelVisible();
   },
 
-  onDetachedFront: function() {
+  onDetachedFront() {
     this.onSelected(false);
   },
 
-  onSelected: async function(selectElement = true) {
+  async onSelected(selectElement = true) {
     
     
     
@@ -1628,13 +1628,13 @@ ComputedViewTool.prototype = {
     }
   },
 
-  refresh: function() {
+  refresh() {
     if (this.isPanelVisible()) {
       this.computedView.refreshPanel();
     }
   },
 
-  onPanelSelected: function() {
+  onPanelSelected() {
     if (
       this.inspector.selection.nodeFront === this.computedView._viewedElement
     ) {
@@ -1644,7 +1644,7 @@ ComputedViewTool.prototype = {
     }
   },
 
-  destroy: function() {
+  destroy() {
     this.inspector.styleChangeTracker.off("style-changed", this.refresh);
     this.inspector.sidebar.off("computedview-selected", this.refresh);
     this.inspector.selection.off("pseudoclass", this.refresh);

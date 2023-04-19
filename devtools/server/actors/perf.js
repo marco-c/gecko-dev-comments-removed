@@ -26,7 +26,7 @@ function _bridgeEvents(actor, names) {
 
 
 exports.PerfActor = ActorClassWithSpec(perfSpec, {
-  initialize: function(conn, targetActor) {
+  initialize(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
     
     
@@ -35,7 +35,7 @@ exports.PerfActor = ActorClassWithSpec(perfSpec, {
     _bridgeEvents(this, ["profiler-started", "profiler-stopped"]);
   },
 
-  destroy: function(conn) {
+  destroy(conn) {
     Actor.prototype.destroy.call(this, conn);
     this.bridge.destroy();
   },

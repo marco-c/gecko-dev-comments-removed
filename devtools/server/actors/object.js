@@ -112,7 +112,7 @@ const proto = {
     };
   },
 
-  rawValue: function() {
+  rawValue() {
     return this.obj.unsafeDereference();
   },
 
@@ -131,7 +131,7 @@ const proto = {
   
 
 
-  form: function() {
+  form() {
     const g = {
       type: "object",
       actor: this.actorID,
@@ -205,7 +205,7 @@ const proto = {
     return g;
   },
 
-  _getOwnPropertyLength: function() {
+  _getOwnPropertyLength() {
     if (isTypedArray(this.obj)) {
       
       return getArrayLength(this.obj);
@@ -225,7 +225,7 @@ const proto = {
     return null;
   },
 
-  getRawObject: function() {
+  getRawObject() {
     let raw = this.obj.unsafeDereference();
 
     
@@ -244,7 +244,7 @@ const proto = {
   
 
 
-  _populateGripPreview: function(grip, raw) {
+  _populateGripPreview(grip, raw) {
     
     
     const className = this.obj.class;
@@ -265,7 +265,7 @@ const proto = {
   
 
 
-  promiseState: function() {
+  promiseState() {
     const { state, value, reason } = getPromiseState(this.obj);
     const promiseState = { state };
 
@@ -291,28 +291,28 @@ const proto = {
 
 
 
-  enumProperties: function(options) {
+  enumProperties(options) {
     return PropertyIteratorActor(this, options, this.conn);
   },
 
   
 
 
-  enumEntries: function() {
+  enumEntries() {
     return PropertyIteratorActor(this, { enumEntries: true }, this.conn);
   },
 
   
 
 
-  enumSymbols: function() {
+  enumSymbols() {
     return SymbolIteratorActor(this, this.conn);
   },
 
   
 
 
-  enumPrivateProperties: function() {
+  enumPrivateProperties() {
     return PrivatePropertiesIteratorActor(this, this.conn);
   },
 
@@ -332,7 +332,7 @@ const proto = {
 
 
 
-  prototypeAndProperties: function() {
+  prototypeAndProperties() {
     let objProto = null;
     let names = [];
     let symbols = [];
@@ -382,7 +382,7 @@ const proto = {
 
 
 
-  _findSafeGetterValues: function(ownProperties, limit = Infinity) {
+  _findSafeGetterValues(ownProperties, limit = Infinity) {
     const safeGetterValues = Object.create(null);
     let obj = this.obj;
     let level = 0,
@@ -496,7 +496,7 @@ const proto = {
 
 
 
-  _findSafeGetters: function(object) {
+  _findSafeGetters(object) {
     if (object._safeGetters) {
       return object._safeGetters;
     }
@@ -540,7 +540,7 @@ const proto = {
   
 
 
-  prototype: function() {
+  prototype() {
     let objProto = null;
     if (DevToolsUtils.isSafeDebuggerObject(this.obj)) {
       objProto = this.obj.proto;
@@ -555,7 +555,7 @@ const proto = {
 
 
 
-  property: function(name) {
+  property(name) {
     if (!name) {
       return this.throwError(
         "missingParameter",
@@ -581,7 +581,7 @@ const proto = {
 
 
 
-  propertyValue: function(name, receiverId) {
+  propertyValue(name, receiverId) {
     if (!name) {
       return this.throwError(
         "missingParameter",
@@ -618,7 +618,7 @@ const proto = {
 
 
 
-  apply: function(context, args) {
+  apply(context, args) {
     if (!this.obj.callable) {
       return this.throwError("notCallable", "debugee object is not callable");
     }
@@ -694,7 +694,7 @@ const proto = {
 
 
 
-  _propertyDescriptor: function(name, onlyEnumerable) {
+  _propertyDescriptor(name, onlyEnumerable) {
     if (!DevToolsUtils.isSafeDebuggerObject(this.obj)) {
       return undefined;
     }
@@ -753,7 +753,7 @@ const proto = {
   
 
 
-  proxySlots: function() {
+  proxySlots() {
     
     
     
@@ -770,7 +770,7 @@ const proto = {
     };
   },
 
-  customFormatterHeader: function() {
+  customFormatterHeader() {
     const rawValue = this.rawValue();
     const globalWrapper = Cu.getGlobalForObject(rawValue);
     const global = globalWrapper?.wrappedJSObject;
@@ -833,7 +833,7 @@ const proto = {
 
 
 
-  customFormatterBody: function(customFormatterIndex) {
+  customFormatterBody(customFormatterIndex) {
     const rawValue = this.rawValue();
     const globalWrapper = Cu.getGlobalForObject(rawValue);
     const global = globalWrapper?.wrappedJSObject;
@@ -878,7 +878,7 @@ const proto = {
 
 
 
-  release: function() {},
+  release() {},
 };
 
 exports.ObjectActor = protocol.ActorClassWithSpec(objectSpec, proto);

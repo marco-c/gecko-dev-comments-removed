@@ -21,7 +21,7 @@ add_task(
 
         
         const response = await threadFront.setBreakpoint(
-          { sourceUrl: source.url, line: line },
+          { sourceUrl: source.url, line },
           {}
         );
         

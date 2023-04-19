@@ -192,7 +192,7 @@ DevToolsLoader.prototype = {
     return {};
   },
 
-  destroy: function(reason = "shutdown") {
+  destroy(reason = "shutdown") {
     unload(this.loader, reason);
     delete this.loader;
   },
@@ -201,7 +201,7 @@ DevToolsLoader.prototype = {
 
 
 
-  isLoaderPluginId: function(id) {
+  isLoaderPluginId(id) {
     return id.startsWith("raw!");
   },
 };

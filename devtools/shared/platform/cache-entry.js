@@ -29,7 +29,7 @@ exports.CacheEntry = {
   
 
 
-  initializeCacheSession: function(request) {
+  initializeCacheSession(request) {
     try {
       const cacheService = Services.cache2;
       if (cacheService) {
@@ -52,7 +52,7 @@ exports.CacheEntry = {
 
 
 
-  parseCacheDescriptor: function(descriptor) {
+  parseCacheDescriptor(descriptor) {
     const descriptorObj = {};
     try {
       if (descriptor.storageDataSize) {
@@ -87,7 +87,7 @@ exports.CacheEntry = {
 
 
 
-  getCacheEntry: function(request, onCacheDescriptorAvailable) {
+  getCacheEntry(request, onCacheDescriptorAvailable) {
     if (!this.isCacheSessionInitialized) {
       this.initializeCacheSession(request);
     }

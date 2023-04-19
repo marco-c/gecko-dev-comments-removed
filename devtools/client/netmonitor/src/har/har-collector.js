@@ -11,7 +11,7 @@ const {
 
 
 const trace = {
-  log: function(...args) {},
+  log(...args) {},
 };
 
 
@@ -37,7 +37,7 @@ function HarCollector(options) {
 HarCollector.prototype = {
   
 
-  start: async function() {
+  async start() {
     await this.commands.resourceCommand.watchResources(
       [this.commands.resourceCommand.TYPES.NETWORK_EVENT],
       {
@@ -47,7 +47,7 @@ HarCollector.prototype = {
     );
   },
 
-  stop: async function() {
+  async stop() {
     await this.commands.resourceCommand.unwatchResources(
       [this.commands.resourceCommand.TYPES.NETWORK_EVENT],
       {
@@ -57,7 +57,7 @@ HarCollector.prototype = {
     );
   },
 
-  clear: function() {
+  clear() {
     
     
     this.files = new Map();
@@ -67,7 +67,7 @@ HarCollector.prototype = {
     this.requests = [];
   },
 
-  waitForHarLoad: function() {
+  waitForHarLoad() {
     
     
     
@@ -79,7 +79,7 @@ HarCollector.prototype = {
     });
   },
 
-  waitForResponses: function() {
+  waitForResponses() {
     trace.log("HarCollector.waitForResponses; " + this.requests.length);
 
     
@@ -118,7 +118,7 @@ HarCollector.prototype = {
 
 
 
-  waitForTimeout: function() {
+  waitForTimeout() {
     
     
     
@@ -140,7 +140,7 @@ HarCollector.prototype = {
     });
   },
 
-  resetPageLoadTimeout: function() {
+  resetPageLoadTimeout() {
     
     if (this.pageLoadTimeout) {
       trace.log("HarCollector.resetPageLoadTimeout;");
@@ -158,17 +158,17 @@ HarCollector.prototype = {
 
   
 
-  getFile: function(actorId) {
+  getFile(actorId) {
     return this.files.get(actorId);
   },
 
-  getItems: function() {
+  getItems() {
     return this.items;
   },
 
   
 
-  onResourceAvailable: function(resources) {
+  onResourceAvailable(resources) {
     for (const resource of resources) {
       trace.log("HarCollector.onNetworkEvent; ", resource);
 
@@ -195,9 +195,9 @@ HarCollector.prototype = {
         id: actor,
         startedDeltaMs: startTime - this.firstRequestStart,
         startedMs: startTime,
-        method: method,
-        url: url,
-        isXHR: isXHR,
+        method,
+        url,
+        isXHR,
       };
 
       this.files.set(actor, file);
@@ -207,7 +207,7 @@ HarCollector.prototype = {
     }
   },
 
-  onResourceUpdated: function(updates) {
+  onResourceUpdated(updates) {
     for (const { resource } of updates) {
       
       
@@ -329,7 +329,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestHeaders: function(response) {
+  onRequestHeaders(response) {
     const file = this.getFile(response.from);
     file.requestHeaders = response;
 
@@ -342,7 +342,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestCookies: function(response) {
+  onRequestCookies(response) {
     const file = this.getFile(response.from);
     file.requestCookies = response;
 
@@ -355,7 +355,7 @@ HarCollector.prototype = {
 
 
 
-  onRequestPostData: function(response) {
+  onRequestPostData(response) {
     trace.log("HarCollector.onRequestPostData;", response);
 
     const file = this.getFile(response.from);
@@ -376,7 +376,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseHeaders: function(response) {
+  onResponseHeaders(response) {
     const file = this.getFile(response.from);
     file.responseHeaders = response;
 
@@ -389,7 +389,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseCookies: function(response) {
+  onResponseCookies(response) {
     const file = this.getFile(response.from);
     file.responseCookies = response;
 
@@ -402,7 +402,7 @@ HarCollector.prototype = {
 
 
 
-  onResponseContent: function(response) {
+  onResponseContent(response) {
     const file = this.getFile(response.from);
     file.responseContent = response;
 
@@ -421,7 +421,7 @@ HarCollector.prototype = {
 
 
 
-  onEventTimings: function(response) {
+  onEventTimings(response) {
     const file = this.getFile(response.from);
     file.eventTimings = response;
     file.totalTime = response.totalTime;
@@ -429,7 +429,7 @@ HarCollector.prototype = {
 
   
 
-  getLongHeaders: function(headers) {
+  getLongHeaders(headers) {
     for (const header of headers) {
       if (typeof header.value == "object") {
         try {
@@ -454,7 +454,7 @@ HarCollector.prototype = {
 
 
 
-  getString: async function(stringGrip) {
+  async getString(stringGrip) {
     const promise = getLongStringFullText(this.commands.client, stringGrip);
     this.requests.push(promise);
     return promise;

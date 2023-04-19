@@ -73,7 +73,7 @@ function connectToContentProcess(connection, mm, onDestroy) {
     
     
     mm.sendAsyncMessage("debug:init-content-server", {
-      prefix: prefix,
+      prefix,
       
       
       sessionContext: createContentProcessSessionContext(),

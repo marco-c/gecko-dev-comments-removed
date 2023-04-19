@@ -78,19 +78,19 @@ function CssColor(colorValue, supportsCssColor4ColorFunction = false) {
 }
 
 module.exports.colorUtils = {
-  CssColor: CssColor,
-  rgbToHsl: rgbToHsl,
-  rgbToHwb: rgbToHwb,
-  rgbToLab: rgbToLab,
-  setAlpha: setAlpha,
-  classifyColor: classifyColor,
-  rgbToColorName: rgbToColorName,
-  colorToRGBA: colorToRGBA,
-  isValidCSSColor: isValidCSSColor,
-  calculateContrastRatio: calculateContrastRatio,
-  calculateDeltaE: calculateDeltaE,
-  calculateLuminance: calculateLuminance,
-  blendColors: blendColors,
+  CssColor,
+  rgbToHsl,
+  rgbToHwb,
+  rgbToLab,
+  setAlpha,
+  classifyColor,
+  rgbToColorName,
+  colorToRGBA,
+  isValidCSSColor,
+  calculateContrastRatio,
+  calculateDeltaE,
+  calculateLuminance,
+  blendColors,
 };
 
 
@@ -117,7 +117,7 @@ CssColor.prototype = {
   
   cssColor4: false,
 
-  _setColorUnitUppercase: function(color) {
+  _setColorUnitUppercase(color) {
     
     
     
@@ -145,7 +145,7 @@ CssColor.prototype = {
 
 
 
-  setAuthoredUnitFromColor: function(color) {
+  setAuthoredUnitFromColor(color) {
     if (
       Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
       CssColor.COLORUNIT.authored
@@ -393,7 +393,7 @@ CssColor.prototype = {
 
 
 
-  _getInvalidOrSpecialValue: function() {
+  _getInvalidOrSpecialValue() {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -409,7 +409,7 @@ CssColor.prototype = {
 
 
 
-  newColor: function(color) {
+  newColor(color) {
     
     
     
@@ -419,7 +419,7 @@ CssColor.prototype = {
     return this;
   },
 
-  nextColorUnit: function() {
+  nextColorUnit() {
     
     
     
@@ -444,7 +444,7 @@ CssColor.prototype = {
   
 
 
-  toString: function() {
+  toString() {
     let color;
 
     switch (this.colorUnit) {
@@ -484,7 +484,7 @@ CssColor.prototype = {
 
 
 
-  getRGBATuple: function() {
+  getRGBATuple() {
     const tuple = colorToRGBA(this.authored, this.cssColor4);
 
     tuple.a = parseFloat(tuple.a.toFixed(2));
@@ -496,7 +496,7 @@ CssColor.prototype = {
 
 
 
-  _getHSLATuple: function() {
+  _getHSLATuple() {
     const { r, g, b, a } = colorToRGBA(this.authored, this.cssColor4);
 
     const [h, s, l] = rgbToHsl([r, g, b]);
@@ -509,7 +509,7 @@ CssColor.prototype = {
     };
   },
 
-  _hsl: function(maybeAlpha) {
+  _hsl(maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
       return this.authored;
@@ -523,7 +523,7 @@ CssColor.prototype = {
     return "hsl(" + h + ", " + s + "%, " + l + "%)";
   },
 
-  _hwb: function(maybeAlpha) {
+  _hwb(maybeAlpha) {
     if (this.lowerCased.startsWith("hwb(") && maybeAlpha === undefined) {
       
       return this.authored;
@@ -539,7 +539,7 @@ CssColor.prototype = {
   
 
 
-  valueOf: function() {
+  valueOf() {
     return this.rgba;
   },
 
@@ -548,7 +548,7 @@ CssColor.prototype = {
 
 
 
-  isTransparent: function() {
+  isTransparent() {
     return this.getRGBATuple().a === 0;
   },
 };

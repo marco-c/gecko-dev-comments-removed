@@ -20,7 +20,7 @@ function SlottedNodeEditor(container, node) {
 }
 
 SlottedNodeEditor.prototype = {
-  buildMarkup: function() {
+  buildMarkup() {
     const doc = this.markup.doc;
 
     this.elt = doc.createElement("span");
@@ -40,7 +40,7 @@ SlottedNodeEditor.prototype = {
     this.elt.appendChild(this.revealLink);
   },
 
-  destroy: function() {
+  destroy() {
     
     if (!this.elt) {
       return;
@@ -55,7 +55,7 @@ SlottedNodeEditor.prototype = {
   
 
 
-  getInfoAtNode: function() {
+  getInfoAtNode() {
     return null;
   },
 };

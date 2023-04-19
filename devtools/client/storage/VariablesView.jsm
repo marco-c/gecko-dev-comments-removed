@@ -114,7 +114,7 @@ VariablesView.prototype = {
 
 
 
-  addScope: function(l10nId = "", aCustomClass = "") {
+  addScope(l10nId = "", aCustomClass = "") {
     this._removeEmptyNotice();
     this._toggleSearchVisibility(true);
 
@@ -134,7 +134,7 @@ VariablesView.prototype = {
 
 
 
-  empty: function(aTimeout = this.lazyEmptyDelay) {
+  empty(aTimeout = this.lazyEmptyDelay) {
     
     if (!this._store.length) {
       return;
@@ -174,7 +174,7 @@ VariablesView.prototype = {
 
 
 
-  _emptySoon: function(aTimeout) {
+  _emptySoon(aTimeout) {
     const prevList = this._list;
     const currList = (this._list = this.document.createXULElement("scrollbox"));
 
@@ -402,7 +402,7 @@ VariablesView.prototype = {
 
 
 
-  _enableSearch: function() {
+  _enableSearch() {
     
     if (this._searchboxContainer) {
       return;
@@ -436,7 +436,7 @@ VariablesView.prototype = {
 
 
 
-  _disableSearch: function() {
+  _disableSearch() {
     
     if (!this._searchboxContainer) {
       return;
@@ -459,7 +459,7 @@ VariablesView.prototype = {
 
 
 
-  _toggleSearchVisibility: function(aVisibleFlag) {
+  _toggleSearchVisibility(aVisibleFlag) {
     
     if (!this._searchboxContainer) {
       return;
@@ -470,14 +470,14 @@ VariablesView.prototype = {
   
 
 
-  _onSearchboxInput: function() {
+  _onSearchboxInput() {
     this.scheduleSearch(this._searchboxNode.value);
   },
 
   
 
 
-  _onSearchboxKeyDown: function(e) {
+  _onSearchboxKeyDown(e) {
     switch (e.keyCode) {
       case KeyCodes.DOM_VK_RETURN:
         this._onSearchboxInput();
@@ -496,7 +496,7 @@ VariablesView.prototype = {
 
 
 
-  scheduleSearch: function(aToken, aWait) {
+  scheduleSearch(aToken, aWait) {
     
     if (!this.lazySearch) {
       this._doSearch(aToken);
@@ -522,7 +522,7 @@ VariablesView.prototype = {
 
 
 
-  _doSearch: function(aToken) {
+  _doSearch(aToken) {
     if (this.controller && this.controller.supportsSearch()) {
       
       const scope = this._store[0]._store.get(undefined);
@@ -568,7 +568,7 @@ VariablesView.prototype = {
 
 
 
-  _findInVisibleItems: function(aPredicate) {
+  _findInVisibleItems(aPredicate) {
     for (const scope of this._store) {
       const result = scope._findInVisibleItems(aPredicate);
       if (result) {
@@ -590,7 +590,7 @@ VariablesView.prototype = {
 
 
 
-  _findInVisibleItemsReverse: function(aPredicate) {
+  _findInVisibleItemsReverse(aPredicate) {
     for (let i = this._store.length - 1; i >= 0; i--) {
       const scope = this._store[i];
       const result = scope._findInVisibleItemsReverse(aPredicate);
@@ -609,7 +609,7 @@ VariablesView.prototype = {
 
 
 
-  getScopeAtIndex: function(aIndex) {
+  getScopeAtIndex(aIndex) {
     return this._store[aIndex];
   },
 
@@ -622,7 +622,7 @@ VariablesView.prototype = {
 
 
 
-  getItemForNode: function(aNode) {
+  getItemForNode(aNode) {
     return this._itemsByElement.get(aNode);
   },
 
@@ -634,7 +634,7 @@ VariablesView.prototype = {
 
 
 
-  getOwnerScopeForVariableOrProperty: function(aItem) {
+  getOwnerScopeForVariableOrProperty(aItem) {
     if (!aItem) {
       return null;
     }
@@ -658,7 +658,7 @@ VariablesView.prototype = {
 
 
 
-  getParentScopesForVariableOrProperty: function(aItem) {
+  getParentScopesForVariableOrProperty(aItem) {
     const scope = this.getOwnerScopeForVariableOrProperty(aItem);
     return this._store.slice(0, Math.max(this._store.indexOf(scope), 0));
   },
@@ -669,7 +669,7 @@ VariablesView.prototype = {
 
 
 
-  getFocusedItem: function() {
+  getFocusedItem() {
     const focused = this.document.commandDispatcher.focusedElement;
     return this.getItemForNode(focused);
   },
@@ -677,7 +677,7 @@ VariablesView.prototype = {
   
 
 
-  focusFirstVisibleItem: function() {
+  focusFirstVisibleItem() {
     const focusableItem = this._findInVisibleItems(item => item.focusable);
     if (focusableItem) {
       this._focusItem(focusableItem);
@@ -689,7 +689,7 @@ VariablesView.prototype = {
   
 
 
-  focusLastVisibleItem: function() {
+  focusLastVisibleItem() {
     const focusableItem = this._findInVisibleItemsReverse(
       item => item.focusable
     );
@@ -703,14 +703,14 @@ VariablesView.prototype = {
   
 
 
-  focusNextItem: function() {
+  focusNextItem() {
     this.focusItemAtDelta(+1);
   },
 
   
 
 
-  focusPrevItem: function() {
+  focusPrevItem() {
     this.focusItemAtDelta(-1);
   },
 
@@ -721,7 +721,7 @@ VariablesView.prototype = {
 
 
 
-  focusItemAtDelta: function(aDelta) {
+  focusItemAtDelta(aDelta) {
     const direction = aDelta > 0 ? "advanceFocus" : "rewindFocus";
     let distance = Math.abs(Math[aDelta > 0 ? "ceil" : "floor"](aDelta));
     while (distance--) {
@@ -740,7 +740,7 @@ VariablesView.prototype = {
 
 
 
-  _focusChange: function(aDirection) {
+  _focusChange(aDirection) {
     const commandDispatcher = this.document.commandDispatcher;
     const prevFocusedElement = commandDispatcher.focusedElement;
     let currFocusedItem = null;
@@ -770,7 +770,7 @@ VariablesView.prototype = {
 
 
 
-  _focusItem: function(aItem, aCollapseFlag) {
+  _focusItem(aItem, aCollapseFlag) {
     if (!aItem.focusable) {
       return false;
     }
@@ -785,7 +785,7 @@ VariablesView.prototype = {
   
 
 
-  _copyItem: function() {
+  _copyItem() {
     const item = this.getFocusedItem();
     lazy.clipboardHelper.copyString(
       item._nameString + item.separatorStr + item._valueString
@@ -796,7 +796,7 @@ VariablesView.prototype = {
 
 
   
-  _onViewKeyDown: function(e) {
+  _onViewKeyDown(e) {
     const item = this.getFocusedItem();
 
     
@@ -918,7 +918,7 @@ VariablesView.prototype = {
   
 
 
-  _appendEmptyNotice: function() {
+  _appendEmptyNotice() {
     if (this._emptyTextNode || !this._emptyTextValue) {
       return;
     }
@@ -934,7 +934,7 @@ VariablesView.prototype = {
   
 
 
-  _removeEmptyNotice: function() {
+  _removeEmptyNotice() {
     if (!this._emptyTextNode) {
       return;
     }
@@ -1314,7 +1314,7 @@ Scope.prototype = {
 
 
 
-  _createChild: function(aName, aDescriptor, aOptions) {
+  _createChild(aName, aDescriptor, aOptions) {
     return new Variable(this, aName, aDescriptor, aOptions);
   },
 
@@ -1350,7 +1350,7 @@ Scope.prototype = {
 
 
 
-  addItem: function(aName, aDescriptor = {}, aOptions = {}) {
+  addItem(aName, aDescriptor = {}, aOptions = {}) {
     const { relaxed } = aOptions;
     if (this._store.has(aName) && !relaxed) {
       return this._store.get(aName);
@@ -1386,7 +1386,7 @@ Scope.prototype = {
 
 
 
-  addItems: function(aItems, aOptions = {}) {
+  addItems(aItems, aOptions = {}) {
     const names = Object.keys(aItems);
 
     
@@ -1408,7 +1408,7 @@ Scope.prototype = {
   
 
 
-  remove: function() {
+  remove() {
     const view = this._variablesView;
     view._store.splice(view._store.indexOf(this), 1);
     view._itemsByElement.delete(this._target);
@@ -1429,7 +1429,7 @@ Scope.prototype = {
 
 
 
-  get: function(aName) {
+  get(aName) {
     return this._store.get(aName);
   },
 
@@ -1442,7 +1442,7 @@ Scope.prototype = {
 
 
 
-  find: function(aNode) {
+  find(aNode) {
     for (const [, variable] of this._store) {
       let match;
       if (variable._target == aNode) {
@@ -1466,7 +1466,7 @@ Scope.prototype = {
 
 
 
-  isChildOf: function(aParent) {
+  isChildOf(aParent) {
     return this.ownerView == aParent;
   },
 
@@ -1479,7 +1479,7 @@ Scope.prototype = {
 
 
 
-  isDescendantOf: function(aParent) {
+  isDescendantOf(aParent) {
     if (this.isChildOf(aParent)) {
       return true;
     }
@@ -1495,7 +1495,7 @@ Scope.prototype = {
   
 
 
-  show: function() {
+  show() {
     this._target.hidden = false;
     this._isContentVisible = true;
 
@@ -1507,7 +1507,7 @@ Scope.prototype = {
   
 
 
-  hide: function() {
+  hide() {
     this._target.hidden = true;
     this._isContentVisible = false;
 
@@ -1519,7 +1519,7 @@ Scope.prototype = {
   
 
 
-  expand: function() {
+  expand() {
     if (this._isExpanded || this._isLocked) {
       return;
     }
@@ -1543,7 +1543,7 @@ Scope.prototype = {
   
 
 
-  collapse: function() {
+  collapse() {
     if (!this._isExpanded || this._isLocked) {
       return;
     }
@@ -1560,7 +1560,7 @@ Scope.prototype = {
   
 
 
-  toggle: function(e) {
+  toggle(e) {
     if (e && e.button != 0) {
       
       return;
@@ -1580,7 +1580,7 @@ Scope.prototype = {
   
 
 
-  showHeader: function() {
+  showHeader() {
     if (this._isHeaderVisible || !this._nameString) {
       return;
     }
@@ -1592,7 +1592,7 @@ Scope.prototype = {
 
 
 
-  hideHeader: function() {
+  hideHeader() {
     if (!this._isHeaderVisible) {
       return;
     }
@@ -1611,7 +1611,7 @@ Scope.prototype = {
 
 
 
-  _naturalSort: function(a, b) {
+  _naturalSort(a, b) {
     if (isNaN(parseFloat(a)) && isNaN(parseFloat(b))) {
       return a < b ? -1 : 1;
     }
@@ -1620,7 +1620,7 @@ Scope.prototype = {
   
 
 
-  showArrow: function() {
+  showArrow() {
     if (this._isArrowVisible) {
       return;
     }
@@ -1631,7 +1631,7 @@ Scope.prototype = {
   
 
 
-  hideArrow: function() {
+  hideArrow() {
     if (!this._isArrowVisible) {
       return;
     }
@@ -1748,7 +1748,7 @@ Scope.prototype = {
   
 
 
-  focus: function() {
+  focus() {
     this._variablesView._focusItem(this);
   },
 
@@ -1758,7 +1758,7 @@ Scope.prototype = {
 
 
 
-  addEventListener: function(aName, aCallback, aCapture) {
+  addEventListener(aName, aCallback, aCapture) {
     this._title.addEventListener(aName, aCallback, aCapture);
   },
 
@@ -1768,7 +1768,7 @@ Scope.prototype = {
 
 
 
-  removeEventListener: function(aName, aCallback, aCapture) {
+  removeEventListener(aName, aCallback, aCapture) {
     this._title.removeEventListener(aName, aCallback, aCapture);
   },
 
@@ -1820,7 +1820,7 @@ Scope.prototype = {
 
 
 
-  _init: function(l10nId, aFlags) {
+  _init(l10nId, aFlags) {
     this._idString = generateId((this._nameString = l10nId));
     this._displayScope({
       l10nId,
@@ -1844,12 +1844,7 @@ Scope.prototype = {
 
 
 
-  _displayScope: function({
-    l10nId,
-    value,
-    targetClassName,
-    titleClassName = "",
-  }) {
+  _displayScope({ l10nId, value, targetClassName, titleClassName = "" }) {
     const document = this.document;
 
     const element = (this._target = document.createXULElement("vbox"));
@@ -1888,14 +1883,14 @@ Scope.prototype = {
   
 
 
-  _addEventListeners: function() {
+  _addEventListeners() {
     this._title.addEventListener("mousedown", this._onClick);
   },
 
   
 
 
-  _onClick: function(e) {
+  _onClick(e) {
     if (
       this.editing ||
       e.button != 0 ||
@@ -1912,7 +1907,7 @@ Scope.prototype = {
   
 
 
-  _openEnum: function() {
+  _openEnum() {
     this._arrow.setAttribute("open", "");
     this._enum.setAttribute("open", "");
   },
@@ -1920,7 +1915,7 @@ Scope.prototype = {
   
 
 
-  _openNonEnum: function() {
+  _openNonEnum() {
     this._nonenum.setAttribute("open", "");
   },
 
@@ -1969,7 +1964,7 @@ Scope.prototype = {
 
 
 
-  _performSearch: function(aLowerCaseQuery) {
+  _performSearch(aLowerCaseQuery) {
     for (let [, variable] of this._store) {
       const currentObject = variable;
       const lowerCaseName = variable._nameString.toLowerCase();
@@ -2041,7 +2036,7 @@ Scope.prototype = {
 
 
 
-  _findInVisibleItems: function(aPredicate) {
+  _findInVisibleItems(aPredicate) {
     if (aPredicate(this)) {
       return this;
     }
@@ -2082,7 +2077,7 @@ Scope.prototype = {
 
 
 
-  _findInVisibleItemsReverse: function(aPredicate) {
+  _findInVisibleItemsReverse(aPredicate) {
     if (this._isExpanded) {
       if (this._variablesView._nonEnumVisible) {
         for (let i = this._nonEnumItems.length - 1; i >= 0; i--) {
@@ -2276,14 +2271,14 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _createChild: function(aName, aDescriptor, aOptions) {
+  _createChild(aName, aDescriptor, aOptions) {
     return new Property(this, aName, aDescriptor, aOptions);
   },
 
   
 
 
-  remove: function() {
+  remove() {
     if (this._linkedToInspector) {
       this.unhighlightDomNode();
       this._valueLabel.removeEventListener("mouseover", this.highlightDomNode);
@@ -2315,7 +2310,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  populate: function(aObject, aOptions = {}) {
+  populate(aObject, aOptions = {}) {
     
     if (this._fetched) {
       return;
@@ -2361,7 +2356,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _populateTarget: function(aVar, aObject = aVar._sourceValue) {
+  _populateTarget(aVar, aObject = aVar._sourceValue) {
     aVar.populate(aObject);
   },
 
@@ -2378,7 +2373,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _addRawValueProperty: function(aName, aDescriptor, aValue) {
+  _addRawValueProperty(aName, aDescriptor, aValue) {
     const descriptor = Object.create(aDescriptor);
     descriptor.value = VariablesView.getGrip(aValue);
 
@@ -2404,7 +2399,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _addRawNonValueProperty: function(aName, aDescriptor) {
+  _addRawNonValueProperty(aName, aDescriptor) {
     const descriptor = Object.create(aDescriptor);
     descriptor.get = VariablesView.getGrip(aDescriptor.get);
     descriptor.set = VariablesView.getGrip(aDescriptor.set);
@@ -2455,7 +2450,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _buildSymbolicPath: function(path = []) {
+  _buildSymbolicPath(path = []) {
     if (this.name) {
       path.unshift(this.name);
       if (this.ownerView instanceof Variable) {
@@ -2506,7 +2501,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  setGrip: function(aGrip) {
+  setGrip(aGrip) {
     
     
     if (
@@ -2565,7 +2560,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  setOverridden: function(aFlag) {
+  setOverridden(aFlag) {
     if (aFlag) {
       this._target.setAttribute("overridden", "");
     } else {
@@ -2579,7 +2574,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  flash: function(aDuration = ITEM_FLASH_DURATION) {
+  flash(aDuration = ITEM_FLASH_DURATION) {
     const fadeInDelay = this._variablesView.lazyEmptyDelay + 1;
     const fadeOutDelay = fadeInDelay + aDuration;
 
@@ -2600,7 +2595,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _init: function(aName, aDescriptor) {
+  _init(aName, aDescriptor) {
     this._idString = generateId((this._nameString = aName));
     this._displayScope({ value: aName, targetClassName: this.targetClassName });
     this._displayVariable();
@@ -2625,7 +2620,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _displayVariable: function() {
+  _displayVariable() {
     const document = this.document;
     const descriptor = this._initialDescriptor;
 
@@ -2687,7 +2682,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _customizeVariable: function() {
+  _customizeVariable() {
     const ownerView = this.ownerView;
     const descriptor = this._initialDescriptor;
 
@@ -2770,14 +2765,14 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _prepareTooltips: function() {
+  _prepareTooltips() {
     this._target.addEventListener("mouseover", this._setTooltips);
   },
 
   
 
 
-  _setTooltips: function() {
+  _setTooltips() {
     this._target.removeEventListener("mouseover", this._setTooltips);
 
     const ownerView = this.ownerView;
@@ -2848,7 +2843,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _isLinkableToInspector: function() {
+  _isLinkableToInspector() {
     const isDomNode =
       this._valueGrip && this._valueGrip.preview.kind === "DOMNode";
     const hasBeenLinked = this._linkedToInspector;
@@ -2861,7 +2856,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  _linkToInspector: function() {
+  _linkToInspector() {
     if (!this._isLinkableToInspector()) {
       return;
     }
@@ -2889,7 +2884,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  openNodeInInspector: function(event) {
+  openNodeInInspector(event) {
     if (!this.toolbox) {
       return Promise.reject(new Error("Toolbox not available"));
     }
@@ -2924,7 +2919,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  highlightDomNode: async function() {
+  async highlightDomNode() {
     if (!this.toolbox) {
       return;
     }
@@ -2943,7 +2938,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  unhighlightDomNode: function() {
+  unhighlightDomNode() {
     if (!this.toolbox) {
       return;
     }
@@ -2957,7 +2952,7 @@ Variable.prototype = extend(Scope.prototype, {
 
 
   
-  _setAttributes: function() {
+  _setAttributes() {
     const ownerView = this.ownerView;
     if (ownerView.preventDescriptorModifiers) {
       return;
@@ -3018,7 +3013,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _addEventListeners: function() {
+  _addEventListeners() {
     this._name.addEventListener("dblclick", this._activateNameInput);
     this._valueLabel.addEventListener("mousedown", this._activateValueInput);
     this._title.addEventListener("mousedown", this._onClick);
@@ -3027,7 +3022,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _activateNameInput: function(e) {
+  _activateNameInput(e) {
     if (!this._variablesView.alignedValues) {
       this._separatorLabel.hidden = true;
       this._valueLabel.hidden = true;
@@ -3056,7 +3051,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _activateValueInput: function(e) {
+  _activateValueInput(e) {
     EditableValue.create(
       this,
       {
@@ -3077,7 +3072,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _disable: function() {
+  _disable() {
     
     this.hideArrow();
 
@@ -3098,7 +3093,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _onEdit: function(e) {
+  _onEdit(e) {
     if (e.button != 0) {
       return;
     }
@@ -3111,7 +3106,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _onDelete: function(e) {
+  _onDelete(e) {
     if ("button" in e && e.button != 0) {
       return;
     }
@@ -3129,7 +3124,7 @@ Variable.prototype = extend(Scope.prototype, {
   
 
 
-  _onAddProperty: function(e) {
+  _onAddProperty(e) {
     if ("button" in e && e.button != 0) {
       return;
     }
@@ -3670,14 +3665,14 @@ VariablesView.getString = function(aGrip, aOptions = {}) {
 VariablesView.stringifiers = {};
 
 VariablesView.stringifiers.byType = {
-  string: function(aGrip, { noStringQuotes }) {
+  string(aGrip, { noStringQuotes }) {
     if (noStringQuotes) {
       return aGrip;
     }
     return '"' + aGrip + '"';
   },
 
-  longString: function({ initial }, { noStringQuotes, noEllipsis }) {
+  longString({ initial }, { noStringQuotes, noEllipsis }) {
     const ellipsis = noEllipsis ? "" : ELLIPSIS;
     if (noStringQuotes) {
       return initial + ellipsis;
@@ -3689,7 +3684,7 @@ VariablesView.stringifiers.byType = {
     return result.substr(0, result.length - 1) + ellipsis + '"';
   },
 
-  object: function(aGrip, aOptions) {
+  object(aGrip, aOptions) {
     const { preview } = aGrip;
     let stringifier;
     if (aGrip.class) {
@@ -3704,12 +3699,12 @@ VariablesView.stringifiers.byType = {
     return null;
   },
 
-  symbol: function(aGrip, aOptions) {
+  symbol(aGrip, aOptions) {
     const name = aGrip.name || "";
     return "Symbol(" + name + ")";
   },
 
-  mapEntry: function(aGrip, { concise }) {
+  mapEntry(aGrip, { concise }) {
     const {
       preview: { key, value },
     } = aGrip;
@@ -3725,7 +3720,7 @@ VariablesView.stringifiers.byType = {
 }; 
 
 VariablesView.stringifiers.byObjectClass = {
-  Function: function(aGrip, { concise }) {
+  Function(aGrip, { concise }) {
     
 
     let name = aGrip.userDisplayName || aGrip.displayName || aGrip.name || "";
@@ -3740,11 +3735,11 @@ VariablesView.stringifiers.byObjectClass = {
     return (name || "function ") + "(" + params + ")";
   },
 
-  RegExp: function({ displayString }) {
+  RegExp({ displayString }) {
     return VariablesView.getString(displayString, { noStringQuotes: true });
   },
 
-  Date: function({ preview }) {
+  Date({ preview }) {
     if (!preview || !("timestamp" in preview)) {
       return null;
     }
@@ -3756,7 +3751,7 @@ VariablesView.stringifiers.byObjectClass = {
     return "Date " + new Date(preview.timestamp).toISOString();
   },
 
-  Number: function(aGrip) {
+  Number(aGrip) {
     const { preview } = aGrip;
     if (preview === undefined) {
       return null;
@@ -3771,7 +3766,7 @@ VariablesView.stringifiers.byObjectClass.Boolean =
   VariablesView.stringifiers.byObjectClass.Number;
 
 VariablesView.stringifiers.byObjectKind = {
-  ArrayLike: function(aGrip, { concise }) {
+  ArrayLike(aGrip, { concise }) {
     const { preview } = aGrip;
     if (concise) {
       return aGrip.class + "[" + preview.length + "]";
@@ -3811,7 +3806,7 @@ VariablesView.stringifiers.byObjectKind = {
     return prefix + "[" + result.join(", ") + "]";
   },
 
-  MapLike: function(aGrip, { concise }) {
+  MapLike(aGrip, { concise }) {
     const { preview } = aGrip;
     if (concise || !preview.entries) {
       const size =
@@ -3837,7 +3832,7 @@ VariablesView.stringifiers.byObjectKind = {
     return aGrip.class + " {" + entries.join(", ") + "}";
   },
 
-  ObjectWithText: function(aGrip, { concise }) {
+  ObjectWithText(aGrip, { concise }) {
     if (concise) {
       return aGrip.class;
     }
@@ -3845,7 +3840,7 @@ VariablesView.stringifiers.byObjectKind = {
     return aGrip.class + " " + VariablesView.getString(aGrip.preview.text);
   },
 
-  ObjectWithURL: function(aGrip, { concise }) {
+  ObjectWithURL(aGrip, { concise }) {
     let result = aGrip.class;
     const url = aGrip.preview.url;
     if (!VariablesView.isFalsy({ value: url })) {
@@ -3855,7 +3850,7 @@ VariablesView.stringifiers.byObjectKind = {
   },
 
   
-  Object: function(aGrip, { concise }) {
+  Object(aGrip, { concise }) {
     if (concise) {
       return aGrip.class;
     }
@@ -3914,7 +3909,7 @@ VariablesView.stringifiers.byObjectKind = {
     return prefix + "{" + props.join(", ") + "}";
   }, 
 
-  Error: function(aGrip, { concise }) {
+  Error(aGrip, { concise }) {
     const { preview } = aGrip;
     const name = VariablesView.getString(preview.name, {
       noStringQuotes: true,
@@ -3939,7 +3934,7 @@ VariablesView.stringifiers.byObjectKind = {
     return msg;
   },
 
-  DOMException: function(aGrip, { concise }) {
+  DOMException(aGrip, { concise }) {
     const { preview } = aGrip;
     if (concise) {
       return preview.name || aGrip.class;
@@ -3968,7 +3963,7 @@ VariablesView.stringifiers.byObjectKind = {
     return msg + "]";
   },
 
-  DOMEvent: function(aGrip, { concise }) {
+  DOMEvent(aGrip, { concise }) {
     const { preview } = aGrip;
     if (!preview.type) {
       return null;
@@ -4004,7 +3999,7 @@ VariablesView.stringifiers.byObjectKind = {
     return result + " {" + props.join(", ") + "}";
   }, 
 
-  DOMNode: function(aGrip, { concise }) {
+  DOMNode(aGrip, { concise }) {
     const { preview } = aGrip;
 
     switch (preview.nodeType) {
@@ -4250,7 +4245,7 @@ Editable.prototype = {
 
 
 
-  activate: function(e) {
+  activate(e) {
     if (!this.shouldActivate) {
       this._onCleanup && this._onCleanup();
       return;
@@ -4303,7 +4298,7 @@ Editable.prototype = {
 
 
 
-  deactivate: function() {
+  deactivate() {
     this._input.removeEventListener("keydown", this._onKeydown);
     this._input.removeEventListener("blur", this.deactivate);
     this._input.parentNode.replaceChild(this.label, this._input);
@@ -4321,7 +4316,7 @@ Editable.prototype = {
   
 
 
-  _save: function() {
+  _save() {
     const initial = this.label.getAttribute("value");
     const current = this._input.value.trim();
     this.deactivate();
@@ -4334,7 +4329,7 @@ Editable.prototype = {
 
 
 
-  _next: function() {
+  _next() {
     this._save();
   },
 
@@ -4342,7 +4337,7 @@ Editable.prototype = {
 
 
 
-  _reset: function() {
+  _reset() {
     this.deactivate();
     this._variable.focus();
   },
@@ -4350,14 +4345,14 @@ Editable.prototype = {
   
 
 
-  _onBlur: function() {
+  _onBlur() {
     this.deactivate();
   },
 
   
 
 
-  _onKeydown: function(e) {
+  _onKeydown(e) {
     e.stopPropagation();
 
     switch (e.keyCode) {
@@ -4426,13 +4421,13 @@ function EditableNameAndValue(aVariable, aOptions) {
 EditableNameAndValue.create = Editable.create;
 
 EditableNameAndValue.prototype = extend(EditableName.prototype, {
-  _reset: function(e) {
+  _reset(e) {
     
     this._variable.remove();
     this.deactivate();
   },
 
-  _next: function(e) {
+  _next(e) {
     
     const key = this._input.value;
     this.label.setAttribute("value", key);
@@ -4448,7 +4443,7 @@ EditableNameAndValue.prototype = extend(EditableName.prototype, {
     };
   },
 
-  _save: function(e) {
+  _save(e) {
     
     this._next(e);
   },

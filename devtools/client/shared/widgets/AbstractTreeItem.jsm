@@ -149,7 +149,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _displaySelf: function(document, arrowNode) {
+  _displaySelf(document, arrowNode) {
     throw new Error(
       "The `_displaySelf` method needs to be implemented by inheriting classes."
     );
@@ -163,7 +163,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _populateSelf: function(children) {
+  _populateSelf(children) {
     throw new Error(
       "The `_populateSelf` method needs to be implemented by inheriting classes."
     );
@@ -254,11 +254,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  attachTo: function(
-    containerNode,
-    fragmentNode = containerNode,
-    beforeNode = null
-  ) {
+  attachTo(containerNode, fragmentNode = containerNode, beforeNode = null) {
     this._containerNode = containerNode;
     this._constructTargetNode();
 
@@ -277,7 +273,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  remove: function() {
+  remove() {
     this._targetNode.remove();
     this._hideChildren();
     this._childTreeItems.length = 0;
@@ -286,14 +282,14 @@ AbstractTreeItem.prototype = {
   
 
 
-  focus: function() {
+  focus() {
     this._targetNode.focus();
   },
 
   
 
 
-  expand: function() {
+  expand() {
     if (this._expanded) {
       return;
     }
@@ -307,7 +303,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  collapse: function() {
+  collapse() {
     if (!this._expanded) {
       return;
     }
@@ -324,7 +320,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  getChild: function(index = 0) {
+  getChild(index = 0) {
     return this._childTreeItems[index];
   },
 
@@ -333,7 +329,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  traverse: function(cb) {
+  traverse(cb) {
     for (const child of this._childTreeItems) {
       cb(child);
       child.bfs();
@@ -346,7 +342,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  find: function(predicate) {
+  find(predicate) {
     for (const child of this._childTreeItems) {
       if (predicate(child) || child.find(predicate)) {
         return child;
@@ -362,7 +358,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _toggleChildren: function(visible) {
+  _toggleChildren(visible) {
     if (visible) {
       if (!this._populated) {
         this._populateSelf(this._childTreeItems);
@@ -377,7 +373,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _showChildren: function() {
+  _showChildren() {
     
     
     if (this == this._rootItem && this.autoExpandDepth == 0) {
@@ -393,7 +389,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _hideChildren: function() {
+  _hideChildren() {
     for (const item of this._childTreeItems) {
       item._targetNode.remove();
       item._hideChildren();
@@ -404,7 +400,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _appendChildrenBatch: function() {
+  _appendChildrenBatch() {
     if (this._fragment === undefined) {
       this._fragment = this.document.createDocumentFragment();
     }
@@ -421,7 +417,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _appendChildrenSuccessive: function() {
+  _appendChildrenSuccessive() {
     const childTreeItems = this._childTreeItems;
     const expandedChildTreeItems = childTreeItems.filter(e => e._expanded);
     const nextNode = this._getSiblingAtDelta(1);
@@ -437,7 +433,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _constructTargetNode: function() {
+  _constructTargetNode() {
     if (this._constructed) {
       return;
     }
@@ -478,7 +474,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _getSiblingAtDelta: function(delta) {
+  _getSiblingAtDelta(delta) {
     const childNodes = this._containerNode.childNodes;
     const indexOfSelf = Array.prototype.indexOf.call(
       childNodes,
@@ -490,14 +486,14 @@ AbstractTreeItem.prototype = {
     return undefined;
   },
 
-  _getNodesPerPageSize: function() {
+  _getNodesPerPageSize() {
     const childNodes = this._containerNode.childNodes;
     const nodeHeight = this._getHeight(childNodes[childNodes.length - 1]);
     const containerHeight = this.bounds.height;
     return Math.ceil(containerHeight / nodeHeight);
   },
 
-  _getHeight: function(elem) {
+  _getHeight(elem) {
     const win = this.document.defaultView;
     const utils = win.windowUtils;
     return utils.getBoundsWithoutFlushing(elem).height;
@@ -506,7 +502,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusFirstNode: function() {
+  _focusFirstNode() {
     const childNodes = this._containerNode.childNodes;
     
     
@@ -522,7 +518,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusLastNode: function() {
+  _focusLastNode() {
     const childNodes = this._containerNode.childNodes;
     childNodes[childNodes.length - 1].focus();
   },
@@ -530,7 +526,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusNextNode: function() {
+  _focusNextNode() {
     const nextElement = this._getSiblingAtDelta(1);
     if (nextElement) {
       nextElement.focus();
@@ -540,7 +536,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusPrevNode: function() {
+  _focusPrevNode() {
     const prevElement = this._getSiblingAtDelta(-1);
     if (prevElement) {
       prevElement.focus();
@@ -553,7 +549,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _focusParentNode: function() {
+  _focusParentNode() {
     const parentItem = this._parentItem;
     if (parentItem) {
       parentItem.focus();
@@ -563,7 +559,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onArrowClick: function(e) {
+  _onArrowClick(e) {
     if (!this._expanded) {
       this.expand();
     } else {
@@ -574,7 +570,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onClick: function(e) {
+  _onClick(e) {
     e.stopPropagation();
     this.focus();
   },
@@ -582,7 +578,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onDoubleClick: function(e) {
+  _onDoubleClick(e) {
     
     
     if (!e.target.classList.contains("arrow")) {
@@ -594,7 +590,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onKeyDown: function(e) {
+  _onKeyDown(e) {
     
     ViewHelpers.preventScrolling(e);
 
@@ -659,14 +655,14 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onFocus: function(e) {
+  _onFocus(e) {
     this._rootItem.emit("focus", this);
   },
 
   
 
 
-  _onBlur: function(e) {
+  _onBlur(e) {
     this._rootItem.emit("blur", this);
   },
 };

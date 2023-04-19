@@ -53,7 +53,7 @@ HarBuilder.prototype = {
 
 
 
-  build: async function() {
+  async build() {
     this.promises = [];
 
     
@@ -76,7 +76,7 @@ HarBuilder.prototype = {
 
   
 
-  buildPage: function(file) {
+  buildPage(file) {
     const page = {};
 
     
@@ -88,7 +88,7 @@ HarBuilder.prototype = {
     return page;
   },
 
-  getPage: function(log, file) {
+  getPage(log, file) {
     const { id } = this._options;
     let page = this._pageMap[id];
     if (page) {
@@ -101,7 +101,7 @@ HarBuilder.prototype = {
     return page;
   },
 
-  buildEntry: async function(log, file) {
+  async buildEntry(log, file) {
     const page = this.getPage(log, file);
 
     const entry = {};
@@ -161,7 +161,7 @@ HarBuilder.prototype = {
     return entry;
   },
 
-  buildPageTimings: function(page, file) {
+  buildPageTimings(page, file) {
     
     const timings = {
       onContentLoad: -1,
@@ -179,7 +179,7 @@ HarBuilder.prototype = {
     return timings;
   },
 
-  buildRequest: async function(file) {
+  async buildRequest(file) {
     
     
     
@@ -226,7 +226,7 @@ HarBuilder.prototype = {
 
 
 
-  buildHeaders: function(input) {
+  buildHeaders(input) {
     if (!input) {
       return [];
     }
@@ -234,7 +234,7 @@ HarBuilder.prototype = {
     return this.buildNameValuePairs(input.headers);
   },
 
-  appendHeadersPostData: function(input = [], file) {
+  appendHeadersPostData(input = [], file) {
     if (!file.requestPostData) {
       return input;
     }
@@ -249,7 +249,7 @@ HarBuilder.prototype = {
     return input;
   },
 
-  buildCookies: function(input) {
+  buildCookies(input) {
     if (!input) {
       return [];
     }
@@ -257,7 +257,7 @@ HarBuilder.prototype = {
     return this.buildNameValuePairs(input.cookies || input);
   },
 
-  buildNameValuePairs: function(entries) {
+  buildNameValuePairs(entries) {
     const result = [];
 
     
@@ -271,7 +271,7 @@ HarBuilder.prototype = {
       this.fetchData(entry.value).then(value => {
         result.push({
           name: entry.name,
-          value: value,
+          value,
         });
       });
     });
@@ -279,7 +279,7 @@ HarBuilder.prototype = {
     return result;
   },
 
-  buildPostData: async function(file) {
+  async buildPostData(file) {
     
     
     
@@ -344,7 +344,7 @@ HarBuilder.prototype = {
     return postData;
   },
 
-  buildResponse: async function(file) {
+  async buildResponse(file) {
     
     
     
@@ -398,7 +398,7 @@ HarBuilder.prototype = {
     return response;
   },
 
-  buildContent: async function(file) {
+  async buildContent(file) {
     const content = {
       mimeType: file.mimeType,
       size: -1,
@@ -441,7 +441,7 @@ HarBuilder.prototype = {
     return content;
   },
 
-  buildCache: async function(file) {
+  async buildCache(file) {
     const cache = {};
 
     
@@ -466,7 +466,7 @@ HarBuilder.prototype = {
     return cache;
   },
 
-  buildCacheEntry: function(cacheEntry) {
+  buildCacheEntry(cacheEntry) {
     const cache = {};
 
     if (typeof cacheEntry !== "undefined") {
@@ -489,7 +489,7 @@ HarBuilder.prototype = {
     return cache;
   },
 
-  getBlockingEndTime: function(file) {
+  getBlockingEndTime(file) {
     if (file.resolveStarted && file.connectStarted) {
       return file.resolvingTime;
     }
@@ -509,7 +509,7 @@ HarBuilder.prototype = {
 
   
 
-  fetchData: function(string) {
+  fetchData(string) {
     const promise = this._options.getString(string).then(value => {
       return value;
     });

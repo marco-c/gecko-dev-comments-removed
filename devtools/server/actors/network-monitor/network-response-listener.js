@@ -170,7 +170,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  setAsyncListener: function(stream, listener) {
+  setAsyncListener(stream, listener) {
     
     stream.asyncWait(listener, 0, 0, Services.tm.mainThread);
   },
@@ -189,7 +189,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onDataAvailable: function(request, inputStream, offset, count) {
+  onDataAvailable(request, inputStream, offset, count) {
     this._findOpenResponse();
     const data = NetUtil.readInputStreamToString(inputStream, count);
 
@@ -219,7 +219,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStartRequest: function(request) {
+  onStartRequest(request) {
     request = request.QueryInterface(Ci.nsIChannel);
     
     if (this.request) {
@@ -316,7 +316,7 @@ NetworkResponseListener.prototype = {
   
 
 
-  _getSecurityInfo: async function() {
+  async _getSecurityInfo() {
     
     
     
@@ -357,7 +357,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  _fetchCacheInformation: function() {
+  _fetchCacheInformation() {
     const httpActivity = this.httpActivity;
     CacheEntry.getCacheEntry(this.request, descriptor => {
       httpActivity.owner.addResponseCache({
@@ -372,7 +372,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStopRequest: function() {
+  onStopRequest() {
     
     
     if (!this.httpActivity) {
@@ -388,14 +388,14 @@ NetworkResponseListener.prototype = {
 
 
 
-  onProgress: function(request, progress, progressMax) {
+  onProgress(request, progress, progressMax) {
     this.transferredSize = progress;
     
     
     this._forwardNotification(Ci.nsIProgressEventSink, "onProgress", arguments);
   },
 
-  onStatus: function() {
+  onStatus() {
     this._forwardNotification(Ci.nsIProgressEventSink, "onStatus", arguments);
   },
 
@@ -408,7 +408,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  _findOpenResponse: function() {
+  _findOpenResponse() {
     if (!this.owner || this._foundOpenResponse) {
       return;
     }
@@ -435,7 +435,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onStreamClose: function() {
+  onStreamClose() {
     if (!this.httpActivity) {
       return;
     }
@@ -482,7 +482,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  _onComplete: function(data) {
+  _onComplete(data) {
     
     this._getResponseContent(data);
     this._onSecurityInfo.then(() => this._destroy());
@@ -491,7 +491,7 @@ NetworkResponseListener.prototype = {
   
 
 
-  _getResponseContent: function(data) {
+  _getResponseContent(data) {
     const response = {
       mimeType: "",
       text: data || "",
@@ -549,7 +549,7 @@ NetworkResponseListener.prototype = {
     });
   },
 
-  _destroy: function() {
+  _destroy() {
     this._wrappedNotificationCallbacks = null;
     this.httpActivity = null;
     this.sink = null;
@@ -567,7 +567,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onInputStreamReady: function(stream) {
+  onInputStreamReady(stream) {
     if (!(stream instanceof Ci.nsIAsyncInputStream) || !this.httpActivity) {
       return;
     }

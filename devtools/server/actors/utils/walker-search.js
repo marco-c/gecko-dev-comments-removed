@@ -40,11 +40,11 @@ WalkerIndex.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     this.walker.off("any-mutation", this.clearIndex);
   },
 
-  clearIndex: function() {
+  clearIndex() {
     if (!this.currentlyIndexing) {
       this._data = null;
     }
@@ -73,7 +73,7 @@ WalkerIndex.prototype = {
     return this._data;
   },
 
-  _addToIndex: function(type, node, value) {
+  _addToIndex(type, node, value) {
     
     const entry = this._data.get(value);
     if (!entry) {
@@ -82,12 +82,12 @@ WalkerIndex.prototype = {
 
     
     this._data.get(value).push({
-      type: type,
-      node: node,
+      type,
+      node,
     });
   },
 
-  index: function() {
+  index() {
     
     
     this.currentlyIndexing = true;
@@ -159,12 +159,12 @@ function WalkerSearch(walker) {
 }
 
 WalkerSearch.prototype = {
-  destroy: function() {
+  destroy() {
     this.index.destroy();
     this.walker = null;
   },
 
-  _addResult: function(node, type, results) {
+  _addResult(node, type, results) {
     if (!results.has(node)) {
       results.set(node, []);
     }
@@ -185,7 +185,7 @@ WalkerSearch.prototype = {
     }
   },
 
-  _searchIndex: function(query, options, results) {
+  _searchIndex(query, options, results) {
     for (const [matched, res] of this.index.data) {
       if (!options.searchMethod(query, matched)) {
         continue;
@@ -202,7 +202,7 @@ WalkerSearch.prototype = {
     }
   },
 
-  _searchSelectors: function(query, options, results) {
+  _searchSelectors(query, options, results) {
     
     
     const isSelector = query && query.match(/[ >~.#\[\]]/);
@@ -216,7 +216,7 @@ WalkerSearch.prototype = {
     }
   },
 
-  _searchXPath: function(query, options, results) {
+  _searchXPath(query, options, results) {
     if (!options.types.includes("xpath")) {
       return;
     }
@@ -246,7 +246,7 @@ WalkerSearch.prototype = {
 
 
 
-  search: function(query, options = {}) {
+  search(query, options = {}) {
     options.searchMethod =
       options.searchMethod || WalkerSearch.SEARCH_METHOD_CONTAINS;
     options.types = options.types || WalkerSearch.ALL_RESULTS_TYPES;
@@ -273,8 +273,8 @@ WalkerSearch.prototype = {
     for (const [node, matches] of results) {
       for (const { type } of matches) {
         resultList.push({
-          node: node,
-          type: type,
+          node,
+          type,
         });
 
         

@@ -115,7 +115,7 @@ parentProcessTargetPrototype.isRootActor = true;
 
 
 Object.defineProperty(parentProcessTargetPrototype, "docShells", {
-  get: function() {
+  get() {
     
     let docShells = [];
     for (const { docShell } of Services.ww.getWindowEnumerator()) {

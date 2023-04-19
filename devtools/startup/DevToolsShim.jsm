@@ -61,7 +61,7 @@ const DevToolsShim = {
 
 
 
-  isEnabled: function() {
+  isEnabled() {
     return !this.isDisabledByPolicy();
   },
 
@@ -69,7 +69,7 @@ const DevToolsShim = {
 
 
 
-  isDisabledByPolicy: function() {
+  isDisabledByPolicy() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
   },
 
@@ -78,7 +78,7 @@ const DevToolsShim = {
 
 
 
-  isInitialized: function() {
+  isInitialized() {
     return !!this._gDevTools;
   },
 
@@ -89,7 +89,7 @@ const DevToolsShim = {
 
 
 
-  getToolboxes: function() {
+  getToolboxes() {
     if (this.isInitialized()) {
       return this._gDevTools.getToolboxes();
     }
@@ -102,7 +102,7 @@ const DevToolsShim = {
 
 
 
-  register: function(gDevTools) {
+  register(gDevTools) {
     this._gDevTools = gDevTools;
     this._onDevToolsRegistered();
     this._gDevTools.emit("devtools-registered");
@@ -112,7 +112,7 @@ const DevToolsShim = {
 
 
 
-  unregister: function() {
+  unregister() {
     if (this.isInitialized()) {
       this._gDevTools.emit("devtools-unregistered");
       this._gDevTools = null;
@@ -133,7 +133,7 @@ const DevToolsShim = {
 
 
 
-  on: function(event, listener) {
+  on(event, listener) {
     if (this.isInitialized()) {
       this._gDevTools.on(event, listener);
     } else {
@@ -145,7 +145,7 @@ const DevToolsShim = {
 
 
 
-  off: function(event, listener) {
+  off(event, listener) {
     if (this.isInitialized()) {
       this._gDevTools.off(event, listener);
     } else {
@@ -159,7 +159,7 @@ const DevToolsShim = {
 
 
 
-  saveDevToolsSession: function(state) {
+  saveDevToolsSession(state) {
     if (!this.isInitialized()) {
       return;
     }
@@ -171,7 +171,7 @@ const DevToolsShim = {
 
 
 
-  restoreDevToolsSession: function(session) {
+  restoreDevToolsSession(session) {
     if (!this.isEnabled()) {
       return;
     }
@@ -204,7 +204,7 @@ const DevToolsShim = {
 
 
 
-  inspectA11Y: function(tab, domReference) {
+  inspectA11Y(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
         lazy.DevToolsStartup.openInstallPage("ContextMenu");
@@ -234,7 +234,7 @@ const DevToolsShim = {
 
 
 
-  inspectNode: function(tab, domReference) {
+  inspectNode(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
         lazy.DevToolsStartup.openInstallPage("ContextMenu");
@@ -252,7 +252,7 @@ const DevToolsShim = {
     return this._gDevTools.inspectNode(tab, domReference, startTime);
   },
 
-  _onDevToolsRegistered: function() {
+  _onDevToolsRegistered() {
     
     for (const [event, listener] of this.listeners) {
       this._gDevTools.on(event, listener);
@@ -270,7 +270,7 @@ const DevToolsShim = {
 
 
 
-  initDevTools: function(reason) {
+  initDevTools(reason) {
     if (!this.isEnabled()) {
       throw new Error("DevTools are not enabled and can not be initialized.");
     }

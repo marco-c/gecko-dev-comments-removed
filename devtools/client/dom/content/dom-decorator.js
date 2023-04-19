@@ -14,7 +14,7 @@ function DomDecorator() {}
 
 
 DomDecorator.prototype = {
-  getRowClass: function(object) {
+  getRowClass(object) {
     if (object instanceof Property) {
       const value = object.value;
       const names = [];
@@ -39,7 +39,7 @@ DomDecorator.prototype = {
 
 
 
-  getValueRep: function(value, colId) {},
+  getValueRep(value, colId) {},
 };
 
 

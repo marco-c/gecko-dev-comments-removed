@@ -358,7 +358,7 @@ CssRuleView.prototype = {
     }
   },
 
-  isPanelVisible: function() {
+  isPanelVisible() {
     if (this.inspector.is3PaneModeEnabled) {
       return true;
     }
@@ -550,7 +550,7 @@ CssRuleView.prototype = {
 
 
 
-  getNodeInfo: function(node) {
+  getNodeInfo(node) {
     return getNodeInfo(node, this._elementStyle);
   },
 
@@ -569,7 +569,7 @@ CssRuleView.prototype = {
 
 
 
-  getNodeCompatibilityInfo: async function(node) {
+  async getNodeCompatibilityInfo(node) {
     const compatibilityInfo = await getNodeCompatibilityInfo(
       node,
       this._elementStyle
@@ -581,7 +581,7 @@ CssRuleView.prototype = {
   
 
 
-  _onContextMenu: function(event) {
+  _onContextMenu(event) {
     if (
       event.originalTarget.closest("input[type=text]") ||
       event.originalTarget.closest("input:not([type])") ||
@@ -602,7 +602,7 @@ CssRuleView.prototype = {
 
 
 
-  _onCopy: function(event) {
+  _onCopy(event) {
     if (event) {
       this.copySelection(event.target);
       event.preventDefault();
@@ -617,7 +617,7 @@ CssRuleView.prototype = {
 
 
 
-  copySelection: function(target) {
+  copySelection(target) {
     try {
       let text = "";
 
@@ -652,7 +652,7 @@ CssRuleView.prototype = {
   
 
 
-  _onAddRule: function() {
+  _onAddRule() {
     const elementStyle = this._elementStyle;
     const element = elementStyle.element;
     const pseudoClasses = element.pseudoClassLocks;
@@ -679,7 +679,7 @@ CssRuleView.prototype = {
   
 
 
-  refreshAddRuleButtonState: function() {
+  refreshAddRuleButtonState() {
     const shouldBeDisabled =
       !this._viewedElement ||
       !this.inspector.selection.isElementNode() ||
@@ -698,23 +698,23 @@ CssRuleView.prototype = {
     );
   },
 
-  _handleUAStylePrefChange: function() {
+  _handleUAStylePrefChange() {
     this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
     this._handlePrefChange(PREF_UA_STYLES);
   },
 
-  _handleDefaultColorUnitPrefChange: function() {
+  _handleDefaultColorUnitPrefChange() {
     this._handlePrefChange(PREF_DEFAULT_COLOR_UNIT);
   },
 
-  _handleDraggablePrefChange: function() {
+  _handleDraggablePrefChange() {
     
     
     
     this.emit("draggable-preference-updated");
   },
 
-  _handlePrefChange: function(pref) {
+  _handlePrefChange(pref) {
     
     const refreshOnPrefs = [PREF_UA_STYLES, PREF_DEFAULT_COLOR_UNIT];
     if (refreshOnPrefs.indexOf(pref) > -1) {
@@ -727,7 +727,7 @@ CssRuleView.prototype = {
 
 
 
-  setFilterStyles: function(value = "") {
+  setFilterStyles(value = "") {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
@@ -736,7 +736,7 @@ CssRuleView.prototype = {
   
 
 
-  _onFilterStyles: function() {
+  _onFilterStyles() {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
     }
@@ -813,7 +813,7 @@ CssRuleView.prototype = {
 
 
 
-  _onClearSearch: function() {
+  _onClearSearch() {
     if (this.searchField.value) {
       this.setFilterStyles("");
       return true;
@@ -822,7 +822,7 @@ CssRuleView.prototype = {
     return false;
   },
 
-  destroy: function() {
+  destroy() {
     this.isDestroyed = true;
     this.clear();
 
@@ -930,14 +930,14 @@ CssRuleView.prototype = {
 
 
 
-  _startSelectingElement: function() {
+  _startSelectingElement() {
     this.element.classList.add("non-interactive");
   },
 
   
 
 
-  _stopSelectingElement: function() {
+  _stopSelectingElement() {
     this.element.classList.remove("non-interactive");
   },
 
@@ -949,7 +949,7 @@ CssRuleView.prototype = {
 
 
 
-  selectElement: function(element, allowRefresh = false) {
+  selectElement(element, allowRefresh = false) {
     const refresh = this._viewedElement === element;
     if (refresh && !allowRefresh) {
       return Promise.resolve(undefined);
@@ -1036,7 +1036,7 @@ CssRuleView.prototype = {
   
 
 
-  refreshPanel: function() {
+  refreshPanel() {
     
     if (!this.isPanelVisible() || this.isEditing || !this._elementStyle) {
       return Promise.resolve(undefined);
@@ -1059,7 +1059,7 @@ CssRuleView.prototype = {
 
 
 
-  clearPseudoClassPanel: function() {
+  clearPseudoClassPanel() {
     this.pseudoClassCheckboxes.forEach(checkbox => {
       checkbox.checked = false;
       checkbox.disabled = false;
@@ -1074,7 +1074,7 @@ CssRuleView.prototype = {
 
 
 
-  _createPseudoClassCheckboxes: function() {
+  _createPseudoClassCheckboxes() {
     const doc = this.styleDocument;
     const fragment = doc.createDocumentFragment();
 
@@ -1098,7 +1098,7 @@ CssRuleView.prototype = {
   
 
 
-  refreshPseudoClassPanel: function() {
+  refreshPseudoClassPanel() {
     if (!this._elementStyle || !this.inspector.selection.isElementNode()) {
       this.pseudoClassCheckboxes.forEach(checkbox => {
         checkbox.disabled = true;
@@ -1113,7 +1113,7 @@ CssRuleView.prototype = {
     });
   },
 
-  _populate: function() {
+  _populate() {
     const elementStyle = this._elementStyle;
     return this._elementStyle
       .populate()
@@ -1137,7 +1137,7 @@ CssRuleView.prototype = {
   
 
 
-  _showEmpty: function() {
+  _showEmpty() {
     if (this.styleDocument.getElementById("ruleview-no-results")) {
       return;
     }
@@ -1152,14 +1152,14 @@ CssRuleView.prototype = {
   
 
 
-  _clearRules: function() {
+  _clearRules() {
     this.element.innerHTML = "";
   },
 
   
 
 
-  clear: function(clearDom = true) {
+  clear(clearDom = true) {
     if (clearDom) {
       this._clearRules();
     }
@@ -1180,7 +1180,7 @@ CssRuleView.prototype = {
 
 
 
-  _changed: function() {
+  _changed() {
     this.emit("ruleview-changed");
   },
 
@@ -1224,7 +1224,7 @@ CssRuleView.prototype = {
 
 
 
-  createExpandableContainer: function(label, isPseudo = false) {
+  createExpandableContainer(label, isPseudo = false) {
     const header = this.styleDocument.createElementNS(HTML_NS, "div");
     header.className = this._getRuleViewHeaderClassName(true);
     header.setAttribute("role", "heading");
@@ -1279,12 +1279,7 @@ CssRuleView.prototype = {
 
 
 
-  _toggleContainerVisibility: function(
-    twisty,
-    container,
-    isPseudo,
-    showPseudo
-  ) {
+  _toggleContainerVisibility(twisty, container, isPseudo, showPseudo) {
     let isOpen = twisty.getAttribute("open");
 
     if (isPseudo) {
@@ -1310,7 +1305,7 @@ CssRuleView.prototype = {
     }
   },
 
-  _getRuleViewHeaderClassName: function(isPseudo) {
+  _getRuleViewHeaderClassName(isPseudo) {
     const baseClassName = "ruleview-header";
     return isPseudo
       ? baseClassName + " ruleview-expandable-header"
@@ -1321,7 +1316,7 @@ CssRuleView.prototype = {
 
 
   
-  _createEditors: function() {
+  _createEditors() {
     
     
     let lastInheritedSource = "";
@@ -1417,7 +1412,7 @@ CssRuleView.prototype = {
 
 
 
-  highlightRule: function(rule) {
+  highlightRule(rule) {
     const isRuleSelectorHighlighted = this._highlightRuleSelector(rule);
     const isStyleSheetHighlighted = this._highlightStyleSheet(rule);
     const isAncestorRulesHighlighted = this._highlightAncestorRules(rule);
@@ -1445,7 +1440,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightRuleSelector: function(rule) {
+  _highlightRuleSelector(rule) {
     let isSelectorHighlighted = false;
 
     let selectorNodes = [...rule.editor.selectorText.childNodes];
@@ -1478,7 +1473,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightAncestorRules: function(rule) {
+  _highlightAncestorRules(rule) {
     const element = rule.editor.ancestorDataEl;
     if (!element) {
       return false;
@@ -1508,7 +1503,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightStyleSheet: function(rule) {
+  _highlightStyleSheet(rule) {
     const styleSheetSource = rule.title.toLowerCase();
     const isStyleSheetHighlighted = this.searchData.strictSearchValue
       ? styleSheetSource === this.searchData.strictSearchValue
@@ -1531,7 +1526,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightProperty: function(editor) {
+  _highlightProperty(editor) {
     const isPropertyHighlighted = this._highlightRuleProperty(editor);
     const isComputedHighlighted = this._highlightComputedProperty(editor);
 
@@ -1555,7 +1550,7 @@ CssRuleView.prototype = {
 
 
 
-  _updatePropertyHighlight: function(editor) {
+  _updatePropertyHighlight(editor) {
     if (!this.searchValue || !this.searchData) {
       return;
     }
@@ -1577,7 +1572,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightRuleProperty: function(editor) {
+  _highlightRuleProperty(editor) {
     
     const propertyName = editor.prop.name.toLowerCase();
     const propertyValue = editor.valueSpan.textContent.toLowerCase();
@@ -1599,7 +1594,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightComputedProperty: function(editor) {
+  _highlightComputedProperty(editor) {
     let isComputedHighlighted = false;
 
     
@@ -1637,7 +1632,7 @@ CssRuleView.prototype = {
 
 
 
-  _highlightMatches: function(element, propertyName, propertyValue) {
+  _highlightMatches(element, propertyName, propertyValue) {
     const {
       searchPropertyName,
       searchPropertyValue,
@@ -1687,7 +1682,7 @@ CssRuleView.prototype = {
 
 
 
-  _clearHighlight: function(element) {
+  _clearHighlight(element) {
     for (const el of element.querySelectorAll(".ruleview-highlight")) {
       el.classList.remove("ruleview-highlight");
     }
@@ -1703,7 +1698,7 @@ CssRuleView.prototype = {
 
 
 
-  _onTogglePseudoClassPanel: function() {
+  _onTogglePseudoClassPanel() {
     if (this.pseudoClassPanel.hidden) {
       this.showPseudoClassPanel();
     } else {
@@ -1711,7 +1706,7 @@ CssRuleView.prototype = {
     }
   },
 
-  showPseudoClassPanel: function() {
+  showPseudoClassPanel() {
     this.hideClassPanel();
 
     this.pseudoClassToggle.classList.add("checked");
@@ -1721,7 +1716,7 @@ CssRuleView.prototype = {
     this.pseudoClassPanel.hidden = false;
   },
 
-  hidePseudoClassPanel: function() {
+  hidePseudoClassPanel() {
     this.pseudoClassToggle.classList.remove("checked");
     this.pseudoClassCheckboxes.forEach(checkbox => {
       checkbox.setAttribute("tabindex", "-1");
@@ -1733,7 +1728,7 @@ CssRuleView.prototype = {
 
 
 
-  _onTogglePseudoClass: function(event) {
+  _onTogglePseudoClass(event) {
     const target = event.target;
     this.inspector.togglePseudoClass(target.value);
   },
@@ -1742,7 +1737,7 @@ CssRuleView.prototype = {
 
 
 
-  _onToggleClassPanel: function() {
+  _onToggleClassPanel() {
     if (this.classPanel.hidden) {
       this.showClassPanel();
     } else {
@@ -1750,7 +1745,7 @@ CssRuleView.prototype = {
     }
   },
 
-  showClassPanel: function() {
+  showClassPanel() {
     this.hidePseudoClassPanel();
 
     this.classToggle.classList.add("checked");
@@ -1759,7 +1754,7 @@ CssRuleView.prototype = {
     this.classListPreviewer.focusAddClassField();
   },
 
-  hideClassPanel: function() {
+  hideClassPanel() {
     this.classToggle.classList.remove("checked");
     this.classPanel.hidden = true;
   },
@@ -1767,7 +1762,7 @@ CssRuleView.prototype = {
   
 
 
-  _onShortcut: function(name, event) {
+  _onShortcut(name, event) {
     if (!event.target.closest("#sidebar-panel-ruleview")) {
       return;
     }
@@ -1924,7 +1919,7 @@ CssRuleView.prototype = {
 
 
 
-  highlightElementRule: function(ruleId) {
+  highlightElementRule(ruleId) {
     let scrollBehavior = "smooth";
 
     const rule = this.rules.find(r => r.domRule.actorID === ruleId);
@@ -1962,7 +1957,7 @@ CssRuleView.prototype = {
 
 
 
-  highlightProperty: function(name) {
+  highlightProperty(name) {
     for (const rule of this.rules) {
       for (const textProp of rule.textProps) {
         if (textProp.overridden || textProp.invisible || !textProp.enabled) {
@@ -2077,18 +2072,18 @@ function RuleViewTool(inspector, window) {
 }
 
 RuleViewTool.prototype = {
-  isPanelVisible: function() {
+  isPanelVisible() {
     if (!this.view) {
       return false;
     }
     return this.view.isPanelVisible();
   },
 
-  onDetachedFront: function() {
+  onDetachedFront() {
     this.onSelected(false);
   },
 
-  onSelected: function(selectElement = true) {
+  onSelected(selectElement = true) {
     
     
     
@@ -2120,13 +2115,13 @@ RuleViewTool.prototype = {
       .then(done, done);
   },
 
-  refresh: function() {
+  refresh() {
     if (this.isPanelVisible()) {
       this.view.refreshPanel();
     }
   },
 
-  _onResourceAvailable: function(resources) {
+  _onResourceAvailable(resources) {
     for (const resource of resources) {
       if (
         resource.resourceType ===
@@ -2139,13 +2134,13 @@ RuleViewTool.prototype = {
     }
   },
 
-  clearUserProperties: function() {
+  clearUserProperties() {
     if (this.view && this.view.store && this.view.store.userProperties) {
       this.view.store.userProperties.clear();
     }
   },
 
-  onPanelSelected: function() {
+  onPanelSelected() {
     if (this.inspector.selection.nodeFront === this.view._viewedElement) {
       this.refresh();
     } else {
@@ -2153,11 +2148,11 @@ RuleViewTool.prototype = {
     }
   },
 
-  onViewRefreshed: function() {
+  onViewRefreshed() {
     this.inspector.emit("rule-view-refreshed");
   },
 
-  destroy: function() {
+  destroy() {
     this.inspector.styleChangeTracker.off("style-changed", this.refresh);
     this.inspector.selection.off("detached-front", this.onDetachedFront);
     this.inspector.selection.off("pseudoclass", this.refresh);

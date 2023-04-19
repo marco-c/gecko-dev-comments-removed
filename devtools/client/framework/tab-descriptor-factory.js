@@ -107,7 +107,7 @@ exports.TabDescriptorFactory = {
 
 
 
-  isKnownTab: function(tab) {
+  isKnownTab(tab) {
     return descriptors.has(tab);
   },
 };

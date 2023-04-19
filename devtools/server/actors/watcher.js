@@ -90,7 +90,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  initialize: function(conn, sessionContext) {
+  initialize(conn, sessionContext) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._sessionContext = sessionContext;
     if (sessionContext.type == "browser-element") {
@@ -166,7 +166,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     );
   },
 
-  destroy: function() {
+  destroy() {
     
     
     for (const targetType of Object.values(Targets.TYPES)) {

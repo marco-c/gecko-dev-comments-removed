@@ -23,7 +23,7 @@ exports.DOMHelpers = {
 
 
 
-  onceDOMReady: function(win, callback, targetURL) {
+  onceDOMReady(win, callback, targetURL) {
     if (!win) {
       throw new Error("window can't be null or undefined");
     }

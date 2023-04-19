@@ -625,15 +625,15 @@ define(function(require, exports, module) {
           
           name: provider.getLabel(child),
           
-          type: type,
+          type,
           
           rowClass: "treeRow-" + type,
           
           level: provider.getLevel ? provider.getLevel(child, level) : level,
           
-          hasChildren: hasChildren,
+          hasChildren,
           
-          value: value,
+          value,
           
           open: this.isExpanded(nodePath),
           
@@ -672,7 +672,7 @@ define(function(require, exports, module) {
 
         const props = Object.assign({}, this.props, {
           key: `${member.path}-${member.active ? "active" : "inactive"}`,
-          member: member,
+          member,
           columns: this.state.columns,
           id: member.path,
           ref: row => row && this.rows.push(row),

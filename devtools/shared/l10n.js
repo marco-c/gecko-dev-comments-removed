@@ -88,7 +88,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getStr: function(name) {
+  getStr(name) {
     const properties = getProperties(this.stringBundleName);
     if (name in properties) {
       return properties[name];
@@ -109,7 +109,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getFormatStr: function(name, ...args) {
+  getFormatStr(name, ...args) {
     return sprintf(this.getStr(name), ...args);
   },
 
@@ -122,7 +122,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getFormatStrWithNumbers: function(name, ...args) {
+  getFormatStrWithNumbers(name, ...args) {
     const newArgs = args.map(x => {
       return typeof x == "number" ? this.numberWithDecimals(x, 2) : x;
     });
@@ -141,7 +141,7 @@ LocalizationHelper.prototype = {
 
 
 
-  numberWithDecimals: function(number, decimals = 0) {
+  numberWithDecimals(number, decimals = 0) {
     
     if (number === (number | 0)) {
       return getNumberFormatter(0).format(number);
@@ -244,7 +244,7 @@ function MultiLocalizationHelper(...stringBundleNames) {
   
   Object.getOwnPropertyNames(LocalizationHelper.prototype)
     .map(name => ({
-      name: name,
+      name,
       descriptor: Object.getOwnPropertyDescriptor(
         LocalizationHelper.prototype,
         name

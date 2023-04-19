@@ -72,7 +72,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  show: function(event) {
+  show(event) {
     try {
       this._openMenu({
         target: event.target,
@@ -84,7 +84,7 @@ StyleInspectorMenu.prototype = {
     }
   },
 
-  _openMenu: function({ target, screenX = 0, screenY = 0 } = {}) {
+  _openMenu({ target, screenX = 0, screenY = 0 } = {}) {
     this.currentTarget = target;
     this.styleWindow.focus();
 
@@ -273,7 +273,7 @@ StyleInspectorMenu.prototype = {
     return menu;
   },
 
-  _hasTextSelected: function() {
+  _hasTextSelected() {
     let hasTextSelected;
     const selection = this.styleWindow.getSelection();
 
@@ -294,7 +294,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _getClickedNodeInfo: function() {
+  _getClickedNodeInfo() {
     const node = this._getClickedNode();
     return this.view.getNodeInfo(node);
   },
@@ -306,7 +306,7 @@ StyleInspectorMenu.prototype = {
 
 
 
-  _isColorPopup: function() {
+  _isColorPopup() {
     this._colorToCopy = "";
 
     const container = this._getClickedNode();
@@ -328,7 +328,7 @@ StyleInspectorMenu.prototype = {
 
 
 
-  _isImageUrl: function() {
+  _isImageUrl() {
     const nodeInfo = this._getClickedNodeInfo();
     if (!nodeInfo) {
       return false;
@@ -343,7 +343,7 @@ StyleInspectorMenu.prototype = {
 
 
 
-  _getClickedNode: function() {
+  _getClickedNode() {
     const node = this.currentTarget;
 
     if (!node) {
@@ -356,7 +356,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onSelectAll: function() {
+  _onSelectAll() {
     const selection = this.styleWindow.getSelection();
 
     if (this.isRuleView) {
@@ -371,21 +371,21 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopy: function() {
+  _onCopy() {
     this.view.copySelection(this.currentTarget);
   },
 
   
 
 
-  _onCopyColor: function() {
+  _onCopyColor() {
     clipboardHelper.copyString(this._colorToCopy);
   },
 
   
 
 
-  _onCopyUrl: function() {
+  _onCopyUrl() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -420,7 +420,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopyLocation: function() {
+  _onCopyLocation() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -431,7 +431,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopyDeclaration: function() {
+  _onCopyDeclaration() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -443,7 +443,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopyPropertyName: function() {
+  _onCopyPropertyName() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -454,7 +454,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopyPropertyValue: function() {
+  _onCopyPropertyValue() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -465,7 +465,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopyRule: function() {
+  _onCopyRule() {
     const node = this._getClickedNode();
     const rule = getRuleFromNode(node, this.view._elementStyle);
     clipboardHelper.copyString(rule.stringifyRule());
@@ -474,7 +474,7 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onCopySelector: function() {
+  _onCopySelector() {
     if (!this._clickedNodeInfo) {
       return;
     }
@@ -485,12 +485,12 @@ StyleInspectorMenu.prototype = {
   
 
 
-  _onToggleOrigSources: function() {
+  _onToggleOrigSources() {
     const isEnabled = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     Services.prefs.setBoolPref(PREF_ORIG_SOURCES, !isEnabled);
   },
 
-  destroy: function() {
+  destroy() {
     this.currentTarget = null;
     this.view = null;
     this.inspector = null;

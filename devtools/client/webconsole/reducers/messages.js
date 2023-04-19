@@ -772,7 +772,7 @@ function setVisibleMessages({
       
       while (ancestorId) {
         ancestors.push({
-          ancestorId: ancestorId,
+          ancestorId,
           matchedFilters: matchedGroups.has(ancestorId),
           isOpen: messagesUiById.includes(ancestorId),
           isCurrentlyVisible: visibleMessages.includes(ancestorId),

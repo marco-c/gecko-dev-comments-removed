@@ -74,7 +74,7 @@ NetMonitorApp.prototype = {
     });
 
     
-    render(Provider({ store: store }, app), this.mount);
+    render(Provider({ store }, app), this.mount);
   },
 
   

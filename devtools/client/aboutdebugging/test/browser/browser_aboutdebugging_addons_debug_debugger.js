@@ -23,7 +23,7 @@ add_task(async () => {
 
   await installTemporaryExtensionFromXPI(
     {
-      background: function() {
+      background() {
         window.someRandomMethodName = () => {
           
           

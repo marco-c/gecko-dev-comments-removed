@@ -122,7 +122,7 @@ var NetworkHelper = {
 
 
 
-  convertToUnicode: function(text, charset) {
+  convertToUnicode(text, charset) {
     
     
     
@@ -145,7 +145,7 @@ var NetworkHelper = {
 
 
 
-  readAndConvertFromStream: function(stream, charset) {
+  readAndConvertFromStream(stream, charset) {
     let text = null;
     try {
       text = NetUtil.readInputStreamToString(stream, stream.available());
@@ -165,7 +165,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromRequest: function(request, charset) {
+  readPostTextFromRequest(request, charset) {
     if (request instanceof Ci.nsIUploadChannel) {
       const iStream = request.uploadStream;
 
@@ -203,7 +203,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPage: function(docShell, charset) {
+  readPostTextFromPage(docShell, charset) {
     const webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
     return this.readPostTextFromPageViaWebNav(webNav, charset);
   },
@@ -218,7 +218,7 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPageViaWebNav: function(webNav, charset) {
+  readPostTextFromPageViaWebNav(webNav, charset) {
     if (webNav instanceof Ci.nsIWebPageDescriptor) {
       const descriptor = webNav.currentDescriptor;
 
@@ -244,7 +244,7 @@ var NetworkHelper = {
 
 
 
-  getTopFrameForRequest: function(request) {
+  getTopFrameForRequest(request) {
     try {
       return this.getRequestLoadContext(request).topFrameElement;
     } catch (ex) {
@@ -259,7 +259,7 @@ var NetworkHelper = {
 
 
 
-  getWindowForRequest: function(request) {
+  getWindowForRequest(request) {
     try {
       return this.getRequestLoadContext(request).associatedWindow;
     } catch (ex) {
@@ -279,7 +279,7 @@ var NetworkHelper = {
 
 
 
-  getRequestLoadContext: function(request) {
+  getRequestLoadContext(request) {
     try {
       return request.notificationCallbacks.getInterface(Ci.nsILoadContext);
     } catch (ex) {
@@ -303,7 +303,7 @@ var NetworkHelper = {
 
 
 
-  isTopLevelLoad: function(request) {
+  isTopLevelLoad(request) {
     if (request instanceof Ci.nsIChannel) {
       const loadInfo = request.loadInfo;
       if (loadInfo?.isTopLevelLoad) {
@@ -326,7 +326,7 @@ var NetworkHelper = {
 
 
 
-  loadFromCache: function(url, charset, callback) {
+  loadFromCache(url, charset, callback) {
     const channel = NetUtil.newChannel({
       uri: url,
       loadUsingSystemPrincipal: true,
@@ -363,7 +363,7 @@ var NetworkHelper = {
 
 
 
-  parseCookieHeader: function(header) {
+  parseCookieHeader(header) {
     const cookies = header.split(";");
     const result = [];
 
@@ -390,7 +390,7 @@ var NetworkHelper = {
 
 
 
-  parseSetCookieHeader: function(header) {
+  parseSetCookieHeader(header) {
     function parseSameSiteAttribute(attribute) {
       attribute = attribute.toLowerCase();
       switch (attribute) {
@@ -412,7 +412,7 @@ var NetworkHelper = {
       const parts = cookie.substr(equal + 1).split(";");
       const value = unescape(parts.shift().trim());
 
-      cookie = { name: name, value: value };
+      cookie = { name, value };
 
       parts.forEach(function(part) {
         part = part.trim();
@@ -524,7 +524,7 @@ var NetworkHelper = {
 
 
 
-  isTextMimeType: function(mimeType) {
+  isTextMimeType(mimeType) {
     if (mimeType.indexOf("text/") == 0) {
       return true;
     }
@@ -591,7 +591,7 @@ var NetworkHelper = {
 
 
 
-  parseSecurityInfo: async function(
+  async parseSecurityInfo(
     securityInfo,
     originAttributes,
     httpActivity,
@@ -749,7 +749,7 @@ var NetworkHelper = {
 
 
 
-  parseCertificateInfo: async function(cert, decodedCertificateCache) {
+  async parseCertificateInfo(cert, decodedCertificateCache) {
     function getDNComponent(dn, componentType) {
       for (const [type, value] of dn.entries) {
         if (type == componentType) {
@@ -816,7 +816,7 @@ var NetworkHelper = {
 
 
 
-  formatSecurityProtocol: function(version) {
+  formatSecurityProtocol(version) {
     switch (version) {
       case Ci.nsITransportSecurityInfo.TLS_VERSION_1:
         return "TLSv1";
@@ -846,7 +846,7 @@ var NetworkHelper = {
 
 
 
-  getReasonsForWeakness: function(state) {
+  getReasonsForWeakness(state) {
     const wpl = Ci.nsIWebProgressListener;
 
     
@@ -880,7 +880,7 @@ var NetworkHelper = {
 
 
 
-  parseQueryString: function(queryString) {
+  parseQueryString(queryString) {
     
     
     

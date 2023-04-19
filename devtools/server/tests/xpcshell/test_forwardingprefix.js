@@ -44,7 +44,7 @@ function newConnection(prefix) {
 
   const transport = DevToolsServer.connectPipe(prefix);
 
-  return { conn: conn, transport: transport };
+  return { conn, transport };
 }
 
 
@@ -142,7 +142,7 @@ function newSubconnection(prefix) {
   };
   gMainConnection.setForwarding(prefix, transport);
 
-  return { conn: conn, transport: transport };
+  return { conn, transport };
 }
 
 

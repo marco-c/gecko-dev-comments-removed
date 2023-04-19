@@ -70,7 +70,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  initialize: function(animationsActor, player, createdTime) {
+  initialize(animationsActor, player, createdTime) {
     Actor.prototype.initialize.call(this, animationsActor.conn);
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
@@ -98,7 +98,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     this.currentTimeAtCreated = player.currentTime;
   },
 
-  destroy: function() {
+  destroy() {
     
     
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
@@ -163,9 +163,9 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  release: function() {},
+  release() {},
 
-  form: function(detail) {
+  form(detail) {
     const data = this.getCurrentState();
     data.actor = this.actorID;
 
@@ -178,15 +178,15 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     return data;
   },
 
-  isCssAnimation: function(player = this.player) {
+  isCssAnimation(player = this.player) {
     return player instanceof this.window.CSSAnimation;
   },
 
-  isCssTransition: function(player = this.player) {
+  isCssTransition(player = this.player) {
     return player instanceof this.window.CSSTransition;
   },
 
-  isScriptAnimation: function(player = this.player) {
+  isScriptAnimation(player = this.player) {
     return (
       player instanceof this.window.Animation &&
       !(
@@ -196,7 +196,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     );
   },
 
-  getType: function() {
+  getType() {
     if (this.isCssAnimation()) {
       return ANIMATION_TYPES.CSS_ANIMATION;
     } else if (this.isCssTransition()) {
@@ -214,7 +214,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getName: function() {
+  getName() {
     if (this.player.id) {
       return this.player.id;
     } else if (this.isCssAnimation()) {
@@ -230,7 +230,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getDuration: function() {
+  getDuration() {
     return this.player.effect.getComputedTiming().duration;
   },
 
@@ -238,7 +238,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getDelay: function() {
+  getDelay() {
     return this.player.effect.getComputedTiming().delay;
   },
 
@@ -246,7 +246,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getEndDelay: function() {
+  getEndDelay() {
     return this.player.effect.getComputedTiming().endDelay;
   },
 
@@ -256,7 +256,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getIterationCount: function() {
+  getIterationCount() {
     const iterations = this.player.effect.getComputedTiming().iterations;
     return iterations === Infinity ? null : iterations;
   },
@@ -266,7 +266,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getIterationStart: function() {
+  getIterationStart() {
     return this.player.effect.getComputedTiming().iterationStart;
   },
 
@@ -274,7 +274,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getEasing: function() {
+  getEasing() {
     return this.player.effect.getComputedTiming().easing;
   },
 
@@ -282,7 +282,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getFill: function() {
+  getFill() {
     return this.player.effect.getComputedTiming().fill;
   },
 
@@ -290,7 +290,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getDirection: function() {
+  getDirection() {
     return this.player.effect.getComputedTiming().direction;
   },
 
@@ -298,7 +298,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getAnimationTimingFunction: function() {
+  getAnimationTimingFunction() {
     if (!this.isCssAnimation()) {
       return null;
     }
@@ -313,7 +313,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     return this.window.getComputedStyle(target, pseudo).animationTimingFunction;
   },
 
-  getPropertiesCompositorStatus: function() {
+  getPropertiesCompositorStatus() {
     const properties = this.player.effect.getProperties();
     return properties.map(prop => {
       return {
@@ -328,7 +328,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getState: function() {
+  getState() {
     const compositorStatus = this.getPropertiesCompositorStatus();
     
     
@@ -377,7 +377,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getCurrentState: function() {
+  getCurrentState() {
     const newState = this.getState();
 
     
@@ -406,7 +406,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  onAnimationMutation: function(mutations) {
+  onAnimationMutation(mutations) {
     const isCurrentAnimation = animation => animation === this.player;
     const hasCurrentAnimation = animations =>
       animations.some(isCurrentAnimation);
@@ -451,7 +451,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getProperties: function() {
+  getProperties() {
     const properties = this.player.effect.getProperties().map(property => {
       return { name: property.property, values: property.values };
     });
@@ -549,7 +549,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getAnimationTypes: function(propertyNames) {
+  getAnimationTypes(propertyNames) {
     const animationTypes = {};
     for (const propertyName of propertyNames) {
       animationTypes[propertyName] = getAnimationTypeForLonghand(propertyName);
@@ -566,7 +566,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
 
-  getDistance: function(target, propertyName, value1, value2, DOMWindowUtils) {
+  getDistance(target, propertyName, value1, value2, DOMWindowUtils) {
     if (value1 === value2) {
       return 0;
     }
@@ -592,7 +592,7 @@ exports.AnimationPlayerActor = AnimationPlayerActor;
 
 
 exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
-  initialize: function(conn, targetActor) {
+  initialize(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
 
@@ -605,7 +605,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     this.targetActor.on("navigate", this.onNavigate);
   },
 
-  destroy: function() {
+  destroy() {
     Actor.prototype.destroy.call(this);
     this.targetActor.off("will-navigate", this.onWillNavigate);
     this.targetActor.off("navigate", this.onNavigate);
@@ -622,7 +622,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  setWalkerActor: function(walker) {
+  setWalkerActor(walker) {
     this.walker = walker;
   },
 
@@ -636,7 +636,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  getAnimationPlayersForNode: function(nodeActor) {
+  getAnimationPlayersForNode(nodeActor) {
     const animations = nodeActor.rawNode.getAnimations({ subtree: true });
 
     
@@ -671,7 +671,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     return this.actors;
   },
 
-  onAnimationMutation: function(mutations) {
+  onAnimationMutation(mutations) {
     const eventData = [];
     const readyPromises = [];
 
@@ -751,19 +751,19 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  stopAnimationPlayerUpdates: function() {
+  stopAnimationPlayerUpdates() {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
   },
 
-  onWillNavigate: function({ isTopLevel }) {
+  onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this.stopAnimationPlayerUpdates();
     }
   },
 
-  onNavigate: function({ isTopLevel }) {
+  onNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this.allAnimationsPaused = false;
     }
@@ -774,7 +774,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  pauseSome: function(actors) {
+  pauseSome(actors) {
     for (const { player } of actors) {
       this.pauseSync(player);
     }
@@ -787,7 +787,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  playSome: function(actors) {
+  playSome(actors) {
     for (const { player } of actors) {
       this.playSync(player);
     }
@@ -801,7 +801,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  setCurrentTimes: function(players, time, shouldPause) {
+  setCurrentTimes(players, time, shouldPause) {
     for (const actor of players) {
       const player = actor.player;
 
@@ -824,7 +824,7 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
 
-  setPlaybackRates: function(players, rate) {
+  setPlaybackRates(players, rate) {
     return Promise.all(
       players.map(({ player }) => {
         player.updatePlaybackRate(rate);

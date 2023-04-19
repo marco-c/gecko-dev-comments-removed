@@ -506,7 +506,7 @@ exports.app = {
   individuals: individualsModel,
 
   
-  view: function(app) {
+  view(app) {
     catchAndIgnore(function(app) {
       switch (app.view.state) {
         case viewState.DIFFING:

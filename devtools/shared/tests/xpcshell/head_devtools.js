@@ -27,7 +27,7 @@ var ALLOW_CONSOLE_ERRORS = false;
 
 
 var listener = {
-  observe: function(message) {
+  observe(message) {
     let string;
     try {
       message.QueryInterface(Ci.nsIScriptError);

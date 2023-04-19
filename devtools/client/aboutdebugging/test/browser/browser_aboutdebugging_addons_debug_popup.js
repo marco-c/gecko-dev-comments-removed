@@ -160,7 +160,7 @@ async function installTestAddon(doc) {
   
   await installTemporaryExtensionFromXPI(
     {
-      background: function() {
+      background() {
         const { browser } = this;
         window.backgroundFunction = function() {
           browser.test.sendMessage("onBackgroundFunctionCalled");

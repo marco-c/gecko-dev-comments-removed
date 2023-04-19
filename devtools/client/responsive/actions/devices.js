@@ -87,7 +87,7 @@ module.exports = {
   
   _loadPreferredDevices: loadPreferredDevices,
 
-  updatePreferredDevices: updatePreferredDevices,
+  updatePreferredDevices,
 
   addCustomDevice(device) {
     return async function({ dispatch }) {

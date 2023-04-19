@@ -176,7 +176,7 @@ webExtensionTargetPrototype.isRootActor = true;
 
 
 Object.defineProperty(webExtensionTargetPrototype, "docShells", {
-  get: function() {
+  get() {
     
     let docShells = [];
     for (const window of Services.ww.getWindowEnumerator(null)) {

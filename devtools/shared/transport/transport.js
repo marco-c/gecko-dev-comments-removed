@@ -113,7 +113,7 @@ DebuggerTransport.prototype = {
 
 
 
-  send: function(object) {
+  send(object) {
     const packet = new JSONPacket(this);
     packet.object = object;
     this._outgoing.push(packet);
@@ -161,7 +161,7 @@ DebuggerTransport.prototype = {
 
 
 
-  startBulkSend: function(header) {
+  startBulkSend(header) {
     const packet = new BulkPacket(this);
     packet.header = header;
     this._outgoing.push(packet);
@@ -175,7 +175,7 @@ DebuggerTransport.prototype = {
 
 
 
-  close: function(reason) {
+  close(reason) {
     this.active = false;
     this._input.close();
     this._scriptableInput.close();
@@ -204,7 +204,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _flushOutgoing: function() {
+  _flushOutgoing() {
     if (!this._outgoingEnabled || this._outgoing.length === 0) {
       return;
     }
@@ -225,14 +225,14 @@ DebuggerTransport.prototype = {
 
 
 
-  pauseOutgoing: function() {
+  pauseOutgoing() {
     this._outgoingEnabled = false;
   },
 
   
 
 
-  resumeOutgoing: function() {
+  resumeOutgoing() {
     this._outgoingEnabled = true;
     this._flushOutgoing();
   },
@@ -264,7 +264,7 @@ DebuggerTransport.prototype = {
   
 
 
-  _finishCurrentOutgoing: function() {
+  _finishCurrentOutgoing() {
     if (this._currentOutgoing) {
       this._currentOutgoing.destroy();
       this._outgoing.shift();
@@ -274,7 +274,7 @@ DebuggerTransport.prototype = {
   
 
 
-  _destroyAllOutgoing: function() {
+  _destroyAllOutgoing() {
     for (const packet of this._outgoing) {
       packet.destroy();
     }
@@ -286,7 +286,7 @@ DebuggerTransport.prototype = {
 
 
 
-  ready: function() {
+  ready() {
     this.active = true;
     this._waitForIncoming();
   },
@@ -295,7 +295,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _waitForIncoming: function() {
+  _waitForIncoming() {
     if (this._incomingEnabled) {
       const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
       this._input.asyncWait(this, 0, 0, threadManager.currentThread);
@@ -307,14 +307,14 @@ DebuggerTransport.prototype = {
 
 
 
-  pauseIncoming: function() {
+  pauseIncoming() {
     this._incomingEnabled = false;
   },
 
   
 
 
-  resumeIncoming: function() {
+  resumeIncoming() {
     this._incomingEnabled = true;
     this._flushIncoming();
     this._waitForIncoming();
@@ -353,7 +353,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _processIncoming: function(stream, count) {
+  _processIncoming(stream, count) {
     dumpv("Data available: " + count);
 
     if (!count) {
@@ -413,7 +413,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _readHeader: function() {
+  _readHeader() {
     const amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
     this._incomingHeader += StreamUtils.delimitedRead(
       this._scriptableInput,
@@ -442,7 +442,7 @@ DebuggerTransport.prototype = {
   
 
 
-  _flushIncoming: function() {
+  _flushIncoming() {
     if (!this._incoming.done) {
       return;
     }
@@ -456,7 +456,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _onJSONObjectReady: function(object) {
+  _onJSONObjectReady(object) {
     DevToolsUtils.executeSoon(
       DevToolsUtils.makeInfallible(() => {
         
@@ -473,7 +473,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _onBulkReadReady: function(...args) {
+  _onBulkReadReady(...args) {
     DevToolsUtils.executeSoon(
       DevToolsUtils.makeInfallible(() => {
         
@@ -488,7 +488,7 @@ DebuggerTransport.prototype = {
 
 
 
-  _destroyIncoming: function() {
+  _destroyIncoming() {
     if (this._incoming) {
       this._incoming.destroy();
     }

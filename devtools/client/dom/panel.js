@@ -117,7 +117,7 @@ DomPanel.prototype = {
 
   
 
-  refresh: function() {
+  refresh() {
     
     if (!this.isPanelVisible()) {
       return;
@@ -142,18 +142,18 @@ DomPanel.prototype = {
 
 
 
-  forceRefresh: function() {
+  forceRefresh() {
     this.shouldRefresh = true;
     
     
     this.refresh();
   },
 
-  _onTargetSelected: function({ targetFront }) {
+  _onTargetSelected({ targetFront }) {
     this.forceRefresh();
   },
 
-  onResourceAvailable: function(resources) {
+  onResourceAvailable(resources) {
     for (const resource of resources) {
       
       if (
@@ -170,7 +170,7 @@ DomPanel.prototype = {
   
 
 
-  onPanelVisibilityChange: function() {
+  onPanelVisibilityChange() {
     this.refresh();
   },
 
@@ -179,11 +179,11 @@ DomPanel.prototype = {
   
 
 
-  isPanelVisible: function() {
+  isPanelVisible() {
     return this._toolbox.currentToolId === "dom";
   },
 
-  getPrototypeAndProperties: async function(objectFront) {
+  async getPrototypeAndProperties(objectFront) {
     if (!objectFront.actorID) {
       console.error("No actor!", objectFront);
       throw new Error("Failed to get object front.");
@@ -214,33 +214,33 @@ DomPanel.prototype = {
     return response;
   },
 
-  openLink: function(url) {
+  openLink(url) {
     openContentLink(url);
   },
 
-  getRootGrip: async function() {
+  async getRootGrip() {
     const { result } = await this._toolbox.commands.scriptCommand.execute(
       "window"
     );
     return result;
   },
 
-  postContentMessage: function(type, args) {
+  postContentMessage(type, args) {
     const data = {
-      type: type,
-      args: args,
+      type,
+      args,
     };
 
     const event = new this.panelWin.MessageEvent("devtools/chrome/message", {
       bubbles: true,
       cancelable: true,
-      data: data,
+      data,
     });
 
     this.panelWin.dispatchEvent(event);
   },
 
-  onContentMessage: function(event) {
+  onContentMessage(event) {
     const data = event.data;
     const method = data.type;
     if (typeof this[method] == "function") {
@@ -248,7 +248,7 @@ DomPanel.prototype = {
     }
   },
 
-  getToolbox: function() {
+  getToolbox() {
     return this._toolbox;
   },
 
@@ -261,7 +261,7 @@ DomPanel.prototype = {
 
 function exportIntoContentScope(win, obj, defineAs) {
   const clone = Cu.createObjectIn(win, {
-    defineAs: defineAs,
+    defineAs,
   });
 
   const props = Object.getOwnPropertyNames(obj);

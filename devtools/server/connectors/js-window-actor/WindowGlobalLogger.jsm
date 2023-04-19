@@ -40,7 +40,7 @@ const WindowGlobalLogger = {
 
 
 
-  logWindowGlobal: function(windowGlobal, message) {
+  logWindowGlobal(windowGlobal, message) {
     const { browsingContext } = windowGlobal;
     const { parent } = browsingContext;
     const windowGlobalUri = getWindowGlobalUri(windowGlobal);

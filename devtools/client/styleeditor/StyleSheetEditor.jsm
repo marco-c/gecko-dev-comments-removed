@@ -239,7 +239,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  linkCSSFile: function() {
+  linkCSSFile() {
     if (!this.styleSheet.isOriginalSource) {
       return;
     }
@@ -322,7 +322,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  fetchSource: function() {
+  fetchSource() {
     return this._getSourceTextAndPrettify()
       .then(source => {
         this.sourceLoaded = true;
@@ -398,7 +398,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  onPropertyChange: function(property, value) {
+  onPropertyChange(property, value) {
     this.emit("property-change", property, value);
   },
 
@@ -406,7 +406,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  onStyleApplied: function(update) {
+  onStyleApplied(update) {
     const updateIsFromSyleSheetEditor =
       update?.event?.cause === STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR;
 
@@ -436,7 +436,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  onMediaRulesChanged: function(rules) {
+  onMediaRulesChanged(rules) {
     if (!rules.length && !this.mediaRules.length) {
       return;
     }
@@ -448,7 +448,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  emitMediaRulesChanged: function() {
+  emitMediaRulesChanged() {
     this.emit("media-rules-changed", this.mediaRules);
   },
 
@@ -462,7 +462,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  load: async function(inputElement, cssProperties) {
+  async load(inputElement, cssProperties) {
     if (this._isDestroyed) {
       throw new Error(
         "Won't load source editor as the style sheet has " +
@@ -529,7 +529,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  getSourceEditor: function() {
+  getSourceEditor() {
     const self = this;
 
     if (this.sourceEditor) {
@@ -546,7 +546,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  focus: function() {
+  focus() {
     if (this.sourceEditor) {
       this.sourceEditor.focus();
     } else {
@@ -560,7 +560,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  onShow: function(options = {}) {
+  onShow(options = {}) {
     if (this.sourceEditor) {
       
       
@@ -585,7 +585,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  updateStyleSheet: function() {
+  updateStyleSheet() {
     if (this._updateTask) {
       
       this._window.clearTimeout(this._updateTask);
@@ -642,7 +642,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _onMouseMove: function(e) {
+  _onMouseMove(e) {
     
     
     if (this.highlighter) {
@@ -748,7 +748,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  saveToFile: function(file, callback) {
+  saveToFile(file, callback) {
     const onFile = returnFile => {
       if (!returnFile) {
         if (callback) {
@@ -801,7 +801,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  onFileSaved: function(returnFile) {
+  onFileSaved(returnFile) {
     this._friendlyName = null;
     this.savedFile = returnFile;
 
@@ -827,7 +827,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  checkLinkedFileForChanges: function() {
+  checkLinkedFileForChanges() {
     IOUtils.stat(this.linkedCSSFile).then(info => {
       const lastChange = info.lastModified;
 
@@ -859,7 +859,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  markLinkedFileBroken: function(error) {
+  markLinkedFileBroken(error) {
     this.linkedCSSFileError = error || true;
     this.emit("linked-css-file-error");
 
@@ -875,7 +875,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  updateLinkedStyleSheet: function() {
+  updateLinkedStyleSheet() {
     IOUtils.read(this.linkedCSSFile).then(async array => {
       const decoder = new TextDecoder();
       const text = decoder.decode(array);
@@ -899,7 +899,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  _getKeyBindings: function() {
+  _getKeyBindings() {
     const saveStyleSheetKeybind = Editor.accel(
       getString("saveStyleSheet.commandkey")
     );
@@ -930,7 +930,7 @@ StyleSheetEditor.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     if (this._sourceEditor) {
       this._sourceEditor.off("dirty-change", this.onPropertyChange);
       this._sourceEditor.off("saveRequested", this.saveToFile);

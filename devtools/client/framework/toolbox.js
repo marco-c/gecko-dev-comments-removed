@@ -478,14 +478,14 @@ Toolbox.prototype = {
 
 
 
-  getToolPanels: function() {
+  getToolPanels() {
     return new Map(this._toolPanels);
   },
 
   
 
 
-  getPanel: function(id) {
+  getPanel(id) {
     return this._toolPanels.get(id);
   },
 
@@ -502,7 +502,7 @@ Toolbox.prototype = {
 
 
 
-  getPanelWhenReady: function(id) {
+  getPanelWhenReady(id) {
     const panel = this.getPanel(id);
     return new Promise(resolve => {
       if (panel) {
@@ -520,7 +520,7 @@ Toolbox.prototype = {
 
 
 
-  getCurrentPanel: function() {
+  getCurrentPanel() {
     return this._toolPanels.get(this.currentToolId);
   },
 
@@ -583,7 +583,7 @@ Toolbox.prototype = {
   
 
 
-  isSplitConsoleFocused: function() {
+  isSplitConsoleFocused() {
     if (!this._splitConsole) {
       return false;
     }
@@ -622,7 +622,7 @@ Toolbox.prototype = {
   
 
 
-  getSelectedTargetFront: function() {
+  getSelectedTargetFront() {
     
     
     const selectedTarget = getSelectedTarget(
@@ -819,7 +819,7 @@ Toolbox.prototype = {
   
 
 
-  open: function() {
+  open() {
     return async function() {
       
       const fluentL10n = new FluentL10n();
@@ -1091,7 +1091,7 @@ Toolbox.prototype = {
 
 
 
-  _addChromeEventHandlerEvents: function() {
+  _addChromeEventHandlerEvents() {
     
     
     
@@ -1117,7 +1117,7 @@ Toolbox.prototype = {
     this._chromeEventHandler.addEventListener("mousedown", this._onMouseDown);
   },
 
-  _removeChromeEventHandlerEvents: function() {
+  _removeChromeEventHandlerEvents() {
     if (!this._chromeEventHandler) {
       return;
     }
@@ -1144,7 +1144,7 @@ Toolbox.prototype = {
     this._chromeEventHandler = null;
   },
 
-  _addShortcuts: function() {
+  _addShortcuts() {
     
     if (!this.shortcuts) {
       this.shortcuts = new KeyShortcuts({
@@ -1201,7 +1201,7 @@ Toolbox.prototype = {
     }
   },
 
-  _removeShortcuts: function() {
+  _removeShortcuts() {
     if (this.shortcuts) {
       this.shortcuts.destroy();
       this.shortcuts = null;
@@ -1211,7 +1211,7 @@ Toolbox.prototype = {
   
 
 
-  _addWindowHostShortcuts: function() {
+  _addWindowHostShortcuts() {
     if (this.hostType != Toolbox.HostType.WINDOW) {
       
       return;
@@ -1269,14 +1269,14 @@ Toolbox.prototype = {
     }
   },
 
-  _removeWindowHostShortcuts: function() {
+  _removeWindowHostShortcuts() {
     if (this._windowHostShortcuts) {
       this._windowHostShortcuts.destroy();
       this._windowHostShortcuts = null;
     }
   },
 
-  _onContextMenu: function(e) {
+  _onContextMenu(e) {
     
     
     
@@ -1306,7 +1306,7 @@ Toolbox.prototype = {
     }
   },
 
-  _onMouseDown: function(e) {
+  _onMouseDown(e) {
     const isMiddleClick = e.button === 1;
     if (isMiddleClick) {
       
@@ -1317,7 +1317,7 @@ Toolbox.prototype = {
     }
   },
 
-  _getDebugTargetData: function() {
+  _getDebugTargetData() {
     const url = new URL(this.win.location);
     const searchParams = new this.win.URLSearchParams(url.search);
 
@@ -1365,7 +1365,7 @@ Toolbox.prototype = {
   
 
 
-  _createSourceMapService: function() {
+  _createSourceMapService() {
     if (this._sourceMapService) {
       return this._sourceMapService;
     }
@@ -1497,7 +1497,7 @@ Toolbox.prototype = {
   },
 
   
-  _getTelemetryHostId: function() {
+  _getTelemetryHostId() {
     switch (this.hostType) {
       case Toolbox.HostType.BOTTOM:
         return 0;
@@ -1517,7 +1517,7 @@ Toolbox.prototype = {
   },
 
   
-  _getTelemetryHostString: function() {
+  _getTelemetryHostString() {
     switch (this.hostType) {
       case Toolbox.HostType.BOTTOM:
         return "bottom";
@@ -1536,7 +1536,7 @@ Toolbox.prototype = {
     }
   },
 
-  _pingTelemetry: function() {
+  _pingTelemetry() {
     Services.prefs.setBoolPref("devtools.everOpened", true);
     this.telemetry.toolOpened("toolbox", this.sessionId, this);
 
@@ -1605,7 +1605,7 @@ Toolbox.prototype = {
 
 
 
-  _createButtonState: function(options) {
+  _createButtonState(options) {
     let isCheckedValue = false;
     const {
       id,
@@ -1676,7 +1676,7 @@ Toolbox.prototype = {
     return button;
   },
 
-  _splitConsoleOnKeypress: function(e) {
+  _splitConsoleOnKeypress(e) {
     if (e.keyCode === KeyCodes.DOM_VK_ESCAPE) {
       this.toggleSplitConsole();
       
@@ -1702,7 +1702,7 @@ Toolbox.prototype = {
 
 
 
-  useKeyWithSplitConsole: function(key, handler, whichTool) {
+  useKeyWithSplitConsole(key, handler, whichTool) {
     this.shortcuts.on(key, event => {
       if (this.currentToolId === whichTool && this.isSplitConsoleFocused()) {
         handler();
@@ -1711,12 +1711,12 @@ Toolbox.prototype = {
     });
   },
 
-  _addWindowListeners: function() {
+  _addWindowListeners() {
     this.win.addEventListener("unload", this.destroy);
     this.win.addEventListener("message", this._onBrowserMessage, true);
   },
 
-  _removeWindowListeners: function() {
+  _removeWindowListeners() {
     
     if (this.win) {
       this.win.removeEventListener("unload", this.destroy);
@@ -1725,7 +1725,7 @@ Toolbox.prototype = {
   },
 
   
-  _onBrowserMessage: function(event) {
+  _onBrowserMessage(event) {
     if (event.data?.name === "switched-host") {
       this._onSwitchedHost(event.data);
     }
@@ -1734,7 +1734,7 @@ Toolbox.prototype = {
     }
   },
 
-  _saveSplitConsoleHeight: function() {
+  _saveSplitConsoleHeight() {
     Services.prefs.setIntPref(
       SPLITCONSOLE_HEIGHT_PREF,
       this.webconsolePanel.height
@@ -1753,7 +1753,7 @@ Toolbox.prototype = {
 
 
 
-  _refreshConsoleDisplay: function() {
+  _refreshConsoleDisplay() {
     const deck = this.doc.getElementById("toolbox-deck");
     const webconsolePanel = this.webconsolePanel;
     const splitter = this.doc.getElementById("toolbox-console-splitter");
@@ -1776,7 +1776,7 @@ Toolbox.prototype = {
 
 
 
-  fireCustomKey: function(toolId) {
+  fireCustomKey(toolId) {
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
     if (
@@ -1813,7 +1813,7 @@ Toolbox.prototype = {
 
 
 
-  _buildDockOptions: function() {
+  _buildDockOptions() {
     if (!this.descriptorFront.isLocalTab) {
       this.component.setDockOptionsEnabled(false);
       this.component.setCanCloseToolbox(false);
@@ -1850,7 +1850,7 @@ Toolbox.prototype = {
     this.component.setHostTypes(hostTypes);
   },
 
-  postMessage: function(msg) {
+  postMessage(msg) {
     
     
     if (!this._destroyer) {
@@ -1864,7 +1864,7 @@ Toolbox.prototype = {
   
 
 
-  _buildTabs: async function() {
+  async _buildTabs() {
     
     
     const definitions = gDevTools.getToolDefinitionArray();
@@ -1917,7 +1917,7 @@ Toolbox.prototype = {
 
 
 
-  _onToolbarFocus: function(id) {
+  _onToolbarFocus(id) {
     this.component.setFocusedButton(id);
   },
 
@@ -1929,7 +1929,7 @@ Toolbox.prototype = {
 
 
 
-  _onToolbarArrowKeypress: function(event) {
+  _onToolbarArrowKeypress(event) {
     const { key, target, ctrlKey, shiftKey, altKey, metaKey } = event;
 
     
@@ -2050,7 +2050,7 @@ Toolbox.prototype = {
 
 
 
-  _onPickerClick: async function() {
+  async _onPickerClick() {
     const focus =
       this.hostType === Toolbox.HostType.BOTTOM ||
       this.hostType === Toolbox.HostType.LEFT ||
@@ -2067,7 +2067,7 @@ Toolbox.prototype = {
 
 
 
-  _onPickerKeypress: function(event) {
+  _onPickerKeypress(event) {
     if (event.keyCode === KeyCodes.DOM_VK_ESCAPE) {
       const currentPanel = this.getCurrentPanel();
       if (currentPanel.cancelPicker) {
@@ -2080,7 +2080,7 @@ Toolbox.prototype = {
     }
   },
 
-  _onPickerStarting: async function() {
+  async _onPickerStarting() {
     if (this.isDestroying()) {
       return;
     }
@@ -2092,11 +2092,11 @@ Toolbox.prototype = {
     this.on("select", this._onToolSelectedStopPicker);
   },
 
-  _onPickerStarted: async function() {
+  async _onPickerStarted() {
     this.doc.addEventListener("keypress", this._onPickerKeypress, true);
   },
 
-  _onPickerStopped: function() {
+  _onPickerStopped() {
     if (this.isDestroying()) {
       return;
     }
@@ -2106,7 +2106,7 @@ Toolbox.prototype = {
     this.pickerButton.isChecked = false;
   },
 
-  _onToolSelectedStopPicker: function() {
+  _onToolSelectedStopPicker() {
     this.nodePicker.stop({ canceled: true });
   },
 
@@ -2114,17 +2114,17 @@ Toolbox.prototype = {
 
 
 
-  _onPickerCanceled: function() {
+  _onPickerCanceled() {
     if (this.hostType !== Toolbox.HostType.WINDOW) {
       this.win.focus();
     }
   },
 
-  _onPickerPicked: function(nodeFront) {
+  _onPickerPicked(nodeFront) {
     this.selection.setNodeFront(nodeFront, { reason: "picker-node-picked" });
   },
 
-  _onPickerPreviewed: function(nodeFront) {
+  _onPickerPreviewed(nodeFront) {
     this.selection.setNodeFront(nodeFront, { reason: "picker-node-previewed" });
   },
 
@@ -2137,7 +2137,7 @@ Toolbox.prototype = {
 
 
 
-  tellRDMAboutPickerState: async function(state, pickerType) {
+  async tellRDMAboutPickerState(state, pickerType) {
     const { localTab } = this.target;
 
     if (!ResponsiveUIManager.isActiveForTab(localTab)) {
@@ -2207,7 +2207,7 @@ Toolbox.prototype = {
 
 
 
-  _applyCacheSettings: async function() {
+  async _applyCacheSettings() {
     const pref = "devtools.cache.disabled";
     const cacheDisabled = Services.prefs.getBoolPref(pref);
 
@@ -2225,7 +2225,7 @@ Toolbox.prototype = {
 
 
 
-  _applyCustomFormatterSetting: async function() {
+  async _applyCustomFormatterSetting() {
     if (!this.commands) {
       return;
     }
@@ -2245,7 +2245,7 @@ Toolbox.prototype = {
 
 
 
-  _applyServiceWorkersTestingSettings: function() {
+  _applyServiceWorkersTestingSettings() {
     const pref = "devtools.serviceWorkers.testing.enabled";
     const serviceWorkersTestingEnabled = Services.prefs.getBoolPref(pref);
     this.commands.targetConfigurationCommand.updateConfiguration({
@@ -2351,7 +2351,7 @@ Toolbox.prototype = {
   
 
 
-  _commandIsVisible: function(button) {
+  _commandIsVisible(button) {
     const { isToolSupported, isCurrentlyVisible, visibilityswitch } = button;
 
     if (!Services.prefs.getBoolPref(visibilityswitch, true)) {
@@ -2375,7 +2375,7 @@ Toolbox.prototype = {
 
 
 
-  _buildPanelForTool: function(toolDefinition) {
+  _buildPanelForTool(toolDefinition) {
     if (!toolDefinition.isToolSupported(this)) {
       return;
     }
@@ -2584,7 +2584,7 @@ Toolbox.prototype = {
 
 
 
-  loadTool: function(id, options) {
+  loadTool(id, options) {
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
     if (iframe) {
       const panel = this._toolPanels.get(id);
@@ -2714,7 +2714,7 @@ Toolbox.prototype = {
 
 
 
-  setIframeDocumentDir: function(iframe) {
+  setIframeDocumentDir(iframe) {
     const docEl = iframe.contentWindow?.document.documentElement;
     if (!docEl || docEl.namespaceURI !== HTML_NS) {
       
@@ -2735,7 +2735,7 @@ Toolbox.prototype = {
 
 
 
-  selectSingleNode: function(collection, id) {
+  selectSingleNode(collection, id) {
     [...collection].forEach(node => {
       if (node.id === id) {
         node.setAttribute("selected", "true");
@@ -2771,7 +2771,7 @@ Toolbox.prototype = {
 
 
 
-  setIframeVisible: function(iframe, visible) {
+  setIframeVisible(iframe, visible) {
     const state = visible ? "visible" : "hidden";
     const win = iframe.contentWindow;
     const doc = win.document;
@@ -2798,7 +2798,7 @@ Toolbox.prototype = {
 
 
 
-  selectTool: function(id, reason = "unknown", options) {
+  selectTool(id, reason = "unknown", options) {
     this.emit("panel-changed");
 
     if (this.currentToolId == id) {
@@ -2878,16 +2878,16 @@ Toolbox.prototype = {
     if (this.currentToolId) {
       this.telemetry.recordEvent("exit", prevPanelName, null, {
         host: this._hostType,
-        width: width,
+        width,
         panel_name: prevPanelName,
         next_panel: panelName,
-        reason: reason,
+        reason,
         session_id: this.sessionId,
       });
     }
 
     this.telemetry.addEventProperties(this.topWindow, "open", "tools", null, {
-      width: width,
+      width,
       session_id: this.sessionId,
     });
 
@@ -2901,7 +2901,7 @@ Toolbox.prototype = {
       host: this._hostType,
       start_state: reason,
       panel_name: panelName,
-      cold: cold,
+      cold,
       session_id: this.sessionId,
     });
 
@@ -2938,7 +2938,7 @@ Toolbox.prototype = {
 
 
 
-  focusTool: function(id, state = true) {
+  focusTool(id, state = true) {
     const iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
 
     if (state) {
@@ -2951,7 +2951,7 @@ Toolbox.prototype = {
   
 
 
-  focusConsoleInput: function() {
+  focusConsoleInput() {
     const consolePanel = this.getPanel("webconsole");
     if (consolePanel) {
       consolePanel.focusInput();
@@ -2961,7 +2961,7 @@ Toolbox.prototype = {
   
 
 
-  disableAllConsoleNetworkLogs: function() {
+  disableAllConsoleNetworkLogs() {
     const consolePanel = this.getPanel("webconsole");
     if (consolePanel) {
       consolePanel.hud.ui.disableAllNetworkMessages();
@@ -2973,7 +2973,7 @@ Toolbox.prototype = {
 
 
 
-  _onFocus: function({ originalTarget }) {
+  _onFocus({ originalTarget }) {
     
     
     const webconsoleURL = gDevTools.getToolDefinition("webconsole").url;
@@ -2987,7 +2987,7 @@ Toolbox.prototype = {
     this._lastFocusedElement = originalTarget;
   },
 
-  _onTabsOrderUpdated: function() {
+  _onTabsOrderUpdated() {
     this._combineAndSortPanelDefinitions();
   },
 
@@ -2997,7 +2997,7 @@ Toolbox.prototype = {
 
 
 
-  openSplitConsole: function() {
+  openSplitConsole() {
     this._splitConsole = true;
     Services.prefs.setBoolPref(SPLITCONSOLE_ENABLED_PREF, true);
     this._refreshConsoleDisplay();
@@ -3026,7 +3026,7 @@ Toolbox.prototype = {
 
 
 
-  closeSplitConsole: function() {
+  closeSplitConsole() {
     this._splitConsole = false;
     Services.prefs.setBoolPref(SPLITCONSOLE_ENABLED_PREF, false);
     this._refreshConsoleDisplay();
@@ -3053,7 +3053,7 @@ Toolbox.prototype = {
 
 
 
-  toggleSplitConsole: function() {
+  toggleSplitConsole() {
     if (this.currentToolId !== "webconsole") {
       return this.splitConsole
         ? this.closeSplitConsole()
@@ -3067,7 +3067,7 @@ Toolbox.prototype = {
 
 
 
-  toggleOptions: function(event) {
+  toggleOptions(event) {
     
     
     if (
@@ -3087,7 +3087,7 @@ Toolbox.prototype = {
   
 
 
-  selectNextTool: function() {
+  selectNextTool() {
     const definitions = this.component.panelDefinitions;
     const index = definitions.findIndex(({ id }) => id === this.currentToolId);
     const definition =
@@ -3100,7 +3100,7 @@ Toolbox.prototype = {
   
 
 
-  selectPreviousTool: function() {
+  selectPreviousTool() {
     const definitions = this.component.panelDefinitions;
     const index = definitions.findIndex(({ id }) => id === this.currentToolId);
     const definition =
@@ -3150,7 +3150,7 @@ Toolbox.prototype = {
   
 
 
-  raise: function() {
+  raise() {
     this.postMessage({ name: "raise-host" });
   },
 
@@ -3208,7 +3208,7 @@ Toolbox.prototype = {
   
 
 
-  _refreshHostTitle: function() {
+  _refreshHostTitle() {
     let title;
 
     if (this.target.isXpcShellTarget) {
@@ -3334,7 +3334,7 @@ Toolbox.prototype = {
     return prefFront.getBoolPref(DISABLE_AUTOHIDE_PREF);
   },
 
-  _listFrames: async function(event) {
+  async _listFrames(event) {
     if (
       !this.target.getTrait("frames") ||
       this.target.targetForm.ignoreSubFrames
@@ -3357,7 +3357,7 @@ Toolbox.prototype = {
 
 
 
-  onIframePickerFrameSelected: function(frameIdOrTargetActorId) {
+  onIframePickerFrameSelected(frameIdOrTargetActorId) {
     if (!this.frameMap.has(frameIdOrTargetActorId)) {
       console.error(
         `Can't focus on frame "${frameIdOrTargetActorId}", it is not a known frame`
@@ -3385,7 +3385,7 @@ Toolbox.prototype = {
 
 
 
-  onHighlightFrame: async function(frameIdOrTargetActorId) {
+  async onHighlightFrame(frameIdOrTargetActorId) {
     
     if (!this.rootFrameSelected) {
       return;
@@ -3427,7 +3427,7 @@ Toolbox.prototype = {
 
 
 
-  _updateFrames: function(data) {
+  _updateFrames(data) {
     
     
     
@@ -3543,7 +3543,7 @@ Toolbox.prototype = {
   
 
 
-  switchToPreviousHost: function() {
+  switchToPreviousHost() {
     return this.switchHost("previous");
   },
 
@@ -3554,7 +3554,7 @@ Toolbox.prototype = {
 
 
 
-  switchHost: function(hostType) {
+  switchHost(hostType) {
     if (hostType == this.hostType || !this.descriptorFront.isLocalTab) {
       return null;
     }
@@ -3598,7 +3598,7 @@ Toolbox.prototype = {
     return this.once("switched-host-to-tab");
   },
 
-  _onSwitchedHost: function({ hostType }) {
+  _onSwitchedHost({ hostType }) {
     this._hostType = hostType;
 
     this._buildDockOptions();
@@ -3650,7 +3650,7 @@ Toolbox.prototype = {
 
 
 
-  isToolRegistered: function(toolId) {
+  isToolRegistered(toolId) {
     return !!this.getToolDefinition(toolId);
   },
 
@@ -3665,7 +3665,7 @@ Toolbox.prototype = {
 
 
 
-  getToolDefinition: function(toolId) {
+  getToolDefinition(toolId) {
     return (
       gDevTools.getToolDefinition(toolId) ||
       this.additionalToolDefinitions.get(toolId)
@@ -3680,7 +3680,7 @@ Toolbox.prototype = {
 
 
 
-  unloadTool: function(toolId) {
+  unloadTool(toolId) {
     if (typeof toolId != "string") {
       throw new Error("Unexpected non-string toolId received.");
     }
@@ -3738,7 +3738,7 @@ Toolbox.prototype = {
 
 
 
-  _toolRegistered: function(toolId) {
+  _toolRegistered(toolId) {
     
     
     let definition = gDevTools.getToolDefinition(toolId);
@@ -3768,7 +3768,7 @@ Toolbox.prototype = {
 
 
 
-  _toolUnregistered: function(toolId) {
+  _toolUnregistered(toolId) {
     this.unloadTool(toolId);
 
     
@@ -3891,7 +3891,7 @@ Toolbox.prototype = {
     return safeAsyncMethod(fn, () => !!this._destroyer);
   },
 
-  _onNewSelectedNodeFront: async function() {
+  async _onNewSelectedNodeFront() {
     
     
     
@@ -3903,7 +3903,7 @@ Toolbox.prototype = {
     }
   },
 
-  _onToolSelected: function() {
+  _onToolSelected() {
     this._refreshHostTitle();
 
     this.updatePickerButton();
@@ -3921,7 +3921,7 @@ Toolbox.prototype = {
     this.inspectObjectActor(packet.objectActor, packet.inspectFromAnnotation);
   },
 
-  inspectObjectActor: async function(objectActor, inspectFromAnnotation) {
+  async inspectObjectActor(objectActor, inspectFromAnnotation) {
     const objectGrip = objectActor?.getGrip
       ? objectActor.getGrip()
       : objectActor;
@@ -3960,25 +3960,25 @@ Toolbox.prototype = {
 
 
 
-  getNotificationBox: function() {
+  getNotificationBox() {
     return this.notificationBox;
   },
 
-  closeToolbox: async function() {
+  async closeToolbox() {
     await this.destroy();
   },
 
   
 
 
-  isDestroying: function() {
+  isDestroying() {
     return this._destroyer;
   },
 
   
 
 
-  destroy: function() {
+  destroy() {
     
     
     if (this._destroyer) {
@@ -3994,7 +3994,7 @@ Toolbox.prototype = {
     return this._destroyer;
   },
 
-  _destroyToolbox: async function() {
+  async _destroyToolbox() {
     this.emit("destroy");
 
     
@@ -4124,16 +4124,16 @@ Toolbox.prototype = {
 
     this.telemetry.toolClosed("toolbox", this.sessionId, this);
     this.telemetry.recordEvent("exit", prevPanelName, null, {
-      host: host,
-      width: width,
+      host,
+      width,
       panel_name: this.getTelemetryPanelNameOrOther(this.currentToolId),
       next_panel: "none",
       reason: "toolbox_close",
       session_id: this.sessionId,
     });
     this.telemetry.recordEvent("close", "tools", null, {
-      host: host,
-      width: width,
+      host,
+      width,
       session_id: this.sessionId,
     });
 
@@ -4228,7 +4228,7 @@ Toolbox.prototype = {
 
 
 
-  openTextBoxContextMenu: function(x, y) {
+  openTextBoxContextMenu(x, y) {
     const menu = createEditContextMenu(this.topWindow, "toolbox-menu");
 
     
@@ -4241,7 +4241,7 @@ Toolbox.prototype = {
   
 
 
-  getTextBoxContextMenu: function() {
+  getTextBoxContextMenu() {
     return this.topDoc.getElementById("toolbox-menu");
   },
 
@@ -4299,7 +4299,7 @@ Toolbox.prototype = {
 
 
 
-  viewGeneratedSourceInStyleEditor: async function(url) {
+  async viewGeneratedSourceInStyleEditor(url) {
     if (typeof url !== "string") {
       console.warn("Failed to open generated source, no url given");
       return;
@@ -4317,7 +4317,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInStyleEditorByURL: async function(url, line, column) {
+  async viewSourceInStyleEditorByURL(url, line, column) {
     if (typeof url !== "string") {
       console.warn("Failed to open source, no url given");
       return;
@@ -4341,11 +4341,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInStyleEditorByFront: async function(
-    stylesheetFront,
-    line,
-    column
-  ) {
+  async viewSourceInStyleEditorByFront(stylesheetFront, line, column) {
     if (!stylesheetFront || typeof stylesheetFront !== "object") {
       console.warn("Failed to open source, no stylesheet given");
       return;
@@ -4369,7 +4365,7 @@ Toolbox.prototype = {
     );
   },
 
-  viewElementInInspector: async function(objectGrip, reason) {
+  async viewElementInInspector(objectGrip, reason) {
     
     await this.loadTool("inspector");
     const inspector = this.getPanel("inspector");
@@ -4384,7 +4380,7 @@ Toolbox.prototype = {
 
 
 
-  viewGeneratedSourceInDebugger: async function(url) {
+  async viewGeneratedSourceInDebugger(url) {
     if (typeof url !== "string") {
       console.warn("Failed to open generated source, no url given");
       return;
@@ -4401,7 +4397,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInDebugger: async function(
+  async viewSourceInDebugger(
     sourceURL,
     sourceLine,
     sourceColumn,
@@ -4437,7 +4433,7 @@ Toolbox.prototype = {
 
 
 
-  viewSource: function(sourceURL, sourceLine) {
+  viewSource(sourceURL, sourceLine) {
     return viewSource.viewSource(this, sourceURL, sourceLine);
   },
 
@@ -4447,7 +4443,7 @@ Toolbox.prototype = {
 
 
 
-  getNetMonitorAPI: async function() {
+  async getNetMonitorAPI() {
     const netPanel = this.getPanel("netmonitor");
 
     
@@ -4470,7 +4466,7 @@ Toolbox.prototype = {
   
 
 
-  getHARFromNetMonitor: async function() {
+  async getHARFromNetMonitor() {
     const netMonitor = await this.getNetMonitorAPI();
     let har = await netMonitor.getHar();
 
@@ -4490,12 +4486,12 @@ Toolbox.prototype = {
 
 
 
-  addRequestFinishedListener: async function(listener) {
+  async addRequestFinishedListener(listener) {
     const netMonitor = await this.getNetMonitorAPI();
     netMonitor.addRequestFinishedListener(listener);
   },
 
-  removeRequestFinishedListener: async function(listener) {
+  async removeRequestFinishedListener(listener) {
     const netMonitor = await this.getNetMonitorAPI();
     netMonitor.removeRequestFinishedListener(listener);
 
@@ -4520,7 +4516,7 @@ Toolbox.prototype = {
 
 
 
-  fetchResponseContent: async function(requestId) {
+  async fetchResponseContent(requestId) {
     const netMonitor = await this.getNetMonitorAPI();
     return netMonitor.fetchResponseContent(requestId);
   },
@@ -4533,7 +4529,7 @@ Toolbox.prototype = {
 
 
 
-  listWebExtensions: function() {
+  listWebExtensions() {
     
     
     
@@ -4549,7 +4545,7 @@ Toolbox.prototype = {
 
 
 
-  registerWebExtension: function(extensionUUID, { name, pref }) {
+  registerWebExtension(extensionUUID, { name, pref }) {
     
     
     
@@ -4564,7 +4560,7 @@ Toolbox.prototype = {
 
 
 
-  unregisterWebExtension: function(extensionUUID) {
+  unregisterWebExtension(extensionUUID) {
     
     
     this._webExtensions.delete(extensionUUID);
@@ -4577,7 +4573,7 @@ Toolbox.prototype = {
 
 
 
-  isWebExtensionEnabled: function(extensionUUID) {
+  isWebExtensionEnabled(extensionUUID) {
     const extInfo = this._webExtensions.get(extensionUUID);
     return extInfo && Services.prefs.getBoolPref(extInfo.pref, false);
   },
@@ -4591,7 +4587,7 @@ Toolbox.prototype = {
 
 
 
-  getTelemetryPanelNameOrOther: function(id) {
+  getTelemetryPanelNameOrOther(id) {
     if (!this._toolNames) {
       const definitions = gDevTools.getToolDefinitionArray();
       const definitionIds = definitions.map(definition => definition.id);

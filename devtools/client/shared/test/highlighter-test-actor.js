@@ -187,7 +187,7 @@ var highlighterTestSpec = protocol.generateActorSpec({
 });
 
 var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
-  initialize: function(conn, targetActor, options) {
+  initialize(conn, targetActor, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.conn = conn;
     this.targetActor = targetActor;
@@ -204,7 +204,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-  _querySelector: function(selector) {
+  _querySelector(selector) {
     let document = this.content.document;
     if (Array.isArray(selector)) {
       const fullSelector = selector.join(" >> ");
@@ -253,7 +253,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-  getHighlighterAttribute: function(nodeID, name, actorID) {
+  getHighlighterAttribute(nodeID, name, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
 
     if (!helper) {
@@ -270,7 +270,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-  getHighlighterNodeTextContent: function(nodeID, actorID) {
+  getHighlighterNodeTextContent(nodeID, actorID) {
     let value;
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
@@ -285,7 +285,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-  getSelectorHighlighterBoxNb: function(actorID) {
+  getSelectorHighlighterBoxNb(actorID) {
     const highlighter = this.conn.getActor(actorID);
     const { _highlighter: h } = highlighter;
     if (!h || !h._highlighters) {
@@ -302,7 +302,7 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-  changeHighlightedNodeWaitForUpdate: function(name, value, actorID) {
+  changeHighlightedNodeWaitForUpdate(name, value, actorID) {
     return new Promise(resolve => {
       const highlighter = this.conn.getActor(actorID);
       const { _highlighter: h } = highlighter;
@@ -739,10 +739,10 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
     return {
       visible: !hidden,
-      x1: x1,
-      y1: y1,
-      x2: x2,
-      y2: y2,
+      x1,
+      y1,
+      x2,
+      y2,
     };
   }
 

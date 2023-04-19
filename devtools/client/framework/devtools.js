@@ -439,7 +439,7 @@ DevTools.prototype = {
 
 
 
-  saveDevToolsSession: function(state) {
+  saveDevToolsSession(state) {
     state.browserConsole = BrowserConsoleManager.getBrowserConsoleSessionState();
     state.browserToolbox = BrowserToolboxLauncher.getBrowserToolboxSessionState();
   },
@@ -447,7 +447,7 @@ DevTools.prototype = {
   
 
 
-  restoreDevToolsSession: async function({ browserConsole, browserToolbox }) {
+  async restoreDevToolsSession({ browserConsole, browserToolbox }) {
     if (browserToolbox) {
       BrowserToolboxLauncher.init();
     }
@@ -747,7 +747,7 @@ DevTools.prototype = {
 
 
 
-  createCommandsForTabForWebExtension: function(tab) {
+  createCommandsForTabForWebExtension(tab) {
     return CommandsFactory.forTab(tab, { isWebExtension: true });
   },
 
@@ -755,7 +755,7 @@ DevTools.prototype = {
 
 
 
-  openBrowserConsole: function() {
+  openBrowserConsole() {
     const {
       BrowserConsoleManager,
     } = require("devtools/client/webconsole/browser-console-manager");

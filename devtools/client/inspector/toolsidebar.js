@@ -59,7 +59,7 @@ ToolSidebar.prototype = {
 
   
 
-  render: function() {
+  render() {
     const sidebar = this.TabBar({
       menuDocument: this._toolPanel._toolbox.doc,
       showAllTabsMenu: true,
@@ -74,7 +74,7 @@ ToolSidebar.prototype = {
   
 
 
-  addAllQueuedTabs: function() {
+  addAllQueuedTabs() {
     this._tabbar.addAllQueuedTabs();
   },
 
@@ -87,7 +87,7 @@ ToolSidebar.prototype = {
 
 
 
-  addTab: function(id, title, panel, selected, index) {
+  addTab(id, title, panel, selected, index) {
     this._tabbar.addTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
   },
@@ -101,12 +101,12 @@ ToolSidebar.prototype = {
 
 
 
-  addExistingTab: function(id, title, selected, index) {
+  addExistingTab(id, title, selected, index) {
     const panel = this.InspectorTabPanel({
-      id: id,
+      id,
       idPrefix: this.TABPANEL_ID_PREFIX,
       key: id,
-      title: title,
+      title,
     });
 
     this.addTab(id, title, panel, selected, index);
@@ -121,7 +121,7 @@ ToolSidebar.prototype = {
 
 
 
-  queueTab: function(id, title, panel, selected, index) {
+  queueTab(id, title, panel, selected, index) {
     this._tabbar.queueTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
   },
@@ -135,12 +135,12 @@ ToolSidebar.prototype = {
 
 
 
-  queueExistingTab: function(id, title, selected, index) {
+  queueExistingTab(id, title, selected, index) {
     const panel = this.InspectorTabPanel({
-      id: id,
+      id,
       idPrefix: this.TABPANEL_ID_PREFIX,
       key: id,
-      title: title,
+      title,
     });
 
     this.queueTab(id, title, panel, selected, index);
@@ -165,21 +165,21 @@ ToolSidebar.prototype = {
 
 
 
-  toggleTab: function(isVisible, id) {
+  toggleTab(isVisible, id) {
     this._tabbar.toggleTab(id, isVisible);
   },
 
   
 
 
-  select: function(id) {
+  select(id) {
     this._tabbar.select(id);
   },
 
   
 
 
-  getCurrentTabID: function() {
+  getCurrentTabID() {
     return this._currentTool;
   },
 
@@ -188,7 +188,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTabPanel: function(id) {
+  getTabPanel(id) {
     
     
     return this._panelDoc.querySelector(
@@ -199,7 +199,7 @@ ToolSidebar.prototype = {
   
 
 
-  handleSelectionChange: function(id) {
+  handleSelectionChange(id) {
     if (this._destroyed) {
       return;
     }
@@ -224,7 +224,7 @@ ToolSidebar.prototype = {
 
 
 
-  updateTelemetryOnChange: function(currentToolId, previousToolId) {
+  updateTelemetryOnChange(currentToolId, previousToolId) {
     if (currentToolId === previousToolId || !this._telemetry) {
       
       return;
@@ -257,7 +257,7 @@ ToolSidebar.prototype = {
 
 
 
-  getTelemetryPanelNameOrOther: function(id) {
+  getTelemetryPanelNameOrOther(id) {
     if (!this._toolNames) {
       
       
@@ -281,7 +281,7 @@ ToolSidebar.prototype = {
 
 
 
-  show: function(id) {
+  show(id) {
     this._tabbox.hidden = false;
 
     
@@ -295,7 +295,7 @@ ToolSidebar.prototype = {
   
 
 
-  hide: function() {
+  hide() {
     this._tabbox.hidden = true;
 
     this.emit("hide");

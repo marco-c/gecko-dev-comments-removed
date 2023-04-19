@@ -408,7 +408,7 @@ function Require(loader, requirer) {
       );
     }
 
-    return { uri: uri, requirement: requirement };
+    return { uri, requirement };
   }
 
   
@@ -515,7 +515,7 @@ function Loader(options) {
     
     Object.defineProperty(module, "exports", {
       enumerable: true,
-      get: function() {
+      get() {
         return builtinModuleExports[id];
       },
     });

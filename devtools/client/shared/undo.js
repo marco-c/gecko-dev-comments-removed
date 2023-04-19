@@ -28,7 +28,7 @@ UndoStack.prototype = {
   
   _batchDepth: 0,
 
-  destroy: function() {
+  destroy() {
     this.uninstallController();
     delete this._stack;
   },
@@ -42,7 +42,7 @@ UndoStack.prototype = {
 
 
 
-  startBatch: function() {
+  startBatch() {
     if (this._batchDepth++ === 0) {
       this._batch = [];
     }
@@ -52,7 +52,7 @@ UndoStack.prototype = {
 
 
 
-  endBatch: function() {
+  endBatch() {
     if (--this._batchDepth > 0) {
       return;
     }
@@ -65,12 +65,12 @@ UndoStack.prototype = {
     const batch = this._batch;
     delete this._batch;
     const entry = {
-      do: function() {
+      do() {
         for (const item of batch) {
           item.do();
         }
       },
-      undo: function() {
+      undo() {
         for (let i = batch.length - 1; i >= 0; i--) {
           batch[i].undo();
         }
@@ -87,7 +87,7 @@ UndoStack.prototype = {
 
 
 
-  do: function(toDo, undo) {
+  do(toDo, undo) {
     this.startBatch();
     this._batch.push({ do: toDo, undo });
     this.endBatch();
@@ -96,7 +96,7 @@ UndoStack.prototype = {
   
 
 
-  canUndo: function() {
+  canUndo() {
     return this._index > 0;
   },
 
@@ -105,7 +105,7 @@ UndoStack.prototype = {
 
 
 
-  undo: function() {
+  undo() {
     if (!this.canUndo()) {
       return false;
     }
@@ -116,7 +116,7 @@ UndoStack.prototype = {
   
 
 
-  canRedo: function() {
+  canRedo() {
     return this._stack.length > this._index;
   },
 
@@ -125,7 +125,7 @@ UndoStack.prototype = {
 
 
 
-  redo: function() {
+  redo() {
     if (!this.canRedo()) {
       return false;
     }
@@ -140,7 +140,7 @@ UndoStack.prototype = {
   
 
 
-  installController: function(controllerWindow) {
+  installController(controllerWindow) {
     const controllers = controllerWindow.controllers;
     
     if (!controllers || !controllers.appendController) {
@@ -154,18 +154,18 @@ UndoStack.prototype = {
   
 
 
-  uninstallController: function() {
+  uninstallController() {
     if (!this._controllerWindow) {
       return;
     }
     this._controllerWindow.controllers.removeController(this);
   },
 
-  supportsCommand: function(command) {
+  supportsCommand(command) {
     return command == "cmd_undo" || command == "cmd_redo";
   },
 
-  isCommandEnabled: function(command) {
+  isCommandEnabled(command) {
     switch (command) {
       case "cmd_undo":
         return this.canUndo();
@@ -175,7 +175,7 @@ UndoStack.prototype = {
     return false;
   },
 
-  doCommand: function(command) {
+  doCommand(command) {
     switch (command) {
       case "cmd_undo":
         return this.undo();
@@ -186,5 +186,5 @@ UndoStack.prototype = {
     }
   },
 
-  onEvent: function(event) {},
+  onEvent(event) {},
 };

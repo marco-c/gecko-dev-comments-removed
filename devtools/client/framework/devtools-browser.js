@@ -415,7 +415,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-  loadBrowserStyleSheet: function(win) {
+  loadBrowserStyleSheet(win) {
     if (this._browserStyleSheets.has(win)) {
       return Promise.resolve();
     }

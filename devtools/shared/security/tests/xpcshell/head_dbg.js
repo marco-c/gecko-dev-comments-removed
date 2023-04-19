@@ -46,7 +46,7 @@ function scriptErrorLogLevel(message) {
 
 
 var listener = {
-  observe: function(message) {
+  observe(message) {
     let string;
     try {
       message.QueryInterface(Ci.nsIScriptError);

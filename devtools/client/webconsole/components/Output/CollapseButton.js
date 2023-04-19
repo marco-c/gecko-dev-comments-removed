@@ -24,7 +24,7 @@ function CollapseButton(props) {
       
       e.target.ownerDocument.defaultView.getSelection().removeAllRanges();
     },
-    title: title,
+    title,
   });
 }
 

@@ -262,7 +262,7 @@ const windowGlobalTargetPrototype = {
 
 
 
-  initialize: function(
+  initialize(
     connection,
     {
       docShell,
@@ -602,7 +602,7 @@ const windowGlobalTargetPrototype = {
       
       followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
       innerWindowId,
-      parentInnerWindowId: parentInnerWindowId,
+      parentInnerWindowId,
       topInnerWindowId: this.browsingContext.topWindowContext.innerWindowId,
       isTopLevelTarget: this.isTopLevelTarget,
       ignoreSubFrames: this.ignoreSubFrames,
@@ -1546,8 +1546,8 @@ const windowGlobalTargetPrototype = {
     
     
     this.emit("navigate", {
-      window: window,
-      isTopLevel: isTopLevel,
+      window,
+      isTopLevel,
     });
 
     
@@ -1571,7 +1571,7 @@ const windowGlobalTargetPrototype = {
       url: this.url,
       title: this.title,
       state: "stop",
-      isFrameSwitching: isFrameSwitching,
+      isFrameSwitching,
     });
   },
 

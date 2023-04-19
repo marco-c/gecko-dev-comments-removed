@@ -66,7 +66,7 @@ add_task(
     
     const extension = ExtensionTestUtils.loadExtension({
       useAddonManager: "temporary",
-      background: function() {
+      background() {
         const { browser } = this;
         browser.test.log("background script executed");
         browser.test.sendMessage("background page ready", window.location.href);

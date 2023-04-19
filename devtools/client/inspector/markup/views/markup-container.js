@@ -62,7 +62,7 @@ MarkupContainer.prototype = {
 
 
 
-  initialize: function(markupView, node, type) {
+  initialize(markupView, node, type) {
     this.markup = markupView;
     this.node = node;
     this.type = type;
@@ -96,7 +96,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  buildMarkup: function() {
+  buildMarkup() {
     this.elt = this.win.document.createElement("li");
     this.elt.classList.add("child", "collapsed");
     this.elt.setAttribute("role", "presentation");
@@ -132,11 +132,11 @@ MarkupContainer.prototype = {
     this.elt.appendChild(this.children);
   },
 
-  toString: function() {
+  toString() {
     return "[MarkupContainer for " + this.node + "]";
   },
 
-  isPreviewable: function() {
+  isPreviewable() {
     if (this.node.tagName && !this.node.isPseudoElement) {
       const tagName = this.node.tagName.toLowerCase();
       const srcAttr = this.editor.getAttributeElement("src");
@@ -155,7 +155,7 @@ MarkupContainer.prototype = {
 
 
 
-  updateIsDisplayed: function() {
+  updateIsDisplayed() {
     this.elt.classList.remove("not-displayed");
     if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
@@ -215,7 +215,7 @@ MarkupContainer.prototype = {
 
 
 
-  clearFocus: function() {
+  clearFocus() {
     if (!this.canFocus) {
       return;
     }
@@ -259,7 +259,7 @@ MarkupContainer.prototype = {
     return this.canExpand && !this.mustExpand;
   },
 
-  updateExpander: function() {
+  updateExpander() {
     if (!this.expander) {
       return;
     }
@@ -282,7 +282,7 @@ MarkupContainer.prototype = {
 
 
 
-  setChildrenRole: function() {
+  setChildrenRole() {
     this.children.setAttribute(
       "role",
       this.hasChildren ? "group" : "presentation"
@@ -292,7 +292,7 @@ MarkupContainer.prototype = {
   
 
 
-  updateLevel: function() {
+  updateLevel() {
     
     const currentLevel = this.tagLine.getAttribute("aria-level");
     const newLevel = this.level;
@@ -312,7 +312,7 @@ MarkupContainer.prototype = {
 
 
 
-  getChildContainers: function() {
+  getChildContainers() {
     if (!this.hasChildren) {
       return null;
     }
@@ -329,7 +329,7 @@ MarkupContainer.prototype = {
     return !this.elt.classList.contains("collapsed");
   },
 
-  setExpanded: function(value) {
+  setExpanded(value) {
     if (!this.expander) {
       return;
     }
@@ -373,7 +373,7 @@ MarkupContainer.prototype = {
 
 
 
-  showCloseTagLine: function() {
+  showCloseTagLine() {
     
     if (this.type !== TYPES.ELEMENT_CONTAINER) {
       return;
@@ -408,7 +408,7 @@ MarkupContainer.prototype = {
 
 
 
-  hideCloseTagLine: function() {
+  hideCloseTagLine() {
     if (!this.closeTagLine) {
       return;
     }
@@ -417,7 +417,7 @@ MarkupContainer.prototype = {
     this.closeTagLine = undefined;
   },
 
-  parentContainer: function() {
+  parentContainer() {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
   },
 
@@ -464,7 +464,7 @@ MarkupContainer.prototype = {
   
 
 
-  isDraggable: function() {
+  isDraggable() {
     const tagName = this.node.tagName && this.node.tagName.toLowerCase();
 
     return (
@@ -479,11 +479,11 @@ MarkupContainer.prototype = {
     );
   },
 
-  isSlotted: function() {
+  isSlotted() {
     return false;
   },
 
-  _onKeyDown: function(event) {
+  _onKeyDown(event) {
     const { target, keyCode, shiftKey } = event;
     const isInput = this.markup._isInputOrTextarea(target);
 
@@ -534,7 +534,7 @@ MarkupContainer.prototype = {
     event.stopPropagation();
   },
 
-  _onMouseDown: function(event) {
+  _onMouseDown(event) {
     const { target, button, metaKey, ctrlKey } = event;
     const isLeftClick = button === 0;
     const isMiddleClick = button === 1;
@@ -620,7 +620,7 @@ MarkupContainer.prototype = {
 
 
 
-  onMouseMove: function(event) {
+  onMouseMove(event) {
     
     
     const initialDiff = Math.abs(event.pageY - this._dragStartY);
@@ -655,7 +655,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  cancelDragging: function() {
+  cancelDragging() {
     if (!this.isDragging) {
       return;
     }
@@ -669,7 +669,7 @@ MarkupContainer.prototype = {
 
 
 
-  flashMutation: function() {
+  flashMutation() {
     if (!this.selected) {
       flashElementOn(this.tagState, {
         foregroundElt: this.editor.elt,
@@ -755,7 +755,7 @@ MarkupContainer.prototype = {
 
 
 
-  update: function() {
+  update() {
     if (this.node.pseudoClassLocks.length) {
       this.elt.classList.add("pseudoclass-locked");
     } else {
@@ -782,7 +782,7 @@ MarkupContainer.prototype = {
   
 
 
-  focus: function() {
+  focus() {
     
     const focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
@@ -790,7 +790,7 @@ MarkupContainer.prototype = {
     }
   },
 
-  _onToggle: function(event) {
+  _onToggle(event) {
     event.stopPropagation();
 
     
@@ -812,7 +812,7 @@ MarkupContainer.prototype = {
 
 
 
-  expandContainer: function(applyToDescendants) {
+  expandContainer(applyToDescendants) {
     if (this.hasChildren) {
       this.markup.setNodeExpanded(
         this.node,
@@ -826,7 +826,7 @@ MarkupContainer.prototype = {
 
 
 
-  destroy: function() {
+  destroy() {
     
     this.elt.removeEventListener("mousedown", this._onMouseDown);
     this.elt.removeEventListener("dblclick", this._onToggle);

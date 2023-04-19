@@ -344,11 +344,11 @@ DevToolsStartup.prototype = {
 
   profilerRecordingButtonCreated: false,
 
-  isDisabledByPolicy: function() {
+  isDisabledByPolicy() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
   },
 
-  handle: function(cmdLine) {
+  handle(cmdLine) {
     const flags = this.readCommandLineFlags(cmdLine);
 
     
@@ -535,7 +535,7 @@ DevToolsStartup.prototype = {
     const subviewId = "PanelUI-developer-tools-view";
 
     const item = {
-      id: id,
+      id,
       type: "view",
       viewId: panelviewId,
       shortcutId: "key_toggleToolbox",
@@ -829,7 +829,7 @@ DevToolsStartup.prototype = {
     return k;
   },
 
-  initDevTools: function(reason, key = "") {
+  initDevTools(reason, key = "") {
     
     
     if (reason !== "CommandLine") {
@@ -846,7 +846,7 @@ DevToolsStartup.prototype = {
     return require;
   },
 
-  handleConsoleFlag: function(cmdLine) {
+  handleConsoleFlag(cmdLine) {
     const window = Services.wm.getMostRecentWindow("devtools:webconsole");
     if (!window) {
       const require = this.initDevTools("CommandLine");
@@ -865,7 +865,7 @@ DevToolsStartup.prototype = {
   },
 
   
-  handleDevToolsFlag: async function(window) {
+  async handleDevToolsFlag(window) {
     const require = this.initDevTools("CommandLine");
     const { gDevTools } = require("devtools/client/framework/devtools");
     await gDevTools.showToolboxForTab(window.gBrowser.selectedTab);
@@ -894,7 +894,7 @@ DevToolsStartup.prototype = {
     return remoteDebuggingEnabled;
   },
 
-  handleDebuggerFlag: function(cmdLine, binaryPath) {
+  handleDebuggerFlag(cmdLine, binaryPath) {
     if (!this._isRemoteDebuggingEnabled()) {
       return;
     }
@@ -953,7 +953,7 @@ DevToolsStartup.prototype = {
 
 
 
-  handleDevToolsServerFlag: function(cmdLine, portOrPath) {
+  handleDevToolsServerFlag(cmdLine, portOrPath) {
     if (!this._isRemoteDebuggingEnabled()) {
       return;
     }
@@ -1215,7 +1215,7 @@ DevToolsStartup.prototype = {
 const JsonView = {
   initialized: false,
 
-  initialize: function() {
+  initialize() {
     
     if (this.initialized) {
       return;
@@ -1234,7 +1234,7 @@ const JsonView = {
 
 
 
-  onSave: function(message) {
+  onSave(message) {
     const browser = message.target;
     const chrome = browser.ownerGlobal;
     if (message.data === null) {

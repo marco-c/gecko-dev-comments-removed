@@ -262,10 +262,6 @@ module.exports = {
     
     "no-unused-vars": ["error", { args: "none", vars: "all" }],
     
-    
-    
-    "object-shorthand": "off",
-    
     "prefer-const": ["error", { destructuring: "all" }],
     
     radix: "error",

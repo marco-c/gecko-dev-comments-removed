@@ -13,7 +13,7 @@ const Services = require("Services");
 
 
 const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
-  initialize: function(conn) {
+  initialize(conn) {
     protocol.Actor.prototype.initialize.call(this, conn);
   },
 

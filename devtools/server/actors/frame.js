@@ -76,7 +76,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  initialize: function(frame, threadActor, depth) {
+  initialize(frame, threadActor, depth) {
     Actor.prototype.initialize.call(this, threadActor.conn);
 
     this.frame = frame;
@@ -99,7 +99,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  destroy: function() {
+  destroy() {
     if (this._frameLifetimePool) {
       this._frameLifetimePool.destroy();
       this._frameLifetimePool = null;
@@ -107,7 +107,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
     Actor.prototype.destroy.call(this);
   },
 
-  getEnvironment: function() {
+  getEnvironment() {
     try {
       if (!this.frame.environment) {
         return {};
@@ -130,7 +130,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
   
 
 
-  form: function() {
+  form() {
     
     if (!(this.frame instanceof Debugger.Frame)) {
       
@@ -202,7 +202,7 @@ const FrameActor = ActorClassWithSpec(frameSpec, {
     return form;
   },
 
-  _args: function() {
+  _args() {
     if (!this.frame.onStack || !this.frame.arguments) {
       return [];
     }

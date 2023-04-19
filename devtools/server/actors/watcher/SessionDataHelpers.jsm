@@ -67,7 +67,7 @@ const SUPPORTED_DATA = {
 
 
 const DATA_KEY_FUNCTION = {
-  [SUPPORTED_DATA.BLACKBOXING]: function({ url, range }) {
+  [SUPPORTED_DATA.BLACKBOXING]({ url, range }) {
     return (
       url +
       (range
@@ -75,21 +75,21 @@ const DATA_KEY_FUNCTION = {
         : "")
     );
   },
-  [SUPPORTED_DATA.BREAKPOINTS]: function({ location }) {
+  [SUPPORTED_DATA.BREAKPOINTS]({ location }) {
     lazy.validateBreakpointLocation(location);
     const { sourceUrl, sourceId, line, column } = location;
     return `${sourceUrl}:${sourceId}:${line}:${column}`;
   },
-  [SUPPORTED_DATA.TARGET_CONFIGURATION]: function({ key }) {
+  [SUPPORTED_DATA.TARGET_CONFIGURATION]({ key }) {
     
     
     return key;
   },
-  [SUPPORTED_DATA.THREAD_CONFIGURATION]: function({ key }) {
+  [SUPPORTED_DATA.THREAD_CONFIGURATION]({ key }) {
     
     return key;
   },
-  [SUPPORTED_DATA.XHR_BREAKPOINTS]: function({ path, method }) {
+  [SUPPORTED_DATA.XHR_BREAKPOINTS]({ path, method }) {
     if (typeof path != "string") {
       throw new Error(
         `XHR Breakpoints expect to have path string, got ${typeof path} instead.`
@@ -102,7 +102,7 @@ const DATA_KEY_FUNCTION = {
     }
     return `${path}:${method}`;
   },
-  [SUPPORTED_DATA.EVENT_BREAKPOINTS]: function(id) {
+  [SUPPORTED_DATA.EVENT_BREAKPOINTS](id) {
     if (typeof id != "string") {
       throw new Error(
         `Event Breakpoints expect the id to be a string , got ${typeof id} instead.`

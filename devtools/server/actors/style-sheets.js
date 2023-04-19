@@ -41,7 +41,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.window.document;
   },
 
-  initialize: function(conn, targetActor) {
+  initialize(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, targetActor.conn);
 
     this.parentActor = targetActor;
@@ -67,7 +67,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     };
   },
 
-  destroy: function() {
+  destroy() {
     for (const win of this.parentActor.windows) {
       
       
@@ -92,7 +92,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onWindowReady: function(evt) {
+  _onWindowReady(evt) {
     this._addStyleSheets(evt.window);
   },
 
@@ -102,7 +102,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onNewStyleSheetActor: function(actor) {
+  _onNewStyleSheetActor(actor) {
     const info = this._addingStyleSheetInfo?.get(actor.rawSheet);
     this._addingStyleSheetInfo?.delete(actor.rawSheet);
 
@@ -139,7 +139,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _shouldListSheet: function(sheet) {
+  _shouldListSheet(sheet) {
     
     
     
@@ -167,7 +167,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onApplicableStateChanged: function({ applicable, stylesheet }) {
+  _onApplicableStateChanged({ applicable, stylesheet }) {
     if (
       
       applicable &&
@@ -190,7 +190,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _addStyleSheets: function(win) {
+  _addStyleSheets(win) {
     return async function() {
       const doc = win.document;
       
@@ -228,7 +228,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _getImported: function(doc, styleSheet) {
+  _getImported(doc, styleSheet) {
     return async function() {
       const rules = await styleSheet.getCSSRules();
       let imported = [];

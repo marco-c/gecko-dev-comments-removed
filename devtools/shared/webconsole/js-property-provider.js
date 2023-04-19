@@ -683,7 +683,7 @@ function getExactMatchImpl(obj, name, { chainIterator, getProperty }) {
 }
 
 var JSObjectSupport = {
-  chainIterator: function*(obj) {
+  *chainIterator(obj) {
     while (obj) {
       yield obj;
       try {
@@ -695,7 +695,7 @@ var JSObjectSupport = {
     }
   },
 
-  getProperties: function(obj) {
+  getProperties(obj) {
     try {
       return Object.getOwnPropertyNames(obj);
     } catch (error) {
@@ -704,14 +704,14 @@ var JSObjectSupport = {
     }
   },
 
-  getProperty: function() {
+  getProperty() {
     
     throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerObjectSupport = {
-  chainIterator: function*(obj) {
+  *chainIterator(obj) {
     while (obj) {
       yield obj;
       try {
@@ -723,7 +723,7 @@ var DebuggerObjectSupport = {
     }
   },
 
-  getProperties: function(obj) {
+  getProperties(obj) {
     try {
       return obj.getOwnPropertyNames();
     } catch (error) {
@@ -732,21 +732,21 @@ var DebuggerObjectSupport = {
     }
   },
 
-  getProperty: function(obj, name, rootObj) {
+  getProperty(obj, name, rootObj) {
     
     throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerEnvironmentSupport = {
-  chainIterator: function*(obj) {
+  *chainIterator(obj) {
     while (obj) {
       yield obj;
       obj = obj.parent;
     }
   },
 
-  getProperties: function(obj) {
+  getProperties(obj) {
     const names = obj.names();
 
     
@@ -760,7 +760,7 @@ var DebuggerEnvironmentSupport = {
     return names;
   },
 
-  getProperty: function(obj, name) {
+  getProperty(obj, name) {
     let result;
     
     

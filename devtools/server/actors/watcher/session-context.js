@@ -120,7 +120,7 @@ function createWebExtensionSessionContext(
   const type = SESSION_TYPES.WEBEXTENSION;
   return {
     type,
-    addonId: addonId,
+    addonId,
     addonBrowsingContextID: browsingContextID,
     addonInnerWindowId: innerWindowId,
     

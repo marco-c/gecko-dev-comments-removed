@@ -315,7 +315,7 @@ Inspector.prototype = {
     this.selection.setNodeFront(null);
   },
 
-  onResourceAvailable: function(resources) {
+  onResourceAvailable(resources) {
     
     const rootNodeAvailablePromises = [];
 
@@ -351,7 +351,7 @@ Inspector.prototype = {
   
 
 
-  onRootNodeAvailable: async function(rootNodeFront) {
+  async onRootNodeAvailable(rootNodeFront) {
     
     this._newRootStart = this.panelWin.performance.now();
 
@@ -378,7 +378,7 @@ Inspector.prototype = {
     }
   },
 
-  _initMarkupView: async function() {
+  async _initMarkupView() {
     if (!this._markupFrame) {
       this._markupFrame = this.panelDoc.createElement("iframe");
       this._markupFrame.setAttribute(
@@ -551,13 +551,13 @@ Inspector.prototype = {
 
 
 
-  _handleRejectionIfNotDestroyed: function(e) {
+  _handleRejectionIfNotDestroyed(e) {
     if (!this._destroyed) {
       console.error(e);
     }
   },
 
-  _onWillNavigate: function() {
+  _onWillNavigate() {
     this._defaultNode = null;
     this.selection.setNodeFront(null);
     if (this._highlighters) {
@@ -567,11 +567,11 @@ Inspector.prototype = {
     this._pendingSelectionUnique = null;
   },
 
-  _getCssProperties: async function(targetFront) {
+  async _getCssProperties(targetFront) {
     this._cssProperties = await targetFront.getFront("cssProperties");
   },
 
-  _getAccessibilityFront: async function(targetFront) {
+  async _getAccessibilityFront(targetFront) {
     this.accessibilityFront = await targetFront.getFront("accessibility");
     return this.accessibilityFront;
   },
@@ -582,7 +582,7 @@ Inspector.prototype = {
 
 
 
-  _getDefaultNodeForSelection: async function(rootNodeFront) {
+  async _getDefaultNodeForSelection(rootNodeFront) {
     if (this._defaultNode) {
       return this._defaultNode;
     }
@@ -640,7 +640,7 @@ Inspector.prototype = {
   
 
 
-  setupSearchBox: function() {
+  setupSearchBox() {
     this.searchBox = this.panelDoc.getElementById("inspector-searchbox");
     this.searchClearButton = this.panelDoc.getElementById(
       "inspector-searchinput-clear"
@@ -697,11 +697,11 @@ Inspector.prototype = {
     return this.search.autocompleter;
   },
 
-  _clearSearchResultsLabel: function(result) {
+  _clearSearchResultsLabel(result) {
     return this._updateSearchResultsLabel(result, true);
   },
 
-  _updateSearchResultsLabel: function(result, clear = false) {
+  _updateSearchResultsLabel(result, clear = false) {
     let str = "";
     if (!clear) {
       if (result) {
@@ -774,7 +774,7 @@ Inspector.prototype = {
 
 
 
-  useLandscapeMode: function() {
+  useLandscapeMode() {
     if (!this.panelDoc) {
       return true;
     }
@@ -793,7 +793,7 @@ Inspector.prototype = {
 
 
 
-  setupSplitter: function() {
+  setupSplitter() {
     const { width, height, splitSidebarWidth } = this.getSidebarSize();
 
     this.sidebarSplitBoxRef = this.React.createRef();
@@ -835,7 +835,7 @@ Inspector.prototype = {
     this.panelWin.addEventListener("resize", this.onPanelWindowResize, true);
   },
 
-  _onLazyPanelResize: async function() {
+  async _onLazyPanelResize() {
     
     if (
       window.closed ||
@@ -849,7 +849,7 @@ Inspector.prototype = {
     this.emit("inspector-resize");
   },
 
-  getSidebarSize: function() {
+  getSidebarSize() {
     let width;
     let height;
     let splitSidebarWidth;
@@ -878,7 +878,7 @@ Inspector.prototype = {
     return { width, height, splitSidebarWidth };
   },
 
-  onSidebarHidden: function() {
+  onSidebarHidden() {
     
     const state = this.splitBox.state;
     Services.prefs.setIntPref(
@@ -895,33 +895,33 @@ Inspector.prototype = {
     );
   },
 
-  onSidebarResized: function(width, height) {
+  onSidebarResized(width, height) {
     this.toolbox.emit("inspector-sidebar-resized", { width, height });
   },
 
   
 
 
-  getActiveSidebar: function() {
+  getActiveSidebar() {
     return Services.prefs.getCharPref("devtools.inspector.activeSidebar");
   },
 
-  setActiveSidebar: function(toolId) {
+  setActiveSidebar(toolId) {
     Services.prefs.setCharPref("devtools.inspector.activeSidebar", toolId);
   },
 
   
 
 
-  getSelectedSidebar: function() {
+  getSelectedSidebar() {
     return Services.prefs.getCharPref("devtools.inspector.selectedSidebar");
   },
 
-  setSelectedSidebar: function(toolId) {
+  setSelectedSidebar(toolId) {
     Services.prefs.setCharPref("devtools.inspector.selectedSidebar", toolId);
   },
 
-  onSidebarSelect: function(toolId) {
+  onSidebarSelect(toolId) {
     
     this.setSelectedSidebar(toolId);
     this.setActiveSidebar(toolId);
@@ -933,7 +933,7 @@ Inspector.prototype = {
     this.toolbox.emit("inspector-sidebar-select", toolId);
   },
 
-  onSidebarShown: function() {
+  onSidebarShown() {
     const { width, height, splitSidebarWidth } = this.getSidebarSize();
     this.splitBox.setState({ width, height });
     this.sidebarSplitBoxRef.current.setState({ width: splitSidebarWidth });
@@ -1089,14 +1089,14 @@ Inspector.prototype = {
   
 
 
-  hasPanel: function(id) {
+  hasPanel(id) {
     return this._panels.has(id);
   },
 
   
 
 
-  getPanel: function(id) {
+  getPanel(id) {
     if (this._panels.has(id)) {
       return this._panels.get(id);
     }
@@ -1290,7 +1290,7 @@ Inspector.prototype = {
 
 
 
-  addExtensionSidebar: function(id, { title }) {
+  addExtensionSidebar(id, { title }) {
     if (this._panels.has(id)) {
       throw new Error(
         `Cannot create an extension sidebar for the existent id: ${id}`
@@ -1319,7 +1319,7 @@ Inspector.prototype = {
 
 
 
-  removeExtensionSidebar: function(id) {
+  removeExtensionSidebar(id) {
     if (!this._panels.has(id)) {
       throw new Error(`Unable to find a sidebar panel with id "${id}"`);
     }
@@ -1347,7 +1347,7 @@ Inspector.prototype = {
 
 
 
-  addSidebarTab: function(id, title, panel, selected) {
+  addSidebarTab(id, title, panel, selected) {
     this.sidebar.addTab(id, title, panel, selected);
   },
 
@@ -1415,7 +1415,7 @@ Inspector.prototype = {
     this.emit("inspector-toolbar-updated");
   },
 
-  teardownToolbar: function() {
+  teardownToolbar() {
     if (this.addNodeButton) {
       this.addNodeButton.removeEventListener("click", this.addNode);
       this.addNodeButton = null;
@@ -1486,7 +1486,7 @@ Inspector.prototype = {
 
 
 
-  canAddHTMLChild: function() {
+  canAddHTMLChild() {
     const selection = this.selection;
 
     
@@ -1541,7 +1541,7 @@ Inspector.prototype = {
   
 
 
-  onNewSelection: function(value, reason) {
+  onNewSelection(value, reason) {
     if (reason === "selection-destroy") {
       return;
     }
@@ -1617,7 +1617,7 @@ Inspector.prototype = {
 
 
 
-  updating: function(name) {
+  updating(name) {
     if (
       this._updateProgress &&
       this._updateProgress.node != this.selection.nodeFront
@@ -1631,7 +1631,7 @@ Inspector.prototype = {
       this._updateProgress = {
         node: this.selection.nodeFront,
         outstanding: new Set(),
-        checkDone: function() {
+        checkDone() {
           if (this !== self._updateProgress) {
             return;
           }
@@ -1663,7 +1663,7 @@ Inspector.prototype = {
   
 
 
-  cancelUpdate: function() {
+  cancelUpdate() {
     this._updateProgress = null;
   },
 
@@ -1672,7 +1672,7 @@ Inspector.prototype = {
 
 
 
-  onDetached: function(parentNode) {
+  onDetached(parentNode) {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
     const nodeFront = parentNode ? parentNode : this._defaultNode;
     this.selection.setNodeFront(nodeFront, { reason: "detached" });
@@ -1681,7 +1681,7 @@ Inspector.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     if (this._destroyed) {
       return;
     }
@@ -1783,7 +1783,7 @@ Inspector.prototype = {
     this.telemetry = null;
   },
 
-  _destroyMarkup: function() {
+  _destroyMarkup() {
     if (this.markup) {
       this.markup.destroy();
       this.markup = null;
@@ -1794,27 +1794,27 @@ Inspector.prototype = {
     }
   },
 
-  onEyeDropperButtonClicked: function() {
+  onEyeDropperButtonClicked() {
     this.eyeDropperButton.classList.contains("checked")
       ? this.hideEyeDropper()
       : this.showEyeDropper();
   },
 
-  startEyeDropperListeners: function() {
+  startEyeDropperListeners() {
     this.toolbox.tellRDMAboutPickerState(true, PICKER_TYPES.EYEDROPPER);
     this.inspectorFront.once("color-pick-canceled", this.onEyeDropperDone);
     this.inspectorFront.once("color-picked", this.onEyeDropperDone);
     this.once("new-root", this.onEyeDropperDone);
   },
 
-  stopEyeDropperListeners: function() {
+  stopEyeDropperListeners() {
     this.toolbox.tellRDMAboutPickerState(false, PICKER_TYPES.EYEDROPPER);
     this.inspectorFront.off("color-pick-canceled", this.onEyeDropperDone);
     this.inspectorFront.off("color-picked", this.onEyeDropperDone);
     this.off("new-root", this.onEyeDropperDone);
   },
 
-  onEyeDropperDone: function() {
+  onEyeDropperDone() {
     this.eyeDropperButton.classList.remove("checked");
     this.stopEyeDropperListeners();
   },
@@ -1823,7 +1823,7 @@ Inspector.prototype = {
 
 
 
-  showEyeDropper: function() {
+  showEyeDropper() {
     
     
     if (!this.eyeDropperButton) {
@@ -1843,7 +1843,7 @@ Inspector.prototype = {
 
 
 
-  hideEyeDropper: function() {
+  hideEyeDropper() {
     
     if (!this.eyeDropperButton) {
       return null;
@@ -1888,7 +1888,7 @@ Inspector.prototype = {
   
 
 
-  togglePseudoClass: function(pseudo) {
+  togglePseudoClass(pseudo) {
     if (this.selection.isElementNode()) {
       const node = this.selection.nodeFront;
       if (node.hasPseudoClassLock(pseudo)) {

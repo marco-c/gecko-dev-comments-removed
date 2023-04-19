@@ -17,7 +17,7 @@ var uid = 1;
 
 
 const trace = {
-  log: function(...args) {},
+  log(...args) {},
 };
 
 
@@ -108,7 +108,7 @@ const HarExporter = {
 
 
 
-  copy: function(options) {
+  copy(options) {
     return this.fetchHarData(options).then(jsonString => {
       clipboardHelper.copyString(jsonString);
       return jsonString;
@@ -121,7 +121,7 @@ const HarExporter = {
 
 
 
-  getHar: function(options) {
+  getHar(options) {
     return this.fetchHarData(options).then(data => {
       return data ? JSON.parse(data) : null;
     });
@@ -129,7 +129,7 @@ const HarExporter = {
 
   
 
-  fetchHarData: function(options) {
+  fetchHarData(options) {
     
     options.id = options.id || uid++;
 
@@ -190,7 +190,7 @@ const HarExporter = {
 
 
 
-  buildHarData: async function(options) {
+  async buildHarData(options) {
     const { connector } = options;
     const { getTabTarget } = connector;
     const { title } = getTabTarget();
@@ -219,7 +219,7 @@ const HarExporter = {
   
 
 
-  stringify: function(har) {
+  stringify(har) {
     if (!har) {
       return null;
     }

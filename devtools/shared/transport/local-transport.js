@@ -40,7 +40,7 @@ LocalDebuggerTransport.prototype = {
 
 
 
-  send: function(packet) {
+  send(packet) {
     const serial = this._serial.count++;
     if (flags.wantLogging) {
       
@@ -81,7 +81,7 @@ LocalDebuggerTransport.prototype = {
 
 
 
-  startBulkSend: function({ actor, type, length }) {
+  startBulkSend({ actor, type, length }) {
     const serial = this._serial.count++;
 
     dumpn("Sent bulk packet " + serial + " for actor " + actor);
@@ -102,9 +102,9 @@ LocalDebuggerTransport.prototype = {
         
         new Promise(receiverResolve => {
           const packet = {
-            actor: actor,
-            type: type,
-            length: length,
+            actor,
+            type,
+            length,
             copyTo: output => {
               const copying = StreamUtils.copyStream(
                 pipe.inputStream,
@@ -156,7 +156,7 @@ LocalDebuggerTransport.prototype = {
   
 
 
-  close: function() {
+  close() {
     if (this.other) {
       
       
@@ -179,12 +179,12 @@ LocalDebuggerTransport.prototype = {
   
 
 
-  ready: function() {},
+  ready() {},
 
   
 
 
-  _deepFreeze: function(object) {
+  _deepFreeze(object) {
     Object.freeze(object);
     for (const prop in object) {
       

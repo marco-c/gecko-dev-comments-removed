@@ -192,7 +192,7 @@ add_task(async function testLongListTraversal() {
   
   const center = allChildren[13];
   is(center.id, "n", "Make sure I know how to count letters.");
-  children = await walker.children(longList, { maxNodes: 5, center: center });
+  children = await walker.children(longList, { maxNodes: 5, center });
   await checkArray(walker, children, false, false, "lmnop");
   
   children = await walker.children(longList, {
@@ -203,7 +203,7 @@ add_task(async function testLongListTraversal() {
   
   const start = allChildren[13];
   is(start.id, "n", "Make sure I know how to count letters.");
-  children = await walker.children(longList, { maxNodes: 5, start: start });
+  children = await walker.children(longList, { maxNodes: 5, start });
   await checkArray(walker, children, false, false, "nopqr");
   
   children = await walker.children(longList, {

@@ -33,7 +33,7 @@ const { reflowSpec } = require("devtools/shared/specs/reflow");
 
 
 exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
-  initialize: function(conn, targetActor) {
+  initialize(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
     this.targetActor = targetActor;
@@ -42,7 +42,7 @@ exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
     this._isStarted = false;
   },
 
-  destroy: function() {
+  destroy() {
     this.stop();
     releaseLayoutChangesObserver(this.targetActor);
     this.observer = null;
@@ -56,7 +56,7 @@ exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
 
 
 
-  start: function() {
+  start() {
     if (!this._isStarted) {
       this.observer.on("reflows", this._onReflow);
       this._isStarted = true;
@@ -68,14 +68,14 @@ exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, {
 
 
 
-  stop: function() {
+  stop() {
     if (this._isStarted) {
       this.observer.off("reflows", this._onReflow);
       this._isStarted = false;
     }
   },
 
-  _onReflow: function(reflows) {
+  _onReflow(reflows) {
     if (this._isStarted) {
       this.emit("reflows", reflows);
     }
@@ -108,7 +108,7 @@ Observable.prototype = {
   
 
 
-  destroy: function() {
+  destroy() {
     if (this.isDestroyed) {
       return;
     }
@@ -126,7 +126,7 @@ Observable.prototype = {
   
 
 
-  start: function() {
+  start() {
     if (this.isObserving) {
       return;
     }
@@ -138,7 +138,7 @@ Observable.prototype = {
   
 
 
-  stop: function() {
+  stop() {
     if (!this.isObserving) {
       return;
     }
@@ -150,30 +150,30 @@ Observable.prototype = {
     }
   },
 
-  _onWindowReady: function({ window }) {
+  _onWindowReady({ window }) {
     if (this.isObserving) {
       this._startListeners([window]);
     }
   },
 
-  _onWindowDestroyed: function({ window }) {
+  _onWindowDestroyed({ window }) {
     if (this.isObserving) {
       this._stopListeners([window]);
     }
   },
 
-  _startListeners: function(windows) {
+  _startListeners(windows) {
     
   },
 
-  _stopListeners: function(windows) {
+  _stopListeners(windows) {
     
   },
 
   
 
 
-  notifyCallback: function(...args) {
+  notifyCallback(...args) {
     this.isObserving && this.callback && this.callback.apply(null, args);
   },
 };
@@ -255,7 +255,7 @@ LayoutChangesObserver.prototype = {
 
 
 
-  destroy: function() {
+  destroy() {
     this.isObserving = false;
 
     this.reflowObserver.destroy();
@@ -267,7 +267,7 @@ LayoutChangesObserver.prototype = {
     this.targetActor = null;
   },
 
-  start: function() {
+  start() {
     if (this.isObserving) {
       return;
     }
@@ -282,7 +282,7 @@ LayoutChangesObserver.prototype = {
     this.resizeObserver.start();
   },
 
-  stop: function() {
+  stop() {
     if (!this.isObserving) {
       return;
     }
@@ -302,7 +302,7 @@ LayoutChangesObserver.prototype = {
 
 
 
-  _startEventLoop: function() {
+  _startEventLoop() {
     
     
     if (!this.targetActor || this.targetActor.isDestroyed()) {
@@ -327,15 +327,15 @@ LayoutChangesObserver.prototype = {
     );
   },
 
-  _stopEventLoop: function() {
+  _stopEventLoop() {
     this._clearTimeout(this.eventLoopTimer);
   },
 
   
-  _setTimeout: function(cb, ms) {
+  _setTimeout(cb, ms) {
     return setTimeout(cb, ms);
   },
-  _clearTimeout: function(t) {
+  _clearTimeout(t) {
     return clearTimeout(t);
   },
 
@@ -347,7 +347,7 @@ LayoutChangesObserver.prototype = {
 
 
 
-  _onReflow: function(start, end, isInterruptible) {
+  _onReflow(start, end, isInterruptible) {
     if (gIgnoreLayoutChanges) {
       return;
     }
@@ -355,9 +355,9 @@ LayoutChangesObserver.prototype = {
     
     
     this.reflows.push({
-      start: start,
-      end: end,
-      isInterruptible: isInterruptible,
+      start,
+      end,
+      isInterruptible,
     });
   },
 
@@ -366,7 +366,7 @@ LayoutChangesObserver.prototype = {
 
 
 
-  _onResize: function() {
+  _onResize() {
     if (gIgnoreLayoutChanges) {
       return;
     }

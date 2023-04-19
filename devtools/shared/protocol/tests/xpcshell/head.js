@@ -34,7 +34,7 @@ function TracingTransport(childTransport) {
 
 TracingTransport.prototype = {
   
-  normalize: function(packet) {
+  normalize(packet) {
     return JSON.parse(
       JSON.stringify(packet, (key, value) => {
         if (key === "to" || key === "from" || key === "actor") {
@@ -44,39 +44,39 @@ TracingTransport.prototype = {
       })
     );
   },
-  send: function(packet) {
+  send(packet) {
     this.packets.push({
       type: "sent",
       packet: this.normalize(packet),
     });
     return this.child.send(packet);
   },
-  close: function() {
+  close() {
     return this.child.close();
   },
-  ready: function() {
+  ready() {
     return this.child.ready();
   },
-  onPacket: function(packet) {
+  onPacket(packet) {
     this.packets.push({
       type: "received",
       packet: this.normalize(packet),
     });
     this.hooks.onPacket(packet);
   },
-  onTransportClosed: function() {
+  onTransportClosed() {
     if (this.hooks.onTransportClosed) {
       this.hooks.onTransportClosed();
     }
   },
 
-  expectSend: function(expected) {
+  expectSend(expected) {
     const packet = this.packets[this.checkIndex++];
     Assert.equal(packet.type, "sent");
     deepEqual(packet.packet, this.normalize(expected));
   },
 
-  expectReceive: function(expected) {
+  expectReceive(expected) {
     const packet = this.packets[this.checkIndex++];
     Assert.equal(packet.type, "received");
     deepEqual(packet.packet, this.normalize(expected));
@@ -84,7 +84,7 @@ TracingTransport.prototype = {
 
   
   
-  dumpLog: function() {
+  dumpLog() {
     for (const entry of this.packets) {
       if (entry.type === "sent") {
         dumpn("trace.expectSend(" + entry.packet + ");");

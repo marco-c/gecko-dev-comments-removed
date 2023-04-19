@@ -262,7 +262,7 @@ function deserialize(array) {
       case 255:
         return readExtDate(readData);
     }
-    return { type: type, data: readData };
+    return { type, data: readData };
   }
 
   function readExtDate(givenData) {
@@ -356,7 +356,7 @@ function decodeUtf8(bytes, start, length) {
 
 
 const msgpack = {
-  deserialize: deserialize,
+  deserialize,
 
   
   decode: deserialize,

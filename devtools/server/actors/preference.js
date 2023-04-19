@@ -28,7 +28,7 @@ function ensurePrefType(name, expectedType) {
 
 
 var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
-  getTraits: function() {
+  getTraits() {
     
     
     
@@ -36,22 +36,22 @@ var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
     return {};
   },
 
-  getBoolPref: function(name) {
+  getBoolPref(name) {
     ensurePrefType(name, PREF_BOOL);
     return Services.prefs.getBoolPref(name);
   },
 
-  getCharPref: function(name) {
+  getCharPref(name) {
     ensurePrefType(name, PREF_STRING);
     return Services.prefs.getCharPref(name);
   },
 
-  getIntPref: function(name) {
+  getIntPref(name) {
     ensurePrefType(name, PREF_INT);
     return Services.prefs.getIntPref(name);
   },
 
-  getAllPrefs: function() {
+  getAllPrefs() {
     const prefs = {};
     Services.prefs.getChildList("").forEach(function(name, index) {
       
@@ -70,7 +70,7 @@ var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
           default:
         }
         prefs[name] = {
-          value: value,
+          value,
           hasUserValue: Services.prefs.prefHasUserValue(name),
         };
       } catch (e) {
@@ -80,22 +80,22 @@ var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
     return prefs;
   },
 
-  setBoolPref: function(name, value) {
+  setBoolPref(name, value) {
     Services.prefs.setBoolPref(name, value);
     Services.prefs.savePrefFile(null);
   },
 
-  setCharPref: function(name, value) {
+  setCharPref(name, value) {
     Services.prefs.setCharPref(name, value);
     Services.prefs.savePrefFile(null);
   },
 
-  setIntPref: function(name, value) {
+  setIntPref(name, value) {
     Services.prefs.setIntPref(name, value);
     Services.prefs.savePrefFile(null);
   },
 
-  clearUserPref: function(name) {
+  clearUserPref(name) {
     Services.prefs.clearUserPref(name);
     Services.prefs.savePrefFile(null);
   },

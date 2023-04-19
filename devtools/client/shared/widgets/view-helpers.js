@@ -64,7 +64,7 @@ exports.ViewHelpers = {
 
 
 
-  dispatchEvent: function(target, type, detail) {
+  dispatchEvent(target, type, detail) {
     if (!(target instanceof Node)) {
       
       return true;
@@ -85,7 +85,7 @@ exports.ViewHelpers = {
 
 
 
-  delegateWidgetAttributeMethods: function(widget, node) {
+  delegateWidgetAttributeMethods(widget, node) {
     widget.getAttribute = widget.getAttribute || node.getAttribute.bind(node);
     widget.setAttribute = widget.setAttribute || node.setAttribute.bind(node);
     widget.removeAttribute =
@@ -100,7 +100,7 @@ exports.ViewHelpers = {
 
 
 
-  delegateWidgetEventMethods: function(widget, node) {
+  delegateWidgetEventMethods(widget, node) {
     widget.addEventListener =
       widget.addEventListener || node.addEventListener.bind(node);
     widget.removeEventListener =
@@ -114,7 +114,7 @@ exports.ViewHelpers = {
 
 
 
-  isEventEmitter: function(object) {
+  isEventEmitter(object) {
     return object?.on && object?.off && object?.once && object?.emit;
   },
 
@@ -124,7 +124,7 @@ exports.ViewHelpers = {
 
 
 
-  isNode: function(object) {
+  isNode(object) {
     return (
       object instanceof Node ||
       object instanceof Element ||
@@ -138,7 +138,7 @@ exports.ViewHelpers = {
 
 
 
-  preventScrolling: function(e) {
+  preventScrolling(e) {
     switch (e.keyCode) {
       case KeyCodes.DOM_VK_UP:
       case KeyCodes.DOM_VK_DOWN:
@@ -159,7 +159,7 @@ exports.ViewHelpers = {
 
 
 
-  isSpaceOrReturn: function(event) {
+  isSpaceOrReturn(event) {
     return (
       event.keyCode === KeyCodes.DOM_VK_SPACE ||
       event.keyCode === KeyCodes.DOM_VK_RETURN
@@ -179,7 +179,7 @@ exports.ViewHelpers = {
 
 
 
-  togglePane: function(flags, pane) {
+  togglePane(flags, pane) {
     
     if (!pane) {
       return;
@@ -330,7 +330,7 @@ Item.prototype = {
 
 
 
-  append: function(element, options = {}) {
+  append(element, options = {}) {
     const item = new Item(this, element, "", options.attachment);
 
     
@@ -356,7 +356,7 @@ Item.prototype = {
 
 
 
-  remove: function(item) {
+  remove(item) {
     if (!item) {
       return;
     }
@@ -372,7 +372,7 @@ Item.prototype = {
 
 
 
-  _entangleItem: function(item, element) {
+  _entangleItem(item, element) {
     this._itemsByElement.set(element, item);
     item._target = element;
   },
@@ -383,7 +383,7 @@ Item.prototype = {
 
 
 
-  _untangleItem: function(item) {
+  _untangleItem(item) {
     if (item.finalize) {
       item.finalize(item);
     }
@@ -401,7 +401,7 @@ Item.prototype = {
 
 
 
-  _unlinkItem: function(item) {
+  _unlinkItem(item) {
     this._itemsByElement.delete(item._target);
   },
 
@@ -410,7 +410,7 @@ Item.prototype = {
 
 
 
-  stringify: function() {
+  stringify() {
     return JSON.stringify(
       {
         value: this._value,

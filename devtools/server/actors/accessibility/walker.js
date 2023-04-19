@@ -408,7 +408,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
   },
 
-  unmanage: function(actor) {
+  unmanage(actor) {
     if (actor instanceof AccessibleActor) {
       this.refMap.delete(actor.rawAccessible);
     }
@@ -590,7 +590,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       });
   },
 
-  onHighlighterEvent: function(data) {
+  onHighlighterEvent(data) {
     this.emit("highlighter-event", data);
   },
 
@@ -862,7 +862,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _isEventAllowed: function({ view }) {
+  _isEventAllowed({ view }) {
     return (
       this.rootWin instanceof Ci.nsIDOMChromeWindow ||
       isWindowIncluded(this.rootWin, view)
@@ -1027,7 +1027,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  pick: function() {
+  pick() {
     if (!this._isPicking) {
       this._isPicking = true;
       this._setPickerEnvironment();
@@ -1037,7 +1037,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  pickAndFocus: function() {
+  pickAndFocus() {
     this.pick();
     this.rootWin.focus();
   },
@@ -1098,7 +1098,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _setPickerEnvironment: function() {
+  _setPickerEnvironment() {
     const target = this.targetActor.chromeEventHandler;
     target.addEventListener("mousemove", this.onHovered, true);
     target.addEventListener("click", this.onPick, true);
@@ -1117,7 +1117,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  _unsetPickerEnvironment: function() {
+  _unsetPickerEnvironment() {
     const target = this.targetActor.chromeEventHandler;
 
     if (!target) {
@@ -1169,7 +1169,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  cancelPick: function() {
+  cancelPick() {
     this.unhighlight();
 
     if (this._isPicking) {

@@ -81,7 +81,7 @@ function RuleEditor(ruleView, rule) {
 }
 
 RuleEditor.prototype = {
-  destroy: function() {
+  destroy() {
     this.rule.domRule.off("location-changed");
     this.toolbox.off("tool-registered", this._onToolChanged);
     this.toolbox.off("tool-unregistered", this._onToolChanged);
@@ -111,7 +111,7 @@ RuleEditor.prototype = {
     return trait && !this.rule.elementStyle.element.isAnonymous;
   },
 
-  _create: function() {
+  _create() {
     this.element = this.doc.createElement("div");
     this.element.className = "ruleview-rule devtools-monospace";
     this.element.dataset.ruleId = this.rule.domRule.actorID;
@@ -274,7 +274,7 @@ RuleEditor.prototype = {
   
 
 
-  _onToolChanged: function() {
+  _onToolChanged() {
     
     
     
@@ -292,11 +292,11 @@ RuleEditor.prototype = {
 
 
 
-  _locationChanged: function() {
+  _locationChanged() {
     this.updateSourceLink();
   },
 
-  _onSourceClick: function() {
+  _onSourceClick() {
     if (this.source.hasAttribute("unselectable")) {
       return;
     }
@@ -319,7 +319,7 @@ RuleEditor.prototype = {
 
 
 
-  _updateLocation: function(originalLocation) {
+  _updateLocation(originalLocation) {
     let displayURL = this.rule.sheet?.href;
     const constructed = this.rule.sheet?.constructed;
     let line = this.rule.ruleLine;
@@ -345,7 +345,7 @@ RuleEditor.prototype = {
     sourceLabel.textContent = sourceTextContent;
   },
 
-  updateSourceLink: function() {
+  updateSourceLink() {
     if (this.rule.isSystem) {
       const sourceLabel = this.element.querySelector(
         ".ruleview-rule-source-label"
@@ -404,7 +404,7 @@ RuleEditor.prototype = {
 
 
 
-  populate: function(reset) {
+  populate(reset) {
     
     while (this.selectorText.hasChildNodes()) {
       this.selectorText.removeChild(this.selectorText.lastChild);
@@ -499,7 +499,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperty: function(name, value, priority, enabled, siblingProp) {
+  addProperty(name, value, priority, enabled, siblingProp) {
     const prop = this.rule.createProperty(
       name,
       value,
@@ -538,7 +538,7 @@ RuleEditor.prototype = {
 
 
 
-  addProperties: function(properties, siblingProp) {
+  addProperties(properties, siblingProp) {
     if (!properties || !properties.length) {
       return;
     }
@@ -569,7 +569,7 @@ RuleEditor.prototype = {
 
 
 
-  newProperty: function() {
+  newProperty() {
     
     if (!this.closeBrace.hasAttribute("tabindex")) {
       return;
@@ -616,7 +616,7 @@ RuleEditor.prototype = {
 
 
 
-  _onNewProperty: function(value, commit) {
+  _onNewProperty(value, commit) {
     if (!value || !commit) {
       return;
     }
@@ -645,7 +645,7 @@ RuleEditor.prototype = {
 
 
 
-  _newPropertyDestroy: function() {
+  _newPropertyDestroy() {
     
     this.closeBrace.setAttribute("tabindex", "0");
 
@@ -755,7 +755,7 @@ RuleEditor.prototype = {
 
 
 
-  _moveSelectorFocus: function(direction) {
+  _moveSelectorFocus(direction) {
     if (!direction || direction === Services.focus.MOVEFOCUS_BACKWARD) {
       return;
     }

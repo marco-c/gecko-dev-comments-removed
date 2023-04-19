@@ -21,7 +21,7 @@ const prefDomain = "devtools.netmonitor.har.";
 
 
 const trace = {
-  log: function(...args) {},
+  log(...args) {},
 };
 
 
@@ -43,14 +43,14 @@ function HarAutomation() {}
 HarAutomation.prototype = {
   
 
-  initialize: async function(toolbox) {
+  async initialize(toolbox) {
     this.toolbox = toolbox;
     this.commands = toolbox.commands;
 
     await this.startMonitoring();
   },
 
-  destroy: function() {
+  destroy() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -62,7 +62,7 @@ HarAutomation.prototype = {
 
   
 
-  startMonitoring: async function() {
+  async startMonitoring() {
     await this.toolbox.resourceCommand.watchResources(
       [this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
       {
@@ -88,11 +88,11 @@ HarAutomation.prototype = {
     );
   },
 
-  pageLoadBegin: function(response) {
+  pageLoadBegin(response) {
     this.resetCollector();
   },
 
-  resetCollector: function() {
+  resetCollector() {
     if (this.collector) {
       this.collector.stop();
     }
@@ -116,7 +116,7 @@ HarAutomation.prototype = {
 
 
 
-  pageLoadDone: function(response) {
+  pageLoadDone(response) {
     trace.log("HarAutomation.pageLoadDone; ", response);
 
     if (this.collector) {
@@ -126,7 +126,7 @@ HarAutomation.prototype = {
     }
   },
 
-  autoExport: function() {
+  autoExport() {
     const autoExport = Services.prefs.getBoolPref(
       prefDomain + "enableAutoExportToFile"
     );
@@ -149,7 +149,7 @@ HarAutomation.prototype = {
   
 
 
-  triggerExport: function(data) {
+  triggerExport(data) {
     if (!data.fileName) {
       data.fileName = Services.prefs.getCharPref(
         prefDomain + "defaultFileName"
@@ -162,7 +162,7 @@ HarAutomation.prototype = {
   
 
 
-  clear: function() {
+  clear() {
     this.resetCollector();
   },
 
@@ -172,7 +172,7 @@ HarAutomation.prototype = {
 
 
 
-  executeExport: async function(data) {
+  async executeExport(data) {
     const items = this.collector.getItems();
     const { title } = this.commands.targetCommand.targetFront;
 
@@ -185,7 +185,7 @@ HarAutomation.prototype = {
       getTimingMarker: null,
       getString: this.getString.bind(this),
       view: this,
-      items: items,
+      items,
     };
 
     options.defaultFileName = data.fileName;
@@ -215,7 +215,7 @@ HarAutomation.prototype = {
   
 
 
-  getString: async function(stringGrip) {
+  async getString(stringGrip) {
     const fullText = await getLongStringFullText(
       this.commands.client,
       stringGrip

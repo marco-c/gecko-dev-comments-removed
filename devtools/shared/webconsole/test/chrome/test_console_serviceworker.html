@@ -5,8 +5,8 @@
   <title>Test for the Console API and Service Workers</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Test for the Console API and Service Workers</p>
@@ -53,7 +53,7 @@ function messageServiceWorker(win, scope, message) {
         resolve();
       };
       const sw = swr.active || swr.waiting || swr.installing;
-      sw.postMessage({ type: "PING", message: message });
+      sw.postMessage({ type: "PING", message });
     });
   });
 }

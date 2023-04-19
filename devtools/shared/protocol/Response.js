@@ -40,7 +40,7 @@ Response.prototype = {
 
 
 
-  write: function(ret, ctx) {
+  write(ret, ctx) {
     
     
     if (this.template instanceof RetVal) {
@@ -69,7 +69,7 @@ Response.prototype = {
 
 
 
-  read: function(packet, ctx) {
+  read(packet, ctx) {
     if (!this.retVal) {
       return undefined;
     }
@@ -95,15 +95,15 @@ var RetVal = function(type) {
 };
 
 RetVal.prototype = {
-  write: function(v, ctx) {
+  write(v, ctx) {
     return this.type.write(v, ctx);
   },
 
-  read: function(v, ctx) {
+  read(v, ctx) {
     return this.type.read(v, ctx);
   },
 
-  isArrayType: function() {
+  isArrayType() {
     
     
     return typeof this._type === "string" && this._type.startsWith("array:");

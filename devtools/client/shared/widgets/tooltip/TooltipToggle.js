@@ -65,7 +65,7 @@ TooltipToggle.prototype = {
 
 
 
-  start: function(
+  start(
     baseNode,
     targetNodeCb,
     { toggleDelay = DEFAULT_TOGGLE_DELAY, interactive = false } = {}
@@ -102,7 +102,7 @@ TooltipToggle.prototype = {
 
 
 
-  stop: function() {
+  stop() {
     this.win.clearTimeout(this.toggleTimer);
 
     if (!this._baseNode) {
@@ -128,7 +128,7 @@ TooltipToggle.prototype = {
     this._lastHovered = null;
   },
 
-  _onMouseMove: function(event) {
+  _onMouseMove(event) {
     if (event.target !== this._lastHovered) {
       this._lastHovered = event.target;
 
@@ -169,7 +169,7 @@ TooltipToggle.prototype = {
     return null;
   },
 
-  _onMouseOut: function(event) {
+  _onMouseOut(event) {
     
     if (
       event &&
@@ -197,7 +197,7 @@ TooltipToggle.prototype = {
     }, this._toggleDelay);
   },
 
-  destroy: function() {
+  destroy() {
     this.stop();
   },
 };
