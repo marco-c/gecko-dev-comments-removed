@@ -49,6 +49,9 @@ class Isolate;
 class RegExpMatchInfo;
 class RegExpStack;
 
+template <typename T>
+class Handle;
+
 }  
 }  
 
@@ -655,6 +658,25 @@ inline uint8_t* ByteArrayData::data() {
   return reinterpret_cast<uint8_t*>(immediatelyAfter);
 }
 
+template <typename T>
+T* ByteArrayData::typedData() {
+  static_assert(alignof(T) <= alignof(ByteArrayData));
+  MOZ_ASSERT(uintptr_t(data()) % alignof(T) == 0);
+  return reinterpret_cast<T*>(data());
+}
+
+template <typename T>
+T ByteArrayData::getTyped(uint32_t index) {
+  MOZ_ASSERT(index < length / sizeof(T));
+  return typedData<T>()[index];
+}
+
+template <typename T>
+void ByteArrayData::setTyped(uint32_t index, T value) {
+  MOZ_ASSERT(index < length / sizeof(T));
+  typedData<T>()[index] = value;
+}
+
 
 class ByteArray : public HeapObject {
  protected:
@@ -668,10 +690,6 @@ class ByteArray : public HeapObject {
 
   byte get(uint32_t index) { return inner()->get(index); }
   void set(uint32_t index, byte val) { inner()->set(index, val); }
-  uint16_t get_uint16(uint32_t index) { return inner()->get_uint16(index); }
-  void set_uint16(uint32_t index, uint16_t value) {
-    inner()->set_uint16(index, value);
-  }
 
   uint32_t length() const { return inner()->length; }
   byte* GetDataStartAddress() { return inner()->data(); }
@@ -686,6 +704,30 @@ class ByteArray : public HeapObject {
 
   friend class SMRegExpMacroAssembler;
 };
+
+
+
+template <typename T>
+class FixedIntegerArray : public ByteArray {
+  static_assert(alignof(T) <= alignof(ByteArrayData));
+  static_assert(std::is_integral<T>::value);
+
+ public:
+  static Handle<FixedIntegerArray<T>> New(Isolate* isolate, uint32_t length);
+
+  T get(uint32_t index) { return inner()->template getTyped<T>(index); };
+  void set(uint32_t index, T value) {
+    inner()->template setTyped<T>(index, value);
+  }
+
+  static FixedIntegerArray<T> cast(Object object) {
+    FixedIntegerArray<T> f;
+    f.setValue(object.value());
+    return f;
+  }
+};
+
+using FixedUInt16Array = FixedIntegerArray<uint16_t>;
 
 
 
@@ -1065,6 +1107,9 @@ class Isolate {
 
   
   Handle<FixedArray> NewFixedArray(int length);
+
+  template <typename T>
+  Handle<FixedIntegerArray<T>> NewFixedIntegerArray(uint32_t length);
 
   template <typename Char>
   Handle<String> InternalizeString(const base::Vector<const Char>& str);
