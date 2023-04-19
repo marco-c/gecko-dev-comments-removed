@@ -1641,29 +1641,43 @@ static void RejectExecutionWithPendingException(JSContext* cx,
 }
 
 
+
 void js::AsyncModuleExecutionFulfilled(JSContext* cx,
                                        Handle<ModuleObject*> module) {
+  
+  if (module->status() == ModuleStatus::Evaluated) {
+    
+    MOZ_ASSERT(module->hadEvaluationError());
+
+    
+    return;
+  }
+
   
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
   
   MOZ_ASSERT(module->isAsyncEvaluating());
 
-  ModuleObject::onTopLevelEvaluationFinished(module);
+  
+  MOZ_ASSERT(!module->hadEvaluationError());
 
-  if (module->hasTopLevelCapability()) {
-    MOZ_ASSERT(module->getCycleRoot() == module);
-    if (!ModuleObject::topLevelCapabilityResolve(cx, module)) {
-      
-      cx->clearPendingException();
-    }
-  }
+  
+  
+  
 
+  
   Rooted<ModuleVector> execList(cx);
+
+  
   if (!GatherAvailableModuleAncestors(cx, module, &execList)) {
     RejectExecutionWithPendingException(cx, module);
     return;
   }
+
+  
+  
+  
 
   Rooted<ModuleVector> scratch(cx);
   if (!scratch.resize(execList.length())) {
@@ -1672,43 +1686,85 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
     return;
   }
 
-  
-  
-  
-  
-  
   MOZ_ALWAYS_TRUE(MergeSort(execList.begin(), execList.length(),
                             scratch.begin(), EvalOrderComparator()));
 
   
+  
+  
+  
+#ifdef DEBUG
+  for (ModuleObject* m : execList) {
+    MOZ_ASSERT(m->isAsyncEvaluating());
+    MOZ_ASSERT(m->pendingAsyncDependencies() == 0);
+    MOZ_ASSERT(!m->hadEvaluationError());
+  }
+#endif
+
+  
+
+  ModuleObject::onTopLevelEvaluationFinished(module);
+
+  
   module->setAsyncEvaluatingFalse();
 
-  Rooted<ModuleObject*> m(cx);
+  
+  module->setStatus(ModuleStatus::Evaluated);
 
+  
+  if (module->hasTopLevelCapability()) {
+    
+    MOZ_ASSERT(module->getCycleRoot() == module);
+
+    
+    
+    if (!ModuleObject::topLevelCapabilityResolve(cx, module)) {
+      
+      cx->clearPendingException();
+    }
+  }
+
+  
+  Rooted<ModuleObject*> m(cx);
   for (ModuleObject* obj : execList) {
     m = obj;
 
     
-    if (!m->isAsyncEvaluating()) {
+    if (m->status() == ModuleStatus::Evaluated) {
+      
       MOZ_ASSERT(m->hadEvaluationError());
-      return;
-    }
-
-    if (m->hasTopLevelAwait()) {
+    } else if (m->hasTopLevelAwait()) {
+      
+      
       MOZ_ALWAYS_TRUE(ExecuteAsyncModule(cx, m));
     } else {
-      if (!ModuleObject::execute(cx, m)) {
-        MOZ_ASSERT(cx->isExceptionPending());
-        RootedValue exception(cx);
-        if (!cx->getPendingException(&exception)) {
-          return;
-        }
-        cx->clearPendingException();
-        AsyncModuleExecutionRejected(cx, m, exception);
+      
+      
+      bool ok = ModuleObject::execute(cx, m);
+
+      
+      if (!ok) {
+        
+        
+        RejectExecutionWithPendingException(cx, m);
       } else {
+        
+        
+        m->setStatus(ModuleStatus::Evaluated);
+
+        
+        
+        
         m->setAsyncEvaluatingFalse();
+
+        
         if (m->hasTopLevelCapability()) {
+          
           MOZ_ASSERT(m->getCycleRoot() == m);
+
+          
+          
+          
           if (!ModuleObject::topLevelCapabilityResolve(cx, m)) {
             
             cx->clearPendingException();
@@ -1718,7 +1774,6 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
     }
   }
 
-  
   
 }
 
