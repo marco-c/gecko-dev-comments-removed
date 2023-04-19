@@ -3,8 +3,7 @@
 
 
 
-
-async function testSteps() {
+add_task(async function testSteps() {
   const data = {
     key: "foo",
     value: "",
@@ -35,4 +34,4 @@ async function testSteps() {
   info("Verifying data");
 
   is(storage.getItem(data.key), data.value, "Correct value");
-}
+});

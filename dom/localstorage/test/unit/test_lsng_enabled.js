@@ -8,7 +8,6 @@
 
 
 
-
-async function testSteps() {
+add_task(async function testSteps() {
   ok(Services.domStorageManager.nextGenLocalStorageEnabled, "LSNG enabled");
-}
+});

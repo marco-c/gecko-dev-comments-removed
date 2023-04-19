@@ -8,7 +8,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   const principal = getPrincipal("http://example.com");
 
   info("Setting prefs");
@@ -29,4 +29,4 @@ async function testSteps() {
     is(ex.name, "NS_ERROR_FAILURE", "Threw right Exception");
     is(ex.result, Cr.NS_ERROR_FAILURE, "Threw with right result");
   }
-}
+});

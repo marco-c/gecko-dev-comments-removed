@@ -11,7 +11,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   
 
 
@@ -66,4 +66,4 @@ async function testSteps() {
 
     ok(originDir.exists(), `The origin directory ${origin.path} should exist`);
   }
-}
+});

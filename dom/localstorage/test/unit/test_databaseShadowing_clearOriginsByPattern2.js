@@ -6,7 +6,7 @@
 
 loadSubscript("databaseShadowing-shared.js");
 
-async function testSteps() {
+add_task(async function testSteps() {
   
   
 
@@ -18,4 +18,4 @@ async function testSteps() {
   );
 
   verifyData([4, 5, 6],  true);
-}
+});

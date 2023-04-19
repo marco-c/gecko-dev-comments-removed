@@ -135,8 +135,7 @@ const fetchFromNewSnapshotNewDatastore = async (itemKey, sample) => {
   });
 };
 
-
-async function testSteps() {
+add_task(async function testSteps() {
   
   Services.prefs.setBoolPref(
     "dom.storage.enable_unsupported_legacy_implementation",
@@ -203,4 +202,4 @@ async function testSteps() {
     "NewSnapshotNewDatastore",
     fetchFromNewSnapshotNewDatastore
   );
-}
+});

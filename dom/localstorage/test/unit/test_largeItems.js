@@ -10,7 +10,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   const globalLimitKB = 5 * 1024;
 
   
@@ -85,4 +85,4 @@ async function testSteps() {
   await returnToEventLoop();
 
   ok(!storage.hasSnapshot, "Snapshot successfully finished");
-}
+});

@@ -3,7 +3,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   const principal = getPrincipal("http://example.com");
 
   const dataFile = getRelativeFile(
@@ -161,4 +161,4 @@ async function testSteps() {
   verifyData();
 
   await verifyUsage( true);
-}
+});

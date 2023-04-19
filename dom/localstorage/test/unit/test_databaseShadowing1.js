@@ -6,7 +6,7 @@
 
 loadSubscript("databaseShadowing-shared.js");
 
-async function testSteps() {
+add_task(async function testSteps() {
   enableNextGenLocalStorage();
 
   storeData();
@@ -20,4 +20,4 @@ async function testSteps() {
   exportShadowDatabase("shadowdb.sqlite");
 
   
-}
+});

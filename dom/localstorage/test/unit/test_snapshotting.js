@@ -3,7 +3,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   const url = "http://example.com";
 
   info("Setting pref");
@@ -327,4 +327,4 @@ async function testSteps() {
       await returnToEventLoop();
     }
   }
-}
+});
