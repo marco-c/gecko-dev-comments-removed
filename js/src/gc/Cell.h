@@ -111,6 +111,12 @@ class CellColor {
 
 
 
+
+
+
+
+
+
 class HeaderWord {
   
   
@@ -119,9 +125,6 @@ class HeaderWord {
 
   uintptr_t value_;
 
-  uintptr_t getAtomic() const {
-    return __atomic_load_n(&value_, __ATOMIC_RELAXED);
-  }
   void setAtomic(uintptr_t value) {
     __atomic_store_n(&value_, value, __ATOMIC_RELAXED);
   }
@@ -132,9 +135,14 @@ class HeaderWord {
   static_assert(gc::CellFlagBitsReservedForGC >= 3,
                 "Not enough flag bits reserved for GC");
 
+  uintptr_t getAtomic() const {
+    return __atomic_load_n(&value_, __ATOMIC_RELAXED);
+  }
+
   
   uintptr_t get() const {
-    uintptr_t value = getAtomic();
+    
+    uintptr_t value = value_;
     MOZ_ASSERT((value & RESERVED_MASK) == 0);
     return value;
   }
@@ -816,6 +824,11 @@ class alignas(gc::CellAlignBytes) CellWithTenuredGCPointer : public BaseCell {
     staticAsserts();
     MOZ_ASSERT(this->flags() == 0);
     return reinterpret_cast<PtrT*>(uintptr_t(this->header_.get()));
+  }
+  PtrT* headerPtrAtomic() const {
+    staticAsserts();
+    MOZ_ASSERT(this->flags() == 0);
+    return reinterpret_cast<PtrT*>(uintptr_t(this->header_.getAtomic()));
   }
 
   void unbarrieredSetHeaderPtr(PtrT* newValue) {

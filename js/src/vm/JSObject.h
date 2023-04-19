@@ -90,6 +90,9 @@ class JSObject
   
   js::Shape* shape() const { return headerPtr(); }
 
+  
+  js::Shape* shapeMaybeForwarded() const { return headerPtrAtomic(); }
+
 #ifndef JS_64BIT
   
   uint32_t padding_;
