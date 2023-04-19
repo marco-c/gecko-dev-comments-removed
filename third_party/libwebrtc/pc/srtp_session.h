@@ -111,6 +111,10 @@ class SrtpSession {
 
   
   
+  void DumpPacket(const void* buf, int len, bool outbound);
+
+  
+  
   
   
   
@@ -130,6 +134,7 @@ class SrtpSession {
   bool external_auth_active_ = false;
   bool external_auth_enabled_ = false;
   int decryption_failure_count_ = 0;
+  bool dump_plain_rtp_ = false;
   RTC_DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
 
