@@ -18,18 +18,7 @@ public interface VideoDecoderFactory {
 
 
 
-  @Deprecated
-  @Nullable
-  default VideoDecoder createDecoder(String codecType) {
-    throw new UnsupportedOperationException("Deprecated and not implemented.");
-  }
-
-  
-  @Nullable
-  @CalledByNative
-  default VideoDecoder createDecoder(VideoCodecInfo info) {
-    return createDecoder(info.getName());
-  }
+  @Nullable @CalledByNative VideoDecoder createDecoder(VideoCodecInfo info);
 
   
 
