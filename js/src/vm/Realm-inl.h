@@ -37,7 +37,12 @@ inline bool JS::Realm::hasLiveGlobal() const {
 inline bool JS::Realm::marked() const {
   
   
-  return hasLiveGlobal() || hasBeenEnteredIgnoringJit();
+  
+  
+  
+  
+  return hasLiveGlobal() || hasBeenEnteredIgnoringJit() ||
+         allocatedDuringIncrementalGC_;
 }
 
  inline js::ObjectRealm& js::ObjectRealm::get(const JSObject* obj) {
