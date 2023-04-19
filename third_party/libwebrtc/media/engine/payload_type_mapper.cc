@@ -61,7 +61,6 @@ PayloadTypeMapper::PayloadTypeMapper()
 
            
            
-           {{kGoogleRtpDataCodecName, 0, 0}, kGoogleRtpDataCodecPlType},
            {{kIlbcCodecName, 8000, 1}, 102},
            {{kIsacCodecName, 16000, 1}, 103},
            {{kIsacCodecName, 32000, 1}, 104},

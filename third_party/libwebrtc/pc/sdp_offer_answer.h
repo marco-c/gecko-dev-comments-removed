@@ -453,7 +453,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  
   void EnableSending();
   
   

@@ -118,7 +118,6 @@ const char MediaConstraints::kUseRtpMux[] = "googUseRtpMUX";
 
 
 const char MediaConstraints::kEnableDtlsSrtp[] = "DtlsSrtpKeyAgreement";
-const char MediaConstraints::kEnableRtpDataChannels[] = "RtpDataChannels";
 
 const char MediaConstraints::kEnableDscp[] = "googDscp";
 const char MediaConstraints::kEnableIPv6[] = "googIPv6";

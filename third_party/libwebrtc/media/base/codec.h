@@ -202,23 +202,6 @@ struct RTC_EXPORT VideoCodec : public Codec {
   void SetDefaultParameters();
 };
 
-struct RtpDataCodec : public Codec {
-  RtpDataCodec(int id, const std::string& name);
-  RtpDataCodec();
-  RtpDataCodec(const RtpDataCodec& c);
-  RtpDataCodec(RtpDataCodec&& c);
-  ~RtpDataCodec() override = default;
-
-  RtpDataCodec& operator=(const RtpDataCodec& c);
-  RtpDataCodec& operator=(RtpDataCodec&& c);
-
-  std::string ToString() const;
-};
-
-
-
-typedef RtpDataCodec DataCodec;
-
 
 
 template <class Codec>

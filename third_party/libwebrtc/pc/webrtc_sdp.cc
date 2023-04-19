@@ -3050,21 +3050,6 @@ bool ParseContent(const std::string& message,
             line, "b=" + bandwidth_type + " value can't be negative.", error);
       }
       
-      
-      
-      
-      
-      
-      if (media_type == cricket::MEDIA_TYPE_DATA &&
-          cricket::IsRtpProtocol(protocol) &&
-          (b > cricket::kRtpDataMaxBandwidth / 1000 ||
-           bandwidth_type == kTransportSpecificBandwidth)) {
-        rtc::StringBuilder description;
-        description << "RTP-based data channels may not send more than "
-                    << cricket::kRtpDataMaxBandwidth / 1000 << "kbps.";
-        return ParseFailed(line, description.str(), error);
-      }
-      
       if (bandwidth_type == kApplicationSpecificBandwidth) {
         b = std::min(b, INT_MAX / 1000) * 1000;
       } else {

@@ -20,8 +20,6 @@
 namespace cricket {
 
 extern const int kVideoCodecClockrate;
-extern const int kDataCodecClockrate;
-extern const int kRtpDataMaxBandwidth;  
 
 extern const int kVideoMtu;
 extern const int kVideoRtpSendBufferSize;
@@ -118,12 +116,6 @@ extern const char kCodecParamMaxBitrate[];
 extern const char kCodecParamMinBitrate[];
 extern const char kCodecParamStartBitrate[];
 extern const char kCodecParamMaxQuantization[];
-
-
-
-
-extern const int kGoogleRtpDataCodecPlType;
-extern const char kGoogleRtpDataCodecName[];
 
 extern const char kComfortNoiseCodecName[];
 

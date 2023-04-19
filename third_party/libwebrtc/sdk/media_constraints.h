@@ -86,8 +86,6 @@ class MediaConstraints {
   
   static const char kEnableDtlsSrtp[];  
   
-  static const char kEnableRtpDataChannels[];  
-  
   
   static const char kEnableDscp[];  
   
