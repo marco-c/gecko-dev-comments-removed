@@ -53,7 +53,7 @@ async function checkMessages(isFissionSupported) {
   await pushPref("devtools.browsertoolbox.fission", isFissionSupported);
 
   
-  await addTab(TEST_URI);
+  await openNewTabAndConsole(TEST_URI);
 
   
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
@@ -191,6 +191,11 @@ async function checkMessages(isFissionSupported) {
       hud.chromeWindow.document.title,
       "Parent process Browser Console",
       "Browser Console window title was updated"
+    );
+
+    ok(
+      hud.iframeWindow.document.hasFocus(),
+      "Browser Console is still focused"
     );
   }
 
