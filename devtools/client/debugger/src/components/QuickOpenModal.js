@@ -332,7 +332,9 @@ export class QuickOpenModal extends Component {
       return;
     }
 
-    this.updateResults(e.target.value);
+    
+    const targetValue = e.target.value;
+    setTimeout(() => this.updateResults(targetValue), 0);
   };
 
   onKeyDown = e => {
