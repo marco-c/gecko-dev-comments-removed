@@ -35,12 +35,6 @@ ChromeUtils.defineModuleGetter(
 );
 
 const Telemetry = Services.telemetry;
-const bundle = Services.strings.createBundle(
-  "chrome://global/locale/aboutTelemetry.properties"
-);
-const brandBundle = Services.strings.createBundle(
-  "chrome://branding/locale/brand.properties"
-);
 
 
 const MAX_BAR_HEIGHT = 8;
@@ -950,17 +944,19 @@ var StackRenderer = {
 
 
 
-  renderHeader: function StackRenderer_renderHeader(aPrefix, aFormatArgs) {
-    let div = document.getElementById(aPrefix);
+
+
+  renderHeader: function StackRenderer_renderHeader(
+    aDivId,
+    aL10nId,
+    aL10nArgs
+  ) {
+    let div = document.getElementById(aDivId);
 
     let titleElement = document.createElement("span");
     titleElement.className = "stack-title";
 
-    let titleText = bundle.formatStringFromName(
-      aPrefix + "-title",
-      aFormatArgs
-    );
-    titleElement.appendChild(document.createTextNode(titleText));
+    document.l10n.setAttributes(titleElement, aL10nId, aL10nArgs);
 
     div.appendChild(titleElement);
     div.appendChild(document.createElement("br"));
@@ -2329,7 +2325,11 @@ function onLoad() {
 
 var LateWritesSingleton = {
   renderHeader: function LateWritesSingleton_renderHeader(aIndex) {
-    StackRenderer.renderHeader("late-writes", [aIndex + 1]);
+    StackRenderer.renderHeader(
+      "late-writes",
+      "about-telemetry-late-writes-title",
+      { lateWriteCount: aIndex + 1 }
+    );
   },
 
   renderLateWrites: function LateWritesSingleton_renderLateWrites(lateWrites) {
