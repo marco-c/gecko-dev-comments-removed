@@ -871,12 +871,10 @@ nsresult nsSocketTransport::InitWithConnectedSocket(PRFileDesc* fd,
   return PostEvent(MSG_RETRY_INIT_SOCKET);
 }
 
-nsresult nsSocketTransport::InitWithConnectedSocket(
-    PRFileDesc* aFD, const NetAddr* aAddr, nsIInterfaceRequestor* aCallbacks) {
-  {
-    MutexAutoLock lock(mLock);
-    mCallbacks = aCallbacks;
-  }
+nsresult nsSocketTransport::InitWithConnectedSocket(PRFileDesc* aFD,
+                                                    const NetAddr* aAddr,
+                                                    nsISupports* aSecInfo) {
+  mSecInfo = aSecInfo;
   return InitWithConnectedSocket(aFD, aAddr);
 }
 
@@ -1114,7 +1112,7 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
     rv = spserv->GetSocketProvider(mTypes[i].get(), getter_AddRefs(provider));
     if (NS_FAILED(rv)) break;
 
-    nsCOMPtr<nsISSLSocketControl> tlsSocketControl;
+    nsCOMPtr<nsISupports> secinfo;
     if (i == 0) {
       
       
@@ -1145,7 +1143,7 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
           mHttpsProxy ? mProxyHost.get() : socketProviderHost,
           mHttpsProxy ? mProxyPort : socketProviderPort, proxyInfo,
           mOriginAttributes, controlFlags, mTlsFlags, &fd,
-          getter_AddRefs(tlsSocketControl));
+          getter_AddRefs(secinfo));
 
       if (NS_SUCCEEDED(rv) && !fd) {
         MOZ_ASSERT_UNREACHABLE(
@@ -1159,7 +1157,7 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
       
       rv = provider->AddToSocket(mNetAddr.raw.family, host, port, proxyInfo,
                                  mOriginAttributes, controlFlags, mTlsFlags, fd,
-                                 getter_AddRefs(tlsSocketControl));
+                                 getter_AddRefs(secinfo));
     }
 
     
@@ -1173,15 +1171,14 @@ nsresult nsSocketTransport::BuildSocket(PRFileDesc*& fd, bool& proxyTransparent,
       nsCOMPtr<nsIInterfaceRequestor> callbacks;
       {
         MutexAutoLock lock(mLock);
-        mTLSSocketControl = tlsSocketControl;
+        mSecInfo = secinfo;
         callbacks = mCallbacks;
-        SOCKET_LOG(("  [tlsSocketControl=%p callbacks=%p]\n",
-                    mTLSSocketControl.get(), mCallbacks.get()));
+        SOCKET_LOG(("  [secinfo=%p callbacks=%p]\n", mSecInfo.get(),
+                    mCallbacks.get()));
       }
       
-      if (tlsSocketControl) {
-        tlsSocketControl->SetNotificationCallbacks(callbacks);
-      }
+      nsCOMPtr<nsISSLSocketControl> secCtrl(do_QueryInterface(secinfo));
+      if (secCtrl) secCtrl->SetNotificationCallbacks(callbacks);
       
       usingSSL = isSSL;
     } else if (mTypes[i].EqualsLiteral("socks") ||
@@ -1331,7 +1328,8 @@ nsresult nsSocketTransport::InitiateSocket() {
     SOCKET_LOG(("Successfully attached fuzzing IOLayer.\n"));
 
     if (usingSSL) {
-      mTLSSocketControl = new FuzzySecurityInfo();
+      mSecInfo = static_cast<nsISupports*>(
+          static_cast<nsISSLSocketControl*>(new FuzzySecurityInfo()));
     }
   }
 #endif
@@ -1471,11 +1469,12 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 #endif
 
-  if (mTLSSocketControl) {
+  nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
+  if (secCtrl) {
     if (!mEchConfig.IsEmpty() &&
         !(mConnectionFlags & (DONT_TRY_ECH | BE_CONSERVATIVE))) {
       SOCKET_LOG(("nsSocketTransport::InitiateSocket set echconfig."));
-      rv = mTLSSocketControl->SetEchConfig(mEchConfig);
+      rv = secCtrl->SetEchConfig(mEchConfig);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -1541,14 +1540,16 @@ nsresult nsSocketTransport::InitiateSocket() {
       
       OnSocketConnected();
 
-      if (mTLSSocketControl && !mProxyHost.IsEmpty() && proxyTransparent &&
-          usingSSL) {
+      if (mSecInfo && !mProxyHost.IsEmpty() && proxyTransparent && usingSSL) {
         
         
         
         
-        SOCKET_LOG(("  calling ProxyStartSSL()\n"));
-        mTLSSocketControl->ProxyStartSSL();
+        nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
+        if (secCtrl) {
+          SOCKET_LOG(("  calling ProxyStartSSL()\n"));
+          secCtrl->ProxyStartSSL();
+        }
         
         
         
@@ -2225,9 +2226,8 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
   
   
   
-  if (mTLSSocketControl) {
-    mTLSSocketControl->SetNotificationCallbacks(nullptr);
-  }
+  nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
+  if (secCtrl) secCtrl->SetNotificationCallbacks(nullptr);
 
   
   
@@ -2392,9 +2392,9 @@ nsSocketTransport::Close(nsresult reason) {
 }
 
 NS_IMETHODIMP
-nsSocketTransport::GetTlsSocketControl(nsISSLSocketControl** tlsSocketControl) {
+nsSocketTransport::GetSecurityInfo(nsISupports** secinfo) {
   MutexAutoLock lock(mLock);
-  *tlsSocketControl = do_AddRef(mTLSSocketControl).take();
+  *secinfo = do_AddRef(mSecInfo).take();
   return NS_OK;
 }
 
@@ -2412,20 +2412,19 @@ nsSocketTransport::SetSecurityCallbacks(nsIInterfaceRequestor* callbacks) {
                                          GetCurrentEventTarget(),
                                          getter_AddRefs(threadsafeCallbacks));
 
-  nsCOMPtr<nsISSLSocketControl> tlsSocketControl;
+  nsCOMPtr<nsISupports> secinfo;
   {
     MutexAutoLock lock(mLock);
     mCallbacks = threadsafeCallbacks;
-    SOCKET_LOG(("Reset callbacks for tlsSocketInfo=%p callbacks=%p\n",
-                mTLSSocketControl.get(), mCallbacks.get()));
+    SOCKET_LOG(("Reset callbacks for secinfo=%p callbacks=%p\n", mSecInfo.get(),
+                mCallbacks.get()));
 
-    tlsSocketControl = mTLSSocketControl;
+    secinfo = mSecInfo;
   }
 
   
-  if (tlsSocketControl) {
-    tlsSocketControl->SetNotificationCallbacks(threadsafeCallbacks);
-  }
+  nsCOMPtr<nsISSLSocketControl> secCtrl(do_QueryInterface(secinfo));
+  if (secCtrl) secCtrl->SetNotificationCallbacks(threadsafeCallbacks);
 
   return NS_OK;
 }

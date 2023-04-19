@@ -135,9 +135,8 @@ class nsSocketTransport final : public nsASocketHandler,
 
   
   
-  
   nsresult InitWithConnectedSocket(PRFileDesc* aFD, const NetAddr* aAddr,
-                                   nsIInterfaceRequestor* aCallbacks);
+                                   nsISupports* aSecInfo);
 
 #ifdef XP_UNIX
   
@@ -380,7 +379,7 @@ class nsSocketTransport final : public nsASocketHandler,
 
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsITransportEventSink> mEventSink;
-  nsCOMPtr<nsISSLSocketControl> mTLSSocketControl;
+  nsCOMPtr<nsISupports> mSecInfo;
 
   nsSocketInputStream mInput;
   nsSocketOutputStream mOutput;
