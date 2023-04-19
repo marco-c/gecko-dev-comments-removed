@@ -1251,19 +1251,20 @@ void Statistics::sendSliceTelemetry(const SliceData& slice) {
   if (slice.budget.isTimeBudget()) {
     TimeDuration budgetDuration = slice.budget.timeBudgetDuration();
     runtime->metrics().GC_BUDGET_MS_2(budgetDuration);
+
     if (IsCurrentlyAnimating(runtime->lastAnimationTime, slice.end)) {
       runtime->metrics().GC_ANIMATION_MS(sliceTime);
     }
 
+    bool wasLongSlice = false;
     if (sliceTime > budgetDuration) {
       
       TimeDuration overrun = sliceTime - budgetDuration;
       runtime->metrics().GC_BUDGET_OVERRUN(overrun);
 
       
-      bool wasLongSlice = (overrun > TimeDuration::FromMilliseconds(5)) ||
-                          (overrun > (budgetDuration / int64_t(2)));
-      runtime->metrics().GC_SLICE_WAS_LONG(wasLongSlice);
+      wasLongSlice = (overrun > TimeDuration::FromMilliseconds(5)) ||
+                     (overrun > (budgetDuration / int64_t(2)));
 
       
       if (wasLongSlice) {
@@ -1283,6 +1284,9 @@ void Statistics::sendSliceTelemetry(const SliceData& slice) {
         }
       }
     }
+
+    
+    runtime->metrics().GC_SLICE_WAS_LONG(wasLongSlice);
   }
 }
 
