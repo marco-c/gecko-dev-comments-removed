@@ -174,5 +174,20 @@ drainJobQueue();
 
 drainJobQueue();
 
+(async function() {
+  function* gen() {
+    for (let i = 0; i < 4; ++i) {
+      yield Promise.resolve(i);
+    }
+  };
+
+  var array = await Array.fromAsync(gen());
+
+  
+  assertEqArray(array, [0, 1, 2, 3]);
+})();
+
+drainJobQueue();
+
 if (typeof reportCompare === 'function')
     reportCompare(true, true);
