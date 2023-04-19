@@ -5159,7 +5159,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool viewportSizeUpdated = false;
   bool needToReclampScroll = false;
 
-  if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
+  if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault ||
+      Metrics().IsRootContent() != aLayerMetrics.IsRootContent()) {
+    if (Metrics().IsRootContent() && !aLayerMetrics.IsRootContent()) {
+      
+      SetZoomAnimationId(Nothing());
+    }
+
     
     
     CancelAnimation();
