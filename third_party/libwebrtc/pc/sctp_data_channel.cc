@@ -294,13 +294,6 @@ bool SctpDataChannel::Send(const DataBuffer& buffer) {
     return false;
   }
 
-  
-  
-  
-  if (buffer.size() == 0) {
-    return true;
-  }
-
   buffered_amount_ += buffer.size();
 
   
