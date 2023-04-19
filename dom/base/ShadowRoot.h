@@ -68,9 +68,6 @@ class ShadowRoot final : public DocumentFragment,
   void MaybeUnslotHostChild(nsIContent&);
 
   
-  Element* GetFirstFocusable(bool aWithMouse) const;
-
-  
   Element* Host() const {
     MOZ_ASSERT(GetHost(),
                "ShadowRoot always has a host, how did we create "

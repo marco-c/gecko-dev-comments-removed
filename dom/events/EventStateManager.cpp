@@ -3491,7 +3491,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           if (ShadowRoot* root = newFocus->GetShadowRoot()) {
             if (root->DelegatesFocus()) {
               if (Element* firstFocusable =
-                      root->GetFirstFocusable( true)) {
+                      root->GetFocusDelegate( true)) {
                 newFocus = firstFocusable;
                 break;
               }

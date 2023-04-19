@@ -297,6 +297,9 @@ class nsIContent : public nsINode {
   virtual bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse);
 
   
+  mozilla::dom::Element* GetFocusDelegate(bool aWithMouse) const;
+
+  
 
 
 

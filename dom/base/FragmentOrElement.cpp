@@ -1027,6 +1027,68 @@ bool nsIContent::IsFocusable(int32_t* aTabIndex, bool aWithMouse) {
   return false;
 }
 
+Element* nsIContent::GetFocusDelegate(bool aWithMouse) const {
+  const nsIContent* whereToLook = this;
+  if (ShadowRoot* root = GetShadowRoot()) {
+    if (!root->DelegatesFocus()) {
+      
+      
+      return nullptr;
+    }
+    whereToLook = root;
+  }
+
+  auto IsFocusable = [&](Element* aElement) {
+    nsIFrame* frame = aElement->GetPrimaryFrame();
+    return frame && frame->IsFocusable(aWithMouse);
+  };
+
+  Element* potentialFocus = nullptr;
+  for (nsINode* node = whereToLook->GetFirstChild(); node;
+       node = node->GetNextNode(whereToLook)) {
+    auto* el = Element::FromNode(*node);
+    if (!el) {
+      continue;
+    }
+
+    const bool autofocus = el->GetBoolAttr(nsGkAtoms::autofocus);
+
+    if (autofocus) {
+      if (IsFocusable(el)) {
+        
+        return el;
+      }
+    } else if (!potentialFocus && IsFocusable(el)) {
+      
+      
+      potentialFocus = el;
+    }
+
+    if (!autofocus && potentialFocus) {
+      
+      
+      continue;
+    }
+
+    if (auto* shadow = el->GetShadowRoot()) {
+      if (shadow->DelegatesFocus()) {
+        if (Element* delegatedFocus = shadow->GetFocusDelegate(aWithMouse)) {
+          if (autofocus) {
+            
+            
+            return delegatedFocus;
+          }
+          if (!potentialFocus) {
+            potentialFocus = delegatedFocus;
+          }
+        }
+      }
+    }
+  }
+
+  return potentialFocus;
+}
+
 bool nsIContent::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   if (aTabIndex) {
     *aTabIndex = -1;  
