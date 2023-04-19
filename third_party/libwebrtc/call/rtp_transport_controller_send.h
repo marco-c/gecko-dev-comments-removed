@@ -218,6 +218,8 @@ class RtpTransportControllerSend final
   
   
   rtc::TaskQueue task_queue_;
+
+  const WebRtcKeyValueConfig& field_trials_;
 };
 
 }  
