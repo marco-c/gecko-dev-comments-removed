@@ -131,7 +131,8 @@ void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
 
   
   
-  if (!sender_)
+  
+  if (!sender_ || !encoder_queue_)
     return;
   rtc::scoped_refptr<RTPSenderVideoFrameTransformerDelegate> delegate = this;
   encoder_queue_->PostTask(ToQueuedTask(
