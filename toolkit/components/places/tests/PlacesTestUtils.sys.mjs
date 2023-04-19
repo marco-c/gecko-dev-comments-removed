@@ -1,7 +1,5 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["PlacesTestUtils"];
-
 const lazy = {};
 ChromeUtils.defineModuleGetter(
   lazy,
@@ -14,27 +12,27 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/TestUtils.jsm"
 );
 
-var PlacesTestUtils = Object.freeze({
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export var PlacesTestUtils = Object.freeze({
+  /**
+   * Asynchronously adds visits to a page.
+   *
+   * @param {*} aPlaceInfo
+   *        A string URL, nsIURI, Window.URL object, info object (explained
+   *        below), or an array of any of those.  Info objects describe the
+   *        visits to add more fully than URLs/URIs alone and look like this:
+   *
+   *          {
+   *            uri|url: href, URL or nsIURI of the page,
+   *            [optional] transition: one of the TRANSITION_* from nsINavHistoryService,
+   *            [optional] title: title of the page,
+   *            [optional] visitDate: visit date, either in microseconds from the epoch or as a date object
+   *            [optional] referrer: nsIURI of the referrer for this visit
+   *          }
+   *
+   * @return {Promise}
+   * @resolves When all visits have been added successfully.
+   * @rejects JavaScript exception.
+   */
   async addVisits(placeInfo) {
     let places = [];
     let infos = [];
@@ -45,7 +43,7 @@ var PlacesTestUtils = Object.freeze({
       places.push(placeInfo);
     }
 
-    
+    // Create a PageInfo for each entry.
     let lastStoredVisit;
     for (let obj of places) {
       let place;
@@ -76,11 +74,11 @@ var PlacesTestUtils = Object.freeze({
       let visitDate = place.visitDate;
       if (visitDate) {
         if (visitDate.constructor.name != "Date") {
-          
-          
-          
-          
-          
+          // visitDate should be in microseconds. It's easy to do the wrong thing
+          // and pass milliseconds, so we lazily check for that.
+          // While it's not easily distinguishable, since both are integers, we
+          // can check if the value is very far in the past, and assume it's
+          // probably a mistake.
           if (visitDate <= Date.now()) {
             throw new Error(
               "AddVisits expects a Date object or _micro_seconds!"
@@ -115,17 +113,17 @@ var PlacesTestUtils = Object.freeze({
     }
   },
 
-  
-
-
-
-
-
+  /*
+   * Add Favicons
+   *
+   * @param {Map} faviconURLs  keys are page URLs, values are their
+   *                           associated favicon URLs.
+   */
 
   async addFavicons(faviconURLs) {
     let faviconPromises = [];
 
-    
+    // If no favicons were provided, we do not want to continue on
     if (!faviconURLs) {
       throw new Error("No favicon URLs were provided");
     }
@@ -155,9 +153,9 @@ var PlacesTestUtils = Object.freeze({
     await Promise.all(faviconPromises);
   },
 
-  
-
-
+  /**
+   * Clears any favicons stored in the database.
+   */
   async clearFavicons() {
     return new Promise(resolve => {
       Services.obs.addObserver(function observer() {
@@ -168,13 +166,13 @@ var PlacesTestUtils = Object.freeze({
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Adds a bookmark to the database. This should only be used when you need to
+   * add keywords. Otherwise, use `PlacesUtils.bookmarks.insert()`.
+   * @param {string} aBookmarkObj.uri
+   * @param {string} [aBookmarkObj.title]
+   * @param {string} [aBookmarkObj.keyword]
+   */
   async addBookmarkWithDetails(aBookmarkObj) {
     await lazy.PlacesUtils.bookmarks.insert({
       parentGuid: lazy.PlacesUtils.bookmarks.unfiledGuid,
@@ -202,19 +200,19 @@ var PlacesTestUtils = Object.freeze({
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Waits for all pending async statements on the default connection.
+   *
+   * @return {Promise}
+   * @resolves When all pending async statements finished.
+   * @rejects Never.
+   *
+   * @note The result is achieved by asynchronously executing a query requiring
+   *       a write lock.  Since all statements on the same connection are
+   *       serialized, the end of this write operation means that all writes are
+   *       complete.  Note that WAL makes so that writers don't block readers, but
+   *       this is a problem only across different connections.
+   */
   promiseAsyncUpdates() {
     return lazy.PlacesUtils.withConnectionWrapper(
       "promiseAsyncUpdates",
@@ -223,22 +221,22 @@ var PlacesTestUtils = Object.freeze({
           await db.executeCached("BEGIN EXCLUSIVE");
           await db.executeCached("COMMIT");
         } catch (ex) {
-          
-          
+          // If we fail to start a transaction, it's because there is already one.
+          // In such a case we should not try to commit the existing transaction.
         }
       }
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously checks if an address is found in the database.
+   * @param aURI
+   *        nsIURI or address to look for.
+   *
+   * @return {Promise}
+   * @resolves Returns true if the page is found.
+   * @rejects JavaScript exception.
+   */
   async isPageInDB(aURI) {
     let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
     let db = await lazy.PlacesUtils.promiseDBConnection();
@@ -249,15 +247,15 @@ var PlacesTestUtils = Object.freeze({
     return !!rows.length;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously checks how many visits exist for a specified page.
+   * @param aURI
+   *        nsIURI or address to look for.
+   *
+   * @return {Promise}
+   * @resolves Returns the number of visits found.
+   * @rejects JavaScript exception.
+   */
   async visitsInDB(aURI) {
     let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
     let db = await lazy.PlacesUtils.promiseDBConnection();
@@ -270,15 +268,15 @@ var PlacesTestUtils = Object.freeze({
     return rows[0].getResultByIndex(0);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Asynchronously returns the required DB field for a specified page.
+   * @param aURI
+   *        nsIURI or address to look for.
+   *
+   * @return {Promise}
+   * @resolves Returns the field value.
+   * @rejects JavaScript exception.
+   */
   fieldInDB(aURI, field) {
     let url = aURI instanceof Ci.nsIURI ? new URL(aURI.spec) : new URL(aURI);
     return lazy.PlacesUtils.withConnectionWrapper(
@@ -294,15 +292,15 @@ var PlacesTestUtils = Object.freeze({
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Marks all syncable bookmarks as synced by setting their sync statuses to
+   * "NORMAL", resetting their change counters, and removing all tombstones.
+   * Used by tests to avoid calling `PlacesSyncUtils.bookmarks.pullChanges`
+   * and `PlacesSyncUtils.bookmarks.pushChanges`.
+   *
+   * @resolves When all bookmarks have been updated.
+   * @rejects JavaScript exception.
+   */
   markBookmarksAsSynced() {
     return lazy.PlacesUtils.withConnectionWrapper(
       "PlacesTestUtils: markBookmarksAsSynced",
@@ -330,20 +328,20 @@ var PlacesTestUtils = Object.freeze({
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Sets sync fields for multiple bookmarks.
+   * @param aStatusInfos
+   *        One or more objects with the following properties:
+   *          { [required] guid: The bookmark's GUID,
+   *            syncStatus: An `nsINavBookmarksService::SYNC_STATUS_*` constant,
+   *            syncChangeCounter: The sync change counter value,
+   *            lastModified: The last modified time,
+   *            dateAdded: The date added time.
+   *          }
+   *
+   * @resolves When all bookmarks have been updated.
+   * @rejects JavaScript exception.
+   */
   setBookmarkSyncFields(...aFieldInfos) {
     return lazy.PlacesUtils.withConnectionWrapper(
       "PlacesTestUtils: setBookmarkSyncFields",
@@ -461,14 +459,14 @@ var PlacesTestUtils = Object.freeze({
     });
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * A debugging helper that dumps the contents of an SQLite table.
+   *
+   * @param {Sqlite.OpenedConnection} db
+   *        The mirror database connection.
+   * @param {String} table
+   *        The table name.
+   */
   async dumpTable(db, table) {
     let columns = (await db.execute(`PRAGMA table_info('${table}')`)).map(r =>
       r.getResultByName("name")
@@ -505,9 +503,9 @@ var PlacesTestUtils = Object.freeze({
     dump(results.join("\n"));
   },
 
-  
-
-
+  /**
+   * Removes all stored metadata.
+   */
   clearMetadata() {
     return lazy.PlacesUtils.withConnectionWrapper(
       "PlacesTestUtils: clearMetadata",
@@ -518,9 +516,9 @@ var PlacesTestUtils = Object.freeze({
     );
   },
 
-  
-
-
+  /**
+   * Clear moz_inputhistory table.
+   */
   async clearInputHistory() {
     await lazy.PlacesUtils.withConnectionWrapper(
       "test:clearInputHistory",
@@ -530,12 +528,12 @@ var PlacesTestUtils = Object.freeze({
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * Compares 2 place: URLs ignoring the order of their params.
+   * @param url1 First URL to compare
+   * @param url2 Second URL to compare
+   * @return whether the URLs are the same
+   */
   ComparePlacesURIs(url1, url2) {
     url1 = url1 instanceof Ci.nsIURI ? url1.spec : new URL(url1);
     if (url1.protocol != "place:") {

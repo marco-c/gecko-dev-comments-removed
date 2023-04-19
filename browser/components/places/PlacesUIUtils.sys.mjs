@@ -1,9 +1,7 @@
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["PlacesUIUtils"];
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -39,27 +37,27 @@ XPCOMUtils.defineLazyGetter(lazy, "bundle", function() {
 const gInContentProcess =
   Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 const FAVICON_REQUEST_TIMEOUT = 60 * 1000;
-
+// Map from windows to arrays of data about pending favicon loads.
 let gFaviconLoadDataMap = new Map();
 
 const ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD = 10;
 
-
+// copied from utilityOverlay.js
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
 
 let InternalFaviconLoader = {
-  
-
-
-
-
-
-
+  /**
+   * Actually cancel the request, and clear the timeout for cancelling it.
+   *
+   * @param {object} options
+   * @param {string} reason
+   *   The reason for cancelling the request.
+   */
   _cancelRequest({ uri, innerWindowID, timerID, callback }, reason) {
-    
+    // Break cycle
     let request = callback.request;
     delete callback.request;
-    
+    // Ensure we don't time out.
     clearTimeout(timerID);
     try {
       request.cancel();
@@ -74,12 +72,12 @@ let InternalFaviconLoader = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Called for every inner that gets destroyed, only in the parent process.
+   *
+   * @param {number} innerID
+   *   The innerID of the window.
+   */
   removeRequestsForInner(innerID) {
     for (let [window, loadDataForWindow] of gFaviconLoadDataMap) {
       let newLoadDataForWindow = loadDataForWindow.filter(loadData => {
@@ -90,23 +88,23 @@ let InternalFaviconLoader = {
             "the inner window was destroyed or a new favicon was loaded for it"
           );
         }
-        
+        // Keep the items whose inner is still alive.
         return !innerWasDestroyed;
       });
-      
-      
+      // Map iteration with for...of is safe against modification, so
+      // now just replace the old value:
       gFaviconLoadDataMap.set(window, newLoadDataForWindow);
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Called when a toplevel chrome window unloads. We use this to tidy up after ourselves,
+   * avoid leaks, and cancel any remaining requests. The last part should in theory be
+   * handled by the inner-window-destroyed handlers. We clean up just to be on the safe side.
+   *
+   * @param {DOMWindow} win
+   *   The window that was unloaded.
+   */
   onUnload(win) {
     let loadDataForWindow = gFaviconLoadDataMap.get(win);
     if (loadDataForWindow) {
@@ -117,18 +115,18 @@ let InternalFaviconLoader = {
     gFaviconLoadDataMap.delete(win);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Remove a particular favicon load's loading data from our map tracking
+   * load data per chrome window.
+   *
+   * @param {DOMWindow} win
+   *        the chrome window in which we should look for this load
+   * @param {object} filterData ({innerWindowID, uri, callback})
+   *        the data we should use to find this particular load to remove.
+   *
+   * @returns {object|null}
+   *   the loadData object we removed, or null if we didn't find any.
+   */
   _removeLoadDataFromWindowMap(win, { innerWindowID, uri, callback }) {
     let loadDataForWindow = gFaviconLoadDataMap.get(win);
     if (loadDataForWindow) {
@@ -148,17 +146,17 @@ let InternalFaviconLoader = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Create a function to use as a nsIFaviconDataCallback, so we can remove cancelling
+   * information when the request succeeds. Note that right now there are some edge-cases,
+   * such as about: URIs with chrome:// favicons where the success callback is not invoked.
+   * This is OK: we will 'cancel' the request after the timeout (or when the window goes
+   * away) but that will be a no-op in such cases.
+   *
+   * @param {DOMWindow} win
+   * @param {number} id
+   * @returns {object}
+   */
   _makeCompletionCallback(win, id) {
     return {
       onComplete(uri) {
@@ -202,7 +200,7 @@ let InternalFaviconLoader = {
       win.addEventListener("unload", unloadHandler, true);
     }
 
-    
+    // First we do the actual setAndFetch call:
     let loadType = lazy.PrivateBrowsingUtils.isWindowPrivate(win)
       ? lazy.PlacesUtils.favicons.FAVICON_LOAD_PRIVATE
       : lazy.PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE;
@@ -227,11 +225,11 @@ let InternalFaviconLoader = {
       principal
     );
 
-    
+    // Now register the result so we can cancel it if/when necessary.
     if (!request) {
-      
-      
-      
+      // The favicon service can return with success but no-op (and leave request
+      // as null) if the icon is the same as the page (e.g. for images) or if it is
+      // the favicon for an error page. In this case, we do not need to do anything else.
       return;
     }
     callback.request = request;
@@ -245,26 +243,26 @@ let InternalFaviconLoader = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Collects all information for a bookmark and performs editmethods
+ *
+ * @param {object} info
+ *    Either a result node or a node-like object representing the item to be edited.
+ * @param {string} [tags]
+ *     Tags (if any) for the bookmark in a comma separated string. Empty tags are
+ * skipped
+ * @param {string} [keyword]
+ *    Existing (if there are any) keyword for bookmark
+ * @returns {string} Guid
+ *    BookamrkGuid
+ */
 class BookmarkState {
   constructor(info, tags = "", keyword = "") {
     this._guid = info.itemGuid;
     this._postData = info.postData;
     this._isTagContainer = info.isTag;
 
-    
+    // Original Bookmark
     this._originalState = {
       title: this._isTagContainer ? info.tag : info.title,
       uri: info.uri?.spec,
@@ -276,56 +274,56 @@ class BookmarkState {
       parentGuid: info.parentGuid,
     };
 
-    
+    // Edited bookmark
     this._newState = {};
   }
 
-  
-
-
-
+  /**
+   * Save edited title for the bookmark
+   * @param {string} title
+   */
   _titleChanged(title) {
     this._newState.title = title;
   }
 
-  
-
-
-
+  /**
+   * Save edited location for the bookmark
+   * @param {string} location
+   */
   _locationChanged(location) {
     this._newState.uri = location;
   }
 
-  
-
-
-
-
+  /**
+   * Save edited tags for the bookmark
+   * @param {string} tags
+   *    Comma separated list of tags
+   */
   _tagsChanged(tags) {
     this._newState.tags = tags;
   }
 
-  
-
-
-
+  /**
+   * Save edited keyword for the bookmark
+   * @param {string} keyword
+   */
   _keywordChanged(keyword) {
     this._newState.keyword = keyword;
   }
 
-  
-
-
-
+  /**
+   * Save edited parentGuid for the bookmark
+   * @param {string} parentGuid
+   */
   _parentGuidChanged(parentGuid) {
     this._newState.parentGuid = parentGuid;
   }
 
-  
-
-
-
-
+  /**
+   * Save() API function for bookmark.
+   *
+   * @returns {string} bookmark.guid
+   */
   async save() {
     if (!Object.keys(this._newState).length) {
       return this._guid;
@@ -421,41 +419,41 @@ class BookmarkState {
   }
 }
 
-var PlacesUIUtils = {
+export var PlacesUIUtils = {
   BookmarkState,
   _bookmarkToolbarTelemetryListening: false,
   LAST_USED_FOLDERS_META_KEY: "bookmarks/lastusedfolders",
 
   lastContextMenuTriggerNode: null,
 
-  
-  
-  
+  // This allows to await for all the relevant bookmark changes to be applied
+  // when a bookmark dialog is closed. It is resolved to the bookmark guid,
+  // if a bookmark was created or modified.
   lastBookmarkDialogDeferred: null,
 
   getFormattedString: function PUIU_getFormattedString(key, params) {
     return lazy.bundle.formatStringFromName(key, params);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Get a localized plural string for the specified key name and numeric value
+   * substituting parameters.
+   *
+   * @param {string} aKey
+   *        key for looking up the localized string in the bundle
+   * @param {number} aNumber
+   *        Number based on which the final localized form is looked up
+   * @param {array} aParams
+   *        Array whose items will substitute #1, #2,... #n parameters
+   *        in the string.
+   *
+   * @see https://developer.mozilla.org/en/Localization_and_Plurals
+   * @returns {string} The localized plural string.
+   */
   getPluralString: function PUIU_getPluralString(aKey, aNumber, aParams) {
     let str = lazy.PluralForm.get(aNumber, lazy.bundle.GetStringFromName(aKey));
 
-    
+    // Replace #1 with aParams[0], #2 with aParams[1], and so on.
     return str.replace(/\#(\d+)/g, function(matchedId, matchedNumber) {
       let param = aParams[parseInt(matchedNumber, 10) - 1];
       return param !== undefined ? param : matchedId;
@@ -466,14 +464,14 @@ var PlacesUIUtils = {
     return lazy.bundle.GetStringFromName(key);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Obfuscates a place: URL to use it in xulstore without the risk of
+   leaking browsing information. Uses md5 to hash the query string.
+   *
+   * @param {URL} url
+   *        the URL for xulstore with place: key pairs.
+   * @returns {string} "place:[md5_hash]" hashed url
+   */
 
   obfuscateUrlForXulStore(url) {
     if (!url.startsWith("place:")) {
@@ -485,28 +483,28 @@ var PlacesUIUtils = {
     return `place:${hashedURL}`;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Shows the bookmark dialog corresponding to the specified info.
+   *
+   * @param {object} aInfo
+   *        Describes the item to be edited/added in the dialog.
+   *        See documentation at the top of bookmarkProperties.js
+   * @param {DOMWindow} [aParentWindow]
+   *        Owner window for the new dialog.
+   *
+   * @see documentation at the top of bookmarkProperties.js
+   * @returns {string} The guid of the item that was created or edited,
+   *                   undefined otherwise.
+   */
   async showBookmarkDialog(aInfo, aParentWindow = null) {
     this.lastBookmarkDialogDeferred = lazy.PromiseUtils.defer();
 
-    
-    
-    
+    // Preserve size attributes differently based on the fact the dialog has
+    // a folder picker or not, since it needs more horizontal space than the
+    // other controls.
     let hasFolderPicker =
       !("hiddenRows" in aInfo) || !aInfo.hiddenRows.includes("folderPicker");
-    
+    // Use a different chrome url to persist different sizes.
     let dialogURL = hasFolderPicker
       ? "chrome://browser/content/places/bookmarkProperties2.xhtml"
       : "chrome://browser/content/places/bookmarkProperties.xhtml";
@@ -520,7 +518,7 @@ var PlacesUIUtils = {
         false
       )
     ) {
-      
+      // Set the transaction manager into batching mode.
       let topUndoEntry = lazy.PlacesTransactions.topUndoEntry;
       let batchBlockingDeferred = lazy.PromiseUtils.defer();
       let batchCompletePromise = lazy.PlacesTransactions.batch(async () => {
@@ -542,8 +540,8 @@ var PlacesUIUtils = {
 
       batchBlockingDeferred.resolve();
 
-      
-      
+      // Ensure the batch has completed before we start the undo/resolve
+      // the deferred promise.
       await batchCompletePromise.catch(console.error);
 
       if (
@@ -577,17 +575,17 @@ var PlacesUIUtils = {
     return bookmarkGuid;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Bookmarks one or more pages. If there is more than one, this will create
+   * the bookmarks in a new folder.
+   *
+   * @param {array.<nsIURI>} URIList
+   *   The list of URIs to bookmark.
+   * @param {array.<string>} [hiddenRows]
+   *   An array of rows to be hidden.
+   * @param {DOMWindow} [win]
+   *   The window to use as the parent to display the bookmark dialog.
+   */
   async showBookmarkPagesDialog(URIList, hiddenRows = [], win = null) {
     if (!URIList.length) {
       return;
@@ -606,21 +604,21 @@ var PlacesUIUtils = {
     await PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, win);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * set and fetch a favicon. Can only be used from the parent process.
+   * @param {object} browser
+   *        The XUL browser element for which we're fetching a favicon.
+   * @param {Principal} principal
+   *        The loading principal to use for the fetch.
+   * @param {URI} pageURI
+   *        The page URI associated to this favicon load.
+   * @param {URI} uri
+   *        The URI to fetch.
+   * @param {number} expiration
+   *        An optional expiration time.
+   * @param {URI} iconURI
+   *        An optional data: URI holding the icon's data.
+   */
   loadFavicon(
     browser,
     principal,
@@ -642,12 +640,12 @@ var PlacesUIUtils = {
     );
   },
 
-  
-
-
-
-
-
+  /**
+   * Returns the closet ancestor places view for the given DOM node
+   * @param {DOMNode} aNode
+   *        a DOM node
+   * @returns {DOMNode} the closest ancestor places view if exists, null otherwsie.
+   */
   getViewForNode: function PUIU_getViewForNode(aNode) {
     let node = aNode;
 
@@ -659,8 +657,8 @@ var PlacesUIUtils = {
       return node._placesView;
     }
 
-    
-    
+    // The view for a <menu> of which its associated menupopup is a places
+    // view, is the menupopup.
     if (
       node.localName == "menu" &&
       !node._placesNode &&
@@ -686,16 +684,16 @@ var PlacesUIUtils = {
     return null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns the active PlacesController for a given command.
+   *
+   * @param {DOMWindow} win The window containing the affected view
+   * @param {string} command The command
+   * @returns {PlacesController} a places controller
+   */
   getControllerForCommand(win, command) {
-    
-    
+    // If we're building a context menu for a non-focusable view, for example
+    // a menupopup, we must return the view that triggered the context menu.
     let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
     if (popupNode) {
       let isManaged = !!popupNode.closest("#managed-bookmarks");
@@ -708,21 +706,21 @@ var PlacesUIUtils = {
       }
     }
 
-    
-    
+    // When we're not building a context menu, only focusable views
+    // are possible.  Thus, we can safely use the command dispatcher.
     let controller = win.top.document.commandDispatcher.getControllerForCommand(
       command
     );
     return controller || null;
   },
 
-  
-
-
-
-
+  /**
+   * Update all the Places commands for the given window.
+   *
+   * @param {DOMWindow} win The window to update.
+   */
   updateCommands(win) {
-    
+    // Get the controller for one of the places commands.
     let controller = this.getControllerForCommand(win, "placesCmd_open");
     for (let command of [
       "placesCmd_open",
@@ -748,12 +746,12 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Executes the given command on the currently active controller.
+   *
+   * @param {DOMWindow} win The window containing the affected view
+   * @param {string} command The command to execute
+   */
   doCommand(win, command) {
     let controller = this.getControllerForCommand(win, command);
     if (controller && controller.isCommandEnabled(command)) {
@@ -761,70 +759,70 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * By calling this before visiting an URL, the visit will be associated to a
+   * TRANSITION_TYPED transition (if there is no a referrer).
+   * This is used when visiting pages from the history menu, history sidebar,
+   * url bar, url autocomplete results, and history searches from the places
+   * organizer.  If this is not called visits will be marked as
+   * TRANSITION_LINK.
+   *
+   * @param {string} aURL
+   *   The URL to mark as typed.
+   */
   markPageAsTyped: function PUIU_markPageAsTyped(aURL) {
     lazy.PlacesUtils.history.markPageAsTyped(
       Services.uriFixup.getFixupURIInfo(aURL).preferredURI
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * By calling this before visiting an URL, the visit will be associated to a
+   * TRANSITION_BOOKMARK transition.
+   * This is used when visiting pages from the bookmarks menu,
+   * personal toolbar, and bookmarks from within the places organizer.
+   * If this is not called visits will be marked as TRANSITION_LINK.
+   *
+   * @param {string} aURL
+   *   The URL to mark as TRANSITION_BOOKMARK.
+   */
   markPageAsFollowedBookmark: function PUIU_markPageAsFollowedBookmark(aURL) {
     lazy.PlacesUtils.history.markPageAsFollowedBookmark(
       Services.uriFixup.getFixupURIInfo(aURL).preferredURI
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * By calling this before visiting an URL, any visit in frames will be
+   * associated to a TRANSITION_FRAMED_LINK transition.
+   * This is actually used to distinguish user-initiated visits in frames
+   * so automatic visits can be correctly ignored.
+   *
+   * @param {string} aURL
+   *   The URL to mark as TRANSITION_FRAMED_LINK.
+   */
   markPageAsFollowedLink: function PUIU_markPageAsFollowedLink(aURL) {
     lazy.PlacesUtils.history.markPageAsFollowedLink(
       Services.uriFixup.getFixupURIInfo(aURL).preferredURI
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Sets the character-set for a page. The character set will not be saved
+   * if the window is determined to be a private browsing window.
+   *
+   * @param {string|URL|nsIURI} url The URL of the page to set the charset on.
+   * @param {string} charset character-set value.
+   * @param {DOMWindow} window The window that the charset is being set from.
+   * @returns {Promise}
+   */
   async setCharsetForPage(url, charset, window) {
     if (lazy.PrivateBrowsingUtils.isWindowPrivate(window)) {
       return;
     }
 
-    
-    
+    // UTF-8 is the default. If we are passed the value then set it to null,
+    // to ensure any charset is removed from the database.
     if (charset.toLowerCase() == "utf-8") {
       charset = null;
     }
@@ -835,16 +833,16 @@ var PlacesUIUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Allows opening of javascript/data URI only if the given node is
+   * bookmarked (see bug 224521).
+   * @param {object} aURINode
+   *        a URI node
+   * @param {DOMWindow} aWindow
+   *        a window on which a potential error alert is shown on.
+   * @returns {boolean} true if it's safe to open the node in the browser, false otherwise.
+   *
+   */
   checkURLSecurity: function PUIU_checkURLSecurity(aURINode, aWindow) {
     if (lazy.PlacesUtils.nodeIsBookmark(aURINode)) {
       return true;
@@ -864,63 +862,63 @@ var PlacesUIUtils = {
     return true;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Check whether or not the given node represents a removable entry (either in
+   * history or in bookmarks).
+   *
+   * @param {object} aNode
+   *        a node, except the root node of a query.
+   * @returns {boolean} true if the aNode represents a removable entry, false otherwise.
+   */
   canUserRemove(aNode) {
     let parentNode = aNode.parent;
     if (!parentNode) {
-      
+      // canUserRemove doesn't accept root nodes.
       return false;
     }
 
-    
+    // Is it a query pointing to one of the special root folders?
     if (lazy.PlacesUtils.nodeIsQuery(parentNode)) {
       if (lazy.PlacesUtils.nodeIsFolder(aNode)) {
         let guid = lazy.PlacesUtils.getConcreteItemGuid(aNode);
-        
-        
+        // If the parent folder is not a folder, it must be a query, and so this node
+        // cannot be removed.
         if (lazy.PlacesUtils.isRootItem(guid)) {
           return false;
         }
       } else if (lazy.PlacesUtils.isVirtualLeftPaneItem(aNode.bookmarkGuid)) {
-        
+        // If the item is a left-pane top-level item, it can't be removed.
         return false;
       }
     }
 
-    
+    // If it's not a bookmark, or it's child of a query, we can remove it.
     if (aNode.itemId == -1 || lazy.PlacesUtils.nodeIsQuery(parentNode)) {
       return true;
     }
 
-    
+    // Otherwise it has to be a child of an editable folder.
     return !this.isFolderReadOnly(parentNode);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * DO NOT USE THIS API IN ADDONS. IT IS VERY LIKELY TO CHANGE WHEN THE SWITCH
+   * TO GUIDS IS COMPLETE (BUG 1071511).
+   *
+   * Check whether or not the given Places node points to a folder which
+   * should not be modified by the user (i.e. its children should be unremovable
+   * and unmovable, new children should be disallowed, etc).
+   * These semantics are not inherited, meaning that read-only folder may
+   * contain editable items (for instance, the places root is read-only, but all
+   * of its direct children aren't).
+   *
+   * You should only pass folder nodes.
+   *
+   * @param {object} placesNode
+   *        any folder result node.
+   * @throws if placesNode is not a folder result node or views is invalid.
+   * @returns {boolean} true if placesNode is a read-only folder, false otherwise.
+   */
   isFolderReadOnly(placesNode) {
     if (
       typeof placesNode != "object" ||
@@ -935,15 +933,15 @@ var PlacesUIUtils = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * @param {array<object>} aItemsToOpen
+   *   needs to be an array of objects of the form:
+   *   {uri: string, isBookmark: boolean}
+   * @param {object} aEvent
+   *   The associated event triggering the open.
+   * @param {DOMWindow} aWindow
+   *   The window associated with the event.
+   */
   openTabset(aItemsToOpen, aEvent, aWindow) {
     if (!aItemsToOpen.length) {
       return;
@@ -966,13 +964,13 @@ var PlacesUIUtils = {
       }
     }
 
-    
-    
+    // whereToOpenLink doesn't return "window" when there's no browser window
+    // open (Bug 630255).
     var where = browserWindow
       ? browserWindow.whereToOpenLink(aEvent, false, true)
       : "window";
     if (where == "window") {
-      
+      // There is no browser window open, thus open a new one.
       let args = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
       let stringsToLoad = Cc["@mozilla.org/array;1"].createInstance(
         Ci.nsIMutableArray
@@ -993,9 +991,9 @@ var PlacesUIUtils = {
     }
 
     var loadInBackground = where == "tabshifted";
-    
-    
-    
+    // For consistency, we want all the bookmarks to open in new tabs, instead
+    // of having one of them replace the currently focused tab.  Hence we call
+    // loadTabs with aReplace set to false.
     browserWindow.gBrowser.loadTabs(urls, {
       inBackground: loadInBackground,
       replace: false,
@@ -1003,19 +1001,19 @@ var PlacesUIUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Loads a selected node's or nodes' URLs in tabs,
+   * warning the user when lots of URLs are being opened
+   *
+   * @param {object|array} nodeOrNodes
+   *          Contains the node or nodes that we're opening in tabs
+   * @param {event} event
+   *          The DOM mouse/key event with modifier keys set that track the
+   *          user's preferred destination window or tab.
+   * @param {object} view
+   *          The current view that contains the node or nodes selected for
+   *          opening
+   */
   openMultipleLinksInTabs(nodeOrNodes, event, view) {
     let window = view.ownerWindow;
     let urlsToOpen = [];
@@ -1024,7 +1022,7 @@ var PlacesUIUtils = {
       urlsToOpen = lazy.PlacesUtils.getURLsForContainerNode(nodeOrNodes);
     } else {
       for (var i = 0; i < nodeOrNodes.length; i++) {
-        
+        // Skip over separators and folders.
         if (lazy.PlacesUtils.nodeIsURI(nodeOrNodes[i])) {
           urlsToOpen.push({
             uri: nodeOrNodes[i].uri,
@@ -1038,16 +1036,16 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Loads the node's URL in the appropriate tab or window given the
+   * user's preference specified by modifier keys tracked by a
+   * DOM mouse/key event.
+   * @param {object} aNode
+   *          An uri result node.
+   * @param {object} aEvent
+   *          The DOM mouse/key event with modifier keys set that track the
+   *          user's preferred destination window or tab.
+   */
   openNodeWithEvent: function PUIU_openNodeWithEvent(aNode, aEvent) {
     let window = aEvent.target.ownerGlobal;
 
@@ -1066,19 +1064,19 @@ var PlacesUIUtils = {
     this._openNodeIn(aNode, where, window);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Loads the node's URL in the appropriate tab or window.
+   * see also openUILinkIn
+   *
+   * @param {object} aNode
+   *        An uri result node.
+   * @param {string} aWhere
+   *        Where to open the URL.
+   * @param {object} aView
+   *        The associated view of the node being opened.
+   * @param {boolean} aPrivate
+   *        True if the window being opened is private.
+   */
   openNodeIn: function PUIU_openNodeIn(aNode, aWhere, aView, aPrivate) {
     let window = aView.ownerWindow;
     this._openNodeIn(aNode, aWhere, window, { aPrivate });
@@ -1116,14 +1114,14 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Helper for guessing scheme from an url string.
+   * Used to avoid nsIURI overhead in frequently called UI functions.
+   *
+   * @param {string} href The url to guess the scheme from.
+   * @returns {string} guessed scheme for this url string.
+   * @note this is not supposed be perfect, so use it only for UI purposes.
+   */
   guessUrlSchemeForUI(href) {
     return href.substr(0, href.indexOf(":"));
   },
@@ -1131,13 +1129,13 @@ var PlacesUIUtils = {
   getBestTitle: function PUIU_getBestTitle(aNode, aDoNotCutTitle) {
     var title;
     if (!aNode.title && lazy.PlacesUtils.nodeIsURI(aNode)) {
-      
-      
+      // if node title is empty, try to set the label using host and filename
+      // Services.io.newURI will throw if aNode.uri is not a valid URI
       try {
         var uri = Services.io.newURI(aNode.uri);
         var host = uri.host;
         var fileName = uri.QueryInterface(Ci.nsIURL).fileName;
-        
+        // if fileName is empty, use path to distinguish labels
         if (aDoNotCutTitle) {
           title = host + uri.pathQueryRef;
         } else {
@@ -1148,7 +1146,7 @@ var PlacesUIUtils = {
               : uri.pathQueryRef);
         }
       } catch (e) {
-        
+        // Use (no title) for non-standard URIs (data:, javascript:, ...)
         title = "";
       }
     } else {
@@ -1165,19 +1163,19 @@ var PlacesUIUtils = {
     return weaveOK;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * WARNING TO ADDON AUTHORS: DO NOT USE THIS METHOD. IT'S LIKELY TO BE REMOVED IN A
+   * FUTURE RELEASE.
+   *
+   * Checks if a place: href represents a folder shortcut.
+   *
+   * @param {string} queryString
+   *        the query string to check (a place: href)
+   * @returns {boolean} whether or not queryString represents a folder shortcut.
+   * @throws if queryString is malformed.
+   */
   isFolderShortcutQueryString(queryString) {
-    
+    // Based on GetSimpleBookmarksQueryFolder in nsNavHistory.cpp.
 
     let query = {},
       options = {};
@@ -1196,18 +1194,18 @@ var PlacesUIUtils = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Helpers for consumers of editBookmarkOverlay which don't have a node as their input.
+   *
+   * Given a bookmark object for either a url bookmark or a folder, returned by
+   * Bookmarks.fetch (see Bookmark.jsm), this creates a node-like object suitable for
+   * initialising the edit overlay with it.
+   *
+   * @param {object} aFetchInfo
+   *        a bookmark object returned by Bookmarks.fetch.
+   * @returns {object} a node-like object suitable for initialising editBookmarkOverlay.
+   * @throws if aFetchInfo is representing a separator.
+   */
   async promiseNodeLikeFromFetchInfo(aFetchInfo) {
     if (aFetchInfo.itemType == lazy.PlacesUtils.bookmarks.TYPE_SEPARATOR) {
       throw new Error("promiseNodeLike doesn't support separators");
@@ -1251,19 +1249,19 @@ var PlacesUIUtils = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * This function wraps potentially large places transaction operations
+   * with batch notifications to the result node, hence switching the views
+   * to batch mode.
+   *
+   * @param {nsINavHistoryResult} resultNode The result node to turn on batching.
+   * @note If resultNode is not supplied, the function will pass-through to
+   *       functionToWrap.
+   * @param {number} itemsBeingChanged The count of items being changed. If the
+   *                                    count is lower than a threshold, then
+   *                                    batching won't be set.
+   * @param {Function} functionToWrap The function to
+   */
   async batchUpdatesForNode(resultNode, itemsBeingChanged, functionToWrap) {
     if (!resultNode) {
       await functionToWrap();
@@ -1283,18 +1281,18 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Processes a set of transfer items that have been dropped or pasted.
+   * Batching will be applied where necessary.
+   *
+   * @param {array} items A list of unwrapped nodes to process.
+   * @param {object} insertionPoint The requested point for insertion.
+   * @param {boolean} doCopy Set to true to copy the items, false will move them
+   *                         if possible.
+   * @param {object} view The view that should be used for batching.
+   * @returns {array} Returns an empty array when the insertion point is a tag, else
+   *                 returns an array of copied or moved guids.
+   */
   async handleTransferItems(items, insertionPoint, doCopy, view) {
     let transactions;
     let itemsCount;
@@ -1315,8 +1313,8 @@ var PlacesUIUtils = {
       );
     }
 
-    
-    
+    // Check if we actually have something to add, if we don't it probably wasn't
+    // valid, or it was moving to the same location, so just ignore it.
     if (!transactions.length) {
       return [];
     }
@@ -1324,11 +1322,11 @@ var PlacesUIUtils = {
     let guidsToSelect = [];
     let resultForBatching = getResultForBatching(view);
 
-    
-    
+    // If we're inserting into a tag, we don't get the guid, so we'll just
+    // pass the transactions direct to the batch function.
     let batchingItem = transactions;
     if (!insertionPoint.isTag) {
-      
+      // If we're not a tag, then we need to get the ids of the items to select.
       batchingItem = async () => {
         for (let transaction of transactions) {
           let result = await transaction.transact();
@@ -1345,7 +1343,7 @@ var PlacesUIUtils = {
   },
 
   onSidebarTreeClick(event) {
-    
+    // right-clicks are not handled here
     if (event.button == 2) {
       return;
     }
@@ -1356,11 +1354,11 @@ var PlacesUIUtils = {
       return;
     }
 
-    
-    
-    
-    
-    
+    // getCoordsForCellItem returns the x coordinate in logical coordinates
+    // (i.e., starting from the left and right sides in LTR and RTL modes,
+    // respectively.)  Therefore, we make sure to exclude the blank area
+    // before the tree item icon (that is, to the left or right of it in
+    // LTR and RTL modes, respectively) from the click target area.
     let win = tree.ownerGlobal;
     let rect = tree.getCoordsForCellItem(cell.row, cell.col, "image");
     let isRTL = win.getComputedStyle(tree).direction == "rtl";
@@ -1389,9 +1387,9 @@ var PlacesUIUtils = {
       !isContainer &&
       event.originalTarget.localName == "treechildren"
     ) {
-      
-      
-      
+      // Clear all other selection since we're loading a link now. We must
+      // do this *before* attempting to load the link since openURL uses
+      // selection as an indication of which link to load.
       tree.view.selection.select(cell.row);
       this.openNodeWithEvent(tree.selectedNode, event);
     }
@@ -1406,13 +1404,13 @@ var PlacesUIUtils = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * The following function displays the URL of a node that is being
+   * hovered over.
+   *
+   * @param {object} event
+   *   The event that triggered the hover.
+   */
   onSidebarTreeMouseMove(event) {
     let treechildren = event.target;
     if (treechildren.localName != "treechildren") {
@@ -1422,9 +1420,9 @@ var PlacesUIUtils = {
     let tree = treechildren.parentNode;
     let cell = tree.getCellAt(event.clientX, event.clientY);
 
-    
-    
-    
+    // cell.row is -1 when the mouse is hovering an empty area within the tree.
+    // To avoid showing a URL from a previously hovered node for a currently
+    // hovered non-url node, we must clear the moused-over URL in these cases.
     if (cell.row != -1) {
       let node = tree.view.nodeForTreeIndex(cell.row);
       if (lazy.PlacesUtils.nodeIsURI(node)) {
@@ -1436,24 +1434,24 @@ var PlacesUIUtils = {
   },
 
   setMouseoverURL(url, win) {
-    
-    
-    
+    // When the browser window is closed with an open sidebar, the sidebar
+    // unload event happens after the browser's one.  In this case
+    // top.XULBrowserWindow has been nullified already.
     if (win.top.XULBrowserWindow) {
       win.top.XULBrowserWindow.setOverLink(url);
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Uncollapses PersonalToolbar if its collapsed status is not
+   * persisted, and user customized it or changed default bookmarks.
+   *
+   * If the user does not have a persisted value for the toolbar's
+   * "collapsed" attribute, try to determine whether it's customized.
+   *
+   * @param {Boolean} aForceVisible Set to true to ignore if the user had
+   * previously collapsed the toolbar manually.
+   */
   NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE: 3,
   maybeToggleBookmarkToolbarVisibility(aForceVisible = false) {
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
@@ -1463,8 +1461,8 @@ var PlacesUIUtils = {
       aForceVisible ||
       !xulStore.hasValue(BROWSER_DOCURL, "PersonalToolbar", "collapsed")
     ) {
-      
-      
+      // We consider the toolbar customized if it has more than NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE
+      // children, or if it has a persisted currentset value.
       let toolbarIsCustomized = xulStore.hasValue(
         BROWSER_DOCURL,
         "PersonalToolbar",
@@ -1501,8 +1499,8 @@ var PlacesUIUtils = {
     let menupopup = event.target;
     let document = menupopup.ownerDocument;
     let window = menupopup.ownerGlobal;
-    
-    
+    // We need to populate the submenus in order to have information
+    // to show the context menu.
     if (
       menupopup.triggerNode.id == "managed-bookmarks" &&
       !menupopup.triggerNode.menupopup.hasAttribute("hasbeenopened")
@@ -1517,17 +1515,17 @@ var PlacesUIUtils = {
       "placesContext_openSeparator",
       "placesContext_copy",
     ];
-    
+    // Hide everything. We'll unhide the things we need.
     Array.from(menupopup.children).forEach(function(child) {
       child.hidden = true;
     });
-    
+    // Store triggerNode in controller for checking if commands are enabled
     this.managedBookmarksController.triggerNode = menupopup.triggerNode;
-    
+    // Container in this context means a folder.
     let isFolder = menupopup.triggerNode.hasAttribute("container");
     if (isFolder) {
-      
-      
+      // Disable the openContainerInTabs menuitem if there
+      // are no children of the menu that have links.
       let openContainerInTabs_menuitem = document.getElementById(
         "placesContext_openContainer:tabs"
       );
@@ -1556,7 +1554,7 @@ var PlacesUIUtils = {
   placesContextShowing(event) {
     let menupopup = event.target;
     if (menupopup.id != "placesContext") {
-      
+      // Ignore any popupshowing events from submenus
       return true;
     }
 
@@ -1569,7 +1567,7 @@ var PlacesUIUtils = {
       menupopup.ownerDocument
         .getElementById("placesContext_open:newtab")
         .setAttribute("default", "true");
-      
+      // else clause ensures correct behavior if pref is repeatedly toggled
     } else {
       menupopup.ownerDocument
         .getElementById("placesContext_open:newtab")
@@ -1586,8 +1584,8 @@ var PlacesUIUtils = {
     }
     menupopup._view = this.getViewForNode(menupopup.triggerNode);
     if (!menupopup._view) {
-      
-      
+      // This can happen if we try to invoke the context menu on
+      // an uninitialized places toolbar. Just bail out:
       event.preventDefault();
       return false;
     }
@@ -1681,17 +1679,17 @@ var PlacesUIUtils = {
       let window = this.triggerNode.ownerGlobal;
       switch (command) {
         case "placesCmd_copy":
-          
-          
+          // This is a little hacky, but there is a lot of code in Places that handles
+          // clipboard stuff, so it's easier to reuse.
           let node = {};
           node.type = 0;
           node.title = this.triggerNode.label;
           node.uri = this.triggerNode.link;
 
-          
+          // Copied from _populateClipboard in controller.js
 
-          
-          
+          // This order is _important_! It controls how this and other applications
+          // select data to be inserted based on type.
           let contents = [
             { type: lazy.PlacesUtils.TYPE_X_MOZ_URL, entries: [] },
             { type: lazy.PlacesUtils.TYPE_HTML, entries: [] },
@@ -1762,7 +1760,7 @@ var PlacesUIUtils = {
         return rows[0].getResultByName("n");
       }
     ).catch(e => {
-      
+      // We want to report errors, but we still want to add the button then:
       Cu.reportError(e);
       return 0;
     });
@@ -1779,14 +1777,14 @@ var PlacesUIUtils = {
   },
 
   removeImportButtonWhenImportSucceeds() {
-    
-    
+    // If the user (re)moved the button, clear the pref and stop worrying about
+    // moving the item.
     let placement = lazy.CustomizableUI.getPlacementOfWidget("import-button");
     if (placement?.area != lazy.CustomizableUI.AREA_BOOKMARKS) {
       Services.prefs.clearUserPref("browser.bookmarks.addedImportButton");
       return;
     }
-    
+    // Otherwise, wait for a successful migration:
     let obs = (subject, topic, data) => {
       if (
         data == Ci.nsIBrowserProfileMigrator.BOOKMARKS &&
@@ -1802,14 +1800,14 @@ var PlacesUIUtils = {
     Services.obs.addObserver(obs, "Migration:ItemError");
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Tries to initiate a speculative connection to a given url.
+   * @param {nsIURI|URL|string} url entity to initiate
+   *        a speculative connection for.
+   * @param {window} window the window from where the connection is initialized.
+   * @note This is not infallible, if a speculative connection cannot be
+   *       initialized, it will be a no-op.
+   */
   setupSpeculativeConnection(url, window) {
     if (
       !Services.prefs.getBoolPref(
@@ -1830,41 +1828,41 @@ var PlacesUIUtils = {
         null
       );
     } catch (ex) {
-      
+      // Can't setup speculative connection for this url, just ignore it.
     }
   },
 
   getImageURL(icon) {
     let iconURL = icon;
-    
+    // don't initiate a connection just to fetch a favicon (see bug 467828)
     if (/^https?:/.test(iconURL)) {
       iconURL = "moz-anno:favicon:" + iconURL;
     }
     return iconURL;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Determines the string indexes where titles differ from similar titles (where
+   * the first n characters are the same) in the provided list of items, and
+   * adds that into the item.
+   *
+   * This assumes the titles will be displayed along the lines of
+   * `Start of title ... place where differs` the index would be reference
+   * the `p` here.
+   *
+   * @param {object[]} candidates
+   *   An array of candidates to modify. The candidates should have a `title`
+   *   property which should be a string or null.
+   *   The order of the array does not matter. The objects are modified
+   *   in-place.
+   *   If a difference to other similar titles is found then a
+   *   `titleDifferentIndex` property will be inserted into all similar
+   *   candidates with the index of the start of the difference.
+   */
   insertTitleStartDiffs(candidates) {
     function findStartDifference(a, b) {
       let i;
-      
+      // We already know the start is the same, so skip that part.
       for (i = PlacesUIUtils.similarTitlesMinChars; i < a.length; i++) {
         if (a[i] != b[i]) {
           return i;
@@ -1873,14 +1871,14 @@ var PlacesUIUtils = {
       if (b.length > i) {
         return i;
       }
-      
+      // They are the same.
       return -1;
     }
 
     let longTitles = new Map();
 
     for (let candidate of candidates) {
-      
+      // Title is too short for us to care about, simply continue.
       if (
         !candidate.title ||
         candidate.title.length < this.similarTitlesMinChars
@@ -1894,8 +1892,8 @@ var PlacesUIUtils = {
           let startDiff = findStartDifference(candidate.title, match.title);
           if (startDiff > 0) {
             candidate.titleDifferentIndex = startDiff;
-            
-            
+            // If we have an existing difference index for the match, move
+            // it forward if this one is earlier in the string.
             if (
               !("titleDifferentIndex" in match) ||
               match.titleDifferentIndex > startDiff
@@ -1913,16 +1911,16 @@ var PlacesUIUtils = {
   },
 };
 
-
-
-
-
-
+/**
+ * Promise used by the toolbar view browser-places to determine whether we
+ * can start loading its content (which involves IO, and so is postponed
+ * during startup).
+ */
 PlacesUIUtils.canLoadToolbarContentPromise = new Promise(resolve => {
   PlacesUIUtils.unblockToolbars = resolve;
 });
 
-
+// These are lazy getters to avoid importing PlacesUtils immediately.
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "PLACES_FLAVORS", () => {
   return [
     lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
@@ -1983,7 +1981,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   PlacesUIUtils,
   "defaultParentGuid",
   "browser.bookmarks.defaultLocation",
-  "", 
+  "", // Avoid eagerly loading PlacesUtils.
   null,
   async prefValue => {
     if (!prefValue) {
@@ -1998,19 +1996,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
         .fetch({ guid: prefValue })
         .then(bm => bm.guid);
     } catch (ex) {
-      
+      // The guid may have an invalid format.
       return lazy.PlacesUtils.bookmarks.toolbarGuid;
     }
   }
 );
 
-
-
-
-
-
-
-
+/**
+ * Determines if an unwrapped node can be moved.
+ *
+ * @param {object} unwrappedNode
+ *        A node unwrapped by PlacesUtils.unwrapNodes().
+ * @returns {boolean} True if the node can be moved, false otherwise.
+ */
 function canMoveUnwrappedNode(unwrappedNode) {
   if (
     (unwrappedNode.concreteGuid &&
@@ -2028,23 +2026,23 @@ function canMoveUnwrappedNode(unwrappedNode) {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * This gets the most appropriate item for using for batching. In the case of multiple
+ * views being related, the method returns the most expensive result to batch.
+ * For example, if it detects the left-hand library pane, then it will look for
+ * and return the reference to the right-hand pane.
+ *
+ * @param {object} viewOrElement The item to check.
+ * @returns {object} Will return the best result node to batch, or null
+ *                  if one could not be found.
+ */
 function getResultForBatching(viewOrElement) {
   if (
     viewOrElement &&
     Element.isInstance(viewOrElement) &&
     viewOrElement.id === "placesList"
   ) {
-    
+    // Note: fall back to the existing item if we can't find the right-hane pane.
     viewOrElement =
       viewOrElement.ownerDocument.getElementById("placeContent") ||
       viewOrElement;
@@ -2057,18 +2055,18 @@ function getResultForBatching(viewOrElement) {
   return null;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Processes a set of transfer items and returns transactions to insert or
+ * move them.
+ *
+ * @param {Array} items A list of unwrapped nodes to get transactions for.
+ * @param {number} insertionIndex The requested index for insertion.
+ * @param {string} insertionParentGuid The guid of the parent folder to insert
+ *                                     or move the items to.
+ * @param {boolean} doMove Set to true to MOVE the items if possible, false will
+ *                         copy them.
+ * @returns {Array} Returns an array of created PlacesTransactions.
+ */
 function getTransactionsForTransferItems(
   items,
   insertionIndex,
@@ -2081,7 +2079,7 @@ function getTransactionsForTransferItems(
       throw new Error(`Unsupported '${item.type}' data type`);
     }
 
-    
+    // Work out if this is data from the same app session we're running in.
     if (
       !("instanceId" in item) ||
       item.instanceId != lazy.PlacesUtils.instanceId
@@ -2091,8 +2089,8 @@ function getTransactionsForTransferItems(
           "Can't copy a container from a legacy-transactions build"
         );
       }
-      
-      
+      // Only log if this is one of "our" types as external items, e.g. drag from
+      // url bar to toolbar, shouldn't complain.
       if (PlacesUIUtils.PLACES_FLAVORS.includes(item.type)) {
         Cu.reportError(
           "Tried to move an unmovable Places " +
@@ -2100,7 +2098,7 @@ function getTransactionsForTransferItems(
         );
       }
 
-      
+      // We can never move from an external copy.
       canMove = false;
     }
 
@@ -2114,8 +2112,8 @@ function getTransactionsForTransferItems(
   }
 
   if (doMove) {
-    
-    
+    // Move is simple, we pass the transaction a list of GUIDs and where to move
+    // them to.
     return [
       lazy.PlacesTransactions.Move({
         guids: items.map(item => item.itemGuid),
@@ -2128,15 +2126,15 @@ function getTransactionsForTransferItems(
   return getTransactionsForCopy(items, insertionIndex, insertionParentGuid);
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Processes a set of transfer items and returns an array of transactions.
+ *
+ * @param {Array} items A list of unwrapped nodes to get transactions for.
+ * @param {number} insertionIndex The requested index for insertion.
+ * @param {string} insertionParentGuid The guid of the parent folder to insert
+ *                                     or move the items to.
+ * @returns {Array} Returns an array of created PlacesTransactions.
+ */
 function getTransactionsForCopy(items, insertionIndex, insertionParentGuid) {
   let transactions = [];
   let index = insertionIndex;
@@ -2147,15 +2145,15 @@ function getTransactionsForCopy(items, insertionIndex, insertionParentGuid) {
 
     if (
       PlacesUIUtils.PLACES_FLAVORS.includes(item.type) &&
-      
-      
+      // For anything that is comming from within this session, we do a
+      // direct copy, otherwise we fallback and form a new item below.
       "instanceId" in item &&
       item.instanceId == lazy.PlacesUtils.instanceId &&
-      
-      
+      // If the Item doesn't have a guid, this could be a virtual tag query or
+      // other item, so fallback to inserting a new bookmark with the URI.
       guid &&
-      
-      
+      // For virtual root items, we fallback to creating a new bookmark, as
+      // we want a shortcut to be created, not a full tree copy.
       !lazy.PlacesUtils.bookmarks.isVirtualRootItem(guid) &&
       !lazy.PlacesUtils.isVirtualLeftPaneItem(guid)
     ) {
@@ -2190,8 +2188,8 @@ function getTransactionsForCopy(items, insertionIndex, insertionParentGuid) {
 }
 
 function getBrowserWindow(aWindow) {
-  
-  
+  // Prefer the caller window if it's a browser window, otherwise use
+  // the top browser window.
   return aWindow &&
     aWindow.document.documentElement.getAttribute("windowtype") ==
       "navigator:browser"
