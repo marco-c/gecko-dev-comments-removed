@@ -1035,6 +1035,16 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
         return PrefValue{GetIntValue(aKind)};
       case PrefType::String:
         return PrefValue{GetBareStringValue(aKind)};
+      case PrefType::None:
+        
+        
+        if (!XRE_IsParentProcess() && sCrashOnBlocklistedPref &&
+            ShouldSanitizePreference(Name(), XRE_IsContentProcess())) {
+          MOZ_CRASH_UNSAFE_PRINTF(
+              "Should not access the preference '%s' in the Content Processes",
+              Name());
+        }
+        [[fallthrough]];
       default:
         MOZ_ASSERT_UNREACHABLE("Unexpected pref type");
         return PrefValue{};
@@ -1043,6 +1053,23 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
 
   Result<PrefValueKind, nsresult> WantValueKind(PrefType aType,
                                                 PrefValueKind aKind) const {
+    
+    
+    if (this->is<Pref*>() && !XRE_IsParentProcess() &&
+        sCrashOnBlocklistedPref &&
+        ShouldSanitizePreference(this->as<Pref*>(), XRE_IsContentProcess())) {
+      MOZ_CRASH_UNSAFE_PRINTF(
+          "Should not access the preference '%s' in the Content Processes",
+          Name());
+    } else if (!this->is<Pref*>()) {
+      
+      
+      
+      MOZ_ASSERT(!(!XRE_IsParentProcess() &&
+                   ShouldSanitizePreference(Name(), XRE_IsContentProcess())),
+                 "We should never have a sanitized SharedPrefMap::Pref.");
+    }
+
     if (Type() != aType) {
       return Err(NS_ERROR_UNEXPECTED);
     }
@@ -5163,6 +5190,16 @@ int32_t Preferences::GetType(const char* aPrefName) {
 
     case PrefType::Bool:
       return PREF_BOOL;
+
+    case PrefType::None:
+      if (!XRE_IsParentProcess() && sCrashOnBlocklistedPref &&
+          gContentProcessPrefsAreInited &&
+          ShouldSanitizePreference(aPrefName, XRE_IsContentProcess())) {
+        MOZ_CRASH_UNSAFE_PRINTF(
+            "Should not access the preference '%s' in the Content Processes",
+            aPrefName);
+      }
+      [[fallthrough]];
 
     default:
       MOZ_CRASH();
