@@ -2172,6 +2172,17 @@ var gBrowserInit = {
         return;
       }
 
+      
+      
+      
+      
+      if (!isBlankPageURL(uriToLoad) && HomePage.get(window) == uriToLoad) {
+        gBrowserInit._selectUrlbarOnLoad = true;
+        gBrowserInit._initiallyFocusedElement = initiallyFocusedElement;
+        shouldRemoveFocusedAttribute = false;
+        return;
+      }
+
       if (gBrowser.selectedBrowser.isRemoteBrowser) {
         
         
@@ -5402,6 +5413,17 @@ var XULBrowserWindow = {
     
     
     gURLBar.setURI(aLocationURI, aIsSimulated, isSessionRestore);
+
+    if (gBrowserInit._selectUrlbarOnLoad) {
+      if (
+        document.commandDispatcher.focusedElement ==
+        gBrowserInit._initiallyFocusedElement
+      ) {
+        gURLBar.select();
+      }
+      gBrowserInit._selectUrlbarOnLoad = false;
+      gBrowserInit._initiallyFocusedElement = null;
+    }
 
     BookmarkingUI.onLocationChange();
     
