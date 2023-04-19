@@ -1001,11 +1001,13 @@ void ModuleLoaderBase::CancelDynamicImport(ModuleLoadRequest* aRequest,
   MOZ_ASSERT(aRequest->mLoader == this);
 
   RefPtr<ScriptLoadRequest> req = mDynamicImportRequests.Steal(aRequest);
-  aRequest->Cancel();
-  
-  
-  
-  FinishDynamicImportAndReject(aRequest, aResult);
+  if (!aRequest->IsCanceled()) {
+    aRequest->Cancel();
+    
+    
+    
+    FinishDynamicImportAndReject(aRequest, aResult);
+  }
 }
 
 void ModuleLoaderBase::RemoveDynamicImport(ModuleLoadRequest* aRequest) {
@@ -1245,15 +1247,10 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
 }
 
 void ModuleLoaderBase::CancelAndClearDynamicImports() {
-  for (ScriptLoadRequest* req = mDynamicImportRequests.getFirst(); req;
-       req = req->getNext()) {
-    req->Cancel();
+  while (ScriptLoadRequest* req = mDynamicImportRequests.getFirst()) {
     
-    
-    
-    FinishDynamicImportAndReject(req->AsModuleRequest(), NS_ERROR_ABORT);
+    CancelDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
   }
-  mDynamicImportRequests.CancelRequestsAndClear();
 }
 
 UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
