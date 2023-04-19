@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 
 
 
+
+
 public final class FormatParam implements Parcelable {
   
   private static final String KEY_CONFIG_0 = "csd-0";
@@ -110,6 +112,12 @@ public final class FormatParam implements Parcelable {
       mFormat.setInteger(
           MediaFormat.KEY_I_FRAME_INTERVAL, bundle.getInt(MediaFormat.KEY_I_FRAME_INTERVAL));
     }
+    if (bundle.containsKey(MediaFormat.KEY_STRIDE)) {
+      mFormat.setInteger(MediaFormat.KEY_STRIDE, bundle.getInt(MediaFormat.KEY_STRIDE));
+    }
+    if (bundle.containsKey(MediaFormat.KEY_SLICE_HEIGHT)) {
+      mFormat.setInteger(MediaFormat.KEY_SLICE_HEIGHT, bundle.getInt(MediaFormat.KEY_SLICE_HEIGHT));
+    }
   }
 
   @Override
@@ -158,6 +166,12 @@ public final class FormatParam implements Parcelable {
     if (mFormat.containsKey(MediaFormat.KEY_I_FRAME_INTERVAL)) {
       bundle.putInt(
           MediaFormat.KEY_I_FRAME_INTERVAL, mFormat.getInteger(MediaFormat.KEY_I_FRAME_INTERVAL));
+    }
+    if (mFormat.containsKey(MediaFormat.KEY_STRIDE)) {
+      bundle.putInt(MediaFormat.KEY_STRIDE, mFormat.getInteger(MediaFormat.KEY_STRIDE));
+    }
+    if (mFormat.containsKey(MediaFormat.KEY_SLICE_HEIGHT)) {
+      bundle.putInt(MediaFormat.KEY_SLICE_HEIGHT, mFormat.getInteger(MediaFormat.KEY_SLICE_HEIGHT));
     }
     return bundle;
   }
