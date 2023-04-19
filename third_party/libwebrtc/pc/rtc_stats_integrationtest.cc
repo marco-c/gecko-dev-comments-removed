@@ -771,10 +771,18 @@ class RTCStatsReportVerifier {
   void VerifyRTCRTPStreamStats(const RTCRTPStreamStats& stream,
                                RTCStatsVerifier* verifier) {
     verifier->TestMemberIsDefined(stream.ssrc);
-    verifier->TestMemberIsDefined(stream.media_type);
     verifier->TestMemberIsDefined(stream.kind);
-    verifier->TestMemberIsIDReference(stream.track_id,
-                                      RTCMediaStreamTrackStats::kType);
+    
+    
+    if (stream.type() == RTCInboundRTPStreamStats::kType ||
+        stream.type() == RTCOutboundRTPStreamStats::kType) {
+      verifier->TestMemberIsDefined(stream.media_type);
+      verifier->TestMemberIsIDReference(stream.track_id,
+                                        RTCMediaStreamTrackStats::kType);
+    } else {
+      verifier->TestMemberIsUndefined(stream.media_type);
+      verifier->TestMemberIsUndefined(stream.track_id);
+    }
     verifier->TestMemberIsIDReference(stream.transport_id,
                                       RTCTransportStats::kType);
     verifier->TestMemberIsIDReference(stream.codec_id, RTCCodecStats::kType);
@@ -917,6 +925,9 @@ class RTCStatsReportVerifier {
   bool VerifyRTCOutboundRTPStreamStats(
       const RTCOutboundRTPStreamStats& outbound_stream) {
     RTCStatsVerifier verifier(report_, &outbound_stream);
+    
+    
+    
     VerifyRTCRTPStreamStats(outbound_stream, &verifier);
     if (outbound_stream.media_type.is_defined() &&
         *outbound_stream.media_type == "video") {
@@ -1008,20 +1019,19 @@ class RTCStatsReportVerifier {
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
+  void VerifyRTCReceivedRtpStreamStats(
+      const RTCReceivedRtpStreamStats& received_rtp,
+      RTCStatsVerifier* verifier) {
+    VerifyRTCRTPStreamStats(received_rtp, verifier);
+    verifier->TestMemberIsNonNegative<double>(received_rtp.jitter);
+    verifier->TestMemberIsDefined(received_rtp.packets_lost);
+  }
+
   bool VerifyRTCRemoteInboundRtpStreamStats(
       const RTCRemoteInboundRtpStreamStats& remote_inbound_stream) {
     RTCStatsVerifier verifier(report_, &remote_inbound_stream);
-    verifier.TestMemberIsDefined(remote_inbound_stream.ssrc);
-    verifier.TestMemberIsDefined(remote_inbound_stream.kind);
-    verifier.TestMemberIsIDReference(remote_inbound_stream.transport_id,
-                                     RTCTransportStats::kType);
-    verifier.TestMemberIsIDReference(remote_inbound_stream.codec_id,
-                                     RTCCodecStats::kType);
-    verifier.TestMemberIsDefined(remote_inbound_stream.packets_lost);
+    VerifyRTCReceivedRtpStreamStats(remote_inbound_stream, &verifier);
     verifier.TestMemberIsDefined(remote_inbound_stream.fraction_lost);
-    
-    
-    verifier.TestMemberIsNonNegative<double>(remote_inbound_stream.jitter);
     verifier.TestMemberIsIDReference(remote_inbound_stream.local_id,
                                      RTCOutboundRTPStreamStats::kType);
     verifier.TestMemberIsNonNegative<double>(
