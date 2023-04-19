@@ -22,6 +22,12 @@ namespace js {
 
 
 
+using JSAllocator = JSContext;
+
+
+
+
+
 struct ErrorMetadata {
   
   const char* filename;
@@ -83,11 +89,13 @@ extern void CallWarningReporter(JSContext* cx, JSErrorReport* report);
 
 
 
-extern void ReportCompileErrorLatin1(JSContext* cx, ErrorMetadata&& metadata,
+extern void ReportCompileErrorLatin1(JSContext* cx, JSAllocator* alloc,
+                                     ErrorMetadata&& metadata,
                                      UniquePtr<JSErrorNotes> notes,
                                      unsigned errorNumber, va_list* args);
 
-extern void ReportCompileErrorUTF8(JSContext* cx, ErrorMetadata&& metadata,
+extern void ReportCompileErrorUTF8(JSContext* cx, JSAllocator* alloc,
+                                   ErrorMetadata&& metadata,
                                    UniquePtr<JSErrorNotes> notes,
                                    unsigned errorNumber, va_list* args);
 
@@ -96,11 +104,9 @@ extern void ReportCompileErrorUTF8(JSContext* cx, ErrorMetadata&& metadata,
 
 
 
-[[nodiscard]] extern bool ReportCompileWarning(JSContext* cx,
-                                               ErrorMetadata&& metadata,
-                                               UniquePtr<JSErrorNotes> notes,
-                                               unsigned errorNumber,
-                                               va_list* args);
+[[nodiscard]] extern bool ReportCompileWarning(
+    JSContext* cx, JSAllocator* alloc, ErrorMetadata&& metadata,
+    UniquePtr<JSErrorNotes> notes, unsigned errorNumber, va_list* args);
 
 class GlobalObject;
 
