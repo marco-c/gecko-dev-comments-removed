@@ -6,6 +6,7 @@ use crate::interfaces::{nsISupports, nsrefcnt};
 use libc;
 use nserror::{nsresult, NS_OK};
 use std::cell::Cell;
+use std::convert::TryInto;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
@@ -251,7 +252,7 @@ where
 
 
 #[derive(Debug)]
-pub struct Refcnt(Cell<nsrefcnt>);
+pub struct Refcnt(Cell<usize>);
 impl Refcnt {
     
     
@@ -265,7 +266,7 @@ impl Refcnt {
         
         let new = self.0.get() + 1;
         self.0.set(new);
-        new
+        new.try_into().unwrap()
     }
 
     
@@ -274,11 +275,11 @@ impl Refcnt {
         
         let new = self.0.get() - 1;
         self.0.set(new);
-        new
+        new.try_into().unwrap()
     }
 
     
-    pub fn get(&self) -> nsrefcnt {
+    pub fn get(&self) -> usize {
         self.0.get()
     }
 }
@@ -301,13 +302,14 @@ impl AtomicRefcnt {
     
     
     pub unsafe fn inc(&self) -> nsrefcnt {
-        self.0.fetch_add(1, Ordering::Relaxed) as nsrefcnt + 1
+        let result = self.0.fetch_add(1, Ordering::Relaxed) + 1;
+        result.try_into().unwrap()
     }
 
     
     
     pub unsafe fn dec(&self) -> nsrefcnt {
-        let result = self.0.fetch_sub(1, Ordering::Release) as nsrefcnt - 1;
+        let result = self.0.fetch_sub(1, Ordering::Release) - 1;
         if result == 0 {
             
             
@@ -322,12 +324,12 @@ impl AtomicRefcnt {
                 atomic::fence(Ordering::Acquire);
             }
         }
-        result
+        result.try_into().unwrap()
     }
 
     
-    pub fn get(&self) -> nsrefcnt {
-        self.0.load(Ordering::Acquire) as nsrefcnt
+    pub fn get(&self) -> usize {
+        self.0.load(Ordering::Acquire)
     }
 }
 
