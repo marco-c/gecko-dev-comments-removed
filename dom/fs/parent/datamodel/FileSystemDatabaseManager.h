@@ -49,6 +49,16 @@ class FileSystemDatabaseManager {
 
 
 
+  virtual Result<EntryId, QMResult> GetParentEntryId(
+      const EntryId& aEntry) const = 0;
+
+  
+
+
+
+
+
+
   virtual Result<EntryId, QMResult> GetOrCreateDirectory(
       const FileSystemChildMetadata& aHandle, bool aCreate) = 0;
 
@@ -64,9 +74,9 @@ class FileSystemDatabaseManager {
   
 
 
-  virtual nsresult GetFile(const EntryId& aEntryId, nsString& aType,
-                           TimeStamp& lastModifiedMilliSeconds, Path& aPath,
-                           nsCOMPtr<nsIFile>& aFile) const = 0;
+  virtual nsresult GetFile(const FileSystemEntryPair& aEndpoints,
+                           nsString& aType, TimeStamp& lastModifiedMilliSeconds,
+                           Path& aPath, nsCOMPtr<nsIFile>& aFile) const = 0;
 
   virtual Result<FileSystemDirectoryListing, QMResult> GetDirectoryEntries(
       const EntryId& aParent, PageNumber aPage) const = 0;
@@ -99,19 +109,8 @@ class FileSystemDatabaseManager {
 
 
 
-  virtual Result<bool, QMResult> RenameEntry(
-      const FileSystemEntryMetadata& aHandle, const Name& aNewName) = 0;
-
-  
-
-
-
-
-
-
-
   virtual Result<bool, QMResult> MoveEntry(
-      const FileSystemEntryMetadata& aHandle,
+      const FileSystemChildMetadata& aHandle,
       const FileSystemChildMetadata& aNewDesignation) = 0;
 
   
