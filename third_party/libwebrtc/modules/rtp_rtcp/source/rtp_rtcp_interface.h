@@ -292,13 +292,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual void SetAsPartOfAllocation(bool part_of_allocation) = 0;
 
   
-  
-  virtual void BitrateSent(uint32_t* total_rate,
-                           uint32_t* video_rate,
-                           uint32_t* fec_rate,
-                           uint32_t* nack_rate) const = 0;
-
-  
   virtual RtpSendRates GetSendRates() const = 0;
 
   virtual RTPSender* RtpSender() = 0;
