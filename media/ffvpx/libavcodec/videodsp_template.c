@@ -20,10 +20,6 @@
 
 
 #include "bit_depth_template.c"
-#if BIT_DEPTH != 8
-
-static
-#endif
 void FUNC(ff_emulated_edge_mc)(uint8_t *buf, const uint8_t *src,
                                ptrdiff_t buf_linesize,
                                ptrdiff_t src_linesize,

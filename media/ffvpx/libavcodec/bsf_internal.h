@@ -24,19 +24,6 @@
 #include "bsf.h"
 #include "packet.h"
 
-typedef struct FFBitStreamFilter {
-    
-
-
-    AVBitStreamFilter p;
-
-    int priv_data_size;
-    int (*init)(AVBSFContext *ctx);
-    int (*filter)(AVBSFContext *ctx, AVPacket *pkt);
-    void (*close)(AVBSFContext *ctx);
-    void (*flush)(AVBSFContext *ctx);
-} FFBitStreamFilter;
-
 
 
 
@@ -54,6 +41,10 @@ int ff_bsf_get_packet(AVBSFContext *ctx, AVPacket **pkt);
 
 
 int ff_bsf_get_packet_ref(AVBSFContext *ctx, AVPacket *pkt);
+
+#if FF_API_CHILD_CLASS_NEXT
+const AVClass *ff_bsf_child_class_next(const AVClass *prev);
+#endif
 
 const AVClass *ff_bsf_child_class_iterate(void **opaque);
 

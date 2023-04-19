@@ -21,7 +21,7 @@
 
 
 
-#include "threadframe.h"
+#include "internal.h"
 #include "vp56.h"
 #include "vp9.h"
 #include "vp9data.h"

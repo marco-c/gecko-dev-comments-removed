@@ -83,15 +83,6 @@ int ff_attach_decode_data(AVFrame *frame);
 
 
 
-
-
-
-int ff_copy_palette(void *dst, const AVPacket *src, void *logctx);
-
-
-
-
-
 int ff_decode_preinit(AVCodecContext *avctx);
 
 #endif 

@@ -32,6 +32,8 @@
 
 #include <stdint.h>
 
+#include "version.h"
+
 
 
 

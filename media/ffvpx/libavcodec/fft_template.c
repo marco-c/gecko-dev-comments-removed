@@ -33,7 +33,7 @@
 #include "fft.h"
 #include "fft-internal.h"
 
-#if !FFT_FLOAT
+#if FFT_FIXED_32
 #include "fft_table.h"
 #else 
 
@@ -226,25 +226,20 @@ av_cold int ff_fft_init(FFTContext *s, int nbits, int inverse)
     s->mdct_calc   = ff_mdct_calc_c;
 #endif
 
+#if FFT_FIXED_32
+    ff_fft_lut_init();
+#else 
 #if FFT_FLOAT
-#if ARCH_AARCH64
-    ff_fft_init_aarch64(s);
-#elif ARCH_ARM
-    ff_fft_init_arm(s);
-#elif ARCH_PPC
-    ff_fft_init_ppc(s);
-#elif ARCH_X86
-    ff_fft_init_x86(s);
-#endif
-#if HAVE_MIPSFPU
-    ff_fft_init_mips(s);
+    if (ARCH_AARCH64) ff_fft_init_aarch64(s);
+    if (ARCH_ARM)     ff_fft_init_arm(s);
+    if (ARCH_PPC)     ff_fft_init_ppc(s);
+    if (ARCH_X86)     ff_fft_init_x86(s);
+    if (HAVE_MIPSFPU) ff_fft_init_mips(s);
 #endif
     for(j=4; j<=nbits; j++) {
         ff_init_ff_cos_tabs(j);
     }
-#else 
-    ff_fft_lut_init();
-#endif
+#endif 
 
 
     if (ARCH_X86 && FFT_FLOAT && s->fft_permutation == FF_FFT_PERM_AVX) {
@@ -317,7 +312,7 @@ av_cold void ff_fft_end(FFTContext *s)
     av_freep(&s->tmp_buf);
 }
 
-#if !FFT_FLOAT
+#if FFT_FIXED_32
 
 static void fft_calc_c(FFTContext *s, FFTComplex *z) {
 

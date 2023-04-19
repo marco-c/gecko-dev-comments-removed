@@ -24,205 +24,10 @@
 #ifndef AVUTIL_FIFO_H
 #define AVUTIL_FIFO_H
 
-#include <stddef.h>
 #include <stdint.h>
-
+#include "avutil.h"
 #include "attributes.h"
-#include "version.h"
 
-typedef struct AVFifo AVFifo;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef int AVFifoCB(void *opaque, void *buf, size_t *nb_elems);
-
-
-
-
-
-
-#define AV_FIFO_FLAG_AUTO_GROW      (1 << 0)
-
-
-
-
-
-
-
-
-
-
-
-AVFifo *av_fifo_alloc2(size_t elems, size_t elem_size,
-                       unsigned int flags);
-
-
-
-
-
-size_t av_fifo_elem_size(const AVFifo *f);
-
-
-
-
-
-void av_fifo_auto_grow_limit(AVFifo *f, size_t max_elems);
-
-
-
-
-size_t av_fifo_can_read(const AVFifo *f);
-
-
-
-
-size_t av_fifo_can_write(const AVFifo *f);
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_grow2(AVFifo *f, size_t inc);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_write(AVFifo *f, const void *buf, size_t nb_elems);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_write_from_cb(AVFifo *f, AVFifoCB read_cb,
-                          void *opaque, size_t *nb_elems);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_read(AVFifo *f, void *buf, size_t nb_elems);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_read_to_cb(AVFifo *f, AVFifoCB write_cb,
-                       void *opaque, size_t *nb_elems);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_peek(AVFifo *f, void *buf, size_t nb_elems, size_t offset);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int av_fifo_peek_to_cb(AVFifo *f, AVFifoCB write_cb, void *opaque,
-                       size_t *nb_elems, size_t offset);
-
-
-
-
-
-
-void av_fifo_drain2(AVFifo *f, size_t size);
-
-
-
-
-
-void av_fifo_reset2(AVFifo *f);
-
-
-
-
-
-void av_fifo_freep2(AVFifo **f);
-
-
-#if FF_API_FIFO_OLD_API
 typedef struct AVFifoBuffer {
     uint8_t *buffer;
     uint8_t *rptr, *wptr, *end;
@@ -234,8 +39,6 @@ typedef struct AVFifoBuffer {
 
 
 
-
-attribute_deprecated
 AVFifoBuffer *av_fifo_alloc(unsigned int size);
 
 
@@ -244,32 +47,24 @@ AVFifoBuffer *av_fifo_alloc(unsigned int size);
 
 
 
-
-attribute_deprecated
 AVFifoBuffer *av_fifo_alloc_array(size_t nmemb, size_t size);
 
 
 
 
 
-
-attribute_deprecated
 void av_fifo_free(AVFifoBuffer *f);
 
 
 
 
 
-
-attribute_deprecated
 void av_fifo_freep(AVFifoBuffer **f);
 
 
 
 
 
-
-attribute_deprecated
 void av_fifo_reset(AVFifoBuffer *f);
 
 
@@ -278,8 +73,6 @@ void av_fifo_reset(AVFifoBuffer *f);
 
 
 
-
-attribute_deprecated
 int av_fifo_size(const AVFifoBuffer *f);
 
 
@@ -288,8 +81,6 @@ int av_fifo_size(const AVFifoBuffer *f);
 
 
 
-
-attribute_deprecated
 int av_fifo_space(const AVFifoBuffer *f);
 
 
@@ -301,12 +92,6 @@ int av_fifo_space(const AVFifoBuffer *f);
 
 
 
-
-
-
-
-
-attribute_deprecated
 int av_fifo_generic_peek_at(AVFifoBuffer *f, void *dest, int offset, int buf_size, void (*func)(void*, void*, int));
 
 
@@ -317,12 +102,6 @@ int av_fifo_generic_peek_at(AVFifoBuffer *f, void *dest, int offset, int buf_siz
 
 
 
-
-
-
-
-
-attribute_deprecated
 int av_fifo_generic_peek(AVFifoBuffer *f, void *dest, int buf_size, void (*func)(void*, void*, int));
 
 
@@ -332,12 +111,6 @@ int av_fifo_generic_peek(AVFifoBuffer *f, void *dest, int buf_size, void (*func)
 
 
 
-
-
-
-
-
-attribute_deprecated
 int av_fifo_generic_read(AVFifoBuffer *f, void *dest, int buf_size, void (*func)(void*, void*, int));
 
 
@@ -353,10 +126,6 @@ int av_fifo_generic_read(AVFifoBuffer *f, void *dest, int buf_size, void (*func)
 
 
 
-
-
-
-attribute_deprecated
 int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void*, void*, int));
 
 
@@ -367,10 +136,6 @@ int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void
 
 
 
-
-
-
-attribute_deprecated
 int av_fifo_realloc2(AVFifoBuffer *f, unsigned int size);
 
 
@@ -382,10 +147,6 @@ int av_fifo_realloc2(AVFifoBuffer *f, unsigned int size);
 
 
 
-
-
-
-attribute_deprecated
 int av_fifo_grow(AVFifoBuffer *f, unsigned int additional_space);
 
 
@@ -393,12 +154,8 @@ int av_fifo_grow(AVFifoBuffer *f, unsigned int additional_space);
 
 
 
-
-
-attribute_deprecated
 void av_fifo_drain(AVFifoBuffer *f, int size);
 
-#if FF_API_FIFO_PEEK2
 
 
 
@@ -409,8 +166,6 @@ void av_fifo_drain(AVFifoBuffer *f, int size);
 
 
 
-
-attribute_deprecated
 static inline uint8_t *av_fifo_peek2(const AVFifoBuffer *f, int offs)
 {
     uint8_t *ptr = f->rptr + offs;
@@ -420,7 +175,5 @@ static inline uint8_t *av_fifo_peek2(const AVFifoBuffer *f, int offs)
         ptr = f->end - (f->buffer - ptr);
     return ptr;
 }
-#endif
-#endif
 
 #endif 

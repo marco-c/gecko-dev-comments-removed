@@ -28,6 +28,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "version.h"
+
 
 
 
@@ -91,7 +93,11 @@ typedef struct AVBufferRef {
     
 
 
+#if FF_API_BUFFER_SIZE_T
+    int      size;
+#else
     size_t   size;
+#endif
 } AVBufferRef;
 
 
@@ -99,13 +105,21 @@ typedef struct AVBufferRef {
 
 
 
+#if FF_API_BUFFER_SIZE_T
+AVBufferRef *av_buffer_alloc(int size);
+#else
 AVBufferRef *av_buffer_alloc(size_t size);
+#endif
 
 
 
 
 
+#if FF_API_BUFFER_SIZE_T
+AVBufferRef *av_buffer_allocz(int size);
+#else
 AVBufferRef *av_buffer_allocz(size_t size);
+#endif
 
 
 
@@ -128,7 +142,11 @@ AVBufferRef *av_buffer_allocz(size_t size);
 
 
 
+#if FF_API_BUFFER_SIZE_T
+AVBufferRef *av_buffer_create(uint8_t *data, int size,
+#else
 AVBufferRef *av_buffer_create(uint8_t *data, size_t size,
+#endif
                               void (*free)(void *opaque, uint8_t *data),
                               void *opaque, int flags);
 
@@ -145,7 +163,7 @@ void av_buffer_default_free(void *opaque, uint8_t *data);
 
 
 
-AVBufferRef *av_buffer_ref(const AVBufferRef *buf);
+AVBufferRef *av_buffer_ref(AVBufferRef *buf);
 
 
 
@@ -196,7 +214,11 @@ int av_buffer_make_writable(AVBufferRef **buf);
 
 
 
+#if FF_API_BUFFER_SIZE_T
+int av_buffer_realloc(AVBufferRef **buf, int size);
+#else
 int av_buffer_realloc(AVBufferRef **buf, size_t size);
+#endif
 
 
 
@@ -212,7 +234,7 @@ int av_buffer_realloc(AVBufferRef **buf, size_t size);
 
 
 
-int av_buffer_replace(AVBufferRef **dst, const AVBufferRef *src);
+int av_buffer_replace(AVBufferRef **dst, AVBufferRef *src);
 
 
 
@@ -263,7 +285,11 @@ typedef struct AVBufferPool AVBufferPool;
 
 
 
+#if FF_API_BUFFER_SIZE_T
+AVBufferPool *av_buffer_pool_init(int size, AVBufferRef* (*alloc)(int size));
+#else
 AVBufferPool *av_buffer_pool_init(size_t size, AVBufferRef* (*alloc)(size_t size));
+#endif
 
 
 
@@ -280,8 +306,13 @@ AVBufferPool *av_buffer_pool_init(size_t size, AVBufferRef* (*alloc)(size_t size
 
 
 
+#if FF_API_BUFFER_SIZE_T
+AVBufferPool *av_buffer_pool_init2(int size, void *opaque,
+                                   AVBufferRef* (*alloc)(void *opaque, int size),
+#else
 AVBufferPool *av_buffer_pool_init2(size_t size, void *opaque,
                                    AVBufferRef* (*alloc)(void *opaque, size_t size),
+#endif
                                    void (*pool_free)(void *opaque));
 
 
@@ -313,7 +344,7 @@ AVBufferRef *av_buffer_pool_get(AVBufferPool *pool);
 
 
 
-void *av_buffer_pool_buffer_get_opaque(const AVBufferRef *ref);
+void *av_buffer_pool_buffer_get_opaque(AVBufferRef *ref);
 
 
 

@@ -47,26 +47,6 @@ int ff_get_encode_buffer(AVCodecContext *avctx, AVPacket *avpkt, int64_t size, i
 
 
 
-int ff_encode_alloc_frame(AVCodecContext *avctx, AVFrame *frame);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int ff_alloc_packet(AVCodecContext *avctx, AVPacket *avpkt, int64_t size);
-
-
-
-
 
 int ff_encode_preinit(AVCodecContext *avctx);
 
