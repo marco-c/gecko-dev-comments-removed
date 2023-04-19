@@ -11,11 +11,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "DevToolsShim",
-  "chrome://devtools-startup/content/DevToolsShim.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
+});
 
 var { ExtensionParent } = ChromeUtils.import(
   "resource://gre/modules/ExtensionParent.jsm"

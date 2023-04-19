@@ -4,9 +4,9 @@
 
 "use strict";
 
-const {
-  DevToolsShim,
-} = require("chrome://devtools-startup/content/DevToolsShim.jsm");
+const { DevToolsShim } = ChromeUtils.importESModule(
+  "chrome://devtools-startup/content/DevToolsShim.sys.mjs"
+);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {

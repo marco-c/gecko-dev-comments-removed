@@ -670,6 +670,8 @@ class MarionetteDebugProtocolPart(DebugProtocolPart):
 
     def load_devtools(self):
         with self.marionette.using_context(self.marionette.CONTEXT_CHROME):
+            
+            
             self.parent.base.execute_script("""
 const { DevToolsShim } = ChromeUtils.import(
   "chrome://devtools-startup/content/DevToolsShim.jsm"
