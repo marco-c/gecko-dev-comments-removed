@@ -122,6 +122,20 @@ class LocalAccInSameDocRule : public PivotRule {
   virtual uint16_t Match(Accessible* aAcc) override;
 };
 
+
+
+
+
+class PivotRadioNameRule : public PivotRule {
+ public:
+  explicit PivotRadioNameRule(const nsString& aName);
+
+  virtual uint16_t Match(Accessible* aAcc) override;
+
+ protected:
+  const nsString& mName;
+};
+
 }  
 }  
 
