@@ -1746,6 +1746,10 @@ void PeerConnection::Close() {
   
   
   observer_ = nullptr;
+
+  
+  
+  sdp_handler_->PrepareForShutdown();
 }
 
 void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
