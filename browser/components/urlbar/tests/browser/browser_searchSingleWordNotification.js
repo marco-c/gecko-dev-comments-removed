@@ -246,9 +246,30 @@ function get_test_function_for_localhost_with_hostname(
     }
 
     
-    
     Services.prefs.setBoolPref(pref, false);
 
+    
+    
+    await BrowserTestUtils.withNewTab(
+      {
+        gBrowser: win.gBrowser,
+        url: "about:blank",
+      },
+      browser =>
+        runURLBarSearchTest({
+          valueToOpen: hostName,
+          expectSearch: true,
+          expectNotification: false,
+          expectDNSResolve: false,
+          aWindow: win,
+        })
+    );
+
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.urlbar.dnsResolveSingleWordsAfterSearch", 1]],
+    });
+
+    
     await BrowserTestUtils.withNewTab(
       {
         gBrowser: win.gBrowser,
@@ -290,6 +311,8 @@ function get_test_function_for_localhost_with_hostname(
       await BrowserTestUtils.closeWindow(win);
       await SimpleTest.promiseFocus(window);
     }
+
+    await SpecialPowers.popPrefEnv();
   };
 }
 

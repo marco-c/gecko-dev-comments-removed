@@ -507,7 +507,7 @@ pref("browser.urlbar.extension.timeout", 400);
 
 
 
-pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 1);
+pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 0);
 
 
 
