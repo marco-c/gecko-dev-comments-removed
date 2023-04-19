@@ -26,7 +26,9 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.PointerIcon;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewStructure;
 import android.view.inputmethod.CursorAnchorInfo;
@@ -3706,13 +3708,25 @@ public class GeckoSession {
 
 
 
+    @UiThread
+    @Deprecated
+    @DeprecationSchedule(id = "location-permissions", version = 104)
+    default void onLocationChange(
+        @NonNull final GeckoSession session, @Nullable final String url) {}
+
+    
+
+
+
+
+
 
     @UiThread
     default void onLocationChange(
         @NonNull GeckoSession session,
         @Nullable String url,
         final @NonNull List<PermissionDelegate.ContentPermission> perms) {
-      session.getNavigationDelegate().onLocationChange(session, url, perms);
+      session.getNavigationDelegate().onLocationChange(session, url);
     }
 
     
@@ -6496,6 +6510,19 @@ public class GeckoSession {
   @UiThread
   public @Nullable Autofill.Delegate getAutofillDelegate() {
     return getAutofillSupport().getDelegate();
+  }
+
+  
+
+
+
+
+
+  @UiThread
+  @Deprecated
+  @DeprecationSchedule(id = "autofill-node", version = 104)
+  public void autofill(final @NonNull SparseArray<CharSequence> values) {
+    getAutofillSession().autofill(values);
   }
 
   

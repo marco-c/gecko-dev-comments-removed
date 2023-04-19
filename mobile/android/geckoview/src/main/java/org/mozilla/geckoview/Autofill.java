@@ -13,6 +13,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewStructure;
+import android.view.autofill.AutofillManager;
 import android.view.autofill.AutofillValue;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
@@ -36,6 +37,67 @@ import org.mozilla.gecko.util.ThreadUtils;
 public class Autofill {
   private static final boolean DEBUG = false;
 
+  @Deprecated
+  @DeprecationSchedule(id = "autofill-node", version = 104)
+  public static final class Notify {
+    private Notify() {}
+
+    
+    public static final int SESSION_STARTED = 0;
+
+    
+    public static final int SESSION_COMMITTED = 1;
+
+    
+    public static final int SESSION_CANCELED = 2;
+
+    
+    public static final int NODE_ADDED = 3;
+
+    
+    public static final int NODE_REMOVED = 4;
+
+    
+    public static final int NODE_UPDATED = 5;
+
+    
+    public static final int NODE_FOCUSED = 6;
+
+    
+    public static final int NODE_BLURRED = 7;
+
+    @AnyThread
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public static @Nullable String toString(final @AutofillNotify int notification) {
+      final String[] map =
+          new String[] {
+            "SESSION_STARTED",
+            "SESSION_COMMITTED",
+            "SESSION_CANCELED",
+            "NODE_ADDED",
+            "NODE_REMOVED",
+            "NODE_UPDATED",
+            "NODE_FOCUSED",
+            "NODE_BLURRED"
+          };
+      if (notification < 0 || notification >= map.length) {
+        return null;
+      }
+      return map[notification];
+    }
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    Notify.SESSION_STARTED,
+    Notify.SESSION_COMMITTED,
+    Notify.SESSION_CANCELED,
+    Notify.NODE_ADDED,
+    Notify.NODE_REMOVED,
+    Notify.NODE_UPDATED,
+    Notify.NODE_FOCUSED,
+    Notify.NODE_BLURRED
+  })
   public @interface AutofillNotify {}
 
   public static final class Hint {
@@ -544,6 +606,18 @@ public class Autofill {
     private final String mSessionId;
 
     
+
+
+
+
+    @AnyThread
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    public int getId() {
+      return 0;
+    }
+
+    
     @NonNull
     String getUuid() {
       return mUuid;
@@ -559,6 +633,20 @@ public class Autofill {
     @Nullable
     Node getParent() {
       return mParent;
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    public boolean getVisible() {
+      return false;
     }
 
     
@@ -631,6 +719,18 @@ public class Autofill {
 
 
     @AnyThread
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    public boolean getFocused() {
+      return false;
+    }
+
+    
+
+
+
+
+    @AnyThread
     public @AutofillHint int getHint() {
       return mHint;
     }
@@ -663,6 +763,18 @@ public class Autofill {
     @AnyThread
     public @NonNull String getDomain() {
       return mDomain;
+    }
+
+    
+
+
+
+
+    @AnyThread
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    public @NonNull String getValue() {
+      return null;
     }
 
     
@@ -726,6 +838,26 @@ public class Autofill {
           .append("}");
 
       return builder.toString();
+    }
+
+    
+
+
+
+
+
+
+    @TargetApi(23)
+    @UiThread
+    @SuppressWarnings("checkstyle:javadocmethod")
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    public void fillViewStructure(
+        @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {}
+
+     Node(
+        @NonNull final GeckoBundle bundle, final Rect defaultDimensions, final String sessionId) {
+      this(bundle,  null,  null, defaultDimensions, sessionId);
     }
 
      Node(
@@ -853,6 +985,24 @@ public class Autofill {
   }
 
   public interface Delegate {
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    @Deprecated
+    @DeprecationSchedule(id = "autofill-node", version = 104)
+    default void onAutofill(
+        @NonNull final GeckoSession session,
+        @AutofillNotify final int notification,
+        @Nullable final Node node) {}
 
     
 
@@ -1010,7 +1160,7 @@ public class Autofill {
      void addNode(
         @NonNull final GeckoBundle message, @NonNull final EventCallback callback) {
       final Session session = getAutofillSession();
-      final Node node = new Node(session.getDefaultDimensions(), session.getId());
+      final Node node = new Node(message, session.getDefaultDimensions(), session.getId());
 
       session.addRoot(node, callback);
       addValues(message);
