@@ -1168,7 +1168,9 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     if (!newAcc && aContext->IsXULTabpanels() &&
         content->GetParent() == aContext->GetContent()) {
       LayoutFrameType frameType = frame->Type();
+      
       if (frameType == LayoutFrameType::Box ||
+          frameType == LayoutFrameType::FlexContainer ||
           frameType == LayoutFrameType::Scroll) {
         newAcc = new XULTabpanelAccessible(content, document);
       }
