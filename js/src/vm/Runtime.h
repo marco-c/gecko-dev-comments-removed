@@ -227,10 +227,77 @@ class Metrics {
  public:
   explicit Metrics(JSRuntime* rt) : rt_(rt) {}
 
+  
+  
+  
+  struct TimeDuration_S {
+    using SourceType = mozilla::TimeDuration;
+    static uint32_t convert(SourceType td) { return uint32_t(td.ToSeconds()); }
+  };
+  struct TimeDuration_MS {
+    using SourceType = mozilla::TimeDuration;
+    static uint32_t convert(SourceType td) {
+      return uint32_t(td.ToMilliseconds());
+    }
+  };
+  struct TimeDuration_US {
+    using SourceType = mozilla::TimeDuration;
+    static uint32_t convert(SourceType td) {
+      return uint32_t(td.ToMicroseconds());
+    }
+  };
+
+  
+  
+  struct MemoryDistribution {
+    using SourceType = size_t;
+    static uint32_t convert(SourceType sz) {
+      return static_cast<uint32_t>(std::min(sz, size_t(UINT32_MAX)));
+    }
+  };
+
+  
+  
+  
+  using QuantityDistribution = MemoryDistribution;
+
+  
+  
+  struct Boolean {
+    using SourceType = bool;
+    static uint32_t convert(SourceType sample) {
+      return static_cast<uint32_t>(sample);
+    }
+  };
+
+  
+  
+  
+  struct Enumeration {
+    using SourceType = int;
+    static uint32_t convert(SourceType sample) {
+      MOZ_ASSERT(sample <= 100);
+      return static_cast<uint32_t>(sample);
+    }
+  };
+
+  
+  
+  
+  struct Percentage {
+    using SourceType = int;
+    static uint32_t convert(SourceType sample) {
+      MOZ_ASSERT(sample <= 100);
+      return static_cast<uint32_t>(sample);
+    }
+  };
+
   inline void addTelemetry(JSMetric id, uint32_t sample);
 
-#define DECLARE_METRIC_HELPER(NAME) \
-  void NAME(uint32_t sample) { addTelemetry(JSMetric::NAME, sample); }
+#define DECLARE_METRIC_HELPER(NAME, TY)                \
+  void NAME(TY::SourceType sample) {                   \
+    addTelemetry(JSMetric::NAME, TY::convert(sample)); \
+  }
   FOR_EACH_JS_METRIC(DECLARE_METRIC_HELPER)
 #undef DECLARE_METRIC_HELPER
 };
