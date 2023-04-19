@@ -504,7 +504,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   
   
-  std::string StatsKeyToMetricName(const StatsKey& key);
+  std::string StatsKeyToMetricName(const StatsKey& key) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   void StartMeasuringCpuProcessTime();
   void StopMeasuringCpuProcessTime();
@@ -517,9 +518,9 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::atomic<uint16_t> next_frame_id_{0};
 
   std::string test_label_;
-  std::unique_ptr<NamesCollection> peers_;
 
   mutable Mutex lock_;
+  std::unique_ptr<NamesCollection> peers_ RTC_GUARDED_BY(lock_);
   State state_ RTC_GUARDED_BY(lock_) = State::kNew;
   Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
   
