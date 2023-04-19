@@ -949,7 +949,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleTextSizeAdjust mTextSizeAdjust;
   uint8_t mTextCombineUpright;  
   mozilla::StyleMozControlCharacterVisibility mMozControlCharacterVisibility;
-  uint8_t mTextEmphasisPosition;  
+  mozilla::StyleTextEmphasisPosition mTextEmphasisPosition;
   mozilla::StyleTextRendering mTextRendering;
   mozilla::StyleColor mTextEmphasisColor;
   mozilla::StyleColor mWebkitTextFillColor;
@@ -1100,18 +1100,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   explicit nsStyleVisibility(const mozilla::dom::Document&);
   nsStyleVisibility(const nsStyleVisibility& aVisibility);
   MOZ_COUNTED_DTOR(nsStyleVisibility)
-  static constexpr bool kHasTriggerImageLoads = false;
-
   nsChangeHint CalcDifference(const nsStyleVisibility& aNewData) const;
-
-  mozilla::StyleImageOrientation mImageOrientation;
-  mozilla::StyleDirection mDirection;
-  mozilla::StyleVisibility mVisible;
-  mozilla::StyleImageRendering mImageRendering;
-  mozilla::StyleWritingModeProperty mWritingMode;
-  mozilla::StyleTextOrientation mTextOrientation;
-  mozilla::StyleMozBoxLayout mMozBoxLayout;
-  mozilla::StylePrintColorAdjust mPrintColorAdjust;
 
   bool IsVisible() const {
     return mVisible == mozilla::StyleVisibility::Visible;
@@ -1125,6 +1114,41 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   bool EmulateMozBoxWithFlex() const {
     return mMozBoxLayout == mozilla::StyleMozBoxLayout::Flex;
   }
+
+  
+
+
+
+
+
+
+
+  mozilla::StyleImageOrientation UsedImageOrientation(
+      imgIRequest* aRequest) const;
+
+  
+
+
+
+
+
+
+
+
+  static mozilla::StyleImageOrientation UsedImageOrientation(
+      imgIRequest* aRequest, mozilla::StyleImageOrientation aOrientation);
+
+  static constexpr bool kHasTriggerImageLoads = false;
+  mozilla::StyleDirection mDirection;
+  mozilla::StyleVisibility mVisible;
+  mozilla::StyleImageRendering mImageRendering;
+  mozilla::StyleWritingModeProperty mWritingMode;
+  mozilla::StyleTextOrientation mTextOrientation;
+  mozilla::StyleMozBoxLayout mMozBoxLayout;
+  mozilla::StylePrintColorAdjust mPrintColorAdjust;
+
+ private:
+  mozilla::StyleImageOrientation mImageOrientation;
 };
 
 namespace mozilla {

@@ -322,24 +322,29 @@ fn derive_single_field_expr(
 }
 
 #[derive(Default, FromMeta)]
+#[darling(default)]
 pub struct CssBitflagAttrs {
     
-    pub single: String,
+    pub single: Option<String>,
     
-    pub mixed: String,
+    pub mixed: Option<String>,
     
-    #[darling(default)]
     pub validate_mixed: Option<Path>,
     
     
-    #[darling(default)]
     pub overlapping_bits: bool,
 }
 
 impl CssBitflagAttrs {
     
-    fn names(s: &str) -> Vec<(String, String)> {
-        s.split(',').map(|css_name| (cg::to_scream_case(css_name), css_name.to_owned())).collect()
+    fn names(s: &Option<String>) -> Vec<(String, String)> {
+        let s = match s {
+            Some(s) => s,
+            None => return vec![],
+        };
+        s.split(',')
+            .map(|css_name| (cg::to_scream_case(css_name), css_name.to_owned()))
+            .collect()
     }
 
     pub fn single_flags(&self) -> Vec<(String, String)> {
