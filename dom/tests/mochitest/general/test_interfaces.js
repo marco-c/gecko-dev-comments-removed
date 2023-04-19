@@ -25,6 +25,13 @@
 
 
 
+
+
+
+
+
+
+
 const { AppConstants } = SpecialPowers.ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -661,9 +668,7 @@ let interfaceNamesInGlobalScope = [
   {
     name: "InstallTrigger",
     insecureContext: true,
-    disabled: !SpecialPowers.Services.prefs.getBoolPref(
-      "extensions.InstallTrigger.enabled"
-    ),
+    disabled: isEarlyBetaOrEarlier,
   },
   
   { name: "IntersectionObserver", insecureContext: true },
