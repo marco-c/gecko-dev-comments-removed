@@ -69,6 +69,12 @@ class TurnPort : public Port {
       return nullptr;
     }
     
+    if (!AllowedTurnPort(server_address.address.port())) {
+      RTC_LOG(LS_ERROR) << "Attempt to use TURN to connect to port "
+                        << server_address.address.port();
+      return nullptr;
+    }
+    
     return absl::WrapUnique(new TurnPort(
         thread, factory, network, socket, username, password, server_address,
         credentials, server_priority, origin, customizer));
@@ -111,6 +117,12 @@ class TurnPort : public Port {
       rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr) {
     
     if (credentials.username.size() > kMaxTurnUsernameLength) {
+      return nullptr;
+    }
+    
+    if (!AllowedTurnPort(server_address.address.port())) {
+      RTC_LOG(LS_ERROR) << "Attempt to use TURN to connect to port "
+                        << server_address.address.port();
       return nullptr;
     }
     
@@ -296,6 +308,7 @@ class TurnPort : public Port {
   typedef std::map<rtc::Socket::Option, int> SocketOptionsMap;
   typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
+  static bool AllowedTurnPort(int port);
   void OnMessage(rtc::Message* pmsg) override;
 
   bool CreateTurnClientSocket();
