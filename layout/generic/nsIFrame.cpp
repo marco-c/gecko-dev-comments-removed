@@ -7856,6 +7856,11 @@ bool nsIFrame::IsImageFrameOrSubclass() const {
   return !!asImage;
 }
 
+bool nsIFrame::IsSubgrid() const {
+  return IsGridContainerFrame() &&
+         static_cast<const nsGridContainerFrame*>(this)->IsSubgrid();
+}
+
 static nsIFrame* GetNearestBlockContainer(nsIFrame* frame) {
   
   
@@ -7867,7 +7872,7 @@ static nsIFrame* GetNearestBlockContainer(nsIFrame* frame) {
   
   
   while (frame->IsFrameOfType(nsIFrame::eLineParticipant) ||
-         frame->IsBlockWrapper() ||
+         frame->IsBlockWrapper() || frame->IsSubgrid() ||
          
          frame->IsTableRowFrame()) {
     frame = frame->GetParent();

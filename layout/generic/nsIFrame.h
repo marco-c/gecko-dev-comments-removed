@@ -3182,6 +3182,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsSubgrid() const;
+
+  
+
+
 
 
   nsIWidget* GetNearestWidget(nsPoint& aOffset) const;
