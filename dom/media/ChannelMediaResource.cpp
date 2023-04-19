@@ -815,6 +815,8 @@ void ChannelMediaResource::UpdatePrincipal() {
         mode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT ||
             mode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
         "no-cors request");
+    MOZ_ASSERT(!hadData || !mChannel->IsDocument(),
+               "Only the initial load may be a document load");
     bool finalResponseIsOpaque =
         
         
@@ -822,7 +824,18 @@ void ChannelMediaResource::UpdatePrincipal() {
         
         
         
-        loadInfo->GetTainting() == LoadTainting::Opaque &&
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        (mChannel->IsDocument() ||
+         loadInfo->GetTainting() == LoadTainting::Opaque) &&
         
         
         
