@@ -1,31 +1,27 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["CommonUtils"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
 
 const MAX_TRIM_LENGTH = 100;
 
-const CommonUtils = {
-  
-
-
-
+export const CommonUtils = {
+  /**
+   * Constant passed to getAccessible to indicate that it shouldn't fail if
+   * there is no accessible.
+   */
   DONOTFAIL_IF_NO_ACC: 1,
 
-  
-
-
-
+  /**
+   * Constant passed to getAccessible to indicate that it shouldn't fail if it
+   * does not support an interface.
+   */
   DONOTFAIL_IF_NO_INTERFACE: 2,
 
-  
-
-
+  /**
+   * nsIAccessibilityService service.
+   */
   get accService() {
     if (!this._accService) {
       this._accService = Cc["@mozilla.org/accessibilityService;1"].getService(
@@ -41,9 +37,9 @@ const CommonUtils = {
     Cu.forceGC();
   },
 
-  
-
-
+  /**
+   * Adds an observer for an 'a11y-consumers-changed' event.
+   */
   addAccConsumersChangedObserver() {
     const deferred = {};
     this._accConsumersChanged = new Promise(resolve => {
@@ -56,22 +52,22 @@ const CommonUtils = {
     Services.obs.addObserver(observe, "a11y-consumers-changed");
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns a promise that resolves when 'a11y-consumers-changed' event is
+   * fired.
+   *
+   * @return {Promise}
+   *         event promise evaluating to event's data
+   */
   observeAccConsumersChanged() {
     return this._accConsumersChanged;
   },
 
-  
-
-
-
-
+  /**
+   * Adds an observer for an 'a11y-init-or-shutdown' event with a value of "1"
+   * which indicates that an accessibility service is initialized in the current
+   * process.
+   */
   addAccServiceInitializedObserver() {
     const deferred = {};
     this._accServiceInitialized = new Promise((resolve, reject) => {
@@ -89,20 +85,20 @@ const CommonUtils = {
     Services.obs.addObserver(observe, "a11y-init-or-shutdown");
   },
 
-  
-
-
-
-
+  /**
+   * Returns a promise that resolves when an accessibility service is
+   * initialized in the current process. Otherwise (if the service is shutdown)
+   * the promise is rejected.
+   */
   observeAccServiceInitialized() {
     return this._accServiceInitialized;
   },
 
-  
-
-
-
-
+  /**
+   * Adds an observer for an 'a11y-init-or-shutdown' event with a value of "0"
+   * which indicates that an accessibility service is shutdown in the current
+   * process.
+   */
   addAccServiceShutdownObserver() {
     const deferred = {};
     this._accServiceShutdown = new Promise((resolve, reject) => {
@@ -120,44 +116,44 @@ const CommonUtils = {
     Services.obs.addObserver(observe, "a11y-init-or-shutdown");
   },
 
-  
-
-
-
-
+  /**
+   * Returns a promise that resolves when an accessibility service is shutdown
+   * in the current process. Otherwise (if the service is initialized) the
+   * promise is rejected.
+   */
   observeAccServiceShutdown() {
     return this._accServiceShutdown;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Extract DOMNode id from an accessible. If the accessible is in the remote
+   * process, DOMNode is not present in parent process. However, if specified by
+   * the author, DOMNode id will be attached to an accessible object.
+   *
+   * @param  {nsIAccessible} accessible  accessible
+   * @return {String?}                   DOMNode id if available
+   */
   getAccessibleDOMNodeID(accessible) {
     if (accessible instanceof Ci.nsIAccessibleDocument) {
-      
+      // If accessible is a document, trying to find its document body id.
       try {
         return accessible.DOMNode.body.id;
       } catch (e) {
-        
+        /* This only works if accessible is not a proxy. */
       }
     }
     try {
       return accessible.DOMNode.id;
     } catch (e) {
-      
+      /* This will fail if DOMNode is in different process. */
     }
     try {
-      
-      
-      
+      // When e10s is enabled, accessible will have an "id" property if its
+      // corresponding DOMNode has an id. If accessible is a document, its "id"
+      // property corresponds to the "id" of its body element.
       return accessible.id;
     } catch (e) {
-      
+      /* This will fail if accessible is not a proxy. */
     }
 
     return null;
@@ -191,26 +187,26 @@ const CommonUtils = {
     }
   },
 
-  
-
-
+  /**
+   * Convert role to human readable string.
+   */
   roleToString(role) {
     return this.accService.getStringRole(role);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Shorten a long string if it exceeds MAX_TRIM_LENGTH.
+   *
+   * @param aString the string to shorten.
+   *
+   * @returns the shortened string.
+   */
   shortenString(str) {
     if (str.length <= MAX_TRIM_LENGTH) {
       return str;
     }
 
-    
+    // Trim the string if its length is > MAX_TRIM_LENGTH characters.
     const trimOffset = MAX_TRIM_LENGTH / 2;
 
     return `${str.substring(0, trimOffset - 1)}…${str.substring(
@@ -247,9 +243,9 @@ const CommonUtils = {
     return `${text}] `;
   },
 
-  
-
-
+  /**
+   * Return pretty name for identifier, it may be ID, DOM node or accessible.
+   */
   prettyName(identifier) {
     if (identifier instanceof Array) {
       let msg = "";
@@ -307,24 +303,24 @@ const CommonUtils = {
     return ` "${identifier}" `;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Return accessible for the given identifier (may be ID attribute or DOM
+   * element or accessible object) or null.
+   *
+   * @param accOrElmOrID
+   *        identifier to get an accessible implementing the given interfaces
+   * @param aInterfaces
+   *        [optional] the interface or an array interfaces to query it/them
+   *        from obtained accessible
+   * @param elmObj
+   *        [optional] object to store DOM element which accessible is obtained
+   *        for
+   * @param doNotFailIf
+   *        [optional] no error for special cases (see DONOTFAIL_IF_NO_ACC,
+   *        DONOTFAIL_IF_NO_INTERFACE)
+   * @param doc
+   *        [optional] document for when accOrElmOrID is an ID.
+   */
   getAccessible(accOrElmOrID, interfaces, elmObj, doNotFailIf, doc) {
     if (!accOrElmOrID) {
       return null;
@@ -397,9 +393,9 @@ const CommonUtils = {
     return acc;
   },
 
-  
-
-
+  /**
+   * Return the DOM node by identifier (may be accessible, DOM node or ID).
+   */
   getNode(accOrNodeOrID, doc) {
     if (!accOrNodeOrID) {
       return null;
@@ -422,23 +418,23 @@ const CommonUtils = {
     return node;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Return root accessible.
+   *
+   * @param  {DOMNode} doc
+   *         Chrome document.
+   *
+   * @return {nsIAccessible}
+   *         Accessible object for chrome window.
+   */
   getRootAccessible(doc) {
     const acc = this.getAccessible(doc);
     return acc ? acc.rootDocument.QueryInterface(Ci.nsIAccessible) : null;
   },
 
-  
-
-
+  /**
+   * Analogy of SimpleTest.is function used to compare objects.
+   */
   isObject(obj, expectedObj, msg) {
     if (obj == expectedObj) {
       Assert.ok(true, msg);

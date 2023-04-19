@@ -1,40 +1,34 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["Layout"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
-const { CommonUtils } = ChromeUtils.import(
-  "chrome://mochitests/content/browser/accessible/tests/browser/Common.jsm"
-);
+import { CommonUtils } from "chrome://mochitests/content/browser/accessible/tests/browser/Common.sys.mjs";
 
-const Layout = {
-  
-
-
+export const Layout = {
+  /**
+   * Zoom the given document.
+   */
   zoomDocument(doc, zoom) {
     const bc = BrowsingContext.getFromWindow(doc.defaultView);
-    
-    
-    
+    // To mirror the behaviour of the UI, we set the zoom
+    // value on the top level browsing context. This value automatically
+    // propagates down to iframes.
     bc.top.fullZoom = zoom;
   },
 
-  
-
-
-
+  /**
+   * Set the relative resolution of this document. This is what apz does.
+   * On non-mobile platforms you won't see a visible change.
+   */
   setResolution(doc, zoom) {
     const windowUtils = doc.defaultView.windowUtils;
     windowUtils.setResolutionAndScaleTo(zoom);
   },
 
-  
-
-
+  /**
+   * Assert.is() function checking the expected value is within the range.
+   */
   isWithin(expected, got, within, msg) {
     if (Math.abs(got - expected) <= within) {
       Assert.ok(true, `${msg} - Got ${got}`);
@@ -46,9 +40,9 @@ const Layout = {
     }
   },
 
-  
-
-
+  /**
+   * Return the accessible coordinates relative to the screen in device pixels.
+   */
   getPos(id) {
     const accessible = CommonUtils.getAccessible(id);
     const x = {};
@@ -58,11 +52,11 @@ const Layout = {
     return [x.value, y.value];
   },
 
-  
-
-
-
-
+  /**
+   * Return the accessible coordinates and size relative to the screen in device
+   * pixels. This methods also retrieves coordinates in CSS pixels and ensures that they
+   * match Dev pixels with a given device pixel ratio.
+   */
   getBounds(id, dpr) {
     const accessible = CommonUtils.getAccessible(id);
     const x = {};
@@ -126,8 +120,8 @@ const Layout = {
   CSSToDevicePixels(win, x, y, width, height) {
     const ratio = win.devicePixelRatio;
 
-    
-    
+    // CSS pixels and ratio can be not integer. Device pixels are always integer.
+    // Do our best and hope it works.
     return [
       Math.round(x * ratio),
       Math.round(y * ratio),
@@ -136,10 +130,10 @@ const Layout = {
     ];
   },
 
-  
-
-
-
+  /**
+   * Return DOM node coordinates relative the screen and its size in device
+   * pixels.
+   */
   getBoundsForDOMElm(id, doc) {
     let x = 0;
     let y = 0;

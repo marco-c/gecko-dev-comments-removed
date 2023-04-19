@@ -23,7 +23,7 @@ add_task(async function() {
     async function(browser) {
       info("Creating a service in content");
       await loadContentScripts(browser, {
-        script: "Common.jsm",
+        script: "Common.sys.mjs",
         symbol: "CommonUtils",
       });
       
