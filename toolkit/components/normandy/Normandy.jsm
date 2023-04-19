@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
 const { Log } = ChromeUtils.importESModule(
@@ -45,7 +45,7 @@ const STARTUP_EXPERIMENT_PREFS_BRANCH = "app.normandy.startupExperimentPrefs.";
 const STARTUP_ROLLOUT_PREFS_BRANCH = "app.normandy.startupRolloutPrefs.";
 const PREF_LOGGING_LEVEL = "app.normandy.logging.level";
 
-
+// Logging
 const log = Log.repository.getLogger(BOOTSTRAP_LOGGER_NAME);
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 log.level = Services.prefs.getIntPref(PREF_LOGGING_LEVEL, Log.Level.Warn);
@@ -56,20 +56,20 @@ var Normandy = {
   defaultPrefsHaveBeenApplied: PromiseUtils.defer(),
   uiAvailableNotificationObserved: PromiseUtils.defer(),
 
-  
+  /** Initialization that needs to happen before the first paint on startup. */
   async init({ runAsync = true } = {}) {
-    
-    
+    // It is important to register the listener for the UI before the first
+    // await, to avoid missing it.
     Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
 
-    
+    // Listen for when Telemetry is disabled or re-enabled.
     Services.obs.addObserver(
       this,
       lazy.TelemetryUtils.TELEMETRY_UPLOAD_DISABLED_TOPIC
     );
 
-    
-    
+    // It is important this happens before the first `await`. Note that this
+    // also happens before migrations are applied.
     this.rolloutPrefsChanged = this.applyStartupPrefs(
       STARTUP_ROLLOUT_PREFS_BRANCH
     );
@@ -80,16 +80,16 @@ var Normandy = {
 
     await lazy.NormandyMigrations.applyAll();
 
-    
+    // Wait for the UI to be ready, or time out after 5 minutes.
     if (runAsync) {
       await Promise.race([
-        this.uiAvailableNotificationObserved,
+        this.uiAvailableNotificationObserved.promise,
         new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)),
       ]);
     }
 
-    
-    
+    // Remove observer for UI notifications. It will error if the notification
+    // was already removed, which is fine.
     try {
       Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
     } catch (e) {}
@@ -127,7 +127,7 @@ var Normandy = {
       this.studyPrefsChanged
     );
 
-    
+    // Setup logging and listen for changes to logging prefs
     lazy.LogManager.configure(
       Services.prefs.getIntPref(PREF_LOGGING_LEVEL, Log.Level.Warn)
     );
@@ -187,8 +187,8 @@ var Normandy = {
 
   async uninit() {
     await lazy.CleanupManager.cleanup();
-    
-    
+    // Note that Service.pref.removeObserver and Service.obs.removeObserver have
+    // oppositely ordered parameters.
     Services.prefs.removeObserver(
       PREF_LOGGING_LEVEL,
       lazy.LogManager.configure
@@ -200,25 +200,25 @@ var Normandy = {
       try {
         Services.obs.removeObserver(this, topic);
       } catch (e) {
-        
+        // topic must have already been removed or never added
       }
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Copy a preference subtree from one branch to another, being careful about
+   * types, and return the values the target branch originally had. Prefs will
+   * be read from the user branch and applied to the default branch.
+   *
+   * @param sourcePrefix
+   *   The pref prefix to read prefs from.
+   * @returns
+   *   The original values that each pref had on the default branch.
+   */
   applyStartupPrefs(sourcePrefix) {
-    
-    
-    
+    // Note that this is called before Normandy's migrations are applied. This
+    // currently has no effect, but future changes should be careful to be
+    // backwards compatible.
     const originalValues = {};
     const sourceBranch = Services.prefs.getBranch(sourcePrefix);
     const targetBranch = Services.prefs.getDefaultBranch("");
@@ -239,7 +239,7 @@ var Normandy = {
         continue;
       }
 
-      
+      // record the value of the default branch before setting it
       try {
         switch (targetPrefType) {
           case Services.prefs.PREF_STRING: {
@@ -259,7 +259,7 @@ var Normandy = {
             break;
           }
           default: {
-            
+            // This should never happen
             log.error(
               `Error getting startup pref ${prefName}; unknown value type ${sourcePrefType}.`
             );
@@ -267,16 +267,16 @@ var Normandy = {
         }
       } catch (e) {
         if (e.result === Cr.NS_ERROR_UNEXPECTED) {
-          
+          // There is a value for the pref on the user branch but not on the default branch. This is ok.
           originalValues[prefName] = null;
         } else {
-          
+          // Unexpected error, report it and move on
           Cu.reportError(e);
           continue;
         }
       }
 
-      
+      // now set the new default value
       switch (sourcePrefType) {
         case Services.prefs.PREF_STRING: {
           targetBranch.setCharPref(
@@ -297,7 +297,7 @@ var Normandy = {
           break;
         }
         default: {
-          
+          // This should never happen.
           Cu.reportError(
             new Error(
               `Error getting startup pref ${prefName}; unexpected value type ${sourcePrefType}.`
