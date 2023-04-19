@@ -191,6 +191,13 @@ void ResizeObservation::Unlink(RemoveFromObserver aRemoveFromObserver) {
 
 bool ResizeObservation::IsActive() const {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
+
+  
+  
+  if (frame && frame->AncestorHidesContent()) {
+    return false;
+  }
+
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
   const LogicalPixelSize size(wm, CalculateBoxSize(mTarget, mObservedBox));
   return mLastReportedSize != size;
