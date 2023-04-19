@@ -39,6 +39,9 @@ namespace js::intl {
 
 
 
+
+
+
 class MOZ_STACK_CLASS DecimalNumber final {
   using Latin1String = mozilla::Span<const JS::Latin1Char>;
   using TwoByteString = mozilla::Span<const char16_t>;

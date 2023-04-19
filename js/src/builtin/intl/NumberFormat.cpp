@@ -979,8 +979,7 @@ static bool IsNonDecimalNumber(JSLinearString* str) {
                                : IsNonDecimalNumber(str->twoByteRange(nogc));
 }
 
-static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value,
-                                    double* numberApproximation = nullptr) {
+static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value) {
   if (!ToPrimitive(cx, JSTYPE_NUMBER, value)) {
     return false;
   }
@@ -1026,9 +1025,6 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value,
 
   
   double number = LinearStringToNumber(str);
-  if (numberApproximation) {
-    *numberApproximation = number;
-  }
 
   bool exponentTooLarge = false;
   if (mozilla::IsNaN(number)) {
@@ -1256,207 +1252,6 @@ static JSLinearString* ToLinearString(JSContext* cx, HandleValue val) {
   return str ? str->ensureLinear(cx) : nullptr;
 };
 
-static bool ValidateNumberRange(JSContext* cx, MutableHandleValue start,
-                                double startApprox, MutableHandleValue end,
-                                double endApprox, bool formatToParts) {
-  static auto isSpecificDouble = [](const Value& val, auto fn) {
-    return val.isDouble() && fn(val.toDouble());
-  };
-
-  static auto isNaN = [](const Value& val) {
-    return isSpecificDouble(val, mozilla::IsNaN<double>);
-  };
-
-  static auto isPositiveInfinity = [](const Value& val) {
-    return isSpecificDouble(
-        val, [](double num) { return num > 0 && mozilla::IsInfinite(num); });
-  };
-
-  static auto isNegativeInfinity = [](const Value& val) {
-    return isSpecificDouble(
-        val, [](double num) { return num < 0 && mozilla::IsInfinite(num); });
-  };
-
-  static auto isNegativeZero = [](const Value& val) {
-    return isSpecificDouble(val, mozilla::IsNegativeZero<double>);
-  };
-
-  static auto isMathematicalValue = [](const Value& val) {
-    
-    
-    
-    if (!val.isDouble()) {
-      return true;
-    }
-    double num = val.toDouble();
-    return mozilla::IsFinite(num) && !mozilla::IsNegativeZero(num);
-  };
-
-  static auto isPositiveOrZero = [](const Value& val, double approx) {
-    MOZ_ASSERT(isMathematicalValue(val));
-
-    if (val.isNumber()) {
-      return val.toNumber() >= 0;
-    }
-    if (val.isBigInt()) {
-      return !val.toBigInt()->isNegative();
-    }
-    return approx >= 0;
-  };
-
-  auto throwRangeError = [&]() {
-    JS_ReportErrorNumberASCII(
-        cx, GetErrorMessage, nullptr, JSMSG_START_AFTER_END_NUMBER,
-        "NumberFormat", formatToParts ? "formatRangeToParts" : "formatRange");
-    return false;
-  };
-
-  
-  if (isNaN(start)) {
-    JS_ReportErrorNumberASCII(
-        cx, GetErrorMessage, nullptr, JSMSG_NAN_NUMBER_RANGE, "start",
-        "NumberFormat", formatToParts ? "formatRangeToParts" : "formatRange");
-    return false;
-  }
-  if (isNaN(end)) {
-    JS_ReportErrorNumberASCII(
-        cx, GetErrorMessage, nullptr, JSMSG_NAN_NUMBER_RANGE, "end",
-        "NumberFormat", formatToParts ? "formatRangeToParts" : "formatRange");
-    return false;
-  }
-
-  
-  MOZ_ASSERT(isMathematicalValue(start) || isNegativeZero(start) ||
-             isNegativeInfinity(start) || isPositiveInfinity(start));
-  MOZ_ASSERT(isMathematicalValue(end) || isNegativeZero(end) ||
-             isNegativeInfinity(end) || isPositiveInfinity(end));
-
-  
-  if (isMathematicalValue(start)) {
-    
-    if (isMathematicalValue(end)) {
-      if (!start.isString() && !end.isString()) {
-        MOZ_ASSERT(start.isNumeric() && end.isNumeric());
-
-        bool isLessThan;
-        if (!LessThan(cx, end, start, &isLessThan)) {
-          return false;
-        }
-        if (isLessThan) {
-          return throwRangeError();
-        }
-      } else {
-        
-        
-        if (start.isNumber()) {
-          startApprox = start.toNumber();
-        } else if (start.isBigInt()) {
-          startApprox = BigInt::numberValue(start.toBigInt());
-        }
-        if (end.isNumber()) {
-          endApprox = end.toNumber();
-        } else if (end.isBigInt()) {
-          endApprox = BigInt::numberValue(end.toBigInt());
-        }
-
-        
-        
-        if (endApprox < startApprox) {
-          return throwRangeError();
-        }
-
-        
-        
-        if (endApprox == startApprox) {
-          Rooted<JSLinearString*> strStart(cx, ToLinearString(cx, start));
-          if (!strStart) {
-            return false;
-          }
-
-          Rooted<JSLinearString*> strEnd(cx, ToLinearString(cx, end));
-          if (!strEnd) {
-            return false;
-          }
-
-          bool endLessThanStart;
-          {
-            JS::AutoCheckCannotGC nogc;
-
-            auto decStart = intl::DecimalNumber::from(strStart, nogc);
-            MOZ_ASSERT(decStart);
-
-            auto decEnd = intl::DecimalNumber::from(strEnd, nogc);
-            MOZ_ASSERT(decEnd);
-
-            endLessThanStart = decEnd->compareTo(*decStart) < 0;
-          }
-          if (endLessThanStart) {
-            return throwRangeError();
-          }
-
-          
-          
-          
-          start.setString(strStart);
-          end.setString(strEnd);
-        }
-      }
-    }
-
-    
-    else if (isNegativeInfinity(end)) {
-      return throwRangeError();
-    }
-
-    
-    else if (isNegativeZero(end)) {
-      if (isPositiveOrZero(start, startApprox)) {
-        return throwRangeError();
-      }
-    }
-
-    
-    else {
-      MOZ_ASSERT(isPositiveInfinity(end));
-    }
-  }
-
-  
-  else if (isPositiveInfinity(start)) {
-    
-    if (!isPositiveInfinity(end)) {
-      return throwRangeError();
-    }
-  }
-
-  
-  else if (isNegativeZero(start)) {
-    
-    if (isMathematicalValue(end)) {
-      if (!isPositiveOrZero(end, endApprox)) {
-        return throwRangeError();
-      }
-    }
-
-    
-    else if (isNegativeInfinity(end)) {
-      return throwRangeError();
-    }
-
-    
-    else {
-      MOZ_ASSERT(isNegativeZero(end) || isPositiveInfinity(end));
-    }
-  }
-
-  
-  else {
-    MOZ_ASSERT(isNegativeInfinity(start));
-  }
-
-  return true;
-}
-
 bool js::intl_FormatNumberRange(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 4);
@@ -1470,19 +1265,26 @@ bool js::intl_FormatNumberRange(JSContext* cx, unsigned argc, Value* vp) {
   bool formatToParts = args[3].toBoolean();
 
   RootedValue start(cx, args[1]);
-  double startApprox = mozilla::UnspecifiedNaN<double>();
-  if (!ToIntlMathematicalValue(cx, &start, &startApprox)) {
+  if (!ToIntlMathematicalValue(cx, &start)) {
     return false;
   }
 
   RootedValue end(cx, args[2]);
-  double endApprox = mozilla::UnspecifiedNaN<double>();
-  if (!ToIntlMathematicalValue(cx, &end, &endApprox)) {
+  if (!ToIntlMathematicalValue(cx, &end)) {
     return false;
   }
 
-  if (!ValidateNumberRange(cx, &start, startApprox, &end, endApprox,
-                           formatToParts)) {
+  
+  if (start.isDouble() && mozilla::IsNaN(start.toDouble())) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_NAN_NUMBER_RANGE, "start",
+        "NumberFormat", formatToParts ? "formatRangeToParts" : "formatRange");
+    return false;
+  }
+  if (end.isDouble() && mozilla::IsNaN(end.toDouble())) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_NAN_NUMBER_RANGE, "end",
+        "NumberFormat", formatToParts ? "formatRangeToParts" : "formatRange");
     return false;
   }
 

@@ -1,22 +1,42 @@
 
 
+
+const en_Number_MAX_VALUE = "179,769,313,486,231,570" + ",000".repeat(97);
+const de_Number_MAX_VALUE = en_Number_MAX_VALUE.replaceAll(",", ".");
+const fr_Number_MAX_VALUE = en_Number_MAX_VALUE.replaceAll(",", " ");
+
 const tests = {
   "en": {
     options: {},
     ranges: [
       
       {start: 0, end: 0, result: "~0"},
+      {start: 0, end: -0, result: "0–-0"},
       {start: -0, end: 0, result: "-0 – 0"},
       {start: -0, end: 0.1e-3, result: "-0 – 0"},
       {start: -0, end: "0.1e-3", result: "-0 – 0"},
       {start: "-0", end: 0.1e-3, result: "-0 – 0"},
       {start: -0, end: -0, result: "~-0"},
+      {start: -0, end: -0.1, result: "-0 – -0.1"},
 
       
       {start: -Infinity, end: -Infinity, result: "~-∞"},
       {start: -Infinity, end: -0, result: "-∞ – -0"},
       {start: -Infinity, end: +0, result: "-∞ – 0"},
       {start: -Infinity, end: +Infinity, result: "-∞ – ∞"},
+
+      
+      {start: -Number.MAX_VALUE, end: -Infinity, result: "-" + en_Number_MAX_VALUE + " – -∞"},
+      {start: -0, end: -Infinity, result: "-0 – -∞"},
+      {start: 0, end: -Infinity, result: "0–-∞"},
+      {start: Number.MAX_VALUE, end: -Infinity, result: en_Number_MAX_VALUE + "–-∞"},
+
+      
+      {start: Infinity, end: Number.MAX_VALUE, result: "∞–" + en_Number_MAX_VALUE},
+      {start: Infinity, end: 0, result: "∞–0"},
+      {start: Infinity, end: -0, result: "∞–-0"},
+      {start: Infinity, end: -Number.MAX_VALUE, result: "∞–-" + en_Number_MAX_VALUE},
+      {start: Infinity, end: -Infinity, result: "∞–-∞"},
 
       
       {start: Infinity, end: Infinity, result: "~∞"},
@@ -37,6 +57,26 @@ const tests = {
         end: "9007199254740993",
         result: "9,007,199,254,740,991–9,007,199,254,740,993",
       },
+
+      
+      {start: -0, end: -0.1, result: "-0 – -0.1"},
+      {start: -0, end: -Number.MAX_VALUE, result: "-0 – -" + en_Number_MAX_VALUE},
+      {start: 1, end: 0, result: "1–0"},
+      {start: 0, end: -1, result: "0–-1"},
+      {start: 1, end: -1, result: "1–-1"},
+      {start: -1, end: -2, result: "-1 – -2"},
+      {start: "10e2", end: "1e-3", result: "1,000–0.001"},
+      {start: "0x100", end: "1e1", result: "256–10"},
+      {start: ".1e-999999", end: ".01e-999999", result: "~0"},
+      {start: ".1e99999", end: "0", result: "100" + ",000".repeat(33332) + "–0"},
+      
+      {
+        start: "1.7976931348623158e+308",
+        end: Number.MAX_VALUE,
+        result: "179,769,313,486,231,580" + ",000".repeat(97) + "–" + en_Number_MAX_VALUE,
+      },
+      
+      {start: "6e-324", end: Number.MIN_VALUE, result: "~0"},
     ],
   },
   "de": {
@@ -44,17 +84,32 @@ const tests = {
     ranges: [
       
       {start: 0, end: 0, result: "≈0,00 €"},
+      {start: 0, end: -0, result: "0,00 € – -0,00 €"},
       {start: -0, end: 0, result: "-0,00 € – 0,00 €"},
       {start: -0, end: 0.1e-3, result: "-0,00 € – 0,00 €"},
       {start: -0, end: "0.1e-3", result: "-0,00 € – 0,00 €"},
       {start: "-0", end: 0.1e-3, result: "-0,00 € – 0,00 €"},
       {start: -0, end: -0, result: "≈-0,00 €"},
+      {start: -0, end: -0.1, result: "-0,00–0,10 €"},
 
       
       {start: -Infinity, end: -Infinity, result: "≈-∞ €"},
       {start: -Infinity, end: -0, result: "-∞–0,00 €"},
       {start: -Infinity, end: +0, result: "-∞ € – 0,00 €"},
       {start: -Infinity, end: +Infinity, result: "-∞ € – ∞ €"},
+
+      
+      {start: -Number.MAX_VALUE, end: -Infinity, result: "-" + de_Number_MAX_VALUE + ",00–∞ €"},
+      {start: -0, end: -Infinity, result: "-0,00–∞ €"},
+      {start: 0, end: -Infinity, result: "0,00 € – -∞ €"},
+      {start: Number.MAX_VALUE, end: -Infinity, result: de_Number_MAX_VALUE + ",00 € – -∞ €"},
+
+      
+      {start: Infinity, end: Number.MAX_VALUE, result: "∞–" + de_Number_MAX_VALUE + ",00 €"},
+      {start: Infinity, end: 0, result: "∞–0,00 €"},
+      {start: Infinity, end: -0, result: "∞ € – -0,00 €"},
+      {start: Infinity, end: -Number.MAX_VALUE, result: "∞ € – -" + de_Number_MAX_VALUE + ",00 €"},
+      {start: Infinity, end: -Infinity, result: "∞ € – -∞ €"},
 
       
       {start: Infinity, end: Infinity, result: "≈∞ €"},
@@ -75,6 +130,26 @@ const tests = {
         end: "9007199254740993",
         result: "9.007.199.254.740.991,00–9.007.199.254.740.993,00 €",
       },
+
+      
+      {start: -0, end: -0.1, result: "-0,00–0,10 €"},
+      {start: -0, end: -Number.MAX_VALUE, result: "-0,00–" + de_Number_MAX_VALUE + ",00 €"},
+      {start: 1, end: 0, result: "1,00–0,00 €"},
+      {start: 0, end: -1, result: "0,00 € – -1,00 €"},
+      {start: 1, end: -1, result: "1,00 € – -1,00 €"},
+      {start: -1, end: -2, result: "-1,00–2,00 €"},
+      {start: "10e2", end: "1e-3", result: "1.000,00–0,00 €"},
+      {start: "0x100", end: "1e1", result: "256,00–10,00 €"},
+      {start: ".1e-999999", end: ".01e-999999", result: "≈0,00 €"},
+      {start: ".1e99999", end: "0", result: "100" + ".000".repeat(33332) + ",00–0,00 €"},
+      
+      {
+        start: "1.7976931348623158e+308",
+        end: Number.MAX_VALUE,
+        result: "179.769.313.486.231.580" + ".000".repeat(97) + ",00–" + de_Number_MAX_VALUE + ",00 €",
+      },
+      
+      {start: "6e-324", end: Number.MIN_VALUE, result: "≈0,00 €"},
     ],
   },
   "fr": {
@@ -83,16 +158,31 @@ const tests = {
       
       {start: 0, end: 0, result: "≃0 m"},
       {start: -0, end: 0, result: "-0 – 0 m"},
+      {start: -0, end: 0, result: "-0 – 0 m"},
       {start: -0, end: 0.1e-3, result: "-0 – 0 m"},
       {start: -0, end: "0.1e-3", result: "-0 – 0 m"},
       {start: "-0", end: 0.1e-3, result: "-0 – 0 m"},
       {start: -0, end: -0, result: "≃-0 m"},
+      {start: -0, end: -0.1, result: "-0 – -0,1 m"},
 
       
       {start: -Infinity, end: -Infinity, result: "≃-∞ m"},
       {start: -Infinity, end: -0, result: "-∞ – -0 m"},
       {start: -Infinity, end: +0, result: "-∞ – 0 m"},
       {start: -Infinity, end: +Infinity, result: "-∞ – ∞ m"},
+
+      
+      {start: -Number.MAX_VALUE, end: -Infinity, result: "-" + fr_Number_MAX_VALUE + " – -∞ m"},
+      {start: -0, end: -Infinity, result: "-0 – -∞ m"},
+      {start: 0, end: -Infinity, result: "0–-∞ m"},
+      {start: Number.MAX_VALUE, end: -Infinity, result: fr_Number_MAX_VALUE + "–-∞ m"},
+
+      
+      {start: Infinity, end: Number.MAX_VALUE, result: "∞–" + fr_Number_MAX_VALUE + " m"},
+      {start: Infinity, end: 0, result: "∞–0 m"},
+      {start: Infinity, end: -0, result: "∞–-0 m"},
+      {start: Infinity, end: -Number.MAX_VALUE, result: "∞–-" + fr_Number_MAX_VALUE + " m"},
+      {start: Infinity, end: -Infinity, result: "∞–-∞ m"},
 
       
       {start: Infinity, end: Infinity, result: "≃∞ m"},
@@ -113,6 +203,26 @@ const tests = {
         end: "9007199254740993",
         result: "9 007 199 254 740 991–9 007 199 254 740 993 m",
       },
+
+      
+      {start: -0, end: -0.1, result: "-0 – -0,1 m"},
+      {start: -0, end: -Number.MAX_VALUE, result: "-0 – -" + fr_Number_MAX_VALUE + " m"},
+      {start: 1, end: 0, result: "1–0 m"},
+      {start: 0, end: -1, result: "0–-1 m"},
+      {start: 1, end: -1, result: "1–-1 m"},
+      {start: -1, end: -2, result: "-1 – -2 m"},
+      {start: "10e2", end: "1e-3", result: "1 000–0,001 m"},
+      {start: "0x100", end: "1e1", result: "256–10 m"},
+      {start: ".1e-999999", end: ".01e-999999", result: "≃0 m"},
+      {start: ".1e99999", end: "0", result: "100" + " 000".repeat(33332) + "–0 m"},
+      
+      {
+        start: "1.7976931348623158e+308",
+        end: Number.MAX_VALUE,
+        result: "179 769 313 486 231 580" + " 000".repeat(97) + "–" + fr_Number_MAX_VALUE + " m",
+      },
+      
+      {start: "6e-324", end: Number.MIN_VALUE, result: "≃0 m"},
     ],
   },
   
@@ -165,51 +275,14 @@ for (let [locale, {options, ranges}] of Object.entries(tests)) {
   }
 }
 
+
 {
   const errorTests = [
-    
     {start: NaN, end: NaN},
     {start: 0, end: NaN},
     {start: NaN, end: 0},
     {start: Infinity, end: NaN},
     {start: NaN, end: Infinity},
-
-    
-    {start: Infinity, end: Number.MAX_VALUE},
-    {start: Infinity, end: 0},
-    {start: Infinity, end: -0},
-    {start: Infinity, end: -Number.MAX_VALUE},
-    {start: Infinity, end: -Infinity},
-
-    
-    {start: -Number.MAX_VALUE, end: -Infinity},
-    {start: -0, end: -Infinity},
-    {start: 0, end: -Infinity},
-    {start: Number.MAX_VALUE, end: -Infinity},
-
-    
-    {start: -0, end: -0.1},
-    {start: -0, end: -Number.MAX_VALUE},
-    {start: -0, end: -Infinity},
-
-    
-    {start: 1, end: 0},
-    {start: 0, end: -1},
-    {start: 1, end: -1},
-    {start: -1, end: -2},
-
-    
-    {start: 0, end: -0},
-
-    
-    {start: "10e2", end: "1e-3"},
-    {start: "0x100", end: "1e1"},
-    {start: ".1e-999999", end: ".01e-999999"},
-    {start: ".1e99999", end: "0"},
-    
-    {start: "1.7976931348623158e+308", end: Number.MAX_VALUE},
-    
-    {start: "6e-324", end: Number.MIN_VALUE},
   ];
 
   let nf = new Intl.NumberFormat("en");
