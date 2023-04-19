@@ -14,30 +14,7 @@
 
 var helpers = require("../helpers");
 var frameScriptEnv = require("../environments/frame-script");
-
-
-
-
-
-var sandboxGlobals = [
-  "Assert",
-  "Blob",
-  "BrowsingContext",
-  "ChromeUtils",
-  "ContentTaskUtils",
-  "EventUtils",
-  "Services",
-  "TextDecoder",
-  "TextEncoder",
-  "URL",
-  "assert",
-  "info",
-  "is",
-  "isnot",
-  "ok",
-  "todo",
-  "todo_is",
-];
+var sandboxEnv = require("../environments/special-powers-sandbox");
 
 module.exports = {
   meta: {
@@ -53,20 +30,23 @@ module.exports = {
       "CallExpression[callee.object.name='ContentTask'][callee.property.name='spawn']": function(
         node
       ) {
-        for (let global in frameScriptEnv.globals) {
-          helpers.addVarToScope(
-            global,
-            context.getScope(),
-            frameScriptEnv.globals[global]
-          );
+        
+        
+        for (let [name, value] of Object.entries(frameScriptEnv.globals)) {
+          helpers.addVarToScope(name, context.getScope(), value);
         }
       },
       "CallExpression[callee.object.name='SpecialPowers'][callee.property.name='spawn']": function(
         node
       ) {
+        for (let [name, value] of Object.entries(sandboxEnv.globals)) {
+          helpers.addVarToScope(name, context.getScope(), value);
+        }
         let globals = [
-          ...sandboxGlobals,
+          
+          
           "SpecialPowers",
+          "ContentTaskUtils",
           "content",
           "docShell",
         ];
@@ -77,10 +57,14 @@ module.exports = {
       "CallExpression[callee.object.name='SpecialPowers'][callee.property.name='spawnChrome']": function(
         node
       ) {
+        for (let [name, value] of Object.entries(sandboxEnv.globals)) {
+          helpers.addVarToScope(name, context.getScope(), value);
+        }
         let globals = [
-          ...sandboxGlobals,
-          "browsingContext",
+          
+          
           "windowGlobalParent",
+          "browsingContext",
         ];
         for (let global of globals) {
           helpers.addVarToScope(global, context.getScope(), false);
