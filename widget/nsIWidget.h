@@ -2121,6 +2121,11 @@ class nsIWidget : public nsISupports {
   virtual void SetWindowButtonRect(WindowButtonType aButtonType,
                                    const LayoutDeviceIntRect& aClientRect) {}
 
+  virtual nsresult SetHiDPIMode(bool aHiDPI) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  virtual nsresult RestoreHiDPIMode() { return NS_ERROR_NOT_IMPLEMENTED; }
+
  protected:
   
   

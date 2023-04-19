@@ -453,6 +453,8 @@ class nsCocoaUtils {
 
   static nsresult MaybeRequestScreenCapturePermission();
 
+  static void InvalidateHiDPIState();
+
  private:
   
 

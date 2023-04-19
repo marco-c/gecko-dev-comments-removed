@@ -755,6 +755,9 @@ bool nsCocoaUtils::HiDPIEnabled() {
   return sHiDPIEnabled;
 }
 
+
+void nsCocoaUtils::InvalidateHiDPIState() { sHiDPIPrefInitialized = false; }
+
 void nsCocoaUtils::GetCommandsFromKeyEvent(NSEvent* aEvent,
                                            nsTArray<KeyBindingsCommand>& aCommands) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
