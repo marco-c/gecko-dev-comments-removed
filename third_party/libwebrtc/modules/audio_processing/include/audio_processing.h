@@ -274,7 +274,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     
     
     
-    struct GainController1 {
+    struct RTC_EXPORT GainController1 {
       bool operator==(const GainController1& rhs) const;
       bool operator!=(const GainController1& rhs) const {
         return !(*this == rhs);
@@ -342,7 +342,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     
     
     
-    struct GainController2 {
+    struct RTC_EXPORT GainController2 {
       bool operator==(const GainController2& rhs) const;
       bool operator!=(const GainController2& rhs) const {
         return !(*this == rhs);
@@ -355,7 +355,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       struct FixedDigital {
         float gain_db = 0.0f;
       } fixed_digital;
-      struct AdaptiveDigital {
+      struct RTC_EXPORT AdaptiveDigital {
         bool operator==(const AdaptiveDigital& rhs) const;
         bool operator!=(const AdaptiveDigital& rhs) const {
           return !(*this == rhs);
