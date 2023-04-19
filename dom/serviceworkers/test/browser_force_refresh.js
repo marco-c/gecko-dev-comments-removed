@@ -43,8 +43,8 @@ function test() {
     },
     async function() {
       
-      const { ForceRefreshParent } = ChromeUtils.import(
-        getRootDirectory(gTestPath) + "ForceRefreshParent.jsm"
+      const { ForceRefreshParent } = ChromeUtils.importESModule(
+        getRootDirectory(gTestPath) + "ForceRefreshParent.sys.mjs"
       );
 
       
@@ -56,10 +56,12 @@ function test() {
       
       let windowActorOptions = {
         parent: {
-          moduleURI: getRootDirectory(gTestPath) + "ForceRefreshParent.jsm",
+          esModuleURI:
+            getRootDirectory(gTestPath) + "ForceRefreshParent.sys.mjs",
         },
         child: {
-          moduleURI: getRootDirectory(gTestPath) + "ForceRefreshChild.jsm",
+          esModuleURI:
+            getRootDirectory(gTestPath) + "ForceRefreshChild.sys.mjs",
           events: {
             "base-register": { capture: true, wantUntrusted: true },
             "base-sw-ready": { capture: true, wantUntrusted: true },
