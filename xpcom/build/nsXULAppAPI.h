@@ -28,6 +28,7 @@ struct XREShellData;
 namespace mozilla {
 class XREAppData;
 struct BootstrapConfig;
+struct Module;
 }  
 
 
@@ -221,6 +222,11 @@ nsresult XRE_GetBinaryPath(nsIFile** aResult);
 
 
 
+const mozilla::Module* XRE_GetStaticModule();
+
+
+
+
 
 
 
@@ -250,6 +256,13 @@ nsresult XRE_LockProfileDirectory(nsIFile* aDirectory,
 
 nsresult XRE_InitEmbedding2(nsIFile* aLibXULDirectory, nsIFile* aAppDirectory,
                             nsIDirectoryServiceProvider* aAppDirProvider);
+
+
+
+
+
+
+nsresult XRE_AddStaticComponent(const mozilla::Module* aComponent);
 
 
 
