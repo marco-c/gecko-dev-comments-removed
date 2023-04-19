@@ -404,6 +404,12 @@ void nsWindow::NotifyOcclusionState(mozilla::widget::OcclusionState aState) {
 }
 
 void nsWindow::MaybeEnableWindowOcclusion(bool aEnable) {
+  
+  
+  if (!mCompositorSession) {
+    return;
+  }
+
   bool enabled = gfxConfig::IsEnabled(gfx::Feature::WINDOW_OCCLUSION);
 
   if (aEnable) {
