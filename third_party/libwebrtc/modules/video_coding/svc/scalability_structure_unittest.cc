@@ -324,7 +324,8 @@ INSTANTIATE_TEST_SUITE_P(
            SvcTestParam{"L2T2_KEY", 4},
            SvcTestParam{"L3T1", 3},
            SvcTestParam{"L3T3", 8},
-           SvcTestParam{"L3T3_KEY", 8}),
+           SvcTestParam{"L3T3_KEY", 8},
+           SvcTestParam{"S2T1", 3}),
     [](const testing::TestParamInfo<SvcTestParam>& info) {
       return info.param.name;
     });
