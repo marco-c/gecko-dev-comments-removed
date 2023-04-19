@@ -601,6 +601,17 @@ class HTMLEditUtils final {
 
 
 
+  static bool ElementHasAttributesExceptMozDirty(const Element& aElement) {
+    uint32_t attrCount = aElement.GetAttrCount();
+    return attrCount > 1 ||
+           (attrCount == 1u &&
+            !aElement.GetAttrNameAt(0)->Equals(nsGkAtoms::mozdirty));
+  }
+
+  
+
+
+
 
 
 
@@ -2035,6 +2046,20 @@ class HTMLEditUtils final {
       }
     }
     return false;
+  }
+
+  
+
+
+  static void CollectAllChildren(
+      const nsINode& aParentNode,
+      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) {
+    MOZ_ASSERT(aOutArrayOfContents.IsEmpty());
+    aOutArrayOfContents.SetCapacity(aParentNode.GetChildCount());
+    for (nsIContent* childContent = aParentNode.GetFirstChild(); childContent;
+         childContent = childContent->GetNextSibling()) {
+      aOutArrayOfContents.AppendElement(*childContent);
+    }
   }
 
   

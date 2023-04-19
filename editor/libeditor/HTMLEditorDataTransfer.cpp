@@ -907,7 +907,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
          HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
       
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditor::GetChildNodesOf(*content, children);
+      HTMLEditUtils::CollectAllChildren(*content, children);
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
         
@@ -960,7 +960,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
              (HTMLEditUtils::IsAnyListElement(pointToInsert.GetContainer()) ||
               HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditor::GetChildNodesOf(*content, children);
+      HTMLEditUtils::CollectAllChildren(*content, children);
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
         if (HTMLEditUtils::IsListItem(child) ||
@@ -1068,7 +1068,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
              HTMLEditUtils::IsPre(content)) {
       
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditor::GetChildNodesOf(*content, children);
+      HTMLEditUtils::CollectAllChildren(*content, children);
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
         

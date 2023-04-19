@@ -6,6 +6,7 @@
 #include "HTMLEditor.h"
 
 #include "AutoRangeArray.h"
+#include "CSSEditUtils.h"
 #include "EditAction.h"
 #include "EditorBase.h"
 #include "EditorDOMPoint.h"
@@ -5372,7 +5373,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     }
     
     AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfChildContents;
-    HTMLEditor::GetChildNodesOf(aContentToRemove, arrayOfChildContents);
+    HTMLEditUtils::CollectAllChildren(aContentToRemove, arrayOfChildContents);
 
     if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
       for (const OwningNonNull<nsIContent>& child :
@@ -6226,7 +6227,7 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
   
   
   AutoTArray<OwningNonNull<nsIContent>, 32> newBlockChildren;
-  HTMLEditor::GetChildNodesOf(aNewBlock, newBlockChildren);
+  HTMLEditUtils::CollectAllChildren(aNewBlock, newBlockChildren);
   for (const OwningNonNull<nsIContent>& child : newBlockChildren) {
     
     nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(child));
