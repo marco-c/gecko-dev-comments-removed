@@ -170,6 +170,9 @@ class AudioDecoder {
   
   virtual size_t Channels() const = 0;
 
+  
+  static constexpr int kMaxNumberOfChannels = 24;
+
  protected:
   static SpeechType ConvertSpeechType(int16_t type);
 

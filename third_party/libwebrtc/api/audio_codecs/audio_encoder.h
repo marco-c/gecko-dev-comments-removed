@@ -246,6 +246,9 @@ class AudioEncoder {
   virtual absl::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
       const = 0;
 
+  
+  static constexpr int kMaxNumberOfChannels = 24;
+
  protected:
   
   
