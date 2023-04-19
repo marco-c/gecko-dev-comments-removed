@@ -1352,6 +1352,19 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
                                                  const uint8_t* packet,
                                                  size_t length) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtcp");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RTC_DCHECK_EQ(media_type, MediaType::ANY);
+
   
   
   
@@ -1398,6 +1411,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 rtc::CopyOnWriteBuffer packet,
                                                 int64_t packet_time_us) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
+  RTC_DCHECK_NE(media_type, MediaType::ANY);
 
   RtpPacketReceived parsed_packet;
   if (!parsed_packet.Parse(std::move(packet)))
