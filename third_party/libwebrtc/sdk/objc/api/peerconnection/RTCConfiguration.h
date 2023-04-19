@@ -227,6 +227,12 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) BOOL enableImplicitRollback;
 
+
+
+
+
+@property(nonatomic, assign) BOOL offerExtmapAllowMixed;
+
 - (instancetype)init;
 
 @end
