@@ -533,6 +533,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   
   
+  
+  
+  
+  
   std::map<uint16_t, FrameInFlight> captured_frames_in_flight_
       RTC_GUARDED_BY(lock_);
   
