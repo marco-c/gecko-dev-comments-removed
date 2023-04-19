@@ -857,6 +857,20 @@ SSL_IMPORT SECStatus SSL_AuthCertificate(void *arg, PRFileDesc *fd,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef SECStatus(PR_CALLBACK *SSLGetClientAuthData)(void *arg,
                                                      PRFileDesc *fd,
                                                      CERTDistNames *caNames,
@@ -1504,6 +1518,50 @@ extern const char *NSSSSL_GetVersion(void);
 
 SSL_IMPORT SECStatus SSL_AuthCertificateComplete(PRFileDesc *fd,
                                                  PRErrorCode error);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_ClientCertCallbackComplete(PRFileDesc *fd, SECStatus outcome, SECKEYPrivateKey *clientPrivateKey, CERTCertificate *clientCertificate);
 
 
 

@@ -90,15 +90,15 @@ ssl_CertIsUsable(sslSocket *ss, CERTCertificate *cert)
 
 
 
-    if (ss->peerSignatureSchemeCount == 0) {
+    if (ss->ssl3.hs.clientAuthSignatureSchemesLen == 0) {
         return PR_TRUE;
     }
-    if (ss->peerSignatureSchemes == NULL) {
+    if (ss->ssl3.hs.clientAuthSignatureSchemes == NULL) {
         return PR_FALSE; 
     }
     rv = ssl_PickClientSignatureScheme(ss, cert, NULL,
-                                       ss->peerSignatureSchemes,
-                                       ss->peerSignatureSchemeCount,
+                                       ss->ssl3.hs.clientAuthSignatureSchemes,
+                                       ss->ssl3.hs.clientAuthSignatureSchemesLen,
                                        &scheme);
     if (rv != SECSuccess) {
         return PR_FALSE;

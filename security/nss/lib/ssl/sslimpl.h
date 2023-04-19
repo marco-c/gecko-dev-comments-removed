@@ -666,6 +666,12 @@ typedef struct SSL3HandshakeStateStr {
         PRUint8 data[72];
     } finishedMsgs;
 
+    
+    PRBool clientCertificatePending;
+    
+    SSLSignatureScheme *clientAuthSignatureSchemes;
+    unsigned int clientAuthSignatureSchemesLen;
+
     PRBool authCertificatePending;
     
 
@@ -1139,10 +1145,6 @@ struct sslSocketStr {
 
     
     sslPsk *psk;
-
-    
-    const SSLSignatureScheme *peerSignatureSchemes;
-    unsigned int peerSignatureSchemeCount;
 };
 
 struct sslSelfEncryptKeysStr {
@@ -1468,6 +1470,7 @@ extern SECStatus SSL3_SendAlert(sslSocket *ss, SSL3AlertLevel level,
 extern SECStatus ssl3_DecodeError(sslSocket *ss);
 
 extern SECStatus ssl3_AuthCertificateComplete(sslSocket *ss, PRErrorCode error);
+extern SECStatus ssl3_ClientCertCallbackComplete(sslSocket *ss, SECStatus outcome, SECKEYPrivateKey *clientPrivateKey, CERTCertificate *clientCertificate);
 
 
 
@@ -1750,7 +1753,7 @@ SECStatus ssl_GetCertificateRequestCAs(const sslSocket *ss,
                                        unsigned int *nnamesp);
 SECStatus ssl3_ParseCertificateRequestCAs(sslSocket *ss, PRUint8 **b,
                                           PRUint32 *length, CERTDistNames *ca_list);
-SECStatus ssl3_CompleteHandleCertificateRequest(
+SECStatus ssl3_BeginHandleCertificateRequest(
     sslSocket *ss, const SSLSignatureScheme *signatureSchemes,
     unsigned int signatureSchemeCount, CERTDistNames *ca_list);
 SECStatus ssl_ConstructServerHello(sslSocket *ss, PRBool helloRetry,
