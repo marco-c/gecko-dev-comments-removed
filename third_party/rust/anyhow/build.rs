@@ -65,13 +65,15 @@ fn main() {
 }
 
 fn compile_probe() -> Option<ExitStatus> {
+    println!("cargo:rerun-if-env-changed=RUSTC_WRAPPER");
+
     let rustc = env::var_os("RUSTC")?;
     let out_dir = env::var_os("OUT_DIR")?;
     let probefile = Path::new(&out_dir).join("probe.rs");
     fs::write(&probefile, PROBE).ok()?;
 
     
-    let mut cmd = if let Some(wrapper) = env::var_os("CARGO_RUSTC_WRAPPER") {
+    let mut cmd = if let Some(wrapper) = env::var_os("RUSTC_WRAPPER") {
         let mut cmd = Command::new(wrapper);
         
         cmd.arg(rustc);
@@ -88,6 +90,10 @@ fn compile_probe() -> Option<ExitStatus> {
         .arg("--out-dir")
         .arg(out_dir)
         .arg(probefile);
+
+    if let Some(target) = env::var_os("TARGET") {
+        cmd.arg("--target").arg(target);
+    }
 
     
     if let Ok(rustflags) = env::var("CARGO_ENCODED_RUSTFLAGS") {

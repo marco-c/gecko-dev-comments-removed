@@ -1,3 +1,7 @@
+
+
+#![cfg(any())]
+
 #[rustversion::not(nightly)]
 #[ignore]
 #[test]
