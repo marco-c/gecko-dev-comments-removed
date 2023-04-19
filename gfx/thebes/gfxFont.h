@@ -325,12 +325,9 @@ class gfxFontCache final
   
   
   
-  void AddNew(gfxFont* aFont);
-
   
   
-  
-  void NotifyReleased(gfxFont* aFont);
+  already_AddRefed<gfxFont> MaybeInsert(RefPtr<gfxFont>&& aFont);
 
   
   
@@ -369,8 +366,6 @@ class gfxFontCache final
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontCacheSizes* aSizes) const;
 
-  void AgeAllGenerations();
-
  protected:
   class MemoryReporter final : public nsIMemoryReporter {
     ~MemoryReporter() = default;
@@ -400,8 +395,7 @@ class gfxFontCache final
       REQUIRES(mMutex) override;
   void NotifyHandlerEnd() override;
 
-  void DestroyFontLocked(gfxFont* aFont) REQUIRES(mMutex);
-  void DestroyDiscard(nsTArray<gfxFont*>& aDiscard);
+  void DestroyDiscard(nsTArray<RefPtr<gfxFont>>& aDiscard);
 
   static gfxFontCache* gGlobalCache;
 
@@ -425,24 +419,30 @@ class gfxFontCache final
     
     explicit HashEntry(KeyTypePointer aStr) : mFont(nullptr) {}
 
+    HashEntry(const HashEntry&) = delete;
+    HashEntry& operator=(const HashEntry&) = delete;
+
+    HashEntry(HashEntry&& aOther) noexcept : mFont(std::move(aOther.mFont)) {}
+
+    HashEntry& operator=(HashEntry&& aOther) noexcept {
+      mFont = std::move(aOther.mFont);
+      return *this;
+    }
+
     bool KeyEquals(const KeyTypePointer aKey) const;
     static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
     static PLDHashNumber HashKey(const KeyTypePointer aKey) {
       return mozilla::HashGeneric(aKey->mStyle->Hash(), aKey->mFontEntry,
                                   aKey->mUnicodeRangeMap);
     }
-    enum { ALLOW_MEMMOVE = true };
+    enum { ALLOW_MEMMOVE = false };
 
-    
-    
-    
-    
-    gfxFont* MOZ_UNSAFE_REF("tracking for deferred deletion") mFont;
+    RefPtr<gfxFont> mFont;
   };
 
   nsTHashtable<HashEntry> mFonts GUARDED_BY(mMutex);
 
-  nsTArray<gfxFont*> mTrackerDiscard GUARDED_BY(mMutex);
+  nsTArray<RefPtr<gfxFont>> mTrackerDiscard GUARDED_BY(mMutex);
 
   static void WordCacheExpirationTimerCallback(nsITimer* aTimer, void* aCache);
 
@@ -1426,24 +1426,7 @@ class gfxFont {
   using FontSlantStyle = mozilla::FontSlantStyle;
   using FontSizeAdjust = mozilla::StyleFontSizeAdjust;
 
-  nsrefcnt AddRef(void) {
-    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-    nsrefcnt count = ++mRefCnt;
-    NS_LOG_ADDREF(this, count, "gfxFont", sizeof(*this));
-    return count;
-  }
-  nsrefcnt Release(void) {
-    MOZ_ASSERT(0 != mRefCnt, "dup release");
-    --mRefCnt;
-    NS_LOG_RELEASE(this, mRefCnt, "gfxFont");
-    nsrefcnt rval = mRefCnt;
-    if (!rval) {
-      NotifyReleased();
-      
-    }
-    return rval;
-  }
-
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFont)
   int32_t GetRefCount() { return int32_t(mRefCnt); }
 
   
@@ -1455,27 +1438,13 @@ class gfxFont {
   } AntialiasOption;
 
  protected:
-  mozilla::ThreadSafeAutoRefCnt mRefCnt;
-
-  void NotifyReleased() {
-    gfxFontCache* cache = gfxFontCache::GetCache();
-    if (cache) {
-      
-      
-      cache->NotifyReleased(this);
-    } else {
-      
-      delete this;
-    }
-  }
-
   gfxFont(const RefPtr<mozilla::gfx::UnscaledFont>& aUnscaledFont,
           gfxFontEntry* aFontEntry, const gfxFontStyle* aFontStyle,
           AntialiasOption anAAOption = kAntialiasDefault);
 
- public:
   virtual ~gfxFont();
 
+ public:
   bool Valid() const { return mIsValid; }
 
   

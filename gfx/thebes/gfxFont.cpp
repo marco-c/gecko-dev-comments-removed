@@ -213,13 +213,7 @@ gfxFontCache::~gfxFontCache() {
   }
 
   
-  AgeAllGenerations();
-  
-  NS_WARNING_ASSERTION(mFonts.Count() == 0,
-                       "Fonts still alive while shutting down gfxFontCache");
-  
-  
-  
+  Flush();
 }
 
 bool gfxFontCache::HashEntry::KeyEquals(const KeyTypePointer aKey) const {
@@ -246,84 +240,61 @@ already_AddRefed<gfxFont> gfxFontCache::Lookup(
   }
 
   RefPtr<gfxFont> font = entry->mFont;
-  if (font->GetExpirationState()->IsTracked()) {
-    RemoveObjectLocked(font, lock);
-  }
+  MarkUsedLocked(font, lock);
   return font.forget();
 }
 
-void gfxFontCache::AddNew(gfxFont* aFont) {
-  nsTArray<gfxFont*> discard;
-  {
-    MutexAutoLock lock(mMutex);
+already_AddRefed<gfxFont> gfxFontCache::MaybeInsert(RefPtr<gfxFont>&& aFont) {
+  MOZ_ASSERT(aFont);
+  MutexAutoLock lock(mMutex);
 
-    Key key(aFont->GetFontEntry(), aFont->GetStyle(),
-            aFont->GetUnicodeRangeMap());
-    HashEntry* entry = mFonts.PutEntry(key);
-    if (!entry) {
-      return;
-    }
-    gfxFont* oldFont = entry->mFont;
-    entry->mFont = aFont;
+  Key key(aFont->GetFontEntry(), aFont->GetStyle(),
+          aFont->GetUnicodeRangeMap());
+  HashEntry* entry = mFonts.PutEntry(key);
+  if (!entry) {
+    return aFont.forget();
+  }
+
+  
+  
+  
+  if (!entry->mFont) {
+    entry->mFont = std::move(aFont);
+    AddObjectLocked(entry->mFont, lock);
     
     
     MOZ_ASSERT(entry == mFonts.GetEntry(key));
-
-    
-    
-    if (oldFont && oldFont->GetExpirationState()->IsTracked()) {
-      
-      
-      NS_ASSERTION(aFont != oldFont, "new font is tracked for expiry!");
-      NotifyExpiredLocked(oldFont, lock);
-      discard = std::move(mTrackerDiscard);
-    }
-  }
-  DestroyDiscard(discard);
-}
-
-void gfxFontCache::NotifyReleased(gfxFont* aFont) {
-  nsTArray<gfxFont*> discard;
-  {
-    MutexAutoLock lock(mMutex);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aFont->GetRefCount() > 0 || aFont->GetExpirationState()->IsTracked()) {
-      return;
-    }
-
-    if (NS_SUCCEEDED(AddObjectLocked(aFont, lock))) {
-      return;
-    }
-
-    
-    DestroyFontLocked(aFont);
-    discard = std::move(mTrackerDiscard);
+  } else {
+    MarkUsedLocked(entry->mFont, lock);
   }
 
-  DestroyDiscard(discard);
-  
-  
-  
-  
-  
+  return do_AddRef(entry->mFont);
 }
 
 void gfxFontCache::NotifyExpiredLocked(gfxFont* aFont, const AutoLock& aLock) {
+  
+  
+  if (aFont->GetRefCount() > 1) {
+    MarkUsedLocked(aFont, aLock);
+    return;
+  }
+
+  
   RemoveObjectLocked(aFont, aLock);
-  DestroyFontLocked(aFont);
+  Key key(aFont->GetFontEntry(), aFont->GetStyle(),
+          aFont->GetUnicodeRangeMap());
+  HashEntry* entry = mFonts.GetEntry(key);
+  if (!entry || entry->mFont != aFont) {
+    MOZ_ASSERT_UNREACHABLE("Invalid font?");
+    return;
+  }
+
+  mTrackerDiscard.AppendElement(std::move(entry->mFont));
+  mFonts.RemoveEntry(entry);
 }
 
 void gfxFontCache::NotifyHandlerEnd() {
-  nsTArray<gfxFont*> discard;
+  nsTArray<RefPtr<gfxFont>> discard;
   {
     MutexAutoLock lock(mMutex);
     discard = std::move(mTrackerDiscard);
@@ -331,47 +302,27 @@ void gfxFontCache::NotifyHandlerEnd() {
   DestroyDiscard(discard);
 }
 
-void gfxFontCache::DestroyFontLocked(gfxFont* aFont) {
-  Key key(aFont->GetFontEntry(), aFont->GetStyle(),
-          aFont->GetUnicodeRangeMap());
-  HashEntry* entry = mFonts.GetEntry(key);
-  if (entry && entry->mFont == aFont) {
-    mFonts.RemoveEntry(entry);
-  }
-  NS_ASSERTION(aFont->GetRefCount() == 0,
-               "Destroying with non-zero ref count!");
-  mTrackerDiscard.AppendElement(aFont);
-}
-
-void gfxFontCache::DestroyDiscard(nsTArray<gfxFont*>& aDiscard) {
-  for (auto* font : aDiscard) {
-    NS_ASSERTION(font->GetRefCount() == 0,
-                 "Destroying with non-zero ref count!");
+void gfxFontCache::DestroyDiscard(nsTArray<RefPtr<gfxFont>>& aDiscard) {
+  for (auto& font : aDiscard) {
+    NS_ASSERTION(font->GetRefCount() == 1,
+                 "Destroying with refs outside cache!");
     font->ClearCachedWords();
-    delete font;
   }
   aDiscard.Clear();
 }
 
 void gfxFontCache::Flush() {
-  nsTArray<gfxFont*> discard;
+  nsTHashtable<HashEntry> discard;
   {
     MutexAutoLock lock(mMutex);
-    mFonts.Clear();
-    AgeAllGenerationsLocked(lock);
-    discard = std::move(mTrackerDiscard);
+    for (auto iter = mFonts.Iter(); !iter.Done(); iter.Next()) {
+      HashEntry* entry = static_cast<HashEntry*>(iter.Get());
+      RemoveObjectLocked(entry->mFont, lock);
+    }
+    MOZ_ASSERT(IsEmptyLocked(lock),
+               "Cache tracker still has fonts after flush!");
+    discard = std::move(mFonts);
   }
-  DestroyDiscard(discard);
-}
-
-void gfxFontCache::AgeAllGenerations() {
-  nsTArray<gfxFont*> discard;
-  {
-    MutexAutoLock lock(mMutex);
-    AgeAllGenerationsLocked(lock);
-    discard = std::move(mTrackerDiscard);
-  }
-  DestroyDiscard(discard);
 }
 
 
