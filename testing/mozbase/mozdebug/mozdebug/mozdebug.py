@@ -44,6 +44,8 @@ _DEBUGGER_INFO = {
     "windbg.exe": {
         "interactive": True,
     },
+    
+    "rr": {"interactive": True, "args": ["record", "--disable-avx-512"]},
 }
 
 
