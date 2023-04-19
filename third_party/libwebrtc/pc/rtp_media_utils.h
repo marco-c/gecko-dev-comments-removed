@@ -49,7 +49,7 @@ RtpTransceiverDirection RtpTransceiverDirectionIntersection(
     RtpTransceiverDirection lhs,
     RtpTransceiverDirection rhs);
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 inline std::ostream& operator<<(  
     std::ostream& os,             
     RtpTransceiverDirection direction) {

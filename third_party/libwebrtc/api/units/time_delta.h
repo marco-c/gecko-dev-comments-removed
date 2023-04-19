@@ -11,7 +11,7 @@
 #ifndef API_UNITS_TIME_DELTA_H_
 #define API_UNITS_TIME_DELTA_H_
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 #include <ostream>  
 #endif              
 
@@ -92,7 +92,7 @@ inline std::string ToLogString(TimeDelta value) {
   return ToString(value);
 }
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 inline std::ostream& operator<<(  
     std::ostream& stream,         
     TimeDelta value) {

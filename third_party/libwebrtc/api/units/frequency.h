@@ -10,7 +10,7 @@
 #ifndef API_UNITS_FREQUENCY_H_
 #define API_UNITS_FREQUENCY_H_
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 #include <ostream>  
 #endif              
 
@@ -89,7 +89,7 @@ inline std::string ToLogString(Frequency value) {
   return ToString(value);
 }
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 inline std::ostream& operator<<(  
     std::ostream& stream,         
     Frequency value) {

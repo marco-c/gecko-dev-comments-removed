@@ -11,7 +11,7 @@
 #ifndef API_RTC_ERROR_H_
 #define API_RTC_ERROR_H_
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 #include <ostream>
 #endif  
 #include <string>
@@ -161,7 +161,7 @@ class RTC_EXPORT RTCError {
 RTC_EXPORT const char* ToString(RTCErrorType error);
 RTC_EXPORT const char* ToString(RTCErrorDetailType error);
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 inline std::ostream& operator<<(  
     std::ostream& stream,         
     RTCErrorType error) {

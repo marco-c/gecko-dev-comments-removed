@@ -80,7 +80,7 @@ class RTC_EXPORT IPAddress {
   bool operator<(const IPAddress& other) const;
   bool operator>(const IPAddress& other) const;
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
   inline std::ostream& operator<<(  
       std::ostream& os) {           
     return os << ToString();

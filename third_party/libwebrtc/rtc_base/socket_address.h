@@ -12,7 +12,7 @@
 #define RTC_BASE_SOCKET_ADDRESS_H_
 
 #include <string>
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
 #include <ostream>  
 #endif              
 #include "rtc_base/ip_address.h"
@@ -127,7 +127,7 @@ class RTC_EXPORT SocketAddress {
   
   bool FromString(const std::string& str);
 
-#ifdef UNIT_TEST
+#ifdef WEBRTC_UNIT_TEST
   inline std::ostream& operator<<(  
       std::ostream& os) {           
     return os << HostAsURIString() << ":" << port();
