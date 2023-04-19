@@ -88,6 +88,7 @@ class RttValue : public NativeObject {
   
   
   
+  
   class PropOffset {
     uint32_t u32_;
 
@@ -201,8 +202,7 @@ class TypedObject : public JSObject {
 class WasmArrayObject : public TypedObject {
  public:
   
-  
-  using NumElements = uint32_t;
+  uint32_t numElements_;
 
  private:
   
@@ -210,46 +210,26 @@ class WasmArrayObject : public TypedObject {
   
   uint8_t* data_;
 
- protected:
   friend class TypedObject;
-
-  
-  static WasmArrayObject* create(JSContext* cx, Handle<RttValue*> rtt,
-                                 size_t numBytes,
-                                 gc::InitialHeap heap = gc::DefaultHeap);
-
-  
-  
-  uint8_t* outOfLineTypedMem() const { return data_; }
-
-  void setNumElements(NumElements numElements) {
-    *(NumElements*)(data_ + offsetOfNumElements()) = numElements;
-  }
 
  public:
   static const JSClass class_;
 
   
-  uint8_t* addressOfElementZero() const {
-    return data_ + offsetOfNumElements() + sizeof(NumElements);
-  }
-
-  
-  NumElements numElements() const {
-    return *(NumElements*)(data_ + offsetOfNumElements());
-  }
-
-  
   static gc::AllocKind allocKind();
 
   
+  uint32_t numElements() const { return numElements_; }
+  void setNumElements(uint32_t numElements) { numElements_ = numElements; }
+  uint8_t* data() const { return data_; }
 
   
+  static constexpr size_t offsetOfNumElements() {
+    return offsetof(WasmArrayObject, numElements_);
+  }
   static constexpr size_t offsetOfData() {
     return offsetof(WasmArrayObject, data_);
   }
-  
-  static constexpr size_t offsetOfNumElements() { return 0; }
 
   
   static void obj_trace(JSTracer* trc, JSObject* object);
@@ -258,8 +238,8 @@ class WasmArrayObject : public TypedObject {
 
 
 
-#define STATIC_ASSERT_NUMELEMENTS_IS_U32 \
-  static_assert(sizeof(js::WasmArrayObject::NumElements) == sizeof(uint32_t));
+#define STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32 \
+  static_assert(sizeof(js::WasmArrayObject::numElements_) == sizeof(uint32_t))
 
 
 

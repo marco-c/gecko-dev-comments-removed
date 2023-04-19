@@ -1273,7 +1273,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   
   
-  memcpy(arrayObj->addressOfElementZero(), &seg->bytes[segByteOffset],
+  memcpy(arrayObj->data(), &seg->bytes[segByteOffset],
          size_t(numBytesToCopy.value()));
 
   return arrayObj;
@@ -1348,7 +1348,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   
   
-  void** dst = (void**)arrayObj->addressOfElementZero();
+  void** dst = (void**)arrayObj->data();
   const uint32_t* src = &seg->elemFuncIndices[segElemIndex];
   for (uint32_t i = 0; i < numElements; i++) {
     uint32_t funcIndex = src[i];
@@ -1408,7 +1408,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   
   
-  STATIC_ASSERT_NUMELEMENTS_IS_U32;
+  STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
 
   
   uint64_t dstNumElements = uint64_t(dstArrayObj->numElements());
@@ -1437,8 +1437,8 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
   
   
-  uint8_t* srcBase = srcArrayObj->addressOfElementZero();
-  uint8_t* dstBase = dstArrayObj->addressOfElementZero();
+  uint8_t* srcBase = srcArrayObj->data();
+  uint8_t* dstBase = dstArrayObj->data();
   srcBase += size_t(srcIndex) * size_t(elementSize);
   dstBase += size_t(dstIndex) * size_t(elementSize);
 
