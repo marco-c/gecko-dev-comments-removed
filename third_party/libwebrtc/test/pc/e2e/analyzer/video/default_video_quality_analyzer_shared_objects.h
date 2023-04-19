@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/numerics/samples_stats_counter.h"
 #include "api/units/timestamp.h"
 
@@ -163,21 +164,6 @@ struct StatsKey {
 
 bool operator<(const StatsKey& a, const StatsKey& b);
 bool operator==(const StatsKey& a, const StatsKey& b);
-
-struct InternalStatsKey {
-  InternalStatsKey(size_t stream, size_t sender, size_t receiver)
-      : stream(stream), sender(sender), receiver(receiver) {}
-
-  std::string ToString() const;
-
-  size_t stream;
-  size_t sender;
-  size_t receiver;
-};
-
-
-bool operator<(const InternalStatsKey& a, const InternalStatsKey& b);
-bool operator==(const InternalStatsKey& a, const InternalStatsKey& b);
 
 }  
 }  

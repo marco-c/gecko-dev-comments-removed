@@ -29,6 +29,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
+#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_internal_shared_objects.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_shared_objects.h"
 #include "test/pc/e2e/analyzer/video/multi_head_queue.h"
 #include "test/testsupport/perf_test.h"
@@ -113,73 +114,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   double GetCpuUsagePercent();
 
  private:
-  
-  
-  struct FrameStats {
-    FrameStats(Timestamp captured_time) : captured_time(captured_time) {}
-
-    
-    Timestamp captured_time;
-    Timestamp pre_encode_time = Timestamp::MinusInfinity();
-    Timestamp encoded_time = Timestamp::MinusInfinity();
-    
-    Timestamp received_time = Timestamp::MinusInfinity();
-    Timestamp decode_start_time = Timestamp::MinusInfinity();
-    Timestamp decode_end_time = Timestamp::MinusInfinity();
-    Timestamp rendered_time = Timestamp::MinusInfinity();
-    Timestamp prev_frame_rendered_time = Timestamp::MinusInfinity();
-
-    int64_t encoded_image_size = 0;
-    uint32_t target_encode_bitrate = 0;
-
-    absl::optional<int> rendered_frame_width = absl::nullopt;
-    absl::optional<int> rendered_frame_height = absl::nullopt;
-
-    
-    absl::optional<StreamCodecInfo> used_encoder = absl::nullopt;
-    
-    absl::optional<StreamCodecInfo> used_decoder = absl::nullopt;
-  };
-
-  
-  
-  enum class OverloadReason {
-    kNone,
-    
-    kCpu,
-    
-    kMemory
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  struct FrameComparison {
-    FrameComparison(InternalStatsKey stats_key,
-                    absl::optional<VideoFrame> captured,
-                    absl::optional<VideoFrame> rendered,
-                    bool dropped,
-                    FrameStats frame_stats,
-                    OverloadReason overload_reason);
-
-    InternalStatsKey stats_key;
-    
-    
-    absl::optional<VideoFrame> captured;
-    absl::optional<VideoFrame> rendered;
-    
-    
-    
-    bool dropped;
-    FrameStats frame_stats;
-    OverloadReason overload_reason;
-  };
-
   
   class StreamState {
    public:
