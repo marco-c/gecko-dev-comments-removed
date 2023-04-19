@@ -22,6 +22,11 @@ import os
 import sys
 
 
+
+
+import google.protobuf  
+
+
 def _CreateParser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--perf-dashboard-machine-group', required=True,
