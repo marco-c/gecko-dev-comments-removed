@@ -1049,7 +1049,13 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
       } else if (roleMapEntry->IsOfType(eTableRow)) {
         if (aContext->IsTable() ||
-            (aContext->LocalParent() && aContext->LocalParent()->IsTable())) {
+            
+            
+            
+            
+            ((aContext->Role() == roles::GROUPING ||
+              (aContext->IsGenericHyperText() && !aContext->ARIARoleMap())) &&
+             aContext->LocalParent() && aContext->LocalParent()->IsTable())) {
           newAcc = new ARIARowAccessible(content, document);
         }
 

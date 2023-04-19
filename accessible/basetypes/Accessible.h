@@ -447,8 +447,6 @@ class Accessible {
 
   bool IsDoc() const { return HasGenericType(eDocument); }
 
-  bool IsTableRow() const { return HasGenericType(eTableRow); }
-
   
 
 
@@ -457,6 +455,8 @@ class Accessible {
 
 
 
+
+  bool IsTableRow() const { return mGenericTypes & eTableRow; }
 
   bool IsTableCell() const { return mGenericTypes & eTableCell; }
 
