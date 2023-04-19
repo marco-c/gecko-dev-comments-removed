@@ -30,7 +30,6 @@ using namespace mozilla::gfx;
 
 
 
-
 #define GREEK_CAPITAL_LETTER_SIGMA 0x03A3
 #define GREEK_SMALL_LETTER_FINAL_SIGMA 0x03C2
 #define GREEK_SMALL_LETTER_SIGMA 0x03C3
