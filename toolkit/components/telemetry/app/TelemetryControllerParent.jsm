@@ -927,69 +927,50 @@ var Impl = {
       return;
     }
 
-    let start = TelemetryUtils.monotonicNow();
-    let now = () => " " + (TelemetryUtils.monotonicNow() - start);
-    this._shutdownStep = "_cleanupOnShutdown begin " + now();
-
     this._detachObservers();
 
     
     try {
       if (this._delayedNewPingTask) {
-        this._shutdownStep = "awaiting delayed new ping task" + now();
         await this._delayedNewPingTask.finalize();
       }
 
-      this._shutdownStep = "Update" + now();
       lazy.UpdatePing.shutdown();
 
-      this._shutdownStep = "Event" + now();
       lazy.TelemetryEventPing.shutdown();
-      this._shutdownStep = "Prio" + now();
       await lazy.TelemetryPrioPing.shutdown();
 
       
       
       if (this._fnSyncPingShutdown) {
-        this._shutdownStep = "Sync" + now();
         this._fnSyncPingShutdown();
       }
 
       
-      this._shutdownStep = "Policy" + now();
       lazy.TelemetryReportingPolicy.shutdown();
-      this._shutdownStep = "Environment" + now();
       lazy.TelemetryEnvironment.shutdown();
 
       
-      this._shutdownStep = "TelemetrySend" + now();
       await lazy.TelemetrySend.shutdown();
 
       
-      this._shutdownStep = "Health ping" + now();
       await lazy.TelemetryHealthPing.shutdown();
 
-      this._shutdownStep = "TelemetrySession" + now();
       await lazy.TelemetrySession.shutdown();
-      this._shutdownStep = "Services.telemetry" + now();
       await Services.telemetry.shutdown();
 
       
-      this._shutdownStep = "await shutdown barrier" + now();
       await this._shutdownBarrier.wait();
 
       
-      this._shutdownStep = "await connections barrier" + now();
       await this._connectionsBarrier.wait();
 
       if (AppConstants.platform !== "android") {
         
-        this._shutdownStep = "Flush pingsender batch" + now();
         lazy.TelemetrySend.flushPingSenderBatch();
       }
 
       
-      this._shutdownStep = "await TelemetryStorage" + now();
       await lazy.TelemetryStorage.shutdown();
     } finally {
       
@@ -1076,7 +1057,6 @@ var Impl = {
       connectionsBarrier: this._connectionsBarrier.state,
       sendModule: lazy.TelemetrySend.getShutdownState(),
       haveDelayedNewProfileTask: !!this._delayedNewPingTask,
-      shutdownStep: this._shutdownStep,
     };
   },
 
