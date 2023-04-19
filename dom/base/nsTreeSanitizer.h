@@ -138,6 +138,9 @@ class nsTreeSanitizer {
     bool Contains(nsAtom* aAtom) { return GetEntry(aAtom); }
   };
 
+  using ElementToAttributeSetTable =
+      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>;
+
   void SanitizeChildren(nsINode* aRoot);
 
   
@@ -199,6 +202,9 @@ class nsTreeSanitizer {
 
   void SanitizeAttributes(mozilla::dom::Element* aElement,
                           AllowedAttributes aAllowed);
+  
+  bool MustDropAttribute(mozilla::dom::Element* aElement,
+                         int32_t aAttrNamespace, nsAtom* aAttrLocalName);
 
   
 
@@ -240,6 +246,11 @@ class nsTreeSanitizer {
 
 
   static void RemoveAllAttributesFromDescendants(mozilla::dom::Element*);
+
+  static bool MatchesAttributeMatchList(ElementToAttributeSetTable& aMatchList,
+                                        mozilla::dom::Element& aElement,
+                                        int32_t aAttrNamespace,
+                                        nsAtom* aAttrLocalName);
 
   
 
@@ -294,7 +305,17 @@ class nsTreeSanitizer {
   
 
 
+  static AtomsTable* sBaselineAttributeAllowlist;
+
+  
+
+
   static AtomsTable* sBaselineElementAllowlist;
+
+  
+
+
+  static AtomsTable* sDefaultConfigurationAttributeAllowlist;
 
   
 
@@ -322,9 +343,6 @@ class nsTreeSanitizer {
 
   
   mozilla::UniquePtr<DynamicAtomsTable> mDropElements;
-
-  using ElementToAttributeSetTable =
-      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>;
 
   
   mozilla::UniquePtr<ElementToAttributeSetTable> mAllowedAttributes;

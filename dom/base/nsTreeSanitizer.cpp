@@ -971,6 +971,225 @@ const nsStaticAtom* const kURLAttributesMathML[] = {
 };
 
 
+constexpr const nsStaticAtom* const kBaselineAttributeAllowlist[] = {
+    
+  nsGkAtoms::abbr,
+  nsGkAtoms::accept,
+  nsGkAtoms::acceptcharset,
+  nsGkAtoms::charset,
+  nsGkAtoms::accesskey,
+  nsGkAtoms::action,
+  nsGkAtoms::align,
+  nsGkAtoms::alink,
+  nsGkAtoms::allow,
+  nsGkAtoms::allowfullscreen,
+  
+  nsGkAtoms::alt,
+  nsGkAtoms::anchor,
+  nsGkAtoms::archive,
+  nsGkAtoms::as,
+  nsGkAtoms::async,
+  nsGkAtoms::autocapitalize,
+  nsGkAtoms::autocomplete,
+  
+  nsGkAtoms::autofocus,
+  
+  nsGkAtoms::autoplay,
+  nsGkAtoms::axis,
+  nsGkAtoms::background,
+  nsGkAtoms::behavior,
+  nsGkAtoms::bgcolor,
+  nsGkAtoms::border,
+  nsGkAtoms::bordercolor,
+  nsGkAtoms::capture,
+  nsGkAtoms::cellpadding,
+  nsGkAtoms::cellspacing,
+  
+  nsGkAtoms::_char,
+  nsGkAtoms::charoff,
+  nsGkAtoms::charset,
+  nsGkAtoms::checked,
+  nsGkAtoms::cite,
+  nsGkAtoms::_class,
+  nsGkAtoms::classid,
+  nsGkAtoms::clear,
+  nsGkAtoms::code,
+  nsGkAtoms::codebase,
+  nsGkAtoms::codetype,
+  nsGkAtoms::color,
+  nsGkAtoms::cols,
+  nsGkAtoms::colspan,
+  nsGkAtoms::compact,
+  nsGkAtoms::content,
+  nsGkAtoms::contenteditable,
+  nsGkAtoms::controls,
+  
+  
+  nsGkAtoms::coords,
+  nsGkAtoms::crossorigin,
+  nsGkAtoms::csp,
+  nsGkAtoms::data,
+  nsGkAtoms::datetime,
+  nsGkAtoms::declare,
+  nsGkAtoms::decoding,
+  nsGkAtoms::_default,
+  nsGkAtoms::defer,
+  nsGkAtoms::dir,
+  nsGkAtoms::direction,
+  
+  nsGkAtoms::disabled,
+  
+  
+  
+  nsGkAtoms::download,
+  nsGkAtoms::draggable,
+  
+  nsGkAtoms::enctype,
+  nsGkAtoms::end,
+  nsGkAtoms::enterkeyhint,
+  nsGkAtoms::event,
+  nsGkAtoms::exportparts,
+  nsGkAtoms::face,
+  nsGkAtoms::_for,
+  nsGkAtoms::form,
+  nsGkAtoms::formaction,
+  nsGkAtoms::formenctype,
+  nsGkAtoms::formmethod,
+  nsGkAtoms::formnovalidate,
+  nsGkAtoms::formtarget,
+  nsGkAtoms::frame,
+  nsGkAtoms::frameborder,
+  nsGkAtoms::headers,
+  nsGkAtoms::height,
+  nsGkAtoms::hidden,
+  nsGkAtoms::high,
+  nsGkAtoms::href,
+  nsGkAtoms::hreflang,
+  
+  nsGkAtoms::hspace,
+  nsGkAtoms::http,
+  
+  nsGkAtoms::id,
+  nsGkAtoms::imagesizes,
+  nsGkAtoms::imagesrcset,
+  
+  
+  
+  
+  nsGkAtoms::inert,
+  nsGkAtoms::inputmode,
+  nsGkAtoms::integrity,
+  
+  nsGkAtoms::is,
+  nsGkAtoms::ismap,
+  
+  nsGkAtoms::kind,
+  nsGkAtoms::label,
+  nsGkAtoms::lang,
+  nsGkAtoms::language,
+  
+  nsGkAtoms::leftmargin,
+  nsGkAtoms::link,
+  
+  nsGkAtoms::loading,
+  nsGkAtoms::longdesc,
+  nsGkAtoms::loop,
+  nsGkAtoms::low,
+  nsGkAtoms::lowsrc,
+  nsGkAtoms::manifest,
+  nsGkAtoms::marginheight,
+  nsGkAtoms::marginwidth,
+  nsGkAtoms::max,
+  nsGkAtoms::maxlength,
+  
+  nsGkAtoms::media,
+  nsGkAtoms::method,
+  nsGkAtoms::min,
+  nsGkAtoms::minlength,
+  nsGkAtoms::multiple,
+  nsGkAtoms::muted,
+  nsGkAtoms::name,
+  nsGkAtoms::nohref,
+  nsGkAtoms::nomodule,
+  nsGkAtoms::nonce,
+  nsGkAtoms::noresize,
+  nsGkAtoms::noshade,
+  nsGkAtoms::novalidate,
+  nsGkAtoms::nowrap,
+  nsGkAtoms::object,
+  nsGkAtoms::open,
+  nsGkAtoms::optimum,
+  nsGkAtoms::part,
+  nsGkAtoms::pattern,
+  nsGkAtoms::ping,
+  nsGkAtoms::placeholder,
+  
+  
+  nsGkAtoms::poster,
+  nsGkAtoms::preload,
+  
+  nsGkAtoms::readonly,
+  nsGkAtoms::referrerpolicy,
+  nsGkAtoms::rel,
+  
+  nsGkAtoms::required,
+  nsGkAtoms::resources,
+  nsGkAtoms::rev,
+  nsGkAtoms::reversed,
+  nsGkAtoms::role,
+  nsGkAtoms::rows,
+  nsGkAtoms::rowspan,
+  nsGkAtoms::rules,
+  nsGkAtoms::sandbox,
+  nsGkAtoms::scheme,
+  nsGkAtoms::scope,
+  
+  nsGkAtoms::scrollamount,
+  nsGkAtoms::scrolldelay,
+  nsGkAtoms::scrolling,
+  nsGkAtoms::select,
+  nsGkAtoms::selected,
+  
+  
+  nsGkAtoms::shape,
+  nsGkAtoms::size,
+  nsGkAtoms::sizes,
+  nsGkAtoms::slot,
+  nsGkAtoms::span,
+  nsGkAtoms::spellcheck,
+  nsGkAtoms::src,
+  nsGkAtoms::srcdoc,
+  nsGkAtoms::srclang,
+  nsGkAtoms::srcset,
+  nsGkAtoms::standby,
+  nsGkAtoms::start,
+  nsGkAtoms::step,
+  nsGkAtoms::style,
+  nsGkAtoms::summary,
+  nsGkAtoms::tabindex,
+  nsGkAtoms::target,
+  nsGkAtoms::text,
+  nsGkAtoms::title,
+  nsGkAtoms::topmargin,
+  nsGkAtoms::translate,
+  nsGkAtoms::truespeed,
+  
+  nsGkAtoms::type,
+  nsGkAtoms::usemap,
+  nsGkAtoms::valign,
+  nsGkAtoms::value,
+  nsGkAtoms::valuetype,
+  nsGkAtoms::version,
+  
+  nsGkAtoms::vlink,
+  nsGkAtoms::vspace,
+  nsGkAtoms::webkitdirectory,
+  nsGkAtoms::width,
+  nsGkAtoms::wrap,
+    
+};
+
+
 constexpr const nsStaticAtom* const kBaselineElementAllowlist[] = {
     nsGkAtoms::a,          nsGkAtoms::abbr,      nsGkAtoms::acronym,
     nsGkAtoms::address,    nsGkAtoms::area,      nsGkAtoms::article,
@@ -1015,6 +1234,228 @@ constexpr const nsStaticAtom* const kBaselineElementAllowlist[] = {
     nsGkAtoms::track,      nsGkAtoms::tt,        nsGkAtoms::u,
     nsGkAtoms::ul,         nsGkAtoms::var,       nsGkAtoms::video,
     nsGkAtoms::wbr,        nsGkAtoms::xmp,
+};
+
+
+
+
+
+
+
+constexpr const nsStaticAtom* const kDefaultConfigurationAttributeAllowlist[] =
+    {
+        nsGkAtoms::abbr,
+        nsGkAtoms::accept,
+        nsGkAtoms::acceptcharset,
+        nsGkAtoms::charset,
+        nsGkAtoms::accesskey,
+        nsGkAtoms::action,
+        nsGkAtoms::align,
+        nsGkAtoms::alink,
+        nsGkAtoms::allow,
+        nsGkAtoms::allowfullscreen,
+        nsGkAtoms::alt,
+        nsGkAtoms::anchor,
+        nsGkAtoms::archive,
+        nsGkAtoms::as,
+        nsGkAtoms::async,
+        nsGkAtoms::autocapitalize,
+        nsGkAtoms::autocomplete,
+        
+        nsGkAtoms::autofocus,
+        
+        nsGkAtoms::autoplay,
+        nsGkAtoms::axis,
+        nsGkAtoms::background,
+        nsGkAtoms::behavior,
+        nsGkAtoms::bgcolor,
+        nsGkAtoms::border,
+        nsGkAtoms::bordercolor,
+        nsGkAtoms::capture,
+        nsGkAtoms::cellpadding,
+        nsGkAtoms::cellspacing,
+        
+        nsGkAtoms::_char,
+        nsGkAtoms::charoff,
+        nsGkAtoms::charset,
+        nsGkAtoms::checked,
+        nsGkAtoms::cite,
+        nsGkAtoms::_class,
+        nsGkAtoms::classid,
+        nsGkAtoms::clear,
+        nsGkAtoms::code,
+        nsGkAtoms::codebase,
+        nsGkAtoms::codetype,
+        nsGkAtoms::color,
+        nsGkAtoms::cols,
+        nsGkAtoms::colspan,
+        nsGkAtoms::compact,
+        nsGkAtoms::content,
+        nsGkAtoms::contenteditable,
+        nsGkAtoms::controls,
+        
+        
+        nsGkAtoms::coords,
+        nsGkAtoms::crossorigin,
+        nsGkAtoms::csp,
+        nsGkAtoms::data,
+        nsGkAtoms::datetime,
+        nsGkAtoms::declare,
+        nsGkAtoms::decoding,
+        nsGkAtoms::_default,
+        nsGkAtoms::defer,
+        nsGkAtoms::dir,
+        nsGkAtoms::direction,
+        
+        nsGkAtoms::disabled,
+        
+        
+        
+        nsGkAtoms::download,
+        nsGkAtoms::draggable,
+        
+        nsGkAtoms::enctype,
+        nsGkAtoms::end,
+        nsGkAtoms::enterkeyhint,
+        nsGkAtoms::event,
+        nsGkAtoms::exportparts,
+        nsGkAtoms::face,
+        nsGkAtoms::_for,
+        nsGkAtoms::form,
+        nsGkAtoms::formaction,
+        nsGkAtoms::formenctype,
+        nsGkAtoms::formmethod,
+        nsGkAtoms::formnovalidate,
+        nsGkAtoms::formtarget,
+        nsGkAtoms::frame,
+        nsGkAtoms::frameborder,
+        nsGkAtoms::headers,
+        nsGkAtoms::height,
+        nsGkAtoms::hidden,
+        nsGkAtoms::high,
+        nsGkAtoms::href,
+        nsGkAtoms::hreflang,
+        
+        nsGkAtoms::hspace,
+        nsGkAtoms::http,
+        
+        nsGkAtoms::id,
+        nsGkAtoms::imagesizes,
+        nsGkAtoms::imagesrcset,
+        
+        
+        
+        
+        nsGkAtoms::inert,
+        nsGkAtoms::inputmode,
+        nsGkAtoms::integrity,
+        
+        nsGkAtoms::is,
+        nsGkAtoms::ismap,
+        
+        nsGkAtoms::kind,
+        nsGkAtoms::label,
+        nsGkAtoms::lang,
+        nsGkAtoms::language,
+        
+        nsGkAtoms::leftmargin,
+        nsGkAtoms::link,
+        
+        nsGkAtoms::loading,
+        nsGkAtoms::longdesc,
+        nsGkAtoms::loop,
+        nsGkAtoms::low,
+        nsGkAtoms::lowsrc,
+        nsGkAtoms::manifest,
+        nsGkAtoms::marginheight,
+        nsGkAtoms::marginwidth,
+        nsGkAtoms::max,
+        nsGkAtoms::maxlength,
+        
+        nsGkAtoms::media,
+        nsGkAtoms::method,
+        nsGkAtoms::min,
+        nsGkAtoms::minlength,
+        nsGkAtoms::multiple,
+        nsGkAtoms::muted,
+        nsGkAtoms::name,
+        nsGkAtoms::nohref,
+        nsGkAtoms::nomodule,
+        nsGkAtoms::nonce,
+        nsGkAtoms::noresize,
+        nsGkAtoms::noshade,
+        nsGkAtoms::novalidate,
+        nsGkAtoms::nowrap,
+        nsGkAtoms::object,
+        nsGkAtoms::open,
+        nsGkAtoms::optimum,
+        nsGkAtoms::part,
+        nsGkAtoms::pattern,
+        nsGkAtoms::ping,
+        nsGkAtoms::placeholder,
+        
+        
+        nsGkAtoms::poster,
+        nsGkAtoms::preload,
+        
+        nsGkAtoms::readonly,
+        nsGkAtoms::referrerpolicy,
+        nsGkAtoms::rel,
+        
+        nsGkAtoms::required,
+        nsGkAtoms::resources,
+        nsGkAtoms::rev,
+        nsGkAtoms::reversed,
+        nsGkAtoms::role,
+        nsGkAtoms::rows,
+        nsGkAtoms::rowspan,
+        nsGkAtoms::rules,
+        nsGkAtoms::sandbox,
+        nsGkAtoms::scheme,
+        nsGkAtoms::scope,
+        
+        nsGkAtoms::scrollamount,
+        nsGkAtoms::scrolldelay,
+        nsGkAtoms::scrolling,
+        nsGkAtoms::select,
+        nsGkAtoms::selected,
+        
+        
+        nsGkAtoms::shape,
+        nsGkAtoms::size,
+        nsGkAtoms::sizes,
+        nsGkAtoms::slot,
+        nsGkAtoms::span,
+        nsGkAtoms::spellcheck,
+        nsGkAtoms::src,
+        nsGkAtoms::srcdoc,
+        nsGkAtoms::srclang,
+        nsGkAtoms::srcset,
+        nsGkAtoms::standby,
+        nsGkAtoms::start,
+        nsGkAtoms::step,
+        nsGkAtoms::style,
+        nsGkAtoms::summary,
+        nsGkAtoms::tabindex,
+        nsGkAtoms::target,
+        nsGkAtoms::text,
+        nsGkAtoms::title,
+        nsGkAtoms::topmargin,
+        nsGkAtoms::translate,
+        nsGkAtoms::truespeed,
+        
+        nsGkAtoms::type,
+        nsGkAtoms::usemap,
+        nsGkAtoms::valign,
+        nsGkAtoms::value,
+        nsGkAtoms::valuetype,
+        nsGkAtoms::version,
+        
+        nsGkAtoms::vlink,
+        nsGkAtoms::vspace,
+        nsGkAtoms::webkitdirectory,
+        nsGkAtoms::width,
+        nsGkAtoms::wrap,
 };
 
 
@@ -1068,8 +1509,12 @@ nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsSVG = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sAttributesSVG = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsMathML = nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sAttributesMathML = nullptr;
+nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sBaselineAttributeAllowlist =
+    nullptr;
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sBaselineElementAllowlist =
     nullptr;
+nsTreeSanitizer::AtomsTable*
+    nsTreeSanitizer::sDefaultConfigurationAttributeAllowlist = nullptr;
 nsTreeSanitizer::AtomsTable*
     nsTreeSanitizer::sDefaultConfigurationElementAllowlist = nullptr;
 nsIPrincipal* nsTreeSanitizer::sNullPrincipal = nullptr;
@@ -1413,31 +1858,7 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
     RefPtr<nsAtom> attrLocal = attrName->LocalName();
 
     if (mIsForSanitizerAPI) {
-      bool shouldRemove = true;
-      RefPtr<nsAtom> elemName = aElement->NodeInfo()->NameAtom();
-
-      
-      if (mAllowedAttributes) {
-        auto allowedElements = mAllowedAttributes->Lookup(attrLocal);
-        if (allowedElements) {
-          if (allowedElements.Data()->Contains(elemName) ||
-              allowedElements.Data()->Contains(nsGkAtoms::_asterisk)) {
-            shouldRemove = false;
-          }
-        }
-      }
-      
-      
-      if (mDroppedAttributes) {
-        auto dropElements = mDroppedAttributes->Lookup(attrLocal);
-        if (dropElements) {
-          if (dropElements.Data()->Contains(elemName) ||
-              dropElements.Data()->Contains(nsGkAtoms::_asterisk)) {
-            shouldRemove = true;
-          }
-        }
-      }
-      if (shouldRemove) {
+      if (MustDropAttribute(aElement, attrNs, attrLocal)) {
         aElement->UnsetAttr(kNameSpaceID_None, attrLocal, false);
         if (mLogRemovals) {
           LogMessage("Removed unsafe attribute.", aElement->OwnerDoc(),
@@ -1538,6 +1959,90 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
   if (aElement->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
     aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::controls, u""_ns, false);
   }
+}
+
+
+bool nsTreeSanitizer::MatchesAttributeMatchList(
+    ElementToAttributeSetTable& aMatchList, Element& aElement,
+    int32_t aAttrNamespace, nsAtom* aAttrLocalName) {
+  
+  
+  DynamicAtomsTable* elements;
+  if (auto lookup = aMatchList.Lookup(aAttrLocalName)) {
+    elements = lookup->get();
+  } else if (auto lookup = aMatchList.Lookup(nsGkAtoms::_asterisk)) {
+    elements = lookup->get();
+  } else {
+    return false;
+  }
+
+  
+  
+  nsAtom* elemName = aElement.NodeInfo()->NameAtom();
+
+  
+  
+  
+  
+
+  
+  
+  if (!elements->Contains(elemName) &&
+      !elements->Contains(nsGkAtoms::_asterisk)) {
+    return false;
+  }
+
+  
+  return true;
+}
+
+
+bool nsTreeSanitizer::MustDropAttribute(Element* aElement,
+                                        int32_t aAttrNamespace,
+                                        nsAtom* aAttrLocalName) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (!sBaselineAttributeAllowlist->Contains(aAttrLocalName)) {
+    return true;
+  }
+
+  
+  
+  if (mDroppedAttributes &&
+      MatchesAttributeMatchList(*mDroppedAttributes, *aElement, aAttrNamespace,
+                                aAttrLocalName)) {
+    return true;
+  }
+
+  
+  if (mAllowedAttributes) {
+    
+    
+    
+    if (!MatchesAttributeMatchList(*mAllowedAttributes, *aElement,
+                                   aAttrNamespace, aAttrLocalName)) {
+      return true;
+    }
+  } else {
+    
+    
+    
+    
+    if (!sDefaultConfigurationAttributeAllowlist->Contains(aAttrLocalName)) {
+      return true;
+    }
+  }
+
+  
+  return false;
 }
 
 bool nsTreeSanitizer::SanitizeURL(mozilla::dom::Element* aElement,
@@ -1824,10 +2329,22 @@ void nsTreeSanitizer::InitializeStatics() {
     sAttributesMathML->Insert(kAttributesMathML[i]);
   }
 
+  sBaselineAttributeAllowlist =
+      new AtomsTable(ArrayLength(kBaselineAttributeAllowlist));
+  for (const auto* atom : kBaselineAttributeAllowlist) {
+    sBaselineAttributeAllowlist->Insert(atom);
+  }
+
   sBaselineElementAllowlist =
       new AtomsTable(ArrayLength(kBaselineElementAllowlist));
   for (const auto* atom : kBaselineElementAllowlist) {
     sBaselineElementAllowlist->Insert(atom);
+  }
+
+  sDefaultConfigurationAttributeAllowlist =
+      new AtomsTable(ArrayLength(kDefaultConfigurationAttributeAllowlist));
+  for (const auto* atom : kDefaultConfigurationAttributeAllowlist) {
+    sDefaultConfigurationAttributeAllowlist->Insert(atom);
   }
 
   sDefaultConfigurationElementAllowlist =
@@ -1863,8 +2380,14 @@ void nsTreeSanitizer::ReleaseStatics() {
   delete sAttributesMathML;
   sAttributesMathML = nullptr;
 
+  delete sBaselineAttributeAllowlist;
+  sBaselineAttributeAllowlist = nullptr;
+
   delete sBaselineElementAllowlist;
   sBaselineElementAllowlist = nullptr;
+
+  delete sDefaultConfigurationAttributeAllowlist;
+  sDefaultConfigurationAttributeAllowlist = nullptr;
 
   delete sDefaultConfigurationElementAllowlist;
   sDefaultConfigurationElementAllowlist = nullptr;
