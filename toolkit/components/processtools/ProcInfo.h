@@ -77,9 +77,6 @@ enum class UtilityActorName {
 };
 
 
-nsCString GetUtilityActorName(const UtilityActorName aActorName);
-
-
 
 
 int GetCycleTimeFrequencyMHz();

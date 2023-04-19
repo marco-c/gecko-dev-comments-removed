@@ -10,12 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-
-add_setup(async function ensureNoExistingProcess() {
-  await killPendingUtilityProcess();
-});
-
 add_task(async () => {
   const utilityPid = await startUtilityProcess();
 
