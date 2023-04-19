@@ -1297,14 +1297,6 @@ class PeerConnectionObserver {
 
   
   
-  
-  virtual void OnIceCandidateError(const std::string& host_candidate,
-                                   const std::string& url,
-                                   int error_code,
-                                   const std::string& error_text) {}
-
-  
-  
   virtual void OnIceCandidateError(const std::string& address,
                                    int port,
                                    const std::string& url,
