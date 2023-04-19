@@ -3499,7 +3499,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 130;
+    const UI_VERSION = 131;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4298,6 +4298,10 @@ BrowserGlue.prototype = {
     
     if (currentUIVersion < 130) {
       migrateXULAttributeToStyle("sidebar-box", "width");
+    }
+
+    if (currentUIVersion < 131) {
+      xulStore.removeValue(BROWSER_DOCURL, "urlbar-container", "width");
     }
 
     
