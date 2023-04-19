@@ -9,6 +9,7 @@
 #include "nsIIDNService.h"
 #include "nsCOMPtr.h"
 #include "nsWeakReference.h"
+#include "nsThreadUtils.h"
 
 #include "mozilla/Mutex.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
@@ -175,15 +176,6 @@ class nsIDNService final : public nsIIDNService,
 
   
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist MOZ_GUARDED_BY(mLock);
-
-  
-
-
-
-
-
-
-  bool mShowPunycode MOZ_GUARDED_BY(mLock) = false;
 
   
 

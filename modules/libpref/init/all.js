@@ -1426,11 +1426,6 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 
 
-pref("network.IDN_show_punycode", false);
-
-
-
-
 
 
 
