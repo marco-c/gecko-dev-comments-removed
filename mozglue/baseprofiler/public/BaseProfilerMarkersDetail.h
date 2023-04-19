@@ -72,7 +72,23 @@ struct Streaming {
       DeserializerTag aTag);
 
   
-  MFBT_API static Span<const MarkerTypeFunctions> MarkerTypeFunctionsArray();
+  
+  class LockedMarkerTypeFunctionsList {
+   public:
+    MFBT_API LockedMarkerTypeFunctionsList();
+    MFBT_API ~LockedMarkerTypeFunctionsList();
+
+    LockedMarkerTypeFunctionsList(const LockedMarkerTypeFunctionsList&) =
+        delete;
+    LockedMarkerTypeFunctionsList& operator=(
+        const LockedMarkerTypeFunctionsList&) = delete;
+
+    auto begin() const { return mMarkerTypeFunctionsSpan.begin(); }
+    auto end() const { return mMarkerTypeFunctionsSpan.end(); }
+
+   private:
+    Span<const MarkerTypeFunctions> mMarkerTypeFunctionsSpan;
+  };
 };
 
 

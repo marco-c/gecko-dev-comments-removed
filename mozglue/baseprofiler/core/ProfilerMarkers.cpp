@@ -17,13 +17,27 @@ namespace base_profiler_markers_detail {
 using DeserializerTagAtomic = unsigned;
 
 
-static Atomic<DeserializerTagAtomic, MemoryOrdering::Relaxed>
+
+
+static constexpr DeserializerTagAtomic scExclusiveLock = 0x80'00'00'00u;
+
+
+
+static constexpr DeserializerTagAtomic scSharedLockUnit = 0x00'01'00'00u;
+
+static constexpr DeserializerTagAtomic scTagMask = 0x00'00'FF'FFu;
+
+
+
+static Atomic<DeserializerTagAtomic, MemoryOrdering::ReleaseAcquire>
     sDeserializerCount{0};
 
 
 
 
 static constexpr DeserializerTagAtomic DeserializerMax = 250;
+static_assert(DeserializerMax <= scTagMask,
+              "DeserializerMax doesn't fit in scTagMask");
 
 static_assert(
     DeserializerMax <= std::numeric_limits<Streaming::DeserializerTag>::max(),
@@ -49,13 +63,37 @@ static Streaming::MarkerTypeFunctions
   MOZ_RELEASE_ASSERT(!!aMarkerTypeNameFunction);
   MOZ_RELEASE_ASSERT(!!aMarkerSchemaFunction);
 
-  DeserializerTagAtomic tag = ++sDeserializerCount;
+  
+  DeserializerTagAtomic tagWithLock = (sDeserializerCount += scSharedLockUnit);
+
+  
+  while ((tagWithLock & scExclusiveLock) != 0u) {
+    tagWithLock = sDeserializerCount;
+  }
+
+  MOZ_ASSERT(
+      
+      tagWithLock / scSharedLockUnit <
+          
+          
+          scExclusiveLock / scSharedLockUnit / 2,
+      "The shared lock count is getting unexpectedly high, verify the "
+      "algorithm, and tweak constants if needed");
+
+  
+  
+  
+  const DeserializerTagAtomic tag = ++sDeserializerCount & scTagMask;
+
   MOZ_RELEASE_ASSERT(
       tag <= DeserializerMax,
       "Too many deserializers, consider increasing DeserializerMax. "
       "Or is a deserializer stored again and again?");
   sMarkerTypeFunctions1Based[tag - 1] = {aDeserializer, aMarkerTypeNameFunction,
                                          aMarkerSchemaFunction};
+
+  
+  sDeserializerCount -= scSharedLockUnit;
 
   return static_cast<DeserializerTag>(tag);
 }
@@ -69,9 +107,38 @@ static Streaming::MarkerTypeFunctions
   return sMarkerTypeFunctions1Based[aTag - 1].mMarkerDataDeserializer;
 }
 
- Span<const Streaming::MarkerTypeFunctions>
-Streaming::MarkerTypeFunctionsArray() {
-  return {sMarkerTypeFunctions1Based, sDeserializerCount};
+Streaming::LockedMarkerTypeFunctionsList::LockedMarkerTypeFunctionsList() {
+  for (;;) {
+    const DeserializerTagAtomic count = sDeserializerCount;
+    if ((count & scTagMask) != count) {
+      
+      continue;
+    }
+
+    
+    if (!sDeserializerCount.compareExchange(count, count | scExclusiveLock)) {
+      
+      continue;
+    }
+
+    
+    
+    
+    
+    mMarkerTypeFunctionsSpan = {sMarkerTypeFunctions1Based, count};
+    break;
+  }
+}
+
+Streaming::LockedMarkerTypeFunctionsList::~LockedMarkerTypeFunctionsList() {
+  MOZ_ASSERT(
+      (sDeserializerCount & scExclusiveLock) == scExclusiveLock,
+      "sDeserializerCount should still have the the exclusive lock bit set");
+  MOZ_ASSERT(
+      (sDeserializerCount & scTagMask) ==
+          DeserializerTagAtomic(mMarkerTypeFunctionsSpan.size()),
+      "sDeserializerCount should have the same count since construction");
+  sDeserializerCount &= ~scExclusiveLock;
 }
 
 
