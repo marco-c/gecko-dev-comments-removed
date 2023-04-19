@@ -1231,7 +1231,15 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadRLEAbsolute(
   if (mCurrentPos + n > uint32_t(mH.mWidth)) {
     
     
-    return Transition::TerminateSuccess();
+    if (mH.mCompression == Compression::RLE8 && n > 0 && (n & 1) == 0 &&
+        mCurrentPos + n - uint32_t(mH.mWidth) == 1 && aLength > 0 &&
+        aData[aLength - 1] == 0) {
+      n--;
+    } else {
+      
+      
+      return Transition::TerminateSuccess();
+    }
   }
 
   
