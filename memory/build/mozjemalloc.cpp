@@ -163,6 +163,11 @@
 #include "Mutex.h"
 #include "Utils.h"
 
+
+#if defined(XP_WIN) && !defined(JS_STANDALONE)
+#  include "mozilla/ProcessType.h"
+#endif
+
 using namespace mozilla;
 
 
@@ -1365,13 +1370,8 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 }
 
 
+
 #ifdef XP_WIN
-
-
-static bool sShouldAlwaysStall = true;
-MOZ_JEMALLOC_API void mozjemalloc_win_set_always_stall(bool aVal) {
-  sShouldAlwaysStall = aVal;
-}
 
 
 namespace MozAllocRetries {
@@ -1383,12 +1383,20 @@ constexpr size_t kMaxAttempts = 10;
 constexpr size_t kDelayMs = 50;
 
 Atomic<bool> sHasStalled{false};
-static bool ShouldStallAndRetry() {
-  if (sShouldAlwaysStall) {
+static inline bool ShouldStallAndRetry() {
+#  if defined(JS_STANDALONE)
+  
+  
+  
+  return true;
+#  else
+  
+  if (GetGeckoProcessType() == GeckoProcessType::GeckoProcessType_Default) {
     return true;
   }
   
   return sHasStalled.compareExchange(false, true);
+#  endif
 }
 
 
@@ -1453,7 +1461,7 @@ static bool ShouldStallAndRetry() {
 }  
 
 using MozAllocRetries::MozVirtualAlloc;
-#endif    
+#endif  
 
 
 

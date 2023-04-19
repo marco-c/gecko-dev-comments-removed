@@ -61,11 +61,6 @@ static inline void jemalloc_stats(jemalloc_stats_t* aStats) {
 }
 #  endif
 
-
-#  if defined(XP_WIN)
-MOZ_JEMALLOC_API void mozjemalloc_win_set_always_stall(bool);
-#  endif
-
 #endif  
 
 #define NOTHROW_MALLOC_DECL(name, return_type, ...) \
