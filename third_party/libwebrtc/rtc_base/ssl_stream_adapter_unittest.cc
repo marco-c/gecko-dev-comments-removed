@@ -510,6 +510,7 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
 
   
   
+  
   void TestHandshakeWithDelayedIdentity(bool valid_identity) {
     server_ssl_->SetMode(dtls_ ? rtc::SSL_MODE_DTLS : rtc::SSL_MODE_TLS);
     client_ssl_->SetMode(dtls_ ? rtc::SSL_MODE_DTLS : rtc::SSL_MODE_TLS);
@@ -524,14 +525,9 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
     }
 
     
-    int rv;
-
     server_ssl_->SetServerRole();
-    rv = server_ssl_->StartSSL();
-    ASSERT_EQ(0, rv);
-
-    rv = client_ssl_->StartSSL();
-    ASSERT_EQ(0, rv);
+    ASSERT_EQ(0, server_ssl_->StartSSL());
+    ASSERT_EQ(0, client_ssl_->StartSSL());
 
     
     EXPECT_TRUE_WAIT(
@@ -549,14 +545,55 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
 
     
     
-    SetPeerIdentitiesByDigest(valid_identity, valid_identity);
+    unsigned char server_digest[20];
+    size_t server_digest_len;
+    unsigned char client_digest[20];
+    size_t client_digest_len;
+    bool rv;
+
+    rv = server_identity()->certificate().ComputeDigest(
+        rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
+    ASSERT_TRUE(rv);
+    rv = client_identity()->certificate().ComputeDigest(
+        rtc::DIGEST_SHA_1, client_digest, 20, &client_digest_len);
+    ASSERT_TRUE(rv);
+
+    if (!valid_identity) {
+      RTC_LOG(LS_INFO) << "Setting bogus digest for client/server certs";
+      client_digest[0]++;
+      server_digest[0]++;
+    }
+
+    
+    rtc::SSLPeerCertificateDigestError err;
+    rtc::SSLPeerCertificateDigestError expected_err =
+        valid_identity
+            ? rtc::SSLPeerCertificateDigestError::NONE
+            : rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
+    rv = client_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, server_digest,
+                                               server_digest_len, &err);
+    EXPECT_EQ(expected_err, err);
+    EXPECT_EQ(valid_identity, rv);
     
     
     if (valid_identity) {
       EXPECT_EQ(rtc::SS_OPEN, client_ssl_->GetState());
-      EXPECT_EQ(rtc::SS_OPEN, server_ssl_->GetState());
+      
+      
+      EXPECT_EQ(rtc::SR_SUCCESS, client_ssl_->Write(&packet, 1, &sent, 0));
+      EXPECT_EQ(rtc::SR_BLOCK, server_ssl_->Read(&packet, 1, 0, 0));
     } else {
       EXPECT_EQ(rtc::SS_CLOSED, client_ssl_->GetState());
+    }
+
+    
+    rv = server_ssl_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, client_digest,
+                                               client_digest_len, &err);
+    EXPECT_EQ(expected_err, err);
+    EXPECT_EQ(valid_identity, rv);
+    if (valid_identity) {
+      EXPECT_EQ(rtc::SS_OPEN, server_ssl_->GetState());
+    } else {
       EXPECT_EQ(rtc::SS_CLOSED, server_ssl_->GetState());
     }
   }

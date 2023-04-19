@@ -21,6 +21,19 @@ namespace rtc {
 
 namespace openssl {
 
+#ifdef OPENSSL_IS_BORINGSSL
+
+
+
+bool ParseCertificate(CRYPTO_BUFFER* cert_buffer,
+                      CBS* signature_algorithm_oid,
+                      int64_t* expiration_time);
+#endif
+
+
+
+
+
 
 bool VerifyPeerCertMatchesHost(SSL* ssl, const std::string& host);
 
@@ -34,6 +47,10 @@ void LogSSLErrors(const std::string& prefix);
 
 bool LoadBuiltinSSLRootCertificates(SSL_CTX* ssl_ctx);
 #endif  
+
+#ifdef OPENSSL_IS_BORINGSSL
+CRYPTO_BUFFER_POOL* GetBufferPool();
+#endif
 
 }  
 }  

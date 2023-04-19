@@ -21,7 +21,11 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/buffer.h"
+#ifdef OPENSSL_IS_BORINGSSL
+#include "rtc_base/boringssl_identity.h"
+#else
 #include "rtc_base/openssl_identity.h"
+#endif
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
@@ -71,7 +75,7 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   ~OpenSSLStreamAdapter() override;
 
   void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
-  OpenSSLIdentity* GetIdentityForTesting() const override;
+  SSLIdentity* GetIdentityForTesting() const override;
 
   
   void SetServerRole(SSLRole role = SSL_SERVER) override;
@@ -179,9 +183,16 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   SSL_CTX* SetupSSLContext();
   
   bool VerifyPeerCertificate();
+
+#ifdef OPENSSL_IS_BORINGSSL
+  
+  static enum ssl_verify_result_t SSLVerifyCallback(SSL* ssl,
+                                                    uint8_t* out_alert);
+#else
   
   
   static int SSLVerifyCallback(X509_STORE_CTX* store, void* arg);
+#endif
 
   bool WaitingToVerifyPeerCertificate() const {
     return GetClientAuthEnabled() && !peer_certificate_verified_;
@@ -208,7 +219,11 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   SSL_CTX* ssl_ctx_;
 
   
+#ifdef OPENSSL_IS_BORINGSSL
+  std::unique_ptr<BoringSSLIdentity> identity_;
+#else
   std::unique_ptr<OpenSSLIdentity> identity_;
+#endif
   
   
   std::unique_ptr<SSLCertChain> peer_cert_chain_;
