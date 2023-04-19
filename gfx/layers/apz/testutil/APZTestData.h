@@ -92,7 +92,7 @@ class APZTestData {
   }
 
   
-  bool ToJS(JS::MutableHandleValue aOutValue, JSContext* aContext) const;
+  bool ToJS(JS::MutableHandle<JS::Value> aOutValue, JSContext* aContext) const;
 
   
   
