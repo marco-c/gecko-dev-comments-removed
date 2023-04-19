@@ -175,6 +175,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   DurationMap mDurationMap;
   const bool mLowLatency;
+  AVDiscard mFrameDrop = AVDISCARD_DEFAULT;
 
   
   Maybe<Atomic<bool>> mIsUsingShmemBufferForDecode;
