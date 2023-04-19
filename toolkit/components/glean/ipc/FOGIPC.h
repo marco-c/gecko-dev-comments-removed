@@ -92,6 +92,24 @@ void TestTriggerMetrics(uint32_t processType,
 
 void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount);
+
+
+
+
+
+
+
+
+void RecordIPCSentMessage(uint32_t aMessageType);
+
+
+
+
+
+
+
+
+void RecordIPCReceivedMessage(uint32_t aMessageType);
 #endif
 
 void RecordPowerMetrics();
