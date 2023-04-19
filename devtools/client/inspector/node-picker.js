@@ -22,10 +22,10 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 class NodePicker extends EventEmitter {
-  constructor(targetCommand, selection) {
+  constructor(commands, selection) {
     super();
-
-    this.targetCommand = targetCommand;
+    this.commands = commands;
+    this.targetCommand = commands.targetCommand;
 
     
     this.isPicking = false;
@@ -48,6 +48,31 @@ class NodePicker extends EventEmitter {
       return this.stop({ canceled: true });
     }
     return this.start(doFocus);
+  };
+
+  
+
+
+
+
+  #onDocumentEventResourceAvailable = async resources => {
+    const { DOCUMENT_EVENT } = this.commands.resourceCommand.TYPES;
+
+    for (const resource of resources) {
+      if (
+        resource.resourceType == DOCUMENT_EVENT &&
+        resource.name === "dom-complete" &&
+        resource.targetFront.isTopLevel
+      ) {
+        const inspectorFront = await resource.targetFront.getFront("inspector");
+        
+        
+        
+        
+        await inspectorFront.walker.cancelPick();
+        await inspectorFront.walker.pick(this.doFocus);
+      }
+    }
   };
 
   
@@ -146,6 +171,15 @@ class NodePicker extends EventEmitter {
       onAvailable: this.#onTargetAvailable,
     });
 
+    if (this.targetCommand.descriptorFront.isWebExtension) {
+      await this.commands.resourceCommand.watchResources(
+        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this.#onDocumentEventResourceAvailable,
+        }
+      );
+    }
+
     this.emit("picker-started");
   };
 
@@ -172,6 +206,15 @@ class NodePicker extends EventEmitter {
       onAvailable: this.#onTargetAvailable,
     });
 
+    if (this.targetCommand.descriptorFront.isWebExtension) {
+      this.commands.resourceCommand.unwatchResources(
+        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this.#onDocumentEventResourceAvailable,
+        }
+      );
+    }
+
     const promises = [];
     for (const inspectorFront of this.#currentInspectorFronts) {
       promises.push(
@@ -196,6 +239,7 @@ class NodePicker extends EventEmitter {
     
     this.stop({ isDestroyCodepath: true });
     this.targetCommand = null;
+    this.commands = null;
   }
 
   
