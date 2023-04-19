@@ -3065,6 +3065,12 @@ class Extension extends ExtensionData {
 
       
       
+      if (this.type === "theme") {
+        this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+      }
+
+      
+      
       if (INSTALL_AND_UPDATE_STARTUP_REASONS.has(this.startupReason)) {
         if (isMozillaExtension(this)) {
           
