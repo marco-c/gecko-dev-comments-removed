@@ -1535,6 +1535,13 @@ bitflags! {
     }
 }
 
+impl ContainerType {
+    
+    pub fn is_size_container_type(&self) -> bool {
+        self.intersects(ContainerType::SIZE | ContainerType::INLINE_SIZE)
+    }
+}
+
 
 #[repr(transparent)]
 #[derive(
