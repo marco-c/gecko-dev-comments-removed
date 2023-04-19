@@ -954,7 +954,7 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   
 
   MOZ_ASSERT(thing);
-  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+  MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
   TenuredCell* cell = &thing.asCell()->asTenured();
   MOZ_ASSERT(!cell->isMarkedBlack());
@@ -971,18 +971,17 @@ void js::gc::PerformIncrementalReadBarrier(TenuredCell* cell) {
   
 
   MOZ_ASSERT(cell);
+  MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
+
   if (cell->isMarkedBlack()) {
     return;
   }
-
-  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
 
   Zone* zone = cell->zone();
   MOZ_ASSERT(zone->needsIncrementalBarrier());
 
   
   BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
-
   trc->performBarrier(JS::GCCellPtr(cell, cell->getTraceKind()));
 }
 
