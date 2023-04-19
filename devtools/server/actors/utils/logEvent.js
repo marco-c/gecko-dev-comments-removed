@@ -69,18 +69,21 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
     value = value.unsafeDereference();
   }
 
+  const targetActor = threadActor._parent;
   const message = {
     filename: sourceActor.url,
     lineNumber: line,
     columnNumber: column,
     arguments: value,
     level,
+    chromeContext:
+      targetActor.actorID &&
+      /conn\d+\.parentProcessTarget\d+/.test(targetActor.actorID),
     
     
     sourceId: sourceActor.internalSourceId,
   };
 
-  const targetActor = threadActor._parent;
   
   
   const consoleMessageWatcher = getResourceWatcher(
