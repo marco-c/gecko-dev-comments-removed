@@ -82,6 +82,17 @@ interface nsIPermissionManager : nsISupports
 
   Array<nsIPermission> getAllWithTypePrefix(in ACString prefix);
 
+
+  
+
+
+
+
+
+
+
+  Array<nsIPermission> getAllByTypes(in Array<ACString> types);
+
   
 
 
