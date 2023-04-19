@@ -1389,6 +1389,9 @@ static inline bool ShouldStallAndRetry() {
   
   
   return true;
+#  elif defined(NIGHTLY_BUILD)
+  
+  return true;
 #  else
   
   if (GetGeckoProcessType() == GeckoProcessType::GeckoProcessType_Default) {
