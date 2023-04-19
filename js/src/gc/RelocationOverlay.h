@@ -29,7 +29,7 @@ class RelocationOverlay : public Cell {
   
   Cell* forwardingAddress() const {
     MOZ_ASSERT(isForwarded());
-    return reinterpret_cast<Cell*>(header_ & ~RESERVED_MASK);
+    return reinterpret_cast<Cell*>(header_.getForwardingAddress());
   }
 
  protected:
