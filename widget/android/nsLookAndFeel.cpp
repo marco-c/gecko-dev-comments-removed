@@ -112,7 +112,8 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
   
   
   auto UseNativeAccent = [this] {
-    return mSystemColors.colorAccent && StaticPrefs::widget_use_theme_accent();
+    return mSystemColors.colorAccent &&
+           StaticPrefs::widget_non_native_theme_use_theme_accent();
   };
 
   switch (aID) {
