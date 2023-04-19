@@ -1034,7 +1034,11 @@ struct JSRuntime {
   }
 
  private:
-  js::MainThreadOrParseData<js::RuntimeCaches> caches_;
+  
+  
+  
+  
+  js::MainThreadOrParseOrIonCompileData<js::RuntimeCaches> caches_;
 
  public:
   js::RuntimeCaches& caches() { return caches_.ref(); }

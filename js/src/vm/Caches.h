@@ -106,9 +106,9 @@ class MegamorphicCache {
  public:
   static constexpr size_t NumEntries = 1024;
   
-  static constexpr size_t ShapeHashShift1 = 3;
+  static constexpr uint8_t ShapeHashShift1 = 3;
   
-  static constexpr size_t ShapeHashShift2 = ShapeHashShift1 + 10;
+  static constexpr uint8_t ShapeHashShift2 = ShapeHashShift1 + 10;
 
   class Entry {
     
@@ -127,14 +127,15 @@ class MegamorphicCache {
     
     
     
-    static constexpr size_t MaxHopsForDataProperty = UINT8_MAX - 2;
-    static constexpr size_t NumHopsForMissingProperty = UINT8_MAX - 1;
-    static constexpr size_t NumHopsForMissingOwnProperty = UINT8_MAX;
     uint8_t numHops_ = 0;
 
     friend class MegamorphicCache;
 
    public:
+    static constexpr uint8_t MaxHopsForDataProperty = UINT8_MAX - 2;
+    static constexpr uint8_t NumHopsForMissingProperty = UINT8_MAX - 1;
+    static constexpr uint8_t NumHopsForMissingOwnProperty = UINT8_MAX;
+
     void init(Shape* shape, PropertyKey key, uint16_t generation,
               uint8_t numHops, uint16_t slot) {
       shape_ = shape;
@@ -160,6 +161,20 @@ class MegamorphicCache {
       MOZ_ASSERT(isDataProperty());
       return slot_;
     }
+
+    static constexpr size_t offsetOfShape() { return offsetof(Entry, shape_); }
+
+    static constexpr size_t offsetOfKey() { return offsetof(Entry, key_); }
+
+    static constexpr size_t offsetOfGeneration() {
+      return offsetof(Entry, generation_);
+    }
+
+    static constexpr size_t offsetOfSlot() { return offsetof(Entry, slot_); }
+
+    static constexpr size_t offsetOfNumHops() {
+      return offsetof(Entry, numHops_);
+    }
   };
 
  private:
@@ -168,6 +183,7 @@ class MegamorphicCache {
   
   uint16_t generation_ = 0;
 
+  
   Entry& getEntry(Shape* shape, PropertyKey key) {
     static_assert(mozilla::IsPowerOfTwo(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
@@ -209,6 +225,14 @@ class MegamorphicCache {
       return;
     }
     entry->init(shape, key, generation_, numHops, slot);
+  }
+
+  static constexpr size_t offsetOfEntries() {
+    return offsetof(MegamorphicCache, entries_);
+  }
+
+  static constexpr size_t offsetOfGeneration() {
+    return offsetof(MegamorphicCache, generation_);
   }
 };
 
