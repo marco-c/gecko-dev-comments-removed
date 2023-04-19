@@ -1365,6 +1365,83 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 }
 
 
+#ifdef XP_WIN
+#  ifdef MOZ_STALL_ON_OOM
+
+
+namespace MozAllocRetries {
+
+
+constexpr size_t kMaxAttempts = 10;
+
+
+constexpr size_t kDelayMs = 50;
+
+
+
+
+
+
+[[nodiscard]] void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
+                                    DWORD flAllocationType, DWORD flProtect) {
+  constexpr auto IsOOMError = [] {
+    switch (::GetLastError()) {
+      
+      case ERROR_COMMITMENT_LIMIT:
+      
+      
+      
+      
+      case ERROR_NOT_ENOUGH_MEMORY:
+        return true;
+    }
+    return false;
+  };
+
+  {
+    void* ptr = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+    if (MOZ_LIKELY(ptr)) return ptr;
+
+    
+    if (!IsOOMError()) return nullptr;
+    
+    
+    if (!(flAllocationType & MEM_COMMIT)) return nullptr;
+  }
+
+  
+  
+  for (size_t i = 0; i < kMaxAttempts; ++i) {
+    ::Sleep(kDelayMs);
+    void* ptr = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+
+    if (ptr) {
+      
+      
+      if (IsOOMError()) {
+        ::SetLastError(0);
+      }
+      return ptr;
+    }
+
+    
+    if (!IsOOMError()) {
+      return nullptr;
+    }
+  }
+
+  
+  return nullptr;
+}
+}  
+
+using MozAllocRetries::MozVirtualAlloc;
+#  else
+using MozVirtualAlloc = VirtualAlloc;
+#  endif  
+#endif    
+
+
 
 static inline void pages_decommit(void* aAddr, size_t aSize) {
 #ifdef XP_WIN
@@ -1413,7 +1490,7 @@ static inline void pages_decommit(void* aAddr, size_t aSize) {
   
   size_t pages_size = std::min(aSize, kChunkSize - GetChunkOffsetForPtr(aAddr));
   while (aSize > 0) {
-    if (!VirtualAlloc(aAddr, pages_size, MEM_COMMIT, PAGE_READWRITE)) {
+    if (!MozVirtualAlloc(aAddr, pages_size, MEM_COMMIT, PAGE_READWRITE)) {
       return false;
     }
     aAddr = (void*)((uintptr_t)aAddr + pages_size);
@@ -1558,7 +1635,7 @@ using UniqueBaseNode =
 
 static void* pages_map(void* aAddr, size_t aSize) {
   void* ret = nullptr;
-  ret = VirtualAlloc(aAddr, aSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  ret = MozVirtualAlloc(aAddr, aSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   return ret;
 }
 
