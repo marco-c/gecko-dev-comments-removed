@@ -318,16 +318,19 @@ SECStatus DetermineCertOverrideErrors(const nsCOMPtr<nsIX509Cert>& cert,
           certInput, mozilla::pkix::EndEntityOrCA::MustBeEndEntity, nullptr);
       Result rv = backCert.Init();
       if (rv != Success) {
-        MapResultToPRErrorCode(rv);
+        PR_SetError(MapResultToPRErrorCode(rv), 0);
         return SECFailure;
       }
       mozilla::pkix::Time notBefore(mozilla::pkix::Time::uninitialized);
       mozilla::pkix::Time notAfter(mozilla::pkix::Time::uninitialized);
+      
+      
       rv = mozilla::pkix::ParseValidity(backCert.GetValidity(), &notBefore,
                                         &notAfter);
       if (rv != Success) {
-        MapResultToPRErrorCode(rv);
-        return SECFailure;
+        collectedErrors |= nsICertOverrideService::ERROR_TIME;
+        errorCodeTime = MapResultToPRErrorCode(rv);
+        break;
       }
       
       
