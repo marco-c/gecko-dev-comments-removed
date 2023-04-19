@@ -8601,7 +8601,11 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    if (!aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
+    
+    if (Maybe<nscoord> containBSize =
+            aReflowInput.mFrame->ContainIntrinsicBSize()) {
+      bSize = *containBSize;
+    } else {
       if (IsMasonry(eLogicalAxisBlock)) {
         bSize = computedBSize;
       } else {
@@ -8625,7 +8629,11 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    if (!aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
+    
+    if (Maybe<nscoord> containBSize =
+            aReflowInput.mFrame->ContainIntrinsicBSize()) {
+      bSize = *containBSize;
+    } else {
       const uint32_t numRows = gridReflowInput.mRows.mSizes.Length();
       bSize = gridReflowInput.mRows.GridLineEdge(numRows,
                                                  GridLineSide::AfterGridGap);
@@ -9355,8 +9363,9 @@ nscoord nsGridContainerFrame::GetMinISize(gfxContext* aRC) {
 
   DISPLAY_MIN_INLINE_SIZE(this, mCachedMinISize);
   if (mCachedMinISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
-    mCachedMinISize = StyleDisplay()->GetContainSizeAxes().mIContained
-                          ? 0
+    Maybe<nscoord> containISize = ContainIntrinsicISize();
+    mCachedMinISize = containISize
+                          ? *containISize
                           : IntrinsicISize(aRC, IntrinsicISizeType::MinISize);
   }
   return mCachedMinISize;
@@ -9370,8 +9379,9 @@ nscoord nsGridContainerFrame::GetPrefISize(gfxContext* aRC) {
 
   DISPLAY_PREF_INLINE_SIZE(this, mCachedPrefISize);
   if (mCachedPrefISize == NS_INTRINSIC_ISIZE_UNKNOWN) {
-    mCachedPrefISize = StyleDisplay()->GetContainSizeAxes().mIContained
-                           ? 0
+    Maybe<nscoord> containISize = ContainIntrinsicISize();
+    mCachedPrefISize = containISize
+                           ? *containISize
                            : IntrinsicISize(aRC, IntrinsicISizeType::PrefISize);
   }
   return mCachedPrefISize;
