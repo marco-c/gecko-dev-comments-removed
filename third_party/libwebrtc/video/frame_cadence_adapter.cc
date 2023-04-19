@@ -11,11 +11,15 @@
 #include "video/frame_cadence_adapter.h"
 
 #include <memory>
+#include <utility>
 
 #include "api/sequence_checker.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -24,7 +28,7 @@ namespace {
 
 class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
  public:
-  FrameCadenceAdapterImpl();
+  explicit FrameCadenceAdapterImpl(TaskQueueBase* worker_queue);
 
   
   void Initialize(Callback* callback) override;
@@ -38,8 +42,12 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
 
  private:
   
-  void MaybeReportFrameRateConstraintUmas()
-      RTC_RUN_ON(&incoming_frame_race_checker_) RTC_LOCKS_EXCLUDED(mutex_);
+  void OnFrameOnMainQueue(const VideoFrame& frame) RTC_RUN_ON(worker_queue_);
+
+  
+  void MaybeReportFrameRateConstraintUmas() RTC_RUN_ON(&worker_queue_);
+
+  TaskQueueBase* const worker_queue_;
 
   
   
@@ -49,34 +57,35 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   Callback* callback_ = nullptr;
 
   
-  
-  
-  Mutex mutex_;
-
-  
   absl::optional<VideoTrackSourceConstraints> source_constraints_
-      RTC_GUARDED_BY(mutex_);
+      RTC_GUARDED_BY(worker_queue_);
 
   
-  bool zero_hertz_and_uma_reporting_enabled_ RTC_GUARDED_BY(mutex_) = false;
+  bool zero_hertz_and_uma_reporting_enabled_ RTC_GUARDED_BY(worker_queue_) =
+      false;
 
   
   
   rtc::RaceChecker incoming_frame_race_checker_;
-  bool has_reported_screenshare_frame_rate_umas_ RTC_GUARDED_BY(mutex_) = false;
+  bool has_reported_screenshare_frame_rate_umas_ RTC_GUARDED_BY(worker_queue_) =
+      false;
+
+  ScopedTaskSafety safety_;
 };
 
-FrameCadenceAdapterImpl::FrameCadenceAdapterImpl()
-    : zero_hertz_screenshare_enabled_(
-          field_trial::IsEnabled("WebRTC-ZeroHertzScreenshare")) {}
+FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(TaskQueueBase* worker_queue)
+    : worker_queue_(worker_queue),
+      zero_hertz_screenshare_enabled_(
+          field_trial::IsEnabled("WebRTC-ZeroHertzScreenshare")) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+}
 
 void FrameCadenceAdapterImpl::Initialize(Callback* callback) {
   callback_ = callback;
 }
 
 void FrameCadenceAdapterImpl::SetZeroHertzModeEnabled(bool enabled) {
-  
-  MutexLock lock(&mutex_);
+  RTC_DCHECK_RUN_ON(worker_queue_);
   if (enabled && !zero_hertz_and_uma_reporting_enabled_)
     has_reported_screenshare_frame_rate_umas_ = false;
   zero_hertz_and_uma_reporting_enabled_ = enabled;
@@ -86,8 +95,11 @@ void FrameCadenceAdapterImpl::OnFrame(const VideoFrame& frame) {
   
   
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
-  callback_->OnFrame(frame);
-  MaybeReportFrameRateConstraintUmas();
+  worker_queue_->PostTask(ToQueuedTask(safety_, [this, frame] {
+    RTC_DCHECK_RUN_ON(worker_queue_);
+    OnFrameOnMainQueue(std::move(frame));
+    MaybeReportFrameRateConstraintUmas();
+  }));
 }
 
 void FrameCadenceAdapterImpl::OnConstraintsChanged(
@@ -95,13 +107,19 @@ void FrameCadenceAdapterImpl::OnConstraintsChanged(
   RTC_LOG(LS_INFO) << __func__ << " min_fps "
                    << constraints.min_fps.value_or(-1) << " max_fps "
                    << constraints.max_fps.value_or(-1);
-  MutexLock lock(&mutex_);
-  source_constraints_ = constraints;
+  worker_queue_->PostTask(ToQueuedTask(safety_, [this, constraints] {
+    RTC_DCHECK_RUN_ON(worker_queue_);
+    source_constraints_ = constraints;
+  }));
+}
+
+
+void FrameCadenceAdapterImpl::OnFrameOnMainQueue(const VideoFrame& frame) {
+  callback_->OnFrame(frame);
 }
 
 
 void FrameCadenceAdapterImpl::MaybeReportFrameRateConstraintUmas() {
-  MutexLock lock(&mutex_);
   if (has_reported_screenshare_frame_rate_umas_)
     return;
   has_reported_screenshare_frame_rate_umas_ = true;
@@ -157,8 +175,8 @@ void FrameCadenceAdapterImpl::MaybeReportFrameRateConstraintUmas() {
 }  
 
 std::unique_ptr<FrameCadenceAdapterInterface>
-FrameCadenceAdapterInterface::Create() {
-  return std::make_unique<FrameCadenceAdapterImpl>();
+FrameCadenceAdapterInterface::Create(TaskQueueBase* worker_queue) {
+  return std::make_unique<FrameCadenceAdapterImpl>(worker_queue);
 }
 
 }  
