@@ -43,6 +43,9 @@
   if (outError) {
     *outError = nil;
   }
+  if (![self checkLock:outError]) {
+    return NO;
+  }
 
   
   
