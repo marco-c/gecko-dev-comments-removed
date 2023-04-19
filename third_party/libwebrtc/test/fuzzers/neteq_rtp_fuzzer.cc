@@ -8,7 +8,9 @@
 
 
 
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -64,6 +66,7 @@ class FuzzRtpInput : public NetEqInput {
                                       std::numeric_limits<int64_t>::max()));
     packet_ = input_->PopPacket();
     FuzzHeader();
+    MaybeFuzzPayload();
   }
 
   absl::optional<int64_t> NextPacketTime() const override {
@@ -79,6 +82,7 @@ class FuzzRtpInput : public NetEqInput {
     std::unique_ptr<PacketData> packet_to_return = std::move(packet_);
     packet_ = input_->PopPacket();
     FuzzHeader();
+    MaybeFuzzPayload();
     return packet_to_return;
   }
 
@@ -114,6 +118,30 @@ class FuzzRtpInput : public NetEqInput {
         ByteReader<uint32_t>::ReadLittleEndian(&data_[data_ix_]);
     data_ix_ += sizeof(uint32_t);
     RTC_CHECK_EQ(data_ix_ - start_ix, kNumBytesToFuzz);
+  }
+
+  void MaybeFuzzPayload() {
+    
+    if (data_ix_ + 1 > data_.size()) {
+      ended_ = true;
+      return;
+    }
+    size_t bytes_to_fuzz = data_[data_ix_++];
+
+    
+    
+    bytes_to_fuzz = std::min(bytes_to_fuzz % 16, packet_->payload.size());
+
+    if (bytes_to_fuzz == 0)
+      return;
+
+    if (data_ix_ + bytes_to_fuzz > data_.size()) {
+      ended_ = true;
+      return;
+    }
+
+    std::memcpy(packet_->payload.data(), &data_[data_ix_], bytes_to_fuzz);
+    data_ix_ += bytes_to_fuzz;
   }
 
   bool ended_ = false;
