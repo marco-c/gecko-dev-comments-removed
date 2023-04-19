@@ -2850,14 +2850,12 @@ void nsWindow::UpdateDarkModeToolbar() {
 
 
 
-bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
+bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   if (!mCustomNonClient) {
     return false;
   }
 
-  if (aSizeMode == -1) {
-    aSizeMode = mFrameState->GetSizeMode();
-  }
+  const nsSizeMode sizeMode = mFrameState->GetSizeMode();
 
   bool hasCaption = (mBorderStyle & (eBorderStyle_all | eBorderStyle_title |
                                      eBorderStyle_menu | eBorderStyle_default));
@@ -2909,13 +2907,13 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
                     : 0);
   }
 
-  if (aSizeMode == nsSizeMode_Minimized) {
+  if (sizeMode == nsSizeMode_Minimized) {
     
     mNonClientOffset.top = 0;
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
     mNonClientOffset.bottom = 0;
-  } else if (aSizeMode == nsSizeMode_Fullscreen) {
+  } else if (sizeMode == nsSizeMode_Fullscreen) {
     
     
     
@@ -2924,7 +2922,7 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
     mNonClientOffset.bottom = mVertResizeMargin;
     mNonClientOffset.left = mHorResizeMargin;
     mNonClientOffset.right = mHorResizeMargin;
-  } else if (aSizeMode == nsSizeMode_Maximized) {
+  } else if (sizeMode == nsSizeMode_Maximized) {
     
     
     
@@ -3738,7 +3736,7 @@ void nsWindow::OnFullscreenWillChange(bool aFullScreen) {
 void nsWindow::OnFullscreenChanged(bool aFullScreen) {
   
   
-  UpdateNonClientMargins(mFrameState->GetSizeMode(),  !aFullScreen);
+  UpdateNonClientMargins( !aFullScreen);
 
   
   
@@ -3752,7 +3750,7 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
     DispatchFocusToTopLevelWindow(true);
   }
 
-  OnSizeModeChange(mFrameState->GetSizeMode());
+  OnSizeModeChange();
 
   if (mWidgetListener) {
     mWidgetListener->FullscreenChanged(aFullScreen);
@@ -7061,7 +7059,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
 
     
     if (mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
-      if (UpdateNonClientMargins(nsSizeMode_Maximized, true)) {
+      if (UpdateNonClientMargins(true)) {
         
         return;
       }
@@ -7596,29 +7594,31 @@ bool nsWindow::OnResize(const LayoutDeviceIntSize& aSize) {
   return result;
 }
 
-void nsWindow::OnSizeModeChange(nsSizeMode aSizeMode) {
+void nsWindow::OnSizeModeChange() {
+  const nsSizeMode mode = mFrameState->GetSizeMode();
+
   MOZ_LOG(gWindowsLog, LogLevel::Info,
-          ("nsWindow::OnSizeModeChange() aSizeMode %d", aSizeMode));
+          ("nsWindow::OnSizeModeChange() sizeMode %d", mode));
 
   if (NeedsToTrackWindowOcclusionState()) {
     WinWindowOcclusionTracker::Get()->OnWindowVisibilityChanged(
-        this, aSizeMode != nsSizeMode_Minimized);
+        this, mode != nsSizeMode_Minimized);
 
     wr::DebugFlags flags{0};
     flags.bits = gfx::gfxVars::WebRenderDebugFlags();
     bool debugEnabled = bool(flags & wr::DebugFlags::WINDOW_VISIBILITY_DBG);
     if (debugEnabled && mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->NotifyVisibilityUpdated(aSizeMode,
+      mCompositorWidgetDelegate->NotifyVisibilityUpdated(mode,
                                                          mIsFullyOccluded);
     }
   }
 
   if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->OnWindowModeChange(aSizeMode);
+    mCompositorWidgetDelegate->OnWindowModeChange(mode);
   }
 
   if (mWidgetListener) {
-    mWidgetListener->SizeModeChanged(aSizeMode);
+    mWidgetListener->SizeModeChanged(mode);
   }
 }
 
@@ -9433,16 +9433,17 @@ void nsWindow::FrameState::OnFrameChanging() {
     return;
   }
 
-  WINDOWPLACEMENT pl;
-  pl.length = sizeof(pl);
-  ::GetWindowPlacement(mWindow->mWnd, &pl);
+  const nsSizeMode previousSizeMode = mSizeMode;
 
   const nsSizeMode newSizeMode =
       GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
+  EnsureSizeMode(newSizeMode);
 
-  mWindow->OnSizeModeChange(newSizeMode);
+  if (previousSizeMode != mSizeMode) {
+    mWindow->OnSizeModeChange();
+  }
 
-  mWindow->UpdateNonClientMargins(newSizeMode, false);
+  mWindow->UpdateNonClientMargins(false);
 }
 
 void nsWindow::FrameState::OnFrameChanged() {
@@ -9458,13 +9459,12 @@ void nsWindow::FrameState::OnFrameChanged() {
   
   
   
-  
   mSizeMode = GetSizeModeForWindowFrame(mWindow->mWnd, mFullscreenMode);
 
   MaybeLogSizeMode(mSizeMode);
 
   if (mSizeMode != previousSizeMode) {
-    mWindow->OnSizeModeChange(mSizeMode);
+    mWindow->OnSizeModeChange();
   }
 
   
