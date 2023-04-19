@@ -138,7 +138,6 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
 
 FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
     Clock* clock,
-    RtpStreamReceiverControllerInterface* receiver_controller,
     const Config& config,
     RecoveredPacketReceiver* recovered_packet_receiver,
     RtcpRttStats* rtt_stats,
@@ -155,17 +154,26 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
       process_thread_(process_thread) {
   RTC_LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
 
+  network_thread_checker_.Detach();
+
   
   rtp_rtcp_->SetRTCPStatus(config_.rtcp_mode);
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
+}
 
-  
-  
-  
-  
-  
-  
-  
+FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
+  RTC_LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
+  process_thread_->DeRegisterModule(rtp_rtcp_.get());
+}
+
+void FlexfecReceiveStreamImpl::RegisterWithTransport(
+    RtpStreamReceiverControllerInterface* receiver_controller) {
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  RTC_DCHECK(!rtp_stream_receiver_);
+
+  if (!receiver_)
+    return;
+
   
   
   
@@ -174,9 +182,9 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
       receiver_controller->CreateReceiver(config_.remote_ssrc, this);
 }
 
-FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
-  RTC_LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
-  process_thread_->DeRegisterModule(rtp_rtcp_.get());
+void FlexfecReceiveStreamImpl::UnregisterFromTransport() {
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+  rtp_stream_receiver_.reset();
 }
 
 void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
