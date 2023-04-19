@@ -41,15 +41,17 @@ function Number_toLocaleString() {
 
 
 function Number_isFinite(num) {
-    if (typeof num !== "number")
+    if (typeof num !== "number") {
         return false;
+    }
     return num - num === 0;
 }
 
 
 function Number_isNaN(num) {
-    if (typeof num !== "number")
+    if (typeof num !== "number") {
         return false;
+    }
     return num !== num;
 }
 
@@ -59,8 +61,9 @@ function Number_isInteger(number) {
     
 
     
-    if (typeof number !== "number")
+    if (typeof number !== "number") {
         return false;
+    }
 
     var integer = std_Math_trunc(number);
 
@@ -76,15 +79,17 @@ function Number_isSafeInteger(number) {
     
 
     
-    if (typeof number !== "number")
+    if (typeof number !== "number") {
         return false;
+    }
 
     var integer = std_Math_trunc(number);
 
     
     
-    if (number - integer !== 0)
+    if (number - integer !== 0) {
         return false;
+    }
 
     
     return -((2 ** 53) - 1) <= integer && integer <= (2 ** 53) - 1;
