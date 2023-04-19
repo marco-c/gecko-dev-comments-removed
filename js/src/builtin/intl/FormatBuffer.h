@@ -39,7 +39,20 @@ class FormatBuffer {
   FormatBuffer& operator=(FormatBuffer&& other) noexcept = default;
 
   explicit FormatBuffer(AllocPolicy aP = AllocPolicy())
-      : buffer_(std::move(aP)) {}
+      : buffer_(std::move(aP)) {
+    
+    
+    
+    
+    MOZ_ASSERT(buffer_.capacity() == MinInlineCapacity);
+    if constexpr (MinInlineCapacity > 0) {
+      
+      
+      
+      
+      MOZ_ALWAYS_TRUE(buffer_.reserve(MinInlineCapacity));
+    }
+  }
 
   
   operator mozilla::Span<CharType>() { return buffer_; }
@@ -48,7 +61,11 @@ class FormatBuffer {
   
 
 
-  [[nodiscard]] bool reserve(size_t size) { return buffer_.reserve(size); }
+  [[nodiscard]] bool reserve(size_t size) {
+    
+    
+    return buffer_.reserve(size) && buffer_.reserve(buffer_.capacity());
+  }
 
   
 
@@ -73,8 +90,12 @@ class FormatBuffer {
     
     
     
-    mozilla::DebugOnly<bool> result = buffer_.resizeUninitialized(amount);
-    MOZ_ASSERT(result);
+    size_t curLength = length();
+    if (amount > curLength) {
+      buffer_.infallibleGrowByUninitialized(amount - curLength);
+    } else {
+      buffer_.shrinkBy(curLength - amount);
+    }
   }
 
   
