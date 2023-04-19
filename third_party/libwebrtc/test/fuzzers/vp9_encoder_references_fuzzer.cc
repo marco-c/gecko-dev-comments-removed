@@ -34,6 +34,8 @@ namespace {
 using test::FuzzDataHelper;
 using ::testing::NiceMock;
 
+constexpr int kBitrateEnabledBps = 100'000;
+
 class FrameValidator : public EncodedImageCallback {
  public:
   ~FrameValidator() override = default;
@@ -220,6 +222,9 @@ VideoCodec CodecSettings(FuzzDataHelper& rng) {
       SpatialLayer& spatial_layer = codec_settings.spatialLayers[sid];
       codec_settings.width = 320 << sid;
       codec_settings.height = 180 << sid;
+      spatial_layer.width = codec_settings.width;
+      spatial_layer.height = codec_settings.height;
+      spatial_layer.targetBitrate = kBitrateEnabledBps * num_temporal_layers;
       spatial_layer.maxFramerate = codec_settings.maxFramerate;
       spatial_layer.numberOfTemporalLayers = num_temporal_layers;
     }
@@ -424,7 +429,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     parameters.framerate_fps = 30.0;
     for (int sid = 0; sid < codec.VP9()->numberOfSpatialLayers; ++sid) {
       for (int tid = 0; tid < codec.VP9()->numberOfTemporalLayers; ++tid) {
-        parameters.bitrate.SetBitrate(sid, tid, 100'000);
+        parameters.bitrate.SetBitrate(sid, tid, kBitrateEnabledBps);
       }
     }
     encoder.SetRates(parameters);
@@ -449,6 +454,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         encoder.Encode(fake_image, &frame_types);
         uint8_t encode_spatial_layers = (action >> 4);
         for (size_t sid = 0; sid < state.config.ss_number_layers; ++sid) {
+          if (state.config.ss_target_bitrate[sid] == 0) {
+            
+            continue;
+          }
           bool drop = true;
           switch (state.frame_drop.framedrop_mode) {
             case FULL_SUPERFRAME_DROP:
@@ -480,7 +489,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         for (int sid = 0; sid < codec.VP9()->numberOfSpatialLayers; ++sid) {
           int temporal_layers = (action >> ((1 + sid) * 2)) & 0b11;
           for (int tid = 0; tid < temporal_layers; ++tid) {
-            parameters.bitrate.SetBitrate(sid, tid, 100'000);
+            parameters.bitrate.SetBitrate(sid, tid, kBitrateEnabledBps);
           }
         }
         
