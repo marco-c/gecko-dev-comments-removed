@@ -16,15 +16,12 @@ function test() {
   
   
   
-  var processTypes = [
-    "tab",
-    "socket",
-    "rdd",
-    "gmplugin",
-    "utility:0",
-    "utility:1",
-    "gpu",
-  ];
+  var processTypes = ["tab", "socket", "rdd", "gmplugin", "utility:0", "gpu"];
+
+  const platform = SpecialPowers.Services.appinfo.OS;
+  if (platform === "WINNT" || platform === "Darwin") {
+    processTypes.push("utility:1");
+  }
 
   
   let sandboxTestResult = (subject, topic, data) => {

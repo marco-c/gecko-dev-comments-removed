@@ -38,7 +38,8 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
   
   ::LoadLibraryW(L"winmm.dll");
 
-  if (*sandboxingKind == SandboxingKind::UTILITY_AUDIO_DECODING_GENERIC) {
+  if (*sandboxingKind == SandboxingKind::GENERIC_UTILITY) {
+    
     UtilityAudioDecoderParent::GenericPreloadForSandbox();
   }
 
