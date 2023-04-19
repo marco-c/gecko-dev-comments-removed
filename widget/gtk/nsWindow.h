@@ -525,7 +525,7 @@ class nsWindow final : public nsBaseWidget {
       COMPOSITOR_ENABLED};
   
   
-  int mCompositorPauseTimeoutID = 0;
+  guint mCompositorPauseTimeoutID = 0;
 
   
   nsSizeMode mSizeMode = nsSizeMode_Normal;
