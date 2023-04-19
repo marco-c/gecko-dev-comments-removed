@@ -29,7 +29,7 @@
 #include "rtc_base/string_utils.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
-#include "rtc_base/win32.h"
+#include "rtc_base/win/windows_version.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -295,7 +295,7 @@ WindowCapturerWinGdi::CaptureResults WindowCapturerWinGdi::CaptureFrame(
   
   
   
-  if (rtc::IsWindows8OrLater()) {
+  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
     
     
     

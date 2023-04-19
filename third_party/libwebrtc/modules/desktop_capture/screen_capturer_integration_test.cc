@@ -33,7 +33,7 @@
 
 #if defined(WEBRTC_WIN)
 #include "modules/desktop_capture/win/screen_capturer_win_directx.h"
-#include "rtc_base/win32.h"
+#include "rtc_base/win/windows_version.h"
 #endif  
 
 using ::testing::_;
@@ -338,7 +338,7 @@ TEST_F(ScreenCapturerIntegrationTest,
   
   
   
-  if (rtc::IsWindows8OrLater()) {
+  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
     return;
   }
   CreateMagnifierCapturer();
@@ -351,7 +351,7 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
   
   
   
-  if (rtc::IsWindows8OrLater()) {
+  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
     return;
   }
   CreateMagnifierCapturer();
@@ -362,7 +362,7 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
 
 TEST_F(ScreenCapturerIntegrationTest,
        DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
-  if (!rtc::IsWindows8OrLater()) {
+  if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN8) {
     
     
     
