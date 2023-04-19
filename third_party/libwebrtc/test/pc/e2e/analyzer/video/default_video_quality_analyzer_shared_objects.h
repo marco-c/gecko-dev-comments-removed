@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -156,17 +157,19 @@ struct AnalyzerStats {
 };
 
 struct StatsKey {
-  StatsKey(std::string stream_label, std::string sender, std::string receiver)
-      : stream_label(std::move(stream_label)),
-        sender(std::move(sender)),
-        receiver(std::move(receiver)) {}
+  
+  StatsKey(std::string stream_label,
+           std::string ,
+           std::string receiver)
+      : stream_label(std::move(stream_label)), receiver(std::move(receiver)) {}
+
+  StatsKey(std::string stream_label, std::string receiver)
+      : stream_label(std::move(stream_label)), receiver(std::move(receiver)) {}
 
   std::string ToString() const;
 
   
   std::string stream_label;
-  
-  std::string sender;
   
   std::string receiver;
 };
@@ -174,6 +177,42 @@ struct StatsKey {
 
 bool operator<(const StatsKey& a, const StatsKey& b);
 bool operator==(const StatsKey& a, const StatsKey& b);
+
+
+
+class VideoStreamsInfo {
+ public:
+  std::set<StatsKey> GetStatsKeys() const;
+
+  
+  std::set<std::string> GetStreams() const;
+
+  
+  
+  
+  std::set<std::string> GetStreams(absl::string_view sender_name) const;
+
+  
+  
+  absl::optional<std::string> GetSender(absl::string_view stream_label) const;
+
+  
+  
+  
+  std::set<std::string> GetReceivers(absl::string_view stream_label) const;
+
+ protected:
+  friend class DefaultVideoQualityAnalyzer;
+  VideoStreamsInfo(
+      std::map<std::string, std::string> stream_to_sender,
+      std::map<std::string, std::set<std::string>> sender_to_streams,
+      std::map<std::string, std::set<std::string>> stream_to_receivers);
+
+ private:
+  std::map<std::string, std::string> stream_to_sender_;
+  std::map<std::string, std::set<std::string>> sender_to_streams_;
+  std::map<std::string, std::set<std::string>> stream_to_receivers_;
+};
 
 struct DefaultVideoQualityAnalyzerOptions {
   

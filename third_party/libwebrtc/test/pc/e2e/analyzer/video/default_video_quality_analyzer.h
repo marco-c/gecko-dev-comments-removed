@@ -82,6 +82,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
   
   std::set<StatsKey> GetKnownVideoStreams() const;
+  VideoStreamsInfo GetKnownStreams() const;
   const FrameCounters& GetGlobalCounters() const;
   
   
@@ -322,7 +323,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   
   
-  std::string StatsKeyToMetricName(const StatsKey& key) const
+  std::string ToMetricName(const InternalStatsKey& key) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   const DefaultVideoQualityAnalyzerOptions options_;
