@@ -114,6 +114,11 @@ class RtpPacket {
   bool HasExtension() const;
   bool HasExtension(ExtensionType type) const;
 
+  
+  
+  template <typename Extension>
+  bool IsRegistered() const;
+
   template <typename Extension, typename FirstValue, typename... Values>
   bool GetExtension(FirstValue, Values...) const;
 
@@ -205,6 +210,11 @@ class RtpPacket {
 template <typename Extension>
 bool RtpPacket::HasExtension() const {
   return HasExtension(Extension::kId);
+}
+
+template <typename Extension>
+bool RtpPacket::IsRegistered() const {
+  return extensions_.IsRegistered(Extension::kId);
 }
 
 template <typename Extension, typename FirstValue, typename... Values>
