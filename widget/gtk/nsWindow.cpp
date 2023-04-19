@@ -2397,6 +2397,14 @@ bool nsWindow::WaylandPopupAnchorAdjustForParentPopup(
   LOG("  parent window size %d x %d", parentWindowRect.width,
       parentWindowRect.height);
 
+  
+  if (!aPopupAnchor->width) {
+    aPopupAnchor->width = 1;
+  }
+  if (!aPopupAnchor->height) {
+    aPopupAnchor->height = 1;
+  }
+
   GdkRectangle finalRect;
   if (!gdk_rectangle_intersect(aPopupAnchor, &parentWindowRect, &finalRect)) {
     
