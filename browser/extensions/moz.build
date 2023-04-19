@@ -5,7 +5,6 @@
 
 
 DIRS += [
-    "doh-rollout",
     "formautofill",
     "screenshots",
     "webcompat",
