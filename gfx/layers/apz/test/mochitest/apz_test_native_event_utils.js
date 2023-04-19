@@ -1293,25 +1293,6 @@ function promiseMoveMouseAndScrollWheelOver(
   return p;
 }
 
-function scrollbarDragStart(aTarget, aScaleFactor) {
-  var targetElement = elementForTarget(aTarget);
-  var w = {},
-    h = {};
-  utilsForTarget(aTarget).getScrollbarSizes(targetElement, w, h);
-  var verticalScrollbarWidth = w.value;
-  if (verticalScrollbarWidth == 0) {
-    return null;
-  }
-
-  var upArrowHeight = verticalScrollbarWidth; 
-  var startX = targetElement.clientWidth + verticalScrollbarWidth / 2;
-  var startY = upArrowHeight + 5; 
-  startX *= aScaleFactor;
-  startY *= aScaleFactor;
-
-  return { x: startX, y: startY };
-}
-
 
 
 
@@ -1328,22 +1309,31 @@ function scrollbarDragStart(aTarget, aScaleFactor) {
 
 
 async function promiseVerticalScrollbarDrag(
-  aTarget,
-  aDistance = 20,
-  aIncrement = 5,
-  aScaleFactor = 1
+  target,
+  distance = 20,
+  increment = 5,
+  scaleFactor = 1
 ) {
-  var startPoint = scrollbarDragStart(aTarget, aScaleFactor);
-  var targetElement = elementForTarget(aTarget);
-  if (startPoint == null) {
+  var targetElement = elementForTarget(target);
+  var w = {},
+    h = {};
+  utilsForTarget(target).getScrollbarSizes(targetElement, w, h);
+  var verticalScrollbarWidth = w.value;
+  if (verticalScrollbarWidth == 0) {
     return null;
   }
 
+  var upArrowHeight = verticalScrollbarWidth; 
+  var mouseX = targetElement.clientWidth + verticalScrollbarWidth / 2;
+  var mouseY = upArrowHeight + 5; 
+  mouseX *= scaleFactor;
+  mouseY *= scaleFactor;
+
   dump(
     "Starting drag at " +
-      startPoint.x +
+      mouseX +
       ", " +
-      startPoint.y +
+      mouseY +
       " from top-left of #" +
       targetElement.id +
       "\n"
@@ -1351,31 +1341,31 @@ async function promiseVerticalScrollbarDrag(
 
   
   await promiseNativeMouseEventWithAPZ({
-    aTarget,
-    offsetX: startPoint.x,
-    offsetY: startPoint.y,
+    target,
+    offsetX: mouseX,
+    offsetY: mouseY,
     type: "mousemove",
   });
   
   await promiseNativeMouseEventWithAPZ({
-    aTarget,
-    offsetX: startPoint.x,
-    offsetY: startPoint.y,
+    target,
+    offsetX: mouseX,
+    offsetY: mouseY,
     type: "mousedown",
   });
   
-  for (var y = aIncrement; y < aDistance; y += aIncrement) {
+  for (var y = increment; y < distance; y += increment) {
     await promiseNativeMouseEventWithAPZ({
-      aTarget,
-      offsetX: startPoint.x,
-      offsetY: startPoint.y + y,
+      target,
+      offsetX: mouseX,
+      offsetY: mouseY + y,
       type: "mousemove",
     });
   }
   await promiseNativeMouseEventWithAPZ({
-    aTarget,
-    offsetX: startPoint.x,
-    offsetY: startPoint.y + aDistance,
+    target,
+    offsetX: mouseX,
+    offsetY: mouseY + distance,
     type: "mousemove",
   });
 
@@ -1383,48 +1373,12 @@ async function promiseVerticalScrollbarDrag(
   return async function() {
     dump("Finishing drag of #" + targetElement.id + "\n");
     await promiseNativeMouseEventWithAPZ({
-      aTarget,
-      offsetX: startPoint.x,
-      offsetY: startPoint.y + aDistance,
+      target,
+      offsetX: mouseX,
+      offsetY: mouseY + distance,
       type: "mouseup",
     });
   };
-}
-
-
-
-
-
-async function promiseVerticalScrollbarTouchDrag(
-  aTarget,
-  aDistance = 20,
-  aScaleFactor = 1
-) {
-  var startPoint = scrollbarDragStart(aTarget, aScaleFactor);
-  var targetElement = elementForTarget(aTarget);
-  if (startPoint == null) {
-    return false;
-  }
-
-  dump(
-    "Starting touch drag at " +
-      startPoint.x +
-      ", " +
-      startPoint.y +
-      " from top-left of #" +
-      targetElement.id +
-      "\n"
-  );
-
-  await promiseNativeTouchDrag(
-    aTarget,
-    startPoint.x,
-    startPoint.y,
-    0,
-    aDistance
-  );
-
-  return true;
 }
 
 
