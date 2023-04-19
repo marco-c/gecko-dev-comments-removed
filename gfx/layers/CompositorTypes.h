@@ -88,9 +88,11 @@ enum class TextureFlags : uint32_t {
   
   
   BORROWED_EXTERNAL_ID = 1 << 19,
+  
+  REMOTE_TEXTURE = 1 << 20,
 
   
-  ALL_BITS = (1 << 20) - 1,
+  ALL_BITS = (1 << 21) - 1,
   
   DEFAULT = NO_FLAGS
 };
