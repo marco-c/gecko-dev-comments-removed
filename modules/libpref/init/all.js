@@ -2551,16 +2551,6 @@ pref("font.size.monospace.x-math", 13);
   pref("intl.tsf.associate_imc_only_when_imm_ime_is_active", false);
 
   
-
-  
-  
-  
-  
-  
-  
-  pref("intl.tsf.hack.atok.search_input_scope_disabled", false);
-
-  
   
   
   
