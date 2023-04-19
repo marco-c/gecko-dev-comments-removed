@@ -435,17 +435,6 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
-  bool ShouldUseMozBoxCollapseBehavior(const nsStyleDisplay* aFlexStyleDisp);
-
-  
-
-
-
-
-
-
-
-
 
 
 
