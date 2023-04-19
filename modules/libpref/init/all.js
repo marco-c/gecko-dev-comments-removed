@@ -1044,7 +1044,7 @@ pref("javascript.options.mem.gc_low_frequency_heap_growth", 150);
 pref("javascript.options.mem.gc_balanced_heap_limits", false);
 
 
-pref("javascript.options.mem.gc_heap_growth_factor", 40);
+pref("javascript.options.mem.gc_heap_growth_factor", 50);
 
 
 pref("javascript.options.mem.gc_allocation_threshold_mb", 27);

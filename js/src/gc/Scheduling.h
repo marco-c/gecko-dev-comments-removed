@@ -387,7 +387,7 @@ static const double HighFrequencyLargeHeapGrowth = 1.5;
 static const double LowFrequencyHeapGrowth = 1.5;
 
 
-static const double HeapGrowthFactor = 40.0;
+static const double HeapGrowthFactor = 50.0;
 
 
 static const uint32_t MinEmptyChunkCount = 1;
