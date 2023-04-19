@@ -279,12 +279,17 @@ static void MaybeSanitizeException(JSContext* cx,
   nsIPrincipal* callerPrincipal = nsContentUtils::SubjectPrincipal(cx);
 
   
+  if (!JS_IsExceptionPending(cx)) {
+    return;
+  }
+
+  
   
   {  
     JSAutoRealm ar(cx, unwrappedFun);
 
     JS::ExceptionStack exnStack(cx);
-    
+
     
     
     
