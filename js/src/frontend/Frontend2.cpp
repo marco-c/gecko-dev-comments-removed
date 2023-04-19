@@ -372,7 +372,8 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
 
 
 
-bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
+bool ConvertGCThings(JSContext* cx, ErrorContext* ec,
+                     const SmooshResult& result,
                      const SmooshScriptStencil& smooshScript,
                      CompilationState& compilationState,
                      Vector<TaggedParserAtomIndex>& allAtoms,
@@ -385,7 +386,7 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
   }
 
   TaggedScriptThingIndex* cursor = nullptr;
-  if (!compilationState.allocateGCThingsUninitialized(cx, scriptIndex,
+  if (!compilationState.allocateGCThingsUninitialized(cx, ec, scriptIndex,
                                                       ngcthings, &cursor)) {
     return false;
   }
@@ -428,7 +429,8 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
 
 
 
-bool ConvertScriptStencil(JSContext* cx, const SmooshResult& result,
+bool ConvertScriptStencil(JSContext* cx, ErrorContext* ec,
+                          const SmooshResult& result,
                           const SmooshScriptStencil& smooshScript,
                           Vector<TaggedParserAtomIndex>& allAtoms,
                           CompilationState& compilationState,
@@ -504,7 +506,7 @@ bool ConvertScriptStencil(JSContext* cx, const SmooshResult& result,
     }
   }
 
-  if (!ConvertGCThings(cx, result, smooshScript, compilationState, allAtoms,
+  if (!ConvertGCThings(cx, ec, result, smooshScript, compilationState, allAtoms,
                        scriptIndex)) {
     return false;
   }
@@ -641,12 +643,12 @@ bool Smoosh::tryCompileGlobalScriptToExtensibleStencil(
     }
   }
 
-  if (!compilationState.prepareSharedDataStorage(cx)) {
+  if (!compilationState.prepareSharedDataStorage(ec)) {
     return false;
   }
 
   for (size_t i = 0; i < len; i++) {
-    if (!ConvertScriptStencil(cx, result, result.scripts.data[i], allAtoms,
+    if (!ConvertScriptStencil(cx, ec, result, result.scripts.data[i], allAtoms,
                               compilationState, ScriptIndex(i))) {
       return false;
     }

@@ -1026,7 +1026,7 @@ UniquePtr<DelazifyTask> DelazifyTask::Create(
   
   auto initial = cx->make_unique<frontend::ExtensibleCompilationStencil>(
       cx, options, stencil.source);
-  if (!initial || !initial->cloneFrom(cx, stencil)) {
+  if (!initial || !initial->cloneFrom(cx, &task->ec_, stencil)) {
     
     return nullptr;
   }
@@ -1049,7 +1049,7 @@ bool DelazifyTask::init(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     UniquePtr<frontend::ExtensibleCompilationStencil>&& initial) {
   using namespace js::frontend;
-  if (!merger.setInitial(cx, std::move(initial))) {
+  if (!merger.setInitial(&ec_, std::move(initial))) {
     return false;
   }
 
@@ -1169,7 +1169,7 @@ bool DelazifyTask::runTask(JSContext* cx) {
     
     
     
-    if (!merger.addDelazification(cx, *innerStencil)) {
+    if (!merger.addDelazification(cx, &this->ec_, *innerStencil)) {
       return false;
     }
 
