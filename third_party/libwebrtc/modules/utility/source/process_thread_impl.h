@@ -85,25 +85,29 @@ class ProcessThreadImpl : public ProcessThread {
   typedef std::list<ModuleCallback> ModuleList;
 
   void Delete() override;
+  
+  void StopNoLocks();
 
   
   
   
-  
-  
-  
-  rtc::RecursiveCriticalSection
-      lock_;  
+  rtc::RecursiveCriticalSection lock_;
 
   SequenceChecker thread_checker_;
   rtc::Event wake_up_;
   
   std::unique_ptr<rtc::PlatformThread> thread_;
 
-  ModuleList modules_;
+  ModuleList modules_ RTC_GUARDED_BY(lock_);
   std::queue<QueuedTask*> queue_;
   std::priority_queue<DelayedTask> delayed_tasks_ RTC_GUARDED_BY(lock_);
-  bool stop_;
+  
+  
+  
+  
+  
+  
+  bool stop_ RTC_GUARDED_BY(lock_);
   const char* thread_name_;
 };
 

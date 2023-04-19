@@ -69,7 +69,8 @@ void ProcessThreadImpl::Delete() {
   delete this;
 }
 
-void ProcessThreadImpl::Start() {
+
+void ProcessThreadImpl::Start() RTC_NO_THREAD_SAFETY_ANALYSIS {
   RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!thread_.get());
   if (thread_.get())
@@ -91,6 +92,7 @@ void ProcessThreadImpl::Stop() {
     return;
 
   {
+    
     rtc::CritScope lock(&lock_);
     stop_ = true;
   }
@@ -98,9 +100,17 @@ void ProcessThreadImpl::Stop() {
   wake_up_.Set();
 
   thread_->Stop();
+  thread_.reset();
+
+  StopNoLocks();
+}
+
+
+
+void ProcessThreadImpl::StopNoLocks() RTC_NO_THREAD_SAFETY_ANALYSIS {
+  RTC_DCHECK(!thread_);
   stop_ = false;
 
-  thread_.reset();
   for (ModuleCallback& m : modules_)
     m.module->ProcessThreadAttached(nullptr);
 }
