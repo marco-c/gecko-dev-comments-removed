@@ -465,7 +465,9 @@ void InitPoisonIOInterposer() {
 
   
   MozillaRegisterDebugFD(1);
-  MozillaRegisterDebugFD(2);
+  if (::GetStdHandle(STD_OUTPUT_HANDLE) != ::GetStdHandle(STD_ERROR_HANDLE)) {
+    MozillaRegisterDebugFD(2);
+  }
 
 #ifdef MOZ_REPLACE_MALLOC
   
