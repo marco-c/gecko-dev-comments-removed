@@ -213,8 +213,8 @@ class MozURL final {
   Mutator Mutate() { return Mutator(this); }
 
   
-  nsrefcnt AddRef() { return mozurl_addref(this); }
-  nsrefcnt Release() { return mozurl_release(this); }
+  void AddRef() { mozurl_addref(this); }
+  void Release() { mozurl_release(this); }
 
  private:
   
