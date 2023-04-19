@@ -229,8 +229,7 @@ AndroidNetworkMonitor::AndroidNetworkMonitor(
     : android_sdk_int_(Java_NetworkMonitor_androidSdkInt(env)),
       j_application_context_(env, j_application_context),
       j_network_monitor_(env, Java_NetworkMonitor_getInstance(env)),
-      network_thread_(rtc::Thread::Current()),
-      safety_flag_(PendingTaskSafetyFlag::Create()) {}
+      network_thread_(rtc::Thread::Current()) {}
 
 AndroidNetworkMonitor::~AndroidNetworkMonitor() {
   RTC_DCHECK(!started_);
@@ -251,7 +250,9 @@ void AndroidNetworkMonitor::Start() {
       webrtc::field_trial::IsEnabled("WebRTC-BindUsingInterfaceName");
 
   
-  safety_flag_->SetAlive();
+  
+  
+  safety_flag_ = PendingTaskSafetyFlag::Create();
 
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_NetworkMonitor_startMonitoring(
