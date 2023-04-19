@@ -109,11 +109,13 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteAudioSSLCertificate();
+
+  RTC_DEPRECATED std::unique_ptr<rtc::SSLCertificate>
+  GetRemoteAudioSSLCertificate();
 
   
-  std::unique_ptr<rtc::SSLCertChain> GetRemoteAudioSSLCertChain();
+  RTC_DEPRECATED std::unique_ptr<rtc::SSLCertChain>
+  GetRemoteAudioSSLCertChain();
 
   rtc::scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
