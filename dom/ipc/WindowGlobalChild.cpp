@@ -440,30 +440,6 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WindowGlobalChild::RecvGetSecurityInfo(
-    GetSecurityInfoResolver&& aResolve) {
-  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
-  auto callResolve =
-      MakeScopeExit([aResolve, &securityInfo]() { aResolve(securityInfo); });
-
-  nsCOMPtr<Document> doc = mWindowGlobal->GetDoc();
-  if (!doc) {
-    return IPC_OK();
-  }
-
-  
-  
-  if (nsIChannel* failedChannel = doc->GetFailedChannel()) {
-    Unused << failedChannel->GetSecurityInfo(getter_AddRefs(securityInfo));
-    return IPC_OK();
-  }
-  
-  
-  
-  securityInfo = doc->GetSecurityInfo();
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult
 WindowGlobalChild::RecvSaveStorageAccessPermissionGranted() {
   nsCOMPtr<nsPIDOMWindowInner> inner = GetWindowGlobal();
