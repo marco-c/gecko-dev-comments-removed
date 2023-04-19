@@ -2088,8 +2088,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-
-  [[nodiscard]] bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
+  [[nodiscard]] bool getFullAsciiCodePoint(int32_t lead) {
     MOZ_ASSERT(isAsciiCodePoint(lead),
                "non-ASCII code units must be handled separately");
     MOZ_ASSERT(toUnit(lead) == this->sourceUnits.previousCodeUnit(),
@@ -2098,19 +2097,9 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     if (MOZ_UNLIKELY(lead == '\r')) {
       matchLineTerminator('\n');
     } else if (MOZ_LIKELY(lead != '\n')) {
-      *codePoint = lead;
       return true;
     }
-
-    *codePoint = '\n';
-    bool ok = updateLineInfoForEOL();
-    if (!ok) {
-#ifdef DEBUG
-      *codePoint = EOF;  
-#endif
-      MOZ_MAKE_MEM_UNDEFINED(codePoint, sizeof(*codePoint));
-    }
-    return ok;
+    return updateLineInfoForEOL();
   }
 
   [[nodiscard]] MOZ_ALWAYS_INLINE bool updateLineInfoForEOL() {
@@ -2507,8 +2496,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-
-  [[nodiscard]] bool getCodePoint(int32_t* cp);
+  [[nodiscard]] bool getCodePoint();
 
   
   
