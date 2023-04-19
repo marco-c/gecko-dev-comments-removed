@@ -3760,7 +3760,15 @@ void NS_CycleCollectorSuspect3(void* aPtr, nsCycleCollectionParticipant* aCp,
   CollectorData* data = sCollectorData.get();
 
   
-  MOZ_ASSERT(data);
+  
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(
+      data,
+      "Cycle collected object used on a thread without a cycle collector.");
 
   if (MOZ_LIKELY(data->mCollector)) {
     data->mCollector->Suspect(aPtr, aCp, aRefCnt);
