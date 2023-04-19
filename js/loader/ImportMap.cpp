@@ -42,8 +42,8 @@ void ReportWarningHelper::Report(const char* aMessageName,
 }
 
 
-static ResolveResult ParseURLLikeImportSpecifier(const nsAString& aSpecifier,
-                                                 nsIURI* aBaseURL) {
+static ResolveResult ResolveURLLikeModuleSpecifier(const nsAString& aSpecifier,
+                                                   nsIURI* aBaseURL) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv;
 
@@ -92,7 +92,7 @@ static void NormalizeSpecifierKey(const nsAString& aSpecifierKey,
 
   
   
-  auto parseResult = ParseURLLikeImportSpecifier(aSpecifierKey, aBaseURL);
+  auto parseResult = ResolveURLLikeModuleSpecifier(aSpecifierKey, aBaseURL);
 
   
   if (parseResult.isOk()) {
@@ -155,7 +155,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
 
     
     
-    auto parseResult = ParseURLLikeImportSpecifier(value, aBaseURL);
+    auto parseResult = ResolveURLLikeModuleSpecifier(value, aBaseURL);
 
     
     if (parseResult.isErr()) {
@@ -589,7 +589,7 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
   
   
   
-  auto parseResult = ParseURLLikeImportSpecifier(aSpecifier, baseURL);
+  auto parseResult = ResolveURLLikeModuleSpecifier(aSpecifier, baseURL);
   nsCOMPtr<nsIURI> asURL;
   if (parseResult.isOk()) {
     asURL = parseResult.unwrap();
