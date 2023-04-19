@@ -74,7 +74,13 @@ add_task(async function test_aboutwelcome_mr_template_telemetry() {
   const sandbox = initSandbox();
   const messageStub = sandbox.spy(aboutWelcomeActor, "onContentMessage");
 
-  await clickVisibleButton(browser, "button.secondary");
+  
+  
+  await clickVisibleButton(browser, "button.primary");
+
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
 
   const { callCount } = messageStub;
   ok(callCount >= 1, `${callCount} Stub was called`);

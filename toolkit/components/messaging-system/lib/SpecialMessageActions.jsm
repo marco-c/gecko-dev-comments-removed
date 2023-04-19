@@ -311,6 +311,17 @@ const SpecialMessageActions = {
           (data && data.extraParams) || {}
         );
         
+        if (data.where) {
+          window.openLinkIn(url, data.where, {
+            private: false,
+            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+              {}
+            ),
+            csp: null,
+          });
+          break;
+        }
+        
         window.openLinkIn(url, "current", {
           private: false,
           triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
