@@ -15,6 +15,7 @@
 
 
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -190,6 +191,25 @@ fn setup_state(state: State) {
 }
 
 
+#[derive(Debug)]
+pub enum CallbackError {
+    
+    UnexpectedError,
+}
+
+impl fmt::Display for CallbackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unexpected error")
+    }
+}
+
+impl From<uniffi::UnexpectedUniFFICallbackError> for CallbackError {
+    fn from(_: uniffi::UnexpectedUniFFICallbackError) -> CallbackError {
+        CallbackError::UnexpectedError
+    }
+}
+
+
 
 
 pub trait OnGleanEvents: Send {
@@ -204,13 +224,13 @@ pub trait OnGleanEvents: Send {
     
     
     
-    fn trigger_upload(&self);
+    fn trigger_upload(&self) -> Result<(), CallbackError>;
 
     
     fn start_metrics_ping_scheduler(&self) -> bool;
 
     
-    fn cancel_uploads(&self);
+    fn cancel_uploads(&self) -> Result<(), CallbackError>;
 }
 
 
@@ -348,7 +368,9 @@ fn initialize_inner(
                 
                 
                 if pings_submitted || !upload_enabled {
-                    state.callbacks.trigger_upload();
+                    if let Err(e) = state.callbacks.trigger_upload() {
+                        log::error!("Triggering upload failed. Error: {}", e);
+                    }
                 }
             }
 
@@ -371,7 +393,9 @@ fn initialize_inner(
                 
                 
                 if state.callbacks.start_metrics_ping_scheduler() {
-                    state.callbacks.trigger_upload();
+                    if let Err(e) = state.callbacks.trigger_upload() {
+                        log::error!("Triggering upload failed. Error: {}", e);
+                    }
                 }
             }
 
@@ -388,7 +412,9 @@ fn initialize_inner(
                     
                     
                     if glean.submit_ping_by_name("baseline", Some("dirty_startup")) {
-                        state.callbacks.trigger_upload();
+                        if let Err(e) = state.callbacks.trigger_upload() {
+                            log::error!("Triggering upload failed. Error: {}", e);
+                        }
                     }
                 }
 
@@ -599,7 +625,9 @@ pub fn glean_set_upload_enabled(enabled: bool) {
             
             glean.cancel_metrics_ping_scheduler();
             
-            state.callbacks.cancel_uploads();
+            if let Err(e) = state.callbacks.cancel_uploads() {
+                log::error!("Canceling upload failed. Error: {}", e);
+            }
         }
 
         glean.set_upload_enabled(enabled);
@@ -609,7 +637,9 @@ pub fn glean_set_upload_enabled(enabled: bool) {
         }
 
         if original_enabled && !enabled {
-            state.callbacks.trigger_upload();
+            if let Err(e) = state.callbacks.trigger_upload() {
+                log::error!("Triggering upload failed. Error: {}", e);
+            }
         }
     })
 }
@@ -756,7 +786,9 @@ pub fn glean_handle_client_active() {
         
         
         let state = global_state().lock().unwrap();
-        state.callbacks.trigger_upload();
+        if let Err(e) = state.callbacks.trigger_upload() {
+            log::error!("Triggering upload failed. Error: {}", e);
+        }
     });
 
     
@@ -787,7 +819,9 @@ pub fn glean_handle_client_inactive() {
         
         
         let state = global_state().lock().unwrap();
-        state.callbacks.trigger_upload();
+        if let Err(e) = state.callbacks.trigger_upload() {
+            log::error!("Triggering upload failed. Error: {}", e);
+        }
     })
 }
 
@@ -799,7 +833,9 @@ pub fn glean_submit_ping_by_name(ping_name: String, reason: Option<String>) {
 
         if sent {
             let state = global_state().lock().unwrap();
-            state.callbacks.trigger_upload();
+            if let Err(e) = state.callbacks.trigger_upload() {
+                log::error!("Triggering upload failed. Error: {}", e);
+            }
         }
     })
 }
