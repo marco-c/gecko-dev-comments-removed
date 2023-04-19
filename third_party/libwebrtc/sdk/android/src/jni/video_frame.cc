@@ -10,12 +10,8 @@
 
 #include "sdk/android/src/jni/video_frame.h"
 
-#include <memory>
-
 #include "api/scoped_refptr.h"
 #include "common_video/include/video_frame_buffer.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
 #include "sdk/android/generated_video_jni/VideoFrame_jni.h"
@@ -26,6 +22,51 @@ namespace webrtc {
 namespace jni {
 
 namespace {
+
+class AndroidVideoBuffer : public VideoFrameBuffer {
+ public:
+  
+  static rtc::scoped_refptr<AndroidVideoBuffer> Create(
+      JNIEnv* jni,
+      const JavaRef<jobject>& j_video_frame_buffer);
+
+  
+  
+  
+  static rtc::scoped_refptr<AndroidVideoBuffer> Adopt(
+      JNIEnv* jni,
+      const JavaRef<jobject>& j_video_frame_buffer);
+
+  ~AndroidVideoBuffer() override;
+
+  const ScopedJavaGlobalRef<jobject>& video_frame_buffer() const;
+
+  
+  
+  rtc::scoped_refptr<VideoFrameBuffer> CropAndScale(int crop_x,
+                                                    int crop_y,
+                                                    int crop_width,
+                                                    int crop_height,
+                                                    int scale_width,
+                                                    int scale_height) override;
+
+ protected:
+  
+  
+  AndroidVideoBuffer(JNIEnv* jni, const JavaRef<jobject>& j_video_frame_buffer);
+
+ private:
+  Type type() const override;
+  int width() const override;
+  int height() const override;
+
+  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
+
+  const int width_;
+  const int height_;
+  
+  const ScopedJavaGlobalRef<jobject> j_video_frame_buffer_;
+};
 
 class AndroidVideoI420Buffer : public I420BufferInterface {
  public:
@@ -187,6 +228,12 @@ rtc::scoped_refptr<I420BufferInterface> AndroidVideoBuffer::ToI420() {
   
   
   return AndroidVideoI420Buffer::Adopt(jni, width_, height_, j_i420_buffer);
+}
+
+rtc::scoped_refptr<VideoFrameBuffer> JavaToNativeFrameBuffer(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_video_frame_buffer) {
+  return AndroidVideoBuffer::Create(jni, j_video_frame_buffer);
 }
 
 VideoFrame JavaToNativeFrame(JNIEnv* jni,

@@ -15,56 +15,14 @@
 
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
-#include "api/video/video_rotation.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-class AndroidVideoBuffer : public VideoFrameBuffer {
- public:
-  
-  static rtc::scoped_refptr<AndroidVideoBuffer> Create(
-      JNIEnv* jni,
-      const JavaRef<jobject>& j_video_frame_buffer);
-
-  
-  
-  
-  static rtc::scoped_refptr<AndroidVideoBuffer> Adopt(
-      JNIEnv* jni,
-      const JavaRef<jobject>& j_video_frame_buffer);
-
-  ~AndroidVideoBuffer() override;
-
-  const ScopedJavaGlobalRef<jobject>& video_frame_buffer() const;
-
-  
-  
-  rtc::scoped_refptr<VideoFrameBuffer> CropAndScale(int crop_x,
-                                                    int crop_y,
-                                                    int crop_width,
-                                                    int crop_height,
-                                                    int scale_width,
-                                                    int scale_height) override;
-
- protected:
-  
-  
-  AndroidVideoBuffer(JNIEnv* jni, const JavaRef<jobject>& j_video_frame_buffer);
-
- private:
-  Type type() const override;
-  int width() const override;
-  int height() const override;
-
-  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
-
-  const int width_;
-  const int height_;
-  
-  const ScopedJavaGlobalRef<jobject> j_video_frame_buffer_;
-};
+rtc::scoped_refptr<VideoFrameBuffer> JavaToNativeFrameBuffer(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_video_frame_buffer);
 
 VideoFrame JavaToNativeFrame(JNIEnv* jni,
                              const JavaRef<jobject>& j_video_frame,
