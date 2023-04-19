@@ -1355,6 +1355,11 @@ JS_PUBLIC_API void js::DecWasiRecursionDepth(JSContext* cx) {
 }
 
 JS_PUBLIC_API bool js::CheckWasiRecursionLimit(JSContext* cx) {
+  
+  
+  
+  
+  
   if (JS::RootingContext::get(cx)->wasiRecursionDepth >=
       JS::RootingContext::wasiRecursionDepthLimit) {
     return false;

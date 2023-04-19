@@ -128,11 +128,6 @@ class MOZ_RAII AutoCheckRecursionLimit {
   }
 
   MOZ_ALWAYS_INLINE bool checkWasiRecursionLimit() const {
-    
-    
-    
-    
-    
     if (context_.is<JSContext*>()) {
       JSContext* cx = context_.as<JSContext*>();
       if (!CheckWasiRecursionLimit(cx)) {
