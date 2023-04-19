@@ -876,6 +876,7 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
       encoder_info.is_hardware_accelerated =
           encoder_impl_info.is_hardware_accelerated;
       encoder_info.has_internal_source = encoder_impl_info.has_internal_source;
+      encoder_info.is_qp_trusted = encoder_impl_info.is_qp_trusted;
     } else {
       encoder_info.implementation_name += ", ";
       encoder_info.implementation_name += encoder_impl_info.implementation_name;
@@ -897,6 +898,12 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
 
       
       encoder_info.has_internal_source &= encoder_impl_info.has_internal_source;
+
+      
+      
+      encoder_info.is_qp_trusted =
+          encoder_info.is_qp_trusted.value_or(true) &
+          encoder_impl_info.is_qp_trusted.value_or(true);
     }
     encoder_info.fps_allocation[i] = encoder_impl_info.fps_allocation[0];
     encoder_info.requested_resolution_alignment = cricket::LeastCommonMultiple(
