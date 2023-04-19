@@ -74,6 +74,9 @@ void MatchedFilterCore(size_t x_start_index,
                        bool* filters_updated,
                        float* error_sum);
 
+
+size_t MaxSquarePeakIndex(rtc::ArrayView<const float> h);
+
 }  
 
 
