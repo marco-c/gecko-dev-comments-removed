@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+#include "pc/transport_stats.h"
+
+namespace cricket {
+
+TransportChannelStats::TransportChannelStats() = default;
+
+TransportChannelStats::TransportChannelStats(const TransportChannelStats&) =
+    default;
+
+TransportChannelStats::~TransportChannelStats() = default;
+
+}  
