@@ -350,10 +350,12 @@ function TupleFilter(callbackfn) {
     var len = TupleLength(list);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.filter");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var newList = [];
@@ -414,8 +416,9 @@ function TupleMap(callbackfn) {
     var len = TupleLength(list);
 
     
-    if (!IsCallable(callbackfn))
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var newList = [];
@@ -552,10 +555,12 @@ function TupleFlatMap(mapperFunction ) {
     var list = ThisTupleValue(this);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.flatMap");
-    if (!IsCallable(mapperFunction))
+    }
+    if (!IsCallable(mapperFunction)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
+    }
 
     
     var flat = [];
