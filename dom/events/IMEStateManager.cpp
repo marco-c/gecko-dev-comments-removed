@@ -42,6 +42,7 @@
 #include "nsINode.h"
 #include "nsISupports.h"
 #include "nsIURI.h"
+#include "nsIURIMutator.h"
 #include "nsPresContext.h"
 
 namespace mozilla {
@@ -1539,7 +1540,17 @@ void IMEStateManager::SetIMEState(const IMEState& aState,
       
       
       if (uri->SchemeIs("http") || uri->SchemeIs("https")) {
-        context.mURI = uri;
+        
+        
+        
+        nsCOMPtr<nsIURI> exposableURL;
+        if (NS_SUCCEEDED(NS_MutateURI(uri)
+                             .SetQuery(""_ns)
+                             .SetRef(""_ns)
+                             .SetUserPass(""_ns)
+                             .Finalize(exposableURL))) {
+          context.mURI = std::move(exposableURL);
+        }
       }
     }
   }
