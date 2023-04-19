@@ -73,6 +73,15 @@ class RTC_EXPORT DesktopFrame {
   void set_dpi(const DesktopVector& dpi) { dpi_ = dpi; }
 
   
+  
+  
+  
+  bool may_contain_cursor() const { return may_contain_cursor_; }
+  void set_may_contain_cursor(bool may_contain_cursor) {
+    may_contain_cursor_ = may_contain_cursor;
+  }
+
+  
   int64_t capture_time_ms() const { return capture_time_ms_; }
   void set_capture_time_ms(int64_t time_ms) { capture_time_ms_ = time_ms; }
 
@@ -150,6 +159,7 @@ class RTC_EXPORT DesktopFrame {
   DesktopRegion updated_region_;
   DesktopVector top_left_;
   DesktopVector dpi_;
+  bool may_contain_cursor_ = false;
   int64_t capture_time_ms_;
   uint32_t capturer_id_;
   std::vector<uint8_t> icc_profile_;
