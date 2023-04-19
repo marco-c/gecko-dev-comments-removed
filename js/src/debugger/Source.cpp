@@ -527,7 +527,7 @@ bool DebuggerSource::CallData::setSourceMapURL() {
     return false;
   }
 
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx);
   if (!ss->setSourceMapURL(cx, &ec, std::move(chars))) {
     return false;
   }

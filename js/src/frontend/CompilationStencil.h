@@ -624,7 +624,7 @@ struct CompilationInput {
 
   bool initForSelfHostingGlobal(JSContext* cx) {
     target = CompilationTarget::SelfHosting;
-    MainThreadErrorContext ec(cx);
+    AutoReportFrontendContext ec(cx);
     return initScriptSource(cx, &ec);
   }
 

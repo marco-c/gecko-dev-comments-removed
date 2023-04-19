@@ -22,7 +22,7 @@
 #include "js/friend/StackLimits.h"    
 #include "js/PropertyAndElement.h"    
 #include "js/StableStringChars.h"
-#include "vm/ErrorContext.h"
+#include "vm/ErrorContext.h"   
 #include "vm/FunctionFlags.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSAtom.h"
@@ -4097,7 +4097,7 @@ static bool reflect_parse(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx);
   ASTSerializer serialize(cx, &ec, loc, filename.get(), lineno);
   if (!serialize.init(builder)) {
     return false;

@@ -36,10 +36,11 @@
 #include "js/RootingAPI.h"            
 #include "js/Stack.h"                 
 #include "js/UniquePtr.h"             
-#include "js/Utility.h"    
-#include "vm/JSScript.h"   
-#include "vm/Scope.h"      
-#include "vm/ScopeKind.h"  
+#include "js/Utility.h"       
+#include "vm/ErrorContext.h"  
+#include "vm/JSScript.h"      
+#include "vm/Scope.h"         
+#include "vm/ScopeKind.h"     
 #include "vm/SharedStencil.h"  
 
 using mozilla::Utf8Unit;
@@ -361,8 +362,9 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
     scopeNotes[i].parent = scopeNote.parent;
   }
 
+  AutoReportFrontendContext ec(cx);
   return ImmutableScriptData::new_(
-      cx, smooshScriptData.main_offset, smooshScriptData.nfixed,
+      &ec, smooshScriptData.main_offset, smooshScriptData.nfixed,
       smooshScriptData.nslots, GCThingIndex(smooshScriptData.body_scope_index),
       smooshScriptData.num_ic_entries, isFunction, smooshScriptData.fun_length,
       mozilla::Span(smooshScriptData.bytecode.data,

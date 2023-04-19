@@ -1406,7 +1406,7 @@ bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
   }
 
   
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx);
   if (!frontend::DelazifyCanonicalScriptedFunction(
           cx, &ec, cx->stackLimitForCurrentPrincipal(), fun)) {
     
