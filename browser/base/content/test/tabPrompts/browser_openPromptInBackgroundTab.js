@@ -53,7 +53,7 @@ add_task(async function test_old_modal_ui() {
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
+  let promptElements = openedTab.linkedBrowser.parentNode.parentNode.querySelectorAll(
     "tabmodalprompt"
   );
   is(promptElements.length, 1, "There should be 1 prompt");
@@ -164,7 +164,7 @@ add_task(async function test_new_modal_ui() {
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
+  let promptElements = openedTab.linkedBrowser.parentNode.parentNode.querySelectorAll(
     ".content-prompt-dialog"
   );
 

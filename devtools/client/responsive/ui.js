@@ -190,7 +190,8 @@ class ResponsiveUI {
     this.browserContainerEl.classList.add("responsive-mode");
 
     
-    this.browserStackEl.prepend(rdmFrame);
+    this.browserContainerEl.prepend(rdmFrame);
+
     this.browserStackEl.append(resizeHandle);
     this.browserStackEl.append(resizeHandleX);
     this.browserStackEl.append(resizeHandleY);
@@ -221,23 +222,20 @@ class ResponsiveUI {
     this.resizeHandleY = resizeHandleY;
     this.resizeHandleY.addEventListener("mousedown", this.onResizeStart);
 
-    
-    
-    
-    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(() => {
-      const style = this.browserWindow.getComputedStyle(this.browserStackEl);
-
-      this.browserStackEl.style.setProperty("--rdm-stack-width", style.width);
-      this.browserStackEl.style.setProperty("--rdm-stack-height", style.height);
-      
-      
-      
-      
-      this.rdmFrame.classList.toggle(
-        "accomodate-ua",
-        parseFloat(style.width) < 520
-      );
-    });
+    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(
+      entries => {
+        for (const entry of entries) {
+          
+          
+          
+          
+          this.rdmFrame.classList.toggle(
+            "accomodate-ua",
+            entry.contentBoxSize[0].inlineSize < 520
+          );
+        }
+      }
+    );
 
     this.resizeToolbarObserver.observe(this.browserStackEl);
   }
@@ -308,8 +306,6 @@ class ResponsiveUI {
     this.browserStackEl.style.removeProperty("--rdm-width");
     this.browserStackEl.style.removeProperty("--rdm-height");
     this.browserStackEl.style.removeProperty("--rdm-zoom");
-    this.browserStackEl.style.removeProperty("--rdm-stack-height");
-    this.browserStackEl.style.removeProperty("--rdm-stack-width");
 
     
     
@@ -718,11 +714,7 @@ class ResponsiveUI {
   }
 
   onUpdateDeviceModal(event) {
-    if (event.data.isOpen) {
-      this.browserStackEl.classList.add("device-modal-opened");
-    } else {
-      this.browserStackEl.classList.remove("device-modal-opened");
-    }
+    this.rdmFrame.classList.toggle("device-modal-opened", event.data.isOpen);
   }
 
   async hasDeviceState() {
