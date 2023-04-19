@@ -500,20 +500,8 @@ class PeerConnectionE2EQualityTestFixture {
   
   virtual PeerHandle* AddPeer(
       const PeerNetworkDependencies& network_dependencies,
-      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
-    return AddPeer(network_dependencies.network_thread,
-                   network_dependencies.network_manager, configurer);
-  }
-  
-  
-  virtual PeerHandle* AddPeer(
-      rtc::Thread* network_thread,
-      rtc::NetworkManager* network_manager,
-      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
-    return AddPeer({network_thread, network_manager,
-                    nullptr},
-                   configurer);
-  }
+      rtc::FunctionView<void(PeerConfigurer*)> configurer) = 0;
+
   
   
   
