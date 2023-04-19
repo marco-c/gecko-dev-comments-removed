@@ -25,8 +25,11 @@ void AudioStreamTrack::RemoveAudioOutput(void* aKey) {
   if (Ended()) {
     return;
   }
-  if (CrossGraphPort* cgm = mCrossGraphs.Get(aKey)) {
-    cgm->RemoveAudioOutput(aKey);
+  if (auto entry = mCrossGraphs.Lookup(aKey)) {
+    
+    
+    entry.Data()->Destroy();
+    entry.Remove();
     return;
   }
   mTrack->RemoveAudioOutput(aKey);
@@ -69,8 +72,10 @@ void AudioStreamTrack::SetReadyState(MediaStreamTrackState aState) {
 }
 
 RefPtr<GenericPromise> AudioStreamTrack::SetAudioOutputDevice(
-    void* key, AudioDeviceInfo* aSink) {
+    void* aKey, AudioDeviceInfo* aSink) {
   MOZ_ASSERT(aSink);
+  MOZ_ASSERT(!mCrossGraphs.Get(aKey),
+             "A previous audio output for this aKey should have been removed");
 
   if (Ended()) {
     return GenericPromise::CreateAndResolve(true, __func__);
@@ -80,25 +85,15 @@ RefPtr<GenericPromise> AudioStreamTrack::SetAudioOutputDevice(
       CrossGraphPort::Connect(this, aSink, mWindow);
   if (!manager) {
     
-    auto entry = mCrossGraphs.Lookup(key);
-    if (entry) {
-      
-      
-      entry.Data()->Destroy();
-      entry.Remove();
-    }
     return GenericPromise::CreateAndResolve(true, __func__);
   }
 
   
-  UniquePtr<CrossGraphPort>& crossGraphPtr = mCrossGraphs.LookupOrInsert(key);
-  if (crossGraphPtr) {
-    
-    crossGraphPtr->Destroy();
-  }
-
-  crossGraphPtr = std::move(manager);
-  return crossGraphPtr->EnsureConnected();
+  const UniquePtr<CrossGraphPort>& crossGraph = mCrossGraphs.WithEntryHandle(
+      aKey, [&manager](auto entry) -> UniquePtr<CrossGraphPort>& {
+        return entry.Insert(std::move(manager));
+      });
+  return crossGraph->EnsureConnected();
 }
 
 }  
