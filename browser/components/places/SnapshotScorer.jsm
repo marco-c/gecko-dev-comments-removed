@@ -51,6 +51,10 @@ XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
 
 
 
+
+
+
+
 const SnapshotScorer = new (class SnapshotScorer {
   
 
@@ -117,7 +121,7 @@ const SnapshotScorer = new (class SnapshotScorer {
     let currentDate = this.#dateOverride ?? Date.now();
     let currentSessionUrls = selectionContext.getCurrentSessionUrls();
 
-    for (let { recommendations, weight } of recommendationGroups) {
+    for (let { source, recommendations, weight } of recommendationGroups) {
       for (let { snapshot, score } of recommendations) {
         if (
           selectionContext.filterAdult &&
@@ -130,7 +134,7 @@ const SnapshotScorer = new (class SnapshotScorer {
         if (currentScore) {
           
           
-          currentScore.sourceScore += score * weight;
+          currentScore.sourceScore.set(source, score * weight);
         } else {
           currentScore = {
             snapshot,
@@ -139,7 +143,7 @@ const SnapshotScorer = new (class SnapshotScorer {
               currentDate,
               currentSessionUrls
             ),
-            sourceScore: score * weight,
+            sourceScore: new Map([[source, score * weight]]),
           };
 
           combined.set(snapshot.url, currentScore);
@@ -151,11 +155,26 @@ const SnapshotScorer = new (class SnapshotScorer {
     for (let currentScore of combined.values()) {
       let recommendation = {
         snapshot: currentScore.snapshot,
-        score: currentScore.snapshotScore + currentScore.sourceScore,
+        score: currentScore.snapshotScore,
+        source: undefined,
       };
 
+      
+      let maxScore = null;
+      let source = null;
+      for (let [id, score] of currentScore.sourceScore) {
+        recommendation.score += score;
+
+        if (maxScore === null || maxScore < score) {
+          maxScore = score;
+          source = id;
+        }
+      }
+
+      recommendation.source = source;
+
       lazy.logConsole.debug(
-        `Scored ${recommendation.score} for ${recommendation.snapshot.url}`
+        `Scored ${recommendation.score} for ${recommendation.snapshot.url} from source ${recommendation.source}`
       );
 
       if (recommendation.score >= this.snapshotThreshold) {

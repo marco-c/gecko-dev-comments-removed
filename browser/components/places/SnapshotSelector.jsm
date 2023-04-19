@@ -77,6 +77,8 @@ XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
 
 
 
+
+
 class SnapshotSelector extends EventEmitter {
   
 
@@ -187,17 +189,17 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  #snapshotsGenerated(snapshots) {
+  #snapshotsGenerated(recommendations) {
     
     if (!this.#task) {
       return;
     }
 
     lazy.logConsole.debug(
-      "Generated snapshots",
-      snapshots.map(s => s.url)
+      "Generated recommendations",
+      recommendations.map(s => s.snapshot.url)
     );
-    this.emit("snapshots-updated", snapshots);
+    this.emit("snapshots-updated", recommendations);
   }
 
   
@@ -234,18 +236,21 @@ class SnapshotSelector extends EventEmitter {
       return !context.filterAdult || !lazy.FilterAdult.isAdultUrl(snapshot.url);
     });
 
-    snapshots = lazy.SnapshotScorer.dedupeSnapshots(
-      snapshots.map(s => ({
-        snapshot: s,
-      }))
-    )
-      .slice(0, context.count)
-      .map(s => s.snapshot)
-      .slice();
+    let recommendations = snapshots.map((snapshot, index) => ({
+      source: "recent",
+      score: snapshots.length - index,
+      snapshot,
+    }));
 
-    lazy.PlacesUIUtils.insertTitleStartDiffs(snapshots);
+    recommendations = lazy.SnapshotScorer.dedupeSnapshots(
+      recommendations
+    ).slice(0, context.count);
 
-    this.#snapshotsGenerated(snapshots);
+    lazy.PlacesUIUtils.insertTitleStartDiffs(
+      recommendations.map(s => s.snapshot)
+    );
+
+    this.#snapshotsGenerated(recommendations);
   }
 
   
@@ -284,7 +289,7 @@ class SnapshotSelector extends EventEmitter {
             )
           );
 
-          return { recommendations, weight };
+          return { source: key, recommendations, weight };
         }
       )
     );
@@ -294,13 +299,13 @@ class SnapshotSelector extends EventEmitter {
       ...recommendationGroups
     );
 
-    let snapshots = recommendations
-      .slice(0, context.count)
-      .map(r => r.snapshot);
+    recommendations = recommendations.slice(0, context.count);
 
-    lazy.PlacesUIUtils.insertTitleStartDiffs(snapshots);
+    lazy.PlacesUIUtils.insertTitleStartDiffs(
+      recommendations.map(r => r.snapshot)
+    );
 
-    this.#snapshotsGenerated(snapshots);
+    this.#snapshotsGenerated(recommendations);
   }
 
   
