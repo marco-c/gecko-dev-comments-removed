@@ -255,12 +255,15 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
   }
 
   
-  if (!_captureThread) {
+  if (_captureThread.empty()) {
     quit_ = false;
-    _captureThread.reset(new rtc::PlatformThread(
-        VideoCaptureModuleV4L2::CaptureThread, this, "CaptureThread",
-        rtc::ThreadAttributes().SetPriority(rtc::kHighPriority)));
-    _captureThread->Start();
+    _captureThread = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (CaptureProcess()) {
+          }
+        },
+        "CaptureThread",
+        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kHigh));
   }
 
   
@@ -276,14 +279,13 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
 }
 
 int32_t VideoCaptureModuleV4L2::StopCapture() {
-  if (_captureThread) {
+  if (!_captureThread.empty()) {
     {
       MutexLock lock(&capture_lock_);
       quit_ = true;
     }
     
-    _captureThread->Stop();
-    _captureThread.reset();
+    _captureThread.Finalize();
   }
 
   MutexLock lock(&capture_lock_);
@@ -371,11 +373,6 @@ bool VideoCaptureModuleV4L2::CaptureStarted() {
   return _captureStarted;
 }
 
-void VideoCaptureModuleV4L2::CaptureThread(void* obj) {
-  VideoCaptureModuleV4L2* capture = static_cast<VideoCaptureModuleV4L2*>(obj);
-  while (capture->CaptureProcess()) {
-  }
-}
 bool VideoCaptureModuleV4L2::CaptureProcess() {
   int retVal = 0;
   struct pollfd rSet;

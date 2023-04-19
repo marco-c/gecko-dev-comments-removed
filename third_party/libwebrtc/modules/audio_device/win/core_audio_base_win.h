@@ -158,7 +158,7 @@ class CoreAudioBase : public IAudioSessionEvents {
   
   
   std::atomic<bool> is_restarting_;
-  std::unique_ptr<rtc::PlatformThread> audio_thread_;
+  rtc::PlatformThread audio_thread_;
   Microsoft::WRL::ComPtr<IAudioSessionControl> audio_session_control_;
 
   void StopThread();

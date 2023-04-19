@@ -79,19 +79,12 @@ namespace rtc {
 namespace tracing {
 namespace {
 
-static void EventTracingThreadFunc(void* params);
-
 
 static volatile int g_event_logging_active = 0;
 
 
 class EventLogger final {
  public:
-  EventLogger()
-      : logging_thread_(EventTracingThreadFunc,
-                        this,
-                        "EventTracingThread",
-                        ThreadAttributes().SetPriority(kLowPriority)) {}
   ~EventLogger() { RTC_DCHECK(thread_checker_.IsCurrent()); }
 
   void AddTraceEvent(const char* name,
@@ -209,7 +202,8 @@ class EventLogger final {
                  rtc::AtomicOps::CompareAndSwap(&g_event_logging_active, 0, 1));
 
     
-    logging_thread_.Start();
+    logging_thread_ =
+        PlatformThread::SpawnJoinable([this] { Log(); }, "EventTracingThread");
     TRACE_EVENT_INSTANT0("webrtc", "EventLogger::Start");
   }
 
@@ -223,7 +217,7 @@ class EventLogger final {
     
     shutdown_event_.Set();
     
-    logging_thread_.Stop();
+    logging_thread_.Finalize();
   }
 
  private:
@@ -325,10 +319,6 @@ class EventLogger final {
   FILE* output_file_ = nullptr;
   bool output_file_owned_ = false;
 };
-
-static void EventTracingThreadFunc(void* params) {
-  static_cast<EventLogger*>(params)->Log();
-}
 
 static EventLogger* volatile g_event_logger = nullptr;
 static const char* const kDisabledTracePrefix = TRACE_DISABLED_BY_DEFAULT("");

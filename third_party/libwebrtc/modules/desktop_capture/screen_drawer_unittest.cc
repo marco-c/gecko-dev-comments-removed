@@ -48,13 +48,12 @@ void TestScreenDrawerLock(
 
     ~Task() = default;
 
-    static void RunTask(void* me) {
-      Task* task = static_cast<Task*>(me);
-      std::unique_ptr<ScreenDrawerLock> lock = task->ctor_();
+    void RunTask() {
+      std::unique_ptr<ScreenDrawerLock> lock = ctor_();
       ASSERT_TRUE(!!lock);
-      task->created_->store(true);
+      created_->store(true);
       
-      while (!task->ready_.load()) {
+      while (!ready_.load()) {
         SleepMs(1);
       }
       
@@ -77,8 +76,8 @@ void TestScreenDrawerLock(
     const rtc::FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor_;
   } task(&created, ready, ctor);
 
-  rtc::PlatformThread lock_thread(&Task::RunTask, &task, "lock_thread");
-  lock_thread.Start();
+  auto lock_thread = rtc::PlatformThread::SpawnJoinable(
+      [&task] { task.RunTask(); }, "lock_thread");
 
   
   
@@ -95,7 +94,6 @@ void TestScreenDrawerLock(
   ASSERT_GT(kLockDurationMs, rtc::TimeMillis() - start_ms);
   ctor();
   ASSERT_LE(kLockDurationMs, rtc::TimeMillis() - start_ms);
-  lock_thread.Stop();
 }
 
 }  

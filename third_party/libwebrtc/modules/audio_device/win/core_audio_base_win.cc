@@ -119,11 +119,6 @@ const char* SessionDisconnectReasonToString(
   }
 }
 
-void Run(void* obj) {
-  RTC_DCHECK(obj);
-  reinterpret_cast<CoreAudioBase*>(obj)->ThreadRun();
-}
-
 
 
 
@@ -553,24 +548,19 @@ bool CoreAudioBase::Start() {
     
     
     
-    RTC_DCHECK(audio_thread_);
+    RTC_DCHECK(!audio_thread_.empty());
   }
 
   
   
-  if (!audio_thread_) {
-    audio_thread_ = std::make_unique<rtc::PlatformThread>(
-        Run, this, IsInput() ? "wasapi_capture_thread" : "wasapi_render_thread",
-        rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority));
-    RTC_DCHECK(audio_thread_);
-    audio_thread_->Start();
-    if (!audio_thread_->IsRunning()) {
-      StopThread();
-      RTC_LOG(LS_ERROR) << "Failed to start audio thread";
-      return false;
-    }
-    RTC_DLOG(INFO) << "Started thread with name: " << audio_thread_->name()
-                   << " and id: " << audio_thread_->GetThreadRef();
+  if (audio_thread_.empty()) {
+    const absl::string_view name =
+        IsInput() ? "wasapi_capture_thread" : "wasapi_render_thread";
+    audio_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] { ThreadRun(); }, name,
+        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime));
+    RTC_DLOG(INFO) << "Started thread with name: " << name
+                   << " and handle: " << *audio_thread_.GetHandle();
   }
 
   
@@ -697,14 +687,11 @@ bool CoreAudioBase::Restart() {
 void CoreAudioBase::StopThread() {
   RTC_DLOG(INFO) << __FUNCTION__;
   RTC_DCHECK(!IsRestarting());
-  if (audio_thread_) {
-    if (audio_thread_->IsRunning()) {
-      RTC_DLOG(INFO) << "Sets stop_event...";
-      SetEvent(stop_event_.Get());
-      RTC_DLOG(INFO) << "PlatformThread::Stop...";
-      audio_thread_->Stop();
-    }
-    audio_thread_.reset();
+  if (!audio_thread_.empty()) {
+    RTC_DLOG(INFO) << "Sets stop_event...";
+    SetEvent(stop_event_.Get());
+    RTC_DLOG(INFO) << "PlatformThread::Finalize...";
+    audio_thread_.Finalize();
 
     
     
@@ -717,7 +704,7 @@ bool CoreAudioBase::HandleRestartEvent() {
   RTC_DLOG(INFO) << __FUNCTION__ << "[" << DirectionToString(direction())
                  << "]";
   RTC_DCHECK_RUN_ON(&thread_checker_audio_);
-  RTC_DCHECK(audio_thread_);
+  RTC_DCHECK(!audio_thread_.empty());
   RTC_DCHECK(IsRestarting());
   
   

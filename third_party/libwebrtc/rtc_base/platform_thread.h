@@ -11,14 +11,11 @@
 #ifndef RTC_BASE_PLATFORM_THREAD_H_
 #define RTC_BASE_PLATFORM_THREAD_H_
 
-#ifndef WEBRTC_WIN
-#include <pthread.h>
-#endif
+#include <functional>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "api/sequence_checker.h"
-#include "rtc_base/constructor_magic.h"
+#include "absl/types/optional.h"
 #include "rtc_base/platform_thread_types.h"
 
 #include "rtc_base/deprecated/recursive_critical_section.h"
@@ -28,94 +25,94 @@ namespace rtc {
 
 class PlatformUIThread;
 
-
-typedef void (*ThreadRunFunction)(void*);
-
-enum ThreadPriority {
-#ifdef WEBRTC_WIN
-  kLowPriority = THREAD_PRIORITY_BELOW_NORMAL,
-  kNormalPriority = THREAD_PRIORITY_NORMAL,
-  kHighPriority = THREAD_PRIORITY_ABOVE_NORMAL,
-  kHighestPriority = THREAD_PRIORITY_HIGHEST,
-  kRealtimePriority = THREAD_PRIORITY_TIME_CRITICAL
-#else
-  kLowPriority = 1,
-  kNormalPriority = 2,
-  kHighPriority = 3,
-  kHighestPriority = 4,
-  kRealtimePriority = 5
-#endif
+enum class ThreadPriority {
+  kLow = 1,
+  kNormal,
+  kHigh,
+  kRealtime,
 };
 
 struct ThreadAttributes {
-  ThreadPriority priority = kNormalPriority;
-  bool joinable = true;
-
+  ThreadPriority priority = ThreadPriority::kNormal;
   ThreadAttributes& SetPriority(ThreadPriority priority_param) {
     priority = priority_param;
     return *this;
   }
-  ThreadAttributes& SetDetached() {
-    joinable = false;
-    return *this;
-  }
 };
 
 
-
-
-class PlatformThread {
+class PlatformThread final {
  public:
-  PlatformThread(ThreadRunFunction func,
-                 void* obj,
-                 absl::string_view thread_name,
-                 ThreadAttributes attributes = ThreadAttributes());
+  
+#if defined(WEBRTC_WIN)
+  using Handle = HANDLE;
+#else
+  using Handle = pthread_t;
+#endif  
+  
+  
+  
+  
+  PlatformThread() = default;
+
+  
+  
+  
+  PlatformThread(PlatformThread&& rhs);
+
+  
+  
+  
+  PlatformThread& operator=(PlatformThread&& rhs);
+
+  
+  
+  
   virtual ~PlatformThread();
 
-  const std::string& name() const { return name_; }
+  
+  
+  
+  
+  
+  void Finalize();
+
+  
+  bool empty() const { return !handle_.has_value(); }
 
   
   
-  
-  virtual void Start();
-
-  bool IsRunning() const;
-
-  
-  
-  PlatformThreadRef GetThreadRef() const;
+  static PlatformThread SpawnJoinable(
+      std::function<void()> thread_function,
+      absl::string_view name,
+      ThreadAttributes attributes = ThreadAttributes());
 
   
   
-  
-  
-  
-  virtual void Stop();
+  static PlatformThread SpawnDetached(
+      std::function<void()> thread_function,
+      absl::string_view name,
+      ThreadAttributes attributes = ThreadAttributes());
 
- protected:
+  
+  absl::optional<Handle> GetHandle() const;
+
 #if defined(WEBRTC_WIN)
   
   bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data);
 #endif
 
  private:
-  ThreadRunFunction const run_function_ = nullptr;
-  const ThreadAttributes attributes_;
-  void* const obj_;
-  
-  
-  const std::string name_;
-  webrtc::SequenceChecker thread_checker_;
-#if defined(WEBRTC_WIN)
-  HANDLE thread_ = nullptr;
-  DWORD thread_id_ = 0;
-  RecursiveCriticalSection cs_;
-#else
-  pthread_t thread_ = 0;
-#endif  
+  PlatformThread(Handle handle, bool joinable);
+  static PlatformThread SpawnThread(std::function<void()> thread_function,
+                                    absl::string_view name,
+                                    ThreadAttributes attributes,
+                                    bool joinable);
+
+  absl::optional<Handle> handle_;
+  bool joinable_ = false;
   
   friend PlatformUIThread;
-  RTC_DISALLOW_COPY_AND_ASSIGN(PlatformThread);
 };
 
 }  

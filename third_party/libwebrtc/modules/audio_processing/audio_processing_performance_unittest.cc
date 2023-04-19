@@ -391,17 +391,7 @@ class TimedThreadApiProcessor {
 class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
  public:
   CallSimulator()
-      : render_thread_(new rtc::PlatformThread(
-            RenderProcessorThreadFunc,
-            this,
-            "render",
-            rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority))),
-        capture_thread_(new rtc::PlatformThread(
-            CaptureProcessorThreadFunc,
-            this,
-            "capture",
-            rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority))),
-        rand_gen_(42U),
+      : rand_gen_(42U),
         simulation_config_(static_cast<SimulationConfig>(GetParam())) {}
 
   
@@ -437,12 +427,9 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   static const int32_t kTestTimeout = 3 * 10 * kMinNumFramesToProcess;
 
   
-  void TearDown() override { StopThreads(); }
-
-  
   void StopThreads() {
-    render_thread_->Stop();
-    capture_thread_->Stop();
+    render_thread_.Finalize();
+    capture_thread_.Finalize();
   }
 
   
@@ -534,31 +521,27 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   }
 
   
-  static void RenderProcessorThreadFunc(void* context) {
-    CallSimulator* call_simulator = reinterpret_cast<CallSimulator*>(context);
-    while (call_simulator->render_thread_state_->Process()) {
-    }
-  }
-
-  
-  static void CaptureProcessorThreadFunc(void* context) {
-    CallSimulator* call_simulator = reinterpret_cast<CallSimulator*>(context);
-    while (call_simulator->capture_thread_state_->Process()) {
-    }
-  }
-
-  
   void StartThreads() {
-    ASSERT_NO_FATAL_FAILURE(render_thread_->Start());
-    ASSERT_NO_FATAL_FAILURE(capture_thread_->Start());
+    const auto attributes =
+        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime);
+    render_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (render_thread_state_->Process()) {
+          }
+        },
+        "render", attributes);
+    capture_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (capture_thread_state_->Process()) {
+          }
+        },
+        "capture", attributes);
   }
 
   
   rtc::Event test_complete_;
 
   
-  std::unique_ptr<rtc::PlatformThread> render_thread_;
-  std::unique_ptr<rtc::PlatformThread> capture_thread_;
   Random rand_gen_;
 
   std::unique_ptr<AudioProcessing> apm_;
@@ -567,6 +550,8 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   LockedFlag capture_call_checker_;
   std::unique_ptr<TimedThreadApiProcessor> render_thread_state_;
   std::unique_ptr<TimedThreadApiProcessor> capture_thread_state_;
+  rtc::PlatformThread render_thread_;
+  rtc::PlatformThread capture_thread_;
 };
 
 

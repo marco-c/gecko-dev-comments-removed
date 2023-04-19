@@ -268,9 +268,8 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   rtc::Event _recStartEvent;
   rtc::Event _playStartEvent;
 
-  
-  std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;
-  std::unique_ptr<rtc::PlatformThread> _ptrThreadRec;
+  rtc::PlatformThread _ptrThreadPlay;
+  rtc::PlatformThread _ptrThreadRec;
 
   AudioMixerManagerLinuxPulse _mixerManager;
 

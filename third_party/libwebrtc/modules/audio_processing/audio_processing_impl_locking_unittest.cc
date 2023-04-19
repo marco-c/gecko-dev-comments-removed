@@ -388,33 +388,6 @@ class AudioProcessingImplLockTest
   void TearDown() override;
 
   
-  static void RenderProcessorThreadFunc(void* context) {
-    AudioProcessingImplLockTest* impl =
-        reinterpret_cast<AudioProcessingImplLockTest*>(context);
-    while (!impl->MaybeEndTest()) {
-      impl->render_thread_state_.Process();
-    }
-  }
-
-  
-  static void CaptureProcessorThreadFunc(void* context) {
-    AudioProcessingImplLockTest* impl =
-        reinterpret_cast<AudioProcessingImplLockTest*>(context);
-    while (!impl->MaybeEndTest()) {
-      impl->capture_thread_state_.Process();
-    }
-  }
-
-  
-  static void StatsProcessorThreadFunc(void* context) {
-    AudioProcessingImplLockTest* impl =
-        reinterpret_cast<AudioProcessingImplLockTest*>(context);
-    while (!impl->MaybeEndTest()) {
-      impl->stats_thread_state_.Process();
-    }
-  }
-
-  
   
   bool TestDone() {
     return frame_counters_.BothCountersExceedeThreshold(
@@ -423,9 +396,28 @@ class AudioProcessingImplLockTest
 
   
   void StartThreads() {
-    render_thread_.Start();
-    capture_thread_.Start();
-    stats_thread_.Start();
+    const auto attributes =
+        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime);
+    render_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (!MaybeEndTest())
+            render_thread_state_.Process();
+        },
+        "render", attributes);
+    capture_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (!MaybeEndTest()) {
+            capture_thread_state_.Process();
+          }
+        },
+        "capture", attributes);
+
+    stats_thread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+          while (!MaybeEndTest())
+            stats_thread_state_.Process();
+        },
+        "stats", attributes);
   }
 
   
@@ -434,9 +426,6 @@ class AudioProcessingImplLockTest
   rtc::Event capture_call_event_;
 
   
-  rtc::PlatformThread render_thread_;
-  rtc::PlatformThread capture_thread_;
-  rtc::PlatformThread stats_thread_;
   mutable RandomGenerator rand_gen_;
 
   std::unique_ptr<AudioProcessing> apm_;
@@ -445,6 +434,9 @@ class AudioProcessingImplLockTest
   RenderProcessor render_thread_state_;
   CaptureProcessor capture_thread_state_;
   StatsProcessor stats_thread_state_;
+  rtc::PlatformThread render_thread_;
+  rtc::PlatformThread capture_thread_;
+  rtc::PlatformThread stats_thread_;
 };
 
 
@@ -485,22 +477,7 @@ void PopulateAudioFrame(float amplitude,
 }
 
 AudioProcessingImplLockTest::AudioProcessingImplLockTest()
-    : render_thread_(
-          RenderProcessorThreadFunc,
-          this,
-          "render",
-          rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)),
-      capture_thread_(
-          CaptureProcessorThreadFunc,
-          this,
-          "capture",
-          rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)),
-      stats_thread_(
-          StatsProcessorThreadFunc,
-          this,
-          "stats",
-          rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)),
-      apm_(AudioProcessingBuilderForTesting().Create()),
+    : apm_(AudioProcessingBuilderForTesting().Create()),
       render_thread_state_(kMaxFrameSize,
                            &rand_gen_,
                            &render_call_event_,
@@ -552,9 +529,6 @@ void AudioProcessingImplLockTest::SetUp() {
 void AudioProcessingImplLockTest::TearDown() {
   render_call_event_.Set();
   capture_call_event_.Set();
-  render_thread_.Stop();
-  capture_thread_.Stop();
-  stats_thread_.Stop();
 }
 
 StatsProcessor::StatsProcessor(RandomGenerator* rand_gen,
