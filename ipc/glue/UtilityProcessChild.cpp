@@ -12,6 +12,7 @@
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RemoteDecoderManagerParent.h"
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
@@ -234,12 +235,21 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
     mProfilerController = nullptr;
   }
 
+  uint32_t timeout = 0;
+  if (mUtilityAudioDecoderInstance) {
+    mUtilityAudioDecoderInstance = nullptr;
+    timeout = 10 * 1000;
+  }
+
   
   
   
   
-  mShutdownBlockers.WaitUntilClear(10 * 1000 )
-      ->Then(GetCurrentSerialEventTarget(), __func__, [&]() {
+  
+  
+  
+  mShutdownBlockers.WaitUntilClear(timeout)->Then(
+      GetCurrentSerialEventTarget(), __func__, [&]() {
 #  ifdef XP_WIN
         {
           RefPtr<DllServices> dllSvc(DllServices::Get());
