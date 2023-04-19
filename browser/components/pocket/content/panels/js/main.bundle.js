@@ -543,40 +543,18 @@ function Signup(props) {
 
 
 
-
-
 var SignupOverlay = function (options) {
   this.inited = false;
   this.active = false;
 
-  this.setupClickEvents = function () {
-    messages.clickHelper(document.querySelector(`.pkt_ext_learnmore`), {
-      source: `learn_more`
-    });
-    messages.clickHelper(document.querySelector(`.signup-btn-firefox`), {
-      source: `sign_up_1`
-    });
-    messages.clickHelper(document.querySelector(`.signup-btn-email`), {
-      source: `sign_up_2`
-    });
-    messages.clickHelper(document.querySelector(`.pkt_ext_login`), {
-      source: `log_in`
-    });
-  };
-
   this.create = function ({
     pockethost
   }) {
-    const parser = new DOMParser();
-    let elBody = document.querySelector(`body`); 
-
+    
     const {
       searchParams
     } = new URL(window.location.href);
-    const isEmailSignupEnabled = searchParams.get(`emailButton`) === `true`;
     const locale = searchParams.get(`locale`) || ``;
-    const language = locale.split(`-`)[0].toLowerCase();
-    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
     const utmSource = searchParams.get(`utmSource`);
     const utmCampaign = searchParams.get(`utmCampaign`);
     const utmContent = searchParams.get(`utmContent`);
@@ -585,47 +563,18 @@ var SignupOverlay = function (options) {
       return;
     }
 
-    this.active = true;
+    this.active = true; 
 
-    if (layoutRefresh) {
-      
-      
-      document.querySelector(`.pkt_ext_containersignup`)?.classList.add(`stp_signup_body`);
-      document.querySelector(`.pkt_ext_containersignup`)?.classList.remove(`pkt_ext_containersignup`); 
+    react_dom.render( react.createElement(Signup_Signup, {
+      pockethost: pockethost,
+      utmSource: utmSource,
+      utmCampaign: utmCampaign,
+      utmContent: utmContent,
+      locale: locale
+    }), document.querySelector(`body`));
 
-      react_dom.render( react.createElement(Signup_Signup, {
-        pockethost: pockethost,
-        utmSource: utmSource,
-        utmCampaign: utmCampaign,
-        utmContent: utmContent,
-        locale: locale
-      }), document.querySelector(`body`));
-
-      if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
-        document.querySelector(`body`).classList.add(`theme_dark`);
-      }
-    } else {
-      const templateData = {
-        pockethost,
-        utmCampaign: utmCampaign || `firefox_door_hanger_menu`,
-        
-        
-        utmSource: utmContent || `control`
-      }; 
-
-      if (language) {
-        elBody.classList.add(`pkt_ext_signup_${language}`);
-      } 
-
-
-      elBody.append(parser.parseFromString(Handlebars.templates.signup_shell(templateData), `text/html`).documentElement); 
-
-      if (!isEmailSignupEnabled) {
-        document.querySelector(`.btn-container-email`).remove();
-      } 
-
-
-      this.setupClickEvents();
+    if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
+      document.querySelector(`body`).classList.add(`theme_dark`);
     } 
 
 
