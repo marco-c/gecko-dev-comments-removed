@@ -219,10 +219,19 @@ nsresult GetOriginFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
 
 nsresult GetSiteFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
                               nsACString& aSite) {
-  nsresult rv = aPrincipal->GetSiteOriginNoSuffix(aSite);
+  nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
+  nsEffectiveTLDService* etld = nsEffectiveTLDService::GetInstance();
+  NS_ENSURE_TRUE(etld, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
+  nsresult rv = etld->GetSite(uri, aSite);
+
   
   
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    rv = aPrincipal->GetOrigin(aSite);
+    NS_ENSURE_SUCCESS(rv, rv);
+    return NS_OK;
+  }
 
   nsAutoCString suffix;
   rv = aPrincipal->GetOriginSuffix(suffix);
@@ -572,10 +581,10 @@ bool IsPersistentExpire(uint32_t aExpire, const nsACString& aType) {
 PermissionManager::PermissionKey*
 PermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal,
                                                       bool aForceStripOA,
-                                                      bool scopeToSite,
+                                                      bool aScopeToSite,
                                                       nsresult& aResult) {
   nsAutoCString keyString;
-  if (scopeToSite) {
+  if (aScopeToSite) {
     aResult = GetSiteFromPrincipal(aPrincipal, aForceStripOA, keyString);
   } else {
     aResult = GetOriginFromPrincipal(aPrincipal, aForceStripOA, keyString);
@@ -583,7 +592,6 @@ PermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal,
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return nullptr;
   }
-
   return new PermissionKey(keyString);
 }
 
@@ -3238,10 +3246,10 @@ void PermissionManager::SetPermissionsWithKey(
 }
 
 
-void PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
-                                        bool aForceStripOA,
-                                        bool aSiteScopePermissions,
-                                        nsACString& aKey) {
+nsresult PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
+                                            bool aForceStripOA,
+                                            bool aSiteScopePermissions,
+                                            nsACString& aKey) {
   aKey.Truncate();
 
   
@@ -3252,7 +3260,7 @@ void PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   if (!StringBeginsWith(aOrigin, "http:"_ns) &&
       !StringBeginsWith(aOrigin, "https:"_ns) &&
       !StringBeginsWith(aOrigin, "ftp:"_ns)) {
-    return;
+    return NS_OK;
   }
 
   
@@ -3261,7 +3269,7 @@ void PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   OriginAttributes attrs;
   if (!attrs.PopulateFromOrigin(aOrigin, aKey)) {
     aKey.Truncate();
-    return;
+    return NS_OK;
   }
 
   MaybeStripOriginAttributes(aForceStripOA, attrs);
@@ -3294,34 +3302,36 @@ void PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   nsAutoCString suffix;
   attrs.CreateSuffix(suffix);
   aKey.Append(suffix);
+
+  return NS_OK;
 }
 
 
-void PermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal,
-                                           bool aForceStripOA,
-                                           bool aSiteScopePermissions,
-                                           nsACString& aKey) {
+nsresult PermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal,
+                                               bool aForceStripOA,
+                                               bool aSiteScopePermissions,
+                                               nsACString& aKey) {
   nsAutoCString origin;
   nsresult rv = aPrincipal->GetOrigin(origin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aKey.Truncate();
-    return;
+    return rv;
   }
-  GetKeyForOrigin(origin, aForceStripOA, aSiteScopePermissions, aKey);
+  return GetKeyForOrigin(origin, aForceStripOA, aSiteScopePermissions, aKey);
 }
 
 
-void PermissionManager::GetKeyForPermission(nsIPrincipal* aPrincipal,
-                                            const nsACString& aType,
-                                            nsACString& aKey) {
+nsresult PermissionManager::GetKeyForPermission(nsIPrincipal* aPrincipal,
+                                                const nsACString& aType,
+                                                nsACString& aKey) {
   
   if (IsPreloadPermission(aType)) {
     aKey.Truncate();
-    return;
+    return NS_OK;
   }
 
-  GetKeyForPrincipal(aPrincipal, IsOAForceStripPermission(aType),
-                     IsSiteScopedPermission(aType), aKey);
+  return GetKeyForPrincipal(aPrincipal, IsOAForceStripPermission(aType),
+                            IsSiteScopedPermission(aType), aKey);
 }
 
 

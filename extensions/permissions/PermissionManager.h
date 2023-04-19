@@ -216,8 +216,10 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-  static void GetKeyForPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
-                                 bool aSiteScopePermissions, nsACString& aKey);
+  static nsresult GetKeyForPrincipal(nsIPrincipal* aPrincipal,
+                                     bool aForceStripOA,
+                                     bool aSiteScopePermissions,
+                                     nsACString& aKey);
 
   
 
@@ -240,8 +242,8 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-  static void GetKeyForOrigin(const nsACString& aOrigin, bool aForceStripOA,
-                              bool aSiteScopePermissions, nsACString& aKey);
+  static nsresult GetKeyForOrigin(const nsACString& aOrigin, bool aForceStripOA,
+                                  bool aSiteScopePermissions, nsACString& aKey);
 
   
 
@@ -261,8 +263,9 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-  static void GetKeyForPermission(nsIPrincipal* aPrincipal,
-                                  const nsACString& aType, nsACString& aKey);
+  static nsresult GetKeyForPermission(nsIPrincipal* aPrincipal,
+                                      const nsACString& aType,
+                                      nsACString& aKey);
 
   
 
