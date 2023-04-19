@@ -7,6 +7,7 @@
 
 #include "EditorDOMPoint.h"
 #include "EditorUtils.h"
+#include "ErrorList.h"
 #include "HTMLEditHelpers.h"  
 #include "HTMLEditor.h"
 #include "HTMLEditUtils.h"
@@ -508,6 +509,9 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
       
       pointToMoveFirstLineContent = atLeftBlockChild;
     } else {
+      if (NS_WARN_IF(!aLeftContentInBlock.IsInComposedDoc())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
       
       
       
