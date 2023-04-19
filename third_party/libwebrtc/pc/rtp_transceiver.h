@@ -13,8 +13,8 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -100,7 +100,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
 
   
   
-  cricket::ChannelInterface* channel() const { return channel_; }
+  cricket::ChannelInterface* channel() const { return channel_.get(); }
 
   
   
@@ -127,12 +127,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   
-  
-  
-  
-  
-  
-  void SetChannel(cricket::ChannelInterface* channel,
+  void SetChannel(std::unique_ptr<cricket::ChannelInterface> channel,
                   std::function<RtpTransportInternal*(const std::string&)>
                       transport_lookup);
 
@@ -285,7 +280,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   void PushNewMediaChannelAndDeleteChannel(
-      cricket::ChannelInterface* channel_to_delete);
+      std::unique_ptr<cricket::ChannelInterface> channel_to_delete);
 
   
   TaskQueueBase* const thread_;
@@ -313,7 +308,7 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   
-  cricket::ChannelInterface* channel_ = nullptr;
+  std::unique_ptr<cricket::ChannelInterface> channel_ = nullptr;
   cricket::ChannelManager* channel_manager_ = nullptr;
   std::vector<RtpCodecCapability> codec_preferences_;
   std::vector<RtpHeaderExtensionCapability> header_extensions_to_offer_;

@@ -161,7 +161,7 @@ RtpTransceiver::~RtpTransceiver() {
 }
 
 void RtpTransceiver::SetChannel(
-    cricket::ChannelInterface* channel,
+    std::unique_ptr<cricket::ChannelInterface> channel,
     std::function<RtpTransportInternal*(const std::string&)> transport_lookup) {
   RTC_DCHECK_RUN_ON(thread_);
   RTC_DCHECK(channel);
@@ -177,6 +177,8 @@ void RtpTransceiver::SetChannel(
   RTC_DCHECK_EQ(media_type(), channel->media_type());
   signaling_thread_safety_ = PendingTaskSafetyFlag::Create();
 
+  std::unique_ptr<cricket::ChannelInterface> channel_to_delete;
+
   
   
   
@@ -187,7 +189,13 @@ void RtpTransceiver::SetChannel(
   
   
   channel_manager_->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
-    channel_ = channel;
+    if (channel_) {
+      channel_->SetFirstPacketReceivedCallback(nullptr);
+      channel_->SetRtpTransport(nullptr);
+      channel_to_delete = std::move(channel_);
+    }
+
+    channel_ = std::move(channel);
 
     channel_->SetRtpTransport(transport_lookup(channel_->mid()));
     channel_->SetFirstPacketReceivedCallback(
@@ -214,26 +222,24 @@ void RtpTransceiver::ClearChannel() {
     signaling_thread_safety_->SetNotAlive();
     signaling_thread_safety_ = nullptr;
   }
-  cricket::ChannelInterface* channel_to_delete = nullptr;
+  std::unique_ptr<cricket::ChannelInterface> channel_to_delete;
 
   channel_manager_->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
     if (channel_) {
       channel_->SetFirstPacketReceivedCallback(nullptr);
       channel_->SetRtpTransport(nullptr);
-      channel_to_delete = channel_;
+      channel_to_delete = std::move(channel_);
     }
-
-    channel_ = nullptr;
   });
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
-  PushNewMediaChannelAndDeleteChannel(channel_to_delete);
+  PushNewMediaChannelAndDeleteChannel(std::move(channel_to_delete));
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
 
 void RtpTransceiver::PushNewMediaChannelAndDeleteChannel(
-    cricket::ChannelInterface* channel_to_delete) {
+    std::unique_ptr<cricket::ChannelInterface> channel_to_delete) {
   
   
   if (!channel_to_delete && senders_.empty() && receivers_.empty()) {
@@ -253,7 +259,7 @@ void RtpTransceiver::PushNewMediaChannelAndDeleteChannel(
     
     
     if (channel_to_delete) {
-      channel_manager_->DestroyChannel(channel_to_delete);
+      channel_to_delete.reset(nullptr);
     }
   });
 }

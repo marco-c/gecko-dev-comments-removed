@@ -80,17 +80,18 @@ class ChannelManager : public ChannelFactoryInterface {
   
 
   
-  VoiceChannel* CreateVoiceChannel(webrtc::Call* call,
-                                   const MediaConfig& media_config,
-                                   const std::string& mid,
-                                   bool srtp_required,
-                                   const webrtc::CryptoOptions& crypto_options,
-                                   const AudioOptions& options) override;
+  std::unique_ptr<VoiceChannel> CreateVoiceChannel(
+      webrtc::Call* call,
+      const MediaConfig& media_config,
+      const std::string& mid,
+      bool srtp_required,
+      const webrtc::CryptoOptions& crypto_options,
+      const AudioOptions& options) override;
 
   
   
   
-  VideoChannel* CreateVideoChannel(
+  std::unique_ptr<VideoChannel> CreateVideoChannel(
       webrtc::Call* call,
       const MediaConfig& media_config,
       const std::string& mid,
@@ -99,8 +100,6 @@ class ChannelManager : public ChannelFactoryInterface {
       const VideoOptions& options,
       webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory)
       override;
-
-  void DestroyChannel(ChannelInterface* channel) override;
 
   
   
@@ -133,12 +132,6 @@ class ChannelManager : public ChannelFactoryInterface {
   
   
   rtc::UniqueRandomIdGenerator ssrc_generator_;
-
-  
-  std::vector<std::unique_ptr<VoiceChannel>> voice_channels_
-      RTC_GUARDED_BY(worker_thread_);
-  std::vector<std::unique_ptr<VideoChannel>> video_channels_
-      RTC_GUARDED_BY(worker_thread_);
 
   const bool enable_rtx_;
 };

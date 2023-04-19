@@ -11,6 +11,7 @@
 #ifndef PC_CHANNEL_INTERFACE_H_
 #define PC_CHANNEL_INTERFACE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -42,8 +43,10 @@ struct MediaConfig;
 
 
 
+
 class ChannelInterface {
  public:
+  virtual ~ChannelInterface() = default;
   virtual cricket::MediaType media_type() const = 0;
 
   virtual MediaChannel* media_channel() const = 0;
@@ -83,14 +86,11 @@ class ChannelInterface {
   
   
   virtual bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) = 0;
-
- protected:
-  virtual ~ChannelInterface() = default;
 };
 
 class ChannelFactoryInterface {
  public:
-  virtual VideoChannel* CreateVideoChannel(
+  virtual std::unique_ptr<VideoChannel> CreateVideoChannel(
       webrtc::Call* call,
       const MediaConfig& media_config,
       const std::string& mid,
@@ -100,15 +100,13 @@ class ChannelFactoryInterface {
       webrtc::VideoBitrateAllocatorFactory*
           video_bitrate_allocator_factory) = 0;
 
-  virtual VoiceChannel* CreateVoiceChannel(
+  virtual std::unique_ptr<VoiceChannel> CreateVoiceChannel(
       webrtc::Call* call,
       const MediaConfig& media_config,
       const std::string& mid,
       bool srtp_required,
       const webrtc::CryptoOptions& crypto_options,
       const AudioOptions& options) = 0;
-
-  virtual void DestroyChannel(ChannelInterface* channel) = 0;
 
  protected:
   virtual ~ChannelFactoryInterface() = default;
