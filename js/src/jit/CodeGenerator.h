@@ -324,8 +324,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                    Register scratch, OutOfLineTestObject* ool);
 
   void emitStoreElementTyped(const LAllocation* value, MIRType valueType,
-                             MIRType elementType, Register elements,
-                             const LAllocation* index);
+                             Register elements, const LAllocation* index);
 
   
   void emitStoreHoleCheck(Register elements, const LAllocation* index,

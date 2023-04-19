@@ -11439,18 +11439,16 @@ void CodeGenerator::emitStoreHoleCheck(Register elements,
 }
 
 void CodeGenerator::emitStoreElementTyped(const LAllocation* value,
-                                          MIRType valueType,
-                                          MIRType elementType,
-                                          Register elements,
+                                          MIRType valueType, Register elements,
                                           const LAllocation* index) {
   MOZ_ASSERT(valueType != MIRType::MagicHole);
   ConstantOrRegister v = ToConstantOrRegister(value, valueType);
   if (index->isConstant()) {
     Address dest(elements, ToInt32(index) * sizeof(js::Value));
-    masm.storeUnboxedValue(v, valueType, dest, elementType);
+    masm.storeUnboxedValue(v, valueType, dest, MIRType::Value);
   } else {
     BaseObjectElementIndex dest(elements, ToRegister(index));
-    masm.storeUnboxedValue(v, valueType, dest, elementType);
+    masm.storeUnboxedValue(v, valueType, dest, MIRType::Value);
   }
 }
 
@@ -11466,8 +11464,8 @@ void CodeGenerator::visitStoreElementT(LStoreElementT* store) {
     emitStoreHoleCheck(elements, index, store->snapshot());
   }
 
-  emitStoreElementTyped(store->value(), store->mir()->value()->type(),
-                        MIRType::Value, elements, index);
+  emitStoreElementTyped(store->value(), store->mir()->value()->type(), elements,
+                        index);
 }
 
 void CodeGenerator::visitStoreElementV(LStoreElementV* lir) {
@@ -11518,8 +11516,8 @@ void CodeGenerator::visitStoreElementHoleT(LStoreElementHoleT* lir) {
   emitPreBarrier(elements, lir->index());
 
   masm.bind(ool->rejoinStore());
-  emitStoreElementTyped(lir->value(), lir->mir()->value()->type(),
-                        MIRType::Value, elements, lir->index());
+  emitStoreElementTyped(lir->value(), lir->mir()->value()->type(), elements,
+                        lir->index());
 
   masm.bind(ool->rejoin());
 }
@@ -11620,8 +11618,9 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     
     
     
+    MOZ_ASSERT(valueType < MIRType::Value);
     emitStoreElementTyped(ins->toStoreElementHoleT()->value(), valueType,
-                          MIRType::None, elements, index);
+                          elements, index);
     masm.jump(ool->rejoin());
   } else {
     
