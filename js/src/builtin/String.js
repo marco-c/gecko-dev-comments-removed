@@ -34,7 +34,7 @@ function String_match(regexp) {
   }
 
   
-  var isPatternString = (typeof regexp === "string");
+  var isPatternString = typeof regexp === "string";
   if (!(isPatternString && StringProtoHasNoMatch()) && regexp !== undefined && regexp !== null) {
     
     var matcher = GetMethod(regexp, GetBuiltinSymbol("match"));
@@ -188,8 +188,8 @@ function StringProtoHasNoReplace() {
 
 function Substring(str, from, length) {
   assert(typeof str === "string", "|str| should be a string");
-  assert(from | 0 === from, "coercing |from| into int32 should not change the value");
-  assert(length | 0 === length, "coercing |length| into int32 should not change the value");
+  assert((from | 0) === from, "coercing |from| into int32 should not change the value");
+  assert((length | 0) === length, "coercing |length| into int32 should not change the value");
 
   return SubstringKernel(str, from | 0, length | 0);
 }
@@ -400,7 +400,7 @@ function String_search(regexp) {
   }
 
   
-  var isPatternString = (typeof regexp === "string");
+  var isPatternString = typeof regexp === "string";
   if (!(isPatternString && StringProtoHasNoSearch()) && regexp !== undefined && regexp !== null) {
     
     var searcher = GetMethod(regexp, GetBuiltinSymbol("search"));
@@ -530,7 +530,7 @@ function String_substring(start, end) {
   var intStart = ToInteger(start);
 
   
-  var intEnd = (end === undefined) ? len : ToInteger(end);
+  var intEnd = end === undefined ? len : ToInteger(end);
 
   
   var finalStart = std_Math_min(std_Math_max(intStart, 0), len);
@@ -574,7 +574,7 @@ function String_substr(start, length) {
   var size = str.length;
   
   
-  var end = (length === undefined) ? size : ToInteger(length);
+  var end = length === undefined ? size : ToInteger(length);
 
   
   if (intStart < 0) {
@@ -654,13 +654,13 @@ function String_slice(start, end) {
   var intStart = ToInteger(start);
 
   
-  var intEnd = (end === undefined) ? len : ToInteger(end);
+  var intEnd = end === undefined ? len : ToInteger(end);
 
   
-  var from = (intStart < 0) ? std_Math_max(len + intStart, 0) : std_Math_min(intStart, len);
+  var from = intStart < 0 ? std_Math_max(len + intStart, 0) : std_Math_min(intStart, len);
 
   
-  var to = (intEnd < 0) ? std_Math_max(len + intEnd, 0) : std_Math_min(intEnd, len);
+  var to = intEnd < 0 ? std_Math_max(len + intEnd, 0) : std_Math_min(intEnd, len);
 
   
   var span = std_Math_max(to - from, 0);
@@ -697,18 +697,18 @@ function String_codePointAt(pos) {
 
   
   var first = callFunction(std_String_charCodeAt, S, position);
-  if (first < 0xD800 || first > 0xDBFF || position + 1 === size) {
+  if (first < 0xd800 || first > 0xdbff || position + 1 === size) {
     return first;
   }
 
   
   var second = callFunction(std_String_charCodeAt, S, position + 1);
-  if (second < 0xDC00 || second > 0xDFFF) {
+  if (second < 0xdc00 || second > 0xdfff) {
     return first;
   }
 
   
-  return (first - 0xD800) * 0x400 + (second - 0xDC00) + 0x10000;
+  return (first - 0xd800) * 0x400 + (second - 0xdc00) + 0x10000;
 }
 
 
@@ -803,10 +803,10 @@ function StringIteratorNext() {
 
   var charCount = 1;
   var first = callFunction(std_String_charCodeAt, S, index);
-  if (first >= 0xD800 && first <= 0xDBFF && index + 1 < size) {
+  if (first >= 0xd800 && first <= 0xdbff && index + 1 < size) {
     var second = callFunction(std_String_charCodeAt, S, index + 1);
-    if (second >= 0xDC00 && second <= 0xDFFF) {
-      first = (first - 0xD800) * 0x400 + (second - 0xDC00) + 0x10000;
+    if (second >= 0xdc00 && second <= 0xdfff) {
+      first = (first - 0xd800) * 0x400 + (second - 0xdc00) + 0x10000;
       charCount = 2;
     }
   }
@@ -953,7 +953,7 @@ function String_toLocaleUpperCase() {
 
 
 
-function String_static_raw(callSite) {
+function String_static_raw(callSite ) {
   
 
   
