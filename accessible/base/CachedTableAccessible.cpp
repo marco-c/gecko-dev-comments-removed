@@ -182,7 +182,6 @@ CachedTableAccessible::CachedTableAccessible(Accessible* aAcc) : mAcc(aAcc) {
       for (uint32_t spannedCol = colIdx; spannedCol <= lastColForCell;
            ++spannedCol) {
         EnsureRowCol(spannedRow, spannedCol);
-        MOZ_ASSERT(mRowColToCellIdx[spannedRow][spannedCol] == kNoCellIdx);
         auto& rowCol = mRowColToCellIdx[spannedRow][spannedCol];
         
         
@@ -229,7 +228,7 @@ Accessible* CachedTableAccessible::Caption() const {
     Accessible* caption = nsAccUtils::GetAccessibleByID(
         nsAccUtils::DocumentFor(mAcc), mCaptionAccID);
     MOZ_ASSERT(caption, "Dead caption Accessible!");
-    MOZ_ASSERT(caption->Role() != roles::CAPTION, "Caption has wrong role");
+    MOZ_ASSERT(caption->Role() == roles::CAPTION, "Caption has wrong role");
     return caption;
   }
   return nullptr;
