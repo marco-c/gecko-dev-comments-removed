@@ -49,6 +49,7 @@ function createTestingEnvironment(markerFileOnly = false) {
 
 
 
+
 async function testSteps() {
   SpecialPowers.setBoolPref("dom.quotaManager.testing", true);
 

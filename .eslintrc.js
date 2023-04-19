@@ -161,30 +161,7 @@ module.exports = {
       
       
       
-      
       files: testPaths.xpcshell.map(path => `${path}test*.js`),
-      rules: {
-        
-        "no-unused-vars": [
-          "warn",
-          {
-            args: "none",
-            vars: "all",
-          },
-        ],
-      },
-    },
-    {
-      
-      
-      
-      files: testPaths.xpcshell.map(path => `${path}test*.js`),
-      excludedFiles: [
-        
-        
-        
-        "dom/indexedDB/**",
-      ],
       rules: {
         
         "no-unused-vars": [

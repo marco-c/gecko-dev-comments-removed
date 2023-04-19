@@ -33,6 +33,7 @@ function createTestingEnvironment() {
 
 
 
+
 async function testSteps() {
   info("Verifying open shouldn't be blocked by unexpected files");
 
