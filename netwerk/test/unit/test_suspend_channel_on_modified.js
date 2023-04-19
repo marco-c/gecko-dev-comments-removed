@@ -1,8 +1,6 @@
 
 "use strict";
 
-var CC = Components.Constructor;
-
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var obs = Services.obs;

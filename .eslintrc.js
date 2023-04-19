@@ -190,7 +190,6 @@ module.exports = {
         
         
         "dom/**",
-        "netwerk/**",
       ],
       rules: {
         

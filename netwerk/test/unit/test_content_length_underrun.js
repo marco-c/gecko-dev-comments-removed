@@ -14,7 +14,6 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
 });
 
 var httpserver = new HttpServer();
-var index = 0;
 var test_flags = [];
 var testPathBase = "/cl_hdrs";
 
@@ -113,6 +112,7 @@ function endTests() {
 
 test_flags[1] = CL_EXPECT_LATE_FAILURE;
 
+
 function handler1(metadata, response) {
   var body = "blablabla";
 
@@ -125,6 +125,7 @@ function handler1(metadata, response) {
   response.finish();
 }
 
+
 function completeTest1(request, data, ctx) {
   Assert.equal(request.status, Cr.NS_ERROR_NET_PARTIAL_TRANSFER);
 
@@ -134,6 +135,7 @@ function completeTest1(request, data, ctx) {
 
 
 test_flags[11] = CL_IGNORE_CL;
+
 
 function handler11(metadata, response) {
   var body = "blablabla";
@@ -147,6 +149,7 @@ function handler11(metadata, response) {
   response.finish();
 }
 
+
 function completeTest11(request, data, ctx) {
   Assert.equal(request.status, Cr.NS_OK);
   run_test_number(2);
@@ -156,6 +159,7 @@ function completeTest11(request, data, ctx) {
 
 
 test_flags[2] = CL_IGNORE_CL;
+
 
 function handler2(metadata, response) {
   var body = "short content";
@@ -168,6 +172,7 @@ function handler2(metadata, response) {
   response.write(body);
   response.finish();
 }
+
 
 function completeTest2(request, data, ctx) {
   Assert.equal(request.status, Cr.NS_OK);
@@ -186,6 +191,7 @@ function completeTest2(request, data, ctx) {
 
 test_flags[3] = CL_IGNORE_CL;
 
+
 function handler3(metadata, response) {
   var body = "blablabla";
 
@@ -198,6 +204,7 @@ function handler3(metadata, response) {
   response.finish();
 }
 
+
 function completeTest3(request, data, ctx) {
   Assert.equal(request.status, Cr.NS_OK);
   prefs.setBoolPref("network.http.enforce-framing.soft", true);
@@ -207,6 +214,7 @@ function completeTest3(request, data, ctx) {
 
 
 test_flags[4] = CL_IGNORE_CL;
+
 
 function handler4(metadata, response) {
   
@@ -238,12 +246,14 @@ function handler4(metadata, response) {
   response.finish();
 }
 
+
 function completeTest4(request, data, ctx) {
   Assert.equal(request.status, Cr.NS_OK);
 
   prefs.setBoolPref("network.http.enforce-framing.http1", true);
   run_gzip_test(99);
 }
+
 
 
 

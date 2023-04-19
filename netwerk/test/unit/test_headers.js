@@ -30,7 +30,6 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
 });
 
 var httpserver = new HttpServer();
-var index = 0;
 var nextTest = firstTest;
 var test_flags = [];
 var testPathBase = "/test_headers";
@@ -85,11 +84,13 @@ function endTests() {
 
 
 
+
 function handler1(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Disposition", "attachment; filename=foo");
   response.setHeader("Content-Type", "text/plain", false);
 }
+
 
 function completeTest1(request, data, ctx) {
   try {
@@ -105,6 +106,7 @@ function completeTest1(request, data, ctx) {
 
 
 
+
 function handler2(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
@@ -112,6 +114,7 @@ function handler2(metadata, response) {
   var body = "foo";
   response.bodyOutputStream.write(body, body.length);
 }
+
 
 function completeTest2(request, data, ctx) {
   try {
@@ -128,6 +131,7 @@ function completeTest2(request, data, ctx) {
 
 
 
+
 function handler3(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
@@ -135,6 +139,7 @@ function handler3(metadata, response) {
   var body = "foo";
   response.bodyOutputStream.write(body, body.length);
 }
+
 
 function completeTest3(request, data, ctx) {
   try {
@@ -152,6 +157,7 @@ function completeTest3(request, data, ctx) {
 
 
 
+
 function handler4(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
@@ -159,6 +165,7 @@ function handler4(metadata, response) {
   var body = "foo";
   response.bodyOutputStream.write(body, body.length);
 }
+
 
 function completeTest4(request, data, ctx) {
   try {

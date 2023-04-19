@@ -211,7 +211,8 @@ function done() {
   });
 }
 
-var redirector = new Redirector();
+
+new Redirector();
 
 function run_test() {
   httpServer = new HttpServer();

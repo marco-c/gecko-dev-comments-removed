@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 var perfMetadata = {
   owner: "Network Team",
   name: "http3 raw",
@@ -57,6 +59,7 @@ function run_next_test() {
     current_test++;
   }
 }
+
 
 function run_test() {
   let env = Cc["@mozilla.org/process/environment;1"].getService(

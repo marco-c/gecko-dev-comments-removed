@@ -8,6 +8,10 @@
 
 "use strict";
 
+
+
+
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 XPCOMUtils.defineLazyGetter(this, "URL", function() {
@@ -15,7 +19,6 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
 });
 
 var httpserver = new HttpServer();
-var index = 0;
 var test_flags = [];
 var testPathBase = "/dupe_hdrs";
 

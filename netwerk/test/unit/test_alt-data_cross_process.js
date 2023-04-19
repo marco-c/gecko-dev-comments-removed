@@ -72,6 +72,8 @@ function check_has_alt_data_in_index(aHasAltData, callback) {
   }, true);
 }
 
+
+
 function run_test() {
   httpServer = new HttpServer();
   httpServer.registerPathHandler("/content", contentHandler);

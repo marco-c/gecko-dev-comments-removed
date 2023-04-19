@@ -103,6 +103,9 @@ var tests = [startAuthHeaderTest, removeAuthHeaderTest];
 
 var current_test = 0;
 
+
+
+
 var requestObserver = null;
 
 function run_test() {
