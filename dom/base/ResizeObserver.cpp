@@ -202,23 +202,14 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ResizeObserver)
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(ResizeObserver)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ResizeObserver)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwner, mDocument, mActiveTargets,
-                                    mObservationMap);
-  if (tmp->mCallback.is<RefPtr<ResizeObserverCallback>>()) {
-    ImplCycleCollectionTraverse(
-        cb, tmp->mCallback.as<RefPtr<ResizeObserverCallback>>(), "mCallback",
-        0);
-  }
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwner, mDocument, mCallback,
+                                    mActiveTargets, mObservationMap);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ResizeObserver)
   tmp->Disconnect();
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner, mDocument, mActiveTargets,
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner, mDocument, mCallback, mActiveTargets,
                                   mObservationMap);
-  if (tmp->mCallback.is<RefPtr<ResizeObserverCallback>>()) {
-    ImplCycleCollectionUnlink(
-        tmp->mCallback.as<RefPtr<ResizeObserverCallback>>());
-  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -228,14 +219,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ResizeObserver)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-
-ResizeObserver::ResizeObserver(Document& aDocument, NativeCallback aCallback)
-    : mOwner(aDocument.GetInnerWindow()),
-      mDocument(&aDocument),
-      mCallback(aCallback) {
-  MOZ_ASSERT(mOwner, "Need a non-null owner window");
-  MOZ_ASSERT(mDocument == mOwner->GetExtantDoc());
-}
 
 already_AddRefed<ResizeObserver> ResizeObserver::Constructor(
     const GlobalObject& aGlobal, ResizeObserverCallback& aCb,
@@ -295,18 +278,6 @@ void ResizeObserver::Observe(Element& aTarget,
   observation =
       new ResizeObservation(aTarget, *this, aOptions.mBox,
                             frame ? frame->GetWritingMode() : WritingMode());
-  if (this == mDocument->GetLastRememberedSizeObserver()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    observation->UpdateLastReportedSize(gfx::Size(-1, -1));
-    MOZ_ASSERT(observation->IsActive());
-  }
   mObservationList.insertBack(observation);
 
   
@@ -412,13 +383,8 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
     }
   }
 
-  if (mCallback.is<RefPtr<ResizeObserverCallback>>()) {
-    RefPtr<ResizeObserverCallback> callback(
-        mCallback.as<RefPtr<ResizeObserverCallback>>());
-    callback->Call(this, entries, *this);
-  } else {
-    mCallback.as<NativeCallback>()(entries, *this);
-  }
+  RefPtr<ResizeObserverCallback> callback(mCallback);
+  callback->Call(this, entries, *this);
 
   mActiveTargets.Clear();
   mHasSkippedTargets = false;
@@ -501,17 +467,6 @@ void ResizeObserverEntry::SetDevicePixelContentSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
   mDevicePixelContentBoxSize = new ResizeObserverSize(mOwner, aSize, wm);
-}
-
-static void LastRememberedSizeCallback(
-    const Sequence<OwningNonNull<ResizeObserverEntry>>& aEntries,
-    ResizeObserver& aObserver) {
-  
-}
-
- already_AddRefed<ResizeObserver>
-ResizeObserver::CreateLastRememberedSizeObserver(Document& aDocument) {
-  return do_AddRef(new ResizeObserver(aDocument, LastRememberedSizeCallback));
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserverSize, mOwner)
