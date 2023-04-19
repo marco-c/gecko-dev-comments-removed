@@ -1261,16 +1261,6 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         AssertMatchesCallSite(fixedPC, fixedFP);
 #endif
       } else {
-        if (codeRange->kind() == CodeRange::ImportJitExit) {
-          
-          
-          
-          if (offsetInCode >= codeRange->jitExitUntrustedFPStart() &&
-              offsetInCode < codeRange->jitExitUntrustedFPEnd()) {
-            return false;
-          }
-        }
-
         if (isSignatureCheckFail(offsetInCode, codeRange)) {
           
           const auto* frame = Frame::fromUntaggedWasmExitFP(fp);

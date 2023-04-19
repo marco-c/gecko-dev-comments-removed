@@ -2346,15 +2346,9 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
 
   
   
-  
-  offsets->untrustedFPStart = masm.currentOffset();
   AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddrAndFP);
-
   masm.loadPtr(Address(masm.getStackPointer(), savedInstanceOffset),
                InstanceReg);
-  masm.moveStackPtrTo(FramePointer);
-  masm.addPtr(Imm32(masm.framePushed()), FramePointer);
-  offsets->untrustedFPEnd = masm.currentOffset();
 
   
   
