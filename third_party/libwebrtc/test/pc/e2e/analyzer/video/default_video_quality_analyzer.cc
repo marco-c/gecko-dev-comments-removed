@@ -527,6 +527,10 @@ void DefaultVideoQualityAnalyzer::RegisterParticipantInCall(
     key_val.second.AddPeer();
   }
   
+  
+  
+  
+  
   for (auto& key_val : captured_frames_in_flight_) {
     key_val.second.AddPeer();
   }
