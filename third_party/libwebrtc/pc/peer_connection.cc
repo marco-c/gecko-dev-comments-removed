@@ -652,6 +652,10 @@ RTCError PeerConnection::Initialize(
       },
       delay_ms);
 
+  
+  RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.PeerConnection.IceServers.Configured",
+                              configuration_.servers.size(), 0, 31, 32);
+
   return RTCError::OK();
 }
 
@@ -1896,6 +1900,10 @@ void PeerConnection::SetConnectionState(
     }
     RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.ProvisionalAnswer",
                               pranswer, kProvisionalAnswerMax);
+
+    
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.PeerConnection.IceServers.Connected",
+                                configuration_.servers.size(), 0, 31, 32);
   }
 }
 
