@@ -15,6 +15,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 
 
@@ -411,24 +414,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  Select: {
-    parent: {
-      moduleURI: "resource://gre/actors/SelectParent.jsm",
-    },
-
-    child: {
-      moduleURI: "resource://gre/actors/SelectChild.jsm",
-      events: {
-        mozshowdropdown: {},
-        "mozshowdropdown-sourcetouch": {},
-        mozhidedropdown: { mozSystemGroup: true },
-      },
-    },
-
-    includeChrome: true,
-    allFrames: true,
-  },
-
   
   
   
@@ -525,6 +510,29 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
     },
 
     messageManagerGroups: ["browsers"],
+  };
+}
+
+
+
+
+if (AppConstants.platform != "android") {
+  JSWINDOWACTORS.Select = {
+    parent: {
+      moduleURI: "resource://gre/actors/SelectParent.jsm",
+    },
+
+    child: {
+      moduleURI: "resource://gre/actors/SelectChild.jsm",
+      events: {
+        mozshowdropdown: {},
+        "mozshowdropdown-sourcetouch": {},
+        mozhidedropdown: { mozSystemGroup: true },
+      },
+    },
+
+    includeChrome: true,
+    allFrames: true,
   };
 }
 
