@@ -50,6 +50,7 @@ use std::time::{Duration, Instant};
 
 
 
+
 pub struct Parker {
     unparker: Unparker,
     _marker: PhantomData<*const ()>,
@@ -245,6 +246,7 @@ impl Unparker {
     
     
     
+    
     pub fn unpark(&self) {
         self.inner.unpark()
     }
@@ -262,7 +264,7 @@ impl Unparker {
     
     
     pub fn into_raw(this: Unparker) -> *const () {
-        Arc::into_raw(this.inner) as *const ()
+        Arc::into_raw(this.inner).cast::<()>()
     }
 
     
@@ -284,7 +286,7 @@ impl Unparker {
     
     pub unsafe fn from_raw(ptr: *const ()) -> Unparker {
         Unparker {
-            inner: Arc::from_raw(ptr as *const Inner),
+            inner: Arc::from_raw(ptr.cast::<Inner>()),
         }
     }
 }

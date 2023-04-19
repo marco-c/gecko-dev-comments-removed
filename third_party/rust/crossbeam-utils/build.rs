@@ -44,7 +44,6 @@ fn main() {
     
     
     
-    
     if NO_ATOMIC_CAS.contains(&&*target) {
         println!("cargo:rustc-cfg=crossbeam_no_atomic_cas");
     }

@@ -145,6 +145,7 @@ type SharedOption<T> = Arc<Mutex<Option<T>>>;
 
 
 
+
 pub fn scope<'env, F, R>(f: F) -> thread::Result<R>
 where
     F: FnOnce(&Scope<'env>) -> R,
@@ -488,6 +489,7 @@ pub struct ScopedJoinHandle<'scope, T> {
 }
 
 impl<T> ScopedJoinHandle<'_, T> {
+    
     
     
     
