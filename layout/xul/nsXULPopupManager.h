@@ -269,12 +269,8 @@ class nsMenuChainItem {
   
   
   void SetParent(mozilla::UniquePtr<nsMenuChainItem> aParent);
-
   
-  
-  
-  
-  void Detach(mozilla::UniquePtr<nsMenuChainItem>& aRoot);
+  mozilla::UniquePtr<nsMenuChainItem> Detach();
 };
 
 
@@ -758,6 +754,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   nsMenuChainItem* GetTopVisibleMenu();
+
+  
+  void RemoveMenuChainItem(nsMenuChainItem*);
 
   
   

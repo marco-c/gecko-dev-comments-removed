@@ -178,39 +178,35 @@ nsIContent* nsMenuChainItem::Content() { return mFrame->GetContent(); }
 
 void nsMenuChainItem::SetParent(UniquePtr<nsMenuChainItem> aParent) {
   MOZ_ASSERT_IF(aParent, !aParent->mChild);
-  if (mParent) {
-    NS_ASSERTION(mParent->mChild == this,
-                 "Unexpected - parent's child not set to this");
-    mParent->mChild = nullptr;
-  }
+  auto oldParent = Detach();
   mParent = std::move(aParent);
   if (mParent) {
     mParent->mChild = this;
   }
 }
 
-void nsMenuChainItem::Detach(UniquePtr<nsMenuChainItem>& aRoot) {
+UniquePtr<nsMenuChainItem> nsMenuChainItem::Detach() {
   if (mParent) {
     MOZ_ASSERT(mParent->mChild == this,
-                "Unexpected - parent's child not set to this");
+               "Unexpected - parent's child not set to this");
     mParent->mChild = nullptr;
   }
-  auto parent = std::move(mParent);
-  
-  
-  
-  if (mChild) {
-    MOZ_ASSERT(this != aRoot,
-                 "Unexpected - popup with child at end of chain");
+  return std::move(mParent);
+}
+
+void nsXULPopupManager::RemoveMenuChainItem(nsMenuChainItem* aItem) {
+  auto parent = aItem->Detach();
+  if (auto* child = aItem->GetChild()) {
+    MOZ_ASSERT(aItem != mPopups,
+               "Unexpected - popup with child at end of chain");
     
-    mChild->SetParent(std::move(parent));
+    child->SetParent(std::move(parent));
   } else {
     
     
-    MOZ_ASSERT(this == aRoot,
-                 "Unexpected - popup with no child not at end of chain");
-    
-    aRoot = std::move(parent);
+    MOZ_ASSERT(aItem == mPopups,
+               "Unexpected - popup with no child not at end of chain");
+    mPopups = std::move(parent);
   }
 }
 
@@ -1049,8 +1045,8 @@ void nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   bool isNoAutoHide =
       aPopupFrame->IsNoAutoHide() || popupType == ePopupTypeTooltip;
 
-  auto item =
-      MakeUnique<nsMenuChainItem>(aPopupFrame, isNoAutoHide, aIsContextMenu, popupType);
+  auto item = MakeUnique<nsMenuChainItem>(aPopupFrame, isNoAutoHide,
+                                          aIsContextMenu, popupType);
 
   
   
@@ -1307,7 +1303,7 @@ void nsXULPopupManager::HidePopupCallback(
   
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
     if (item->Content() == aPopup) {
-      item->Detach(mPopups);
+      RemoveMenuChainItem(item);
       SetCaptureState(aPopup);
       break;
     }
@@ -1434,7 +1430,7 @@ void nsXULPopupManager::HidePopupsInDocShell(
     if (item->Frame()->PopupState() != ePopupInvisible &&
         IsChildOfDocShell(item->Content()->OwnerDoc(), aDocShellToHide)) {
       nsMenuPopupFrame* frame = item->Frame();
-      item->Detach(mPopups);
+      RemoveMenuChainItem(item);
       popupsToHide.AppendElement(frame);
     }
     item = parent;
@@ -1715,9 +1711,9 @@ bool nsXULPopupManager::IsPopupOpen(nsIContent* aPopup) {
   
   if (nsMenuChainItem* item = FindPopup(aPopup)) {
     NS_ASSERTION(item->Frame()->IsOpen() ||
-                      item->Frame()->PopupState() == ePopupHiding ||
-                      item->Frame()->PopupState() == ePopupInvisible,
-                  "popup in open list not actually open");
+                     item->Frame()->PopupState() == ePopupHiding ||
+                     item->Frame()->PopupState() == ePopupInvisible,
+                 "popup in open list not actually open");
     return true;
   }
   return false;
@@ -1782,7 +1778,8 @@ already_AddRefed<nsINode> nsXULPopupManager::GetLastTriggerNode(
       node = nsMenuPopupFrame::GetTriggerContent(popupFrame);
     }
   } else {
-    for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
+    for (nsMenuChainItem* item = mPopups.get(); item;
+         item = item->GetParent()) {
       
       if ((item->PopupType() == ePopupTypeTooltip) == aIsTooltip &&
           item->Content()->GetUncomposedDoc() == aDocument) {
@@ -1906,42 +1903,36 @@ void nsXULPopupManager::PopupDestroyed(nsMenuPopupFrame* aPopup) {
     mTimerMenu = nullptr;
   }
 
-  nsTArray<nsMenuPopupFrame*> popupsToHide;
-
-  for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
-    nsMenuPopupFrame* frame = item->Frame();
-    if (frame != aPopup) {
-      continue;
-    }
-
-    
-    if (!item->IsNoAutoHide() && frame->PopupState() != ePopupInvisible) {
-      
-      
-      
-      
-      for (auto* child = item->GetChild(); child; child = child->GetChild()) {
-        
-        
-        
-        
-        
-        nsMenuPopupFrame* childframe = child->Frame();
-        if (nsLayoutUtils::IsProperAncestorFrame(frame, childframe)) {
-          popupsToHide.AppendElement(childframe);
-        } else {
-          
-          
-          HidePopup(child->Content(), false, false, true, false);
-          break;
-        }
-      }
-    }
-
-    item->Detach(mPopups);
-    break;
+  nsMenuChainItem* item = FindPopup(aPopup->GetContent());
+  if (!item) {
+    return;
   }
 
+  nsTArray<nsMenuPopupFrame*> popupsToHide;
+  
+  if (!item->IsNoAutoHide() && item->Frame()->PopupState() != ePopupInvisible) {
+    
+    
+    
+    
+    for (auto* child = item->GetChild(); child; child = child->GetChild()) {
+      
+      
+      
+      
+      
+      if (nsLayoutUtils::IsProperAncestorFrame(item->Frame(), child->Frame())) {
+        popupsToHide.AppendElement(child->Frame());
+      } else {
+        
+        
+        HidePopup(child->Content(), false, false, true, false);
+        break;
+      }
+    }
+  }
+
+  RemoveMenuChainItem(item);
   HidePopupsInList(popupsToHide);
 }
 
