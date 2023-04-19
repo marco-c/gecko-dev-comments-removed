@@ -9,6 +9,23 @@
 
 
 
+function closingPopupEndsDrag(popup) {
+  if (!popup.isWaylandPopup) {
+    return false;
+  }
+  if (popup.isWaylandDragSource) {
+    return true;
+  }
+  for (let childPopup of popup.querySelectorAll("menu > menupopup")) {
+    if (childPopup.isWaylandDragSource) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
 {
   
 
@@ -134,7 +151,7 @@
             
             
             
-            if (!draggingOverChild) {
+            if (!draggingOverChild && !closingPopupEndsDrag(this._self)) {
               this.closeParentMenus();
             }
           } else if (aTimer == this.closeMenuTimer) {
@@ -142,19 +159,23 @@
             var popup = this._self;
             
             
-            if (
+            var hidePopup =
               PlacesControllerDragHelper.getSession() &&
               !PlacesControllerDragHelper.draggingOverChildNode(
                 popup.parentNode
-              )
-            ) {
-              popup.hidePopup();
-              
-              
-              
-              this.closeParentMenus();
+              );
+            if (hidePopup) {
+              if (!closingPopupEndsDrag(popup)) {
+                popup.hidePopup();
+                
+                
+                
+                this.closeParentMenus();
+              } else if (popup.isWaylandDragSource) {
+                
+                this._closeMenuTimer = this.setTimer(this.hoverTime);
+              }
             }
-            this._closeMenuTimer = null;
           }
         },
 
@@ -184,8 +205,12 @@
         
         clear: function OF__clear() {
           if (this._folder.elt && this._folder.elt.lastElementChild) {
-            if (!this._folder.elt.lastElementChild.hasAttribute("dragover")) {
-              this._folder.elt.lastElementChild.hidePopup();
+            var popup = this._folder.elt.lastElementChild;
+            if (
+              !popup.hasAttribute("dragover") &&
+              !closingPopupEndsDrag(popup)
+            ) {
+              popup.hidePopup();
             }
             
             this._folder.elt.removeAttribute("_moz-menuactive");
