@@ -294,9 +294,6 @@ class Port : public PortInterface,
   Connection* GetConnection(const rtc::SocketAddress& remote_addr) override;
 
   
-  sigslot::signal2<Port*, Connection*> SignalConnectionCreated;
-
-  
   
   
   
