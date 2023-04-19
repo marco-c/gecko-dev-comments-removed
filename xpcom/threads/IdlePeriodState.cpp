@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/IdlePeriodState.h"
 #include "mozilla/StaticPrefs_idle_period.h"
 #include "mozilla/ipc/IdleSchedulerChild.h"
@@ -108,7 +109,7 @@ TimeStamp IdlePeriodState::GetLocalIdleDeadline(
   
   
   
-  if (gXPCOMThreadsShutDown ||
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads) ||
       nsThreadManager::get().GetCurrentThread()->ShuttingDown()) {
     aShuttingDown = true;
     return TimeStamp::Now();
