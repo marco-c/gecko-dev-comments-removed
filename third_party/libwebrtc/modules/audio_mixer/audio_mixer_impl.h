@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio/audio_mixer.h"
 #include "api/scoped_refptr.h"
@@ -28,22 +29,9 @@
 
 namespace webrtc {
 
-typedef std::vector<AudioFrame*> AudioFrameList;
-
 class AudioMixerImpl : public AudioMixer {
  public:
-  struct SourceStatus {
-    SourceStatus(Source* audio_source, bool is_mixed, float gain)
-        : audio_source(audio_source), is_mixed(is_mixed), gain(gain) {}
-    Source* audio_source = nullptr;
-    bool is_mixed = false;
-    float gain = 0.0f;
-
-    
-    AudioFrame audio_frame;
-  };
-
-  using SourceStatusList = std::vector<std::unique_ptr<SourceStatus>>;
+  struct SourceStatus;
 
   
   static const int kFrameDurationInMs = 10;
@@ -75,32 +63,29 @@ class AudioMixerImpl : public AudioMixer {
                  bool use_limiter);
 
  private:
-  
-  void CalculateOutputFrequency();
-  
-  int OutputFrequency() const;
+  struct HelperContainers;
 
   
   
   
-  AudioFrameList GetAudioFromSources() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  rtc::ArrayView<AudioFrame* const> GetAudioFromSources(int output_frequency)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
   
   mutable Mutex mutex_;
-  rtc::RaceChecker race_checker_;
 
   std::unique_ptr<OutputRateCalculator> output_rate_calculator_;
-  
-  int output_frequency_ RTC_GUARDED_BY(race_checker_);
-  size_t sample_size_ RTC_GUARDED_BY(race_checker_);
 
   
-  SourceStatusList audio_source_list_ RTC_GUARDED_BY(mutex_);  
+  std::vector<std::unique_ptr<SourceStatus>> audio_source_list_
+      RTC_GUARDED_BY(mutex_);
+  const std::unique_ptr<HelperContainers> helper_containers_
+      RTC_GUARDED_BY(mutex_);
 
   
-  FrameCombiner frame_combiner_ RTC_GUARDED_BY(race_checker_);
+  FrameCombiner frame_combiner_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioMixerImpl);
 };
