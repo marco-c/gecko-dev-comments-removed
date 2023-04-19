@@ -88,6 +88,17 @@ class VideoCodecTestFixture {
 
     
     std::string filename;
+    
+    
+    absl::optional<int> clip_width;
+    absl::optional<int> clip_height;
+    
+    absl::optional<int> clip_fps;
+
+    
+    
+    absl::optional<int> reference_width;
+    absl::optional<int> reference_height;
 
     
     std::string filepath;
