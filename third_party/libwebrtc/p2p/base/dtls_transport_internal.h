@@ -34,15 +34,17 @@ namespace cricket {
 
 enum DtlsTransportState {
   
-  DTLS_TRANSPORT_NEW = 0,
+  DTLS_TRANSPORT_NEW = static_cast<int>(webrtc::DtlsTransportState::kNew),
   
-  DTLS_TRANSPORT_CONNECTING,
+  DTLS_TRANSPORT_CONNECTING =
+      static_cast<int>(webrtc::DtlsTransportState::kConnecting),
   
-  DTLS_TRANSPORT_CONNECTED,
+  DTLS_TRANSPORT_CONNECTED =
+      static_cast<int>(webrtc::DtlsTransportState::kConnected),
   
-  DTLS_TRANSPORT_CLOSED,
+  DTLS_TRANSPORT_CLOSED = static_cast<int>(webrtc::DtlsTransportState::kClosed),
   
-  DTLS_TRANSPORT_FAILED,
+  DTLS_TRANSPORT_FAILED = static_cast<int>(webrtc::DtlsTransportState::kFailed),
 };
 
 webrtc::DtlsTransportState ConvertDtlsTransportState(
