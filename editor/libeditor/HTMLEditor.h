@@ -3318,19 +3318,19 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertiesAsSubAction(
+      const nsTArray<EditorInlineStyle>& aStylesToRemove);
+
+  
 
 
 
 
 
 
-
-
-
-  enum class RemoveRelatedElements { Yes, No };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertyAsSubAction(
-      nsStaticAtom* aHTMLProperty, nsStaticAtom* aAttribute,
-      RemoveRelatedElements aRemoveRelatedElements);
+  void AppendInlineStyleAndRelatedStyle(
+      const EditorInlineStyle& aStyleToRemove,
+      nsTArray<EditorInlineStyle>& aStylesToRemove) const;
 
   
 
