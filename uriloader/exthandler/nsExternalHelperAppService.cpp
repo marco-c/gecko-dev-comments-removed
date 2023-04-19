@@ -3544,7 +3544,7 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   uint32_t bytesLength = 0;
 
   
-  uint32_t extensionBytesLength = 0;
+  int32_t extensionBytesLength = 0;
 
   
   
@@ -3556,8 +3556,9 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
       break;
     }
 
-    
-    MOZ_ASSERT(nextChar != char16_t(0));
+    if (nextChar == char16_t(0)) {
+      continue;
+    }
 
     auto unicodeCategory = unicode::GetGeneralCategory(nextChar);
     if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_CONTROL ||
@@ -3610,11 +3611,10 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
     if (maxBytes) {
       
       
-      uint32_t charBytesLength = nextChar < 0x80      ? 1
-                                 : nextChar < 0x800   ? 2
-                                 : nextChar < 0x10000 ? 3
-                                                      : 4;
-      bytesLength += charBytesLength;
+      bytesLength += nextChar < 0x80      ? 1
+                     : nextChar < 0x800   ? 2
+                     : nextChar < 0x10000 ? 3
+                                          : 4;
       if (bytesLength > maxBytes) {
         if (longFileNameEnd == -1) {
           longFileNameEnd = int32_t(outFileName.Length());
@@ -3623,11 +3623,10 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
 
       
       
-      
       if (nextChar == u'.') {
         extensionBytesLength = 1;  
       } else if (extensionBytesLength) {
-        extensionBytesLength += charBytesLength;
+        extensionBytesLength++;
       }
     }
 
@@ -3639,10 +3638,10 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   
   if (bytesLength > maxBytes && !outFileName.IsEmpty()) {
     
-    nsAutoString extension;
+    nsAutoCString extension;
     int32_t dotidx = outFileName.RFind(u".");
     if (dotidx != -1) {
-      extension = Substring(outFileName, dotidx + 1);
+      extension = NS_ConvertUTF16toUTF8(Substring(outFileName, dotidx + 1));
     }
 
     
@@ -3663,23 +3662,19 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
       if (longFileNameEnd <= 0) {
         
         
-        
-        
-        
-        int32_t dotidx = outFileName.Find(u".");
-        outFileName.Truncate(dotidx > 0 ? dotidx : 1);
+        outFileName.Truncate(maxBytes);
       } else {
         outFileName.Truncate(std::min(longFileNameEnd, lastNonTrimmable));
+      }
 
-        
-        
-        if (!extension.IsEmpty()) {
-          if (outFileName.Last() != '.') {
-            outFileName.AppendLiteral(".");
-          }
-
-          outFileName.Append(extension);
+      
+      
+      if (!extension.IsEmpty()) {
+        if (outFileName.Last() != '.') {
+          outFileName.AppendLiteral(".");
         }
+
+        outFileName.Append(NS_ConvertUTF8toUTF16(extension));
       }
     }
   } else if (lastNonTrimmable >= 0) {
