@@ -102,7 +102,9 @@ class RemoteDecoderManagerChild final
   layers::VideoBridgeSource GetSource() const;
 
   
-  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
+  
+  static RefPtr<GenericNonExclusivePromise> LaunchUtilityProcessIfNeeded(
+      RemoteDecodeIn aLocation);
 
  protected:
   void InitIPDL();
@@ -130,8 +132,9 @@ class RemoteDecoderManagerChild final
   static void OpenRemoteDecoderManagerChildForProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint,
       RemoteDecodeIn aLocation);
-  static RefPtr<GenericNonExclusivePromise> LaunchUtilityProcessIfNeeded(
-      RemoteDecodeIn aLocation);
+
+  
+  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
   RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
   

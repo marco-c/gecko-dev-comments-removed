@@ -431,8 +431,13 @@ mozilla::ipc::IPCResult GPUParent::RecvInitImageBridge(
 }
 
 mozilla::ipc::IPCResult GPUParent::RecvInitVideoBridge(
-    Endpoint<PVideoBridgeParent>&& aEndpoint) {
-  VideoBridgeParent::Open(std::move(aEndpoint), VideoBridgeSource::RddProcess);
+    Endpoint<PVideoBridgeParent>&& aEndpoint,
+    const layers::VideoBridgeSource& aSource) {
+  
+  
+  MOZ_ASSERT(aSource == layers::VideoBridgeSource::RddProcess ||
+             aSource == layers::VideoBridgeSource::MFMediaEngineCDMProcess);
+  VideoBridgeParent::Open(std::move(aEndpoint), aSource);
   return IPC_OK();
 }
 

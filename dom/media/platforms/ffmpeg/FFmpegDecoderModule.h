@@ -69,6 +69,11 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   media::DecodeSupportSet Supports(
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override {
+    
+    if (aParams.mMediaEngineId) {
+      return media::DecodeSupport::Unsupported;
+    }
+
     const auto& trackInfo = aParams.mConfig;
     const nsACString& mimeType = trackInfo.mMimeType;
 

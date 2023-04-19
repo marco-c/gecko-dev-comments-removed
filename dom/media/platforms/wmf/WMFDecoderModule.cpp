@@ -311,6 +311,10 @@ media::DecodeSupportSet WMFDecoderModule::Supports(
     const SupportDecoderParams& aParams,
     DecoderDoctorDiagnostics* aDiagnostics) const {
   
+  if (aParams.mMediaEngineId) {
+    return media::DecodeSupport::Unsupported;
+  }
+  
   
   
   const auto& trackInfo = aParams.mConfig;

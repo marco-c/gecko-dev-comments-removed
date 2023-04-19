@@ -114,7 +114,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   void InitVideoBridge(
-      mozilla::ipc::Endpoint<PVideoBridgeParent>&& aVideoBridge);
+      mozilla::ipc::Endpoint<PVideoBridgeParent>&& aVideoBridge,
+      layers::VideoBridgeSource aSource);
 
   
   

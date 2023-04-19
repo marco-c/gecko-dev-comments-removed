@@ -14,16 +14,26 @@
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/ipc/PUtilityAudioDecoderChild.h"
 
+#ifdef MOZ_WMF_MEDIA_ENGINE
+#  include "mozilla/gfx/GPUProcessListener.h"
+#  include "mozilla/gfx/gfxVarReceiver.h"
+#endif
+
 #include "PDMFactory.h"
 
 namespace mozilla::ipc {
 
 
 
-class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild {
+class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild
+#ifdef MOZ_WMF_MEDIA_ENGINE
+    ,
+                                       public gfx::gfxVarReceiver,
+                                       public gfx::GPUProcessListener
+#endif
+{
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UtilityAudioDecoderChild, override);
-
   mozilla::ipc::IPCResult RecvUpdateMediaCodecsSupported(
       const RemoteDecodeIn& aLocation,
       const media::MediaCodecsSupported& aSupported);
@@ -77,11 +87,31 @@ class UtilityAudioDecoderChild final : public PUtilityAudioDecoderChild {
 
   static RefPtr<UtilityAudioDecoderChild> GetSingleton(SandboxingKind aKind);
 
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  mozilla::ipc::IPCResult RecvCompleteCreatedVideoBridge();
+
+  bool HasCreatedVideoBridge() const;
+
+  void OnVarChanged(const gfx::GfxVarUpdate& aVar) override;
+
+  void OnCompositorUnexpectedShutdown() override;
+
+  
+  
+  bool CreateVideoBridge();
+#endif
+
  private:
   explicit UtilityAudioDecoderChild(SandboxingKind aKind);
   ~UtilityAudioDecoderChild() = default;
 
   const SandboxingKind mSandbox;
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  
+  
+  bool mHasCreatedVideoBridge = false;
+#endif
 };
 
 }  
