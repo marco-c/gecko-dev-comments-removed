@@ -225,7 +225,6 @@ bool RemoteDecoderManagerChild::Supports(
   if (!supported) {
     
     
-    
     if (aLocation == RemoteDecodeIn::UtilityProcess) {
       LaunchUtilityProcessIfNeeded();
     }
@@ -234,7 +233,20 @@ bool RemoteDecoderManagerChild::Supports(
       
       LaunchRDDProcessIfNeeded();
     }
-    return true;
+
+    
+    
+    const bool isVideo = aParams.mConfig.IsVideo();
+    const bool isAudio = aParams.mConfig.IsAudio();
+    const auto trackSupport = GetTrackSupport(aLocation);
+    if (isVideo) {
+      return trackSupport.contains(TrackSupport::Video);
+    }
+    if (isAudio) {
+      return trackSupport.contains(TrackSupport::Audio);
+    }
+    MOZ_ASSERT_UNREACHABLE("Not audio and video?!");
+    return false;
   }
 
   
