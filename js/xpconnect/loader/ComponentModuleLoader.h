@@ -95,10 +95,10 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
 
 
 
-class ComponentLoadContext : public JS::loader::LoadContextBase {
+class ComponentLoadContext : public JS::loader::LoadContextCCBase {
  public:
   ComponentLoadContext()
-      : LoadContextBase(JS::loader::ContextKind::Component) {}
+      : LoadContextCCBase(JS::loader::ContextKind::Component) {}
 
  public:
   

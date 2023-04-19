@@ -51,7 +51,7 @@ class CacheCreator;
 
 
 
-class WorkerLoadContext : public JS::loader::LoadContextBase {
+class WorkerLoadContext : public JS::loader::LoadContextNoCCBase {
  public:
   
 
@@ -79,8 +79,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   };
 
   explicit WorkerLoadContext(Kind aKind, const Maybe<ClientInfo>& aClientInfo);
-
-  ~WorkerLoadContext() = default;
 
   
   bool IsTopLevel() {
