@@ -12,7 +12,7 @@ const { UrlClassifierTestUtils } = ChromeUtils.import(
 const defaultTopWindowURI = NetUtil.newURI("http://www.example.com/");
 
 var httpServer;
-var normalOrigin, trackingOrigin;
+var trackingOrigin;
 
 
 
@@ -21,7 +21,7 @@ var normalOrigin, trackingOrigin;
 
 
 
-const PARAM_LOAD_BYPASS_URL_CLASSIFIER = 1 << 0;
+
 const PARAM_CONTENT_POLICY_TYPE_DOCUMENT = 1 << 1;
 const PARAM_TRIGGERING_PRINCIPAL_SYSTEM = 1 << 2;
 const PARAM_CAP_BE_CONSERVATIVE = 1 << 3;
@@ -84,7 +84,6 @@ function setupHttpServer() {
     "example.org",
     httpServer.identity.primaryPort
   );
-  normalOrigin = "http://localhost:" + httpServer.identity.primaryPort;
   trackingOrigin =
     "http://tracking.example.org:" + httpServer.identity.primaryPort;
 }
