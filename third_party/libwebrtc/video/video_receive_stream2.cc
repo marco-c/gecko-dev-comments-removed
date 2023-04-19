@@ -65,7 +65,9 @@ constexpr int kMaxBaseMinimumDelayMs = 10000;
 
 constexpr int kMaxWaitForFrameMs = 3000;
 
-constexpr int kDefaultMaximumPreStreamDecoders = 100;
+
+
+constexpr int kDefaultMaximumPreStreamDecoders = 1;
 
 
 
