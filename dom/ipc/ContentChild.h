@@ -273,9 +273,6 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvThemeChanged(FullLookAndFeel&&,
                                            widget::ThemeChangeKind);
 
-  mozilla::ipc::IPCResult RecvUpdateSystemParameters(
-      nsTArray<SystemParameterKVPair>&& aUpdates);
-
   
   nsresult AddRemoteAlertObserver(const nsString& aData,
                                   nsIObserver* aObserver);

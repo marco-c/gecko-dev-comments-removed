@@ -309,7 +309,6 @@
 
 #ifdef XP_WIN
 #  include "mozilla/widget/AudioSession.h"
-#  include "mozilla/widget/WinContentSystemParameters.h"
 #  include "mozilla/WinDllServices.h"
 #endif
 
@@ -3015,11 +3014,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     GfxInfoBase* gfxInfoRaw = static_cast<GfxInfoBase*>(gfxInfo.get());
     xpcomInit.gfxFeatureStatus() = gfxInfoRaw->GetAllFeatures();
   }
-
-#ifdef XP_WIN
-  xpcomInit.systemParameters() =
-      widget::WinContentSystemParameters::GetSingleton()->GetParentValues();
-#endif
 
   
   TelemetryIPC::GetDynamicScalarDefinitions(xpcomInit.dynamicScalarDefs());

@@ -133,7 +133,6 @@
 #include "SystemTimeConverter.h"
 #include "WinTaskbar.h"
 #include "WidgetUtils.h"
-#include "WinContentSystemParameters.h"
 #include "WinWindowOcclusionTracker.h"
 #include "nsIWidgetListener.h"
 #include "mozilla/dom/Document.h"
@@ -5150,9 +5149,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_THEMECHANGED: {
-      
-      WinContentSystemParameters::GetSingleton()->OnThemeChanged();
-
       
       UpdateNonClientMargins();
       nsUXThemeData::UpdateNativeThemeInfo();
