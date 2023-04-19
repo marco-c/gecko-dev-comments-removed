@@ -116,7 +116,7 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
       MOZ_ALWAYS_SUCCEEDS(scriptError->Init(
           aMessage, aFilename,
            u""_ns, aLineNumber, aColumnNumber, aSeverityFlag,
-          category.get(),
+          category,
            false,
            aIsChrome));
     }

@@ -160,7 +160,7 @@ void Sanitizer::LogMessage(const nsAString& aMessage, uint32_t aFlags,
   message.Append(aMessage);
 
   
-  nsCString category("Sanitizer");
+  constexpr auto category = "Sanitizer"_ns;
 
   if (aInnerWindowID > 0) {
     
@@ -168,9 +168,9 @@ void Sanitizer::LogMessage(const nsAString& aMessage, uint32_t aFlags,
                                               aInnerWindowID);
   } else {
     
-    nsContentUtils::LogSimpleConsoleError(
-        message, category.get(), aFromPrivateWindow,
-        true , aFlags);
+    nsContentUtils::LogSimpleConsoleError(message, category, aFromPrivateWindow,
+                                          true ,
+                                          aFlags);
   }
 }
 

@@ -175,7 +175,7 @@ class RenderThread final {
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
 
   
-  void SetProfilerUI(wr::WindowId aWindowId, const nsCString& aUI);
+  void SetProfilerUI(wr::WindowId aWindowId, const nsACString& aUI);
 
   
   void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId,

@@ -117,7 +117,7 @@ struct StringWriteFunc : public JSONWriteFunc {
 };
 
 void AppendJSONStringAsProperty(nsCString& aDest, const char* aPropertyName,
-                                const nsCString& aJSON) {
+                                const nsACString& aJSON) {
   
   
   aDest.Append(",\n\"");
@@ -127,7 +127,7 @@ void AppendJSONStringAsProperty(nsCString& aDest, const char* aPropertyName,
 }
 
 static void WriteContentParent(nsCString& aRawString, JSONWriter& aWriter,
-                               const nsCString& aString,
+                               const nsACString& aString,
                                ContentParent* aParent) {
   aWriter.StringProperty("type", "content");
   aWriter.IntProperty("id", aParent->ChildID());
@@ -206,7 +206,7 @@ void PerfStats::ResetCollection() {
 }
 
 void PerfStats::StorePerfStatsInternal(dom::ContentParent* aParent,
-                                       const nsCString& aPerfStats) {
+                                       const nsACString& aPerfStats) {
   nsCString jsonString;
   JSONWriter w(MakeUnique<StringWriteFunc>(jsonString));
 

@@ -194,7 +194,7 @@ nsresult nsObserverService::FilterHttpOnTopics(const char* aTopic) {
         do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
     error->Init(u"http-on-* observers only work in the parent process"_ns,
                 u""_ns, u""_ns, 0, 0, nsIScriptError::warningFlag,
-                "chrome javascript", false ,
+                "chrome javascript"_ns, false ,
                 true );
     console->LogMessage(error);
 

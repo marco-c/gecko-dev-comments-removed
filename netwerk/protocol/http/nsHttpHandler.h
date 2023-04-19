@@ -520,7 +520,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   friend class SocketProcessChild;
   void SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs);
-  void SetDeviceModelId(const nsCString& aModelId);
+  void SetDeviceModelId(const nsACString& aModelId);
 
   
   

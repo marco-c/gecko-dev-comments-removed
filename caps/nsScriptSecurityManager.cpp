@@ -1123,7 +1123,8 @@ nsresult nsScriptSecurityManager::ReportError(const char* aMessageTag,
         aInnerWindowID, true );
   } else {
     rv = error->Init(message, u""_ns, u""_ns, 0, 0, nsIScriptError::errorFlag,
-                     "SOP", aFromPrivateWindow, true );
+                     "SOP"_ns, aFromPrivateWindow,
+                     true );
   }
   NS_ENSURE_SUCCESS(rv, rv);
   console->LogMessage(error);

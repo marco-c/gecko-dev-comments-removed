@@ -1660,13 +1660,12 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                               nsIScriptError::errorFlag,
                                               aCategory, aInnerWindowID);
   } else {
-    nsCString category = PromiseFlatCString(aCategory);
     rv = scriptError->Init(aMessage,
                            u""_ns,  
                            u""_ns,  
                            0,       
                            0,       
-                           nsIScriptError::errorFlag, category.get(),
+                           nsIScriptError::errorFlag, aCategory,
                            aPrivateBrowsing,
                            aFromChromeContext);  
   }

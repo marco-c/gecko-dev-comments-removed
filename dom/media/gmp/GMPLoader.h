@@ -40,7 +40,7 @@ class GMPAdapter {
   
   
   virtual GMPErr GMPGetAPI(const char* aAPIName, void* aHostAPI,
-                           void** aPluginAPI, const nsCString& aKeySystem) = 0;
+                           void** aPluginAPI, const nsACString& aKeySystem) = 0;
   virtual void GMPShutdown() = 0;
 };
 
@@ -62,7 +62,7 @@ class GMPLoader {
   
   
   GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI,
-                const nsCString& aKeySystem);
+                const nsACString& aKeySystem);
 
   
   

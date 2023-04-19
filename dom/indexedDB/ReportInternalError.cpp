@@ -24,7 +24,7 @@ void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr) {
   nsContentUtils::LogSimpleConsoleError(
       NS_ConvertUTF8toUTF16(
           nsPrintfCString("IndexedDB %s: %s:%" PRIu32, aStr, aFile, aLine)),
-      "indexedDB", false ,
+      "indexedDB"_ns, false ,
       true );
 }
 

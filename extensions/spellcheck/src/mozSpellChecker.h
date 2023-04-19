@@ -144,7 +144,7 @@ class mozSpellChecker final {
 
 
 
-  nsresult SetCurrentDictionary(const nsCString& aDictionary);
+  nsresult SetCurrentDictionary(const nsACString& aDictionary);
 
   
 

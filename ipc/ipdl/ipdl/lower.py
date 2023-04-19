@@ -693,11 +693,18 @@ def _cxxInType(ipdltype, side):
     if _cxxTypeNeedsMoveForSend(ipdltype):
         t.rvalref = True
         return t
-    if ipdltype.isCxx() and ipdltype.isRefcounted():
+    if ipdltype.isCxx():
+        if ipdltype.isRefcounted():
+            
+            t = t.T
+            t.ptr = True
+            return t
+        if ipdltype.name() == "nsCString":
+            t = Type("nsACString")
+        if ipdltype.name() == "nsString":
+            t = Type("nsAString")
         
-        t = t.T
-        t.ptr = True
-        return t
+
     t.const = True
     t.ref = True
     return t
