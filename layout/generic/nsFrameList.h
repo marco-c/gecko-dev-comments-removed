@@ -172,6 +172,15 @@ class nsFrameList {
 
 
 
+
+  [[nodiscard]] nsFrameList TakeFramesBefore(nsIFrame* aFrame);
+
+  
+
+
+
+
+
   nsFrameList RemoveFramesAfter(nsIFrame* aAfterFrame);
 
   
@@ -260,19 +269,11 @@ class nsFrameList {
 
     for (nsIFrame* f : *this) {
       if (aPredicate(f)) {
-        return ExtractHead(f);
+        return TakeFramesBefore(f);
       }
     }
     return std::move(*this);
   }
-
-  
-
-
-
-
-
-  nsFrameList ExtractHead(nsIFrame* aFrame);
 
   
 

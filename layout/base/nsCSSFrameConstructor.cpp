@@ -11036,7 +11036,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   
 
   
-  nsFrameList firstInlineKids = childList.ExtractHead(firstBlock);
+  nsFrameList firstInlineKids = childList.TakeFramesBefore(firstBlock);
   newFrame->SetInitialChildList(kPrincipalList, firstInlineKids);
 
   aFrameList.AppendFrame(nullptr, newFrame);
