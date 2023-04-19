@@ -36,6 +36,9 @@ class MultiHeadQueue {
   }
 
   
+  void AddHead(size_t copy_index) { queues_.push_back(queues_[copy_index]); }
+
+  
   void PushBack(T value) {
     for (auto& queue : queues_) {
       queue.push_back(value);

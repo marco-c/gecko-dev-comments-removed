@@ -48,6 +48,12 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
 
   
   
+  void RegisterParticipantInCall(absl::string_view peer_name) {
+    analyzer_->RegisterParticipantInCall(peer_name);
+  }
+
+  
+  
   std::unique_ptr<VideoEncoderFactory> WrapVideoEncoderFactory(
       absl::string_view peer_name,
       std::unique_ptr<VideoEncoderFactory> delegate,

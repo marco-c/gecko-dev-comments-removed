@@ -139,6 +139,9 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
       const rtc::scoped_refptr<const RTCStatsReport>& report) override {}
 
   
+  virtual void RegisterParticipantInCall(absl::string_view peer_name) {}
+
+  
   
   virtual void Stop() {}
 
