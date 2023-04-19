@@ -4,7 +4,12 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["deserialize", "serialize", "stringify"];
+var EXPORTED_SYMBOLS = [
+  "deserialize",
+  "OwnershipModel",
+  "serialize",
+  "stringify",
+];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -21,6 +26,39 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.WEBDRIVER_BIDI)
 );
+
+
+
+
+
+
+
+
+
+
+
+const OwnershipModel = {
+  None: "none",
+  Root: "root",
+};
+
+
+
+
+
+
+
+
+
+
+
+function createRemoteValue(type, handleId) {
+  const remoteValue = { type };
+  if (handleId !== null) {
+    remoteValue.handle = handleId;
+  }
+  return remoteValue;
+}
 
 
 
@@ -256,12 +294,40 @@ function deserialize( serializedValue) {
 
 
 
+
+
+
+function getHandleForObject(realm, ownershipType, object) {
+  if (ownershipType === OwnershipModel.None) {
+    return null;
+  }
+  return realm.getHandleForObject(object);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function serializeList(
   iterable,
-  maxDepth 
-
-
-
+  maxDepth,
+  childOwnership,
+  serializationInternalMap,
+  realm
 ) {
   const serialized = [];
   const childDepth = maxDepth !== null ? maxDepth - 1 : null;
@@ -270,7 +336,10 @@ function serializeList(
     serialized.push(
       serialize(
         item,
-        childDepth 
+        childDepth,
+        childOwnership,
+        serializationInternalMap,
+        realm
       )
     );
   }
@@ -291,12 +360,17 @@ function serializeList(
 
 
 
+
+
+
+
+
 function serializeMapping(
   iterable,
-  maxDepth 
-
-
-
+  maxDepth,
+  childOwnership,
+  serializationInternalMap,
+  realm
 ) {
   const serialized = [];
   const childDepth = maxDepth !== null ? maxDepth - 1 : null;
@@ -307,17 +381,17 @@ function serializeMapping(
         ? key
         : serialize(
             key,
-            childDepth 
-
-
-
+            childDepth,
+            childOwnership,
+            serializationInternalMap,
+            realm
           );
     const serializedValue = serialize(
       item,
-      childDepth 
-
-
-
+      childDepth,
+      childOwnership,
+      serializationInternalMap,
+      realm
     );
 
     serialized.push([serializedKey, serializedValue]);
@@ -339,12 +413,17 @@ function serializeMapping(
 
 
 
+
+
+
+
+
 function serialize(
   value,
-  maxDepth 
-
-
-
+  maxDepth,
+  ownershipType,
+  serializationInternalMap,
+  realm
 ) {
   const type = typeof value;
 
@@ -369,72 +448,74 @@ function serialize(
 
   const className = ChromeUtils.getClassName(value);
 
+  const handleId = getHandleForObject(realm, ownershipType, value);
+
+  
+  const childOwnership = OwnershipModel.None;
+
   
   if (className == "Array") {
-    const remoteValue = { type: "array" };
+    const remoteValue = createRemoteValue("array", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
       remoteValue.value = serializeList(
         value,
-        maxDepth 
-
-
-
+        maxDepth,
+        childOwnership,
+        serializationInternalMap,
+        realm
       );
     }
-
     return remoteValue;
   } else if (className == "RegExp") {
-    return {
-      type: "regexp",
-      value: { pattern: value.source, flags: value.flags },
-    };
+    const remoteValue = createRemoteValue("regexp", handleId);
+    remoteValue.value = { pattern: value.source, flags: value.flags };
+    return remoteValue;
   } else if (className == "Date") {
-    return { type: "date", value: value.toISOString() };
+    const remoteValue = createRemoteValue("date", handleId);
+    remoteValue.value = value.toISOString();
+    return remoteValue;
   } else if (className == "Map") {
-    const remoteValue = { type: "map" };
+    const remoteValue = createRemoteValue("map", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
       remoteValue.value = serializeMapping(
         value.entries(),
-        maxDepth 
-
-
-
+        maxDepth,
+        childOwnership,
+        serializationInternalMap,
+        realm
       );
     }
-
     return remoteValue;
   } else if (className == "Set") {
-    const remoteValue = { type: "set" };
+    const remoteValue = createRemoteValue("set", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
       remoteValue.value = serializeList(
         value.values(),
-        maxDepth 
-
-
-
+        maxDepth,
+        childOwnership,
+        serializationInternalMap,
+        realm
       );
     }
-
     return remoteValue;
   }
   
   
   else if (className == "Object") {
-    const remoteValue = { type: "object" };
+    const remoteValue = createRemoteValue("object", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
       remoteValue.value = serializeMapping(
         Object.entries(value),
-        maxDepth 
-
-
-
+        maxDepth,
+        childOwnership,
+        serializationInternalMap,
+        realm
       );
     }
-
     return remoteValue;
   }
 
