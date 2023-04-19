@@ -225,8 +225,29 @@ impl<T> Slab<T> {
     
     
     
-    pub fn new() -> Slab<T> {
-        Slab::with_capacity(0)
+    
+    
+    #[cfg(not(slab_no_const_vec_new))]
+    pub const fn new() -> Self {
+        Self {
+            entries: Vec::new(),
+            next: 0,
+            len: 0,
+        }
+    }
+    
+    
+    
+    
+    
+    
+    #[cfg(slab_no_const_vec_new)]
+    pub fn new() -> Self {
+        Self {
+            entries: Vec::new(),
+            next: 0,
+            len: 0,
+        }
     }
 
     
@@ -877,6 +898,7 @@ impl<T> Slab<T> {
     
     
     
+    #[cfg_attr(not(slab_no_track_caller), track_caller)]
     pub fn key_of(&self, present_element: &T) -> usize {
         let element_ptr = present_element as *const T as usize;
         let base_ptr = self.entries.as_ptr() as usize;
@@ -1045,6 +1067,7 @@ impl<T> Slab<T> {
     
     
     
+    #[cfg_attr(not(slab_no_track_caller), track_caller)]
     pub fn remove(&mut self, key: usize) -> T {
         self.try_remove(key).expect("invalid key")
     }
@@ -1152,6 +1175,7 @@ impl<T> Slab<T> {
 impl<T> ops::Index<usize> for Slab<T> {
     type Output = T;
 
+    #[cfg_attr(not(slab_no_track_caller), track_caller)]
     fn index(&self, key: usize) -> &T {
         match self.entries.get(key) {
             Some(&Entry::Occupied(ref v)) => v,
@@ -1161,6 +1185,7 @@ impl<T> ops::Index<usize> for Slab<T> {
 }
 
 impl<T> ops::IndexMut<usize> for Slab<T> {
+    #[cfg_attr(not(slab_no_track_caller), track_caller)]
     fn index_mut(&mut self, key: usize) -> &mut T {
         match self.entries.get_mut(key) {
             Some(&mut Entry::Occupied(ref mut v)) => v,
