@@ -209,7 +209,7 @@ async function initBrowserToolboxTask({
   async function destroy() {
     
     if (destroyed) {
-      return null;
+      return;
     }
 
     const closePromise = existingProcessClose
