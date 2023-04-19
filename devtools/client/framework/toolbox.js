@@ -948,9 +948,12 @@ Toolbox.prototype = {
 
       await fluentInitPromise;
 
+      
+      
       this._mountReactComponent(fluentL10n.getBundles());
       this._buildDockOptions();
-      this._buildTabs();
+      this._buildInitialPanelDefinitions();
+      this._setDebugTargetData();
 
       
       this._applyCacheSettings();
@@ -967,9 +970,6 @@ Toolbox.prototype = {
         "aria-label",
         L10N.getStr("toolbox.label")
       );
-
-      
-      this._setDebugTargetData();
 
       this.webconsolePanel = this.doc.querySelector(
         "#toolbox-panel-webconsole"
@@ -993,6 +993,9 @@ Toolbox.prototype = {
       if (!toolDef || !toolDef.isToolSupported(this)) {
         this._defaultToolId = "webconsole";
       }
+
+      
+      await this._setInitialMeatballState();
 
       
       
@@ -1860,7 +1863,8 @@ Toolbox.prototype = {
   
 
 
-  async _buildTabs() {
+
+  async _buildInitialPanelDefinitions() {
     
     
     const definitions = gDevTools.getToolDefinitionArray();
@@ -1871,7 +1875,9 @@ Toolbox.prototype = {
       definition =>
         definition.isToolSupported(this) && definition.id !== "options"
     );
+  },
 
+  async _setInitialMeatballState() {
     
     if (this.isBrowserChromeTarget) {
       
@@ -1884,6 +1890,12 @@ Toolbox.prototype = {
       this.component.setPseudoLocale(pseudoLocale);
     }
   },
+
+  
+
+
+
+
 
   _mountReactComponent(fluentBundles) {
     
@@ -3286,9 +3298,6 @@ Toolbox.prototype = {
 
 
   async getPseudoLocale() {
-    
-    
-    await this.isOpen;
     if (!this.isBrowserChromeTarget) {
       return undefined;
     }
@@ -3319,9 +3328,6 @@ Toolbox.prototype = {
   },
 
   async _isDisableAutohideEnabled() {
-    
-    
-    await this.isOpen;
     if (!this.isBrowserChromeTarget) {
       return false;
     }
