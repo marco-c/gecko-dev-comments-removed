@@ -315,6 +315,7 @@ Connection::Connection(rtc::WeakPtr<Port> port,
       field_trials_(&kDefaultFieldTrials),
       rtt_estimate_(DEFAULT_RTT_ESTIMATE_HALF_TIME_MS) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DCHECK(port_);
   RTC_LOG(LS_INFO) << ToString() << ": Connection created";
 }
 
@@ -831,10 +832,8 @@ void Connection::Prune() {
 
 void Connection::Destroy() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (pending_delete_)
+  if (!port_)
     return;
-
-  pending_delete_ = true;
 
   RTC_DLOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
 
@@ -846,6 +845,10 @@ void Connection::Destroy() {
   SignalDestroyed.disconnect_all();
 
   LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
+
+  
+  
+  port_.reset();
 
   
   
@@ -874,10 +877,7 @@ void Connection::FailAndPrune() {
   
   
   
-  
-  
-  
-  if (pending_delete_)
+  if (!port_)
     return;
 
   set_state(IceCandidatePairState::FAILED);
@@ -1226,7 +1226,7 @@ std::string Connection::ToString() const {
   rtc::StringBuilder ss;
   ss << "Conn[" << ToDebugId();
 
-  if (pending_delete_) {
+  if (!port_) {
     
     
     
@@ -1249,7 +1249,7 @@ std::string Connection::ToString() const {
      << "|" << SELECTED_STATE_ABBREV[selected_] << "|" << remote_nomination_
      << "|" << nomination_ << "|";
 
-  if (!pending_delete_)
+  if (port_)
     ss << priority() << "|";
 
   if (rtt_ < DEFAULT_RTT) {
