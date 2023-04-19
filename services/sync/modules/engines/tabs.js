@@ -10,9 +10,6 @@ const TAB_ENTRIES_LIMIT = 5;
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
-const { TabStateFlusher } = ChromeUtils.import(
-  "resource:///modules/sessionstore/TabStateFlusher.jsm"
-);
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { Store, SyncEngine, Tracker } = ChromeUtils.import(
   "resource://services-sync/engines.js"
@@ -44,11 +41,6 @@ ChromeUtils.defineModuleGetter(
   lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "SessionStore",
-  "resource:///modules/sessionstore/SessionStore.jsm"
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -299,12 +291,9 @@ TabStore.prototype = {
     return win.closed || lazy.PrivateBrowsingUtils.isWindowPrivate(win);
   },
 
-  getTabState(tab) {
-    return JSON.parse(lazy.SessionStore.getTabState(tab));
-  },
-
   async getAllTabs(filter) {
     let allTabs = [];
+    let iconPromises = [];
 
     for (let win of this.getWindowEnumerator()) {
       if (this.shouldSkipWindow(win)) {
@@ -312,75 +301,54 @@ TabStore.prototype = {
       }
 
       for (let tab of win.gBrowser.tabs) {
-        let tabState = this.getTabState(tab);
-
         
-        if (!tabState || !tabState.entries.length) {
-          
-          
-          await TabStateFlusher.flushWindow(win);
-          tabState = this.getTabState(tab);
-
-          
-          
-          if (!tabState || !tabState.entries.length) {
-            continue;
-          }
+        
+        
+        
+        if (!tab?.linkedBrowser) {
+          continue;
         }
-
         let acceptable = !filter
           ? url => url
           : url =>
               url &&
               !lazy.TABS_FILTERED_SCHEMES.has(Services.io.extractScheme(url));
 
-        let entries = tabState.entries;
-        let index = tabState.index;
-        let current = entries[index - 1];
-
+        let url = tab.linkedBrowser.currentURI?.spec;
         
         
-        if (!acceptable(current.url)) {
+        if (!acceptable(url)) {
           continue;
         }
 
-        if (current.url.length > URI_LENGTH_MAX) {
+        if (url.length > URI_LENGTH_MAX) {
           this._log.trace("Skipping over-long URL.");
           continue;
         }
 
+        let thisTab = {
+          title: tab.linkedBrowser.contentTitle || "",
+          urlHistory: [url],
+          icon: "",
+          lastUsed: Math.floor((tab.lastAccessed || 0) / 1000),
+        };
+        allTabs.push(thisTab);
         
-        
-        
-        let candidates =
-          entries.length == index ? entries : entries.slice(0, index);
-
-        let urls = candidates
-          .map(entry => entry.url)
-          .filter(acceptable)
-          .reverse(); 
-
-        
-        if (urls.length > TAB_ENTRIES_LIMIT) {
-          urls.length = TAB_ENTRIES_LIMIT;
-        }
-
-        
-        let icon = "";
-        try {
-          let iconData = await lazy.PlacesUtils.promiseFaviconData(urls[0]);
-          icon = iconData.uri.spec;
-        } catch (ex) {
-          this._log.trace(`Failed to fetch favicon for ${urls[0]}`, ex);
-        }
-        allTabs.push({
-          title: current.title || "",
-          urlHistory: urls,
-          icon,
-          lastUsed: Math.floor((tabState.lastAccessed || 0) / 1000),
-        });
+        let iconPromise = lazy.PlacesUtils.promiseFaviconData(url)
+          .then(iconData => {
+            thisTab.icon = iconData.uri.spec;
+          })
+          .catch(ex => {
+            this._log.trace(
+              `Failed to fetch favicon for ${url}`,
+              thisTab.urlHistory[0]
+            );
+          });
+        iconPromises.push(iconPromise);
       }
     }
+
+    await Promise.allSettled(iconPromises);
 
     return allTabs;
   },
