@@ -55,9 +55,15 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
   
   
-  explicit FakeDtlsTransport(const std::string& name, int component)
+  FakeDtlsTransport(const std::string& name, int component)
       : FakeDtlsTransport(std::make_unique<FakeIceTransport>(name, component)) {
   }
+  FakeDtlsTransport(const std::string& name,
+                    int component,
+                    rtc::Thread* network_thread)
+      : FakeDtlsTransport(std::make_unique<FakeIceTransport>(name,
+                                                             component,
+                                                             network_thread)) {}
 
   ~FakeDtlsTransport() override {
     if (dest_ && dest_->dest_ == this) {
