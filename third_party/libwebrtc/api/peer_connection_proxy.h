@@ -26,7 +26,7 @@ namespace webrtc {
 
 
 BEGIN_PROXY_MAP(PeerConnection)
-PROXY_PRIMARY_THREAD_DESTRUCTOR()
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>, local_streams)
 PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>, remote_streams)
 PROXY_METHOD1(bool, AddStream, MediaStreamInterface*)
@@ -140,8 +140,8 @@ PROXY_WORKER_METHOD1(rtc::scoped_refptr<DtlsTransportInterface>,
                      const std::string&)
 
 
-PROXY_SECONDARY_CONSTMETHOD0(rtc::scoped_refptr<SctpTransportInterface>,
-                             GetSctpTransport)
+PROXY_WORKER_CONSTMETHOD0(rtc::scoped_refptr<SctpTransportInterface>,
+                          GetSctpTransport)
 PROXY_METHOD0(SignalingState, signaling_state)
 PROXY_METHOD0(IceConnectionState, ice_connection_state)
 PROXY_METHOD0(IceConnectionState, standardized_ice_connection_state)

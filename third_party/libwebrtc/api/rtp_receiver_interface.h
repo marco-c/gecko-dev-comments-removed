@@ -120,8 +120,8 @@ class RTC_EXPORT RtpReceiverInterface : public rtc::RefCountInterface {
 
 
 
-BEGIN_PRIMARY_PROXY_MAP(RtpReceiver)
-PROXY_PRIMARY_THREAD_DESTRUCTOR()
+BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtlsTransportInterface>, dtls_transport)
 PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
