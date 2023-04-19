@@ -6,8 +6,8 @@
 
 const EXPORTED_SYMBOLS = [
   "ChromeWebElement",
-  "ContentShadowRoot",
   "element",
+  "ShadowRoot",
   "WebElement",
   "WebFrame",
   "WebReference",
@@ -1510,7 +1510,7 @@ class WebReference {
       
       
       
-      return new ContentShadowRoot(uuid);
+      return new ShadowRoot(uuid);
     } else if (element.isElement(node)) {
       if (element.isInPrivilegedDocument(node)) {
         
@@ -1554,8 +1554,8 @@ class WebReference {
 
     for (let key of keys) {
       switch (key) {
-        case ContentShadowRoot.Identifier:
-          return ContentShadowRoot.fromJSON(json);
+        case ShadowRoot.Identifier:
+          return ShadowRoot.fromJSON(json);
 
         case WebElement.Identifier:
           return WebElement.fromJSON(json);
@@ -1633,7 +1633,7 @@ class WebReference {
     }
 
     if (
-      ContentShadowRoot.Identifier in obj ||
+      ShadowRoot.Identifier in obj ||
       WebElement.Identifier in obj ||
       WebFrame.Identifier in obj ||
       WebWindow.Identifier in obj ||
@@ -1684,13 +1684,13 @@ WebElement.Identifier = "element-6066-11e4-a52e-4f735466cecf";
 
 
 
-class ContentShadowRoot extends WebReference {
+class ShadowRoot extends WebReference {
   toJSON() {
-    return { [ContentShadowRoot.Identifier]: this.uuid };
+    return { [ShadowRoot.Identifier]: this.uuid };
   }
 
   static fromJSON(json) {
-    const { Identifier } = ContentShadowRoot;
+    const { Identifier } = ShadowRoot;
 
     if (!(Identifier in json)) {
       throw new lazy.error.InvalidArgumentError(
@@ -1699,10 +1699,10 @@ class ContentShadowRoot extends WebReference {
     }
 
     let uuid = json[Identifier];
-    return new ContentShadowRoot(uuid);
+    return new ShadowRoot(uuid);
   }
 }
-ContentShadowRoot.Identifier = "shadow-6066-11e4-a52e-4f735466cecf";
+ShadowRoot.Identifier = "shadow-6066-11e4-a52e-4f735466cecf";
 
 
 
