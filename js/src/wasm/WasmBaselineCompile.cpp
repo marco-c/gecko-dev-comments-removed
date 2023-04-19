@@ -4124,11 +4124,7 @@ bool BaseCompiler::emitCatchAll() {
   captureResultRegisters(exnResult);
   
   
-  if (!pushBlockResults(exnResult)) {
-    return false;
-  }
-
-  return true;
+  return pushBlockResults(exnResult);
 }
 
 bool BaseCompiler::emitBodyDelegateThrowPad() {
