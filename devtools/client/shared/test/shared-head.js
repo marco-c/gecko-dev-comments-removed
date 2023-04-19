@@ -1517,7 +1517,12 @@ let allDownloads = [];
 
 
 
-async function waitUntilScreenshot() {
+
+
+
+
+
+async function waitUntilScreenshot({ isWindowPrivate = false } = {}) {
   const { Downloads } = require("resource://gre/modules/Downloads.jsm");
   const list = await Downloads.getList(Downloads.ALL);
 
@@ -1528,6 +1533,14 @@ async function waitUntilScreenshot() {
         if (allDownloads.includes(download)) {
           return;
         }
+
+        is(
+          !!download.source.isPrivate,
+          isWindowPrivate,
+          `The download occured in the expected${
+            isWindowPrivate ? " private" : ""
+          } window`
+        );
 
         allDownloads.push(download);
         resolve(download.target.path);
@@ -1545,10 +1558,10 @@ async function waitUntilScreenshot() {
 async function resetDownloads() {
   info("Reset downloads");
   const { Downloads } = require("resource://gre/modules/Downloads.jsm");
-  const publicList = await Downloads.getList(Downloads.PUBLIC);
-  const downloads = await publicList.getAll();
+  const downloadList = await Downloads.getList(Downloads.ALL);
+  const downloads = await downloadList.getAll();
   for (const download of downloads) {
-    publicList.remove(download);
+    downloadList.remove(download);
     await download.finalize(true);
   }
   allDownloads = [];

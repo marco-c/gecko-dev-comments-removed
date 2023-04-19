@@ -10,6 +10,11 @@ const Services = require("Services");
 
 loader.lazyImporter(this, "Downloads", "resource://gre/modules/Downloads.jsm");
 loader.lazyImporter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
+loader.lazyImporter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
@@ -232,7 +237,7 @@ function saveScreenshot(window, args = {}, value) {
   }
 
   simulateCameraShutter(window);
-  return save(args, value);
+  return save(window, args, value);
 }
 
 
@@ -262,7 +267,11 @@ function simulateCameraShutter(window) {
 
 
 
-async function save(args, image) {
+
+
+
+
+async function save(window, args, image) {
   const fileNeeded = args.filename || !args.clipboard || args.file;
   const results = [];
 
@@ -272,7 +281,7 @@ async function save(args, image) {
   }
 
   if (fileNeeded) {
-    const result = await saveToFile(image);
+    const result = await saveToFile(window, image);
     results.push(result);
   }
   return results;
@@ -332,7 +341,10 @@ function saveToClipboard(base64URI) {
 
 
 
-async function saveToFile(image) {
+
+
+
+async function saveToFile(window, image) {
   let filename = image.filename;
 
   
@@ -355,13 +367,22 @@ async function saveToFile(image) {
       : PathUtils.joinRelative(downloadsDir, filename);
   }
 
-  const sourceURI = Services.io.newURI(image.data);
   const targetFile = new FileUtils.File(filename);
 
   
   try {
     const download = await Downloads.createDownload({
-      source: sourceURI,
+      source: {
+        url: image.data,
+        
+        
+        
+        isPrivate: window.isChromeWindow
+          ? PrivateBrowsingUtils.isWindowPrivate(window)
+          : PrivateBrowsingUtils.isBrowserPrivate(
+              window.browsingContext.embedderElement
+            ),
+      },
       target: targetFile,
     });
     const list = await Downloads.getList(Downloads.ALL);
