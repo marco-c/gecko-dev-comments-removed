@@ -144,10 +144,9 @@ class ScriptModule extends Module {
 
 
 
-
   async evaluate(options = {}) {
     const {
-      awaitPromise = true,
+      awaitPromise,
       expression: source,
       resultOwnership = OwnershipModel.None,
       target = {},
