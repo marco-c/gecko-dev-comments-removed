@@ -20,4 +20,7 @@
 - (instancetype)initWithObserver:(webrtc::NetworkMonitorObserver *)observer
     NS_DESIGNATED_INITIALIZER;
 
+
+- (void)stop;
+
 @end
