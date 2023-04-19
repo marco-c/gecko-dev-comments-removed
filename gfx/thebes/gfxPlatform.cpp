@@ -1799,30 +1799,23 @@ bool gfxPlatform::UseGraphiteShaping() {
   return StaticPrefs::gfx_font_rendering_graphite_enabled();
 }
 
-bool gfxPlatform::IsFontFormatSupported(
-    StyleFontFaceSourceFormatKeyword aHint) {
-  switch (aHint) {
-    case StyleFontFaceSourceFormatKeyword::None:
-      return true;
-    case StyleFontFaceSourceFormatKeyword::Collection:
-      return false;
-    case StyleFontFaceSourceFormatKeyword::Opentype:
-    case StyleFontFaceSourceFormatKeyword::Truetype:
-      return true;
-    case StyleFontFaceSourceFormatKeyword::EmbeddedOpentype:
-      return false;
-    case StyleFontFaceSourceFormatKeyword::Svg:
-      return false;
-    case StyleFontFaceSourceFormatKeyword::Woff:
-      return true;
-    case StyleFontFaceSourceFormatKeyword::Woff2:
-      return true;
-    case StyleFontFaceSourceFormatKeyword::Unknown:
-      return false;
-    default:
-      MOZ_ASSERT_UNREACHABLE("bad format hint!");
-      return false;
+bool gfxPlatform::IsFontFormatSupported(uint32_t aFormatFlags) {
+  
+  MOZ_ASSERT(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
+             "strange font format hint set");
+
+  
+  if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
+    return true;
   }
+
+  
+  if (aFormatFlags != 0) {
+    return false;
+  }
+
+  
+  return true;
 }
 
 gfxFontGroup* gfxPlatform::CreateFontGroup(
