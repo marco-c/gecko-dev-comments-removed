@@ -263,6 +263,9 @@ class Table {
   
   uint32_t Type() { return m_type; }
 
+  
+  uint32_t Tag() { return m_tag; }
+
   Font* GetFont() { return m_font; }
 
   bool Error(const char *format, ...);
@@ -314,6 +317,9 @@ struct Font {
   
   
   Table* GetTypedTable(uint32_t tag) const;
+
+  
+  void AddTable(Table* table);
 
   
   void DropGraphite();
