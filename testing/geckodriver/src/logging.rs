@@ -35,11 +35,12 @@ use std::fmt;
 use std::io;
 use std::io::Write;
 use std::str;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use unicode_segmentation::UnicodeSegmentation;
 
 use mozprofile::preferences::Pref;
 
+static LOG_TRUNCATE: AtomicBool = AtomicBool::new(true);
 static MAX_LOG_LEVEL: AtomicUsize = AtomicUsize::new(0);
 
 const MAX_STRING_LENGTH: usize = 250;
@@ -196,14 +197,15 @@ impl log::Log for Logger {
 }
 
 
-pub fn init() -> Result<(), log::SetLoggerError> {
-    init_with_level(Level::Info)
+pub fn init(truncate: bool) -> Result<(), log::SetLoggerError> {
+    init_with_level(Level::Info, truncate)
 }
 
 
-pub fn init_with_level(level: Level) -> Result<(), log::SetLoggerError> {
+pub fn init_with_level(level: Level, truncate: bool) -> Result<(), log::SetLoggerError> {
     let logger = Logger {};
     set_max_level(level);
+    set_truncate(truncate);
     log::set_boxed_logger(Box::new(logger))?;
     Ok(())
 }
@@ -222,12 +224,27 @@ pub fn set_max_level(level: Level) {
 }
 
 
+pub fn set_truncate(truncate: bool) {
+    LOG_TRUNCATE.store(truncate, Ordering::SeqCst);
+}
+
+
+pub fn truncate() -> bool {
+    LOG_TRUNCATE.load(Ordering::Relaxed)
+}
+
+
 fn format_ts(ts: chrono::DateTime<chrono::Local>) -> String {
     format!("{}{:03}", ts.timestamp(), ts.timestamp_subsec_millis())
 }
 
 
 fn truncate_message(args: &fmt::Arguments) -> Option<(String, String)> {
+    
+    if !truncate() {
+        return None;
+    }
+
     let message = format!("{}", args);
     let chars = message.graphemes(true).collect::<Vec<&str>>();
 
@@ -351,9 +368,9 @@ mod tests {
     #[test]
     fn test_init_with_level() {
         let _guard = LEVEL_MUTEX.lock();
-        init_with_level(Level::Debug).unwrap();
+        init_with_level(Level::Debug, false).unwrap();
         assert_eq!(max_level(), Level::Debug);
-        assert!(init_with_level(Level::Warn).is_err());
+        assert!(init_with_level(Level::Warn, false).is_err());
     }
 
     #[test]
@@ -373,6 +390,11 @@ mod tests {
         let part = (0..MAX_STRING_LENGTH / 2).map(|_| "x").collect::<String>();
 
         
+        set_truncate(false);
+        assert_eq!(truncate_message(&format_args!("{}", long_message)), None);
+
+        
+        set_truncate(true);
         assert_eq!(
             truncate_message(&format_args!("{}", long_message)),
             Some((part.to_owned(), part.to_owned()))
