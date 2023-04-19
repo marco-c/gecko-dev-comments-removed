@@ -143,7 +143,7 @@ class RootMessageHandler extends MessageHandler {
     return this._updateSessionData(sessionData, { mode: "remove" });
   }
 
-  _updateSessionData(sessionData, options = {}) {
+  async _updateSessionData(sessionData, options = {}) {
     const { mode } = options;
 
     
@@ -165,7 +165,7 @@ class RootMessageHandler extends MessageHandler {
 
     if (!updatedValues.length) {
       
-      return [];
+      return;
     }
 
     const destination = {
@@ -174,19 +174,17 @@ class RootMessageHandler extends MessageHandler {
     };
 
     
-    
-    if (!this.moduleCache.hasModule(moduleName, destination)) {
-      return Promise.resolve();
+    if (this.supportsCommand(moduleName, "_applySessionData", destination)) {
+      await this.handleCommand({
+        moduleName,
+        commandName: "_applySessionData",
+        params: {
+          [isAdding ? "added" : "removed"]: updatedValues,
+          category,
+          contextDescriptor,
+        },
+        destination,
+      });
     }
-
-    return this.handleCommand({
-      moduleName,
-      commandName: "_applySessionData",
-      params: {
-        [isAdding ? "added" : "removed"]: updatedValues,
-        category,
-      },
-      destination,
-    });
   }
 }

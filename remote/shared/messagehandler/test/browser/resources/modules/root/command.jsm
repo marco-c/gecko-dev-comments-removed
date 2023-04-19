@@ -14,15 +14,37 @@ const { Module } = ChromeUtils.import(
   "chrome://remote/content/shared/messagehandler/Module.jsm"
 );
 
+const { WindowGlobalMessageHandler } = ChromeUtils.import(
+  "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm"
+);
+
 class CommandModule extends Module {
   destroy() {}
+
+  async #getSessionDataUpdateFromAllContexts() {
+    const updates = await this.messageHandler.handleCommand({
+      moduleName: "command",
+      commandName: "_getSessionDataUpdate",
+      destination: {
+        contextDescriptor: {
+          type: ContextDescriptorType.All,
+        },
+        type: WindowGlobalMessageHandler.type,
+      },
+    });
+
+    
+    
+    
+    return updates.filter(update => update != null);
+  }
 
   
 
 
 
-  testAddSessionData(params) {
-    return this.messageHandler.addSessionData({
+  async testAddSessionData(params) {
+    await this.messageHandler.addSessionData({
       moduleName: "command",
       category: "testCategory",
       contextDescriptor: {
@@ -30,10 +52,12 @@ class CommandModule extends Module {
       },
       values: params.values,
     });
+
+    return this.#getSessionDataUpdateFromAllContexts();
   }
 
-  testRemoveSessionData(params) {
-    return this.messageHandler.removeSessionData({
+  async testRemoveSessionData(params) {
+    await this.messageHandler.removeSessionData({
       moduleName: "command",
       category: "testCategory",
       contextDescriptor: {
@@ -41,6 +65,8 @@ class CommandModule extends Module {
       },
       values: params.values,
     });
+
+    return this.#getSessionDataUpdateFromAllContexts();
   }
 
   testRootModule() {
