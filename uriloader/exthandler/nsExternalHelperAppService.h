@@ -125,6 +125,13 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
   
   static nsresult EscapeURI(nsIURI* aURI, nsIURI** aResult);
 
+  
+
+
+
+
+  static mozilla::LazyLogModule sLog;
+
  protected:
   virtual ~nsExternalHelperAppService();
 
@@ -166,13 +173,6 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
   bool GetTypeFromExtras(const nsACString& aExtension, nsACString& aMIMEType);
-
-  
-
-
-
-
-  static mozilla::LazyLogModule mLog;
 
   
   friend class nsExternalAppHandler;
