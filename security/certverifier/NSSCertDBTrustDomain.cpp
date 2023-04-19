@@ -845,9 +845,10 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
   Result stapledOCSPResponseResult = Success;
   if (stapledOCSPResponse) {
     bool expired;
+    uint32_t ageInHours;
     stapledOCSPResponseResult = VerifyAndMaybeCacheEncodedOCSPResponse(
         certID, time, maxOCSPLifetimeInDays, *stapledOCSPResponse,
-        ResponseWasStapled, expired);
+        ResponseWasStapled, expired, ageInHours);
     Telemetry::AccumulateCategorical(
         Telemetry::LABELS_CERT_REVOCATION_MECHANISMS::StapledOCSP);
     if (stapledOCSPResponseResult == Success) {
@@ -1067,9 +1068,10 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
   
   
   bool expired;
-  rv = VerifyAndMaybeCacheEncodedOCSPResponse(certID, time,
-                                              maxOCSPLifetimeInDays, response,
-                                              ResponseIsFromNetwork, expired);
+  uint32_t ageInHours;
+  rv = VerifyAndMaybeCacheEncodedOCSPResponse(
+      certID, time, maxOCSPLifetimeInDays, response, ResponseIsFromNetwork,
+      expired, ageInHours);
 
   
   
@@ -1088,6 +1090,11 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
         
         Telemetry::AccumulateCategorical(
             Telemetry::LABELS_CRLITE_VS_OCSP_RESULT::CRLiteRevOCSPOk);
+
+        if (mCRLiteMode == CRLiteMode::ConfirmRevocations) {
+          Telemetry::Accumulate(Telemetry::OCSP_AGE_AT_CRLITE_OVERRIDE,
+                                ageInHours);
+        }
       }
     } else if (rv == Result::ERROR_REVOKED_CERTIFICATE) {
       if (crliteResult == Success) {
@@ -1183,7 +1190,8 @@ Result NSSCertDBTrustDomain::HandleOCSPFailure(
 Result NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
     const CertID& certID, Time time, uint16_t maxLifetimeInDays,
     Input encodedResponse, EncodedResponseSource responseSource,
-     bool& expired) {
+     bool& expired,
+     uint32_t& ageInHours) {
   Time thisUpdate(Time::uninitialized);
   Time validThrough(Time::uninitialized);
 
@@ -1206,6 +1214,30 @@ Result NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
     if (validThrough.AddSeconds(ServerFailureDelaySeconds) != Success) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;  
     }
+  }
+  
+  
+  
+  uint64_t timeInSeconds;
+  uint64_t thisUpdateInSeconds;
+  uint64_t ageInSeconds;
+  SecondsSinceEpochFromTime(time, &timeInSeconds);
+  SecondsSinceEpochFromTime(thisUpdate, &thisUpdateInSeconds);
+  if (timeInSeconds >= thisUpdateInSeconds) {
+    ageInSeconds = timeInSeconds - thisUpdateInSeconds;
+    
+    if (ageInSeconds > UINT32_MAX) {
+      
+      
+      
+      ageInHours = UINT32_MAX;
+    } else {
+      
+      
+      ageInHours = 1 + ageInSeconds / (60 * 60);
+    }
+  } else {
+    ageInHours = 0;
   }
   if (responseSource == ResponseIsFromNetwork || rv == Success ||
       rv == Result::ERROR_REVOKED_CERTIFICATE ||

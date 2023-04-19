@@ -264,7 +264,8 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   Result VerifyAndMaybeCacheEncodedOCSPResponse(
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       uint16_t maxLifetimeInDays, mozilla::pkix::Input encodedResponse,
-      EncodedResponseSource responseSource,  bool& expired);
+      EncodedResponseSource responseSource,  bool& expired,
+       uint32_t& ageInHours);
   TimeDuration GetOCSPTimeout() const;
 
   Result CheckRevocationByCRLite(const mozilla::pkix::CertID& certID,
