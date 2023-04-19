@@ -626,8 +626,8 @@ void WebrtcGmpVideoEncoder::Encoded(
   unit._encodedHeight = aEncodedFrame->EncodedHeight();
 
   
-  mH264BitstreamParser.ParseBitstream(unit.data(), unit.size());
-  mH264BitstreamParser.GetLastSliceQp(&unit.qp_);
+  mH264BitstreamParser.ParseBitstream(unit);
+  unit.qp_ = mH264BitstreamParser.GetLastSliceQp().value_or(-1);
 
   
   
