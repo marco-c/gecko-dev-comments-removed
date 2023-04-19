@@ -340,15 +340,20 @@ add_task(async function testColorwayButtonTextWithColorwayEnabled() {
     set: [["browser.theme.colorway-closet", true]],
   });
 
-  const { addon } = await installTestTheme(NO_INTENSITY_THEME_ID);
+  const { addon: validColorway } = await installTestTheme(
+    BALANCED_COLORWAY_THEME_ID
+  );
+  const { addon: expiredColorway } = await installTestTheme(
+    NO_INTENSITY_EXPIRED_THEME_ID
+  );
+
+  await expiredColorway.disable();
 
   let win = await loadInitialView("theme");
   let doc = win.document;
 
   
   doc.l10n.addResourceIds(["mock-colorways.ftl"]);
-
-  await addon.disable();
 
   let colorwaySection = getSection(doc, "colorways-section");
   ok(colorwaySection, "colorway section was found");
@@ -362,22 +367,31 @@ add_task(async function testColorwayButtonTextWithColorwayEnabled() {
   is(
     colorwaysButton.getAttribute("data-l10n-id"),
     "theme-colorways-button",
-    "button has the expected fluent id when no colorways theme is not enabled"
+    "button has the expected fluent id when no colorway is enabled"
   );
 
-  await addon.enable();
+  await expiredColorway.enable();
+
+  is(
+    colorwaysButton.getAttribute("data-l10n-id"),
+    "theme-colorways-button",
+    "button fluent id remains unchanged since enabled colorway is not in active collection"
+  );
+
+  await validColorway.enable();
 
   is(
     colorwaysButton.getAttribute("data-l10n-id"),
     "theme-colorways-button-colorway-enabled",
-    "button has the expected fluent id when colorways theme is enabled"
+    "button fluent id is updated since newly enabled colorway is found in active collection"
   );
 
   
   await doc.l10n.translateFragment(colorwaySection);
 
   await closeView(win);
-  await addon.uninstall(true);
+  await validColorway.uninstall(true);
+  await expiredColorway.uninstall(true);
   await SpecialPowers.popPrefEnv();
   clearBuiltInThemesStubs();
 });
