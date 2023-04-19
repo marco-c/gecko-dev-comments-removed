@@ -1119,10 +1119,29 @@ MsaaAccessible::get_accRole(
   
   
   
-  LocalAccessible* localAcc = mAcc->AsLocal();
-  if (!localAcc) {
-    return E_FAIL;
+  
+  
+  if (mAcc->IsRemote()) {
+    
+    
+    
+    nsAtom* val = nullptr;
+    const nsRoleMapEntry* roleMap = mAcc->ARIARoleMap();
+    if (roleMap && roleMap->roleAtom != nsGkAtoms::_empty) {
+      val = roleMap->roleAtom;
+    } else {
+      val = mAcc->TagName();
+    }
+    if (!val) {
+      return E_FAIL;
+    }
+    pvarRole->vt = VT_BSTR;
+    pvarRole->bstrVal = ::SysAllocString(val->GetUTF16String());
+    return S_OK;
   }
+
+  LocalAccessible* localAcc = mAcc->AsLocal();
+  MOZ_ASSERT(localAcc);
   nsIContent* content = localAcc->GetContent();
   if (!content) return E_FAIL;
 
