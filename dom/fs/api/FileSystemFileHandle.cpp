@@ -1,10 +1,11 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FileSystemFileHandle.h"
+#include "fs/FileSystemRequestHandler.h"
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemFileHandleBinding.h"
@@ -17,16 +18,26 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(FileSystemFileHandle,
                                                FileSystemHandle)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(FileSystemFileHandle, FileSystemHandle)
 
-// WebIDL Boilerplate
+FileSystemFileHandle::FileSystemFileHandle(
+    nsIGlobalObject* aGlobal, const fs::FileSystemEntryMetadata& aMetadata,
+    fs::FileSystemRequestHandler* aRequestHandler)
+    : FileSystemHandle(aGlobal, aMetadata, aRequestHandler) {}
+
+FileSystemFileHandle::FileSystemFileHandle(
+    nsIGlobalObject* aGlobal, const fs::FileSystemEntryMetadata& aMetadata)
+    : FileSystemFileHandle(aGlobal, aMetadata,
+                           new fs::FileSystemRequestHandler()) {}
+
+
 
 JSObject* FileSystemFileHandle::WrapObject(JSContext* aCx,
                                            JS::Handle<JSObject*> aGivenProto) {
   return FileSystemFileHandle_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-// WebIDL Interface
 
-FileSystemHandleKind FileSystemFileHandle::Kind() {
+
+FileSystemHandleKind FileSystemFileHandle::Kind() const {
   return FileSystemHandleKind::File;
 }
 
@@ -65,4 +76,4 @@ already_AddRefed<Promise> FileSystemFileHandle::CreateSyncAccessHandle(
   return promise.forget();
 }
 
-}  // namespace mozilla::dom
+}  
