@@ -2168,11 +2168,10 @@ TEST_F(TestVp9Impl, ReenablingUpperLayerAfterKFWithInterlayerPredIsEnabled) {
   EXPECT_EQ(encoded_frames[0]._frameType, VideoFrameType::kVideoFrameDelta);
 }
 
-TEST_F(TestVp9Impl, HandlesEmptyInitDecode) {
+TEST_F(TestVp9Impl, HandlesEmptyDecoderConfigure) {
   std::unique_ptr<VideoDecoder> decoder = CreateDecoder();
   
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder->InitDecode(nullptr, 1));
+  EXPECT_TRUE(decoder->Configure({}));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder->Release());
 }
 
