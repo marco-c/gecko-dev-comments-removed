@@ -89,9 +89,7 @@ function waitForTick() {
   
   
   
-  
-  
-async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
+async function testDuration(t, id, numEntries, dur, slowDur) {
   assert_implements(window.PerformanceEventTiming, 'Event Timing is not supported.');
   const observerPromise = new Promise(async resolve => {
     let minDuration = Math.ceil(dur / 8) * 8;
@@ -108,7 +106,7 @@ async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
       numEntriesReceived += pointerDowns.length;
       
       
-      if (numEntriesReceived >= numEntries)
+      if (numEntriesReceived === numEntries)
         resolve();
     }).observe({type: "event", durationThreshold: dur});
   });
@@ -116,13 +114,6 @@ async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
     for (let index = 0; index < numEntries; index++) {
       
       await clickOnElementAndDelay(id, slowDur);
-      
-      if (fastDur > 0) {
-        await clickOnElementAndDelay(id, fastDur);
-      } else {
-        
-        await test_driver.click(document.getElementById(id));
-      }
     }
     resolve();
   });
