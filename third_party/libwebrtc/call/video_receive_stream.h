@@ -201,13 +201,13 @@ class VideoReceiveStream : public MediaReceiveStream {
       } rtcp_xr;
 
       
+      
+      KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
+
+      
       bool remb = false;
 
       bool tmmbr = false;
-
-      
-      
-      KeyFrameReqMethod keyframe_method;
 
       
       LntfConfig lntf;
