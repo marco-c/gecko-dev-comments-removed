@@ -405,9 +405,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
 
   
-  virtual bool RtcpXrRrtrStatus() const = 0;
-
-  
   
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override = 0;
   
@@ -430,9 +427,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   virtual void SetStorePacketsStatus(bool enable, uint16_t numberToStore) = 0;
-
-  
-  virtual bool StorePackets() const = 0;
 
   virtual void SetVideoBitrateAllocation(
       const VideoBitrateAllocation& bitrate) = 0;

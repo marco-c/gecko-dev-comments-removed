@@ -244,8 +244,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   
   void SetStorePacketsStatus(bool enable, uint16_t number_to_store) override;
 
-  bool StorePackets() const override;
-
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
 
@@ -257,8 +255,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   
   void SetRtcpXrRrtrStatus(bool enable) override;
-
-  bool RtcpXrRrtrStatus() const override;
 
   
   int32_t SendLossNotification(uint16_t last_decoded_seq_num,
@@ -327,6 +323,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   int64_t rtt_ms() const;
 
   bool TimeToSendFullNackList(int64_t now) const;
+
+  
+  bool StorePackets() const;
+
+  
+  bool RtcpXrRrtrStatus() const;
 
   std::unique_ptr<RtpSenderContext> rtp_sender_;
 
