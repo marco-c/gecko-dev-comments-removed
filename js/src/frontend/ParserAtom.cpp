@@ -17,7 +17,6 @@
 #include "util/StringBuffer.h"  
 #include "util/Text.h"          
 #include "util/Unicode.h"
-#include "vm/ErrorContext.h"
 #include "vm/JSContext.h"
 #include "vm/Printer.h"  
 #include "vm/Runtime.h"

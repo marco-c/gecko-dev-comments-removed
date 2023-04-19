@@ -9,11 +9,8 @@
 
 #include "mozilla/RefPtr.h"  
 
-#include "frontend/CompilationStencil.h"  
-#include "frontend/ObjLiteral.h"          
-#include "frontend/ParserAtom.h"          
+#include "frontend/ParserAtom.h"  
 #include "frontend/Stencil.h"  
-#include "vm/SharedStencil.h"  
 #include "vm/Xdr.h"            
 
 namespace JS {
@@ -25,12 +22,18 @@ class DecodeOptions;
 namespace js {
 
 class LifoAlloc;
+class ObjLiteralStencil;
 class ScriptSource;
+class SharedImmutableScriptData;
 
 class XDRStencilDecoder;
 class XDRStencilEncoder;
 
 namespace frontend {
+
+struct CompilationStencil;
+struct ExtensibleCompilationStencil;
+struct SharedDataContainer;
 
 
 

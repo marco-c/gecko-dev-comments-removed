@@ -9,18 +9,15 @@
 #include "mozilla/ArrayUtils.h"             
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/ScopeExit.h"              
-#include "mozilla/Variant.h"                
 
 #include <stddef.h>     
 #include <stdint.h>     
 #include <type_traits>  
 #include <utility>      
 
-#include "ds/LifoAlloc.h"                  
-#include "frontend/BytecodeCompilation.h"  
+#include "ds/LifoAlloc.h"                 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ScriptIndex.h"  
-#include "vm/ErrorReporting.h"     
 #include "vm/Scope.h"              
 #include "vm/StencilEnums.h"       
 

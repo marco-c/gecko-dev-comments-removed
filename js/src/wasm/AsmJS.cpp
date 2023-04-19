@@ -32,6 +32,7 @@
 
 #include "jsmath.h"
 
+#include "frontend/BytecodeCompiler.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
