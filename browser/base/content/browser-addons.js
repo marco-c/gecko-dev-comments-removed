@@ -1351,10 +1351,16 @@ var gUnifiedExtensions = {
         this._listView.addEventListener("ViewHiding", this);
 
         
-        const template = document.getElementById("unified-extensions-template");
-        if (template) {
-          template.replaceWith(template.content);
-        }
+        document
+          .getElementById("unified-extensions-context-menu")
+          .querySelectorAll("[data-lazy-l10n-id]")
+          .forEach(el => {
+            el.setAttribute(
+              "data-l10n-id",
+              el.getAttribute("data-lazy-l10n-id")
+            );
+            el.removeAttribute("data-lazy-l10n-id");
+          });
       }
 
       if (this._button.open) {
