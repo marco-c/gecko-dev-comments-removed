@@ -191,23 +191,31 @@ class ScriptModule extends Module {
 
 
 
+
+
   async callFunctionDeclaration(options) {
     const {
       awaitPromise,
       commandArguments = null,
       functionDeclaration,
+      thisParameter = null,
     } = options;
 
     const deserializedArguments =
       commandArguments != null
         ? commandArguments.map(a => lazy.deserialize(a))
         : [];
-    const expression = `(${functionDeclaration}).apply(null, __bidi_args)`;
+
+    const deserializedThis =
+      thisParameter != null ? lazy.deserialize(thisParameter) : null;
+
+    const expression = `(${functionDeclaration}).apply(__bidi_this, __bidi_args)`;
 
     const rv = this.#global.executeInGlobalWithBindings(
       expression,
       {
         __bidi_args: this.#cloneAsDebuggerObject(deserializedArguments),
+        __bidi_this: this.#cloneAsDebuggerObject(deserializedThis),
       },
       {
         url: this.messageHandler.window.document.baseURI,
