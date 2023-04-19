@@ -457,6 +457,28 @@ TEST(FrameCadenceAdapterTest,
   time_controller.AdvanceTime(kIdleFrameDelay);
 }
 
+TEST(FrameCadenceAdapterTest, LayerReconfigurationResetsConvergenceInfo) {
+  ZeroHertzFieldTrialEnabler enabler;
+  MockCallback callback;
+  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
+  auto adapter = CreateAdapter(time_controller.GetClock());
+  adapter->Initialize(&callback);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+  constexpr int kMaxFpsHz = 10;
+  constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(1000 / kMaxFpsHz);
+  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
+  time_controller.AdvanceTime(TimeDelta::Zero());
+
+  
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{
+          2});
+  adapter->OnFrame(CreateFrame());
+  EXPECT_CALL(callback, OnFrame).Times(kMaxFpsHz);
+  time_controller.AdvanceTime(kMaxFpsHz * kMinFrameDelay);
+}
+
 class ZeroHertzLayerQualityConvergenceTest : public ::testing::Test {
  public:
   static constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(100);
@@ -499,18 +521,13 @@ class ZeroHertzLayerQualityConvergenceTest : public ::testing::Test {
       CreateAdapter(time_controller_.GetClock())};
 };
 
-TEST_F(ZeroHertzLayerQualityConvergenceTest, InitialStateConverged) {
-  
-  
-  
+TEST_F(ZeroHertzLayerQualityConvergenceTest, InitialStateUnconverged) {
   
   PassFrame();
   ExpectFrameEntriesAtDelaysFromNow({
-      kMinFrameDelay,  
-      kMinFrameDelay +
-          kIdleFrameDelay,  
-      kMinFrameDelay + 2 * kIdleFrameDelay,  
-      kMinFrameDelay + 3 * kIdleFrameDelay,  
+      1 * kMinFrameDelay,  
+      2 * kMinFrameDelay,  
+      3 * kMinFrameDelay,  
   });
 }
 
