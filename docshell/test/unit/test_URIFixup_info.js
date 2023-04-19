@@ -969,9 +969,23 @@ async function do_single_test_run(browserFixupAlternateEnabled = false) {
         couldDoKeywordLookup && expectKeywordLookup,
         "keyword lookup as expected"
       );
+
+      let expectProtocolChangeAfterAlternate = false;
+      
+      
+      
+      
+      if (
+        makeAlternativeURI &&
+        alternativeURI != null &&
+        !expectedFixedURI.startsWith(URIInfo.fixedURI.scheme)
+      ) {
+        expectProtocolChangeAfterAlternate = true;
+      }
+
       Assert.equal(
         URIInfo.fixupChangedProtocol,
-        expectProtocolChange,
+        expectProtocolChange || expectProtocolChangeAfterAlternate,
         "protocol change as expected"
       );
       Assert.equal(

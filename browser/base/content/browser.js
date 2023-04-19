@@ -1296,29 +1296,6 @@ var gKeywordURIFixup = {
     
     let asciiHost = fixedURI.asciiHost;
 
-    let isIPv4Address = host => {
-      let parts = host.split(".");
-      if (parts.length != 4) {
-        return false;
-      }
-      return parts.every(part => {
-        let n = parseInt(part, 10);
-        return n >= 0 && n <= 255;
-      });
-    };
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (isIPv4Address(asciiHost) || /^(?:\d+|0x[a-f0-9]+)$/i.test(asciiHost)) {
-      return;
-    }
-
     let onLookupCompleteListener = {
       onLookupComplete(request, record, status) {
         let browserRef = weakBrowser.get();
@@ -1387,33 +1364,11 @@ var gKeywordURIFixup = {
       },
     };
 
-    
-    
-    
-    let lookupName = hostName;
-    if (
-      UrlbarPrefs.get("dnsResolveFullyQualifiedNames") &&
-      !lookupName.includes(".")
-    ) {
-      lookupName += ".";
-    }
-    try {
-      gDNSService.asyncResolve(
-        lookupName,
-        Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
-        0,
-        null,
-        onLookupCompleteListener,
-        Services.tm.mainThread,
-        contentPrincipal.originAttributes
-      );
-    } catch (ex) {
-      
-      if (ex.result != Cr.NS_ERROR_UNKNOWN_HOST) {
-        
-        Cu.reportError(ex);
-      }
-    }
+    Services.uriFixup.checkHost(
+      fixedURI,
+      onLookupCompleteListener,
+      contentPrincipal.originAttributes
+    );
   },
 
   observe(fixupInfo, topic, data) {
