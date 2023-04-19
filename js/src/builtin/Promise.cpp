@@ -14,7 +14,8 @@
 #include "jsexn.h"
 #include "jsfriendapi.h"
 
-#include "js/CallAndConstruct.h"      
+#include "js/CallAndConstruct.h"  
+#include "js/Debug.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/ForOfIterator.h"         
 #include "js/friend/ErrorMessages.h"  
@@ -25,6 +26,7 @@
 #include "vm/AsyncIteration.h"
 #include "vm/CompletionKind.h"
 #include "vm/ErrorObject.h"
+#include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"

@@ -9,10 +9,12 @@
 
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
+#include "util/StringBuffer.h"
 #include "vm/PlainObject.h"  
 #include "vm/SymbolType.h"
 
 #include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 
 using namespace js;
 

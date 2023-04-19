@@ -7,18 +7,17 @@
 #ifndef builtin_Promise_h
 #define builtin_Promise_h
 
+#include "js/Promise.h"
+
 #include "jstypes.h"  
 
+#include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
 #include "js/TypeDecls.h"   
+#include "js/Value.h"       
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
-
-namespace JS {
-class CallArgs;
-class Value;
-}  
 
 namespace js {
 

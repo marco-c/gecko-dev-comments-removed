@@ -17,6 +17,8 @@
 #include "jstypes.h"
 
 #include "builtin/Array.h"
+#include "builtin/BigInt.h"
+#include "js/CallAndConstruct.h"      
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Object.h"                
@@ -40,6 +42,7 @@
 #endif
 
 #include "builtin/Array-inl.h"
+#include "builtin/Boolean-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSAtom-inl.h"
 #include "vm/NativeObject-inl.h"

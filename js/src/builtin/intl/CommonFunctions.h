@@ -7,19 +7,22 @@
 #ifndef builtin_intl_CommonFunctions_h
 #define builtin_intl_CommonFunctions_h
 
+#include "mozilla/Assertions.h"
+
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
+#include <type_traits>
 
 #include "js/RootingAPI.h"
-#include "js/Utility.h"
+#include "js/Vector.h"
+#include "vm/StringType.h"
 
 namespace mozilla::intl {
 enum class ICUError : uint8_t;
 }
 
 namespace js {
-
-class PropertyName;
 
 namespace intl {
 
@@ -60,6 +63,10 @@ extern void ReportInternalError(JSContext* cx);
 
 extern void ReportInternalError(JSContext* cx, mozilla::intl::ICUError error);
 
+static inline bool StringsAreEqual(const char* s1, const char* s2) {
+  return !strcmp(s1, s2);
+}
+
 
 
 
@@ -86,7 +93,7 @@ struct OldStyleLanguageTagMapping {
 
 extern const OldStyleLanguageTagMapping oldStyleLanguageTagMappings[5];
 
-extern JS::UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
+extern UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
 
 
 

@@ -26,12 +26,10 @@
 #include "vm/ErrorContext.h"       
 #include "vm/JSContext.h"          
 #include "vm/JSObject.h"           
-#include "vm/List.h"               
 #include "vm/Runtime.h"            
 
 #include "builtin/Array-inl.h"
 #include "vm/JSContext-inl.h"  
-#include "vm/JSObject-inl.h"
 
 using namespace js;
 
