@@ -2764,7 +2764,8 @@ class nsContentUtils {
 
 
 
-  static bool IsForbiddenRequestHeader(const nsACString& aHeader);
+  static bool IsForbiddenRequestHeader(const nsACString& aHeader,
+                                       const nsACString& aValue);
 
   
 
@@ -2772,6 +2773,14 @@ class nsContentUtils {
 
   static bool IsForbiddenSystemRequestHeader(const nsACString& aHeader);
 
+  
+
+
+  static bool IsOverrideMethodHeader(const nsACString& headerName);
+  
+
+
+  static bool ContainsForbiddenMethod(const nsACString& headerValue);
   
 
 

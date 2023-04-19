@@ -37,7 +37,6 @@ class FetchUtil final {
 
   static nsresult GetValidRequestMethod(const nsACString& aMethod,
                                         nsCString& outMethod);
-
   
 
 
