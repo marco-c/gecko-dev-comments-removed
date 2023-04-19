@@ -5354,7 +5354,7 @@ bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {
   
   
   
-  if (!parser->astGenerator().isDeclarationList(target)) {
+  if (!target->is<DeclarationListNode>()) {
     return emitAssignmentOrInit(ParseNodeKind::AssignExpr, target, nullptr);
     
   }
@@ -5365,13 +5365,12 @@ bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {
   
   
 
-  if (!updateSourceCoordNotes(target->pn_pos.begin)) {
+  auto* declarationList = &target->as<DeclarationListNode>();
+  if (!updateSourceCoordNotes(declarationList->pn_pos.begin)) {
     return false;
   }
 
-  MOZ_ASSERT(target->isForLoopDeclaration());
-  target = parser->astGenerator().singleBindingFromDeclaration(
-      &target->as<ListNode>());
+  target = declarationList->singleBinding();
 
   NameNode* nameNode = nullptr;
   if (target->isKind(ParseNodeKind::Name)) {
@@ -5528,9 +5527,10 @@ bool BytecodeEmitter::emitForIn(ForNode* forInLoop,
   
   
   ParseNode* forInTarget = forInHead->kid1();
-  if (parser->astGenerator().isDeclarationList(forInTarget)) {
-    ParseNode* decl = parser->astGenerator().singleBindingFromDeclaration(
-        &forInTarget->as<ListNode>());
+  if (forInTarget->is<DeclarationListNode>()) {
+    auto* declarationList = &forInTarget->as<DeclarationListNode>();
+
+    ParseNode* decl = declarationList->singleBinding();
     if (decl->isKind(ParseNodeKind::AssignExpr) ||
         decl->isKind(ParseNodeKind::InitExpr)) {
       BinaryNode* assignNode = &decl->as<BinaryNode>();
@@ -5645,7 +5645,9 @@ bool BytecodeEmitter::emitCStyleFor(
     
     
     
-    if (init->isForLoopDeclaration()) {
+    if (init->is<DeclarationListNode>()) {
+      MOZ_ASSERT(!init->as<DeclarationListNode>().empty());
+
       if (!emitTree(init)) {
         
         return false;
