@@ -14,10 +14,6 @@
 
 using namespace mozilla::a11y;
 
-AccessibleWrap* ia2AccessibleAction::LocalAcc() {
-  return static_cast<MsaaAccessible*>(this)->LocalAcc();
-}
-
 Accessible* ia2AccessibleAction::Acc() {
   return static_cast<MsaaAccessible*>(this)->Acc();
 }
@@ -30,7 +26,7 @@ ia2AccessibleAction::QueryInterface(REFIID iid, void** ppv) {
 
   *ppv = nullptr;
 
-  if (IID_IAccessibleAction == iid && LocalAcc()) {
+  if (IID_IAccessibleAction == iid) {
     *ppv = static_cast<IAccessibleAction*>(this);
     (reinterpret_cast<IUnknown*>(*ppv))->AddRef();
     return S_OK;
@@ -91,14 +87,25 @@ ia2AccessibleAction::get_keyBinding(long aActionIndex, long aNumMaxBinding,
 
   if (aActionIndex != 0 || aNumMaxBinding < 1) return E_INVALIDARG;
 
-  AccessibleWrap* acc = LocalAcc();
+  Accessible* acc = Acc();
   if (!acc) return CO_E_OBJNOTCONNECTED;
 
   
-  KeyBinding keyBinding = acc->AccessKey();
-  if (keyBinding.IsEmpty()) return S_FALSE;
+  LocalAccessible* localAcc = acc->AsLocal();
+  if (!localAcc) {
+    
+    return S_FALSE;
+  }
 
-  keyBinding = acc->KeyboardShortcut();
+  KeyBinding keyBinding = acc->AccessKey();
+  if (keyBinding.IsEmpty()) {
+    
+    
+    return S_FALSE;
+  }
+
+  
+  keyBinding = localAcc->KeyboardShortcut();
   if (keyBinding.IsEmpty()) return S_FALSE;
 
   nsAutoString keyStr;
