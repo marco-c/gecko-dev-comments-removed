@@ -67,6 +67,66 @@ extern template void CallbackListReceivers::AddReceiver(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename... ArgT>
 class CallbackList {
  public:
