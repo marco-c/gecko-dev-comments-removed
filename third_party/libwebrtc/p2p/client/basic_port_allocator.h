@@ -22,7 +22,9 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/network.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace cricket {
 
@@ -106,8 +108,9 @@ enum class SessionState {
               
 };
 
-class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
-                                             public rtc::MessageHandler {
+
+
+class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
  public:
   BasicPortAllocatorSession(BasicPortAllocator* allocator,
                             const std::string& content_name,
@@ -155,10 +158,11 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
 
   
   
-  virtual void ConfigReady(PortConfiguration* config);
-
+  void ConfigReady(std::unique_ptr<PortConfiguration> config);
   
-  void OnMessage(rtc::Message* message) override;
+  ABSL_DEPRECATED(
+      "Use ConfigReady(std::unique_ptr<PortConfiguration>) instead!")
+  void ConfigReady(PortConfiguration* config);
 
  private:
   class PortData {
@@ -213,10 +217,10 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
     State state_ = STATE_INPROGRESS;
   };
 
-  void OnConfigReady(PortConfiguration* config);
+  void OnConfigReady(std::unique_ptr<PortConfiguration> config);
   void OnConfigStop();
   void AllocatePorts();
-  void OnAllocate();
+  void OnAllocate(int allocation_epoch);
   void DoAllocate(bool disable_equivalent_phases);
   void OnNetworksChanged();
   void OnAllocationSequenceObjectsCreated();
@@ -266,7 +270,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
   bool allocation_started_;
   bool network_manager_started_;
   bool allocation_sequences_created_;
-  std::vector<PortConfiguration*> configs_;
+  std::vector<std::unique_ptr<PortConfiguration>> configs_;
   std::vector<AllocationSequence*> sequences_;
   std::vector<PortData> ports_;
   std::vector<IceCandidateErrorEvent> candidate_error_events_;
@@ -274,13 +278,15 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
   
   webrtc::PortPrunePolicy turn_port_prune_policy_;
   SessionState state_ = SessionState::CLEARED;
+  int allocation_epoch_ RTC_GUARDED_BY(network_thread_) = 0;
+  webrtc::ScopedTaskSafety network_safety_;
 
   friend class AllocationSequence;
 };
 
 
 
-struct RTC_EXPORT PortConfiguration : public rtc::MessageData {
+struct RTC_EXPORT PortConfiguration {
   
   rtc::SocketAddress stun_address;
   ServerAddresses stun_servers;
@@ -299,8 +305,6 @@ struct RTC_EXPORT PortConfiguration : public rtc::MessageData {
   PortConfiguration(const ServerAddresses& stun_servers,
                     const std::string& username,
                     const std::string& password);
-
-  ~PortConfiguration() override;
 
   
   
