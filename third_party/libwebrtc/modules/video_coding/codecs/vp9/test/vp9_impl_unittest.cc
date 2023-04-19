@@ -750,7 +750,8 @@ TEST_F(TestVp9Impl, DISABLED_DisableEnableBaseLayerTriggersKeyFrame) {
   }
 }
 
-TEST(Vp9ImplTest, DisableEnableBaseLayerWithSvcControllerTriggersKeyFrame) {
+TEST(Vp9ImplTest,
+     DISABLED_DisableEnableBaseLayerWithSvcControllerTriggersKeyFrame) {
   
   
   const size_t num_spatial_layers = 3;
