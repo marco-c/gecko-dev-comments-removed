@@ -204,7 +204,10 @@ FlexfecReceiveStreamImpl::Stats FlexfecReceiveStreamImpl::GetStats() const {
 void FlexfecReceiveStreamImpl::SetRtpExtensions(
     std::vector<RtpExtension> extensions) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  config_.rtp.extensions = std::move(extensions);
+  
+  
+  const_cast<std::vector<RtpExtension>&>(config_.rtp.extensions) =
+      std::move(extensions);
 }
 
 }  

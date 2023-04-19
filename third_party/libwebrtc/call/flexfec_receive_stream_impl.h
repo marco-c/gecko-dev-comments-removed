@@ -61,12 +61,15 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   
   void SetRtpExtensions(std::vector<RtpExtension> extensions) override;
   const RtpConfig& rtp_config() const override { return config_.rtp; }
+  uint32_t remote_ssrc() const { return config_.rtp.remote_ssrc; }
 
  private:
   RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
 
   
-  Config config_ RTC_GUARDED_BY(packet_sequence_checker_);
+  
+  
+  const Config config_;
 
   
   const std::unique_ptr<FlexfecReceiver> receiver_;

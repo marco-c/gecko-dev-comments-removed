@@ -128,7 +128,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
 
   uint32_t local_ssrc() const;
 
-  uint32_t remote_ssrc() const {
+  uint32_t remote_ssrc() const override {
     
     
     return config_.rtp.remote_ssrc;
