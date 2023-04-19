@@ -463,7 +463,8 @@ class PeerConnection : public PeerConnectionInternal,
   explicit PeerConnection(rtc::scoped_refptr<ConnectionContext> context,
                           bool is_unified_plan,
                           std::unique_ptr<RtcEventLog> event_log,
-                          std::unique_ptr<Call> call);
+                          std::unique_ptr<Call> call,
+                          PeerConnectionDependencies& dependencies);
 
   ~PeerConnection() override;
 
@@ -634,18 +635,18 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  std::unique_ptr<AsyncResolverFactory> async_resolver_factory_
+  const std::unique_ptr<AsyncResolverFactory> async_resolver_factory_
       RTC_GUARDED_BY(signaling_thread());
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  
                         
-  std::unique_ptr<webrtc::IceTransportFactory>
+  const std::unique_ptr<webrtc::IceTransportFactory>
       ice_transport_factory_;  
                                
                                
                                
                                
-  std::unique_ptr<rtc::SSLCertificateVerifier>
+  const std::unique_ptr<rtc::SSLCertificateVerifier>
       tls_cert_verifier_;  
                            
 
