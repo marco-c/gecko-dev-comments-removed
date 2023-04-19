@@ -2376,6 +2376,14 @@ function loadScript(...scripts) {
 }
 
 
+
+
+
+
+
+
+
+
 var scriptsReady = loadScript("/tests/SimpleTest/SimpleTest.js").then(() => {
   return loadScript(
     "head.js",

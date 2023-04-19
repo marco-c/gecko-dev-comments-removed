@@ -173,6 +173,8 @@ MediaStreamPlayback.prototype = {
 
 function addLoadEvent() {}
 
+
+
 var scriptsReady = Promise.all(
   ["/tests/SimpleTest/SimpleTest.js", "head.js"].map(script => {
     var el = document.createElement("script");
