@@ -456,20 +456,22 @@ void CachedTableCellAccessible::RowHeaderCells(nsTArray<Accessible*>* aCells) {
       return;
     }
   }
+  Accessible* doc = nsAccUtils::DocumentFor(table->AsAccessible());
   
   
   uint32_t row = RowIdx();
   uint32_t thisCol = ColIdx();
   for (uint32_t col = thisCol - 1; col < thisCol; --col) {
-    Accessible* cellAcc = table->CellAt(row, col);
-    if (!cellAcc) {
+    int32_t cellIdx = table->CellIndexAt(row, col);
+    if (cellIdx == -1) {
       continue;
     }
-    TableCellAccessibleBase* cell = cellAcc->AsTableCellBase();
-    MOZ_ASSERT(cell);
+    CachedTableCellAccessible& cell = table->mCells[cellIdx];
+    Accessible* cellAcc = nsAccUtils::GetAccessibleByID(doc, cell.mAccID);
+    MOZ_ASSERT(cellAcc);
     
     
-    col = cell->ColIdx();
+    col = cell.ColIdx();
     if (cellAcc->Role() != roles::ROWHEADER) {
       continue;
     }
