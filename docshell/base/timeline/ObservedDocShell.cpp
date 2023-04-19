@@ -17,9 +17,7 @@
 namespace mozilla {
 
 ObservedDocShell::ObservedDocShell(nsIDocShell* aDocShell)
-    : MarkersStorage("ObservedDocShellMutex"),
-      mDocShell(aDocShell),
-      mPopping(false) {
+    : mDocShell(aDocShell), mLock("ObservedDocShellMutex") {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
@@ -42,13 +40,13 @@ void ObservedDocShell::AddOTMTMarker(
   
   
   MOZ_ASSERT(!NS_IsMainThread());
-  MutexAutoLock lock(GetLock());  
+  MutexAutoLock lock(mLock);  
   mOffTheMainThreadTimelineMarkers.AppendElement(std::move(aMarker));
 }
 
 void ObservedDocShell::ClearMarkers() {
   MOZ_ASSERT(NS_IsMainThread());
-  MutexAutoLock lock(GetLock());  
+  MutexAutoLock lock(mLock);  
   mTimelineMarkers.Clear();
   mOffTheMainThreadTimelineMarkers.Clear();
 }
@@ -56,16 +54,20 @@ void ObservedDocShell::ClearMarkers() {
 void ObservedDocShell::PopMarkers(
     JSContext* aCx, nsTArray<dom::ProfileTimelineMarker>& aStore) {
   MOZ_ASSERT(NS_IsMainThread());
-  MutexAutoLock lock(GetLock());  
 
   MOZ_RELEASE_ASSERT(!mPopping);
   AutoRestore<bool> resetPopping(mPopping);
   mPopping = true;
 
-  
-  
-  
-  mTimelineMarkers.AppendElements(std::move(mOffTheMainThreadTimelineMarkers));
+  {
+    MutexAutoLock lock(mLock);  
+
+    
+    
+    
+    mTimelineMarkers.AppendElements(
+        std::move(mOffTheMainThreadTimelineMarkers));
+  }
 
   
   
