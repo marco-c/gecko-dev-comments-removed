@@ -83,12 +83,7 @@ var lastHTMLGlobals = {};
 
 function GlobalsForNode(filePath) {
   this.path = filePath;
-
-  if (this.path) {
-    this.dirname = path.dirname(this.path);
-  } else {
-    this.dirname = null;
-  }
+  this.dirname = path.dirname(this.path);
 }
 
 GlobalsForNode.prototype = {
@@ -121,11 +116,6 @@ GlobalsForNode.prototype = {
         continue;
       }
 
-      if (!this.dirname) {
-        
-        return globals;
-      }
-
       let filePath = match[1].trim();
 
       if (!path.isAbsolute(filePath)) {
@@ -140,7 +130,7 @@ GlobalsForNode.prototype = {
   },
 
   ExpressionStatement(node, parents, globalScope) {
-    let isGlobal = helpers.getIsGlobalThis(parents);
+    let isGlobal = helpers.getIsGlobalScope(parents);
     let globals = [];
 
     
@@ -157,9 +147,7 @@ GlobalsForNode.prototype = {
     
     
     
-    
-    
-    if (globalScope && globalScope.set.get("importScripts") && this.dirname) {
+    if (globalScope && globalScope.set.get("importScripts")) {
       let workerDetails = helpers.convertWorkerExpressionToGlobals(
         node,
         isGlobal,
@@ -230,49 +218,6 @@ module.exports = {
     globalCache.set(filePath, globals);
 
     globalDiscoveryInProgressForFiles.delete(filePath);
-    return globals;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getGlobalsForCode(code, astOptions = {}) {
-    
-    let { ast, scopeManager, visitorKeys } = helpers.parseCode(
-      code,
-      astOptions
-    );
-
-    
-    let globalScope = scopeManager.acquire(ast);
-
-    let globals = Object.keys(globalScope.variables).map(v => ({
-      name: globalScope.variables[v].name,
-      writable: true,
-    }));
-
-    
-    let handler = new GlobalsForNode(null);
-
-    helpers.walkAST(ast, visitorKeys, (type, node, parents) => {
-      if (type in handler) {
-        let newGlobals = handler[type](node, parents, globalScope);
-        globals.push.apply(globals, newGlobals);
-      }
-    });
-
     return globals;
   },
 

@@ -491,18 +491,14 @@ module.exports = {
 
 
 
-  getIsTopLevelScript(ancestors) {
-    for (let parent of ancestors) {
-      switch (parent.type) {
-        case "ArrowFunctionExpression":
-        case "FunctionDeclaration":
-        case "FunctionExpression":
-        case "PropertyDefinition":
-        case "StaticBlock":
-          return false;
-      }
+  getIsFunctionNode(node) {
+    switch (node.type) {
+      case "ArrowFunctionExpression":
+      case "FunctionDeclaration":
+      case "FunctionExpression":
+        return true;
     }
-    return true;
+    return false;
   },
 
   
@@ -514,14 +510,10 @@ module.exports = {
 
 
 
-  getIsGlobalThis(ancestors) {
+  getIsGlobalScope(ancestors) {
     for (let parent of ancestors) {
-      switch (parent.type) {
-        case "FunctionDeclaration":
-        case "FunctionExpression":
-        case "PropertyDefinition":
-        case "StaticBlock":
-          return false;
+      if (this.getIsFunctionNode(parent)) {
+        return false;
       }
     }
     return true;
