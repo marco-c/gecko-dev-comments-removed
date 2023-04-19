@@ -10,6 +10,7 @@
 
 #include <queue>
 
+#include "BlankDecoderModule.h"
 #include "MediaQueue.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/Atomics.h"
@@ -152,10 +153,14 @@ class MFMediaEngineStream
 class MFMediaEngineStreamWrapper : public MediaDataDecoder {
  public:
   MFMediaEngineStreamWrapper(MFMediaEngineStream* aStream,
-                             TaskQueue* aTaskQueue)
-      : mStream(aStream), mTaskQueue(aTaskQueue) {
+                             TaskQueue* aTaskQueue,
+                             const CreateDecoderParams& aParams)
+      : mStream(aStream),
+        mTaskQueue(aTaskQueue),
+        mFakeDataCreator(new FakeDecodedDataCreator(aParams)) {
     MOZ_ASSERT(mStream);
     MOZ_ASSERT(mTaskQueue);
+    MOZ_ASSERT(mFakeDataCreator);
   }
 
   
@@ -169,7 +174,25 @@ class MFMediaEngineStreamWrapper : public MediaDataDecoder {
 
  private:
   Microsoft::WRL::ComPtr<MFMediaEngineStream> mStream;
+  
+  
+  
+  class FakeDecodedDataCreator final {
+   public:
+    explicit FakeDecodedDataCreator(const CreateDecoderParams& aParams);
+    RefPtr<MediaDataDecoder::DecodePromise> Decode(MediaRawData* aSample) {
+      return mDummyDecoder->Decode(aSample);
+    }
+    void Flush() { Unused << mDummyDecoder->Flush(); }
+
+    TrackInfo::TrackType Type() const { return mType; }
+
+   private:
+    RefPtr<MediaDataDecoder> mDummyDecoder;
+    TrackInfo::TrackType mType;
+  };
   RefPtr<TaskQueue> mTaskQueue;
+  UniquePtr<FakeDecodedDataCreator> mFakeDataCreator;
 };
 
 }  
