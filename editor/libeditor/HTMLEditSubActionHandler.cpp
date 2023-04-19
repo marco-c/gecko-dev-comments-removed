@@ -8401,7 +8401,8 @@ CreateElementResult HTMLEditor::CreateOrChangeBlockContainerElement(
 }
 
 SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
-    nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode) {
+    nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode,
+    const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aStartOfDeepestRightNode.IsSet())) {
@@ -8409,15 +8410,11 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
   }
   MOZ_ASSERT(aStartOfDeepestRightNode.IsSetAndValid());
 
-  RefPtr<Element> host = ComputeEditingHost();
-  if (NS_WARN_IF(!host)) {
-    return SplitNodeResult(NS_ERROR_FAILURE);
-  }
-
   
-  if (aStartOfDeepestRightNode.GetContainer() != host &&
+  
+  if (aStartOfDeepestRightNode.GetContainer() != &aEditingHost &&
       !EditorUtils::IsDescendantOf(*aStartOfDeepestRightNode.GetContainer(),
-                                   *host)) {
+                                   aEditingHost)) {
     NS_WARNING("aStartOfDeepestRightNode was not in editing host");
     return SplitNodeResult(NS_ERROR_INVALID_ARG);
   }
@@ -8428,7 +8425,7 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
        pointToInsert.Set(pointToInsert.GetContainer())) {
     
     
-    if (pointToInsert.GetChild() == host) {
+    if (pointToInsert.GetChild() == &aEditingHost) {
       NS_WARNING(
           "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() reached "
           "editing host");
@@ -8469,7 +8466,8 @@ HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   const SplitNodeResult splitNodeResult =
-      MaybeSplitAncestorsForInsertWithTransaction(aTagName, aPointToInsert);
+      MaybeSplitAncestorsForInsertWithTransaction(aTagName, aPointToInsert,
+                                                  aEditingHost);
   if (splitNodeResult.isErr()) {
     NS_WARNING(
         "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() failed");
@@ -10295,7 +10293,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
           
           const SplitNodeResult splitNodeResult =
               MaybeSplitAncestorsForInsertWithTransaction(
-                  MOZ_KnownLive(*ULOrOLOrDLTagName), atContent);
+                  MOZ_KnownLive(*ULOrOLOrDLTagName), atContent, aEditingHost);
           if (splitNodeResult.isOk()) {
             NS_WARNING(
                 "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() "
@@ -10405,7 +10403,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
           
           const SplitNodeResult splitNodeResult =
               MaybeSplitAncestorsForInsertWithTransaction(
-                  MOZ_KnownLive(*containerName), atListItem);
+                  MOZ_KnownLive(*containerName), atListItem, aEditingHost);
           if (splitNodeResult.isErr()) {
             NS_WARNING(
                 "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() "

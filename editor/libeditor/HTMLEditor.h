@@ -1307,7 +1307,8 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitNodeResult
   MaybeSplitAncestorsForInsertWithTransaction(
-      nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode);
+      nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode,
+      const Element& aEditingHost);
 
   
 
