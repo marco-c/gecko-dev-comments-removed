@@ -26,6 +26,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/webrtc_key_value_config.h"
 #include "modules/pacing/pacing_controller.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -144,6 +145,16 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   Stats GetStats() const;
 
   Clock* const clock_;
+  
+  
+  
+  
+  
+  
+  
+  const bool allow_low_precision_;
+  
+  
   const TimeDelta max_hold_back_window_;
   const int max_hold_back_window_in_packets_;
 
