@@ -6,6 +6,7 @@
 #define DOM_MEDIA_IPC_MFMEDIAENGINEPARENT_H_
 
 #include <Mfidl.h>
+#include <winnt.h>
 #include <wrl.h>
 
 #include "MediaInfo.h"
@@ -78,6 +79,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   void DestroyEngineIfExists(const Maybe<MediaResult>& aError = Nothing());
 
+  void EnsureDcompSurfaceHandle();
+
   
   
   static inline uint64_t sMediaEngineIdx = 0;
@@ -106,6 +109,14 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   HWND mVirtualVideoWindow = nullptr;
 
   Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mDXGIDeviceManager;
+
+  
+  DWORD mDisplayWidth = 0;
+  DWORD mDisplayHeight = 0;
+
+  
+  
+  bool mIsEnableDcompMode = false;
 };
 
 }  

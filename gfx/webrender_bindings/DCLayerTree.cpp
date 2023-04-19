@@ -15,6 +15,7 @@
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
+#include "mozilla/webrender/RenderDcompSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/WindowsVersion.h"
@@ -37,6 +38,10 @@ namespace wr {
 
 extern LazyLogModule gRenderThreadLog;
 #define LOG(...) MOZ_LOG(gRenderThreadLog, LogLevel::Debug, (__VA_ARGS__))
+
+#define LOG_H(msg, ...)                   \
+  MOZ_LOG(gDcompSurface, LogLevel::Debug, \
+          ("DCSurfaceHandle=%p, " msg, this, ##__VA_ARGS__))
 
 UniquePtr<GpuOverlayInfo> DCLayerTree::sGpuOverlayInfo;
 
@@ -497,9 +502,9 @@ void DCLayerTree::CreateExternalSurface(wr::NativeSurfaceId aId,
   auto it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
-  auto surface = MakeUnique<DCSurfaceVideo>(aIsOpaque, this);
+  auto surface = MakeUnique<DCExternalSurfaceWrapper>(aIsOpaque, this);
   if (!surface->Initialize()) {
-    gfxCriticalNote << "Failed to initialize DCSurfaceVideo: "
+    gfxCriticalNote << "Failed to initialize DCExternalSurfaceWrapper: "
                     << wr::AsUint64(aId);
     return;
   }
@@ -530,10 +535,60 @@ void DCLayerTree::AttachExternalImage(wr::NativeSurfaceId aId,
                                       wr::ExternalImageId aExternalImage) {
   auto surface_it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
-  auto* surfaceVideo = surface_it->second->AsDCSurfaceVideo();
-  MOZ_RELEASE_ASSERT(surfaceVideo);
+  surface_it->second->AttachExternalImage(aExternalImage);
+}
 
-  surfaceVideo->AttachExternalImage(aExternalImage);
+void DCExternalSurfaceWrapper::AttachExternalImage(
+    wr::ExternalImageId aExternalImage) {
+  if (auto* surface = EnsureSurfaceForExternalImage(aExternalImage)) {
+    surface->AttachExternalImage(aExternalImage);
+  }
+}
+
+DCSurface* DCExternalSurfaceWrapper::EnsureSurfaceForExternalImage(
+    wr::ExternalImageId aExternalImage) {
+  if (mSurface) {
+    return mSurface.get();
+  }
+
+  
+  RenderTextureHost* texture =
+      RenderThread::Get()->GetRenderTexture(aExternalImage);
+  if (texture && texture->AsRenderDXGITextureHost()) {
+    mSurface.reset(new DCSurfaceVideo(mIsOpaque, mDCLayerTree));
+    if (!mSurface->Initialize()) {
+      gfxCriticalNote << "Failed to initialize DCSurfaceVideo: "
+                      << wr::AsUint64(aExternalImage);
+      mSurface = nullptr;
+    }
+  } else if (texture && texture->AsRenderDcompSurfaceTextureHost()) {
+    mSurface.reset(new DCSurfaceHandle(mIsOpaque, mDCLayerTree));
+    if (!mSurface->Initialize()) {
+      gfxCriticalNote << "Failed to initialize DCSurfaceHandle: "
+                      << wr::AsUint64(aExternalImage);
+      mSurface = nullptr;
+    }
+  }
+
+  if (mSurface) {
+    
+    mVisual->AddVisual(mSurface->GetVisual(), TRUE, nullptr);
+  } else {
+    gfxCriticalNote << "Failed to create a surface for external image: "
+                    << gfx::hexa(texture);
+  }
+  return mSurface.get();
+}
+
+void DCExternalSurfaceWrapper::PresentExternalSurface(gfx::Matrix& aTransform) {
+  MOZ_ASSERT(mSurface);
+  if (auto* surface = mSurface->AsDCSurfaceVideo()) {
+    if (surface->CalculateSwapChainSize(aTransform)) {
+      surface->PresentVideo();
+    }
+  } else if (auto* surface = mSurface->AsDCSurfaceHandle()) {
+    surface->PresentSurfaceHandle();
+  }
 }
 
 template <typename T>
@@ -560,12 +615,7 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   gfx::Matrix transform(aTransform.m11, aTransform.m12, aTransform.m21,
                         aTransform.m22, aTransform.m41, aTransform.m42);
 
-  auto* surfaceVideo = surface->AsDCSurfaceVideo();
-  if (surfaceVideo) {
-    if (surfaceVideo->CalculateSwapChainSize(transform)) {
-      surfaceVideo->PresentVideo();
-    }
-  }
+  surface->PresentExternalSurface(transform);
 
   transform.PreTranslate(-virtualOffset.x, -virtualOffset.y);
 
@@ -691,6 +741,7 @@ bool DCLayerTree::EnsureVideoProcessor(const gfx::IntSize& aInputSize,
     return false;
   }
 
+  
   
   
   mVideoContext->VideoProcessorSetStreamAutoProcessingMode(mVideoProcessor, 0,
@@ -1219,6 +1270,67 @@ void DCSurfaceVideo::ReleaseDecodeSwapChainResources() {
   }
 }
 
+DCSurfaceHandle::DCSurfaceHandle(bool aIsOpaque, DCLayerTree* aDCLayerTree)
+    : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, aIsOpaque,
+                aDCLayerTree) {}
+
+void DCSurfaceHandle::AttachExternalImage(wr::ExternalImageId aExternalImage) {
+  RenderTextureHost* texture =
+      RenderThread::Get()->GetRenderTexture(aExternalImage);
+  RenderDcompSurfaceTextureHost* renderTexture =
+      texture ? texture->AsRenderDcompSurfaceTextureHost() : nullptr;
+  if (!renderTexture) {
+    gfxCriticalNote << "Unsupported RenderTexture for DCSurfaceHandle: "
+                    << gfx::hexa(texture);
+    return;
+  }
+
+  const auto handle = renderTexture->GetDcompSurfaceHandle();
+  if (GetSurfaceHandle() == handle) {
+    return;
+  }
+
+  LOG_H("AttachExternalImage, ext-image=%" PRIu64 ", texture=%p, handle=%p",
+        wr::AsUint64(aExternalImage), renderTexture, handle);
+  mDcompTextureHost = renderTexture;
+}
+
+HANDLE DCSurfaceHandle::GetSurfaceHandle() const {
+  if (mDcompTextureHost) {
+    return mDcompTextureHost->GetDcompSurfaceHandle();
+  }
+  return nullptr;
+}
+
+IDCompositionSurface* DCSurfaceHandle::EnsureSurface() {
+  if (auto* surface = mDcompTextureHost->GetSurface()) {
+    return surface;
+  }
+
+  
+  RefPtr<IDCompositionDevice> device;
+  HRESULT hr = mDCLayerTree->GetCompositionDevice()->QueryInterface(
+      (IDCompositionDevice**)getter_AddRefs(device));
+  if (FAILED(hr)) {
+    gfxCriticalNote
+        << "Failed to convert IDCompositionDevice2 to IDCompositionDevice: "
+        << gfx::hexa(hr);
+    return nullptr;
+  }
+
+  return mDcompTextureHost->CreateSurfaceFromDevice(device);
+}
+
+void DCSurfaceHandle::PresentSurfaceHandle() {
+  LOG_H("PresentSurfaceHandle");
+  if (IDCompositionSurface* surface = EnsureSurface()) {
+    LOG_H("Set surface %p to visual", surface);
+    mVisual->SetContent(surface);
+  } else {
+    mVisual->SetContent(nullptr);
+  }
+}
+
 DCTile::DCTile(DCLayerTree* aDCLayerTree) : mDCLayerTree(aDCLayerTree) {}
 
 DCTile::~DCTile() {}
@@ -1332,3 +1444,5 @@ void DCLayerTree::DestroyEGLSurface() {
 
 }  
 }  
+
+#undef LOG_H

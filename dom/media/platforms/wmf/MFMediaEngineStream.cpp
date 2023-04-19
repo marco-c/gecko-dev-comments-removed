@@ -48,7 +48,12 @@ RefPtr<MediaDataDecoder::DecodePromise> MFMediaEngineStreamWrapper::Decode(
   Unused << mTaskQueue->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineStreamWrapper::Decode",
       [sample = RefPtr{aSample}, stream]() { stream->NotifyNewData(sample); }));
-
+  
+  
+  RefPtr<MediaData> outputData = mStream->OutputData(aSample);
+  if (outputData) {
+    return DecodePromise::CreateAndResolve(DecodedData{outputData}, __func__);
+  }
   
   
   MOZ_ASSERT(mFakeDataCreator->Type() == mStream->TrackType());

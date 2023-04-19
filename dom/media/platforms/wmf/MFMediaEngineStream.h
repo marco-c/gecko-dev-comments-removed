@@ -19,6 +19,7 @@
 
 namespace mozilla {
 
+class MFMediaEngineVideoStream;
 class MFMediaSource;
 
 
@@ -85,6 +86,13 @@ class MFMediaEngineStream
 
   
   bool IsShutdown() const { return mIsShutdown; }
+
+  virtual MFMediaEngineVideoStream* AsVideoStream() { return nullptr; }
+
+  
+  virtual already_AddRefed<MediaData> OutputData(MediaRawData* aSample) {
+    return nullptr;
+  }
 
  protected:
   HRESULT GenerateStreamDescriptor(uint64_t aStreamId, const TrackInfo& aInfo);
