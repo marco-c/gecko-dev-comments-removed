@@ -57,7 +57,6 @@ class AudioEgressTest : public ::testing::Test {
 
   AudioEgressTest()
       : fake_clock_(kStartTime), wave_generator_(1000.0, kAudioLevel) {
-    rtp_rtcp_ = CreateRtpStack(&fake_clock_, &transport_, kRemoteSsrc);
     task_queue_factory_ = CreateDefaultTaskQueueFactory();
     encoder_factory_ = CreateBuiltinAudioEncoderFactory();
   }
@@ -65,6 +64,7 @@ class AudioEgressTest : public ::testing::Test {
   
   
   void SetUp() override {
+    rtp_rtcp_ = CreateRtpStack(&fake_clock_, &transport_, kRemoteSsrc);
     egress_ = std::make_unique<AudioEgress>(rtp_rtcp_.get(), &fake_clock_,
                                             task_queue_factory_.get());
     constexpr int kPcmuPayload = 0;
@@ -81,6 +81,7 @@ class AudioEgressTest : public ::testing::Test {
     egress_->StopSend();
     rtp_rtcp_->SetSendingStatus(false);
     egress_.reset();
+    rtp_rtcp_.reset();
   }
 
   
