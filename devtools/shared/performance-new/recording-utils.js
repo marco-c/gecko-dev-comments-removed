@@ -33,9 +33,7 @@ function requireLazy(callback) {
   };
 }
 
-const lazyServices = requireLazy(() =>
-  require("resource://gre/modules/Services.jsm")
-);
+const lazyServices = requireLazy(() => require("Services"));
 
 
 
@@ -43,7 +41,7 @@ const lazyServices = requireLazy(() =>
 
 
 function getActiveBrowserID() {
-  const { Services } = lazyServices();
+  const Services = lazyServices();
   const win = Services.wm.getMostRecentWindow("navigator:browser");
 
   if (win?.gBrowser?.selectedBrowser?.browsingContext?.browserId) {
