@@ -244,7 +244,7 @@ void nsTableRowFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   DrainSelfOverflowList();  
   
   const nsFrameList::Slice& newCells =
-      mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
+      mFrames.InsertFrames(nullptr, aPrevFrame, std::move(aFrameList));
 
   nsTableCellFrame* prevCellFrame =
       static_cast<nsTableCellFrame*>(nsTableFrame::GetFrameAtOrBefore(

@@ -745,7 +745,7 @@ void nsBoxFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
 
   
   const nsFrameList::Slice& newFrames =
-      mFrames.InsertFrames(this, aPrevFrame, aFrameList);
+      mFrames.InsertFrames(this, aPrevFrame, std::move(aFrameList));
 
   
   if (mLayoutManager)

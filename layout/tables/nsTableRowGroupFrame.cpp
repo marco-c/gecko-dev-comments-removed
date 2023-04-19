@@ -1064,7 +1064,7 @@ void nsTableRowGroupFrame::UndoContinuedRow(nsPresContext* aPresContext,
 
   
   if (!overflows->IsEmpty()) {
-    mFrames.InsertFrames(nullptr, rowBefore, *overflows);
+    mFrames.InsertFrames(nullptr, rowBefore, std::move(*overflows));
   }
 }
 
@@ -1517,7 +1517,7 @@ void nsTableRowGroupFrame::InsertFrames(
 
   int32_t startRowIndex = GetStartRowIndex();
   
-  mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
+  mFrames.InsertFrames(nullptr, aPrevFrame, std::move(aFrameList));
 
   int32_t numRows = rows.Length();
   if (numRows > 0) {

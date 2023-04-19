@@ -697,7 +697,7 @@ void nsTableFrame::AppendAnonymousColFrames(
   nsFrameList& cols = aColGroupFrame->GetWritableChildList();
   nsIFrame* oldLastCol = cols.LastChild();
   const nsFrameList::Slice& newCols =
-      cols.InsertFrames(nullptr, oldLastCol, newColFrames);
+      cols.InsertFrames(nullptr, oldLastCol, std::move(newColFrames));
   if (aAddToTable) {
     
     int32_t startColIndex;
@@ -1998,7 +1998,8 @@ void nsTableFrame::PushChildren(const RowGroupArray& aRowGroups,
     
     
     ReparentFrameViewList(frames, this, nextInFlow);
-    nextInFlow->mFrames.InsertFrames(nextInFlow, prevSibling, frames);
+    nextInFlow->mFrames.InsertFrames(nextInFlow, prevSibling,
+                                     std::move(frames));
   } else {
     
     SetOverflowFrames(std::move(frames));
@@ -2282,7 +2283,7 @@ void nsTableFrame::HomogenousInsertFrames(ChildListID aListID,
     NS_ASSERTION(aListID == kColGroupList, "unexpected child list");
     
     const nsFrameList::Slice& newColgroups =
-        mColGroups.InsertFrames(this, aPrevFrame, aFrameList);
+        mColGroups.InsertFrames(this, aPrevFrame, std::move(aFrameList));
     
     int32_t startColIndex = 0;
     if (aPrevFrame) {
@@ -2300,14 +2301,14 @@ void nsTableFrame::HomogenousInsertFrames(ChildListID aListID,
     DrainSelfOverflowList();  
     
     const nsFrameList::Slice& newRowGroups =
-        mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
+        mFrames.InsertFrames(nullptr, aPrevFrame, std::move(aFrameList));
 
     InsertRowGroups(newRowGroups);
   } else {
     NS_ASSERTION(aListID == kPrincipalList, "unexpected child list");
     MOZ_ASSERT_UNREACHABLE("How did we even get here?");
     
-    mFrames.InsertFrames(nullptr, aPrevFrame, aFrameList);
+    mFrames.InsertFrames(nullptr, aPrevFrame, std::move(aFrameList));
     return;
   }
 

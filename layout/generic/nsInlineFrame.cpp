@@ -314,7 +314,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         
         const nsFrameList::Slice& newFrames =
-            mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+            mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
         
         
         
@@ -437,7 +437,7 @@ void nsInlineFrame::PullOverflowsFromPrevInFlow() {
       
       nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
                                               this);
-      mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+      mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
     }
   }
 }
@@ -999,7 +999,7 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
-          mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+          mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
       ReparentChildListStyle(aPresContext, newFrames, this);
     }
   }
@@ -1061,7 +1061,7 @@ void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
-          mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+          mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
       ReparentChildListStyle(presContext, newFrames, this);
     }
   }

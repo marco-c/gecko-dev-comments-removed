@@ -10166,7 +10166,7 @@ void nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
       
       
       aBlockFrames.DestroyFrame(textFrame);
-      aBlockFrames.InsertFrames(nullptr, prevFrame, letterFrames);
+      aBlockFrames.InsertFrames(nullptr, prevFrame, std::move(letterFrames));
     } else {
       
       RemoveFrame(kPrincipalList, textFrame);

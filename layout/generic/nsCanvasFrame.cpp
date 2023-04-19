@@ -710,7 +710,7 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      mFrames.InsertFrames(this, nullptr, *overflow);
+      mFrames.InsertFrames(this, nullptr, std::move(*overflow));
     }
   }
 
