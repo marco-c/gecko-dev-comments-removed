@@ -1412,8 +1412,6 @@ function TypedArrayAt(index) {
   GetAttachedArrayBuffer(obj);
 
   
-
-  
   var len = TypedArrayLength(obj);
 
   
