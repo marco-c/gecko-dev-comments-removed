@@ -19,11 +19,6 @@ class MockPressureService {
       ['power-supply', PressureFactor.kPowerSupply]
     ]);
     this.pressureServiceReadingTimerId_ = null;
-    
-    
-    
-    
-    this.timestamp_ = window.performance.timeOrigin;
   }
 
   start() {
@@ -64,11 +59,28 @@ class MockPressureService {
     if (this.pressureServiceReadingTimerId_ != null)
       stopPlatformCollector();
 
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    const windowsEpoch = Date.UTC(1601, 0, 1, 0, 0, 0, 0);
+    const unixEpoch = Date.UTC(1970, 0, 1, 0, 0, 0, 0);
+    
+    const epochDeltaInMs = unixEpoch - windowsEpoch;
+
     const timeout = (1 / sampleRate) * 1000;
     this.pressureServiceReadingTimerId_ = window.setInterval(() => {
       if (this.pressureUpdate_ === null || this.observer_ === null)
         return;
-      this.pressureUpdate_.timestamp = this.timestamp_++;
+      this.pressureUpdate_.timestamp = {
+        internalValue: BigInt((new Date().getTime() + epochDeltaInMs) * 1000)
+      };
       this.observer_.onUpdate(this.pressureUpdate_);
       this.updatesDelivered_++;
     }, timeout);
@@ -102,7 +114,6 @@ class MockPressureService {
     this.pressureUpdate_ = {
       state: this.mojomStateType_.get(state),
       factors: pressureFactors,
-      timestamp: window.performance.timeOrigin
     };
   }
 }
