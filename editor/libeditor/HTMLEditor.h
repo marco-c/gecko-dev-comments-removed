@@ -1719,7 +1719,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT JoinNodesResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<JoinNodesResult, nsresult>
   JoinNodesWithTransaction(nsIContent& aLeftContent, nsIContent& aRightContent);
 
   

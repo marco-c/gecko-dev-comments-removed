@@ -737,14 +737,14 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
       
       
       AutoTransactionsConserveSelection dontChangeMySelection(*this);
-      JoinNodesResult joinNodesResult =
+      Result<JoinNodesResult, nsresult> joinNodesResult =
           JoinNodesWithTransaction(*previousSibling, *nextSibling);
-      if (joinNodesResult.Failed()) {
+      if (MOZ_UNLIKELY(joinNodesResult.isErr())) {
         NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
-        return Err(joinNodesResult.Rv());
+        return joinNodesResult.propagateErr();
       }
       
-      return joinNodesResult.AtJoinedPoint<EditorDOMPoint>();
+      return joinNodesResult.inspect().AtJoinedPoint<EditorDOMPoint>();
     }
   }
 

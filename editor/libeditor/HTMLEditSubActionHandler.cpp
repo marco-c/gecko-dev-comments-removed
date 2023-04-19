@@ -8857,15 +8857,15 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   
   if (HTMLEditUtils::IsAnyListElement(&aNodeLeft) || aNodeLeft.IsText()) {
     
-    JoinNodesResult joinNodesResult =
+    Result<JoinNodesResult, nsresult> joinNodesResult =
         JoinNodesWithTransaction(aNodeLeft, aNodeRight);
-    if (MOZ_UNLIKELY(joinNodesResult.Failed())) {
+    if (MOZ_UNLIKELY(joinNodesResult.isErr())) {
       NS_WARNING("HTMLEditor::JoinNodesWithTransaction failed");
-      return joinNodesResult.Rv();
+      return joinNodesResult.unwrapErr();
     }
     *aNewFirstChildOfRightNode =
-        joinNodesResult.AtJoinedPoint<EditorDOMPoint>();
-    return joinNodesResult.Rv();
+        joinNodesResult.inspect().AtJoinedPoint<EditorDOMPoint>();
+    return NS_OK;
   }
 
   
@@ -8884,11 +8884,11 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   }
 
   
-  JoinNodesResult joinNodesResult =
+  Result<JoinNodesResult, nsresult> joinNodesResult =
       JoinNodesWithTransaction(aNodeLeft, aNodeRight);
-  if (MOZ_UNLIKELY(joinNodesResult.Failed())) {
+  if (MOZ_UNLIKELY(joinNodesResult.isErr())) {
     NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
-    return joinNodesResult.Rv();
+    return joinNodesResult.unwrapErr();
   }
 
   if ((lastEditableChildOfLeftContent->IsText() ||
@@ -8904,7 +8904,8 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
         "HTMLEditor::JoinNearestEditableNodesWithTransaction() failed");
     return rv;
   }
-  *aNewFirstChildOfRightNode = joinNodesResult.AtJoinedPoint<EditorDOMPoint>();
+  *aNewFirstChildOfRightNode =
+      joinNodesResult.inspect().AtJoinedPoint<EditorDOMPoint>();
   return NS_OK;
 }
 
