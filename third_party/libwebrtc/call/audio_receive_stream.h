@@ -161,15 +161,26 @@ class AudioReceiveStream {
     
     
     
+    
+    
+    
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
 
+    
+    
+    
     
     
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
   };
 
   
-  virtual void Reconfigure(const Config& config) = 0;
+  virtual void SetDepacketizerToDecoderFrameTransformer(
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+          frame_transformer) = 0;
+  virtual void SetDecoderMap(std::map<int, SdpAudioFormat> decoder_map) = 0;
+  virtual void SetUseTransportCcAndNackHistory(bool use_transport_cc,
+                                               int history_ms) = 0;
 
   
   
