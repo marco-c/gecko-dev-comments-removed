@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <string>
 
+#include "mozilla/WinHeaderOnlyUtils.h"
+
 #include "NotificationFactory.h"
 
 using namespace std::filesystem;
@@ -41,10 +43,23 @@ bool PopulateDllPath(HINSTANCE dllInstance) {
 
 
 bool CheckRuntimeClsid(REFCLSID rclsid) {
+  
+  
+  if (mozilla::HasPackageIdentity()) {
+    
+    constexpr CLSID MOZ_INOTIFICATIONACTIVATION_CLSID = {
+        0x916f9b5d,
+        0xb5b2,
+        0x4d36,
+        {0xb0, 0x47, 0x03, 0xc7, 0xa5, 0x2f, 0x81, 0xc8}};
+
+    return IsEqualCLSID(rclsid, MOZ_INOTIFICATIONACTIVATION_CLSID);
+  }
+
   std::wstring clsid_str;
   {
     wchar_t* raw_clsid_str;
-    if (StringFromCLSID(rclsid, &raw_clsid_str) == S_OK) {
+    if (SUCCEEDED(StringFromCLSID(rclsid, &raw_clsid_str))) {
       clsid_str += raw_clsid_str;
       CoTaskMemFree(raw_clsid_str);
     } else {
