@@ -13,6 +13,8 @@
 
 
 
+
+
 const { Cu, Cc, Ci, Services } = require("chrome");
 const jsmScope = require("resource://devtools/shared/loader/Loader.jsm");
 
@@ -40,67 +42,6 @@ const {
   StructuredCloneHolder,
   TelemetryStopwatch,
 } = Cu.getGlobalForObject(jsmScope);
-
-
-
-const debuggerSandbox = (exports.internalSandbox = Cu.Sandbox(systemPrincipal, {
-  
-  
-  
-  freshCompartment: true,
-
-  wantGlobalProperties: [
-    "AbortController",
-    "atob",
-    "btoa",
-    "Blob",
-    "ChromeUtils",
-    "crypto",
-    "CSS",
-    "CSSRule",
-    "DOMParser",
-    "Element",
-    "Event",
-    "FileReader",
-    "FormData",
-    "Headers",
-    "indexedDB",
-    "InspectorUtils",
-    "Node",
-    "TextDecoder",
-    "TextEncoder",
-    "URL",
-    "URLSearchParams",
-    "Window",
-    "XMLHttpRequest",
-  ],
-}));
-
-const {
-  AbortController,
-  atob,
-  btoa,
-  Blob,
-  ChromeUtils,
-  crypto,
-  CSS,
-  CSSRule,
-  DOMParser,
-  Element,
-  Event,
-  FileReader,
-  FormData,
-  Headers,
-  indexedDB,
-  InspectorUtils,
-  Node,
-  TextDecoder,
-  TextEncoder,
-  URL,
-  URLSearchParams,
-  Window,
-  XMLHttpRequest,
-} = debuggerSandbox;
 
 
 
@@ -241,6 +182,14 @@ defineLazyGetter(exports.modules, "Debugger", () => {
 });
 
 defineLazyGetter(exports.modules, "ChromeDebugger", () => {
+  
+  const debuggerSandbox = Cu.Sandbox(systemPrincipal, {
+    
+    
+    
+    freshCompartment: true,
+  });
+
   const { addDebuggerToGlobal } = ChromeUtils.import(
     "resource://gre/modules/jsdebugger.jsm"
   );
@@ -255,10 +204,6 @@ defineLazyGetter(exports.modules, "xpcInspector", () => {
 
 
 exports.globals = {
-  AbortController,
-  atob,
-  Blob,
-  btoa,
   CanonicalBrowsingContext,
   ChromeUtils,
   BrowsingContext,
@@ -266,20 +211,11 @@ exports.globals = {
   WindowGlobalParent,
   WindowGlobalChild,
   console,
-  crypto,
-  CSS,
-  CSSRule,
-  DOMParser,
   DOMPoint,
   DOMQuad,
-  Event,
   NamedNodeMap,
   NodeFilter,
   DOMRect,
-  Element,
-  FileReader,
-  FormData,
-  Headers,
   IOUtils,
   isWorker: false,
   L10nRegistry,
@@ -292,17 +228,10 @@ exports.globals = {
     id: null,
   },
   Localization,
-  Node,
   PathUtils,
   reportError: Cu.reportError,
   Services: Object.create(Services),
   StructuredCloneHolder,
-  TextDecoder,
-  TextEncoder,
-  URL,
-  URLSearchParams,
-  Window,
-  XMLHttpRequest,
 };
 
 

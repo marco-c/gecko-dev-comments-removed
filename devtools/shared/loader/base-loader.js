@@ -112,6 +112,36 @@ function Sandbox(options) {
     
     
     wantComponents: false,
+    
+    
+    
+    
+    wantGlobalProperties: [
+      "AbortController",
+      "atob",
+      "btoa",
+      "Blob",
+      "crypto",
+      "ChromeUtils",
+      "CSS",
+      "CSSRule",
+      "DOMParser",
+      "Element",
+      "Event",
+      "FileReader",
+      "FormData",
+      "Headers",
+      "indexedDB",
+      "InspectorUtils",
+      "Node",
+      "TextDecoder",
+      "TextEncoder",
+      "URL",
+      "URLSearchParams",
+      "Window",
+      "XMLHttpRequest",
+    ],
+
     sandboxName: options.name,
     sandboxPrototype: "prototype" in options ? options.prototype : {},
     invisibleToDebugger:

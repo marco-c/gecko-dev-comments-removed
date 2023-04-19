@@ -103,7 +103,7 @@ exports.allocationTracker = function({
       
       if (
         ref == Cu.getGlobalForObject(builtinGlobal) ||
-        ref == builtinGlobal.internalSandbox
+        ref == Cu.getGlobalForObject(builtinGlobal.modules.ChromeDebugger)
       ) {
         accept = false;
       }
