@@ -415,13 +415,6 @@ class PortTest : public ::testing::Test, public sigslot::has_slots<> {
         role_conflict_(false),
         ports_destroyed_(0) {}
 
-  ~PortTest() {
-    
-    
-    
-    rtc::Thread::Current()->ProcessMessages(0);
-  }
-
  protected:
   std::string password() { return password_; }
 
