@@ -143,10 +143,16 @@ class FinalRefCountedObject final : public T {
 
 
 
-template <typename T,
-          typename... Args,
-          typename std::enable_if<std::is_convertible_v<T*, RefCountInterface*>,
-                                  T>::type* = nullptr>
+
+
+
+
+template <
+    typename T,
+    typename... Args,
+    typename std::enable_if<std::is_convertible_v<T*, RefCountInterface*> &&
+                                std::is_abstract_v<T>,
+                            T>::type* = nullptr>
 scoped_refptr<T> make_ref_counted(Args&&... args) {
   return scoped_refptr<T>(new RefCountedObject<T>(std::forward<Args>(args)...));
 }
