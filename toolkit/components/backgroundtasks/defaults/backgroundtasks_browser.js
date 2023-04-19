@@ -9,7 +9,6 @@
 
 
 pref("alerts.useSystemBackend", true);
-pref("alerts.useSystemBackend.windows.notificationserver.enabled", true);
 
 
 
