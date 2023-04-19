@@ -1077,20 +1077,10 @@ void RTCStatsCollector::GetStatsReportInternal(
     
     
     
-    transceiver_stats_infos_ = PrepareTransceiverStatsInfos_s_w();
+    PrepareTransceiverStatsInfosAndCallStats_s_w();
     
     
     transport_names_ = PrepareTransportNames_s();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    call_stats_ = pc_->GetCallStats();
 
     
     
@@ -1898,11 +1888,10 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
   return transport_cert_stats;
 }
 
-std::vector<RTCStatsCollector::RtpTransceiverStatsInfo>
-RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
+void RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
-  std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos;
+  transceiver_stats_infos_.clear();
   
   
   std::map<cricket::VoiceMediaChannel*,
@@ -1920,8 +1909,8 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
 
       
       
-      transceiver_stats_infos.emplace_back();
-      RtpTransceiverStatsInfo& stats = transceiver_stats_infos.back();
+      transceiver_stats_infos_.emplace_back();
+      RtpTransceiverStatsInfo& stats = transceiver_stats_infos_.back();
       stats.transceiver = transceiver->internal();
       stats.media_type = media_type;
 
@@ -1955,6 +1944,7 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
   
   
   
+  
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
@@ -1971,7 +1961,7 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
     }
 
     
-    for (auto& stats : transceiver_stats_infos) {
+    for (auto& stats : transceiver_stats_infos_) {
       auto transceiver = stats.transceiver;
       std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info;
       std::unique_ptr<cricket::VideoMediaInfo> video_media_info;
@@ -2003,9 +1993,9 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
           std::move(voice_media_info), std::move(video_media_info), senders,
           receivers);
     }
-  });
 
-  return transceiver_stats_infos;
+    call_stats_ = pc_->GetCallStats();
+  });
 }
 
 std::set<std::string> RTCStatsCollector::PrepareTransportNames_s() const {
