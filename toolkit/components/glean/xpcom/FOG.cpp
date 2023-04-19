@@ -30,9 +30,6 @@ using glean::LogToBrowserConsole;
 extern "C" NS_EXPORT void glean_enable_logging(void);
 
 
-extern "C" NS_EXPORT void rlb_flush_dispatcher(void);
-
-
 
 
 
