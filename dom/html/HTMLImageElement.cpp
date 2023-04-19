@@ -1261,6 +1261,10 @@ bool HTMLImageElement::SelectSourceForTagWithAttrs(
 }
 
 void HTMLImageElement::DestroyContent() {
+  
+  
+  mPendingImageLoadTask = nullptr;
+
   mResponsiveSelector = nullptr;
 
   nsImageLoadingContent::Destroy();
