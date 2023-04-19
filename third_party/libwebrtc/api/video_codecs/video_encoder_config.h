@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
+#include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/ref_count.h"
@@ -64,7 +65,7 @@ struct VideoStream {
   
   absl::optional<double> bitrate_priority;
 
-  absl::optional<std::string> scalability_mode;
+  absl::optional<ScalabilityMode> scalability_mode;
 
   
   bool active;

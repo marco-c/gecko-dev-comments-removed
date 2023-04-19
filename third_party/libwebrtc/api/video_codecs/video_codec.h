@@ -19,6 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
+#include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/spatial_layer.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -106,11 +107,13 @@ class RTC_EXPORT VideoCodec {
 
   
   
-  
-  absl::string_view ScalabilityMode() const { return scalability_mode_; }
-  void SetScalabilityMode(absl::string_view scalability_mode) {
-    scalability_mode_ = std::string(scalability_mode);
+  absl::optional<ScalabilityMode> GetScalabilityMode() const {
+    return scalability_mode_;
   }
+  void SetScalabilityMode(ScalabilityMode scalability_mode) {
+    scalability_mode_ = scalability_mode;
+  }
+  void UnsetScalabilityMode() { scalability_mode_ = absl::nullopt; }
 
   VideoCodecComplexity GetVideoEncoderComplexity() const;
   void SetVideoEncoderComplexity(VideoCodecComplexity complexity_setting);
@@ -174,7 +177,7 @@ class RTC_EXPORT VideoCodec {
   
   
   VideoCodecUnion codec_specific_;
-  std::string scalability_mode_;
+  absl::optional<ScalabilityMode> scalability_mode_;
   
   
   absl::optional<VideoCodecComplexity> complexity_;
