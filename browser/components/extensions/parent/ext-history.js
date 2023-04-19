@@ -46,48 +46,61 @@ const getTransition = transitionType => {
 
 
 
-
-
-const convertNodeToHistoryItem = node => {
+const convertRowToHistoryItem = row => {
   return {
-    id: node.pageGuid,
-    url: node.uri,
-    title: node.title,
-    lastVisitTime: PlacesUtils.toDate(node.time).getTime(),
-    visitCount: node.accessCount,
+    id: row.getResultByName("guid"),
+    url: row.getResultByName("url"),
+    title: row.getResultByName("page_title"),
+    lastVisitTime: PlacesUtils.toDate(
+      row.getResultByName("last_visit_date")
+    ).getTime(),
+    visitCount: row.getResultByName("visit_count"),
   };
 };
 
 
 
 
-
-
-const convertNodeToVisitItem = node => {
+const convertRowToVisitItem = row => {
   return {
-    id: node.pageGuid,
-    visitId: String(node.visitId),
-    visitTime: PlacesUtils.toDate(node.time).getTime(),
-    referringVisitId: String(node.fromVisitId),
-    transition: getTransition(node.visitType),
+    id: row.getResultByName("guid"),
+    visitId: String(row.getResultByName("id")),
+    visitTime: PlacesUtils.toDate(row.getResultByName("visit_date")).getTime(),
+    referringVisitId: String(row.getResultByName("from_visit")),
+    transition: getTransition(row.getResultByName("visit_type")),
   };
 };
 
 
 
 
-
-
-const convertNavHistoryContainerResultNode = (container, converter) => {
-  let results = [];
-  container.containerOpen = true;
-  for (let i = 0; i < container.childCount; i++) {
-    let node = container.getChild(i);
-    results.push(converter(node));
+const accumulateNavHistoryResults = (resultSet, converter, results) => {
+  let row;
+  while ((row = resultSet.getNextRow())) {
+    results.push(converter(row));
   }
-  container.containerOpen = false;
-  return results;
 };
+
+function executeAsyncQuery(historyQuery, options, resultConverter) {
+  let results = [];
+  return new Promise((resolve, reject) => {
+    PlacesUtils.history.asyncExecuteLegacyQuery(historyQuery, options, {
+      handleResult(resultSet) {
+        accumulateNavHistoryResults(resultSet, resultConverter, results);
+      },
+      handleError(error) {
+        reject(
+          new Error(
+            "Async execution error (" + error.result + "): " + error.message
+          )
+        );
+      },
+      handleCompletion(reason) {
+        resolve(results);
+      },
+    });
+  });
+}
 
 this.history = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
@@ -258,15 +271,11 @@ this.history = class extends ExtensionAPIPersistent {
           historyQuery.searchTerms = query.text;
           historyQuery.beginTime = beginTime;
           historyQuery.endTime = endTime;
-          let queryResult = PlacesUtils.history.executeQuery(
+          return executeAsyncQuery(
             historyQuery,
-            options
-          ).root;
-          let results = convertNavHistoryContainerResultNode(
-            queryResult,
-            convertNodeToHistoryItem
+            options,
+            convertRowToHistoryItem
           );
-          return Promise.resolve(results);
         },
 
         getVisits: function(details) {
@@ -284,15 +293,11 @@ this.history = class extends ExtensionAPIPersistent {
 
           let historyQuery = PlacesUtils.history.getNewQuery();
           historyQuery.uri = Services.io.newURI(url);
-          let queryResult = PlacesUtils.history.executeQuery(
+          return executeAsyncQuery(
             historyQuery,
-            options
-          ).root;
-          let results = convertNavHistoryContainerResultNode(
-            queryResult,
-            convertNodeToVisitItem
+            options,
+            convertRowToVisitItem
           );
-          return Promise.resolve(results);
         },
 
         onVisited: new EventManager({
