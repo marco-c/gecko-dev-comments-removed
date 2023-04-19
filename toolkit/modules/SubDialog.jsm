@@ -349,8 +349,16 @@ SubDialog.prototype = {
 
     let { contentDocument } = this._frame;
     
+    
     for (let dialog of contentDocument.querySelectorAll("dialog")) {
       dialog.setAttribute("subdialog", "true");
+    }
+    
+    
+    
+    
+    if (this._window.isChromeWindow) {
+      contentDocument.documentElement.classList.add("system-font-size");
     }
     
     contentDocument.documentElement.setAttribute("dialogroot", "true");
