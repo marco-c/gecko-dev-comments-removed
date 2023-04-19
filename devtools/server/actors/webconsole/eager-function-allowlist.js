@@ -4,7 +4,7 @@
 
 "use strict";
 
-const idlPureAllowlist = require("devtools/server/actors/webconsole/webidl-pure-allowlist");
+const idlPureAllowlist = require("resource://devtools/server/actors/webconsole/webidl-pure-allowlist.js");
 
 
 const customEagerFunctions = {

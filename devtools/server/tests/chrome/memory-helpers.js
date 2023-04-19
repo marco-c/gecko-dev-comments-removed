@@ -7,7 +7,7 @@ const { require } = ChromeUtils.import(
 );
 const {
   CommandsFactory,
-} = require("devtools/shared/commands/commands-factory");
+} = require("resource://devtools/shared/commands/commands-factory.js");
 
 
 Services.prefs.setBoolPref("devtools.debugger.log", true);

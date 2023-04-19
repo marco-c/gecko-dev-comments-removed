@@ -4,20 +4,23 @@
 
 "use strict";
 
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 
-const { DevToolsServer } = require("devtools/server/devtools-server");
+const {
+  DevToolsServer,
+} = require("resource://devtools/server/devtools-server.js");
 
 loader.lazyGetter(
   this,
   "NodeActor",
-  () => require("devtools/server/actors/inspector/node").NodeActor,
+  () =>
+    require("resource://devtools/server/actors/inspector/node.js").NodeActor,
   true
 );
 
 const {
   webExtensionInspectedWindowSpec,
-} = require("devtools/shared/specs/addon/webextension-inspected-window");
+} = require("resource://devtools/shared/specs/addon/webextension-inspected-window.js");
 
 
 

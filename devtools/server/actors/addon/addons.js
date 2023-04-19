@@ -7,11 +7,13 @@
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"
 );
-const { addonsSpec } = require("devtools/shared/specs/addon/addons");
+const {
+  addonsSpec,
+} = require("resource://devtools/shared/specs/addon/addons.js");
 
 
 
@@ -38,8 +40,10 @@ const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
     
     
     if (openDevTools) {
-      
-      const { gDevTools } = require("devtools/client/framework/devtools");
+      const {
+        gDevTools,
+        
+      } = require("resource://devtools/client/framework/devtools.js");
       gDevTools.showToolboxForWebExtension(addon.id);
     }
 

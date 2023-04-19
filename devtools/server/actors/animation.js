@@ -25,15 +25,15 @@
 
 
 
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 const { Actor } = protocol;
 const {
   animationPlayerSpec,
   animationsSpec,
-} = require("devtools/shared/specs/animation");
+} = require("resource://devtools/shared/specs/animation.js");
 const {
   ANIMATION_TYPE_FOR_LONGHANDS,
-} = require("devtools/server/actors/animation-type-longhand");
+} = require("resource://devtools/server/actors/animation-type-longhand.js");
 
 
 const ANIMATION_TYPES = {

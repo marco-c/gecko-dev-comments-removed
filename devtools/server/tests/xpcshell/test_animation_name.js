@@ -5,7 +5,9 @@
 
 
 
-const { AnimationPlayerActor } = require("devtools/server/actors/animation");
+const {
+  AnimationPlayerActor,
+} = require("resource://devtools/server/actors/animation.js");
 
 function run_test() {
   

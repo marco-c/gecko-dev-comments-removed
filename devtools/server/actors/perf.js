@@ -3,13 +3,15 @@
 
 "use strict";
 
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 const { ActorClassWithSpec, Actor } = protocol;
-const { actorBridgeWithSpec } = require("devtools/server/actors/common");
-const { perfSpec } = require("devtools/shared/specs/perf");
+const {
+  actorBridgeWithSpec,
+} = require("resource://devtools/server/actors/common.js");
+const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
 const {
   ActorReadyGeckoProfilerInterface,
-} = require("devtools/shared/performance-new/gecko-profiler-interface");
+} = require("resource://devtools/shared/performance-new/gecko-profiler-interface.js");
 
 
 

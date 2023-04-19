@@ -9,7 +9,7 @@
 const {
   logEvent,
   getThrownMessage,
-} = require("devtools/server/actors/utils/logEvent");
+} = require("resource://devtools/server/actors/utils/logEvent.js");
 
 
 

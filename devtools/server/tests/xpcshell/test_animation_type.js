@@ -7,7 +7,7 @@
 const {
   ANIMATION_TYPES,
   AnimationPlayerActor,
-} = require("devtools/server/actors/animation");
+} = require("resource://devtools/server/actors/animation.js");
 
 function run_test() {
   

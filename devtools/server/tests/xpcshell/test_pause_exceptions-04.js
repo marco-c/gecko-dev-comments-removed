@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { waitForTick } = require("devtools/shared/DevToolsUtils");
+const { waitForTick } = require("resource://devtools/shared/DevToolsUtils.js");
 
 
 

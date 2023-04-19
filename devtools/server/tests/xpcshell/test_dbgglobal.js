@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { SocketListener } = require("devtools/shared/security/socket");
+const {
+  SocketListener,
+} = require("resource://devtools/shared/security/socket.js");
 
 function run_test() {
   

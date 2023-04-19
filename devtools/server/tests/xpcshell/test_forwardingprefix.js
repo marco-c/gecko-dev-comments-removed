@@ -5,7 +5,7 @@
 
 
 
-const { RootActor } = require("devtools/server/actors/root");
+const { RootActor } = require("resource://devtools/server/actors/root.js");
 
 var gMainConnection, gMainTransport;
 var gSubconnection1, gSubconnection2;
@@ -176,7 +176,7 @@ function TestForwardPrefix12OnlyRoot() {
 
 
 
-const { Actor } = require("devtools/shared/protocol/Actor");
+const { Actor } = require("resource://devtools/shared/protocol/Actor.js");
 class EchoActor extends Actor {
   constructor(conn) {
     super(conn);

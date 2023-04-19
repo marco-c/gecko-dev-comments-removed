@@ -44,7 +44,7 @@ const {
     },
     SCORES: { FAIL, WARNING },
   },
-} = require("devtools/shared/constants");
+} = require("resource://devtools/shared/constants.js");
 
 
 const STYLE_RULE = 1;

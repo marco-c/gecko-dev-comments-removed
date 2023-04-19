@@ -61,7 +61,9 @@ add_task(async function() {
         const { require } = ChromeUtils.import(
           "resource://devtools/shared/loader/Loader.jsm"
         );
-        const { DevToolsServer } = require("devtools/server/devtools-server");
+        const {
+          DevToolsServer,
+        } = require("resource://devtools/server/devtools-server.js");
         
         
         actorID = String(actorID);
