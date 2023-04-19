@@ -123,11 +123,6 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   }
 
   
-  
-  
-  if (header_length_bytes == kRedLastHeaderLength) {
-    header_length_bytes = 0;
-  }
   encoded->SetSize(header_length_bytes);
 
   
@@ -148,17 +143,15 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   
   
   
-  if (header_length_bytes > 0) {
+  if (header_length_bytes > kRedHeaderLength) {
     info.redundant.push_back(info);
     RTC_DCHECK_EQ(info.speech,
                   info.redundant[info.redundant.size() - 1].speech);
   }
 
   encoded->AppendData(primary_encoded_);
-  if (header_length_bytes > 0) {
-    RTC_DCHECK_EQ(header_offset, header_length_bytes - 1);
-    encoded->data()[header_offset] = info.payload_type;
-  }
+  RTC_DCHECK_EQ(header_offset, header_length_bytes - 1);
+  encoded->data()[header_offset] = info.payload_type;
 
   
   auto rit = redundant_encodings_.rbegin();
@@ -172,9 +165,7 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   it->second.SetData(primary_encoded_);
 
   
-  if (header_length_bytes > 0) {
-    info.payload_type = red_payload_type_;
-  }
+  info.payload_type = red_payload_type_;
   info.encoded_bytes = encoded->size();
   return info;
 }
