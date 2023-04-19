@@ -1504,6 +1504,22 @@ already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(
 
   
   
+  if (aPrincipal->GetIsExpandedPrincipal()) {
+    nsTArray<nsCOMPtr<nsIPrincipal>> truncatedAllowList;
+
+    for (const auto& allowedPrincipal : BasePrincipal::Cast(aPrincipal)
+                                            ->As<ExpandedPrincipal>()
+                                            ->AllowList()) {
+      nsCOMPtr<nsIPrincipal> truncatedPrincipal =
+          CreateTruncatedPrincipal(allowedPrincipal);
+
+      truncatedAllowList.AppendElement(truncatedPrincipal);
+    }
+
+    return ExpandedPrincipal::Create(truncatedAllowList,
+                                     aPrincipal->OriginAttributesRef());
+  }
+
   
   
   MOZ_ASSERT(false, "Unhandled Principal or URI type encountered.");
