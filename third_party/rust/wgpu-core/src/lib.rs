@@ -48,7 +48,7 @@ pub mod resource;
 mod track;
 mod validation;
 
-pub use hal::{api, MAX_BIND_GROUPS, MAX_COLOR_TARGETS, MAX_VERTEX_BUFFERS};
+pub use hal::{api, MAX_BIND_GROUPS, MAX_COLOR_ATTACHMENTS, MAX_VERTEX_BUFFERS};
 
 use atomic::{AtomicUsize, Ordering};
 
@@ -237,6 +237,20 @@ support enough features to be a fully compliant implementation. A subset of the 
 If you are running this program on native and not in a browser and wish to work around this issue, call \
 Adapter::downlevel_properties or Device::downlevel_properties to get a listing of the features the current \
 platform supports.";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

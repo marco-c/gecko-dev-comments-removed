@@ -177,6 +177,8 @@ impl<'source> ParsingContext<'source> {
                 ctx.emit_restart(body);
 
                 let mut cases = Vec::new();
+                
+                let mut default_present = false;
 
                 self.expect(parser, TokenValue::LeftBrace)?;
                 loop {
@@ -215,6 +217,7 @@ impl<'source> ParsingContext<'source> {
                         }
                         TokenValue::Default => {
                             self.bump(parser)?;
+                            default_present = true;
                             crate::SwitchValue::Default
                         }
                         TokenValue::RightBrace => {
@@ -273,6 +276,40 @@ impl<'source> ParsingContext<'source> {
 
                 meta.subsume(end_meta);
 
+                
+                
+                if let Some(case) = cases.last_mut() {
+                    
+                    
+                    
+                    
+                    if case.body.is_empty() && case.fall_through {
+                        parser.errors.push(Error {
+                            kind: ErrorKind::SemanticError(
+                                "last case/default label must be followed by statements".into(),
+                            ),
+                            meta,
+                        })
+                    }
+
+                    
+                    
+                    
+                    
+                    case.fall_through = false;
+                }
+
+                
+                
+                
+                if !default_present {
+                    cases.push(SwitchCase {
+                        value: crate::SwitchValue::Default,
+                        body: Block::new(),
+                        fall_through: false,
+                    })
+                }
+
                 body.push(Statement::Switch { selector, cases }, meta);
 
                 meta
@@ -321,6 +358,7 @@ impl<'source> ParsingContext<'source> {
                     Statement::Loop {
                         body: loop_body,
                         continuing: Block::new(),
+                        break_if: None,
                     },
                     meta,
                 );
@@ -374,6 +412,7 @@ impl<'source> ParsingContext<'source> {
                     Statement::Loop {
                         body: loop_body,
                         continuing: Block::new(),
+                        break_if: None,
                     },
                     meta,
                 );
@@ -476,6 +515,7 @@ impl<'source> ParsingContext<'source> {
                     Statement::Loop {
                         body: block,
                         continuing,
+                        break_if: None,
                     },
                     meta,
                 );

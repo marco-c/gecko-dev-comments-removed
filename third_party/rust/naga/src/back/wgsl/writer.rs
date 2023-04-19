@@ -908,6 +908,7 @@ impl<W: Write> Writer<W> {
             Statement::Loop {
                 ref body,
                 ref continuing,
+                break_if,
             } => {
                 write!(self.out, "{}", level)?;
                 writeln!(self.out, "loop {{")?;
@@ -917,11 +918,26 @@ impl<W: Write> Writer<W> {
                     self.write_stmt(module, sta, func_ctx, l2)?;
                 }
 
-                if !continuing.is_empty() {
+                
+                
+                
+                
+                if !continuing.is_empty() || break_if.is_some() {
                     writeln!(self.out, "{}continuing {{", l2)?;
                     for sta in continuing.iter() {
                         self.write_stmt(module, sta, func_ctx, l2.next())?;
                     }
+
+                    
+                    
+                    if let Some(condition) = break_if {
+                        
+                        write!(self.out, "{}break if ", l2.next())?;
+                        self.write_expr(module, condition, func_ctx)?;
+                        
+                        writeln!(self.out, ";")?;
+                    }
+
                     writeln!(self.out, "{}}}", l2)?;
                 }
 
@@ -1859,6 +1875,8 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
+    
+    #[allow(clippy::missing_const_for_fn)]
     pub fn finish(self) -> W {
         self.out
     }

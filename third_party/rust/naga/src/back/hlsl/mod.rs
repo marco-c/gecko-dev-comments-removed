@@ -98,10 +98,6 @@
 
 
 
-
-
-
-
 mod conv;
 mod help;
 mod keywords;
@@ -253,6 +249,7 @@ struct Wrapped {
     image_queries: crate::FastHashSet<help::WrappedImageQuery>,
     constructors: crate::FastHashSet<help::WrappedConstructor>,
     struct_matrix_access: crate::FastHashSet<help::WrappedStructMatrixAccess>,
+    mat_cx2s: crate::FastHashSet<help::WrappedMatCx2>,
 }
 
 impl Wrapped {
@@ -261,6 +258,7 @@ impl Wrapped {
         self.image_queries.clear();
         self.constructors.clear();
         self.struct_matrix_access.clear();
+        self.mat_cx2s.clear();
     }
 }
 

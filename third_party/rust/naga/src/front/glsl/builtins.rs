@@ -1556,7 +1556,7 @@ fn inject_common_builtin(
                 };
                 declaration.overloads.push(module.add_builtin(
                     vec![ty(), ty(), base_ty()],
-                    MacroCall::MathFunction(MathFunction::SmoothStep),
+                    MacroCall::SmoothStep { splatted: size },
                 ))
             }
         }
@@ -1604,6 +1604,12 @@ pub enum MacroCall {
     BitCast(Sk),
     Derivate(DerivativeAxis),
     Barrier,
+    
+    
+    SmoothStep {
+        
+        splatted: Option<VectorSize>,
+    },
 }
 
 impl MacroCall {
@@ -2072,6 +2078,22 @@ impl MacroCall {
                 body.push(crate::Statement::Barrier(crate::Barrier::all()), meta);
                 return Ok(None);
             }
+            MacroCall::SmoothStep { splatted } => {
+                ctx.implicit_splat(parser, &mut args[0], meta, splatted)?;
+                ctx.implicit_splat(parser, &mut args[1], meta, splatted)?;
+
+                ctx.add_expression(
+                    Expression::Math {
+                        fun: MathFunction::SmoothStep,
+                        arg: args[0],
+                        arg1: args.get(1).copied(),
+                        arg2: args.get(2).copied(),
+                        arg3: None,
+                    },
+                    Span::default(),
+                    body,
+                )
+            }
         }))
     }
 }
@@ -2237,20 +2259,26 @@ pub fn sampled_to_depth(
     meta: Span,
     errors: &mut Vec<Error>,
 ) {
+    
     let ty = match ctx[image] {
         Expression::GlobalVariable(handle) => &mut module.global_variables.get_mut(handle).ty,
         Expression::FunctionArgument(i) => {
+            
             ctx.parameters_info[i as usize].depth = true;
+            
             &mut ctx.arguments[i as usize].ty
         }
         _ => {
+            
             return errors.push(Error {
                 kind: ErrorKind::SemanticError("Not a valid texture expression".into()),
                 meta,
-            })
+            });
         }
     };
+
     match module.types[*ty].inner {
+        
         TypeInner::Image {
             class,
             dim,
@@ -2270,6 +2298,7 @@ pub fn sampled_to_depth(
                 )
             }
             ImageClass::Depth { .. } => {}
+            
             _ => errors.push(Error {
                 kind: ErrorKind::SemanticError("Not a texture".into()),
                 meta,
@@ -2280,6 +2309,15 @@ pub fn sampled_to_depth(
             meta,
         }),
     };
+
+    
+    let ty = *ty;
+
+    
+    
+    if let Expression::FunctionArgument(i) = ctx[image] {
+        ctx.parameters[i as usize] = ty;
+    }
 }
 
 bitflags::bitflags! {

@@ -364,6 +364,8 @@ pub struct Writer<W> {
     put_expression_stack_pointers: FastHashSet<*const ()>,
     #[cfg(test)]
     put_block_stack_pointers: FastHashSet<*const ()>,
+    
+    
     struct_member_pads: FastHashSet<(Handle<crate::Type>, u32)>,
 }
 
@@ -647,6 +649,8 @@ impl<W: Write> Writer<W> {
     }
 
     
+    
+    #[allow(clippy::missing_const_for_fn)]
     pub fn finish(self) -> W {
         self.out
     }
@@ -1221,20 +1225,30 @@ impl<W: Write> Writer<W> {
         arg: Handle<crate::Expression>,
         arg1: Handle<crate::Expression>,
         size: usize,
+        context: &ExpressionContext,
     ) -> BackendResult {
+        
+        
         write!(self.out, "(")?;
-
-        let arg0_name = &self.named_expressions[&arg];
-        let arg1_name = &self.named_expressions[&arg1];
 
         
         for index in 0..size {
             let component = back::COMPONENTS[index];
-            write!(
-                self.out,
-                " + {}.{} * {}.{}",
-                arg0_name, component, arg1_name, component
-            )?;
+            
+            
+            write!(self.out, " + ")?;
+            
+            
+            
+            self.put_expression(arg, context, true)?;
+            
+            write!(self.out, ".{} * ", component)?;
+            
+            
+            
+            self.put_expression(arg1, context, true)?;
+            
+            write!(self.out, ".{}", component)?;
         }
 
         write!(self.out, ")")?;
@@ -1652,7 +1666,7 @@ impl<W: Write> Writer<W> {
                             ..
                         } => "dot",
                         crate::TypeInner::Vector { size, .. } => {
-                            return self.put_dot_product(arg, arg1.unwrap(), size as usize)
+                            return self.put_dot_product(arg, arg1.unwrap(), size as usize, context)
                         }
                         _ => unreachable!(
                             "Correct TypeInner for dot product should be already validated"
@@ -2538,14 +2552,23 @@ impl<W: Write> Writer<W> {
                 crate::Statement::Loop {
                     ref body,
                     ref continuing,
+                    break_if,
                 } => {
-                    if !continuing.is_empty() {
+                    if !continuing.is_empty() || break_if.is_some() {
                         let gate_name = self.namer.call("loop_init");
                         writeln!(self.out, "{}bool {} = true;", level, gate_name)?;
                         writeln!(self.out, "{}while(true) {{", level)?;
                         let lif = level.next();
+                        let lcontinuing = lif.next();
                         writeln!(self.out, "{}if (!{}) {{", lif, gate_name)?;
-                        self.put_block(lif.next(), continuing, context)?;
+                        self.put_block(lcontinuing, continuing, context)?;
+                        if let Some(condition) = break_if {
+                            write!(self.out, "{}if (", lcontinuing)?;
+                            self.put_expression(condition, &context.expression, true)?;
+                            writeln!(self.out, ") {{")?;
+                            writeln!(self.out, "{}break;", lcontinuing.next())?;
+                            writeln!(self.out, "{}}}", lcontinuing)?;
+                        }
                         writeln!(self.out, "{}}}", lif)?;
                         writeln!(self.out, "{}{} = false;", lif, gate_name)?;
                     } else {
@@ -3080,6 +3103,10 @@ impl<W: Write> Writer<W> {
                     };
                     write!(self.out, "constant {} {} = {{", ty_name, name,)?;
                     for (i, &sub_handle) in components.iter().enumerate() {
+                        
+                        if self.struct_member_pads.contains(&(ty, i as u32)) {
+                            write!(self.out, ", {{}}")?;
+                        }
                         let separator = if i != 0 { ", " } else { "" };
                         let coco = ConstantContext {
                             handle: sub_handle,

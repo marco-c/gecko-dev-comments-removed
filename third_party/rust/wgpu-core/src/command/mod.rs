@@ -287,6 +287,10 @@ pub struct BasePass<C> {
     
     pub string_data: Vec<u8>,
 
+    
+    
+    
+    
     pub push_constant_data: Vec<u32>,
 }
 

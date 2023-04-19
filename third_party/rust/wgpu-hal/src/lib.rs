@@ -97,7 +97,7 @@ use thiserror::Error;
 pub const MAX_ANISOTROPY: u8 = 16;
 pub const MAX_BIND_GROUPS: usize = 8;
 pub const MAX_VERTEX_BUFFERS: usize = 16;
-pub const MAX_COLOR_TARGETS: usize = 8;
+pub const MAX_COLOR_ATTACHMENTS: usize = 8;
 pub const MAX_MIP_LEVELS: u32 = 16;
 
 pub const QUERY_SIZE: wgt::BufferAddress = 8;
@@ -194,9 +194,18 @@ pub trait Surface<A: Api>: Send + Sync {
     unsafe fn unconfigure(&mut self, device: &A::Device);
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn acquire_texture(
         &mut self,
-        timeout_ms: u32,
+        timeout: Option<std::time::Duration>,
     ) -> Result<Option<AcquiredSurfaceTexture<A>>, SurfaceError>;
     unsafe fn discard_texture(&mut self, texture: A::SurfaceTexture);
 }
@@ -304,6 +313,7 @@ pub trait Device<A: Api>: Send + Sync {
     unsafe fn create_fence(&self) -> Result<A::Fence, DeviceError>;
     unsafe fn destroy_fence(&self, fence: A::Fence);
     unsafe fn get_fence_value(&self, fence: &A::Fence) -> Result<FenceValue, DeviceError>;
+    
     unsafe fn wait(
         &self,
         fence: &A::Fence,
@@ -1014,7 +1024,7 @@ pub struct RenderPipelineDescriptor<'a, A: Api> {
     
     pub fragment_stage: Option<ProgrammableStage<'a, A>>,
     
-    pub color_targets: &'a [wgt::ColorTargetState],
+    pub color_targets: &'a [Option<wgt::ColorTargetState>],
     
     
     pub multiview: Option<NonZeroU32>,
@@ -1169,7 +1179,7 @@ pub struct RenderPassDescriptor<'a, A: Api> {
     pub label: Label<'a>,
     pub extent: wgt::Extent3d,
     pub sample_count: u32,
-    pub color_attachments: &'a [ColorAttachment<'a, A>],
+    pub color_attachments: &'a [Option<ColorAttachment<'a, A>>],
     pub depth_stencil_attachment: Option<DepthStencilAttachment<'a, A>>,
     pub multiview: Option<NonZeroU32>,
 }

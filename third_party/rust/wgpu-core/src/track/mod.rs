@@ -707,6 +707,7 @@ impl<A: hub::HalApi> Tracker<A> {
     
     
     
+    
     pub unsafe fn set_and_remove_from_usage_scope_sparse(
         &mut self,
         textures: &hub::Storage<resource::Texture<A>, id::TextureId>,
@@ -714,7 +715,7 @@ impl<A: hub::HalApi> Tracker<A> {
         bind_group: &BindGroupStates<A>,
     ) {
         self.buffers
-            .set_and_remove_from_usage_scope_sparse(&mut scope.buffers, &bind_group.buffers);
+            .set_and_remove_from_usage_scope_sparse(&mut scope.buffers, bind_group.buffers.used());
         self.textures.set_and_remove_from_usage_scope_sparse(
             textures,
             &mut scope.textures,

@@ -22,6 +22,35 @@ const BACKEND_SHIFT: usize = INDEX_BITS * 2 - BACKEND_BITS;
 pub const EPOCH_MASK: u32 = (1 << (EPOCH_BITS)) - 1;
 type Dummy = hal::api::Empty;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(transparent)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize), serde(into = "SerialId"))]
 #[cfg_attr(

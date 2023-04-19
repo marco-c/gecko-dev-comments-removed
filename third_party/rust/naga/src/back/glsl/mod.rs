@@ -43,7 +43,6 @@
 
 
 
-
 pub use features::Features;
 
 use crate::{
@@ -68,6 +67,10 @@ mod keywords;
 pub const SUPPORTED_CORE_VERSIONS: &[u16] = &[330, 400, 410, 420, 430, 440, 450];
 
 pub const SUPPORTED_ES_VERSIONS: &[u16] = &[300, 310, 320];
+
+
+
+const CLAMPED_LOD_SUFFIX: &str = "_clamped_lod";
 
 
 pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, u8>;
@@ -375,6 +378,8 @@ pub struct Writer<'a, W> {
     out: W,
     
     options: &'a Options,
+    
+    policies: proc::BoundsCheckPolicies,
 
     
     
@@ -410,6 +415,7 @@ impl<'a, W: Write> Writer<'a, W> {
         info: &'a valid::ModuleInfo,
         options: &'a Options,
         pipeline_options: &'a PipelineOptions,
+        policies: proc::BoundsCheckPolicies,
     ) -> Result<Self, Error> {
         
         if !options.version.is_supported() {
@@ -437,6 +443,8 @@ impl<'a, W: Write> Writer<'a, W> {
             info,
             out,
             options,
+            policies,
+
             namer,
             features: FeaturesManager::new(),
             names,
@@ -1518,20 +1526,30 @@ impl<'a, W: Write> Writer<'a, W> {
         arg: Handle<crate::Expression>,
         arg1: Handle<crate::Expression>,
         size: usize,
+        ctx: &back::FunctionCtx<'_>,
     ) -> BackendResult {
+        
+        
         write!(self.out, "(")?;
-
-        let arg0_name = &self.named_expressions[&arg];
-        let arg1_name = &self.named_expressions[&arg1];
 
         
         for index in 0..size {
             let component = back::COMPONENTS[index];
-            write!(
-                self.out,
-                " + {}.{} * {}.{}",
-                arg0_name, component, arg1_name, component
-            )?;
+            
+            
+            write!(self.out, " + ")?;
+            
+            
+            
+            self.write_expr(arg, ctx)?;
+            
+            write!(self.out, ".{} * ", component)?;
+            
+            
+            
+            self.write_expr(arg1, ctx)?;
+            
+            write!(self.out, ".{}", component)?;
         }
 
         write!(self.out, ")")?;
@@ -1634,6 +1652,27 @@ impl<'a, W: Write> Writer<'a, W> {
                     } else {
                         None
                     };
+
+                    
+                    
+                    
+                    if let crate::Expression::ImageLoad {
+                        image,
+                        level: Some(level_expr),
+                        ..
+                    } = ctx.expressions[handle]
+                    {
+                        if let TypeInner::Image {
+                            class: crate::ImageClass::Sampled { .. },
+                            ..
+                        } = *ctx.info[image].ty.inner_with(&self.module.types)
+                        {
+                            if let proc::BoundsCheckPolicy::Restrict = self.policies.image {
+                                write!(self.out, "{}", level)?;
+                                self.write_clamped_lod(ctx, handle, image, level_expr)?
+                            }
+                        }
+                    }
 
                     if let Some(name) = expr_name {
                         write!(self.out, "{}", level)?;
@@ -1761,16 +1800,26 @@ impl<'a, W: Write> Writer<'a, W> {
             Statement::Loop {
                 ref body,
                 ref continuing,
+                break_if,
             } => {
-                if !continuing.is_empty() {
+                if !continuing.is_empty() || break_if.is_some() {
                     let gate_name = self.namer.call("loop_init");
                     writeln!(self.out, "{}bool {} = true;", level, gate_name)?;
                     writeln!(self.out, "{}while(true) {{", level)?;
-                    writeln!(self.out, "{}if (!{}) {{", level.next(), gate_name)?;
+                    let l2 = level.next();
+                    let l3 = l2.next();
+                    writeln!(self.out, "{}if (!{}) {{", l2, gate_name)?;
                     for sta in continuing {
-                        self.write_stmt(sta, ctx, level.next())?;
+                        self.write_stmt(sta, ctx, l3)?;
                     }
-                    writeln!(self.out, "{}}}", level.next())?;
+                    if let Some(condition) = break_if {
+                        write!(self.out, "{}if (", l3)?;
+                        self.write_expr(condition, ctx)?;
+                        writeln!(self.out, ") {{")?;
+                        writeln!(self.out, "{}break;", l3.next())?;
+                        writeln!(self.out, "{}}}", l3)?;
+                    }
+                    writeln!(self.out, "{}}}", l2)?;
                     writeln!(self.out, "{}{} = false;", level.next(), gate_name)?;
                 } else {
                     writeln!(self.out, "{}while(true) {{", level)?;
@@ -1933,19 +1982,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 value,
             } => {
                 write!(self.out, "{}", level)?;
-                
-                let dim = match *ctx.info[image].ty.inner_with(&self.module.types) {
-                    TypeInner::Image { dim, .. } => dim,
-                    _ => unreachable!(),
-                };
-
-                write!(self.out, "imageStore(")?;
-                self.write_expr(image, ctx)?;
-                write!(self.out, ", ")?;
-                self.write_texture_coordinates(coordinate, array_index, dim, ctx)?;
-                write!(self.out, ", ")?;
-                self.write_expr(value, ctx)?;
-                writeln!(self.out, ");")?;
+                self.write_image_store(ctx, image, coordinate, array_index, value)?
             }
             
             Statement::Call {
@@ -2320,51 +2357,13 @@ impl<'a, W: Write> Writer<'a, W> {
                 
                 write!(self.out, ")")?
             }
-            
-            
-            
-            
-            
-            
-            
-            
             Expression::ImageLoad {
                 image,
                 coordinate,
                 array_index,
                 sample,
                 level,
-            } => {
-                
-                let (dim, class) = match *ctx.info[image].ty.inner_with(&self.module.types) {
-                    TypeInner::Image {
-                        dim,
-                        arrayed: _,
-                        class,
-                    } => (dim, class),
-                    _ => unreachable!(),
-                };
-
-                let fun_name = match class {
-                    crate::ImageClass::Sampled { .. } => "texelFetch",
-                    crate::ImageClass::Storage { .. } => "imageLoad",
-                    
-                    crate::ImageClass::Depth { multi: _ } => {
-                        return Err(Error::Custom("TODO: depth sample loads".to_string()))
-                    }
-                };
-
-                write!(self.out, "{}(", fun_name)?;
-                self.write_expr(image, ctx)?;
-                write!(self.out, ", ")?;
-                self.write_texture_coordinates(coordinate, array_index, dim, ctx)?;
-
-                if let Some(sample_or_level) = sample.or(level) {
-                    write!(self.out, ", ")?;
-                    self.write_expr(sample_or_level, ctx)?;
-                }
-                write!(self.out, ")")?;
-            }
+            } => self.write_image_load(expr, ctx, image, coordinate, array_index, sample, level)?,
             
             
             
@@ -2747,7 +2746,7 @@ impl<'a, W: Write> Writer<'a, W> {
                             ..
                         } => "dot",
                         crate::TypeInner::Vector { size, .. } => {
-                            return self.write_dot_product(arg, arg1.unwrap(), size as usize)
+                            return self.write_dot_product(arg, arg1.unwrap(), size as usize, ctx)
                         }
                         _ => unreachable!(
                             "Correct TypeInner for dot product should be already validated"
@@ -2821,30 +2820,57 @@ impl<'a, W: Write> Writer<'a, W> {
 
                 
                 
-                let need_extra_paren = {
-                    (fun == Mf::FindLsb || fun == Mf::FindMsb || fun == Mf::CountOneBits)
-                        && match *ctx.info[arg].ty.inner_with(&self.module.types) {
-                            crate::TypeInner::Scalar {
-                                kind: crate::ScalarKind::Uint,
-                                ..
-                            } => {
-                                write!(self.out, "uint(")?;
-                                true
-                            }
-                            crate::TypeInner::Vector {
-                                kind: crate::ScalarKind::Uint,
-                                size,
-                                ..
-                            } => {
-                                write!(self.out, "uvec{}(", size as u8)?;
-                                true
-                            }
-                            _ => false,
-                        }
+                let ret_might_need_int_to_uint =
+                    matches!(fun, Mf::FindLsb | Mf::FindMsb | Mf::CountOneBits | Mf::Abs);
+
+                
+                
+                let arg_might_need_uint_to_int = matches!(fun, Mf::Abs);
+
+                
+                
+                let maybe_uint_size = match *ctx.info[arg].ty.inner_with(&self.module.types) {
+                    crate::TypeInner::Scalar {
+                        kind: crate::ScalarKind::Uint,
+                        ..
+                    } => Some(None),
+                    crate::TypeInner::Vector {
+                        kind: crate::ScalarKind::Uint,
+                        size,
+                        ..
+                    } => Some(Some(size)),
+                    _ => None,
                 };
 
+                
+                if ret_might_need_int_to_uint {
+                    if let Some(maybe_size) = maybe_uint_size {
+                        match maybe_size {
+                            Some(size) => write!(self.out, "uvec{}(", size as u8)?,
+                            None => write!(self.out, "uint(")?,
+                        }
+                    }
+                }
+
                 write!(self.out, "{}(", fun_name)?;
+
+                
+                if arg_might_need_uint_to_int {
+                    if let Some(maybe_size) = maybe_uint_size {
+                        match maybe_size {
+                            Some(size) => write!(self.out, "ivec{}(", size as u8)?,
+                            None => write!(self.out, "int(")?,
+                        }
+                    }
+                }
+
                 self.write_expr(arg, ctx)?;
+
+                
+                if arg_might_need_uint_to_int && maybe_uint_size.is_some() {
+                    write!(self.out, ")")?
+                }
+
                 if let Some(arg) = arg1 {
                     write!(self.out, ", ")?;
                     if extract_bits {
@@ -2877,7 +2903,8 @@ impl<'a, W: Write> Writer<'a, W> {
                 }
                 write!(self.out, ")")?;
 
-                if need_extra_paren {
+                
+                if ret_might_need_int_to_uint && maybe_uint_size.is_some() {
                     write!(self.out, ")")?
                 }
             }
@@ -2913,38 +2940,50 @@ impl<'a, W: Write> Writer<'a, W> {
                     None => {
                         use crate::ScalarKind as Sk;
 
-                        let source_kind = inner.scalar_kind().unwrap();
-                        let conv_op = match (source_kind, target_kind) {
-                            (Sk::Float, Sk::Sint) => "floatBitsToInt",
-                            (Sk::Float, Sk::Uint) => "floatBitsToUint",
-                            (Sk::Sint, Sk::Float) => "intBitsToFloat",
-                            (Sk::Uint, Sk::Float) => "uintBitsToFloat",
-                            
-                            (Sk::Uint, Sk::Sint) => "int",
-                            (Sk::Sint, Sk::Uint) => "uint",
-
-                            (Sk::Bool, Sk::Sint) => "int",
-                            (Sk::Bool, Sk::Uint) => "uint",
-                            (Sk::Bool, Sk::Float) => "float",
-
-                            (Sk::Sint, Sk::Bool) => "bool",
-                            (Sk::Uint, Sk::Bool) => "bool",
-                            (Sk::Float, Sk::Bool) => "bool",
-
-                            
-                            (Sk::Sint, Sk::Sint) => "",
-                            (Sk::Uint, Sk::Uint) => "",
-                            (Sk::Float, Sk::Float) => "",
-                            (Sk::Bool, Sk::Bool) => "",
+                        let target_vector_type = match *inner {
+                            TypeInner::Vector { size, width, .. } => Some(TypeInner::Vector {
+                                size,
+                                width,
+                                kind: target_kind,
+                            }),
+                            _ => None,
                         };
-                        write!(self.out, "{}", conv_op)?;
-                        if !conv_op.is_empty() {
-                            write!(self.out, "(")?;
-                        }
+
+                        let source_kind = inner.scalar_kind().unwrap();
+
+                        match (source_kind, target_kind, target_vector_type) {
+                            
+                            (Sk::Sint, Sk::Sint, _)
+                            | (Sk::Uint, Sk::Uint, _)
+                            | (Sk::Float, Sk::Float, _)
+                            | (Sk::Bool, Sk::Bool, _) => {
+                                self.write_expr(expr, ctx)?;
+                                return Ok(());
+                            }
+
+                            
+                            (Sk::Float, Sk::Sint, _) => write!(self.out, "floatBitsToInt")?,
+                            (Sk::Float, Sk::Uint, _) => write!(self.out, "floatBitsToUint")?,
+                            (Sk::Sint, Sk::Float, _) => write!(self.out, "intBitsToFloat")?,
+                            (Sk::Uint, Sk::Float, _) => write!(self.out, "uintBitsToFloat")?,
+
+                            
+                            (_, _, Some(vector)) => {
+                                self.write_value_type(&vector)?;
+                            }
+
+                            
+                            (Sk::Uint | Sk::Bool, Sk::Sint, None) => write!(self.out, "int")?,
+                            (Sk::Sint | Sk::Bool, Sk::Uint, None) => write!(self.out, "uint")?,
+                            (Sk::Bool, Sk::Float, None) => write!(self.out, "float")?,
+                            (Sk::Sint | Sk::Uint | Sk::Float, Sk::Bool, None) => {
+                                write!(self.out, "bool")?
+                            }
+                        };
+
+                        write!(self.out, "(")?;
                         self.write_expr(expr, ctx)?;
-                        if !conv_op.is_empty() {
-                            write!(self.out, ")")?
-                        }
+                        write!(self.out, ")")?;
                     }
                 }
             }
@@ -2961,25 +3000,71 @@ impl<'a, W: Write> Writer<'a, W> {
         Ok(())
     }
 
-    fn write_texture_coordinates(
+    
+    fn write_clamped_lod(
         &mut self,
+        ctx: &back::FunctionCtx,
+        expr: Handle<crate::Expression>,
+        image: Handle<crate::Expression>,
+        level_expr: Handle<crate::Expression>,
+    ) -> Result<(), Error> {
+        
+        write!(
+            self.out,
+            "int {}{}{} = clamp(",
+            back::BAKE_PREFIX,
+            expr.index(),
+            CLAMPED_LOD_SUFFIX
+        )?;
+        
+        self.write_expr(level_expr, ctx)?;
+        
+        
+        write!(self.out, ", 0, textureQueryLevels(")?;
+        
+        self.write_expr(image, ctx)?;
+        
+        
+        
+        writeln!(self.out, ") - 1);")?;
+
+        Ok(())
+    }
+
+    
+    
+    fn get_coordinate_vector_size(&self, dim: crate::ImageDimension, arrayed: bool) -> u8 {
+        
+        let tex_1d_hack = dim == crate::ImageDimension::D1 && self.options.version.is_es();
+        
+        let tex_coord_size = match dim {
+            crate::ImageDimension::D1 => 1,
+            crate::ImageDimension::D2 => 2,
+            crate::ImageDimension::D3 => 3,
+            crate::ImageDimension::Cube => 2,
+        };
+        
+        
+        tex_coord_size + tex_1d_hack as u8 + arrayed as u8
+    }
+
+    
+    fn write_texture_coord(
+        &mut self,
+        ctx: &back::FunctionCtx,
+        vector_size: u8,
         coordinate: Handle<crate::Expression>,
         array_index: Option<Handle<crate::Expression>>,
-        dim: crate::ImageDimension,
-        ctx: &back::FunctionCtx,
+        
+        tex_1d_hack: bool,
     ) -> Result<(), Error> {
-        use crate::ImageDimension as IDim;
-
-        let tex_1d_hack = dim == IDim::D1 && self.options.version.is_es();
         match array_index {
+            
+            
+            
+            
             Some(layer_expr) => {
-                let tex_coord_size = match dim {
-                    IDim::D1 => 2,
-                    IDim::D2 => 3,
-                    IDim::D3 => 4,
-                    IDim::Cube => 4,
-                };
-                write!(self.out, "ivec{}(", tex_coord_size + tex_1d_hack as u8)?;
+                write!(self.out, "ivec{}(", vector_size)?;
                 self.write_expr(coordinate, ctx)?;
                 write!(self.out, ", ")?;
                 
@@ -2990,16 +3075,326 @@ impl<'a, W: Write> Writer<'a, W> {
                 self.write_expr(layer_expr, ctx)?;
                 write!(self.out, ")")?;
             }
+            
             None => {
                 if tex_1d_hack {
                     write!(self.out, "ivec2(")?;
                 }
                 self.write_expr(coordinate, ctx)?;
                 if tex_1d_hack {
-                    write!(self.out, ", 0.0)")?;
+                    write!(self.out, ", 0)")?;
                 }
             }
         }
+
+        Ok(())
+    }
+
+    
+    fn write_image_store(
+        &mut self,
+        ctx: &back::FunctionCtx,
+        image: Handle<crate::Expression>,
+        coordinate: Handle<crate::Expression>,
+        array_index: Option<Handle<crate::Expression>>,
+        value: Handle<crate::Expression>,
+    ) -> Result<(), Error> {
+        use crate::ImageDimension as IDim;
+
+        
+        
+
+        
+        let dim = match *ctx.info[image].ty.inner_with(&self.module.types) {
+            TypeInner::Image { dim, .. } => dim,
+            _ => unreachable!(),
+        };
+
+        
+        write!(self.out, "imageStore(")?;
+        self.write_expr(image, ctx)?;
+        
+        write!(self.out, ", ")?;
+
+        
+        let tex_1d_hack = dim == IDim::D1 && self.options.version.is_es();
+        
+        self.write_texture_coord(
+            ctx,
+            
+            self.get_coordinate_vector_size(dim, array_index.is_some()),
+            coordinate,
+            array_index,
+            tex_1d_hack,
+        )?;
+
+        
+        
+        write!(self.out, ", ")?;
+        self.write_expr(value, ctx)?;
+        
+        writeln!(self.out, ");")?;
+
+        Ok(())
+    }
+
+    
+    #[allow(clippy::too_many_arguments)]
+    fn write_image_load(
+        &mut self,
+        handle: Handle<crate::Expression>,
+        ctx: &back::FunctionCtx,
+        image: Handle<crate::Expression>,
+        coordinate: Handle<crate::Expression>,
+        array_index: Option<Handle<crate::Expression>>,
+        sample: Option<Handle<crate::Expression>>,
+        level: Option<Handle<crate::Expression>>,
+    ) -> Result<(), Error> {
+        use crate::ImageDimension as IDim;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        let (dim, class) = match *ctx.info[image].ty.inner_with(&self.module.types) {
+            TypeInner::Image {
+                dim,
+                arrayed: _,
+                class,
+            } => (dim, class),
+            _ => unreachable!(),
+        };
+
+        
+        
+        let (fun_name, policy) = match class {
+            
+            crate::ImageClass::Sampled { .. } => ("texelFetch", self.policies.image),
+            crate::ImageClass::Storage { .. } => {
+                
+                
+                ("imageLoad", proc::BoundsCheckPolicy::Unchecked)
+            }
+            
+            crate::ImageClass::Depth { multi: _ } => {
+                return Err(Error::Custom(
+                    "WGSL `textureLoad` from depth textures is not supported in GLSL".to_string(),
+                ))
+            }
+        };
+
+        
+        let tex_1d_hack = dim == IDim::D1 && self.options.version.is_es();
+        
+        let vector_size = self.get_coordinate_vector_size(dim, array_index.is_some());
+
+        if let proc::BoundsCheckPolicy::ReadZeroSkipWrite = policy {
+            
+            
+            
+            
+            
+            
+            
+
+            
+            
+            write!(self.out, "(",)?;
+
+            
+            
+            if let Some(level_expr) = level {
+                self.write_expr(level_expr, ctx)?;
+                write!(self.out, " < textureQueryLevels(",)?;
+                self.write_expr(image, ctx)?;
+                
+                write!(self.out, ") && ")?;
+            }
+
+            
+            if let Some(sample_expr) = sample {
+                self.write_expr(sample_expr, ctx)?;
+                write!(self.out, " < textureSamples(",)?;
+                self.write_expr(image, ctx)?;
+                
+                write!(self.out, ") && ")?;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            if vector_size != 1 {
+                write!(self.out, "all(lessThan(")?;
+            }
+
+            
+            self.write_texture_coord(ctx, vector_size, coordinate, array_index, tex_1d_hack)?;
+
+            if vector_size != 1 {
+                
+                
+                write!(self.out, ", ")?;
+            } else {
+                
+                
+                write!(self.out, " < ")?;
+            }
+
+            
+            write!(self.out, "textureSize(")?;
+            self.write_expr(image, ctx)?;
+            
+            if let Some(level_expr) = level {
+                
+                write!(self.out, ", ")?;
+                self.write_expr(level_expr, ctx)?;
+            }
+            
+            write!(self.out, ")")?;
+
+            if vector_size != 1 {
+                
+                write!(self.out, "))")?;
+            }
+
+            
+            write!(self.out, " ? ")?;
+        }
+
+        
+        write!(self.out, "{}(", fun_name)?;
+        self.write_expr(image, ctx)?;
+        write!(self.out, ", ")?;
+
+        
+        
+        
+        if let proc::BoundsCheckPolicy::Restrict = policy {
+            write!(self.out, "clamp(")?;
+        }
+
+        
+        self.write_texture_coord(ctx, vector_size, coordinate, array_index, tex_1d_hack)?;
+
+        
+        
+        if let proc::BoundsCheckPolicy::Restrict = policy {
+            
+            if vector_size == 1 {
+                write!(self.out, ", 0")?;
+            } else {
+                write!(self.out, ", ivec{}(0)", vector_size)?;
+            }
+            
+            write!(self.out, ", textureSize(")?;
+            self.write_expr(image, ctx)?;
+            
+            
+            
+            if class.is_mipmapped() {
+                write!(
+                    self.out,
+                    ", {}{}{}",
+                    back::BAKE_PREFIX,
+                    handle.index(),
+                    CLAMPED_LOD_SUFFIX
+                )?;
+            }
+            
+            write!(self.out, ")")?;
+
+            
+            if vector_size == 1 {
+                write!(self.out, " - 1")?;
+            } else {
+                write!(self.out, " - ivec{}(1)", vector_size)?;
+            }
+
+            
+            write!(self.out, ")")?;
+
+            
+            
+            if level.is_some() {
+                write!(
+                    self.out,
+                    ", {}{}{}",
+                    back::BAKE_PREFIX,
+                    handle.index(),
+                    CLAMPED_LOD_SUFFIX
+                )?;
+            }
+
+            
+            
+            if let Some(sample_expr) = sample {
+                write!(self.out, ", clamp(")?;
+                self.write_expr(sample_expr, ctx)?;
+                
+                write!(self.out, ", 0, textureSamples(")?;
+                self.write_expr(image, ctx)?;
+                
+                
+                writeln!(self.out, ") - 1)")?;
+            }
+        } else if let Some(sample_or_level) = sample.or(level) {
+            
+            
+            write!(self.out, ", ")?;
+            self.write_expr(sample_or_level, ctx)?;
+        }
+
+        
+        write!(self.out, ")")?;
+
+        
+        
+        
+        if let proc::BoundsCheckPolicy::ReadZeroSkipWrite = policy {
+            
+            let kind = match class {
+                
+                
+                crate::ImageClass::Sampled { kind, .. } => kind,
+                _ => unreachable!(),
+            };
+
+            
+            write!(self.out, " : ")?;
+            
+            write!(self.out, "{}vec4(", glsl_scalar(kind, 4)?.prefix,)?;
+            self.write_zero_init_scalar(kind)?;
+            
+            write!(self.out, ")")?;
+            
+            write!(self.out, ")")?;
+        }
+
         Ok(())
     }
 
@@ -3347,7 +3742,7 @@ const fn glsl_storage_format(format: crate::StorageFormat) -> &'static str {
         Sf::Rg16Uint => "rg16ui",
         Sf::Rg16Sint => "rg16i",
         Sf::Rg16Float => "rg16f",
-        Sf::Rgba8Unorm => "rgba8ui",
+        Sf::Rgba8Unorm => "rgba8",
         Sf::Rgba8Snorm => "rgba8_snorm",
         Sf::Rgba8Uint => "rgba8ui",
         Sf::Rgba8Sint => "rgba8i",

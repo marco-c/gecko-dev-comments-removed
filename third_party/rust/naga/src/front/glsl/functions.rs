@@ -671,6 +671,13 @@ impl Parser {
                 let overload_param_ty = &self.module.types[*overload_parameter].inner;
                 let call_arg_ty = self.resolve_type(ctx, call_argument.0, call_argument.1)?;
 
+                log::trace!(
+                    "Testing parameter {}\n\tOverload = {:?}\n\tCall = {:?}",
+                    i,
+                    overload_param_ty,
+                    call_arg_ty
+                );
+
                 
                 
                 
