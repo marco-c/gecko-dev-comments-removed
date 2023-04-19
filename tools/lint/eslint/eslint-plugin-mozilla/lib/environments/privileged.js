@@ -12,6 +12,7 @@ module.exports = {
   globals: {
     
     Intl: false,
+    WebAssembly: false,
     
     
     
