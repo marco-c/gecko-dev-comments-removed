@@ -24,15 +24,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     return 0x2022;
   }
 
-  void RecordLookAndFeelSpecificTelemetry() override {
-    RecordAccessibilityTelemetry();
-  }
-
-  
-  
-  
-  static void RecordAccessibilityTelemetry();
-
  protected:
   static bool SystemWantsDarkTheme();
   static bool IsSystemOrientationRTL();
