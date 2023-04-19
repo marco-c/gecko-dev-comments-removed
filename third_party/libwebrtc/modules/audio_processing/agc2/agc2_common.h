@@ -45,6 +45,7 @@ constexpr float kInitialSpeechLevelEstimateDbfs = -30.0f;
 
 
 constexpr int kDefaultVadRnnResetPeriodMs = 1500;
+static_assert(kDefaultVadRnnResetPeriodMs % kFrameDurationMs == 0, "");
 constexpr float kDefaultSmoothedVadProbabilityAttack = 1.0f;
 constexpr int kDefaultLevelEstimatorAdjacentSpeechFramesThreshold = 1;
 
