@@ -125,6 +125,10 @@ class RTC_EXPORT SocketAddress {
   std::string ToSensitiveString() const;
 
   
+  
+  std::string ToResolvedSensitiveString() const;
+
+  
   bool FromString(const std::string& str);
 
 #ifdef WEBRTC_UNIT_TEST
