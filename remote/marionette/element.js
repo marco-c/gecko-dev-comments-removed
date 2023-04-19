@@ -6,11 +6,11 @@
 
 const EXPORTED_SYMBOLS = [
   "ChromeWebElement",
-  "ContentWebElement",
   "ContentShadowRoot",
   "ContentWebFrame",
   "ContentWebWindow",
   "element",
+  "WebElement",
   "WebReference",
 ];
 
@@ -1516,7 +1516,7 @@ class WebReference {
         
         return new ChromeWebElement(uuid);
       }
-      return new ContentWebElement(uuid);
+      return new WebElement(uuid);
     } else if (element.isDOMWindow(node)) {
       if (node.parent === node) {
         return new ContentWebWindow(uuid);
@@ -1557,8 +1557,8 @@ class WebReference {
         case ContentShadowRoot.Identifier:
           return ContentShadowRoot.fromJSON(json);
 
-        case ContentWebElement.Identifier:
-          return ContentWebElement.fromJSON(json);
+        case WebElement.Identifier:
+          return WebElement.fromJSON(json);
 
         case ContentWebWindow.Identifier:
           return ContentWebWindow.fromJSON(json);
@@ -1608,7 +1608,7 @@ class WebReference {
         return new ChromeWebElement(uuid);
 
       case "content":
-        return new ContentWebElement(uuid);
+        return new WebElement(uuid);
 
       default:
         throw new lazy.error.InvalidArgumentError(
@@ -1634,7 +1634,7 @@ class WebReference {
 
     if (
       ContentShadowRoot.Identifier in obj ||
-      ContentWebElement.Identifier in obj ||
+      WebElement.Identifier in obj ||
       ContentWebWindow.Identifier in obj ||
       ContentWebFrame.Identifier in obj ||
       ChromeWebElement.Identifier in obj
@@ -1660,13 +1660,13 @@ class WebReference {
 
 
 
-class ContentWebElement extends WebReference {
+class WebElement extends WebReference {
   toJSON() {
-    return { [ContentWebElement.Identifier]: this.uuid };
+    return { [WebElement.Identifier]: this.uuid };
   }
 
   static fromJSON(json) {
-    const { Identifier } = ContentWebElement;
+    const { Identifier } = WebElement;
 
     if (!(Identifier in json)) {
       throw new lazy.error.InvalidArgumentError(
@@ -1675,10 +1675,10 @@ class ContentWebElement extends WebReference {
     }
 
     let uuid = json[Identifier];
-    return new ContentWebElement(uuid);
+    return new WebElement(uuid);
   }
 }
-ContentWebElement.Identifier = "element-6066-11e4-a52e-4f735466cecf";
+WebElement.Identifier = "element-6066-11e4-a52e-4f735466cecf";
 
 
 
