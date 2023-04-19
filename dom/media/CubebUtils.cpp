@@ -99,7 +99,7 @@ uint32_t sCubebMTGLatencyInFrames = 512;
 
 
 
-uint32_t sCubebForcedSampleRate = 0;
+Atomic<uint32_t> sCubebForcedSampleRate{0};
 bool sCubebPlaybackLatencyPrefSet = false;
 bool sCubebMTGLatencyPrefSet = false;
 bool sAudioStreamInitEverSucceeded = false;
@@ -154,7 +154,7 @@ std::unordered_map<std::string, LABELS_MEDIA_AUDIO_BACKEND>
 
 
 
-uint32_t sPreferredSampleRate;
+static Atomic<uint32_t> sPreferredSampleRate{0};
 
 #ifdef MOZ_CUBEB_REMOTING
 
@@ -369,10 +369,12 @@ bool InitPreferredSampleRate() {
   if (!context) {
     return false;
   }
-  if (cubeb_get_preferred_sample_rate(context, &sPreferredSampleRate) !=
+  uint32_t rate;
+  if (cubeb_get_preferred_sample_rate(context, &rate) !=
       CUBEB_OK) {
     return false;
   }
+  sPreferredSampleRate = rate;
 #endif
   MOZ_ASSERT(sPreferredSampleRate);
   return true;
