@@ -23,16 +23,6 @@ function* testSteps() {
   yield undefined;
 
   
-  do_load_manifest("GlobalObjectsComponent.manifest");
-  test = Cc[
-    "@mozilla.org/dom/indexeddb/GlobalObjectsComponent;1"
-  ].createInstance(Ci.nsISupports).wrappedJSObject;
-  test.ok = ok;
-  test.finishTest = continueToNextStep;
-  test.runTest();
-  yield undefined;
-
-  
   let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
     Ci.nsIPrincipal
   );
