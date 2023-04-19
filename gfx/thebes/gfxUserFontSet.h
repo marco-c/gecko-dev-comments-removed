@@ -78,19 +78,7 @@ struct gfxFontFaceSrc {
   bool mUseOriginPrincipal = false;
 
   
-  enum FormatHint : uint8_t {
-    NONE = 0,  
-    COLLECTION = 1,
-    OPENTYPE = 2,
-    TRUETYPE = 3,
-    EOT = 4,
-    SVG = 5,
-    WOFF = 6,
-    WOFF2 = 7,
-    UNKNOWN = 255  
-  };
-
-  FormatHint mFormatHint;
+  mozilla::StyleFontFaceSourceFormatKeyword mFormatHint;
 
   nsCString mLocalName;                     
   RefPtr<gfxFontSrcURI> mURI;               
@@ -148,7 +136,7 @@ class gfxUserFontData {
   gfxUserFontData()
       : mSrcIndex(0),
         mMetaOrigLen(0),
-        mFormatHint(gfxFontFaceSrc::FormatHint::NONE),
+        mFormatHint(mozilla::StyleFontFaceSourceFormatKeyword::None),
         mCompression(kUnknownCompression),
         mPrivate(false),
         mIsBuffer(false) {}
@@ -164,7 +152,7 @@ class gfxUserFontData {
   nsCString mRealName;    
   uint32_t mSrcIndex;     
   uint32_t mMetaOrigLen;  
-  gfxFontFaceSrc::FormatHint
+  mozilla::StyleFontFaceSourceFormatKeyword
       mFormatHint;       
   uint8_t mCompression;  
   bool mPrivate;         
@@ -249,8 +237,6 @@ class gfxUserFontSet {
   gfxUserFontSet();
 
   void Destroy();
-
-  using FormatHint = gfxFontFaceSrc::FormatHint;
 
   
   
