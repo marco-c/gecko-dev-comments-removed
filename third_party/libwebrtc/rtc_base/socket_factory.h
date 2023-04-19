@@ -21,10 +21,6 @@ class SocketFactory {
 
   
   virtual Socket* CreateSocket(int family, int type) = 0;
-  
-  virtual Socket* CreateAsyncSocket(int family, int type) {
-    return CreateSocket(family, type);
-  }
 };
 
 }  
