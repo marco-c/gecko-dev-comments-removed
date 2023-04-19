@@ -111,10 +111,7 @@ add_task(async function init() {
 
   
   
-  gStartupDateMsStub = gSandbox.stub(
-    UrlbarProviderQuickSuggest,
-    "_getStartupDateMs"
-  );
+  gStartupDateMsStub = gSandbox.stub(QuickSuggest, "_getStartupDateMs");
   gStartupDateMsStub.returns(0);
 });
 
@@ -2892,10 +2889,10 @@ add_task(async function prefSync() {
         "JSON is correct"
       );
 
-      UrlbarProviderQuickSuggest._impressionStats = null;
-      UrlbarProviderQuickSuggest._loadImpressionStats();
+      QuickSuggest._impressionStats = null;
+      QuickSuggest._loadImpressionStats();
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         {
           sponsored: [
             {
@@ -2960,14 +2957,14 @@ add_task(async function prefDirectlyChanged() {
 
       UrlbarPrefs.set("quicksuggest.impressionCaps.stats", "bogus");
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         expectedStats,
         "Expected stats for 'bogus'"
       );
 
       UrlbarPrefs.set("quicksuggest.impressionCaps.stats", JSON.stringify({}));
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         expectedStats,
         "Expected stats for {}"
       );
@@ -2977,7 +2974,7 @@ add_task(async function prefDirectlyChanged() {
         JSON.stringify({ sponsored: "bogus" })
       );
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         expectedStats,
         "Expected stats for { sponsored: 'bogus' }"
       );
@@ -3011,7 +3008,7 @@ add_task(async function prefDirectlyChanged() {
         })
       );
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         expectedStats,
         "Expected stats with intervalSeconds: 'bogus'"
       );
@@ -3038,7 +3035,7 @@ add_task(async function prefDirectlyChanged() {
         })
       );
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         expectedStats,
         "Expected stats with `maxCount` values different from caps"
       );
@@ -3066,7 +3063,7 @@ add_task(async function prefDirectlyChanged() {
         JSON.stringify(stats)
       );
       Assert.deepEqual(
-        UrlbarProviderQuickSuggest._impressionStats,
+        QuickSuggest._impressionStats,
         stats,
         "Expected stats with valid JSON"
       );
@@ -3097,7 +3094,7 @@ add_task(async function intervalsElapsedButCapNotHit() {
         },
         
         10: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           let expectedEvents = [
             
             {
@@ -3162,7 +3159,7 @@ add_task(async function restart_1() {
       await doTimedCallbacks({
         
         10: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3212,7 +3209,7 @@ add_task(async function restart_2() {
       await doTimedCallbacks({
         
         10: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3262,7 +3259,7 @@ add_task(async function restart_3() {
       await doTimedCallbacks({
         
         10: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3313,12 +3310,12 @@ add_task(async function restart_4() {
       await doTimedCallbacks({
         
         9: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([]);
         },
         
         10: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3337,12 +3334,12 @@ add_task(async function restart_4() {
         },
         
         19: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([]);
         },
         
         20: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3392,7 +3389,7 @@ add_task(async function restart_5() {
       await doTimedCallbacks({
         
         20: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3443,12 +3440,12 @@ add_task(async function restart_6() {
       await doTimedCallbacks({
         
         19: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([]);
         },
         
         20: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3467,12 +3464,12 @@ add_task(async function restart_6() {
         },
         
         29: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([]);
         },
         
         30: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3522,7 +3519,7 @@ add_task(async function restart_7() {
       await doTimedCallbacks({
         
         30: async () => {
-          UrlbarProviderQuickSuggest._resetElapsedImpressionCounters();
+          QuickSuggest._resetElapsedImpressionCounters();
           await checkTelemetryEvents([
             {
               object: "reset",
@@ -3556,10 +3553,7 @@ add_task(async function shutdown() {
       },
     },
     callback: async () => {
-      let spy = gSandbox.spy(
-        UrlbarProviderQuickSuggest,
-        "_resetElapsedImpressionCounters"
-      );
+      let spy = gSandbox.spy(QuickSuggest, "_resetElapsedImpressionCounters");
 
       
       
@@ -3609,10 +3603,7 @@ add_task(async function resetInterval() {
       },
     },
     callback: async () => {
-      let spy = gSandbox.spy(
-        UrlbarProviderQuickSuggest,
-        "_resetElapsedImpressionCounters"
-      );
+      let spy = gSandbox.spy(QuickSuggest, "_resetElapsedImpressionCounters");
 
       
       
@@ -3621,13 +3612,13 @@ add_task(async function resetInterval() {
       
       
       
-      UrlbarProviderQuickSuggest._setImpressionCountersResetInterval(1000);
+      QuickSuggest._setImpressionCountersResetInterval(1000);
 
       
       await new Promise(r => setTimeout(r, 1100));
 
       
-      UrlbarProviderQuickSuggest._setImpressionCountersResetInterval();
+      QuickSuggest._setImpressionCountersResetInterval();
 
       Assert.ok(spy.calledOnce, "_resetElapsedImpressionCounters called once");
       await checkTelemetryEvents([
@@ -3660,10 +3651,7 @@ add_task(async function resetInterval() {
     Cu.getGlobalForObject(UrlbarProviderQuickSuggest).Date,
     "now"
   );
-  gStartupDateMsStub = gSandbox.stub(
-    UrlbarProviderQuickSuggest,
-    "_getStartupDateMs"
-  );
+  gStartupDateMsStub = gSandbox.stub(QuickSuggest, "_getStartupDateMs");
   gStartupDateMsStub.returns(0);
 });
 
@@ -3688,7 +3676,7 @@ async function doTest({ config, callback }) {
 
   info(`Clearing stats and setting config`);
   UrlbarPrefs.clear("quicksuggest.impressionCaps.stats");
-  UrlbarProviderQuickSuggest._impressionStats = null;
+  QuickSuggest._impressionStats = null;
   await QuickSuggestTestUtils.withConfig({ config, callback });
 }
 

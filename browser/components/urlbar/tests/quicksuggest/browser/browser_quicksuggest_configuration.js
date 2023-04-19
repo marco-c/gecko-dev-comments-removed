@@ -37,7 +37,7 @@ add_task(async function test_updateFeatureState_pref() {
   );
 
   let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateFeatureState");
+  let spy = sandbox.spy(QuickSuggest, "_updateFeatureState");
 
   UrlbarPrefs.set("quicksuggest.enabled", false);
   await UrlbarQuickSuggest.readyPromise;
@@ -62,7 +62,7 @@ add_task(async function test_updateFeatureState_pref() {
 
 add_task(async function test_updateFeatureState_experiment() {
   let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateFeatureState");
+  let spy = sandbox.spy(QuickSuggest, "_updateFeatureState");
 
   await QuickSuggestTestUtils.withExperiment({
     callback: () => {
