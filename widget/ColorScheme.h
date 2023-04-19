@@ -13,6 +13,18 @@ namespace mozilla {
 
 enum class ColorScheme : uint8_t { Light, Dark };
 
+
+
+
+
+
+
+
+enum class ColorSchemeMode : uint8_t {
+  Used,
+  Preferred,
+};
+
 }  
 
 #endif
