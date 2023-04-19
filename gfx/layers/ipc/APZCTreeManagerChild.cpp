@@ -201,5 +201,19 @@ mozilla::ipc::IPCResult APZCTreeManagerChild::RecvCancelAutoscroll(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult APZCTreeManagerChild::RecvNotifyScaleGestureComplete(
+    const ScrollableLayerGuid::ViewID& aScrollId, float aScale) {
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCompositorSession && mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyScaleGestureComplete(
+        mCompositorSession->GetWidget(), aScale);
+  }
+  return IPC_OK();
+}
+
 }  
 }  
