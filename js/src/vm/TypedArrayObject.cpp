@@ -913,9 +913,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     return makeInstance(cx, buffer, 0, nelements, proto);
   }
 
-  static bool AllocateArrayBuffer(JSContext* cx, size_t count,
-                                  MutableHandle<ArrayBufferObject*> buffer);
-
   static TypedArrayObject* fromArray(JSContext* cx, HandleObject other,
                                      HandleObject proto = nullptr);
 
@@ -1095,17 +1092,6 @@ TypedArrayObject* js::NewTypedArrayWithTemplateAndBuffer(
   }
 }
 
-
-
-
-
-template <typename T>
- bool TypedArrayObjectTemplate<T>::AllocateArrayBuffer(
-    JSContext* cx, size_t count, MutableHandle<ArrayBufferObject*> buffer) {
-  
-  return maybeCreateArrayBuffer(cx, count, buffer);
-}
-
 template <typename T>
  TypedArrayObject* TypedArrayObjectTemplate<T>::fromArray(
     JSContext* cx, HandleObject other, HandleObject proto ) {
@@ -1172,13 +1158,7 @@ template <typename T>
   
   
   Rooted<ArrayBufferObject*> buffer(cx);
-  if (!AllocateArrayBuffer(cx, elementLength, &buffer)) {
-    return nullptr;
-  }
-
-  if (srcArray->hasDetachedBuffer()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
+  if (!maybeCreateArrayBuffer(cx, elementLength, &buffer)) {
     return nullptr;
   }
 
@@ -1199,6 +1179,8 @@ template <typename T>
   if (!obj) {
     return nullptr;
   }
+
+  MOZ_RELEASE_ASSERT(!srcArray->hasDetachedBuffer());
 
   
   
