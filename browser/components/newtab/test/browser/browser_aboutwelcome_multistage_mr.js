@@ -2,6 +2,10 @@
 
 const MR_TEMPLATE_PREF = "browser.aboutwelcome.templateMR";
 
+const { AboutWelcomeParent } = ChromeUtils.import(
+  "resource:///actors/AboutWelcomeParent.jsm"
+);
+
 async function openMRAboutWelcome() {
   await pushPrefs([MR_TEMPLATE_PREF, true]);
   await setAboutWelcomePref(true);
@@ -15,6 +19,27 @@ async function openMRAboutWelcome() {
   });
 
   return tab.linkedBrowser;
+}
+
+async function clickVisibleButton(browser, selector) {
+  
+  await ContentTask.spawn(browser, { selector }, async ({ selector }) => {
+    function getVisibleElement() {
+      for (const el of content.document.querySelectorAll(selector)) {
+        if (el.offsetParent !== null) {
+          return el;
+        }
+      }
+      return null;
+    }
+    await ContentTaskUtils.waitForCondition(
+      getVisibleElement,
+      selector,
+      200, 
+      100 
+    );
+    getVisibleElement().click();
+  });
 }
 
 
@@ -33,7 +58,7 @@ add_task(async function test_aboutwelcome_mr_template_telemetry() {
     sandbox.restore();
   });
 
-  await onButtonClick(browser, ".action-buttons button.secondary");
+  await clickVisibleButton(browser, "button.secondary");
 
   const { callCount } = messageStub;
   ok(callCount >= 1, `${callCount} Stub was called`);
@@ -56,6 +81,11 @@ add_task(async function test_aboutwelcome_mr_template_telemetry() {
 
 
 add_task(async function test_aboutwelcome_mr_template_content() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(AboutWelcomeParent, "doesAppNeedPin").returns(true);
+  sandbox.stub(AboutWelcomeParent, "isDefaultBrowser").returns(false);
   let browser = await openMRAboutWelcome();
 
   await test_screen_content(
@@ -64,4 +94,139 @@ add_task(async function test_aboutwelcome_mr_template_content() {
     
     [`main.screen[pos="split"]`]
   );
+
+  await test_screen_content(
+    browser,
+    "renders pin screen",
+    
+    ["main.AW_PIN_FIREFOX"],
+    
+    ["main.AW_GRATITUDE"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  
+  await test_screen_content(
+    browser,
+    "renders set default screen",
+    
+    ["main.AW_SET_DEFAULT"],
+    
+    ["main.AW_CHOOSE_THEME"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await test_screen_content(
+    browser,
+    "renders import settings screen",
+    
+    ["main.AW_IMPORT_SETTINGS"],
+    
+    ["main.AW_PIN_FIREFOX"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await test_screen_content(
+    browser,
+    "renders set colorway screen",
+    
+    ["main.AW_CHOOSE_THEME"],
+    
+    ["main.AW_PIN_FIREFOX"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await test_screen_content(
+    browser,
+    "renders gratitude screen",
+    
+    ["main.AW_GRATITUDE"],
+    
+    ["main.AW_PIN_FIREFOX"]
+  );
+
+  sandbox.restore();
+});
+
+
+
+
+add_task(async function test_aboutwelcome_mr_template_content_default() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(AboutWelcomeParent, "doesAppNeedPin").returns(true);
+  sandbox.stub(AboutWelcomeParent, "isDefaultBrowser").returns(true);
+
+  let browser = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "renders pin screen",
+    
+    ["main.AW_PIN_FIREFOX"],
+    
+    ["main.AW_SET_DEFAULT"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await test_screen_content(
+    browser,
+    "renders set colorway screen",
+    
+    ["main.AW_CHOOSE_THEME"],
+    
+    ["main.AW_SET_DEFAULT"]
+  );
+  sandbox.restore();
+});
+
+
+
+
+add_task(async function test_aboutwelcome_mr_template_content() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(AboutWelcomeParent, "doesAppNeedPin").returns(false);
+  sandbox.stub(AboutWelcomeParent, "isDefaultBrowser").returns(false);
+  let browser = await openMRAboutWelcome();
+
+  
+  await test_screen_content(
+    browser,
+    "renders set default screen",
+    
+    ["main.AW_ONLY_DEFAULT"],
+    
+    ["main.AW_PIN_FIREFOX"]
+  );
+  sandbox.restore();
+});
+
+
+
+add_task(async function test_aboutwelcome_mr_template_content() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+  sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+  let browser = await openMRAboutWelcome();
+
+  
+  await test_screen_content(
+    browser,
+    "doesn't render pin and set default screens",
+    
+    ["main.AW_GET_STARTED"],
+    
+    ["main.AW_PIN_FIREFOX", "main.AW_ONLY_DEFAULT"]
+  );
+  sandbox.restore();
 });
