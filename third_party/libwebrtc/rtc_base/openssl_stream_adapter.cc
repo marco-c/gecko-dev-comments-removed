@@ -1095,7 +1095,8 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   
   
   SSL_CTX_set_cipher_list(
-      ctx, "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK");
+      ctx,
+      "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK:!3DES");
 
   if (!srtp_ciphers_.empty()) {
     if (SSL_CTX_set_tlsext_use_srtp(ctx, srtp_ciphers_.c_str())) {

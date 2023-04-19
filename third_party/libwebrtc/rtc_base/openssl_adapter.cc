@@ -978,7 +978,7 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
   
   
   SSL_CTX_set_cipher_list(
-      ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5");
+      ctx, "ALL:!SHA256:!SHA384:!aPSK:!ECDSA+SHA1:!ADH:!LOW:!EXP:!MD5:!3DES");
 
   if (mode == SSL_MODE_DTLS) {
     SSL_CTX_set_read_ahead(ctx, 1);
