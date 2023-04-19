@@ -31,6 +31,7 @@
 #include "modules/audio_processing/aec3/reverb_model_estimator.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/aec3/subtractor_output_analyzer.h"
+#include "modules/audio_processing/aec3/transparent_mode.h"
 
 namespace webrtc {
 
@@ -107,8 +108,8 @@ class AecState {
   }
 
   
-  bool TransparentMode() const {
-    return transparent_mode_activated_ && transparent_state_.Active();
+  bool TransparentModeActive() const {
+    return transparent_state_ && transparent_state_->Active();
   }
 
   
@@ -152,7 +153,6 @@ class AecState {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const EchoCanceller3Config config_;
   const size_t num_capture_channels_;
-  const bool transparent_mode_activated_;
   const bool deactivate_initial_state_reset_at_echo_path_change_;
   const bool full_reset_at_echo_path_change_;
   const bool subtractor_analyzer_reset_at_echo_path_change_;
@@ -219,40 +219,7 @@ class AecState {
   } delay_state_;
 
   
-  
-  class TransparentMode {
-   public:
-    explicit TransparentMode(const EchoCanceller3Config& config);
-
-    
-    bool Active() const { return transparency_activated_; }
-
-    
-    void Reset();
-
-    
-    void Update(int filter_delay_blocks,
-                bool any_filter_consistent,
-                bool any_filter_converged,
-                bool all_filters_diverged,
-                bool active_render,
-                bool saturated_capture);
-
-   private:
-    const bool bounded_erl_;
-    const bool linear_and_stable_echo_path_;
-    size_t capture_block_counter_ = 0;
-    bool transparency_activated_ = false;
-    size_t active_blocks_since_sane_filter_;
-    bool sane_filter_observed_ = false;
-    bool finite_erl_recently_detected_ = false;
-    size_t non_converged_sequence_size_;
-    size_t diverged_sequence_size_ = 0;
-    size_t active_non_converged_sequence_size_ = 0;
-    size_t num_converged_blocks_ = 0;
-    bool recent_convergence_during_activity_ = false;
-    size_t strong_not_saturated_render_blocks_ = 0;
-  } transparent_state_;
+  std::unique_ptr<TransparentMode> transparent_state_;
 
   
   
