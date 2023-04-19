@@ -31,6 +31,17 @@ class Glean final : public nsISupports, public nsWrapperCache {
   bool NameIsEnumerable(const nsAString& aName);
   void GetSupportedNames(nsTArray<nsString>& aNames);
 
+  
+
+
+
+
+
+
+
+
+  static void TestSetRuntimeMetricsComprehensive(bool aIsComprehensive);
+
  protected:
   virtual ~Glean() = default;
 };
