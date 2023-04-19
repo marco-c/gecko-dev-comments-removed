@@ -1175,13 +1175,16 @@ void MacroAssembler::storeDependentStringBase(Register base, Register str) {
 }
 
 void MacroAssembler::loadStringChar(Register str, Register index,
-                                    Register output, Register scratch,
-                                    Label* fail) {
+                                    Register output, Register scratch1,
+                                    Register scratch2, Label* fail) {
   MOZ_ASSERT(str != output);
   MOZ_ASSERT(str != index);
   MOZ_ASSERT(index != output);
-  MOZ_ASSERT(output != scratch);
+  MOZ_ASSERT(output != scratch1);
+  MOZ_ASSERT(output != scratch2);
 
+  
+  move32(index, scratch1);
   movePtr(str, output);
 
   
@@ -1191,11 +1194,19 @@ void MacroAssembler::loadStringChar(Register str, Register index,
   loadRopeLeftChild(str, output);
 
   
-  
-  spectreBoundsCheck32(index, Address(output, JSString::offsetOfLength()),
-                       scratch, fail);
+  Label loadedChild, notInLeft;
+  spectreBoundsCheck32(scratch1, Address(output, JSString::offsetOfLength()),
+                       scratch2, &notInLeft);
+  jump(&loadedChild);
 
   
+  
+  bind(&notInLeft);
+  sub32(Address(output, JSString::offsetOfLength()), scratch1);
+  loadRopeRightChild(str, output);
+
+  
+  bind(&loadedChild);
   branchIfRope(output, fail);
 
   bind(&notRope);
@@ -1204,13 +1215,13 @@ void MacroAssembler::loadStringChar(Register str, Register index,
   
   
   branchLatin1String(output, &isLatin1);
-  loadStringChars(output, scratch, CharEncoding::TwoByte);
-  loadChar(scratch, index, output, CharEncoding::TwoByte);
+  loadStringChars(output, scratch2, CharEncoding::TwoByte);
+  loadChar(scratch2, scratch1, output, CharEncoding::TwoByte);
   jump(&done);
 
   bind(&isLatin1);
-  loadStringChars(output, scratch, CharEncoding::Latin1);
-  loadChar(scratch, index, output, CharEncoding::Latin1);
+  loadStringChars(output, scratch2, CharEncoding::Latin1);
+  loadChar(scratch2, scratch1, output, CharEncoding::Latin1);
 
   bind(&done);
 }

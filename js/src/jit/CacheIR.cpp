@@ -2285,16 +2285,13 @@ static bool CanAttachStringChar(const Value& val, const Value& idVal) {
   }
 
   
-  
   if (str->isRope()) {
     JSRope* rope = &str->asRope();
-
-    
-    if (size_t(index) >= rope->leftChild()->length()) {
-      return false;
+    if (size_t(index) < rope->leftChild()->length()) {
+      str = rope->leftChild();
+    } else {
+      str = rope->rightChild();
     }
-
-    str = rope->leftChild();
   }
 
   if (!str->isLinear()) {

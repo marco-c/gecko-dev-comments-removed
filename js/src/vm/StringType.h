@@ -1639,6 +1639,9 @@ MOZ_ALWAYS_INLINE bool JSString::getChar(JSContext* cx, size_t index,
 
 
 
+
+
+
   JSString* str;
   if (isRope()) {
     JSRope* rope = &asRope();
