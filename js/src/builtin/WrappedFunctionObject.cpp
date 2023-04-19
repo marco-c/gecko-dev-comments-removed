@@ -52,6 +52,7 @@ bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, Handle<Value> value,
 
 
 
+
 static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -61,74 +62,75 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   Handle<WrappedFunctionObject*> fun = callee.as<WrappedFunctionObject>();
 
   
+  
+  MOZ_ASSERT(cx->realm() == fun->realm());
+
+  
+
+  
   Rooted<JSObject*> target(cx, fun->getTargetFunction());
 
   
   MOZ_ASSERT(IsCallable(ObjectValue(*target)));
 
   
+  Rooted<Realm*> callerRealm(cx, fun->realm());
+
+  
+  
+  
+  
+  
+
+  
   Rooted<Realm*> targetRealm(cx, GetFunctionRealm(cx, target));
   if (!targetRealm) {
     return false;
   }
+
   
-  Rooted<Realm*> callerRealm(cx, GetFunctionRealm(cx, fun));
-  if (!callerRealm) {
+  InvokeArgs wrappedArgs(cx);
+  if (!wrappedArgs.init(cx, args.length())) {
     return false;
   }
 
   
   
+  
+  Rooted<Value> element(cx);
+  for (size_t i = 0; i < args.length(); i++) {
+    element = args.get(i);
+    if (!GetWrappedValue(cx, targetRealm, element, &element)) {
+      return false;
+    }
+
+    wrappedArgs[i].set(element);
+  }
+
+  
+  
+  Rooted<Value> wrappedThisArgument(cx);
+  if (!GetWrappedValue(cx, targetRealm, args.thisv(), &wrappedThisArgument)) {
+    return false;
+  }
+
+  
+  
+  Rooted<Value> targetValue(cx, ObjectValue(*target));
   Rooted<Value> result(cx);
-  {
-    Rooted<JSObject*> global(cx, callerRealm->maybeGlobal());
-    MOZ_RELEASE_ASSERT(
-        global, "global is null; executing in a realm that's being GC'd?");
-    AutoRealm ar(cx, global);
+  if (!js::Call(cx, targetValue, wrappedThisArgument, wrappedArgs, &result)) {
+    
+    
+    ReportPotentiallyDetailedMessage(
+        cx, JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE_DETAIL,
+        JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE);
+    return false;
+  }
 
-    
-    InvokeArgs wrappedArgs(cx);
-    if (!wrappedArgs.init(cx, args.length())) {
-      return false;
-    }
-
-    
-    
-    
-    Rooted<Value> element(cx);
-    for (size_t i = 0; i < args.length(); i++) {
-      element = args.get(i);
-      if (!GetWrappedValue(cx, targetRealm, element, &element)) {
-        return false;
-      }
-
-      wrappedArgs[i].set(element);
-    }
-
-    
-    
-    Rooted<Value> wrappedThisArgument(cx);
-    if (!GetWrappedValue(cx, targetRealm, args.thisv(), &wrappedThisArgument)) {
-      return false;
-    }
-
-    
-    
-    Rooted<Value> targetValue(cx, ObjectValue(*target));
-    if (!js::Call(cx, targetValue, wrappedThisArgument, wrappedArgs, &result)) {
-      
-      
-      ReportPotentiallyDetailedMessage(
-          cx, JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE_DETAIL,
-          JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE);
-      return false;
-    }
-
-    
-    
-    if (!GetWrappedValue(cx, callerRealm, result, args.rval())) {
-      return false;
-    }
+  
+  
+  if (!GetWrappedValue(cx, callerRealm, result, args.rval())) {
+    return false;
   }
 
   return true;
