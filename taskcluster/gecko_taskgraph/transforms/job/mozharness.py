@@ -79,8 +79,6 @@ mozharness_run_schema = Schema(
         
         Required("taskcluster-proxy"): bool,
         
-        Required("need-xvfb"): bool,
-        
         
         Required("keep-artifacts"): bool,
         
@@ -107,7 +105,6 @@ mozharness_defaults = {
     "tooltool-downloads": False,
     "secrets": False,
     "taskcluster-proxy": False,
-    "need-xvfb": False,
     "keep-artifacts": True,
     "requires-signed-builds": False,
     "use-simple-package": True,
@@ -203,12 +200,6 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
         env["DIST_UPLOADS"] = ""
 
     
-    if run.pop("need-xvfb"):
-        env["NEED_XVFB"] = "true"
-    else:
-        env["NEED_XVFB"] = "false"
-
-    
     worker["retry-exit-status"] = [4]
 
     setup_secrets(config, job, taskdesc)
@@ -240,9 +231,6 @@ def mozharness_on_generic_worker(config, job, taskdesc):
 
     
     invalid = []
-    for prop in ["need-xvfb"]:
-        if prop in run and run.pop(prop):
-            invalid.append(prop)
     if not run.pop("keep-artifacts", True):
         invalid.append("keep-artifacts")
     if invalid:
