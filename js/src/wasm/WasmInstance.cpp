@@ -2225,7 +2225,6 @@ bool Instance::constantRefFunc(uint32_t funcIndex,
   return true;
 }
 
-
 JSAtom* Instance::getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const {
   
   
