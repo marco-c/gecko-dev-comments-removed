@@ -1,0 +1,15 @@
+
+
+
+
+
+
+EXPORTS.mozilla.dom += [
+    "VideoColorSpace.h",
+]
+
+UNIFIED_SOURCES += [
+    "VideoColorSpace.cpp",
+]
+
+FINAL_LIBRARY = "xul"
