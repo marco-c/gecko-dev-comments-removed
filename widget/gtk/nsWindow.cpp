@@ -3442,6 +3442,10 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
 #endif
 #ifdef MOZ_WAYLAND
       if (GdkIsWaylandDisplay()) {
+        if (mCompositorWidgetDelegate) {
+          MOZ_DIAGNOSTIC_ASSERT(
+              !mCompositorWidgetDelegate->AsGtkCompositorWidget()->IsHidden());
+        }
         eglWindow = moz_container_wayland_get_egl_window(
             mContainer, FractionalScaleFactor());
       }
@@ -4059,6 +4063,26 @@ void nsWindow::OnMap() {
 
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
+
+  
+  
+  if (GdkIsWaylandDisplay() && mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->DisableRendering();
+  }
+#ifdef MOZ_WAYLAND
+  if (moz_container_wayland_has_egl_window(mContainer)) {
+    
+    
+    
+    
+    
+    
+    
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+      remoteRenderer->SendResume();
+    }
+  }
+#endif
   moz_container_wayland_unmap(GTK_WIDGET(mContainer));
 }
 
