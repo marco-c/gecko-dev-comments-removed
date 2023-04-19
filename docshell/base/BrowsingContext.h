@@ -234,7 +234,10 @@ enum class ExplicitActiveStatus : uint8_t {
   /* This field only gets incrememented when we start navigations in the      \
    * parent process. This is used for keeping track of the racing navigations \
    * between the parent and content processes. */                             \
-  FIELD(ParentInitiatedNavigationEpoch, uint64_t)
+  FIELD(ParentInitiatedNavigationEpoch, uint64_t)                             \
+  /* This browsing context is for a synthetic image document wrapping an      \
+   * image embedded in <object> or <embed>. */                                \
+  FIELD(SyntheticDocumentContainer, bool)
 
 
 
@@ -368,6 +371,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
+  bool IsEmbedderTypeObjectOrEmbed();
+
+  
+  
   
   void Embed();
 
@@ -487,6 +494,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   Span<RefPtr<BrowsingContext>> Children() const;
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
+
+  Span<RefPtr<BrowsingContext>> NonSyntheticChildren() const;
 
   const nsTArray<RefPtr<WindowContext>>& GetWindowContexts() {
     return mWindowContexts;
@@ -1193,6 +1202,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool CanSet(FieldIndex<IDX_IsInBFCache>, bool, ContentParent* aSource);
   void DidSet(FieldIndex<IDX_IsInBFCache>);
+
+  void DidSet(FieldIndex<IDX_SyntheticDocumentContainer>);
 
   
   

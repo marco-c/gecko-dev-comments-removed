@@ -148,6 +148,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   Span<RefPtr<BrowsingContext>> Children() { return mChildren; }
 
   
+  
+  Span<RefPtr<BrowsingContext>> NonSyntheticChildren() {
+    return mNonSyntheticChildren;
+  }
+
+  
   WindowGlobalParent* Canonical();
 
   nsIGlobalObject* GetParentObject() const;
@@ -218,6 +224,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   void AppendChildBrowsingContext(BrowsingContext* aBrowsingContext);
   void RemoveChildBrowsingContext(BrowsingContext* aBrowsingContext);
+
+  
+  
+  
+  void UpdateChildSynthetic(BrowsingContext* aBrowsingContext,
+                            bool aIsSynthetic);
 
   
   void SendCommitTransaction(ContentParent* aParent,
@@ -330,6 +342,15 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   
   nsTArray<RefPtr<BrowsingContext>> mChildren;
+
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<BrowsingContext>> mNonSyntheticChildren;
 
   bool mIsDiscarded = false;
   bool mIsInProcess = false;

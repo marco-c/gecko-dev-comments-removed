@@ -147,6 +147,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void PropagateIsUnderHiddenEmbedderElement(
       bool aIsUnderHiddenEmbedderElement);
 
+  void UpdateRemoteStyle(mozilla::StyleImageRendering aImageRendering);
+
   
   
   
