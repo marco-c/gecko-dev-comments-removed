@@ -901,7 +901,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   RtcEventLogFactory rtc_event_log_factory(task_queue_factory.get());
   
   
-  std::unique_ptr<RtcEventLog> log_dumper =
+  std::unique_ptr<RtcEventLog> log =
       rtc_event_log_factory.CreateRtcEventLog(encoding_type_);
 
   for (size_t i = 0; i < kNumEvents; i++) {
@@ -911,18 +911,18 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
     
     
     
-    log_dumper->Log(std::make_unique<RtcEventProbeResultSuccess>(
+    log->Log(std::make_unique<RtcEventProbeResultSuccess>(
         i, kStartBitrate + i * 1000));
     fake_clock->AdvanceTime(TimeDelta::Millis(10));
   }
   int64_t start_time_us = rtc::TimeMicros();
   int64_t utc_start_time_us = rtc::TimeUTCMicros();
-  log_dumper->StartLogging(
+  log->StartLogging(
       std::make_unique<RtcEventLogOutputFile>(temp_filename, 10000000),
       RtcEventLog::kImmediateOutput);
   fake_clock->AdvanceTime(TimeDelta::Millis(10));
   int64_t stop_time_us = rtc::TimeMicros();
-  log_dumper->StopLogging();
+  log->StopLogging();
 
   
   ParsedRtcEventLog parsed_log;
@@ -960,6 +960,9 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
         RtcEventProbeResultSuccess(first_id + i, first_bitrate_bps + i * 1000),
         probe_success_events[i]);
   }
+
+  
+  remove(temp_filename.c_str());
 }
 
 INSTANTIATE_TEST_SUITE_P(
