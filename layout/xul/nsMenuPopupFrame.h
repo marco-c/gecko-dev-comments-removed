@@ -205,7 +205,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
-  void EnsureWidget(bool aRecreate = false);
+  void PrepareWidget(bool aRecreate = false);
 
   nsresult CreateWidgetForView(nsView* aView);
   mozilla::StyleWindowShadow GetShadowStyle();
