@@ -5953,8 +5953,7 @@ void nsBlockFrame::AddFrames(nsFrameList& aFrameList, nsIFrame* aPrevSibling,
 
   
   
-  for (nsFrameList::Enumerator e(newFrames); !e.AtEnd(); e.Next()) {
-    nsIFrame* newFrame = e.get();
+  for (nsIFrame* newFrame : newFrames) {
     NS_ASSERTION(!aPrevSibling || aPrevSibling->GetNextSibling() == newFrame,
                  "Unexpected aPrevSibling");
     NS_ASSERTION(
@@ -8166,8 +8165,8 @@ void nsBlockFrame::VerifyOverflowSituation() {
   
   oofs = GetPushedFloats();
   if (oofs) {
-    for (nsFrameList::Enumerator e(*oofs); !e.AtEnd(); e.Next()) {
-      nsIFrame* nif = e.get()->GetNextInFlow();
+    for (nsIFrame* f : *oofs) {
+      nsIFrame* nif = f->GetNextInFlow();
       MOZ_ASSERT(!nif ||
                  (!mFloats.ContainsFrame(nif) && !mFrames.ContainsFrame(nif)));
     }

@@ -69,17 +69,23 @@ nsresult nsTableColGroupFrame::AddColsToTable(int32_t aFirstColIndex,
 
   
   int32_t colIndex = aFirstColIndex;
-  nsFrameList::Enumerator e(aCols);
-  for (; !e.AtEnd(); e.Next()) {
-    ((nsTableColFrame*)e.get())->SetColIndex(colIndex);
+
+  
+  
+  
+  auto colIter = aCols.begin();
+  for (auto colIterEnd = aCols.end(); *colIter && colIter != colIterEnd;
+       ++colIter) {
+    auto* colFrame = static_cast<nsTableColFrame*>(*colIter);
+    colFrame->SetColIndex(colIndex);
     mColCount++;
-    tableFrame->InsertCol((nsTableColFrame&)*e.get(), colIndex);
+    tableFrame->InsertCol(*colFrame, colIndex);
     colIndex++;
   }
 
-  for (nsFrameList::Enumerator eTail = e.GetUnlimitedEnumerator();
-       !eTail.AtEnd(); eTail.Next()) {
-    ((nsTableColFrame*)eTail.get())->SetColIndex(colIndex);
+  for (; *colIter; ++colIter) {
+    auto* colFrame = static_cast<nsTableColFrame*>(*colIter);
+    colFrame->SetColIndex(colIndex);
     colIndex++;
   }
 

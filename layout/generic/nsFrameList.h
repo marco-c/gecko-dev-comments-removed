@@ -377,10 +377,17 @@ class nsFrameList {
         : mStart(aList.FirstChild()), mEnd(nullptr) {}
     Slice(nsIFrame* aStart, nsIFrame* aEnd) : mStart(aStart), mEnd(aEnd) {}
 
+    iterator begin() const { return iterator(mStart); }
+    const_iterator cbegin() const { return begin(); }
+    iterator end() const { return iterator(mEnd); }
+    const_iterator cend() const { return end(); }
+
    private:
-    nsIFrame* const mStart;      
-    const nsIFrame* const mEnd;  
-                                 
+    
+    nsIFrame* const mStart;
+
+    
+    nsIFrame* const mEnd;
   };
 
   class Enumerator {

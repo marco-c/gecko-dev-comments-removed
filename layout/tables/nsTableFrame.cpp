@@ -476,17 +476,15 @@ void nsTableFrame::ResetRowIndices(
   OrderRowGroups(rowGroups);
 
   nsTHashSet<nsTableRowGroupFrame*> excludeRowGroups;
-  nsFrameList::Enumerator excludeRowGroupsEnumerator(aRowGroupsToExclude);
-  while (!excludeRowGroupsEnumerator.AtEnd()) {
+  for (nsIFrame* excludeRowGroup : aRowGroupsToExclude) {
     excludeRowGroups.Insert(
-        static_cast<nsTableRowGroupFrame*>(excludeRowGroupsEnumerator.get()));
+        static_cast<nsTableRowGroupFrame*>(excludeRowGroup));
 #ifdef DEBUG
     {
       
       
       
-      const nsFrameList& rowFrames =
-          excludeRowGroupsEnumerator.get()->PrincipalChildList();
+      const nsFrameList& rowFrames = excludeRowGroup->PrincipalChildList();
       for (nsIFrame* r : rowFrames) {
         auto* row = static_cast<nsTableRowFrame*>(r);
         MOZ_ASSERT(row->GetRowIndex() == 0,
@@ -495,7 +493,6 @@ void nsTableFrame::ResetRowIndices(
       }
     }
 #endif
-    excludeRowGroupsEnumerator.Next();
   }
 
   int32_t rowIndex = 0;
@@ -517,32 +514,23 @@ void nsTableFrame::ResetRowIndices(
 void nsTableFrame::InsertColGroups(int32_t aStartColIndex,
                                    const nsFrameList::Slice& aColGroups) {
   int32_t colIndex = aStartColIndex;
-  nsFrameList::Enumerator colGroups(aColGroups);
-  for (; !colGroups.AtEnd(); colGroups.Next()) {
-    MOZ_ASSERT(colGroups.get()->IsTableColGroupFrame());
-    nsTableColGroupFrame* cgFrame =
-        static_cast<nsTableColGroupFrame*>(colGroups.get());
-    cgFrame->SetStartColumnIndex(colIndex);
-    
-    
-    
-    
 
-    
-    
-    
-    
-    cgFrame->AddColsToTable(colIndex, false,
-                            colGroups.get()->PrincipalChildList());
+  
+  
+  
+  auto colGroupIter = aColGroups.begin();
+  for (auto colGroupIterEnd = aColGroups.end();
+       *colGroupIter && colGroupIter != colGroupIterEnd; ++colGroupIter) {
+    MOZ_ASSERT((*colGroupIter)->IsTableColGroupFrame());
+    auto* cgFrame = static_cast<nsTableColGroupFrame*>(*colGroupIter);
+    cgFrame->SetStartColumnIndex(colIndex);
+    cgFrame->AddColsToTable(colIndex, false, cgFrame->PrincipalChildList());
     int32_t numCols = cgFrame->GetColCount();
     colIndex += numCols;
   }
 
-  nsFrameList::Enumerator remainingColgroups =
-      colGroups.GetUnlimitedEnumerator();
-  if (!remainingColgroups.AtEnd()) {
-    nsTableColGroupFrame::ResetColIndices(
-        static_cast<nsTableColGroupFrame*>(remainingColgroups.get()), colIndex);
+  for (; *colGroupIter; ++colGroupIter) {
+    nsTableColGroupFrame::ResetColIndices(*colGroupIter, colIndex);
   }
 }
 
@@ -1052,9 +1040,8 @@ void nsTableFrame::InsertRowGroups(const nsFrameList::Slice& aRowGroups) {
     
     uint32_t rgIndex;
     for (rgIndex = 0; rgIndex < orderedRowGroups.Length(); rgIndex++) {
-      for (nsFrameList::Enumerator rowgroups(aRowGroups); !rowgroups.AtEnd();
-           rowgroups.Next()) {
-        if (orderedRowGroups[rgIndex] == rowgroups.get()) {
+      for (nsIFrame* rowGroup : aRowGroups) {
+        if (orderedRowGroups[rgIndex] == rowGroup) {
           nsTableRowGroupFrame* priorRG =
               (0 == rgIndex) ? nullptr : orderedRowGroups[rgIndex - 1];
           
@@ -1069,13 +1056,12 @@ void nsTableFrame::InsertRowGroups(const nsFrameList::Slice& aRowGroups) {
 
     
     for (rgIndex = 0; rgIndex < orderedRowGroups.Length(); rgIndex++) {
-      for (nsFrameList::Enumerator rowgroups(aRowGroups); !rowgroups.AtEnd();
-           rowgroups.Next()) {
-        if (orderedRowGroups[rgIndex] == rowgroups.get()) {
+      for (nsIFrame* rowGroup : aRowGroups) {
+        if (orderedRowGroups[rgIndex] == rowGroup) {
           nsTableRowGroupFrame* priorRG =
               (0 == rgIndex) ? nullptr : orderedRowGroups[rgIndex - 1];
           
-          int32_t numRows = CollectRows(rowgroups.get(), rows);
+          int32_t numRows = CollectRows(rowGroup, rows);
           if (numRows > 0) {
             int32_t rowIndex = 0;
             if (priorRG) {
