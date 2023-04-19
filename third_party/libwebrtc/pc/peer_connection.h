@@ -380,7 +380,8 @@ class PeerConnection : public PeerConnectionInternal,
   void NoteUsageEvent(UsageEvent event);
 
   
-  void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
+  void ReportSdpFormatReceived(
+      const SessionDescriptionInterface& remote_description);
 
   
   
