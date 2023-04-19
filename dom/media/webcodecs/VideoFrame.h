@@ -136,6 +136,14 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
 
   void Close();
 
+  
+  static already_AddRefed<VideoFrame> ReadStructuredClone(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      JSStructuredCloneReader* aReader);
+
+  bool WriteStructuredClone(JSContext* aCx,
+                            JSStructuredCloneWriter* aWriter) const;
+
  public:
   
   class Format final {
