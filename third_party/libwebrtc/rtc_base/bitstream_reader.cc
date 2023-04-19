@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include <limits>
+
 #include "absl/numeric/bits.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -79,14 +81,14 @@ int BitstreamReader::ReadBit() {
 void BitstreamReader::ConsumeBits(int bits) {
   RTC_DCHECK_GE(bits, 0);
   set_last_read_is_verified(false);
+  if (remaining_bits_ < bits) {
+    Invalidate();
+    return;
+  }
 
   int remaining_bytes = (remaining_bits_ + 7) / 8;
   remaining_bits_ -= bits;
   int new_remaining_bytes = (remaining_bits_ + 7) / 8;
-  
-  
-  
-  
   bytes_ += (remaining_bytes - new_remaining_bytes);
 }
 
