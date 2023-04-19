@@ -3694,12 +3694,12 @@ class ColorwayClosetCard extends HTMLElement {
     
     
     
-    const isCurrentThemeColorway = BuiltInThemes.isMonochromaticTheme(addon.id);
+    
     let colorwaysButton = document.querySelector("[action='open-colorways']");
 
     document.l10n.setAttributes(
       colorwaysButton,
-      isCurrentThemeColorway
+      BuiltInThemes.isColorwayFromCurrentCollection?.(addon.id)
         ? "theme-colorways-button-colorway-enabled"
         : "theme-colorways-button"
     );
@@ -3770,13 +3770,9 @@ class ColorwayClosetCard extends HTMLElement {
     );
 
     let colorwaysButton = card.querySelector("[action='open-colorways']");
-    const isCurrentThemeColorway = BuiltInThemes.isMonochromaticTheme(
-      ACTIVE_THEME_ID
-    );
-
     document.l10n.setAttributes(
       colorwaysButton,
-      isCurrentThemeColorway
+      BuiltInThemes.isColorwayFromCurrentCollection?.(ACTIVE_THEME_ID)
         ? "theme-colorways-button-colorway-enabled"
         : "theme-colorways-button"
     );
