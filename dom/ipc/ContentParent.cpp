@@ -1644,6 +1644,7 @@ const nsACString& ContentParent::GetRemoteType() const { return mRemoteType; }
 
 static StaticRefPtr<nsIAsyncShutdownClient> sXPCOMShutdownClient;
 static StaticRefPtr<nsIAsyncShutdownClient> sProfileBeforeChangeClient;
+static StaticRefPtr<nsIAsyncShutdownClient> sQuitApplicationGrantedClient;
 
 void ContentParent::Init() {
   MOZ_ASSERT(sXPCOMShutdownClient);
@@ -1714,6 +1715,7 @@ void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
 
   
   MarkAsDead();
+  SignalImpendingShutdownToContentJS();
   StartForceKillTimer();
 
   if (aSendShutDown) {
@@ -1791,7 +1793,12 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
               __LINE__);
           mShutdownPending = true;
           
-          StartForceKillTimer();
+          
+          
+          if (!mForceKillTimer) {
+            SignalImpendingShutdownToContentJS();
+            StartForceKillTimer();
+          }
         } else {
           MaybeLogBlockShutdownDiagnostics(
               this, "ShutDownProcess: !!! Send shutdown message failed! !!!",
@@ -2358,8 +2365,6 @@ void ContentParent::StartForceKillTimer() {
   if (mForceKillTimer || !CanSend()) {
     return;
   }
-
-  NotifyImpendingShutdown();
 
   int32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
   if (timeoutSecs > 0) {
@@ -3570,10 +3575,67 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ContentParent)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMProcessParent)
 NS_INTERFACE_MAP_END
 
+class RequestContentJSInterruptRunnable final : public Runnable {
+ public:
+  explicit RequestContentJSInterruptRunnable(PProcessHangMonitorParent* aActor)
+      : Runnable("dom::RequestContentJSInterruptRunnable"),
+        mHangMonitorActor(aActor) {}
+
+  NS_IMETHOD Run() override {
+    MOZ_ASSERT(mHangMonitorActor);
+    Unused << mHangMonitorActor->SendRequestContentJSInterrupt();
+
+    return NS_OK;
+  }
+
+ private:
+  
+  
+  
+  
+  
+  
+  PProcessHangMonitorParent* mHangMonitorActor;
+};
+
+void ContentParent::SignalImpendingShutdownToContentJS() {
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
+    MaybeLogBlockShutdownDiagnostics(
+        this, "BlockShutdown: NotifyImpendingShutdown.", __FILE__, __LINE__);
+    NotifyImpendingShutdown();
+    if (mHangMonitorActor &&
+        StaticPrefs::dom_abort_script_on_child_shutdown()) {
+      MaybeLogBlockShutdownDiagnostics(
+          this, "BlockShutdown: RequestContentJSInterrupt.", __FILE__,
+          __LINE__);
+      RefPtr<RequestContentJSInterruptRunnable> r =
+          new RequestContentJSInterruptRunnable(mHangMonitorActor);
+      ProcessHangMonitor::Get()->Dispatch(r.forget());
+    }
+  }
+}
+
 
 NS_IMETHODIMP
 ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown)) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    mBlockShutdownCalled = true;
+#endif
+    
+    
+    SignalImpendingShutdownToContentJS();
+    if (sQuitApplicationGrantedClient) {
+      Unused << sQuitApplicationGrantedClient->RemoveBlocker(this);
+    }
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    mBlockShutdownCalled = false;
+#endif
+    return NS_OK;
+  }
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
   
   
   
@@ -3663,6 +3725,15 @@ static void InitShutdownClients() {
         ClearOnShutdown(&sProfileBeforeChangeClient);
       }
     }
+    
+    
+    if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+      rv = svc->GetQuitApplicationGranted(getter_AddRefs(client));
+      if (NS_SUCCEEDED(rv)) {
+        sQuitApplicationGrantedClient = client.forget();
+        ClearOnShutdown(&sQuitApplicationGrantedClient);
+      }
+    }
   }
 }
 
@@ -3677,6 +3748,10 @@ void ContentParent::AddShutdownBlockers() {
   }
   if (sProfileBeforeChangeClient) {
     sProfileBeforeChangeClient->AddBlocker(
+        this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, u""_ns);
+  }
+  if (sQuitApplicationGrantedClient) {
+    sQuitApplicationGrantedClient->AddBlocker(
         this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, u""_ns);
   }
 }
@@ -3696,6 +3771,9 @@ void ContentParent::RemoveShutdownBlockers() {
   }
   if (sProfileBeforeChangeClient) {
     Unused << sProfileBeforeChangeClient->RemoveBlocker(this);
+  }
+  if (sQuitApplicationGrantedClient) {
+    Unused << sQuitApplicationGrantedClient->RemoveBlocker(this);
   }
 }
 
