@@ -527,11 +527,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   RTCError CreateChannels(const cricket::SessionDescription& desc);
 
-  
-  std::unique_ptr<cricket::VoiceChannel> CreateVoiceChannel(
-      const std::string& mid);
-  std::unique_ptr<cricket::VideoChannel> CreateVideoChannel(
-      const std::string& mid);
   bool CreateDataChannel(const std::string& mid);
 
   

@@ -118,6 +118,8 @@ class JsepTransportCollection {
   cricket::JsepTransport* GetTransportForMid(const std::string& mid);
   const cricket::JsepTransport* GetTransportForMid(
       const std::string& mid) const;
+  cricket::JsepTransport* GetTransportForMid(absl::string_view mid);
+  const cricket::JsepTransport* GetTransportForMid(absl::string_view mid) const;
   
   
   bool SetTransportForMid(const std::string& mid,

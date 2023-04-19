@@ -20,6 +20,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/audio_options.h"
 #include "api/jsep.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
@@ -30,6 +31,8 @@
 #include "api/rtp_transceiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/video/video_bitrate_allocator_factory.h"
+#include "media/base/media_channel.h"
 #include "pc/channel_interface.h"
 #include "pc/channel_manager.h"
 #include "pc/proxy.h"
@@ -45,7 +48,7 @@
 
 namespace webrtc {
 
-
+class PeerConnectionSdpMethods;
 
 
 
@@ -101,6 +104,18 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   cricket::ChannelInterface* channel() const { return channel_.get(); }
+
+  
+  RTCError CreateChannel(
+      absl::string_view mid,
+      Call* call_ptr,
+      const cricket::MediaConfig& media_config,
+      bool srtp_required,
+      CryptoOptions crypto_options,
+      const cricket::AudioOptions& audio_options,
+      const cricket::VideoOptions& video_options,
+      VideoBitrateAllocatorFactory* video_bitrate_allocator_factory,
+      std::function<RtpTransportInternal*(absl::string_view)> transport_lookup);
 
   
   
