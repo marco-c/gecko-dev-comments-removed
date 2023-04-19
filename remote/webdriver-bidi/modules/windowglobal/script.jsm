@@ -71,13 +71,37 @@ class ScriptModule extends Module {
 
 
 
-  evaluateExpression(options) {
-    const { expression } = options;
+
+
+
+  async evaluateExpression(options) {
+    const { awaitPromise, expression } = options;
     const rv = this.#global.executeInGlobal(expression);
 
     if ("return" in rv) {
+      let result = rv.return;
+      if (
+        awaitPromise &&
+        
+        result instanceof Debugger.Object &&
+        result.isPromise
+      ) {
+        try {
+          
+          
+          result = this.#global.makeDebuggeeValue(
+            await result.unsafeDereference()
+          );
+        } catch (e) {
+          
+          throw new lazy.error.UnsupportedOperationError(
+            `Unsupported promise rejection for expression evaluation`
+          );
+        }
+      }
+
       return {
-        result: lazy.serialize(this.#toRawObject(rv.return), 1),
+        result: lazy.serialize(this.#toRawObject(result), 1),
       };
     }
 

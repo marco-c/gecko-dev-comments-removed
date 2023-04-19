@@ -217,6 +217,7 @@ class ScriptModule extends Module {
         id: realm.context.id,
       },
       params: {
+        awaitPromise,
         expression: source,
       },
     });
