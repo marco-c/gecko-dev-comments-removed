@@ -1,9 +1,7 @@
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["BlockedSiteChild"];
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -26,7 +24,7 @@ function getSiteBlockedErrorDetails(docShell) {
 
       let reportUri = httpChannel.URI;
 
-      
+      // Remove the query to avoid leaking sensitive data
       if (reportUri instanceof Ci.nsIURL) {
         reportUri = reportUri
           .mutate()
@@ -48,7 +46,7 @@ function getSiteBlockedErrorDetails(docShell) {
   return blockedInfo;
 }
 
-class BlockedSiteChild extends JSWindowActorChild {
+export class BlockedSiteChild extends JSWindowActorChild {
   receiveMessage(msg) {
     if (msg.name == "DeceptiveBlockedDetails") {
       return getSiteBlockedErrorDetails(this.docShell);
@@ -72,11 +70,11 @@ class BlockedSiteChild extends JSWindowActorChild {
 
     let doc = content.document;
 
-    
-
-
-
-
+    /**
+     * Set error description link in error details.
+     * For example, the "reported as a deceptive site" link for
+     * blocked phishing pages.
+     */
     let desc = Services.prefs.getCharPref(
       "browser.safebrowsing.provider." + provider + ".reportURL",
       ""
@@ -87,7 +85,7 @@ class BlockedSiteChild extends JSWindowActorChild {
         .setAttribute("href", desc + encodeURIComponent(aEvent.detail.url));
     }
 
-    
+    // Set other links in error details.
     switch (aEvent.detail.err) {
       case "malware":
         doc
@@ -119,7 +117,7 @@ class BlockedSiteChild extends JSWindowActorChild {
         break;
     }
 
-    
+    // Set the firefox support url.
     doc
       .getElementById("firefox_support")
       .setAttribute(
@@ -128,7 +126,7 @@ class BlockedSiteChild extends JSWindowActorChild {
           "phishing-malware"
       );
 
-    
+    // Show safe browsing details on load if the pref is set to true.
     let showDetails = Services.prefs.getBoolPref(
       "browser.xul.error_pages.show_safe_browsing_details_on_load"
     );
@@ -139,7 +137,7 @@ class BlockedSiteChild extends JSWindowActorChild {
       details.removeAttribute("hidden");
     }
 
-    
+    // Set safe browsing advisory link.
     let advisoryUrl = Services.prefs.getCharPref(
       "browser.safebrowsing.provider." + provider + ".advisoryURL",
       ""
