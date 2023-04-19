@@ -17,7 +17,7 @@ function ArrayEvery(callbackfn) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     
@@ -51,7 +51,7 @@ function ArraySome(callbackfn) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     
@@ -134,7 +134,7 @@ function ArrayForEach(callbackfn) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     
@@ -147,7 +147,7 @@ function ArrayForEach(callbackfn) {
     }
 
     
-    return void 0;
+    return undefined;
 }
 
 SetIsInlinableLargeFunction(ArrayForEach);
@@ -167,7 +167,7 @@ function ArrayMap(callbackfn) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     var A = ArraySpeciesCreate(O, len);
@@ -204,7 +204,7 @@ function ArrayFilter(callbackfn) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     var A = ArraySpeciesCreate(O, 0);
@@ -248,7 +248,7 @@ function ArrayGroup(callbackfn) {
     
     var groups = new_List();
 
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
     for (var k = 0; k < len; k++) {
@@ -322,7 +322,7 @@ function ArrayGroupToMap(callbackfn) {
     var C = GetBuiltinConstructor("Map");
     var map = new C();
 
-    var T = arguments.length > 1 ? arguments[1] : void 0;
+    var T = arguments.length > 1 ? arguments[1] : undefined;
 
     
 
