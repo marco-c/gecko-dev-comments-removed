@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_HTMLVideoElement_h
 #define mozilla_dom_HTMLVideoElement_h
@@ -60,10 +60,10 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   virtual nsresult SetAcceptHeader(nsIHttpChannel* aChannel) override;
 
-  
+  // Element
   virtual bool IsInteractiveHTMLContent() const override;
 
-  
+  // WebIDL
 
   uint32_t Width() const {
     return GetDimensionAttrAsUnsignedInt(nsGkAtoms::width, 0);
@@ -81,27 +81,9 @@ class HTMLVideoElement final : public HTMLMediaElement {
     SetUnsignedIntAttr(nsGkAtoms::height, aValue, 0, aRv);
   }
 
-  uint32_t VideoWidth() const {
-    if (mMediaInfo.HasVideo()) {
-      if (mMediaInfo.mVideo.mRotation == VideoInfo::Rotation::kDegree_90 ||
-          mMediaInfo.mVideo.mRotation == VideoInfo::Rotation::kDegree_270) {
-        return mMediaInfo.mVideo.mDisplay.height;
-      }
-      return mMediaInfo.mVideo.mDisplay.width;
-    }
-    return 0;
-  }
+  uint32_t VideoWidth();
 
-  uint32_t VideoHeight() const {
-    if (mMediaInfo.HasVideo()) {
-      if (mMediaInfo.mVideo.mRotation == VideoInfo::Rotation::kDegree_90 ||
-          mMediaInfo.mVideo.mRotation == VideoInfo::Rotation::kDegree_270) {
-        return mMediaInfo.mVideo.mDisplay.width;
-      }
-      return mMediaInfo.mVideo.mDisplay.height;
-    }
-    return 0;
-  }
+  uint32_t VideoHeight();
 
   VideoInfo::Rotation RotationDegrees() const {
     return mMediaInfo.mVideo.mRotation;
@@ -120,7 +102,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   uint32_t MozDecodedFrames() const;
 
-  uint32_t MozPresentedFrames() const;
+  uint32_t MozPresentedFrames();
 
   uint32_t MozPaintedFrames();
 
@@ -156,18 +138,20 @@ class HTMLVideoElement final : public HTMLMediaElement {
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
-  
-
-
-
-
-
+  /**
+   * We create video wakelock when the video is playing and release it when
+   * video pauses. Note, the actual platform wakelock will automatically be
+   * released when the page is in the background, so we don't need to check the
+   * video's visibility by ourselves.
+   */
   void WakeLockRelease() override;
   void UpdateWakeLock() override;
 
   bool ShouldCreateVideoWakeLock() const;
   void CreateVideoWakeLockIfNeeded();
   void ReleaseVideoWakeLockIfExists();
+
+  gfx::IntSize GetVideoIntrinsicDimensions();
 
   RefPtr<WakeLock> mScreenWakeLock;
 
@@ -181,28 +165,28 @@ class HTMLVideoElement final : public HTMLMediaElement {
       RefPtr<Promise> aVisualCloneTargetPromise = nullptr);
   bool SetVisualCloneSource(RefPtr<HTMLVideoElement> aVisualCloneSource);
 
-  
-  
-  
-  
-  
-  
-  
+  // For video elements, we can clone the frames being played to
+  // a secondary video element. If we're doing that, we hold a
+  // reference to the video element we're cloning to in
+  // mVisualCloneSource.
+  //
+  // Please don't set this to non-nullptr values directly - use
+  // SetVisualCloneTarget() instead.
   RefPtr<HTMLVideoElement> mVisualCloneTarget;
-  
-  
+  // Set when mVisualCloneTarget is set, and resolved (and unset) when the
+  // secondary container has been applied to the underlying resource.
   RefPtr<Promise> mVisualCloneTargetPromise;
-  
-  
-  
-  
+  // Set when beginning to clone visually and we are playing a MediaStream.
+  // This is the output wrapping the VideoFrameContainer of mVisualCloneTarget,
+  // so we can render its first frame, and resolve mVisualCloneTargetPromise as
+  // we do.
   RefPtr<FirstFrameVideoOutput> mSecondaryVideoOutput;
-  
-  
-  
-  
-  
-  
+  // If this video is the clone target of another video element,
+  // then mVisualCloneSource points to that originating video
+  // element.
+  //
+  // Please don't set this to non-nullptr values directly - use
+  // SetVisualCloneTarget() instead.
   RefPtr<HTMLVideoElement> mVisualCloneSource;
 
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
@@ -215,7 +199,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
   void EndCloningVisually();
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_HTMLVideoElement_h
