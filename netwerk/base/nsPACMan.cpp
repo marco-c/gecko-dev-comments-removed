@@ -712,13 +712,6 @@ void nsPACMan::ContinueLoadingAfterPACUriKnown() {
 }
 
 void nsPACMan::OnLoadFailure() {
-  
-  
-  {
-    auto loader = mLoader.Lock();
-    loader.ref() = nullptr;
-  }
-
   int32_t minInterval = 5;    
   int32_t maxInterval = 300;  
 
@@ -875,6 +868,7 @@ nsPACMan::OnStreamComplete(nsIStreamLoader* loader, nsISupports* context,
                            const uint8_t* data) {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
 
+  bool loadSucceeded = NS_SUCCEEDED(status) && HttpRequestSucceeded(loader);
   {
     auto locked = mLoader.Lock();
     if (locked.ref() != loader) {
@@ -883,13 +877,21 @@ nsPACMan::OnStreamComplete(nsIStreamLoader* loader, nsISupports* context,
       
       
       LOG(("OnStreamComplete: called more than once\n"));
-      if (status == NS_ERROR_ABORT) return NS_OK;
+      if (status == NS_ERROR_ABORT) {
+        return NS_OK;
+      }
+    } else if (!loadSucceeded) {
+      
+      
+      
+      
+      locked.ref() = nullptr;
     }
   }
 
   LOG(("OnStreamComplete: entry\n"));
 
-  if (NS_SUCCEEDED(status) && HttpRequestSucceeded(loader)) {
+  if (loadSucceeded) {
     
     nsAutoCString pacURI;
     {
