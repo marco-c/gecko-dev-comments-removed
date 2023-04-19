@@ -17,6 +17,7 @@
 #include "nsAccUtils.h"
 #include "nsIIOService.h"
 #include "TextRange.h"
+#include "Relation.h"
 #include "RootAccessible.h"
 
 #if defined(XP_WIN)
@@ -1324,6 +1325,19 @@ void DocAccessibleParent::URL(nsAString& aURL) const {
   nsAutoCString url;
   exposableURI->GetSpec(url);
   CopyUTF8toUTF16(url, aURL);
+}
+
+Relation DocAccessibleParent::RelationByType(RelationType aType) const {
+  
+  
+  
+  
+  
+  if (aType == RelationType::NODE_CHILD_OF && IsTopLevel()) {
+    return Relation(Parent());
+  }
+
+  return RemoteAccessibleBase<RemoteAccessible>::RelationByType(aType);
 }
 
 DocAccessibleParent* DocAccessibleParent::GetFrom(

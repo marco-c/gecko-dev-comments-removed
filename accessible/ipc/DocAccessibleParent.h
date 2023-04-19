@@ -330,6 +330,8 @@ class DocAccessibleParent : public RemoteAccessible,
 
   void URL(nsAString& aURL) const;
 
+  virtual Relation RelationByType(RelationType aType) const override;
+
   
   
   
