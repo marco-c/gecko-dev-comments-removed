@@ -768,6 +768,25 @@ struct sRGBColor {
 
   
   
+  
+  constexpr static sRGBColor InterpolatePremultiplied(const sRGBColor& aC1,
+                                                      const sRGBColor& aC2,
+                                                      float aFrac) {
+    double other = 1 - aFrac;
+    return sRGBColor(
+        aC2.r * aFrac + aC1.r * other, aC2.g * aFrac + aC1.g * other,
+        aC2.b * aFrac + aC1.b * other, aC2.a * aFrac + aC1.a * other);
+  }
+
+  constexpr static sRGBColor Interpolate(const sRGBColor& aC1,
+                                         const sRGBColor& aC2, float aFrac) {
+    return InterpolatePremultiplied(aC1.Premultiplied(), aC2.Premultiplied(),
+                                    aFrac)
+        .Unpremultiplied();
+  }
+
+  
+  
   uint32_t UnusualToARGB() const {
     return uint32_t(b * 255.0f) | uint32_t(g * 255.0f) << 8 |
            uint32_t(r * 255.0f) << 16 | uint32_t(a * 255.0f) << 24;
