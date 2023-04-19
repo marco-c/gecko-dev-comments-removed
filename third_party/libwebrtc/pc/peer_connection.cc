@@ -1169,6 +1169,9 @@ bool PeerConnection::GetStats(StatsObserver* observer,
   RTC_LOG_THREAD_BLOCK_COUNT();
 
   stats_->UpdateStats(level);
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(4);
+
   
   
   if (track && !stats_->IsValidTrack(track->id())) {
