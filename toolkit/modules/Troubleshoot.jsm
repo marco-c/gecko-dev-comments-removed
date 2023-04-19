@@ -776,6 +776,22 @@ var dataProviders = {
         .audioDevices(Ci.nsIDOMWindowUtils.AUDIO_INPUT)
         .QueryInterface(Ci.nsIArray)
     );
+
+    data.codecSupportInfo = "Unknown";
+
+    
+    
+    try {
+      
+      var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
+
+      
+      
+      
+      
+      data.codecSupportInfo = gfxInfo.CodecSupportInfo;
+    } catch (e) {}
+
     done(data);
   },
 

@@ -1052,6 +1052,12 @@ var snapshotFormatters = {
 
     
     insertEnumerateDatabase();
+
+    
+    
+    if (AppConstants.platform == "win") {
+      insertBasicInfo("media-codec-support-info", data.codecSupportInfo);
+    }
   },
 
   remoteAgent(data) {
