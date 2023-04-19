@@ -50,7 +50,7 @@ var gTests = [
       
       ok(permissionPopupHidden(win), "control center should be hidden");
       let activeStreams = webrtcUI.getActiveStreams(true, false, false);
-      webrtcUI.showSharingDoorhanger(activeStreams[0], "Devices");
+      webrtcUI.showSharingDoorhanger(activeStreams[0]);
       
       
       
