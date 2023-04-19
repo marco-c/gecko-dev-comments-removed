@@ -226,7 +226,7 @@ function createSourceObject({
     
     
     
-    displayURL: getDisplayURL(url),
+    displayURL: getDisplayURL(url, extensionName),
 
     
     thread,

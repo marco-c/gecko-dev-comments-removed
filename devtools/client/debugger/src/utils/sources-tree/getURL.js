@@ -32,7 +32,10 @@ const def = { path: "", search: "", group: "", filename: "" };
 
 
 
-export function getDisplayURL(url) {
+
+
+
+export function getDisplayURL(url, extensionName = null) {
   if (!url) {
     return def;
   }
@@ -46,6 +49,16 @@ export function getDisplayURL(url) {
       return def;
 
     case "moz-extension:":
+      return {
+        ...def,
+        path: pathname,
+        search,
+        filename,
+        
+        
+        
+        group: extensionName || `${protocol}//${host}`,
+      };
     case "resource:":
       return {
         ...def,
@@ -54,7 +67,6 @@ export function getDisplayURL(url) {
         filename,
         group: `${protocol}//${host || ""}`,
       };
-
     case "webpack:":
     case "ng:":
       return {
