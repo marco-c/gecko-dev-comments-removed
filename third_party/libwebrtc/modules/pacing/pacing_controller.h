@@ -97,8 +97,7 @@ class PacingController {
   void Resume();  
   bool IsPaused() const;
 
-  void SetCongestionWindow(DataSize congestion_window_size);
-  void UpdateOutstandingData(DataSize outstanding_data);
+  void SetCongested(bool congested);
 
   
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
@@ -144,8 +143,6 @@ class PacingController {
   
   
   void ProcessPackets();
-
-  bool Congested() const;
 
   bool IsProbing() const;
 
@@ -225,8 +222,7 @@ class PacingController {
   RoundRobinPacketQueue packet_queue_;
   uint64_t packet_counter_;
 
-  DataSize congestion_window_size_;
-  DataSize outstanding_data_;
+  bool congested_;
 
   TimeDelta queue_time_limit;
   bool account_for_audio_;

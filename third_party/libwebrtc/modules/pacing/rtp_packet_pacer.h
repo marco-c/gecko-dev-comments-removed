@@ -34,8 +34,7 @@ class RtpPacketPacer {
   
   virtual void Resume() = 0;
 
-  virtual void SetCongestionWindow(DataSize congestion_window_size) = 0;
-  virtual void UpdateOutstandingData(DataSize outstanding_data) = 0;
+  virtual void SetCongested(bool congested) = 0;
 
   
   virtual void SetPacingRates(DataRate pacing_rate, DataRate padding_rate) = 0;

@@ -129,6 +129,8 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       relay_bandwidth_cap_("relay_cap", DataRate::PlusInfinity()),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
+      congestion_window_size_(DataSize::PlusInfinity()),
+      is_congested_(false),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
       task_queue_(task_queue_factory->CreateTaskQueue(
           "rtp_send_controller",
@@ -200,6 +202,15 @@ void RtpTransportControllerSend::UpdateControlState() {
   
   RTC_DCHECK(observer_ != nullptr);
   observer_->OnTargetTransferRate(*update);
+}
+
+void RtpTransportControllerSend::UpdateCongestedState() {
+  bool congested = transport_feedback_adapter_.GetOutstandingData() >=
+                   congestion_window_size_;
+  if (congested != is_congested_) {
+    is_congested_ = congested;
+    pacer()->SetCongested(congested);
+  }
 }
 
 RtpPacketPacer* RtpTransportControllerSend::pacer() {
@@ -361,7 +372,8 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
       } else {
         UpdateInitialConstraints(msg.constraints);
       }
-      pacer()->UpdateOutstandingData(DataSize::Zero());
+      is_congested_ = false;
+      pacer()->SetCongested(false);
     });
   }
 }
@@ -382,7 +394,8 @@ void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
     } else {
       pacer()->Pause();
     }
-    pacer()->UpdateOutstandingData(DataSize::Zero());
+    is_congested_ = false;
+    pacer()->SetCongested(false);
 
     if (controller_) {
       control_handler_->SetNetworkAvailability(network_available_);
@@ -425,8 +438,7 @@ void RtpTransportControllerSend::OnSentPacket(
       
       
       
-      pacer()->UpdateOutstandingData(
-          transport_feedback_adapter_.GetOutstandingData());
+      UpdateCongestedState();
       if (controller_)
         PostUpdates(controller_->OnSentPacket(*packet_msg));
     }
@@ -585,9 +597,7 @@ void RtpTransportControllerSend::OnTransportFeedback(
         PostUpdates(controller_->OnTransportPacketsFeedback(*feedback_msg));
 
       
-      
-      pacer()->UpdateOutstandingData(
-          transport_feedback_adapter_.GetOutstandingData());
+      UpdateCongestedState();
     }
   });
 }
@@ -679,7 +689,8 @@ void RtpTransportControllerSend::UpdateStreamsConfig() {
 
 void RtpTransportControllerSend::PostUpdates(NetworkControlUpdate update) {
   if (update.congestion_window) {
-    pacer()->SetCongestionWindow(*update.congestion_window);
+    congestion_window_size_ = *update.congestion_window;
+    UpdateCongestedState();
   }
   if (update.pacer_config) {
     pacer()->SetPacingRates(update.pacer_config->data_rate(),

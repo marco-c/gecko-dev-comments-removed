@@ -80,8 +80,7 @@ class PacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   void Resume() override;
 
-  void SetCongestionWindow(DataSize congestion_window_size) override;
-  void UpdateOutstandingData(DataSize outstanding_data) override;
+  void SetCongested(bool congested) override;
 
   
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate) override;
