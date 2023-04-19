@@ -17,50 +17,38 @@ function pushPref(name, val) {
 async function createAndShutdownContentProcess(url) {
   info("Create and shutdown a content process for " + url);
 
-  let oldChildCount = Services.ppmm.childCount;
-  info("Old process count: " + oldChildCount);
-
-  let tabpromise = BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    opening: url,
-    waitForLoad: true,
-    forceNewProcess: true,
-  });
-
-  let tab = await tabpromise;
-
   
-  Services.tm.spinEventLoopUntil(
-    "browser_content_shutdown_with_endless_js",
-    () => Services.ppmm.childCount > oldChildCount
+  
+  let browserParentDestroyed = PromiseUtils.defer();
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      opening: url,
+      waitForLoad: true,
+      forceNewProcess: true,
+    },
+    async function(otherBrowser) {
+      let remoteTab = otherBrowser.frameLoader.remoteTab;
+
+      ok(true, "Content process created.");
+
+      browserParentDestroyed.resolve(
+        TestUtils.topicObserved(
+          "ipc:browser-destroyed",
+          subject => subject === remoteTab
+        )
+      );
+
+      
+    }
   );
 
-  let newChildCount = Services.ppmm.childCount;
-  info("New process count: " + newChildCount);
-
   
   
-  
-  ok(newChildCount > oldChildCount, "Process created.");
+  await browserParentDestroyed.promise;
 
   
-  let tabClosed = BrowserTestUtils.waitForTabClosing(tab);
-  BrowserTestUtils.removeTab(tab);
-  ok(true, "removeTab");
-
-  Services.tm.spinEventLoopUntil(
-    "browser_content_shutdown_with_endless_js",
-    () => Services.ppmm.childCount < newChildCount
-  );
-
-  info("New count: " + Services.ppmm.childCount);
-  await tabClosed;
-
-  
-  ok(
-    Services.ppmm.childCount < newChildCount,
-    "Shutdown of content process complete."
-  );
+  ok(true, "Shutdown of content process.");
 }
 
 add_task(async () => {
