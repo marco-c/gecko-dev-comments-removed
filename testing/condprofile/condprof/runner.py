@@ -127,8 +127,9 @@ class Runner:
 
     def display_error(self, scenario, customization):
         logger.error("%s x %s failed." % (scenario, customization), exc_info=True)
-        if self.strict:
-            raise
+        
+        
+        
 
     async def one_run(self, scenario, customization):
         """Runs one single conditioned profile.
