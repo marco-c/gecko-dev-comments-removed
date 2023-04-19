@@ -26,11 +26,32 @@ function appendIframe(t, doc, src) {
 
 
 
-function futureMessage() {
+
+
+
+
+
+
+
+
+
+function futureMessage(options) {
   return new Promise(resolve => {
-      window.addEventListener("message", e => resolve(e.data));
+    window.addEventListener("message", (e) => {
+      if (options?.source && options.source !== e.source) {
+        return;
+      }
+
+      resolve(e.data);
+    });
   });
 };
+
+async function postMessageAndAwaitReply(target, message) {
+  const reply = futureMessage({ source: target });
+  target.postMessage(message, "*");
+  return await reply;
+}
 
 const Server = {
   HTTP_LOCAL: {
@@ -313,6 +334,35 @@ async function xhrTest(t, { source, target, method, expected }) {
   assert_equals(loaded, expected.loaded, "response loaded");
   assert_equals(status, expected.status, "response status");
   assert_equals(body, expected.body, "response body");
+}
+
+const IframeTestResult = {
+  SUCCESS: "loaded",
+  FAILURE: "timeout",
+};
+
+async function iframeTest(t, { source, target, expected }) {
+  const targetUrl = preflightUrl(target);
+  targetUrl.searchParams.set("file", "iframed.html");
+
+  const sourceUrl =
+      resolveUrl("resources/iframer.html", sourceResolveOptions(source));
+  sourceUrl.searchParams.set("url", targetUrl);
+
+  const messagePromise = futureMessage();
+  const iframe = await appendIframe(t, document, sourceUrl);
+
+  
+  
+  
+  const result = await Promise.race([
+      messagePromise,
+      new Promise((resolve) => {
+        t.step_timeout(() => resolve("timeout"), 500 );
+      }),
+  ]);
+
+  assert_equals(result, expected);
 }
 
 const WebsocketTestResult = {
