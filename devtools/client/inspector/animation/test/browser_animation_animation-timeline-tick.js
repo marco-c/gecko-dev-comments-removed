@@ -8,10 +8,10 @@
 
 
 
-const TimeScale = require("devtools/client/inspector/animation/utils/timescale");
+const TimeScale = require("resource://devtools/client/inspector/animation/utils/timescale.js");
 const {
   findOptimalTimeInterval,
-} = require("devtools/client/inspector/animation/utils/utils");
+} = require("resource://devtools/client/inspector/animation/utils/utils.js");
 
 
 

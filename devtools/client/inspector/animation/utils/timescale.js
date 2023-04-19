@@ -6,7 +6,7 @@
 
 const {
   getFormatStr,
-} = require("devtools/client/inspector/animation/utils/l10n");
+} = require("resource://devtools/client/inspector/animation/utils/l10n.js");
 
 
 

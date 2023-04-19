@@ -7,31 +7,33 @@
 const {
   createFactory,
   PureComponent,
-} = require("devtools/client/shared/vendor/react");
-const dom = require("devtools/client/shared/vendor/react-dom-factories");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { getStr } = require("devtools/client/inspector/layout/utils/l10n");
+} = require("resource://devtools/client/shared/vendor/react.js");
+const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.js");
+const {
+  getStr,
+} = require("resource://devtools/client/inspector/layout/utils/l10n.js");
 
 
 
 
 loader.lazyGetter(this, "GridDisplaySettings", function() {
   return createFactory(
-    require("devtools/client/inspector/grids/components/GridDisplaySettings")
+    require("resource://devtools/client/inspector/grids/components/GridDisplaySettings.js")
   );
 });
 loader.lazyGetter(this, "GridList", function() {
   return createFactory(
-    require("devtools/client/inspector/grids/components/GridList")
+    require("resource://devtools/client/inspector/grids/components/GridList.js")
   );
 });
 loader.lazyGetter(this, "GridOutline", function() {
   return createFactory(
-    require("devtools/client/inspector/grids/components/GridOutline")
+    require("resource://devtools/client/inspector/grids/components/GridOutline.js")
   );
 });
 
-const Types = require("devtools/client/inspector/grids/types");
+const Types = require("resource://devtools/client/inspector/grids/types.js");
 
 class Grid extends PureComponent {
   static get propTypes() {
