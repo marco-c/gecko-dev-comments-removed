@@ -8,7 +8,7 @@
 
 
 
-#import <WebRTC/RTCIceCandidate.h>
+#import "sdk/objc/api/peerconnection/RTCIceCandidate.h"
 
 @interface RTC_OBJC_TYPE (RTCIceCandidate)
 (JSON)

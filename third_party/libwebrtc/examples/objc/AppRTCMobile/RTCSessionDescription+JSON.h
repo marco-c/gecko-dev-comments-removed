@@ -8,7 +8,7 @@
 
 
 
-#import <WebRTC/RTCSessionDescription.h>
+#import "sdk/objc/api/peerconnection/RTCSessionDescription.h"
 
 @interface RTC_OBJC_TYPE (RTCSessionDescription)
 (JSON)

@@ -8,7 +8,7 @@
 
 
 
-#import <WebRTC/RTCVideoCodecInfo.h>
+#import "sdk/objc/base/RTCVideoCodecInfo.h"
 
 @interface RTC_OBJC_TYPE (RTCVideoCodecInfo)
 (HumanReadable)

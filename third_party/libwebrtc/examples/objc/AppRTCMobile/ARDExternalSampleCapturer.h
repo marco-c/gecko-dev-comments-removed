@@ -8,7 +8,7 @@
 
 
 
-#import <WebRTC/RTCVideoCapturer.h>
+#import "sdk/objc/base/RTCVideoCapturer.h"
 
 @protocol ARDExternalSampleDelegate <NSObject>
 - (void)didCaptureSampleBuffer:(CMSampleBufferRef)sampleBuffer;

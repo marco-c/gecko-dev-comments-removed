@@ -8,7 +8,7 @@
 
 
 
-#import <WebRTC/RTCCameraVideoCapturer.h>
+#import "sdk/objc/components/capturer/RTCCameraVideoCapturer.h"
 
 @class ARDSettingsModel;
 
