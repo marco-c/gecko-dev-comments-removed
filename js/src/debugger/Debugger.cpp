@@ -3849,7 +3849,7 @@ void DebugAPI::slowPathTraceGeneratorFrame(JSTracer* tracer,
   
   
   
-  if (!tracer->isMarkingTracer()) {
+  if (tracer->isGenericTracer()) {
     return;
   }
 

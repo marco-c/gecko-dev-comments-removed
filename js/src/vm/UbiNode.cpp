@@ -196,7 +196,7 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
   
   bool wantNames;
 
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  void onChild(JS::GCCellPtr thing) override {
     if (!okay) {
       return;
     }
@@ -214,8 +214,8 @@ class EdgeVectorTracer final : public JS::CallbackTracer {
     if (wantNames) {
       
       char buffer[1024];
-      context().getEdgeName(name, buffer, sizeof(buffer));
-      name = buffer;
+      context().getEdgeName(buffer, sizeof(buffer));
+      const char* name = buffer;
 
       
       name16 = js_pod_malloc<char16_t>(strlen(name) + 1);

@@ -19,7 +19,6 @@ using CompartmentSet =
 
 namespace js {
 
-class TaggedProto;
 
 
 
@@ -55,22 +54,6 @@ class TaggedProto;
 
 
 
-
-
-class GCMarker;
-
-
-#ifdef DEBUG
-template <typename T>
-void CheckTracedThing(JSTracer* trc, T* thing);
-template <typename T>
-void CheckTracedThing(JSTracer* trc, const T& thing);
-#else
-template <typename T>
-inline void CheckTracedThing(JSTracer* trc, T* thing) {}
-template <typename T>
-inline void CheckTracedThing(JSTracer* trc, const T& thing) {}
-#endif
 
 namespace gc {
 
@@ -94,21 +77,8 @@ typename PtrBaseGCType<T>::type* ConvertToBase(T* thingp) {
 }
 
 
-
-#define DEFINE_TRACE_FUNCTION(name, type, _1, _2)                        \
-  MOZ_ALWAYS_INLINE bool TraceEdgeInternal(JSTracer* trc, type** thingp, \
-                                           const char* name) {           \
-    CheckTracedThing(trc, *thingp);                                      \
-    trc->on##name##Edge(thingp, name);                                   \
-    return *thingp;                                                      \
-  }
-JS_FOR_EACH_TRACEKIND(DEFINE_TRACE_FUNCTION)
-#undef DEFINE_TRACE_FUNCTION
-
-bool TraceEdgeInternal(JSTracer* trc, Value* thingp, const char* name);
-bool TraceEdgeInternal(JSTracer* trc, jsid* thingp, const char* name);
-bool TraceEdgeInternal(JSTracer* trc, TaggedProto* thingp, const char* name);
-
+template <typename T>
+bool TraceEdgeInternal(JSTracer* trc, T* thingp, const char* name);
 template <typename T>
 void TraceRangeInternal(JSTracer* trc, size_t len, T* vec, const char* name);
 template <typename T>
@@ -117,10 +87,8 @@ bool TraceWeakMapKeyInternal(JSTracer* trc, Zone* zone, T* thingp,
 
 #ifdef DEBUG
 void AssertRootMarkingPhase(JSTracer* trc);
-void AssertShouldMarkInZone(GCMarker* marker, gc::Cell* thing);
 #else
 inline void AssertRootMarkingPhase(JSTracer* trc) {}
-inline void AssertShouldMarkInZone(GCMarker* marker, gc::Cell* thing) {}
 #endif
 
 }  
@@ -383,10 +351,9 @@ void GetTraceThingInfo(char* buf, size_t bufsize, void* thing,
 
 
 
-#define DEFINE_DISPATCH_FUNCTION(name, type, _1, _2)         \
-  inline void DispatchToOnEdge(JSTracer* trc, type** thingp, \
-                               const char* name) {           \
-    trc->on##name##Edge(thingp, name);                       \
+#define DEFINE_DISPATCH_FUNCTION(name, type, _1, _2)               \
+  inline type* DispatchToOnEdge(GenericTracer* trc, type* thing) { \
+    return trc->on##name##Edge(thing);                             \
   }
 JS_FOR_EACH_TRACEKIND(DEFINE_DISPATCH_FUNCTION)
 #undef DEFINE_DISPATCH_FUNCTION
