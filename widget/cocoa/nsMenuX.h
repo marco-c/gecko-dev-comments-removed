@@ -252,10 +252,15 @@ class nsMenuX final : public nsMenuParentX,
   
   RefPtr<mozilla::CancelableRunnable> mPendingAsyncMenuCloseRunnable;
 
+  struct PendingCommandEvent {
+    RefPtr<nsMenuItemX> mMenuItem;
+    NSEventModifierFlags mModifiers;
+    int16_t mButton;
+  };
+
   
   
-  
-  nsTArray<RefPtr<mozilla::Runnable>> mPendingCommandRunnables;
+  nsTArray<PendingCommandEvent> mPendingCommandEvents;
 
   GeckoNSMenu* mNativeMenu = nil;     
   MenuDelegate* mMenuDelegate = nil;  
