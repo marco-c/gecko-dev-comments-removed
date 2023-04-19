@@ -116,7 +116,7 @@ class RtcpTransceiverImpl {
       rtc::ArrayView<const rtcp::ReportBlock> report_blocks);
 
   void ReschedulePeriodicCompoundPackets();
-  void SchedulePeriodicCompoundPackets(int64_t delay_ms);
+  void SchedulePeriodicCompoundPackets(TimeDelta delay);
   
   
   

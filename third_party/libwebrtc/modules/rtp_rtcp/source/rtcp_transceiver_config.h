@@ -149,10 +149,10 @@ struct RtcpTransceiverConfig {
   
   bool initial_ready_to_send = true;
   
-  int initial_report_delay_ms = 500;
+  TimeDelta initial_report_delay = TimeDelta::Millis(500);
 
   
-  int report_period_ms = 1000;
+  TimeDelta report_period = TimeDelta::Seconds(1);
 
   
   
