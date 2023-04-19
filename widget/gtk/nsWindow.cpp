@@ -4255,6 +4255,8 @@ void nsWindow::TryToShowNativeWindowMenu(GdkEventButton* aEvent) {
 void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   LOG("Button %u press\n", aEvent->button);
 
+  SetLastMousePressEvent((GdkEvent*)aEvent);
+
   
   
   
@@ -4363,6 +4365,9 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
 
 void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   LOG("Button %u release\n", aEvent->button);
+
+  SetLastMousePressEvent(nullptr);
+
   if (!mGdkWindow) {
     return;
   }

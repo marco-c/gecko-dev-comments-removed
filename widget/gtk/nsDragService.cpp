@@ -360,15 +360,19 @@ nsresult nsDragService::InvokeDragSessionImpl(
   if (aActionType & DRAGDROP_ACTION_LINK)
     action = (GdkDragAction)(action | GDK_ACTION_LINK);
 
-  
-  
-  
-  
-  GdkEvent event;
-  memset(&event, 0, sizeof(GdkEvent));
-  event.type = GDK_BUTTON_PRESS;
-  event.button.window = gtk_widget_get_window(mHiddenWidget);
-  event.button.time = nsWindow::GetLastUserInputTime();
+  GdkEvent* existingEvent = widget::GetLastMousePressEvent();
+  GdkEvent fakeEvent;
+  if (!existingEvent) {
+    
+    
+    
+    
+    memset(&fakeEvent, 0, sizeof(GdkEvent));
+    fakeEvent.type = GDK_BUTTON_PRESS;
+    fakeEvent.button.window = gtk_widget_get_window(mHiddenWidget);
+    fakeEvent.button.time = nsWindow::GetLastUserInputTime();
+    fakeEvent.button.device = widget::GdkGetPointer();
+  }
 
   
   
@@ -378,11 +382,9 @@ nsresult nsDragService::InvokeDragSessionImpl(
   gtk_window_group_add_window(window_group, GTK_WINDOW(mHiddenWidget));
 
   
-  event.button.device = widget::GdkGetPointer();
-
-  
   GdkDragContext* context = gtk_drag_begin_with_coordinates(
-      mHiddenWidget, sourceList, action, 1, &event, -1, -1);
+      mHiddenWidget, sourceList, action, 1,
+      existingEvent ? existingEvent : &fakeEvent, -1, -1);
 
   LOGDRAGSERVICE(
       ("nsDragService::InvokeDragSessionImpl GdkDragContext %p", context));
@@ -1353,8 +1355,8 @@ void nsDragService::SourceEndDragSession(GdkDragContext* aContext,
     GtkWindow* window = GetGtkWindow(mSourceDocument);
     GdkWindow* gdkWindow = window ? gtk_widget_get_window(GTK_WIDGET(window))
                                   : gdk_screen_get_root_window(screen);
-    gdk_window_get_device_position(gdkWindow, widget::GdkGetPointer(), &x, &y,
-                                   nullptr);
+    gdk_window_get_device_position(
+        gdkWindow, gdk_drag_context_get_device(aContext), &x, &y, nullptr);
     gint scale = gdk_window_get_scale_factor(gdkWindow);
     SetDragEndPoint(LayoutDeviceIntPoint(x * scale, y * scale));
     LOGDRAGSERVICE(("guess drag end point %d %d\n", x * scale, y * scale));

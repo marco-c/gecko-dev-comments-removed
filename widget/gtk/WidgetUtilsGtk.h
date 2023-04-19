@@ -13,6 +13,7 @@
 
 typedef struct _GdkDisplay GdkDisplay;
 typedef struct _GdkDevice GdkDevice;
+typedef union _GdkEvent GdkEvent;
 
 namespace mozilla::widget {
 
@@ -31,6 +32,10 @@ bool GdkIsWaylandDisplay();
 bool GdkIsX11Display();
 
 GdkDevice* GdkGetPointer();
+
+
+void SetLastMousePressEvent(GdkEvent*);
+GdkEvent* GetLastMousePressEvent();
 
 
 const char* GetSnapInstanceName();
