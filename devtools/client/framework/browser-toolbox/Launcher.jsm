@@ -64,69 +64,59 @@ const processes = new Set();
 
 
 
-
-
-
-function BrowserToolboxLauncher(onClose, onRun, overwritePreferences) {
-  const emitter = new EventEmitter();
-  this.on = emitter.on.bind(emitter);
-  this.off = emitter.off.bind(emitter);
-  this.once = emitter.once.bind(emitter);
+class BrowserToolboxLauncher extends EventEmitter {
   
-  this.emit = function(...args) {
-    emitter.emit(...args);
-    BrowserToolboxLauncher.emit(...args);
-  };
 
-  if (onClose) {
-    this.once("close", onClose);
+
+
+
+
+
+  static init(args) {
+    if (
+      !Services.prefs.getBoolPref("devtools.chrome.enabled") ||
+      !Services.prefs.getBoolPref("devtools.debugger.remote-enabled")
+    ) {
+      console.error("Could not start Browser Toolbox, you need to enable it.");
+      return null;
+    }
+    return new BrowserToolboxLauncher(args);
   }
-  if (onRun) {
-    this.once("run", onRun);
+
+  
+
+
+
+  static getBrowserToolboxSessionState() {
+    return processes.size !== 0;
   }
 
-  this._telemetry = new Telemetry();
-
-  this.close = this.close.bind(this);
-  Services.obs.addObserver(this.close, "quit-application");
-  this._initServer();
-  this._initProfile(overwritePreferences);
-  this._create();
-
-  processes.add(this);
-}
-
-EventEmitter.decorate(BrowserToolboxLauncher);
+  
 
 
 
 
+  constructor({ onClose, onRun, overwritePreferences } = {}) {
+    super();
 
+    if (onClose) {
+      this.once("close", onClose);
+    }
+    if (onRun) {
+      this.once("run", onRun);
+    }
 
-BrowserToolboxLauncher.init = function({
-  onClose,
-  onRun,
-  overwritePreferences,
-} = {}) {
-  if (
-    !Services.prefs.getBoolPref("devtools.chrome.enabled") ||
-    !Services.prefs.getBoolPref("devtools.debugger.remote-enabled")
-  ) {
-    console.error("Could not start Browser Toolbox, you need to enable it.");
-    return null;
+    this._telemetry = new Telemetry();
+
+    this.close = this.close.bind(this);
+    Services.obs.addObserver(this.close, "quit-application");
+    this._initServer();
+    this._initProfile(overwritePreferences);
+    this._create();
+
+    processes.add(this);
   }
-  return new BrowserToolboxLauncher(onClose, onRun, overwritePreferences);
-};
 
-
-
-
-
-BrowserToolboxLauncher.getBrowserToolboxSessionState = function() {
-  return processes.size !== 0;
-};
-
-BrowserToolboxLauncher.prototype = {
   
 
 
@@ -194,7 +184,7 @@ BrowserToolboxLauncher.prototype = {
     dump(
       `DevTools Server for Browser Toolbox listening on port: ${this.port}\n`
     );
-  },
+  }
 
   
 
@@ -290,7 +280,7 @@ BrowserToolboxLauncher.prototype = {
       "Finished creating the chrome toolbox user profile at: " +
         this._dbgProfilePath
     );
-  },
+  }
 
   
 
@@ -426,7 +416,7 @@ BrowserToolboxLauncher.prototype = {
         );
       }
     );
-  },
+  }
 
   
 
@@ -470,8 +460,8 @@ BrowserToolboxLauncher.prototype = {
     }
     this.loader = null;
     this._telemetry = null;
-  },
-};
+  }
+}
 
 
 
