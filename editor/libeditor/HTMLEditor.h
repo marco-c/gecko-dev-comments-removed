@@ -989,9 +989,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
   MOZ_CAN_RUN_SCRIPT SplitNodeResult
-  DoSplitNode(const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode);
+  DoSplitNode(const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode,
+              SplitNodeDirection aDirection);
 
   
 
