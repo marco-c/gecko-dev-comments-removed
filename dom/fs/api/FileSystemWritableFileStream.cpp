@@ -341,18 +341,8 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
 
   UniquePtr<uint8_t> buffer(new uint8_t[length]);
   memcpy(buffer.get(), data, length);
-#if 0
-  
-  MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(NS_NewRunnableFunction("WritableFileStream::write",
-                                                                  [fd = mFileDesc, buffer = std::move(buffer), length, promise]() {
-                                                                    uint64_t written = 0;
-                                                                    written = PR_Write(fd, buffer.get(), length); 
-                                                                    promise->MaybeResolve(written);
-                                                                  })));
-#else
   written = PR_Write(mFileDesc, buffer.get(), length);  
   promise->MaybeResolve(written);
-#endif
   return promise.forget();
 }
 
