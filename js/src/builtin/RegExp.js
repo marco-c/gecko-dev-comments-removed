@@ -825,11 +825,13 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
+
 #define FUNC_NAME RegExpGlobalReplaceOptFunc
 #define FUNCTIONAL
 #include "RegExpGlobalReplaceOpt.h.js"
 #undef FUNCTIONAL
 #undef FUNC_NAME
+
 
 
 
@@ -843,6 +845,7 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
+
 #define FUNC_NAME RegExpGlobalReplaceOptSubst
 #define SUBSTITUTION
 #include "RegExpGlobalReplaceOpt.h.js"
@@ -852,9 +855,11 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
+
 #define FUNC_NAME RegExpLocalReplaceOpt
 #include "RegExpLocalReplaceOpt.h.js"
 #undef FUNC_NAME
+
 
 
 
@@ -869,6 +874,7 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
+
 #define FUNC_NAME RegExpLocalReplaceOptFunc
 #define FUNCTIONAL
 #include "RegExpLocalReplaceOpt.h.js"
@@ -878,11 +884,13 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags) {
 
 
 
+
 #define FUNC_NAME RegExpLocalReplaceOptSubst
 #define SUBSTITUTION
 #include "RegExpLocalReplaceOpt.h.js"
 #undef SUBSTITUTION
 #undef FUNC_NAME
+
 
 
 

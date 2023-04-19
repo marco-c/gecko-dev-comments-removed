@@ -42,8 +42,6 @@ module.exports = {
     "no-self-compare": "off",
     "no-lonely-if": "off",
     
-    "no-undef": "off",
-    
     
     "no-redeclare": "off",
   },
