@@ -416,6 +416,15 @@ function terminalInputChanged(expression, force = false) {
     let mapped;
     ({ expression, mapped } = await getMappedExpression(hud, expression));
 
+    
+    if (mapped?.await) {
+      return dispatch({
+        type: SET_TERMINAL_EAGER_RESULT,
+        expression,
+        result: null,
+      });
+    }
+
     const response = await commands.scriptCommand.execute(expression, {
       frameActor: hud.getSelectedFrameActorID(),
       selectedNodeActor: webConsoleUI.getSelectedNodeActorID(),
