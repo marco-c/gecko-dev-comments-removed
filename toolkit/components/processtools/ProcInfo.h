@@ -72,7 +72,8 @@ enum class UtilityActorName {
   Unknown,
   AudioDecoder_Generic,
   AudioDecoder_AppleMedia,
-  AudioDecoder_WMF
+  AudioDecoder_WMF,
+  MfMediaEngineCDM,
 };
 
 
