@@ -822,9 +822,37 @@ nsresult nsWindowWatcher::OpenWindowInternal(
          : nsContentUtils::GetSystemPrincipal();
   MOZ_ASSERT(subjectPrincipal);
 
-  
-  MOZ_ASSERT_IF(windowTypeIsChrome,
-                subjectPrincipal && subjectPrincipal->IsSystemPrincipal());
+  nsCOMPtr<nsIPrincipal> newWindowPrincipal;
+  if (!newBC) {
+    if (windowTypeIsChrome) {
+      
+      
+      MOZ_RELEASE_ASSERT(subjectPrincipal->IsSystemPrincipal(),
+                         "Only system principals can create chrome windows");
+      newWindowPrincipal = subjectPrincipal;
+    } else if (nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
+      
+      
+      
+      
+      if (parentBC) {
+        newWindowPrincipal = NullPrincipal::CreateWithInheritedAttributes(
+            parentBC->OriginAttributesRef());
+      } else {
+        newWindowPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
+      }
+    } else if (aForceNoOpener) {
+      
+      
+      
+      newWindowPrincipal =
+          NullPrincipal::CreateWithInheritedAttributes(subjectPrincipal);
+    } else {
+      
+      
+      newWindowPrincipal = subjectPrincipal;
+    }
+  }
 
   
   
@@ -841,13 +869,11 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     openWindowInfo->mIsRemote = XRE_IsContentProcess();
 
     
-    
-    if (!nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
-      openWindowInfo->mOriginAttributes =
-          subjectPrincipal->OriginAttributesRef();
-    } else if (parentBC) {
-      openWindowInfo->mOriginAttributes = parentBC->OriginAttributesRef();
-    }
+    MOZ_ASSERT(
+        newWindowPrincipal &&
+        !nsContentUtils::IsSystemOrExpandedPrincipal(newWindowPrincipal));
+    openWindowInfo->mOriginAttributes =
+        newWindowPrincipal->OriginAttributesRef();
 
     MOZ_DIAGNOSTIC_ASSERT(
         !parentBC || openWindowInfo->mOriginAttributes.EqualsIgnoringFPD(
@@ -1132,13 +1158,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
 
   if (windowIsNew) {
-    if (subjectPrincipal &&
-        !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal) &&
-        newBC->IsContent()) {
-      MOZ_DIAGNOSTIC_ASSERT(
-          subjectPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
-              newBC->OriginAttributesRef()));
-    }
+    MOZ_DIAGNOSTIC_ASSERT(
+        !newBC->IsContent() ||
+        newWindowPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
+            newBC->OriginAttributesRef()));
 
     bool autoPrivateBrowsing =
         Preferences::GetBool("browser.privatebrowsing.autostart");
@@ -1175,7 +1198,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       MOZ_ASSERT(windowIsNew);
       MOZ_ASSERT(!win->GetSameProcessOpener() ||
                  win->GetSameProcessOpener() == aParent);
-      win->SetInitialPrincipal(subjectPrincipal, cspToInheritForAboutBlank,
+      win->SetInitialPrincipal(newWindowPrincipal, cspToInheritForAboutBlank,
                                coepToInheritForAboutBlank);
 
       if (aIsPopupSpam) {
@@ -1296,13 +1319,21 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   if (uriToLoad && aNavigate) {
-    
-    
-    
-    loadState->SetLoadFlags(
-        windowIsNew
-            ? static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD)
-            : static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_NONE));
+    uint32_t loadFlags = nsIWebNavigation::LOAD_FLAGS_NONE;
+    if (windowIsNew) {
+      loadFlags |= nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD;
+
+      
+      
+      
+      
+      
+      
+      if (aForceNoOpener) {
+        loadFlags |= nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+      }
+    }
+    loadState->SetLoadFlags(loadFlags);
     loadState->SetFirstParty(true);
 
     
