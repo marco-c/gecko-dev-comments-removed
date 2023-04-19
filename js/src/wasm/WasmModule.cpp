@@ -20,7 +20,8 @@
 
 #include <chrono>
 
-#include "js/BuildId.h"                 
+#include "jit/FlushICache.h"  
+#include "js/BuildId.h"       
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
 #include "js/Printf.h"                  
@@ -211,6 +212,14 @@ bool Module::finishTier2(const LinkData& linkData2,
     if (!stubs2->createTier2(funcExportIndices, *borrowedTier2, &stub2Index)) {
       return false;
     }
+
+    
+    
+    
+    
+    
+    
+    jit::FlushExecutionContextForAllThreads();
 
     
 

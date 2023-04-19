@@ -70,13 +70,7 @@ enum class ProtectionSetting {
 
 
 
-
-
-
-
-enum class MustFlushICache { No, LocalThreadOnly, AllThreads };
-
-enum class FlushICacheSpec { LocalThreadOnly, AllThreads };
+enum class MustFlushICache { No, Yes };
 
 [[nodiscard]] extern bool ReprotectRegion(void* start, size_t size,
                                           ProtectionSetting protection,

@@ -33,39 +33,7 @@
 #  include <libkern/OSCacheControl.h>
 #endif
 
-#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
-#   if defined(__linux__)
-#    include <linux/membarrier.h>
-#    include <sys/syscall.h>
-#    include <sys/utsname.h>
-#    include <unistd.h>
-#   elif defined(__ANDROID__)
-#    include <sys/syscall.h>
-#    include <unistd.h>
-#   else
-#    error "Missing platform-specific declarations for membarrier syscall!"
-#   endif 
-
-#  include "vm/JSContext.h" 
-
-static int membarrier(int cmd, int flags) {
-    return syscall(__NR_membarrier, cmd, flags);
-}
-
-
-
-#  ifndef MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE
-#  define MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE (1 << 5)
-#  endif
-
-#  ifndef MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE
-#  define MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE (1 << 6)
-#  endif
-
-#endif 
-
 namespace vixl {
-
 
 
 void CPU::SetUp() {
@@ -115,45 +83,7 @@ uint32_t CPU::GetCacheType() {
 #endif
 }
 
-bool CPU::CanFlushICacheFromBackgroundThreads() {
-#if defined(__aarch64__) && (defined(__linux__) || defined(__android__))
-  
-  
-  
-  
-  
-  static constexpr int kRequiredMajor = 4;
-  static constexpr int kRequiredMinor = 16;
-
-  static bool computed = false;
-  static bool kernelHasMembarrier = false;
-
-  if (!computed) {
-    struct utsname uts;
-    int major, minor;
-    kernelHasMembarrier = uname(&uts) == 0 &&
-        strcmp(uts.sysname, "Linux") == 0 &&
-        sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
-        major >= kRequiredMajor && (major != kRequiredMajor || minor >= kRequiredMinor);
-
-    
-    
-    if (kernelHasMembarrier &&
-        membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE, 0) != 0) {
-      kernelHasMembarrier = false;
-    }
-
-    computed = true;
-  }
-
-  return kernelHasMembarrier;
-#else
-  
-  return true;
-#endif
-}
-
-void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThreadLocal) {
+void CPU::EnsureIAndDCacheCoherency(void* address, size_t length) {
 #if defined(JS_SIMULATOR_ARM64) && defined(JS_CACHE_SIMULATOR_ARM64)
   
   
@@ -175,11 +105,6 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThr
   Simulator* sim = vixl::Simulator::Current();
   if (sim) {
     sim->FlushICache();
-  } else if (!codeIsThreadLocal) {
-    
-    
-    
-    SimulatorProcess::membarrier();
   }
 #elif defined(_MSC_VER) && defined(_M_ARM64)
   FlushInstructionCache(GetCurrentProcess(), address, length);
@@ -262,31 +187,18 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThr
     iline += isize;
   } while (iline < end);
 
-  __asm__ __volatile__ (
-    
-    
-    "   dsb  ish\n"
-
-    
-    
-    
-    "   isb\n"
-    : : : "memory");
-
-  if (!codeIsThreadLocal) {
-    
-    
-    JSContext* cx = js::TlsContext.get();
-    if (!cx || !cx->isMainThreadContext()) {
-      MOZ_RELEASE_ASSERT(CPU::CanFlushICacheFromBackgroundThreads());
+  __asm__ __volatile__(
       
       
-      if (membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE, 0) != 0) {
-        
-        MOZ_CRASH("membarrier can't be executed");
-      }
-    }
-  }
+      "   dsb  ish\n"
+
+      
+      
+      
+      "   isb\n"
+      :
+      :
+      : "memory");
 #else
   
   

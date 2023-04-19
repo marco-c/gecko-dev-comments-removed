@@ -18,8 +18,7 @@ namespace jit {
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
 
-inline void FlushICache(void* code, size_t size,
-                        bool codeIsThreadLocal = true) {
+inline void FlushICache(void* code, size_t size) {
   
 }
 
@@ -27,14 +26,15 @@ inline void FlushICache(void* code, size_t size,
     (defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)) || \
     defined(JS_CODEGEN_LOONG64)
 
-extern void FlushICache(void* code, size_t size, bool codeIsThreadLocal = true);
+
+
+
+
+extern void FlushICache(void* code, size_t size);
 
 #elif defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_WASM32)
 
-inline void FlushICache(void* code, size_t size,
-                        bool codeIsThreadLocal = true) {
-  MOZ_CRASH();
-}
+inline void FlushICache(void* code, size_t size) { MOZ_CRASH(); }
 
 #else
 #  error "Unknown architecture!"
@@ -47,10 +47,16 @@ inline void FlushICache(void* code, size_t size,
 inline void FlushExecutionContext() {
   
 }
+inline bool CanFlushExecutionContextForAllThreads() { return true; }
+inline void FlushExecutionContextForAllThreads() {
+  
+}
 
 #elif defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_WASM32)
 
 inline void FlushExecutionContext() { MOZ_CRASH(); }
+inline bool CanFlushExecutionContextForAllThreads() { MOZ_CRASH(); }
+inline void FlushExecutionContextForAllThreads() { MOZ_CRASH(); }
 
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
 
@@ -62,6 +68,19 @@ inline void FlushExecutionContext() { MOZ_CRASH(); }
 
 
 extern void FlushExecutionContext();
+
+
+
+
+
+extern bool CanFlushExecutionContextForAllThreads();
+
+
+
+
+
+
+extern void FlushExecutionContextForAllThreads();
 
 #else
 #  error "Unknown architecture!"
