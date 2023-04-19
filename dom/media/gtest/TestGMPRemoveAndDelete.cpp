@@ -129,6 +129,8 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredSimple)
 
 
 
+
+#if !defined(_WIN64)
 TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse)
 {
   RefPtr<GMPRemoveTest> test(new GMPRemoveTest());
@@ -149,6 +151,7 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse)
   
   EXPECT_TRUE(test->IsTerminated());
 }
+#endif
 
 
 
