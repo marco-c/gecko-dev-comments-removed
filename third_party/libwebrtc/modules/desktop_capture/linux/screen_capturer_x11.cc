@@ -325,6 +325,12 @@ bool ScreenCapturerX11::SelectSource(SourceId id) {
       selected_monitor_name_ = m.name;
       selected_monitor_rect_ =
           DesktopRect::MakeXYWH(m.x, m.y, m.width, m.height);
+      const auto& pixel_buffer_rect = x_server_pixel_buffer_.window_rect();
+      if (!pixel_buffer_rect.ContainsRect(selected_monitor_rect_)) {
+        RTC_LOG(LS_WARNING)
+            << "Cropping selected monitor rect to fit the pixel-buffer.";
+        selected_monitor_rect_.IntersectWith(pixel_buffer_rect);
+      }
       return true;
     }
   }
@@ -359,7 +365,9 @@ std::unique_ptr<DesktopFrame> ScreenCapturerX11::CaptureScreen() {
 
   
   
-  helper_.set_size_most_recent(x_server_pixel_buffer_.window_size());
+  
+  
+  helper_.set_size_most_recent(frame->size());
 
   
   
@@ -384,13 +392,11 @@ std::unique_ptr<DesktopFrame> ScreenCapturerX11::CaptureScreen() {
 
       
       
-      damage_rect.IntersectWith(selected_monitor_rect_);
-      if (!damage_rect.is_empty()) {
-        
-        
-        damage_rect.Translate(-frame->top_left());
-        updated_region->AddRect(damage_rect);
-      }
+      
+      
+      
+      damage_rect.Translate(-frame->top_left());
+      updated_region->AddRect(damage_rect);
     }
     XFree(rects);
     helper_.InvalidateRegion(*updated_region);
