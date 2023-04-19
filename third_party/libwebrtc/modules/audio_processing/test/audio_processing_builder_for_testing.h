@@ -62,8 +62,8 @@ class AudioProcessingBuilderForTesting {
   
   
   
-  AudioProcessing* Create();
-  AudioProcessing* Create(const webrtc::Config& config);
+  rtc::scoped_refptr<AudioProcessing> Create();
+  rtc::scoped_refptr<AudioProcessing> Create(const webrtc::Config& config);
 
  private:
   

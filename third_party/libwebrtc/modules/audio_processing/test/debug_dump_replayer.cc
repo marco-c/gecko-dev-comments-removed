@@ -185,7 +185,7 @@ void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   
   
   if (!apm_.get()) {
-    apm_.reset(AudioProcessingBuilderForTesting().Create(config));
+    apm_ = AudioProcessingBuilderForTesting().Create(config);
   }
 }
 

@@ -70,7 +70,7 @@ void GenerateFixedFrame(test::FuzzDataHelper* fuzz_data,
 }  
 
 void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
-                         std::unique_ptr<AudioProcessing> apm) {
+                         rtc::scoped_refptr<AudioProcessing> apm) {
   AudioFrame fixed_frame;
   
   

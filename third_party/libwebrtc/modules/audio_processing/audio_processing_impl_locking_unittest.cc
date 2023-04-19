@@ -428,7 +428,7 @@ class AudioProcessingImplLockTest
   
   mutable RandomGenerator rand_gen_;
 
-  std::unique_ptr<AudioProcessing> apm_;
+  rtc::scoped_refptr<AudioProcessing> apm_;
   TestConfig test_config_;
   FrameCounters frame_counters_;
   RenderProcessor render_thread_state_;
