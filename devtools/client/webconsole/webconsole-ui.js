@@ -544,22 +544,11 @@ class WebConsoleUI {
 
 
   async _onTargetAvailable({ targetFront }) {
-    const dispatchTargetAvailable = () => {
-      const store = this.wrapper && this.wrapper.getStore();
-      if (store) {
-        this.wrapper.getStore().dispatch({
-          type: constants.TARGET_AVAILABLE,
-          targetType: targetFront.targetType,
-        });
-      }
-    };
-
     
     
     if (targetFront.isTopLevel) {
       this.proxy = new WebConsoleConnectionProxy(this, targetFront);
       await this.proxy.connect();
-      dispatchTargetAvailable();
       return;
     }
 
@@ -591,7 +580,6 @@ class WebConsoleUI {
     const proxy = new WebConsoleConnectionProxy(this, targetFront);
     this.additionalProxies.set(targetFront, proxy);
     await proxy.connect();
-    dispatchTargetAvailable();
   }
 
   
