@@ -33,6 +33,12 @@ static const int64_t kNumNanosecsPerMicrosec =
 
 
 
+
+
+constexpr int64_t kNtpJan1970Millisecs = 2'208'988'800 * kNumMillisecsPerSec;
+
+
+
 class ClockInterface {
  public:
   virtual ~ClockInterface() {}
