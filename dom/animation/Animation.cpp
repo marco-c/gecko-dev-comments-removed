@@ -2001,7 +2001,22 @@ StickyTimeDuration Animation::IntervalEndTime(
              "Should be called for CSS animations or transitions");
 
   static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
-  return std::max(std::min((EffectEnd() - mEffect->NormalizedTiming().Delay()),
+  const StickyTimeDuration& effectEnd = EffectEnd();
+
+  
+  
+  
+  if (MOZ_UNLIKELY(effectEnd == TimeDuration::Forever() &&
+                   effectEnd == mEffect->NormalizedTiming().Delay())) {
+    
+    
+    
+    
+    
+    return zeroDuration;
+  }
+
+  return std::max(std::min(effectEnd - mEffect->NormalizedTiming().Delay(),
                            aActiveDuration),
                   zeroDuration);
 }
