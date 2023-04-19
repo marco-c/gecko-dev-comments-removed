@@ -43,12 +43,14 @@ class AudioRtpReceiver : public ObserverInterface,
  public:
   AudioRtpReceiver(rtc::Thread* worker_thread,
                    std::string receiver_id,
-                   std::vector<std::string> stream_ids);
+                   std::vector<std::string> stream_ids,
+                   bool is_unified_plan);
   
   AudioRtpReceiver(
       rtc::Thread* worker_thread,
       const std::string& receiver_id,
-      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams);
+      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams,
+      bool is_unified_plan);
   virtual ~AudioRtpReceiver();
 
   
