@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Toolbox } = require("devtools/client/framework/toolbox");
+const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 
 
 

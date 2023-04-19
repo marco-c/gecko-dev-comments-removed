@@ -7,19 +7,21 @@
 const { shallow } = require("enzyme");
 const { createFactory } = require("react");
 
-const { setupStore } = require("devtools/client/application/test/node/helpers");
+const {
+  setupStore,
+} = require("resource://devtools/client/application/test/node/helpers.js");
 
 const {
   MANIFEST_NO_ISSUES,
-} = require("devtools/client/application/test/node/fixtures/data/constants");
+} = require("resource://devtools/client/application/test/node/fixtures/data/constants.js");
 
-const manifestActions = require("devtools/client/application/src/actions/manifest");
+const manifestActions = require("resource://devtools/client/application/src/actions/manifest.js");
 
 
 const fetchManifestActionSpy = jest.spyOn(manifestActions, "fetchManifest");
 
 const ManifestLoader = createFactory(
-  require("devtools/client/application/src/components/manifest/ManifestLoader")
+  require("resource://devtools/client/application/src/components/manifest/ManifestLoader.js")
 );
 
 describe("ManifestLoader", () => {
