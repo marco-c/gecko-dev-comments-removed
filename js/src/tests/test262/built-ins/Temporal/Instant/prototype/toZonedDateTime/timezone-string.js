@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+const instance = new Temporal.Instant(0n);
+
+["UTC", "+01:30"].forEach((timeZone) => {
+  const result = instance.toZonedDateTime({ timeZone, calendar: "iso8601" });
+  assert.sameValue(result.timeZone.id, timeZone, `Time zone created from string "${timeZone}"`);
+});
+
+reportCompare(0, 0);

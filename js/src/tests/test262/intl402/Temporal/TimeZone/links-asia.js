@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+const testCases = [
+  "Europe/Nicosia",  
+  "Asia/Bahrain",  
+  "Antarctica/Syowa",  
+  "Asia/Aden",  
+  "Asia/Kuwait",  
+  "Asia/Phnom_Penh",  
+  "Asia/Vientiane",  
+  "Asia/Muscat",  
+];
+
+for (let id of testCases) {
+  
+  new Temporal.TimeZone(id);
+}
+
+reportCompare(0, 0);

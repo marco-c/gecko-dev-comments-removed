@@ -11,14 +11,20 @@
 
 
 
-var obj = {
-  get global() {
+
+
+
+
+
+var re = /./;
+Object.defineProperty(re, 'global', {
+  get() {
     throw new Test262Error();
   }
-};
+});
 
 assert.throws(Test262Error, function() {
-  RegExp.prototype[Symbol.match].call(obj);
+  RegExp.prototype[Symbol.match].call(re);
 });
 
 reportCompare(0, 0);
