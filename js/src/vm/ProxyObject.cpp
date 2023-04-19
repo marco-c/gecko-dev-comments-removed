@@ -153,7 +153,7 @@ void ProxyObject::setSameCompartmentPrivate(const Value& priv) {
 }
 
 inline void ProxyObject::setPrivate(const Value& priv) {
-  MOZ_ASSERT_IF(IsMarkedBlack(this) && priv.isGCThing(),
+  MOZ_ASSERT_IF(!zone()->isGCPreparing() && isMarkedBlack() && priv.isGCThing(),
                 !JS::GCThingIsMarkedGray(priv.toGCCellPtr()));
   *slotOfPrivate() = priv;
 }
@@ -161,12 +161,13 @@ inline void ProxyObject::setPrivate(const Value& priv) {
 void ProxyObject::setExpando(JSObject* expando) {
   
   
-  MOZ_ASSERT_IF(IsMarkedBlack(this) && expando,
-                !JS::GCThingIsMarkedGray(JS::GCCellPtr(expando)));
+  MOZ_ASSERT_IF(expando, expando->compartment() == compartment());
 
   
   
-  MOZ_ASSERT_IF(expando, expando->compartment() == compartment());
+  MOZ_ASSERT_IF(!zone()->isGCPreparing() && isMarkedBlack() && expando,
+                !JS::GCThingIsMarkedGray(JS::GCCellPtr(expando)));
+
   *slotOfExpando() = ObjectOrNullValue(expando);
 }
 
