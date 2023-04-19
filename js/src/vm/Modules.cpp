@@ -696,19 +696,6 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   return true;
 }
 
-static void EnsureModuleEnvironmentNamespace(
-    JSContext* cx, Handle<ModuleObject*> module,
-    Handle<ModuleNamespaceObject*> ns) {
-  Rooted<ModuleEnvironmentObject*> environment(cx,
-                                               &module->initialEnvironment());
-  
-  
-  mozilla::Maybe<PropertyInfo> prop =
-      environment->lookup(cx, cx->names().starNamespaceStar);
-  MOZ_ASSERT(prop.isSome());
-  environment->setSlot(prop->slot(), ObjectValue(*ns));
-}
-
 
 
 ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
@@ -770,6 +757,18 @@ static bool IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
   return resolution.isObject();
 }
 
+static void InitNamespaceBinding(JSContext* cx,
+                                 Handle<ModuleEnvironmentObject*> env,
+                                 Handle<JSAtom*> name,
+                                 Handle<ModuleNamespaceObject*> ns) {
+  
+  
+  RootedId id(cx, AtomToId(name));
+  mozilla::Maybe<PropertyInfo> prop = env->lookup(cx, id);
+  MOZ_ASSERT(prop.isSome());
+  env->setSlot(prop->slot(), ObjectValue(*ns));
+}
+
 
 
 static ModuleNamespaceObject* ModuleNamespaceCreate(
@@ -811,7 +810,9 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
     MOZ_ASSERT(IsResolvedBinding(cx, resolution));
     binding = &resolution.toObject().as<ResolvedBindingObject>();
     importedModule = binding->module();
-    if (binding->bindingName() == cx->names().starNamespaceStar) {
+    bindingName = binding->bindingName();
+
+    if (bindingName == cx->names().starNamespaceStar) {
       importedNamespace = GetOrCreateModuleNamespace(cx, importedModule);
       if (!importedNamespace) {
         return nullptr;
@@ -820,10 +821,11 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
       
       
       
-      EnsureModuleEnvironmentNamespace(cx, importedModule, importedNamespace);
+      Rooted<ModuleEnvironmentObject*> env(
+          cx, &importedModule->initialEnvironment());
+      InitNamespaceBinding(cx, env, bindingName, importedNamespace);
     }
 
-    bindingName = binding->bindingName();
     if (!ns->addBinding(cx, name, importedModule, bindingName)) {
       return nullptr;
     }
@@ -884,18 +886,6 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   cx->setPendingException(error, nullptr);
-}
-
-static void InitNamespaceBinding(JSContext* cx,
-                                 Handle<ModuleEnvironmentObject*> env,
-                                 Handle<JSAtom*> name,
-                                 Handle<ModuleNamespaceObject*> ns) {
-  
-  
-  RootedId id(cx, AtomToId(name));
-  mozilla::Maybe<PropertyInfo> prop = env->lookup(cx, id);
-  MOZ_ASSERT(prop.isSome());
-  env->setSlot(prop->slot(), ObjectValue(*ns));
 }
 
 
@@ -1014,7 +1004,9 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
         
         
         
-        EnsureModuleEnvironmentNamespace(cx, sourceModule, ns);
+        Rooted<ModuleEnvironmentObject*> sourceEnv(
+            cx, &sourceModule->initialEnvironment());
+        InitNamespaceBinding(cx, sourceEnv, bindingName, ns);
         if (!env->createImportBinding(cx, localName, sourceModule,
                                       bindingName)) {
           return false;
