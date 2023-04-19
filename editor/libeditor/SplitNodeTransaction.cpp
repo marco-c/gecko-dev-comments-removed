@@ -12,6 +12,7 @@
 #include "SelectionState.h"  
 
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ToString.h"
 #include "nsAString.h"
 #include "nsDebug.h"     
@@ -179,16 +180,25 @@ NS_IMETHODIMP SplitNodeTransaction::UndoTransaction() {
   const OwningNonNull<nsIContent> keepingContent = *mSplitContent;
   const OwningNonNull<nsIContent> removingContent = *mNewContent;
   nsresult rv;
-  EditorDOMPoint joinedPoint(keepingContent, 0u);
+  EditorDOMPoint joinedPoint;
   {
-    AutoTrackDOMPoint trackJoinedPoint(htmlEditor->RangeUpdaterRef(),
-                                       &joinedPoint);
+    
+    
+    
+    
+    Maybe<AutoTrackDOMPoint> trackJoinedPoint;
+    if (GetJoinNodesDirection() == JoinNodesDirection::LeftNodeIntoRightNode) {
+      joinedPoint.Set(keepingContent, 0u);
+      trackJoinedPoint.emplace(htmlEditor->RangeUpdaterRef(), &joinedPoint);
+    }
     rv = htmlEditor->DoJoinNodes(keepingContent, removingContent,
                                  GetJoinNodesDirection());
   }
   if (NS_SUCCEEDED(rv)) {
     
-    mSplitOffset = joinedPoint.Offset();
+    if (joinedPoint.IsSet()) {
+      mSplitOffset = joinedPoint.Offset();
+    }
   } else {
     NS_WARNING("HTMLEditor::DoJoinNodes() failed");
   }

@@ -40,8 +40,14 @@ JoinNodesTransaction::JoinNodesTransaction(HTMLEditor& aHTMLEditor,
                                            nsIContent& aLeftContent,
                                            nsIContent& aRightContent)
     : mHTMLEditor(&aHTMLEditor),
-      mRemovedContent(&aLeftContent),
-      mKeepingContent(&aRightContent) {
+      mRemovedContent(aHTMLEditor.GetJoinNodesDirection() ==
+                              JoinNodesDirection::LeftNodeIntoRightNode
+                          ? &aLeftContent
+                          : &aRightContent),
+      mKeepingContent(aHTMLEditor.GetJoinNodesDirection() ==
+                              JoinNodesDirection::LeftNodeIntoRightNode
+                          ? &aRightContent
+                          : &aLeftContent) {
   
   static_assert(sizeof(JoinNodesTransaction) <= 64,
                 "Transaction classes may be created a lot and may be alive "
@@ -133,14 +139,21 @@ nsresult JoinNodesTransaction::DoTransactionInternal(
   
   
   
-  mJoinedOffset = mRemovedContent->Length();
+  
+  mJoinedOffset =
+      GetJoinNodesDirection() == JoinNodesDirection::LeftNodeIntoRightNode
+          ? mRemovedContent->Length()
+          : mKeepingContent->Length();
 
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> removingContent = *mRemovedContent;
   const OwningNonNull<nsIContent> keepingContent = *mKeepingContent;
   nsresult rv;
   
-  EditorDOMPoint joinNodesPoint(mKeepingContent, 0u);
+  EditorDOMPoint joinNodesPoint =
+      GetJoinNodesDirection() == JoinNodesDirection::LeftNodeIntoRightNode
+          ? EditorDOMPoint(keepingContent, 0u)
+          : EditorDOMPoint::AtEndOf(keepingContent);
   {
     AutoTrackDOMPoint trackJoinNodePoint(htmlEditor->RangeUpdaterRef(),
                                          &joinNodesPoint);
@@ -174,10 +187,9 @@ NS_IMETHODIMP JoinNodesTransaction::UndoTransaction() {
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> removedContent = *mRemovedContent;
 
-  const SplitNodeResult splitNodeResult = htmlEditor->DoSplitNode(
-      EditorDOMPoint(mKeepingContent,
-                     std::min(mJoinedOffset, mKeepingContent->Length())),
-      removedContent, GetSplitNodeDirection());
+  const SplitNodeResult splitNodeResult =
+      htmlEditor->DoSplitNode(CreateJoinedPoint<EditorDOMPoint>(),
+                              removedContent, GetSplitNodeDirection());
   NS_WARNING_ASSERTION(splitNodeResult.isOk(),
                        "HTMLEditor::DoSplitNode() failed");
   
