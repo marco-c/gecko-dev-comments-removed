@@ -103,7 +103,10 @@ class LeafRule : public PivotRule {
  public:
   virtual uint16_t Match(Accessible* aAcc) override {
     if (aAcc->IsOuterDoc()) {
-      return nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+      
+      
+      return nsIAccessibleTraversalRule::FILTER_MATCH |
+             nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     }
     
     
@@ -468,10 +471,16 @@ static nsTArray<nsRange*> FindDOMSpellingErrors(LocalAccessible* aAcc,
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
-  if (aOffset != nsIAccessibleText::TEXT_OFFSET_CARET && aAcc->HasChildren()) {
+  
+  
+  if (aOffset != nsIAccessibleText::TEXT_OFFSET_CARET && !aAcc->IsOuterDoc() &&
+      aAcc->HasChildren()) {
     
     
     auto GetChild = [&aOffset](Accessible* acc) -> Accessible* {
+      if (acc->IsOuterDoc()) {
+        return nullptr;
+      }
       return aOffset != nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT
                  ? acc->FirstChild()
                  : acc->LastChild();
