@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/checks.h"
@@ -833,15 +834,25 @@ void Connection::Prune() {
 
 void Connection::Destroy() {
   RTC_DCHECK_RUN_ON(network_thread_);
+  RTC_DLOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
+
   
   
   
   
-  
-  RTC_LOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
-  
-  port_->thread()->Post(RTC_FROM_HERE, this, MSG_DELETE);
+  SignalDestroyed(this);
+  SignalDestroyed.disconnect_all();
+
   LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
+
+  
+  
+  
+  
+  
+  
+  network_thread_->PostTask(
+      webrtc::ToQueuedTask([me = absl::WrapUnique(this)]() {}));
 }
 
 void Connection::FailAndDestroy() {
@@ -1420,15 +1431,6 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
       remote_candidate_.generation() == new_candidate.generation()) {
     remote_candidate_ = new_candidate;
   }
-}
-
-void Connection::OnMessage(rtc::Message* pmsg) {
-  RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK(pmsg->message_id == MSG_DELETE);
-  RTC_LOG(LS_INFO) << "Connection deleted with number of pings sent: "
-                   << num_pings_sent_;
-  SignalDestroyed(this);
-  delete this;
 }
 
 int64_t Connection::last_received() const {
