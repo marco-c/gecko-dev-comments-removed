@@ -215,6 +215,16 @@ var MigratorPrototype = {
 
 
 
+  get enabled() {
+    let key = this.getBrowserKey();
+    return Services.prefs.getBoolPref(`browser.migrate.${key}.enabled`, false);
+  },
+
+  
+
+
+
+
 
   getMigrateData: async function MP_getMigrateData(aProfile) {
     let resources = await this._getMaybeCachedResources(aProfile);

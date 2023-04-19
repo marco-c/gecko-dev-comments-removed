@@ -70,4 +70,11 @@ interface nsIBrowserProfileMigrator : nsISupports
 
 
   readonly attribute boolean          sourceLocked;
+
+  
+
+
+
+
+  readonly attribute boolean          enabled;
 };

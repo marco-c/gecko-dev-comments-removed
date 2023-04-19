@@ -220,7 +220,8 @@ var MigrationWizard = {
         var migrator = this.spinResolve(
           MigrationUtils.getMigrator(migratorKey)
         );
-        if (migrator) {
+
+        if (migrator?.enabled) {
           
           
           if (!selectedMigrator || this._source == migratorKey) {
