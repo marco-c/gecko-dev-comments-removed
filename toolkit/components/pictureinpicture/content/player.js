@@ -433,12 +433,6 @@ let Player = {
         break;
       }
 
-      case "":
-      case "controls-bottom":
-      case "controls": {
-        document.querySelector("#settings").classList.add("hide");
-        break;
-      }
       case "closed-caption": {
         let settingsPanel = document.querySelector("#settings");
         let settingsPanelVisible = !settingsPanel.classList.contains("hide");
@@ -449,8 +443,15 @@ let Player = {
           settingsPanel.classList.remove("hide");
           this.controls.setAttribute("donthide", true);
         }
-        break;
+        
+        return;
       }
+    }
+    
+    
+    let settingsPanel = document.querySelector("#settings");
+    if (!settingsPanel.contains(event.target)) {
+      document.querySelector("#settings").classList.add("hide");
     }
   },
 
