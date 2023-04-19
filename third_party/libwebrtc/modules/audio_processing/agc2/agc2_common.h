@@ -25,9 +25,7 @@ constexpr int kSubFramesInFrame = 20;
 constexpr int kMaximalNumberOfSamplesPerChannel = 480;
 
 
-constexpr float kHeadroomDbfs = 6.0f;
-constexpr float kMaxGainDb = 30.0f;
-constexpr float kInitialAdaptiveDigitalGainDb = 8.0f;
+
 
 constexpr float kLimiterThresholdForAgcGainDbfs = -1.0f;
 
@@ -38,23 +36,13 @@ constexpr float kVadConfidenceThreshold = 0.95f;
 
 
 
-
 constexpr float kLevelEstimatorTimeToConfidenceMs = 400;
 constexpr float kLevelEstimatorLeakFactor =
     1.0f - 1.0f / kLevelEstimatorTimeToConfidenceMs;
 
 
-constexpr int kDefaultLevelEstimatorAdjacentSpeechFramesThreshold = 12;
-
-
 constexpr float kSaturationProtectorInitialHeadroomDb = 20.0f;
 constexpr int kSaturationProtectorBufferSize = 4;
-
-
-
-constexpr float kInitialSpeechLevelEstimateDbfs =
-    -kSaturationProtectorInitialHeadroomDb - kInitialAdaptiveDigitalGainDb -
-    kHeadroomDbfs;
 
 
 
