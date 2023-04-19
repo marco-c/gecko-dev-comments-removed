@@ -349,14 +349,12 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT void ResizeReflow(
-      nscoord aWidth, nscoord aHeight,
-      ResizeReflowOptions = ResizeReflowOptions::NoOption);
-  MOZ_CAN_RUN_SCRIPT bool ResizeReflowIgnoreOverride(
-      nscoord aWidth, nscoord aHeight,
-      ResizeReflowOptions = ResizeReflowOptions::NoOption);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ResizeReflow(nscoord aWidth, nscoord aHeight,
+               ResizeReflowOptions = ResizeReflowOptions::NoOption);
+  MOZ_CAN_RUN_SCRIPT nsresult ResizeReflowIgnoreOverride(nscoord aWidth,
+                                                         nscoord aHeight,
+                                                         ResizeReflowOptions);
 
   
 
@@ -384,7 +382,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  bool SimpleResizeReflow(nscoord aWidth, nscoord aHeight);
+  void SimpleResizeReflow(nscoord aWidth, nscoord aHeight, ResizeReflowOptions);
 
  public:
   

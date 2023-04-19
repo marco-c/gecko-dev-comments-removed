@@ -165,7 +165,8 @@ void nsViewManager::GetWindowDimensions(nscoord* aWidth, nscoord* aHeight) {
   }
 }
 
-void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight) {
+void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight,
+                                          bool aDoReflow) {
   nsRect oldDim = mRootView->GetDimensions();
   nsRect newDim(0, 0, aWidth, aHeight);
   
@@ -175,7 +176,11 @@ void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight) {
   
   mRootView->SetDimensions(newDim, true, false);
   if (RefPtr<PresShell> presShell = mPresShell) {
-    presShell->ResizeReflow(aWidth, aHeight);
+    auto options = ResizeReflowOptions::NoOption;
+    if (!aDoReflow) {
+      options |= ResizeReflowOptions::SuppressReflow;
+    }
+    presShell->ResizeReflow(aWidth, aHeight, options);
   }
 }
 
@@ -205,10 +210,10 @@ void nsViewManager::SetWindowDimensions(nscoord aWidth, nscoord aHeight,
         
         
         mDelayedResize = nsSize(aWidth, aHeight);
-        FlushDelayedResize();
+        FlushDelayedResize(false);
       }
       mDelayedResize.SizeTo(NSCOORD_NONE, NSCOORD_NONE);
-      DoSetWindowDimensions(aWidth, aHeight);
+      DoSetWindowDimensions(aWidth, aHeight,  true);
     } else {
       mDelayedResize.SizeTo(aWidth, aHeight);
       if (mPresShell) {
@@ -219,9 +224,10 @@ void nsViewManager::SetWindowDimensions(nscoord aWidth, nscoord aHeight,
   }
 }
 
-void nsViewManager::FlushDelayedResize() {
+void nsViewManager::FlushDelayedResize(bool aDoReflow) {
   if (mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE)) {
-    DoSetWindowDimensions(mDelayedResize.width, mDelayedResize.height);
+    DoSetWindowDimensions(mDelayedResize.width, mDelayedResize.height,
+                          aDoReflow);
     mDelayedResize.SizeTo(NSCOORD_NONE, NSCOORD_NONE);
   }
 }
@@ -404,7 +410,7 @@ void nsViewManager::ProcessPendingUpdatesPaint(nsIWidget* aWidget) {
       if (vm->mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE) &&
           vm->mRootView->IsEffectivelyVisible() && vm->mPresShell &&
           vm->mPresShell->IsVisible()) {
-        vm->FlushDelayedResize();
+        vm->FlushDelayedResize(true);
       }
     }
     nsView* view = nsView::GetViewFor(aWidget);
