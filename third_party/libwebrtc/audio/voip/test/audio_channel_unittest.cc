@@ -140,34 +140,86 @@ TEST_F(AudioChannelTest, VerifyLocalSsrcAsAssigned) {
 }
 
 
-TEST_F(AudioChannelTest, TestAudioStatistics) {
-  rtc::Event event;
+TEST_F(AudioChannelTest, TestIngressStatistics) {
+  auto event = std::make_unique<rtc::Event>();
   auto loop_rtp = [&](const uint8_t* packet, size_t length, Unused) {
     audio_channel_->ReceivedRTPPacket(
         rtc::ArrayView<const uint8_t>(packet, length));
-    event.Set();
+    event->Set();
     return true;
   };
-  EXPECT_CALL(transport_, SendRtp).WillOnce(Invoke(loop_rtp));
+  EXPECT_CALL(transport_, SendRtp).WillRepeatedly(Invoke(loop_rtp));
 
   auto audio_sender = audio_channel_->GetAudioSender();
   audio_sender->SendAudioData(GetAudioFrame(0));
   audio_sender->SendAudioData(GetAudioFrame(1));
-
-  event.Wait(1000);
+  event->Wait(1000);
 
   AudioFrame audio_frame;
   audio_mixer_->Mix(1, &audio_frame);
+  audio_mixer_->Mix(1, &audio_frame);
+
+  absl::optional<IngressStatistics> ingress_stats =
+      audio_channel_->GetIngressStatistics();
+  EXPECT_TRUE(ingress_stats);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_samples_received, 160ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealed_samples, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealment_events, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.inserted_samples_for_deceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.removed_samples_for_acceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.silent_concealed_samples, 0ULL);
+  
+  
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_delay_ms, 1600ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_emitted_count, 160ULL);
+  EXPECT_GT(ingress_stats->neteq_stats.jitter_buffer_target_delay_ms, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.interruption_count, 0);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_interruption_duration_ms, 0);
+  EXPECT_DOUBLE_EQ(ingress_stats->total_duration, 0.02);
 
   
+  audio_mixer_->Mix(1, &audio_frame);
+  audio_mixer_->Mix(1, &audio_frame);
+
   
-  absl::optional<NetEqLifetimeStatistics> neteq_stats =
-      audio_channel_->GetNetEqStatistics();
-  EXPECT_TRUE(neteq_stats);
-  EXPECT_EQ(neteq_stats->total_samples_received, 80ULL);
-  EXPECT_EQ(neteq_stats->concealed_samples, 0ULL);
-  EXPECT_EQ(neteq_stats->jitter_buffer_delay_ms, 1600ULL);
-  EXPECT_EQ(neteq_stats->interruption_count, 0);
+  event = std::make_unique<rtc::Event>();
+  audio_sender->SendAudioData(GetAudioFrame(2));
+  audio_sender->SendAudioData(GetAudioFrame(3));
+  event->Wait(1000);
+
+  ingress_stats = audio_channel_->GetIngressStatistics();
+  EXPECT_TRUE(ingress_stats);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_samples_received, 320ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealed_samples, 168ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealment_events, 1ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.inserted_samples_for_deceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.removed_samples_for_acceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.silent_concealed_samples, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_delay_ms, 1600ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_emitted_count, 160ULL);
+  EXPECT_GT(ingress_stats->neteq_stats.jitter_buffer_target_delay_ms, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.interruption_count, 0);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_interruption_duration_ms, 0);
+  EXPECT_DOUBLE_EQ(ingress_stats->total_duration, 0.04);
+
+  
+  audio_mixer_->Mix(1, &audio_frame);
+  audio_mixer_->Mix(1, &audio_frame);
+
+  ingress_stats = audio_channel_->GetIngressStatistics();
+  EXPECT_TRUE(ingress_stats);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_samples_received, 480ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealed_samples, 168ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.concealment_events, 1ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.inserted_samples_for_deceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.removed_samples_for_acceleration, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.silent_concealed_samples, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_delay_ms, 3200ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.jitter_buffer_emitted_count, 320ULL);
+  EXPECT_GT(ingress_stats->neteq_stats.jitter_buffer_target_delay_ms, 0ULL);
+  EXPECT_EQ(ingress_stats->neteq_stats.interruption_count, 0);
+  EXPECT_EQ(ingress_stats->neteq_stats.total_interruption_duration_ms, 0);
+  EXPECT_DOUBLE_EQ(ingress_stats->total_duration, 0.06);
 }
 
 }  

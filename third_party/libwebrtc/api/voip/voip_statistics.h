@@ -16,13 +16,23 @@
 
 namespace webrtc {
 
+struct IngressStatistics {
+  
+  NetEqLifetimeStatistics neteq_stats;
+
+  
+  
+  
+  double total_duration = 0.0;
+};
+
 
 
 class VoipStatistics {
  public:
   
   
-  virtual absl::optional<NetEqLifetimeStatistics> GetNetEqStatistics(
+  virtual absl::optional<IngressStatistics> GetIngressStatistics(
       ChannelId channel_id) = 0;
 
  protected:
