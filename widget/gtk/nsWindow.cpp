@@ -1416,10 +1416,9 @@ void nsWindow::WaylandPopupHierarchyHideByLayout(
   
   nsWindow* popup = mWaylandPopupNext;
   while (popup) {
-    MOZ_ASSERT(popup->mPopupType != ePopupTypeTooltip,
-               "Tooltips should be closed!");
     
-    if (!popup->mPopupClosed && !popup->mSourceDragContext) {
+    if (!popup->mPopupClosed && popup->mPopupType != ePopupTypeTooltip &&
+        !popup->mSourceDragContext) {
       if (!popup->IsPopupInLayoutPopupChain(aLayoutWidgetHierarchy,
                                              false)) {
         LOG("  hidding popup [%p]", popup);
