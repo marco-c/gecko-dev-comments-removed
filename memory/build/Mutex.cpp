@@ -7,7 +7,7 @@
 #if defined(XP_DARWIN)
 
 
-bool Mutex::UseUnfairLocks() {
+bool Mutex::SpinInKernelSpace() {
   if (__builtin_available(macOS 10.15, *)) {
     return true;
   }
@@ -16,6 +16,6 @@ bool Mutex::UseUnfairLocks() {
 }
 
 
-bool Mutex::gFallbackToOSSpinLock = !UseUnfairLocks();
+bool Mutex::gSpinInKernelSpace = SpinInKernelSpace();
 
 #endif  
