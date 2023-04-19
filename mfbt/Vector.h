@@ -37,10 +37,105 @@ namespace detail {
 
 
 
-template <typename T>
+template <size_t EltSize>
 static bool CapacityHasExcessSpace(size_t aCapacity) {
-  size_t size = aCapacity * sizeof(T);
-  return RoundUpPow2(size) - size >= sizeof(T);
+  size_t size = aCapacity * EltSize;
+  return RoundUpPow2(size) - size >= EltSize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t EltSize>
+inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
+  
+
+
+
+
+
+
+
+  if (aIncr == 1) {
+    if (aOldElts == 0) {
+      return 1;
+    }
+
+    
+
+    
+
+
+
+
+
+
+
+
+    if (MOZ_UNLIKELY(aOldElts &
+                     mozilla::tl::MulOverflowMask<4 * EltSize>::value)) {
+      return 0;
+    }
+
+    
+
+
+
+
+    size_t newElts = aOldElts * 2;
+    if (CapacityHasExcessSpace<EltSize>(newElts)) {
+      newElts += 1;
+    }
+    return newElts;
+  }
+
+  
+  size_t newMinCap = aOldElts + aIncr;
+
+  
+  if (MOZ_UNLIKELY(newMinCap < aOldElts ||
+                   newMinCap & tl::MulOverflowMask<2 * EltSize>::value)) {
+    return 0;
+  }
+
+  size_t newMinSize = newMinCap * EltSize;
+  size_t newSize = RoundUpPow2(newMinSize);
+  return newSize / EltSize;
+};
+
+
+template <typename AP, size_t EltSize>
+static size_t ComputeGrowth(size_t aOldElts, size_t aIncr, int) {
+  return GrowEltsByDoubling<EltSize>(aOldElts, aIncr);
+}
+
+
+
+template <typename AP, size_t EltSize>
+static size_t ComputeGrowth(
+    size_t aOldElts, size_t aIncr,
+    decltype(std::declval<AP>().template computeGrowth<EltSize>(0, 0),
+             bool()) aOverloadSelector) {
+  size_t newElts = AP::template computeGrowth<EltSize>(aOldElts, aIncr);
+  MOZ_ASSERT(newElts <= PTRDIFF_MAX && newElts * EltSize <= PTRDIFF_MAX,
+             "invalid Vector size (see bug 510319)");
+  return newElts;
 }
 
 
@@ -119,7 +214,7 @@ struct VectorImpl {
   [[nodiscard]] static inline bool growTo(Vector<T, N, AP>& aV,
                                           size_t aNewCap) {
     MOZ_ASSERT(!aV.usingInlineStorage());
-    MOZ_ASSERT(!CapacityHasExcessSpace<T>(aNewCap));
+    MOZ_ASSERT(!CapacityHasExcessSpace<sizeof(T)>(aNewCap));
     T* newbuf = aV.template pod_malloc<T>(aNewCap);
     if (MOZ_UNLIKELY(!newbuf)) {
       return false;
@@ -204,7 +299,7 @@ struct VectorImpl<T, N, AP, true> {
   [[nodiscard]] static inline bool growTo(Vector<T, N, AP>& aV,
                                           size_t aNewCap) {
     MOZ_ASSERT(!aV.usingInlineStorage());
-    MOZ_ASSERT(!CapacityHasExcessSpace<T>(aNewCap));
+    MOZ_ASSERT(!CapacityHasExcessSpace<sizeof(T)>(aNewCap));
     T* newbuf =
         aV.template pod_realloc<T>(aV.mBegin, aV.mTail.mCapacity, aNewCap);
     if (MOZ_UNLIKELY(!newbuf)) {
@@ -925,7 +1020,7 @@ inline bool Vector<T, N, AP>::convertToHeapStorage(size_t aNewCap) {
   MOZ_ASSERT(usingInlineStorage());
 
   
-  MOZ_ASSERT(!detail::CapacityHasExcessSpace<T>(aNewCap));
+  MOZ_ASSERT(!detail::CapacityHasExcessSpace<sizeof(T)>(aNewCap));
   T* newBuf = this->template pod_malloc<T>(aNewCap);
   if (MOZ_UNLIKELY(!newBuf)) {
     return false;
@@ -946,78 +1041,27 @@ template <typename T, size_t N, class AP>
 MOZ_NEVER_INLINE bool Vector<T, N, AP>::growStorageBy(size_t aIncr) {
   MOZ_ASSERT(mLength + aIncr > mTail.mCapacity);
 
-  
-
-
-
-
-
-
-
   size_t newCap;
 
-  if (aIncr == 1) {
-    if (usingInlineStorage()) {
-      
-      size_t newSize =
-          tl::RoundUpPow2<(kInlineCapacity + 1) * sizeof(T)>::value;
-      newCap = newSize / sizeof(T);
-      goto convert;
-    }
-
-    if (mLength == 0) {
-      
-      newCap = 1;
-      goto grow;
-    }
-
+  if (aIncr == 1 && usingInlineStorage()) {
     
-
-    
-
-
-
-
-
-
-
-
-    if (MOZ_UNLIKELY(mLength & tl::MulOverflowMask<4 * sizeof(T)>::value)) {
-      this->reportAllocOverflow();
-      return false;
-    }
-
-    
-
-
-
-
-    newCap = mLength * 2;
-    if (detail::CapacityHasExcessSpace<T>(newCap)) {
-      newCap += 1;
-    }
-  } else {
-    
-    size_t newMinCap = mLength + aIncr;
-
-    
-    if (MOZ_UNLIKELY(newMinCap < mLength ||
-                     newMinCap & tl::MulOverflowMask<2 * sizeof(T)>::value)) {
-      this->reportAllocOverflow();
-      return false;
-    }
-
-    size_t newMinSize = newMinCap * sizeof(T);
-    size_t newSize = RoundUpPow2(newMinSize);
+    constexpr size_t newSize =
+        tl::RoundUpPow2<(kInlineCapacity + 1) * sizeof(T)>::value;
+    static_assert(newSize / sizeof(T) > 0,
+                  "overflow when exceeding inline Vector storage");
     newCap = newSize / sizeof(T);
+  } else {
+    newCap = detail::ComputeGrowth<AP, sizeof(T)>(mLength, aIncr, true);
+    if (MOZ_UNLIKELY(newCap == 0)) {
+      this->reportAllocOverflow();
+      return false;
+    }
   }
 
   if (usingInlineStorage()) {
-  convert:
     return convertToHeapStorage(newCap);
   }
 
-grow:
   return Impl::growTo(*this, newCap);
 }
 

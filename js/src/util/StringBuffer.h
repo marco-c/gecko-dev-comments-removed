@@ -7,6 +7,7 @@
 #ifndef util_StringBuffer_h
 #define util_StringBuffer_h
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Utf8.h"
 
@@ -18,6 +19,33 @@ namespace js {
 namespace frontend {
 class ParserAtomsTable;
 class TaggedParserAtomIndex;
+}  
+
+namespace detail {
+
+
+
+
+
+static constexpr size_t AggressiveLimit = 128 << 20;
+
+template <size_t EltSize>
+inline size_t GrowEltsAggressively(size_t aOldElts, size_t aIncr) {
+  mozilla::CheckedInt<size_t> required =
+      mozilla::CheckedInt<size_t>(aOldElts) + aIncr;
+  if (!required.isValid()) {
+    return 0;
+  }
+  required = mozilla::RoundUpPow2(required.value());
+  required *= 8;
+  if (!(required * EltSize).isValid() || required.value() > AggressiveLimit) {
+    
+    
+    return mozilla::detail::GrowEltsByDoubling<EltSize>(aOldElts, aIncr);
+  }
+  return required.value();
+};
+
 }  
 
 class StringBufferAllocPolicy {
@@ -59,6 +87,12 @@ class StringBufferAllocPolicy {
   }
   void reportAllocOverflow() const { impl_.reportAllocOverflow(); }
   bool checkSimulatedOOM() const { return impl_.checkSimulatedOOM(); }
+
+  
+  template <size_t EltSize>
+  static size_t computeGrowth(size_t aOldElts, size_t aIncr) {
+    return detail::GrowEltsAggressively<EltSize>(aOldElts, aIncr);
+  }
 };
 
 
