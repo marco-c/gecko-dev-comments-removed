@@ -4,7 +4,7 @@
 
 
 import os
-from taskgraph.util import taskcluster as tc_util
+from taskgraph.util import taskcluster as tc_util, schema
 
 GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..")))
 
@@ -17,6 +17,21 @@ MAX_DEPENDENCIES = 99
 
 
 tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
+
+
+
+
+schema.WHITELISTED_SCHEMA_IDENTIFIERS.extend(
+    [
+        
+        lambda path: "[{!r}]".format("upstream-artifacts") in path,
+        lambda path: (
+            "[{!r}]".format("test_name") in path
+            or "[{!r}]".format("json_location") in path
+            or "[{!r}]".format("video_location") in path
+        ),
+    ]
+)
 
 
 def register(graph_config):
