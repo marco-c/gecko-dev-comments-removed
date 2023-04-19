@@ -16,7 +16,6 @@
 #include "mozilla/HTMLEditHelpers.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/File.h"
@@ -4451,8 +4450,6 @@ class HTMLEditor final : public EditorBase,
   
   
   bool mUseGeckoTraditionalJoinSplitBehavior = true;
-
-  UniquePtr<CSSEditUtils> mCSSEditUtils;
 
   
   bool mIsObjectResizingEnabled;

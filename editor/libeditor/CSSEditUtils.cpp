@@ -280,9 +280,6 @@ const CSSEditUtils::CSSEquivTable hrAlignEquivTable[] = {
 
 #undef CSS_EQUIV_TABLE_NONE
 
-CSSEditUtils::CSSEditUtils(HTMLEditor* aHTMLEditor)
-    : mHTMLEditor(aHTMLEditor) {}
-
 
 
 
@@ -385,7 +382,10 @@ bool CSSEditUtils::IsCSSEditableProperty(nsINode* aNode, nsAtom* aProperty,
 
 
 
-nsresult CSSEditUtils::SetCSSPropertyInternal(nsStyledElement& aStyledElement,
+
+
+nsresult CSSEditUtils::SetCSSPropertyInternal(HTMLEditor& aHTMLEditor,
+                                              nsStyledElement& aStyledElement,
                                               nsAtom& aProperty,
                                               const nsAString& aValue,
                                               bool aSuppressTxn) {
@@ -397,12 +397,8 @@ nsresult CSSEditUtils::SetCSSPropertyInternal(nsStyledElement& aStyledElement,
                          "ChangeStyleTransaction::DoTransaction() failed");
     return rv;
   }
-  if (NS_WARN_IF(!mHTMLEditor)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
-  nsresult rv = htmlEditor->DoTransactionInternal(transaction);
-  if (NS_WARN_IF(htmlEditor->Destroyed())) {
+  nsresult rv = aHTMLEditor.DoTransactionInternal(transaction);
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -410,16 +406,19 @@ nsresult CSSEditUtils::SetCSSPropertyInternal(nsStyledElement& aStyledElement,
   return rv;
 }
 
+
 nsresult CSSEditUtils::SetCSSPropertyPixelsWithTransaction(
-    nsStyledElement& aStyledElement, nsAtom& aProperty, int32_t aIntValue) {
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement, nsAtom& aProperty,
+    int32_t aIntValue) {
   nsAutoString s;
   s.AppendInt(aIntValue);
-  nsresult rv =
-      SetCSSPropertyWithTransaction(aStyledElement, aProperty, s + u"px"_ns);
+  nsresult rv = SetCSSPropertyWithTransaction(aHTMLEditor, aStyledElement,
+                                              aProperty, s + u"px"_ns);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "CSSEditUtils::SetCSSPropertyWithTransaction() failed");
   return rv;
 }
+
 
 nsresult CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
     nsStyledElement& aStyledElement, const nsAtom& aProperty,
@@ -446,9 +445,11 @@ nsresult CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
 
 
 
+
+
 nsresult CSSEditUtils::RemoveCSSPropertyInternal(
-    nsStyledElement& aStyledElement, nsAtom& aProperty, const nsAString& aValue,
-    bool aSuppressTxn) {
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement, nsAtom& aProperty,
+    const nsAString& aValue, bool aSuppressTxn) {
   RefPtr<ChangeStyleTransaction> transaction =
       ChangeStyleTransaction::CreateToRemove(aStyledElement, aProperty, aValue);
   if (aSuppressTxn) {
@@ -457,12 +458,8 @@ nsresult CSSEditUtils::RemoveCSSPropertyInternal(
                          "ChangeStyleTransaction::DoTransaction() failed");
     return rv;
   }
-  if (NS_WARN_IF(!mHTMLEditor)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
-  nsresult rv = htmlEditor->DoTransactionInternal(transaction);
-  if (NS_WARN_IF(htmlEditor->Destroyed())) {
+  nsresult rv = aHTMLEditor.DoTransactionInternal(transaction);
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -570,13 +567,15 @@ already_AddRefed<nsComputedDOMStyle> CSSEditUtils::GetComputedStyle(
 
 
 
+
+
 Result<EditorDOMPoint, nsresult>
 CSSEditUtils::RemoveCSSInlineStyleWithTransaction(
-    nsStyledElement& aStyledElement, nsAtom* aProperty,
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement, nsAtom* aProperty,
     const nsAString& aPropertyValue) {
   
-  nsresult rv = RemoveCSSPropertyWithTransaction(aStyledElement, *aProperty,
-                                                 aPropertyValue);
+  nsresult rv = RemoveCSSPropertyWithTransaction(aHTMLEditor, aStyledElement,
+                                                 *aProperty, aPropertyValue);
   if (NS_FAILED(rv)) {
     NS_WARNING("CSSEditUtils::RemoveCSSPropertyWithTransaction() failed");
     return Err(rv);
@@ -587,9 +586,8 @@ CSSEditUtils::RemoveCSSInlineStyleWithTransaction(
     return EditorDOMPoint();
   }
 
-  OwningNonNull<HTMLEditor> htmlEditor(*mHTMLEditor);
   Result<EditorDOMPoint, nsresult> unwrapStyledElementResult =
-      htmlEditor->RemoveContainerWithTransaction(aStyledElement);
+      aHTMLEditor.RemoveContainerWithTransaction(aStyledElement);
   NS_WARNING_ASSERTION(unwrapStyledElementResult.isOk(),
                        "HTMLEditor::RemoveContainerWithTransaction() failed");
   return unwrapStyledElementResult;
@@ -852,8 +850,9 @@ void CSSEditUtils::GenerateCSSDeclarationsFromHTMLStyle(
 
 
 Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToHTMLStyleInternal(
-    nsStyledElement& aStyledElement, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-    const nsAString* aValue, bool aSuppressTransaction) {
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
+    nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString* aValue,
+    bool aSuppressTransaction) {
   if (!IsCSSEditableProperty(&aStyledElement, aHTMLProperty, aAttribute)) {
     return 0;
   }
@@ -872,7 +871,7 @@ Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToHTMLStyleInternal(
   const size_t count = cssPropertyArray.Length();
   for (size_t index = 0; index < count; index++) {
     nsresult rv = SetCSSPropertyInternal(
-        aStyledElement, MOZ_KnownLive(*cssPropertyArray[index]),
+        aHTMLEditor, aStyledElement, MOZ_KnownLive(*cssPropertyArray[index]),
         cssValueArray[index], aSuppressTransaction);
     if (NS_FAILED(rv)) {
       NS_WARNING("CSSEditUtils::SetCSSPropertyInternal() failed");
@@ -884,9 +883,12 @@ Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToHTMLStyleInternal(
 
 
 
+
+
 nsresult CSSEditUtils::RemoveCSSEquivalentToHTMLStyleInternal(
-    nsStyledElement& aStyledElement, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-    const nsAString* aValue, bool aSuppressTransaction) {
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
+    nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString* aValue,
+    bool aSuppressTransaction) {
   if (!IsCSSEditableProperty(&aStyledElement, aHTMLProperty, aAttribute)) {
     return NS_OK;
   }
@@ -908,7 +910,7 @@ nsresult CSSEditUtils::RemoveCSSEquivalentToHTMLStyleInternal(
   }
   for (size_t index = 0; index < count; index++) {
     nsresult rv = RemoveCSSPropertyInternal(
-        aStyledElement, MOZ_KnownLive(*cssPropertyArray[index]),
+        aHTMLEditor, aStyledElement, MOZ_KnownLive(*cssPropertyArray[index]),
         cssValueArray[index], aSuppressTransaction);
     if (NS_FAILED(rv)) {
       NS_WARNING("CSSEditUtils::RemoveCSSPropertyWithoutTransaction() failed");
@@ -985,10 +987,11 @@ nsresult CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSetInternal(
 
 
 
+
 Result<bool, nsresult>
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
-    nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-    nsAString& aValue, StyleType aStyleType) {
+    const HTMLEditor& aHTMLEditor, nsIContent& aContent, nsAtom* aHTMLProperty,
+    nsAtom* aAttribute, nsAString& aValue, StyleType aStyleType) {
   MOZ_ASSERT(aHTMLProperty || aAttribute);
 
   nsAutoString htmlValueString(aValue);
@@ -1003,7 +1006,7 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
     
     nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
         *content, aHTMLProperty, aAttribute, aValue, aStyleType);
-    if (NS_WARN_IF(!mHTMLEditor || mHTMLEditor->Destroyed())) {
+    if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_FAILED(rv)) {
@@ -1144,9 +1147,10 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSetInternal(
   return isSet;
 }
 
+
 Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
-    nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-    StyleType aStyleType) {
+    const HTMLEditor& aHTMLEditor, nsIContent& aContent, nsAtom* aHTMLProperty,
+    nsAtom* aAttribute, StyleType aStyleType) {
   MOZ_ASSERT(aHTMLProperty || aAttribute);
 
   
@@ -1159,7 +1163,7 @@ Result<bool, nsresult> CSSEditUtils::HaveCSSEquivalentStylesInternal(
     
     nsresult rv = GetCSSEquivalentToHTMLInlineStyleSetInternal(
         *content, aHTMLProperty, aAttribute, valueString, aStyleType);
-    if (NS_WARN_IF(!mHTMLEditor || mHTMLEditor->Destroyed())) {
+    if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_FAILED(rv)) {
