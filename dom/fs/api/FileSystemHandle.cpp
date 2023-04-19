@@ -5,6 +5,7 @@
 
 
 #include "FileSystemHandle.h"
+#include "fs/FileSystemRequestHandler.h"
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemHandleBinding.h"
@@ -20,6 +21,13 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(FileSystemHandle);
 NS_IMPL_CYCLE_COLLECTING_RELEASE(FileSystemHandle);
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(FileSystemHandle, mGlobal);
 
+FileSystemHandle::FileSystemHandle(
+    nsIGlobalObject* aGlobal, const fs::FileSystemEntryMetadata& aMetadata,
+    fs::FileSystemRequestHandler* aRequestHandler)
+    : mGlobal(aGlobal),
+      mMetadata(aMetadata),
+      mRequestHandler(aRequestHandler) {}
+
 
 
 nsIGlobalObject* FileSystemHandle::GetParentObject() const { return mGlobal; }
@@ -31,10 +39,12 @@ JSObject* FileSystemHandle::WrapObject(JSContext* aCx,
 
 
 
-void FileSystemHandle::GetName(DOMString& aResult) { aResult.SetNull(); }
+void FileSystemHandle::GetName(nsAString& aResult) {
+  aResult = mMetadata.entryName();
+}
 
 already_AddRefed<Promise> FileSystemHandle::IsSameEntry(
-    FileSystemHandle& aOther, ErrorResult& aError) {
+    FileSystemHandle& aOther, ErrorResult& aError) const {
   RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
   if (aError.Failed()) {
     return nullptr;
