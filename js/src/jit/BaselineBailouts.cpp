@@ -1453,10 +1453,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   MOZ_ASSERT(!cx->isExceptionPending());
 
-  TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
-  TraceLogStopEvent(logger, TraceLogger_IonMonkey);
-  TraceLogStartEvent(logger, TraceLogger_Baseline);
-
   
   
   
@@ -1575,15 +1571,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     
     
     snapIter.settleOnFrame();
-
-    if (!builder.isOutermostFrame()) {
-      
-      
-      
-      TraceLoggerEvent scriptEvent(TraceLogger_Scripts, builder.script());
-      TraceLogStartEvent(logger, scriptEvent);
-      TraceLogStartEvent(logger, TraceLogger_Baseline);
-    }
 
     JitSpew(JitSpew_BaselineBailouts, "    FrameNo %zu", builder.frameNo());
 
