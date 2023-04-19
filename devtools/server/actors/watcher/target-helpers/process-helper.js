@@ -77,26 +77,6 @@ function onContentProcessActorCreated(msg) {
   watcher.notifyTargetAvailable(actor);
 }
 
-function onContentProcessActorDestroyed(msg) {
-  const { watcherActorID } = msg.data;
-  const watcher = WatcherRegistry.getWatcher(watcherActorID);
-  if (!watcher) {
-    throw new Error(
-      `Receiving a content process actor destruction without a watcher actor ${watcherActorID}`
-    );
-  }
-  
-  
-  
-  
-  
-  if (!watchers.has(watcher)) {
-    return;
-  }
-  const messageManager = msg.target;
-  unregisterWatcherForMessageManager(watcher, messageManager);
-}
-
 function onMessageManagerClose(messageManager, topic, data) {
   const list = actors.get(messageManager);
   if (!list || list.length == 0) {
@@ -113,52 +93,38 @@ function onMessageManagerClose(messageManager, topic, data) {
   actors.delete(messageManager);
 }
 
-
-
-
-
-
-
-function unregisterWatcherForMessageManager(watcher, messageManager) {
-  const targetActorDescriptions = actors.get(messageManager);
-  if (!targetActorDescriptions || targetActorDescriptions.length == 0) {
-    return;
-  }
-
-  
-  const matchingTargetActorDescriptions = targetActorDescriptions.filter(
-    item => item.watcher === watcher
-  );
-  for (const {
-    prefix,
-    childTransport,
-    actor,
-  } of matchingTargetActorDescriptions) {
-    watcher.notifyTargetDestroyed(actor);
-
-    childTransport.close();
-    watcher.conn.cancelForwarding(prefix);
-  }
-
-  
-  const remainingTargetActorDescriptions = targetActorDescriptions.filter(
-    item => item.watcher !== watcher
-  );
-  if (remainingTargetActorDescriptions.length == 0) {
-    actors.delete(messageManager);
-  } else {
-    actors.set(messageManager, remainingTargetActorDescriptions);
-  }
-}
-
-
-
-
-
 function closeWatcherTransports(watcher) {
   for (let i = 0; i < Services.ppmm.childCount; i++) {
     const messageManager = Services.ppmm.getChildAt(i);
-    unregisterWatcherForMessageManager(watcher, messageManager);
+    const targetActorDescriptions = actors.get(messageManager);
+    if (!targetActorDescriptions || targetActorDescriptions.length == 0) {
+      continue;
+    }
+
+    
+    const matchingTargetActorDescriptions = targetActorDescriptions.filter(
+      item => item.watcher === watcher
+    );
+    for (const {
+      prefix,
+      childTransport,
+      actor,
+    } of matchingTargetActorDescriptions) {
+      watcher.notifyTargetDestroyed(actor);
+
+      childTransport.close();
+      watcher.conn.cancelForwarding(prefix);
+    }
+
+    
+    const remainingTargetActorDescriptions = targetActorDescriptions.filter(
+      item => item.watcher !== watcher
+    );
+    if (remainingTargetActorDescriptions.length == 0) {
+      actors.delete(messageManager);
+    } else {
+      actors.set(messageManager, remainingTargetActorDescriptions);
+    }
   }
 }
 
@@ -169,10 +135,6 @@ function maybeRegisterMessageListeners(watcher) {
     Services.ppmm.addMessageListener(
       "debug:content-process-actor",
       onContentProcessActorCreated
-    );
-    Services.ppmm.addMessageListener(
-      "debug:content-process-actor-destroyed",
-      onContentProcessActorDestroyed
     );
     Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
 
@@ -198,10 +160,6 @@ function maybeUnregisterMessageListeners(watcher) {
     Services.ppmm.removeMessageListener(
       "debug:content-process-actor",
       onContentProcessActorCreated
-    );
-    Services.ppmm.removeMessageListener(
-      "debug:content-process-actor-destroyed",
-      onContentProcessActorDestroyed
     );
     Services.obs.removeObserver(onMessageManagerClose, "message-manager-close");
 
