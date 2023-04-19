@@ -1,8 +1,12 @@
 
+
+
+
 function log(str) {
   const entry = document.createElement('li');
   entry.innerHTML = str;
-  logger.appendChild(entry);
+  const loggerElement = document.getElementById('logger');
+  loggerElement.appendChild(entry);
   return entry;
 }
 
@@ -35,4 +39,30 @@ async function setUpWindowPlacement(setUpTest, setUpButton) {
   }
   await setUpClick;
   setUpButton.disabled = true;
+}
+
+
+
+
+
+
+
+
+async function addTestTriggerButtonAndAwaitClick(buttonContainer, name, test) {
+  const button = document.createElement('button');
+  button.innerHTML = name;
+  const entry = document.createElement('li');
+  entry.appendChild(button);
+  buttonContainer.appendChild(entry);
+  const testWatcher = new EventWatcher(test, button, ['click']);
+  const buttonClick = testWatcher.wait_for('click');
+  
+  button.onclick = function() {
+    button.disabled = true;
+  };
+  try {  
+    await test_driver.click(button);
+  } catch {
+  }
+  await buttonClick;
 }
