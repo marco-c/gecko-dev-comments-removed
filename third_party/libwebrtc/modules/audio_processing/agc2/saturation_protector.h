@@ -13,6 +13,7 @@
 
 #include <array>
 
+#include "absl/types/optional.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/vad_with_level.h"
 
@@ -29,41 +30,52 @@ class SaturationProtector {
 
   
   
-  
-  
   void UpdateMargin(const VadWithLevel::LevelAndProbability& vad_data,
-                    float last_speech_level_estimate_dbfs);
+                    float last_speech_level_estimate);
 
-  
   
   float LastMargin() const;
 
-  
   void Reset();
 
   void DebugDumpEstimate() const;
 
  private:
   
+  class RingBuffer {
+   public:
+    void Reset();
+    
+    void PushBack(float v);
+    
+    
+    absl::optional<float> Front() const;
+
+   private:
+    std::array<float, kPeakEnveloperBufferSize> buffer_;
+    int next_ = 0;
+    int size_ = 0;
+  };
+
+  
   class PeakEnveloper {
    public:
     PeakEnveloper();
+    void Reset();
     void Process(float frame_peak_dbfs);
-
     float Query() const;
 
    private:
-    size_t speech_time_in_estimate_ms_ = 0;
-    float current_superframe_peak_dbfs_ = -90.f;
-    size_t elements_in_buffer_ = 0;
-    std::array<float, kPeakEnveloperBufferSize> peak_delay_buffer_ = {};
+    size_t speech_time_in_estimate_ms_;
+    float current_superframe_peak_dbfs_;
+    RingBuffer peak_delay_buffer_;
   };
 
   ApmDataDumper* apm_data_dumper_;
-
-  float last_margin_;
   PeakEnveloper peak_enveloper_;
+
   const float extra_saturation_margin_db_;
+  float last_margin_;
 };
 
 }  
