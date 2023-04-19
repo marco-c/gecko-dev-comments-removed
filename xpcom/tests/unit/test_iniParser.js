@@ -279,6 +279,15 @@ function run_test() {
       checkParserOutput(parser, testdata[testnum - 1].reference);
       
       newfile.remove(false);
+
+      
+      Assert.ok(parser instanceof Ci.nsIINIParserWriter);
+      let formatted = parser.writeToString();
+      parser = factory.createINIParser(null);
+      
+      
+      parser.initFromString(formatted);
+      checkParserOutput(parser, testdata[testnum - 1].reference);
     }
 
     dump("INFO | test #" + ++testnum + "\n");
