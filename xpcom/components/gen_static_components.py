@@ -521,6 +521,57 @@ static inline ::mozilla::xpcom::CreateInstanceHelper Create(nsresult* aRv = null
 
         return res
 
+    
+    
+    
+    
+    def lower_getters_rust(self):
+        assert not self.anonymous
+
+        substs = {
+            "name": self.name,
+            "id": "super::ModuleID::%s" % self.name,
+        }
+
+        res = (
+            """
+#[allow(non_snake_case)]
+pub mod %(name)s {
+    /// Get the singleton service instance for this component.
+    pub fn service<T: crate::XpCom>() -> Result<crate::RefPtr<T>, nserror::nsresult> {
+        let mut ga = crate::GetterAddrefs::<T>::new();
+        let rv = unsafe { super::Gecko_GetServiceByModuleID(%(id)s, &T::IID, ga.void_ptr()) };
+        if rv.failed() {
+            return Err(rv);
+        }
+        ga.refptr().ok_or(nserror::NS_ERROR_NO_INTERFACE)
+    }
+"""
+            % substs
+        )
+
+        if not self.singleton:
+            res += (
+                """
+    /// Create a new instance of this component.
+    pub fn create<T: crate::XpCom>() -> Result<crate::RefPtr<T>, nserror::nsresult> {
+        let mut ga = crate::GetterAddrefs::<T>::new();
+        let rv = unsafe { super::Gecko_CreateInstanceByModuleID(%(id)s, &T::IID, ga.void_ptr()) };
+        if rv.failed() {
+            return Err(rv);
+        }
+        ga.refptr().ok_or(nserror::NS_ERROR_NO_INTERFACE)
+    }
+"""
+                % substs
+            )
+
+        res += """\
+}
+"""
+
+        return res
+
 
 
 
@@ -676,6 +727,17 @@ def gen_getters(entries):
     entries.sort(key=lambda e: e.name)
 
     return "".join(entry.lower_getters() for entry in entries if not entry.anonymous)
+
+
+
+
+def gen_getters_rust(entries):
+    entries = list(entries)
+    entries.sort(key=lambda e: e.name)
+
+    return "".join(
+        entry.lower_getters_rust() for entry in entries if not entry.anonymous
+    )
 
 
 def gen_includes(substs, all_headers):
@@ -843,6 +905,8 @@ def gen_substs(manifests):
 
     substs["component_getters"] = gen_getters(cid_phf.entries)
 
+    substs["component_getters_rust"] = gen_getters_rust(cid_phf.entries)
+
     substs["module_cid_table"] = cid_phf.cxx_codegen(
         name="ModuleByCID",
         entry_type="StaticModule",
@@ -964,6 +1028,20 @@ static constexpr size_t kModuleInitCount = %(init_count)d;
 }  // namespace mozilla
 
 #endif
+"""
+            % substs
+        )
+
+    with open_output("components.rs") as fh:
+        fh.write(
+            """\
+/// Unique IDs for each statically-registered module.
+#[repr(u16)]
+pub enum ModuleID {
+%(module_ids)s
+}
+
+%(component_getters_rust)s
 """
             % substs
         )

@@ -39,5 +39,8 @@ pub mod interfaces;
 pub mod services;
 
 
+pub mod components;
+
+
 #[doc(hidden)]
 pub mod reexports;
