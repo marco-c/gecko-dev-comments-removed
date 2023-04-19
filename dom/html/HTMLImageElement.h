@@ -279,7 +279,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   
   
-  void QueueImageLoadTask(bool aAlwaysLoad);
+  
+  void UpdateSourceSyncAndQueueImageTask(
+      bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource = nullptr);
 
   
   
@@ -308,9 +310,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   void PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode, bool aNotify);
 
-  void PictureSourceAdded(nsIContent* aSourceNode);
+  void PictureSourceAdded(HTMLSourceElement* aSourceNode = nullptr);
   
-  void PictureSourceRemoved(nsIContent* aSourceNode);
+  void PictureSourceRemoved(HTMLSourceElement* aSourceNode = nullptr);
 
   
   
@@ -325,7 +327,12 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   
   
-  bool UpdateResponsiveSource();
+  
+  
+  
+  
+  bool UpdateResponsiveSource(
+      const HTMLSourceElement* aSkippedSource = nullptr);
 
   
   

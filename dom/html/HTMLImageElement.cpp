@@ -361,7 +361,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
         mResponsiveSelector->SetDefaultSource(VoidString());
       }
-      QueueImageLoadTask(true);
+      UpdateSourceSyncAndQueueImageTask(true);
     } else {
       
       CancelImageRequests(aNotify);
@@ -411,7 +411,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     if (InResponsiveMode()) {
       
       
-      QueueImageLoadTask(true);
+      UpdateSourceSyncAndQueueImageTask(true);
     } else if (ShouldLoadImage()) {
       
       
@@ -462,7 +462,7 @@ void HTMLImageElement::AfterMaybeChangeAttr(
       mResponsiveSelector->SetDefaultSource(aValue.String(),
                                             mSrcTriggeringPrincipal);
     }
-    QueueImageLoadTask(true);
+    UpdateSourceSyncAndQueueImageTask(true);
   } else if (aNotify && ShouldLoadImage()) {
     
     
@@ -549,7 +549,13 @@ nsresult HTMLImageElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     
-    QueueImageLoadTask(false);
+    
+    
+    
+    
+    if (!IsInPicture()) {
+      UpdateSourceSyncAndQueueImageTask(false);
+    }
   } else if (!InResponsiveMode() && HasAttr(nsGkAtoms::src)) {
     
     
@@ -622,6 +628,7 @@ void HTMLImageElement::UpdateFormOwner() {
 }
 
 void HTMLImageElement::MaybeLoadImage(bool aAlwaysForceLoad) {
+  
   
   
   
@@ -805,7 +812,21 @@ void HTMLImageElement::ClearForm(bool aRemoveFromForm) {
   mForm = nullptr;
 }
 
-void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
+void HTMLImageElement::UpdateSourceSyncAndQueueImageTask(
+    bool aAlwaysLoad, const HTMLSourceElement* aSkippedSource) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool changed = UpdateResponsiveSource(aSkippedSource);
+
   
   
   if (!LoadingEnabled() || !ShouldLoadImage()) {
@@ -818,6 +839,11 @@ void HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad) {
   if (mPendingImageLoadTask) {
     alwaysLoad = alwaysLoad || mPendingImageLoadTask->AlwaysLoad();
   }
+
+  if (!changed && !alwaysLoad) {
+    return;
+  }
+
   RefPtr<ImageLoadTask> task =
       new ImageLoadTask(this, alwaysLoad, mUseUrgentStartForChannel);
   
@@ -855,28 +881,17 @@ bool HTMLImageElement::SelectedSourceMatchesLast(nsIURI* aSelectedSource) {
 
 nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
                                              bool aAlwaysLoad) {
-  double currentDensity = 1.0;  
+  
+  
+  
+  MOZ_ASSERT(!UpdateResponsiveSource(),
+             "The image source should be the same because we update the "
+             "responsive source synchronously");
 
-  if (aForce) {
-    
-    
-    
-    
-    const bool sourceChanged = UpdateResponsiveSource();
-
-    if (mResponsiveSelector) {
-      currentDensity = mResponsiveSelector->GetSelectedImageDensity();
-    }
-
-    if (!sourceChanged && !aAlwaysLoad) {
-      
-      
-      MOZ_ASSERT(currentDensity == mCurrentDensity);
-      return NS_OK;
-    }
-  } else if (mResponsiveSelector) {
-    currentDensity = mResponsiveSelector->GetSelectedImageDensity();
-  }
+  
+  double currentDensity = mResponsiveSelector
+                              ? mResponsiveSelector->GetSelectedImageDensity()
+                              : 1.0;
 
   nsCOMPtr<nsIURI> selectedSource;
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
@@ -970,7 +985,7 @@ void HTMLImageElement::PictureSourceSrcsetChanged(nsIContent* aSourceNode,
 
   
   
-  QueueImageLoadTask(true);
+  UpdateSourceSyncAndQueueImageTask(true);
 }
 
 void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
@@ -990,7 +1005,7 @@ void HTMLImageElement::PictureSourceSizesChanged(nsIContent* aSourceNode,
 
   
   
-  QueueImageLoadTask(true);
+  UpdateSourceSyncAndQueueImageTask(true);
 }
 
 void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
@@ -1000,24 +1015,25 @@ void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
 
   
   
-  QueueImageLoadTask(true);
+  UpdateSourceSyncAndQueueImageTask(true);
 }
 
-void HTMLImageElement::PictureSourceAdded(nsIContent* aSourceNode) {
-  MOZ_ASSERT(aSourceNode == this || IsPreviousSibling(aSourceNode, this),
+void HTMLImageElement::PictureSourceAdded(HTMLSourceElement* aSourceNode) {
+  MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
 
-  QueueImageLoadTask(true);
+  UpdateSourceSyncAndQueueImageTask(true);
 }
 
-void HTMLImageElement::PictureSourceRemoved(nsIContent* aSourceNode) {
-  MOZ_ASSERT(aSourceNode == this || IsPreviousSibling(aSourceNode, this),
+void HTMLImageElement::PictureSourceRemoved(HTMLSourceElement* aSourceNode) {
+  MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
 
-  QueueImageLoadTask(true);
+  UpdateSourceSyncAndQueueImageTask(true, aSourceNode);
 }
 
-bool HTMLImageElement::UpdateResponsiveSource() {
+bool HTMLImageElement::UpdateResponsiveSource(
+    const HTMLSourceElement* aSkippedSource) {
   bool hadSelector = !!mResponsiveSelector;
 
   nsIContent* currentSource =
@@ -1031,7 +1047,11 @@ bool HTMLImageElement::UpdateResponsiveSource() {
   
   RefPtr<ResponsiveImageSelector> newResponsiveSelector = nullptr;
 
-  while (candidateSource) {
+  for (; candidateSource; candidateSource = candidateSource->GetNextSibling()) {
+    if (aSkippedSource == candidateSource) {
+      continue;
+    }
+
     if (candidateSource == currentSource) {
       
       
@@ -1073,7 +1093,6 @@ bool HTMLImageElement::UpdateResponsiveSource() {
         break;
       }
     }
-    candidateSource = candidateSource->GetNextSibling();
   }
 
   
@@ -1234,7 +1253,7 @@ void HTMLImageElement::DestroyContent() {
 }
 
 void HTMLImageElement::MediaFeatureValuesChanged() {
-  QueueImageLoadTask(false);
+  UpdateSourceSyncAndQueueImageTask(false);
 }
 
 bool HTMLImageElement::ShouldLoadImage() const {
@@ -1272,9 +1291,10 @@ void HTMLImageElement::StartLoadingIfNeeded() {
     
     nsContentUtils::AddScriptRunner(
         InResponsiveMode()
-            ? NewRunnableMethod<bool>(
-                  "dom::HTMLImageElement::QueueImageLoadTask", this,
-                  &HTMLImageElement::QueueImageLoadTask, true)
+            ? NewRunnableMethod<bool, const HTMLSourceElement*>(
+                  "dom::HTMLImageElement::UpdateSourceSyncAndQueueImageTask",
+                  this, &HTMLImageElement::UpdateSourceSyncAndQueueImageTask,
+                  true, nullptr)
             : NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
                                       this, &HTMLImageElement::MaybeLoadImage,
                                       true));
