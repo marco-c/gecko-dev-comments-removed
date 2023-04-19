@@ -42,7 +42,6 @@ loader.lazyRequireGetter(
 const ZoomKeys = require("devtools/client/shared/zoom-keys");
 
 const PREF_SIDEBAR_ENABLED = "devtools.webconsole.sidebarToggle";
-const PREF_BROWSERTOOLBOX_SCOPE = "devtools.browsertoolbox.scope";
 
 
 
@@ -79,14 +78,6 @@ class WebConsoleUI {
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
     this._onNetworkResourceUpdated = this._onNetworkResourceUpdated.bind(this);
     this.clearPrivateMessages = this.clearPrivateMessages.bind(this);
-    this._onScopePrefChanged = this._onScopePrefChanged.bind(this);
-
-    if (this.isBrowserConsole) {
-      Services.prefs.addObserver(
-        PREF_BROWSERTOOLBOX_SCOPE,
-        this._onScopePrefChanged
-      );
-    }
 
     EventEmitter.decorate(this);
   }
@@ -165,13 +156,6 @@ class WebConsoleUI {
       toolbox.off("webconsole-selected", this._onPanelSelected);
       toolbox.off("split-console", this._onChangeSplitConsoleState);
       toolbox.off("select", this._onChangeSplitConsoleState);
-    }
-
-    if (this.isBrowserConsole) {
-      Services.prefs.removeObserver(
-        PREF_BROWSERTOOLBOX_SCOPE,
-        this._onScopePrefChanged
-      );
     }
 
     
@@ -572,19 +556,14 @@ class WebConsoleUI {
     }
   }
 
-  _onTargetDestroyed({ targetFront, isModeSwitching }) {
-    
-    if (!this.wrapper) {
-      return;
-    }
+  
 
+
+
+
+
+  _onTargetDestroyed({ targetFront }) {
     
-    
-    
-    
-    if (isModeSwitching) {
-      this.wrapper.dispatchTargetMessagesRemove(targetFront);
-    }
   }
 
   _initUI() {
@@ -717,12 +696,6 @@ class WebConsoleUI {
 
   _onChangeSplitConsoleState() {
     this.wrapper.dispatchSplitConsoleCloseButtonToggle();
-  }
-
-  _onScopePrefChanged() {
-    if (this.isBrowserConsole) {
-      this.hud.updateWindowTitle();
-    }
   }
 
   getInputCursor() {

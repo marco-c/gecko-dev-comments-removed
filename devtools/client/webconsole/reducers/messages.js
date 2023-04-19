@@ -472,31 +472,6 @@ function messages(
       );
     }
 
-    case constants.TARGET_MESSAGES_REMOVE: {
-      const removedIds = [];
-      for (const [id, message] of mutableMessagesById) {
-        
-        
-        
-        
-        
-        if (
-          message.targetFront == action.targetFront &&
-          message.type !== MESSAGE_TYPE.COMMAND &&
-          message.type !== MESSAGE_TYPE.RESULT
-        ) {
-          removedIds.push(id);
-        }
-      }
-
-      return removeMessagesFromState(
-        {
-          ...state,
-        },
-        removedIds
-      );
-    }
-
     case constants.MESSAGES_DISABLE:
       return {
         ...state,
