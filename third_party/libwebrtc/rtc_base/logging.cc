@@ -51,17 +51,6 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
-#if defined(WEBRTC_RACE_CHECK_MUTEX)
-#if defined(WEBRTC_ABSL_MUTEX)
-#error Please only define one of WEBRTC_RACE_CHECK_MUTEX and WEBRTC_ABSL_MUTEX.
-#endif
-#include "absl/base/const_init.h"
-#include "absl/synchronization/mutex.h"  
-using LoggingMutexLock = ::absl::MutexLock;
-#else
-using LoggingMutexLock = ::webrtc::MutexLock;
-#endif  
-
 namespace rtc {
 
 bool LogMessage::aec_debug_ = false;
@@ -95,14 +84,7 @@ const char* FilenameFromPath(const char* file) {
 
 
 
-#if defined(WEBRTC_RACE_CHECK_MUTEX)
-
-
-
-absl::Mutex g_log_mutex_(absl::kConstInit);
-#else
 webrtc::Mutex g_log_mutex_;
-#endif
 
 }  
 
@@ -229,7 +211,7 @@ LogMessage::~LogMessage() {
 #endif
   }
 
-  LoggingMutexLock lock(&g_log_mutex_);
+  webrtc::MutexLock lock(&g_log_mutex_);
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (severity_ >= entry->min_severity_) {
 #if defined(WEBRTC_ANDROID)
@@ -279,7 +261,7 @@ void LogMessage::LogTimestamps(bool on) {
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   
   
-  LoggingMutexLock lock(&g_log_mutex_);
+  webrtc::MutexLock lock(&g_log_mutex_);
   g_dbg_sev = min_sev;
   UpdateMinLogSeverity();
 }
@@ -289,7 +271,7 @@ void LogMessage::SetLogToStderr(bool log_to_stderr) {
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
-  LoggingMutexLock lock(&g_log_mutex_);
+  webrtc::MutexLock lock(&g_log_mutex_);
   LoggingSeverity sev = LS_NONE;
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (stream == nullptr || stream == entry) {
@@ -300,7 +282,7 @@ int LogMessage::GetLogToStream(LogSink* stream) {
 }
 
 void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
-  LoggingMutexLock lock(&g_log_mutex_);
+  webrtc::MutexLock lock(&g_log_mutex_);
   stream->min_severity_ = min_sev;
   stream->next_ = streams_;
   streams_ = stream;
@@ -309,7 +291,7 @@ void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
 }
 
 void LogMessage::RemoveLogToStream(LogSink* stream) {
-  LoggingMutexLock lock(&g_log_mutex_);
+  webrtc::MutexLock lock(&g_log_mutex_);
   for (LogSink** entry = &streams_; *entry != nullptr;
        entry = &(*entry)->next_) {
     if (*entry == stream) {
