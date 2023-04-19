@@ -812,8 +812,7 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
       
       if (!longLineColumnInfo_.add(ptr, line, Vector<ChunkInfo>(cx))) {
         
-        cx->recoverFromOutOfMemory();  
-                                       
+        ec->recoverFromOutOfMemory();
         return ColumnFromPartial(start, 0, UnitsType::PossiblyMultiUnit);
       }
     }
@@ -882,8 +881,7 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
 
     if (!lastChunkVectorForLine_->reserve(chunkIndex + 1)) {
       
-      cx->recoverFromOutOfMemory();  
-                                     
+      ec->recoverFromOutOfMemory();
       return ColumnFromPartial(partialOffset, partialColumn,
                                UnitsType::PossiblyMultiUnit);
     }
