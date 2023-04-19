@@ -12,6 +12,7 @@
 #include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Result.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsAppRunner.h"
@@ -115,11 +116,50 @@ static bool AddActionNode(IXmlDocument* toastXml, IXmlNode* actionsNode,
 
   ComPtr<IXmlNode> appendedChild;
   hr = actionsNode->AppendChild(actionNode.Get(), &appendedChild);
-  if (NS_WARN_IF(FAILED(hr))) {
-    return false;
-  }
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
   return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+static Result<nsString, nsresult> GetLaunchArgument() {
+  nsString launchArg;
+
+  
+  
+  
+  
+  
+  if (!Preferences::GetBool(
+          "alerts.useSystemBackend.windows.notificationserver.enabled",
+          false)) {
+    
+    
+    launchArg += u"invalid key\ninvalid value"_ns;
+    return launchArg;
+  }
+
+  
+  launchArg += u"program\n"_ns MOZ_APP_NAME;
+
+  
+  nsCOMPtr<nsIFile> profDir;
+  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                 getter_AddRefs(profDir)));
+  nsAutoString profilePath;
+  MOZ_TRY(profDir->GetPath(profilePath));
+  launchArg += u"\nprofile\n"_ns + profilePath;
+
+  return launchArg;
 }
 
 static ComPtr<IToastNotificationManagerStatics>
@@ -250,6 +290,17 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
                            u"reminder"_ns);
     NS_ENSURE_TRUE(success, nullptr);
   }
+  ComPtr<IXmlElement> toastElement;
+  hr = toastNodeRoot.As(&toastElement);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
+
+  auto maybeLaunchArg = GetLaunchArgument();
+  NS_ENSURE_TRUE(maybeLaunchArg.isOk(), nullptr);
+  nsString launchArg = maybeLaunchArg.unwrap();
+
+  success =
+      SetAttribute(toastElement.Get(), HStringReference(L"launch"), launchArg);
+  NS_ENSURE_TRUE(success, nullptr);
 
   ComPtr<IXmlElement> actions;
   hr = toastXml->CreateElement(HStringReference(L"actions").Get(), &actions);
