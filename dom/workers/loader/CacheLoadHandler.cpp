@@ -323,6 +323,11 @@ void CacheLoadHandler::RejectedCallback(JSContext* aCx,
                                         JS::Handle<JS::Value> aValue,
                                         ErrorResult& aRv) {
   AssertIsOnMainThread();
+
+  if (mLoader->IsCancelled()) {
+    return;
+  }
+
   MOZ_ASSERT(mLoadContext->mCacheStatus == WorkerLoadContext::Uncached);
   Fail(NS_ERROR_FAILURE);
 }
@@ -332,7 +337,8 @@ void CacheLoadHandler::ResolvedCallback(JSContext* aCx,
                                         ErrorResult& aRv) {
   AssertIsOnMainThread();
   
-  if (mFailed) {
+  
+  if (mFailed || mLoader->IsCancelled()) {
     return;
   }
 
