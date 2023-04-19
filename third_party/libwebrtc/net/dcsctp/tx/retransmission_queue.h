@@ -143,6 +143,12 @@ class RetransmissionQueue {
   
   class TxData {
    public:
+    enum class NackAction {
+      kNothing,
+      kRetransmit,
+      kAbandon,
+    };
+
     explicit TxData(Data data,
                     absl::optional<size_t> max_retransmissions,
                     TimeMs time_sent,
@@ -162,7 +168,8 @@ class RetransmissionQueue {
     
     
     
-    bool Nack(bool retransmit_now = false);
+    
+    NackAction Nack(bool retransmit_now = false);
 
     
     
@@ -173,6 +180,7 @@ class RetransmissionQueue {
 
     bool is_outstanding() const { return ack_state_ == AckState::kUnacked; }
     bool is_acked() const { return ack_state_ == AckState::kAcked; }
+    bool is_nacked() const { return ack_state_ == AckState::kNacked; }
     bool is_abandoned() const { return is_abandoned_; }
 
     
@@ -266,6 +274,14 @@ class RetransmissionQueue {
 
   
   
+  
+  
+  bool NackItem(UnwrappedTSN cumulative_tsn_ack,
+                TxData& item,
+                bool retransmit_now);
+
+  
+  
   void AckGapBlocks(UnwrappedTSN cumulative_tsn_ack,
                     rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
                     AckInfo& ack_info);
@@ -309,11 +325,11 @@ class RetransmissionQueue {
 
   
   
-  void ExpireChunks(TimeMs now);
+  void ExpireOutstandingChunks(TimeMs now);
   
   
   
-  void ExpireAllFor(const RetransmissionQueue::TxData& item);
+  void AbandonAllFor(const RetransmissionQueue::TxData& item);
 
   
   CongestionAlgorithmPhase phase() const {
