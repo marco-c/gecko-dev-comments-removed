@@ -14,11 +14,6 @@ const lazy = {};
 
 ChromeUtils.defineModuleGetter(
   lazy,
-  "PluralForm",
-  "resource://gre/modules/PluralForm.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -32,12 +27,6 @@ ChromeUtils.defineModuleGetter(
   "webrtcUI",
   "resource:///modules/webrtcUI.jsm"
 );
-
-XPCOMUtils.defineLazyGetter(lazy, "gBrandBundle", function() {
-  return Services.strings.createBundle(
-    "chrome://branding/locale/brand.properties"
-  );
-});
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
@@ -565,61 +554,36 @@ function prompt(aActor, aBrowser, aRequest) {
   }
 
   let chromeDoc = aBrowser.ownerDocument;
-  let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
-  let localization = new Localization(
-    ["branding/brand.ftl", "browser/browser.ftl"],
+  const localization = new Localization(
+    ["browser/webrtcIndicator.ftl", "branding/brand.ftl"],
     true
   );
 
   
-  
-  
-  let joinedRequestTypes = requestTypes.join("And");
-  let requestMessages;
-  if (aRequest.secondOrigin) {
-    requestMessages = [
-      
-      "getUserMedia.shareCameraUnsafeDelegation2.message",
-      "getUserMedia.shareMicrophoneUnsafeDelegations2.message",
-      "getUserMedia.shareScreenUnsafeDelegation2.message",
-      "getUserMedia.shareAudioCaptureUnsafeDelegation2.message",
-      "selectAudioOutput.shareSpeakerUnsafeDelegation.message",
-      
-      "getUserMedia.shareCameraAndMicrophoneUnsafeDelegation2.message",
-      "getUserMedia.shareCameraAndAudioCaptureUnsafeDelegation2.message",
-      "getUserMedia.shareScreenAndMicrophoneUnsafeDelegation2.message",
-      "getUserMedia.shareScreenAndAudioCaptureUnsafeDelegation2.message",
-    ];
-  } else {
-    requestMessages = [
-      
-      "getUserMedia.shareCamera3.message",
-      "getUserMedia.shareMicrophone3.message",
-      "getUserMedia.shareScreen4.message",
-      "getUserMedia.shareAudioCapture3.message",
-      "selectAudioOutput.shareSpeaker.message",
-      
-      "getUserMedia.shareCameraAndMicrophone3.message",
-      "getUserMedia.shareCameraAndAudioCapture3.message",
-      "getUserMedia.shareScreenAndMicrophone4.message",
-      "getUserMedia.shareScreenAndAudioCapture4.message",
-    ];
+  let reqVideoInput = null;
+  if (videoInputDevices.length) {
+    reqVideoInput = sharingScreen ? "Screen" : "Camera";
   }
+  
+  let reqAudioInput = null;
+  if (audioInputDevices.length) {
+    reqAudioInput = sharingAudio ? "AudioCapture" : "Microphone";
+  }
+  const reqAudioOutput = !!audioOutputDevices.length;
 
-  let stringId = requestMessages.find(id => id.includes(joinedRequestTypes));
-  let message = aRequest.secondOrigin
-    ? stringBundle.getFormattedString(stringId, ["<>", "{}"])
-    : stringBundle.getFormattedString(stringId, ["<>"]);
+  const stringId = getPromptMessageId(
+    reqVideoInput,
+    reqAudioInput,
+    reqAudioOutput,
+    !!aRequest.secondOrigin
+  );
+  const message = localization.formatValueSync(stringId, {
+    origin: "<>",
+    thirdParty: "{}",
+  });
 
   let notification; 
-  let mainAction = {
-    label: stringBundle.getString("getUserMedia.allow.label"),
-    accessKey: stringBundle.getString("getUserMedia.allow.accesskey"),
-    
-    
-    
-    callback() {},
-  };
+  const actionL10nIds = [{ id: "webrtc-action-allow" }];
 
   let notificationSilencingEnabled = Services.prefs.getBoolPref(
     "privacy.webrtc.allowSilencingNotifications"
@@ -631,44 +595,12 @@ function prompt(aActor, aBrowser, aRequest) {
     
     
     
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let convertAttributesToObjects = messages => {
-      return messages.map(msg => {
-        return msg.attributes.reduce((acc, attribute) => {
-          acc[attribute.name] = attribute.value;
-          return acc;
-        }, {});
-      });
-    };
-
-    let [block, alwaysBlock] = convertAttributesToObjects(
-      localization.formatMessagesSync([
-        { id: "popup-screen-sharing-block" },
-        { id: "popup-screen-sharing-always-block" },
-      ])
+    actionL10nIds.push(
+      { id: "webrtc-action-block" },
+      { id: "webrtc-action-always-block" }
     );
-
     secondaryActions = [
       {
-        label: block.label,
-        accessKey: block.accesskey,
         callback(aState) {
           aActor.denyRequest(aRequest);
           lazy.SitePermissions.setForPrincipal(
@@ -681,8 +613,6 @@ function prompt(aActor, aBrowser, aRequest) {
         },
       },
       {
-        label: alwaysBlock.label,
-        accessKey: alwaysBlock.accesskey,
         callback(aState) {
           aActor.denyRequest(aRequest);
           lazy.SitePermissions.setForPrincipal(
@@ -696,37 +626,27 @@ function prompt(aActor, aBrowser, aRequest) {
       },
     ];
   } else {
-    let label = "getUserMedia.block.label";
-    let key = "getUserMedia.block.accesskey";
-    let isNotNowLabelEnabled =
+    const isNotNowLabelEnabled =
       allowedOrActiveCameraOrMicrophone(aBrowser) && !sharingScreen;
     
     
-    if (isNotNowLabelEnabled) {
-      label = "getUserMedia.notNow.label";
-      key = "getUserMedia.notNow.accesskey";
-    }
+    const id = isNotNowLabelEnabled
+      ? "webrtc-action-not-now"
+      : "webrtc-action-block";
+    actionL10nIds.push({ id });
     secondaryActions = [
       {
-        label: stringBundle.getString(label),
-        accessKey: stringBundle.getString(key),
         callback(aState) {
           aActor.denyRequest(aRequest);
 
-          let scope = lazy.SitePermissions.SCOPE_TEMPORARY;
-          if (aState && aState.checkboxChecked) {
-            scope = lazy.SitePermissions.SCOPE_PERSISTENT;
-          }
+          const isPersistent = aState?.checkboxChecked;
 
           
           
           
           
           
-          if (
-            scope != lazy.SitePermissions.SCOPE_PERSISTENT &&
-            isNotNowLabelEnabled
-          ) {
+          if (!isPersistent && isNotNowLabelEnabled) {
             return;
           }
 
@@ -735,11 +655,14 @@ function prompt(aActor, aBrowser, aRequest) {
           
           clearTemporaryGrants(
             notification.browser,
-            videoInputDevices.length && !sharingScreen,
-            audioInputDevices.length
+            reqVideoInput === "Camera",
+            !!reqAudioInput
           );
 
-          if (audioInputDevices.length) {
+          const scope = isPersistent
+            ? lazy.SitePermissions.SCOPE_PERSISTENT
+            : lazy.SitePermissions.SCOPE_TEMPORARY;
+          if (reqAudioInput) {
             lazy.SitePermissions.setForPrincipal(
               principal,
               "microphone",
@@ -748,7 +671,7 @@ function prompt(aActor, aBrowser, aRequest) {
               notification.browser
             );
           }
-          if (videoInputDevices.length) {
+          if (reqVideoInput) {
             lazy.SitePermissions.setForPrincipal(
               principal,
               sharingScreen ? "screen" : "camera",
@@ -762,7 +685,32 @@ function prompt(aActor, aBrowser, aRequest) {
     ];
   }
 
-  let productName = lazy.gBrandBundle.GetStringFromName("brandShortName");
+  
+  
+  
+  
+  const [mainMessage, ...secondaryMessages] = localization
+    .formatMessagesSync(actionL10nIds)
+    .map(msg =>
+      msg.attributes.reduce(
+        (acc, { name, value }) => ({ ...acc, [name]: value }),
+        {}
+      )
+    );
+
+  const mainAction = {
+    label: mainMessage.label,
+    accessKey: mainMessage.accesskey,
+    
+    
+    
+    callback() {},
+  };
+
+  for (let i = 0; i < secondaryActions.length; ++i) {
+    secondaryActions[i].label = secondaryMessages[i].label;
+    secondaryActions[i].accessKey = secondaryMessages[i].accesskey;
+  }
 
   let options = {
     name: lazy.webrtcUI.getHostOrExtensionName(principal.URI),
@@ -777,9 +725,9 @@ function prompt(aActor, aBrowser, aRequest) {
 
       
       if (
-        ((aTopic == "dismissed" || aTopic == "removed") &&
-          requestTypes.includes("Screen")) ||
-        !requestTypes.includes("Screen")
+        reqVideoInput !== "Screen" ||
+        aTopic == "dismissed" ||
+        aTopic == "removed"
       ) {
         let video = doc.getElementById("webRTC-previewVideo");
         if (video.stream) {
@@ -870,22 +818,11 @@ function prompt(aActor, aBrowser, aRequest) {
         menupopup.parentNode.removeAttribute("value");
         menupopup.parentNode.selectedItem = null;
 
-        let label = doc.getElementById("webRTC-selectWindow-label");
-        const gumStringId = "getUserMedia.selectWindowOrScreen2";
-        label.setAttribute(
-          "value",
-          stringBundle.getString(gumStringId + ".label")
-        );
-        label.setAttribute(
-          "accesskey",
-          stringBundle.getString(gumStringId + ".accesskey")
-        );
-
         
         
         addDeviceToList(
           menupopup,
-          stringBundle.getString("getUserMedia.pickWindowOrScreen.label"),
+          localization.formatValueSync("webrtc-pick-window-or-screen"),
           "-1"
         );
         menupopup.appendChild(doc.createXULElement("menuseparator"));
@@ -901,14 +838,11 @@ function prompt(aActor, aBrowser, aRequest) {
           
           if (type == "screen") {
             if (device.name == "Primary Monitor") {
-              name = stringBundle.getString(
-                "getUserMedia.shareEntireScreen.label"
-              );
+              name = localization.formatValueSync("webrtc-share-entire-screen");
             } else {
-              name = stringBundle.getFormattedString(
-                "getUserMedia.shareMonitor.label",
-                [monitorIndex]
-              );
+              name = localization.formatValueSync("webrtc-share-monitor", {
+                monitorIndex,
+              });
               ++monitorIndex;
             }
           } else {
@@ -920,10 +854,9 @@ function prompt(aActor, aBrowser, aRequest) {
             
             if (name == PIPEWIRE_PORTAL_NAME && device.id == PIPEWIRE_ID) {
               isPipeWire = true;
-              let sawcStringId = "getUserMedia.sharePipeWirePortal.label";
               let item = addDeviceToList(
                 menupopup,
-                stringBundle.getString(sawcStringId),
+                localization.formatValueSync("webrtc-share-pipe-wire-portal"),
                 i,
                 type
               );
@@ -939,16 +872,11 @@ function prompt(aActor, aBrowser, aRequest) {
             if (type == "application") {
               
               
-              let sepIndex = name.indexOf("\x1e");
-              let count = name.slice(0, sepIndex);
-              let sawcStringId =
-                "getUserMedia.shareApplicationWindowCount.label";
-              name = lazy.PluralForm.get(
-                parseInt(count),
-                stringBundle.getString(sawcStringId)
-              )
-                .replace("#1", name.slice(sepIndex + 1))
-                .replace("#2", count);
+              const [count, appName] = name.split("\x1e");
+              name = localization.formatValueSync("webrtc-share-application", {
+                appName,
+                windowCount: parseInt(count),
+              });
             }
           }
           let item = addDeviceToList(menupopup, name, i, type);
@@ -973,52 +901,32 @@ function prompt(aActor, aBrowser, aRequest) {
             video.stream = null;
           }
 
-          let type = event.target.mediaSource;
-          let deviceId = event.target.deviceId;
+          const { deviceId, mediaSource, scary } = event.target;
           if (deviceId == undefined) {
             doc.getElementById("webRTC-preview").hidden = true;
             video.src = null;
             return;
           }
 
-          let scary = event.target.scary;
           let warning = doc.getElementById("webRTC-previewWarning");
           let warningBox = doc.getElementById("webRTC-previewWarningBox");
           warningBox.hidden = !scary;
           let chromeWin = doc.defaultView;
           if (scary) {
-            warningBox.hidden = false;
-            let string;
-            let bundle = chromeWin.gNavigatorBundle;
+            const warnId =
+              mediaSource == "screen"
+                ? "webrtc-share-screen-warning"
+                : "webrtc-share-browser-warning";
+            doc.l10n.setAttributes(warning, warnId);
 
-            let learnMoreText = bundle.getString(
-              "getUserMedia.shareScreen.learnMoreLabel"
-            );
-            let baseURL = Services.urlFormatter.formatURLPref(
-              "app.support.baseURL"
-            );
-
-            if (type == "screen") {
-              string = bundle.getString(
-                "getUserMedia.shareScreenWarning2.message"
-              );
-            } else {
-              let brand = doc
-                .getElementById("bundle_brand")
-                .getString("brandShortName");
-              string = bundle.getFormattedString(
-                "getUserMedia.shareFirefoxWarning2.message",
-                [brand]
-              );
-            }
-
-            warning.textContent = string;
-
-            let learnMore = doc.getElementById(
+            const learnMore = doc.getElementById(
               "webRTC-previewWarning-learnMore"
             );
+            const baseURL = Services.urlFormatter.formatURLPref(
+              "app.support.baseURL"
+            );
             learnMore.setAttribute("href", baseURL + "screenshare-safety");
-            learnMore.textContent = learnMoreText;
+            doc.l10n.setAttributes(learnMore, "webrtc-share-screen-learn-more");
 
             
             
@@ -1050,7 +958,7 @@ function prompt(aActor, aBrowser, aRequest) {
           if (!isPipeWire) {
             video.deviceId = deviceId;
             let constraints = {
-              video: { mediaSource: type, deviceId: { exact: deviceId } },
+              video: { mediaSource, deviceId: { exact: deviceId } },
             };
             chromeWin.navigator.mediaDevices.getUserMedia(constraints).then(
               stream => {
@@ -1104,14 +1012,12 @@ function prompt(aActor, aBrowser, aRequest) {
       }
 
       doc.getElementById("webRTC-selectCamera").hidden =
-        !videoInputDevices.length || sharingScreen;
+        reqVideoInput !== "Camera";
       doc.getElementById("webRTC-selectWindowOrScreen").hidden =
-        !sharingScreen || !videoInputDevices.length;
+        reqVideoInput !== "Screen";
       doc.getElementById("webRTC-selectMicrophone").hidden =
-        !audioInputDevices.length || sharingAudio;
-      doc.getElementById(
-        "webRTC-selectSpeaker"
-      ).hidden = !audioOutputDevices.length;
+        reqAudioInput !== "Microphone";
+      doc.getElementById("webRTC-selectSpeaker").hidden = !reqAudioOutput;
 
       let camMenupopup = doc.getElementById("webRTC-selectCamera-menupopup");
       let windowMenupopup = doc.getElementById("webRTC-selectWindow-menupopup");
@@ -1122,7 +1028,6 @@ function prompt(aActor, aBrowser, aRequest) {
         "webRTC-selectSpeaker-menupopup"
       );
       let describedByIDs = ["webRTC-shareDevices-notification-description"];
-      let describedBySuffix = "icon";
 
       if (sharingScreen) {
         listScreenShareDevices(windowMenupopup, videoInputDevices);
@@ -1132,8 +1037,7 @@ function prompt(aActor, aBrowser, aRequest) {
         listDevices(camMenupopup, videoInputDevices, labelID);
         notificationElement.removeAttribute("invalidselection");
         if (videoInputDevices.length == 1) {
-          describedByIDs.push("webRTC-selectCamera-" + describedBySuffix);
-          describedByIDs.push(labelID);
+          describedByIDs.push("webRTC-selectCamera-icon", labelID);
         }
       }
 
@@ -1141,16 +1045,14 @@ function prompt(aActor, aBrowser, aRequest) {
         let labelID = "webRTC-selectMicrophone-single-device-label";
         listDevices(micMenupopup, audioInputDevices, labelID);
         if (audioInputDevices.length == 1) {
-          describedByIDs.push("webRTC-selectMicrophone-" + describedBySuffix);
-          describedByIDs.push(labelID);
+          describedByIDs.push("webRTC-selectMicrophone-icon", labelID);
         }
       }
 
       let labelID = "webRTC-selectSpeaker-single-device-label";
       listDevices(speakerMenupopup, audioOutputDevices, labelID);
       if (audioInputDevices.length == 1) {
-        describedByIDs.push("webRTC-selectSpeaker-icon");
-        describedByIDs.push(labelID);
+        describedByIDs.push("webRTC-selectSpeaker-icon", labelID);
       }
 
       
@@ -1172,11 +1074,10 @@ function prompt(aActor, aBrowser, aRequest) {
 
         let allowedDevices = [];
         let perms = Services.perms;
-        if (videoInputDevices.length) {
-          let listId =
-            "webRTC-select" +
-            (sharingScreen ? "Window" : "Camera") +
-            "-menulist";
+        if (reqVideoInput) {
+          let listId = sharingScreen
+            ? "webRTC-selectWindow-menulist"
+            : "webRTC-selectCamera-menulist";
           let videoDeviceIndex = doc.getElementById(listId).value;
           let allowVideoDevice = videoDeviceIndex != "-1";
           if (allowVideoDevice) {
@@ -1202,32 +1103,32 @@ function prompt(aActor, aBrowser, aRequest) {
             }
           }
         }
-        if (audioInputDevices.length) {
-          if (!sharingAudio) {
-            let audioDeviceIndex = doc.getElementById(
-              "webRTC-selectMicrophone-menulist"
-            ).value;
-            let allowMic = audioDeviceIndex != "-1";
-            if (allowMic) {
-              allowedDevices.push(audioDeviceIndex);
-              let { mediaSource, id } = audioInputDevices.find(
-                ({ deviceIndex }) => deviceIndex == audioDeviceIndex
+
+        if (reqAudioInput === "Microphone") {
+          let audioDeviceIndex = doc.getElementById(
+            "webRTC-selectMicrophone-menulist"
+          ).value;
+          let allowMic = audioDeviceIndex != "-1";
+          if (allowMic) {
+            allowedDevices.push(audioDeviceIndex);
+            let { mediaSource, id } = audioInputDevices.find(
+              ({ deviceIndex }) => deviceIndex == audioDeviceIndex
+            );
+            aActor.activateDevicePerm(aRequest.windowID, mediaSource, id);
+            if (remember) {
+              lazy.SitePermissions.setForPrincipal(
+                principal,
+                "microphone",
+                lazy.SitePermissions.ALLOW
               );
-              aActor.activateDevicePerm(aRequest.windowID, mediaSource, id);
-              if (remember) {
-                lazy.SitePermissions.setForPrincipal(
-                  principal,
-                  "microphone",
-                  lazy.SitePermissions.ALLOW
-                );
-              }
             }
-          } else {
-            
-            allowedDevices.push(0);
           }
+        } else if (reqAudioInput === "AudioCapture") {
+          
+          allowedDevices.push(0);
         }
-        if (audioOutputDevices.length) {
+
+        if (reqAudioOutput) {
           let audioDeviceIndex = doc.getElementById(
             "webRTC-selectSpeaker-menulist"
           ).value;
@@ -1242,10 +1143,10 @@ function prompt(aActor, aBrowser, aRequest) {
           return;
         }
 
-        let camNeeded = !!videoInputDevices.length && !sharingScreen;
-        let scrNeeded = !!videoInputDevices.length && sharingScreen;
-        let micNeeded = !!audioInputDevices.length;
-        let havePermission = await aActor.checkOSPermission(
+        const camNeeded = reqVideoInput === "Camera";
+        const micNeeded = !!reqAudioInput;
+        const scrNeeded = reqVideoInput === "Screen";
+        const havePermission = await aActor.checkOSPermission(
           camNeeded,
           micNeeded,
           scrNeeded
@@ -1288,7 +1189,7 @@ function prompt(aActor, aBrowser, aRequest) {
 
     
     
-    if (audioOutputDevices.length) {
+    if (reqAudioOutput) {
       return false;
     }
 
@@ -1300,28 +1201,22 @@ function prompt(aActor, aBrowser, aRequest) {
     
     
     
-    let reasonForNoPermanentAllow = "";
+    let reason = "";
     if (sharingScreen) {
-      reasonForNoPermanentAllow =
-        "getUserMedia.reasonForNoPermanentAllow.screen3";
+      reason = "webrtc-reason-for-no-permanent-allow-screen";
     } else if (sharingAudio) {
-      reasonForNoPermanentAllow =
-        "getUserMedia.reasonForNoPermanentAllow.audio";
+      reason = "webrtc-reason-for-no-permanent-allow-audio";
     } else if (!aRequest.secure) {
-      reasonForNoPermanentAllow =
-        "getUserMedia.reasonForNoPermanentAllow.insecure";
+      reason = "webrtc-reason-for-no-permanent-allow-insecure";
     }
 
     options.checkbox = {
-      label: stringBundle.getString("getUserMedia.remember"),
+      label: localization.formatValueSync("webrtc-remember-allow-checkbox"),
       checked: principal.isAddonOrExpandedAddonPrincipal,
-      checkedState: reasonForNoPermanentAllow
+      checkedState: reason
         ? {
             disableMainAction: true,
-            warningLabel: stringBundle.getFormattedString(
-              reasonForNoPermanentAllow,
-              [productName]
-            ),
+            warningLabel: localization.formatValueSync(reason),
           }
         : undefined,
     };
@@ -1331,12 +1226,8 @@ function prompt(aActor, aBrowser, aRequest) {
   
   
   if (notificationSilencingEnabled && sharingScreen) {
-    let [silenceNotifications] = localization.formatMessagesSync([
-      { id: "popup-mute-notifications-checkbox" },
-    ]);
-
     options.checkbox = {
-      label: silenceNotifications.value,
+      label: localization.formatValueSync("webrtc-mute-notifications-checkbox"),
       checked: false,
       checkedState: {
         disableMainAction: false,
@@ -1344,22 +1235,16 @@ function prompt(aActor, aBrowser, aRequest) {
     };
   }
 
-  let iconType = "Devices";
-  if (requestTypes.length == 1) {
-    switch (requestTypes[0]) {
-      case "AudioCapture":
-        iconType = "Microphone";
-        break;
-      case "Microphone":
-      case "Speaker":
-        iconType = requestTypes[0];
-        break;
+  let anchorId = "webRTC-shareDevices-notification-icon";
+  if (reqVideoInput === "Screen") {
+    anchorId = "webRTC-shareScreen-notification-icon";
+  } else if (!reqVideoInput) {
+    if (reqAudioInput && !reqAudioOutput) {
+      anchorId = "webRTC-shareMicrophone-notification-icon";
+    } else if (!reqAudioInput && reqAudioOutput) {
+      anchorId = "webRTC-shareSpeaker-notification-icon";
     }
   }
-  if (requestTypes.includes("Screen")) {
-    iconType = "Screen";
-  }
-  let anchorId = "webRTC-share" + iconType + "-notification-icon";
 
   if (aRequest.secondOrigin) {
     options.secondName = lazy.webrtcUI.getHostOrExtensionName(
@@ -1402,6 +1287,74 @@ function prompt(aActor, aBrowser, aRequest) {
 
     schemeHistogram.add(requestType, scheme);
     userInputHistogram.add(requestType, aRequest.isHandlingUserInput);
+  }
+}
+
+
+
+
+
+
+
+
+function getPromptMessageId(
+  reqVideoInput,
+  reqAudioInput,
+  reqAudioOutput,
+  delegation
+) {
+  switch (reqVideoInput) {
+    case "Camera":
+      switch (reqAudioInput) {
+        case "Microphone":
+          return delegation
+            ? "webrtc-allow-share-camera-and-microphone-unsafe-delegation"
+            : "webrtc-allow-share-camera-and-microphone";
+        case "AudioCapture":
+          return delegation
+            ? "webrtc-allow-share-camera-and-audio-capture-unsafe-delegation"
+            : "webrtc-allow-share-camera-and-audio-capture";
+        default:
+          return delegation
+            ? "webrtc-allow-share-camera-unsafe-delegation"
+            : "webrtc-allow-share-camera";
+      }
+
+    case "Screen":
+      switch (reqAudioInput) {
+        case "Microphone":
+          return delegation
+            ? "webrtc-allow-share-screen-and-microphone-unsafe-delegation"
+            : "webrtc-allow-share-screen-and-microphone";
+        case "AudioCapture":
+          return delegation
+            ? "webrtc-allow-share-screen-and-audio-capture-unsafe-delegation"
+            : "webrtc-allow-share-screen-and-audio-capture";
+        default:
+          return delegation
+            ? "webrtc-allow-share-screen-unsafe-delegation"
+            : "webrtc-allow-share-screen";
+      }
+
+    default:
+      switch (reqAudioInput) {
+        case "Microphone":
+          return delegation
+            ? "webrtc-allow-share-microphone-unsafe-delegation"
+            : "webrtc-allow-share-microphone";
+        case "AudioCapture":
+          return delegation
+            ? "webrtc-allow-share-audio-capture-unsafe-delegation"
+            : "webrtc-allow-share-audio-capture";
+        default:
+          
+          if (reqAudioOutput) {
+            return delegation
+              ? "webrtc-allow-share-speaker-unsafe-delegation"
+              : "webrtc-allow-share-speaker";
+          }
+          return undefined;
+      }
   }
 }
 
