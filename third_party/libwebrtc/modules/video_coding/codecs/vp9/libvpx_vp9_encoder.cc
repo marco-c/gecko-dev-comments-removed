@@ -1944,7 +1944,7 @@ rtc::scoped_refptr<VideoFrameBuffer> LibvpxVp9Encoder::PrepareBufferForProfile0(
        mapped_buffer->type() != VideoFrameBuffer::Type::kI420A)) {
     
     
-    rtc::scoped_refptr<VideoFrameBuffer> converted_buffer = buffer->ToI420();
+    auto converted_buffer = buffer->ToI420();
     if (!converted_buffer) {
       RTC_LOG(LS_ERROR) << "Failed to convert "
                         << VideoFrameBufferTypeToString(buffer->type())
@@ -1958,16 +1958,7 @@ rtc::scoped_refptr<VideoFrameBuffer> LibvpxVp9Encoder::PrepareBufferForProfile0(
     
     if (converted_buffer->type() != VideoFrameBuffer::Type::kI420 &&
         converted_buffer->type() != VideoFrameBuffer::Type::kI420A) {
-      if (converted_buffer->type() == VideoFrameBuffer::Type::kNative) {
-        auto mapped_converted_buffer =
-            converted_buffer->GetMappedFrameBuffer(supported_formats);
-        if (mapped_converted_buffer)
-          converted_buffer = mapped_converted_buffer;
-      }
-      if (converted_buffer->type() != VideoFrameBuffer::Type::kI420 &&
-          converted_buffer->type() != VideoFrameBuffer::Type::kI420A) {
-        converted_buffer = converted_buffer->ToI420();
-      }
+      converted_buffer = converted_buffer->ToI420();
       RTC_CHECK(converted_buffer->type() == VideoFrameBuffer::Type::kI420 ||
                 converted_buffer->type() == VideoFrameBuffer::Type::kI420A);
     }
