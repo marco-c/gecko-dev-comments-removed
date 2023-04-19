@@ -197,6 +197,13 @@ class FragmentOrElement : public nsIContent {
 
 
     UniquePtr<CustomElementData> mCustomElementData;
+
+    
+
+
+
+    Maybe<float> mLastRememberedBSize;
+    Maybe<float> mLastRememberedISize;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {
