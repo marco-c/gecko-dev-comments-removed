@@ -1367,6 +1367,10 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     SendCache(CacheDomain::Actions, CacheUpdateType::Update);
   }
 
+  if (aAttribute == nsGkAtoms::href) {
+    mDoc->QueueCacheUpdate(this, CacheDomain::Value);
+  }
+
   if (aAttribute == nsGkAtoms::aria_controls ||
       aAttribute == nsGkAtoms::aria_flowto) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
@@ -3150,6 +3154,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     
     
     
+    
     bool cacheValueText = false;
     if (HasNumericValue()) {
       fields->SetAttribute(nsGkAtoms::value, CurValue());
@@ -3161,7 +3166,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                         mContent->AsElement()->HasAttr(
                             kNameSpaceID_None, nsGkAtoms::aria_valuetext));
     } else {
-      cacheValueText = IsTextField();
+      cacheValueText = IsTextField() || IsHTMLLink();
     }
 
     if (cacheValueText) {
