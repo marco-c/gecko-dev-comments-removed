@@ -8144,28 +8144,6 @@ const TopicsWidget = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 const WIDGET_IDS = {
   TOPICS: 1
 };
-function DSSubHeader(props) {
-  return external_React_default().createElement("div", {
-    className: "section-top-bar ds-sub-header"
-  }, external_React_default().createElement("h3", {
-    className: "section-title-container"
-  }, external_React_default().createElement("span", {
-    className: "section-title"
-  }, props.children)));
-}
-function GridContainer(props) {
-  const {
-    header,
-    className,
-    children
-  } = props;
-  console.log("header?", header);
-  return external_React_default().createElement((external_React_default()).Fragment, null, header && external_React_default().createElement(DSSubHeader, null, external_React_default().createElement(FluentOrText, {
-    message: header
-  })), external_React_default().createElement("div", {
-    className: `ds-card-grid ${className}`
-  }, children));
-}
 class CardGrid extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -8194,8 +8172,20 @@ class CardGrid extends (external_React_default()).PureComponent {
     return loadMore && data.recommendations.length > loadMoreThreshold && !this.state.moreLoaded;
   }
 
+  renderDSSubHeader(title) {
+    return external_React_default().createElement("div", {
+      className: "section-top-bar ds-sub-header"
+    }, external_React_default().createElement("h3", {
+      className: "section-title-container"
+    }, external_React_default().createElement("span", {
+      className: "section-title"
+    }, external_React_default().createElement(FluentOrText, {
+      message: title
+    }))));
+  }
+
   renderCards() {
-    var _widgets$positions, _widgets$data, _essentialReadsCards, _editorsPicksCards;
+    var _widgets$positions, _widgets$data;
 
     let {
       items
@@ -8227,11 +8217,8 @@ class CardGrid extends (external_React_default()).PureComponent {
       showLastCardMessage = false;
     }
 
-    console.log("items", items);
     const recs = this.props.data.recommendations.slice(0, items);
     const cards = [];
-    let essentialReadsCards = [];
-    let editorsPicksCards = [];
 
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
@@ -8276,6 +8263,17 @@ class CardGrid extends (external_React_default()).PureComponent {
         is_collection: this.props.is_collection
       }));
     } 
+    
+
+
+    if (essentialReadsHeader && editorsPicksHeader) {
+      
+      if (fourCardLayout) {
+        cards.splice(8, 0, this.renderDSSubHeader("Editor’s Picks"));
+      } else {
+        cards.splice(6, 0, this.renderDSSubHeader("Editor’s Picks"));
+      }
+    } 
 
 
     if (showLastCardMessage) {
@@ -8317,39 +8315,15 @@ class CardGrid extends (external_React_default()).PureComponent {
     } 
 
 
-    if (essentialReadsHeader && editorsPicksHeader) {
-      console.log("in splice");
-      let spliceAt = 6; 
-
-      if (fourCardLayout) {
-        spliceAt = 8;
-      } 
-
-
-      essentialReadsCards = [...cards.splice(0, spliceAt)]; 
-
-      editorsPicksCards = [...cards.splice(0, cards.length)];
-    }
-
-    console.log(essentialReadsCards.length);
-    console.log(cards.length); 
-
     const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
     const hideCardBackgroundClass = hideCardBackground ? `ds-card-grid-hide-background` : ``;
     const fourCardLayoutClass = fourCardLayout ? `ds-card-grid-four-card-variant` : ``;
     const hideDescriptionsClassName = !hideDescriptions ? `ds-card-grid-include-descriptions` : ``;
     const compactGridClassName = compactGrid ? `ds-card-grid-compact` : ``;
     const hybridLayoutClassName = hybridLayout ? `ds-card-grid-hybrid-layout` : ``;
-    const className = `ds-card-grid-${this.props.border} ${variantClass} ${hybridLayoutClassName} ${hideCardBackgroundClass} ${fourCardLayoutClass} ${hideDescriptionsClassName} ${compactGridClassName}`;
-    console.log(editorsPicksCards.length, "length");
-    return external_React_default().createElement((external_React_default()).Fragment, null, ((_essentialReadsCards = essentialReadsCards) === null || _essentialReadsCards === void 0 ? void 0 : _essentialReadsCards.length) > 0 && external_React_default().createElement(GridContainer, {
-      className: className
-    }, essentialReadsCards), ((_editorsPicksCards = editorsPicksCards) === null || _editorsPicksCards === void 0 ? void 0 : _editorsPicksCards.length) > 0 && external_React_default().createElement(GridContainer, {
-      className: className,
-      header: "Editor\u2019s Picks"
-    }, editorsPicksCards), (cards === null || cards === void 0 ? void 0 : cards.length) > 0 && external_React_default().createElement(GridContainer, {
-      className: className
-    }, cards));
+    return external_React_default().createElement("div", {
+      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${hybridLayoutClassName} ${hideCardBackgroundClass} ${fourCardLayoutClass} ${hideDescriptionsClassName} ${compactGridClassName}`
+    }, cards);
   }
 
   render() {
