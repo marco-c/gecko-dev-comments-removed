@@ -27,12 +27,44 @@ namespace workerinternals::loader {
 class CacheCreator;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WorkerLoadContext : public JS::loader::LoadContextBase {
  public:
   explicit WorkerLoadContext();
 
   ~WorkerLoadContext() = default;
 
+  
+  Maybe<bool> mMutedErrorFlag;
+  nsresult mLoadResult = NS_ERROR_NOT_INITIALIZED;
+
+  
+  
   
   
   nsString mFullURL;
@@ -46,8 +78,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   
   
   nsCOMPtr<nsIInputStream> mCacheReadStream;
-
-  nsresult mLoadResult = NS_ERROR_NOT_INITIALIZED;
 
   RefPtr<workerinternals::loader::CacheCreator> mCacheCreator;
 
@@ -79,8 +109,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   };
 
   CacheStatus mCacheStatus = Uncached;
-
-  Maybe<bool> mMutedErrorFlag;
 
   bool IsAwaitingPromise() const { return bool(mCachePromise); }
 };
