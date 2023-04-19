@@ -11,6 +11,7 @@
 #include "media/engine/webrtc_voice_engine.h"
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <string>
@@ -1167,7 +1168,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   
   
   absl::optional<std::string> audio_network_adaptor_config_from_options_;
-  int num_encoded_channels_ = -1;
+  std::atomic<int> num_encoded_channels_{-1};
 };
 
 class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
