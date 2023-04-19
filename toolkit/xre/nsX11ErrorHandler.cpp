@@ -9,11 +9,45 @@
 #include "nsXULAppAPI.h"
 #include "nsExceptionHandler.h"
 #include "nsDebug.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 #include "mozilla/X11Util.h"
 #include <X11/Xlib.h>
 
 #define BUFSIZE 2048  // What Xlib uses with XGetErrorDatabaseText
+
+struct XExtension {
+  nsCString name;
+  int major_opcode;
+
+  XExtension(const char* aName, int aCode) : name(aName), major_opcode(aCode) {}
+};
+
+static nsTArray<XExtension> sXExtensions;
+
+
+
+
+
+static void QueryXExtensions(Display* aDisplay) {
+  if (!aDisplay) {
+    return;
+  }
+  int nExts = 0;
+  char** extNames = XListExtensions(aDisplay, &nExts);
+  if (!extNames) {
+    return;
+  }
+  for (int i = 0; i < nExts; ++i) {
+    int major_opcode, first_event, first_error;
+    if (XQueryExtension(aDisplay, extNames[i], &major_opcode, &first_event,
+                        &first_error)) {
+      sXExtensions.EmplaceBack(extNames[i], major_opcode);
+    }
+  }
+  XFreeExtensionList(extNames);
+}
 
 extern "C" {
 int X11Error(Display* display, XErrorEvent* event) {
@@ -28,34 +62,13 @@ int X11Error(Display* display, XErrorEvent* event) {
     message.AppendInt(event->request_code);
   } else {
     
-
-    
-    
-    
-    
-    
-    
-    Display* tmpDisplay = XOpenDisplay(nullptr);
-    if (tmpDisplay) {
-      int nExts;
-      char** extNames = XListExtensions(tmpDisplay, &nExts);
-      int first_error;
-      if (extNames) {
-        for (int i = 0; i < nExts; ++i) {
-          int major_opcode, first_event;
-          if (XQueryExtension(tmpDisplay, extNames[i], &major_opcode,
-                              &first_event, &first_error) &&
-              major_opcode == event->request_code) {
-            message.Append(extNames[i]);
-            message.Append('.');
-            message.AppendInt(event->minor_code);
-            break;
-          }
-        }
-
-        XFreeExtensionList(extNames);
+    for (XExtension& ext : sXExtensions) {
+      if (ext.major_opcode == event->request_code) {
+        message.Append(ext.name);
+        message.Append('.');
+        message.AppendInt(event->minor_code);
+        break;
       }
-      XCloseDisplay(tmpDisplay);
     }
   }
 
@@ -130,9 +143,9 @@ int X11Error(Display* display, XErrorEvent* event) {
 void InstallX11ErrorHandler() {
   XSetErrorHandler(X11Error);
 
-  if (PR_GetEnv("MOZ_X_SYNC")) {
-    Display* display = mozilla::DefaultXDisplay();
-    if (display) {
+  if (Display* display = mozilla::DefaultXDisplay()) {
+    QueryXExtensions(display);
+    if (PR_GetEnv("MOZ_X_SYNC")) {
       XSynchronize(display, X11True);
     }
   }
