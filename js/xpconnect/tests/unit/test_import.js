@@ -63,33 +63,6 @@ function run_test() {
   Assert.ok(didThrow);
 
   
-  do_load_manifest("component_import.manifest");
-  const contractID = "@mozilla.org/tests/module-importer;";
-  Assert.ok((contractID + "1") in Cc);
-  var foo = Cc[contractID + "1"]
-              .createInstance(Ci.nsIClassInfo);
-  Assert.ok(Boolean(foo));
-  Assert.ok(foo.contractID == contractID + "1");
-  
-  
-  
-  
-
-  
-  
-  var interfaces = foo.interfaces;
-  Assert.ok(Array.isArray(interfaces));
-  Assert.equal(interfaces.length, 1);
-  Assert.ok(interfaces[0].equals(Ci.nsIClassInfo))
-
-  
-  Assert.ok((contractID + "2") in Cc);
-  var bar = Cc[contractID + "2"]
-              .createInstance(Ci.nsIClassInfo);
-  Assert.ok(Boolean(bar));
-  Assert.ok(bar.contractID == contractID + "2");
-
-  
   var scope4 = {};
   const wrongScheme = "data:text/javascript,var a = {a:1}";
   Assert.throws(
