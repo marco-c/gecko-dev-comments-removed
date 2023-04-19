@@ -29,14 +29,18 @@
 
 
 
+#ifdef HAVE_ARC4RANDOM
+
+#define EVENT__HAVE_ARC4RANDOM 1
+#endif
 
 
 
 
+#ifdef HAVE_ARC4RANDOM_BUF
 
-
-
-
+#define EVENT__HAVE_ARC4RANDOM_BUF 1
+#endif
 
 
 #define EVENT__HAVE_ARPA_INET_H 1
