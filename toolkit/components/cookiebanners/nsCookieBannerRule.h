@@ -9,8 +9,6 @@
 #include "nsString.h"
 #include "nsCOMPtr.h"
 
-class nsIClickRule;
-
 namespace mozilla {
 
 class nsCookieBannerRule final : public nsICookieBannerRule {
@@ -30,8 +28,6 @@ class nsCookieBannerRule final : public nsICookieBannerRule {
 
   
   nsTArray<nsCOMPtr<nsICookieRule>>& Cookies(bool isOptOut);
-
-  nsCOMPtr<nsIClickRule> mClickRule;
 };
 
 }  
