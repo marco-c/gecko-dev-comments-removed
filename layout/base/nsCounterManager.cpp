@@ -8,21 +8,19 @@
 
 #include "nsCounterManager.h"
 
-#include "mozilla/AutoRestore.h"
-#include "mozilla/ContainStyleScopeManager.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/Likely.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/Text.h"
-#include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIFrame.h"
+#include "nsContainerFrame.h"
 #include "nsTArray.h"
+#include "mozilla/dom/Text.h"
 
 using namespace mozilla;
 
@@ -51,11 +49,8 @@ bool nsCounterUseNode::InitTextFrame(nsGenConList* aList,
 
 
 void nsCounterUseNode::Calc(nsCounterList* aList, bool aNotify) {
-  NS_ASSERTION(aList->IsRecalculatingAll() || !aList->IsDirty(),
-               "Why are we calculating with a dirty list?");
-
+  NS_ASSERTION(!aList->IsDirty(), "Why are we calculating with a dirty list?");
   mValueAfter = nsCounterList::ValueBefore(this);
-
   if (mText) {
     nsAutoString contentString;
     GetText(contentString);
@@ -66,8 +61,7 @@ void nsCounterUseNode::Calc(nsCounterList* aList, bool aNotify) {
 
 
 void nsCounterChangeNode::Calc(nsCounterList* aList) {
-  NS_ASSERTION(aList->IsRecalculatingAll() || !aList->IsDirty(),
-               "Why are we calculating with a dirty list?");
+  NS_ASSERTION(!aList->IsDirty(), "Why are we calculating with a dirty list?");
   if (IsContentBasedReset()) {
     
   } else if (mType == RESET || mType == SET) {
@@ -153,14 +147,6 @@ static const nsIContent* GetParentContentForScope(nsIFrame* frame) {
   return content;
 }
 
-bool nsCounterList::IsDirty() const {
-  return mScope->GetScopeManager().CounterDirty(mCounterName);
-}
-
-void nsCounterList::SetDirty() {
-  mScope->GetScopeManager().SetCounterDirty(mCounterName);
-}
-
 void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
@@ -175,13 +161,12 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   auto setNullScopeFor = [](nsCounterNode* aNode) {
     aNode->mScopeStart = nullptr;
     aNode->mScopePrev = nullptr;
-    aNode->mCrossesContainStyleBoundaries = false;
     if (aNode->IsUnitializedIncrementNode()) {
       aNode->ChangeNode()->mChangeValue = 1;
     }
   };
 
-  if (aNode == First() && aNode->mType != nsCounterNode::USE) {
+  if (aNode == First()) {
     setNullScopeFor(aNode);
     return;
   }
@@ -191,7 +176,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
       return;
     }
     if (aNode->mScopeStart->IsContentBasedReset()) {
-      SetDirty();
+      mDirty = true;
     }
     if (aNode->IsUnitializedIncrementNode()) {
       aNode->ChangeNode()->mChangeValue =
@@ -217,7 +202,6 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
       }
       aNode->mScopeStart = counter;
       aNode->mScopePrev = counter;
-      aNode->mCrossesContainStyleBoundaries = false;
       for (nsCounterNode* prev = Prev(aNode); prev; prev = prev->mScopePrev) {
         if (prev->mScopeStart == counter) {
           aNode->mScopePrev =
@@ -245,93 +229,44 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
   const nsIContent* nodeContent = GetParentContentForScope(aNode->mPseudoFrame);
-  if (SetScopeByWalkingBackwardThroughList(aNode, nodeContent, Prev(aNode))) {
-    aNode->mCrossesContainStyleBoundaries = false;
-    didSetScopeFor(aNode);
-    return;
-  }
-
-  
-  
-  
-  
-  if (aNode->mType == nsCounterNode::USE && aNode == First()) {
-    for (auto* scope = mScope->GetParent(); scope; scope = scope->GetParent()) {
-      if (auto* counterList =
-              scope->GetCounterManager().GetCounterList(mCounterName)) {
-        if (auto* node = static_cast<nsCounterNode*>(
-                mScope->GetPrecedingElementInGenConList(counterList))) {
-          if (SetScopeByWalkingBackwardThroughList(aNode, nodeContent, node)) {
-            aNode->mCrossesContainStyleBoundaries = true;
-            didSetScopeFor(aNode);
-            return;
-          }
-        }
-      }
-    }
-  }
-
-  setNullScopeFor(aNode);
-}
-
-bool nsCounterList::SetScopeByWalkingBackwardThroughList(
-    nsCounterNode* aNodeToSetScopeFor, const nsIContent* aNodeContent,
-    nsCounterNode* aNodeToBeginLookingAt) {
-  for (nsCounterNode *prev = aNodeToBeginLookingAt, *start; prev;
+  for (nsCounterNode *prev = Prev(aNode), *start; prev;
        prev = start->mScopePrev) {
     
     
     
     
     
-    
-    
-    
-    
-    
-    start =
-        (prev->mType == nsCounterNode::RESET || !prev->mScopeStart ||
-         (prev->mScopePrev && prev->mScopePrev->mCrossesContainStyleBoundaries))
-            ? prev
-            : prev->mScopeStart;
+    start = (prev->mType == nsCounterNode::RESET || !prev->mScopeStart)
+                ? prev
+                : prev->mScopeStart;
 
+    
     const nsIContent* startContent =
         GetParentContentForScope(start->mPseudoFrame);
-    NS_ASSERTION(aNodeContent || !startContent,
+    NS_ASSERTION(nodeContent || !startContent,
                  "null check on startContent should be sufficient to "
-                 "null check aNodeContent as well, since if aNodeContent "
+                 "null check nodeContent as well, since if nodeContent "
                  "is for the root, startContent (which is before it) "
                  "must be too");
 
     
-    if (!(aNodeToSetScopeFor->mType == nsCounterNode::RESET &&
-          aNodeContent == startContent) &&
+    if (!(aNode->mType == nsCounterNode::RESET &&
+          nodeContent == startContent) &&
         
         
         (!startContent ||
-         aNodeContent->IsInclusiveFlatTreeDescendantOf(startContent))) {
-      
-      
-      
-      
-      if (aNodeToSetScopeFor->mType == nsCounterNode::USE) {
-        aNodeToSetScopeFor->mCrossesContainStyleBoundaries =
-            prev->mCrossesContainStyleBoundaries;
-      }
-
-      aNodeToSetScopeFor->mScopeStart = start;
-      aNodeToSetScopeFor->mScopePrev = prev;
-      return true;
+         nodeContent->IsInclusiveFlatTreeDescendantOf(startContent))) {
+      aNode->mScopeStart = start;
+      aNode->mScopePrev = prev;
+      didSetScopeFor(aNode);
+      return;
     }
   }
 
-  return false;
+  setNullScopeFor(aNode);
 }
 
 void nsCounterList::RecalcAll() {
-  AutoRestore<bool> restoreRecalculatingAll(mRecalculatingAll);
-  mRecalculatingAll = true;
-
   
   
   
@@ -371,6 +306,7 @@ void nsCounterList::RecalcAll() {
     iter.Key()->mValueAfter += iter.Data();
   }
 
+  mDirty = false;
   for (nsCounterNode* node = First(); node; node = Next(node)) {
     node->Calc(this,  true);
   }
@@ -382,8 +318,7 @@ static bool AddCounterChangeNode(nsCounterManager& aManager, nsIFrame* aFrame,
                                  nsCounterNode::Type aType) {
   auto* node = new nsCounterChangeNode(aFrame, aType, aPair.value, aIndex,
                                        aPair.is_reversed);
-  nsCounterList* counterList =
-      aManager.GetOrCreateCounterList(aPair.name.AsAtom());
+  nsCounterList* counterList = aManager.CounterListFor(aPair.name.AsAtom());
   counterList->Insert(node);
   if (!counterList->IsLast(node)) {
     
@@ -469,14 +404,9 @@ bool nsCounterManager::AddCounterChanges(nsIFrame* aFrame) {
   return dirty;
 }
 
-nsCounterList* nsCounterManager::GetOrCreateCounterList(nsAtom* aCounterName) {
+nsCounterList* nsCounterManager::CounterListFor(nsAtom* aCounterName) {
   MOZ_ASSERT(aCounterName);
-  return mNames.GetOrInsertNew(aCounterName, aCounterName, mScope);
-}
-
-nsCounterList* nsCounterManager::GetCounterList(nsAtom* aCounterName) {
-  MOZ_ASSERT(aCounterName);
-  return mNames.Get(aCounterName);
+  return mNames.GetOrInsertNew(aCounterName);
 }
 
 void nsCounterManager::RecalcAll() {
@@ -507,19 +437,37 @@ bool nsCounterManager::DestroyNodesFor(nsIFrame* aFrame) {
 }
 
 #ifdef ACCESSIBILITY
-bool nsCounterManager::GetFirstCounterValueForFrame(
-    nsIFrame* aFrame, CounterValue& aOrdinal) const {
+void nsCounterManager::GetSpokenCounterText(nsIFrame* aFrame,
+                                            nsAString& aText) const {
+  CounterValue ordinal = 1;
   if (const auto* list = mNames.Get(nsGkAtoms::list_item)) {
     for (nsCounterNode* n = list->GetFirstNodeFor(aFrame);
          n && n->mPseudoFrame == aFrame; n = list->Next(n)) {
       if (n->mType == nsCounterNode::USE) {
-        aOrdinal = n->mValueAfter;
-        return true;
+        ordinal = n->mValueAfter;
+        break;
       }
     }
   }
-
-  return false;
+  CounterStyle* counterStyle =
+      aFrame->PresContext()->CounterStyleManager()->ResolveCounterStyle(
+          aFrame->StyleList()->mCounterStyle);
+  nsAutoString text;
+  bool isBullet;
+  counterStyle->GetSpokenCounterText(ordinal, aFrame->GetWritingMode(), text,
+                                     isBullet);
+  if (isBullet) {
+    aText = text;
+    if (!counterStyle->IsNone()) {
+      aText.Append(' ');
+    }
+  } else {
+    counterStyle->GetPrefix(aText);
+    aText += text;
+    nsAutoString suffix;
+    counterStyle->GetSuffix(suffix);
+    aText += suffix;
+  }
 }
 #endif
 

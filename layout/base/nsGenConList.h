@@ -9,12 +9,10 @@
 #ifndef nsGenConList_h___
 #define nsGenConList_h___
 
-#include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
 #include "nsStyleStruct.h"
 #include "nsCSSPseudoElements.h"
 #include "nsTextNode.h"
-#include <functional>
 
 class nsGenConList;
 class nsIFrame;
@@ -96,13 +94,6 @@ class nsGenConList {
 
   
   static bool NodeAfter(const nsGenConNode* aNode1, const nsGenConNode* aNode2);
-
-  
-  
-  nsGenConNode* BinarySearch(
-      const mozilla::FunctionRef<bool(nsGenConNode*)>& aIsAfter);
-
-  nsGenConNode* GetLast() { return mList.getLast(); }
 
   bool IsFirst(nsGenConNode* aNode) {
     MOZ_ASSERT(aNode, "aNode cannot be nullptr!");

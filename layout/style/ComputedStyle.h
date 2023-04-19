@@ -165,10 +165,6 @@ class ComputedStyle {
     return bool(Flags() & Flag::IS_IN_PSEUDO_ELEMENT_SUBTREE);
   }
 
-  bool SelfOrAncestorHasContainStyle() const {
-    return bool(Flags() & Flag::SELF_OR_ANCESTOR_HAS_CONTAIN_STYLE);
-  }
-
   
   
   

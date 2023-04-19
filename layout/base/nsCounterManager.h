@@ -19,12 +19,6 @@ class nsCounterList;
 struct nsCounterUseNode;
 struct nsCounterChangeNode;
 
-namespace mozilla {
-
-class ContainStyleScope;
-
-}  
-
 struct nsCounterNode : public nsGenConNode {
   enum Type {
     RESET,      
@@ -59,11 +53,6 @@ struct nsCounterNode : public nsGenConNode {
   
   
   nsCounterNode* mScopePrev = nullptr;
-
-  
-  
-  
-  bool mCrossesContainStyleBoundaries = false;
 
   inline nsCounterUseNode* UseNode();
   inline nsCounterChangeNode* ChangeNode();
@@ -211,10 +200,7 @@ inline bool nsCounterNode::IsUnitializedIncrementNode() {
 
 class nsCounterList : public nsGenConList {
  public:
-  nsCounterList(nsAtom* aCounterName, mozilla::ContainStyleScope* aScope)
-      : nsGenConList(), mCounterName(aCounterName), mScope(aScope) {
-    MOZ_ASSERT(aScope);
-  }
+  nsCounterList() : nsGenConList(), mDirty(false) {}
 
   
   nsCounterNode* GetFirstNodeFor(nsIFrame* aFrame) const {
@@ -242,16 +228,7 @@ class nsCounterList : public nsGenConList {
   }
 
   static int32_t ValueBefore(nsCounterNode* aNode) {
-    if (!aNode->mScopePrev) {
-      return 0;
-    }
-
-    if (aNode->mType != nsCounterNode::USE &&
-        aNode->mScopePrev->mCrossesContainStyleBoundaries) {
-      return 0;
-    }
-
-    return aNode->mScopePrev->mValueAfter;
+    return aNode->mScopePrev ? aNode->mScopePrev->mValueAfter : 0;
   }
 
   
@@ -261,18 +238,11 @@ class nsCounterList : public nsGenConList {
   
   void RecalcAll();
 
-  bool IsDirty() const;
-  void SetDirty();
-  bool IsRecalculatingAll() const { return mRecalculatingAll; }
+  bool IsDirty() { return mDirty; }
+  void SetDirty() { mDirty = true; }
 
  private:
-  bool SetScopeByWalkingBackwardThroughList(
-      nsCounterNode* aNodeToSetScopeFor, const nsIContent* aNodeContent,
-      nsCounterNode* aNodeToBeginLookingAt);
-
-  RefPtr<nsAtom> mCounterName;
-  mozilla::ContainStyleScope* mScope;
-  bool mRecalculatingAll = false;
+  bool mDirty;
 };
 
 
@@ -281,18 +251,12 @@ class nsCounterList : public nsGenConList {
 
 class nsCounterManager {
  public:
-  explicit nsCounterManager(mozilla::ContainStyleScope* scope)
-      : mScope(scope) {}
-
   
   bool AddCounterChanges(nsIFrame* aFrame);
 
   
   
-  nsCounterList* GetOrCreateCounterList(nsAtom* aCounterName);
-
-  
-  nsCounterList* GetCounterList(nsAtom* aCounterName);
+  nsCounterList* CounterListFor(nsAtom* aCounterName);
 
   
   void RecalcAll();
@@ -309,10 +273,7 @@ class nsCounterManager {
 
 #ifdef ACCESSIBILITY
   
-  
-  
-  bool GetFirstCounterValueForFrame(nsIFrame* aFrame,
-                                    mozilla::CounterValue& aOrdinal) const;
+  void GetSpokenCounterText(nsIFrame* aFrame, nsAString& aText) const;
 #endif
 
 #if defined(DEBUG) || defined(MOZ_LAYOUT_DEBUGGER)
@@ -343,7 +304,6 @@ class nsCounterManager {
   }
 
  private:
-  mozilla::ContainStyleScope* mScope;
   nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsCounterList> mNames;
 };
 
