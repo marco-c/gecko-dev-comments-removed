@@ -2923,23 +2923,19 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
   }
 
   OnDonePrinting();
-  RefPtr<nsPrintJob> printJob = new nsPrintJob();
 
   
   
-  nsresult rv =
-      printJob->Initialize(*this, *mContainer, *mDocument,
-                           float(AppUnitsPerCSSInch()) /
-                               float(mDeviceContext->AppUnitsPerDevPixel()));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    printJob->Destroy();
-    return rv;
-  }
-
+  
+  
+  RefPtr<nsPrintJob> printJob =
+      new nsPrintJob(*this, *mContainer, *mDocument,
+                     float(AppUnitsPerCSSInch()) /
+                         float(mDeviceContext->AppUnitsPerDevPixel()));
   mPrintJob = printJob;
 
-  rv = printJob->Print(*mDocument, aPrintSettings, aRemotePrintJob,
-                       aWebProgressListener);
+  nsresult rv = printJob->Print(*mDocument, aPrintSettings, aRemotePrintJob,
+                                aWebProgressListener);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     OnDonePrinting();
   }
@@ -2971,22 +2967,18 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
 
   OnDonePrinting();
 
-  RefPtr<nsPrintJob> printJob = new nsPrintJob();
-
   
   
-  nsresult rv =
-      printJob->Initialize(*this, *mContainer, *doc,
-                           float(AppUnitsPerCSSInch()) /
-                               float(mDeviceContext->AppUnitsPerDevPixel()));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    printJob->Destroy();
-    return rv;
-  }
+  
+  
+  RefPtr<nsPrintJob> printJob =
+      new nsPrintJob(*this, *mContainer, *doc,
+                     float(AppUnitsPerCSSInch()) /
+                         float(mDeviceContext->AppUnitsPerDevPixel()));
   mPrintJob = printJob;
 
-  rv = printJob->PrintPreview(*doc, aPrintSettings, aWebProgressListener,
-                              std::move(aCallback));
+  nsresult rv = printJob->PrintPreview(
+      *doc, aPrintSettings, aWebProgressListener, std::move(aCallback));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     OnDonePrinting();
   }

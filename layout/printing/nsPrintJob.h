@@ -57,8 +57,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   using RemotePrintJobChild = mozilla::layout::RemotePrintJobChild;
 
  public:
-  nsPrintJob();
-
   
   NS_DECL_ISUPPORTS
 
@@ -87,9 +85,12 @@ class nsPrintJob final : public nsIWebProgressListener,
 
 
 
-  nsresult Initialize(nsIDocumentViewerPrint& aDocViewerPrint,
-                      nsIDocShell& aDocShell, Document& aOriginalDoc,
-                      float aScreenDPI);
+
+
+
+
+  nsPrintJob(nsIDocumentViewerPrint& aDocViewerPrint, nsIDocShell& aDocShell,
+             Document& aOriginalDoc, float aScreenDPI);
 
   
   

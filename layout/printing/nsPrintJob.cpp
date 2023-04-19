@@ -231,8 +231,6 @@ static nsresult GetDefaultPrintSettings(nsIPrintSettings** aSettings) {
 NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener, nsISupportsWeakReference)
 
 
-nsPrintJob::nsPrintJob() = default;
-
 nsPrintJob::~nsPrintJob() {
   Destroy();  
   DisconnectPagePrintTimer();
@@ -258,18 +256,12 @@ void nsPrintJob::DestroyPrintingData() {
   mPrt = nullptr;
 }
 
-
-
-
-
-
-nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint& aDocViewerPrint,
-                                nsIDocShell& aDocShell, Document& aOriginalDoc,
-                                float aScreenDPI) {
-  mDocViewerPrint = &aDocViewerPrint;
-  mDocShell = do_GetWeakReference(&aDocShell);
-  mScreenDPI = aScreenDPI;
-
+nsPrintJob::nsPrintJob(nsIDocumentViewerPrint& aDocViewerPrint,
+                       nsIDocShell& aDocShell, Document& aOriginalDoc,
+                       float aScreenDPI)
+    : mDocViewerPrint(&aDocViewerPrint),
+      mDocShell(do_GetWeakReference(&aDocShell)),
+      mScreenDPI(aScreenDPI) {
   
   
   
@@ -287,8 +279,6 @@ nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint& aDocViewerPrint,
       wbc->IsWindowModal(&mIsForModalWindow);
     }
   }
-
-  return NS_OK;
 }
 
 
@@ -320,9 +310,6 @@ nsPrintJob::GetSeqFrameAndCountSheets() const {
   
   return {seqFrame, seqFrame->PrincipalChildList().GetLength()};
 }
-
-
-
 
 
 #ifdef EXTENDED_DEBUG_PRINTING
