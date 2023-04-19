@@ -61,9 +61,6 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register) {
 #endif
 
   
-  
-
-  
   masm.Push(Operand(StackPointer, 0));
 
   

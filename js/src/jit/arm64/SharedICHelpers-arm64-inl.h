@@ -59,8 +59,6 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
 #endif
 
   
-
-  
   
   masm.PushFrameDescriptor(FrameType::BaselineJS);
   masm.Push(ICTailCallReg);

@@ -705,10 +705,6 @@ class BaselineStubFrameLayout : public CommonFrameLayout {
 };
 
 
-
-static constexpr size_t StubFrameSize = 4 * sizeof(uintptr_t);
-
-
 class InvalidationBailoutStack {
   RegisterDump::FPUArray fpregs_;
   RegisterDump::GPRArray regs_;

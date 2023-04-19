@@ -557,7 +557,9 @@ void FallbackICCodeCompiler::assumeStubFrame() {
 
   
   
-  framePushedAtEnterStubFrame_ = StubFrameSize;
+  
+  framePushedAtEnterStubFrame_ =
+      BaselineStubFrameLayout::Size() + sizeof(ICStub*);
 #endif
 }
 
