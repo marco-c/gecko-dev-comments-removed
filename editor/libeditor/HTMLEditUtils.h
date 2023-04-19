@@ -167,6 +167,13 @@ class HTMLEditUtils final {
     return !IsBlockElement(aContent);
   }
 
+  
+
+
+
+
+  static bool IsVisibleElementEvenIfLeafNode(const nsIContent& aContent);
+
   static bool IsInlineStyle(nsINode* aNode);
 
   
@@ -848,7 +855,7 @@ class HTMLEditUtils final {
   };
   using LeafNodeTypes = EnumSet<LeafNodeType>;
   static nsIContent* GetLastLeafContent(
-      nsINode& aNode, const LeafNodeTypes& aLeafNodeTypes,
+      const nsINode& aNode, const LeafNodeTypes& aLeafNodeTypes,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT_IF(
         aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode),
@@ -1644,6 +1651,13 @@ class HTMLEditUtils final {
     }
     return nullptr;
   }
+
+  
+
+
+
+  static nsIContent* GetUnnecessaryLineBreakContent(
+      const Element& aBlockElement);
 
   
 

@@ -164,6 +164,31 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent) {
       nsHTMLTags::AtomTagToId(aContent.NodeInfo()->NameAtom()));
 }
 
+bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
+  if (!aContent.IsElement()) {
+    return false;
+  }
+  
+  if (!aContent.IsHTMLElement()) {
+    return true;
+  }
+  if (HTMLEditUtils::IsBlockElement(aContent)) {
+    return true;
+  }
+  if (aContent.IsAnyOfHTMLElements(nsGkAtoms::applet, nsGkAtoms::iframe,
+                                   nsGkAtoms::img, nsGkAtoms::meter,
+                                   nsGkAtoms::progress, nsGkAtoms::select,
+                                   nsGkAtoms::textarea)) {
+    return true;
+  }
+  if (const HTMLInputElement* inputElement =
+          HTMLInputElement::FromNode(&aContent)) {
+    return inputElement->ControlType() != FormControlType::InputHidden;
+  }
+  
+  return false;
+}
+
 
 
 
@@ -505,10 +530,7 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
 
       
       
-      if (nextContent->IsAnyOfHTMLElements(
-              nsGkAtoms::applet, nsGkAtoms::iframe, nsGkAtoms::img,
-              nsGkAtoms::meter, nsGkAtoms::progress, nsGkAtoms::select,
-              nsGkAtoms::textarea)) {
+      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
         return nullptr;
       }
 
@@ -529,15 +551,6 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         
         
         return nextContent->AsElement();
-      }
-
-      if (HTMLInputElement* inputElement =
-              HTMLInputElement::FromNode(nextContent)) {
-        if (inputElement->ControlType() == FormControlType::InputHidden) {
-          continue;  
-        }
-        return nullptr;  
-                         
       }
 
       continue;
@@ -580,6 +593,140 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
   
   
   return maybeNonEditableAncestorBlock;
+}
+
+nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
+    const Element& aBlockElement) {
+  auto* lastLineBreakContent = [&]() -> nsIContent* {
+    const LeafNodeTypes leafNodeOrNonEditableNode{
+        LeafNodeType::LeafNodeOrNonEditableNode};
+    for (nsIContent* content = HTMLEditUtils::GetLastLeafContent(
+             aBlockElement, leafNodeOrNonEditableNode);
+         content;
+         content = HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+             *content, aBlockElement, leafNodeOrNonEditableNode)) {
+      if (Text* textNode = Text::FromNode(content)) {
+        if (!textNode->TextLength()) {
+          continue;  
+        }
+        const nsTextFragment& textFragment = textNode->TextFragment();
+        if (EditorUtils::IsNewLinePreformatted(*textNode) &&
+            textFragment.CharAt(textFragment.GetLength() - 1u) ==
+                HTMLEditUtils::kNewLine) {
+          
+          
+          if (textFragment.GetLength() == 1u) {
+            return textNode;  
+          }
+          return textFragment.CharAt(textFragment.GetLength() - 2u) ==
+                         HTMLEditUtils::kNewLine
+                     ? nullptr
+                     : textNode;
+        }
+        if (HTMLEditUtils::IsVisibleTextNode(*textNode)) {
+          return nullptr;
+        }
+        continue;
+      }
+      if (content->IsCharacterData()) {
+        continue;  
+      }
+      if (content->IsHTMLElement(nsGkAtoms::br)) {
+        return content;
+      }
+      
+      
+      if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*content)) {
+        return nullptr;
+      }
+      
+    }
+    return nullptr;
+  }();
+  if (!lastLineBreakContent) {
+    return nullptr;
+  }
+
+  
+  
+  
+  Text* lastLineBreakText = Text::FromNode(lastLineBreakContent);
+  if (lastLineBreakText && lastLineBreakText->TextDataLength() != 1u) {
+    return lastLineBreakText;
+  }
+
+  
+  const LeafNodeTypes leafNodeOrNonEditableNodeOrChildBlock{
+      LeafNodeType::LeafNodeOrNonEditableNode,
+      LeafNodeType::LeafNodeOrChildBlock};
+  const Element* blockElement = HTMLEditUtils::GetAncestorElement(
+      *lastLineBreakContent, HTMLEditUtils::ClosestBlockElement);
+  for (nsIContent* content =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               *lastLineBreakContent, *blockElement,
+               leafNodeOrNonEditableNodeOrChildBlock);
+       content;
+       content = HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+           *content, *blockElement, leafNodeOrNonEditableNodeOrChildBlock)) {
+    if (HTMLEditUtils::IsBlockElement(*content) ||
+        (content->IsElement() && !content->IsHTMLElement())) {
+      
+      
+      
+      
+      return nullptr;
+    }
+    if (Text* textNode = Text::FromNode(content)) {
+      if (!textNode->TextLength()) {
+        continue;  
+      }
+      const nsTextFragment& textFragment = textNode->TextFragment();
+      if (EditorUtils::IsNewLinePreformatted(*textNode) &&
+          textFragment.CharAt(textFragment.GetLength() - 1u) ==
+              HTMLEditUtils::kNewLine) {
+        
+        
+        
+        
+        return nullptr;
+      }
+      if (!HTMLEditUtils::IsVisibleTextNode(*textNode)) {
+        continue;
+      }
+      if (EditorUtils::IsWhiteSpacePreformatted(*textNode)) {
+        
+        
+        return lastLineBreakContent;
+      }
+      
+      
+      switch (textFragment.CharAt(textFragment.GetLength() - 1u)) {
+        case HTMLEditUtils::kSpace:
+        case HTMLEditUtils::kCarriageReturn:
+        case HTMLEditUtils::kTab:
+        case HTMLEditUtils::kNBSP:
+          return nullptr;
+        default:
+          return lastLineBreakContent;
+      }
+    }
+    if (content->IsCharacterData()) {
+      continue;  
+    }
+    
+    
+    if (content->IsHTMLElement(nsGkAtoms::br)) {
+      return nullptr;
+    }
+    
+    if (HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*content)) {
+      return lastLineBreakContent;
+    }
+    
+  }
+  
+  
+  return nullptr;
 }
 
 bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,

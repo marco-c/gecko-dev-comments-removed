@@ -20,6 +20,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ContentIterator.h"
+#include "mozilla/EditorDOMPoint.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/StaticPrefs_editor.h"  
@@ -4787,6 +4788,13 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
     return MoveNodeResult(NS_ERROR_INVALID_ARG);
   }
 
+  const RefPtr<Element> inclusiveAncestorBlock =
+      aPointToInsert.IsInContentNode()
+          ? HTMLEditUtils::GetInclusiveAncestorElement(
+                *aPointToInsert.ContainerAs<nsIContent>(),
+                HTMLEditUtils::ClosestBlockElement)
+          : nullptr;
+
   EditorDOMPoint pointToInsert(aPointToInsert);
   EditorDOMPoint pointToPutCaret;
   AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
@@ -4852,8 +4860,47 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
     return MoveNodeIgnored(std::move(pointToInsert));
   }
 
+  
+  EditorDOMRange movedContentRange(pointToInsert);
   MoveNodeResult moveContentsInLineResult = MoveNodeIgnored(pointToInsert);
+  if (aMoveToEndOfContainer == MoveToEndOfContainer::Yes) {
+    pointToInsert.SetToEndOf(pointToInsert.GetContainer());
+  }
   for (auto& content : arrayOfContents) {
+    {
+      AutoEditorDOMRangeChildrenInvalidator lockOffsets(movedContentRange);
+      
+      
+      if (HTMLEditUtils::IsBlockElement(content)) {
+        moveContentsInLineResult |= MoveChildrenWithTransaction(
+            MOZ_KnownLive(*content->AsElement()), pointToInsert);
+        if (moveContentsInLineResult.isErr()) {
+          NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
+          return moveContentsInLineResult;
+        }
+        moveContentsInLineResult.MarkAsHandled();
+        
+        
+        nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*content));
+        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          moveContentsInLineResult.IgnoreCaretPointSuggestion();
+          return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "EditorBase::DeleteNodeWithTransaction() failed, but ignored");
+      } else {
+        
+        
+        moveContentsInLineResult |= MoveNodeOrChildrenWithTransaction(
+            MOZ_KnownLive(content), pointToInsert);
+        if (moveContentsInLineResult.isErr()) {
+          NS_WARNING("HTMLEditor::MoveNodeOrChildrenWithTransaction() failed");
+          return moveContentsInLineResult;
+        }
+      }
+    }
     
     
     
@@ -4868,37 +4915,65 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
           moveContentsInLineResult.NextInsertionPointRef().IsSet());
       pointToInsert = moveContentsInLineResult.NextInsertionPointRef();
     }
-    
-    
-    if (HTMLEditUtils::IsBlockElement(content)) {
-      moveContentsInLineResult |= MoveChildrenWithTransaction(
-          MOZ_KnownLive(*content->AsElement()), pointToInsert);
-      if (moveContentsInLineResult.isErr()) {
-        NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
-        return moveContentsInLineResult;
-      }
-      moveContentsInLineResult.MarkAsHandled();
-      
-      
-      nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*content));
-      if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        moveContentsInLineResult.IgnoreCaretPointSuggestion();
-        return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "EditorBase::DeleteNodeWithTransaction() failed, but ignored");
-      continue;
+    if (!MayHaveMutationEventListeners() ||
+        movedContentRange.EndRef().IsBefore(pointToInsert)) {
+      movedContentRange.SetEnd(pointToInsert);
     }
-    
-    
-    moveContentsInLineResult |= MoveNodeOrChildrenWithTransaction(
-        MOZ_KnownLive(content), pointToInsert);
-    if (moveContentsInLineResult.isErr()) {
-      NS_WARNING("HTMLEditor::MoveNodeOrChildrenWithTransaction() failed");
+  }
+
+  
+  
+  if (moveContentsInLineResult.Ignored() ||
+      MOZ_UNLIKELY(!inclusiveAncestorBlock)) {
+    return moveContentsInLineResult;
+  }
+
+  
+  
+  
+  if (MOZ_UNLIKELY(!movedContentRange.IsPositioned() ||
+                   movedContentRange.Collapsed())) {
+    return moveContentsInLineResult;
+  }
+
+  nsCOMPtr<nsIContent> lastLineBreakContent =
+      HTMLEditUtils::GetUnnecessaryLineBreakContent(*inclusiveAncestorBlock);
+  if (!lastLineBreakContent) {
+    return moveContentsInLineResult;
+  }
+  EditorRawDOMPoint atUnnecessaryLineBreak(lastLineBreakContent);
+  if (NS_WARN_IF(!atUnnecessaryLineBreak.IsSet())) {
+    return MoveNodeResult(NS_ERROR_FAILURE);
+  }
+  
+  
+  if (!movedContentRange.Contains(atUnnecessaryLineBreak)) {
+    return moveContentsInLineResult;
+  }
+
+  AutoTransactionsConserveSelection dontChangeMySelection(*this);
+  
+  
+  if (Text* textNode = Text::FromNode(lastLineBreakContent)) {
+    MOZ_ASSERT(EditorUtils::IsNewLinePreformatted(*textNode));
+    if (textNode->TextDataLength() > 1) {
+      nsresult rv = DeleteTextWithTransaction(
+          MOZ_KnownLive(*textNode), textNode->TextDataLength() - 1u, 1u);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::DeleteTextWithTransaction() failed");
+        return MoveNodeResult(rv);
+      }
       return moveContentsInLineResult;
     }
+  } else {
+    MOZ_ASSERT(lastLineBreakContent->IsHTMLElement(nsGkAtoms::br));
+  }
+  
+  
+  nsresult rv = DeleteNodeWithTransaction(*lastLineBreakContent);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    return MoveNodeResult(rv);
   }
   return moveContentsInLineResult;
 }
