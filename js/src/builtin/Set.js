@@ -11,12 +11,14 @@ function SetConstructorInit(iterable) {
     var adder = set.add;
 
     
-    if (!IsCallable(adder))
+    if (!IsCallable(adder)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+    }
 
     
-    for (var nextValue of allowContentIter(iterable))
+    for (var nextValue of allowContentIter(iterable)) {
         callContentFunction(adder, set, nextValue);
+    }
 }
 
 #ifdef ENABLE_NEW_SET_METHODS
@@ -523,25 +525,29 @@ function SetForEach(callbackfn, thisArg = undefined) {
     var S = this;
 
     
-    if (!IsObject(S) || (S = GuardToSetObject(S)) === null)
+    if (!IsObject(S) || (S = GuardToSetObject(S)) === null) {
         return callFunction(CallSetMethodIfWrapped, this, callbackfn, thisArg, "SetForEach");
+    }
 
     
-    if (!IsCallable(callbackfn))
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var values = callFunction(std_Set_values, S);
 
     
     var setIterationResult = setIteratorTemp.setIterationResult;
-    if (!setIterationResult)
+    if (!setIterationResult) {
         setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
+    }
 
     while (true) {
         var done = GetNextSetEntryForIterator(values, setIterationResult);
-        if (done)
+        if (done) {
             break;
+        }
 
         var value = setIterationResult[0];
         setIterationResult[0] = null;
@@ -567,15 +573,17 @@ function SetIteratorNext() {
     var O = this;
 
     
-    if (!IsObject(O) || (O = GuardToSetIterator(O)) === null)
+    if (!IsObject(O) || (O = GuardToSetIterator(O)) === null) {
         return callFunction(CallSetIteratorMethodIfWrapped, this, "SetIteratorNext");
+    }
 
     
     
 
     var setIterationResult = setIteratorTemp.setIterationResult;
-    if (!setIterationResult)
+    if (!setIterationResult) {
         setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
+    }
 
     var retVal = {value: undefined, done: true};
 
