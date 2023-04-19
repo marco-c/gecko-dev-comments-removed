@@ -1,15 +1,11 @@
+// A little pattern-matching library.
+//
+// Ported from js/src/tests/js1_8_5/reflect-parse/Match.js for use with devtools
+// server xpcshell tests.
 
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["Match"];
-
-const Match = (function() {
+export const Match = (function() {
   function Pattern(template) {
-    
+    // act like a constructor even as a function
     if (!(this instanceof Pattern)) {
       return new Pattern(template);
     }
