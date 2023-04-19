@@ -42,8 +42,11 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpPacketTypeCounterObserver,
                                public CallStatsObserver {
  public:
-  ReceiveStatisticsProxy(const VideoReceiveStream::Config* config,
-                         Clock* clock);
+  
+  
+  ReceiveStatisticsProxy(const VideoReceiveStream::Config* config, Clock* clock)
+      : ReceiveStatisticsProxy(config->rtp.remote_ssrc, clock) {}
+  ReceiveStatisticsProxy(uint32_t remote_ssrc, Clock* clock);
   ~ReceiveStatisticsProxy() = default;
 
   VideoReceiveStream::Stats GetStats() const;
@@ -140,14 +143,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
       int64_t now_ms) const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   Clock* const clock_;
-  
-  
-  
-  
-  
-  
-  
-  const VideoReceiveStream::Config& config_;
   const int64_t start_ms_;
   const bool enable_decode_time_histograms_;
 
