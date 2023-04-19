@@ -11690,10 +11690,10 @@ void CodeGenerator::visitStoreElementHoleT(LStoreElementHoleT* lir) {
 
   Register elements = ToRegister(lir->elements());
   Register index = ToRegister(lir->index());
-  Register spectreTemp = ToTempRegisterOrInvalid(lir->temp0());
+  Register temp = ToRegister(lir->temp0());
 
   Address initLength(elements, ObjectElements::offsetOfInitializedLength());
-  masm.spectreBoundsCheck32(index, initLength, spectreTemp, ool->entry());
+  masm.spectreBoundsCheck32(index, initLength, temp, ool->entry());
 
   emitPreBarrier(elements, lir->index());
 
@@ -11711,10 +11711,10 @@ void CodeGenerator::visitStoreElementHoleV(LStoreElementHoleV* lir) {
   Register elements = ToRegister(lir->elements());
   Register index = ToRegister(lir->index());
   const ValueOperand value = ToValue(lir, LStoreElementHoleV::ValueIndex);
-  Register spectreTemp = ToTempRegisterOrInvalid(lir->temp0());
+  Register temp = ToRegister(lir->temp0());
 
   Address initLength(elements, ObjectElements::offsetOfInitializedLength());
-  masm.spectreBoundsCheck32(index, initLength, spectreTemp, ool->entry());
+  masm.spectreBoundsCheck32(index, initLength, temp, ool->entry());
 
   emitPreBarrier(elements, lir->index());
 
@@ -11729,7 +11729,7 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
   Register object, elements, index;
   LInstruction* ins = ool->ins();
   mozilla::Maybe<ConstantOrRegister> value;
-  Register spectreTemp;
+  Register temp;
 
   if (ins->isStoreElementHoleV()) {
     LStoreElementHoleV* store = ins->toStoreElementHoleV();
@@ -11738,7 +11738,7 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     index = ToRegister(store->index());
     value.emplace(
         TypedOrValueRegister(ToValue(store, LStoreElementHoleV::ValueIndex)));
-    spectreTemp = ToTempRegisterOrInvalid(store->temp0());
+    temp = ToRegister(store->temp0());
   } else {
     LStoreElementHoleT* store = ins->toStoreElementHoleT();
     object = ToRegister(store->object());
@@ -11752,7 +11752,7 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
       value.emplace(
           TypedOrValueRegister(valueType, ToAnyRegister(store->value())));
     }
-    spectreTemp = ToTempRegisterOrInvalid(store->temp0());
+    temp = ToRegister(store->temp0());
   }
 
   
@@ -11772,7 +11772,7 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
 
   
   masm.spectreBoundsCheck32(
-      index, Address(elements, ObjectElements::offsetOfCapacity()), spectreTemp,
+      index, Address(elements, ObjectElements::offsetOfCapacity()), temp,
       &callStub);
 
   
@@ -11800,16 +11800,39 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     bailoutCmp32(Assembler::LessThan, index, Imm32(0), ins->snapshot());
   }
 
-  saveLive(ins);
+  
+  
+  Register valueTemp = elements;
 
-  pushArg(value.ref());
-  pushArg(index);
-  pushArg(object);
+  
+  
+  LiveRegisterSet liveRegs = liveVolatileRegs(ins);
+  liveRegs.takeUnchecked(temp);
+  liveRegs.addUnchecked(elements);
 
-  using Fn = bool (*)(JSContext*, Handle<NativeObject*>, int32_t, HandleValue);
-  callVM<Fn, jit::SetDenseElement>(ins);
+  masm.PushRegsInMask(liveRegs);
 
-  restoreLive(ins);
+  masm.Push(value.ref());
+  masm.moveStackPtrTo(valueTemp);
+
+  masm.setupAlignedABICall();
+  masm.loadJSContext(temp);
+  masm.passABIArg(temp);
+  masm.passABIArg(object);
+  masm.passABIArg(index);
+  masm.passABIArg(valueTemp);
+
+  using Fn = bool (*)(JSContext*, NativeObject*, int32_t, Value*);
+  masm.callWithABI<Fn, jit::SetDenseElementPure>();
+  masm.storeCallPointerResult(temp);
+
+  masm.freeStack(sizeof(Value));  
+
+  MOZ_ASSERT(!liveRegs.has(temp));
+  masm.PopRegsInMask(liveRegs);
+
+  bailoutIfFalseBool(temp, ins->snapshot());
+
   masm.jump(ool->rejoin());
 }
 
