@@ -12,10 +12,12 @@
 #define CALL_RTP_DEMUXER_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "rtc_base/containers/flat_map.h"
+#include "rtc_base/containers/flat_set.h"
 
 namespace webrtc {
 
@@ -42,10 +44,10 @@ struct RtpDemuxerCriteria {
   std::string rsid;
 
   
-  std::set<uint32_t> ssrcs;
+  flat_set<uint32_t> ssrcs;
 
   
-  std::set<uint8_t> payload_types;
+  flat_set<uint8_t> payload_types;
 
   
   std::string ToString() const;
@@ -168,24 +170,24 @@ class RtpDemuxer {
   
   
   
-  std::map<std::string, RtpPacketSinkInterface*> sink_by_mid_;
-  std::map<uint32_t, RtpPacketSinkInterface*> sink_by_ssrc_;
+  flat_map<std::string, RtpPacketSinkInterface*> sink_by_mid_;
+  flat_map<uint32_t, RtpPacketSinkInterface*> sink_by_ssrc_;
   std::multimap<uint8_t, RtpPacketSinkInterface*> sinks_by_pt_;
-  std::map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+  flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
       sink_by_mid_and_rsid_;
-  std::map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
+  flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
 
   
   
   
-  std::set<std::string> known_mids_;
+  flat_set<std::string> known_mids_;
 
   
   
   
   
-  std::map<uint32_t, std::string> mid_by_ssrc_;
-  std::map<uint32_t, std::string> rsid_by_ssrc_;
+  flat_map<uint32_t, std::string> mid_by_ssrc_;
+  flat_map<uint32_t, std::string> rsid_by_ssrc_;
 
   
   void AddSsrcSinkBinding(uint32_t ssrc, RtpPacketSinkInterface* sink);
