@@ -210,26 +210,9 @@ public final class StorageController {
 
 
 
-
-
   @AnyThread
   public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri) {
-    return getPermissions(uri, null, false);
-  }
-
-  
-
-
-
-
-
-
-
-
-  @AnyThread
-  public @NonNull GeckoResult<List<ContentPermission>> getPermissions(
-      final @NonNull String uri, boolean privateMode) {
-    return getPermissions(uri, null, privateMode);
+    return getPermissions(uri, null);
   }
 
   
@@ -242,12 +225,10 @@ public final class StorageController {
 
   @AnyThread
   public @NonNull GeckoResult<List<ContentPermission>> getPermissions(
-      final @NonNull String uri, final @Nullable String contextId, boolean privateMode) {
+      final @NonNull String uri, final @Nullable String contextId) {
     final GeckoBundle msg = new GeckoBundle(2);
-    final int privateBrowsingId = (privateMode) ? 1 : 0;
     msg.putString("uri", uri);
     msg.putString("contextId", createSafeSessionContextId(contextId));
-    msg.putInt("privateBrowsingId", privateBrowsingId);
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:GetPermissionsByURI", msg)
         .map(
