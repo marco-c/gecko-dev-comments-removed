@@ -27,10 +27,6 @@ class VideoEncoder;
 
 class VideoEncoderFactory {
  public:
-  
-  struct CodecInfo {
-  };
-
   struct CodecSupport {
     bool is_supported = false;
     bool is_power_efficient = false;
@@ -66,16 +62,6 @@ class VideoEncoderFactory {
   
   virtual std::vector<SdpVideoFormat> GetImplementations() const {
     return GetSupportedFormats();
-  }
-
-  
-  
-
-  
-  
-  
-  virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const {
-    return CodecInfo();
   }
 
   
