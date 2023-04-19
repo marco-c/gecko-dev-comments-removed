@@ -17,6 +17,7 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AttributionCode: "resource:///modules/AttributionCode.jsm",
+  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -665,6 +666,12 @@ function prepareMRContent(content) {
   
   if (lazy.usesFirefoxSync && lazy.mobileDevices > 0) {
     removeScreens(screen => screen.id === "AW_MOBILE_DOWNLOAD", screens);
+  }
+
+  
+  const hasActiveColorways = !!lazy.BuiltInThemes.findActiveColorwayCollection?.();
+  if (!hasActiveColorways) {
+    removeScreens(screen => screen.id === "AW_CHOOSE_COLORWAY", screens);
   }
 
   return content;

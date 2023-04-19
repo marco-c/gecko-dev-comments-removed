@@ -865,6 +865,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "ColorwayDescription": () => ( ColorwayDescription),
    "computeColorWay": () => ( computeColorWay),
+   "computeVariationIndex": () => ( computeVariationIndex),
    "Colorways": () => ( Colorways)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
@@ -903,6 +904,25 @@ const ColorwayDescription = props => {
 
 function computeColorWay(themeName, systemVariations) {
   return !themeName || themeName === "alpenglow" || systemVariations.includes(themeName) ? "default" : themeName.split("-")[0];
+} 
+
+function computeVariationIndex(themeName, systemVariations, variations, defaultVariationIndex) {
+  
+  let index = systemVariations.findIndex(theme => theme === themeName);
+
+  if (index >= 0) {
+    return index;
+  } 
+
+
+  let variation = themeName === null || themeName === void 0 ? void 0 : themeName.split("-")[1];
+  index = variations.findIndex(element => element === variation);
+
+  if (index >= 0) {
+    return index;
+  }
+
+  return defaultVariationIndex;
 }
 function Colorways(props) {
   let {
@@ -913,10 +933,12 @@ function Colorways(props) {
   } = props.content.tiles; 
 
   const activeId = computeColorWay(props.activeTheme, systemVariations);
-  const [colorwayId, setState] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(activeId); 
+  const [colorwayId, setState] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(activeId);
+  const [variationIndex, setVariationIndex] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(defaultVariationIndex); 
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    setState(computeColorWay(props.activeTheme, systemVariations)); 
+    setState(computeColorWay(props.activeTheme, systemVariations));
+    setVariationIndex(computeVariationIndex(props.activeTheme, systemVariations, variations, defaultVariationIndex)); 
   }, [props.activeTheme]);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "tiles-theme-container"
@@ -953,7 +975,7 @@ function Colorways(props) {
     type: "radio",
     "data-colorway": id,
     name: "theme",
-    value: id === "default" ? systemVariations[defaultVariationIndex] : `${id}-${variations[defaultVariationIndex]}`,
+    value: id === "default" ? systemVariations[variationIndex] : `${id}-${variations[variationIndex]}`,
     checked: colorwayId === id,
     className: "sr-only input",
     onClick: props.handleAction,
