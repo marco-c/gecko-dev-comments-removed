@@ -5,6 +5,7 @@
 
 
 EXPORTS.mozilla.dom += [
+    "FileSystemHelpers.h",
     "FileSystemTypes.h",
 ]
 

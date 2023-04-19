@@ -1,0 +1,16 @@
+
+
+
+
+
+
+UNIFIED_SOURCES = [
+    "TestFileSystemHelpers.cpp",
+]
+
+FINAL_LIBRARY = "xul-gtest"
+
+LOCAL_INCLUDES += [
+    "/dom/fs/shared",
+    "/dom/fs/test/gtest",
+]
