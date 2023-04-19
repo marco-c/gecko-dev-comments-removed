@@ -4346,18 +4346,6 @@ const BrowserSearch = {
     return document.getElementById("searchbar");
   },
 
-  get searchEnginesURL() {
-    return formatURL("browser.search.searchEnginesURL", true);
-  },
-
-  loadAddEngines: function BrowserSearch_loadAddEngines() {
-    var newWindowPref = Services.prefs.getIntPref(
-      "browser.link.open_newwindow"
-    );
-    var where = newWindowPref == 3 ? "tab" : "window";
-    openTrustedLinkIn(this.searchEnginesURL, where);
-  },
-
   
 
 
@@ -8348,20 +8336,6 @@ function ReportFalseDeceptiveSite() {
 function ReportSiteIssue() {
   let subject = { wrappedJSObject: gBrowser.selectedTab };
   Services.obs.notifyObservers(subject, "report-site-issue");
-}
-
-
-
-
-
-
-
-
-
-function formatURL(aFormat, aIsPref) {
-  return aIsPref
-    ? Services.urlFormatter.formatURLPref(aFormat)
-    : Services.urlFormatter.formatURL(aFormat);
 }
 
 
