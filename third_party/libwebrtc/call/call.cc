@@ -466,10 +466,6 @@ class Call final : public webrtc::Call,
 
   bool is_started_ RTC_GUARDED_BY(worker_thread_) = false;
 
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker sent_packet_sequence_checker_;
-  absl::optional<rtc::SentPacket> last_sent_packet_
-      RTC_GUARDED_BY(sent_packet_sequence_checker_);
-
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  
@@ -807,7 +803,6 @@ Call::Call(Clock* clock,
   RTC_DCHECK(worker_thread_->IsCurrent());
 
   send_transport_sequence_checker_.Detach();
-  sent_packet_sequence_checker_.Detach();
 
   
   
@@ -1376,19 +1371,6 @@ void Call::OnUpdateSyncGroup(webrtc::AudioReceiveStream& stream,
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  
-  
-  
-  
-  
-  RTC_DCHECK_RUN_ON(&sent_packet_sequence_checker_);
-  if (last_sent_packet_.has_value() &&
-      last_sent_packet_->packet_id == sent_packet.packet_id &&
-      last_sent_packet_->send_time_ms == sent_packet.send_time_ms) {
-    return;
-  }
-  last_sent_packet_ = sent_packet;
-
   
   
   
