@@ -1,0 +1,7 @@
+
+
+
+
+fn main() {
+    uniffi_build::generate_scaffolding("./src/geometry.udl").unwrap();
+}
