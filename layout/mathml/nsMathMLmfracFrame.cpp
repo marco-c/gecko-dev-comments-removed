@@ -110,11 +110,7 @@ void nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   
-  if (mIsBevelled) {
-    DisplaySlash(aBuilder, mLineRect, mLineThickness, aLists);
-  } else {
-    DisplayBar(aBuilder, this, mLineRect, aLists);
-  }
+  DisplayBar(aBuilder, this, mLineRect, aLists);
 }
 
 nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
@@ -202,223 +198,93 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
       CalcLineThickness(presContext, mComputedStyle, value, onePixel,
                         defaultRuleThickness, fontSizeInflation);
 
+  bool displayStyle = StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL;
+
+  mLineRect.height = mLineThickness;
+
   
-  mIsBevelled = false;
-  if (!StaticPrefs::mathml_mfrac_bevelled_attribute_disabled()) {
-    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::bevelled_,
-                                       value)) {
-      mContent->OwnerDoc()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedBevelledAttribute);
-      mIsBevelled = value.EqualsLiteral("true");
+  
+  
+  
+  
+  nscoord leftSpace = onePixel;
+  nscoord rightSpace = onePixel;
+  if (outermostEmbellished) {
+    const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+    nsEmbellishData coreData;
+    GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
+    leftSpace += isRTL ? coreData.trailingSpace : coreData.leadingSpace;
+    rightSpace += isRTL ? coreData.leadingSpace : coreData.trailingSpace;
+  }
+
+  nscoord actualRuleThickness = mLineThickness;
+
+  
+  
+  nscoord numShift = 0;
+  nscoord denShift = 0;
+
+  
+  nscoord numShift1, numShift2, numShift3;
+  nscoord denShift1, denShift2;
+
+  GetNumeratorShifts(fm, numShift1, numShift2, numShift3);
+  GetDenominatorShifts(fm, denShift1, denShift2);
+
+  if (0 == actualRuleThickness) {
+    numShift = displayStyle ? numShift1 : numShift3;
+    denShift = displayStyle ? denShift1 : denShift2;
+    if (mathFont) {
+      numShift = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::StackTopDisplayStyleShiftUp
+                       : gfxMathTable::StackTopShiftUp,
+          oneDevPixel);
+      denShift = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::StackBottomDisplayStyleShiftDown
+                       : gfxMathTable::StackBottomShiftDown,
+          oneDevPixel);
+    }
+  } else {
+    numShift = displayStyle ? numShift1 : numShift2;
+    denShift = displayStyle ? denShift1 : denShift2;
+    if (mathFont) {
+      numShift = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::FractionNumeratorDisplayStyleShiftUp
+                       : gfxMathTable::FractionNumeratorShiftUp,
+          oneDevPixel);
+      denShift = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::FractionDenominatorDisplayStyleShiftDown
+                       : gfxMathTable::FractionDenominatorShiftDown,
+          oneDevPixel);
     }
   }
 
-  bool displayStyle = StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL;
-
-  if (!mIsBevelled) {
-    mLineRect.height = mLineThickness;
+  if (0 == actualRuleThickness) {
+    
 
     
-    
-    
-    
-    
-    nscoord leftSpace = onePixel;
-    nscoord rightSpace = onePixel;
-    if (outermostEmbellished) {
-      const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
-      nsEmbellishData coreData;
-      GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
-      leftSpace += isRTL ? coreData.trailingSpace : coreData.leadingSpace;
-      rightSpace += isRTL ? coreData.leadingSpace : coreData.trailingSpace;
+    nscoord minClearance =
+        displayStyle ? 7 * defaultRuleThickness : 3 * defaultRuleThickness;
+    if (mathFont) {
+      minClearance = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::StackDisplayStyleGapMin
+                       : gfxMathTable::StackGapMin,
+          oneDevPixel);
     }
 
-    nscoord actualRuleThickness = mLineThickness;
-
+    nscoord actualClearance =
+        (numShift - bmNum.descent) - (bmDen.ascent - denShift);
     
-    
-    nscoord numShift = 0;
-    nscoord denShift = 0;
-
-    
-    nscoord numShift1, numShift2, numShift3;
-    nscoord denShift1, denShift2;
-
-    GetNumeratorShifts(fm, numShift1, numShift2, numShift3);
-    GetDenominatorShifts(fm, denShift1, denShift2);
-
-    if (0 == actualRuleThickness) {
-      numShift = displayStyle ? numShift1 : numShift3;
-      denShift = displayStyle ? denShift1 : denShift2;
-      if (mathFont) {
-        numShift = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::StackTopDisplayStyleShiftUp
-                         : gfxMathTable::StackTopShiftUp,
-            oneDevPixel);
-        denShift = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::StackBottomDisplayStyleShiftDown
-                         : gfxMathTable::StackBottomShiftDown,
-            oneDevPixel);
-      }
-    } else {
-      numShift = displayStyle ? numShift1 : numShift2;
-      denShift = displayStyle ? denShift1 : denShift2;
-      if (mathFont) {
-        numShift = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::FractionNumeratorDisplayStyleShiftUp
-                         : gfxMathTable::FractionNumeratorShiftUp,
-            oneDevPixel);
-        denShift = mathFont->MathTable()->Constant(
-            displayStyle
-                ? gfxMathTable::FractionDenominatorDisplayStyleShiftDown
-                : gfxMathTable::FractionDenominatorShiftDown,
-            oneDevPixel);
-      }
-    }
-
-    if (0 == actualRuleThickness) {
-      
-
-      
-      nscoord minClearance =
-          displayStyle ? 7 * defaultRuleThickness : 3 * defaultRuleThickness;
-      if (mathFont) {
-        minClearance = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::StackDisplayStyleGapMin
-                         : gfxMathTable::StackGapMin,
-            oneDevPixel);
-      }
-
-      nscoord actualClearance =
-          (numShift - bmNum.descent) - (bmDen.ascent - denShift);
-      
-      if (actualClearance < minClearance) {
-        nscoord halfGap = (minClearance - actualClearance) / 2;
-        numShift += halfGap;
-        denShift += halfGap;
-      }
-    } else {
-      
-
-      
-
-      
-      
-      
-      
-
-      
-      
-      
-      
-      nscoord minClearanceNum = displayStyle ? 3 * defaultRuleThickness
-                                             : defaultRuleThickness + onePixel;
-      nscoord minClearanceDen = minClearanceNum;
-      if (mathFont) {
-        minClearanceNum = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::FractionNumDisplayStyleGapMin
-                         : gfxMathTable::FractionNumeratorGapMin,
-            oneDevPixel);
-        minClearanceDen = mathFont->MathTable()->Constant(
-            displayStyle ? gfxMathTable::FractionDenomDisplayStyleGapMin
-                         : gfxMathTable::FractionDenominatorGapMin,
-            oneDevPixel);
-      }
-
-      
-      nscoord actualClearanceNum =
-          (numShift - bmNum.descent) - (axisHeight + actualRuleThickness / 2);
-      if (actualClearanceNum < minClearanceNum) {
-        numShift += (minClearanceNum - actualClearanceNum);
-      }
-      
-      nscoord actualClearanceDen =
-          (axisHeight - actualRuleThickness / 2) - (bmDen.ascent - denShift);
-      if (actualClearanceDen < minClearanceDen) {
-        denShift += (minClearanceDen - actualClearanceDen);
-      }
-    }
-
-    
-    
-
-    
-    
-    nscoord width = std::max(bmNum.width, bmDen.width);
-    nscoord dxNum = leftSpace + (width - sizeNum.Width()) / 2;
-    nscoord dxDen = leftSpace + (width - sizeDen.Width()) / 2;
-    width += leftSpace + rightSpace;
-
-    mBoundingMetrics.rightBearing =
-        std::max(dxNum + bmNum.rightBearing, dxDen + bmDen.rightBearing);
-    if (mBoundingMetrics.rightBearing < width - rightSpace)
-      mBoundingMetrics.rightBearing = width - rightSpace;
-    mBoundingMetrics.leftBearing =
-        std::min(dxNum + bmNum.leftBearing, dxDen + bmDen.leftBearing);
-    if (mBoundingMetrics.leftBearing > leftSpace)
-      mBoundingMetrics.leftBearing = leftSpace;
-    mBoundingMetrics.ascent = bmNum.ascent + numShift;
-    mBoundingMetrics.descent = bmDen.descent + denShift;
-    mBoundingMetrics.width = width;
-
-    aDesiredSize.SetBlockStartAscent(sizeNum.BlockStartAscent() + numShift);
-    aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + sizeDen.Height() -
-                            sizeDen.BlockStartAscent() + denShift;
-    aDesiredSize.Width() = mBoundingMetrics.width;
-    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
-
-    mReference.x = 0;
-    mReference.y = aDesiredSize.BlockStartAscent();
-
-    if (aPlaceOrigin) {
-      nscoord dy;
-      
-      dy = 0;
-      FinishReflowChild(frameNum, presContext, sizeNum, nullptr, dxNum, dy,
-                        ReflowChildFlags::Default);
-      
-      dy = aDesiredSize.Height() - sizeDen.Height();
-      FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dxDen, dy,
-                        ReflowChildFlags::Default);
-      
-      dy = aDesiredSize.BlockStartAscent() -
-           (axisHeight + actualRuleThickness / 2);
-      mLineRect.SetRect(leftSpace, dy, width - (leftSpace + rightSpace),
-                        actualRuleThickness);
+    if (actualClearance < minClearance) {
+      nscoord halfGap = (minClearance - actualClearance) / 2;
+      numShift += halfGap;
+      denShift += halfGap;
     }
   } else {
-    nscoord numShift = 0.0;
-    nscoord denShift = 0.0;
-    nscoord padding = 3 * defaultRuleThickness;
-    nscoord slashRatio = 3;
+    
 
     
-    nscoord em = fm->EmHeight();
-    nscoord slashMaxWidthConstant = 2 * em;
 
-    
-    
-    nscoord slashMinHeight =
-        slashRatio * std::min(2 * mLineThickness, slashMaxWidthConstant);
-
-    nscoord leadingSpace = padding;
-    nscoord trailingSpace = padding;
-    if (outermostEmbellished) {
-      nsEmbellishData coreData;
-      GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
-      leadingSpace += coreData.leadingSpace;
-      trailingSpace += coreData.trailingSpace;
-    }
-    nscoord delta;
-
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -426,165 +292,83 @@ nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
 
     
     
-    delta =
-        std::max(bmDen.ascent - bmNum.ascent, bmNum.descent - bmDen.descent) /
-        2;
-    if (delta > 0) {
-      numShift += delta;
-      denShift += delta;
-    }
-
-    if (StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL) {
-      delta =
-          std::min(bmDen.ascent + bmDen.descent, bmNum.ascent + bmNum.descent) /
-          2;
-      numShift += delta;
-      denShift += delta;
-    } else {
-      nscoord xHeight = fm->XHeight();
-      numShift += xHeight / 2;
-      denShift += xHeight / 4;
+    
+    
+    nscoord minClearanceNum = displayStyle ? 3 * defaultRuleThickness
+                                           : defaultRuleThickness + onePixel;
+    nscoord minClearanceDen = minClearanceNum;
+    if (mathFont) {
+      minClearanceNum = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::FractionNumDisplayStyleGapMin
+                       : gfxMathTable::FractionNumeratorGapMin,
+          oneDevPixel);
+      minClearanceDen = mathFont->MathTable()->Constant(
+          displayStyle ? gfxMathTable::FractionDenomDisplayStyleGapMin
+                       : gfxMathTable::FractionDenominatorGapMin,
+          oneDevPixel);
     }
 
     
-    mBoundingMetrics.ascent = bmNum.ascent + numShift;
-    mBoundingMetrics.descent = bmDen.descent + denShift;
-
-    
-    
-    
-    delta = (slashMinHeight -
-             (mBoundingMetrics.ascent + mBoundingMetrics.descent)) /
-            2;
-    if (delta > 0) {
-      mBoundingMetrics.ascent += delta;
-      mBoundingMetrics.descent += delta;
+    nscoord actualClearanceNum =
+        (numShift - bmNum.descent) - (axisHeight + actualRuleThickness / 2);
+    if (actualClearanceNum < minClearanceNum) {
+      numShift += (minClearanceNum - actualClearanceNum);
     }
-
     
-    if (aWidthOnly) {
-      mLineRect.width = mLineThickness + slashMaxWidthConstant;
-    } else {
-      mLineRect.width =
-          mLineThickness +
-          std::min(slashMaxWidthConstant,
-                   (mBoundingMetrics.ascent + mBoundingMetrics.descent) /
-                       slashRatio);
+    nscoord actualClearanceDen =
+        (axisHeight - actualRuleThickness / 2) - (bmDen.ascent - denShift);
+    if (actualClearanceDen < minClearanceDen) {
+      denShift += (minClearanceDen - actualClearanceDen);
     }
+  }
 
+  
+  
+
+  
+  
+  nscoord width = std::max(bmNum.width, bmDen.width);
+  nscoord dxNum = leftSpace + (width - sizeNum.Width()) / 2;
+  nscoord dxDen = leftSpace + (width - sizeDen.Width()) / 2;
+  width += leftSpace + rightSpace;
+
+  mBoundingMetrics.rightBearing =
+      std::max(dxNum + bmNum.rightBearing, dxDen + bmDen.rightBearing);
+  if (mBoundingMetrics.rightBearing < width - rightSpace)
+    mBoundingMetrics.rightBearing = width - rightSpace;
+  mBoundingMetrics.leftBearing =
+      std::min(dxNum + bmNum.leftBearing, dxDen + bmDen.leftBearing);
+  if (mBoundingMetrics.leftBearing > leftSpace)
+    mBoundingMetrics.leftBearing = leftSpace;
+  mBoundingMetrics.ascent = bmNum.ascent + numShift;
+  mBoundingMetrics.descent = bmDen.descent + denShift;
+  mBoundingMetrics.width = width;
+
+  aDesiredSize.SetBlockStartAscent(sizeNum.BlockStartAscent() + numShift);
+  aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + sizeDen.Height() -
+                          sizeDen.BlockStartAscent() + denShift;
+  aDesiredSize.Width() = mBoundingMetrics.width;
+  aDesiredSize.mBoundingMetrics = mBoundingMetrics;
+
+  mReference.x = 0;
+  mReference.y = aDesiredSize.BlockStartAscent();
+
+  if (aPlaceOrigin) {
+    nscoord dy;
     
-    if (StyleVisibility()->mDirection == StyleDirection::Rtl) {
-      mBoundingMetrics.leftBearing = trailingSpace + bmDen.leftBearing;
-      mBoundingMetrics.rightBearing =
-          trailingSpace + bmDen.width + mLineRect.width + bmNum.rightBearing;
-    } else {
-      mBoundingMetrics.leftBearing = leadingSpace + bmNum.leftBearing;
-      mBoundingMetrics.rightBearing =
-          leadingSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
-    }
-    mBoundingMetrics.width = leadingSpace + bmNum.width + mLineRect.width +
-                             bmDen.width + trailingSpace;
-
+    dy = 0;
+    FinishReflowChild(frameNum, presContext, sizeNum, nullptr, dxNum, dy,
+                      ReflowChildFlags::Default);
     
-    aDesiredSize.SetBlockStartAscent(mBoundingMetrics.ascent + padding);
-    aDesiredSize.Height() =
-        mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
-    aDesiredSize.Width() = mBoundingMetrics.width;
-    aDesiredSize.mBoundingMetrics = mBoundingMetrics;
-
-    mReference.x = 0;
-    mReference.y = aDesiredSize.BlockStartAscent();
-
-    if (aPlaceOrigin) {
-      nscoord dx, dy;
-
-      
-      dx = MirrorIfRTL(aDesiredSize.Width(), sizeNum.Width(), leadingSpace);
-      dy = aDesiredSize.BlockStartAscent() - numShift -
-           sizeNum.BlockStartAscent();
-      FinishReflowChild(frameNum, presContext, sizeNum, nullptr, dx, dy,
-                        ReflowChildFlags::Default);
-
-      
-      dx = MirrorIfRTL(aDesiredSize.Width(), mLineRect.width,
-                       leadingSpace + bmNum.width);
-      dy = aDesiredSize.BlockStartAscent() - mBoundingMetrics.ascent;
-      mLineRect.SetRect(dx, dy, mLineRect.width,
-                        aDesiredSize.Height() - 2 * padding);
-
-      
-      dx = MirrorIfRTL(aDesiredSize.Width(), sizeDen.Width(),
-                       leadingSpace + bmNum.width + mLineRect.width);
-      dy = aDesiredSize.BlockStartAscent() + denShift -
-           sizeDen.BlockStartAscent();
-      FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dx, dy,
-                        ReflowChildFlags::Default);
-    }
+    dy = aDesiredSize.Height() - sizeDen.Height();
+    FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dxDen, dy,
+                      ReflowChildFlags::Default);
+    
+    dy = aDesiredSize.BlockStartAscent() -
+         (axisHeight + actualRuleThickness / 2);
+    mLineRect.SetRect(leftSpace, dy, width - (leftSpace + rightSpace),
+                      actualRuleThickness);
   }
 
   return NS_OK;
-}
-
-namespace mozilla {
-
-class nsDisplayMathMLSlash : public nsPaintedDisplayItem {
- public:
-  nsDisplayMathMLSlash(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                       const nsRect& aRect, nscoord aThickness)
-      : nsPaintedDisplayItem(aBuilder, aFrame),
-        mRect(aRect),
-        mThickness(aThickness) {
-    MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
-  }
-  MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayMathMLSlash)
-
-  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  NS_DISPLAY_DECL_NAME("MathMLSlash", TYPE_MATHML_SLASH)
-
- private:
-  nsRect mRect;
-  nscoord mThickness;
-};
-
-void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
-                                 gfxContext* aCtx) {
-  DrawTarget& aDrawTarget = *aCtx->GetDrawTarget();
-
-  
-  nsPresContext* presContext = mFrame->PresContext();
-  Rect rect = NSRectToRect(mRect + ToReferenceFrame(),
-                           presContext->AppUnitsPerDevPixel());
-
-  ColorPattern color(ToDeviceColor(
-      mFrame->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor)));
-
-  
-  Point delta = Point(presContext->AppUnitsToGfxUnits(mThickness), 0);
-  RefPtr<PathBuilder> builder = aDrawTarget.CreatePathBuilder();
-  if (mFrame->StyleVisibility()->mDirection == StyleDirection::Rtl) {
-    builder->MoveTo(rect.TopLeft());
-    builder->LineTo(rect.TopLeft() + delta);
-    builder->LineTo(rect.BottomRight());
-    builder->LineTo(rect.BottomRight() - delta);
-  } else {
-    builder->MoveTo(rect.BottomLeft());
-    builder->LineTo(rect.BottomLeft() + delta);
-    builder->LineTo(rect.TopRight());
-    builder->LineTo(rect.TopRight() - delta);
-  }
-  RefPtr<Path> path = builder->Finish();
-  aDrawTarget.Fill(path, color);
-}
-
-}  
-
-void nsMathMLmfracFrame::DisplaySlash(nsDisplayListBuilder* aBuilder,
-                                      const nsRect& aRect, nscoord aThickness,
-                                      const nsDisplayListSet& aLists) {
-  if (!StyleVisibility()->IsVisible() || aRect.IsEmpty()) {
-    return;
-  }
-
-  aLists.Content()->AppendNewToTop<nsDisplayMathMLSlash>(aBuilder, this, aRect,
-                                                         aThickness);
 }
