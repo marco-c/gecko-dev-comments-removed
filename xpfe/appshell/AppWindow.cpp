@@ -2649,10 +2649,12 @@ void AppWindow::SizeShell() {
       nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
       docShell->GetTreeOwner(getter_AddRefs(treeOwner));
       if (treeOwner) {
-        
-        
-        int32_t width = 0, height = 0;
-        if (NS_SUCCEEDED(cv->GetContentSize(&width, &height))) {
+        if (Maybe<CSSIntSize> size = cv->GetContentSize()) {
+          nsPresContext* pc = cv->GetPresContext();
+          MOZ_ASSERT(pc, "Should have pres context");
+          int32_t width = pc->CSSPixelsToDevPixels(size->width);
+          int32_t height = pc->CSSPixelsToDevPixels(size->height);
+
           treeOwner->SizeShellTo(docShell, width, height);
           
           specWidth = width + windowDiff.width;
