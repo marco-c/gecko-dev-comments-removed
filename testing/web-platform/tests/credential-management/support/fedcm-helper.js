@@ -1,25 +1,4 @@
 
-
-
-
-
-import { MockFederatedAuthRequest } from './fedcm-mock.js';
-
-export function fedcm_test(test_func, name, exception, properties) {
-  promise_test(async (t) => {
-    assert_implements(navigator.credentials, 'missing navigator.credentials');
-    const mock = new MockFederatedAuthRequest();
-    try {
-      await test_func(t, mock);
-    } catch (e) {
-      assert_equals(exception, e.message)
-    } finally {
-      await mock.reset();
-    }
-  }, name, properties);
-}
-
-
 export function set_fedcm_cookie() {
   return new Promise(resolve => {
     const img = document.createElement('img');
