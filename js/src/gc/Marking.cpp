@@ -2130,7 +2130,7 @@ template <typename T>
 bool js::gc::IsMarkedInternal(JSRuntime* rt, T* thing) {
   
   MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
-  MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
+  MOZ_ASSERT(rt->heapState() != JS::HeapState::MinorCollecting);
   MOZ_ASSERT(thing);
   CheckIsMarkedThing(thing);
 
