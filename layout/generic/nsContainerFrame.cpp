@@ -2365,7 +2365,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   nscoord iSize, minISize, maxISize, bSize, minBSize, maxBSize;
   enum class Stretch {
     
-    StretchPreservingRatio,  
+    StretchPreservingRatio,
     
     Stretch,
     
