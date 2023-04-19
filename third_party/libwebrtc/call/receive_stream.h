@@ -58,6 +58,11 @@ class ReceiveStream {
   
   
   
+  virtual const std::vector<RtpExtension>& GetRtpExtensions() const = 0;
+
+  
+  
+  
   
   virtual const RtpConfig& rtp_config() const = 0;
 
