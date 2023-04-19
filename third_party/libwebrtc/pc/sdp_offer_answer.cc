@@ -1261,7 +1261,8 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
 
   
   
-  pc_->stats()->UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  
+  pc_->stats()->InvalidateCache();
 
   
   
@@ -1550,7 +1551,8 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
 
   
   
-  pc_->stats()->UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
+  
+  pc_->stats()->InvalidateCache();
 
   
   
