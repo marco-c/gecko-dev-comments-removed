@@ -4,11 +4,6 @@
 
 
 
-DIRS += [
-    "api",
-    "child",
-    "parent",
-    "shared",
-]
+DIRS += ["api"]
 
 TEST_DIRS += ["test"]
