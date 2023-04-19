@@ -227,6 +227,20 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   }
 
   
+  if (settings_.frame_for_sending_capture_output_used_false &&
+      *settings_.frame_for_sending_capture_output_used_false ==
+          static_cast<int>(num_process_stream_calls_)) {
+    ap_->PostRuntimeSetting(
+        AudioProcessing::RuntimeSetting::CreateCaptureOutputUsedSetting(false));
+  }
+  if (settings_.frame_for_sending_capture_output_used_true &&
+      *settings_.frame_for_sending_capture_output_used_true ==
+          static_cast<int>(num_process_stream_calls_)) {
+    ap_->PostRuntimeSetting(
+        AudioProcessing::RuntimeSetting::CreateCaptureOutputUsedSetting(true));
+  }
+
+  
   if (fixed_interface) {
     {
       const auto st = ScopedTimer(&api_call_statistics_,
