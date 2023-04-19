@@ -16,6 +16,7 @@ use std::ops::RangeFull;
 use std::ops::RangeInclusive;
 use std::ops::RangeTo;
 use std::ops::RangeToInclusive;
+use std::result;
 use std::str;
 
 #[cfg(feature = "memchr")]
@@ -23,12 +24,17 @@ use memchr::memmem::find;
 #[cfg(feature = "memchr")]
 use memchr::memmem::rfind;
 
+use super::imp;
 use super::imp::raw;
 use super::iter::Split;
 use super::pattern::Encoded as EncodedPattern;
-use super::OsStrBytes;
-use super::OsStringBytes;
+use super::private;
 use super::Pattern;
+
+if_checked_conversions! {
+    use super::EncodingError;
+    use super::Result;
+}
 
 #[cfg(not(feature = "memchr"))]
 fn find(string: &[u8], pat: &[u8]) -> Option<usize> {
@@ -50,35 +56,24 @@ fn rfind(string: &[u8], pat: &[u8]) -> Option<usize> {
     None
 }
 
-macro_rules! impl_trim_matches {
-    ( $self:ident , $pat:expr , $strip_method:ident ) => {{
-        let pat = $pat.__encode();
-        let pat = pat.__get();
-        if pat.is_empty() {
-            return $self;
-        }
-
-        let mut string = &$self.0;
-        while let Some(substring) = string.$strip_method(pat) {
-            string = substring;
-        }
-        Self::from_raw_bytes_unchecked(string)
-    }};
+#[allow(clippy::missing_safety_doc)]
+unsafe trait TransmuteBox {
+    fn transmute_box<R>(self: Box<Self>) -> Box<R>
+    where
+        R: ?Sized + TransmuteBox,
+    {
+        let value = Box::into_raw(self);
+        
+        
+        unsafe { Box::from_raw(mem::transmute_copy(&value)) }
+    }
 }
 
-macro_rules! impl_split_once_raw {
-    ( $self:ident , $pat:expr , $find_fn:expr ) => {{
-        let pat = $pat.__get();
 
-        let index = $find_fn(&$self.0, pat)?;
-        let prefix = &$self.0[..index];
-        let suffix = &$self.0[index + pat.len()..];
-        Some((
-            Self::from_raw_bytes_unchecked(prefix),
-            Self::from_raw_bytes_unchecked(suffix),
-        ))
-    }};
-}
+unsafe impl TransmuteBox for RawOsStr {}
+unsafe impl TransmuteBox for [u8] {}
+
+
 
 
 
@@ -118,7 +113,7 @@ macro_rules! impl_split_once_raw {
 pub struct RawOsStr([u8]);
 
 impl RawOsStr {
-    fn from_raw_bytes_unchecked(string: &[u8]) -> &Self {
+    const fn from_inner(string: &[u8]) -> &Self {
         
         unsafe { mem::transmute(string) }
     }
@@ -147,10 +142,8 @@ impl RawOsStr {
     #[inline]
     #[must_use]
     pub fn new(string: &OsStr) -> Cow<'_, Self> {
-        match string.to_raw_bytes() {
-            Cow::Borrowed(string) => {
-                Cow::Borrowed(Self::from_raw_bytes_unchecked(string))
-            }
+        match imp::os_str_to_bytes(string) {
+            Cow::Borrowed(string) => Cow::Borrowed(Self::from_inner(string)),
             Cow::Owned(string) => Cow::Owned(RawOsString(string)),
         }
     }
@@ -175,7 +168,7 @@ impl RawOsStr {
     #[inline]
     #[must_use]
     pub fn from_str(string: &str) -> &Self {
-        Self::from_raw_bytes_unchecked(string.as_bytes())
+        Self::from_inner(string.as_bytes())
     }
 
     
@@ -183,6 +176,108 @@ impl RawOsStr {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use = "method should not be used for validation"]
+    #[track_caller]
+    pub fn assert_from_raw_bytes(string: &[u8]) -> &Self {
+        expect_encoded!(raw::validate_bytes(string));
+
+        Self::from_inner(string)
+    }
+
+    if_checked_conversions! {
+        /// Wraps a byte string, without copying or encoding conversion.
+        ///
+        /// [`assert_from_raw_bytes`] should almost always be used instead. For
+        /// more information, see [`EncodingError`].
+        ///
+        /// # Errors
+        ///
+        /// See documentation for [`EncodingError`].
+        ///
+        /// # Examples
+        ///
+        /// ```
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[cfg_attr(
+            os_str_bytes_docs_rs,
+            doc(cfg(feature = "checked_conversions"))
+        )]
+        #[inline]
+        pub fn from_raw_bytes(string: &[u8]) -> Result<&Self> {
+            raw::validate_bytes(string)
+                .map(|()| Self::from_inner(string))
+                .map_err(EncodingError)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub unsafe fn from_raw_bytes_unchecked(string: &[u8]) -> &Self {
+        #[cfg(debug_assertions)]
+        expect_encoded!(raw::validate_bytes(string));
+
+        Self::from_inner(string)
+    }
+
     
     
     
@@ -215,10 +310,6 @@ impl RawOsStr {
     
     
     
-    
-    
-    
-    
     #[inline]
     #[must_use]
     pub fn contains<P>(&self, pat: P) -> bool
@@ -228,10 +319,6 @@ impl RawOsStr {
         self.find(pat).is_some()
     }
 
-    
-    
-    
-    
     
     
     
@@ -266,20 +353,12 @@ impl RawOsStr {
     
     
     
-    
-    
-    
-    
     #[inline]
     #[must_use]
     pub fn ends_with_os(&self, pat: &Self) -> bool {
         raw::ends_with(&self.0, &pat.0)
     }
 
-    
-    
-    
-    
     
     
     
@@ -356,10 +435,6 @@ impl RawOsStr {
     
     
     
-    
-    
-    
-    
     #[inline]
     #[must_use]
     pub fn rfind<P>(&self, pat: P) -> Option<usize>
@@ -372,17 +447,30 @@ impl RawOsStr {
         rfind(&self.0, pat)
     }
 
+    fn split_once_raw_with<P, F>(
+        &self,
+        pat: &P,
+        find_fn: F,
+    ) -> Option<(&Self, &Self)>
+    where
+        F: FnOnce(&[u8], &[u8]) -> Option<usize>,
+        P: EncodedPattern,
+    {
+        let pat = pat.__get();
+
+        let index = find_fn(&self.0, pat)?;
+        let prefix = &self.0[..index];
+        let suffix = &self.0[index + pat.len()..];
+        Some((Self::from_inner(prefix), Self::from_inner(suffix)))
+    }
+
     pub(super) fn rsplit_once_raw<P>(&self, pat: &P) -> Option<(&Self, &Self)>
     where
         P: EncodedPattern,
     {
-        impl_split_once_raw!(self, pat, rfind)
+        self.split_once_raw_with(pat, rfind)
     }
 
-    
-    
-    
-    
     
     
     
@@ -413,19 +501,18 @@ impl RawOsStr {
     fn index_boundary_error(&self, index: usize) -> ! {
         debug_assert!(raw::is_continuation(self.0[index]));
 
-        let start = self.0[..index]
+        let start = expect_encoded!(self.0[..index]
             .iter()
-            .rposition(|&x| !raw::is_continuation(x))
-            .expect("invalid raw bytes");
+            .rposition(|&x| !raw::is_continuation(x)));
         let mut end = index + 1;
         end += self.0[end..]
             .iter()
-            .position(|&x| !raw::is_continuation(x))
-            .unwrap_or_else(|| self.raw_len() - end);
+            .take_while(|&&x| raw::is_continuation(x))
+            .count();
         let code_point = raw::decode_code_point(&self.0[start..end]);
         panic!(
             "byte index {} is not a valid boundary; it is inside U+{:04X} \
-            (bytes {}..{})",
+             (bytes {}..{})",
             index, code_point, start, end,
         );
     }
@@ -455,6 +542,7 @@ impl RawOsStr {
     
     #[inline]
     #[must_use]
+    #[track_caller]
     pub fn split<P>(&self, pat: P) -> Split<'_, P>
     where
         P: Pattern,
@@ -483,27 +571,21 @@ impl RawOsStr {
     
     #[inline]
     #[must_use]
+    #[track_caller]
     pub fn split_at(&self, mid: usize) -> (&Self, &Self) {
         self.check_bound(mid);
 
         let (prefix, suffix) = self.0.split_at(mid);
-        (
-            Self::from_raw_bytes_unchecked(prefix),
-            Self::from_raw_bytes_unchecked(suffix),
-        )
+        (Self::from_inner(prefix), Self::from_inner(suffix))
     }
 
     pub(super) fn split_once_raw<P>(&self, pat: &P) -> Option<(&Self, &Self)>
     where
         P: EncodedPattern,
     {
-        impl_split_once_raw!(self, pat, find)
+        self.split_once_raw_with(pat, find)
     }
 
-    
-    
-    
-    
     
     
     
@@ -527,10 +609,6 @@ impl RawOsStr {
         self.split_once_raw(&pat.__encode())
     }
 
-    
-    
-    
-    
     
     
     
@@ -566,20 +644,12 @@ impl RawOsStr {
     
     
     
-    
-    
-    
-    
     #[inline]
     #[must_use]
     pub fn starts_with_os(&self, pat: &Self) -> bool {
         raw::starts_with(&self.0, &pat.0)
     }
 
-    
-    
-    
-    
     
     
     
@@ -603,13 +673,9 @@ impl RawOsStr {
         let pat = pat.__encode();
         let pat = pat.__get();
 
-        self.0.strip_prefix(pat).map(Self::from_raw_bytes_unchecked)
+        self.0.strip_prefix(pat).map(Self::from_inner)
     }
 
-    
-    
-    
-    
     
     
     
@@ -633,9 +699,12 @@ impl RawOsStr {
         let pat = pat.__encode();
         let pat = pat.__get();
 
-        self.0.strip_suffix(pat).map(Self::from_raw_bytes_unchecked)
+        self.0.strip_suffix(pat).map(Self::from_inner)
     }
 
+    
+    
+    
     
     
     
@@ -655,7 +724,7 @@ impl RawOsStr {
     #[inline]
     #[must_use]
     pub fn to_os_str(&self) -> Cow<'_, OsStr> {
-        OsStr::from_raw_bytes(&self.0).expect("invalid raw bytes")
+        expect_encoded!(imp::os_str_from_bytes(&self.0))
     }
 
     
@@ -704,27 +773,28 @@ impl RawOsStr {
         String::from_utf8_lossy(&self.0)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[must_use]
-    pub fn trim_end_matches<P>(&self, pat: P) -> &Self
+    fn trim_matches_raw_with<P, F>(&self, pat: &P, strip_fn: F) -> &Self
     where
-        P: Pattern,
+        F: for<'a> Fn(&'a [u8], &[u8]) -> Option<&'a [u8]>,
+        P: EncodedPattern,
     {
-        impl_trim_matches!(self, pat, strip_suffix)
+        let pat = pat.__get();
+        if pat.is_empty() {
+            return self;
+        }
+
+        let mut string = &self.0;
+        while let Some(substring) = strip_fn(string, pat) {
+            string = substring;
+        }
+        Self::from_inner(string)
+    }
+
+    fn trim_end_matches_raw<P>(&self, pat: &P) -> &Self
+    where
+        P: EncodedPattern,
+    {
+        self.trim_matches_raw_with(pat, <[_]>::strip_suffix)
     }
 
     
@@ -738,16 +808,61 @@ impl RawOsStr {
     
     
     
+    #[inline]
+    #[must_use]
+    pub fn trim_end_matches<P>(&self, pat: P) -> &Self
+    where
+        P: Pattern,
+    {
+        self.trim_end_matches_raw(&pat.__encode())
+    }
+
     
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn trim_matches<P>(&self, pat: P) -> &Self
+    where
+        P: Pattern,
+    {
+        let pat = pat.__encode();
+        self.trim_start_matches_raw(&pat).trim_end_matches_raw(&pat)
+    }
+
+    fn trim_start_matches_raw<P>(&self, pat: &P) -> &Self
+    where
+        P: EncodedPattern,
+    {
+        self.trim_matches_raw_with(pat, <[_]>::strip_prefix)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     #[must_use]
     pub fn trim_start_matches<P>(&self, pat: P) -> &Self
     where
         P: Pattern,
     {
-        impl_trim_matches!(self, pat, strip_prefix)
+        self.trim_start_matches_raw(&pat.__encode())
     }
 }
 
@@ -781,40 +896,17 @@ impl Default for &RawOsStr {
 
 impl<'a> From<&'a RawOsStr> for Cow<'a, RawOsStr> {
     #[inline]
-    fn from(other: &'a RawOsStr) -> Self {
-        Cow::Borrowed(other)
+    fn from(value: &'a RawOsStr) -> Self {
+        Cow::Borrowed(value)
     }
 }
 
-macro_rules! r#impl {
-    (
-        $index_type:ty
-        $(, $index_var:ident , $first_bound:expr $(, $second_bound:expr)?)?
-    ) => {
-        impl Index<$index_type> for RawOsStr {
-            type Output = Self;
-
-            #[inline]
-            fn index(&self, idx: $index_type) -> &Self::Output {
-                $(
-                    let $index_var = &idx;
-                    self.check_bound($first_bound);
-                    $(self.check_bound($second_bound);)?
-                )?
-
-                Self::from_raw_bytes_unchecked(&self.0[idx])
-            }
-        }
-    };
+impl From<Box<str>> for Box<RawOsStr> {
+    #[inline]
+    fn from(value: Box<str>) -> Self {
+        value.into_boxed_bytes().transmute_box()
+    }
 }
-r#impl!(Range<usize>, x, x.start, x.end);
-r#impl!(RangeFrom<usize>, x, x.start);
-r#impl!(RangeFull);
-
-#[rustfmt::skip]
-r#impl!(RangeInclusive<usize>, x, *x.start(), x.end().wrapping_add(1));
-r#impl!(RangeTo<usize>, x, x.end);
-r#impl!(RangeToInclusive<usize>, x, x.end.wrapping_add(1));
 
 impl ToOwned for RawOsStr {
     type Owned = RawOsString;
@@ -826,6 +918,69 @@ impl ToOwned for RawOsStr {
 }
 
 
+
+
+#[cfg_attr(os_str_bytes_docs_rs, doc(cfg(feature = "raw_os_str")))]
+pub trait RawOsStrCow<'a>: private::Sealed {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    fn into_os_str(self) -> Cow<'a, OsStr>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    fn into_raw_bytes(self) -> Cow<'a, [u8]>;
+}
+
+impl<'a> RawOsStrCow<'a> for Cow<'a, RawOsStr> {
+    #[inline]
+    fn into_os_str(self) -> Cow<'a, OsStr> {
+        match self {
+            Cow::Borrowed(string) => string.to_os_str(),
+            Cow::Owned(string) => Cow::Owned(string.into_os_string()),
+        }
+    }
+
+    #[inline]
+    fn into_raw_bytes(self) -> Cow<'a, [u8]> {
+        match self {
+            Cow::Borrowed(string) => Cow::Borrowed(&string.0),
+            Cow::Owned(string) => Cow::Owned(string.0),
+        }
+    }
+}
 
 
 
@@ -856,7 +1011,7 @@ impl RawOsString {
     #[inline]
     #[must_use]
     pub fn new(string: OsString) -> Self {
-        Self(string.into_raw_vec())
+        Self(imp::os_string_into_vec(string))
     }
 
     
@@ -897,10 +1052,60 @@ impl RawOsString {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    #[must_use]
-    pub fn into_os_string(self) -> OsString {
-        OsString::from_raw_vec(self.0).expect("invalid raw bytes")
+    #[must_use = "method should not be used for validation"]
+    #[track_caller]
+    pub fn assert_from_raw_vec(string: Vec<u8>) -> Self {
+        expect_encoded!(raw::validate_bytes(&string));
+
+        Self(string)
+    }
+
+    if_checked_conversions! {
+        /// Wraps a byte string, without copying or encoding conversion.
+        ///
+        /// [`assert_from_raw_vec`] should almost always be used instead. For
+        /// more information, see [`EncodingError`].
+        ///
+        /// # Errors
+        ///
+        /// See documentation for [`EncodingError`].
+        ///
+        /// # Examples
+        ///
+        /// ```
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[cfg_attr(
+            os_str_bytes_docs_rs,
+            doc(cfg(feature = "checked_conversions"))
+        )]
+        #[inline]
+        pub fn from_raw_vec(string: Vec<u8>) -> Result<Self> {
+            raw::validate_bytes(&string)
+                .map(|()| Self(string))
+                .map_err(EncodingError)
+        }
     }
 
     
@@ -908,6 +1113,98 @@ impl RawOsString {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub unsafe fn from_raw_vec_unchecked(string: Vec<u8>) -> Self {
+        #[cfg(debug_assertions)]
+        expect_encoded!(raw::validate_bytes(&string));
+
+        Self(string)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn into_box(self) -> Box<RawOsStr> {
+        self.0.into_boxed_slice().transmute_box()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub fn into_os_string(self) -> OsString {
+        expect_encoded!(imp::os_string_from_vec(self.0))
+    }
+
     
     
     
@@ -941,8 +1238,76 @@ impl RawOsString {
     
     
     #[inline]
-    pub fn into_string(self) -> Result<String, Self> {
+    pub fn into_string(self) -> result::Result<String, Self> {
         String::from_utf8(self.0).map_err(|x| Self(x.into_bytes()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.0.shrink_to_fit();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    #[track_caller]
+    pub fn split_off(&mut self, at: usize) -> Self {
+        self.check_bound(at);
+
+        Self(self.0.split_off(at))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[track_caller]
+    pub fn truncate(&mut self, new_len: usize) {
+        self.check_bound(new_len);
+
+        self.0.truncate(new_len);
     }
 }
 
@@ -965,46 +1330,41 @@ impl Deref for RawOsString {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        RawOsStr::from_raw_bytes_unchecked(&self.0)
+        RawOsStr::from_inner(&self.0)
     }
 }
 
-impl From<String> for RawOsString {
+impl From<RawOsString> for Box<RawOsStr> {
     #[inline]
-    fn from(other: String) -> Self {
-        Self::from_string(other)
+    fn from(value: RawOsString) -> Self {
+        value.into_box()
+    }
+}
+
+impl From<Box<RawOsStr>> for RawOsString {
+    #[inline]
+    fn from(value: Box<RawOsStr>) -> Self {
+        Self(value.transmute_box::<[_]>().into_vec())
     }
 }
 
 impl From<RawOsString> for Cow<'_, RawOsStr> {
     #[inline]
-    fn from(other: RawOsString) -> Self {
-        Cow::Owned(other)
+    fn from(value: RawOsString) -> Self {
+        Cow::Owned(value)
     }
 }
 
-macro_rules! r#impl {
-    ( $index_type:ty ) => {
-        impl Index<$index_type> for RawOsString {
-            type Output = RawOsStr;
-
-            #[inline]
-            fn index(&self, idx: $index_type) -> &Self::Output {
-                &(**self)[idx]
-            }
-        }
-    };
+impl From<String> for RawOsString {
+    #[inline]
+    fn from(value: String) -> Self {
+        Self::from_string(value)
+    }
 }
-r#impl!(Range<usize>);
-r#impl!(RangeFrom<usize>);
-r#impl!(RangeFull);
-r#impl!(RangeInclusive<usize>);
-r#impl!(RangeTo<usize>);
-r#impl!(RangeToInclusive<usize>);
 
-struct Buffer<'a>(&'a [u8]);
+struct DebugBuffer<'a>(&'a [u8]);
 
-impl Debug for Buffer<'_> {
+impl Debug for DebugBuffer<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("\"")?;
 
@@ -1050,7 +1410,7 @@ macro_rules! r#impl {
             #[inline]
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
                 f.debug_tuple(stringify!($type))
-                    .field(&Buffer(&self.0))
+                    .field(&DebugBuffer(&self.0))
                     .finish()
             }
         }
@@ -1058,6 +1418,42 @@ macro_rules! r#impl {
 }
 r#impl!(RawOsStr);
 r#impl!(RawOsString);
+
+macro_rules! r#impl {
+    ( $index_type:ty $(, $index_var:ident , $($bound:expr),+)? ) => {
+        impl Index<$index_type> for RawOsStr {
+            type Output = Self;
+
+            #[inline]
+            fn index(&self, idx: $index_type) -> &Self::Output {
+                $(
+                    let $index_var = &idx;
+                    $(self.check_bound($bound);)+
+                )?
+
+                Self::from_inner(&self.0[idx])
+            }
+        }
+
+        impl Index<$index_type> for RawOsString {
+            type Output = RawOsStr;
+
+            #[allow(clippy::indexing_slicing)]
+            #[inline]
+            fn index(&self, idx: $index_type) -> &Self::Output {
+                &(**self)[idx]
+            }
+        }
+    };
+}
+r#impl!(Range<usize>, x, x.start, x.end);
+r#impl!(RangeFrom<usize>, x, x.start);
+r#impl!(RangeFull);
+
+#[rustfmt::skip]
+r#impl!(RangeInclusive<usize>, x, *x.start(), x.end().wrapping_add(1));
+r#impl!(RangeTo<usize>, x, x.end);
+r#impl!(RangeToInclusive<usize>, x, x.end.wrapping_add(1));
 
 macro_rules! r#impl {
     ( $type:ty , $other_type:ty ) => {
