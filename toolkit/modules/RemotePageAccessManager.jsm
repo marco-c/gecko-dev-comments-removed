@@ -17,6 +17,8 @@ var EXPORTED_SYMBOLS = ["RemotePageAccessManager"];
 
 
 
+
+
 let RemotePageAccessManager = {
   
 
@@ -228,6 +230,7 @@ let RemotePageAccessManager = {
 
 
 
+
   checkAllowAccess(aDocument, aFeature, aValue) {
     let principal = aDocument.nodePrincipal;
     
@@ -244,6 +247,7 @@ let RemotePageAccessManager = {
   },
 
   
+
 
 
 
