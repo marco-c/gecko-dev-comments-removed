@@ -847,7 +847,7 @@ pub fn glean_test_destroy_glean(clear_stores: bool) {
 
 
 pub fn glean_get_upload_task() -> PingUploadTask {
-    core::with_glean(|glean| glean.get_upload_task())
+    core::with_opt_glean(|glean| glean.get_upload_task()).unwrap_or_else(PingUploadTask::done)
 }
 
 
