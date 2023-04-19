@@ -43,7 +43,10 @@ add_task(async function() {
   const menuList = toolbox.doc.getElementById("toolbox-frame-menu");
   const frames = Array.from(menuList.querySelectorAll(".command"));
 
-  const onNewRoot = inspector.once("new-root");
+  
+  
+  
+  const onNewRoot = inspector.once("reloaded");
   frames[1].click();
   await onNewRoot;
 
