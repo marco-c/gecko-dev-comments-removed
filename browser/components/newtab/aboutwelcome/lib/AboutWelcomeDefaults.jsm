@@ -863,7 +863,7 @@ async function prepareContentForReact(content) {
 
       
       if (removeDefault) {
-        if (!content.templateMR) delete pinScreen.content.secondary_button;
+        delete pinScreen.content.secondary_button;
       } else {
         
         pinScreen.content.primary_button.action.type = "SET_DEFAULT_BROWSER";
