@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 const { TestUtils } = ChromeUtils.import(
@@ -86,6 +90,7 @@ setup();
 
 add_task(async function test_bug1724345() {
   consoleListener.clear();
+  
   
   let pac = function FindProxyForURL(url, host) {
     alert(`PAC resolving: ${host}`);
