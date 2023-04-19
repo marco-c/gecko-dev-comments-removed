@@ -40,6 +40,11 @@ class FileSystemRequestHandler;
 
 
 
+
+
+
+
+
 class FileSystemManager : public nsISupports {
  public:
   FileSystemManager(

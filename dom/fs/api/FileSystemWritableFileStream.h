@@ -41,8 +41,9 @@ class Promise;
 
 class FileSystemWritableFileStream final : public WritableStream {
  public:
-  
-  
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FileSystemWritableFileStream,
+                                           WritableStream)
 
   static already_AddRefed<FileSystemWritableFileStream> MaybeCreate(
       nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
@@ -76,8 +77,6 @@ class FileSystemWritableFileStream final : public WritableStream {
   bool IsClosed() const { return !mActor || !mActor->MutableFileDescPtr(); }
 
  protected:
-  
-  
   RefPtr<FileSystemManager> mManager;
   fs::FileSystemEntryMetadata mMetadata;
 
