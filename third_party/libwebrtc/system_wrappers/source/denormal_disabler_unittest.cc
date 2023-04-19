@@ -132,8 +132,8 @@ TEST(DenormalDisabler, ZeroDenormalsNested) {
 
 TEST(DenormalDisabler, DoNotZeroDenormalsIfUnsupported) {
   if (DenormalDisabler::IsSupported()) {
-    
-    return;
+    GTEST_SKIP() << "This test should only run on platforms without support "
+                    "for DenormalDisabler.";
   }
   DenormalDisabler denormal_disabler(true);
   for (float x : kDenormalDivisors) {
