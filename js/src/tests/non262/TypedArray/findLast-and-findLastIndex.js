@@ -3,7 +3,6 @@
 
 
 
-
 var BUGNUMBER = 1704385;
 var summary = "Implement %TypedArray%.prototype.{findLast, findLastIndex}";
 print(BUGNUMBER + ": " + summary);

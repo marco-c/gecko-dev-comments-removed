@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.findLast.call(true, () => {}),
   undefined,

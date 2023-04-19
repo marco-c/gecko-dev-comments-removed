@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(isConstructor(Array.prototype.findLast), false, 'isConstructor(Array.prototype.findLast) must return false');
 
 assert.throws(TypeError, () => {

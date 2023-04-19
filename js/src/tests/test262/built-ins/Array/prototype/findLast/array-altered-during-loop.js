@@ -16,7 +16,6 @@
 
 
 
-
 var arr = ['Shoes', 'Car', 'Bike'];
 var results = [];
 

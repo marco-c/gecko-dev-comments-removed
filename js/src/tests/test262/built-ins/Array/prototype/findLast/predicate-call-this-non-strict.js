@@ -17,7 +17,6 @@
 
 
 
-
 var result;
 
 [1].findLast(function() {

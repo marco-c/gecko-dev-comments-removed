@@ -16,7 +16,6 @@
 
 
 
-
 var arr = [undefined, , , 'foo'];
 var called = 0;
 

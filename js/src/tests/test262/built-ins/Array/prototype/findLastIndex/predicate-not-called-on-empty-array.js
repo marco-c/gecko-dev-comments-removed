@@ -16,7 +16,6 @@
 
 
 
-
 var called = false;
 
 var predicate = function() {

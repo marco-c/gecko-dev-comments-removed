@@ -18,7 +18,6 @@
 
 
 
-
 var o = {
   length: 1
 };

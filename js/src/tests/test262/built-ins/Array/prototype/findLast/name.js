@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.findLast.name, 'findLast',
   'The value of `Array.prototype.findLast.name` is `"findLast"`'

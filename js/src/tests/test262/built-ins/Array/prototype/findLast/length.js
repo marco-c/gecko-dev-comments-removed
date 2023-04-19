@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.findLast.length, 1,
   'The value of `Array.prototype.findLast.length` is `1`'

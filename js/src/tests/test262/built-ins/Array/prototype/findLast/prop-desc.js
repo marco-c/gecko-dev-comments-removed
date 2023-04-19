@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   typeof Array.prototype.findLast,
   'function',

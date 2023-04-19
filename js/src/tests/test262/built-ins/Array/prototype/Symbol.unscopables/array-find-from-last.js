@@ -16,7 +16,6 @@
 
 
 
-
 var unscopables = Array.prototype[Symbol.unscopables];
 
 assert.sameValue(Object.getPrototypeOf(unscopables), null);

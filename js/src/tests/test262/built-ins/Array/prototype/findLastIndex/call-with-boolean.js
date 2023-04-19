@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.findLastIndex.call(true, () => {}),
   -1,
