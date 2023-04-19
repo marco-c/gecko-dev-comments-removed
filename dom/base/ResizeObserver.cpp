@@ -72,6 +72,7 @@ static nsSize GetContentRectSize(const nsIFrame& aFrame) {
 
 
 
+
 static gfx::Size CalculateBoxSize(Element* aTarget,
                                   ResizeObserverBoxOptions aBox) {
   gfx::Size size;
@@ -81,7 +82,7 @@ static gfx::Size CalculateBoxSize(Element* aTarget,
     return size;
   }
 
-  if (aTarget->IsSVGElement()) {
+  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
     
