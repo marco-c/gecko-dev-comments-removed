@@ -204,7 +204,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   virtual mozilla::ipc::IPCResult RecvDeletingChannel() override;
 
  private:
-  void UpdateAndSerializeSecurityInfo(nsACString& aSerializedSecurityInfoOut);
+  already_AddRefed<nsITransportSecurityInfo> SecurityInfo();
 
   
   
