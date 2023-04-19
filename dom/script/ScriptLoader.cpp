@@ -910,6 +910,9 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
        aElement));
 
   
+  
+  
+  
   if (aScriptKind == ScriptKind::eImportMap) {
     NS_DispatchToCurrentThread(
         NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
