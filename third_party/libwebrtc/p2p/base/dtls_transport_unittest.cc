@@ -86,10 +86,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
     fake_ice_transport_->SignalReadPacket.connect(
         this, &DtlsTestClient::OnFakeIceTransportReadPacket);
 
-    dtls_transport_ = std::make_unique<DtlsTransport>(fake_ice_transport_.get(),
-                                                      webrtc::CryptoOptions(),
-                                                      nullptr);
-    dtls_transport_->SetSslMaxProtocolVersion(ssl_max_version_);
+    dtls_transport_ = std::make_unique<DtlsTransport>(
+        fake_ice_transport_.get(), webrtc::CryptoOptions(),
+        nullptr, ssl_max_version_);
     
     dtls_transport_->SetLocalCertificate(certificate_);
     dtls_transport_->SignalWritableState.connect(
