@@ -65,6 +65,9 @@ var gExceptionPaths = [
 
   
   "resource://activity-stream/schemas",
+
+  
+  "resource://app/localization/en-US/browser/featureCallout.ftl",
 ];
 
 
