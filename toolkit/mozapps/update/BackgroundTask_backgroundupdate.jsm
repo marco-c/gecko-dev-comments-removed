@@ -402,7 +402,7 @@ async function runBackgroundTask(commandLine) {
       
       
       
-      lazy.log.warning(
+      lazy.log.warn(
         `${SLUG}: exception raised from Nimbus/Firefox Messaging System`,
         f
       );
