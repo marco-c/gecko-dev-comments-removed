@@ -30,6 +30,8 @@ struct AckedPacket {
 
 class RtcEventGenericAckReceived final : public RtcEvent {
  public:
+  static constexpr Type kType = Type::GenericAckReceived;
+
   
   
   static std::vector<std::unique_ptr<RtcEventGenericAckReceived>> CreateLogs(
@@ -40,9 +42,8 @@ class RtcEventGenericAckReceived final : public RtcEvent {
 
   std::unique_ptr<RtcEventGenericAckReceived> Copy() const;
 
-  Type GetType() const override;
-
-  bool IsConfigEvent() const override;
+  Type GetType() const override { return kType; }
+  bool IsConfigEvent() const override { return false; }
 
   
   int64_t packet_number() const { return packet_number_; }
