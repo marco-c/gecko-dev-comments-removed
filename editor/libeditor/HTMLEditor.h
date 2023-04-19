@@ -1614,12 +1614,16 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  ChangeSelectedHardLinesToList(nsAtom& aListElementTagName,
-                                nsAtom& aListItemElementTagName,
-                                const nsAString& aBulletType,
-                                SelectAllOfCurrentList aSelectAllOfCurrentList,
-                                const Element& aEditingHost);
+  ConvertContentAroundRangesToList(
+      AutoRangeArray& aRanges, nsAtom& aListElementTagName,
+      nsAtom& aListItemElementTagName, const nsAString& aBulletType,
+      SelectAllOfCurrentList aSelectAllOfCurrentList,
+      const Element& aEditingHost);
 
   
 
