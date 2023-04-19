@@ -1032,27 +1032,30 @@ EditActionResult HTMLEditor::HandleInsertText(
     return EditActionHandled(NS_ERROR_FAILURE);
   }
 
-  RefPtr<const nsRange> firstRange = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
+  const RefPtr<Element> editingHost = ComputeEditingHost(
+      GetDocument()->IsXMLDocument() ? LimitInBodyElement::No
+                                     : LimitInBodyElement::Yes);
+  if (NS_WARN_IF(!editingHost)) {
+    return EditActionHandled(NS_ERROR_FAILURE);
+  }
+
+  auto pointToInsert = GetFirstSelectionStartPoint<EditorDOMPoint>();
+  if (MOZ_UNLIKELY(!pointToInsert.IsSet())) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
 
   
-  
-  
-  rv = CreateStyleForInsertText(*firstRange);
-  if (NS_FAILED(rv)) {
+  Result<EditorDOMPoint, nsresult> setStyleResult =
+      CreateStyleForInsertText(pointToInsert);
+  if (MOZ_UNLIKELY(setStyleResult.isErr())) {
     NS_WARNING("HTMLEditor::CreateStyleForInsertText() failed");
-    return EditActionHandled(rv);
+    return EditActionHandled(setStyleResult.unwrapErr());
+  }
+  if (setStyleResult.inspect().IsSet()) {
+    pointToInsert = setStyleResult.unwrap();
   }
 
-  firstRange = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
-    return EditActionHandled(NS_ERROR_FAILURE);
-  }
-
-  EditorDOMPoint pointToInsert(firstRange->StartRef());
-  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValid()) ||
       NS_WARN_IF(!pointToInsert.IsInContentNode())) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
@@ -1061,12 +1064,6 @@ EditActionResult HTMLEditor::HandleInsertText(
   
   
   if (!pointToInsert.IsInTextNode()) {
-    Element* editingHost = ComputeEditingHost(GetDocument()->IsXMLDocument()
-                                                  ? LimitInBodyElement::No
-                                                  : LimitInBodyElement::Yes);
-    if (NS_WARN_IF(!editingHost)) {
-      return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-    }
     while (!HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
                                           *nsGkAtoms::textTagName)) {
       if (NS_WARN_IF(pointToInsert.GetContainer() == editingHost) ||
@@ -1219,11 +1216,6 @@ EditActionResult HTMLEditor::HandleInsertText(
         }
       }
     } else {
-      const RefPtr<Element> editingHost =
-          ComputeEditingHost(LimitInBodyElement::No);
-      if (NS_WARN_IF(!editingHost)) {
-        return EditActionHandled(NS_ERROR_FAILURE);
-      }
       constexpr auto tabStr = u"\t"_ns;
       constexpr auto spacesStr = u"    "_ns;
       char specialChars[] = {TAB, nsCRT::LF, 0};
@@ -2074,26 +2066,17 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
   
   
 
-  RefPtr<const nsRange> caretRange =
-      nsRange::Create(aPointToBreak.ToRawRangeBoundary(),
-                      aPointToBreak.ToRawRangeBoundary(), IgnoreErrors());
-  if (NS_WARN_IF(!caretRange)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = CreateStyleForInsertText(*caretRange);
-  if (NS_FAILED(rv)) {
+  Result<EditorDOMPoint, nsresult> setStyleResult =
+      CreateStyleForInsertText(aPointToBreak);
+  if (MOZ_UNLIKELY(setStyleResult.isErr())) {
     NS_WARNING("HTMLEditor::CreateStyleForInsertText() failed");
-    return rv;
+    return setStyleResult.unwrapErr();
   }
 
-  caretRange = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!caretRange)) {
-    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-  }
-
-  EditorDOMPoint pointToInsert(caretRange->StartRef());
-  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+  EditorDOMPoint pointToInsert = setStyleResult.inspect().IsSet()
+                                     ? setStyleResult.inspect()
+                                     : aPointToBreak;
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValid()) ||
       NS_WARN_IF(!pointToInsert.IsInContentNode())) {
     return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
   }
@@ -2197,7 +2180,7 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
   }
 
   caretAfterInsert.SetInterlinePosition(InterlinePosition::EndOfLine);
-  rv = CollapseSelectionTo(caretAfterInsert);
+  nsresult rv = CollapseSelectionTo(caretAfterInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
   return rv;
@@ -5765,22 +5748,21 @@ CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
   return CreateElementResult(listElementOrError.UnwrapNewNode());
 }
 
-nsresult HTMLEditor::CreateStyleForInsertText(
-    const AbstractRange& aAbstractRange) {
+Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
+    const EditorDOMPoint& aPointToInsertText) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aAbstractRange.IsPositioned());
+  MOZ_ASSERT(aPointToInsertText.IsSetAndValid());
   MOZ_ASSERT(mTypeInState);
 
-  RefPtr<Element> documentRootElement = GetDocument()->GetRootElement();
+  const RefPtr<Element> documentRootElement = GetDocument()->GetRootElement();
   if (NS_WARN_IF(!documentRootElement)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   
   UniquePtr<PropItem> item = mTypeInState->TakeClearProperty();
 
-  EditorDOMPoint pointToPutCaret(aAbstractRange.StartRef());
-  bool putCaret = false;
+  EditorDOMPoint pointToPutCaret(aPointToInsertText);
   {
     
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
@@ -5791,87 +5773,73 @@ nsresult HTMLEditor::CreateStyleForInsertText(
                        MOZ_KnownLive(item->attr), item->specifiedStyle);
       if (result.Failed()) {
         NS_WARNING("HTMLEditor::ClearStyleAt() failed");
-        return result.Rv();
+        return Err(result.Rv());
       }
       pointToPutCaret = result.PointRefToCollapseSelection();
       item = mTypeInState->TakeClearProperty();
-      putCaret = true;
     }
   }
 
   
-  int32_t relFontSize = mTypeInState->TakeRelativeFontSize();
+  const int32_t relFontSize = mTypeInState->TakeRelativeFontSize();
   item = mTypeInState->TakeSetProperty();
 
   if (item || relFontSize) {
     
     
-    if (pointToPutCaret.IsInTextNode()) {
+    EditorDOMPoint pointToInsertTextNode(pointToPutCaret);
+    if (pointToInsertTextNode.IsInTextNode()) {
       
-      const SplitNodeResult splitTextNodeResult = SplitNodeDeepWithTransaction(
-          MOZ_KnownLive(*pointToPutCaret.GetContainerAsText()), pointToPutCaret,
-          SplitAtEdges::eAllowToCreateEmptyContainer);
+      SplitNodeResult splitTextNodeResult = SplitNodeDeepWithTransaction(
+          MOZ_KnownLive(*pointToInsertTextNode.GetContainerAsText()),
+          pointToInsertTextNode, SplitAtEdges::eAllowToCreateEmptyContainer);
       if (splitTextNodeResult.isErr()) {
         NS_WARNING(
             "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
             "eAllowToCreateEmptyContainer) failed");
-        return splitTextNodeResult.unwrapErr();
+        return Err(splitTextNodeResult.unwrapErr());
       }
-      nsresult rv = splitTextNodeResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion,
-                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      pointToPutCaret = splitTextNodeResult.AtSplitPoint<EditorDOMPoint>();
+      splitTextNodeResult.MoveCaretPointTo(
+          pointToPutCaret, *this,
+          {SuggestCaret::OnlyIfHasSuggestion,
+           SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+      pointToInsertTextNode =
+          splitTextNodeResult.AtSplitPoint<EditorDOMPoint>();
     }
-    if (!pointToPutCaret.IsInContentNode() ||
+    if (!pointToInsertTextNode.IsInContentNode() ||
         !HTMLEditUtils::IsContainerNode(
-            *pointToPutCaret.ContainerAsContent())) {
-      return NS_OK;
+            *pointToInsertTextNode.ContainerAsContent())) {
+      return pointToPutCaret;
     }
     RefPtr<Text> newEmptyTextNode = CreateTextNode(u""_ns);
     if (!newEmptyTextNode) {
       NS_WARNING("EditorBase::CreateTextNode() failed");
-      return NS_ERROR_FAILURE;
+      return Err(NS_ERROR_FAILURE);
     }
-    CreateTextResult insertNewTextNodeResult =
-        InsertNodeWithTransaction<Text>(*newEmptyTextNode, pointToPutCaret);
+    CreateTextResult insertNewTextNodeResult = InsertNodeWithTransaction<Text>(
+        *newEmptyTextNode, pointToInsertTextNode);
     if (insertNewTextNodeResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return insertNewTextNodeResult.unwrapErr();
+      return Err(insertNewTextNodeResult.unwrapErr());
     }
     insertNewTextNodeResult.IgnoreCaretPointSuggestion();
     pointToPutCaret.Set(newEmptyTextNode, 0u);
-    putCaret = true;
 
     if (relFontSize) {
       
       HTMLEditor::FontSize dir = relFontSize > 0 ? HTMLEditor::FontSize::incr
                                                  : HTMLEditor::FontSize::decr;
-      EditorDOMPoint pointToPutCaret;
       for (int32_t j = 0; j < DeprecatedAbs(relFontSize); j++) {
-        CreateElementResult wrapTextInBigOrSmallElementResult =
+        const CreateElementResult wrapTextInBigOrSmallElementResult =
             RelativeFontChangeOnTextNode(dir, *newEmptyTextNode, 0, UINT32_MAX);
         if (wrapTextInBigOrSmallElementResult.isErr()) {
           NS_WARNING("HTMLEditor::RelativeFontChangeOnTextNode() failed");
-          return wrapTextInBigOrSmallElementResult.unwrapErr();
+          return Err(wrapTextInBigOrSmallElementResult.inspectErr());
         }
-        wrapTextInBigOrSmallElementResult.MoveCaretPointTo(
-            pointToPutCaret, *this,
-            {SuggestCaret::OnlyIfHasSuggestion,
-             SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      }
-      if (pointToPutCaret.IsSet()) {
-        nsresult rv = CollapseSelectionTo(pointToPutCaret);
-        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          NS_WARNING("EditorBase::CollapseSelectionTo() failed");
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "EditorBase::CollapseSelectionTo() failed, but ignored");
+        
+        
+        MOZ_ASSERT(pointToPutCaret.IsSet());
+        wrapTextInBigOrSmallElementResult.IgnoreCaretPointSuggestion();
       }
     }
 
@@ -5881,23 +5849,16 @@ nsresult HTMLEditor::CreateStyleForInsertText(
           MOZ_KnownLive(*item->tag), MOZ_KnownLive(item->attr), item->value);
       if (MOZ_UNLIKELY(setStyleResult.isErr())) {
         NS_WARNING("HTMLEditor::SetInlinePropertyOnNode() failed");
-        return setStyleResult.unwrapErr();
+        return Err(setStyleResult.unwrapErr());
       }
       
       
-      MOZ_ASSERT(putCaret);
+      MOZ_ASSERT(pointToPutCaret.IsSet());
       item = mTypeInState->TakeSetProperty();
     }
   }
 
-  if (!putCaret) {
-    return NS_OK;
-  }
-
-  nsresult rv = CollapseSelectionTo(pointToPutCaret);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed");
-  return rv;
+  return pointToPutCaret;
 }
 
 EditActionResult HTMLEditor::AlignAsSubAction(const nsAString& aAlignType,

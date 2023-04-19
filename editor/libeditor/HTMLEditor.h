@@ -1081,9 +1081,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CreateStyleForInsertText(const dom::AbstractRange& aAbstractRange);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  CreateStyleForInsertText(const EditorDOMPoint& aPointToInsertText);
 
   
 
