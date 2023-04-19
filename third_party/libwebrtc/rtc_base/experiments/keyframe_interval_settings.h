@@ -17,6 +17,9 @@
 
 namespace webrtc {
 
+
+
+
 class KeyframeIntervalSettings final {
  public:
   static KeyframeIntervalSettings ParseFromFieldTrials();
@@ -25,22 +28,11 @@ class KeyframeIntervalSettings final {
   
   absl::optional<int> MinKeyframeSendIntervalMs() const;
 
-  
-  
-  
-  
-  
-  
-  absl::optional<int> MaxWaitForKeyframeMs() const;
-  absl::optional<int> MaxWaitForFrameMs() const;
-
  private:
   explicit KeyframeIntervalSettings(
       const WebRtcKeyValueConfig* key_value_config);
 
   FieldTrialOptional<int> min_keyframe_send_interval_ms_;
-  FieldTrialOptional<int> max_wait_for_keyframe_ms_;
-  FieldTrialOptional<int> max_wait_for_frame_ms_;
 };
 
 }  
