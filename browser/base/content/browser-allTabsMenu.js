@@ -139,6 +139,12 @@ var gTabsPanel = {
   },
 
   showAllTabsPanel(event) {
+    
+
+    
+    if (event?.type == "keypress" && event.key != "Enter" && event.key != " ") {
+      return;
+    }
     this.init();
     if (this.canOpen) {
       PanelUI.showSubView(
