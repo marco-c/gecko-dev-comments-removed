@@ -4,6 +4,8 @@
 
 
 
+#include "nsTPromiseFlatString.h"
+
 template <typename T>
 void nsTPromiseFlatString<T>::Init(const substring_type& str) {
   if (str.IsTerminated()) {
