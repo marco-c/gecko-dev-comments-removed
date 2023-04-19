@@ -193,6 +193,7 @@ Result<bool, nsresult> HTMLLabelElement::PerformAccesskey(
   }
 
   
+  AutoHandlingUserInputStatePusher userInputStatePusher(aIsTrustedEvent);
   AutoPopupStatePusher popupStatePusher(
       aIsTrustedEvent ? PopupBlocker::openAllowed : PopupBlocker::openAbused);
   DispatchSimulatedClick(this, aIsTrustedEvent, presContext);
