@@ -66,8 +66,11 @@ ScopedKeyValueConfig::ScopedKeyValueConfig(ScopedKeyValueConfig* parent,
                                            const std::string& s)
     : parent_(parent), leaf_(nullptr) {
   InsertIntoMap(key_value_map_, s);
-  
-  scoped_field_trials_ = std::make_unique<ScopedFieldTrials>(s);
+
+  if (!s.empty()) {
+    
+    scoped_field_trials_ = std::make_unique<ScopedFieldTrials>(s);
+  }
 
   if (parent == nullptr) {
     

@@ -332,6 +332,7 @@ class VideoReceiveStream2
   
   ScopedTaskSafety task_safety_;
 };
+
 }  
 }  
 

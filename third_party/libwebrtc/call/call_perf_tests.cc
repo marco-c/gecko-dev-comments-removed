@@ -766,8 +766,8 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
 
   
   
-  test::ScopedFieldTrials field_trials(
-      "WebRTC-SendSideBwe-WithOverhead/Disabled/");
+  test::ScopedKeyValueConfig field_trials(
+      field_trials_, "WebRTC-SendSideBwe-WithOverhead/Disabled/");
 
   class VideoStreamFactory
       : public VideoEncoderConfig::VideoStreamFactoryInterface {
