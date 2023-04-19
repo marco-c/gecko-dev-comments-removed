@@ -353,6 +353,15 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
+  
+  
+  
+  
+  virtual void OnPacketSendingThreadSwitched() = 0;
+
+  
+  
+  
 
   
   virtual RtcpMode RTCP() const = 0;

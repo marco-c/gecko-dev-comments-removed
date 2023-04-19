@@ -451,6 +451,15 @@ RtpVideoSender::RtpVideoSender(
   
   transport_->GetStreamFeedbackProvider()->RegisterStreamFeedbackObserver(
       rtp_config_.ssrcs, this);
+
+  
+  
+  
+  
+  
+  for (const RtpStreamSender& stream : rtp_streams_) {
+    stream.rtp_rtcp->OnPacketSendingThreadSwitched();
+  }
 }
 
 RtpVideoSender::~RtpVideoSender() {

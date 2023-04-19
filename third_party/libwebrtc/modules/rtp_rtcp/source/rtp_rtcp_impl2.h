@@ -169,6 +169,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   size_t ExpectedPerPacketOverhead() const override;
 
+  void OnPacketSendingThreadSwitched() override;
+
   
 
   
@@ -274,12 +276,9 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
     
     
     const bool deferred_sequencing_;
+    SequenceChecker sequencing_checker;
     
-    
-    
-    mutable Mutex mutex_sequencer_;
-    
-    PacketSequencer sequencer_ RTC_GUARDED_BY(mutex_sequencer_);
+    PacketSequencer sequencer RTC_GUARDED_BY(sequencing_checker);
     
     RtpSenderEgress packet_sender;
     
@@ -319,8 +318,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
                                                TimeDelta duration);
 
   TaskQueueBase* const worker_queue_;
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker pacer_thread_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker rtcp_thread_checker_;
 
   std::unique_ptr<RtpSenderContext> rtp_sender_;
   RTCPSender rtcp_sender_;
