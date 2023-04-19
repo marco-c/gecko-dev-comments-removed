@@ -130,9 +130,13 @@ bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(!peer_connection_factory_);
   RTC_DCHECK(!peer_connection_);
 
+  if (!signaling_thread_.get()) {
+    signaling_thread_ = rtc::Thread::CreateWithSocketServer();
+    signaling_thread_->Start();
+  }
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
       nullptr , nullptr ,
-      nullptr , nullptr ,
+      signaling_thread_.get(), nullptr ,
       webrtc::CreateBuiltinAudioEncoderFactory(),
       webrtc::CreateBuiltinAudioDecoderFactory(),
       webrtc::CreateBuiltinVideoEncoderFactory(),
