@@ -341,10 +341,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   explicit MacroAssembler(TempAllocator& alloc);
 
-  
-  struct WasmToken {};
-  explicit MacroAssembler(WasmToken, TempAllocator& alloc);
-
  public:
   MoveResolver& moveResolver() {
     
