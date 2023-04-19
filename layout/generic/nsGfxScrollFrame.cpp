@@ -8037,6 +8037,11 @@ bool ScrollFrameHelper::IsLastSnappedTarget(const nsIFrame* aFrame) const {
 }
 
 void ScrollFrameHelper::TryResnap() {
+  
+  if (!ScrollAnimationState().isEmpty()) {
+    return;
+  }
+
   if (auto snapTarget = GetSnapPointForResnap()) {
     
     mAnchor.UserScrolled();
