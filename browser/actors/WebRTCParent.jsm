@@ -315,11 +315,11 @@ class WebRTCParent extends JSWindowActorParent {
 
   activateDevicePerm(aOuterWindowId, aMediaSource, aId) {
     if (!lazy.webrtcUI.activePerms.has(this.manager.outerWindowId)) {
-      lazy.webrtcUI.activePerms.set(this.manager.outerWindowId, new Set());
+      lazy.webrtcUI.activePerms.set(this.manager.outerWindowId, new Map());
     }
     lazy.webrtcUI.activePerms
       .get(this.manager.outerWindowId)
-      .add(aOuterWindowId + aMediaSource + aId);
+      .set(aOuterWindowId + aMediaSource + aId, aMediaSource);
   }
 
   
@@ -342,8 +342,8 @@ class WebRTCParent extends JSWindowActorParent {
     if (!lazy.webrtcUI.activePerms.has(this.manager.outerWindowId)) {
       return;
     }
-    let set = lazy.webrtcUI.activePerms.get(this.manager.outerWindowId);
-    set.delete(aOuterWindowId + aMediaSource + aId);
+    let map = lazy.webrtcUI.activePerms.get(this.manager.outerWindowId);
+    map.delete(aOuterWindowId + aMediaSource + aId);
 
     
     if (
@@ -412,7 +412,7 @@ class WebRTCParent extends JSWindowActorParent {
       (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) ||
       aRequest.secondOrigin;
 
-    let set = lazy.webrtcUI.activePerms.get(this.manager.outerWindowId);
+    let map = lazy.webrtcUI.activePerms.get(this.manager.outerWindowId);
     let {
       callID,
       windowID,
@@ -425,7 +425,7 @@ class WebRTCParent extends JSWindowActorParent {
     
     
     const isAllowed = ({ mediaSource, id }, permissionID) =>
-      set?.has(windowID + mediaSource + id) ||
+      map?.get(windowID + mediaSource + id) ||
       (!limited &&
         (lazy.SitePermissions.getForPrincipal(aPrincipal, permissionID).state ==
           lazy.SitePermissions.ALLOW ||
@@ -696,12 +696,39 @@ function prompt(aActor, aBrowser, aRequest) {
       },
     ];
   } else {
+    let label = "getUserMedia.block.label";
+    let key = "getUserMedia.block.accesskey";
+    let isNotNowLabelEnabled =
+      allowedOrActiveCameraOrMicrophone(aBrowser) && !sharingScreen;
+    
+    
+    if (isNotNowLabelEnabled) {
+      label = "getUserMedia.notNow.label";
+      key = "getUserMedia.notNow.accesskey";
+    }
     secondaryActions = [
       {
-        label: stringBundle.getString("getUserMedia.block.label"),
-        accessKey: stringBundle.getString("getUserMedia.block.accesskey"),
+        label: stringBundle.getString(label),
+        accessKey: stringBundle.getString(key),
         callback(aState) {
           aActor.denyRequest(aRequest);
+
+          let scope = lazy.SitePermissions.SCOPE_TEMPORARY;
+          if (aState && aState.checkboxChecked) {
+            scope = lazy.SitePermissions.SCOPE_PERSISTENT;
+          }
+
+          
+          
+          
+          
+          
+          if (
+            scope != lazy.SitePermissions.SCOPE_PERSISTENT &&
+            isNotNowLabelEnabled
+          ) {
+            return;
+          }
 
           
           
@@ -712,10 +739,6 @@ function prompt(aActor, aBrowser, aRequest) {
             audioInputDevices.length
           );
 
-          let scope = lazy.SitePermissions.SCOPE_TEMPORARY;
-          if (aState && aState.checkboxChecked) {
-            scope = lazy.SitePermissions.SCOPE_PERSISTENT;
-          }
           if (audioInputDevices.length) {
             lazy.SitePermissions.setForPrincipal(
               principal,
@@ -1380,6 +1403,49 @@ function prompt(aActor, aBrowser, aRequest) {
     schemeHistogram.add(requestType, scheme);
     userInputHistogram.add(requestType, aRequest.isHandlingUserInput);
   }
+}
+
+
+
+
+
+
+
+function allowedOrActiveCameraOrMicrophone(browser) {
+  
+  if (
+    lazy.SitePermissions.getAllForBrowser(browser).some(perm => {
+      return (
+        perm.state == lazy.SitePermissions.ALLOW &&
+        (perm.id.startsWith("camera") || perm.id.startsWith("microphone"))
+      );
+    })
+  ) {
+    
+    return true;
+  }
+
+  
+  return (
+    
+    browser.browsingContext
+      .getAllBrowsingContextsInSubtree()
+      
+      .map(bc => bc.currentWindowGlobal?.outerWindowId)
+      .filter(id => id != null)
+      
+      
+      .some(id => {
+        let map = lazy.webrtcUI.activePerms.get(id);
+        if (!map) {
+          
+          return false;
+        }
+        
+        let types = [...map.values()];
+        return types.includes("microphone") || types.includes("camera");
+      })
+  );
 }
 
 function removePrompt(aBrowser, aCallId) {
