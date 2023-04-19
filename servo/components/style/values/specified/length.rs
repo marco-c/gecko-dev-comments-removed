@@ -91,23 +91,25 @@ impl FontBaseSize {
 impl FontRelativeLength {
     
     fn is_zero(&self) -> bool {
-        self.unitless_value() == 0.
-    }
-
-    
-    fn unitless_value(&self) -> CSSFloat {
         match *self {
             FontRelativeLength::Em(v) |
             FontRelativeLength::Ex(v) |
             FontRelativeLength::Ch(v) |
             FontRelativeLength::Cap(v) |
             FontRelativeLength::Ic(v) |
-            FontRelativeLength::Rem(v) => v,
+            FontRelativeLength::Rem(v) => v == 0.,
         }
     }
 
     fn is_negative(&self) -> bool {
-        self.unitless_value() < 0.
+        match *self {
+            FontRelativeLength::Em(v) |
+            FontRelativeLength::Ex(v) |
+            FontRelativeLength::Ch(v) |
+            FontRelativeLength::Cap(v) |
+            FontRelativeLength::Ic(v) |
+            FontRelativeLength::Rem(v) => v < 0.,
+        }
     }
 
     fn try_sum(&self, other: &Self) -> Result<Self, ()> {
@@ -408,16 +410,13 @@ pub enum ViewportPercentageLength {
 impl ViewportPercentageLength {
     
     fn is_zero(&self) -> bool {
-        self.unitless_value() == 0.
+        let (_, _, v) = self.unpack();
+        v == 0.
     }
 
     fn is_negative(&self) -> bool {
-        self.unitless_value() < 0.
-    }
-
-    
-    fn unitless_value(&self) -> CSSFloat {
-        self.unpack().2
+        let (_, _, v) = self.unpack();
+        v < 0.
     }
 
     fn unpack(&self) -> (ViewportVariant, ViewportUnit, CSSFloat) {
@@ -666,8 +665,7 @@ pub enum AbsoluteLength {
 }
 
 impl AbsoluteLength {
-    
-    fn unitless_value(&self) -> CSSFloat {
+    fn is_zero(&self) -> bool {
         match *self {
             AbsoluteLength::Px(v) |
             AbsoluteLength::In(v) |
@@ -675,16 +673,20 @@ impl AbsoluteLength {
             AbsoluteLength::Mm(v) |
             AbsoluteLength::Q(v) |
             AbsoluteLength::Pt(v) |
-            AbsoluteLength::Pc(v) => v,
+            AbsoluteLength::Pc(v) => v == 0.,
         }
     }
 
-    fn is_zero(&self) -> bool {
-        self.unitless_value() == 0.
-    }
-
     fn is_negative(&self) -> bool {
-        self.unitless_value() < 0.
+        match *self {
+            AbsoluteLength::Px(v) |
+            AbsoluteLength::In(v) |
+            AbsoluteLength::Cm(v) |
+            AbsoluteLength::Mm(v) |
+            AbsoluteLength::Q(v) |
+            AbsoluteLength::Pt(v) |
+            AbsoluteLength::Pc(v) => v < 0.,
+        }
     }
 
     
@@ -801,16 +803,6 @@ impl Mul<CSSFloat> for NoCalcLength {
 }
 
 impl NoCalcLength {
-    
-    pub fn unitless_value(&self) -> CSSFloat {
-        match *self {
-            NoCalcLength::Absolute(v) => v.unitless_value(),
-            NoCalcLength::FontRelative(v) => v.unitless_value(),
-            NoCalcLength::ViewportPercentage(v) => v.unitless_value(),
-            NoCalcLength::ServoCharacterWidth(c) => c.0 as f32,
-        }
-    }
-
     
     pub fn is_negative(&self) -> bool {
         match *self {
