@@ -141,11 +141,6 @@ class VCMTiming {
   uint32_t prev_frame_timestamp_ RTC_GUARDED_BY(mutex_);
   absl::optional<TimingFrameInfo> timing_frame_info_ RTC_GUARDED_BY(mutex_);
   size_t num_decoded_frames_ RTC_GUARDED_BY(mutex_);
-  
-  
-  
-  FieldTrialParameter<bool> low_latency_renderer_enabled_
-      RTC_GUARDED_BY(mutex_);
   absl::optional<int> max_composition_delay_in_frames_ RTC_GUARDED_BY(mutex_);
   
   

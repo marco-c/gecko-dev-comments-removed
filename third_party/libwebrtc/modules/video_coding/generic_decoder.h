@@ -66,16 +66,6 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   int64_t ntp_offset_;
   
   FieldTrialOptional<TimeDelta> _extra_decode_time;
-
-  
-  
-  
-  FieldTrialParameter<bool> low_latency_renderer_enabled_;
-  
-  
-  
-  
-  FieldTrialParameter<bool> low_latency_renderer_include_predecode_buffer_;
 };
 
 class VCMGenericDecoder {

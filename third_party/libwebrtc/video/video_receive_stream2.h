@@ -312,16 +312,6 @@ class VideoReceiveStream2
   
   
   
-  FieldTrialParameter<bool> low_latency_renderer_enabled_;
-  
-  
-  
-  
-  FieldTrialParameter<bool> low_latency_renderer_include_predecode_buffer_;
-
-  
-  
-  
   FieldTrialParameter<int> maximum_pre_stream_decoders_;
 
   DecodeSynchronizer* decode_sync_;
