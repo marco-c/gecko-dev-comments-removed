@@ -12,6 +12,7 @@ var gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 
 
+
 var gImportedCerts = [];
 
 registerCleanupFunction(() => {

@@ -17,6 +17,7 @@ const X509v3 = 2;
 
 
 
+
 function readNULL(der) {
   return new NULL(der.readTagAndGetContents(DER.NULL));
 }
@@ -34,6 +35,7 @@ class NULL {
     this._contents = bytes;
   }
 }
+
 
 
 
@@ -96,6 +98,7 @@ class DecodedDER {
 
 
 
+
   get error() {
     return this._error;
   }
@@ -117,6 +120,7 @@ class DecodedDER {
 
 
 
+
   parse(bytes) {
     this._der = new DER.DERDecoder(bytes);
     try {
@@ -133,9 +137,11 @@ class DecodedDER {
 
 
 
+
 function readSEQUENCEAndMakeDER(der) {
   return new DER.DERDecoder(der.readTagAndGetContents(DER.SEQUENCE));
 }
+
 
 
 
@@ -557,6 +563,7 @@ class Time extends DecodedDER {
   }
 
   
+
 
 
 

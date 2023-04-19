@@ -5,6 +5,8 @@
 "use strict";
 
 module.exports = {
+  extends: ["plugin:mozilla/valid-jsdoc"],
+
   rules: {
     
     "array-callback-return": "error",
@@ -58,16 +60,6 @@ module.exports = {
 
     
     strict: ["error", "global"],
-
-    
-    "valid-jsdoc": [
-      "error",
-      {
-        requireParamDescription: false,
-        requireReturn: false,
-        requireReturnDescription: false,
-      },
-    ],
 
     
     yoda: ["error", "never"],

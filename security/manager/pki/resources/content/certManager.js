@@ -18,6 +18,7 @@ var certdialogs = Cc["@mozilla.org/nsCertificateDialogs;1"].getService(
 
 
 
+
 var selected_certs = [];
 var selected_tree_items = [];
 var selected_index = [];
@@ -27,7 +28,9 @@ var certdb;
 
 
 
+
 var caTreeView;
+
 
 
 
@@ -225,7 +228,9 @@ var serverRichList = {
 
 
 
+
 var emailTreeView;
+
 
 
 

@@ -23,6 +23,7 @@
 
 
 
+
 const TEST_CASES = [
   { name: "empty", password1: "", password2: "", strength: "0" },
   { name: "match-weak", password1: "foo", password2: "foo", strength: "10" },

@@ -24,6 +24,7 @@ const { MockRegistrar } = ChromeUtils.import(
 
 
 
+
 const TEST_CASES = [
   { certFilename: "has-cn.pem", expectedDisplayString: "Foo", cert: null },
   {

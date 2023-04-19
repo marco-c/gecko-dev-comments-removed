@@ -74,11 +74,13 @@ class BitString {
 
 
 
+
   get unusedBits() {
     return this._unusedBits;
   }
 
   
+
 
 
 
@@ -118,11 +120,13 @@ class DERDecoder {
 
 
 
+
   atEnd() {
     return this._cursor == this._bytes.length;
   }
 
   
+
 
 
 
@@ -140,6 +144,7 @@ class DERDecoder {
 
 
 
+
   _readExpectedTag(expectedTag) {
     let tag = this.readByte();
     if (tag != expectedTag) {
@@ -148,6 +153,7 @@ class DERDecoder {
   }
 
   
+
 
 
 
@@ -186,6 +192,7 @@ class DERDecoder {
 
 
 
+
   readBytes(length) {
     if (length < 0) {
       throw new Error(ERROR_INVALID_LENGTH);
@@ -205,6 +212,7 @@ class DERDecoder {
 
 
 
+
   readTagAndGetContents(tag) {
     this._readExpectedTag(tag);
     let length = this._readLength();
@@ -212,6 +220,7 @@ class DERDecoder {
   }
 
   
+
 
 
 
@@ -224,6 +233,7 @@ class DERDecoder {
   }
 
   
+
 
 
 
@@ -243,12 +253,14 @@ class DERDecoder {
 
 
 
+
   readTLV() {
     let nextTag = this._peekByte();
     return this._readExpectedTLV(nextTag);
   }
 
   
+
 
 
 
@@ -275,6 +287,7 @@ class DERDecoder {
 
 
 
+
   peekTag(tag) {
     if (this._cursor >= this._bytes.length) {
       return false;
@@ -283,6 +296,7 @@ class DERDecoder {
   }
 
   
+
 
 
 

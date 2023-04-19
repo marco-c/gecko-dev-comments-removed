@@ -31,6 +31,7 @@
 
 
 
+
 function getLabelForCertToDelete(certToDelete) {
   let element = document.createXULElement("label");
   let cert = certToDelete.cert;

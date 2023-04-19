@@ -34,6 +34,7 @@ async function onBrowseBtnPress() {
 
 
 
+
 function onDialogAccept(event) {
   let nameBox = document.getElementById("device_name");
   let pathBox = document.getElementById("device_path");

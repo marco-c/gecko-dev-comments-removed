@@ -262,8 +262,6 @@ function asyncDetermineUsages(cert) {
 
 
 
-
-
 function getBestChain(results) {
   let usages = [
     certificateUsageSSLServer,

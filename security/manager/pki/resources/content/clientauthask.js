@@ -69,12 +69,16 @@ const { parse, pemToDER } = certDecoderInitializer(
 
 
 
+
+
 var bundle;
 
 
 
 
+
 var certArray;
+
 
 
 
