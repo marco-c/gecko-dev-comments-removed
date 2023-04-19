@@ -421,7 +421,9 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
   
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      applications: { gecko: { id: "test-aboutprocesses@mochi.test" } },
+      browser_specific_settings: {
+        gecko: { id: "test-aboutprocesses@mochi.test" },
+      },
     },
     background() {
       
