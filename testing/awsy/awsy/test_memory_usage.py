@@ -112,7 +112,7 @@ class TestMemoryUsage(AwsyTestCase):
         self._playback.start()
 
         
-        self.marionette.restart(clean=False)
+        self.marionette.restart(in_app=False, clean=False)
 
         
         self.marionette.delete_session()
