@@ -24,8 +24,10 @@
 
 
 
-#if ((defined(__clang__) && !defined(_MSC_VER) && !defined(WEBRTC_IOS)) || \
-     __cplusplus > 201703L)
+#ifndef __has_cpp_attribute
+#define __has_cpp_attribute(__x) 0
+#endif
+#if __has_cpp_attribute(no_unique_address)
 
 #define RTC_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
