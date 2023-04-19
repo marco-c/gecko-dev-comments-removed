@@ -411,11 +411,14 @@ async function toggleBookmarksToolbar(visible = true) {
   );
 }
 
-async function openContextMenuInPopup(extension, selector = "body") {
-  let contentAreaContextMenu = document.getElementById(
-    "contentAreaContextMenu"
-  );
-  let browser = await awaitExtensionPanel(extension);
+async function openContextMenuInPopup(
+  extension,
+  selector = "body",
+  win = window
+) {
+  let doc = win.document;
+  let contentAreaContextMenu = doc.getElementById("contentAreaContextMenu");
+  let browser = await awaitExtensionPanel(extension, win);
 
   
   
@@ -513,9 +516,10 @@ async function openContextMenu(selector = "#img1", win = window) {
   return contentAreaContextMenu;
 }
 
-async function closeContextMenu(contextMenu) {
+async function closeContextMenu(contextMenu, win = window) {
+  let doc = win.document;
   let contentAreaContextMenu =
-    contextMenu || document.getElementById("contentAreaContextMenu");
+    contextMenu || doc.getElementById("contentAreaContextMenu");
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(
     contentAreaContextMenu,
     "popuphidden"
