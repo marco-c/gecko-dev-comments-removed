@@ -2106,18 +2106,6 @@ function TypedArrayToReversed() {
 
 
 
-function isValidIntegerIndex(a, index) {
-  return (
-    !IsDetachedBuffer(ViewedArrayBufferIfReified(a)) &&
-    Number_isInteger(index) &&
-    !SameValue(index, -0) &&
-    index >= 0 &&
-    index < TypedArrayLength(a)
-  );
-}
-
-
-
 function TypedArrayWith(index, value) {
   
   if (!IsObject(this) || !IsTypedArray(this)) {
@@ -2130,27 +2118,45 @@ function TypedArrayWith(index, value) {
     );
   }
 
-  
-  let O = this;
+  GetAttachedArrayBuffer(this);
 
   
-  let len = TypedArrayLength(O);
+  var O = this;
 
   
-  let relativeIndex = ToInteger(index);
+  var len = TypedArrayLength(O);
 
   
+  var relativeIndex = ToInteger(index);
+
   var actualIndex;
   if (relativeIndex >= 0) {
+    
     actualIndex = relativeIndex;
   } else {
     
     actualIndex = len + relativeIndex;
   }
 
+  var kind = GetTypedArrayKind(O);
+  if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
+    
+    value = ToBigInt(value);
+  } else {
+    
+    value = ToNumber(value);
+  }
+
+  
+  len = TypedArrayLength(O);
+  assert(
+    !IsDetachedBuffer(ViewedArrayBufferIfReified(O)) || len === 0,
+    "length is set to zero when the buffer has been detached"
+  );
+
   
   
-  if (actualIndex >= len || actualIndex < 0) {
+  if (actualIndex < 0 || actualIndex >= len) {
     ThrowRangeError(JSMSG_BAD_INDEX);
   }
 
@@ -2162,12 +2168,13 @@ function TypedArrayWith(index, value) {
   for (var k = 0; k < len; k++) {
     
     
+
     
     
-
-
     var fromValue = k == actualIndex ? value : O[k];
-    DefineDataProperty(A, k, fromValue);
+
+    
+    A[k] = fromValue;
   }
 
   
