@@ -41,13 +41,13 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface>,
   
   std::string kind() const override;
 
- private:
   
   AudioSourceInterface* GetSource() const override;
 
   void AddSink(AudioTrackSinkInterface* sink) override;
   void RemoveSink(AudioTrackSinkInterface* sink) override;
 
+ private:
   
   void OnChanged() override;
 
