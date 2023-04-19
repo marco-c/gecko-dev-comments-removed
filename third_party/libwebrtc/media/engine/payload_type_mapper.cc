@@ -73,7 +73,12 @@ PayloadTypeMapper::PayloadTypeMapper()
               {kCodecParamUseInbandFec, kParamValueTrue}}},
             111},
            
-           {{kRedCodecName, 48000, 2}, 63},
+           
+           {{kRedCodecName,
+             48000,
+             2,
+             {{kCodecParamNotInNameValueFormat, "111/111"}}},
+            63},
            
            
            {{kDtmfCodecName, 48000, 1}, 110},
