@@ -769,7 +769,7 @@ var FullScreen = {
   },
 
   
-  getAutohide(aItem) {
+  updateAutohideMenuitem(aItem) {
     aItem.setAttribute(
       "checked",
       Services.prefs.getBoolPref("browser.fullscreen.autohide")
