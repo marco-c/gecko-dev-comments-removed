@@ -42,10 +42,6 @@ class HttpBackgroundChannelParent;
 class ParentChannelListener;
 class ChannelEventQueue;
 
-
-
-
-
 class HttpChannelParent final : public nsIInterfaceRequestor,
                                 public PHttpChannelParent,
                                 public nsIParentRedirectingChannel,
