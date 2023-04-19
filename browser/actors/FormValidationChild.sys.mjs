@@ -1,29 +1,27 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["FormValidationChild"];
+/**
+ * Handles the validation callback from nsIFormFillController and
+ * the display of the help panel on invalid elements.
+ */
 
 const { LayoutUtils } = ChromeUtils.import(
   "resource://gre/modules/LayoutUtils.jsm"
 );
 
-class FormValidationChild extends JSWindowActorChild {
+export class FormValidationChild extends JSWindowActorChild {
   constructor() {
     super();
     this._validationMessage = "";
     this._element = null;
   }
 
-  
-
-
+  /*
+   * Events
+   */
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
@@ -37,8 +35,8 @@ class FormValidationChild extends JSWindowActorChild {
         }
         break;
       case "pagehide":
-        
-        
+        // Act as if the element is being blurred. This will remove any
+        // listeners and hide the popup.
         this._onBlur();
         break;
       case "input":
@@ -51,10 +49,10 @@ class FormValidationChild extends JSWindowActorChild {
   }
 
   notifyInvalidSubmit(aInvalidElements) {
-    
+    // Show a validation message on the first focusable element.
     for (let element of aInvalidElements) {
-      
-      
+      // Insure that this is the FormSubmitObserver associated with the
+      // element / window this notification is about.
       if (this.contentWindow != element.ownerGlobal.document.defaultView) {
         return;
       }
@@ -76,8 +74,8 @@ class FormValidationChild extends JSWindowActorChild {
         : element.validationMessage;
 
       if (element.isFormAssociatedCustomElements) {
-        
-        
+        // For element that are form-associated custom elements, user agents
+        // should use their validation anchor instead.
         element = element.internals.validationAnchor;
       }
 
@@ -85,10 +83,10 @@ class FormValidationChild extends JSWindowActorChild {
         continue;
       }
 
-      
+      // Update validation message before showing notification
       this._validationMessage = validationMessage;
 
-      
+      // Don't connect up to the same element more than once.
       if (this._element == element) {
         this._showPopup(element);
         break;
@@ -97,11 +95,11 @@ class FormValidationChild extends JSWindowActorChild {
 
       element.focus();
 
-      
+      // Watch for input changes which may change the validation message.
       element.addEventListener("input", this);
 
-      
-      
+      // Watch for focus changes so we can disconnect our listeners and
+      // hide the popup.
       element.addEventListener("blur", this);
 
       this._showPopup(element);
@@ -109,36 +107,36 @@ class FormValidationChild extends JSWindowActorChild {
     }
   }
 
-  
+  /*
+   * Internal
+   */
 
-
-
-  
-
-
-
-
+  /*
+   * Handles input changes on the form element we've associated a popup
+   * with. Updates the validation message or closes the popup if form data
+   * becomes valid.
+   */
   _onInput(aEvent) {
     let element = aEvent.originalTarget;
 
-    
+    // If the form input is now valid, hide the popup.
     if (element.validity.valid) {
       this._hidePopup();
       return;
     }
 
-    
-    
+    // If the element is still invalid for a new reason, we should update
+    // the popup error message.
     if (this._validationMessage != element.validationMessage) {
       this._validationMessage = element.validationMessage;
       this._showPopup(element);
     }
   }
 
-  
-
-
-
+  /*
+   * Blur event handler in which we disconnect from the form element and
+   * hide the popup.
+   */
   _onBlur(aEvent) {
     if (this._element) {
       this._element.removeEventListener("input", this);
@@ -148,21 +146,21 @@ class FormValidationChild extends JSWindowActorChild {
     this._element = null;
   }
 
-  
-
-
-
-
+  /*
+   * Send the show popup message to chrome with appropriate position
+   * information. Can be called repetitively to update the currently
+   * displayed popup position and text.
+   */
   _showPopup(aElement) {
-    
+    // Collect positional information and show the popup
     let panelData = {};
 
     panelData.message = this._validationMessage;
 
     panelData.screenRect = LayoutUtils.getElementBoundingScreenRect(aElement);
 
-    
-    
+    // We want to show the popup at the middle of checkbox and radio buttons
+    // and where the content begin for the other elements.
     if (
       aElement.tagName == "INPUT" &&
       (aElement.type == "radio" || aElement.type == "checkbox")
