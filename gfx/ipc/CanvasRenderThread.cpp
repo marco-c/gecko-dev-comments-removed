@@ -41,10 +41,10 @@ void CanvasRenderThread::Start() {
   nsresult rv = NS_NewNamedThread(
       "CanvasRenderer", getter_AddRefs(thread),
       NS_NewRunnableFunction(
-          "CanvasRender::BackgroundHanSetup",
+          "CanvasRender::BackgroundHangSetup",
           []() {
             sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
-                "CanvasRenderer",
+                "CanvasRendererBHM",
                 
 
 
@@ -73,7 +73,7 @@ void CanvasRenderThread::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sCanvasRenderThread);
 
-  layers::SynchronousTask task("CanvasRenderThread");
+  layers::SynchronousTask task("CanvasRenderThreadShutdown");
   RefPtr<Runnable> runnable =
       WrapRunnable(RefPtr<CanvasRenderThread>(sCanvasRenderThread.get()),
                    &CanvasRenderThread::ShutDownTask, &task);
