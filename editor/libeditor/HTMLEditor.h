@@ -1856,9 +1856,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
+  enum class PreserveWhiteSpaceStyle { No, Yes };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
-  MoveNodeOrChildrenWithTransaction(nsIContent& aNode,
-                                    const EditorDOMPoint& aPointToInsert);
+  MoveNodeOrChildrenWithTransaction(
+      nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert,
+      PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle);
 
   
 
@@ -1880,8 +1886,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult MoveChildrenWithTransaction(
-      Element& aElement, const EditorDOMPoint& aPointToInsert);
+      Element& aElement, const EditorDOMPoint& aPointToInsert,
+      PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle);
 
   
 
