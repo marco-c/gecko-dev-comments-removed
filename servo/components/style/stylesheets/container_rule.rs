@@ -102,16 +102,6 @@ pub struct ContainerCondition {
     flags: FeatureFlags,
 }
 
-
-pub struct ContainerLookupResult<E> {
-    
-    pub element: E,
-    
-    pub info: ContainerInfo,
-    
-    pub style: Arc<ComputedValues>,
-}
-
 impl ContainerCondition {
     
     pub fn parse<'a>(
@@ -130,17 +120,17 @@ impl ContainerCondition {
         Ok(Self { name, condition, flags })
     }
 
-    fn valid_container_info<E>(&self, potential_container: E) -> Option<ContainerLookupResult<E>>
+    fn valid_container_info<E>(&self, potential_container: E) -> Option<(ContainerInfo, Arc<ComputedValues>)>
     where
         E: TElement,
     {
         use crate::values::computed::ContainerType;
 
         fn container_type_axes(ty_: ContainerType, wm: WritingMode) -> FeatureFlags {
-            if ty_.contains(ContainerType::SIZE) {
+            if ty_.intersects(ContainerType::SIZE) {
                 return FeatureFlags::all_container_axes()
             }
-            if ty_.contains(ContainerType::INLINE_SIZE) {
+            if ty_.intersects(ContainerType::INLINE_SIZE) {
                 let physical_axis = if wm.is_vertical() {
                     FeatureFlags::CONTAINER_REQUIRES_HEIGHT_AXIS
                 } else {
@@ -176,21 +166,16 @@ impl ContainerCondition {
 
         let size = potential_container.primary_box_size();
         let style = style.clone();
-        Some(ContainerLookupResult {
-            element: potential_container,
-            info: ContainerInfo { size, wm },
-            style,
-        })
+        Some((ContainerInfo { size, wm }, style))
     }
 
-    
-    pub fn find_container<E>(&self, mut e: E) -> Option<ContainerLookupResult<E>>
+    fn find_container<E>(&self, mut e: E) -> Option<(ContainerInfo, Arc<ComputedValues>)>
     where
         E: TElement,
     {
         while let Some(element) = e.traversal_parent() {
-            if let Some(result) = self.valid_container_info(element) {
-                return Some(result);
+            if let Some(info) = self.valid_container_info(element) {
+                return Some(info);
             }
             e = element;
         }
@@ -203,8 +188,7 @@ impl ContainerCondition {
     where
         E: TElement,
     {
-        let result = self.find_container(element);
-        let info = result.map(|r| (r.info, r.style));
+        let info = self.find_container(element);
         Context::for_container_query_evaluation(device, info, |context| {
             self.condition.matches(context)
         })
