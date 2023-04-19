@@ -17,7 +17,10 @@ let ColorwayClosetOpener = {
 
 
 
-  openModal: ({ source = "unknown" } = {}) => {
+
+
+
+  openModal: ({ source = "unknown", onClosed = null } = {}) => {
     let { gBrowser } = BrowserWindowTracker.getTopWindow();
     let dialogBox = gBrowser.getTabDialogBox(gBrowser.selectedBrowser);
     return dialogBox.open(
@@ -26,7 +29,7 @@ let ColorwayClosetOpener = {
         features: "resizable=no",
         sizeTo: "available",
       },
-      { source }
+      { source, onClosed }
     );
   },
 };

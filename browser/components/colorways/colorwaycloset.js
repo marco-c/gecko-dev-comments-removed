@@ -284,6 +284,14 @@ const ColorwayCloset = {
             extraKeys: { colorway_id: this.selectedColorway.id },
           });
         }
+
+        
+        
+        
+        
+        
+        const { onClosed } = window?.arguments?.[0] || {};
+        onClosed?.({ colorwayChanged: !this.revertToPreviousTheme });
         break;
     }
   },

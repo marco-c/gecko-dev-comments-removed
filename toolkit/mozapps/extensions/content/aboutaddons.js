@@ -3787,8 +3787,45 @@ class ColorwayClosetCard extends HTMLElement {
     colorwaysButton.onclick = () => {
       ColorwayClosetOpener.openModal({
         source: "aboutaddons",
+        onClosed: ({ colorwayChanged }) => {
+          ColorwayClosetCard.hasModalOpen = false;
+          ColorwayClosetCard.runPendingModalClosedCallbacks(colorwayChanged);
+        },
       });
+      ColorwayClosetCard.hasModalOpen = true;
     };
+  }
+
+  static hasModalOpen = false;
+  static closedModalCallbacks = new Set();
+
+  static callOnModalClosed(fn) {
+    if (!this.hasModalOpen) {
+      try {
+        fn();
+      } catch (err) {
+        Cu.reportError(err);
+      }
+      return;
+    }
+    this.closedModalCallbacks.add(fn);
+  }
+
+  static async runPendingModalClosedCallbacks(colorwayChanged) {
+    
+    
+    
+    
+    if (colorwayChanged) {
+      for (const fn of this.closedModalCallbacks) {
+        try {
+          fn();
+        } catch (err) {
+          Cu.reportError(err);
+        }
+      }
+    }
+    this.closedModalCallbacks.clear();
   }
 }
 customElements.define("colorways-card", ColorwayClosetCard);
@@ -4298,12 +4335,34 @@ class AddonList extends HTMLElement {
   }
 
   updateAddon(addon) {
-    if (!this.getCard(addon)) {
+    if (addon.type === "theme" && ColorwayClosetCard.hasModalOpen) {
+      
+      
+      
+      
+      ColorwayClosetCard.callOnModalClosed(() => {
+        this.updateAddon(addon);
+      });
+    } else if (!this.getCard(addon)) {
       
       this.addAddon(addon);
     } else if (this._addonSectionIndex(addon) == -1) {
       
-      this._updateAddon(addon);
+      
+      
+      
+      
+      
+      if (
+        addon.type === "theme" &&
+        BuiltInThemes.isColorwayFromCurrentCollection?.(addon.id) &&
+        this.isUserFocused
+      ) {
+        this.updateLater(addon);
+      } else {
+        
+        this._updateAddon(addon);
+      }
     } else if (this.isUserFocused) {
       
       this.updateLater(addon);
