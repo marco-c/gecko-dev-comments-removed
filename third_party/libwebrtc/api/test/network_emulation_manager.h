@@ -13,6 +13,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/array_view.h"
@@ -66,6 +67,37 @@ struct EmulatedEndpointConfig {
   StatsGatheringMode stats_gathering_mode = StatsGatheringMode::kDefault;
 };
 
+struct EmulatedTURNServerConfig {
+  EmulatedEndpointConfig client_config;
+  EmulatedEndpointConfig peer_config;
+};
+
+
+class EmulatedTURNServerInterface {
+ public:
+  struct IceServerConfig {
+    std::string username;
+    std::string password;
+    std::string url;
+  };
+
+  virtual ~EmulatedTURNServerInterface() {}
+
+  
+  virtual IceServerConfig GetIceServerConfig() const = 0;
+
+  
+  
+  virtual EmulatedEndpoint* GetClientEndpoint() const = 0;
+
+  
+  
+  virtual rtc::SocketAddress GetClientEndpointAddress() const = 0;
+
+  
+  
+  virtual EmulatedEndpoint* GetPeerEndpoint() const = 0;
+};
 
 
 
@@ -210,6 +242,13 @@ class NetworkEmulationManager {
       rtc::ArrayView<EmulatedEndpoint*> endpoints,
       std::function<void(std::unique_ptr<EmulatedNetworkStats>)>
           stats_callback) = 0;
+
+  
+  
+  
+  
+  virtual EmulatedTURNServerInterface* CreateTURNServer(
+      EmulatedTURNServerConfig config) = 0;
 };
 
 }  
