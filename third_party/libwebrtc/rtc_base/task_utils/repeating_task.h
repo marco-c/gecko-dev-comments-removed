@@ -19,21 +19,18 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-
-class RepeatingTaskHandle;
-
 namespace webrtc_repeating_task_impl {
 class RepeatingTaskBase : public QueuedTask {
  public:
   RepeatingTaskBase(TaskQueueBase* task_queue,
                     TimeDelta first_delay,
-                    Clock* clock);
+                    Clock* clock,
+                    rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag);
   ~RepeatingTaskBase() override;
-
-  void Stop();
 
  private:
   virtual TimeDelta RunClosure() = 0;
@@ -43,8 +40,9 @@ class RepeatingTaskBase : public QueuedTask {
   TaskQueueBase* const task_queue_;
   Clock* const clock_;
   
-  
   Timestamp next_run_time_ RTC_GUARDED_BY(task_queue_);
+  rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag_
+      RTC_GUARDED_BY(task_queue_);
 };
 
 
@@ -54,8 +52,12 @@ class RepeatingTaskImpl final : public RepeatingTaskBase {
   RepeatingTaskImpl(TaskQueueBase* task_queue,
                     TimeDelta first_delay,
                     Closure&& closure,
-                    Clock* clock)
-      : RepeatingTaskBase(task_queue, first_delay, clock),
+                    Clock* clock,
+                    rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag)
+      : RepeatingTaskBase(task_queue,
+                          first_delay,
+                          clock,
+                          std::move(alive_flag)),
         closure_(std::forward<Closure>(closure)) {
     static_assert(
         std::is_same<TimeDelta,
@@ -81,13 +83,11 @@ class RepeatingTaskHandle {
  public:
   RepeatingTaskHandle() = default;
   ~RepeatingTaskHandle() = default;
-  RepeatingTaskHandle(RepeatingTaskHandle&& other);
-  RepeatingTaskHandle& operator=(RepeatingTaskHandle&& other);
+  RepeatingTaskHandle(RepeatingTaskHandle&& other) = default;
+  RepeatingTaskHandle& operator=(RepeatingTaskHandle&& other) = default;
   RepeatingTaskHandle(const RepeatingTaskHandle&) = delete;
   RepeatingTaskHandle& operator=(const RepeatingTaskHandle&) = delete;
 
-  
-  
   
   
   
@@ -97,12 +97,13 @@ class RepeatingTaskHandle {
   static RepeatingTaskHandle Start(TaskQueueBase* task_queue,
                                    Closure&& closure,
                                    Clock* clock = Clock::GetRealTimeClockRaw()) {
-    auto repeating_task = std::make_unique<
-        webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
-        task_queue, TimeDelta::Zero(), std::forward<Closure>(closure), clock);
-    auto* repeating_task_ptr = repeating_task.get();
-    task_queue->PostTask(std::move(repeating_task));
-    return RepeatingTaskHandle(repeating_task_ptr);
+    auto alive_flag = PendingTaskSafetyFlag::CreateDetached();
+    task_queue->PostTask(
+        std::make_unique<
+            webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
+            task_queue, TimeDelta::Zero(), std::forward<Closure>(closure),
+            clock, alive_flag));
+    return RepeatingTaskHandle(std::move(alive_flag));
   }
 
   
@@ -113,12 +114,14 @@ class RepeatingTaskHandle {
       TimeDelta first_delay,
       Closure&& closure,
       Clock* clock = Clock::GetRealTimeClockRaw()) {
-    auto repeating_task = std::make_unique<
-        webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
-        task_queue, first_delay, std::forward<Closure>(closure), clock);
-    auto* repeating_task_ptr = repeating_task.get();
-    task_queue->PostDelayedTask(std::move(repeating_task), first_delay.ms());
-    return RepeatingTaskHandle(repeating_task_ptr);
+    auto alive_flag = PendingTaskSafetyFlag::CreateDetached();
+    task_queue->PostDelayedTask(
+        std::make_unique<
+            webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
+            task_queue, first_delay, std::forward<Closure>(closure), clock,
+            alive_flag),
+        first_delay.ms());
+    return RepeatingTaskHandle(std::move(alive_flag));
   }
 
   
@@ -133,9 +136,9 @@ class RepeatingTaskHandle {
 
  private:
   explicit RepeatingTaskHandle(
-      webrtc_repeating_task_impl::RepeatingTaskBase* repeating_task);
-  
-  webrtc_repeating_task_impl::RepeatingTaskBase* repeating_task_ = nullptr;
+      rtc::scoped_refptr<PendingTaskSafetyFlag> alive_flag)
+      : repeating_task_(std::move(alive_flag)) {}
+  rtc::scoped_refptr<PendingTaskSafetyFlag> repeating_task_;
 };
 
 }  
