@@ -164,15 +164,14 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
     }
   }
 
-  if (!settings_.use_ts || *settings_.use_ts == 1) {
+  if (settings_.override_key_pressed.has_value()) {
+    
+    ap_->set_stream_key_pressed(*settings_.override_key_pressed);
+  } else {
     
     if (msg.has_keypress()) {
       ap_->set_stream_key_pressed(msg.keypress());
     }
-  } else {
-    
-    
-    ap_->set_stream_key_pressed(*settings_.use_ts == 2);
   }
 
   
