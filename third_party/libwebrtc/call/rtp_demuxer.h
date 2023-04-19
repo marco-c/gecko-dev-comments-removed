@@ -65,11 +65,8 @@ class RtpDemuxerCriteria {
  private:
   
   
-  
-  
-  
-  std::string mid_;
-  std::string rsid_;
+  const std::string mid_;
+  const std::string rsid_;
   flat_set<uint32_t> ssrcs_;
   flat_set<uint8_t> payload_types_;
 };
