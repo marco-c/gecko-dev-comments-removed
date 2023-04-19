@@ -832,7 +832,7 @@ TEST_P(DataChannelIntegrationTest,
   EXPECT_GT(202u, callee()->data_observer()->received_message_count());
   EXPECT_LE(2u, callee()->data_observer()->received_message_count());
   
-  if (!webrtc::field_trial::IsDisabled("WebRTC-DataChannel-Dcsctp")) {
+  if (webrtc::field_trial::IsEnabled("WebRTC-DataChannel-Dcsctp")) {
     
     EXPECT_EQ(2u, callee()->data_observer()->received_message_count());
   } else {
