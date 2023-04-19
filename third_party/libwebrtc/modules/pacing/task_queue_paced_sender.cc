@@ -224,9 +224,13 @@ void TaskQueuePacedSender::MaybeProcessPackets(
     
     
     
-    time_to_next_process =
-        std::max(TimeDelta::Zero(),
-                 (next_process_time - now).RoundDownTo(TimeDelta::Millis(1)));
+    if (next_process_time.IsMinusInfinity()) {
+      time_to_next_process = TimeDelta::Zero();
+    } else {
+      time_to_next_process =
+          std::max(TimeDelta::Zero(),
+                   (next_process_time - now).RoundDownTo(TimeDelta::Millis(1)));
+    }
   } else if (next_process_time_.IsMinusInfinity() ||
              next_process_time <= next_process_time_ - hold_back_window_) {
     
