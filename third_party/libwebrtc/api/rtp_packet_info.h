@@ -75,6 +75,14 @@ class RTC_EXPORT RtpPacketInfo {
     absolute_capture_time_ = value;
   }
 
+  const absl::optional<int64_t>& local_capture_clock_offset() const {
+    return local_capture_clock_offset_;
+  }
+
+  void set_local_capture_clock_offset(const absl::optional<int64_t>& value) {
+    local_capture_clock_offset_ = value;
+  }
+
   Timestamp receive_time() const { return receive_time_; }
   void set_receive_time(Timestamp value) { receive_time_ = value; }
   
@@ -94,7 +102,16 @@ class RTC_EXPORT RtpPacketInfo {
 
   
   
+  
+  
+  
+  
+  
   absl::optional<AbsoluteCaptureTime> absolute_capture_time_;
+
+  
+  
+  absl::optional<int64_t> local_capture_clock_offset_;
 
   
   Timestamp receive_time_;
