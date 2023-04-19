@@ -74,15 +74,3 @@ impl SerialProblemSolver {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn problem_solver() {
-        
-        
-        
-
-        
-    }
-}

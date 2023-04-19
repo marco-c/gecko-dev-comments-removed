@@ -173,15 +173,3 @@ impl<T: AsyncTester> ParallelProblemSolver<T> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn problem_solver() {
-        
-        
-        
-
-        
-    }
-}
