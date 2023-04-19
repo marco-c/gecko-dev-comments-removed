@@ -282,8 +282,8 @@ TEST_F(SctpTransportTest, MessageInterleavedWithNotification) {
   meta.rcv_tsn = 42;
   meta.rcv_cumtsn = 42;
   chunk.SetData("meow?", 5);
-  transport1->InjectDataOrNotificationFromSctpForTesting(chunk.data(),
-                                                         chunk.size(), meta, 0);
+  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
+                   chunk.data(), chunk.size(), meta, 0));
 
   
   union sctp_notification notification;
@@ -292,15 +292,15 @@ TEST_F(SctpTransportTest, MessageInterleavedWithNotification) {
   notification.sn_header.sn_type = SCTP_PEER_ADDR_CHANGE;
   notification.sn_header.sn_flags = 0;
   notification.sn_header.sn_length = sizeof(notification);
-  transport1->InjectDataOrNotificationFromSctpForTesting(
-      &notification, sizeof(notification), {0}, MSG_NOTIFICATION);
+  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
+                   &notification, sizeof(notification), {0}, MSG_NOTIFICATION));
 
   
   meta.rcv_tsn = 42;
   meta.rcv_cumtsn = 43;
   chunk.SetData(" rawr!", 6);
-  transport1->InjectDataOrNotificationFromSctpForTesting(
-      chunk.data(), chunk.size(), meta, MSG_EOR);
+  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
+                   chunk.data(), chunk.size(), meta, MSG_EOR));
 
   
   EXPECT_TRUE_WAIT(ReceivedData(&recv1, 1, "meow? rawr!"), kDefaultTimeout);
