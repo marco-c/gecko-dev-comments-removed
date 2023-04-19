@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_JoinSplitNodeDirection_h
-#define mozilla_JoinSplitNodeDirection_h
+#ifndef JoinSplitNodeDirection_h
+#define JoinSplitNodeDirection_h
 
 #include <iostream>
 

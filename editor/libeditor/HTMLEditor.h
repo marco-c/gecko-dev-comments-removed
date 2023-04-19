@@ -11,7 +11,6 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorForwards.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/JoinSplitNodeDirection.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -604,20 +603,6 @@ class HTMLEditor final : public EditorBase,
         MOZ_ASSERT_UNREACHABLE("New paragraph separator isn't handled here");
         return *nsGkAtoms::div;
     }
-  }
-
-  
-
-
-  [[nodiscard]] SplitNodeDirection GetSplitNodeDirection() const {
-    return MOZ_LIKELY(mUseGeckoTraditionalJoinSplitBehavior)
-               ? SplitNodeDirection::LeftNodeIsNewOne
-               : SplitNodeDirection::RightNodeIsNewOne;
-  }
-  [[nodiscard]] JoinNodesDirection GetJoinNodesDirection() const {
-    return MOZ_LIKELY(mUseGeckoTraditionalJoinSplitBehavior)
-               ? JoinNodesDirection::LeftNodeIntoRightNode
-               : JoinNodesDirection::RightNodeIntoLeftNode;
   }
 
   
@@ -2657,6 +2642,12 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult OnDocumentModified();
 
  protected:  
+  
+
+
+  [[nodiscard]] inline SplitNodeDirection GetSplitNodeDirection() const;
+  [[nodiscard]] inline JoinNodesDirection GetJoinNodesDirection() const;
+
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aTopLevelEditSubAction,
       nsIEditor::EDirection aDirectionOfTopLevelEditSubAction,
@@ -4556,6 +4547,7 @@ class HTMLEditor final : public EditorBase,
                             
   friend class JoinNodesTransaction;  
                                       
+                                      
   friend class ListElementSelectionState;      
                                                
   friend class ListItemElementSelectionState;  
@@ -4570,6 +4562,7 @@ class HTMLEditor final : public EditorBase,
                                            
   friend class SlurpBlobEventListener;     
   friend class SplitNodeTransaction;       
+                                           
   friend class TransactionManager;  
                                     
   friend class

@@ -8,6 +8,7 @@
 #include "EditorDOMPoint.h"   
 #include "HTMLEditHelpers.h"  
 #include "HTMLEditor.h"       
+#include "HTMLEditorInlines.h"
 #include "HTMLEditUtils.h"
 #include "JoinSplitNodeDirection.h"  
 #include "SelectionState.h"          
