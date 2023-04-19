@@ -27,8 +27,7 @@ namespace webrtc {
 
 
 
-class FakeFrameDecryptor final
-    : public rtc::RefCountedObject<FrameDecryptorInterface> {
+class FakeFrameDecryptor : public FrameDecryptorInterface {
  public:
   
   
