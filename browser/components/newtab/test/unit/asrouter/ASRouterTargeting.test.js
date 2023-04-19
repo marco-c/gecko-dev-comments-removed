@@ -19,7 +19,6 @@ describe("#CachedTargetingGetter", () => {
   let topsitesCache;
   let globals;
   let doesAppNeedPinStub;
-  let getAddonsByTypesStub;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     clock = sinon.useFakeTimers();
@@ -43,7 +42,6 @@ describe("#CachedTargetingGetter", () => {
       }
     );
     doesAppNeedPinStub = sandbox.stub().resolves();
-    getAddonsByTypesStub = sandbox.stub().resolves();
   });
 
   afterEach(() => {
@@ -53,7 +51,7 @@ describe("#CachedTargetingGetter", () => {
   });
 
   it("should cache allow for optional getter argument", async () => {
-    let pinCachedGetter = new CachedTargetingGetter(
+    let cachedGetter = new CachedTargetingGetter(
       "doesAppNeedPin",
       true,
       undefined,
@@ -62,9 +60,9 @@ describe("#CachedTargetingGetter", () => {
     
     clock.tick(sixHours);
 
-    await pinCachedGetter.get();
-    await pinCachedGetter.get();
-    await pinCachedGetter.get();
+    await cachedGetter.get();
+    await cachedGetter.get();
+    await cachedGetter.get();
 
     
     assert.calledOnce(doesAppNeedPinStub);
@@ -74,37 +72,10 @@ describe("#CachedTargetingGetter", () => {
 
     
     clock.tick(sixHours);
-    await pinCachedGetter.get();
+    await cachedGetter.get();
 
     
     assert.calledTwice(doesAppNeedPinStub);
-
-    let themesCachedGetter = new CachedTargetingGetter(
-      "getAddonsByTypes",
-      ["foo"],
-      undefined,
-      { getAddonsByTypes: getAddonsByTypesStub }
-    );
-
-    
-    clock.tick(sixHours);
-
-    await themesCachedGetter.get();
-    await themesCachedGetter.get();
-    await themesCachedGetter.get();
-
-    
-    assert.calledOnce(getAddonsByTypesStub);
-
-    
-    assert.calledWith(getAddonsByTypesStub, ["foo"]);
-
-    
-    clock.tick(sixHours);
-    await themesCachedGetter.get();
-
-    
-    assert.calledTwice(getAddonsByTypesStub);
   });
 
   it("should only make a request every 6 hours", async () => {
