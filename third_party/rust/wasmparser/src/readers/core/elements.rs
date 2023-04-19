@@ -14,7 +14,7 @@
 
 
 use crate::{
-    BinaryReader, BinaryReaderError, ExternalKind, InitExpr, Result, SectionIteratorLimited,
+    BinaryReader, BinaryReaderError, ConstExpr, ExternalKind, Result, SectionIteratorLimited,
     SectionReader, SectionWithLimitedItems, ValType,
 };
 use std::ops::Range;
@@ -42,7 +42,7 @@ pub enum ElementKind<'a> {
         
         table_index: u32,
         
-        init_expr: InitExpr<'a>,
+        offset_expr: ConstExpr<'a>,
     },
     
     Declared,
@@ -62,7 +62,7 @@ pub enum ElementItem<'a> {
     
     Func(u32),
     
-    Expr(InitExpr<'a>),
+    Expr(ConstExpr<'a>),
 }
 
 impl<'a> ElementItems<'a> {
@@ -112,7 +112,7 @@ impl<'a> ElementItemsReader<'a> {
     
     pub fn read(&mut self) -> Result<ElementItem<'a>> {
         if self.exprs {
-            let expr = self.reader.read_init_expr()?;
+            let expr = self.reader.read_const_expr()?;
             Ok(ElementItem::Expr(expr))
         } else {
             let idx = self.reader.read_var_u32()?;
@@ -242,15 +242,15 @@ impl<'a> ElementSectionReader<'a> {
             } else {
                 self.reader.read_var_u32()?
             };
-            let init_expr = {
+            let offset_expr = {
                 let expr_offset = self.reader.position;
-                self.reader.skip_init_expr()?;
+                self.reader.skip_const_expr()?;
                 let data = &self.reader.buffer[expr_offset..self.reader.position];
-                InitExpr::new(data, self.reader.original_offset + expr_offset)
+                ConstExpr::new(data, self.reader.original_offset + expr_offset)
             };
             ElementKind::Active {
                 table_index,
-                init_expr,
+                offset_expr,
             }
         };
         let exprs = flags & 0b100 != 0;
@@ -275,7 +275,7 @@ impl<'a> ElementSectionReader<'a> {
         let items_count = self.reader.read_var_u32()?;
         if exprs {
             for _ in 0..items_count {
-                self.reader.skip_init_expr()?;
+                self.reader.skip_const_expr()?;
             }
         } else {
             for _ in 0..items_count {

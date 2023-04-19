@@ -87,7 +87,7 @@ assertErrorMessage(() => wasmEvalText(`
 (module
  (func (param (ref null $odd)) (unreachable)))
 `),
-SyntaxError, /failed to find type/);
+SyntaxError, /failed to find name/);
 
 
 

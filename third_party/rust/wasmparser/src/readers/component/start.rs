@@ -10,6 +10,8 @@ pub struct ComponentStartFunction {
     
     
     pub arguments: Box<[u32]>,
+    
+    pub results: u32,
 }
 
 

@@ -32,7 +32,7 @@ pub enum CustomPlace {
 }
 
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[allow(missing_docs)]
 pub enum CustomPlaceAnchor {
     Type,

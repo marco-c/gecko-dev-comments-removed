@@ -90,11 +90,17 @@ pub enum Token<'a> {
     Float(Float<'a>),
 }
 
+enum ReservedKind<'a> {
+    String(Cow<'a, [u8]>),
+    Idchars,
+    Reserved,
+}
 
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum LexError {
     
@@ -151,7 +157,7 @@ pub enum LexError {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SignToken {
     
     Plus,
@@ -196,7 +202,7 @@ struct WasmStringInner<'a> {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum FloatVal<'a> {
     
     Nan {
@@ -300,7 +306,7 @@ impl<'a> Lexer<'a> {
         
         
         
-        let byte = match self.remaining.as_bytes().get(0) {
+        let byte = match self.remaining.as_bytes().first() {
             Some(b) => b,
             None => return Ok(None),
         };
@@ -326,13 +332,13 @@ impl<'a> Lexer<'a> {
                     while let Some(ch) = iter.next() {
                         match ch {
                             b'(' => {
-                                if let Some(b';') = iter.as_slice().get(0) {
+                                if let Some(b';') = iter.as_slice().first() {
                                     level += 1;
                                     iter.next();
                                 }
                             }
                             b';' => {
-                                if let Some(b')') = iter.as_slice().get(0) {
+                                if let Some(b')') = iter.as_slice().first() {
                                     level -= 1;
                                     iter.next();
                                     if level == 0 {
@@ -354,38 +360,49 @@ impl<'a> Lexer<'a> {
 
             b')' => Ok(Some(Token::RParen(self.split_first_byte()))),
 
-            b'"' => {
-                let val = self.string()?;
-                let src = &self.input[pos..self.cur()];
-                return Ok(Some(Token::String(WasmString(Box::new(WasmStringInner {
-                    val,
-                    src,
-                })))));
-            }
-
             
             b' ' | b'\n' | b'\r' | b'\t' => Ok(Some(Token::Whitespace(self.split_ws()))),
 
-            c @ idchars!() => {
-                let reserved = self.split_while(|b| match b {
-                    idchars!() => true,
-                    _ => false,
-                });
+            c @ (idchars!() | b'"') => {
+                let (kind, src) = self.split_reserved()?;
+                match kind {
+                    
+                    
+                    ReservedKind::String(val) => {
+                        return Ok(Some(Token::String(WasmString(Box::new(WasmStringInner {
+                            val,
+                            src,
+                        })))));
+                    }
 
-                
-                if let Some(number) = self.number(reserved) {
-                    Ok(Some(number))
-                
-                } else if *c == b'$' && reserved.len() > 1 {
-                    Ok(Some(Token::Id(reserved)))
-                
-                } else if b'a' <= *c && *c <= b'z' {
-                    Ok(Some(Token::Keyword(reserved)))
-                } else {
-                    Ok(Some(Token::Reserved(reserved)))
+                    
+                    
+                    ReservedKind::Idchars => {
+                        
+                        if let Some(number) = self.number(src) {
+                            return Ok(Some(number));
+                        
+                        } else if *c == b'$' && src.len() > 1 {
+                            return Ok(Some(Token::Id(src)));
+                        
+                        } else if b'a' <= *c && *c <= b'z' {
+                            return Ok(Some(Token::Keyword(src)));
+                        }
+                    }
+
+                    
+                    
+                    
+                    
+                    ReservedKind::Reserved => {}
                 }
+
+                Ok(Some(Token::Reserved(src)))
             }
 
+            
+            
+            
             
             
             b';' => match self.remaining.as_bytes().get(1) {
@@ -397,6 +414,9 @@ impl<'a> Lexer<'a> {
                 _ => Ok(Some(Token::Reserved(self.split_first_byte()))),
             },
 
+            
+            
+            
             
             b',' | b'[' | b']' | b'{' | b'}' => Ok(Some(Token::Reserved(self.split_first_byte()))),
 
@@ -469,16 +489,74 @@ impl<'a> Lexer<'a> {
         ret
     }
 
-    fn split_while(&mut self, f: impl Fn(u8) -> bool) -> &'a str {
-        let pos = self
-            .remaining
-            .as_bytes()
-            .iter()
-            .position(|b| !f(*b))
-            .unwrap_or(self.remaining.len());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn split_reserved(&mut self) -> Result<(ReservedKind<'a>, &'a str), Error> {
+        let mut idchars = false;
+        let mut strings = 0u32;
+        let mut last_string_val = None;
+        let mut pos = 0;
+        while let Some(byte) = self.remaining.as_bytes().get(pos) {
+            match byte {
+                
+                
+                idchars!() => {
+                    idchars = true;
+                    pos += 1;
+                }
+
+                
+                b'"' => {
+                    strings += 1;
+                    pos += 1;
+                    let mut it = self.remaining[pos..].chars();
+                    let result = Lexer::parse_str(&mut it, self.allow_confusing_unicode);
+                    pos = self.remaining.len() - it.as_str().len();
+                    match result {
+                        Ok(s) => last_string_val = Some(s),
+                        Err(e) => {
+                            let start = self.input.len() - self.remaining.len();
+                            self.remaining = &self.remaining[pos..];
+                            let err_pos = match &e {
+                                LexError::UnexpectedEof => self.input.len(),
+                                _ => {
+                                    self.input[..start + pos]
+                                        .char_indices()
+                                        .next_back()
+                                        .unwrap()
+                                        .0
+                                }
+                            };
+                            return Err(self.error(err_pos, e));
+                        }
+                    }
+                }
+
+                
+                _ => break,
+            }
+        }
         let (ret, remaining) = self.remaining.split_at(pos);
         self.remaining = remaining;
-        ret
+        Ok(match (idchars, strings) {
+            (false, 0) => unreachable!(),
+            (false, 1) => (ReservedKind::String(last_string_val.unwrap()), ret),
+            (true, 0) => (ReservedKind::Idchars, ret),
+            _ => (ReservedKind::Reserved, ret),
+        })
     }
 
     fn number(&self, src: &'a str) -> Option<Token<'a>> {
@@ -689,24 +767,6 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(())
-    }
-
-    
-    
-    
-    
-    fn string(&mut self) -> Result<Cow<'a, [u8]>, Error> {
-        let mut it = self.remaining[1..].chars();
-        let result = Lexer::parse_str(&mut it, self.allow_confusing_unicode);
-        let end = self.input.len() - it.as_str().len();
-        self.remaining = &self.input[end..];
-        result.map_err(|e| {
-            let err_pos = match &e {
-                LexError::UnexpectedEof => self.input.len(),
-                _ => self.input[..end].char_indices().next_back().unwrap().0,
-            };
-            self.error(err_pos, e)
-        })
     }
 
     fn parse_str(
@@ -968,11 +1028,18 @@ fn escape_char(c: char) -> String {
 
 
 fn is_confusing_unicode(ch: char) -> bool {
-    match ch {
-        '\u{202a}' | '\u{202b}' | '\u{202d}' | '\u{202e}' | '\u{2066}' | '\u{2067}'
-        | '\u{2068}' | '\u{206c}' | '\u{2069}' => true,
-        _ => false,
-    }
+    matches!(
+        ch,
+        '\u{202a}'
+            | '\u{202b}'
+            | '\u{202d}'
+            | '\u{202e}'
+            | '\u{2066}'
+            | '\u{2067}'
+            | '\u{2068}'
+            | '\u{206c}'
+            | '\u{2069}'
+    )
 }
 
 #[cfg(test)]

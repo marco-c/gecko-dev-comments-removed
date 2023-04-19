@@ -1,9 +1,69 @@
-use super::operators::OperatorValidator;
-use crate::{BinaryReader, Result, ValType};
+use super::operators::{Frame, OperatorValidator, OperatorValidatorAllocations};
+use crate::{BinaryReader, Result, ValType, VisitOperator};
 use crate::{FunctionBody, Operator, WasmFeatures, WasmModuleResources};
 
 
 
+
+
+
+
+
+pub struct FuncToValidate<T> {
+    resources: T,
+    index: u32,
+    ty: u32,
+    features: WasmFeatures,
+}
+
+impl<T: WasmModuleResources> FuncToValidate<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(index: u32, ty: u32, resources: T, features: &WasmFeatures) -> FuncToValidate<T> {
+        FuncToValidate {
+            resources,
+            index,
+            ty,
+            features: *features,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_validator(self, allocs: FuncValidatorAllocations) -> FuncValidator<T> {
+        let FuncToValidate {
+            resources,
+            index,
+            ty,
+            features,
+        } = self;
+        let validator =
+            OperatorValidator::new_func(ty, 0, &features, &resources, allocs.0).unwrap();
+        FuncValidator {
+            validator,
+            resources,
+            index,
+        }
+    }
+}
 
 
 
@@ -15,38 +75,16 @@ pub struct FuncValidator<T> {
     index: u32,
 }
 
+
+
+
+
+
+
+#[derive(Default)]
+pub struct FuncValidatorAllocations(OperatorValidatorAllocations);
+
 impl<T: WasmModuleResources> FuncValidator<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(
-        index: u32,
-        ty: u32,
-        offset: usize,
-        resources: T,
-        features: &WasmFeatures,
-    ) -> Result<FuncValidator<T>> {
-        Ok(FuncValidator {
-            validator: OperatorValidator::new_func(ty, offset, features, &resources)?,
-            resources,
-            index,
-        })
-    }
-
-    
-    
-    
-    
-    pub fn operand_stack_height(&self) -> u32 {
-        self.validator.operands.len() as u32
-    }
-
     
     
     
@@ -56,9 +94,7 @@ impl<T: WasmModuleResources> FuncValidator<T> {
         self.read_locals(&mut reader)?;
         reader.allow_memarg64(self.validator.features.memory64);
         while !reader.eof() {
-            let pos = reader.original_position();
-            let op = reader.read_operator()?;
-            self.op(pos, &op)?;
+            reader.visit_operator(self)??;
         }
         self.finish(reader.original_position())
     }
@@ -94,9 +130,8 @@ impl<T: WasmModuleResources> FuncValidator<T> {
     
     pub fn op(&mut self, offset: usize, operator: &Operator<'_>) -> Result<()> {
         self.validator
-            .process_operator(operator, &self.resources)
-            .map_err(|e| e.set_offset(offset))?;
-        Ok(())
+            .with_resources(&self.resources)
+            .visit_operator(offset, operator)
     }
 
     
@@ -108,8 +143,7 @@ impl<T: WasmModuleResources> FuncValidator<T> {
     
     
     pub fn finish(&mut self, offset: usize) -> Result<()> {
-        self.validator.finish().map_err(|e| e.set_offset(offset))?;
-        Ok(())
+        self.validator.finish(offset)
     }
 
     
@@ -121,6 +155,68 @@ impl<T: WasmModuleResources> FuncValidator<T> {
     
     pub fn index(&self) -> u32 {
         self.index
+    }
+
+    
+    pub fn len_locals(&self) -> u32 {
+        self.validator.locals.len_locals()
+    }
+
+    
+    pub fn get_local_type(&self, index: u32) -> Option<ValType> {
+        self.validator.locals.get(index)
+    }
+
+    
+    
+    
+    
+    pub fn operand_stack_height(&self) -> u32 {
+        self.validator.operand_stack_height() as u32
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_operand_type(&self, depth: usize) -> Option<Option<ValType>> {
+        self.validator.peek_operand_at(depth)
+    }
+
+    
+    
+    
+    
+    pub fn control_stack_height(&self) -> u32 {
+        self.validator.control_stack_height() as u32
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_control_frame(&self, depth: usize) -> Option<&Frame> {
+        self.validator.get_frame(depth)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn into_allocations(self) -> FuncValidatorAllocations {
+        FuncValidatorAllocations(self.validator.into_allocations())
     }
 }
 
@@ -185,7 +281,8 @@ mod tests {
 
     #[test]
     fn operand_stack_height() {
-        let mut v = FuncValidator::new(0, 0, 0, &EmptyResources, &Default::default()).unwrap();
+        let mut v = FuncToValidate::new(0, 0, EmptyResources, &Default::default())
+            .into_validator(Default::default());
 
         
         assert_eq!(v.operand_stack_height(), 0);
@@ -209,4 +306,25 @@ mod tests {
         assert!(v.op(2, &Operator::I32Const { value: 99 }).is_ok());
         assert_eq!(v.operand_stack_height(), 2);
     }
+}
+
+macro_rules! define_visit_operator {
+    ($(@$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident)*) => {
+        $(
+            fn $visit(&mut self, offset: usize $($(,$arg: $argty)*)?) -> Result<()> {
+                self.validator.with_resources(&self.resources)
+                    .$visit(offset $($(,$arg)*)?)
+            }
+        )*
+    }
+}
+
+#[allow(unused_variables)]
+impl<'a, T> VisitOperator<'a> for FuncValidator<T>
+where
+    T: WasmModuleResources,
+{
+    type Output = Result<()>;
+
+    for_each_operator!(define_visit_operator);
 }

@@ -14,6 +14,7 @@
 
 
 use crate::{BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems};
+use std::fmt::Debug;
 use std::ops::Range;
 
 
@@ -35,6 +36,16 @@ pub enum ValType {
     ExternRef,
 }
 
+impl ValType {
+    
+    
+    
+    
+    pub fn is_reference_type(&self) -> bool {
+        matches!(self, ValType::FuncRef | ValType::ExternRef)
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub enum Type {
@@ -43,12 +54,63 @@ pub enum Type {
 }
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct FuncType {
     
-    pub params: Box<[ValType]>,
+    params_results: Box<[ValType]>,
     
-    pub returns: Box<[ValType]>,
+    len_params: usize,
+}
+
+impl Debug for FuncType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FuncType")
+            .field("params", &self.params())
+            .field("returns", &self.results())
+            .finish()
+    }
+}
+
+impl FuncType {
+    
+    pub fn new<P, R>(params: P, results: R) -> Self
+    where
+        P: IntoIterator<Item = ValType>,
+        R: IntoIterator<Item = ValType>,
+    {
+        let mut buffer = params.into_iter().collect::<Vec<_>>();
+        let len_params = buffer.len();
+        buffer.extend(results);
+        Self {
+            params_results: buffer.into(),
+            len_params,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub(crate) fn from_raw_parts(params_results: Box<[ValType]>, len_params: usize) -> Self {
+        assert!(len_params <= params_results.len());
+        Self {
+            params_results,
+            len_params,
+        }
+    }
+
+    
+    #[inline]
+    pub fn params(&self) -> &[ValType] {
+        &self.params_results[..self.len_params]
+    }
+
+    
+    #[inline]
+    pub fn results(&self) -> &[ValType] {
+        &self.params_results[self.len_params..]
+    }
 }
 
 

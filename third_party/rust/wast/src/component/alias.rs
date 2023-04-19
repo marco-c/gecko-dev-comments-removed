@@ -24,110 +24,6 @@ impl<'a> Parse<'a> for InlineExportAlias<'a> {
 
 
 #[derive(Debug)]
-pub struct CoreAlias<'a> {
-    
-    pub span: Span,
-    
-    
-    pub id: Option<Id<'a>>,
-    
-    pub name: Option<NameAnnotation<'a>>,
-    
-    pub target: CoreAliasTarget<'a>,
-}
-
-impl<'a> CoreAlias<'a> {
-    
-    pub fn parse_outer_type_alias(span: Span, parser: Parser<'a>) -> Result<Self> {
-        parser.parse::<kw::outer>()?;
-        let outer = parser.parse()?;
-        let index = parser.parse()?;
-
-        let (kind, id, name) =
-            parser.parens(|parser| Ok((parser.parse()?, parser.parse()?, parser.parse()?)))?;
-
-        Ok(Self {
-            span,
-            target: CoreAliasTarget::Outer { outer, index, kind },
-            id,
-            name,
-        })
-    }
-}
-
-impl<'a> Parse<'a> for CoreAlias<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::core>()?.0;
-        parser.parse::<kw::alias>()?.0;
-
-        let mut l = parser.lookahead1();
-
-        if l.peek::<kw::outer>() {
-            
-            
-            Self::parse_outer_type_alias(span, parser)
-        } else if l.peek::<kw::export>() {
-            parser.parse::<kw::export>()?;
-            let instance = parser.parse()?;
-            let export_name = parser.parse()?;
-            let (kind, id, name) =
-                parser.parens(|parser| Ok((parser.parse()?, parser.parse()?, parser.parse()?)))?;
-
-            Ok(Self {
-                span,
-                target: CoreAliasTarget::Export {
-                    instance,
-                    name: export_name,
-                    kind,
-                },
-                id,
-                name,
-            })
-        } else {
-            Err(l.error())
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub enum CoreAliasTarget<'a> {
-    
-    Export {
-        
-        instance: Index<'a>,
-        
-        name: &'a str,
-        
-        kind: ExportKind,
-    },
-    
-    Outer {
-        
-        outer: Index<'a>,
-        
-        index: Index<'a>,
-        
-        kind: CoreOuterAliasKind,
-    },
-}
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum CoreOuterAliasKind {
-    
-    Type,
-}
-
-impl<'a> Parse<'a> for CoreOuterAliasKind {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        parser.parse::<kw::r#type>()?;
-        Ok(Self::Type)
-    }
-}
-
-
-#[derive(Debug)]
 pub struct Alias<'a> {
     
     pub span: Span,
@@ -142,16 +38,24 @@ pub struct Alias<'a> {
 
 impl<'a> Alias<'a> {
     
-    pub fn parse_outer_type_alias(parser: Parser<'a>) -> Result<Self> {
+    pub fn parse_outer_type_alias(parser: Parser<'a>, core_prefix_assumed: bool) -> Result<Self> {
         let span = parser.parse::<kw::alias>()?.0;
         parser.parse::<kw::outer>()?;
         let outer = parser.parse()?;
         let index = parser.parse()?;
 
         let (kind, id, name) = parser.parens(|parser| {
-            let kind: ComponentOuterAliasKind = parser.parse()?;
+            let mut kind: ComponentOuterAliasKind = parser.parse()?;
             match kind {
-                ComponentOuterAliasKind::CoreType | ComponentOuterAliasKind::Type => {}
+                ComponentOuterAliasKind::CoreType | ComponentOuterAliasKind::Type => {
+                    if core_prefix_assumed {
+                        
+                        if kind == ComponentOuterAliasKind::CoreType {
+                            return Err(parser.error("expected type for outer alias"));
+                        }
+                        kind = ComponentOuterAliasKind::CoreType;
+                    }
+                }
                 _ => return Err(parser.error("expected core type or type for outer alias")),
             }
 
@@ -190,6 +94,25 @@ impl<'a> Parse<'a> for Alias<'a> {
 
             (
                 AliasTarget::Export {
+                    instance,
+                    name: export_name,
+                    kind,
+                },
+                id,
+                name,
+            )
+        } else if l.peek::<kw::core>() {
+            parser.parse::<kw::core>()?;
+            parser.parse::<kw::export>()?;
+            let instance = parser.parse()?;
+            let export_name = parser.parse()?;
+            let (kind, id, name) = parser.parens(|parser| {
+                parser.parse::<kw::core>()?;
+                Ok((parser.parse()?, parser.parse()?, parser.parse()?))
+            })?;
+
+            (
+                AliasTarget::CoreExport {
                     instance,
                     name: export_name,
                     kind,
@@ -311,6 +234,15 @@ pub enum AliasTarget<'a> {
         name: &'a str,
         
         kind: ComponentExportAliasKind,
+    },
+    
+    CoreExport {
+        
+        instance: Index<'a>,
+        
+        name: &'a str,
+        
+        kind: ExportKind,
     },
     
     Outer {

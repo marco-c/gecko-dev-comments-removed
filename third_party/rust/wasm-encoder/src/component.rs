@@ -55,25 +55,23 @@ pub enum ComponentSectionId {
     
     CoreInstance = 2,
     
-    CoreAlias = 3,
+    CoreType = 3,
     
-    CoreType = 4,
+    Component = 4,
     
-    Component = 5,
+    Instance = 5,
     
-    Instance = 6,
+    Alias = 6,
     
-    Alias = 7,
+    Type = 7,
     
-    Type = 8,
+    CanonicalFunction = 8,
     
-    CanonicalFunction = 9,
+    Start = 9,
     
-    Start = 10,
+    Import = 10,
     
-    Import = 11,
-    
-    Export = 12,
+    Export = 11,
 }
 
 impl From<ComponentSectionId> for u8 {

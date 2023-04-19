@@ -22,6 +22,11 @@ pub struct ComponentStartSection<A> {
     
     
     pub args: A,
+    
+    
+    
+    
+    pub results: u32,
 }
 
 impl<A> Encode for ComponentStartSection<A>
@@ -32,6 +37,7 @@ where
         let mut bytes = Vec::new();
         self.function_index.encode(&mut bytes);
         self.args.as_ref().encode(&mut bytes);
+        self.results.encode(&mut bytes);
         bytes.encode(sink);
     }
 }

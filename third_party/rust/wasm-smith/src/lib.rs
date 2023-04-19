@@ -50,9 +50,6 @@
 
 
 
-
-
-
 #![deny(missing_docs, missing_debug_implementations)]
 
 #![recursion_limit = "512"]
@@ -62,13 +59,13 @@ mod config;
 mod core;
 
 pub use crate::core::{
-    ConfiguredModule, InstructionKind, InstructionKinds, MaybeInvalidModule, Module,
+    no_traps::NotSupported, ConfiguredModule, InstructionKind, InstructionKinds,
+    MaybeInvalidModule, Module,
 };
 use arbitrary::{Result, Unstructured};
 pub use component::{Component, ConfiguredComponent};
 pub use config::{Config, DefaultConfig, SwarmConfig};
-
-use std::{collections::HashSet, str};
+use std::{collections::HashSet, fmt::Write, str};
 
 
 
@@ -131,7 +128,7 @@ pub(crate) fn unique_string(
 ) -> Result<String> {
     let mut name = limited_string(max_size, u)?;
     while names.contains(&name) {
-        name.push_str(&format!("{}", names.len()));
+        write!(&mut name, "{}", names.len()).unwrap();
     }
     names.insert(name.clone());
     Ok(name)
@@ -144,7 +141,6 @@ pub(crate) fn unique_non_empty_string(
 ) -> Result<String> {
     let mut s = unique_string(max_size, names, u)?;
     while s.is_empty() || names.contains(&s) {
-        use std::fmt::Write;
         write!(&mut s, "{}", names.len()).unwrap();
     }
     names.insert(s.clone());

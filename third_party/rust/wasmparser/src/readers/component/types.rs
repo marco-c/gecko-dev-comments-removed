@@ -1,8 +1,15 @@
 use crate::{
-    Alias, BinaryReader, ComponentAlias, ComponentImport, ComponentTypeRef, FuncType, Import,
-    Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems, Type, TypeRef,
+    BinaryReader, ComponentAlias, ComponentImport, ComponentTypeRef, FuncType, Import, Result,
+    SectionIteratorLimited, SectionReader, SectionWithLimitedItems, Type, TypeRef,
 };
 use std::ops::Range;
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum OuterAliasKind {
+    
+    Type,
+}
 
 
 #[derive(Debug, Clone)]
@@ -26,7 +33,14 @@ pub enum ModuleTypeDeclaration<'a> {
         ty: TypeRef,
     },
     
-    Alias(Alias<'a>),
+    OuterAlias {
+        
+        kind: OuterAliasKind,
+        
+        count: u32,
+        
+        index: u32,
+    },
     
     Import(Import<'a>),
 }
@@ -132,8 +146,6 @@ pub enum ComponentValType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveValType {
     
-    Unit,
-    
     Bool,
     
     S8,
@@ -167,14 +179,13 @@ impl PrimitiveValType {
     }
 
     
-    pub fn is_subtype_of(&self, other: &Self) -> bool {
+    pub fn is_subtype_of(a: Self, b: Self) -> bool {
         
         
-        self == other
+        a == b
             || matches!(
-                (self, other),
-                (_, Self::Unit)
-                    | (Self::S8, Self::S16)
+                (a, b),
+                (Self::S8, Self::S16)
                     | (Self::S8, Self::S32)
                     | (Self::S8, Self::S64)
                     | (Self::U8, Self::U16)
@@ -194,13 +205,6 @@ impl PrimitiveValType {
                     | (Self::U32, Self::S64)
                     | (Self::Float32, Self::Float64)
             )
-    }
-
-    pub(crate) fn type_size(&self) -> usize {
-        match self {
-            Self::Unit => 0,
-            _ => 1,
-        }
     }
 }
 
@@ -257,11 +261,58 @@ pub enum InstanceTypeDeclaration<'a> {
 
 
 #[derive(Debug, Clone)]
+pub enum ComponentFuncResult<'a> {
+    
+    Unnamed(ComponentValType),
+    
+    Named(Box<[(&'a str, ComponentValType)]>),
+}
+
+impl ComponentFuncResult<'_> {
+    
+    pub fn type_count(&self) -> usize {
+        match self {
+            Self::Unnamed(_) => 1,
+            Self::Named(vec) => vec.len(),
+        }
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = (Option<&str>, &ComponentValType)> {
+        enum Either<L, R> {
+            Left(L),
+            Right(R),
+        }
+
+        impl<L, R> Iterator for Either<L, R>
+        where
+            L: Iterator,
+            R: Iterator<Item = L::Item>,
+        {
+            type Item = L::Item;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    Either::Left(l) => l.next(),
+                    Either::Right(r) => r.next(),
+                }
+            }
+        }
+
+        match self {
+            Self::Unnamed(ty) => Either::Left(std::iter::once(ty).map(|ty| (None, ty))),
+            Self::Named(vec) => Either::Right(vec.iter().map(|(n, ty)| (Some(*n), ty))),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
 pub struct ComponentFuncType<'a> {
     
-    pub params: Box<[(Option<&'a str>, ComponentValType)]>,
+    pub params: Box<[(&'a str, ComponentValType)]>,
     
-    pub result: ComponentValType,
+    pub results: ComponentFuncResult<'a>,
 }
 
 
@@ -270,7 +321,7 @@ pub struct VariantCase<'a> {
     
     pub name: &'a str,
     
-    pub ty: ComponentValType,
+    pub ty: Option<ComponentValType>,
     
     pub refines: Option<u32>,
 }
@@ -297,11 +348,11 @@ pub enum ComponentDefinedType<'a> {
     
     Option(ComponentValType),
     
-    Expected {
+    Result {
         
-        ok: ComponentValType,
+        ok: Option<ComponentValType>,
         
-        error: ComponentValType,
+        err: Option<ComponentValType>,
     },
 }
 

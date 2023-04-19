@@ -55,9 +55,20 @@ pub trait SectionReader {
 }
 
 
-pub trait SectionWithLimitedItems {
+pub trait SectionWithLimitedItems: SectionReader {
     
     fn get_count(&self) -> u32;
+
+    
+    
+    fn into_iter_with_offsets(self) -> IntoIterWithOffsets<Self>
+    where
+        Self: Sized,
+    {
+        IntoIterWithOffsets {
+            iter: SectionIteratorLimited::new(self),
+        }
+    }
 }
 
 
@@ -96,10 +107,7 @@ where
 }
 
 
-pub struct SectionIteratorLimited<R>
-where
-    R: SectionReader + SectionWithLimitedItems,
-{
+pub struct SectionIteratorLimited<R> {
     reader: R,
     left: u32,
     end: bool,
@@ -107,7 +115,7 @@ where
 
 impl<R> SectionIteratorLimited<R>
 where
-    R: SectionReader + SectionWithLimitedItems,
+    R: SectionWithLimitedItems,
 {
     
     pub fn new(reader: R) -> SectionIteratorLimited<R> {
@@ -122,7 +130,7 @@ where
 
 impl<R> Iterator for SectionIteratorLimited<R>
 where
-    R: SectionReader + SectionWithLimitedItems,
+    R: SectionWithLimitedItems,
 {
     type Item = Result<R::Item>;
 
@@ -148,5 +156,26 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         let count = self.reader.get_count() as usize;
         (count, Some(count))
+    }
+}
+
+
+pub struct IntoIterWithOffsets<R> {
+    iter: SectionIteratorLimited<R>,
+}
+
+impl<R> Iterator for IntoIterWithOffsets<R>
+where
+    R: SectionWithLimitedItems,
+{
+    type Item = Result<(usize, R::Item)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let pos = self.iter.reader.original_position();
+        Some(self.iter.next()?.map(|item| (pos, item)))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }

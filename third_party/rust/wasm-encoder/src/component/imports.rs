@@ -104,6 +104,8 @@ impl Encode for ComponentTypeRef {
 
 
 
+
+
 #[derive(Clone, Debug, Default)]
 pub struct ComponentImportSection {
     bytes: Vec<u8>,

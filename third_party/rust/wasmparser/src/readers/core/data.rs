@@ -14,7 +14,7 @@
 
 
 use crate::{
-    BinaryReader, BinaryReaderError, InitExpr, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, BinaryReaderError, ConstExpr, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems,
 };
 use std::ops::Range;
@@ -40,7 +40,7 @@ pub enum DataKind<'a> {
         
         memory_index: u32,
         
-        init_expr: InitExpr<'a>,
+        offset_expr: ConstExpr<'a>,
     },
 }
 
@@ -125,15 +125,15 @@ impl<'a> DataSectionReader<'a> {
                 } else {
                     self.reader.read_var_u32()?
                 };
-                let init_expr = {
+                let offset_expr = {
                     let expr_offset = self.reader.position;
-                    self.reader.skip_init_expr()?;
+                    self.reader.skip_const_expr()?;
                     let data = &self.reader.buffer[expr_offset..self.reader.position];
-                    InitExpr::new(data, self.reader.original_offset + expr_offset)
+                    ConstExpr::new(data, self.reader.original_offset + expr_offset)
                 };
                 DataKind::Active {
                     memory_index,
-                    init_expr,
+                    offset_expr,
                 }
             }
             _ => {
