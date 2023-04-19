@@ -109,12 +109,6 @@ class DOMProxyHandler : public BaseDOMProxyHandler {
            JS::ObjectOpResult& result) const override;
 
   
-  
-  virtual bool useProxyExpandoObjectForPrivateFields() const override {
-    return false;
-  }
-
-  
 
 
 

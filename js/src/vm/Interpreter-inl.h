@@ -575,6 +575,18 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
     }
   }
 
+  
+  
+  
+  if (condition == ThrowCondition::ThrowHas) {
+    if (JS::EnsureCanAddPrivateElementOp op =
+            cx->runtime()->canAddPrivateElement) {
+      if (!op(cx, val)) {
+        return false;
+      }
+    }
+  }
+
   if (!HasOwnProperty(cx, val, idval, result)) {
     return false;
   }

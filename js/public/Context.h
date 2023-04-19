@@ -89,6 +89,23 @@ using FilenameValidationCallback = bool (*)(JSContext* cx,
                                             const char* filename);
 JS_PUBLIC_API void SetFilenameValidationCallback(FilenameValidationCallback cb);
 
+
+
+
+
+
+
+
+
+
+
+
+
+using EnsureCanAddPrivateElementOp = bool (*)(JSContext* cx, HandleValue val);
+
+JS_PUBLIC_API void SetHostEnsureCanAddPrivateElementHook(
+    JSContext* cx, EnsureCanAddPrivateElementOp op);
+
 } 
 
 #endif  

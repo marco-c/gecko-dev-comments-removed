@@ -316,6 +316,13 @@ class JS_PUBLIC_API BaseProxyHandler {
   virtual bool useProxyExpandoObjectForPrivateFields() const { return true; }
 
   
+  
+  
+  
+  
+  virtual bool throwOnPrivateField() const { return false; }
+
+  
 
 
 

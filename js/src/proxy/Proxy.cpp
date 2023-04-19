@@ -987,3 +987,26 @@ void ProxyObject::renew(const BaseProxyHandler* handler, const Value& priv) {
     setReservedSlot(i, UndefinedValue());
   }
 }
+
+
+
+
+
+bool DefaultHostEnsureCanAddPrivateElementCallback(JSContext* cx,
+                                                   HandleValue val) {
+  if (!val.isObject()) {
+    return true;
+  }
+
+  Rooted<JSObject*> valObj(cx, &val.toObject());
+  if (!IsProxy(valObj)) {
+    return true;
+  }
+
+  if (GetProxyHandler(valObj)->throwOnPrivateField()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ILLEGAL_PRIVATE_EXOTIC);
+    return false;
+  }
+  return true;
+}

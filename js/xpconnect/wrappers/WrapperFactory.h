@@ -41,6 +41,9 @@ class CrossOriginObjectWrapper : public js::Wrapper {
   bool dynamicCheckedUnwrapAllowed(JS::Handle<JSObject*> obj,
                                    JSContext* cx) const override;
 
+  
+  virtual bool throwOnPrivateField() const override { return true; }
+
   static const CrossOriginObjectWrapper singleton;
 };
 

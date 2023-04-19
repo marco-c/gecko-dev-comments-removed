@@ -68,6 +68,10 @@ class RemoteObjectProxyBase : public js::BaseProxyHandler,
   const char* className(JSContext* aCx,
                         JS::Handle<JSObject*> aProxy) const final;
 
+  
+  
+  virtual bool throwOnPrivateField() const override { return true; }
+
   bool isCallable(JSObject* aObj) const final { return false; }
   bool isConstructor(JSObject* aObj) const final { return false; }
 

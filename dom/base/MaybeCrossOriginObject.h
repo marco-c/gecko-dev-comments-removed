@@ -338,6 +338,9 @@ class MaybeCrossOriginObject : public Base,
                  JS::MutableHandleVector<jsid> props) const final;
 
   
+  virtual bool throwOnPrivateField() const override { return true; }
+
+  
 
 
 
