@@ -5470,11 +5470,16 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   
   MOZ_ASSERT(callee_->isNativeWithoutJitEntry());
 
-  MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard ||
-             flags_.getArgFormat() == CallFlags::FunCall);
-
   ObjOperandId calleeObjId;
-  if (flags_.getArgFormat() == CallFlags::FunCall) {
+  if (flags_.getArgFormat() == CallFlags::Standard) {
+    ValOperandId calleeValId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
+    calleeObjId = writer.guardToObject(calleeValId);
+  } else if (flags_.getArgFormat() == CallFlags::Spread) {
+    ValOperandId calleeValId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
+    calleeObjId = writer.guardToObject(calleeValId);
+  } else if (flags_.getArgFormat() == CallFlags::FunCall) {
     MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
 
     Int32OperandId argcId(0);
@@ -5484,16 +5489,20 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
       calleeObjId = generator_.emitFunApplyGuard(argcId);
     }
   } else {
-    ValOperandId calleeValId =
-        writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
-    calleeObjId = writer.guardToObject(calleeValId);
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
+    MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
+
+    Int32OperandId argcId(0);
+    calleeObjId = generator_.emitFunApplyGuard(argcId);
   }
 
   writer.guardSpecificFunction(calleeObjId, callee_);
 
   
   if (flags_.isConstructing()) {
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard);
     MOZ_ASSERT(&newTarget_.toObject() == callee_);
+
     ValOperandId newTargetValId =
         writer.loadArgumentFixedSlot(ArgumentKind::NewTarget, argc_, flags_);
     ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
@@ -5501,35 +5510,13 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   }
 }
 
-ObjOperandId
-InlinableNativeIRGenerator::emitNativeCalleeGuardAndLoadArgsArray() {
-  
-  
-  MOZ_ASSERT(callee_->isNativeWithoutJitEntry());
-
-  MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Spread ||
-             flags_.getArgFormat() == CallFlags::FunApplyArray);
-
-  MOZ_ASSERT(!flags_.isConstructing());
-
-  ObjOperandId calleeObjId;
-  ObjOperandId argObjId;
-  if (flags_.getArgFormat() == CallFlags::FunApplyArray) {
-    MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
-
-    Int32OperandId argcId(0);
-    calleeObjId = generator_.emitFunApplyGuard(argcId);
-    argObjId = generator_.emitFunApplyArgsGuard(flags_.getArgFormat());
-  } else {
-    ValOperandId calleeValId =
-        writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
-    calleeObjId = writer.guardToObject(calleeValId);
-    argObjId = writer.loadSpreadArgs();
+ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
+  if (flags_.getArgFormat() == CallFlags::Spread) {
+    return writer.loadSpreadArgs();
   }
 
-  writer.guardSpecificFunction(calleeObjId, callee_);
-
-  return argObjId;
+  MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
+  return generator_.emitFunApplyArgsGuard(flags_.getArgFormat());
 }
 
 void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
@@ -7585,7 +7572,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
   initializeInputOperand();
 
   
-  ObjOperandId argsId = emitNativeCalleeGuardAndLoadArgsArray();
+  emitNativeCalleeGuard();
+
+  
+  ObjOperandId argsId = emitLoadArgsArray();
 
   if (int32Result) {
     writer.int32MinMaxArrayResult(argsId, isMax);
