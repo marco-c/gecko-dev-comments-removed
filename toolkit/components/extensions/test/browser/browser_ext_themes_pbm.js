@@ -6,8 +6,8 @@
 
 
 
-const { BuiltInThemes } = ChromeUtils.import(
-  "resource:///modules/BuiltInThemes.jsm"
+const { BuiltInThemes } = ChromeUtils.importESModule(
+  "resource:///modules/BuiltInThemes.sys.mjs"
 );
 const { PromptTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromptTestUtils.jsm"

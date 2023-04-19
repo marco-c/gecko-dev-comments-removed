@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["ThemeVariableMap", "ThemeContentPropertyList"];
-
-const ThemeVariableMap = [
+export const ThemeVariableMap = [
   [
     "--lwt-accent-color-inactive",
     {
@@ -136,7 +134,7 @@ const ThemeVariableMap = [
         }
         const { r, g, b } = rgbaChannels;
         element.setAttribute("lwt-sidebar", "true");
-        
+        // Drop alpha channel
         return `rgb(${r}, ${g}, ${b})`;
       },
     },
@@ -164,15 +162,15 @@ const ThemeVariableMap = [
           !rgbaChannels ||
           !Services.prefs.getBoolPref("browser.newtabpage.enabled")
         ) {
-          
-          
-          
-          
-          
-          
+          // We only set the tabpanel background to the new tab background color
+          // if the user uses about:home for new tabs. Otherwise, we flash a
+          // colorful background when a new tab is opened. We will flash the
+          // newtab color in new windows if the user uses about:home for new
+          // tabs but not new windows. However, the flash is concealed by the OS
+          // window-open animation.
           return null;
         }
-        
+        // Drop alpha channel
         let { r, g, b } = rgbaChannels;
         return `rgb(${r}, ${g}, ${b})`;
       },
@@ -180,7 +178,7 @@ const ThemeVariableMap = [
   ],
 ];
 
-const ThemeContentPropertyList = [
+export const ThemeContentPropertyList = [
   "ntp_background",
   "ntp_card_background",
   "ntp_text",

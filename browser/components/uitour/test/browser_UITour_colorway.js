@@ -12,8 +12,8 @@ const { AddonManager } = ChromeUtils.import(
 );
 
 
-const { BuiltInThemes } = ChromeUtils.import(
-  "resource:///modules/BuiltInThemes.jsm"
+const { BuiltInThemes } = ChromeUtils.importESModule(
+  "resource:///modules/BuiltInThemes.sys.mjs"
 );
 const COLORWAY_IDS = [...BuiltInThemes.builtInThemeMap.keys()].filter(
   id =>

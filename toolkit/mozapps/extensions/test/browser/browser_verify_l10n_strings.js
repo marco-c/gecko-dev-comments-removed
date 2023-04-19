@@ -2,8 +2,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
 });
 
 

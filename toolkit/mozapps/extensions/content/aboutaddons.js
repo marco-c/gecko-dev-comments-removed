@@ -9,11 +9,14 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AMTelemetry: "resource://gre/modules/AddonManager.jsm",
-  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
   ClientID: "resource://gre/modules/ClientID.jsm",
   ColorwayClosetOpener: "resource:///modules/ColorwayClosetOpener.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",

@@ -55,12 +55,12 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 XPCOMUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
   try {
-    let { BuiltInThemes } = ChromeUtils.import(
-      "resource:///modules/BuiltInThemes.jsm"
+    let { BuiltInThemes } = ChromeUtils.importESModule(
+      "resource:///modules/BuiltInThemes.sys.mjs"
     );
     return BuiltInThemes;
   } catch (e) {
-    Cu.reportError(`Unable to load BuiltInThemes.jsm: ${e}`);
+    Cu.reportError(`Unable to load BuiltInThemes.sys.mjs: ${e}`);
   }
   return undefined;
 });

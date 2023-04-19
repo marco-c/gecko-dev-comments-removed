@@ -1,18 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["BuiltInThemes"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  BuiltInThemeConfig: "resource:///modules/BuiltInThemeConfig.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
-  BuiltInThemeConfig: "resource:///modules/BuiltInThemeConfig.jsm",
 });
 
 const ColorwayL10n = new Localization(["browser/colorways.ftl"], true);
@@ -50,18 +49,18 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 class _BuiltInThemes {
-  
-
-
-
+  /**
+   * The list of themes to be installed. This is exposed on the class so tests
+   * can set custom config files.
+   */
   builtInThemeMap = lazy.BuiltInThemeConfig;
 
-  
-
-
-
-
-
+  /**
+   * @param {string} id An addon's id string.
+   * @returns {string}
+   *   If `id` refers to a built-in theme, returns a path pointing to the
+   *   theme's preview image. Null otherwise.
+   */
   previewForBuiltInThemeId(id) {
     let theme = this.builtInThemeMap.get(id);
     if (theme) {
@@ -71,19 +70,19 @@ class _BuiltInThemes {
     return null;
   }
 
-  
-
-
-
-
+  /**
+   * @param {string} id An addon's id string.
+   * @return {boolean}
+   *   True if the theme with id `id` is a monochromatic theme.
+   */
   isMonochromaticTheme(id) {
     return id.endsWith("-colorway@mozilla.org");
   }
 
-  
-
-
-
+  /**
+   * If the active theme is built-in, this function calls
+   * AddonManager.maybeInstallBuiltinAddon for that theme.
+   */
   maybeInstallActiveBuiltInTheme() {
     const activeThemeID = Services.prefs.getStringPref(
       kActiveThemePref,
@@ -100,10 +99,10 @@ class _BuiltInThemes {
     }
   }
 
-  
-
-
-
+  /**
+   * Ensures that all built-in themes are installed and expired themes are
+   * uninstalled.
+   */
   async ensureBuiltInThemes() {
     let installPromises = [];
     installPromises.push(this._uninstallExpiredThemes());
@@ -125,9 +124,9 @@ class _BuiltInThemes {
           )
         );
         if (this.isMonochromaticTheme(id)) {
-          
-          
-          
+          // Monochromatic themes get sorted in the UI according to their
+          // position in the config, implied by this loop over
+          // builtInThemeMap.entries().
           this.monochromaticSortIndices.set(id, monochromaticSortIndex++);
         }
       }
@@ -136,37 +135,37 @@ class _BuiltInThemes {
     await Promise.all(installPromises);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * @param {string} id
+   *   A theme's ID.
+   * @returns {boolean}
+   *   Returns true if the theme is expired. False otherwise.
+   * @note This looks up the id in a Map rather than accessing a property on
+   *   the addon itself. That makes calls to this function O(m) where m is the
+   *   total number of built-in themes offered now or in the past. Since we
+   *   are using a Map, calls are O(1) in the average case.
+   */
   themeIsExpired(id) {
     let themeInfo = this.builtInThemeMap.get(id);
     return themeInfo?.expiry && new Date(themeInfo.expiry) < new Date();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * @param {string} id
+   *   The theme's id.
+   * @return {boolean}
+   *   True if the theme with id `id` is both expired and retained. That is,
+   *   the user has the ability to use it after its expiry date.
+   */
   isRetainedExpiredTheme(id) {
     return lazy.retainedThemes.includes(id) && this.themeIsExpired(id);
   }
 
-  
-
-
-
-
+  /**
+   * Uninstalls themes after they expire. If the expired theme is active, then
+   * it is not uninstalled. Instead, it is saved so that the user can use it
+   * indefinitely.
+   */
   async _uninstallExpiredThemes() {
     const activeThemeID = Services.prefs.getStringPref(
       kActiveThemePref,
@@ -195,12 +194,12 @@ class _BuiltInThemes {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Set a pref to ensure that the user can continue to use a specified theme
+   * past its expiry date.
+   * @param {string} id
+   *   The ID of the theme to retain.
+   */
   _retainLimitedTimeTheme(id) {
     if (!lazy.retainedThemes.includes(id)) {
       lazy.retainedThemes.push(id);
@@ -211,20 +210,20 @@ class _BuiltInThemes {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Finds the active colorway collection.
+   * @return {object}
+   *   Colorway Collection
+   */
   findActiveColorwayCollection() {
     return this.builtInThemeMap.findActiveColorwayCollection();
   }
 
-  
-
-
-
-
+  /**
+   * @return {boolean}
+   *   Whether a specific theme is part of the currently active colorway
+   *   collection.
+   */
   isColorwayFromCurrentCollection(id) {
     let collection = this.findActiveColorwayCollection();
     return (
@@ -232,29 +231,29 @@ class _BuiltInThemes {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Colorway collections are usually divided into and presented as "groups".
+   * A group either contains closely related colorways, e.g. stemming from the
+   * same base color but with different intensities (soft, balanced, and bold),
+   * or if the current collection doesn't have intensities, each colorway is
+   * their own group. Group name localization is optional.
+   * @param {string} id
+   *   The ID of the colorway add-on.
+   * @return {string}
+   *   Localized colorway group name. null if there's no such name, in which
+   *   case the caller should fall back on getting a name from the add-on API.
+   */
   getLocalizedColorwayGroupName(colorwayId) {
     return this._getColorwayString(colorwayId, "groupName");
   }
 
-  
-
-
-
-
-
-
+  /**
+   * @param {string} id
+   *   The ID of the colorway add-on.
+   * @return {string}
+   *   L10nId for intensity value of the colorway with the provided id, null if
+   *   there's none.
+   */
   getColorwayIntensityL10nId(colorwayId) {
     const result = ColorwayIntensityIdPostfixToL10nMap.find(
       ([postfix, l10nId]) => colorwayId.endsWith(postfix)
@@ -262,13 +261,13 @@ class _BuiltInThemes {
     return result ? result[1] : null;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * @param {string} id
+   *   The ID of the colorway add-on.
+   * @return {string}
+   *   Localized description of the colorway with the provided id, null if
+   *   there's none.
+   */
   getLocalizedColorwayDescription(colorwayId) {
     return this._getColorwayString(colorwayId, "description");
   }
@@ -287,4 +286,4 @@ class _BuiltInThemes {
   }
 }
 
-var BuiltInThemes = new _BuiltInThemes();
+export var BuiltInThemes = new _BuiltInThemes();
