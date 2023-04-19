@@ -63,11 +63,6 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
     return FrameDecision::kStash;
   }
   
-  if (frame->GetRtpVideoHeader().generic == absl::nullopt) {
-    RTC_LOG(LS_ERROR) << "No generic frame descriptor found dropping frame.";
-    return FrameDecision::kDrop;
-  }
-  
   const size_t max_plaintext_byte_size =
       frame_decryptor_->GetMaxPlaintextByteSize(cricket::MEDIA_TYPE_VIDEO,
                                                 frame->size());
