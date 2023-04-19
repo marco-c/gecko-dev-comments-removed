@@ -28,6 +28,7 @@ impl Group {
     
     
     
+    #[inline]
     #[allow(clippy::items_after_statements)]
     pub const fn static_empty() -> &'static [u8; Group::WIDTH] {
         #[repr(C)]

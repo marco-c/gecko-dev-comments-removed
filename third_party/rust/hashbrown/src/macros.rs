@@ -1,4 +1,5 @@
 
+#[allow(unused_macro_rules)]
 macro_rules! cfg_if {
     
     ($(
@@ -57,8 +58,8 @@ macro_rules! cfg_if {
 
 #[cfg(feature = "nightly")]
 macro_rules! default_fn {
-	($($tt:tt)*) => {
-        default $($tt)*
+	(#[$($a:tt)*] $($tt:tt)*) => {
+        #[$($a)*] default $($tt)*
     }
 }
 #[cfg(not(feature = "nightly"))]

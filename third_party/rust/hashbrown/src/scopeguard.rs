@@ -1,5 +1,9 @@
 
-use core::ops::{Deref, DerefMut};
+use core::{
+    mem,
+    ops::{Deref, DerefMut},
+    ptr,
+};
 
 pub struct ScopeGuard<T, F>
 where
@@ -15,6 +19,27 @@ where
     F: FnMut(&mut T),
 {
     ScopeGuard { dropfn, value }
+}
+
+impl<T, F> ScopeGuard<T, F>
+where
+    F: FnMut(&mut T),
+{
+    #[inline]
+    pub fn into_inner(guard: Self) -> T {
+        
+        
+        unsafe {
+            let value = ptr::read(&guard.value);
+            
+            
+            
+            
+            let _dropfn = ptr::read(&guard.dropfn);
+            mem::forget(guard);
+            value
+        }
+    }
 }
 
 impl<T, F> Deref for ScopeGuard<T, F>
@@ -44,6 +69,6 @@ where
 {
     #[inline]
     fn drop(&mut self) {
-        (self.dropfn)(&mut self.value)
+        (self.dropfn)(&mut self.value);
     }
 }

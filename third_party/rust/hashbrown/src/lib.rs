@@ -21,7 +21,8 @@
         allocator_api,
         slice_ptr_get,
         nonnull_slice_from_raw_parts,
-        maybe_uninit_array_assume_init
+        maybe_uninit_array_assume_init,
+        build_hasher_simple_hash_one
     )
 )]
 #![allow(
@@ -30,7 +31,9 @@
     clippy::must_use_candidate,
     clippy::option_if_let_else,
     clippy::redundant_else,
-    clippy::manual_map
+    clippy::manual_map,
+    clippy::missing_safety_doc,
+    clippy::missing_errors_doc
 )]
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
@@ -126,20 +129,6 @@ pub enum TryReserveError {
         
         layout: alloc::alloc::Layout,
     },
-}
-
-
-
-#[cfg(feature = "nightly")]
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum UnavailableMutError {
-    
-    Absent,
-    
-    
-    
-    
-    Duplicate(usize),
 }
 
 

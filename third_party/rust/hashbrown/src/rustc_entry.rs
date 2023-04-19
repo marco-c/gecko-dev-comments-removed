@@ -431,10 +431,8 @@ impl<'a, K, V, A: Allocator + Clone> RustcOccupiedEntry<'a, K, V, A> {
     
     
     #[cfg_attr(feature = "inline-more", inline)]
-    pub fn insert(&mut self, mut value: V) -> V {
-        let old_value = self.get_mut();
-        mem::swap(&mut value, old_value);
-        value
+    pub fn insert(&mut self, value: V) -> V {
+        mem::replace(self.get_mut(), value)
     }
 
     
@@ -574,8 +572,10 @@ impl<'a, K, V, A: Allocator + Clone> RustcVacantEntry<'a, K, V, A> {
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn insert(self, value: V) -> &'a mut V {
-        let bucket = self.table.insert_no_grow(self.hash, (self.key, value));
-        unsafe { &mut bucket.as_mut().1 }
+        unsafe {
+            let bucket = self.table.insert_no_grow(self.hash, (self.key, value));
+            &mut bucket.as_mut().1
+        }
     }
 
     
@@ -596,7 +596,7 @@ impl<'a, K, V, A: Allocator + Clone> RustcVacantEntry<'a, K, V, A> {
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn insert_entry(self, value: V) -> RustcOccupiedEntry<'a, K, V, A> {
-        let bucket = self.table.insert_no_grow(self.hash, (self.key, value));
+        let bucket = unsafe { self.table.insert_no_grow(self.hash, (self.key, value)) };
         RustcOccupiedEntry {
             key: None,
             elem: bucket,

@@ -378,7 +378,7 @@ impl<T, S, A: Allocator + Clone> HashSet<T, S, A> {
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn clear(&mut self) {
-        self.map.clear()
+        self.map.clear();
     }
 }
 
@@ -454,6 +454,12 @@ impl<T, S, A> HashSet<T, S, A>
 where
     A: Allocator + Clone,
 {
+    
+    #[inline]
+    pub fn allocator(&self) -> &A {
+        self.map.allocator()
+    }
+
     
     
     
@@ -553,7 +559,7 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn reserve(&mut self, additional: usize) {
-        self.map.reserve(additional)
+        self.map.reserve(additional);
     }
 
     
@@ -595,7 +601,7 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn shrink_to_fit(&mut self) {
-        self.map.shrink_to_fit()
+        self.map.shrink_to_fit();
     }
 
     
@@ -621,7 +627,7 @@ where
     
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn shrink_to(&mut self, min_capacity: usize) {
-        self.map.shrink_to(min_capacity)
+        self.map.shrink_to(min_capacity);
     }
 
     
@@ -913,6 +919,47 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn entry(&mut self, value: T) -> Entry<'_, T, S, A> {
+        match self.map.entry(value) {
+            map::Entry::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
+            map::Entry::Vacant(entry) => Entry::Vacant(VacantEntry { inner: entry }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_disjoint(&self, other: &Self) -> bool {
         self.iter().all(|v| !other.contains(v))
     }
@@ -983,6 +1030,30 @@ where
     #[cfg_attr(feature = "inline-more", inline)]
     pub fn insert(&mut self, value: T) -> bool {
         self.map.insert(value, ()).is_none()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn insert_unique_unchecked(&mut self, value: T) -> &T {
+        self.map.insert_unique_unchecked(value, ()).0
     }
 
     
@@ -1098,8 +1169,7 @@ where
 
 impl<T, S, A> fmt::Debug for HashSet<T, S, A>
 where
-    T: Eq + Hash + fmt::Debug,
-    S: BuildHasher,
+    T: fmt::Debug,
     A: Allocator + Clone,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1127,6 +1197,27 @@ where
         let mut set = Self::with_hasher_in(Default::default(), Default::default());
         set.extend(iter);
         set
+    }
+}
+
+
+#[cfg(feature = "ahash")]
+impl<T, A, const N: usize> From<[T; N]> for HashSet<T, DefaultHashBuilder, A>
+where
+    T: Eq + Hash,
+    A: Default + Allocator + Clone,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(arr: [T; N]) -> Self {
+        arr.into_iter().collect()
     }
 }
 
@@ -1162,7 +1253,7 @@ where
 {
     #[cfg_attr(feature = "inline-more", inline)]
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
-        self.extend(iter.into_iter().cloned());
+        self.extend(iter.into_iter().copied());
     }
 
     #[inline]
@@ -1796,6 +1887,406 @@ where
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub enum Entry<'a, T, S, A = Global>
+where
+    A: Allocator + Clone,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Occupied(OccupiedEntry<'a, T, S, A>),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Vacant(VacantEntry<'a, T, S, A>),
+}
+
+impl<T: fmt::Debug, S, A: Allocator + Clone> fmt::Debug for Entry<'_, T, S, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Entry::Vacant(ref v) => f.debug_tuple("Entry").field(v).finish(),
+            Entry::Occupied(ref o) => f.debug_tuple("Entry").field(o).finish(),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct OccupiedEntry<'a, T, S, A: Allocator + Clone = Global> {
+    inner: map::OccupiedEntry<'a, T, (), S, A>,
+}
+
+impl<T: fmt::Debug, S, A: Allocator + Clone> fmt::Debug for OccupiedEntry<'_, T, S, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OccupiedEntry")
+            .field("value", self.get())
+            .finish()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct VacantEntry<'a, T, S, A: Allocator + Clone = Global> {
+    inner: map::VacantEntry<'a, T, (), S, A>,
+}
+
+impl<T: fmt::Debug, S, A: Allocator + Clone> fmt::Debug for VacantEntry<'_, T, S, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("VacantEntry").field(self.get()).finish()
+    }
+}
+
+impl<'a, T, S, A: Allocator + Clone> Entry<'a, T, S, A> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn insert(self) -> OccupiedEntry<'a, T, S, A>
+    where
+        T: Hash,
+        S: BuildHasher,
+    {
+        match self {
+            Entry::Occupied(entry) => entry,
+            Entry::Vacant(entry) => entry.insert_entry(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn or_insert(self)
+    where
+        T: Hash,
+        S: BuildHasher,
+    {
+        if let Entry::Vacant(entry) = self {
+            entry.insert();
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn get(&self) -> &T {
+        match *self {
+            Entry::Occupied(ref entry) => entry.get(),
+            Entry::Vacant(ref entry) => entry.get(),
+        }
+    }
+}
+
+impl<T, S, A: Allocator + Clone> OccupiedEntry<'_, T, S, A> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn get(&self) -> &T {
+        self.inner.key()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn remove(self) -> T {
+        self.inner.remove_entry().0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn replace(self) -> T {
+        self.inner.replace_key()
+    }
+}
+
+impl<'a, T, S, A: Allocator + Clone> VacantEntry<'a, T, S, A> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn get(&self) -> &T {
+        self.inner.key()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn into_value(self) -> T {
+        self.inner.into_key()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn insert(self)
+    where
+        T: Hash,
+        S: BuildHasher,
+    {
+        self.inner.insert(());
+    }
+
+    #[cfg_attr(feature = "inline-more", inline)]
+    fn insert_entry(self) -> OccupiedEntry<'a, T, S, A>
+    where
+        T: Hash,
+        S: BuildHasher,
+    {
+        OccupiedEntry {
+            inner: self.inner.insert_entry(()),
+        }
+    }
+}
+
 #[allow(dead_code)]
 fn assert_covariance() {
     fn set<'new>(v: HashSet<&'static str>) -> HashSet<&'new str> {
@@ -1963,7 +2454,7 @@ mod test_set {
         let expected = [3, 5, 11, 77];
         for x in a.intersection(&b) {
             assert!(expected.contains(x));
-            i += 1
+            i += 1;
         }
         assert_eq!(i, expected.len());
     }
@@ -1986,7 +2477,7 @@ mod test_set {
         let expected = [1, 5, 11];
         for x in a.difference(&b) {
             assert!(expected.contains(x));
-            i += 1
+            i += 1;
         }
         assert_eq!(i, expected.len());
     }
@@ -2012,7 +2503,7 @@ mod test_set {
         let expected = [-2, 1, 5, 11, 14, 22];
         for x in a.symmetric_difference(&b) {
             assert!(expected.contains(x));
-            i += 1
+            i += 1;
         }
         assert_eq!(i, expected.len());
     }
@@ -2042,7 +2533,7 @@ mod test_set {
         let expected = [-2, 1, 3, 5, 9, 11, 13, 16, 19, 24];
         for x in a.union(&b) {
             assert!(expected.contains(x));
-            i += 1
+            i += 1;
         }
         assert_eq!(i, expected.len());
     }
@@ -2068,7 +2559,7 @@ mod test_set {
     fn test_from_iter() {
         let xs = [1, 2, 2, 3, 4, 5, 6, 7, 8, 9];
 
-        let set: HashSet<_> = xs.iter().cloned().collect();
+        let set: HashSet<_> = xs.iter().copied().collect();
 
         for x in &xs {
             assert!(set.contains(x));
@@ -2230,7 +2721,7 @@ mod test_set {
     #[test]
     fn test_retain() {
         let xs = [1, 2, 3, 4, 5, 6];
-        let mut set: HashSet<i32> = xs.iter().cloned().collect();
+        let mut set: HashSet<i32> = xs.iter().copied().collect();
         set.retain(|&k| k % 2 == 0);
         assert_eq!(set.len(), 3);
         assert!(set.contains(&2));
@@ -2272,7 +2763,7 @@ mod test_set {
 
         const EMPTY_SET: HashSet<u32, MyHasher> = HashSet::with_hasher(MyHasher);
 
-        let mut set = EMPTY_SET.clone();
+        let mut set = EMPTY_SET;
         set.insert(19);
         assert!(set.contains(&19));
     }

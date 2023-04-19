@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 
+#[allow(clippy::linkedlist)] 
 pub(super) fn collect<I: IntoParallelIterator>(iter: I) -> (LinkedList<Vec<I::Item>>, usize) {
     let list = iter
         .into_par_iter()
