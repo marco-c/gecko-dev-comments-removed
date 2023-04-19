@@ -9,7 +9,6 @@
 
 #include "UrlClassifierFeatureCryptominingAnnotation.h"
 #include "UrlClassifierFeatureCryptominingProtection.h"
-#include "UrlClassifierFeatureEmailTrackingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 #include "UrlClassifierFeatureFingerprintingProtection.h"
 #include "UrlClassifierFeatureLoginReputation.h"
@@ -35,7 +34,6 @@ void UrlClassifierFeatureFactory::Shutdown() {
 
   UrlClassifierFeatureCryptominingAnnotation::MaybeShutdown();
   UrlClassifierFeatureCryptominingProtection::MaybeShutdown();
-  UrlClassifierFeatureEmailTrackingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
   UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
@@ -59,12 +57,6 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   
   
   
-
-  
-  feature = UrlClassifierFeatureEmailTrackingProtection::MaybeCreate(aChannel);
-  if (feature) {
-    aFeatures.AppendElement(feature);
-  }
 
   
   feature = UrlClassifierFeatureCryptominingProtection::MaybeCreate(aChannel);
@@ -150,13 +142,6 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
 
   
   feature =
-      UrlClassifierFeatureEmailTrackingProtection::GetIfNameMatches(aName);
-  if (feature) {
-    return feature.forget();
-  }
-
-  
-  feature =
       UrlClassifierFeatureFingerprintingAnnotation::GetIfNameMatches(aName);
   if (feature) {
     return feature.forget();
@@ -226,12 +211,6 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
 
   
   name.Assign(UrlClassifierFeatureCryptominingProtection::Name());
-  if (!name.IsEmpty()) {
-    aArray.AppendElement(name);
-  }
-
-  
-  name.Assign(UrlClassifierFeatureEmailTrackingProtection::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
   }
@@ -318,9 +297,6 @@ static const BlockingErrorCode sBlockingErrorCodes[] = {
      "TrackerUriBlocked", "Tracking Protection"_ns},
     {NS_ERROR_SOCIALTRACKING_URI,
      nsIWebProgressListener::STATE_BLOCKED_SOCIALTRACKING_CONTENT,
-     "TrackerUriBlocked", "Tracking Protection"_ns},
-    {NS_ERROR_EMAILTRACKING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_EMAILTRACKING_CONTENT,
      "TrackerUriBlocked", "Tracking Protection"_ns},
 };
 
