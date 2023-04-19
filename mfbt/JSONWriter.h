@@ -245,8 +245,7 @@ class JSONWriter {
   static constexpr Span<const char> scSpaceString = MakeStringSpan(" ");
   static constexpr Span<const char> scTopObjectBeginString =
       MakeStringSpan("{");
-  static constexpr Span<const char> scTopObjectEndString =
-      MakeStringSpan("}\n");
+  static constexpr Span<const char> scTopObjectEndString = MakeStringSpan("}");
   static constexpr Span<const char> scTrueString = MakeStringSpan("true");
 
   const UniquePtr<JSONWriteFunc> mWriter;
@@ -303,13 +302,13 @@ class JSONWriter {
     mNeedComma[mDepth] = true;
   }
 
-  void NewVectorEntries() {
+  void NewVectorEntries(bool aNeedNewLines) {
     
     
     MOZ_RELEASE_ASSERT(mNeedComma.resizeUninitialized(mDepth + 1));
     MOZ_RELEASE_ASSERT(mNeedNewlines.resizeUninitialized(mDepth + 1));
     mNeedComma[mDepth] = false;
-    mNeedNewlines[mDepth] = true;
+    mNeedNewlines[mDepth] = aNeedNewLines;
   }
 
   void StartCollection(const Span<const char>& aMaybePropertyName,
@@ -322,9 +321,7 @@ class JSONWriter {
     mWriter->Write(aStartChar);
     mNeedComma[mDepth] = true;
     mDepth++;
-    NewVectorEntries();
-    mNeedNewlines[mDepth] =
-        mNeedNewlines[mDepth - 1] && aStyle == MultiLineStyle;
+    NewVectorEntries(mNeedNewlines[mDepth - 1] && aStyle == MultiLineStyle);
   }
 
   
@@ -341,9 +338,10 @@ class JSONWriter {
   }
 
  public:
-  explicit JSONWriter(UniquePtr<JSONWriteFunc> aWriter)
+  explicit JSONWriter(UniquePtr<JSONWriteFunc> aWriter,
+                      CollectionStyle aStyle = MultiLineStyle)
       : mWriter(std::move(aWriter)), mNeedComma(), mNeedNewlines(), mDepth(0) {
-    NewVectorEntries();
+    NewVectorEntries(aStyle == MultiLineStyle);
   }
 
   
@@ -362,7 +360,12 @@ class JSONWriter {
   }
 
   
-  void End() { EndCollection(scTopObjectEndString); }
+  void End() {
+    EndCollection(scTopObjectEndString);
+    if (mNeedNewlines[mDepth]) {
+      mWriter->Write(scNewLineString);
+    }
+  }
 
   
   void NullProperty(const Span<const char>& aName) {
