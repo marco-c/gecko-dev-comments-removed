@@ -75,7 +75,8 @@ void QuicSocketControl::HandshakeCompleted() {
 
   
   
-  if (mIsDomainMismatch || mIsUntrusted || mIsNotValidAtThisTime) {
+  
+  if (mOverridableErrorCategory != OverridableErrorCategory::ERROR_UNSET) {
     state |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
   }
 

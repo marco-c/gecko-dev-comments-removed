@@ -1272,16 +1272,13 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     }
   }
 
-  bool domainMismatch;
-  bool untrusted;
-  bool notValidAtThisTime;
+  nsITransportSecurityInfo::OverridableErrorCategory overridableErrorCategory;
   
-  Unused << infoObject->GetIsDomainMismatch(&domainMismatch);
-  Unused << infoObject->GetIsUntrusted(&untrusted);
-  Unused << infoObject->GetIsNotValidAtThisTime(&notValidAtThisTime);
+  Unused << infoObject->GetOverridableErrorCategory(&overridableErrorCategory);
   
   
-  if (domainMismatch || untrusted || notValidAtThisTime) {
+  if (overridableErrorCategory !=
+      nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET) {
     state |= nsIWebProgressListener::STATE_CERT_USER_OVERRIDDEN;
   }
 
