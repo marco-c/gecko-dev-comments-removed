@@ -1859,11 +1859,16 @@ void nsWindow::WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize) {
 
 void nsWindow::NativeMoveResizeWaylandPopupCallback(
     const GdkRectangle* aFinalSize, bool aFlippedX, bool aFlippedY) {
-#ifdef NIGHTLY_BUILD
   
   
-  MOZ_DIAGNOSTIC_ASSERT(mWaitingForMoveToRectCallback,
-                        "Bogus move-to-rect callback! A compositor bug?");
+  
+  
+  
+  
+#if MOZ_LOGGING
+  if (!mWaitingForMoveToRectCallback) {
+    LOG("  Bogus move-to-rect callback! A compositor bug?");
+  }
 #endif
 
   mWaitingForMoveToRectCallback = false;
