@@ -3169,7 +3169,7 @@
 
 
  \
-    MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
@@ -3180,7 +3180,7 @@
 
 
  \
-    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
