@@ -49,12 +49,14 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private boolean useStereoInput;
     private boolean useStereoOutput;
     private AudioAttributes audioAttributes;
+    private boolean useLowLatency;
 
     private Builder(Context context) {
       this.context = context;
       this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
       this.inputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
       this.outputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
+      this.useLowLatency = false;
     }
 
     public Builder setScheduler(ScheduledExecutorService scheduler) {
@@ -198,6 +200,14 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     
 
 
+    public Builder setUseLowLatency(boolean useLowLatency) {
+      this.useLowLatency = useLowLatency;
+      return this;
+    }
+
+    
+
+
     public Builder setAudioAttributes(AudioAttributes audioAttributes) {
       this.audioAttributes = audioAttributes;
       return this;
@@ -225,6 +235,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         }
         Logging.d(TAG, "HW AEC will not be used.");
       }
+      
+      
+      final int MIN_LOW_LATENCY_SDK_VERSION = 26;
+      if (useLowLatency && Build.VERSION.SDK_INT >= MIN_LOW_LATENCY_SDK_VERSION) {
+        Logging.d(TAG, "Low latency mode will be used.");
+      }
       ScheduledExecutorService executor = this.scheduler;
       if (executor == null) {
         executor = WebRtcAudioRecord.newDefaultScheduler();
@@ -232,8 +248,8 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
       final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, executor, audioManager,
           audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
           samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
-      final WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(
-          context, audioManager, audioAttributes, audioTrackErrorCallback, audioTrackStateCallback);
+      final WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(context, audioManager,
+          audioAttributes, audioTrackErrorCallback, audioTrackStateCallback, useLowLatency);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
           inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
     }
