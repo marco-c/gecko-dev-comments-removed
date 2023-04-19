@@ -33,19 +33,6 @@ function IsCSSPropertyPrefEnabled(prefName) {
 }
 
 
-function IsWebRenderEnabled() {
-  try {
-    return SpecialPowers.Cc["@mozilla.org/gfx/info;1"].getService(
-      SpecialPowers.Ci.nsIGfxInfo
-    ).WebRenderEnabled;
-  } catch (ex) {
-    ok(false, "Failed to check WebRender's enabled state");
-  }
-
-  return false;
-}
-
-
 const CSS_TYPE_LONGHAND = 0;
 
 
@@ -13510,10 +13497,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.linear-easing-function.enabled")) {
   );
 }
 
-if (
-  IsCSSPropertyPrefEnabled("layout.css.backdrop-filter.enabled") &&
-  IsWebRenderEnabled()
-) {
+if (IsCSSPropertyPrefEnabled("layout.css.backdrop-filter.enabled")) {
   gCSSProperties["backdrop-filter"] = {
     domProp: "backdropFilter",
     inherited: false,

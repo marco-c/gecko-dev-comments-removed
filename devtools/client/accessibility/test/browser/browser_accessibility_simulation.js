@@ -5,10 +5,6 @@
 
 
 
-const {
-  isWebRenderEnabled,
-} = require("resource://devtools/server/actors/utils/accessibility.js");
-
 const TEST_URI = `<html>
   <head>
     <meta charset="utf-8"/>
@@ -24,19 +20,6 @@ const TEST_URI = `<html>
   </body>
 </html>`;
 
-if (!isWebRenderEnabled(window)) {
-  addA11YPanelTask(
-    "Test that simulation menu button does not exist without WebRender.",
-    TEST_URI,
-    async function({ doc }) {
-      ok(
-        !doc.querySelector("#simulation-menu-button"),
-        "Simulation menu is not shown without WebRender."
-      );
-    }
-  );
-} else {
-  
 
 
 
@@ -45,76 +28,76 @@ if (!isWebRenderEnabled(window)) {
 
 
 
-  const tests = [
-    {
-      desc:
-        "Check that the menu button is inactivate and the menu is closed initially.",
-      expected: {
-        simulation: {
-          buttonActive: false,
-        },
+
+const tests = [
+  {
+    desc:
+      "Check that the menu button is inactivate and the menu is closed initially.",
+    expected: {
+      simulation: {
+        buttonActive: false,
       },
     },
-    {
-      desc:
-        "Clicking the menu button shows the menu with No Simulation selected.",
-      setup: async ({ doc }) => {
-        await openSimulationMenu(doc);
-      },
-      expected: {
-        simulation: {
-          buttonActive: false,
-          checkedOptionIndices: [0],
-        },
+  },
+  {
+    desc:
+      "Clicking the menu button shows the menu with No Simulation selected.",
+    setup: async ({ doc }) => {
+      await openSimulationMenu(doc);
+    },
+    expected: {
+      simulation: {
+        buttonActive: false,
+        checkedOptionIndices: [0],
       },
     },
-    {
-      desc:
-        "Selecting an option renders the menu button active and closes the menu.",
-      setup: async ({ doc }) => {
-        await toggleSimulationOption(doc, 2);
-      },
-      expected: {
-        simulation: {
-          buttonActive: true,
-          checkedOptionIndices: [2],
-        },
+  },
+  {
+    desc:
+      "Selecting an option renders the menu button active and closes the menu.",
+    setup: async ({ doc }) => {
+      await toggleSimulationOption(doc, 2);
+    },
+    expected: {
+      simulation: {
+        buttonActive: true,
+        checkedOptionIndices: [2],
       },
     },
-    {
-      desc: "Reopening the menu preserves the previously selected option.",
-      setup: async ({ doc }) => {
-        await openSimulationMenu(doc);
-      },
-      expected: {
-        simulation: {
-          buttonActive: true,
-          checkedOptionIndices: [2],
-        },
+  },
+  {
+    desc: "Reopening the menu preserves the previously selected option.",
+    setup: async ({ doc }) => {
+      await openSimulationMenu(doc);
+    },
+    expected: {
+      simulation: {
+        buttonActive: true,
+        checkedOptionIndices: [2],
       },
     },
-    {
-      desc:
-        "Unselecting the option renders the button inactive and closes the menu.",
-      setup: async ({ doc }) => {
-        await toggleSimulationOption(doc, 2);
-      },
-      expected: {
-        simulation: {
-          buttonActive: false,
-          checkedOptionIndices: [0],
-        },
+  },
+  {
+    desc:
+      "Unselecting the option renders the button inactive and closes the menu.",
+    setup: async ({ doc }) => {
+      await toggleSimulationOption(doc, 2);
+    },
+    expected: {
+      simulation: {
+        buttonActive: false,
+        checkedOptionIndices: [0],
       },
     },
-  ];
-
-  
-
+  },
+];
 
 
-  addA11yPanelTestsTask(
-    tests,
-    TEST_URI,
-    "Test selecting and unselecting simulation options updates UI."
-  );
-}
+
+
+
+addA11yPanelTestsTask(
+  tests,
+  TEST_URI,
+  "Test selecting and unselecting simulation options updates UI."
+);
