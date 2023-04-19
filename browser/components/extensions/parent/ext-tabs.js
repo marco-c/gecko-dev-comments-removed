@@ -611,6 +611,26 @@ this.tabs = class extends ExtensionAPIPersistent {
       return tab;
     }
 
+    function setContentTriggeringPrincipal(url, browser, options) {
+      
+      
+      
+      
+      
+      if (url.startsWith("about:")) {
+        options.allowInheritPrincipal = false;
+      }
+      options.triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+        Services.io.newURI(url),
+        {
+          userContextId: options.userContextId,
+          privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(browser)
+            ? 1
+            : 0,
+        }
+      );
+    }
+
     let tabsApi = {
       tabs: {
         onActivated: new EventManager({
@@ -706,9 +726,13 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
           }).then(window => {
             let url;
-            let principal = context.principal;
 
-            let options = {};
+            let options = {
+              
+              
+              allowInheritPrincipal: true,
+              triggeringPrincipal: context.principal,
+            };
             if (createProperties.cookieStoreId) {
               
               options.userContextId = getUserContextIdForCookieStoreId(
@@ -721,7 +745,10 @@ this.tabs = class extends ExtensionAPIPersistent {
             if (createProperties.url !== null) {
               url = context.uri.resolve(createProperties.url);
 
-              if (!context.checkLoadURL(url, { dontReportErrors: true })) {
+              if (
+                !url.startsWith("moz-extension://") &&
+                !context.checkLoadURL(url, { dontReportErrors: true })
+              ) {
                 return Promise.reject({ message: `Illegal URL: ${url}` });
               }
 
@@ -731,30 +758,10 @@ this.tabs = class extends ExtensionAPIPersistent {
             } else {
               url = window.BROWSER_NEW_TAB_URL;
             }
-            
-            
-            
-            
             let discardable = url && !url.startsWith("about:");
-            if (!discardable) {
-              
-              
-              options.allowInheritPrincipal = false;
-              
-              principal = Services.scriptSecurityManager.createContentPrincipal(
-                Services.io.newURI(url),
-                {
-                  userContextId: options.userContextId,
-                  privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(
-                    window.gBrowser
-                  )
-                    ? 1
-                    : 0,
-                }
-              );
-            } else {
-              options.allowInheritPrincipal = true;
-              options.triggeringPrincipal = context.principal;
+            
+            if (!discardable || url.startsWith("moz-extension://")) {
+              setContentTriggeringPrincipal(url, window.gBrowser, options);
             }
 
             tabListener.initTabReady();
@@ -814,7 +821,6 @@ this.tabs = class extends ExtensionAPIPersistent {
               });
             }
 
-            options.triggeringPrincipal = principal;
             let nativeTab = window.gBrowser.addTab(url, options);
 
             if (active) {
@@ -888,16 +894,21 @@ this.tabs = class extends ExtensionAPIPersistent {
           if (updateProperties.url !== null) {
             let url = context.uri.resolve(updateProperties.url);
 
-            if (!context.checkLoadURL(url, { dontReportErrors: true })) {
-              return Promise.reject({ message: `Illegal URL: ${url}` });
-            }
-
             let options = {
               flags: updateProperties.loadReplace
                 ? Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY
                 : Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
               triggeringPrincipal: context.principal,
             };
+
+            if (!context.checkLoadURL(url, { dontReportErrors: true })) {
+              
+              if (url.startsWith("moz-extension://")) {
+                setContentTriggeringPrincipal(url, tabbrowser, options);
+              } else {
+                return Promise.reject({ message: `Illegal URL: ${url}` });
+              }
+            }
 
             let browser = nativeTab.linkedBrowser;
             if (nativeTab.linkedPanel) {
