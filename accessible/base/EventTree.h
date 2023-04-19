@@ -41,12 +41,6 @@ class TreeMutation final {
     return mParent->Document()->Controller();
   }
 
-  static EventTree* const kNoEventTree;
-
-#ifdef A11Y_LOG
-  static const char* PrefixLog(void* aData, LocalAccessible*);
-#endif
-
   LocalAccessible* mParent;
   uint32_t mStartIdx;
   uint32_t mStateFlagsCopy;
@@ -59,67 +53,6 @@ class TreeMutation final {
 #ifdef DEBUG
   bool mIsDone;
 #endif
-};
-
-
-
-
-class EventTree final {
- public:
-  EventTree()
-      : mFirst(nullptr),
-        mNext(nullptr),
-        mContainer(nullptr),
-        mFireReorder(false) {}
-  explicit EventTree(LocalAccessible* aContainer, bool aFireReorder)
-      : mFirst(nullptr),
-        mNext(nullptr),
-        mContainer(aContainer),
-        mFireReorder(aFireReorder) {}
-  ~EventTree() { Clear(); }
-
-  void Shown(LocalAccessible* aTarget);
-  void Hidden(LocalAccessible*, bool);
-
-  
-
-
-  const EventTree* Find(const LocalAccessible* aContainer) const;
-
-  
-
-
-  void Mutated(AccMutationEvent* aEv);
-
-#ifdef A11Y_LOG
-  void Log(uint32_t aLevel = UINT32_MAX) const;
-#endif
-
- private:
-  
-
-
-  void Process(const RefPtr<DocAccessible>& aDeathGrip);
-
-  
-
-
-  EventTree* FindOrInsert(LocalAccessible* aContainer);
-
-  void Clear();
-
-  UniquePtr<EventTree> mFirst;
-  UniquePtr<EventTree> mNext;
-
-  LocalAccessible* mContainer;
-  nsTArray<RefPtr<AccMutationEvent>> mDependentEvents;
-  bool mFireReorder;
-
-  static NotificationController* Controller(LocalAccessible* aAcc) {
-    return aAcc->Document()->Controller();
-  }
-
-  friend class NotificationController;
 };
 
 }  
