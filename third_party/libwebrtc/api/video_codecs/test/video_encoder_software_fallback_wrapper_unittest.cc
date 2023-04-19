@@ -613,13 +613,13 @@ TEST_F(ForcedFallbackTestEnabled, FallbackIsEndedForNonValidSettings) {
   EncodeFrameAndVerifyLastName("libvpx");
 
   
-  codec_.VP8()->numberOfTemporalLayers = 2;
+  codec_.numberOfSimulcastStreams = 2;
   InitEncode(kWidth, kHeight);
   EXPECT_EQ(1, fake_encoder_->init_encode_count_);
   EncodeFrameAndVerifyLastName("fake-encoder");
 
   
-  codec_.VP8()->numberOfTemporalLayers = 1;
+  codec_.numberOfSimulcastStreams = 1;
   InitEncode(kWidth, kHeight);
   EXPECT_EQ(1, fake_encoder_->init_encode_count_);
   EncodeFrameAndVerifyLastName("libvpx");
