@@ -3770,13 +3770,14 @@ CipherKey IndexedDBCipherKeyManager::Ensure(const nsCString& aDatabaseID,
 
   auto& dbKeyStore =
       lockedPrivateBrowsingInfoHashTable->LookupOrInsert(aDatabaseID);
+
   return dbKeyStore.LookupOrInsertWith(keyStoreID, [] {
-    
     
     
     auto keyOrErr = IndexedDBCipherStrategy::GenerateKey();
 
     
+    MOZ_RELEASE_ASSERT(keyOrErr.isOk());
     return keyOrErr.unwrap();
   });
 }

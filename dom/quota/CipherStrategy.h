@@ -37,8 +37,6 @@ enum class CipherMode { Encrypt, Decrypt };
 
 
 
-
-
 }  
 
 #endif
