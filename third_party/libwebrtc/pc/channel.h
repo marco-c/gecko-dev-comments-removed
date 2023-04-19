@@ -59,7 +59,6 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -306,9 +305,6 @@ class BaseChannel : public ChannelInterface,
   
   std::string ToString() const;
 
-  void SetNegotiatedHeaderExtensions_w(const RtpHeaderExtensions& extensions)
-      RTC_RUN_ON(worker_thread());
-
   
   RtpHeaderExtensions GetNegotiatedRtpHeaderExtensions() const override;
 
@@ -316,6 +312,8 @@ class BaseChannel : public ChannelInterface,
   bool ConnectToRtpTransport() RTC_RUN_ON(network_thread());
   void DisconnectFromRtpTransport() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
+  void SetContent_s(const MediaContentDescription* content,
+                    webrtc::SdpType type) RTC_RUN_ON(signaling_thread());
 
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
@@ -385,10 +383,8 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  
-  mutable webrtc::Mutex negotiated_header_extensions_lock_;
   RtpHeaderExtensions negotiated_header_extensions_
-      RTC_GUARDED_BY(negotiated_header_extensions_lock_);
+      RTC_GUARDED_BY(signaling_thread());
 };
 
 

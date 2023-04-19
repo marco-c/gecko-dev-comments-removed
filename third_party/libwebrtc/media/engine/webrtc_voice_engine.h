@@ -83,12 +83,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   
   
   
-  void RegisterChannel(WebRtcVoiceMediaChannel* channel);
-  void UnregisterChannel(WebRtcVoiceMediaChannel* channel);
-
-  
-  
-  
   
   bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes) override;
 
@@ -129,7 +123,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::vector<AudioCodec> send_codecs_;
   std::vector<AudioCodec> recv_codecs_;
-  std::vector<WebRtcVoiceMediaChannel*> channels_;
   bool is_dumping_aec_ = false;
   bool initialized_ = false;
 
