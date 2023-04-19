@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
@@ -23,7 +24,9 @@
 #include "modules/audio_processing/aec3/block_delay_buffer.h"
 #include "modules/audio_processing/aec3/block_framer.h"
 #include "modules/audio_processing/aec3/block_processor.h"
+#include "modules/audio_processing/aec3/config_selector.h"
 #include "modules/audio_processing/aec3/frame_blocker.h"
+#include "modules/audio_processing/aec3/multi_channel_content_detector.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
@@ -84,10 +87,12 @@ class Aec3RenderQueueItemVerifier {
 
 class EchoCanceller3 : public EchoControl {
  public:
-  EchoCanceller3(const EchoCanceller3Config& config,
-                 int sample_rate_hz,
-                 size_t num_render_channels,
-                 size_t num_capture_channels);
+  EchoCanceller3(
+      const EchoCanceller3Config& config,
+      const absl::optional<EchoCanceller3Config>& multichannel_config,
+      int sample_rate_hz,
+      size_t num_render_channels,
+      size_t num_capture_channels);
 
   ~EchoCanceller3() override;
 
@@ -131,18 +136,35 @@ class EchoCanceller3 : public EchoControl {
   }
 
   
-  
-  static EchoCanceller3Config CreateDefaultConfig(size_t num_render_channels,
-                                                  size_t num_capture_channels);
+  static EchoCanceller3Config CreateDefaultMultichannelConfig();
 
  private:
-  class RenderWriter;
   friend class EchoCanceller3Tester;
-  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3Metrics, EchoReturnLossEnhancement);
+  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3, DetectionOfProperStereo);
+  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3,
+                           DetectionOfProperStereoUsingThreshold);
+  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3,
+                           StereoContentDetectionForMonoSignals);
+
+  class RenderWriter;
+
+  
+  
+  void Initialize();
 
   
   void SetBlockProcessorForTesting(
       std::unique_ptr<BlockProcessor> block_processor);
+
+  
+  bool StereoRenderProcessingActiveForTesting() const {
+    return multichannel_content_detector_.IsMultiChannelContentDetected();
+  }
+
+  
+  const EchoCanceller3Config& GetActiveConfigForTesting() const {
+    return config_selector_.active_config();
+  }
 
   
   void EmptyRenderQueue();
@@ -166,13 +188,17 @@ class EchoCanceller3 : public EchoControl {
   const EchoCanceller3Config config_;
   const int sample_rate_hz_;
   const int num_bands_;
-  const size_t num_render_channels_;
+  const size_t num_render_input_channels_;
+  size_t num_render_channels_to_aec_;
   const size_t num_capture_channels_;
+  ConfigSelector config_selector_;
+  MultiChannelContentDetector multichannel_content_detector_;
   std::unique_ptr<BlockFramer> linear_output_framer_
       RTC_GUARDED_BY(capture_race_checker_);
   BlockFramer output_framer_ RTC_GUARDED_BY(capture_race_checker_);
   FrameBlocker capture_blocker_ RTC_GUARDED_BY(capture_race_checker_);
-  FrameBlocker render_blocker_ RTC_GUARDED_BY(capture_race_checker_);
+  std::unique_ptr<FrameBlocker> render_blocker_
+      RTC_GUARDED_BY(capture_race_checker_);
   SwapQueue<std::vector<std::vector<std::vector<float>>>,
             Aec3RenderQueueItemVerifier>
       render_transfer_queue_;
