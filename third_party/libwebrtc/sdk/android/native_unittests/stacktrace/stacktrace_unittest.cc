@@ -224,25 +224,11 @@ TEST(Stacktrace, TestCurrentThread) {
       << "] not contained in: " << StackTraceToString(stack_trace);
 }
 
-
-
-#ifdef WEBRTC_ARCH_ARM64
-#define MAYBE_TestSpinLock DISABLED_TestSpinLock
-#else
-#define MAYBE_TestSpinLock TestSpinLock
-#endif
-TEST(Stacktrace, MAYBE_TestSpinLock) {
+TEST(Stacktrace, TestSpinLock) {
   TestStacktrace(std::make_unique<SpinDeadlock>());
 }
 
-
-
-#ifdef WEBRTC_ARCH_ARM64
-#define MAYBE_TestSleep DISABLED_TestSleep
-#else
-#define MAYBE_TestSleep TestSleep
-#endif
-TEST(Stacktrace, MAYBE_TestSleep) {
+TEST(Stacktrace, TestSleep) {
   TestStacktrace(std::make_unique<SleepDeadlock>());
 }
 
@@ -250,15 +236,11 @@ TEST(Stacktrace, MAYBE_TestSleep) {
 
 #ifdef WEBRTC_ARCH_ARM64
 
-
-
-TEST(Stacktrace, DISABLED_TestRtcEvent) {
+TEST(Stacktrace, TestRtcEvent) {
   TestStacktrace(std::make_unique<RtcEventDeadlock>());
 }
 
-
-
-TEST(Stacktrace, DISABLED_TestRtcCriticalSection) {
+TEST(Stacktrace, TestRtcCriticalSection) {
   TestStacktrace(std::make_unique<RtcCriticalSectionDeadlock>());
 }
 
