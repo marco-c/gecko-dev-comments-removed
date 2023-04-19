@@ -1081,10 +1081,6 @@ class AsyncPanZoomController {
   
   ParentLayerPoint mLastZoomFocus;
 
-  
-  
-  CSSToParentLayerScale mLastNotifiedZoom;
-
   RefPtr<AsyncPanZoomAnimation> mAnimation;
 
   UniquePtr<OverscrollEffectBase> mOverscrollEffect;

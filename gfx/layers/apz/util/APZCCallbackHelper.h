@@ -162,8 +162,6 @@ class APZCCallbackHelper {
       const ScrollableLayerGuid::ViewID& aScrollId);
 
   static void CancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId);
-  static void NotifyScaleGestureComplete(const nsCOMPtr<nsIWidget>& aWidget,
-                                         float aScale);
 
   
 
