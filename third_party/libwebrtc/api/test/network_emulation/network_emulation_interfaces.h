@@ -222,9 +222,13 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   
   
   
+  
+  
+  
   virtual absl::optional<uint16_t> BindReceiver(
       uint16_t desired_port,
       EmulatedNetworkReceiverInterface* receiver) = 0;
+  
   
   
   virtual void UnbindReceiver(uint16_t port) = 0;
