@@ -244,6 +244,8 @@ class RtpTransmissionManager : public RtpSenderBase::SetStreamsObserver {
   PeerConnectionObserver* Observer() const;
   void OnNegotiationNeeded();
 
+  cricket::MediaEngineInterface* media_engine() const;
+
   TransceiverList transceivers_;
 
   

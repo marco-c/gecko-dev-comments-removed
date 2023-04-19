@@ -144,9 +144,11 @@ ConnectionContext::ConnectionContext(
   default_socket_factory_ =
       std::make_unique<rtc::BasicPacketSocketFactory>(socket_factory);
 
-  channel_manager_ = cricket::ChannelManager::Create(
-      std::move(dependencies->media_engine),
-      true, worker_thread(), network_thread());
+  if (dependencies->media_engine) {
+    channel_manager_ = cricket::ChannelManager::Create(
+        std::move(dependencies->media_engine),
+        true, worker_thread(), network_thread());
+  }
 
   
   
