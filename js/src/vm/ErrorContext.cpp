@@ -24,9 +24,6 @@ void* ErrorAllocator::onOutOfMemory(AllocFunction allocFunc, arena_id_t arena,
 
 MainThreadErrorContext::MainThreadErrorContext(JSContext* cx) : cx_(cx) {}
 
-bool MainThreadErrorContext::addPendingError(CompileError** error) {
-  return true;
-}
 void* MainThreadErrorContext::onOutOfMemory(AllocFunction allocFunc,
                                             arena_id_t arena, size_t nbytes,
                                             void* reallocPtr) {
@@ -55,7 +52,8 @@ void MainThreadErrorContext::reportError(CompileError* err) {
 }
 
 void MainThreadErrorContext::reportWarning(CompileError* err) {
-  if (!cx_->isHelperThreadContext()) {
+  if (!cx_->isHelperThreadContext()) {  
+                                        
     err->throwError(cx_);
   }
 }
@@ -73,20 +71,6 @@ MainThreadErrorContext::errors() const {
   return cx_->offThreadFrontendErrors()->errors;
 }
 
-bool OffThreadErrorContext::addPendingError(CompileError** error) {
-  
-  
-  auto errorPtr = getAllocator()->make_unique<CompileError>();
-  if (!errorPtr) {
-    return false;
-  }
-  if (!errors_.errors.append(std::move(errorPtr))) {
-    ReportOutOfMemory();
-    return false;
-  }
-  *error = errors_.errors.back().get();
-  return true;
-}
 void* OffThreadErrorContext::onOutOfMemory(AllocFunction allocFunc,
                                            arena_id_t arena, size_t nbytes,
                                            void* reallocPtr) {
@@ -106,9 +90,20 @@ const JSErrorFormatString* OffThreadErrorContext::gcSafeCallback(
 
 void OffThreadErrorContext::reportError(CompileError* err) {
   
+  
+  auto errorPtr = getAllocator()->make_unique<CompileError>(std::move(*err));
+  if (!errorPtr) {
+    return;
+  }
+  if (!errors_.errors.append(std::move(errorPtr))) {
+    ReportOutOfMemory();
+    return;
+  }
 }
 
-void OffThreadErrorContext::reportWarning(CompileError* err) {}
+void OffThreadErrorContext::reportWarning(CompileError* err) {
+  reportError(err);
+}
 
 void OffThreadErrorContext::ReportOutOfMemory() {
   
