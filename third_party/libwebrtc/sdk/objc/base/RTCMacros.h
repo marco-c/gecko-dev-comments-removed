@@ -11,7 +11,7 @@
 #ifndef SDK_OBJC_BASE_RTCMACROS_H_
 #define SDK_OBJC_BASE_RTCMACROS_H_
 
-#ifdef WEBRTC_ENABLE_SYMBOL_EXPORT
+#ifdef WEBRTC_ENABLE_OBJC_SYMBOL_EXPORT
 
 #if defined(WEBRTC_LIBRARY_IMPL)
 #define RTC_OBJC_EXPORT __attribute__((visibility("default")))
