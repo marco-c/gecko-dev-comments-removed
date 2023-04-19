@@ -174,14 +174,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     absl::optional<int> target_spatial_index;
-
-    
-    
-    
-    
-    
-    
-    std::vector<RtpEncodingParameters> encoding_params;
   };
 
   class VideoResolution {
@@ -273,17 +265,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     absl::optional<int> temporal_layers_count;
-    
-    
-    
-    
-    absl::optional<int> max_encode_bitrate_bps;
-    
-    
-    
-    
-    
-    absl::optional<int> min_encode_bitrate_bps;
     
     
     
