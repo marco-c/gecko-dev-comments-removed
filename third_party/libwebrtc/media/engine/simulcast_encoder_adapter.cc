@@ -791,8 +791,8 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
       
       int pixels_per_frame = codec_params.width * codec_params.height;
       if (pixels_per_frame < 352 * 288) {
-        codec_params.VP8()->complexity =
-            webrtc::VideoCodecComplexity::kComplexityHigher;
+        codec_params.SetVideoEncoderComplexity(
+            webrtc::VideoCodecComplexity::kComplexityHigher);
       }
       
       codec_params.VP8()->denoisingOn = false;

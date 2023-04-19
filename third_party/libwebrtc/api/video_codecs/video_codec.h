@@ -111,6 +111,9 @@ class RTC_EXPORT VideoCodec {
     scalability_mode_ = std::string(scalability_mode);
   }
 
+  VideoCodecComplexity GetVideoEncoderComplexity() const;
+  void SetVideoEncoderComplexity(VideoCodecComplexity complexity_setting);
+
   
   VideoCodecType codecType;
 
@@ -171,6 +174,9 @@ class RTC_EXPORT VideoCodec {
   
   VideoCodecUnion codec_specific_;
   std::string scalability_mode_;
+  
+  
+  absl::optional<VideoCodecComplexity> complexity_;
 };
 
 }  

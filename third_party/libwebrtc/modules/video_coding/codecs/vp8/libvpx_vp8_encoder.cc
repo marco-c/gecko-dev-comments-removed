@@ -591,7 +591,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
 
   
-  switch (inst->VP8().complexity) {
+  switch (inst->GetVideoEncoderComplexity()) {
     case VideoCodecComplexity::kComplexityHigh:
       cpu_speed_[0] = -5;
       break;
