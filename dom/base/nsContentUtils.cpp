@@ -8086,28 +8086,6 @@ void nsContentUtils::TransferableToIPCTransferable(
       
       nsCOMPtr<BlobImpl> blobImpl;
       if (nsCOMPtr<nsIFile> file = do_QueryInterface(data)) {
-        
-        
-        
-        
-        
-        if (aInSyncMessage) {
-          nsAutoCString type;
-          if (IsFileImage(file, type)) {
-            IPCDataTransferItem* item =
-                aIPCDataTransfer->items().AppendElement();
-            item->flavor() = type;
-            nsCString data;
-            SlurpFileToString(file, data);
-            
-            
-            
-            item->data() =
-                IPCDataTransferInputStream(BigBuffer(AsBytes(Span(data))));
-          }
-          continue;
-        }
-
         if (aParent) {
           bool isDir = false;
           if (NS_SUCCEEDED(file->IsDirectory(&isDir)) && isDir) {

@@ -4264,7 +4264,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  static nsresult SlurpBlob(dom::Blob* aBlob, nsPIDOMWindowOuter* aWindow,
+  static nsresult SlurpBlob(dom::Blob* aBlob, nsIGlobalObject* aGlobal,
                             BlobReader* aBlobReader);
 
   
