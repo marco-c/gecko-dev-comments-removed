@@ -4,6 +4,7 @@
 
 
 #include "CookieCommons.h"
+#include "CookieLogging.h"
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoParent.h"
@@ -13,7 +14,9 @@
 #include "mozIThirdPartyUtil.h"
 #include "nsArrayUtils.h"
 #include "nsIChannel.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsNetCID.h"
+#include "nsMixedContentBlocker.h"
 
 using namespace mozilla::ipc;
 
@@ -28,6 +31,10 @@ CookieServiceParent::CookieServiceParent() {
   
   mCookieService = CookieService::GetSingleton();
   NS_ASSERTION(mCookieService, "couldn't get nsICookieService");
+
+  mTLDService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  MOZ_ALWAYS_TRUE(mTLDService);
+
   mProcessingCookie = false;
 }
 
@@ -40,10 +47,10 @@ void CookieServiceParent::RemoveBatchDeletedCookies(nsIArray* aCookieList) {
   nsTArray<OriginAttributes> attrsList;
   for (uint32_t i = 0; i < len; i++) {
     nsCOMPtr<nsICookie> xpcCookie = do_QueryElementAt(aCookieList, i);
-    auto* cookie = static_cast<Cookie*>(xpcCookie.get());
-    attrs = cookie->OriginAttributesRef();
-    cookieStruct = cookie->ToIPC();
-    if (cookie->IsHttpOnly()) {
+    const auto& cookie = xpcCookie->AsCookie();
+    attrs = cookie.OriginAttributesRef();
+    cookieStruct = cookie.ToIPC();
+    if (cookie.IsHttpOnly()) {
       
       cookieStruct.value() = "";
     }
@@ -55,24 +62,34 @@ void CookieServiceParent::RemoveBatchDeletedCookies(nsIArray* aCookieList) {
 
 void CookieServiceParent::RemoveAll() { Unused << SendRemoveAll(); }
 
-void CookieServiceParent::RemoveCookie(nsICookie* aCookie) {
-  auto* cookie = static_cast<Cookie*>(aCookie);
-  const OriginAttributes& attrs = cookie->OriginAttributesRef();
-  CookieStruct cookieStruct = cookie->ToIPC();
-  if (cookie->IsHttpOnly()) {
+void CookieServiceParent::RemoveCookie(const Cookie& cookie) {
+  const OriginAttributes& attrs = cookie.OriginAttributesRef();
+  CookieStruct cookieStruct = cookie.ToIPC();
+  if (cookie.IsHttpOnly()) {
     cookieStruct.value() = "";
   }
   Unused << SendRemoveCookie(cookieStruct, attrs);
 }
 
-void CookieServiceParent::AddCookie(nsICookie* aCookie) {
-  auto* cookie = static_cast<Cookie*>(aCookie);
-  const OriginAttributes& attrs = cookie->OriginAttributesRef();
-  CookieStruct cookieStruct = cookie->ToIPC();
-  if (cookie->IsHttpOnly()) {
+void CookieServiceParent::AddCookie(const Cookie& cookie) {
+  const OriginAttributes& attrs = cookie.OriginAttributesRef();
+  CookieStruct cookieStruct = cookie.ToIPC();
+  if (cookie.IsHttpOnly()) {
     cookieStruct.value() = "";
   }
   Unused << SendAddCookie(cookieStruct, attrs);
+}
+
+bool CookieServiceParent::CookieMatchesContentList(const Cookie& cookie) {
+  nsCString baseDomain;
+  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomainFromHost(
+      mTLDService, cookie.Host(), baseDomain));
+
+  CookieKey cookieKey(baseDomain, cookie.OriginAttributesRef());
+  if (Maybe<bool> allowSecure = mCookieKeysInContent.MaybeGet(cookieKey)) {
+    return (!cookie.IsSecure() || *allowSecure);
+  }
+  return false;
 }
 
 void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
@@ -89,7 +106,6 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
       aChannel, attrs);
 
-  
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
   thirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID);
 
@@ -97,6 +113,9 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   ThirdPartyAnalysisResult result = thirdPartyUtil->AnalyzeChannel(
       aChannel, false, nullptr, nullptr, &rejectedReason);
 
+  UpdateCookieInContentList(uri, attrs);
+
+  
   nsTArray<Cookie*> foundCookieList;
   mCookieService->GetCookiesForURI(
       uri, aChannel, result.contains(ThirdPartyAnalysis::IsForeign),
@@ -108,6 +127,21 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
   nsTArray<CookieStruct> matchingCookiesList;
   SerialializeCookieList(foundCookieList, matchingCookiesList);
   Unused << SendTrackCookiesLoad(matchingCookiesList, attrs);
+}
+
+
+
+void CookieServiceParent::UpdateCookieInContentList(
+    nsIURI* uri, const OriginAttributes& originAttrs) {
+  nsCString baseDomain;
+  bool requireAHostMatch = false;
+  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomain(mTLDService, uri, baseDomain,
+                                                   requireAHostMatch));
+
+  CookieKey cookieKey(baseDomain, originAttrs);
+  bool& allowSecure = mCookieKeysInContent.LookupOrInsert(cookieKey, false);
+  allowSecure =
+      allowSecure || nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(uri);
 }
 
 
@@ -137,6 +171,10 @@ IPCResult CookieServiceParent::RecvPrepareCookieList(
   if (!aHost) {
     return IPC_FAIL(this, "aHost must not be null");
   }
+
+  
+  
+  UpdateCookieInContentList(aHost, aAttrs);
 
   nsTArray<Cookie*> foundCookieList;
   
