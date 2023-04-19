@@ -392,8 +392,11 @@ impl<'a, T: 'a + Array> Drop for Drain<'a, T> {
                 let start = source_vec.len();
                 let tail = self.tail_start;
                 if tail != start {
-                    let src = source_vec.as_ptr().add(tail);
-                    let dst = source_vec.as_mut_ptr().add(start);
+                    
+                    
+                    let ptr = source_vec.as_mut_ptr();
+                    let src = ptr.add(tail);
+                    let dst = ptr.add(start);
                     ptr::copy(src, dst, self.tail_len);
                 }
                 source_vec.set_len(start + self.tail_len);
@@ -813,13 +816,14 @@ impl<A: Array> SmallVec<A> {
         unsafe {
             self.set_len(start);
 
-            let range_slice = slice::from_raw_parts_mut(self.as_mut_ptr().add(start), end - start);
+            let range_slice = slice::from_raw_parts(self.as_ptr().add(start), end - start);
 
             Drain {
                 tail_start: end,
                 tail_len: len - end,
                 iter: range_slice.iter(),
-                vec: NonNull::from(self),
+                
+                vec: NonNull::new_unchecked(self as *mut _),
             }
         }
     }
@@ -1071,10 +1075,15 @@ impl<A: Array> SmallVec<A> {
         unsafe {
             let (mut ptr, len_ptr, _) = self.triple_mut();
             let len = *len_ptr;
-            assert!(index <= len);
-            *len_ptr = len + 1;
             ptr = ptr.add(index);
-            ptr::copy(ptr, ptr.add(1), len - index);
+            if index < len {
+                ptr::copy(ptr, ptr.add(1), len - index);
+            } else if index == len {
+                
+            } else {
+                panic!("index exceeds length");
+            }
+            *len_ptr = len + 1;
             ptr::write(ptr, element);
         }
     }
@@ -1111,6 +1120,10 @@ impl<A: Array> SmallVec<A> {
                 skip: index..(index + lower_size_bound),
                 len: old_len + lower_size_bound,
             };
+
+            
+            let start = self.as_mut_ptr();
+            let ptr = start.add(index);
 
             while num_added < lower_size_bound {
                 let element = match iter.next() {
@@ -1217,6 +1230,15 @@ impl<A: Array> SmallVec<A> {
             }
         }
         self.truncate(len - del);
+    }
+
+    
+    
+    
+    
+    
+    pub fn retain_mut<F: FnMut(&mut A::Item) -> bool>(&mut self, f: F) {
+        self.retain(f)
     }
 
     
