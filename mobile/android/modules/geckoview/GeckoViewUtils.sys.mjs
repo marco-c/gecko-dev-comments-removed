@@ -1,14 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { Log } from "resource://gre/modules/Log.sys.mjs";
 
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
 const { clearTimeout, setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
@@ -20,28 +16,26 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
 });
 
-var EXPORTED_SYMBOLS = ["GeckoViewUtils"];
-
-
-
-
-
+/**
+ * A formatter that does not prepend time/name/level information to messages,
+ * because those fields are logged separately when using the Android logger.
+ */
 class AndroidFormatter extends Log.BasicFormatter {
   format(message) {
     return this.formatText(message);
   }
 }
 
-
-
-
-
+/*
+ * AndroidAppender
+ * Logs to Android logcat using AndroidLog.jsm
+ */
 class AndroidAppender extends Log.Appender {
   constructor(aFormatter) {
     super(aFormatter || new AndroidFormatter());
     this._name = "AndroidAppender";
 
-    
+    // Map log level to AndroidLog.foo method.
     this._mapping = {
       [Log.Level.Fatal]: "e",
       [Log.Level.Error]: "e",
@@ -58,34 +52,34 @@ class AndroidAppender extends Log.Appender {
       return;
     }
 
-    
-    
+    // AndroidLog.jsm always prepends "Gecko" to the tag, so we strip any
+    // leading "Gecko" here. Also strip dots to save space.
     const tag = aMessage.loggerName.replace(/^Gecko|\./g, "");
     const msg = this._formatter.format(aMessage);
     lazy.AndroidLog[this._mapping[aMessage.level]](tag, msg);
   }
 }
 
-var GeckoViewUtils = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export var GeckoViewUtils = {
+  /**
+   * Define a lazy getter that loads an object from external code, and
+   * optionally handles observer and/or message manager notifications for the
+   * object, so the object only loads when a notification is received.
+   *
+   * @param scope     Scope for holding the loaded object.
+   * @param name      Name of the object to load.
+   * @param service   If specified, load the object from a JS component; the
+   *                  component must include the line
+   *                  "this.wrappedJSObject = this;" in its constructor.
+   * @param module    If specified, load the object from a JS module.
+   * @param init      Optional post-load initialization function.
+   * @param observers If specified, listen to specified observer notifications.
+   * @param ppmm      If specified, listen to specified process messages.
+   * @param mm        If specified, listen to specified frame messages.
+   * @param ged       If specified, listen to specified global EventDispatcher events.
+   * @param once      if true, only listen to the specified
+   *                  events/messages/notifications once.
+   */
   addLazyGetter(
     scope,
     name,
@@ -119,13 +113,13 @@ var GeckoViewUtils = {
         if (!once) {
           Services.obs.addObserver(scope[name], topic);
         }
-        scope[name].observe(subject, topic, data); 
+        scope[name].observe(subject, topic, data); // Explicitly notify new observer
       };
       observers.forEach(topic => Services.obs.addObserver(observer, topic));
     }
 
     if (!this.IS_PARENT_PROCESS) {
-      
+      // ppmm, mm, and ged are only available in the parent process.
       return;
     }
 
@@ -180,20 +174,20 @@ var GeckoViewUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add lazy event listeners that only load the actual handler when an event
+   * is being handled.
+   *
+   * @param target  Event target for the event listeners.
+   * @param events  Event name as a string or array.
+   * @param handler If specified, function that, for a given event, returns the
+   *                actual event handler as an object or an array of objects.
+   *                If handler is not specified, the actual event handler is
+   *                specified using the scope and name pair.
+   * @param scope   See handler.
+   * @param name    See handler.
+   * @param options Options for addEventListener.
+   */
   addLazyEventListener(target, events, { handler, scope, name, options }) {
     this._addLazyListeners(
       events,
@@ -217,22 +211,22 @@ var GeckoViewUtils = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add lazy pref observers, and only load the actual handler once the pref
+   * value changes from default, and every time the pref value changes
+   * afterwards.
+   *
+   * @param aPrefs  Prefs as an object or array. Each pref object has fields
+   *                "name" and "default", indicating the name and default value
+   *                of the pref, respectively.
+   * @param handler If specified, function that, for a given pref, returns the
+   *                actual event handler as an object or an array of objects.
+   *                If handler is not specified, the actual event handler is
+   *                specified using the scope and name pair.
+   * @param scope   See handler.
+   * @param name    See handler.
+   * @param once    If true, only observe the specified prefs once.
+   */
   addLazyPrefObserver(aPrefs, { handler, scope, name, once }) {
     this._addLazyListeners(
       aPrefs,
@@ -258,7 +252,7 @@ var GeckoViewUtils = {
               break;
           }
           if (pref.default !== value) {
-            
+            // Notify observer if value already changed from default.
             observer(Services.prefs, "nsPref:changed", pref.name);
           }
         });
@@ -288,34 +282,34 @@ var GeckoViewUtils = {
     return docShell.rootTreeItem.QueryInterface(Ci.nsIInterfaceRequestor);
   },
 
-  
-
-
-
-
-
+  /**
+   * Return the outermost chrome DOM window (the XUL window) for a given DOM
+   * window, in the parent process.
+   *
+   * @param aWin a DOM window.
+   */
   getChromeWindow(aWin) {
     const docShell = this.getRootDocShell(aWin);
     return docShell && docShell.domWindow;
   },
 
-  
-
-
-
-
-
+  /**
+   * Return the content frame message manager (aka the frame script global
+   * object) for a given DOM window, in a child process.
+   *
+   * @param aWin a DOM window.
+   */
   getContentFrameMessageManager(aWin) {
     const docShell = this.getRootDocShell(aWin);
     return docShell && docShell.getInterface(Ci.nsIBrowserChild).messageManager;
   },
 
-  
-
-
-
-
-
+  /**
+   * Return the per-nsWindow EventDispatcher for a given DOM window, in either
+   * the parent process or a child process.
+   *
+   * @param aWin a DOM window.
+   */
   getDispatcherForWindow(aWin) {
     try {
       if (!this.IS_PARENT_PROCESS) {
@@ -330,19 +324,19 @@ var GeckoViewUtils = {
     return null;
   },
 
-  
-
-
-
-
-
+  /**
+   * Return promise for waiting for finishing PanZoomState.
+   *
+   * @param aWindow a DOM window.
+   * @return promise
+   */
   waitForPanZoomState(aWindow) {
     return new Promise((resolve, reject) => {
       if (
         !aWindow?.windowUtils.asyncPanZoomEnabled ||
         !Services.prefs.getBoolPref("apz.zoom-to-focused-input.enabled")
       ) {
-        
+        // No zoomToFocusedInput.
         resolve();
         return;
       }
@@ -351,7 +345,7 @@ var GeckoViewUtils = {
 
       const panZoomState = (aSubject, aTopic, aData) => {
         if (timerId != 0) {
-          
+          // aWindow may be dead object now.
           try {
             clearTimeout(timerId);
           } catch (e) {}
@@ -366,45 +360,45 @@ var GeckoViewUtils = {
 
       Services.obs.addObserver(panZoomState, "PanZoom:StateChange");
 
-      
-      
-      
-      
+      // "GeckoView:ZoomToInput" has the timeout as 500ms when window isn't
+      // resized (it means on-screen-keyboard is already shown).
+      // So after up to 500ms, APZ event is sent. So we need to wait for more
+      // 500ms.
       timerId = setTimeout(() => {
-        
+        // PanZoom state isn't changed. zoomToFocusedInput will return error.
         Services.obs.removeObserver(panZoomState, "PanZoom:StateChange");
         reject();
       }, 600);
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add logging functions to the specified scope that forward to the given
+   * Log.jsm logger. Currently "debug" and "warn" functions are supported. To
+   * log something, call the function through a template literal:
+   *
+   *   function foo(bar, baz) {
+   *     debug `hello world`;
+   *     debug `foo called with ${bar} as bar`;
+   *     warn `this is a warning for ${baz}`;
+   *   }
+   *
+   * An inline format can also be used for logging:
+   *
+   *   let bar = 42;
+   *   do_something(bar); // No log.
+   *   do_something(debug.foo = bar); // Output "foo = 42" to the log.
+   *
+   * @param aTag Name of the Log.jsm logger to forward logs to.
+   * @param aScope Scope to add the logging functions to.
+   */
   initLogging(aTag, aScope) {
     aScope = aScope || {};
     const tag = "GeckoView." + aTag.replace(/^GeckoView\.?/, "");
 
-    
-    
-    
+    // Only provide two levels for simplicity.
+    // For "info", use "debug" instead.
+    // For "error", throw an actual JS error instead.
     for (const level of ["DEBUG", "WARN"]) {
       const log = (strings, ...exprs) =>
         this._log(log.logger, level, strings, exprs);
@@ -442,31 +436,31 @@ var GeckoViewUtils = {
     }
 
     if (aLogger.level > Log.Level.Numbers[aLevel]) {
-      
+      // Log disabled.
       return;
     }
 
-    
-    
-    
-    
+    // Do some GeckoView-specific formatting:
+    // * Remove newlines so long log lines can be put into multiple lines:
+    //   debug `foo=${foo}
+    //          bar=${bar}`;
     const strs = Array.from(aStrings);
     const regex = /\n\s*/g;
     for (let i = 0; i < strs.length; i++) {
       strs[i] = strs[i].replace(regex, " ");
     }
 
-    
-    
+    // * Heuristically format flags as hex.
+    // * Heuristically format nsresult as string name or hex.
     for (let i = 0; i < aExprs.length; i++) {
       const expr = aExprs[i];
       switch (typeof expr) {
         case "number":
           if (expr > 0 && /\ba?[fF]lags?[\s=:]+$/.test(strs[i])) {
-            
+            // Likely a flag; display in hex.
             aExprs[i] = `0x${expr.toString(0x10)}`;
           } else if (expr >= 0 && /\b(a?[sS]tatus|rv)[\s=:]+$/.test(strs[i])) {
-            
+            // Likely an nsresult; display in name or hex.
             aExprs[i] = `0x${expr.toString(0x10)}`;
             for (const name in Cr) {
               if (expr === Cr[name]) {
@@ -482,14 +476,14 @@ var GeckoViewUtils = {
     aLogger[aLevel.toLowerCase()](strs, ...aExprs);
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Checks whether the principal is supported for permissions.
+   *
+   * @param {nsIPrincipal} principal
+   *        The principal to check.
+   *
+   * @return {boolean} if the principal is supported.
+   */
   isSupportedPermissionsPrincipal(principal) {
     if (!principal) {
       return false;
@@ -502,11 +496,11 @@ var GeckoViewUtils = {
     return this.isSupportedPermissionsScheme(principal.scheme);
   },
 
-  
-
-
-
-
+  /**
+   * Checks whether we support managing permissions for a specific scheme.
+   * @param {string} scheme - Scheme to test.
+   * @returns {boolean} Whether the scheme is supported.
+   */
   isSupportedPermissionsScheme(scheme) {
     return ["http", "https", "moz-extension", "file"].includes(scheme);
   },

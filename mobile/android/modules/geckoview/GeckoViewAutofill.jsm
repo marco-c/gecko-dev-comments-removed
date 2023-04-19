@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { GeckoViewUtils } = ChromeUtils.import(
-  "resource://gre/modules/GeckoViewUtils.jsm"
+const { GeckoViewUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/GeckoViewUtils.sys.mjs"
 );
 
 var EXPORTED_SYMBOLS = ["gAutofillManager"];
