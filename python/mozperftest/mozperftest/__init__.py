@@ -3,7 +3,10 @@
 
 import mozlog
 
-from mozperftest.argparser import PerftestArgumentParser  
+from mozperftest.argparser import (  
+    PerftestArgumentParser,
+    PerftestToolsArgumentParser,
+)
 from mozperftest.metadata import Metadata  
 from mozperftest.environment import MachEnvironment  
 
