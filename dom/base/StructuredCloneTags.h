@@ -107,18 +107,6 @@ enum StructuredCloneTags : uint32_t {
 
   
   
-  SCTAG_DOM_FILESYSTEMHANDLE,
-
-  
-  
-  SCTAG_DOM_FILESYSTEMFILEHANDLE,
-
-  
-  
-  SCTAG_DOM_FILESYSTEMDIRECTORYHANDLE,
-
-  
-  
 
   
   
