@@ -33,8 +33,14 @@ void CreateAnalyzedStream(Scenario* s,
   auto* audio = s->CreateAudioStream(route->forward(), AudioStreamConfig());
   s->Every(TimeDelta::Seconds(1), [=] {
     collectors->call.AddStats(caller->GetStats());
-    collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
-    collectors->audio_receive.AddStats(audio->receive()->GetStats());
+
+    VideoSendStream::Stats send_stats;
+    caller->SendTask([&]() { send_stats = video->send()->GetStats(); });
+    collectors->video_send.AddStats(send_stats, s->Now());
+
+    AudioReceiveStream::Stats receive_stats;
+    caller->SendTask([&]() { receive_stats = audio->receive()->GetStats(); });
+    collectors->audio_receive.AddStats(receive_stats);
 
     
     

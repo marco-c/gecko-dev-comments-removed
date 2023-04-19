@@ -670,6 +670,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
 void SendStatisticsProxy::OnEncoderReconfigured(
     const VideoEncoderConfig& config,
     const std::vector<VideoStream>& streams) {
+  
   MutexLock lock(&mutex_);
 
   if (content_type_ != config.content_type) {
