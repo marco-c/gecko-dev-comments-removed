@@ -29,6 +29,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
     "resource://activity-stream/lib/ASRouterTriggerListeners.jsm",
   KintoHttpClient: "resource://services-common/kinto-http-client.js",
   Downloader: "resource://services-settings/Attachments.jsm",
+  RemoteImages: "resource://activity-stream/lib/RemoteImages.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
@@ -96,6 +97,14 @@ const TOPIC_EXPERIMENT_FORCE_ENROLLED = "nimbus:force-enroll";
 
 const USE_REMOTE_L10N_PREF =
   "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
+
+const MESSAGING_EXPERIMENTS_DEFAULT_FEATURES = [
+  "cfr",
+  "infobar",
+  "moments-page",
+  "pbNewtab",
+  "spotlight",
+];
 
 
 
@@ -325,15 +334,27 @@ const MessageLoaderUtils = {
     return RemoteSettings(bucket).get();
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async _experimentsAPILoader(provider) {
     
-    const featureIds = provider.featureIds ?? [
-      "cfr",
-      "infobar",
-      "moments-page",
-      "pbNewtab",
-      "spotlight",
-    ];
+    const featureIds = Array.isArray(provider.featureIds)
+      ? provider.featureIds
+      : MESSAGING_EXPERIMENTS_DEFAULT_FEATURES;
     let experiments = [];
     for (const featureId of featureIds) {
       let featureAPI = lazy.NimbusFeatures[featureId];
@@ -552,6 +573,7 @@ class _ASRouter {
       errors: [],
       localeInUse: Services.locale.appLocaleAsBCP47,
     };
+    this._experimentChangedListeners = new Map();
     this._triggerHandler = this._triggerHandler.bind(this);
     this._localProviders = localProviders;
     this.blockMessageById = this.blockMessageById.bind(this);
@@ -636,6 +658,13 @@ class _ASRouter {
           );
           provider.url = Services.urlFormatter.formatURL(provider.url);
         }
+        if (provider.id === "messaging-experiments") {
+          
+          
+          if (!provider.featureIds) {
+            provider.featureIds = MESSAGING_EXPERIMENTS_DEFAULT_FEATURES;
+          }
+        }
         
         provider.lastUpdated = undefined;
         return provider;
@@ -650,6 +679,21 @@ class _ASRouter {
       if (!providerIDs.includes(prevProvider.id)) {
         invalidProviders.push(prevProvider.id);
       }
+    }
+
+    {
+      
+      
+      
+      const prevExpts = previousProviders.find(
+        p => p.id === "messaging-experiments"
+      );
+      const expts = providers.find(p => p.id === "messaging-experiments");
+
+      this._onFeatureListChanged(
+        prevExpts?.enabled ? prevExpts.featureIds : [],
+        expts?.enabled ? expts.featureIds : []
+      );
     }
 
     return this.setState(prevState => ({
@@ -1848,7 +1892,7 @@ class _ASRouter {
     await lazy.ToolbarPanelHub._hideToolbarButton(win);
   }
 
-  async _onExperimentForceEnrolled(subject, topic, data) {
+  async _onExperimentForceEnrolled(subject, topic, slug) {
     const experimentProvider = this.state.providers.find(
       p => p.id === "messaging-experiments"
     );
@@ -1856,7 +1900,88 @@ class _ASRouter {
       return;
     }
 
+    const branch = lazy.ExperimentAPI.getActiveBranch({ slug });
+    const features = branch.features ?? [branch.feature];
+    const featureIds = features.map(feature => feature.featureId);
+
+    this._onFeaturesUpdated(...featureIds);
+
     await this.loadMessagesFromAllProviders([experimentProvider]);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _onFeatureListChanged(oldFeatures, newFeatures) {
+    for (const featureId of oldFeatures) {
+      if (!newFeatures.includes(featureId)) {
+        const listener = this._experimentChangedListeners.get(featureId);
+        this._experimentChangedListeners.delete(featureId);
+        lazy.NimbusFeatures[featureId].off(listener);
+      }
+    }
+
+    const newlySubscribed = [];
+
+    for (const featureId of newFeatures) {
+      if (!oldFeatures.includes(featureId)) {
+        const listener = () => this._onFeaturesUpdated(featureId);
+        this._experimentChangedListeners.set(featureId, listener);
+        lazy.NimbusFeatures[featureId].onUpdate(listener);
+
+        newlySubscribed.push(featureId);
+      }
+    }
+
+    
+    
+    this._onFeaturesUpdated(...newlySubscribed);
+  }
+
+  
+
+
+
+
+
+
+
+  _onFeaturesUpdated(...featureIds) {
+    const messages = [];
+
+    for (const featureId of featureIds) {
+      const featureAPI = lazy.NimbusFeatures[featureId];
+      
+      
+      if (lazy.ExperimentAPI.getExperimentMetaData({ featureId })) {
+        
+        
+        messages.push(featureAPI.getAllVariables());
+      }
+    }
+
+    
+    
+    if (messages.length) {
+      lazy.RemoteImages.prefetchImagesFor(messages);
+    }
   }
 }
 

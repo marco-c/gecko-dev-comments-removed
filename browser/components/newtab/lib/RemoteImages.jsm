@@ -45,11 +45,35 @@ const REMOTE_IMAGES_DB_PATH = PathUtils.join(REMOTE_IMAGES_PATH, "db.json");
 
 const IMAGE_EXPIRY_DURATION = 30 * 24 * 60 * 60; 
 
+const PREFETCH_FINISHED_TOPIC = "remote-images:prefetch-finished";
+
+
+
+
+
+
+
+
+const MessageInspectors = {
+  spotlight(message) {
+    if (
+      message.content.template === "logo-and-content" &&
+      message.content.logo?.imageId
+    ) {
+      return [message.content.logo.imageId];
+    }
+    return [];
+  },
+};
+
 class _RemoteImages {
   #dbPromise;
 
+  #fetching;
+
   constructor() {
     this.#dbPromise = null;
+    this.#fetching = new Map();
 
     RemoteSettings(RS_COLLECTION).on("sync", () => this.#onSync());
 
@@ -193,6 +217,12 @@ class _RemoteImages {
   async #loadImpl(db, imageId) {
     const recordId = this.#getRecordId(imageId);
 
+    
+    if (this.#fetching.has(imageId)) {
+      const { record, arrayBuffer } = await this.#fetching.get(imageId);
+      return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+    }
+
     let blob;
     if (db.data.images[recordId]) {
       
@@ -231,6 +261,9 @@ class _RemoteImages {
   }
 
   #onSync() {
+    
+    
+    
     return this.withDb(async db => {
       await this.#cleanup(db);
 
@@ -245,7 +278,7 @@ class _RemoteImages {
           .filter(
             entry => recordsById[entry.recordId]?.attachment.hash !== entry.hash
           )
-          .map(entry => this.#download(db, entry.recordId, { refresh: true }))
+          .map(entry => this.#download(db, entry.recordId, { fetchOnly: true }))
       );
     });
   }
@@ -261,6 +294,8 @@ class _RemoteImages {
 
 
   async #cleanup(db) {
+    
+    
     const now = Date.now();
     await Promise.all(
       Object.values(db.data.images)
@@ -336,33 +371,13 @@ class _RemoteImages {
 
 
 
-
-
-
-
-  async #download(db, recordId, { refresh = false } = {}) {
-    const client = new lazy.KintoHttpClient(lazy.Utils.SERVER_URL);
-    const record = await client
-      .bucket(RS_MAIN_BUCKET)
-      .collection(RS_COLLECTION)
-      .getRecord(recordId);
-
-    const downloader = new lazy.Downloader(RS_MAIN_BUCKET, RS_COLLECTION);
-    const arrayBuffer = await downloader.downloadAsBytes(record.data, {
-      retries: RS_DOWNLOAD_MAX_RETRIES,
-    });
-
-    
-    const path = PathUtils.join(REMOTE_IMAGES_PATH, recordId);
-
+  async #download(db, recordId, { fetchOnly = false } = {}) {
     
     
-    
-    IOUtils.write(path, new Uint8Array(arrayBuffer));
-
+    const { record, arrayBuffer } = await this.#unsafeDownload(recordId);
     const { mimetype, hash } = record.data.attachment;
 
-    if (refresh) {
+    if (fetchOnly) {
       Object.assign(db.data.images[recordId], { mimetype, hash });
     } else {
       db.data.images[recordId] = {
@@ -375,11 +390,177 @@ class _RemoteImages {
 
     db.saveSoon();
 
-    if (!refresh) {
-      return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+    if (fetchOnly) {
+      return undefined;
     }
 
-    return undefined;
+    return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+  }
+
+  
+
+
+
+
+
+
+
+  async #unsafeDownload(recordId) {
+    const client = new lazy.KintoHttpClient(lazy.Utils.SERVER_URL);
+
+    const record = await client
+      .bucket(RS_MAIN_BUCKET)
+      .collection(RS_COLLECTION)
+      .getRecord(recordId);
+
+    const downloader = new lazy.Downloader(RS_MAIN_BUCKET, RS_COLLECTION);
+    const arrayBuffer = await downloader.downloadAsBytes(record.data, {
+      retries: RS_DOWNLOAD_MAX_RETRIES,
+    });
+
+    const path = PathUtils.join(REMOTE_IMAGES_PATH, recordId);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    IOUtils.write(path, new Uint8Array(arrayBuffer));
+
+    return { record, arrayBuffer };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async prefetchImagesFor(messages) {
+    
+    
+    const recordIds = messages
+      .filter(
+        message =>
+          message.template && Object.hasOwn(MessageInspectors, message.template)
+      )
+      .flatMap(message => MessageInspectors[message.template](message))
+      .map(imageId => this.#getRecordId(imageId));
+
+    
+    
+    if (recordIds.length) {
+      const promises = await this.withDb(
+        db =>
+          new Map(
+            recordIds.reduce((entries, recordId) => {
+              const promise = this.#beginPrefetch(db, recordId);
+
+              
+              
+              if (promise !== null) {
+                this.#fetching.set(recordId, promise);
+                entries.push([recordId, promise]);
+              }
+
+              return entries;
+            }, [])
+          )
+      );
+
+      
+      
+      
+      
+      
+      
+      
+      const prefetchesFinished = Array.from(promises.entries()).map(
+        ([recordId, promise]) =>
+          promise.then(
+            result => this.#finishPrefetch(result),
+            () => this.#handleFailedPrefetch(recordId)
+          )
+      );
+
+      
+      await Promise.all(prefetchesFinished);
+
+      Services.obs.notifyObservers(null, PREFETCH_FINISHED_TOPIC);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  #beginPrefetch(db, recordId) {
+    if (!Object.hasOwn(db.data.images, recordId)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      const promise = this.#unsafeDownload(recordId);
+      this.#fetching.set(recordId, promise);
+
+      return promise;
+    }
+
+    return null;
+  }
+
+  
+
+
+
+
+
+  #finishPrefetch({ record }) {
+    return this.withDb(db => {
+      const { id: recordId } = record.data;
+      const { mimetype, hash } = record.data.attachment;
+
+      this.#fetching.delete(recordId);
+
+      db.data.images[recordId] = {
+        recordId,
+        mimetype,
+        hash,
+        lastLoaded: Date.now(),
+      };
+
+      db.saveSoon();
+    });
+  }
+
+  
+
+
+  #handleFailedPrefetch(recordId) {
+    return this.withDb(db => {
+      this.#fetching.delete(recordId);
+    });
   }
 
   
