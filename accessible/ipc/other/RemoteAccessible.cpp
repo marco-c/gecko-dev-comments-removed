@@ -888,45 +888,6 @@ double RemoteAccessible::Step() const {
   return step;
 }
 
-RemoteAccessible* RemoteAccessible::FocusedChild() {
-  if (IsOuterDoc()) {
-    
-    
-    
-    
-    RemoteAccessible* child = RemoteFirstChild();
-    if (!child) {
-      return (State() & states::FOCUSED) ? this : nullptr;
-    }
-    MOZ_ASSERT(child->IsDoc());
-    return (child->State() & states::FOCUSED) ? child : nullptr;
-  }
-
-  auto* doc = mDoc;
-  uint64_t id = mID;
-  if (IsDoc()) {
-    
-    
-    
-    if (dom::BrowserParent* browser = dom::BrowserParent::GetFocused()) {
-      if (auto* focusedDoc = browser->GetTopLevelDocAccessible()) {
-        if (!focusedDoc->IsTopLevel()) {
-          
-          doc = focusedDoc;
-        }
-      }
-    }
-  }
-
-  PDocAccessibleParent* resultDoc = nullptr;
-  uint64_t resultID = 0;
-  Unused << doc->SendFocusedChild(id, &resultDoc, &resultID);
-
-  auto* useDoc = static_cast<DocAccessibleParent*>(resultDoc);
-  
-  return useDoc ? useDoc->GetAccessible(resultID) : nullptr;
-}
-
 Accessible* RemoteAccessible::ChildAtPoint(
     int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
   if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {

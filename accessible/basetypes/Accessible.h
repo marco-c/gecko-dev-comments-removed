@@ -204,6 +204,11 @@ class Accessible {
   
 
 
+  virtual Accessible* FocusedChild();
+
+  
+
+
   const nsRoleMapEntry* ARIARoleMap() const;
 
   

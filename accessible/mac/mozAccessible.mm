@@ -227,33 +227,12 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 
 - (id)moxFocusedUIElement {
   MOZ_ASSERT(mGeckoAccessible);
-
-  LocalAccessible* acc = mGeckoAccessible->AsLocal();
-  RemoteAccessible* proxy = mGeckoAccessible->AsRemote();
-
-  mozAccessible* focusedChild = nil;
-  if (acc) {
-    LocalAccessible* focusedGeckoChild = acc->FocusedChild();
-    if (focusedGeckoChild) {
-      focusedChild = GetNativeFromGeckoAccessible(focusedGeckoChild);
-    } else {
-      dom::BrowserParent* browser = dom::BrowserParent::GetFocused();
-      if (browser) {
-        a11y::DocAccessibleParent* proxyDoc =
-            browser->GetTopLevelDocAccessible();
-        if (proxyDoc) {
-          mozAccessible* nativeRemoteChild =
-              GetNativeFromGeckoAccessible(proxyDoc);
-          return [nativeRemoteChild accessibilityFocusedUIElement];
-        }
-      }
-    }
-  } else if (proxy) {
-    RemoteAccessible* focusedGeckoChild = proxy->FocusedChild();
-    if (focusedGeckoChild) {
-      focusedChild = GetNativeFromGeckoAccessible(focusedGeckoChild);
-    }
-  }
+  
+  
+  
+  Accessible* doc = nsAccUtils::DocumentFor(mGeckoAccessible);
+  mozAccessible* focusedChild =
+      GetNativeFromGeckoAccessible(doc->FocusedChild());
 
   if ([focusedChild isAccessibilityElement]) {
     return focusedChild;

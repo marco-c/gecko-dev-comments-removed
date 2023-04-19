@@ -66,54 +66,48 @@ already_AddRefed<IUnknown> MsaaRootAccessible::GetInternalUnknown() {
 
 
 STDMETHODIMP
-MsaaRootAccessible::get_accFocus(
-     VARIANT __RPC_FAR* pvarChild) {
-  HRESULT hr = MsaaDocAccessible::get_accFocus(pvarChild);
-  if (FAILED(hr) || pvarChild->vt != VT_EMPTY || !IsWin8OrLater()) {
+MsaaRootAccessible::accNavigate(
+     long navDir,
+     VARIANT varStart,
+     VARIANT __RPC_FAR* pvarEndUpAt) {
+  
+  
+  
+  
+  
+  if (navDir != NAVRELATION_EMBEDS || varStart.vt != VT_I4 ||
+      varStart.lVal != CHILDID_SELF) {
     
     
-    
-    
-    return hr;
+    return MsaaDocAccessible::accNavigate(navDir, varStart, pvarEndUpAt);
   }
 
-  
-  
-  
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    return S_FALSE;
+  if (!pvarEndUpAt) {
+    return E_INVALIDARG;
   }
-  dom::BrowserParent* browser = dom::BrowserParent::GetFocused();
-  if (!browser) {
-    return hr;
+  RootAccessible* rootAcc = RootAcc();
+  if (!rootAcc) {
+    return CO_E_OBJNOTCONNECTED;
   }
-  DocAccessibleParent* docProxy = browser->GetTopLevelDocAccessible();
-  if (!docProxy) {
-    return hr;
+
+  Accessible* target = nullptr;
+  
+  RemoteAccessible* docProxy = rootAcc->GetPrimaryRemoteTopLevelContentDoc();
+  if (docProxy) {
+    target = docProxy;
+  } else {
+    
+    
+    Relation rel = rootAcc->RelationByType(RelationType::EMBEDS);
+    target = rel.Next();
   }
-  RefPtr<IDispatch> docDisp = already_AddRefed(NativeAccessible(docProxy));
-  if (!docDisp) {
+
+  if (!target) {
     return E_FAIL;
   }
-  RefPtr<IAccessible> docIa;
-  hr = docDisp->QueryInterface(IID_IAccessible, (void**)getter_AddRefs(docIa));
-  MOZ_ASSERT(SUCCEEDED(hr));
-  MOZ_ASSERT(docIa);
 
-  
-  
-  hr = docIa->get_accFocus(pvarChild);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  if (pvarChild->vt == VT_I4 && pvarChild->lVal == CHILDID_SELF) {
-    
-    
-    
-    pvarChild->vt = VT_DISPATCH;
-    docDisp.forget(&pvarChild->pdispVal);
-  }
-
+  VariantInit(pvarEndUpAt);
+  pvarEndUpAt->pdispVal = NativeAccessible(target);
+  pvarEndUpAt->vt = VT_DISPATCH;
   return S_OK;
 }

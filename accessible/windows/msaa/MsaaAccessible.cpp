@@ -1267,15 +1267,9 @@ MsaaAccessible::get_accFocus(
   if (!mAcc) {
     return CO_E_OBJNOTCONNECTED;
   }
-  LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) {
-    return E_NOTIMPL;  
-  }
-
   
-  LocalAccessible* focusedAccessible = localAcc->FocusedChild();
-
-  if (focusedAccessible == localAcc) {
+  Accessible* focusedAccessible = mAcc->FocusedChild();
+  if (focusedAccessible == mAcc) {
     pvarChild->vt = VT_I4;
     pvarChild->lVal = CHILDID_SELF;
   } else if (focusedAccessible) {

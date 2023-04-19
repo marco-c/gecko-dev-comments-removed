@@ -47,8 +47,10 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLSelectElement.h"
@@ -264,10 +266,34 @@ void DocAccessible::ApplyARIAState(uint64_t* aState) const {
   if (mParent) mParent->ApplyARIAState(aState);
 }
 
-LocalAccessible* DocAccessible::FocusedChild() {
+Accessible* DocAccessible::FocusedChild() {
   
   
-  return FocusMgr()->FocusedAccessible();
+  if (Accessible* focusedAcc = FocusMgr()->FocusedAccessible()) {
+    return focusedAcc;
+  }
+  nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();
+
+  if (!focusManagerDOM) {
+    return nullptr;
+  }
+
+  if (!XRE_IsParentProcess()) {
+    
+    
+    
+    return nullptr;
+  }
+  
+  
+  
+  
+  dom::BrowsingContext* focusedContext =
+      focusManagerDOM->GetFocusedBrowsingContextInChrome();
+
+  DocAccessibleParent* focusedDoc =
+      DocAccessibleParent::GetFrom(focusedContext);
+  return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
 }
 
 void DocAccessible::TakeFocus() const {
