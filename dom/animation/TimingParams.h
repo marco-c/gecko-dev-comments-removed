@@ -132,7 +132,17 @@ struct TimingParams {
       return zeroDuration;
     }
 
-    return aDuration->MultDouble(aIterations);
+    MOZ_ASSERT(*aDuration >= zeroDuration && aIterations >= 0.0,
+               "Both animation duration and ieration count should be greater "
+               "than zero");
+
+    StickyTimeDuration result = aDuration->MultDouble(aIterations);
+    if (result < zeroDuration) {
+      
+      
+      return StickyTimeDuration::Forever();
+    }
+    return result;
   }
   
   
