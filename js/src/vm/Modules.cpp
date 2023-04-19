@@ -114,9 +114,13 @@ static JSObject* CompileModuleHelper(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  MainThreadErrorContext ec(cx);
-  return frontend::CompileModule(cx, &ec, cx->stackLimitForCurrentPrincipal(),
-                                 options, srcBuf);
+  JS::Rooted<JSObject*> mod(cx);
+  {
+    AutoReportFrontendContext ec(cx);
+    mod = frontend::CompileModule(cx, &ec, cx->stackLimitForCurrentPrincipal(),
+                                  options, srcBuf);
+  }
+  return mod;
 }
 
 JS_PUBLIC_API JSObject* JS::CompileModule(JSContext* cx,
