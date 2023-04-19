@@ -21,7 +21,6 @@
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/bitstream_reader.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 
@@ -187,6 +186,9 @@ class FixedLengthDeltaEncoder final {
       absl::optional<uint64_t> base,
       const std::vector<absl::optional<uint64_t>>& values);
 
+  FixedLengthDeltaEncoder(const FixedLengthDeltaEncoder&) = delete;
+  FixedLengthDeltaEncoder& operator=(const FixedLengthDeltaEncoder&) = delete;
+
  private:
   
   
@@ -249,8 +251,6 @@ class FixedLengthDeltaEncoder final {
   
   
   std::unique_ptr<BitWriter> writer_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FixedLengthDeltaEncoder);
 };
 
 
@@ -566,6 +566,9 @@ class FixedLengthDeltaDecoder final {
       absl::optional<uint64_t> base,
       size_t num_of_deltas);
 
+  FixedLengthDeltaDecoder(const FixedLengthDeltaDecoder&) = delete;
+  FixedLengthDeltaDecoder& operator=(const FixedLengthDeltaDecoder&) = delete;
+
  private:
   
   
@@ -619,8 +622,6 @@ class FixedLengthDeltaDecoder final {
 
   
   const size_t num_of_deltas_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FixedLengthDeltaDecoder);
 };
 
 bool FixedLengthDeltaDecoder::IsSuitableDecoderFor(const std::string& input) {

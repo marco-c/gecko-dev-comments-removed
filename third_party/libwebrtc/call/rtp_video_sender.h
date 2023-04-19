@@ -35,7 +35,6 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
@@ -88,6 +87,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       const CryptoOptions& crypto_options,  
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoSender() override;
+
+  RtpVideoSender(const RtpVideoSender&) = delete;
+  RtpVideoSender& operator=(const RtpVideoSender&) = delete;
 
   
   
@@ -209,8 +211,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   
   
   std::map<uint32_t, RtpRtcpInterface*> ssrc_to_rtp_module_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };
 
 }  

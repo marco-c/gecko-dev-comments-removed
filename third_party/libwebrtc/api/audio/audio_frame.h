@@ -16,7 +16,6 @@
 
 #include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -57,6 +56,9 @@ class AudioFrame {
   };
 
   AudioFrame();
+
+  AudioFrame(const AudioFrame&) = delete;
+  AudioFrame& operator=(const AudioFrame&) = delete;
 
   
   void Reset();
@@ -164,8 +166,6 @@ class AudioFrame {
   
   
   absl::optional<int64_t> absolute_capture_timestamp_ms_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
 }  

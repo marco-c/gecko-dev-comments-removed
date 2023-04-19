@@ -14,7 +14,6 @@
 #include "absl/types/optional.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/data_rate.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -24,6 +23,10 @@ class RtpBitrateConfigurator {
  public:
   explicit RtpBitrateConfigurator(const BitrateConstraints& bitrate_config);
   ~RtpBitrateConfigurator();
+
+  RtpBitrateConfigurator(const RtpBitrateConfigurator&) = delete;
+  RtpBitrateConfigurator& operator=(const RtpBitrateConfigurator&) = delete;
+
   BitrateConstraints GetConfig() const;
 
   
@@ -68,8 +71,6 @@ class RtpBitrateConfigurator {
 
   
   DataRate max_bitrate_over_relay_ = DataRate::PlusInfinity();
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(RtpBitrateConfigurator);
 };
 }  
 

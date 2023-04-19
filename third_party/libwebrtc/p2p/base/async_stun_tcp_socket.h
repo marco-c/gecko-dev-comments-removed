@@ -15,7 +15,6 @@
 
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_tcp_socket.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 
@@ -32,6 +31,9 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
 
   explicit AsyncStunTCPSocket(rtc::Socket* socket);
 
+  AsyncStunTCPSocket(const AsyncStunTCPSocket&) = delete;
+  AsyncStunTCPSocket& operator=(const AsyncStunTCPSocket&) = delete;
+
   int Send(const void* pv,
            size_t cb,
            const rtc::PacketOptions& options) override;
@@ -42,8 +44,6 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
   
   
   size_t GetExpectedLength(const void* data, size_t len, int* pad_bytes);
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncStunTCPSocket);
 };
 
 }  

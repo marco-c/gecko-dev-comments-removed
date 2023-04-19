@@ -22,7 +22,6 @@
 
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -288,6 +287,9 @@ class RTC_EXPORT StatsReport {
 
     ~Value();
 
+    Value(const Value&) = delete;
+    Value& operator=(const Value&) = delete;
+
     
     
     
@@ -358,8 +360,6 @@ class RTC_EXPORT StatsReport {
       const char* static_string_;
       Id* id_;
     } value_;
-
-    RTC_DISALLOW_COPY_AND_ASSIGN(Value);
   };
 
   typedef rtc::scoped_refptr<Value> ValuePtr;
@@ -368,6 +368,9 @@ class RTC_EXPORT StatsReport {
   
   explicit StatsReport(const Id& id);
   ~StatsReport();
+
+  StatsReport(const StatsReport&) = delete;
+  StatsReport& operator=(const StatsReport&) = delete;
 
   
   static Id NewBandwidthEstimationId();
@@ -408,8 +411,6 @@ class RTC_EXPORT StatsReport {
   const Id id_;
   double timestamp_;  
   Values values_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(StatsReport);
 };
 
 
