@@ -113,6 +113,7 @@ class ScriptModule extends Module {
 
 
 
+
   async callFunction(options = {}) {
     
     this.assertExperimentalCommandsEnabled("script.callFunction");
@@ -159,6 +160,7 @@ class ScriptModule extends Module {
         commandArguments,
         functionDeclaration,
         realmId,
+        resultOwnership,
         sandbox,
         thisParameter,
       },
@@ -168,6 +170,7 @@ class ScriptModule extends Module {
   }
 
   
+
 
 
 
@@ -226,6 +229,7 @@ class ScriptModule extends Module {
         awaitPromise,
         expression: source,
         realmId,
+        resultOwnership,
         sandbox,
       },
     });

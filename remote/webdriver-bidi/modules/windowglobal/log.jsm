@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   ConsoleListener:
     "chrome://remote/content/shared/listeners/ConsoleListener.jsm",
   isChromeFrame: "chrome://remote/content/shared/Stack.jsm",
+  OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
   serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
 });
 
@@ -142,7 +143,12 @@ class LogModule extends Module {
     
     const serializedArgs = [];
     for (const arg of args) {
-      serializedArgs.push(lazy.serialize(arg ));
+      
+      
+      
+      serializedArgs.push(
+        lazy.serialize(arg, 1, lazy.OwnershipModel.None, new Map(), null)
+      );
     }
 
     
