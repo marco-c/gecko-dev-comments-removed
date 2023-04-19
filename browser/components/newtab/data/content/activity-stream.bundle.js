@@ -959,11 +959,7 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
     this.setAttribution = this.setAttribution.bind(this);
     this.onCopyTargetingParams = this.onCopyTargetingParams.bind(this);
     this.onNewTargetingParams = this.onNewTargetingParams.bind(this);
-    this.handleUpdateWNMessages = this.handleUpdateWNMessages.bind(this);
-    this.handleForceWNP = this.handleForceWNP.bind(this);
-    this.handleCloseWNP = this.handleCloseWNP.bind(this);
     this.resetPanel = this.resetPanel.bind(this);
-    this.restoreWNMessageState = this.restoreWNMessageState.bind(this);
     this.toggleJSON = this.toggleJSON.bind(this);
     this.toggleAllMessages = this.toggleAllMessages.bind(this);
     this.resetGroups = this.resetGroups.bind(this);
@@ -973,7 +969,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
     this.state = {
       messageFilter: "all",
       messageGroupsFilter: "all",
-      WNMessages: [],
       collapsedMessages: [],
       modifiedMessages: [],
       evaluationStatus: {},
@@ -1069,7 +1064,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
 
   resetPanel() {
     this.resetAllJSON();
-    this.handleCloseWNP();
   }
 
   handleOverride(id) {
@@ -1078,27 +1072,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
       this.props.notifyContent({
         message: state.message
       });
-    });
-  }
-
-  async handleUpdateWNMessages() {
-    await this.restoreWNMessageState();
-    let messages = this.state.WNMessages;
-
-    for (const msg of messages) {
-      ASRouterUtils.modifyMessageJson(JSON.parse(msg));
-    }
-  }
-
-  handleForceWNP() {
-    ASRouterUtils.sendMessage({
-      type: "FORCE_WHATSNEW_PANEL"
-    });
-  }
-
-  handleCloseWNP() {
-    ASRouterUtils.sendMessage({
-      type: "CLOSE_WHATSNEW_PANEL"
     });
   }
 
@@ -1388,25 +1361,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
     }, JSON.stringify(msg, null, 2))))));
   }
 
-  restoreWNMessageState() {
-    
-    let tempState = [];
-    let messageCheckboxes = document.querySelectorAll('input[type="checkbox"]'); 
-
-    for (const checkbox of messageCheckboxes) {
-      let trimmedId = checkbox.id.replace(" checkbox", "");
-      let msg = document.getElementById(`${trimmedId}-textarea`).value;
-
-      if (checkbox.checked) {
-        tempState.push(msg);
-      }
-    }
-
-    this.setState({
-      WNMessages: tempState
-    });
-  }
-
   modifyJson(content) {
     const message = JSON.parse(document.getElementById(`${content.id}-textarea`).value);
     return ASRouterUtils.modifyMessageJson(message).then(state => {
@@ -1415,40 +1369,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
         message: state.message
       });
     });
-  }
-
-  renderWNMessageItem(msg) {
-    const isBlocked = this.state.messageBlockList.includes(msg.id) || this.state.messageBlockList.includes(msg.campaign);
-    const impressions = this.state.messageImpressions[msg.id] ? this.state.messageImpressions[msg.id].length : 0;
-    const isCollapsed = this.state.collapsedMessages.includes(msg.id);
-    let itemClassName = "message-item";
-
-    if (isBlocked) {
-      itemClassName += " blocked";
-    }
-
-    return external_React_default().createElement("tr", {
-      className: itemClassName,
-      key: `${msg.id}-${msg.provider}`
-    }, external_React_default().createElement("td", {
-      className: "message-id"
-    }, external_React_default().createElement("span", null, msg.id, " ", external_React_default().createElement("br", null), external_React_default().createElement("br", null), "(", impressions, " impressions)")), external_React_default().createElement("td", null, external_React_default().createElement(ToggleMessageJSON, {
-      msgId: `${msg.id}`,
-      toggleJSON: this.toggleJSON,
-      isCollapsed: isCollapsed
-    })), external_React_default().createElement("td", null, external_React_default().createElement("input", {
-      type: "checkbox",
-      id: `${msg.id} checkbox`,
-      name: `${msg.id} checkbox`
-    })), external_React_default().createElement("td", {
-      className: `message-summary`
-    }, external_React_default().createElement("pre", {
-      className: isCollapsed ? "collapsed" : "expanded"
-    }, external_React_default().createElement("textarea", {
-      id: `${msg.id}-textarea`,
-      className: "wnp-textarea",
-      name: msg.id
-    }, JSON.stringify(msg, null, 2)))));
   }
 
   toggleAllMessages(messagesToShow) {
@@ -1489,15 +1409,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
 
     const messagesToShow = this.state.messageGroupsFilter === "all" ? this.state.messages.filter(m => m.groups.length) : this.state.messages.filter(message => message.groups.includes(this.state.messageGroupsFilter));
     return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, messagesToShow.map(msg => this.renderMessageItem(msg))));
-  }
-
-  renderWNMessages() {
-    if (!this.state.messages) {
-      return null;
-    }
-
-    const messagesToShow = this.state.messages.filter(message => message.provider === "whats-new-panel" && message.content.body);
-    return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, messagesToShow.map(msg => this.renderWNMessageItem(msg))));
   }
 
   renderMessageFilter() {
@@ -1789,39 +1700,10 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
     return external_React_default().createElement("p", null, "No errors");
   }
 
-  renderWNPTests() {
-    if (!this.state.messages) {
-      return null;
-    }
-
-    let messagesToShow = this.state.messages.filter(message => message.provider === "whats-new-panel");
-    return external_React_default().createElement("div", null, external_React_default().createElement("p", {
-      className: "helpLink"
-    }, external_React_default().createElement("span", {
-      className: "icon icon-small-spacer icon-info"
-    }), " ", external_React_default().createElement("span", null, "To correctly render selected messages, click 'Open What's New Panel', select the messages you want to see, and click 'Render Selected Messages'.", external_React_default().createElement("br", null), external_React_default().createElement("br", null), "To modify a message, select it, modify the JSON and click 'Render Selected Messages' again to see your changes.", external_React_default().createElement("br", null), "Click 'Reset Panel' to close the panel and reset all JSON to its original state.")), external_React_default().createElement("div", null, external_React_default().createElement("button", {
-      className: "ASRouterButton primary button",
-      onClick: this.handleForceWNP
-    }, "Open What's New Panel"), external_React_default().createElement("button", {
-      className: "ASRouterButton secondary button",
-      onClick: this.handleUpdateWNMessages
-    }, "Render Selected Messages"), external_React_default().createElement("button", {
-      className: "ASRouterButton secondary button",
-      onClick: this.resetPanel
-    }, "Reset Panel"), external_React_default().createElement("h2", null, "Messages"), external_React_default().createElement("button", {
-      className: "ASRouterButton slim button" 
-      ,
-      onClick: e => this.toggleAllMessages(messagesToShow)
-    }, "Collapse/Expand All"), this.renderWNMessages()));
-  }
-
   getSection() {
     const [section] = this.props.location.routes;
 
     switch (section) {
-      case "wnpanel":
-        return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h2", null, "What's New Panel"), this.renderWNPTests());
-
       case "targeting":
         return external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement("h2", null, "Targeting Utilities"), external_React_default().createElement("button", {
           className: "button",
@@ -1877,8 +1759,6 @@ class ASRouterAdminInner extends (external_React_default()).PureComponent {
     }, external_React_default().createElement("ul", null, external_React_default().createElement("li", null, external_React_default().createElement("a", {
       href: "#devtools"
     }, "General")), external_React_default().createElement("li", null, external_React_default().createElement("a", {
-      href: "#devtools-wnpanel"
-    }, "What's New Panel")), external_React_default().createElement("li", null, external_React_default().createElement("a", {
       href: "#devtools-targeting"
     }, "Targeting")), external_React_default().createElement("li", null, external_React_default().createElement("a", {
       href: "#devtools-groups"
