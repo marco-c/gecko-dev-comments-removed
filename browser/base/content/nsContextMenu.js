@@ -243,6 +243,8 @@ class nsContextMenu {
     this.inSyntheticDoc = context.inSyntheticDoc;
     this.inAboutDevtoolsToolbox = context.inAboutDevtoolsToolbox;
 
+    this.isSponsoredLink = context.isSponsoredLink;
+
     
     if (this.target) {
       this.ownerDoc = this.target.ownerDocument;
@@ -1390,7 +1392,25 @@ class nsContextMenu {
 
   
   openLink() {
-    openLinkIn(this.linkURL, "window", this._openLinkInParameters());
+    let params;
+    if (this.isSponsoredLink) {
+      params = {
+        globalHistoryOptions: { triggeringSponsoredURL: this.linkURL },
+      };
+    } else if (this.browser.hasAttribute("triggeringSponsoredURL")) {
+      params = {
+        globalHistoryOptions: {
+          triggeringSponsoredURL: this.browser.getAttribute(
+            "triggeringSponsoredURL"
+          ),
+          triggeringSponsoredURLVisitTimeMS: this.browser.getAttribute(
+            "triggeringSponsoredURLVisitTimeMS"
+          ),
+        },
+      };
+    }
+
+    openLinkIn(this.linkURL, "window", this._openLinkInParameters(params));
   }
 
   
