@@ -162,17 +162,12 @@ void FullBandErleEstimator::ErleInstantaneous::Dump(
 
 void FullBandErleEstimator::ErleInstantaneous::UpdateMaxMin() {
   RTC_DCHECK(erle_log2_);
-  if (erle_log2_.value() > max_erle_log2_) {
-    max_erle_log2_ = erle_log2_.value();
-  } else {
-    max_erle_log2_ -= 0.0004;  
-  }
-
-  if (erle_log2_.value() < min_erle_log2_) {
-    min_erle_log2_ = erle_log2_.value();
-  } else {
-    min_erle_log2_ += 0.0004;  
-  }
+  
+  
+  max_erle_log2_ -= 0.0004f;  
+  max_erle_log2_ = std::max(max_erle_log2_, erle_log2_.value());
+  min_erle_log2_ += 0.0004f;  
+  min_erle_log2_ = std::min(min_erle_log2_, erle_log2_.value());
 }
 
 void FullBandErleEstimator::ErleInstantaneous::UpdateQualityEstimate() {
