@@ -170,10 +170,6 @@ class ImageBundle {
     const ExtraChannelInfo* eci = metadata_->Find(ExtraChannel::kAlpha);
     return (eci == nullptr) ? false : eci->alpha_associated;
   }
-  
-  void PremultiplyAlpha();
-  
-  void UnpremultiplyAlpha();
   const ImageF& alpha() const;
   ImageF* alpha();
 

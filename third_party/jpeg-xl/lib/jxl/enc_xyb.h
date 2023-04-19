@@ -37,9 +37,6 @@ Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
 
 Image3F OpsinDynamicsImage(const Image3B& srgb8, const JxlCmsInterface& cms);
 
-
-void TestCubeRoot();
-
 }  
 
 #endif  

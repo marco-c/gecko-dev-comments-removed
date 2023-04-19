@@ -32,7 +32,7 @@ static JXL_INLINE uint32_t GetPopulationCountPrecision(uint32_t logcount,
 
 
 
-std::vector<int> CreateFlatHistogram(int length, int total_count);
+std::vector<int32_t> CreateFlatHistogram(int length, int total_count);
 
 
 
@@ -135,7 +135,7 @@ struct AliasTable {
 };
 
 
-void InitAliasTable(std::vector<int> distribution, uint32_t range,
+void InitAliasTable(std::vector<int32_t> distribution, uint32_t range,
                     size_t log_alpha_size, AliasTable::Entry* JXL_RESTRICT a);
 
 }  

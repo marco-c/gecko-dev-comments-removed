@@ -22,6 +22,84 @@ namespace jxl {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct JxlEncoderFrameIndexBoxEntryStruct {
+  bool to_be_indexed;
+  uint32_t duration;
+  uint64_t OFFi;
+} JxlEncoderFrameIndexBoxEntry;
+
+typedef struct JxlEncoderFrameIndexBoxStruct {
+  
+  
+  
+  bool index_box_requested_through_api = false;
+
+  int64_t NF() const { return entries.size(); }
+  bool StoreFrameIndexBox() {
+    for (auto e : entries) {
+      if (e.to_be_indexed) {
+        return true;
+      }
+    }
+    return false;
+  }
+  int32_t TNUM = 1;
+  int32_t TDEN = 1000;
+
+  std::vector<JxlEncoderFrameIndexBoxEntry> entries;
+
+  
+  
+  
+  void AddFrame(uint64_t OFFi, uint32_t duration, bool to_be_indexed) {
+    
+    
+    
+    
+    
+    
+    if (entries.size() == 1) {
+      if (OFFi == entries[0].OFFi) {
+        
+        
+        entries.clear();
+      }
+    }
+    JxlEncoderFrameIndexBoxEntry e;
+    e.to_be_indexed = to_be_indexed;
+    e.OFFi = OFFi;
+    e.duration = duration;
+    entries.push_back(e);
+  }
+} JxlEncoderFrameIndexBox;
+
+
+
 typedef struct JxlEncoderFrameSettingsValuesStruct {
   
   
@@ -30,6 +108,7 @@ typedef struct JxlEncoderFrameSettingsValuesStruct {
   JxlFrameHeader header;
   std::vector<JxlBlendInfo> extra_channel_blend_info;
   std::string frame_name;
+  bool frame_index_box = false;
 } JxlEncoderFrameSettingsValues;
 
 typedef std::array<uint8_t, 4> BoxType;
@@ -106,6 +185,7 @@ void AppendBoxHeader(const jxl::BoxType& type, size_t size, bool unbounded,
 
 
 struct JxlEncoderStruct {
+  JxlEncoderError error = JxlEncoderError::JXL_ENC_ERR_OK;
   JxlMemoryManager memory_manager;
   jxl::MemoryManagerUniquePtr<jxl::ThreadPool> thread_pool{
       nullptr, jxl::MemoryManagerDeleteHelper(&memory_manager)};
@@ -126,6 +206,7 @@ struct JxlEncoderStruct {
   
   size_t codestream_bytes_written_beginning_of_frame;
   size_t codestream_bytes_written_end_of_frame;
+  jxl::JxlEncoderFrameIndexBox frame_index_box;
 
   
   bool use_container;
@@ -135,7 +216,7 @@ struct JxlEncoderStruct {
   
   
   
-  uint32_t codestream_level;
+  int32_t codestream_level;
   bool store_jpeg_metadata;
   jxl::CodecMetadata metadata;
   std::vector<uint8_t> jpeg_metadata;
@@ -145,6 +226,7 @@ struct JxlEncoderStruct {
   
   bool wrote_bytes;
   jxl::CompressParams last_used_cparams;
+  JxlBasicInfo basic_info;
 
   
   

@@ -67,15 +67,6 @@ class DefaultEncoderHeuristics : public EncoderHeuristics {
                               const ImageBundle& ib) override;
 };
 
-class FastEncoderHeuristics : public EncoderHeuristics {
- public:
-  Status LossyFrameHeuristics(PassesEncoderState* enc_state,
-                              ModularFrameEncoder* modular_frame_encoder,
-                              const ImageBundle* linear, Image3F* opsin,
-                              const JxlCmsInterface& cms, ThreadPool* pool,
-                              AuxOut* aux_out) override;
-};
-
 
 
 void FindBestDequantMatrices(const CompressParams& cparams,

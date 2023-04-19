@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#include "lib/jxl/base/sanitizer_definitions.h"
+
 
 
 
@@ -73,6 +75,16 @@
 
 
 #define JXL_MAYBE_UNUSED __attribute__((unused))
+#endif
+
+
+
+
+
+#if JXL_MEMORY_SANITIZER || JXL_ADDRESS_SANITIZER || JXL_THREAD_SANITIZER
+#define JXL_MAYBE_INLINE JXL_MAYBE_UNUSED
+#else
+#define JXL_MAYBE_INLINE JXL_INLINE
 #endif
 
 #if JXL_COMPILER_MSVC

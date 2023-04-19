@@ -19,11 +19,6 @@
 namespace jxl {
 namespace {
 
-class OpsinImageTargetTest : public hwy::TestWithParamTarget {};
-HWY_TARGET_INSTANTIATE_TEST_SUITE_P(OpsinImageTargetTest);
-
-TEST_P(OpsinImageTargetTest, MaxCubeRootError) { TestCubeRoot(); }
-
 
 
 void LinearSrgbToOpsin(float rgb_r, float rgb_g, float rgb_b,

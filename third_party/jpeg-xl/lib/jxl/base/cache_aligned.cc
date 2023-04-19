@@ -71,8 +71,9 @@ void* CacheAligned::Allocate(const size_t payload_size, size_t offset) {
   
   
   if (offset == 0) {
-    offset = kAlignment;  
-    static_assert(sizeof(AllocationHeader) <= kAlignment, "Else: round up");
+    
+    
+    offset = hwy::RoundUpTo(sizeof(AllocationHeader), kAlignment);
   }
 
 #if JXL_USE_MMAP

@@ -202,6 +202,7 @@ struct CompressParams {
 
   
   bool verbose = false;
+  bool log_search_state = false;
 
   ButteraugliParams ba_params;
 
@@ -242,8 +243,6 @@ struct CompressParams {
     color_transform = jxl::ColorTransform::kNone;
   }
 
-  bool use_new_heuristics = false;
-
   
   
   
@@ -253,6 +252,11 @@ struct CompressParams {
   int ec_resampling = -1;
   
   bool already_downsampled = false;
+  
+  
+  float original_butteraugli_distance = -1.0f;
+
+  float quant_ac_rescale = 1.0;
 
   
   

@@ -13,8 +13,8 @@
 #ifndef JXL_ENCODE_H_
 #define JXL_ENCODE_H_
 
+#include "jxl/cms_interface.h"
 #include "jxl/codestream_header.h"
-#include "jxl/decode.h"
 #include "jxl/jxl_export.h"
 #include "jxl/memory_manager.h"
 #include "jxl/parallel_runner.h"
@@ -74,9 +74,54 @@ typedef enum {
   
 
 
+
+
   JXL_ENC_NOT_SUPPORTED = 3,
 
 } JxlEncoderStatus;
+
+
+
+
+
+
+typedef enum {
+  
+
+  JXL_ENC_ERR_OK = 0,
+
+  
+
+  JXL_ENC_ERR_GENERIC = 1,
+
+  
+
+
+  JXL_ENC_ERR_OOM = 2,
+
+  
+
+
+  JXL_ENC_ERR_JBRD = 3,
+
+  
+
+  JXL_ENC_ERR_BAD_INPUT = 4,
+
+  
+
+
+
+  JXL_ENC_ERR_NOT_SUPPORTED = 0x80,
+
+  
+
+
+
+  JXL_ENC_ERR_API_USAGE = 0x81,
+
+} JxlEncoderError;
+
 
 
 
@@ -240,6 +285,9 @@ typedef enum {
 
 
 
+
+
+
   JXL_ENC_FRAME_SETTING_MODULAR_COLOR_SPACE = 25,
 
   
@@ -353,6 +401,15 @@ JXL_EXPORT void JxlEncoderSetCms(JxlEncoder* enc, JxlCmsInterface cms);
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderSetParallelRunner(JxlEncoder* enc, JxlParallelRunner parallel_runner,
                             void* parallel_runner_opaque);
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderError JxlEncoderGetError(JxlEncoder* enc);
 
 
 
@@ -722,8 +779,10 @@ JXL_EXPORT void JxlEncoderCloseInput(JxlEncoder* enc);
 
 
 
+
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderSetColorEncoding(JxlEncoder* enc, const JxlColorEncoding* color);
+
 
 
 
@@ -852,7 +911,25 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelName(JxlEncoder* enc,
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderFrameSettingsSetOption(
     JxlEncoderFrameSettings* frame_settings, JxlEncoderFrameSettingId option,
-    int32_t value);
+    int64_t value);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderFrameSettingsSetFloatOption(
+    JxlEncoderFrameSettings* frame_settings, JxlEncoderFrameSettingId option,
+    float value);
 
 
 
@@ -891,6 +968,9 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderUseContainer(JxlEncoder* enc,
 
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderStoreJPEGMetadata(JxlEncoder* enc, JXL_BOOL store_jpeg_metadata);
+
+
+
 
 
 

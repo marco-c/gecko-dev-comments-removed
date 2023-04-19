@@ -32,6 +32,9 @@ enum class RenderPipelineChannelMode {
   
   kInOut = 2,
   
+  
+  
+  
   kInput = 3,
 };
 
@@ -100,6 +103,10 @@ class RenderPipelineStage {
                           size_t xextra, size_t xsize, size_t xpos, size_t ypos,
                           size_t thread_id) const = 0;
 
+  
+  
+  virtual RenderPipelineChannelMode GetChannelMode(size_t c) const = 0;
+
  protected:
   explicit RenderPipelineStage(Settings settings) : settings_(settings) {}
 
@@ -111,10 +118,6 @@ class RenderPipelineStage {
       const std::vector<std::pair<size_t, size_t>>& input_sizes) {}
 
   virtual Status PrepareForThreads(size_t num_threads) { return true; }
-
-  
-  
-  virtual RenderPipelineChannelMode GetChannelMode(size_t c) const = 0;
 
   
   
@@ -137,6 +140,8 @@ class RenderPipelineStage {
     return output_rows[c][offset] + kRenderPipelineXOffset;
   }
 
+  
+  
   
   
   

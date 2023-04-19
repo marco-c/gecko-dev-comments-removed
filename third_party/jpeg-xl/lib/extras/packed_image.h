@@ -22,7 +22,6 @@
 #include "jxl/codestream_header.h"
 #include "jxl/encode.h"
 #include "jxl/types.h"
-#include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"
 
 namespace jxl {
@@ -76,6 +75,11 @@ class PackedImage {
   
   JxlPixelFormat format;
   size_t pixels_size;
+
+  size_t pixel_stride() const {
+    return (BitsPerChannel(format.data_type) * format.num_channels /
+            jxl::kBitsPerByte);
+  }
 
   static size_t BitsPerChannel(JxlDataType data_type) {
     switch (data_type) {
@@ -140,11 +144,8 @@ class PackedPixelFile {
 
   
   struct PackedExtraChannel {
-    PackedExtraChannel(const JxlExtraChannelInfo& ec_info,
-                       const std::string& name)
-        : ec_info(ec_info), name(name) {}
-
     JxlExtraChannelInfo ec_info;
+    size_t index;
     std::string name;
   };
   std::vector<PackedExtraChannel> extra_channels_info;
@@ -153,7 +154,10 @@ class PackedPixelFile {
   
   std::vector<uint8_t> icc;
   JxlColorEncoding color_encoding = {};
+  
+  std::vector<uint8_t> orig_icc;
 
+  std::unique_ptr<PackedFrame> preview_frame;
   std::vector<PackedFrame> frames;
 
   PackedMetadata metadata;

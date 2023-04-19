@@ -1,0 +1,23 @@
+
+
+
+
+
+#ifndef LIB_EXTRAS_ENC_NPY_H_
+#define LIB_EXTRAS_ENC_NPY_H_
+
+
+
+#include <memory>
+
+#include "lib/extras/enc/encode.h"
+
+namespace jxl {
+namespace extras {
+
+std::unique_ptr<Encoder> GetNumPyEncoder();
+
+}  
+}  
+
+#endif  

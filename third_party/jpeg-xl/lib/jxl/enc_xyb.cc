@@ -22,79 +22,16 @@
 #include "lib/jxl/color_management.h"
 #include "lib/jxl/enc_bit_writer.h"
 #include "lib/jxl/enc_image_bundle.h"
+#include "lib/jxl/fast_math-inl.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/image_bundle.h"
 #include "lib/jxl/image_ops.h"
 #include "lib/jxl/opsin_params.h"
 #include "lib/jxl/transfer_functions-inl.h"
+
 HWY_BEFORE_NAMESPACE();
 namespace jxl {
 namespace HWY_NAMESPACE {
-
-
-using hwy::HWY_NAMESPACE::ShiftRight;
-
-
-
-
-template <class V>
-V CubeRootAndAdd(const V x, const V add) {
-  const HWY_FULL(float) df;
-  const HWY_FULL(int32_t) di;
-
-  const auto kExpBias = Set(di, 0x54800000);  
-  const auto kExpMul = Set(di, 0x002AAAAA);   
-  const auto k1_3 = Set(df, 1.0f / 3);
-  const auto k4_3 = Set(df, 4.0f / 3);
-
-  const auto xa = x;  
-  const auto xa_3 = k1_3 * xa;
-
-  
-  const auto m1 = BitCast(di, xa);
-  
-  
-  
-  
-  const auto m2 =
-      IfThenZeroElse(m1 == Zero(di), kExpBias - (ShiftRight<23>(m1)) * kExpMul);
-  auto r = BitCast(df, m2);
-
-  
-  for (int i = 0; i < 3; i++) {
-    const auto r2 = r * r;
-    r = NegMulAdd(xa_3, r2 * r2, k4_3 * r);
-  }
-  
-  auto r2 = r * r;
-  r = MulAdd(k1_3, NegMulAdd(xa, r2 * r2, r), r);
-  r2 = r * r;
-  r = MulAdd(r2, x, add);
-
-  return r;
-}
-
-
-void TestCubeRoot() {
-  const HWY_FULL(float) d;
-  float max_err = 0.0f;
-  for (uint64_t x5 = 0; x5 < 2000000; x5++) {
-    const float x = x5 * 1E-5f;
-    const float expected = cbrtf(x);
-    HWY_ALIGN float approx[MaxLanes(d)];
-    Store(CubeRootAndAdd(Set(d, x), Zero(d)), d, approx);
-
-    
-    for (size_t i = 1; i < Lanes(d); ++i) {
-      JXL_ASSERT(std::abs(approx[0] - approx[i]) <= 1.2E-7f);
-    }
-
-    const float err = std::abs(approx[0] - expected);
-    max_err = std::max(max_err, err);
-  }
-  
-  JXL_ASSERT(max_err < 8E-7f);
-}
 
 
 template <class V>
@@ -416,9 +353,6 @@ Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
   return HWY_DYNAMIC_DISPATCH(RgbToYcbcr)(r_plane, g_plane, b_plane, y_plane,
                                           cb_plane, cr_plane, pool);
 }
-
-HWY_EXPORT(TestCubeRoot);
-void TestCubeRoot() { return HWY_DYNAMIC_DISPATCH(TestCubeRoot)(); }
 
 
 Image3F OpsinDynamicsImage(const Image3B& srgb8, const JxlCmsInterface& cms) {

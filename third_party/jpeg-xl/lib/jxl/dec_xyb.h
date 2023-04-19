@@ -29,23 +29,39 @@ struct OpsinParams {
 };
 
 struct OutputEncodingInfo {
+  
+  
+  
+  ColorEncoding orig_color_encoding;
+  
+  float orig_intensity_target;
+  
+  float orig_inverse_matrix[9];
+  bool default_transform;
+  bool xyb_encoded;
+  
+  
+  
   ColorEncoding color_encoding;
+  bool color_encoding_is_original;
+  
+  
+  OpsinParams opsin_params;
+  bool all_default_opsin;
   
   float inverse_gamma;
   
   
-  OpsinParams opsin_params;
   
+  float luminances[3];
   
-  
-  Status Set(const CodecMetadata& metadata, const ColorEncoding& default_enc);
-  bool all_default_opsin = true;
-  bool color_encoding_is_original = false;
-  
-  
-  float luminances[3] = {0.2126, 0.7152, 0.0722};
-  
-  float intensity_target;
+  float desired_intensity_target;
+
+  Status SetFromMetadata(const CodecMetadata& metadata);
+  Status MaybeSetColorEncoding(const ColorEncoding& c_desired);
+
+ private:
+  Status SetColorEncoding(const ColorEncoding& c_desired);
 };
 
 

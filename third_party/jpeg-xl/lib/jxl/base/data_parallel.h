@@ -31,6 +31,9 @@ class ThreadPool {
   ThreadPool(const ThreadPool&) = delete;
   ThreadPool& operator&(const ThreadPool&) = delete;
 
+  JxlParallelRunner runner() const { return runner_; }
+  void* runner_opaque() const { return runner_opaque_; }
+
   
   
   

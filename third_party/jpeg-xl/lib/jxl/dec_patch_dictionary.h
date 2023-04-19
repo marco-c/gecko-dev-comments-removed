@@ -78,25 +78,12 @@ struct PatchBlending {
 
 struct PatchReferencePosition {
   size_t ref, x0, y0, xsize, ysize;
-  bool operator<(const PatchReferencePosition& oth) const {
-    return std::make_tuple(ref, x0, y0, xsize, ysize) <
-           std::make_tuple(oth.ref, oth.x0, oth.y0, oth.xsize, oth.ysize);
-  }
-  bool operator==(const PatchReferencePosition& oth) const {
-    return !(*this < oth) && !(oth < *this);
-  }
 };
 
 struct PatchPosition {
   
   size_t x, y;
-  
-  std::vector<PatchBlending> blending;
-  PatchReferencePosition ref_pos;
-  bool operator<(const PatchPosition& oth) const {
-    return std::make_tuple(ref_pos, x, y) <
-           std::make_tuple(oth.ref_pos, oth.x, oth.y);
-  }
+  size_t ref_pos_idx;
 };
 
 struct PassesSharedState;
@@ -135,7 +122,10 @@ class PatchDictionary {
 
   const PassesSharedState* shared_;
   std::vector<PatchPosition> positions_;
+  std::vector<PatchReferencePosition> ref_positions_;
+  std::vector<PatchBlending> blendings_;
 
+  
   
   std::vector<size_t> sorted_patches_;
   

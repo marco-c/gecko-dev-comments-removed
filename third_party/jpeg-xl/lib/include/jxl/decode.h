@@ -16,7 +16,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "jxl/cms_interface.h"
 #include "jxl/codestream_header.h"
 #include "jxl/color_encoding.h"
 #include "jxl/jxl_export.h"
@@ -57,6 +56,7 @@ typedef enum {
 
   JXL_SIG_CONTAINER = 3,
 } JxlSignature;
+
 
 
 
@@ -122,6 +122,16 @@ typedef enum {
   
 
 
+
+
+
+
+
+
+
+
+
+
   JXL_DEC_SUCCESS = 0,
 
   
@@ -138,9 +148,17 @@ typedef enum {
 
 
 
+
+
+
+
+
   JXL_DEC_NEED_MORE_INPUT = 2,
 
   
+
+
+
 
 
 
@@ -163,6 +181,8 @@ typedef enum {
 
 
 
+
+
   JXL_DEC_NEED_IMAGE_OUT_BUFFER = 5,
 
   
@@ -181,15 +201,26 @@ typedef enum {
   
 
 
+
+
+
+
   JXL_DEC_BASIC_INFO = 0x40,
 
   
 
 
 
+
+
+
+
   JXL_DEC_EXTENSIONS = 0x80,
 
   
+
+
+
 
 
 
@@ -201,9 +232,15 @@ typedef enum {
 
 
 
+
+
+
   JXL_DEC_PREVIEW_IMAGE = 0x200,
 
   
+
+
+
 
 
 
@@ -232,9 +269,16 @@ typedef enum {
 
 
 
+
+
   JXL_DEC_DC_IMAGE = 0x800,
 
   
+
+
+
+
+
 
 
 
@@ -251,9 +295,17 @@ typedef enum {
 
 
 
+
+
+
   JXL_DEC_JPEG_RECONSTRUCTION = 0x2000,
 
   
+
+
+
+
+
 
 
 
@@ -296,8 +348,24 @@ typedef enum {
 
 
 
+
+
+
+
   JXL_DEC_FRAME_PROGRESSION = 0x8000,
 } JxlDecoderStatus;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -328,6 +396,8 @@ JXL_EXPORT void JxlDecoderRewind(JxlDecoder* dec);
 
 
 
+
+
 JXL_EXPORT void JxlDecoderSkipFrames(JxlDecoder* dec, size_t amount);
 
 
@@ -341,7 +411,24 @@ JXL_EXPORT void JxlDecoderSkipFrames(JxlDecoder* dec, size_t amount);
 
 
 
-JXL_EXPORT JxlDecoderStatus
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSkipCurrentFrame(JxlDecoder* dec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus
 JxlDecoderDefaultPixelFormat(const JxlDecoder* dec, JxlPixelFormat* format);
 
 
@@ -423,9 +510,26 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSubscribeEvents(JxlDecoder* dec,
 
 
 
-
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL skip_reorientation);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus
+JxlDecoderSetUnpremultiplyAlpha(JxlDecoder* dec, JXL_BOOL unpremul_alpha);
 
 
 
@@ -498,8 +602,8 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetCoalescing(JxlDecoder* dec,
 
 
 
-
 JXL_EXPORT JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec);
+
 
 
 
@@ -535,7 +639,12 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetInput(JxlDecoder* dec,
 
 
 
+
+
 JXL_EXPORT size_t JxlDecoderReleaseInput(JxlDecoder* dec);
+
+
+
 
 
 
@@ -654,7 +763,7 @@ typedef enum {
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsEncodedProfile(
-    const JxlDecoder* dec, const JxlPixelFormat* format,
+    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
     JxlColorProfileTarget target, JxlColorEncoding* color_encoding);
 
 
@@ -680,10 +789,9 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsEncodedProfile(
 
 
 
-JXL_EXPORT JxlDecoderStatus
-JxlDecoderGetICCProfileSize(const JxlDecoder* dec, const JxlPixelFormat* format,
-                            JxlColorProfileTarget target, size_t* size);
-
+JXL_EXPORT JxlDecoderStatus JxlDecoderGetICCProfileSize(
+    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
+    JxlColorProfileTarget target, size_t* size);
 
 
 
@@ -702,13 +810,8 @@ JxlDecoderGetICCProfileSize(const JxlDecoder* dec, const JxlPixelFormat* format,
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsICCProfile(
-    const JxlDecoder* dec, const JxlPixelFormat* format,
+    const JxlDecoder* dec, const JxlPixelFormat* unused_format,
     JxlColorProfileTarget target, uint8_t* icc_profile, size_t size);
-
-
-
-
-
 
 
 
@@ -745,6 +848,20 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsICCProfile(
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetPreferredColorProfile(
     JxlDecoder* dec, const JxlColorEncoding* color_encoding);
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetDesiredIntensityTarget(
+    JxlDecoder* dec, float desired_intensity_target);
+
 
 
 
@@ -929,12 +1046,8 @@ typedef void (*JxlImageOutCallback)(void* opaque, size_t x, size_t y,
 
 
 
-
-
 typedef void* (*JxlImageOutInitCallback)(void* init_opaque, size_t num_threads,
                                          size_t num_pixels_per_thread);
-
-
 
 
 
@@ -955,8 +1068,6 @@ typedef void* (*JxlImageOutInitCallback)(void* init_opaque, size_t num_threads,
 typedef void (*JxlImageOutRunCallback)(void* run_opaque, size_t thread_id,
                                        size_t x, size_t y, size_t num_pixels,
                                        const void* pixels);
-
-
 
 
 
@@ -1085,9 +1196,11 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderExtraChannelBufferSize(
 
 
 
+
 JXL_EXPORT JxlDecoderStatus
 JxlDecoderSetExtraChannelBuffer(JxlDecoder* dec, const JxlPixelFormat* format,
                                 void* buffer, size_t size, uint32_t index);
+
 
 
 
@@ -1126,6 +1239,8 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetJPEGBuffer(JxlDecoder* dec,
 
 
 JXL_EXPORT size_t JxlDecoderReleaseJPEGBuffer(JxlDecoder* dec);
+
+
 
 
 
@@ -1254,9 +1369,12 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
 
 
 
+
+
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
                                                  JxlBoxType type,
                                                  JXL_BOOL decompressed);
+
 
 
 
@@ -1288,8 +1406,18 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxSizeRaw(const JxlDecoder* dec,
 
 
 
-JXL_EXPORT void JxlDecoderSetProgressiveDetail(JxlDecoder* dec,
-                                               uint32_t detail);
+JXL_EXPORT JxlDecoderStatus
+JxlDecoderSetProgressiveDetail(JxlDecoder* dec, JxlProgressiveDetail detail);
+
+
+
+
+
+
+
+
+
+JXL_EXPORT size_t JxlDecoderGetIntendedDownsamplingRatio(JxlDecoder* dec);
 
 
 

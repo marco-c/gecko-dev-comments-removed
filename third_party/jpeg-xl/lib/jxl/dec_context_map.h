@@ -22,8 +22,8 @@ constexpr size_t kMaxClusters = 256;
 
 
 
-bool DecodeContextMap(std::vector<uint8_t>* context_map, size_t* num_htrees,
-                      BitReader* input);
+Status DecodeContextMap(std::vector<uint8_t>* context_map, size_t* num_htrees,
+                        BitReader* input);
 
 }  
 

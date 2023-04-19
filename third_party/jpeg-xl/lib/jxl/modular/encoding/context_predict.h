@@ -62,7 +62,7 @@ struct State {
   pixel_type_w pred = 0;  
   std::vector<uint32_t> pred_errors[kNumPredictors];
   std::vector<int32_t> error;
-  Header header;
+  const Header header;
 
   
   uint32_t divlookup[64];

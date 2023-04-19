@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "jxl/decode.h"
+#include "jxl/types.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/span.h"
@@ -19,7 +20,6 @@
 #include "lib/jxl/dec_bit_reader.h"
 #include "lib/jxl/dec_cache.h"
 #include "lib/jxl/dec_modular.h"
-#include "lib/jxl/dec_params.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/headers.h"
 #include "lib/jxl/image_bundle.h"
@@ -30,20 +30,10 @@ namespace jxl {
 
 
 
-Status DecodeFrameHeader(BitReader* JXL_RESTRICT reader,
-                         FrameHeader* JXL_RESTRICT frame_header);
-
-
-
-
-
-
-
-Status DecodeFrame(const DecompressParams& dparams,
-                   PassesDecoderState* dec_state, ThreadPool* JXL_RESTRICT pool,
-                   BitReader* JXL_RESTRICT reader, ImageBundle* decoded,
-                   const CodecMetadata& metadata,
-                   const SizeConstraints* constraints, bool is_preview = false);
+Status DecodeFrame(PassesDecoderState* dec_state, ThreadPool* JXL_RESTRICT pool,
+                   const uint8_t* next_in, size_t avail_in,
+                   ImageBundle* decoded, const CodecMetadata& metadata,
+                   bool use_slow_rendering_pipeline = false);
 
 
 class FrameDecoder {
@@ -56,25 +46,22 @@ class FrameDecoder {
         frame_header_(&metadata),
         use_slow_rendering_pipeline_(use_slow_rendering_pipeline) {}
 
-  
-  
-  void SetFrameSizeLimits(const SizeConstraints* constraints) {
-    constraints_ = constraints;
-  }
   void SetRenderSpotcolors(bool rsc) { render_spotcolors_ = rsc; }
   void SetCoalescing(bool c) { coalescing_ = c; }
 
   
   
   
-  
-  
   Status InitFrame(BitReader* JXL_RESTRICT br, ImageBundle* decoded,
-                   bool is_preview, bool allow_partial_frames,
-                   bool allow_partial_dc_global, bool output_needed);
+                   bool is_preview, bool output_needed);
 
   struct SectionInfo {
     BitReader* JXL_RESTRICT br;
+    size_t id;
+  };
+
+  struct TocEntry {
+    size_t size;
     size_t id;
   };
 
@@ -118,22 +105,20 @@ class FrameDecoder {
   
   static int SavedAs(const FrameHeader& header);
 
-  
-  
-  const std::vector<uint64_t>& SectionOffsets() const {
-    return section_offsets_;
-  }
-  const std::vector<uint32_t>& SectionSizes() const { return section_sizes_; }
-  size_t NumSections() const { return section_sizes_.size(); }
+  uint64_t SumSectionSizes() const { return section_sizes_sum_; }
+  const std::vector<TocEntry>& Toc() const { return toc_; }
 
-  
-  void SetMaxPasses(size_t max_passes) { max_passes_ = max_passes; }
   const FrameHeader& GetFrameHeader() const { return frame_header_; }
 
   
   
   bool HasDecodedDC() const { return finalized_dc_; }
-  bool HasDecodedAll() const { return NumSections() == num_sections_done_; }
+  bool HasDecodedAll() const { return toc_.size() == num_sections_done_; }
+
+  size_t NumCompletePasses() const {
+    return *std::min_element(decoded_passes_per_ac_group_.begin(),
+                             decoded_passes_per_ac_group_.end());
+  };
 
   
   
@@ -141,7 +126,59 @@ class FrameDecoder {
   
   
   
-  void SetPauseAtProgressive() { pause_at_progressive_ = true; }
+  
+  JxlProgressiveDetail SetPauseAtProgressive(JxlProgressiveDetail prog_detail) {
+    bool single_section =
+        frame_dim_.num_groups == 1 && frame_header_.passes.num_passes == 1;
+    if (frame_header_.frame_type != kSkipProgressive &&
+        
+        
+        !single_section &&
+        
+        
+        
+        
+        
+        
+        decoded_->metadata()->extra_channel_info.empty() &&
+        
+        
+        
+        
+        
+        frame_header_.encoding == FrameEncoding::kVarDCT) {
+      progressive_detail_ = prog_detail;
+    } else {
+      progressive_detail_ = JxlProgressiveDetail::kFrames;
+    }
+    if (progressive_detail_ >= JxlProgressiveDetail::kPasses) {
+      for (size_t i = 1; i < frame_header_.passes.num_passes; ++i) {
+        passes_to_pause_.push_back(i);
+      }
+    } else if (progressive_detail_ >= JxlProgressiveDetail::kLastPasses) {
+      for (size_t i = 0; i < frame_header_.passes.num_downsample; ++i) {
+        passes_to_pause_.push_back(frame_header_.passes.last_pass[i] + 1);
+      }
+      
+      std::sort(passes_to_pause_.begin(), passes_to_pause_.end());
+    }
+    return progressive_detail_;
+  }
+
+  size_t NextNumPassesToPause() const {
+    auto it = std::upper_bound(passes_to_pause_.begin(), passes_to_pause_.end(),
+                               NumCompletePasses());
+    return (it != passes_to_pause_.end() ? *it
+                                         : std::numeric_limits<size_t>::max());
+  }
+
+  void MaybeSetUnpremultiplyAlpha(bool unpremul_alpha) {
+    const jxl::ExtraChannelInfo* alpha =
+        decoded_->metadata()->Find(jxl::ExtraChannel::kAlpha);
+    if (alpha && alpha->alpha_associated && unpremul_alpha) {
+      dec_state_->unpremul_alpha = true;
+    }
+  }
 
   
   
@@ -156,7 +193,9 @@ class FrameDecoder {
   
   void MaybeSetRGB8OutputBuffer(uint8_t* rgb_output, size_t stride,
                                 bool is_rgba, bool undo_orientation) const {
-    if (!CanDoLowMemoryPath(undo_orientation)) return;
+    if (!CanDoLowMemoryPath(undo_orientation) || dec_state_->unpremul_alpha) {
+      return;
+    }
     dec_state_->rgb_output = rgb_output;
     dec_state_->rgb_output_is_rgba = is_rgba;
     dec_state_->rgb_stride = stride;
@@ -165,6 +204,8 @@ class FrameDecoder {
     if (decoded_->metadata()->xyb_encoded &&
         dec_state_->output_encoding_info.color_encoding.IsSRGB() &&
         dec_state_->output_encoding_info.all_default_opsin &&
+        dec_state_->output_encoding_info.desired_intensity_target ==
+            dec_state_->output_encoding_info.orig_intensity_target &&
         HasFastXYBTosRGB8() && frame_header_.needs_color_transform()) {
       dec_state_->fast_xyb_srgb8_conversion = true;
     }
@@ -183,7 +224,7 @@ class FrameDecoder {
   
   
   void MaybeSetFloatCallback(const PixelCallback& pixel_callback, bool is_rgba,
-                             bool undo_orientation) const {
+                             bool unpremul_alpha, bool undo_orientation) const {
     if (!CanDoLowMemoryPath(undo_orientation)) return;
     dec_state_->pixel_callback = pixel_callback;
     dec_state_->rgb_output_is_rgba = is_rgba;
@@ -221,11 +262,12 @@ class FrameDecoder {
       group_dec_caches_.resize(storage_size);
     }
     use_task_id_ = num_threads > num_tasks;
+    bool use_group_ids = (modular_frame_decoder_.UsesFullImage() &&
+                          (frame_header_.encoding == FrameEncoding::kVarDCT ||
+                           (frame_header_.flags & FrameHeader::kNoise)));
     if (dec_state_->render_pipeline) {
       JXL_RETURN_IF_ERROR(dec_state_->render_pipeline->PrepareForThreads(
-          storage_size,
-          modular_frame_decoder_.UsesFullImage() &&
-              frame_header_.encoding == FrameEncoding::kVarDCT));
+          storage_size, use_group_ids));
     }
     return true;
   }
@@ -248,16 +290,13 @@ class FrameDecoder {
 
   PassesDecoderState* dec_state_;
   ThreadPool* pool_;
-  std::vector<uint64_t> section_offsets_;
-  std::vector<uint32_t> section_sizes_;
-  size_t max_passes_;
+  std::vector<TocEntry> toc_;
+  uint64_t section_sizes_sum_;
   
   FrameHeader frame_header_;
   FrameDimensions frame_dim_;
   ImageBundle* decoded_;
   ModularFrameDecoder modular_frame_decoder_;
-  bool allow_partial_frames_;
-  bool allow_partial_dc_global_;
   bool render_spotcolors_ = true;
   bool coalescing_ = true;
 
@@ -270,13 +309,9 @@ class FrameDecoder {
   bool finalized_dc_ = true;
   size_t num_sections_done_ = 0;
   bool is_finalized_ = true;
-  size_t num_renders_ = 0;
   bool allocated_ = false;
 
   std::vector<GroupDecCache> group_dec_caches_;
-
-  
-  const SizeConstraints* constraints_ = nullptr;
 
   
   
@@ -285,7 +320,10 @@ class FrameDecoder {
   
   bool use_slow_rendering_pipeline_;
 
-  bool pause_at_progressive_ = false;
+  JxlProgressiveDetail progressive_detail_ = kFrames;
+  
+  
+  std::vector<int> passes_to_pause_;
 };
 
 }  

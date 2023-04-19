@@ -8,6 +8,7 @@
 
 
 
+#include "lib/extras/enc/encode.h"
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
@@ -19,10 +20,12 @@
 namespace jxl {
 namespace extras {
 
+std::unique_ptr<Encoder> GetEXREncoder();
+
 
 
 Status EncodeImageEXR(const CodecInOut* io, const ColorEncoding& c_desired,
-                      ThreadPool* pool, PaddedBytes* bytes);
+                      ThreadPool* pool, std::vector<uint8_t>* bytes);
 
 }  
 }  

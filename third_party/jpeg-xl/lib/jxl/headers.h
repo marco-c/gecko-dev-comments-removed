@@ -29,10 +29,6 @@ static constexpr uint8_t kCodestreamMarker = 0x0A;
 
 class SizeHeader : public Fields {
  public:
-  
-  
-  static constexpr size_t kMaxBits = 78;
-
   SizeHeader();
   JXL_FIELDS_NAME(SizeHeader)
 

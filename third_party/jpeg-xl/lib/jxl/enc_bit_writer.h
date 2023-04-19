@@ -38,10 +38,6 @@ struct BitWriter {
   BitWriter(BitWriter&&) = default;
   BitWriter& operator=(BitWriter&&) = default;
 
-  explicit BitWriter(PaddedBytes&& donor)
-      : bits_written_(donor.size() * kBitsPerByte),
-        storage_(std::move(donor)) {}
-
   size_t BitsWritten() const { return bits_written_; }
 
   Span<const uint8_t> GetSpan() const {
@@ -60,8 +56,11 @@ struct BitWriter {
     return std::move(storage_);
   }
 
+ private:
   
   void AppendByteAligned(const Span<const uint8_t>& span);
+
+ public:
   
   void AppendByteAligned(const BitWriter& other);
   void AppendByteAligned(const std::vector<std::unique_ptr<BitWriter>>& others);

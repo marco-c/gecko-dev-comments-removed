@@ -114,13 +114,13 @@ struct TreeSamples {
   
   std::vector<std::vector<uint8_t>> props;
   
-  std::vector<std::vector<int>> compact_properties;
+  std::vector<std::vector<int32_t>> compact_properties;
   
   std::vector<uint32_t> props_to_use;
   
   std::vector<Predictor> predictors;
   
-  static constexpr int kPropertyRange = 511;
+  static constexpr int32_t kPropertyRange = 511;
   std::vector<std::vector<uint8_t>> property_mapping;
   
   size_t num_samples = 0;

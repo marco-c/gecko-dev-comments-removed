@@ -170,7 +170,9 @@ Status EncodeFile(const CompressParams& params, const CodecInOut* io,
   }
 
   
+  BitWriter::Allotment allotment(&writer, 8);
   writer.ZeroPadToByte();
+  ReclaimAndCharge(&writer, &allotment, kLayerHeader, aux_out);
 
   if (cparams.progressive_mode || cparams.qprogressive_mode) {
     if (cparams.saliency_map != nullptr) {

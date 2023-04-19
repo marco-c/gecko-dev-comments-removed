@@ -154,6 +154,46 @@ inline float FastErff(float f) {
 }
 
 
+
+
+template <class V>
+V CubeRootAndAdd(const V x, const V add) {
+  const HWY_FULL(float) df;
+  const HWY_FULL(int32_t) di;
+
+  const auto kExpBias = Set(di, 0x54800000);  
+  const auto kExpMul = Set(di, 0x002AAAAA);   
+  const auto k1_3 = Set(df, 1.0f / 3);
+  const auto k4_3 = Set(df, 4.0f / 3);
+
+  const auto xa = x;  
+  const auto xa_3 = k1_3 * xa;
+
+  
+  const auto m1 = BitCast(di, xa);
+  
+  
+  
+  
+  const auto m2 =
+      IfThenZeroElse(m1 == Zero(di), kExpBias - (ShiftRight<23>(m1)) * kExpMul);
+  auto r = BitCast(df, m2);
+
+  
+  for (int i = 0; i < 3; i++) {
+    const auto r2 = r * r;
+    r = NegMulAdd(xa_3, r2 * r2, k4_3 * r);
+  }
+  
+  auto r2 = r * r;
+  r = MulAdd(k1_3, NegMulAdd(xa, r2 * r2, r), r);
+  r2 = r * r;
+  r = MulAdd(r2, x, add);
+
+  return r;
+}
+
+
 }  
 }  
 HWY_AFTER_NAMESPACE();
@@ -161,6 +201,8 @@ HWY_AFTER_NAMESPACE();
 #endif  
 
 #if HWY_ONCE
+#ifndef FAST_MATH_ONCE
+#define FAST_MATH_ONCE
 
 namespace jxl {
 inline float FastLog2f(float f) { return HWY_STATIC_DISPATCH(FastLog2f)(f); }
@@ -172,4 +214,5 @@ inline float FastCosf(float f) { return HWY_STATIC_DISPATCH(FastCosf)(f); }
 inline float FastErff(float f) { return HWY_STATIC_DISPATCH(FastErff)(f); }
 }  
 
+#endif  
 #endif  
