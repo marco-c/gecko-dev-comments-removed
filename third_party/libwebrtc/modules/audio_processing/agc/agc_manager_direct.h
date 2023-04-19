@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "modules/audio_processing/agc/agc.h"
 #include "modules/audio_processing/agc/clipping_predictor.h"
+#include "modules/audio_processing/agc/clipping_predictor_evaluator.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gtest_prod_util.h"
@@ -41,16 +42,17 @@ class AgcManagerDirect final {
   
   
   
-  AgcManagerDirect(int num_capture_channels,
-                   int startup_min_level,
-                   int clipped_level_min,
-                   bool disable_digital_adaptive,
-                   int sample_rate_hz,
-                   int clipped_level_step,
-                   float clipped_ratio_threshold,
-                   int clipped_wait_frames,
-                   const AudioProcessing::Config::GainController1::
-                       AnalogGainController::ClippingPredictor& clipping_cfg);
+  AgcManagerDirect(
+      int num_capture_channels,
+      int startup_min_level,
+      int clipped_level_min,
+      bool disable_digital_adaptive,
+      int sample_rate_hz,
+      int clipped_level_step,
+      float clipped_ratio_threshold,
+      int clipped_wait_frames,
+      const AudioProcessing::Config::GainController1::AnalogGainController::
+          ClippingPredictor& clipping_config);
 
   ~AgcManagerDirect();
   AgcManagerDirect(const AgcManagerDirect&) = delete;
@@ -73,10 +75,15 @@ class AgcManagerDirect final {
   int sample_rate_hz() const { return sample_rate_hz_; }
 
   
-  bool clipping_predictor_enabled() const;
+  absl::optional<int> GetDigitalComressionGain();
 
   
-  absl::optional<int> GetDigitalComressionGain();
+  bool clipping_predictor_enabled() const { return !!clipping_predictor_; }
+
+  
+  bool use_clipping_predictor_step() const {
+    return use_clipping_predictor_step_;
+  }
 
  private:
   friend class AgcManagerDirectTest;
@@ -99,20 +106,24 @@ class AgcManagerDirect final {
                            ClippingParametersVerified);
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
                            DisableClippingPredictorDoesNotLowerVolume);
+  FRIEND_TEST_ALL_PREFIXES(
+      AgcManagerDirectStandaloneTest,
+      EnableClippingPredictorWithUnusedPredictedStepDoesNotLowerVolume);
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
                            EnableClippingPredictorLowersVolume);
 
   
   
-  AgcManagerDirect(Agc* agc,
-                   int startup_min_level,
-                   int clipped_level_min,
-                   int sample_rate_hz,
-                   int clipped_level_step,
-                   float clipped_ratio_threshold,
-                   int clipped_wait_frames,
-                   const AudioProcessing::Config::GainController1::
-                       AnalogGainController::ClippingPredictor& clipping_cfg);
+  AgcManagerDirect(
+      Agc* agc,
+      int startup_min_level,
+      int clipped_level_min,
+      int sample_rate_hz,
+      int clipped_level_step,
+      float clipped_ratio_threshold,
+      int clipped_wait_frames,
+      const AudioProcessing::Config::GainController1::AnalogGainController::
+          ClippingPredictor& clipping_config);
 
   void AnalyzePreProcess(const float* const* audio, size_t samples_per_channel);
 
@@ -138,6 +149,9 @@ class AgcManagerDirect final {
   std::vector<absl::optional<int>> new_compressions_to_set_;
 
   const std::unique_ptr<ClippingPredictor> clipping_predictor_;
+  const bool use_clipping_predictor_step_;
+  ClippingPredictorEvaluator clipping_predictor_evaluator_;
+  int clipping_predictor_log_counter_;
 };
 
 class MonoAgc {

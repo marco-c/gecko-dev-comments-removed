@@ -907,33 +907,62 @@ TEST(AgcManagerDirectStandaloneTest,
       kClippedWaitFrames, default_config);
   manager->Initialize();
   EXPECT_FALSE(manager->clipping_predictor_enabled());
+  EXPECT_FALSE(manager->use_clipping_predictor_step());
+}
+
+TEST(AgcManagerDirectStandaloneTest, ClippingPredictorDisabledByDefault) {
+  constexpr ClippingPredictorConfig kDefaultConfig;
+  EXPECT_FALSE(kDefaultConfig.enabled);
 }
 
 TEST(AgcManagerDirectStandaloneTest,
      EnableClippingPredictorEnablesClippingPredictor) {
-  const ClippingPredictorConfig config(
-      {true, ClippingPredictorConfig::kClippingEventPrediction,
-       5, 5,
-       5, -1.0f,
-       3.0f});
+  
+  ClippingPredictorConfig config;
+  config.enabled = true;
+  config.use_predicted_step = true;
   std::unique_ptr<AgcManagerDirect> manager = CreateAgcManagerDirect(
       kInitialVolume, kClippedLevelStep, kClippedRatioThreshold,
       kClippedWaitFrames, config);
   manager->Initialize();
   EXPECT_TRUE(manager->clipping_predictor_enabled());
+  EXPECT_TRUE(manager->use_clipping_predictor_step());
 }
 
 TEST(AgcManagerDirectStandaloneTest,
      DisableClippingPredictorDoesNotLowerVolume) {
-  const ClippingPredictorConfig default_config;
-  EXPECT_FALSE(default_config.enabled);
+  
+  constexpr ClippingPredictorConfig kConfig{false};
   AgcManagerDirect manager(new ::testing::NiceMock<MockAgc>(), kInitialVolume,
                            kClippedMin, kSampleRateHz, kClippedLevelStep,
-                           kClippedRatioThreshold, kClippedWaitFrames,
-                           default_config);
+                           kClippedRatioThreshold, kClippedWaitFrames, kConfig);
   manager.Initialize();
   manager.set_stream_analog_level(255);
   EXPECT_FALSE(manager.clipping_predictor_enabled());
+  EXPECT_FALSE(manager.use_clipping_predictor_step());
+  EXPECT_EQ(manager.stream_analog_level(), 255);
+  manager.Process(nullptr);
+  CallPreProcessAudioBuffer(10, 0.99f, manager);
+  EXPECT_EQ(manager.stream_analog_level(), 255);
+  CallPreProcessAudioBuffer(300, 0.99f, manager);
+  EXPECT_EQ(manager.stream_analog_level(), 255);
+  CallPreProcessAudioBuffer(10, 0.99f, manager);
+  EXPECT_EQ(manager.stream_analog_level(), 255);
+}
+
+TEST(AgcManagerDirectStandaloneTest,
+     EnableClippingPredictorWithUnusedPredictedStepDoesNotLowerVolume) {
+  
+  ClippingPredictorConfig config;
+  config.enabled = true;
+  config.use_predicted_step = false;
+  AgcManagerDirect manager(new ::testing::NiceMock<MockAgc>(), kInitialVolume,
+                           kClippedMin, kSampleRateHz, kClippedLevelStep,
+                           kClippedRatioThreshold, kClippedWaitFrames, config);
+  manager.Initialize();
+  manager.set_stream_analog_level(255);
+  EXPECT_TRUE(manager.clipping_predictor_enabled());
+  EXPECT_FALSE(manager.use_clipping_predictor_step());
   EXPECT_EQ(manager.stream_analog_level(), 255);
   manager.Process(nullptr);
   CallPreProcessAudioBuffer(10, 0.99f, manager);
@@ -945,17 +974,17 @@ TEST(AgcManagerDirectStandaloneTest,
 }
 
 TEST(AgcManagerDirectStandaloneTest, EnableClippingPredictorLowersVolume) {
-  const ClippingPredictorConfig config(
-      {true, ClippingPredictorConfig::kClippingEventPrediction,
-       5, 5,
-       5, -1.0f,
-       3.0f});
+  
+  ClippingPredictorConfig config;
+  config.enabled = true;
+  config.use_predicted_step = true;
   AgcManagerDirect manager(new ::testing::NiceMock<MockAgc>(), kInitialVolume,
                            kClippedMin, kSampleRateHz, kClippedLevelStep,
                            kClippedRatioThreshold, kClippedWaitFrames, config);
   manager.Initialize();
   manager.set_stream_analog_level(255);
   EXPECT_TRUE(manager.clipping_predictor_enabled());
+  EXPECT_TRUE(manager.use_clipping_predictor_step());
   EXPECT_EQ(manager.stream_analog_level(), 255);
   manager.Process(nullptr);
   CallPreProcessAudioBuffer(10, 0.99f, manager);

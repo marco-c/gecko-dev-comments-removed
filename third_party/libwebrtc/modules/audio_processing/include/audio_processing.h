@@ -365,6 +365,10 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
           float clipping_threshold = -1.0f;
           
           float crest_factor_margin = 3.0f;
+          
+          
+          
+          bool use_predicted_step = true;
         } clipping_predictor;
       } analog_gain_controller;
     } gain_controller1;
