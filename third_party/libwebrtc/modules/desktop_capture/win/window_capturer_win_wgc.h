@@ -11,19 +11,22 @@
 #ifndef MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURER_WIN_WGC_H_
 #define MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURER_WIN_WGC_H_
 
+#include <d3d11.h>
+#include <wrl/client.h>
+#include <map>
 #include <memory>
 
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/win/wgc_capture_session.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
 
 namespace webrtc {
 
-class WindowCapturerWinWgc : public DesktopCapturer {
+class WindowCapturerWinWgc final : public DesktopCapturer {
  public:
   WindowCapturerWinWgc(bool enumerate_current_process_windows);
 
-  
   WindowCapturerWinWgc(const WindowCapturerWinWgc&) = delete;
   WindowCapturerWinWgc& operator=(const WindowCapturerWinWgc&) = delete;
 
@@ -39,12 +42,26 @@ class WindowCapturerWinWgc : public DesktopCapturer {
   bool SelectSource(SourceId id) override;
 
  private:
+  
+  
   Callback* callback_ = nullptr;
 
   
   
+  
   HWND window_ = nullptr;
+
+  
   WindowCaptureHelperWin window_capture_helper_;
+
+  
+  
+  Microsoft::WRL::ComPtr<::ID3D11Device> d3d11_device_;
+
+  
+  
+  
+  std::map<HWND, WgcCaptureSession> ongoing_captures_;
   bool enumerate_current_process_windows_;
 };
 

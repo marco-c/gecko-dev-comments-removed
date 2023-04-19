@@ -20,6 +20,13 @@
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer_differ_wrapper.h"
 
+#if defined(RTC_ENABLE_WIN_WGC)
+#include "modules/desktop_capture/win/window_capturer_win_wgc.h"
+#include "rtc_base/win/windows_version.h"
+
+const bool kUseWinWgcCapturer = false;
+#endif  
+
 #if defined(WEBRTC_USE_PIPEWIRE) || defined(WEBRTC_USE_X11)
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>
@@ -53,6 +60,16 @@ bool DesktopCapturer::IsOccluded(const DesktopVector& pos) {
 
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateWindowCapturer(
     const DesktopCaptureOptions& options) {
+#if defined(RTC_ENABLE_WIN_WGC)
+  
+  
+  
+  if (kUseWinWgcCapturer &&
+      rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN10_RS5) {
+    return WindowCapturerWinWgc::CreateRawWindowCapturer(options);
+  }
+#endif  
+
 #if defined(WEBRTC_WIN)
   if (options.allow_cropping_window_capturer()) {
     return CroppingWindowCapturer::CreateCapturer(options);
