@@ -1392,6 +1392,13 @@ static inline void TryToDealWithScrollbarChange(nsChangeHint& aHint,
       aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
       return;
     }
+  } else if (aFrame->IsTextInputFrame()) {
+    
+    
+    
+    
+    aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
+    return;
   } else if (!scrollable) {
     
     
