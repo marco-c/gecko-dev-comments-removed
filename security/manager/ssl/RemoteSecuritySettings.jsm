@@ -590,10 +590,8 @@ class CRLiteFilters {
     let filtersDownloaded = [];
     for (let filter of filtersToDownload) {
       try {
-        
-        let localURI = await this.client.attachments.downloadToDisk(filter);
-        let buffer = await (await fetch(localURI)).arrayBuffer();
-        let bytes = new Uint8Array(buffer);
+        let attachment = await this.client.attachments.downloadAsBytes(filter);
+        let bytes = new Uint8Array(attachment.buffer);
         lazy.log.debug(
           `Downloaded ${filter.details.name}: ${bytes.length} bytes`
         );
