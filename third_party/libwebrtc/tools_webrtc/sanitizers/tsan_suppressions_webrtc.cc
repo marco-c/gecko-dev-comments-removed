@@ -31,8 +31,6 @@ char kTSanDefaultSuppressions[] =
     
     
     "race:rtc_base/logging.cc\n"
-    "race:rtc_base/shared_exclusive_lock_unittest.cc\n"
-    "race:rtc_base/signal_thread_unittest.cc\n"
 
     
     
