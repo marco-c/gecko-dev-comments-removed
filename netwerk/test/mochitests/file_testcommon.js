@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const SCRIPT_URL = SimpleTest.getTestFileURL("file_chromecommon.js");

@@ -1,8 +1,6 @@
 
 
 
-
-
 const { TabStateFlusher } = ChromeUtils.import(
   "resource:///modules/sessionstore/TabStateFlusher.jsm"
 );

@@ -3,7 +3,6 @@
 
 "use strict";
 
-
 const ICON_DATAURL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
 const TEST_URI = NetUtil.newURI("http://mozilla.org/");
@@ -179,6 +178,7 @@ add_task(async function page_content_process() {
   );
 
   await contentPage.spawn(PAGE_ICON_TEST_URLS, async URLS => {
+    
     
     
     for (let url of URLS) {

@@ -1,6 +1,4 @@
 
-
-
 add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_only_mode", true]],

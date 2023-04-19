@@ -1,5 +1,3 @@
-
-
 add_task(async function() {
   await pushPrefs(["ui.key.contentAccess", 5], ["ui.key.chromeAccess", 5]);
 

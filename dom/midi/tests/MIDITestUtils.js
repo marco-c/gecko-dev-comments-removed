@@ -1,4 +1,3 @@
-
 var MIDITestUtils = {
   permissionSetup: allow => {
     let permPromiseRes;
