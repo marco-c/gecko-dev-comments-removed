@@ -3,6 +3,12 @@
 
 "use strict";
 
+
+
+add_setup(async function ensureNoExistingProcess() {
+  await utilityProcessTest().stopProcess();
+});
+
 add_task(async () => {
   const utilityPid = await startUtilityProcess();
 
@@ -23,7 +29,7 @@ add_task(async () => {
       aAmount,
       aDescription
     ) {
-      const expectedProcess = `Utility (pid: ${utilityPid}, sandboxingKind: ${kGenericUtility})`;
+      const expectedProcess = `Utility (pid: ${utilityPid}, sandboxingKind: ${kGenericUtilitySandbox})`;
       if (aProcess !== expectedProcess) {
         return;
       }
