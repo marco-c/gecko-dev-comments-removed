@@ -1563,6 +1563,8 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
 
 
 Nullable<VideoPixelFormat> VideoFrame::GetFormat() const {
+  AssertIsOnOwningThread();
+
   
   return mResource
              ? Nullable<VideoPixelFormat>(mResource->mFormat.PixelFormat())
@@ -1571,16 +1573,22 @@ Nullable<VideoPixelFormat> VideoFrame::GetFormat() const {
 
 
 uint32_t VideoFrame::CodedWidth() const {
+  AssertIsOnOwningThread();
+
   return static_cast<uint32_t>(mCodedSize.Width());
 }
 
 
 uint32_t VideoFrame::CodedHeight() const {
+  AssertIsOnOwningThread();
+
   return static_cast<uint32_t>(mCodedSize.Height());
 }
 
 
 already_AddRefed<DOMRectReadOnly> VideoFrame::GetCodedRect() const {
+  AssertIsOnOwningThread();
+
   
   return MakeAndAddRef<DOMRectReadOnly>(
       mParent, 0.0f, 0.0f, static_cast<double>(mCodedSize.Width()),
@@ -1589,6 +1597,8 @@ already_AddRefed<DOMRectReadOnly> VideoFrame::GetCodedRect() const {
 
 
 already_AddRefed<DOMRectReadOnly> VideoFrame::GetVisibleRect() const {
+  AssertIsOnOwningThread();
+
   
   
   return mResource ? MakeAndAddRef<DOMRectReadOnly>(
@@ -1601,32 +1611,44 @@ already_AddRefed<DOMRectReadOnly> VideoFrame::GetVisibleRect() const {
 
 
 uint32_t VideoFrame::DisplayWidth() const {
+  AssertIsOnOwningThread();
+
   return static_cast<uint32_t>(mDisplaySize.Width());
 }
 
 
 uint32_t VideoFrame::DisplayHeight() const {
+  AssertIsOnOwningThread();
+
   return static_cast<uint32_t>(mDisplaySize.Height());
 }
 
 
 Nullable<uint64_t> VideoFrame::GetDuration() const {
+  AssertIsOnOwningThread();
+
   return mDuration ? Nullable<uint64_t>(*mDuration) : Nullable<uint64_t>();
 }
 
 
 Nullable<int64_t> VideoFrame::GetTimestamp() const {
+  AssertIsOnOwningThread();
+
   return mTimestamp ? Nullable<int64_t>(*mTimestamp) : Nullable<int64_t>();
 }
 
 
 already_AddRefed<VideoColorSpace> VideoFrame::ColorSpace() const {
+  AssertIsOnOwningThread();
+
   return MakeAndAddRef<VideoColorSpace>(mParent, mColorSpace);
 }
 
 
 uint32_t VideoFrame::AllocationSize(const VideoFrameCopyToOptions& aOptions,
                                     ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+
   
   
   if (!mResource) {
@@ -1650,6 +1672,8 @@ uint32_t VideoFrame::AllocationSize(const VideoFrameCopyToOptions& aOptions,
 already_AddRefed<Promise> VideoFrame::CopyTo(
     const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aDestination,
     const VideoFrameCopyToOptions& aOptions, ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+
   
   
   if (!mResource) {
@@ -1733,6 +1757,8 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
 
 
 already_AddRefed<VideoFrame> VideoFrame::Clone(ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+
   
   
   if (!mResource) {
@@ -1746,6 +1772,8 @@ already_AddRefed<VideoFrame> VideoFrame::Clone(ErrorResult& aRv) {
 
 
 void VideoFrame::Close() {
+  AssertIsOnOwningThread();
+
   
   mResource.reset();
   mCodedSize = gfx::IntSize();

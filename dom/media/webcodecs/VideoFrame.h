@@ -163,6 +163,9 @@ class VideoFrame final : public nsISupports, public nsWrapperCache {
 
  private:
   
+  void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(VideoFrame); }
+
+  
   class Resource final {
    public:
     Resource(const RefPtr<layers::Image>& aImage, const Format& aFormat);
