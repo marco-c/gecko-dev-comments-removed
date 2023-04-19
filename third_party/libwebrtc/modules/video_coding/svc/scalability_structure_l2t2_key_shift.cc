@@ -20,20 +20,27 @@
 namespace webrtc {
 namespace {
 
-constexpr auto kNotPresent = DecodeTargetIndication::kNotPresent;
-constexpr auto kDiscardable = DecodeTargetIndication::kDiscardable;
-constexpr auto kSwitch = DecodeTargetIndication::kSwitch;
+DecodeTargetIndication
+Dti(int sid, int tid, const ScalableVideoController::LayerFrameConfig& config) {
+  if (config.IsKeyframe()) {
+    RTC_DCHECK_EQ(config.TemporalId(), 0);
+    return sid < config.SpatialId() ? DecodeTargetIndication::kNotPresent
+                                    : DecodeTargetIndication::kSwitch;
+  }
 
-constexpr DecodeTargetIndication kDtis[6][4] = {
-    {kSwitch, kSwitch, kSwitch, kSwitch},                   
-    {kNotPresent, kNotPresent, kSwitch, kSwitch},           
-    {kSwitch, kSwitch, kNotPresent, kNotPresent},           
-    {kNotPresent, kNotPresent, kNotPresent, kDiscardable},  
-    {kNotPresent, kDiscardable, kNotPresent, kNotPresent},  
-    {kNotPresent, kNotPresent, kSwitch, kSwitch},           
-};
+  if (sid != config.SpatialId() || tid < config.TemporalId()) {
+    return DecodeTargetIndication::kNotPresent;
+  }
+  if (tid == config.TemporalId() && tid > 0) {
+    return DecodeTargetIndication::kDiscardable;
+  }
+  return DecodeTargetIndication::kSwitch;
+}
 
 }  
+
+constexpr int ScalabilityStructureL2T2KeyShift::kNumSpatialLayers;
+constexpr int ScalabilityStructureL2T2KeyShift::kNumTemporalLayers;
 
 ScalabilityStructureL2T2KeyShift::~ScalabilityStructureL2T2KeyShift() = default;
 
@@ -65,52 +72,80 @@ FrameDependencyStructure ScalabilityStructureL2T2KeyShift::DependencyStructure()
   return structure;
 }
 
-ScalableVideoController::LayerFrameConfig
-ScalabilityStructureL2T2KeyShift::KeyFrameConfig() const {
-  return LayerFrameConfig().Id(0).Keyframe().S(0).T(0).Update(0);
-}
-
 std::vector<ScalableVideoController::LayerFrameConfig>
 ScalabilityStructureL2T2KeyShift::NextFrameConfig(bool restart) {
+  std::vector<LayerFrameConfig> configs;
+  configs.reserve(2);
   if (restart) {
     next_pattern_ = kKey;
   }
-  std::vector<LayerFrameConfig> result(2);
 
   
   
   switch (next_pattern_) {
     case kKey:
-      result[0] = KeyFrameConfig();
-      result[1].Id(1).S(1).T(0).Reference(0).Update(1);
+      if (DecodeTargetIsActive(0, 0)) {
+        configs.emplace_back();
+        configs.back().S(0).T(0).Update(0).Keyframe();
+      }
+      if (DecodeTargetIsActive(1, 0)) {
+        configs.emplace_back();
+        configs.back().S(1).T(0).Update(1);
+        if (DecodeTargetIsActive(0, 0)) {
+          configs.back().Reference(0);
+        } else {
+          configs.back().Keyframe();
+        }
+      }
       next_pattern_ = kDelta0;
       break;
     case kDelta0:
-      result[0].Id(2).S(0).T(0).ReferenceAndUpdate(0);
-      result[1].Id(3).S(1).T(1).Reference(1);
+      if (DecodeTargetIsActive(0, 0)) {
+        configs.emplace_back();
+        configs.back().S(0).T(0).ReferenceAndUpdate(0);
+      }
+      if (DecodeTargetIsActive(1, 1)) {
+        configs.emplace_back();
+        configs.back().S(1).T(1).Reference(1);
+      }
+      if (configs.empty() && DecodeTargetIsActive(1, 0)) {
+        configs.emplace_back();
+        configs.back().S(1).T(0).ReferenceAndUpdate(1);
+      }
       next_pattern_ = kDelta1;
       break;
     case kDelta1:
-      result[0].Id(4).S(0).T(1).Reference(0);
-      result[1].Id(5).S(1).T(0).ReferenceAndUpdate(1);
+      if (DecodeTargetIsActive(0, 1)) {
+        configs.emplace_back();
+        configs.back().S(0).T(1).Reference(0);
+      }
+      if (DecodeTargetIsActive(1, 0)) {
+        configs.emplace_back();
+        configs.back().S(1).T(0).ReferenceAndUpdate(1);
+      }
+      if (configs.empty() && DecodeTargetIsActive(0, 0)) {
+        configs.emplace_back();
+        configs.back().S(0).T(0).ReferenceAndUpdate(0);
+      }
       next_pattern_ = kDelta0;
       break;
   }
-  return result;
+
+  RTC_DCHECK(!configs.empty() || active_decode_targets_.none());
+  return configs;
 }
 
 GenericFrameInfo ScalabilityStructureL2T2KeyShift::OnEncodeDone(
     const LayerFrameConfig& config) {
-  RTC_CHECK_GE(config.Id(), 0);
-  RTC_CHECK_LT(config.Id(), ABSL_ARRAYSIZE(kDtis));
-
   GenericFrameInfo frame_info;
   frame_info.spatial_id = config.SpatialId();
   frame_info.temporal_id = config.TemporalId();
   frame_info.encoder_buffers = config.Buffers();
-  int config_id = config.IsKeyframe() ? 0 : config.Id();
-  frame_info.decode_target_indications.assign(std::begin(kDtis[config_id]),
-                                              std::end(kDtis[config_id]));
+  for (int sid = 0; sid < kNumSpatialLayers; ++sid) {
+    for (int tid = 0; tid < kNumTemporalLayers; ++tid) {
+      frame_info.decode_target_indications.push_back(Dti(sid, tid, config));
+    }
+  }
   if (config.IsKeyframe()) {
     frame_info.part_of_chain = {true, true};
   } else if (config.TemporalId() == 0) {
@@ -120,6 +155,22 @@ GenericFrameInfo ScalabilityStructureL2T2KeyShift::OnEncodeDone(
     frame_info.part_of_chain = {false, false};
   }
   return frame_info;
+}
+
+void ScalabilityStructureL2T2KeyShift::OnRatesUpdated(
+    const VideoBitrateAllocation& bitrates) {
+  for (int sid = 0; sid < kNumSpatialLayers; ++sid) {
+    
+    bool active = bitrates.GetBitrate(sid, 0) > 0;
+    if (!DecodeTargetIsActive(sid, 0) && active) {
+      
+      next_pattern_ = kKey;
+    }
+
+    SetDecodeTargetIsActive(sid, 0, active);
+    SetDecodeTargetIsActive(sid, 1,
+                            active && bitrates.GetBitrate(sid, 1) > 0);
+  }
 }
 
 }  
