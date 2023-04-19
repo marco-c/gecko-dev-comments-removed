@@ -36,6 +36,7 @@
 
 #include "nsAppRunner.h"
 #include "nsExceptionHandler.h"
+#include "mozilla/RuntimeExceptionModule.h"
 #include "nsThreadUtils.h"
 #include "nsJSUtils.h"
 #include "nsWidgetsCID.h"
@@ -489,6 +490,12 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
         
         NS_WARNING("Could not setup crash reporting\n");
       }
+    } else {
+      
+      
+      
+      
+      CrashReporter::UnregisterRuntimeExceptionModule();
     }
   }
 
