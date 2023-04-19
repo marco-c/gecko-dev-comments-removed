@@ -197,6 +197,14 @@ TEST_F(QualityScalingTest, NoAdaptDownForLowStartBitrate_Simulcast) {
           false, false);
 }
 
+TEST_F(QualityScalingTest, AdaptsDownForHighQp_HighestStreamActive_Vp8) {
+  
+  test::ScopedFieldTrials field_trials(kPrefix + "1,1,0,0,0,0" + kEnd);
+
+  RunTest("VP8", {false, false, true}, kHighStartBps,
+          true, true);
+}
+
 TEST_F(QualityScalingTest,
        AdaptsDownForLowStartBitrate_HighestStreamActive_Vp8) {
   
@@ -204,6 +212,14 @@ TEST_F(QualityScalingTest,
 
   RunTest("VP8", {false, false, true}, kLowStartBps,
           true, true);
+}
+
+TEST_F(QualityScalingTest, NoAdaptDownForHighQp_LowestStreamActive_Vp8) {
+  
+  test::ScopedFieldTrials field_trials(kPrefix + "1,1,0,0,0,0" + kEnd);
+
+  RunTest("VP8", {true, false, false}, kHighStartBps,
+          true, false);
 }
 
 TEST_F(QualityScalingTest,
@@ -250,6 +266,15 @@ TEST_F(QualityScalingTest, AdaptsDownForLowStartBitrate_Vp9) {
           true, true);
 }
 
+TEST_F(QualityScalingTest, NoAdaptDownForHighQp_LowestStreamActive_Vp9) {
+  
+  test::ScopedFieldTrials field_trials(kPrefix + "0,0,1,1,0,0" + kEnd +
+                                       "WebRTC-VP9QualityScaler/Enabled/");
+
+  RunTest("VP9", {true, false, false}, kHighStartBps,
+          true, false);
+}
+
 TEST_F(QualityScalingTest,
        NoAdaptDownForLowStartBitrate_LowestStreamActive_Vp9) {
   
@@ -258,6 +283,15 @@ TEST_F(QualityScalingTest,
 
   RunTest("VP9", {true, false, false}, kLowStartBps,
           true, false);
+}
+
+TEST_F(QualityScalingTest, AdaptsDownForHighQp_MiddleStreamActive_Vp9) {
+  
+  test::ScopedFieldTrials field_trials(kPrefix + "0,0,1,1,0,0" + kEnd +
+                                       "WebRTC-VP9QualityScaler/Enabled/");
+
+  RunTest("VP9", {false, true, false}, kHighStartBps,
+          true, true);
 }
 
 TEST_F(QualityScalingTest,

@@ -359,7 +359,7 @@ void ApplyVp9BitrateLimits(const VideoEncoder::EncoderInfo& encoder_info,
 
   
   absl::optional<uint32_t> pixels =
-      VideoStreamEncoderResourceManager::GetSingleActiveLayerPixels(*codec);
+      VideoStreamAdapter::GetSingleActiveLayerPixels(*codec);
   if (!pixels.has_value()) {
     return;
   }
