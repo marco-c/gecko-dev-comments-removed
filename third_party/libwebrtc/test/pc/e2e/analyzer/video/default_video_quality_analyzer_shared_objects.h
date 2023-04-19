@@ -215,8 +215,6 @@ struct DefaultVideoQualityAnalyzerOptions {
   
   bool use_weighted_psnr = false;
   
-  bool heavy_metrics_computation_enabled = true;
-  
   
   
   
