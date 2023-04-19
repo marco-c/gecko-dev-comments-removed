@@ -159,7 +159,6 @@ interface nsIRequest : nsISupports
 
 
 
-
     nsIRequest_TRRMode getTRRMode();
     void setTRRMode(in nsIRequest_TRRMode mode);
 
