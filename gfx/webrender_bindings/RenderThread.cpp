@@ -70,6 +70,9 @@ LazyLogModule gRenderThreadLog("RenderThread");
 
 static StaticRefPtr<RenderThread> sRenderThread;
 static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
+#ifdef DEBUG
+static bool sRenderThreadEverStarted = false;
+#endif
 
 RenderThread::RenderThread(RefPtr<nsIThread> aThread)
     : mThread(std::move(aThread)),
@@ -91,6 +94,13 @@ RenderThread* RenderThread::Get() { return sRenderThread; }
 void RenderThread::Start(uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sRenderThread);
+
+#ifdef DEBUG
+  
+  
+  MOZ_ASSERT(!sRenderThreadEverStarted);
+  sRenderThreadEverStarted = true;
+#endif
 
   RefPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(
@@ -139,28 +149,33 @@ void RenderThread::ShutDown() {
     sRenderThread->mHasShutdown = true;
   }
 
-  layers::SynchronousTask task("RenderThread");
-  RefPtr<Runnable> runnable =
-      WrapRunnable(RefPtr<RenderThread>(sRenderThread.get()),
-                   &RenderThread::ShutDownTask, &task);
+  RefPtr<Runnable> runnable = WrapRunnable(
+      RefPtr<RenderThread>(sRenderThread.get()), &RenderThread::ShutDownTask);
   sRenderThread->PostRunnable(runnable.forget());
-  task.Wait();
+
+  
+  
+  nsCOMPtr<nsIThread> oldThread = sRenderThread->GetRenderThread();
+  oldThread->Shutdown();
 
   layers::SharedSurfacesParent::Shutdown();
   layers::CompositableInProcessManager::Shutdown();
 
-  sRenderThread = nullptr;
 #ifdef XP_WIN
   if (widget::WinCompositorWindowThread::Get()) {
     widget::WinCompositorWindowThread::ShutDown();
   }
 #endif
+
+  
+  
+  
+  sRenderThread = nullptr;
 }
 
 extern void ClearAllBlobImageResources();
 
-void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
-  layers::AutoCompleteTask complete(aTask);
+void RenderThread::ShutDownTask() {
   MOZ_ASSERT(IsInRenderThread());
   LOG("RenderThread::ShutDownTask()");
 
