@@ -448,6 +448,7 @@ VideoStreamEncoder::VideoStreamEncoder(
         &stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(&stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(this);
+    stream_resource_manager_.MaybeInitializePixelLimitResource();
 
     
     adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();

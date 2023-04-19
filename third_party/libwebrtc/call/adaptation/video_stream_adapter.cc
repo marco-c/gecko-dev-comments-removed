@@ -45,19 +45,6 @@ int GetHigherFrameRateThan(int fps) {
              : std::numeric_limits<int>::max();
 }
 
-
-
-
-
-
-
-
-
-int GetLowerResolutionThan(int pixel_count) {
-  RTC_DCHECK(pixel_count != std::numeric_limits<int>::max());
-  return (pixel_count * 3) / 5;
-}
-
 int GetIncreasedMaxPixelsWanted(int target_pixels) {
   if (target_pixels == std::numeric_limits<int>::max())
     return std::numeric_limits<int>::max();
@@ -137,6 +124,19 @@ VideoSourceRestrictions FilterRestrictionsByDegradationPreference(
       source_restrictions.set_max_frame_rate(absl::nullopt);
   }
   return source_restrictions;
+}
+
+
+
+
+
+
+
+
+
+int GetLowerResolutionThan(int pixel_count) {
+  RTC_DCHECK(pixel_count != std::numeric_limits<int>::max());
+  return (pixel_count * 3) / 5;
 }
 
 
