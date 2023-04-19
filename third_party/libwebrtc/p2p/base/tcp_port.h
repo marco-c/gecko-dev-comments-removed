@@ -124,7 +124,7 @@ class TCPPort : public Port {
   friend class TCPConnection;
 };
 
-class TCPConnection : public Connection {
+class TCPConnection : public Connection, public sigslot::has_slots<> {
  public:
   
   TCPConnection(rtc::WeakPtr<Port> tcp_port,

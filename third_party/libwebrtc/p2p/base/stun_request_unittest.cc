@@ -39,7 +39,7 @@ int TotalDelay(int sends) {
 }
 }  
 
-class StunRequestTest : public ::testing::Test, public sigslot::has_slots<> {
+class StunRequestTest : public ::testing::Test {
  public:
   StunRequestTest()
       : manager_(rtc::Thread::Current(),

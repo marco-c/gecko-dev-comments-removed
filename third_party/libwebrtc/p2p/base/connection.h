@@ -71,7 +71,7 @@ class ConnectionRequest : public StunRequest {
 
 
 
-class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
+class Connection : public CandidatePairInterface {
  public:
   struct SentPing {
     SentPing(const std::string id, int64_t sent_time, uint32_t nomination)
