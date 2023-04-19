@@ -257,9 +257,6 @@ class BaseChannel : public ChannelInterface,
 
   void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route);
 
-  bool PacketIsRtcp(const rtc::PacketTransportInternal* transport,
-                    const char* data,
-                    size_t len);
   bool SendPacket(bool rtcp,
                   rtc::CopyOnWriteBuffer* packet,
                   const rtc::PacketOptions& options);
@@ -285,7 +282,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  virtual void UpdateMediaSendRecvState_w() = 0;
+  virtual void UpdateMediaSendRecvState_w() RTC_RUN_ON(worker_thread()) = 0;
 
   bool UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                             webrtc::SdpType type,
@@ -297,10 +294,12 @@ class BaseChannel : public ChannelInterface,
       RTC_RUN_ON(worker_thread());
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
                                  webrtc::SdpType type,
-                                 std::string* error_desc) = 0;
+                                 std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) = 0;
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
                                   webrtc::SdpType type,
-                                  std::string* error_desc) = 0;
+                                  std::string* error_desc)
+      RTC_RUN_ON(worker_thread()) = 0;
   
   
   
@@ -332,14 +331,15 @@ class BaseChannel : public ChannelInterface,
   
   std::string ToString() const;
 
-  void SetNegotiatedHeaderExtensions_w(const RtpHeaderExtensions& extensions);
+  void SetNegotiatedHeaderExtensions_w(const RtpHeaderExtensions& extensions)
+      RTC_RUN_ON(worker_thread());
 
   
   RtpHeaderExtensions GetNegotiatedRtpHeaderExtensions() const override;
 
  private:
-  bool ConnectToRtpTransport();
-  void DisconnectFromRtpTransport();
+  bool ConnectToRtpTransport() RTC_RUN_ON(network_thread());
+  void DisconnectFromRtpTransport() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet)
       RTC_RUN_ON(network_thread());
 
