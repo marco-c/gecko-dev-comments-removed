@@ -1139,13 +1139,66 @@ static LogicalSize CalculateContainingBlockSizeForAbsolutes(
 
 
 
-static nsBlockFrame* GetAsLineClampDescendant(nsIFrame* aFrame) {
-  if (nsBlockFrame* block = do_QueryFrame(aFrame)) {
+static const nsBlockFrame* GetAsLineClampDescendant(const nsIFrame* aFrame) {
+  if (const nsBlockFrame* block = do_QueryFrame(aFrame)) {
     if (!block->HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS)) {
       return block;
     }
   }
   return nullptr;
+}
+
+static nsBlockFrame* GetAsLineClampDescendant(nsIFrame* aFrame) {
+  return const_cast<nsBlockFrame*>(
+      GetAsLineClampDescendant(const_cast<const nsIFrame*>(aFrame)));
+}
+
+static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
+  if (!aFrame->StyleDisplay()->mWebkitLineClamp) {
+    return false;
+  }
+
+  if (!aFrame->HasAllStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  auto origDisplay = [&] {
+    if (aFrame->Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+      
+      
+      MOZ_ASSERT(aFrame->GetParent());
+      const auto& parentDisp = *aFrame->GetParent()->StyleDisplay();
+      MOZ_ASSERT(parentDisp.mWebkitLineClamp ==
+                     aFrame->StyleDisplay()->mWebkitLineClamp,
+                 ":-moz-scrolled-content should inherit -webkit-line-clamp, "
+                 "via rule in UA stylesheet");
+      return parentDisp.mOriginalDisplay;
+    }
+    return aFrame->StyleDisplay()->mOriginalDisplay;
+  }();
+  return nsStyleDisplay::DisplayInside(origDisplay) ==
+         StyleDisplayInside::WebkitBox;
+}
+
+bool nsBlockFrame::IsInLineClampContext() const {
+  if (IsLineClampRoot(this)) {
+    return true;
+  }
+  const nsBlockFrame* cur = this;
+  while (GetAsLineClampDescendant(cur)) {
+    cur = do_QueryFrame(cur->GetParent());
+    if (!cur) {
+      return false;
+    }
+    if (IsLineClampRoot(cur)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -1253,13 +1306,6 @@ static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
 }
 
 void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
-
-static bool IsLineClampItem(const ReflowInput& aReflowInput) {
-  return aReflowInput.mFlags.mApplyLineClamp ||
-         (aReflowInput.mParentReflowInput &&
-          aReflowInput.mParentReflowInput->mFrame->IsScrollFrame() &&
-          aReflowInput.mParentReflowInput->mFlags.mApplyLineClamp);
-}
 
 void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
@@ -1523,7 +1569,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   
-  if (IsLineClampItem(aReflowInput)) {
+  if (aReflowInput.mStyleDisplay->mWebkitLineClamp) {
     ClearLineClampEllipsis();
   }
 
@@ -1742,7 +1788,7 @@ bool nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine() {
 }
 
 static nsLineBox* FindLineClampTarget(nsBlockFrame*& aFrame,
-                                      uint32_t aLineNumber) {
+                                      StyleLineClamp aLineNumber) {
   MOZ_ASSERT(aLineNumber > 0);
   MOZ_ASSERT(!aFrame->HasAnyStateBits(NS_BLOCK_HAS_LINE_CLAMP_ELLIPSIS),
              "Should have been removed earlier in nsBlockReflow::Reflow");
@@ -1797,43 +1843,23 @@ static nsLineBox* FindLineClampTarget(nsBlockFrame*& aFrame,
 }
 
 static nscoord ApplyLineClamp(const ReflowInput& aReflowInput,
-                              nsBlockFrame* aFrame, nscoord aContentBSize) {
-  
-  
-  
-  
-  if (!IsLineClampItem(aReflowInput)) {
-    return aContentBSize;
+                              nsBlockFrame* aFrame,
+                              nscoord aContentBlockEndEdge) {
+  if (!IsLineClampRoot(aFrame)) {
+    return aContentBlockEndEdge;
   }
 
-  auto container =
-      static_cast<nsFlexContainerFrame*>(nsLayoutUtils::GetClosestFrameOfType(
-          aFrame, LayoutFrameType::FlexContainer));
-  MOZ_ASSERT(container,
-             "A flex item affected by -webkit-line-clamp must have an ancestor "
-             "flex container");
-
-  uint32_t lineClamp = container->GetLineClampValue();
-  if (lineClamp == 0) {
-    
-    return aContentBSize;
-  }
-
-  MOZ_ASSERT(container->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX),
-             "Should only have an effective -webkit-line-clamp value if we "
-             "are in a legacy flex container");
-
+  auto lineClamp = aReflowInput.mStyleDisplay->mWebkitLineClamp;
   nsBlockFrame* frame = aFrame;
   nsLineBox* line = FindLineClampTarget(frame, lineClamp);
   if (!line) {
     
-    return aContentBSize;
+    return aContentBlockEndEdge;
   }
 
   
   line->SetHasLineClampEllipsis();
   frame->AddStateBits(NS_BLOCK_HAS_LINE_CLAMP_ELLIPSIS);
-  container->AddStateBits(NS_STATE_FLEX_HAS_LINE_CLAMP_ELLIPSIS);
 
   
   nscoord edge = line->BEnd();
@@ -1969,11 +1995,16 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
       
       finalSize.BSize(wm) = aReflowInput.AvailableBSize();
     } else if (aState.mReflowStatus.IsComplete()) {
-      nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
-      nscoord lineClampedContentBSize =
-          ApplyLineClamp(aReflowInput, this, contentBSize);
-      nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(lineClampedContentBSize,
-                                                        aState.mConsumedBSize);
+      const nscoord lineClampedContentBlockEndEdge =
+          ApplyLineClamp(aReflowInput, this, blockEndEdgeOfChildren);
+
+      const nscoord bpBStart = borderPadding.BStart(wm);
+      const nscoord contentBSize = blockEndEdgeOfChildren - bpBStart;
+      const nscoord lineClampedContentBSize =
+          lineClampedContentBlockEndEdge - bpBStart;
+
+      const nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(
+          lineClampedContentBSize, aState.mConsumedBSize);
       if (autoBSize != contentBSize) {
         
         

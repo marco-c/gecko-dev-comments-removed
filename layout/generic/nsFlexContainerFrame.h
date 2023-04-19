@@ -184,14 +184,6 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   }
 
   
-
-
-
-
-
-  uint32_t GetLineClampValue() const;
-
-  
   bool DrainSelfOverflowList() override;
   void AppendFrames(ChildListID aListID, nsFrameList& aFrameList) override;
   void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
@@ -335,8 +327,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
       const nscoord aTentativeContentBoxMainSize,
       const nscoord aTentativeContentBoxCrossSize,
       const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
-      nscoord aCrossGapSize, bool aHasLineClampEllipsis,
-      nsTArray<StrutInfo>& aStruts,
+      nscoord aCrossGapSize, nsTArray<StrutInfo>& aStruts,
       ComputedFlexContainerInfo* const aContainerInfo);
 
   
@@ -389,7 +380,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
       FlexLine& aLine, nsIFrame* aChildFrame,
       const ReflowInput& aParentReflowInput,
       const FlexboxAxisTracker& aAxisTracker,
-      const nscoord aTentativeContentBoxCrossSize, bool aHasLineClampEllipsis);
+      const nscoord aTentativeContentBoxCrossSize);
 
   
 
@@ -409,7 +400,6 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
   nscoord MeasureFlexItemContentBSize(FlexItem& aFlexItem,
                                       bool aForceBResizeForMeasuringReflow,
-                                      bool aHasLineClampEllipsis,
                                       const ReflowInput& aParentReflowInput);
 
   
@@ -419,8 +409,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
   void ResolveAutoFlexBasisAndMinSize(FlexItem& aFlexItem,
                                       const ReflowInput& aItemReflowInput,
-                                      const FlexboxAxisTracker& aAxisTracker,
-                                      bool aHasLineClampEllipsis);
+                                      const FlexboxAxisTracker& aAxisTracker);
 
   
 
@@ -451,7 +440,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                          const nscoord aTentativeContentBoxCrossSize,
                          const nsTArray<StrutInfo>& aStruts,
                          const FlexboxAxisTracker& aAxisTracker,
-                         nscoord aMainGapSize, bool aHasLineClampEllipsis,
+                         nscoord aMainGapSize,
                          nsTArray<nsIFrame*>& aPlaceholders,
                          nsTArray<FlexLine>& aLines);
 
@@ -579,8 +568,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
       const nscoord aSumOfPrevInFlowsChildrenBlockSize,
-      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis,
-      FlexLayoutResult& aFlr);
+      const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr);
 
   
 
@@ -619,8 +607,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                                 const FlexItem& aItem,
                                 mozilla::LogicalPoint& aFramePos,
                                 const mozilla::LogicalSize& aAvailableSize,
-                                const nsSize& aContainerSize,
-                                bool aHasLineClampEllipsis);
+                                const nsSize& aContainerSize);
 
   
 

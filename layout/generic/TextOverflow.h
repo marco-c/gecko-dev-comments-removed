@@ -16,6 +16,7 @@
 #include <algorithm>
 
 class nsIScrollableFrame;
+class nsBlockFrame;
 class nsLineBox;
 
 namespace mozilla {
@@ -34,21 +35,22 @@ class TextOverflow final {
 
 
   static Maybe<TextOverflow> WillProcessLines(nsDisplayListBuilder* aBuilder,
-                                              nsIFrame* aBlockFrame);
+                                              nsBlockFrame*);
 
   
 
 
 
 
-  TextOverflow(nsDisplayListBuilder* aBuilder, nsIFrame* aBlockFrame);
+  TextOverflow(nsDisplayListBuilder* aBuilder, nsBlockFrame*);
 
   TextOverflow() = delete;
   ~TextOverflow() = default;
   TextOverflow(TextOverflow&&) = default;
+
   TextOverflow(const TextOverflow&) = delete;
-  TextOverflow& operator=(TextOverflow&&) = default;
   TextOverflow& operator=(const TextOverflow&) = delete;
+  TextOverflow& operator=(TextOverflow&&) = delete;
 
   
 
@@ -71,7 +73,12 @@ class TextOverflow final {
   static bool HasBlockEllipsis(nsIFrame* aBlockFrame);
 
   
-  static bool CanHaveOverflowMarkers(nsIFrame* aBlockFrame);
+  
+  
+  
+  enum class BeforeReflow : bool { No, Yes };
+  static bool CanHaveOverflowMarkers(nsBlockFrame*,
+                                     BeforeReflow = BeforeReflow::No);
 
   typedef nsTHashSet<nsIFrame*> FrameHashtable;
 
@@ -246,6 +253,9 @@ class TextOverflow final {
   nsSize mBlockSize;
   WritingMode mBlockWM;
   bool mCanHaveInlineAxisScrollbar;
+  
+  
+  const bool mInLineClampContext;
   bool mAdjustForPixelSnapping;
 
   class Marker {
@@ -266,7 +276,12 @@ class TextOverflow final {
 
     void SetupString(nsIFrame* aFrame);
 
-    bool IsSuppressed() const { return !mHasBlockEllipsis && mStyle->IsClip(); }
+    bool IsSuppressed(bool aInLineClampContext) const {
+      if (aInLineClampContext) {
+        return !mHasBlockEllipsis;
+      }
+      return mStyle->IsClip();
+    }
     bool IsNeeded() const { return mHasOverflow || mHasBlockEllipsis; }
     void Reset() {
       mHasOverflow = false;

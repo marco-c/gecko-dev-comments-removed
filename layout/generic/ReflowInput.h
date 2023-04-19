@@ -539,20 +539,6 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    bool mInsideLineClamp : 1;
-
-    
-    
-    
-    
-    
-    
-    bool mApplyLineClamp : 1;
-
-    
-    
-    
-    
     
     
     

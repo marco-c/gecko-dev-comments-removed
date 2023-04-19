@@ -621,6 +621,13 @@ class nsBlockFrame : public nsContainerFrame {
 
   void ClearLineClampEllipsis();
 
+  
+
+
+
+
+  bool IsInLineClampContext() const;
+
  protected:
   
   void DoRemoveFrameInternal(nsIFrame* aDeletedFrame, uint32_t aFlags,

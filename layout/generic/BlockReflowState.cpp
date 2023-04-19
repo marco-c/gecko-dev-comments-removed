@@ -87,14 +87,8 @@ BlockReflowState::BlockReflowState(const ReflowInput& aReflowInput,
     mFlags.mBlockNeedsFloatManager = true;
   }
 
-  
-  
-  
-  
-  
-  mFlags.mCanHaveOverflowMarkers =
-      aReflowInput.mFlags.mInsideLineClamp ||
-      css::TextOverflow::CanHaveOverflowMarkers(mBlock);
+  mFlags.mCanHaveOverflowMarkers = css::TextOverflow::CanHaveOverflowMarkers(
+      mBlock, css::TextOverflow::BeforeReflow::Yes);
 
   MOZ_ASSERT(FloatManager(),
              "Float manager should be valid when creating BlockReflowState!");
