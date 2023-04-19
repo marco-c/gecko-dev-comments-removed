@@ -148,8 +148,6 @@ AudioReceiveStream::AudioReceiveStream(
   channel_receive_->SetReceiveCodecs(config.decoder_map);
   
   
-  RTC_DCHECK(!config.frame_transformer);
-  RTC_DCHECK(!config.frame_decryptor);
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
