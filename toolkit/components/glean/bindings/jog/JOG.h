@@ -71,6 +71,17 @@ class JOG {
 
 
   static Maybe<uint32_t> GetMetric(const nsACString& aMetricName);
+
+  
+
+
+
+
+
+
+
+
+  static Maybe<uint32_t> GetPing(const nsACString& aPingName);
 };
 
 }  
