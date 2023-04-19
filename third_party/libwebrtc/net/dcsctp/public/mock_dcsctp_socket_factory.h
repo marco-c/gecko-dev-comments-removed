@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+#ifndef NET_DCSCTP_PUBLIC_MOCK_DCSCTP_SOCKET_FACTORY_H_
+#define NET_DCSCTP_PUBLIC_MOCK_DCSCTP_SOCKET_FACTORY_H_
+
+#include <memory>
+
+#include "net/dcsctp/public/dcsctp_socket_factory.h"
+#include "test/gmock.h"
+
+namespace dcsctp {
+
+class MockDcSctpSocketFactory : public DcSctpSocketFactory {
+ public:
+  MOCK_METHOD(std::unique_ptr<DcSctpSocketInterface>,
+              Create,
+              (absl::string_view log_prefix,
+               DcSctpSocketCallbacks& callbacks,
+               std::unique_ptr<PacketObserver> packet_observer,
+               const DcSctpOptions& options),
+              (override));
+};
+
+}  
+
+#endif  
