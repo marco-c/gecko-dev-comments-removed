@@ -496,6 +496,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   bool ShouldFollowAnchor();
 
+  nsIFrame* GetAnchorFrame() const;
+
  public:
   
 
@@ -504,13 +506,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
 
 
-  bool IsDirectionRTL() const {
-    return mAnchorContent && mAnchorContent->GetPrimaryFrame()
-               ? mAnchorContent->GetPrimaryFrame()
-                         ->StyleVisibility()
-                         ->mDirection == mozilla::StyleDirection::Rtl
-               : StyleVisibility()->mDirection == mozilla::StyleDirection::Rtl;
-  }
+  bool IsDirectionRTL() const;
 
   bool ShouldFollowAnchor(nsRect& aRect);
 
