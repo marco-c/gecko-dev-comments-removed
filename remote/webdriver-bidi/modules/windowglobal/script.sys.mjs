@@ -1,44 +1,31 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["script"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { Module } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/Module.sys.mjs"
-);
+import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  deserialize: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   getFramesFromStack: "chrome://remote/content/shared/Stack.sys.mjs",
   isChromeFrame: "chrome://remote/content/shared/Stack.sys.mjs",
+  serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
+  stringify: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
+  WindowRealm: "chrome://remote/content/webdriver-bidi/Realm.sys.mjs",
 });
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  deserialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
-  serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
-  stringify: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
-  WindowRealm: "chrome://remote/content/webdriver-bidi/Realm.jsm",
-});
+/**
+ * @typedef {string} EvaluationStatus
+ **/
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Enum of possible evaluation states.
+ *
+ * @readonly
+ * @enum {EvaluationStatus}
+ **/
 const EvaluationStatus = {
   Normal: "normal",
   Throw: "throw",
@@ -53,7 +40,7 @@ class ScriptModule extends Module {
 
     this.#defaultRealm = new lazy.WindowRealm(this.messageHandler.window);
 
-    
+    // Maps sandbox names to instances of window realms.
     this.#realms = new Map();
   }
 
@@ -71,10 +58,10 @@ class ScriptModule extends Module {
     const frames = lazy.getFramesFromStack(stack) || [];
 
     const callFrames = frames
-      
+      // Remove chrome/internal frames
       .filter(frame => !lazy.isChromeFrame(frame))
-      
-      
+      // Translate frames from getFramesFromStack to frames expected by
+      // WebDriver BiDi.
       .map(frame => {
         return {
           columnNumber: frame.columnNumber,
@@ -106,13 +93,13 @@ class ScriptModule extends Module {
       evaluationStatus = EvaluationStatus.Normal;
       if (
         awaitPromise &&
-        
+        // Only non-primitive return values are wrapped in Debugger.Object.
         rv.return instanceof Debugger.Object &&
         rv.return.isPromise
       ) {
         try {
-          
-          
+          // Force wrapping the promise resolution result in a Debugger.Object
+          // wrapper for consistency with the synchronous codepath.
           const asyncResult = await rv.return.unsafeDereference();
           result = realm.globalObjectReference.makeDebuggeeValue(asyncResult);
         } catch (asyncException) {
@@ -123,12 +110,12 @@ class ScriptModule extends Module {
           stack = rv.return.promiseResolutionSite;
         }
       } else {
-        
+        // rv.return is a Debugger.Object or a primitive.
         result = rv.return;
       }
     } else if ("throw" in rv) {
-      
-      
+      // rv.throw will be set if the evaluation synchronously failed, either if
+      // the script contains a syntax error or throws an exception.
       evaluationStatus = EvaluationStatus.Throw;
       exception = rv.throw;
       stack = rv.stack;
@@ -205,50 +192,50 @@ class ScriptModule extends Module {
 
   #toRawObject(maybeDebuggerObject) {
     if (maybeDebuggerObject instanceof Debugger.Object) {
-      
-      
+      // Retrieve the referent for the provided Debugger.object.
+      // See https://firefox-source-docs.mozilla.org/devtools-user/debugger-api/debugger.object/index.html
       const rawObject = maybeDebuggerObject.unsafeDereference();
 
-      
-      
-      
-      
-      
+      // TODO: Getters for Maps and Sets iterators return "Opaque" objects and
+      // are not iterable. RemoteValue.jsm' serializer should handle calling
+      // waiveXrays on Maps/Sets/... and then unwaiveXrays on entries but since
+      // we serialize with maxDepth=1, calling waiveXrays once on the root
+      // object allows to return correctly serialized values.
       return Cu.waiveXrays(rawObject);
     }
 
-    
-    
+    // If maybeDebuggerObject was not a Debugger.Object, it is a primitive value
+    // which can be used as is.
     return maybeDebuggerObject;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Call a function in the current window global.
+   *
+   * @param {Object} options
+   * @param {boolean} awaitPromise
+   *     Determines if the command should wait for the return value of the
+   *     expression to resolve, if this return value is a Promise.
+   * @param {Array<RemoteValue>=} commandArguments
+   *     The arguments to pass to the function call.
+   * @param {string} functionDeclaration
+   *     The body of the function to call.
+   * @param {string=} realmId
+   *     The id of the realm.
+   * @param {OwnershipModel} resultOwnership
+   *     The ownership model to use for the results of this evaluation.
+   * @param {string=} sandbox
+   *     The name of the sandbox.
+   * @param {RemoteValue=} thisParameter
+   *     The value of the this keyword for the function call.
+   *
+   * @return {Object}
+   *     - evaluationStatus {EvaluationStatus} One of "normal", "throw".
+   *     - exceptionDetails {ExceptionDetails=} the details of the exception if
+   *     the evaluation status was "throw".
+   *     - result {RemoteValue=} the result of the evaluation serialized as a
+   *     RemoteValue if the evaluation status was "normal".
+   */
   async callFunctionDeclaration(options) {
     const {
       awaitPromise,
@@ -279,18 +266,18 @@ class ScriptModule extends Module {
     return this.#buildReturnValue(rv, realm, awaitPromise, resultOwnership);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Delete the provided handles from the realm corresponding to the provided
+   * sandbox name.
+   *
+   * @param {Object=} options
+   * @param {Array<string>} handles
+   *     Array of handle ids to disown.
+   * @param {string=} realmId
+   *     The id of the realm.
+   * @param {string=} sandbox
+   *     The name of the sandbox.
+   */
   disownHandles(options) {
     const { handles, realmId = null, sandbox: sandboxName = null } = options;
     const realm = this.#getRealm(realmId, sandboxName);
@@ -299,29 +286,29 @@ class ScriptModule extends Module {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Evaluate a provided expression in the current window global.
+   *
+   * @param {Object} options
+   * @param {boolean} awaitPromise
+   *     Determines if the command should wait for the return value of the
+   *     expression to resolve, if this return value is a Promise.
+   * @param {string} expression
+   *     The expression to evaluate.
+   * @param {string=} realmId
+   *     The id of the realm.
+   * @param {OwnershipModel} resultOwnership
+   *     The ownership model to use for the results of this evaluation.
+   * @param {string=} sandbox
+   *     The name of the sandbox.
+   *
+   * @return {Object}
+   *     - evaluationStatus {EvaluationStatus} One of "normal", "throw".
+   *     - exceptionDetails {ExceptionDetails=} the details of the exception if
+   *     the evaluation status was "throw".
+   *     - result {RemoteValue=} the result of the evaluation serialized as a
+   *     RemoteValue if the evaluation status was "normal".
+   */
   async evaluateExpression(options) {
     const {
       awaitPromise,
@@ -337,16 +324,16 @@ class ScriptModule extends Module {
     return this.#buildReturnValue(rv, realm, awaitPromise, resultOwnership);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Get realms for the current window global.
+   *
+   * @return {Array<Object>}
+   *     - context {BrowsingContext} The browsing context, associated with the realm.
+   *     - id {string} The realm unique identifier.
+   *     - origin {string} The serialization of an origin.
+   *     - sandbox {string=} The name of the sandbox.
+   *     - type {RealmType.Window} The window realm type.
+   */
   getWindowRealms() {
     return [this.#defaultRealm, ...this.#realms.values()].map(realm =>
       realm.getInfo()
@@ -354,4 +341,4 @@ class ScriptModule extends Module {
   }
 }
 
-const script = ScriptModule;
+export const script = ScriptModule;

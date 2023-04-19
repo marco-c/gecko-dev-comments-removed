@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["browsingContext"];
-
-const { Module } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/Module.sys.mjs"
-);
+import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
 
@@ -21,7 +15,7 @@ class BrowsingContextModule extends Module {
 
   interceptEvent(name, payload) {
     if (name == "browsingContext.load") {
-      
+      // Resolve browsing context to a TabManager id.
       payload.context = lazy.TabManager.getIdForBrowsingContext(
         payload.context
       );
@@ -31,4 +25,4 @@ class BrowsingContextModule extends Module {
   }
 }
 
-const browsingContext = BrowsingContextModule;
+export const browsingContext = BrowsingContextModule;

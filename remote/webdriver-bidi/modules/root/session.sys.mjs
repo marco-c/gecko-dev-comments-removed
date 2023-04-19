@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["session"];
-
-const { Module } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/Module.sys.mjs"
-);
+import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
 
@@ -27,9 +21,9 @@ class SessionModule extends Module {
   constructor(messageHandler) {
     super(messageHandler);
 
-    
-    
-    
+    // Set of event names which are strings of the form [moduleName].[eventName]
+    // We should only add an actual event listener on the MessageHandler the
+    // first time an event is subscribed to.
     this.#globalEventSet = new Set();
   }
 
@@ -37,27 +31,27 @@ class SessionModule extends Module {
     this.#globalEventSet = null;
   }
 
-  
+  /**
+   * Commands
+   */
 
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Enable certain events either globally, or for a list of browsing contexts.
+   *
+   * @params {Object=} params
+   * @params {Array<String>} events
+   *     List of events to subscribe to.
+   * @params {Array<String>=} contexts
+   *     Optional list of top-level browsing context ids
+   *     to subscribe the events for.
+   *
+   * @throws {InvalidArgumentError}
+   *     If <var>events</var> or <var>contexts</var> are not valid types.
+   */
   async subscribe(params = {}) {
     const { events, contexts = [] } = params;
 
-    
+    // Check input types until we run schema validation.
     lazy.assert.array(events, "events: array value expected");
     events.forEach(name => {
       lazy.assert.string(name, `${name}: string value expected`);
@@ -68,8 +62,8 @@ class SessionModule extends Module {
       lazy.assert.string(context, `${context}: string value expected`);
     });
 
-    
-    
+    // For now just subscribe the events to all available top-level
+    // browsing contexts.
     const allEvents = events
       .map(event => Array.from(this.#obtainEvents(event)))
       .flat();
@@ -94,23 +88,23 @@ class SessionModule extends Module {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Disable certain events either globally, or for a list of browsing contexts.
+   *
+   * @params {Object=} params
+   * @params {Array<String>} events
+   *     List of events to unsubscribe from.
+   * @params {Array<String>=} contexts
+   *     Optional list of top-level browsing context ids
+   *     to unsubscribe the events from.
+   *
+   * @throws {InvalidArgumentError}
+   *     If <var>events</var> or <var>contexts</var> are not valid types.
+   */
   async unsubscribe(params = {}) {
     const { events, contexts = [] } = params;
 
-    
+    // Check input types until we run schema validation.
     lazy.assert.array(events, "events: array value expected");
     events.forEach(name => {
       lazy.assert.string(name, `${name}: string value expected`);
@@ -121,8 +115,8 @@ class SessionModule extends Module {
       lazy.assert.string(context, `${context}: string value expected`);
     });
 
-    
-    
+    // For now just unsubscribe the events from all available top-level
+    // browsing contexts.
     const allEvents = events
       .map(event => Array.from(this.#obtainEvents(event)))
       .flat();
@@ -168,8 +162,8 @@ class SessionModule extends Module {
   }
 
   #getRootModuleClass(moduleName) {
-    
-    
+    // Modules which support event subscriptions should have a root module
+    // defining supported events.
     const rootDestination = { type: lazy.RootMessageHandler.type };
     const moduleClasses = this.messageHandler.getAllModuleClasses(
       moduleName,
@@ -179,49 +173,49 @@ class SessionModule extends Module {
     return moduleClasses[0];
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Obtain a set of events based on the given event name.
+   *
+   * Could contain a period for a
+   *     specific event, or just the module name for all events.
+   *
+   * @param {String} event
+   *     Name of the event to process.
+   *
+   * @returns {Set<String>}
+   *     A Set with the expanded events in the form of `<module>.<event>`.
+   *
+   * @throws {InvalidArgumentError}
+   *     If <var>event</var> does not reference a valid event.
+   */
   #obtainEvents(event) {
     const events = new Set();
 
-    
-    
+    // Check if a period is present that splits the event name into the module,
+    // and the actual event. Hereby only care about the first found instance.
     const index = event.indexOf(".");
     if (index >= 0) {
-      
+      // TODO: Throw invalid argument error if event doesn't exist
       events.add(event);
     } else {
-      
+      // Interpret the name as module, and register all its available events
       this.#assertModuleSupportsEventSubscription(event);
-      
+      // TODO: Append all available events from the module
     }
 
     return events;
   }
 
   #onMessageHandlerEvent = (name, event) => {
-    
-    
-    
-    
-    
-    
+    // TODO: As long as we only support subscribing to all available top-level
+    // browsing contexts, it is fine to always emit an event captured here as
+    // protocol event.
+    // However when we start supporting subscribing per context, the event
+    // should only be emitted if the origin of the event matches a context
+    // descriptor passed to session.subscribe for this event.
     this.messageHandler.emitProtocolEvent(name, event);
   };
 }
 
-
-const session = SessionModule;
+// To export the class as lower-case
+export const session = SessionModule;

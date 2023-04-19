@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["browsingContext"];
-
-const { Module } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/Module.sys.mjs"
-);
+import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
 
@@ -24,7 +18,7 @@ class BrowsingContextModule extends Module {
   constructor(messageHandler) {
     super(messageHandler);
 
-    
+    // Setup the LoadListener as early as possible.
     this.#loadListener = new lazy.LoadListener(this.messageHandler.window);
     this.#loadListener.on("DOMContentLoaded", this.#onDOMContentLoaded);
     this.#loadListener.on("load", this.#onLoad);
@@ -84,21 +78,21 @@ class BrowsingContextModule extends Module {
     if (this.#listeningToLoad) {
       this.emitEvent("browsingContext.load", {
         context: this.messageHandler.context,
-        
-        
+        // TODO: The navigation id should be a real id mapped to the navigation.
+        // See https://bugzilla.mozilla.org/show_bug.cgi?id=1763122
         navigation: null,
         url: data.target.baseURI,
       });
     }
   };
 
-  
-
-
+  /**
+   * Internal commands
+   */
 
   _applySessionData(params) {
-    
-    
+    // TODO: Bug 1775231. Move this logic to a shared module or an abstract
+    // class.
     const { category, added = [], removed = [] } = params;
     if (category === "event") {
       for (const event of added) {
@@ -115,4 +109,4 @@ class BrowsingContextModule extends Module {
   }
 }
 
-const browsingContext = BrowsingContextModule;
+export const browsingContext = BrowsingContextModule;

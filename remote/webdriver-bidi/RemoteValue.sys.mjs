@@ -1,19 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = [
-  "deserialize",
-  "OwnershipModel",
-  "serialize",
-  "stringify",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -27,17 +16,17 @@ XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.WEBDRIVER_BIDI)
 );
 
+/**
+ * @typedef {Object} OwnershipModel
+ **/
 
-
-
-
-
-
-
-
-
-
-const OwnershipModel = {
+/**
+ * Enum of ownership models supported by the serialization.
+ *
+ * @readonly
+ * @enum {OwnershipModel}
+ **/
+export const OwnershipModel = {
   None: "none",
   Root: "root",
 };
@@ -63,14 +52,14 @@ const TYPED_ARRAY_CLASSES = [
   "BigUint64Array",
 ];
 
-
-
-
-
-
-
-
-
+/**
+ * Build the serialized RemoteValue.
+ *
+ * @return {Object}
+ *     An object with a mandatory `type` property, and optional `handle`,
+ *     depending on the OwnershipModel, used for the serialization and
+ *     on the value's type.
+ */
 function buildSerialized(type, handle = null) {
   const serialized = { type };
 
@@ -81,20 +70,20 @@ function buildSerialized(type, handle = null) {
   return serialized;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to validate if a date string follows Date Time String format.
+ *
+ * @see https://tc39.es/ecma262/#sec-date-time-string-format
+ *
+ * @param {string} dateString
+ *     String which needs to be validated.
+ *
+ * @throws {InvalidArgumentError}
+ *     If <var>dateString</var> doesn't follow the format.
+ */
 function checkDateTimeString(dateString) {
-  
-  
+  // Check if a date string follows a simplification of
+  // the ISO 8601 calendar date extended format.
   const expandedYear = "[+-]\\d{6}";
   const year = "\\d{4}";
   const YYYY = `${expandedYear}|${year}`;
@@ -108,7 +97,7 @@ function checkDateTimeString(dateString) {
   const time = `T${HH_mm}(?::${SS}(?:\\.${sss})?(?:${TZ})?)?`;
   const iso8601Format = new RegExp(`^${date}(?:${time})?$`);
 
-  
+  // Check also if a date string is a valid date.
   if (Number.isNaN(Date.parse(dateString)) || !iso8601Format.test(dateString)) {
     throw new lazy.error.InvalidArgumentError(
       `Expected "value" for Date to be a Date Time string, got ${dateString}`
@@ -116,21 +105,21 @@ function checkDateTimeString(dateString) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to deserialize value list.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#deserialize-value-list
+ *
+ * @param {Realm} realm
+ *     The Realm in which the value is deserialized.
+ * @param {Array} serializedValueList
+ *     List of serialized values.
+ *
+ * @return {Array} List of deserialized values.
+ *
+ * @throws {InvalidArgumentError}
+ *     If <var>serializedValueList</var> is not an array.
+ */
 function deserializeValueList(realm, serializedValueList) {
   lazy.assert.array(
     serializedValueList,
@@ -146,22 +135,22 @@ function deserializeValueList(realm, serializedValueList) {
   return deserializedValues;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to deserialize key-value list.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#deserialize-key-value-list
+ *
+ * @param {Realm} realm
+ *     The Realm in which the value is deserialized.
+ * @param {Array} serializedKeyValueList
+ *     List of serialized key-value.
+ *
+ * @return {Array} List of deserialized key-value.
+ *
+ * @throws {InvalidArgumentError}
+ *     If <var>serializedKeyValueList</var> is not an array or
+ *     not an array of key-value arrays.
+ */
 function deserializeKeyValueList(realm, serializedKeyValueList) {
   lazy.assert.array(
     serializedKeyValueList,
@@ -189,22 +178,22 @@ function deserializeKeyValueList(realm, serializedKeyValueList) {
   return deserializedKeyValueList;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-function deserialize(realm, serializedValue) {
+/**
+ * Deserialize a local value.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#deserialize-local-value
+ *
+ * @param {Realm} realm
+ *     The Realm in which the value is deserialized.
+ * @param {Object} serializedValue
+ *     Value of any type to be deserialized.
+ *
+ * @return {Object} Deserialized representation of the value.
+ */
+export function deserialize(realm, serializedValue) {
   const { handle, type, value } = serializedValue;
 
-  
+  // With a handle present deserialize as remote reference.
   if (handle !== undefined) {
     lazy.assert.string(
       handle,
@@ -223,7 +212,7 @@ function deserialize(realm, serializedValue) {
 
   lazy.assert.string(type, `Expected "type" to be a string, got ${type}`);
 
-  
+  // Primitive protocol values
   switch (type) {
     case "undefined":
       return undefined;
@@ -236,12 +225,12 @@ function deserialize(realm, serializedValue) {
       );
       return value;
     case "number":
-      
+      // If value is already a number return its value.
       if (typeof value === "number") {
         return value;
       }
 
-      
+      // Otherwise it has to be one of the special strings
       lazy.assert.in(
         value,
         ["NaN", "-0", "Infinity", "-Infinity"],
@@ -267,14 +256,14 @@ function deserialize(realm, serializedValue) {
         );
       }
 
-    
+    // Non-primitive protocol values
     case "array":
       const array = realm.cloneIntoRealm([]);
       deserializeValueList(realm, value).forEach(v => array.push(v));
       return array;
     case "date":
-      
-      
+      // We want to support only Date Time String format,
+      // check if the value follows it.
       checkDateTimeString(value);
 
       return realm.cloneIntoRealm(new Date(value));
@@ -321,22 +310,22 @@ function deserialize(realm, serializedValue) {
   return undefined;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to retrieve the handle id for a given object, for the provided realm
+ * and ownership type.
+ *
+ * See https://w3c.github.io/webdriver-bidi/#handle-for-an-object
+ *
+ * @param {Realm} realm
+ *     The Realm from which comes the value being serialized.
+ * @param {OwnershipModel} ownershipType
+ *     The ownership model to use for this serialization.
+ * @param {Object} object
+ *     The object being serialized.
+ *
+ * @return {string} The unique handle id for the object. Will be null if the
+ *     Ownership type is "none".
+ */
 function getHandleForObject(realm, ownershipType, object) {
   if (ownershipType === OwnershipModel.None) {
     return null;
@@ -344,24 +333,24 @@ function getHandleForObject(realm, ownershipType, object) {
   return realm.getHandleForObject(object);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to serialize as a list.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#serialize-as-a-list
+ *
+ * @param {Iterable} iterable
+ *     List of values to be serialized.
+ * @param {number|null} maxDepth
+ *     Depth of a serialization.
+ * @param {OwnershipModel} childOwnership
+ *     The ownership model to use for this serialization.
+ * @param {Map} serializationInternalMap
+ *     Map of internal ids.
+ * @param {Realm} realm
+ *     The Realm from which comes the value being serialized.
+ *
+ * @return {Array} List of serialized values.
+ */
 function serializeList(
   iterable,
   maxDepth,
@@ -387,24 +376,24 @@ function serializeList(
   return serialized;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to serialize as a mapping.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#serialize-as-a-mapping
+ *
+ * @param {Iterable} iterable
+ *     List of values to be serialized.
+ * @param {number|null} maxDepth
+ *     Depth of a serialization.
+ * @param {OwnershipModel} childOwnership
+ *     The ownership model to use for this serialization.
+ * @param {Map} serializationInternalMap
+ *     Map of internal ids.
+ * @param {Realm} realm
+ *     The Realm from which comes the value being serialized.
+ *
+ * @return {Array} List of serialized values.
+ */
 function serializeMapping(
   iterable,
   maxDepth,
@@ -440,25 +429,25 @@ function serializeMapping(
   return serialized;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function serialize(
+/**
+ * Serialize a value as a remote value.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#serialize-as-a-remote-value
+ *
+ * @param {Object} value
+ *     Value of any type to be serialized.
+ * @param {number|null} maxDepth
+ *     Depth of a serialization.
+ * @param {OwnershipModel} ownershipType
+ *     The ownership model to use for this serialization.
+ * @param {Map} serializationInternalMap
+ *     Map of internal ids.
+ * @param {Realm} realm
+ *     The Realm from which comes the value being serialized.
+ *
+ * @return {Object} Serialized representation of the value.
+ */
+export function serialize(
   value,
   maxDepth,
   ownershipType,
@@ -467,7 +456,7 @@ function serialize(
 ) {
   const type = typeof value;
 
-  
+  // Primitive protocol values
   if (type == "undefined") {
     return { type };
   } else if (Object.is(value, null)) {
@@ -489,19 +478,19 @@ function serialize(
   const handleId = getHandleForObject(realm, ownershipType, value);
   const knownObject = serializationInternalMap.has(value);
 
-  
+  // Set the OwnershipModel to use for all complex object serializations.
   const childOwnership = OwnershipModel.None;
 
-  
+  // Remote values
 
-  
-  
+  // symbols are primitive JS values which can only be serialized
+  // as remote values.
   if (type == "symbol") {
     return buildSerialized("symbol", handleId);
   }
 
-  
-  
+  // All other remote values are non-primitives and their
+  // className can be extracted with ChromeUtils.getClassName
   const className = ChromeUtils.getClassName(value);
   if (className == "Array") {
     const serialized = buildSerialized("array", handleId);
@@ -570,8 +559,8 @@ function serialize(
   } else if (TYPED_ARRAY_CLASSES.includes(className)) {
     return buildSerialized("typedarray", handleId);
   }
-  
-  
+  // TODO: Bug 1770733 and 1792524. Remove the if condition when the serialization of all the other types is implemented,
+  // since then the serialization of plain objects should be the fallback.
   else if (className == "Object") {
     const serialized = buildSerialized("object", handleId);
     setInternalIdsIfNeeded(serializationInternalMap, serialized, value);
@@ -595,57 +584,57 @@ function serialize(
   return undefined;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Set the internalId property of a provided serialized RemoteValue,
+ * and potentially of a previously created serialized RemoteValue,
+ * corresponding to the same provided object.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#set-internal-ids-if-needed
+ *
+ * @param {Map} serializationInternalMap
+ *     Map of objects to remote values.
+ * @param {Object} remoteValue
+ *     A serialized RemoteValue for the provided object.
+ * @param {Object} object
+ *     Object of any type to be serialized.
+ */
 function setInternalIdsIfNeeded(serializationInternalMap, remoteValue, object) {
   if (!serializationInternalMap.has(object)) {
-    
-    
-    
+    // If the object was not tracked yet in the current serialization, add
+    // a new entry in the serialization internal map. An internal id will only
+    // be generated if the same object is encountered again.
     serializationInternalMap.set(object, remoteValue);
   } else {
-    
-    
+    // This is at least the second time this object is encountered, retrieve the
+    // original remote value stored for this object.
     const previousRemoteValue = serializationInternalMap.get(object);
 
     if (!previousRemoteValue.internalId) {
-      
-      
+      // If the original remote value has no internal id yet, generate a uuid
+      // and update the internalId of the original remote value with it.
       previousRemoteValue.internalId = getUUID();
     }
 
-    
+    // Copy the internalId of the original remote value to the new remote value.
     remoteValue.internalId = previousRemoteValue.internalId;
   }
 }
 
-
-
-
-
-
-
-
-
-function stringify(obj) {
+/**
+ * Safely stringify a value.
+ *
+ * @param {Object} value
+ *     Value of any type to be stringified.
+ *
+ * @return {string} String representation of the value.
+ */
+export function stringify(obj) {
   let text;
   try {
     text =
       obj !== null && typeof obj === "object" ? obj.toString() : String(obj);
   } catch (e) {
-    
+    // The error-case will also be handled in `finally {}`.
   } finally {
     if (typeof text != "string") {
       text = Object.prototype.toString.apply(obj);

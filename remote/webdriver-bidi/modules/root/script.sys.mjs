@@ -1,18 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["script"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { Module } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/messagehandler/Module.sys.mjs"
-);
+import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
 
@@ -21,105 +11,102 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
+  RealmType: "chrome://remote/content/webdriver-bidi/Realm.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
 });
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
-  RealmType: "chrome://remote/content/webdriver-bidi/Realm.jsm",
-});
-
 class ScriptModule extends Module {
   destroy() {}
 
-  
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Used to represent a frame of a JavaScript stack trace.
+   *
+   * @typedef StackFrame
+   *
+   * @property {number} columnNumber
+   * @property {string} functionName
+   * @property {number} lineNumber
+   * @property {string} url
+   */
+
+  /**
+   * Used to represent a JavaScript stack at a point in script execution.
+   *
+   * @typedef StackTrace
+   *
+   * @property {Array<StackFrame>} callFrames
+   */
+
+  /**
+   * Used to represent a JavaScript exception.
+   *
+   * @typedef ExceptionDetails
+   *
+   * @property {number} columnNumber
+   * @property {RemoteValue} exception
+   * @property {number} lineNumber
+   * @property {StackTrace} stackTrace
+   * @property {string} text
+   */
+
+  /**
+   * Used as return value for script.evaluate, as one of the available variants
+   * {ScriptEvaluateResultException} or {ScriptEvaluateResultSuccess}.
+   *
+   * @typedef ScriptEvaluateResult
+   */
+
+  /**
+   * Used as return value for script.evaluate when the script completes with a
+   * thrown exception.
+   *
+   * @typedef ScriptEvaluateResultException
+   *
+   * @property {ExceptionDetails} exceptionDetails
+   * @property {string} realm
+   */
+
+  /**
+   * Used as return value for script.evaluate when the script completes
+   * normally.
+   *
+   * @typedef ScriptEvaluateResultSuccess
+   *
+   * @property {string} realm
+   * @property {RemoteValue} result
+   */
+
+  /**
+   * Calls a provided function with given arguments and scope in the provided
+   * target, which is either a realm or a browsing context.
+   *
+   * @param {Object=} options
+   * @param {Array<RemoteValue>=} arguments
+   *     The arguments to pass to the function call.
+   * @param {boolean} awaitPromise
+   *     Determines if the command should wait for the return value of the
+   *     expression to resolve, if this return value is a Promise.
+   * @param {string} functionDeclaration
+   *     The expression to evaluate.
+   * @param {OwnershipModel=} resultOwnership
+   *     The ownership model to use for the results of this evaluation. Defaults
+   *     to `OwnershipModel.None`.
+   * @param {Object} target
+   *     The target for the evaluation, which either matches the definition for
+   *     a RealmTarget or for ContextTarget.
+   * @param {RemoteValue=} this
+   *     The value of the this keyword for the function call.
+   *
+   * @returns {ScriptEvaluateResult}
+   *
+   * @throws {InvalidArgumentError}
+   *     If any of the arguments does not have the expected type.
+   * @throws {NoSuchFrameError}
+   *     If the target cannot be found.
+   */
   async callFunction(options = {}) {
     const {
       arguments: commandArguments = null,
@@ -172,18 +159,18 @@ class ScriptModule extends Module {
     return this.#buildReturnValue(evaluationResult);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * The script.disown command disowns the given handles. This does not
+   * guarantee the handled object will be garbage collected, as there can be
+   * other handles or strong ECMAScript references.
+   *
+   * @param {Object=} options
+   * @param {Array<string>} handles
+   *     Array of handle ids to disown.
+   * @param {Object} target
+   *     The target owning the handles, which either matches the definition for
+   *     a RealmTarget or for ContextTarget.
+   */
   async disown(options = {}) {
     const { handles, target = {} } = options;
 
@@ -215,30 +202,30 @@ class ScriptModule extends Module {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Evaluate a provided expression in the provided target, which is either a
+   * realm or a browsing context.
+   *
+   * @param {Object=} options
+   * @param {boolean} awaitPromise
+   *     Determines if the command should wait for the return value of the
+   *     expression to resolve, if this return value is a Promise.
+   * @param {string} expression
+   *     The expression to evaluate.
+   * @param {OwnershipModel=} resultOwnership
+   *     The ownership model to use for the results of this evaluation. Defaults
+   *     to `OwnershipModel.None`.
+   * @param {Object} target
+   *     The target for the evaluation, which either matches the definition for
+   *     a RealmTarget or for ContextTarget.
+   *
+   * @returns {ScriptEvaluateResult}
+   *
+   * @throws {InvalidArgumentError}
+   *     If any of the arguments does not have the expected type.
+   * @throws {NoSuchFrameError}
+   *     If the target cannot be found.
+   */
   async evaluate(options = {}) {
     const {
       awaitPromise,
@@ -280,71 +267,71 @@ class ScriptModule extends Module {
     return this.#buildReturnValue(evaluationResult);
   }
 
-  
+  /**
+   * An object that holds basic information about a realm.
+   *
+   * @typedef BaseRealmInfo
+   *
+   * @property {string} id
+   *     The realm unique identifier.
+   * @property {string} origin
+   *     The serialization of an origin.
+   */
 
+  /**
+   *
+   * @typedef WindowRealmInfoProperties
+   *
+   * @property {string} context
+   *     The browsing context id, associated with the realm.
+   * @property {string=} sandbox
+   *     The name of the sandbox.
+   * @property {RealmType.Window} type
+   *     The window realm type.
+   */
 
+  /**
+   * An object that holds information about a window realm.
+   *
+   * @typedef {BaseRealmInfo & WindowRealmInfoProperties} WindowRealmInfo
+   */
 
+  /**
+   * An object that holds information about a realm.
+   *
+   * @typedef {WindowRealmInfo} RealmInfo
+   */
 
+  /**
+   * An object that holds a list of realms.
+   *
+   * @typedef ScriptGetRealmsResult
+   *
+   * @property {Array<RealmInfo>} realms
+   *     List of realms.
+   */
 
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns a list of all realms, optionally filtered to realms
+   * of a specific type, or to the realms associated with
+   * a specified browsing context.
+   *
+   * @param {Object=} options
+   * @param {string=} context
+   *     The id of the browsing context to filter
+   *     only realms associated with it. If not provided, return realms
+   *     associated with all browsing contexts.
+   * @param {RealmType=} type
+   *     Type of realm to filter.
+   *     If not provided, return realms of all types.
+   *
+   * @returns {ScriptGetRealmsResult}
+   *
+   * @throws {InvalidArgumentError}
+   *     If any of the arguments does not have the expected type.
+   * @throws {NoSuchFrameError}
+   *     If the context cannot be found.
+   */
   async getRealms(options = {}) {
     const { context: contextId = null, type = null } = options;
     const destination = {};
@@ -369,7 +356,7 @@ class ScriptModule extends Module {
         );
       }
 
-      
+      // Remove this check when other realm types are supported
       if (type !== lazy.RealmType.Window) {
         throw new lazy.error.UnsupportedOperationError(
           `Unsupported "type": ${type}. Only "type" ${lazy.RealmType.Window} is currently supported.`
@@ -439,11 +426,11 @@ class ScriptModule extends Module {
   #buildReturnValue(evaluationResult) {
     const rv = { realm: evaluationResult.realmId };
     switch (evaluationResult.evaluationStatus) {
-      
+      // TODO: Compare with EvaluationStatus.Normal after Bug 1774444 is fixed.
       case "normal":
         rv.result = evaluationResult.result;
         break;
-      
+      // TODO: Compare with EvaluationStatus.Throw after Bug 1774444 is fixed.
       case "throw":
         rv.exceptionDetails = evaluationResult.exceptionDetails;
         break;
@@ -510,7 +497,7 @@ class ScriptModule extends Module {
     return realms
       .flat()
       .map(realm => {
-        
+        // Resolve browsing context to a TabManager id.
         realm.context = lazy.TabManager.getIdForBrowsingContext(realm.context);
         return realm;
       })
@@ -522,4 +509,4 @@ class ScriptModule extends Module {
   }
 }
 
-const script = ScriptModule;
+export const script = ScriptModule;
