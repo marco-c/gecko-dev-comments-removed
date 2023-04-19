@@ -46,7 +46,7 @@ class AudioStreamTrack : public MediaStreamTrack {
   
   
   
-  nsClassHashtable<nsPtrHashKey<void>, UniquePtr<CrossGraphPort>> mCrossGraphs;
+  nsClassHashtable<nsPtrHashKey<void>, CrossGraphPort> mCrossGraphs;
 };
 
 }  
