@@ -1036,7 +1036,6 @@ class Isolate {
 
   
   RegExpStack* regexp_stack() const { return regexpStack_; }
-  byte* top_of_regexp_stack() const;
 
   
   
@@ -1166,6 +1165,13 @@ class StackLimitCheck {
  private:
   JSContext* cx_;
   js::AutoCheckRecursionLimit recursion_;
+};
+
+class ExternalReference {
+ public:
+  static const void* TopOfRegexpStack(Isolate* isolate);
+  static size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                                    RegExpStack* regexpStack);
 };
 
 class Code : public HeapObject {
