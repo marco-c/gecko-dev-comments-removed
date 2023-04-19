@@ -430,9 +430,22 @@ var ExtensionsUI = {
         popupIconClass: icon ? "" : "addon-warning-icon",
         persistent: true,
         eventCallback,
-        name: strings.addonName,
         removeOnDismissal: true,
       };
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (strings.header.includes("<>")) {
+        options.name = strings.addonName;
+      }
 
       let action = {
         label: strings.acceptText,

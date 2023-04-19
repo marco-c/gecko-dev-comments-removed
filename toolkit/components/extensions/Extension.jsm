@@ -2010,11 +2010,10 @@ class ExtensionData {
       
       result.header = bundle.formatStringFromName(
         `webextSitePerms.headerWithGatedPerms.${info.sitePermissions[0]}`,
-        ["<>", host]
-      );
-      result.text = bundle.formatStringFromName(
-        `webextSitePerms.descriptionGatedPerms`,
         [host]
+      );
+      result.text = bundle.GetStringFromName(
+        `webextSitePerms.descriptionGatedPerms`
       );
 
       return result;
