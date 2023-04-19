@@ -150,9 +150,13 @@ int ff_get_cpu_flags_x86(void)
             rval |= AV_CPU_FLAG_AVX2;
 #if HAVE_AVX512 
         if ((xcr0_lo & 0xe0) == 0xe0) { 
-            if ((rval & AV_CPU_FLAG_AVX2) && (ebx & 0xd0030000) == 0xd0030000)
+            if ((rval & AV_CPU_FLAG_AVX2) && (ebx & 0xd0030000) == 0xd0030000) {
                 rval |= AV_CPU_FLAG_AVX512;
-
+#if HAVE_AVX512ICL
+                if ((ebx & 0xd0200000) == 0xd0200000 && (ecx & 0x5f42) == 0x5f42)
+                    rval |= AV_CPU_FLAG_AVX512ICL;
+#endif 
+            }
         }
 #endif 
 #endif 
@@ -196,6 +200,10 @@ int ff_get_cpu_flags_x86(void)
 
             if ((family == 0x15 || family == 0x16) && (rval & AV_CPU_FLAG_AVX))
                 rval |= AV_CPU_FLAG_AVXSLOW;
+
+        
+            if ((family <= 0x19) && (rval & AV_CPU_FLAG_AVX2))
+                rval |= AV_CPU_FLAG_SLOW_GATHER;
         }
 
         
@@ -235,6 +243,10 @@ int ff_get_cpu_flags_x86(void)
         if ((rval & AV_CPU_FLAG_SSSE3) && !(rval & AV_CPU_FLAG_SSE4) &&
             family == 6 && model < 23)
             rval |= AV_CPU_FLAG_SSSE3SLOW;
+
+        
+        if ((rval & AV_CPU_FLAG_AVX2) && family == 6 && model < 70)
+            rval |= AV_CPU_FLAG_SLOW_GATHER;
     }
 
 #endif 

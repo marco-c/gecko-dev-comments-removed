@@ -34,7 +34,26 @@
 
 
 
-typedef struct AVBSFInternal AVBSFInternal;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -56,12 +75,6 @@ typedef struct AVBSFContext {
 
 
     const struct AVBitStreamFilter *filter;
-
-    
-
-
-
-    AVBSFInternal *internal;
 
     
 
@@ -115,20 +128,6 @@ typedef struct AVBitStreamFilter {
 
 
     const AVClass *priv_class;
-
-    
-
-
-
-
-
-
-
-    int priv_data_size;
-    int (*init)(AVBSFContext *ctx);
-    int (*filter)(AVBSFContext *ctx, AVPacket *pkt);
-    void (*close)(AVBSFContext *ctx);
-    void (*flush)(AVBSFContext *ctx);
 } AVBitStreamFilter;
 
 
@@ -186,7 +185,11 @@ int av_bsf_init(AVBSFContext *ctx);
 
 
 
+
+
 int av_bsf_send_packet(AVBSFContext *ctx, AVPacket *pkt);
+
+
 
 
 

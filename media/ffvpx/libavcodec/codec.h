@@ -31,7 +31,7 @@
 #include "libavutil/samplefmt.h"
 
 #include "libavcodec/codec_id.h"
-#include "libavcodec/version.h"
+#include "libavcodec/version_major.h"
 
 
 
@@ -50,7 +50,12 @@
 
 
 #define AV_CODEC_CAP_DR1                 (1 <<  1)
+#if FF_API_FLAG_TRUNCATED
+
+
+
 #define AV_CODEC_CAP_TRUNCATED           (1 <<  3)
+#endif
 
 
 
@@ -185,12 +190,6 @@ typedef struct AVProfile {
     const char *name; 
 } AVProfile;
 
-typedef struct AVCodecDefault AVCodecDefault;
-
-struct AVCodecContext;
-struct AVSubtitle;
-struct AVPacket;
-
 
 
 
@@ -214,12 +213,18 @@ typedef struct AVCodec {
 
 
     int capabilities;
+    uint8_t max_lowres;                     
     const AVRational *supported_framerates; 
     const enum AVPixelFormat *pix_fmts;     
     const int *supported_samplerates;       
     const enum AVSampleFormat *sample_fmts; 
+#if FF_API_OLD_CHANNEL_LAYOUT
+    
+
+
+    attribute_deprecated
     const uint64_t *channel_layouts;         
-    uint8_t max_lowres;                     
+#endif
     const AVClass *priv_class;              
     const AVProfile *profiles;              
 
@@ -238,114 +243,7 @@ typedef struct AVCodec {
     
 
 
-
-
-
-
-    int priv_data_size;
-#if FF_API_NEXT
-    struct AVCodec *next;
-#endif
-    
-
-
-
-    
-
-
-
-
-
-
-    int (*update_thread_context)(struct AVCodecContext *dst, const struct AVCodecContext *src);
-    
-
-    
-
-
-    const AVCodecDefault *defaults;
-
-    
-
-
-
-
-
-    void (*init_static_data)(struct AVCodec *codec);
-
-    int (*init)(struct AVCodecContext *);
-    int (*encode_sub)(struct AVCodecContext *, uint8_t *buf, int buf_size,
-                      const struct AVSubtitle *sub);
-    
-
-
-
-
-
-
-
-
-
-    int (*encode2)(struct AVCodecContext *avctx, struct AVPacket *avpkt,
-                   const struct AVFrame *frame, int *got_packet_ptr);
-    
-
-
-
-
-
-
-
-
-
-
-
-    int (*decode)(struct AVCodecContext *avctx, void *outdata,
-                  int *got_frame_ptr, struct AVPacket *avpkt);
-    int (*close)(struct AVCodecContext *);
-    
-
-
-
-
-    int (*receive_packet)(struct AVCodecContext *avctx, struct AVPacket *avpkt);
-
-    
-
-
-
-
-    int (*receive_frame)(struct AVCodecContext *avctx, struct AVFrame *frame);
-    
-
-
-
-    void (*flush)(struct AVCodecContext *);
-    
-
-
-
-    int caps_internal;
-
-    
-
-
-
-    const char *bsfs;
-
-    
-
-
-
-
-
-
-    const struct AVCodecHWConfigInternal *const *hw_configs;
-
-    
-
-
-    const uint32_t *codec_tags;
+    const AVChannelLayout *ch_layouts;
 } AVCodec;
 
 
@@ -365,7 +263,7 @@ const AVCodec *av_codec_iterate(void **opaque);
 
 
 
-AVCodec *avcodec_find_decoder(enum AVCodecID id);
+const AVCodec *avcodec_find_decoder(enum AVCodecID id);
 
 
 
@@ -373,7 +271,7 @@ AVCodec *avcodec_find_decoder(enum AVCodecID id);
 
 
 
-AVCodec *avcodec_find_decoder_by_name(const char *name);
+const AVCodec *avcodec_find_decoder_by_name(const char *name);
 
 
 
@@ -381,7 +279,7 @@ AVCodec *avcodec_find_decoder_by_name(const char *name);
 
 
 
-AVCodec *avcodec_find_encoder(enum AVCodecID id);
+const AVCodec *avcodec_find_encoder(enum AVCodecID id);
 
 
 
@@ -389,7 +287,7 @@ AVCodec *avcodec_find_encoder(enum AVCodecID id);
 
 
 
-AVCodec *avcodec_find_encoder_by_name(const char *name);
+const AVCodec *avcodec_find_encoder_by_name(const char *name);
 
 
 
@@ -399,6 +297,15 @@ int av_codec_is_encoder(const AVCodec *codec);
 
 
 int av_codec_is_decoder(const AVCodec *codec);
+
+
+
+
+
+
+
+
+const char *av_get_profile_name(const AVCodec *codec, int profile);
 
 enum {
     

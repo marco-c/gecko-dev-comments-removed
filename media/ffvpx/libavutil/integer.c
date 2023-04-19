@@ -25,9 +25,11 @@
 
 
 
-#include "common.h"
+#include <string.h>
+
 #include "integer.h"
 #include "avassert.h"
+#include "intmath.h"
 
 static const AVInteger zero_i;
 

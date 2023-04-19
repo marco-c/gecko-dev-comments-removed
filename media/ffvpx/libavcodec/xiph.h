@@ -21,7 +21,7 @@
 #ifndef AVCODEC_XIPH_H
 #define AVCODEC_XIPH_H
 
-#include "libavutil/common.h"
+#include <stdint.h>
 
 
 
