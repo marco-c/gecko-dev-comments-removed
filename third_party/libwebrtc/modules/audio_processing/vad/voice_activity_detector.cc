@@ -39,6 +39,7 @@ void VoiceActivityDetector::ProcessChunk(const int16_t* audio,
                                          int sample_rate_hz) {
   RTC_DCHECK_EQ(length, sample_rate_hz / 100);
   
+  
   const int16_t* resampled_ptr = audio;
   if (sample_rate_hz != kSampleRateHz) {
     RTC_CHECK_EQ(

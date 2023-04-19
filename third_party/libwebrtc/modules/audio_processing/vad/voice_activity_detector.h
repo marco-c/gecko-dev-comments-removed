@@ -33,6 +33,8 @@ class VoiceActivityDetector {
   ~VoiceActivityDetector();
 
   
+  
+  
   void ProcessChunk(const int16_t* audio, size_t length, int sample_rate_hz);
 
   

@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "api/array_view.h"
 #include "modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
@@ -26,7 +27,7 @@ class Agc {
 
   
   
-  virtual void Process(const int16_t* audio, size_t length, int sample_rate_hz);
+  virtual void Process(rtc::ArrayView<const int16_t> audio);
 
   
   
