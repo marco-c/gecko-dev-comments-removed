@@ -197,7 +197,7 @@ async function maybeSubmitBackgroundUpdatePing() {
   lazy.log.info(`${SLUG}: submitted "background-update" ping`);
 }
 
-async function runBackgroundTask() {
+async function runBackgroundTask(commandLine) {
   let SLUG = "runBackgroundTask";
   lazy.log.error(`${SLUG}: backgroundupdate`);
 
@@ -246,6 +246,9 @@ async function runBackgroundTask() {
   
   
   
+  
+  
+  let defaultProfileTargetingSnapshot = {};
   try {
     let defaultProfilePrefs;
     await lazy.BackgroundTasksUtils.withProfileLock(async lock => {
@@ -255,7 +258,11 @@ async function runBackgroundTask() {
           name.startsWith("datareporting.") || 
           name.startsWith("logging.") || 
           name.startsWith("telemetry.fog.") || 
-          name.startsWith("app.partner.") 
+          name.startsWith("app.partner.") || 
+          name === "app.shield.optoutstudies.enabled" || 
+          name === "services.settings.server" || 
+          name === "services.settings.preview_enabled" || 
+          name === "messaging-system.rsexperimentloader.collection_id" 
         );
       };
 
@@ -267,6 +274,21 @@ async function runBackgroundTask() {
         lock
       );
       Glean.backgroundUpdate.clientId.set(telemetryClientID);
+
+      try {
+        defaultProfileTargetingSnapshot = await lazy.BackgroundTasksUtils.readFirefoxMessagingSystemTargetingSnapshot();
+      } catch (f) {
+        if (DOMException.isInstance(f) && f.name === "NotFoundError") {
+          lazy.log.info(
+            `${SLUG}: no default profile targeting snapshot exists`
+          );
+        } else {
+          lazy.log.warn(
+            `${SLUG}: ignoring exception reading default profile targeting snapshot`,
+            f
+          );
+        }
+      }
     });
 
     for (let [name, value] of Object.entries(defaultProfilePrefs)) {
@@ -326,10 +348,20 @@ async function runBackgroundTask() {
   Services.fog.initializeFOG(gleanRoot, "firefox.desktop.background.update");
 
   
-  Services.prefs.setCharPref(
-    "toolkit.backgroundtasks.loglevel",
-    Services.prefs.getCharPref("app.update.background.loglevel", "error")
+  let logLevel = Services.prefs.getCharPref(
+    "app.update.background.loglevel",
+    "error"
   );
+  const logLevelPrefs = [
+    "browser.newtabpage.activity-stream.asrouter.debugLogLevel",
+    "messaging-system.log",
+    "services.settings.loglevel",
+    "toolkit.backgroundtasks.loglevel",
+  ];
+  for (let logLevelPref of logLevelPrefs) {
+    lazy.log.info(`${SLUG}: setting ${logLevelPref}=${logLevel}`);
+    Services.prefs.setCharPref(logLevelPref, logLevel);
+  }
 
   
   
@@ -354,6 +386,28 @@ async function runBackgroundTask() {
 
     lazy.log.info(`${SLUG}: attempted background update`);
     Glean.backgroundUpdate.exitCodeSuccess.set(true);
+
+    try {
+      
+      
+      
+      await lazy.BackgroundTasksUtils.enableNimbus(commandLine);
+
+      await lazy.BackgroundTasksUtils.enableFirefoxMessagingSystem(
+        defaultProfileTargetingSnapshot.environment
+      );
+    } catch (f) {
+      
+      
+      
+      
+      
+      lazy.log.warning(
+        `${SLUG}: exception raised from Nimbus/Firefox Messaging System`,
+        f
+      );
+      throw f;
+    }
   } catch (e) {
     
     
