@@ -212,6 +212,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   
   rtc::ArrayView<Connection*> connections() const;
+  void RemoveConnectionForTest(Connection* connection);
 
   
   PortAllocatorSession* allocator_session() const {
