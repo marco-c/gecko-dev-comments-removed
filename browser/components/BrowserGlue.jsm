@@ -4309,26 +4309,41 @@ BrowserGlue.prototype = {
     const { gBrowser } = lazy.BrowserWindowTracker.getTopWindow();
 
     
+    let tab;
+
+    const upgradeTabsProgressListener = {
+      onLocationChange(
+        aBrowser,
+        aWebProgress,
+        aRequest,
+        aLocationURI,
+        aFlags,
+        aIsSimulated
+      ) {
+        if (aBrowser === tab.linkedBrowser) {
+          
+          
+          
+          const config = {
+            type: "SHOW_SPOTLIGHT",
+            data,
+          };
+          lazy.SpecialMessageActions.handleAction(config, tab.linkedBrowser);
+
+          gBrowser.removeTabsProgressListener(upgradeTabsProgressListener);
+        }
+      },
+    };
+
     
-    const tab = gBrowser.addTrustedTab("about:home", {
+    
+    gBrowser.addTabsProgressListener(upgradeTabsProgressListener);
+
+    tab = gBrowser.addTrustedTab("about:home", {
       relatedToCurrent: true,
     });
 
-    
-    
-    
-    
-    await new Promise(resolve => {
-      gBrowser.addEventListener("TabSwitchDone", resolve, { once: true });
-      gBrowser.selectedTab = tab;
-    });
-
-    
-    const config = {
-      type: "SHOW_SPOTLIGHT",
-      data,
-    };
-    lazy.SpecialMessageActions.handleAction(config, tab.linkedBrowser);
+    gBrowser.selectedTab = tab;
   },
 
   async _maybeShowDefaultBrowserPrompt() {
