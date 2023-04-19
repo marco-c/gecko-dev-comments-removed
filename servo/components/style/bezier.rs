@@ -30,58 +30,8 @@ impl Bezier {
     
     
     
-    pub fn calculate_bezier_output(
-        progress: f64,
-        epsilon: f64,
-        x1: f32,
-        y1: f32,
-        x2: f32,
-        y2: f32,
-    ) -> f64 {
-        
-        if x1 == y1 && x2 == y2 {
-            return progress;
-        }
-
-        
-        if progress == 0.0 {
-            return 0.0;
-        }
-        if progress == 1.0 {
-            return 1.0;
-        }
-
-        
-        
-        if progress < 0.0 {
-            if x1 > 0.0 {
-                return progress * y1 as f64 / x1 as f64;
-            }
-            if y1 == 0.0 && x2 > 0.0 {
-                return progress * y2 as f64 / x2 as f64;
-            }
-            
-            return 0.0;
-        }
-
-        
-        
-        if progress > 1.0 {
-            if x2 < 1.0 {
-                return 1.0 + (progress - 1.0) * (y2 as f64 - 1.0) / (x2 as f64 - 1.0);
-            }
-            if y2 == 1.0 && x1 < 1.0 {
-                return 1.0 + (progress - 1.0) * (y1 as f64 - 1.0) / (x1 as f64 - 1.0);
-            }
-            
-            return 1.0;
-        }
-
-        Bezier::new(x1, y1, x2, y2).solve(progress, epsilon)
-    }
-
     #[inline]
-    fn new(x1: CSSFloat, y1: CSSFloat, x2: CSSFloat, y2: CSSFloat) -> Bezier {
+    pub fn new(x1: CSSFloat, y1: CSSFloat, x2: CSSFloat, y2: CSSFloat) -> Bezier {
         let cx = 3. * x1 as f64;
         let bx = 3. * (x2 as f64 - x1 as f64) - cx;
 
@@ -159,7 +109,7 @@ impl Bezier {
     
     
     #[inline]
-    fn solve(&self, x: f64, epsilon: f64) -> f64 {
+    pub fn solve(&self, x: f64, epsilon: f64) -> f64 {
         self.sample_curve_y(self.solve_curve_x(x, epsilon))
     }
 }
