@@ -2205,36 +2205,6 @@ GetWrapImageFunction(vpx_image_t* img) {
   };
 }
 
-TEST(Vp9SpeedSettingsTrialsTest, SvcExtraCfgNotPopulatedByDefault) {
-  test::ExplicitKeyValueConfig trials("");
-
-  
-  
-  auto* const vpx = new NiceMock<MockLibvpxInterface>();
-  LibvpxVp9Encoder encoder(cricket::VideoCodec(),
-                           absl::WrapUnique<LibvpxInterface>(vpx), trials);
-
-  VideoCodec settings = DefaultCodecSettings();
-  
-  ConfigureSvc(settings, 3, 3);
-  vpx_image_t img;
-
-  ON_CALL(*vpx, img_wrap).WillByDefault(GetWrapImageFunction(&img));
-  ON_CALL(*vpx, codec_enc_config_default)
-      .WillByDefault(DoAll(WithArg<1>([](vpx_codec_enc_cfg_t* cfg) {
-                             memset(cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-                           }),
-                           Return(VPX_CODEC_OK)));
-  EXPECT_CALL(*vpx,
-              codec_control(
-                  _, VP9E_SET_SVC_PARAMETERS,
-                  SafeMatcherCast<vpx_svc_extra_cfg_t*>(AllOf(
-                      Field(&vpx_svc_extra_cfg_t::speed_per_layer, Each(0)),
-                      Field(&vpx_svc_extra_cfg_t::loopfilter_ctrl, Each(0))))));
-
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder.InitEncode(&settings, kSettings));
-}
-
 TEST(Vp9SpeedSettingsTrialsTest, NoSvcUsesGlobalSpeedFromTl0InLayerConfig) {
   
   test::ExplicitKeyValueConfig trials(
@@ -2333,7 +2303,7 @@ TEST(Vp9SpeedSettingsTrialsTest,
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder.InitEncode(&settings, kSettings));
 }
 
-TEST(Vp9SpeedSettingsTrialsTest, PerLayerFlagsWithSvc) {
+TEST(Vp9SpeedSettingsTrialsTest, DefaultPerLayerFlagsWithSvc) {
   
   
   
@@ -2344,7 +2314,7 @@ TEST(Vp9SpeedSettingsTrialsTest, PerLayerFlagsWithSvc) {
       "use_per_layer_speed,"
       "min_pixel_count:0|129600,"
       "base_layer_speed:5|7,"
-      "high_layer_speed:8|9,"
+      "high_layer_speed:8|8,"
       "deblock_mode:1|0/");
 
   
@@ -2361,7 +2331,7 @@ TEST(Vp9SpeedSettingsTrialsTest, PerLayerFlagsWithSvc) {
   
   const int kBaseTlSpeed[VPX_MAX_LAYERS] = {5, 7, 7};
   
-  const int kHighTlSpeed[VPX_MAX_LAYERS] = {8, 9, 9};
+  const int kHighTlSpeed[VPX_MAX_LAYERS] = {8, 8, 8};
   
   
   const int kLoopFilter[VPX_MAX_LAYERS] = {1, 0, 0};
