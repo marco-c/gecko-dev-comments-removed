@@ -25,8 +25,6 @@ import { getRelatedMapLocation } from "../../utils/source-maps";
 
 import {
   getSource,
-  getSourceActor,
-  getFirstSourceActorForGeneratedSource,
   getSourceByURL,
   getPrettySource,
   getActiveSearch,
@@ -77,7 +75,8 @@ export function selectSourceURL(cx, url, options) {
       return dispatch(setPendingSelectedLocation(cx, url, options));
     }
 
-    const location = createLocation({ ...options, sourceId: source.id });
+    const sourceId = source.id;
+    const location = createLocation({ ...options, sourceId });
     return dispatch(selectLocation(cx, location));
   };
 }
@@ -94,12 +93,9 @@ export function selectSourceURL(cx, url, options) {
 
 
 
-
-
-
-export function selectSource(cx, sourceId, sourceActorId, location = {}) {
+export function selectSource(cx, sourceId, location = {}) {
   return async ({ dispatch }) => {
-    location = createLocation({ ...location, sourceId, sourceActorId });
+    location = createLocation({ ...location, sourceId });
     return dispatch(selectSpecificLocation(cx, location));
   };
 }
@@ -168,19 +164,9 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       dispatch(addTab(source));
     }
 
-    let sourceActor;
-    if (!location.sourceActorId) {
-      sourceActor = getFirstSourceActorForGeneratedSource(
-        getState(),
-        source.id
-      );
-      location.sourceActorId = sourceActor ? sourceActor.actor : null;
-    } else {
-      sourceActor = getSourceActor(getState(), location.sourceActorId);
-    }
-
     dispatch(setSelectedLocation(cx, source, location));
-    await dispatch(loadSourceText({ cx, source, sourceActor }));
+
+    await dispatch(loadSourceText({ cx, source }));
     await dispatch(setBreakableLines(cx, source.id));
 
     const loadedSource = getSource(getState(), source.id);
@@ -203,7 +189,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       dispatch(closeTab(cx, loadedSource));
     }
 
-    await dispatch(setSymbols({ cx, source: loadedSource, sourceActor }));
+    await dispatch(setSymbols({ cx, source: loadedSource }));
     dispatch(setInScopeLines(cx));
 
     if (getIsCurrentThreadPaused(getState())) {

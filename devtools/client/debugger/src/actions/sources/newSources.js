@@ -35,7 +35,6 @@ import {
   getPendingBreakpointsForSource,
   getContext,
   getSourceTextContent,
-  getFirstSourceActorForGeneratedSource,
 } from "../../selectors";
 
 import { prefs } from "../../utils/prefs";
@@ -173,11 +172,7 @@ function checkPendingBreakpoints(cx, sourceId) {
     }
 
     
-    const sourceActor = getFirstSourceActorForGeneratedSource(
-      getState(),
-      source.id
-    );
-    await dispatch(loadSourceText({ cx, source, sourceActor }));
+    await dispatch(loadSourceText({ cx, source }));
 
     await dispatch(setBreakableLines(cx, source.id));
 
