@@ -434,8 +434,6 @@ void FileSystemWritableFileStream::Seek(uint64_t aPosition,
   
   
   
-  
-  
   LOG_VERBOSE(("%p: Seeking to %" PRIu64, mFileDesc, aPosition));
 
   QM_TRY(SeekPosition(aPosition), [&aPromise](const nsresult rv) {
@@ -450,7 +448,6 @@ void FileSystemWritableFileStream::Truncate(uint64_t aSize,
                                             RefPtr<Promise> aPromise) {
   MOZ_ASSERT(!mClosed);
 
-  
   
   
   
