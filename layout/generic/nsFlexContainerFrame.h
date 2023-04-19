@@ -325,6 +325,8 @@ class nsFlexContainerFrame final : public nsContainerFrame,
     
     nsTArray<nsIFrame*> mPlaceholders;
 
+    bool mHasCollapsedItems = false;
+
     
     
     nscoord mContentBoxMainSize = NS_UNCONSTRAINEDSIZE;
@@ -446,7 +448,8 @@ class nsFlexContainerFrame final : public nsContainerFrame,
                          const FlexboxAxisTracker& aAxisTracker,
                          nscoord aMainGapSize,
                          nsTArray<nsIFrame*>& aPlaceholders,
-                         nsTArray<FlexLine>& aLines);
+                         nsTArray<FlexLine>& aLines,
+                         bool& aHasCollapsedItems);
 
   
 
