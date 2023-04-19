@@ -88,8 +88,13 @@ bool IvfFileWriter::WriteHeader() {
       ivf_header[11] = '4';
       break;
     default:
-      RTC_LOG(LS_ERROR) << "Unknown CODEC type: " << codec_type_;
-      return false;
+      
+      
+      ivf_header[8] = '*';
+      ivf_header[9] = '*';
+      ivf_header[10] = '*';
+      ivf_header[11] = '*';
+      break;
   }
 
   ByteWriter<uint16_t>::WriteLittleEndian(&ivf_header[12], width_);
