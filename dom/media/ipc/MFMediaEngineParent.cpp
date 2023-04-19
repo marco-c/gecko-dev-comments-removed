@@ -227,8 +227,14 @@ MFMediaEngineStreamWrapper* MFMediaEngineParent::GetMediaEngineStream(
                                           aParam);
   }
   MOZ_ASSERT(aType == TrackType::kVideoTrack);
-  auto* stream = mMediaSource->GetVideoStream();
-  return new MFMediaEngineStreamWrapper(stream, stream->GetTaskQueue(), aParam);
+  
+  
+  if (StaticPrefs::media_wmf_media_engine_video_output_enabled()) {
+    auto* stream = mMediaSource->GetVideoStream();
+    return new MFMediaEngineStreamWrapper(stream, stream->GetTaskQueue(),
+                                          aParam);
+  }
+  return nullptr;
 }
 
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvInitMediaEngine(
