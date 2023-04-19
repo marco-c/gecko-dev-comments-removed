@@ -971,6 +971,18 @@ nsCSPHashSrc::nsCSPHashSrc(const nsAString& aAlgo, const nsAString& aHash)
   
   
   ToLowerCase(mAlgorithm);
+  
+  char16_t* cur = mHash.BeginWriting();
+  char16_t* end = mHash.EndWriting();
+
+  for (; cur < end; ++cur) {
+    if (char16_t('-') == *cur) {
+      *cur = char16_t('+');
+    }
+    if (char16_t('_') == *cur) {
+      *cur = char16_t('/');
+    }
+  }
 }
 
 nsCSPHashSrc::~nsCSPHashSrc() = default;
