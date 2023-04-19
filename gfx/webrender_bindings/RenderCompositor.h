@@ -194,6 +194,8 @@ class RenderCompositor {
   }
   virtual bool MaybeProcessScreenshotQueue() { return false; }
 
+  virtual bool HaveScreenshotsToFlush() { return false; }
+
   
   
   

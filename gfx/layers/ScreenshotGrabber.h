@@ -53,6 +53,8 @@ class ScreenshotGrabber final {
   
   void MaybeProcessQueue();
 
+  bool HaveScreenshotsToFlush();
+
   
   
   

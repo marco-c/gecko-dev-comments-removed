@@ -112,10 +112,15 @@ RendererOGL::RendererOGL(RefPtr<RenderThread>&& aThread,
   MOZ_ASSERT(mRenderer);
   MOZ_ASSERT(mBridge);
   MOZ_COUNT_CTOR(RendererOGL);
+  mProcessScreenshotQueueTimer = NS_NewTimer();
 }
 
 RendererOGL::~RendererOGL() {
   MOZ_COUNT_DTOR(RendererOGL);
+
+  mProcessScreenshotQueueTimer->Cancel();
+  mProcessScreenshotQueueTimerRunning = false;
+
   if (!mCompositor->MakeCurrent()) {
     gfxCriticalNote
         << "Failed to make render context current during destroying.";
@@ -137,11 +142,46 @@ void RendererOGL::Update() {
     wr_renderer_update(mRenderer);
     FlushPipelineInfo();
   }
+
+  if (mProcessScreenshotQueueTimerRunning) {
+    mLastUpdateAndRenderEndTime = TimeStamp::Now();
+  }
 }
 
 static void DoWebRenderDisableNativeCompositor(
     layers::CompositorBridgeParent* aBridge) {
   aBridge->NotifyWebRenderDisableNativeCompositor();
+}
+
+static void FlushScreenshotsQueueCallback(nsITimer* aTimer, void* aClosure) {
+  static_cast<RendererOGL*>(aClosure)->FlushScreenshotsQueue();
+}
+
+void RendererOGL::FlushScreenshotsQueue() {
+  
+  
+  
+  if (mLastUpdateAndRenderEndTime &&
+      ((TimeStamp::Now() - mLastUpdateAndRenderEndTime).ToMilliseconds() <
+       100.)) {
+    mProcessScreenshotQueueTimer->InitWithNamedFuncCallback(
+        FlushScreenshotsQueueCallback, this, 500, nsITimer::TYPE_ONE_SHOT,
+        "wr::RendererOGL::FlushScreenshotsQueue");
+    return;
+  }
+
+  mProcessScreenshotQueueTimerRunning = false;
+
+  
+  
+  if (mCompositor) {
+    if (!mCompositor->MaybeProcessScreenshotQueue()) {
+      mScreenshotGrabber.MaybeProcessQueue(this);
+    }
+    if (!mCompositor->MaybeProcessScreenshotQueue()) {
+      mScreenshotGrabber.MaybeProcessQueue(this);
+    }
+  }
 }
 
 RenderedFrameId RendererOGL::UpdateAndRender(
@@ -236,6 +276,24 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
   if (!mCompositor->MaybeProcessScreenshotQueue()) {
     mScreenshotGrabber.MaybeProcessQueue(this);
+  }
+
+  
+  
+  
+  
+  
+  if (!mProcessScreenshotQueueTimerRunning) {
+    if (mCompositor->HaveScreenshotsToFlush() ||
+        mScreenshotGrabber.HaveScreenshotsToFlush()) {
+      mProcessScreenshotQueueTimer->InitWithNamedFuncCallback(
+          FlushScreenshotsQueueCallback, this, 500, nsITimer::TYPE_ONE_SHOT,
+          "wr::RendererOGL::FlushScreenshotsQueue");
+      mProcessScreenshotQueueTimerRunning = true;
+    }
+  }
+  if (mProcessScreenshotQueueTimerRunning) {
+    mLastUpdateAndRenderEndTime = TimeStamp::Now();
   }
 
   
