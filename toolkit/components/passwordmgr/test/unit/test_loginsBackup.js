@@ -64,12 +64,9 @@ Services.prefs.setBoolPref(
 
 
 add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
-  let loginsStorePath = OS.Path.join(
-    OS.Constants.Path.profileDir,
-    "logins.json"
-  );
-  let loginsStoreBackup = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  const loginsStorePath = PathUtils.join(PathUtils.profileDir, "logins.json");
+  const loginsStoreBackup = PathUtils.join(
+    PathUtils.profileDir,
     "logins-backup.json"
   );
 
@@ -78,35 +75,39 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   await store.load();
 
   
-  Assert.equal(false, await OS.File.exists(store.path));
-  Assert.equal(false, await OS.File.exists(store._options.backupTo));
+  Assert.ok(!(await IOUtils.exists(store.path)), "No store file at start up");
+  Assert.ok(
+    !(await IOUtils.exists(store._options.backupTo)),
+    "No backup file at start up"
+  );
 
   
   store.data.logins.push(rawLogin1);
   await store._save();
-  Assert.equal(true, await OS.File.exists(store.path));
+  Assert.ok(await IOUtils.exists(store.path));
 
   store.data.logins.push(rawLogin2);
   await store._save();
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
 
   
-  await OS.File.remove(store.path);
+  await IOUtils.remove(store.path);
   store.data.logins = [];
   store.dataReady = false;
-  Assert.equal(false, await OS.File.exists(store.path));
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(!(await IOUtils.exists(store.path)));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
 
   
   Services.telemetry.clearEvents();
 
   await store.load();
 
-  
-  
-  await OS.File.exists(store.path);
+  Assert.ok(
+    await IOUtils.exists(store.path),
+    "logins.json is restored as expected after it went missing"
+  );
 
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
   Assert.equal(
     store.data.logins.length,
     1,
@@ -127,8 +128,8 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
 
   
   let string = '{"logins":[{"hostname":"http://www.example.com","id":1,';
-  await OS.File.writeAtomic(store.path, new TextEncoder().encode(string), {
-    tmpPath: store.path + ".tmp",
+  await IOUtils.writeUTF8(store.path, string, {
+    tmpPath: `${store.path}.tmp`,
   });
 
   
@@ -139,15 +140,17 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   store.dataReady = false;
   await store.load();
 
-  
-  await OS.File.exists(store.path + ".corrupt");
+  Assert.ok(
+    await IOUtils.exists(`${store.path}.corrupt`),
+    "logins.json.corrupt created"
+  );
+  Assert.ok(
+    await IOUtils.exists(store.path),
+    "logins.json is restored after it was corrupted"
+  );
 
   
-  
-  await OS.File.exists(store.path);
-
-  
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
   Assert.equal(
     store.data.logins.length,
     1,
@@ -168,31 +171,31 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   );
 
   
-  await OS.File.remove(store.path + ".corrupt");
+  await IOUtils.remove(`${store.path}.corrupt`);
 
   
   
-  await OS.File.remove(store.path);
+  await IOUtils.remove(store.path);
   store.data.logins = [];
   store.dataReady = false;
-  Assert.equal(false, await OS.File.exists(store.path));
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(!(await IOUtils.exists(store.path)));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
 
   store.ensureDataReady();
 
   
   
-  await OS.File.exists(store.path);
+  await IOUtils.exists(store.path);
 
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
   await TestUtils.waitForCondition(() => {
     return store.data.logins.length == 1;
   });
 
   
   
-  await OS.File.writeAtomic(store.path, new TextEncoder().encode(string), {
-    tmpPath: store.path + ".tmp",
+  await IOUtils.writeUTF8(store.path, string, {
+    tmpPath: `${store.path}.tmp`,
   });
 
   
@@ -200,15 +203,17 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   store.dataReady = false;
   store.ensureDataReady();
 
-  
-  Assert.equal(true, await OS.File.exists(store.path + ".corrupt"));
+  Assert.ok(
+    await IOUtils.exists(`${store.path}.corrupt`),
+    "logins.json.corrupt created"
+  );
+  Assert.ok(
+    await IOUtils.exists(store.path),
+    "logins.json is restored after it was corrupted"
+  );
 
   
-  
-  await OS.File.exists(store.path);
-
-  
-  Assert.equal(true, await OS.File.exists(store._options.backupTo));
+  Assert.ok(await IOUtils.exists(store._options.backupTo));
   await TestUtils.waitForCondition(() => {
     return store.data.logins.length == 1;
   });

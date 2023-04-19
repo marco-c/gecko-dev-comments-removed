@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
   FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
@@ -44,12 +42,9 @@ const fxaKey = new nsLoginInfo(
   ""
 );
 
-const loginStorePath = OS.Path.join(
-  OS.Constants.Path.profileDir,
-  "logins.json"
-);
-const loginBackupPath = OS.Path.join(
-  OS.Constants.Path.profileDir,
+const loginStorePath = PathUtils.join(PathUtils.profileDir, "logins.json");
+const loginBackupPath = PathUtils.join(
+  PathUtils.profileDir,
   "logins-backup.json"
 );
 
@@ -63,24 +58,17 @@ async function waitForBackupUpdate() {
 }
 
 async function loginStoreExists() {
-  return TestUtils.waitForCondition(async () => {
-    let fileExists = await OS.File.exists(loginStorePath);
-    return fileExists;
-  });
+  return TestUtils.waitForCondition(() => IOUtils.exists(loginStorePath));
 }
 
 async function loginBackupExists() {
-  return TestUtils.waitForCondition(async () => {
-    let fileExists = await OS.File.exists(loginBackupPath);
-    return fileExists;
-  });
+  return TestUtils.waitForCondition(() => IOUtils.exists(loginBackupPath));
 }
 
 async function loginBackupDeleted() {
-  return TestUtils.waitForCondition(async () => {
-    let fileExists = await OS.File.exists(loginBackupPath);
-    return !fileExists;
-  });
+  return TestUtils.waitForCondition(
+    async () => !(await IOUtils.exists(loginBackupPath))
+  );
 }
 
 
@@ -119,7 +107,7 @@ add_task(
     
     
     Services.logins.removeAllLogins();
-    await OS.File.remove(loginStorePath);
+    await IOUtils.remove(loginStorePath);
   }
 );
 
@@ -128,8 +116,8 @@ add_task(async function test_deleteLoginsBackup_removeAllUserFacingLogins() {
   
   info("Testing the removeAllUserFacingLogins() case");
 
-  await OS.File.remove(loginStorePath, { ignoreAbsent: true });
-  await OS.File.remove(loginBackupPath, { ignoreAbsent: true });
+  await IOUtils.remove(loginStorePath, { ignoreAbsent: true });
+  await IOUtils.remove(loginBackupPath, { ignoreAbsent: true });
 
   let storageUpdatePromise = TestUtils.topicObserved(
     "password-storage-updated"
@@ -161,7 +149,7 @@ add_task(async function test_deleteLoginsBackup_removeAllUserFacingLogins() {
   );
 
   
-  await OS.File.remove(loginStorePath);
+  await IOUtils.remove(loginStorePath);
 });
 
 
@@ -171,8 +159,8 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
   
   info("Testing the removeAllLogins() case");
 
-  await OS.File.remove(loginStorePath, { ignoreAbsent: true });
-  await OS.File.remove(loginBackupPath, { ignoreAbsent: true });
+  await IOUtils.remove(loginStorePath, { ignoreAbsent: true });
+  await IOUtils.remove(loginBackupPath, { ignoreAbsent: true });
 
   let storageUpdatePromise = TestUtils.topicObserved(
     "password-storage-updated"
@@ -201,7 +189,7 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
   info(
     "logins-backup.json was deleted as expected when all logins were removed"
   );
-  await OS.File.remove(loginStorePath);
+  await IOUtils.remove(loginStorePath);
 
   info("Testing the removeAllLogins() case when FxA key is present");
   storageUpdatePromise = TestUtils.topicObserved("password-storage-updated");
@@ -224,7 +212,7 @@ add_task(async function test_deleteLoginsBackup_removeAllLogins() {
   );
 
   
-  await OS.File.remove(loginStorePath);
+  await IOUtils.remove(loginStorePath);
 });
 
 
@@ -262,7 +250,7 @@ add_task(async function test_deleteLoginsBackup_removeLogin() {
   info(
     "logins-backup.json was deleted as expected when the last saved login was removed"
   );
-  await OS.File.remove(loginStorePath);
+  await IOUtils.remove(loginStorePath);
 
   info("Testing the removeLogin() case when there is a saved fxa key");
   info("Adding two logins: one user facing and the fxa key");
@@ -290,5 +278,5 @@ add_task(async function test_deleteLoginsBackup_removeLogin() {
   
   
   Services.logins.removeAllLogins();
-  await OS.File.remove(loginStorePath);
+  await IOUtils.remove(loginStorePath);
 });

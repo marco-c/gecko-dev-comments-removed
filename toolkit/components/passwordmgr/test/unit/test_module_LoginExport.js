@@ -18,11 +18,10 @@ let { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 
 async function exportAsCSVInTmpFile() {
-  let tmpFilePath = FileTestUtils.getTempFile("logins.csv").path;
+  const tmpFilePath = FileTestUtils.getTempFile("logins.csv").path;
   await LoginExport.exportAsCSV(tmpFilePath);
-  let csvContent = await OS.File.read(tmpFilePath);
-  let csvString = new TextDecoder().decode(csvContent);
-  await OS.File.remove(tmpFilePath);
+  const csvString = await IOUtils.readUTF8(tmpFilePath);
+  await IOUtils.remove(tmpFilePath);
   
   return csvString.split(/\r\n/);
 }

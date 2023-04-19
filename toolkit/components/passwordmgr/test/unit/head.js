@@ -33,7 +33,6 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadPaths: "resource://gre/modules/DownloadPaths.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
 });
 
 const LoginInfo = Components.Constructor(
@@ -80,9 +79,9 @@ add_setup(async function test_common_initialize() {
   
   
   const keyDBName = "key4.db";
-  await OS.File.copy(
+  await IOUtils.copy(
     do_get_file(`data/${keyDBName}`).path,
-    OS.Path.join(OS.Constants.Path.profileDir, keyDBName)
+    PathUtils.join(PathUtils.profileDir, keyDBName)
   );
 
   
