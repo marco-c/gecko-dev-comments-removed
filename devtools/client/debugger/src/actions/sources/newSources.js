@@ -273,7 +273,12 @@ export function newGeneratedSources(sourceResources) {
       
       
       if (!hasSourceActor(getState(), actorId)) {
-        newSourceActors.push(createSourceActor(sourceResource));
+        newSourceActors.push(
+          createSourceActor(
+            sourceResource,
+            getSource(getState(), id) || newSourcesObj[id]
+          )
+        );
       }
 
       resultIds.push(id);

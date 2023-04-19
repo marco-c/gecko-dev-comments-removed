@@ -67,26 +67,71 @@ export function initialSourcesTreeState() {
 
 export default function update(state = initialSourcesTreeState(), action) {
   switch (action.type) {
-    case "ADD_SOURCES":
-      const newSources = action.sources.filter(source =>
-        isSourceVisibleInSourceTree(
-          source,
-          state.chromeAndExtensionsEnabled,
-          state.isWebExtension
-        )
+    case "ADD_SOURCES": {
+      
+      
+      const newSources = action.sources.filter(
+        source =>
+          source.isOriginal &&
+          isSourceVisibleInSourceTree(
+            source,
+            state.chromeAndExtensionsEnabled,
+            state.isWebExtension
+          )
       );
       if (newSources.length == 0) {
         return state;
       }
+      let changed = false;
       
-      
-      const newState = { ...state };
+      const threadItems = [...state.threadItems];
       for (const source of newSources) {
-        addSource(newState.threadItems, source);
+        changed |= addSource(threadItems, source.thread, source);
       }
+      if (changed) {
+        return {
+          ...state,
+          threadItems,
+        };
+      }
+      return state;
+    }
+    case "INSERT_SOURCE_ACTORS": {
       
-      newState.threadItems = [...newState.threadItems];
-      return newState;
+      
+      
+      
+      
+      const newSourceActors = action.items.filter(sourceActor =>
+        isSourceVisibleInSourceTree(
+          sourceActor.sourceObject,
+          state.chromeAndExtensionsEnabled,
+          state.isWebExtension
+        )
+      );
+      if (newSourceActors.length == 0) {
+        return state;
+      }
+      let changed = false;
+      
+      const threadItems = [...state.threadItems];
+      for (const sourceActor of newSourceActors) {
+        
+        
+        changed |= addSource(
+          threadItems,
+          sourceActor.thread,
+          sourceActor.sourceObject
+        );
+      }
+      if (changed) {
+        return {
+          ...state,
+          threadItems,
+        };
+      }
+      return state;
+    }
 
     case "NAVIGATE":
       return initialSourcesTreeState();
@@ -191,10 +236,8 @@ function isSourceVisibleInSourceTree(
   );
 }
 
-function addSource(threadItems, source) {
+function addSource(threadItems, thread, source) {
   
-  const { thread } = source;
-
   let threadItem = threadItems.find(item => {
     return item.threadActorID == thread;
   });
@@ -205,6 +248,7 @@ function addSource(threadItems, source) {
     threadItems.push(threadItem);
   }
 
+  
   
   const { displayURL } = source;
   const { group } = displayURL;
@@ -227,12 +271,24 @@ function addSource(threadItems, source) {
   const directoryItem = addOrGetParentDirectory(thread, groupItem, parentPath);
 
   
+  
+  
+  const existing = directoryItem.children.find(item => {
+    return item.type == "source" && item.source == source;
+  });
+  if (existing) {
+    return false;
+  }
+
+  
   const sourceItem = createSourceTreeItem(source, thread, group, directoryItem);
   
   
   directoryItem.children = [...directoryItem.children, sourceItem];
   
   directoryItem.children.sort(sortItems);
+
+  return true;
 }
 
 function sortItems(a, b) {

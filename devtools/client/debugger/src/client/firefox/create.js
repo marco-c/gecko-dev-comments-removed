@@ -312,7 +312,9 @@ export function createPrettyPrintOriginalSource(id, url, thread) {
 
 
 
-export function createSourceActor(sourceResource) {
+
+
+export function createSourceActor(sourceResource, sourceObject) {
   const actorId = sourceResource.actor;
 
   
@@ -326,6 +328,7 @@ export function createSourceActor(sourceResource) {
     thread: threadActorID,
     
     source: makeSourceId(sourceResource),
+    sourceObject,
     sourceMapBaseURL: sourceResource.sourceMapBaseURL,
     sourceMapURL: sourceResource.sourceMapURL,
     url: sourceResource.url,
