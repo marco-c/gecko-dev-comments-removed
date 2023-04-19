@@ -37,8 +37,8 @@ namespace webrtc_pc_e2e {
 
 
 
-class SingleProcessEncodedImageDataInjector : public EncodedImageDataInjector,
-                                              public EncodedImageDataExtractor {
+class SingleProcessEncodedImageDataInjector
+    : public EncodedImageDataPropagator {
  public:
   SingleProcessEncodedImageDataInjector();
   ~SingleProcessEncodedImageDataInjector() override;
