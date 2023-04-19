@@ -384,8 +384,11 @@ add_task(async function test_jog_labeled_boolean_works() {
   
   Assert.equal(undefined, Glean.jogCat.jogLabeledBool.__other__.testGetValue());
   Glean.jogCat.jogLabeledBool.InvalidLabel.set(true);
-  Assert.equal(true, Glean.jogCat.jogLabeledBool.__other__.testGetValue());
-  
+  Assert.throws(
+    () => Glean.jogCat.jogLabeledBool.__other__.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+    "Should throw because of a recording error."
+  );
 });
 
 add_task(async function test_jog_labeled_boolean_with_static_labels_works() {
