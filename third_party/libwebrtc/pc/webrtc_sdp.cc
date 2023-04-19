@@ -110,11 +110,12 @@ namespace webrtc {
 
 
 
-static const char kLegalTokenCharacters[] =
-    "!#$%&'*+-."                          
-    "0123456789"                          
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"          
-    "^_`abcdefghijklmnopqrstuvwxyz{|}~";  
+
+bool IsTokenChar(char ch) {
+  return ch == 0x21 || (ch >= 0x23 && ch <= 0x27) || ch == 0x2a || ch == 0x2b ||
+         ch == 0x2d || ch == 0x2e || (ch >= 0x30 && ch <= 0x39) ||
+         (ch >= 0x41 && ch <= 0x5a) || (ch >= 0x5e && ch <= 0x7e);
+}
 static const int kLinePrefixLength = 2;  
 static const char kLineTypeVersion = 'v';
 static const char kLineTypeOrigin = 'o';
@@ -637,7 +638,7 @@ static bool GetSingleTokenValue(const std::string& message,
   if (!GetValue(message, attribute, value, error)) {
     return false;
   }
-  if (strspn(value->c_str(), kLegalTokenCharacters) != value->size()) {
+  if (!absl::c_all_of(absl::string_view(*value), IsTokenChar)) {
     rtc::StringBuilder description;
     description << "Illegal character found in the value of " << attribute;
     return ParseFailed(message, description.Release(), error);
