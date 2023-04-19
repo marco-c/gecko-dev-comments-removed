@@ -328,9 +328,6 @@ NetworkResponseListener.prototype = {
     
     
     const secinfo = this.httpActivity.channel.securityInfo;
-    if (secinfo) {
-      secinfo.QueryInterface(Ci.nsITransportSecurityInfo);
-    }
     const info = await NetworkHelper.parseSecurityInfo(
       secinfo,
       this.request.loadInfo.originAttributes,
