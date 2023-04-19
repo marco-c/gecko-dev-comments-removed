@@ -85,14 +85,6 @@ interface nsICookieService : nsISupports
   
 
 
-  const uint32_t ACCEPT_NORMALLY   = 0; 
-  
-  const uint32_t ACCEPT_SESSION    = 2; 
-  
-
-  
-
-
 
 
 

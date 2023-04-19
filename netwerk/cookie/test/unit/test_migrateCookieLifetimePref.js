@@ -10,10 +10,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 add_task(async function migrateSanitizationPrefsClearCleaningPrefs() {
-  Services.prefs.setIntPref(
-    "network.cookie.lifetimePolicy",
-    Ci.nsICookieService.ACCEPT_SESSION
-  );
+  
+  
+  Services.prefs.setIntPref("network.cookie.lifetimePolicy", 2);
   Services.prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", false);
   Services.prefs.setBoolPref("privacy.clearOnShutdown.cache", false);
   Services.prefs.setBoolPref("privacy.clearOnShutdown.cookies", false);
@@ -24,12 +23,11 @@ add_task(async function migrateSanitizationPrefsClearCleaningPrefs() {
   
   Services.cookies;
 
+  
+  
   Assert.equal(
-    Services.prefs.getIntPref(
-      "network.cookie.lifetimePolicy",
-      Ci.nsICookieService.ACCEPT_NORMALLY
-    ),
-    Ci.nsICookieService.ACCEPT_NORMALLY,
+    Services.prefs.getIntPref("network.cookie.lifetimePolicy", 0),
+    0,
     "Cookie lifetime policy is off"
   );
 
