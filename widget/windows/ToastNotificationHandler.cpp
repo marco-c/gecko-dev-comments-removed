@@ -11,6 +11,7 @@
 #include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Result.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/WindowsVersion.h"
@@ -223,8 +224,64 @@ void ToastNotificationHandler::UnregisterHandler() {
 
 nsresult ToastNotificationHandler::InitAlertAsync(
     nsIAlertNotification* aAlert) {
+  MOZ_TRY(InitWindowsTag());
+
   return aAlert->LoadImage( 0, this,  nullptr,
                            getter_AddRefs(mImageRequest));
+}
+
+
+
+
+
+
+
+
+
+nsresult ToastNotificationHandler::InitWindowsTag() {
+  mWindowsTag.Truncate();
+
+  nsAutoString tag;
+
+  
+  
+  
+  nsCOMPtr<nsIFile> profDir;
+  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                 getter_AddRefs(profDir)));
+  MOZ_TRY(profDir->GetPath(tag));
+
+  if (!mHostPort.IsEmpty()) {
+    
+    
+    
+    tag += mName;
+  } else {
+    
+    if (!mName.IsEmpty()) {
+      tag += u"chrome#tag:"_ns;
+      
+      tag += mName;
+    } else {
+      
+      nsIDToCString uuidString(nsID::GenerateUUID());
+      size_t len = strlen(uuidString.get());
+      MOZ_ASSERT(len == NSID_LENGTH - 1);
+      nsAutoString uuid;
+      CopyASCIItoUTF16(nsDependentCSubstring(uuidString.get(), len), uuid);
+
+      tag += u"chrome#notag:"_ns;
+      tag += uuid;
+    }
+  }
+
+  
+  
+  
+  HashNumber hash = HashString(tag);
+  mWindowsTag.AppendPrintf("%010u", hash);
+
+  return NS_OK;
 }
 
 ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
@@ -495,22 +552,14 @@ bool ToastNotificationHandler::CreateWindowsNotificationFromXml(
 
   ComPtr<IToastNotification2> notification2;
   hr = mNotification.As(&notification2);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  
-  
-  
-  
-  
-  
-  
-  nsIDToCString uuidString(nsID::GenerateUUID());
-  size_t len = strlen(uuidString.get());
-  MOZ_ASSERT(len == NSID_LENGTH - 1);
-  nsAutoString tag;
-  CopyASCIItoUTF16(nsDependentCSubstring(uuidString.get(), len), tag);
   HString hTag;
-  hTag.Set(tag.get());
-  notification2->put_Tag(hTag.Get());
+  hr = hTag.Set(mWindowsTag.get());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
+
+  hr = notification2->put_Tag(hTag.Get());
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
   ComPtr<IToastNotificationManagerStatics> toastNotificationManagerStatics =
       GetToastNotificationManagerStatics();
