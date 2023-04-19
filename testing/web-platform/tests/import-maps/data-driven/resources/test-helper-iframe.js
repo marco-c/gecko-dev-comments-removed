@@ -1,5 +1,5 @@
 
-const onScriptError = event => {
+window.onScriptError = event => {
   window.registrationResult = {type: 'FetchError', error: event.error};
   return false;
 };
@@ -14,90 +14,33 @@ window.addEventListener('error', window.windowErrorHandler);
 
 
 window.addEventListener('message', event => {
-  if (event.data.action === 'prepareResolve') {
-    
-    
-    
-    
-    
-
-    
-    
-    parent.worker.postMessage('serveImporterScript');
-  } else if (event.data.action === 'resolve') {
-    if (event.data.expectedURL === null ||
-        new URL(event.data.expectedURL).protocol === 'https:') {
-      
-      
-      
-      
-      
-
-      
-      
-      const script = document.createElement('script');
-      script.onload = () => {
-        
-        importHelper(event.data.specifier)
-          .then(module => {
-              
-              
-              
-              parent.postMessage({type: 'ResolutionSuccess',
-                                  result: module.response.url},
-                                 '*');
-            })
-          .catch(e => {
-              parent.postMessage(
-                  {type: 'Failure', result: e.name, message: e.message},
-                  '*');
-            });
-      };
-      script.src = event.data.baseURL;
-      document.body.appendChild(script);
-    } else {
-      
-      
-      if (!event.data.useInternalMethods) {
-        parent.postMessage(
-            {type: 'Failure',
-             result: 'Error',
-             message: 'internals.resolveModuleSpecifier is not available'},
-            '*');
-        return;
-      }
-      try {
-        const result = internals.resolveModuleSpecifier(
-          event.data.specifier,
-          event.data.baseURL,
-          document);
-        parent.postMessage(
-            {type: 'ResolutionSuccess', result: result}, '*');
-      } catch (e) {
-        parent.postMessage(
-            {type: 'Failure', result: e.name, message: e.message}, '*');
-      }
-    }
-  } else if (event.data.action === 'getParsedImportMap') {
-    if (!event.data.useInternalMethods) {
-      parent.postMessage(
-          {type: 'Failure',
-           result: 'Error',
-           message: 'internals.getParsedImportMap is not available'},
-          '*');
-    }
-    try {
-      parent.postMessage({
-          type: 'GetParsedImportMapSuccess',
-          result: internals.getParsedImportMap(document)}, '*');
-    } catch (e) {
-      parent.postMessage(
-          {type: 'Failure', result: e.name, message: e.message}, '*');
-    }
-  } else {
+  if (event.data.action !== 'resolve') {
     parent.postMessage({
         type: 'Failure',
         result: 'Error',
         message: 'Invalid Action: ' + event.data.action}, '*');
+    return;
   }
+
+  
+  
+  
+  
+  
+  
+  window.specifierToResolve = event.data.specifier;
+  document.querySelector('base').href = event.data.baseURL;
+
+  const inlineScript = document.createElement('script');
+  inlineScript.type = 'module';
+  inlineScript.textContent = `
+    try {
+      const result = import.meta.resolve(window.specifierToResolve);
+      parent.postMessage({type: 'ResolutionSuccess', result}, '*');
+    } catch (e) {
+      parent.postMessage(
+          {type: 'Failure', result: e.name, message: e.message}, '*');
+    }
+  `;
+  document.body.append(inlineScript);
 });
