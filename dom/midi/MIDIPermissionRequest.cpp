@@ -50,9 +50,13 @@ NS_IMETHODIMP
 MIDIPermissionRequest::GetTypes(nsIArray** aTypes) {
   NS_ENSURE_ARG_POINTER(aTypes);
   nsTArray<nsString> options;
+
   
   
-  options.AppendElement(u"sysex"_ns);
+  
+  if (mNeedsSysex || !StaticPrefs::dom_sitepermsaddon_provider_enabled()) {
+    options.AppendElement(u"sysex"_ns);
+  }
   return nsContentPermissionUtils::CreatePermissionArray(mType, options,
                                                          aTypes);
 }
@@ -96,23 +100,24 @@ MIDIPermissionRequest::Run() {
     return NS_OK;
   }
 
+  nsCString permName = "midi"_ns;
   
   
   
-  
-  
-  constexpr auto kPermName = "midi-sysex"_ns;
+  if (mNeedsSysex || !StaticPrefs::dom_sitepermsaddon_provider_enabled()) {
+    permName.Append("-sysex");
+  }
 
   
   
   
   
-  if (nsContentUtils::IsSitePermAllow(mPrincipal, kPermName)) {
+  if (nsContentUtils::IsSitePermAllow(mPrincipal, permName)) {
     Allow(JS::UndefinedHandleValue);
     return NS_OK;
   }
 
-  if (nsContentUtils::IsSitePermDeny(mPrincipal, kPermName)) {
+  if (nsContentUtils::IsSitePermDeny(mPrincipal, permName)) {
     Cancel();
     return NS_OK;
   }
@@ -121,7 +126,7 @@ MIDIPermissionRequest::Run() {
   
   if (StaticPrefs::dom_webmidi_gated() &&
       !StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
-      !nsContentUtils::HasSitePerm(mPrincipal, kPermName) &&
+      !nsContentUtils::HasSitePerm(mPrincipal, permName) &&
       !mPrincipal->GetIsLoopbackHost()) {
     Cancel();
     return NS_OK;
