@@ -11,40 +11,33 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/VideoColorSpaceBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
-class nsIGlobalObject;  
-
-namespace mozilla {
-namespace dom {
-
-enum class VideoColorPrimaries : uint8_t;           
-enum class VideoTransferCharacteristics : uint8_t;  
-enum class VideoMatrixCoefficients : uint8_t;       
-struct VideoColorSpaceInit;                         
-
-}  
-}  
+class nsIGlobalObject;
 
 namespace mozilla::dom {
 
-class VideoColorSpace final
-    : public nsISupports 
-
-    ,
-      public nsWrapperCache 
-
-{
+class VideoColorSpace final : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(VideoColorSpace)
 
  public:
-  VideoColorSpace();
+  VideoColorSpace(nsIGlobalObject* aParent, const VideoColorSpaceInit& aInit);
 
  protected:
-  ~VideoColorSpace();
+  ~VideoColorSpace() = default;
+
+ private:
+  template <class T>
+  static Nullable<T> ToNullable(const Optional<T>& aInput) {
+    if (aInput.WasPassed()) {
+      return Nullable<T>(aInput.Value());
+    }
+    return Nullable<T>();
+  }
 
  public:
   
@@ -56,18 +49,26 @@ class VideoColorSpace final
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<VideoColorSpace> Constructor(
-      const GlobalObject& global, const VideoColorSpaceInit& init,
+      const GlobalObject& aGlobal, const VideoColorSpaceInit& aInit,
       ErrorResult& aRv);
 
-  Nullable<VideoColorPrimaries> GetPrimaries() const;
+  Nullable<VideoColorPrimaries> GetPrimaries() const {
+    return ToNullable(mInit.mPrimaries);
+  }
 
-  Nullable<VideoTransferCharacteristics> GetTransfer() const;
+  Nullable<VideoTransferCharacteristics> GetTransfer() const {
+    return ToNullable(mInit.mTransfer);
+  }
 
-  Nullable<VideoMatrixCoefficients> GetMatrix() const;
+  Nullable<VideoMatrixCoefficients> GetMatrix() const {
+    return ToNullable(mInit.mMatrix);
+  }
 
-  Nullable<bool> GetFullRange() const;
+  Nullable<bool> GetFullRange() const { return ToNullable(mInit.mFullRange); }
 
-  void ToJSON(JSContext* cx, JS::MutableHandle<JSObject*> aRetVal);
+ private:
+  nsCOMPtr<nsIGlobalObject> mParent;
+  const VideoColorSpaceInit mInit;
 };
 
 }  
