@@ -42,8 +42,6 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
-const { createCommandsDictionary } = require("devtools/shared/commands/index");
-
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/shared/loader/browser-loader.js"
 );
@@ -221,7 +219,7 @@ const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
 function Toolbox(
-  descriptorFront,
+  commands,
   selectedTool,
   hostType,
   contentWindow,
@@ -233,7 +231,12 @@ function Toolbox(
   this.selection = new Selection();
   this.telemetry = new Telemetry();
 
-  this._descriptorFront = descriptorFront;
+  
+  
+  
+  
+  this.commands = commands;
+  this._descriptorFront = commands.descriptorFront;
 
   
   
@@ -844,13 +847,6 @@ Toolbox.prototype = {
           this._URL
         );
       });
-
-      
-      
-      
-      
-      
-      this.commands = await createCommandsDictionary(this._descriptorFront);
 
       this.commands.targetCommand.on(
         "target-thread-wrong-order-on-resume",
@@ -4244,8 +4240,8 @@ Toolbox.prototype = {
             
             
             
-            this.commands.targetCommand.destroy();
-            return this._descriptorFront.destroy();
+            
+            return this.commands.destroy();
           }, console.error)
           .then(() => {
             this.emit("destroyed");

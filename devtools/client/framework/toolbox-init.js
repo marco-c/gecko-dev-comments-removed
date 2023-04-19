@@ -94,8 +94,7 @@ async function initToolbox(url, host) {
 
   try {
     const commands = await commandsFromURL(url);
-    const descriptor = commands.descriptorFront;
-    const toolbox = gDevTools.getToolboxForDescriptor(descriptor);
+    const toolbox = gDevTools.getToolboxForCommands(commands);
     if (toolbox && toolbox.isDestroying()) {
       
       
@@ -103,7 +102,7 @@ async function initToolbox(url, host) {
     }
 
     
-    descriptor.once("descriptor-destroyed", function() {
+    commands.descriptorFront.once("descriptor-destroyed", function() {
       
       if (host.contentDocument) {
         const error = new Error("Debug target was disconnected");
@@ -112,7 +111,7 @@ async function initToolbox(url, host) {
     });
 
     const options = { customIframe: host };
-    await gDevTools.showToolbox(descriptor, {
+    await gDevTools.showToolbox(commands, {
       toolId: tool,
       hostType: Toolbox.HostType.PAGE,
       hostOptions: options,

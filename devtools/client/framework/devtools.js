@@ -507,7 +507,7 @@ DevTools.prototype = {
 
 
   async showToolbox(
-    descriptor,
+    commands,
     {
       toolId,
       hostType,
@@ -517,7 +517,7 @@ DevTools.prototype = {
       hostOptions,
     } = {}
   ) {
-    let toolbox = this._toolboxes.get(descriptor);
+    let toolbox = this._toolboxes.get(commands);
 
     if (toolbox) {
       if (hostType != null && toolbox.hostType != hostType) {
@@ -537,19 +537,19 @@ DevTools.prototype = {
       
       
       
-      const promise = this._creatingToolboxes.get(descriptor);
+      const promise = this._creatingToolboxes.get(commands);
       if (promise) {
         return promise;
       }
       const toolboxPromise = this._createToolbox(
-        descriptor,
+        commands,
         toolId,
         hostType,
         hostOptions
       );
-      this._creatingToolboxes.set(descriptor, toolboxPromise);
+      this._creatingToolboxes.set(commands, toolboxPromise);
       toolbox = await toolboxPromise;
-      this._creatingToolboxes.delete(descriptor);
+      this._creatingToolboxes.delete(commands);
 
       if (startTime) {
         this.logToolboxOpenTime(toolbox, startTime);
@@ -607,10 +607,7 @@ DevTools.prototype = {
       const openerCommands = await LocalTabCommandsFactory.getCommandsForTab(
         openerTab
       );
-      if (
-        openerCommands &&
-        this.getToolboxForDescriptor(openerCommands.descriptorFront)
-      ) {
+      if (this.getToolboxForCommands(openerCommands)) {
         console.log(
           "Can't open a toolbox for this document as this is debugged from its opener tab"
         );
@@ -618,7 +615,7 @@ DevTools.prototype = {
       }
     }
     const commands = await LocalTabCommandsFactory.createCommandsForTab(tab);
-    return this.showToolbox(commands.descriptorFront, {
+    return this.showToolbox(commands, {
       toolId,
       hostType,
       startTime,
@@ -651,7 +648,7 @@ DevTools.prototype = {
       this._commandsPromiseByWebExtId.delete(extensionId);
     });
 
-    return this.showToolbox(commands.descriptorFront, {
+    return this.showToolbox(commands, {
       hostType: Toolbox.HostType.WINDOW,
       hostOptions: {
         
@@ -719,12 +716,12 @@ DevTools.prototype = {
 
 
 
-  async _createToolbox(descriptor, toolId, hostType, hostOptions) {
-    const manager = new ToolboxHostManager(descriptor, hostType, hostOptions);
+  async _createToolbox(commands, toolId, hostType, hostOptions) {
+    const manager = new ToolboxHostManager(commands, hostType, hostOptions);
 
     const toolbox = await manager.create(toolId);
 
-    this._toolboxes.set(descriptor, toolbox);
+    this._toolboxes.set(commands, toolbox);
 
     this.emit("toolbox-created", toolbox);
 
@@ -733,7 +730,7 @@ DevTools.prototype = {
     });
 
     toolbox.once("destroyed", () => {
-      this._toolboxes.delete(descriptor);
+      this._toolboxes.delete(commands);
       this.emit("toolbox-destroyed", toolbox);
     });
 
@@ -752,8 +749,21 @@ DevTools.prototype = {
 
 
 
-  getToolboxForDescriptor(descriptor) {
-    return this._toolboxes.get(descriptor);
+  getToolboxForCommands(commands) {
+    return this._toolboxes.get(commands);
+  },
+
+  
+
+
+
+  getToolboxForDescriptorFront(descriptorFront) {
+    for (const [commands, toolbox] of this._toolboxes) {
+      if (commands.descriptorFront == descriptorFront) {
+        return toolbox;
+      }
+    }
+    return null;
   },
 
   
@@ -762,7 +772,7 @@ DevTools.prototype = {
 
   async getToolboxForTab(tab) {
     const commands = await LocalTabCommandsFactory.getCommandsForTab(tab);
-    return commands && this.getToolboxForDescriptor(commands.descriptorFront);
+    return this.getToolboxForCommands(commands);
   },
 
   
@@ -774,10 +784,10 @@ DevTools.prototype = {
 
   async closeToolboxForTab(tab) {
     const commands = await LocalTabCommandsFactory.getCommandsForTab(tab);
-    const descriptor = commands.descriptorFront;
-    let toolbox = await this._creatingToolboxes.get(descriptor);
+
+    let toolbox = await this._creatingToolboxes.get(commands);
     if (!toolbox) {
-      toolbox = this._toolboxes.get(descriptor);
+      toolbox = this._toolboxes.get(commands);
     }
     if (!toolbox) {
       return;
