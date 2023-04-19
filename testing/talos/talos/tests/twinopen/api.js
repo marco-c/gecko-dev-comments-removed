@@ -2,11 +2,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TalosParentProfiler",
-  "resource://talos-powers/TalosParentProfiler.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TalosParentProfiler: "resource://talos-powers/TalosParentProfiler.sys.mjs",
+});
 
 var OPENER_DELAY = 1000; 
 

@@ -45,8 +45,8 @@ this.sessionrestore = class extends ExtensionAPI {
     
     async function getTalosParentProfiler() {
       try {
-        var { TalosParentProfiler } = ChromeUtils.import(
-          "resource://talos-powers/TalosParentProfiler.jsm"
+        var { TalosParentProfiler } = ChromeUtils.importESModule(
+          "resource://talos-powers/TalosParentProfiler.sys.mjs"
         );
         return TalosParentProfiler;
       } catch (err) {
