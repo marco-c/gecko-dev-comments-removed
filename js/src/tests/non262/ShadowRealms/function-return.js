@@ -1,73 +1,21 @@
 
 
-
-
-
-
-
-
-
-
-
-
-function assertMatchesNativeFunction(f) {
-  var source = f.toString();
-
-  
-  assertEq(/^function\b/.test(source), true);
-
-  
-  var nativeAccesorRe = /^(?<start>\s*function)(?<accessor>\s+[gs]et)(?<end>\s+[^(].*)$/;
-  var match = nativeAccesorRe.exec(source);
-  if (match) {
-    source = match.groups.start + match.groups.end;
-  }
-
-  
-  var closeCurly = source.lastIndexOf("}");
-  var openCurly = source.lastIndexOf("{");
-  assertEq(openCurly < closeCurly, true);
-
-  var body = source.slice(openCurly + 1, closeCurly);
-  assertEq(/^\s*\[native code\]\s*$/.test(body), true);
-
-  
-  
-  source = source.slice(0, openCurly) + "{}";
-
-  
-  
-  source = "void " + source;
-
-  try {
-    Function(source);
-  } catch {
-    assertEq(true, false, `${source} doesn't match NativeFunction`);
-  }
-}
-
 let sr = new ShadowRealm();
 var f = sr.evaluate("function f() { }; f");
 
-assertMatchesNativeFunction(f);
+assertEq(/native code/.test(f.toString()), true)
+assertEq(/function f/.test(f.toString()), true)
 
 f.name = "koala"
-assertMatchesNativeFunction(f);
+
+assertEq(/function koala/.test(f.toString()), false)
 
 Object.defineProperty(f, "name", { writable: true, value: "koala" });
-assertMatchesNativeFunction(f);
+assertEq(/function koala/.test(f.toString()), true)
 
 f.name = "panda"
-assertMatchesNativeFunction(f);
+assertEq(/function panda/.test(f.toString()), true)
 
-f.name = "has whitespace, therefore shouldn't match the PropertyName production";
-assertMatchesNativeFunction(f);
-
-f.name = 123;
-assertMatchesNativeFunction(f);
-
-Object.defineProperty(f, "name", { get() { throw new Error("unexpected side-effect"); } });
-assertMatchesNativeFunction(f);
 
 if (typeof reportCompare === 'function')
     reportCompare(true, true);

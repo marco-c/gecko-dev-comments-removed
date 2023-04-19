@@ -33,7 +33,6 @@
 #include "vm/ObjectOperations.h"
 
 #include "builtin/HandlerFunction-inl.h"
-#include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
 
@@ -149,28 +148,40 @@ bool ShadowRealmObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static ShadowRealmObject* ValidateShadowRealmObject(JSContext* cx,
-                                                    Handle<Value> value) {
+                                                    Handle<JSObject*> O) {
   
   
-  return UnwrapAndTypeCheckValue<ShadowRealmObject>(cx, value, [cx]() {
+  Rooted<JSObject*> maybeUnwrappedO(cx, O);
+  if (IsCrossCompartmentWrapper(O)) {
+    maybeUnwrappedO = CheckedUnwrapDynamic(O, cx);
+    
+    if (!maybeUnwrappedO) {
+      return nullptr;
+    }
+  }
+
+  if (!maybeUnwrappedO->is<ShadowRealmObject>()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_NOT_SHADOW_REALM);
-  });
+    return nullptr;
+  }
+
+  return &maybeUnwrappedO->as<ShadowRealmObject>();
 }
 
 void js::ReportPotentiallyDetailedMessage(JSContext* cx,
                                           const unsigned detailedError,
                                           const unsigned genericError) {
   Rooted<Value> exception(cx);
-  if (!cx->getPendingException(&exception)) {
+  if (!JS_GetPendingException(cx, &exception)) {
     return;
   }
-  cx->clearPendingException();
+  JS_ClearPendingException(cx);
 
   JS::ErrorReportBuilder jsReport(cx);
   JS::ExceptionStack exnStack(cx, exception, nullptr);
   if (!jsReport.init(cx, exnStack, JS::ErrorReportBuilder::NoSideEffects)) {
-    cx->clearPendingException();
+    JS_ClearPendingException(cx);
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, genericError);
     return;
   }
@@ -292,13 +303,13 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
     
     
     Rooted<Value> exception(cx);
-    if (!cx->getPendingException(&exception)) {
+    if (!JS_GetPendingException(cx, &exception)) {
       return false;
     }
 
     
     
-    cx->clearPendingException();
+    JS_ClearPendingException(cx);
 
     Rooted<Value> clonedException(cx);
     if (!JS_StructuredClone(cx, exception, &clonedException, nullptr,
@@ -306,7 +317,7 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
       return false;
     }
 
-    cx->setPendingException(clonedException, ShouldCaptureStack::Always);
+    JS_SetPendingException(cx, clonedException);
     return false;
   }
 
@@ -324,11 +335,6 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
   }
 
   
-  if (!cx->compartment()->wrap(cx, rval)) {
-    return false;
-  }
-
-  
   return GetWrappedValue(cx, callerRealm, rval, rval);
 }
 
@@ -338,7 +344,10 @@ static bool ShadowRealm_evaluate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  HandleValue obj = args.thisv();
+  Rooted<JSObject*> obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
 
   
   Rooted<ShadowRealmObject*> shadowRealm(cx,
@@ -365,14 +374,6 @@ static bool ShadowRealm_evaluate(JSContext* cx, unsigned argc, Value* vp) {
   return PerformShadowRealmEval(cx, sourceText, callerRealm, evalRealm,
                                 args.rval());
 }
-
-enum class ImportValueIndices : uint32_t {
-  CalleRealm = 0,
-
-  ExportNameString,
-
-  Length,
-};
 
 
 
@@ -491,23 +492,26 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
   
   
-  Rooted<ArrayObject*> handlerObject(
-      cx,
-      NewDenseFullyAllocatedArray(cx, uint32_t(ImportValueIndices::Length)));
+  Rooted<JSObject*> handlerObject(cx, JS_NewPlainObject(cx));
   if (!handlerObject) {
     return nullptr;
   }
 
-  handlerObject->setDenseInitializedLength(
-      uint32_t(ImportValueIndices::Length));
-  handlerObject->initDenseElement(uint32_t(ImportValueIndices::CalleRealm),
-                                  PrivateValue(callerRealm));
-  handlerObject->initDenseElement(
-      uint32_t(ImportValueIndices::ExportNameString), StringValue(exportName));
+  Rooted<Value> calleeRealmValue(cx, PrivateValue(callerRealm));
+  if (!JS_DefineProperty(cx, handlerObject, "calleeRealm", calleeRealmValue,
+                         JSPROP_READONLY)) {
+    return nullptr;
+  }
 
+  if (!JS_DefineProperty(cx, handlerObject, "exportNameString", exportName,
+                         JSPROP_READONLY)) {
+    return nullptr;
+  }
+
+  Rooted<Value> handlerValue(cx, ObjectValue(*handlerObject));
   Rooted<JSFunction*> onFulfilled(
       cx,
-      NewHandlerWithExtra(
+      NewHandlerWithExtraValue(
           cx,
           [](JSContext* cx, unsigned argc, Value* vp) {
             
@@ -515,17 +519,18 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
             CallArgs args = CallArgsFromVp(argc, vp);
             MOZ_ASSERT(args.length() == 1);
 
-            auto* handlerObject = ExtraFromHandler<ArrayObject>(args);
+            Rooted<JSObject*> handlerObject(
+                cx, &ExtraValueFromHandler(args).toObject());
 
-            Rooted<Value> realmValue(
-                cx, handlerObject->getDenseElement(
-                        uint32_t(ImportValueIndices::CalleRealm)));
-            Rooted<Value> exportNameValue(
-                cx, handlerObject->getDenseElement(
-                        uint32_t(ImportValueIndices::ExportNameString)));
+            Rooted<Value> realmValue(cx);
+            Rooted<Value> exportNameValue(cx);
+            MOZ_ALWAYS_TRUE(
+                JS_GetProperty(cx, handlerObject, "calleeRealm", &realmValue));
+            MOZ_ALWAYS_TRUE(JS_GetProperty(
+                cx, handlerObject, "exportNameString", &exportNameValue));
 
             
-            Handle<Value> exportsValue = args[0];
+            Rooted<Value> exportsValue(cx, args.get(0));
             MOZ_ASSERT(exportsValue.isObject() &&
                        exportsValue.toObject().is<ModuleNamespaceObject>());
 
@@ -539,12 +544,11 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
             
             MOZ_ASSERT(exportNameValue.isString());
 
-            Rooted<JSAtom*> stringAtom(
-                cx, AtomizeString(cx, exportNameValue.toString()));
-            if (!stringAtom) {
+            Rooted<JSString*> string(cx, exportNameValue.toString());
+            Rooted<jsid> stringId(cx);
+            if (!JS_StringToId(cx, string, &stringId)) {
               return false;
             }
-            Rooted<jsid> stringId(cx, AtomToId(stringAtom));
 
             
             bool hasOwn = false;
@@ -561,7 +565,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
             
             Rooted<Value> value(cx);
-            if (!GetProperty(cx, exports, exports, stringId, &value)) {
+            if (!JS_GetPropertyById(cx, exports, stringId, &value)) {
               return false;
             }
 
@@ -571,7 +575,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
             
             return GetWrappedValue(cx, callerRealm, value, args.rval());
           },
-          promise, handlerObject));
+          promise, handlerValue));
   if (!onFulfilled) {
     return nullptr;
   }
@@ -586,7 +590,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
                 return false;
               },
               promise));
-  if (!onRejected) {
+  if (!onFulfilled) {
     return nullptr;
   }
 
@@ -595,7 +599,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
   
   
   
-  return OriginalPromiseThen(cx, promise, onFulfilled, onRejected);
+  return JS::CallOriginalPromiseThen(cx, promise, onFulfilled, onRejected);
 }
 
 
@@ -604,7 +608,10 @@ static bool ShadowRealm_importValue(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  HandleValue obj = args.thisv();
+  Rooted<JSObject*> obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
 
   
   Rooted<ShadowRealmObject*> shadowRealm(cx,
@@ -646,8 +653,9 @@ static bool ShadowRealm_importValue(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
-  JSObject* res = ShadowRealmImportValue(cx, specifierString, exportName,
-                                         callerRealm, evalRealm);
+  Rooted<JSObject*> res(
+      cx, ShadowRealmImportValue(cx, specifierString, exportName, callerRealm,
+                                 evalRealm));
   if (!res) {
     return false;
   }
@@ -658,36 +666,27 @@ static bool ShadowRealm_importValue(JSContext* cx, unsigned argc, Value* vp) {
 
 static const JSFunctionSpec shadowrealm_methods[] = {
     JS_FN("evaluate", ShadowRealm_evaluate, 1, 0),
-    JS_FN("importValue", ShadowRealm_importValue, 2, 0),
-    JS_FS_END,
-};
+    JS_FN("importValue", ShadowRealm_importValue, 2, 0), JS_FS_END};
 
 static const JSPropertySpec shadowrealm_properties[] = {
-    JS_STRING_SYM_PS(toStringTag, "ShadowRealm", JSPROP_READONLY),
-    JS_PS_END,
-};
+    JS_STRING_SYM_PS(toStringTag, "ShadowRealm", JSPROP_READONLY), JS_PS_END};
 
 static const ClassSpec ShadowRealmObjectClassSpec = {
     GenericCreateConstructor<ShadowRealmObject::construct, 0,
                              gc::AllocKind::FUNCTION>,
     GenericCreatePrototype<ShadowRealmObject>,
-    nullptr,                 
-    nullptr,                 
-    shadowrealm_methods,     
-    shadowrealm_properties,  
+    nullptr,                
+    nullptr,                
+    shadowrealm_methods,    
+    shadowrealm_properties  
 };
 
 const JSClass ShadowRealmObject::class_ = {
     "ShadowRealm",
     JSCLASS_HAS_CACHED_PROTO(JSProto_ShadowRealm) |
         JSCLASS_HAS_RESERVED_SLOTS(ShadowRealmObject::SlotCount),
-    JS_NULL_CLASS_OPS,
-    &ShadowRealmObjectClassSpec,
-};
+    JS_NULL_CLASS_OPS, &ShadowRealmObjectClassSpec};
 
 const JSClass ShadowRealmObject::protoClass_ = {
-    "ShadowRealm.prototype",
-    JSCLASS_HAS_CACHED_PROTO(JSProto_ShadowRealm),
-    JS_NULL_CLASS_OPS,
-    &ShadowRealmObjectClassSpec,
-};
+    "ShadowRealm.prototype", JSCLASS_HAS_CACHED_PROTO(JSProto_ShadowRealm),
+    JS_NULL_CLASS_OPS, &ShadowRealmObjectClassSpec};
