@@ -3376,7 +3376,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
         return false;
       }
-      if (!emit2(JSOp::Unpick, emitted + 1)) {
+      if (!emitUnpickN(emitted + 1)) {
         
         return false;
       }
@@ -3423,7 +3423,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
         
         return false;
       }
-      if (!emit2(JSOp::Unpick, emitted + 1)) {
+      if (!emitUnpickN(emitted + 1)) {
         
         return false;
       }
@@ -3455,7 +3455,7 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
       
       return false;
     }
-    if (!emit2(JSOp::Unpick, emitted + 2)) {
+    if (!emitUnpickN(emitted + 2)) {
       
       return false;
     }
