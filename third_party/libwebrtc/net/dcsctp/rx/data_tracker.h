@@ -70,7 +70,8 @@ class DataTracker {
   bool IsTSNValid(TSN tsn) const;
 
   
-  void Observe(TSN tsn,
+  
+  bool Observe(TSN tsn,
                AnyDataChunk::ImmediateAckFlag immediate_ack =
                    AnyDataChunk::ImmediateAckFlag(false));
   
