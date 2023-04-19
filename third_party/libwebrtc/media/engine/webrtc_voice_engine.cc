@@ -2070,6 +2070,13 @@ void WebRtcVoiceMediaChannel::ResetUnsignaledRecvStream() {
   }
 }
 
+
+
+
+
+void WebRtcVoiceMediaChannel::OnDemuxerCriteriaUpdatePending() {}
+void WebRtcVoiceMediaChannel::OnDemuxerCriteriaUpdateComplete() {}
+
 bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,
                                              AudioSource* source) {
   auto it = send_streams_.find(ssrc);

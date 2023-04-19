@@ -300,7 +300,6 @@ class BaseChannel : public ChannelInterface,
       const RtpHeaderExtensions& header_extensions);
 
   bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
-  bool RegisterRtpDemuxerSink_n() RTC_RUN_ON(network_thread());
 
   
   std::string ToString() const;
@@ -371,6 +370,9 @@ class BaseChannel : public ChannelInterface,
   
   
   webrtc::RtpDemuxerCriteria demuxer_criteria_;
+  
+  
+  webrtc::RtpDemuxerCriteria previous_demuxer_criteria_;
   
   
   

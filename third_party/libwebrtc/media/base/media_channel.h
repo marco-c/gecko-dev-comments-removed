@@ -207,6 +207,17 @@ class MediaChannel : public sigslot::has_slots<> {
   
   virtual void ResetUnsignaledRecvStream() = 0;
   
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void OnDemuxerCriteriaUpdatePending() = 0;
+  virtual void OnDemuxerCriteriaUpdateComplete() = 0;
+  
   virtual int GetRtpSendTimeExtnId() const;
   
   

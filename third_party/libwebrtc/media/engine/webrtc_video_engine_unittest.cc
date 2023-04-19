@@ -6392,6 +6392,9 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
   cricket::StreamParams unsignaled_stream;
   unsignaled_stream.set_stream_ids({kSyncLabel});
   ASSERT_TRUE(channel_->AddRecvStream(unsignaled_stream));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
   
   
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
@@ -6413,8 +6416,19 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
   
   
   channel_->ResetUnsignaledRecvStream();
+  channel_->OnDemuxerCriteriaUpdatePending();
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
 
+  
+  
+  channel_->OnPacketReceived(packet,  -1);
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+
+  
+  
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
   channel_->OnPacketReceived(packet,  -1);
   rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
@@ -6452,6 +6466,279 @@ TEST_F(WebRtcVideoChannelTest,
   const auto& receivers2 = fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(receivers2.size(), 1u);
   EXPECT_EQ(receivers2[0]->GetConfig().rtp.remote_ssrc, kIncomingSignalledSsrc);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       RecentlyAddedSsrcsDoNotCreateUnsignalledRecvStreams) {
+  const uint32_t kSsrc1 = 1;
+  const uint32_t kSsrc2 = 2;
+
+  
+  EXPECT_TRUE(channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc1)));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+
+  
+  
+  
+  
+
+  
+  
+  channel_->OnDemuxerCriteriaUpdatePending();
+
+  
+  
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc1);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 0u);
+
+  
+  
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc1);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 2u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 2u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 1u);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       RecentlyRemovedSsrcsDoNotCreateUnsignalledRecvStreams) {
+  const uint32_t kSsrc1 = 1;
+  const uint32_t kSsrc2 = 2;
+
+  
+  EXPECT_TRUE(channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc1)));
+  EXPECT_TRUE(channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc2)));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 2u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 0u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 0u);
+
+  
+  
+  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc1));
+  channel_->OnDemuxerCriteriaUpdatePending();
+
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+
+  
+  
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc1);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 0u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 1u);
+
+  
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc1);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 2u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 2u);
+}
+
+TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
+  const uint32_t kSsrc = 1;
+
+  
+  EXPECT_TRUE(channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+  ASSERT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+
+  
+  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
+  
+  
+  EXPECT_TRUE(channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+
+  
+  
+  {
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 1u);
+
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  {
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
+
+  
+  EXPECT_TRUE(channel_->RemoveRecvStream(kSsrc));
+  channel_->OnDemuxerCriteriaUpdatePending();
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
+
+  
+  
+  {
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
+
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  {
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
+
+  
+  channel_->OnDemuxerCriteriaUpdateComplete();
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  {
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 3u);
 }
 
 

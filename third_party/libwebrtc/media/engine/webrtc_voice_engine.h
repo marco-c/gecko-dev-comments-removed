@@ -187,6 +187,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
   void ResetUnsignaledRecvStream() override;
+  void OnDemuxerCriteriaUpdatePending() override;
+  void OnDemuxerCriteriaUpdateComplete() override;
 
   
   

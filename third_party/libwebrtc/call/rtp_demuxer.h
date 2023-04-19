@@ -28,6 +28,9 @@ struct RtpDemuxerCriteria {
   RtpDemuxerCriteria();
   ~RtpDemuxerCriteria();
 
+  bool operator==(const RtpDemuxerCriteria& other) const;
+  bool operator!=(const RtpDemuxerCriteria& other) const;
+
   
   std::string mid;
 

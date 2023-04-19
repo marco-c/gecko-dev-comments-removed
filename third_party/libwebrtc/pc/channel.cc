@@ -174,7 +174,13 @@ std::string BaseChannel::ToString() const {
 
 bool BaseChannel::ConnectToRtpTransport() {
   RTC_DCHECK(rtp_transport_);
-  if (!RegisterRtpDemuxerSink_n()) {
+  
+  
+  bool result = rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria_, this);
+  if (result) {
+    previous_demuxer_criteria_ = demuxer_criteria_;
+  } else {
+    previous_demuxer_criteria_ = {};
     RTC_LOG(LS_ERROR) << "Failed to set up demuxing for " << ToString();
     return false;
   }
@@ -512,21 +518,26 @@ void BaseChannel::UpdateRtpHeaderExtensionMap(
 }
 
 bool BaseChannel::RegisterRtpDemuxerSink_w() {
+  if (demuxer_criteria_ == previous_demuxer_criteria_) {
+    return true;
+  }
+  media_channel_->OnDemuxerCriteriaUpdatePending();
   
   
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE, [this, demuxer_criteria = demuxer_criteria_] {
         RTC_DCHECK_RUN_ON(network_thread());
         RTC_DCHECK(rtp_transport_);
-        return rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria, this);
+        bool result =
+            rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria, this);
+        if (result) {
+          previous_demuxer_criteria_ = demuxer_criteria;
+        } else {
+          previous_demuxer_criteria_ = {};
+        }
+        media_channel_->OnDemuxerCriteriaUpdateComplete();
+        return result;
       });
-}
-
-bool BaseChannel::RegisterRtpDemuxerSink_n() {
-  RTC_DCHECK(rtp_transport_);
-  
-  
-  return rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria_, this);
 }
 
 void BaseChannel::EnableMedia_w() {
