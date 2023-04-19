@@ -15,8 +15,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <bitset>
+#include <deque>
 #include <limits>
-#include <map>
 #include <memory>
 #include <set>
 #include <utility>
@@ -53,13 +54,15 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
 
   Vp8EncoderConfig UpdateConfiguration(size_t stream_index) override;
 
+  
+  
+  
   void OnEncodeDone(size_t stream_index,
                     uint32_t rtp_timestamp,
                     size_t size_bytes,
                     bool is_keyframe,
                     int qp,
                     CodecSpecificInfo* info) override;
-
   void OnFrameDropped(size_t stream_index, uint32_t rtp_timestamp) override;
 
   void OnPacketLossRateUpdate(float packet_loss_rate) override;
@@ -70,6 +73,7 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
       const VideoEncoder::LossNotification& loss_notification) override;
 
  private:
+  static constexpr size_t kNumReferenceBuffers = 3;  
   struct DependencyInfo {
     DependencyInfo() = default;
     DependencyInfo(absl::string_view indication_symbols,
@@ -81,29 +85,13 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
     absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     Vp8FrameConfig frame_config;
   };
-
-  static std::vector<DependencyInfo> GetDependencyInfo(size_t num_layers);
-  bool IsSyncFrame(const Vp8FrameConfig& config) const;
-  void ValidateReferences(Vp8FrameConfig::BufferFlags* flags,
-                          Vp8FrameConfig::Vp8BufferReference ref) const;
-  void UpdateSearchOrder(Vp8FrameConfig* config);
-
-  const size_t num_layers_;
-  const std::vector<unsigned int> temporal_ids_;
-  const std::vector<DependencyInfo> temporal_pattern_;
-  
-  std::set<Vp8FrameConfig::Vp8BufferReference> kf_buffers_;
-  FrameDependencyStructure GetTemplateStructure(int num_layers) const;
-
-  uint8_t pattern_idx_;
-  
-  absl::optional<std::vector<uint32_t>> new_bitrates_bps_;
-
   struct PendingFrame {
     PendingFrame();
-    PendingFrame(bool expired,
+    PendingFrame(uint32_t timestamp,
+                 bool expired,
                  uint8_t updated_buffers_mask,
                  const DependencyInfo& dependency_info);
+    uint32_t timestamp = 0;
     
     
     bool expired = false;
@@ -113,14 +101,38 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
     
     DependencyInfo dependency_info;
   };
+
+  static std::vector<DependencyInfo> GetDependencyInfo(size_t num_layers);
+  static std::bitset<kNumReferenceBuffers> DetermineStaticBuffers(
+      const std::vector<DependencyInfo>& temporal_pattern);
+  bool IsSyncFrame(const Vp8FrameConfig& config) const;
+  void ValidateReferences(Vp8FrameConfig::BufferFlags* flags,
+                          Vp8FrameConfig::Vp8BufferReference ref) const;
+  void UpdateSearchOrder(Vp8FrameConfig* config);
+  size_t NumFramesSinceBufferRefresh(
+      Vp8FrameConfig::Vp8BufferReference ref) const;
+  void ResetNumFramesSinceBufferRefresh(Vp8FrameConfig::Vp8BufferReference ref);
+  void CullPendingFramesBefore(uint32_t timestamp);
+
+  const size_t num_layers_;
+  const std::vector<unsigned int> temporal_ids_;
+  const std::vector<DependencyInfo> temporal_pattern_;
   
-  std::map<uint32_t, PendingFrame> pending_frames_;
+  
+  const std::bitset<kNumReferenceBuffers> is_static_buffer_;
+  FrameDependencyStructure GetTemplateStructure(int num_layers) const;
+
+  uint8_t pattern_idx_;
+  
+  absl::optional<std::vector<uint32_t>> new_bitrates_bps_;
+
+  
+  std::deque<PendingFrame> pending_frames_;
 
   
   
   
-  std::map<Vp8FrameConfig::Vp8BufferReference, size_t>
-      frames_since_buffer_refresh_;
+  std::array<size_t, kNumReferenceBuffers> frames_since_buffer_refresh_;
 
   
   std::unique_ptr<TemporalLayersChecker> checker_;
