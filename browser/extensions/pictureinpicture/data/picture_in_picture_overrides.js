@@ -151,6 +151,12 @@ let AVAILABLE_PIP_OVERRIDES;
       "https://*.udemy.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
     },
 
+    voot: {
+      "https://*.voot.com/*": {
+        videoWrapperScriptPath: "video-wrappers/voot.js",
+      },
+    },
+
     youtube: {
       
 
