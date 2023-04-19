@@ -151,6 +151,11 @@ RuleEditor.prototype = {
         if (ancestorData.type == "media") {
           return `@media ${ancestorData.value}`;
         }
+
+        if (ancestorData.type == "supports") {
+          return `@supports ${ancestorData.conditionText}`;
+        }
+        
         
         
         console.warn("Unknown ancestor data type:", ancestorData.type);
