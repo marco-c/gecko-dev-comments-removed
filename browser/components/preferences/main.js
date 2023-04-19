@@ -191,8 +191,14 @@ if (AppConstants.MOZ_UPDATER) {
   }
 }
 
-XPCOMUtils.defineLazyGetter(this, "gIsPackagedApp", () => {
-  return Services.sysinfo.getProperty("isPackagedApp");
+XPCOMUtils.defineLazyGetter(this, "gHasWinPackageId", () => {
+  let hasWinPackageId = false;
+  try {
+    hasWinPackageId = Services.sysinfo.getProperty("hasWinPackageId");
+  } catch (_ex) {
+    
+  }
+  return hasWinPackageId;
 });
 
 
@@ -630,7 +636,7 @@ var gMainPane = {
       let updateDisabled =
         Services.policies && !Services.policies.isAllowed("appUpdate");
 
-      if (gIsPackagedApp) {
+      if (gHasWinPackageId) {
         
         
         
@@ -1867,7 +1873,7 @@ var gMainPane = {
     if (
       AppConstants.MOZ_UPDATER &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
-      !gIsPackagedApp
+      !gHasWinPackageId
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
 
@@ -1887,7 +1893,7 @@ var gMainPane = {
     if (
       AppConstants.MOZ_UPDATER &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
-      !gIsPackagedApp
+      !gHasWinPackageId
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoValue = radiogroup.value == "true";
@@ -1927,7 +1933,7 @@ var gMainPane = {
       
       UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
-      !gIsPackagedApp &&
+      !gHasWinPackageId &&
       !UpdateUtils.appUpdateSettingIsLocked("app.update.background.enabled")
     );
   },
