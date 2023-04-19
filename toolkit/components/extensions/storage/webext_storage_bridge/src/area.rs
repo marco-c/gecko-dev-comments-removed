@@ -58,16 +58,17 @@ fn path_from_nsifile(file: &nsIFile) -> Result<PathBuf> {
 
 
 
-#[derive(xpcom)]
-#[xpimplements(
-    mozIExtensionStorageArea,
-    mozIConfigurableExtensionStorageArea,
-    mozISyncedExtensionStorageArea,
-    mozIInterruptible,
-    mozIBridgedSyncEngine
+#[xpcom(
+    implement(
+        mozIExtensionStorageArea,
+        mozIConfigurableExtensionStorageArea,
+        mozISyncedExtensionStorageArea,
+        mozIInterruptible,
+        mozIBridgedSyncEngine
+    ),
+    nonatomic
 )]
-#[refcnt = "nonatomic"]
-pub struct InitStorageSyncArea {
+pub struct StorageSyncArea {
     
     
     

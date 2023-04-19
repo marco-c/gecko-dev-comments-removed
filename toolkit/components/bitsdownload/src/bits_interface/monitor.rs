@@ -93,10 +93,8 @@ fn status_to_request_result(
 
 
 
-#[derive(xpcom)]
-#[xpimplements(nsIRunnable, nsINamed)]
-#[refcnt = "atomic"]
-pub struct InitMonitorRunnable {
+#[xpcom(implement(nsIRunnable, nsINamed), atomic)]
+pub struct MonitorRunnable {
     request: AtomicCell<Option<ThreadBoundRefPtr<BitsRequest>>>,
     id: Guid,
     timeout: u32,

@@ -91,8 +91,6 @@ use nserror::{nsresult, NS_ERROR_NULL_POINTER};
 
 
 
-
-
 #[macro_export]
 macro_rules! xpcom_method {
     

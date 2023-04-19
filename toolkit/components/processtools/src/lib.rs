@@ -43,10 +43,8 @@ pub unsafe extern "system" fn crash_illegal_instruction(_arg: *mut c_void) -> u3
 
 
 
-#[derive(xpcom)]
-#[refcnt = "atomic"]
-#[xpimplements(nsIProcessToolsService)]
-pub struct InitProcessToolsService {}
+#[xpcom(implement(nsIProcessToolsService), atomic)]
+pub struct ProcessToolsService {}
 
 impl ProcessToolsService {
     pub fn new() -> RefPtr<ProcessToolsService> {

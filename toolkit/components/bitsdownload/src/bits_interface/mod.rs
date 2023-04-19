@@ -46,10 +46,8 @@ pub unsafe extern "C" fn new_bits_service(result: *mut *const nsIBits) {
     RefPtr::new(service.coerce::<nsIBits>()).forget(&mut *result);
 }
 
-#[derive(xpcom)]
-#[xpimplements(nsIBits)]
-#[refcnt = "nonatomic"]
-pub struct InitBitsService {
+#[xpcom(implement(nsIBits), nonatomic)]
+pub struct BitsService {
     
     
     
