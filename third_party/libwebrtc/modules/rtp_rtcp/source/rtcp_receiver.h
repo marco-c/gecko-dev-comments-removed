@@ -15,6 +15,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "api/array_view.h"
@@ -151,6 +152,11 @@ class RTCPReceiver final {
   struct TmmbrInformation;
   struct RrtrInformation;
   struct LastFirStatus;
+
+  
+  
+  
+
   
   using ReportBlockDataMap = std::map<uint32_t, ReportBlockData>;
   
@@ -280,7 +286,7 @@ class RTCPReceiver final {
   std::list<RrtrInformation> received_rrtrs_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
   
-  std::map<uint32_t, std::list<RrtrInformation>::iterator>
+  std::unordered_map<uint32_t, std::list<RrtrInformation>::iterator>
       received_rrtrs_ssrc_it_ RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
@@ -289,11 +295,11 @@ class RTCPReceiver final {
 
   int64_t oldest_tmmbr_info_ms_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   
-  std::map<uint32_t, TmmbrInformation> tmmbr_infos_
+  std::unordered_map<uint32_t, TmmbrInformation> tmmbr_infos_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   ReportBlockMap received_report_blocks_ RTC_GUARDED_BY(rtcp_receiver_lock_);
-  std::map<uint32_t, LastFirStatus> last_fir_
+  std::unordered_map<uint32_t, LastFirStatus> last_fir_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
