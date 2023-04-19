@@ -26,7 +26,9 @@ namespace dom {
 class CSSFontFaceRule;
 class FontFaceBufferSource;
 struct FontFaceDescriptors;
+class FontFaceImpl;
 class FontFaceSet;
+class FontFaceSetImpl;
 class Promise;
 class UTF8StringOrArrayBufferOrArrayBufferView;
 }  
@@ -36,41 +38,8 @@ namespace mozilla::dom {
 
 class FontFace final : public nsISupports, public nsWrapperCache {
   friend class mozilla::PostTraversalTask;
-  friend class FontFaceBufferSource;
-  friend class Entry;
 
  public:
-  class Entry final : public gfxUserFontEntry {
-    friend class FontFace;
-
-   public:
-    Entry(gfxUserFontSet* aFontSet,
-          const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList, WeightRange aWeight,
-          StretchRange aStretch, SlantStyleRange aStyle,
-          const nsTArray<gfxFontFeature>& aFeatureSettings,
-          const nsTArray<gfxFontVariation>& aVariationSettings,
-          uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-          StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
-          float aAscentOverride, float aDescentOverride, float aLineGapOverride,
-          float aSizeAdjust)
-        : gfxUserFontEntry(aFontSet, aFontFaceSrcList, aWeight, aStretch,
-                           aStyle, aFeatureSettings, aVariationSettings,
-                           aLanguageOverride, aUnicodeRanges, aFontDisplay,
-                           aRangeFlags, aAscentOverride, aDescentOverride,
-                           aLineGapOverride, aSizeAdjust) {}
-
-    virtual void SetLoadState(UserFontLoadState aLoadState) override;
-    virtual void GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult) override;
-    const AutoTArray<FontFace*, 1>& GetFontFaces() { return mFontFaces; }
-
-   protected:
-    
-    
-    
-    
-    AutoTArray<FontFace*, 1> mFontFaces;
-  };
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FontFace)
 
@@ -81,77 +50,6 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   static already_AddRefed<FontFace> CreateForRule(nsISupports* aGlobal,
                                                   FontFaceSet* aFontFaceSet,
                                                   RawServoFontFaceRule* aRule);
-
-  RawServoFontFaceRule* GetRule() { return mRule; }
-
-  bool HasLocalSrc() const;
-  Maybe<StyleComputedFontWeightRange> GetFontWeight() const;
-  Maybe<StyleComputedFontStretchRange> GetFontStretch() const;
-  Maybe<StyleComputedFontStyleDescriptor> GetFontStyle() const;
-  Maybe<StyleFontDisplay> GetFontDisplay() const;
-  void GetFontFeatureSettings(nsTArray<gfxFontFeature>&) const;
-  void GetFontVariationSettings(nsTArray<gfxFontVariation>&) const;
-  void GetSources(nsTArray<StyleFontFaceSourceListComponent>&) const;
-  Maybe<StyleFontLanguageOverride> GetFontLanguageOverride() const;
-  Maybe<StylePercentage> GetAscentOverride() const;
-  Maybe<StylePercentage> GetDescentOverride() const;
-  Maybe<StylePercentage> GetLineGapOverride() const;
-  Maybe<StylePercentage> GetSizeAdjust() const;
-
-  gfxUserFontEntry* CreateUserFontEntry();
-  gfxUserFontEntry* GetUserFontEntry() const { return mUserFontEntry; }
-  void SetUserFontEntry(gfxUserFontEntry* aEntry);
-
-  
-
-
-  bool IsInFontFaceSet(FontFaceSet* aFontFaceSet) const;
-
-  void AddFontFaceSet(FontFaceSet* aFontFaceSet);
-  void RemoveFontFaceSet(FontFaceSet* aFontFaceSet);
-
-  FontFaceSet* GetPrimaryFontFaceSet() const { return mFontFaceSet; }
-
-  
-
-
-
-
-  nsAtom* GetFamilyName() const;
-
-  
-
-
-
-  bool HasRule() const { return mRule; }
-
-  
-
-
-  void DisconnectFromRule();
-
-  
-
-
-
-  bool HasFontData() const;
-
-  
-
-
-
-  already_AddRefed<gfxFontFaceBufferSource> CreateBufferSource();
-
-  
-
-
-
-  bool GetData(uint8_t*& aBuffer, uint32_t& aLength);
-
-  
-
-
-  gfxCharacterMap* GetUnicodeRangeAsCharacterMap();
 
   
   static already_AddRefed<FontFace> Constructor(
@@ -190,47 +88,17 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   Promise* Load(ErrorResult& aRv);
   Promise* GetLoaded(ErrorResult& aRv);
 
- private:
-  FontFace(nsISupports* aParent, FontFaceSet* aFontFaceSet);
-  ~FontFace();
+  FontFaceImpl* GetImpl() const { return mImpl; }
 
-  void InitializeSource(const UTF8StringOrArrayBufferOrArrayBufferView&);
-
-  
-  void DoLoad();
-
-  
-  
-  
-  bool SetDescriptor(nsCSSFontDesc aFontDesc, const nsACString& aValue,
-                     ErrorResult& aRv);
-
-  
-
-
-
-
-  bool SetDescriptors(const nsACString& aFamily,
-                      const FontFaceDescriptors& aDescriptors);
-
-  
-
-
-
-  void DescriptorUpdated();
-
-  
-
-
-  void SetStatus(FontFaceLoadStatus aStatus);
-
-  void GetDesc(nsCSSFontDesc aDescID, nsACString& aResult) const;
+  void Destroy();
+  void MaybeResolve();
+  void MaybeReject(nsresult aResult);
 
   already_AddRefed<URLExtraData> GetURLExtraData() const;
 
-  RawServoFontFaceRule* GetData() const {
-    return HasRule() ? mRule : mDescriptors;
-  }
+ private:
+  explicit FontFace(nsISupports* aParent);
+  ~FontFace();
 
   
 
@@ -239,16 +107,11 @@ class FontFace final : public nsISupports, public nsWrapperCache {
 
   
   
-  void Reject(nsresult aResult);
-
-  
-  
   void EnsurePromise();
 
-  void DoResolve();
-  void DoReject(nsresult aResult);
-
   nsCOMPtr<nsISupports> mParent;
+
+  RefPtr<FontFaceImpl> mImpl;
 
   
   
@@ -257,62 +120,6 @@ class FontFace final : public nsISupports, public nsWrapperCache {
 
   
   nsresult mLoadedRejection;
-
-  
-  
-  RefPtr<RawServoFontFaceRule> mRule;
-
-  
-  
-  RefPtr<Entry> mUserFontEntry;
-
-  
-  
-  
-  
-  FontFaceLoadStatus mStatus;
-
-  
-  enum SourceType {
-    eSourceType_FontFaceRule = 1,
-    eSourceType_URLs,
-    eSourceType_Buffer
-  };
-
-  
-  SourceType mSourceType;
-
-  
-  
-  uint8_t* mSourceBuffer;
-  uint32_t mSourceBufferLength;
-
-  
-  
-  
-  
-  
-  
-  RefPtr<RawServoFontFaceRule> mDescriptors;
-
-  
-  
-  RefPtr<gfxCharacterMap> mUnicodeRange;
-
-  
-  
-  RefPtr<FontFaceSet> mFontFaceSet;
-
-  
-  
-  nsTArray<RefPtr<FontFaceSet>> mOtherFontFaceSets;
-
-  
-  
-  bool mUnicodeRangeDirty;
-
-  
-  bool mInFontFaceSet;
 };
 
 }  
