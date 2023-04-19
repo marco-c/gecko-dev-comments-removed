@@ -689,7 +689,7 @@ const windowGlobalTargetPrototype = {
       
       
       
-      if (!isTargetSwitching) {
+      if (!isTargetSwitching && !isModeSwitching) {
         this._restoreTargetConfiguration();
       }
     }
