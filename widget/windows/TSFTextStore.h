@@ -979,6 +979,22 @@ class TSFTextStore final : public ITextStoreACP,
 
   Maybe<Content>& ContentForTSF();
 
+  class MOZ_STACK_CLASS AutoNotifyingTSFBatch final {
+   public:
+    explicit AutoNotifyingTSFBatch(TSFTextStore& aTextStore)
+        : mTextStore(aTextStore), mOldValue(aTextStore.mDeferNotifyingTSF) {
+      mTextStore.mDeferNotifyingTSF = true;
+    }
+    ~AutoNotifyingTSFBatch() {
+      mTextStore.mDeferNotifyingTSF = mOldValue;
+      mTextStore.MaybeFlushPendingNotifications();
+    }
+
+   private:
+    TSFTextStore& mTextStore;
+    bool mOldValue;
+  };
+
   
   
   
@@ -1060,6 +1076,11 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   bool mDeferClearingContentForTSF = false;
+  
+  
+  
+  
+  bool mDeferNotifyingTSF = false;
   
   
   

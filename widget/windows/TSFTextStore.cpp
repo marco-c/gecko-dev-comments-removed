@@ -2516,6 +2516,15 @@ void TSFTextStore::FlushPendingActions() {
 }
 
 void TSFTextStore::MaybeFlushPendingNotifications() {
+  if (mDeferNotifyingTSF) {
+    MOZ_LOG(gIMELog, LogLevel::Debug,
+            ("0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
+             "putting off flushing pending notifications due to initializing "
+             "something...",
+             this));
+    return;
+  }
+
   if (IsReadLocked()) {
     MOZ_LOG(gIMELog, LogLevel::Debug,
             ("0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
@@ -2846,6 +2855,8 @@ Maybe<TSFTextStore::Content>& TSFTextStore::ContentForTSF() {
   }
 
   if (mContentForTSF.isNothing()) {
+    AutoNotifyingTSFBatch deferNotifyingTSF(*this);
+
     nsString text;  
     if (NS_WARN_IF(!GetCurrentText(text))) {
       MOZ_LOG(gIMELog, LogLevel::Error,
@@ -2855,6 +2866,9 @@ Maybe<TSFTextStore::Content>& TSFTextStore::ContentForTSF() {
       return mContentForTSF;
     }
 
+    MOZ_DIAGNOSTIC_ASSERT(mContentForTSF.isNothing(),
+                          "How was it initialized recursively?");
+    mContentForTSF.reset();  
     mContentForTSF.emplace(*this, text);
     
     
@@ -2933,6 +2947,8 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
       MOZ_ASSERT_UNREACHABLE("There should be non-destroyed widget");
     }
 
+    AutoNotifyingTSFBatch deferNotifyingTSF(*this);
+
     WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                    mWidget);
     mWidget->InitEvent(querySelectedTextEvent);
@@ -2940,6 +2956,8 @@ Maybe<TSFTextStore::Selection>& TSFTextStore::SelectionForTSF() {
     if (NS_WARN_IF(querySelectedTextEvent.Failed())) {
       return mSelectionForTSF;
     }
+    MOZ_DIAGNOSTIC_ASSERT(mSelectionForTSF.isNothing(),
+                          "How was it initialized recursively?");
     mSelectionForTSF = Some(Selection(querySelectedTextEvent));
   }
 
