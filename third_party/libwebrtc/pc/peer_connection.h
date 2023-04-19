@@ -363,6 +363,10 @@ class PeerConnection : public PeerConnectionInternal,
     RTC_DCHECK_RUN_ON(signaling_thread());
     return &mid_generator_;
   }
+  absl::optional<std::string> sctp_mid() {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    return sctp_mid_s_;
+  }
 
   
   void ReturnHistogramVeryQuicklyForTesting() {
@@ -370,10 +374,6 @@ class PeerConnection : public PeerConnectionInternal,
     return_histogram_very_quickly_ = true;
   }
   void RequestUsagePatternReportForTesting();
-  absl::optional<std::string> sctp_mid() {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return sctp_mid_s_;
-  }
 
  protected:
   ~PeerConnection() override;
@@ -426,9 +426,6 @@ class PeerConnection : public PeerConnectionInternal,
   GetFirstAudioTransceiver() const RTC_RUN_ON(signaling_thread());
 
 
-  
-  void RemoveStoppedTransceivers();
-
   void CreateAudioReceiver(MediaStreamInterface* stream,
                            const RtpSenderInfo& remote_sender_info)
       RTC_RUN_ON(signaling_thread());
@@ -480,7 +477,7 @@ class PeerConnection : public PeerConnectionInternal,
       cricket::MediaType media_type,
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
       const RtpTransceiverInit& init,
-      bool fire_callback = true) RTC_RUN_ON(signaling_thread());
+      bool fire_callback = true);
 
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
   CreateSender(cricket::MediaType media_type,
@@ -560,36 +557,8 @@ class PeerConnection : public PeerConnectionInternal,
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetTransceiverByMLineIndex(size_t mline_index) const;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  void ProcessRemovalOfRemoteTrack(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-          transceiver,
-      std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
-
-  void RemoveRemoteStreamsIfEmpty(
-      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
-          remote_streams,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
-
   void OnNegotiationNeeded();
 
-
-  RTCError HandleLegacyOfferOptions(const RTCOfferAnswerOptions& options);
-  void RemoveRecvDirectionFromReceivingTransceiversOfType(
-      cricket::MediaType media_type) RTC_RUN_ON(signaling_thread());
-  void AddUpToOneReceivingTransceiverOfType(cricket::MediaType media_type);
-  std::vector<
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  GetReceivingTransceiversOfType(cricket::MediaType media_type)
-      RTC_RUN_ON(signaling_thread());
 
   
   
@@ -619,33 +588,15 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void RemoveSenders(cricket::MediaType media_type);
-
-  
-  
-  
-  
-  
-  
-  void UpdateRemoteSendersList(
-      const std::vector<cricket::StreamParams>& streams,
-      bool default_track_needed,
-      cricket::MediaType media_type,
-      StreamCollection* new_streams);
-
-  
-  
   
   void OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
-                           cricket::MediaType media_type)
-      RTC_RUN_ON(signaling_thread());
+                           cricket::MediaType media_type);
 
   
   
   
   void OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
-                             cricket::MediaType media_type)
-      RTC_RUN_ON(signaling_thread());
+                             cricket::MediaType media_type);
 
   
   
@@ -656,7 +607,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  void UpdateLocalSenders(const std::vector<cricket::StreamParams>& streams,
+  
+  void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
                           cricket::MediaType media_type);
 
   
@@ -664,18 +616,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  void OnLocalSenderAdded(const RtpSenderInfo& sender_info,
-                          cricket::MediaType media_type)
-      RTC_RUN_ON(signaling_thread());
-
-  
-  
-  
-  
-  
   void OnLocalSenderRemoved(const RtpSenderInfo& sender_info,
-                            cricket::MediaType media_type)
-      RTC_RUN_ON(signaling_thread());
+                            cricket::MediaType media_type);
 
   
   
@@ -753,19 +695,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   cricket::ChannelManager* channel_manager() const;
 
-  enum class SessionError {
-    kNone,       
-    kContent,    
-    kTransport,  
-  };
-
-  
-  SessionError session_error() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return session_error_;
-  }
-  const std::string& session_error_desc() const { return session_error_desc_; }
-
   cricket::ChannelInterface* GetChannel(const std::string& content_name);
 
   cricket::IceConfig ParseIceConfig(
@@ -779,19 +708,8 @@ class PeerConnection : public PeerConnectionInternal,
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   
-  void SetSessionError(SessionError error, const std::string& error_desc);
-
   
-  
-  void UpdatePayloadTypeDemuxingState(cricket::ContentSource source)
-      RTC_RUN_ON(signaling_thread());
-  
-  
-  RTCError PushdownMediaDescription(SdpType type,
-                                    cricket::ContentSource source);
-
-  RTCError PushdownTransportDescription(cricket::ContentSource source,
-                                        SdpType type);
+  void UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
 
   
   
@@ -799,11 +717,6 @@ class PeerConnection : public PeerConnectionInternal,
       const cricket::SessionDescription* description,
       const std::string& content_name,
       cricket::TransportDescription* info);
-
-  
-  
-  
-  void EnableSending();
 
   
   void DestroyAllChannels() RTC_RUN_ON(signaling_thread());
@@ -822,9 +735,6 @@ class PeerConnection : public PeerConnectionInternal,
   RTCErrorOr<const cricket::ContentInfo*> FindContentInfo(
       const SessionDescriptionInterface* description,
       const IceCandidateInterface* candidate) RTC_RUN_ON(signaling_thread());
-  
-  
-  void RemoveUnusedChannels(const cricket::SessionDescription* desc);
 
   
   
@@ -879,15 +789,8 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_RUN_ON(signaling_thread());
   void OnTransportControllerDtlsHandshakeError(rtc::SSLHandshakeError error);
 
-  const char* SessionErrorToString(SessionError error) const;
-  std::string GetSessionErrorMsg();
-
   
   void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
-
-  
-  
-  void ReportNegotiatedSdpSemantics(const SessionDescriptionInterface& answer);
 
   
   
@@ -1054,10 +957,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   rtc::UniqueStringGenerator mid_generator_ RTC_GUARDED_BY(signaling_thread());
-
-  SessionError session_error_ RTC_GUARDED_BY(signaling_thread()) =
-      SessionError::kNone;
-  std::string session_error_desc_ RTC_GUARDED_BY(signaling_thread());
 
   std::string session_id_ RTC_GUARDED_BY(signaling_thread());
 

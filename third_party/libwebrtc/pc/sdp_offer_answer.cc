@@ -64,12 +64,20 @@ const char kSdpWithoutDtlsFingerprint[] =
     "Called with SDP without DTLS fingerprint.";
 const char kSdpWithoutSdesCrypto[] = "Called with SDP without SDES crypto.";
 
+const char kSessionError[] = "Session error code: ";
+const char kSessionErrorDesc[] = "Session error description: ";
+
 
 const char kSimulcastVersionApplyLocalDescription[] =
     "WebRTC.PeerConnection.Simulcast.ApplyLocalDescription";
 const char kSimulcastVersionApplyRemoteDescription[] =
     "WebRTC.PeerConnection.Simulcast.ApplyRemoteDescription";
 const char kSimulcastDisabled[] = "WebRTC.PeerConnection.Simulcast.Disabled";
+
+const char kDefaultStreamId[] = "default";
+
+static const char kDefaultAudioSenderId[] = "defaulta0";
+static const char kDefaultVideoSenderId[] = "defaultv0";
 
 void NoteAddIceCandidateResult(int result) {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.AddIceCandidate", result,
@@ -1064,7 +1072,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
     }
   }
 
-  RTCError error = pc_->PushdownTransportDescription(cricket::CS_LOCAL, type);
+  RTCError error = PushdownTransportDescription(cricket::CS_LOCAL, type);
   if (!error.ok()) {
     return error;
   }
@@ -1088,7 +1096,8 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
       
       if (transceiver->mid()) {
         auto dtls_transport =
-            pc_->LookupDtlsTransportByMidInternal(*transceiver->mid());
+            pc_->transport_controller_->LookupDtlsTransportByMid(
+                *transceiver->mid());
         transceiver->internal()->sender_internal()->set_transport(
             dtls_transport);
         transceiver->internal()->receiver_internal()->set_transport(
@@ -1112,8 +1121,8 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
             (transceiver->internal()->fired_direction() &&
              RtpTransceiverDirectionHasRecv(
                  *transceiver->internal()->fired_direction()))) {
-          pc_->ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
-                                           &removed_streams);
+          ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
+                                      &removed_streams);
         }
         
         
@@ -1140,7 +1149,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
       }
     }
     
-    pc_->RemoveUnusedChannels(local_description()->description());
+    RemoveUnusedChannels(local_description()->description());
   }
 
   error = UpdateSessionState(type, cricket::CS_LOCAL,
@@ -1155,9 +1164,8 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
   }
 
   pending_ice_restarts_.clear();
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         pc_->GetSessionErrorMsg());
+  if (session_error() != SessionError::kNone) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
   }
 
   
@@ -1202,11 +1210,11 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
         GetFirstAudioContent(local_description()->description());
     if (audio_content) {
       if (audio_content->rejected) {
-        pc_->RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
+        RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
       } else {
         const cricket::AudioContentDescription* audio_desc =
             audio_content->media_description()->as_audio();
-        pc_->UpdateLocalSenders(audio_desc->streams(), audio_desc->type());
+        UpdateLocalSenders(audio_desc->streams(), audio_desc->type());
       }
     }
 
@@ -1214,11 +1222,11 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
         GetFirstVideoContent(local_description()->description());
     if (video_content) {
       if (video_content->rejected) {
-        pc_->RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
+        RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
       } else {
         const cricket::VideoContentDescription* video_desc =
             video_content->media_description()->as_video();
-        pc_->UpdateLocalSenders(video_desc->streams(), video_desc->type());
+        UpdateLocalSenders(video_desc->streams(), video_desc->type());
       }
     }
   }
@@ -1346,7 +1354,7 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
   ReportSimulcastApiVersion(kSimulcastVersionApplyRemoteDescription,
                             *remote_description()->description());
 
-  RTCError error = pc_->PushdownTransportDescription(cricket::CS_REMOTE, type);
+  RTCError error = PushdownTransportDescription(cricket::CS_REMOTE, type);
   if (!error.ok()) {
     return error;
   }
@@ -1371,7 +1379,7 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
       }
     }
     
-    pc_->RemoveUnusedChannels(remote_description()->description());
+    RemoveUnusedChannels(remote_description()->description());
   }
 
   
@@ -1414,9 +1422,8 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
     }
   }
 
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         pc_->GetSessionErrorMsg());
+  if (session_error() != SessionError::kNone) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
   }
 
   
@@ -1493,8 +1500,8 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
       if (!RtpTransceiverDirectionHasRecv(local_direction) &&
           (transceiver->fired_direction() &&
            RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
-        pc_->ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
-                                         &removed_streams);
+        ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
+                                    &removed_streams);
       }
       
       transceiver->internal()->set_fired_direction(local_direction);
@@ -1507,7 +1514,8 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
         
         if (transceiver->mid()) {
           auto dtls_transport =
-              pc_->LookupDtlsTransportByMidInternal(*transceiver->mid());
+              pc_->transport_controller_->LookupDtlsTransportByMid(
+                  *transceiver->mid());
           transceiver->internal()->sender_internal()->set_transport(
               dtls_transport);
           transceiver->internal()->receiver_internal()->set_transport(
@@ -1589,14 +1597,14 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
     
     if (audio_content) {
       if (audio_content->rejected) {
-        pc_->RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
+        RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
       } else {
         bool default_audio_track_needed =
             !remote_peer_supports_msid_ &&
             RtpTransceiverDirectionHasSend(audio_desc->direction());
-        pc_->UpdateRemoteSendersList(GetActiveStreams(audio_desc),
-                                     default_audio_track_needed,
-                                     audio_desc->type(), new_streams);
+        UpdateRemoteSendersList(GetActiveStreams(audio_desc),
+                                default_audio_track_needed, audio_desc->type(),
+                                new_streams);
       }
     }
 
@@ -1604,14 +1612,14 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
     
     if (video_content) {
       if (video_content->rejected) {
-        pc_->RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
+        RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
       } else {
         bool default_video_track_needed =
             !remote_peer_supports_msid_ &&
             RtpTransceiverDirectionHasSend(video_desc->direction());
-        pc_->UpdateRemoteSendersList(GetActiveStreams(video_desc),
-                                     default_video_track_needed,
-                                     video_desc->type(), new_streams);
+        UpdateRemoteSendersList(GetActiveStreams(video_desc),
+                                default_video_track_needed, video_desc->type(),
+                                new_streams);
       }
     }
 
@@ -1662,8 +1670,8 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
 
   
   
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    std::string error_message = pc_->GetSessionErrorMsg();
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "SetLocalDescription: " << error_message;
     observer->OnSetLocalDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
@@ -1703,8 +1711,7 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
     
     
     
-    pc_->SetSessionError(PeerConnection::SessionError::kContent,
-                         error.message());
+    SetSessionError(SessionError::kContent, error.message());
     std::string error_message =
         GetSetDescriptionErrorMessage(cricket::CS_LOCAL, type, error);
     RTC_LOG(LS_ERROR) << error_message;
@@ -1715,7 +1722,7 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   RTC_DCHECK(local_description());
 
   if (local_description()->GetType() == SdpType::kAnswer) {
-    pc_->RemoveStoppedTransceivers();
+    RemoveStoppedTransceivers();
 
     
     
@@ -1723,7 +1730,7 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
         RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                                  pc_->port_allocator_.get()));
     
-    pc_->ReportNegotiatedSdpSemantics(*local_description());
+    ReportNegotiatedSdpSemantics(*local_description());
   }
 
   observer->OnSetLocalDescriptionComplete(RTCError::OK());
@@ -1772,8 +1779,8 @@ void SdpOfferAnswerHandler::DoCreateOffer(
 
   
   
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    std::string error_message = pc_->GetSessionErrorMsg();
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "CreateOffer: " << error_message;
     pc_->PostCreateSessionDescriptionFailure(
         observer,
@@ -1792,7 +1799,7 @@ void SdpOfferAnswerHandler::DoCreateOffer(
   
   
   if (IsUnifiedPlan()) {
-    RTCError error = pc_->HandleLegacyOfferOptions(options);
+    RTCError error = HandleLegacyOfferOptions(options);
     if (!error.ok()) {
       pc_->PostCreateSessionDescriptionFailure(observer, std::move(error));
       return;
@@ -1846,8 +1853,8 @@ void SdpOfferAnswerHandler::DoCreateAnswer(
 
   
   
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    std::string error_message = pc_->GetSessionErrorMsg();
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "CreateAnswer: " << error_message;
     pc_->PostCreateSessionDescriptionFailure(
         observer,
@@ -1908,8 +1915,8 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
 
   
   
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    std::string error_message = pc_->GetSessionErrorMsg();
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "SetRemoteDescription: " << error_message;
     observer->OnSetRemoteDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
@@ -1963,8 +1970,7 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
     
     
     
-    pc_->SetSessionError(PeerConnection::SessionError::kContent,
-                         error.message());
+    SetSessionError(SessionError::kContent, error.message());
     std::string error_message =
         GetSetDescriptionErrorMessage(cricket::CS_REMOTE, type, error);
     RTC_LOG(LS_ERROR) << error_message;
@@ -1975,14 +1981,14 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
   RTC_DCHECK(remote_description());
 
   if (type == SdpType::kAnswer) {
-    pc_->RemoveStoppedTransceivers();
+    RemoveStoppedTransceivers();
     
     
     pc_->network_thread()->Invoke<void>(
         RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                                  pc_->port_allocator_.get()));
     
-    pc_->ReportNegotiatedSdpSemantics(*remote_description());
+    ReportNegotiatedSdpSemantics(*remote_description());
   }
 
   observer->OnSetRemoteDescriptionComplete(RTCError::OK());
@@ -2043,7 +2049,7 @@ void SdpOfferAnswerHandler::SetAssociatedRemoteStreams(
   
   
   receiver->SetStreams(media_streams);
-  pc_->RemoveRemoteStreamsIfEmpty(previous_streams, removed_streams);
+  RemoveRemoteStreamsIfEmpty(previous_streams, removed_streams);
 }
 
 bool SdpOfferAnswerHandler::AddIceCandidate(
@@ -2253,11 +2259,11 @@ RTCError SdpOfferAnswerHandler::UpdateSessionState(
 
   
   
-  RTC_DCHECK(pc_->session_error() == PeerConnection::SessionError::kNone);
+  RTC_DCHECK(session_error() == SessionError::kNone);
 
   
   if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
-    pc_->EnableSending();
+    EnableSending();
   }
 
   
@@ -2279,7 +2285,7 @@ RTCError SdpOfferAnswerHandler::UpdateSessionState(
 
   
   
-  RTCError error = pc_->PushdownMediaDescription(type, source);
+  RTCError error = PushdownMediaDescription(type, source);
   if (!error.ok()) {
     return error;
   }
@@ -2656,9 +2662,8 @@ void SdpOfferAnswerHandler::GenerateNegotiationNeededEvent() {
 RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
     const SessionDescriptionInterface* sdesc,
     cricket::ContentSource source) {
-  if (pc_->session_error() != PeerConnection::SessionError::kNone) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         pc_->GetSessionErrorMsg());
+  if (session_error() != SessionError::kNone) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
   }
 
   if (!sdesc || !sdesc->description()) {
@@ -3539,6 +3544,498 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanAnswer(
       }
     }
   }
+}
+
+const char* SdpOfferAnswerHandler::SessionErrorToString(
+    SessionError error) const {
+  switch (error) {
+    case SessionError::kNone:
+      return "ERROR_NONE";
+    case SessionError::kContent:
+      return "ERROR_CONTENT";
+    case SessionError::kTransport:
+      return "ERROR_TRANSPORT";
+  }
+  RTC_NOTREACHED();
+  return "";
+}
+
+std::string SdpOfferAnswerHandler::GetSessionErrorMsg() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  rtc::StringBuilder desc;
+  desc << kSessionError << SessionErrorToString(session_error()) << ". ";
+  desc << kSessionErrorDesc << session_error_desc() << ".";
+  return desc.Release();
+}
+
+void SdpOfferAnswerHandler::SetSessionError(SessionError error,
+                                            const std::string& error_desc) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  if (error != session_error_) {
+    session_error_ = error;
+    session_error_desc_ = error_desc;
+  }
+}
+
+RTCError SdpOfferAnswerHandler::HandleLegacyOfferOptions(
+    const PeerConnectionInterface::RTCOfferAnswerOptions& options) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  RTC_DCHECK(IsUnifiedPlan());
+
+  if (options.offer_to_receive_audio == 0) {
+    RemoveRecvDirectionFromReceivingTransceiversOfType(
+        cricket::MEDIA_TYPE_AUDIO);
+  } else if (options.offer_to_receive_audio == 1) {
+    AddUpToOneReceivingTransceiverOfType(cricket::MEDIA_TYPE_AUDIO);
+  } else if (options.offer_to_receive_audio > 1) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
+                         "offer_to_receive_audio > 1 is not supported.");
+  }
+
+  if (options.offer_to_receive_video == 0) {
+    RemoveRecvDirectionFromReceivingTransceiversOfType(
+        cricket::MEDIA_TYPE_VIDEO);
+  } else if (options.offer_to_receive_video == 1) {
+    AddUpToOneReceivingTransceiverOfType(cricket::MEDIA_TYPE_VIDEO);
+  } else if (options.offer_to_receive_video > 1) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
+                         "offer_to_receive_video > 1 is not supported.");
+  }
+
+  return RTCError::OK();
+}
+
+void SdpOfferAnswerHandler::RemoveRecvDirectionFromReceivingTransceiversOfType(
+    cricket::MediaType media_type) {
+  for (const auto& transceiver : GetReceivingTransceiversOfType(media_type)) {
+    RtpTransceiverDirection new_direction =
+        RtpTransceiverDirectionWithRecvSet(transceiver->direction(), false);
+    if (new_direction != transceiver->direction()) {
+      RTC_LOG(LS_INFO) << "Changing " << cricket::MediaTypeToString(media_type)
+                       << " transceiver (MID="
+                       << transceiver->mid().value_or("<not set>") << ") from "
+                       << RtpTransceiverDirectionToString(
+                              transceiver->direction())
+                       << " to "
+                       << RtpTransceiverDirectionToString(new_direction)
+                       << " since CreateOffer specified offer_to_receive=0";
+      transceiver->internal()->set_direction(new_direction);
+    }
+  }
+}
+
+void SdpOfferAnswerHandler::AddUpToOneReceivingTransceiverOfType(
+    cricket::MediaType media_type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  if (GetReceivingTransceiversOfType(media_type).empty()) {
+    RTC_LOG(LS_INFO)
+        << "Adding one recvonly " << cricket::MediaTypeToString(media_type)
+        << " transceiver since CreateOffer specified offer_to_receive=1";
+    RtpTransceiverInit init;
+    init.direction = RtpTransceiverDirection::kRecvOnly;
+    pc_->AddTransceiver(media_type, nullptr, init,
+                        false);
+  }
+}
+
+std::vector<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+SdpOfferAnswerHandler::GetReceivingTransceiversOfType(
+    cricket::MediaType media_type) {
+  std::vector<
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+      receiving_transceivers;
+  for (const auto& transceiver : pc_->transceivers_.List()) {
+    if (!transceiver->stopped() && transceiver->media_type() == media_type &&
+        RtpTransceiverDirectionHasRecv(transceiver->direction())) {
+      receiving_transceivers.push_back(transceiver);
+    }
+  }
+  return receiving_transceivers;
+}
+
+void SdpOfferAnswerHandler::ProcessRemovalOfRemoteTrack(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver,
+    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams) {
+  RTC_DCHECK(transceiver->mid());
+  RTC_LOG(LS_INFO) << "Processing the removal of a track for MID="
+                   << *transceiver->mid();
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> previous_streams =
+      transceiver->internal()->receiver_internal()->streams();
+  
+  transceiver->internal()->receiver_internal()->set_stream_ids({});
+  remove_list->push_back(transceiver);
+  RemoveRemoteStreamsIfEmpty(previous_streams, removed_streams);
+}
+
+void SdpOfferAnswerHandler::RemoveRemoteStreamsIfEmpty(
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& remote_streams,
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  
+  
+  
+  for (const auto& remote_stream : remote_streams) {
+    if (remote_stream->GetAudioTracks().empty() &&
+        remote_stream->GetVideoTracks().empty()) {
+      pc_->remote_streams_internal()->RemoveStream(remote_stream);
+      removed_streams->push_back(remote_stream);
+    }
+  }
+}
+
+void SdpOfferAnswerHandler::RemoveSenders(cricket::MediaType media_type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  UpdateLocalSenders(std::vector<cricket::StreamParams>(), media_type);
+  UpdateRemoteSendersList(std::vector<cricket::StreamParams>(), false,
+                          media_type, nullptr);
+}
+
+void SdpOfferAnswerHandler::UpdateLocalSenders(
+    const std::vector<cricket::StreamParams>& streams,
+    cricket::MediaType media_type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  std::vector<PeerConnection::RtpSenderInfo>* current_senders =
+      pc_->GetLocalSenderInfos(media_type);
+
+  
+  
+  for (auto sender_it = current_senders->begin();
+       sender_it != current_senders->end();
+       ) {
+    const PeerConnection::RtpSenderInfo& info = *sender_it;
+    const cricket::StreamParams* params =
+        cricket::GetStreamBySsrc(streams, info.first_ssrc);
+    if (!params || params->id != info.sender_id ||
+        params->first_stream_id() != info.stream_id) {
+      pc_->OnLocalSenderRemoved(info, media_type);
+      sender_it = current_senders->erase(sender_it);
+    } else {
+      ++sender_it;
+    }
+  }
+
+  
+  for (const cricket::StreamParams& params : streams) {
+    
+    
+    const std::string& stream_id = params.first_stream_id();
+    const std::string& sender_id = params.id;
+    uint32_t ssrc = params.first_ssrc();
+    const PeerConnection::RtpSenderInfo* sender_info =
+        pc_->FindSenderInfo(*current_senders, stream_id, sender_id);
+    if (!sender_info) {
+      current_senders->push_back(
+          PeerConnection::RtpSenderInfo(stream_id, sender_id, ssrc));
+      pc_->OnLocalSenderAdded(current_senders->back(), media_type);
+    }
+  }
+}
+
+void SdpOfferAnswerHandler::UpdateRemoteSendersList(
+    const cricket::StreamParamsVec& streams,
+    bool default_sender_needed,
+    cricket::MediaType media_type,
+    StreamCollection* new_streams) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  RTC_DCHECK(!IsUnifiedPlan());
+
+  std::vector<PeerConnection::RtpSenderInfo>* current_senders =
+      pc_->GetRemoteSenderInfos(media_type);
+
+  
+  
+  for (auto sender_it = current_senders->begin();
+       sender_it != current_senders->end();
+       ) {
+    const PeerConnection::RtpSenderInfo& info = *sender_it;
+    const cricket::StreamParams* params =
+        cricket::GetStreamBySsrc(streams, info.first_ssrc);
+    std::string params_stream_id;
+    if (params) {
+      params_stream_id =
+          (!params->first_stream_id().empty() ? params->first_stream_id()
+                                              : kDefaultStreamId);
+    }
+    bool sender_exists = params && params->id == info.sender_id &&
+                         params_stream_id == info.stream_id;
+    
+    if ((info.stream_id == kDefaultStreamId && default_sender_needed) ||
+        sender_exists) {
+      ++sender_it;
+    } else {
+      pc_->OnRemoteSenderRemoved(info, media_type);
+      sender_it = current_senders->erase(sender_it);
+    }
+  }
+
+  
+  for (const cricket::StreamParams& params : streams) {
+    if (!params.has_ssrcs()) {
+      
+      
+      
+      default_sender_needed = true;
+      break;
+    }
+
+    
+    
+    
+    
+    
+    const std::string& stream_id =
+        (!params.first_stream_id().empty() ? params.first_stream_id()
+                                           : kDefaultStreamId);
+    const std::string& sender_id = params.id;
+    uint32_t ssrc = params.first_ssrc();
+
+    rtc::scoped_refptr<MediaStreamInterface> stream =
+        pc_->remote_streams_internal()->find(stream_id);
+    if (!stream) {
+      
+      stream = MediaStreamProxy::Create(rtc::Thread::Current(),
+                                        MediaStream::Create(stream_id));
+      pc_->remote_streams_internal()->AddStream(stream);
+      new_streams->AddStream(stream);
+    }
+
+    const PeerConnection::RtpSenderInfo* sender_info =
+        pc_->FindSenderInfo(*current_senders, stream_id, sender_id);
+    if (!sender_info) {
+      current_senders->push_back(
+          PeerConnection::RtpSenderInfo(stream_id, sender_id, ssrc));
+      pc_->OnRemoteSenderAdded(current_senders->back(), media_type);
+    }
+  }
+
+  
+  if (default_sender_needed) {
+    rtc::scoped_refptr<MediaStreamInterface> default_stream =
+        pc_->remote_streams_internal()->find(kDefaultStreamId);
+    if (!default_stream) {
+      
+      default_stream = MediaStreamProxy::Create(
+          rtc::Thread::Current(), MediaStream::Create(kDefaultStreamId));
+      pc_->remote_streams_internal()->AddStream(default_stream);
+      new_streams->AddStream(default_stream);
+    }
+    std::string default_sender_id = (media_type == cricket::MEDIA_TYPE_AUDIO)
+                                        ? kDefaultAudioSenderId
+                                        : kDefaultVideoSenderId;
+    const PeerConnection::RtpSenderInfo* default_sender_info =
+        pc_->FindSenderInfo(*current_senders, kDefaultStreamId,
+                            default_sender_id);
+    if (!default_sender_info) {
+      current_senders->push_back(PeerConnection::RtpSenderInfo(
+          kDefaultStreamId, default_sender_id, 0));
+      pc_->OnRemoteSenderAdded(current_senders->back(), media_type);
+    }
+  }
+}
+
+void SdpOfferAnswerHandler::EnableSending() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  for (const auto& transceiver : pc_->transceivers_.List()) {
+    cricket::ChannelInterface* channel = transceiver->internal()->channel();
+    if (channel && !channel->enabled()) {
+      channel->Enable(true);
+    }
+  }
+
+  if (pc_->data_channel_controller()->rtp_data_channel() &&
+      !pc_->data_channel_controller()->rtp_data_channel()->enabled()) {
+    pc_->data_channel_controller()->rtp_data_channel()->Enable(true);
+  }
+}
+
+RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
+    SdpType type,
+    cricket::ContentSource source) {
+  const SessionDescriptionInterface* sdesc =
+      (source == cricket::CS_LOCAL ? local_description()
+                                   : remote_description());
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  RTC_DCHECK(sdesc);
+
+  pc_->UpdatePayloadTypeDemuxingState(source);
+
+  
+  for (const auto& transceiver : pc_->transceivers_.List()) {
+    const ContentInfo* content_info =
+        FindMediaSectionForTransceiver(transceiver, sdesc);
+    cricket::ChannelInterface* channel = transceiver->internal()->channel();
+    if (!channel || !content_info || content_info->rejected) {
+      continue;
+    }
+    const MediaContentDescription* content_desc =
+        content_info->media_description();
+    if (!content_desc) {
+      continue;
+    }
+    std::string error;
+    bool success = (source == cricket::CS_LOCAL)
+                       ? channel->SetLocalContent(content_desc, type, &error)
+                       : channel->SetRemoteContent(content_desc, type, &error);
+    if (!success) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
+    }
+  }
+
+  
+  if (pc_->data_channel_controller()->rtp_data_channel()) {
+    const ContentInfo* data_content =
+        cricket::GetFirstDataContent(sdesc->description());
+    if (data_content && !data_content->rejected) {
+      const MediaContentDescription* data_desc =
+          data_content->media_description();
+      if (data_desc) {
+        std::string error;
+        bool success = (source == cricket::CS_LOCAL)
+                           ? pc_->data_channel_controller()
+                                 ->rtp_data_channel()
+                                 ->SetLocalContent(data_desc, type, &error)
+                           : pc_->data_channel_controller()
+                                 ->rtp_data_channel()
+                                 ->SetRemoteContent(data_desc, type, &error);
+        if (!success) {
+          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
+        }
+      }
+    }
+  }
+
+  
+  
+  if (pc_->sctp_mid() && local_description() && remote_description()) {
+    rtc::scoped_refptr<SctpTransport> sctp_transport =
+        pc_->transport_controller_->GetSctpTransport(*(pc_->sctp_mid()));
+    auto local_sctp_description = cricket::GetFirstSctpDataContentDescription(
+        local_description()->description());
+    auto remote_sctp_description = cricket::GetFirstSctpDataContentDescription(
+        remote_description()->description());
+    if (sctp_transport && local_sctp_description && remote_sctp_description) {
+      int max_message_size;
+      
+      
+      if (remote_sctp_description->max_message_size() == 0) {
+        max_message_size = local_sctp_description->max_message_size();
+      } else {
+        max_message_size =
+            std::min(local_sctp_description->max_message_size(),
+                     remote_sctp_description->max_message_size());
+      }
+      sctp_transport->Start(local_sctp_description->port(),
+                            remote_sctp_description->port(), max_message_size);
+    }
+  }
+
+  return RTCError::OK();
+}
+
+RTCError SdpOfferAnswerHandler::PushdownTransportDescription(
+    cricket::ContentSource source,
+    SdpType type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+
+  if (source == cricket::CS_LOCAL) {
+    const SessionDescriptionInterface* sdesc = local_description();
+    RTC_DCHECK(sdesc);
+    return pc_->transport_controller_->SetLocalDescription(
+        type, sdesc->description());
+  } else {
+    const SessionDescriptionInterface* sdesc = remote_description();
+    RTC_DCHECK(sdesc);
+    return pc_->transport_controller_->SetRemoteDescription(
+        type, sdesc->description());
+  }
+}
+
+void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  
+  
+  if (!IsUnifiedPlan())
+    return;
+  
+  auto transceiver_list = pc_->transceivers_.List();
+  for (auto transceiver : transceiver_list) {
+    
+    
+    
+    
+    
+    if (!transceiver->stopped()) {
+      continue;
+    }
+    const ContentInfo* local_content =
+        FindMediaSectionForTransceiver(transceiver, local_description());
+    const ContentInfo* remote_content =
+        FindMediaSectionForTransceiver(transceiver, remote_description());
+    if ((local_content && local_content->rejected) ||
+        (remote_content && remote_content->rejected)) {
+      RTC_LOG(LS_INFO) << "Dissociating transceiver"
+                       << " since the media section is being recycled.";
+      transceiver->internal()->set_mid(absl::nullopt);
+      transceiver->internal()->set_mline_index(absl::nullopt);
+      pc_->transceivers_.Remove(transceiver);
+      continue;
+    }
+    if (!local_content && !remote_content) {
+      
+      
+      RTC_LOG(LS_INFO)
+          << "Dropping stopped transceiver that was never associated";
+      pc_->transceivers_.Remove(transceiver);
+      continue;
+    }
+  }
+}
+
+void SdpOfferAnswerHandler::RemoveUnusedChannels(
+    const SessionDescription* desc) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  
+  
+  const cricket::ContentInfo* video_info = cricket::GetFirstVideoContent(desc);
+  if (!video_info || video_info->rejected) {
+    pc_->DestroyTransceiverChannel(pc_->GetVideoTransceiver());
+  }
+
+  const cricket::ContentInfo* audio_info = cricket::GetFirstAudioContent(desc);
+  if (!audio_info || audio_info->rejected) {
+    pc_->DestroyTransceiverChannel(pc_->GetAudioTransceiver());
+  }
+
+  const cricket::ContentInfo* data_info = cricket::GetFirstDataContent(desc);
+  if (!data_info || data_info->rejected) {
+    pc_->DestroyDataChannelTransport();
+  }
+}
+
+void SdpOfferAnswerHandler::ReportNegotiatedSdpSemantics(
+    const SessionDescriptionInterface& answer) {
+  SdpSemanticNegotiated semantics_negotiated;
+  switch (answer.description()->msid_signaling()) {
+    case 0:
+      semantics_negotiated = kSdpSemanticNegotiatedNone;
+      break;
+    case cricket::kMsidSignalingMediaSection:
+      semantics_negotiated = kSdpSemanticNegotiatedUnifiedPlan;
+      break;
+    case cricket::kMsidSignalingSsrcAttribute:
+      semantics_negotiated = kSdpSemanticNegotiatedPlanB;
+      break;
+    case cricket::kMsidSignalingMediaSection |
+        cricket::kMsidSignalingSsrcAttribute:
+      semantics_negotiated = kSdpSemanticNegotiatedMixed;
+      break;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.SdpSemanticNegotiated",
+                            semantics_negotiated, kSdpSemanticNegotiatedMax);
 }
 
 }  
