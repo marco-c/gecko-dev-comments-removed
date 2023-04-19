@@ -2881,9 +2881,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         
         
         
-        keepGoing = false;
-        PushLines(aState, line.prev());
-        aState.mReflowStatus.SetIncomplete();
+        PushTruncatedLine(aState, line, &keepGoing);
       } else {
         
         
