@@ -28,8 +28,14 @@ export function runBfcacheTestForEmbeds(testCase) {
           shouldBeCached: true,
           funcBeforeNavigation: (tag, attrs) => {
             let e = document.createElement(tag.name);
-            e.type = attrs.type;
-            e[tag.srcAttr] = attrs.src;
+            
+            
+            if ('type' in attrs) {
+              e.type = attrs.type;
+            }
+            if ('src' in attrs) {
+              e[tag.srcAttr] = attrs.src;
+            }
             document.body.append(e);
           },
           argsBeforeNavigation: [tag, testCase]
