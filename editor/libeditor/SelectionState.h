@@ -318,6 +318,7 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
         mPoint(Some(aPoint->IsSet() ? aPoint : nullptr)),
         mRangeItem(do_AddRef(new RangeItem())) {
     if (!aPoint->IsSet()) {
+      mIsTracking = false;
       return;  
     }
     mRangeItem->mStartContainer = aPoint->GetContainer();
@@ -327,11 +328,14 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
     mRangeUpdater.RegisterRangeItem(mRangeItem);
   }
 
-  ~AutoTrackDOMPoint() {
+  ~AutoTrackDOMPoint() { FlushAndStopTracking(); }
+
+  void FlushAndStopTracking() {
+    if (!mIsTracking) {
+      return;
+    }
+    mIsTracking = false;
     if (mPoint.isSome()) {
-      if (!mPoint.ref()) {
-        return;  
-      }
       mRangeUpdater.DropRangeItem(mRangeItem);
       
       
@@ -360,6 +364,7 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
   uint32_t* mOffset;
   Maybe<EditorDOMPoint*> mPoint;
   OwningNonNull<RangeItem> mRangeItem;
+  bool mIsTracking = true;
 };
 
 class MOZ_STACK_CLASS AutoTrackDOMRange final {

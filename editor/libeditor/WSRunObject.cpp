@@ -535,9 +535,13 @@ EditActionResult WhiteSpaceVisibilityKeeper::
         NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
         return EditActionResult(splitResult.unwrapErr());
       }
-      
-      
-      splitResult.IgnoreCaretPointSuggestion();
+      nsresult rv = splitResult.SuggestCaretPointTo(
+          aHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
+                        SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+      if (NS_FAILED(rv)) {
+        NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+        return EditActionResult(rv);
+      }
       if (splitResult.Handled()) {
         if (nsIContent* nextContentAtSplitPoint =
                 splitResult.GetNextContent()) {

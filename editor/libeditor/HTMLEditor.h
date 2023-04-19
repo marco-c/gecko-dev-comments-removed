@@ -938,7 +938,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditResult
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   ClearStyleAt(const EditorDOMPoint& aPoint, nsAtom* aProperty,
                nsAtom* aAttribute, SpecifiedStyle aSpecifiedStyle);
 

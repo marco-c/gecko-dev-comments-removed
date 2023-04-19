@@ -931,6 +931,13 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return SplitNodeResult(result.unwrapErr());
     }
+    nsresult rv = result.SuggestCaretPointTo(
+        *this, {SuggestCaret::OnlyIfHasSuggestion,
+                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+      return SplitNodeResult(rv);
+    }
     if (result.Handled()) {
       startOfRange = result.AtSplitPoint<EditorDOMPoint>();
       if (!startOfRange.IsSet()) {
@@ -955,6 +962,13 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
     if (result.isErr()) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return SplitNodeResult(result.unwrapErr());
+    }
+    nsresult rv = result.SuggestCaretPointTo(
+        *this, {SuggestCaret::OnlyIfHasSuggestion,
+                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+      return SplitNodeResult(rv);
     }
     if (result.Handled()) {
       endOfRange = result.AtSplitPoint<EditorDOMPoint>();
@@ -1011,6 +1025,7 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
   SplitNodeResult result =
       SplitNodeResult::NotHandled(aPointToSplit, GetSplitNodeDirection());
   MOZ_ASSERT(!result.Handled());
+  EditorDOMPoint pointToPutCaret;
   for (OwningNonNull<nsIContent>& content : arrayOfParents) {
     bool isSetByCSS = false;
     if (useCSS &&
@@ -1059,6 +1074,7 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     
     
     
+    AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(), &pointToPutCaret);
     SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
         MOZ_KnownLive(content), result.AtSplitPoint<EditorDOMPoint>(),
         SplitAtEdges::eAllowToCreateEmptyContainer);
@@ -1066,13 +1082,9 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return splitNodeResult;
     }
-    nsresult rv = splitNodeResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-      return SplitNodeResult(rv);
-    }
+    trackPointToPutCaret.FlushAndStopTracking();
+    splitNodeResult.MoveCaretPointTo(pointToPutCaret,
+                                     {SuggestCaret::OnlyIfHasSuggestion});
 
     
     
@@ -1085,16 +1097,18 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     MOZ_ASSERT(result.Handled());
   }
 
-  return result;
+  return pointToPutCaret.IsSet()
+             ? SplitNodeResult(std::move(result), std::move(pointToPutCaret))
+             : std::move(result);
 }
 
-EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
-                                    nsAtom* aProperty, nsAtom* aAttribute,
-                                    SpecifiedStyle aSpecifiedStyle) {
+Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
+    const EditorDOMPoint& aPoint, nsAtom* aProperty, nsAtom* aAttribute,
+    SpecifiedStyle aSpecifiedStyle) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aPoint.IsSet())) {
-    return EditResult(NS_ERROR_INVALID_ARG);
+    return Err(NS_ERROR_INVALID_ARG);
   }
 
   
@@ -1105,21 +1119,22 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  const SplitNodeResult splitResult =
+  EditorDOMPoint pointToPutCaret(aPoint);
+  SplitNodeResult splitResult =
       SplitAncestorStyledInlineElementsAt(aPoint, aProperty, aAttribute);
   if (splitResult.isErr()) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-    return EditResult(splitResult.unwrapErr());
+    return Err(splitResult.unwrapErr());
   }
-  
-  
-  splitResult.IgnoreCaretPointSuggestion();
+  splitResult.MoveCaretPointTo(pointToPutCaret, *this,
+                               {SuggestCaret::OnlyIfHasSuggestion,
+                                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
 
   
   
   
   if (!splitResult.Handled()) {
-    return EditResult(aPoint);
+    return pointToPutCaret;
   }
 
   
@@ -1134,6 +1149,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
           {EmptyCheckOption::TreatSingleBRElementAsVisible,
            EmptyCheckOption::TreatListItemAsVisible,
            EmptyCheckOption::TreatTableCellAsVisible})) {
+    AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(), &pointToPutCaret);
     
     
     
@@ -1141,7 +1157,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
         MOZ_KnownLive(*splitResult.GetPreviousContent()));
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-      return EditResult(rv);
+      return Err(rv);
     }
   }
 
@@ -1151,7 +1167,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   if (!splitResult.GetNextContent()) {
-    return EditResult(aPoint);
+    return pointToPutCaret;
   }
 
   
@@ -1176,20 +1192,21 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
     brElement = HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
     if (!atStartOfNextNode.GetContainerParentAs<nsIContent>()) {
       NS_WARNING("atStartOfNextNode was in an orphan node");
-      return EditResult(NS_ERROR_FAILURE);
+      return Err(NS_ERROR_FAILURE);
     }
     atStartOfNextNode.Set(atStartOfNextNode.GetContainerParent(), 0);
   }
-  const SplitNodeResult splitResultAtStartOfNextNode =
+  SplitNodeResult splitResultAtStartOfNextNode =
       SplitAncestorStyledInlineElementsAt(atStartOfNextNode, aProperty,
                                           aAttribute);
   if (splitResultAtStartOfNextNode.isErr()) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
-    return EditResult(splitResultAtStartOfNextNode.unwrapErr());
+    return Err(splitResultAtStartOfNextNode.unwrapErr());
   }
-  
-  
-  splitResultAtStartOfNextNode.IgnoreCaretPointSuggestion();
+  splitResultAtStartOfNextNode.MoveCaretPointTo(
+      pointToPutCaret, *this,
+      {SuggestCaret::OnlyIfHasSuggestion,
+       SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
 
   if (splitResultAtStartOfNextNode.Handled() &&
       splitResultAtStartOfNextNode.GetNextContent()) {
@@ -1217,7 +1234,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
           MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
       if (NS_FAILED(rv)) {
         NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        return EditResult(rv);
+        return Err(rv);
       }
       if (seenBR && !brElement) {
         brElement = HTMLEditUtils::GetFirstBRElement(
@@ -1235,8 +1252,8 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
         splitResult.AtSplitPoint<EditorRawDOMPoint>();
     const EditorRawDOMPoint& splitPointAtStartOfNextNode =
         splitResultAtStartOfNextNode.AtSplitPoint<EditorRawDOMPoint>();
-    return EditResult(EditorDOMPoint(splitPoint.GetContainer(),
-                                     splitPointAtStartOfNextNode.Offset()));
+    return EditorDOMPoint(splitPoint.GetContainer(),
+                          splitPointAtStartOfNextNode.Offset());
   }
 
   
@@ -1245,33 +1262,25 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
       *splitResultAtStartOfNextNode.GetPreviousContent(),
       {LeafNodeType::OnlyLeafNode});
-  EditorDOMPoint pointToPutCaret(
-      firstLeafChildOfPreviousNode
-          ? firstLeafChildOfPreviousNode
-          : splitResultAtStartOfNextNode.GetPreviousContent(),
-      0);
+  pointToPutCaret.Set(firstLeafChildOfPreviousNode
+                          ? firstLeafChildOfPreviousNode
+                          : splitResultAtStartOfNextNode.GetPreviousContent(),
+                      0);
 
   
   
   
   if (brElement) {
-    const MoveNodeResult moveBRElementResult =
+    MoveNodeResult moveBRElementResult =
         MoveNodeWithTransaction(*brElement, pointToPutCaret);
     if (moveBRElementResult.isErr()) {
       NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-      return EditResult(moveBRElementResult.unwrapErr());
+      return Err(moveBRElementResult.unwrapErr());
     }
-    nsresult rv = moveBRElementResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                SuggestCaret::AndIgnoreTrivialError});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-      return EditResult(rv);
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
+    moveBRElementResult.MoveCaretPointTo(
+        pointToPutCaret, *this,
+        {SuggestCaret::OnlyIfHasSuggestion,
+         SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
 
     if (splitResultAtStartOfNextNode.GetNextContent() &&
         splitResultAtStartOfNextNode.GetNextContent()->IsInComposedDoc()) {
@@ -1293,7 +1302,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
             MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
         if (NS_FAILED(rv)) {
           NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-          return EditResult(rv);
+          return Err(rv);
         }
       }
       
@@ -1320,7 +1329,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
               MOZ_KnownLive(emptyInlineContainerElement));
           if (NS_FAILED(rv)) {
             NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-            return EditResult(rv);
+            return Err(rv);
           }
         }
       }
@@ -1349,12 +1358,12 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
                           aProperty, aAttribute, aSpecifiedStyle);
     if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
-      return EditResult(removeStyleResult.unwrapErr());
+      return removeStyleResult;
     }
     
     
   }
-  return EditResult(pointToPutCaret);
+  return pointToPutCaret;
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
