@@ -436,6 +436,10 @@ class MOZ_NON_PARAM Val : public LitVal {
 
   
   void readFromRootedLocation(const void* loc);
+
+  
+  void initFromRootedLocation(ValType type, const void* loc);
+
   
   void writeToRootedLocation(void* loc, bool mustWrite64) const;
 

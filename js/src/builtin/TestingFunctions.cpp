@@ -1082,8 +1082,8 @@ static bool WasmGlobalFromArrayBuffer(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  wasm::RootedVal val(cx, valType);
-  val.get().readFromRootedLocation(buffer->dataPointer());
+  wasm::RootedVal val(cx);
+  val.get().initFromRootedLocation(valType, buffer->dataPointer());
 
   
   RootedObject proto(
