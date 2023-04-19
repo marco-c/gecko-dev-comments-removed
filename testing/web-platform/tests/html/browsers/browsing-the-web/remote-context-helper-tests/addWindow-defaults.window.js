@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+'use strict';
+
+promise_test(async t => {
+  const rcHelper = new RemoteContextHelper();
+  const main = await rcHelper.addWindow();
+  await assertSimplestScriptRuns(main);
+  await assertOriginIsAsExpected(main, location.origin);
+});
