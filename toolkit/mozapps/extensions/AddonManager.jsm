@@ -105,6 +105,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
   isKnownPublicSuffix:
     "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
+  isPrincipalInSitePermissionsBlocklist:
+    "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
 });
 
 
@@ -1801,6 +1803,7 @@ var AddonManagerInternal = {
 
 
 
+
   async getSitePermsAddonInstallForWebpage(
     aBrowser,
     aInstallingPrincipal,
@@ -1826,6 +1829,13 @@ var AddonManagerInternal = {
     if (aBrowser && !Element.isInstance(aBrowser)) {
       throw Components.Exception(
         "aBrowser must be an Element, or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    if (lazy.isPrincipalInSitePermissionsBlocklist(aInstallingPrincipal)) {
+      throw Components.Exception(
+        `SitePermsAddons can't be installed`,
         Cr.NS_ERROR_INVALID_ARG
       );
     }
