@@ -7,6 +7,12 @@
 
 
 
+
+
+
+USE_PYTHON3 = True
+
+
 def _CommonChecks(input_api, output_api):
   results = []
 
@@ -27,15 +33,16 @@ def _CommonChecks(input_api, output_api):
   results.extend(input_api.RunTests(pylint_checks))
 
   
-  results.extend(input_api.canned_checks.RunUnitTestsInDirectory(
-      input_api,
-      output_api,
-      '.',
-      [ r'^.+_unittest\.py$'],
-      skip_shebang_check=True))
+  results.extend(
+      input_api.canned_checks.RunUnitTestsInDirectory(input_api,
+                                                      output_api,
+                                                      '.',
+                                                      [r'^.+_unittest\.py$'],
+                                                      skip_shebang_check=False,
+                                                      run_on_python2=False))
 
   
-  cmd = [input_api.python_executable, 'mb.py', 'validate']
+  cmd = [input_api.python3_executable, 'mb.py', 'validate']
   kwargs = {'cwd': input_api.PresubmitLocalPath()}
   results.extend(input_api.RunTests([
       input_api.Command(name='mb_validate',

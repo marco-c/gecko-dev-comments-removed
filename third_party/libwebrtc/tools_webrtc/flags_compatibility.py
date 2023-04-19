@@ -36,10 +36,11 @@ def main():
 def _ForcePythonInterpreter(cmd):
   """Returns the fixed command line to call the right python executable."""
   out = cmd[:]
-  if out[0] == 'python':
-    out[0] = sys.executable
-  elif out[0].endswith('.py'):
-    out.insert(0, sys.executable)
+  if len(out) > 0:
+    if out[0] == 'python':
+      out[0] = sys.executable
+    elif out[0].endswith('.py'):
+      out.insert(0, sys.executable)
   return out
 
 

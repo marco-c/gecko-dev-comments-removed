@@ -7,29 +7,29 @@
 
 
 
+
 import unittest
-from copy_framework_header import replace_double_quote
+from copy_framework_header import _ReplaceDoubleQuote
 
 
 class TestCopyFramework(unittest.TestCase):
-    def testReplaceDoubleQuote(self):
-        self.assertEqual(replace_double_quote("""#import "RTCMacros.h\""""),
-                         """#import <WebRTC/RTCMacros.h>""")
-        self.assertEqual(replace_double_quote("""#import "RTCMacros.h\"\n"""),
-                         """#import <WebRTC/RTCMacros.h>\n""")
-        self.assertEqual(
-            replace_double_quote("""#import "UIDevice+RTCDevice.h\"\n"""),
-            """#import <WebRTC/UIDevice+RTCDevice.h>\n""")
-        self.assertEqual(
-            replace_double_quote("#import \"components/video_codec/" +
-                                 "RTCVideoDecoderFactoryH264.h\"\n"),
-            """#import <WebRTC/RTCVideoDecoderFactoryH264.h>\n""")
-        self.assertEqual(
-            replace_double_quote(
-                """@property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) *\n"""
-            ),
-            """@property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) *\n""")
+  def testReplaceDoubleQuote(self):
+    self.assertEqual(_ReplaceDoubleQuote("""#import "RTCMacros.h\""""),
+                     """#import <WebRTC/RTCMacros.h>""")
+    self.assertEqual(_ReplaceDoubleQuote("""#import "RTCMacros.h\"\n"""),
+                     """#import <WebRTC/RTCMacros.h>\n""")
+    self.assertEqual(
+        _ReplaceDoubleQuote("""#import "UIDevice+RTCDevice.h\"\n"""),
+        """#import <WebRTC/UIDevice+RTCDevice.h>\n""")
+    self.assertEqual(
+        _ReplaceDoubleQuote("#import \"components/video_codec/" +
+                            "RTCVideoDecoderFactoryH264.h\"\n"),
+        """#import <WebRTC/RTCVideoDecoderFactoryH264.h>\n""")
+    self.assertEqual(
+        _ReplaceDoubleQuote(
+            """@property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) *\n"""),
+        """@property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) *\n""")
 
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()
