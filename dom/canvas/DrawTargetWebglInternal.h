@@ -31,17 +31,14 @@ class TexturePacker {
   const IntRect& GetBounds() const { return mBounds; }
 
  private:
-  bool IsLeaf() const { return !mChildren[0]; }
+  bool IsLeaf() const { return !mChildren; }
   bool IsFullyAvailable() const { return IsLeaf() && mAvailable > 0; }
 
-  void DiscardChildren() {
-    mChildren[0] = nullptr;
-    mChildren[1] = nullptr;
-  }
+  void DiscardChildren() { mChildren.reset(); }
 
   
   
-  UniquePtr<TexturePacker> mChildren[2];
+  UniquePtr<TexturePacker[]> mChildren;
   
   IntRect mBounds;
   

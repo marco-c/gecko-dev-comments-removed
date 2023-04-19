@@ -32,17 +32,17 @@ Maybe<IntPoint> TexturePacker::Insert(const IntSize& aSize) {
       mBounds.width < aSize.width || mBounds.height < aSize.height) {
     return Nothing();
   }
-  if (mChildren[0]) {
+  if (mChildren) {
     
     
-    Maybe<IntPoint> inserted = mChildren[0]->Insert(aSize);
+    Maybe<IntPoint> inserted = mChildren[0].Insert(aSize);
     if (!inserted) {
-      inserted = mChildren[1]->Insert(aSize);
+      inserted = mChildren[1].Insert(aSize);
     }
     
     
     if (inserted) {
-      mAvailable = std::max(mChildren[0]->mAvailable, mChildren[1]->mAvailable);
+      mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
       if (!mAvailable) {
         DiscardChildren();
       }
@@ -60,29 +60,29 @@ Maybe<IntPoint> TexturePacker::Insert(const IntSize& aSize) {
   
   
   if (mBounds.width - aSize.width > mBounds.height - aSize.height) {
-    mChildren[0].reset(new TexturePacker(
-        IntRect(mBounds.x, mBounds.y, aSize.width, mBounds.height)));
-    mChildren[1].reset(new TexturePacker(
-        IntRect(mBounds.x + aSize.width, mBounds.y, mBounds.width - aSize.width,
-                mBounds.height)));
+    mChildren.reset(new TexturePacker[2]{
+        TexturePacker(
+            IntRect(mBounds.x, mBounds.y, aSize.width, mBounds.height)),
+        TexturePacker(IntRect(mBounds.x + aSize.width, mBounds.y,
+                              mBounds.width - aSize.width, mBounds.height))});
   } else {
-    mChildren[0].reset(new TexturePacker(
-        IntRect(mBounds.x, mBounds.y, mBounds.width, aSize.height)));
-    mChildren[1].reset(new TexturePacker(
-        IntRect(mBounds.x, mBounds.y + aSize.height, mBounds.width,
-                mBounds.height - aSize.height)));
+    mChildren.reset(new TexturePacker[2]{
+        TexturePacker(
+            IntRect(mBounds.x, mBounds.y, mBounds.width, aSize.height)),
+        TexturePacker(IntRect(mBounds.x, mBounds.y + aSize.height,
+                              mBounds.width, mBounds.height - aSize.height))});
   }
   
   
   
-  Maybe<IntPoint> inserted = mChildren[0]->Insert(aSize);
-  mAvailable = std::max(mChildren[0]->mAvailable, mChildren[1]->mAvailable);
+  Maybe<IntPoint> inserted = mChildren[0].Insert(aSize);
+  mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
   return inserted;
 }
 
 
 bool TexturePacker::Remove(const IntRect& aBounds) {
-  if (!mChildren[0]) {
+  if (!mChildren) {
     
     
     
@@ -107,22 +107,24 @@ bool TexturePacker::Remove(const IntRect& aBounds) {
       int split = aBounds.x - mBounds.x > mBounds.XMost() - aBounds.XMost()
                       ? aBounds.x
                       : aBounds.XMost();
-      mChildren[0].reset(new TexturePacker(
-          IntRect(mBounds.x, mBounds.y, split - mBounds.x, mBounds.height),
-          false));
-      mChildren[1].reset(new TexturePacker(
-          IntRect(split, mBounds.y, mBounds.XMost() - split, mBounds.height),
-          false));
+      mChildren.reset(new TexturePacker[2]{
+          TexturePacker(
+              IntRect(mBounds.x, mBounds.y, split - mBounds.x, mBounds.height),
+              false),
+          TexturePacker(IntRect(split, mBounds.y, mBounds.XMost() - split,
+                                mBounds.height),
+                        false)});
     } else {
       int split = aBounds.y - mBounds.y > mBounds.YMost() - aBounds.YMost()
                       ? aBounds.y
                       : aBounds.YMost();
-      mChildren[0].reset(new TexturePacker(
-          IntRect(mBounds.x, mBounds.y, mBounds.width, split - mBounds.y),
-          false));
-      mChildren[1].reset(new TexturePacker(
-          IntRect(mBounds.x, split, mBounds.width, mBounds.YMost() - split),
-          false));
+      mChildren.reset(new TexturePacker[2]{
+          TexturePacker(
+              IntRect(mBounds.x, mBounds.y, mBounds.width, split - mBounds.y),
+              false),
+          TexturePacker(
+              IntRect(mBounds.x, split, mBounds.width, mBounds.YMost() - split),
+              false)});
     }
   }
   
@@ -130,16 +132,16 @@ bool TexturePacker::Remove(const IntRect& aBounds) {
   
   
   
-  bool next = mChildren[0]->mBounds.x < mChildren[1]->mBounds.x
-                  ? aBounds.x >= mChildren[1]->mBounds.x
-                  : aBounds.y >= mChildren[1]->mBounds.y;
-  bool removed = mChildren[next ? 1 : 0]->Remove(aBounds);
+  bool next = mChildren[0].mBounds.x < mChildren[1].mBounds.x
+                  ? aBounds.x >= mChildren[1].mBounds.x
+                  : aBounds.y >= mChildren[1].mBounds.y;
+  bool removed = mChildren[next ? 1 : 0].Remove(aBounds);
   if (removed) {
-    if (mChildren[0]->IsFullyAvailable() && mChildren[1]->IsFullyAvailable()) {
+    if (mChildren[0].IsFullyAvailable() && mChildren[1].IsFullyAvailable()) {
       DiscardChildren();
       mAvailable = std::min(mBounds.width, mBounds.height);
     } else {
-      mAvailable = std::max(mChildren[0]->mAvailable, mChildren[1]->mAvailable);
+      mAvailable = std::max(mChildren[0].mAvailable, mChildren[1].mAvailable);
     }
   }
   return removed;
