@@ -37,6 +37,13 @@ namespace webrtc {
 namespace {
 using ::dcsctp::SendPacketStatus;
 
+
+
+
+
+constexpr dcsctp::DurationMs kMaxTimerBackoffDuration =
+    dcsctp::DurationMs(3000);
+
 enum class WebrtcPPID : dcsctp::PPID::UnderlyingType {
   
   kDCEP = 50,
@@ -156,6 +163,10 @@ bool DcSctpTransport::Start(int local_sctp_port,
     options.local_port = local_sctp_port;
     options.remote_port = remote_sctp_port;
     options.max_message_size = max_message_size;
+    options.max_timer_backoff_duration = kMaxTimerBackoffDuration;
+    
+    options.max_retransmissions = absl::nullopt;
+    options.max_init_retransmits = absl::nullopt;
 
     std::unique_ptr<dcsctp::PacketObserver> packet_observer;
     if (RTC_LOG_CHECK_LEVEL(LS_VERBOSE)) {
