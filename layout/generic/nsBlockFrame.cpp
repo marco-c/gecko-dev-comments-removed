@@ -1950,6 +1950,12 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     const nscoord contentBSizeWithBStartBP =
         aState.mBCoord + nonCarriedOutBDirMargin;
+
+    
+    
+    
+    ApplyLineClamp(aState.mReflowInput, this, contentBSizeWithBStartBP);
+
     finalSize.BSize(wm) = ComputeFinalBSize(aState, contentBSizeWithBStartBP);
 
     
