@@ -46,31 +46,31 @@ class nsStorageStream final : public nsIStorageStream, public nsIOutputStream {
   ~nsStorageStream();
 
   mozilla::Mutex mMutex{"nsStorageStream"};
-  nsSegmentedBuffer* mSegmentedBuffer MOZ_GUARDED_BY(mMutex) = nullptr;
+  nsSegmentedBuffer* mSegmentedBuffer GUARDED_BY(mMutex) = nullptr;
   
   
-  uint32_t mSegmentSize MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mSegmentSize GUARDED_BY(mMutex) = 0;
   
-  uint32_t mSegmentSizeLog2 MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mSegmentSizeLog2 GUARDED_BY(mMutex) = 0;
   
-  bool mWriteInProgress MOZ_GUARDED_BY(mMutex) = false;
+  bool mWriteInProgress GUARDED_BY(mMutex) = false;
   
-  int32_t mLastSegmentNum MOZ_GUARDED_BY(mMutex) = -1;
+  int32_t mLastSegmentNum GUARDED_BY(mMutex) = -1;
   
-  char* mWriteCursor MOZ_GUARDED_BY(mMutex) = nullptr;
+  char* mWriteCursor GUARDED_BY(mMutex) = nullptr;
   
-  char* mSegmentEnd MOZ_GUARDED_BY(mMutex) = nullptr;
+  char* mSegmentEnd GUARDED_BY(mMutex) = nullptr;
   
-  uint32_t mLogicalLength MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mLogicalLength GUARDED_BY(mMutex) = 0;
   
-  uint32_t mActiveSegmentBorrows MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mActiveSegmentBorrows GUARDED_BY(mMutex) = 0;
 
-  nsresult SetLengthLocked(uint32_t aLength) MOZ_REQUIRES(mMutex);
-  nsresult Seek(int32_t aPosition) MOZ_REQUIRES(mMutex);
-  uint32_t SegNum(uint32_t aPosition) MOZ_REQUIRES(mMutex) {
+  nsresult SetLengthLocked(uint32_t aLength) REQUIRES(mMutex);
+  nsresult Seek(int32_t aPosition) REQUIRES(mMutex);
+  uint32_t SegNum(uint32_t aPosition) REQUIRES(mMutex) {
     return aPosition >> mSegmentSizeLog2;
   }
-  uint32_t SegOffset(uint32_t aPosition) MOZ_REQUIRES(mMutex) {
+  uint32_t SegOffset(uint32_t aPosition) REQUIRES(mMutex) {
     return aPosition & (mSegmentSize - 1);
   }
 };

@@ -23,18 +23,18 @@
 #include "mozilla/Attributes.h"
 
 #if defined(__clang__) && (__clang_major__ >= 8) && !defined(SWIG)
-#  define MOZ_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
+#  define THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 
 
-#  define MOZ_PUSH_IGNORE_THREAD_SAFETY \
-    _Pragma("GCC diagnostic push")      \
+#  define PUSH_IGNORE_THREAD_SAFETY \
+    _Pragma("GCC diagnostic push")  \
         _Pragma("GCC diagnostic ignored \"-Wthread-safety\"")
-#  define MOZ_POP_THREAD_SAFETY _Pragma("GCC diagnostic pop")
+#  define POP_THREAD_SAFETY _Pragma("GCC diagnostic pop")
 
 #else
-#  define MOZ_THREAD_ANNOTATION_ATTRIBUTE__(x)
-#  define MOZ_PUSH_IGNORE_THREAD_SAFETY
-#  define MOZ_POP_THREAD_SAFETY
+#  define THREAD_ANNOTATION_ATTRIBUTE__(x)
+#  define PUSH_IGNORE_THREAD_SAFETY
+#  define POP_THREAD_SAFETY
 #endif
 
 
@@ -42,8 +42,8 @@
 
 
 
-#define MOZ_GUARDED_BY(x) MOZ_THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
-#define MOZ_GUARDED_VAR MOZ_THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
+#define GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
 
 
 
@@ -53,88 +53,86 @@
 
 
 
-#define MOZ_PT_GUARDED_BY(x) MOZ_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
-#define MOZ_PT_GUARDED_VAR MOZ_THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
+#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
+#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
 
 
 
 
 
 
-#define MOZ_ACQUIRED_AFTER(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(__VA_ARGS__))
-#define MOZ_ACQUIRED_BEFORE(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(__VA_ARGS__))
+#define ACQUIRED_AFTER(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(__VA_ARGS__))
+#define ACQUIRED_BEFORE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(__VA_ARGS__))
 
 
 
 
 
-#define MOZ_REQUIRES(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
+#define REQUIRES(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(__VA_ARGS__))
 
-#define MOZ_REQUIRES_SHARED(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
-
-
-
-
-#define MOZ_EXCLUDES(x) MOZ_THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(x))
-
-
-#define MOZ_RETURN_CAPABILITY(x) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
-
-
-#define MOZ_CAPABILITY MOZ_THREAD_ANNOTATION_ATTRIBUTE__(lockable)
-
-
-#define MOZ_SCOPED_CAPABILITY MOZ_THREAD_ANNOTATION_ATTRIBUTE__(scoped_lockable)
-
-
-#define MOZ_CAPABILITY_ACQUIRE(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_lock_function(__VA_ARGS__))
-
-#define MOZ_EXCLUSIVE_RELEASE(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(release_capability(__VA_ARGS__))
-
-#define MOZ_ACQUIRE_SHARED(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(shared_lock_function(__VA_ARGS__))
-
-#define MOZ_TRY_ACQUIRE(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_trylock_function(__VA_ARGS__))
-
-#define MOZ_SHARED_TRYLOCK_FUNCTION(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
-
-#define MOZ_CAPABILITY_RELEASE(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
-
-
-#define MOZ_NO_THREAD_SAFETY_ANALYSIS \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
-
-
-#define MOZ_ASSERT_CAPABILITY(x) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(assert_capability(x))
-
-#define MOZ_ASSERT_SHARED_CAPABILITY(x) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(assert_shared_capability(x))
+#define REQUIRES_SHARED(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_locks_required(__VA_ARGS__))
 
 
 
-#define MOZ_RELEASE_SHARED(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(release_shared_capability(__VA_ARGS__))
 
-#define MOZ_RELEASE_GENERIC(...) \
-  MOZ_THREAD_ANNOTATION_ATTRIBUTE__(release_generic_capability(__VA_ARGS__))
+#define EXCLUDES(x) THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(x))
+
+
+#define RETURN_CAPABILITY(x) THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))
+
+
+#define CAPABILITY THREAD_ANNOTATION_ATTRIBUTE__(lockable)
+
+
+#define SCOPED_CAPABILITY THREAD_ANNOTATION_ATTRIBUTE__(scoped_lockable)
+
+
+#define CAPABILITY_ACQUIRE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_lock_function(__VA_ARGS__))
+
+#define EXCLUSIVE_RELEASE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(release_capability(__VA_ARGS__))
+
+#define ACQUIRE_SHARED(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_lock_function(__VA_ARGS__))
+
+#define TRY_ACQUIRE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(exclusive_trylock_function(__VA_ARGS__))
+
+#define SHARED_TRYLOCK_FUNCTION(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
+
+#define CAPABILITY_RELEASE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
+
+
+#define NO_THREAD_SAFETY_ANALYSIS \
+  THREAD_ANNOTATION_ATTRIBUTE__(no_thread_safety_analysis)
+
+
+#define ASSERT_CAPABILITY(x) THREAD_ANNOTATION_ATTRIBUTE__(assert_capability(x))
+
+#define ASSERT_SHARED_CAPABILITY(x) \
+  THREAD_ANNOTATION_ATTRIBUTE__(assert_shared_capability(x))
+
+
+
+#define RELEASE_SHARED(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(release_shared_capability(__VA_ARGS__))
+
+#define RELEASE_GENERIC(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(release_generic_capability(__VA_ARGS__))
 
 
 
 
 
 
-#define MOZ_SCOPED_UNLOCK_RELEASE(...) MOZ_EXCLUSIVE_RELEASE(__VA_ARGS__)
-#define MOZ_SCOPED_UNLOCK_REACQUIRE(...) MOZ_EXCLUSIVE_RELEASE(__VA_ARGS__)
+#define SCOPED_UNLOCK_RELEASE(...) EXCLUSIVE_RELEASE(__VA_ARGS__)
+#define SCOPED_UNLOCK_REACQUIRE(...) EXCLUSIVE_RELEASE(__VA_ARGS__)
 
 #endif 

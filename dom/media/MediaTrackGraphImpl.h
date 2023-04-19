@@ -189,7 +189,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  void ApplyTrackUpdate(TrackUpdate* aUpdate) MOZ_REQUIRES(mMonitor);
+  void ApplyTrackUpdate(TrackUpdate* aUpdate) REQUIRES(mMonitor);
   
 
 
@@ -280,13 +280,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void EnsureStableStateEventPosted() MOZ_REQUIRES(mMonitor);
+  void EnsureStableStateEventPosted() REQUIRES(mMonitor);
   
 
 
 
-  void PrepareUpdatesToMainThreadState(bool aFinalUpdate)
-      MOZ_REQUIRES(mMonitor);
+  void PrepareUpdatesToMainThreadState(bool aFinalUpdate) REQUIRES(mMonitor);
   
 
 
@@ -320,7 +319,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
-  void SwapMessageQueues() MOZ_REQUIRES(mMonitor) {
+  void SwapMessageQueues() REQUIRES(mMonitor) {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
     mMonitor.AssertCurrentThreadOwns();
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
@@ -554,7 +553,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  GraphDriver* CurrentDriver() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  GraphDriver* CurrentDriver() const NO_THREAD_SAFETY_ANALYSIS {
 #ifdef DEBUG
     if (!OnGraphThreadOrNotRunning()) {
       mMonitor.AssertCurrentThreadOwns();
@@ -788,11 +787,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  nsTArray<TrackUpdate> mTrackUpdates MOZ_GUARDED_BY(mMonitor);
+  nsTArray<TrackUpdate> mTrackUpdates GUARDED_BY(mMonitor);
   
 
 
-  nsTArray<nsCOMPtr<nsIRunnable>> mUpdateRunnables MOZ_GUARDED_BY(mMonitor);
+  nsTArray<nsCOMPtr<nsIRunnable>> mUpdateRunnables GUARDED_BY(mMonitor);
   
 
 
@@ -806,10 +805,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  nsTArray<MessageBlock> mBackMessageQueue MOZ_GUARDED_BY(mMonitor);
+  nsTArray<MessageBlock> mBackMessageQueue GUARDED_BY(mMonitor);
 
   
-  bool MessagesQueued() const MOZ_REQUIRES(mMonitor) {
+  bool MessagesQueued() const REQUIRES(mMonitor) {
     mMonitor.AssertCurrentThreadOwns();
     return !mBackMessageQueue.IsEmpty();
   }
@@ -863,8 +862,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  LifecycleState mLifecycleState MOZ_GUARDED_BY(mMonitor);
-  LifecycleState& LifecycleStateRef() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  LifecycleState mLifecycleState GUARDED_BY(mMonitor);
+  LifecycleState& LifecycleStateRef() NO_THREAD_SAFETY_ANALYSIS {
 #if DEBUG
     if (mGraphDriverRunning) {
       mMonitor.AssertCurrentThreadOwns();
@@ -874,8 +873,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 #endif
     return mLifecycleState;
   }
-  const LifecycleState& LifecycleStateRef() const
-      MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  const LifecycleState& LifecycleStateRef() const NO_THREAD_SAFETY_ANALYSIS {
 #if DEBUG
     if (mGraphDriverRunning) {
       mMonitor.AssertCurrentThreadOwns();
@@ -901,7 +899,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool mInterruptJSCalled MOZ_GUARDED_BY(mMonitor) = false;
+  bool mInterruptJSCalled GUARDED_BY(mMonitor) = false;
 
   
 
@@ -914,7 +912,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  bool mPostedRunInStableStateEvent MOZ_GUARDED_BY(mMonitor);
+  bool mPostedRunInStableStateEvent GUARDED_BY(mMonitor);
 
   
 
@@ -922,7 +920,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  JSContext* mJSContext MOZ_GUARDED_BY(mMonitor) = nullptr;
+  JSContext* mJSContext GUARDED_BY(mMonitor) = nullptr;
 
   
 
@@ -1017,7 +1015,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  GraphTime mNextMainThreadGraphTime MOZ_GUARDED_BY(mMonitor) = 0;
+  GraphTime mNextMainThreadGraphTime GUARDED_BY(mMonitor) = 0;
 
   
 

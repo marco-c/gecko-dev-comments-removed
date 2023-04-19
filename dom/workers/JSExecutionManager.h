@@ -104,17 +104,16 @@ class JSExecutionManager {
 
   
   
-  std::deque<WorkerPrivate*> mExecutionQueue
-      MOZ_GUARDED_BY(mExecutionQueueMutex);
+  std::deque<WorkerPrivate*> mExecutionQueue GUARDED_BY(mExecutionQueueMutex);
 
   
   
-  int32_t mRunning MOZ_GUARDED_BY(mExecutionQueueMutex) = 0;
+  int32_t mRunning GUARDED_BY(mExecutionQueueMutex) = 0;
 
   
   
   
-  int32_t mMaxRunning MOZ_GUARDED_BY(mExecutionQueueMutex) = 1;
+  int32_t mMaxRunning GUARDED_BY(mExecutionQueueMutex) = 1;
 
   
   Mutex mExecutionQueueMutex =
@@ -131,8 +130,7 @@ class JSExecutionManager {
   
   
   
-  bool mMainThreadAwaitingExecution MOZ_GUARDED_BY(mExecutionQueueMutex) =
-      false;
+  bool mMainThreadAwaitingExecution GUARDED_BY(mExecutionQueueMutex) = false;
 };
 
 

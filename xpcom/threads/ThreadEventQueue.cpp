@@ -267,7 +267,7 @@ already_AddRefed<nsIThreadObserver> ThreadEventQueue::GetObserver() {
 }
 
 already_AddRefed<nsIThreadObserver> ThreadEventQueue::GetObserverOnThread()
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    NO_THREAD_SAFETY_ANALYSIS {
   
   return do_AddRef(mObserver);
 }

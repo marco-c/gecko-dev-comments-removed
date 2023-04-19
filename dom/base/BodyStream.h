@@ -141,18 +141,17 @@ class BodyStream final : public nsIInputStreamCallback,
 
   void ErrorPropagation(JSContext* aCx,
                         const MutexSingleWriterAutoLock& aProofOfLock,
-                        ReadableStream* aStream, nsresult aRv)
-      MOZ_REQUIRES(mMutex);
+                        ReadableStream* aStream, nsresult aRv) REQUIRES(mMutex);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAndReleaseObjects(
       JSContext* aCx, const MutexSingleWriterAutoLock& aProofOfLock,
-      ReadableStream* aStream) MOZ_REQUIRES(mMutex);
+      ReadableStream* aStream) REQUIRES(mMutex);
 
   class WorkerShutdown;
 
   void ReleaseObjects(const MutexSingleWriterAutoLock& aProofOfLock)
-      MOZ_REQUIRES(mMutex);
+      REQUIRES(mMutex);
 
   void ReleaseObjects();
 
@@ -187,12 +186,12 @@ class BodyStream final : public nsIInputStreamCallback,
   MutexSingleWriter mMutex;
 
   
-  State mState MOZ_GUARDED_BY(mMutex);  
+  State mState GUARDED_BY(mMutex);  
 
   
   
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  RefPtr<BodyStreamHolder> mStreamHolder MOZ_GUARDED_BY(mMutex);
+  RefPtr<BodyStreamHolder> mStreamHolder GUARDED_BY(mMutex);
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 
   

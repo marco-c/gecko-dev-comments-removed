@@ -48,7 +48,7 @@ class FFmpegDataDecoder<LIBAV_VER>
   
   virtual RefPtr<FlushPromise> ProcessFlush();
   virtual void ProcessShutdown();
-  virtual void InitCodecContext() MOZ_REQUIRES(sMutex) {}
+  virtual void InitCodecContext() REQUIRES(sMutex) {}
   AVFrame* PrepareFrame();
   MediaResult InitDecoder();
   MediaResult AllocateExtraData();

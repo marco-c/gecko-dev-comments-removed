@@ -40,7 +40,7 @@ class PerformanceStorageWorker final : public PerformanceStorage {
 
   
   
-  RefPtr<WeakWorkerRef> mWorkerRef MOZ_GUARDED_BY(mMutex);
+  RefPtr<WeakWorkerRef> mWorkerRef GUARDED_BY(mMutex);
 };
 
 }  

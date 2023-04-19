@@ -176,14 +176,14 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  uint32_t mPendingEventCount MOZ_GUARDED_BY(mMutex);
+  uint32_t mPendingEventCount GUARDED_BY(mMutex);
 
   
 
 
 
 
-  uint32_t mIdleNotificationCount MOZ_GUARDED_BY(mMutex);
+  uint32_t mIdleNotificationCount GUARDED_BY(mMutex);
 
   
 
@@ -202,7 +202,7 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  bool mThreadIsShuttingDown MOZ_GUARDED_BY(mMutex);
+  bool mThreadIsShuttingDown GUARDED_BY(mMutex);
 
   
 
