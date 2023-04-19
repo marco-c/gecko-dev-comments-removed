@@ -351,9 +351,10 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvNotifyMediaInfo(
   });
 
   
-  NS_ENSURE_TRUE(SUCCEEDED(MakeAndInitialize<MFMediaSource>(
-                     &mMediaSource, aInfo.audioInfo(), aInfo.videoInfo())),
-                 IPC_OK());
+  NS_ENSURE_TRUE(
+      SUCCEEDED(MakeAndInitialize<MFMediaSource>(
+          &mMediaSource, aInfo.audioInfo(), aInfo.videoInfo(), mManagerThread)),
+      IPC_OK());
   mMediaEngineExtension->SetMediaSource(mMediaSource.Get());
 
   

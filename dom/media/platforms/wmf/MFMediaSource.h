@@ -12,7 +12,6 @@
 #include "MediaEventSource.h"
 #include "MFMediaEngineExtra.h"
 #include "MFMediaEngineStream.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/TaskQueue.h"
 
@@ -43,7 +42,8 @@ class MFMediaSource
  public:
   MFMediaSource();
   HRESULT RuntimeClassInitialize(const Maybe<AudioInfo>& aAudio,
-                                 const Maybe<VideoInfo>& aVideo);
+                                 const Maybe<VideoInfo>& aVideo,
+                                 nsISerialEventTarget* aManagerThread);
 
   
   IFACEMETHODIMP GetCharacteristics(DWORD* aCharacteristics) override;
@@ -83,8 +83,8 @@ class MFMediaSource
   IFACEMETHODIMP SetRate(BOOL aSupportsThinning, float aRate) override;
   IFACEMETHODIMP GetRate(BOOL* aSupportsThinning, float* aRate) override;
 
-  MFMediaEngineStream* GetAudioStream() { return mAudioStream.Get(); }
-  MFMediaEngineStream* GetVideoStream() { return mVideoStream.Get(); }
+  MFMediaEngineStream* GetAudioStream();
+  MFMediaEngineStream* GetVideoStream();
 
   TaskQueue* GetTaskQueue() { return mTaskQueue; }
 
@@ -112,26 +112,28 @@ class MFMediaSource
     Paused,
     Shutdowned,
   };
-  State GetState() const { return mState; }
+  State GetState() const;
 
   void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle);
 
  private:
   void AssertOnTaskQueue() const;
+  void AssertOnManagerThread() const;
   void AssertOnMFThreadPool() const;
 
   void NotifyEndOfStreamInternal(TrackInfo::TrackType aType);
 
   bool IsSeekable() const;
-  MFMediaEngineStream* GetStreamByDescriptorId(DWORD aId) const;
 
   
   
   Microsoft::WRL::ComPtr<IMFMediaEventQueue> mMediaEventQueue;
-  Microsoft::WRL::ComPtr<MFMediaEngineStream> mAudioStream;
-  Microsoft::WRL::ComPtr<MFMediaEngineStream> mVideoStream;
 
   RefPtr<TaskQueue> mTaskQueue;
+
+  
+  
+  RefPtr<nsISerialEventTarget> mManagerThread;
 
   
   friend class MFMediaEngineStream;
@@ -144,12 +146,19 @@ class MFMediaSource
   
   
 
-  
-  
-  Atomic<bool> mPresentationEnded;
+  mutable Mutex mMutex{"MFMediaEngineSource"};
 
   
-  Atomic<State> mState;
+  
+  bool mPresentationEnded MOZ_GUARDED_BY(mMutex);
+
+  
+  State mState MOZ_GUARDED_BY(mMutex);
+
+  Microsoft::WRL::ComPtr<MFMediaEngineStream> mAudioStream
+      MOZ_GUARDED_BY(mMutex);
+  Microsoft::WRL::ComPtr<MFMediaEngineStream> mVideoStream
+      MOZ_GUARDED_BY(mMutex);
 
   
 
