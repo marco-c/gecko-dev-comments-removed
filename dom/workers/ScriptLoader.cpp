@@ -51,6 +51,7 @@
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/LoadContext.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -82,14 +83,17 @@ namespace mozilla::dom::workerinternals {
 namespace {
 
 nsresult ConstructURI(const nsAString& aScriptURL, nsIURI* baseURI,
-                      Document* parentDoc, bool aDefaultURIEncoding,
+                      const mozilla::Encoding* aDocumentEncoding,
                       nsIURI** aResult) {
   nsresult rv;
-  if (aDefaultURIEncoding) {
-    rv = NS_NewURI(aResult, aScriptURL, nullptr, baseURI);
+  
+  
+  if (aDocumentEncoding) {
+    nsAutoCString charset;
+    aDocumentEncoding->Name(charset);
+    rv = NS_NewURI(aResult, aScriptURL, charset.get(), baseURI);
   } else {
-    rv = nsContentUtils::NewURIWithDocumentCharset(aResult, aScriptURL,
-                                                   parentDoc, baseURI);
+    rv = NS_NewURI(aResult, aScriptURL, nullptr, baseURI);
   }
 
   if (NS_FAILED(rv)) {
@@ -232,7 +236,8 @@ nsresult ChannelFromScriptURL(
 void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
                     UniquePtr<SerializedStackHolder> aOriginStack,
                     const nsTArray<nsString>& aScriptURLs, bool aIsMainScript,
-                    WorkerScriptType aWorkerScriptType, ErrorResult& aRv) {
+                    WorkerScriptType aWorkerScriptType, ErrorResult& aRv,
+                    const mozilla::Encoding* aDocumentEncoding = nullptr) {
   aWorkerPrivate->AssertIsOnWorkerThread();
   NS_ASSERTION(!aScriptURLs.IsEmpty(), "Bad arguments!");
 
@@ -262,8 +267,8 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
 
   RefPtr<loader::WorkerScriptLoader> loader = new loader::WorkerScriptLoader(
       aWorkerPrivate, std::move(aOriginStack), syncLoopTarget,
-      std::move(aLoadInfos), clientInfo, controller, aIsMainScript,
-      aWorkerScriptType, aRv);
+      std::move(aLoadInfos), aDocumentEncoding, clientInfo, controller,
+      aIsMainScript, aWorkerScriptType, aRv);
 
   NS_ASSERTION(aLoadInfos.IsEmpty(), "Should have swapped!");
 
@@ -330,8 +335,7 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
 
     
     nsCOMPtr<nsIURI> url;
-    mResult =
-        ConstructURI(mScriptURL, baseURI, parentDoc, true, getter_AddRefs(url));
+    mResult = ConstructURI(mScriptURL, baseURI, nullptr, getter_AddRefs(url));
     NS_ENSURE_SUCCESS(mResult, true);
 
     Maybe<ClientInfo> clientInfo;
@@ -456,6 +460,7 @@ WorkerScriptLoader::WorkerScriptLoader(
     WorkerPrivate* aWorkerPrivate,
     UniquePtr<SerializedStackHolder> aOriginStack,
     nsIEventTarget* aSyncLoopTarget, nsTArray<ScriptLoadInfo> aLoadInfos,
+    const mozilla::Encoding* aDocumentEncoding,
     const Maybe<ClientInfo>& aClientInfo,
     const Maybe<ServiceWorkerDescriptor>& aController, bool aIsMainScript,
     WorkerScriptType aWorkerScriptType, ErrorResult& aRv)
@@ -476,11 +481,22 @@ WorkerScriptLoader::WorkerScriptLoader(
   for (ScriptLoadInfo& loadInfo : mLoadInfos) {
     
     
+    MOZ_ASSERT_IF(bool(aDocumentEncoding),
+                  aIsMainScript && !aWorkerPrivate->GetParent());
+    nsresult rv = ConstructURI(loadInfo.mURL, GetBaseURI(), aDocumentEncoding,
+                               getter_AddRefs(loadInfo.mURI));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      loadInfo.mLoadResult = rv;
+    }
+
+    
+    
     mLoadingRequests.AppendElement(&loadInfo);
   }
 }
 
 bool WorkerScriptLoader::DispatchLoadScripts() {
+  mWorkerPrivate->AssertIsOnWorkerThread();
   RefPtr<ScriptLoaderRunnable> runnable = new ScriptLoaderRunnable(this);
 
   if (NS_FAILED(NS_DispatchToMainThread(runnable))) {
@@ -686,6 +702,11 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadInfo* aLoadInfo) {
   AssertIsOnMainThread();
   MOZ_ASSERT_IF(IsMainWorkerScript(), !IsDebuggerScript());
 
+  
+  if (aLoadInfo->mLoadResult != NS_ERROR_NOT_INITIALIZED) {
+    return aLoadInfo->mLoadResult;
+  }
+
   WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
 
   
@@ -702,9 +723,6 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadInfo* aLoadInfo) {
 
   NS_ENSURE_TRUE(NS_LoadGroupMatchesPrincipal(loadGroup, principal),
                  NS_ERROR_FAILURE);
-
-  
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
 
   
   nsCOMPtr<Document> parentDoc = mWorkerPrivate->GetDocument();
@@ -747,16 +765,6 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadInfo* aLoadInfo) {
   }
 
   if (!channel) {
-    
-    
-    bool useDefaultEncoding = !(!parentWorker && IsMainWorkerScript());
-    nsCOMPtr<nsIURI> url;
-    rv = ConstructURI(aLoadInfo->mURL, baseURI, parentDoc, useDefaultEncoding,
-                      getter_AddRefs(url));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
         ReferrerInfo::CreateForFetch(principal, nullptr);
     if (parentWorker && !IsMainWorkerScript()) {
@@ -765,12 +773,12 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadInfo* aLoadInfo) {
               ->CloneWithNewPolicy(parentWorker->GetReferrerPolicy());
     }
 
-    rv = ChannelFromScriptURL(principal, parentDoc, mWorkerPrivate, loadGroup,
-                              ios, secMan, url, mClientInfo, mController,
-                              IsMainWorkerScript(), mWorkerScriptType,
-                              mWorkerPrivate->ContentPolicyType(), loadFlags,
-                              mWorkerPrivate->CookieJarSettings(), referrerInfo,
-                              getter_AddRefs(channel));
+    rv = ChannelFromScriptURL(
+        principal, parentDoc, mWorkerPrivate, loadGroup, ios, secMan,
+        aLoadInfo->mURI, mClientInfo, mController, IsMainWorkerScript(),
+        mWorkerScriptType, mWorkerPrivate->ContentPolicyType(), loadFlags,
+        mWorkerPrivate->CookieJarSettings(), referrerInfo,
+        getter_AddRefs(channel));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1183,13 +1191,14 @@ void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
 void LoadMainScript(WorkerPrivate* aWorkerPrivate,
                     UniquePtr<SerializedStackHolder> aOriginStack,
                     const nsAString& aScriptURL,
-                    WorkerScriptType aWorkerScriptType, ErrorResult& aRv) {
+                    WorkerScriptType aWorkerScriptType, ErrorResult& aRv,
+                    const mozilla::Encoding* aDocumentEncoding) {
   nsTArray<nsString> scriptURLs;
 
   scriptURLs.AppendElement(aScriptURL);
 
   LoadAllScripts(aWorkerPrivate, std::move(aOriginStack), scriptURLs, true,
-                 aWorkerScriptType, aRv);
+                 aWorkerScriptType, aRv, aDocumentEncoding);
 }
 
 void Load(WorkerPrivate* aWorkerPrivate,

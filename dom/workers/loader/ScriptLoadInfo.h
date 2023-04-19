@@ -33,6 +33,7 @@ class ScriptLoadInfo {
   ~ScriptLoadInfo();
 
   nsString mURL;
+  nsCOMPtr<nsIURI> mURI;
 
   
   
