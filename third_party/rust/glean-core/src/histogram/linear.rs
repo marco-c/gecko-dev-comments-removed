@@ -36,7 +36,7 @@ fn linear_range(min: u64, max: u64, count: usize) -> Vec<u64> {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PrecomputedLinear {
     
     

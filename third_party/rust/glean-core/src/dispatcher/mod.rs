@@ -63,7 +63,7 @@ enum Command {
 }
 
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum DispatchError {
     
     #[error("The worker panicked while running a task")]

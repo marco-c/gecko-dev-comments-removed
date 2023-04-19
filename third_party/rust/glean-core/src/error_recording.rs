@@ -27,7 +27,7 @@ use crate::Lifetime;
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ErrorType {
     
     InvalidValue,

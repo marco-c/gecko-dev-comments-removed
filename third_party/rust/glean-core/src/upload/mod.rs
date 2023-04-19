@@ -127,7 +127,7 @@ impl RateLimiter {
 
 
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum PingUploadTask {
     
     Upload {
