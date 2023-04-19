@@ -179,16 +179,9 @@ nsresult nsClipboard::SetupNativeDataObject(
   }
 
   auto* dObj = static_cast<nsDataObj*>(aDataObj);
-
   if (aMightNeedToFlush) {
     *aMightNeedToFlush = MightNeedToFlush::No;
   }
-
-  auto MarkAsPotentiallyNeedingToFlush = [&] {
-    if (aMightNeedToFlush) {
-      *aMightNeedToFlush = MightNeedToFlush::Yes;
-    }
-  };
 
   
   
@@ -223,7 +216,9 @@ nsresult nsClipboard::SetupNativeDataObject(
       FORMATETC textFE;
       SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
       dObj->AddDataFlavor(kTextMime, &textFE);
-      MarkAsPotentiallyNeedingToFlush();
+      if (aMightNeedToFlush) {
+        *aMightNeedToFlush = MightNeedToFlush::Yes;
+      }
     } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
       
       
@@ -231,7 +226,6 @@ nsresult nsClipboard::SetupNativeDataObject(
       SET_FORMATETC(htmlFE, GetHtmlClipboardFormat(), 0, DVASPECT_CONTENT, -1,
                     TYMED_HGLOBAL);
       dObj->AddDataFlavor(kHTMLMime, &htmlFE);
-      MarkAsPotentiallyNeedingToFlush();
     } else if (flavorStr.EqualsLiteral(kURLMime)) {
       
       
@@ -254,7 +248,6 @@ nsresult nsClipboard::SetupNativeDataObject(
       SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0,
                     DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(kURLMime, &shortcutFE);
-      MarkAsPotentiallyNeedingToFlush();
     } else if (flavorStr.EqualsLiteral(kPNGImageMime) ||
                flavorStr.EqualsLiteral(kJPEGImageMime) ||
                flavorStr.EqualsLiteral(kJPGImageMime) ||
@@ -461,23 +454,6 @@ static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
   RepeatedlyTry(::OleSetClipboard, LogOleSetClipboardResult, aDataObj);
 }
 
-static bool ShouldFlushClipboardAfterWriting() {
-  switch (StaticPrefs::widget_windows_sync_clipboard_flush()) {
-    case 0:
-      return false;
-    case 1:
-      return true;
-    default:
-      
-      
-      
-      
-      
-      
-      return NeedsWindows11SuggestedActionsWorkaround();
-  }
-}
-
 
 NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   MOZ_LOG(gWin32ClipboardLog, LogLevel::Debug, ("%s", __FUNCTION__));
@@ -501,8 +477,26 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
                                           getter_AddRefs(dataObj), nullptr,
                                           &mightNeedToFlush))) {
     RepeatedlyTryOleSetClipboard(dataObj);
-    if (mightNeedToFlush == MightNeedToFlush::Yes &&
-        ShouldFlushClipboardAfterWriting()) {
+
+    const bool doFlush = [&] {
+      switch (StaticPrefs::widget_windows_sync_clipboard_flush()) {
+        case 0:
+          return false;
+        case 1:
+          return true;
+        default:
+          
+          
+          
+          
+          
+          
+          
+          return mightNeedToFlush == MightNeedToFlush::Yes &&
+                 NeedsWindows11SuggestedActionsWorkaround();
+      }
+    }();
+    if (doFlush) {
       RepeatedlyTry(::OleFlushClipboard, [](HRESULT) {});
     }
   } else {
