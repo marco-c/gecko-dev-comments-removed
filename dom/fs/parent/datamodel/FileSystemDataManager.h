@@ -10,25 +10,33 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/FileSystemTypes.h"
+#include "mozilla/dom/FileSystemHelpers.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsUtils.h"
 #include "nsString.h"
+#include "nsTHashSet.h"
 
 namespace mozilla {
 
 template <typename V, typename E>
 class Result;
 
-namespace dom::fs::data {
+namespace dom {
+
+class FileSystemManagerParent;
+
+namespace fs::data {
 
 class FileSystemDataManager
     : public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
  public:
+  enum struct State : uint8_t { Initial = 0, Closed };
+
   FileSystemDataManager(const Origin& aOrigin,
                         MovingNotNull<RefPtr<TaskQueue>> aIOTaskQueue);
 
-  using result_t = Result<RefPtr<FileSystemDataManager>, nsresult>;
+  using result_t = Result<Registered<FileSystemDataManager>, nsresult>;
   static FileSystemDataManager::result_t GetOrCreateFileSystemDataManager(
       const Origin& aOrigin);
 
@@ -42,14 +50,30 @@ class FileSystemDataManager
     return mIOTaskQueue.get();
   }
 
+  void Register();
+
+  void Unregister();
+
+  void RegisterActor(NotNull<FileSystemManagerParent*> aActor);
+
+  void UnregisterActor(NotNull<FileSystemManagerParent*> aActor);
+
  protected:
   ~FileSystemDataManager();
 
+  bool IsInactive() const;
+
+  void Close();
+
+  nsTHashSet<FileSystemManagerParent*> mActors;
   const Origin mOrigin;
   const NotNull<nsCOMPtr<nsISerialEventTarget>> mBackgroundTarget;
   const NotNull<RefPtr<TaskQueue>> mIOTaskQueue;
+  uint32_t mRegCount;
+  State mState;
 };
 
+}  
 }  
 }  
 
