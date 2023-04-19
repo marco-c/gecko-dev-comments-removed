@@ -259,12 +259,17 @@ already_AddRefed<ImageBitmap> OffscreenCanvas::TransferToImageBitmap(
 
   RefPtr<ImageBitmap> result =
       ImageBitmap::CreateFromOffscreenCanvas(GetOwnerGlobal(), *this, aRv);
-  if (!result) {
+  if (aRv.Failed()) {
     return nullptr;
   }
 
-  if (mCurrentContext) {
-    mCurrentContext->ResetBitmap();
+  if (result && mCurrentContext) {
+    
+    
+    
+    
+    mCurrentContext->Reset();
+    mCurrentContext->SetDimensions(result->Width(), result->Height());
   }
   return result.forget();
 }
