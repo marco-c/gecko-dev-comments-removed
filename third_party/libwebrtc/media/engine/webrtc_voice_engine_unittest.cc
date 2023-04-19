@@ -2845,7 +2845,7 @@ TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_NoRecreate) {
   EXPECT_EQ(audio_receive_stream_id, streams.front()->id());
 }
 
-TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_Recreate) {
+TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_Updates) {
   EXPECT_TRUE(SetupChannel());
 
   
@@ -2858,13 +2858,22 @@ TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_Recreate) {
   
   const auto& streams = call_.GetAudioReceiveStreams();
   EXPECT_EQ(1u, streams.size());
+  
+  EXPECT_TRUE(streams.front()->GetConfig().sync_group.empty());
+
+  const std::string new_stream_id("stream_id");
   int audio_receive_stream_id = streams.front()->id();
   cricket::StreamParams stream_params;
   stream_params.ssrcs.push_back(1);
-  stream_params.set_stream_ids({"stream_id"});
+  stream_params.set_stream_ids({new_stream_id});
+
   EXPECT_TRUE(channel_->AddRecvStream(stream_params));
   EXPECT_EQ(1u, streams.size());
-  EXPECT_NE(audio_receive_stream_id, streams.front()->id());
+  
+  EXPECT_EQ(audio_receive_stream_id, streams.front()->id());
+
+  
+  EXPECT_EQ(new_stream_id, streams.front()->GetConfig().sync_group);
 }
 
 

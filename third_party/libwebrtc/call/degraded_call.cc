@@ -295,6 +295,11 @@ void DegradedCall::OnLocalSsrcUpdated(AudioReceiveStream& stream,
   call_->OnLocalSsrcUpdated(stream, local_ssrc);
 }
 
+void DegradedCall::OnUpdateSyncGroup(AudioReceiveStream& stream,
+                                     const std::string& sync_group) {
+  call_->OnUpdateSyncGroup(stream, sync_group);
+}
+
 void DegradedCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   if (send_config_) {
     
