@@ -41,7 +41,11 @@ namespace webrtc {
 
 class RtpReceiverInternal : public RtpReceiverInterface {
  public:
+  
   virtual void Stop() = 0;
+  
+  
+  virtual void StopAndEndTrack() = 0;
 
   
   

@@ -1,12 +1,12 @@
-/*
- *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "pc/rtp_transceiver.h"
 
@@ -27,12 +27,12 @@ template <class T>
 RTCError VerifyCodecPreferences(const std::vector<RtpCodecCapability>& codecs,
                                 const std::vector<T>& send_codecs,
                                 const std::vector<T>& recv_codecs) {
-  // If the intersection between codecs and
-  // RTCRtpSender.getCapabilities(kind).codecs or the intersection between
-  // codecs and RTCRtpReceiver.getCapabilities(kind).codecs only contains RTX,
-  // RED or FEC codecs or is an empty set, throw InvalidModificationError.
-  // This ensures that we always have something to offer, regardless of
-  // transceiver.direction.
+  
+  
+  
+  
+  
+  
 
   if (!absl::c_any_of(codecs, [&recv_codecs](const RtpCodecCapability& codec) {
         return codec.name != cricket::kRtxCodecName &&
@@ -60,10 +60,10 @@ RTCError VerifyCodecPreferences(const std::vector<RtpCodecCapability>& codecs,
                     "codec capabilities.");
   }
 
-  // Let codecCapabilities be the union of
-  // RTCRtpSender.getCapabilities(kind).codecs and
-  // RTCRtpReceiver.getCapabilities(kind).codecs. For each codec in codecs, If
-  // codec is not in codecCapabilities, throw InvalidModificationError.
+  
+  
+  
+  
   for (const auto& codec_preference : codecs) {
     bool is_recv_codec =
         absl::c_any_of(recv_codecs, [&codec_preference](const T& codec) {
@@ -83,7 +83,7 @@ RTCError VerifyCodecPreferences(const std::vector<RtpCodecCapability>& codecs,
     }
   }
 
-  // Check we have a real codec (not just rtx, red or fec)
+  
   if (absl::c_all_of(codecs, [](const RtpCodecCapability& codec) {
         return codec.name == cricket::kRtxCodecName ||
                codec.name == cricket::kRedCodecName ||
@@ -104,7 +104,7 @@ TaskQueueBase* GetCurrentTaskQueueOrThread() {
   return current;
 }
 
-}  // namespace
+}  
 
 RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
     : thread_(GetCurrentTaskQueueOrThread()),
@@ -137,7 +137,7 @@ RtpTransceiver::~RtpTransceiver() {
 }
 
 void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
-  // Cannot set a non-null channel on a stopped transceiver.
+  
   if (stopped_ && channel) {
     return;
   }
@@ -217,10 +217,10 @@ bool RtpTransceiver::RemoveReceiver(RtpReceiverInterface* receiver) {
     return false;
   }
   (*it)->internal()->Stop();
-  // After the receiver has been removed, there's no guarantee that the
-  // contained media channel isn't deleted shortly after this. To make sure that
-  // the receiver doesn't spontaneously try to use it's (potentially stale)
-  // media channel reference, we clear it out.
+  
+  
+  
+  
   (*it)->internal()->SetMediaChannel(nullptr);
   receivers_.erase(it);
   return true;
@@ -333,20 +333,20 @@ absl::optional<RtpTransceiverDirection> RtpTransceiver::fired_direction()
 }
 
 void RtpTransceiver::StopSendingAndReceiving() {
-  // 1. Let sender be transceiver.[[Sender]].
-  // 2. Let receiver be transceiver.[[Receiver]].
-  //
-  // 3. Stop sending media with sender.
-  //
-  // 4. Send an RTCP BYE for each RTP stream that was being sent by sender, as
-  // specified in [RFC3550].
+  
+  
+  
+  
+  
+  
+  
   RTC_DCHECK_RUN_ON(thread_);
   for (const auto& sender : senders_)
     sender->internal()->Stop();
 
-  // 5. Stop receiving media with receiver.
+  
   for (const auto& receiver : receivers_)
-    receiver->internal()->Stop();
+    receiver->internal()->StopAndEndTrack();
 
   stopping_ = true;
   direction_ = webrtc::RtpTransceiverDirection::kInactive;
@@ -354,29 +354,29 @@ void RtpTransceiver::StopSendingAndReceiving() {
 
 RTCError RtpTransceiver::StopStandard() {
   RTC_DCHECK_RUN_ON(thread_);
-  // If we're on Plan B, do what Stop() used to do there.
+  
   if (!unified_plan_) {
     StopInternal();
     return RTCError::OK();
   }
-  // 1. Let transceiver be the RTCRtpTransceiver object on which the method is
-  // invoked.
-  //
-  // 2. Let connection be the RTCPeerConnection object associated with
-  // transceiver.
-  //
-  // 3. If connection.[[IsClosed]] is true, throw an InvalidStateError.
+  
+  
+  
+  
+  
+  
+  
   if (is_pc_closed_) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
                          "PeerConnection is closed.");
   }
 
-  // 4. If transceiver.[[Stopping]] is true, abort these steps.
+  
   if (stopping_)
     return RTCError::OK();
 
-  // 5. Stop sending and receiving given transceiver, and update the
-  // negotiation-needed flag for connection.
+  
+  
   StopSendingAndReceiving();
   SignalNegotiationNeeded();
 
@@ -389,21 +389,21 @@ void RtpTransceiver::StopInternal() {
 
 void RtpTransceiver::StopTransceiverProcedure() {
   RTC_DCHECK_RUN_ON(thread_);
-  // As specified in the "Stop the RTCRtpTransceiver" procedure
-  // 1. If transceiver.[[Stopping]] is false, stop sending and receiving given
-  // transceiver.
+  
+  
+  
   if (!stopping_)
     StopSendingAndReceiving();
 
-  // 2. Set transceiver.[[Stopped]] to true.
+  
   stopped_ = true;
 
-  // Signal the updated change to the senders.
+  
   for (const auto& sender : senders_)
     sender->internal()->SetTransceiverAsStopped();
 
-  // 3. Set transceiver.[[Receptive]] to false.
-  // 4. Set transceiver.[[CurrentDirection]] to null.
+  
+  
   current_direction_ = absl::nullopt;
 }
 
@@ -411,21 +411,21 @@ RTCError RtpTransceiver::SetCodecPreferences(
     rtc::ArrayView<RtpCodecCapability> codec_capabilities) {
   RTC_DCHECK(unified_plan_);
 
-  // 3. If codecs is an empty list, set transceiver's [[PreferredCodecs]] slot
-  // to codecs and abort these steps.
+  
+  
   if (codec_capabilities.empty()) {
     codec_preferences_.clear();
     return RTCError::OK();
   }
 
-  // 4. Remove any duplicate values in codecs.
+  
   std::vector<RtpCodecCapability> codecs;
   absl::c_remove_copy_if(codec_capabilities, std::back_inserter(codecs),
                          [&codecs](const RtpCodecCapability& codec) {
                            return absl::c_linear_search(codecs, codec);
                          });
 
-  // 6. to 8.
+  
   RTCError result;
   if (media_type_ == cricket::MEDIA_TYPE_AUDIO) {
     std::vector<cricket::AudioCodec> recv_codecs, send_codecs;
@@ -457,15 +457,15 @@ RTCError RtpTransceiver::SetOfferedRtpHeaderExtensions(
     rtc::ArrayView<const RtpHeaderExtensionCapability>
         header_extensions_to_offer) {
   for (const auto& entry : header_extensions_to_offer) {
-    // Handle unsupported requests for mandatory extensions as per
-    // https://w3c.github.io/webrtc-extensions/#rtcrtptransceiver-interface.
-    // Note:
-    // - We do not handle setOfferedRtpHeaderExtensions algorithm step 2.1,
-    //   this has to be checked on a higher level. We naturally error out
-    //   in the handling of Step 2.2 if an unset URI is encountered.
+    
+    
+    
+    
+    
+    
 
-    // Step 2.2.
-    // Handle unknown extensions.
+    
+    
     auto it = std::find_if(
         header_extensions_to_offer_.begin(), header_extensions_to_offer_.end(),
         [&entry](const auto& offered) { return entry.uri == offered.uri; });
@@ -474,10 +474,10 @@ RTCError RtpTransceiver::SetOfferedRtpHeaderExtensions(
                       "Attempted to modify an unoffered extension.");
     }
 
-    // Step 2.4-2.5.
-    // - Use of the transceiver interface indicates unified plan is in effect,
-    //   hence the MID extension needs to be enabled.
-    // - Also handle the mandatory video orientation extensions.
+    
+    
+    
+    
     if ((entry.uri == RtpExtension::kMidUri ||
          entry.uri == RtpExtension::kVideoRotationUri) &&
         entry.direction != RtpTransceiverDirection::kSendRecv) {
@@ -486,7 +486,7 @@ RTCError RtpTransceiver::SetOfferedRtpHeaderExtensions(
     }
   }
 
-  // Apply mutation after error checking.
+  
   for (const auto& entry : header_extensions_to_offer) {
     auto it = std::find_if(
         header_extensions_to_offer_.begin(), header_extensions_to_offer_.end(),
@@ -501,4 +501,4 @@ void RtpTransceiver::SetPeerConnectionClosed() {
   is_pc_closed_ = true;
 }
 
-}  // namespace webrtc
+}  

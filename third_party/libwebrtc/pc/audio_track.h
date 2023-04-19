@@ -34,10 +34,10 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface>,
       const std::string& id,
       const rtc::scoped_refptr<AudioSourceInterface>& source);
 
- private:
   
   std::string kind() const override;
 
+ private:
   
   AudioSourceInterface* GetSource() const override;
 
