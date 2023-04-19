@@ -136,7 +136,7 @@ add_task(async function test_storage_sync_bridged_engine() {
     {
       id: "guidAAA",
       modified: 0.1,
-      cleartext: JSON.stringify({
+      payload: JSON.stringify({
         id: "guidAAA",
         extId: "ext-2",
         data: JSON.stringify({
@@ -147,7 +147,7 @@ add_task(async function test_storage_sync_bridged_engine() {
     {
       id: "guidBBB",
       modified: 0.1,
-      cleartext: JSON.stringify({
+      payload: JSON.stringify({
         id: "guidBBB",
         extId: "ext-3",
         data: JSON.stringify({
@@ -163,7 +163,7 @@ add_task(async function test_storage_sync_bridged_engine() {
   
   let { value: outgoingEnvelopesAsJSON } = await promisify(area.apply);
   let outgoingEnvelopes = outgoingEnvelopesAsJSON.map(json => JSON.parse(json));
-  let parsedCleartexts = outgoingEnvelopes.map(e => JSON.parse(e.cleartext));
+  let parsedCleartexts = outgoingEnvelopes.map(e => JSON.parse(e.payload));
   let parsedData = parsedCleartexts.map(c => JSON.parse(c.data));
 
   let { changes } = await promisify(
