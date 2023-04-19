@@ -17,7 +17,7 @@ function log(str) {
 
 
 
-async function setUpWindowPlacement(setUpTest, setUpButton) {
+async function setUpWindowManagement(setUpTest, setUpButton) {
   assert_true(
     'getScreenDetails' in self && 'isExtended' in screen,
     `API not supported; use Chromium (not content_shell) and enable
