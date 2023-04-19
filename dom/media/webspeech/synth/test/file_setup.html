@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=525444
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 525444: Web Speech API check all classes are present</title>
@@ -82,6 +82,7 @@ is(typeof speechSynthesis.paused, "boolean", "speechSynthesis.paused is a boolea
 var voices1 = speechSynthesis.getVoices();
 var voices2 = speechSynthesis.getVoices();
 
+ok(!!voices1.length, "More than one voice found");
 ok(voices1.length == voices2.length, "Voice count matches");
 
 for (var i in voices1) {
