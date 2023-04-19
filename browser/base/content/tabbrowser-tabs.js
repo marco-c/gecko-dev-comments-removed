@@ -1000,7 +1000,7 @@
       
       return PrivateBrowsingUtils.isWindowPrivate(window) &&
         !Services.prefs.getBoolPref("browser.privatebrowsing.autostart")
-        ? "tabs.emptyPrivateTabTitle"
+        ? "tabs.emptyPrivateTabTitle2"
         : "tabs.emptyTabTitle";
     }
 
