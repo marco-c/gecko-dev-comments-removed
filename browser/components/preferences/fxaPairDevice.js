@@ -38,6 +38,13 @@ var gFxaPairDeviceDialog = {
   },
 
   uninit() {
+    
+    
+    const browser = window.docShell.chromeEventHandler;
+    browser.loadURI("about:preferences#sync", {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+
     this.teardownListeners();
     this._emitter.emit("view:Closed");
   },

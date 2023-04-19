@@ -273,9 +273,22 @@ FxAccountsWebChannel.prototype = {
         break;
       case COMMAND_PAIR_PREFERENCES:
         if (lazy.pairingEnabled) {
-          browser.loadURI("about:preferences?action=pair#sync", {
-            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-          });
+          let window = browser.ownerGlobal;
+          
+          let selectedTab = window.gBrowser.selectedTab;
+          window.switchToTabHavingURI(
+            "about:preferences?action=pair#sync",
+            true,
+            {
+              ignoreQueryString: true,
+              replaceQueryString: true,
+              adoptIntoActiveWindow: true,
+              ignoreFragment: "whenComparing",
+              triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+            }
+          );
+          
+          window.gBrowser.removeTab(selectedTab);
         }
         break;
       case COMMAND_FIREFOX_VIEW:
