@@ -46,6 +46,8 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
   
   
   
+  
+  
   enum class Type {
     kNative,
     kI420,

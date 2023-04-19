@@ -37,6 +37,15 @@ public class VideoFrame implements RefCounted {
     
 
 
+    @CalledByNative("Buffer")
+    @VideoFrameBufferType
+    default int getBufferType() {
+      return VideoFrameBufferType.NATIVE;
+    }
+
+    
+
+
     @CalledByNative("Buffer") int getWidth();
     @CalledByNative("Buffer") int getHeight();
 
@@ -63,6 +72,11 @@ public class VideoFrame implements RefCounted {
 
 
   public interface I420Buffer extends Buffer {
+    @Override
+    default int getBufferType() {
+      return VideoFrameBufferType.I420;
+    }
+
     
 
 
