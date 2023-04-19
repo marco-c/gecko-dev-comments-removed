@@ -331,6 +331,25 @@ static bool GatherAvailableModuleAncestors(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleVector> execList);
 
+static const char* ModuleStatusName(ModuleStatus status) {
+  switch (status) {
+    case ModuleStatus::Unlinked:
+      return "Unlinked";
+    case ModuleStatus::Linking:
+      return "Linking";
+    case ModuleStatus::Linked:
+      return "Linked";
+    case ModuleStatus::Evaluating:
+      return "Evaluating";
+    case ModuleStatus::EvaluatingAsync:
+      return "EvaluatingAsync";
+    case ModuleStatus::Evaluated:
+      return "Evaluated";
+    default:
+      MOZ_CRASH("Unexpected ModuleStatus");
+  }
+}
+
 static ArrayObject* NewList(JSContext* cx) {
   
   
@@ -484,7 +503,8 @@ static ModuleObject* HostResolveImportedModule(
 
   if (requestedModule->status() < expectedMinimumStatus) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_BAD_MODULE_STATUS);
+                              JSMSG_BAD_MODULE_STATUS,
+                              ModuleStatusName(requestedModule->status()));
     return nullptr;
   }
 
@@ -1047,8 +1067,13 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
 
 bool js::ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   
-  MOZ_ASSERT(module->status() != ModuleStatus::Linking &&
-             module->status() != ModuleStatus::Evaluating);
+  ModuleStatus status = module->status();
+  if (status == ModuleStatus::Linking || status == ModuleStatus::Evaluating) {
+    JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr,
+                               JSMSG_BAD_MODULE_STATUS,
+                               ModuleStatusName(status));
+    return false;
+  }
 
   
   Rooted<ModuleVector> stack(cx);
@@ -1106,8 +1131,9 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
 
   
   if (module->status() != ModuleStatus::Unlinked) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_BAD_MODULE_STATUS);
+    JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr,
+                               JSMSG_BAD_MODULE_STATUS,
+                               ModuleStatusName(module->status()));
     return false;
   }
 
@@ -1222,11 +1248,12 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   
-  if (module->status() != ModuleStatus::Linked &&
-      module->status() != ModuleStatus::EvaluatingAsync &&
-      module->status() != ModuleStatus::Evaluated) {
+  ModuleStatus status = module->status();
+  if (status != ModuleStatus::Linked &&
+      status != ModuleStatus::EvaluatingAsync &&
+      status != ModuleStatus::Evaluated) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_BAD_MODULE_STATUS);
+                             JSMSG_BAD_MODULE_STATUS, ModuleStatusName(status));
     return false;
   }
 
