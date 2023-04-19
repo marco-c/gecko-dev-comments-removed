@@ -182,6 +182,7 @@ class Event;
 class EventTarget;
 class HTMLInputElement;
 class IPCDataTransfer;
+class IPCDataTransferImageContainer;
 class IPCDataTransferItem;
 struct LifecycleCallbackArgs;
 class MessageBroadcaster;
@@ -194,6 +195,7 @@ enum class ReferrerPolicy : uint8_t;
 }  
 
 namespace ipc {
+class BigBuffer;
 class IProtocol;
 class IShmemAllocator;
 class Shmem;
@@ -2877,10 +2879,8 @@ class nsContentUtils {
 
 
 
-
-
-  static nsresult DataTransferItemToImage(
-      const mozilla::dom::IPCDataTransferItem& aItem,
+  static nsresult DeserializeDataTransferImageContainer(
+      const mozilla::dom::IPCDataTransferImageContainer& aData,
       imgIContainer** aContainer);
 
   
@@ -2891,15 +2891,13 @@ class nsContentUtils {
 
   static nsresult IPCTransferableToTransferable(
       const mozilla::dom::IPCDataTransfer& aDataTransfer, bool aAddDataFlavor,
-      nsITransferable* aTransferable,
-      mozilla::ipc::IShmemAllocator* aAllocator);
+      nsITransferable* aTransferable);
 
   static nsresult IPCTransferableToTransferable(
       const mozilla::dom::IPCDataTransfer& aDataTransfer,
       const bool& aIsPrivateData, nsIPrincipal* aRequestingPrincipal,
       const nsContentPolicyType& aContentPolicyType, bool aAddDataFlavor,
-      nsITransferable* aTransferable,
-      mozilla::ipc::IShmemAllocator* aAllocator);
+      nsITransferable* aTransferable);
 
   static nsresult IPCTransferableItemToVariant(
       const mozilla::dom::IPCDataTransferItem& aDataTransferItem,
@@ -2919,7 +2917,7 @@ class nsContentUtils {
 
 
 
-  static mozilla::UniquePtr<char[]> GetSurfaceData(
+  static mozilla::Maybe<mozilla::ipc::BigBuffer> GetSurfaceData(
       mozilla::gfx::DataSourceSurface&, size_t* aLength, int32_t* aStride);
 
   
