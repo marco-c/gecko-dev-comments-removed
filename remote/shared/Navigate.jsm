@@ -9,6 +9,9 @@ const EXPORTED_SYMBOLS = [
   "waitForInitialNavigationCompleted",
 ];
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -27,6 +30,24 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 XPCOMUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.REMOTE_AGENT)
 );
+
+
+
+
+XPCOMUtils.defineLazyGetter(lazy, "UNLOAD_TIMEOUT_MULTIPLIER", () => {
+  if (AppConstants.MOZ_CODE_COVERAGE) {
+    
+    
+    return 16;
+  }
+
+  if (AppConstants.ASAN || AppConstants.DEBUG || AppConstants.TSAN) {
+    
+    return 8;
+  }
+
+  return 1;
+});
 
 
 const webProgressListeners = new Set();
@@ -125,6 +146,8 @@ class ProgressListener {
 
 
 
+
+
   constructor(webProgress, options = {}) {
     const {
       expectNavigation = false,
@@ -135,7 +158,7 @@ class ProgressListener {
 
     this.#expectNavigation = expectNavigation;
     this.#resolveWhenStarted = resolveWhenStarted;
-    this.#unloadTimeout = unloadTimeout;
+    this.#unloadTimeout = unloadTimeout * lazy.UNLOAD_TIMEOUT_MULTIPLIER;
     this.#waitForExplicitStart = waitForExplicitStart;
     this.#webProgress = webProgress;
 
