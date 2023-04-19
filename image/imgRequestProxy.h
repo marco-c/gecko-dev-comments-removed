@@ -235,10 +235,12 @@ NS_DEFINE_STATIC_IID_ACCESSOR(imgRequestProxy, NS_IMGREQUESTPROXY_CID)
 
 class imgRequestProxyStatic : public imgRequestProxy {
  public:
-  imgRequestProxyStatic(Image* aImage, nsIPrincipal* aPrincipal,
+  imgRequestProxyStatic(Image* aImage, nsIPrincipal* aImagePrincipal,
+                        nsIPrincipal* aTriggeringPrincipal,
                         bool hadCrossOriginRedirects);
 
   NS_IMETHOD GetImagePrincipal(nsIPrincipal** aPrincipal) override;
+  NS_IMETHOD GetTriggeringPrincipal(nsIPrincipal** aPrincipal) override;
 
   NS_IMETHOD GetHadCrossOriginRedirects(
       bool* aHadCrossOriginRedirects) override;
@@ -248,7 +250,8 @@ class imgRequestProxyStatic : public imgRequestProxy {
 
   
   
-  nsCOMPtr<nsIPrincipal> mPrincipal;
+  const nsCOMPtr<nsIPrincipal> mImagePrincipal;
+  const nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   const bool mHadCrossOriginRedirects;
 };
 
