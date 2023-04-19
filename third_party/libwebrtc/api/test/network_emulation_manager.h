@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/test/network_emulation/cross_traffic.h"
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 #include "api/test/simulated_network.h"
 #include "api/test/time_controller.h"
@@ -224,6 +225,7 @@ class NetworkEmulationManager {
   
   
   
+  
   virtual void ClearRoute(EmulatedRoute* route) = 0;
 
   
@@ -232,6 +234,20 @@ class NetworkEmulationManager {
   
   virtual TcpMessageRoute* CreateTcpRoute(EmulatedRoute* send_route,
                                           EmulatedRoute* ret_route) = 0;
+
+  
+  
+  virtual CrossTrafficRoute* CreateCrossTrafficRoute(
+      const std::vector<EmulatedNetworkNode*>& via_nodes) = 0;
+
+  
+  
+  virtual CrossTrafficGenerator* StartCrossTraffic(
+      std::unique_ptr<CrossTrafficGenerator> generator) = 0;
+
+  
+  
+  virtual void StopCrossTraffic(CrossTrafficGenerator* generator) = 0;
 
   
   

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/test/network_emulation_manager.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "system_wrappers/include/clock.h"
 #include "test/network/network_emulation.h"
@@ -23,19 +24,20 @@ namespace test {
 
 
 
-class TrafficRoute {
+class CrossTrafficRouteImpl final : public CrossTrafficRoute {
  public:
-  TrafficRoute(Clock* clock,
-               EmulatedNetworkReceiverInterface* receiver,
-               EmulatedEndpoint* endpoint);
-  ~TrafficRoute();
+  CrossTrafficRouteImpl(Clock* clock,
+                        EmulatedNetworkReceiverInterface* receiver,
+                        EmulatedEndpoint* endpoint);
+  ~CrossTrafficRouteImpl();
 
   
-  void TriggerPacketBurst(size_t num_packets, size_t packet_size);
+  void TriggerPacketBurst(size_t num_packets, size_t packet_size) override;
   
-  void NetworkDelayedAction(size_t packet_size, std::function<void()> action);
+  void NetworkDelayedAction(size_t packet_size,
+                            std::function<void()> action) override;
 
-  void SendPacket(size_t packet_size);
+  void SendPacket(size_t packet_size) override;
 
  private:
   void SendPacket(size_t packet_size, uint16_t dest_port);
