@@ -205,6 +205,16 @@ void ScreenCapturerX11::UpdateMonitors() {
         RTC_LOG(LS_INFO) << "XRandR monitor " << m.name << " rect updated.";
         selected_monitor_rect_ =
             DesktopRect::MakeXYWH(m.x, m.y, m.width, m.height);
+        const auto& pixel_buffer_rect = x_server_pixel_buffer_.window_rect();
+        if (!pixel_buffer_rect.ContainsRect(selected_monitor_rect_)) {
+          
+          
+          
+          
+          RTC_LOG(LS_WARNING)
+              << "Cropping selected monitor rect to fit the pixel-buffer.";
+          selected_monitor_rect_.IntersectWith(pixel_buffer_rect);
+        }
         return;
       }
     }
@@ -408,7 +418,12 @@ void ScreenCapturerX11::ScreenConfigurationChanged() {
                          "configuration change.";
   }
 
-  if (!use_randr_) {
+  if (use_randr_) {
+    
+    
+    
+    UpdateMonitors();
+  } else {
     selected_monitor_rect_ =
         DesktopRect::MakeSize(x_server_pixel_buffer_.window_size());
   }
