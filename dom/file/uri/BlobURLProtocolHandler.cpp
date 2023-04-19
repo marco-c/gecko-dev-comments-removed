@@ -16,6 +16,7 @@
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/MediaSource.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Maybe.h"
@@ -396,13 +397,10 @@ class ReleasingTimerHolder final : public Runnable,
 
     RefPtr<ReleasingTimerHolder> holder = new ReleasingTimerHolder(aURI);
 
+    
+    
+    
     auto raii = MakeScopeExit([holder] { holder->CancelTimerAndRevokeURI(); });
-
-    
-    
-    if (NS_WARN_IF(gXPCOMThreadsShutDown)) {
-      return;
-    }
 
     nsresult rv =
         SchedulerGroup::Dispatch(TaskCategory::Other, holder.forget());
