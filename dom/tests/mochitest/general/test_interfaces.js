@@ -283,7 +283,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSFontFeatureValuesRule", insecureContext: true },
   
-  { name: "CSSFontPaletteValuesRule", insecureContext: true, nightly: true },
+  { name: "CSSFontPaletteValuesRule", insecureContext: true },
   
   { name: "CSSGroupingRule", insecureContext: true },
   
