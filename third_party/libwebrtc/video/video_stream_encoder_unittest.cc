@@ -97,6 +97,11 @@ uint8_t optimal_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
                          0x05, 0x03, 0xC7, 0xE0, 0x1B,
                          0x41, 0x10, 0x8D, 0x00};
 
+const uint8_t kCodedFrameVp8Qp25[] = {
+    0x10, 0x02, 0x00, 0x9d, 0x01, 0x2a, 0x10, 0x00, 0x10, 0x00,
+    0x02, 0x47, 0x08, 0x85, 0x85, 0x88, 0x85, 0x84, 0x88, 0x0c,
+    0x82, 0x00, 0x0c, 0x0d, 0x60, 0x00, 0xfe, 0xfc, 0x5c, 0xd0};
+
 class TestBuffer : public webrtc::I420Buffer {
  public:
   TestBuffer(rtc::Event* event, int width, int height)
@@ -960,9 +965,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
       FakeEncoder::Encode(input_image, &frame_type);
     }
 
-    void InjectEncodedImage(const EncodedImage& image) {
+    void InjectEncodedImage(const EncodedImage& image,
+                            const CodecSpecificInfo* codec_specific_info) {
       MutexLock lock(&local_mutex_);
-      encoded_image_callback_->OnEncodedImage(image, nullptr);
+      encoded_image_callback_->OnEncodedImage(image, codec_specific_info);
     }
 
     void SetEncodedImageData(
@@ -1248,6 +1254,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return last_capture_time_ms_;
     }
 
+    const EncodedImage& GetLastEncodedImage() {
+      MutexLock lock(&mutex_);
+      return last_encoded_image_;
+    }
+
     std::vector<uint8_t> GetLastEncodedImageData() {
       MutexLock lock(&mutex_);
       return std::move(last_encoded_image_data_);
@@ -1279,6 +1290,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         const CodecSpecificInfo* codec_specific_info) override {
       MutexLock lock(&mutex_);
       EXPECT_TRUE(expect_frames_);
+      last_encoded_image_ = EncodedImage(encoded_image);
       last_encoded_image_data_ = std::vector<uint8_t>(
           encoded_image.data(), encoded_image.data() + encoded_image.size());
       uint32_t timestamp = encoded_image.Timestamp();
@@ -1337,6 +1349,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     mutable Mutex mutex_;
     TestEncoder* test_encoder_;
     rtc::Event encoded_frame_event_;
+    EncodedImage last_encoded_image_;
     std::vector<uint8_t> last_encoded_image_data_;
     uint32_t last_timestamp_ = 0;
     int64_t last_capture_time_ms_ = 0;
@@ -7135,14 +7148,12 @@ TEST_F(VideoStreamEncoderTest, AdjustsTimestampInternalSource) {
 
   int64_t timestamp = 1;
   EncodedImage image;
-  image.SetEncodedData(
-      EncodedImageBuffer::Create(kTargetBitrateBps / kDefaultFramerate / 8));
   image.capture_time_ms_ = ++timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   const int64_t kEncodeFinishDelayMs = 10;
   image.timing_.encode_start_ms = timestamp;
   image.timing_.encode_finish_ms = timestamp + kEncodeFinishDelayMs;
-  fake_encoder_.InjectEncodedImage(image);
+  fake_encoder_.InjectEncodedImage(image, nullptr);
   
   EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
   
@@ -7800,6 +7811,65 @@ TEST_F(VideoStreamEncoderTest, EncoderResolutionsExposedInSimulcast) {
   EXPECT_THAT(video_source_.sink_wants().resolutions,
               ::testing::ElementsAreArray({kLayer0Size}));
 
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, QpPresent_QpKept) {
+  
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("VP8", 1, 1, 1, false);
+
+  
+  
+  
+  EncodedImage encoded_image;
+  encoded_image.qp_ = 123;
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+      kCodedFrameVp8Qp25, sizeof(kCodedFrameVp8Qp25)));
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecVP8;
+  fake_encoder_.InjectEncodedImage(encoded_image, &codec_info);
+  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_EQ(sink_.GetLastEncodedImage().qp_, 123);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, QpAbsent_QpParsed) {
+  
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("VP8", 1, 1, 1, false);
+
+  
+  
+  EncodedImage encoded_image;
+  encoded_image.qp_ = -1;
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+      kCodedFrameVp8Qp25, sizeof(kCodedFrameVp8Qp25)));
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecVP8;
+  fake_encoder_.InjectEncodedImage(encoded_image, &codec_info);
+  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_EQ(sink_.GetLastEncodedImage().qp_, 25);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, QpAbsentParsingDisabled_QpAbsent) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-QpParsingKillSwitch/Enabled/");
+
+  
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("VP8", 1, 1, 1, false);
+
+  EncodedImage encoded_image;
+  encoded_image.qp_ = -1;
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+      kCodedFrameVp8Qp25, sizeof(kCodedFrameVp8Qp25)));
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecVP8;
+  fake_encoder_.InjectEncodedImage(encoded_image, &codec_info);
+  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_EQ(sink_.GetLastEncodedImage().qp_, -1);
   video_stream_encoder_->Stop();
 }
 
