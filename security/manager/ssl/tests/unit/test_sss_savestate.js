@@ -8,7 +8,9 @@
 
 const EXPECTED_ENTRIES = 5;
 const EXPECTED_HSTS_COLUMNS = 3;
+
 var gProfileDir = null;
+var gExpectingWrites = true;
 
 
 
@@ -20,6 +22,7 @@ function checkStateWritten(aSubject, aTopic, aData) {
   }
 
   equal(aData, SSS_STATE_FILE_NAME);
+  ok(gExpectingWrites);
 
   let stateFile = gProfileDir.clone();
   stateFile.append(SSS_STATE_FILE_NAME);
@@ -77,13 +80,21 @@ function checkStateWritten(aSubject, aTopic, aData) {
     return;
   }
 
-  do_test_finished();
+  
+  
+  gExpectingWrites = false;
+
+  
+  
+  process_headers();
+
+  
+  do_timeout(2000, function() {
+    do_test_finished();
+  });
 }
 
-function run_test() {
-  Services.prefs.setBoolPref("security.cert_pinning.hpkp.enabled", true);
-  Services.prefs.setIntPref("test.datastorage.write_timer_ms", 100);
-  gProfileDir = do_get_profile();
+function process_headers() {
   let SSService = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
   );
@@ -99,9 +110,9 @@ function run_test() {
   for (let i = 0; i < 1000; i++) {
     let uriIndex = i % uris.length;
     
-    let maxAge = "max-age=" + i * 1000;
+    let maxAge = "max-age=" + (i + 31536000);
     
-    let includeSubdomains = i % 2 == 0 ? "; includeSubdomains" : "";
+    let includeSubdomains = uriIndex % 2 == 1 ? "; includeSubdomains" : "";
     let secInfo = Cc[
       "@mozilla.org/security/transportsecurityinfo;1"
     ].createInstance(Ci.nsITransportSecurityInfo);
@@ -111,7 +122,12 @@ function run_test() {
       secInfo
     );
   }
+}
 
+function run_test() {
+  Services.prefs.setIntPref("test.datastorage.write_timer_ms", 100);
+  gProfileDir = do_get_profile();
+  process_headers();
   do_test_pending();
   Services.obs.addObserver(checkStateWritten, "data-storage-written");
 }
