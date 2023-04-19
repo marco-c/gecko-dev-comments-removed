@@ -117,9 +117,10 @@ class WSScanResult;
 
 
 
-struct EditorInlineStyle;  
-struct PropItem;           
-struct RangeItem;          
+struct EditorInlineStyle;          
+struct EditorInlineStyleAndValue;  
+struct PropItem;                   
+struct RangeItem;                  
 
 
 

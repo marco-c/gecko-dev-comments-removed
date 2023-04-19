@@ -486,8 +486,8 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertyAsAction(
-      nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue,
-      nsIPrincipal* aPrincipal = nullptr);
+      nsStaticAtom& aProperty, nsStaticAtom* aAttribute,
+      const nsAString& aValue, nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -3305,12 +3305,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SetInlinePropertyAsSubAction(nsAtom& aHTMLProperty, nsAtom* aAttribute,
-                               const nsAString& aAttributeValue);
+  template <size_t N>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAsSubAction(
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
 
   
 

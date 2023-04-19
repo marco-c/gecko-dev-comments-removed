@@ -3388,34 +3388,31 @@ nsresult HTMLEditor::InsertLinkAroundSelectionAsAction(
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t count = attributeMap->Length();
-  nsAutoString value;
-  for (uint32_t i = 0; i < count; ++i) {
-    
-    
-    
-    
+  
+  
+  
+  
+  AutoTArray<EditorInlineStyleAndValue, 32> stylesToSet;
+  stylesToSet.SetCapacity(attributeMap->Length());
+  nsString value;
+  for (uint32_t i : IntegerRange(attributeMap->Length())) {
     RefPtr<Attr> attribute = attributeMap->Item(i);
     if (!attribute) {
       continue;
     }
 
-    
-    
-    value.Truncate();
+    RefPtr<nsAtom> attributeName = attribute->NodeInfo()->NameAtom();
 
-    nsAtom* attributeName = attribute->NodeInfo()->NameAtom();
-
+    MOZ_ASSERT(value.IsEmpty());
     attribute->GetValue(value);
 
-    nsresult rv = SetInlinePropertyAsSubAction(
-        *nsGkAtoms::a, MOZ_KnownLive(attributeName), value);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("SetInlinePropertyAsSubAction(nsGkAtoms::a) failed");
-      return rv;
-    }
+    stylesToSet.AppendElement(EditorInlineStyleAndValue(
+        *nsGkAtoms::a, std::move(attributeName), std::move(value)));
   }
-  return NS_OK;
+  rv = SetInlinePropertiesAsSubAction(stylesToSet);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::SetInlinePropertiesAsSubAction() failed");
+  return rv;
 }
 
 nsresult HTMLEditor::SetHTMLBackgroundColorWithTransaction(
