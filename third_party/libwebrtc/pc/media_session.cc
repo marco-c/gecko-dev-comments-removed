@@ -2381,6 +2381,22 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
                                          filtered_codecs, codec, nullptr)) {
         
         
+        if (IsRtxCodec(codec)) {
+          
+          
+          auto referenced_codec =
+              GetAssociatedCodecForRtx(supported_video_codecs, codec);
+          RTC_DCHECK(referenced_codec);
+
+          
+          VideoCodec changed_referenced_codec;
+          if (FindMatchingCodec<VideoCodec>(supported_video_codecs,
+                                            filtered_codecs, *referenced_codec,
+                                            &changed_referenced_codec)) {
+            found_codec.SetParam(kCodecParamAssociatedPayloadType,
+                                 changed_referenced_codec.id);
+          }
+        }
         filtered_codecs.push_back(found_codec);
       }
     }
