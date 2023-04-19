@@ -1665,7 +1665,9 @@ void nsAccessibilityService::NotifyOfConsumersChange() {
 const mozilla::a11y::MarkupMapInfo* nsAccessibilityService::GetMarkupMapInfoFor(
     Accessible* aAcc) const {
   if (LocalAccessible* localAcc = aAcc->AsLocal()) {
-    return GetMarkupMapInfoFor(localAcc->GetContent());
+    return localAcc->HasOwnContent()
+               ? GetMarkupMapInfoFor(localAcc->GetContent())
+               : nullptr;
   }
   
   
