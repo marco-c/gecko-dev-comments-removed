@@ -521,7 +521,6 @@ var PlacesUIUtils = {
         false
       )
     ) {
-
       
       let topUndoEntry = lazy.PlacesTransactions.topUndoEntry;
       let batchBlockingDeferred = lazy.PromiseUtils.defer();
