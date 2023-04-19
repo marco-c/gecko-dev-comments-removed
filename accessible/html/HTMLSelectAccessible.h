@@ -70,8 +70,6 @@ class HTMLSelectOptionAccessible : public HyperTextAccessibleWrap {
   virtual nsRect RelativeBounds(nsIFrame** aBoundingFrame) const override;
   virtual void SetSelected(bool aSelect) override;
 
-  nsresult HandleAccEvent(AccEvent* aEvent) override;
-
   
   virtual bool HasPrimaryAction() const override;
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
