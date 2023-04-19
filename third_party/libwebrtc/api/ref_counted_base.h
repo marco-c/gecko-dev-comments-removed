@@ -10,8 +10,9 @@
 #ifndef API_REF_COUNTED_BASE_H_
 #define API_REF_COUNTED_BASE_H_
 
+#include <type_traits>
+
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counter.h"
 
 namespace rtc {
@@ -36,6 +37,51 @@ class RefCountedBase {
   mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RefCountedBase);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class RefCountedNonVirtual {
+ public:
+  RefCountedNonVirtual() = default;
+
+  void AddRef() const { ref_count_.IncRef(); }
+  RefCountReleaseStatus Release() const {
+    
+    
+    
+    
+    
+    
+    
+    static_assert(!std::is_polymorphic<T>::value,
+                  "T has virtual methods. RefCountedBase is a better fit.");
+    const auto status = ref_count_.DecRef();
+    if (status == RefCountReleaseStatus::kDroppedLastRef) {
+      delete static_cast<const T*>(this);
+    }
+    return status;
+  }
+
+ protected:
+  ~RefCountedNonVirtual() = default;
+
+ private:
+  mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(RefCountedNonVirtual);
 };
 
 }  

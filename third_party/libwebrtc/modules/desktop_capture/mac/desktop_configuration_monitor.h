@@ -25,14 +25,14 @@ namespace webrtc {
 
 
 
-class DesktopConfigurationMonitor : public rtc::RefCountedBase {
+class DesktopConfigurationMonitor final
+    : public rtc::RefCountedNonVirtual<DesktopConfigurationMonitor> {
  public:
   DesktopConfigurationMonitor();
+  ~DesktopConfigurationMonitor();
+
   
   MacDesktopConfiguration desktop_configuration();
-
- protected:
-  ~DesktopConfigurationMonitor() override;
 
  private:
   static void DisplaysReconfiguredCallback(CGDirectDisplayID display,

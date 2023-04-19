@@ -19,9 +19,11 @@
 #include <string>
 #include <vector>
 
+#include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats.h"
-#include "rtc_base/ref_count.h"
+
+
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -29,7 +31,8 @@ namespace webrtc {
 
 
 
-class RTC_EXPORT RTCStatsReport : public rtc::RefCountInterface {
+class RTC_EXPORT RTCStatsReport final
+    : public rtc::RefCountedNonVirtual<RTCStatsReport> {
  public:
   typedef std::map<std::string, std::unique_ptr<const RTCStats>> StatsMap;
 
@@ -107,11 +110,11 @@ class RTC_EXPORT RTCStatsReport : public rtc::RefCountInterface {
   
   std::string ToJson() const;
 
-  friend class rtc::RefCountedObject<RTCStatsReport>;
+ protected:
+  friend class rtc::RefCountedNonVirtual<RTCStatsReport>;
+  ~RTCStatsReport() = default;
 
  private:
-  ~RTCStatsReport() override;
-
   int64_t timestamp_us_;
   StatsMap stats_;
 };

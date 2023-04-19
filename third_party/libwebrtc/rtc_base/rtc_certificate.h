@@ -16,8 +16,8 @@
 #include <memory>
 #include <string>
 
+#include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -49,7 +49,8 @@ class RTCCertificatePEM {
 
 
 
-class RTC_EXPORT RTCCertificate : public RefCountInterface {
+class RTC_EXPORT RTCCertificate final
+    : public RefCountedNonVirtual<RTCCertificate> {
  public:
   
   static scoped_refptr<RTCCertificate> Create(
@@ -82,7 +83,9 @@ class RTC_EXPORT RTCCertificate : public RefCountInterface {
 
  protected:
   explicit RTCCertificate(SSLIdentity* identity);
-  ~RTCCertificate() override;
+
+  friend class RefCountedNonVirtual<RTCCertificate>;
+  ~RTCCertificate();
 
  private:
   

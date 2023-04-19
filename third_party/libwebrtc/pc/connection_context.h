@@ -17,6 +17,7 @@
 #include "api/call/call_factory_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/transport/sctp_transport_factory_interface.h"
@@ -27,7 +28,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network_monitor_factory.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
@@ -47,7 +47,8 @@ class RtcEventLog;
 
 
 
-class ConnectionContext : public rtc::RefCountInterface {
+class ConnectionContext final
+    : public rtc::RefCountedNonVirtual<ConnectionContext> {
  public:
   
   
@@ -92,7 +93,8 @@ class ConnectionContext : public rtc::RefCountInterface {
  protected:
   explicit ConnectionContext(PeerConnectionFactoryDependencies* dependencies);
 
-  virtual ~ConnectionContext();
+  friend class rtc::RefCountedNonVirtual<ConnectionContext>;
+  ~ConnectionContext();
 
  private:
   

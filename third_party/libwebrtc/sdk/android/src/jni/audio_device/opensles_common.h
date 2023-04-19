@@ -68,10 +68,11 @@ typedef ScopedSLObject<SLObjectItf, const SLObjectItf_*> ScopedSLObjectItf;
 
 
 
-class OpenSLEngineManager : public rtc::RefCountedBase {
+class OpenSLEngineManager
+    : public rtc::RefCountedNonVirtual<OpenSLEngineManager> {
  public:
   OpenSLEngineManager();
-  ~OpenSLEngineManager() override;
+  ~OpenSLEngineManager() = default;
   SLObjectItf GetOpenSLEngine();
 
  private:

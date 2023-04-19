@@ -11,10 +11,10 @@
 #ifndef RTC_BASE_TASK_UTILS_PENDING_TASK_SAFETY_FLAG_H_
 #define RTC_BASE_TASK_UTILS_PENDING_TASK_SAFETY_FLAG_H_
 
+#include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
@@ -55,7 +55,8 @@ namespace webrtc {
 
 
 
-class PendingTaskSafetyFlag : public rtc::RefCountInterface {
+class PendingTaskSafetyFlag final
+    : public rtc::RefCountedNonVirtual<PendingTaskSafetyFlag> {
  public:
   static rtc::scoped_refptr<PendingTaskSafetyFlag> Create();
 
@@ -113,7 +114,7 @@ class PendingTaskSafetyFlag : public rtc::RefCountInterface {
 
 
 
-class ScopedTaskSafety {
+class ScopedTaskSafety final {
  public:
   ScopedTaskSafety() = default;
   ~ScopedTaskSafety() { flag_->SetNotAlive(); }
@@ -128,7 +129,7 @@ class ScopedTaskSafety {
 
 
 
-class ScopedTaskSafetyDetached {
+class ScopedTaskSafetyDetached final {
  public:
   ScopedTaskSafetyDetached() = default;
   ~ScopedTaskSafetyDetached() { flag_->SetNotAlive(); }
