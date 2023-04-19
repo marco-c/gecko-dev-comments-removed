@@ -279,11 +279,6 @@ class PlacesFeed {
       private: isPrivate,
       targetBrowser: action._target.browser,
       fromChrome: false, 
-      globalHistoryOptions: {
-        triggeringSponsoredURL: action.data.sponsored_tile_id
-          ? action.data.url
-          : undefined,
-      },
     };
 
     
