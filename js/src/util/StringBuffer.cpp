@@ -33,8 +33,14 @@ static CharT* ExtractWellSized(Buffer& cb) {
   }
 
   
+  
+  
+  
+  
   MOZ_ASSERT(capacity >= length);
-  if (length > Buffer::sMaxInlineStorage && capacity - length > length / 4) {
+  constexpr size_t minCharsToReclaim = 80 / sizeof(CharT);
+  if (capacity - length >= minCharsToReclaim &&
+      capacity - length > capacity / 4) {
     CharT* tmp = allocPolicy.pod_realloc<CharT>(buf, capacity, length);
     if (!tmp) {
       allocPolicy.free_(buf);
