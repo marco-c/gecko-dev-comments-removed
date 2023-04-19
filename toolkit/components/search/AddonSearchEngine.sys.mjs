@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint no-shadow: error, mozilla/no-aArgs: error */
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -19,19 +19,19 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
 });
 
-
-
-
-class AddonSearchEngine extends SearchEngine {
-  
-
-
-
-
-
-
-
-
+/**
+ * AddonSearchEngine represents a search engine defined by an add-on.
+ */
+export class AddonSearchEngine extends SearchEngine {
+  /**
+   * Creates a AddonSearchEngine.
+   *
+   * @param {object} options
+   * @param {object} [options.details]
+   *   An object that simulates the manifest object from a WebExtension.
+   * @param {object} [options.json]
+   *   An object that represents the saved JSON settings for the engine.
+   */
   constructor({ isAppProvided, details, json } = {}) {
     super({
       loadPath:
@@ -60,22 +60,22 @@ class AddonSearchEngine extends SearchEngine {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Update this engine based on new manifest, used during
+   * webextension upgrades.
+   *
+   * @param {string} extensionID
+   *   The WebExtension ID.
+   * @param {string} extensionBaseURI
+   *   The Base URI of the WebExtension.
+   * @param {object} manifest
+   *   An object representing the WebExtensions' manifest.
+   * @param {string} locale
+   *   The locale that is being used for the WebExtension.
+   * @param {object} [configuration]
+   *   The search engine configuration for application provided engines, that
+   *   may be overriding some of the WebExtension's settings.
+   */
   updateFromManifest(
     extensionID,
     extensionBaseURI,
@@ -95,21 +95,21 @@ class AddonSearchEngine extends SearchEngine {
     lazy.SearchUtils.notifyAction(this, lazy.SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Initializes the engine based on the manifest and other values.
+   *
+   * @param {string} extensionID
+   *   The WebExtension ID.
+   * @param {string} extensionBaseURI
+   *   The Base URI of the WebExtension.
+   * @param {object} manifest
+   *   An object representing the WebExtensions' manifest.
+   * @param {string} locale
+   *   The locale that is being used for the WebExtension.
+   * @param {object} [configuration]
+   *   The search engine configuration for application provided engines, that
+   *   may be overriding some of the WebExtension's settings.
+   */
   #initFromManifest(
     extensionID,
     extensionBaseURI,
@@ -122,8 +122,8 @@ class AddonSearchEngine extends SearchEngine {
     this._extensionID = extensionID;
     this._locale = locale;
 
-    
-    
+    // We only set _telemetryId for app-provided engines. See also telemetryId
+    // getter.
     if (this._isAppProvided) {
       if (configuration.telemetryId) {
         this._telemetryId = configuration.telemetryId;
@@ -136,7 +136,7 @@ class AddonSearchEngine extends SearchEngine {
       }
     }
 
-    
+    // Set the main icon URL for the engine.
     let iconURL = searchProvider.favicon_url;
 
     if (!iconURL) {
@@ -147,7 +147,7 @@ class AddonSearchEngine extends SearchEngine {
         );
     }
 
-    
+    // Record other icons that the WebExtension has.
     if (manifest.icons) {
       let iconList = Object.entries(manifest.icons).map(icon => {
         return {
@@ -161,9 +161,9 @@ class AddonSearchEngine extends SearchEngine {
       }
     }
 
-    
-    
-    
+    // Filter out any untranslated parameters, the extension has to list all
+    // possible mozParams for each engine where a 'locale' may only provide
+    // actual values for some (or none).
     if (searchProvider.params) {
       searchProvider.params = searchProvider.params.filter(param => {
         return !(param.value && param.value.startsWith("__MSG_"));
@@ -176,5 +176,3 @@ class AddonSearchEngine extends SearchEngine {
     );
   }
 }
-
-var EXPORTED_SYMBOLS = ["AddonSearchEngine"];
