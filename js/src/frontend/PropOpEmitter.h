@@ -16,6 +16,7 @@ namespace frontend {
 
 struct BytecodeEmitter;
 class TaggedParserAtomIndex;
+enum class ValueUsage;
 
 
 
@@ -243,7 +244,8 @@ class MOZ_STACK_CLASS PropOpEmitter {
   
   [[nodiscard]] bool emitAssignment(TaggedParserAtomIndex prop);
 
-  [[nodiscard]] bool emitIncDec(TaggedParserAtomIndex prop);
+  [[nodiscard]] bool emitIncDec(TaggedParserAtomIndex prop,
+                                ValueUsage valueUsage);
 };
 
 } 

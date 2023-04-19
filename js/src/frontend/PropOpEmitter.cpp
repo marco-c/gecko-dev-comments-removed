@@ -189,7 +189,8 @@ bool PropOpEmitter::emitAssignment(TaggedParserAtomIndex prop) {
   return true;
 }
 
-bool PropOpEmitter::emitIncDec(TaggedParserAtomIndex prop) {
+bool PropOpEmitter::emitIncDec(TaggedParserAtomIndex prop,
+                               ValueUsage valueUsage) {
   MOZ_ASSERT(state_ == State::Obj);
   MOZ_ASSERT(isIncDec());
 
@@ -205,7 +206,7 @@ bool PropOpEmitter::emitIncDec(TaggedParserAtomIndex prop) {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     
     if (!bce_->emit1(JSOp::Dup)) {
       
@@ -229,7 +230,7 @@ bool PropOpEmitter::emitIncDec(TaggedParserAtomIndex prop) {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit1(JSOp::Pop)) {
       
       return false;

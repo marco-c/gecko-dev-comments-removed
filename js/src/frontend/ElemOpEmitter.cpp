@@ -203,7 +203,7 @@ bool ElemOpEmitter::emitAssignment() {
   return true;
 }
 
-bool ElemOpEmitter::emitIncDec() {
+bool ElemOpEmitter::emitIncDec(ValueUsage valueUsage) {
   MOZ_ASSERT(state_ == State::Key);
   MOZ_ASSERT(isIncDec());
 
@@ -219,7 +219,7 @@ bool ElemOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     
     if (!bce_->emit1(JSOp::Dup)) {
       
@@ -243,7 +243,7 @@ bool ElemOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit1(JSOp::Pop)) {
       
       return false;

@@ -263,7 +263,7 @@ bool PrivateOpEmitter::emitAssignment() {
   return true;
 }
 
-bool PrivateOpEmitter::emitIncDec() {
+bool PrivateOpEmitter::emitIncDec(ValueUsage valueUsage) {
   MOZ_ASSERT(state_ == State::Reference);
   MOZ_ASSERT(isIncDec());
   
@@ -286,7 +286,7 @@ bool PrivateOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     
     if (!bce_->emit1(JSOp::Dup)) {
       
@@ -320,7 +320,7 @@ bool PrivateOpEmitter::emitIncDec() {
     }
   }
 
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit1(JSOp::Pop)) {
       
       return false;

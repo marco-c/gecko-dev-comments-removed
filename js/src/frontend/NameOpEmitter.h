@@ -17,6 +17,7 @@ namespace js {
 namespace frontend {
 
 struct BytecodeEmitter;
+enum class ValueUsage;
 
 
 
@@ -172,7 +173,7 @@ class MOZ_STACK_CLASS NameOpEmitter {
   [[nodiscard]] bool emitGet();
   [[nodiscard]] bool prepareForRhs();
   [[nodiscard]] bool emitAssignment();
-  [[nodiscard]] bool emitIncDec();
+  [[nodiscard]] bool emitIncDec(ValueUsage valueUsage);
 };
 
 } 

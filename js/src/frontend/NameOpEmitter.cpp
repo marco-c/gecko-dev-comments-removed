@@ -11,6 +11,7 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/TDZCheckCache.h"
+#include "frontend/ValueUsage.h"
 #include "vm/Opcodes.h"
 
 using namespace js;
@@ -412,7 +413,7 @@ bool NameOpEmitter::emitAssignment() {
   return true;
 }
 
-bool NameOpEmitter::emitIncDec() {
+bool NameOpEmitter::emitIncDec(ValueUsage valueUsage) {
   MOZ_ASSERT(state_ == State::Start);
 
   JSOp incOp = isInc() ? JSOp::Inc : JSOp::Dec;
@@ -424,7 +425,7 @@ bool NameOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit1(JSOp::Dup)) {
       
       return false;
@@ -434,7 +435,8 @@ bool NameOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec() && emittedBindOp()) {
+  if (isPostIncDec() && emittedBindOp() &&
+      valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit2(JSOp::Pick, 2)) {
       
       return false;
@@ -448,7 +450,7 @@ bool NameOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (isPostIncDec()) {
+  if (isPostIncDec() && valueUsage == ValueUsage::WantValue) {
     if (!bce_->emit1(JSOp::Pop)) {
       
       return false;
