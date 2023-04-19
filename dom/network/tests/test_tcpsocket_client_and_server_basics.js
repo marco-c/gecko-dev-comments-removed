@@ -3,6 +3,9 @@
 
 
 
+
+
+
 const isOSX = Services.appinfo.OS === "Darwin";
 const testConnectingToNonListeningPort = !isOSX;
 
