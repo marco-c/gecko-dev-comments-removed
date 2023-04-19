@@ -20,12 +20,6 @@
 
 namespace mozilla {
 
-class JsepUuidGenerator {
- public:
-  virtual ~JsepUuidGenerator() {}
-  virtual bool Generate(std::string* id) = 0;
-};
-
 class JsepSessionImpl : public JsepSession {
  public:
   JsepSessionImpl(const std::string& name, UniquePtr<JsepUuidGenerator> uuidgen)
@@ -138,13 +132,12 @@ class JsepSessionImpl : public JsepSession {
   virtual std::set<std::pair<std::string, std::string>> GetLocalIceCredentials()
       const override;
 
-  virtual const std::map<size_t, RefPtr<JsepTransceiver>>& GetTransceivers()
+  virtual const std::vector<RefPtr<JsepTransceiver>>& GetTransceivers()
       const override {
     return mTransceivers;
   }
 
-  virtual std::map<size_t, RefPtr<JsepTransceiver>>& GetTransceivers()
-      override {
+  virtual std::vector<RefPtr<JsepTransceiver>>& GetTransceivers() override {
     return mTransceivers;
   }
 
@@ -238,10 +231,9 @@ class JsepSessionImpl : public JsepSession {
 
   
   
+  std::vector<RefPtr<JsepTransceiver>> mTransceivers;
   
-  std::map<size_t, RefPtr<JsepTransceiver>> mTransceivers;
-  
-  std::map<size_t, RefPtr<JsepTransceiver>> mOldTransceivers;
+  std::vector<RefPtr<JsepTransceiver>> mOldTransceivers;
 
   Maybe<bool> mIsPendingOfferer;
   Maybe<bool> mIsCurrentOfferer;
