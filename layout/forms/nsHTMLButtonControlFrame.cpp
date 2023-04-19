@@ -210,10 +210,10 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
   childPos.B(wm) = 0;  
                        
 
-  const LayoutFrameType frameType = aFirstKid->Type();
-  if (frameType == LayoutFrameType::FlexContainer ||
-      frameType == LayoutFrameType::GridContainer) {
-    contentsReflowInput.ComputedBSize() = aButtonReflowInput.ComputedBSize();
+  if (aFirstKid->IsFlexOrGridContainer()) {
+    
+    contentsReflowInput.SetComputedBSize(aButtonReflowInput.ComputedBSize(),
+                                         ReflowInput::ResetResizeFlags::No);
     contentsReflowInput.ComputedMinBSize() =
         aButtonReflowInput.ComputedMinBSize();
     contentsReflowInput.ComputedMaxBSize() =

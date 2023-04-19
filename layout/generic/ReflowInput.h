@@ -341,8 +341,6 @@ struct ReflowInput : public SizeComputationInput {
     mAvailableSize.BSize(mWritingMode) = aAvailableBSize;
   }
 
-  nscoord& ComputedISize() { return mComputedSize.ISize(mWritingMode); }
-  nscoord& ComputedBSize() { return mComputedSize.BSize(mWritingMode); }
   nscoord& ComputedMinISize() { return mComputedMinSize.ISize(mWritingMode); }
   nscoord& ComputedMaxISize() { return mComputedMaxSize.ISize(mWritingMode); }
   nscoord& ComputedMinBSize() { return mComputedMinSize.BSize(mWritingMode); }
@@ -816,12 +814,17 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  void SetComputedISize(nscoord aComputedISize);
+  enum class ResetResizeFlags : bool { No, Yes };
 
   
   
-  void SetComputedBSize(nscoord aComputedBSize);
-  void SetComputedBSizeWithoutResettingResizeFlags(nscoord aComputedBSize);
+  void SetComputedISize(nscoord aComputedISize,
+                        ResetResizeFlags aFlags = ResetResizeFlags::Yes);
+
+  
+  
+  void SetComputedBSize(nscoord aComputedBSize,
+                        ResetResizeFlags aFlags = ResetResizeFlags::Yes);
 
   bool WillReflowAgainForClearance() const {
     return mDiscoveredClearance && *mDiscoveredClearance;

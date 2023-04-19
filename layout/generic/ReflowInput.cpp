@@ -271,7 +271,8 @@ bool ReflowInput::ShouldReflowAllKids() const {
           mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
 }
 
-void ReflowInput::SetComputedISize(nscoord aComputedISize) {
+void ReflowInput::SetComputedISize(nscoord aComputedISize,
+                                   ResetResizeFlags aFlags) {
   
   
   
@@ -287,15 +288,21 @@ void ReflowInput::SetComputedISize(nscoord aComputedISize) {
 
   NS_WARNING_ASSERTION(aComputedISize >= 0, "Invalid computed inline-size!");
   if (ComputedISize() != aComputedISize) {
-    ComputedISize() = std::max(0, aComputedISize);
+    mComputedSize.ISize(mWritingMode) = std::max(0, aComputedISize);
     const LayoutFrameType frameType = mFrame->Type();
-    if (frameType != LayoutFrameType::Viewport) {
+    if (aFlags == ResetResizeFlags::Yes &&
+        frameType != LayoutFrameType::Viewport) {
       InitResizeFlags(mFrame->PresContext(), frameType);
     }
   }
 }
 
-void ReflowInput::SetComputedBSize(nscoord aComputedBSize) {
+void ReflowInput::SetComputedBSize(nscoord aComputedBSize,
+                                   ResetResizeFlags aFlags) {
+  
+  
+  
+  
   
   
   
@@ -305,20 +312,11 @@ void ReflowInput::SetComputedBSize(nscoord aComputedBSize) {
   
   
 
+  NS_WARNING_ASSERTION(aComputedBSize >= 0, "Invalid computed block-size!");
   if (ComputedBSize() != aComputedBSize) {
-    SetComputedBSizeWithoutResettingResizeFlags(aComputedBSize);
+    mComputedSize.BSize(mWritingMode) = std::max(0, aComputedBSize);
     InitResizeFlags(mFrame->PresContext(), mFrame->Type());
   }
-}
-
-void ReflowInput::SetComputedBSizeWithoutResettingResizeFlags(
-    nscoord aComputedBSize) {
-  
-  
-  
-  
-  NS_WARNING_ASSERTION(aComputedBSize >= 0, "Invalid computed block-size!");
-  ComputedBSize() = std::max(0, aComputedBSize);
 }
 
 void ReflowInput::Init(nsPresContext* aPresContext,
@@ -354,7 +352,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
   if (type == mozilla::LayoutFrameType::Placeholder) {
     
     
-    ComputedBSize() = ComputedISize() = 0;
+    mComputedSize.SizeTo(mWritingMode, 0, 0);
     return;
   }
 
@@ -423,7 +421,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
     
     if (type == LayoutFrameType::ColumnSet &&
         mStylePosition->ISize(mWritingMode).IsAuto()) {
-      ComputedISize() = NS_UNCONSTRAINEDSIZE;
+      SetComputedISize(NS_UNCONSTRAINEDSIZE, ResetResizeFlags::No);
     } else {
       SetAvailableBSize(NS_UNCONSTRAINEDSIZE);
     }
@@ -1766,8 +1764,7 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
         ComputedLogicalMargin(wm).Size(wm) +
             ComputedLogicalOffsets(wm).Size(wm),
         ComputedLogicalBorderPadding(wm).Size(wm), {}, mComputeSizeFlags);
-    ComputedISize() = sizeResult.mLogicalSize.ISize(wm);
-    ComputedBSize() = sizeResult.mLogicalSize.BSize(wm);
+    mComputedSize = sizeResult.mLogicalSize;
     NS_ASSERTION(ComputedISize() >= 0, "Bogus inline-size");
     NS_ASSERTION(
         ComputedBSize() == NS_UNCONSTRAINEDSIZE || ComputedBSize() >= 0,
@@ -1915,8 +1912,7 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     ComputeAbsPosBlockAutoMargin(availMarginSpace, cbwm, marginBStartIsAuto,
                                  marginBEndIsAuto, margin, offsets);
   }
-  ComputedBSize() = computedSize.ConvertTo(wm, cbwm).BSize(wm);
-  ComputedISize() = computedSize.ConvertTo(wm, cbwm).ISize(wm);
+  mComputedSize = computedSize.ConvertTo(wm, cbwm);
 
   SetComputedLogicalOffsets(cbwm, offsets);
   SetComputedLogicalMargin(cbwm, margin);
@@ -2174,18 +2170,14 @@ void ReflowInput::InitConstraints(
     SetComputedLogicalOffsets(wm, LogicalMargin(wm));
 
     const auto borderPadding = ComputedLogicalBorderPadding(wm);
-    ComputedISize() = AvailableISize() - borderPadding.IStartEnd(wm);
-    if (ComputedISize() < 0) {
-      ComputedISize() = 0;
-    }
-    if (AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
-      ComputedBSize() = AvailableBSize() - borderPadding.BStartEnd(wm);
-      if (ComputedBSize() < 0) {
-        ComputedBSize() = 0;
-      }
-    } else {
-      ComputedBSize() = NS_UNCONSTRAINEDSIZE;
-    }
+    SetComputedISize(
+        std::max(0, AvailableISize() - borderPadding.IStartEnd(wm)),
+        ResetResizeFlags::No);
+    SetComputedBSize(
+        AvailableBSize() != NS_UNCONSTRAINEDSIZE
+            ? std::max(0, AvailableBSize() - borderPadding.BStartEnd(wm))
+            : NS_UNCONSTRAINEDSIZE,
+        ResetResizeFlags::No);
 
     ComputedMinISize() = ComputedMinBSize() = 0;
     ComputedMaxBSize() = ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
@@ -2304,19 +2296,22 @@ void ReflowInput::InitConstraints(
       
       
       if (isAutoISize || inlineSize.HasLengthAndPercentage()) {
-        ComputedISize() = AvailableISize();
-
-        if ((ComputedISize() != NS_UNCONSTRAINEDSIZE) && !rowOrRowGroup) {
+        if (AvailableISize() != NS_UNCONSTRAINEDSIZE && !rowOrRowGroup) {
           
           
-          ComputedISize() -= ComputedLogicalBorderPadding(wm).IStartEnd(wm);
-          if (ComputedISize() < 0) ComputedISize() = 0;
+          SetComputedISize(
+              std::max(0, AvailableISize() -
+                              ComputedLogicalBorderPadding(wm).IStartEnd(wm)),
+              ResetResizeFlags::No);
+        } else {
+          SetComputedISize(AvailableISize(), ResetResizeFlags::No);
         }
         NS_ASSERTION(ComputedISize() >= 0, "Bogus computed isize");
 
       } else {
-        ComputedISize() =
-            ComputeISizeValue(cbSize, mStylePosition->mBoxSizing, inlineSize);
+        SetComputedISize(
+            ComputeISizeValue(cbSize, mStylePosition->mBoxSizing, inlineSize),
+            ResetResizeFlags::No);
       }
 
       
@@ -2328,11 +2323,12 @@ void ReflowInput::InitConstraints(
       
       
       if (isAutoBSize || blockSize.HasLengthAndPercentage()) {
-        ComputedBSize() = NS_UNCONSTRAINEDSIZE;
+        SetComputedBSize(NS_UNCONSTRAINEDSIZE, ResetResizeFlags::No);
       } else {
-        ComputedBSize() =
+        SetComputedBSize(
             ComputeBSizeValue(cbSize.BSize(wm), mStylePosition->mBoxSizing,
-                              blockSize.AsLengthPercentage());
+                              blockSize.AsLengthPercentage()),
+            ResetResizeFlags::No);
       }
 
       
