@@ -3446,6 +3446,7 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
   
   if (!aStyle.weight.IsNormal()) {
     aUsedFont.AppendFloat(aStyle.weight.ToFloat());
+    aUsedFont.Append(" ");
   }
 
   
