@@ -1,10 +1,10 @@
+
+
+
+
 "use strict";
 
 function check_ip(s, v, ip) {
-  let secInfo = Cc[
-    "@mozilla.org/security/transportsecurityinfo;1"
-  ].createInstance(Ci.nsITransportSecurityInfo);
-
   let str = "https://";
   if (v == 6) {
     str += "[";
@@ -23,7 +23,6 @@ function check_ip(s, v, ip) {
   s.processHeader(
     uri,
     "max-age=1000;includeSubdomains",
-    secInfo,
     {},
     parsedMaxAge,
     parsedIncludeSubdomains

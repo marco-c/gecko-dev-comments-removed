@@ -27,116 +27,93 @@ const sss = Cc["@mozilla.org/ssservice;1"].getService(
 );
 const uri = Services.io.newURI("https://a.pinning.example.com");
 
-function add_tests() {
-  let secInfo = null;
 
-  add_connection_test(
-    "a.pinning.example.com",
-    PRErrorCodeSuccess,
-    undefined,
-    aSecInfo => {
-      secInfo = aSecInfo;
-    }
+
+
+
+add_task(async function() {
+  sss.processHeader(uri, GOOD_MAX_AGE);
+
+  Assert.ok(sss.isSecureURI(uri), "a.pinning.example.com should be HSTS");
+
+  await ForgetAboutSite.removeDataFromDomain("a.pinning.example.com");
+
+  Assert.ok(
+    !sss.isSecureURI(uri),
+    "a.pinning.example.com should not be HSTS now"
+  );
+});
+
+
+
+
+
+add_task(async function() {
+  sss.processHeader(uri, GOOD_MAX_AGE);
+
+  Assert.ok(
+    sss.isSecureURI(uri),
+    "a.pinning.example.com should be HSTS (subdomain case)"
   );
 
   
-  
-  
-  
-  add_task(async function() {
-    sss.processHeader(uri, GOOD_MAX_AGE, secInfo);
+  let unrelatedURI = Services.io.newURI("https://example.org");
+  sss.processHeader(unrelatedURI, GOOD_MAX_AGE);
+  Assert.ok(sss.isSecureURI(unrelatedURI), "example.org should be HSTS");
 
-    Assert.ok(sss.isSecureURI(uri), "a.pinning.example.com should be HSTS");
+  await ForgetAboutSite.removeDataFromDomain("example.com");
 
-    await ForgetAboutSite.removeDataFromDomain("a.pinning.example.com");
+  Assert.ok(
+    !sss.isSecureURI(uri),
+    "a.pinning.example.com should not be HSTS now (subdomain case)"
+  );
+
+  Assert.ok(sss.isSecureURI(unrelatedURI), "example.org should still be HSTS");
+});
+
+
+
+
+
+
+add_task(async function() {
+  let originAttributesList = [
+    {},
+    { userContextId: 1 },
+    { firstPartyDomain: "foo.com" },
+    { userContextId: 1, firstPartyDomain: "foo.com" },
+  ];
+
+  let unrelatedURI = Services.io.newURI("https://example.org");
+
+  for (let originAttributes of originAttributesList) {
+    sss.processHeader(uri, GOOD_MAX_AGE, originAttributes);
 
     Assert.ok(
-      !sss.isSecureURI(uri),
-      "a.pinning.example.com should not be HSTS now"
-    );
-  });
-
-  
-  
-  
-  
-  add_task(async function() {
-    sss.processHeader(uri, GOOD_MAX_AGE, secInfo);
-
-    Assert.ok(
-      sss.isSecureURI(uri),
-      "a.pinning.example.com should be HSTS (subdomain case)"
+      sss.isSecureURI(uri, originAttributes),
+      "a.pinning.example.com should be HSTS (originAttributes case)"
     );
 
     
-    let unrelatedURI = Services.io.newURI("https://example.org");
-    sss.processHeader(unrelatedURI, GOOD_MAX_AGE, secInfo);
-    Assert.ok(sss.isSecureURI(unrelatedURI), "example.org should be HSTS");
-
-    await ForgetAboutSite.removeDataFromDomain("example.com");
-
+    sss.processHeader(unrelatedURI, GOOD_MAX_AGE, originAttributes);
     Assert.ok(
-      !sss.isSecureURI(uri),
-      "a.pinning.example.com should not be HSTS now (subdomain case)"
+      sss.isSecureURI(unrelatedURI, originAttributes),
+      "example.org should be HSTS (originAttributes case)"
+    );
+  }
+
+  await ForgetAboutSite.removeDataFromDomain("example.com");
+
+  for (let originAttributes of originAttributesList) {
+    Assert.ok(
+      !sss.isSecureURI(uri, originAttributes),
+      "a.pinning.example.com should not be HSTS now " +
+        "(originAttributes case)"
     );
 
     Assert.ok(
-      sss.isSecureURI(unrelatedURI),
-      "example.org should still be HSTS"
+      sss.isSecureURI(unrelatedURI, originAttributes),
+      "example.org should still be HSTS (originAttributes case)"
     );
-  });
-
-  
-  
-  
-  
-  
-  add_task(async function() {
-    let originAttributesList = [
-      {},
-      { userContextId: 1 },
-      { firstPartyDomain: "foo.com" },
-      { userContextId: 1, firstPartyDomain: "foo.com" },
-    ];
-
-    let unrelatedURI = Services.io.newURI("https://example.org");
-
-    for (let originAttributes of originAttributesList) {
-      sss.processHeader(uri, GOOD_MAX_AGE, secInfo, originAttributes);
-
-      Assert.ok(
-        sss.isSecureURI(uri, originAttributes),
-        "a.pinning.example.com should be HSTS (originAttributes case)"
-      );
-
-      
-      sss.processHeader(unrelatedURI, GOOD_MAX_AGE, secInfo, originAttributes);
-      Assert.ok(
-        sss.isSecureURI(unrelatedURI, originAttributes),
-        "example.org should be HSTS (originAttributes case)"
-      );
-    }
-
-    await ForgetAboutSite.removeDataFromDomain("example.com");
-
-    for (let originAttributes of originAttributesList) {
-      Assert.ok(
-        !sss.isSecureURI(uri, originAttributes),
-        "a.pinning.example.com should not be HSTS now " +
-          "(originAttributes case)"
-      );
-
-      Assert.ok(
-        sss.isSecureURI(unrelatedURI, originAttributes),
-        "example.org should still be HSTS (originAttributes case)"
-      );
-    }
-  });
-}
-
-function run_test() {
-  Services.prefs.setIntPref("security.cert_pinning.enforcement_level", 2);
-  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
-  add_tests();
-  run_next_test();
-}
+  }
+});
