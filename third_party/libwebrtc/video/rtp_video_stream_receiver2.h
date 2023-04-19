@@ -122,7 +122,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   
   int GetUniqueFramesSeen() const {
-    RTC_DCHECK_RUN_ON(&worker_task_checker_);
+    RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
     return frame_counter_.GetUniqueSeen();
   }
 
@@ -157,8 +157,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
-  void OnCompleteFrames(RtpFrameReferenceFinder::ReturnVector frame);
-
   
   void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) override;
 
@@ -192,6 +190,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
  private:
   
   void ManageFrame(std::unique_ptr<RtpFrameObject> frame) override;
+
+  void OnCompleteFrames(RtpFrameReferenceFinder::ReturnVector frame)
+      RTC_RUN_ON(packet_sequence_checker_);
 
   
   
@@ -240,20 +241,20 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       bool decodability_flag;
     };
 
-    RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_task_checker_;
+    RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
     KeyFrameRequestSender* const key_frame_request_sender_;
     NackSender* const nack_sender_;
     LossNotificationSender* const loss_notification_sender_;
 
     
-    bool request_key_frame_ RTC_GUARDED_BY(worker_task_checker_);
+    bool request_key_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
 
     
     std::vector<uint16_t> nack_sequence_numbers_
-        RTC_GUARDED_BY(worker_task_checker_);
+        RTC_GUARDED_BY(packet_sequence_checker_);
 
     absl::optional<LossNotificationState> lntf_state_
-        RTC_GUARDED_BY(worker_task_checker_);
+        RTC_GUARDED_BY(packet_sequence_checker_);
   };
   enum ParseGenericDependenciesResult {
     kDropPacket,
@@ -263,22 +264,29 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   
   
-  void ReceivePacket(const RtpPacketReceived& packet);
+  void ReceivePacket(const RtpPacketReceived& packet)
+      RTC_RUN_ON(packet_sequence_checker_);
+
   
   
-  void ParseAndHandleEncapsulatingHeader(const RtpPacketReceived& packet);
-  void NotifyReceiverOfEmptyPacket(uint16_t seq_num);
+  void ParseAndHandleEncapsulatingHeader(const RtpPacketReceived& packet)
+      RTC_RUN_ON(packet_sequence_checker_);
+  void NotifyReceiverOfEmptyPacket(uint16_t seq_num)
+      RTC_RUN_ON(packet_sequence_checker_);
   void UpdateHistograms();
   bool IsRedEnabled() const;
-  void InsertSpsPpsIntoTracker(uint8_t payload_type);
-  void OnInsertedPacket(video_coding::PacketBuffer::InsertResult result);
+  void InsertSpsPpsIntoTracker(uint8_t payload_type)
+      RTC_RUN_ON(packet_sequence_checker_);
+  void OnInsertedPacket(video_coding::PacketBuffer::InsertResult result)
+      RTC_RUN_ON(packet_sequence_checker_);
   ParseGenericDependenciesResult ParseGenericDependenciesExtension(
       const RtpPacketReceived& rtp_packet,
-      RTPVideoHeader* video_header) RTC_RUN_ON(worker_task_checker_);
-  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame);
+      RTPVideoHeader* video_header) RTC_RUN_ON(packet_sequence_checker_);
+  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame)
+      RTC_RUN_ON(packet_sequence_checker_);
   void UpdatePacketReceiveTimestamps(const RtpPacketReceived& packet,
                                      bool is_keyframe)
-      RTC_RUN_ON(worker_task_checker_);
+      RTC_RUN_ON(packet_sequence_checker_);
 
   Clock* const clock_;
   
@@ -297,8 +305,16 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_task_checker_;
-  bool receiving_ RTC_GUARDED_BY(worker_task_checker_);
-  int64_t last_packet_log_ms_ RTC_GUARDED_BY(worker_task_checker_);
+  
+  
+  
+  
+  
+  
+  
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
+  bool receiving_ RTC_GUARDED_BY(packet_sequence_checker_);
+  int64_t last_packet_log_ms_ RTC_GUARDED_BY(packet_sequence_checker_);
 
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
 
@@ -312,66 +328,68 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   VCMReceiveStatisticsCallback* const vcm_receive_statistics_;
   video_coding::PacketBuffer packet_buffer_
-      RTC_GUARDED_BY(worker_task_checker_);
-  UniqueTimestampCounter frame_counter_ RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  UniqueTimestampCounter frame_counter_
+      RTC_GUARDED_BY(packet_sequence_checker_);
   SeqNumUnwrapper<uint16_t> frame_id_unwrapper_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
   
   std::unique_ptr<FrameDependencyStructure> video_structure_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   
   
   absl::optional<int64_t> video_structure_frame_id_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   std::unique_ptr<RtpFrameReferenceFinder> reference_finder_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   absl::optional<VideoCodecType> current_codec_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   uint32_t last_assembled_frame_rtp_timestamp_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
-      RTC_GUARDED_BY(worker_task_checker_);
-  video_coding::H264SpsPpsTracker tracker_ RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  video_coding::H264SpsPpsTracker tracker_
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   std::map<uint8_t, std::unique_ptr<VideoRtpDepacketizer>> payload_type_map_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
   
   std::map<uint8_t, std::map<std::string, std::string>> pt_codec_params_
-      RTC_GUARDED_BY(worker_task_checker_);
-  int16_t last_payload_type_ RTC_GUARDED_BY(worker_task_checker_) = -1;
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  int16_t last_payload_type_ RTC_GUARDED_BY(packet_sequence_checker_) = -1;
 
-  bool has_received_frame_ RTC_GUARDED_BY(worker_task_checker_);
+  bool has_received_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
 
   absl::optional<uint32_t> last_received_rtp_timestamp_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   absl::optional<uint32_t> last_received_keyframe_rtp_timestamp_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   absl::optional<Timestamp> last_received_rtp_system_time_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   absl::optional<Timestamp> last_received_keyframe_rtp_system_time_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_
-      RTC_PT_GUARDED_BY(worker_task_checker_);
+      RTC_PT_GUARDED_BY(packet_sequence_checker_);
   bool frames_decryptable_ RTC_GUARDED_BY(worker_task_checker_);
   absl::optional<ColorSpace> last_color_space_;
 
   AbsoluteCaptureTimeInterpolator absolute_capture_time_interpolator_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   CaptureClockOffsetUpdater capture_clock_offset_updater_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   int64_t last_completed_picture_id_ = 0;
 
@@ -379,9 +397,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       frame_transformer_delegate_;
 
   SeqNumUnwrapper<uint16_t> rtp_seq_num_unwrapper_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
   std::map<int64_t, RtpPacketInfo> packet_infos_
-      RTC_GUARDED_BY(worker_task_checker_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 };
 
 }  
