@@ -15,15 +15,16 @@ class FileSystemSyncAccessHandle;
 
 class FileSystemAccessHandleChild : public PFileSystemAccessHandleChild {
  public:
-  explicit FileSystemAccessHandleChild(const FileDescriptor& aFileDescriptor);
+  FileSystemAccessHandleChild();
 
   NS_INLINE_DECL_REFCOUNTING(FileSystemAccessHandleChild, override)
 
+  FileSystemSyncAccessHandle* MutableAccessHandlePtr() const {
+    MOZ_ASSERT(mAccessHandle);
+    return mAccessHandle;
+  }
+
   void SetAccessHandle(FileSystemSyncAccessHandle* aAccessHandle);
-
-  PRFileDesc* MutableFileDescPtr() const;
-
-  void Close();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -33,8 +34,6 @@ class FileSystemAccessHandleChild : public PFileSystemAccessHandleChild {
   
   
   FileSystemSyncAccessHandle* MOZ_NON_OWNING_REF mAccessHandle;
-
-  PRFileDesc* mFileDesc;
 };
 
 }  
