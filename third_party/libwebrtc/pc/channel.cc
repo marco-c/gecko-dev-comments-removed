@@ -496,6 +496,12 @@ bool BaseChannel::RegisterRtpDemuxerSink_w() {
   bool ret = network_thread_->Invoke<bool>(
       RTC_FROM_HERE, [this, demuxer_criteria = demuxer_criteria_] {
         RTC_DCHECK_RUN_ON(network_thread());
+        if (!rtp_transport_) {
+          
+          
+          
+          return false;
+        }
         
         
         
