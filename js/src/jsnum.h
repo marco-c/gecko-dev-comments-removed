@@ -100,9 +100,7 @@ extern char* NumberToCString(ToCStringBuf* cbuf, double d);
 
 
 
-
-extern char* NumberToCStringWithBase(JSContext* cx, ToCStringBuf* cbuf,
-                                     double d, int base);
+extern char* NumberToHexCString(ToCStringBuf* cbuf, uint32_t value);
 
 
 
