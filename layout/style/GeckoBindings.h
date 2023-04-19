@@ -584,6 +584,9 @@ bool Gecko_IsInServoTraversal();
 bool Gecko_IsMainThread();
 
 
+bool Gecko_IsDOMWorkerThread();
+
+
 
 
 mozilla::StyleDisplayMode Gecko_MediaFeatures_GetDisplayMode(
