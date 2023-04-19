@@ -1831,6 +1831,16 @@ var AddonManagerInternal = {
     }
 
     
+    
+    
+    if (aInstallingPrincipal.isNullPrincipal) {
+      throw Components.Exception(
+        `SitePermsAddons can't be installed from sandboxed subframes`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    
     if (
       aBrowser &&
       aBrowser.contentPrincipal.isThirdPartyPrincipal(aInstallingPrincipal)
