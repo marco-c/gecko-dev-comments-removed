@@ -9,8 +9,11 @@
 
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/ClipboardBinding.h"
+#include "mozilla/MozPromise.h"
 
 #include "nsWrapperCache.h"
+
+class nsITransferable;
 
 namespace mozilla::dom {
 
@@ -26,18 +29,41 @@ class ClipboardItem final : public nsWrapperCache {
     NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ItemEntry)
     NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ItemEntry)
 
-    ItemEntry(const nsAString& aType, OwningStringOrBlob&& aData)
-        : mType(aType), mData(std::move(aData)) {}
-    ItemEntry(const nsAString& aType, const OwningStringOrBlob& aData)
-        : mType(aType), mData(aData) {}
+    ItemEntry(const nsAString& aType, const nsACString& aFormat);
+    ItemEntry(const nsAString& aType, const nsACString& aFormat,
+              OwningStringOrBlob&& aData)
+        : ItemEntry(aType, aFormat) {
+      mData = std::move(aData);
+    }
+    ItemEntry(const nsAString& aType, const nsACString& aFormat,
+              const OwningStringOrBlob& aData)
+        : ItemEntry(aType, aFormat) {
+      mData = aData;
+    }
 
     const nsString& Type() const { return mType; }
+    const nsCString& Format() const { return mFormat; }
     const OwningStringOrBlob& Data() const { return mData; }
 
+    void SetData(already_AddRefed<Blob>&& aBlob);
+    void LoadData(nsIGlobalObject& aGlobal, nsITransferable& aTransferable);
+    
+    
+    
+    
+    void ReactPromise(nsIGlobalObject& aGlobal, Promise& aPromise);
+
    private:
-    ~ItemEntry() = default;
+    ~ItemEntry() { mLoadingPromise.DisconnectIfExists(); }
+
+    void ResolvePendingGetTypePromises(Blob& aBlob);
+    void RejectPendingGetTypePromises(nsresult rv);
+
     nsString mType;
+    nsCString mFormat;
     OwningStringOrBlob mData;
+    MozPromiseRequestHolder<GenericPromise> mLoadingPromise;
+    nsTArray<RefPtr<Promise>> mPendingGetTypeRequests;
   };
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ClipboardItem)
