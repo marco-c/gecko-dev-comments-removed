@@ -18,13 +18,13 @@
 namespace webrtc {
 
 DegradedCall::FakeNetworkPipeOnTaskQueue::FakeNetworkPipeOnTaskQueue(
-    TaskQueueFactory* task_queue_factory,
+    TaskQueueBase* task_queue,
+    const ScopedTaskSafety& task_safety,
     Clock* clock,
     std::unique_ptr<NetworkBehaviorInterface> network_behavior)
     : clock_(clock),
-      task_queue_(task_queue_factory->CreateTaskQueue(
-          "DegradedSendQueue",
-          TaskQueueFactory::Priority::NORMAL)),
+      task_queue_(task_queue),
+      task_safety_(task_safety),
       pipe_(clock, std::move(network_behavior)) {}
 
 void DegradedCall::FakeNetworkPipeOnTaskQueue::SendRtp(
@@ -61,21 +61,22 @@ bool DegradedCall::FakeNetworkPipeOnTaskQueue::Process() {
     return false;
   }
 
-  task_queue_.PostTask([this, time_to_next]() {
-    RTC_DCHECK_RUN_ON(&task_queue_);
+  task_queue_->PostTask(ToQueuedTask(task_safety_, [this, time_to_next] {
+    RTC_DCHECK_RUN_ON(task_queue_);
     int64_t next_process_time = *time_to_next + clock_->TimeInMilliseconds();
     if (!next_process_ms_ || next_process_time < *next_process_ms_) {
       next_process_ms_ = next_process_time;
-      task_queue_.PostDelayedHighPrecisionTask(
-          [this]() {
-            RTC_DCHECK_RUN_ON(&task_queue_);
-            if (!Process()) {
-              next_process_ms_.reset();
-            }
-          },
+      task_queue_->PostDelayedHighPrecisionTask(
+          ToQueuedTask(task_safety_,
+                       [this] {
+                         RTC_DCHECK_RUN_ON(task_queue_);
+                         if (!Process()) {
+                           next_process_ms_.reset();
+                         }
+                       }),
           *time_to_next);
     }
-  });
+  }));
 
   return true;
 }
@@ -124,8 +125,6 @@ bool DegradedCall::FakeNetworkPipeTransportAdapter::SendRtcp(
   network_pipe_->SendRtcp(packet, length, real_transport_);
   return true;
 }
-
-
 
 
 

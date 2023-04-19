@@ -170,7 +170,6 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
 
 
-
   }
 
   if (!module_thread_) {
