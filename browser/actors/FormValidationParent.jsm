@@ -115,8 +115,8 @@ class FormValidationParent extends JSWindowActorParent {
       case "scroll":
         this._hidePopup();
         break;
-      case "popuphiding":
-        this._onPopupHiding(aEvent);
+      case "popuphidden":
+        this._onPopupHidden(aEvent);
         break;
     }
   }
@@ -125,8 +125,8 @@ class FormValidationParent extends JSWindowActorParent {
 
 
 
-  _onPopupHiding(aEvent) {
-    aEvent.originalTarget.removeEventListener("popuphiding", this, true);
+  _onPopupHidden(aEvent) {
+    aEvent.originalTarget.removeEventListener("popuphidden", this, true);
     Services.obs.removeObserver(this._obs, "popup-shown");
     let tabBrowser = aEvent.originalTarget.ownerGlobal.gBrowser;
     tabBrowser.selectedBrowser.removeEventListener("scroll", this, true);
@@ -158,30 +158,31 @@ class FormValidationParent extends JSWindowActorParent {
     let tabBrowser = window.gBrowser;
 
     
-    if (!previouslyShown) {
-      
-      this._panel.addEventListener("popuphiding", this, true);
-      
-      this._obs = new PopupShownObserver(this.browsingContext);
-      Services.obs.addObserver(this._obs, "popup-shown", true);
-
-      
-      tabBrowser.selectedBrowser.addEventListener("scroll", this, true);
-      tabBrowser.selectedBrowser.addEventListener("FullZoomChange", this);
-      tabBrowser.selectedBrowser.addEventListener("TextZoomChange", this);
-
-      
-      let rect = aPanelData.screenRect;
-      this._panel.openPopupAtScreenRect(
-        aPanelData.position,
-        rect.left,
-        rect.top,
-        rect.width,
-        rect.height,
-        false,
-        false
-      );
+    if (previouslyShown) {
+      return;
     }
+    
+    this._panel.addEventListener("popuphidden", this, true);
+    
+    this._obs = new PopupShownObserver(this.browsingContext);
+    Services.obs.addObserver(this._obs, "popup-shown", true);
+
+    
+    tabBrowser.selectedBrowser.addEventListener("scroll", this, true);
+    tabBrowser.selectedBrowser.addEventListener("FullZoomChange", this);
+    tabBrowser.selectedBrowser.addEventListener("TextZoomChange", this);
+
+    
+    let rect = aPanelData.screenRect;
+    this._panel.openPopupAtScreenRect(
+      aPanelData.position,
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height,
+      false,
+      false
+    );
   }
 
   
