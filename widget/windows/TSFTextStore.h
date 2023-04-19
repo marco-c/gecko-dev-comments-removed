@@ -1035,7 +1035,7 @@ class TSFTextStore final : public ITextStoreACP,
     
     NUM_OF_SUPPORTED_ATTRS
   };
-  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS]{false};
+  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS] = {false};
 
   int32_t GetRequestedAttrIndex(const TS_ATTRID& aAttrID);
   TS_ATTRID GetAttrID(int32_t aIndex);
@@ -1056,7 +1056,7 @@ class TSFTextStore final : public ITextStoreACP,
   bool mWaitingQueryLayout = false;
   
   
-  bool mPendingDestroy;
+  bool mPendingDestroy = false;
   
   
   bool mDeferClearingContentForTSF = false;
