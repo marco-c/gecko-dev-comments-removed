@@ -43,12 +43,14 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
       wasm_rt_get_default_max_linear_memory_size();
 
   
+  
+  
   Result<int64_t, nsresult> dictSizeResult =
       mozHunspellFileMgrHost::GetSize(dpath);
-  MOZ_RELEASE_ASSERT(dictSizeResult.isOk());
+  NS_ENSURE_TRUE(dictSizeResult.isOk(), nullptr);
 
   int64_t dictSize = dictSizeResult.unwrap();
-  MOZ_RELEASE_ASSERT(dictSize >= 0);
+  NS_ENSURE_TRUE(dictSize >= 0, nullptr);
 
   
   
@@ -81,6 +83,7 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
     mozHunspellCallbacks::AllowFile(dpath);
   }
 
+  
   return new RLBoxHunspell(std::move(sandbox), affpath, dpath);
 }
 
