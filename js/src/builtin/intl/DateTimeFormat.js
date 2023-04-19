@@ -686,11 +686,6 @@ function Intl_DateTimeFormat_formatRange(startDate, endDate) {
     var y = ToNumber(endDate);
 
     
-    if (x > y) {
-        ThrowRangeError(JSMSG_START_AFTER_END_DATE, "formatRange");
-    }
-
-    
     getDateTimeFormatInternals(dtf);
 
     
@@ -723,11 +718,6 @@ function Intl_DateTimeFormat_formatRangeToParts(startDate, endDate) {
 
     
     var y = ToNumber(endDate);
-
-    
-    if (x > y) {
-        ThrowRangeError(JSMSG_START_AFTER_END_DATE, "formatRangeToParts");
-    }
 
     
     getDateTimeFormatInternals(dtf);

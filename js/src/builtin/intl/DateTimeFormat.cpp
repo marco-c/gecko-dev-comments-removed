@@ -1407,7 +1407,6 @@ static bool PartitionDateTimeRangePattern(
     ClippedTime y, bool* equal) {
   MOZ_ASSERT(x.isValid());
   MOZ_ASSERT(y.isValid());
-  MOZ_ASSERT(x.toDouble() <= y.toDouble());
 
   
   
@@ -1424,7 +1423,8 @@ static bool PartitionDateTimeRangePattern(
       GregorianChangeDate + msPerDay;
 
   mozilla::intl::ICUResult result = Ok();
-  if (x.toDouble() < GregorianChangeDatePlusOneDay) {
+  if (x.toDouble() < GregorianChangeDatePlusOneDay ||
+      y.toDouble() < GregorianChangeDatePlusOneDay) {
     
     
     
@@ -1564,10 +1564,6 @@ bool js::intl_FormatDateTimeRange(JSContext* cx, unsigned argc, Value* vp) {
         formatToParts ? "formatRangeToParts" : "formatRange");
     return false;
   }
-
-  
-  MOZ_ASSERT(x.toDouble() <= y.toDouble(),
-             "start date mustn't be after the end date");
 
   mozilla::intl::DateTimeFormat* df =
       GetOrCreateDateTimeFormat(cx, dateTimeFormat);
