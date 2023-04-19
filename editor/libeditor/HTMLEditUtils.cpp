@@ -5,6 +5,7 @@
 
 #include "HTMLEditUtils.h"
 
+#include "AutoRangeArray.h"  
 #include "CSSEditUtils.h"    
 #include "EditAction.h"      
 #include "EditorBase.h"      
@@ -1931,6 +1932,38 @@ size_t HTMLEditUtils::CollectEmptyInlineContainerDescendants(
     }
   }
   return numberOfFoundElements;
+}
+
+
+
+
+
+SelectedTableCellScanner::SelectedTableCellScanner(
+    const AutoRangeArray& aRanges) {
+  if (aRanges.Ranges().IsEmpty()) {
+    return;
+  }
+  Element* firstSelectedCellElement =
+      HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(
+          aRanges.FirstRangeRef());
+  if (!firstSelectedCellElement) {
+    return;  
+  }
+  mSelectedCellElements.SetCapacity(aRanges.Ranges().Length());
+  mSelectedCellElements.AppendElement(*firstSelectedCellElement);
+  for (uint32_t i = 1; i < aRanges.Ranges().Length(); i++) {
+    nsRange* range = aRanges.Ranges()[i];
+    if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
+      continue;  
+    }
+    
+    
+    
+    if (Element* selectedCellElement =
+            HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range)) {
+      mSelectedCellElements.AppendElement(*selectedCellElement);
+    }
+  }
 }
 
 }  

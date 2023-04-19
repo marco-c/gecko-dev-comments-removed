@@ -71,7 +71,6 @@ using EditorRawDOMPointInText = EditorDOMPointBase<dom::Text*, nsIContent*>;
 
 
 
-class AutoRangeArray;           
 class AutoSelectionRangeArray;  
 class AutoStyleCacheArray;      
 class ChangeStyleTransaction;   
@@ -87,6 +86,7 @@ class StyleCache;
 class TextEditor;               
 class TypeInState;              
 
+class AutoRangeArray;               
 class ChangeAttributeTransaction;   
 class CompositionTransaction;       
 class DeleteNodeTransaction;        

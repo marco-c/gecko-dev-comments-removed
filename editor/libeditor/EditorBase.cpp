@@ -10,6 +10,7 @@
 #include <stdio.h>   
 #include <string.h>  
 
+#include "AutoRangeArray.h"              
 #include "ChangeAttributeTransaction.h"  
 #include "CompositionTransaction.h"      
 #include "DeleteNodeTransaction.h"       

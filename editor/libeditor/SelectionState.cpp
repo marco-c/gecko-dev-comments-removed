@@ -5,6 +5,7 @@
 
 #include "SelectionState.h"
 
+#include "AutoRangeArray.h"   
 #include "EditorUtils.h"      
 #include "HTMLEditHelpers.h"  
 
