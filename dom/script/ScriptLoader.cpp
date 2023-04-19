@@ -3628,10 +3628,16 @@ void ScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsReadyToRun());
   MOZ_ASSERT(aRequest->IsTopLevel());
 
+  
+  
+  
+  
   if (aRequest->GetScriptLoadContext()->mInAsyncList) {
-    MOZ_RELEASE_ASSERT(aRequest->isInList());
-    RefPtr<ScriptLoadRequest> req = mLoadingAsyncRequests.Steal(aRequest);
-    mLoadedAsyncRequests.AppendElement(req);
+    MOZ_ASSERT(aRequest->isInList());
+    if (aRequest->isInList()) {
+      RefPtr<ScriptLoadRequest> req = mLoadingAsyncRequests.Steal(aRequest);
+      mLoadedAsyncRequests.AppendElement(req);
+    }
   } else if (aRequest->IsModuleRequest() &&
              aRequest->AsModuleRequest()->IsDynamicImport()) {
     
