@@ -82,12 +82,16 @@ class SendQueue {
   
   
   
-  virtual void PrepareResetStreams(rtc::ArrayView<const StreamID> streams) = 0;
+  virtual void PrepareResetStream(StreamID stream_id) = 0;
+
+  
+  virtual bool HasStreamsReadyToBeReset() const = 0;
 
   
   
   
-  virtual bool CanResetStreams() const = 0;
+  
+  virtual std::vector<StreamID> GetStreamsReadyToBeReset() = 0;
 
   
   

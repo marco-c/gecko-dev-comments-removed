@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
@@ -65,8 +66,9 @@ class RRSendQueue : public SendQueue {
   bool Discard(IsUnordered unordered,
                StreamID stream_id,
                MID message_id) override;
-  void PrepareResetStreams(rtc::ArrayView<const StreamID> streams) override;
-  bool CanResetStreams() const override;
+  void PrepareResetStream(StreamID streams) override;
+  bool HasStreamsReadyToBeReset() const override;
+  std::vector<StreamID> GetStreamsReadyToBeReset() override;
   void CommitResetStreams() override;
   void RollbackResetStreams() override;
   void Reset() override;
@@ -108,15 +110,19 @@ class RRSendQueue : public SendQueue {
   
   class OutgoingStream {
    public:
-    explicit OutgoingStream(
+    OutgoingStream(
+        StreamID stream_id,
         std::function<void()> on_buffered_amount_low,
         ThresholdWatcher& total_buffered_amount,
         const DcSctpSocketHandoverState::OutgoingStream* state = nullptr)
-        : next_unordered_mid_(MID(state ? state->next_unordered_mid : 0)),
+        : stream_id_(stream_id),
+          next_unordered_mid_(MID(state ? state->next_unordered_mid : 0)),
           next_ordered_mid_(MID(state ? state->next_ordered_mid : 0)),
           next_ssn_(SSN(state ? state->next_ssn : 0)),
           buffered_amount_(std::move(on_buffered_amount_low)),
           total_buffered_amount_(total_buffered_amount) {}
+
+    StreamID stream_id() const { return stream_id_; }
 
     
     void Add(DcSctpMessage message,
@@ -137,9 +143,18 @@ class RRSendQueue : public SendQueue {
     void Pause();
 
     
-    void Resume() { is_paused_ = false; }
+    void Resume();
 
-    bool is_paused() const { return is_paused_; }
+    bool IsReadyToBeReset() const {
+      return pause_state_ == PauseState::kPaused;
+    }
+
+    bool IsResetting() const { return pause_state_ == PauseState::kResetting; }
+
+    void SetAsResetting() {
+      RTC_DCHECK(pause_state_ == PauseState::kPaused);
+      pause_state_ = PauseState::kResetting;
+    }
 
     
     void Reset();
@@ -155,6 +170,26 @@ class RRSendQueue : public SendQueue {
         DcSctpSocketHandoverState::OutgoingStream& state) const;
 
    private:
+    
+    
+    
+    
+    
+    
+    enum class PauseState {
+      
+      kNotPaused,
+      
+      
+      
+      kPending,
+      
+      kPaused,
+      
+      
+      kResetting,
+    };
+
     
     struct Item {
       explicit Item(DcSctpMessage msg,
@@ -182,8 +217,8 @@ class RRSendQueue : public SendQueue {
 
     bool IsConsistent() const;
 
-    
-    bool is_paused_ = false;
+    const StreamID stream_id_;
+    PauseState pause_state_ = PauseState::kNotPaused;
     
     MID next_unordered_mid_;
     MID next_ordered_mid_;
