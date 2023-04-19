@@ -818,7 +818,10 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 
   
   
-  masm.movePtr(ImmWord(0), FramePointer);
+  
+  
+  masm.andPtr(Imm32(int32_t(~ExitOrJitEntryFPTag)), FramePointer);
+
   masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
@@ -854,15 +857,8 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   
-  
   Label success, join;
-  masm.branchTestPtr(Assembler::Zero, FramePointer, FramePointer, &success);
-#ifdef DEBUG
-  Label ok;
-  masm.branchPtr(Assembler::Equal, FramePointer, Imm32(FailFP), &ok);
-  masm.breakpoint();
-  masm.bind(&ok);
-#endif
+  masm.branchPtr(Assembler::NotEqual, FramePointer, Imm32(FailFP), &success);
   masm.move32(Imm32(false), ReturnReg);
   masm.jump(&join);
   masm.bind(&success);

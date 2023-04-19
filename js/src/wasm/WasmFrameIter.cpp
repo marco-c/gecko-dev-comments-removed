@@ -955,7 +955,8 @@ static inline void AssertMatchesCallSite(void* callerPC, uint8_t* callerFP) {
   MOZ_ASSERT(callerCodeRange);
 
   if (callerCodeRange->isInterpEntry()) {
-    MOZ_ASSERT(callerFP == nullptr);
+    
+    
     return;
   }
 
