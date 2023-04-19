@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <list>
 #include <memory>
 #include <utility>
 
@@ -25,6 +26,8 @@
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
+
+
 
 
 
@@ -84,15 +87,11 @@ class AudioEncoderCopyRed final : public AudioEncoder {
                          rtc::Buffer* encoded) override;
 
  private:
-  size_t CalculateHeaderLength(size_t encoded_bytes) const;
-
   std::unique_ptr<AudioEncoder> speech_encoder_;
+  rtc::Buffer primary_encoded_;
   size_t max_packet_length_;
   int red_payload_type_;
-  rtc::Buffer secondary_encoded_;
-  EncodedInfoLeaf secondary_info_;
-  rtc::Buffer tertiary_encoded_;
-  EncodedInfoLeaf tertiary_info_;
+  std::list<std::pair<EncodedInfo, rtc::Buffer>> redundant_encodings_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCopyRed);
 };
