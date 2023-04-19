@@ -393,11 +393,16 @@ class SctpTransport::UsrSctpWrapper {
                                  struct sctp_rcvinfo rcv,
                                  int flags,
                                  void* ulp_info) {
+    SctpTransport* transport = GetTransportFromSocket(sock);
+    if (!transport) {
+      RTC_LOG(LS_ERROR)
+          << "OnSctpInboundPacket: Failed to get transport for socket " << sock
+          << "; possibly was already destroyed.";
+      return 0;
+    }
     
     
-    RTC_CHECK_EQ(static_cast<SctpTransport*>(ulp_info),
-                 GetTransportFromSocket(sock));
-    SctpTransport* transport = static_cast<SctpTransport*>(ulp_info);
+    RTC_CHECK_EQ(transport, static_cast<SctpTransport*>(ulp_info));
     int result =
         transport->OnDataOrNotificationFromSctp(data, length, rcv, flags);
     free(data);
@@ -440,7 +445,7 @@ class SctpTransport::UsrSctpWrapper {
     if (!transport) {
       RTC_LOG(LS_ERROR)
           << "SendThresholdCallback: Failed to get transport for socket "
-          << sock;
+          << sock << "; possibly was already destroyed.";
       return 0;
     }
     transport->OnSendThresholdCallback();
@@ -452,12 +457,17 @@ class SctpTransport::UsrSctpWrapper {
                                    void* ulp_info) {
     
     
-    RTC_CHECK_EQ(static_cast<SctpTransport*>(ulp_info),
-                 GetTransportFromSocket(sock));
+    
+    SctpTransport* transport = GetTransportFromSocket(sock);
+    if (!transport) {
+      RTC_LOG(LS_ERROR)
+          << "SendThresholdCallback: Failed to get transport for socket "
+          << sock << "; possibly was already destroyed.";
+      return 0;
+    }
     
     
-    
-    SctpTransport* transport = static_cast<SctpTransport*>(ulp_info);
+    RTC_CHECK_EQ(transport, static_cast<SctpTransport*>(ulp_info));
     transport->OnSendThresholdCallback();
     return 0;
   }
@@ -1122,8 +1132,8 @@ int SctpTransport::OnDataOrNotificationFromSctp(void* data,
   
   if (!data) {
     RTC_LOG(LS_INFO) << debug_name_
-                     << "->OnSctpInboundPacket(...): "
-                        "No data, closing.";
+                     << "->OnDataOrNotificationFromSctp(...): "
+                        "No data; association closed.";
     return kSctpSuccessReturn;
   }
 
@@ -1132,9 +1142,10 @@ int SctpTransport::OnDataOrNotificationFromSctp(void* data,
   
   
   if (flags & MSG_NOTIFICATION) {
-    RTC_LOG(LS_VERBOSE) << debug_name_
-                        << "->OnSctpInboundPacket(...): SCTP notification"
-                        << " length=" << length;
+    RTC_LOG(LS_VERBOSE)
+        << debug_name_
+        << "->OnDataOrNotificationFromSctp(...): SCTP notification"
+        << " length=" << length;
 
     
     rtc::CopyOnWriteBuffer notification(reinterpret_cast<uint8_t*>(data),
@@ -1148,7 +1159,7 @@ int SctpTransport::OnDataOrNotificationFromSctp(void* data,
   
   const uint32_t ppid = rtc::NetworkToHost32(rcv.rcv_ppid);
   RTC_LOG(LS_VERBOSE) << debug_name_
-                      << "->OnSctpInboundPacket(...): SCTP data chunk"
+                      << "->OnDataOrNotificationFromSctp(...): SCTP data chunk"
                       << " length=" << length << ", sid=" << rcv.rcv_sid
                       << ", ppid=" << ppid << ", ssn=" << rcv.rcv_ssn
                       << ", cum-tsn=" << rcv.rcv_cumtsn
