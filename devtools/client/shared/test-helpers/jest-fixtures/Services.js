@@ -552,6 +552,7 @@ const Services = {
 };
 
 function pref(name, value) {
+  
   const thePref = Services.prefs._findOrCreatePref(name, value, true, value);
   thePref._setDefault(value);
 }
