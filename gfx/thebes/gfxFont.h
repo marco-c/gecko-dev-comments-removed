@@ -317,8 +317,9 @@ class gfxFontCache final
 
   
   
-  gfxFont* Lookup(const gfxFontEntry* aFontEntry, const gfxFontStyle* aStyle,
-                  const gfxCharacterMap* aUnicodeRangeMap);
+  already_AddRefed<gfxFont> Lookup(const gfxFontEntry* aFontEntry,
+                                   const gfxFontStyle* aStyle,
+                                   const gfxCharacterMap* aUnicodeRangeMap);
 
   
   
@@ -334,13 +335,7 @@ class gfxFontCache final
   
   
   
-  void Flush() {
-    {
-      mozilla::MutexAutoLock lock(mMutex);
-      mFonts.Clear();
-    }
-    AgeAllGenerations();
-  }
+  void Flush();
 
   void FlushShapedWordCaches();
   void NotifyGlyphsChanged();
@@ -374,15 +369,7 @@ class gfxFontCache final
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontCacheSizes* aSizes) const;
 
-  void AgeAllGenerations() {
-    AutoLock lock(mMutex);
-    AgeAllGenerationsLocked(lock);
-  }
-
-  void RemoveObject(gfxFont* aFont) {
-    AutoLock lock(mMutex);
-    RemoveObjectLocked(aFont, lock);
-  }
+  void AgeAllGenerations();
 
  protected:
   class MemoryReporter final : public nsIMemoryReporter {
@@ -411,10 +398,10 @@ class gfxFontCache final
   
   void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&)
       REQUIRES(mMutex) override;
-  void NotifyExpired(gfxFont* aFont);
+  void NotifyHandlerEnd() override;
 
-  void DestroyFont(gfxFont* aFont);
   void DestroyFontLocked(gfxFont* aFont) REQUIRES(mMutex);
+  void DestroyDiscard(nsTArray<gfxFont*>& aDiscard);
 
   static gfxFontCache* gGlobalCache;
 
@@ -454,6 +441,8 @@ class gfxFontCache final
   };
 
   nsTHashtable<HashEntry> mFonts GUARDED_BY(mMutex);
+
+  nsTArray<gfxFont*> mTrackerDiscard GUARDED_BY(mMutex);
 
   static void WordCacheExpirationTimerCallback(nsITimer* aTimer, void* aCache);
 
@@ -1439,17 +1428,9 @@ class gfxFont {
 
   nsrefcnt AddRef(void) {
     MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-    nsExpirationState state;
-    {
-      mozilla::AutoReadLock lock(mLock);
-      state = mExpirationState;
-    }
-    if (state.IsTracked()) {
-      gfxFontCache::GetCache()->RemoveObject(this);
-    }
-    ++mRefCnt;
-    NS_LOG_ADDREF(this, mRefCnt, "gfxFont", sizeof(*this));
-    return mRefCnt;
+    nsrefcnt count = ++mRefCnt;
+    NS_LOG_ADDREF(this, count, "gfxFont", sizeof(*this));
+    return count;
   }
   nsrefcnt Release(void) {
     MOZ_ASSERT(0 != mRefCnt, "dup release");
@@ -1966,7 +1947,8 @@ class gfxFont {
 
   
   
-  gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel) const;
+  already_AddRefed<gfxFont> GetSubSuperscriptFont(
+      int32_t aAppUnitsPerDevPixel) const;
 
   bool HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh);
 
@@ -2017,7 +1999,7 @@ class gfxFont {
   
   
   
-  gfxFont* GetSmallCapsFont() const;
+  already_AddRefed<gfxFont> GetSmallCapsFont() const;
 
   
   
@@ -2239,7 +2221,9 @@ class gfxFont {
   
   float mFUnitsConvFactor;
 
-  nsExpirationState mExpirationState GUARDED_BY(mLock);
+  
+  
+  nsExpirationState mExpirationState;
 
   
   uint16_t mSpaceGlyph = 0;
