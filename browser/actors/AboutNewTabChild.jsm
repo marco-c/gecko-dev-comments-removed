@@ -37,7 +37,7 @@ class AboutNewTabChild extends JSWindowActorChild {
       
       
       if (
-        lazy.NimbusFeatures.aboutwelcome.isEnabled({ defaultValue: true }) &&
+        (lazy.NimbusFeatures.aboutwelcome.getVariable("enabled") ?? true) &&
         this.contentWindow.location.pathname.includes("welcome")
       ) {
         return;
