@@ -96,35 +96,22 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
     
     
     pos = GetSystemClockPosition(t);
-
-    RefPtr<AudioData> audio = mAudioQueue.PeekBack();
-    if (audio) {
-      mLastPacketEndTime = Some(audio->GetEndTime());
-    }
-
+    LOGV("%p: Getting position from the system clock %lf", this,
+         pos.ToSeconds());
     if (mAudioQueue.GetSize() > 0 && IsMuted()) {
       
       
       
       DropAudioPacketsIfNeeded(pos);
-    }
-
-    
-    
-    
-    
-    
-    
-    if (mLastPacketEndTime && pos > mLastPacketEndTime.value() &&
-        CheckIfEnded()) {
-      pos = mLastPacketEndTime.value();
-      mEndedPromiseHolder.ResolveIfExists(true, __func__);
-    } else if (!mLastPacketEndTime && CheckIfEnded()) {
-      mEndedPromiseHolder.ResolveIfExists(true, __func__);
+      
+      
+      
+      if (CheckIfEnded()) {
+        MOZ_ASSERT(!mAudioSink);
+        mEndedPromiseHolder.ResolveIfExists(true, __func__);
+      }
     }
     mLastClockSource = ClockSource::SystemClock;
-    LOGV("%p: Getting position from the system clock %lf", this,
-         pos.ToSeconds());
   } else {
     
     pos = mPlayDuration;
@@ -157,7 +144,7 @@ void AudioSinkWrapper::DropAudioPacketsIfNeeded(
     const TimeUnit& aMediaPosition) {
   RefPtr<AudioData> audio = mAudioQueue.PeekFront();
   uint32_t dropped = 0;
-  while (audio && audio->GetEndTime() < aMediaPosition) {
+  while (audio && audio->mTime + audio->mDuration < aMediaPosition) {
     
     audio = mAudioQueue.PopFront();
     dropped++;
