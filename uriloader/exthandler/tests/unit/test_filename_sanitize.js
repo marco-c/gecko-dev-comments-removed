@@ -133,6 +133,24 @@ add_task(async function validate_filename_method() {
     repeatStr + "sev.png"
   );
 
+  
+  Assert.equal(checkFilename(".png", 0), "index.png");
+
+  
+  Assert.equal(
+    checkFilename(".png", mimeService.VALIDATE_SANITIZE_ONLY),
+    "png"
+  );
+
+  
+  Assert.equal(checkFilename(".butterpecan.icecream", 0), "butterpecan.png");
+
+  
+  Assert.equal(
+    checkFilename(".butterpecan.icecream", mimeService.VALIDATE_SANITIZE_ONLY),
+    "butterpecan.icecream"
+  );
+
   let ext = ".fairlyLongExtension";
   Assert.equal(
     checkFilename(repeatStr + ext, mimeService.VALIDATE_SANITIZE_ONLY),
@@ -224,5 +242,39 @@ add_task(async function validate_filename_method() {
     mimeService.validateFileNameForSaving("sound.m4c", "audio/mp4", 0),
     AppConstants.platform == "macosx" ? "sound.mp4" : "sound.m4a",
     "sound.mpc"
+  );
+
+  
+  
+  Assert.equal(
+    mimeService.validateFileNameForSaving(
+      "라이브9.9만 시청컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장24%102,000원 브랜드데이 앵콜 🎁 1.등 유산균 컬처렐 특가!",
+      "text/unknown",
+      mimeService.VALIDATE_SANITIZE_ONLY
+    ),
+    "라이브9.9만 시청컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 .등 유산균 컬처렐 특가!",
+    "very long filename with extension"
+  );
+
+  
+  Assert.equal(
+    mimeService.validateFileNameForSaving(
+      "라이브9.9만 시청컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장24%102,000원 브랜드데이 앵콜 🎁 1등 유산균 컬처렐 특가!",
+      "text/unknown",
+      mimeService.VALIDATE_SANITIZE_ONLY
+    ),
+    "라이브9",
+    "another very long filename with long extension"
+  );
+
+  
+  Assert.equal(
+    mimeService.validateFileNameForSaving(
+      ".라이브99만 시청컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장24%102,000원 브랜드데이 앵콜 🎁 1등 유산균 컬처렐 특가!",
+      "text/unknown",
+      mimeService.VALIDATE_SANITIZE_ONLY
+    ),
+    "라이브99만 시청컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 + 3박스 더 (뚱랑이 굿즈 증정) + 선물용 쇼핑백 2장24%102,000원 브랜드데",
+    "very filename with extension only"
   );
 });
