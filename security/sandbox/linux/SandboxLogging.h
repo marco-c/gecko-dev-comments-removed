@@ -43,7 +43,7 @@ void SandboxLogError(const char* aMessage);
 
 
 
-#define SANDBOX_LOG_ERROR(fmt, args...)                        \
+#define SANDBOX_LOG(fmt, args...)                              \
   do {                                                         \
     char _sandboxLogBuf[SANDBOX_LOG_LEN];                      \
     ::base::strings::SafeSPrintf(_sandboxLogBuf, fmt, ##args); \
