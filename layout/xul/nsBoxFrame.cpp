@@ -761,7 +761,8 @@ void nsBoxFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
   nsBoxLayoutState state(PresContext());
 
   
-  const nsFrameList::Slice& newFrames = mFrames.AppendFrames(this, aFrameList);
+  const nsFrameList::Slice& newFrames =
+      mFrames.AppendFrames(this, std::move(aFrameList));
 
   
   if (mLayoutManager) mLayoutManager->ChildrenAppended(this, state, newFrames);

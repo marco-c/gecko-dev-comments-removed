@@ -211,7 +211,7 @@ void nsTableRowFrame::AppendFrames(ChildListID aListID,
 
   DrainSelfOverflowList();  
   const nsFrameList::Slice& newCells =
-      mFrames.AppendFrames(nullptr, aFrameList);
+      mFrames.AppendFrames(nullptr, std::move(aFrameList));
 
   
   nsTableFrame* tableFrame = GetTableFrame();

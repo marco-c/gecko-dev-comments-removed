@@ -10646,7 +10646,7 @@ void nsCSSFrameConstructor::ConstructBlock(
     
     
     
-    aFrameList.AppendFrames(nullptr, columnSpanSiblings);
+    aFrameList.AppendFrames(nullptr, std::move(columnSpanSiblings));
   }
 
   MOZ_ASSERT(columnSpanSiblings.IsEmpty(),
@@ -11115,7 +11115,7 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
         nsFrameList columnSpanSiblings =
             CreateColumnSpanSiblings(aState, blockFrame, blockKids,
                                      aIsAbsPosCB ? aInitialInline : nullptr);
-        aSiblings.AppendFrames(nullptr, columnSpanSiblings);
+        aSiblings.AppendFrames(nullptr, std::move(columnSpanSiblings));
       }
     }
 

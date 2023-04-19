@@ -934,7 +934,7 @@ void nsColumnSetFrame::DrainOverflowColumns() {
   if (overflows) {
     
     
-    mFrames.AppendFrames(nullptr, *overflows);
+    mFrames.AppendFrames(nullptr, std::move(*overflows));
   }
 }
 
