@@ -50,7 +50,6 @@ async def test_sandbox(bidi_session, new_tab):
 @pytest.mark.asyncio
 async def test_sandbox_with_empty_name(bidi_session, new_tab):
     
-    
     await bidi_session.script.call_function(
         function_declaration="() => window.foo = 'bar'",
         target=ContextTarget(new_tab["context"], ""),
@@ -66,12 +65,12 @@ async def test_sandbox_with_empty_name(bidi_session, new_tab):
     assert result == {"type": "string", "value": "bar"}
 
     
-    result = await bidi_session.script.evaluate(
-        expression="window.foo",
+    result = await bidi_session.script.call_function(
+        function_declaration="() => window.foo",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,
     )
-    assert result == {"type": "undefined"}
+    assert result == {"type": "string", "value": "bar"}
 
 
 @pytest.mark.asyncio
