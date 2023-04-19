@@ -33,9 +33,6 @@ constexpr float kInitialAdaptiveDigitalGainDb = 8.f;
 constexpr float kLimiterThresholdForAgcGainDbfs = -kHeadroomDbfs;
 
 
-constexpr float kMaxNoiseLevelDbfs = -50.f;
-
-
 
 
 constexpr float kVadConfidenceThreshold = 0.9f;

@@ -37,9 +37,12 @@ class AdaptiveDigitalGainApplier {
   
   
   
+  
+  
   AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper,
                              int adjacent_speech_frames_threshold,
-                             float max_gain_change_db_per_second);
+                             float max_gain_change_db_per_second,
+                             float max_output_noise_level_dbfs);
   AdaptiveDigitalGainApplier(const AdaptiveDigitalGainApplier&) = delete;
   AdaptiveDigitalGainApplier& operator=(const AdaptiveDigitalGainApplier&) =
       delete;
@@ -54,6 +57,7 @@ class AdaptiveDigitalGainApplier {
 
   const int adjacent_speech_frames_threshold_;
   const float max_gain_change_db_per_10ms_;
+  const float max_output_noise_level_dbfs_;
 
   int calls_since_last_gain_log_;
   int frames_to_gain_increase_allowed_;
