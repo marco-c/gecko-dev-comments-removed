@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { generateActorSpec, RetVal } = require("devtools/shared/protocol");
+const {
+  generateActorSpec,
+  RetVal,
+} = require("resource://devtools/shared/protocol.js");
 
 const manifestSpec = generateActorSpec({
   typeName: "manifest",

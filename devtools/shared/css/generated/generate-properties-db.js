@@ -14,7 +14,7 @@ var { require } = ChromeUtils.import(
 );
 var {
   generateCssProperties,
-} = require("devtools/server/actors/css-properties");
+} = require("resource://devtools/server/actors/css-properties.js");
 const InspectorUtils = require("InspectorUtils");
 
 

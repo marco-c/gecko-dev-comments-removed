@@ -6,7 +6,7 @@
 
 
 
-const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
+const { MESSAGE_CATEGORY } = require("resource://devtools/shared/constants.js");
 
 
 const httpServer = createTestHTTPServer();

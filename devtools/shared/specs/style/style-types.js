@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { RetVal, types } = require("devtools/shared/protocol");
+const { RetVal, types } = require("resource://devtools/shared/protocol.js");
 
 
 types.addActorType("domstylerule");

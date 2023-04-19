@@ -7,7 +7,7 @@
 const {
   getAdHocFrontOrPrimitiveGrip,
   
-} = require("devtools/client/fronts/object");
+} = require("resource://devtools/client/fronts/object.js");
 
 
 

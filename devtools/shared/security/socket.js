@@ -7,7 +7,7 @@
 
 Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
 
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
+var DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 var { dumpn } = DevToolsUtils;
 loader.lazyRequireGetter(
   this,

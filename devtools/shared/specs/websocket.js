@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { Arg, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  Arg,
+  generateActorSpec,
+} = require("resource://devtools/shared/protocol.js");
 
 const webSocketSpec = generateActorSpec({
   typeName: "webSocket",

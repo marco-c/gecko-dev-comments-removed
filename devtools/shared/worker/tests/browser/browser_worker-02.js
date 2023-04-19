@@ -5,7 +5,9 @@
 
 
 
-const { DevToolsWorker } = require("devtools/shared/worker/worker");
+const {
+  DevToolsWorker,
+} = require("resource://devtools/shared/worker/worker.js");
 
 const blob = new Blob(
   [

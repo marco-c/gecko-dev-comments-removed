@@ -5,7 +5,9 @@
 
 
 
-const { TYPES } = require("devtools/shared/commands/resource/resource-command");
+const {
+  TYPES,
+} = require("resource://devtools/shared/commands/resource/resource-command.js");
 
 add_task(async function() {
   const tab = await addTab(

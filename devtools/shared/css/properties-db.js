@@ -15,7 +15,7 @@ let db;
 
 
 try {
-  db = require("devtools/shared/css/generated/properties-db");
+  db = require("resource://devtools/shared/css/generated/properties-db.js");
 } catch (error) {
   console.error(
     `If this error is being displayed and "mach devtools-css-db" is not ` +

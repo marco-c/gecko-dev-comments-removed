@@ -18,7 +18,7 @@ add_task(async function() {
     );
     const {
       WebConsoleCommands,
-    } = require("devtools/server/actors/webconsole/utils");
+    } = require("resource://devtools/server/actors/webconsole/utils.js");
 
     
     this.WebConsoleCommands = WebConsoleCommands;

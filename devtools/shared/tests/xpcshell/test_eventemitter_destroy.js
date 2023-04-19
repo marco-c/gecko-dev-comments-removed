@@ -10,7 +10,7 @@ add_task(function() {
   );
 
   
-  require("devtools/shared/event-emitter");
+  require("resource://devtools/shared/event-emitter.js");
 
   const emitterRef = (function() {
     const loader = new DevToolsLoader();

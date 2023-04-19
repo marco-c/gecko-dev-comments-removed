@@ -3,7 +3,11 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  Arg,
+  RetVal,
+  generateActorSpec,
+} = require("resource://devtools/shared/protocol.js");
 
 const responsiveSpec = generateActorSpec({
   typeName: "responsive",

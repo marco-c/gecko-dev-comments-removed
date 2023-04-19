@@ -3,7 +3,11 @@
 
 "use strict";
 
-const { generateActorSpec, Arg, RetVal } = require("devtools/shared/protocol");
+const {
+  generateActorSpec,
+  Arg,
+  RetVal,
+} = require("resource://devtools/shared/protocol.js");
 
 const watcherSpecPrototype = {
   typeName: "watcher",

@@ -3,10 +3,14 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  Arg,
+  RetVal,
+  generateActorSpec,
+} = require("resource://devtools/shared/protocol.js");
 
 
-require("devtools/shared/specs/style/style-types");
+require("resource://devtools/shared/specs/style/style-types.js");
 
 const styleRuleSpec = generateActorSpec({
   typeName: "domstylerule",

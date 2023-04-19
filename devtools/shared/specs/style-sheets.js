@@ -3,10 +3,14 @@
 
 "use strict";
 
-const { Arg, RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  Arg,
+  RetVal,
+  generateActorSpec,
+} = require("resource://devtools/shared/protocol.js");
 
 
-require("devtools/shared/specs/style-sheet");
+require("resource://devtools/shared/specs/style-sheet.js");
 
 const styleSheetsSpec = generateActorSpec({
   typeName: "stylesheets",

@@ -24,10 +24,10 @@
 
 
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 const { dumpn, dumpv } = DevToolsUtils;
-const flags = require("devtools/shared/flags");
-const StreamUtils = require("devtools/shared/transport/stream-utils");
+const flags = require("resource://devtools/shared/flags.js");
+const StreamUtils = require("resource://devtools/shared/transport/stream-utils.js");
 
 DevToolsUtils.defineLazyGetter(this, "unicodeConverter", () => {
   

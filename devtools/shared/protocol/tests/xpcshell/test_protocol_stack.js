@@ -10,7 +10,7 @@
 
 
 
-var protocol = require("devtools/shared/protocol");
+var protocol = require("resource://devtools/shared/protocol.js");
 var { RetVal } = protocol;
 
 function simpleHello() {

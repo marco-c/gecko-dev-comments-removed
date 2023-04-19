@@ -6,7 +6,7 @@
 
 
 
-const asyncStorage = require("devtools/shared/async-storage");
+const asyncStorage = require("resource://devtools/shared/async-storage.js");
 add_task(async function() {
   is(typeof asyncStorage.length, "function", "API exists.");
   is(typeof asyncStorage.key, "function", "API exists.");

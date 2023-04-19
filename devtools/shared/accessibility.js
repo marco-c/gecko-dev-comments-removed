@@ -14,7 +14,7 @@ const {
   accessibility: {
     SCORES: { FAIL, AA, AAA },
   },
-} = require("devtools/shared/constants");
+} = require("resource://devtools/shared/constants.js");
 
 
 

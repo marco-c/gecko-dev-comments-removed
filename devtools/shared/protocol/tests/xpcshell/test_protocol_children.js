@@ -7,7 +7,7 @@
 
 
 
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 const { types, Arg, RetVal } = protocol;
 
 function simpleHello() {

@@ -4,10 +4,12 @@
 
 "use strict";
 
+const {
+  WorkersListener,
+  
+} = require("resource://devtools/client/shared/workers-listener.js");
 
-const { WorkersListener } = require("devtools/client/shared/workers-listener");
-
-const LegacyWorkersWatcher = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
+const LegacyWorkersWatcher = require("resource://devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher.js");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   

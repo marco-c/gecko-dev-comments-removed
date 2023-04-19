@@ -1363,7 +1363,7 @@ Decoder.decode = function(bits) {
 
 
 
-var DevToolsServer = require("devtools/server/devtools-server").DevToolsServer;
+var DevToolsServer = require("resource://devtools/server/devtools-server.js").DevToolsServer;
 
 var window = Services.wm.getMostRecentWindow(DevToolsServer.chromeWindowType);
 

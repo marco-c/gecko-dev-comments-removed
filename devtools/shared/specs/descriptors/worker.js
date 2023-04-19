@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  RetVal,
+  generateActorSpec,
+} = require("resource://devtools/shared/protocol.js");
 
 const workerDescriptorSpec = generateActorSpec({
   typeName: "workerDescriptor",
