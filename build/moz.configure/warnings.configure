@@ -144,18 +144,6 @@ with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
     check_and_add_warning("-Wsuper-class-method-mismatch")
 
 
-
-
-
-
-
-
-
-check_and_add_warning(
-    "-Werror=non-literal-null-conversion", when="--enable-warnings-as-errors"
-)
-
-
 check_and_add_warning("-Wstring-conversion")
 
 
