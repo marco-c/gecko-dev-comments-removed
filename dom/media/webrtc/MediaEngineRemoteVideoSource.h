@@ -34,7 +34,7 @@
 #include "NullTransport.h"
 
 
-#include "common_video/include/i420_buffer_pool.h"
+#include "common_video/include/video_frame_buffer_pool.h"
 #include "modules/video_capture/video_capture_defines.h"
 
 namespace webrtc {
@@ -173,7 +173,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
-  webrtc::I420BufferPool mRescalingBufferPool;
+  webrtc::VideoFrameBufferPool mRescalingBufferPool;
 
   
   

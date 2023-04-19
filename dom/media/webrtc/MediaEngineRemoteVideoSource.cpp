@@ -483,7 +483,7 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
       dst_width <= aProps.width() && dst_height <= aProps.height()) {
     
     rtc::scoped_refptr<webrtc::I420Buffer> scaledBuffer =
-        mRescalingBufferPool.CreateBuffer(dst_width, dst_height);
+        mRescalingBufferPool.CreateI420Buffer(dst_width, dst_height);
     if (!scaledBuffer) {
       MOZ_ASSERT_UNREACHABLE(
           "We might fail to allocate a buffer, but with this "

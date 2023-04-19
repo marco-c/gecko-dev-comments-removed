@@ -26,7 +26,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/call.h"
-#include "common_video/include/i420_buffer_pool.h"
+#include "common_video/include/video_frame_buffer_pool.h"
 #include "media/base/video_adapter.h"
 #include "media/base/video_broadcaster.h"
 #include <functional>
@@ -361,7 +361,7 @@ class WebrtcVideoConduit
 
   
   
-  webrtc::I420BufferPool mBufferPool;
+  webrtc::VideoFrameBufferPool mBufferPool;
 
   
   
