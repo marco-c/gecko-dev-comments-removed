@@ -6,9 +6,8 @@
 requestLongerTimeout(2);
 
 
-
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/dom/base/test/fullscreen/fullscreen_helpers.js",
+  "chrome://mochitests/content/browser/dom/html/test/fullscreen_helpers.js",
   this
 );
 
@@ -26,7 +25,7 @@ add_setup(async function() {
   );
 });
 
-async function startTests(setupFun, name) {
+async function startTests(testFun, name) {
   TEST_URLS.forEach(url => {
     add_task(async () => {
       info(`Test ${name}, url: ${url}`);
@@ -36,10 +35,7 @@ async function startTests(setupFun, name) {
           url,
         },
         async function(browser) {
-          let promiseFsState = Promise.all([
-            setupFun(browser),
-            waitForFullscreenState(document, false, true),
-          ]);
+          let promiseFsState = waitForFullscreenState(document, true);
           
           SpecialPowers.spawn(
             browser.browsingContext.children[0].children[0],
@@ -50,6 +46,11 @@ async function startTests(setupFun, name) {
               }, 0);
             }
           );
+          await promiseFsState;
+
+          
+          promiseFsState = waitForFullscreenState(document, false);
+          await testFun(browser);
           await promiseFsState;
 
           
@@ -71,51 +72,45 @@ function RemoveElementFromRemoteDocument(aBrowsingContext, aElementId) {
   return SpecialPowers.spawn(aBrowsingContext, [aElementId], async function(
     id
   ) {
-    content.document.addEventListener(
-      "fullscreenchange",
-      function() {
-        content.document.getElementById(id).remove();
-      },
-      { once: true }
-    );
+    content.document.getElementById(id).remove();
   });
 }
 
 startTests(async browser => {
-  
-  let promise = waitRemoteFullscreenExitEvents([
+  let promiseRemoteFsState = waitRemoteFullscreenExitEvents([
     
     [browser.browsingContext, "toplevel"],
   ]);
+  
   await RemoveElementFromRemoteDocument(browser.browsingContext, "div");
-  return promise;
+  await promiseRemoteFsState;
 }, "document_mutation_toplevel");
 
 startTests(async browser => {
-  
-  let promise = waitRemoteFullscreenExitEvents([
+  let promiseRemoteFsState = waitRemoteFullscreenExitEvents([
     
     [browser.browsingContext, "toplevel"],
     [browser.browsingContext.children[0], "middle"],
   ]);
+  
   await RemoveElementFromRemoteDocument(
     browser.browsingContext.children[0],
     "div"
   );
-  return promise;
+  await promiseRemoteFsState;
 }, "document_mutation_middle_frame");
 
 startTests(async browser => {
-  
-  let promise = waitRemoteFullscreenExitEvents([
+  let promiseRemoteFsState = waitRemoteFullscreenExitEvents([
     
     [browser.browsingContext, "toplevel"],
     [browser.browsingContext.children[0], "middle"],
     [browser.browsingContext.children[0].children[0], "inner"],
   ]);
+  
   await RemoveElementFromRemoteDocument(
     browser.browsingContext.children[0].children[0],
     "div"
   );
-  return promise;
+  await promiseRemoteFsState;
 }, "document_mutation_inner_frame");

@@ -45,8 +45,9 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
       
       
       return topWin.document.fullscreenElement || inNormalMode(topWin);
+    } else {
+      throw "'type' must be either 'enter', or 'exit'.";
     }
-    throw new Error("'type' must be either 'enter', or 'exit'.");
   }
   function invokeCallback(event) {
     

@@ -6,9 +6,8 @@
 requestLongerTimeout(2);
 
 
-
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/dom/base/test/fullscreen/fullscreen_helpers.js",
+  "chrome://mochitests/content/browser/dom/html/test/fullscreen_helpers.js",
   this
 );
 
@@ -23,35 +22,6 @@ add_setup(async function() {
     ["full-screen-api.transition-duration.enter", "0 0"],
     ["full-screen-api.transition-duration.leave", "0 0"],
     ["full-screen-api.allow-trusted-requests-only", false]
-  );
-});
-
-add_task(async function navigation() {
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: `data:text/html,
-      <button id="button">Click here</button>
-      <script>
-        let button = document.getElementById("button");
-        button.addEventListener("click", function() {
-          button.requestFullscreen();
-          location.href = "about:blank";
-        });
-      </script>`,
-    },
-    async function(browser) {
-      let promiseFsState = waitForFullscreenState(document, false, true);
-      BrowserTestUtils.synthesizeMouseAtCenter("#button", {}, browser);
-      await promiseFsState;
-
-      
-      ok(!window.fullScreen, "The chrome window should not be in fullscreen");
-      ok(
-        !document.documentElement.hasAttribute("inDOMFullscreen"),
-        "The chrome document should not be in fullscreen"
-      );
-    }
   );
 });
 
@@ -96,12 +66,14 @@ async function startTests(setupFun, name) {
   });
 }
 
-function NavigateRemoteDocument(aBrowsingContext, aURL) {
-  return SpecialPowers.spawn(aBrowsingContext, [aURL], async function(url) {
+function RemoveElementFromRemoteDocument(aBrowsingContext, aElementId) {
+  return SpecialPowers.spawn(aBrowsingContext, [aElementId], async function(
+    id
+  ) {
     content.document.addEventListener(
       "fullscreenchange",
       function() {
-        content.location.href = url;
+        content.document.getElementById(id).remove();
       },
       { once: true }
     );
@@ -110,21 +82,13 @@ function NavigateRemoteDocument(aBrowsingContext, aURL) {
 
 startTests(async browser => {
   
-  await NavigateRemoteDocument(browser.browsingContext, "about:blank");
-}, "navigation_toplevel");
-
-startTests(async browser => {
-  
   let promise = waitRemoteFullscreenExitEvents([
     
     [browser.browsingContext, "toplevel"],
   ]);
-  await NavigateRemoteDocument(
-    browser.browsingContext.children[0],
-    "about:blank"
-  );
+  await RemoveElementFromRemoteDocument(browser.browsingContext, "div");
   return promise;
-}, "navigation_middle_frame");
+}, "document_mutation_toplevel");
 
 startTests(async browser => {
   
@@ -133,9 +97,24 @@ startTests(async browser => {
     [browser.browsingContext, "toplevel"],
     [browser.browsingContext.children[0], "middle"],
   ]);
-  await NavigateRemoteDocument(
-    browser.browsingContext.children[0].children[0],
-    "about:blank"
+  await RemoveElementFromRemoteDocument(
+    browser.browsingContext.children[0],
+    "div"
   );
   return promise;
-}, "navigation_inner_frame");
+}, "document_mutation_middle_frame");
+
+startTests(async browser => {
+  
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+    [browser.browsingContext.children[0], "middle"],
+    [browser.browsingContext.children[0].children[0], "inner"],
+  ]);
+  await RemoveElementFromRemoteDocument(
+    browser.browsingContext.children[0].children[0],
+    "div"
+  );
+  return promise;
+}, "document_mutation_inner_frame");
