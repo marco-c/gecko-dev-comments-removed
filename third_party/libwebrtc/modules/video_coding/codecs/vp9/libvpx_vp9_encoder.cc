@@ -1902,21 +1902,17 @@ LibvpxVp9Encoder::ParsePerformanceFlagsFromTrials(
 LibvpxVp9Encoder::PerformanceFlags
 LibvpxVp9Encoder::GetDefaultPerformanceFlags() {
   PerformanceFlags flags;
-  flags.use_per_layer_speed = true;
+  flags.use_per_layer_speed = false;
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
   
   flags.settings_by_resolution[0] = {8, 8, 0};
 #else
   
   
-  
-  
-  flags.settings_by_resolution[0] = {5, 8, 1};
+  flags.settings_by_resolution[0] = {5, 5, 0};
 
   
-  
-  
-  flags.settings_by_resolution[352 * 288] = {7, 8, 0};
+  flags.settings_by_resolution[352 * 288] = {7, 7, 0};
 #endif
   return flags;
 }
