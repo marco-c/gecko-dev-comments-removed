@@ -331,6 +331,11 @@ class ForwardErrorCorrection {
   void DiscardOldRecoveredPackets(RecoveredPacketList* recovered_packets);
 
   
+  
+  bool IsOldFecPacket(const ReceivedFecPacket& fec_packet,
+                      const RecoveredPacketList* recovered_packets);
+
+  
   const uint32_t ssrc_;
   const uint32_t protected_media_ssrc_;
 

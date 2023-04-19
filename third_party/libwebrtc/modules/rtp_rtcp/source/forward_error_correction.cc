@@ -31,6 +31,8 @@ namespace webrtc {
 namespace {
 
 constexpr size_t kTransportOverhead = 28;
+
+constexpr uint16_t kOldSequenceThreshold = 0x3fff;
 }  
 
 ForwardErrorCorrection::Packet::Packet() : data(0), ref_count_(0) {}
@@ -508,9 +510,6 @@ void ForwardErrorCorrection::InsertPacket(
   
   
   
-  
-  
-  
   if (!received_fec_packets_.empty() &&
       received_packet.ssrc == received_fec_packets_.front()->ssrc) {
     
@@ -521,7 +520,7 @@ void ForwardErrorCorrection::InsertPacket(
     auto it = received_fec_packets_.begin();
     while (it != received_fec_packets_.end()) {
       uint16_t seq_num_diff = MinDiff(received_packet.seq_num, (*it)->seq_num);
-      if (seq_num_diff > 0x3fff) {
+      if (seq_num_diff > kOldSequenceThreshold) {
         it = received_fec_packets_.erase(it);
       } else {
         
@@ -698,7 +697,8 @@ void ForwardErrorCorrection::AttemptRecovery(
       
       
       fec_packet_it = received_fec_packets_.begin();
-    } else if (packets_missing == 0) {
+    } else if (packets_missing == 0 ||
+               IsOldFecPacket(**fec_packet_it, recovered_packets)) {
       
       
       fec_packet_it = received_fec_packets_.erase(fec_packet_it);
@@ -729,6 +729,23 @@ void ForwardErrorCorrection::DiscardOldRecoveredPackets(
     recovered_packets->pop_front();
   }
   RTC_DCHECK_LE(recovered_packets->size(), max_media_packets);
+}
+
+bool ForwardErrorCorrection::IsOldFecPacket(
+    const ReceivedFecPacket& fec_packet,
+    const RecoveredPacketList* recovered_packets) {
+  if (recovered_packets->empty()) {
+    return false;
+  }
+
+  const uint16_t back_recovered_seq_num = recovered_packets->back()->seq_num;
+  const uint16_t last_protected_seq_num =
+      fec_packet.protected_packets.back()->seq_num;
+
+  
+  
+  return (MinDiff(back_recovered_seq_num, last_protected_seq_num) >
+          kOldSequenceThreshold);
 }
 
 uint16_t ForwardErrorCorrection::ParseSequenceNumber(const uint8_t* packet) {
