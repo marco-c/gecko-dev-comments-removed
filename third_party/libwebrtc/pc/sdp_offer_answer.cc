@@ -2497,18 +2497,42 @@ void SdpOfferAnswerHandler::AddIceCandidate(
                 : kAddIceCandidateFailClosed;
         NoteAddIceCandidateResult(result);
         operations_chain_callback();
-        if (result == kAddIceCandidateFailClosed) {
-          callback(RTCError(
-              RTCErrorType::INVALID_STATE,
-              "AddIceCandidate failed because the session was shut down"));
-        } else if (result != kAddIceCandidateSuccess &&
-                   result != kAddIceCandidateFailNotReady) {
-          
-          
-          callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                            "Error processing ICE candidate"));
-        } else {
-          callback(RTCError::OK());
+        switch (result) {
+          case AddIceCandidateResult::kAddIceCandidateSuccess:
+          case AddIceCandidateResult::kAddIceCandidateFailNotReady:
+            
+            callback(RTCError::OK());
+            break;
+          case AddIceCandidateResult::kAddIceCandidateFailClosed:
+            
+            
+            callback(RTCError(
+                RTCErrorType::INVALID_STATE,
+                "AddIceCandidate failed because the session was shut down"));
+            break;
+          case AddIceCandidateResult::kAddIceCandidateFailNoRemoteDescription:
+            
+            
+            callback(RTCError(RTCErrorType::INVALID_STATE,
+                              "The remote description was null"));
+            break;
+          case AddIceCandidateResult::kAddIceCandidateFailNullCandidate:
+            
+            
+            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                              "Error processing ICE candidate"));
+            break;
+          case AddIceCandidateResult::kAddIceCandidateFailNotValid:
+          case AddIceCandidateResult::kAddIceCandidateFailInAddition:
+          case AddIceCandidateResult::kAddIceCandidateFailNotUsable:
+            
+            
+            
+            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                              "Error processing ICE candidate"));
+            break;
+          default:
+            RTC_DCHECK_NOTREACHED();
         }
       });
 }
