@@ -407,12 +407,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     
     
-    
-    bool enable_rtp_data_channel = false;
-
-    
-    
-    
     absl::optional<int> screencast_min_bitrate;
 
     
