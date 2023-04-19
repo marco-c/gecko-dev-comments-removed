@@ -272,6 +272,9 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
     
     RtpPacketHistory packet_history;
     
+    
+    const bool deferred_sequencing_;
+    
     PacketSequencer sequencer_;
     
     RtpSenderEgress packet_sender;
@@ -313,6 +316,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   TaskQueueBase* const worker_queue_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker pacer_thread_checker_;
 
   std::unique_ptr<RtpSenderContext> rtp_sender_;
   RTCPSender rtcp_sender_;
