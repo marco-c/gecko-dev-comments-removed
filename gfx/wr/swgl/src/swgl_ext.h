@@ -1388,25 +1388,51 @@ static inline WideRGBA8 sampleGradient(sampler2D sampler, int address,
 
 template <bool BLEND>
 static bool commitLinearGradient(sampler2D sampler, int address, float size,
-                                 bool repeat, Float offset, uint32_t* buf,
-                                 int span) {
+                                 bool tileRepeat, bool gradientRepeat, vec2 pos,
+                                 const vec2_scalar& scaleDir, float startOffset,
+                                 uint32_t* buf, int span) {
   assert(sampler->format == TextureFormat::RGBA32F);
   assert(address >= 0 && address < int(sampler->height * sampler->stride));
   GradientStops* stops = (GradientStops*)&sampler->buf[address];
   
   
   
-  float delta = (offset.y - offset.x) * 4.0f;
+  vec2_scalar posStep = dFdx(pos) * 4.0f;
+  float delta = dot(posStep, scaleDir);
   if (!isfinite(delta)) {
     return false;
   }
+  
+  
+  
+  vec2_scalar distCoeffsX = {0.25f * span, 0.0f};
+  vec2_scalar distCoeffsY = distCoeffsX;
+  if (tileRepeat) {
+    if (posStep.x != 0.0f) {
+      distCoeffsX = vec2_scalar{step(0.0f, posStep.x), 1.0f} * recip(posStep.x);
+    }
+    if (posStep.y != 0.0f) {
+      distCoeffsY = vec2_scalar{step(0.0f, posStep.y), 1.0f} * recip(posStep.y);
+    }
+  }
   for (; span > 0;) {
     
-    if (repeat) {
-      offset = fract(offset);
+    float chunks = 0.25f * span;
+    vec2 repeatPos = pos;
+    if (tileRepeat) {
+      
+      
+      repeatPos = fract(pos);
+      chunks = min(chunks, distCoeffsX.x - repeatPos.x.x * distCoeffsX.y);
+      chunks = min(chunks, distCoeffsY.x - repeatPos.y.x * distCoeffsY.y);
     }
     
-    float chunks = 0.25f * span;
+    Float offset =
+        repeatPos.x * scaleDir.x + repeatPos.y * scaleDir.y - startOffset;
+    
+    if (gradientRepeat) {
+      offset = fract(offset);
+    }
     
     
     
@@ -1517,8 +1543,12 @@ static bool commitLinearGradient(sampler2D sampler, int address, float size,
       }
       
       
-      offset += inside * delta;
-      if (repeat) {
+      
+      pos += posStep * float(inside);
+      repeatPos = tileRepeat ? fract(pos) : pos;
+      offset =
+          repeatPos.x * scaleDir.x + repeatPos.y * scaleDir.y - startOffset;
+      if (gradientRepeat) {
         offset = fract(offset);
       }
     }
@@ -1532,7 +1562,7 @@ static bool commitLinearGradient(sampler2D sampler, int address, float size,
     commit_blend_span<BLEND>(buf, sampleGradient(sampler, address, entry));
     span -= 4;
     buf += 4;
-    offset += delta;
+    pos += posStep;
   }
   return true;
 }
@@ -1543,22 +1573,24 @@ static bool commitLinearGradient(sampler2D sampler, int address, float size,
 
 
 
-#define swgl_commitLinearGradientRGBA8(sampler, address, size, repeat, offset) \
-  do {                                                                         \
-    bool drawn = false;                                                        \
-    if (blend_key) {                                                           \
-      drawn =                                                                  \
-          commitLinearGradient<true>(sampler, address, size, repeat, offset,   \
-                                     swgl_OutRGBA8, swgl_SpanLength);          \
-    } else {                                                                   \
-      drawn =                                                                  \
-          commitLinearGradient<false>(sampler, address, size, repeat, offset,  \
-                                      swgl_OutRGBA8, swgl_SpanLength);         \
-    }                                                                          \
-    if (drawn) {                                                               \
-      swgl_OutRGBA8 += swgl_SpanLength;                                        \
-      swgl_SpanLength = 0;                                                     \
-    }                                                                          \
+#define swgl_commitLinearGradientRGBA8(sampler, address, size, tileRepeat,   \
+                                       gradientRepeat, pos, scaleDir,        \
+                                       startOffset)                          \
+  do {                                                                       \
+    bool drawn = false;                                                      \
+    if (blend_key) {                                                         \
+      drawn = commitLinearGradient<true>(                                    \
+          sampler, address, size, tileRepeat, gradientRepeat, pos, scaleDir, \
+          startOffset, swgl_OutRGBA8, swgl_SpanLength);                      \
+    } else {                                                                 \
+      drawn = commitLinearGradient<false>(                                   \
+          sampler, address, size, tileRepeat, gradientRepeat, pos, scaleDir, \
+          startOffset, swgl_OutRGBA8, swgl_SpanLength);                      \
+    }                                                                        \
+    if (drawn) {                                                             \
+      swgl_OutRGBA8 += swgl_SpanLength;                                      \
+      swgl_SpanLength = 0;                                                   \
+    }                                                                        \
   } while (0)
 
 template <bool CLAMP, typename V>
