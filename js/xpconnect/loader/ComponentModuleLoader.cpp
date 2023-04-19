@@ -9,7 +9,7 @@
 #include "nsISupportsImpl.h"
 
 #include "js/loader/ModuleLoadRequest.h"
-#include "mozJSComponentLoader.h"
+#include "mozJSModuleLoader.h"
 
 using namespace JS::loader;
 
@@ -84,7 +84,7 @@ already_AddRefed<ModuleLoadRequest> ComponentModuleLoader::CreateDynamicImport(
 
 bool ComponentModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,
                                          nsresult* aRvOut) {
-  return mozJSComponentLoader::IsTrustedScheme(aRequest->mURI);
+  return mozJSModuleLoader::IsTrustedScheme(aRequest->mURI);
 }
 
 nsresult ComponentModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
@@ -104,7 +104,7 @@ nsresult ComponentModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   JSContext* cx = jsapi.cx();
   RootedScript script(cx);
   nsresult rv =
-      mozJSComponentLoader::LoadSingleModuleScript(cx, aRequest->mURI, &script);
+      mozJSModuleLoader::LoadSingleModuleScript(cx, aRequest->mURI, &script);
   MOZ_ASSERT_IF(jsapi.HasException(), NS_FAILED(rv));
   MOZ_ASSERT(bool(script) == NS_SUCCEEDED(rv));
 

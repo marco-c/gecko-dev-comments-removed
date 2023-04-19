@@ -96,10 +96,6 @@ extern "C" const char* __lsan_default_suppressions() {
          
          
          "leak:nsComponentManagerImpl\n"
-         
-         
-         "leak:mozJSComponentLoader::LoadModule\n"
-         "leak:nsNativeModuleLoader::LoadModule\n"
 
          
          "leak:pixman_implementation_lookup_composite\n"
@@ -187,7 +183,7 @@ extern "C" const char* __lsan_default_suppressions() {
          "leak:js::frontend::GeneralParser\n"
          "leak:js::frontend::Parse\n"
          "leak:xpc::CIGSHelper\n"
-         "leak:mozJSComponentLoader\n"
+         "leak:mozJSModuleLoader\n"
          "leak:mozilla::xpcom::ConstructJSMComponent\n"
          "leak:XPCWrappedNativeJSOps\n"
 

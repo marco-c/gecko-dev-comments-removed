@@ -21,7 +21,7 @@ UNIFIED_SOURCES += [
 
 
 SOURCES += [
-    "mozJSComponentLoader.cpp",
+    "mozJSModuleLoader.cpp",
 ]
 
 IPDL_SOURCES += [

@@ -12,7 +12,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ScopeExit.h"
-#include "mozJSComponentLoader.h"
+#include "mozJSModuleLoader.h"
 #include "jsapi.h"
 #include "js/CallAndConstruct.h"    
 #include "js/PropertyAndElement.h"  
@@ -61,7 +61,7 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
   JSAutoRealm ar(aCx, xpc::PrivilegedJunkScope());
 
   
-  RefPtr<mozJSComponentLoader> loader = mozJSComponentLoader::Get();
+  RefPtr loader = mozJSModuleLoader::Get();
   MOZ_ASSERT(loader);
 
   

@@ -18,7 +18,7 @@
 #include "mozilla/TaskController.h"
 #include "mozilla/Unused.h"
 #include "mozilla/XPCOM.h"
-#include "mozJSComponentLoader.h"
+#include "mozJSModuleLoader.h"
 #include "nsXULAppAPI.h"
 
 #ifndef ANDROID
@@ -689,7 +689,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   
-  mozJSComponentLoader::Unload();
+  mozJSModuleLoader::Unload();
 
   
   
