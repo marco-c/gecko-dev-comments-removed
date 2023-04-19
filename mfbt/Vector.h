@@ -109,8 +109,9 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
   size_t newMinCap = aOldElts + aIncr;
 
   
+
   if (MOZ_UNLIKELY(newMinCap < aOldElts ||
-                   newMinCap & tl::MulOverflowMask<2 * EltSize>::value)) {
+                   newMinCap & tl::MulOverflowMask<4 * EltSize>::value)) {
     return 0;
   }
 
