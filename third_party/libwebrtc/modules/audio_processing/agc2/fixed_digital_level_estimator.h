@@ -31,7 +31,7 @@ class FixedDigitalLevelEstimator {
   
   
   
-  FixedDigitalLevelEstimator(size_t sample_rate_hz,
+  FixedDigitalLevelEstimator(int sample_rate_hz,
                              ApmDataDumper* apm_data_dumper);
 
   
@@ -43,7 +43,7 @@ class FixedDigitalLevelEstimator {
 
   
   
-  void SetSampleRate(size_t sample_rate_hz);
+  void SetSampleRate(int sample_rate_hz);
 
   
   void Reset();
@@ -55,8 +55,8 @@ class FixedDigitalLevelEstimator {
 
   ApmDataDumper* const apm_data_dumper_ = nullptr;
   float filter_state_level_;
-  size_t samples_in_frame_;
-  size_t samples_in_sub_frame_;
+  int samples_in_frame_;
+  int samples_in_sub_frame_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FixedDigitalLevelEstimator);
 };
