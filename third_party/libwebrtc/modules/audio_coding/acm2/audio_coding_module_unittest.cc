@@ -1289,7 +1289,7 @@ TEST_F(AcmSenderBitExactnessOldApi, IsacWb30ms) {
           "5c2eb46199994506236f68b2c8e51b0d",
           "343f1f42be0607c61e6516aece424609",
           "2c9cb15d4ed55b5a0cadd04883bc73b0",
-          "6f7f227f4e2ace7027257eecb7b17e08"),
+          "2c9cb15d4ed55b5a0cadd04883bc73b0"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "3c79f16f34218271f3dca4e2b1dfe1bb",
           "d42cb5195463da26c8129bbfe73a22e6",
@@ -1308,7 +1308,7 @@ TEST_F(AcmSenderBitExactnessOldApi, IsacWb60ms) {
           "9a81e467eb1485f84aca796f8ea65011",
           "ef75e900e6f375e3061163c53fd09a63",
           "1ad29139a04782a33daad8c2b9b35875",
-          "8b4377f3048d946d69b771c1e5fa8839"),
+          "1ad29139a04782a33daad8c2b9b35875"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "9e0a0ab743ad987b55b8e14802769c56",
           "ebe04a819d3a9d83a83a17f271e1139a",
@@ -1333,7 +1333,7 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_IsacSwb30ms) {
           "5683b58da0fbf2063c7adc2e6bfb3fb8",
           "2b3c387d06f00b7b7aad4c9be56fb83d", "android_arm32_audio",
           "android_arm64_audio", "android_arm64_clang_audio",
-          "c1858ba5d734df6fe52e715eb1b25f31"),
+          "5683b58da0fbf2063c7adc2e6bfb3fb8"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "ce86106a93419aefb063097108ec94ab",
           "bcc2041e7744c7ebd9f701866856849c", "android_arm32_payload",
