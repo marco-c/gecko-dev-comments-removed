@@ -154,8 +154,6 @@ static const char kMediaStreamSemantic[] = "WMS";
 static const char kSsrcAttributeMsid[] = "msid";
 static const char kDefaultMsid[] = "default";
 static const char kNoStreamMsid[] = "-";
-static const char kSsrcAttributeMslabel[] = "mslabel";
-static const char kSSrcAttributeLabel[] = "label";
 static const char kAttributeSsrcGroup[] = "ssrc-group";
 static const char kAttributeCrypto[] = "crypto";
 static const char kAttributeCandidate[] = "candidate";
@@ -267,11 +265,6 @@ struct SsrcInfo {
   std::string cname;
   std::string stream_id;
   std::string track_id;
-
-  
-  
-  std::string label;
-  std::string mslabel;
 };
 typedef std::vector<SsrcInfo> SsrcInfoVec;
 typedef std::vector<SsrcGroup> SsrcGroupVec;
@@ -724,12 +717,6 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
       
       stream_ids.push_back(ssrc_info.stream_id);
       track_id = ssrc_info.track_id;
-    } else if (!ssrc_info.mslabel.empty()) {
-      
-      
-      
-      stream_ids.push_back(ssrc_info.mslabel);
-      track_id = ssrc_info.label;
     } else {
       
       
@@ -1740,15 +1727,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
            << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
            << kSdpDelimiterSpace << track.id;
         AddLine(os.str(), message);
-
-        
-        
-        
-        
-        
-        
-        AddSsrcLine(ssrc, kSsrcAttributeMslabel, stream_id, message);
-        AddSsrcLine(ssrc, kSSrcAttributeLabel, track.id, message);
       }
     }
 
@@ -3469,14 +3447,8 @@ bool ParseSsrcAttribute(const std::string& line,
       ssrc_info.track_id = fields[1];
     }
     *msid_signaling |= cricket::kMsidSignalingSsrcAttribute;
-  } else if (attribute == kSsrcAttributeMslabel) {
-    
-    
-    ssrc_info.mslabel = value;
-  } else if (attribute == kSSrcAttributeLabel) {
-    
-    
-    ssrc_info.label = value;
+  } else {
+    RTC_LOG(LS_INFO) << "Ignored unknown ssrc-specific attribute: " << line;
   }
   return true;
 }
