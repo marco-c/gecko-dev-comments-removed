@@ -999,6 +999,13 @@ void DumpTaggedParserAtomIndexNoQuote(GenericPrinter& out,
 #endif
 
 } 
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+void DumpImmutableScriptFlags(js::JSONPrinter& json,
+                              ImmutableScriptFlags immutableFlags);
+void DumpFunctionFlagsItems(js::JSONPrinter& json, FunctionFlags functionFlags);
+#endif
+
 } 
 
 #endif 
