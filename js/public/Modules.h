@@ -268,6 +268,11 @@ extern JS_PUBLIC_API JSObject* GetModuleForNamespace(
 extern JS_PUBLIC_API JSObject* GetModuleEnvironment(
     JSContext* cx, Handle<JSObject*> moduleObj);
 
+
+
+
+extern JS_PUBLIC_API void ClearModuleEnvironment(JSObject* moduleObj);
+
 }  
 
 #endif  

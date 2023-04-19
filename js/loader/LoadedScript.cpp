@@ -135,6 +135,14 @@ ModuleScript::ModuleScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL)
   MOZ_ASSERT(!HasErrorToRethrow());
 }
 
+void ModuleScript::Shutdown() {
+  if (mModuleRecord) {
+    JS::ClearModuleEnvironment(mModuleRecord);
+  }
+
+  UnlinkModuleRecord();
+}
+
 void ModuleScript::UnlinkModuleRecord() {
   
   
