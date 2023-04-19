@@ -2563,11 +2563,6 @@ pref("font.size.monospace.x-math", 13);
   
   
   
-  pref("intl.tsf.hack.japanist10.do_not_return_no_layout_error_of_composition_string", true);
-  
-  
-  
-  
   pref("intl.tsf.hack.free_chang_jie.do_not_return_no_layout_error", true);
   
   pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
