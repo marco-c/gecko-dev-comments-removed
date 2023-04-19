@@ -38,19 +38,6 @@ class XULResizerElement final : public nsXULElement {
 
   nsIContent* GetContentToResize() const;
 
-  
-
-
-
-
-
-
-
-
-
-  static void AdjustDimensions(int32_t* aPos, int32_t* aSize, int32_t aMovement,
-                               int8_t aResizerDirection);
-
   struct SizeInfo {
     nsCString width, height;
   };
@@ -63,7 +50,7 @@ class XULResizerElement final : public nsXULElement {
                                        const SizeInfo& aSizeInfo);
   static void RestoreOriginalSize(nsIContent* aContent);
 
-  LayoutDeviceIntRect mMouseDownRect;
+  nsSize mMouseDownSize;
   LayoutDeviceIntPoint mMouseDownPoint;
   bool mTrackingMouseMove = false;
 };

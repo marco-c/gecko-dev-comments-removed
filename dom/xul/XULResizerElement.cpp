@@ -15,6 +15,7 @@
 #include "nsContentUtils.h"
 #include "nsICSSDeclaration.h"
 #include "nsIFrame.h"
+#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsStyledElement.h"
 
@@ -127,22 +128,15 @@ void XULResizerElement::PostHandleEventInternal(
           break;
         }
         
-        
-        
-        nsRect rect = frame->GetScreenRectInAppUnits();
-        if (frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
-          rect.Deflate(frame->GetUsedBorderAndPadding());
-        }
-
-        mMouseDownRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
-            rect, frame->PresContext()->AppUnitsPerDevPixel());
+        mMouseDownSize =
+            frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content
+                ? frame->GetContentRect().Size()
+                : frame->GetRect().Size();
 
         
-        LayoutDeviceIntPoint refPoint;
-        if (!GetEventPoint(guiEvent, refPoint)) {
+        if (!GetEventPoint(guiEvent, mMouseDownPoint)) {
           break;
         }
-        mMouseDownPoint = refPoint + guiEvent->mWidget->WidgetToScreenOffset();
         mTrackingMouseMove = true;
         PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
         doDefault = false;
@@ -171,41 +165,52 @@ void XULResizerElement::PostHandleEventInternal(
         if (!GetEventPoint(guiEvent, refPoint)) {
           break;
         }
-        LayoutDeviceIntPoint screenPoint =
-            refPoint + guiEvent->mWidget->WidgetToScreenOffset();
-        LayoutDeviceIntPoint mouseMove(screenPoint - mMouseDownPoint);
+
+        const nsPoint oldPos = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+            guiEvent->mWidget, mMouseDownPoint, RelativeTo{frame});
+        const nsPoint newPos = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+            guiEvent->mWidget, refPoint, RelativeTo{frame});
+
+        nsPoint mouseMove(newPos - oldPos);
 
         
         
         
         Direction direction = GetDirection();
 
-        LayoutDeviceIntRect rect = mMouseDownRect;
+        nsSize newSize = mMouseDownSize;
 
         
-        AdjustDimensions(&rect.x, &rect.width, mouseMove.x,
-                         direction.mHorizontal);
-        AdjustDimensions(&rect.y, &rect.height, mouseMove.y,
-                         direction.mVertical);
+        newSize.width += direction.mHorizontal * mouseMove.x;
+        newSize.height += direction.mVertical * mouseMove.y;
 
-        
-        
-        
-        
-        nsRect appUnitsRect = ToAppUnits(
-            rect.ToUnknownRect(), frame->PresContext()->AppUnitsPerDevPixel());
-        if (auto* resizerFrame = GetPrimaryFrame()) {
-          nsRect frameRect = resizerFrame->GetRect();
-          if (appUnitsRect.width < frameRect.width && mouseMove.x)
-            appUnitsRect.width = frameRect.width;
-          if (appUnitsRect.height < frameRect.height && mouseMove.y)
-            appUnitsRect.height = frameRect.height;
+        if (newSize.width < AppUnitsPerCSSPixel() && mouseMove.x != 0) {
+          newSize.width = AppUnitsPerCSSPixel();
         }
-        nsIntRect cssRect = appUnitsRect.ToInsidePixels(AppUnitsPerCSSPixel());
+
+        if (newSize.height < AppUnitsPerCSSPixel() && mouseMove.y != 0) {
+          newSize.height = AppUnitsPerCSSPixel();
+        }
+
+        
+        
+        
+        
+        if (auto* resizerFrame = GetPrimaryFrame()) {
+          nsRect resizerRect = resizerFrame->GetRect();
+          if (newSize.width < resizerRect.width && mouseMove.x != 0) {
+            newSize.width = resizerRect.width;
+          }
+          if (newSize.height < resizerRect.height && mouseMove.y != 0) {
+            newSize.height = resizerRect.height;
+          }
+        }
+
+        auto cssSize = CSSIntSize::FromAppUnitsRounded(newSize);
 
         SizeInfo sizeInfo, originalSizeInfo;
-        sizeInfo.width.AppendInt(cssRect.width);
-        sizeInfo.height.AppendInt(cssRect.height);
+        sizeInfo.width.AppendInt(cssSize.width);
+        sizeInfo.height.AppendInt(cssSize.height);
         ResizeContent(contentToResize, direction, sizeInfo, &originalSizeInfo);
         MaybePersistOriginalSize(contentToResize, originalSizeInfo);
 
@@ -262,54 +267,36 @@ nsIContent* XULResizerElement::GetContentToResize() const {
 }
 
 
-void XULResizerElement::AdjustDimensions(int32_t* aPos, int32_t* aSize,
-                                         int32_t aMovement,
-                                         int8_t aResizerDirection) {
-  int32_t oldSize = *aSize;
-
-  *aSize += aResizerDirection * aMovement;
-  
-  if (*aSize < 1) {
-    *aSize = 1;
-  }
-
-  
-  
-  if (aResizerDirection == -1) {
-    *aPos += oldSize - *aSize;
-  }
-}
-
-
 void XULResizerElement::ResizeContent(nsIContent* aContent,
                                       const Direction& aDirection,
                                       const SizeInfo& aSizeInfo,
                                       SizeInfo* aOriginalSizeInfo) {
-  if (RefPtr<nsStyledElement> inlineStyleContent =
-          nsStyledElement::FromNode(aContent)) {
-    nsICSSDeclaration* decl = inlineStyleContent->Style();
+  RefPtr inlineStyleContent = nsStyledElement::FromNode(aContent);
+  if (!inlineStyleContent) {
+    return;
+  }
+  nsCOMPtr<nsICSSDeclaration> decl = inlineStyleContent->Style();
+  if (aOriginalSizeInfo) {
+    decl->GetPropertyValue("width"_ns, aOriginalSizeInfo->width);
+    decl->GetPropertyValue("height"_ns, aOriginalSizeInfo->height);
+  }
 
-    if (aOriginalSizeInfo) {
-      decl->GetPropertyValue("width"_ns, aOriginalSizeInfo->width);
-      decl->GetPropertyValue("height"_ns, aOriginalSizeInfo->height);
+  
+  
+  if (aDirection.mHorizontal) {
+    nsAutoCString widthstr(aSizeInfo.width);
+    if (!widthstr.IsEmpty() && !StringEndsWith(widthstr, "px"_ns)) {
+      widthstr.AppendLiteral("px");
     }
+    decl->SetProperty("width"_ns, widthstr, ""_ns, IgnoreErrors());
+  }
 
-    
-    
-    if (aDirection.mHorizontal) {
-      nsAutoCString widthstr(aSizeInfo.width);
-      if (!widthstr.IsEmpty() &&
-          !Substring(widthstr, widthstr.Length() - 2, 2).EqualsLiteral("px"))
-        widthstr.AppendLiteral("px");
-      decl->SetProperty("width"_ns, widthstr, ""_ns, IgnoreErrors());
+  if (aDirection.mVertical) {
+    nsAutoCString heightstr(aSizeInfo.height);
+    if (!heightstr.IsEmpty() && !StringEndsWith(heightstr, "px"_ns)) {
+      heightstr.AppendLiteral("px");
     }
-    if (aDirection.mVertical) {
-      nsAutoCString heightstr(aSizeInfo.height);
-      if (!heightstr.IsEmpty() &&
-          !Substring(heightstr, heightstr.Length() - 2, 2).EqualsLiteral("px"))
-        heightstr.AppendLiteral("px");
-      decl->SetProperty("height"_ns, heightstr, ""_ns, IgnoreErrors());
-    }
+    decl->SetProperty("height"_ns, heightstr, ""_ns, IgnoreErrors());
   }
 }
 
