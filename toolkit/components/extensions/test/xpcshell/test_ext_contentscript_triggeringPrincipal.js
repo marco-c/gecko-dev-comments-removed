@@ -9,10 +9,6 @@
 
 
 
-const env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-
 
 
 Services.prefs.setIntPref("media.autoplay.default", Ci.nsIAutoplay.ALLOWED);
@@ -1294,7 +1290,7 @@ add_task(async function test_contentscript_triggeringPrincipals() {
 add_task(async function test_contentscript_csp() {
   
   
-  let chaosMode = parseInt(env.get("MOZ_CHAOSMODE"), 16);
+  let chaosMode = parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
   let checkCSPReports = !(chaosMode === 0 || chaosMode & 0x02);
 
   gContentSecurityPolicy = `default-src 'none' 'report-sample'; script-src 'nonce-deadbeef' 'unsafe-eval' 'report-sample'; report-uri ${CSP_REPORT_PATH};`;
@@ -1334,7 +1330,7 @@ add_task(async function test_extension_contentscript_csp() {
 
   
   
-  let chaosMode = parseInt(env.get("MOZ_CHAOSMODE"), 16);
+  let chaosMode = parseInt(Services.env.get("MOZ_CHAOSMODE"), 16);
   let checkCSPReports = !(chaosMode === 0 || chaosMode & 0x02);
 
   gContentSecurityPolicy = `default-src 'none' 'report-sample'; script-src 'nonce-deadbeef' 'unsafe-eval' 'report-sample'; report-uri ${CSP_REPORT_PATH};`;

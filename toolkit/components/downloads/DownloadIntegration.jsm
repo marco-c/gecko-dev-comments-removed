@@ -59,12 +59,6 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
-  "gEnvironment",
-  "@mozilla.org/process/environment;1",
-  "nsIEnvironment"
-);
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
   "gMIMEService",
   "@mozilla.org/mime;1",
   "nsIMIMEService"
@@ -300,7 +294,7 @@ var DownloadIntegration = {
     if (AppConstants.platform == "android") {
       
       
-      this._downloadsDirectory = lazy.gEnvironment.get("DOWNLOADS_DIRECTORY");
+      this._downloadsDirectory = Services.env.get("DOWNLOADS_DIRECTORY");
       if (!this._downloadsDirectory) {
         throw new Components.Exception(
           "DOWNLOADS_DIRECTORY is not set.",
