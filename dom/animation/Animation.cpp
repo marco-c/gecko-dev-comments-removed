@@ -250,6 +250,18 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   StickyTimeDuration activeTime =
       mEffect ? mEffect->GetComputedTiming().mActiveTime : StickyTimeDuration();
 
+  const AnimationPlayState previousPlayState = PlayState();
+  const Nullable<TimeDuration> previousCurrentTime = GetCurrentTimeAsDuration();
+  
+  
+  
+  const TimeDuration endTime = TimeDuration(EffectEnd());
+  double previousProgress = 0.0;
+  if (!previousCurrentTime.IsNull() && !endTime.IsZero()) {
+    previousProgress =
+        previousCurrentTime.Value().ToSeconds() / endTime.ToSeconds();
+  }
+
   RefPtr<AnimationTimeline> oldTimeline = mTimeline;
   if (oldTimeline) {
     oldTimeline->RemoveAnimation(this);
@@ -257,8 +269,46 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
 
   mTimeline = aTimeline;
 
+  mResetCurrentTimeOnResume = false;
+
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+  }
+
+  if (mTimeline && !mTimeline->IsMonotonicallyIncreasing()) {
+    
+
+    ApplyPendingPlaybackRate();
+    Nullable<TimeDuration> seekTime;
+    if (mPlaybackRate >= 0.0) {
+      seekTime.SetValue(TimeDuration());
+    } else {
+      seekTime.SetValue(TimeDuration(EffectEnd()));
+    }
+
+    switch (previousPlayState) {
+      case AnimationPlayState::Running:
+      case AnimationPlayState::Finished:
+        mStartTime = seekTime;
+        break;
+      case AnimationPlayState::Paused:
+        if (!previousCurrentTime.IsNull()) {
+          mResetCurrentTimeOnResume = true;
+          mStartTime.SetNull();
+          mHoldTime.SetValue(
+              TimeDuration(EffectEnd().MultDouble(previousProgress)));
+        } else {
+          mStartTime = seekTime;
+        }
+        break;
+      case AnimationPlayState::Idle:
+      default:
+        break;
+    }
+  } else if (oldTimeline && !oldTimeline->IsMonotonicallyIncreasing() &&
+             !previousCurrentTime.IsNull()) {
+    
+    SetCurrentTime(TimeDuration(EffectEnd().MultDouble(previousProgress)));
   }
 
   if (!mStartTime.IsNull()) {
@@ -301,6 +351,8 @@ void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
 
   ApplyPendingPlaybackRate();
   mStartTime = aNewStartTime;
+
+  mResetCurrentTimeOnResume = false;
 
   if (!aNewStartTime.IsNull()) {
     if (mPlaybackRate != 0.0) {
@@ -1029,19 +1081,25 @@ TimeStamp Animation::ElapsedTimeToTimeStamp(
 
 
 void Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime) {
+  
+  
+  
+
   if (!mHoldTime.IsNull() || mStartTime.IsNull() || !mTimeline ||
       mTimeline->GetCurrentTimeAsDuration().IsNull() || mPlaybackRate == 0.0) {
     mHoldTime.SetValue(aSeekTime);
-    if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
-      mStartTime.SetNull();
-    }
   } else {
     mStartTime =
         StartTimeFromTimelineTime(mTimeline->GetCurrentTimeAsDuration().Value(),
                                   aSeekTime, mPlaybackRate);
   }
 
+  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
+    mStartTime.SetNull();
+  }
+
   mPreviousCurrentTime.SetNull();
+  mResetCurrentTimeOnResume = false;
 }
 
 bool Animation::ShouldBeSynchronizedWithMainThread(
@@ -1388,6 +1446,11 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
+  if (mResetCurrentTimeOnResume) {
+    currentTime.SetNull();
+    mResetCurrentTimeOnResume = false;
+  }
+
   Nullable<TimeDuration> seekTime;
   if (isAutoRewind) {
     if (effectivePlaybackRate >= 0.0 &&

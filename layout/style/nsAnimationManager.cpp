@@ -177,17 +177,8 @@ static void UpdateOldAnimationPropertiesWithNew(
 
   
   
-  
-  
-  
-  
-  
-  
-  dom::AnimationTimeline* oldTimeline = aOld.GetTimeline();
-  if (!oldTimeline != !aTimeline ||
-      (oldTimeline && aTimeline &&
-       oldTimeline->AsScrollTimeline() != aTimeline->AsScrollTimeline())) {
-    aOld.SetTimelineNoUpdate(aTimeline);
+  if (aOld.GetTimeline() != aTimeline) {
+    aOld.SetTimeline(aTimeline);
     animationChanged = true;
   }
 
