@@ -592,7 +592,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     BitrateAllocationCallbackType allocation_cb_type)
     : main_queue_(TaskQueueBase::Current()),
       number_of_cores_(number_of_cores),
-      quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       sink_(nullptr),
       settings_(settings),
       allocation_cb_type_(allocation_cb_type),
@@ -913,11 +912,11 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   crop_width_ = last_frame_info_->width - highest_stream_width;
   crop_height_ = last_frame_info_->height - highest_stream_height;
 
-  encoder_bitrate_limits_ =
+  absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits =
       encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
           last_frame_info_->width * last_frame_info_->height);
 
-  if (encoder_bitrate_limits_) {
+  if (encoder_bitrate_limits) {
     if (streams.size() == 1 && encoder_config_.simulcast_layers.size() == 1) {
       
       
@@ -925,9 +924,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       int min_bitrate_bps;
       if (encoder_config_.simulcast_layers.empty() ||
           encoder_config_.simulcast_layers[0].min_bitrate_bps <= 0) {
-        min_bitrate_bps = encoder_bitrate_limits_->min_bitrate_bps;
+        min_bitrate_bps = encoder_bitrate_limits->min_bitrate_bps;
       } else {
-        min_bitrate_bps = std::max(encoder_bitrate_limits_->min_bitrate_bps,
+        min_bitrate_bps = std::max(encoder_bitrate_limits->min_bitrate_bps,
                                    streams.back().min_bitrate_bps);
       }
 
@@ -936,9 +935,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       
       
       if (encoder_config_.max_bitrate_bps <= 0) {
-        max_bitrate_bps = encoder_bitrate_limits_->max_bitrate_bps;
+        max_bitrate_bps = encoder_bitrate_limits->max_bitrate_bps;
       } else {
-        max_bitrate_bps = std::min(encoder_bitrate_limits_->max_bitrate_bps,
+        max_bitrate_bps = std::min(encoder_bitrate_limits->max_bitrate_bps,
                                    streams.back().max_bitrate_bps);
       }
 
@@ -947,12 +946,12 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         streams.back().max_bitrate_bps = max_bitrate_bps;
         streams.back().target_bitrate_bps =
             std::min(streams.back().target_bitrate_bps,
-                     encoder_bitrate_limits_->max_bitrate_bps);
+                     encoder_bitrate_limits->max_bitrate_bps);
       } else {
         RTC_LOG(LS_WARNING)
             << "Bitrate limits provided by encoder"
-            << " (min=" << encoder_bitrate_limits_->min_bitrate_bps
-            << ", max=" << encoder_bitrate_limits_->min_bitrate_bps
+            << " (min=" << encoder_bitrate_limits->min_bitrate_bps
+            << ", max=" << encoder_bitrate_limits->max_bitrate_bps
             << ") do not intersect with limits set by app"
             << " (min=" << streams.back().min_bitrate_bps
             << ", max=" << encoder_config_.max_bitrate_bps

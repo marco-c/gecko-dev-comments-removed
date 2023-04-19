@@ -230,8 +230,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   const uint32_t number_of_cores_;
 
-  const bool quality_scaling_experiment_enabled_;
-
   EncoderSink* sink_;
   const VideoStreamEncoderSettings settings_;
   const BitrateAllocationCallbackType allocation_cb_type_;
@@ -315,8 +313,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   absl::optional<int64_t> last_encode_info_ms_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoEncoder::EncoderInfo encoder_info_ RTC_GUARDED_BY(&encoder_queue_);
-  absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits_
-      RTC_GUARDED_BY(&encoder_queue_);
   VideoEncoderFactory::CodecInfo codec_info_ RTC_GUARDED_BY(&encoder_queue_);
   VideoCodec send_codec_ RTC_GUARDED_BY(&encoder_queue_);
 
