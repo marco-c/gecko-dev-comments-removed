@@ -48,7 +48,7 @@ class ErrorReportMixin : public StrictModeGetter {
   virtual const JS::ReadOnlyCompileOptions& options() const = 0;
 
   
-  virtual JSContext* getContext() const = 0;
+  virtual ErrorContext* getContext() const = 0;
 
   
   virtual JSAllocator* getAllocator() const = 0;
