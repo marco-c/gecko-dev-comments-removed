@@ -42,7 +42,6 @@ UNIFIED_SOURCES += [
     'hb-aat-map.cc',
     'hb-blob.cc',
     'hb-buffer-serialize.cc',
-    'hb-buffer-verify.cc',
     'hb-buffer.cc',
     'hb-common.cc',
     'hb-draw.cc',
@@ -96,24 +95,16 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk':
     ]
     CXXFLAGS += CONFIG['GLIB_CFLAGS']
 
-
-AllowCompilerWarnings()
-
-if CONFIG['CC_TYPE'] == 'clang-cl':
-    CXXFLAGS += ['-Wno-unused-variable']
-
 FINAL_LIBRARY = 'gkmedias'
 
 DEFINES['PACKAGE_VERSION'] = '"moz"'
 DEFINES['PACKAGE_BUGREPORT'] = '"http://bugzilla.mozilla.org/"'
 DEFINES['HAVE_OT'] = 1
 DEFINES['HAVE_ROUND'] = 1
+DEFINES['HB_NO_BUFFER_VERIFY'] = True
 DEFINES['HB_NO_FALLBACK_SHAPE'] = True
 DEFINES['HB_NO_UCD'] = True
 DEFINES['HB_NO_UNICODE_FUNCS'] = True
-
-
-DEFINES['DEBUG'] = False
 
 
 
