@@ -35,10 +35,6 @@ class RTC_EXPORT EncoderSimulcastProxy : public VideoEncoder {
  public:
   EncoderSimulcastProxy(VideoEncoderFactory* factory,
                         const SdpVideoFormat& format);
-  
-  
-  explicit EncoderSimulcastProxy(VideoEncoderFactory* factory);
-
   ~EncoderSimulcastProxy() override;
 
   
