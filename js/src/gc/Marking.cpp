@@ -1101,6 +1101,8 @@ void GCMarker::traverse(BaseScript* thing) {
 }
 }  
 
+template void js::GCMarker::markAndTraverse<JSObject>(JSObject* thing);
+
 #ifdef DEBUG
 void GCMarker::setCheckAtomMarking(bool check) {
   MOZ_ASSERT(check != checkAtomMarking);
@@ -1186,137 +1188,6 @@ static inline void CallTraceHook(JSTracer* trc, JSObject* obj) {
     AutoSetTracingSource asts(trc, obj);
     clasp->doTrace(trc, obj);
   }
-}
-
-GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
-#ifdef DEBUG
-  if (markQueue.empty()) {
-    return QueueComplete;
-  }
-
-  GCRuntime& gcrt = runtime()->gc;
-  if (queueMarkColor == mozilla::Some(MarkColor::Gray) &&
-      gcrt.state() != State::Sweep) {
-    return QueueSuspended;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (queueMarkColor == mozilla::Some(MarkColor::Gray) && hasBlackEntries()) {
-    return QueueSuspended;
-  }
-
-  
-  
-  
-  bool willRevertToGray = markColor() == MarkColor::Gray;
-  AutoSetMarkColor autoRevertColor(*this, queueMarkColor.valueOr(markColor()));
-
-  
-  
-  
-  while (queuePos < markQueue.length()) {
-    Value val = markQueue[queuePos++].get();
-    if (val.isObject()) {
-      JSObject* obj = &val.toObject();
-      JS::Zone* zone = obj->zone();
-      if (!zone->isGCMarking() || obj->isMarkedAtLeast(markColor())) {
-        continue;
-      }
-
-      
-      
-      
-      
-      if (gcrt.state() == State::Sweep && gcrt.initialState != State::Sweep) {
-        if (zone->gcSweepGroupIndex < gcrt.getCurrentSweepGroupIndex()) {
-          
-          
-          continue;
-        }
-        if (zone->gcSweepGroupIndex > gcrt.getCurrentSweepGroupIndex()) {
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-      }
-
-      if (markColor() == MarkColor::Gray && zone->isGCMarkingBlackOnly()) {
-        
-        
-        queuePos--;
-        return QueueSuspended;
-      }
-
-      if (markColor() == MarkColor::Black && willRevertToGray) {
-        
-        
-        
-        queuePos--;
-        return QueueSuspended;
-      }
-
-      
-      size_t oldPosition = stack.position();
-      markAndTraverse(obj);
-
-      
-      
-      if (stack.position() == oldPosition) {
-        MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        oomUnsafe.crash("Overflowed stack while marking test queue");
-      }
-
-      
-      
-      SliceBudget unlimited = SliceBudget::unlimited();
-      processMarkStackTop(unlimited);
-    } else if (val.isString()) {
-      JSLinearString* str = &val.toString()->asLinear();
-      if (js::StringEqualsLiteral(str, "yield") && gcrt.isIncrementalGc()) {
-        return QueueYielded;
-      } else if (js::StringEqualsLiteral(str, "enter-weak-marking-mode") ||
-                 js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-        if (state == MarkingState::RegularMarking) {
-          
-          
-          
-          
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-        if (js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-          abortLinearWeakMarking();
-        }
-      } else if (js::StringEqualsLiteral(str, "drain")) {
-        auto unlimited = SliceBudget::unlimited();
-        MOZ_RELEASE_ASSERT(
-            markUntilBudgetExhausted(unlimited, DontReportMarkTime));
-      } else if (js::StringEqualsLiteral(str, "set-color-gray")) {
-        queueMarkColor = mozilla::Some(MarkColor::Gray);
-        if (gcrt.state() != State::Sweep || hasBlackEntries()) {
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-        setMarkColor(MarkColor::Gray);
-      } else if (js::StringEqualsLiteral(str, "set-color-black")) {
-        queueMarkColor = mozilla::Some(MarkColor::Black);
-        setMarkColor(MarkColor::Black);
-      } else if (js::StringEqualsLiteral(str, "unset-color")) {
-        queueMarkColor.reset();
-      }
-    }
-  }
-#endif
-
-  return QueueComplete;
 }
 
 static gcstats::PhaseKind GrayMarkingPhaseForCurrentPhase(
@@ -1914,9 +1785,7 @@ GCMarker::GCMarker(JSRuntime* rt)
       ,
       markLaterArenas(0),
       checkAtomMarking(true),
-      strictCompartmentChecking(false),
-      markQueue(rt),
-      queuePos(0)
+      strictCompartmentChecking(false)
 #endif
 {
 }
@@ -1932,11 +1801,6 @@ void GCMarker::start() {
   MOZ_ASSERT(state == MarkingState::NotActive);
   state = MarkingState::RegularMarking;
   markColor_ = MarkColor::Black;
-
-#ifdef DEBUG
-  queuePos = 0;
-  queueMarkColor.reset();
-#endif
 
   MOZ_ASSERT(!delayedMarkingList);
   MOZ_ASSERT(markLaterArenas == 0);
@@ -2066,12 +1930,6 @@ bool GCMarker::enterWeakMarkingMode() {
   
   
   state = MarkingState::WeakMarking;
-
-  
-  
-  
-  while (processMarkQueue() == QueueYielded) {
-  };
 
   return true;
 }

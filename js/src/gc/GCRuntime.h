@@ -263,8 +263,6 @@ struct SweepingTracer final : public GenericTracerImpl<SweepingTracer> {
 };
 
 class GCRuntime {
-  friend GCMarker::MarkQueueProgress GCMarker::processMarkQueue();
-
  public:
   explicit GCRuntime(JSRuntime* rt);
   [[nodiscard]] bool init(uint32_t maxbytes);
@@ -638,6 +636,14 @@ class GCRuntime {
 
   void updateAllocationRates();
 
+#ifdef DEBUG
+  const GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>& getTestMarkQueue()
+      const;
+  [[nodiscard]] bool appendTestMarkQueue(const JS::Value& value);
+  void clearTestMarkQueue();
+  size_t testMarkQueuePos() const;
+#endif
+
  private:
   enum IncrementalResult { ResetIncremental = 0, Ok };
 
@@ -777,10 +783,20 @@ class GCRuntime {
   void markAllGrayReferences(gcstats::PhaseKind phase);
 
   
+  
+  enum MarkQueueProgress {
+    QueueYielded,   
+    QueueComplete,  
+    QueueSuspended  
+  };
+  MarkQueueProgress processTestMarkQueue();
+
+  
   void beginSweepPhase(JS::GCReason reason, AutoGCSession& session);
   void dropStringWrappers();
   void groupZonesForSweeping(JS::GCReason reason);
   [[nodiscard]] bool findSweepGroupEdges();
+  [[nodiscard]] bool addEdgesForMarkQueue();
   void getNextSweepGroup();
   void resetGrayList(Compartment* comp);
   IncrementalProgress beginMarkingSweepGroup(JS::GCContext* gcx,
@@ -1011,7 +1027,6 @@ class GCRuntime {
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> numArenasFreeCommitted;
   MainThreadData<VerifyPreTracer*> verifyPreData;
 
- private:
   MainThreadData<mozilla::TimeStamp> lastGCStartTime_;
   MainThreadData<mozilla::TimeStamp> lastGCEndTime_;
 
@@ -1032,7 +1047,6 @@ class GCRuntime {
 
   mozilla::Atomic<JS::GCReason, mozilla::ReleaseAcquire> majorGCTriggerReason;
 
- private:
   
   MainThreadData<uint64_t> minorGCNumber;
 
@@ -1133,6 +1147,26 @@ class GCRuntime {
   MainThreadOrGCTaskData<IncrementalProgress> sweepMarkResult;
 
 #ifdef DEBUG
+  
+
+
+
+
+
+
+
+
+
+
+  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>>
+      testMarkQueue;
+
+  
+  size_t queuePos;
+
+  
+  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
+
   
   
   
@@ -1273,7 +1307,6 @@ class GCRuntime {
 
   MainThreadData<SortedArenaList> incrementalSweepList;
 
- private:
   MainThreadData<Nursery> nursery_;
 
   
