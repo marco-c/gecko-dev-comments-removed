@@ -1449,7 +1449,7 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
   
   
-  if (module->pendingAsyncDependencies() > 0 || module->isAsync()) {
+  if (module->pendingAsyncDependencies() > 0 || module->hasTopLevelAwait()) {
     
     
     MOZ_ASSERT(!module->isAsyncEvaluating() && !module->wasAsyncEvaluating());
@@ -1521,7 +1521,7 @@ static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
              module->status() == ModuleStatus::Evaluated);
 
   
-  MOZ_ASSERT(module->isAsync());
+  MOZ_ASSERT(module->hasTopLevelAwait());
 
   
 
@@ -1609,7 +1609,7 @@ static bool GatherAvailableModuleAncestors(
 
         
         
-        if (!m->isAsync() &&
+        if (!m->hasTopLevelAwait() &&
             !::GatherAvailableModuleAncestors(cx, m, execList)) {
           return false;
         }
@@ -1671,7 +1671,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
       return;
     }
 
-    if (m->isAsync()) {
+    if (m->hasTopLevelAwait()) {
       MOZ_ALWAYS_TRUE(ExecuteAsyncModule(cx, m));
     } else {
       if (!ModuleObject::execute(cx, m)) {
