@@ -50,6 +50,9 @@ void ClipManager::EndBuild() {
 }
 
 void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
+  CLIP_LOG("begin list %p affects = %d, ref-frame = %d\n", &aStackingContext,
+           aStackingContext.AffectsClipPositioning(),
+           aStackingContext.ReferenceFrameId().isSome());
   if (aStackingContext.AffectsClipPositioning()) {
     if (aStackingContext.ReferenceFrameId()) {
       PushOverrideForASR(
@@ -70,11 +73,18 @@ void ClipManager::BeginList(const StackingContextHelper& aStackingContext) {
     clips.mScrollId = aStackingContext.ReferenceFrameId().ref();
   }
 
+  CLIP_LOG("  push: clip: %p, asr: %p, scroll = %zu, clip = %zu\n",
+           clips.mChain, clips.mASR, clips.mScrollId.id,
+           clips.mClipChainId.valueOr(wr::WrClipChainId{0}).id);
+
   mItemClipStack.push(clips);
 }
 
 void ClipManager::EndList(const StackingContextHelper& aStackingContext) {
   MOZ_ASSERT(!mItemClipStack.empty());
+
+  CLIP_LOG("end list %p\n", &aStackingContext);
+
   mBuilder->SetClipChainLeaf(Nothing());
   mItemClipStack.pop();
 
@@ -148,10 +158,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     }
   }
   const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
-  CLIP_LOG("processing item %p (%s) asr %p clip %p, inherited = %p\n", aItem,
-           DisplayItemTypeName(aItem->GetType()), asr, clip,
-           inheritedClipChain);
-
   DisplayItemType type = aItem->GetType();
   if (type == DisplayItemType::TYPE_STICKY_POSITION) {
     
@@ -169,6 +175,10 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
       clip = clip->mParent;
     }
   }
+
+  CLIP_LOG("processing item %p (%s) asr %p clip %p, inherited = %p\n", aItem,
+           DisplayItemTypeName(aItem->GetType()), asr, clip,
+           inheritedClipChain);
 
   
   
@@ -243,6 +253,11 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   
   clips.UpdateSeparateLeaf(*mBuilder, auPerDevPixel);
   auto spaceAndClipChain = clips.GetSpaceAndClipChain();
+
+  CLIP_LOG("  push: clip: %p, asr: %p, scroll = %zu, clip = %zu\n",
+           clips.mChain, clips.mASR, clips.mScrollId.id,
+           clips.mClipChainId.valueOr(wr::WrClipChainId{0}).id);
+
   mItemClipStack.push(clips);
 
   CLIP_LOG("done setup for %p\n", aItem);
