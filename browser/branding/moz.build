@@ -1,0 +1,10 @@
+
+
+
+
+
+
+SPHINX_TREES["docs"] = "docs"
+
+with Files("docs/**"):
+    SCHEDULES.exclusive = ["docs"]
