@@ -156,7 +156,7 @@ class VideoStreamEncoderResourceManager
       rtc::scoped_refptr<Resource> resource) const;
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
-  int LastInputFrameSizeOrDefault() const;
+  int LastFrameSizeOrDefault() const;
 
   
   
