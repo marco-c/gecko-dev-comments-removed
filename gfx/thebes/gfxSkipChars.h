@@ -6,6 +6,7 @@
 #ifndef GFX_SKIP_CHARS_H
 #define GFX_SKIP_CHARS_H
 
+#include "mozilla/Attributes.h"
 #include "mozilla/NotNull.h"
 #include "nsTArray.h"
 
@@ -123,7 +124,7 @@ class gfxSkipChars {
 
 
 
-class gfxSkipCharsIterator {
+class MOZ_STACK_CLASS gfxSkipCharsIterator {
  public:
   
 
