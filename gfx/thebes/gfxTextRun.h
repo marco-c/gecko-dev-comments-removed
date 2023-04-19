@@ -675,7 +675,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  void FetchGlyphExtents(DrawTarget* aRefDrawTarget);
+  void FetchGlyphExtents(DrawTarget* aRefDrawTarget) const;
 
   const GlyphRun* GetGlyphRuns(uint32_t* aNumGlyphRuns) const {
     if (mHasGlyphRunArray) {
@@ -796,6 +796,9 @@ class gfxTextRun : public gfxShapedText {
   gfxTextRun(const gfxTextRunFactory::Parameters* aParams, uint32_t aLength,
              gfxFontGroup* aFontGroup, mozilla::gfx::ShapedTextFlags aFlags,
              nsTextFrameUtils::Flags aFlags2);
+
+  
+  bool NeedsGlyphExtents() const;
 
   
 
