@@ -7,32 +7,32 @@
 
 promise_test(async t => {
   const uuid = token();
-  const url = generateSetBeaconCountURL(uuid);
+  const url = generateSetBeaconURL(uuid);
 
   
   const beacon = new PendingGetBeacon(url);
   beacon.sendNow();
 
-  await expectBeaconCount(uuid, 1);
+  await expectBeacon(uuid, {count: 1});
 }, 'sendNow() sends a beacon immediately.');
 
 promise_test(async t => {
   const uuid = token();
-  const url = generateSetBeaconCountURL(uuid);
+  const url = generateSetBeaconURL(uuid);
 
   
   const beacon = new PendingGetBeacon(url);
   beacon.sendNow();
-  await expectBeaconCount(uuid, 1);
+  await expectBeacon(uuid, {count: 1});
 
   
   beacon.sendNow();
-  await expectBeaconCount(uuid, 1);
+  await expectBeacon(uuid, {count: 1});
 }, 'sendNow() doesn\'t send the same beacon twice.');
 
 promise_test(async t => {
   const uuid = token();
-  const url = generateSetBeaconCountURL(uuid);
+  const url = generateSetBeaconURL(uuid);
 
   
   const beacon1 = new PendingGetBeacon(url);
@@ -42,5 +42,5 @@ promise_test(async t => {
   const beacon2 = new PendingGetBeacon(url);
   beacon2.sendNow();
 
-  await expectBeaconCount(uuid, 2);
+  await expectBeacon(uuid, {count: 2});
 }, 'sendNow() sends multiple beacons.');

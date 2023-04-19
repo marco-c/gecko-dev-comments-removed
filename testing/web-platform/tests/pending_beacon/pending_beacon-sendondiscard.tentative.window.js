@@ -23,7 +23,7 @@ promise_test(async t => {
   document.body.removeChild(iframe);
 
   
-  await expectBeaconCount(uuid, 2);
+  await expectBeacon(uuid, {count: 2});
 }, 'Verify that a discarded document sends its beacons.');
 
 promise_test(async t => {
@@ -42,9 +42,9 @@ promise_test(async t => {
   await iframe_load_promise;
 
   
-  await expectBeaconCount(uuid, 1);
+  await expectBeacon(uuid, {count: 1});
 
   
   document.body.removeChild(iframe);
-  await expectBeaconCount(uuid, 1);
+  await expectBeacon(uuid, {count: 1});
 }, 'Verify that a discarded document does not send an already sent beacon.');

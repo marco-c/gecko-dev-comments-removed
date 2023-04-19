@@ -17,6 +17,16 @@ const BeaconDataType = {
 };
 
 
+const BeaconDataTypeToSkipCharset = {
+  String: '',
+  ArrayBuffer: '',
+  FormData: '\n\r',  
+  URLSearchParams: ';,/?:@&=+$',  
+};
+
+const BEACON_PAYLOAD_KEY = 'payload';
+
+
 
 
 
@@ -28,10 +38,15 @@ function makeBeaconData(data, dataType) {
       return new TextEncoder().encode(data).buffer;
     case BeaconDataType.FormData:
       const formData = new FormData();
-      formData.append('payload', data);
+      if (data.length > 0) {
+        formData.append(BEACON_PAYLOAD_KEY, data);
+      }
       return formData;
     case BeaconDataType.URLSearchParams:
-      return new URLSearchParams(data);
+      if (data.length > 0) {
+        return new URLSearchParams(`${BEACON_PAYLOAD_KEY}=${data}`);
+      }
+      return new URLSearchParams();
     default:
       throw Error(`Unsupported beacon dataType: ${dataType}`);
   }
@@ -48,58 +63,76 @@ function generateSequentialData(begin, end, skip) {
   return String.fromCharCode(...codeUnits);
 }
 
-function generateSetBeaconCountURL(uuid) {
-  return `/pending_beacon/resources/set_beacon_count.py?uuid=${uuid}`;
+function generateSetBeaconURL(uuid) {
+  return `/pending_beacon/resources/set_beacon.py?uuid=${uuid}`;
 }
 
 async function poll(f, expected) {
   const interval = 400;  
   while (true) {
     const result = await f();
-    if (result === expected) {
+    if (expected(result)) {
       return result;
     }
     await new Promise(resolve => setTimeout(resolve, interval));
   }
 }
 
-async function expectBeaconCount(uuid, expected) {
-  poll(async () => {
-    const res = await fetch(
-        `/pending_beacon/resources/get_beacon_count.py?uuid=${uuid}`,
-        {cache: 'no-store'});
-    return await res.json();
-  }, expected);
+
+
+
+
+async function expectBeacon(uuid, options) {
+  const expectedCount = options && options.count ? options.count : 1;
+
+  const res = await poll(
+      async () => {
+        const res = await fetch(
+            `/pending_beacon/resources/get_beacon.py?uuid=${uuid}`,
+            {cache: 'no-store'});
+        return await res.json();
+      },
+      (res) => {
+        return res.data.length == expectedCount;
+      });
+  if (!options || !options.data) {
+    return;
+  }
+
+  const decoder = options && options.percentDecoded ? (s) => {
+    
+    
+    s = s.replace(/\+/g, '%20');
+    return decodeURIComponent(s);
+  } : (s) => s;
+
+  assert_equals(
+      res.data.length, options.data.length,
+      `The size of beacon data ${
+          res.data.length} from server does not match expected value ${
+          options.data.length}.`);
+  for (let i = 0; i < options.data.length; i++) {
+    assert_equals(
+        decoder(res.data[i]), options.data[i],
+        'The beacon data does not match expected value.');
+  }
 }
 
-async function expectBeaconData(uuid, expected, options) {
-  poll(async () => {
-    const res = await fetch(
-        `/pending_beacon/resources/get_beacon_count.py?uuid=${uuid}`,
-        {cache: 'no-store'});
-    let data = await res.text();
-    if (options && options.percentDecoded) {
-      
-      
-      data = data.replace(/\+/g, '%20');
-      return decodeURIComponent(data);
-    }
-    return data;
-  }, expected);
-}
-
-function postBeaconSendDataTest(dataType, testData, expectEmpty, description) {
+function postBeaconSendDataTest(dataType, testData, description, options) {
   parallelPromiseTest(async t => {
+    const expectNoData = options && options.expectNoData;
     const uuid = token();
-    const url = `/pending_beacon/resources/set_beacon_data.py?uuid=${uuid}`;
-    let beacon = new PendingPostBeacon(url);
-    assert_equals(beacon.method, 'POST');
+    const url = generateSetBeaconURL(uuid);
+    const beacon = new PendingPostBeacon(url);
+    assert_equals(beacon.method, 'POST', 'must be POST to call setData().');
 
     beacon.setData(makeBeaconData(testData, dataType));
     beacon.sendNow();
 
-    const expected = expectEmpty ? '<NO-DATA>' : testData;
-    const percentDecoded = dataType === BeaconDataType.URLSearchParams;
-    await expectBeaconData(uuid, expected, {percentDecoded: percentDecoded});
-  }, `Beacon data of type "${dataType}": ${description}`);
+    const expectedData = expectNoData ? null : testData;
+    const percentDecoded =
+        !expectNoData && dataType === BeaconDataType.URLSearchParams;
+    await expectBeacon(
+        uuid, {count: 1, data: [expectedData], percentDecoded: percentDecoded});
+  }, `PendingPostBeacon(${dataType}): ${description}`);
 }

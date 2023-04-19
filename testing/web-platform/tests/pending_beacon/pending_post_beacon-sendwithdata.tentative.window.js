@@ -6,34 +6,19 @@
 'use strict';
 
 
-postBeaconSendDataTest(
-    BeaconDataType.String, '',
-     true, 'Sent empty String, and server got no data.');
-postBeaconSendDataTest(
-    BeaconDataType.ArrayBuffer, '',
-     true, 'Sent empty ArrayBuffer, and server got no data.');
-postBeaconSendDataTest(
-    BeaconDataType.FormData, '',
-     false, 'Sent empty form payload, and server got "".');
-postBeaconSendDataTest(
-    BeaconDataType.URLSearchParams, 'testkey=',
-     false, 'Sent empty URLparams, and server got "".');
+for (const dataType in BeaconDataType) {
+  postBeaconSendDataTest(
+      dataType, '', `Sent empty ${dataType}, and server got no data.`, {
+        expectNoData: true,
+      });
+}
 
 
-postBeaconSendDataTest(
-    BeaconDataType.String, generateSequentialData(0, 1024),
-     false, 'Encoded and sent in POST request.');
-postBeaconSendDataTest(
-    BeaconDataType.ArrayBuffer, generateSequentialData(0, 1024),
-     false, 'Encoded and sent in POST request.');
-
-postBeaconSendDataTest(
-    BeaconDataType.FormData, generateSequentialData(0, 1024, '\n\r'),
-     false, 'Encoded and sent in POST request.');
-
-postBeaconSendDataTest(
-    BeaconDataType.URLSearchParams,
-    'testkey=' + generateSequentialData(0, 1024, ';,/?:@&=+$'),
-     false, 'Encoded and sent in POST request.');
+for (const [dataType, skipCharset] of Object.entries(
+         BeaconDataTypeToSkipCharset)) {
+  postBeaconSendDataTest(
+      dataType, generateSequentialData(0, 1024, skipCharset),
+      'Encoded and sent in POST request.');
+}
 
 
