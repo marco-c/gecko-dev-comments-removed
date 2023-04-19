@@ -3773,6 +3773,55 @@ bool BaseCompiler::emitBrOnNull() {
 
   return true;
 }
+
+bool BaseCompiler::emitBrOnNonNull() {
+  MOZ_ASSERT(!hasLatentOp());
+
+  uint32_t relativeDepth;
+  ResultType type;
+  BaseNothingVector unused_values{};
+  Nothing unused_condition;
+  if (!iter_.readBrOnNonNull(&relativeDepth, &type, &unused_values,
+                             &unused_condition)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  Control& target = controlItem(relativeDepth);
+  target.bceSafeOnExit &= bceSafe_;
+
+  BranchState b(&target.label, target.stackHeight, InvertBranch(false), type);
+  MOZ_ASSERT(b.hasBlockResults(), "br_on_non_null has block results");
+
+  
+  needIntegerResultRegisters(b.resultType);
+
+  
+  RegRef condition = popRef();
+
+  
+  
+  RegRef rp = needRef();
+  moveRef(condition, rp);
+  pushRef(rp);
+
+  freeIntegerResultRegisters(b.resultType);
+
+  if (!jumpConditionalWithResults(&b, Assembler::NotEqual, condition,
+                                  ImmWord(NULLREF_VALUE))) {
+    return false;
+  }
+
+  freeRef(condition);
+
+  
+  dropValue();
+
+  return true;
+}
 #endif
 
 bool BaseCompiler::emitBrTable() {
@@ -9133,6 +9182,11 @@ bool BaseCompiler::emitBody() {
           return iter_.unrecognizedOpcode(&op);
         }
         CHECK_NEXT(emitBrOnNull());
+      case uint16_t(Op::BrOnNonNull):
+        if (!moduleEnv_.functionReferencesEnabled()) {
+          return iter_.unrecognizedOpcode(&op);
+        }
+        CHECK_NEXT(emitBrOnNonNull());
 #endif
 #ifdef ENABLE_WASM_GC
       case uint16_t(Op::RefEq):

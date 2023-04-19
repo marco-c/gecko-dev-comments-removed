@@ -434,6 +434,9 @@ enum class Op {
   
   RefEq = 0xd5,
 
+  
+  BrOnNonNull = 0xd6,
+
   FirstPrefix = 0xfa,
   GcPrefix = 0xfb,
   MiscPrefix = 0xfc,
