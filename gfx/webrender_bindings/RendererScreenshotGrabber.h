@@ -45,8 +45,6 @@ class RendererScreenshotGrabber final {
 
   void MaybeProcessQueue(RendererOGL* aRenderer);
 
-  bool HaveScreenshotsToFlush();
-
  private:
   
 
