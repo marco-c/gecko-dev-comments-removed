@@ -15,6 +15,7 @@
 
 
 
+
 macro_rules! with_metric {
     (BOOLEAN_MAP, $id:ident, $m:ident, $f:expr) => {
         maybe_labeled_with_metric!(BOOLEAN_MAP, $id, $m, $f)
@@ -43,11 +44,22 @@ macro_rules! with_metric {
 
 
 
+
 macro_rules! just_with_metric {
     ($map:ident, $id:ident, $m:ident, $f:expr) => {
-        match $crate::metrics::__glean_metric_maps::$map.get(&$id.into()) {
-            Some($m) => $f,
-            None => panic!("No metric for id {}", $id),
+        if $id & (1 << $crate::factory::DYNAMIC_METRIC_BIT) > 0 {
+            let map = $crate::factory::__jog_metric_maps::$map
+                .read()
+                .expect("Read lock for dynamic metric map was poisoned");
+            match map.get(&$id.into()) {
+                Some($m) => $f,
+                None => panic!("No (dynamic) metric for id {}", $id),
+            }
+        } else {
+            match $crate::metrics::__glean_metric_maps::$map.get(&$id.into()) {
+                Some($m) => $f,
+                None => panic!("No metric for id {}", $id),
+            }
         }
     };
 }
