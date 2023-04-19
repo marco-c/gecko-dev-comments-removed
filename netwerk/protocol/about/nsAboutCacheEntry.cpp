@@ -359,13 +359,12 @@ nsresult nsAboutCacheEntry::Channel::WriteCacheEntryDescription(
   
   char timeBuf[255];
   uint32_t u = 0;
-  int32_t i = 0;
   nsAutoCString s;
 
   
   s.Truncate();
-  entry->GetFetchCount(&i);
-  s.AppendInt(i);
+  entry->GetFetchCount(&u);
+  s.AppendInt(u);
   APPEND_ROW("fetch count", s);
 
   
