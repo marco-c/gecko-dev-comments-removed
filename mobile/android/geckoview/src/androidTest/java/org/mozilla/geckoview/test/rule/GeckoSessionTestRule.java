@@ -1377,13 +1377,13 @@ public class GeckoSessionTestRule implements TestRule {
 
   protected void cleanupExtensions() throws Throwable {
     final WebExtensionController controller = getRuntime().getWebExtensionController();
-    final List<WebExtension> list = waitForResult(controller.list());
+    final List<WebExtension> list = waitForResult(controller.list(), env.getDefaultTimeoutMillis());
 
     boolean hasTestSupport = false;
     
     for (final WebExtension extension : list) {
       if (!extension.id.equals(RuntimeCreator.TEST_SUPPORT_EXTENSION_ID)) {
-        waitForResult(controller.uninstall(extension));
+        waitForResult(controller.uninstall(extension), env.getDefaultTimeoutMillis());
       } else {
         hasTestSupport = true;
       }
@@ -2748,9 +2748,22 @@ public class GeckoSessionTestRule implements TestRule {
 
 
   public <T> T waitForResult(@NonNull final GeckoResult<T> result) throws Throwable {
+    return waitForResult(result, mTimeoutMillis);
+  }
+
+  
+
+
+
+
+
+
+
+  private <T> T waitForResult(@NonNull final GeckoResult<T> result, final long timeout)
+      throws Throwable {
     beforeWait();
     try {
-      return UiThreadUtils.waitForResult(result, mTimeoutMillis);
+      return UiThreadUtils.waitForResult(result, timeout);
     } catch (final Throwable e) {
       throw unwrapRuntimeException(e);
     } finally {
