@@ -6,9 +6,6 @@
 
 
 
-const nsILDAPURL = Ci.nsILDAPURL;
-const LDAPURLContractID = "@mozilla.org/network/ldap-url;1";
-const nsILDAPSyncQuery = Ci.nsILDAPSyncQuery;
 const LDAPSyncQueryContractID = "@mozilla.org/ldapsyncquery;1";
 
 var gVersion;
@@ -133,13 +130,17 @@ function getLDAPAttributes(host, base, filter, attribs, isSecure) {
       "?sub?" +
       filter;
 
+    
+    
     var url = Services.io.newURI(urlSpec).QueryInterface(Ci.nsILDAPURL);
 
     var ldapquery = Cc[LDAPSyncQueryContractID].createInstance(
-      nsILDAPSyncQuery
+      
+      Ci.nsILDAPSyncQuery
     );
     
     if (!gVersion) {
+      
       gVersion = Ci.nsILDAPConnection.VERSION3;
     }
     

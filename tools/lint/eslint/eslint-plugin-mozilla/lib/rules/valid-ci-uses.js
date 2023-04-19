@@ -6,9 +6,57 @@
 
 
 
+
 "use strict";
 
+const os = require("os");
 const helpers = require("../helpers");
+
+
+
+const platformSpecificInterfaces = new Map([
+  ["nsIAboutThirdParty", "windows"],
+  ["nsIJumpListItem", "windows"],
+  ["nsIJumpListLink", "windows"],
+  ["nsIJumpListSeparator", "windows"],
+  ["nsIJumpListShortcut", "windows"],
+  ["nsITaskbarWindowPreview", "windows"],
+  ["nsIWindowsAlertsService", "windows"],
+  ["nsIWinAppHelper", "windows"],
+  ["nsIWinTaskbar", "windows"],
+  ["nsIWinTaskSchedulerService", "windows"],
+  ["nsIWindowsRegKey", "windows"],
+  ["nsIWindowsPackageManager", "windows"],
+  ["nsIWindowsShellService", "windows"],
+  ["nsIMacShellService", "darwin"],
+  ["nsIMacDockSupport", "darwin"],
+  ["nsIMacFinderProgress", "darwin"],
+  ["nsIMacSharingService", "darwin"],
+  ["nsIMacUserActivityUpdater", "darwin"],
+  ["nsIMacWebAppUtils", "darwin"],
+  ["nsIStandaloneNativeMenu", "darwin"],
+  ["nsITouchBarHelper", "darwin"],
+  ["nsITouchBarInput", "darwin"],
+  ["nsITouchBarUpdater", "darwin"],
+  ["mozISandboxReporter", "linux"],
+  ["nsIApplicationChooser", "linux"],
+  ["nsIGNOMEShellService", "linux"],
+  ["nsIGtkTaskbarProgress", "linux"],
+
+  
+  ["amIFoo", "any"],
+  ["nsIMeh", "any"],
+  
+  ["nsIAndroidBridge", "any"],
+  ["nsIAndroidView", "any"],
+  
+  ["nsICodeCoverage", "any"],
+  
+  ["nsILayoutDebuggingTools", "any"],
+  
+  
+  ["mozISandboxTest", "any"],
+]);
 
 function interfaceHasProperty(interfaceName, propertyName) {
   
@@ -18,7 +66,6 @@ function interfaceHasProperty(interfaceName, propertyName) {
 
   let interfaceInfo = helpers.xpidlData.get(interfaceName);
 
-  
   if (!interfaceInfo) {
     return true;
   }
@@ -41,6 +88,9 @@ module.exports = {
         "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/valid-ci-uses.html",
     },
     messages: {
+      missingInterface:
+        "{{ interface }} is defined in this rule's platform specific list, but is not available",
+      unknownInterface: "Use of unknown interface Ci.{{ interface}}",
       unknownProperty:
         "Use of unknown property Ci.{{ interface }}.{{ property }}",
     },
@@ -50,6 +100,38 @@ module.exports = {
   create(context) {
     return {
       MemberExpression(node) {
+        if (
+          node.computed === false &&
+          node.type === "MemberExpression" &&
+          node.object.type === "Identifier" &&
+          node.object.name === "Ci" &&
+          node.property.type === "Identifier" &&
+          node.property.name.includes("I")
+        ) {
+          if (!helpers.xpidlData.get(node.property.name)) {
+            let platformSpecific = platformSpecificInterfaces.get(
+              node.property.name
+            );
+            if (!platformSpecific) {
+              context.report({
+                node,
+                messageId: "unknownInterface",
+                data: {
+                  interface: node.property.name,
+                },
+              });
+            } else if (platformSpecific == os.platform) {
+              context.report({
+                node,
+                messageId: "missingInterface",
+                data: {
+                  interface: node.property.name,
+                },
+              });
+            }
+          }
+        }
+
         if (
           node.computed === false &&
           node.object.type === "MemberExpression" &&
