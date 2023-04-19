@@ -36,6 +36,8 @@ struct ResourceTimingStruct : TimingStruct {
   
   TimeStamp cacheReadStart;
   TimeStamp cacheReadEnd;
+
+  TimeStamp connectionPending;
 };
 
 }  

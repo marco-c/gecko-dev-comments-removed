@@ -98,6 +98,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   void SetPendingTime(bool now = true) {
+    mozilla::MutexAutoLock lock(mLock);
     if (!now && !mPendingTime.IsNull()) {
       
       
@@ -111,7 +112,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
       mPendingTime = now ? TimeStamp::Now() : TimeStamp();
     }
   }
-  TimeStamp GetPendingTime() { return mPendingTime; }
+  TimeStamp GetPendingTime() override {
+    mozilla::MutexAutoLock lock(mLock);
+    return mPendingTime;
+  }
 
   
   nsIRequestContext* RequestContext() override { return mRequestContext.get(); }

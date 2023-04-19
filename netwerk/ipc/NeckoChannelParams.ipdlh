@@ -504,6 +504,8 @@ struct ResourceTimingStructArgs {
   
   TimeStamp cacheReadStart;
   TimeStamp cacheReadEnd;
+
+  TimeStamp transactionPending;
 };
 
 struct HttpActivity
