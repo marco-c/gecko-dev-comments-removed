@@ -97,7 +97,7 @@ struct KeyframeValueEntry {
   AnimationValue mValue;
 
   float mOffset;
-  Maybe<ComputedTimingFunction> mTimingFunction;
+  Maybe<StyleComputedTimingFunction> mTimingFunction;
   dom::CompositeOperation mComposite;
 
   struct PropertyOffsetComparator {
@@ -1100,7 +1100,7 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   
   
   
-  FallibleTArray<Maybe<ComputedTimingFunction>> easings;
+  FallibleTArray<Maybe<StyleComputedTimingFunction>> easings;
   auto parseAndAppendEasing = [&](const nsACString& easingString,
                                   ErrorResult& aRv) {
     auto easing = TimingParams::ParseEasing(easingString, aRv);

@@ -8,7 +8,6 @@
 #define mozilla_layers_AnimationHelper_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ComputedTimingFunction.h"  
 #include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/LayersMessages.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
@@ -18,8 +17,7 @@
 #include "X11UndefineNone.h"
 #include <unordered_map>
 
-namespace mozilla {
-namespace layers {
+namespace mozilla::layers {
 class Animation;
 class APZSampler;
 class CompositorAnimationStorage;
@@ -148,7 +146,6 @@ class AnimationHelper {
                            const ParentLayerRect& aClipRect);
 };
 
-}  
 }  
 
 #endif  

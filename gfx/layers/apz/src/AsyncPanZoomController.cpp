@@ -37,13 +37,13 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    
-#include "mozilla/ComputedTimingFunction.h"  
-#include "mozilla/EventForwards.h"           
-#include "mozilla/EventStateManager.h"       
-#include "mozilla/MouseEvents.h"             
-#include "mozilla/Preferences.h"             
-#include "mozilla/RecursiveMutex.h"          
-#include "mozilla/RefPtr.h"                  
+#include "mozilla/ServoStyleConsts.h"   
+#include "mozilla/EventForwards.h"      
+#include "mozilla/EventStateManager.h"  
+#include "mozilla/MouseEvents.h"        
+#include "mozilla/Preferences.h"        
+#include "mozilla/RecursiveMutex.h"     
+#include "mozilla/RefPtr.h"             
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_general.h"
@@ -80,7 +80,6 @@
 #include "nsMathUtils.h"  
 #include "nsPoint.h"      
 #include "nsStyleConsts.h"
-#include "nsTimingFunction.h"
 #include "nsTArray.h"        
 #include "nsThreadUtils.h"   
 #include "nsViewportInfo.h"  
@@ -505,12 +504,12 @@ typedef PlatformSpecificStateBase
 
 
 
-StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
+StaticAutoPtr<StyleComputedTimingFunction> gZoomAnimationFunction;
 
 
 
 
-StaticAutoPtr<ComputedTimingFunction> gVelocityCurveFunction;
+StaticAutoPtr<StyleComputedTimingFunction> gVelocityCurveFunction;
 
 
 
@@ -648,8 +647,8 @@ class ZoomAnimation : public AsyncPanZoomAnimation {
 
     
     
-    float sampledPosition = gZoomAnimationFunction->GetValue(
-        animPosition, StyleEasingBeforeFlag::Unset);
+    float sampledPosition =
+        gZoomAnimationFunction->At(animPosition,  false);
 
     
     
@@ -699,14 +698,15 @@ void AsyncPanZoomController::InitializeGlobalState() {
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  gZoomAnimationFunction =
-      new ComputedTimingFunction(nsTimingFunction(StyleTimingKeyword::Ease));
+  gZoomAnimationFunction = new StyleComputedTimingFunction(
+      StyleComputedTimingFunction::Keyword(StyleTimingKeyword::Ease));
   ClearOnShutdown(&gZoomAnimationFunction);
-  gVelocityCurveFunction = new ComputedTimingFunction(
-      nsTimingFunction(StaticPrefs::apz_fling_curve_function_x1_AtStartup(),
-                       StaticPrefs::apz_fling_curve_function_y1_AtStartup(),
-                       StaticPrefs::apz_fling_curve_function_x2_AtStartup(),
-                       StaticPrefs::apz_fling_curve_function_y2_AtStartup()));
+  gVelocityCurveFunction =
+      new StyleComputedTimingFunction(StyleComputedTimingFunction::CubicBezier(
+          StaticPrefs::apz_fling_curve_function_x1_AtStartup(),
+          StaticPrefs::apz_fling_curve_function_y1_AtStartup(),
+          StaticPrefs::apz_fling_curve_function_x2_AtStartup(),
+          StaticPrefs::apz_fling_curve_function_y2_AtStartup()));
   ClearOnShutdown(&gVelocityCurveFunction);
 
   uint64_t sysmem = PR_GetPhysicalMemorySize();

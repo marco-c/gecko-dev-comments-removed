@@ -17,7 +17,6 @@
 #include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/EffectCompositor.h"
-#include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/PreferenceSheet.h"
 #include "nsStyleStruct.h"
 
@@ -246,8 +245,7 @@ const RawServoAnimationValue* Gecko_ElementTransitions_EndValueAt(
 double Gecko_GetProgressFromComputedTiming(const mozilla::ComputedTiming*);
 
 double Gecko_GetPositionInSegment(const mozilla::AnimationPropertySegment*,
-                                  double aProgress,
-                                  mozilla::StyleEasingBeforeFlag aBeforeFlag);
+                                  double aProgress, bool aBeforeFlag);
 
 
 
@@ -390,7 +388,7 @@ void Gecko_EnsureStyleTransitionArrayLength(void* array, size_t len);
 
 mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
     nsTArray<mozilla::Keyframe>* keyframes, float offset,
-    const nsTimingFunction* timingFunction,
+    const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
 
 
@@ -400,7 +398,7 @@ mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
 
 mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
     nsTArray<mozilla::Keyframe>* keyframes,
-    const nsTimingFunction* timingFunction,
+    const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
 
 
@@ -409,7 +407,7 @@ mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
 
 mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
     nsTArray<mozilla::Keyframe>* keyframes,
-    const nsTimingFunction* timingFunction,
+    const mozilla::StyleComputedTimingFunction* timingFunction,
     const mozilla::dom::CompositeOperationOrAuto composition);
 
 

@@ -8,7 +8,7 @@
 #define mozilla_layers_AnimationStorageData_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/ServoStyleConsts.h"        
 #include "mozilla/layers/LayersMessages.h"   
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/TimeStamp.h"               
@@ -28,7 +28,7 @@ struct PropertyAnimation {
   struct SegmentData {
     RefPtr<RawServoAnimationValue> mStartValue;
     RefPtr<RawServoAnimationValue> mEndValue;
-    Maybe<mozilla::ComputedTimingFunction> mFunction;
+    Maybe<mozilla::StyleComputedTimingFunction> mFunction;
     float mStartPortion;
     float mEndPortion;
     dom::CompositeOperation mStartComposite;

@@ -11,7 +11,7 @@
 #include "nsCSSValue.h"
 #include "nsTArray.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
-#include "mozilla/ComputedTimingFunction.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 
@@ -71,8 +71,8 @@ struct Keyframe {
   Maybe<double> mOffset;
   static constexpr double kComputedOffsetNotSet = -1.0;
   double mComputedOffset = kComputedOffsetNotSet;
-  Maybe<ComputedTimingFunction> mTimingFunction;  
-                                                  
+  Maybe<StyleComputedTimingFunction> mTimingFunction;  
+                                                       
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
   CopyableTArray<PropertyValuePair> mPropertyValues;
