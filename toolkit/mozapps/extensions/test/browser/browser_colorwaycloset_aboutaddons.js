@@ -20,6 +20,8 @@ AddonTestUtils.initMochitest(this);
 const kTestThemeId = "test-colorway@mozilla.org";
 const kTestExpiredThemeId = `expired-${kTestThemeId}`;
 
+const mockL10nId = "colorway-collection-test-mock";
+
 
 function getMockExpiry() {
   const expireDate = new Date();
@@ -73,6 +75,7 @@ function setBuiltInThemeConfigMock(...args) {
       l10nId: {
         title: mockL10nId,
       },
+      cardImagePath: "mockCollectionPreview.avif",
     };
   };
 }
@@ -158,9 +161,6 @@ add_task(async function testColorwayClosetPrefEnabled() {
   });
 
   
-  const mockL10nId = "colorway-collection-test-mock";
-
-  
   const mockExpiry = getMockExpiry();
 
   info(
@@ -216,10 +216,15 @@ add_task(async function testColorwayClosetPrefEnabled() {
     card.querySelector("#colorways-preview-text-container"),
     "Preview text container found"
   );
-  ok(
-    card.querySelector(".card-heading-image"),
-    "Preview image container found"
+
+  const cardImage = card.querySelector(".card-heading-image");
+  ok(cardImage, "Preview image container found");
+  is(
+    cardImage.src,
+    "mockCollectionPreview.avif",
+    "Preview image has correct source"
   );
+
   const previewTextHeader = card.querySelector(
     "#colorways-preview-text-container > h3"
   );
@@ -291,9 +296,6 @@ add_task(async function testButtonOpenModal() {
   });
 
   
-  const mockL10nId = "colorway-collection-test-mock";
-
-  
   const mockExpiry = getMockExpiry();
   setBuiltInThemeConfigMock({ mockExpiry, mockL10nId });
 
@@ -352,9 +354,6 @@ add_task(async function testColorwayClosetSectionOneRetainedOneUnexpired() {
   registerCleanupFunction(() => {
     clearBuiltInThemeConfigMock(originalFindActiveCollection);
   });
-
-  
-  const mockL10nId = "colorway-collection-test-mock";
 
   
   const mockExpiry = getMockExpiry();
