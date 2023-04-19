@@ -289,7 +289,11 @@
               focusedElt.hasAttribute("dlgtype") &&
               focusedElt != defaultButton
             ) {
+              
               defaultButton.focus();
+              if (document.commandDispatcher.focusedElement != defaultButton) {
+                initialFocusedElt.focus();
+              }
             }
           }
         }

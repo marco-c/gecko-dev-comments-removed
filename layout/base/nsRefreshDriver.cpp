@@ -2580,10 +2580,15 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
         RefPtr<PresShell> presShell = rawPresShell;
         presShell->mObservingLayoutFlushes = false;
         presShell->mWasLastReflowInterrupted = false;
-        FlushType flushType = HasPendingAnimations(presShell)
-                                  ? FlushType::Layout
-                                  : FlushType::InterruptibleLayout;
-        presShell->FlushPendingNotifications(ChangesToFlush(flushType, false));
+        const auto flushType = HasPendingAnimations(presShell)
+                                   ? FlushType::Layout
+                                   : FlushType::InterruptibleLayout;
+        const ChangesToFlush ctf(flushType, false);
+        presShell->FlushPendingNotifications(ctf);
+        if (presShell->FixUpFocus()) {
+          presShell->FlushPendingNotifications(ctf);
+        }
+
         
         
         presShell->NotifyFontFaceSetOnRefresh();

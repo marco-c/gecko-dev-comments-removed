@@ -2100,30 +2100,17 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
   
   
   
+  
+  
   if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(aElement)) {
-    
-    
-    if (aElement->NodeInfo()->NamespaceID() != kNameSpaceID_XUL) {
+    if (!aElement->IsXULElement()) {
       
       
       
       if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
         
         
-        Document* subdoc = bc->GetDocument();
-        if (!subdoc) {
-          return aElement;
-        }
-        nsIPrincipal* framerPrincipal = doc->GetPrincipal();
-        nsIPrincipal* frameePrincipal = subdoc->GetPrincipal();
-        if (framerPrincipal && frameePrincipal &&
-            !framerPrincipal->Equals(frameePrincipal)) {
-          
-          
-          
-          
-          return aElement;
-        }
+        Unused << bc->GetDocument();
       }
     }
   }
