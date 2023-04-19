@@ -199,6 +199,10 @@ uint32_t DecideAudioPlaybackSampleRate(const AudioInfo& aInfo) {
   } else {
     
     rate = AudioStream::GetPreferredRate();
+    if (rate > 384000) {
+      
+      rate = 48000;
+    }
   }
   MOZ_DIAGNOSTIC_ASSERT(rate, "output rate can't be 0.");
 
