@@ -283,9 +283,6 @@ with only_when(target_is_windows):
         check_and_add_warning("-Wno-enum-compare")
 
 
-check_and_add_warning("-Wno-gnu-zero-variadic-macro-arguments")
-
-
 check_and_add_warning("-Werror=implicit-function-declaration", c_compiler)
 
 
