@@ -164,8 +164,8 @@ add_task(async function test_network_markers_service_worker_use() {
     
     Assert.equal(
       contentRedirectMarkers.length,
-      expectedFiles.length - 1,
-      "There should be as one less redirect markers in the content process than requested files."
+      0,
+      "There should be no redirect markers in the content process than requested files."
     );
 
     for (const [i, expectedFile] of expectedFiles.entries()) {
@@ -179,9 +179,6 @@ add_task(async function test_network_markers_service_worker_use() {
         marker => marker.data.URI === expectedFile
       );
       const parentStopMarker = parentStopMarkers.find(
-        marker => marker.data.URI === expectedFile
-      );
-      const contentRedirectMarker = contentRedirectMarkers.find(
         marker => marker.data.URI === expectedFile
       );
       const contentStopMarker = contentStopMarkers.find(
@@ -292,11 +289,6 @@ add_task(async function test_network_markers_service_worker_use() {
           ...commonRedirectProperties,
           innerWindowID: Expect.number(),
           redirectId: parentStopMarker.data.id,
-        });
-        Assert.objectContainsOnly(contentRedirectMarker.data, {
-          ...commonRedirectProperties,
-          innerWindowID: Expect.number(),
-          redirectId: contentStopMarker.data.id,
         });
       }
     }

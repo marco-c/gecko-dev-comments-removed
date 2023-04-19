@@ -87,6 +87,10 @@ class StreamFilterParent final : public PStreamFilterParent,
     Disconnected,
   };
 
+  
+  
+  void Disconnect(const nsACString& aReason);
+
  protected:
   virtual ~StreamFilterParent();
 
@@ -180,6 +184,8 @@ class StreamFilterParent final : public PStreamFilterParent,
   
   
   bool mDisconnectedByOnStartRequest = false;
+
+  bool mBeforeOnStartRequest = true;
 
   nsCOMPtr<nsISupports> mContext;
   uint64_t mOffset;

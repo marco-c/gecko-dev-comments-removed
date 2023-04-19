@@ -125,6 +125,9 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   nsresult CrossProcessRedirectFinished(nsresult aStatus);
 
+  void RegisterStreamFilter(
+      RefPtr<extensions::StreamFilterParent>& aStreamFilter);
+
  protected:
   mozilla::ipc::IPCResult RecvOnStartRequestSent() override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
@@ -231,6 +234,7 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   void ProcessAttachStreamFilter(
       Endpoint<extensions::PStreamFilterParent>&& aEndpoint);
+  void ProcessDetachStreamFilters();
 
   
   
@@ -321,6 +325,12 @@ class HttpChannelChild final : public PHttpChannelChild,
       false};
   
   Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead{true};
+
+  
+  
+  
+  using StreamFilters = nsTArray<extensions::StreamFilterParent*>;
+  StreamFilters mStreamFilters;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy = false;
@@ -416,6 +426,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   void ContinueDoNotifyListener();
   void OnAfterLastPart(const nsresult& aStatus);
   void MaybeConnectToSocketProcess();
+  void OnDetachStreamFilters();
 
   
   

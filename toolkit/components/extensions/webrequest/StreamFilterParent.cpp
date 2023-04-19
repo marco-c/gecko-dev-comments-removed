@@ -6,6 +6,7 @@
 
 #include "StreamFilterParent.h"
 
+#include "HttpChannelChild.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
@@ -158,10 +159,36 @@ void StreamFilterParent::Attach(nsIChannel* aChannel,
                                           std::move(aEndpoint)),
       NS_DISPATCH_NORMAL);
 
+  
+  
+  
+  
+  RefPtr<net::HttpChannelChild> channelChild = do_QueryObject(aChannel);
+  if (channelChild) {
+    channelChild->RegisterStreamFilter(self);
+  }
+
   self->Init(aChannel);
 
   
   Unused << self.forget();
+}
+
+void StreamFilterParent::Disconnect(const nsACString& aReason) {
+  AssertIsMainThread();
+  MOZ_DIAGNOSTIC_ASSERT(mBeforeOnStartRequest);
+
+  mDisconnected = true;
+
+  nsAutoCString reason(aReason);
+
+  RefPtr<StreamFilterParent> self(this);
+  RunOnActorThread(FUNC, [self, reason] {
+    if (self->IPCActive()) {
+      self->mState = State::Disconnected;
+      self->CheckResult(self->SendError(reason));
+    }
+  });
 }
 
 void StreamFilterParent::Bind(ParentEndpoint&& aEndpoint) {
@@ -513,6 +540,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  mBeforeOnStartRequest = false;
   if (aRequest != mChannel) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
     nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->LoadInfo() : nullptr;
