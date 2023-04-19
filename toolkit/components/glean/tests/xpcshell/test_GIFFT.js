@@ -92,6 +92,32 @@ add_task(function test_gifft_memory_dist() {
   Telemetry.getHistogramById("TELEMETRY_TEST_LINEAR").clear();
   Assert.equal(24, data.sum, "Histogram's in `memory_unit` units");
   Assert.equal(2, data.values["1"], "Both samples in a low bucket");
+
+  
+  
+  
+  
+  
+  
+  Glean.testOnlyIpc.aMemoryDist.accumulate(36893488147419103232);
+  let dubiousValue = Object.entries(
+    Glean.testOnlyIpc.aMemoryDist.testGetValue().values
+  )[0][1];
+  Assert.equal(
+    dubiousValue,
+    1,
+    "Greater than 64-Byte number did not accumulate correctly"
+  );
+
+  
+  
+  
+  Glean.testOnlyIpc.aMemoryDist.accumulate(Math.pow(2, 31));
+  Assert.throws(
+    () => Glean.testOnlyIpc.aMemoryDist.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+    "Did not accumulate correctly"
+  );
 });
 
 add_task(function test_gifft_custom_dist() {
