@@ -11,9 +11,9 @@
 Test for Popup Direction
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
-  
+  <!-- normal, basic form -->
   <form id="form1" onsubmit="return false;">
     <input  type="text" name="field1">
     <button type="submit">Submit</button>
@@ -30,7 +30,7 @@ function waitForNextPopup() {
 }
 
 add_task(async function test_popup_direction() {
-  let input = $_(1, "field1");
+  let input = getFormElementByName(1, "field1");
 
   await new Promise(resolve => updateFormHistory([
     { op: "remove" },

@@ -35,9 +35,9 @@
 Form History Layout test: form field autocomplete: Bug 787624
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
-  
+  <!-- in this form, the input field is partially hidden and can scroll -->
   <div class="container">
     <div class="subcontainer">
       <form id="form1" onsubmit="return false;">
@@ -60,7 +60,7 @@ function waitForNextPopup() {
 }
 
 add_task(async function test_popup_not_move_input() {
-  let input = $_(1, "field1");
+  let input = getFormElementByName(1, "field1");
   let rect = input.getBoundingClientRect();
 
   await new Promise(resolve => updateFormHistory([

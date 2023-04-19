@@ -9,11 +9,11 @@
 <body>
 <p id="display"></p>
 <div id="content" style="display: none">
-
-
-
-
-
+<!--
+   Test for bug 492701.
+   Only change field # numInputFields (= MAX_FIELDS_SAVED + 1)
+   and test that it is actually saved and the other (unmodified) ones are not.
+-->
   <form id="form1" onsubmit="return checkSubmit(1)">
     <input type="text" name="test1" value="1">
     <input type="text" name="test2" value="2">
@@ -137,7 +137,7 @@ function startTest() {
   // Fill in values for the various fields. We could just set the <input>'s
   // value attribute, but we don't save default form values (and we want to
   // ensure unsaved values are because of autocomplete=off or whatever).
-  $_(1, "test" + numInputFields).value = numInputFields + " changed";
+  getFormElementByName(1, "test" + numInputFields).value = numInputFields + " changed";
 
   // submit the first form.
   let button = getFormSubmitButton(1);
