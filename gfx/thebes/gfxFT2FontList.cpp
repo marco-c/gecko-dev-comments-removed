@@ -1466,12 +1466,15 @@ void gfxFT2FontList::FindFonts() {
         font = systemFontIterator_next(iter);
       }
 
-      
-      
-      
-      nsAutoCString legacyEmojiFont(androidFontsRoot);
-      legacyEmojiFont.Append("/NotoColorEmojiLegacy.ttf");
-      AppendFacesFromFontFile(legacyEmojiFont, mFontNameCache.get(), kStandard);
+      if (!StaticPrefs::gfx_font_rendering_colr_v1_enabled()) {
+        
+        
+        
+        nsAutoCString legacyEmojiFont(androidFontsRoot);
+        legacyEmojiFont.Append("/NotoColorEmojiLegacy.ttf");
+        AppendFacesFromFontFile(legacyEmojiFont, mFontNameCache.get(),
+                                kStandard);
+      }
 
       systemFontIterator_close(iter);
     } else {
