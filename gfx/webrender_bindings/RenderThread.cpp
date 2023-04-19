@@ -400,6 +400,11 @@ void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender) {
 
   
   
+  glean::wr::time_to_render_start.AccumulateRawDuration(TimeStamp::Now() -
+                                                        frame.mStartTime);
+
+  
+  
   HandleRenderTextureOps();
 
   UpdateAndRender(aWindowId, frame.mStartId, frame.mStartTime, render,
