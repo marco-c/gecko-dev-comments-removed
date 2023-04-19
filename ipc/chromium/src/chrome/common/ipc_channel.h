@@ -101,6 +101,9 @@ class Channel {
   
   
   
+  
+  
+  
   Channel(const ChannelId& channel_id, Mode mode, Listener* listener);
 
   
@@ -189,7 +192,7 @@ class Channel {
  private:
   
   class ChannelImpl;
-  ChannelImpl* channel_impl_;
+  RefPtr<ChannelImpl> channel_impl_;
 
   enum {
 #if defined(OS_MACOSX)

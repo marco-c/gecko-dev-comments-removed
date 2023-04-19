@@ -108,6 +108,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   void SetName(const NodeName& aNewName) { mName = aNewName; }
 
 #ifdef FUZZING_SNAPSHOT
+  
   const NodeName& GetName() { return mName; }
 #endif
 
@@ -127,7 +128,6 @@ class NodeChannel final : public IPC::Channel::Listener {
   void SetOtherPid(base::ProcessId aNewPid);
 
   void SendMessage(UniquePtr<IPC::Message> aMessage);
-  void DoSendMessage(UniquePtr<IPC::Message> aMessage);
 
   
   void OnMessageReceived(UniquePtr<IPC::Message> aMessage) override;
@@ -151,14 +151,19 @@ class NodeChannel final : public IPC::Channel::Listener {
   std::atomic<base::ProcessId> mOtherPid;
 
   
-  mozilla::UniquePtr<IPC::Channel> mChannel;
+  
+  
+  const mozilla::UniquePtr<IPC::Channel> mChannel;
 
   
-  bool mClosed = false;
+  
+  
+  
+  enum class State { Active, Closing, Closed };
+  std::atomic<State> mState = State::Active;
 
 #ifdef FUZZING_SNAPSHOT
-  
-  bool mBlockSendRecv = false;
+  std::atomic<bool> mBlockSendRecv = false;
 #endif
 
   

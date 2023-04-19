@@ -563,22 +563,27 @@ void NodeController::OnBroadcast(const NodeName& aFromNode,
     return;
   }
 
+  nsTArray<RefPtr<NodeChannel>> peers;
   {
     auto state = mState.Lock();
+    peers.SetCapacity(state->mPeers.Count());
     for (const auto& peer : state->mPeers.Values()) {
-      
-      
-      
-      
-      
-      auto clone = event->Clone();
-      if (!clone) {
-        NODECONTROLLER_WARNING("Attempt to broadcast unsupported message");
-        break;
-      }
-
-      peer->SendEventMessage(SerializeEventMessage(std::move(clone)));
+      peers.AppendElement(peer);
     }
+  }
+  for (const auto& peer : peers) {
+    
+    
+    
+    
+    
+    auto clone = event->Clone();
+    if (!clone) {
+      NODECONTROLLER_WARNING("Attempt to broadcast unsupported message");
+      break;
+    }
+
+    peer->SendEventMessage(SerializeEventMessage(std::move(clone)));
   }
 }
 
@@ -626,7 +631,6 @@ void NodeController::OnIntroduce(const NodeName& aFromNode,
       return;
     }
 
-    
     
     
     

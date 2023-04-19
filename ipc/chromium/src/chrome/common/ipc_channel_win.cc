@@ -31,22 +31,10 @@
 
 using namespace mozilla::ipc;
 
-
-
-
-#ifdef DEBUG
-#  define ASSERT_OWNINGTHREAD(_class)                              \
-    if (nsAutoOwningThread* owningThread = _mOwningThread.get()) { \
-      owningThread->AssertOwnership(#_class " not thread-safe");   \
-    }
-#else
-#  define ASSERT_OWNINGTHREAD(_class) ((void)0)
-#endif
-
 namespace IPC {
 
 
-Channel::ChannelImpl::State::State(ChannelImpl* channel) : is_pending(false) {
+Channel::ChannelImpl::State::State(ChannelImpl* channel) {
   memset(&context.overlapped, 0, sizeof(context.overlapped));
   context.handler = channel;
 }
@@ -60,9 +48,9 @@ Channel::ChannelImpl::State::~State() {
 
 Channel::ChannelImpl::ChannelImpl(const ChannelId& channel_id, Mode mode,
                                   Listener* listener)
-    : ALLOW_THIS_IN_INITIALIZER_LIST(input_state_(this)),
-      ALLOW_THIS_IN_INITIALIZER_LIST(output_state_(this)),
-      ALLOW_THIS_IN_INITIALIZER_LIST(factory_(this)) {
+    : io_thread_(MessageLoopForIO::current()->SerialEventTarget()),
+      ALLOW_THIS_IN_INITIALIZER_LIST(input_state_(this)),
+      ALLOW_THIS_IN_INITIALIZER_LIST(output_state_(this)) {
   Init(mode, listener);
 
   if (!CreatePipe(channel_id, mode)) {
@@ -75,13 +63,12 @@ Channel::ChannelImpl::ChannelImpl(const ChannelId& channel_id, Mode mode,
 
 Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
                                   Listener* listener)
-    : ALLOW_THIS_IN_INITIALIZER_LIST(input_state_(this)),
-      ALLOW_THIS_IN_INITIALIZER_LIST(output_state_(this)),
-      ALLOW_THIS_IN_INITIALIZER_LIST(factory_(this)) {
+    : io_thread_(MessageLoopForIO::current()->SerialEventTarget()),
+      ALLOW_THIS_IN_INITIALIZER_LIST(input_state_(this)),
+      ALLOW_THIS_IN_INITIALIZER_LIST(output_state_(this)) {
   Init(mode, listener);
 
   if (!pipe) {
-    closed_ = true;
     return;
   }
 
@@ -95,11 +82,11 @@ void Channel::ChannelImpl::Init(Mode mode, Listener* listener) {
   
   static_assert(sizeof(*this) <= 512, "Exceeded expected size class");
 
+  mode_ = mode;
   pipe_ = INVALID_HANDLE_VALUE;
   listener_ = listener;
-  waiting_connect_ = (mode == MODE_SERVER);
+  waiting_connect_ = true;
   processing_incoming_ = false;
-  closed_ = false;
   input_buf_offset_ = 0;
   input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
   accept_handles_ = false;
@@ -118,8 +105,15 @@ void Channel::ChannelImpl::OutputQueuePop() {
 }
 
 void Channel::ChannelImpl::Close() {
-  ASSERT_OWNINGTHREAD(ChannelImpl);
+  io_thread_.AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(mutex_);
+  CloseLocked();
+}
 
+void Channel::ChannelImpl::CloseLocked() {
+  
+  
+  
   if (input_state_.is_pending || output_state_.is_pending) {
     CancelIo(pipe_);
   }
@@ -137,22 +131,24 @@ void Channel::ChannelImpl::Close() {
     other_process_ = INVALID_HANDLE_VALUE;
   }
 
+  
+  
+  
+  
+  
+  
   while (input_state_.is_pending || output_state_.is_pending) {
+    mozilla::MutexAutoUnlock unlock(mutex_);
     MessageLoopForIO::current()->WaitForIOCompletion(INFINITE, this);
   }
 
   while (!output_queue_.IsEmpty()) {
     OutputQueuePop();
   }
-
-#ifdef DEBUG
-  _mOwningThread = nullptr;
-#endif
-  closed_ = true;
 }
 
 bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
-  ASSERT_OWNINGTHREAD(ChannelImpl);
+  mozilla::MutexAutoLock lock(mutex_);
 
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
   DLOG(INFO) << "sending message @" << message.get() << " on channel @" << this
@@ -165,7 +161,7 @@ bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
       "Channel::ChannelImpl::Send", std::move(message));
 #endif
 
-  if (closed_) {
+  if (pipe_ == INVALID_HANDLE_VALUE) {
     if (mozilla::ipc::LoggingEnabled()) {
       fprintf(stderr,
               "Can't send message %s, because this channel is closed.\n",
@@ -178,7 +174,9 @@ bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
   
   if (!waiting_connect_) {
     if (!output_state_.is_pending) {
-      if (!ProcessOutgoingMessages(NULL, 0)) return false;
+      if (!ProcessOutgoingMessages(NULL, 0, false)) {
+        return false;
+      }
     }
   }
 
@@ -230,7 +228,6 @@ bool Channel::ChannelImpl::CreatePipe(const ChannelId& channel_id, Mode mode) {
   if (pipe_ == INVALID_HANDLE_VALUE) {
     
     CHROMIUM_LOG(WARNING) << "failed to create pipe: " << GetLastError();
-    closed_ = true;
     return false;
   }
 
@@ -258,38 +255,43 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
 }
 
 bool Channel::ChannelImpl::Connect() {
-#ifdef DEBUG
-  if (!_mOwningThread) {
-    _mOwningThread = mozilla::MakeUnique<nsAutoOwningThread>();
-  }
-#endif
+  io_thread_.AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(mutex_);
 
   if (pipe_ == INVALID_HANDLE_VALUE) return false;
 
   MessageLoopForIO::current()->RegisterIOHandler(pipe_, this);
 
   
-  if (waiting_connect_) {
+  if (mode_ == MODE_SERVER) {
+    DCHECK(!input_state_.is_pending);
     if (!ProcessConnection()) {
       return false;
     }
+  } else {
+    waiting_connect_ = false;
   }
 
   if (!input_state_.is_pending) {
     
     
     
-    MessageLoopForIO::current()->PostTask(factory_.NewRunnableMethod(
-        &Channel::ChannelImpl::OnIOCompleted, &input_state_.context, 0, 0));
+    
+    io_thread_.Dispatch(
+        mozilla::NewRunnableMethod<MessageLoopForIO::IOContext*, DWORD, DWORD>(
+            "ContinueConnect", this, &ChannelImpl::OnIOCompleted,
+            &input_state_.context, 0, 0));
   }
 
-  if (!waiting_connect_) ProcessOutgoingMessages(NULL, 0);
+  if (!waiting_connect_) {
+    DCHECK(!output_state_.is_pending);
+    ProcessOutgoingMessages(NULL, 0, false);
+  }
   return true;
 }
 
 bool Channel::ChannelImpl::ProcessConnection() {
-  ASSERT_OWNINGTHREAD(ChannelImpl);
-  if (input_state_.is_pending) input_state_.is_pending = false;
+  DCHECK(!input_state_.is_pending);
 
   
   if (INVALID_HANDLE_VALUE == pipe_) return false;
@@ -306,7 +308,7 @@ bool Channel::ChannelImpl::ProcessConnection() {
 
   switch (err) {
     case ERROR_IO_PENDING:
-      input_state_.is_pending = true;
+      input_state_.is_pending = this;
       break;
     case ERROR_PIPE_CONNECTED:
       waiting_connect_ = false;
@@ -323,10 +325,10 @@ bool Channel::ChannelImpl::ProcessConnection() {
 }
 
 bool Channel::ChannelImpl::ProcessIncomingMessages(
-    MessageLoopForIO::IOContext* context, DWORD bytes_read) {
-  ASSERT_OWNINGTHREAD(ChannelImpl);
-  if (input_state_.is_pending) {
-    input_state_.is_pending = false;
+    MessageLoopForIO::IOContext* context, DWORD bytes_read, bool was_pending) {
+  DCHECK(!input_state_.is_pending);
+
+  if (was_pending) {
     DCHECK(context);
 
     if (!context || !bytes_read) return false;
@@ -346,7 +348,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
       if (!ok) {
         DWORD err = GetLastError();
         if (err == ERROR_IO_PENDING) {
-          input_state_.is_pending = true;
+          input_state_.is_pending = this;
           return true;
         }
         if (err != ERROR_BROKEN_PIPE) {
@@ -354,7 +356,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         }
         return false;
       }
-      input_state_.is_pending = true;
+      input_state_.is_pending = this;
       return true;
     }
     DCHECK(bytes_read);
@@ -364,7 +366,9 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
     const char* p = input_buf_.get();
     const char* end = input_buf_.get() + input_buf_offset_ + bytes_read;
 
-    while (p < end) {
+    
+    
+    while (p < end && INVALID_HANDLE_VALUE != pipe_) {
       
       
       uint32_t message_length = 0;
@@ -444,8 +448,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         if (waiting_for_shared_secret_ && (it.NextInt() != shared_secret_)) {
           NOTREACHED();
           
-          Close();
-          listener_->OnChannelError();
+          
           return false;
         }
         waiting_for_shared_secret_ = false;
@@ -461,12 +464,15 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
           }
         }
 
-        listener_->OnChannelConnected(other_pid_);
+        int32_t other_pid = other_pid_;
+        mozilla::MutexAutoUnlock unlock(mutex_);
+        listener_->OnChannelConnected(other_pid);
       } else {
         mozilla::LogIPCMessage::Run run(&m);
         if (!AcceptHandles(m)) {
           return false;
         }
+        mozilla::MutexAutoUnlock unlock(mutex_);
         listener_->OnMessageReceived(std::move(incoming_message_));
       }
 
@@ -478,14 +484,13 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
 }
 
 bool Channel::ChannelImpl::ProcessOutgoingMessages(
-    MessageLoopForIO::IOContext* context, DWORD bytes_written) {
+    MessageLoopForIO::IOContext* context, DWORD bytes_written,
+    bool was_pending) {
+  DCHECK(!output_state_.is_pending);
   DCHECK(!waiting_connect_);  
                               
-  ASSERT_OWNINGTHREAD(ChannelImpl);
-
-  if (output_state_.is_pending) {
+  if (was_pending) {
     DCHECK(context);
-    output_state_.is_pending = false;
     if (!context || bytes_written == 0) {
       DWORD err = GetLastError();
       if (err != ERROR_BROKEN_PIPE) {
@@ -541,7 +546,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
   if (!ok) {
     DWORD err = GetLastError();
     if (err == ERROR_IO_PENDING) {
-      output_state_.is_pending = true;
+      output_state_.is_pending = this;
 
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
       DLOG(INFO) << "sent pending message @" << m << " on channel @" << this
@@ -561,40 +566,58 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
              << " with type " << m->type();
 #endif
 
-  output_state_.is_pending = true;
+  output_state_.is_pending = this;
   return true;
 }
 
 void Channel::ChannelImpl::OnIOCompleted(MessageLoopForIO::IOContext* context,
                                          DWORD bytes_transfered, DWORD error) {
+  
+  
+  RefPtr<ChannelImpl> was_pending;
+
+  io_thread_.AssertOnCurrentThread();
+  mozilla::ReleasableMutexAutoLock lock(mutex_);
   bool ok;
-  ASSERT_OWNINGTHREAD(ChannelImpl);
   if (context == &input_state_.context) {
-    if (waiting_connect_) {
-      if (!ProcessConnection()) return;
+    was_pending = input_state_.is_pending.forget();
+    bool was_waiting_connect = waiting_connect_;
+    if (was_waiting_connect) {
+      if (!ProcessConnection()) {
+        return;
+      }
       
-      if (!output_queue_.IsEmpty() && !output_state_.is_pending)
-        ProcessOutgoingMessages(NULL, 0);
-      if (input_state_.is_pending) return;
+      if (!output_queue_.IsEmpty() && !output_state_.is_pending) {
+        ProcessOutgoingMessages(NULL, 0, false);
+      }
+      if (input_state_.is_pending) {
+        return;
+      }
       
     }
     
     DCHECK(!processing_incoming_);
     processing_incoming_ = true;
-    ok = ProcessIncomingMessages(context, bytes_transfered);
+    ok = ProcessIncomingMessages(context, bytes_transfered,
+                                 was_pending && !was_waiting_connect);
     processing_incoming_ = false;
   } else {
     DCHECK(context == &output_state_.context);
-    ok = ProcessOutgoingMessages(context, bytes_transfered);
+    was_pending = output_state_.is_pending.forget();
+    ok = ProcessOutgoingMessages(context, bytes_transfered, was_pending);
   }
   if (!ok && INVALID_HANDLE_VALUE != pipe_) {
     
-    Close();
+    CloseLocked();
+    lock.Unlock();
     listener_->OnChannelError();
   }
 }
 
 void Channel::ChannelImpl::StartAcceptingHandles(Mode mode) {
+  io_thread_.AssertOnCurrentThread();
+  mozilla::MutexAutoLock lock(mutex_);
+
   if (accept_handles_) {
     MOZ_ASSERT(privileged_ == (mode == MODE_SERVER));
     return;
@@ -739,8 +762,6 @@ bool Channel::ChannelImpl::TransferHandles(Message& msg) {
   return true;
 }
 
-bool Channel::ChannelImpl::IsClosed() const { return closed_; }
-
 
 
 Channel::Channel(const ChannelId& channel_id, Mode mode, Listener* listener)
@@ -753,10 +774,7 @@ Channel::Channel(ChannelHandle pipe, Mode mode, Listener* listener)
   MOZ_COUNT_CTOR(IPC::Channel);
 }
 
-Channel::~Channel() {
-  MOZ_COUNT_DTOR(IPC::Channel);
-  delete channel_impl_;
-}
+Channel::~Channel() { MOZ_COUNT_DTOR(IPC::Channel); }
 
 bool Channel::Connect() { return channel_impl_->Connect(); }
 

@@ -17,7 +17,9 @@
 #include "base/task.h"
 #include "nsISupportsImpl.h"
 
+#include "mozilla/EventTargetCapability.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Queue.h"
 #include "mozilla/UniquePtr.h"
 
@@ -25,131 +27,150 @@ namespace IPC {
 
 class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
+      ChannelImpl, io_thread_.GetEventTarget());
+
   using ChannelId = Channel::ChannelId;
   using ChannelHandle = Channel::ChannelHandle;
 
   
   ChannelImpl(const ChannelId& channel_id, Mode mode, Listener* listener);
   ChannelImpl(ChannelHandle pipe, Mode mode, Listener* listener);
+  bool Connect() MOZ_EXCLUDES(mutex_);
+  void Close() MOZ_EXCLUDES(mutex_);
+  void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(mutex_);
+  Listener* set_listener(Listener* listener) {
+    io_thread_.AssertOnCurrentThread();
+    Listener* old = listener_;
+    listener_ = listener;
+    return old;
+  }
+  
+  bool Send(mozilla::UniquePtr<Message> message) MOZ_EXCLUDES(mutex_);
+
+  int32_t OtherPid() MOZ_EXCLUDES(mutex_) {
+    io_thread_.AssertOnCurrentThread();
+    mozilla::MutexAutoLock lock(mutex_);
+    return other_pid_;
+  }
+
+  
+  
+  bool IsClosed() MOZ_EXCLUDES(mutex_) {
+    mozilla::MutexAutoLock lock(mutex_);
+    return pipe_ == INVALID_HANDLE_VALUE;
+  }
+
+ private:
   ~ChannelImpl() {
+    io_thread_.AssertOnCurrentThread();
     if (pipe_ != INVALID_HANDLE_VALUE ||
         other_process_ != INVALID_HANDLE_VALUE) {
       Close();
     }
   }
-  bool Connect();
-  void Close();
-  void StartAcceptingHandles(Mode mode);
-  Listener* set_listener(Listener* listener) {
-    Listener* old = listener_;
-    listener_ = listener;
-    return old;
-  }
-  bool Send(mozilla::UniquePtr<Message> message);
 
-  int32_t OtherPid() const { return other_pid_; }
+  void Init(Mode mode, Listener* listener) MOZ_REQUIRES(mutex_, io_thread_);
 
-  
-  bool IsClosed() const;
-
- private:
-  void Init(Mode mode, Listener* listener);
-
-  void OutputQueuePush(mozilla::UniquePtr<Message> msg);
-  void OutputQueuePop();
+  void OutputQueuePush(mozilla::UniquePtr<Message> msg) MOZ_REQUIRES(mutex_);
+  void OutputQueuePop() MOZ_REQUIRES(mutex_);
 
   const ChannelId PipeName(const ChannelId& channel_id, int32_t* secret) const;
-  bool CreatePipe(const ChannelId& channel_id, Mode mode);
-  bool EnqueueHelloMessage();
+  bool CreatePipe(const ChannelId& channel_id, Mode mode)
+      MOZ_REQUIRES(mutex_, io_thread_);
+  bool EnqueueHelloMessage() MOZ_REQUIRES(mutex_, io_thread_);
+  void CloseLocked() MOZ_REQUIRES(mutex_, io_thread_);
 
-  bool ProcessConnection();
+  bool ProcessConnection() MOZ_REQUIRES(mutex_, io_thread_);
   bool ProcessIncomingMessages(MessageLoopForIO::IOContext* context,
-                               DWORD bytes_read);
+                               DWORD bytes_read, bool was_pending)
+      MOZ_REQUIRES(mutex_, io_thread_);
   bool ProcessOutgoingMessages(MessageLoopForIO::IOContext* context,
-                               DWORD bytes_written);
+                               DWORD bytes_written, bool was_pending)
+      MOZ_REQUIRES(mutex_);
 
   
   
-  bool AcceptHandles(Message& msg);
-  bool TransferHandles(Message& msg);
+  bool AcceptHandles(Message& msg) MOZ_REQUIRES(mutex_, io_thread_);
+  bool TransferHandles(Message& msg) MOZ_REQUIRES(mutex_);
 
   
   virtual void OnIOCompleted(MessageLoopForIO::IOContext* context,
                              DWORD bytes_transfered, DWORD error);
 
  private:
+  mozilla::Mutex mutex_{"ChannelImpl"};
+  const mozilla::EventTargetCapability<nsISerialEventTarget> io_thread_;
+
+  Mode mode_ MOZ_GUARDED_BY(io_thread_);
+
   struct State {
     explicit State(ChannelImpl* channel);
     ~State();
     MessageLoopForIO::IOContext context;
-    bool is_pending = false;
+    
+    
+    RefPtr<ChannelImpl> is_pending;
   };
 
-  State input_state_;
-  State output_state_;
+  State input_state_ MOZ_GUARDED_BY(io_thread_);
+  State output_state_ MOZ_GUARDED_BY(mutex_);
 
-  HANDLE pipe_ = INVALID_HANDLE_VALUE;
+  HANDLE pipe_ MOZ_GUARDED_BY(mutex_) = INVALID_HANDLE_VALUE;
 
-  Listener* listener_ = nullptr;
-
-  
-  mozilla::Queue<mozilla::UniquePtr<Message>, 64> output_queue_;
+  Listener* listener_ MOZ_GUARDED_BY(io_thread_) = nullptr;
 
   
-  
-  
-  mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_;
-
-  
-  mozilla::UniquePtr<char[]> input_buf_;
-  size_t input_buf_offset_ = 0;
-
-  
-  
-  mozilla::UniquePtr<Message> incoming_message_;
+  mozilla::Queue<mozilla::UniquePtr<Message>, 64> output_queue_
+      MOZ_GUARDED_BY(mutex_);
 
   
   
   
-  bool waiting_connect_ = false;
+  mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_
+      MOZ_GUARDED_BY(mutex_);
+
+  
+  mozilla::UniquePtr<char[]> input_buf_ MOZ_GUARDED_BY(io_thread_);
+  size_t input_buf_offset_ MOZ_GUARDED_BY(io_thread_) = 0;
+
+  
+  
+  mozilla::UniquePtr<Message> incoming_message_ MOZ_GUARDED_BY(io_thread_);
 
   
   
   
-  bool processing_incoming_ = false;
-
-  
-  std::atomic<bool> closed_ = false;
+  bool waiting_connect_ MOZ_GUARDED_BY(mutex_) = true;
 
   
   
-  int32_t other_pid_ = -1;
+  
+  bool processing_incoming_ MOZ_GUARDED_BY(io_thread_) = false;
 
-  ScopedRunnableMethodFactory<ChannelImpl> factory_;
+  
+  
+  int32_t other_pid_ MOZ_GUARDED_BY(mutex_) = -1;
 
   
   
   
   
-  int32_t shared_secret_ = 0;
+  int32_t shared_secret_ MOZ_GUARDED_BY(io_thread_) = 0;
 
   
   
-  bool waiting_for_shared_secret_ = false;
+  bool waiting_for_shared_secret_ MOZ_GUARDED_BY(io_thread_) = false;
 
   
   
   
-  bool accept_handles_ = false;
-  bool privileged_ = false;
+  bool accept_handles_ MOZ_GUARDED_BY(mutex_) = false;
+  bool privileged_ MOZ_GUARDED_BY(mutex_) = false;
 
   
   
-  HANDLE other_process_ = INVALID_HANDLE_VALUE;
-
-#ifdef DEBUG
-  mozilla::UniquePtr<nsAutoOwningThread> _mOwningThread;
-#endif
+  HANDLE other_process_ MOZ_GUARDED_BY(mutex_) = INVALID_HANDLE_VALUE;
 
   DISALLOW_COPY_AND_ASSIGN(ChannelImpl);
 };
