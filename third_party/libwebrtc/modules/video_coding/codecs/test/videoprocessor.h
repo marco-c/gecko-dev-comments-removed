@@ -24,6 +24,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/video/encoded_image.h"
+#include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_frame.h"
@@ -58,6 +59,7 @@ class VideoProcessor {
   
   
   using FrameWriterList = std::vector<std::unique_ptr<FrameWriter>>;
+  using FrameStatistics = VideoCodecTestStats::FrameStatistics;
 
   VideoProcessor(webrtc::VideoEncoder* encoder,
                  VideoDecoderList* decoders,
@@ -76,6 +78,11 @@ class VideoProcessor {
 
   
   void SetRates(size_t bitrate_kbps, double framerate_fps);
+
+  
+  
+  
+  void Finalize();
 
  private:
   class VideoProcessorEncodeCompleteCallback
@@ -182,9 +189,20 @@ class VideoProcessor {
       size_t simulcast_svc_idx,
       bool inter_layer_predicted) RTC_RUN_ON(sequence_checker_);
 
+  void CalcFrameQuality(const I420BufferInterface& decoded_frame,
+                        FrameStatistics* frame_stat);
+
+  void WriteDecodedFrame(const I420BufferInterface& decoded_frame,
+                         FrameWriter& frame_writer);
+
+  void HandleTailDrops();
+
   
-  VideoCodecTestFixture::Config config_ RTC_GUARDED_BY(sequence_checker_);
+  const VideoCodecTestFixture::Config config_;
   const size_t num_simulcast_or_spatial_layers_;
+  const bool analyze_frame_quality_;
+
+  
   VideoCodecTestStatsImpl* const stats_;
 
   
@@ -240,13 +258,16 @@ class VideoProcessor {
   
   std::vector<size_t> last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   
-  std::vector<rtc::Buffer> decoded_frame_buffer_
+  std::vector<rtc::scoped_refptr<I420Buffer>> last_decoded_frame_buffer_
       RTC_GUARDED_BY(sequence_checker_);
 
   
   
   
   int64_t post_encode_time_ns_ RTC_GUARDED_BY(sequence_checker_);
+
+  
+  bool is_finalized_ RTC_GUARDED_BY(sequence_checker_);
 
   
   SequenceChecker sequence_checker_;

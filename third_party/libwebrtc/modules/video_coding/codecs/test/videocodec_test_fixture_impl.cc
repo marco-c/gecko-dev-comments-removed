@@ -450,6 +450,8 @@ void VideoCodecTestFixtureImpl::ProcessAllFrames(
     }
   }
 
+  task_queue->PostTask([this] { processor_->Finalize(); });
+
   
   task_queue->SendTask([] {}, RTC_FROM_HERE);
 
