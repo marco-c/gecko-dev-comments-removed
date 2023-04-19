@@ -21,17 +21,15 @@
 #include "api/call/transport.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "api/crypto/crypto_options.h"
-#include "api/crypto/frame_decryptor_interface.h"
-#include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
-#include "api/transport/rtp/rtp_source.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "call/receive_stream.h"
 #include "call/rtp_config.h"
 #include "common_video/frame_counts.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
@@ -42,7 +40,7 @@ namespace webrtc {
 class RtpPacketSinkInterface;
 class VideoDecoderFactory;
 
-class VideoReceiveStream {
+class VideoReceiveStream : public MediaReceiveStream {
  public:
   
   struct RecordingState {
@@ -178,17 +176,14 @@ class VideoReceiveStream {
     VideoDecoderFactory* decoder_factory = nullptr;
 
     
-    struct Rtp {
+    struct Rtp : public RtpConfig {
       Rtp();
       Rtp(const Rtp&);
       ~Rtp();
       std::string ToString() const;
 
       
-      uint32_t remote_ssrc = 0;
-
-      
-      uint32_t local_ssrc = 0;
+      NackConfig nack;
 
       
       RtcpMode rtcp_mode = RtcpMode::kCompound;
@@ -201,9 +196,6 @@ class VideoReceiveStream {
       } rtcp_xr;
 
       
-      bool transport_cc = false;
-
-      
       bool remb = false;
 
       bool tmmbr = false;
@@ -214,9 +206,6 @@ class VideoReceiveStream {
 
       
       LntfConfig lntf;
-
-      
-      NackConfig nack;
 
       
       int ulpfec_payload_type = -1;
@@ -241,9 +230,6 @@ class VideoReceiveStream {
       
       
       std::set<int> raw_payload_types;
-
-      
-      std::vector<RtpExtension> extensions;
 
       RtcpEventObserver* rtcp_event_observer = nullptr;
     } rtp;
@@ -283,16 +269,7 @@ class VideoReceiveStream {
   };
 
   
-  
-  virtual void Start() = 0;
-  
-  
-  virtual void Stop() = 0;
-
-  
   virtual Stats GetStats() const = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 
   
   
@@ -302,16 +279,6 @@ class VideoReceiveStream {
 
   
   virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
-
-  
-  
-  virtual void SetFrameDecryptor(
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) = 0;
-
-  
-  
-  virtual void SetDepacketizerToDecoderFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
 
   
   

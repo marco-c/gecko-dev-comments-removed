@@ -19,11 +19,13 @@
 #include "api/call/transport.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
+#include "call/receive_stream.h"
 #include "call/rtp_packet_sink_interface.h"
 
 namespace webrtc {
 
-class FlexfecReceiveStream : public RtpPacketSinkInterface {
+class FlexfecReceiveStream : public RtpPacketSinkInterface,
+                             public ReceiveStream {
  public:
   ~FlexfecReceiveStream() override = default;
 
@@ -48,8 +50,7 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface {
     
     int payload_type = -1;
 
-    
-    uint32_t remote_ssrc = 0;
+    RtpConfig rtp;
 
     
     
@@ -60,20 +61,10 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface {
     std::vector<uint32_t> protected_media_ssrcs;
 
     
-    uint32_t local_ssrc = 0;
-
-    
     RtcpMode rtcp_mode = RtcpMode::kCompound;
 
     
     Transport* rtcp_send_transport = nullptr;
-
-    
-    
-    bool transport_cc = false;
-
-    
-    std::vector<RtpExtension> rtp_header_extensions;
   };
 
   virtual Stats GetStats() const = 0;

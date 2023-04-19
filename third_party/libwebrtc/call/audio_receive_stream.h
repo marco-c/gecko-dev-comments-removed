@@ -21,17 +21,14 @@
 #include "api/call/transport.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "api/crypto/crypto_options.h"
-#include "api/crypto/frame_decryptor_interface.h"
-#include "api/frame_transformer_interface.h"
 #include "api/rtp_parameters.h"
-#include "api/scoped_refptr.h"
-#include "api/transport/rtp/rtp_source.h"
+#include "call/receive_stream.h"
 #include "call/rtp_config.h"
 
 namespace webrtc {
 class AudioSinkInterface;
 
-class AudioReceiveStream {
+class AudioReceiveStream : public MediaReceiveStream {
  public:
   struct Stats {
     Stats();
@@ -108,29 +105,14 @@ class AudioReceiveStream {
     std::string ToString() const;
 
     
-    struct Rtp {
+    struct Rtp : public RtpConfig {
       Rtp();
       ~Rtp();
 
       std::string ToString() const;
 
       
-      uint32_t remote_ssrc = 0;
-
-      
-      uint32_t local_ssrc = 0;
-
-      
-      
-      
-      
-      bool transport_cc = false;
-
-      
       NackConfig nack;
-
-      
-      std::vector<RtpExtension> extensions;
 
       RtcpEventObserver* rtcp_event_observer = nullptr;
     } rtp;
@@ -175,21 +157,9 @@ class AudioReceiveStream {
   };
 
   
-  virtual void SetDepacketizerToDecoderFrameTransformer(
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface>
-          frame_transformer) = 0;
   virtual void SetDecoderMap(std::map<int, SdpAudioFormat> decoder_map) = 0;
   virtual void SetUseTransportCcAndNackHistory(bool use_transport_cc,
                                                int history_ms) = 0;
-  virtual void SetFrameDecryptor(
-      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) = 0;
-
-  
-  
-  virtual void Start() = 0;
-  
-  
-  virtual void Stop() = 0;
 
   
   virtual bool IsRunning() const = 0;
@@ -218,8 +188,6 @@ class AudioReceiveStream {
 
   
   virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 
  protected:
   virtual ~AudioReceiveStream() {}
