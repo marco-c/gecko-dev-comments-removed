@@ -35,19 +35,14 @@ let wasmGlobalInterfaces = [
   { name: "CompileError", insecureContext: true },
   { name: "LinkError", insecureContext: true },
   { name: "RuntimeError", insecureContext: true },
-  {
-    name: "Function",
-    insecureContext: true,
-    nightly: true,
-  },
-  {
-    name: "Exception",
-    insecureContext: true,
-  },
-  {
-    name: "Tag",
-    insecureContext: true,
-  },
+  { name: "Function", insecureContext: true, nightly: true },
+  { name: "Exception", insecureContext: true },
+  { name: "Tag", insecureContext: true },
+  { name: "compile", insecureContext: true },
+  { name: "compileStreaming", insecureContext: true },
+  { name: "instantiate", insecureContext: true },
+  { name: "instantiateStreaming", insecureContext: true },
+  { name: "validate", insecureContext: true },
 ];
 
 
@@ -104,6 +99,19 @@ let ecmaGlobals = [
   "WeakRef",
   "WeakSet",
   wasmGlobalEntry,
+  "decodeURI",
+  "decodeURIComponent",
+  "encodeURI",
+  "encodeURIComponent",
+  "escape",
+  "eval",
+  "globalThis",
+  "isFinite",
+  "isNaN",
+  "parseFloat",
+  "parseInt",
+  "undefined",
+  "unescape",
 ];
 
 
@@ -380,8 +388,49 @@ let interfaceNamesInGlobalScope = [
   "WritableStreamDefaultController",
   
   "WritableStreamDefaultWriter",
+  
+  "clients",
+  
+  "console",
+  
+  "onactivate",
+  
+  "onfetch",
+  
+  "oninstall",
+  
+  "onmessage",
+  
+  "onmessageerror",
+  
+  "onnotificationclick",
+  
+  "onnotificationclose",
+  
+  "onpush",
+  
+  "onpushsubscriptionchange",
+  
+  "registration",
+  
+  "skipWaiting",
+  
 ];
 
+
+
+
+let testFunctions = [
+  "ok",
+  "is",
+  "workerTestArrayEquals",
+  "workerTestDone",
+  "workerTestGetHelperData",
+  "workerTestGetStorageManager",
+  "entryDisabled",
+  "createInterfaceMap",
+  "runTest",
+];
 
 function entryDisabled(
   entry,
@@ -444,7 +493,7 @@ function runTest(parentName, parent, data, ...interfaceGroups) {
   var interfaceMap = createInterfaceMap(data, ...interfaceGroups);
   for (var name of Object.getOwnPropertyNames(parent)) {
     
-    if (!/^[A-Z]/.test(name)) {
+    if (parent === self && testFunctions.includes(name)) {
       continue;
     }
     ok(
