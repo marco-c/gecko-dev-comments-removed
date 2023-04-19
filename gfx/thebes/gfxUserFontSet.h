@@ -75,18 +75,17 @@ struct gfxFontFaceSrc {
   SourceType mSourceType;
 
   
-  bool mUseOriginPrincipal = false;
+  bool mUseOriginPrincipal;
 
   
   
   
   uint32_t mFormatFlags;
 
-  nsCString mLocalName;                     
-  RefPtr<gfxFontSrcURI> mURI;               
-  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;  
-  RefPtr<gfxFontSrcPrincipal>
-      mOriginPrincipal;  
+  nsCString mLocalName;                          
+  RefPtr<gfxFontSrcURI> mURI;                    
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;       
+  RefPtr<gfxFontSrcPrincipal> mOriginPrincipal;  
 
   RefPtr<gfxFontFaceBufferSource> mBuffer;
 
@@ -107,18 +106,12 @@ inline bool operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b) {
     case gfxFontFaceSrc::eSourceType_Local:
       return a.mLocalName == b.mLocalName;
     case gfxFontFaceSrc::eSourceType_URL: {
-      if (a.mUseOriginPrincipal != b.mUseOriginPrincipal) {
-        return false;
-      }
-      if (a.mUseOriginPrincipal &&
-          !a.mOriginPrincipal->Equals(b.mOriginPrincipal)) {
-        return false;
-      }
       bool equals;
-      return a.mFormatFlags == b.mFormatFlags &&
+      return a.mUseOriginPrincipal == b.mUseOriginPrincipal &&
+             a.mFormatFlags == b.mFormatFlags &&
              (a.mURI == b.mURI || a.mURI->Equals(b.mURI)) &&
              NS_SUCCEEDED(a.mReferrerInfo->Equals(b.mReferrerInfo, &equals)) &&
-             equals;
+             equals && a.mOriginPrincipal->Equals(b.mOriginPrincipal);
     }
     case gfxFontFaceSrc::eSourceType_Buffer:
       return a.mBuffer == b.mBuffer;

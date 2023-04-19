@@ -22,7 +22,7 @@ class nsSimpleURI;
 
 
 
-class gfxFontSrcURI final {
+class gfxFontSrcURI {
  public:
   explicit gfxFontSrcURI(nsIURI* aURI);
 
@@ -35,21 +35,11 @@ class gfxFontSrcURI final {
   nsCString GetSpecOrDefault();
 
   PLDHashNumber Hash() const { return mHash; }
-
-  bool InheritsSecurityContext() {
-    EnsureInitialized();
-    return mInheritsSecurityContext;
-  }
-
-  bool SyncLoadIsOK() {
-    EnsureInitialized();
-    return mSyncLoadIsOK;
-  }
+  bool InheritsSecurityContext() const { return mInheritsSecurityContext; }
+  bool SyncLoadIsOK() const { return mSyncLoadIsOK; }
 
  private:
   ~gfxFontSrcURI();
-
-  void EnsureInitialized();
 
   
   nsCOMPtr<nsIURI> mURI;
@@ -68,14 +58,11 @@ class gfxFontSrcURI final {
   PLDHashNumber mHash;
 
   
-  bool mInitialized = false;
+  
+  bool mInheritsSecurityContext;
 
   
-  
-  bool mInheritsSecurityContext = false;
-
-  
-  bool mSyncLoadIsOK = false;
+  bool mSyncLoadIsOK;
 };
 
 #endif  

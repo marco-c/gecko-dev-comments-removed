@@ -2012,9 +2012,11 @@ void gfxFontGroup::AddFamilyToFontList(fontlist::Family* aFamily,
                                        StyleGenericFontFamily aGeneric) {
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
   if (!aFamily->IsInitialized()) {
-    if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
+    if (!NS_IsMainThread() && ServoStyleSet::Current()) {
       
       
+      ServoStyleSet* set = ServoStyleSet::Current();
+      MOZ_ASSERT(set);
       set->AppendTask(PostTraversalTask::InitializeFamily(aFamily));
       set->AppendTask(PostTraversalTask::FontInfoUpdate(set));
       return;
