@@ -576,10 +576,6 @@ enum {
 
 
 
-
-
-
-
 int av_hwframe_map(AVFrame *dst, const AVFrame *src, int flags);
 
 

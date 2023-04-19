@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include "attributes.h"
+#include "error.h"
 #include "avutil.h"
 #include "version.h"
 
@@ -237,15 +238,14 @@ av_alloc_size(1, 2) void *av_malloc_array(size_t nmemb, size_t size);
 
 
 
-void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib av_alloc_size(1, 2);
-
-#if FF_API_AV_MALLOCZ_ARRAY
+av_alloc_size(1, 2) void *av_mallocz_array(size_t nmemb, size_t size);
 
 
 
-attribute_deprecated
-void *av_mallocz_array(size_t nmemb, size_t size) av_malloc_attrib av_alloc_size(1, 2);
-#endif
+
+
+
+void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib;
 
 
 
@@ -327,6 +327,7 @@ void *av_realloc_f(void *ptr, size_t nelem, size_t elsize);
 
 
 av_alloc_size(2, 3) void *av_realloc_array(void *ptr, size_t nmemb, size_t size);
+
 
 
 
@@ -671,7 +672,16 @@ void *av_dynarray2_add(void **tab_ptr, int *nb_ptr, size_t elem_size,
 
 
 
-int av_size_mult(size_t a, size_t b, size_t *r);
+static inline int av_size_mult(size_t a, size_t b, size_t *r)
+{
+    size_t t = a * b;
+    
+
+    if ((a | b) >= ((size_t)1 << (sizeof(size_t) * 4)) && a && t / a != b)
+        return AVERROR(EINVAL);
+    *r = t;
+    return 0;
+}
 
 
 

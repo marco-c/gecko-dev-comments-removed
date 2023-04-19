@@ -19,9 +19,7 @@
 
 
 
-#include <stdint.h>
-#include "libavutil/error.h"
-#include "bytestream.h"
+#include "libavutil/common.h"
 #include "vp56.h"
 
 const uint8_t ff_vp56_norm_shift[256]= {

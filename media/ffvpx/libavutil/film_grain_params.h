@@ -28,11 +28,6 @@ enum AVFilmGrainParamsType {
 
 
     AV_FILM_GRAIN_PARAMS_AV1,
-
-    
-
-
-    AV_FILM_GRAIN_PARAMS_H274,
 };
 
 
@@ -129,89 +124,6 @@ typedef struct AVFilmGrainAOMParams {
 
 
 
-typedef struct AVFilmGrainH274Params {
-    
-
-
-
-    int model_id;
-
-    
-
-
-    int bit_depth_luma;
-
-    
-
-
-    int bit_depth_chroma;
-
-    enum AVColorRange                  color_range;
-    enum AVColorPrimaries              color_primaries;
-    enum AVColorTransferCharacteristic color_trc;
-    enum AVColorSpace                  color_space;
-
-    
-
-
-
-
-
-    int blending_mode_id;
-
-    
-
-
-    int log2_scale_factor;
-
-    
-
-
-    int component_model_present[3 ];
-
-    
-
-
-
-    uint16_t num_intensity_intervals[3 ];
-
-    
-
-
-
-    uint8_t num_model_values[3 ];
-
-    
-
-
-
-    uint8_t intensity_interval_lower_bound[3 ][256 ];
-
-    
-
-
-
-    uint8_t intensity_interval_upper_bound[3 ][256 ];
-
-    
-
-
-
-
-
-
-
-
-    int16_t comp_model_value[3 ][256 ][6 ];
-} AVFilmGrainH274Params;
-
-
-
-
-
-
-
-
 
 typedef struct AVFilmGrainParams {
     
@@ -220,9 +132,6 @@ typedef struct AVFilmGrainParams {
     enum AVFilmGrainParamsType type;
 
     
-
-
-
 
 
     uint64_t seed;
@@ -234,7 +143,6 @@ typedef struct AVFilmGrainParams {
 
     union {
         AVFilmGrainAOMParams aom;
-        AVFilmGrainH274Params h274;
     } codec;
 } AVFilmGrainParams;
 

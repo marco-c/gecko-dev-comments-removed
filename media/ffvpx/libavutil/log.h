@@ -22,6 +22,7 @@
 #define AVUTIL_LOG_H
 
 #include <stdarg.h>
+#include "avutil.h"
 #include "attributes.h"
 #include "version.h"
 
@@ -109,6 +110,24 @@ typedef struct AVClass {
     
 
 
+    void* (*child_next)(void *obj, void *prev);
+
+#if FF_API_CHILD_CLASS_NEXT
+    
+
+
+
+
+
+
+
+    attribute_deprecated
+    const struct AVClass* (*child_class_next)(const struct AVClass *prev);
+#endif
+
+    
+
+
 
 
     AVClassCategory category;
@@ -124,11 +143,6 @@ typedef struct AVClass {
 
 
     int (*query_ranges)(struct AVOptionRanges **, void *obj, const char *key, int flags);
-
-    
-
-
-    void* (*child_next)(void *obj, void *prev);
 
     
 

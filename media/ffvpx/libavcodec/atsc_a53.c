@@ -73,7 +73,7 @@ int ff_parse_a53_cc(AVBufferRef **pbuf, const uint8_t *data, int size)
     int ret, cc_count;
 
     if (size < 3)
-        return AVERROR_INVALIDDATA;
+        return AVERROR(EINVAL);
 
     ret = init_get_bits8(&gb, data, size);
     if (ret < 0)
@@ -95,12 +95,12 @@ int ff_parse_a53_cc(AVBufferRef **pbuf, const uint8_t *data, int size)
 
     
     if (cc_count * 3 >= (get_bits_left(&gb) >> 3))
-        return AVERROR_INVALIDDATA;
+        return AVERROR(EINVAL);
 
     new_size = (old_size + cc_count * 3);
 
     if (new_size > INT_MAX)
-        return AVERROR_INVALIDDATA;
+        return AVERROR(EINVAL);
 
     
     ret = av_buffer_realloc(pbuf, new_size);

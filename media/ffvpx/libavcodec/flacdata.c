@@ -19,7 +19,7 @@
 
 
 
-#include "flacdata.h"
+#include "internal.h"
 
 const int ff_flac_sample_rate_table[16] =
 { 0,

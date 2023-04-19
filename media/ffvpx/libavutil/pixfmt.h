@@ -112,11 +112,21 @@ enum AVPixelFormat {
     AV_PIX_FMT_BGR555BE,  
     AV_PIX_FMT_BGR555LE,  
 
+#if FF_API_VAAPI
+    
+    
+    AV_PIX_FMT_VAAPI_MOCO, 
+    AV_PIX_FMT_VAAPI_IDCT, 
+    AV_PIX_FMT_VAAPI_VLD,  
+    
+    AV_PIX_FMT_VAAPI = AV_PIX_FMT_VAAPI_VLD,
+#else
     
 
 
 
     AV_PIX_FMT_VAAPI,
+#endif
 
     AV_PIX_FMT_YUV420P16LE,  
     AV_PIX_FMT_YUV420P16BE,  
@@ -260,9 +270,7 @@ enum AVPixelFormat {
     AV_PIX_FMT_BAYER_GRBG16LE, 
     AV_PIX_FMT_BAYER_GRBG16BE, 
 
-#if FF_API_XVMC
     AV_PIX_FMT_XVMC,
-#endif
 
     AV_PIX_FMT_YUV440P10LE, 
     AV_PIX_FMT_YUV440P10BE, 
@@ -352,21 +360,6 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_X2RGB10LE, 
     AV_PIX_FMT_X2RGB10BE, 
-    AV_PIX_FMT_X2BGR10LE, 
-    AV_PIX_FMT_X2BGR10BE, 
-
-    AV_PIX_FMT_P210BE,      
-    AV_PIX_FMT_P210LE,      
-
-    AV_PIX_FMT_P410BE,      
-    AV_PIX_FMT_P410LE,      
-
-    AV_PIX_FMT_P216BE,      
-    AV_PIX_FMT_P216LE,      
-
-    AV_PIX_FMT_P416BE,      
-    AV_PIX_FMT_P416LE,      
-
     AV_PIX_FMT_NB         
 };
 
@@ -457,12 +450,6 @@ enum AVPixelFormat {
 
 #define AV_PIX_FMT_Y210       AV_PIX_FMT_NE(Y210BE,  Y210LE)
 #define AV_PIX_FMT_X2RGB10    AV_PIX_FMT_NE(X2RGB10BE, X2RGB10LE)
-#define AV_PIX_FMT_X2BGR10    AV_PIX_FMT_NE(X2BGR10BE, X2BGR10LE)
-
-#define AV_PIX_FMT_P210       AV_PIX_FMT_NE(P210BE, P210LE)
-#define AV_PIX_FMT_P410       AV_PIX_FMT_NE(P410BE, P410LE)
-#define AV_PIX_FMT_P216       AV_PIX_FMT_NE(P216BE, P216LE)
-#define AV_PIX_FMT_P416       AV_PIX_FMT_NE(P416BE, P416LE)
 
 
 
@@ -526,7 +513,7 @@ enum AVColorSpace {
     AVCOL_SPC_RGB         = 0,  
     AVCOL_SPC_BT709       = 1,  
     AVCOL_SPC_UNSPECIFIED = 2,
-    AVCOL_SPC_RESERVED    = 3,  
+    AVCOL_SPC_RESERVED    = 3,
     AVCOL_SPC_FCC         = 4,  
     AVCOL_SPC_BT470BG     = 5,  
     AVCOL_SPC_SMPTE170M   = 6,  
