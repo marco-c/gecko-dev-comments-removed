@@ -45,7 +45,11 @@ add_task(async function aboutDialog_AppUpdater_stop_staging() {
     },
     {
       panelId: "checkForUpdates",
+      
+      
+      
       checkActiveUpdate: { state: STATE_PENDING },
+      expectedStateOverride: Ci.nsIApplicationUpdateService.STATE_STAGING,
     },
   ]);
 
