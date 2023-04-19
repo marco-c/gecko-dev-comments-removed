@@ -643,8 +643,14 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       "The preceding invisible BR element computation was different");
   EditActionResult ret(NS_OK);
   if (aListElementTagName.isSome() ||
-      aLeftBlockElement.NodeInfo()->NameAtom() ==
-          aRightBlockElement.NodeInfo()->NameAtom()) {
+      
+      
+      
+      
+      (aLeftBlockElement.NodeInfo()->NameAtom() ==
+           aRightBlockElement.NodeInfo()->NameAtom() &&
+       EditorUtils::GetComputedWhiteSpaceStyle(aLeftBlockElement) ==
+           EditorUtils::GetComputedWhiteSpaceStyle(aRightBlockElement))) {
     
     EditorDOMPoint atFirstChildOfRightNode;
     nsresult rv = aHTMLEditor.JoinNearestEditableNodesWithTransaction(

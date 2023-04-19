@@ -10,6 +10,7 @@
 #include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/EditorForwards.h"
 #include "mozilla/IntegerRange.h"       
+#include "mozilla/Maybe.h"              
 #include "mozilla/Result.h"             
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/HTMLBRElement.h"  
@@ -27,6 +28,8 @@
 class nsITransferable;
 
 namespace mozilla {
+
+enum class StyleWhiteSpace : uint8_t;
 
 
 
@@ -394,6 +397,12 @@ class EditorUtils final {
     }
     return aContent.IsElement() && !IsPaddingBRElementForEmptyEditor(aContent);
   }
+
+  
+
+
+  static Maybe<StyleWhiteSpace> GetComputedWhiteSpaceStyle(
+      const nsIContent& aContent);
 
   
 
