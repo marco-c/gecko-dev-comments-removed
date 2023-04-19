@@ -39,6 +39,12 @@ class EncoderSwitchRequestCallback {
 };
 
 struct VideoStreamEncoderSettings {
+  enum class BitrateAllocationCallbackType {
+    kVideoBitrateAllocation,
+    kVideoBitrateAllocationWhenScreenSharing,
+    kVideoLayersAllocation
+  };
+
   explicit VideoStreamEncoderSettings(
       const VideoEncoder::Capabilities& capabilities)
       : capabilities(capabilities) {}
@@ -59,6 +65,11 @@ struct VideoStreamEncoderSettings {
   
   
   VideoEncoder::Capabilities capabilities;
+
+  
+  
+  BitrateAllocationCallbackType allocation_cb_type =
+      BitrateAllocationCallbackType::kVideoBitrateAllocationWhenScreenSharing;
 };
 
 }  

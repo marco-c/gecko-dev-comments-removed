@@ -67,8 +67,7 @@ struct PacingConfig {
 
 
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
-                            public VideoStreamEncoderInterface::EncoderSink,
-                            public VideoBitrateAllocationObserver {
+                            public VideoStreamEncoderInterface::EncoderSink {
  public:
   VideoSendStreamImpl(
       Clock* clock,
@@ -113,11 +112,15 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   
   uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;
 
+  
   void OnEncoderConfigurationChanged(
       std::vector<VideoStream> streams,
       bool is_svc,
       VideoEncoderConfig::ContentType content_type,
       int min_transmit_bitrate_bps) override;
+
+  void OnBitrateAllocationUpdated(
+      const VideoBitrateAllocation& allocation) override;
 
   
   
@@ -128,10 +131,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   
   void OnDroppedFrame(EncodedImageCallback::DropReason reason) override;
-
-  
-  void OnBitrateAllocationUpdated(
-      const VideoBitrateAllocation& allocation) override;
 
   
   void StartupVideoSendStream();

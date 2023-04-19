@@ -49,6 +49,9 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
         bool is_svc,
         VideoEncoderConfig::ContentType content_type,
         int min_transmit_bitrate_bps) = 0;
+
+    virtual void OnBitrateAllocationUpdated(
+        const VideoBitrateAllocation& allocation) = 0;
   };
 
   
@@ -109,11 +112,6 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
                                 uint8_t fraction_lost,
                                 int64_t round_trip_time_ms,
                                 double cwnd_reduce_ratio) = 0;
-
-  
-  
-  virtual void SetBitrateAllocationObserver(
-      VideoBitrateAllocationObserver* bitrate_observer) = 0;
 
   
   
