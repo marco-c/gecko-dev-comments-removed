@@ -497,8 +497,9 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
             });
       });
 
+  
   p = p->Then(
-      GetCurrentSerialEventTarget(), __func__,
+      managerThread, __func__,
       [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
         StaticMutexAutoLock lock(sLaunchMutex);
         sLaunchPromises[RemoteDecodeIn::RddProcess] = nullptr;
@@ -589,8 +590,19 @@ RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded(
                    });
       });
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   p = p->Then(
-      GetCurrentSerialEventTarget(), __func__,
+      managerThread, __func__,
       [aLocation](
           const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
         StaticMutexAutoLock lock(sLaunchMutex);
