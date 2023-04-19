@@ -35,8 +35,7 @@ class VCMDecoderDataBase {
   bool IsExternalDecoderRegistered(uint8_t payload_type) const;
 
   bool RegisterReceiveCodec(uint8_t payload_type,
-                            const VideoCodec& receive_codec,
-                            int number_of_cores);
+                            const VideoDecoder::Settings& settings);
   bool DeregisterReceiveCodec(uint8_t payload_type);
 
   
@@ -49,17 +48,12 @@ class VCMDecoderDataBase {
       VCMDecodedFrameCallback* decoded_frame_callback);
 
  private:
-  struct DecoderSettings {
-    VideoCodec settings;
-    int number_of_cores;
-  };
-
   void CreateAndInitDecoder(const VCMEncodedFrame& frame);
 
   absl::optional<uint8_t> current_payload_type_;
   absl::optional<VCMGenericDecoder> current_decoder_;
   
-  std::map<uint8_t, DecoderSettings> decoder_settings_;
+  std::map<uint8_t, VideoDecoder::Settings> decoder_settings_;
   
   std::map<uint8_t, VideoDecoder*> decoders_;
 };

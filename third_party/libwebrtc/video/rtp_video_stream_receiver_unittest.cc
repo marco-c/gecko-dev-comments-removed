@@ -539,7 +539,6 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
 
 TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   constexpr int kPayloadType = 99;
-  VideoCodec codec;
   std::map<std::string, std::string> codec_params;
   
   
