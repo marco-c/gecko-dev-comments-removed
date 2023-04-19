@@ -131,6 +131,15 @@ const startupPhases = {
       ignoreIfUnused: true,
       maxCount: 1,
     },
+    {
+      
+      
+      
+      name: "PCompositorBridge::Msg_Resume",
+      condition: LINUX,
+      ignoreIfUnused: true,
+      maxCount: 1,
+    },
   ],
 
   
