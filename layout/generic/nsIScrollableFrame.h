@@ -426,12 +426,16 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+
+
   enum class AnimationState {
-    MainThread,    
-    APZPending,    
-    APZRequested,  
-    APZInProgress  
-                   
+    MainThread,        
+    APZPending,        
+    APZRequested,      
+    APZInProgress,     
+                       
+    TriggeredByScript  
+                       
   };
   virtual mozilla::EnumSet<AnimationState> ScrollAnimationState() const = 0;
 

@@ -533,6 +533,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool HasScrollUpdates() const { return !mScrollUpdates.IsEmpty(); }
 
   bool IsLastScrollUpdateAnimating() const;
+  bool IsLastScrollUpdateTriggeredByScriptAnimating() const;
   mozilla::EnumSet<AnimationState> ScrollAnimationState() const;
 
   void ResetScrollInfoIfNeeded(const MainThreadScrollGeneration& aGeneration,
@@ -798,6 +799,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   bool mApzAnimationRequested : 1;
+
+  
+  
+  bool mApzAnimationTriggeredByScriptRequested : 1;
 
   
   bool mReclampVVOffsetInReflowFinished : 1;
