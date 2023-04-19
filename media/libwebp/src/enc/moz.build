@@ -4,9 +4,6 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'ImageLib')
-
 SOURCES += [
     'alpha_enc.c',
     'analysis_enc.c',

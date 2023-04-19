@@ -4,9 +4,6 @@
 
 
 
-with Files('**'):
-    BUG_COMPONENT = ('Core', 'ImageLib')
-
 SOURCES += [
     'bit_reader_utils.c',
     'bit_writer_utils.c',
