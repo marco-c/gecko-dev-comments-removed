@@ -301,7 +301,7 @@ function ArrayGroup(callbackfn ) {
 
 
   for (var propertyKey in groups) {
-    DefineDataProperty(object, propertyKey, groups[propertyKey])
+    DefineDataProperty(object, propertyKey, groups[propertyKey]);
   }
 
   
@@ -610,7 +610,7 @@ function ArrayCopyWithin(target, start, end = undefined) {
   var count = std_Math_min(final - from, len - to);
 
   
-  if (from < to && to < (from + count)) {
+  if (from < to && to < from + count) {
     
     from = from + count - 1;
     to = to + count - 1;
@@ -1014,9 +1014,9 @@ function ArraySpeciesCreate(originalArray, length) {
 
 function IsConcatSpreadable(O) {
   
-  if (!IsObject(O)
+  if (!IsObject(O) 
 #ifdef ENABLE_RECORD_TUPLE
-      && !IsTuple(O)
+      && !IsTuple(O) 
 #endif
   ) {
     return false;
@@ -1055,7 +1055,8 @@ function ArrayConcat(arg1) {
   
 
   
-  var i = 0, argsLen = arguments.length;
+  var i = 0;
+  var argsLen = arguments.length;
 
   
   var E = O;
