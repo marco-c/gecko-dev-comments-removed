@@ -153,9 +153,10 @@ void HeartbeatHandler::HandleHeartbeatAck(HeartbeatAckChunk chunk) {
     return;
   }
 
-  DurationMs duration(*ctx_->callbacks().TimeMillis() - *info->created_at());
-
-  ctx_->ObserveRTT(duration);
+  TimeMs now = ctx_->callbacks().TimeMillis();
+  if (info->created_at() <= now) {
+    ctx_->ObserveRTT(now - info->created_at());
+  }
 
   
   
