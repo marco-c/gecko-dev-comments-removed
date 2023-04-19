@@ -81,8 +81,9 @@ function getPluralRulesInternals(obj) {
     assert(internals.type === "PluralRules", "bad type escaped getIntlObjectInternals");
 
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     internalProps = resolvePluralRulesInternals(internals.lazyData);
     setInternalProperties(internals, internalProps);
@@ -139,10 +140,11 @@ function InitializePluralRules(pluralRules, locales, options) {
     lazyPluralRulesData.requestedLocales = requestedLocales;
 
     
-    if (options === undefined)
+    if (options === undefined) {
         options = std_Object_create(null);
-    else
+    } else {
         options = ToObject(options);
+    }
 
     
     let opt = new_Record();
@@ -298,8 +300,9 @@ function Intl_PluralRules_resolvedOptions() {
     }
 
     var pluralCategories = [];
-    for (var i = 0; i < internalsPluralCategories.length; i++)
+    for (var i = 0; i < internalsPluralCategories.length; i++) {
         DefineDataProperty(pluralCategories, i, internalsPluralCategories[i]);
+    }
 
     
     DefineDataProperty(result, "pluralCategories", pluralCategories);
