@@ -2942,13 +2942,10 @@ void GCRuntime::updateAllGCStartThresholds() {
 }
 
 void GCRuntime::updateAllocationRates() {
+  
+  
+
   TimeStamp currentTime = ReallyNow();
-  MOZ_ASSERT(currentTime - lastAllocRateUpdateTime >=
-             collectorTimeSinceAllocRateUpdate.ref());
-
-  
-  
-
   TimeDuration totalTime = currentTime - lastAllocRateUpdateTime;
   if (collectorTimeSinceAllocRateUpdate >= totalTime) {
     
