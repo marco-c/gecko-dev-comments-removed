@@ -841,6 +841,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   uint32_t activeDocsSandboxFlags = 0;
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> coepToInheritForAboutBlank;
   if (!newBC) {
     
     
@@ -853,6 +855,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (Document* doc = parentWindow->GetDoc()) {
         
         activeDocsSandboxFlags = doc->GetSandboxFlags();
+
+        if (!aForceNoOpener) {
+          cspToInheritForAboutBlank = doc->GetCsp();
+          coepToInheritForAboutBlank = doc->GetEmbedderPolicy();
+        }
+
         
         
         if (aPrintKind == PRINT_NONE &&
@@ -1159,16 +1167,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     if (win) {
-      nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
-      Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> coepToInheritForAboutBlank;
-      nsCOMPtr<mozIDOMWindowProxy> targetOpener = win->GetSameProcessOpener();
-      nsCOMPtr<nsIDocShell> openerDocShell(do_GetInterface(targetOpener));
-      if (openerDocShell) {
-        RefPtr<Document> openerDoc =
-            static_cast<nsDocShell*>(openerDocShell.get())->GetDocument();
-        cspToInheritForAboutBlank = openerDoc ? openerDoc->GetCsp() : nullptr;
-        coepToInheritForAboutBlank = openerDoc->GetEmbedderPolicy();
-      }
+      MOZ_ASSERT(windowIsNew);
+      MOZ_ASSERT(!win->GetSameProcessOpener() ||
+                 win->GetSameProcessOpener() == aParent);
       win->SetInitialPrincipalToSubject(cspToInheritForAboutBlank,
                                         coepToInheritForAboutBlank);
 
