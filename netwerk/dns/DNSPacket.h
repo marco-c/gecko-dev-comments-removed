@@ -53,6 +53,7 @@ class DNSPacket {
   virtual ~DNSPacket() = default;
 
   Result<uint8_t, nsresult> GetRCode() const;
+  Result<bool, nsresult> RecursionAvailable() const;
 
   
   nsresult OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
