@@ -16,19 +16,31 @@
 namespace cricket {
 
 
-extern const char kMediaProtocolRtpPrefix[];
-extern const char kMediaProtocolSctp[];
-extern const char kMediaProtocolDtlsSctp[];
-extern const char kMediaProtocolUdpDtlsSctp[];
-extern const char kMediaProtocolTcpDtlsSctp[];
 
-bool IsDtlsSctp(absl::string_view protocol);
-bool IsPlainSctp(absl::string_view protocol);
+extern const char kMediaProtocolSctp[];
+extern const char kMediaProtocolUdpDtlsSctp[];
+extern const char kMediaProtocolDtlsSavpf[];
+extern const char kMediaProtocolSavpf[];
+extern const char kMediaProtocolAvpf[];
+
+
+extern const char kMediaProtocolTcpDtlsSctp[];
+extern const char kMediaProtocolDtlsSctp[];
 
 
 bool IsRtpProtocol(absl::string_view protocol);
 
 bool IsSctpProtocol(absl::string_view protocol);
+
+
+bool IsPlainSctp(absl::string_view protocol);
+
+bool IsDtlsSctp(absl::string_view protocol);
+
+
+bool IsPlainRtp(absl::string_view protocol);
+
+bool IsDtlsRtp(absl::string_view protocol);
 
 }  
 

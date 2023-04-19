@@ -21,12 +21,38 @@ namespace cricket {
 
 
 
+
+
+
+
 const char kMediaProtocolRtpPrefix[] = "RTP/";
 
+
 const char kMediaProtocolSctp[] = "SCTP";
-const char kMediaProtocolDtlsSctp[] = "DTLS/SCTP";
 const char kMediaProtocolUdpDtlsSctp[] = "UDP/DTLS/SCTP";
+const char kMediaProtocolDtlsSctp[] = "DTLS/SCTP";
 const char kMediaProtocolTcpDtlsSctp[] = "TCP/DTLS/SCTP";
+
+const char kMediaProtocolDtlsSavpf[] = "UDP/TLS/RTP/SAVPF";
+const char kMediaProtocolSavpf[] = "RTP/SAVPF";
+const char kMediaProtocolAvpf[] = "RTP/AVPF";
+
+namespace {
+
+
+
+
+
+
+const char kMediaProtocolSavp[] = "RTP/SAVP";
+const char kMediaProtocolAvp[] = "RTP/AVP";
+
+const char kMediaProtocolTcpTlsSavpf[] = "TCP/TLS/RTP/SAVPF";
+const char kMediaProtocolUdpTlsSavpf[] = "UDP/TLS/RTP/SAVPF";
+const char kMediaProtocolTcpTlsSavp[] = "TCP/TLS/RTP/SAVP";
+const char kMediaProtocolUdpTlsSavp[] = "UDP/TLS/RTP/SAVP";
+
+}  
 
 bool IsDtlsSctp(absl::string_view protocol) {
   return protocol == kMediaProtocolDtlsSctp ||
@@ -36,6 +62,10 @@ bool IsDtlsSctp(absl::string_view protocol) {
 
 bool IsPlainSctp(absl::string_view protocol) {
   return protocol == kMediaProtocolSctp;
+}
+
+bool IsSctpProtocol(absl::string_view protocol) {
+  return IsPlainSctp(protocol) || IsDtlsSctp(protocol);
 }
 
 bool IsRtpProtocol(absl::string_view protocol) {
@@ -53,8 +83,23 @@ bool IsRtpProtocol(absl::string_view protocol) {
   return false;
 }
 
-bool IsSctpProtocol(absl::string_view protocol) {
-  return IsPlainSctp(protocol) || IsDtlsSctp(protocol);
+
+
+
+
+bool IsDtlsRtp(absl::string_view protocol) {
+  
+  return protocol == kMediaProtocolDtlsSavpf ||
+         protocol == kMediaProtocolTcpTlsSavpf ||
+         protocol == kMediaProtocolUdpTlsSavpf ||
+         protocol == kMediaProtocolUdpTlsSavp ||
+         protocol == kMediaProtocolTcpTlsSavp;
+}
+
+bool IsPlainRtp(absl::string_view protocol) {
+  
+  return protocol == kMediaProtocolSavpf || protocol == kMediaProtocolAvpf ||
+         protocol == kMediaProtocolSavp || protocol == kMediaProtocolAvp;
 }
 
 }  

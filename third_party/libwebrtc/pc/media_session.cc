@@ -116,33 +116,6 @@ cricket::RtpHeaderExtensions UnstoppedOrPresentRtpHeaderExtensions(
 
 namespace cricket {
 
-
-
-
-const char kMediaProtocolAvpf[] = "RTP/AVPF";
-
-const char kMediaProtocolDtlsSavpf[] = "UDP/TLS/RTP/SAVPF";
-
-
-
-const char kMediaProtocolSavpf[] = "RTP/SAVPF";
-
-
-
-
-
-static bool IsDtlsRtp(const std::string& protocol) {
-  
-  return protocol == "UDP/TLS/RTP/SAVPF" || protocol == "TCP/TLS/RTP/SAVPF" ||
-         protocol == "UDP/TLS/RTP/SAVP" || protocol == "TCP/TLS/RTP/SAVP";
-}
-
-static bool IsPlainRtp(const std::string& protocol) {
-  
-  return protocol == "RTP/SAVPF" || protocol == "RTP/AVPF" ||
-         protocol == "RTP/SAVP" || protocol == "RTP/AVP";
-}
-
 static RtpTransceiverDirection NegotiateRtpTransceiverDirection(
     RtpTransceiverDirection offer,
     RtpTransceiverDirection wants) {
@@ -1437,13 +1410,11 @@ static bool IsMediaProtocolSupported(MediaType type,
 
   if (type == MEDIA_TYPE_DATA) {
     
-    
     if (secure_transport) {
       
-      return IsDtlsSctp(protocol) || IsDtlsRtp(protocol) ||
-             IsPlainRtp(protocol);
+      return IsDtlsSctp(protocol);
     } else {
-      return IsPlainSctp(protocol) || IsPlainRtp(protocol);
+      return IsPlainSctp(protocol);
     }
   }
 
