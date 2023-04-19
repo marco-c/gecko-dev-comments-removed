@@ -5447,12 +5447,7 @@ var XULBrowserWindow = {
     
     
     
-    gURLBar.setURI(
-      aLocationURI,
-      aIsSimulated,
-      isSessionRestore,
-      aRequest instanceof Ci.nsIChannel ? aRequest.originalURI : null
-    );
+    gURLBar.setURI(aLocationURI, aIsSimulated, isSessionRestore);
 
     BookmarkingUI.onLocationChange();
     
