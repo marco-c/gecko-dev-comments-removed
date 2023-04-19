@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+#include "api/audio/echo_detector_creator.h"
+
+#include "modules/audio_processing/residual_echo_detector.h"
+#include "rtc_base/ref_counted_object.h"
+
+namespace webrtc {
+
+rtc::scoped_refptr<EchoDetector> CreateEchoDetector() {
+  return rtc::make_ref_counted<ResidualEchoDetector>();
+}
+
+}  

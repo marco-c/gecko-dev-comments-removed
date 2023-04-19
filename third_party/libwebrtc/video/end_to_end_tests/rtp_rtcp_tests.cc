@@ -316,7 +316,7 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
         }
 
         GetVideoEncoderConfig()->video_stream_factory =
-            new rtc::RefCountedObject<VideoStreamFactory>();
+            rtc::make_ref_counted<VideoStreamFactory>();
         
         
         one_stream = GetVideoEncoderConfig()->Copy();

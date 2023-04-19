@@ -65,7 +65,7 @@ class AudioChannelTest : public ::testing::Test {
     
     
     rtc::scoped_refptr<AudioChannel> audio_channel =
-        new rtc::RefCountedObject<AudioChannel>(
+        rtc::make_ref_counted<AudioChannel>(
             &transport_, ssrc, task_queue_factory_.get(), process_thread_.get(),
             audio_mixer_.get(), decoder_factory_);
     audio_channel->SetEncoder(kPcmuPayload, kPcmuFormat,
