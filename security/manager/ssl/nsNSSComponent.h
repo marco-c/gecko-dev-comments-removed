@@ -52,7 +52,7 @@ UniqueCERTCertList FindClientCertificatesWithPrivateKeys();
 bool EnsureNSSInitializedChromeOrContent();
 bool HandleTLSPrefChange(const nsCString& aPref);
 void SetValidationOptionsCommon();
-void NSSShutdownForSocketProcess();
+void PrepareForShutdownInSocketProcess();
 
 
 class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
@@ -91,7 +91,7 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
  private:
   nsresult InitializeNSS();
-  void ShutdownNSS();
+  void PrepareForShutdown();
 
   void setValidationOptions(bool isInitialSetting,
                             const mozilla::MutexAutoLock& proofOfLock);
@@ -136,14 +136,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
   
   static int mInstanceCount;
-  
-  
-  
-  
-  
-  
-  
-  bool mLoadLoadableCertsTaskDispatched;
   
   
   
