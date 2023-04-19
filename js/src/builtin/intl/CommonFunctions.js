@@ -59,13 +59,6 @@ function endOfUnicodeExtensions(locale, start) {
   );
 
   
-  #define HYPHEN 0x2D
-  assert(
-    std_String_fromCharCode(HYPHEN) === "-",
-    "code unit constant should match the expected character"
-  );
-
-  
   
   
   
@@ -73,10 +66,10 @@ function endOfUnicodeExtensions(locale, start) {
   
   
   for (var i = start + 5, end = locale.length - 4; i <= end; i++) {
-    if (callFunction(std_String_charCodeAt, locale, i) !== HYPHEN) {
+    if (locale[i] !== "-") {
       continue;
     }
-    if (callFunction(std_String_charCodeAt, locale, i + 2) === HYPHEN) {
+    if (locale[i + 2] === "-") {
       return i;
     }
 
@@ -84,8 +77,6 @@ function endOfUnicodeExtensions(locale, start) {
     
     i += 2;
   }
-
-  #undef HYPHEN
 
   
   
