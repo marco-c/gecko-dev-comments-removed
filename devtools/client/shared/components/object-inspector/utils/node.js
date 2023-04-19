@@ -290,7 +290,12 @@ function nodeHasEntries(item) {
     
     
     
-    (className === "FormData" && Array.isArray(value.preview?.entries))
+    (className === "FormData" && Array.isArray(value.preview?.entries)) ||
+    
+    
+    
+    (className === "MIDIInputMap" && Array.isArray(value.preview?.entries)) ||
+    (className === "MIDIOutputMap" && Array.isArray(value.preview?.entries))
   );
 }
 

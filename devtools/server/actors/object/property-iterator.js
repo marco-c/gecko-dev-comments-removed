@@ -70,8 +70,11 @@ const PropertyIteratorActor = protocol.ActorClassWithSpec(
           this.iterator = enumHeadersEntries(objectActor);
         } else if (cls == "FormData") {
           this.iterator = enumFormDataEntries(objectActor);
-        }
-         else {
+        } else if (cls == "MIDIInputMap") {
+          this.iterator = enumMidiInputMapEntries(objectActor);
+        } else if (cls == "MIDIOutputMap") {
+          this.iterator = enumMidiOutputMapEntries(objectActor);
+        } else {
           throw new Error(
             "Unsupported class to enumerate entries from: " + cls
           );
@@ -439,6 +442,62 @@ function enumHeadersEntries(objectActor) {
   };
 }
 
+function enumMidiInputMapEntries(objectActor) {
+  let raw = objectActor.obj.unsafeDereference();
+  
+  
+  
+  const entries = Array.from(
+    waiveXrays(MIDIInputMap.prototype.entries.call(waiveXrays(raw)))
+  );
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (const [key, value] of entries) {
+        yield [key, gripFromEntry(objectActor, value)];
+      }
+    },
+    size: entries.length,
+    propertyName(index) {
+      return entries[index][0];
+    },
+    propertyDescription(index) {
+      return {
+        enumerable: true,
+        value: gripFromEntry(objectActor, entries[index][1]),
+      };
+    },
+  };
+}
+
+function enumMidiOutputMapEntries(objectActor) {
+  let raw = objectActor.obj.unsafeDereference();
+  
+  
+  
+  const entries = Array.from(
+    waiveXrays(MIDIOutputMap.prototype.entries.call(waiveXrays(raw)))
+  );
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (const [key, value] of entries) {
+        yield [key, gripFromEntry(objectActor, value)];
+      }
+    },
+    size: entries.length,
+    propertyName(index) {
+      return entries[index][0];
+    },
+    propertyDescription(index) {
+      return {
+        enumerable: true,
+        value: gripFromEntry(objectActor, entries[index][1]),
+      };
+    },
+  };
+}
+
 function getWeakMapEntries(obj) {
   
   
@@ -581,6 +640,8 @@ function isUint32(num) {
 module.exports = {
   PropertyIteratorActor,
   enumMapEntries,
+  enumMidiInputMapEntries,
+  enumMidiOutputMapEntries,
   enumSetEntries,
   enumURLSearchParamsEntries,
   enumFormDataEntries,
