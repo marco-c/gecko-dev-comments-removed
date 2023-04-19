@@ -53,7 +53,11 @@ void DocAccessibleWrap::Shutdown() {
   
   if (!IPCAccessibilityActive()) {
     MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
-    SessionAccessibility::UnregisterAccessible(this);
+    if (IsRoot()) {
+      SessionAccessibility::UnregisterAll(PresShellPtr());
+    } else {
+      SessionAccessibility::UnregisterAccessible(this);
+    }
   }
   DocAccessible::Shutdown();
 }
