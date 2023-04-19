@@ -3787,8 +3787,11 @@ class XREMain {
   UniquePtr<XREAppData> mAppData;
 
   nsXREDirProvider mDirProvider;
+
+#ifdef MOZ_WIDGET_GTK
   nsAutoCString mXDGActivationToken;
   nsAutoCString mDesktopStartupID;
+#endif
 
   bool mStartOffline = false;
   bool mShuttingDown = false;
@@ -4693,7 +4696,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
 #endif 
 
-#if defined(MOZ_WIDGET_GTK)
+#ifdef MOZ_WIDGET_GTK
   
   
   if (const char* v = PR_GetEnv("DESKTOP_STARTUP_ID")) {
@@ -4865,7 +4868,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     return 1;
   }
 
-#if defined(MOZ_WIDGET_GTK)
+#ifdef MOZ_WIDGET_GTK
   
   
   if (!mDesktopStartupID.IsEmpty()) {
@@ -4929,8 +4932,12 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (!mDisableRemoteClient) {
       
       
+#  ifdef MOZ_WIDGET_GTK
       const auto& startupToken =
           GdkIsWaylandDisplay() ? mXDGActivationToken : mDesktopStartupID;
+#  else
+      const nsCString startupToken;
+#  endif
       RemoteResult rr = mRemoteService->StartClient(
           startupToken.IsEmpty() ? nullptr : startupToken.get());
       if (rr == REMOTE_FOUND) {
