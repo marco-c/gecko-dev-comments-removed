@@ -533,8 +533,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
 
   
   
-  
-  virtual bool PostRuntimeSetting(RuntimeSetting setting) { return false; }
+  virtual bool PostRuntimeSetting(RuntimeSetting setting) = 0;
 
   
   
