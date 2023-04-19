@@ -48,6 +48,7 @@ function assertTelemetryResults(histograms, type, index, method) {
 
 
 
+
 async function updateTopSites(condition, searchShortcuts = false) {
   
   await SpecialPowers.pushPrefEnv({

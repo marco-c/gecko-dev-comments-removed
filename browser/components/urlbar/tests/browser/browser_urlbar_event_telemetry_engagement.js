@@ -1234,6 +1234,7 @@ add_task(async function disabled() {
 
 
 
+
 async function addTopSite(site) {
   await PlacesUtils.history.clear();
   for (let i = 0; i < 5; i++) {

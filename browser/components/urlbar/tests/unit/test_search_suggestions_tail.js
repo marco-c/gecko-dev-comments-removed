@@ -22,6 +22,7 @@ var previousSuggestionsFn;
 
 
 
+
 function setSuggestionsFn(fn) {
   previousSuggestionsFn = suggestionsFn;
   suggestionsFn = fn;

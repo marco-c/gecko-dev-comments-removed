@@ -173,6 +173,8 @@ async function triggerAutofillAndPickResult(searchString, autofilledValue) {
 
 
 
+
+
 async function getUseCount({ url = undefined, input = undefined }) {
   return PlacesUtils.withConnectionWrapper("test::getUseCount", async db => {
     let rows;

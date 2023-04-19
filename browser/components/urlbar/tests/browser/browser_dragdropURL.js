@@ -41,6 +41,7 @@ add_task(async function test_setup() {
 
 
 
+
 function simulateURLBarDrop(content) {
   EventUtils.synthesizeDrop(
     document.getElementById("home-button"), 

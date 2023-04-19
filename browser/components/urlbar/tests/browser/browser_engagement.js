@@ -84,6 +84,8 @@ add_task(async function privateWindow_engagement() {
 
 
 
+
+
 async function doTest({
   expectedEndState,
   endEngagement,

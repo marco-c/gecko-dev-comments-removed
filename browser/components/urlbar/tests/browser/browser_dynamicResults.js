@@ -726,6 +726,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
 
 
 
+
 async function withDynamicTypeProvider(
   callback,
   provider = new TestProvider()

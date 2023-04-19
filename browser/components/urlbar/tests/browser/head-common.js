@@ -53,6 +53,7 @@ XPCOMUtils.defineLazyGetter(this, "SearchTestUtils", () => {
 
 
 
+
 async function withHttpServer(
   details = { scheme: "http", host: "localhost", port: -1 },
   taskFn

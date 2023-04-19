@@ -114,6 +114,8 @@ add_task(async function mouse_insideTipButNotOnButtons() {
 
 
 
+
+
 async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   
   let tab;

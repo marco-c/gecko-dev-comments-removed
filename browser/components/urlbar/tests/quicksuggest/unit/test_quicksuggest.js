@@ -627,6 +627,8 @@ add_task(async function dedupeAgainstURL_lowerPrefix() {
 
 
 
+
+
 async function doDedupeAgainstURLTest({
   searchString,
   expectedQuickSuggestResult,

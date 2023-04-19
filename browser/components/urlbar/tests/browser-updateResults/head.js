@@ -113,6 +113,8 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
 
 
 
+
+
 function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
   if (count) {
     specs.push({ count, type });
@@ -210,6 +212,14 @@ function initSuggestedIndexTest() {
     gSuggestedIndexTaskIndex = 0;
   });
 }
+
+
+
+
+
+
+
+
 
 
 

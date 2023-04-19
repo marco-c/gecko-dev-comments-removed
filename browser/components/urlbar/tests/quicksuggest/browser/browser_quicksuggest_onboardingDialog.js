@@ -1486,6 +1486,8 @@ async function doDialogTest({
 
 
 
+
+
 async function showOnboardingDialog({ skipIntroduction } = {}) {
   const dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
     null,

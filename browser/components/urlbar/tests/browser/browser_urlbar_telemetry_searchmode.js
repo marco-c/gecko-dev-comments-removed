@@ -43,6 +43,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
 function assertSearchModeScalars(entry, engineOrSource, resultIndex = -1) {
   
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, false);

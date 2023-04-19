@@ -413,6 +413,11 @@ function frecencyForUrl(aURI) {
 
 
 
+
+
+
+
+
 function makeBookmarkResult(
   queryContext,
   {
@@ -450,6 +455,9 @@ function makeBookmarkResult(
 
 
 
+
+
+
 function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
   return new UrlbarResult(
     UrlbarUtils.RESULT_TYPE.SEARCH,
@@ -461,6 +469,9 @@ function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
     })
   );
 }
+
+
+
 
 
 
@@ -508,6 +519,9 @@ function makeOmniboxResult(
 
 
 
+
+
+
 function makeTabSwitchResult(queryContext, { uri, title, iconUri }) {
   return new UrlbarResult(
     UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
@@ -520,6 +534,9 @@ function makeTabSwitchResult(queryContext, { uri, title, iconUri }) {
     })
   );
 }
+
+
+
 
 
 
@@ -575,6 +592,9 @@ function makeKeywordSearchResult(
 
 
 
+
+
+
 function makePrioritySearchResult(
   queryContext,
   { engineName, engineIconUri, heuristic }
@@ -593,6 +613,9 @@ function makePrioritySearchResult(
   }
   return result;
 }
+
+
+
 
 
 
@@ -641,6 +664,26 @@ function makeRemoteTabResult(
 
   return result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -776,6 +819,10 @@ function makeSearchResult(
 
 
 
+
+
+
+
 function makeVisitResult(
   queryContext,
   {
@@ -819,6 +866,8 @@ function makeVisitResult(
   result.heuristic = heuristic;
   return result;
 }
+
+
 
 
 
@@ -1032,6 +1081,7 @@ async function getOriginAutofillThreshold() {
     stddevMultiplier * Math.sqrt((squares - (sum * sum) / count) / count)
   );
 }
+
 
 
 

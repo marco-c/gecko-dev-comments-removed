@@ -291,6 +291,8 @@ async function processUpdateStep(step) {
 
 
 
+
+
 async function doUpdateTest({
   searchString,
   tip,
@@ -425,6 +427,8 @@ function makeProfileResettable() {
     );
   });
 }
+
+
 
 
 
@@ -634,6 +638,7 @@ async function checkTab(win, url, expectedTip, reset = true) {
 
   BrowserTestUtils.removeTab(tab);
 }
+
 
 
 

@@ -20,6 +20,7 @@ add_task(async function test() {
 
 
 
+
   async function testVal(str, passthrough) {
     sandbox.stub(gURLBar, "_loadURL").callsFake(url => {
       if (passthrough) {

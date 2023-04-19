@@ -55,6 +55,8 @@ add_setup(async function loadSource() {
 
 
 
+
+
 async function loadExtension({ background, extraFiles = {} }) {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {

@@ -3674,6 +3674,8 @@ add_task(async function resetInterval() {
 
 
 
+
+
 async function doTest({ config, callback }) {
   Services.telemetry.clearEvents();
 
@@ -3787,6 +3789,8 @@ async function doTimedCallbacks(callbacksBySecond) {
     await callback();
   }
 }
+
+
 
 
 

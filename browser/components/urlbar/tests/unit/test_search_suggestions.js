@@ -34,6 +34,7 @@ let port;
 
 
 
+
 function setSuggestionsFn(fn) {
   previousSuggestionsFn = suggestionsFn;
   suggestionsFn = fn;

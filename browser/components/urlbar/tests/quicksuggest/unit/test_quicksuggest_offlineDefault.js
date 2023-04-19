@@ -78,6 +78,8 @@ add_task(async function test() {
 
 
 
+
+
 async function doTest({ locale, home, expectedOfflineDefault }) {
   
   for (let pref of PREFS) {

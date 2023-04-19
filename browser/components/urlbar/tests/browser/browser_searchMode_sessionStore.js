@@ -120,6 +120,8 @@ add_task(async function switchToNonInitialPage_exit() {
 
 
 
+
+
 async function doTest({
   urls,
   searchModeTabIndex,
