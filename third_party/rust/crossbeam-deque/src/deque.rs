@@ -3,7 +3,7 @@ use std::cmp;
 use std::fmt;
 use std::iter::FromIterator;
 use std::marker::PhantomData;
-use std::mem::{self, MaybeUninit};
+use std::mem::{self, ManuallyDrop, MaybeUninit};
 use std::ptr;
 use std::sync::atomic::{self, AtomicIsize, AtomicPtr, AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -38,9 +38,8 @@ impl<T> Buffer<T> {
     fn alloc(cap: usize) -> Buffer<T> {
         debug_assert_eq!(cap, cap.next_power_of_two());
 
-        let mut v = Vec::with_capacity(cap);
+        let mut v = ManuallyDrop::new(Vec::with_capacity(cap));
         let ptr = v.as_mut_ptr();
-        mem::forget(v);
 
         Buffer { ptr, cap }
     }
@@ -53,6 +52,8 @@ impl<T> Buffer<T> {
     
     unsafe fn at(&self, index: isize) -> *mut T {
         
+        
+        
         self.ptr.offset(index & (self.cap - 1) as isize)
     }
 
@@ -62,8 +63,8 @@ impl<T> Buffer<T> {
     
     
     
-    unsafe fn write(&self, index: isize, task: T) {
-        ptr::write_volatile(self.at(index), task)
+    unsafe fn write(&self, index: isize, task: MaybeUninit<T>) {
+        ptr::write_volatile(self.at(index).cast::<MaybeUninit<T>>(), task)
     }
 
     
@@ -72,8 +73,8 @@ impl<T> Buffer<T> {
     
     
     
-    unsafe fn read(&self, index: isize) -> T {
-        ptr::read_volatile(self.at(index))
+    unsafe fn read(&self, index: isize) -> MaybeUninit<T> {
+        ptr::read_volatile(self.at(index).cast::<MaybeUninit<T>>())
     }
 }
 
@@ -115,8 +116,8 @@ struct Inner<T> {
 impl<T> Drop for Inner<T> {
     fn drop(&mut self) {
         
-        let b = self.back.load(Ordering::Relaxed);
-        let f = self.front.load(Ordering::Relaxed);
+        let b = *self.back.get_mut();
+        let f = *self.front.get_mut();
 
         unsafe {
             let buffer = self.buffer.load(Ordering::Relaxed, epoch::unprotected());
@@ -406,7 +407,7 @@ impl<T> Worker<T> {
 
         
         unsafe {
-            buffer.write(b, task);
+            buffer.write(b, MaybeUninit::new(task));
         }
 
         atomic::fence(Ordering::Release);
@@ -461,7 +462,7 @@ impl<T> Worker<T> {
                 unsafe {
                     
                     let buffer = self.buffer.get();
-                    let task = buffer.read(f);
+                    let task = buffer.read(f).assume_init();
 
                     
                     if buffer.cap > MIN_CAP && len <= buffer.cap as isize / 4 {
@@ -510,7 +511,7 @@ impl<T> Worker<T> {
                             .is_err()
                         {
                             
-                            mem::forget(task.take());
+                            task.take();
                         }
 
                         
@@ -524,7 +525,7 @@ impl<T> Worker<T> {
                         }
                     }
 
-                    task
+                    task.map(|t| unsafe { t.assume_init() })
                 }
             }
         }
@@ -661,12 +662,11 @@ impl<T> Stealer<T> {
                 .is_err()
         {
             
-            mem::forget(task);
             return Steal::Retry;
         }
 
         
-        Steal::Success(task)
+        Steal::Success(unsafe { task.assume_init() })
     }
 
     
@@ -821,7 +821,6 @@ impl<T> Stealer<T> {
                             .is_err()
                     {
                         
-                        mem::forget(task);
                         batch_size = i;
                         break;
                     }
@@ -975,7 +974,6 @@ impl<T> Stealer<T> {
                         .is_err()
                 {
                     
-                    mem::forget(task);
                     return Steal::Retry;
                 }
 
@@ -992,7 +990,6 @@ impl<T> Stealer<T> {
                     .is_err()
                 {
                     
-                    mem::forget(task);
                     return Steal::Retry;
                 }
 
@@ -1037,7 +1034,6 @@ impl<T> Stealer<T> {
                             .is_err()
                     {
                         
-                        mem::forget(tmp);
                         batch_size = i;
                         break;
                     }
@@ -1077,7 +1073,7 @@ impl<T> Stealer<T> {
         dest.inner.back.store(dest_b, Ordering::Release);
 
         
-        Steal::Success(task)
+        Steal::Success(unsafe { task.assume_init() })
     }
 }
 
@@ -1123,6 +1119,11 @@ struct Slot<T> {
 }
 
 impl<T> Slot<T> {
+    const UNINIT: Self = Self {
+        task: UnsafeCell::new(MaybeUninit::uninit()),
+        state: AtomicUsize::new(0),
+    };
+
     
     fn wait_write(&self) {
         let backoff = Backoff::new();
@@ -1146,13 +1147,10 @@ struct Block<T> {
 impl<T> Block<T> {
     
     fn new() -> Block<T> {
-        
-        
-        
-        
-        
-        
-        unsafe { MaybeUninit::zeroed().assume_init() }
+        Self {
+            next: AtomicPtr::new(ptr::null_mut()),
+            slots: [Slot::UNINIT; BLOCK_CAP],
+        }
     }
 
     
@@ -1535,7 +1533,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i);
                         slot.wait_write();
-                        let task = slot.task.get().read().assume_init();
+                        let task = slot.task.get().read();
 
                         
                         dest_buffer.write(dest_b.wrapping_add(i as isize), task);
@@ -1547,7 +1545,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i);
                         slot.wait_write();
-                        let task = slot.task.get().read().assume_init();
+                        let task = slot.task.get().read();
 
                         
                         dest_buffer.write(dest_b.wrapping_add((batch_size - 1 - i) as isize), task);
@@ -1689,7 +1687,7 @@ impl<T> Injector<T> {
             
             let slot = (*block).slots.get_unchecked(offset);
             slot.wait_write();
-            let task = slot.task.get().read().assume_init();
+            let task = slot.task.get().read();
 
             match dest.flavor {
                 Flavor::Fifo => {
@@ -1698,7 +1696,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i + 1);
                         slot.wait_write();
-                        let task = slot.task.get().read().assume_init();
+                        let task = slot.task.get().read();
 
                         
                         dest_buffer.write(dest_b.wrapping_add(i as isize), task);
@@ -1711,7 +1709,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i + 1);
                         slot.wait_write();
-                        let task = slot.task.get().read().assume_init();
+                        let task = slot.task.get().read();
 
                         
                         dest_buffer.write(dest_b.wrapping_add((batch_size - 1 - i) as isize), task);
@@ -1744,7 +1742,7 @@ impl<T> Injector<T> {
                 }
             }
 
-            Steal::Success(task)
+            Steal::Success(task.assume_init())
         }
     }
 
@@ -1820,9 +1818,9 @@ impl<T> Injector<T> {
 
 impl<T> Drop for Injector<T> {
     fn drop(&mut self) {
-        let mut head = self.head.index.load(Ordering::Relaxed);
-        let mut tail = self.tail.index.load(Ordering::Relaxed);
-        let mut block = self.head.block.load(Ordering::Relaxed);
+        let mut head = *self.head.index.get_mut();
+        let mut tail = *self.tail.index.get_mut();
+        let mut block = *self.head.block.get_mut();
 
         
         head &= !((1 << SHIFT) - 1);
@@ -1840,7 +1838,7 @@ impl<T> Drop for Injector<T> {
                     p.as_mut_ptr().drop_in_place();
                 } else {
                     
-                    let next = (*block).next.load(Ordering::Relaxed);
+                    let next = *(*block).next.get_mut();
                     drop(Box::from_raw(block));
                     block = next;
                 }
