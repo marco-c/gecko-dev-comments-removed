@@ -404,6 +404,12 @@ nsresult MemoryTelemetry::FinishGatheringTotalMemory(
     int64_t aTotalMemory, const nsTArray<int64_t>& aChildSizes) {
   mGatheringTotalMemory = false;
 
+  
+  
+  
+  
+  
+  
   HandleMemoryReport(Telemetry::MEMORY_TOTAL, nsIMemoryReporter::UNITS_BYTES,
                      aTotalMemory);
 
