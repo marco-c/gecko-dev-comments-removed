@@ -455,7 +455,6 @@ class RefTest(object):
         
         
         prefs["gfx.font_loader.delay"] = 0
-        prefs["gfx.font_loader.interval"] = 0
         
         
         prefs["gfx.bundled-fonts.activate"] = 1
