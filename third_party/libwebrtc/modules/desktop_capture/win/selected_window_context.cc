@@ -29,19 +29,18 @@ bool SelectedWindowContext::IsSelectedWindowValid() const {
 
 bool SelectedWindowContext::IsWindowOwnedBySelectedWindow(HWND hwnd) const {
   
-  
   if (GetAncestor(hwnd, GA_ROOTOWNER) == selected_window_) {
     return true;
   }
 
   
   
-  DWORD enumerated_window_process_id = 0;
-  DWORD enumerated_window_thread_id =
-      GetWindowThreadProcessId(hwnd, &enumerated_window_process_id);
-  return enumerated_window_thread_id != 0 &&
-         enumerated_window_process_id == selected_window_process_id_ &&
-         enumerated_window_thread_id == selected_window_thread_id_;
+  
+  
+  
+  
+
+  return false;
 }
 
 bool SelectedWindowContext::IsWindowOverlappingSelectedWindow(HWND hwnd) const {
