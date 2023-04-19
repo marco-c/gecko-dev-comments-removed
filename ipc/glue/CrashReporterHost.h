@@ -46,7 +46,10 @@ class CrashReporterHost {
   
   
   
-  bool FinalizeCrashReport();
+  void FinalizeCrashReport();
+
+  
+  void DeleteCrashReport();
 
   
   
