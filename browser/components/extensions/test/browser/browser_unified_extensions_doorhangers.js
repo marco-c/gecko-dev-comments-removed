@@ -19,14 +19,29 @@ add_setup(async function() {
 
 const verifyPermissionsPrompt = async (win, expectedAnchorID) => {
   const ext = ExtensionTestUtils.loadExtension({
+    useAddonManager: "temporary",
+
     manifest: {
+      chrome_settings_overrides: {
+        search_provider: {
+          name: "some search name",
+          search_url: "https://example.com/?q={searchTerms}",
+          is_default: true,
+        },
+      },
       optional_permissions: ["history"],
     },
 
-    background: async () => {
-      await browser.tabs.create({
-        url: browser.runtime.getURL("content.html"),
-        active: true,
+    background: () => {
+      browser.test.onMessage.addListener(async msg => {
+        if (msg !== "create-tab") {
+          return;
+        }
+
+        await browser.tabs.create({
+          url: browser.runtime.getURL("content.html"),
+          active: true,
+        });
       });
     },
 
@@ -58,7 +73,29 @@ const verifyPermissionsPrompt = async (win, expectedAnchorID) => {
   });
 
   await BrowserTestUtils.withNewTab({ gBrowser: win.gBrowser }, async () => {
-    await ext.startup();
+    const defaultSearchPopupPromise = promisePopupNotificationShown(
+      "addon-webext-defaultsearch",
+      win
+    );
+    let [panel] = await Promise.all([defaultSearchPopupPromise, ext.startup()]);
+    ok(panel, "expected panel");
+    let notification = win.PopupNotifications.getNotification(
+      "addon-webext-defaultsearch"
+    );
+    ok(notification, "expected notification");
+    
+    
+    
+    is(
+      notification?.anchorElement?.id,
+      "addons-notification-icon",
+      "expected the right anchor ID for the defaultsearch popup"
+    );
+    
+    panel.button.click();
+    await TestUtils.topicObserved("webextension-defaultsearch-prompt-response");
+
+    ext.sendMessage("create-tab");
     await ext.awaitMessage("ready");
 
     const popupPromise = promisePopupNotificationShown(
@@ -66,8 +103,9 @@ const verifyPermissionsPrompt = async (win, expectedAnchorID) => {
       win
     );
     ext.sendMessage("grant-permission");
-    const panel = await popupPromise;
-    const notification = win.PopupNotifications.getNotification(
+    panel = await popupPromise;
+    ok(panel, "expected panel");
+    notification = win.PopupNotifications.getNotification(
       "addon-webext-permissions"
     );
     ok(notification, "expected notification");
