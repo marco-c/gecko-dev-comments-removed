@@ -101,10 +101,7 @@ class nsFrameList {
   
   
   nsFrameList(const nsFrameList& aOther) = delete;
-
-  
-  
-  nsFrameList& operator=(const nsFrameList& aOther) = default;
+  nsFrameList& operator=(const nsFrameList& aOther) = delete;
   nsFrameList Clone() const { return nsFrameList(mFirstChild, mLastChild); }
 
   
