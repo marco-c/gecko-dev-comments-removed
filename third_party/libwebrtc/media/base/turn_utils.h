@@ -18,8 +18,6 @@
 
 namespace cricket {
 
-struct PacketOptions;
-
 
 
 bool RTC_EXPORT UnwrapTurnPacket(const uint8_t* packet,
