@@ -840,11 +840,9 @@ void GeckoChildProcessHost::InitializeChannel(
 
   aChannelReady(GetChannel());
 
-  if (mProcessType != GeckoProcessType_ForkServer) {
-    mNodeController = NodeController::GetSingleton();
-    std::tie(mInitialPort, mNodeChannel) =
-        mNodeController->InviteChildProcess(TakeChannel());
-  }
+  mNodeController = NodeController::GetSingleton();
+  std::tie(mInitialPort, mNodeChannel) =
+      mNodeController->InviteChildProcess(TakeChannel());
 
   MonitorAutoLock lock(mMonitor);
   mProcessState = CHANNEL_INITIALIZED;
@@ -1169,16 +1167,19 @@ bool PosixProcessLauncher::DoSetup() {
 
   
   
+  
+  if (mProcessType != GeckoProcessType_ForkServer) {
 #  ifdef MOZ_WIDGET_ANDROID
-  
-  
-  mLaunchOptions->fds_to_remap.push_back(
-      std::pair<int, int>(mChannelSrcFd.get(), -1));
+    
+    
+    mLaunchOptions->fds_to_remap.push_back(
+        std::pair<int, int>(mChannelSrcFd.get(), -1));
 #  else
-  MOZ_ASSERT(mChannelDstFd >= 0);
-  mLaunchOptions->fds_to_remap.push_back(
-      std::pair<int, int>(mChannelSrcFd.get(), mChannelDstFd));
+    MOZ_ASSERT(mChannelDstFd >= 0);
+    mLaunchOptions->fds_to_remap.push_back(
+        std::pair<int, int>(mChannelSrcFd.get(), mChannelDstFd));
 #  endif
+  }
 
   
   
@@ -1777,22 +1778,26 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::Launch(
 
   
   
-  
-  
-  
-  
-  
-  
-  bool failed = false;
-  aHost->InitializeChannel([&](IPC::Channel* channel) {
-    if (NS_WARN_IF(!channel || !SetChannel(channel))) {
-      failed = true;
+  if (mProcessType != GeckoProcessType_ForkServer) {
+    
+    
+    
+    
+    
+    
+    
+    
+    bool failed = false;
+    aHost->InitializeChannel([&](IPC::Channel* channel) {
+      if (NS_WARN_IF(!channel || !SetChannel(channel))) {
+        failed = true;
+      }
+    });
+    if (failed) {
+      return ProcessLaunchPromise::CreateAndReject(LaunchError{}, __func__);
     }
-  });
-  if (failed) {
-    return ProcessLaunchPromise::CreateAndReject(LaunchError{}, __func__);
+    mChannelId = aHost->GetChannelId();
   }
-  mChannelId = aHost->GetChannelId();
 
   return InvokeAsync(mLaunchThread, this, __func__,
                      &BaseProcessLauncher::PerformAsyncLaunch);

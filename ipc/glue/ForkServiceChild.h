@@ -72,7 +72,6 @@ class ForkServiceChild {
   UniquePtr<MiniTransceiver> mTcver;
   static UniquePtr<ForkServiceChild> sForkServiceChild;
   pid_t mRecvPid;
-  bool mWaitForHello;
   bool mFailed;  
   GeckoChildProcessHost* mProcess;
 };

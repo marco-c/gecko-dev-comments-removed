@@ -146,9 +146,6 @@ class Channel {
   void GetClientFileDescriptorMapping(int* src_fd, int* dest_fd) const;
 
   
-  int GetFileDescriptor() const;
-
-  
   void CloseClientFileDescriptor();
 
 #  if defined(OS_MACOSX)

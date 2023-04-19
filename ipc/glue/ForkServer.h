@@ -15,7 +15,9 @@ namespace ipc {
 
 class ForkServer {
  public:
-  static const int kHELLO_MESSAGE_TYPE = 65535;
+  
+  
+  static constexpr int kClientPipeFd = 3;
 
   ForkServer();
   ~ForkServer(){};
