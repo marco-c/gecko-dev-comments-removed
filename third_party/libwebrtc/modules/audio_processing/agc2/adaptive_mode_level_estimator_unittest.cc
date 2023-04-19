@@ -19,21 +19,33 @@
 namespace webrtc {
 namespace {
 
-constexpr float kInitialSaturationMarginDb = 20.f;
-constexpr float kExtraSaturationMarginDb = 2.f;
 
-static_assert(kInitialSpeechLevelEstimateDbfs < 0.f, "");
-constexpr float kVadLevelRms = kInitialSpeechLevelEstimateDbfs / 2.f;
-constexpr float kVadLevelPeak = kInitialSpeechLevelEstimateDbfs / 3.f;
 
-constexpr VadLevelAnalyzer::Result kVadDataSpeech{1.f,
+constexpr int kNumFramesToConfidence =
+    kLevelEstimatorTimeToConfidenceMs / kFrameDurationMs;
+static_assert(kNumFramesToConfidence > 0, "");
+
+
+static_assert(kInitialSpeechLevelEstimateDbfs < 0.0f, "");
+constexpr float kVadLevelRms = kInitialSpeechLevelEstimateDbfs / 2.0f;
+constexpr float kVadLevelPeak = kInitialSpeechLevelEstimateDbfs / 3.0f;
+static_assert(kVadLevelRms < kVadLevelPeak, "");
+static_assert(kVadLevelRms > kInitialSpeechLevelEstimateDbfs, "");
+static_assert(kVadLevelRms - kInitialSpeechLevelEstimateDbfs > 5.0f,
+              "Adjust `kVadLevelRms` so that the difference from the initial "
+              "level is wide enough for the tests.");
+
+constexpr VadLevelAnalyzer::Result kVadDataSpeech{1.0f,
                                                   kVadLevelRms, kVadLevelPeak};
 constexpr VadLevelAnalyzer::Result kVadDataNonSpeech{
-    kVadConfidenceThreshold / 2.f, kVadLevelRms,
+    kVadConfidenceThreshold / 2.0f, kVadLevelRms,
     kVadLevelPeak};
 
-constexpr float kMinSpeechProbability = 0.f;
-constexpr float kMaxSpeechProbability = 1.f;
+constexpr float kMinSpeechProbability = 0.0f;
+constexpr float kMaxSpeechProbability = 1.0f;
+
+constexpr float kConvergenceSpeedTestsLevelTolerance = 0.5f;
+
 
 void RunOnConstantLevel(int num_iterations,
                         const VadLevelAnalyzer::Result& vad_level,
@@ -43,172 +55,125 @@ void RunOnConstantLevel(int num_iterations,
   }
 }
 
+
 struct TestLevelEstimator {
   TestLevelEstimator()
       : data_dumper(0),
         estimator(std::make_unique<AdaptiveModeLevelEstimator>(
             &data_dumper,
-            AudioProcessing::Config::GainController2::LevelEstimator::kRms,
-            1,
-            kInitialSaturationMarginDb,
-            kExtraSaturationMarginDb)) {}
+            1)) {}
   ApmDataDumper data_dumper;
   std::unique_ptr<AdaptiveModeLevelEstimator> estimator;
 };
 
-TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
-     EstimatorShouldNotCrash) {
-  TestLevelEstimator level_estimator;
 
-  VadLevelAnalyzer::Result vad_level{kMaxSpeechProbability, -20.f,
-                                     -10.f};
-  level_estimator.estimator->Update(vad_level);
-  static_cast<void>(level_estimator.estimator->level_dbfs());
+TEST(GainController2AdaptiveModeLevelEstimator, CheckInitialEstimate) {
+  TestLevelEstimator level_estimator;
+  EXPECT_FLOAT_EQ(level_estimator.estimator->level_dbfs(),
+                  kInitialSpeechLevelEstimateDbfs);
 }
 
-TEST(AutomaticGainController2AdaptiveModeLevelEstimator, LevelShouldStabilize) {
+
+TEST(GainController2AdaptiveModeLevelEstimator, LevelStabilizes) {
   TestLevelEstimator level_estimator;
-
-  constexpr float kSpeechPeakDbfs = -15.f;
-  RunOnConstantLevel(100,
-                     VadLevelAnalyzer::Result{kMaxSpeechProbability,
-                                              kSpeechPeakDbfs -
-                                                  kInitialSaturationMarginDb,
-                                              kSpeechPeakDbfs},
+  RunOnConstantLevel(kNumFramesToConfidence, kVadDataSpeech,
                      *level_estimator.estimator);
-
-  EXPECT_NEAR(
-      level_estimator.estimator->level_dbfs() - kExtraSaturationMarginDb,
-      kSpeechPeakDbfs, 0.1f);
+  const float estimated_level_dbfs = level_estimator.estimator->level_dbfs();
+  RunOnConstantLevel(1, kVadDataSpeech,
+                     *level_estimator.estimator);
+  EXPECT_NEAR(level_estimator.estimator->level_dbfs(), estimated_level_dbfs,
+              0.1f);
 }
 
-TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
-     EstimatorIgnoresZeroProbabilityFrames) {
+
+
+TEST(GainController2AdaptiveModeLevelEstimator, IsNotConfident) {
   TestLevelEstimator level_estimator;
+  RunOnConstantLevel(kNumFramesToConfidence / 2,
+                     kVadDataSpeech, *level_estimator.estimator);
+  EXPECT_FALSE(level_estimator.estimator->IsConfident());
+}
 
-  
-  constexpr float kSpeechRmsDbfs = -25.f;
-  RunOnConstantLevel(100,
-                     VadLevelAnalyzer::Result{kMaxSpeechProbability,
-                                              kSpeechRmsDbfs -
-                                                  kInitialSaturationMarginDb,
-                                              kSpeechRmsDbfs},
+
+
+TEST(GainController2AdaptiveModeLevelEstimator, IsConfident) {
+  TestLevelEstimator level_estimator;
+  RunOnConstantLevel(kNumFramesToConfidence, kVadDataSpeech,
                      *level_estimator.estimator);
+  EXPECT_TRUE(level_estimator.estimator->IsConfident());
+}
 
+
+
+TEST(GainController2AdaptiveModeLevelEstimator,
+     EstimatorIgnoresNonSpeechFrames) {
+  TestLevelEstimator level_estimator;
   
-  constexpr float kNoiseRmsDbfs = 0.f;
-  RunOnConstantLevel(100,
+  RunOnConstantLevel(kNumFramesToConfidence, kVadDataSpeech,
+                     *level_estimator.estimator);
+  const float estimated_level_dbfs = level_estimator.estimator->level_dbfs();
+  
+  RunOnConstantLevel(kNumFramesToConfidence,
                      VadLevelAnalyzer::Result{kMinSpeechProbability,
-                                              kNoiseRmsDbfs,
-                                              kNoiseRmsDbfs},
+                                              0.0f,
+                                              0.0f},
                      *level_estimator.estimator);
-
   
-  EXPECT_NEAR(
-      level_estimator.estimator->level_dbfs() - kExtraSaturationMarginDb,
-      kSpeechRmsDbfs, 0.1f);
+  EXPECT_FLOAT_EQ(level_estimator.estimator->level_dbfs(),
+                  estimated_level_dbfs);
 }
 
-TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
+
+TEST(GainController2AdaptiveModeLevelEstimator,
+     ConvergenceSpeedBeforeConfidence) {
   TestLevelEstimator level_estimator;
-
-  
-  constexpr float kInitialSpeechRmsDbfs = -30.f;
-  RunOnConstantLevel(
-      kFullBufferSizeMs / kFrameDurationMs,
-      VadLevelAnalyzer::Result{
-          kMaxSpeechProbability,
-          kInitialSpeechRmsDbfs - kInitialSaturationMarginDb,
-          kInitialSpeechRmsDbfs},
-      *level_estimator.estimator);
-
-  
-  
-  constexpr float kDifferentSpeechRmsDbfs = -10.f;
-  
-  
-  const float kMaxDifferenceDb =
-      0.25f * std::abs(kDifferentSpeechRmsDbfs - kInitialSpeechRmsDbfs);
-  RunOnConstantLevel(
-      static_cast<int>(kFullBufferSizeMs / kFrameDurationMs / 2),
-      VadLevelAnalyzer::Result{
-          kMaxSpeechProbability,
-          kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
-          kDifferentSpeechRmsDbfs},
-      *level_estimator.estimator);
-  EXPECT_GT(std::abs(kDifferentSpeechRmsDbfs -
-                     level_estimator.estimator->level_dbfs()),
-            kMaxDifferenceDb);
-
-  
-  RunOnConstantLevel(
-      static_cast<int>(3 * kFullBufferSizeMs / kFrameDurationMs),
-      VadLevelAnalyzer::Result{
-          kMaxSpeechProbability,
-          kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
-          kDifferentSpeechRmsDbfs},
-      *level_estimator.estimator);
-  EXPECT_NEAR(
-      level_estimator.estimator->level_dbfs() - kExtraSaturationMarginDb,
-      kDifferentSpeechRmsDbfs, kMaxDifferenceDb * 0.5f);
+  RunOnConstantLevel(kNumFramesToConfidence, kVadDataSpeech,
+                     *level_estimator.estimator);
+  EXPECT_NEAR(level_estimator.estimator->level_dbfs(), kVadDataSpeech.rms_dbfs,
+              kConvergenceSpeedTestsLevelTolerance);
 }
 
-TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
-     ResetGivesFastAdaptation) {
+
+TEST(GainController2AdaptiveModeLevelEstimator,
+     ConvergenceSpeedAfterConfidence) {
   TestLevelEstimator level_estimator;
-
   
-  
-  constexpr float kInitialSpeechRmsDbfs = -30.f;
   RunOnConstantLevel(
-      kFullBufferSizeMs / kFrameDurationMs,
+      kNumFramesToConfidence,
       VadLevelAnalyzer::Result{
           kMaxSpeechProbability,
-          kInitialSpeechRmsDbfs - kInitialSaturationMarginDb,
-          kInitialSpeechRmsDbfs},
+          kInitialSpeechLevelEstimateDbfs,
+          kInitialSpeechLevelEstimateDbfs + 6.0f},
       *level_estimator.estimator);
-
-  constexpr float kDifferentSpeechRmsDbfs = -10.f;
   
-  level_estimator.estimator->Reset();
-
+  ASSERT_FLOAT_EQ(level_estimator.estimator->level_dbfs(),
+                  kInitialSpeechLevelEstimateDbfs);
+  ASSERT_TRUE(level_estimator.estimator->IsConfident());
+  
+  constexpr float kConvergenceTimeAfterConfidenceNumFrames = 600;  
+  static_assert(
+      kConvergenceTimeAfterConfidenceNumFrames > kNumFramesToConfidence, "");
   RunOnConstantLevel(
-      kFullBufferSizeMs / kFrameDurationMs / 2,
-      VadLevelAnalyzer::Result{
-          kMaxSpeechProbability,
-          kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
-          kDifferentSpeechRmsDbfs},
-      *level_estimator.estimator);
-
-  
-  const float kMaxDifferenceDb =
-      0.1f * std::abs(kDifferentSpeechRmsDbfs - kInitialSpeechRmsDbfs);
-  EXPECT_LT(std::abs(kDifferentSpeechRmsDbfs -
-                     (level_estimator.estimator->level_dbfs() -
-                      kExtraSaturationMarginDb)),
-            kMaxDifferenceDb);
+      kConvergenceTimeAfterConfidenceNumFrames,
+      kVadDataSpeech, *level_estimator.estimator);
+  EXPECT_NEAR(level_estimator.estimator->level_dbfs(), kVadDataSpeech.rms_dbfs,
+              kConvergenceSpeedTestsLevelTolerance);
 }
 
-struct TestConfig {
-  int min_consecutive_speech_frames;
-  float initial_saturation_margin_db;
-  float extra_saturation_margin_db;
+class AdaptiveModeLevelEstimatorParametrization
+    : public ::testing::TestWithParam<int> {
+ protected:
+  int adjacent_speech_frames_threshold() const { return GetParam(); }
 };
 
-class AdaptiveModeLevelEstimatorTest
-    : public ::testing::TestWithParam<TestConfig> {};
-
-TEST_P(AdaptiveModeLevelEstimatorTest, DoNotAdaptToShortSpeechSegments) {
-  const auto params = GetParam();
+TEST_P(AdaptiveModeLevelEstimatorParametrization,
+       DoNotAdaptToShortSpeechSegments) {
   ApmDataDumper apm_data_dumper(0);
   AdaptiveModeLevelEstimator level_estimator(
-      &apm_data_dumper,
-      AudioProcessing::Config::GainController2::LevelEstimator::kRms,
-      params.min_consecutive_speech_frames, params.initial_saturation_margin_db,
-      params.extra_saturation_margin_db);
+      &apm_data_dumper, adjacent_speech_frames_threshold());
   const float initial_level = level_estimator.level_dbfs();
-  ASSERT_LT(initial_level, kVadDataSpeech.rms_dbfs);
-  for (int i = 0; i < params.min_consecutive_speech_frames - 1; ++i) {
+  ASSERT_LT(initial_level, kVadDataSpeech.peak_dbfs);
+  for (int i = 0; i < adjacent_speech_frames_threshold() - 1; ++i) {
     SCOPED_TRACE(i);
     level_estimator.Update(kVadDataSpeech);
     EXPECT_EQ(initial_level, level_estimator.level_dbfs());
@@ -217,26 +182,21 @@ TEST_P(AdaptiveModeLevelEstimatorTest, DoNotAdaptToShortSpeechSegments) {
   EXPECT_EQ(initial_level, level_estimator.level_dbfs());
 }
 
-TEST_P(AdaptiveModeLevelEstimatorTest, AdaptToEnoughSpeechSegments) {
-  const auto params = GetParam();
+TEST_P(AdaptiveModeLevelEstimatorParametrization, AdaptToEnoughSpeechSegments) {
   ApmDataDumper apm_data_dumper(0);
   AdaptiveModeLevelEstimator level_estimator(
-      &apm_data_dumper,
-      AudioProcessing::Config::GainController2::LevelEstimator::kRms,
-      params.min_consecutive_speech_frames, params.initial_saturation_margin_db,
-      params.extra_saturation_margin_db);
+      &apm_data_dumper, adjacent_speech_frames_threshold());
   const float initial_level = level_estimator.level_dbfs();
-  ASSERT_LT(initial_level, kVadDataSpeech.rms_dbfs);
-  for (int i = 0; i < params.min_consecutive_speech_frames; ++i) {
+  ASSERT_LT(initial_level, kVadDataSpeech.peak_dbfs);
+  for (int i = 0; i < adjacent_speech_frames_threshold(); ++i) {
     level_estimator.Update(kVadDataSpeech);
   }
   EXPECT_LT(initial_level, level_estimator.level_dbfs());
 }
 
-INSTANTIATE_TEST_SUITE_P(AutomaticGainController2,
-                         AdaptiveModeLevelEstimatorTest,
-                         ::testing::Values(TestConfig{1, 0.f, 0.f},
-                                           TestConfig{9, 0.f, 0.f}));
+INSTANTIATE_TEST_SUITE_P(GainController2,
+                         AdaptiveModeLevelEstimatorParametrization,
+                         ::testing::Values(1, 9, 17));
 
 }  
 }  

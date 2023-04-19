@@ -29,9 +29,6 @@ using ::testing::ReturnRoundRobin;
 constexpr int kNoVadPeriodicReset =
     kFrameDurationMs * (std::numeric_limits<int>::max() / kFrameDurationMs);
 
-constexpr float kInstantAttack = 1.0f;
-constexpr float kSlowAttack = 0.1f;
-
 constexpr int kSampleRateHz = 8000;
 
 class MockVad : public VadLevelAnalyzer::VoiceActivityDetector {
@@ -48,7 +45,6 @@ class MockVad : public VadLevelAnalyzer::VoiceActivityDetector {
 
 std::unique_ptr<VadLevelAnalyzer> CreateVadLevelAnalyzerWithMockVad(
     int vad_reset_period_ms,
-    float vad_probability_attack,
     const std::vector<float>& speech_probabilities,
     int expected_vad_reset_calls = 0) {
   auto vad = std::make_unique<MockVad>();
@@ -58,8 +54,8 @@ std::unique_ptr<VadLevelAnalyzer> CreateVadLevelAnalyzerWithMockVad(
   if (expected_vad_reset_calls >= 0) {
     EXPECT_CALL(*vad, Reset).Times(expected_vad_reset_calls);
   }
-  return std::make_unique<VadLevelAnalyzer>(
-      vad_reset_period_ms, vad_probability_attack, std::move(vad));
+  return std::make_unique<VadLevelAnalyzer>(vad_reset_period_ms,
+                                            std::move(vad));
 }
 
 
@@ -75,7 +71,7 @@ struct FrameWithView {
   const AudioFrameView<const float> view;
 };
 
-TEST(AutomaticGainController2VadLevelAnalyzer, PeakLevelGreaterThanRmsLevel) {
+TEST(GainController2VadLevelAnalyzer, PeakLevelGreaterThanRmsLevel) {
   
   FrameWithView frame(1000.0f);  
   frame.samples[10] = 2000.0f;   
@@ -89,13 +85,12 @@ TEST(AutomaticGainController2VadLevelAnalyzer, PeakLevelGreaterThanRmsLevel) {
 }
 
 
-
-TEST(AutomaticGainController2VadLevelAnalyzer, NoSpeechProbabilitySmoothing) {
+TEST(GainController2VadLevelAnalyzer, NoSpeechProbabilitySmoothing) {
   const std::vector<float> speech_probabilities{0.709f, 0.484f, 0.882f, 0.167f,
                                                 0.44f,  0.525f, 0.858f, 0.314f,
                                                 0.653f, 0.965f, 0.413f, 0.0f};
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      kNoVadPeriodicReset, kInstantAttack, speech_probabilities);
+  auto analyzer = CreateVadLevelAnalyzerWithMockVad(kNoVadPeriodicReset,
+                                                    speech_probabilities);
   FrameWithView frame;
   for (int i = 0; rtc::SafeLt(i, speech_probabilities.size()); ++i) {
     SCOPED_TRACE(i);
@@ -105,44 +100,10 @@ TEST(AutomaticGainController2VadLevelAnalyzer, NoSpeechProbabilitySmoothing) {
 }
 
 
-
-TEST(AutomaticGainController2VadLevelAnalyzer,
-     SlowAttackSpeechProbabilitySmoothing) {
-  const std::vector<float> speech_probabilities{0.0f, 0.0f, 1.0f,
-                                                1.0f, 1.0f, 1.0f};
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      kNoVadPeriodicReset, kSlowAttack, speech_probabilities);
-  FrameWithView frame;
-  float prev_probability = 0.0f;
-  for (int i = 0; rtc::SafeLt(i, speech_probabilities.size()); ++i) {
-    SCOPED_TRACE(i);
-    const float smoothed_probability =
-        analyzer->AnalyzeFrame(frame.view).speech_probability;
-    EXPECT_LT(smoothed_probability, 1.0f);  
-    EXPECT_LE(prev_probability, smoothed_probability);  
-    prev_probability = smoothed_probability;
-  }
-}
-
-
-
-TEST(AutomaticGainController2VadLevelAnalyzer, SpeechProbabilityInstantDecay) {
-  const std::vector<float> speech_probabilities{1.0f, 1.0f, 1.0f,
-                                                1.0f, 1.0f, 0.0f};
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      kNoVadPeriodicReset, kSlowAttack, speech_probabilities);
-  FrameWithView frame;
-  for (int i = 0; rtc::SafeLt(i, speech_probabilities.size() - 1); ++i) {
-    analyzer->AnalyzeFrame(frame.view);
-  }
-  EXPECT_EQ(0.0f, analyzer->AnalyzeFrame(frame.view).speech_probability);
-}
-
-
-TEST(AutomaticGainController2VadLevelAnalyzer, VadNoPeriodicReset) {
+TEST(GainController2VadLevelAnalyzer, VadNoPeriodicReset) {
   constexpr int kNumFrames = 19;
   auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      kNoVadPeriodicReset, kSlowAttack, {1.0f},
+      kNoVadPeriodicReset, {1.0f},
       0);
   FrameWithView frame;
   for (int i = 0; i < kNumFrames; ++i) {
@@ -161,7 +122,7 @@ class VadPeriodResetParametrization
 TEST_P(VadPeriodResetParametrization, VadPeriodicReset) {
   auto analyzer = CreateVadLevelAnalyzerWithMockVad(
       vad_reset_period_frames() * kFrameDurationMs,
-      kSlowAttack, {1.0f},
+      {1.0f},
       num_frames() / vad_reset_period_frames());
   FrameWithView frame;
   for (int i = 0; i < num_frames(); ++i) {
@@ -169,7 +130,7 @@ TEST_P(VadPeriodResetParametrization, VadPeriodicReset) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(AutomaticGainController2VadLevelAnalyzer,
+INSTANTIATE_TEST_SUITE_P(GainController2VadLevelAnalyzer,
                          VadPeriodResetParametrization,
                          ::testing::Combine(::testing::Values(1, 19, 123),
                                             ::testing::Values(2, 5, 20, 53)));

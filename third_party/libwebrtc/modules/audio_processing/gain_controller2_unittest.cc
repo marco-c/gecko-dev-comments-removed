@@ -11,6 +11,7 @@
 #include "modules/audio_processing/gain_controller2.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
 #include "api/array_view.h"
@@ -68,7 +69,8 @@ std::unique_ptr<GainController2> CreateAgc2FixedDigitalMode(
   return agc2;
 }
 
-float GainAfterProcessingFile(GainController2* gain_controller) {
+float GainDbAfterProcessingFile(GainController2& gain_controller,
+                                int max_duration_ms) {
   
   constexpr size_t kStereo = 2u;
   const StreamConfig capture_config(AudioProcessing::kSampleRate48kHz, kStereo,
@@ -84,22 +86,27 @@ float GainAfterProcessingFile(GainController2* gain_controller) {
 
   
   
-  const int kNumFramesToProcess = 100;
-  for (int frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
+  RTC_DCHECK_GT(max_duration_ms, 0);
+  const int num_frames = rtc::CheckedDivExact(max_duration_ms, 10);
+  for (int i = 0; i < num_frames; ++i) {
     ReadFloatSamplesFromStereoFile(capture_config.num_frames(),
                                    capture_config.num_channels(), &capture_file,
                                    capture_input);
-
     test::CopyVectorToAudioBuffer(capture_config, capture_input, &ab);
-    gain_controller->Process(&ab);
+    gain_controller.Process(&ab);
   }
 
   
-  
   constexpr float sample_value = 1.f;
   SetAudioBufferSamples(sample_value, &ab);
-  gain_controller->Process(&ab);
-  return ab.channels()[0][0];
+  gain_controller.Process(&ab);
+  
+  float rms = 0.0f;
+  for (size_t i = 0; i < capture_config.num_frames(); ++i) {
+    rms += ab.channels()[0][i] * ab.channels()[0][i];
+  }
+  
+  return 20.0f * std::log10(std::sqrt(rms / capture_config.num_frames()));
 }
 
 }  
@@ -324,34 +331,20 @@ INSTANTIATE_TEST_SUITE_P(
                                48000,
                                true)));
 
-TEST(GainController2, UsageSaturationMargin) {
+
+
+TEST(GainController2, CheckGainAdaptiveDigital) {
+  constexpr float kExpectedGainDb = 4.3f;
+  constexpr float kToleranceDb = 0.5f;
   GainController2 gain_controller2;
   gain_controller2.Initialize(AudioProcessing::kSampleRate48kHz);
-
   AudioProcessing::Config::GainController2 config;
-  
-  
-  
   config.fixed_digital.gain_db = 0.f;
   config.adaptive_digital.enabled = true;
-  config.adaptive_digital.extra_saturation_margin_db = 50.f;
   gain_controller2.ApplyConfig(config);
-
-  EXPECT_LT(GainAfterProcessingFile(&gain_controller2), 2.f);
-}
-
-TEST(GainController2, UsageNoSaturationMargin) {
-  GainController2 gain_controller2;
-  gain_controller2.Initialize(AudioProcessing::kSampleRate48kHz);
-
-  AudioProcessing::Config::GainController2 config;
-  
-  config.fixed_digital.gain_db = 0.f;
-  config.adaptive_digital.enabled = true;
-  config.adaptive_digital.extra_saturation_margin_db = 0.f;
-  gain_controller2.ApplyConfig(config);
-
-  EXPECT_GT(GainAfterProcessingFile(&gain_controller2), 1.9f);
+  EXPECT_NEAR(
+      GainDbAfterProcessingFile(gain_controller2, 2000),
+      kExpectedGainDb, kToleranceDb);
 }
 
 }  

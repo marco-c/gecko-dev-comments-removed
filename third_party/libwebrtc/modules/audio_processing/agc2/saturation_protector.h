@@ -11,71 +11,36 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_SATURATION_PROTECTOR_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_SATURATION_PROTECTOR_H_
 
-#include <array>
-
-#include "absl/types/optional.h"
-#include "modules/audio_processing/agc2/agc2_common.h"
-#include "rtc_base/numerics/safe_compare.h"
+#include <memory>
 
 namespace webrtc {
-namespace saturation_protector_impl {
+class ApmDataDumper;
 
 
-class RingBuffer {
+
+class SaturationProtector {
  public:
-  bool operator==(const RingBuffer& b) const;
-  inline bool operator!=(const RingBuffer& b) const { return !(*this == b); }
+  virtual ~SaturationProtector() = default;
 
   
-  int Capacity() const { return buffer_.size(); }
-  
-  int Size() const { return size_; }
+  virtual float HeadroomDb() = 0;
 
-  void Reset();
-  
-  void PushBack(float v);
   
   
-  absl::optional<float> Front() const;
+  virtual void Analyze(float speech_probability,
+                       float peak_dbfs,
+                       float speech_level_dbfs) = 0;
 
- private:
-  inline int FrontIndex() const {
-    return rtc::SafeEq(size_, buffer_.size()) ? next_ : 0;
-  }
   
-  
-  std::array<float, kPeakEnveloperBufferSize> buffer_;
-  int next_ = 0;
-  int size_ = 0;
-};
-
-}  
-
-
-
-struct SaturationProtectorState {
-  bool operator==(const SaturationProtectorState& s) const;
-  inline bool operator!=(const SaturationProtectorState& s) const {
-    return !(*this == s);
-  }
-
-  float margin_db;  
-  saturation_protector_impl::RingBuffer peak_delay_buffer;
-  float max_peaks_dbfs;
-  int time_since_push_ms;  
+  virtual void Reset() = 0;
 };
 
 
-void ResetSaturationProtectorState(float initial_margin_db,
-                                   SaturationProtectorState& state);
-
-
-
-
-
-void UpdateSaturationProtectorState(float speech_peak_dbfs,
-                                    float speech_level_dbfs,
-                                    SaturationProtectorState& state);
+std::unique_ptr<SaturationProtector> CreateSaturationProtector(
+    float initial_headroom_db,
+    float extra_headroom_db,
+    int adjacent_speech_frames_threshold,
+    ApmDataDumper* apm_data_dumper);
 
 }  
 

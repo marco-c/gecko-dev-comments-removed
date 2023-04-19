@@ -75,7 +75,7 @@ class InterpolatedGainCurve {
  private:
   
   
-  FRIEND_TEST_ALL_PREFIXES(AutomaticGainController2InterpolatedGainCurve,
+  FRIEND_TEST_ALL_PREFIXES(GainController2InterpolatedGainCurve,
                            CheckApproximationParams);
 
   struct RegionLogger {

@@ -11,19 +11,18 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_AGC2_COMMON_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_AGC2_COMMON_H_
 
-#include <stddef.h>
-
 namespace webrtc {
 
 constexpr float kMinFloatS16Value = -32768.0f;
 constexpr float kMaxFloatS16Value = 32767.0f;
 constexpr float kMaxAbsFloatS16Value = 32768.0f;
 
+
+constexpr float kMinLevelDbfs = -90.31f;
+
 constexpr int kFrameDurationMs = 10;
 constexpr int kSubFramesInFrame = 20;
 constexpr int kMaximalNumberOfSamplesPerChannel = 480;
-
-constexpr float kAttackFilterConstant = 0.0f;
 
 
 constexpr float kHeadroomDbfs = 1.0f;
@@ -38,42 +37,28 @@ constexpr float kLimiterThresholdForAgcGainDbfs = -kHeadroomDbfs;
 constexpr float kVadConfidenceThreshold = 0.95f;
 
 
-constexpr int kFullBufferSizeMs = 1200;
-constexpr float kFullBufferLeakFactor = 1.0f - 1.0f / kFullBufferSizeMs;
 
-constexpr float kInitialSpeechLevelEstimateDbfs = -30.0f;
+
+constexpr float kLevelEstimatorTimeToConfidenceMs = 400;
+constexpr float kLevelEstimatorLeakFactor =
+    1.0f - 1.0f / kLevelEstimatorTimeToConfidenceMs;
 
 
 constexpr int kDefaultVadRnnResetPeriodMs = 1500;
 static_assert(kDefaultVadRnnResetPeriodMs % kFrameDurationMs == 0, "");
-constexpr float kDefaultSmoothedVadProbabilityAttack = 1.0f;
-constexpr int kDefaultLevelEstimatorAdjacentSpeechFramesThreshold = 1;
+constexpr int kDefaultLevelEstimatorAdjacentSpeechFramesThreshold = 12;
 
 
-constexpr float kDefaultInitialSaturationMarginDb = 20.0f;
-constexpr float kDefaultExtraSaturationMarginDb = 2.0f;
-
-constexpr int kPeakEnveloperSuperFrameLengthMs = 400;
-static_assert(kFullBufferSizeMs % kPeakEnveloperSuperFrameLengthMs == 0,
-              "Full buffer size should be a multiple of super frame length for "
-              "optimal Saturation Protector performance.");
-
-constexpr int kPeakEnveloperBufferSize =
-    kFullBufferSizeMs / kPeakEnveloperSuperFrameLengthMs + 1;
+constexpr float kSaturationProtectorInitialHeadroomDb = 20.0f;
+constexpr float kSaturationProtectorExtraHeadroomDb = 5.0f;
+constexpr int kSaturationProtectorBufferSize = 4;
 
 
 
-constexpr float kSaturationProtectorAttackConstant = 0.9988493699365052f;
-
-
-
-constexpr float kSaturationProtectorDecayConstant = 0.9997697679981565f;
-
-
-
-
-
-constexpr float kDecayFilterConstant = 0.9998848773724686f;
+constexpr float kInitialSpeechLevelEstimateDbfs =
+    -kSaturationProtectorExtraHeadroomDb -
+    kSaturationProtectorInitialHeadroomDb - kInitialAdaptiveDigitalGainDb -
+    kHeadroomDbfs;
 
 
 

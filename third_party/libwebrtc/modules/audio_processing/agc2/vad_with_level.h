@@ -42,13 +42,10 @@ class VadLevelAnalyzer {
   
   
   
-  
   VadLevelAnalyzer(int vad_reset_period_ms,
-                   float vad_probability_attack,
                    const AvailableCpuFeatures& cpu_features);
   
   VadLevelAnalyzer(int vad_reset_period_ms,
-                   float vad_probability_attack,
                    std::unique_ptr<VoiceActivityDetector> vad);
 
   VadLevelAnalyzer(const VadLevelAnalyzer&) = delete;
@@ -61,9 +58,7 @@ class VadLevelAnalyzer {
  private:
   std::unique_ptr<VoiceActivityDetector> vad_;
   const int vad_reset_period_frames_;
-  const float vad_probability_attack_;
   int time_to_vad_reset_;
-  float vad_probability_;
 };
 
 }  

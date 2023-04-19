@@ -12,7 +12,6 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 
 #include "modules/audio_processing/agc2/gain_applier.h"
-#include "modules/audio_processing/agc2/vad_with_level.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 
 namespace webrtc {
@@ -22,16 +21,16 @@ class ApmDataDumper;
 
 
 
-
 class AdaptiveDigitalGainApplier {
  public:
   
   struct FrameInfo {
-    float input_level_dbfs;        
-    float input_noise_level_dbfs;  
-    VadLevelAnalyzer::Result vad_result;
+    float speech_probability;     
+    float speech_level_dbfs;      
+    bool speech_level_reliable;   
+    float noise_rms_dbfs;         
+    float headroom_db;            
     float limiter_envelope_dbfs;  
-    bool estimate_is_confident;
   };
 
   

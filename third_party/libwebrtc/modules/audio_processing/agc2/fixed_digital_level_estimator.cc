@@ -22,6 +22,14 @@ namespace {
 
 constexpr float kInitialFilterStateLevel = 0.f;
 
+
+constexpr float kAttackFilterConstant = 0.f;
+
+
+
+
+constexpr float kDecayFilterConstant = 0.9998848773724686f;
+
 }  
 
 FixedDigitalLevelEstimator::FixedDigitalLevelEstimator(
