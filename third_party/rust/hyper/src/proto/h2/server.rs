@@ -264,7 +264,7 @@ where
                         let reason = err.h2_reason();
                         if reason == Reason::NO_ERROR {
                             
-                            trace!("interpretting NO_ERROR user error as graceful_shutdown");
+                            trace!("interpreting NO_ERROR user error as graceful_shutdown");
                             self.conn.graceful_shutdown();
                         } else {
                             trace!("abruptly shutting down with {:?}", reason);
