@@ -6,22 +6,7 @@
 var testGenerator = testSteps();
 
 function* testSteps() {
-  Services.prefs.setBoolPref("dom.indexedDB.storageOption.enabled", true);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("dom.indexedDB.storageOption.enabled");
-  });
-
   const openParams = [
-    
-    { dbName: "dbA", dbOptions: { version: 1, storage: "persistent" } },
-
-    
-    {
-      url: "http://localhost",
-      dbName: "dbB",
-      dbOptions: { version: 1, storage: "temporary" },
-    },
-
     
     {
       url: "http://localhost:81",
