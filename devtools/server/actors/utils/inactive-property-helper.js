@@ -387,6 +387,22 @@ class InactivePropertyHelper {
         fixId: "inactive-scroll-padding-when-not-scroll-container-fix",
         msgId: "inactive-scroll-padding-when-not-scroll-container",
       },
+      
+      {
+        invalidProperties: [
+          "border-image",
+          "border-image-outset",
+          "border-image-repeat",
+          "border-image-slice",
+          "border-image-source",
+          "border-image-width",
+        ],
+        when: () =>
+          this.internalTableElement &&
+          this.checkTableParentHasBorderCollapsed(),
+        fixId: "inactive-css-border-image-fix",
+        msgId: "inactive-css-border-image",
+      },
     ];
   }
 
@@ -1065,6 +1081,42 @@ class InactivePropertyHelper {
     }
 
     return current;
+  }
+
+  
+
+
+
+
+
+  getTableParent() {
+    let current = this.node.parentNode;
+
+    
+    while (current && computedStyle(current).display !== "table") {
+      current = current.parentNode;
+
+      
+      if (current == this.node.ownerDocument.documentElement) {
+        return null;
+      }
+    }
+
+    return current;
+  }
+
+  
+
+
+
+
+
+  checkTableParentHasBorderCollapsed() {
+    const parent = this.getTableParent();
+    if (!parent) {
+      return false;
+    }
+    return computedStyle(parent).borderCollapse === "collapse";
   }
 }
 
