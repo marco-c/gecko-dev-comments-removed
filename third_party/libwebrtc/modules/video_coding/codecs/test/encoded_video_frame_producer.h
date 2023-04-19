@@ -41,6 +41,8 @@ class EncodedVideoFrameProducer {
   
   EncodedVideoFrameProducer& SetNumInputFrames(int value);
   
+  EncodedVideoFrameProducer& ForceKeyFrame();
+  
   EncodedVideoFrameProducer& SetResolution(RenderResolution value);
 
   EncodedVideoFrameProducer& SetFramerateFps(int value);
@@ -57,12 +59,19 @@ class EncodedVideoFrameProducer {
   int num_input_frames_ = 1;
   int framerate_fps_ = 30;
   RenderResolution resolution_ = {320, 180};
+  std::vector<VideoFrameType> next_frame_type_ = {
+      VideoFrameType::kVideoFrameKey};
 };
 
 inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetNumInputFrames(
     int value) {
   RTC_DCHECK_GT(value, 0);
   num_input_frames_ = value;
+  return *this;
+}
+
+inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::ForceKeyFrame() {
+  next_frame_type_ = {VideoFrameType::kVideoFrameKey};
   return *this;
 }
 

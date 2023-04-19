@@ -384,8 +384,13 @@ void RTPSenderVideo::AddRtpHeaderExtensions(
       }
       
       
+      
+      
+      
       if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
-          first_packet) {
+          video_header.generic->dependencies.empty() && first_packet) {
+        
+        
         descriptor.attached_structure =
             absl::WrapUnique(video_structure_.get());
       }
