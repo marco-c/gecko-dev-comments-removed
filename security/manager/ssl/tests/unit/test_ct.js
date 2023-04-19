@@ -6,9 +6,6 @@
 "use strict";
 
 do_get_profile(); 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-  Ci.nsIX509CertDB
-);
 
 function expectCT(value) {
   return securityInfo => {

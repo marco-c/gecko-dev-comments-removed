@@ -191,7 +191,6 @@ module.exports = {
         
         "dom/**",
         "netwerk/**",
-        "security/manager/ssl/tests/unit/**",
       ],
       rules: {
         

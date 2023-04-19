@@ -18,10 +18,6 @@ const PKCS12_FILE_NO_PASS = "test_certDB_import/cert_from_windows_nopass.pfx";
 const CERT_COMMON_NAME = "test_cert_from_windows";
 const TEST_CERT_PASSWORD = "黒い";
 
-
-let gGetPKCS12FilePasswordCalled = false;
-let gCurrentTestcase = null;
-
 let gTestcases = [
   
   {
@@ -114,8 +110,6 @@ function runOneTestcase(testcase) {
   
   let certFile = do_get_file(testcase.filename);
   ok(certFile, `${testcase.filename} should exist`);
-  gGetPKCS12FilePasswordCalled = false;
-  gCurrentTestcase = testcase;
   let errorCode = gCertDB.importPKCS12File(certFile, testcase.passwordToUse);
   equal(errorCode, testcase.errorCode, `verifying error code`);
   equal(

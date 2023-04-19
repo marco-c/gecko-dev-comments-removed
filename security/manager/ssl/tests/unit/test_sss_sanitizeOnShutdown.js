@@ -18,7 +18,7 @@ Sanitizer.onStartup();
 
 
 
-const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+Cc["@mozilla.org/serviceworkers/manager;1"].getService(
   Ci.nsIServiceWorkerManager
 );
 
