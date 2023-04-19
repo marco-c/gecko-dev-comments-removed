@@ -235,6 +235,7 @@ class RTC_EXPORT StatsReport {
     kStatsValueNameTrackId,
     kStatsValueNameTransmitBitrate,
     kStatsValueNameTransportType,
+    
     kStatsValueNameTypingNoiseState,
     kStatsValueNameWritable,
     kStatsValueNameAudioDeviceUnderrunCounter,
