@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+def main(output, *filenames):
+    with open(filenames[0], "r", encoding="utf-8") as f:
+        content = f.read()
+        output.write(content)

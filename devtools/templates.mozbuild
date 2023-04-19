@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 @template
 def DevToolsModules(*modules):
@@ -21,11 +21,28 @@ def DevToolsModules(*modules):
             error('DevToolsModules must be used from the same directory as ' +
                   'the files to be installed.')
 
-    # jar.mn manifest files are typically used to install files to chrome
-    # locations.  Instead of doing this, use this DevToolsModules syntax via
-    # moz.build files to do the installation so that we can enforce correct
-    # paths based on source tree location.
+    
+    
+    
+    
     base = FINAL_TARGET_FILES.chrome.devtools.modules
     for dir in RELATIVEDIR.split('/'):
         base = base[dir]
     base += [m for m in modules]
+
+
+@template
+def RenamedDevToolsModules(source, target):
+    ''' Helper function to ship a file (source) with a distinct name (target).
+    This will ship the file the same way DevToolsModule does it, to resource://devtools/'''
+
+    base = FINAL_TARGET_FILES.chrome.devtools.modules
+    for dir in RELATIVEDIR.split("/"):
+        base = base[dir]
+    base += ["!%s" % target]
+
+    GeneratedFile(
+        target,
+        script="/devtools/rename.py",
+        inputs=[source],
+    )
