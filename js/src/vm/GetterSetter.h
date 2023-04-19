@@ -56,7 +56,7 @@ namespace js {
 
 
 class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
-  friend struct gc::CellAllocator;
+  friend class gc::CellAllocator;
 
  public:
   

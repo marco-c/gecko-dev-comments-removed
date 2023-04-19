@@ -1409,7 +1409,7 @@ class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
 
 
 class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
-  friend struct js::gc::CellAllocator;
+  friend class js::gc::CellAllocator;
 
  public:
   
