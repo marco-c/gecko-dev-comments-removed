@@ -89,6 +89,7 @@ enum GetWindowListFlags {
 
 
 
+
 bool GetWindowList(int flags,
                    DesktopCapturer::SourceList* windows,
                    LONG ex_style_filters = 0);
