@@ -269,9 +269,12 @@ std::map<std::string, double>
 QualityLimitationDurationToRTCQualityLimitationDuration(
     std::map<webrtc::QualityLimitationReason, int64_t> durations_ms) {
   std::map<std::string, double> result;
+  
+  
+  
   for (const auto& elem : durations_ms) {
     result[QualityLimitationReasonToRTCQualityLimitationReason(elem.first)] =
-        elem.second;
+        elem.second / static_cast<double>(rtc::kNumMillisecsPerSec);
   }
   return result;
 }
