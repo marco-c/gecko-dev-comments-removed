@@ -144,43 +144,13 @@ VideoAdapter::VideoAdapter() : VideoAdapter(1) {}
 
 VideoAdapter::~VideoAdapter() {}
 
-bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
+bool VideoAdapter::DropFrame(int64_t in_timestamp_ns) {
   int max_fps = max_framerate_request_;
   if (max_fps_)
     max_fps = std::min(max_fps, *max_fps_);
 
-  if (max_fps <= 0)
-    return false;
-
-  
-  
-  int64_t frame_interval_ns = rtc::kNumNanosecsPerSec / max_fps;
-  if (frame_interval_ns <= 0) {
-    
-    return true;
-  }
-
-  if (next_frame_timestamp_ns_) {
-    
-    const int64_t time_until_next_frame_ns =
-        (*next_frame_timestamp_ns_ - in_timestamp_ns);
-
-    
-    if (std::abs(time_until_next_frame_ns) < 2 * frame_interval_ns) {
-      
-      if (time_until_next_frame_ns > 0)
-        return false;
-      
-      *next_frame_timestamp_ns_ += frame_interval_ns;
-      return true;
-    }
-  }
-
-  
-  
-  
-  next_frame_timestamp_ns_ = in_timestamp_ns + frame_interval_ns / 2;
-  return true;
+  framerate_controller_.SetMaxFramerate(max_fps);
+  return framerate_controller_.ShouldDropFrame(in_timestamp_ns);
 }
 
 bool VideoAdapter::AdaptFrameResolution(int in_width,
@@ -224,7 +194,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
       std::min(resolution_request_target_pixel_count_, max_pixel_count);
 
   
-  if (max_pixel_count <= 0 || !KeepFrame(in_timestamp_ns)) {
+  if (max_pixel_count <= 0 || DropFrame(in_timestamp_ns)) {
     
     if ((frames_in_ - frames_out_) % 90 == 0) {
       
@@ -345,7 +315,7 @@ void VideoAdapter::OnOutputFormatRequest(
   target_portrait_aspect_ratio_ = target_portrait_aspect_ratio;
   max_portrait_pixel_count_ = max_portrait_pixel_count;
   max_fps_ = max_fps;
-  next_frame_timestamp_ns_ = absl::nullopt;
+  framerate_controller_.Reset();
 }
 
 void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
