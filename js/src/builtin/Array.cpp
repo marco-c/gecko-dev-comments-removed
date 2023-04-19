@@ -3162,6 +3162,47 @@ static bool array_splice_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
+static void CopyDenseElementsFillHoles(ArrayObject* arr, NativeObject* nobj,
+                                       uint32_t length) {
+  
+  MOZ_ASSERT(arr->getDenseInitializedLength() == 0);
+  MOZ_ASSERT(arr->getDenseCapacity() >= length);
+  MOZ_ASSERT(length > 0);
+
+  uint32_t count = std::min(nobj->getDenseInitializedLength(), length);
+
+  if (count > 0) {
+    if (nobj->denseElementsArePacked()) {
+      
+      arr->initDenseElements(nobj, 0, count);
+    } else {
+      arr->setDenseInitializedLength(count);
+
+      
+      for (uint32_t i = 0; i < count; i++) {
+        Value val = nobj->getDenseElement(i);
+        if (val.isMagic(JS_ELEMENTS_HOLE)) {
+          val = UndefinedValue();
+        }
+        arr->initDenseElement(i, val);
+      }
+    }
+  }
+
+  
+  if (count < length) {
+    arr->setDenseInitializedLength(length);
+
+    for (uint32_t i = count; i < length; i++) {
+      arr->initDenseElement(i, UndefinedValue());
+    }
+  }
+
+  
+  MOZ_ASSERT(arr->getDenseInitializedLength() == length);
+  MOZ_ASSERT(arr->denseElementsArePacked());
+}
+
 
 
 static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
@@ -3378,6 +3419,29 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
 
   MOZ_ASSERT(length > 0);
   MOZ_ASSERT(0 <= actualIndex && actualIndex < UINT32_MAX);
+
+  
+  if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, length)) {
+    auto nobj = obj.as<NativeObject>();
+
+    ArrayObject* arr = NewDenseFullyAllocatedArray(cx, length);
+    if (!arr) {
+      return false;
+    }
+    arr->setLength(length);
+
+    CopyDenseElementsFillHoles(arr, nobj, length);
+
+    
+    arr->setDenseElement(uint32_t(actualIndex), args.get(1));
+
+    
+    MOZ_ASSERT(IsPackedArray(arr));
+    MOZ_ASSERT(arr->length() == length);
+
+    args.rval().setObject(*arr);
+    return true;
+  }
 
   
   RootedObject arr(cx, NewDensePartlyAllocatedArray(cx, length));
