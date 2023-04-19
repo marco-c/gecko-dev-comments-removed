@@ -175,7 +175,10 @@ void Navigator::Invalidate() {
 
   mPermissions = nullptr;
 
-  mStorageManager = nullptr;
+  if (mStorageManager) {
+    mStorageManager->Shutdown();
+    mStorageManager = nullptr;
+  }
 
   
   if (mGeolocation) {
