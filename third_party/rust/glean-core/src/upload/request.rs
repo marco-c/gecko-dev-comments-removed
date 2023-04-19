@@ -180,7 +180,7 @@ impl Builder {
 }
 
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct PingRequest {
     
     
