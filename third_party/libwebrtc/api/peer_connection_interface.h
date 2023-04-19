@@ -457,11 +457,14 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     absl::optional<bool> combined_audio_video_bwe;
 
+#if defined(WEBRTC_FUCHSIA)
+    
     
     
     
     
     absl::optional<bool> enable_dtls_srtp;
+#endif
 
     
     

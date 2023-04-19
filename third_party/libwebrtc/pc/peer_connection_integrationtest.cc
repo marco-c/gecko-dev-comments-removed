@@ -269,6 +269,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithDtls) {
                                     webrtc::kEnumCounterKeyProtocolSdes));
 }
 
+#if defined(WEBRTC_FUCHSIA)
 
 TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
   PeerConnectionInterface::RTCConfiguration sdes_config;
@@ -292,6 +293,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
       0, webrtc::metrics::NumEvents("WebRTC.PeerConnection.KeyProtocol",
                                     webrtc::kEnumCounterKeyProtocolDtls));
 }
+#endif
 
 
 
