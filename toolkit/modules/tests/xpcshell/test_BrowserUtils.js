@@ -187,6 +187,28 @@ add_task(async function test_shouldShowFocusPromo() {
   Preferences.resetBranch("browser.promo.focus");
 });
 
+add_task(async function test_shouldShowPinPromo() {
+  
+  Assert.ok(BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
+
+  
+  if (AppConstants.platform !== "android") {
+    
+    await setupEnterprisePolicy();
+
+    Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
+
+    
+    await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
+  }
+
+  
+  Preferences.set("browser.promo.pin.enabled", false);
+  Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
+
+  Preferences.resetBranch("browser.promo.pin");
+});
+
 add_task(function test_isShareableURL() {
   
   if (!Preferences.get("services.sync.engine.tabs.filteredSchemes")) {

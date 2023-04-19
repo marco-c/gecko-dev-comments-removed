@@ -1939,6 +1939,9 @@ pref("browser.promo.focus.disallowed_regions", "cn");
 pref("browser.promo.focus.enabled", true);
 
 
+pref("browser.promo.pin.enabled", true);
+
+
 pref("browser.contentblocking.report.vpn_platforms", "win,mac,linux");
 pref("browser.contentblocking.report.hide_vpn_banner", false);
 pref("browser.contentblocking.report.vpn_sub_id", "sub_HrfCZF7VPHzZkA");
