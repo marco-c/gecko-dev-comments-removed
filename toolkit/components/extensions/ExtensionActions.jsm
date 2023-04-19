@@ -16,6 +16,19 @@ const { ExtensionParent } = ChromeUtils.import(
 );
 const { IconDetails, StartupCache } = ExtensionParent;
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = {};
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "MV2_ACTION_POPURL_RESTRICTED",
+  "extensions.manifestV2.actionsPopupURLRestricted",
+  false
+);
+
 function parseColor(color, kind) {
   if (typeof color == "string") {
     let rgba = InspectorUtils.colorToRGBA(color);
@@ -265,10 +278,18 @@ class PanelActionBase {
 
         
         
+        
+        
+        
+        
+        
+        
+        
         if (
-          context.extension.manifestVersion >= 3 &&
           url &&
-          !url.startsWith(extension.baseURI.spec)
+          !url.startsWith(extension.baseURI.spec) &&
+          (context.extension.manifestVersion >= 3 ||
+            lazy.MV2_ACTION_POPURL_RESTRICTED)
         ) {
           return Promise.reject({ message: `Access denied for URL ${url}` });
         }

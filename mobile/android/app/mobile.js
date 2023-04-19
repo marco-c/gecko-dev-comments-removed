@@ -159,6 +159,10 @@ pref("extensions.blocklist.useMLBF", false);
 
 
 
+pref("extensions.manifestV2.actionsPopupURLRestricted", true);
+
+
+
 pref("extensions.autoDisableScopes", 15);
 
 pref("extensions.enabledScopes", 5);
