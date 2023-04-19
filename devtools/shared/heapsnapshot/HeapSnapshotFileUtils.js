@@ -22,11 +22,11 @@
 
 "use strict";
 
-loader.lazyRequireGetter(
-  this,
+const lazy = {};
+ChromeUtils.defineModuleGetter(
+  lazy,
   "FileUtils",
-  "resource://gre/modules/FileUtils.jsm",
-  true
+  "resource://gre/modules/FileUtils.jsm"
 );
 
 function getHeapSnapshotFileTemplate() {
@@ -40,7 +40,7 @@ function getHeapSnapshotFileTemplate() {
 
 
 exports.getNewUniqueHeapSnapshotTempFilePath = function() {
-  const file = new FileUtils.File(getHeapSnapshotFileTemplate());
+  const file = new lazy.FileUtils.File(getHeapSnapshotFileTemplate());
   
   
   

@@ -42,12 +42,12 @@ loader.lazyRequireGetter(
 );
 
 
+const lazy = {};
 if (!isWorker) {
-  loader.lazyRequireGetter(
-    this,
+  ChromeUtils.defineModuleGetter(
+    lazy,
     "ContentDOMReference",
-    "resource://gre/modules/ContentDOMReference.jsm",
-    true
+    "resource://gre/modules/ContentDOMReference.jsm"
   );
 }
 
@@ -190,14 +190,14 @@ const proto = {
     this._populateGripPreview(g, raw);
     this.hooks.decrementGripDepth();
 
-    if (raw && Node.isInstance(raw) && ContentDOMReference) {
+    if (raw && Node.isInstance(raw) && lazy.ContentDOMReference) {
       
       
       
       
       
       try {
-        g.contentDomReference = ContentDOMReference.get(raw);
+        g.contentDomReference = lazy.ContentDOMReference.get(raw);
       } catch (e) {}
     }
 

@@ -18,11 +18,11 @@ if (!isWorker) {
     true
   );
 }
-loader.lazyRequireGetter(
-  this,
+const lazy = {};
+ChromeUtils.defineModuleGetter(
+  lazy,
   "Reflect",
-  "resource://gre/modules/reflect.jsm",
-  true
+  "resource://gre/modules/reflect.jsm"
 );
 loader.lazyRequireGetter(
   this,
@@ -561,7 +561,7 @@ function prepareReturnedObject({
         
         
         
-        Reflect.parse(`({${match}: true})`);
+        lazy.Reflect.parse(`({${match}: true})`);
       } catch (e) {
         matches.delete(match);
       }

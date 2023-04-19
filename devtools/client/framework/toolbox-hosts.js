@@ -13,11 +13,11 @@ loader.lazyRequireGetter(
   true
 );
 
-loader.lazyRequireGetter(
-  this,
+const lazy = {};
+ChromeUtils.defineModuleGetter(
+  lazy,
   "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  true
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
 
 
@@ -256,7 +256,7 @@ WindowHost.prototype = {
       
       const owner =
         this.hostTab?.ownerGlobal || this.options?.browserContentToolboxOpener;
-      if (owner && PrivateBrowsingUtils.isWindowPrivate(owner)) {
+      if (owner && lazy.PrivateBrowsingUtils.isWindowPrivate(owner)) {
         flags += ",private";
       }
 

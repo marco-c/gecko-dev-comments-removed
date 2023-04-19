@@ -10,8 +10,9 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
+const lazy = {};
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "E10SUtils",
   "resource://gre/modules/E10SUtils.jsm"
 );
@@ -96,7 +97,9 @@ ContentProcessForward.prototype = {
         (typeof arg == "object" || typeof arg == "function") &&
         arg !== null
       ) {
-        if (Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
+        if (
+          Services.appinfo.remoteType === lazy.E10SUtils.EXTENSION_REMOTE_TYPE
+        ) {
           
           
           
