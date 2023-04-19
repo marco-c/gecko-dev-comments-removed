@@ -48,6 +48,10 @@ AvailableCpuFeatures GetAvailableCpuFeatures() {
   return {false,
           false,
           true};
+#else
+  return {false,
+          false,
+          false};
 #endif
 }
 
