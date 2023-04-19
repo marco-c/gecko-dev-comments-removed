@@ -40,18 +40,9 @@ class VideoTrackTest : public ::testing::Test {
 
  protected:
   rtc::scoped_refptr<FakeVideoTrackSource> video_track_source_;
-  rtc::scoped_refptr<VideoTrack> video_track_;
+  rtc::scoped_refptr<VideoTrackInterface> video_track_;
   cricket::FakeFrameSource frame_source_;
 };
-
-
-
-
-
-TEST_F(VideoTrackTest, CheckApiProxyAndInternalSource) {
-  EXPECT_NE(video_track_->GetSource(), video_track_source_.get());
-  EXPECT_EQ(video_track_->GetSourceInternal(), video_track_source_.get());
-}
 
 
 TEST_F(VideoTrackTest, SourceStateChangeTrackState) {

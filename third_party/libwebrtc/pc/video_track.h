@@ -54,9 +54,6 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   MediaStreamTrackInterface::TrackState state() const override;
   std::string kind() const override;
 
-  
-  VideoTrackSourceInterface* GetSourceInternal() const;
-
  protected:
   VideoTrack(
       const std::string& id,
