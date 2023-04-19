@@ -1,14 +1,10 @@
+/* -*- Mode: JavaScript; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* global noSuchMethodExistsYo1, noSuchMethodExistsYo2, noSuchMethodExistsYo3 */
 
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TestInterfaceJS"];
-
-function TestInterfaceJS() {}
+export function TestInterfaceJS() {}
 
 TestInterfaceJS.prototype = {
   QueryInterface: ChromeUtils.generateQI([
@@ -120,14 +116,14 @@ TestInterfaceJS.prototype = {
   },
 
   testThrowNsresult() {
-    
-    
+    // This is explicitly testing preservation of raw thrown Crs in XPCJS
+    // eslint-disable-next-line mozilla/no-throw-cr-literal
     throw Cr.NS_BINDING_ABORTED;
   },
 
   testThrowNsresultFromNative(x) {
-    
-    
+    // We want to throw an exception that we generate from an nsresult thrown
+    // by a C++ component.
     Services.io.notImplemented();
   },
 
@@ -193,10 +189,10 @@ TestInterfaceJS.prototype = {
   },
 
   testPromiseWithThrowingContentThenable(thenable) {
-    
-    
-    
-    
+    // Waive Xrays on the thenable, because we're calling resolve() in the
+    // chrome compartment, so that's the compartment the "then" property get
+    // will happen in, and if we leave the Xray in place the function-valued
+    // property won't return the function.
     return this._win.Promise.resolve(Cu.waiveXrays(thenable));
   },
 
