@@ -216,8 +216,11 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     
     Register framePtr = FramePointer;
-    masm.subPtr(Imm32(BaselineFrame::Size()), StackPointer);
     masm.movePtr(StackPointer, framePtr);
+    masm.subPtr(Imm32(BaselineFrame::Size()), StackPointer);
+
+    Register framePtrScratch = regs.takeAny();
+    masm.movePtr(sp, framePtrScratch);
 
     
     masm.as_slli_d(scratch, numStackValues, 3);
@@ -244,8 +247,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     using Fn = bool (*)(BaselineFrame * frame, InterpreterFrame * interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
-    masm.passABIArg(FramePointer);  
-    masm.passABIArg(OsrFrameReg);   
+    masm.passABIArg(framePtrScratch);  
+    masm.passABIArg(OsrFrameReg);      
     masm.passABIArg(numStackValues);
     masm.callWithABI<Fn, jit::InitBaselineFrameForOsr>(
         MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
@@ -258,7 +261,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
     Label error;
     masm.freeStack(ExitFrameLayout::SizeWithFooter());
-    masm.addPtr(Imm32(BaselineFrame::Size()), framePtr);
     masm.branchIfFalseBool(ReturnReg, &error);
 
     
@@ -352,7 +354,7 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   masm.callWithABI<Fn, InvalidationBailout>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
 
-  masm.loadPtr(Address(StackPointer, 0), a2);
+  masm.pop(a2);
 
   
   masm.moveToStackPtr(FramePointer);

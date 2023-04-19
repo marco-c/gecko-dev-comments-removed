@@ -37,11 +37,8 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   
   
   MOZ_ASSERT(ICTailCallReg == ra);
-  masm.subPtr(Imm32(sizeof(CommonFrameLayout)), StackPointer);
-  masm.storePtr(ImmWord(MakeFrameDescriptor(FrameType::BaselineJS)),
-                Address(StackPointer, CommonFrameLayout::offsetOfDescriptor()));
-  masm.storePtr(
-      ra, Address(StackPointer, CommonFrameLayout::offsetOfReturnAddress()));
+  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.push(ra);
 
   masm.jump(target);
 }
