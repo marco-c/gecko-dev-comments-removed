@@ -203,7 +203,7 @@ class BiplanarYuv8Buffer : public BiplanarYuvBuffer {
 
 
 
-class NV12BufferInterface : public BiplanarYuv8Buffer {
+class RTC_EXPORT NV12BufferInterface : public BiplanarYuv8Buffer {
  public:
   Type type() const override;
 
