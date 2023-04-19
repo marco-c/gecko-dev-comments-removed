@@ -829,6 +829,219 @@ function ArrayKeys() {
 }
 
 
+function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
+  
+  var C = this;
+
+  
+  
+  let fromAsyncClosure = async () => {
+    
+    
+    
+    
+    var mapping = mapfn !== undefined;
+    if (mapping && !IsCallable(mapfn)) {
+      ThrowTypeError(JSMSG_NOT_FUNCTION, ToSource(mapfn));
+    }
+
+    
+    let usingAsyncIterator = GetMethod(
+      asyncItems,
+      GetBuiltinSymbol("asyncIterator")
+    );
+    let usingSyncIterator = undefined;
+
+    
+    if (usingAsyncIterator === undefined) {
+      
+      usingSyncIterator = GetMethod(asyncItems, GetBuiltinSymbol("iterator"));
+    }
+
+    
+    
+    
+    
+    let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
+
+    
+    let iteratorRecord = undefined;
+
+    
+    if (usingAsyncIterator !== undefined) {
+      
+      iteratorRecord = GetIterator(asyncItems, "async", usingAsyncIterator);
+    } else if (usingSyncIterator !== undefined) {
+      
+      
+      let asyncIterator = GetIterator(asyncItems, "sync", usingSyncIterator);
+
+      
+      
+      let asyncFromSyncIteratorObject = CreateAsyncFromSyncIterator(
+        asyncIterator.iterator,
+        asyncIterator.nextMethod
+      );
+
+      iteratorRecord = {
+        __proto__: null,
+        iterator: UnsafeGetReservedSlot(
+          asyncFromSyncIteratorObject,
+          ASYNC_FROM_SYNC_ITERATOR_OBJECT_ITERATOR_SLOT
+        ),
+        nextMethod: UnsafeGetReservedSlot(
+          asyncFromSyncIteratorObject,
+          ASYNC_FROM_SYNC_ITERATOR_OBJECT_NEXT_METHOD_SLOT
+        ),
+        
+        done: false,
+      };
+    }
+
+    
+    
+    if (iteratorRecord === undefined) {
+      
+      
+      let arrayLike = ToObject(asyncItems);
+
+      
+      let len = ToLength(arrayLike.length);
+      
+      
+      
+      
+      
+      
+      let A = IsConstructor(C)
+        ? constructContentFunction(C, C, len)
+        : std_Array(len);
+
+      
+      let k = 0;
+      
+
+      while (k < len) {
+        
+        
+        
+        let kValue = await arrayLike[k];
+
+        
+        
+        
+        
+        let mappedValue = mapping
+          ? await callContentFunction(mapfn, thisArg, kValue, k)
+          : kValue;
+
+        
+        DefineDataProperty(A, k, mappedValue);
+
+        
+        k = k + 1;
+      }
+
+      
+      A.length = len;
+
+      
+      return A;
+    }
+
+    
+    let k = 0;
+
+    
+    
+    let mustClose = false;
+    try {
+      
+      do {
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        let nextResult = callContentFunction(
+          iteratorRecord.nextMethod,
+          iteratorRecord.iterator
+        );
+
+        
+        nextResult = await nextResult;
+
+        
+        if (!IsObject(nextResult)) {
+          ThrowTypeError(JSMSG_OBJECT_REQUIRED, nextResult);
+        }
+
+        
+        let done = nextResult.done;
+
+        
+        if (done) {
+          
+          A.length = k;
+
+          
+          return A;
+        }
+
+        
+        let nextValue = nextResult.value;
+
+        
+        let mappedValue = nextValue;
+
+        
+        
+        mustClose = true;
+
+        
+        if (mapping) {
+          
+          mappedValue = callContentFunction(mapfn, thisArg, nextValue, k);
+
+          
+          
+          
+          
+          mappedValue = await mappedValue;
+          
+        }
+
+        
+        
+        DefineDataProperty(A, k, mappedValue);
+
+        
+        mustClose = false;
+
+        
+        k = k + 1;
+      } while (true);
+    } finally {
+      if (mustClose) {
+        AsyncIteratorClose(iteratorRecord);
+      }
+    }
+  };
+
+  
+  
+  return fromAsyncClosure();
+}
+
+
 function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
   
   var C = this;
@@ -960,7 +1173,7 @@ function ArrayToLocaleString(locales, options) {
   if (firstElement === undefined || firstElement === null) {
     R = "";
   } else {
-#if JS_HAS_INTL_API
+    #if JS_HAS_INTL_API
     R = ToString(
       callContentFunction(
         firstElement.toLocaleString,
@@ -969,11 +1182,11 @@ function ArrayToLocaleString(locales, options) {
         options
       )
     );
-#else
+    #else
     R = ToString(
       callContentFunction(firstElement.toLocaleString, firstElement)
     );
-#endif
+    #endif
   }
 
   
@@ -988,7 +1201,7 @@ function ArrayToLocaleString(locales, options) {
     
     R += separator;
     if (!(nextElement === undefined || nextElement === null)) {
-#if JS_HAS_INTL_API
+      #if JS_HAS_INTL_API
       R += ToString(
         callContentFunction(
           nextElement.toLocaleString,
@@ -997,11 +1210,11 @@ function ArrayToLocaleString(locales, options) {
           options
         )
       );
-#else
+      #else
       R += ToString(
         callContentFunction(nextElement.toLocaleString, nextElement)
       );
-#endif
+      #endif
     }
   }
 
@@ -1076,8 +1289,8 @@ function IsConcatSpreadable(O) {
   
   if (!IsObject(O) 
 #ifdef ENABLE_RECORD_TUPLE
-      && !IsTuple(O) 
-#endif
+    && !IsTuple(O) 
+  #endif
   ) {
     return false;
   }
@@ -1090,11 +1303,11 @@ function IsConcatSpreadable(O) {
     return ToBoolean(spreadable);
   }
 
-#ifdef ENABLE_RECORD_TUPLE
+  #ifdef ENABLE_RECORD_TUPLE
   if (IsTuple(O)) {
     return true;
   }
-#endif
+  #endif
 
   
   return IsArray(O);
@@ -1125,10 +1338,10 @@ function ArrayConcat(arg1) {
   while (true) {
     
     if (IsConcatSpreadable(E)) {
-#ifdef ENABLE_RECORD_TUPLE
+      #ifdef ENABLE_RECORD_TUPLE
       
       E = ToObject(E);
-#endif
+      #endif
 
       
       len = ToLength(E.length);
