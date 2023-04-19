@@ -152,8 +152,9 @@ class NetworkEmulationManager {
       Builder& capacity_Mbps(int link_capacity_Mbps);
       Builder& loss(double loss_rate);
       Builder& packet_queue_length(int max_queue_length_in_packets);
-      SimulatedNetworkNode Build() const;
-      SimulatedNetworkNode Build(NetworkEmulationManager* net) const;
+      SimulatedNetworkNode Build(uint64_t random_seed = 1) const;
+      SimulatedNetworkNode Build(NetworkEmulationManager* net,
+                                 uint64_t random_seed = 1) const;
 
      private:
       NetworkEmulationManager* const net_;
@@ -166,8 +167,14 @@ class NetworkEmulationManager {
 
   
   
+  
+  
   virtual EmulatedNetworkNode* CreateEmulatedNode(
-      BuiltInNetworkBehaviorConfig config) = 0;
+      BuiltInNetworkBehaviorConfig config,
+      uint64_t random_seed = 1) = 0;
+  
+  
+  
   virtual EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior) = 0;
 

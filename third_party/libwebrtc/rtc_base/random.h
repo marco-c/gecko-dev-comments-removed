@@ -67,6 +67,7 @@ class Random {
 
  private:
   
+  
   uint64_t NextOutput() {
     state_ ^= state_ >> 12;
     state_ ^= state_ << 25;
