@@ -1,3 +1,5 @@
+
+#![cfg(any())]
 #![cfg_attr(thiserror_nightly_testing, feature(backtrace))]
 
 use thiserror::Error;
