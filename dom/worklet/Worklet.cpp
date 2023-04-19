@@ -179,8 +179,11 @@ class WorkletFetchHandler final : public PromiseNativeHandler,
       return;
     }
 
+    
+    
+    
     if (!response->Ok()) {
-      RejectPromises(NS_ERROR_DOM_NETWORK_ERR);
+      RejectPromises(NS_ERROR_DOM_ABORT_ERR);
       return;
     }
 
