@@ -108,14 +108,18 @@ int64_t RateTracker::TotalSampleCount() const {
 }
 
 void RateTracker::AddSamples(int64_t sample_count) {
+  AddSamplesAtTime(Time(), sample_count);
+}
+
+void RateTracker::AddSamplesAtTime(int64_t current_time_ms,
+                                   int64_t sample_count) {
   RTC_DCHECK_LE(0, sample_count);
   EnsureInitialized();
-  int64_t current_time = Time();
   
   
-  for (size_t i = 0;
-       i <= bucket_count_ &&
-       current_time >= bucket_start_time_milliseconds_ + bucket_milliseconds_;
+  for (size_t i = 0; i <= bucket_count_ &&
+                     current_time_ms >=
+                         bucket_start_time_milliseconds_ + bucket_milliseconds_;
        ++i) {
     bucket_start_time_milliseconds_ += bucket_milliseconds_;
     current_bucket_ = NextBucketIndex(current_bucket_);
@@ -125,7 +129,8 @@ void RateTracker::AddSamples(int64_t sample_count) {
   
   bucket_start_time_milliseconds_ +=
       bucket_milliseconds_ *
-      ((current_time - bucket_start_time_milliseconds_) / bucket_milliseconds_);
+      ((current_time_ms - bucket_start_time_milliseconds_) /
+       bucket_milliseconds_);
   
   sample_buckets_[current_bucket_] += sample_count;
   total_sample_count_ += sample_count;

@@ -237,6 +237,8 @@ class Connection : public CandidatePairInterface,
   
   
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
+  
+  int64_t last_send_data() const { return last_send_data_; }
   int64_t last_data_received() const { return last_data_received_; }
 
   
@@ -378,6 +380,7 @@ class Connection : public CandidatePairInterface,
   ConnectionInfo stats_;
   rtc::RateTracker recv_rate_tracker_;
   rtc::RateTracker send_rate_tracker_;
+  int64_t last_send_data_ = 0;
 
  private:
   
