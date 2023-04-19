@@ -42,6 +42,14 @@ class RtpPayloadParams final {
                                    const CodecSpecificInfo* codec_specific_info,
                                    int64_t shared_frame_id);
 
+  
+  
+  
+  
+  
+  static FrameDependencyStructure MinimalisticVp9Structure(
+      const CodecSpecificInfoVP9& vp9);
+
   uint32_t ssrc() const;
 
   RtpPayloadState state() const;
