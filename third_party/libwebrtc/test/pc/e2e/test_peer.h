@@ -33,7 +33,12 @@ namespace webrtc_pc_e2e {
 
 class TestPeer final {
  public:
-  Params* params() const { return params_.get(); }
+  
+  Params* params() { return &params_; }
+
+  
+  const Params& params2() const { return params_; }
+
   PeerConfigurerImpl::VideoSource ReleaseVideoSource(size_t i) {
     RTC_CHECK(wrapper_) << "TestPeer is already closed";
     return std::move(video_sources_[i]);
@@ -57,11 +62,11 @@ class TestPeer final {
   void CreateOffer(
       rtc::scoped_refptr<CreateSessionDescriptionObserver> observer) {
     RTC_CHECK(wrapper_) << "TestPeer is already closed";
-    pc()->CreateOffer(observer.release(), params_->rtc_offer_answer_options);
+    pc()->CreateOffer(observer.release(), params_.rtc_offer_answer_options);
   }
   std::unique_ptr<SessionDescriptionInterface> CreateOffer() {
     RTC_CHECK(wrapper_) << "TestPeer is already closed";
-    return wrapper_->CreateOffer(params_->rtc_offer_answer_options);
+    return wrapper_->CreateOffer(params_.rtc_offer_answer_options);
   }
 
   std::unique_ptr<SessionDescriptionInterface> CreateAnswer() {
@@ -145,10 +150,10 @@ class TestPeer final {
            std::unique_ptr<rtc::Thread> worker_thread);
 
  private:
+  Params params_;
   
   std::unique_ptr<rtc::Thread> worker_thread_;
   std::unique_ptr<PeerConnectionWrapper> wrapper_;
-  std::unique_ptr<Params> params_;
   std::vector<PeerConfigurerImpl::VideoSource> video_sources_;
   rtc::scoped_refptr<AudioProcessing> audio_processing_;
 
