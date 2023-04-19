@@ -93,7 +93,13 @@ var TelemetryControllerBase = Object.freeze({
   setTelemetryRecordingFlags() {
     
     
-    let prereleaseChannels = ["nightly", "aurora", "beta"];
+    let prereleaseChannels = [
+      "nightly",
+      "nightly-autoland",
+      "nightly-try",
+      "aurora",
+      "beta",
+    ];
     if (!AppConstants.MOZILLA_OFFICIAL) {
       
       prereleaseChannels.push("default");
