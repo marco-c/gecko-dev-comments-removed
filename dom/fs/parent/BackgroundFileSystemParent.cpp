@@ -9,7 +9,6 @@
 
 #include "nsNetCID.h"
 #include "mozilla/dom/FileSystemTypes.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/Maybe.h"
@@ -66,19 +65,14 @@ mozilla::ipc::IPCResult BackgroundFileSystemParent::RecvGetRoot(
   nsAutoCString origin =
       quota::QuotaManager::GetOriginFromValidatedPrincipalInfo(mPrincipalInfo);
 
-  auto sendBackError = [aResolver](const auto& aRv) {
-    aResolver(fs::FileSystemGetRootResponse(aRv));
-  };
-
-  fs::EntryId rootId = fs::data::GetRootHandle(origin);
-
   
-  QM_TRY_UNWRAP(
-      fs::data::FileSystemDataManager * dataRaw,
-      fs::data::FileSystemDataManager::CreateFileSystemDataManager(origin),
-      IPC_OK(), sendBackError);
-  UniquePtr<fs::data::FileSystemDataManager> data(dataRaw);
+  auto res =
+      fs::data::FileSystemDataManager::CreateFileSystemDataManager(origin);
+  QM_TRY(OkIf(res.isErr()), IPC_OK(), [aResolver](const auto&) {
+    aResolver(fs::FileSystemGetRootResponse(NS_ERROR_UNEXPECTED));
+  });
 
+  UniquePtr<fs::data::FileSystemDataManager> data(res.unwrap());
   nsCOMPtr<nsIThread> pbackground = NS_GetCurrentThread();
 
   nsCOMPtr<nsIEventTarget> target =
@@ -92,19 +86,22 @@ mozilla::ipc::IPCResult BackgroundFileSystemParent::RecvGetRoot(
   
   
   
-  InvokeAsync(taskqueue, __func__,
-              [origin, parentEp = std::move(aParentEp), aResolver, rootId,
-               data = std::move(data), taskqueue, pbackground]() mutable {
-                RefPtr<OriginPrivateFileSystemParent> parent =
-                    new OriginPrivateFileSystemParent(taskqueue);
-                if (!parentEp.Bind(parent)) {
-                  auto response =
-                      fs::FileSystemGetRootResponse(NS_ERROR_FAILURE);
-                  return RootPromise::CreateAndReject(response, __func__);
-                }
-                
-                return RootPromise::CreateAndResolve(rootId, __func__);
-              })
+  InvokeAsync(
+      taskqueue, __func__,
+      [origin, parentEp = std::move(aParentEp), aResolver,
+       data = std::move(data), taskqueue, pbackground]() mutable {
+        RefPtr<OriginPrivateFileSystemParent> parent =
+            new OriginPrivateFileSystemParent(taskqueue);
+        if (!parentEp.Bind(parent)) {
+          auto response = fs::FileSystemGetRootResponse(NS_ERROR_FAILURE);
+          return RootPromise::CreateAndReject(response, __func__);
+        }
+
+        
+        auto response =
+            fs::FileSystemGetRootResponse(fs::data::GetRootHandle(origin));
+        return RootPromise::CreateAndResolve(response, __func__);
+      })
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [aResolver](const RootPromise::ResolveOrRejectValue& aValue) {
                if (aValue.IsReject()) {
