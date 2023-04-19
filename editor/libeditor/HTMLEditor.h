@@ -1510,8 +1510,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitNodeResult
   HandleInsertParagraphInParagraph(Element& aParentDivOrP,
                                    const EditorDOMPoint& aCandidatePointToSplit,
                                    const Element& aEditingHost);
