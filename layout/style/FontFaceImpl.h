@@ -136,7 +136,7 @@ class FontFaceImpl final {
 
 
 
-  already_AddRefed<gfxFontFaceBufferSource> CreateBufferSource();
+  already_AddRefed<gfxFontFaceBufferSource> TakeBufferSource();
 
   
 
@@ -184,7 +184,8 @@ class FontFaceImpl final {
 
   FontFaceImpl(FontFace* aOwner, FontFaceSetImpl* aFontFaceSet);
 
-  void InitializeSource(const UTF8StringOrArrayBufferOrArrayBufferView&);
+  void InitializeSourceURL(const nsACString& aURL);
+  void InitializeSourceBuffer(uint8_t* aBuffer, uint32_t aLength);
 
   
 
@@ -256,8 +257,7 @@ class FontFaceImpl final {
 
   
   
-  uint8_t* mSourceBuffer;
-  uint32_t mSourceBufferLength;
+  RefPtr<FontFaceBufferSource> mBufferSource;
 
   
   
