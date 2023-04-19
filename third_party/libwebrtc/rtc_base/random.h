@@ -16,7 +16,6 @@
 #include <limits>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -34,6 +33,10 @@ class Random {
   
   
   explicit Random(uint64_t seed);
+
+  Random() = delete;
+  Random(const Random&) = delete;
+  Random& operator=(const Random&) = delete;
 
   
   
@@ -73,8 +76,6 @@ class Random {
   }
 
   uint64_t state_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Random);
 };
 
 

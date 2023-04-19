@@ -26,7 +26,6 @@
 #include "common_audio/wav_file.h"
 #include "rtc_base/checks.h"
 #endif
-#include "rtc_base/constructor_magic.h"
 
 
 #if !defined(WEBRTC_APM_DEBUG_DUMP) || \
@@ -51,6 +50,10 @@ class ApmDataDumper {
   
   
   explicit ApmDataDumper(int instance_index);
+
+  ApmDataDumper() = delete;
+  ApmDataDumper(const ApmDataDumper&) = delete;
+  ApmDataDumper& operator=(const ApmDataDumper&) = delete;
 
   ~ApmDataDumper();
 
@@ -316,7 +319,6 @@ class ApmDataDumper {
   }
 
 #endif
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ApmDataDumper);
 };
 
 }  

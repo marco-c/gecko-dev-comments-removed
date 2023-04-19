@@ -58,27 +58,29 @@ class ScopedGDIObject {
 template <typename T>
 class DeleteObjectTraits {
  public:
+  DeleteObjectTraits() = delete;
+  DeleteObjectTraits(const DeleteObjectTraits&) = delete;
+  DeleteObjectTraits& operator=(const DeleteObjectTraits&) = delete;
+
   
   static void Close(T handle) {
     if (handle)
       DeleteObject(handle);
   }
-
- private:
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DeleteObjectTraits);
 };
 
 
 class DestroyCursorTraits {
  public:
+  DestroyCursorTraits() = delete;
+  DestroyCursorTraits(const DestroyCursorTraits&) = delete;
+  DestroyCursorTraits& operator=(const DestroyCursorTraits&) = delete;
+
   
   static void Close(HCURSOR handle) {
     if (handle)
       DestroyCursor(handle);
   }
-
- private:
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DestroyCursorTraits);
 };
 
 typedef ScopedGDIObject<HBITMAP, DeleteObjectTraits<HBITMAP> > ScopedBitmap;

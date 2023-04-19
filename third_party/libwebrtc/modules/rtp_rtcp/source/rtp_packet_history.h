@@ -19,7 +19,6 @@
 
 #include "api/function_view.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -63,6 +62,11 @@ class RtpPacketHistory {
   static constexpr int kPacketCullingDelayFactor = 3;
 
   RtpPacketHistory(Clock* clock, bool enable_padding_prio);
+
+  RtpPacketHistory() = delete;
+  RtpPacketHistory(const RtpPacketHistory&) = delete;
+  RtpPacketHistory& operator=(const RtpPacketHistory&) = delete;
+
   ~RtpPacketHistory();
 
   
@@ -211,8 +215,6 @@ class RtpPacketHistory {
   
   
   PacketPrioritySet padding_priority_ RTC_GUARDED_BY(lock_);
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPacketHistory);
 };
 }  
 #endif  
