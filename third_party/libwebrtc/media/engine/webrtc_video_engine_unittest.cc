@@ -953,32 +953,22 @@ TEST_F(WebRtcVideoEngineTest, SimulcastEnabledForH264BehindFieldTrial) {
 
 
 
-TEST_F(WebRtcVideoEngineTest, Flexfec03SendCodecEnablesWithFieldTrial) {
+
+
+TEST_F(WebRtcVideoEngineTest,
+       Flexfec03SupportedAsInternalCodecBehindFieldTrial) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
   auto flexfec = Field("name", &VideoCodec::name, "flexfec-03");
 
+  
   EXPECT_THAT(engine_.send_codecs(), Not(Contains(flexfec)));
 
+  
   RTC_DCHECK(!override_field_trials_);
   override_field_trials_ = std::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-FlexFEC-03-Advertised/Enabled/");
   EXPECT_THAT(engine_.send_codecs(), Contains(flexfec));
-}
-
-
-
-TEST_F(WebRtcVideoEngineTest, Flexfec03ReceiveCodecDisablesWithFieldTrial) {
-  decoder_factory_->AddSupportedVideoCodecType("VP8");
-
-  auto flexfec = Field("name", &VideoCodec::name, "flexfec-03");
-
-  EXPECT_THAT(engine_.recv_codecs(), Contains(flexfec));
-
-  RTC_DCHECK(!override_field_trials_);
-  override_field_trials_ = std::make_unique<webrtc::test::ScopedFieldTrials>(
-      "WebRTC-FlexFEC-03-Advertised/Disabled/");
-  EXPECT_THAT(engine_.recv_codecs(), Not(Contains(flexfec)));
 }
 
 
@@ -4027,13 +4017,13 @@ TEST_F(WebRtcVideoChannelTest, FlexfecRecvCodecWithoutSsrcNotExposedByDefault) {
   EXPECT_TRUE(streams.empty());
 }
 
-TEST_F(WebRtcVideoChannelTest, FlexfecRecvCodecWithSsrcExposedByDefault) {
+TEST_F(WebRtcVideoChannelTest, FlexfecRecvCodecWithSsrcNotExposedByDefault) {
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
 
   const std::vector<FakeFlexfecReceiveStream*>& streams =
       fake_call_->GetFlexfecReceiveStreams();
-  EXPECT_EQ(1U, streams.size());
+  EXPECT_TRUE(streams.empty());
 }
 
 
