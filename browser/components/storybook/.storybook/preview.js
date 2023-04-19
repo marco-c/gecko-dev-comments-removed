@@ -55,6 +55,3 @@ window.MozXULElement = {
     document.l10n.translateRoots();
   },
 };
-
-
-window.MozXULElement.insertFTLIfNeeded("browser/companion.ftl");
