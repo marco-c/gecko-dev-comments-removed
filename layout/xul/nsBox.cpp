@@ -309,7 +309,6 @@ nsresult nsIFrame::XULRedraw(nsBoxLayoutState& aState) {
   if (aState.PaintingDisabled()) return NS_OK;
 
   
-  
   InvalidateFrameSubtree();
 
   return NS_OK;

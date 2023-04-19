@@ -109,10 +109,22 @@ ${helpers.predefined_type(
 )}
 
 
+
+${helpers.predefined_type(
+    "-moz-subtree-hidden-only-visually",
+    "BoolInteger",
+    "computed::BoolInteger::zero()",
+    engines="gecko",
+    animation_value_type="discrete",
+    spec="None (Nonstandard internal property)",
+    enabled_in="chrome",
+)}
+
+
 ${helpers.predefined_type(
     "-moz-force-broken-image-icon",
-    "MozForceBrokenImageIcon",
-    "computed::MozForceBrokenImageIcon::false_value()",
+    "BoolInteger",
+    "computed::BoolInteger::zero()",
     engines="gecko",
     animation_value_type="discrete",
     spec="None (Nonstandard Firefox-only property)",

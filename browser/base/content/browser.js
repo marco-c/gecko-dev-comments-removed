@@ -2171,23 +2171,23 @@ var gBrowserInit = {
         return;
       }
 
-      if (gBrowser.selectedBrowser.isRemoteBrowser) {
+      
+      
+      
+      
+      let promise = gBrowser.selectedBrowser.isRemoteBrowser
+        ? this._firstContentWindowPaintDeferred.promise
+        : Promise.resolve();
+
+      promise.then(() => {
         
         
-        this._firstContentWindowPaintDeferred.promise.then(() => {
-          
-          
-          if (
-            document.commandDispatcher.focusedElement == initiallyFocusedElement
-          ) {
-            gBrowser.selectedBrowser.focus();
-          }
-        });
-      } else {
-        
-        
-        gBrowser.selectedBrowser.focus();
-      }
+        if (
+          document.commandDispatcher.focusedElement == initiallyFocusedElement
+        ) {
+          gBrowser.selectedBrowser.focus();
+        }
+      });
     });
 
     

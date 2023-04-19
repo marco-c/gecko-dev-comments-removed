@@ -14,7 +14,6 @@
 #include "nsAccCache.h"
 #include "nsAccessiblePivot.h"
 #include "nsAccUtils.h"
-#include "nsDeckFrame.h"
 #include "nsEventShell.h"
 #include "nsLayoutUtils.h"
 #include "nsTextEquivUtils.h"
@@ -1050,21 +1049,6 @@ LocalAccessible* DocAccessible::GetAccessibleOrContainer(
     if (aNoContainerIfPruned && currNode->IsElement() &&
         aria::HasDefinedARIAHidden(currNode->AsElement())) {
       return nullptr;
-    }
-
-    
-    if (aNoContainerIfPruned && currNode->IsXULElement()) {
-      if (nsIFrame* frame = currNode->AsContent()->GetPrimaryFrame()) {
-        nsDeckFrame* deckFrame = do_QueryFrame(frame->GetParent());
-        if (deckFrame && deckFrame->GetSelectedBox() != frame) {
-          
-          nsIContent* parentFrameContent = deckFrame->GetContent();
-          if (!parentFrameContent ||
-              !parentFrameContent->IsXULElement(nsGkAtoms::tabpanels)) {
-            return nullptr;
-          }
-        }
-      }
     }
 
     
