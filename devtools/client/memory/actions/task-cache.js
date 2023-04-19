@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { assert } = require("devtools/shared/DevToolsUtils");
+const { assert } = require("resource://devtools/shared/DevToolsUtils.js");
 
 
 

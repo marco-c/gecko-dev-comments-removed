@@ -13,12 +13,12 @@
 
 
 
-const colorCoarseType = require("devtools/client/memory/components/tree-map/color-coarse-type");
+const colorCoarseType = require("resource://devtools/client/memory/components/tree-map/color-coarse-type.js");
 const {
   hslToStyle,
   formatAbbreviatedBytes,
   L10N,
-} = require("devtools/client/memory/utils");
+} = require("resource://devtools/client/memory/utils.js");
 
 
 const NO_SCROLL = {

@@ -3,12 +3,15 @@
 
 "use strict";
 
-const { assert, immutableUpdate } = require("devtools/shared/DevToolsUtils");
+const {
+  assert,
+  immutableUpdate,
+} = require("resource://devtools/shared/DevToolsUtils.js");
 const {
   actions,
   individualsState,
   viewState,
-} = require("devtools/client/memory/constants");
+} = require("resource://devtools/client/memory/constants.js");
 
 const handlers = Object.create(null);
 

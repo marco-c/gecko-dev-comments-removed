@@ -5,7 +5,9 @@
 
 
 
-const { toggleDiffing } = require("devtools/client/memory/actions/diffing");
+const {
+  toggleDiffing,
+} = require("resource://devtools/client/memory/actions/diffing.js");
 
 add_task(async function() {
   const front = new StubbedMemoryFront();

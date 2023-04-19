@@ -3,7 +3,10 @@
 
 "use strict";
 
-const { actions, censusDisplays } = require("devtools/client/memory/constants");
+const {
+  actions,
+  censusDisplays,
+} = require("resource://devtools/client/memory/constants.js");
 const DEFAULT_CENSUS_DISPLAY = censusDisplays.coarseType;
 
 const handlers = Object.create(null);

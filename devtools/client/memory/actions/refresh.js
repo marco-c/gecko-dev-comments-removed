@@ -3,10 +3,12 @@
 
 "use strict";
 
-const { assert } = require("devtools/shared/DevToolsUtils");
-const { viewState } = require("devtools/client/memory/constants");
-const { refreshDiffing } = require("devtools/client/memory/actions/diffing");
-const snapshot = require("devtools/client/memory/actions/snapshot");
+const { assert } = require("resource://devtools/shared/DevToolsUtils.js");
+const { viewState } = require("resource://devtools/client/memory/constants.js");
+const {
+  refreshDiffing,
+} = require("resource://devtools/client/memory/actions/diffing.js");
+const snapshot = require("resource://devtools/client/memory/actions/snapshot.js");
 
 
 

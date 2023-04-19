@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { actions } = require("devtools/client/memory/constants");
+const { actions } = require("resource://devtools/client/memory/constants.js");
 
 module.exports = function(filterString = null, action) {
   if (action.type === actions.SET_FILTER_STRING) {
