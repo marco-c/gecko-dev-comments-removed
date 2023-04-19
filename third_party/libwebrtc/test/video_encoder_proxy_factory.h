@@ -27,7 +27,7 @@ const VideoEncoder::Capabilities kCapabilities(false);
 
 
 
-class VideoEncoderProxyFactory final : public VideoEncoderFactory {
+class VideoEncoderProxyFactory : public VideoEncoderFactory {
  public:
   explicit VideoEncoderProxyFactory(VideoEncoder* encoder)
       : VideoEncoderProxyFactory(encoder, nullptr) {}
@@ -68,7 +68,7 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
     return max_num_simultaneous_encoder_instances_;
   }
 
- private:
+ protected:
   void OnDestroyVideoEncoder() {
     RTC_CHECK_GT(num_simultaneous_encoder_instances_, 0);
     --num_simultaneous_encoder_instances_;
