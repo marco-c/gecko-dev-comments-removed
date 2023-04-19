@@ -5,6 +5,8 @@
 
 do_get_profile();
 
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 const { Sqlite } = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
 const { AsyncShutdown } = ChromeUtils.import(
   "resource://gre/modules/AsyncShutdown.jsm"

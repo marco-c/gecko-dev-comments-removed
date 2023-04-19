@@ -10,5 +10,6 @@ const { AppConstants } = ChromeUtils.import(
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  OS: "resource://gre/modules/osfile.jsm",
   Subprocess: "resource://gre/modules/Subprocess.jsm",
 });
