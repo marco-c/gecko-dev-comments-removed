@@ -3,6 +3,15 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyModuleGetters(globalThis, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
 });
@@ -14,8 +23,8 @@ const { TabsSetupFlowManager } = ChromeUtils.importESModule(
 const URLs = [
   "http://mochi.test:8888/browser/",
   "http://www.example.com/",
-  "http://example.net",
-  "http://example.org",
+  "http://example.net/",
+  "http://example.org/",
 ];
 
 const RECENTLY_CLOSED_EVENT = [
@@ -359,6 +368,189 @@ add_task(async function test_time_updates_correctly() {
 });
 
 add_task(async function test_keyboard_navigation() {
+  const arrowDown = () => {
+    info("Arrow down");
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+  };
+  const arrowUp = () => {
+    info("Arrow up");
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+  };
+  const enter = () => {
+    info("Enter");
+    EventUtils.synthesizeKey("KEY_Enter");
+  };
+  const tab = (shiftKey = false) => {
+    info(`${shiftKey ? "Shift + Tab" : "Tab"}`);
+    EventUtils.synthesizeKey("KEY_Tab", { shiftKey });
+  };
+
+  
+
+
+
+
+
+
+
+  const assertPreconditions = (document, summary) => {
+    let details = document.getElementById("recently-closed-tabs-container");
+    ok(
+      details.open,
+      "Recently closed details should be initially open on load"
+    );
+    summary.focus();
+    enter();
+    ok(!details.open, "Recently closed details should be closed");
+    enter();
+    ok(details.open, "Recently closed details should be opened");
+  };
+  await SpecialPowers.clearUserPref(RECENTLY_CLOSED_STATE_PREF);
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
+  is(
+    SessionStore.getClosedTabCount(window),
+    0,
+    "Closed tab count after purging session history"
+  );
+
+  const sandbox = sinon.createSandbox();
+  let setupCompleteStub = sandbox.stub(
+    TabsSetupFlowManager,
+    "isTabSyncSetupComplete"
+  );
+  setupCompleteStub.returns(true);
+
+  await open_then_close(URLs[0]);
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:firefoxview",
+    },
+    async browser => {
+      const { document } = browser.contentWindow;
+      const list = document.querySelectorAll(".closed-tab-li");
+      let summary = document.getElementById(
+        "recently-closed-tabs-header-section"
+      );
+
+      assertPreconditions(document, summary);
+      tab();
+
+      ok(list[0].matches(":focus"), "The first link is focused");
+      arrowDown();
+      ok(
+        list[0].matches(":focus"),
+        "The first link is still focused after pressing the down arrow key"
+      );
+      arrowUp();
+      ok(
+        list[0].matches(":focus"),
+        "The first link is still focused after pressing the up arrow key"
+      );
+
+      tab(true);
+      ok(
+        summary.matches(":focus"),
+        "The container is focused when using shift+tab in the list"
+      );
+    }
+  );
+  
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+
+  clearHistory();
+
+  await open_then_close(URLs[0]);
+  await open_then_close(URLs[1]);
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:firefoxview",
+    },
+    async browser => {
+      const { document } = browser.contentWindow;
+      const list = document.querySelectorAll(".closed-tab-li");
+      let summary = document.getElementById(
+        "recently-closed-tabs-header-section"
+      );
+      assertPreconditions(document, summary);
+
+      tab();
+
+      ok(list[0].matches(":focus"), "The first link is focused");
+      arrowDown();
+      ok(list[1].matches(":focus"), "The second link is focused");
+      arrowUp();
+      ok(list[0].matches(":focus"), "The first link is focused again");
+
+      tab(true);
+      ok(
+        summary.matches(":focus"),
+        "The container is focused when using shift+tab in the list"
+      );
+    }
+  );
+
+  
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+
+  clearHistory();
+
+  await open_then_close(URLs[0]);
+  await open_then_close(URLs[1]);
+  await open_then_close(URLs[2]);
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:firefoxview",
+    },
+    async browser => {
+      const { document } = browser.contentWindow;
+      const list = document.querySelectorAll(".closed-tab-li");
+      let summary = document.getElementById(
+        "recently-closed-tabs-header-section"
+      );
+      assertPreconditions(document, summary);
+
+      tab();
+
+      ok(list[0].matches(":focus"), "The first link is focused");
+      arrowDown();
+      ok(list[1].matches(":focus"), "The second link is focused");
+      arrowDown();
+      ok(list[2].matches(":focus"), "The third link is focused");
+      arrowDown();
+      ok(list[2].matches(":focus"), "The third link is still focused");
+      arrowUp();
+      ok(list[1].matches(":focus"), "The second link is focused");
+      arrowUp();
+      ok(list[0].matches(":focus"), "The first link is focused");
+      arrowUp();
+      ok(list[0].matches(":focus"), "The first link is still focused");
+
+      
+      
+      
+      arrowDown();
+      arrowDown();
+      arrowDown();
+      tab(true);
+      ok(
+        summary.matches(":focus"),
+        "The container is focused when using shift+tab in the list"
+      );
+    }
+  );
+});
+
+add_task(async function test_list_maintains_focus_when_restoring_tab() {
   await SpecialPowers.clearUserPref(RECENTLY_CLOSED_STATE_PREF);
   Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
@@ -384,51 +576,62 @@ add_task(async function test_keyboard_navigation() {
       url: "about:firefoxview",
     },
     async browser => {
+      let gBrowser = browser.getTabBrowser();
       const { document } = browser.contentWindow;
       const list = document.querySelectorAll(".closed-tab-li");
-      const arrowDown = () => {
-        info("Arrow down");
-        EventUtils.synthesizeKey("KEY_ArrowDown");
-      };
-      const arrowUp = () => {
-        info("Arrow up");
-        EventUtils.synthesizeKey("KEY_ArrowUp");
-      };
-      const enter = () => {
-        info("Enter");
-        EventUtils.synthesizeKey("KEY_Enter");
-      };
-
-      let summary = document.getElementById(
-        "recently-closed-tabs-header-section"
-      );
-      let details = document.getElementById("recently-closed-tabs-container");
-      ok(
-        details.open,
-        "Recently closed details should be initially open on load"
-      );
-      summary.focus();
-      enter();
-      ok(!details.open, "Recently closed details should be closed");
-      enter();
-      ok(details.open, "Recently closed details should be opened");
-
+      let expectedFocusedElement = list[1];
       list[0].focus();
-      ok(list[0].matches(":focus"), "The first link is focused");
-      arrowDown();
-      ok(list[1].matches(":focus"), "The second link is focused");
-      arrowDown();
-      ok(list[2].matches(":focus"), "The third link is focused");
-      arrowDown();
-      ok(list[2].matches(":focus"), "The third link is still focused");
-      arrowUp();
-      ok(list[1].matches(":focus"), "The second link is focused");
-      arrowUp();
-      ok(list[0].matches(":focus"), "The first link is focused");
-      arrowUp();
-      ok(list[0].matches(":focus"), "The first link is still focused");
+      EventUtils.synthesizeKey("KEY_Enter");
+      let firefoxViewTab = gBrowser.tabs.find(
+        tab => tab.label == "Firefox View"
+      );
+      await BrowserTestUtils.switchTab(gBrowser, firefoxViewTab);
+      is(
+        document.activeElement,
+        expectedFocusedElement,
+        "Focus should be on the first item in the recently closed list"
+      );
     }
   );
+
+  
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+
+  clearHistory();
+  await open_then_close(URLs[2]);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:firefoxview",
+    },
+    async browser => {
+      let gBrowser = browser.getTabBrowser();
+      const { document } = browser.contentWindow;
+      let expectedFocusedElement = document.getElementById(
+        "recently-closed-tabs-header-section"
+      );
+      const list = document.querySelectorAll(".closed-tab-li");
+      list[0].focus();
+
+      EventUtils.synthesizeKey("KEY_Enter");
+      let firefoxViewTab = gBrowser.tabs.find(
+        tab => tab.label == "Firefox View"
+      );
+      await BrowserTestUtils.switchTab(gBrowser, firefoxViewTab);
+      is(
+        document.activeElement,
+        expectedFocusedElement,
+        "Focus should be on the section header"
+      );
+    }
+  );
+
+  
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
 });
 
 add_task(async function test_switch_before_closing() {
