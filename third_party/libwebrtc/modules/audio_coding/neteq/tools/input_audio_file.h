@@ -15,8 +15,6 @@
 
 #include <string>
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 namespace test {
 
@@ -26,6 +24,9 @@ class InputAudioFile {
   explicit InputAudioFile(const std::string file_name, bool loop_at_end = true);
 
   virtual ~InputAudioFile();
+
+  InputAudioFile(const InputAudioFile&) = delete;
+  InputAudioFile& operator=(const InputAudioFile&) = delete;
 
   
   
@@ -52,7 +53,6 @@ class InputAudioFile {
  private:
   FILE* fp_;
   const bool loop_at_end_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(InputAudioFile);
 };
 
 }  

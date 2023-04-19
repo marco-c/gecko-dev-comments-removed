@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/moving_median_filter.h"
 #include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
@@ -31,6 +30,9 @@ class RemoteNtpTimeEstimator {
   explicit RemoteNtpTimeEstimator(Clock* clock);
 
   ~RemoteNtpTimeEstimator();
+
+  RemoteNtpTimeEstimator(const RemoteNtpTimeEstimator&) = delete;
+  RemoteNtpTimeEstimator& operator=(const RemoteNtpTimeEstimator&) = delete;
 
   
   
@@ -52,7 +54,6 @@ class RemoteNtpTimeEstimator {
   MovingMedianFilter<int64_t> ntp_clocks_offset_estimator_;
   RtpToNtpEstimator rtp_to_ntp_;
   int64_t last_timing_log_ms_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(RemoteNtpTimeEstimator);
 };
 
 }  

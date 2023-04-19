@@ -28,6 +28,9 @@ class DesktopFrameProvider {
   explicit DesktopFrameProvider(bool allow_iosurface);
   ~DesktopFrameProvider();
 
+  DesktopFrameProvider(const DesktopFrameProvider&) = delete;
+  DesktopFrameProvider& operator=(const DesktopFrameProvider&) = delete;
+
   
   
   
@@ -49,8 +52,6 @@ class DesktopFrameProvider {
 
   
   std::map<CGDirectDisplayID, std::unique_ptr<SharedDesktopFrame>> io_surfaces_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrameProvider);
 };
 
 }  

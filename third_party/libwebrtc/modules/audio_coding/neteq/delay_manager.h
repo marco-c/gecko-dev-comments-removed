@@ -22,7 +22,6 @@
 #include "modules/audio_coding/neteq/relative_arrival_delay_tracker.h"
 #include "modules/audio_coding/neteq/reorder_optimizer.h"
 #include "modules/audio_coding/neteq/underrun_optimizer.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -51,6 +50,9 @@ class DelayManager {
   DelayManager(const Config& config, const TickTimer* tick_timer);
 
   virtual ~DelayManager();
+
+  DelayManager(const DelayManager&) = delete;
+  DelayManager& operator=(const DelayManager&) = delete;
 
   
   
@@ -111,9 +113,7 @@ class DelayManager {
   int maximum_delay_ms_;            
 
   int packet_len_ms_ = 0;
-  int target_level_ms_;       
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
+  int target_level_ms_;  
 };
 
 }  

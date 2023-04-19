@@ -16,7 +16,6 @@
 #include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
@@ -53,6 +52,9 @@ class Packet {
          double time_ms);
 
   virtual ~Packet();
+
+  Packet(const Packet&) = delete;
+  Packet& operator=(const Packet&) = delete;
 
   
   
@@ -95,8 +97,6 @@ class Packet {
   size_t virtual_payload_length_bytes_ = 0;
   const double time_ms_;     
   const bool valid_header_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(Packet);
 };
 
 }  

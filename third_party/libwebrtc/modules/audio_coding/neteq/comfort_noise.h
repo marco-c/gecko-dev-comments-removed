@@ -13,8 +13,6 @@
 
 #include <stddef.h>
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 
 
@@ -42,6 +40,9 @@ class ComfortNoise {
         decoder_database_(decoder_database),
         sync_buffer_(sync_buffer) {}
 
+  ComfortNoise(const ComfortNoise&) = delete;
+  ComfortNoise& operator=(const ComfortNoise&) = delete;
+
   
   void Reset();
 
@@ -65,7 +66,6 @@ class ComfortNoise {
   DecoderDatabase* decoder_database_;
   SyncBuffer* sync_buffer_;
   int internal_error_code_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(ComfortNoise);
 };
 
 }  

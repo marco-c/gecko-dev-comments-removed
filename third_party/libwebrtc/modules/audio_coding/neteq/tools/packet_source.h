@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "modules/audio_coding/neteq/tools/packet.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 namespace test {
@@ -26,6 +25,9 @@ class PacketSource {
   PacketSource();
   virtual ~PacketSource();
 
+  PacketSource(const PacketSource&) = delete;
+  PacketSource& operator=(const PacketSource&) = delete;
+
   
   
   virtual std::unique_ptr<Packet> NextPacket() = 0;
@@ -34,9 +36,6 @@ class PacketSource {
 
  protected:
   std::bitset<128> filter_;  
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(PacketSource);
 };
 
 }  

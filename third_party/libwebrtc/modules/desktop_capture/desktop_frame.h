@@ -19,7 +19,6 @@
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/shared_memory.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -33,6 +32,9 @@ class RTC_EXPORT DesktopFrame {
   static const int kBytesPerPixel = 4;
 
   virtual ~DesktopFrame();
+
+  DesktopFrame(const DesktopFrame&) = delete;
+  DesktopFrame& operator=(const DesktopFrame&) = delete;
 
   
   
@@ -163,8 +165,6 @@ class RTC_EXPORT DesktopFrame {
   int64_t capture_time_ms_;
   uint32_t capturer_id_;
   std::vector<uint8_t> icc_profile_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrame);
 };
 
 
@@ -175,12 +175,12 @@ class RTC_EXPORT BasicDesktopFrame : public DesktopFrame {
 
   ~BasicDesktopFrame() override;
 
+  BasicDesktopFrame(const BasicDesktopFrame&) = delete;
+  BasicDesktopFrame& operator=(const BasicDesktopFrame&) = delete;
+
   
   
   static DesktopFrame* CopyOf(const DesktopFrame& frame);
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(BasicDesktopFrame);
 };
 
 
@@ -206,6 +206,9 @@ class RTC_EXPORT SharedMemoryDesktopFrame : public DesktopFrame {
 
   ~SharedMemoryDesktopFrame() override;
 
+  SharedMemoryDesktopFrame(const SharedMemoryDesktopFrame&) = delete;
+  SharedMemoryDesktopFrame& operator=(const SharedMemoryDesktopFrame&) = delete;
+
  private:
   
   
@@ -217,8 +220,6 @@ class RTC_EXPORT SharedMemoryDesktopFrame : public DesktopFrame {
   SharedMemoryDesktopFrame(DesktopRect rect,
                            int stride,
                            SharedMemory* shared_memory);
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemoryDesktopFrame);
 };
 
 }  

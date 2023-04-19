@@ -16,7 +16,6 @@
 
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -33,6 +32,10 @@ class FixedDigitalLevelEstimator {
   
   FixedDigitalLevelEstimator(int sample_rate_hz,
                              ApmDataDumper* apm_data_dumper);
+
+  FixedDigitalLevelEstimator(const FixedDigitalLevelEstimator&) = delete;
+  FixedDigitalLevelEstimator& operator=(const FixedDigitalLevelEstimator&) =
+      delete;
 
   
   
@@ -57,8 +60,6 @@ class FixedDigitalLevelEstimator {
   float filter_state_level_;
   int samples_in_frame_;
   int samples_in_sub_frame_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FixedDigitalLevelEstimator);
 };
 }  
 

@@ -42,6 +42,9 @@ class ScreenCapturerMac final : public DesktopCapturer {
       bool allow_iosurface);
   ~ScreenCapturerMac() override;
 
+  ScreenCapturerMac(const ScreenCapturerMac&) = delete;
+  ScreenCapturerMac& operator=(const ScreenCapturerMac&) = delete;
+
   
   bool Init();
 
@@ -118,8 +121,6 @@ class ScreenCapturerMac final : public DesktopCapturer {
   
   
   bool update_screen_configuration_ = false;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerMac);
 };
 
 }  

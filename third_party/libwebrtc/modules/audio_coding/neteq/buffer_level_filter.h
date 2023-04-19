@@ -14,14 +14,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 
 class BufferLevelFilter {
  public:
   BufferLevelFilter();
   virtual ~BufferLevelFilter() {}
+
+  BufferLevelFilter(const BufferLevelFilter&) = delete;
+  BufferLevelFilter& operator=(const BufferLevelFilter&) = delete;
+
   virtual void Reset();
 
   
@@ -46,8 +48,6 @@ class BufferLevelFilter {
  private:
   int level_factor_;  
   int filtered_current_level_;  
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(BufferLevelFilter);
 };
 
 }  

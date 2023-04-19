@@ -27,7 +27,6 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
-#include "rtc_base/constructor_magic.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -46,6 +45,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   struct Configuration {
     Configuration() = default;
     Configuration(Configuration&& rhs) = default;
+
+    Configuration(const Configuration&) = delete;
+    Configuration& operator=(const Configuration&) = delete;
 
     
     
@@ -148,9 +150,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     bool non_sender_rtt_measurement = false;
-
-   private:
-    RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };
 
   

@@ -14,7 +14,6 @@
 #include <string.h>  
 
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -48,6 +47,9 @@ class TimeStretch {
   }
 
   virtual ~TimeStretch() {}
+
+  TimeStretch(const TimeStretch&) = delete;
+  TimeStretch& operator=(const TimeStretch&) = delete;
 
   
   
@@ -105,8 +107,6 @@ class TimeStretch {
                        int32_t vec2_energy,
                        size_t peak_index,
                        int scaling) const;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(TimeStretch);
 };
 
 }  
