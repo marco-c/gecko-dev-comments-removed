@@ -2703,6 +2703,7 @@ nsStyleVisibility::nsStyleVisibility(const Document& aDocument)
       mImageRendering(StyleImageRendering::Auto),
       mWritingMode(StyleWritingModeProperty::HorizontalTb),
       mTextOrientation(StyleTextOrientation::Mixed),
+      mMozBoxLayout(StyleMozBoxLayout::Legacy),
       mPrintColorAdjust(StylePrintColorAdjust::Economy) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
@@ -2714,6 +2715,7 @@ nsStyleVisibility::nsStyleVisibility(const nsStyleVisibility& aSource)
       mImageRendering(aSource.mImageRendering),
       mWritingMode(aSource.mWritingMode),
       mTextOrientation(aSource.mTextOrientation),
+      mMozBoxLayout(aSource.mMozBoxLayout),
       mPrintColorAdjust(aSource.mPrintColorAdjust) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
@@ -2723,39 +2725,39 @@ nsChangeHint nsStyleVisibility::CalcDifference(
   nsChangeHint hint = nsChangeHint(0);
 
   if (mDirection != aNewData.mDirection ||
-      mWritingMode != aNewData.mWritingMode) {
+      mWritingMode != aNewData.mWritingMode ||
+      mMozBoxLayout != aNewData.mMozBoxLayout) {
     
     
     
     
     
-    hint |= nsChangeHint_ReconstructFrame;
-  } else {
-    if ((mImageOrientation != aNewData.mImageOrientation)) {
-      hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;
+    return nsChangeHint_ReconstructFrame;
+  }
+  if (mImageOrientation != aNewData.mImageOrientation) {
+    hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;
+  }
+  if (mVisible != aNewData.mVisible) {
+    if (mVisible == StyleVisibility::Visible ||
+        aNewData.mVisible == StyleVisibility::Visible) {
+      hint |= nsChangeHint_VisibilityChange;
     }
-    if (mVisible != aNewData.mVisible) {
-      if (mVisible == StyleVisibility::Visible ||
-          aNewData.mVisible == StyleVisibility::Visible) {
-        hint |= nsChangeHint_VisibilityChange;
-      }
-      if (StyleVisibility::Collapse == mVisible ||
-          StyleVisibility::Collapse == aNewData.mVisible) {
-        hint |= NS_STYLE_HINT_REFLOW;
-      } else {
-        hint |= NS_STYLE_HINT_VISUAL;
-      }
-    }
-    if (mTextOrientation != aNewData.mTextOrientation) {
+    if (StyleVisibility::Collapse == mVisible ||
+        StyleVisibility::Collapse == aNewData.mVisible) {
       hint |= NS_STYLE_HINT_REFLOW;
+    } else {
+      hint |= NS_STYLE_HINT_VISUAL;
     }
-    if (mImageRendering != aNewData.mImageRendering) {
-      hint |= nsChangeHint_RepaintFrame;
-    }
-    if (mPrintColorAdjust != aNewData.mPrintColorAdjust) {
-      
-      hint |= nsChangeHint_NeutralChange;
-    }
+  }
+  if (mTextOrientation != aNewData.mTextOrientation) {
+    hint |= NS_STYLE_HINT_REFLOW;
+  }
+  if (mImageRendering != aNewData.mImageRendering) {
+    hint |= nsChangeHint_RepaintFrame;
+  }
+  if (mPrintColorAdjust != aNewData.mPrintColorAdjust) {
+    
+    hint |= nsChangeHint_NeutralChange;
   }
   return hint;
 }
