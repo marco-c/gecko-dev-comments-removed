@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/rtc_event_log/rtc_event.h"
+
+#include "rtc_base/time_utils.h"
+
+namespace webrtc {
+
+RtcEvent::RtcEvent() : timestamp_us_(rtc::TimeMillis() * 1000) {}
+
+}  
