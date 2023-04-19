@@ -18,7 +18,8 @@ export function selectFrame(cx, frame) {
     
     
     if (frame.state !== "on-stack") {
-      return dispatch(selectLocation(cx, frame.location));
+      dispatch(selectLocation(cx, frame.location));
+      return;
     }
 
     dispatch({

@@ -27,14 +27,14 @@ function getLocalScopeLevels(originalAstScopes) {
 export function generateInlinePreview(cx, frame) {
   return async function({ dispatch, getState, parser, client }) {
     if (!frame || !features.inlinePreview) {
-      return;
+      return null;
     }
 
     const { thread } = cx;
 
     
     if (getInlinePreviews(getState(), thread, frame.id)) {
-      return;
+      return null;
     }
 
     const originalFrameScopes = getOriginalFrameScope(
@@ -53,20 +53,20 @@ export function generateInlinePreview(cx, frame) {
     let scopes = originalFrameScopes?.scope || generatedFrameScopes?.scope;
 
     if (!scopes || !scopes.bindings) {
-      return;
+      return null;
     }
 
     
     
     const selectedLocation = getSelectedLocation(getState());
     if (!selectedLocation) {
-      return;
+      return null;
     }
 
     const originalAstScopes = await parser.getScopes(selectedLocation);
     validateThreadContext(getState(), cx);
     if (!originalAstScopes) {
-      return;
+      return null;
     }
 
     const allPreviews = [];
