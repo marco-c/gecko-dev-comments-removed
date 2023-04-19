@@ -38,13 +38,14 @@ bool RepeatingTaskBase::Run() {
     return true;
 
   TimeDelta delay = RunClosure();
+  RTC_DCHECK_GE(delay, TimeDelta::Zero());
 
   
   
-  if (!alive_flag_->alive())
+  
+  if (delay.IsPlusInfinity() || !alive_flag_->alive())
     return true;
 
-  RTC_DCHECK(delay.IsFinite());
   TimeDelta lost_time = clock_->CurrentTime() - next_run_time_;
   next_run_time_ += delay;
   delay -= lost_time;
