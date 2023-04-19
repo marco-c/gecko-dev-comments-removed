@@ -162,7 +162,7 @@ add_task(async function test_support_ntp_colors() {
       
       
       
-      ["layout.css.prefers-color-scheme.content-override", 2],
+      ["layout.css.prefers-color-scheme.content-override", 1],
       
       
       ["ui.systemUsesDarkTheme", 0],
