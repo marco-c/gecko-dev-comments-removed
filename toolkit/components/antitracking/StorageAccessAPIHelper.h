@@ -156,7 +156,7 @@ class StorageAccessAPIHelper final {
   
   
   static Maybe<bool> CheckExistingPermissionDecidesStorageAccessAPI(
-      dom::Document* aDocument);
+      dom::Document* aDocument, bool aRequestingStorageAccess);
 
  private:
   friend class dom::ContentParent;
