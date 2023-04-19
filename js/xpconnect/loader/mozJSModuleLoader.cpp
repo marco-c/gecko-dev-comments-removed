@@ -1580,11 +1580,14 @@ nsresult mozJSModuleLoader::Import(JSContext* aCx, const nsACString& aLocation,
         return NS_ERROR_FAILURE;
       }
 
-      if (rv == NS_ERROR_FILE_NOT_FOUND) {
+      if (rv == NS_ERROR_FILE_NOT_FOUND || rv == NS_ERROR_FILE_ACCESS_DENIED) {
+        
+        
         rv = TryFallbackToImportESModule(aCx, aLocation, aModuleGlobal,
                                          aModuleExports, aIgnoreExports);
 
-        if (rv == NS_ERROR_FILE_NOT_FOUND) {
+        if (rv == NS_ERROR_FILE_NOT_FOUND ||
+            rv == NS_ERROR_FILE_ACCESS_DENIED) {
           
           
           
@@ -1659,7 +1662,8 @@ nsresult mozJSModuleLoader::TryFallbackToImportESModule(
   
   nsresult rv = ImportESModule(aCx, mjsLocation, &moduleNamespace,
                                SkipCheckForBrokenURLOrZeroSized::Yes);
-  if (rv == NS_ERROR_FILE_NOT_FOUND) {
+  if (rv == NS_ERROR_FILE_NOT_FOUND || rv == NS_ERROR_FILE_ACCESS_DENIED) {
+    
     
     if (JS_IsExceptionPending(aCx)) {
       JS_ClearPendingException(aCx);
