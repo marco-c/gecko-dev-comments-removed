@@ -42,7 +42,6 @@ var dateTimeFormatCache = new_Record();
 
 
 
-
 function GetCachedFormat(format, required, defaults) {
   assert(
     format === "dateTimeFormat" || format === "dateFormat" || format === "timeFormat",
@@ -110,7 +109,6 @@ function Date_toLocaleString() {
 
 
 
-
 function Date_toLocaleDateString() {
   
   var x = callFunction(ThisTimeValue, this, DATE_METHOD_LOCALE_DATE_STRING);
@@ -136,7 +134,6 @@ function Date_toLocaleDateString() {
   
   return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
-
 
 
 
