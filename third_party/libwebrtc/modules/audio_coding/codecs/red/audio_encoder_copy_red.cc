@@ -24,6 +24,8 @@ namespace webrtc {
 static constexpr const int kRedMaxPacketSize =
     1 << 10;  
               
+static constexpr const size_t kRedMaxTimestampDelta =
+    1 << 14;  
 static constexpr const size_t kAudioMaxRtpPacketLen =
     1200;  
 
@@ -100,7 +102,7 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   RTC_CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
   RTC_DCHECK_EQ(primary_encoded_.size(), info.encoded_bytes);
 
-  if (info.encoded_bytes == 0 || info.encoded_bytes > kRedMaxPacketSize) {
+  if (info.encoded_bytes == 0 || info.encoded_bytes >= kRedMaxPacketSize) {
     return info;
   }
   RTC_DCHECK_GT(max_packet_length_, info.encoded_bytes);
@@ -111,11 +113,16 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
 
   
   
+  
+  
   for (; it != redundant_encodings_.end(); it++) {
     if (bytes_available < kRedHeaderLength + it->first.encoded_bytes) {
       break;
     }
     if (it->first.encoded_bytes == 0) {
+      break;
+    }
+    if (rtp_timestamp - it->first.encoded_timestamp >= kRedMaxTimestampDelta) {
       break;
     }
     bytes_available -= kRedHeaderLength + it->first.encoded_bytes;
