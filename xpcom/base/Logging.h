@@ -123,7 +123,7 @@ class LogModule {
 
 
 
-  static void SetRecordMarkers(bool aRecordMarkers);
+  static void SetCaptureStacks(bool aCaptureStacks);
 
   
 
