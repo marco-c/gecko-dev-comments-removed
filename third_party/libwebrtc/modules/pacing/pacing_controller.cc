@@ -463,7 +463,6 @@ void PacingController::ProcessPackets() {
 
   PacedPacketInfo pacing_info;
   DataSize recommended_probe_size = DataSize::Zero();
-  DataSize data_sent = DataSize::Zero();
   bool is_probing = prober_.is_probing();
   if (is_probing) {
     
@@ -481,20 +480,10 @@ void PacingController::ProcessPackets() {
         
         if (!padding.empty()) {
           
+          EnqueuePacketInternal(std::move(padding[0]), kFirstPriority);
+          
           
           RTC_DCHECK_EQ(padding.size(), 1u);
-
-          
-          data_sent += SendPacket(std::move(padding[0]), pacing_info, now);
-
-          
-          
-          if (is_probing && data_sent >= recommended_probe_size) {
-            RTC_DCHECK(!data_sent.IsZero());
-            probing_send_failure_ = false;
-            prober_.ProbeSent(CurrentTime(), data_sent);
-            return;
-          }
         }
       }
     } else {
@@ -503,6 +492,7 @@ void PacingController::ProcessPackets() {
     }
   }
 
+  DataSize data_sent = DataSize::Zero();
   
   static constexpr int kMaxIterations = 1 << 16;
   int iteration = 0;
@@ -535,8 +525,26 @@ void PacingController::ProcessPackets() {
       
       break;
     } else {
-      data_sent += SendPacket(std::move(rtp_packet), pacing_info, now);
+      RTC_DCHECK(rtp_packet);
+      RTC_DCHECK(rtp_packet->packet_type().has_value());
+      const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
+      DataSize packet_size = DataSize::Bytes(rtp_packet->payload_size() +
+                                             rtp_packet->padding_size());
+
+      if (include_overhead_) {
+        packet_size += DataSize::Bytes(rtp_packet->headers_size()) +
+                       transport_overhead_per_packet_;
+      }
+
+      packet_sender_->SendPacket(std::move(rtp_packet), pacing_info);
+      for (auto& packet : packet_sender_->FetchFec()) {
+        EnqueuePacket(std::move(packet));
+      }
+      data_sent += packet_size;
       ++packets_sent;
+
+      
+      OnPacketSent(packet_type, packet_size, now);
 
       
       
@@ -655,31 +663,6 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
   }
 
   return packet_queue_.Pop();
-}
-
-DataSize PacingController::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
-                                      const PacedPacketInfo& pacing_info,
-                                      Timestamp now) {
-  RTC_DCHECK(packet);
-  RTC_DCHECK(packet->packet_type().has_value());
-  const RtpPacketMediaType packet_type = *packet->packet_type();
-  DataSize packet_size =
-      DataSize::Bytes(packet->payload_size() + packet->padding_size());
-
-  if (include_overhead_) {
-    packet_size += DataSize::Bytes(packet->headers_size()) +
-                   transport_overhead_per_packet_;
-  }
-
-  packet_sender_->SendPacket(std::move(packet), pacing_info);
-  for (std::unique_ptr<RtpPacketToSend>& packet : packet_sender_->FetchFec()) {
-    EnqueuePacket(std::move(packet));
-  }
-
-  
-  OnPacketSent(packet_type, packet_size, now);
-
-  return packet_size;
 }
 
 void PacingController::OnPacketSent(RtpPacketMediaType packet_type,
