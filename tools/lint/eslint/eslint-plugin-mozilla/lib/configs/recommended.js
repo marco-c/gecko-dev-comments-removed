@@ -57,10 +57,6 @@ module.exports = {
         "mozilla/reject-top-level-await": "error",
         
         
-        
-        "mozilla/use-isInstance": "error",
-        
-        
         "no-redeclare": ["error", { builtinGlobals: false }],
       },
     },
@@ -178,6 +174,7 @@ module.exports = {
     "mozilla/use-chromeutils-import": "error",
     "mozilla/use-default-preference-values": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
+    "mozilla/use-isInstance": "error",
     "mozilla/use-ownerGlobal": "error",
     "mozilla/use-returnValue": "error",
     "mozilla/use-services": "error",
