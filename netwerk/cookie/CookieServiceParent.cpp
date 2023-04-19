@@ -82,6 +82,7 @@ void CookieServiceParent::AddCookie(const Cookie& cookie) {
 
 bool CookieServiceParent::CookieMatchesContentList(const Cookie& cookie) {
   nsCString baseDomain;
+  
   MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomainFromHost(
       mTLDService, cookie.Host(), baseDomain));
 
@@ -135,8 +136,12 @@ void CookieServiceParent::UpdateCookieInContentList(
     nsIURI* uri, const OriginAttributes& originAttrs) {
   nsCString baseDomain;
   bool requireAHostMatch = false;
-  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomain(mTLDService, uri, baseDomain,
-                                                   requireAHostMatch));
+
+  
+  if (NS_WARN_IF(NS_FAILED(CookieCommons::GetBaseDomain(
+          mTLDService, uri, baseDomain, requireAHostMatch)))) {
+    return;
+  }
 
   CookieKey cookieKey(baseDomain, originAttrs);
   bool& allowSecure = mCookieKeysInContent.LookupOrInsert(cookieKey, false);
