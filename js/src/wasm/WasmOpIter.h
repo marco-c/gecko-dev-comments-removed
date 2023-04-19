@@ -458,11 +458,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool checkBranchValueAndPush(uint32_t relativeDepth,
                                              ResultType* type,
                                              ValueVector* values);
-  [[nodiscard]] bool checkCastedBranchValueAndPush(uint32_t relativeDepth,
-                                                   ValType castedFromType,
-                                                   ValType castedToType,
-                                                   ResultType* branchTargetType,
-                                                   ValueVector* values);
   [[nodiscard]] bool checkBrTableEntryAndPush(uint32_t* relativeDepth,
                                               ResultType prevBranchType,
                                               ResultType* branchType,
@@ -726,9 +721,13 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                    Value* numElements);
   [[nodiscard]] bool readRefTest(uint32_t* typeIndex, Value* ref);
   [[nodiscard]] bool readRefCast(uint32_t* typeIndex, Value* ref);
-  [[nodiscard]] bool readBrOnCast(uint32_t* relativeDepth, uint32_t* typeIndex,
-                                  ResultType* branchTargetType,
-                                  ValueVector* values);
+  [[nodiscard]] bool readBrOnCast(uint32_t* labelRelativeDepth,
+                                  uint32_t* castTypeIndex,
+                                  ResultType* labelType, ValueVector* values);
+  [[nodiscard]] bool readBrOnCastFail(uint32_t* labelRelativeDepth,
+                                      uint32_t* castTypeIndex,
+                                      ResultType* labelType,
+                                      ValueVector* values);
 #endif
 
 #ifdef ENABLE_WASM_SIMD
@@ -1398,64 +1397,6 @@ inline bool OpIter<Policy>::checkBranchValueAndPush(uint32_t relativeDepth,
 
   *type = block->branchTargetType();
   return checkTopTypeMatches(*type, values, false);
-}
-
-
-
-
-
-template <typename Policy>
-inline bool OpIter<Policy>::checkCastedBranchValueAndPush(
-    uint32_t relativeDepth, ValType castedFromType, ValType castedToType,
-    ResultType* branchTargetType, ValueVector* values) {
-  
-  
-  Control* block = nullptr;
-  if (!getControl(relativeDepth, &block)) {
-    return false;
-  }
-  *branchTargetType = block->branchTargetType();
-
-  
-  
-  if (branchTargetType->length() < 1) {
-    UniqueChars expectedText = ToString(castedToType, env_.types);
-    if (!expectedText) {
-      return false;
-    }
-
-    UniqueChars error(JS_smprintf("type mismatch: expected [_, %s], got []",
-                                  expectedText.get()));
-    if (!error) {
-      return false;
-    }
-    return fail(error.get());
-  }
-
-  
-  
-  const size_t castTypeIndex = branchTargetType->length() - 1;
-
-  
-  
-  if (!checkIsSubtypeOf(castedToType, (*branchTargetType)[castTypeIndex])) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  ValTypeVector stackTargetType;
-  if (!branchTargetType->cloneToVector(&stackTargetType)) {
-    return false;
-  }
-  stackTargetType[castTypeIndex] = castedFromType;
-
-  return checkTopTypeMatches(ResultType::Vector(stackTargetType), values,
-                             false);
 }
 
 template <typename Policy>
@@ -3488,31 +3429,164 @@ inline bool OpIter<Policy>::readRefCast(uint32_t* typeIndex, Value* ref) {
   return push(RefType::fromTypeDef(&typeDef, false));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename Policy>
-inline bool OpIter<Policy>::readBrOnCast(uint32_t* relativeDepth,
-                                         uint32_t* typeIndex,
-                                         ResultType* branchTargetType,
+inline bool OpIter<Policy>::readBrOnCast(uint32_t* labelRelativeDepth,
+                                         uint32_t* castTypeIndex,
+                                         ResultType* labelType,
                                          ValueVector* values) {
   MOZ_ASSERT(Classify(op_) == OpKind::BrOnCast);
 
-  if (!readVarU32(relativeDepth)) {
+  if (!readVarU32(labelRelativeDepth)) {
     return fail("unable to read br_on_cast depth");
   }
 
-  if (!readGcTypeIndex(typeIndex)) {
+  if (!readGcTypeIndex(castTypeIndex)) {
     return false;
   }
 
   
-  ValType castedFromType(RefType::eq());
+  ValType eqrefType(RefType::eq());
 
   
   
-  const TypeDef& typeDef = env_.types->type(*typeIndex);
-  ValType castedToType(RefType::fromTypeDef(&typeDef, false));
+  const TypeDef& castTypeDef = env_.types->type(*castTypeIndex);
+  ValType castType(RefType::fromTypeDef(&castTypeDef, false));
 
-  return checkCastedBranchValueAndPush(*relativeDepth, castedFromType,
-                                       castedToType, branchTargetType, values);
+  
+  
+  
+  Control* block = nullptr;
+  if (!getControl(*labelRelativeDepth, &block)) {
+    return false;
+  }
+  *labelType = block->branchTargetType();
+
+  
+  
+  const size_t labelTypeNumValues = labelType->length();
+  if (labelTypeNumValues < 1) {
+    return fail("type mismatch: branch target type has no value slots");
+  }
+
+  
+  
+
+  
+  
+  if (!checkIsSubtypeOf(castType, (*labelType)[labelTypeNumValues - 1])) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  ValTypeVector fallthroughType;
+  if (!labelType->cloneToVector(&fallthroughType)) {
+    return false;
+  }
+  fallthroughType[labelTypeNumValues - 1] = eqrefType;
+
+  
+  
+  return checkTopTypeMatches(ResultType::Vector(fallthroughType), values,
+                             false);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Policy>
+inline bool OpIter<Policy>::readBrOnCastFail(uint32_t* labelRelativeDepth,
+                                             uint32_t* castTypeIndex,
+                                             ResultType* labelType,
+                                             ValueVector* values) {
+  MOZ_ASSERT(Classify(op_) == OpKind::BrOnCast);
+
+  if (!readVarU32(labelRelativeDepth)) {
+    return fail("unable to read br_on_cast_fail depth");
+  }
+
+  if (!readGcTypeIndex(castTypeIndex)) {
+    return false;
+  }
+
+  
+  ValType eqrefType(RefType::eq());
+
+  
+  
+  const TypeDef& castTypeDef = env_.types->type(*castTypeIndex);
+  ValType castType(RefType::fromTypeDef(&castTypeDef, false));
+
+  
+  
+  
+  Control* block = nullptr;
+  if (!getControl(*labelRelativeDepth, &block)) {
+    return false;
+  }
+  *labelType = block->branchTargetType();
+
+  
+  
+  if (labelType->length() < 1) {
+    return fail("type mismatch: branch target type has no value slots");
+  }
+
+  
+  if (!checkTopTypeMatches(*labelType, values,
+                           false)) {
+    return false;
+  }
+
+  
+  
+  
+  Value ignored;
+  if (!popWithType(eqrefType, &ignored)) {
+    return false;
+  }
+
+  
+  infalliblePush(castType);
+  return true;
 }
 
 #endif  
