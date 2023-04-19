@@ -13,26 +13,3 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentTestUtils: "resource://testing-common/NimbusTestUtils.jsm",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
 });
-
-add_setup(function() {
-  let sandbox = sinon.createSandbox();
-
-  
-
-
-
-
-  let origAddExperiment = ExperimentManager.store.addEnrollment.bind(
-    ExperimentManager.store
-  );
-  sandbox
-    .stub(ExperimentManager.store, "addEnrollment")
-    .callsFake(async enrollment => {
-      await ExperimentTestUtils.validateEnrollment(enrollment);
-      return origAddExperiment(enrollment);
-    });
-
-  registerCleanupFunction(() => {
-    sandbox.restore();
-  });
-});
