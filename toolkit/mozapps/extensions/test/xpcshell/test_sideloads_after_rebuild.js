@@ -5,6 +5,14 @@
 
 
 
+
+Services.prefs.setBoolPref(
+  "extensions.webextensions.warnings-as-errors",
+  false
+);
+
+
+
 let legacyIDs = [
   getID(`legacy-global`),
   getID(`legacy-user`),
