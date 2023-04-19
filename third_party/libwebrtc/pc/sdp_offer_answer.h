@@ -457,12 +457,29 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  
-  void EnableSending();
-  
-  
   RTCError PushdownMediaDescription(SdpType type,
                                     cricket::ContentSource source);
+
+  struct PayloadTypeDemuxingUpdate {
+    PayloadTypeDemuxingUpdate(cricket::ChannelInterface* channel, bool enabled)
+        : channel(channel), enabled(enabled) {}
+    cricket::ChannelInterface* channel;
+    bool enabled;
+  };
+  struct ContentUpdate {
+    ContentUpdate(cricket::ChannelInterface* channel,
+                  const cricket::MediaContentDescription* content_description)
+        : channel(channel), content_description(content_description) {}
+    cricket::ChannelInterface* channel;
+    const cricket::MediaContentDescription* content_description;
+  };
+  
+  
+  RTCError ApplyChannelUpdates(
+      SdpType type,
+      cricket::ContentSource source,
+      std::vector<PayloadTypeDemuxingUpdate> payload_type_demuxing_updates,
+      std::vector<ContentUpdate> content_updates);
 
   RTCError PushdownTransportDescription(cricket::ContentSource source,
                                         SdpType type);
@@ -550,9 +567,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
       const std::string& mid) const;
 
   const std::string GetTransportName(const std::string& content_name);
+
   
   
-  bool UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
+  
+  
+  
+  std::vector<PayloadTypeDemuxingUpdate> GetPayloadTypeDemuxingUpdates(
+      cricket::ContentSource source);
 
   
   
