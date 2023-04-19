@@ -31,6 +31,11 @@ namespace webrtc {
 
 namespace {
 
+
+
+const CFStringRef kStatusIndicator = CFSTR("StatusIndicator");
+const CFStringRef kStatusIndicatorOwnerName = CFSTR("Window Server");
+
 bool ToUtf8(const CFStringRef str16, std::string* str8) {
   size_t maxlen = CFStringGetMaximumSizeForEncoding(CFStringGetLength(str16),
                                                     kCFStringEncodingUTF8) +
@@ -142,6 +147,17 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
         CFDictionaryGetValue(window, kCGWindowName));
     if (!window_title && !IsWindowOnScreen(window) &&
         !IsWindowFullScreen(desktop_config, window)) {
+      continue;
+    }
+
+    CFStringRef window_owner_name = reinterpret_cast<CFStringRef>(
+        CFDictionaryGetValue(window, kCGWindowOwnerName));
+    
+    
+    
+    if (window_title && CFEqual(window_title, kStatusIndicator) &&
+        window_owner_name &&
+        CFEqual(window_owner_name, kStatusIndicatorOwnerName)) {
       continue;
     }
 
