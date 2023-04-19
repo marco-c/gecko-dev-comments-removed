@@ -3,8 +3,6 @@
 
 
 
-const DATA = "ZIP WRITER TEST DATA";
-
 var TESTS = [];
 
 function build_tests() {
