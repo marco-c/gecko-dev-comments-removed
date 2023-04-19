@@ -79,7 +79,8 @@ void Device::Cleanup() {
     mBridge->UnregisterDevice(mId);
   }
 
-  if (mLostPromise) {
+  
+  if (mLostPromise && mLostPromise->PromiseObj() != nullptr) {
     auto info = MakeRefPtr<DeviceLostInfo>(GetParentObject(),
                                            dom::GPUDeviceLostReason::Destroyed,
                                            u"Device destroyed"_ns);
