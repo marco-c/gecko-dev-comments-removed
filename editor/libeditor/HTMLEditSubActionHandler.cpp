@@ -144,9 +144,11 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
   
   
   if (!SelectionRef().RangeCount()) {
-    nsresult rv = CollapseSelectionToEndOfLastLeafNode();
+    nsresult rv = CollapseSelectionToEndOfLastLeafNodeOfDocument();
     if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::CollapseSelectionToEndOfLastLeafNode() failed");
+      NS_WARNING(
+          "HTMLEditor::CollapseSelectionToEndOfLastLeafNodeOfDocument() "
+          "failed");
       return rv;
     }
   }

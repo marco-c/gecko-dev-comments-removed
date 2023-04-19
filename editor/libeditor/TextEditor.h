@@ -110,6 +110,7 @@ class TextEditor final : public EditorBase,
   NS_DECL_NSINAMED
 
   
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndOfDocument() final;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD InsertLineBreak() final;
   NS_IMETHOD GetTextLength(uint32_t* aCount) final;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD Paste(int32_t aClipboardType) final {
@@ -539,6 +540,12 @@ class TextEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CollapseSelectionToEndOfTextNode();
 
   
 
