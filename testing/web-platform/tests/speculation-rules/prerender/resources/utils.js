@@ -382,3 +382,11 @@ async function activatePrerenderRC(referrerRC, prerenderedRC, navigateFn) {
     "The prerendered page must be activated; instead a normal navigation happened."
   );
 }
+
+
+
+function failTest(reason, uid) {
+  const bc = new PrerenderChannel('test-channel', uid);
+  bc.postMessage({result: 'FAILED', reason});
+  bc.close();
+}
