@@ -648,12 +648,22 @@ const LoginHelper = {
   getLoginOrigin(uriString, allowJS = false) {
     let realm = "";
     try {
+      const mozProxyRegex = /^moz-proxy:\/\//i;
+      const isMozProxy = !!uriString.match(mozProxyRegex);
+      if (isMozProxy) {
+        
+        return (
+          "moz-proxy://" +
+          Services.io.newURI(uriString.replace(mozProxyRegex, "https://"))
+            .displayHostPort
+        );
+      }
+
       let uri = Services.io.newURI(uriString);
 
       if (allowJS && uri.scheme == "javascript") {
         return "javascript:";
       }
-      
 
       
       realm = uri.scheme + "://" + uri.displayHostPort;
