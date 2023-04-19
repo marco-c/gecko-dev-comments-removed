@@ -582,19 +582,11 @@ class StyleSheetsManager extends EventEmitter {
     this._mqlList = [];
 
     const styleSheetRules = await this._getCSSRules(styleSheet);
-    const document = styleSheet.associatedDocument;
-    const win = document.ownerGlobal;
-    const CSSGroupingRule = win.CSSGroupingRule;
 
     
     const rules = [];
     const traverseRules = ruleList => {
       for (const rule of ruleList) {
-        
-        if (!CSSGroupingRule.isInstance(rule)) {
-          continue;
-        }
-
         if (rule.type === CSSRule.MEDIA_RULE) {
           rules.push(rule);
         }
@@ -610,7 +602,8 @@ class StyleSheetsManager extends EventEmitter {
       let matches = false;
 
       try {
-        const mql = win.matchMedia(rule.media.mediaText);
+        const window = styleSheet.ownerNode.ownerGlobal;
+        const mql = window.matchMedia(rule.media.mediaText);
         matches = mql.matches;
         mql.onchange = this._onMatchesChange.bind(this, resourceId, index);
         this._mqlList.push(mql);
