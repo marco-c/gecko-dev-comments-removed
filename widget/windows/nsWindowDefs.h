@@ -46,14 +46,6 @@
 
 
 
-typedef enum { TRI_UNKNOWN = -1, TRI_FALSE = 0, TRI_TRUE = 1 } TriStateBool;
-
-
-
-
-
-
-
 
 
 
