@@ -959,7 +959,7 @@ var PanelMultiView = class extends AssociatedToNode {
     this._viewContainer.style.height = prevPanelView.knownHeight + "px";
     this._viewContainer.style.width = prevPanelView.knownWidth + "px";
     
-    let rect = this._panel.getOuterScreenRect();
+    let rect = this._getBoundsWithoutFlushing(this._panel);
     this._panel.style.width = rect.width + "px";
     this._panel.style.height = rect.height + "px";
 
