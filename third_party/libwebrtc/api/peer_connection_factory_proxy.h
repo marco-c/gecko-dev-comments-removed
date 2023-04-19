@@ -22,8 +22,8 @@ namespace webrtc {
 
 
 
-BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
-PROXY_SIGNALING_THREAD_DESTRUCTOR()
+BEGIN_PRIMARY_PROXY_MAP(PeerConnectionFactory)
+PROXY_PRIMARY_THREAD_DESTRUCTOR()
 PROXY_METHOD1(void, SetOptions, const Options&)
 PROXY_METHOD4(rtc::scoped_refptr<PeerConnectionInterface>,
               CreatePeerConnection,
