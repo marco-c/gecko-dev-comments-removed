@@ -1300,7 +1300,7 @@ nsresult NS_NewSafeLocalFileOutputStream(nsIOutputStream** result,
   return rv;
 }
 
-nsresult NS_NewLocalFileStream(nsIFileStream** result, nsIFile* file,
+nsresult NS_NewLocalFileStream(nsIRandomAccessStream** result, nsIFile* file,
                                int32_t ioFlags ,
                                int32_t perm ,
                                int32_t behaviorFlags ) {
@@ -1312,10 +1312,11 @@ nsresult NS_NewLocalFileStream(nsIFileStream** result, nsIFile* file,
   return rv;
 }
 
-mozilla::Result<nsCOMPtr<nsIFileStream>, nsresult> NS_NewLocalFileStream(
-    nsIFile* file, int32_t ioFlags , int32_t perm ,
-    int32_t behaviorFlags ) {
-  nsCOMPtr<nsIFileStream> stream;
+mozilla::Result<nsCOMPtr<nsIRandomAccessStream>, nsresult>
+NS_NewLocalFileStream(nsIFile* file, int32_t ioFlags ,
+                      int32_t perm ,
+                      int32_t behaviorFlags ) {
+  nsCOMPtr<nsIRandomAccessStream> stream;
   const nsresult rv = NS_NewLocalFileStream(getter_AddRefs(stream), file,
                                             ioFlags, perm, behaviorFlags);
   if (NS_SUCCEEDED(rv)) {
