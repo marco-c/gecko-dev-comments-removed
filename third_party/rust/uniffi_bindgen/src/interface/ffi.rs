@@ -34,8 +34,7 @@ pub enum FFIType {
     
     
     
-    
-    RustArcPtr(String),
+    RustArcPtr,
     
     
     

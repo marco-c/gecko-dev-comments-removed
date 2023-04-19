@@ -2,7 +2,6 @@
 
 
 
-#![allow(clippy::significant_drop_in_scrutinee)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(missing_docs)]
 

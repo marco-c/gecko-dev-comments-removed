@@ -514,7 +514,7 @@ impl<T: FfiConverter> RustBufferFfiConverter for Vec<T> {
         
         let len = i32::try_from(obj.len()).unwrap();
         buf.put_i32(len); 
-        for item in obj {
+        for item in obj.into_iter() {
             <T as FfiConverter>::write(item, buf);
         }
     }
@@ -548,7 +548,7 @@ where
         
         let len = i32::try_from(obj.len()).unwrap();
         buf.put_i32(len); 
-        for (key, value) in obj {
+        for (key, value) in obj.into_iter() {
             <K as FfiConverter>::write(key, buf);
             <V as FfiConverter>::write(value, buf);
         }

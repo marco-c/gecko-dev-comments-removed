@@ -56,7 +56,7 @@ fn exponential_range(min: u64, max: u64, bucket_count: usize) -> Vec<u64> {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PrecomputedExponential {
     
     

@@ -6,7 +6,7 @@ use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use askama::Template;
 use heck::{ToLowerCamelCase, ToShoutySnakeCase, ToUpperCamelCase};
 use serde::{Deserialize, Serialize};
@@ -89,7 +89,7 @@ impl MergeWith for Config {
 pub fn generate_bindings(config: &Config, ci: &ComponentInterface) -> Result<String> {
     KotlinWrapper::new(config.clone(), ci)
         .render()
-        .context("failed to render kotlin bindings")
+        .map_err(|_| anyhow::anyhow!("failed to render kotlin bindings"))
 }
 
 
@@ -174,6 +174,7 @@ impl<'a> KotlinWrapper<'a> {
     pub fn initialization_fns(&self) -> Vec<String> {
         self.ci
             .iter_types()
+            .into_iter()
             .filter_map(|t| t.initialization_fn(&KotlinCodeOracle))
             .collect()
     }
@@ -240,12 +241,12 @@ impl CodeOracle for KotlinCodeOracle {
 
     
     fn fn_name(&self, nm: &str) -> String {
-        format!("`{}`", nm.to_string().to_lower_camel_case())
+        nm.to_string().to_lower_camel_case()
     }
 
     
     fn var_name(&self, nm: &str) -> String {
-        format!("`{}`", nm.to_string().to_lower_camel_case())
+        nm.to_string().to_lower_camel_case()
     }
 
     
@@ -259,11 +260,14 @@ impl CodeOracle for KotlinCodeOracle {
     
     
     fn error_name(&self, nm: &str) -> String {
-        
-        let name = self.class_name(nm);
+        let name = nm.to_string();
         match name.strip_suffix("Error") {
             None => name,
-            Some(stripped) => format!("{}Exception", stripped),
+            Some(stripped) => {
+                let mut kt_exc_name = stripped.to_owned();
+                kt_exc_name.push_str("Exception");
+                kt_exc_name
+            }
         }
     }
 
@@ -278,7 +282,7 @@ impl CodeOracle for KotlinCodeOracle {
             FFIType::Int64 | FFIType::UInt64 => "Long".to_string(),
             FFIType::Float32 => "Float".to_string(),
             FFIType::Float64 => "Double".to_string(),
-            FFIType::RustArcPtr(_) => "Pointer".to_string(),
+            FFIType::RustArcPtr => "Pointer".to_string(),
             FFIType::RustBuffer => "RustBuffer.ByValue".to_string(),
             FFIType::ForeignBytes => "ForeignBytes.ByValue".to_string(),
             FFIType::ForeignCallback => "ForeignCallback".to_string(),
@@ -360,6 +364,9 @@ pub mod filters {
         Ok(oracle().enum_variant_name(nm))
     }
 
+    
+    
+    
     
     
     pub fn exception_name(nm: &str) -> Result<String, askama::Error> {
