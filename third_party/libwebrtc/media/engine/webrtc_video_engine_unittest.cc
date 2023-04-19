@@ -53,11 +53,13 @@
 #include "media/engine/webrtc_voice_engine.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/event.h"
 #include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/fake_decoder.h"
 #include "test/field_trial.h"
 #include "test/frame_forwarder.h"
@@ -1738,6 +1740,7 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
 
   webrtc::RtcEventLogNull event_log_;
   webrtc::FieldTrialBasedConfig field_trials_;
+  std::unique_ptr<webrtc::test::ScopedFieldTrials> override_field_trials_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
@@ -1792,8 +1795,10 @@ TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSize) {
   
   
   const int kCustomRecvBufferSize = 123456;
-  webrtc::test::ScopedFieldTrials field_trial(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = std::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-IncreasedReceivebuffers/123456/");
+
   ResetTest();
 
   EXPECT_TRUE(SetOneCodec(DefaultCodec()));
@@ -1808,7 +1813,8 @@ TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSizeWithSuffix) {
   
   
   const int kCustomRecvBufferSize = 123456;
-  webrtc::test::ScopedFieldTrials field_trial(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = std::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-IncreasedReceivebuffers/123456_Dogfood/");
   ResetTest();
 
@@ -1825,18 +1831,46 @@ TEST_F(WebRtcVideoChannelBaseTest, InvalidRecvBufferSize) {
   
   
 
+  const char* prev_field_trials = webrtc::field_trial::GetFieldTrialString();
+
+  std::string field_trial_string;
   for (std::string group : {" ", "NotANumber", "-1", "0"}) {
-    std::string field_trial_string = "WebRTC-IncreasedReceivebuffers/";
-    field_trial_string += group;
-    field_trial_string += "/";
-    webrtc::test::ScopedFieldTrials field_trial(field_trial_string);
-    ResetTest();
+    std::string trial_string = "WebRTC-IncreasedReceivebuffers/";
+    trial_string += group;
+    trial_string += "/";
+
+    
+    
+    
+    TearDown();
+    
+    
+    
+    
+    
+    rtc::TaskQueue* tq = call_->GetTransportControllerSend()->GetWorkerQueue();
+    rtc::Event waiting, resume;
+    tq->PostTask([&waiting, &resume]() {
+      waiting.Set();
+      resume.Wait(rtc::Event::kForever);
+    });
+
+    waiting.Wait(rtc::Event::kForever);
+    field_trial_string = std::move(trial_string);
+    webrtc::field_trial::InitFieldTrialsFromString(field_trial_string.c_str());
+
+    SetUp();
+    resume.Set();
+
+    
 
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_TRUE(SetSend(true));
     EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
     EXPECT_EQ(256 * 1024, network_interface_.recvbuf_size());
   }
+
+  webrtc::field_trial::InitFieldTrialsFromString(prev_field_trials);
 }
 
 
@@ -2940,7 +2974,7 @@ TEST_F(WebRtcVideoChannelTest, RecvAbsoluteSendTimeHeaderExtensions) {
 }
 
 TEST_F(WebRtcVideoChannelTest, FiltersExtensionsPicksTransportSeqNum) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  webrtc::test::ScopedFieldTrials override_field_trials(
       "WebRTC-FilterAbsSendTimeExtension/Enabled/");
   
   std::vector<std::string> extensions;
