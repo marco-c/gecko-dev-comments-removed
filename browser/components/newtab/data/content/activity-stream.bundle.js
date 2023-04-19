@@ -6103,59 +6103,21 @@ class DSImage extends (external_React_default()).PureComponent {
     let img;
 
     if (this.state) {
-      if (this.props.optimize && this.props.rawSource && !this.state.optimizedImageFailed) {
-        let baseSource = this.props.rawSource;
-        let sizeRules = [];
-        let srcSetRules = [];
-
-        for (let rule of this.props.sizes) {
-          let {
-            mediaMatcher,
-            width,
-            height
-          } = rule;
-          let sizeRule = `${mediaMatcher} ${width}px`;
-          sizeRules.push(sizeRule);
-          let srcSetRule = `${this.reformatImageURL(baseSource, width, height)} ${width}w`;
-          let srcSetRule2x = `${this.reformatImageURL(baseSource, width * 2, height * 2)} ${width * 2}w`;
-          srcSetRules.push(srcSetRule);
-          srcSetRules.push(srcSetRule2x);
-        }
-
-        if (this.props.sizes.length) {
-          
-          
-          sizeRules.push(`${this.props.sizes[this.props.sizes.length - 1].width}px`);
-        }
-
-        img = external_React_default().createElement("img", {
-          loading: "lazy",
-          alt: this.props.alt_text,
-          crossOrigin: "anonymous",
-          onLoad: this.onLoad,
-          onError: this.onOptimizedImageError,
-          sizes: sizeRules.join(","),
-          src: baseSource,
-          srcSet: srcSetRules.join(",")
-        });
-      } else if (this.props.source && !this.state.nonOptimizedImageFailed) {
-        img = external_React_default().createElement("img", {
-          loading: "lazy",
-          alt: this.props.alt_text,
-          crossOrigin: "anonymous",
-          onLoad: this.onLoad,
-          onError: this.onNonOptimizedImageError,
-          src: this.props.source
-        });
-      } else {
+      if (false) {} else if (false) {} else {
         
         classNames = `${classNames} loaded`; 
         
 
-        img = external_React_default().createElement(PlaceholderImage, {
-          urlKey: this.props.url,
-          titleKey: this.props.title
-        });
+        if (this.props.isRecentSave && !this.props.rawSource && !this.props.source) {
+          img = external_React_default().createElement(PlaceholderImage, {
+            urlKey: this.props.url,
+            titleKey: this.props.title
+          });
+        } else {
+          img = external_React_default().createElement("div", {
+            className: "broken-image"
+          });
+        }
       }
     }
 
@@ -7728,7 +7690,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       rawSource: this.props.raw_image_src,
       sizes: this.dsImageSizes,
       url: this.props.url,
-      title: this.props.title
+      title: this.props.title,
+      isRecentSave: isRecentSave
     })), external_React_default().createElement(DefaultMeta, {
       source: this.props.source,
       title: this.props.title,
