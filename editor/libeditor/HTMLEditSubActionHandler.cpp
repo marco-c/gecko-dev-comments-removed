@@ -8691,6 +8691,7 @@ HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
     const InitializeInsertingElement& aInitializer) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
+  const nsCOMPtr<nsIContent> childAtPointToInsert = aPointToInsert.GetChild();
   const SplitNodeResult splitNodeResult =
       MaybeSplitAncestorsForInsertWithTransaction(aTagName, aPointToInsert,
                                                   aEditingHost);
@@ -8709,7 +8710,10 @@ HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
   
   
   
-  if (NS_WARN_IF(aPointToInsert.HasChildMovedFromContainer())) {
+  if (childAtPointToInsert &&
+      NS_WARN_IF(!childAtPointToInsert->IsInclusiveDescendantOf(
+          splitNodeResult.DidSplit() ? splitNodeResult.GetNextContent()
+                                     : aPointToInsert.GetContainer()))) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
