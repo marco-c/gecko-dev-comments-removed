@@ -3673,73 +3673,71 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     
     
     
-    bool needsGetElem = true;
-
     if (member->isKind(ParseNodeKind::MutateProto)) {
       if (!emitAtomOp(JSOp::GetProp,
                       TaggedParserAtomIndex::WellKnown::proto())) {
         
         return false;
       }
-      needsGetElem = false;
     } else {
       MOZ_ASSERT(member->isKind(ParseNodeKind::PropertyDefinition) ||
                  member->isKind(ParseNodeKind::Shorthand));
 
       ParseNode* key = member->as<BinaryNode>().left();
-      if (key->isKind(ParseNodeKind::NumberExpr)) {
-        if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-          
-          return false;
-        }
-      } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
-        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
-          
-          return false;
-        }
-      } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
-                 key->isKind(ParseNodeKind::StringExpr)) {
+      if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
+          key->isKind(ParseNodeKind::StringExpr)) {
         if (!emitAtomOp(JSOp::GetProp, key->as<NameNode>().atom())) {
           
           return false;
         }
-        needsGetElem = false;
       } else {
-        if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
+        if (key->isKind(ParseNodeKind::NumberExpr)) {
+          if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+            
+            return false;
+          }
+        } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
+          if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
+            
+            return false;
+          }
+        } else {
+          if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
+            
+            return false;
+          }
+
           
-          return false;
+          if (needsRestPropertyExcludedSet) {
+            if (!emitDupAt(emitted + 3)) {
+              
+              return false;
+            }
+            if (!emitDupAt(1)) {
+              
+              return false;
+            }
+            if (!emit1(JSOp::Undefined)) {
+              
+              return false;
+            }
+            if (!emit1(JSOp::InitElem)) {
+              
+              return false;
+            }
+            if (!emit1(JSOp::Pop)) {
+              
+              return false;
+            }
+          }
         }
 
         
-        if (needsRestPropertyExcludedSet) {
-          if (!emitDupAt(emitted + 3)) {
-            
-            return false;
-          }
-          if (!emitDupAt(1)) {
-            
-            return false;
-          }
-          if (!emit1(JSOp::Undefined)) {
-            
-            return false;
-          }
-          if (!emit1(JSOp::InitElem)) {
-            
-            return false;
-          }
-          if (!emit1(JSOp::Pop)) {
-            
-            return false;
-          }
+        if (!emitElemOpBase(JSOp::GetElem)) {
+          
+          return false;
         }
       }
-    }
-
-    
-    if (needsGetElem && !emitElemOpBase(JSOp::GetElem)) {
-      
-      return false;
     }
 
     if (pndefault) {
