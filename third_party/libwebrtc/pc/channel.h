@@ -381,8 +381,13 @@ class BaseChannel : public ChannelInterface,
   
   rtc::UniqueRandomIdGenerator* const ssrc_generator_;
 
+  
+  
+  
+  
+  mutable webrtc::Mutex negotiated_header_extensions_lock_;
   RtpHeaderExtensions negotiated_header_extensions_
-      RTC_GUARDED_BY(signaling_thread());
+      RTC_GUARDED_BY(negotiated_header_extensions_lock_);
 };
 
 
