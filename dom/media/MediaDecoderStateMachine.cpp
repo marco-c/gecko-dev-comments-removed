@@ -842,6 +842,7 @@ class MediaDecoderStateMachine::DecodingState
 
 
 
+
 class MediaDecoderStateMachine::LoopingDecodingState
     : public MediaDecoderStateMachine::DecodingState {
  public:
