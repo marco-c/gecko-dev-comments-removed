@@ -94,7 +94,7 @@
 
 @end
 
-NSInteger ARDGetCpuUsagePercentage() {
+NSInteger ARDGetCpuUsagePercentage(void) {
   
   const task_t task = mach_task_self();
   thread_act_array_t thread_array;
