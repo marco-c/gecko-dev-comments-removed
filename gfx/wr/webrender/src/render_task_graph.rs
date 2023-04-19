@@ -399,8 +399,11 @@ impl RenderTaskGraphBuilder {
                         let mut location = None;
                         let kind = task.kind.target_kind();
 
+                        
+                        
                         let can_use_shared_surface =
-                            task.kind.can_use_shared_surface();
+                            task.kind.can_use_shared_surface() &&
+                            task.free_after != PassId::INVALID;
 
                         if can_use_shared_surface {
                             
