@@ -78,6 +78,9 @@ ChunksFileReader CreatePitchBuffer24kHzReader();
 ChunksFileReader CreateLpResidualAndPitchInfoReader();
 
 
+std::unique_ptr<FileReader> CreateGruInputReader();
+
+
 std::unique_ptr<FileReader> CreateVadProbsReader();
 
 

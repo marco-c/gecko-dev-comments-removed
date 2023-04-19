@@ -50,6 +50,7 @@ RnnVad::RnnVad(const AvailableCpuFeatures& cpu_features)
               kHiddenGruBias,
               kHiddenGruWeights,
               kHiddenGruRecurrentWeights,
+              cpu_features,
               "GRU1"),
       output_(kHiddenLayerOutputSize,
               kOutputLayerOutputSize,
