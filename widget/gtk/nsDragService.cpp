@@ -59,9 +59,15 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 
 
-
-
 #define NS_DND_TIMEOUT 1000000
+
+
+
+
+
+
+
+#define NS_DND_TMP_CLEANUP_TIMEOUT (1000 * 60 * 5)
 
 #define NS_SYSTEMINFO_CONTRACTID "@mozilla.org/system-info;1"
 
@@ -167,7 +173,10 @@ nsDragService::nsDragService()
 nsDragService::~nsDragService() {
   LOGDRAGSERVICE("nsDragService::~nsDragService");
   if (mTaskSource) g_source_remove(mTaskSource);
-  if (mTempFileTimerID) g_source_remove(mTempFileTimerID);
+  if (mTempFileTimerID) {
+    g_source_remove(mTempFileTimerID);
+    RemoveTempFiles();
+  }
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsDragService, nsBaseDragService, nsIObserver)
@@ -470,22 +479,31 @@ nsDragService::StartDragSession() {
 }
 
 bool nsDragService::RemoveTempFiles() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  int32_t count = mTemporaryFiles.Count();
-  for (int32_t pos = 0; pos < count; pos++) {
-    mTemporaryFiles[pos]->Remove( true);
-  }
-  mTemporaryFiles.Clear();
+  LOGDRAGSERVICE("nsDragService::RemoveTempFiles");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto files = std::move(mTemporaryFiles);
+  for (nsIFile* file : files) {
+#ifdef MOZ_LOGGING
+    if (MOZ_LOG_TEST(gWidgetDragLog, LogLevel::Debug)) {
+      nsAutoCString path;
+      if (NS_SUCCEEDED(file->GetNativePath(path))) {
+        LOGDRAGSERVICE("  removing %s", path.get());
+      }
+    }
+#endif
+    file->Remove( true);
+  }
+  MOZ_ASSERT(mTemporaryFiles.IsEmpty());
   mTempFileTimerID = 0;
   
   return false;
@@ -521,10 +539,11 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
 
   
   if (mTemporaryFiles.Count() > 0 && !mTempFileTimerID) {
-    LOGDRAGSERVICE("  removing temporary files");
+    LOGDRAGSERVICE("  queue removing of temporary files");
     
     
-    mTempFileTimerID = g_timeout_add(NS_DND_TIMEOUT, TaskRemoveTempFiles, this);
+    mTempFileTimerID =
+        g_timeout_add(NS_DND_TMP_CLEANUP_TIMEOUT, TaskRemoveTempFiles, this);
     mTempFileUrl.Truncate();
   }
 
