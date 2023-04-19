@@ -36,7 +36,7 @@ const TESTS = [
     title: "Tagged search",
     trackingUrl: "https://www.example.com/search?q=test&abc=ff",
     expectedSearchCountEntry: "example.in-content:sap:ff",
-    expectedAdKey: "example:sap",
+    expectedAdKey: "example:tagged",
     adUrls: ["https://www.example.com/ad2"],
     nonAdUrls: ["https://www.example.com/ad3"],
   },
@@ -44,7 +44,7 @@ const TESTS = [
     title: "Tagged follow-on",
     trackingUrl: "https://www.example.com/search?q=test&abc=tb&a=next",
     expectedSearchCountEntry: "example.in-content:sap-follow-on:tb",
-    expectedAdKey: "example:sap-follow-on",
+    expectedAdKey: "example:tagged-follow-on",
     adUrls: ["https://www.example.com/ad2"],
     nonAdUrls: ["https://www.example.com/ad3"],
   },
@@ -125,13 +125,13 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
   if (!expectedAdKey) {
     Assert.ok(
-      !("browser.search.ad_clicks" in scalars),
+      !("browser.search.adclicks.unknown" in scalars),
       "Should not have recorded an ad click"
     );
   } else {
     TelemetryTestUtils.assertKeyedScalar(
       scalars,
-      "browser.search.ad_clicks",
+      "browser.search.adclicks.unknown",
       expectedAdKey,
       1
     );
