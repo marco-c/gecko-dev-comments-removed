@@ -18,92 +18,42 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/ImageBitmap.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
 
 namespace mozilla {
 
 class TabCapturedHandler;
 
-class TabCapturer {
+class TabCapturerWebrtc : public webrtc::DesktopCapturer {
  private:
-  ~TabCapturer();
-
-  TabCapturer(const TabCapturer&) = delete;
-  TabCapturer& operator=(const TabCapturer&) = delete;
+  ~TabCapturerWebrtc();
 
  public:
   friend class TabCapturedHandler;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TabCapturer)
 
-  explicit TabCapturer(const webrtc::DesktopCaptureOptions& options);
+  explicit TabCapturerWebrtc(const webrtc::DesktopCaptureOptions& options);
 
   static std::unique_ptr<webrtc::DesktopCapturer> CreateRawWindowCapturer(
       const webrtc::DesktopCaptureOptions& options);
 
-  
-  void Start(webrtc::DesktopCapturer::Callback* callback);
-  void CaptureFrame();
-  bool GetSourceList(webrtc::DesktopCapturer::SourceList* sources);
-  bool SelectSource(webrtc::DesktopCapturer::SourceId id);
-  bool FocusOnSelectedSource();
-  bool IsOccluded(const webrtc::DesktopVector& pos);
+  TabCapturerWebrtc(const TabCapturerWebrtc&) = delete;
+  TabCapturerWebrtc& operator=(const TabCapturerWebrtc&) = delete;
 
   
-  void CaptureFrameNow();
-  void OnFrame(dom::ImageBitmap* aBitmap);
-
-  class StartRunnable : public Runnable {
-   public:
-    explicit StartRunnable(TabCapturer* videoSource)
-        : Runnable("TabCapturer::StartRunnable"), mVideoSource(videoSource) {}
-    NS_IMETHOD Run() override;
-    const RefPtr<TabCapturer> mVideoSource;
-  };
+  void Start(Callback* callback) override;
+  void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
+  bool IsOccluded(const webrtc::DesktopVector& pos) override;
 
  private:
   
-  
-  
-  Monitor mMonitor MOZ_UNANNOTATED;
+  using CapturePromise = MozPromise<RefPtr<dom::ImageBitmap>, nsresult, true>;
+  RefPtr<CapturePromise> CaptureFrameNow();
+
   webrtc::DesktopCapturer::Callback* mCallback = nullptr;
-
   uint64_t mBrowserId = 0;
-  bool mCapturing = false;
-};
-
-
-
-
-
-
-
-
-class TabCapturerWebrtc : public webrtc::DesktopCapturer {
- public:
-  explicit TabCapturerWebrtc(const webrtc::DesktopCaptureOptions& options) {
-    mInternal = new TabCapturer(options);
-  }
-
-  ~TabCapturerWebrtc() override = default;
-
-  
-  void Start(Callback* callback) override { mInternal->Start(callback); }
-  void CaptureFrame() override { mInternal->CaptureFrame(); }
-  bool GetSourceList(SourceList* sources) override {
-    return mInternal->GetSourceList(sources);
-  }
-  bool SelectSource(SourceId id) override {
-    return mInternal->SelectSource(id);
-  }
-  bool FocusOnSelectedSource() override {
-    return mInternal->FocusOnSelectedSource();
-  }
-  bool IsOccluded(const webrtc::DesktopVector& pos) override {
-    return mInternal->IsOccluded(pos);
-  }
-
- private:
-  RefPtr<TabCapturer> mInternal;
 };
 
 }  
