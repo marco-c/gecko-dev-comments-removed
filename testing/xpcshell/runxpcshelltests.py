@@ -1557,9 +1557,9 @@ class XPCShellTests(object):
         self.log.info("Created a conditioned-profile copy: %s" % condprof_copy)
         return condprof_copy
 
-    def downloadConditionedProfile(self, profile_scenario):
+    def downloadConditionedProfile(self, profile_scenario, app):
         from condprof.client import get_profile
-        from condprof.util import get_current_platform
+        from condprof.util import get_current_platform, get_version
 
         if self.conditioned_profile_dir:
             
@@ -1576,6 +1576,9 @@ class XPCShellTests(object):
         
         
         platform = get_current_platform()
+        version = None
+        if isinstance(app, str):
+            version = get_version(app)
 
         if not profile_scenario:
             profile_scenario = "settled"
@@ -1585,12 +1588,29 @@ class XPCShellTests(object):
                 platform,
                 profile_scenario,
                 repo="mozilla-central",
+                version=version,
+                retries=2,
             )
         except Exception:
-            
-            self.log.critical("Could not get the conditioned profile")
-            traceback.print_exc()
-            raise
+            if version is None:
+                
+                self.log.critical("Could not get the conditioned profile")
+                traceback.print_exc()
+                raise
+            version = None
+            try:
+                self.log.info("Retrying a profile with no version specified")
+                cond_prof_target_dir = get_profile(
+                    temp_download_dir,
+                    platform,
+                    profile_scenario,
+                    repo="mozilla-central",
+                    version=version,
+                )
+            except Exception:
+                self.log.critical("Could not get the conditioned profile")
+                traceback.print_exc()
+                raise
 
         
         self.conditioned_profile_dir = os.path.join(
@@ -1732,7 +1752,9 @@ class XPCShellTests(object):
         self.todoCount = 0
 
         if self.conditionedProfile:
-            self.conditioned_profile_dir = self.downloadConditionedProfile("full")
+            self.conditioned_profile_dir = self.downloadConditionedProfile(
+                "full", self.appPath
+            )
             options["self_test"] = False
             if not options["test_tags"]:
                 options["test_tags"] = []
