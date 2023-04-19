@@ -34,9 +34,15 @@ class LightweightThemeChild extends JSWindowActorChild {
       }
     } catch (ex) {}
 
+    if (
+      Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT
+    ) {
+      return this.browsingContext.topChromeWindow.docShell.outerWindowID;
+    }
+
     
     
-    return this.contentWindow.top?.docShell?.outerWindowID;
+    return 0;
   }
 
   
