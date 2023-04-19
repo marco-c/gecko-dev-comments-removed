@@ -1,0 +1,15 @@
+
+
+
+
+#include "Mutex.h"
+
+#if defined(XP_DARWIN)
+
+
+bool Mutex::UseUnfairLocks() { return __builtin_available(macOS 10.15, *); }
+
+
+bool Mutex::gFallbackToOSSpinLock = !UseUnfairLocks();
+
+#endif  
