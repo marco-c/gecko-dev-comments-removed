@@ -87,7 +87,7 @@ class RTC_EXPORT RTCCertificate : public RefCountInterface {
  private:
   
   
-  std::unique_ptr<SSLIdentity> identity_;
+  const std::unique_ptr<SSLIdentity> identity_;
 };
 
 }  
