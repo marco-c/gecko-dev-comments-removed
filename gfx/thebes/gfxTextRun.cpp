@@ -2045,8 +2045,7 @@ bool gfxFontGroup::HasFont(const gfxFontEntry* aFontEntry) {
   return false;
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::GetFontAt(int32_t i, uint32_t aCh,
-                                                  bool* aLoading) {
+gfxFont* gfxFontGroup::GetFontAt(int32_t i, uint32_t aCh, bool* aLoading) {
   if (uint32_t(i) >= mFonts.Length()) {
     return nullptr;
   }
@@ -2056,7 +2055,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFontAt(int32_t i, uint32_t aCh,
     return nullptr;
   }
 
-  RefPtr<gfxFont> font = ff.Font();
+  gfxFont* font = ff.Font();
   if (!font) {
     gfxFontEntry* fe = ff.FontEntry();
     if (!fe) {
@@ -2080,11 +2079,14 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFontAt(int32_t i, uint32_t aCh,
     font = fe->FindOrMakeFont(&mStyle, unicodeRangeMap);
     if (!font || !font->Valid()) {
       ff.SetInvalid();
+      
+      
+      RefPtr<gfxFont> ref(font);
       return nullptr;
     }
     ff.SetFont(font);
   }
-  return font.forget();
+  return font;
 }
 
 void gfxFontGroup::FamilyFace::CheckState(bool& aSkipDrawing) {
@@ -2136,9 +2138,9 @@ static nsAutoCString FamilyListToString(
                     });
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
+gfxFont* gfxFontGroup::GetDefaultFont() {
   if (mDefaultFont) {
-    return do_AddRef(mDefaultFont);
+    return mDefaultFont.get();
   }
 
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
@@ -2230,9 +2232,9 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
     } else {
       gfxFontEntry* fe = pfl->GetDefaultFontEntry();
       if (fe) {
-        RefPtr<gfxFont> f = fe->FindOrMakeFont(&mStyle);
+        gfxFont* f = fe->FindOrMakeFont(&mStyle);
         if (f) {
-          return f.forget();
+          return f;
         }
       }
     }
@@ -2261,11 +2263,11 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
     MOZ_CRASH_UNSAFE(msg);
   }
 
-  return do_AddRef(mDefaultFont);
+  return mDefaultFont.get();
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
-    uint32_t aCh, StyleGenericFontFamily* aGeneric) {
+gfxFont* gfxFontGroup::GetFirstValidFont(uint32_t aCh,
+                                         StyleGenericFontFamily* aGeneric) {
   
   CheckForUpdatedPlatformList();
 
@@ -2278,12 +2280,12 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
     }
 
     
-    RefPtr<gfxFont> font = ff.Font();
+    gfxFont* font = ff.Font();
     if (font) {
       if (aGeneric) {
         *aGeneric = ff.Generic();
       }
-      return font.forget();
+      return font;
     }
 
     
@@ -2313,7 +2315,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
       if (aGeneric) {
         *aGeneric = ff.Generic();
       }
-      return font.forget();
+      return font;
     }
   }
   if (aGeneric) {
@@ -2322,12 +2324,12 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
   return GetDefaultFont();
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::GetFirstMathFont() {
+gfxFont* gfxFontGroup::GetFirstMathFont() {
   uint32_t count = mFonts.Length();
   for (uint32_t i = 0; i < count; ++i) {
-    RefPtr<gfxFont> font = GetFontAt(i);
+    gfxFont* font = GetFontAt(i);
     if (font && font->TryGetMathTable()) {
-      return font.forget();
+      return font;
     }
   }
   return nullptr;
@@ -2377,7 +2379,7 @@ already_AddRefed<gfxTextRun> gfxFontGroup::MakeSpaceTextRun(
     orientation = ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
   }
 
-  RefPtr<gfxFont> font = GetFirstValidFont();
+  gfxFont* font = GetFirstValidFont();
   if (MOZ_UNLIKELY(GetStyle()->AdjustedSizeMustBeZero())) {
     
     
@@ -2393,7 +2395,7 @@ already_AddRefed<gfxTextRun> gfxFontGroup::MakeSpaceTextRun(
       
       
       FontMatchType matchType;
-      RefPtr<gfxFont> spaceFont =
+      gfxFont* spaceFont =
           FindFontForChar(' ', 0, 0, Script::LATIN, nullptr, &matchType);
       if (spaceFont) {
         textRun->SetSpaceGlyph(spaceFont, aParams->mDrawTarget, 0, orientation);
@@ -2421,9 +2423,8 @@ already_AddRefed<gfxTextRun> gfxFontGroup::MakeBlankTextRun(
   if (orientation == ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED) {
     orientation = ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
   }
-  RefPtr<gfxFont> font = GetFirstValidFont();
-  textRun->AddGlyphRun(font, FontMatchType::Kind::kUnspecified, 0, false,
-                       orientation, false);
+  textRun->AddGlyphRun(GetFirstValidFont(), FontMatchType::Kind::kUnspecified,
+                       0, false, orientation, false);
 
   for (uint32_t i = 0; i < aLength; i++) {
     if (aString[i] == '\n') {
@@ -2443,7 +2444,7 @@ already_AddRefed<gfxTextRun> gfxFontGroup::MakeHyphenTextRun(
   
   
   static const char16_t hyphen = 0x2010;
-  RefPtr<gfxFont> font = GetFirstValidFont(uint32_t(hyphen));
+  gfxFont* font = GetFirstValidFont(uint32_t(hyphen));
   if (font->HasCharacter(hyphen)) {
     return MakeTextRun(&hyphen, 1, aDrawTarget, aAppUnitsPerDevUnit, aFlags,
                        nsTextFrameUtils::Flags(), nullptr);
@@ -2705,7 +2706,7 @@ void gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
     UpdateUserFonts();
   }
 
-  RefPtr<gfxFont> mainFont = GetFirstValidFont();
+  gfxFont* mainFont = GetFirstValidFont();
 
   ShapedTextFlags orientation =
       aTextRun->GetFlags() & ShapedTextFlags::TEXT_ORIENT_MASK;
@@ -2731,7 +2732,7 @@ void gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
   for (uint32_t r = 0; r < numRanges; r++) {
     const TextRange& range = fontRanges[r];
     uint32_t matchedLength = range.Length();
-    RefPtr<gfxFont> matchedFont = range.font;
+    gfxFont* matchedFont = range.font;
     
     if (matchedFont && mStyle.noFallbackVariantFeatures) {
       
@@ -2915,7 +2916,7 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
 
   
   
-  RefPtr<gfxFont> firstFont = GetFirstValidFont(uint32_t(kEllipsisChar[0]));
+  gfxFont* firstFont = GetFirstValidFont(uint32_t(kEllipsisChar[0]));
   nsString ellipsis =
       firstFont->HasCharacter(kEllipsisChar[0])
           ? nsDependentString(kEllipsisChar, ArrayLength(kEllipsisChar) - 1)
@@ -2937,7 +2938,7 @@ gfxTextRun* gfxFontGroup::GetEllipsisTextRun(
   return mCachedEllipsisTextRun.get();
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
+gfxFont* gfxFontGroup::FindFallbackFaceForChar(
     gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
     eFontPresentation aPresentation) {
   GlobalFontMatch data(aCh, aNextCh, mStyle, aPresentation);
@@ -2949,7 +2950,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
   return fe->FindOrMakeFont(&mStyle);
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
+gfxFont* gfxFontGroup::FindFallbackFaceForChar(
     fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
     eFontPresentation aPresentation) {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
@@ -2973,7 +2974,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
   return fe->FindOrMakeFont(&mStyle);
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::FindFallbackFaceForChar(
+gfxFont* gfxFontGroup::FindFallbackFaceForChar(
     const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
     eFontPresentation aPresentation) {
   if (aFamily.IsSharedFamily()) {
@@ -3000,14 +3001,14 @@ gfxFloat gfxFontGroup::GetUnderlineOffset() {
             ff.SharedFamily()->IsBadUnderlineFamily()) ||
            (!ff.IsSharedFamily() && ff.OwnedFamily() &&
             ff.OwnedFamily()->IsBadUnderlineFamily()))) {
-        RefPtr<gfxFont> font = GetFontAt(i);
+        gfxFont* font = GetFontAt(i);
         if (!font) {
           continue;
         }
         gfxFloat bad =
             font->GetMetrics(nsFontMetrics::eHorizontal).underlineOffset;
-        RefPtr<gfxFont> firstValidFont = GetFirstValidFont();
-        gfxFloat first = firstValidFont->GetMetrics(nsFontMetrics::eHorizontal)
+        gfxFloat first = GetFirstValidFont()
+                             ->GetMetrics(nsFontMetrics::eHorizontal)
                              .underlineOffset;
         mUnderlineOffset = std::min(first, bad);
         return mUnderlineOffset;
@@ -3015,9 +3016,9 @@ gfxFloat gfxFontGroup::GetUnderlineOffset() {
     }
 
     
-    RefPtr<gfxFont> firstValidFont = GetFirstValidFont();
-    mUnderlineOffset =
-        firstValidFont->GetMetrics(nsFontMetrics::eHorizontal).underlineOffset;
+    mUnderlineOffset = GetFirstValidFont()
+                           ->GetMetrics(nsFontMetrics::eHorizontal)
+                           .underlineOffset;
   }
 
   return mUnderlineOffset;
@@ -3025,15 +3026,16 @@ gfxFloat gfxFontGroup::GetUnderlineOffset() {
 
 #define NARROW_NO_BREAK_SPACE 0x202fu
 
-already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
-    uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh, Script aRunScript,
-    gfxFont* aPrevMatchedFont, FontMatchType* aMatchType) {
+gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
+                                       uint32_t aNextCh, Script aRunScript,
+                                       gfxFont* aPrevMatchedFont,
+                                       FontMatchType* aMatchType) {
   
   
   
   if (aPrevMatchedFont && IsClusterExtender(aCh)) {
     if (aPrevMatchedFont->HasCharacter(aCh) || IsDefaultIgnorable(aCh)) {
-      return do_AddRef(aPrevMatchedFont);
+      return aPrevMatchedFont;
     }
     
     static UErrorCode err = U_ZERO_ERROR;
@@ -3042,7 +3044,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     int32_t composed = unorm2_composePair(nfc, aPrevCh, aCh);
     if (composed > 0 && aPrevMatchedFont->HasCharacter(composed)) {
-      return do_AddRef(aPrevMatchedFont);
+      return aPrevMatchedFont;
     }
   }
 
@@ -3052,16 +3054,16 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     
     if (!aPrevCh && aNextCh && aNextCh != NARROW_NO_BREAK_SPACE) {
-      RefPtr<gfxFont> nextFont = FindFontForChar(aNextCh, 0, 0, aRunScript,
-                                                 aPrevMatchedFont, aMatchType);
+      gfxFont* nextFont = FindFontForChar(aNextCh, 0, 0, aRunScript,
+                                          aPrevMatchedFont, aMatchType);
       if (nextFont && nextFont->HasCharacter(aCh)) {
-        return nextFont.forget();
+        return nextFont;
       }
     }
     
     
     if (aPrevMatchedFont && aPrevMatchedFont->HasCharacter(aCh)) {
-      return do_AddRef(aPrevMatchedFont);
+      return aPrevMatchedFont;
     }
   }
 
@@ -3121,15 +3123,15 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
 
   if (!isJoinControl && !wasJoinCauser && !isVarSelector &&
       !nextIsVarSelector && presentation == eFontPresentation::Any) {
-    RefPtr<gfxFont> firstFont = GetFontAt(0, aCh, &loading);
+    gfxFont* firstFont = GetFontAt(0, aCh, &loading);
     if (firstFont) {
       if (firstFont->HasCharacter(aCh) ||
           (fallbackChar && firstFont->HasCharacter(fallbackChar))) {
         *aMatchType = {FontMatchType::Kind::kFontGroup, mFonts[0].Generic()};
-        return firstFont.forget();
+        return firstFont;
       }
 
-      RefPtr<gfxFont> font;
+      gfxFont* font = nullptr;
       if (mFonts[0].CheckForFallbackFaces()) {
         font = FindFallbackFaceForChar(mFonts[0], aCh, aNextCh, presentation);
       } else if (!firstFont->GetFontEntry()->IsUserFont()) {
@@ -3141,7 +3143,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       }
       if (font) {
         *aMatchType = {FontMatchType::Kind::kFontGroup, mFonts[0].Generic()};
-        return font.forget();
+        return font;
       }
     } else {
       if (fontListLength > 0) {
@@ -3159,14 +3161,14 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     
     if (isJoinControl ||
         GetGeneralCategory(aCh) == HB_UNICODE_GENERAL_CATEGORY_CONTROL) {
-      return do_AddRef(aPrevMatchedFont);
+      return aPrevMatchedFont;
     }
 
     
     
     if (wasJoinCauser) {
       if (aPrevMatchedFont->HasCharacter(aCh)) {
-        return do_AddRef(aPrevMatchedFont);
+        return aPrevMatchedFont;
       }
     }
   }
@@ -3176,7 +3178,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   if (isVarSelector || IsDefaultIgnorable(aCh)) {
-    return do_AddRef(aPrevMatchedFont);
+    return aPrevMatchedFont;
   }
 
   
@@ -3185,7 +3187,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   
   
-  RefPtr<gfxFont> candidateFont;
+  gfxFont* candidateFont = nullptr;
   FontMatchType candidateMatchType;
 
   
@@ -3197,6 +3199,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     if (presentation == eFontPresentation::Any ||
         (presentation == eFontPresentation::EmojiDefault &&
          f->GetFontEntry()->IsUserFont())) {
+      RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = t;
       return true;
     }
@@ -3204,6 +3207,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh);
     
     if (hasColorGlyph == PrefersColor(presentation)) {
+      RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = t;
       return true;
     }
@@ -3225,14 +3229,14 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       continue;
     }
 
-    RefPtr<gfxFont> font = ff.Font();
+    gfxFont* font = ff.Font();
     if (font) {
       
       if (font->HasCharacter(aCh) ||
           (fallbackChar && font->HasCharacter(fallbackChar))) {
         if (CheckCandidate(font,
                            {FontMatchType::Kind::kFontGroup, ff.Generic()})) {
-          return font.forget();
+          return font;
         }
       }
     } else {
@@ -3267,7 +3271,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
           if (font) {
             if (CheckCandidate(font, {FontMatchType::Kind::kFontGroup,
                                       mFonts[i].Generic()})) {
-              return font.forget();
+              return font;
             }
           }
         }
@@ -3279,7 +3283,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
         if (font) {
           if (CheckCandidate(font, {FontMatchType::Kind::kFontGroup,
                                     mFonts[i].Generic()})) {
-            return font.forget();
+            return font;
           }
         }
       }
@@ -3305,7 +3309,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       if (font) {
         if (CheckCandidate(font,
                            {FontMatchType::Kind::kFontGroup, ff.Generic()})) {
-          return font.forget();
+          return font;
         }
       }
     } else {
@@ -3318,7 +3322,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
         if (font) {
           if (CheckCandidate(font,
                              {FontMatchType::Kind::kFontGroup, ff.Generic()})) {
-            return font.forget();
+            return font;
           }
         }
       }
@@ -3326,11 +3330,11 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   }
 
   if (fontListLength == 0) {
-    RefPtr<gfxFont> defaultFont = GetDefaultFont();
+    gfxFont* defaultFont = GetDefaultFont();
     if (defaultFont->HasCharacter(aCh) ||
         (fallbackChar && defaultFont->HasCharacter(fallbackChar))) {
       if (CheckCandidate(defaultFont, FontMatchType::Kind::kFontGroup)) {
-        return defaultFont.forget();
+        return defaultFont;
       }
     }
   }
@@ -3350,11 +3354,11 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
     if (candidateFont) {
       *aMatchType = candidateMatchType;
     }
-    return candidateFont.forget();
+    return candidateFont;
   }
 
   
-  RefPtr<gfxFont> font = WhichPrefFontSupportsChar(aCh, aNextCh, presentation);
+  gfxFont* font = WhichPrefFontSupportsChar(aCh, aNextCh, presentation);
   if (font) {
     if (PrefersColor(presentation) &&
         gfxPlatformFontList::PlatformFontList()->EmojiPrefHasUserValue()) {
@@ -3366,11 +3370,13 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       
       RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = FontMatchType::Kind::kPrefsFallback;
-      return font.forget();
+      return font;
     }
     if (CheckCandidate(font, FontMatchType::Kind::kPrefsFallback)) {
-      return font.forget();
+      return font;
     }
+    
+    RefPtr<gfxFont> autoRefDeref(font);
   }
 
   
@@ -3388,15 +3394,15 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
        (fallbackChar && aPrevMatchedFont->HasCharacter(fallbackChar)))) {
     if (CheckCandidate(aPrevMatchedFont,
                        FontMatchType::Kind::kSystemFallback)) {
-      return do_AddRef(aPrevMatchedFont);
+      return aPrevMatchedFont;
     }
   }
 
   
   
-  font = GetFirstValidFont();
   if (GetGeneralCategory(aCh) == HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR &&
-      font->SynthesizeSpaceWidth(aCh) >= 0.0) {
+      GetFirstValidFont()->SynthesizeSpaceWidth(aCh) >= 0.0) {
+    RefPtr<gfxFont> autoRefDeref(candidateFont);
     return nullptr;
   }
 
@@ -3404,13 +3410,14 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   font = WhichSystemFontSupportsChar(aCh, aNextCh, aRunScript, presentation);
   if (font) {
     if (CheckCandidate(font, FontMatchType::Kind::kSystemFallback)) {
-      return font.forget();
+      return font;
     }
+    RefPtr<gfxFont> autoRefDeref(font);
   }
   if (candidateFont) {
     *aMatchType = candidateMatchType;
   }
-  return candidateFont.forget();
+  return candidateFont;
 }
 
 template <typename T>
@@ -3433,7 +3440,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
   
   
   StyleGenericFontFamily generic = StyleGenericFontFamily::None;
-  RefPtr<gfxFont> prevFont = GetFirstValidFont(' ', &generic);
+  gfxFont* prevFont = GetFirstValidFont(' ', &generic);
 
   
   
@@ -3466,7 +3473,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       nextCh = i < aLength - 1 ? aString[i + 1] : 0;
     }
 
-    RefPtr<gfxFont> font;
+    gfxFont* font;
 
     
     
@@ -3543,7 +3550,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
       
       aRanges.AppendElement(TextRange(0, 1, font, matchType, orient));
       lastRangeIndex++;
-      prevFont = std::move(font);
+      prevFont = font;
     } else {
       
       
@@ -3559,7 +3566,7 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
         
         
         if (sizeof(T) == sizeof(uint8_t) || !gfxFontUtils::IsJoinCauser(ch)) {
-          prevFont = std::move(font);
+          prevFont = font;
         }
       } else {
         prevRange.matchType |= matchType;
@@ -3676,7 +3683,7 @@ bool gfxFontGroup::ContainsUserFont(const gfxUserFontEntry* aUserFont) {
   return false;
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
+gfxFont* gfxFontGroup::WhichPrefFontSupportsChar(
     uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation) {
   eFontPrefLang charLang;
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
@@ -3692,7 +3699,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
   
   if (mLastPrefFont && charLang == mLastPrefLang && mLastPrefFirstFont &&
       mLastPrefFont->HasCharacter(aCh)) {
-    return do_AddRef(mLastPrefFont);
+    return mLastPrefFont;
   }
 
   
@@ -3726,7 +3733,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       
       
       if (family == mLastPrefFamily && mLastPrefFont->HasCharacter(aCh)) {
-        return do_AddRef(mLastPrefFont);
+        return mLastPrefFont;
       }
 
       gfxFontEntry* fe = nullptr;
@@ -3748,7 +3755,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       }
 
       
-      RefPtr<gfxFont> prefFont;
+      gfxFont* prefFont = nullptr;
       if (fe->HasCharacter(aCh)) {
         prefFont = fe->FindOrMakeFont(&mStyle);
         if (!prefFont) {
@@ -3770,7 +3777,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
         mLastPrefFont = prefFont;
         mLastPrefLang = charLang;
         mLastPrefFirstFont = (i == 0 && j == 0);
-        return prefFont.forget();
+        return prefFont;
       }
     }
   }
@@ -3778,13 +3785,19 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
   return nullptr;
 }
 
-already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
+gfxFont* gfxFontGroup::WhichSystemFontSupportsChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
     eFontPresentation aPresentation) {
   FontVisibility visibility;
-  return gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
-      mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
-      &visibility);
+  gfxFont* font =
+      gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
+          mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
+          &visibility);
+  if (font) {
+    return font;
+  }
+
+  return nullptr;
 }
 
 void gfxMissingFontRecorder::Flush() {

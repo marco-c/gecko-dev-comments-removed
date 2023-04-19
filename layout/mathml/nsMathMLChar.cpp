@@ -499,15 +499,16 @@ already_AddRefed<gfxTextRun> nsOpenTypeTable::MakeTextRun(
   RefPtr<gfxTextRun> textRun =
       gfxTextRun::Create(&params, 1, aFontGroup, gfx::ShapedTextFlags(),
                          nsTextFrameUtils::Flags());
-  RefPtr<gfxFont> font = aFontGroup->GetFirstValidFont();
-  textRun->AddGlyphRun(font, FontMatchType::Kind::kFontGroup, 0, false,
+  textRun->AddGlyphRun(aFontGroup->GetFirstValidFont(),
+                       FontMatchType::Kind::kFontGroup, 0, false,
                        gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL, false);
   
   
   gfxTextRun::DetailedGlyph detailedGlyph;
   detailedGlyph.mGlyphID = aGlyph.glyphID;
   detailedGlyph.mAdvance = NSToCoordRound(
-      aAppUnitsPerDevPixel * font->GetGlyphAdvance(aGlyph.glyphID));
+      aAppUnitsPerDevPixel *
+      aFontGroup->GetFirstValidFont()->GetGlyphAdvance(aGlyph.glyphID));
   textRun->SetDetailedGlyphs(0, 1, &detailedGlyph);
 
   return textRun.forget();
@@ -874,7 +875,7 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
 
       const auto& firstFontInList = familyList.list.AsSpan()[0];
 
-      RefPtr<gfxFont> firstFont = fm->GetThebesFontGroup()->GetFirstValidFont();
+      gfxFont* firstFont = fm->GetThebesFontGroup()->GetFirstValidFont();
       RefPtr<nsAtom> firstFontName =
           NS_Atomize(firstFont->GetFontEntry()->FamilyName());
 
@@ -986,7 +987,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     ch = aGlyphTable->BigOf(mDrawTarget, oneDevPixel, *aFontGroup, uchar,
                             isVertical, 0);
     if (ch.IsGlyphID()) {
-      RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
+      gfxFont* mathFont = aFontGroup->get()->GetFirstMathFont();
       
       
       
@@ -1026,7 +1027,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
         aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
     nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
     if (ch.IsGlyphID()) {
-      RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
+      gfxFont* mathFont = aFontGroup->get()->GetFirstMathFont();
       if (mathFont) {
         
         
@@ -1293,8 +1294,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
     glyphTable = &gGlyphTableList->mUnicodeTable;
   } else {
     
-    RefPtr<gfxFont> font = fontGroup->GetFirstValidFont();
-    openTypeTable = nsOpenTypeTable::Create(font);
+    openTypeTable = nsOpenTypeTable::Create(fontGroup->GetFirstValidFont());
     if (openTypeTable) {
       glyphTable = openTypeTable.get();
     } else if (StaticPrefs::mathml_stixgeneral_operator_stretching_disabled()) {
@@ -1547,8 +1547,7 @@ nsresult nsMathMLChar::StretchInternal(
   
   
   gfxMissingFontRecorder* MFR = presContext->MissingFontRecorder();
-  RefPtr<gfxFont> firstMathFont = fm->GetThebesFontGroup()->GetFirstMathFont();
-  if (MFR && !firstMathFont) {
+  if (MFR && !fm->GetThebesFontGroup()->GetFirstMathFont()) {
     MFR->RecordScript(intl::Script::MATHEMATICAL_NOTATION);
   }
 

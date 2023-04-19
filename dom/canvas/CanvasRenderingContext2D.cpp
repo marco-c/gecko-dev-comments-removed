@@ -4245,9 +4245,9 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
 
   processor.mFontgrp
       ->UpdateUserFonts();  
-  RefPtr<gfxFont> font = processor.mFontgrp->GetFirstValidFont();
   const gfxFont::Metrics& fontMetrics =
-      font->GetMetrics(nsFontMetrics::eHorizontal);
+      processor.mFontgrp->GetFirstValidFont()->GetMetrics(
+          nsFontMetrics::eHorizontal);
 
   
   

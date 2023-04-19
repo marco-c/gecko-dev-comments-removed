@@ -941,13 +941,13 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  already_AddRefed<gfxFont> GetFirstValidFont(
+  gfxFont* GetFirstValidFont(
       uint32_t aCh = 0x20, mozilla::StyleGenericFontFamily* aGeneric = nullptr);
 
   
   
   
-  already_AddRefed<gfxFont> GetFirstMathFont();
+  gfxFont* GetFirstMathFont();
 
   const gfxFontStyle* GetStyle() const { return &mStyle; }
 
@@ -1032,10 +1032,9 @@ class gfxFontGroup final : public gfxTextRunFactory {
   enum { UNDERLINE_OFFSET_NOT_SET = INT16_MAX };
   gfxFloat GetUnderlineOffset();
 
-  already_AddRefed<gfxFont> FindFontForChar(uint32_t ch, uint32_t prevCh,
-                                            uint32_t aNextCh, Script aRunScript,
-                                            gfxFont* aPrevMatchedFont,
-                                            FontMatchType* aMatchType);
+  gfxFont* FindFontForChar(uint32_t ch, uint32_t prevCh, uint32_t aNextCh,
+                           Script aRunScript, gfxFont* aPrevMatchedFont,
+                           FontMatchType* aMatchType);
 
   gfxUserFontSet* GetUserFontSet();
 
@@ -1119,12 +1118,12 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   
   
-  already_AddRefed<gfxFont> WhichPrefFontSupportsChar(
-      uint32_t aCh, uint32_t aNextCh, eFontPresentation aPresentation);
+  gfxFont* WhichPrefFontSupportsChar(uint32_t aCh, uint32_t aNextCh,
+                                     eFontPresentation aPresentation);
 
-  already_AddRefed<gfxFont> WhichSystemFontSupportsChar(
-      uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-      eFontPresentation aPresentation);
+  gfxFont* WhichSystemFontSupportsChar(uint32_t aCh, uint32_t aNextCh,
+                                       Script aRunScript,
+                                       eFontPresentation aPresentation);
 
   template <typename T>
   void ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
@@ -1449,17 +1448,17 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  already_AddRefed<gfxFont> GetFontAt(int32_t i, uint32_t aCh, bool* aLoading);
+  gfxFont* GetFontAt(int32_t i, uint32_t aCh, bool* aLoading);
 
   
   
-  already_AddRefed<gfxFont> GetFontAt(int32_t i, uint32_t aCh = 0x20) {
+  gfxFont* GetFontAt(int32_t i, uint32_t aCh = 0x20) {
     bool loading = false;
     return GetFontAt(i, aCh, &loading);
   }
 
   
-  already_AddRefed<gfxFont> GetDefaultFont();
+  gfxFont* GetDefaultFont();
 
   
   
@@ -1484,17 +1483,17 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  already_AddRefed<gfxFont> FindFallbackFaceForChar(
-      const FamilyFace& aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+  gfxFont* FindFallbackFaceForChar(const FamilyFace& aFamily, uint32_t aCh,
+                                   uint32_t aNextCh,
+                                   eFontPresentation aPresentation);
 
-  already_AddRefed<gfxFont> FindFallbackFaceForChar(
-      mozilla::fontlist::Family* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+  gfxFont* FindFallbackFaceForChar(mozilla::fontlist::Family* aFamily,
+                                   uint32_t aCh, uint32_t aNextCh,
+                                   eFontPresentation aPresentation);
 
-  already_AddRefed<gfxFont> FindFallbackFaceForChar(
-      gfxFontFamily* aFamily, uint32_t aCh, uint32_t aNextCh,
-      eFontPresentation aPresentation);
+  gfxFont* FindFallbackFaceForChar(gfxFontFamily* aFamily, uint32_t aCh,
+                                   uint32_t aNextCh,
+                                   eFontPresentation aPresentation);
 
   
 
