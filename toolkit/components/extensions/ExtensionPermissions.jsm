@@ -465,11 +465,8 @@ var OriginControls = {
 
   
   getAttention(policy, window) {
-    if (policy?.manifestVersion >= 3) {
-      let state = this.getState(policy, window.gBrowser.currentURI);
-      return !!state.whenClicked && !state.hasAccess;
-    }
-    return false;
+    let state = this.getState(policy, window.gBrowser.currentURI);
+    return !!state.whenClicked && !state.hasAccess;
   },
 
   
