@@ -60,3 +60,16 @@ macro_rules! breadcrumb {
         }
     };
 }
+
+
+
+#[macro_export]
+macro_rules! handle_error {
+    { $($tt:tt)* } => {
+        let body = || {
+            $($tt)*
+        };
+        let result: Result<_> = body();
+        result.map_err($crate::convert_log_report_error)
+    }
+}

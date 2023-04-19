@@ -3,6 +3,25 @@
 
 
 use parking_lot::RwLock;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+
+
+
+
+
+static BREADCRUMB_COUNTER: AtomicU32 = AtomicU32::new(0);
+
+fn get_breadcrumb_counter_value() -> u32 {
+    
+    
+    
+    
+    
+    
+    
+    BREADCRUMB_COUNTER.fetch_add(1, Ordering::Relaxed)
+}
 
 
 
@@ -41,6 +60,7 @@ pub fn report_error(type_name: String, message: String) {
 }
 
 pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32) {
+    let message = format!("{} ({})", message, get_breadcrumb_counter_value());
     APPLICATION_ERROR_REPORTER
         .read()
         .report_breadcrumb(message, module, line, column);

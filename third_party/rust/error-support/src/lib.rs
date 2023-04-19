@@ -31,6 +31,12 @@ pub use reporting::{
     report_breadcrumb, report_error, set_application_error_reporter, ApplicationErrorReporter,
 };
 
+mod handling;
+pub use handling::{convert_log_report_error, ErrorHandling, ErrorReporting, GetErrorHandling};
+
+
+
+
 
 
 #[macro_export]

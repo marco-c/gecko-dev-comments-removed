@@ -57,7 +57,7 @@ pub trait BridgedEngine {
     
     
     
-    fn store_incoming(&self, incoming_cleartexts: &[IncomingEnvelope]) -> Result<(), Self::Error>;
+    fn store_incoming(&self, incoming_payloads: &[IncomingEnvelope]) -> Result<(), Self::Error>;
 
     
     
@@ -141,15 +141,14 @@ pub struct IncomingEnvelope {
     pub ttl: Option<u32>,
     
     
-    cleartext: String,
+    payload: String,
 }
 
 impl IncomingEnvelope {
     
     
-    
     pub fn payload(&self) -> Result<Payload, PayloadError> {
-        let payload: Payload = serde_json::from_str(&self.cleartext)?;
+        let payload: Payload = serde_json::from_str(&self.payload)?;
         if payload.id != self.id {
             return Err(PayloadError::MismatchedId {
                 envelope: self.id.clone(),
@@ -169,7 +168,7 @@ impl IncomingEnvelope {
 #[derive(Clone, Debug, Serialize)]
 pub struct OutgoingEnvelope {
     id: Guid,
-    cleartext: String,
+    payload: String,
     sortindex: Option<i32>,
     ttl: Option<u32>,
 }
@@ -182,7 +181,7 @@ impl From<Payload> for OutgoingEnvelope {
         let sortindex = payload.take_auto_field("sortindex");
         OutgoingEnvelope {
             id,
-            cleartext: payload.into_json_string(),
+            payload: payload.into_json_string(),
             sortindex,
             ttl,
         }
