@@ -492,6 +492,16 @@ void HTMLLinkElement::
     
     
     
+    if (!OwnerDoc()->ScriptLoader()->GetModuleLoader()) {
+      
+      
+      
+      
+      
+      
+      return;
+    }
+
     OwnerDoc()->ScriptLoader()->GetModuleLoader()->SetAcquiringImportMaps(
         false);
     return;
