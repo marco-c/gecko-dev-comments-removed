@@ -8596,6 +8596,8 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       grid.mGridColEnd = subgrid->mGridColEnd;
       grid.mGridRowEnd = subgrid->mGridRowEnd;
     }
+    gridReflowInput.CalculateTrackSizes(grid, computedSize,
+                                        SizingConstraint::NoConstraint);
     
     
     
@@ -8603,13 +8605,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     if (Maybe<nscoord> containBSize =
             aReflowInput.mFrame->ContainIntrinsicBSize()) {
       bSize = *containBSize;
-      const LogicalSize containLogicalSize(wm, computedISize, bSize);
-      gridReflowInput.CalculateTrackSizes(grid, containLogicalSize,
-                                          SizingConstraint::NoConstraint);
-
     } else {
-      gridReflowInput.CalculateTrackSizes(grid, computedSize,
-                                          SizingConstraint::NoConstraint);
       if (IsMasonry(eLogicalAxisBlock)) {
         bSize = computedBSize;
       } else {
