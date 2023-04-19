@@ -406,14 +406,12 @@ NS_IMPL_ISUPPORTS(ScriptLoaderRunnable, nsIRunnable, nsINamed)
 
 class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   WorkerScriptLoader& mScriptLoader;
-  nsTArray<ScriptLoadInfo*> mLoadInfosToExecute;
-  const bool mAllScriptsExecutable;
+  ScriptLoadInfo* mLoadInfo;
 
  public:
   ScriptExecutorRunnable(WorkerScriptLoader& aScriptLoader,
                          nsIEventTarget* aSyncLoopTarget,
-                         nsTArray<ScriptLoadInfo*>&& aLoadInfosToExecute,
-                         bool aAllScriptsExecutable);
+                         ScriptLoadInfo* aLoadInfo);
 
  private:
   ~ScriptExecutorRunnable() = default;
@@ -539,8 +537,25 @@ void WorkerScriptLoader::MaybeExecuteFinishedScripts(
   
   if (aLoadInfo->Finished()) {
     aLoadInfo->ClearCacheCreator();
-    DispatchProcessPendingRequests();
+    DispatchMaybeMoveToLoadedList(aLoadInfo);
   }
+}
+
+bool WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadInfo* aLoadInfo) {
+  mWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(!aLoadInfo->mExecutionScheduled);
+  aLoadInfo->mExecutionScheduled = true;
+
+  while (mLoadingRequests.Length() > 0) {
+    if (!mLoadingRequests[0]->mExecutionScheduled) {
+      break;
+    }
+    ScriptLoadInfo* loadInfo = mLoadingRequests[0];
+    mLoadedRequests.AppendElement(loadInfo);
+    mLoadingRequests.RemoveElementAt(0);
+  }
+
+  return true;
 }
 
 bool WorkerScriptLoader::StoreCSP() {
@@ -562,11 +577,11 @@ bool WorkerScriptLoader::StoreCSP() {
   return true;
 }
 
-bool WorkerScriptLoader::ProcessPendingRequests(
-    JSContext* aCx, nsTArray<ScriptLoadInfo*>&& aLoadInfosToExecute) {
+bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
   mWorkerPrivate->AssertIsOnWorkerThread();
   
   if (mExecutionAborted) {
+    mLoadedRequests.Clear();
     return true;
   }
 
@@ -579,20 +594,21 @@ bool WorkerScriptLoader::ProcessPendingRequests(
   JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
   MOZ_ASSERT(global);
 
-  for (ScriptLoadInfo* loadInfo : aLoadInfosToExecute) {
+  while (mLoadedRequests.Length()) {
+    ScriptLoadInfo* loadInfo = mLoadedRequests[0];
     
     
     
     
     
     
-    if (mExecutionAborted) {
-      break;
-    }
     if (!EvaluateScript(aCx, loadInfo)) {
       mExecutionAborted = true;
       mMutedErrorFlag = loadInfo->mMutedErrorFlag.valueOr(true);
+      mLoadedRequests.Clear();
+      break;
     }
+    mLoadedRequests.RemoveElement(loadInfo);
   }
 
   return true;
@@ -852,36 +868,18 @@ nsresult WorkerScriptLoader::LoadScript(ScriptLoadInfo* aLoadInfo) {
   return NS_OK;
 }
 
-void WorkerScriptLoader::DispatchProcessPendingRequests() {
+void WorkerScriptLoader::DispatchMaybeMoveToLoadedList(
+    ScriptLoadInfo* aLoadInfo) {
   AssertIsOnMainThread();
 
   if (IsMainWorkerScript()) {
     mWorkerPrivate->WorkerScriptLoaded();
   }
 
-  nsTArray<ScriptLoadInfo*> loadedScripts;
-
-  while (mLoadingRequests.Length() > 0) {
-    if (!mLoadingRequests[0]->Finished()) {
-      break;
-    }
-    ScriptLoadInfo* loadInfo = mLoadingRequests[0];
-    
-    loadInfo->mExecutionScheduled = true;
-
-    mLoadingRequests.RemoveElement(loadInfo);
-    loadedScripts.AppendElement(loadInfo);
-  }
-
-  
-  
-  if (loadedScripts.Length()) {
-    RefPtr<ScriptExecutorRunnable> runnable = new ScriptExecutorRunnable(
-        *this, mSyncLoopTarget, std::move(loadedScripts),
-         mLoadingRequests.IsEmpty());
-    if (!runnable->Dispatch()) {
-      MOZ_ASSERT(false, "This should never fail!");
-    }
+  RefPtr<ScriptExecutorRunnable> runnable =
+      new ScriptExecutorRunnable(*this, mSyncLoopTarget, aLoadInfo);
+  if (!runnable->Dispatch()) {
+    MOZ_ASSERT(false, "This should never fail!");
   }
 }
 
@@ -1018,12 +1016,11 @@ NS_IMPL_ISUPPORTS(WorkerScriptLoader, nsINamed)
 
 ScriptExecutorRunnable::ScriptExecutorRunnable(
     WorkerScriptLoader& aScriptLoader, nsIEventTarget* aSyncLoopTarget,
-    nsTArray<ScriptLoadInfo*>&& aLoadInfosToExecute, bool aAllScriptsExecutable)
+    ScriptLoadInfo* aLoadInfo)
     : MainThreadWorkerSyncRunnable(aScriptLoader.mWorkerPrivate,
                                    aSyncLoopTarget),
       mScriptLoader(aScriptLoader),
-      mLoadInfosToExecute(std::move(aLoadInfosToExecute)),
-      mAllScriptsExecutable(aAllScriptsExecutable) {}
+      mLoadInfo(aLoadInfo) {}
 
 bool ScriptExecutorRunnable::IsDebuggerRunnable() const {
   
@@ -1052,8 +1049,8 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       mScriptLoader.mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-  return mScriptLoader.ProcessPendingRequests(aCx,
-                                              std::move(mLoadInfosToExecute));
+  mScriptLoader.MaybeMoveToLoadedList(mLoadInfo);
+  return mScriptLoader.ProcessPendingRequests(aCx);
 }
 
 void ScriptExecutorRunnable::PostRun(JSContext* aCx,
@@ -1096,7 +1093,8 @@ nsresult ScriptExecutorRunnable::Cancel() {
 }
 
 bool ScriptExecutorRunnable::AllScriptsExecutable() const {
-  return mAllScriptsExecutable;
+  return mScriptLoader.mLoadingRequests.IsEmpty() &&
+         mScriptLoader.mLoadedRequests.IsEmpty();
 }
 
 } 
