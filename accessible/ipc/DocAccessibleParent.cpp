@@ -349,7 +349,11 @@ void DocAccessibleParent::FireEvent(RemoteAccessible* aAcc,
       
       
       
-      UpdateStateCache(states::STALE, false);
+      
+      
+      
+      
+      UpdateStateCache(states::STALE | states::BUSY, false);
     }
   }
 
