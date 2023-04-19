@@ -160,9 +160,6 @@ using AudioBweIntegrationTest = CallTest;
 
 
 TEST_F(AudioBweIntegrationTest, DISABLED_NoBandwidthDropAfterDtx) {
-  webrtc::test::ScopedFieldTrials override_field_trials(
-      "WebRTC-Audio-SendSideBwe/Enabled/"
-      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   NoBandwidthDropAfterDtx test;
   RunBaseTest(&test);
 }

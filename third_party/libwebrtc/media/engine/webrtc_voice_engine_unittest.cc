@@ -1344,8 +1344,6 @@ TEST_P(WebRtcVoiceEngineTestFake, SetAndGetRtpSendParameters) {
 
 
 TEST_P(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesMaxBitrate) {
-  webrtc::test::ScopedFieldTrials override_field_trials(
-      "WebRTC-Audio-SendSideBwe/Enabled/");
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSendParameters send_parameters;
   send_parameters.codecs.push_back(kOpusCodec);
@@ -2127,17 +2125,7 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
-class WebRtcVoiceEngineWithSendSideBweTest : public WebRtcVoiceEngineTestFake {
- public:
-  WebRtcVoiceEngineWithSendSideBweTest()
-      : WebRtcVoiceEngineTestFake("WebRTC-Audio-SendSideBwe/Enabled/") {}
-};
-
-INSTANTIATE_TEST_SUITE_P(UnusedParameter,
-                         WebRtcVoiceEngineWithSendSideBweTest,
-                         ::testing::Values(true));
-
-TEST_P(WebRtcVoiceEngineWithSendSideBweTest,
+TEST_P(WebRtcVoiceEngineTestFake,
        SupportsTransportSequenceNumberHeaderExtension) {
   const std::vector<webrtc::RtpExtension> header_extensions =
       GetDefaultEnabledRtpHeaderExtensions(*engine_);
@@ -2530,9 +2518,7 @@ class WebRtcVoiceEngineWithSendSideBweWithOverheadTest
  public:
   WebRtcVoiceEngineWithSendSideBweWithOverheadTest()
       : WebRtcVoiceEngineTestFake(
-            "WebRTC-Audio-SendSideBwe/Enabled/WebRTC-Audio-Allocation/"
-            "min:6000bps,max:32000bps/WebRTC-SendSideBwe-WithOverhead/"
-            "Enabled/") {}
+            "WebRTC-Audio-Allocation/min:6000bps,max:32000bps/") {}
 };
 
 
