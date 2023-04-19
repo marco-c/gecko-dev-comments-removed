@@ -11,6 +11,8 @@
 #ifndef PC_RTP_MEDIA_UTILS_H_
 #define PC_RTP_MEDIA_UTILS_H_
 
+#include <ostream>  
+
 #include "api/rtp_transceiver_direction.h"
 #include "api/rtp_transceiver_interface.h"
 
