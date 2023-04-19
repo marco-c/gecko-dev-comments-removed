@@ -7,6 +7,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StateMirroring.h"
@@ -439,7 +440,8 @@ class WebrtcVideoConduit
 
   
   
-  RefPtr<rtc::RefCountedObject<VideoStreamFactory>> mVideoStreamFactory;
+  DataMutex<RefPtr<rtc::RefCountedObject<VideoStreamFactory>>>
+      mVideoStreamFactory;
 
   
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
