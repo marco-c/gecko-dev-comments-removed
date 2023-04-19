@@ -2537,7 +2537,11 @@ var CustomizableUIInternal = {
       
       
       if (gFuturePlacements.has(aArea)) {
+        let areaPlacements = gPlacements.get(aArea);
         for (let id of gFuturePlacements.get(aArea)) {
+          if (areaPlacements.includes(id)) {
+            continue;
+          }
           this.addWidgetToArea(id, aArea);
         }
         gFuturePlacements.delete(aArea);
