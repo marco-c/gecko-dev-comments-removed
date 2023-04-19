@@ -471,12 +471,7 @@ var WinTaskbarJumpList = {
 
     if (lazy.PrivateBrowsingUtils.enabled) {
       tasksCfg.push(privateWindowTask);
-    } else {
-      
-      
-      this._builtPb = true;
     }
-
     
     this._builder._tasks = tasksCfg;
     this._pbBuilder._tasks = tasksCfg;

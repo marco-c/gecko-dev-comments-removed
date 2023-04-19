@@ -230,9 +230,6 @@ function openBrowserWindow(
   postData = null,
   forcePrivate = false
 ) {
-  
-  
-  forcePrivate = lazy.PrivateBrowsingUtils.enabled ? forcePrivate : false;
   let chromeURL = AppConstants.BROWSER_CHROME_URL;
   const isStartup =
     cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;

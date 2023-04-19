@@ -136,7 +136,6 @@
 #include "WidgetUtils.h"
 #include "WinWindowOcclusionTracker.h"
 #include "nsIWidgetListener.h"
-#include "nsIEnterprisePolicies.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/Touch.h"
@@ -1102,47 +1101,36 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
-  nsCOMPtr<nsIEnterprisePolicies> policies(
-      do_GetService("@mozilla.org/enterprisepolicies;1"));
-  
-  
-  bool pbAllowed = true;
-  policies->IsAllowed("privatebrowsing"_ns, &pbAllowed);
-  if (NimbusFeatures::GetBool("majorRelease2022"_ns,
-                              "feltPrivacyWindowSeparation"_ns, true) &&
-      
-      
-      
-      
-      
-      
-      pbAllowed &&
-      
-      
-      
-      
-      !StaticPrefs::browser_privatebrowsing_autostart()) {
-    RefPtr<IPropertyStore> pPropStore;
-    if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
-                                            getter_AddRefs(pPropStore)))) {
-      PROPVARIANT pv;
-      nsAutoString aumid;
-      
-      
-      Unused << NS_WARN_IF(
-          !mozilla::widget::WinTaskbar::GenerateAppUserModelID(aumid, true));
-      if (!FAILED(InitPropVariantFromString(aumid.get(), &pv))) {
-        if (!FAILED(pPropStore->SetValue(PKEY_AppUserModel_ID, pv))) {
-          pPropStore->Commit();
-        }
+  if (aInitData->mIsPrivate) {
+    if (NimbusFeatures::GetBool("majorRelease2022"_ns,
+                                "feltPrivacyWindowSeparation"_ns, true) &&
+        
+        
+        
+        
+        !StaticPrefs::browser_privatebrowsing_autostart()) {
+      RefPtr<IPropertyStore> pPropStore;
+      if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
+                                              getter_AddRefs(pPropStore)))) {
+        PROPVARIANT pv;
+        nsAutoString aumid;
+        
+        
+        Unused << NS_WARN_IF(
+            !mozilla::widget::WinTaskbar::GenerateAppUserModelID(aumid, true));
+        if (!FAILED(InitPropVariantFromString(aumid.get(), &pv))) {
+          if (!FAILED(pPropStore->SetValue(PKEY_AppUserModel_ID, pv))) {
+            pPropStore->Commit();
+          }
 
-        PropVariantClear(&pv);
+          PropVariantClear(&pv);
+        }
       }
+      HICON icon = ::LoadIconW(::GetModuleHandleW(nullptr),
+                               MAKEINTRESOURCEW(IDI_PBMODE));
+      SetBigIcon(icon);
+      SetSmallIcon(icon);
     }
-    HICON icon =
-        ::LoadIconW(::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_PBMODE));
-    SetBigIcon(icon);
-    SetSmallIcon(icon);
   }
 
   mDeviceNotifyHandle = InputDeviceUtils::RegisterNotification(mWnd);
