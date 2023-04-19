@@ -848,11 +848,6 @@ enum Role {
   
 
 
-  MATHML_FENCED = 142,
-
-  
-
-
   MATHML_ENCLOSED = 143,
 
   

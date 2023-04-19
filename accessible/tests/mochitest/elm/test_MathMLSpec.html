@@ -140,11 +140,10 @@
       testElm("mroot", obj);
 
       // ////////////////////////////////////////////////////////////////////////
-      // mfenced
+      // Deprecated mfenced element (treated as an mrow).
 
       obj = {
-        role: ROLE_MATHML_FENCED,
-        attributes: { open: "]", close: "[", separators: "." },
+        role: ROLE_MATHML_ROW,
       };
       testElm("mfenced", obj);
 
@@ -444,17 +443,17 @@
         <mo> + </mo>
         <mi> z </mi>
       </mrow>
-      <mo> &#x23DF; </mo>
+      <mo> &#x23DF;<!--BOTTOM CURLY BRACKET--> </mo>
     </munder>
     <mspace width="1em"/>
     <mover id="mover" accent="true" align="center">
       <mi> x </mi>
-      <mo> &#x5E; </mo>
+      <mo> &#x5E;<!--CIRCUMFLEX ACCENT--> </mo>
     </mover>
     <munderover id="munderover" accentunder="true" accent="true" align="center">
-      <mo> &#x222B; </mo>
+      <mo> &#x222B;<!--INTEGRAL--> </mo>
       <mn> 0 </mn>
-      <mi> &#x221E; </mi>
+      <mi> &#x221E;<!--INFINITY--> </mi>
     </munderover>
     <mmultiscripts id="mmultiscripts">
       <mi> R </mi>
@@ -479,7 +478,7 @@
             <mo>=</mo>
             <mrow>
               <mi>m</mi>
-              <mo>&#x2062;</mo>
+              <mo>&#x2062;<!--INVISIBLE TIMES--></mo>
               <msup>
                 <mi>c</mi>
                 <mn>2</mn>
@@ -545,7 +544,7 @@
     </merror>
 
     <semantics id="semantics">
-      
+      <!-- Presentation MathML -->
       <mrow>
         <msup>
           <mi>x</mi>
@@ -554,7 +553,7 @@
         <mo>+</mo>
         <mi>y</mi>
       </mrow>
-      
+      <!-- Content MathML -->
       <annotation-xml id="annotation-xml" encoding="MathML-Content">
         <apply>
           <plus/>
@@ -566,7 +565,7 @@
           <ci>y</ci>
         </apply>
       </annotation-xml>
-      
+      <!-- annotate TeX -->
       <annotation id="annotation" encoding="application/x-tex">
         x^{2} + y
       </annotation>
@@ -601,7 +600,7 @@
     <mstack>
       <msgroup id="msgroup" position="2" shift="-1">
         <mn>123</mn>
-        <msrow><mo>&#xD7;</mo><mn>321</mn></msrow>
+        <msrow><mo>&#xD7;<!--MULTIPLICATION SIGN--></mo><mn>321</mn></msrow>
       </msgroup>
       <msline/>
       <msgroup shift="1">

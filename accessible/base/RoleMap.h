@@ -1368,8 +1368,6 @@ ROLE(MATHML_OPERATOR,
     
     
     
-    
-    
      0,
      IA2_ROLE_UNKNOWN,
      java::SessionAccessibility::CLASSNAME_VIEW,
@@ -1440,16 +1438,6 @@ ROLE(MATHML_ROOT,
      ATK_ROLE_MATH_ROOT,
      NSAccessibilityGroupRole,
      @"AXMathRoot",
-     0,
-     IA2_ROLE_UNKNOWN,
-     java::SessionAccessibility::CLASSNAME_VIEW,
-     eNoNameRule)
-
-ROLE(MATHML_FENCED,
-     "mathml fenced",
-     ATK_ROLE_SECTION,
-     NSAccessibilityGroupRole,
-     @"AXMathFenced",      
      0,
      IA2_ROLE_UNKNOWN,
      java::SessionAccessibility::CLASSNAME_VIEW,
