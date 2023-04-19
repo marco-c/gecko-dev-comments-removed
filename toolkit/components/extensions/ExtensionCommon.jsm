@@ -2370,12 +2370,24 @@ class EventManager {
             
             listener.error = true;
           }
+
           
           
           
           
           
-          if (listener.error || (!isInStartup && !listener.primed)) {
+          
+          
+          
+          if (
+            listener.error ||
+            (!isInStartup &&
+              !(
+                (`${module}.${event}` === "runtime.onStartup" &&
+                  listener.added) ||
+                listener.primed
+              ))
+          ) {
             EventManager.clearPersistentListener(extension, module, event, key);
           }
         }
