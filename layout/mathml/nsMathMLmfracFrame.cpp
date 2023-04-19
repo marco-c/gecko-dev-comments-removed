@@ -91,8 +91,7 @@ nscoord nsMathMLmfracFrame::CalcLineThickness(nsPresContext* aPresContext,
   
   if (!aThicknessAttribute.IsEmpty()) {
     lineThickness = defaultThickness;
-    ParseNumericValue(aThicknessAttribute, &lineThickness,
-                      dom::MathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
+    ParseNumericValue(aThicknessAttribute, &lineThickness, 0, aPresContext,
                       aComputedStyle, aFontSizeInflation);
   }
   
