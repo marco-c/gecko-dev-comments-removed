@@ -1267,12 +1267,6 @@ void RuntimeService::UnregisterWorker(WorkerPrivate& aWorkerPrivate) {
     }
   }
 
-  if (aWorkerPrivate.IsServiceWorker()) {
-    AssertIsOnMainThread();
-    Telemetry::AccumulateTimeDelta(Telemetry::SERVICE_WORKER_LIFE_TIME,
-                                   aWorkerPrivate.CreationTimeStamp());
-  }
-
   
   
   
