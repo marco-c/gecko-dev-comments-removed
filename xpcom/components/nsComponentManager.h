@@ -137,48 +137,6 @@ class nsComponentManagerImpl final : public nsIComponentManager,
 
   static nsTArray<ComponentLocation>* sModuleLocations;
 
-  class KnownModule {
-   public:
-    
-
-
-    explicit KnownModule(const mozilla::Module* aModule)
-        : mModule(aModule), mLoaded(false), mFailed(false) {}
-
-    ~KnownModule() {
-      if (mLoaded && mModule->unloadProc) {
-        mModule->unloadProc();
-      }
-    }
-
-    bool Load();
-
-    const mozilla::Module* Module() const { return mModule; }
-
-    
-
-
-
-    nsCString Description() const;
-
-   private:
-    const mozilla::Module* mModule;
-    bool mLoaded;
-    bool mFailed;
-  };
-
-  
-  
-  nsTArray<mozilla::UniquePtr<KnownModule>> mKnownStaticModules;
-
-  
-  void RegisterModule(const mozilla::Module* aModule);
-
-  
-  void RegisterCIDEntryLocked(const mozilla::Module::CIDEntry* aEntry,
-                              KnownModule* aModule);
-  void RegisterContractIDLocked(const mozilla::Module::ContractIDEntry* aEntry);
-
   
   void RegisterManifest(NSLocationType aType, mozilla::FileLocation& aFile,
                         bool aChromeOnly);
@@ -240,13 +198,10 @@ class nsComponentManagerImpl final : public nsIComponentManager,
 #define NS_ERROR_IS_DIR NS_ERROR_GENERATE_FAILURE(NS_ERROR_MODULE_XPCOM, 24)
 
 struct nsFactoryEntry {
-  nsFactoryEntry(const mozilla::Module::CIDEntry* aEntry,
-                 nsComponentManagerImpl::KnownModule* aModule);
-
   
   nsFactoryEntry(const nsCID& aClass, nsIFactory* aFactory);
 
-  ~nsFactoryEntry();
+  ~nsFactoryEntry() = default;
 
   already_AddRefed<nsIFactory> GetFactory();
 
@@ -254,8 +209,7 @@ struct nsFactoryEntry {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-  const mozilla::Module::CIDEntry* mCIDEntry;
-  nsComponentManagerImpl::KnownModule* mModule;
+  const nsCID mCID;
 
   nsCOMPtr<nsIFactory> mFactory;
   nsCOMPtr<nsISupports> mServiceObject;
