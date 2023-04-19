@@ -941,6 +941,10 @@ class Shims {
       
       match = shim.isTriggeredByURLAndType(url, type);
       if (match) {
+        if (!unblocked && match.onlyIfBlockedByETP) {
+          continue;
+        }
+
         
         
         if (shim.hasUserOptedInAlready(topHost)) {
