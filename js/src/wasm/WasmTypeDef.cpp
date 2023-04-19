@@ -310,6 +310,12 @@ TypeResult TypeContext::isRefSubtypeOf(RefType subType, RefType superType,
     }
 
     
+    if (subType.isTypeIndex() && types_[subType.typeIndex()].isFuncType() &&
+        superType.isFunc()) {
+      return TypeResult::True;
+    }
+
+    
     if (subType.isTypeIndex() && superType.isTypeIndex()) {
       return isTypeIndexSubtypeOf(subType.typeIndex(), superType.typeIndex(),
                                   cache);

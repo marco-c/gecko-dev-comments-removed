@@ -252,6 +252,10 @@ OpKind wasm::Classify(OpBytes op) {
       return OpKind::Call;
     case Op::CallIndirect:
       return OpKind::CallIndirect;
+#  ifdef ENABLE_WASM_FUNCTION_REFERENCES
+    case Op::CallRef:
+      return OpKind::CallRef;
+#  endif
     case Op::Return:
     case Op::Limit:
       
