@@ -234,11 +234,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
       RTC_GUARDED_BY(signaling_thread());
 
   
-  
-  rtc::AsyncInvoker data_channel_transport_invoker_
-      RTC_GUARDED_BY(network_thread());
-
-  
   PeerConnection* const pc_;
   
   
