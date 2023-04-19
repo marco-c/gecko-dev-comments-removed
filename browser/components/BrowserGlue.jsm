@@ -1803,11 +1803,6 @@ BrowserGlue.prototype = {
       lazy.NimbusFeatures.tcpByDefault.getVariable("enabled") &&
       !hasCookieBehaviorPolicy()
     ) {
-      Services.telemetry.scalarSet(
-        "privacy.dfpi_rollout_tcpByDefault_feature",
-        true
-      );
-
       
       
       defaultPrefs.setIntPref(
@@ -1817,10 +1812,6 @@ BrowserGlue.prototype = {
 
       return;
     }
-    Services.telemetry.scalarSet(
-      "privacy.dfpi_rollout_tcpByDefault_feature",
-      false
-    );
 
     
     
