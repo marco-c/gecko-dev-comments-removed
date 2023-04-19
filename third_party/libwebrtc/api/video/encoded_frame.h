@@ -59,11 +59,6 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   int64_t id_ = -1;
 };
 
-
-namespace video_coding {
-using ::webrtc::EncodedFrame;
-}  
-
 }  
 
 #endif  

@@ -63,11 +63,6 @@ class RtpFrameObject : public EncodedFrame {
   int times_nacked_;
 };
 
-
-namespace video_coding {
-using ::webrtc::RtpFrameObject;
-}  
-
 }  
 
 #endif  
