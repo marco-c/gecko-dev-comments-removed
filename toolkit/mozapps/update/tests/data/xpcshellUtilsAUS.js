@@ -1907,7 +1907,6 @@ function logUpdateLog(aLogLeafName) {
   if (updateLog.exists()) {
     
     let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
-    updateLogContents = removeTimeStamps(updateLogContents);
     updateLogContents = replaceLogPaths(updateLogContents);
     let aryLogContents = updateLogContents.split("\n");
     logTestInfo("contents of " + updateLog.path + ":");
@@ -1926,7 +1925,6 @@ function logUpdateLog(aLogLeafName) {
     if (updateLog.exists()) {
       
       let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
-      updateLogContents = removeTimeStamps(updateLogContents);
       updateLogContents = replaceLogPaths(updateLogContents);
       let aryLogContents = updateLogContents.split("\n");
       logTestInfo("contents of " + updateLog.path + ":");
@@ -3354,20 +3352,6 @@ function replaceLogPaths(aLogContents) {
 
 
 
-function removeTimeStamps(aLogContents) {
-  return aLogContents.replace(
-    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[+-]\d{4}: /gm,
-    ""
-  );
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -3473,8 +3457,6 @@ function checkUpdateLogContents(
   }
 
   
-  updateLogContents = removeTimeStamps(updateLogContents);
-  
   updateLogContents = updateLogContents.replace(/, err:.*\n/g, "\n");
   
   updateLogContents = updateLogContents.replace(/non-fatal error /g, "");
@@ -3520,8 +3502,6 @@ function checkUpdateLogContents(
   }
 
   
-  compareLogContents = removeTimeStamps(compareLogContents);
-  
   compareLogContents = compareLogContents.replace(/\n+/g, "\n");
   
   compareLogContents = compareLogContents.replace(/^\n|\n$/g, "");
@@ -3547,9 +3527,8 @@ function checkUpdateLogContents(
           "the first incorrect line is line #" +
             i +
             " and the " +
-            "value is: '" +
-            aryLog[i] +
-            "'"
+            "value is: " +
+            aryLog[i]
         );
         Assert.equal(
           aryLog[i],
@@ -3572,16 +3551,11 @@ function checkUpdateLogContents(
 function checkUpdateLogContains(aCheckString) {
   let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
   let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
-  updateLogContents = removeTimeStamps(updateLogContents);
   updateLogContents = replaceLogPaths(updateLogContents);
   Assert.notEqual(
     updateLogContents.indexOf(aCheckString),
     -1,
-    "the update log '" +
-      updateLog +
-      "' contents should contain value: '" +
-      aCheckString +
-      "'"
+    "the update log contents should contain value: " + aCheckString
   );
 }
 
