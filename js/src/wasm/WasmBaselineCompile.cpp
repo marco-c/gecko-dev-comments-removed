@@ -1732,6 +1732,13 @@ void BaseCompiler::finishTryNote(size_t tryNoteIndex) {
   }
 
   
+  
+  
+  if (masm.oom()) {
+    return;
+  }
+
+  
   tryNote.setTryBodyEnd(masm.currentOffset());
 }
 
