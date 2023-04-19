@@ -317,7 +317,8 @@ Candidate PortAllocator::SanitizeCandidate(const Candidate& c) const {
   
   
   bool use_hostname_address =
-      c.type() == LOCAL_PORT_TYPE && MdnsObfuscationEnabled();
+      (c.type() == LOCAL_PORT_TYPE || c.type() == PRFLX_PORT_TYPE) &&
+      MdnsObfuscationEnabled();
   
   
   bool filter_stun_related_address =
