@@ -2,8 +2,6 @@
 
 "use strict";
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 var gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
@@ -47,7 +45,7 @@ function pemToBase64(pem) {
 
 
 function readCertificate(filename, trustString) {
-  return OS.File.read(getTestFilePath(filename)).then(
+  return IOUtils.read(getTestFilePath(filename)).then(
     data => {
       let decoder = new TextDecoder();
       let pem = decoder.decode(data);
