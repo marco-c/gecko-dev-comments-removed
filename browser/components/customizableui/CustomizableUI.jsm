@@ -2224,18 +2224,13 @@ var CustomizableUIInternal = {
       return;
     }
 
-    
-    
-    
-    
-    if (
-      eventType != "command" &&
-      eventType != "keypress" &&
-      (aEvent.defaultPrevented || aEvent.button != 0)
-    ) {
+    if (eventType == "click" && aEvent.button != 0) {
       return;
     }
 
+    
+    
+    
     if (eventType != "command" && this._isOnInteractiveElement(aEvent)) {
       return;
     }
