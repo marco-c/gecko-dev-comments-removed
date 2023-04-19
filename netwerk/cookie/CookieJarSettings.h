@@ -197,6 +197,54 @@ class CookieJarSettings final : public nsICookieJarSettings {
   State mState;
 
   bool mToBeMerged;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mShouldResistFingerprinting;
 };
 
 }  

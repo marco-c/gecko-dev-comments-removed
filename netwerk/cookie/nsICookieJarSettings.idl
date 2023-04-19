@@ -32,6 +32,11 @@ interface nsICookieJarSettings : nsISerializable
   
 
 
+  [infallible] readonly attribute boolean shouldResistFingerprinting;
+
+  
+
+
   [infallible] readonly attribute boolean rejectThirdPartyContexts;
 
   [infallible] readonly attribute boolean limitForeignContexts;

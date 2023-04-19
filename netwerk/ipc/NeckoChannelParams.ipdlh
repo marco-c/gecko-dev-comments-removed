@@ -54,6 +54,7 @@ struct CookieJarSettingsArgs
   
   uint32_t cookieBehavior;
   bool isFirstPartyIsolated;
+  bool shouldResistFingerprinting;
   bool isOnContentBlockingAllowList;
   CookiePermissionData[] cookiePermissions;
   bool isFixed;
