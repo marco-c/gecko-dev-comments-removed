@@ -1,16 +1,14 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
-
-
-"use strict";
-
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const { MigrationUtils, MigratorPrototype } = ChromeUtils.import(
-  "resource:///modules/MigrationUtils.jsm"
-);
+import {
+  MigrationUtils,
+  MigratorPrototype,
+} from "resource:///modules/MigrationUtils.sys.mjs";
 
 const lazy = {};
 
@@ -65,25 +63,25 @@ Bookmarks.prototype = {
     );
   },
 
-  
+  // Bookmarks collections in Safari.  Constants for migrateCollection.
   ROOT_COLLECTION: 0,
   MENU_COLLECTION: 1,
   TOOLBAR_COLLECTION: 2,
   READING_LIST_COLLECTION: 3,
 
-  
-
-
-
-
-
-
-
+  /**
+   * Recursively migrate a Safari collection of bookmarks.
+   *
+   * @param aEntries
+   *        the collection's children
+   * @param aCollection
+   *        one of the values above.
+   */
   async _migrateCollection(aEntries, aCollection) {
-    
-    
-    
-    
+    // A collection of bookmarks in Safari resembles places roots.  In the
+    // property list files (Bookmarks.plist, ReadingList.plist) they are
+    // stored as regular bookmarks folders, and thus can only be distinguished
+    // from by their names and places in the hierarchy.
 
     let entriesFiltered = [];
     if (aCollection == this.ROOT_COLLECTION) {
@@ -119,12 +117,12 @@ Bookmarks.prototype = {
     let folderGuid = -1;
     switch (aCollection) {
       case this.ROOT_COLLECTION: {
-        
-        
-        
-        
-        
-        
+        // In Safari, it is possible (though quite cumbersome) to move
+        // bookmarks to the bookmarks root, which is the parent folder of
+        // all bookmarks "collections".  That is somewhat in parallel with
+        // both the places root and the unfiled-bookmarks root.
+        // Because the former is only an implementation detail in our UI,
+        // the unfiled root seems to be the best choice.
         folderGuid = lazy.PlacesUtils.bookmarks.unfiledGuid;
         this._histogramBookmarkRoots |=
           MigrationUtils.SOURCE_BOOKMARK_ROOTS_UNFILED;
@@ -143,9 +141,9 @@ Bookmarks.prototype = {
         break;
       }
       case this.READING_LIST_COLLECTION: {
-        
-        
-        
+        // Reading list items are imported as regular bookmarks.
+        // They are imported under their own folder, created either under the
+        // bookmarks menu (in the case of startup migration).
         let readingListTitle = await MigrationUtils.getLocalizedString(
           "imported-safari-reading-list"
         );
@@ -170,8 +168,8 @@ Bookmarks.prototype = {
     await this._migrateEntries(entriesFiltered, folderGuid);
   },
 
-  
-  
+  // migrate the given array of safari bookmarks to the given places
+  // folder.
   _migrateEntries(entries, parentGuid) {
     let convertedEntries = this._convertEntries(entries);
     return MigrationUtils.insertManyBookmarksWrapper(
@@ -192,7 +190,7 @@ Bookmarks.prototype = {
           };
         }
         if (type == "WebBookmarkTypeLeaf" && entry.has("URLString")) {
-          
+          // Check we understand this URL before adding it:
           let url = entry.get("URLString");
           try {
             new URL(url);
@@ -220,13 +218,13 @@ function History(aHistoryFile) {
 History.prototype = {
   type: MigrationUtils.resourceTypes.HISTORY,
 
-  
-  
-  
+  // Helper method for converting the visit date property to a PRTime value.
+  // The visit date is stored as a string, so it's not read as a Date
+  // object by PropertyListUtils.
   _parseCocoaDate: function H___parseCocoaDate(aCocoaDateStr) {
     let asDouble = parseFloat(aCocoaDateStr);
     if (!isNaN(asDouble)) {
-      
+      // reference date of NSDate.
       let date = new Date("1 January 2001, GMT");
       date.setMilliseconds(asDouble * 1000);
       return date;
@@ -256,25 +254,25 @@ History.prototype = {
                 title: entry.get("title"),
                 visits: [
                   {
-                    
-                    
+                    // Safari's History file contains only top-level urls.  It does not
+                    // distinguish between typed urls and linked urls.
                     transition: lazy.PlacesUtils.history.TRANSITIONS.LINK,
                     date,
                   },
                 ],
               });
             } catch (ex) {
-              
-              
+              // Safari's History file may contain malformed URIs which
+              // will be ignored.
               Cu.reportError(ex);
               failedOnce = true;
             }
           }
         }
         if (!pageInfos.length) {
-          
-          
-          
+          // If we failed at least once, then we didn't succeed in importing,
+          // otherwise we didn't actually have anything to import, so we'll
+          // report it as a success.
           aCallback(!failedOnce);
           return;
         }
@@ -291,22 +289,22 @@ History.prototype = {
   },
 };
 
-
-
-
-
-
-
-
-
+/**
+ * Safari's preferences property list is independently used for three purposes:
+ * (a) importation of preferences
+ * (b) importation of search strings
+ * (c) retrieving the home page.
+ *
+ * So, rather than reading it three times, it's cached and managed here.
+ */
 function MainPreferencesPropertyList(aPreferencesFile) {
   this._file = aPreferencesFile;
   this._callbacks = [];
 }
 MainPreferencesPropertyList.prototype = {
-  
-
-
+  /**
+   * @see PropertyListUtils.read
+   */
   read: function MPPL_read(aCallback) {
     if ("_dict" in this) {
       aCallback(this._dict);
@@ -360,7 +358,7 @@ SearchStrings.prototype = {
   },
 };
 
-function SafariProfileMigrator() {}
+export function SafariProfileMigrator() {}
 
 SafariProfileMigrator.prototype = Object.create(MigratorPrototype);
 
@@ -382,11 +380,11 @@ SafariProfileMigrator.prototype.getResources = function SM_getResources() {
   pushProfileFileResource("History.plist", History);
   pushProfileFileResource("Bookmarks.plist", Bookmarks);
 
-  
-  
-  
-  
-  
+  // The Reading List feature was introduced at the same time in Windows and
+  // Mac versions of Safari.  Not surprisingly, they are stored in the same
+  // format in both versions.  Surpsingly, only on Windows there is a
+  // separate property list for it.  This code is used on mac too, because
+  // Apple may fix this at some point.
   pushProfileFileResource("ReadingList.plist", Bookmarks);
 
   let prefs = this.mainPreferencesPropertyList;
@@ -416,15 +414,15 @@ SafariProfileMigrator.prototype.hasPermissions = async function SM_hasPermission
   if (this._hasPermissions) {
     return true;
   }
-  
+  // Check if we have access:
   let target = FileUtils.getDir(
     "ULibDir",
     ["Safari", "Bookmarks.plist"],
     false
   );
   try {
-    
-    
+    // 'stat' is always allowed, but reading is somehow not, if the user hasn't
+    // allowed it:
     await IOUtils.read(target.path, { maxBytes: 1 });
     this._hasPermissions = true;
     return true;
@@ -436,26 +434,26 @@ SafariProfileMigrator.prototype.hasPermissions = async function SM_hasPermission
 SafariProfileMigrator.prototype.getPermissions = async function SM_getPermissions(
   win
 ) {
-  
-  
+  // Keep prompting the user until they pick a file that grants us access,
+  // or they cancel out of the file open panel.
   while (!(await this.hasPermissions())) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    
+    // The title (second arg) is not displayed on macOS, so leave it blank.
     fp.init(win, "", Ci.nsIFilePicker.modeOpen);
-    
-    
-    
-    
-    
+    // This is a little weird. You'd expect that it matters which file
+    // the user picks, but it doesn't really, as long as it's in this
+    // directory. Anyway, let's not confuse the user: the sensible idea
+    // here is to ask for permissions for Bookmarks.plist, and we'll
+    // silently accept whatever input as long as we can then read the plist.
     fp.appendFilter("plist", "*.plist");
     fp.filterIndex = 1;
     fp.displayDirectory = FileUtils.getDir("ULibDir", ["Safari"], false);
-    
-    
-    
-    
+    // Now wait for the filepicker to open and close. If the user picks
+    // any file in this directory, macOS will grant us read access, so
+    // we don't need to check or do anything else with the file returned
+    // by the filepicker.
     let result = await new Promise(resolve => fp.open(resolve));
-    
+    // Bail if the user cancels the dialog:
     if (result == Ci.nsIFilePicker.returnCancel) {
       return false;
     }
@@ -492,5 +490,3 @@ SafariProfileMigrator.prototype.contractID =
 SafariProfileMigrator.prototype.classID = Components.ID(
   "{4b609ecf-60b2-4655-9df4-dc149e474da1}"
 );
-
-var EXPORTED_SYMBOLS = ["SafariProfileMigrator"];

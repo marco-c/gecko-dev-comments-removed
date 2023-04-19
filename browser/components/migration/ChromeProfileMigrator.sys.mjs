@@ -1,10 +1,8 @@
-
-
-
-
-
-
-"use strict";
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * vim: sw=2 ts=2 sts=2 et */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const AUTH_TYPE = {
   SCHEME_HTML: 0,
@@ -12,52 +10,51 @@ const AUTH_TYPE = {
   SCHEME_DIGEST: 2,
 };
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { MigratorPrototype, MigrationUtils } = ChromeUtils.import(
-  "resource:///modules/MigrationUtils.jsm"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
+import {
+  MigratorPrototype,
+  MigrationUtils,
+} from "resource:///modules/MigrationUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.sys.mjs",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  Qihoo360seMigrationUtils: "resource:///modules/360seMigrationUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  Qihoo360seMigrationUtils: "resource:///modules/360seMigrationUtils.jsm",
 });
 
-
-
-
-
-
-
-
-
-
+/**
+ * Converts an array of chrome bookmark objects into one our own places code
+ * understands.
+ *
+ * @param   items
+ *          bookmark items to be inserted on this parent
+ * @param   errorAccumulator
+ *          function that gets called with any errors thrown so we don't drop them on the floor.
+ */
 function convertBookmarks(items, errorAccumulator) {
   let itemsToInsert = [];
   for (let item of items) {
     try {
       if (item.type == "url") {
         if (item.url.trim().startsWith("chrome:")) {
-          
-          
-          
+          // Skip invalid internal URIs. Creating an actual URI always reports
+          // messages to the console because Gecko has its own concept of how
+          // chrome:// URIs should be formed, so we avoid doing that.
           continue;
         }
         if (item.url.trim().startsWith("edge:")) {
-          
+          // Don't import internal Microsoft Edge URIs as they won't resolve within Firefox.
           continue;
         }
         itemsToInsert.push({ url: item.url, title: item.name });
@@ -77,7 +74,7 @@ function convertBookmarks(items, errorAccumulator) {
   return itemsToInsert;
 }
 
-function ChromeProfileMigrator() {
+export function ChromeProfileMigrator() {
   this._chromeUserDataPathSuffix = "Chrome";
 }
 
@@ -173,11 +170,11 @@ ChromeProfileMigrator.prototype.getSourceProfiles = async function Chrome_getSou
       });
     }
   } catch (e) {
-    
+    // Avoid reporting NotFoundErrors from trying to get local state.
     if (localState || e.name != "NotFoundError") {
       Cu.reportError("Error detecting Chrome profiles: " + e);
     }
-    
+    // If we weren't able to detect any profiles above, fallback to the Default profile.
     let defaultProfilePath = PathUtils.join(chromeUserDataPath, "Default");
     if (await IOUtils.exists(defaultProfilePath)) {
       profiles = [
@@ -196,7 +193,7 @@ ChromeProfileMigrator.prototype.getSourceProfiles = async function Chrome_getSou
     }))
   );
 
-  
+  // Only list profiles from which any data can be imported
   this.__sourceProfiles = profileResources
     .filter(({ resources }) => {
       return resources && !!resources.length;
@@ -207,7 +204,7 @@ ChromeProfileMigrator.prototype.getSourceProfiles = async function Chrome_getSou
 
 Object.defineProperty(ChromeProfileMigrator.prototype, "sourceLocked", {
   get: function Chrome_sourceLocked() {
-    
+    // There is an exclusive lock on some SQLite databases. Assume they are locked for now.
     return true;
   },
 });
@@ -246,15 +243,15 @@ async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
         let errorGatherer = function() {
           gotErrors = true;
         };
-        
+        // Parse Chrome bookmark file that is JSON format
         let bookmarkJSON = await lazy.OS.File.read(bookmarksPath, {
           encoding: "UTF-8",
         });
         let roots = JSON.parse(bookmarkJSON).roots;
 
-        
+        // Importing bookmark bar items
         if (roots.bookmark_bar.children && roots.bookmark_bar.children.length) {
-          
+          // Toolbar
           let parentGuid = lazy.PlacesUtils.bookmarks.toolbarGuid;
           let bookmarks = convertBookmarks(
             roots.bookmark_bar.children,
@@ -267,9 +264,9 @@ async function GetBookmarksResource(aProfileFolder, aBrowserKey) {
           lazy.PlacesUIUtils.maybeToggleBookmarkToolbarVisibilityAfterMigration();
         }
 
-        
+        // Importing bookmark menu items
         if (roots.other.children && roots.other.children.length) {
-          
+          // Bookmark menu
           let parentGuid = lazy.PlacesUtils.bookmarks.menuGuid;
           let bookmarks = convertBookmarks(roots.other.children, errorGatherer);
           await MigrationUtils.insertManyBookmarksWrapper(
@@ -327,7 +324,7 @@ async function GetHistoryResource(aProfileFolder) {
         let fallbackVisitDate = new Date();
         for (let row of rows) {
           try {
-            
+            // if having typed_count, we changes transition type to typed.
             let transition = lazy.PlacesUtils.history.TRANSITIONS.LINK;
             if (row.getResultByName("typed_count") > 0) {
               transition = lazy.PlacesUtils.history.TRANSITIONS.TYPED;
@@ -377,7 +374,7 @@ async function GetCookiesResource(aProfileFolder) {
     type: MigrationUtils.resourceTypes.COOKIES,
 
     async migrate(aCallback) {
-      
+      // Get columns names and set is_sceure, is_httponly fields accordingly.
       let columns = await MigrationUtils.getRowsFromDBWithoutLocks(
         cookiesPath,
         "Chrome cookies",
@@ -386,8 +383,8 @@ async function GetCookiesResource(aProfileFolder) {
         Cu.reportError(ex);
         aCallback(false);
       });
-      
-      
+      // If the promise was rejected we will have already called aCallback,
+      // so we can just return here.
       if (!columns) {
         return;
       }
@@ -401,7 +398,7 @@ async function GetCookiesResource(aProfileFolder) {
         ? "source_scheme"
         : `"${Ci.nsICookie.SCHEME_UNSET}" as source_scheme`;
 
-      
+      // We don't support decrypting cookies yet so only import plaintext ones.
       let rows = await MigrationUtils.getRowsFromDBWithoutLocks(
         cookiesPath,
         "Chrome cookies",
@@ -413,8 +410,8 @@ async function GetCookiesResource(aProfileFolder) {
         aCallback(false);
       });
 
-      
-      
+      // If the promise was rejected we will have already called aCallback,
+      // so we can just return here.
       if (!rows) {
         return;
       }
@@ -423,7 +420,7 @@ async function GetCookiesResource(aProfileFolder) {
       for (let row of rows) {
         let host_key = row.getResultByName("host_key");
         if (host_key.match(/^\./)) {
-          
+          // 1st character of host_key may be ".", so we have to remove it
           host_key = host_key.substr(1);
         }
 
@@ -443,7 +440,7 @@ async function GetCookiesResource(aProfileFolder) {
               row.getResultByName("expires_utc"),
               fallbackExpiryDate
             ) / 1000;
-          
+          // No point adding cookies that don't have a valid expiry.
           if (!expiresUtc) {
             continue;
           }
@@ -499,14 +496,14 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
         Cu.reportError(ex);
         aCallback(false);
       });
-      
-      
+      // If the promise was rejected we will have already called aCallback,
+      // so we can just return here.
       if (!rows) {
         return;
       }
 
-      
-      
+      // If there are no relevant rows, return before initializing crypto and
+      // thus prompting for Keychain access on macOS.
       if (!rows.length) {
         aCallback(true);
         return;
@@ -515,13 +512,13 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
       let crypto;
       try {
         if (AppConstants.platform == "win") {
-          let { ChromeWindowsLoginCrypto } = ChromeUtils.import(
-            "resource:///modules/ChromeWindowsLoginCrypto.jsm"
+          let { ChromeWindowsLoginCrypto } = ChromeUtils.importESModule(
+            "resource:///modules/ChromeWindowsLoginCrypto.sys.mjs"
           );
           crypto = new ChromeWindowsLoginCrypto(_chromeUserDataPathSuffix);
         } else if (AppConstants.platform == "macosx") {
-          let { ChromeMacOSLoginCrypto } = ChromeUtils.import(
-            "resource:///modules/ChromeMacOSLoginCrypto.jsm"
+          let { ChromeMacOSLoginCrypto } = ChromeUtils.importESModule(
+            "resource:///modules/ChromeMacOSLoginCrypto.sys.mjs"
           );
           crypto = new ChromeMacOSLoginCrypto(
             _keychainServiceName,
@@ -533,7 +530,7 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
           return;
         }
       } catch (ex) {
-        
+        // Handle the user canceling Keychain access or other OSCrypto errors.
         Cu.reportError(ex);
         aCallback(false);
         return;
@@ -546,8 +543,8 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
           let origin_url = lazy.NetUtil.newURI(
             row.getResultByName("origin_url")
           );
-          
-          
+          // Ignore entries for non-http(s)/ftp URLs because we likely can't
+          // use them anyway.
           const kValidSchemes = new Set(["https", "http", "ftp"]);
           if (!kValidSchemes.has(origin_url.scheme)) {
             continue;
@@ -574,20 +571,20 @@ ChromeProfileMigrator.prototype._GetPasswordsResource = async function(
             case AUTH_TYPE.SCHEME_HTML:
               let action_url = row.getResultByName("action_url");
               if (!action_url) {
-                
-                
+                // If there is no action_url, store the wildcard "" value.
+                // See the `formActionOrigin` IDL comments.
                 loginInfo.formActionOrigin = "";
                 break;
               }
               let action_uri = lazy.NetUtil.newURI(action_url);
               if (!kValidSchemes.has(action_uri.scheme)) {
-                continue; 
+                continue; // This continues the outer for loop.
               }
               loginInfo.formActionOrigin = action_uri.prePath;
               break;
             case AUTH_TYPE.SCHEME_BASIC:
             case AUTH_TYPE.SCHEME_DIGEST:
-              
+              // signon_realm format is URIrealm, so we need remove URI
               loginInfo.httpRealm = row
                 .getResultByName("signon_realm")
                 .substring(loginInfo.origin.length + 1);
@@ -625,10 +622,10 @@ ChromeProfileMigrator.prototype.classID = Components.ID(
   "{4cec1de4-1671-4fc3-a53e-6c539dc77a26}"
 );
 
-
-
-
-function ChromiumProfileMigrator() {
+/**
+ *  Chromium migration
+ **/
+export function ChromiumProfileMigrator() {
   this._chromeUserDataPathSuffix = "Chromium";
   this._keychainServiceName = "Chromium Safe Storage";
   this._keychainAccountName = "Chromium";
@@ -645,17 +642,11 @@ ChromiumProfileMigrator.prototype.classID = Components.ID(
   "{8cece922-9720-42de-b7db-7cef88cb07ca}"
 );
 
-var EXPORTED_SYMBOLS = [
-  "ChromeProfileMigrator",
-  "ChromiumProfileMigrator",
-  "BraveProfileMigrator",
-];
-
-
-
-
-
-function CanaryProfileMigrator() {
+/**
+ * Chrome Canary
+ * Not available on Linux
+ **/
+export function CanaryProfileMigrator() {
   this._chromeUserDataPathSuffix = "Canary";
 }
 CanaryProfileMigrator.prototype = Object.create(
@@ -669,14 +660,10 @@ CanaryProfileMigrator.prototype.classID = Components.ID(
   "{4bf85aa5-4e21-46ca-825f-f9c51a5e8c76}"
 );
 
-if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
-  EXPORTED_SYMBOLS.push("CanaryProfileMigrator");
-}
-
-
-
-
-function ChromeDevMigrator() {
+/**
+ * Chrome Dev - Linux only (not available in Mac and Windows)
+ */
+export function ChromeDevMigrator() {
   this._chromeUserDataPathSuffix = "Chrome Dev";
 }
 ChromeDevMigrator.prototype = Object.create(ChromeProfileMigrator.prototype);
@@ -687,11 +674,7 @@ ChromeDevMigrator.prototype.classID = Components.ID(
   "{7370a02a-4886-42c3-a4ec-d48c726ec30a}"
 );
 
-if (AppConstants.platform != "win" && AppConstants.platform != "macosx") {
-  EXPORTED_SYMBOLS.push("ChromeDevMigrator");
-}
-
-function ChromeBetaMigrator() {
+export function ChromeBetaMigrator() {
   this._chromeUserDataPathSuffix = "Chrome Beta";
 }
 ChromeBetaMigrator.prototype = Object.create(ChromeProfileMigrator.prototype);
@@ -702,15 +685,12 @@ ChromeBetaMigrator.prototype.classID = Components.ID(
   "{47f75963-840b-4950-a1f0-d9c1864f8b8e}"
 );
 
-if (AppConstants.platform != "macosx") {
-  EXPORTED_SYMBOLS.push("ChromeBetaMigrator");
-}
-
-function BraveProfileMigrator() {
+export function BraveProfileMigrator() {
   this._chromeUserDataPathSuffix = "Brave";
   this._keychainServiceName = "Brave Browser Safe Storage";
   this._keychainAccountName = "Brave Browser";
 }
+
 BraveProfileMigrator.prototype = Object.create(ChromeProfileMigrator.prototype);
 BraveProfileMigrator.prototype.classDescription = "Brave Browser Migrator";
 BraveProfileMigrator.prototype.contractID =
@@ -719,7 +699,7 @@ BraveProfileMigrator.prototype.classID = Components.ID(
   "{4071880a-69e4-4c83-88b4-6c589a62801d}"
 );
 
-function ChromiumEdgeMigrator() {
+export function ChromiumEdgeMigrator() {
   this._chromeUserDataPathSuffix = "Edge";
   this._keychainServiceName = "Microsoft Edge Safe Storage";
   this._keychainAccountName = "Microsoft Edge";
@@ -733,7 +713,7 @@ ChromiumEdgeMigrator.prototype.classID = Components.ID(
   "{3c7f6b7c-baa9-4338-acfa-04bf79f1dcf1}"
 );
 
-function ChromiumEdgeBetaMigrator() {
+export function ChromiumEdgeBetaMigrator() {
   this._chromeUserDataPathSuffix = "Edge Beta";
   this._keychainServiceName = "Microsoft Edge Safe Storage";
   this._keychainAccountName = "Microsoft Edge";
@@ -749,11 +729,7 @@ ChromiumEdgeBetaMigrator.prototype.classID = Components.ID(
   "{0fc3d48a-c1c3-4871-b58f-a8b47d1555fb}"
 );
 
-if (AppConstants.platform == "macosx" || AppConstants.platform == "win") {
-  EXPORTED_SYMBOLS.push("ChromiumEdgeMigrator", "ChromiumEdgeBetaMigrator");
-}
-
-function Chromium360seMigrator() {
+export function Chromium360seMigrator() {
   this._chromeUserDataPathSuffix = "360 SE";
 }
 Chromium360seMigrator.prototype = Object.create(
@@ -766,7 +742,3 @@ Chromium360seMigrator.prototype.contractID =
 Chromium360seMigrator.prototype.classID = Components.ID(
   "{2e1a182e-ce4f-4dc9-a22c-d4125b931552}"
 );
-
-if (AppConstants.platform == "win") {
-  EXPORTED_SYMBOLS.push("Chromium360seMigrator");
-}

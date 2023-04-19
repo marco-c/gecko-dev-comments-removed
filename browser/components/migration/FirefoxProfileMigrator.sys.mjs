@@ -1,21 +1,20 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sw=2 ts=2 sts=2 et */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * Migrates from a Firefox profile in a lossy manner in order to clean up a
+ * user's profile.  Data is only migrated where the benefits outweigh the
+ * potential problems caused by importing undesired/invalid configurations
+ * from the source profile.
+ */
 
-
-
-
-
-"use strict";
-
-
-
-
-
-
-
-
-const { MigrationUtils, MigratorPrototype } = ChromeUtils.import(
-  "resource:///modules/MigrationUtils.jsm"
-);
+import {
+  MigrationUtils,
+  MigratorPrototype,
+} from "resource:///modules/MigrationUtils.sys.mjs";
 
 const lazy = {};
 
@@ -31,8 +30,8 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
 
-function FirefoxProfileMigrator() {
-  this.wrappedJSObject = this; 
+export function FirefoxProfileMigrator() {
+  this.wrappedJSObject = this; // for testing...
 }
 
 FirefoxProfileMigrator.prototype = Object.create(MigratorPrototype);
@@ -70,9 +69,9 @@ FirefoxProfileMigrator.prototype._getFileObject = function(dir, fileName) {
   let file = dir.clone();
   file.append(fileName);
 
-  
-  
-  
+  // File resources are monolithic.  We don't make partial copies since
+  // they are not expected to work alone. Return null to avoid trying to
+  // copy non-existing files.
   return file.exists() ? file : null;
 };
 
@@ -90,11 +89,11 @@ FirefoxProfileMigrator.prototype.getResources = function(aProfile) {
     return null;
   }
 
-  
-  
+  // Being a startup-only migrator, we can rely on
+  // MigrationUtils.profileStartup being set.
   let currentProfileDir = MigrationUtils.profileStartup.directory;
 
-  
+  // Surely data cannot be imported from the current profile.
   if (sourceProfileDir.equals(currentProfileDir)) {
     return null;
   }
@@ -103,9 +102,9 @@ FirefoxProfileMigrator.prototype.getResources = function(aProfile) {
 };
 
 FirefoxProfileMigrator.prototype.getLastUsedDate = function() {
-  
-  
-  
+  // We always pretend we're really old, so that we don't mess
+  // up the determination of which browser is the most 'recent'
+  // to import from.
   return Promise.resolve(new Date(0));
 };
 
@@ -136,9 +135,9 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
   };
 
   function savePrefs() {
-    
-    
-    
+    // If we've used the pref service to write prefs for the new profile, it's too
+    // early in startup for the service to have a profile directory, so we have to
+    // manually tell it where to save the prefs file.
     let newPrefsFile = currentProfileDir.clone();
     newPrefsFile.append("prefs.js");
     Services.prefs.savePrefFile(newPrefsFile);
@@ -177,10 +176,10 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
     Ci.nsIEnvironment
   );
   if (env.get("MOZ_RESET_PROFILE_MIGRATE_SESSION")) {
-    
-    
-    
-    
+    // We only want to restore the previous firefox session if the profile refresh was
+    // triggered by user. The MOZ_RESET_PROFILE_MIGRATE_SESSION would be set when a user-triggered
+    // profile refresh happened in nsAppRunner.cpp. Hence, we detect the MOZ_RESET_PROFILE_MIGRATE_SESSION
+    // to see if session data migration is required.
     env.set("MOZ_RESET_PROFILE_MIGRATE_SESSION", "");
     let sessionCheckpoints = this._getFileObject(
       sourceProfileDir,
@@ -208,13 +207,13 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
             function() {
               let buildID = Services.appinfo.platformBuildID;
               let mstone = Services.appinfo.platformVersion;
-              
+              // Force the browser to one-off resume the session that we give it:
               Services.prefs.setBoolPref(
                 "browser.sessionstore.resume_session_once",
                 true
               );
-              
-              
+              // Reset the homepage_override prefs so that the browser doesn't override our
+              // session with the "what's new" page:
               Services.prefs.setCharPref(
                 "browser.startup.homepage_override.mstone",
                 mstone
@@ -235,14 +234,14 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
     }
   }
 
-  
+  // Sync/FxA related data
   let sync = {
-    name: "sync", 
+    name: "sync", // name is used only by tests.
     type: types.OTHERDATA,
     migrate: async aCallback => {
-      
-      
-      
+      // Try and parse a signedInUser.json file from the source directory and
+      // if we can, copy it to the new profile and set sync's username pref
+      // (which acts as a de-facto flag to indicate if sync is configured)
       try {
         let oldPath = lazy.OS.Path.join(
           sourceProfileDir.path,
@@ -254,16 +253,16 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
           let data = JSON.parse(raw);
           if (data && data.accountData && data.accountData.email) {
             let username = data.accountData.email;
-            
+            // copy the file itself.
             await lazy.OS.File.copy(
               oldPath,
               lazy.OS.Path.join(currentProfileDir.path, "signedInUser.json")
             );
-            
-            
-            
-            
-            
+            // Now we need to know whether Sync is actually configured for this
+            // user. The only way we know is by looking at the prefs file from
+            // the old profile. We avoid trying to do a full parse of the prefs
+            // file and even avoid parsing the single string value we care
+            // about.
             let prefsPath = lazy.OS.Path.join(
               sourceProfileDir.path,
               "prefs.js"
@@ -273,9 +272,9 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
                 encoding: "utf-8",
               });
               if (/^user_pref\("services\.sync\.username"/m.test(rawPrefs)) {
-                
-                
-                
+                // sync's configured in the source profile - ensure it is in the
+                // new profile too.
+                // Write it to prefs.js and flush the file.
                 Services.prefs.setStringPref(
                   "services.sync.username",
                   username
@@ -293,16 +292,16 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
     },
   };
 
-  
+  // Telemetry related migrations.
   let times = {
-    name: "times", 
+    name: "times", // name is used only by tests.
     type: types.OTHERDATA,
     migrate: aCallback => {
       let file = this._getFileObject(sourceProfileDir, "times.json");
       if (file) {
         file.copyTo(currentProfileDir, "");
       }
-      
+      // And record the fact a migration (ie, a reset) happened.
       let recordMigration = async () => {
         try {
           let profileTimes = await lazy.ProfileAge(currentProfileDir.path);
@@ -317,7 +316,7 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
     },
   };
   let telemetry = {
-    name: "telemetry", 
+    name: "telemetry", // name is used only by tests...
     type: types.OTHERDATA,
     migrate: aCallback => {
       let createSubDir = name => {
@@ -327,13 +326,13 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(
         return dir;
       };
 
-      
+      // If the 'datareporting' directory exists we migrate files from it.
       let dataReportingDir = this._getFileObject(
         sourceProfileDir,
         "datareporting"
       );
       if (dataReportingDir && dataReportingDir.isDirectory()) {
-        
+        // Copy only specific files.
         let toCopy = ["state.json", "session-state.json"];
 
         let dest = createSubDir("datareporting");
@@ -376,5 +375,3 @@ FirefoxProfileMigrator.prototype.contractID =
 FirefoxProfileMigrator.prototype.classID = Components.ID(
   "{91185366-ba97-4438-acba-48deaca63386}"
 );
-
-var EXPORTED_SYMBOLS = ["FirefoxProfileMigrator"];
