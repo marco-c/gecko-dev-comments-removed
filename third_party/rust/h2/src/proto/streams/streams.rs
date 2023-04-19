@@ -12,7 +12,6 @@ use http::{HeaderMap, Request, Response};
 use std::task::{Context, Poll, Waker};
 use tokio::io::AsyncWrite;
 
-use crate::PollExt;
 use std::sync::{Arc, Mutex};
 use std::{fmt, io};
 
@@ -1282,7 +1281,7 @@ impl OpaqueStreamRef {
         me.actions
             .recv
             .poll_pushed(cx, &mut stream)
-            .map_ok_(|(h, key)| {
+            .map_ok(|(h, key)| {
                 me.refs += 1;
                 let opaque_ref =
                     OpaqueStreamRef::new(self.inner.clone(), &mut me.store.resolve(key));
@@ -1462,9 +1461,21 @@ fn drop_stream_ref(inner: &Mutex<Inner>, key: store::Key) {
 
 fn maybe_cancel(stream: &mut store::Ptr, actions: &mut Actions, counts: &mut Counts) {
     if stream.is_canceled_interest() {
+        
+        
+        
+        let reason = if counts.peer().is_server()
+            && stream.state.is_send_closed()
+            && stream.state.is_recv_streaming()
+        {
+            Reason::NO_ERROR
+        } else {
+            Reason::CANCEL
+        };
+
         actions
             .send
-            .schedule_implicit_reset(stream, Reason::CANCEL, counts, &mut actions.task);
+            .schedule_implicit_reset(stream, reason, counts, &mut actions.task);
         actions.recv.enqueue_reset_expiration(stream, counts);
     }
 }

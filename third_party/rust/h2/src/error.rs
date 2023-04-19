@@ -59,10 +59,7 @@ impl Error {
 
     
     pub fn is_io(&self) -> bool {
-        match self.kind {
-            Kind::Io(_) => true,
-            _ => false,
-        }
+        matches!(self.kind, Kind::Io(..))
     }
 
     
@@ -90,6 +87,11 @@ impl Error {
     
     pub fn is_go_away(&self) -> bool {
         matches!(self.kind, Kind::GoAway(..))
+    }
+
+    
+    pub fn is_reset(&self) -> bool {
+        matches!(self.kind, Kind::Reset(..))
     }
 
     

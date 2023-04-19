@@ -78,7 +78,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/h2/0.3.13")]
+#![doc(html_root_url = "https://docs.rs/h2/0.3.14")]
 #![deny(missing_debug_implementations, missing_docs)]
 #![cfg_attr(test, deny(warnings))]
 
@@ -133,44 +133,3 @@ pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream
 
 #[cfg(feature = "unstable")]
 pub use codec::{Codec, SendError, UserError};
-
-use std::task::Poll;
-
-
-
-trait PollExt<T, E> {
-    
-    fn map_ok_<U, F>(self, f: F) -> Poll<Option<Result<U, E>>>
-    where
-        F: FnOnce(T) -> U;
-    
-    fn map_err_<U, F>(self, f: F) -> Poll<Option<Result<T, U>>>
-    where
-        F: FnOnce(E) -> U;
-}
-
-impl<T, E> PollExt<T, E> for Poll<Option<Result<T, E>>> {
-    fn map_ok_<U, F>(self, f: F) -> Poll<Option<Result<U, E>>>
-    where
-        F: FnOnce(T) -> U,
-    {
-        match self {
-            Poll::Ready(Some(Ok(t))) => Poll::Ready(Some(Ok(f(t)))),
-            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(e))),
-            Poll::Ready(None) => Poll::Ready(None),
-            Poll::Pending => Poll::Pending,
-        }
-    }
-
-    fn map_err_<U, F>(self, f: F) -> Poll<Option<Result<T, U>>>
-    where
-        F: FnOnce(E) -> U,
-    {
-        match self {
-            Poll::Ready(Some(Ok(t))) => Poll::Ready(Some(Ok(t))),
-            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(f(e)))),
-            Poll::Ready(None) => Poll::Ready(None),
-            Poll::Pending => Poll::Pending,
-        }
-    }
-}
