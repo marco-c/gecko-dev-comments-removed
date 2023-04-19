@@ -168,13 +168,9 @@ class nsITheme : public nsISupports {
   
 
 
-
-
-
-  NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
-                                  StyleAppearance aWidgetType,
-                                  mozilla::LayoutDeviceIntSize* aResult,
-                                  bool* aIsOverridable) = 0;
+  virtual mozilla::LayoutDeviceIntSize GetMinimumWidgetSize(
+      nsPresContext* aPresContext, nsIFrame* aFrame,
+      StyleAppearance aWidgetType) = 0;
 
   enum Transparency { eOpaque = 0, eTransparent, eUnknownTransparency };
 

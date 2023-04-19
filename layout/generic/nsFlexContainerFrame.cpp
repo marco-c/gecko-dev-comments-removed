@@ -1441,14 +1441,11 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  bool isFixedSizeWidget = false;
   const nsStyleDisplay* disp = aChildFrame->StyleDisplay();
   if (aChildFrame->IsThemed(disp)) {
-    LayoutDeviceIntSize widgetMinSize;
-    bool canOverride = true;
-    PresContext()->Theme()->GetMinimumWidgetSize(PresContext(), aChildFrame,
-                                                 disp->EffectiveAppearance(),
-                                                 &widgetMinSize, &canOverride);
+    LayoutDeviceIntSize widgetMinSize =
+        PresContext()->Theme()->GetMinimumWidgetSize(
+            PresContext(), aChildFrame, disp->EffectiveAppearance());
 
     nscoord widgetMainMinSize = PresContext()->DevPixelsToAppUnits(
         aAxisTracker.MainComponent(widgetMinSize));
@@ -1464,26 +1461,16 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     
     widgetMainMinSize = std::max(0, widgetMainMinSize);
     widgetCrossMinSize = std::max(0, widgetCrossMinSize);
+    
+    
+    mainMinSize = std::max(mainMinSize, widgetMainMinSize);
+    mainMaxSize = std::max(mainMaxSize, widgetMainMinSize);
 
-    if (!canOverride) {
-      
-      
-      
-      flexBaseSize = mainMinSize = mainMaxSize = widgetMainMinSize;
-      tentativeCrossSize = crossMinSize = crossMaxSize = widgetCrossMinSize;
-      isFixedSizeWidget = true;
-    } else {
-      
-      
-      mainMinSize = std::max(mainMinSize, widgetMainMinSize);
-      mainMaxSize = std::max(mainMaxSize, widgetMainMinSize);
-
-      if (tentativeCrossSize != NS_UNCONSTRAINEDSIZE) {
-        tentativeCrossSize = std::max(tentativeCrossSize, widgetCrossMinSize);
-      }
-      crossMinSize = std::max(crossMinSize, widgetCrossMinSize);
-      crossMaxSize = std::max(crossMaxSize, widgetCrossMinSize);
+    if (tentativeCrossSize != NS_UNCONSTRAINEDSIZE) {
+      tentativeCrossSize = std::max(tentativeCrossSize, widgetCrossMinSize);
     }
+    crossMinSize = std::max(crossMinSize, widgetCrossMinSize);
+    crossMaxSize = std::max(crossMaxSize, widgetCrossMinSize);
   }
 
   
@@ -1524,8 +1511,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
 
   
   
-  
-  if (isFixedSizeWidget || (flexGrow == 0.0f && flexShrink == 0.0f)) {
+  if (flexGrow == 0.0f && flexShrink == 0.0f) {
     item->Freeze();
     if (flexBaseSize < mainMinSize) {
       item->SetWasMinClamped();

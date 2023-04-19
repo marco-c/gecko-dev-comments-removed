@@ -373,14 +373,11 @@ Decimal nsRangeFrame::GetValueAtEventPoint(WidgetGUIEvent* aEvent) {
 
   if (IsThemed()) {
     
-    nsPresContext* presContext = PresContext();
-    bool notUsedCanOverride;
-    LayoutDeviceIntSize size;
-    presContext->Theme()->GetMinimumWidgetSize(presContext, this,
-                                               StyleAppearance::RangeThumb,
-                                               &size, &notUsedCanOverride);
-    thumbSize.width = presContext->DevPixelsToAppUnits(size.width);
-    thumbSize.height = presContext->DevPixelsToAppUnits(size.height);
+    nsPresContext* pc = PresContext();
+    LayoutDeviceIntSize size = pc->Theme()->GetMinimumWidgetSize(
+        pc, this, StyleAppearance::RangeThumb);
+    thumbSize =
+        LayoutDeviceIntSize::ToAppUnits(size, pc->AppUnitsPerDevPixel());
     
     
     
@@ -582,11 +579,9 @@ nsresult nsRangeFrame::AttributeChanged(int32_t aNameSpaceID,
 nscoord nsRangeFrame::AutoCrossSize(Length aEm) {
   nscoord minCrossSize(0);
   if (IsThemed()) {
-    bool unused;
-    LayoutDeviceIntSize size;
     nsPresContext* pc = PresContext();
-    pc->Theme()->GetMinimumWidgetSize(pc, this, StyleAppearance::RangeThumb,
-                                      &size, &unused);
+    LayoutDeviceIntSize size = pc->Theme()->GetMinimumWidgetSize(
+        pc, this, StyleAppearance::RangeThumb);
     minCrossSize =
         pc->DevPixelsToAppUnits(IsHorizontal() ? size.height : size.width);
   }
