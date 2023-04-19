@@ -1645,9 +1645,7 @@ bool nsPresContext::UseOverlayScrollbars() const {
 }
 
 void nsPresContext::ThemeChanged(widget::ThemeChangeKind aKind) {
-  
-  
-  PROFILER_MARKER_TEXT("ThemeChanged", LAYOUT, MarkerStack::Capture(), ""_ns);
+  PROFILER_MARKER_UNTYPED("ThemeChanged", LAYOUT, MarkerStack::Capture());
 
   mPendingThemeChangeKind |= unsigned(aKind);
 
