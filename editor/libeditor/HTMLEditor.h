@@ -2416,8 +2416,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignBlockContentsWithDivElement(
-      dom::Element& aBlockElement, const nsAString& aAlignType);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  AlignBlockContentsWithDivElement(Element& aBlockElement,
+                                   const nsAString& aAlignType);
 
   
 
@@ -2428,7 +2430,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   AlignContentsInAllTableCellsAndListItems(dom::Element& aElement,
                                            const nsAString& aAlignType);
 
