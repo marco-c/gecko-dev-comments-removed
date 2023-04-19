@@ -622,7 +622,6 @@ void WebrtcGmpVideoEncoder::Encoded(
   unit._frameType = ft;
   unit.SetTimestamp(timestamp);
   unit.capture_time_ms_ = capture_time.ms();
-  unit._completeFrame = true;
   unit._encodedWidth = aEncodedFrame->EncodedWidth();
   unit._encodedHeight = aEncodedFrame->EncodedHeight();
 
@@ -860,7 +859,7 @@ void WebrtcGmpVideoDecoder::Decode_g(const RefPtr<WebrtcGmpVideoDecoder>& aThis,
   frame->SetEncodedHeight(aDecodeData->mImage._encodedHeight);
   frame->SetTimeStamp((aDecodeData->mImage.Timestamp() * 1000ll) /
                       90);  
-  frame->SetCompleteFrame(aDecodeData->mImage._completeFrame);
+  frame->SetCompleteFrame(true); 
   frame->SetBufferType(GMP_BufferLength32);
 
   GMPVideoFrameType ft;
