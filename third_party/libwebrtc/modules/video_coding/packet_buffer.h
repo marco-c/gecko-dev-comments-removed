@@ -23,7 +23,6 @@
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/numerics/sequence_number_util.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -78,58 +77,50 @@ class PacketBuffer {
   PacketBuffer(size_t start_buffer_size, size_t max_buffer_size);
   ~PacketBuffer();
 
-  ABSL_MUST_USE_RESULT InsertResult InsertPacket(std::unique_ptr<Packet> packet)
-      RTC_LOCKS_EXCLUDED(mutex_);
-  ABSL_MUST_USE_RESULT InsertResult InsertPadding(uint16_t seq_num)
-      RTC_LOCKS_EXCLUDED(mutex_);
+  ABSL_MUST_USE_RESULT InsertResult
+  InsertPacket(std::unique_ptr<Packet> packet);
+  ABSL_MUST_USE_RESULT InsertResult InsertPadding(uint16_t seq_num);
 
   
   
-  uint32_t ClearTo(uint16_t seq_num) RTC_LOCKS_EXCLUDED(mutex_);
-  void Clear() RTC_LOCKS_EXCLUDED(mutex_);
+  uint32_t ClearTo(uint16_t seq_num);
+  void Clear();
 
   void ForceSpsPpsIdrIsH264Keyframe();
 
  private:
-  
-  void ClearInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  void ClearInternal();
 
   
-  bool ExpandBufferSize() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  bool ExpandBufferSize();
 
   
-  bool PotentialNewFrame(uint16_t seq_num) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  bool PotentialNewFrame(uint16_t seq_num) const;
 
   
   
-  std::vector<std::unique_ptr<Packet>> FindFrames(uint16_t seq_num)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  std::vector<std::unique_ptr<Packet>> FindFrames(uint16_t seq_num);
 
-  void UpdateMissingPackets(uint16_t seq_num)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-
-  mutable Mutex mutex_;
+  void UpdateMissingPackets(uint16_t seq_num);
 
   
   const size_t max_size_;
 
   
-  uint16_t first_seq_num_ RTC_GUARDED_BY(mutex_);
+  uint16_t first_seq_num_;
 
   
-  bool first_packet_received_ RTC_GUARDED_BY(mutex_);
+  bool first_packet_received_;
 
   
-  bool is_cleared_to_first_seq_num_ RTC_GUARDED_BY(mutex_);
+  bool is_cleared_to_first_seq_num_;
 
   
   
-  std::vector<std::unique_ptr<Packet>> buffer_ RTC_GUARDED_BY(mutex_);
+  std::vector<std::unique_ptr<Packet>> buffer_;
 
-  absl::optional<uint16_t> newest_inserted_seq_num_ RTC_GUARDED_BY(mutex_);
-  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_
-      RTC_GUARDED_BY(mutex_);
+  absl::optional<uint16_t> newest_inserted_seq_num_;
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_;
 
   
   
