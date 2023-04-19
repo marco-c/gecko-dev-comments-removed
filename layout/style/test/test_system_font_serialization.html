@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=475214
+-->
 <head>
   <title>Test for Bug 475214</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -72,6 +72,9 @@ EXPECTED_DECLS = [
 if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
   EXPECTED_DECLS.push("font-optical-sizing: inherit;");
   EXPECTED_DECLS.push("font-variation-settings: inherit;");
+}
+if (IsCSSPropertyPrefEnabled("layout.css.font-palette.enabled")) {
+  EXPECTED_DECLS.push("font-palette: inherit;");
 }
 EXPECTED_DECLS = EXPECTED_DECLS.sort().join(" ");
 let sortedDecls = e.style.cssText.split(/ (?=font-|line-)/).sort().join(" ");
