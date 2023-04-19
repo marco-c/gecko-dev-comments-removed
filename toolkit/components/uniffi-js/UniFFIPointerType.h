@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#ifndef mozilla_UniFFIPointerType_h
+#define mozilla_UniFFIPointerType_h
+
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
+#include "nsLiteralString.h"
+#include "UniFFIRust.h"
+
+namespace mozilla::uniffi {
+
+
+
+
+
+
+struct UniFFIPointerType {
+  nsLiteralCString typeName;
+  
+  void (*destructor)(void*, RustCallStatus*);
+};
+}  
+
+#endif 
