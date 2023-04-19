@@ -881,7 +881,7 @@ void BaseProcessLauncher::GetChildLogName(const char* origLogName,
 
   
   buffer.AppendLiteral(".child-");
-  buffer.AppendInt(gChildCounter);
+  buffer.AppendInt(mChildId);
 }
 
 
