@@ -5047,7 +5047,14 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   return mLocalStorage;
 }
 
-IDBFactory* nsGlobalWindowInner::GetIndexedDB(ErrorResult& aError) {
+IDBFactory* nsGlobalWindowInner::GetIndexedDB(JSContext* aCx,
+                                              ErrorResult& aError) {
+  if (!IDBFactory::IsEnabled(aCx, AsGlobal()->GetGlobalJSObject())) {
+    
+    
+    return nullptr;
+  }
+
   if (!mIndexedDB) {
     
     auto res = IDBFactory::CreateForWindow(this);
