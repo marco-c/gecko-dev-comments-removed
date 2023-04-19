@@ -41,7 +41,6 @@ enum class TracerKind {
   
   Tenuring,
   Moving,
-  GrayBuffering,
   ClearEdges,
   Sweeping,
   MinorSweeping,
@@ -194,10 +193,6 @@ class JS_PUBLIC_API JSTracer {
   }
 
   JS::TracingContext& context() { return context_; }
-
-  
-  
-  uint32_t gcNumberForMarking() const;
 
  protected:
   JSTracer(JSRuntime* rt, JS::TracerKind kind,
