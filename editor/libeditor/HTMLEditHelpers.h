@@ -865,22 +865,9 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
 
 
 
-
-
-
-
 class MOZ_STACK_CLASS SplitRangeOffResult final {
  public:
-  
-  
-  bool isOk() const { return NS_SUCCEEDED(mRv); }
-  bool isErr() const { return NS_FAILED(mRv); }
-  constexpr nsresult inspectErr() const { return mRv; }
-  constexpr nsresult unwrapErr() const { return inspectErr(); }
   constexpr bool Handled() const { return mHandled; }
-  constexpr bool EditorDestroyed() const {
-    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
-  }
 
   
 
@@ -945,7 +932,6 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
                       SplitNodeResult&& aSplitNodeResultAtStart,
                       SplitNodeResult&& aSplitNodeResultAtEnd)
       : mRange(std::move(aTrackedRange)),
-        mRv(NS_OK),
         mHandled(aSplitNodeResultAtStart.Handled() ||
                  aSplitNodeResultAtEnd.Handled()) {
     MOZ_ASSERT(mRange.StartRef().IsSet());
@@ -961,10 +947,6 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
         mCaretPoint, {SuggestCaret::OnlyIfHasSuggestion});
     splitNodeResultAtEnd.MoveCaretPointTo(mCaretPoint,
                                           {SuggestCaret::OnlyIfHasSuggestion});
-  }
-
-  explicit SplitRangeOffResult(nsresult aRv) : mRv(aRv), mHandled(false) {
-    MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(mRv));
   }
 
   SplitRangeOffResult(const SplitRangeOffResult& aOther) = delete;
@@ -984,8 +966,6 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
   
   
   EditorDOMPoint mCaretPoint;
-
-  nsresult mRv;
 
   bool mHandled;
   bool mutable mHandledCaretPoint = false;
