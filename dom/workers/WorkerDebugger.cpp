@@ -500,7 +500,6 @@ void WorkerDebugger::ReportErrorToDebuggerOnMainThread(
 
 RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
   AssertIsOnMainThread();
-  RefPtr<BrowsingContext> top;
   RefPtr<WorkerDebugger> self = this;
 
 #if defined(XP_WIN)
@@ -510,7 +509,6 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
 #endif
   bool isTopLevel = false;
   uint64_t windowID = mWorkerPrivate->WindowID();
-  PerformanceMemoryInfo memoryInfo;
 
   
   WorkerPrivate* wp = mWorkerPrivate;
@@ -521,7 +519,7 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
   if (win) {
     BrowsingContext* context = win->GetBrowsingContext();
     if (context) {
-      top = context->Top();
+      RefPtr<BrowsingContext> top = context->Top();
       if (top && top->GetCurrentWindowContext()) {
         windowID = top->GetCurrentWindowContext()->OuterWindowId();
         isTopLevel = context->IsTop();
@@ -548,40 +546,59 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
   
   FallibleTArray<CategoryDispatch> items;
 
+  if (mWorkerPrivate->GetParent()) {
+    
+    
+    return PerformanceInfoPromise::CreateAndResolve(
+        PerformanceInfo(url, pid, windowID, duration, perfId, true, isTopLevel,
+                        PerformanceMemoryInfo(), items),
+        __func__);
+  }
+
   CategoryDispatch item =
       CategoryDispatch(DispatchCategory::Worker.GetValue(), count);
   if (!items.AppendElement(item, fallible)) {
     NS_ERROR("Could not complete the operation");
   }
 
-  if (!isTopLevel) {
+  
+  RefPtr<WorkerPrivate::JSMemoryUsagePromise> memoryUsagePromise =
+      mWorkerPrivate->GetJSMemoryUsage();
+  if (!memoryUsagePromise) {
+    
     return PerformanceInfoPromise::CreateAndResolve(
         PerformanceInfo(url, pid, windowID, duration, perfId, true, isTopLevel,
-                        memoryInfo, items),
+                        PerformanceMemoryInfo(), items),
         __func__);
   }
 
   
   
   
+  
+  
+  
   WorkerPrivate* workerPtr = mWorkerPrivate;
   RefPtr<WorkerPrivate> workerRef = workerPtr;
-  RefPtr<AbstractThread> mainThread = AbstractThread::MainThread();
 
-  return CollectMemoryInfo(top, mainThread)
-      ->Then(
-          mainThread, __func__,
-          [workerRef, url, pid, perfId, windowID, duration, isTopLevel,
-           items = std::move(items)](const PerformanceMemoryInfo& aMemoryInfo) {
-            return PerformanceInfoPromise::CreateAndResolve(
-                PerformanceInfo(url, pid, windowID, duration, perfId, true,
-                                isTopLevel, aMemoryInfo, items),
-                __func__);
-          },
-          [workerRef]() {
-            return PerformanceInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                           __func__);
-          });
+  
+  
+  return memoryUsagePromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [url, pid, perfId, windowID, duration, isTopLevel,
+       items = std::move(items), _w = std::move(workerRef),
+       memoryUsagePromise](uint64_t jsMem) {
+        PerformanceMemoryInfo memInfo;
+        memInfo.GCHeapUsage() = jsMem;
+        return PerformanceInfoPromise::CreateAndResolve(
+            PerformanceInfo(url, pid, windowID, duration, perfId, true,
+                            isTopLevel, memInfo, items),
+            __func__);
+      },
+      []() {
+        return PerformanceInfoPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                       __func__);
+      });
 }
 
 }  
