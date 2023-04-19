@@ -964,7 +964,6 @@ MediaDecoder::PositionUpdate MediaDecoder::GetPositionUpdateReason(
   MOZ_ASSERT(NS_IsMainThread());
   
   
-  
   const bool notSeeking = !mSeekRequest.Exists();
   if (mLooping && notSeeking && aCurPos < aPrevPos) {
     return PositionUpdate::eSeamlessLoopingSeeking;
