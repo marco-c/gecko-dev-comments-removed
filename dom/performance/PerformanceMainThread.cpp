@@ -289,42 +289,6 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
   }
 }
 
-
-bool PerformanceMainThread::IsPerformanceTimingAttribute(
-    const nsAString& aName) {
-  
-  static const char* attributes[] = {"navigationStart",
-                                     "unloadEventStart",
-                                     "unloadEventEnd",
-                                     "redirectStart",
-                                     "redirectEnd",
-                                     "fetchStart",
-                                     "domainLookupStart",
-                                     "domainLookupEnd",
-                                     "connectStart",
-                                     "secureConnectionStart",
-                                     "connectEnd",
-                                     "requestStart",
-                                     "responseStart",
-                                     "responseEnd",
-                                     "domLoading",
-                                     "domInteractive",
-                                     "domContentLoadedEventStart",
-                                     "domContentLoadedEventEnd",
-                                     "domComplete",
-                                     "loadEventStart",
-                                     "loadEventEnd",
-                                     nullptr};
-
-  for (uint32_t i = 0; attributes[i]; ++i) {
-    if (aName.EqualsASCII(attributes[i])) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 DOMHighResTimeStamp PerformanceMainThread::GetPerformanceTimingFromString(
     const nsAString& aProperty) {
   

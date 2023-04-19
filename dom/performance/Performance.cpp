@@ -394,6 +394,41 @@ void Performance::ClearMarks(const Optional<nsAString>& aName) {
   ClearUserEntries(aName, u"mark"_ns);
 }
 
+
+bool Performance::IsPerformanceTimingAttribute(const nsAString& aName) const {
+  
+  static const char* attributes[] = {"navigationStart",
+                                     "unloadEventStart",
+                                     "unloadEventEnd",
+                                     "redirectStart",
+                                     "redirectEnd",
+                                     "fetchStart",
+                                     "domainLookupStart",
+                                     "domainLookupEnd",
+                                     "connectStart",
+                                     "secureConnectionStart",
+                                     "connectEnd",
+                                     "requestStart",
+                                     "responseStart",
+                                     "responseEnd",
+                                     "domLoading",
+                                     "domInteractive",
+                                     "domContentLoadedEventStart",
+                                     "domContentLoadedEventEnd",
+                                     "domComplete",
+                                     "loadEventStart",
+                                     "loadEventEnd",
+                                     nullptr};
+
+  for (uint32_t i = 0; attributes[i]; ++i) {
+    if (aName.EqualsASCII(attributes[i])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 DOMHighResTimeStamp Performance::ConvertMarkToTimestampWithString(
     const nsAString& aName, ErrorResult& aRv) {
   AutoTArray<RefPtr<PerformanceEntry>, 1> arr;
