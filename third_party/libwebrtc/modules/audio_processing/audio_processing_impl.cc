@@ -1325,6 +1325,20 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   
   stats_reporter_.UpdateStatistics(capture_.stats);
 
+  
+  
+  
+  
+  if (!capture_.capture_output_used_last_frame &&
+      capture_.capture_output_used) {
+    for (size_t ch = 0; ch < capture_buffer->num_channels(); ++ch) {
+      rtc::ArrayView<float> channel_view(capture_buffer->channels()[ch],
+                                         capture_buffer->num_frames());
+      std::fill(channel_view.begin(), channel_view.end(), 0.f);
+    }
+  }
+  capture_.capture_output_used_last_frame = capture_.capture_output_used;
+
   capture_.was_stream_delay_set = false;
   return kNoError;
 }
@@ -2025,6 +2039,7 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
 AudioProcessingImpl::ApmCaptureState::ApmCaptureState()
     : was_stream_delay_set(false),
       capture_output_used(true),
+      capture_output_used_last_frame(true),
       key_pressed(false),
       capture_processing_format(kSampleRate16kHz),
       split_rate(kSampleRate16kHz),
