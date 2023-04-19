@@ -4735,16 +4735,16 @@ js::gc::ClearEdgesTracer::ClearEdgesTracer(JSRuntime* rt)
                         JS::WeakMapTraceAction::TraceKeysAndValues) {}
 
 template <typename T>
-T* js::gc::ClearEdgesTracer::onEdge(T* thing, const char* name) {
+void js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
   
   
+  T* thing = *thingp;
   MOZ_ASSERT(!IsInsideNursery(thing));
 
   
   InternalBarrierMethods<T*>::preBarrier(thing);
 
-  
-  return nullptr;
+  *thingp = nullptr;
 }
 
 void GCRuntime::setPerformanceHint(PerformanceHint hint) {
