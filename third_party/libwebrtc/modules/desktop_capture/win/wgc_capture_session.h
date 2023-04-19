@@ -11,19 +11,23 @@
 #ifndef MODULES_DESKTOP_CAPTURE_WIN_WGC_CAPTURE_SESSION_H_
 #define MODULES_DESKTOP_CAPTURE_WIN_WGC_CAPTURE_SESSION_H_
 
-#include <Windows.Graphics.Capture.h>
 #include <d3d11.h>
+#include <windows.graphics.capture.h>
 #include <wrl/client.h>
 #include <memory>
 
-#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/win/wgc_capture_source.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
 class WgcCaptureSession final {
  public:
-  WgcCaptureSession(Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device,
-                    HWND window);
+  WgcCaptureSession(
+      Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device,
+      Microsoft::WRL::ComPtr<
+          ABI::Windows::Graphics::Capture::IGraphicsCaptureItem> item);
 
   
   WgcCaptureSession(const WgcCaptureSession&) = delete;
@@ -32,15 +36,72 @@ class WgcCaptureSession final {
   ~WgcCaptureSession();
 
   HRESULT StartCapture();
-  HRESULT GetMostRecentFrame(std::unique_ptr<DesktopFrame>* output_frame);
-  bool IsCaptureStarted() const { return is_capture_started_; }
+
+  
+  HRESULT GetFrame(std::unique_ptr<DesktopFrame>* output_frame);
+
+  bool IsCaptureStarted() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return is_capture_started_;
+  }
 
  private:
   
   
+  
+  
+  
+  HRESULT CreateMappedTexture(
+      Microsoft::WRL::ComPtr<ID3D11Texture2D> src_texture,
+      UINT width = 0,
+      UINT height = 0);
+
+  
+  HRESULT OnItemClosed(
+      ABI::Windows::Graphics::Capture::IGraphicsCaptureItem* sender,
+      IInspectable* event_args);
+
+  
+  
   Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device_;
-  HWND window_;
+
+  
+  
+  Microsoft::WRL::ComPtr<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>
+      item_;
+
+  
+  Microsoft::WRL::ComPtr<
+      ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>
+      direct3d_device_;
+
+  
+  
+  Microsoft::WRL::ComPtr<
+      ABI::Windows::Graphics::Capture::IDirect3D11CaptureFramePool>
+      frame_pool_;
+
+  
+  
+  
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mapped_texture_;
+
+  
+  
+  
+  ABI::Windows::Graphics::SizeInt32 previous_size_;
+
+  
+  
+  
+  Microsoft::WRL::ComPtr<
+      ABI::Windows::Graphics::Capture::IGraphicsCaptureSession>
+      session_;
+
+  bool item_closed_ = false;
   bool is_capture_started_ = false;
+
+  SequenceChecker sequence_checker_;
 };
 
 }  

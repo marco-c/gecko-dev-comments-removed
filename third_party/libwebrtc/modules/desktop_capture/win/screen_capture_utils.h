@@ -21,11 +21,20 @@ namespace webrtc {
 
 
 
+bool GetMonitorList(DesktopCapturer::SourceList* monitors);
+
+
+
 
 
 
 bool GetScreenList(DesktopCapturer::SourceList* screens,
                    std::vector<std::string>* device_names = nullptr);
+
+
+
+
+bool IsMonitorValid(DesktopCapturer::SourceId monitor);
 
 
 
