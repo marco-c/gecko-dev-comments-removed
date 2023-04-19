@@ -38,6 +38,10 @@ class SIMD {
                                           size_t length);
 
   
+  static MFBT_API const char* memchr8AVX2(const char* ptr, char value,
+                                          size_t length);
+
+  
   
   static MFBT_API const char16_t* memchr16(const char16_t* ptr, char16_t value,
                                            size_t length);
@@ -47,9 +51,17 @@ class SIMD {
                                                char16_t value, size_t length);
 
   
+  static MFBT_API const char16_t* memchr16AVX2(const char16_t* ptr,
+                                               char16_t value, size_t length);
+
+  
   
   static MFBT_API const uint64_t* memchr64(const uint64_t* ptr, uint64_t value,
                                            size_t length);
+
+  
+  static MFBT_API const uint64_t* memchr64AVX2(const uint64_t* ptr,
+                                               uint64_t value, size_t length);
 
   
   
