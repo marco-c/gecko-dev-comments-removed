@@ -758,10 +758,23 @@
 
     advanceSelectedTab(aDir, aWrap) {
       let startTab = this.ariaFocusedItem || this.selectedItem;
-      let newTab = this.findNextTab(startTab, {
-        direction: aDir,
-        wrap: aWrap,
-      });
+      let newTab = null;
+
+      
+      
+      if (startTab.hidden) {
+        if (aDir == 1) {
+          newTab = this.allTabs.find(tab => !tab.hidden);
+        } else {
+          newTab = this.allTabs.findLast(tab => !tab.hidden);
+        }
+      } else {
+        newTab = this.findNextTab(startTab, {
+          direction: aDir,
+          wrap: aWrap,
+        });
+      }
+
       if (newTab && newTab != startTab) {
         this._selectNewTab(newTab, aDir, aWrap);
       }

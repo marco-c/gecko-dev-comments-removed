@@ -14,11 +14,14 @@ add_task(async function() {
 
   let testTab = BrowserTestUtils.addTab(gBrowser);
 
+  let firefoxViewTab = BrowserTestUtils.addTab(gBrowser, "about:firefoxview");
+  gBrowser.hideTab(firefoxViewTab);
+
   let visible = gBrowser.visibleTabs;
-  is(visible.length, 3, "3 tabs should be open");
+  is(visible.length, 3, "3 tabs should be visible");
   is(visible[0], pinned, "the pinned tab is first");
   is(visible[1], origTab, "original tab is next");
-  is(visible[2], testTab, "last created tab is last");
+  is(visible[2], testTab, "last created tab is next to last");
 
   
   is(
@@ -37,7 +40,7 @@ add_task(async function() {
   is(visible.length, 2, "2 tabs should be visible including the pinned");
   is(visible[0], pinned, "first is pinned");
   is(visible[1], testTab, "next is the test tab");
-  is(gBrowser.tabs.length, 3, "3 tabs should still be open");
+  is(gBrowser.tabs.length, 4, "4 tabs should still be open");
 
   gBrowser.selectTabAtIndex(1);
   is(gBrowser.selectedTab, testTab, "second tab is the test tab");
@@ -73,7 +76,21 @@ add_task(async function() {
   is(gBrowser.selectedTab, testTab, "next to test tab again");
 
   
-  gBrowser.showOnlyTheseTabs(Array.from(gBrowser.tabs));
+  gBrowser.selectedTab = firefoxViewTab;
+  gBrowser.tabContainer.advanceSelectedTab(1, true);
+  is(gBrowser.selectedTab, pinned, "next to first visible tab, the pinned tab");
+  gBrowser.tabContainer.advanceSelectedTab(1, true);
+  is(gBrowser.selectedTab, testTab, "next to second visible tab, the test tab");
+
+  
+  gBrowser.selectedTab = firefoxViewTab;
+  gBrowser.tabContainer.advanceSelectedTab(-1, true);
+  is(gBrowser.selectedTab, testTab, "next to last visible tab, the test tab");
+  gBrowser.tabContainer.advanceSelectedTab(-1, true);
+  is(gBrowser.selectedTab, pinned, "next to first visible tab, the pinned tab");
+
+  
+  gBrowser.showOnlyTheseTabs(Array.from(gBrowser.tabs.slice(0, 3)));
   is(gBrowser.visibleTabs.length, 3, "all 3 tabs are visible again");
 
   
@@ -94,7 +111,10 @@ add_task(async function() {
   visible = gBrowser.visibleTabs;
   is(visible.length, 1, "only the original tab is visible");
   is(visible[0], testTab, "it's the original tab");
-  is(gBrowser.tabs.length, 2, "still have 2 open tabs");
+  is(gBrowser.tabs.length, 3, "still have 3 open tabs");
+
+  
+  gBrowser.removeTab(firefoxViewTab);
 
   
   gBrowser.removeTab(testTab);
