@@ -6,7 +6,8 @@
 
 
 
-#include "xptcprivate.h"
+#include "xptcall.h"
+#include "xptinfo.h"
 
 
 

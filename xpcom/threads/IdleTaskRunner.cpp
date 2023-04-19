@@ -5,8 +5,9 @@
 
 
 #include "IdleTaskRunner.h"
+#include "mozilla/TaskCategory.h"
+#include "mozilla/TaskController.h"
 #include "nsRefreshDriver.h"
-#include "nsComponentManagerUtils.h"
 
 namespace mozilla {
 

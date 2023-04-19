@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/Attributes.h"
 #include "mozmemory.h"
 #include "gtest/gtest.h"
 
