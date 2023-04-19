@@ -1,3 +1,154 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::{
     binding_model::{BindGroup, BindGroupLayout, PipelineLayout},
     command::{CommandBuffer, RenderBundle},
@@ -5,7 +156,7 @@ use crate::{
     id,
     instance::{Adapter, HalSurface, Instance, Surface},
     pipeline::{ComputePipeline, RenderPipeline, ShaderModule},
-    resource::{Buffer, QuerySet, Sampler, Texture, TextureClearMode, TextureView},
+    resource::{Buffer, QuerySet, Sampler, StagingBuffer, Texture, TextureClearMode, TextureView},
     Epoch, Index,
 };
 
@@ -15,6 +166,9 @@ use wgt::Backend;
 #[cfg(debug_assertions)]
 use std::cell::Cell;
 use std::{fmt::Debug, marker::PhantomData, mem, ops};
+
+
+
 
 
 
@@ -156,6 +310,28 @@ impl<T, I: id::TypedId> Storage<T, I> {
             }
             None => false,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub(crate) fn try_get(&self, id: I) -> Result<Option<&T>, InvalidId> {
+        let (index, epoch, _) = id.unzip();
+        let (result, storage_epoch) = match self.map.get(index as usize) {
+            Some(&Element::Occupied(ref v, epoch)) => (Ok(Some(v)), epoch),
+            Some(&Element::Vacant) => return Ok(None),
+            Some(&Element::Error(epoch, ..)) => (Err(InvalidId), epoch),
+            None => return Err(InvalidId),
+        };
+        assert_eq!(
+            epoch, storage_epoch,
+            "{}[{}] is no longer alive",
+            self.kind, index
+        );
+        result
     }
 
     
@@ -351,6 +527,7 @@ impl<A: HalApi> Access<Buffer<A>> for CommandBuffer<A> {}
 impl<A: HalApi> Access<Buffer<A>> for ComputePipeline<A> {}
 impl<A: HalApi> Access<Buffer<A>> for RenderPipeline<A> {}
 impl<A: HalApi> Access<Buffer<A>> for QuerySet<A> {}
+impl<A: HalApi> Access<StagingBuffer<A>> for Device<A> {}
 impl<A: HalApi> Access<Texture<A>> for Root {}
 impl<A: HalApi> Access<Texture<A>> for Device<A> {}
 impl<A: HalApi> Access<Texture<A>> for Buffer<A> {}
@@ -408,14 +585,29 @@ impl<'a, T> Drop for Token<'a, T> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 pub trait IdentityHandler<I>: Debug {
+    
     type Input: Clone + Debug;
+
+    
     fn process(&self, id: Self::Input, backend: Backend) -> I;
+
+    
     fn free(&self, id: I);
 }
 
 impl<I: id::TypedId + Debug> IdentityHandler<I> for Mutex<IdentityManager> {
-    type Input = PhantomData<I>;
+    type Input = ();
     fn process(&self, _id: Self::Input, backend: Backend) -> I {
         self.lock().alloc(backend)
     }
@@ -424,10 +616,27 @@ impl<I: id::TypedId + Debug> IdentityHandler<I> for Mutex<IdentityManager> {
     }
 }
 
+
+
+
 pub trait IdentityHandlerFactory<I> {
+    
+    
+    
+    
     type Filter: IdentityHandler<I>;
+
+    
+    
+    
+    
     fn spawn(&self) -> Self::Filter;
 }
+
+
+
+
+
 
 #[derive(Debug)]
 pub struct IdentityManagerFactory;
@@ -438,6 +647,8 @@ impl<I: id::TypedId + Debug> IdentityHandlerFactory<I> for IdentityManagerFactor
         Mutex::new(IdentityManager::default())
     }
 }
+
+
 
 pub trait GlobalIdentityHandlerFactory:
     IdentityHandlerFactory<id::AdapterId>
@@ -452,6 +663,7 @@ pub trait GlobalIdentityHandlerFactory:
     + IdentityHandlerFactory<id::ComputePipelineId>
     + IdentityHandlerFactory<id::QuerySetId>
     + IdentityHandlerFactory<id::BufferId>
+    + IdentityHandlerFactory<id::StagingBufferId>
     + IdentityHandlerFactory<id::TextureId>
     + IdentityHandlerFactory<id::TextureViewId>
     + IdentityHandlerFactory<id::SamplerId>
@@ -639,6 +851,7 @@ pub struct Hub<A: HalApi, F: GlobalIdentityHandlerFactory> {
     pub compute_pipelines: Registry<ComputePipeline<A>, id::ComputePipelineId, F>,
     pub query_sets: Registry<QuerySet<A>, id::QuerySetId, F>,
     pub buffers: Registry<Buffer<A>, id::BufferId, F>,
+    pub staging_buffers: Registry<StagingBuffer<A>, id::StagingBufferId, F>,
     pub textures: Registry<Texture<A>, id::TextureId, F>,
     pub texture_views: Registry<TextureView<A>, id::TextureViewId, F>,
     pub samplers: Registry<Sampler<A>, id::SamplerId, F>,
@@ -659,6 +872,7 @@ impl<A: HalApi, F: GlobalIdentityHandlerFactory> Hub<A, F> {
             compute_pipelines: Registry::new(A::VARIANT, factory),
             query_sets: Registry::new(A::VARIANT, factory),
             buffers: Registry::new(A::VARIANT, factory),
+            staging_buffers: Registry::new(A::VARIANT, factory),
             textures: Registry::new(A::VARIANT, factory),
             texture_views: Registry::new(A::VARIANT, factory),
             samplers: Registry::new(A::VARIANT, factory),
@@ -895,7 +1109,7 @@ pub struct Global<G: GlobalIdentityHandlerFactory> {
 
 impl<G: GlobalIdentityHandlerFactory> Global<G> {
     pub fn new(name: &str, factory: G, backends: wgt::Backends) -> Self {
-        profiling::scope!("new", "Global");
+        profiling::scope!("Global::new");
         Self {
             instance: Instance::new(name, backends),
             surfaces: Registry::without_backend(&factory, "Surface"),
@@ -911,7 +1125,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         factory: G,
         hal_instance: A::Instance,
     ) -> Self {
-        profiling::scope!("new", "Global");
+        profiling::scope!("Global::new");
         Self {
             instance: A::create_instance_from_hal(name, hal_instance),
             surfaces: Registry::without_backend(&factory, "Surface"),
@@ -922,19 +1136,15 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
     
     
     
-    pub unsafe fn instance_as_hal<A: HalApi, F: FnOnce(Option<&A::Instance>) -> R, R>(
-        &self,
-        hal_instance_callback: F,
-    ) -> R {
-        let hal_instance = A::instance_as_hal(&self.instance);
-        hal_instance_callback(hal_instance)
+    pub unsafe fn instance_as_hal<A: HalApi>(&self) -> Option<&A::Instance> {
+        A::instance_as_hal(&self.instance)
     }
 
     
     
     
     pub unsafe fn from_instance(factory: G, instance: Instance) -> Self {
-        profiling::scope!("new", "Global");
+        profiling::scope!("Global::new");
         Self {
             instance,
             surfaces: Registry::without_backend(&factory, "Surface"),
@@ -988,7 +1198,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
 impl<G: GlobalIdentityHandlerFactory> Drop for Global<G> {
     fn drop(&mut self) {
-        profiling::scope!("drop", "Global");
+        profiling::scope!("Global::drop");
         log::info!("Dropping Global");
         let mut surface_guard = self.surfaces.data.write();
 

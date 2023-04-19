@@ -8,7 +8,25 @@
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WebHandle {
+pub struct WebDisplayHandle;
+
+impl WebDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WebWindowHandle {
     
     
     
@@ -20,7 +38,7 @@ pub struct WebHandle {
     pub id: u32,
 }
 
-impl WebHandle {
+impl WebWindowHandle {
     pub fn empty() -> Self {
         Self { id: 0 }
     }

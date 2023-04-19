@@ -11,7 +11,25 @@ use core::ptr;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AppKitHandle {
+pub struct AppKitDisplayHandle;
+
+impl AppKitDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AppKitWindowHandle {
     
     pub ns_window: *mut c_void,
     
@@ -19,7 +37,7 @@ pub struct AppKitHandle {
     
 }
 
-impl AppKitHandle {
+impl AppKitWindowHandle {
     pub fn empty() -> Self {
         Self {
             ns_window: ptr::null_mut(),

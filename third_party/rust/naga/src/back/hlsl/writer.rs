@@ -199,8 +199,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         }
 
         
-        for ep in module.entry_points.iter() {
-            let ep_io = self.write_ep_interface(module, &ep.function, ep.stage, &ep.name)?;
+        for (index, ep) in module.entry_points.iter().enumerate() {
+            let ep_name = self.names[&NameKey::EntryPoint(index as u16)].clone();
+            let ep_io = self.write_ep_interface(module, &ep.function, ep.stage, &ep_name)?;
             self.entry_point_io.push(ep_io);
         }
 
@@ -622,11 +623,44 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 register
             }
-            crate::AddressSpace::PushConstant => unimplemented!("Push constants"),
+            crate::AddressSpace::PushConstant => {
+                
+                write!(self.out, "ConstantBuffer<")?;
+                "b"
+            }
         };
+
+        
+        
+        if global.space == crate::AddressSpace::PushConstant {
+            self.write_global_type(module, global.ty)?;
+
+            
+            if let TypeInner::Array { base, size, .. } = module.types[global.ty].inner {
+                self.write_array_size(module, base, size)?;
+            }
+
+            
+            write!(self.out, ">")?;
+        }
 
         let name = &self.names[&NameKey::GlobalVariable(handle)];
         write!(self.out, " {}", name)?;
+
+        
+        
+        if global.space == crate::AddressSpace::PushConstant {
+            let target = self
+                .options
+                .push_constants_target
+                .as_ref()
+                .expect("No bind target was defined for the push constants block");
+            write!(self.out, ": register(b{}", target.register)?;
+            if target.space != 0 {
+                write!(self.out, ", space{}", target.space)?;
+            }
+            write!(self.out, ")")?;
+        }
 
         if let Some(ref binding) = global.binding {
             
@@ -664,34 +698,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         if global.space == crate::AddressSpace::Uniform {
             write!(self.out, " {{ ")?;
 
-            let matrix_data = get_inner_matrix_data(module, global.ty);
+            self.write_global_type(module, global.ty)?;
 
-            
-            
-            if let Some(MatrixType {
-                columns,
-                rows: crate::VectorSize::Bi,
-                width: 4,
-            }) = matrix_data
-            {
-                write!(
-                    self.out,
-                    "__mat{}x2 {}",
-                    columns as u8,
-                    &self.names[&NameKey::GlobalVariable(handle)]
-                )?;
-            } else {
-                
-                
-                
-                if matrix_data.is_some() {
-                    write!(self.out, "row_major ")?;
-                }
-
-                self.write_type(module, global.ty)?;
-                let sub_name = &self.names[&NameKey::GlobalVariable(handle)];
-                write!(self.out, " {}", sub_name)?;
-            }
+            write!(
+                self.out,
+                " {}",
+                &self.names[&NameKey::GlobalVariable(handle)]
+            )?;
 
             
             if let TypeInner::Array { base, size, .. } = module.types[global.ty].inner {
@@ -828,27 +841,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 TypeInner::Array { base, size, .. } => {
                     
 
-                    let matrix_data = get_inner_matrix_data(module, member.ty);
-
-                    
-                    
-                    if let Some(MatrixType {
-                        columns,
-                        rows: crate::VectorSize::Bi,
-                        width: 4,
-                    }) = matrix_data
-                    {
-                        write!(self.out, "__mat{}x2", columns as u8)?;
-                    } else {
-                        
-                        
-                        
-                        if matrix_data.is_some() {
-                            write!(self.out, "row_major ")?;
-                        }
-
-                        self.write_type(module, base)?;
-                    }
+                    self.write_global_type(module, member.ty)?;
 
                     
                     write!(
@@ -919,6 +912,40 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         }
 
         writeln!(self.out, "}};")?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    pub(super) fn write_global_type(
+        &mut self,
+        module: &Module,
+        ty: Handle<crate::Type>,
+    ) -> BackendResult {
+        let matrix_data = get_inner_matrix_data(module, ty);
+
+        
+        
+        if let Some(MatrixType {
+            columns,
+            rows: crate::VectorSize::Bi,
+            width: 4,
+        }) = matrix_data
+        {
+            write!(self.out, "__mat{}x2", columns as u8)?;
+        } else {
+            
+            
+            
+            if matrix_data.is_some() {
+                write!(self.out, "row_major ")?;
+            }
+
+            self.write_type(module, ty)?;
+        }
+
         Ok(())
     }
 
@@ -2421,6 +2448,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 enum Function {
                     Asincosh { is_sin: bool },
                     Atanh,
+                    Unpack2x16float,
                     Regular(&'static str),
                     MissingIntOverload(&'static str),
                 }
@@ -2431,6 +2459,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     Mf::Min => Function::Regular("min"),
                     Mf::Max => Function::Regular("max"),
                     Mf::Clamp => Function::Regular("clamp"),
+                    Mf::Saturate => Function::Regular("saturate"),
                     
                     Mf::Cos => Function::Regular("cos"),
                     Mf::Cosh => Function::Regular("cosh"),
@@ -2488,6 +2517,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                     Mf::ReverseBits => Function::MissingIntOverload("reversebits"),
                     Mf::FindLsb => Function::Regular("firstbitlow"),
                     Mf::FindMsb => Function::Regular("firstbithigh"),
+                    Mf::Unpack2x16float => Function::Unpack2x16float,
                     _ => return Err(Error::Unimplemented(format!("write_expr_math {:?}", fun))),
                 };
 
@@ -2510,6 +2540,13 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         write!(self.out, ") / (1.0 - ")?;
                         self.write_expr(module, arg, func_ctx)?;
                         write!(self.out, "))")?;
+                    }
+                    Function::Unpack2x16float => {
+                        write!(self.out, "float2(f16tof32(")?;
+                        self.write_expr(module, arg, func_ctx)?;
+                        write!(self.out, "), f16tof32((")?;
+                        self.write_expr(module, arg, func_ctx)?;
+                        write!(self.out, ") >> 16))")?;
                     }
                     Function::Regular(fun_name) => {
                         write!(self.out, "{}(", fun_name)?;

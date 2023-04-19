@@ -82,7 +82,7 @@ impl FeaturesManager {
             
             ($feature:ident, $core:literal, $es:literal) => {
                 if self.0.contains(Features::$feature)
-                    && (version < Version::Desktop($core) || version < Version::Embedded($es))
+                    && (version < Version::Desktop($core) || version < Version::new_gles($es))
                 {
                     missing |= Features::$feature;
                 }
@@ -106,7 +106,10 @@ impl FeaturesManager {
         check_feature!(CULL_DISTANCE, 450, 300);
         check_feature!(SAMPLE_VARIABLES, 400, 300);
         check_feature!(DYNAMIC_ARRAY_SIZE, 430, 310);
-        check_feature!(MULTI_VIEW, 140, 310);
+        match version {
+            Version::Embedded { is_webgl: true, .. } => check_feature!(MULTI_VIEW, 140, 300),
+            _ => check_feature!(MULTI_VIEW, 140, 310),
+        };
         
         
         
@@ -212,11 +215,16 @@ impl FeaturesManager {
         }
 
         if self.0.contains(Features::MULTI_VIEW) {
-            
-            writeln!(out, "#extension GL_EXT_multiview : require")?;
+            if let Version::Embedded { is_webgl: true, .. } = version {
+                
+                writeln!(out, "#extension GL_OVR_multiview2 : require")?;
+            } else {
+                
+                writeln!(out, "#extension GL_EXT_multiview : require")?;
+            }
         }
 
-        if self.0.contains(Features::FMA) && version >= Version::Embedded(310) {
+        if self.0.contains(Features::FMA) && version >= Version::new_gles(310) {
             
             writeln!(out, "#extension GL_EXT_gpu_shader5 : require")?;
         }
@@ -267,6 +275,10 @@ impl<'a, W> Writer<'a, W> {
 
         if let ShaderStage::Compute = self.entry_point.stage {
             self.features.request(Features::COMPUTE_SHADER)
+        }
+
+        if self.multiview.is_some() {
+            self.features.request(Features::MULTI_VIEW);
         }
 
         for (ty_handle, ty) in self.module.types.iter() {

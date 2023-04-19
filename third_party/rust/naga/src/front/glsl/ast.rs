@@ -159,6 +159,15 @@ pub enum HirExprKind {
         
         expr: Handle<HirExpr>,
     },
+    
+    Method {
+        
+        expr: Handle<HirExpr>,
+        
+        name: String,
+        
+        args: Vec<Handle<HirExpr>>,
+    },
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]

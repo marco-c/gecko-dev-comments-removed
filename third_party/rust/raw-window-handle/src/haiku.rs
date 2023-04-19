@@ -11,14 +11,32 @@ use core::ptr;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct HaikuHandle {
+pub struct HaikuDisplayHandle;
+
+impl HaikuDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct HaikuWindowHandle {
     
     pub b_window: *mut c_void,
     
     pub b_direct_window: *mut c_void,
 }
 
-impl HaikuHandle {
+impl HaikuWindowHandle {
     pub fn empty() -> Self {
         Self {
             b_window: ptr::null_mut(),

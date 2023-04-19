@@ -161,6 +161,7 @@ impl<T> Iterator for Range<T> {
 
 
 
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "serialize", serde(transparent))]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
@@ -412,6 +413,7 @@ mod tests {
 
 
 
+#[cfg_attr(feature = "clone", derive(Clone))]
 pub struct UniqueArena<T> {
     set: IndexSet<T>,
 

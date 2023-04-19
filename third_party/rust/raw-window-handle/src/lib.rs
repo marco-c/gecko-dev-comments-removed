@@ -31,14 +31,17 @@ mod unix;
 mod web;
 mod windows;
 
-pub use android::AndroidNdkHandle;
-pub use appkit::AppKitHandle;
-pub use haiku::HaikuHandle;
-pub use redox::OrbitalHandle;
-pub use uikit::UiKitHandle;
-pub use unix::{WaylandHandle, XcbHandle, XlibHandle};
-pub use web::WebHandle;
-pub use windows::{Win32Handle, WinRtHandle};
+pub use android::{AndroidDisplayHandle, AndroidNdkWindowHandle};
+pub use appkit::{AppKitDisplayHandle, AppKitWindowHandle};
+pub use haiku::{HaikuDisplayHandle, HaikuWindowHandle};
+pub use redox::{OrbitalDisplayHandle, OrbitalWindowHandle};
+pub use uikit::{UiKitDisplayHandle, UiKitWindowHandle};
+pub use unix::{
+    DrmDisplayHandle, DrmWindowHandle, GbmDisplayHandle, GbmWindowHandle, WaylandDisplayHandle,
+    WaylandWindowHandle, XcbDisplayHandle, XcbWindowHandle, XlibDisplayHandle, XlibWindowHandle,
+};
+pub use web::{WebDisplayHandle, WebWindowHandle};
+pub use windows::{Win32WindowHandle, WinRtWindowHandle, WindowsDisplayHandle};
 
 
 
@@ -101,63 +104,204 @@ pub enum RawWindowHandle {
     
     
     
-    UiKit(UiKitHandle),
+    UiKit(UiKitWindowHandle),
     
     
     
     
     
     
-    AppKit(AppKitHandle),
+    AppKit(AppKitWindowHandle),
     
     
     
     
     
-    Orbital(OrbitalHandle),
-    
-    
-    
-    
-    
-    
-    Xlib(XlibHandle),
+    Orbital(OrbitalWindowHandle),
     
     
     
     
     
     
-    Xcb(XcbHandle),
+    Xlib(XlibWindowHandle),
     
     
     
     
     
-    Wayland(WaylandHandle),
+    
+    Xcb(XcbWindowHandle),
     
     
     
     
-    Win32(Win32Handle),
+    
+    Wayland(WaylandWindowHandle),
     
     
     
     
-    WinRt(WinRtHandle),
+    Drm(DrmWindowHandle),
     
     
     
     
-    Web(WebHandle),
+    
+    Gbm(GbmWindowHandle),
     
     
     
     
-    AndroidNdk(AndroidNdkHandle),
+    Win32(Win32WindowHandle),
     
     
     
     
-    Haiku(HaikuHandle),
+    WinRt(WinRtWindowHandle),
+    
+    
+    
+    
+    Web(WebWindowHandle),
+    
+    
+    
+    
+    AndroidNdk(AndroidNdkWindowHandle),
+    
+    
+    
+    
+    Haiku(HaikuWindowHandle),
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait HasRawDisplayHandle {
+    fn raw_display_handle(&self) -> RawDisplayHandle;
+}
+
+unsafe impl<'a, T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for &'a T {
+    fn raw_display_handle(&self) -> RawDisplayHandle {
+        (*self).raw_display_handle()
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+unsafe impl<T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for alloc::rc::Rc<T> {
+    fn raw_display_handle(&self) -> RawDisplayHandle {
+        (**self).raw_display_handle()
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+unsafe impl<T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for alloc::sync::Arc<T> {
+    fn raw_display_handle(&self) -> RawDisplayHandle {
+        (**self).raw_display_handle()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RawDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    UiKit(UiKitDisplayHandle),
+    
+    
+    
+    
+    
+    
+    AppKit(AppKitDisplayHandle),
+    
+    
+    
+    
+    
+    Orbital(OrbitalDisplayHandle),
+    
+    
+    
+    
+    
+    
+    Xlib(XlibDisplayHandle),
+    
+    
+    
+    
+    
+    
+    Xcb(XcbDisplayHandle),
+    
+    
+    
+    
+    
+    Wayland(WaylandDisplayHandle),
+    
+    
+    
+    
+    Drm(DrmDisplayHandle),
+    
+    
+    
+    
+    
+    Gbm(GbmDisplayHandle),
+    
+    
+    
+    
+    Windows(WindowsDisplayHandle),
+    
+    
+    
+    
+    Web(WebDisplayHandle),
+    
+    
+    
+    
+    Android(AndroidDisplayHandle),
+    
+    
+    
+    
+    Haiku(HaikuDisplayHandle),
 }

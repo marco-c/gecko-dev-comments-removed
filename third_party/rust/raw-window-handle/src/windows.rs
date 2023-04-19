@@ -9,16 +9,36 @@ use core::ptr;
 
 
 
+
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Win32Handle {
+pub struct WindowsDisplayHandle;
+
+impl WindowsDisplayHandle {
+    pub fn empty() -> Self {
+        Self
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Win32WindowHandle {
     
     pub hwnd: *mut c_void,
     
     pub hinstance: *mut c_void,
 }
 
-impl Win32Handle {
+impl Win32WindowHandle {
     pub fn empty() -> Self {
         Self {
             hwnd: ptr::null_mut(),
@@ -37,12 +57,12 @@ impl Win32Handle {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WinRtHandle {
+pub struct WinRtWindowHandle {
     
     pub core_window: *mut c_void,
 }
 
-impl WinRtHandle {
+impl WinRtWindowHandle {
     pub fn empty() -> Self {
         Self {
             core_window: ptr::null_mut(),

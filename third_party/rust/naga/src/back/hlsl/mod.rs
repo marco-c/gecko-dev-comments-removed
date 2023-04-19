@@ -189,6 +189,8 @@ pub struct Options {
     
     
     pub special_constants_binding: Option<BindTarget>,
+    
+    pub push_constants_target: Option<BindTarget>,
 }
 
 impl Default for Options {
@@ -198,6 +200,7 @@ impl Default for Options {
             binding_map: BindingMap::default(),
             fake_missing_bindings: true,
             special_constants_binding: None,
+            push_constants_target: None,
         }
     }
 }

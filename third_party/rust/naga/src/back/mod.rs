@@ -59,7 +59,7 @@ struct FunctionCtx<'a> {
     named_expressions: &'a crate::NamedExpressions,
 }
 
-impl<'a> FunctionCtx<'_> {
+impl FunctionCtx<'_> {
     
     const fn name_key(&self, local: crate::Handle<crate::LocalVariable>) -> crate::proc::NameKey {
         match self.ty {

@@ -190,19 +190,18 @@ impl<'source> ParsingContext<'source> {
                 })
                 .transpose()?;
 
-            
-            
-            
-            
-            let maybe_constant = if let Some((root, meta)) = init {
-                let is_const = ctx.qualifiers.storage.0 == StorageQualifier::Const;
-
-                match parser.solve_constant(ctx.ctx, root, meta) {
-                    Ok(res) => Some(res),
-                    
-                    
-                    Err(err) if ctx.external && is_const => return Err(err),
-                    _ => None,
+            let is_const = ctx.qualifiers.storage.0 == StorageQualifier::Const;
+            let maybe_constant = if ctx.external {
+                if let Some((root, meta)) = init {
+                    match parser.solve_constant(ctx.ctx, root, meta) {
+                        Ok(res) => Some(res),
+                        
+                        
+                        Err(err) if is_const => return Err(err),
+                        _ => None,
+                    }
+                } else {
+                    None
                 }
             } else {
                 None

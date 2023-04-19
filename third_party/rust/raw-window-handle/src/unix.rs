@@ -1,7 +1,7 @@
 use core::ffi::c_void;
 use core::ptr;
 
-use cty::c_ulong;
+use cty::{c_int, c_ulong};
 
 
 
@@ -13,11 +13,31 @@ use cty::c_ulong;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct XlibHandle {
-    
-    pub window: c_ulong,
+pub struct XlibDisplayHandle {
     
     pub display: *mut c_void,
+
+    
+    
+    
+    
+    
+    pub screen: c_int,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct XlibWindowHandle {
+    
+    pub window: c_ulong,
     
     pub visual_id: c_ulong,
 }
@@ -32,11 +52,31 @@ pub struct XlibHandle {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct XcbHandle {
-    
-    pub window: u32, 
+pub struct XcbDisplayHandle {
     
     pub connection: *mut c_void,
+
+    
+    
+    
+    
+    
+    pub screen: c_int,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct XcbWindowHandle {
+    
+    pub window: u32, 
     
     pub visual_id: u32,
 }
@@ -51,38 +91,162 @@ pub struct XcbHandle {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WaylandHandle {
-    
-    pub surface: *mut c_void,
+pub struct WaylandDisplayHandle {
     
     pub display: *mut c_void,
 }
 
-impl XlibHandle {
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WaylandWindowHandle {
+    
+    pub surface: *mut c_void,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DrmDisplayHandle {
+    
+    pub fd: i32,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DrmWindowHandle {
+    
+    pub plane: u32,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GbmDisplayHandle {
+    
+    pub gbm_device: *mut c_void,
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GbmWindowHandle {
+    
+    pub gbm_surface: *mut c_void,
+}
+
+impl XlibDisplayHandle {
     pub fn empty() -> Self {
         Self {
-            window: 0,
             display: ptr::null_mut(),
-            visual_id: 0,
+            screen: 0,
         }
     }
 }
 
-impl XcbHandle {
+impl XlibWindowHandle {
     pub fn empty() -> Self {
         Self {
             window: 0,
-            connection: ptr::null_mut(),
             visual_id: 0,
         }
     }
 }
 
-impl WaylandHandle {
+impl XcbDisplayHandle {
+    pub fn empty() -> Self {
+        Self {
+            connection: ptr::null_mut(),
+            screen: 0,
+        }
+    }
+}
+
+impl XcbWindowHandle {
+    pub fn empty() -> Self {
+        Self {
+            window: 0,
+            visual_id: 0,
+        }
+    }
+}
+
+impl WaylandDisplayHandle {
+    pub fn empty() -> Self {
+        Self {
+            display: ptr::null_mut(),
+        }
+    }
+}
+
+impl WaylandWindowHandle {
     pub fn empty() -> Self {
         Self {
             surface: ptr::null_mut(),
-            display: ptr::null_mut(),
+        }
+    }
+}
+
+impl DrmDisplayHandle {
+    pub fn empty() -> Self {
+        Self { fd: 0 }
+    }
+}
+
+impl DrmWindowHandle {
+    pub fn empty() -> Self {
+        Self { plane: 0 }
+    }
+}
+
+impl GbmDisplayHandle {
+    pub fn empty() -> Self {
+        Self {
+            gbm_device: ptr::null_mut(),
+        }
+    }
+}
+
+impl GbmWindowHandle {
+    pub fn empty() -> Self {
+        Self {
+            gbm_surface: ptr::null_mut(),
         }
     }
 }

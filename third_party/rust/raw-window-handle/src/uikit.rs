@@ -11,7 +11,25 @@ use core::ptr;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct UiKitHandle {
+pub struct UiKitDisplayHandle;
+
+impl UiKitDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UiKitWindowHandle {
     
     pub ui_window: *mut c_void,
     
@@ -20,7 +38,7 @@ pub struct UiKitHandle {
     pub ui_view_controller: *mut c_void,
 }
 
-impl UiKitHandle {
+impl UiKitWindowHandle {
     pub fn empty() -> Self {
         Self {
             ui_window: ptr::null_mut(),

@@ -11,12 +11,30 @@ use core::ptr;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AndroidNdkHandle {
+pub struct AndroidDisplayHandle;
+
+impl AndroidDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AndroidNdkWindowHandle {
     
     pub a_native_window: *mut c_void,
 }
 
-impl AndroidNdkHandle {
+impl AndroidNdkWindowHandle {
     pub fn empty() -> Self {
         Self {
             a_native_window: ptr::null_mut(),

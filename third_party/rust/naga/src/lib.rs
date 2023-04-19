@@ -184,11 +184,15 @@
 
 
 
+
+
+
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro,
-    clippy::if_same_then_else
+    clippy::if_same_then_else,
+    clippy::derive_partial_eq_without_eq
 )]
 #![warn(
     trivial_casts,
@@ -557,6 +561,7 @@ pub enum ImageClass {
 
 
 #[derive(Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -569,6 +574,7 @@ pub struct Type {
 
 
 #[derive(Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -745,6 +751,7 @@ pub enum TypeInner {
 
 
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -951,6 +958,7 @@ pub enum MathFunction {
     Min,
     Max,
     Clamp,
+    Saturate,
     
     Cos,
     Cosh,
@@ -1583,6 +1591,7 @@ pub struct FunctionResult {
 
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -1647,6 +1656,7 @@ pub struct Function {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -1677,6 +1687,7 @@ pub struct EntryPoint {
 
 
 #[derive(Debug, Default)]
+#[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]

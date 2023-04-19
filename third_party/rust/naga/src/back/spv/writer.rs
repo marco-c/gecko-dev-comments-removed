@@ -341,9 +341,16 @@ impl Writer {
 
             if let Some(ref mut iface) = interface {
                 let id = if let Some(ref binding) = argument.binding {
-                    let name = argument.name.as_ref().map(AsRef::as_ref);
-                    let varying_id =
-                        self.write_varying(ir_module, class, name, argument.ty, binding)?;
+                    let name = argument.name.as_deref();
+
+                    let varying_id = self.write_varying(
+                        ir_module,
+                        iface.stage,
+                        class,
+                        name,
+                        argument.ty,
+                        binding,
+                    )?;
                     iface.varying_ids.push(varying_id);
                     let id = self.id_gen.next();
                     prelude
@@ -357,10 +364,16 @@ impl Writer {
                     let mut constituent_ids = Vec::with_capacity(members.len());
                     for member in members {
                         let type_id = self.get_type_id(LookupType::Handle(member.ty));
-                        let name = member.name.as_ref().map(AsRef::as_ref);
+                        let name = member.name.as_deref();
                         let binding = member.binding.as_ref().unwrap();
-                        let varying_id =
-                            self.write_varying(ir_module, class, name, member.ty, binding)?;
+                        let varying_id = self.write_varying(
+                            ir_module,
+                            iface.stage,
+                            class,
+                            name,
+                            member.ty,
+                            binding,
+                        )?;
                         iface.varying_ids.push(varying_id);
                         let id = self.id_gen.next();
                         prelude
@@ -414,8 +427,14 @@ impl Writer {
                         has_point_size |=
                             *binding == crate::Binding::BuiltIn(crate::BuiltIn::PointSize);
                         let type_id = self.get_type_id(LookupType::Handle(result.ty));
-                        let varying_id =
-                            self.write_varying(ir_module, class, None, result.ty, binding)?;
+                        let varying_id = self.write_varying(
+                            ir_module,
+                            iface.stage,
+                            class,
+                            None,
+                            result.ty,
+                            binding,
+                        )?;
                         iface.varying_ids.push(varying_id);
                         ep_context.results.push(ResultMember {
                             id: varying_id,
@@ -427,12 +446,18 @@ impl Writer {
                     {
                         for member in members {
                             let type_id = self.get_type_id(LookupType::Handle(member.ty));
-                            let name = member.name.as_ref().map(AsRef::as_ref);
+                            let name = member.name.as_deref();
                             let binding = member.binding.as_ref().unwrap();
                             has_point_size |=
                                 *binding == crate::Binding::BuiltIn(crate::BuiltIn::PointSize);
-                            let varying_id =
-                                self.write_varying(ir_module, class, name, member.ty, binding)?;
+                            let varying_id = self.write_varying(
+                                ir_module,
+                                iface.stage,
+                                class,
+                                name,
+                                member.ty,
+                                binding,
+                            )?;
                             iface.varying_ids.push(varying_id);
                             ep_context.results.push(ResultMember {
                                 id: varying_id,
@@ -1115,6 +1140,7 @@ impl Writer {
     fn write_varying(
         &mut self,
         ir_module: &crate::Module,
+        stage: crate::ShaderStage,
         class: spirv::StorageClass,
         debug_name: Option<&str>,
         ty: Handle<crate::Type>,
@@ -1144,14 +1170,21 @@ impl Writer {
             } => {
                 self.decorate(id, Decoration::Location, &[location]);
 
-                match interpolation {
-                    
-                    None | Some(crate::Interpolation::Perspective) => (),
-                    Some(crate::Interpolation::Flat) => {
-                        self.decorate(id, Decoration::Flat, &[]);
-                    }
-                    Some(crate::Interpolation::Linear) => {
-                        self.decorate(id, Decoration::NoPerspective, &[]);
+                
+                
+                
+                
+                
+                if class != spirv::StorageClass::Input || stage != crate::ShaderStage::Vertex {
+                    match interpolation {
+                        
+                        None | Some(crate::Interpolation::Perspective) => (),
+                        Some(crate::Interpolation::Flat) => {
+                            self.decorate(id, Decoration::Flat, &[]);
+                        }
+                        Some(crate::Interpolation::Linear) => {
+                            self.decorate(id, Decoration::NoPerspective, &[]);
+                        }
                     }
                 }
 
@@ -1225,6 +1258,28 @@ impl Writer {
                 };
 
                 self.decorate(id, Decoration::BuiltIn, &[built_in as u32]);
+
+                use crate::ScalarKind as Sk;
+
+                
+                
+                
+                
+                
+                if class == spirv::StorageClass::Input && stage == crate::ShaderStage::Fragment {
+                    let is_flat = match ir_module.types[ty].inner {
+                        crate::TypeInner::Scalar { kind, .. }
+                        | crate::TypeInner::Vector { kind, .. } => match kind {
+                            Sk::Uint | Sk::Sint | Sk::Bool => true,
+                            Sk::Float => false,
+                        },
+                        _ => false,
+                    };
+
+                    if is_flat {
+                        self.decorate(id, Decoration::Flat, &[]);
+                    }
+                }
             }
         }
 

@@ -11,12 +11,30 @@ use core::ptr;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct OrbitalHandle {
+pub struct OrbitalDisplayHandle;
+
+impl OrbitalDisplayHandle {
+    pub fn empty() -> Self {
+        Self {}
+    }
+}
+
+
+
+
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct OrbitalWindowHandle {
     
     pub window: *mut c_void,
 }
 
-impl OrbitalHandle {
+impl OrbitalWindowHandle {
     pub fn empty() -> Self {
         Self {
             window: ptr::null_mut(),
