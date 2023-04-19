@@ -4223,6 +4223,8 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
   
   
   
+  
+  
   bool isAdd = index == initLength;
   bool isHoleInBounds =
       index < initLength && !nobj->containsDenseElement(index);
