@@ -369,9 +369,6 @@ class VirtualSocket : public AsyncSocket,
   
   size_t PurgeNetworkPackets(int64_t cur_time);
 
-  
-  sigslot::signal2<VirtualSocket*, const SocketAddress&> SignalAddressReady;
-
  private:
   struct NetworkEntry {
     size_t size;
