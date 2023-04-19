@@ -1511,7 +1511,7 @@ class HTMLEditUtils final {
 
 
 
-  static Element* GetMostDistantAnscestorEditableEmptyInlineElement(
+  static Element* GetMostDistantAncestorEditableEmptyInlineElement(
       const nsIContent& aEmptyContent, const Element* aEditingHost = nullptr) {
     nsIContent* lastEmptyContent = const_cast<nsIContent*>(&aEmptyContent);
     for (Element* element = aEmptyContent.GetParentElement();

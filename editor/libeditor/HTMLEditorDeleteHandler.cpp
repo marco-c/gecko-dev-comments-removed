@@ -4280,7 +4280,7 @@ nsresult HTMLEditor::DeleteTextAndTextNodesWithTransaction(
     if (aTreatEmptyTextNodes ==
         TreatEmptyTextNodes::RemoveAllEmptyInlineAncestors) {
       Element* emptyParentElementToRemove =
-          HTMLEditUtils::GetMostDistantAnscestorEditableEmptyInlineElement(
+          HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               nodeToRemove, editingHost);
       if (emptyParentElementToRemove) {
         nodeToRemove = *emptyParentElementToRemove;
@@ -4987,7 +4987,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
   if (aMoveToEndOfContainer == MoveToEndOfContainer::Yes) {
     pointToInsert.SetToEndOf(pointToInsert.GetContainer());
   }
-  for (auto& content : arrayOfContents) {
+  for (const OwningNonNull<nsIContent>& content : arrayOfContents) {
     {
       AutoEditorDOMRangeChildrenInvalidator lockOffsets(movedContentRange);
       
@@ -5002,8 +5002,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
         }
         moveContentsInLineResult.MarkAsHandled();
         
-        
-        nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*content));
+        nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(content));
         if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
           NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
           moveContentsInLineResult.IgnoreCaretPointSuggestion();
@@ -5012,8 +5011,25 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
             "EditorBase::DeleteNodeWithTransaction() failed, but ignored");
+      }
+      
+      
+      else if (HTMLEditUtils::IsEmptyInlineContainer(
+                   content, {EmptyCheckOption::TreatSingleBRElementAsVisible,
+                             EmptyCheckOption::TreatListItemAsVisible,
+                             EmptyCheckOption::TreatTableCellAsVisible})) {
+        nsCOMPtr<nsIContent> emptyContent =
+            HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
+                content, &aEditingHost);
+        if (!emptyContent) {
+          emptyContent = content;
+        }
+        nsresult rv = DeleteNodeWithTransaction(*emptyContent);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          return MoveNodeResult(rv);
+        }
       } else {
-        
         
         moveContentsInLineResult |= MoveNodeOrChildrenWithTransaction(
             MOZ_KnownLive(content), pointToInsert, preserveWhiteSpaceStyle);
@@ -5094,7 +5110,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
   
   
   if (const RefPtr<Element> inlineElement =
-          HTMLEditUtils::GetMostDistantAnscestorEditableEmptyInlineElement(
+          HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               *lastLineBreakContent, &aEditingHost)) {
     nsresult rv = DeleteNodeWithTransaction(*inlineElement);
     if (NS_FAILED(rv)) {
