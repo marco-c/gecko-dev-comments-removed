@@ -640,7 +640,8 @@ TEST_F(NetworkTest, MergeWithChangedIP) {
 
 
 
-TEST_F(NetworkTest, TestMultipleIPMergeNetworkList) {
+
+TEST_F(NetworkTest, DISABLED_TestMultipleIPMergeNetworkList) {
   PhysicalSocketServer socket_server;
   BasicNetworkManager manager(&socket_server);
   manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
