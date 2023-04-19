@@ -1502,6 +1502,22 @@ static void JSONRootCheck(const Json::Value& aRoot,
       JSONRootCheck(process, aWithMainThread);
     }
   }
+
+  GET_JSON(profilingLog, aRoot["profilingLog"], Object);
+  EXPECT_EQ(profilingLog.size(), 1u);
+  for (auto it = profilingLog.begin(); it != profilingLog.end(); ++it) {
+    
+    const auto key = it.name();
+    for (const auto letter : key) {
+      EXPECT_GE(letter, '0');
+      EXPECT_LE(letter, '9');
+    }
+    
+    GET_JSON(logForPid, profilingLog[key], Object);
+    
+    EXPECT_HAS_JSON(logForPid["profilingLogBegin_TSms"], Double);
+    EXPECT_HAS_JSON(logForPid["profilingLogEnd_TSms"], Double);
+  }
 }
 
 

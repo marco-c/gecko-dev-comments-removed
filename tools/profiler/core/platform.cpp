@@ -373,6 +373,30 @@ static constexpr uint32_t StartupExtraDefaultFeatures() {
   return ProfilerFeature::FileIOAll | ProfilerFeature::IPCMessages;
 }
 
+ mozilla::baseprofiler::detail::BaseProfilerMutex
+    ProfilingLog::gMutex;
+ mozilla::UniquePtr<Json::Value> ProfilingLog::gLog;
+
+ void ProfilingLog::Init() {
+  mozilla::baseprofiler::detail::BaseProfilerAutoLock lock{gMutex};
+  MOZ_ASSERT(!gLog);
+  gLog = mozilla::MakeUniqueFallible<Json::Value>(Json::objectValue);
+  if (gLog) {
+    (*gLog)[Json::StaticString{"profilingLogBegin" TIMESTAMP_JSON_SUFFIX}] =
+        ProfilingLog::Timestamp();
+  }
+}
+
+ void ProfilingLog::Destroy() {
+  mozilla::baseprofiler::detail::BaseProfilerAutoLock lock{gMutex};
+  MOZ_ASSERT(gLog);
+  gLog = nullptr;
+}
+
+ bool ProfilingLog::IsLockedOnCurrentThread() {
+  return gMutex.IsLockedOnCurrentThread();
+}
+
 
 
 
@@ -384,8 +408,10 @@ class MOZ_RAII PSAutoLock {
           
           
           
+          
           MOZ_ASSERT(!ThreadRegistry::IsRegistryMutexLockedOnCurrentThread());
           MOZ_ASSERT(!ThreadRegistration::IsDataMutexLockedOnCurrentThread());
+          MOZ_ASSERT(!ProfilingLog::IsLockedOnCurrentThread());
           return gPSMutex;
         }()) {}
 
@@ -776,6 +802,8 @@ class ActivePS {
             NewSamplerThread(aLock, mGeneration, aInterval, aFeatures)),
         mIsPaused(false),
         mIsSamplingPaused(false) {
+    ProfilingLog::Init();
+
     
     MOZ_ALWAYS_TRUE(mFilters.resize(aFilterCount));
     MOZ_ALWAYS_TRUE(mFiltersLowered.resize(aFilterCount));
@@ -852,6 +880,8 @@ class ActivePS {
       
       profiler_get_core_buffer().ResetChunkManager();
     }
+
+    ProfilingLog::Destroy();
   }
 
   bool ThreadSelected(const char* aThreadName) {
@@ -3302,6 +3332,20 @@ static void locked_profiler_stream_json_for_this_process(
                                           "Streamed pauses"));
   }
   aWriter.EndArray();
+
+  ProfilingLog::Access([&](Json::Value& aProfilingLogObject) {
+    aProfilingLogObject[Json::StaticString{
+        "profilingLogEnd" TIMESTAMP_JSON_SUFFIX}] = ProfilingLog::Timestamp();
+
+    aWriter.StartObjectProperty("profilingLog");
+    {
+      nsAutoCString pid;
+      pid.AppendInt(int64_t(profiler_current_process_id().ToNumber()));
+      Json::String logString = aProfilingLogObject.toStyledString();
+      aWriter.SplicedJSONProperty(pid, logString);
+    }
+    aWriter.EndObject();
+  });
 
   const double collectionEndMs = profiler_time();
 
