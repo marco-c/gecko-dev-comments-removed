@@ -49,7 +49,8 @@ def apply_patches(base):
         
         'make_mjpeg_printfs_optional.patch',
         
-        'allow_disabling_asm_avx2.patch',
+        
+        
     ]
 
     for patch in patches:
