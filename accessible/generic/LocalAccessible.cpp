@@ -3405,34 +3405,34 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 
       if (frame && frame->IsTextFrame()) {
         nsTArray<int32_t> charData;
-        nsTextFrame* currTextFrame = do_QueryFrame(frame);
-        bool isFirstContinuation = true;
-        while (currTextFrame) {
-          nsRect t = currTextFrame->GetRect();
-          nsTArray<nsRect> charBounds;
-          currTextFrame->GetCharacterRectsInRange(
-              currTextFrame->GetContentOffset(), currTextFrame->GetContentEnd(),
-              charBounds);
-          for (const nsRect& rect : charBounds) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            charData.AppendElement(rect.x + (isFirstContinuation ? 0 : t.x));
-            charData.AppendElement(rect.y + (isFirstContinuation ? 0 : t.y));
-            charData.AppendElement(rect.width);
-            charData.AppendElement(rect.height);
-          }
-          currTextFrame = currTextFrame->GetNextContinuation();
-          isFirstContinuation = false;
-        }
 
+        if (nsTextFrame* currTextFrame = do_QueryFrame(frame)) {
+          nsRect frameRect = currTextFrame->GetRect();
+          while (currTextFrame) {
+            nsRect contRect = currTextFrame->GetRect();
+            nsTArray<nsRect> charBounds;
+            currTextFrame->GetCharacterRectsInRange(
+                currTextFrame->GetContentOffset(),
+                currTextFrame->GetContentEnd(), charBounds);
+            for (const nsRect& charRect : charBounds) {
+              
+              
+              
+              
+              
+              
+              
+              
+              int computedX = charRect.x + (contRect.x - frameRect.x);
+              int computedY = charRect.y + (contRect.y - frameRect.y);
+              charData.AppendElement(computedX);
+              charData.AppendElement(computedY);
+              charData.AppendElement(charRect.width);
+              charData.AppendElement(charRect.height);
+            }
+            currTextFrame = currTextFrame->GetNextContinuation();
+          }
+        }
         if (charData.Length()) {
           fields->SetAttribute(nsGkAtoms::characterData, std::move(charData));
         }
