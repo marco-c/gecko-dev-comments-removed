@@ -35,6 +35,7 @@ class TemplateObject {
   inline bool isTypedArrayObject() const;
   inline bool isRegExpObject() const;
   inline bool isCallObject() const;
+  inline bool isBlockLexicalEnvironmentObject() const;
   inline bool isPlainObject() const;
 
   
