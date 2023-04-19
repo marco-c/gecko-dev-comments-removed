@@ -14,9 +14,15 @@ add_setup(async function() {
   
   let oldDefaultEngine = await Services.search.getDefault();
   await SearchTestUtils.installSearchExtension({ name: "Test" });
-  await Services.search.setDefault(Services.search.getEngineByName("Test"));
+  await Services.search.setDefault(
+    Services.search.getEngineByName("Test"),
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
   registerCleanupFunction(async () => {
-    await Services.search.setDefault(oldDefaultEngine);
+    await Services.search.setDefault(
+      oldDefaultEngine,
+      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    );
   });
 
   

@@ -20,7 +20,10 @@ add_setup(async function() {
   
   let engineDefault = Services.search.getEngineByName("MozSearch");
   let originalEngine = await Services.search.getDefault();
-  await Services.search.setDefault(engineDefault);
+  await Services.search.setDefault(
+    engineDefault,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
 
   
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
@@ -35,7 +38,10 @@ add_setup(async function() {
 
   
   registerCleanupFunction(async function() {
-    await Services.search.setDefault(originalEngine);
+    await Services.search.setDefault(
+      originalEngine,
+      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    );
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
     Services.telemetry.canRecordExtended = oldCanRecord;

@@ -60,6 +60,7 @@ function taskify(fun) {
     
     info("\t" + fun.name);
     return fun().then(doneFn, reason => {
+      console.error(reason);
       ok(false, reason);
       doneFn();
     });

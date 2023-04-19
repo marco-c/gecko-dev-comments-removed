@@ -43,7 +43,10 @@ add_task(async function test_parseSubmissionURL() {
     search_url_get_params: "",
   });
 
-  await Services.search.setDefault(engine1);
+  await Services.search.setDefault(
+    engine1,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
 
   
   for (let engine of await Services.search.getAppProvidedEngines()) {
