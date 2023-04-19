@@ -2003,8 +2003,16 @@ bool gfxFontFamily::CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList) {
   mCheckedForLegacyFamilyNames = true;
   bool added = false;
   const uint32_t kNAME = TRUETYPE_TAG('n', 'a', 'm', 'e');
-  AutoReadLock lock(mLock);
-  for (const auto& fe : mAvailableFonts) {
+  AutoTArray<RefPtr<gfxFontEntry>, 16> faces;
+  {
+    
+    
+    
+    
+    AutoReadLock lock(mLock);
+    faces.AppendElements(mAvailableFonts);
+  }
+  for (const auto& fe : faces) {
     if (!fe) {
       continue;
     }
