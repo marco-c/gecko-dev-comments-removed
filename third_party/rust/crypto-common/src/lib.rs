@@ -4,8 +4,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_root_url = "https://docs.rs/crypto-common/0.1.3"
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -27,9 +26,15 @@ use rand_core::{CryptoRng, RngCore};
 
 pub type Block<B> = GenericArray<u8, <B as BlockSizeUser>::BlockSize>;
 
+
+pub type ParBlocks<T> = GenericArray<Block<T>, <T as ParBlocksSizeUser>::ParBlocksSize>;
+
+
 pub type Output<T> = GenericArray<u8, <T as OutputSizeUser>::OutputSize>;
 
+
 pub type Key<B> = GenericArray<u8, <B as KeySizeUser>::KeySize>;
+
 
 pub type Iv<B> = GenericArray<u8, <B as IvSizeUser>::IvSize>;
 
@@ -50,6 +55,12 @@ impl<T: BlockSizeUser> BlockSizeUser for &T {
 
 impl<T: BlockSizeUser> BlockSizeUser for &mut T {
     type BlockSize = T::BlockSize;
+}
+
+
+pub trait ParBlocksSizeUser: BlockSizeUser {
+    
+    type ParBlocksSize: ArrayLength<Block<Self>>;
 }
 
 
