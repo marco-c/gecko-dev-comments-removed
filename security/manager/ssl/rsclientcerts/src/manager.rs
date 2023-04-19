@@ -3,7 +3,7 @@
 
 
 
-use pkcs11::types::*;
+use pkcs11_bindings::*;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
