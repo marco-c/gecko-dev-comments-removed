@@ -155,6 +155,7 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   void GenerateKeyFrame() override;
 
  private:
+  void CreateAndRegisterExternalDecoder(const Decoder& decoder);
   int64_t GetMaxWaitMs() const RTC_RUN_ON(decode_queue_);
   void StartNextDecode() RTC_RUN_ON(decode_queue_);
   void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame)
@@ -264,6 +265,11 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   
   
   FieldTrialParameter<bool> low_latency_renderer_include_predecode_buffer_;
+
+  
+  
+  
+  FieldTrialParameter<int> maximum_pre_stream_decoders_;
 
   
   rtc::TaskQueue decode_queue_;

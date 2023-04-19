@@ -66,6 +66,8 @@ constexpr int kMaxBaseMinimumDelayMs = 10000;
 
 constexpr int kMaxWaitForFrameMs = 3000;
 
+constexpr int kDefaultMaximumPreStreamDecoders = 100;
+
 
 
 class WebRtcRecordableEncodedFrame : public RecordableEncodedFrame {
@@ -235,6 +237,7 @@ VideoReceiveStream2::VideoReceiveStream2(
       low_latency_renderer_enabled_("enabled", true),
       low_latency_renderer_include_predecode_buffer_("include_predecode_buffer",
                                                      true),
+      maximum_pre_stream_decoders_("max", kDefaultMaximumPreStreamDecoders),
       decode_queue_(task_queue_factory_->CreateTaskQueue(
           "DecodingQueue",
           TaskQueueFactory::Priority::HIGH)) {
@@ -279,6 +282,11 @@ VideoReceiveStream2::VideoReceiveStream2(
   ParseFieldTrial({&low_latency_renderer_enabled_,
                    &low_latency_renderer_include_predecode_buffer_},
                   field_trial::FindFullName("WebRTC-LowLatencyRenderer"));
+  ParseFieldTrial(
+      {
+          &maximum_pre_stream_decoders_,
+      },
+      field_trial::FindFullName("WebRTC-PreStreamDecoders"));
 }
 
 VideoReceiveStream2::~VideoReceiveStream2() {
@@ -326,41 +334,16 @@ void VideoReceiveStream2::Start() {
     renderer = this;
   }
 
+  int decoders_count = 0;
   for (const Decoder& decoder : config_.decoders) {
-    std::unique_ptr<VideoDecoder> video_decoder =
-        config_.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
-                                                          config_.stream_id);
     
     
     
-    
-    if (!video_decoder) {
-      video_decoder = std::make_unique<NullVideoDecoder>();
+    if (decoders_count < maximum_pre_stream_decoders_) {
+      CreateAndRegisterExternalDecoder(decoder);
+      ++decoders_count;
     }
 
-    std::string decoded_output_file =
-        field_trial::FindFullName("WebRTC-DecoderDataDumpDirectory");
-    
-    
-    
-    
-    
-    
-    absl::c_replace(decoded_output_file, ';', '/');
-    if (!decoded_output_file.empty()) {
-      char filename_buffer[256];
-      rtc::SimpleStringBuilder ssb(filename_buffer);
-      ssb << decoded_output_file << "/webrtc_receive_stream_"
-          << this->config_.rtp.remote_ssrc << "-" << rtc::TimeMicros()
-          << ".ivf";
-      video_decoder = CreateFrameDumpingDecoderWrapper(
-          std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
-    }
-
-    video_decoders_.push_back(std::move(video_decoder));
-
-    video_receiver_.RegisterExternalDecoder(video_decoders_.back().get(),
-                                            decoder.payload_type);
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
 
     const bool raw_payload =
@@ -429,6 +412,41 @@ void VideoReceiveStream2::Stop() {
   video_stream_decoder_.reset();
   incoming_video_stream_.reset();
   transport_adapter_.Disable();
+}
+
+void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
+    const Decoder& decoder) {
+  std::unique_ptr<VideoDecoder> video_decoder =
+      config_.decoder_factory->CreateVideoDecoder(decoder.video_format);
+  
+  
+  
+  
+  if (!video_decoder) {
+    video_decoder = std::make_unique<NullVideoDecoder>();
+  }
+
+  std::string decoded_output_file =
+      field_trial::FindFullName("WebRTC-DecoderDataDumpDirectory");
+  
+  
+  
+  
+  
+  
+  absl::c_replace(decoded_output_file, ';', '/');
+  if (!decoded_output_file.empty()) {
+    char filename_buffer[256];
+    rtc::SimpleStringBuilder ssb(filename_buffer);
+    ssb << decoded_output_file << "/webrtc_receive_stream_"
+        << this->config_.rtp.remote_ssrc << "-" << rtc::TimeMicros() << ".ivf";
+    video_decoder = CreateFrameDumpingDecoderWrapper(
+        std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
+  }
+
+  video_decoders_.push_back(std::move(video_decoder));
+  video_receiver_.RegisterExternalDecoder(video_decoders_.back().get(),
+                                          decoder.payload_type);
 }
 
 VideoReceiveStream::Stats VideoReceiveStream2::GetStats() const {
@@ -671,6 +689,16 @@ void VideoReceiveStream2::HandleEncodedFrame(
 
   const bool keyframe_request_is_due =
       now_ms >= (last_keyframe_request_ms_ + max_wait_for_keyframe_ms_);
+
+  if (!video_receiver_.IsExternalDecoderRegistered(frame->PayloadType())) {
+    
+    for (const Decoder& decoder : config_.decoders) {
+      if (decoder.payload_type == frame->PayloadType()) {
+        CreateAndRegisterExternalDecoder(decoder);
+        break;
+      }
+    }
+  }
 
   int decode_result = video_receiver_.Decode(frame.get());
   if (decode_result == WEBRTC_VIDEO_CODEC_OK ||
