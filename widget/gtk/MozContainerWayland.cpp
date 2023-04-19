@@ -369,6 +369,10 @@ static gboolean moz_container_wayland_map_event(GtkWidget* widget,
 
   
   
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  
+  
   
   
   wl_container->waiting_to_show = true;
@@ -762,9 +766,11 @@ bool moz_container_wayland_is_commiting_to_parent(MozContainer* container) {
 }
 
 bool moz_container_wayland_is_waiting_to_show(MozContainer* container) {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   return container->wl_container.waiting_to_show;
 }
 
 void moz_container_wayland_clear_waiting_to_show_flag(MozContainer* container) {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   container->wl_container.waiting_to_show = false;
 }
