@@ -17,10 +17,9 @@ namespace mozilla {
 class ErrorResult;
 
 namespace dom {
-struct GPUBufferDescriptor;
 template <typename T>
 class Optional;
-}  
+}
 
 namespace ipc {
 class Shmem;
@@ -30,14 +29,15 @@ namespace webgpu {
 class Device;
 
 struct MappedInfo {
+  ipc::Shmem mShmem;
   
   bool mWritable = false;
   
   nsTArray<JS::Heap<JSObject*>> mArrayBuffers;
-  BufferAddress mOffset;
-  BufferAddress mSize;
+
   MappedInfo() = default;
   MappedInfo(const MappedInfo&) = delete;
+  bool IsReady() const { return mShmem.IsReadable(); }
 };
 
 class Buffer final : public ObjectBase, public ChildOf<Device> {
@@ -45,31 +45,17 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   GPU_DECL_CYCLE_COLLECTION(Buffer)
   GPU_DECL_JS_WRAP(Buffer)
 
-  static already_AddRefed<Buffer> Create(Device* aDevice, RawId aDeviceId,
-                                         const dom::GPUBufferDescriptor& aDesc,
-                                         ErrorResult& aRv);
-
-  already_AddRefed<dom::Promise> MapAsync(uint32_t aMode, uint64_t aOffset,
-                                          const dom::Optional<uint64_t>& aSize,
-                                          ErrorResult& aRv);
-  void GetMappedRange(JSContext* aCx, uint64_t aOffset,
-                      const dom::Optional<uint64_t>& aSize,
-                      JS::Rooted<JSObject*>* aObject, ErrorResult& aRv);
-  void Unmap(JSContext* aCx, ErrorResult& aRv);
-  void Destroy(JSContext* aCx, ErrorResult& aRv);
+  Buffer(Device* const aParent, RawId aId, BufferAddress aSize,
+         uint32_t aUsage);
+  void SetMapped(ipc::Shmem&& aShmem, bool aWritable);
 
   const RawId mId;
 
  private:
-  Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
-         ipc::Shmem&& aShmem);
   virtual ~Buffer();
-  Device& GetDevice() { return *mParent; }
-  void Drop();
+  void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
-  void RejectMapRequest(dom::Promise* aPromise, nsACString& message);
-  void AbortMapRequest();
-  void SetMapped(BufferAddress aOffset, BufferAddress aSize, bool aWritable);
+  bool Mappable() const;
 
   
   
@@ -79,10 +65,16 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   nsString mLabel;
   
   Maybe<MappedInfo> mMapped;
-  RefPtr<dom::Promise> mMapRequest;
-  
-  
-  ipc::Shmem mShmem;
+
+ public:
+  already_AddRefed<dom::Promise> MapAsync(uint32_t aMode, uint64_t aOffset,
+                                          const dom::Optional<uint64_t>& aSize,
+                                          ErrorResult& aRv);
+  void GetMappedRange(JSContext* aCx, uint64_t aOffset,
+                      const dom::Optional<uint64_t>& aSize,
+                      JS::Rooted<JSObject*>* aObject, ErrorResult& aRv);
+  void Unmap(JSContext* aCx, ErrorResult& aRv);
+  void Destroy();
 };
 
 }  
