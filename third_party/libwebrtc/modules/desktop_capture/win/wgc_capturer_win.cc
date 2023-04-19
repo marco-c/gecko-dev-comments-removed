@@ -57,10 +57,15 @@ void RecordWgcCapturerResult(WgcCapturerResult error) {
 }  
 
 bool IsWgcSupported(CaptureType capture_type) {
-  
-  if (capture_type == CaptureType::kScreen &&
-      rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1) {
-    return false;
+  if (capture_type == CaptureType::kScreen) {
+    
+    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1)
+      return false;
+
+    
+    
+    if (!HasActiveDisplay())
+      return false;
   }
 
   if (!ResolveCoreWinRTDelayload())

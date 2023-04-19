@@ -163,6 +163,12 @@ HRESULT WgcScreenSource::CreateCaptureItem(
   if (FAILED(hr))
     return hr;
 
+  
+  
+  
+  if (!IsMonitorValid(*hmonitor_))
+    return E_ABORT;
+
   ComPtr<WGC::IGraphicsCaptureItem> item;
   hr = interop->CreateForMonitor(*hmonitor_, IID_PPV_ARGS(&item));
   if (FAILED(hr))

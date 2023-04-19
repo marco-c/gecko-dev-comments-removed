@@ -30,6 +30,9 @@ WEBRTC_DECLARE_HANDLE(HMONITOR);
 namespace webrtc {
 
 
+bool HasActiveDisplay();
+
+
 
 
 

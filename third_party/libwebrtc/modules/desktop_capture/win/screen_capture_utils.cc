@@ -24,6 +24,14 @@
 
 namespace webrtc {
 
+bool HasActiveDisplay() {
+  DesktopCapturer::SourceList screens;
+  if (!GetScreenList(&screens))
+    return false;
+
+  return screens.size() >= 1;
+}
+
 bool GetScreenList(DesktopCapturer::SourceList* screens,
                    std::vector<std::string>* device_names ) {
   RTC_DCHECK_EQ(screens->size(), 0U);
@@ -91,6 +99,12 @@ bool IsMonitorValid(const HMONITOR monitor) {
   
   
   if (monitor == 0) {
+    
+    
+    
+    if (!HasActiveDisplay())
+      return false;
+
     return true;
   }
 
