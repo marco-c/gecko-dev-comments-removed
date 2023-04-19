@@ -135,6 +135,11 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncPacketSocket);
 };
 
+
+
+
+using AsyncListenSocket = AsyncPacketSocket;
+
 void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
                                        const AsyncPacketSocket& socket_from,
                                        bool is_connectionless,
