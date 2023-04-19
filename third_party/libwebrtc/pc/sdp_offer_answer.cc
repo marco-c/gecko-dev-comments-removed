@@ -1725,7 +1725,9 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
           RTC_LOG(LS_INFO)
               << "Processing the addition of a remote track for MID="
               << content->name << ".";
-          now_receiving_transceivers.push_back(transceiver);
+          
+          
+          now_receiving_transceivers.push_back(transceiver_ext);
         }
       }
       
