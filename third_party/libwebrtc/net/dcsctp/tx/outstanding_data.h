@@ -171,7 +171,7 @@ class OutstandingData {
 
     
     
-    void Retransmit();
+    void MarkAsRetransmitted();
 
     
     void Abandon();
@@ -179,10 +179,12 @@ class OutstandingData {
     bool is_outstanding() const { return ack_state_ == AckState::kUnacked; }
     bool is_acked() const { return ack_state_ == AckState::kAcked; }
     bool is_nacked() const { return ack_state_ == AckState::kNacked; }
-    bool is_abandoned() const { return is_abandoned_; }
+    bool is_abandoned() const { return lifecycle_ == Lifecycle::kAbandoned; }
 
     
-    bool should_be_retransmitted() const { return should_be_retransmitted_; }
+    bool should_be_retransmitted() const {
+      return lifecycle_ == Lifecycle::kToBeRetransmitted;
+    }
     
     bool has_been_retransmitted() const { return num_retransmissions_ > 0; }
 
@@ -191,18 +193,28 @@ class OutstandingData {
     bool has_expired(TimeMs now) const;
 
    private:
-    enum class AckState {
-      kUnacked,
-      kAcked,
-      kNacked,
+    enum class Lifecycle {
+      
+      kActive,
+      
+      
+      kToBeRetransmitted,
+      
+      kAbandoned
     };
+    enum class AckState {
+      
+      kUnacked,
+      
+      kAcked,
+      
+      kNacked
+    };
+    
+    Lifecycle lifecycle_ = Lifecycle::kActive;
     
     
     AckState ack_state_ = AckState::kUnacked;
-    
-    bool is_abandoned_ = false;
-    
-    bool should_be_retransmitted_ = false;
 
     
     
