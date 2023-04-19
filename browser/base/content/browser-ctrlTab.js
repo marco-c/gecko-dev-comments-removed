@@ -358,7 +358,10 @@ var ctrlTab = {
   },
 
   attachTab: function ctrlTab_attachTab(aTab, aPos) {
-    if (aTab.closing) {
+    
+    
+    
+    if (aTab.closing || (aTab.hidden && !aTab.selected)) {
       return;
     }
 
@@ -565,6 +568,12 @@ var ctrlTab = {
       case "TabSelect":
         this.detachTab(event.target);
         this.attachTab(event.target, 0);
+        
+        
+        let previousTab = event.detail.previousTab;
+        if (previousTab.hidden) {
+          this.detachTab(previousTab);
+        }
         break;
       case "TabOpen":
         this.attachTab(event.target, 1);
