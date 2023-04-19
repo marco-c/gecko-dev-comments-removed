@@ -141,8 +141,6 @@ class RTC_EXPORT ThreadManager {
   Thread* WrapCurrentThread();
   void UnwrapCurrentThread();
 
-  bool IsMainThread();
-
 #if RTC_DCHECK_IS_ON
   
   
@@ -188,9 +186,6 @@ class RTC_EXPORT ThreadManager {
 #if defined(WEBRTC_WIN)
   const DWORD key_;
 #endif
-
-  
-  const PlatformThreadRef main_thread_ref_;
 };
 
 
