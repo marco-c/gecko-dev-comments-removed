@@ -131,6 +131,9 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   const std::unique_ptr<AudioCodingModule> audio_coding_;
 
   
+  voe::AudioLevel input_audio_level_;
+
+  
   struct EncoderContext {
     
     
@@ -148,9 +151,6 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   
   
   rtc::TaskQueue encoder_queue_;
-
-  
-  voe::AudioLevel input_audio_level_;
 };
 
 }  
