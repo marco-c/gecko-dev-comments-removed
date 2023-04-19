@@ -7985,6 +7985,9 @@ bool BytecodeEmitter::emitCallOrNew(
     
     
     
+    
+    
+    
     auto calleeName = calleeNode->as<NameNode>().name();
     if (calleeName == TaggedParserAtomIndex::WellKnown::callFunction()) {
       return emitSelfHostedCallFunction(callNode, JSOp::Call);
