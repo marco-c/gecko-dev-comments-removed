@@ -32,7 +32,7 @@ int GetIlbcBitrate(int ptime) {
       
       return 13333;
     default:
-      FATAL();
+      RTC_CHECK_NOTREACHED();
   }
 }
 }  

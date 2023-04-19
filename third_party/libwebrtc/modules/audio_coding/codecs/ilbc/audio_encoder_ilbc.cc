@@ -34,7 +34,7 @@ int GetIlbcBitrate(int ptime) {
       
       return 13333;
     default:
-      FATAL();
+      RTC_CHECK_NOTREACHED();
   }
 }
 
@@ -144,7 +144,7 @@ size_t AudioEncoderIlbcImpl::RequiredOutputSizeBytes() const {
     case 6:
       return 2 * 50;
     default:
-      FATAL();
+      RTC_CHECK_NOTREACHED();
   }
 }
 

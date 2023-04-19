@@ -110,7 +110,7 @@ void DataRace() {
   thread2.Join();
   
   
-  RTC_CHECK(false);
+  RTC_CHECK_NOTREACHED();
 }
 
 TEST(SanitizersDeathTest, ThreadSanitizer) {

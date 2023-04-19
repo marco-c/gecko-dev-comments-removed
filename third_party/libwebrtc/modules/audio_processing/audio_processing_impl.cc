@@ -114,7 +114,7 @@ GainControl::Mode Agc1ConfigModeToInterfaceMode(
     case Agc1Config::kFixedDigital:
       return GainControl::kFixedDigital;
   }
-  RTC_CHECK(false);
+  RTC_CHECK_NOTREACHED();
 }
 
 
@@ -1830,7 +1830,7 @@ void AudioProcessingImpl::InitializeNoiseSuppressor() {
             case NoiseSuppresionConfig::kVeryHigh:
               return NsConfig::SuppressionLevel::k21dB;
           }
-          RTC_CHECK(false);
+          RTC_CHECK_NOTREACHED();
         };
 
     NsConfig cfg;

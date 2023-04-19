@@ -63,12 +63,10 @@ inline constexpr Dst saturated_cast(Src value) {
 
     
     case internal::TYPE_INVALID:
-      FATAL();
-      return std::numeric_limits<Dst>::max();
+      RTC_CHECK_NOTREACHED();
   }
 
-  FATAL();
-  return static_cast<Dst>(value);
+  RTC_CHECK_NOTREACHED();
 }
 
 }  

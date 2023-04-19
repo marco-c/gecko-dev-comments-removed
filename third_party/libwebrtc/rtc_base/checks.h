@@ -338,6 +338,22 @@ class FatalLogCall final {
   const char* message_;
 };
 
+#if RTC_DCHECK_IS_ON
+
+
+
+#define RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS __FILE__, __LINE__
+RTC_NORETURN RTC_EXPORT void UnreachableCodeReached(const char* file, int line);
+
+#else
+
+
+
+#define RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS
+RTC_NORETURN RTC_EXPORT void UnreachableCodeReached();
+
+#endif
+
 }  
 
 
@@ -429,6 +445,14 @@ class FatalLogCall final {
 
 #define RTC_UNREACHABLE_CODE_HIT false
 #define RTC_NOTREACHED() RTC_DCHECK(RTC_UNREACHABLE_CODE_HIT)
+
+
+
+#define RTC_CHECK_NOTREACHED()                         \
+  do {                                                 \
+    ::rtc::webrtc_checks_impl::UnreachableCodeReached( \
+        RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS);      \
+  } while (0)
 
 
 #define FATAL()                                                      \
