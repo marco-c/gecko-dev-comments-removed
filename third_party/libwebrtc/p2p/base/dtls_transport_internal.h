@@ -114,7 +114,6 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   
   virtual IceTransportInternal* ice_transport() = 0;
 
-  sigslot::signal2<DtlsTransportInternal*, DtlsTransportState> SignalDtlsState;
   
   template <typename F>
   void SubscribeDtlsState(F&& callback) {
