@@ -1291,11 +1291,8 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
   }
 
   AutoTArray<nsIFrame*, 20> frame1Ancestors;
-  
-  
-  
-  if (!FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors) &&
-      aCommonAncestor) {
+  if (aCommonAncestor &&
+      !FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors)) {
     
     
     return DoCompareTreePosition(aFrame1, aFrame2, aIf1Ancestor, aIf2Ancestor,
