@@ -15,7 +15,6 @@
 
 #include <memory>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -26,6 +25,9 @@ class RTC_EXPORT ScopedThreadDesktop {
  public:
   ScopedThreadDesktop();
   ~ScopedThreadDesktop();
+
+  ScopedThreadDesktop(const ScopedThreadDesktop&) = delete;
+  ScopedThreadDesktop& operator=(const ScopedThreadDesktop&) = delete;
 
   
   
@@ -46,8 +48,6 @@ class RTC_EXPORT ScopedThreadDesktop {
 
   
   std::unique_ptr<Desktop> initial_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(ScopedThreadDesktop);
 };
 
 }  

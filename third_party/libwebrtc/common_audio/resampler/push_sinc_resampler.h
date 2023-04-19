@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "common_audio/resampler/sinc_resampler.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -32,6 +31,9 @@ class PushSincResampler : public SincResamplerCallback {
   
   PushSincResampler(size_t source_frames, size_t destination_frames);
   ~PushSincResampler() override;
+
+  PushSincResampler(const PushSincResampler&) = delete;
+  PushSincResampler& operator=(const PushSincResampler&) = delete;
 
   
   
@@ -72,8 +74,6 @@ class PushSincResampler : public SincResamplerCallback {
 
   
   size_t source_available_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(PushSincResampler);
 };
 
 }  

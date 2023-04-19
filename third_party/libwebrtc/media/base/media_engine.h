@@ -64,7 +64,9 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
  public:
   VoiceEngineInterface() = default;
   virtual ~VoiceEngineInterface() = default;
-  RTC_DISALLOW_COPY_AND_ASSIGN(VoiceEngineInterface);
+
+  VoiceEngineInterface(const VoiceEngineInterface&) = delete;
+  VoiceEngineInterface& operator=(const VoiceEngineInterface&) = delete;
 
   
   
@@ -98,7 +100,9 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
  public:
   VideoEngineInterface() = default;
   virtual ~VideoEngineInterface() = default;
-  RTC_DISALLOW_COPY_AND_ASSIGN(VideoEngineInterface);
+
+  VideoEngineInterface(const VideoEngineInterface&) = delete;
+  VideoEngineInterface& operator=(const VideoEngineInterface&) = delete;
 
   
   

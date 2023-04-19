@@ -15,8 +15,6 @@
 
 #include <memory>
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 
 
@@ -34,6 +32,9 @@ class AudioConverter {
                                                 size_t dst_channels,
                                                 size_t dst_frames);
   virtual ~AudioConverter() {}
+
+  AudioConverter(const AudioConverter&) = delete;
+  AudioConverter& operator=(const AudioConverter&) = delete;
 
   
   
@@ -64,8 +65,6 @@ class AudioConverter {
   const size_t src_frames_;
   const size_t dst_channels_;
   const size_t dst_frames_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioConverter);
 };
 
 }  

@@ -15,8 +15,6 @@
 #undef max // Xlibint.h defines this and it breaks std::max
 #undef min // Xlibint.h defines this and it breaks std::min
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 
 
@@ -28,6 +26,9 @@ class XErrorTrap {
  public:
   explicit XErrorTrap(Display* display);
   ~XErrorTrap();
+
+  XErrorTrap(const XErrorTrap&) = delete;
+  XErrorTrap& operator=(const XErrorTrap&) = delete;
 
   
   
@@ -43,8 +44,6 @@ class XErrorTrap {
   unsigned long last_ignored_request_;
   int last_xserver_error_code_;
   bool enabled_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(XErrorTrap);
 };
 
 }  
