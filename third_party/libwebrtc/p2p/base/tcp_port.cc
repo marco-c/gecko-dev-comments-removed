@@ -68,6 +68,7 @@
 
 #include <errno.h>
 
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -157,11 +158,11 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
     
     
     socket->SignalReadPacket.disconnect(this);
-    conn = new TCPConnection(this, address, socket);
+    conn = new TCPConnection(NewWeakPtr(), address, socket);
   } else {
     
     
-    conn = new TCPConnection(this, address);
+    conn = new TCPConnection(NewWeakPtr(), address);
     if (conn->socket()) {
       conn->socket()->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
       conn->socket()->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
@@ -343,16 +344,17 @@ void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 
 
 
-TCPConnection::TCPConnection(TCPPort* port,
+TCPConnection::TCPConnection(rtc::WeakPtr<Port> tcp_port,
                              const Candidate& candidate,
                              rtc::AsyncPacketSocket* socket)
-    : Connection(port, 0, candidate),
+    : Connection(std::move(tcp_port), 0, candidate),
       socket_(socket),
       error_(0),
       outgoing_(socket == NULL),
       connection_pending_(false),
       pretending_to_be_writable_(false),
       reconnection_timeout_(cricket::CONNECTION_WRITE_CONNECT_TIMEOUT) {
+  RTC_DCHECK_EQ(port()->GetProtocol(), PROTO_TCP);  
   if (outgoing_) {
     CreateOutgoingTcpSocket();
   } else {
@@ -360,7 +362,7 @@ TCPConnection::TCPConnection(TCPPort* port,
     
     RTC_LOG(LS_VERBOSE) << ToString() << ": socket ipaddr: "
                         << socket_->GetLocalAddress().ToSensitiveString()
-                        << ", port() Network:" << port->Network()->ToString();
+                        << ", port() Network:" << port()->Network()->ToString();
     RTC_DCHECK(absl::c_any_of(
         port_->Network()->GetIPs(), [this](const rtc::InterfaceAddress& addr) {
           return socket_->GetLocalAddress().ipaddr() == addr;
@@ -399,7 +401,7 @@ int TCPConnection::Send(const void* data,
   }
   stats_.sent_total_packets++;
   rtc::PacketOptions modified_options(options);
-  static_cast<TCPPort*>(port_)->CopyPortInformationToPacketInfo(
+  tcp_port()->CopyPortInformationToPacketInfo(
       &modified_options.info_signaled_after_sent);
   int sent = socket_->Send(data, size, modified_options);
   int64_t now = rtc::TimeMillis();
