@@ -905,7 +905,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
-  bool fillExceptingContext(ErrorMetadata* err, uint32_t offset);
+  bool fillExceptingContext(ErrorMetadata* err, uint32_t offset) const;
 
   MOZ_ALWAYS_INLINE void updateFlagsForEOL() { flags.isDirtyLine = false; }
 
@@ -1012,15 +1012,15 @@ class TokenStreamAnyChars : public TokenStreamShared {
   }
 
   
-  void computeErrorMetadataNoOffset(ErrorMetadata* err);
+  void computeErrorMetadataNoOffset(ErrorMetadata* err) const;
 
   
 
   
   
   
-  void reportErrorNoOffset(unsigned errorNumber, ...);
-  void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args);
+  void reportErrorNoOffset(unsigned errorNumber, ...) const;
+  void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args) const;
 
   const JS::ReadOnlyCompileOptions& options() const { return options_; }
 
@@ -1502,7 +1502,7 @@ class SourceUnits {
                                            size_t encodingSpecificTokenOffset,
                                            size_t* utf16TokenOffset,
                                            size_t encodingSpecificWindowLength,
-                                           size_t* utf16WindowLength);
+                                           size_t* utf16WindowLength) const;
 };
 
 template <>
@@ -1705,7 +1705,8 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
 
 
-  [[nodiscard]] bool addLineOfContext(ErrorMetadata* err, uint32_t offset);
+  [[nodiscard]] bool addLineOfContext(ErrorMetadata* err,
+                                      uint32_t offset) const;
 };
 
 template <>
@@ -1996,7 +1997,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-  [[nodiscard]] bool fillExceptingContext(ErrorMetadata* err, uint32_t offset) {
+  [[nodiscard]] bool fillExceptingContext(ErrorMetadata* err,
+                                          uint32_t offset) const {
     if (anyCharsAccess().fillExceptingContext(err, offset)) {
       computeLineAndColumn(offset, &err->lineNumber, &err->columnNumber);
       return true;
@@ -2129,7 +2131,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
   [[nodiscard]] bool internalComputeLineOfContext(ErrorMetadata* err,
-                                                  uint32_t offset) {
+                                                  uint32_t offset) const {
     
     
     
@@ -2557,7 +2559,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   }
 
   [[nodiscard]] bool computeErrorMetadata(
-      ErrorMetadata* err, const ErrorOffset& errorOffset) override;
+      ErrorMetadata* err, const ErrorOffset& errorOffset) const override;
 
  private:
   void reportInvalidEscapeError(uint32_t offset, InvalidEscapeType type) {
