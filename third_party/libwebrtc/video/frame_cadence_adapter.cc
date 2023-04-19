@@ -18,7 +18,9 @@
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/rate_statistics.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/clock.h"
@@ -28,6 +30,80 @@
 namespace webrtc {
 namespace {
 
+
+class AdapterMode {
+ public:
+  virtual ~AdapterMode() = default;
+
+  
+  virtual void OnFrame(Timestamp post_time,
+                       int frames_scheduled_for_processing,
+                       const VideoFrame& frame) = 0;
+
+  
+  virtual absl::optional<uint32_t> GetInputFrameRateFps() = 0;
+
+  
+  virtual void UpdateFrameRate() = 0;
+};
+
+
+class PassthroughAdapterMode : public AdapterMode {
+ public:
+  PassthroughAdapterMode(Clock* clock,
+                         FrameCadenceAdapterInterface::Callback* callback)
+      : clock_(clock), callback_(callback) {
+    sequence_checker_.Detach();
+  }
+
+  
+  void OnFrame(Timestamp post_time,
+               int frames_scheduled_for_processing,
+               const VideoFrame& frame) override {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    callback_->OnFrame(post_time, frames_scheduled_for_processing, frame);
+  }
+
+  absl::optional<uint32_t> GetInputFrameRateFps() override {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return input_framerate_.Rate(clock_->TimeInMilliseconds());
+  }
+
+  void UpdateFrameRate() override {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    input_framerate_.Update(1, clock_->TimeInMilliseconds());
+  }
+
+ private:
+  Clock* const clock_;
+  FrameCadenceAdapterInterface::Callback* const callback_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+  
+  RateStatistics input_framerate_ RTC_GUARDED_BY(sequence_checker_){
+      FrameCadenceAdapterInterface::kFrameRateAveragingWindowSizeMs, 1000};
+};
+
+
+class ZeroHertzAdapterMode : public AdapterMode {
+ public:
+  ZeroHertzAdapterMode(FrameCadenceAdapterInterface::Callback* callback,
+                       double max_fps);
+
+  
+  void OnFrame(Timestamp post_time,
+               int frames_scheduled_for_processing,
+               const VideoFrame& frame) override;
+  absl::optional<uint32_t> GetInputFrameRateFps() override;
+  void UpdateFrameRate() override {}
+
+ private:
+  FrameCadenceAdapterInterface::Callback* const callback_;
+  
+  
+  const double max_fps_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+};
+
 class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
  public:
   FrameCadenceAdapterImpl(Clock* clock, TaskQueueBase* queue);
@@ -35,6 +111,8 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   
   void Initialize(Callback* callback) override;
   void SetZeroHertzModeEnabled(bool enabled) override;
+  absl::optional<uint32_t> GetInputFrameRateFps() override;
+  void UpdateFrameRate() override;
 
   
   void OnFrame(const VideoFrame& frame) override;
@@ -49,7 +127,17 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
                           const VideoFrame& frame) RTC_RUN_ON(queue_);
 
   
-  void MaybeReportFrameRateConstraintUmas() RTC_RUN_ON(&queue_);
+  
+  
+  
+  
+  bool IsZeroHertzScreenshareEnabled() const RTC_RUN_ON(queue_);
+
+  
+  void MaybeReconfigureAdapters(bool was_zero_hertz_enabled) RTC_RUN_ON(queue_);
+
+  
+  void MaybeReportFrameRateConstraintUmas() RTC_RUN_ON(queue_);
 
   Clock* const clock_;
   TaskQueueBase* const queue_;
@@ -57,6 +145,12 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   
   
   const bool zero_hertz_screenshare_enabled_;
+
+  
+  absl::optional<PassthroughAdapterMode> passthrough_adapter_;
+  absl::optional<ZeroHertzAdapterMode> zero_hertz_adapter_;
+  
+  AdapterMode* current_adapter_mode_ = nullptr;
 
   
   Callback* callback_ = nullptr;
@@ -80,6 +174,26 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   ScopedTaskSafetyDetached safety_;
 };
 
+ZeroHertzAdapterMode::ZeroHertzAdapterMode(
+    FrameCadenceAdapterInterface::Callback* callback,
+    double max_fps)
+    : callback_(callback), max_fps_(max_fps) {
+  sequence_checker_.Detach();
+}
+
+void ZeroHertzAdapterMode::OnFrame(Timestamp post_time,
+                                   int frames_scheduled_for_processing,
+                                   const VideoFrame& frame) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  
+  callback_->OnFrame(post_time, frames_scheduled_for_processing, frame);
+}
+
+absl::optional<uint32_t> ZeroHertzAdapterMode::GetInputFrameRateFps() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  return max_fps_;
+}
+
 FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(Clock* clock,
                                                  TaskQueueBase* queue)
     : clock_(clock),
@@ -89,13 +203,30 @@ FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(Clock* clock,
 
 void FrameCadenceAdapterImpl::Initialize(Callback* callback) {
   callback_ = callback;
+  passthrough_adapter_.emplace(clock_, callback);
+  current_adapter_mode_ = &passthrough_adapter_.value();
 }
 
 void FrameCadenceAdapterImpl::SetZeroHertzModeEnabled(bool enabled) {
   RTC_DCHECK_RUN_ON(queue_);
+  bool was_zero_hertz_enabled = zero_hertz_and_uma_reporting_enabled_;
   if (enabled && !zero_hertz_and_uma_reporting_enabled_)
     has_reported_screenshare_frame_rate_umas_ = false;
   zero_hertz_and_uma_reporting_enabled_ = enabled;
+  MaybeReconfigureAdapters(was_zero_hertz_enabled);
+}
+
+absl::optional<uint32_t> FrameCadenceAdapterImpl::GetInputFrameRateFps() {
+  RTC_DCHECK_RUN_ON(queue_);
+  return current_adapter_mode_->GetInputFrameRateFps();
+}
+
+void FrameCadenceAdapterImpl::UpdateFrameRate() {
+  RTC_DCHECK_RUN_ON(queue_);
+  
+  
+  
+  passthrough_adapter_->UpdateFrameRate();
 }
 
 void FrameCadenceAdapterImpl::OnFrame(const VideoFrame& frame) {
@@ -124,7 +255,9 @@ void FrameCadenceAdapterImpl::OnConstraintsChanged(
                    << constraints.max_fps.value_or(-1);
   queue_->PostTask(ToQueuedTask(safety_.flag(), [this, constraints] {
     RTC_DCHECK_RUN_ON(queue_);
+    bool was_zero_hertz_enabled = IsZeroHertzScreenshareEnabled();
     source_constraints_ = constraints;
+    MaybeReconfigureAdapters(was_zero_hertz_enabled);
   }));
 }
 
@@ -133,7 +266,33 @@ void FrameCadenceAdapterImpl::OnFrameOnMainQueue(
     Timestamp post_time,
     int frames_scheduled_for_processing,
     const VideoFrame& frame) {
-  callback_->OnFrame(post_time, frames_scheduled_for_processing, frame);
+  current_adapter_mode_->OnFrame(post_time, frames_scheduled_for_processing,
+                                 frame);
+}
+
+
+bool FrameCadenceAdapterImpl::IsZeroHertzScreenshareEnabled() const {
+  return zero_hertz_screenshare_enabled_ && source_constraints_.has_value() &&
+         source_constraints_->max_fps.value_or(-1) > 0 &&
+         source_constraints_->min_fps.value_or(-1) == 0 &&
+         zero_hertz_and_uma_reporting_enabled_;
+}
+
+
+void FrameCadenceAdapterImpl::MaybeReconfigureAdapters(
+    bool was_zero_hertz_enabled) {
+  bool is_zero_hertz_enabled = IsZeroHertzScreenshareEnabled();
+  if (is_zero_hertz_enabled) {
+    if (!was_zero_hertz_enabled) {
+      zero_hertz_adapter_.emplace(callback_,
+                                  source_constraints_->max_fps.value());
+    }
+    current_adapter_mode_ = &zero_hertz_adapter_.value();
+  } else {
+    if (was_zero_hertz_enabled)
+      zero_hertz_adapter_ = absl::nullopt;
+    current_adapter_mode_ = &passthrough_adapter_.value();
+  }
 }
 
 

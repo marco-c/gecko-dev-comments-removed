@@ -30,6 +30,10 @@ class FrameCadenceAdapterInterface
     : public rtc::VideoSinkInterface<VideoFrame> {
  public:
   
+  
+  static constexpr int64_t kFrameRateAveragingWindowSizeMs = (1000 / 30) * 90;
+
+  
   class Callback {
    public:
     virtual ~Callback() = default;
@@ -66,6 +70,14 @@ class FrameCadenceAdapterInterface
 
   
   virtual void SetZeroHertzModeEnabled(bool enabled) = 0;
+
+  
+  
+  virtual absl::optional<uint32_t> GetInputFrameRateFps() = 0;
+
+  
+  
+  virtual void UpdateFrameRate() = 0;
 };
 
 }  

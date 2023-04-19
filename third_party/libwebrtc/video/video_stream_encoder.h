@@ -339,7 +339,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   
   bool force_disable_frame_dropper_ RTC_GUARDED_BY(&encoder_queue_);
-  RateStatistics input_framerate_ RTC_GUARDED_BY(&encoder_queue_);
   
   
   
