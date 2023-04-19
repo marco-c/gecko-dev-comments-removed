@@ -1962,12 +1962,14 @@ class TabManagerBase {
 
 
 
+
   activateScripts(nativeTab) {
     let tab = this.getWrapper(nativeTab);
     if (
       this.extension.originControls &&
-      this.extension.optionalOrigins.matches(tab._uri) &&
       !tab.matchesHostPermission &&
+      (this.extension.optionalOrigins.matches(tab._uri) ||
+        this.extension.hasPermission("activeTab")) &&
       (this.extension.contentScripts.length ||
         this.extension.registeredContentScripts.size)
     ) {
