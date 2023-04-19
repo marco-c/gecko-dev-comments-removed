@@ -32,18 +32,18 @@ PayloadTypeMapper::PayloadTypeMapper()
       max_payload_type_(127),
       mappings_(
           {
-           {{"PCMU", 8000, 1}, 0},
+           {{kPcmuCodecName, 8000, 1}, 0},
            {{"GSM", 8000, 1}, 3},
            {{"G723", 8000, 1}, 4},
            {{"DVI4", 8000, 1}, 5},
            {{"DVI4", 16000, 1}, 6},
            {{"LPC", 8000, 1}, 7},
-           {{"PCMA", 8000, 1}, 8},
-           {{"G722", 8000, 1}, 9},
-           {{"L16", 44100, 2}, 10},
-           {{"L16", 44100, 1}, 11},
+           {{kPcmaCodecName, 8000, 1}, 8},
+           {{kG722CodecName, 8000, 1}, 9},
+           {{kL16CodecName, 44100, 2}, 10},
+           {{kL16CodecName, 44100, 1}, 11},
            {{"QCELP", 8000, 1}, 12},
-           {{"CN", 8000, 1}, 13},
+           {{kCnCodecName, 8000, 1}, 13},
            
            
            
@@ -70,7 +70,8 @@ PayloadTypeMapper::PayloadTypeMapper()
            {{kOpusCodecName,
              48000,
              2,
-             {{"minptime", "10"}, {"useinbandfec", "1"}}},
+             {{kCodecParamMinPTime, "10"},
+              {kCodecParamUseInbandFec, kParamValueTrue}}},
             111},
            
            
