@@ -269,26 +269,6 @@ pub trait DomTraversal<E: TElement>: Sync {
     }
 
     
-    fn should_cull_subtree(
-        &self,
-        context: &mut StyleContext<E>,
-        parent: E,
-        parent_data: &ElementData,
-    ) -> bool {
-        debug_assert!(
-            parent.has_current_styles_for_traversal(parent_data, context.shared.traversal_flags)
-        );
-
-        
-        if parent_data.styles.is_display_none() {
-            debug!("Parent {:?} is display:none, culling traversal", parent);
-            return true;
-        }
-
-        return false;
-    }
-
-    
     fn shared_context(&self) -> &SharedStyleContext;
 }
 
@@ -408,7 +388,7 @@ where
 #[inline]
 #[allow(unsafe_code)]
 pub fn recalc_style_at<E, D, F>(
-    traversal: &D,
+    _traversal: &D,
     traversal_data: &PerLevelTraversalData,
     context: &mut StyleContext<E>,
     element: E,
@@ -522,14 +502,12 @@ pub fn recalc_style_at<E, D, F>(
     
     
     
-    
     let mut traverse_children = has_dirty_descendants_for_this_restyle ||
         !propagated_hint.is_empty() ||
         !child_cascade_requirement.can_skip_cascade() ||
         is_servo_nonincremental_layout();
 
-    traverse_children =
-        traverse_children && !traversal.should_cull_subtree(context, element, &data);
+    traverse_children = traverse_children && !data.styles.is_display_none();
 
     
     if traverse_children {
