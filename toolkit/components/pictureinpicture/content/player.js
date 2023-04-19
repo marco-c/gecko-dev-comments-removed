@@ -2,8 +2,8 @@
 
 
 
-const { PictureInPicture } = ChromeUtils.import(
-  "resource://gre/modules/PictureInPicture.jsm"
+const { PictureInPicture } = ChromeUtils.importESModule(
+  "resource://gre/modules/PictureInPicture.sys.mjs"
 );
 const { ShortcutUtils } = ChromeUtils.import(
   "resource://gre/modules/ShortcutUtils.jsm"

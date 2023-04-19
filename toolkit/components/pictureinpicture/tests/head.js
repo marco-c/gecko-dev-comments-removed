@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { TOGGLE_POLICIES } = ChromeUtils.import(
-  "resource://gre/modules/PictureInPictureControls.jsm"
+const { TOGGLE_POLICIES } = ChromeUtils.importESModule(
+  "resource://gre/modules/PictureInPictureControls.sys.mjs"
 );
 
 const TEST_ROOT = getRootDirectory(gTestPath).replace(
@@ -325,8 +325,8 @@ async function assertTogglePolicy(
     }, "Waiting for the hovering state to be set on the video.");
 
     if (policy) {
-      const { TOGGLE_POLICY_STRINGS } = ChromeUtils.import(
-        "resource://gre/modules/PictureInPictureControls.jsm"
+      const { TOGGLE_POLICY_STRINGS } = ChromeUtils.importESModule(
+        "resource://gre/modules/PictureInPictureControls.sys.mjs"
       );
       let policyAttr = toggle.getAttribute("policy");
       Assert.equal(
@@ -434,8 +434,8 @@ async function prepareForToggleClick(browser, videoID) {
       
       
       
-      let { PictureInPictureToggleChild } = ChromeUtils.import(
-        "resource://gre/actors/PictureInPictureChild.jsm"
+      let { PictureInPictureToggleChild } = ChromeUtils.importESModule(
+        "resource://gre/actors/PictureInPictureChild.sys.mjs"
       );
       await ContentTaskUtils.waitForCondition(
         () => {
