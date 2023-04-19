@@ -4,8 +4,8 @@
 
 "use strict";
 
-const { UrlbarTestUtils } = ChromeUtils.import(
-  "resource://testing-common/UrlbarTestUtils.jsm"
+const { UrlbarTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/UrlbarTestUtils.sys.mjs"
 );
 
 
