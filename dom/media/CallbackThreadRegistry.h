@@ -4,8 +4,8 @@
 
 
 
-#ifndef AUDIOTHREADREGISTRY_H
-#define AUDIOTHREADREGISTRY_H
+#ifndef CALLBACKTHREADREGISTRY_H
+#define CALLBACKTHREADREGISTRY_H
 
 #include <cstdint>
 #include <mozilla/DataMutex.h>
@@ -21,11 +21,11 @@ namespace mozilla {
 
 
 
-class AudioThreadRegistry final {
+class CallbackThreadRegistry final {
  public:
-  AudioThreadRegistry() : mThreadIds("AudioThreadId") {}
+  CallbackThreadRegistry();
 
-  ~AudioThreadRegistry() {
+  ~CallbackThreadRegistry() {
     
     
     
@@ -33,7 +33,11 @@ class AudioThreadRegistry final {
 
   
   
-  void Register(ProfilerThreadId aThreadId) {
+  static CallbackThreadRegistry* Get();
+
+  
+  
+  void Register(ProfilerThreadId aThreadId, const char* aName) {
     if (!aThreadId.IsSpecified()) {
       
       return;
@@ -50,7 +54,7 @@ class AudioThreadRegistry final {
     tuc.mId = aThreadId;
     tuc.mUserCount = 1;
     threadIds->AppendElement(tuc);
-    PROFILER_REGISTER_THREAD("NativeAudioCallback");
+    PROFILER_REGISTER_THREAD(aName);
   }
 
   
@@ -76,15 +80,15 @@ class AudioThreadRegistry final {
     MOZ_ASSERT(false);
   }
 
- private:
-  AudioThreadRegistry(const AudioThreadRegistry&) = delete;
-  AudioThreadRegistry& operator=(const AudioThreadRegistry&) = delete;
-  AudioThreadRegistry(AudioThreadRegistry&&) = delete;
-  AudioThreadRegistry& operator=(AudioThreadRegistry&&) = delete;
+  CallbackThreadRegistry(const CallbackThreadRegistry&) = delete;
+  CallbackThreadRegistry& operator=(const CallbackThreadRegistry&) = delete;
+  CallbackThreadRegistry(CallbackThreadRegistry&&) = delete;
+  CallbackThreadRegistry& operator=(CallbackThreadRegistry&&) = delete;
 
+ private:
   struct ThreadUserCount {
     ProfilerThreadId mId;  
-    int mUserCount;
+    int mUserCount = 0;
   };
   DataMutex<nsTArray<ThreadUserCount>> mThreadIds;
 };

@@ -18,7 +18,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(cubeb_stream_prefs)
 
 namespace mozilla {
 
-class AudioThreadRegistry;
+class CallbackThreadRegistry;
 
 namespace CubebUtils {
 
@@ -43,10 +43,6 @@ void InitLibrary();
 void ShutdownLibrary();
 
 bool SandboxEnabled();
-
-
-
-AudioThreadRegistry* GetAudioThreadRegistry();
 
 
 uint32_t MaxNumberOfChannels();
