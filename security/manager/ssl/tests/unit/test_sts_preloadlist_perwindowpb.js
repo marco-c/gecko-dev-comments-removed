@@ -101,22 +101,12 @@ function test_part1() {
   let subDomainUri = Services.io.newURI(
     "https://subdomain.includesubdomains.preloaded.test"
   );
-  gSSService.processHeader(
-    uri,
-    "max-age=0",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=0", secInfo);
   ok(!gSSService.isSecureURI(uri));
   ok(!gSSService.isSecureURI(subDomainUri));
   
   
-  gSSService.processHeader(
-    uri,
-    "max-age=1000",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=1000", secInfo);
   ok(gSSService.isSecureURI(uri));
   
   ok(!gSSService.isSecureURI(subDomainUri));
@@ -127,12 +117,7 @@ function test_part1() {
   uri = Services.io.newURI(
     "https://subdomain.noincludesubdomains.preloaded.test"
   );
-  gSSService.processHeader(
-    uri,
-    "max-age=0",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=0", secInfo);
   ok(
     gSSService.isSecureURI(
       Services.io.newURI("https://noincludesubdomains.preloaded.test")
@@ -143,12 +128,7 @@ function test_part1() {
   uri = Services.io.newURI(
     "https://subdomain.includesubdomains.preloaded.test"
   );
-  gSSService.processHeader(
-    uri,
-    "max-age=0",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=0", secInfo);
   
   
   
@@ -181,12 +161,7 @@ function test_part1() {
     )
   );
 
-  gSSService.processHeader(
-    uri,
-    "max-age=1000",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=1000", secInfo);
   
   
   
@@ -218,12 +193,7 @@ function test_part1() {
   
   uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
   ok(gSSService.isSecureURI(uri));
-  gSSService.processHeader(
-    uri,
-    "max-age=1",
-    secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-  );
+  gSSService.processHeader(uri, "max-age=1", secInfo);
   do_timeout(1250, function() {
     ok(!gSSService.isSecureURI(uri));
     run_next_test();
@@ -246,7 +216,6 @@ function test_private_browsing1() {
     uri,
     "max-age=0",
     secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
     PRIVATE_ORIGIN_ATTRIBUTES
   );
   ok(!gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
@@ -257,7 +226,6 @@ function test_private_browsing1() {
     uri,
     "max-age=1000",
     secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
     PRIVATE_ORIGIN_ATTRIBUTES
   );
   ok(gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
@@ -269,7 +237,6 @@ function test_private_browsing1() {
     uri,
     "max-age=0",
     secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
     PRIVATE_ORIGIN_ATTRIBUTES
   );
   ok(!gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
@@ -287,7 +254,6 @@ function test_private_browsing1() {
     uri,
     "max-age=1",
     secInfo,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
     PRIVATE_ORIGIN_ATTRIBUTES
   );
   do_timeout(1250, function() {

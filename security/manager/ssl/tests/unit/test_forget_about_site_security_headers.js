@@ -44,12 +44,7 @@ function add_tests() {
   
   
   add_task(async function() {
-    sss.processHeader(
-      uri,
-      GOOD_MAX_AGE,
-      secInfo,
-      Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-    );
+    sss.processHeader(uri, GOOD_MAX_AGE, secInfo);
 
     Assert.ok(sss.isSecureURI(uri), "a.pinning.example.com should be HSTS");
 
@@ -66,12 +61,7 @@ function add_tests() {
   
   
   add_task(async function() {
-    sss.processHeader(
-      uri,
-      GOOD_MAX_AGE,
-      secInfo,
-      Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-    );
+    sss.processHeader(uri, GOOD_MAX_AGE, secInfo);
 
     Assert.ok(
       sss.isSecureURI(uri),
@@ -80,12 +70,7 @@ function add_tests() {
 
     
     let unrelatedURI = Services.io.newURI("https://example.org");
-    sss.processHeader(
-      unrelatedURI,
-      GOOD_MAX_AGE,
-      secInfo,
-      Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
-    );
+    sss.processHeader(unrelatedURI, GOOD_MAX_AGE, secInfo);
     Assert.ok(sss.isSecureURI(unrelatedURI), "example.org should be HSTS");
 
     await ForgetAboutSite.removeDataFromDomain("example.com");
@@ -117,13 +102,7 @@ function add_tests() {
     let unrelatedURI = Services.io.newURI("https://example.org");
 
     for (let originAttributes of originAttributesList) {
-      sss.processHeader(
-        uri,
-        GOOD_MAX_AGE,
-        secInfo,
-        Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
-        originAttributes
-      );
+      sss.processHeader(uri, GOOD_MAX_AGE, secInfo, originAttributes);
 
       Assert.ok(
         sss.isSecureURI(uri, originAttributes),
@@ -131,13 +110,7 @@ function add_tests() {
       );
 
       
-      sss.processHeader(
-        unrelatedURI,
-        GOOD_MAX_AGE,
-        secInfo,
-        Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
-        originAttributes
-      );
+      sss.processHeader(unrelatedURI, GOOD_MAX_AGE, secInfo, originAttributes);
       Assert.ok(
         sss.isSecureURI(unrelatedURI, originAttributes),
         "example.org should be HSTS (originAttributes case)"
