@@ -409,7 +409,6 @@ struct ReflowInput : public SizeComputationInput {
 
   
   const nsStyleDisplay* mStyleDisplay = nullptr;
-  const nsStyleVisibility* mStyleVisibility = nullptr;
   const nsStylePosition* mStylePosition = nullptr;
   const nsStyleBorder* mStyleBorder = nullptr;
   const nsStyleMargin* mStyleMargin = nullptr;
