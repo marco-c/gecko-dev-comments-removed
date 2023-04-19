@@ -2488,6 +2488,25 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor) {
   return true;
 }
 
+void nsWindow::WaylandPopupPrepareForMove() {
+  
+  if (gtk_widget_is_visible(mShell)) {
+    HideWaylandPopupWindow( true,
+                            false);
+  }
+  
+  
+  
+  
+  
+  if (mPopupHint != ePopupTypeTooltip) {
+    gtk_window_set_type_hint(GTK_WINDOW(mShell),
+                             mPopupUseMoveToRect
+                                 ? GDK_WINDOW_TYPE_HINT_POPUP_MENU
+                                 : GDK_WINDOW_TYPE_HINT_UTILITY);
+  }
+}
+
 void nsWindow::WaylandPopupMove() {
   
   static auto sGdkWindowMoveToRect = (void (*)(
@@ -2535,11 +2554,7 @@ void nsWindow::WaylandPopupMove() {
       return;
     }
 
-    
-    if (gtk_widget_is_visible(mShell)) {
-      HideWaylandPopupWindow( true,
-                              false);
-    }
+    WaylandPopupPrepareForMove();
 
     if (useRelativeCoordinates) {
       LOG("  use relative gtk_window_move(%d, %d) for utility/tooltips",
@@ -2556,12 +2571,7 @@ void nsWindow::WaylandPopupMove() {
     return;
   }
 
-  
-  
-  if (gtk_widget_is_visible(mShell)) {
-    HideWaylandPopupWindow( true,
-                            false);
-  }
+  WaylandPopupPrepareForMove();
 
   
   
