@@ -897,17 +897,17 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
         
         done: false,
       };
-    }
+    } else {
+      
+      
 
-    
-    
-    if (iteratorRecord === undefined) {
       
       
       let arrayLike = ToObject(asyncItems);
 
       
       let len = ToLength(arrayLike.length);
+
       
       
       
@@ -920,8 +920,8 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
 
       
       let k = 0;
-      
 
+      
       while (k < len) {
         
         
