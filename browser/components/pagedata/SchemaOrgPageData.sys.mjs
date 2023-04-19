@@ -1,83 +1,79 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SchemaOrgPageData"];
+import { PageDataSchema } from "resource:///modules/pagedata/PageDataSchema.sys.mjs";
 
-const { PageDataSchema } = ChromeUtils.import(
-  "resource:///modules/pagedata/PageDataSchema.jsm"
-);
-
-
-
-
-
-
-
-
-
-
+/**
+ * Represents an item from the schema.org specification.
+ *
+ * Every `Item` has a type and a set of properties. Each property has a string
+ * name and a list of values. It often isn't clear from the spec whether a
+ * property is expected to have a list of values or just one value so this
+ * data structure stores every property as a list and provides a simple method
+ * to get the first property value.
+ */
 class Item {
-  
+  /** @type {string} The type of the item e.g. "Product" or "Person". */
   type;
 
-  
+  /** @type {Map<string, any[]>} Properties of the item. */
   properties = new Map();
 
-  
-
-
-
-
-
+  /**
+   * Constructors a new `Item` of the given type.
+   *
+   * @param {string} type
+   *   The type of the item.
+   */
   constructor(type) {
     this.type = type;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Tests whether a property has any values in this item.
+   *
+   * @param {string} prop
+   *   The name of the property.
+   * @returns {boolean}
+   */
   has(prop) {
     return this.properties.has(prop);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Gets all of the values for a property. This may return an empty array if
+   * there are no values.
+   *
+   * @param {string} prop
+   *   The name of the property.
+   * @returns {any[]}
+   */
   all(prop) {
     return this.properties.get(prop) ?? [];
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Gets the first value for a property.
+   *
+   * @param {string} prop
+   *   The name of the property.
+   * @returns {any}
+   */
   get(prop) {
     return this.properties.get(prop)?.[0];
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Sets a value for a property.
+   *
+   * @param {string} prop
+   *   The name of the property.
+   * @param {any} value
+   *   The value of the property.
+   */
   set(prop, value) {
     let props = this.properties.get(prop);
     if (props === undefined) {
@@ -88,21 +84,21 @@ class Item {
     props.push(value);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Converts this item to JSON-LD.
+   *
+   * Single array properties are converted into simple properties.
+   *
+   * @returns {object}
+   */
   toJsonLD() {
-    
-
-
-
-
-
-
+    /**
+     * Converts a value to its JSON-LD representation.
+     *
+     * @param {any} val
+     *   The value to convert.
+     * @returns {any}
+     */
     function toLD(val) {
       if (val instanceof Item) {
         return val.toJsonLD();
@@ -125,15 +121,15 @@ class Item {
   }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Parses the value for a given microdata property.
+ * See https://html.spec.whatwg.org/multipage/microdata.html#values for the parsing spec
+ *
+ * @param {Element} propElement
+ *   The property element.
+ * @returns {any}
+ *   The value of the property.
+ */
 function parseMicrodataProp(propElement) {
   if (propElement.hasAttribute("itemscope")) {
     throw new Error(
@@ -168,10 +164,10 @@ function parseMicrodataProp(propElement) {
     case "video":
       return parseUrl(propElement, "src");
     case "img":
-      
-      
-      
-      
+      // Some pages may be using a lazy loading approach to images, putting a
+      // temporary image in "src" while the real image is in a differently
+      // named attribute. So far we found "content" and "data-src" are common
+      // names for that attribute.
       return (
         parseUrl(propElement, "content") ||
         parseUrl(propElement, "data-src") ||
@@ -192,7 +188,7 @@ function parseMicrodataProp(propElement) {
       }
       return propElement.textContent;
     default:
-      
+      // Not mentioned in the spec but sites seem to use it.
       if (propElement.hasAttribute("content")) {
         return propElement.getAttribute("content");
       }
@@ -200,16 +196,16 @@ function parseMicrodataProp(propElement) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Collects product data from an item.
+ *
+ * @param {Document} document
+ *   The document the item comes from.
+ * @param {PageData} pageData
+ *   The pageData object to add to.
+ * @param {Item} item
+ *   The product item.
+ */
 function collectProduct(document, pageData, item) {
   if (item.has("image")) {
     let url = new URL(item.get("image"), document.documentURI);
@@ -241,34 +237,34 @@ function collectProduct(document, pageData, item) {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Returns the root microdata items from the given document.
+ *
+ * @param {Document} document
+ *   The DOM document to collect from.
+ * @returns {Item[]}
+ */
 function collectMicrodataItems(document) {
-  
+  // First find all of the items in the document.
   let itemElements = document.querySelectorAll(
     "[itemscope][itemtype^='https://schema.org/'], [itemscope][itemtype^='http://schema.org/']"
   );
 
-  
-
-
-
-
+  /**
+   * Maps elements to the closest item.
+   *
+   * @type {Map<Element, Item>}
+   */
   let items = new Map();
 
-  
-
-
-
-
-
-
-
+  /**
+   * Finds the item for an element. Throws if there is no item. Caches the
+   * result.
+   *
+   * @param {Element} element
+   *   The element to search from.
+   * @returns {Item}
+   */
   function itemFor(element) {
     let item = items.get(element);
     if (item) {
@@ -286,7 +282,7 @@ function collectMicrodataItems(document) {
 
   for (let element of itemElements) {
     let itemType = element.getAttribute("itemtype");
-    
+    // Strip off the base url
     if (itemType.startsWith("https://")) {
       itemType = itemType.substring(19);
     } else {
@@ -296,24 +292,24 @@ function collectMicrodataItems(document) {
     items.set(element, new Item(itemType));
   }
 
-  
+  // The initial roots are just all the items.
   let roots = new Set(items.values());
 
-  
+  // Now find all item properties.
   let itemProps = document.querySelectorAll(
     "[itemscope][itemtype^='https://schema.org/'] [itemprop], [itemscope][itemtype^='http://schema.org/'] [itemprop]"
   );
 
   for (let element of itemProps) {
-    
+    // The item is always defined above the current element.
     let item = itemFor(element.parentElement);
 
-    
+    // The properties value is either a nested item or a simple value.
     let propValue = items.get(element) ?? parseMicrodataProp(element);
     item.set(element.getAttribute("itemprop"), propValue);
 
     if (propValue instanceof Item) {
-      
+      // This item belongs to another item and so is not a root item.
       roots.delete(propValue);
     }
   }
@@ -321,33 +317,33 @@ function collectMicrodataItems(document) {
   return [...roots];
 }
 
-
-
-
-
-
-
-
+/**
+ * Returns the root JSON-LD items from the given document.
+ *
+ * @param {Document} document
+ *   The DOM document to collect from.
+ * @returns {Item[]}
+ */
 function collectJsonLDItems(document) {
-  
-
-
-
+  /**
+   * The root items.
+   * @type {Item[]}
+   */
   let items = [];
 
-  
-
-
-
-
-
-
+  /**
+   * Converts a JSON-LD value into an Item if appropriate.
+   *
+   * @param {any} val
+   *   The value to convert.
+   * @returns {any}
+   */
   function fromLD(val) {
     if (typeof val == "object" && "@type" in val) {
       let item = new Item(val["@type"]);
 
       for (let [prop, value] of Object.entries(val)) {
-        
+        // Ignore meta properties.
         if (prop.startsWith("@")) {
           continue;
         }
@@ -390,39 +386,39 @@ function collectJsonLDItems(document) {
         items.push(item);
       }
     } catch (e) {
-      
+      // Unparsable content.
     }
   }
 
   return items;
 }
 
-
-
-
-
-
-const SchemaOrgPageData = {
-  
-
-
-
-
-
-
-
-
+/**
+ * Collects schema.org related data from a page.
+ *
+ * Currently only supports HTML Microdata and JSON-LD formats, not RDFa.
+ */
+export const SchemaOrgPageData = {
+  /**
+   * Parses and collects the schema.org items from the given document.
+   * The returned items are the roots, i.e. the top-level items, there may be
+   * other items as nested properties.
+   *
+   * @param {Document} document
+   *   The DOM document to parse.
+   * @returns {Item[]}
+   */
   collectItems(document) {
     return collectMicrodataItems(document).concat(collectJsonLDItems(document));
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Performs PageData collection from the given document.
+   *
+   * @param {Document} document
+   *   The DOM document to collect from.
+   * @returns {PageData}
+   */
   collect(document) {
     let pageData = { data: {} };
 

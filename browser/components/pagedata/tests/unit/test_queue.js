@@ -1,8 +1,11 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  PageDataService: "resource:///modules/pagedata/PageDataService.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
-  PageDataService: "resource:///modules/pagedata/PageDataService.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
 });
 
