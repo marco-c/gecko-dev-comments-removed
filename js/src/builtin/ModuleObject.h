@@ -256,7 +256,12 @@ enum class ModuleStatus : int32_t {
   Linked,
   Evaluating,
   Evaluated,
-  Evaluated_Error  
+
+  
+  
+  
+  
+  Evaluated_Error
 };
 
 

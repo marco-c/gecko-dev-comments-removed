@@ -1075,8 +1075,7 @@ bool js::ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   
   
   MOZ_ASSERT(module->status() == ModuleStatus::Linked ||
-             module->status() == ModuleStatus::Evaluated ||
-             module->status() == ModuleStatus::Evaluated_Error);
+             module->status() == ModuleStatus::Evaluated);
 
   
   MOZ_ASSERT(stack.empty());
@@ -1094,8 +1093,7 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   
   if (module->status() == ModuleStatus::Linking ||
       module->status() == ModuleStatus::Linked ||
-      module->status() == ModuleStatus::Evaluated ||
-      module->status() == ModuleStatus::Evaluated_Error) {
+      module->status() == ModuleStatus::Evaluated) {
     
     *indexOut = index;
     return true;
@@ -1157,8 +1155,7 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     
     MOZ_ASSERT(requiredModule->status() == ModuleStatus::Linking ||
                requiredModule->status() == ModuleStatus::Linked ||
-               requiredModule->status() == ModuleStatus::Evaluated ||
-               requiredModule->status() == ModuleStatus::Evaluated_Error);
+               requiredModule->status() == ModuleStatus::Evaluated);
 
     
     
@@ -1220,8 +1217,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
   
   
   if (module->status() != ModuleStatus::Linked &&
-      module->status() != ModuleStatus::Evaluated &&
-      module->status() != ModuleStatus::Evaluated_Error) {
+      module->status() != ModuleStatus::Evaluated) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_BAD_MODULE_STATUS);
     return false;
@@ -1229,7 +1225,11 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   
-  if (module->status() == ModuleStatus::Evaluated) {
+  
+  
+  
+  if (module->status() == ModuleStatus::Evaluated &&
+      !module->hadEvaluationError()) {
     module = module->getCycleRoot();
   }
 
@@ -1284,7 +1284,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     }
 
     
-    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated_Error);
+    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
     
     MOZ_ASSERT(module->evaluationError() == error);
@@ -1422,11 +1422,11 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
       
       
-      MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Evaluated);
+      MOZ_ASSERT(requiredModule->status() == ModuleStatus::Evaluated);
 
       
       
-      if (requiredModule->status() == ModuleStatus::Evaluated_Error) {
+      if (requiredModule->hadEvaluationError()) {
         Rooted<Value> error(cx, requiredModule->evaluationError());
         cx->setPendingException(error, ShouldCaptureStack::Maybe);
         return false;
@@ -1704,8 +1704,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       HandleValue error) {
   
-  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated ||
-             module->status() == ModuleStatus::Evaluated_Error);
+  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
   
   if (!module->isAsyncEvaluating()) {
