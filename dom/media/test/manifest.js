@@ -2136,14 +2136,6 @@ var gDecodeSuspendTests = [
   },
 ];
 
-
-
-
-var gVideoLowPowerTests = [
-  { name: "seek.ogv", type: "video/ogg", duration: 3.966 },
-  { name: "gizmo.mp4", type: "video/mp4", duration: 5.56 },
-];
-
 function checkMetadata(msg, e, test) {
   if (test.width) {
     is(e.videoWidth, test.width, msg + " video width");
