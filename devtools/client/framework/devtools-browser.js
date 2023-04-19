@@ -475,42 +475,39 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     async function slowScriptDebugHandler(tab, callback) {
-      gDevTools
-        .showToolboxForTab(tab, { toolId: "jsdebugger" })
-        .then(toolbox => {
-          const threadFront = toolbox.threadFront;
+      const toolbox = await gDevTools.showToolboxForTab(tab, {
+        toolId: "jsdebugger",
+      });
+      const threadFront = toolbox.threadFront;
 
+      
+      
+      switch (threadFront.state) {
+        case "paused":
           
+          threadFront.resumeThenPause();
+          break;
+        case "attached":
           
-          switch (threadFront.state) {
-            case "paused":
-              
-              threadFront.resumeThenPause();
-              callback();
-              break;
-            case "attached":
-              
-              threadFront.interrupt().then(() => {
-                threadFront.resumeThenPause();
-                callback();
-              });
-              break;
-            case "resuming":
-              
-              threadFront.once("resumed", () => {
-                threadFront.interrupt().then(() => {
-                  threadFront.resumeThenPause();
-                  callback();
-                });
-              });
-              break;
-            default:
-              throw Error(
-                "invalid thread front state in slow script debug handler: " +
-                  threadFront.state
-              );
-          }
-        });
+          const onPaused = threadFront.once("paused");
+          threadFront.interrupt();
+          await onPaused;
+          threadFront.resumeThenPause();
+          break;
+        case "resuming":
+          
+          const onResumed = threadFront.once("resumed");
+          await threadFront.interrupt();
+          await onResumed;
+          threadFront.resumeThenPause();
+          break;
+        default:
+          throw Error(
+            "invalid thread front state in slow script debug handler: " +
+              threadFront.state
+          );
+      }
+      callback();
     }
 
     debugService.activationHandler = function(window) {
