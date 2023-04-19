@@ -250,6 +250,10 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   Network* GetNetworkFromAddress(const rtc::IPAddress& ip) const;
 
+  
+  
+  const NetworkList& GetNetworksInternal() const { return networks_; }
+
  private:
   friend class NetworkTest;
 
