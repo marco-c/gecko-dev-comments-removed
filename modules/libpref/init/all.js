@@ -2074,19 +2074,6 @@ pref("dom.global_stop_script", true);
 pref("input_event_queue.supported", true);
 
 
-
-pref("input_event_queue.duration.max", 8);
-pref("input_event_queue.duration.min", 1);
-
-
-
-pref("input_event_queue.default_duration_per_event", 1);
-
-
-
-pref("input_event_queue.count_for_prediction", 9);
-
-
 pref("plugins.navigator.hidden_ctp_plugin", "");
 
 
