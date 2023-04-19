@@ -12,6 +12,7 @@
 #define VIDEO_VIDEO_RECEIVE_STREAM2_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/sequence_checker.h"
@@ -116,7 +117,13 @@ class VideoReceiveStream2
   
   void UnregisterFromTransport();
 
-  const Config& config() const { return config_; }
+  
+  
+  
+  
+  
+  const Config::Rtp& rtp() const;
+  const std::string& sync_group() const;
 
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
