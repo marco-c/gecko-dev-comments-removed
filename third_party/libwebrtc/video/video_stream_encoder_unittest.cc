@@ -8095,9 +8095,12 @@ TEST_F(VideoStreamEncoderTest, EncoderResolutionsExposedInSimulcast) {
 }
 
 TEST_F(VideoStreamEncoderTest, QpPresent_QpKept) {
-  
-  encoder_factory_.SetHasInternalSource(true);
   ResetEncoder("VP8", 1, 1, 1, false);
+
+  
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, codec_width_, codec_height_));
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
   
   
@@ -8115,9 +8118,12 @@ TEST_F(VideoStreamEncoderTest, QpPresent_QpKept) {
 }
 
 TEST_F(VideoStreamEncoderTest, QpAbsent_QpParsed) {
-  
-  encoder_factory_.SetHasInternalSource(true);
   ResetEncoder("VP8", 1, 1, 1, false);
+
+  
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, codec_width_, codec_height_));
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
   
   
@@ -8137,9 +8143,12 @@ TEST_F(VideoStreamEncoderTest, QpAbsentParsingDisabled_QpAbsent) {
   webrtc::test::ScopedFieldTrials field_trials(
       "WebRTC-QpParsingKillSwitch/Enabled/");
 
-  
-  encoder_factory_.SetHasInternalSource(true);
   ResetEncoder("VP8", 1, 1, 1, false);
+
+  
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, codec_width_, codec_height_));
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
   EncodedImage encoded_image;
   encoded_image.qp_ = -1;
