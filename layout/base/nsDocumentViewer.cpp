@@ -1166,8 +1166,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       
       
       
-      if (RefPtr<nsPIDOMWindowInner> inner = window->GetCurrentInnerWindow()) {
-        nsGlobalWindowInner::Cast(inner)->Print(IgnoreErrors());
+      if (RefPtr inner =
+              nsGlobalWindowInner::Cast(window->GetCurrentInnerWindow())) {
+        inner->Print(IgnoreErrors());
       }
       if (outerWin->DelayedCloseForPrinting()) {
         outerWin->Close();

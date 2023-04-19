@@ -2162,6 +2162,13 @@ void PresShell::FireResizeEvent() {
   }
 
   mResizeEventPending = false;
+  FireResizeEventSync();
+}
+
+void PresShell::FireResizeEventSync() {
+  if (mIsDocumentGone) {
+    return;
+  }
 
   
   WidgetEvent event(true, mozilla::eResize);
