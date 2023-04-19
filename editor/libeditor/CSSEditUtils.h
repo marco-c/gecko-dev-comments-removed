@@ -3,11 +3,11 @@
 
 
 
-#ifndef mozilla_CSSEditUtils_h
-#define mozilla_CSSEditUtils_h
+#ifndef CSSEditUtils_h
+#define CSSEditUtils_h
 
-#include "mozilla/ChangeStyleTransaction.h"  
-#include "mozilla/EditorForwards.h"
+#include "ChangeStyleTransaction.h"  
+#include "EditorForwards.h"
 #include "nsCOMPtr.h"  
 #include "nsStringFwd.h"
 #include "nsTArray.h"  

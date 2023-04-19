@@ -3,10 +3,10 @@
 
 
 
-#ifndef mozilla_ChangeStyleTransaction_h
-#define mozilla_ChangeStyleTransaction_h
+#ifndef ChangeStyleTransaction_h
+#define ChangeStyleTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
+#include "EditTransactionBase.h"  
 
 #include "nsCOMPtr.h"                      
 #include "nsCycleCollectionParticipant.h"  
