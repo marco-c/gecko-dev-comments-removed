@@ -130,6 +130,7 @@ class VideoStreamEncoderResourceManager
   
   bool DropInitialFrames() const;
   absl::optional<uint32_t> SingleActiveStreamPixels() const;
+  absl::optional<uint32_t> UseBandwidthAllocationBps() const;
 
   
   
