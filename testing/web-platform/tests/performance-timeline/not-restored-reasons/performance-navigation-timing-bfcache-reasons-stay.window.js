@@ -16,7 +16,6 @@ promise_test(async t => {
        null,  {features: 'noopener'});
   
   await useWebSocket(rc1);
-
   const rc1_url = await rc1.executeScript(() => {
     return location.href;
   });
@@ -24,11 +23,27 @@ promise_test(async t => {
 
   
   const rc2 = await rc1.navigateToNew();
-
   
   await rc2.historyBack();
   assert_not_bfcached(rc1);
+
   
+  await assertNotRestoredReasonsEquals(
+      rc1,
+       true,
+       rc1_url,
+       '',
+       '',
+       '',
+      ['WebSocket'],
+      []);
+  prepareForBFCache(rc1);
+
+  await rc1.historyForward();
+  await rc2.historyBack();
+  
+  
+  assert_implements_bfcache(rc1);
   await assertNotRestoredReasonsEquals(
       rc1,
        true,

@@ -18,12 +18,9 @@ promise_test(async t => {
     return location.href;
   });
   
-  const rc1_child = await rc1.addIframe({},  {id: 'test-id'});
-
-  const domainPort = SCHEME_DOMAIN_PORT;
-  await rc1_child.executeScript((domain) => {
-    var ws = new WebSocket(domain + '/echo');
-  }, [domainPort]);
+  const rc1_child = await rc1.addIframe(
+       {},  {id: 'test-id'});
+  await useWebSocket(rc1_child);
 
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
@@ -33,39 +30,38 @@ promise_test(async t => {
   const rc1_grand_child_url = await rc1_grand_child.executeScript(() => {
     return location.href;
   });
+  prepareForBFCache(rc1);
 
   
   const rc2 = await rc1.navigateToNew();
 
   
   await rc2.historyBack();
-
+  assert_not_bfcached(rc1);
   
   await assertNotRestoredReasonsEquals(
-    rc1,
-    false,
-    rc1_url,
-     "",
-    "",
-    "",
-    [],
-    [{
-      "blocked": true,
-      "url": rc1_child_url,
-      "src": rc1_child_url,
-      "id": "test-id",
-      "name": "",
-      "reasons": ["WebSocket"],
-      "children": [
-        {
-        "blocked": false,
-        "url": rc1_grand_child_url,
-        "src": rc1_grand_child_url,
-        "id": "",
-        "name": "",
-        "reasons": [],
-        "children": []
-        }
-      ]
-    }]);
+      rc1,
+       false,
+       rc1_url,
+       '',
+       '',
+       '',
+      [],
+      [{
+        'blocked': true,
+        'url': rc1_child_url,
+        'src': rc1_child_url,
+        'id': 'test-id',
+        'name': '',
+        'reasons': ['WebSocket'],
+        'children': [{
+          'blocked': false,
+          'url': rc1_grand_child_url,
+          'src': rc1_grand_child_url,
+          'id': '',
+          'name': '',
+          'reasons': [],
+          'children': []
+        }]
+      }]);
 });
