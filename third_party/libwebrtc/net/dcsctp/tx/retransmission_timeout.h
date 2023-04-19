@@ -27,6 +27,8 @@ namespace dcsctp {
 
 class RetransmissionTimeout {
  public:
+  static constexpr int kRttShift = 3;
+  static constexpr int kRttVarShift = 2;
   explicit RetransmissionTimeout(const DcSctpOptions& options);
 
   
@@ -36,22 +38,20 @@ class RetransmissionTimeout {
   DurationMs rto() const { return DurationMs(rto_); }
 
   
-  DurationMs srtt() const { return DurationMs(srtt_); }
+  DurationMs srtt() const { return DurationMs(scaled_srtt_ >> kRttShift); }
 
  private:
-  
-  
-  const double min_rto_;
-  const double max_rto_;
-  const double max_rtt_;
+  const int32_t min_rto_;
+  const int32_t max_rto_;
+  const int32_t max_rtt_;
   
   bool first_measurement_ = true;
   
-  double srtt_ = 0.0;
+  int32_t scaled_srtt_ = 0;
   
-  double rttvar_ = 0.0;
+  int32_t scaled_rtt_var_ = 0;
   
-  double rto_;
+  int32_t rto_;
 };
 }  
 

@@ -9,17 +9,12 @@
 
 #include "net/dcsctp/tx/retransmission_timeout.h"
 
-#include <cmath>
+#include <algorithm>
 #include <cstdint>
 
 #include "net/dcsctp/public/dcsctp_options.h"
 
 namespace dcsctp {
-namespace {
-
-constexpr double kRtoAlpha = 0.125;
-constexpr double kRtoBeta = 0.25;
-}  
 
 RetransmissionTimeout::RetransmissionTimeout(const DcSctpOptions& options)
     : min_rto_(*options.rto_min),
@@ -28,42 +23,39 @@ RetransmissionTimeout::RetransmissionTimeout(const DcSctpOptions& options)
       rto_(*options.rto_initial) {}
 
 void RetransmissionTimeout::ObserveRTT(DurationMs measured_rtt) {
-  double rtt = *measured_rtt;
+  int32_t rtt = *measured_rtt;
 
   
   
   
-  if (rtt < 0.0 || rtt > max_rtt_) {
+  if (rtt < 0 || rtt > max_rtt_) {
     return;
   }
 
+  
+  
+  
   if (first_measurement_) {
-    
-    
-    
-    
-    
-    srtt_ = rtt;
-    rttvar_ = rtt * 0.5;
-    rto_ = srtt_ + 4 * rttvar_;
+    scaled_srtt_ = rtt << kRttShift;
+    scaled_rtt_var_ = (rtt / 2) << kRttVarShift;
     first_measurement_ = false;
   } else {
-    
-    
-    
-    
-    
-    rttvar_ = (1 - kRtoBeta) * rttvar_ + kRtoBeta * std::abs(srtt_ - rtt);
-    srtt_ = (1 - kRtoAlpha) * srtt_ + kRtoAlpha * rtt;
-    rto_ = srtt_ + 4 * rttvar_;
+    rtt -= (scaled_srtt_ >> kRttShift);
+    scaled_srtt_ += rtt;
+    if (rtt < 0) {
+      rtt = -rtt;
+    }
+    rtt -= (scaled_rtt_var_ >> kRttVarShift);
+    scaled_rtt_var_ += rtt;
   }
+  rto_ = (scaled_srtt_ >> kRttShift) + scaled_rtt_var_;
 
   
   
   
-  rto_ = std::fmax(rto_, rtt + 1);
+  rto_ = std::max(rto_, rtt + 1);
 
   
-  rto_ = std::fmin(std::fmax(rto_, min_rto_), max_rto_);
+  rto_ = std::min(std::max(rto_, min_rto_), max_rto_);
 }
 }  
