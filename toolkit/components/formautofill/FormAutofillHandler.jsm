@@ -1021,8 +1021,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
   isValidSection() {
     let ccNumberDetail = null;
-    let hasExpiryDate = false;
-    let hasCCName = false;
+    let ccNameDetail = null;
+    let ccExpiryDetail = null;
 
     for (let detail of this.fieldDetails) {
       switch (detail.fieldName) {
@@ -1033,28 +1033,40 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
         case "cc-given-name":
         case "cc-additional-name":
         case "cc-family-name":
-          hasCCName = true;
+          ccNameDetail = detail;
           break;
         case "cc-exp":
         case "cc-exp-month":
         case "cc-exp-year":
-          hasExpiryDate = true;
+          ccExpiryDetail = detail;
           break;
       }
     }
 
+    
+    
+    if (
+      ccNumberDetail?._reason == "autocomplete" ||
+      ccNameDetail?._reason == "autocomplete" ||
+      ccExpiryDetail?._reason == "autocomplete"
+    ) {
+      return true;
+    }
+
     if (ccNumberDetail) {
-      if (
-        ccNumberDetail._reason == "autocomplete" ||
-        hasExpiryDate ||
-        hasCCName
-      ) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (ccNameDetail || ccExpiryDetail) {
         return true;
       }
 
-      
-      
-      
       
       
       
@@ -1072,8 +1084,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
         }
       }
     } else if (
-      hasCCName &&
-      hasExpiryDate &&
+      ccNameDetail &&
+      ccExpiryDetail &&
       FormAutofillUtils.ccHeuristicsNameExpirySection
     ) {
       return true;
