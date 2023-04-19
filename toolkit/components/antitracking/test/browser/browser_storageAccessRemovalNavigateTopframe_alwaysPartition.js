@@ -26,15 +26,10 @@ AntiTracking.runTest(
       );
     });
   },
-  [
-    [
-      "privacy.partition.always_partition_third_party_non_cookie_storage",
-      false,
-    ],
-  ], 
+  [["privacy.partition.always_partition_third_party_non_cookie_storage", true]], 
   false, 
   false, 
-  0, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   false, 
   null, 
   "navigate-topframe", 
