@@ -551,38 +551,46 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
   br.ReadBit();  
 
   if (reducedStillPicture) {
-    aDestInfo = tempInfo;
-    return NS_OK;
-  }
-
-  br.ReadBit();  
-  br.ReadBit();  
-  br.ReadBit();  
-  br.ReadBit();  
-
-  const bool enableOrderHint = br.ReadBit();
-
-  if (enableOrderHint) {
-    br.ReadBit();  
-    br.ReadBit();  
-  }
-
-  uint8_t forceScreenContentTools;
-
-  if (br.ReadBit()) {             
-    forceScreenContentTools = 2;  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   } else {
-    forceScreenContentTools = br.ReadBits(1);
-  }
+    br.ReadBit();  
+    br.ReadBit();  
+    br.ReadBit();  
+    br.ReadBit();  
 
-  if (forceScreenContentTools > 0) {
-    if (!br.ReadBit()) {  
-      br.ReadBit();       
+    const bool enableOrderHint = br.ReadBit();
+
+    if (enableOrderHint) {
+      br.ReadBit();  
+      br.ReadBit();  
     }
-  }
 
-  if (enableOrderHint) {
-    br.ReadBits(3);  
+    uint8_t forceScreenContentTools;
+
+    if (br.ReadBit()) {             
+      forceScreenContentTools = 2;  
+    } else {
+      forceScreenContentTools = br.ReadBits(1);
+    }
+
+    if (forceScreenContentTools > 0) {
+      if (!br.ReadBit()) {  
+        br.ReadBit();       
+      }
+    }
+
+    if (enableOrderHint) {
+      br.ReadBits(3);  
+    }
   }
 
   br.ReadBit();  
@@ -673,7 +681,7 @@ MediaResult AOMDecoder::ReadSequenceHeaderInfo(
   }
   if (!correct) {
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
-                       "AV1 sequence header was parsed incorrectly");
+                       "AV1 sequence header was corrupted");
   }
   
 
