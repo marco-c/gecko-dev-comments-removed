@@ -4,6 +4,7 @@
 
 
 #include <string>
+#include <cstdint>
 
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpGlue.h"
