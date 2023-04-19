@@ -189,14 +189,14 @@ void Nyx::handle_event(const char* type, const char* file, int line,
     return;
   }
 
-  
-  
-  MOZ_FUZZING_NYX_PRINTF(
-      "[ERROR] PRE SNAPSHOT Nyx::handle_event() called: %s at %s:%d : %s\n",
-      type, file, line, reason);
-
   if (mInited) {
     nyx_handle_event(type, file, line, reason);
+  } else {
+    
+    
+    MOZ_FUZZING_NYX_PRINTF(
+        "[ERROR] PRE SNAPSHOT Nyx::handle_event() called: %s at %s:%d : %s\n",
+        type, file, line, reason);
   }
 }
 
