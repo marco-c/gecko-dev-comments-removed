@@ -39,7 +39,7 @@ namespace webrtc {
 
 
 
-class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
+class VideoStreamEncoderInterface {
  public:
   
   
@@ -57,6 +57,8 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
     virtual void OnVideoLayersAllocationUpdated(
         VideoLayersAllocation allocation) = 0;
   };
+
+  virtual ~VideoStreamEncoderInterface() = default;
 
   
   
