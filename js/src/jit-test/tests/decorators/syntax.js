@@ -1,5 +1,7 @@
 
 
+load(libdir + "asserts.js");
+
 Reflect.parse("class c {@dec1 field = false;}");
 Reflect.parse("class c {@dec1 @dec2 @dec3 field = false;}");
 Reflect.parse("class c {@dec1 @dec2 @dec3('a') static field = false;}");
