@@ -2289,12 +2289,7 @@ pref("devtools.toolbox.tabsOrder", "");
 
 
 
-
-#if defined(NIGHTLY_BUILD)
 pref("devtools.browsertoolbox.fission", true);
-#else
-pref("devtools.browsertoolbox.fission", false);
-#endif
 
 
 
