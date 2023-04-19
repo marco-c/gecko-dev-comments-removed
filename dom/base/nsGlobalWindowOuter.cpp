@@ -7472,8 +7472,7 @@ void nsGlobalWindowOuter::MaybeResetWindowName(Document* aNewDocument) {
     
     
     
-    if (mDoc && mDoc->NodePrincipal()->EqualsConsideringDomain(
-                    aNewDocument->NodePrincipal())) {
+    if (mDoc && mDoc->NodePrincipal()->Equals(aNewDocument->NodePrincipal())) {
       return;
     }
 
