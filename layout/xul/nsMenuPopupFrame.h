@@ -252,6 +252,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   bool IsMenuList();
 
+  bool IsDragSource() const { return mIsDragSource; }
+  void SetIsDragSource(bool aIsDragSource) { mIsDragSource = aIsDragSource; }
+
   static nsIContent* GetTriggerContent(nsMenuPopupFrame* aMenuPopupFrame);
   void ClearTriggerContent() { mTriggerContent = nullptr; }
   void ClearTriggerContentIncludingDocument();
@@ -630,6 +633,10 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   
   bool mPendingPositionedEvent = false;
+
+  
+  
+  bool mIsDragSource = false;
 
   
   
