@@ -102,7 +102,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       
       
       nscolor accent =
-          Color(ColorID::MozAccentColor, aColorScheme, UseStandins::No);
+          Color(ColorID::Accentcolor, aColorScheme, UseStandins::No);
       aColor =
           NS_RGBA(NS_GET_R(accent), NS_GET_G(accent), NS_GET_B(accent), 78);
       return NS_OK;
@@ -186,13 +186,13 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
     
     case ColorID::MozCellhighlight:
     case ColorID::Selecteditem:
-    case ColorID::MozAccentColor:
+    case ColorID::Accentcolor:
       aColor = UseNativeAccent() ? mSystemColors.colorAccent
                                  : widget::sDefaultAccent.ToABGR();
       break;
     case ColorID::MozCellhighlighttext:
     case ColorID::Selecteditemtext:
-    case ColorID::MozAccentColorForeground:
+    case ColorID::Accentcolortext:
       aColor = UseNativeAccent() ? ThemeColors::ComputeCustomAccentForeground(
                                        mSystemColors.colorAccent)
                                  : widget::sDefaultAccentForeground.ToABGR();
