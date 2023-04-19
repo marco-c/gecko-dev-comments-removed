@@ -87,7 +87,7 @@ nsresult GetJSValFromKeyPathString(
       
       if (currentVal.isString() && !tokenizer.hasMoreTokens() &&
           token.EqualsLiteral("length")) {
-        aKeyJSVal->setNumber(double(JS_GetStringLength(currentVal.toString())));
+        aKeyJSVal->setNumber(JS_GetStringLength(currentVal.toString()));
         break;
       }
 
