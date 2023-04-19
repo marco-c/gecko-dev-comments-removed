@@ -235,26 +235,24 @@ interface nsIEditor  : nsISupports
 
 
 
-
-
-
-
-
   [can_run_script]
-  void undo(in unsigned long count);
+  void undo();
 
   
 
 
 
 
+  [can_run_script]
+  void undoAll();
 
+  
 
 
 
 
   [can_run_script]
-  void redo(in unsigned long count);
+  void redo();
 
   
 
