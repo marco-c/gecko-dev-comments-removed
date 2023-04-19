@@ -20,7 +20,31 @@
 namespace webrtc {
 namespace {
 static constexpr DataSize kMaxLeadingSize = DataSize::Bytes(1400);
+
+int GetPriorityForType(RtpPacketMediaType type) {
+  
+  switch (type) {
+    case RtpPacketMediaType::kAudio:
+      
+      return 0;
+    case RtpPacketMediaType::kRetransmission:
+      
+      return 1;
+    case RtpPacketMediaType::kVideo:
+    case RtpPacketMediaType::kForwardErrorCorrection:
+      
+      
+      
+      return 2;
+    case RtpPacketMediaType::kPadding:
+      
+      
+      return 3;
+  }
+  RTC_CHECK_NOTREACHED();
 }
+
+}  
 
 RoundRobinPacketQueue::QueuedPacket::QueuedPacket(const QueuedPacket& rhs) =
     default;
@@ -125,11 +149,11 @@ RoundRobinPacketQueue::~RoundRobinPacketQueue() {
   }
 }
 
-void RoundRobinPacketQueue::Push(int priority,
-                                 Timestamp enqueue_time,
+void RoundRobinPacketQueue::Push(Timestamp enqueue_time,
                                  uint64_t enqueue_order,
                                  std::unique_ptr<RtpPacketToSend> packet) {
   RTC_DCHECK(packet->packet_type().has_value());
+  int priority = GetPriorityForType(*packet->packet_type());
   if (size_packets_ == 0) {
     
     single_packet_queue_.emplace(

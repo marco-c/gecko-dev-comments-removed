@@ -38,8 +38,6 @@ constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
 
 constexpr TimeDelta kMaxProcessingInterval = TimeDelta::Millis(30);
 
-constexpr int kFirstPriority = 0;
-
 bool IsDisabled(const FieldTrialsView& field_trials, absl::string_view key) {
   return absl::StartsWith(field_trials.Lookup(key), "Disabled");
 }
@@ -54,29 +52,6 @@ TimeDelta GetDynamicPaddingTarget(const FieldTrialsView& field_trials) {
   ParseFieldTrial({&padding_target},
                   field_trials.Lookup("WebRTC-Pacer-DynamicPaddingTarget"));
   return padding_target.Get();
-}
-
-int GetPriorityForType(RtpPacketMediaType type) {
-  
-  switch (type) {
-    case RtpPacketMediaType::kAudio:
-      
-      return kFirstPriority + 1;
-    case RtpPacketMediaType::kRetransmission:
-      
-      return kFirstPriority + 2;
-    case RtpPacketMediaType::kVideo:
-    case RtpPacketMediaType::kForwardErrorCorrection:
-      
-      
-      
-      return kFirstPriority + 3;
-    case RtpPacketMediaType::kPadding:
-      
-      
-      return kFirstPriority + 4;
-  }
-  RTC_CHECK_NOTREACHED();
 }
 
 }  
@@ -217,10 +192,24 @@ void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
   RTC_DCHECK(pacing_bitrate_ > DataRate::Zero())
       << "SetPacingRate must be called before InsertPacket.";
   RTC_CHECK(packet->packet_type());
-  
-  
-  const int priority = GetPriorityForType(*packet->packet_type());
-  EnqueuePacketInternal(std::move(packet), priority);
+
+  prober_.OnIncomingPacket(DataSize::Bytes(packet->payload_size()));
+
+  Timestamp now = CurrentTime();
+  if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty()) {
+    
+    
+    
+    Timestamp target_process_time = now;
+    Timestamp next_send_time = NextSendTime();
+    if (next_send_time.IsFinite()) {
+      
+      
+      target_process_time = std::min(now, next_send_time);
+    }
+    UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(target_process_time));
+  }
+  packet_queue_.Push(now, packet_counter_++, std::move(packet));
 }
 
 void PacingController::SetAccountForAudioPackets(bool account_for_audio) {
@@ -264,29 +253,6 @@ absl::optional<Timestamp> PacingController::FirstSentPacketTime() const {
 
 Timestamp PacingController::OldestPacketEnqueueTime() const {
   return packet_queue_.OldestEnqueueTime();
-}
-
-void PacingController::EnqueuePacketInternal(
-    std::unique_ptr<RtpPacketToSend> packet,
-    int priority) {
-  prober_.OnIncomingPacket(DataSize::Bytes(packet->payload_size()));
-
-  Timestamp now = CurrentTime();
-
-  if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty()) {
-    
-    
-    
-    Timestamp target_process_time = now;
-    Timestamp next_send_time = NextSendTime();
-    if (next_send_time.IsFinite()) {
-      
-      
-      target_process_time = std::min(now, next_send_time);
-    }
-    UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(target_process_time));
-  }
-  packet_queue_.Push(priority, now, packet_counter_++, std::move(packet));
 }
 
 TimeDelta PacingController::UpdateTimeAndGetElapsed(Timestamp now) {
