@@ -59,6 +59,27 @@ for (let constructor of constructors) {
   assertEq(cloned.stack === undefined, false);
 
   
+  error = new constructor("hello");
+  error.cause = new Error("foobar");
+  assertDeepEq(Object.getOwnPropertyDescriptor(error, "cause"), {
+    value: error.cause,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+  cloned = roundtrip(error);
+  assertDeepEq(Object.getOwnPropertyDescriptor(cloned, "cause"), {
+    value: cloned.cause,
+    writable: true,
+    enumerable: false,  
+    configurable: true,
+  });
+  assertEq(cloned.hasOwnProperty('message'), true);
+  assertEq(cloned instanceof constructor, true);
+  assertEq(cloned.stack, error.stack);
+  assertEq(cloned.stack === undefined, false);
+
+  
   error = new (class MyError extends constructor {});
   cloned = roundtrip(error);
   assertEq(cloned.name, constructor.name);
