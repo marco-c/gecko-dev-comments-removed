@@ -142,9 +142,7 @@ ContentAreaDropListener.prototype = {
     }
     let uri = info.fixedURI;
 
-    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-      Ci.nsIScriptSecurityManager
-    );
+    let secMan = Services.scriptSecurityManager;
     let flags = secMan.STANDARD;
     if (disallowInherit) {
       flags |= secMan.DISALLOW_INHERIT_PRINCIPAL;
@@ -190,22 +188,13 @@ ContentAreaDropListener.prototype = {
       
       
       if (fallbackToSystemPrincipal) {
-        let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-          Ci.nsIScriptSecurityManager
-        );
-        return secMan.getSystemPrincipal();
-      } else {
-        principalURISpec = "file:///";
+        return Services.scriptSecurityManager.getSystemPrincipal();
       }
+
+      principalURISpec = "file:///";
     }
-    let ioService = Cc["@mozilla.org/network/io-service;1"].getService(
-      Ci.nsIIOService
-    );
-    let secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-      Ci.nsIScriptSecurityManager
-    );
-    return secMan.createContentPrincipal(
-      ioService.newURI(principalURISpec),
+    return Services.scriptSecurityManager.createContentPrincipal(
+      Services.io.newURI(principalURISpec),
       {}
     );
   },
