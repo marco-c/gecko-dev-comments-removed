@@ -11,6 +11,11 @@
 #ifndef MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 #define MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 
+#include "absl/types/optional.h"
+#include "api/units/data_size.h"
+#include "api/units/frequency.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/video_coding/rtt_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
@@ -36,10 +41,9 @@ class VCMJitterEstimator {
   
   
   
-  
-  void UpdateEstimate(int64_t frameDelayMS,
-                      uint32_t frameSizeBytes,
-                      bool incompleteFrame = false);
+  void UpdateEstimate(TimeDelta frame_delay,
+                      DataSize frame_size,
+                      bool incomplete_frame = false);
 
   
   
@@ -47,8 +51,10 @@ class VCMJitterEstimator {
   
   
   
-  virtual int GetJitterEstimate(double rttMultiplier,
-                                absl::optional<double> rttMultAddCapMs);
+  
+  virtual TimeDelta GetJitterEstimate(
+      double rtt_multiplier,
+      absl::optional<TimeDelta> rtt_mult_add_cap);
 
   
   void FrameNacked();
@@ -57,17 +63,17 @@ class VCMJitterEstimator {
   
   
   
-  void UpdateRtt(int64_t rttMs);
+  void UpdateRtt(TimeDelta rtt);
 
   
   
   
-  static const uint32_t OPERATING_SYSTEM_JITTER = 10;
+  static constexpr TimeDelta OPERATING_SYSTEM_JITTER = TimeDelta::Millis(10);
 
  protected:
   
-  double _theta[2];  
-  double _varNoise;  
+  double theta_[2];   
+  double var_noise_;  
 
  private:
   
@@ -78,7 +84,9 @@ class VCMJitterEstimator {
   
   
   
-  void KalmanEstimateChannel(int64_t frameDelayMS, int32_t deltaFSBytes);
+  
+  void KalmanEstimateChannel(TimeDelta frame_delay,
+                             double delta_frame_size_bytes);
 
   
   
@@ -87,14 +95,14 @@ class VCMJitterEstimator {
   
   
   
-  void EstimateRandomJitter(double d_dT, bool incompleteFrame);
+  void EstimateRandomJitter(double d_dT, bool incomplete_frame);
 
   double NoiseThreshold() const;
 
   
   
   
-  double CalculateEstimate();
+  TimeDelta CalculateEstimate();
 
   
   void PostProcessEstimate();
@@ -109,46 +117,42 @@ class VCMJitterEstimator {
   
   
   
-  double DeviationFromExpectedDelay(int64_t frameDelayMS,
-                                    int32_t deltaFSBytes) const;
+  double DeviationFromExpectedDelay(TimeDelta frame_delay,
+                                    double delta_frame_size_bytes) const;
 
-  double GetFrameRate() const;
+  Frequency GetFrameRate() const;
+
+  double theta_cov_[2][2];  
+  double q_cov_[2][2];      
+
+  static constexpr DataSize kDefaultAvgAndMaxFrameSize = DataSize::Bytes(500);
+  DataSize avg_frame_size_ = kDefaultAvgAndMaxFrameSize;  
+  double var_frame_size_;  
+  
+  DataSize max_frame_size_ = kDefaultAvgAndMaxFrameSize;
+  DataSize frame_size_sum_ = DataSize::Zero();
+  uint32_t frame_size_count_;
+
+  absl::optional<Timestamp> last_update_time_;
+  
+  absl::optional<TimeDelta> prev_estimate_;
+  
+  absl::optional<DataSize> prev_frame_size_;
+  
+  double avg_noise_;
+  uint32_t alpha_count_;
+  
+  TimeDelta filter_jitter_estimate_ = TimeDelta::Zero();
+
+  uint32_t startup_count_;
+  
+  Timestamp latest_nack_ = Timestamp::Zero();
+  
+  
+  uint32_t nack_count_;
+  VCMRttFilter rtt_filter_;
 
   
-  const double _phi;
-  const double _psi;
-  const uint32_t _alphaCountMax;
-  const double _thetaLow;
-  const uint32_t _nackLimit;
-  const int32_t _numStdDevDelayOutlier;
-  const int32_t _numStdDevFrameSizeOutlier;
-  const double _noiseStdDevs;
-  const double _noiseStdDevOffset;
-
-  double _thetaCov[2][2];  
-  double _Qcov[2][2];      
-  double _avgFrameSize;    
-  double _varFrameSize;    
-  double _maxFrameSize;    
-                           
-  uint32_t _fsSum;
-  uint32_t _fsCount;
-
-  int64_t _lastUpdateT;
-  double _prevEstimate;     
-  uint32_t _prevFrameSize;  
-  double _avgNoise;         
-  uint32_t _alphaCount;
-  double _filterJitterEstimate;  
-
-  uint32_t _startupCount;
-
-  int64_t
-      _latestNackTimestamp;  
-  uint32_t _nackCount;       
-                             
-  VCMRttFilter _rttFilter;
-
   rtc::RollingAccumulator<uint64_t> fps_counter_;
   const double time_deviation_upper_bound_;
   const bool enable_reduced_delay_;
