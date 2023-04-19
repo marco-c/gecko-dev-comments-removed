@@ -65,14 +65,22 @@ class ProcessThreadImpl : public ProcessThread {
     ModuleCallback& operator=(ModuleCallback&);
   };
   struct DelayedTask {
-    DelayedTask(int64_t run_at_ms, std::unique_ptr<QueuedTask> task)
-        : run_at_ms(run_at_ms), task(task.release()) {}
+    DelayedTask(int64_t run_at_ms,
+                uint64_t sequence_id,
+                std::unique_ptr<QueuedTask> task)
+        : run_at_ms(run_at_ms),
+          sequence_id_(sequence_id),
+          task(task.release()) {}
     friend bool operator<(const DelayedTask& lhs, const DelayedTask& rhs) {
       
-      return lhs.run_at_ms > rhs.run_at_ms;
+      if (lhs.run_at_ms != rhs.run_at_ms) {
+        return lhs.run_at_ms > rhs.run_at_ms;
+      }
+      return lhs.sequence_id_ > rhs.sequence_id_;
     }
 
     int64_t run_at_ms;
+    uint64_t sequence_id_;
     
     
     
@@ -101,7 +109,10 @@ class ProcessThreadImpl : public ProcessThread {
   
   bool holds_mutex_ RTC_GUARDED_BY(this) = false;
   std::queue<QueuedTask*> queue_;
+  
+  
   std::priority_queue<DelayedTask> delayed_tasks_ RTC_GUARDED_BY(mutex_);
+  uint64_t sequence_id_ RTC_GUARDED_BY(mutex_) = 0;
   
   
   
