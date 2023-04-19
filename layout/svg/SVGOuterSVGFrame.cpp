@@ -178,7 +178,7 @@ nscoord SVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
           ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
     result = *containISize;
   } else if (isize.IsPercentage()) {
-    if (isize.IsExplicitlySet()) {
+    if (isize.IsExplicitlySet() || StylePosition()->ISize(wm).HasPercent()) {
       
       
       
