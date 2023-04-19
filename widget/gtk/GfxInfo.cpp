@@ -831,6 +831,22 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
+        DeviceFamily::AtiAll, nsIGfxInfo::FEATURE_DMABUF_SURFACE_EXPORT,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
+        V(21, 1, 2, 0), "FEATURE_FAILURE_BROKEN_MESA", "22.1.2");
+
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
+        DeviceFamily::IntelAll, nsIGfxInfo::FEATURE_DMABUF_SURFACE_EXPORT,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_FAILURE_BROKEN_DRIVER", "");
+
+    
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
         DeviceFamily::All, nsIGfxInfo::FEATURE_VAAPI,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(21, 0, 0, 0), "FEATURE_ROLLOUT_VAAPI_MESA", "Mesa 21.0.0.0");
