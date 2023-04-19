@@ -138,9 +138,6 @@ class MFMediaEngineStream
   Atomic<bool> mReceivedEOS;
 
   
-  Atomic<bool> mShouldServeSmamples;
-
-  
   MediaQueue<MediaRawData> mRawDataQueue;
 
   
