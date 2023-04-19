@@ -158,7 +158,7 @@ class CSSAnimation final : public Animation {
   
   TimeDuration InitialAdvance() const {
     return mEffect ? std::max(TimeDuration(),
-                              mEffect->SpecifiedTiming().Delay() * -1)
+                              mEffect->NormalizedTiming().Delay() * -1)
                    : TimeDuration();
   }
 

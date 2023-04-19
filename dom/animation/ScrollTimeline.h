@@ -12,7 +12,6 @@
 #include "mozilla/HashTable.h"
 #include "mozilla/PairHash.h"
 #include "mozilla/ServoStyleConsts.h"
-#include "mozilla/TimingParams.h"
 #include "mozilla/WritingModes.h"
 
 class nsIScrollableFrame;
@@ -177,8 +176,6 @@ class ScrollTimeline final : public AnimationTimeline {
 
   bool ScrollingDirectionIsAvailable() const;
 
-  static constexpr const TimingParams& GetTiming() { return sTiming; }
-
  protected:
   virtual ~ScrollTimeline() { Teardown(); }
 
@@ -208,11 +205,6 @@ class ScrollTimeline final : public AnimationTimeline {
   
   Scroller mSource;
   StyleScrollAxis mAxis;
-
-  
-  
-  
-  static TimingParams sTiming;
 };
 
 

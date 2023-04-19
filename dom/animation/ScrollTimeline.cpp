@@ -15,8 +15,6 @@
 #include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
 
-#define SCROLL_TIMELINE_DURATION_MILLISEC 100000
-
 namespace mozilla::dom {
 
 
@@ -43,8 +41,6 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
                                                AnimationTimeline)
 
-TimingParams ScrollTimeline::sTiming;
-
 ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                                StyleScrollAxis aAxis)
     : AnimationTimeline(aDocument->GetParentObject()),
@@ -52,13 +48,6 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
       mSource(aScroller),
       mAxis(aAxis) {
   MOZ_ASSERT(aDocument);
-
-  
-  
-  
-  sTiming = TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0,
-                         std::numeric_limits<float>::infinity(),
-                         PlaybackDirection::Alternate, FillMode::Both);
 }
 
 
@@ -222,7 +211,7 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   
   
   if (!scrollFrame->GetAvailableScrollingDirections().contains(orientation)) {
-    return TimeDuration::FromMilliseconds(SCROLL_TIMELINE_DURATION_MILLISEC);
+    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
   const nsPoint& scrollOffset = scrollFrame->GetScrollPosition();
@@ -240,7 +229,7 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
   
   double progress = position / range;
   return TimeDuration::FromMilliseconds(progress *
-                                        SCROLL_TIMELINE_DURATION_MILLISEC);
+                                        PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
 
 layers::ScrollDirection ScrollTimeline::Axis() const {

@@ -427,7 +427,7 @@ void AnimationInfo::AddAnimationForProperty(
                                      ? AddAnimationForNextTransaction()
                                      : AddAnimation();
 
-  const TimingParams& timing = aAnimation->GetEffect()->SpecifiedTiming();
+  const TimingParams& timing = aAnimation->GetEffect()->NormalizedTiming();
 
   
   

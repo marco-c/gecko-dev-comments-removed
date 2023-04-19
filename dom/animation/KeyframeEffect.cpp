@@ -1862,6 +1862,8 @@ void KeyframeEffect::SetAnimation(Animation* aAnimation) {
 
   mAnimation = aAnimation;
 
+  UpdateNormalizedTiming();
+
   
   
   

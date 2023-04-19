@@ -41,7 +41,7 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   bool IsCurrent() const;
   bool IsInEffect() const;
   bool HasFiniteActiveDuration() const {
-    return SpecifiedTiming().ActiveDuration() != TimeDuration::Forever();
+    return NormalizedTiming().ActiveDuration() != TimeDuration::Forever();
   }
 
   
@@ -50,16 +50,22 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   virtual void UpdateTiming(const OptionalEffectTiming& aTiming,
                             ErrorResult& aRv);
 
-  const TimingParams& SpecifiedTiming() const {
-    return mAnimation && mAnimation->UsingScrollTimeline()
-               
-               
-               
-               
-               ? ScrollTimeline::GetTiming()
-               : mTiming;
-  }
+  const TimingParams& SpecifiedTiming() const { return mTiming; }
   void SetSpecifiedTiming(TimingParams&& aTiming);
+
+  const TimingParams& NormalizedTiming() const {
+    MOZ_ASSERT((mAnimation && mAnimation->UsingScrollTimeline() &&
+                mNormalizedTiming) ||
+                   !mNormalizedTiming,
+               "We do normalization only for progress-based timeline");
+    return mNormalizedTiming ? *mNormalizedTiming : mTiming;
+  }
+
+  
+  
+  
+  
+  void UpdateNormalizedTiming();
 
   
   
@@ -98,6 +104,7 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   RefPtr<Document> mDocument;
   RefPtr<Animation> mAnimation;
   TimingParams mTiming;
+  Maybe<TimingParams> mNormalizedTiming;
 };
 
 }  
