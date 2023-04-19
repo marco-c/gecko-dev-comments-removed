@@ -522,15 +522,16 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     
     RTC_DCHECK(vp9_settings.frameDroppingOn);
     if (!is_screencast) {
-      webrtc::FieldTrialFlag interlayer_pred_experiment_enabled =
-          webrtc::FieldTrialFlag("Enabled");
+      webrtc::FieldTrialFlag interlayer_pred_experiment_enabled("Enabled");
       webrtc::FieldTrialEnum<webrtc::InterLayerPredMode> inter_layer_pred_mode(
           "inter_layer_pred_mode", webrtc::InterLayerPredMode::kOnKeyPic,
           {{"off", webrtc::InterLayerPredMode::kOff},
            {"on", webrtc::InterLayerPredMode::kOn},
            {"onkeypic", webrtc::InterLayerPredMode::kOnKeyPic}});
+      webrtc::FieldTrialFlag force_flexible_mode("FlexibleMode");
       webrtc::ParseFieldTrial(
-          {&interlayer_pred_experiment_enabled, &inter_layer_pred_mode},
+          {&interlayer_pred_experiment_enabled, &inter_layer_pred_mode,
+           &force_flexible_mode},
           call_->trials().Lookup("WebRTC-Vp9InterLayerPred"));
       if (interlayer_pred_experiment_enabled) {
         vp9_settings.interLayerPred = inter_layer_pred_mode;
@@ -538,6 +539,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
         
         vp9_settings.interLayerPred = webrtc::InterLayerPredMode::kOnKeyPic;
       }
+      vp9_settings.flexibleMode = force_flexible_mode.Get();
     } else {
       
       vp9_settings.flexibleMode = vp9_settings.numberOfSpatialLayers > 1;
