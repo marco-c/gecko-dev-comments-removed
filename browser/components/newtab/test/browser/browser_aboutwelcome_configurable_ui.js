@@ -69,30 +69,64 @@ add_task(async function test_aboutwelcome_with_noodles() {
 
 add_task(async function test_aboutwelcome_with_customized_logo() {
   const TEST_LOGO_URL = "chrome://branding/content/icon64.png";
+  const TEST_LOGO_HEIGHT = "50px";
   const TEST_LOGO_CONTENT = makeTestContent("TEST_LOGO_STEP", {
     logo: {
-      height: "50px",
+      height: TEST_LOGO_HEIGHT,
       imageURL: TEST_LOGO_URL,
     },
   });
   const TEST_LOGO_JSON = JSON.stringify([TEST_LOGO_CONTENT]);
-  const LOGO_HEIGHT = TEST_LOGO_CONTENT.content.logo.height;
   let browser = await openAboutWelcome(TEST_LOGO_JSON);
 
   await test_screen_content(
     browser,
     "renders screen with customized logo",
     
-    ["main.TEST_LOGO_STEP[pos='center']", `div.brand-logo`]
+    ["main.TEST_LOGO_STEP[pos='center']", `.brand-logo[src="${TEST_LOGO_URL}"]`]
   );
 
+  
   await test_element_styles(
     browser,
-    "div.brand-logo",
+    ".brand-logo",
     
     {
-      height: LOGO_HEIGHT,
-      "background-image": `url("${TEST_LOGO_URL}")`,
+      
+      height: TEST_LOGO_HEIGHT,
+    }
+  );
+});
+
+
+
+
+add_task(async function test_aboutwelcome_with_empty_logo_spacing() {
+  const TEST_LOGO_HEIGHT = "50px";
+  const TEST_LOGO_CONTENT = makeTestContent("TEST_LOGO_STEP", {
+    logo: {
+      height: TEST_LOGO_HEIGHT,
+      imageURL: "none",
+    },
+  });
+  const TEST_LOGO_JSON = JSON.stringify([TEST_LOGO_CONTENT]);
+  let browser = await openAboutWelcome(TEST_LOGO_JSON);
+
+  await test_screen_content(
+    browser,
+    "renders screen with empty logo element",
+    
+    ["main.TEST_LOGO_STEP[pos='center']", ".brand-logo[src='none']"]
+  );
+
+  
+  await test_element_styles(
+    browser,
+    ".brand-logo",
+    
+    {
+      
+      height: TEST_LOGO_HEIGHT,
     }
   );
 });
@@ -456,6 +490,51 @@ add_task(async function test_aboutwelcome_history_updates_disabled() {
   ok(
     startHistoryLength === endHistoryLength,
     "No entries added to the session's history stack with history updates disabled"
+  );
+
+  await doExperimentCleanup();
+});
+
+
+
+
+add_task(async function test_aboutwelcome_with_dark_mode_logo() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["ui.systemUsesDarkTheme", 1],
+    ],
+  });
+
+  let screens = [];
+  
+  for (let i = 0; i < 2; i++) {
+    screens.push(
+      makeTestContent("TEST_TEXT_COLOR_OVERRIDE_STEP", {
+        logo: {
+          darkModeImageURL:
+            "chrome://activity-stream/content/data/content/assets/heart.webp",
+        },
+      })
+    );
+  }
+
+  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: "aboutwelcome",
+    value: {
+      enabled: true,
+      screens,
+    },
+  });
+  let browser = await openAboutWelcome(JSON.stringify(screens));
+
+  await test_screen_content(
+    browser,
+    "renders screen with dark mode logo",
+    
+    [
+      '.logo-container source[srcset="chrome://activity-stream/content/data/content/assets/heart.webp"]',
+    ]
   );
 
   await doExperimentCleanup();
