@@ -2048,14 +2048,13 @@ function SharedArrayBufferSlice(start, end) {
 
 function TypedArrayCreateSameType(exemplar, length) {
   
-  let contentType = GetTypedArrayKind(exemplar);
   assert(
-    contentType !== undefined,
+    IsPossiblyWrappedTypedArray(exemplar),
     "in TypedArrayCreateSameType, exemplar does not have a [[ContentType]] internal slot"
   );
 
   
-  let constructor = GetTypedArrayConstructorFromKind(contentType);
+  let constructor = ConstructorForTypedArray(exemplar);
 
   
   
