@@ -550,6 +550,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
 
 TEST_F(NetEqImplTest, ReorderedPacket) {
   UseNoMocks();
+
   
   MockAudioDecoder mock_decoder;
 
@@ -647,6 +648,9 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   
   
   EXPECT_TRUE(packet_buffer_->Empty());
+
+  
+  EXPECT_EQ(1u, neteq_->GetOperationsAndState().discarded_primary_packets);
 
   
   ASSERT_THAT(output.packet_infos_, SizeIs(1));
