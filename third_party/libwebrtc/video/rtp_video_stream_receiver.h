@@ -427,9 +427,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       RTC_GUARDED_BY(packet_buffer_lock_);
 };
 
-
-using OnCompleteFrameCallback = RtpVideoStreamReceiver::OnCompleteFrameCallback;
-
 }  
 
 #endif  
