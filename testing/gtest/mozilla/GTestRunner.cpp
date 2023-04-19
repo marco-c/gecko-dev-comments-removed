@@ -6,10 +6,7 @@
 #include "GTestRunner.h"
 #include "gtest/gtest.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/glean/fog_ffi_generated.h"
 #include "nsICrashReporter.h"
-#include "nsString.h"
 #include "testing/TestHarness.h"
 #include "prenv.h"
 #ifdef ANDROID
@@ -155,14 +152,6 @@ int RunGTestFunc(int* argc, char** argv) {
       crashreporter->SetMinidumpPath(file);
     }
   }
-
-  
-  
-  
-  
-  Preferences::SetInt("telemetry.fog.test.localhost_port", -1);
-  const nsCString empty;
-  glean::impl::fog_init(&empty, &empty);
 
   return RUN_ALL_TESTS();
 }
