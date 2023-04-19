@@ -3477,6 +3477,14 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   RefPtr<URLExtraData> urlExtraData =
       fontFaceSetImpl ? fontFaceSetImpl->GetURLExtraData() : nullptr;
 
+  if (NS_WARN_IF(!urlExtraData)) {
+    
+    
+    
+    aError.ThrowInvalidStateError("Missing URLExtraData");
+    return false;
+  }
+
   if (fontFaceSetImpl) {
     fontFaceSetImpl->FlushUserFontSet();
   }

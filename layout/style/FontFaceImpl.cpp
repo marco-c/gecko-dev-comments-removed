@@ -416,9 +416,16 @@ bool FontFaceImpl::SetDescriptor(nsCSSFontDesc aFontDesc,
     return false;
   }
 
-  
-  
   RefPtr<URLExtraData> url = mFontFaceSet->GetURLExtraData();
+  if (NS_WARN_IF(!url)) {
+    
+    
+    aRv.ThrowInvalidStateError("Missing URLExtraData");
+    return false;
+  }
+
+  
+  
   bool changed;
   if (!Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &aValue, url,
                                         &changed)) {
