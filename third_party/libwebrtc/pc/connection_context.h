@@ -75,7 +75,11 @@ class ConnectionContext final
   rtc::Thread* network_thread() { return network_thread_; }
   const rtc::Thread* network_thread() const { return network_thread_; }
 
-  const FieldTrialsView& trials() const { return *trials_.get(); }
+  
+  
+  
+  
+  const FieldTrialsView& field_trials() const { return *trials_.get(); }
 
   
   rtc::BasicNetworkManager* default_network_manager() {

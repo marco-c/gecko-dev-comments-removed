@@ -145,7 +145,7 @@ ConnectionContext::ConnectionContext(
   
   
   default_network_manager_ = std::make_unique<rtc::BasicNetworkManager>(
-      network_monitor_factory_.get(), socket_factory, &trials());
+      network_monitor_factory_.get(), socket_factory, &field_trials());
 
   default_socket_factory_ =
       std::make_unique<rtc::BasicPacketSocketFactory>(socket_factory);

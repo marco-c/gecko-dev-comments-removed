@@ -1398,6 +1398,9 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
       video_bitrate_allocator_factory;
+  
+  
+  std::unique_ptr<FieldTrialsView> trials;
 };
 
 

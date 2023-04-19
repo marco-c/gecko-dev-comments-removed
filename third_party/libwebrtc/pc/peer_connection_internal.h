@@ -123,6 +123,8 @@ class PeerConnectionSdpMethods {
   virtual void TeardownDataChannelTransport_n() = 0;
   virtual void SetSctpDataMid(const std::string& mid) = 0;
   virtual void ResetSctpDataMid() = 0;
+
+  virtual const FieldTrialsView& trials() const = 0;
 };
 
 
@@ -178,8 +180,6 @@ class PeerConnectionInternal : public PeerConnectionInterface,
   virtual void NoteDataAddedEvent() {}
   
   virtual void OnSctpDataChannelClosed(DataChannelInterface* channel) {}
-
-  virtual const FieldTrialsView& trials() = 0;
 };
 
 }  
