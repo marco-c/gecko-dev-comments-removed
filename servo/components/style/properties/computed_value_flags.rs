@@ -102,9 +102,23 @@ bitflags! {
         /// Whether the style depends on viewport units.
         const USES_VIEWPORT_UNITS = 1 << 20;
 
+        /// Whether the style depends on viewport units on container queries.
+        ///
+        /// This needs to be a separate flag from `USES_VIEWPORT_UNITS` because
+        /// it causes us to re-match the style (rather than re-cascascading it,
+        /// which is enough for other uses of viewport units).
+        const USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES = 1 << 21;
+
         /// A flag used to mark styles which have `container-type` of `size` or
         /// `inline-size`, or under one.
-        const SELF_OR_ANCESTOR_HAS_SIZE_CONTAINER_TYPE = 1 << 21;
+        const SELF_OR_ANCESTOR_HAS_SIZE_CONTAINER_TYPE = 1 << 22;
+    }
+}
+
+impl Default for ComputedValueFlags {
+    #[inline]
+    fn default() -> Self {
+        Self::empty()
     }
 }
 
@@ -124,7 +138,13 @@ impl ComputedValueFlags {
     
     #[inline]
     fn maybe_inherited_flags() -> Self {
-        Self::inherited_flags() | ComputedValueFlags::SHOULD_SUPPRESS_LINEBREAK
+        Self::inherited_flags() | Self::SHOULD_SUPPRESS_LINEBREAK
+    }
+
+    
+    #[inline]
+    fn cascade_input_flags() -> Self {
+        Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES
     }
 
     
@@ -140,5 +160,11 @@ impl ComputedValueFlags {
     #[inline]
     pub fn maybe_inherited(self) -> Self {
         self & Self::maybe_inherited_flags()
+    }
+
+    
+    #[inline]
+    pub fn for_cascade_inputs(self) -> Self {
+        self & Self::cascade_input_flags()
     }
 }

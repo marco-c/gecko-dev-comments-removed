@@ -7,6 +7,7 @@
 #[cfg(feature = "servo")]
 use crate::animation::DocumentAnimationSet;
 use crate::bloom::StyleBloom;
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::data::{EagerPseudoStyles, ElementData};
 use crate::dom::{SendElement, TElement};
 #[cfg(feature = "gecko")]
@@ -189,14 +190,18 @@ pub struct CascadeInputs {
     
     
     pub visited_rules: Option<StrongRuleNode>,
+
+    
+    pub flags: ComputedValueFlags,
 }
 
 impl CascadeInputs {
     
     pub fn new_from_style(style: &ComputedValues) -> Self {
-        CascadeInputs {
+        Self {
             rules: style.rules.clone(),
             visited_rules: style.visited_style().and_then(|v| v.rules.clone()),
+            flags: style.flags.for_cascade_inputs(),
         }
     }
 }

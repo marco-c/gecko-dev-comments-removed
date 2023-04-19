@@ -4,6 +4,7 @@
 
 
 
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::gecko_bindings::structs::RawServoSelectorList;
 use crate::gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use crate::invalidation::element::document_state::InvalidationMatchingData;
@@ -236,6 +237,10 @@ pub struct SelectorImpl;
 pub struct ExtraMatchingData {
     
     pub invalidation_data: InvalidationMatchingData,
+
+    
+    
+    pub cascade_input_flags: ComputedValueFlags,
 }
 
 impl ::selectors::SelectorImpl for SelectorImpl {

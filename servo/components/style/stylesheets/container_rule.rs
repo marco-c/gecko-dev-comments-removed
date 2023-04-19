@@ -225,7 +225,12 @@ impl ContainerCondition {
     }
 
     
-    pub(crate) fn matches<E>(&self, device: &Device, element: E) -> bool
+    pub(crate) fn matches<E>(
+        &self,
+        device: &Device,
+        element: E,
+        invalidation_flags: &mut ComputedValueFlags,
+    ) -> bool
     where
         E: TElement,
     {
@@ -240,7 +245,15 @@ impl ContainerCondition {
             device,
             info,
             size_query_container_lookup,
-            |context| self.condition.matches(context),
+            |context| {
+                let matches = self.condition.matches(context);
+                if context.style().flags().contains(ComputedValueFlags::USES_VIEWPORT_UNITS) {
+                    
+                    
+                    invalidation_flags.insert(ComputedValueFlags::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES);
+                }
+                matches
+            },
         )
     }
 }
