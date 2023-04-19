@@ -300,7 +300,7 @@ TEST_P(RtpPacketHistoryTest, RemovesLowestPrioPaddingWhenAtMaxCapacity) {
 
   
   
-  const size_t kMaxNumPackets = RtpPacketHistory::kMaxPaddingtHistory;
+  const size_t kMaxNumPackets = RtpPacketHistory::kMaxPaddingHistory;
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets * 2);
   hist_.SetRtt(1);
 

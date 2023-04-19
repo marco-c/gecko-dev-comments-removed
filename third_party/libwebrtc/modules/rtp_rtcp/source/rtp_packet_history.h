@@ -54,7 +54,7 @@ class RtpPacketHistory {
   
   static constexpr size_t kMaxCapacity = 9600;
   
-  static constexpr size_t kMaxPaddingtHistory = 63;
+  static constexpr size_t kMaxPaddingHistory = 63;
   
   static constexpr int64_t kMinPacketDurationMs = 1000;
   static constexpr int kMinPacketDurationRtt = 3;
