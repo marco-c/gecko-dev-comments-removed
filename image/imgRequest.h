@@ -118,7 +118,10 @@ class imgRequest final : public nsIStreamListener,
 
   
   
-  already_AddRefed<nsIPrincipal> GetTriggeringPrincipal() const;
+  already_AddRefed<nsIPrincipal> GetTriggeringPrincipal() const {
+    nsCOMPtr<nsIPrincipal> principal = mTriggeringPrincipal;
+    return principal.forget();
+  }
 
   
   

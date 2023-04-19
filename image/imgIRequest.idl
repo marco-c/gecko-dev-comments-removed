@@ -39,12 +39,6 @@ interface imgIRequest : nsIRequest
 
 
 
-  [infallible] readonly attribute nsIPrincipal triggeringPrincipal;
-
-  
-
-
-
 
 
 
@@ -95,7 +89,7 @@ interface imgIRequest : nsIRequest
 
 
 
-  [infallible] readonly attribute nsIURI URI;
+  readonly attribute nsIURI URI;
 
   
 

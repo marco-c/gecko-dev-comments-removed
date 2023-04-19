@@ -424,23 +424,15 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     UpdateIntrinsicSize();
   }
 
-  nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
-
-  bool shouldUpdateOrientation = false;
-  auto newOrientation = StyleVisibility()->UsedImageOrientation(currentRequest);
+  auto newOrientation = StyleVisibility()->mImageOrientation;
 
   
   
   
-  if (mImage) {
-    if (aOldStyle) {
-      auto oldOrientation =
-          aOldStyle->StyleVisibility()->UsedImageOrientation(currentRequest);
-      shouldUpdateOrientation = oldOrientation != newOrientation;
-    } else {
-      shouldUpdateOrientation = true;
-    }
-  }
+  bool shouldUpdateOrientation =
+      mImage &&
+      (!aOldStyle ||
+       aOldStyle->StyleVisibility()->mImageOrientation != newOrientation);
 
   if (shouldUpdateOrientation) {
     nsCOMPtr<imgIContainer> image(mImage->Unwrap());
@@ -947,11 +939,10 @@ void nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
 
 void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
   if (SizeIsAvailable(aRequest)) {
-    StyleImageOrientation orientation =
-        StyleVisibility()->UsedImageOrientation(aRequest);
     
     
-    mImage = nsLayoutUtils::OrientImage(aImage, orientation);
+    mImage = nsLayoutUtils::OrientImage(aImage,
+                                        StyleVisibility()->mImageOrientation);
     MOZ_ASSERT(mImage);
   } else {
     
@@ -2638,7 +2629,8 @@ void nsImageFrame::List(FILE* out, const char* aPrefix,
 
   
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
-    nsCOMPtr<nsIURI> uri = currentRequest->GetURI();
+    nsCOMPtr<nsIURI> uri;
+    currentRequest->GetURI(getter_AddRefs(uri));
     nsAutoCString uristr;
     uri->GetAsciiSpec(uristr);
     str += nsPrintfCString(" [src=%s]", uristr.get());
