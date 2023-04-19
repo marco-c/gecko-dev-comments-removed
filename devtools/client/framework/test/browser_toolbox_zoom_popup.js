@@ -5,8 +5,10 @@
 
 
 
-const { Toolbox } = require("devtools/client/framework/toolbox");
-const { getCurrentZoom } = require("devtools/shared/layout/utils");
+const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
+const {
+  getCurrentZoom,
+} = require("resource://devtools/shared/layout/utils.js");
 
 
 

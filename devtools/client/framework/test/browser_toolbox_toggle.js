@@ -8,7 +8,7 @@
 
 const URL = "data:text/html;charset=utf-8,Toggling devtools using shortcuts";
 
-var { Toolbox } = require("devtools/client/framework/toolbox");
+var { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 
 add_task(async function() {
   

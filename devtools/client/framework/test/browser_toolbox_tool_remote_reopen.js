@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { DevToolsServer } = require("devtools/server/devtools-server");
+const {
+  DevToolsServer,
+} = require("resource://devtools/server/devtools-server.js");
 
 
 requestLongerTimeout(2);

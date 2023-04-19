@@ -23,7 +23,7 @@
 
 
 
-const { Toolbox } = require("devtools/client/framework/toolbox");
+const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 
 const TEST_STARTING_ORDER = [
   "inspector",

@@ -15,7 +15,7 @@ requestLongerTimeout(4);
 
 
 
-const { fetch } = require("devtools/shared/DevToolsUtils");
+const { fetch } = require("resource://devtools/shared/DevToolsUtils.js");
 
 const debuggerHeadURL =
   CHROME_URL_ROOT + "../../../debugger/test/mochitest/shared-head.js";

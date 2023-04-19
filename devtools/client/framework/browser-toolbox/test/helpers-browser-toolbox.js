@@ -7,7 +7,9 @@
 const { BrowserToolboxLauncher } = ChromeUtils.importESModule(
   "resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs"
 );
-const { DevToolsClient } = require("devtools/client/devtools-client");
+const {
+  DevToolsClient,
+} = require("resource://devtools/client/devtools-client.js");
 
 
 

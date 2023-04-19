@@ -3,11 +3,11 @@
 
 "use strict";
 
-const { assert } = require("devtools/shared/DevToolsUtils");
+const { assert } = require("resource://devtools/shared/DevToolsUtils.js");
 const {
   getDOMMutationBreakpoint,
   getDOMMutationBreakpoints,
-} = require("devtools/client/framework/reducers/dom-mutation-breakpoints");
+} = require("resource://devtools/client/framework/reducers/dom-mutation-breakpoints.js");
 
 exports.registerWalkerListeners = registerWalkerListeners;
 function registerWalkerListeners(store, walker) {

@@ -5,7 +5,7 @@
 
 
 
-const { listenOnce } = require("devtools/shared/async-utils");
+const { listenOnce } = require("resource://devtools/shared/async-utils.js");
 
 
 
