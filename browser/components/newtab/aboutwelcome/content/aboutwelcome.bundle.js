@@ -316,13 +316,16 @@ const MultiStageAboutWelcome = props => {
     
 
     const totalNumberOfScreens = screens[0].content.position === "corner" ? screens.length - 1 : screens.length;
+    
+
+    const stepOrder = screens[0].content.position === "corner" ? order - 1 : order;
     return index === order ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(WelcomeScreen, {
       key: screen.id + order,
       id: screen.id,
       totalNumberOfScreens: totalNumberOfScreens,
       isFirstCenteredScreen: isFirstCenteredScreen,
       isLastCenteredScreen: isLastCenteredScreen,
-      startsWithCorner: screens[0].content.position === "corner",
+      stepOrder: stepOrder,
       order: order,
       content: screen.content,
       navigate: handleTransition,
@@ -460,6 +463,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       content: this.props.content,
       id: this.props.id,
       order: this.props.order,
+      stepOrder: this.props.stepOrder,
       activeTheme: this.props.activeTheme,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
       appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
@@ -627,7 +631,7 @@ const MultiStageProtonScreen = props => {
     handleAction: props.handleAction,
     isFirstCenteredScreen: props.isFirstCenteredScreen,
     isLastCenteredScreen: props.isLastCenteredScreen,
-    startsWithCorner: props.startsWithCorner,
+    stepOrder: props.stepOrder,
     autoAdvance: props.autoAdvance,
     isRtamo: props.isRtamo,
     addonName: props.addonName,
@@ -644,13 +648,14 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
 
   getLogoStyle({
-    imageURL = "chrome://branding/content/about-logo.svg",
-    height = "80px"
+    imageURL,
+    height
   }) {
-    return {
-      background: imageURL === "" ? null : `url(${imageURL}) no-repeat center / contain`,
+    let style = {
       height
     };
+    style.backgroundImage = imageURL ? `url(${imageURL})` : null;
+    return style;
   }
 
   getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles) {
@@ -676,18 +681,18 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     }) : null);
   }
 
-  renderNoodles(includeNoodles, isCornerPosition) {
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, includeNoodles ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `noodle orange-L`
-    }) : null, includeNoodles ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `noodle purple-C`
-    }) : null, isCornerPosition ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `noodle solid-L`
-    }) : null, includeNoodles ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `noodle outline-L`
-    }) : null, includeNoodles ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `noodle yellow-circle`
-    }) : null);
+  renderNoodles() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "noodle orange-L"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "noodle purple-C"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "noodle solid-L"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "noodle outline-L"
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "noodle yellow-circle"
+    }));
   }
 
   renderLanguageSwitcher() {
@@ -709,36 +714,12 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     });
   }
 
-  render() {
-    var _this$props$appAndSys, _content$primary_butt, _content$primary_butt2;
-
-    const {
-      autoAdvance,
-      content,
-      isRtamo,
-      isTheme,
-      isFirstCenteredScreen,
-      isLastCenteredScreen,
-      totalNumberOfScreens: total
-    } = this.props;
-    const includeNoodles = content.has_noodles;
-    const isCornerPosition = content.position === "corner";
-    const hideStepsIndicator = autoAdvance || isCornerPosition || isFirstCenteredScreen && isLastCenteredScreen;
-    const textColorClass = content.text_color ? `${content.text_color}-text` : ""; 
-    
-
-    const screenClassName = isCornerPosition ? "" : this.getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles);
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("main", {
-      className: `screen ${this.props.id || ""} ${screenClassName} ${textColorClass}`,
-      role: "dialog",
-      pos: content.position || "center",
-      tabIndex: "-1",
-      "aria-labelledby": "mainContentHeader",
-      ref: input => {
-        this.mainContentHeader = input;
-      }
-    }, isCornerPosition ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "section-left"
+  renderSecondarySection(content) {
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "section-secondary",
+      style: content.background ? {
+        background: content.background
+      } : {}
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "message-text"
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -751,15 +732,47 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       text: content.help_text
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "attrib-text"
-    }))) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    })));
+  }
+
+  render() {
+    var _this$props$appAndSys, _content$primary_butt, _content$primary_butt2;
+
+    const {
+      autoAdvance,
+      content,
+      isRtamo,
+      isTheme,
+      isFirstCenteredScreen,
+      isLastCenteredScreen,
+      totalNumberOfScreens: total
+    } = this.props;
+    const includeNoodles = content.has_noodles; 
+
+    const isCenterPosition = content.position === "center" || !content.position;
+    const hideStepsIndicator = autoAdvance || isFirstCenteredScreen && isLastCenteredScreen;
+    const textColorClass = content.text_color ? `${content.text_color}-text` : ""; 
+    
+
+    const screenClassName = isCenterPosition ? this.getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles) : "";
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("main", {
+      className: `screen ${this.props.id || ""} ${screenClassName} ${textColorClass}`,
+      role: "dialog",
+      pos: content.position || "center",
+      tabIndex: "-1",
+      "aria-labelledby": "mainContentHeader",
+      ref: input => {
+        this.mainContentHeader = input;
+      }
+    }, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "section-main"
     }, content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
       position: "top"
-    }) : null, this.renderNoodles(includeNoodles, isCornerPosition), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }) : null, includeNoodles ? this.renderNoodles() : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
-      style: content.background ? {
+      style: content.background && isCenterPosition ? {
         background: content.background
       } : {}
     }, content.dismiss_button ? this.renderDismissButton() : null, content.logo ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -787,7 +800,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         "addon-name": this.props.addonName,
         ...((_this$props$appAndSys = this.props.appAndSystemLocaleInfo) === null || _this$props$appAndSys === void 0 ? void 0 : _this$props$appAndSys.displayNames)
       })
-    }))), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    }))), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "action-buttons"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
       className: "primary",
@@ -805,7 +820,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         total
       })
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("br", null), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", null), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.StepsIndicator, {
-      order: this.props.startsWithCorner ? this.props.order - 1 : this.props.order,
+      order: this.props.stepOrder,
       totalNumberOfScreens: total
     })))));
   }

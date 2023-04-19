@@ -129,6 +129,16 @@ add_task(async function test_AWMultistage_RemovePinScreen() {
     
     ["main.AW_ONLY_DEFAULT"],
     
-    ["main.AW_PIN_FIREFOX_STEP1", "nav.steps"]
+    ["main.AW_PIN_FIREFOX_STEP1"]
+  );
+
+  
+  await test_element_styles(
+    browser,
+    "nav.steps",
+    
+    {
+      display: "none",
+    }
   );
 });

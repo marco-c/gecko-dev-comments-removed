@@ -77,21 +77,23 @@ add_task(async function test_aboutwelcome_with_customized_logo() {
   });
   const TEST_LOGO_JSON = JSON.stringify([TEST_LOGO_CONTENT]);
   const LOGO_HEIGHT = TEST_LOGO_CONTENT.content.logo.height;
-  const EXPECTED_LOGO_STYLE = `background: rgba(0, 0, 0, 0) url("${TEST_LOGO_URL}") no-repeat scroll center center / contain; height: ${LOGO_HEIGHT}`;
-  const DEFAULT_LOGO_STYLE =
-    'background: rgba(0, 0, 0, 0) url("chrome://branding/content/about-logo.svg")';
   let browser = await openAboutWelcome(TEST_LOGO_JSON);
 
   await test_screen_content(
     browser,
     "renders screen with customized logo",
     
-    [
-      "main.TEST_LOGO_STEP[pos='center']",
-      `div.brand-logo[style*='${EXPECTED_LOGO_STYLE}']`,
-    ],
+    ["main.TEST_LOGO_STEP[pos='center']", `div.brand-logo`]
+  );
+
+  await test_element_styles(
+    browser,
+    "div.brand-logo",
     
-    [`div.brand-logo[style*='${DEFAULT_LOGO_STYLE}']`]
+    {
+      height: LOGO_HEIGHT,
+      "background-image": `url("${TEST_LOGO_URL}")`,
+    }
   );
 });
 
@@ -299,4 +301,47 @@ add_task(async function test_aboutwelcome_dismiss_button() {
   await onButtonClick(browser, "button.dismiss-button");
   const { callCount } = aboutWelcomeActor.onContentMessage;
   ok(callCount >= 1, `${callCount} Stub was called`);
+});
+
+
+
+
+add_task(async function test_aboutwelcome_split_position() {
+  const TEST_SPLIT_STEP = makeTestContent("TEST_SPLIT_STEP", {
+    position: "split",
+    hero_text: "hero test",
+  });
+
+  const TEST_SPLIT_JSON = JSON.stringify([TEST_SPLIT_STEP]);
+  let browser = await openAboutWelcome(TEST_SPLIT_JSON);
+
+  await test_screen_content(
+    browser,
+    "renders screen secondary section containing hero text",
+    
+    [`main.screen[pos="split"]`, `.section-secondary`, `.message-text h1`]
+  );
+
+  
+  await test_element_styles(
+    browser,
+    "main.screen .section-secondary",
+    
+    {
+      display: "flex",
+      margin: "auto 0px auto auto",
+    }
+  );
+
+  
+  await test_element_styles(
+    browser,
+    ".action-buttons .secondary-cta .secondary",
+    
+    {
+      
+      "background-color": "rgb(240, 240, 244)",
+      color: "rgb(0, 0, 0)",
+    }
+  );
 });

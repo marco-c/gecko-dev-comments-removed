@@ -247,7 +247,9 @@ class AboutWelcomeChild extends JSWindowActorChild {
         "AWPage:GET_APP_AND_SYSTEM_LOCALE_INFO"
       );
     }
-    let defaults = lazy.AboutWelcomeDefaults.getDefaults();
+    let defaults = lazy.AboutWelcomeDefaults.getDefaults(
+      featureConfig.templateMR
+    );
     
     
     
