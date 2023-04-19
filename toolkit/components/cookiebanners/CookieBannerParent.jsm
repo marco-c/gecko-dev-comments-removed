@@ -57,10 +57,40 @@ class CookieBannerParent extends JSWindowActorParent {
 
     
     let mode;
-    if (this.#isPrivateBrowsing()) {
+    let isPrivateBrowsing = this.#isPrivateBrowsing();
+    if (isPrivateBrowsing) {
       mode = lazy.serviceModePBM;
     } else {
       mode = lazy.serviceMode;
+    }
+
+    
+    
+    let topBrowsingContext = this.manager.browsingContext.top;
+    let topURI = topBrowsingContext.currentWindowGlobal?.documentURI;
+
+    
+    
+    if (mode != Ci.nsICookieBannerService.MODE_DISABLED && topURI) {
+      try {
+        let perDomainMode = Services.cookieBanners.getDomainPref(
+          topURI,
+          isPrivateBrowsing
+        );
+
+        if (perDomainMode != Ci.nsICookieBannerService.MODE_UNSET) {
+          mode = perDomainMode;
+        }
+      } catch (e) {
+        
+        
+        
+        if (e.result == Cr.NS_ERROR_NOT_AVAILABLE) {
+          Cu.reportError("The cookie banner handling service is not available");
+        } else {
+          Cu.reportError("Fail on getting domain pref:" + e);
+        }
+      }
     }
 
     
