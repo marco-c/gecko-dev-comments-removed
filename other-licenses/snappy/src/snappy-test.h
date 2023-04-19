@@ -31,13 +31,11 @@
 #ifndef THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_TEST_H_
 #define THIRD_PARTY_SNAPPY_OPENSOURCE_SNAPPY_TEST_H_
 
-#include <iostream>
-#include <string>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "snappy-stubs-internal.h"
-
-#include <stdio.h>
-#include <stdarg.h>
 
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
@@ -52,53 +50,13 @@
 #endif
 
 #ifdef HAVE_WINDOWS_H
+
+
+#define NOMINMAX
 #include <windows.h>
 #endif
 
-#ifdef HAVE_GTEST
-
-#include <gtest/gtest.h>
-#undef TYPED_TEST
-#define TYPED_TEST TEST
-#define INIT_GTEST(argc, argv) ::testing::InitGoogleTest(argc, *argv)
-
-#else
-
-
-
-#define TEST(test_case, test_subcase) \
-  void Test_ ## test_case ## _ ## test_subcase()
-#define INIT_GTEST(argc, argv)
-
-#define TYPED_TEST TEST
-#define EXPECT_EQ CHECK_EQ
-#define EXPECT_NE CHECK_NE
-#define EXPECT_FALSE(cond) CHECK(!(cond))
-
-#endif
-
-#ifdef HAVE_GFLAGS
-
-#include <gflags/gflags.h>
-
-
-
-
-#define InitGoogle(argv0, argc, argv, remove_flags) \
-  INIT_GTEST(argc, argv); \
-  google::ParseCommandLineFlags(argc, argv, remove_flags);
-
-#else
-
-
-
-#define DEFINE_int32(flag_name, default_value, description) \
-  static int FLAGS_ ## flag_name = default_value;
-
-#define InitGoogle(argv0, argc, argv, remove_flags) \
-  INIT_GTEST(argc, argv)
-
-#endif
+#define InitGoogle(argv0, argc, argv, remove_flags) ((void)(0))
 
 #ifdef HAVE_LIBZ
 #include "zlib.h"
@@ -108,82 +66,54 @@
 #include "lzo/lzo1x.h"
 #endif
 
-namespace {
+#ifdef HAVE_LIBLZ4
+#include "lz4.h"
+#endif
 
 namespace file {
-  int Defaults() { return 0; }
 
-  class DummyStatus {
-   public:
-    void CheckSuccess() { }
-  };
 
-  DummyStatus GetContents(
-      const std::string& filename, std::string* data, int unused) {
-    FILE* fp = fopen(filename.c_str(), "rb");
-    if (fp == NULL) {
-      perror(filename.c_str());
-      exit(1);
-    }
 
-    data->clear();
-    while (!feof(fp)) {
-      char buf[4096];
-      size_t ret = fread(buf, 1, 4096, fp);
-      if (ret == 0 && ferror(fp)) {
-        perror("fread");
-        exit(1);
-      }
-      data->append(std::string(buf, ret));
-    }
 
-    fclose(fp);
 
-    return DummyStatus();
-  }
+class OptionsStub {
+ public:
+  OptionsStub();
+  OptionsStub(const OptionsStub &) = delete;
+  OptionsStub &operator=(const OptionsStub &) = delete;
+  ~OptionsStub();
+};
 
-  inline DummyStatus SetContents(
-      const std::string& filename, const std::string& str, int unused) {
-    FILE* fp = fopen(filename.c_str(), "wb");
-    if (fp == NULL) {
-      perror(filename.c_str());
-      exit(1);
-    }
+const OptionsStub &Defaults();
 
-    int ret = fwrite(str.data(), str.size(), 1, fp);
-    if (ret != 1) {
-      perror("fwrite");
-      exit(1);
-    }
 
-    fclose(fp);
 
-    return DummyStatus();
-  }
-}  
+
+
+
+class StatusStub {
+ public:
+  StatusStub();
+  StatusStub(const StatusStub &);
+  StatusStub &operator=(const StatusStub &);
+  ~StatusStub();
+
+  bool ok();
+};
+
+StatusStub GetContents(const std::string &file_name, std::string *output,
+                       const OptionsStub & );
+
+StatusStub SetContents(const std::string &file_name, const std::string &content,
+                       const OptionsStub & );
 
 }  
 
 namespace snappy {
 
 #define FLAGS_test_random_seed 301
-using TypeParam = std::string;
-
-void Test_CorruptedTest_VerifyCorrupted();
-void Test_Snappy_SimpleTests();
-void Test_Snappy_MaxBlowup();
-void Test_Snappy_RandomData();
-void Test_Snappy_FourByteOffset();
-void Test_SnappyCorruption_TruncatedVarint();
-void Test_SnappyCorruption_UnterminatedVarint();
-void Test_SnappyCorruption_OverflowingVarint();
-void Test_Snappy_ReadPastEndOfBuffer();
-void Test_Snappy_FindMatchLength();
-void Test_Snappy_FindMatchLengthRandom();
 
 std::string ReadTestDataFile(const std::string& base, size_t size_limit);
-
-std::string ReadTestDataFile(const std::string& base);
 
 
 
@@ -193,17 +123,18 @@ std::string StrFormat(const char* format, ...);
 
 class CycleTimer {
  public:
-  CycleTimer() : real_time_us_(0) {}
+  inline CycleTimer() : real_time_us_(0) {}
+  inline ~CycleTimer() = default;
 
-  void Start() {
+  inline void Start() {
 #ifdef WIN32
     QueryPerformanceCounter(&start_);
 #else
-    gettimeofday(&start_, NULL);
+    ::gettimeofday(&start_, nullptr);
 #endif
   }
 
-  void Stop() {
+  inline void Stop() {
 #ifdef WIN32
     LARGE_INTEGER stop;
     LARGE_INTEGER frequency;
@@ -214,65 +145,76 @@ class CycleTimer {
         frequency.QuadPart;
     real_time_us_ += elapsed * 1e6 + 0.5;
 #else
-    struct timeval stop;
-    gettimeofday(&stop, NULL);
+    struct ::timeval stop;
+    ::gettimeofday(&stop, nullptr);
 
     real_time_us_ += 1000000 * (stop.tv_sec - start_.tv_sec);
     real_time_us_ += (stop.tv_usec - start_.tv_usec);
 #endif
   }
 
-  double Get() {
-    return real_time_us_ * 1e-6;
-  }
+  inline double Get() { return real_time_us_ * 1e-6; }
 
  private:
-  int64 real_time_us_;
+  int64_t real_time_us_;
 #ifdef WIN32
   LARGE_INTEGER start_;
 #else
-  struct timeval start_;
+  struct ::timeval start_;
 #endif
 };
 
 
 
-typedef void (*BenchmarkFunction)(int, int);
-
-class Benchmark {
+class LogMessage {
  public:
-  Benchmark(const std::string& name, BenchmarkFunction function)
-      : name_(name), function_(function) {}
+  inline LogMessage() = default;
+  ~LogMessage();
 
-  Benchmark* DenseRange(int start, int stop) {
-    start_ = start;
-    stop_ = stop;
-    return this;
-  }
-
-  void Run();
-
- private:
-  const std::string name_;
-  const BenchmarkFunction function_;
-  int start_, stop_;
+  LogMessage &operator<<(const std::string &message);
+  LogMessage &operator<<(int number);
 };
-#define BENCHMARK(benchmark_name) \
-  Benchmark* Benchmark_ ## benchmark_name = \
-          (new Benchmark(#benchmark_name, benchmark_name))
 
-extern Benchmark* Benchmark_BM_UFlat;
-extern Benchmark* Benchmark_BM_UIOVec;
-extern Benchmark* Benchmark_BM_UValidate;
-extern Benchmark* Benchmark_BM_ZFlat;
-extern Benchmark* Benchmark_BM_ZFlatAll;
-extern Benchmark* Benchmark_BM_ZFlatIncreasingTableSize;
+class LogMessageCrash : public LogMessage {
+ public:
+  inline LogMessageCrash() = default;
+  ~LogMessageCrash();
+};
 
-void ResetBenchmarkTiming();
-void StartBenchmarkTiming();
-void StopBenchmarkTiming();
-void SetBenchmarkLabel(const std::string& str);
-void SetBenchmarkBytesProcessed(int64 bytes);
+
+
+
+
+class LogMessageVoidify {
+ public:
+  inline LogMessageVoidify() = default;
+  inline ~LogMessageVoidify() = default;
+
+  
+  
+  inline void operator&(const LogMessage &) {}
+};
+
+
+
+
+#define CRASH_UNLESS(condition)  \
+  SNAPPY_PREDICT_TRUE(condition) \
+      ? (void)0                  \
+      : snappy::LogMessageVoidify() & snappy::LogMessageCrash()
+
+#define LOG(level) LogMessage()
+#define VLOG(level) \
+  true ? (void)0 : snappy::LogMessageVoidify() & snappy::LogMessage()
+
+#define CHECK(cond) CRASH_UNLESS(cond)
+#define CHECK_LE(a, b) CRASH_UNLESS((a) <= (b))
+#define CHECK_GE(a, b) CRASH_UNLESS((a) >= (b))
+#define CHECK_EQ(a, b) CRASH_UNLESS((a) == (b))
+#define CHECK_NE(a, b) CRASH_UNLESS((a) != (b))
+#define CHECK_LT(a, b) CRASH_UNLESS((a) < (b))
+#define CHECK_GT(a, b) CRASH_UNLESS((a) > (b))
+#define CHECK_OK(cond) (cond).ok()
 
 #ifdef HAVE_LIBZ
 
@@ -394,131 +336,6 @@ class ZLib {
 };
 
 #endif  
-
-}  
-
-DECLARE_bool(run_microbenchmarks);
-
-static inline void RunSpecifiedBenchmarks() {
-  if (!FLAGS_run_microbenchmarks) {
-    return;
-  }
-
-  fprintf(stderr, "Running microbenchmarks.\n");
-#ifndef NDEBUG
-  fprintf(stderr, "WARNING: Compiled with assertions enabled, will be slow.\n");
-#endif
-#ifndef __OPTIMIZE__
-  fprintf(stderr, "WARNING: Compiled without optimization, will be slow.\n");
-#endif
-  fprintf(stderr, "Benchmark            Time(ns)    CPU(ns) Iterations\n");
-  fprintf(stderr, "---------------------------------------------------\n");
-
-  snappy::Benchmark_BM_UFlat->Run();
-  snappy::Benchmark_BM_UIOVec->Run();
-  snappy::Benchmark_BM_UValidate->Run();
-  snappy::Benchmark_BM_ZFlat->Run();
-  snappy::Benchmark_BM_ZFlatAll->Run();
-  snappy::Benchmark_BM_ZFlatIncreasingTableSize->Run();
-
-  fprintf(stderr, "\n");
-}
-
-#ifndef HAVE_GTEST
-
-static inline int RUN_ALL_TESTS() {
-  fprintf(stderr, "Running correctness tests.\n");
-  snappy::Test_CorruptedTest_VerifyCorrupted();
-  snappy::Test_Snappy_SimpleTests();
-  snappy::Test_Snappy_MaxBlowup();
-  snappy::Test_Snappy_RandomData();
-  snappy::Test_Snappy_FourByteOffset();
-  snappy::Test_SnappyCorruption_TruncatedVarint();
-  snappy::Test_SnappyCorruption_UnterminatedVarint();
-  snappy::Test_SnappyCorruption_OverflowingVarint();
-  snappy::Test_Snappy_ReadPastEndOfBuffer();
-  snappy::Test_Snappy_FindMatchLength();
-  snappy::Test_Snappy_FindMatchLengthRandom();
-  fprintf(stderr, "All tests passed.\n");
-
-  return 0;
-}
-
-#endif  
-
-
-namespace snappy {
-
-
-
-#define LOG(level) LogMessage()
-#define VLOG(level) true ? (void)0 : \
-    snappy::LogMessageVoidify() & snappy::LogMessage()
-
-class LogMessage {
- public:
-  LogMessage() { }
-  ~LogMessage() {
-    std::cerr << std::endl;
-  }
-
-  LogMessage& operator<<(const std::string& msg) {
-    std::cerr << msg;
-    return *this;
-  }
-  LogMessage& operator<<(int x) {
-    std::cerr << x;
-    return *this;
-  }
-};
-
-
-
-
-#define CRASH_UNLESS(condition) \
-    SNAPPY_PREDICT_TRUE(condition) ? (void)0 : \
-    snappy::LogMessageVoidify() & snappy::LogMessageCrash()
-
-#ifdef _MSC_VER
-
-
-#pragma warning(push)
-#pragma warning(disable:4722)
-#endif
-
-class LogMessageCrash : public LogMessage {
- public:
-  LogMessageCrash() { }
-  ~LogMessageCrash() {
-    std::cerr << std::endl;
-    abort();
-  }
-};
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-
-
-
-
-class LogMessageVoidify {
- public:
-  LogMessageVoidify() { }
-  
-  
-  void operator&(const LogMessage&) { }
-};
-
-#define CHECK(cond) CRASH_UNLESS(cond)
-#define CHECK_LE(a, b) CRASH_UNLESS((a) <= (b))
-#define CHECK_GE(a, b) CRASH_UNLESS((a) >= (b))
-#define CHECK_EQ(a, b) CRASH_UNLESS((a) == (b))
-#define CHECK_NE(a, b) CRASH_UNLESS((a) != (b))
-#define CHECK_LT(a, b) CRASH_UNLESS((a) < (b))
-#define CHECK_GT(a, b) CRASH_UNLESS((a) > (b))
-#define CHECK_OK(cond) (cond).CheckSuccess()
 
 }  
 

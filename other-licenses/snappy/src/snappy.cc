@@ -26,9 +26,9 @@
 
 
 
-#include "snappy.h"
 #include "snappy-internal.h"
 #include "snappy-sinksource.h"
+#include "snappy.h"
 
 #if !defined(SNAPPY_HAVE_SSSE3)
 
@@ -68,34 +68,91 @@
 #include <immintrin.h>
 #endif
 
-#include <stdio.h>
-
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace snappy {
 
+namespace {
+
+
+constexpr int kSlopBytes = 64;
+
+using internal::char_table;
 using internal::COPY_1_BYTE_OFFSET;
 using internal::COPY_2_BYTE_OFFSET;
-using internal::LITERAL;
-using internal::char_table;
+using internal::COPY_4_BYTE_OFFSET;
 using internal::kMaximumTagLength;
+using internal::LITERAL;
 
 
 
 
 
 
-static inline uint32 HashBytes(uint32 bytes, int shift) {
-  uint32 kMul = 0x1e35a7bd;
-  return (bytes * kMul) >> shift;
+
+
+
+
+
+
+inline constexpr int16_t MakeEntry(int16_t len, int16_t offset) {
+  return len - (offset << 8);
 }
-static inline uint32 Hash(const char* p, int shift) {
-  return HashBytes(UNALIGNED_LOAD32(p), shift);
+
+inline constexpr int16_t LengthMinusOffset(int data, int type) {
+  return type == 3   ? 0xFF                    
+         : type == 2 ? MakeEntry(data + 1, 0)  
+         : type == 1 ? MakeEntry((data & 7) + 4, data >> 3)  
+         : data < 60 ? MakeEntry(data + 1, 1)  
+                     : 0xFF;                   
 }
 
-size_t MaxCompressedLength(size_t source_len) {
+inline constexpr int16_t LengthMinusOffset(uint8_t tag) {
+  return LengthMinusOffset(tag >> 2, tag & 3);
+}
+
+template <size_t... Ints>
+struct index_sequence {};
+
+template <std::size_t N, size_t... Is>
+struct make_index_sequence : make_index_sequence<N - 1, N - 1, Is...> {};
+
+template <size_t... Is>
+struct make_index_sequence<0, Is...> : index_sequence<Is...> {};
+
+template <size_t... seq>
+constexpr std::array<int16_t, 256> MakeTable(index_sequence<seq...>) {
+  return std::array<int16_t, 256>{LengthMinusOffset(seq)...};
+}
+
+
+
+struct {
+  alignas(64) const std::array<int16_t, 256> length_minus_offset;
+  uint32_t extract_masks[4];  
+} table = {MakeTable(make_index_sequence<256>{}), {0, 0xFF, 0xFFFF, 0}};
+
+
+
+
+
+
+inline uint32_t HashBytes(uint32_t bytes, uint32_t mask) {
+  constexpr uint32_t kMagic = 0x1e35a7bd;
+  return ((kMagic * bytes) >> (32 - kMaxHashTableBits)) & mask;
+}
+
+}  
+
+size_t MaxCompressedLength(size_t source_bytes) {
   
   
   
@@ -116,15 +173,15 @@ size_t MaxCompressedLength(size_t source_len) {
   
   
   
-  return 32 + source_len + source_len/6;
+  return 32 + source_bytes + source_bytes / 6;
 }
 
 namespace {
 
 void UnalignedCopy64(const void* src, void* dst) {
   char tmp[8];
-  memcpy(tmp, src, 8);
-  memcpy(dst, tmp, 8);
+  std::memcpy(tmp, src, 8);
+  std::memcpy(dst, tmp, 8);
 }
 
 void UnalignedCopy128(const void* src, void* dst) {
@@ -132,9 +189,20 @@ void UnalignedCopy128(const void* src, void* dst) {
   
   
   char tmp[16];
-  memcpy(tmp, src, 16);
-  memcpy(dst, tmp, 16);
+  std::memcpy(tmp, src, 16);
+  std::memcpy(dst, tmp, 16);
 }
+
+template <bool use_16bytes_chunk>
+inline void ConditionalUnalignedCopy128(const char* src, char* dst) {
+  if (use_16bytes_chunk) {
+    UnalignedCopy128(src, dst);
+  } else {
+    UnalignedCopy64(src, dst);
+    UnalignedCopy64(src + 8, dst + 8);
+  }
+}
+
 
 
 
@@ -165,31 +233,165 @@ inline char* IncrementalCopySlow(const char* src, char* op,
 
 
 
-alignas(16) const char pshufb_fill_patterns[7][16] = {
-  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1},
-  {0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0},
-  {0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3},
-  {0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0},
-  {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3},
-  {0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 0, 1},
-};
+
+
+
+
+
+
+template <size_t... indexes>
+inline constexpr std::array<char, sizeof...(indexes)> MakePatternMaskBytes(
+    int index_offset, int pattern_size, index_sequence<indexes...>) {
+  return {static_cast<char>((index_offset + indexes) % pattern_size)...};
+}
+
+
+
+template <size_t... pattern_sizes_minus_one>
+inline constexpr std::array<std::array<char, sizeof(__m128i)>,
+                            sizeof...(pattern_sizes_minus_one)>
+MakePatternMaskBytesTable(int index_offset,
+                          index_sequence<pattern_sizes_minus_one...>) {
+  return {MakePatternMaskBytes(
+      index_offset, pattern_sizes_minus_one + 1,
+      make_index_sequence<sizeof(__m128i)>())...};
+}
+
+
+
+
+alignas(16) constexpr std::array<std::array<char, sizeof(__m128i)>,
+                                 16> pattern_generation_masks =
+    MakePatternMaskBytesTable(
+        0,
+        make_index_sequence<16>());
+
+
+
+
+
+
+alignas(16) constexpr std::array<std::array<char, sizeof(__m128i)>,
+                                 16> pattern_reshuffle_masks =
+    MakePatternMaskBytesTable(
+        16,
+        make_index_sequence<16>());
+
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+static inline __m128i LoadPattern(const char* src, const size_t pattern_size) {
+  __m128i generation_mask = _mm_load_si128(reinterpret_cast<const __m128i*>(
+      pattern_generation_masks[pattern_size - 1].data()));
+  
+  
+  SNAPPY_ANNOTATE_MEMORY_IS_INITIALIZED(src + pattern_size, 16 - pattern_size);
+  return _mm_shuffle_epi8(
+      _mm_loadu_si128(reinterpret_cast<const __m128i*>(src)), generation_mask);
+}
+
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+static inline std::pair<__m128i , __m128i >
+LoadPatternAndReshuffleMask(const char* src, const size_t pattern_size) {
+  __m128i pattern = LoadPattern(src, pattern_size);
+
+  
+  
+  
+  
+  
+  
+  __m128i reshuffle_mask = _mm_load_si128(reinterpret_cast<const __m128i*>(
+      pattern_reshuffle_masks[pattern_size - 1].data()));
+  return {pattern, reshuffle_mask};
+}
 
 #endif  
 
 
 
 
+
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+static inline bool Copy64BytesWithPatternExtension(char* dst, size_t offset) {
+#if SNAPPY_HAVE_SSSE3
+  if (SNAPPY_PREDICT_TRUE(offset <= 16)) {
+    switch (offset) {
+      case 0:
+        return false;
+      case 1: {
+        std::memset(dst, dst[-1], 64);
+        return true;
+      }
+      case 2:
+      case 4:
+      case 8:
+      case 16: {
+        __m128i pattern = LoadPattern(dst - offset, offset);
+        for (int i = 0; i < 4; i++) {
+          _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + 16 * i), pattern);
+        }
+        return true;
+      }
+      default: {
+        auto pattern_and_reshuffle_mask =
+            LoadPatternAndReshuffleMask(dst - offset, offset);
+        __m128i pattern = pattern_and_reshuffle_mask.first;
+        __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+        for (int i = 0; i < 4; i++) {
+          _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + 16 * i), pattern);
+          pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        }
+        return true;
+      }
+    }
+  }
+#else
+  if (SNAPPY_PREDICT_TRUE(offset < 16)) {
+    if (SNAPPY_PREDICT_FALSE(offset == 0)) return false;
+    
+    for (int i = 0; i < 16; i++) dst[i] = (dst - offset)[i];
+    
+    static std::array<uint8_t, 16> pattern_sizes = []() {
+      std::array<uint8_t, 16> res;
+      for (int i = 1; i < 16; i++) res[i] = (16 / i + 1) * i;
+      return res;
+    }();
+    offset = pattern_sizes[offset];
+    for (int i = 1; i < 4; i++) {
+      std::memcpy(dst + i * 16, dst + i * 16 - offset, 16);
+    }
+    return true;
+  }
+#endif  
+
+  
+  for (int i = 0; i < 4; i++) {
+    std::memcpy(dst + i * 16, dst + i * 16 - offset, 16);
+  }
+  return true;
+}
+
+
+
+
 inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
                              char* const buf_limit) {
+#if SNAPPY_HAVE_SSSE3
+  constexpr int big_pattern_size_lower_bound = 16;
+#else
+  constexpr int big_pattern_size_lower_bound = 8;
+#endif
+
   
   
   
   
   
   assert(src < op);
-  assert(op <= op_limit);
+  assert(op < op_limit);
   assert(op_limit <= buf_limit);
+  
+  assert(op_limit - op <= 64);
+  
   
   
   
@@ -218,9 +420,11 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
   
   
   
+  
 
   
-  if (SNAPPY_PREDICT_FALSE(pattern_size < 8)) {
+  
+  if (pattern_size < big_pattern_size_lower_bound) {
 #if SNAPPY_HAVE_SSSE3
     
     
@@ -234,25 +438,58 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
     
     
     
-    if (SNAPPY_PREDICT_TRUE(op <= buf_limit - 16)) {
-      const __m128i shuffle_mask = _mm_load_si128(
-          reinterpret_cast<const __m128i*>(pshufb_fill_patterns)
-          + pattern_size - 1);
-      const __m128i pattern = _mm_shuffle_epi8(
-          _mm_loadl_epi64(reinterpret_cast<const __m128i*>(src)), shuffle_mask);
+
+    
+    
+    if (SNAPPY_PREDICT_TRUE(op_limit <= buf_limit - 15)) {
+      auto pattern_and_reshuffle_mask =
+          LoadPatternAndReshuffleMask(src, pattern_size);
+      __m128i pattern = pattern_and_reshuffle_mask.first;
+      __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+
       
       
-      SNAPPY_ANNOTATE_MEMORY_IS_INITIALIZED(&pattern, sizeof(pattern));
-      pattern_size *= 16 / pattern_size;
-      char* op_end = std::min(op_limit, buf_limit - 15);
-      while (op < op_end) {
-        _mm_storeu_si128(reinterpret_cast<__m128i*>(op), pattern);
-        op += pattern_size;
+      
+      
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(op), pattern);
+
+      if (op + 16 < op_limit) {
+        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 16), pattern);
       }
-      if (SNAPPY_PREDICT_TRUE(op >= op_limit)) return op_limit;
+      if (op + 32 < op_limit) {
+        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 32), pattern);
+      }
+      if (op + 48 < op_limit) {
+        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(op + 48), pattern);
+      }
+      return op_limit;
     }
-    return IncrementalCopySlow(src, op, op_limit);
-#else  
+    char* const op_end = buf_limit - 15;
+    if (SNAPPY_PREDICT_TRUE(op < op_end)) {
+      auto pattern_and_reshuffle_mask =
+          LoadPatternAndReshuffleMask(src, pattern_size);
+      __m128i pattern = pattern_and_reshuffle_mask.first;
+      __m128i reshuffle_mask = pattern_and_reshuffle_mask.second;
+
+      
+      
+      
+      
+      
+#ifdef __clang__
+#pragma clang loop unroll(disable)
+#endif
+      do {
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(op), pattern);
+        pattern = _mm_shuffle_epi8(pattern, reshuffle_mask);
+        op += 16;
+      } while (SNAPPY_PREDICT_TRUE(op < op_end));
+    }
+    return IncrementalCopySlow(op - pattern_size, op, op_limit);
+#else   
     
     
     
@@ -271,7 +508,8 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
     }
 #endif  
   }
-  assert(pattern_size >= 8);
+  assert(pattern_size >= big_pattern_size_lower_bound);
+  constexpr bool use_16bytes_chunk = big_pattern_size_lower_bound == 16;
 
   
   
@@ -280,25 +518,20 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
   
   
   
-  if (SNAPPY_PREDICT_TRUE(op_limit <= buf_limit - 16)) {
+  if (SNAPPY_PREDICT_TRUE(op_limit <= buf_limit - 15)) {
     
     
     
     
-    UnalignedCopy64(src, op);
-    UnalignedCopy64(src + 8, op + 8);
-
+    ConditionalUnalignedCopy128<use_16bytes_chunk>(src, op);
     if (op + 16 < op_limit) {
-      UnalignedCopy64(src + 16, op + 16);
-      UnalignedCopy64(src + 24, op + 24);
+      ConditionalUnalignedCopy128<use_16bytes_chunk>(src + 16, op + 16);
     }
     if (op + 32 < op_limit) {
-      UnalignedCopy64(src + 32, op + 32);
-      UnalignedCopy64(src + 40, op + 40);
+      ConditionalUnalignedCopy128<use_16bytes_chunk>(src + 32, op + 32);
     }
     if (op + 48 < op_limit) {
-      UnalignedCopy64(src + 48, op + 48);
-      UnalignedCopy64(src + 56, op + 56);
+      ConditionalUnalignedCopy128<use_16bytes_chunk>(src + 48, op + 48);
     }
     return op_limit;
   }
@@ -312,12 +545,10 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
 #ifdef __clang__
 #pragma clang loop unroll(disable)
 #endif
-  for (char *op_end = buf_limit - 16; op < op_end; op += 16, src += 16) {
-    UnalignedCopy64(src, op);
-    UnalignedCopy64(src + 8, op + 8);
+  for (char* op_end = buf_limit - 16; op < op_end; op += 16, src += 16) {
+    ConditionalUnalignedCopy128<use_16bytes_chunk>(src, op);
   }
-  if (op >= op_limit)
-    return op_limit;
+  if (op >= op_limit) return op_limit;
 
   
   
@@ -332,9 +563,7 @@ inline char* IncrementalCopy(const char* src, char* op, char* const op_limit,
 }  
 
 template <bool allow_fast_path>
-static inline char* EmitLiteral(char* op,
-                                const char* literal,
-                                int len) {
+static inline char* EmitLiteral(char* op, const char* literal, int len) {
   
   
   
@@ -345,7 +574,7 @@ static inline char* EmitLiteral(char* op,
   
   
   
-  assert(len > 0);      
+  assert(len > 0);  
   int n = len - 1;
   if (allow_fast_path && len <= 16) {
     
@@ -370,7 +599,7 @@ static inline char* EmitLiteral(char* op,
     LittleEndian::Store32(op, n);
     op += count;
   }
-  memcpy(op, literal, len);
+  std::memcpy(op, literal, len);
   return op + len;
 }
 
@@ -381,15 +610,22 @@ static inline char* EmitCopyAtMost64(char* op, size_t offset, size_t len) {
   assert(offset < 65536);
   assert(len_less_than_12 == (len < 12));
 
-  if (len_less_than_12 && SNAPPY_PREDICT_TRUE(offset < 2048)) {
+  if (len_less_than_12) {
+    uint32_t u = (len << 2) + (offset << 8);
+    uint32_t copy1 = COPY_1_BYTE_OFFSET - (4 << 2) + ((offset >> 3) & 0xe0);
+    uint32_t copy2 = COPY_2_BYTE_OFFSET - (1 << 2);
     
     
-    *op++ = COPY_1_BYTE_OFFSET + ((len - 4) << 2) + ((offset >> 3) & 0xe0);
-    *op++ = offset & 0xff;
+    
+    
+    
+    u += offset < 2048 ? copy1 : copy2;
+    LittleEndian::Store32(op, u);
+    op += offset < 2048 ? 2 : 3;
   } else {
     
     
-    uint32 u = COPY_2_BYTE_OFFSET + ((len - 1) << 2) + (offset << 8);
+    uint32_t u = COPY_2_BYTE_OFFSET + ((len - 1) << 2) + (offset << 8);
     LittleEndian::Store32(op, u);
     op += 3;
   }
@@ -428,7 +664,7 @@ static inline char* EmitCopy(char* op, size_t offset, size_t len) {
 }
 
 bool GetUncompressedLength(const char* start, size_t n, size_t* result) {
-  uint32 v = 0;
+  uint32_t v = 0;
   const char* limit = start + n;
   if (Varint::Parse32WithLimit(start, limit, &v) != NULL) {
     *result = v;
@@ -439,7 +675,7 @@ bool GetUncompressedLength(const char* start, size_t n, size_t* result) {
 }
 
 namespace {
-uint32 CalculateTableSize(uint32 input_size) {
+uint32_t CalculateTableSize(uint32_t input_size) {
   static_assert(
       kMaxHashTableSize >= kMinHashTableSize,
       "kMaxHashTableSize should be greater or equal to kMinHashTableSize.");
@@ -462,7 +698,7 @@ WorkingMemory::WorkingMemory(size_t input_size) {
   size_ = table_size * sizeof(*table_) + max_fragment_size +
           MaxCompressedLength(max_fragment_size);
   mem_ = std::allocator<char>().allocate(size_);
-  table_ = reinterpret_cast<uint16*>(mem_);
+  table_ = reinterpret_cast<uint16_t*>(mem_);
   input_ = mem_ + table_size * sizeof(*table_);
   output_ = input_ + max_fragment_size;
 }
@@ -471,8 +707,8 @@ WorkingMemory::~WorkingMemory() {
   std::allocator<char>().deallocate(mem_, size_);
 }
 
-uint16* WorkingMemory::GetHashTable(size_t fragment_size,
-                                    int* table_size) const {
+uint16_t* WorkingMemory::GetHashTable(size_t fragment_size,
+                                      int* table_size) const {
   const size_t htsize = CalculateTableSize(fragment_size);
   memset(table_, 0, htsize * sizeof(*table_));
   *table_size = htsize;
@@ -491,73 +727,26 @@ uint16* WorkingMemory::GetHashTable(size_t fragment_size,
 
 
 
-
-
-#ifdef ARCH_K8
-
-typedef uint64 EightBytesReference;
-
-static inline EightBytesReference GetEightBytesAt(const char* ptr) {
-  return UNALIGNED_LOAD64(ptr);
-}
-
-static inline uint32 GetUint32AtOffset(uint64 v, int offset) {
-  assert(offset >= 0);
-  assert(offset <= 4);
-  return v >> (LittleEndian::IsLittleEndian() ? 8 * offset : 32 - 8 * offset);
-}
-
-#else
-
-typedef const char* EightBytesReference;
-
-static inline EightBytesReference GetEightBytesAt(const char* ptr) {
-  return ptr;
-}
-
-static inline uint32 GetUint32AtOffset(const char* v, int offset) {
-  assert(offset >= 0);
-  assert(offset <= 4);
-  return UNALIGNED_LOAD32(v + offset);
-}
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
 namespace internal {
-char* CompressFragment(const char* input,
-                       size_t input_size,
-                       char* op,
-                       uint16* table,
-                       const int table_size) {
+char* CompressFragment(const char* input, size_t input_size, char* op,
+                       uint16_t* table, const int table_size) {
   
   const char* ip = input;
   assert(input_size <= kBlockSize);
   assert((table_size & (table_size - 1)) == 0);  
-  const int shift = 32 - Bits::Log2Floor(table_size);
-  assert(static_cast<int>(kuint32max >> shift) == table_size - 1);
+  const uint32_t mask = table_size - 1;
   const char* ip_end = input + input_size;
   const char* base_ip = ip;
-  
-  
-  const char* next_emit = ip;
 
   const size_t kInputMarginBytes = 15;
   if (SNAPPY_PREDICT_TRUE(input_size >= kInputMarginBytes)) {
     const char* ip_limit = input + input_size - kInputMarginBytes;
 
-    for (uint32 next_hash = Hash(++ip, shift); ; ) {
-      assert(next_emit < ip);
+    for (uint32_t preload = LittleEndian::Load32(ip + 1);;) {
+      
+      
+      const char* next_emit = ip++;
+      uint64_t data = LittleEndian::Load64(ip);
       
       
       
@@ -583,28 +772,60 @@ char* CompressFragment(const char* input,
       
       
       
-      uint32 skip = 32;
+      uint32_t skip = 32;
 
-      const char* next_ip = ip;
       const char* candidate;
-      do {
-        ip = next_ip;
-        uint32 hash = next_hash;
-        assert(hash == Hash(ip, shift));
-        uint32 bytes_between_hash_lookups = skip >> 5;
+      if (ip_limit - ip >= 16) {
+        auto delta = ip - base_ip;
+        for (int j = 0; j < 4; ++j) {
+          for (int k = 0; k < 4; ++k) {
+            int i = 4 * j + k;
+            
+            
+            
+            uint32_t dword = i == 0 ? preload : static_cast<uint32_t>(data);
+            assert(dword == LittleEndian::Load32(ip + i));
+            uint32_t hash = HashBytes(dword, mask);
+            candidate = base_ip + table[hash];
+            assert(candidate >= base_ip);
+            assert(candidate < ip + i);
+            table[hash] = delta + i;
+            if (SNAPPY_PREDICT_FALSE(LittleEndian::Load32(candidate) == dword)) {
+              *op = LITERAL | (i << 2);
+              UnalignedCopy128(next_emit, op + 1);
+              ip += i;
+              op = op + i + 2;
+              goto emit_match;
+            }
+            data >>= 8;
+          }
+          data = LittleEndian::Load64(ip + 4 * j + 4);
+        }
+        ip += 16;
+        skip += 16;
+      }
+      while (true) {
+        assert(static_cast<uint32_t>(data) == LittleEndian::Load32(ip));
+        uint32_t hash = HashBytes(data, mask);
+        uint32_t bytes_between_hash_lookups = skip >> 5;
         skip += bytes_between_hash_lookups;
-        next_ip = ip + bytes_between_hash_lookups;
+        const char* next_ip = ip + bytes_between_hash_lookups;
         if (SNAPPY_PREDICT_FALSE(next_ip > ip_limit)) {
+          ip = next_emit;
           goto emit_remainder;
         }
-        next_hash = Hash(next_ip, shift);
         candidate = base_ip + table[hash];
         assert(candidate >= base_ip);
         assert(candidate < ip);
 
         table[hash] = ip - base_ip;
-      } while (SNAPPY_PREDICT_TRUE(UNALIGNED_LOAD32(ip) !=
-                                 UNALIGNED_LOAD32(candidate)));
+        if (SNAPPY_PREDICT_FALSE(static_cast<uint32_t>(data) ==
+                                LittleEndian::Load32(candidate))) {
+          break;
+        }
+        data = LittleEndian::Load32(next_ip);
+        ip = next_ip;
+      }
 
       
       
@@ -620,15 +841,13 @@ char* CompressFragment(const char* input,
       
       
       
-      EightBytesReference input_bytes;
-      uint32 candidate_bytes = 0;
-
+    emit_match:
       do {
         
         
         const char* base = ip;
         std::pair<size_t, bool> p =
-            FindMatchLength(candidate + 4, ip + 4, ip_end);
+            FindMatchLength(candidate + 4, ip + 4, ip_end, &data);
         size_t matched = 4 + p.first;
         ip += matched;
         size_t offset = base - candidate;
@@ -638,32 +857,40 @@ char* CompressFragment(const char* input,
         } else {
           op = EmitCopy<false>(op, offset, matched);
         }
-        next_emit = ip;
         if (SNAPPY_PREDICT_FALSE(ip >= ip_limit)) {
           goto emit_remainder;
         }
         
+        assert((data & 0xFFFFFFFFFF) ==
+               (LittleEndian::Load64(ip) & 0xFFFFFFFFFF));
         
         
-        input_bytes = GetEightBytesAt(ip - 1);
-        uint32 prev_hash = HashBytes(GetUint32AtOffset(input_bytes, 0), shift);
-        table[prev_hash] = ip - base_ip - 1;
-        uint32 cur_hash = HashBytes(GetUint32AtOffset(input_bytes, 1), shift);
-        candidate = base_ip + table[cur_hash];
-        candidate_bytes = UNALIGNED_LOAD32(candidate);
-        table[cur_hash] = ip - base_ip;
-      } while (GetUint32AtOffset(input_bytes, 1) == candidate_bytes);
-
-      next_hash = HashBytes(GetUint32AtOffset(input_bytes, 2), shift);
-      ++ip;
+        
+        table[HashBytes(LittleEndian::Load32(ip - 1), mask)] = ip - base_ip - 1;
+        uint32_t hash = HashBytes(data, mask);
+        candidate = base_ip + table[hash];
+        table[hash] = ip - base_ip;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      } while (static_cast<uint32_t>(data) == LittleEndian::Load32(candidate));
+      
+      
+      preload = data >> 8;
     }
   }
 
- emit_remainder:
+emit_remainder:
   
-  if (next_emit < ip_end) {
-    op = EmitLiteral<false>(op, next_emit,
-                                                ip_end - next_emit);
+  if (ip < ip_end) {
+    op = EmitLiteral<false>(op, ip, ip_end - ip);
   }
 
   return op;
@@ -672,7 +899,12 @@ char* CompressFragment(const char* input,
 
 
 static inline void Report(const char *algorithm, size_t compressed_size,
-                          size_t uncompressed_size) {}
+                          size_t uncompressed_size) {
+  
+  (void)algorithm;
+  (void)compressed_size;
+  (void)uncompressed_size;
+}
 
 
 
@@ -714,7 +946,23 @@ static inline void Report(const char *algorithm, size_t compressed_size,
 
 
 
-static inline uint32 ExtractLowBytes(uint32 v, int n) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline uint32_t ExtractLowBytes(uint32_t v, int n) {
   assert(n >= 0);
   assert(n <= 4);
 #if SNAPPY_HAVE_BMI2
@@ -722,14 +970,14 @@ static inline uint32 ExtractLowBytes(uint32 v, int n) {
 #else
   
   
-  uint64 mask = 0xffffffff;
+  uint64_t mask = 0xffffffff;
   return v & ~(mask << (8 * n));
 #endif
 }
 
-static inline bool LeftShiftOverflows(uint8 value, uint32 shift) {
+static inline bool LeftShiftOverflows(uint8_t value, uint32_t shift) {
   assert(shift < 32);
-  static const uint8 masks[] = {
+  static const uint8_t masks[] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  
@@ -737,15 +985,194 @@ static inline bool LeftShiftOverflows(uint8 value, uint32 shift) {
   return (value & masks[shift]) != 0;
 }
 
+inline bool Copy64BytesWithPatternExtension(ptrdiff_t dst, size_t offset) {
+  
+  (void)dst;
+  return offset != 0;
+}
+
+void MemCopy(char* dst, const uint8_t* src, size_t size) {
+  std::memcpy(dst, src, size);
+}
+
+void MemCopy(ptrdiff_t dst, const uint8_t* src, size_t size) {
+  
+  (void)dst;
+  (void)src;
+  (void)size;
+}
+
+void MemMove(char* dst, const void* src, size_t size) {
+  std::memmove(dst, src, size);
+}
+
+void MemMove(ptrdiff_t dst, const void* src, size_t size) {
+  
+  (void)dst;
+  (void)src;
+  (void)size;
+}
+
+SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+size_t AdvanceToNextTag(const uint8_t** ip_p, size_t* tag) {
+  const uint8_t*& ip = *ip_p;
+  
+  
+  
+  
+  
+  
+  
+  size_t literal_len = *tag >> 2;
+  size_t tag_type = *tag;
+  bool is_literal;
+#if defined(__GNUC__) && defined(__x86_64__) && defined(__GCC_ASM_FLAG_OUTPUTS__)
+  
+  
+  asm("and $3, %k[tag_type]\n\t"
+      : [tag_type] "+r"(tag_type), "=@ccz"(is_literal));
+#else
+  tag_type &= 3;
+  is_literal = (tag_type == 0);
+#endif
+  
+  
+  
+  
+  
+  size_t tag_literal =
+      static_cast<const volatile uint8_t*>(ip)[1 + literal_len];
+  size_t tag_copy = static_cast<const volatile uint8_t*>(ip)[tag_type];
+  *tag = is_literal ? tag_literal : tag_copy;
+  const uint8_t* ip_copy = ip + 1 + tag_type;
+  const uint8_t* ip_literal = ip + 2 + literal_len;
+  ip = is_literal ? ip_literal : ip_copy;
+#if defined(__GNUC__) && defined(__x86_64__)
+  
+  
+  
+  
+  
+  asm("" ::"r"(tag_copy));
+#endif
+  return tag_type;
+}
+
+
+inline uint32_t ExtractOffset(uint32_t val, size_t tag_type) {
+  return val & table.extract_masks[tag_type];
+};
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+std::pair<const uint8_t*, ptrdiff_t> DecompressBranchless(
+    const uint8_t* ip, const uint8_t* ip_limit, ptrdiff_t op, T op_base,
+    ptrdiff_t op_limit_min_slop) {
+  
+  op_limit_min_slop -= kSlopBytes;
+  if (2 * (kSlopBytes + 1) < ip_limit - ip && op < op_limit_min_slop) {
+    const uint8_t* const ip_limit_min_slop = ip_limit - 2 * kSlopBytes - 1;
+    ip++;
+    
+    
+    size_t tag = ip[-1];
+    do {
+      
+      
+      
+      for (int i = 0; i < 2; i++) {
+        const uint8_t* old_ip = ip;
+        assert(tag == ip[-1]);
+        
+        
+        ptrdiff_t len_min_offset = table.length_minus_offset[tag];
+        size_t tag_type = AdvanceToNextTag(&ip, &tag);
+        uint32_t next = LittleEndian::Load32(old_ip);
+        size_t len = len_min_offset & 0xFF;
+        len_min_offset -= ExtractOffset(next, tag_type);
+        if (SNAPPY_PREDICT_FALSE(len_min_offset > 0)) {
+          if (SNAPPY_PREDICT_FALSE(len & 0x80)) {
+            
+            
+            
+            
+          break_loop:
+            ip = old_ip;
+            goto exit;
+          }
+          
+          assert(tag_type == 1 || tag_type == 2);
+          std::ptrdiff_t delta = op + len_min_offset - len;
+          
+          if (SNAPPY_PREDICT_FALSE(delta < 0 ||
+                                  !Copy64BytesWithPatternExtension(
+                                      op_base + op, len - len_min_offset))) {
+            goto break_loop;
+          }
+          op += len;
+          continue;
+        }
+        std::ptrdiff_t delta = op + len_min_offset - len;
+        if (SNAPPY_PREDICT_FALSE(delta < 0)) {
+#if defined(__GNUC__) && defined(__x86_64__)
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          asm("");
+#endif
+
+          
+          
+          if (tag_type != 0) goto break_loop;
+          MemCopy(op_base + op, old_ip, 64);
+          op += len;
+          continue;
+        }
+
+        
+        
+        const void* from =
+            tag_type ? reinterpret_cast<void*>(op_base + delta) : old_ip;
+        MemMove(op_base + op, from, 64);
+        op += len;
+      }
+    } while (ip < ip_limit_min_slop && op < op_limit_min_slop);
+  exit:
+    ip--;
+    assert(ip <= ip_limit);
+  }
+  return {ip, op};
+}
+
 
 class SnappyDecompressor {
  private:
-  Source*       reader_;         
-  const char*   ip_;             
-  const char*   ip_limit_;       
-  uint32        peeked_;         
-  bool          eof_;            
-  char          scratch_[kMaximumTagLength];  
+  Source* reader_;        
+  const char* ip_;        
+  const char* ip_limit_;  
+  
+  
+  const char* ip_limit_min_maxtaglen_;
+  uint32_t peeked_;                  
+  bool eof_;                         
+  char scratch_[kMaximumTagLength];  
 
   
   
@@ -754,14 +1181,14 @@ class SnappyDecompressor {
   
   bool RefillTag();
 
+  void ResetLimit(const char* ip) {
+    ip_limit_min_maxtaglen_ =
+        ip_limit_ - std::min<ptrdiff_t>(ip_limit_ - ip, kMaximumTagLength - 1);
+  }
+
  public:
   explicit SnappyDecompressor(Source* reader)
-      : reader_(reader),
-        ip_(NULL),
-        ip_limit_(NULL),
-        peeked_(0),
-        eof_(false) {
-  }
+      : reader_(reader), ip_(NULL), ip_limit_(NULL), peeked_(0), eof_(false) {}
 
   ~SnappyDecompressor() {
     
@@ -769,18 +1196,16 @@ class SnappyDecompressor {
   }
 
   
-  bool eof() const {
-    return eof_;
-  }
+  bool eof() const { return eof_; }
 
   
   
   
-  bool ReadUncompressedLength(uint32* result) {
-    assert(ip_ == NULL);       
+  bool ReadUncompressedLength(uint32_t* result) {
+    assert(ip_ == NULL);  
     
     *result = 0;
-    uint32 shift = 0;
+    uint32_t shift = 0;
     while (true) {
       if (shift >= 32) return false;
       size_t n;
@@ -788,8 +1213,8 @@ class SnappyDecompressor {
       if (n == 0) return false;
       const unsigned char c = *(reinterpret_cast<const unsigned char*>(ip));
       reader_->Skip(1);
-      uint32 val = c & 0x7f;
-      if (LeftShiftOverflows(static_cast<uint8>(val), shift)) return false;
+      uint32_t val = c & 0x7f;
+      if (LeftShiftOverflows(static_cast<uint8_t>(val), shift)) return false;
       *result |= val << shift;
       if (c < 128) {
         break;
@@ -805,38 +1230,44 @@ class SnappyDecompressor {
 #if defined(__GNUC__) && defined(__x86_64__)
   __attribute__((aligned(32)))
 #endif
-  void DecompressAllTags(Writer* writer) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#if defined(__GNUC__) && defined(__x86_64__)
-    
-    asm(".byte 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00");
-    asm(".byte 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00");
-#endif
-
+  void
+  DecompressAllTags(Writer* writer) {
     const char* ip = ip_;
+    ResetLimit(ip);
+    auto op = writer->GetOutputPtr();
     
     
     
     
-    #define MAYBE_REFILL() \
-        if (ip_limit_ - ip < kMaximumTagLength) { \
-          ip_ = ip; \
-          if (!RefillTag()) return; \
-          ip = ip_; \
-        }
+#define MAYBE_REFILL()                                      \
+  if (SNAPPY_PREDICT_FALSE(ip >= ip_limit_min_maxtaglen_)) { \
+    ip_ = ip;                                               \
+    if (SNAPPY_PREDICT_FALSE(!RefillTag())) goto exit;       \
+    ip = ip_;                                               \
+    ResetLimit(ip);                                         \
+  }                                                         \
+  preload = static_cast<uint8_t>(*ip)
 
+    
+    
+    uint32_t preload;
     MAYBE_REFILL();
-    for ( ;; ) {
-      const unsigned char c = *(reinterpret_cast<const unsigned char*>(ip++));
+    for (;;) {
+      {
+        ptrdiff_t op_limit_min_slop;
+        auto op_base = writer->GetBase(&op_limit_min_slop);
+        if (op_base) {
+          auto res =
+              DecompressBranchless(reinterpret_cast<const uint8_t*>(ip),
+                                   reinterpret_cast<const uint8_t*>(ip_limit_),
+                                   op - op_base, op_base, op_limit_min_slop);
+          ip = reinterpret_cast<const char*>(res.first);
+          op = op_base + res.second;
+          MAYBE_REFILL();
+        }
+      }
+      const uint8_t c = static_cast<uint8_t>(preload);
+      ip++;
 
       
       
@@ -852,12 +1283,13 @@ class SnappyDecompressor {
       
       if (SNAPPY_PREDICT_FALSE((c & 0x3) == LITERAL)) {
         size_t literal_length = (c >> 2) + 1u;
-        if (writer->TryFastAppend(ip, ip_limit_ - ip, literal_length)) {
+        if (writer->TryFastAppend(ip, ip_limit_ - ip, literal_length, &op)) {
           assert(literal_length < 61);
           ip += literal_length;
           
           
           
+          preload = static_cast<uint8_t>(*ip);
           continue;
         }
         if (SNAPPY_PREDICT_FALSE(literal_length >= 61)) {
@@ -871,48 +1303,79 @@ class SnappyDecompressor {
 
         size_t avail = ip_limit_ - ip;
         while (avail < literal_length) {
-          if (!writer->Append(ip, avail)) return;
+          if (!writer->Append(ip, avail, &op)) goto exit;
           literal_length -= avail;
           reader_->Skip(peeked_);
           size_t n;
           ip = reader_->Peek(&n);
           avail = n;
           peeked_ = avail;
-          if (avail == 0) return;  
+          if (avail == 0) goto exit;
           ip_limit_ = ip + avail;
+          ResetLimit(ip);
         }
-        if (!writer->Append(ip, literal_length)) {
-          return;
-        }
+        if (!writer->Append(ip, literal_length, &op)) goto exit;
         ip += literal_length;
         MAYBE_REFILL();
       } else {
-        const size_t entry = char_table[c];
-        const size_t trailer =
-            ExtractLowBytes(LittleEndian::Load32(ip), entry >> 11);
-        const size_t length = entry & 0xff;
-        ip += entry >> 11;
+        if (SNAPPY_PREDICT_FALSE((c & 3) == COPY_4_BYTE_OFFSET)) {
+          const size_t copy_offset = LittleEndian::Load32(ip);
+          const size_t length = (c >> 2) + 1;
+          ip += 4;
 
-        
-        
-        
-        const size_t copy_offset = entry & 0x700;
-        if (!writer->AppendFromSelf(copy_offset + trailer, length)) {
-          return;
+          if (!writer->AppendFromSelf(copy_offset, length, &op)) goto exit;
+        } else {
+          const ptrdiff_t entry = table.length_minus_offset[c];
+          preload = LittleEndian::Load32(ip);
+          const uint32_t trailer = ExtractLowBytes(preload, c & 3);
+          const uint32_t length = entry & 0xff;
+          assert(length > 0);
+
+          
+          
+          
+          const uint32_t copy_offset = trailer - entry + length;
+          if (!writer->AppendFromSelf(copy_offset, length, &op)) goto exit;
+
+          ip += (c & 3);
+          
+          
+          preload >>= (c & 3) * 8;
+          if (ip < ip_limit_min_maxtaglen_) continue;
         }
         MAYBE_REFILL();
       }
     }
-
 #undef MAYBE_REFILL
+  exit:
+    writer->SetOutputPtr(op);
   }
 };
+
+constexpr uint32_t CalculateNeeded(uint8_t tag) {
+  return ((tag & 3) == 0 && tag >= (60 * 4))
+             ? (tag >> 2) - 58
+             : (0x05030201 >> ((tag * 8) & 31)) & 0xFF;
+}
+
+#if __cplusplus >= 201402L
+constexpr bool VerifyCalculateNeeded() {
+  for (int i = 0; i < 1; i++) {
+    if (CalculateNeeded(i) != (char_table[i] >> 11) + 1) return false;
+  }
+  return true;
+}
+
+
+
+static_assert(VerifyCalculateNeeded(), "");
+#endif  
 
 bool SnappyDecompressor::RefillTag() {
   const char* ip = ip_;
   if (ip == ip_limit_) {
     
-    reader_->Skip(peeked_);   
+    reader_->Skip(peeked_);  
     size_t n;
     ip = reader_->Peek(&n);
     peeked_ = n;
@@ -924,26 +1387,31 @@ bool SnappyDecompressor::RefillTag() {
   
   assert(ip < ip_limit_);
   const unsigned char c = *(reinterpret_cast<const unsigned char*>(ip));
-  const uint32 entry = char_table[c];
-  const uint32 needed = (entry >> 11) + 1;  
+  
+  
+  
+  
+  
+  
+  const uint32_t needed = CalculateNeeded(c);
   assert(needed <= sizeof(scratch_));
 
   
-  uint32 nbuf = ip_limit_ - ip;
+  uint32_t nbuf = ip_limit_ - ip;
   if (nbuf < needed) {
     
     
     
     
-    memmove(scratch_, ip, nbuf);
+    std::memmove(scratch_, ip, nbuf);
     reader_->Skip(peeked_);  
     peeked_ = 0;
     while (nbuf < needed) {
       size_t length;
       const char* src = reader_->Peek(&length);
       if (length == 0) return false;
-      uint32 to_add = std::min<uint32>(needed - nbuf, length);
-      memcpy(scratch_ + nbuf, src, to_add);
+      uint32_t to_add = std::min<uint32_t>(needed - nbuf, length);
+      std::memcpy(scratch_ + nbuf, src, to_add);
       nbuf += to_add;
       reader_->Skip(to_add);
     }
@@ -953,7 +1421,7 @@ bool SnappyDecompressor::RefillTag() {
   } else if (nbuf < kMaximumTagLength) {
     
     
-    memmove(scratch_, ip, nbuf);
+    std::memmove(scratch_, ip, nbuf);
     reader_->Skip(peeked_);  
     peeked_ = 0;
     ip_ = scratch_;
@@ -969,7 +1437,7 @@ template <typename Writer>
 static bool InternalUncompress(Source* r, Writer* writer) {
   
   SnappyDecompressor decompressor(r);
-  uint32 uncompressed_len = 0;
+  uint32_t uncompressed_len = 0;
   if (!decompressor.ReadUncompressedLength(&uncompressed_len)) return false;
 
   return InternalUncompressAllTags(&decompressor, writer, r->Available(),
@@ -978,9 +1446,8 @@ static bool InternalUncompress(Source* r, Writer* writer) {
 
 template <typename Writer>
 static bool InternalUncompressAllTags(SnappyDecompressor* decompressor,
-                                      Writer* writer,
-                                      uint32 compressed_len,
-                                      uint32 uncompressed_len) {
+                                      Writer* writer, uint32_t compressed_len,
+                                      uint32_t uncompressed_len) {
   Report("snappy_uncompress", compressed_len, uncompressed_len);
 
   writer->SetExpectedLength(uncompressed_len);
@@ -991,7 +1458,7 @@ static bool InternalUncompressAllTags(SnappyDecompressor* decompressor,
   return (decompressor->eof() && writer->CheckLength());
 }
 
-bool GetUncompressedLength(Source* source, uint32* result) {
+bool GetUncompressedLength(Source* source, uint32_t* result) {
   SnappyDecompressor decompressor(source);
   return decompressor.ReadUncompressedLength(result);
 }
@@ -1002,7 +1469,7 @@ size_t Compress(Source* reader, Sink* writer) {
   const size_t uncompressed_size = N;
   char ulength[Varint::kMax32];
   char* p = Varint::Encode32(ulength, N);
-  writer->Append(ulength, p-ulength);
+  writer->Append(ulength, p - ulength);
   written += (p - ulength);
 
   internal::WorkingMemory wmem(N);
@@ -1022,13 +1489,13 @@ size_t Compress(Source* reader, Sink* writer) {
       fragment_size = num_to_read;
     } else {
       char* scratch = wmem.GetScratchInput();
-      memcpy(scratch, fragment, bytes_read);
+      std::memcpy(scratch, fragment, bytes_read);
       reader->Skip(bytes_read);
 
       while (bytes_read < num_to_read) {
         fragment = reader->Peek(&fragment_size);
         size_t n = std::min<size_t>(fragment_size, num_to_read - bytes_read);
-        memcpy(scratch + bytes_read, fragment, n);
+        std::memcpy(scratch + bytes_read, fragment, n);
         bytes_read += n;
         reader->Skip(n);
       }
@@ -1040,7 +1507,7 @@ size_t Compress(Source* reader, Sink* writer) {
 
     
     int table_size;
-    uint16* table = wmem.GetHashTable(num_to_read, &table_size);
+    uint16_t* table = wmem.GetHashTable(num_to_read, &table_size);
 
     
     const int max_output = MaxCompressedLength(num_to_read);
@@ -1115,22 +1582,26 @@ class SnappyIOVecWriter {
                                    : nullptr),
         curr_iov_remaining_(iov_count ? iov->iov_len : 0),
         total_written_(0),
-        output_limit_(-1) {}
-
-  inline void SetExpectedLength(size_t len) {
-    output_limit_ = len;
+        output_limit_(-1) {
   }
 
-  inline bool CheckLength() const {
-    return total_written_ == output_limit_;
-  }
+  inline void SetExpectedLength(size_t len) { output_limit_ = len; }
 
-  inline bool Append(const char* ip, size_t len) {
+  inline bool CheckLength() const { return total_written_ == output_limit_; }
+
+  inline bool Append(const char* ip, size_t len, char**) {
     if (total_written_ + len > output_limit_) {
       return false;
     }
 
     return AppendNoCheck(ip, len);
+  }
+
+  char* GetOutputPtr() { return nullptr; }
+  char* GetBase(ptrdiff_t*) { return nullptr; }
+  void SetOutputPtr(char* op) {
+    
+    (void)op;
   }
 
   inline bool AppendNoCheck(const char* ip, size_t len) {
@@ -1146,7 +1617,7 @@ class SnappyIOVecWriter {
       }
 
       const size_t to_write = std::min(len, curr_iov_remaining_);
-      memcpy(curr_iov_output_, ip, to_write);
+      std::memcpy(curr_iov_output_, ip, to_write);
       curr_iov_output_ += to_write;
       curr_iov_remaining_ -= to_write;
       total_written_ += to_write;
@@ -1157,7 +1628,8 @@ class SnappyIOVecWriter {
     return true;
   }
 
-  inline bool TryFastAppend(const char* ip, size_t available, size_t len) {
+  inline bool TryFastAppend(const char* ip, size_t available, size_t len,
+                            char**) {
     const size_t space_left = output_limit_ - total_written_;
     if (len <= 16 && available >= 16 + kMaximumTagLength && space_left >= 16 &&
         curr_iov_remaining_ >= 16) {
@@ -1172,7 +1644,7 @@ class SnappyIOVecWriter {
     return false;
   }
 
-  inline bool AppendFromSelf(size_t offset, size_t len) {
+  inline bool AppendFromSelf(size_t offset, size_t len, char**) {
     
     
     if (offset - 1u >= total_written_) {
@@ -1228,6 +1700,7 @@ class SnappyIOVecWriter {
         if (to_copy > len) {
           to_copy = len;
         }
+        assert(to_copy > 0);
 
         IncrementalCopy(GetIOVecPointer(from_iov, from_iov_offset),
                         curr_iov_output_, curr_iov_output_ + to_copy,
@@ -1270,59 +1743,74 @@ class SnappyArrayWriter {
   char* base_;
   char* op_;
   char* op_limit_;
+  
+  
+  char* op_limit_min_slop_;
 
  public:
   inline explicit SnappyArrayWriter(char* dst)
       : base_(dst),
         op_(dst),
-        op_limit_(dst) {
-  }
+        op_limit_(dst),
+        op_limit_min_slop_(dst) {}  
 
   inline void SetExpectedLength(size_t len) {
     op_limit_ = op_ + len;
+    
+    op_limit_min_slop_ = op_limit_ - std::min<size_t>(kSlopBytes - 1, len);
   }
 
-  inline bool CheckLength() const {
-    return op_ == op_limit_;
-  }
+  inline bool CheckLength() const { return op_ == op_limit_; }
 
-  inline bool Append(const char* ip, size_t len) {
-    char* op = op_;
+  char* GetOutputPtr() { return op_; }
+  char* GetBase(ptrdiff_t* op_limit_min_slop) {
+    *op_limit_min_slop = op_limit_min_slop_ - base_;
+    return base_;
+  }
+  void SetOutputPtr(char* op) { op_ = op; }
+
+  inline bool Append(const char* ip, size_t len, char** op_p) {
+    char* op = *op_p;
     const size_t space_left = op_limit_ - op;
-    if (space_left < len) {
-      return false;
-    }
-    memcpy(op, ip, len);
-    op_ = op + len;
+    if (space_left < len) return false;
+    std::memcpy(op, ip, len);
+    *op_p = op + len;
     return true;
   }
 
-  inline bool TryFastAppend(const char* ip, size_t available, size_t len) {
-    char* op = op_;
+  inline bool TryFastAppend(const char* ip, size_t available, size_t len,
+                            char** op_p) {
+    char* op = *op_p;
     const size_t space_left = op_limit_ - op;
     if (len <= 16 && available >= 16 + kMaximumTagLength && space_left >= 16) {
       
       UnalignedCopy128(ip, op);
-      op_ = op + len;
+      *op_p = op + len;
       return true;
     } else {
       return false;
     }
   }
 
-  inline bool AppendFromSelf(size_t offset, size_t len) {
-    char* const op_end = op_ + len;
+  SNAPPY_ATTRIBUTE_ALWAYS_INLINE
+  inline bool AppendFromSelf(size_t offset, size_t len, char** op_p) {
+    assert(len > 0);
+    char* const op = *op_p;
+    assert(op >= base_);
+    char* const op_end = op + len;
 
     
-    
-    
-    
-    
-    
-    
-    if (Produced() <= offset - 1u || op_end > op_limit_) return false;
-    op_ = IncrementalCopy(op_ - offset, op_, op_end, op_limit_);
+    if (SNAPPY_PREDICT_FALSE(static_cast<size_t>(op - base_) < offset))
+      return false;
 
+    if (SNAPPY_PREDICT_FALSE((kSlopBytes < 64 && len > kSlopBytes) ||
+                            op >= op_limit_min_slop_ || offset < len)) {
+      if (op_end > op_limit_ || offset == 0) return false;
+      *op_p = IncrementalCopy(op - offset, op, op_end, op_limit_);
+      return true;
+    }
+    std::memmove(op, op - offset, kSlopBytes);
+    *op_p = op_end;
     return true;
   }
   inline size_t Produced() const {
@@ -1332,8 +1820,9 @@ class SnappyArrayWriter {
   inline void Flush() {}
 };
 
-bool RawUncompress(const char* compressed, size_t n, char* uncompressed) {
-  ByteArraySource reader(compressed, n);
+bool RawUncompress(const char* compressed, size_t compressed_length,
+                   char* uncompressed) {
+  ByteArraySource reader(compressed, compressed_length);
   return RawUncompress(&reader, uncompressed);
 }
 
@@ -1342,9 +1831,10 @@ bool RawUncompress(Source* compressed, char* uncompressed) {
   return InternalUncompress(compressed, &output);
 }
 
-bool Uncompress(const char* compressed, size_t n, std::string* uncompressed) {
+bool Uncompress(const char* compressed, size_t compressed_length,
+                std::string* uncompressed) {
   size_t ulength;
-  if (!GetUncompressedLength(compressed, n, &ulength)) {
+  if (!GetUncompressedLength(compressed, compressed_length, &ulength)) {
     return false;
   }
   
@@ -1353,7 +1843,8 @@ bool Uncompress(const char* compressed, size_t n, std::string* uncompressed) {
     return false;
   }
   STLStringResizeUninitialized(uncompressed, ulength);
-  return RawUncompress(compressed, n, string_as_array(uncompressed));
+  return RawUncompress(compressed, compressed_length,
+                       string_as_array(uncompressed));
 }
 
 
@@ -1363,32 +1854,44 @@ class SnappyDecompressionValidator {
   size_t produced_;
 
  public:
-  inline SnappyDecompressionValidator() : expected_(0), produced_(0) { }
-  inline void SetExpectedLength(size_t len) {
-    expected_ = len;
+  inline SnappyDecompressionValidator() : expected_(0), produced_(0) {}
+  inline void SetExpectedLength(size_t len) { expected_ = len; }
+  size_t GetOutputPtr() { return produced_; }
+  size_t GetBase(ptrdiff_t* op_limit_min_slop) {
+    *op_limit_min_slop = std::numeric_limits<ptrdiff_t>::max() - kSlopBytes + 1;
+    return 1;
   }
-  inline bool CheckLength() const {
-    return expected_ == produced_;
+  void SetOutputPtr(size_t op) { produced_ = op; }
+  inline bool CheckLength() const { return expected_ == produced_; }
+  inline bool Append(const char* ip, size_t len, size_t* produced) {
+    
+    (void)ip;
+
+    *produced += len;
+    return *produced <= expected_;
   }
-  inline bool Append(const char* ip, size_t len) {
-    produced_ += len;
-    return produced_ <= expected_;
-  }
-  inline bool TryFastAppend(const char* ip, size_t available, size_t length) {
+  inline bool TryFastAppend(const char* ip, size_t available, size_t length,
+                            size_t* produced) {
+    
+    (void)ip;
+    (void)available;
+    (void)length;
+    (void)produced;
+
     return false;
   }
-  inline bool AppendFromSelf(size_t offset, size_t len) {
+  inline bool AppendFromSelf(size_t offset, size_t len, size_t* produced) {
     
     
-    if (produced_ <= offset - 1u) return false;
-    produced_ += len;
-    return produced_ <= expected_;
+    if (*produced <= offset - 1u) return false;
+    *produced += len;
+    return *produced <= expected_;
   }
   inline void Flush() {}
 };
 
-bool IsValidCompressedBuffer(const char* compressed, size_t n) {
-  ByteArraySource reader(compressed, n);
+bool IsValidCompressedBuffer(const char* compressed, size_t compressed_length) {
+  ByteArraySource reader(compressed, compressed_length);
   SnappyDecompressionValidator writer;
   return InternalUncompress(&reader, &writer);
 }
@@ -1398,9 +1901,7 @@ bool IsValidCompressed(Source* compressed) {
   return InternalUncompress(compressed, &writer);
 }
 
-void RawCompress(const char* input,
-                 size_t input_length,
-                 char* compressed,
+void RawCompress(const char* input, size_t input_length, char* compressed,
                  size_t* compressed_length) {
   ByteArraySource reader(input, input_length);
   UncheckedByteArraySink writer(compressed);
@@ -1443,13 +1944,14 @@ class SnappyScatteredWriter {
   size_t full_size_;
 
   
-  char* op_base_;       
-  char* op_ptr_;        
-  char* op_limit_;      
+  char* op_base_;   
+  char* op_ptr_;    
+  char* op_limit_;  
+  
+  
+  char* op_limit_min_slop_;
 
-  inline size_t Size() const {
-    return full_size_ + (op_ptr_ - op_base_);
-  }
+  inline size_t Size() const { return full_size_ + (op_ptr_ - op_base_); }
 
   bool SlowAppend(const char* ip, size_t len);
   bool SlowAppendFromSelf(size_t offset, size_t len);
@@ -1460,60 +1962,79 @@ class SnappyScatteredWriter {
         full_size_(0),
         op_base_(NULL),
         op_ptr_(NULL),
-        op_limit_(NULL) {
+        op_limit_(NULL),
+        op_limit_min_slop_(NULL) {}
+  char* GetOutputPtr() { return op_ptr_; }
+  char* GetBase(ptrdiff_t* op_limit_min_slop) {
+    *op_limit_min_slop = op_limit_min_slop_ - op_base_;
+    return op_base_;
   }
+  void SetOutputPtr(char* op) { op_ptr_ = op; }
 
   inline void SetExpectedLength(size_t len) {
     assert(blocks_.empty());
     expected_ = len;
   }
 
-  inline bool CheckLength() const {
-    return Size() == expected_;
-  }
+  inline bool CheckLength() const { return Size() == expected_; }
 
   
-  inline size_t Produced() const {
-    return Size();
-  }
+  inline size_t Produced() const { return Size(); }
 
-  inline bool Append(const char* ip, size_t len) {
-    size_t avail = op_limit_ - op_ptr_;
+  inline bool Append(const char* ip, size_t len, char** op_p) {
+    char* op = *op_p;
+    size_t avail = op_limit_ - op;
     if (len <= avail) {
       
-      memcpy(op_ptr_, ip, len);
-      op_ptr_ += len;
+      std::memcpy(op, ip, len);
+      *op_p = op + len;
       return true;
     } else {
-      return SlowAppend(ip, len);
+      op_ptr_ = op;
+      bool res = SlowAppend(ip, len);
+      *op_p = op_ptr_;
+      return res;
     }
   }
 
-  inline bool TryFastAppend(const char* ip, size_t available, size_t length) {
-    char* op = op_ptr_;
+  inline bool TryFastAppend(const char* ip, size_t available, size_t length,
+                            char** op_p) {
+    char* op = *op_p;
     const int space_left = op_limit_ - op;
     if (length <= 16 && available >= 16 + kMaximumTagLength &&
         space_left >= 16) {
       
       UnalignedCopy128(ip, op);
-      op_ptr_ = op + length;
+      *op_p = op + length;
       return true;
     } else {
       return false;
     }
   }
 
-  inline bool AppendFromSelf(size_t offset, size_t len) {
-    char* const op_end = op_ptr_ + len;
+  inline bool AppendFromSelf(size_t offset, size_t len, char** op_p) {
+    char* op = *op_p;
+    assert(op >= op_base_);
     
-    
-    if (SNAPPY_PREDICT_TRUE(offset - 1u < op_ptr_ - op_base_ &&
-                          op_end <= op_limit_)) {
-      
-      op_ptr_ = IncrementalCopy(op_ptr_ - offset, op_ptr_, op_end, op_limit_);
+    if (SNAPPY_PREDICT_FALSE((kSlopBytes < 64 && len > kSlopBytes) ||
+                            static_cast<size_t>(op - op_base_) < offset ||
+                            op >= op_limit_min_slop_ || offset < len)) {
+      if (offset == 0) return false;
+      if (SNAPPY_PREDICT_FALSE(static_cast<size_t>(op - op_base_) < offset ||
+                              op + len > op_limit_)) {
+        op_ptr_ = op;
+        bool res = SlowAppendFromSelf(offset, len);
+        *op_p = op_ptr_;
+        return res;
+      }
+      *op_p = IncrementalCopy(op - offset, op, op + len, op_limit_);
       return true;
     }
-    return SlowAppendFromSelf(offset, len);
+    
+    char* const op_end = op + len;
+    std::memmove(op, op - offset, kSlopBytes);
+    *op_p = op_end;
+    return true;
   }
 
   
@@ -1521,12 +2042,12 @@ class SnappyScatteredWriter {
   inline void Flush() { allocator_.Flush(Produced()); }
 };
 
-template<typename Allocator>
+template <typename Allocator>
 bool SnappyScatteredWriter<Allocator>::SlowAppend(const char* ip, size_t len) {
   size_t avail = op_limit_ - op_ptr_;
   while (len > avail) {
     
-    memcpy(op_ptr_, ip, avail);
+    std::memcpy(op_ptr_, ip, avail);
     op_ptr_ += avail;
     assert(op_limit_ - op_ptr_ == 0);
     full_size_ += (op_ptr_ - op_base_);
@@ -1534,25 +2055,25 @@ bool SnappyScatteredWriter<Allocator>::SlowAppend(const char* ip, size_t len) {
     ip += avail;
 
     
-    if (full_size_ + len > expected_) {
-      return false;
-    }
+    if (full_size_ + len > expected_) return false;
 
     
     size_t bsize = std::min<size_t>(kBlockSize, expected_ - full_size_);
     op_base_ = allocator_.Allocate(bsize);
     op_ptr_ = op_base_;
     op_limit_ = op_base_ + bsize;
+    op_limit_min_slop_ = op_limit_ - std::min<size_t>(kSlopBytes - 1, bsize);
+
     blocks_.push_back(op_base_);
     avail = bsize;
   }
 
-  memcpy(op_ptr_, ip, len);
+  std::memcpy(op_ptr_, ip, len);
   op_ptr_ += len;
   return true;
 }
 
-template<typename Allocator>
+template <typename Allocator>
 bool SnappyScatteredWriter<Allocator>::SlowAppendFromSelf(size_t offset,
                                                          size_t len) {
   
@@ -1567,18 +2088,26 @@ bool SnappyScatteredWriter<Allocator>::SlowAppendFromSelf(size_t offset,
   
   
   
+  
+  
+  
   size_t src = cur - offset;
+  char* op = op_ptr_;
   while (len-- > 0) {
-    char c = blocks_[src >> kBlockLog][src & (kBlockSize-1)];
-    Append(&c, 1);
+    char c = blocks_[src >> kBlockLog][src & (kBlockSize - 1)];
+    if (!Append(&c, 1, &op)) {
+      op_ptr_ = op;
+      return false;
+    }
     src++;
   }
+  op_ptr_ = op;
   return true;
 }
 
 class SnappySinkAllocator {
  public:
-  explicit SnappySinkAllocator(Sink* dest): dest_(dest) {}
+  explicit SnappySinkAllocator(Sink* dest) : dest_(dest) {}
   ~SnappySinkAllocator() {}
 
   char* Allocate(int size) {
@@ -1594,10 +2123,9 @@ class SnappySinkAllocator {
   
   void Flush(size_t size) {
     size_t size_written = 0;
-    size_t block_size;
-    for (int i = 0; i < blocks_.size(); ++i) {
-      block_size = std::min<size_t>(blocks_[i].size, size - size_written);
-      dest_->AppendAndTakeOwnership(blocks_[i].data, block_size,
+    for (Datablock& block : blocks_) {
+      size_t block_size = std::min<size_t>(block.size, size - size_written);
+      dest_->AppendAndTakeOwnership(block.data, block_size,
                                     &SnappySinkAllocator::Deleter, NULL);
       size_written += block_size;
     }
@@ -1612,6 +2140,10 @@ class SnappySinkAllocator {
   };
 
   static void Deleter(void* arg, const char* bytes, size_t size) {
+    
+    (void)arg;
+    (void)size;
+
     delete[] bytes;
   }
 
@@ -1631,15 +2163,15 @@ size_t UncompressAsMuchAsPossible(Source* compressed, Sink* uncompressed) {
 bool Uncompress(Source* compressed, Sink* uncompressed) {
   
   SnappyDecompressor decompressor(compressed);
-  uint32 uncompressed_len = 0;
+  uint32_t uncompressed_len = 0;
   if (!decompressor.ReadUncompressedLength(&uncompressed_len)) {
     return false;
   }
 
   char c;
   size_t allocated_size;
-  char* buf = uncompressed->GetAppendBufferVariable(
-      1, uncompressed_len, &c, 1, &allocated_size);
+  char* buf = uncompressed->GetAppendBufferVariable(1, uncompressed_len, &c, 1,
+                                                    &allocated_size);
 
   const size_t compressed_len = compressed->Available();
   

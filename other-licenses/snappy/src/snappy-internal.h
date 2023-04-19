@@ -46,16 +46,16 @@ class WorkingMemory {
   
   
   
-  uint16* GetHashTable(size_t fragment_size, int* table_size) const;
+  uint16_t* GetHashTable(size_t fragment_size, int* table_size) const;
   char* GetScratchInput() const { return input_; }
   char* GetScratchOutput() const { return output_; }
 
  private:
-  char* mem_;      
-  size_t size_;    
-  uint16* table_;  
-  char* input_;    
-  char* output_;   
+  char* mem_;        
+  size_t size_;      
+  uint16_t* table_;  
+  char* input_;      
+  char* output_;     
 
   
   WorkingMemory(const WorkingMemory&);
@@ -76,7 +76,7 @@ class WorkingMemory {
 char* CompressFragment(const char* input,
                        size_t input_length,
                        char* op,
-                       uint16* table,
+                       uint16_t* table,
                        const int table_size);
 
 
@@ -90,11 +90,17 @@ char* CompressFragment(const char* input,
 
 
 
+
+
+
+
+
 #if !defined(SNAPPY_IS_BIG_ENDIAN) && \
-    (defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM))
+    (defined(__x86_64__) || defined(_M_X64) || defined(ARCH_PPC) || defined(ARCH_ARM))
 static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
                                                       const char* s2,
-                                                      const char* s2_limit) {
+                                                      const char* s2_limit,
+                                                      uint64_t* data) {
   assert(s2_limit >= s2);
   size_t matched = 0;
 
@@ -103,12 +109,71 @@ static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
   
   
   
-  if (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 8)) {
-    uint64 a1 = UNALIGNED_LOAD64(s1);
-    uint64 a2 = UNALIGNED_LOAD64(s2);
-    if (a1 != a2) {
-      return std::pair<size_t, bool>(Bits::FindLSBSetNonZero64(a1 ^ a2) >> 3,
-                                     true);
+  if (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 16)) {
+    uint64_t a1 = UNALIGNED_LOAD64(s1);
+    uint64_t a2 = UNALIGNED_LOAD64(s2);
+    if (SNAPPY_PREDICT_TRUE(a1 != a2)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uint64_t xorval = a1 ^ a2;
+      int shift = Bits::FindLSBSetNonZero64(xorval);
+      size_t matched_bytes = shift >> 3;
+#ifndef __x86_64__
+      *data = UNALIGNED_LOAD64(s2 + matched_bytes);
+#else
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uint64_t a3 = UNALIGNED_LOAD64(s2 + 4);
+      asm("testl %k2, %k2\n\t"
+          "cmovzq %1, %0\n\t"
+          : "+r"(a2)
+          : "r"(a3), "r"(xorval));
+      *data = a2 >> (shift & (3 * 8));
+#endif
+      return std::pair<size_t, bool>(matched_bytes, true);
     } else {
       matched = 8;
       s2 += 8;
@@ -119,14 +184,27 @@ static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
   
   
   
-  while (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 8)) {
-    if (UNALIGNED_LOAD64(s2) == UNALIGNED_LOAD64(s1 + matched)) {
+  while (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 16)) {
+    uint64_t a1 = UNALIGNED_LOAD64(s1 + matched);
+    uint64_t a2 = UNALIGNED_LOAD64(s2);
+    if (a1 == a2) {
       s2 += 8;
       matched += 8;
     } else {
-      uint64 x = UNALIGNED_LOAD64(s2) ^ UNALIGNED_LOAD64(s1 + matched);
-      int matching_bits = Bits::FindLSBSetNonZero64(x);
-      matched += matching_bits >> 3;
+      uint64_t xorval = a1 ^ a2;
+      int shift = Bits::FindLSBSetNonZero64(xorval);
+      size_t matched_bytes = shift >> 3;
+#ifndef __x86_64__
+      *data = UNALIGNED_LOAD64(s2 + matched_bytes);
+#else
+      uint64_t a3 = UNALIGNED_LOAD64(s2 + 4);
+      asm("testl %k2, %k2\n\t"
+          "cmovzq %1, %0\n\t"
+          : "+r"(a2)
+          : "r"(a3), "r"(xorval));
+      *data = a2 >> (shift & (3 * 8));
+#endif
+      matched += matched_bytes;
       assert(matched >= 8);
       return std::pair<size_t, bool>(matched, false);
     }
@@ -136,6 +214,9 @@ static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
       ++s2;
       ++matched;
     } else {
+      if (s2 <= s2_limit - 8) {
+        *data = UNALIGNED_LOAD64(s2);
+      }
       return std::pair<size_t, bool>(matched, matched < 8);
     }
   }
@@ -144,7 +225,8 @@ static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
 #else
 static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
                                                       const char* s2,
-                                                      const char* s2_limit) {
+                                                      const char* s2_limit,
+                                                      uint64_t* data) {
   
   assert(s2_limit >= s2);
   int matched = 0;
@@ -155,15 +237,17 @@ static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
     matched += 4;
   }
   if (LittleEndian::IsLittleEndian() && s2 <= s2_limit - 4) {
-    uint32 x = UNALIGNED_LOAD32(s2) ^ UNALIGNED_LOAD32(s1 + matched);
+    uint32_t x = UNALIGNED_LOAD32(s2) ^ UNALIGNED_LOAD32(s1 + matched);
     int matching_bits = Bits::FindLSBSetNonZero(x);
     matched += matching_bits >> 3;
+    s2 += matching_bits >> 3;
   } else {
     while ((s2 < s2_limit) && (s1[matched] == *s2)) {
       ++s2;
       ++matched;
     }
   }
+  if (s2 <= s2_limit - 8) *data = LittleEndian::Load64(s2);
   return std::pair<size_t, bool>(matched, matched < 8);
 }
 #endif
@@ -190,7 +274,8 @@ static const int kMaximumTagLength = 5;
 
 
 
-static const uint16 char_table[256] = {
+static constexpr uint16_t char_table[256] = {
+    
   0x0001, 0x0804, 0x1001, 0x2001, 0x0002, 0x0805, 0x1002, 0x2002,
   0x0003, 0x0806, 0x1003, 0x2003, 0x0004, 0x0807, 0x1004, 0x2004,
   0x0005, 0x0808, 0x1005, 0x2005, 0x0006, 0x0809, 0x1006, 0x2006,
@@ -222,7 +307,8 @@ static const uint16 char_table[256] = {
   0x0039, 0x0f04, 0x1039, 0x2039, 0x003a, 0x0f05, 0x103a, 0x203a,
   0x003b, 0x0f06, 0x103b, 0x203b, 0x003c, 0x0f07, 0x103c, 0x203c,
   0x0801, 0x0f08, 0x103d, 0x203d, 0x1001, 0x0f09, 0x103e, 0x203e,
-  0x1801, 0x0f0a, 0x103f, 0x203f, 0x2001, 0x0f0b, 0x1040, 0x2040
+  0x1801, 0x0f0a, 0x103f, 0x203f, 0x2001, 0x0f0b, 0x1040, 0x2040,
+    
 };
 
 }  
