@@ -17,7 +17,6 @@
 #include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
-#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -43,10 +42,6 @@ class RtpPacketReceived : public RtpPacket {
   void set_arrival_time_ms(int64_t time) { arrival_time_ms_ = time; }
 
   
-  NtpTime capture_ntp_time() const { return capture_time_; }
-  void set_capture_ntp_time(NtpTime time) { capture_time_ = time; }
-
-  
   bool recovered() const { return recovered_; }
   void set_recovered(bool value) { recovered_ = value; }
 
@@ -65,7 +60,6 @@ class RtpPacketReceived : public RtpPacket {
   }
 
  private:
-  NtpTime capture_time_;
   int64_t arrival_time_ms_ = 0;
   int payload_type_frequency_ = 0;
   bool recovered_ = false;
