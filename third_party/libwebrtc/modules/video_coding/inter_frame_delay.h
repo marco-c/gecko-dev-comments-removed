@@ -13,46 +13,32 @@
 
 #include <stdint.h>
 
+#include "absl/types/optional.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "modules/include/module_common_types_public.h"
+
 namespace webrtc {
 
 class VCMInterFrameDelay {
  public:
-  explicit VCMInterFrameDelay(int64_t currentWallClock);
+  VCMInterFrameDelay();
 
   
-  void Reset(int64_t currentWallClock);
+  void Reset();
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool CalculateDelay(uint32_t timestamp,
-                      int64_t* delay,
-                      int64_t currentWallClock);
+  absl::optional<TimeDelta> CalculateDelay(uint32_t rtp_timestamp,
+                                           Timestamp now);
 
  private:
   
-  
-  
-  
-  
-  void CheckForWrapArounds(uint32_t timestamp);
+  int64_t prev_rtp_timestamp_unwrapped_;
+  TimestampUnwrapper unwrapper_;
 
-  int64_t _zeroWallClock;  
-  int32_t _wrapArounds;    
   
-  uint32_t _prevTimestamp;
-  
-  int64_t _prevWallClock;
-  
-  int64_t _dTS;
+  absl::optional<Timestamp> prev_wall_clock_;
 };
 
 }  

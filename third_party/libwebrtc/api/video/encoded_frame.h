@@ -34,6 +34,9 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   
   
   virtual int64_t ReceivedTime() const = 0;
+  
+  
+  absl::optional<webrtc::Timestamp> ReceivedTimestamp() const;
 
   
   
