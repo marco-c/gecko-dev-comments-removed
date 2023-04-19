@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_FRAME_BUFFER3_H_
-#define MODULES_VIDEO_CODING_FRAME_BUFFER3_H_
+#ifndef API_VIDEO_FRAME_BUFFER_H_
+#define API_VIDEO_FRAME_BUFFER_H_
 
 #include <map>
 #include <memory>
