@@ -80,7 +80,7 @@ void TransformStreamErrorWritableAndUnblockWrite(JSContext* aCx,
   
   
   if (aStream->Backpressure()) {
-    TransformStreamSetBackpressure(aStream, false, aRv);
+    aStream->SetBackpressure(false, aRv);
   }
 }
 
@@ -403,7 +403,7 @@ class TransformStreamUnderlyingSourceAlgorithms final
     MOZ_ASSERT(mStream->BackpressureChangePromise());
 
     
-    TransformStreamSetBackpressure(mStream, false, aRv);
+    mStream->SetBackpressure(false, aRv);
 
     
     return do_AddRef(mStream->BackpressureChangePromise());
@@ -451,26 +451,25 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
 NS_INTERFACE_MAP_END_INHERITING(TransformStreamUnderlyingSourceAlgorithms)
 
 
-void TransformStreamSetBackpressure(TransformStream* aStream,
-                                    bool aBackpressure, ErrorResult& aRv) {
+void TransformStream::SetBackpressure(bool aBackpressure, ErrorResult& aRv) {
   
-  MOZ_ASSERT(aStream->Backpressure() != aBackpressure);
+  MOZ_ASSERT(Backpressure() != aBackpressure);
 
   
   
-  if (Promise* promise = aStream->BackpressureChangePromise()) {
+  if (Promise* promise = BackpressureChangePromise()) {
     promise->MaybeResolveWithUndefined();
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
   if (aRv.Failed()) {
     return;
   }
-  aStream->SetBackpressureChangePromise(promise);
+  mBackpressureChangePromise = promise;
 
   
-  aStream->SetBackpressure(aBackpressure);
+  mBackpressure = aBackpressure;
 }
 
 
@@ -518,7 +517,7 @@ void TransformStream::Initialize(JSContext* aCx, Promise* aStartPromise,
   mBackpressureChangePromise = nullptr;
 
   
-  TransformStreamSetBackpressure(this, true, aRv);
+  SetBackpressure(true, aRv);
   if (aRv.Failed()) {
     return;
   }
