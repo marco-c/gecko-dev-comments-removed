@@ -65,6 +65,12 @@ addGatedPermissionTypesForXpcShellTests([GATED_SITE_PERM1, GATED_SITE_PERM2]);
 const NON_GATED_SITE_PERM = "test/nonGatedPerm";
 
 
+
+const PERMS_ISOLATE_USERCONTEXT_ENABLED = Services.prefs.getBoolPref(
+  "permissions.isolateBy.userContext"
+);
+
+
 const expectAndHandleInstallPrompts = () => {
   TestUtils.topicObserved("addon-install-blocked").then(([subject]) => {
     let installInfo = subject.wrappedJSObject;
@@ -530,8 +536,14 @@ add_task(
         PRINCIPAL_MULTIPLE_CONTEXTS_USERCONTEXT,
         GATED_SITE_PERM1
       ),
-      true,
-      "...on the context user specific principal as well"
+      
+      
+      PERMS_ISOLATE_USERCONTEXT_ENABLED
+        ? Services.perms.UNKNOWN_ACTION
+        : Services.perms.ALLOW_ACTION,
+      `...and ${
+        PERMS_ISOLATE_USERCONTEXT_ENABLED ? "not allowed" : "allowed"
+      } on the context user specific principal`
     );
     Assert.equal(
       PermissionTestUtils.testExactPermission(
@@ -585,8 +597,14 @@ add_task(
         PRINCIPAL_MULTIPLE_CONTEXTS_USERCONTEXT,
         GATED_SITE_PERM1
       ),
-      true,
-      "...and on the context user specific principal"
+      
+      
+      PERMS_ISOLATE_USERCONTEXT_ENABLED
+        ? Services.perms.UNKNOWN_ACTION
+        : Services.perms.ALLOW_ACTION,
+      `...and ${
+        PERMS_ISOLATE_USERCONTEXT_ENABLED ? "not allowed" : "allowed"
+      } on the context user specific principal`
     );
 
     addons = await promiseAddonsByTypes([SITEPERMS_ADDON_TYPE]);
