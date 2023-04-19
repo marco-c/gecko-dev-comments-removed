@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["WindowRealm"];
+var EXPORTED_SYMBOLS = ["Realm", "WindowRealm"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -42,17 +42,29 @@ const RealmType = {
   Worklet: "worklet",
 };
 
+function getUUID() {
+  return Services.uuid
+    .generateUUID()
+    .toString()
+    .slice(1, -1);
+}
+
 
 
 
 class Realm {
+  #handleObjectMap;
   #id;
 
   constructor() {
-    this.#id = Services.uuid
-      .generateUUID()
-      .toString()
-      .slice(1, -1);
+    this.#id = getUUID();
+
+    
+    this.#handleObjectMap = new Map();
+  }
+
+  destroy() {
+    this.#handleObjectMap = null;
   }
 
   
@@ -62,6 +74,42 @@ class Realm {
 
   get id() {
     return this.#id;
+  }
+
+  
+
+
+
+
+
+  removeObjectHandle(handle) {
+    this.#handleObjectMap.delete(handle);
+  }
+
+  
+
+
+
+
+
+
+
+  getHandleForObject(object) {
+    const handle = getUUID();
+    this.#handleObjectMap.set(handle, object);
+    return handle;
+  }
+
+  
+
+
+
+
+
+
+
+  getObjectForHandle(handle) {
+    return this.#handleObjectMap.get(handle);
   }
 }
 
@@ -104,6 +152,8 @@ class WindowRealm extends Realm {
     this.#globalObjectReference = null;
     this.#globalObject = null;
     this.#window = null;
+
+    super.destroy();
   }
 
   get globalObjectReference() {
