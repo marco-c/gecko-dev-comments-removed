@@ -21,9 +21,9 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "fdlibm.h"
-
 #include "mozilla/EndianUtils.h"
+
+#include "fdlibm.h"
 
 
 
@@ -32,6 +32,8 @@
 
 typedef double      __double_t;
 typedef __double_t  double_t;
+typedef float       __float_t;
+typedef __float_t   float_t;
 
 
 
@@ -93,11 +95,6 @@ typedef union
 } ieee_quad_shape_type;
 
 #endif
-
-
-
-
-
 
 #if MOZ_BIG_ENDIAN()
 
@@ -635,7 +632,7 @@ rnint(__double_t x)
 
 
 
-#if (defined(amd64) || defined(__i386__)) && defined(__GNUCLIKE_ASM)
+#if defined(amd64) || defined(__i386__)
 #define	irint(x)						\
     (sizeof(x) == sizeof(float) &&				\
     sizeof(__float_t) == sizeof(long double) ? irintf(x) :	\
@@ -644,6 +641,39 @@ rnint(__double_t x)
     sizeof(x) == sizeof(long double) ? irintl(x) : (int)(x))
 #else
 #define	irint(x)	((int)(x))
+#endif
+
+#define	i64rint(x)	((int64_t)(x))	/* only needed for ld128 so not opt. */
+
+#if defined(__i386__)
+static __inline int
+irintf(float x)
+{
+	int n;
+
+	__asm("fistl %0" : "=m" (n) : "t" (x));
+	return (n);
+}
+
+static __inline int
+irintd(double x)
+{
+	int n;
+
+	__asm("fistl %0" : "=m" (n) : "t" (x));
+	return (n);
+}
+#endif
+
+#if defined(__amd64__) || defined(__i386__)
+static __inline int
+irintl(long double x)
+{
+	int n;
+
+	__asm("fistl %0" : "=m" (n) : "t" (x));
+	return (n);
+}
 #endif
 
 #ifdef DEBUG
