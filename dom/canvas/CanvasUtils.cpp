@@ -11,6 +11,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -270,6 +271,52 @@ void DoDrawImageSecurityCheck(dom::HTMLCanvasElement* aCanvasElement,
   }
 
   aCanvasElement->SetWriteOnly();
+}
+
+
+
+
+
+
+
+
+void DoDrawImageSecurityCheck(dom::OffscreenCanvas* aOffscreenCanvas,
+                              nsIPrincipal* aPrincipal, bool aForceWriteOnly,
+                              bool aCORSUsed) {
+  
+  if (NS_WARN_IF(!aOffscreenCanvas)) {
+    return;
+  }
+
+  if (aOffscreenCanvas->IsWriteOnly()) {
+    return;
+  }
+
+  
+  if (aForceWriteOnly) {
+    aOffscreenCanvas->SetWriteOnly();
+    return;
+  }
+
+  
+  if (aCORSUsed) {
+    return;
+  }
+
+  
+  nsIGlobalObject* global = aOffscreenCanvas->GetOwnerGlobal();
+  nsIPrincipal* canvasPrincipal = global ? global->PrincipalOrNull() : nullptr;
+  if (!aPrincipal || !canvasPrincipal) {
+    aOffscreenCanvas->SetWriteOnly();
+    return;
+  }
+
+  if (canvasPrincipal->Subsumes(aPrincipal)) {
+    
+    return;
+  }
+
+  aOffscreenCanvas->SetWriteOnly();
 }
 
 bool CoerceDouble(const JS::Value& v, double* d) {
