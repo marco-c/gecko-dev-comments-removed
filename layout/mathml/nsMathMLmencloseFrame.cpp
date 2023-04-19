@@ -362,7 +362,8 @@ nsresult nsMathMLmencloseFrame::PlaceInternal(DrawTarget* aDrawTarget,
   if (delta) padding += onePixel - delta;  
 
   if (IsToDraw(NOTATION_LONGDIV) || IsToDraw(NOTATION_RADICAL)) {
-    GetRadicalParameters(fm, StyleFont()->mMathStyle == StyleMathStyle::Normal,
+    GetRadicalParameters(fm,
+                         StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL,
                          mRadicalRuleThickness, leading, psi);
 
     

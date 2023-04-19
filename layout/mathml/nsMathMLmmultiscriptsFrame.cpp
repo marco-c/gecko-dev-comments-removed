@@ -229,7 +229,8 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
 
     
     
-    if (font->mMathDepth == 0 && font->mMathStyle == StyleMathStyle::Normal &&
+    if (font->mMathDepth == 0 &&
+        font->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL &&
         !NS_MATHML_IS_COMPRESSED(presentationData.flags)) {
       
       supScriptShift = supScriptShift1;
