@@ -415,11 +415,15 @@ void EchoRemoverImpl::ProcessCapture(
       aec_state_.UsableLinearEstimate() ? S2_linear : R2;
 
   
+  const bool clock_drift = config_.echo_removal_control.has_clock_drift ||
+                           echo_path_variability.clock_drift;
+
+  
   float high_bands_gain;
   std::array<float, kFftLengthBy2Plus1> G;
   suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
                             cng_.NoiseSpectrum(), render_signal_analyzer_,
-                            aec_state_, x, &high_bands_gain, &G);
+                            aec_state_, x, clock_drift, &high_bands_gain, &G);
 
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, Y_fft, y);
