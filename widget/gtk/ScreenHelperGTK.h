@@ -16,6 +16,7 @@
 #endif
 
 class nsWindow;
+struct wl_registry;
 
 namespace mozilla {
 namespace widget {
@@ -79,7 +80,7 @@ class ScreenGetterWayland : public ScreenGetter {
   bool MonitorUsesNonIntegerScale(int aMonitor);
 
  private:
-  void* mRegistry = nullptr;
+  wl_registry* mRegistry = nullptr;
   
   
   
