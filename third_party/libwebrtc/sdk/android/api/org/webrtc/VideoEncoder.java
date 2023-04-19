@@ -86,8 +86,6 @@ public interface VideoEncoder {
 
   public class CodecSpecificInfoH264 extends CodecSpecificInfo {}
 
-  public class CodecSpecificInfoAV1 extends CodecSpecificInfo {}
-
   
 
 
