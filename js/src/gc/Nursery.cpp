@@ -1305,39 +1305,42 @@ js::Nursery::CollectionResult js::Nursery::doCollection(JS::GCReason reason) {
 }
 
 void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
-  
-  AutoSuppressProfilerSampling suppressProfiler(
-      runtime()->mainContextFromOwnThread());
+  {
+    
+    AutoSuppressProfilerSampling suppressProfiler(
+        runtime()->mainContextFromOwnThread());
 
-  
-  StoreBuffer& sb = gc->storeBuffer();
+    
+    StoreBuffer& sb = gc->storeBuffer();
 
-  
-  
-  
-  startProfile(ProfileKey::TraceWholeCells);
-  sb.traceWholeCells(mover);
-  endProfile(ProfileKey::TraceWholeCells);
+    
+    
+    
+    
+    startProfile(ProfileKey::TraceWholeCells);
+    sb.traceWholeCells(mover);
+    endProfile(ProfileKey::TraceWholeCells);
 
-  startProfile(ProfileKey::TraceValues);
-  sb.traceValues(mover);
-  endProfile(ProfileKey::TraceValues);
+    startProfile(ProfileKey::TraceValues);
+    sb.traceValues(mover);
+    endProfile(ProfileKey::TraceValues);
 
-  startProfile(ProfileKey::TraceCells);
-  sb.traceCells(mover);
-  endProfile(ProfileKey::TraceCells);
+    startProfile(ProfileKey::TraceCells);
+    sb.traceCells(mover);
+    endProfile(ProfileKey::TraceCells);
 
-  startProfile(ProfileKey::TraceSlots);
-  sb.traceSlots(mover);
-  endProfile(ProfileKey::TraceSlots);
+    startProfile(ProfileKey::TraceSlots);
+    sb.traceSlots(mover);
+    endProfile(ProfileKey::TraceSlots);
 
-  startProfile(ProfileKey::TraceGenericEntries);
-  sb.traceGenericEntries(&mover);
-  endProfile(ProfileKey::TraceGenericEntries);
+    startProfile(ProfileKey::TraceGenericEntries);
+    sb.traceGenericEntries(&mover);
+    endProfile(ProfileKey::TraceGenericEntries);
 
-  startProfile(ProfileKey::MarkRuntime);
-  gc->traceRuntimeForMinorGC(&mover, session);
-  endProfile(ProfileKey::MarkRuntime);
+    startProfile(ProfileKey::MarkRuntime);
+    gc->traceRuntimeForMinorGC(&mover, session);
+    endProfile(ProfileKey::MarkRuntime);
+  }
 
   startProfile(ProfileKey::MarkDebugger);
   {
