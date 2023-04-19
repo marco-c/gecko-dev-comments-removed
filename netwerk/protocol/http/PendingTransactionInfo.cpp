@@ -7,6 +7,7 @@
 #include "HttpLog.h"
 
 #include "PendingTransactionInfo.h"
+#include "NullHttpTransaction.h"
 
 
 #undef LOG
