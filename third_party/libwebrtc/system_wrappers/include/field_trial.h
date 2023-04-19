@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 
 
 
@@ -61,7 +63,7 @@ namespace field_trial {
 
 
 
-std::string FindFullName(const std::string& name);
+std::string FindFullName(absl::string_view name);
 
 
 
