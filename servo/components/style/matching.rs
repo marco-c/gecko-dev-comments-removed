@@ -968,6 +968,15 @@ pub trait MatchMethods: TElement {
             None => return ChildRestyleRequirement::MustCascadeChildren,
         };
 
+        let old_container_type = old_primary_style.clone_container_type();
+        let new_container_type = new_primary_style.clone_container_type();
+        if old_container_type != new_container_type && !new_container_type.is_size_container_type()
+        {
+            
+            
+            restyle_requirement = ChildRestyleRequirement::MustMatchDescendants;
+        }
+
         restyle_requirement = cmp::max(
             restyle_requirement,
             self.accumulate_damage_for(
