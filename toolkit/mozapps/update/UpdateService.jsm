@@ -2628,7 +2628,7 @@ UpdateService.prototype = {
 
   
   _postUpdateProcessing: async function AUS__postUpdateProcessing() {
-    if (this.disabledByPolicy) {
+    if (this.disabled) {
       
       
       
@@ -3145,11 +3145,11 @@ UpdateService.prototype = {
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
-    if (!this.disabledByPolicy && AppConstants.NIGHTLY_BUILD) {
+    if (!this.disabled && AppConstants.NIGHTLY_BUILD) {
       
       AUSTLMY.pingSuppressPrompts();
     }
-    if (this.disabledByPolicy || this.manualUpdateOnly) {
+    if (this.disabled || this.manualUpdateOnly) {
       
       
       
@@ -3523,7 +3523,7 @@ UpdateService.prototype = {
       return;
     }
 
-    if (this.disabledByPolicy) {
+    if (this.disabled) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_BY_POLICY);
       LOG(
         "UpdateService:_selectAndInstallUpdate - not prompting because " +
@@ -3619,12 +3619,9 @@ UpdateService.prototype = {
   },
 
   
-  
-  
-  
-  
-  
-  get disabledByPolicy() {
+
+
+  get disabled() {
     let hasWinPackageId = false;
     try {
       hasWinPackageId = Services.sysinfo.getProperty("hasWinPackageId");
@@ -3651,7 +3648,7 @@ UpdateService.prototype = {
 
 
   get canUsuallyCheckForUpdates() {
-    if (this.disabledByPolicy) {
+    if (this.disabled) {
       LOG(
         "UpdateService.canUsuallyCheckForUpdates - unable to automatically check " +
           "for updates, the option has been disabled by the administrator."
@@ -3937,8 +3934,8 @@ UpdateService.prototype = {
     if (!lazy.gLogEnabled) {
       return;
     }
-    if (this.disabledByPolicy) {
-      LOG("Current UpdateService status: disabledByPolicy");
+    if (this.disabled) {
+      LOG("Current UpdateService status: disabled");
       
       
       
@@ -4659,7 +4656,7 @@ Checker.prototype = {
     let UpdateServiceInstance = UpdateServiceFactory.createInstance();
     
     
-    if (UpdateServiceInstance.disabledByPolicy) {
+    if (UpdateServiceInstance.disabled) {
       LOG("Checker: checkForUpdates, disabled by policy");
       return;
     }
