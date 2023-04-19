@@ -39,7 +39,7 @@ class APZUpdater {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZUpdater)
 
  public:
-  APZUpdater(const RefPtr<APZCTreeManager>& aApz, bool aIsUsingWebRender);
+  APZUpdater(const RefPtr<APZCTreeManager>& aApz, bool aConnectedToWebRender);
 
   bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
@@ -141,7 +141,12 @@ class APZUpdater {
  protected:
   virtual ~APZUpdater();
 
-  bool UsingWebRenderUpdaterThread() const;
+  
+  
+  
+  
+  bool IsConnectedToWebRender() const;
+
   static already_AddRefed<APZUpdater> GetUpdater(
       const wr::WrWindowId& aWindowId);
 
@@ -150,7 +155,7 @@ class APZUpdater {
  private:
   RefPtr<APZCTreeManager> mApz;
   bool mDestroyed;
-  bool mIsUsingWebRender;
+  bool mConnectedToWebRender;
 
   
   

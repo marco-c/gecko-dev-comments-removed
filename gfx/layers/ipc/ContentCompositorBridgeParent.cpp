@@ -76,9 +76,9 @@ ContentCompositorBridgeParent::AllocPAPZCTreeManagerParent(
     
     
     LayersId dummyId{0};
-    const bool useWebRender = false;
+    const bool connectedToWebRender = false;
     RefPtr<APZCTreeManager> temp = new APZCTreeManager(dummyId);
-    RefPtr<APZUpdater> tempUpdater = new APZUpdater(temp, useWebRender);
+    RefPtr<APZUpdater> tempUpdater = new APZUpdater(temp, connectedToWebRender);
     tempUpdater->ClearTree(dummyId);
     return new APZCTreeManagerParent(aLayersId, temp, tempUpdater);
   }

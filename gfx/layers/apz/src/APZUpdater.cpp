@@ -24,10 +24,10 @@ StaticAutoPtr<std::unordered_map<uint64_t, APZUpdater*>>
     APZUpdater::sWindowIdMap;
 
 APZUpdater::APZUpdater(const RefPtr<APZCTreeManager>& aApz,
-                       bool aIsUsingWebRender)
+                       bool aConnectedToWebRender)
     : mApz(aApz),
       mDestroyed(false),
-      mIsUsingWebRender(aIsUsingWebRender),
+      mConnectedToWebRender(aConnectedToWebRender),
       mThreadIdLock("APZUpdater::ThreadIdLock"),
       mQueueLock("APZUpdater::QueueLock") {
   MOZ_ASSERT(aApz);
@@ -329,7 +329,7 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
     return;
   }
 
-  if (UsingWebRenderUpdaterThread()) {
+  if (IsConnectedToWebRender()) {
     
     
     
@@ -377,7 +377,7 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
 }
 
 bool APZUpdater::IsUpdaterThread() const {
-  if (UsingWebRenderUpdaterThread()) {
+  if (IsConnectedToWebRender()) {
     
     
     
@@ -401,8 +401,8 @@ void APZUpdater::RunOnControllerThread(LayersId aLayersId,
                           std::move(task), nsIThread::DISPATCH_NORMAL));
 }
 
-bool APZUpdater::UsingWebRenderUpdaterThread() const {
-  return mIsUsingWebRender;
+bool APZUpdater::IsConnectedToWebRender() const {
+  return mConnectedToWebRender;
 }
 
 
