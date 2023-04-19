@@ -5303,11 +5303,6 @@ static void GtkWidgetDisableUpdates(GtkWidget* aWidget) {
 void nsWindow::EnableRenderingToWindow() {
   LOG("nsWindow::EnableRenderingToWindow()");
 
-  if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
-                                               GetShapedState());
-  }
-
   if (GdkIsWaylandDisplay()) {
 #ifdef MOZ_WAYLAND
     moz_container_wayland_add_initial_draw_callback(
@@ -5415,6 +5410,11 @@ void nsWindow::ConfigureGdkWindow() {
 
   if (mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
     mCompositorState = COMPOSITOR_PAUSED_MISSING_WINDOW;
+  }
+
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                               GetShapedState());
   }
 
   EnableRenderingToWindow();
@@ -8505,13 +8505,16 @@ void nsWindow::DidGetNonBlankPaint() {
 
 
 
+
+
+
+
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
   LOG("nsWindow::SetCompositorWidgetDelegate %p\n", delegate);
 
   
-  
-  if (mCompositorWidgetDelegate && mIsMapped) {
-    DisableRenderingToWindow();
+  if (mCompositorWidgetDelegate) {
+    mCompositorWidgetDelegate->DisableRendering();
   }
 
   if (delegate) {
@@ -8520,9 +8523,9 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
                "nsWindow::SetCompositorWidgetDelegate called with a "
                "non-PlatformCompositorWidgetDelegate");
     
-    
     if (mIsMapped) {
-      EnableRenderingToWindow();
+      mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                 GetShapedState());
     }
   } else {
     mCompositorWidgetDelegate = nullptr;
