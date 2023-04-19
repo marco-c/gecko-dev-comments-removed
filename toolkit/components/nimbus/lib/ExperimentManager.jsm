@@ -134,13 +134,15 @@ class _ExperimentManager {
 
     for (const experiment of restoredExperiments) {
       this.setExperimentActive(experiment);
-      this._restoreEnrollmentPrefs(experiment);
-      this._updatePrefObservers(experiment);
+      if (this._restoreEnrollmentPrefs(experiment)) {
+        this._updatePrefObservers(experiment);
+      }
     }
     for (const rollout of restoredRollouts) {
       this.setExperimentActive(rollout);
-      this._restoreEnrollmentPrefs(rollout);
-      this._updatePrefObservers(rollout);
+      if (this._restoreEnrollmentPrefs(rollout)) {
+        this._updatePrefObservers(rollout);
+      }
     }
 
     this.observe();
@@ -525,7 +527,10 @@ class _ExperimentManager {
 
 
 
-  _unenroll(enrollment, { reason = "unknown", changedPref = undefined } = {}) {
+  _unenroll(
+    enrollment,
+    { reason = "unknown", changedPref = undefined, duringRestore = false } = {}
+  ) {
     const { slug } = enrollment;
 
     if (!enrollment.active) {
@@ -555,7 +560,7 @@ class _ExperimentManager {
       reason,
     });
 
-    this._unsetEnrollmentPrefs(enrollment, changedPref);
+    this._unsetEnrollmentPrefs(enrollment, { changedPref, duringRestore });
 
     lazy.log.debug(`Recipe unenrolled: ${slug}`);
   }
@@ -888,7 +893,12 @@ class _ExperimentManager {
 
 
 
-  _unsetEnrollmentPrefs(enrollment, changedPref) {
+
+
+
+
+
+  _unsetEnrollmentPrefs(enrollment, { changedPref, duringRestore } = {}) {
     if (!enrollment.prefs?.length) {
       return;
     }
@@ -910,25 +920,35 @@ class _ExperimentManager {
       }
 
       let newValue = pref.originalValue;
-      const conflictingEnrollment = getConflictingEnrollment(pref.featureId);
-      const conflictingPref = conflictingEnrollment?.prefs?.find(
-        p => p.name === pref.name
-      );
 
-      if (conflictingPref) {
-        if (enrollment.isRollout) {
-          
-          
-          
-          continue;
-        } else {
-          
-          
-          
-          newValue = getFeatureFromBranch(
-            conflictingEnrollment.branch,
-            pref.featureId
-          ).value[pref.variable];
+      
+      
+      
+      
+      
+      
+      
+      if (!duringRestore || enrollment.isRollout) {
+        const conflictingEnrollment = getConflictingEnrollment(pref.featureId);
+        const conflictingPref = conflictingEnrollment?.prefs?.find(
+          p => p.name === pref.name
+        );
+
+        if (conflictingPref) {
+          if (enrollment.isRollout) {
+            
+            
+            
+            continue;
+          } else {
+            
+            
+            
+            newValue = getFeatureFromBranch(
+              conflictingEnrollment.branch,
+              pref.featureId
+            ).value[pref.variable];
+          }
         }
       }
 
@@ -958,14 +978,61 @@ class _ExperimentManager {
 
 
 
-  _restoreEnrollmentPrefs({ branch, prefs, isRollout }) {
+
+
+
+  _restoreEnrollmentPrefs(enrollment) {
+    const { branch, prefs = [], isRollout } = enrollment;
+
     if (!prefs?.length) {
-      return;
+      return false;
     }
 
     const featuresById = Object.assign(
       ...featuresCompat(branch).map(f => ({ [f.featureId]: f }))
     );
+
+    for (const { name, featureId, variable } of prefs) {
+      
+      if (!Object.hasOwn(lazy.NimbusFeatures, featureId)) {
+        this._unenroll(enrollment, {
+          reason: "invalid-feature",
+          duringRestore: true,
+        });
+        return false;
+      }
+
+      const variables = lazy.NimbusFeatures[featureId].manifest.variables;
+
+      
+      if (!Object.hasOwn(variables, variable)) {
+        this._unenroll(enrollment, {
+          reason: "pref-variable-missing",
+          duringRestore: true,
+        });
+        return false;
+      }
+
+      const variableDef = variables[variable];
+
+      
+      if (!Object.hasOwn(variableDef, "setPref")) {
+        this._unenroll(enrollment, {
+          reason: "pref-variable-no-longer",
+          duringRestore: true,
+        });
+        return false;
+      }
+
+      
+      if (variableDef.setPref !== name) {
+        this._unenroll(enrollment, {
+          reason: "pref-variable-changed",
+          duringRestore: true,
+        });
+        return false;
+      }
+    }
 
     for (const { name, branch: prefBranch, featureId, variable } of prefs) {
       
@@ -995,6 +1062,8 @@ class _ExperimentManager {
         lazy.PrefUtils.setPref(name, value, { branch: prefBranch });
       }
     }
+
+    return true;
   }
 
   
