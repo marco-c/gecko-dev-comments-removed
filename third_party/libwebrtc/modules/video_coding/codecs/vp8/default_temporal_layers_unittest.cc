@@ -687,6 +687,25 @@ TEST_F(TemporalLayersTest, KeyFrame) {
   }
 }
 
+TEST_F(TemporalLayersTest, SetsTlCountOnFirstConfigUpdate) {
+  
+  constexpr int kNumLayers = 2;
+  DefaultTemporalLayers tl(kNumLayers);
+  Vp8EncoderConfig config = tl.UpdateConfiguration(0);
+
+  
+  ASSERT_TRUE(config.temporal_layer_config.has_value());
+  EXPECT_EQ(config.temporal_layer_config->ts_number_layers,
+            uint32_t{kNumLayers});
+  std::array<uint32_t, Vp8EncoderConfig::TemporalLayerConfig::kMaxLayers>
+      kZeroRate = {};
+  EXPECT_EQ(config.temporal_layer_config->ts_target_bitrate, kZeroRate);
+
+  
+  config = tl.UpdateConfiguration(0);
+  EXPECT_FALSE(config.temporal_layer_config.has_value());
+}
+
 class TemporalLayersReferenceTest : public TemporalLayersTest,
                                     public ::testing::WithParamInterface<int> {
  public:
