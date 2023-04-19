@@ -115,31 +115,50 @@ var UrlbarTestUtils = {
     } else {
       await new Promise(resolve => waitForFocus(resolve, window));
     }
-    window.gURLBar.inputField.focus();
-    
-    
-    if (UrlbarPrefs.get("trimURLs") && value != BrowserUIUtils.trimURL(value)) {
-      window.gURLBar.inputField.value = value;
-      fireInputEvent = true;
-    } else {
-      window.gURLBar.value = value;
-    }
-    if (selectionStart >= 0 && selectionEnd >= 0) {
-      window.gURLBar.selectionEnd = selectionEnd;
-      window.gURLBar.selectionStart = selectionStart;
-    }
 
-    
-    
-    if (fireInputEvent) {
+    const setup = () => {
+      window.gURLBar.inputField.focus();
       
-      this.fireInputEvent(window);
-    } else {
-      window.gURLBar.setPageProxyState("invalid");
-      window.gURLBar.startQuery();
-    }
+      
+      if (
+        UrlbarPrefs.get("trimURLs") &&
+        value != BrowserUIUtils.trimURL(value)
+      ) {
+        window.gURLBar.inputField.value = value;
+        fireInputEvent = true;
+      } else {
+        window.gURLBar.value = value;
+      }
+      if (selectionStart >= 0 && selectionEnd >= 0) {
+        window.gURLBar.selectionEnd = selectionEnd;
+        window.gURLBar.selectionStart = selectionStart;
+      }
 
-    return this.promiseSearchComplete(window);
+      
+      
+      if (fireInputEvent) {
+        
+        this.fireInputEvent(window);
+      } else {
+        window.gURLBar.setPageProxyState("invalid");
+        window.gURLBar.startQuery();
+      }
+    };
+    setup();
+
+    
+    
+    
+    
+    const blurListener = () => {
+      setup();
+    };
+    window.gURLBar.inputField.addEventListener("blur", blurListener, {
+      once: true,
+    });
+    const result = await this.promiseSearchComplete(window);
+    window.gURLBar.inputField.removeEventListener("blur", blurListener);
+    return result;
   },
 
   
