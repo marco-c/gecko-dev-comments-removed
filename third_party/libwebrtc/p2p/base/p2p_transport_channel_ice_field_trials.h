@@ -58,6 +58,9 @@ struct IceFieldTrials {
   
   
   int dead_connection_timeout_ms = 30000;
+
+  
+  bool stop_gather_on_strongly_connected = true;
 };
 
 }  

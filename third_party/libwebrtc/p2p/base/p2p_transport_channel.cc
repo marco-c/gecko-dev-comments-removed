@@ -703,7 +703,10 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       "send_ping_on_nomination_ice_controlled",
       &field_trials_.send_ping_on_nomination_ice_controlled,
       
-      "dead_connection_timeout_ms", &field_trials_.dead_connection_timeout_ms)
+      "dead_connection_timeout_ms", &field_trials_.dead_connection_timeout_ms,
+      
+      "stop_gather_on_strongly_connected",
+      &field_trials_.stop_gather_on_strongly_connected)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
 
   if (field_trials_.dead_connection_timeout_ms < 30000) {
@@ -2015,11 +2018,13 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
   
   
   
-  bool strongly_connected = !connection->weak();
-  bool latest_generation = connection->local_candidate().generation() >=
-                           allocator_session()->generation();
-  if (strongly_connected && latest_generation) {
-    MaybeStopPortAllocatorSessions();
+  if (field_trials_.stop_gather_on_strongly_connected) {
+    bool strongly_connected = !connection->weak();
+    bool latest_generation = connection->local_candidate().generation() >=
+                             allocator_session()->generation();
+    if (strongly_connected && latest_generation) {
+      MaybeStopPortAllocatorSessions();
+    }
   }
   
   
