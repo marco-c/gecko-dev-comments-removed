@@ -156,6 +156,8 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   void MaybeSendShutdownOnPacketReceived(const SctpPacket& packet);
   
+  void MaybeSendResetStreamsRequest();
+  
   void SendInit();
   
   void SendShutdown();
