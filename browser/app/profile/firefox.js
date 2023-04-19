@@ -2123,9 +2123,6 @@ pref("extensions.pocket.showHome", true);
 pref("extensions.pocket.loggedOutVariant", "control");
 
 
-pref("extensions.pocket.refresh.layout.enabled", true);
-
-
 pref("extensions.pocket.refresh.emailButton.enabled", false);
 
 pref("extensions.pocket.refresh.hideRecentSaves.enabled", false);

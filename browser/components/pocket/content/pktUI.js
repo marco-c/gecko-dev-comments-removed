@@ -89,21 +89,21 @@ var pktUI = (function() {
   
   const initialPanelSize = {
     signup: {
-      control: { height: 450, width: 300 },
-      refresh: { height: 315, width: 328 },
+      height: 315,
+      width: 328,
     },
     saved: {
-      control: { height: 132, width: 350 },
-      refresh: { height: 110, width: 350 },
+      height: 110,
+      width: 350,
     },
     home: {
-      control: { height: 477, width: 328 },
-      refresh: { height: 251, width: 328 },
+      height: 251,
+      width: 328,
     },
     
     home_no_topics: {
-      control: { height: 247, width: 328 },
-      refresh: { height: 86, width: 328 },
+      height: 86,
+      width: 328,
     },
   };
 
@@ -224,22 +224,17 @@ var pktUI = (function() {
 
   function showPanel(urlString, panel) {
     const locale = getUILocale();
-    let variant = `control`;
-    const layoutRefresh = NimbusFeatures.saveToPocket.getVariable(
-      "layoutRefresh"
-    );
-    if (layoutRefresh) {
-      variant = `refresh`;
-    }
+    const options = initialPanelSize[panel];
 
-    const options = initialPanelSize[panel][variant];
     resizePanel({
       width: options.width,
       height: options.height,
     });
+
     const saveToPocketExperiment = ExperimentAPI.getExperiment({
       featureId: "saveToPocket",
     });
+
     const pocketNewtabExperiment = ExperimentAPI.getExperiment({
       featureId: "pocketNewtab",
     });
@@ -260,7 +255,6 @@ var pktUI = (function() {
       url.searchParams.append("utmCampaign", utmCampaign);
       url.searchParams.append("utmContent", utmContent);
     }
-    url.searchParams.append("layoutRefresh", layoutRefresh);
     url.searchParams.append("locale", locale);
 
     
@@ -301,10 +295,7 @@ var pktUI = (function() {
       })
     );
 
-    if (
-      NimbusFeatures.saveToPocket.getVariable("layoutRefresh") &&
-      !NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")
-    ) {
+    if (!NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")) {
       let recentSaves = await pktApi.getRecentSavesCache();
       if (recentSaves) {
         
@@ -381,10 +372,7 @@ var pktUI = (function() {
         pktUIMessaging.sendMessageToPanel(saveLinkMessageId, successResponse);
         SaveToPocket.itemSaved();
 
-        if (
-          NimbusFeatures.saveToPocket.getVariable("layoutRefresh") &&
-          !NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")
-        ) {
+        if (!NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")) {
           
           if (item?.resolved_id && item?.resolved_id !== "0") {
             pktApi.getArticleInfo(item.resolved_url, {
