@@ -1,13 +1,6 @@
 
 
 
-const { UIState } = ChromeUtils.import("resource://services-sync/UIState.jsm");
-const { TabsSetupFlowManager } = ChromeUtils.importESModule(
-  "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs"
-);
-
-const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
-
 function promiseSyncReady() {
   let service = Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
     .wrappedJSObject;
