@@ -19,19 +19,21 @@ namespace webrtc {
 
 
 
-
-
-
-
-
 class VoipNetwork {
  public:
   
-  virtual void ReceivedRTPPacket(ChannelId channel_id,
-                                 rtc::ArrayView<const uint8_t> rtp_packet) = 0;
+  
+  
+  
+  virtual VoipResult ReceivedRTPPacket(
+      ChannelId channel_id,
+      rtc::ArrayView<const uint8_t> rtp_packet) = 0;
 
   
-  virtual void ReceivedRTCPPacket(
+  
+  
+  
+  virtual VoipResult ReceivedRTCPPacket(
       ChannelId channel_id,
       rtc::ArrayView<const uint8_t> rtcp_packet) = 0;
 

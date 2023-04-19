@@ -35,6 +35,21 @@ class Transport;
 
 enum class ChannelId : int {};
 
+enum class VoipResult {
+  
+  kOk,
+  
+  
+  kInvalidArgument,
+  
+  
+  kFailedPrecondition,
+  
+  
+  
+  kInternal,
+};
+
 class VoipBase {
  public:
   
@@ -47,39 +62,47 @@ class VoipBase {
   
   
   
-  virtual absl::optional<ChannelId> CreateChannel(
-      Transport* transport,
-      absl::optional<uint32_t> local_ssrc) = 0;
-
   
-  virtual void ReleaseChannel(ChannelId channel_id) = 0;
-
-  
-  
-  
-  
-  virtual bool StartSend(ChannelId channel_id) = 0;
+  virtual ChannelId CreateChannel(Transport* transport,
+                                  absl::optional<uint32_t> local_ssrc) = 0;
 
   
   
   
   
   
-  virtual bool StopSend(ChannelId channel_id) = 0;
+  virtual VoipResult ReleaseChannel(ChannelId channel_id) = 0;
 
   
   
   
   
   
-  virtual bool StartPlayout(ChannelId channel_id) = 0;
+  
+  virtual VoipResult StartSend(ChannelId channel_id) = 0;
 
   
   
   
   
   
-  virtual bool StopPlayout(ChannelId channel_id) = 0;
+  
+  virtual VoipResult StopSend(ChannelId channel_id) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual VoipResult StartPlayout(ChannelId channel_id) = 0;
+
+  
+  
+  
+  
+  virtual VoipResult StopPlayout(ChannelId channel_id) = 0;
 
  protected:
   virtual ~VoipBase() = default;

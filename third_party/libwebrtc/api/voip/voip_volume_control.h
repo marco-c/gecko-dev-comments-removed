@@ -36,17 +36,24 @@ class VoipVolumeControl {
   
   
   
-  virtual void SetInputMuted(ChannelId channel_id, bool enable) = 0;
+  
+  
+  
+  virtual VoipResult SetInputMuted(ChannelId channel_id, bool enable) = 0;
 
   
   
-  virtual absl::optional<VolumeInfo> GetInputVolumeInfo(
-      ChannelId channel_id) = 0;
+  
+  
+  virtual VoipResult GetInputVolumeInfo(ChannelId channel_id,
+                                        VolumeInfo& volume_info) = 0;
 
   
   
-  virtual absl::optional<VolumeInfo> GetOutputVolumeInfo(
-      ChannelId channel_id) = 0;
+  
+  
+  virtual VoipResult GetOutputVolumeInfo(ChannelId channel_id,
+                                         VolumeInfo& volume_info) = 0;
 
  protected:
   virtual ~VoipVolumeControl() = default;

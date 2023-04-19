@@ -32,8 +32,10 @@ class VoipStatistics {
  public:
   
   
-  virtual absl::optional<IngressStatistics> GetIngressStatistics(
-      ChannelId channel_id) = 0;
+  
+  
+  virtual VoipResult GetIngressStatistics(ChannelId channel_id,
+                                          IngressStatistics& ingress_stats) = 0;
 
  protected:
   virtual ~VoipStatistics() = default;

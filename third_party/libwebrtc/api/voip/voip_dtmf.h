@@ -43,9 +43,12 @@ class VoipDtmf {
   
   
   
-  virtual void RegisterTelephoneEventType(ChannelId channel_id,
-                                          int rtp_payload_type,
-                                          int sample_rate_hz) = 0;
+  
+  
+  
+  virtual VoipResult RegisterTelephoneEventType(ChannelId channel_id,
+                                                int rtp_payload_type,
+                                                int sample_rate_hz) = 0;
 
   
   
@@ -54,9 +57,13 @@ class VoipDtmf {
   
   
   
-  virtual bool SendDtmfEvent(ChannelId channel_id,
-                             DtmfEvent dtmf_event,
-                             int duration_ms) = 0;
+  
+  
+  
+  
+  virtual VoipResult SendDtmfEvent(ChannelId channel_id,
+                                   DtmfEvent dtmf_event,
+                                   int duration_ms) = 0;
 
  protected:
   virtual ~VoipDtmf() = default;

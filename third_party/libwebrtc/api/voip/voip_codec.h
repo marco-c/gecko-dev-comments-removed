@@ -29,15 +29,21 @@ namespace webrtc {
 class VoipCodec {
  public:
   
-  virtual void SetSendCodec(ChannelId channel_id,
-                            int payload_type,
-                            const SdpAudioFormat& encoder_spec) = 0;
+  
+  
+  
+  virtual VoipResult SetSendCodec(ChannelId channel_id,
+                                  int payload_type,
+                                  const SdpAudioFormat& encoder_spec) = 0;
 
   
   
   
   
-  virtual void SetReceiveCodecs(
+  
+  
+  
+  virtual VoipResult SetReceiveCodecs(
       ChannelId channel_id,
       const std::map<int, SdpAudioFormat>& decoder_specs) = 0;
 

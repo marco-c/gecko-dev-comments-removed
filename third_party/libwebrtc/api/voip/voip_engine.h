@@ -67,7 +67,6 @@ class VoipVolumeControl;
 
 
 
-
 class VoipEngine {
  public:
   virtual ~VoipEngine() = default;
