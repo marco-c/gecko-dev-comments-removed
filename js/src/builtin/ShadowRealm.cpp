@@ -25,6 +25,7 @@
 #include "js/ShadowRealmCallbacks.h"
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
+#include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "js/Wrapper.h"
 #include "vm/GlobalObject.h"
@@ -277,14 +278,22 @@ static bool PerformShadowRealmEval(JSContext* cx, HandleString sourceText,
   if (!compileSuccess) {
     
     
-    
-    
+    Rooted<Value> exception(cx);
+    if (!JS_GetPendingException(cx, &exception)) {
+      return false;
+    }
 
     
     
     JS_ClearPendingException(cx);
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_SHADOW_REALM_GENERIC_SYNTAX);
+
+    Rooted<Value> clonedException(cx);
+    if (!JS_StructuredClone(cx, exception, &clonedException, nullptr,
+                            nullptr)) {
+      return false;
+    }
+
+    JS_SetPendingException(cx, clonedException);
     return false;
   }
 
