@@ -572,8 +572,6 @@ class DiscoveryStreamFeed {
         hybridLayout: pocketConfig.hybridLayout,
         hideCardBackground: pocketConfig.hideCardBackground,
         fourCardLayout: pocketConfig.fourCardLayout,
-        loadMore: pocketConfig.loadMore,
-        lastCardMessageEnabled: pocketConfig.lastCardMessageEnabled,
         pocketButtonEnabled,
         saveToPocketCard: pocketButtonEnabled && pocketConfig.saveToPocketCard,
         newFooterSection: pocketConfig.newFooterSection,
@@ -1990,8 +1988,6 @@ class DiscoveryStreamFeed {
 
 
 
-
-
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
@@ -2001,8 +1997,6 @@ getHardcodedLayout = ({
   hybridLayout = false,
   hideCardBackground = false,
   fourCardLayout = false,
-  loadMore = false,
-  lastCardMessageEnabled = false,
   newFooterSection = false,
   pocketButtonEnabled = false,
   saveToPocketCard = false,
@@ -2112,8 +2106,6 @@ getHardcodedLayout = ({
             }),
             data: widgetData,
           },
-          loadMore,
-          lastCardMessageEnabled,
           pocketButtonEnabled,
           saveToPocketCard,
           cta_variant: "link",
