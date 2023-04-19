@@ -18,7 +18,7 @@ use core::mem::replace;
 use core::ops::RangeBounds;
 
 use crate::equivalent::Equivalent;
-use crate::util::{enumerate, simplify_range};
+use crate::util::simplify_range;
 use crate::{Bucket, Entries, HashValue};
 
 
@@ -44,7 +44,8 @@ fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
 
 #[inline]
 fn erase_index(table: &mut RawTable<usize>, hash: HashValue, index: usize) {
-    table.erase_entry(hash.get(), move |&i| i == index);
+    let erased = table.erase_entry(hash.get(), move |&i| i == index);
+    debug_assert!(erased);
 }
 
 #[inline]
@@ -185,9 +186,7 @@ impl<K, V> IndexMapCore<K, V> {
         let entries = self.entries.split_off(at);
 
         let mut indices = RawTable::with_capacity(entries.len());
-        for (i, entry) in enumerate(&entries) {
-            indices.insert_no_grow(entry.hash.get(), i);
-        }
+        raw::insert_bulk_no_grow(&mut indices, &entries);
         Self { indices, entries }
     }
 
@@ -204,9 +203,10 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     
-    pub(crate) fn shrink_to_fit(&mut self) {
-        self.indices.shrink_to(0, get_hash(&self.entries));
-        self.entries.shrink_to_fit();
+    pub(crate) fn shrink_to(&mut self, min_capacity: usize) {
+        self.indices
+            .shrink_to(min_capacity, get_hash(&self.entries));
+        self.entries.shrink_to(min_capacity);
     }
 
     
@@ -284,28 +284,76 @@ impl<K, V> IndexMapCore<K, V> {
     
     fn shift_remove_finish(&mut self, index: usize) -> (K, V) {
         
-        
-        let entry = self.entries.remove(index);
+        self.decrement_indices(index + 1, self.entries.len());
 
         
+        let entry = self.entries.remove(index);
+        (entry.key, entry.value)
+    }
+
+    
+    
+    
+    
+    fn decrement_indices(&mut self, start: usize, end: usize) {
         
-        let raw_capacity = self.indices.buckets();
-        let shifted_entries = &self.entries[index..];
-        if shifted_entries.len() > raw_capacity / 2 {
+        let shifted_entries = &self.entries[start..end];
+        if shifted_entries.len() > self.indices.buckets() / 2 {
             
             for i in self.indices_mut() {
-                if *i > index {
+                if start <= *i && *i < end {
                     *i -= 1;
                 }
             }
         } else {
             
-            for (i, entry) in (index + 1..).zip(shifted_entries) {
+            for (i, entry) in (start..end).zip(shifted_entries) {
                 update_index(&mut self.indices, entry.hash, i, i - 1);
             }
         }
+    }
 
-        (entry.key, entry.value)
+    
+    
+    
+    
+    fn increment_indices(&mut self, start: usize, end: usize) {
+        
+        let shifted_entries = &self.entries[start..end];
+        if shifted_entries.len() > self.indices.buckets() / 2 {
+            
+            for i in self.indices_mut() {
+                if start <= *i && *i < end {
+                    *i += 1;
+                }
+            }
+        } else {
+            
+            
+            for (i, entry) in (start..end).zip(shifted_entries).rev() {
+                update_index(&mut self.indices, entry.hash, i, i + 1);
+            }
+        }
+    }
+
+    pub(super) fn move_index(&mut self, from: usize, to: usize) {
+        let from_hash = self.entries[from].hash;
+        if from != to {
+            
+            update_index(&mut self.indices, from_hash, from, usize::MAX);
+
+            
+            if from < to {
+                self.decrement_indices(from + 1, to + 1);
+                self.entries[from..=to].rotate_left(1);
+            } else if to < from {
+                self.increment_indices(to, from);
+                self.entries[to..=from].rotate_right(1);
+            }
+
+            
+            update_index(&mut self.indices, from_hash, usize::MAX, to);
+        }
     }
 
     
@@ -373,14 +421,8 @@ impl<K, V> IndexMapCore<K, V> {
             self.indices.clear();
 
             
-            for (i, entry) in enumerate(start_entries) {
-                self.indices.insert_no_grow(entry.hash.get(), i);
-            }
-
-            
-            for (i, entry) in (start..).zip(shifted_entries) {
-                self.indices.insert_no_grow(entry.hash.get(), i);
-            }
+            raw::insert_bulk_no_grow(&mut self.indices, start_entries);
+            raw::insert_bulk_no_grow(&mut self.indices, shifted_entries);
         } else if erased + shifted < half_capacity {
             
 
@@ -408,6 +450,7 @@ impl<K, V> IndexMapCore<K, V> {
         
         
         
+        
         let len = self.entries.len();
         let mut n_deleted = 0;
         for i in 0..len {
@@ -429,11 +472,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     fn rebuild_hash_table(&mut self) {
         self.indices.clear();
-        debug_assert!(self.indices.capacity() >= self.entries.len());
-        for (i, entry) in enumerate(&self.entries) {
-            
-            self.indices.insert_no_grow(entry.hash.get(), i);
-        }
+        raw::insert_bulk_no_grow(&mut self.indices, &self.entries);
     }
 
     pub(crate) fn reverse(&mut self) {

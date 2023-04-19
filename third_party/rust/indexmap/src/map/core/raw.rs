@@ -2,12 +2,25 @@
 
 
 
-use super::{equivalent, Entry, HashValue, IndexMapCore, VacantEntry};
+use super::{equivalent, Bucket, Entry, HashValue, IndexMapCore, VacantEntry};
 use core::fmt;
 use core::mem::replace;
 use hashbrown::raw::RawTable;
 
 type RawBucket = hashbrown::raw::Bucket<usize>;
+
+
+
+
+pub(super) fn insert_bulk_no_grow<K, V>(indices: &mut RawTable<usize>, entries: &[Bucket<K, V>]) {
+    assert!(indices.capacity() - indices.len() >= entries.len());
+    for entry in entries {
+        
+        unsafe {
+            indices.insert_no_grow(entry.hash.get(), indices.len());
+        }
+    }
+}
 
 pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
 impl fmt::Debug for DebugIndices<'_> {
