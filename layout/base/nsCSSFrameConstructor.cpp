@@ -5491,7 +5491,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   bool pageNameBreak = false;
   
   
-  if (aState.mPresContext->IsPaginated() &&
+  if (aParentFrame && aState.mPresContext->IsPaginated() &&
       StaticPrefs::layout_css_named_pages_enabled() &&
       !aContent->TextIsOnlyWhitespace()) {
     
