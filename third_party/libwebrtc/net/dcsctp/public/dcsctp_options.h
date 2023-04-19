@@ -46,7 +46,29 @@ struct DcSctpOptions {
   
   
   
+  
+  
+  
+  uint16_t announced_maximum_incoming_streams = 65535;
+
+  
+  
+  
+  
+  
+  
+  uint16_t announced_maximum_outgoing_streams = 65535;
+
+  
+  
+  
   size_t mtu = kMaxSafeMTUSize;
+
+  
+  
+  
+  
+  size_t max_message_size = 256 * 1024;
 
   
   
@@ -65,7 +87,7 @@ struct DcSctpOptions {
   
   
   
-  DurationMs rtt_max = DurationMs(8'000);
+  DurationMs rtt_max = DurationMs(8000);
 
   
   DurationMs rto_initial = DurationMs(500);
@@ -86,7 +108,7 @@ struct DcSctpOptions {
   DurationMs t2_shutdown_timeout = DurationMs(1000);
 
   
-  DurationMs heartbeat_interval = DurationMs(30'000);
+  DurationMs heartbeat_interval = DurationMs(30000);
 
   
   

@@ -18,11 +18,26 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "net/dcsctp/public/dcsctp_message.h"
+#include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/public/packet_observer.h"
 #include "net/dcsctp/public/timeout.h"
 #include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
+
+
+enum class SocketState {
+  
+  kClosed,
+  
+  
+  
+  kConnecting,
+  
+  kConnected,
+  
+  kShuttingDown,
+};
 
 
 struct SendOptions {
@@ -59,6 +74,8 @@ enum class ErrorKind {
   kProtocolViolation,
   
   kResourceExhaustion,
+  
+  kUnsupportedOperation,
 };
 
 inline constexpr absl::string_view ToString(ErrorKind error) {
@@ -79,18 +96,64 @@ inline constexpr absl::string_view ToString(ErrorKind error) {
       return "PROTOCOL_VIOLATION";
     case ErrorKind::kResourceExhaustion:
       return "RESOURCE_EXHAUSTION";
+    case ErrorKind::kUnsupportedOperation:
+      return "UNSUPPORTED_OPERATION";
+  }
+}
+
+enum class SendStatus {
+  
+  
+  
+  kSuccess,
+  
+  
+  kErrorMessageEmpty,
+  
+  
+  kErrorMessageTooLarge,
+  
+  
+  kErrorResourceExhaustion,
+  
+  kErrorShuttingDown,
+};
+
+inline constexpr absl::string_view ToString(SendStatus error) {
+  switch (error) {
+    case SendStatus::kSuccess:
+      return "SUCCESS";
+    case SendStatus::kErrorMessageEmpty:
+      return "ERROR_MESSAGE_EMPTY";
+    case SendStatus::kErrorMessageTooLarge:
+      return "ERROR_MESSAGE_TOO_LARGE";
+    case SendStatus::kErrorResourceExhaustion:
+      return "ERROR_RESOURCE_EXHAUSTION";
+    case SendStatus::kErrorShuttingDown:
+      return "ERROR_SHUTTING_DOWN";
   }
 }
 
 
-enum class StreamResetSupport {
+enum class ResetStreamsStatus {
   
-  kUnknown,
+  kNotConnected,
   
-  kSupported,
+  kPerformed,
   
   kNotSupported,
 };
+
+inline constexpr absl::string_view ToString(ResetStreamsStatus error) {
+  switch (error) {
+    case ResetStreamsStatus::kNotConnected:
+      return "NOT_CONNECTED";
+    case ResetStreamsStatus::kPerformed:
+      return "PERFORMED";
+    case ResetStreamsStatus::kNotSupported:
+      return "NOT_SUPPORTED";
+  }
+}
 
 
 
@@ -200,15 +263,6 @@ class DcSctpSocketCallbacks {
   
   virtual void OnIncomingStreamsReset(
       rtc::ArrayView<const StreamID> incoming_streams) = 0;
-
-  
-  
-  
-  
-  
-  virtual void OnSentMessageExpired(StreamID stream_id,
-                                    PPID ppid,
-                                    bool unsent) = 0;
 };
 
 
@@ -237,6 +291,21 @@ class DcSctpSocketInterface {
   virtual void Close() = 0;
 
   
+  virtual SocketState state() const = 0;
+
+  
+  virtual const DcSctpOptions& options() const = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual SendStatus Send(DcSctpMessage message,
+                          const SendOptions& send_options) = 0;
+
   
   
   
@@ -251,27 +320,9 @@ class DcSctpSocketInterface {
   
   
   
-  virtual void ResetStreams(
+  
+  virtual ResetStreamsStatus ResetStreams(
       rtc::ArrayView<const StreamID> outgoing_streams) = 0;
-
-  
-  
-  virtual StreamResetSupport SupportsStreamReset() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  void Send(DcSctpMessage message, const SendOptions& send_options = {}) {
-    SendMessage(std::move(message), send_options);
-  }
-
- private:
-  virtual void SendMessage(DcSctpMessage message,
-                           const SendOptions& send_options) = 0;
 };
 }  
 
