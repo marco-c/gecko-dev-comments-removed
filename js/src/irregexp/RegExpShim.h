@@ -633,12 +633,15 @@ inline uint8_t* ByteArrayData::data() {
 
 
 class ByteArray : public HeapObject {
+ protected:
   ByteArrayData* inner() const {
     return static_cast<ByteArrayData*>(value().toPrivate());
   }
 
  public:
   PseudoHandle<ByteArrayData> takeOwnership(Isolate* isolate);
+  PseudoHandle<ByteArrayData> maybeTakeOwnership(Isolate* isolate);
+
   byte get(uint32_t index) { return inner()->get(index); }
   void set(uint32_t index, byte val) { inner()->set(index, val); }
   uint16_t get_uint16(uint32_t index) { return inner()->get_uint16(index); }
@@ -654,7 +657,13 @@ class ByteArray : public HeapObject {
     b.setValue(object.value());
     return b;
   }
+
+  bool IsByteArray() const { return true; }
+
+  friend class SMRegExpMacroAssembler;
 };
+
+
 
 
 
@@ -1097,6 +1106,8 @@ class Isolate {
  public:
   template <typename T>
   PseudoHandle<T> takeOwnership(void* ptr);
+  template <typename T>
+  PseudoHandle<T> maybeTakeOwnership(void* ptr);
 
   uint32_t liveHandles() const { return handleArena_.Length(); }
   uint32_t livePseudoHandles() const { return uniquePtrArena_.Length(); }

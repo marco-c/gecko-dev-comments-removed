@@ -25,6 +25,7 @@
 
 
 
+
 #include "jit/ABIFunctions.h"
 #include "jit/Bailouts.h"  
                            
@@ -98,6 +99,7 @@ namespace jit {
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)                   \
   _(js::irregexp::CaseInsensitiveCompareUnicode)                      \
   _(js::irregexp::GrowBacktrackStack)                                 \
+  _(js::irregexp::IsCharacterInRangeArray)                            \
   _(js::jit::AllocateAndInitTypedArrayBuffer)                         \
   _(js::jit::AllocateBigIntNoGC)                                      \
   _(js::jit::AllocateFatInlineString)                                 \
