@@ -2194,6 +2194,30 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (!loadInfo) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
+             "aChannel) but the channel's loadinfo was NULL"));
+    return true;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  nsresult rv =
+      loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
+             "aChannel) but the channel's loadinfo's CookieJarSettings "
+             "couldn't be retrieved: %d",
+             rv));
+    return true;
+  }
+  if (cookieJarSettings->GetShouldResistFingerprinting()) {
+    return true;
+  }
 
   
   
@@ -2202,7 +2226,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
   if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
     nsCOMPtr<nsIURI> channelURI;
-    nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
+    rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
     MOZ_ASSERT(
         NS_SUCCEEDED(rv),
         "Failed to get URI in "
@@ -2334,6 +2358,33 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
       nsAutoCString origin;
       aPrincipal->GetAsciiOrigin(origin);
       LogDomainAndPrefList(kExemptedDomainsPrefName, origin, isExemptDomain);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv;
+  if (isExemptDomain && StaticPrefs::privacy_firstparty_isolate() &&
+      !originAttributes.mFirstPartyDomain.IsEmpty()) {
+    rv = NS_NewURI(getter_AddRefs(uri),
+                   u"https://"_ns + originAttributes.mFirstPartyDomain);
+    if (!NS_FAILED(rv)) {
+      isExemptDomain =
+          nsContentUtils::IsURIInPrefList(uri, kExemptedDomainsPrefName);
+    }
+  } else if (isExemptDomain && !originAttributes.mPartitionKey.IsEmpty()) {
+    rv = NS_NewURI(getter_AddRefs(uri),
+                   u"https://"_ns + originAttributes.mPartitionKey);
+    if (!NS_FAILED(rv)) {
+      isExemptDomain =
+          nsContentUtils::IsURIInPrefList(uri, kExemptedDomainsPrefName);
     }
   }
 
