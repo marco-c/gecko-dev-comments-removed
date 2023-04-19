@@ -1,9 +1,11 @@
 use crate::{IdentFragment, ToTokens, TokenStreamExt};
-use std::fmt;
-use std::iter;
-use std::ops::BitOr;
+use core::fmt;
+use core::iter;
+use core::ops::BitOr;
 
+pub use core::option::Option;
 pub use proc_macro2::*;
+pub use std::format;
 
 pub struct HasIterator; 
 pub struct ThereIsNoIteratorInRepetition; 
@@ -46,8 +48,8 @@ pub mod ext {
     use super::RepInterp;
     use super::{HasIterator as HasIter, ThereIsNoIteratorInRepetition as DoesNotHaveIter};
     use crate::ToTokens;
+    use core::slice;
     use std::collections::btree_set::{self, BTreeSet};
-    use std::slice;
 
     
     pub trait RepIteratorExt: Iterator + Sized {
@@ -205,27 +207,12 @@ fn respan_token_tree(mut token: TokenTree, span: Span) -> TokenTree {
 }
 
 pub fn push_ident(tokens: &mut TokenStream, s: &str) {
-    
-    
-    
-    
-    if s.starts_with("r#") {
-        parse(tokens, s);
-    } else {
-        tokens.append(Ident::new(s, Span::call_site()));
-    }
+    let span = Span::call_site();
+    push_ident_spanned(tokens, span, s);
 }
 
 pub fn push_ident_spanned(tokens: &mut TokenStream, span: Span, s: &str) {
-    
-    
-    
-    
-    if s.starts_with("r#") {
-        parse_spanned(tokens, span, s);
-    } else {
-        tokens.append(Ident::new(s, span));
-    }
+    tokens.append(ident_maybe_raw(s, span));
 }
 
 pub fn push_lifetime(tokens: &mut TokenStream, lifetime: &str) {
@@ -392,36 +379,17 @@ pub fn push_underscore_spanned(tokens: &mut TokenStream, span: Span) {
 
 
 
-
-
-
-
-
 pub fn mk_ident(id: &str, span: Option<Span>) -> Ident {
     let span = span.unwrap_or_else(Span::call_site);
+    ident_maybe_raw(id, span)
+}
 
-    let is_raw = id.starts_with("r#");
-    let unraw = Ident::new(if is_raw { &id[2..] } else { id }, span);
-    if !is_raw {
-        return unraw;
+fn ident_maybe_raw(id: &str, span: Span) -> Ident {
+    if id.starts_with("r#") {
+        Ident::new_raw(&id[2..], span)
+    } else {
+        Ident::new(id, span)
     }
-
-    
-    
-    
-    
-    
-    
-    
-    if let Ok(ts) = id.parse::<TokenStream>() {
-        let mut iter = ts.into_iter();
-        if let (Some(TokenTree::Ident(mut id)), None) = (iter.next(), iter.next()) {
-            id.set_span(span);
-            return id;
-        }
-    }
-
-    panic!("not allowed as a raw identifier: `{}`", id);
 }
 
 
