@@ -481,8 +481,18 @@ var gConnectionsDialog = {
   writeDnsOverHttpsMode() {
     
     let trrModeCheckbox = document.getElementById("networkDnsOverHttps");
-    
-    return trrModeCheckbox.checked ? 2 : 5;
+
+    let trrModeCurrent = Preferences.get("network.trr.mode").value;
+    if (trrModeCheckbox.checked) {
+      
+      if (trrModeCurrent == Ci.nsIDNSService.MODE_TRRONLY) {
+        return Ci.nsIDNSService.MODE_TRRONLY;
+      }
+      
+      return Ci.nsIDNSService.MODE_TRRFIRST;
+    }
+
+    return Ci.nsIDNSService.MODE_TRROFF;
   },
 
   updateDnsOverHttpsUI() {
