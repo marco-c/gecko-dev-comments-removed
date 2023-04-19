@@ -19,7 +19,7 @@ namespace webrtc {
 namespace rnn_vad {
 
 
-constexpr size_t kNumLpcCoefficients = 5;
+constexpr int kNumLpcCoefficients = 5;
 
 
 
