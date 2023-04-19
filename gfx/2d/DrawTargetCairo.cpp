@@ -768,7 +768,7 @@ bool DrawTargetCairo::LockBits(uint8_t** aData, IntSize* aSize,
   if (cairo_surface_get_type(surf) == CAIRO_SURFACE_TYPE_IMAGE &&
       cairo_surface_status(surf) == CAIRO_STATUS_SUCCESS) {
     PointDouble offset;
-    cairo_surface_get_device_offset(target, &offset.x, &offset.y);
+    cairo_surface_get_device_offset(target, &offset.x.value, &offset.y.value);
     
     
     IntPoint origin(int32_t(-offset.x), int32_t(-offset.y));

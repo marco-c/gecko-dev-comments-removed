@@ -84,11 +84,10 @@ void Axis::StartTouch(ParentLayerCoord aPos, TimeStamp aTimestamp) {
   mAxisLocked = false;
 }
 
-bool Axis::AdjustDisplacement(
-    ParentLayerCoord aDisplacement,
-     float& aDisplacementOut,
-     float& aOverscrollAmountOut,
-    bool aForceOverscroll ) {
+bool Axis::AdjustDisplacement(ParentLayerCoord aDisplacement,
+                              ParentLayerCoord& aDisplacementOut,
+                              ParentLayerCoord& aOverscrollAmountOut,
+                              bool aForceOverscroll ) {
   if (mAxisLocked) {
     aOverscrollAmountOut = 0;
     aDisplacementOut = 0;

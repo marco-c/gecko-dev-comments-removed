@@ -68,6 +68,10 @@ enum class PixelCastJustification : uint8_t {
   ContentProcessIsLayerInUiProcess,
   
   PropagatingToChildProcess,
+  
+  
+  
+  DeltaIsPageProportion,
 };
 
 template <class TargetUnits, class SourceUnits>

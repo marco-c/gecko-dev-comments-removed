@@ -25,13 +25,6 @@ namespace mozilla {
 template <typename>
 struct IsPixel;
 
-namespace gfx {
-
-
-struct UnknownUnits {};
-
-}  
-
 template <>
 struct IsPixel<gfx::UnknownUnits> : std::true_type {};
 

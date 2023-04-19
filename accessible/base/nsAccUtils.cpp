@@ -319,7 +319,8 @@ LayoutDeviceIntPoint nsAccUtils::GetScreenCoordsForWindow(
 
   nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(treeOwner);
   if (baseWindow) {
-    baseWindow->GetPosition(&coords.x, &coords.y);  
+    baseWindow->GetPosition(&coords.x.value,
+                            &coords.y.value);  
   }
 
   return coords;

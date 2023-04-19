@@ -509,8 +509,8 @@ bool PanGestureInput::TransformToLocal(
   if (mDeltaType == PanGestureInput::PANDELTA_PAGE) {
     
     
-    mLocalPanDisplacement.x = mPanDisplacement.x;
-    mLocalPanDisplacement.y = mPanDisplacement.y;
+    mLocalPanDisplacement = ViewAs<ParentLayerPixel>(
+        mPanDisplacement, PixelCastJustification::DeltaIsPageProportion);
     return true;
   }
 
@@ -533,9 +533,9 @@ ParentLayerPoint PanGestureInput::UserMultipliedLocalPanDisplacement() const {
                           mLocalPanDisplacement.y * mUserDeltaMultiplierY);
 }
 
-static int32_t TakeLargestInt(gfx::Float* aFloat) {
-  int32_t result(*aFloat);  
-  *aFloat -= result;
+static int32_t TakeLargestInt(gfx::Coord* aCoord) {
+  int32_t result(aCoord->value);  
+  aCoord->value -= result;
   return result;
 }
 

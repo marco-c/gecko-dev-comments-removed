@@ -125,8 +125,8 @@ class Axis {
 
 
   bool AdjustDisplacement(ParentLayerCoord aDisplacement,
-                           float& aDisplacementOut,
-                           float& aOverscrollAmountOut,
+                          ParentLayerCoord& aDisplacementOut,
+                          ParentLayerCoord& aOverscrollAmountOut,
                           bool aForceOverscroll = false);
 
   

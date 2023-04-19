@@ -178,8 +178,8 @@ size_t DecomposeIntoNoRepeatRects(const gfx::Rect& aRect,
 
   
   
-  br = gfx::Point(xwrap ? WrapTexCoord(br.x) : br.x,
-                  ywrap ? WrapTexCoord(br.y) : br.y);
+  br = gfx::Point(xwrap ? WrapTexCoord(br.x.value) : br.x.value,
+                  ywrap ? WrapTexCoord(br.y.value) : br.y.value);
 
   
   
