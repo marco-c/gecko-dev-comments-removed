@@ -8,15 +8,15 @@
 
 
 
-#ifndef API_PEER_CONNECTION_FACTORY_PROXY_H_
-#define API_PEER_CONNECTION_FACTORY_PROXY_H_
+#ifndef PC_PEER_CONNECTION_FACTORY_PROXY_H_
+#define PC_PEER_CONNECTION_FACTORY_PROXY_H_
 
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "api/peer_connection_interface.h"
-#include "api/proxy.h"
+#include "pc/proxy.h"
 
 namespace webrtc {
 
