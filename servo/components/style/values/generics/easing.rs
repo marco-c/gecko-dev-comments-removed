@@ -29,7 +29,10 @@ pub struct LinearStop<Number, Percentage> {
     pub output: Number,
     
     #[css(skip_if = "Optional::is_none")]
-    pub input: Optional<Percentage>,
+    pub input_start: Optional<Percentage>,
+    
+    #[css(skip_if = "Optional::is_none")]
+    pub input_end: Optional<Percentage>,
 }
 
 
