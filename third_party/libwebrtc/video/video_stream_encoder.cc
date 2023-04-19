@@ -73,6 +73,8 @@ const int64_t kParameterUpdateIntervalMs = 1000;
 
 constexpr int kMaxAnimationPixels = 1280 * 720;
 
+constexpr int kDefaultMinScreenSharebps = 1200000;
+
 bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
                           const VideoCodec& new_send_codec,
                           bool was_encode_called_since_last_initialization) {
@@ -783,6 +785,8 @@ void VideoStreamEncoder::SetSource(
     if (encoder_) {
       stream_resource_manager_.ConfigureQualityScaler(
           encoder_->GetEncoderInfo());
+      stream_resource_manager_.ConfigureBandwidthQualityScaler(
+          encoder_->GetEncoderInfo());
     }
   });
 }
@@ -914,50 +918,97 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   crop_width_ = last_frame_info_->width - highest_stream_width;
   crop_height_ = last_frame_info_->height - highest_stream_height;
 
-  absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits =
-      encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
-          last_frame_info_->width * last_frame_info_->height);
+  if (!encoder_->GetEncoderInfo().is_qp_trusted.value_or(true)) {
+    
+    
+    const std::vector<VideoEncoder::ResolutionBitrateLimits>& bitrate_limits =
+        encoder_->GetEncoderInfo().resolution_bitrate_limits.empty()
+            ? EncoderInfoSettings::
+                  GetDefaultSinglecastBitrateLimitsWhenQpIsUntrusted()
+            : encoder_->GetEncoderInfo().resolution_bitrate_limits;
 
-  if (encoder_bitrate_limits) {
-    if (streams.size() == 1 && encoder_config_.simulcast_layers.size() == 1) {
-      
-      
-      
-      int min_bitrate_bps;
-      if (encoder_config_.simulcast_layers.empty() ||
-          encoder_config_.simulcast_layers[0].min_bitrate_bps <= 0) {
-        min_bitrate_bps = encoder_bitrate_limits->min_bitrate_bps;
-      } else {
-        min_bitrate_bps = std::max(encoder_bitrate_limits->min_bitrate_bps,
-                                   streams.back().min_bitrate_bps);
-      }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    absl::optional<VideoEncoder::ResolutionBitrateLimits>
+        qp_untrusted_bitrate_limit = EncoderInfoSettings::
+            GetSinglecastBitrateLimitForResolutionWhenQpIsUntrusted(
+                last_frame_info_->width * last_frame_info_->height,
+                bitrate_limits);
 
-      int max_bitrate_bps;
+    if (qp_untrusted_bitrate_limit) {
       
-      
-      
-      if (encoder_config_.max_bitrate_bps <= 0) {
-        max_bitrate_bps = encoder_bitrate_limits->max_bitrate_bps;
-      } else {
-        max_bitrate_bps = std::min(encoder_bitrate_limits->max_bitrate_bps,
-                                   streams.back().max_bitrate_bps);
-      }
-
-      if (min_bitrate_bps < max_bitrate_bps) {
-        streams.back().min_bitrate_bps = min_bitrate_bps;
-        streams.back().max_bitrate_bps = max_bitrate_bps;
+      if (streams.size() == 1 && encoder_config_.simulcast_layers.size() == 1) {
+        streams.back().min_bitrate_bps =
+            qp_untrusted_bitrate_limit->min_bitrate_bps;
+        streams.back().max_bitrate_bps =
+            qp_untrusted_bitrate_limit->max_bitrate_bps;
+        
+        
+        if (encoder_config_.content_type ==
+            VideoEncoderConfig::ContentType::kScreen) {
+          streams.back().max_bitrate_bps = std::max(
+              streams.back().max_bitrate_bps, kDefaultMinScreenSharebps);
+        }
         streams.back().target_bitrate_bps =
-            std::min(streams.back().target_bitrate_bps,
-                     encoder_bitrate_limits->max_bitrate_bps);
-      } else {
-        RTC_LOG(LS_WARNING)
-            << "Bitrate limits provided by encoder"
-            << " (min=" << encoder_bitrate_limits->min_bitrate_bps
-            << ", max=" << encoder_bitrate_limits->max_bitrate_bps
-            << ") do not intersect with limits set by app"
-            << " (min=" << streams.back().min_bitrate_bps
-            << ", max=" << encoder_config_.max_bitrate_bps
-            << "). The app bitrate limits will be used.";
+            qp_untrusted_bitrate_limit->max_bitrate_bps;
+      }
+    }
+  } else {
+    absl::optional<VideoEncoder::ResolutionBitrateLimits>
+        encoder_bitrate_limits =
+            encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
+                last_frame_info_->width * last_frame_info_->height);
+
+    if (encoder_bitrate_limits) {
+      if (streams.size() == 1 && encoder_config_.simulcast_layers.size() == 1) {
+        
+        
+        
+        int min_bitrate_bps;
+        if (encoder_config_.simulcast_layers.empty() ||
+            encoder_config_.simulcast_layers[0].min_bitrate_bps <= 0) {
+          min_bitrate_bps = encoder_bitrate_limits->min_bitrate_bps;
+        } else {
+          min_bitrate_bps = std::max(encoder_bitrate_limits->min_bitrate_bps,
+                                     streams.back().min_bitrate_bps);
+        }
+
+        int max_bitrate_bps;
+        
+        
+        
+        if (encoder_config_.max_bitrate_bps <= 0) {
+          max_bitrate_bps = encoder_bitrate_limits->max_bitrate_bps;
+        } else {
+          max_bitrate_bps = std::min(encoder_bitrate_limits->max_bitrate_bps,
+                                     streams.back().max_bitrate_bps);
+        }
+
+        if (min_bitrate_bps < max_bitrate_bps) {
+          streams.back().min_bitrate_bps = min_bitrate_bps;
+          streams.back().max_bitrate_bps = max_bitrate_bps;
+          streams.back().target_bitrate_bps =
+              std::min(streams.back().target_bitrate_bps,
+                       encoder_bitrate_limits->max_bitrate_bps);
+        } else {
+          RTC_LOG(LS_WARNING)
+              << "Bitrate limits provided by encoder"
+              << " (min=" << encoder_bitrate_limits->min_bitrate_bps
+              << ", max=" << encoder_bitrate_limits->max_bitrate_bps
+              << ") do not intersect with limits set by app"
+              << " (min=" << streams.back().min_bitrate_bps
+              << ", max=" << encoder_config_.max_bitrate_bps
+              << "). The app bitrate limits will be used.";
+        }
       }
     }
   }
@@ -1195,6 +1246,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       encoder_config_.min_transmit_bitrate_bps);
 
   stream_resource_manager_.ConfigureQualityScaler(info);
+  stream_resource_manager_.ConfigureBandwidthQualityScaler(info);
 }
 
 void VideoStreamEncoder::OnEncoderSettingsChanged() {
@@ -2140,7 +2192,7 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
   }
 
   stream_resource_manager_.OnEncodeCompleted(encoded_image, time_sent_us,
-                                             encode_duration_us);
+                                             encode_duration_us, frame_size);
   if (bitrate_adjuster_) {
     bitrate_adjuster_->OnEncodedFrame(
         frame_size, encoded_image.SpatialIndex().value_or(0), temporal_index);
