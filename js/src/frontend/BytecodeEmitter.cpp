@@ -7122,6 +7122,19 @@ bool BytecodeEmitter::emitDeleteElementInOptChain(PropertyByValueBase* elemExpr,
   return true;
 }
 
+bool BytecodeEmitter::emitDebugCheckSelfHosted() {
+  
+
+#ifdef DEBUG
+  if (!emit1(JSOp::DebugCheckSelfHosted)) {
+    
+    return false;
+  }
+#endif
+
+  return true;
+}
+
 bool BytecodeEmitter::emitSelfHostedCallFunction(CallNode* callNode, JSOp op) {
   
   
@@ -7150,9 +7163,11 @@ bool BytecodeEmitter::emitSelfHostedCallFunction(CallNode* callNode, JSOp op) {
   }
 
 #ifdef DEBUG
-  if (emitterMode == BytecodeEmitter::SelfHosting &&
-      calleeNode->name() == TaggedParserAtomIndex::WellKnown::callFunction()) {
-    if (!emit1(JSOp::DebugCheckSelfHosted)) {
+  MOZ_ASSERT(op == JSOp::Call || op == JSOp::CallContent ||
+             op == JSOp::NewContent);
+  if (op == JSOp::Call) {
+    if (!emitDebugCheckSelfHosted()) {
+      
       return false;
     }
   }
