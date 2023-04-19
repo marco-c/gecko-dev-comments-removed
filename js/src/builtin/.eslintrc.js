@@ -22,6 +22,7 @@ module.exports = {
         
         es2021: false,
         "mozilla/privileged": false,
+        "mozilla/specific": false,
 
         
         "spidermonkey-js/environment": true,
@@ -136,22 +137,6 @@ module.exports = {
         Record: "off",
         Temporal: "off",
         Tuple: "off",
-
-        
-        
-        Cc: "off",
-        ChromeUtils: "off",
-        Ci: "off",
-        Components: "off",
-        Cr: "off",
-        Cu: "off",
-        Debugger: "off",
-        InstallTrigger: "off",
-        InternalError: "off",
-        Services: "off",
-        dump: "off",
-        openDialog: "off",
-        uneval: "off",
       },
     },
   ],

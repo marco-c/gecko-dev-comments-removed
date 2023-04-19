@@ -16,29 +16,10 @@ module.exports = {
     browser: true,
     es2021: true,
     "mozilla/privileged": true,
+    "mozilla/specific": true,
   },
 
   extends: ["eslint:recommended", "plugin:prettier/recommended"],
-
-  globals: {
-    
-    Cc: false,
-    ChromeUtils: false,
-    Ci: false,
-    Components: false,
-    Cr: false,
-    Cu: false,
-    Debugger: false,
-    InstallTrigger: false,
-    
-    InternalError: true,
-    Services: false,
-    
-    dump: true,
-    openDialog: false,
-    
-    uneval: false,
-  },
 
   overrides: [
     {
