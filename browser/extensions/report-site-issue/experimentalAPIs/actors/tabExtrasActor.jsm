@@ -5,11 +5,6 @@
 
 "use strict";
 
-
-
-
-Cu.importGlobalProperties(["structuredClone"]);
-
 var EXPORTED_SYMBOLS = ["ReportSiteIssueHelperChild"];
 
 const PREVIEW_MAX_ITEMS = 10;
