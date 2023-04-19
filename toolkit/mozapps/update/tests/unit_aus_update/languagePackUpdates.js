@@ -62,7 +62,7 @@ function mockLangpackUpdate() {
   return stagingCall.promise;
 }
 
-add_task(async function init() {
+add_setup(async function() {
   
   
   Services.prefs.setBoolPref(

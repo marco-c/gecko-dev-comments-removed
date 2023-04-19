@@ -28,7 +28,7 @@ async function searchAndOpenPopup(value) {
   );
 }
 
-add_task(async function init() {
+add_setup(async function() {
   
   
   engine = await SearchTestUtils.promiseNewSearchEngine(

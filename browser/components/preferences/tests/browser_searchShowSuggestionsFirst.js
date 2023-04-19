@@ -6,7 +6,7 @@ const URLBAR_PREF = "browser.urlbar.suggest.searches";
 const FIRST_PREF = "browser.urlbar.showSearchSuggestionsFirst";
 const FIRST_CHECKBOX_ID = "showSearchSuggestionsFirstCheckbox";
 
-add_task(async function init() {
+add_setup(async function() {
   
   await SpecialPowers.pushPrefEnv({
     set: [

@@ -6,7 +6,7 @@
 
 "use strict";
 
-add_task(async function init() {
+add_setup(async function() {
   await PlacesUtils.history.clear();
   
   for (let i = 0; i < 5; i++) {

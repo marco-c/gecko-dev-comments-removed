@@ -46,7 +46,7 @@ const SUGGESTIONS = [
 
 let spy;
 
-add_task(async function init() {
+add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.bestMatch.blockingEnabled", true],

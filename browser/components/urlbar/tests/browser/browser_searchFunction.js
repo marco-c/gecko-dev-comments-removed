@@ -8,7 +8,7 @@
 const ALIAS = "@enginealias";
 let aliasEngine;
 
-add_task(async function init() {
+add_setup(async function() {
   
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);

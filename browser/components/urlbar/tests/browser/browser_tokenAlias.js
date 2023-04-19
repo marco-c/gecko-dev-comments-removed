@@ -21,7 +21,7 @@ if (AppConstants.platform == "macosx") {
   requestLongerTimeout(5);
 }
 
-add_task(async function init() {
+add_setup(async function() {
   
   
   let defaultEngine = await SearchTestUtils.promiseNewSearchEngine(

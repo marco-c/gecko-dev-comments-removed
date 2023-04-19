@@ -16,7 +16,7 @@
 
 requestLongerTimeout(5);
 
-add_task(async function init() {
+add_setup(async function() {
   await cleanUp();
 });
 
