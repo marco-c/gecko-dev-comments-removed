@@ -11,16 +11,10 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "DownloadStore",
-  "resource://gre/modules/DownloadStore.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "DownloadError",
-  "resource://gre/modules/DownloadCore.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  DownloadError: "resource://gre/modules/DownloadCore.sys.mjs",
+  DownloadStore: "resource://gre/modules/DownloadStore.sys.mjs",
+});
 
 
 
