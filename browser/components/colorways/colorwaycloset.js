@@ -47,20 +47,6 @@ const ColorwayCloset = {
   init() {
     window.addEventListener("unload", this);
 
-    
-    
-    
-    
-    
-    
-    
-    window.addEventListener("load", async () => {
-      await document.l10n.ready;
-      requestAnimationFrame(() => {
-        document.documentElement.style.removeProperty("width");
-      });
-    });
-
     this._displayCollectionData();
 
     AddonManager.addAddonListener(this);
