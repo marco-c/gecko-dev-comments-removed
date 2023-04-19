@@ -499,10 +499,10 @@ class PLDHashTable {
   
   
   
-  size_t ShallowSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
-  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t ShallowSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
   
