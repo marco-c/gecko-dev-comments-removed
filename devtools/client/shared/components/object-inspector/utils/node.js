@@ -286,10 +286,7 @@ function nodeHasEntries(item) {
     className === "WeakSet" ||
     className === "Storage" ||
     className === "URLSearchParams" ||
-    
-    
-    
-    (className === "Headers" && Array.isArray(value.preview?.entries)) ||
+    className === "Headers" ||
     
     
     

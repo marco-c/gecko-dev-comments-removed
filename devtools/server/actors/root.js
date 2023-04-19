@@ -130,8 +130,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       networkMonitor: true,
       resources: supportedResources,
       
-      supportsSwitchingMode: true,
-      
       
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
         ? Services.prefs.getBoolPref(

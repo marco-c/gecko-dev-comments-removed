@@ -529,9 +529,7 @@ class ToolboxToolbar extends Component {
       : null;
 
     
-    
     const chromeDebugToolbar =
-      toolbox.commands.client.mainRoot.traits.supportsSwitchingMode &&
       toolbox.commands.targetCommand.descriptorFront
         .isBrowserProcessDescriptor &&
       Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
