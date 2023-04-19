@@ -2,6 +2,8 @@
 
 
 
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 add_task(async function() {
   
   let editMenu = document.getElementById("edit-menu");

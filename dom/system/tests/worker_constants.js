@@ -2,6 +2,8 @@
 
 
 
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 function log(text) {
   dump("WORKER " + text + "\n");
 }
