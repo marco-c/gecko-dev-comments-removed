@@ -1590,8 +1590,8 @@ bool nsTreeSanitizer::MustFlattenForSanitizerAPI(int32_t aNamespace,
 
   
   
-  
-  if (mBlockElements && mBlockElements->Contains(aLocal)) {
+  if (mBlockElements &&
+      MatchesElementName(*mBlockElements, aNamespace, aLocal)) {
     return true;
   }
 
@@ -1601,19 +1601,20 @@ bool nsTreeSanitizer::MustFlattenForSanitizerAPI(int32_t aNamespace,
   if (mAllowElements) {
     
     
-    
-    if (!mAllowElements->Contains(aLocal)) {
+    if (!MatchesElementName(*mAllowElements, aNamespace, aLocal)) {
       return true;
     }
-
   } else {
     
     
 
     
     
+
     
-    if (!sDefaultConfigurationElementAllowlist->Contains(aLocal)) {
+    
+    if (aNamespace != kNameSpaceID_XHTML ||
+        !sDefaultConfigurationElementAllowlist->Contains(aLocal)) {
       return true;
     }
   }
@@ -1763,8 +1764,7 @@ bool nsTreeSanitizer::MustPruneForSanitizerAPI(int32_t aNamespace,
   }
 
   
-  
-  if (mDropElements && mDropElements->Contains(aLocal)) {
+  if (mDropElements && MatchesElementName(*mDropElements, aNamespace, aLocal)) {
     return true;
   }
 
@@ -1965,33 +1965,40 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
 }
 
 
+bool nsTreeSanitizer::MatchesElementName(ElementNameSet& aNames,
+                                         int32_t aNamespace,
+                                         nsAtom* aLocalName) {
+  return aNames.Contains(ElementName(aNamespace, aLocalName));
+}
+
+
 bool nsTreeSanitizer::MatchesAttributeMatchList(
     ElementToAttributeSetTable& aMatchList, Element& aElement,
     int32_t aAttrNamespace, nsAtom* aAttrLocalName) {
   
   
-  DynamicAtomsTable* elements;
+  ElementNameSet* names;
   if (auto lookup = aMatchList.Lookup(aAttrLocalName)) {
-    elements = lookup->get();
+    names = lookup->get();
   } else if (auto lookup = aMatchList.Lookup(nsGkAtoms::_asterisk)) {
-    elements = lookup->get();
+    names = lookup->get();
   } else {
     return false;
   }
 
   
   
-  nsAtom* elemName = aElement.NodeInfo()->NameAtom();
+  
+  
+  
+  int32_t namespaceID = aElement.NodeInfo()->NamespaceID();
+  RefPtr<nsAtom> nameAtom = aElement.NodeInfo()->NameAtom();
+  ElementName elemName(namespaceID, nameAtom);
 
   
   
-  
-  
-
-  
-  
-  if (!elements->Contains(elemName) &&
-      !elements->Contains(nsGkAtoms::_asterisk)) {
+  if (!names->Contains(elemName) &&
+      !names->Contains(ElementName(kNameSpaceID_XHTML, nsGkAtoms::_asterisk))) {
     return false;
   }
 
@@ -2452,6 +2459,50 @@ void nsTreeSanitizer::ReleaseStatics() {
   NS_IF_RELEASE(sNullPrincipal);
 }
 
+UniquePtr<nsTreeSanitizer::ElementNameSet> nsTreeSanitizer::ConvertElementNames(
+    const Sequence<nsString>& aNames) {
+  auto names = MakeUnique<ElementNameSet>(aNames.Length());
+
+  
+  for (const nsString& name : aNames) {
+    
+    
+    int32_t index = name.FindChar(':');
+
+    
+    if (index == kNotFound) {
+      RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(name);
+      ElementName elemName(kNameSpaceID_XHTML, std::move(nameAtom));
+      names->Insert(elemName);
+      continue;
+    }
+
+    
+    
+    if (name.FindChar(':', index + 1) == kNotFound) {
+      auto prefix = Substring(name, 0, index);
+      
+      
+      
+      
+      
+      RefPtr<nsAtom> nameAtom =
+          NS_AtomizeMainThread(Substring(name, index + 1));
+      if (prefix.EqualsLiteral("svg")) {
+        ElementName elemName(kNameSpaceID_SVG, std::move(nameAtom));
+        names->Insert(elemName);
+      } else if (prefix.EqualsLiteral("math")) {
+        ElementName elemName(kNameSpaceID_MathML, std::move(nameAtom));
+        names->Insert(elemName);
+      }
+    }
+
+    
+    
+  }
+  return names;
+}
+
 void nsTreeSanitizer::WithWebSanitizerOptions(
     nsIGlobalObject* aGlobal, const mozilla::dom::SanitizerConfig& aOptions) {
   if (StaticPrefs::dom_security_sanitizer_logging()) {
@@ -2478,46 +2529,25 @@ void nsTreeSanitizer::WithWebSanitizerOptions(
   }
 
   if (aOptions.mAllowElements.WasPassed()) {
-    const Sequence<nsString>& allowedElements = aOptions.mAllowElements.Value();
-    mAllowElements = MakeUnique<DynamicAtomsTable>(allowedElements.Length());
-    for (const nsString& elem : allowedElements) {
-      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(elem);
-      mAllowElements->Insert(elAsAtom);
-    }
+    mAllowElements = ConvertElementNames(aOptions.mAllowElements.Value());
   }
 
   if (aOptions.mBlockElements.WasPassed()) {
-    const Sequence<nsString>& blockedElements = aOptions.mBlockElements.Value();
-    mBlockElements = MakeUnique<DynamicAtomsTable>(blockedElements.Length());
-    for (const nsString& elem : blockedElements) {
-      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(elem);
-      mBlockElements->Insert(elAsAtom);
-    }
+    mBlockElements = ConvertElementNames(aOptions.mBlockElements.Value());
   }
 
   if (aOptions.mDropElements.WasPassed()) {
-    const Sequence<nsString>& dropElements = aOptions.mDropElements.Value();
-    mDropElements = MakeUnique<DynamicAtomsTable>(dropElements.Length());
-    for (const nsString& elem : dropElements) {
-      RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(elem);
-      mDropElements->Insert(elAsAtom);
-    }
+    mDropElements = ConvertElementNames(aOptions.mDropElements.Value());
   }
 
   if (aOptions.mAllowAttributes.WasPassed()) {
     const Record<nsString, Sequence<nsString>>& allowedAttributes =
         aOptions.mAllowAttributes.Value();
     mAllowedAttributes = MakeUnique<ElementToAttributeSetTable>();
-    nsAutoString name;
-    for (const auto& entries : allowedAttributes.Entries()) {
-      UniquePtr<DynamicAtomsTable> elems =
-          MakeUnique<DynamicAtomsTable>(allowedAttributes.Entries().Length());
-      for (const auto& elem : entries.mValue) {
-        RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(elem);
-        elems->Insert(elAsAtom);
-      }
-      RefPtr<nsAtom> attrAtom = NS_AtomizeMainThread(entries.mKey);
-      mAllowedAttributes->InsertOrUpdate(attrAtom, std::move(elems));
+    for (const auto& entry : allowedAttributes.Entries()) {
+      RefPtr<nsAtom> attrAtom = NS_AtomizeMainThread(entry.mKey);
+      UniquePtr<ElementNameSet> elements = ConvertElementNames(entry.mValue);
+      mAllowedAttributes->InsertOrUpdate(attrAtom, std::move(elements));
     }
   }
 
@@ -2525,16 +2555,10 @@ void nsTreeSanitizer::WithWebSanitizerOptions(
     const Record<nsString, Sequence<nsString>>& droppedAttributes =
         aOptions.mDropAttributes.Value();
     mDroppedAttributes = MakeUnique<ElementToAttributeSetTable>();
-    nsAutoString name;
-    for (const auto& entries : droppedAttributes.Entries()) {
-      UniquePtr<DynamicAtomsTable> elems =
-          MakeUnique<DynamicAtomsTable>(droppedAttributes.Entries().Length());
-      for (const auto& elem : entries.mValue) {
-        RefPtr<nsAtom> elAsAtom = NS_AtomizeMainThread(elem);
-        elems->Insert(elAsAtom);
-      }
-      RefPtr<nsAtom> attrAtom = NS_AtomizeMainThread(entries.mKey);
-      mDroppedAttributes->InsertOrUpdate(attrAtom, std::move(elems));
+    for (const auto& entry : droppedAttributes.Entries()) {
+      RefPtr<nsAtom> attrAtom = NS_AtomizeMainThread(entry.mKey);
+      UniquePtr<ElementNameSet> elements = ConvertElementNames(entry.mValue);
+      mDroppedAttributes->InsertOrUpdate(attrAtom, std::move(elements));
     }
   }
 }

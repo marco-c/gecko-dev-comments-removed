@@ -12,6 +12,7 @@
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/SanitizerBinding.h"
 
 class nsIContent;
@@ -129,17 +130,44 @@ class nsTreeSanitizer {
       return aAtom->IsStatic() && GetEntry(aAtom->AsStatic());
     }
   };
-  
-  class DynamicAtomsTable : public nsTHashSet<RefPtr<nsAtom>> {
-   public:
-    explicit DynamicAtomsTable(uint32_t aLength)
-        : nsTHashSet<RefPtr<nsAtom>>(aLength) {}
 
-    bool Contains(nsAtom* aAtom) { return GetEntry(aAtom); }
+  
+  class ElementName : public PLDHashEntryHdr {
+   public:
+    using KeyType = const ElementName&;
+    using KeyTypePointer = const ElementName*;
+
+    explicit ElementName(KeyTypePointer aKey)
+        : mNamespaceID(aKey->mNamespaceID), mLocalName(aKey->mLocalName) {}
+    ElementName(int32_t aNamespaceID, RefPtr<nsAtom> aLocalName)
+        : mNamespaceID(aNamespaceID), mLocalName(std::move(aLocalName)) {}
+    ElementName(ElementName&&) = default;
+    ~ElementName() = default;
+
+    bool KeyEquals(KeyTypePointer aKey) const {
+      return mNamespaceID == aKey->mNamespaceID &&
+             mLocalName == aKey->mLocalName;
+    }
+
+    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+    static PLDHashNumber HashKey(KeyTypePointer aKey) {
+      if (!aKey) {
+        return 0;
+      }
+
+      return mozilla::HashGeneric(aKey->mNamespaceID, aKey->mLocalName.get());
+    }
+
+    enum { ALLOW_MEMMOVE = true };
+
+   private:
+    int32_t mNamespaceID = kNameSpaceID_None;
+    RefPtr<nsAtom> mLocalName;
   };
 
+  using ElementNameSet = nsTHashSet<ElementName>;
   using ElementToAttributeSetTable =
-      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>;
+      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<ElementNameSet>>;
 
   void SanitizeChildren(nsINode* aRoot);
 
@@ -249,10 +277,15 @@ class nsTreeSanitizer {
 
   static void RemoveAllAttributesFromDescendants(mozilla::dom::Element*);
 
+  static bool MatchesElementName(ElementNameSet& aNames, int32_t aNamespace,
+                                 nsAtom* aLocalName);
   static bool MatchesAttributeMatchList(ElementToAttributeSetTable& aMatchList,
                                         mozilla::dom::Element& aElement,
                                         int32_t aAttrNamespace,
                                         nsAtom* aAttrLocalName);
+
+  static mozilla::UniquePtr<ElementNameSet> ConvertElementNames(
+      const mozilla::dom::Sequence<nsString>& aNames);
 
   
 
@@ -338,13 +371,13 @@ class nsTreeSanitizer {
   bool mAllowUnknownMarkup = false;
 
   
-  mozilla::UniquePtr<DynamicAtomsTable> mAllowElements;
+  mozilla::UniquePtr<ElementNameSet> mAllowElements;
 
   
-  mozilla::UniquePtr<DynamicAtomsTable> mBlockElements;
+  mozilla::UniquePtr<ElementNameSet> mBlockElements;
 
   
-  mozilla::UniquePtr<DynamicAtomsTable> mDropElements;
+  mozilla::UniquePtr<ElementNameSet> mDropElements;
 
   
   mozilla::UniquePtr<ElementToAttributeSetTable> mAllowedAttributes;
