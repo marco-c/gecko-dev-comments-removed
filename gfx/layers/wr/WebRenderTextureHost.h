@@ -23,8 +23,7 @@ class SurfaceDescriptor;
 
 class WebRenderTextureHost : public TextureHost {
  public:
-  WebRenderTextureHost(const SurfaceDescriptor& aDesc, TextureFlags aFlags,
-                       TextureHost* aTexture,
+  WebRenderTextureHost(TextureFlags aFlags, TextureHost* aTexture,
                        const wr::ExternalImageId& aExternalImageId);
   virtual ~WebRenderTextureHost();
 
