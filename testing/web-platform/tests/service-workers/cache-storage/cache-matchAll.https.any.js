@@ -1,7 +1,7 @@
-if (self.importScripts) {
-    importScripts('/resources/testharness.js');
-    importScripts('../resources/test-helpers.js');
-}
+
+
+
+
 
 prepopulated_cache_test(simple_entries, function(cache, entries) {
     return cache.matchAll('not-present-in-the-cache')

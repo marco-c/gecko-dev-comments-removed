@@ -1,8 +1,8 @@
-if (self.importScripts) {
-  importScripts('/resources/testharness.js');
-  importScripts('../resources/test-helpers.js');
-  importScripts('/common/utils.js');
-}
+
+
+
+
+
 
 
 

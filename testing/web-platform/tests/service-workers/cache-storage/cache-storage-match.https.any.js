@@ -1,7 +1,7 @@
-if (self.importScripts) {
-    importScripts('/resources/testharness.js');
-    importScripts('../resources/test-helpers.js');
-}
+
+
+
+
 
 (function() {
   var next_index = 1;

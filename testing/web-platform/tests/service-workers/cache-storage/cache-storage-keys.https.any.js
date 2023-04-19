@@ -1,7 +1,7 @@
-if (self.importScripts) {
-    importScripts('/resources/testharness.js');
-    importScripts('../resources/test-helpers.js');
-}
+
+
+
+
 
 var test_cache_list =
   ['', 'example', 'Another cache name', 'A', 'a', 'ex ample'];
