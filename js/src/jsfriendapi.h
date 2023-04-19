@@ -738,6 +738,13 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoAssertNoContentJS {
 
 extern JS_PUBLIC_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
 
+
+
+
+
+
+extern JS_PUBLIC_API uint64_t GetGCHeapUsage(JSContext* cx);
+
 class JS_PUBLIC_API CompartmentTransplantCallback {
  public:
   virtual JSObject* getObjectToTransplant(JS::Compartment* compartment) = 0;
