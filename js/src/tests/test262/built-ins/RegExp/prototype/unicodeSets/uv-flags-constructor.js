@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  new RegExp(".", "uv");
+});
+
+reportCompare(0, 0);

@@ -8,14 +8,27 @@
 
 
 
-var IteratorPrototype = Object.getPrototypeOf(
+
+const IteratorPrototype = Object.getPrototypeOf(
   Object.getPrototypeOf([][Symbol.iterator]())
 );
-var thisValue = {};
+const getIterator = IteratorPrototype[Symbol.iterator];
 
-assert.sameValue(
-  IteratorPrototype[Symbol.iterator].call(thisValue),
-  thisValue
-);
+const thisValues = [
+    {},
+    Symbol(),
+    4,
+    4n,
+    true,
+    undefined,
+    null,
+];
+
+for (const thisValue of thisValues) {
+    assert.sameValue(
+        getIterator.call(thisValue),
+        thisValue
+    );
+}
 
 reportCompare(0, 0);

@@ -8,7 +8,12 @@
 
 
 
-const d = new Temporal.Duration(1, 2, 3, 4, 5);
-assert.throws(RangeError, () => d.with({ hours: 1, minutes: -1 }));
+const instance = new Temporal.Duration(0, 0, 0, 1, 2, 3, 4, 987, 654, 321);
+
+assert.throws(
+  RangeError,
+  () => instance.with({ hours: 1, minutes: -30 }),
+  `mixed positive and negative values always throw`
+);
 
 reportCompare(0, 0);

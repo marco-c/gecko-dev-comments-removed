@@ -8,7 +8,7 @@
 
 
 
-const instance = new Temporal.Duration(1, 2, 3, 4, 5, 6, 7, 987, 654, 321);
+const instance = new Temporal.Duration(0, 0, 0, 1, 2, 3, 4, 987, 654, 321);
 const fields = [
   "years",
   "months",

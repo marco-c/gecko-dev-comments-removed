@@ -9,6 +9,8 @@
 
 
 
+
+
 verifyProperty(SharedArrayBuffer, 'prototype', {
     enumerable: false,
     writable: false,

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, "unicodeSets");
+
+assert.sameValue(
+  desc.get.name,
+  "get unicodeSets"
+);
+
+verifyProperty(desc.get, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

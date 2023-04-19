@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, "unicodeSets").get;
+
+assert.sameValue(get.call(RegExp.prototype), undefined);
+
+reportCompare(0, 0);
