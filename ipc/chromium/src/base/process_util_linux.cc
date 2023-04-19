@@ -255,6 +255,7 @@ bool LaunchApp(const std::vector<std::string>& argv,
   
   
   void (*ccovSigHandler)(int) = signal(SIGUSR1, SIG_IGN);
+  const char* gcov_child_prefix = PR_GetEnv("GCOV_CHILD_PREFIX");
 #endif
 
 #ifdef OS_LINUX
@@ -301,7 +302,6 @@ bool LaunchApp(const std::vector<std::string>& argv,
     argv_cstr[argv.size()] = NULL;
 
 #ifdef MOZ_CODE_COVERAGE
-    const char* gcov_child_prefix = PR_GetEnv("GCOV_CHILD_PREFIX");
     if (gcov_child_prefix && !options.full_env) {
       const pid_t child_pid = getpid();
       nsAutoCString new_gcov_prefix(gcov_child_prefix);
