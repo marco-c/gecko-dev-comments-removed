@@ -1,8 +1,11 @@
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
-  SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
 });
 
 SearchTestUtils.init(this);

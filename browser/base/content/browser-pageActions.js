@@ -2,11 +2,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "SearchUIUtils",
-  "resource:///modules/SearchUIUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
+});
 
 var BrowserPageActions = {
   _panelNode: null,

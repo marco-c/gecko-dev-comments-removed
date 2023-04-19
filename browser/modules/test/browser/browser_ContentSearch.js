@@ -2,11 +2,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "SearchTestUtils",
-  "resource://testing-common/SearchTestUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
+});
 
 SearchTestUtils.init(this);
 
