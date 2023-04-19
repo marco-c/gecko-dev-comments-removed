@@ -83,9 +83,6 @@ inline std::string ToUtf8(const std::wstring& wstr) {
 #endif  
 
 
-std::string string_trim(const std::string& s);
-
-
 std::string ToHex(int i);
 
 
