@@ -399,20 +399,22 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
       
       
       
-      let { children } = gURLBar.view._rows;
+      let { children } = UrlbarTestUtils.getResultsContainer(window);
       observer.observe(children[children.length - 1], { attributes: true });
     } else if (search1.viewCount == rowCountDuringUpdate) {
       
       
       
-      observer.observe(gURLBar.view._rows, {
+      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
         subtree: true,
         attributes: true,
         characterData: true,
       });
     } else {
       
-      observer.observe(gURLBar.view._rows, { childList: true });
+      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
+        childList: true,
+      });
     }
   });
 
@@ -432,14 +434,15 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
   
   Assert.equal(
-    gURLBar.view._rows.children.length,
+    UrlbarTestUtils.getResultCount(window),
     rowCountDuringUpdate,
     "Row count during update"
   );
+  let rows = UrlbarTestUtils.getResultsContainer(window).children;
   let rowIndex = 0;
   for (let rowState of duringUpdate) {
     for (let i = 0; i < rowState.count; i++) {
-      let row = gURLBar.view._rows.children[rowIndex];
+      let row = rows[rowIndex];
 
       
       if ("type" in rowState) {
@@ -522,7 +525,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     "Row count after update"
   );
   for (let i = 0; i < search2.viewCount; i++) {
-    let result = gURLBar.view._rows.children[i].result;
+    let result = rows[i].result;
     let tuple = suggestedIndexesByRealIndex.get(i);
     if (tuple) {
       let [suggestedIndex, resultSpan] = tuple;

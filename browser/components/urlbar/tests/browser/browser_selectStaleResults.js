@@ -64,7 +64,7 @@ add_task(async function viewContainsStaleRows() {
 
   
   
-  let row = gURLBar.view._rows.children[halfResults];
+  let row = UrlbarTestUtils.getRowAt(window, halfResults);
 
   
   
@@ -103,9 +103,9 @@ add_task(async function viewContainsStaleRows() {
   Assert.equal(queryContext.results.length, halfResults + 1);
 
   
-  let items = Array.from(gURLBar.view._rows.children).filter(r =>
-    gURLBar.view._isElementVisible(r)
-  );
+  let items = Array.from(
+    UrlbarTestUtils.getResultsContainer(window).children
+  ).filter(r => BrowserTestUtils.is_visible(r));
   Assert.equal(items.length, maxResults);
 
   
@@ -241,13 +241,13 @@ add_task(async function staleReplacedWithFresh() {
   
   let mutationPromise = new Promise(resolve => {
     let observer = new MutationObserver(mutations => {
-      let row = gURLBar.view._rows.children[maxResults - 2];
+      let row = UrlbarTestUtils.getRowAt(window, maxResults - 2);
       if (row && row._elements.get("title").textContent == "test2") {
         observer.disconnect();
         resolve();
       }
     });
-    observer.observe(gURLBar.view._rows, {
+    observer.observe(UrlbarTestUtils.getResultsContainer(window), {
       subtree: true,
       characterData: true,
       childList: true,
