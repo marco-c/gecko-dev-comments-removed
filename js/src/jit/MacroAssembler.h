@@ -335,7 +335,6 @@ struct AllocSiteInput
 
 class MacroAssembler : public MacroAssemblerSpecific {
  public:
-  mozilla::Maybe<JitContext> jitContext_;
   mozilla::Maybe<AutoJitContextAlloc> alloc_;
 
  private:
