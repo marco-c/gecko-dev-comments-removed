@@ -44,6 +44,10 @@ HRESULT STDMETHODCALLTYPE NotificationCallback::Activate(
       }
     } else if (key == L"profile") {
       profile = value;
+    } else if (key == L"action") {
+      
+      
+      break;
     }
   }
 
