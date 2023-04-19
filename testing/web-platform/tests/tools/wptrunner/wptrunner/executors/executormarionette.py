@@ -455,6 +455,19 @@ class MarionetteCookiesProtocolPart(CookiesProtocolPart):
         self.logger.info("Deleting all cookies")
         return self.marionette.delete_all_cookies()
 
+    def get_all_cookies(self):
+        self.logger.info("Getting all cookies")
+        return self.marionette.get_cookies()
+
+    def get_named_cookie(self, name):
+        self.logger.info("Getting cookie named %s" % name)
+        try:
+            return self.marionette.get_cookie(name)
+        
+        
+        except Exception:
+            return None
+
 
 class MarionetteSendKeysProtocolPart(SendKeysProtocolPart):
     def setup(self):

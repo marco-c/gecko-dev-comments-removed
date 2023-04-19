@@ -195,6 +195,42 @@
 
 
 
+        get_all_cookies: function(context=null) {
+            return window.test_driver_internal.get_all_cookies(context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+         get_named_cookie: async function(name, context=null) {
+            let cookie = await window.test_driver_internal.get_named_cookie(name, context);
+            if (!cookie) {
+                throw new Error("no such cookie");
+            }
+            return cookie;
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -634,6 +670,14 @@
         },
 
         delete_all_cookies: function(context=null) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        get_all_cookies: function(context=null) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        get_named_cookie: function(name, context=null) {
             return Promise.reject(new Error("unimplemented"));
         },
 
