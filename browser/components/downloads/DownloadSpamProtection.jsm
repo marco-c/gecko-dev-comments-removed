@@ -14,7 +14,7 @@ const { Download, DownloadError } = ChromeUtils.import(
   "resource://gre/modules/DownloadCore.jsm"
 );
 
-var { XPCOMUtils } = ChromeUtils.importESModule(
+const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
@@ -31,53 +31,253 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 
 
-class DownloadSpamProtection {
-  constructor() {
-    
 
-
-
-    this._blockedURLToDownloadSpam = new Map();
-    this._browserWin = lazy.BrowserWindowTracker.getTopWindow();
-    this._indicator = lazy.DownloadsCommon.getIndicatorData(this._browserWin);
-    this.list = new lazy.DownloadList();
-  }
-
-  get spamList() {
-    return this.list;
-  }
-
-  update(url) {
-    if (this._blockedURLToDownloadSpam.has(url)) {
-      let downloadSpam = this._blockedURLToDownloadSpam.get(url);
-      this.spamList.remove(downloadSpam);
-      downloadSpam.blockedDownloadsCount += 1;
-      this.spamList.add(downloadSpam);
-      this._indicator.onDownloadStateChanged(downloadSpam);
-      return;
-    }
-
-    let downloadSpam = new DownloadSpam(url);
-    this.spamList.add(downloadSpam);
-    this._blockedURLToDownloadSpam.set(url, downloadSpam);
-    let hasActiveDownloads = lazy.DownloadsCommon.summarizeDownloads(
-      this._indicator._activeDownloads()
-    ).numDownloading;
-    if (!hasActiveDownloads) {
-      this._browserWin.DownloadsPanel.showPanel();
-    }
-    this._indicator.onDownloadAdded(downloadSpam);
+class WindowSpamProtection {
+  constructor(window) {
+    this._window = window;
   }
 
   
 
 
-  clearDownloadSpam(URL) {
-    if (this._blockedURLToDownloadSpam.has(URL)) {
-      let downloadSpam = this._blockedURLToDownloadSpam.get(URL);
+
+
+
+  _downloadSpamForUrl = new Map();
+
+  
+
+
+
+
+
+  _pendingViews = new Set();
+
+  
+
+
+
+
+
+
+  _blocking = false;
+
+  
+
+
+
+
+
+
+  get spamList() {
+    if (!this._blocking) {
+      return undefined;
+    }
+    if (!this._spamList) {
+      this._spamList = new lazy.DownloadList();
+    }
+    return this._spamList;
+  }
+
+  
+
+
+
+
+
+  get indicator() {
+    if (!this._indicator) {
+      this._indicator = lazy.DownloadsCommon.getIndicatorData(this._window);
+    }
+    return this._indicator;
+  }
+
+  
+
+
+
+
+  addDownloadSpam(url) {
+    this._blocking = true;
+    
+    this._maybeAddViews();
+    
+    
+    if (this._downloadSpamForUrl.has(url)) {
+      let downloadSpam = this._downloadSpamForUrl.get(url);
+      downloadSpam.blockedDownloadsCount += 1;
+      this.indicator.onDownloadStateChanged(downloadSpam);
+      return;
+    }
+    
+    
+    let downloadSpam = new DownloadSpam(url);
+    this.spamList.add(downloadSpam);
+    this._downloadSpamForUrl.set(url, downloadSpam);
+    this._notifyDownloadSpamAdded(downloadSpam);
+  }
+
+  
+
+
+
+
+  _notifyDownloadSpamAdded(downloadSpam) {
+    let hasActiveDownloads = lazy.DownloadsCommon.summarizeDownloads(
+      this.indicator._activeDownloads()
+    ).numDownloading;
+    if (
+      !hasActiveDownloads &&
+      this._window === lazy.BrowserWindowTracker.getTopWindow()
+    ) {
+      
+      this._window.DownloadsPanel.showPanel();
+    } else {
+      
+      this._window.getAttention();
+    }
+    this.indicator.onDownloadAdded(downloadSpam);
+  }
+
+  
+
+
+
+  removeDownloadSpamForUrl(url) {
+    if (this._downloadSpamForUrl.has(url)) {
+      let downloadSpam = this._downloadSpamForUrl.get(url);
       this.spamList.remove(downloadSpam);
-      this._indicator.onDownloadRemoved(downloadSpam);
-      this._blockedURLToDownloadSpam.delete(URL);
+      this.indicator.onDownloadRemoved(downloadSpam);
+      this._downloadSpamForUrl.delete(url);
+    }
+  }
+
+  
+
+
+
+
+
+  registerView(view) {
+    if (!view || this.spamList?._views.has(view)) {
+      return;
+    }
+    this._pendingViews.add(view);
+    this._maybeAddViews();
+  }
+
+  
+
+
+
+  _maybeAddViews() {
+    if (this.spamList) {
+      for (let view of this._pendingViews) {
+        if (!this.spamList._views.has(view)) {
+          this.spamList.addView(view);
+        }
+      }
+      this._pendingViews.clear();
+    }
+  }
+
+  
+
+
+
+  removeAllViews() {
+    if (this.spamList) {
+      for (let view of this.spamList._views) {
+        this.spamList.removeView(view);
+      }
+    }
+    this._pendingViews.clear();
+  }
+}
+
+
+
+
+
+
+class DownloadSpamProtection {
+  
+
+
+
+  _forWindowMap = new WeakMap();
+
+  
+
+
+
+
+
+
+  update(url, window) {
+    if (window == null) {
+      lazy.DownloadsCommon.log(
+        "Download spam blocked in a non-chrome window. URL: ",
+        url
+      );
+      return;
+    }
+    
+    
+    
+    let wsp =
+      this._forWindowMap.get(window) ?? new WindowSpamProtection(window);
+    this._forWindowMap.set(window, wsp);
+    wsp.addDownloadSpam(url);
+  }
+
+  
+
+
+
+
+  getSpamListForWindow(window) {
+    return this._forWindowMap.get(window)?.spamList;
+  }
+
+  
+
+
+
+
+
+  removeDownloadSpamForWindow(url, window) {
+    let wsp = this._forWindowMap.get(window);
+    wsp?.removeDownloadSpamForUrl(url);
+  }
+
+  
+
+
+
+
+
+
+
+
+  register(view, window) {
+    let wsp =
+      this._forWindowMap.get(window) ?? new WindowSpamProtection(window);
+    
+    wsp.registerView(view);
+    this._forWindowMap.set(window, wsp);
+  }
+
+  
+
+
+
+  unregister(window) {
+    let wsp = this._forWindowMap.get(window);
+    if (wsp) {
+      
+      wsp.removeAllViews();
+      this._forWindowMap.delete(window);
     }
   }
 }
