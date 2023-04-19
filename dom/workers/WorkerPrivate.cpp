@@ -1442,6 +1442,19 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  RefPtr<extensions::WebExtensionPolicy> addonPolicy;
+
+  if (basePrin) {
+    addonPolicy = basePrin->AddonPolicy();
+  }
+
+  
+  
+  if (addonPolicy) {
+    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
+    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+  }
+
   mLoadInfo.mCSP = csp;
 
   
@@ -1458,6 +1471,15 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
   bool reportWasmEvalViolations = false;
   rv = csp->GetAllowsWasmEval(&reportWasmEvalViolations, &wasmEvalAllowed);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  
+  if (!wasmEvalAllowed && addonPolicy && addonPolicy->ManifestVersion() == 2) {
+    wasmEvalAllowed = true;
+    reportWasmEvalViolations = true;
+  }
 
   mLoadInfo.mWasmEvalAllowed = wasmEvalAllowed;
   mLoadInfo.mReportWasmEvalCSPViolations = reportWasmEvalViolations;
