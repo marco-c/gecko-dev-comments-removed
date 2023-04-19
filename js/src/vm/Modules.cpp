@@ -1355,10 +1355,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     MOZ_ASSERT(!module->hadEvaluationError());
 
     
-    if (!module->isAsyncEvaluating()) {
-      
-      MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
-
+    if (module->status() == ModuleStatus::Evaluated) {
       
       
       if (!ModuleObject::topLevelCapabilityResolve(cx, module)) {
