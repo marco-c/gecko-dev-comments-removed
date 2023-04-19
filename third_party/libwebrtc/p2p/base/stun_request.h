@@ -86,7 +86,7 @@ class StunRequest : public rtc::MessageHandler {
  public:
   explicit StunRequest(StunRequestManager& manager);
   StunRequest(StunRequestManager& manager,
-              std::unique_ptr<StunMessage> request);
+              std::unique_ptr<StunMessage> message);
   ~StunRequest() override;
 
   
@@ -117,7 +117,7 @@ class StunRequest : public rtc::MessageHandler {
 
   
   
-  virtual void Prepare(StunMessage* request) {}
+  virtual void Prepare(StunMessage* message) {}
 
   
   virtual void OnResponse(StunMessage* response) {}

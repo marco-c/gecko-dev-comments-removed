@@ -107,7 +107,7 @@ class PortInterface {
 
   
   
-  virtual void SendBindingErrorResponse(StunMessage* request,
+  virtual void SendBindingErrorResponse(StunMessage* message,
                                         const rtc::SocketAddress& addr,
                                         int error_code,
                                         const std::string& reason) = 0;
