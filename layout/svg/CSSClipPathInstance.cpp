@@ -59,11 +59,7 @@ bool CSSClipPathInstance::HitTestBasicShapeOrPathClip(nsIFrame* aFrame,
                                                       const gfxPoint& aPoint) {
   const auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
   MOZ_ASSERT(!clipPathStyle.IsNone(), "unexpected none value");
-  
-  
-  if (clipPathStyle.IsUrl()) {
-    return false;
-  }
+  MOZ_ASSERT(!clipPathStyle.IsUrl(), "unexpected url value");
 
   CSSClipPathInstance instance(aFrame, clipPathStyle);
 
