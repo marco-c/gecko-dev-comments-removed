@@ -26,6 +26,7 @@
 #include "modules/desktop_capture/win/dxgi_context.h"
 #include "modules/desktop_capture/win/dxgi_frame.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -40,7 +41,7 @@ namespace webrtc {
 
 
 
-class DxgiDuplicatorController {
+class RTC_EXPORT DxgiDuplicatorController {
  public:
   using Context = DxgiFrameContext;
 
