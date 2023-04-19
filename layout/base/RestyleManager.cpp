@@ -376,8 +376,14 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
 
   
   
-  if (aOldChild->IsElement()) {
-    RestyleManager::ClearServoDataFromSubtree(aOldChild->AsElement());
+  if (auto* element = Element::FromNode(aOldChild)) {
+    RestyleManager::ClearServoDataFromSubtree(element);
+    
+    
+    
+    
+    
+    IncrementUndisplayedRestyleGeneration();
   }
 
   
