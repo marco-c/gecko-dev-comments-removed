@@ -78,13 +78,7 @@ extern bool IsInteger(double d);
 extern JSLinearString* IndexToString(JSContext* cx, uint32_t index);
 
 struct ToCStringBuf {
-  
-
-
-
-
-  static const size_t sbufSize = 34;
-  char sbuf[sbufSize];
+  char sbuf[JS::MaximumNumberToStringLength] = {};
 };
 
 struct Int32ToCStringBuf {
