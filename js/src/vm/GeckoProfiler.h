@@ -19,6 +19,7 @@
 #include "js/AllocPolicy.h"
 #include "js/HashTable.h"
 #include "js/ProfilingCategory.h"
+#include "js/ProfilingStack.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 #include "threading/ProtectedData.h"
@@ -182,6 +183,8 @@ class MOZ_RAII GeckoProfilerEntryMarker {
 
 
 
+
+
 class MOZ_NONHEAP_CLASS AutoGeckoProfilerEntry {
  public:
   explicit MOZ_ALWAYS_INLINE AutoGeckoProfilerEntry(
@@ -191,8 +194,9 @@ class MOZ_NONHEAP_CLASS AutoGeckoProfilerEntry {
   MOZ_ALWAYS_INLINE ~AutoGeckoProfilerEntry();
 
  private:
-  GeckoProfilerThread* profiler_;
+  ProfilingStack* profilingStack_;
 #ifdef DEBUG
+  GeckoProfilerThread* profiler_;
   uint32_t spBefore_;
 #endif
 };
