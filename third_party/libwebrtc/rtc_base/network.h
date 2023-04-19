@@ -117,9 +117,6 @@ class NetworkMask {
 class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
                                   public MdnsResponderProvider {
  public:
-  using NetworkList ABSL_DEPRECATED("bugs.webrtc.org/13869") =
-      std::vector<Network*>;
-
   
   enum EnumerationPermission {
     ENUMERATION_ALLOWED,  
@@ -213,13 +210,6 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   
   void MergeNetworkList(std::vector<std::unique_ptr<Network>> list,
-                        bool* changed,
-                        NetworkManager::Stats* stats);
-  ABSL_DEPRECATED("bugs.webrtc.org/13869")
-  void MergeNetworkList(std::vector<Network*> list, bool* changed);
-
-  ABSL_DEPRECATED("bugs.webrtc.org/13869")
-  void MergeNetworkList(std::vector<Network*> list,
                         bool* changed,
                         NetworkManager::Stats* stats);
 
