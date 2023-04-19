@@ -49,6 +49,8 @@ class gfxMacFont final : public gfxFont {
 
   FontType GetType() const override { return FONT_TYPE_MAC; }
 
+  bool UseNativeColrFontSupport() const override;
+
   
   
   
