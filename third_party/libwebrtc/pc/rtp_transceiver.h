@@ -130,6 +130,8 @@ class RtpTransceiver : public RtpTransceiverInterface,
   
   
   
+  
+  
   void SetChannel(cricket::ChannelInterface* channel,
                   std::function<RtpTransportInternal*(const std::string&)>
                       transport_lookup);
@@ -281,7 +283,9 @@ class RtpTransceiver : public RtpTransceiverInterface,
   void OnFirstPacketReceived();
   void StopSendingAndReceiving();
   
-  void DeleteChannel(cricket::ChannelInterface* channel_to_delete);
+  
+  void PushNewMediaChannelAndDeleteChannel(
+      cricket::ChannelInterface* channel_to_delete);
 
   
   TaskQueueBase* const thread_;

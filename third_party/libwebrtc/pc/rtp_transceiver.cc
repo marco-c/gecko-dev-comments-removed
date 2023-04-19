@@ -164,24 +164,18 @@ void RtpTransceiver::SetChannel(
     cricket::ChannelInterface* channel,
     std::function<RtpTransportInternal*(const std::string&)> transport_lookup) {
   RTC_DCHECK_RUN_ON(thread_);
-  RTC_DCHECK(channel);  
+  RTC_DCHECK(channel);
   RTC_DCHECK(transport_lookup);
+  RTC_DCHECK(!channel_);
   
-  if (stopped_ || channel == channel_) {
+  if (stopped_) {
     return;
   }
 
   RTC_LOG_THREAD_BLOCK_COUNT();
 
-  if (channel_) {
-    signaling_thread_safety_->SetNotAlive();
-    signaling_thread_safety_ = nullptr;
-  }
-
   RTC_DCHECK_EQ(media_type(), channel->media_type());
   signaling_thread_safety_ = PendingTaskSafetyFlag::Create();
-
-  cricket::ChannelInterface* channel_to_delete = nullptr;
 
   
   
@@ -193,12 +187,6 @@ void RtpTransceiver::SetChannel(
   
   
   channel_manager_->network_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
-    if (channel_) {
-      channel_->SetFirstPacketReceivedCallback(nullptr);
-      channel_->SetRtpTransport(nullptr);
-      channel_to_delete = channel_;
-    }
-
     channel_ = channel;
 
     channel_->SetRtpTransport(transport_lookup(channel_->mid()));
@@ -208,12 +196,7 @@ void RtpTransceiver::SetChannel(
                                         [this]() { OnFirstPacketReceived(); }));
         });
   });
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
-
-  if (channel_to_delete || !senders_.empty() || !receivers_.empty()) {
-    DeleteChannel(channel_to_delete);
-  }
+  PushNewMediaChannelAndDeleteChannel(nullptr);
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
@@ -244,17 +227,20 @@ void RtpTransceiver::ClearChannel() {
   });
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
-
-  if (channel_to_delete || !senders_.empty() || !receivers_.empty()) {
-    DeleteChannel(channel_to_delete);
-  }
+  PushNewMediaChannelAndDeleteChannel(channel_to_delete);
 
   RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
 
-void RtpTransceiver::DeleteChannel(
+void RtpTransceiver::PushNewMediaChannelAndDeleteChannel(
     cricket::ChannelInterface* channel_to_delete) {
+  
+  
+  if (!channel_to_delete && senders_.empty() && receivers_.empty()) {
+    return;
+  }
   channel_manager_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&]() {
+    
     auto* media_channel = channel_ ? channel_->media_channel() : nullptr;
     for (const auto& sender : senders_) {
       sender->internal()->SetMediaChannel(media_channel);

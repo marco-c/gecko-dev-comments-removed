@@ -76,13 +76,14 @@ TEST(RtpTransceiverTest, CannotSetChannelOnStoppedTransceiver) {
       .WillRepeatedly(Return(cricket::MediaType::MEDIA_TYPE_AUDIO));
 
   
-  transceiver->SetChannel(&channel2,
-                          [](const std::string&) { return nullptr; });
-  EXPECT_EQ(&channel1, transceiver->channel());
-
-  
   EXPECT_CALL(channel1, SetFirstPacketReceivedCallback(_));
   EXPECT_CALL(cm, DestroyChannel(&channel1)).WillRepeatedly(testing::Return());
+  transceiver->ClearChannel();
+  
+  transceiver->SetChannel(&channel2,
+                          [](const std::string&) { return nullptr; });
+  EXPECT_EQ(nullptr, transceiver->channel());
+
   transceiver->ClearChannel();
 }
 
