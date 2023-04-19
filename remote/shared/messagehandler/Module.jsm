@@ -15,6 +15,11 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(lazy, "disabledExperimentalAPI", () => {
+  return !Services.prefs.getBoolPref("remote.experimental.enabled");
 });
 
 class Module {
@@ -106,6 +111,43 @@ class Module {
     throw new Error(
       `Could not intercept event ${name}, interceptEvent is not implemented in windowglobal-in-root module`
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+  assertExperimentalCommandsEnabled(methodName) {
+    
+    if (lazy.disabledExperimentalAPI) {
+      throw new lazy.error.UnknownCommandError(methodName);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  assertExperimentalEventsEnabled(moduleName, event) {
+    
+    if (lazy.disabledExperimentalAPI) {
+      throw new lazy.error.InvalidArgumentError(
+        `Module ${moduleName} does not support event ${event}`
+      );
+    }
   }
 
   

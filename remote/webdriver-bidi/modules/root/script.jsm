@@ -149,6 +149,9 @@ class ScriptModule extends Module {
 
 
   async callFunction(options = {}) {
+    
+    this.assertExperimentalCommandsEnabled("script.callFunction");
+
     const {
       arguments: commandArguments = null,
       awaitPromise,
@@ -229,6 +232,9 @@ class ScriptModule extends Module {
 
 
   async evaluate(options = {}) {
+    
+    this.assertExperimentalCommandsEnabled("script.evaluate");
+
     const {
       awaitPromise,
       expression: source,

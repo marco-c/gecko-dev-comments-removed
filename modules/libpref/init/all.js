@@ -4242,6 +4242,13 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("remote.active-protocols", 3);
 
   
+  #if defined(NIGHTLY_BUILD)
+    pref("remote.experimental.enabled", true);
+  #else
+    pref("remote.experimental.enabled", false);
+  #endif
+
+  
   
   
   
