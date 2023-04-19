@@ -295,6 +295,13 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
   enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY };
 
+  struct PortAllocatorConfig {
+    
+    int min_port = 0;
+    int max_port = 0;
+    uint32_t flags = 0;  
+  };
+
   enum class RTCConfigurationType {
     
     
@@ -370,6 +377,18 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     void set_video_rtcp_report_interval_ms(int video_rtcp_report_interval_ms) {
       media_config.video.rtcp_report_interval_ms =
           video_rtcp_report_interval_ms;
+    }
+
+    
+    
+    
+    int min_port() const { return port_allocator_config.min_port; }
+    void set_min_port(int port) { port_allocator_config.min_port = port; }
+    int max_port() const { return port_allocator_config.max_port; }
+    void set_max_port(int port) { port_allocator_config.max_port = port; }
+    uint32_t port_allocator_flags() { return port_allocator_config.flags; }
+    void set_port_allocator_flags(uint32_t flags) {
+      port_allocator_config.flags = flags;
     }
 
     static const int kUndefined = -1;
@@ -669,6 +688,8 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     
     std::vector<rtc::NetworkMask> vpn_list;
+
+    PortAllocatorConfig port_allocator_config;
 
     
     
