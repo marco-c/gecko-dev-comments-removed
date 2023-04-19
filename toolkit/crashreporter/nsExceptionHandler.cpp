@@ -1205,9 +1205,13 @@ static bool LaunchProgram(const XP_CHAR* aProgramPath,
   si.cb = sizeof(si);
 
   
-  if (CreateProcess(nullptr, (LPWSTR)cmdLine, nullptr, nullptr, FALSE,
-                    NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, nullptr, nullptr,
-                    &si, &pi)) {
+  if (CreateProcess(
+           nullptr, (LPWSTR)cmdLine,
+           nullptr,  nullptr,
+           FALSE,
+          NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
+           nullptr,  nullptr, &si,
+          &pi)) {
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
