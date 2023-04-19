@@ -87,7 +87,14 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
 
-nsContainerFrame* NS_NewBoxFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewBoxFrame(PresShell* aPresShell, ComputedStyle* aStyle,
+                         bool aIsRoot, nsBoxLayout* aLayoutManager) {
+  return new (aPresShell)
+      nsBoxFrame(aStyle, aPresShell->GetPresContext(), nsBoxFrame::kClassID,
+                 aIsRoot, aLayoutManager);
+}
+
+nsIFrame* NS_NewBoxFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsBoxFrame(aStyle, aPresShell->GetPresContext());
 }
 
@@ -100,16 +107,22 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 #endif
 
 nsBoxFrame::nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                       ClassID aID)
+                       ClassID aID, bool aIsRoot, nsBoxLayout* aLayoutManager)
     : nsContainerFrame(aStyle, aPresContext, aID), mAscent(0) {
   AddStateBits(NS_STATE_IS_HORIZONTAL | NS_STATE_AUTO_STRETCH);
+
+  if (aIsRoot) AddStateBits(NS_STATE_IS_ROOT);
 
   mValign = vAlign_Top;
   mHalign = hAlign_Left;
 
   
-  nsCOMPtr<nsBoxLayout> layout;
-  NS_NewSprocketLayout(layout);
+  nsCOMPtr<nsBoxLayout> layout = aLayoutManager;
+
+  if (layout == nullptr) {
+    NS_NewSprocketLayout(layout);
+  }
+
   SetXULLayoutManager(layout);
 }
 
@@ -525,7 +538,7 @@ void nsBoxFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
 
   
   
-  if (!Style()->IsRootElementStyle()) {
+  if (!(mState & NS_STATE_IS_ROOT)) {
     ascent = GetXULBoxAscent(state);
   }
 
@@ -694,7 +707,7 @@ nsBoxFrame::DoXULLayout(nsBoxLayoutState& aState) {
 
     
     
-    if (!Style()->IsRootElementStyle()) {
+    if (!(mState & NS_STATE_IS_ROOT)) {
       ascent = GetXULBoxAscent(aState);
     }
     desiredSize.SetBlockStartAscent(ascent);
