@@ -27,22 +27,21 @@ class FuzzerTest : public PeerConnectionIntegrationBaseTest {
     
 
     auto srd_observer =
-        rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+        rtc::make_ref_counted<FakeSetRemoteDescriptionObserver>();
 
     SdpParseError error;
     std::unique_ptr<SessionDescriptionInterface> sdp(
         CreateSessionDescription("offer", std::string(message), &error));
-    
-    caller()->pc()->SetRemoteDescription(srd_observer, sdp.release());
+    caller()->pc()->SetRemoteDescription(std::move(sdp), srd_observer);
     
     
     EXPECT_TRUE_WAIT(srd_observer->called(), 100);
 
     
     auto sld_observer =
-        rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
-    if (srd_observer->result()) {
-      caller()->pc()->SetLocalDescription(sld_observer.get());
+        rtc::make_ref_counted<FakeSetLocalDescriptionObserver>();
+    if (srd_observer->error().ok()) {
+      caller()->pc()->SetLocalDescription(sld_observer);
       EXPECT_TRUE_WAIT(sld_observer->called(), 100);
     }
     
