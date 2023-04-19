@@ -17,6 +17,15 @@ registerCleanupFunction(async function() {
   }
 });
 
+add_setup(async () => {
+  
+  if (navigator.platform.indexOf("Win") == 0) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+    });
+  }
+});
+
 add_task(async function checkStateDuringPrefFlips() {
   ok(
     Services.prefs.getBoolPref(kDownloadAutoHidePref),
