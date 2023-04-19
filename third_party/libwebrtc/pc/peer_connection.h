@@ -495,11 +495,6 @@ class PeerConnection : public PeerConnectionInternal,
   void OnNegotiationNeeded();
 
   
-  
-  SctpDataChannel* FindDataChannelBySid(int sid) const
-      RTC_RUN_ON(signaling_thread());
-
-  
   struct InitializePortAllocatorResult {
     bool enable_ipv6;
   };
