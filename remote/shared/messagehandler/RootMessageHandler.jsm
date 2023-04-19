@@ -168,23 +168,29 @@ class RootMessageHandler extends MessageHandler {
       return;
     }
 
-    const destination = {
+    const windowGlobalDestination = {
       type: lazy.WindowGlobalMessageHandler.type,
       contextDescriptor,
     };
 
-    
-    if (this.supportsCommand(moduleName, "_applySessionData", destination)) {
-      await this.handleCommand({
-        moduleName,
-        commandName: "_applySessionData",
-        params: {
-          [isAdding ? "added" : "removed"]: updatedValues,
-          category,
-          contextDescriptor,
-        },
-        destination,
-      });
+    const rootDestination = {
+      type: RootMessageHandler.type,
+    };
+
+    for (const destination of [windowGlobalDestination, rootDestination]) {
+      
+      if (this.supportsCommand(moduleName, "_applySessionData", destination)) {
+        await this.handleCommand({
+          moduleName,
+          commandName: "_applySessionData",
+          params: {
+            [isAdding ? "added" : "removed"]: updatedValues,
+            category,
+            contextDescriptor,
+          },
+          destination,
+        });
+      }
     }
   }
 }
