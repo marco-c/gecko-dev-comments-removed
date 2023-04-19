@@ -3,23 +3,17 @@
 
 const ROOT_DIR = getRootDirectory(gTestPath);
 
-const MOCHI_ROOT = ROOT_DIR.replace(
+const EXAMPLE_NET_ROOT = ROOT_DIR.replace(
   "chrome://mochitests/content/",
-  "http://mochi.test:8888/"
+  "https://example.net/"
 );
 
 const EXAMPLE_COM_ROOT = ROOT_DIR.replace(
   "chrome://mochitests/content/",
-  "http://example.com/"
+  "https://example.com/"
 );
 
 const FAVICON_URL = EXAMPLE_COM_ROOT + "credentials.png";
-
-
-Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
-});
 
 
 
@@ -28,7 +22,7 @@ registerCleanupFunction(() => {
 function run_test(url, shouldHaveCookies, description) {
   add_task(async () => {
     await SpecialPowers.addPermission(
-      "3rdPartyStorage^http://example.com",
+      "3rdPartyStorage^https://example.com",
       true,
       url
     );
@@ -68,14 +62,14 @@ function run_test(url, shouldHaveCookies, description) {
       }
     );
     await SpecialPowers.removePermission(
-      "3rdPartyStorage^http://example.com",
+      "3rdPartyStorage^https://example.com",
       url
     );
   });
 }
 
 
-run_test(`${MOCHI_ROOT}credentials1.html`, false, "anonymous, remote");
+run_test(`${EXAMPLE_NET_ROOT}credentials1.html`, false, "anonymous, remote");
 run_test(
   `${EXAMPLE_COM_ROOT}credentials1.html`,
   true,
@@ -83,7 +77,11 @@ run_test(
 );
 
 
-run_test(`${MOCHI_ROOT}credentials2.html`, true, "use-credentials, remote");
+run_test(
+  `${EXAMPLE_NET_ROOT}credentials2.html`,
+  true,
+  "use-credentials, remote"
+);
 run_test(
   `${EXAMPLE_COM_ROOT}credentials2.html`,
   true,

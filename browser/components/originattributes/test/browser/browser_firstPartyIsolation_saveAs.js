@@ -39,8 +39,6 @@ add_setup(async function() {
     set: [
       ["privacy.firstparty.isolate", true],
       ["dom.security.https_first", false],
-      
-      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
 
