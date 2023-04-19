@@ -184,8 +184,11 @@ add_task(async function test_tab_engine_skips_incoming_local_record() {
   });
 
   _("Start sync");
+  Service.scheduler.hasIncomingItems = false;
   await engine._sync();
   await promiseFinished;
+  
+  Assert.ok(!Service.scheduler.hasIncomingItems);
 });
 
 

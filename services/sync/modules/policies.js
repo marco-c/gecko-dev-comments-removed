@@ -463,7 +463,12 @@ SyncScheduler.prototype = {
         this._log.trace(
           "Engine " + data + " successfully applied " + numItems + " items."
         );
-        if (numItems) {
+        
+        
+        
+        
+        
+        if (data != "tabs" && numItems) {
           this.hasIncomingItems = true;
         }
         if (subject.newFailed) {
