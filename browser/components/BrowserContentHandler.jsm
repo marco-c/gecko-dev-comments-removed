@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.jsm",
   FirstStartup: "resource://gre/modules/FirstStartup.jsm",
   LaterRun: "resource:///modules/LaterRun.jsm",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
@@ -54,8 +55,6 @@ const ONCE_PREF = "browser.startup.homepage_override.once";
 
 
 const PRIVATE_BROWSING_ICON_INDEX = 5;
-const PRIVATE_WINDOW_SEPARATION_PREF =
-  "browser.privacySegmentation.windowSeparation.enabled";
 
 function shouldLoadURI(aURI) {
   if (aURI && !aURI.schemeIs("chrome")) {
@@ -293,11 +292,11 @@ function openBrowserWindow(
         win.docShell.QueryInterface(
           Ci.nsILoadContext
         ).usePrivateBrowsing = true;
-        if (Services.prefs.getBoolPref(PRIVATE_WINDOW_SEPARATION_PREF)) {
-          
-          
-          
-          
+        if (
+          lazy.NimbusFeatures.majorRelease2022.getVariable(
+            "feltPrivacyWindowSeparation"
+          )
+        ) {
           lazy.WinTaskbar.setGroupIdForWindow(
             win,
             lazy.WinTaskbar.defaultPrivateGroupId
