@@ -28,9 +28,9 @@ namespace detail {
 
 
 
-class MOZ_CAPABILITY PortMutex : private ::mozilla::detail::MutexImpl {
+class CAPABILITY PortMutex : private ::mozilla::detail::MutexImpl {
  public:
-  void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
+  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this) {
 #ifdef DEBUG
     MOZ_ASSERT(mOwningThread == PR_GetCurrentThread());
 #endif
@@ -40,13 +40,13 @@ class MOZ_CAPABILITY PortMutex : private ::mozilla::detail::MutexImpl {
   
   friend class ::mojo::core::ports::PortLocker;
 
-  void Lock() MOZ_CAPABILITY_ACQUIRE() {
+  void Lock() CAPABILITY_ACQUIRE() {
     ::mozilla::detail::MutexImpl::lock();
 #ifdef DEBUG
     mOwningThread = PR_GetCurrentThread();
 #endif
   }
-  void Unlock() MOZ_CAPABILITY_RELEASE() {
+  void Unlock() CAPABILITY_RELEASE() {
 #ifdef DEBUG
     MOZ_ASSERT(mOwningThread == PR_GetCurrentThread());
     mOwningThread = nullptr;

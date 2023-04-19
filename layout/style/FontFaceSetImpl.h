@@ -241,7 +241,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   mutable RecursiveMutex mMutex;
 
-  FontFaceSet* MOZ_NON_OWNING_REF mOwner MOZ_GUARDED_BY(mMutex);
+  FontFaceSet* MOZ_NON_OWNING_REF mOwner GUARDED_BY(mMutex);
 
   
   
@@ -255,19 +255,19 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   
   
   mutable RefPtr<gfxFontSrcPrincipal> mStandardFontLoadPrincipal
-      MOZ_GUARDED_BY(mMutex);
+      GUARDED_BY(mMutex);
 
   
   
   
-  nsTHashtable<nsPtrHashKey<nsFontFaceLoader>> mLoaders MOZ_GUARDED_BY(mMutex);
+  nsTHashtable<nsPtrHashKey<nsFontFaceLoader>> mLoaders GUARDED_BY(mMutex);
 
   
   
-  nsTArray<FontFaceRecord> mNonRuleFaces MOZ_GUARDED_BY(mMutex);
+  nsTArray<FontFaceRecord> mNonRuleFaces GUARDED_BY(mMutex);
 
   
-  dom::FontFaceSetLoadStatus mStatus MOZ_GUARDED_BY(mMutex);
+  dom::FontFaceSetLoadStatus mStatus GUARDED_BY(mMutex);
 
   
   
@@ -276,22 +276,22 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   
   
   nsTHashMap<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads
-      MOZ_GUARDED_BY(mMutex);
+      GUARDED_BY(mMutex);
 
   
-  bool mNonRuleFacesDirty MOZ_GUARDED_BY(mMutex);
-
-  
-  
-  
-  bool mHasLoadingFontFaces MOZ_GUARDED_BY(mMutex);
-
-  
-  bool mHasLoadingFontFacesIsDirty MOZ_GUARDED_BY(mMutex);
+  bool mNonRuleFacesDirty GUARDED_BY(mMutex);
 
   
   
-  bool mDelayedLoadCheck MOZ_GUARDED_BY(mMutex);
+  
+  bool mHasLoadingFontFaces GUARDED_BY(mMutex);
+
+  
+  bool mHasLoadingFontFacesIsDirty GUARDED_BY(mMutex);
+
+  
+  
+  bool mDelayedLoadCheck GUARDED_BY(mMutex);
 
   
   

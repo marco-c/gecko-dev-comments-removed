@@ -507,8 +507,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
  private:
   friend class APZUpdater;
-  void LockTree() MOZ_CAPABILITY_ACQUIRE(mTreeLock);
-  void UnlockTree() MOZ_CAPABILITY_RELEASE(mTreeLock);
+  void LockTree() CAPABILITY_ACQUIRE(mTreeLock);
+  void UnlockTree() CAPABILITY_RELEASE(mTreeLock);
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(
@@ -591,8 +591,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
   void AttachNodeToTree(HitTestingTreeNode* aNode, HitTestingTreeNode* aParent,
-                        HitTestingTreeNode* aNextSibling)
-      MOZ_REQUIRES(mTreeLock);
+                        HitTestingTreeNode* aNextSibling) REQUIRES(mTreeLock);
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(
       const ScrollableLayerGuid& aGuid);
   already_AddRefed<HitTestingTreeNode> GetTargetNode(
@@ -731,7 +730,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(
-      const HitTestingTreeNode* aNode) const MOZ_REQUIRES(mTreeLock);
+      const HitTestingTreeNode* aNode) const REQUIRES(mTreeLock);
 
   
   static already_AddRefed<GeckoContentController> GetContentController(
@@ -788,7 +787,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   mutable mozilla::RecursiveMutex mTreeLock;
-  RefPtr<HitTestingTreeNode> mRootNode MOZ_GUARDED_BY(mTreeLock);
+  RefPtr<HitTestingTreeNode> mRootNode GUARDED_BY(mTreeLock);
 
   
 
@@ -800,7 +799,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   std::unordered_set<LayersId, LayersId::HashFn> mDetachedLayersIds
-      MOZ_GUARDED_BY(mTreeLock);
+      GUARDED_BY(mTreeLock);
 
   
 

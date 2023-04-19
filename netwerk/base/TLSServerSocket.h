@@ -68,8 +68,7 @@ class TLSServerConnectionInfo : public nsITLSServerConnectionInfo,
   uint32_t mMacLength{0};
   
   mozilla::Mutex mLock{"TLSServerConnectionInfo.mLock"};
-  nsCOMPtr<nsITLSServerSecurityObserver> mSecurityObserver
-      MOZ_GUARDED_BY(mLock);
+  nsCOMPtr<nsITLSServerSecurityObserver> mSecurityObserver GUARDED_BY(mLock);
 };
 
 }  

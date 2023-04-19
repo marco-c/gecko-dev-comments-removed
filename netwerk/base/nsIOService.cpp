@@ -269,9 +269,9 @@ nsresult nsIOService::Init() {
   
   for (int i = 0; gBadPortList[i]; i++) {
     
-    MOZ_PUSH_IGNORE_THREAD_SAFETY
+    PUSH_IGNORE_THREAD_SAFETY
     mRestrictedPortList.AppendElement(gBadPortList[i]);
-    MOZ_POP_THREAD_SAFETY
+    POP_THREAD_SAFETY
   }
 
   

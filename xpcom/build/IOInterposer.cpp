@@ -300,7 +300,7 @@ class SourceList {
   }
 
  private:
-  RefPtr<const ObserverLists> mObserverLists MOZ_GUARDED_BY(mLock);
+  RefPtr<const ObserverLists> mObserverLists GUARDED_BY(mLock);
   
   
   

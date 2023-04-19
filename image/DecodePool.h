@@ -99,7 +99,7 @@ class DecodePool final : public nsIObserver {
 
   
   Mutex mMutex;
-  nsCOMPtr<nsIThread> mIOThread MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIThread> mIOThread GUARDED_BY(mMutex);
 };
 
 }  

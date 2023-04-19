@@ -112,7 +112,7 @@ class AudioClock {
   
   const UniquePtr<FrameHistory> mFrameHistory
 #  ifndef XP_MACOSX
-      MOZ_GUARDED_BY(mMutex)
+      GUARDED_BY(mMutex)
 #  endif
           ;
 #  ifdef XP_MACOSX
@@ -335,10 +335,10 @@ class AudioStream final {
 
   
   
-  bool IsValidAudioFormat(Chunk* aChunk) MOZ_REQUIRES(mMonitor);
+  bool IsValidAudioFormat(Chunk* aChunk) REQUIRES(mMonitor);
 
   template <typename Function, typename... Args>
-  int InvokeCubeb(Function aFunction, Args&&... aArgs) MOZ_REQUIRES(mMonitor);
+  int InvokeCubeb(Function aFunction, Args&&... aArgs) REQUIRES(mMonitor);
   bool CheckThreadIdChanged();
   void AssertIsOnAudioThread() const;
 
@@ -382,8 +382,7 @@ class AudioStream final {
   std::atomic<ProfilerThreadId> mAudioThreadId;
   const bool mSandboxed = false;
 
-  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise
-      MOZ_GUARDED_BY(mMonitor);
+  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise GUARDED_BY(mMonitor);
   std::atomic<bool> mPlaybackComplete;
   
   std::atomic<float> mPlaybackRate;

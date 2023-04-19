@@ -299,9 +299,9 @@ class WebMBufferedState final {
 
   
   
-  nsTArray<WebMTimeDataOffset> mTimeMapping MOZ_GUARDED_BY(mMutex);
+  nsTArray<WebMTimeDataOffset> mTimeMapping GUARDED_BY(mMutex);
   
-  int64_t mLastBlockOffset MOZ_GUARDED_BY(mMutex);
+  int64_t mLastBlockOffset GUARDED_BY(mMutex);
 
   
   nsTArray<WebMBufferedParser> mRangeParsers;

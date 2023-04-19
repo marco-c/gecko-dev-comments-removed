@@ -192,7 +192,7 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   SizeOfTabFns mSizeOfTabFns;
 
  private:
-  bool IsRegistrationBlocked() MOZ_EXCLUDES(mMutex) {
+  bool IsRegistrationBlocked() EXCLUDES(mMutex) {
     mozilla::MutexAutoLock lock(mMutex);
     return mIsRegistrationBlocked;
   }
@@ -215,14 +215,14 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   static const uint32_t kTimeoutLengthMS = 180000;
 
   mozilla::Mutex mMutex;
-  bool mIsRegistrationBlocked MOZ_GUARDED_BY(mMutex);
+  bool mIsRegistrationBlocked GUARDED_BY(mMutex);
 
-  StrongReportersTable* mStrongReporters MOZ_GUARDED_BY(mMutex);
-  WeakReportersTable* mWeakReporters MOZ_GUARDED_BY(mMutex);
+  StrongReportersTable* mStrongReporters GUARDED_BY(mMutex);
+  WeakReportersTable* mWeakReporters GUARDED_BY(mMutex);
 
   
-  StrongReportersTable* mSavedStrongReporters MOZ_GUARDED_BY(mMutex);
-  WeakReportersTable* mSavedWeakReporters MOZ_GUARDED_BY(mMutex);
+  StrongReportersTable* mSavedStrongReporters GUARDED_BY(mMutex);
+  WeakReportersTable* mSavedWeakReporters GUARDED_BY(mMutex);
 
   uint32_t mNextGeneration;  
 
@@ -284,7 +284,7 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   PendingReportersState* mPendingReportersState;  
 
   
-  nsCOMPtr<nsIEventTarget> mThreadPool MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIEventTarget> mThreadPool GUARDED_BY(mMutex);
 
   PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
   [[nodiscard]] static bool StartChildReport(

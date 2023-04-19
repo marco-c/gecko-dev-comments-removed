@@ -246,11 +246,11 @@ class NowSingleton {
       : rollover_(TimeDelta::FromMilliseconds(0)), last_seen_(0) {}
   ~NowSingleton() = default;
 
-  TimeDelta rollover_ MOZ_GUARDED_BY(
+  TimeDelta rollover_ GUARDED_BY(
       sNowSingletonLock);  
   DWORD last_seen_
-      MOZ_GUARDED_BY(sNowSingletonLock);  
-                                          
+      GUARDED_BY(sNowSingletonLock);  
+                                      
 
   DISALLOW_COPY_AND_ASSIGN(NowSingleton);
 };

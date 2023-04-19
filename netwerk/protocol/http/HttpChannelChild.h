@@ -274,17 +274,17 @@ class HttpChannelChild final : public PHttpChannelChild,
   Mutex mBgChildMutex{"HttpChannelChild::BgChildMutex"};
 
   
-  RefPtr<HttpBackgroundChannelChild> mBgChild MOZ_GUARDED_BY(mBgChildMutex);
+  RefPtr<HttpBackgroundChannelChild> mBgChild GUARDED_BY(mBgChildMutex);
 
   
-  nsCOMPtr<nsIRunnable> mBgInitFailCallback MOZ_GUARDED_BY(mBgChildMutex);
+  nsCOMPtr<nsIRunnable> mBgInitFailCallback GUARDED_BY(mBgChildMutex);
 
   
   
   void CleanupBackgroundChannel();
 
   
-  nsCOMPtr<nsIEventTarget> mODATarget MOZ_GUARDED_BY(mEventTargetMutex);
+  nsCOMPtr<nsIEventTarget> mODATarget GUARDED_BY(mEventTargetMutex);
   
   Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
 

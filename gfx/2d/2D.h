@@ -1092,11 +1092,11 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
 
 
 
-  bool Lock(const void* aOwner = nullptr) MOZ_CAPABILITY_ACQUIRE(mLock) {
+  bool Lock(const void* aOwner = nullptr) CAPABILITY_ACQUIRE(mLock) {
     mLock.Lock();
     return !aOwner || mLastLockOwner.exchange(aOwner) == aOwner;
   }
-  void Unlock() MOZ_CAPABILITY_RELEASE(mLock) { mLock.Unlock(); }
+  void Unlock() CAPABILITY_RELEASE(mLock) { mLock.Unlock(); }
 
   
 

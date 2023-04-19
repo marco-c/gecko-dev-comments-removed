@@ -4730,7 +4730,7 @@ inline void MozJemalloc::moz_dispose_arena(arena_id_t aArenaId) {
 
 
 FORK_HOOK
-void _malloc_prefork(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
+void _malloc_prefork(void) NO_THREAD_SAFETY_ANALYSIS {
   
   gArenas.mLock.Lock();
 
@@ -4744,7 +4744,7 @@ void _malloc_prefork(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
 }
 
 FORK_HOOK
-void _malloc_postfork_parent(void) MOZ_NO_THREAD_SAFETY_ANALYSIS {
+void _malloc_postfork_parent(void) NO_THREAD_SAFETY_ANALYSIS {
   
   huge_mtx.Unlock();
 

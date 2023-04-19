@@ -388,8 +388,8 @@ class nsThreadShutdownContext final : public nsIThreadShutdown {
   
   
   mozilla::Mutex mJoiningThreadMutex;
-  RefPtr<nsThread> mJoiningThread MOZ_GUARDED_BY(mJoiningThreadMutex);
-  bool mThreadLeaked MOZ_GUARDED_BY(mJoiningThreadMutex) = false;
+  RefPtr<nsThread> mJoiningThread GUARDED_BY(mJoiningThreadMutex);
+  bool mThreadLeaked GUARDED_BY(mJoiningThreadMutex) = false;
 };
 
 

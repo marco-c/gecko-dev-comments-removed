@@ -41,10 +41,10 @@ class nsHttpRequestHead {
   
   
   const nsHttpHeaderArray& Headers() const;
-  void Enter() const MOZ_CAPABILITY_ACQUIRE(mRecursiveMutex) {
+  void Enter() const CAPABILITY_ACQUIRE(mRecursiveMutex) {
     mRecursiveMutex.Lock();
   }
-  void Exit() const MOZ_CAPABILITY_RELEASE(mRecursiveMutex) {
+  void Exit() const CAPABILITY_RELEASE(mRecursiveMutex) {
     mRecursiveMutex.Unlock();
   }
 
@@ -124,19 +124,19 @@ class nsHttpRequestHead {
 
  private:
   
-  nsHttpHeaderArray mHeaders MOZ_GUARDED_BY(mRecursiveMutex);
-  nsCString mMethod MOZ_GUARDED_BY(mRecursiveMutex){"GET"_ns};
-  HttpVersion mVersion MOZ_GUARDED_BY(mRecursiveMutex){HttpVersion::v1_1};
+  nsHttpHeaderArray mHeaders GUARDED_BY(mRecursiveMutex);
+  nsCString mMethod GUARDED_BY(mRecursiveMutex){"GET"_ns};
+  HttpVersion mVersion GUARDED_BY(mRecursiveMutex){HttpVersion::v1_1};
 
   
   
   
-  nsCString mRequestURI MOZ_GUARDED_BY(mRecursiveMutex);
-  nsCString mPath MOZ_GUARDED_BY(mRecursiveMutex);
+  nsCString mRequestURI GUARDED_BY(mRecursiveMutex);
+  nsCString mPath GUARDED_BY(mRecursiveMutex);
 
-  nsCString mOrigin MOZ_GUARDED_BY(mRecursiveMutex);
-  ParsedMethodType mParsedMethod MOZ_GUARDED_BY(mRecursiveMutex){kMethod_Get};
-  bool mHTTPS MOZ_GUARDED_BY(mRecursiveMutex){false};
+  nsCString mOrigin GUARDED_BY(mRecursiveMutex);
+  ParsedMethodType mParsedMethod GUARDED_BY(mRecursiveMutex){kMethod_Get};
+  bool mHTTPS GUARDED_BY(mRecursiveMutex){false};
 
   
   
@@ -144,7 +144,7 @@ class nsHttpRequestHead {
       "nsHttpRequestHead.mRecursiveMutex"};
 
   
-  bool mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){false};
+  bool mInVisitHeaders GUARDED_BY(mRecursiveMutex){false};
 
   friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };
