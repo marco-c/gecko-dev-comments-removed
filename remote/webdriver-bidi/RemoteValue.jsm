@@ -139,10 +139,6 @@ function deserializeKeyValueList( serializedKeyValueList) {
 function deserialize( serializedValue) {
   const { objectId, type, value } = serializedValue;
 
-  if (type !== undefined) {
-    lazy.assert.string(type, `Expected "type" to be a string, got ${type}`);
-  }
-
   
   if (objectId !== undefined) {
     lazy.assert.string(
@@ -156,6 +152,8 @@ function deserialize( serializedValue) {
     );
     return undefined;
   }
+
+  lazy.assert.string(type, `Expected "type" to be a string, got ${type}`);
 
   
   switch (type) {
