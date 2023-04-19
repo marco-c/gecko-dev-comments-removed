@@ -106,6 +106,16 @@ const POLICIES_TESTS = [
 
   
   {
+    policies: {
+      GoToIntranetSiteForSingleWordEntryInAddressBar: true,
+    },
+    lockedPrefs: {
+      "browser.fixup.dns_first_for_single_words": true,
+    },
+  },
+
+  
+  {
     policies: { OverrideFirstRunPage: "https://www.example.com/" },
     lockedPrefs: { "startup.homepage_welcome_url": "https://www.example.com/" },
   },
