@@ -121,8 +121,12 @@ ConnectionContext::ConnectionContext(
   default_network_manager_ = std::make_unique<rtc::BasicNetworkManager>(
       network_monitor_factory_.get());
 
-  default_socket_factory_ =
-      std::make_unique<rtc::BasicPacketSocketFactory>(network_thread());
+  
+  
+  
+  
+  default_socket_factory_ = std::make_unique<rtc::BasicPacketSocketFactory>(
+      network_thread()->socketserver());
 
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&]() {
     channel_manager_ = cricket::ChannelManager::Create(
