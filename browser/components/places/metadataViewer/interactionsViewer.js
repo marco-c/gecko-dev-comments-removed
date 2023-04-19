@@ -430,26 +430,7 @@ const placesStatsHandler = new (class extends TableViewer {
 
 
   async updateDisplay() {
-    let stats = await PlacesDBUtils.getEntitiesStats();
-    let data = [];
-    let db = await PlacesUtils.promiseDBConnection();
-    for (let [entity, value] of stats) {
-      let count = "-";
-      try {
-        if (
-          entity.startsWith("moz_") &&
-          !entity.endsWith("index") &&
-          entity != "moz_places_visitcount" 
-        ) {
-          count = (
-            await db.execute(`SELECT count(*) FROM ${entity}`)
-          )[0].getResultByIndex(0);
-        }
-      } catch (ex) {
-        console.error(ex);
-      }
-      data.push(Object.assign(value, { entity, count }));
-    }
+    let data = await PlacesDBUtils.getEntitiesStatsAndCounts();
     this.displayData(data);
   }
 })();
