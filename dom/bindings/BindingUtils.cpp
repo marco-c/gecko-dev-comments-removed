@@ -4111,11 +4111,19 @@ void ReportDeprecation(nsIGlobalObject* aGlobal, nsIURI* aURI,
   
   
   
-  nsCOMPtr<nsIURI> exposableURI = net::nsIOService::CreateExposableURI(aURI);
-  nsAutoCString spec;
-  nsresult rv = exposableURI->GetSpec(spec);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
+  nsAutoCString specOrScheme;
+  nsresult rv;
+  if (aURI->SchemeIs("data")) {
+    specOrScheme.Assign("data:..."_ns);
+  } else {
+    
+    
+    
+    nsCOMPtr<nsIURI> exposableURI = net::nsIOService::CreateExposableURI(aURI);
+    rv = exposableURI->GetSpec(specOrScheme);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
   }
 
   nsAutoString type;
@@ -4160,7 +4168,7 @@ void ReportDeprecation(nsIGlobalObject* aGlobal, nsIURI* aURI,
                                 aFileName, aLineNumber, aColumnNumber);
 
   ReportingUtils::Report(aGlobal, nsGkAtoms::deprecation, u"default"_ns,
-                         NS_ConvertUTF8toUTF16(spec), body);
+                         NS_ConvertUTF8toUTF16(specOrScheme), body);
 }
 
 
