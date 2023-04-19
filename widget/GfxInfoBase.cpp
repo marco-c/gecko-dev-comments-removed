@@ -257,6 +257,9 @@ static const char* GetPrefNameForFeature(int32_t aFeature) {
     case nsIGfxInfo::FEATURE_REUSE_DECODER_DEVICE:
       name = BLOCKLIST_PREF_BRANCH "reuse-decoder-device";
       break;
+    case nsIGfxInfo::FEATURE_BACKDROP_FILTER:
+      name = BLOCKLIST_PREF_BRANCH "backdrop.filter";
+      break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected nsIGfxInfo feature?!");
       break;
@@ -521,6 +524,9 @@ static int32_t BlocklistFeatureToGfxFeature(const nsAString& aFeature) {
   }
   if (aFeature.EqualsLiteral("WEBRENDER_PARTIAL_PRESENT")) {
     return nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT;
+  }
+  if (aFeature.EqualsLiteral("BACKDROP_FILTER")) {
+    return nsIGfxInfo::FEATURE_BACKDROP_FILTER;
   }
 
   
@@ -1402,6 +1408,7 @@ void GfxInfoBase::EvaluateDownloadedBlocklist(
                         nsIGfxInfo::FEATURE_HW_DECODED_VIDEO_ZERO_COPY,
                         nsIGfxInfo::FEATURE_REUSE_DECODER_DEVICE,
                         nsIGfxInfo::FEATURE_WEBRENDER_PARTIAL_PRESENT,
+                        nsIGfxInfo::FEATURE_BACKDROP_FILTER,
                         0};
 
   

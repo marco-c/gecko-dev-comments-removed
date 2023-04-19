@@ -119,6 +119,13 @@ class nsCSSProps {
   
 
 
+  static bool IsBackdropFilterAvailable(JSContext*, JSObject*) {
+    return IsEnabled(eCSSProperty_backdrop_filter, EnabledState::ForAllContent);
+  }
+
+  
+
+
 
 
   static void RecomputeEnabledState(const char* aPrefName,

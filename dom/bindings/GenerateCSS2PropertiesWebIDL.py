@@ -39,7 +39,12 @@ def generate(output, idlFilename, dataFile):
         ]
 
         if p.pref != "":
-            extendedAttrs.append('Pref="%s"' % p.pref)
+            
+            
+            if p.method == "BackdropFilter":
+                extendedAttrs.append('Func="nsCSSProps::IsBackdropFilterAvailable"')
+            else:
+                extendedAttrs.append('Pref="%s"' % p.pref)
 
         prop = p.method
 
