@@ -43,8 +43,6 @@ struct CreateRelayPortArgs {
   const RelayServerConfig* config;
   std::string username;
   std::string password;
-  
-  ABSL_DEPRECATED("stun origin support is going away")
   std::string origin;
   webrtc::TurnCustomizer* turn_customizer;
 };

@@ -85,6 +85,7 @@ static const char kIcePwd1[] = "TESTICEPWD00000000000001";
 static const char kIcePwd2[] = "TESTICEPWD00000000000002";
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
+static const char kTestOrigin[] = "http://example.com";
 
 
 static constexpr unsigned int kSimulatedRtt = 50;
@@ -258,14 +259,25 @@ class TurnPortTest : public ::testing::Test,
                       const std::string& password,
                       const ProtocolAddress& server_address) {
     return CreateTurnPortWithAllParams(MakeNetwork(kLocalAddr1), username,
-                                       password, server_address);
+                                       password, server_address, std::string());
   }
   bool CreateTurnPort(const rtc::SocketAddress& local_address,
                       const std::string& username,
                       const std::string& password,
                       const ProtocolAddress& server_address) {
     return CreateTurnPortWithAllParams(MakeNetwork(local_address), username,
-                                       password, server_address);
+                                       password, server_address, std::string());
+  }
+
+  
+  
+  bool CreateTurnPortWithOrigin(const rtc::SocketAddress& local_address,
+                                const std::string& username,
+                                const std::string& password,
+                                const ProtocolAddress& server_address,
+                                const std::string& origin) {
+    return CreateTurnPortWithAllParams(MakeNetwork(local_address), username,
+                                       password, server_address, origin);
   }
 
   bool CreateTurnPortWithNetwork(rtc::Network* network,
@@ -273,7 +285,7 @@ class TurnPortTest : public ::testing::Test,
                                  const std::string& password,
                                  const ProtocolAddress& server_address) {
     return CreateTurnPortWithAllParams(network, username, password,
-                                       server_address);
+                                       server_address, std::string());
   }
 
   
@@ -282,11 +294,12 @@ class TurnPortTest : public ::testing::Test,
   bool CreateTurnPortWithAllParams(rtc::Network* network,
                                    const std::string& username,
                                    const std::string& password,
-                                   const ProtocolAddress& server_address) {
+                                   const ProtocolAddress& server_address,
+                                   const std::string& origin) {
     RelayCredentials credentials(username, password);
     turn_port_ = TurnPort::Create(
         &main_, &socket_factory_, network, 0, 0, kIceUfrag1, kIcePwd1,
-        server_address, credentials, 0, {}, {}, turn_customizer_.get());
+        server_address, credentials, 0, origin, {}, {}, turn_customizer_.get());
     if (!turn_port_) {
       return false;
     }
@@ -318,9 +331,10 @@ class TurnPortTest : public ::testing::Test,
     }
 
     RelayCredentials credentials(username, password);
-    turn_port_ = TurnPort::Create(
-        &main_, &socket_factory_, MakeNetwork(kLocalAddr1), socket_.get(),
-        kIceUfrag1, kIcePwd1, server_address, credentials, 0, nullptr);
+    turn_port_ =
+        TurnPort::Create(&main_, &socket_factory_, MakeNetwork(kLocalAddr1),
+                         socket_.get(), kIceUfrag1, kIcePwd1, server_address,
+                         credentials, 0, std::string(), nullptr);
     
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -347,9 +361,9 @@ class TurnPortTest : public ::testing::Test,
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
   void CreateUdpPort(const SocketAddress& address) {
-    udp_port_ =
-        UDPPort::Create(&main_, &socket_factory_, MakeNetwork(address), 0, 0,
-                        kIceUfrag2, kIcePwd2, false, absl::nullopt);
+    udp_port_ = UDPPort::Create(&main_, &socket_factory_, MakeNetwork(address),
+                                0, 0, kIceUfrag2, kIcePwd2, std::string(),
+                                false, absl::nullopt);
     
     udp_port_->SetIceRole(ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(this,
@@ -1535,6 +1549,17 @@ TEST_F(TurnPortTest, TestCandidateAddressFamilyMatch) {
   remote_candidate.set_address(kLocalIPv6Addr2);
   conn = turn_port_->CreateConnection(remote_candidate, Port::ORIGIN_MESSAGE);
   EXPECT_EQ(nullptr, conn);
+}
+
+TEST_F(TurnPortTest, TestOriginHeader) {
+  CreateTurnPortWithOrigin(kLocalAddr1, kTurnUsername, kTurnPassword,
+                           kTurnUdpProtoAddr, kTestOrigin);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
+  ASSERT_GT(turn_server_.server()->allocations().size(), 0U);
+  SocketAddress local_address = turn_port_->GetLocalAddress();
+  ASSERT_TRUE(turn_server_.FindAllocation(local_address) != NULL);
+  EXPECT_EQ(kTestOrigin, turn_server_.FindAllocation(local_address)->origin());
 }
 
 

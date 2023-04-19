@@ -31,6 +31,7 @@ namespace cricket {
 namespace {
 
 const int k127Utf8CharactersLengthInBytes = 508;
+const int kDefaultMaxAttributeLength = 508;
 const int kMessageIntegrityAttributeLength = 20;
 const int kTheoreticalMaximumAttributeLength = 65535;
 
@@ -67,6 +68,12 @@ bool LengthValid(int type, int length) {
     case STUN_ATTR_SOFTWARE:
       return length <=
              k127Utf8CharactersLengthInBytes;  
+    case STUN_ATTR_ORIGIN:
+      
+      
+      
+      
+      return length <= kDefaultMaxAttributeLength;
     case STUN_ATTR_DATA:
       
       
@@ -613,6 +620,8 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
       return STUN_VALUE_ADDRESS;
     case STUN_ATTR_FINGERPRINT:
       return STUN_VALUE_UINT32;
+    case STUN_ATTR_ORIGIN:
+      return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_RETRANSMIT_COUNT:
       return STUN_VALUE_UINT32;
     case STUN_ATTR_GOOG_LAST_ICE_CHECK_RECEIVED:
