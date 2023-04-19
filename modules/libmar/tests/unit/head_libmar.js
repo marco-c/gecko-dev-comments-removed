@@ -91,7 +91,7 @@ function run_tests(obj) {
 
 function createMAR(outMAR, dataDir, files) {
   
-  Assert.ok(files.length > 0);
+  Assert.ok(!!files.length);
 
   
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
