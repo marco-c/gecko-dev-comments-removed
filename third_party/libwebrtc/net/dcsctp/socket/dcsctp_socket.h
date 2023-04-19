@@ -101,7 +101,9 @@ class DcSctpSocket : public DcSctpSocketInterface {
   Metrics GetMetrics() const override;
   HandoverReadinessStatus GetHandoverReadiness() const override;
   absl::optional<DcSctpSocketHandoverState> GetHandoverStateAndClose() override;
-
+  SctpImplementation peer_implementation() const override {
+    return peer_implementation_;
+  }
   
   VerificationTag verification_tag() const {
     return tcb_ != nullptr ? tcb_->my_verification_tag() : VerificationTag(0);
@@ -276,6 +278,8 @@ class DcSctpSocket : public DcSctpSocketInterface {
   State state_ = State::kClosed;
   
   std::unique_ptr<TransmissionControlBlock> tcb_;
+
+  SctpImplementation peer_implementation_ = SctpImplementation::kUnknown;
 };
 }  
 

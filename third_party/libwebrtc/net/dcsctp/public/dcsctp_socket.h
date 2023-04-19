@@ -207,6 +207,31 @@ struct Metrics {
 };
 
 
+enum class SctpImplementation {
+  
+  kUnknown,
+  
+  kDcsctp,
+  
+  kUsrSctp,
+  
+  kOther,
+};
+
+inline constexpr absl::string_view ToString(SctpImplementation implementation) {
+  switch (implementation) {
+    case SctpImplementation::kUnknown:
+      return "unknown";
+    case SctpImplementation::kDcsctp:
+      return "dcsctp";
+    case SctpImplementation::kUsrSctp:
+      return "usrsctp";
+    case SctpImplementation::kOther:
+      return "other";
+  }
+}
+
+
 
 
 
@@ -440,6 +465,15 @@ class DcSctpSocketInterface {
   
   virtual absl::optional<DcSctpSocketHandoverState>
   GetHandoverStateAndClose() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual SctpImplementation peer_implementation() const = 0;
 };
 }  
 
