@@ -10,7 +10,9 @@
 
 #include "rtc_base/platform_thread.h"
 
-#include "test/gtest.h"
+#include "rtc_base/event.h"
+#include "system_wrappers/include/sleep.h"
+#include "test/gmock.h"
 
 namespace rtc {
 namespace {
@@ -21,6 +23,11 @@ void NullRunFunction(void* obj) {}
 void SetFlagRunFunction(void* obj) {
   bool* obj_as_bool = static_cast<bool*>(obj);
   *obj_as_bool = true;
+}
+
+void StdFunctionRunFunction(void* obj) {
+  std::function<void()>* fun = static_cast<std::function<void()>*>(obj);
+  (*fun)();
 }
 
 }  
@@ -55,6 +62,43 @@ TEST(PlatformThreadTest, RunFunctionIsCalled) {
   thread.Stop();
 
   
+  EXPECT_TRUE(flag);
+}
+
+TEST(PlatformThreadTest, JoinsThread) {
+  
+  EXPECT_TRUE(ThreadAttributes().joinable);
+  rtc::Event event;
+  std::function<void()> thread_function = [&] { event.Set(); };
+  PlatformThread thread(&StdFunctionRunFunction, &thread_function, "T");
+  thread.Start();
+  thread.Stop();
+  EXPECT_TRUE(event.Wait(0));
+}
+
+TEST(PlatformThreadTest, StopsBeforeDetachedThreadExits) {
+  
+  
+  bool flag = false;
+  rtc::Event thread_started;
+  rtc::Event thread_continue;
+  rtc::Event thread_exiting;
+  std::function<void()> thread_function = [&] {
+    thread_started.Set();
+    thread_continue.Wait(Event::kForever);
+    flag = true;
+    thread_exiting.Set();
+  };
+  {
+    PlatformThread thread(&StdFunctionRunFunction, &thread_function, "T",
+                          ThreadAttributes().SetDetached());
+    thread.Start();
+    thread.Stop();
+  }
+  thread_started.Wait(Event::kForever);
+  EXPECT_FALSE(flag);
+  thread_continue.Set();
+  thread_exiting.Wait(Event::kForever);
   EXPECT_TRUE(flag);
 }
 

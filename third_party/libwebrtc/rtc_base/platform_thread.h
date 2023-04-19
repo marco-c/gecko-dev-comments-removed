@@ -47,6 +47,20 @@ enum ThreadPriority {
 #endif
 };
 
+struct ThreadAttributes {
+  ThreadPriority priority = kNormalPriority;
+  bool joinable = true;
+
+  ThreadAttributes& SetPriority(ThreadPriority priority_param) {
+    priority = priority_param;
+    return *this;
+  }
+  ThreadAttributes& SetDetached() {
+    joinable = false;
+    return *this;
+  }
+};
+
 
 
 
@@ -55,11 +69,12 @@ class PlatformThread {
   PlatformThread(ThreadRunFunction func,
                  void* obj,
                  absl::string_view thread_name,
-                 ThreadPriority priority = kNormalPriority);
+                 ThreadAttributes attributes = ThreadAttributes());
   virtual ~PlatformThread();
 
   const std::string& name() const { return name_; }
 
+  
   
   
   virtual void Start();
@@ -71,6 +86,10 @@ class PlatformThread {
   PlatformThreadRef GetThreadRef() const;
 
   
+  
+  
+  
+  
   virtual void Stop();
 
  protected:
@@ -78,28 +97,20 @@ class PlatformThread {
   
   bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data);
 #endif
-  virtual void Run();
 
  private:
-  bool SetPriority(ThreadPriority priority);
-
   ThreadRunFunction const run_function_ = nullptr;
-  const ThreadPriority priority_ = kNormalPriority;
+  const ThreadAttributes attributes_;
   void* const obj_;
   
   
   const std::string name_;
   webrtc::SequenceChecker thread_checker_;
-  webrtc::SequenceChecker spawned_thread_checker_;
 #if defined(WEBRTC_WIN)
-  static DWORD WINAPI StartThread(void* param);
-
   HANDLE thread_ = nullptr;
   DWORD thread_id_ = 0;
   RecursiveCriticalSection cs_;
 #else
-  static void* StartThread(void* param);
-
   pthread_t thread_ = 0;
 #endif  
   
