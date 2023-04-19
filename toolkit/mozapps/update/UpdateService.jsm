@@ -5352,6 +5352,37 @@ Downloader.prototype = {
       let patchFile = updateDir.clone();
       patchFile.append(FILE_UPDATE_MAR);
 
+      if (lazy.gIsBackgroundTaskMode) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let readyUpdateDir = getReadyUpdateDir();
+        let status = readStatusFile(readyUpdateDir);
+        
+        
+        
+        if (!(status == STATE_DOWNLOADING && patchFile.exists())) {
+          cleanupDownloadingUpdate();
+        }
+
+        
+        
+        
+        this.updateService.forEachDownloadListener(listener => {
+          listener.onStopRequest(null, Cr.NS_ERROR_FAILURE);
+        });
+        return false;
+      }
+
       
       let interval = 0;
 
