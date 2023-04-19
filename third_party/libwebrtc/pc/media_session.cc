@@ -1515,10 +1515,6 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
   VideoCodecs offer_video_codecs;
   GetCodecsForOffer(current_active_contents, &offer_audio_codecs,
                     &offer_video_codecs);
-  if (!session_options.vad_enabled) {
-    
-    StripCNCodecs(&offer_audio_codecs);
-  }
   AudioVideoRtpHeaderExtensions extensions_with_ids =
       GetOfferedRtpHeaderExtensionsWithIds(
           current_active_contents, session_options.offer_extmap_allow_mixed,
@@ -1663,11 +1659,6 @@ MediaSessionDescriptionFactory::CreateAnswer(
   VideoCodecs answer_video_codecs;
   GetCodecsForAnswer(current_active_contents, *offer, &answer_audio_codecs,
                      &answer_video_codecs);
-
-  if (!session_options.vad_enabled) {
-    
-    StripCNCodecs(&answer_audio_codecs);
-  }
 
   auto answer = std::make_unique<SessionDescription>();
 
@@ -2183,6 +2174,10 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
       }
     }
   }
+  if (!session_options.vad_enabled) {
+    
+    StripCNCodecs(&filtered_codecs);
+  }
 
   cricket::SecurePolicy sdes_policy =
       IsDtlsActive(current_content, current_description) ? cricket::SEC_DISABLED
@@ -2457,6 +2452,10 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
         filtered_codecs.push_back(codec);
       }
     }
+  }
+  if (!session_options.vad_enabled) {
+    
+    StripCNCodecs(&filtered_codecs);
   }
 
   bool bundle_enabled = offer_description->HasGroup(GROUP_TYPE_BUNDLE) &&
