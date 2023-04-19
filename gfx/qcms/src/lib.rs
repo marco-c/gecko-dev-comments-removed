@@ -12,10 +12,6 @@
     feature = "neon",
     feature(arm_target_feature, raw_ref_op)
 )]
-#![cfg_attr(
-    all(feature = "neon", aarch64_target_feature),
-    feature(aarch64_target_feature)
-)]
 
 
 #[repr(u32)]
