@@ -65,6 +65,7 @@ const {
 const FORBIDDEN_IDS = new Set(["toolbox", ""]);
 const MAX_ORDINAL = 99;
 const POPUP_DEBUG_PREF = "devtools.popups.debug";
+const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 
 
 
@@ -655,6 +656,11 @@ DevTools.prototype = {
 
     return this.showToolbox(commands.descriptorFront, {
       hostType: Toolbox.HostType.WINDOW,
+      hostOptions: {
+        
+        
+        alwaysOnTop: Services.prefs.getBoolPref(DEVTOOLS_ALWAYS_ON_TOP, false),
+      },
     });
   },
 

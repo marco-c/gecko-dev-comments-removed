@@ -103,6 +103,21 @@ async function openAboutDevtoolsToolbox(
   
   if (isWebExtension) {
     const toolbox = await onToolboxReady;
+    
+    
+    const focusedWin = Services.focus.focusedWindow;
+    if (focusedWin?.top != toolbox.win) {
+      info("Wait for the toolbox window to be focused");
+      await new Promise(r => {
+        
+        toolbox.win.docShell.chromeEventHandler.addEventListener("focus", r, {
+          once: true,
+          capture: true,
+        });
+        toolbox.win.focus();
+      });
+      info("The toolbox is focused");
+    }
     return {
       devtoolsBrowser: null,
       devtoolsDocument: toolbox.doc,
@@ -485,9 +500,4 @@ function clickOnAddonWidget(addonId) {
 
   info("Show the web extension popup");
   browserActionEl.click();
-
-  
-  if (focusedWin != window) {
-    focusedWin.focus();
-  }
 }

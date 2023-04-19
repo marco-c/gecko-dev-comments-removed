@@ -40,6 +40,8 @@ add_task(async function testWebExtensionToolboxReload() {
     document
   );
 
+  
+  await pushPref("devtools.toolbox.selectedTool", "webconsole");
   const { devtoolsDocument, devtoolsWindow } = await openAboutDevtoolsToolbox(
     document,
     tab,
