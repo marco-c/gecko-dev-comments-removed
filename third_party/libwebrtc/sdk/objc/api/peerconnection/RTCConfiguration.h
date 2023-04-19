@@ -207,6 +207,12 @@ RTC_OBJC_EXPORT
 
 
 
+
+@property(nonatomic, nullable, copy) NSString *turnLoggingId;
+
+
+
+
 @property(nonatomic, assign) int rtcpAudioReportIntervalMs;
 
 
