@@ -904,31 +904,39 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
       std::make_unique<rtc::ScopedFakeClock>();
   fake_clock->SetTime(Timestamp::Seconds(kStartTimeSeconds));
 
-  auto task_queue_factory = CreateDefaultTaskQueueFactory();
-  RtcEventLogFactory rtc_event_log_factory(task_queue_factory.get());
   
   
-  std::unique_ptr<RtcEventLog> log =
-      rtc_event_log_factory.CreateRtcEventLog(encoding_type_);
+  
+  
+  int64_t start_time_us, utc_start_time_us, stop_time_us;
 
-  for (size_t i = 0; i < kNumEvents; i++) {
+  {
+    auto task_queue_factory = CreateDefaultTaskQueueFactory();
+    RtcEventLogFactory rtc_event_log_factory(task_queue_factory.get());
     
     
-    
-    
-    
-    
-    log->Log(std::make_unique<RtcEventProbeResultSuccess>(
-        i, kStartBitrate + i * 1000));
+    std::unique_ptr<RtcEventLog> log =
+        rtc_event_log_factory.CreateRtcEventLog(encoding_type_);
+
+    for (size_t i = 0; i < kNumEvents; i++) {
+      
+      
+      
+      
+      
+      
+      log->Log(std::make_unique<RtcEventProbeResultSuccess>(
+          i, kStartBitrate + i * 1000));
+      fake_clock->AdvanceTime(TimeDelta::Millis(10));
+    }
+    start_time_us = rtc::TimeMicros();
+    utc_start_time_us = rtc::TimeUTCMicros();
+    log->StartLogging(log_output_factory_->Create(temp_filename),
+                      RtcEventLog::kImmediateOutput);
     fake_clock->AdvanceTime(TimeDelta::Millis(10));
+    stop_time_us = rtc::TimeMicros();
+    log->StopLogging();
   }
-  int64_t start_time_us = rtc::TimeMicros();
-  int64_t utc_start_time_us = rtc::TimeUTCMicros();
-  log->StartLogging(log_output_factory_->Create(temp_filename),
-                    RtcEventLog::kImmediateOutput);
-  fake_clock->AdvanceTime(TimeDelta::Millis(10));
-  int64_t stop_time_us = rtc::TimeMicros();
-  log->StopLogging();
 
   
   ParsedRtcEventLog parsed_log;
