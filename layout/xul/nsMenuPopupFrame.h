@@ -318,8 +318,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
-  void MoveTo(const mozilla::CSSPoint& aPos, bool aUpdateAttrs,
-              bool aByMoveToRect = false);
+  void MoveTo(const mozilla::CSSPoint& aPos, bool aUpdateAttrs);
 
   void MoveToAnchor(nsIContent* aAnchorContent, const nsAString& aPosition,
                     int32_t aXPos, int32_t aYPos, bool aAttributesOverride);
@@ -569,11 +568,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   nsRect mUntransformedAnchorRect;
-
-  
-  
-  bool mPositionedByMoveToRect = false;
-
   
   
   bool mSizedToPopup = false;

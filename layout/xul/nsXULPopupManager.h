@@ -661,7 +661,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void PopupMoved(nsIFrame* aFrame, nsIntPoint aPoint, bool aByMoveToRect);
+  void PopupMoved(nsIFrame* aFrame, nsIntPoint aPoint);
 
   
 

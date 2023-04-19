@@ -65,9 +65,7 @@ class nsIWidgetListener {
 
 
 
-  enum class ByMoveToRect : bool { No, Yes };
-  virtual bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
-                           ByMoveToRect);
+  virtual bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY);
 
   
 
