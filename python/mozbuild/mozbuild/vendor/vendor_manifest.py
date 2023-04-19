@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -39,12 +39,15 @@ def _replace_in_file(file, pattern, replacement, regex=False):
         contents = f.read()
 
     if regex:
-        contents = re.sub(pattern, replacement, contents)
+        newcontents = re.sub(pattern, replacement, contents)
     else:
-        contents = contents.replace(pattern, replacement)
+        newcontents = contents.replace(pattern, replacement)
+
+    if newcontents == contents:
+        raise Exception("Could not find %s in %s to replace with %s" % (pattern, file, replacement))
 
     with open(file, "w") as f:
-        f.write(contents)
+        f.write(newcontents)
 
 
 class VendorManifest(MozbuildObject):
@@ -74,8 +77,8 @@ class VendorManifest(MozbuildObject):
 
         self.source_host = self.get_source_host()
 
-        
-        
+        # Check that updatebot key is available for libraries with existing
+        # moz.yaml files but missing updatebot information
         if "vendoring" in self.manifest:
             ref_type = self.manifest["vendoring"]["tracking"]
             if revision == "tip":
@@ -93,7 +96,7 @@ class VendorManifest(MozbuildObject):
             "Latest {ref_type} is {ref} from {timestamp}",
         )
 
-        
+        # If we're only patching; do that
         if "patches" in self.manifest["vendoring"] and patch_mode == "only":
             self.import_local_patches(
                 self.manifest["vendoring"]["patches"],
@@ -103,11 +106,11 @@ class VendorManifest(MozbuildObject):
             return
 
         if not force and self.manifest["origin"]["revision"] == new_revision:
-            
+            # We're up to date, don't do anything
             self.logInfo({}, "Latest upstream matches in-tree.")
             return
         elif check_for_update:
-            
+            # Only print the new revision to stdout
             print("%s %s" % (new_revision, timestamp))
             return
 
@@ -130,11 +133,15 @@ class VendorManifest(MozbuildObject):
     def process_rust(
         self, command_context, old_revision, new_revision, timestamp, ignore_modified
     ):
-        
+        # First update the Cargo.toml
         cargo_file = os.path.join(os.path.dirname(self.yaml_file), "Cargo.toml")
-        _replace_in_file(cargo_file, old_revision, new_revision)
+        try:
+            _replace_in_file(cargo_file, old_revision, new_revision)
+        except:
+            # If we can't find it the first time, try again with a short hash
+            _replace_in_file(cargo_file, old_revision[:8], new_revision)
 
-        
+        # Then call ./mach vendor rust
         from mozbuild.vendor.vendor_rust import VendorRust
 
         vendor_command = command_context._spawn(VendorRust)
@@ -191,7 +198,7 @@ class VendorManifest(MozbuildObject):
         self.logInfo({"rev": new_revision}, "Updated to '{rev}'.")
 
         if "patches" in self.manifest["vendoring"]:
-            
+            # Remind the user
             self.log(
                 logging.CRITICAL,
                 "vendor",
@@ -226,7 +233,7 @@ class VendorManifest(MozbuildObject):
         if support_cwd and path[0:5] == "{cwd}":
             path = path.replace("{cwd}", ".")
         elif "{tmpextractdir}" in path:
-            
+            # _extract_directory() will throw an exception if it is invalid to use it
             path = path.replace("{tmpextractdir}", self._extract_directory())
         elif "{yaml_dir}" in path:
             path = path.replace("{yaml_dir}", os.path.dirname(self.yaml_file))
@@ -239,24 +246,24 @@ class VendorManifest(MozbuildObject):
         return os.path.abspath(path)
 
     def convert_patterns_to_paths(self, directory, patterns):
-        
-        
-        
+        # glob.iglob uses shell-style wildcards for path name completion.
+        # "recursive=True" enables the double asterisk "**" wildcard which matches
+        # for nested directories as well as the directory we're searching in.
         paths = []
         for pattern in patterns:
             pattern_full_path = mozpath.join(directory, pattern)
-            
+            # If pattern is a directory recursively add contents of directory
             if os.path.isdir(pattern_full_path):
-                
-                
+                # Append double asterisk to the end to make glob.iglob recursively match
+                # contents of directory
                 paths.extend(
                     glob.iglob(mozpath.join(pattern_full_path, "**"), recursive=True)
                 )
-            
+            # Otherwise pattern is a file or wildcard expression so add it without altering it
             else:
                 paths.extend(glob.iglob(pattern_full_path, recursive=True))
-        
-        
+        # Remove folder names from list of paths in order to avoid prematurely
+        # truncating directories elsewhere
         return [mozpath.normsep(path) for path in paths if not os.path.isdir(path)]
 
     def fetch_and_unpack(self, revision):
@@ -296,7 +303,7 @@ class VendorManifest(MozbuildObject):
                     to_keep = []
 
                 self.logInfo({"vd": vendor_dir}, "Cleaning {vd} to import changes.")
-                
+                # We use double asterisk wildcard here to get complete list of recursive contents
                 for file in self.convert_patterns_to_paths(vendor_dir, ["**"]):
                     file = mozpath.normsep(file)
                     if file not in to_keep:
@@ -315,7 +322,7 @@ class VendorManifest(MozbuildObject):
                 )
                 tar.close()
 
-                
+                # GitLab puts everything down a directory; move it up.
                 if has_prefix:
                     tardir = mozpath.join(tmpextractdir.name, one_prefix)
                     mozfile.copy_contents(tardir, tmpextractdir.name)
@@ -349,9 +356,9 @@ class VendorManifest(MozbuildObject):
                     for exclusion in to_exclude:
                         mozfile.remove(exclusion)
 
-                
-                
-                
+                # Clear out empty directories
+                # removeEmpty() won't remove directories containing only empty directories
+                #   so just keep callign it as long as it's doing something
                 def removeEmpty(tmpextractdir):
                     removed = False
                     folders = list(os.walk(tmpextractdir))[1:]
@@ -367,7 +374,7 @@ class VendorManifest(MozbuildObject):
                 while removeEmpty(tmpextractdir.name):
                     pass
 
-                
+                # Then copy over the directories
                 if self.should_perform_step("move-contents"):
                     self.logInfo({"d": vendor_dir}, "Copying to {d}.")
                     mozfile.copy_contents(tmpextractdir.name, vendor_dir)
@@ -415,8 +422,8 @@ class VendorManifest(MozbuildObject):
         changed_files = set(changed_files) - generated_files
         if not changed_files:
             self.logInfo({"r": revision}, "Upstream {r} hasn't modified files locally.")
-            
-            
+            # We almost certainly won't be here if ignore_modified was passed, because a modified
+            # local file will show up as a changed_file, but we'll be safe anyway.
             if not ignore_modified and generated_files:
                 for g in generated_files:
                     self.repository.clean_directory(g)
@@ -562,15 +569,15 @@ class VendorManifest(MozbuildObject):
         if vendoring_dir == moz_yaml_dir:
             vendoring_dir = moz_yaml_dir = None
 
-        
-        
+        # If you edit this (especially for header files) you should double check
+        # rewrite_mozbuild.py around 'assignment_type'
         source_suffixes = [".cc", ".c", ".cpp", ".S", ".asm"]
         header_suffixes = [".h", ".hpp"]
 
         files_removed = self.repository.get_changed_files(diff_filter="D")
         files_added = self.repository.get_changed_files(diff_filter="A")
 
-        
+        # Filter the files added to just source files we track in moz.build files.
         files_added = [
             f for f in files_added if any([f.endswith(s) for s in source_suffixes])
         ]
@@ -629,7 +636,7 @@ class VendorManifest(MozbuildObject):
                 "This is a deficiency in ./mach vendor . "
                 + "Please review the affected files before committing.",
             )
-            
+            # Exit with -1 to distinguish this from the Exception case of exiting with 1
             sys.exit(-1)
 
     def import_local_patches(self, patches, yaml_dir, vendor_dir):
