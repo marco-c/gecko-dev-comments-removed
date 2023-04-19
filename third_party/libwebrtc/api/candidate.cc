@@ -102,6 +102,8 @@ uint32_t Candidate::GetPriority(uint32_t type_preference,
   
   
   
+  
+  
 
   int addr_pref = IPAddressPrecedence(address_.ipaddr());
   int local_preference =
