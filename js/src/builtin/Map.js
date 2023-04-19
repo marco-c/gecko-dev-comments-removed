@@ -11,14 +11,16 @@ function MapConstructorInit(iterable) {
     var adder = map.set;
 
     
-    if (!IsCallable(adder))
+    if (!IsCallable(adder)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+    }
 
     
     for (var nextItem of allowContentIter(iterable)) {
         
-        if (!IsObject(nextItem))
+        if (!IsObject(nextItem)) {
             ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Map");
+        }
 
         
         callContentFunction(adder, map, nextItem[0], nextItem[1]);
@@ -32,12 +34,14 @@ function MapForEach(callbackfn, thisArg = undefined) {
     var M = this;
 
     
-    if (!IsObject(M) || (M = GuardToMapObject(M)) === null)
+    if (!IsObject(M) || (M = GuardToMapObject(M)) === null) {
         return callFunction(CallMapMethodIfWrapped, this, callbackfn, thisArg, "MapForEach");
+    }
 
     
-    if (!IsCallable(callbackfn))
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var entries = callFunction(std_Map_entries, M);
@@ -51,8 +55,9 @@ function MapForEach(callbackfn, thisArg = undefined) {
 
     while (true) {
         var done = GetNextMapEntryForIterator(entries, mapIterationResultPair);
-        if (done)
+        if (done) {
             break;
+        }
 
         var key = mapIterationResultPair[0];
         var value = mapIterationResultPair[1];
@@ -70,8 +75,9 @@ function MapIteratorNext() {
     var O = this;
 
     
-    if (!IsObject(O) || (O = GuardToMapIterator(O)) === null)
+    if (!IsObject(O) || (O = GuardToMapIterator(O)) === null) {
         return callFunction(CallMapIteratorMethodIfWrapped, this, "MapIteratorNext");
+    }
 
     
     
