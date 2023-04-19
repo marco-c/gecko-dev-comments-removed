@@ -38,7 +38,7 @@ const backgroundtaskPhases = {
         "resource://gre/modules/EnterprisePolicies.jsm",
         "resource://gre/modules/EnterprisePoliciesParent.jsm",
         "resource://gre/modules/PromiseUtils.jsm",
-        "resource://gre/modules/XPCOMUtils.jsm",
+        "resource://gre/modules/XPCOMUtils.sys.mjs",
         "resource://gre/modules/nsAsyncShutdown.jsm",
       ],
       
@@ -123,10 +123,15 @@ const backgroundtaskPhases = {
       modules: [
         
         "resource:///modules/backgroundtasks/BackgroundTask_wait.jsm",
+        "resource:///modules/backgroundtasks/BackgroundTask_wait.sys.mjs",
+
         "resource://gre/modules/ConsoleAPIStorage.jsm",
         "resource://gre/modules/Timer.jsm",
+
         
         "resource://gre/modules/backgroundtasks/BackgroundTask_wait.jsm",
+        "resource://gre/modules/backgroundtasks/BackgroundTask_wait.sys.mjs",
+
         "resource://testing-common/backgroundtasks/BackgroundTask_wait.jsm",
       ],
       services: ["@mozilla.org/consoleAPI-storage;1"],
@@ -225,7 +230,8 @@ add_task(async function test_xpcom_graph_wait() {
 
   function newMarkers() {
     return {
-      modules: [], 
+      
+      modules: [],
       services: [],
     };
   }
@@ -250,6 +256,7 @@ add_task(async function test_xpcom_graph_wait() {
     if (
       ![
         "ChromeUtils.import", 
+        "ChromeUtils.importESModule", 
         "GetService", 
       ].includes(markerName)
     ) {
@@ -257,7 +264,10 @@ add_task(async function test_xpcom_graph_wait() {
     }
 
     let markerData = m[dataCol];
-    if (markerName == "ChromeUtils.import") {
+    if (
+      markerName == "ChromeUtils.import" ||
+      markerName == "ChromeUtils.importESModule"
+    ) {
       let module = markerData.name;
       if (!markersForAllPhases.modules.includes(module)) {
         markersForAllPhases.modules.push(module);
