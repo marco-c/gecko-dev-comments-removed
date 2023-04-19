@@ -210,6 +210,8 @@ class RTPSenderVideo {
       RTC_GUARDED_BY(send_checker_);
   
   SendVideoLayersAllocation send_allocation_ RTC_GUARDED_BY(send_checker_);
+  absl::optional<VideoLayersAllocation> last_full_sent_allocation_
+      RTC_GUARDED_BY(send_checker_);
 
   
   VideoPlayoutDelay current_playout_delay_ RTC_GUARDED_BY(send_checker_);
