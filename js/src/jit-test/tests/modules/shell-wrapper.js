@@ -190,10 +190,6 @@ testGetter(m, "asyncParentModules");
 testGetter(m, "pendingAsyncDependencies");
 
 
-const n = parseModule(``);
-assertEq(n.getExportedNames, undefined);
-
-
 const o = parseModule(``);
 assertEq(o.resolveExport, undefined);
 

@@ -6,7 +6,7 @@
 
 
 
-#include "js/Modules.h"
+#include "vm/Modules.h"
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Utf8.h"        
@@ -25,13 +25,15 @@
 #include "vm/JSObject.h"                
 #include "vm/Runtime.h"                 
 
+#include "builtin/Array-inl.h"
 #include "vm/JSContext-inl.h"  
+
+using namespace js;
 
 using mozilla::Utf8Unit;
 
-using js::AssertHeapIsIdle;
-using js::ModuleObject;
-using js::RequestedModuleObject;
+
+
 
 JS_PUBLIC_API JS::SupportedAssertionsHook JS::GetSupportedAssertionsHook(
     JSRuntime* rt) {
@@ -107,7 +109,7 @@ static JSObject* CompileModuleHelper(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  return js::frontend::CompileModule(cx, options, srcBuf);
+  return frontend::CompileModule(cx, options, srcBuf);
 }
 
 JS_PUBLIC_API JSObject* JS::CompileModule(JSContext* cx,
@@ -157,7 +159,7 @@ JS_PUBLIC_API bool JS::ThrowOnModuleEvaluationFailure(
   CHECK_THREAD(cx);
   cx->releaseCheck(evaluationPromise);
 
-  return js::OnModuleEvaluationFailure(cx, evaluationPromise, errorBehaviour);
+  return OnModuleEvaluationFailure(cx, evaluationPromise, errorBehaviour);
 }
 
 JS_PUBLIC_API JSObject* JS::GetRequestedModules(JSContext* cx,
@@ -223,9 +225,9 @@ JS_PUBLIC_API JSObject* JS::GetModuleForNamespace(
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(moduleNamespace);
-  MOZ_ASSERT(moduleNamespace->is<js::ModuleNamespaceObject>());
+  MOZ_ASSERT(moduleNamespace->is<ModuleNamespaceObject>());
 
-  return &moduleNamespace->as<js::ModuleNamespaceObject>().module();
+  return &moduleNamespace->as<ModuleNamespaceObject>().module();
 }
 
 JS_PUBLIC_API JSObject* JS::GetModuleEnvironment(JSContext* cx,
@@ -233,9 +235,9 @@ JS_PUBLIC_API JSObject* JS::GetModuleEnvironment(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(moduleObj);
-  MOZ_ASSERT(moduleObj->is<js::ModuleObject>());
+  MOZ_ASSERT(moduleObj->is<ModuleObject>());
 
-  return moduleObj->as<js::ModuleObject>().environment();
+  return moduleObj->as<ModuleObject>().environment();
 }
 
 JS_PUBLIC_API JSObject* JS::CreateModuleRequest(
@@ -248,7 +250,7 @@ JS_PUBLIC_API JSObject* JS::CreateModuleRequest(
     return nullptr;
   }
 
-  return js::ModuleRequestObject::create(cx, specifierAtom, nullptr);
+  return ModuleRequestObject::create(cx, specifierAtom, nullptr);
 }
 
 JS_PUBLIC_API JSString* JS::GetModuleRequestSpecifier(
@@ -257,7 +259,7 @@ JS_PUBLIC_API JSString* JS::GetModuleRequestSpecifier(
   CHECK_THREAD(cx);
   cx->check(moduleRequestArg);
 
-  return moduleRequestArg->as<js::ModuleRequestObject>().specifier();
+  return moduleRequestArg->as<ModuleRequestObject>().specifier();
 }
 
 JS_PUBLIC_API void JS::ClearModuleEnvironment(JSObject* moduleObj) {
@@ -273,4 +275,151 @@ JS_PUBLIC_API void JS::ClearModuleEnvironment(JSObject* moduleObj) {
   for (uint32_t i = numReserved; i < numSlots; i++) {
     env->setSlot(i, UndefinedValue());
   }
+}
+
+
+
+
+static ModuleObject* HostResolveImportedModule(
+    JSContext* cx, Handle<ModuleObject*> module,
+    Handle<ModuleRequestObject*> moduleRequest,
+    ModuleStatus expectedMinimumStatus);
+
+static ArrayObject* NewList(JSContext* cx) {
+  
+  
+  return NewArrayWithNullProto(cx);
+}
+
+static bool ArrayContainsName(Handle<ArrayObject*> array,
+                              Handle<JSAtom*> name) {
+  for (uint32_t i = 0; i < array->length(); i++) {
+    if (array->getDenseElement(i) == StringValue(name)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+ArrayObject* js::ModuleGetExportedNames(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ModuleSet> exportStarSet) {
+  
+  Rooted<ArrayObject*> exportedNames(cx, NewList(cx));
+  if (!exportedNames) {
+    return nullptr;
+  }
+
+  
+  if (exportStarSet.has(module)) {
+    
+    
+    return exportedNames;
+  }
+
+  
+  if (!exportStarSet.put(module)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  
+  Rooted<ArrayObject*> localExportEntries(cx, &module->localExportEntries());
+  Rooted<ExportEntryObject*> e(cx);
+  for (uint32_t i = 0; i != localExportEntries->length(); i++) {
+    e = &localExportEntries->getDenseElement(i)
+             .toObject()
+             .as<ExportEntryObject>();
+    
+    
+    if (!NewbornArrayPush(cx, exportedNames, StringValue(e->exportName()))) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  Rooted<ArrayObject*> indirectExportEntries(cx,
+                                             &module->indirectExportEntries());
+  for (uint32_t i = 0; i != indirectExportEntries->length(); i++) {
+    e = &indirectExportEntries->getDenseElement(i)
+             .toObject()
+             .as<ExportEntryObject>();
+    
+    
+    if (!NewbornArrayPush(cx, exportedNames, StringValue(e->exportName()))) {
+      return nullptr;
+    }
+  }
+
+  
+  Rooted<ArrayObject*> starExportEntries(cx, &module->starExportEntries());
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleObject*> requestedModule(cx);
+  Rooted<ArrayObject*> starNames(cx);
+  Rooted<JSAtom*> name(cx);
+  for (uint32_t i = 0; i != starExportEntries->length(); i++) {
+    e = &starExportEntries->getDenseElement(i)
+             .toObject()
+             .as<ExportEntryObject>();
+
+    
+    
+    moduleRequest = e->moduleRequest();
+    requestedModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                                MODULE_STATUS_UNLINKED);
+    if (!requestedModule) {
+      return nullptr;
+    }
+
+    
+    
+    starNames = ModuleGetExportedNames(cx, requestedModule, exportStarSet);
+    if (!starNames) {
+      return nullptr;
+    }
+
+    
+    for (uint32_t j = 0; j != starNames->length(); j++) {
+      name = &starNames->getDenseElement(j).toString()->asAtom();
+
+      
+      if (name != cx->names().default_) {
+        
+        if (!ArrayContainsName(exportedNames, name)) {
+          
+          if (!NewbornArrayPush(cx, exportedNames, StringValue(name))) {
+            return nullptr;
+          }
+        }
+      }
+    }
+  }
+
+  
+  return exportedNames;
+}
+
+static ModuleObject* HostResolveImportedModule(
+    JSContext* cx, Handle<ModuleObject*> module,
+    Handle<ModuleRequestObject*> moduleRequest,
+    ModuleStatus expectedMinimumStatus) {
+  Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(module));
+  Rooted<ModuleObject*> requestedModule(cx);
+  requestedModule =
+      CallModuleResolveHook(cx, referencingPrivate, moduleRequest);
+  if (!requestedModule) {
+    return nullptr;
+  }
+
+  if (requestedModule->status() < expectedMinimumStatus) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_MODULE_STATUS);
+    return nullptr;
+  }
+
+  return requestedModule;
 }

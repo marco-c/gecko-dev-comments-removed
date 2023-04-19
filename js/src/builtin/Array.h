@@ -131,7 +131,7 @@ extern JSObject* ArgumentsSliceDense(JSContext* cx, HandleObject obj,
                                      int32_t begin, int32_t end,
                                      HandleObject result);
 
-extern bool intrinsic_newList(JSContext* cx, unsigned argc, js::Value* vp);
+extern ArrayObject* NewArrayWithNullProto(JSContext* cx);
 
 
 
