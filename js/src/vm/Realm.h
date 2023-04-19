@@ -56,22 +56,22 @@ struct NativeIterator;
 
 
 class DtoaCache {
-  double dbl;
+  double d;
   int base;
-  JSLinearString* str;  
+  JSLinearString* s;  
 
  public:
-  DtoaCache() : str(nullptr) {}
-  void purge() { str = nullptr; }
+  DtoaCache() : s(nullptr) {}
+  void purge() { s = nullptr; }
 
-  JSLinearString* lookup(int b, double d) {
-    return str && b == base && d == dbl ? str : nullptr;
+  JSLinearString* lookup(int base, double d) {
+    return this->s && base == this->base && d == this->d ? this->s : nullptr;
   }
 
-  void cache(int b, double d, JSLinearString* s) {
-    base = b;
-    dbl = d;
-    str = s;
+  void cache(int base, double d, JSLinearString* s) {
+    this->base = base;
+    this->d = d;
+    this->s = s;
   }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
