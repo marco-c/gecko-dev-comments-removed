@@ -2,10 +2,7 @@
 
 
 
-from mach.decorators import (
-    Command,
-    SubCommand,
-)
+from mach.decorators import Command, SubCommand
 
 
 def run_mach(command_context, cmd, **kwargs):
@@ -40,6 +37,12 @@ def storybook_launch(command_context):
     description="Install Storybook node dependencies.",
 )
 def storybook_install(command_context):
+    
+    run_mach(
+        command_context,
+        "npm",
+        args=["run", "vendor", "--prefix=toolkit/content/vendor/lit"],
+    )
     return run_npm(command_context, args=["ci"])
 
 
