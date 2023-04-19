@@ -285,16 +285,16 @@ bool PointerEvent::ShouldResistFingerprinting(CallerType aCallerType) {
   
   
   
-  if (!mEvent->IsTrusted() || aCallerType == CallerType::System ||
-      !nsContentUtils::ShouldResistFingerprinting() ||
+  if (!nsContentUtils::ShouldResistFingerprinting() || !mEvent->IsTrusted() ||
+      aCallerType == CallerType::System ||
       mEvent->AsPointerEvent()->mInputSource ==
           MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     return false;
   }
 
+  
   nsCOMPtr<Document> doc = GetDocument();
-
-  return nsContentUtils::ShouldResistFingerprinting(doc);
+  return doc ? doc->ShouldResistFingerprinting() : true;
 }
 
 }  

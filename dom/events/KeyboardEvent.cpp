@@ -366,17 +366,16 @@ bool KeyboardEvent::ShouldResistFingerprinting(CallerType aCallerType) {
   
   
   
-  if (mInitializedByJS || aCallerType == CallerType::System ||
-      mEvent->mFlags.mInSystemGroup ||
-      !nsContentUtils::ShouldResistFingerprinting() ||
+  if (!nsContentUtils::ShouldResistFingerprinting() || mInitializedByJS ||
+      aCallerType == CallerType::System || mEvent->mFlags.mInSystemGroup ||
       mEvent->AsKeyboardEvent()->mLocation ==
           KeyboardEvent_Binding::DOM_KEY_LOCATION_NUMPAD) {
     return false;
   }
 
   nsCOMPtr<Document> doc = GetDocument();
-
-  return nsContentUtils::ShouldResistFingerprinting(doc);
+  
+  return doc ? doc->ShouldResistFingerprinting() : true;
 }
 
 bool KeyboardEvent::GetSpoofedModifierStates(const Modifiers aModifierKey,
