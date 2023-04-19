@@ -137,6 +137,7 @@ impl PiecewiseLinearFunctionBuilder {
     fn create_entry(&mut self, y: ValueType, x: Option<ValueType>) {
         let x = match x {
             Some(x) if x.is_finite() => x,
+            _ if self.entries.is_empty() => 0.0, 
             _ => {
                 self.entries.push(BuildEntry { x: None, y });
                 return;
@@ -185,21 +186,14 @@ impl PiecewiseLinearFunctionBuilder {
         }
         
         
+        debug_assert!(self.entries[0].x.is_some(), "Expected an entry with x defined!");
         
-        
-        
-        
-        
-        
-        
-        self.entries[0]
-            .x
-            .get_or_insert(self.smallest_x.filter(|x| x < &0.0).unwrap_or(0.0));
         self.entries
             .last_mut()
             .unwrap()
             .x
             .get_or_insert(self.largest_x.filter(|x| x > &1.0).unwrap_or(1.0));
+        
 
         let mut result = Vec::with_capacity(self.entries.len());
         result.push(PiecewiseLinearFunctionEntry {
