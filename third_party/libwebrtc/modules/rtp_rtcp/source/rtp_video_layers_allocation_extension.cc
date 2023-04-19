@@ -10,10 +10,13 @@
 
 #include "modules/rtp_rtcp/source/rtp_video_layers_allocation_extension.h"
 
-#include <limits>
+#include <stddef.h>
+#include <stdint.h>
 
+#include "absl/algorithm/container.h"
 #include "api/video/video_layers_allocation.h"
-#include "rtc_base/bit_buffer.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
@@ -22,26 +25,128 @@ constexpr const char RtpVideoLayersAllocationExtension::kUri[];
 
 namespace {
 
+constexpr int kMaxNumRtpStreams = 4;
 
-size_t CountBits(uint64_t val) {
-  size_t bit_count = 0;
-  while (val != 0) {
-    bit_count++;
-    val >>= 1;
+
+
+int Leb128Size(uint32_t value) {
+  int size = 0;
+  while (value >= 0x80) {
+    ++size;
+    value >>= 7;
   }
-  return bit_count;
+  return size + 1;
+}
+
+
+int WriteLeb128(uint32_t value, uint8_t* buffer) {
+  int size = 0;
+  while (value >= 0x80) {
+    buffer[size] = 0x80 | (value & 0x7F);
+    ++size;
+    value >>= 7;
+  }
+  buffer[size] = value;
+  ++size;
+  return size;
 }
 
 
 
-
-
-size_t SizeExponentialGolomb(uint32_t val) {
-  if (val == std::numeric_limits<uint32_t>::max()) {
-    return 0;
+uint64_t ReadLeb128(const uint8_t*& read_at, const uint8_t* end) {
+  uint64_t value = 0;
+  int fill_bits = 0;
+  while (read_at != end && fill_bits < 64 - 7) {
+    uint8_t leb128_byte = *read_at;
+    value |= uint64_t{leb128_byte & 0x7Fu} << fill_bits;
+    ++read_at;
+    fill_bits += 7;
+    if ((leb128_byte & 0x80) == 0) {
+      return value;
+    }
   }
-  uint64_t val_to_encode = static_cast<uint64_t>(val) + 1;
-  return CountBits(val_to_encode) * 2 - 1;
+  
+  read_at = nullptr;
+  return 0;
+}
+
+bool AllocationIsValid(const VideoLayersAllocation& allocation) {
+  
+  
+  
+  if (!absl::c_is_sorted(
+          allocation.active_spatial_layers,
+          [](const VideoLayersAllocation::SpatialLayer& lhs,
+             const VideoLayersAllocation::SpatialLayer& rhs) {
+            return std::make_tuple(lhs.rtp_stream_index, lhs.spatial_id) <
+                   std::make_tuple(rhs.rtp_stream_index, rhs.spatial_id);
+          })) {
+    return false;
+  }
+
+  int max_rtp_stream_idx = 0;
+  for (const auto& spatial_layer : allocation.active_spatial_layers) {
+    if (spatial_layer.rtp_stream_index < 0 ||
+        spatial_layer.rtp_stream_index >= 4) {
+      return false;
+    }
+    if (spatial_layer.spatial_id < 0 || spatial_layer.spatial_id >= 4) {
+      return false;
+    }
+    if (spatial_layer.target_bitrate_per_temporal_layer.empty() ||
+        spatial_layer.target_bitrate_per_temporal_layer.size() > 4) {
+      return false;
+    }
+    if (max_rtp_stream_idx < spatial_layer.rtp_stream_index) {
+      max_rtp_stream_idx = spatial_layer.rtp_stream_index;
+    }
+    if (allocation.resolution_and_frame_rate_is_valid) {
+      
+      
+      
+      if (spatial_layer.width <= 0) {
+        return false;
+      }
+      if (spatial_layer.height <= 0) {
+        return false;
+      }
+      if (spatial_layer.frame_rate_fps < 0 ||
+          spatial_layer.frame_rate_fps > 255) {
+        return false;
+      }
+    }
+  }
+  if (allocation.rtp_stream_index < 0 ||
+      allocation.rtp_stream_index > max_rtp_stream_idx) {
+    return false;
+  }
+  return true;
+}
+
+struct SpatialLayersBitmasks {
+  int max_rtp_stream_id = 0;
+  uint8_t spatial_layer_bitmask[kMaxNumRtpStreams] = {};
+  bool bitmasks_are_the_same = true;
+};
+
+SpatialLayersBitmasks SpatialLayersBitmasksPerRtpStream(
+    const VideoLayersAllocation& allocation) {
+  RTC_DCHECK(AllocationIsValid(allocation));
+  SpatialLayersBitmasks result;
+  for (const auto& layer : allocation.active_spatial_layers) {
+    result.spatial_layer_bitmask[layer.rtp_stream_index] |=
+        (1u << layer.spatial_id);
+    if (result.max_rtp_stream_id < layer.rtp_stream_index) {
+      result.max_rtp_stream_id = layer.rtp_stream_index;
+    }
+  }
+  for (int i = 1; i <= result.max_rtp_stream_id; ++i) {
+    if (result.spatial_layer_bitmask[i] != result.spatial_layer_bitmask[0]) {
+      result.bitmasks_are_the_same = false;
+      break;
+    }
+  }
+  return result;
 }
 
 }  
@@ -76,148 +181,192 @@ size_t SizeExponentialGolomb(uint32_t val) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool RtpVideoLayersAllocationExtension::Write(
     rtc::ArrayView<uint8_t> data,
     const VideoLayersAllocation& allocation) {
-  RTC_DCHECK_LT(allocation.rtp_stream_index,
-                VideoLayersAllocation::kMaxSpatialIds);
-  RTC_DCHECK_GE(data.size(), ValueSize(allocation));
-  rtc::BitBufferWriter writer(data.data(), data.size());
-
-  
-  if (allocation.active_spatial_layers.empty())
+  if (allocation.active_spatial_layers.empty()) {
     return false;
-  writer.WriteBits(allocation.active_spatial_layers.size() - 1, 2);
-
-  
-  writer.WriteBits(allocation.rtp_stream_index, 2);
-
-  
-  bool num_tls_is_the_same = true;
-  size_t first_layers_number_of_temporal_layers =
-      allocation.active_spatial_layers.front()
-          .target_bitrate_per_temporal_layer.size();
-  for (const auto& spatial_layer : allocation.active_spatial_layers) {
-    if (first_layers_number_of_temporal_layers !=
-        spatial_layer.target_bitrate_per_temporal_layer.size()) {
-      num_tls_is_the_same = false;
-      break;
-    }
   }
-  writer.WriteBits(num_tls_is_the_same ? 1 : 0, 1);
 
+  RTC_DCHECK(AllocationIsValid(allocation));
+  RTC_DCHECK_GE(data.size(), ValueSize(allocation));
+
+  SpatialLayersBitmasks slb = SpatialLayersBitmasksPerRtpStream(allocation);
+  uint8_t* write_at = data.data();
   
-  writer.WriteBits(allocation.resolution_and_frame_rate_is_valid ? 1 : 0, 1);
-
+  *write_at = (allocation.rtp_stream_index << 6);
   
-  writer.WriteBits(0, 2);
-
-  if (num_tls_is_the_same) {
-    writer.WriteBits(first_layers_number_of_temporal_layers - 1, 2);
+  *write_at |= slb.max_rtp_stream_id << 4;
+  if (slb.bitmasks_are_the_same) {
+    
+    *write_at |= slb.spatial_layer_bitmask[0];
   } else {
-    for (const auto& spatial_layer : allocation.active_spatial_layers) {
-      writer.WriteBits(
-          spatial_layer.target_bitrate_per_temporal_layer.size() - 1, 2);
+    
+    *++write_at =
+        (slb.spatial_layer_bitmask[0] << 4) | slb.spatial_layer_bitmask[1];
+    if (slb.max_rtp_stream_id >= 2) {
+      *++write_at =
+          (slb.spatial_layer_bitmask[2] << 4) | slb.spatial_layer_bitmask[3];
     }
   }
+  ++write_at;
 
+  {  
+    int bit_offset = 8;
+    *write_at = 0;
+    for (const auto& layer : allocation.active_spatial_layers) {
+      if (bit_offset == 0) {
+        bit_offset = 6;
+        *++write_at = 0;
+      } else {
+        bit_offset -= 2;
+      }
+      *write_at |=
+          ((layer.target_bitrate_per_temporal_layer.size() - 1) << bit_offset);
+    }
+    ++write_at;
+  }
+
+  
   for (const auto& spatial_layer : allocation.active_spatial_layers) {
-    writer.WriteBits(spatial_layer.rtp_stream_index, 2);
-    writer.WriteBits(spatial_layer.spatial_id, 2);
     for (const DataRate& bitrate :
          spatial_layer.target_bitrate_per_temporal_layer) {
-      writer.WriteExponentialGolomb(bitrate.kbps());
+      write_at += WriteLeb128(bitrate.kbps(), write_at);
     }
   }
 
   if (allocation.resolution_and_frame_rate_is_valid) {
     for (const auto& spatial_layer : allocation.active_spatial_layers) {
-      writer.WriteUInt16(spatial_layer.width);
-      writer.WriteUInt16(spatial_layer.height);
-      writer.WriteUInt8(spatial_layer.frame_rate_fps);
+      ByteWriter<uint16_t>::WriteBigEndian(write_at, spatial_layer.width - 1);
+      write_at += 2;
+      ByteWriter<uint16_t>::WriteBigEndian(write_at, spatial_layer.height - 1);
+      write_at += 2;
+      *write_at = spatial_layer.frame_rate_fps;
+      ++write_at;
     }
   }
+  RTC_DCHECK_EQ(write_at - data.data(), ValueSize(allocation));
   return true;
 }
 
 bool RtpVideoLayersAllocationExtension::Parse(
     rtc::ArrayView<const uint8_t> data,
     VideoLayersAllocation* allocation) {
-  if (data.size() == 0)
+  if (data.empty() || allocation == nullptr) {
     return false;
-  rtc::BitBuffer reader(data.data(), data.size());
-  if (!allocation)
-    return false;
+  }
+  const uint8_t* read_at = data.data();
+  const uint8_t* const end = data.data() + data.size();
+
   allocation->active_spatial_layers.clear();
-
-  uint32_t val;
   
-  if (!reader.ReadBits(&val, 2))
-    return false;
-  int active_spatial_layers = val + 1;
+  allocation->rtp_stream_index = *read_at >> 6;
+  int num_rtp_streams = 1 + ((*read_at >> 4) & 0b11);
+  uint8_t spatial_layers_bitmasks[kMaxNumRtpStreams];
+  spatial_layers_bitmasks[0] = *read_at & 0b1111;
 
-  
-  if (!reader.ReadBits(&val, 2))
-    return false;
-  allocation->rtp_stream_index = val;
-
-  
-  if (!reader.ReadBits(&val, 1))
-    return false;
-  bool num_tls_is_constant = (val == 1);
-
-  
-  if (!reader.ReadBits(&val, 1))
-    return false;
-  allocation->resolution_and_frame_rate_is_valid = (val == 1);
-
-  
-  if (!reader.ReadBits(&val, 2))
-    return false;
-
-  int number_of_temporal_layers[VideoLayersAllocation::kMaxSpatialIds];
-  if (num_tls_is_constant) {
-    if (!reader.ReadBits(&val, 2))
-      return false;
-    for (int sl_idx = 0; sl_idx < active_spatial_layers; ++sl_idx) {
-      number_of_temporal_layers[sl_idx] = val + 1;
+  if (spatial_layers_bitmasks[0] != 0) {
+    for (int i = 1; i < num_rtp_streams; ++i) {
+      spatial_layers_bitmasks[i] = spatial_layers_bitmasks[0];
     }
   } else {
-    for (int sl_idx = 0; sl_idx < active_spatial_layers; ++sl_idx) {
-      if (!reader.ReadBits(&val, 2))
+    
+    if (++read_at == end) {
+      return false;
+    }
+    spatial_layers_bitmasks[0] = *read_at >> 4;
+    spatial_layers_bitmasks[1] = *read_at & 0b1111;
+    if (num_rtp_streams > 2) {
+      if (++read_at == end) {
         return false;
-      number_of_temporal_layers[sl_idx] = val + 1;
-      if (number_of_temporal_layers[sl_idx] >
-          VideoLayersAllocation::kMaxTemporalIds)
+      }
+      spatial_layers_bitmasks[2] = *read_at >> 4;
+      spatial_layers_bitmasks[3] = *read_at & 0b1111;
+    }
+  }
+  if (++read_at == end) {
+    return false;
+  }
+
+  
+  
+  int bit_offset = 8;
+  for (int stream_idx = 0; stream_idx < num_rtp_streams; ++stream_idx) {
+    for (int sid = 0; sid < VideoLayersAllocation::kMaxSpatialIds; ++sid) {
+      if ((spatial_layers_bitmasks[stream_idx] & (1 << sid)) == 0) {
+        continue;
+      }
+
+      if (bit_offset == 0) {
+        bit_offset = 6;
+        if (++read_at == end) {
+          return false;
+        }
+      } else {
+        bit_offset -= 2;
+      }
+      int num_temporal_layers = 1 + ((*read_at >> bit_offset) & 0b11);
+      allocation->active_spatial_layers.emplace_back();
+      auto& layer = allocation->active_spatial_layers.back();
+      layer.rtp_stream_index = stream_idx;
+      layer.spatial_id = sid;
+      layer.target_bitrate_per_temporal_layer.resize(num_temporal_layers,
+                                                     DataRate::Zero());
+    }
+  }
+  if (++read_at == end) {
+    return false;
+  }
+
+  
+  for (auto& layer : allocation->active_spatial_layers) {
+    for (DataRate& rate : layer.target_bitrate_per_temporal_layer) {
+      rate = DataRate::KilobitsPerSec(ReadLeb128(read_at, end));
+      if (read_at == nullptr) {
         return false;
+      }
     }
   }
 
-  for (int sl_idx = 0; sl_idx < active_spatial_layers; ++sl_idx) {
-    allocation->active_spatial_layers.emplace_back();
-    auto& spatial_layer = allocation->active_spatial_layers.back();
-    auto& temporal_layers = spatial_layer.target_bitrate_per_temporal_layer;
-    if (!reader.ReadBits(&val, 2))
-      return false;
-    spatial_layer.rtp_stream_index = val;
-    if (!reader.ReadBits(&val, 2))
-      return false;
-    spatial_layer.spatial_id = val;
-    for (int tl_idx = 0; tl_idx < number_of_temporal_layers[sl_idx]; ++tl_idx) {
-      reader.ReadExponentialGolomb(&val);
-      temporal_layers.push_back(DataRate::KilobitsPerSec(val));
-    }
+  if (read_at == end) {
+    allocation->resolution_and_frame_rate_is_valid = false;
+    return true;
   }
 
-  if (allocation->resolution_and_frame_rate_is_valid) {
-    for (auto& spatial_layer : allocation->active_spatial_layers) {
-      if (!reader.ReadUInt16(&spatial_layer.width))
-        return false;
-      if (!reader.ReadUInt16(&spatial_layer.height))
-        return false;
-      if (!reader.ReadUInt8(&spatial_layer.frame_rate_fps))
-        return false;
-    }
+  if (read_at + 5 * allocation->active_spatial_layers.size() != end) {
+    
+    
+    return false;
+  }
+  allocation->resolution_and_frame_rate_is_valid = true;
+  for (auto& layer : allocation->active_spatial_layers) {
+    layer.width = 1 + ByteReader<uint16_t, 2>::ReadBigEndian(read_at);
+    read_at += 2;
+    layer.height = 1 + ByteReader<uint16_t, 2>::ReadBigEndian(read_at);
+    read_at += 2;
+    layer.frame_rate_fps = *read_at;
+    ++read_at;
   }
   return true;
 }
@@ -227,34 +376,26 @@ size_t RtpVideoLayersAllocationExtension::ValueSize(
   if (allocation.active_spatial_layers.empty()) {
     return 0;
   }
-  size_t size_in_bits = 8;  
-  bool num_tls_is_the_same = true;
-  size_t first_layers_number_of_temporal_layers =
-      allocation.active_spatial_layers.front()
-          .target_bitrate_per_temporal_layer.size();
-  for (const auto& spatial_layer : allocation.active_spatial_layers) {
-    if (first_layers_number_of_temporal_layers !=
-        spatial_layer.target_bitrate_per_temporal_layer.size()) {
-      num_tls_is_the_same = false;
-    }
-    size_in_bits += 4;  
-    for (const auto& bitrate :
-         spatial_layer.target_bitrate_per_temporal_layer) {
-      size_in_bits += SizeExponentialGolomb(bitrate.kbps());
+  size_t result = 1;  
+  SpatialLayersBitmasks slb = SpatialLayersBitmasksPerRtpStream(allocation);
+  if (!slb.bitmasks_are_the_same) {
+    ++result;
+    if (slb.max_rtp_stream_id >= 2) {
+      ++result;
     }
   }
-  if (num_tls_is_the_same) {
-    size_in_bits += 2;
-  } else {
-    for (const auto& spatial_layer : allocation.active_spatial_layers) {
-      size_in_bits +=
-          2 * spatial_layer.target_bitrate_per_temporal_layer.size();
+  
+  
+  result += (allocation.active_spatial_layers.size() + 3) / 4;
+  for (const auto& spatial_layer : allocation.active_spatial_layers) {
+    for (DataRate value : spatial_layer.target_bitrate_per_temporal_layer) {
+      result += Leb128Size(value.kbps());
     }
   }
   if (allocation.resolution_and_frame_rate_is_valid) {
-    size_in_bits += allocation.active_spatial_layers.size() * 5 * 8;
+    result += 5 * allocation.active_spatial_layers.size();
   }
-  return (size_in_bits + 7) / 8;
+  return result;
 }
 
 }  
