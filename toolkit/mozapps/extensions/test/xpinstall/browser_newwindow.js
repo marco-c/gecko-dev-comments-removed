@@ -5,6 +5,7 @@
 
 let win;
 let popupPromise;
+let newtabPromise;
 const exampleURI = Services.io.newURI("http://example.com");
 async function test() {
   waitForExplicitFinish(); 
@@ -36,7 +37,7 @@ async function test() {
   );
 
   const url = `${TESTROOT}installtrigger.html?${triggers}`;
-  BrowserTestUtils.openNewForegroundTab(win.gBrowser, url);
+  newtabPromise = BrowserTestUtils.openNewForegroundTab(win.gBrowser, url);
   popupPromise = BrowserTestUtils.waitForEvent(
     win.PanelUI.notificationPanel,
     "popupshown"
@@ -73,6 +74,13 @@ async function finish_test(count) {
   win.PanelUI.notificationPanel
     .querySelector("popupnotification[popupid=addon-installed]")
     .button.click();
+
+  
+  
+  
+  
+  
+  await newtabPromise;
 
   
   await BrowserTestUtils.closeWindow(win);
