@@ -518,8 +518,24 @@ FormAutoComplete.prototype = {
       removable: true,
     }));
 
+    const isInArray = (value, arr, key) =>
+      arr.find(item => item[key].toUpperCase() === value.toUpperCase());
+
     
-    let finalItems = historyResults.concat(items);
+    
+    
+    const dedupedHistoryResults = historyResults.filter(
+      historyRes => !isInArray(historyRes.value, items, "value")
+    );
+
+    
+    
+    
+    const finalItems = dedupedHistoryResults.concat(items);
+
+    historyResult.wrappedJSObject.entries = historyResult.wrappedJSObject.entries.filter(
+      entry => !isInArray(entry.text, items, "value")
+    );
 
     
     
