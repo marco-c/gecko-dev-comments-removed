@@ -12,18 +12,14 @@
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_PACKET_H_
 
 #include <list>
-#include <memory>
 
-#include "api/rtp_headers.h"  
+#include "api/array_view.h"
+#include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
-
-namespace RtpUtility {
-class RtpHeaderParser;
-}  
-
 namespace test {
 
 
@@ -36,16 +32,15 @@ class Packet {
   
   
   
-  
-  
-  
-  
-  Packet(uint8_t* packet_memory,
-         size_t allocated_bytes,
+  Packet(rtc::CopyOnWriteBuffer packet,
          size_t virtual_packet_length_bytes,
          double time_ms,
-         const RtpUtility::RtpHeaderParser& parser,
          const RtpHeaderExtensionMap* extension_map = nullptr);
+
+  Packet(rtc::CopyOnWriteBuffer packet,
+         double time_ms,
+         const RtpHeaderExtensionMap* extension_map = nullptr)
+      : Packet(packet, packet.size(), time_ms, extension_map) {}
 
   
   
@@ -55,17 +50,6 @@ class Packet {
   Packet(const RTPHeader& header,
          size_t virtual_packet_length_bytes,
          size_t virtual_payload_length_bytes,
-         double time_ms);
-
-  
-  
-  
-  
-  Packet(uint8_t* packet_memory, size_t allocated_bytes, double time_ms);
-
-  Packet(uint8_t* packet_memory,
-         size_t allocated_bytes,
-         size_t virtual_packet_length_bytes,
          double time_ms);
 
   virtual ~Packet();
@@ -80,11 +64,11 @@ class Packet {
   
   static void DeleteRedHeaders(std::list<RTPHeader*>* headers);
 
-  const uint8_t* payload() const { return payload_; }
+  const uint8_t* payload() const { return rtp_payload_.data(); }
 
-  size_t packet_length_bytes() const { return packet_length_bytes_; }
+  size_t packet_length_bytes() const { return packet_.size(); }
 
-  size_t payload_length_bytes() const { return payload_length_bytes_; }
+  size_t payload_length_bytes() const { return rtp_payload_.size(); }
 
   size_t virtual_packet_length_bytes() const {
     return virtual_packet_length_bytes_;
@@ -100,21 +84,17 @@ class Packet {
   bool valid_header() const { return valid_header_; }
 
  private:
-  bool ParseHeader(const webrtc::RtpUtility::RtpHeaderParser& parser,
-                   const RtpHeaderExtensionMap* extension_map);
+  bool ParseHeader(const RtpHeaderExtensionMap* extension_map);
   void CopyToHeader(RTPHeader* destination) const;
 
   RTPHeader header_;
-  const std::unique_ptr<uint8_t[]> payload_memory_;
-  const uint8_t* payload_ = nullptr;      
-  const size_t packet_length_bytes_ = 0;  
-  size_t payload_length_bytes_ = 0;  
-                                     
+  const rtc::CopyOnWriteBuffer packet_;
+  rtc::ArrayView<const uint8_t> rtp_payload_;  
   
   const size_t virtual_packet_length_bytes_;
   size_t virtual_payload_length_bytes_ = 0;
   const double time_ms_;     
-  const bool valid_header_;  
+  const bool valid_header_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Packet);
 };

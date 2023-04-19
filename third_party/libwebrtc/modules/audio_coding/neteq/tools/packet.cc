@@ -10,30 +10,22 @@
 
 #include "modules/audio_coding/neteq/tools/packet.h"
 
-#include <string.h>
-
-#include <memory>
-
-#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "api/array_view.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 namespace test {
 
-using webrtc::RtpUtility::RtpHeaderParser;
-
-Packet::Packet(uint8_t* packet_memory,
-               size_t allocated_bytes,
+Packet::Packet(rtc::CopyOnWriteBuffer packet,
                size_t virtual_packet_length_bytes,
                double time_ms,
-               const RtpUtility::RtpHeaderParser& parser,
-               const RtpHeaderExtensionMap* extension_map )
-    : payload_memory_(packet_memory),
-      packet_length_bytes_(allocated_bytes),
+               const RtpHeaderExtensionMap* extension_map)
+    : packet_(std::move(packet)),
       virtual_packet_length_bytes_(virtual_packet_length_bytes),
-      virtual_payload_length_bytes_(0),
       time_ms_(time_ms),
-      valid_header_(ParseHeader(parser, extension_map)) {}
+      valid_header_(ParseHeader(extension_map)) {}
 
 Packet::Packet(const RTPHeader& header,
                size_t virtual_packet_length_bytes,
@@ -44,23 +36,6 @@ Packet::Packet(const RTPHeader& header,
       virtual_payload_length_bytes_(virtual_payload_length_bytes),
       time_ms_(time_ms),
       valid_header_(true) {}
-
-Packet::Packet(uint8_t* packet_memory, size_t allocated_bytes, double time_ms)
-    : Packet(packet_memory,
-             allocated_bytes,
-             allocated_bytes,
-             time_ms,
-             RtpUtility::RtpHeaderParser(packet_memory, allocated_bytes)) {}
-
-Packet::Packet(uint8_t* packet_memory,
-               size_t allocated_bytes,
-               size_t virtual_packet_length_bytes,
-               double time_ms)
-    : Packet(packet_memory,
-             allocated_bytes,
-             virtual_packet_length_bytes,
-             time_ms,
-             RtpUtility::RtpHeaderParser(packet_memory, allocated_bytes)) {}
 
 Packet::~Packet() = default;
 
@@ -77,9 +52,8 @@ bool Packet::ExtractRedHeaders(std::list<RTPHeader*>* headers) const {
   
   
 
-  RTC_DCHECK(payload_);
-  const uint8_t* payload_ptr = payload_;
-  const uint8_t* payload_end_ptr = payload_ptr + payload_length_bytes_;
+  const uint8_t* payload_ptr = payload();
+  const uint8_t* payload_end_ptr = payload_ptr + payload_length_bytes();
 
   
   
@@ -111,27 +85,43 @@ void Packet::DeleteRedHeaders(std::list<RTPHeader*>* headers) {
   }
 }
 
-bool Packet::ParseHeader(const RtpHeaderParser& parser,
-                         const RtpHeaderExtensionMap* extension_map) {
-  bool valid_header = parser.Parse(&header_, extension_map);
+bool Packet::ParseHeader(const RtpHeaderExtensionMap* extension_map) {
+  
+  
+  webrtc::RtpPacketReceived rtp_packet(extension_map);
 
   
   
   
-  const bool header_only_with_padding =
-      (header_.headerLength == packet_length_bytes_ &&
-       header_.paddingLength > 0);
-  if (!valid_header && !header_only_with_padding) {
-    return false;
+  
+  bool padding = (packet_[0] & 0b0010'0000);
+  size_t padding_size = 0;
+  if (padding) {
+    
+    rtc::CopyOnWriteBuffer packet(packet_);
+    packet.MutableData()[0] &= ~0b0010'0000;
+    if (!rtp_packet.Parse(std::move(packet))) {
+      return false;
+    }
+    if (rtp_packet.payload_size() > 0) {
+      padding_size = rtp_packet.data()[rtp_packet.size() - 1];
+    }
+    if (padding_size > rtp_packet.payload_size()) {
+      return false;
+    }
+  } else {
+    if (!rtp_packet.Parse(packet_)) {
+      return false;
+    }
   }
-  RTC_DCHECK_LE(header_.headerLength, packet_length_bytes_);
-  payload_ = &payload_memory_[header_.headerLength];
-  RTC_DCHECK_GE(packet_length_bytes_, header_.headerLength);
-  payload_length_bytes_ = packet_length_bytes_ - header_.headerLength;
-  RTC_CHECK_GE(virtual_packet_length_bytes_, packet_length_bytes_);
-  RTC_DCHECK_GE(virtual_packet_length_bytes_, header_.headerLength);
+  rtp_payload_ = rtc::MakeArrayView(packet_.data() + rtp_packet.headers_size(),
+                                    rtp_packet.payload_size() - padding_size);
+  rtp_packet.GetHeader(&header_);
+
+  RTC_CHECK_GE(virtual_packet_length_bytes_, rtp_packet.size());
+  RTC_DCHECK_GE(virtual_packet_length_bytes_, rtp_packet.headers_size());
   virtual_payload_length_bytes_ =
-      virtual_packet_length_bytes_ - header_.headerLength;
+      virtual_packet_length_bytes_ - rtp_packet.headers_size();
   return true;
 }
 
