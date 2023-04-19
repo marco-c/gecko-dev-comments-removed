@@ -1786,13 +1786,8 @@ pref("browser.ping-centre.log", false);
 
 pref("media.gmp-provider.enabled", true);
 
-#ifdef NIGHTLY_BUILD
 
 pref("network.cookie.cookieBehavior", 5 );
-#else
-
-pref("network.cookie.cookieBehavior", 4 );
-#endif
 
 
 
@@ -1875,7 +1870,7 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 
 
 
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp,rpTop,ocsp,qps");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cm,fp,stp,lvl2,rp,rpTop,ocsp,qps");
 
 
 
