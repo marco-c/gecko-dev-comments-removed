@@ -1616,6 +1616,12 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   if (encoder_failed_)
     return;
 
+  
+  
+  
+  if (!encoder_)
+    return;
+
   TraceFrameDropEnd();
 
   
