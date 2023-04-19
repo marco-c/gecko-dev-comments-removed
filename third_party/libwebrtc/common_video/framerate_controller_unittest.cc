@@ -143,4 +143,20 @@ TEST_F(FramerateControllerTest, NoFramesDroppedAfterReset) {
     EXPECT_FALSE(controller_.ShouldDropFrame(GetNextTimestampNs()));
 }
 
+TEST_F(FramerateControllerTest, TestKeepFrame) {
+  FramerateController controller(kInputFps / 2);
+
+  EXPECT_FALSE(controller.ShouldDropFrame(GetNextTimestampNs()));
+  EXPECT_TRUE(controller.ShouldDropFrame(GetNextTimestampNs()));
+  EXPECT_FALSE(controller.ShouldDropFrame(GetNextTimestampNs()));
+  EXPECT_TRUE(controller.ShouldDropFrame(GetNextTimestampNs()));
+  EXPECT_FALSE(controller.ShouldDropFrame(GetNextTimestampNs()));
+
+  
+  
+  controller.KeepFrame(GetNextTimestampNs());
+  
+  EXPECT_TRUE(controller.ShouldDropFrame(GetNextTimestampNs()));
+}
+
 }  
