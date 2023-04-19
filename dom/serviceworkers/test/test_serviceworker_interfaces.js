@@ -125,6 +125,10 @@ var interfaceNamesInGlobalScope = [
   
   "CacheStorage",
   
+  { name: "CanvasGradient", nightly: true },
+  
+  { name: "CanvasPattern", nightly: true },
+  
   "Client",
   
   "Clients",
@@ -176,6 +180,12 @@ var interfaceNamesInGlobalScope = [
   "FileList",
   
   "FileReader",
+  
+  { name: "FontFace", nightly: true },
+  
+  { name: "FontFaceSet", nightly: true },
+  
+  { name: "FontFaceSetLoadEvent", nightly: true },
   
   "FormData",
   
@@ -230,6 +240,12 @@ var interfaceNamesInGlobalScope = [
   "Notification",
   
   "NotificationEvent",
+  
+  { name: "OffscreenCanvas", nightly: true },
+  
+  { name: "OffscreenCanvasRenderingContext2D", nightly: true },
+  
+  { name: "Path2D", nightly: true },
   
   "Performance",
   
@@ -317,7 +333,39 @@ var interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
+  { name: "WebGL2RenderingContext", nightly: true },
+  
+  { name: "WebGLActiveInfo", nightly: true },
+  
+  { name: "WebGLBuffer", nightly: true },
+  
+  { name: "WebGLContextEvent", nightly: true },
+  
+  { name: "WebGLFramebuffer", nightly: true },
+  
+  { name: "WebGLProgram", nightly: true },
+  
   "WebGLQuery",
+  
+  { name: "WebGLRenderbuffer", nightly: true },
+  
+  { name: "WebGLRenderingContext", nightly: true },
+  
+  { name: "WebGLSampler", nightly: true },
+  
+  { name: "WebGLShader", nightly: true },
+  
+  { name: "WebGLShaderPrecisionFormat", nightly: true },
+  
+  { name: "WebGLSync", nightly: true },
+  
+  { name: "WebGLTexture", nightly: true },
+  
+  { name: "WebGLTransformFeedback", nightly: true },
+  
+  { name: "WebGLUniformLocation", nightly: true },
+  
+  { name: "WebGLVertexArrayObject", nightly: true },
   
   "WindowClient",
   

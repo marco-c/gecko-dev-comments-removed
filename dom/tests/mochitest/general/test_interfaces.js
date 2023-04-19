@@ -833,6 +833,14 @@ var interfaceNamesInGlobalScope = [
     disabled: isEarlyBetaOrEarlier,
   },
   
+  { name: "OffscreenCanvas", insecureContext: true, nightly: true },
+  
+  {
+    name: "OffscreenCanvasRenderingContext2D",
+    insecureContext: true,
+    nightly: true,
+  },
+  
   { name: "Option", insecureContext: true },
   
   { name: "OscillatorNode", insecureContext: true },
