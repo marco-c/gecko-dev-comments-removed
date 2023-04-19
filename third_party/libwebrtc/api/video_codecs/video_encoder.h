@@ -267,6 +267,9 @@ class RTC_EXPORT VideoEncoder {
 
     
     
+    VideoBitrateAllocation target_bitrate;
+    
+    
     VideoBitrateAllocation bitrate;
     
     

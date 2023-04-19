@@ -193,8 +193,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   
   
-  
-  EncoderRateSettings UpdateBitrateAllocationAndNotifyObserver(
+  EncoderRateSettings UpdateBitrateAllocation(
       const EncoderRateSettings& rate_settings) RTC_RUN_ON(&encoder_queue_);
 
   uint32_t GetInputFramerateFps() RTC_RUN_ON(&encoder_queue_);
