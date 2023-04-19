@@ -71,16 +71,37 @@
 
 
 function waitForNotification(t, f) {
-  requestAnimationFrame(function() {
-    requestAnimationFrame(function() { t.step_timeout(f, 0); });
+  return new Promise(resolve => {
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        let callback = function() {
+          resolve();
+          if (f) {
+            f();
+          }
+        };
+        if (t) {
+          t.step_timeout(callback);
+        } else {
+          setTimeout(callback);
+        }
+      });
+    });
   });
 }
 
 
 
 function waitForFrame(t, f) {
-  requestAnimationFrame(function() {
-    t.step_timeout(f, 0);
+  return new Promise(resolve => {
+    requestAnimationFrame(function() {
+      t.step_timeout(function() {
+        resolve();
+        if (f) {
+          f();
+        }
+      });
+    });
   });
 }
 
