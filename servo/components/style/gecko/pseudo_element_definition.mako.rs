@@ -184,7 +184,7 @@ impl PseudoElement {
     
     
     #[inline]
-    pub fn from_slice(name: &str) -> Option<Self> {
+    pub fn from_slice(name: &str, allow_unkown_webkit: bool) -> Option<Self> {
         
         
         
@@ -209,7 +209,7 @@ impl PseudoElement {
                     return PseudoElement::tree_pseudo_element(name, Box::new([]))
                 }
                 const WEBKIT_PREFIX: &str = "-webkit-";
-                if starts_with_ignore_ascii_case(name, WEBKIT_PREFIX) {
+                if allow_unkown_webkit && starts_with_ignore_ascii_case(name, WEBKIT_PREFIX) {
                     let part = string_as_ascii_lowercase(&name[WEBKIT_PREFIX.len()..]);
                     return Some(PseudoElement::UnknownWebkit(part.into()));
                 }

@@ -269,6 +269,11 @@ pub trait Parser<'i> {
     }
 
     
+    fn allow_forgiving_selectors(&self) -> bool {
+        true
+    }
+
+    
     
     fn parse_non_ts_pseudo_class(
         &self,
@@ -388,7 +393,11 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
                 Ok(selector) => values.push(selector),
                 Err(err) => match recovery {
                     ParseErrorRecovery::DiscardList => return Err(err),
-                    ParseErrorRecovery::IgnoreInvalidSelector => {},
+                    ParseErrorRecovery::IgnoreInvalidSelector => {
+                        if !parser.allow_forgiving_selectors() {
+                            return Err(err);
+                        }
+                    },
                 },
             }
 
