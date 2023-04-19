@@ -15,10 +15,41 @@ function getMessageData(message_data_type, source) {
 
 
 
+
+
 async function postCapabilityDelegationMessage(frame, message, origin, capability, activate) {
     let result_promise = getMessageData("result", frame);
+
     if (activate)
         await test_driver.bless();
-    frame.postMessage(message, {targetOrigin: origin, delegate: capability});
+
+    let postMessageOptions = {targetOrigin: origin};
+    if (capability)
+        postMessageOptions["delegate"] = capability;
+    try {
+        frame.postMessage(message, postMessageOptions);
+    } catch (exception) {
+        return Promise.reject(exception);
+    }
+
     return await result_promise;
+}
+
+
+
+async function findOneCapabilitySupportingDelegation() {
+  const capabilities = ["fullscreen", "payment"];
+
+  for (let i = 0; i < capabilities.length; i++) {
+    try {
+      await postCapabilityDelegationMessage(window, "any_message", "/", capabilities[i], false);
+      assert_unreached();
+    } catch (exception) {
+      if (exception.name != "NotSupportedError")
+          return capabilities[i];
+      
+    }
+  };
+
+  return undefined;
 }
