@@ -4,13 +4,18 @@
 "use strict";
 
 const Services = require("Services");
-const { PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  PureComponent,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
   CONNECTION_TYPES,
 } = require("devtools/client/shared/remote-debugging/constants");
 const DESCRIPTOR_TYPES = require("devtools/client/fronts/descriptors/descriptor-types");
+const FluentReact = require("devtools/client/shared/vendor/fluent-react");
+const Localized = createFactory(FluentReact.Localized);
 
 
 
@@ -19,6 +24,9 @@ const DESCRIPTOR_TYPES = require("devtools/client/fronts/descriptors/descriptor-
 class DebugTargetInfo extends PureComponent {
   static get propTypes() {
     return {
+      alwaysOnTop: PropTypes.boolean.isRequired,
+      focusedState: PropTypes.boolean,
+      toggleAlwaysOnTop: PropTypes.func.isRequired,
       debugTargetData: PropTypes.shape({
         connectionType: PropTypes.oneOf(Object.values(CONNECTION_TYPES))
           .isRequired,
@@ -200,7 +208,15 @@ class DebugTargetInfo extends PureComponent {
   }
 
   renderRuntime() {
-    if (!this.props.debugTargetData.runtimeInfo) {
+    if (
+      !this.props.debugTargetData.runtimeInfo ||
+      (this.props.debugTargetData.connectionType ===
+        CONNECTION_TYPES.THIS_FIREFOX &&
+        this.props.debugTargetData.descriptorType ===
+          DESCRIPTOR_TYPES.EXTENSION)
+    ) {
+      
+      
       
       
       
@@ -267,6 +283,38 @@ class DebugTargetInfo extends PureComponent {
         defaultValue: url,
       })
     );
+  }
+
+  renderAlwaysOnTopButton() {
+    
+    if (
+      this.props.debugTargetData.descriptorType !==
+        DESCRIPTOR_TYPES.EXTENSION &&
+      this.props.debugTargetData.connectionType ===
+        CONNECTION_TYPES.THIS_FIREFOX
+    ) {
+      return [];
+    }
+    const checked = this.props.alwaysOnTop;
+    const toolboxFocused = this.props.focusedState;
+    return [
+      dom.div({ className: "toolbox-toolbar-spacer" }),
+      Localized(
+        {
+          id: checked
+            ? "toolbox-always-on-top-enabled"
+            : "toolbox-always-on-top-disabled",
+          attrs: { title: true },
+        },
+        dom.button({
+          className:
+            `toolbox-always-on-top` +
+            (checked ? " checked" : "") +
+            (toolboxFocused ? " toolbox-is-focused" : ""),
+          onClick: this.props.toggleAlwaysOnTop,
+        })
+      ),
+    ];
   }
 
   renderNavigationButton(detail) {
@@ -346,7 +394,8 @@ class DebugTargetInfo extends PureComponent {
       this.renderRuntime(),
       this.renderTargetTitle(),
       this.renderNavigation(),
-      this.renderTargetURI()
+      this.renderTargetURI(),
+      ...this.renderAlwaysOnTopButton()
     );
   }
 }

@@ -2300,6 +2300,11 @@ pref("devtools.toolbox.tabsOrder", "");
 
 
 
+
+pref("devtools.toolbox.alwaysOnTop", true);
+
+
+
 pref("devtools.browsertoolbox.fission", true);
 
 

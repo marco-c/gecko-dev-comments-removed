@@ -259,6 +259,13 @@ WindowHost.prototype = {
         flags += ",non-fission";
       }
 
+      
+      
+      
+      if (this.options?.alwaysOnTop) {
+        flags += ",alwaysontop";
+      }
+
       const win = Services.ww.openWindow(
         null,
         this.WINDOW_URL,
