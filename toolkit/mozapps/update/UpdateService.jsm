@@ -6289,33 +6289,8 @@ class RestartOnLastWindowClosed {
   #restartTimer = null;
   #restartTimerExpired = false;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  #updateReady = false;
-
   constructor() {
     this.#maybeEnableOrDisable();
-
-    
-    
-    Services.obs.addObserver(this, "update-downloaded");
-    Services.obs.addObserver(this, "update-staged");
-    Services.obs.addObserver(this, "update-swap");
 
     Services.prefs.addObserver(
       PREF_APP_UPDATE_NO_WINDOW_AUTO_RESTART_ENABLED,
@@ -6333,10 +6308,6 @@ class RestartOnLastWindowClosed {
       this
     );
     Services.obs.removeObserver(this, "quit-application");
-
-    Services.obs.removeObserver(this, "update-downloaded");
-    Services.obs.removeObserver(this, "update-staged");
-    Services.obs.removeObserver(this, "update-swap");
 
     this.#maybeEnableOrDisable();
   }
@@ -6378,9 +6349,6 @@ class RestartOnLastWindowClosed {
       case "update-staged":
         this.#onUpdateReady(data);
         break;
-      case "update-swap":
-        this.#onUpdateUnready();
-        break;
     }
   }
 
@@ -6406,9 +6374,9 @@ class RestartOnLastWindowClosed {
 
       Services.obs.addObserver(this, "domwindowclosed");
       Services.obs.addObserver(this, "domwindowopened");
+      Services.obs.addObserver(this, "update-downloaded");
+      Services.obs.addObserver(this, "update-staged");
 
-      
-      
       this.#restartTimer = null;
       this.#restartTimerExpired = false;
 
@@ -6424,6 +6392,8 @@ class RestartOnLastWindowClosed {
 
       Services.obs.removeObserver(this, "domwindowclosed");
       Services.obs.removeObserver(this, "domwindowopened");
+      Services.obs.removeObserver(this, "update-downloaded");
+      Services.obs.removeObserver(this, "update-staged");
 
       this.#enabled = false;
 
@@ -6447,8 +6417,6 @@ class RestartOnLastWindowClosed {
         STATE_PENDING_SERVICE,
       ].includes(updateState)
     ) {
-      this.#updateReady = true;
-
       if (this.#enabled) {
         LOG("RestartOnLastWindowClosed.#onUpdateReady - update ready");
         this.#maybeRestartBrowser();
@@ -6459,20 +6427,6 @@ class RestartOnLastWindowClosed {
           `ready because the state is ${updateState}`
       );
     }
-  }
-
-  
-  
-  #onUpdateUnready() {
-    
-    
-    if (this.#enabled) {
-      LOG(
-        "RestartOnLastWindowClosed.#onUpdateUnready - update no longer ready"
-      );
-    }
-
-    this.#updateReady = false;
   }
 
   #onWindowClose() {
@@ -6537,7 +6491,7 @@ class RestartOnLastWindowClosed {
       return;
     }
 
-    if (!this.#updateReady) {
+    if (lazy.AUS.currentState != Ci.nsIApplicationUpdateService.STATE_PENDING) {
       LOG(
         "RestartOnLastWindowClosed.#maybeRestartBrowser - No update ready. " +
           "(not restarting)"
