@@ -997,7 +997,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
             aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
         nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
         float largeopFactor = kLargeOpFactor;
-        if (NS_STRETCH_INTEGRAL & mStretchHint) {
+        if (nsMathMLOperators::IsIntegralOperator(mChar->mData)) {
           
           largeopFactor = kIntegralFactor;
         }
@@ -1614,7 +1614,7 @@ nsresult nsMathMLChar::StretchInternal(
 
     
     
-    if (NS_STRETCH_INTEGRAL & aStretchHint) {
+    if (nsMathMLOperators::IsIntegralOperator(mData)) {
       
       largeopFactor = kIntegralFactor;
     }
@@ -1639,9 +1639,9 @@ nsresult nsMathMLChar::Stretch(nsIFrame* aForFrame, DrawTarget* aDrawTarget,
                                const nsBoundingMetrics& aContainerSize,
                                nsBoundingMetrics& aDesiredStretchSize,
                                uint32_t aStretchHint, bool aRTL) {
-  NS_ASSERTION(!(aStretchHint & ~(NS_STRETCH_VARIABLE_MASK |
-                                  NS_STRETCH_LARGEOP | NS_STRETCH_INTEGRAL)),
-               "Unexpected stretch flags");
+  NS_ASSERTION(
+      !(aStretchHint & ~(NS_STRETCH_VARIABLE_MASK | NS_STRETCH_LARGEOP)),
+      "Unexpected stretch flags");
 
   mDraw = DRAW_NORMAL;
   mMirrored = aRTL && nsMathMLOperators::IsMirrorableOperator(mData);
