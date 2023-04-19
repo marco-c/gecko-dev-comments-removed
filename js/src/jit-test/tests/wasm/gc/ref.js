@@ -171,21 +171,23 @@ assertErrorMessage(() => wasmEvalText(`
 `),
 WebAssembly.CompileError, /expression has type \(ref null.*\) but expected \(ref null.*\)/);
 
+if (!wasmFunctionReferencesEnabled()) {
+  
 
-
-assertErrorMessage(() => wasmEvalText(`
+  assertErrorMessage(() => wasmEvalText(`
 (module
  (type $x (func (param i32)))
  (func $f (param (ref null $x)) (unreachable)))
 `),
-WebAssembly.CompileError, /does not reference a gc type/);
+  WebAssembly.CompileError, /does not reference a gc type/);
 
-assertErrorMessage(() => wasmEvalText(`
+  assertErrorMessage(() => wasmEvalText(`
 (module
  (type (func (param i32)))
  (func $f (param (ref null 0)) (unreachable)))
 `),
-WebAssembly.CompileError, /does not reference a gc type/);
+  WebAssembly.CompileError, /does not reference a gc type/);
+}
 
 
 
