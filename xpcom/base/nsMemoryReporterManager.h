@@ -179,6 +179,8 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
 #ifdef XP_WIN
   static int64_t ResidentUnique(HANDLE aProcess = nullptr);
 #elif XP_MACOSX
+  
+  
   static int64_t ResidentUnique(mach_port_t aPort = 0);
 #else
   static int64_t ResidentUnique(pid_t aPid = 0);
