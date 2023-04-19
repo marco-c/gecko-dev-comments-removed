@@ -2749,6 +2749,8 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"FEATURE_CALLOUT_1\",\"complete
 
 #ifdef NIGHTLY_BUILD
   pref("cookiebanners.service.mode.privateBrowsing", 1);
+  
+  pref("cookiebanners.ui.desktop.enabled", true);
 #endif
 
 

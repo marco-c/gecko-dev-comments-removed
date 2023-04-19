@@ -1060,6 +1060,183 @@ let SocialTracking = new (class SocialTrackingProtection extends ProtectionCateg
 
 
 
+
+let cookieBannerSection = new (class {
+  
+  
+  #isPrivateBrowsing = PrivateBrowsingUtils.isWindowPrivate(window);
+
+  constructor() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_serviceModePref",
+      "cookiebanners.service.mode",
+      Ci.nsICookieBannerService.MODE_DISABLED
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_serviceModePrefPrivateBrowsing",
+      "cookiebanners.service.mode.privateBrowsing",
+      Ci.nsICookieBannerService.MODE_DISABLED
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_uiDisabled",
+      "cookiebanners.ui.desktop.enabled",
+      false
+    );
+  }
+
+  
+
+
+
+  updateSection({ hostForDisplay }) {
+    let showSection = this.#shouldShowSection();
+
+    for (let el of [
+      this.#cookieBannerSection,
+      this.#cookieBannerSectionSeparator,
+    ]) {
+      el.toggleAttribute("uiDisabled", !showSection);
+    }
+
+    if (showSection) {
+      
+      this.#updateSwitchState({ hostForDisplay });
+    }
+  }
+
+  
+
+
+  onCookieBannerSwitchCommand() {
+    
+    let newState = this.#cookieBannerSwitch.toggleAttribute("enabled");
+    
+    this.#cookieBannerSection.toggleAttribute("hasException", !newState);
+
+    if (newState) {
+      
+      
+      Services.cookieBanners.removeDomainPref(
+        gBrowser.currentURI,
+        this.#isPrivateBrowsing
+      );
+    } else {
+      
+      Services.cookieBanners.setDomainPref(
+        gBrowser.currentURI,
+        Ci.nsICookieBannerService.MODE_DISABLED,
+        this.#isPrivateBrowsing
+      );
+    }
+
+    this.#updateSwitchState({ hasException: !newState });
+  }
+
+  
+
+
+
+
+
+
+
+  #updateSwitchState({
+    hasException = this.#hasException,
+    hostForDisplay = gIdentityHandler.getHostForDisplay(),
+  }) {
+    
+    this.#cookieBannerSwitch.toggleAttribute("enabled", !hasException);
+    
+    this.#cookieBannerSection.toggleAttribute("hasException", hasException);
+
+    
+    
+    if (hasException) {
+      this.#cookieBannerSwitch.setAttribute(
+        "aria-label",
+        "Enable cookie banner handling for " + hostForDisplay
+      );
+    } else {
+      this.#cookieBannerSwitch.setAttribute(
+        "aria-label",
+        "Disable cookie banner handling for " + hostForDisplay
+      );
+    }
+  }
+
+  
+
+
+
+  #shouldShowSection() {
+    
+    if (!this._uiDisabled) {
+      return false;
+    }
+
+    let mode;
+
+    if (this.#isPrivateBrowsing) {
+      mode = this._serviceModePrefPrivateBrowsing;
+    } else {
+      mode = this._serviceModePref;
+    }
+
+    
+    
+    return mode != Ci.nsICookieBannerService.MODE_DISABLED;
+  }
+
+  
+
+
+
+  get #hasException() {
+    let pref = Services.cookieBanners.getDomainPref(
+      gBrowser.currentURI,
+      this.#isPrivateBrowsing
+    );
+    return pref == Ci.nsICookieBannerService.MODE_DISABLED;
+  }
+
+  
+  #cookieBannerSectionEl;
+  get #cookieBannerSection() {
+    if (this.#cookieBannerSectionEl) {
+      return this.#cookieBannerSectionEl;
+    }
+    return (this.#cookieBannerSectionEl = document.getElementById(
+      "protections-popup-cookie-banner-section"
+    ));
+  }
+
+  #cookieBannerSectionSeparatorEl;
+  get #cookieBannerSectionSeparator() {
+    if (this.#cookieBannerSectionSeparatorEl) {
+      return this.#cookieBannerSectionSeparatorEl;
+    }
+    return (this.#cookieBannerSectionSeparatorEl = document.getElementById(
+      "protections-popup-cookie-banner-section-separator"
+    ));
+  }
+
+  #cookieBannerSwitchEl;
+  get #cookieBannerSwitch() {
+    if (this.#cookieBannerSwitchEl) {
+      return this.#cookieBannerSwitchEl;
+    }
+    return (this.#cookieBannerSwitchEl = document.getElementById(
+      "protections-popup-cookie-banner-switch"
+    ));
+  }
+})();
+
+/**
+ * Utility object to handle manipulations of the protections indicators in the UI
+ */
 var gProtectionsHandler = {
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
   PREF_CB_CATEGORY: "browser.contentblocking.category",
@@ -1867,6 +2044,8 @@ var gProtectionsHandler = {
       this._protectionsPopup.removeAttribute("milestone");
     }
 
+    cookieBannerSection.updateSection({ hostForDisplay: host });
+
     this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
     this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
     this._protectionsPopup.toggleAttribute("hasException", this.hasException);
@@ -2016,6 +2195,10 @@ var gProtectionsHandler = {
     gBrowser.reloadTab(targetTab);
 
     delete this._TPSwitchCommanding;
+  },
+
+  onCookieBannerSwitchCommand() {
+    cookieBannerSection.onCookieBannerSwitchCommand();
   },
 
   setTrackersBlockedCounter(trackerCount) {
