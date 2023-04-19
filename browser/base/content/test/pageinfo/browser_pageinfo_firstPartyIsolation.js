@@ -24,7 +24,7 @@ async function testFirstPartyDomain(pageInfo) {
     
     
     if (i == 0) {
-      await BrowserTestUtils.waitForEvent(preview, "loadend");
+      await BrowserTestUtils.waitForEvent(preview, "load");
     } else {
       await BrowserTestUtils.waitForEvent(preview, "loadstart");
     }
