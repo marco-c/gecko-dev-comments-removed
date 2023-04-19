@@ -545,10 +545,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  void DestroyChannelInterface(cricket::ChannelInterface* channel);
-  
-  
-
   void GenerateMediaDescriptionOptions(
       const SessionDescriptionInterface* session_desc,
       RtpTransceiverDirection audio_direction,
@@ -681,14 +677,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
   cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
-
-  
-  
-  
-  
-  
-  
-  rtc::UniqueRandomIdGenerator ssrc_generator_;
 
   
   

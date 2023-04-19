@@ -141,8 +141,7 @@ class MediaSessionDescriptionFactory {
   
   
   MediaSessionDescriptionFactory(ChannelManager* cmanager,
-                                 const TransportDescriptionFactory* factory,
-                                 rtc::UniqueRandomIdGenerator* ssrc_generator);
+                                 const TransportDescriptionFactory* factory);
 
   const AudioCodecs& audio_sendrecv_codecs() const;
   const AudioCodecs& audio_send_codecs() const;

@@ -129,11 +129,9 @@ ConnectionContext::ConnectionContext(
   default_socket_factory_ = std::make_unique<rtc::BasicPacketSocketFactory>(
       network_thread()->socketserver());
 
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&]() {
-    channel_manager_ = cricket::ChannelManager::Create(
-        std::move(dependencies->media_engine),
-        true, worker_thread(), network_thread());
-  });
+  channel_manager_ = cricket::ChannelManager::Create(
+      std::move(dependencies->media_engine),
+      true, worker_thread(), network_thread());
 
   
   
@@ -147,8 +145,7 @@ ConnectionContext::ConnectionContext(
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  worker_thread_->Invoke<void>(RTC_FROM_HERE,
-                               [&]() { channel_manager_.reset(nullptr); });
+  channel_manager_.reset(nullptr);
 
   
   

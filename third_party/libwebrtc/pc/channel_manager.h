@@ -43,7 +43,7 @@ namespace cricket {
 
 
 
-class ChannelManager final {
+class ChannelManager final : public ChannelFactoryInterface {
  public:
   
   
@@ -55,11 +55,12 @@ class ChannelManager final {
       rtc::Thread* network_thread);
 
   ChannelManager() = delete;
-  ~ChannelManager();
+  ~ChannelManager() override;
 
   rtc::Thread* worker_thread() const { return worker_thread_; }
   rtc::Thread* network_thread() const { return network_thread_; }
   MediaEngineInterface* media_engine() { return media_engine_.get(); }
+  rtc::UniqueRandomIdGenerator& ssrc_generator() { return ssrc_generator_; }
 
   
   
@@ -81,14 +82,10 @@ class ChannelManager final {
   
   VoiceChannel* CreateVoiceChannel(webrtc::Call* call,
                                    const MediaConfig& media_config,
-                                   rtc::Thread* signaling_thread,
-                                   const std::string& content_name,
+                                   const std::string& mid,
                                    bool srtp_required,
                                    const webrtc::CryptoOptions& crypto_options,
-                                   rtc::UniqueRandomIdGenerator* ssrc_generator,
-                                   const AudioOptions& options);
-  
-  void DestroyVoiceChannel(VoiceChannel* voice_channel);
+                                   const AudioOptions& options) override;
 
   
   
@@ -96,15 +93,14 @@ class ChannelManager final {
   VideoChannel* CreateVideoChannel(
       webrtc::Call* call,
       const MediaConfig& media_config,
-      rtc::Thread* signaling_thread,
-      const std::string& content_name,
+      const std::string& mid,
       bool srtp_required,
       const webrtc::CryptoOptions& crypto_options,
-      rtc::UniqueRandomIdGenerator* ssrc_generator,
       const VideoOptions& options,
-      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory);
-  
-  void DestroyVideoChannel(VideoChannel* video_channel);
+      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory)
+      override;
+
+  void DestroyChannel(ChannelInterface* channel) override;
 
   
   
@@ -120,9 +116,22 @@ class ChannelManager final {
                  rtc::Thread* worker_thread,
                  rtc::Thread* network_thread);
 
+  
+  void DestroyVoiceChannel(VoiceChannel* voice_channel);
+
+  
+  void DestroyVideoChannel(VideoChannel* video_channel);
+
   const std::unique_ptr<MediaEngineInterface> media_engine_;  
+  rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+
+  
+  
+  
+  
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 
   
   std::vector<std::unique_ptr<VoiceChannel>> voice_channels_

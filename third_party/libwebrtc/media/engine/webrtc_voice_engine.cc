@@ -343,6 +343,7 @@ void WebRtcVoiceEngine::Init() {
   RTC_LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
 
   
+  RTC_DCHECK(!low_priority_worker_queue_);
   low_priority_worker_queue_.reset(
       new rtc::TaskQueue(task_queue_factory_->CreateTaskQueue(
           "rtc-low-prio", webrtc::TaskQueueFactory::Priority::LOW)));

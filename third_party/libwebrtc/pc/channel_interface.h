@@ -20,9 +20,17 @@
 #include "media/base/media_channel.h"
 #include "pc/rtp_transport_internal.h"
 
+namespace webrtc {
+class Call;
+class VideoBitrateAllocatorFactory;
+}  
+
 namespace cricket {
 
 class MediaContentDescription;
+class VideoChannel;
+class VoiceChannel;
+struct MediaConfig;
 
 
 
@@ -39,7 +47,8 @@ class ChannelInterface {
   
   virtual absl::string_view transport_name() const = 0;
 
-  virtual const std::string& content_name() const = 0;
+  
+  virtual const std::string& mid() const = 0;
 
   
   virtual void Enable(bool enable) = 0;
@@ -70,6 +79,32 @@ class ChannelInterface {
 
  protected:
   virtual ~ChannelInterface() = default;
+};
+
+class ChannelFactoryInterface {
+ public:
+  virtual VideoChannel* CreateVideoChannel(
+      webrtc::Call* call,
+      const MediaConfig& media_config,
+      const std::string& mid,
+      bool srtp_required,
+      const webrtc::CryptoOptions& crypto_options,
+      const VideoOptions& options,
+      webrtc::VideoBitrateAllocatorFactory*
+          video_bitrate_allocator_factory) = 0;
+
+  virtual VoiceChannel* CreateVoiceChannel(
+      webrtc::Call* call,
+      const MediaConfig& media_config,
+      const std::string& mid,
+      bool srtp_required,
+      const webrtc::CryptoOptions& crypto_options,
+      const AudioOptions& options) = 0;
+
+  virtual void DestroyChannel(ChannelInterface* channel) = 0;
+
+ protected:
+  virtual ~ChannelFactoryInterface() = default;
 };
 
 }  

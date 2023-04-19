@@ -132,13 +132,10 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     bool dtls_enabled,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
-    UniqueRandomIdGenerator* ssrc_generator,
     std::function<void(const rtc::scoped_refptr<rtc::RTCCertificate>&)>
         on_certificate_ready)
     : signaling_thread_(signaling_thread),
-      session_desc_factory_(channel_manager,
-                            &transport_desc_factory_,
-                            ssrc_generator),
+      session_desc_factory_(channel_manager, &transport_desc_factory_),
       
       
       
