@@ -97,7 +97,6 @@ struct nsWidgetInitData {
   
   bool mClipChildren = false;
   bool mClipSiblings = false;
-  bool mDropShadow = false;
   bool mRTL = false;
   bool mNoAutoHide = false;   
   bool mIsDragPopup = false;  

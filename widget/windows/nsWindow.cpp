@@ -260,7 +260,6 @@ using namespace mozilla::plugins;
 
 static const wchar_t kUser32LibName[] = L"user32.dll";
 
-bool nsWindow::sDropShadowEnabled = true;
 uint32_t nsWindow::sInstanceCount = 0;
 bool nsWindow::sSwitchKeyboardLayout = false;
 BOOL nsWindow::sIsOleInitialized = FALSE;
@@ -1020,13 +1019,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
-  const wchar_t* className;
-  if (aInitData->mDropShadow) {
-    className = GetWindowPopupClass();
-  } else {
-    className = GetWindowClass();
-  }
-
+  const wchar_t* className = GetWindowClass();
   if (aInitData->mWindowType == eWindowType_toplevel && !aParent &&
       !sFirstTopLevelWindowCreated) {
     sFirstTopLevelWindowCreated = true;
@@ -1360,16 +1353,13 @@ const wchar_t* nsWindow::GetWindowClass() const {
       return RegisterWindowClass(kClassNameHidden, 0, gStockApplicationIcon);
     case eWindowType_dialog:
       return RegisterWindowClass(kClassNameDialog, 0, 0);
+    case eWindowType_popup:
+      return RegisterWindowClass(kClassNameDropShadow, CS_DROPSHADOW,
+                                 gStockApplicationIcon);
     default:
       return RegisterWindowClass(GetMainWindowClass(), 0,
                                  gStockApplicationIcon);
   }
-}
-
-
-const wchar_t* nsWindow::GetWindowPopupClass() const {
-  return RegisterWindowClass(kClassNameDropShadow, CS_XP_DROPSHADOW,
-                             gStockApplicationIcon);
 }
 
 
@@ -1685,23 +1675,27 @@ void nsWindow::Show(bool bState) {
   }
 
   if (mWindowType == eWindowType_popup) {
-    
-    
-    
-    
-    
-    if (HasBogusPopupsDropShadowOnMultiMonitor() &&
-        WinUtils::GetMonitorCount() > 1 &&
-        !gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
-      if (sDropShadowEnabled) {
-        ::SetClassLongA(mWnd, GCL_STYLE, 0);
-        sDropShadowEnabled = false;
+    const bool shouldUseDropShadow = [&] {
+      if (mTransparencyMode == eTransparencyTransparent) {
+        return false;
       }
-    } else {
-      if (!sDropShadowEnabled) {
-        ::SetClassLongA(mWnd, GCL_STYLE, CS_DROPSHADOW);
-        sDropShadowEnabled = true;
+      if (HasBogusPopupsDropShadowOnMultiMonitor() &&
+          WinUtils::GetMonitorCount() > 1 &&
+          !gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
+        
+        
+        
+        
+        
+        return false;
       }
+      return true;
+    }();
+
+    static bool sShadowEnabled = true;
+    if (sShadowEnabled != shouldUseDropShadow) {
+      ::SetClassLongA(mWnd, GCL_STYLE, shouldUseDropShadow ? CS_DROPSHADOW : 0);
+      sShadowEnabled = shouldUseDropShadow;
     }
 
     

@@ -64,7 +64,8 @@ typedef enum { TRI_UNKNOWN = -1, TRI_FALSE = 0, TRI_TRUE = 1 } TriStateBool;
 
 
 
-const uint32_t kMaxClassNameLength = 40;
+
+
 const wchar_t kClassNameHidden[] = L"MozillaHiddenWindowClass";
 const wchar_t kClassNameGeneral[] = L"MozillaWindowClass";
 const wchar_t kClassNameDialog[] = L"MozillaDialogClass";

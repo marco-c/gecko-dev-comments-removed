@@ -364,17 +364,9 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
   bool remote = HasRemoteContent();
 
   nsTransparencyMode mode = nsLayoutUtils::GetFrameTransparency(this, this);
-  nsIContent* parentContent = GetContent()->GetParent();
-  nsAtom* tag = nullptr;
-  if (parentContent && parentContent->IsXULElement())
-    tag = parentContent->NodeInfo()->NameAtom();
   widgetData.mHasRemoteContent = remote;
   widgetData.mSupportTranslucency = mode == eTransparencyTransparent;
   widgetData.mPopupLevel = PopupLevel(widgetData.mNoAutoHide);
-
-  
-  widgetData.mDropShadow =
-      !(mode == eTransparencyTransparent || tag == nsGkAtoms::menulist);
 
   
   
