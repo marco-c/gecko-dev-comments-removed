@@ -316,6 +316,21 @@ class Promise : public SupportsWeakPtr {
   static already_AddRefed<Promise> CreateResolvedWithUndefined(
       nsIGlobalObject* aGlobal, ErrorResult& aRv);
 
+  static already_AddRefed<Promise> CreateRejected(
+      nsIGlobalObject* aGlobal, JS::Handle<JS::Value> aRejectionError,
+      ErrorResult& aRv);
+
+  static already_AddRefed<Promise> CreateRejectedWithTypeError(
+      nsIGlobalObject* aGlobal, const nsACString& aMessage, ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  static already_AddRefed<Promise> CreateRejectedWithErrorResult(
+      nsIGlobalObject* aGlobal, ErrorResult& aRejectionError);
+
  protected:
   template <typename ResolveCallback, typename RejectCallback, typename... Args>
   ThenResult<ResolveCallback, Args...> ThenCatchWithCycleCollectedArgsImpl(

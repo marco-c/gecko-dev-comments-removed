@@ -351,13 +351,8 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
                 aPort->Close();
 
                 
-                RefPtr<Promise> promise =
-                    Promise::Create(aPort->GetParentObject(), aRv);
-                if (aRv.Failed()) {
-                  return nullptr;
-                }
-                promise->MaybeReject(error);
-                return promise.forget();
+                return Promise::CreateRejected(aPort->GetParentObject(), error,
+                                               aRv);
               }
 
               
@@ -408,12 +403,7 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
     
     
     if (!result) {
-      RefPtr<Promise> promise = Promise::Create(mPort->GetParentObject(), aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-      promise->MaybeReject(error);
-      return promise.forget();
+      return Promise::CreateRejected(mPort->GetParentObject(), error, aRv);
     }
 
     
@@ -751,12 +741,7 @@ class CrossRealmReadableUnderlyingSourceAlgorithms final
     
     
     if (!result) {
-      RefPtr<Promise> promise = Promise::Create(mPort->GetParentObject(), aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-      promise->MaybeReject(error);
-      return promise.forget();
+      return Promise::CreateRejected(mPort->GetParentObject(), error, aRv);
     }
 
     

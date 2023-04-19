@@ -305,13 +305,8 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   
   
   if (state == WritableStream::WriterState::Errored) {
-    RefPtr<Promise> promise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
     JS::Rooted<JS::Value> error(aCx, stream->StoredError());
-    promise->MaybeReject(error);
-    return promise.forget();
+    return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 
   
@@ -319,24 +314,15 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   
   if (stream->CloseQueuedOrInFlight() ||
       state == WritableStream::WriterState::Closed) {
-    RefPtr<Promise> promise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-    promise->MaybeRejectWithTypeError("Stream is closed or closing");
-    return promise.forget();
+    return Promise::CreateRejectedWithTypeError(
+        aWriter->GetParentObject(), "Stream is closed or closing"_ns, aRv);
   }
 
   
   
   if (state == WritableStream::WriterState::Erroring) {
-    RefPtr<Promise> promise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
     JS::Rooted<JS::Value> error(aCx, stream->StoredError());
-    promise->MaybeReject(error);
-    return promise.forget();
+    return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 
   
@@ -570,13 +556,8 @@ already_AddRefed<Promise> WritableStreamDefaultWriterCloseWithErrorPropagation(
   
   
   if (state == WritableStream::WriterState::Errored) {
-    RefPtr<Promise> promise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
     JS::Rooted<JS::Value> error(aCx, stream->StoredError());
-    promise->MaybeReject(error);
-    return promise.forget();
+    return Promise::CreateRejected(aWriter->GetParentObject(), error, aRv);
   }
 
   
