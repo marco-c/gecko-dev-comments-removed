@@ -319,13 +319,6 @@ class ErrorReportMixin : public StrictModeGetter {
 class ErrorReporter : public ErrorReportMixin {
  public:
   
-  virtual void lineAndColumnAt(size_t offset, uint32_t* line,
-                               uint32_t* column) const = 0;
-
-  
-  virtual void currentLineAndColumn(uint32_t* line, uint32_t* column) const = 0;
-
-  
   
   
   
@@ -338,13 +331,6 @@ class ErrorReporter : public ErrorReportMixin {
 
   
   virtual uint32_t columnAt(size_t offset) const = 0;
-
-  
-  
-  virtual bool hasTokenizationStarted() const = 0;
-
-  
-  virtual const char* getFilename() const = 0;
 };
 
 }  
