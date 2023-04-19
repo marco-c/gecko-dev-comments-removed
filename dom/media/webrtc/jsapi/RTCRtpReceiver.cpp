@@ -314,16 +314,16 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               local.mPacketsReceived.Construct(audioStats->packets_rcvd);
               local.mPacketsDiscarded.Construct(audioStats->packets_discarded);
               local.mBytesReceived.Construct(audioStats->payload_bytes_rcvd);
+              local.mJitterBufferDelay.Construct(
+                  audioStats->jitter_buffer_delay_seconds);
+              local.mJitterBufferEmittedCount.Construct(
+                  audioStats->jitter_buffer_emitted_count);
+              local.mTotalSamplesReceived.Construct(
+                  audioStats->total_samples_received);
+              local.mConcealedSamples.Construct(audioStats->concealed_samples);
+              local.mSilentConcealedSamples.Construct(
+                  audioStats->silent_concealed_samples);
               
-
-
-
-
-
-
-
-
-
 
 
 
@@ -435,12 +435,11 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               local.mFramesReceived.Construct(
                   videoStats->frame_counts.key_frames +
                   videoStats->frame_counts.delta_frames);
-
+              local.mJitterBufferDelay.Construct(
+                  videoStats->jitter_buffer_delay_seconds);
+              local.mJitterBufferEmittedCount.Construct(
+                  videoStats->jitter_buffer_emitted_count);
               
-
-
-
-
 
 
 
