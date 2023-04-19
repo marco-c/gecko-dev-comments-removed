@@ -151,11 +151,25 @@ var FormAutofill = {
 
 
 
+  get isAutofillCreditCardsLocked() {
+    return Services.prefs.prefIsLocked(ENABLED_AUTOFILL_CREDITCARDS_PREF);
+  },
+  
+
+
+
   get isAutofillAddressesEnabled() {
     return (
       this.isAutofillAddressesAvailable &&
       FormAutofill._isAutofillAddressesEnabled
     );
+  },
+  
+
+
+
+  get isAutofillAddressesLocked() {
+    return Services.prefs.prefIsLocked(ENABLED_AUTOFILL_ADDRESSES_PREF);
   },
 
   defineLogGetter(scope, logPrefix) {
