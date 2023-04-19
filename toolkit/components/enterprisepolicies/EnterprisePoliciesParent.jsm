@@ -1,62 +1,62 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+
+
+var EXPORTED_SYMBOLS = ["EnterprisePoliciesManager"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
 const lazy = {};
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  Policies: "resource:///modules/policies/Policies.sys.mjs",
-  WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.sys.mjs",
-  macOSPoliciesParser:
-    "resource://gre/modules/policies/macOSPoliciesParser.sys.mjs",
-});
-
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
+  macOSPoliciesParser:
+    "resource://gre/modules/policies/macOSPoliciesParser.jsm",
+  Policies: "resource:///modules/policies/Policies.jsm",
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
 });
 
-// This is the file that will be searched for in the
-// ${InstallDir}/distribution folder.
+
+
 const POLICIES_FILENAME = "policies.json";
 
-// When true browser policy is loaded per-user from
-// /run/user/$UID/appname
+
+
 const PREF_PER_USER_DIR = "toolkit.policies.perUserDir";
-// For easy testing, modify the helpers/sample.json file,
-// and set PREF_ALTERNATE_PATH in firefox.js as:
-// /your/repo/browser/components/enterprisepolicies/helpers/sample.json
+
+
+
 const PREF_ALTERNATE_PATH = "browser.policies.alternatePath";
-// For testing GPO, you can set an alternate location in testing
+
 const PREF_ALTERNATE_GPO = "browser.policies.alternateGPO";
 
-// For testing, we may want to set PREF_ALTERNATE_PATH to point to a file
-// relative to the test root directory. In order to enable this, the string
-// below may be placed at the beginning of that preference value and it will
-// be replaced with the path to the test root directory.
+
+
+
+
 const MAGIC_TEST_ROOT_PREFIX = "<test-root>";
 const PREF_TEST_ROOT = "mochitest.testRoot";
 
 const PREF_LOGLEVEL = "browser.policies.loglevel";
 
-// To force disallowing enterprise-only policies during tests
+
 const PREF_DISALLOW_ENTERPRISE = "browser.policies.testing.disallowEnterprise";
 
-// To allow for cleaning up old policies
+
 const PREF_POLICIES_APPLIED = "browser.policies.applied";
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   return new ConsoleAPI({
     prefix: "Enterprise Policies",
-    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
-    // messages during development. See LOG_LEVELS in Console.jsm for details.
+    
+    
     maxLogLevel: "error",
     maxLogLevelPref: PREF_LOGLEVEL,
   });
@@ -67,8 +67,8 @@ let env = Cc["@mozilla.org/process/environment;1"].getService(
 );
 const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
 
-// We're only testing for empty objects, not
-// empty strings or empty arrays.
+
+
 function isEmptyObject(obj) {
   if (typeof obj != "object" || Array.isArray(obj)) {
     return false;
@@ -81,7 +81,7 @@ function isEmptyObject(obj) {
   return true;
 }
 
-export function EnterprisePoliciesManager() {
+function EnterprisePoliciesManager() {
   Services.obs.addObserver(this, "profile-after-change", true);
   Services.obs.addObserver(this, "final-ui-startup", true);
   Services.obs.addObserver(this, "sessionstore-windows-restored", true);
@@ -107,7 +107,7 @@ EnterprisePoliciesManager.prototype = {
               timing,
               policyCallback.bind(
                 policyImpl,
-                this /* the EnterprisePoliciesManager */
+                this 
               )
             );
           }
@@ -208,7 +208,7 @@ EnterprisePoliciesManager.prototype = {
             timing,
             policyCallback.bind(
               policyImpl,
-              this /* the EnterprisePoliciesManager */,
+              this ,
               parsedParameters
             )
           );
@@ -218,23 +218,23 @@ EnterprisePoliciesManager.prototype = {
   },
 
   _callbacks: {
-    // The earliest that a policy callback can run. This will
-    // happen right after the Policy Engine itself has started,
-    // and before the Add-ons Manager has started.
+    
+    
+    
     onBeforeAddons: [],
 
-    // This happens after all the initialization related to
-    // the profile has finished (prefs, places database, etc.).
+    
+    
     onProfileAfterChange: [],
 
-    // Just before the first browser window gets created.
+    
     onBeforeUIStartup: [],
 
-    // Called after all windows from the last session have been
-    // restored (or the default window and homepage tab, if the
-    // session is not being restored).
-    // The content of the tabs themselves have not necessarily
-    // finished loading.
+    
+    
+    
+    
+    
     onAllWindowsRestored: [],
   },
 
@@ -269,8 +269,8 @@ EnterprisePoliciesManager.prototype = {
     let { PromiseUtils } = ChromeUtils.import(
       "resource://gre/modules/PromiseUtils.jsm"
     );
-    // Simulate the startup process. This step-by-step is a bit ugly but it
-    // tries to emulate the same behavior as of a normal startup.
+    
+    
 
     await PromiseUtils.idleDispatch(() => {
       this.observe(null, "policies-startup", null);
@@ -289,12 +289,12 @@ EnterprisePoliciesManager.prototype = {
     });
   },
 
-  // nsIObserver implementation
+  
   observe: function BG_observe(subject, topic, data) {
     switch (topic) {
       case "policies-startup":
-        // Before the first set of policy callbacks runs, we must
-        // initialize the service.
+        
+        
         this._initialize();
 
         this._runPoliciesCallbacks("onBeforeAddons");
@@ -311,7 +311,7 @@ EnterprisePoliciesManager.prototype = {
       case "sessionstore-windows-restored":
         this._runPoliciesCallbacks("onAllWindowsRestored");
 
-        // After the last set of policy callbacks ran, notify the test observer.
+        
         Services.obs.notifyObservers(
           null,
           "EnterprisePolicies:AllPoliciesApplied"
@@ -327,8 +327,8 @@ EnterprisePoliciesManager.prototype = {
   disallowFeature(feature, neededOnContentProcess = false) {
     DisallowedFeatures[feature] = neededOnContentProcess;
 
-    // NOTE: For optimization purposes, only features marked as needed
-    // on content process will be passed onto the child processes.
+    
+    
     if (neededOnContentProcess) {
       Services.ppmm.sharedData.set(
         "EnterprisePolicies:DisallowedFeatures",
@@ -339,9 +339,9 @@ EnterprisePoliciesManager.prototype = {
     }
   },
 
-  // ------------------------------
-  // public nsIEnterprisePolicies members
-  // ------------------------------
+  
+  
+  
 
   _status: Ci.nsIEnterprisePolicies.UNINITIALIZED,
 
@@ -408,7 +408,7 @@ EnterprisePoliciesManager.prototype = {
   },
 
   mayInstallAddon(addon) {
-    // See https://dev.chromium.org/administrators/policy-list-3/extension-settings-full
+    
     if (!ExtensionSettings) {
       return true;
     }
@@ -473,23 +473,23 @@ let ExtensionPolicies = null;
 let ExtensionSettings = null;
 let InstallSources = null;
 
-/**
- * areEnterpriseOnlyPoliciesAllowed
- *
- * Checks whether the policies marked as enterprise_only in the
- * schema are allowed to run on this browser.
- *
- * This is meant to only allow policies to run on ESR, but in practice
- * we allow it to run on channels different than release, to allow
- * these policies to be tested on pre-release channels.
- *
- * @returns {Bool} Whether the policy can run.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 function areEnterpriseOnlyPoliciesAllowed() {
   if (Cu.isInAutomation || isXpcshell) {
     if (Services.prefs.getBoolPref(PREF_DISALLOW_ENTERPRISE, false)) {
-      // This is used as an override to test the "enterprise_only"
-      // functionality itself on tests.
+      
+      
       return false;
     }
     return true;
@@ -502,13 +502,13 @@ function areEnterpriseOnlyPoliciesAllowed() {
   );
 }
 
-/*
- * JSON PROVIDER OF POLICIES
- *
- * This is a platform-agnostic provider which looks for
- * policies specified through a policies.json file stored
- * in the installation's distribution folder.
- */
+
+
+
+
+
+
+
 
 class JSONPoliciesProvider {
   constructor() {
@@ -553,27 +553,27 @@ class JSONPoliciesProvider {
       }
       configFile.append(POLICIES_FILENAME);
     } catch (ex) {
-      // Getting the correct directory will fail in xpcshell tests. This should
-      // be handled the same way as if the configFile simply does not exist.
+      
+      
     }
 
     let alternatePath = Services.prefs.getStringPref(PREF_ALTERNATE_PATH, "");
 
-    // Check if we are in automation *before* we use the synchronous
-    // nsIFile.exists() function or allow the config file to be overriden
-    // An alternate policy path can also be used in Nightly builds (for
-    // testing purposes), but the Background Update Agent will be unable to
-    // detect the alternate policy file so the DisableAppUpdate policy may not
-    // work as expected.
+    
+    
+    
+    
+    
+    
     if (
       alternatePath &&
       (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD || isXpcshell) &&
       (!configFile || !configFile.exists())
     ) {
       if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
-        // Intentionally not using a default value on this pref lookup. If no
-        // test root is set, we are not currently testing and this function
-        // should throw rather than returning something.
+        
+        
+        
         let testRoot = Services.prefs.getStringPref(PREF_TEST_ROOT);
         let relativePath = alternatePath.substring(
           MAGIC_TEST_ROOT_PREFIX.length
@@ -594,7 +594,7 @@ class JSONPoliciesProvider {
   _readData() {
     let configFile = this._getConfigurationFile();
     if (!configFile) {
-      // Do nothing, _policies will remain null
+      
       return;
     }
     try {
@@ -614,7 +614,7 @@ class JSONPoliciesProvider {
         ex instanceof Components.Exception &&
         ex.result == Cr.NS_ERROR_FILE_NOT_FOUND
       ) {
-        // Do nothing, _policies will remain null
+        
       } else if (ex instanceof SyntaxError) {
         lazy.log.error(`Error parsing JSON file: ${ex}`);
         this._failed = true;
@@ -634,10 +634,10 @@ class WindowsGPOPoliciesProvider {
       Ci.nsIWindowsRegKey
     );
 
-    // Machine policies override user policies, so we read
-    // user policies first and then replace them if necessary.
+    
+    
     this._readData(wrk, wrk.ROOT_KEY_CURRENT_USER);
-    // We don't access machine policies in testing
+    
     if (!Cu.isInAutomation && !isXpcshell) {
       this._readData(wrk, wrk.ROOT_KEY_LOCAL_MACHINE);
     }
@@ -711,8 +711,8 @@ class macOSPoliciesProvider {
 
 class CombinedProvider {
   constructor(primaryProvider, secondaryProvider) {
-    // Combine policies with primaryProvider taking precedence.
-    // We only do this for top level policies.
+    
+    
     this._policies = primaryProvider._policies;
     for (let policyName of Object.keys(secondaryProvider.policies)) {
       if (!(policyName in this._policies)) {
@@ -722,7 +722,7 @@ class CombinedProvider {
   }
 
   get hasPolicies() {
-    // Combined provider always has policies.
+    
     return true;
   }
 
@@ -731,7 +731,7 @@ class CombinedProvider {
   }
 
   get failed() {
-    // Combined provider never fails.
+    
     return false;
   }
 }

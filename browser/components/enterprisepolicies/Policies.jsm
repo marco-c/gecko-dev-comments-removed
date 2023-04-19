@@ -1,11 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -26,16 +27,13 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   gXulStore: ["@mozilla.org/xul/xulstore;1", "nsIXULStore"],
 });
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  BookmarksPolicies: "resource:///modules/policies/BookmarksPolicies.sys.mjs",
-  ProxyPolicies: "resource:///modules/policies/ProxyPolicies.sys.mjs",
-  WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
-});
-
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
+  BookmarksPolicies: "resource:///modules/policies/BookmarksPolicies.jsm",
   CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
+  ProxyPolicies: "resource:///modules/policies/ProxyPolicies.jsm",
+  WebsiteFilter: "resource:///modules/policies/WebsiteFilter.jsm",
 });
 
 const PREF_LOGLEVEL = "browser.policies.loglevel";
@@ -51,42 +49,49 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   return new ConsoleAPI({
     prefix: "Policies.jsm",
-    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
-    // messages during development. See LOG_LEVELS in Console.jsm for details.
+    
+    
     maxLogLevel: "error",
     maxLogLevelPref: PREF_LOGLEVEL,
   });
 });
 
-/*
- * ============================
- * = POLICIES IMPLEMENTATIONS =
- * ============================
- *
- * The Policies object below is where the implementation for each policy
- * happens. An object for each policy should be defined, containing
- * callback functions that will be called by the engine.
- *
- * See the _callbacks object in EnterprisePolicies.js for the list of
- * possible callbacks and an explanation of each.
- *
- * Each callback will be called with two parameters:
- * - manager
- *   This is the EnterprisePoliciesManager singleton object from
- *   EnterprisePolicies.js
- *
- * - param
- *   The parameter defined for this policy in policies-schema.json.
- *   It will be different for each policy. It could be a boolean,
- *   a string, an array or a complex object. All parameters have
- *   been validated according to the schema, and no unknown
- *   properties will be present on them.
- *
- * The callbacks will be bound to their parent policy object.
- */
-export var Policies = {
-  // Used for cleaning up policies.
-  // Use the same timing that you used for setting up the policy.
+var EXPORTED_SYMBOLS = [
+  "Policies",
+  "setAndLockPref",
+  "PoliciesUtils",
+  "runOnce",
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var Policies = {
+  
+  
   _cleanup: {
     onBeforeAddons(manager) {
       if (Cu.isInAutomation || isXpcshell) {
@@ -130,8 +135,8 @@ export var Policies = {
 
   AppAutoUpdate: {
     onBeforeUIStartup(manager, param) {
-      // Logic feels a bit reversed here, but it's correct. If AppAutoUpdate is
-      // true, we disallow turning off auto updating, and visa versa.
+      
+      
       if (param) {
         manager.disallowFeature("app-auto-updates-off");
       } else {
@@ -142,9 +147,9 @@ export var Policies = {
 
   AppUpdatePin: {
     validate(param) {
-      // This is the version when pinning was introduced. Attempting to set a
-      // pin before this will not work, because Balrog's pinning table will
-      // never have the necessary entry.
+      
+      
+      
       const earliestPinMajorVersion = 102;
       const earliestPinMinorVersion = 0;
 
@@ -230,13 +235,13 @@ export var Policies = {
 
       return true;
     },
-    // No additional implementation needed here. UpdateService.jsm will check
-    // for this policy directly when determining the update URL.
+    
+    
   },
 
   AppUpdateURL: {
-    // No implementation needed here. UpdateService.jsm will check for this
-    // policy directly when determining the update URL.
+    
+    
   },
 
   Authentication: {
@@ -389,14 +394,14 @@ export var Policies = {
           let platform = AppConstants.platform;
           if (platform == "win") {
             dirs = [
-              // Ugly, but there is no official way to get %USERNAME\AppData\Roaming\Mozilla.
+              
               Services.dirsvc.get("XREUSysExt", Ci.nsIFile).parent,
-              // Even more ugly, but there is no official way to get %USERNAME\AppData\Local\Mozilla.
+              
               Services.dirsvc.get("DefProfLRt", Ci.nsIFile).parent.parent,
             ];
           } else if (platform == "macosx" || platform == "linux") {
             dirs = [
-              // These two keys are named wrong. They return the Mozilla directory.
+              
               Services.dirsvc.get("XREUserNativeManifests", Ci.nsIFile),
               Services.dirsvc.get("XRESysNativeManifests", Ci.nsIFile),
             ];
@@ -447,7 +452,7 @@ export var Policies = {
                   `constructX509 failed with error '${e}' - trying constructX509FromBase64.`
                 );
                 try {
-                  // It might be PEM instead of DER.
+                  
                   cert = lazy.gCertDB.constructX509FromBase64(
                     pemToBase64(certFile)
                   );
@@ -466,13 +471,13 @@ export var Policies = {
                     Ci.nsIX509CertDB.TRUSTED_SSL
                   )
                 ) {
-                  // Certificate is already installed.
+                  
                   return;
                 }
                 try {
                   lazy.gCertDB.addCert(certFile, "CT,CT,");
                 } catch (e) {
-                  // It might be PEM instead of DER.
+                  
                   lazy.gCertDB.addCertFromBase64(
                     pemToBase64(certFile),
                     "CT,CT,"
@@ -530,7 +535,7 @@ export var Policies = {
         );
       }
 
-      // New Cookie Behavior option takes precendence
+      
       let defaultPref = Services.prefs.getDefaultBranch("");
       let newCookieBehavior = defaultPref.getIntPref(
         "network.cookie.cookieBehavior"
@@ -555,9 +560,9 @@ export var Policies = {
           newCookieBehaviorPB = behaviors[param.BehaviorPrivateBrowsing];
         }
       } else {
-        // Default, AcceptThirdParty, and RejectTracker are being
-        // deprecated in favor of Behavior. They will continue
-        // to be supported, though.
+        
+        
+        
         if (
           param.Default !== undefined ||
           param.AcceptThirdParty !== undefined ||
@@ -577,10 +582,10 @@ export var Policies = {
             newCookieBehavior = Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER;
           }
         }
-        // With the old cookie policy, we made private browsing the same.
+        
         newCookieBehaviorPB = newCookieBehavior;
       }
-      // We set the values no matter what just in case the policy was only used to lock.
+      
       PoliciesUtils.setDefaultPref(
         "network.cookie.cookieBehavior",
         newCookieBehavior,
@@ -600,7 +605,7 @@ export var Policies = {
         "browser.download.dir",
         replacePathVariables(param)
       );
-      // If a custom download directory is being used, just lock folder list to 2.
+      
       setAndLockPref("browser.download.folderList", 2);
     },
   },
@@ -661,9 +666,9 @@ export var Policies = {
   },
 
   DisableDefaultBrowserAgent: {
-    // The implementation of this policy is in the default browser agent itself
-    // (/toolkit/mozapps/defaultagent); we need an entry for it here so that it
-    // shows up in about:policies as a real policy and not as an error.
+    
+    
+    
   },
 
   DisableDeveloperTools: {
@@ -848,13 +853,13 @@ export var Policies = {
   DisplayBookmarksToolbar: {
     onBeforeUIStartup(manager, param) {
       let value = (!param).toString();
-      // This policy is meant to change the default behavior, not to force it.
-      // If this policy was alreay applied and the user chose to re-hide the
-      // bookmarks toolbar, do not show it again.
+      
+      
+      
       runOncePerModification("displayBookmarksToolbar", value, () => {
-        // Set the preference to keep the bookmarks bar open and also
-        // declaratively open the bookmarks toolbar. Otherwise, default
-        // to showing it on the New Tab Page.
+        
+        
+        
         let visibilityPref = "browser.toolbars.bookmarks.visibility";
         let visibility = param ? "always" : "newtab";
         Services.prefs.setCharPref(visibilityPref, visibility);
@@ -887,9 +892,9 @@ export var Policies = {
             value = (!param).toString();
             break;
         }
-        // This policy is meant to change the default behavior, not to force it.
-        // If this policy was already applied and the user chose to re-hide the
-        // menu bar, do not show it again.
+        
+        
+        
         runOncePerModification("displayMenuBar", value, () => {
           lazy.gXulStore.setValue(
             BROWSER_DOCUMENT_URL,
@@ -904,7 +909,7 @@ export var Policies = {
             value = "false";
             break;
           case "never":
-            // Make sure Alt key doesn't show the menubar
+            
             setAndLockPref("ui.key.menuAccessKeyFocuses", false);
             value = "true";
             break;
@@ -956,10 +961,10 @@ export var Policies = {
   DownloadDirectory: {
     onBeforeAddons(manager, param) {
       setAndLockPref("browser.download.dir", replacePathVariables(param));
-      // If a custom download directory is being used, just lock folder list to 2.
+      
       setAndLockPref("browser.download.folderList", 2);
-      // Per Chrome spec, user can't choose to download every time
-      // if this is set.
+      
+      
       setAndLockPref("browser.download.useDownloadDir", true);
     },
   },
@@ -1018,8 +1023,8 @@ export var Policies = {
   },
 
   ExemptDomainFileTypePairsFromFileTypeDownloadWarnings: {
-    // This policy is handled directly in EnterprisePoliciesParent.jsm
-    // and requires no validation (It's done by the schema).
+    
+    
   },
 
   Extensions: {
@@ -1030,8 +1035,8 @@ export var Policies = {
           "extensionsUninstall",
           JSON.stringify(param.Uninstall),
           async () => {
-            // If we're uninstalling add-ons, re-run the extensionsInstall runOnce even if it hasn't
-            // changed, which will allow add-ons to be updated.
+            
+            
             Services.prefs.clearUserPref(
               "browser.policies.runOncePerModification.extensionsInstall"
             );
@@ -1043,7 +1048,7 @@ export var Policies = {
                 try {
                   await addon.uninstall();
                 } catch (e) {
-                  // This can fail for add-ons that can't be uninstalled.
+                  
                   lazy.log.debug(
                     `Add-on ID (${addon.id}) couldn't be uninstalled.`
                   );
@@ -1062,9 +1067,9 @@ export var Policies = {
             for (let location of param.Install) {
               let uri;
               try {
-                // We need to try as a file first because
-                // Windows paths are valid URIs.
-                // This is done for legacy support (old API)
+                
+                
+                
                 let xpiFile = new lazy.FileUtils.File(location);
                 uri = Services.io.newFileURI(xpiFile);
               } catch (e) {
@@ -1101,14 +1106,14 @@ export var Policies = {
           extensionSettings["*"].installation_mode == "blocked"
         ) {
           blockAllExtensions = true;
-          // Turn off discovery pane in about:addons
+          
           setAndLockPref("extensions.getAddons.showPane", false);
-          // Turn off recommendations
+          
           setAndLockPref(
             "extensions.htmlaboutaddons.recommendations.enable",
             false
           );
-          // Block about:debugging
+          
           blockAboutPage(manager, "about:debugging");
         }
         if ("restricted_domains" in extensionSettings["*"]) {
@@ -1127,7 +1132,7 @@ export var Policies = {
       let allowedExtensions = [];
       for (let extensionID in extensionSettings) {
         if (extensionID == "*") {
-          // Ignore global settings
+          
           continue;
         }
         if ("installation_mode" in extensionSettings[extensionID]) {
@@ -1161,12 +1166,12 @@ export var Policies = {
             extensionSettings[extensionID].installation_mode == "blocked"
           ) {
             if (addons.find(addon => addon.id == extensionID)) {
-              // Can't use the addon from getActiveAddons since it doesn't have uninstall.
+              
               let addon = await lazy.AddonManager.getAddonByID(extensionID);
               try {
                 await addon.uninstall();
               } catch (e) {
-                // This can fail for add-ons that can't be uninstalled.
+                
                 lazy.log.debug(
                   `Add-on ID (${addon.id}) couldn't be uninstalled.`
                 );
@@ -1186,13 +1191,13 @@ export var Policies = {
           }
           if (!allowedExtensions.includes(addon.id)) {
             try {
-              // Can't use the addon from getActiveAddons since it doesn't have uninstall.
+              
               let addonToUninstall = await lazy.AddonManager.getAddonByID(
                 addon.id
               );
               await addonToUninstall.uninstall();
             } catch (e) {
-              // This can fail for add-ons that can't be uninstalled.
+              
               lazy.log.debug(
                 `Add-on ID (${addon.id}) couldn't be uninstalled.`
               );
@@ -1347,13 +1352,13 @@ export var Policies = {
   Homepage: {
     onBeforeUIStartup(manager, param) {
       if ("StartPage" in param && param.StartPage == "none") {
-        // For blank startpage, we use about:blank rather
-        // than messing with browser.startup.page
+        
+        
         param.URL = new URL("about:blank");
       }
-      // |homepages| will be a string containing a pipe-separated ('|') list of
-      // URLs because that is what the "Home page" section of about:preferences
-      // (and therefore what the pref |browser.startup.homepage|) accepts.
+      
+      
+      
       if ("URL" in param) {
         let homepages = param.URL.href;
         if (param.Additional && param.Additional.length) {
@@ -1378,10 +1383,10 @@ export var Policies = {
             true
           );
         } else {
-          // Clear out old run once modification that is no longer used.
+          
           clearRunOnceModification("setHomepage");
         }
-        // If a homepage has been set via policy, show the home button
+        
         if (param.URL != "about:blank") {
           manager.disallowFeature("removeHomeButtonByDefault");
         }
@@ -1431,7 +1436,7 @@ export var Policies = {
   },
 
   LegacyProfiles: {
-    // Handled in nsToolkitProfileService.cpp (Windows only)
+    
   },
 
   LegacySameSiteCookieBehaviorEnabled: {
@@ -1454,7 +1459,7 @@ export var Policies = {
 
   LocalFileLinks: {
     onBeforeAddons(manager, param) {
-      // If there are existing capabilities, lock them with the policy pref.
+      
       let policyNames = Services.prefs
         .getCharPref("capability.policy.policynames", "")
         .split(" ");
@@ -1534,9 +1539,9 @@ export var Policies = {
     onProfileAfterChange(manager, param) {
       let url = param ? param.href : "";
       setAndLockPref("startup.homepage_override_url", url);
-      // The pref startup.homepage_override_url is only used
-      // as a fallback when the update.xml file hasn't provided
-      // a specific post-update URL.
+      
+      
+      
       manager.disallowFeature("postUpdateCustomPage");
     },
   },
@@ -1750,7 +1755,7 @@ export var Policies = {
           continue;
         }
         if (typeof param[preference] != "object") {
-          // Legacy policy preferences
+          
           setAndLockPref(preference, param[preference]);
         } else {
           if (param[preference].Status == "clear") {
@@ -1775,12 +1780,12 @@ export var Policies = {
                   throw new Error(`Non-integer value for ${preference}`);
                 }
 
-                // This is ugly, but necessary. On Windows GPO and macOS
-                // configs, booleans are converted to 0/1. In the previous
-                // Preferences implementation, the schema took care of
-                // automatically converting these values to booleans.
-                // Since we allow arbitrary prefs now, we have to do
-                // something different. See bug 1666836.
+                
+                
+                
+                
+                
+                
                 if (
                   prefBranch.getPrefType(preference) == prefBranch.PREF_INT ||
                   ![0, 1].includes(param[preference].Value)
@@ -1873,7 +1878,7 @@ export var Policies = {
         setAndLockPref("privacy.clearOnShutdown.offlineApps", param);
       } else {
         let locked = true;
-        // Needed to preserve original behavior in perpetuity.
+        
         let lockDefaultPrefs = true;
         if ("Locked" in param) {
           locked = param.Locked;
@@ -1982,9 +1987,9 @@ export var Policies = {
 
   SearchBar: {
     onAllWindowsRestored(manager, param) {
-      // This policy is meant to change the default behavior, not to force it.
-      // If this policy was already applied and the user chose move the search
-      // bar, don't move it again.
+      
+      
+      
       runOncePerModification("searchInNavBar", param, () => {
         if (param == "separate") {
           lazy.CustomizableUI.addWidgetToArea(
@@ -2009,7 +2014,7 @@ export var Policies = {
     onAllWindowsRestored(manager, param) {
       Services.search.init().then(async () => {
         if (param.Remove) {
-          // Only rerun if the list of engine names has changed.
+          
           await runOncePerModification(
             "removeSearchEngines",
             JSON.stringify(param.Remove),
@@ -2028,7 +2033,7 @@ export var Policies = {
           );
         }
         if (param.Add) {
-          // Rerun if any engine info has changed.
+          
           let engineInfoHash = md5Hash(JSON.stringify(param.Add));
           await runOncePerModification(
             "addSearchEngines",
@@ -2039,8 +2044,8 @@ export var Policies = {
                   description: newEngine.Description,
                   iconURL: newEngine.IconURL ? newEngine.IconURL.href : null,
                   name: newEngine.Name,
-                  // If the encoding is not specified or is falsy, the
-                  // search service will fall back to the default encoding.
+                  
+                  
                   encoding: newEngine.Encoding,
                   search_url: encodeURI(newEngine.URLTemplate),
                   keyword: newEngine.Alias,
@@ -2316,46 +2321,46 @@ export var Policies = {
   },
 };
 
-/*
- * ====================
- * = HELPER FUNCTIONS =
- * ====================
- *
- * The functions below are helpers to be used by several policies.
- */
 
-/**
- * setAndLockPref
- *
- * Sets the _default_ value of a pref, and locks it (meaning that
- * the default value will always be returned, independent from what
- * is stored as the user value).
- * The value is only changed in memory, and not stored to disk.
- *
- * @param {string} prefName
- *        The pref to be changed
- * @param {boolean,number,string} prefValue
- *        The value to set and lock
- */
-export function setAndLockPref(prefName, prefValue) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setAndLockPref(prefName, prefValue) {
   PoliciesUtils.setDefaultPref(prefName, prefValue, true);
 }
 
-/**
- * setDefaultPref
- *
- * Sets the _default_ value of a pref and optionally locks it.
- * The value is only changed in memory, and not stored to disk.
- *
- * @param {string} prefName
- *        The pref to be changed
- * @param {boolean,number,string} prefValue
- *        The value to set
- * @param {boolean} locked
- *        Optionally lock the pref
- */
 
-export var PoliciesUtils = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+var PoliciesUtils = {
   setDefaultPref(prefName, prefValue, locked = false) {
     if (Services.prefs.prefIsLocked(prefName)) {
       Services.prefs.unlockPref(prefName);
@@ -2373,12 +2378,12 @@ export var PoliciesUtils = {
           throw new Error(`Non-integer value for ${prefName}`);
         }
 
-        // This is ugly, but necessary. On Windows GPO and macOS
-        // configs, booleans are converted to 0/1. In the previous
-        // Preferences implementation, the schema took care of
-        // automatically converting these values to booleans.
-        // Since we allow arbitrary prefs now, we have to do
-        // something different. See bug 1666836.
+        
+        
+        
+        
+        
+        
         if (
           defaults.getPrefType(prefName) == defaults.PREF_INT ||
           ![0, 1].includes(prefValue)
@@ -2400,16 +2405,16 @@ export var PoliciesUtils = {
   },
 };
 
-/**
- * setDefaultPermission
- *
- * Helper function to set preferences appropriately for the policy
- *
- * @param {string} policyName
- *        The name of the policy to set
- * @param {object} policyParam
- *        The object containing param for the policy
- */
+
+
+
+
+
+
+
+
+
+
 function setDefaultPermission(policyName, policyParam) {
   if ("BlockNewRequests" in policyParam) {
     let prefName = "permissions.default." + policyName;
@@ -2422,19 +2427,19 @@ function setDefaultPermission(policyName, policyParam) {
   }
 }
 
-/**
- * addAllowDenyPermissions
- *
- * Helper function to call the permissions manager (Services.perms.addFromPrincipal)
- * for two arrays of URLs.
- *
- * @param {string} permissionName
- *        The name of the permission to change
- * @param {array} allowList
- *        The list of URLs to be set as ALLOW_ACTION for the chosen permission.
- * @param {array} blockList
- *        The list of URLs to be set as DENY_ACTION for the chosen permission.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 function addAllowDenyPermissions(permissionName, allowList, blockList) {
   allowList = allowList || [];
   blockList = blockList || [];
@@ -2448,7 +2453,7 @@ function addAllowDenyPermissions(permissionName, allowList, blockList) {
         Ci.nsIPermissionManager.EXPIRE_POLICY
       );
     } catch (ex) {
-      // It's possible if the origin was invalid, we'll have a string instead of an origin.
+      
       lazy.log.error(
         `Unable to add ${permissionName} permission for ${origin.href ||
           origin}`
@@ -2466,18 +2471,18 @@ function addAllowDenyPermissions(permissionName, allowList, blockList) {
   }
 }
 
-/**
- * runOnce
- *
- * Helper function to run a callback only once per policy.
- *
- * @param {string} actionName
- *        A given name which will be used to track if this callback has run.
- * @param {Functon} callback
- *        The callback to run only once.
- */
-// eslint-disable-next-line no-unused-vars
-export function runOnce(actionName, callback) {
+
+
+
+
+
+
+
+
+
+
+
+function runOnce(actionName, callback) {
   let prefName = `browser.policies.runonce.${actionName}`;
   if (Services.prefs.getBoolPref(prefName, false)) {
     lazy.log.debug(
@@ -2489,30 +2494,30 @@ export function runOnce(actionName, callback) {
   callback();
 }
 
-/**
- * runOncePerModification
- *
- * Helper function similar to runOnce. The difference is that runOnce runs the
- * callback once when the policy is set, then never again.
- * runOncePerModification runs the callback once each time the policy value
- * changes from its previous value.
- * If the callback that was passed is an async function, you can await on this
- * function to await for the callback.
- *
- * @param {string} actionName
- *        A given name which will be used to track if this callback has run.
- *        This string will be part of a pref name.
- * @param {string} policyValue
- *        The current value of the policy. This will be compared to previous
- *        values given to this function to determine if the policy value has
- *        changed. Regardless of the data type of the policy, this must be a
- *        string.
- * @param {Function} callback
- *        The callback to be run when the pref value changes
- * @returns Promise
- *        A promise that will resolve once the callback finishes running.
- *
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function runOncePerModification(actionName, policyValue, callback) {
   let prefName = `browser.policies.runOncePerModification.${actionName}`;
   let oldPolicyValue = Services.prefs.getStringPref(prefName, undefined);
@@ -2526,11 +2531,11 @@ async function runOncePerModification(actionName, policyValue, callback) {
   return callback();
 }
 
-/**
- * clearRunOnceModification
- *
- * Helper function that clears a runOnce policy.
- */
+
+
+
+
+
 function clearRunOnceModification(actionName) {
   let prefName = `browser.policies.runOncePerModification.${actionName}`;
   Services.prefs.clearUserPref(prefName);
@@ -2546,12 +2551,12 @@ function replacePathVariables(path) {
   return path;
 }
 
-/**
- * installAddonFromURL
- *
- * Helper function that installs an addon from a URL
- * and verifies that the addon ID matches.
- */
+
+
+
+
+
+
 function installAddonFromURL(url, extensionID, addon) {
   if (
     addon &&
@@ -2559,7 +2564,7 @@ function installAddonFromURL(url, extensionID, addon) {
     addon.sourceURI.spec == url &&
     !addon.sourceURI.schemeIs("file")
   ) {
-    // It's the same addon, don't reinstall.
+    
     return;
   }
   lazy.AddonManager.getInstallForURL(url, {
@@ -2571,9 +2576,9 @@ function installAddonFromURL(url, extensionID, addon) {
       return;
     }
     let listener = {
-      /* eslint-disable-next-line no-shadow */
+      
       onDownloadEnded: install => {
-        // Install failed, error will be reported elsewhere.
+        
         if (!install.addon) {
           return;
         }
@@ -2617,7 +2622,7 @@ function installAddonFromURL(url, extensionID, addon) {
           )} - {url}`
         );
       },
-      /* eslint-disable-next-line no-shadow */
+      
       onInstallEnded: (install, addon) => {
         if (addon.type == "theme") {
           addon.enable();
@@ -2626,8 +2631,8 @@ function installAddonFromURL(url, extensionID, addon) {
         lazy.log.debug(`Installation succeeded - ${url}`);
       },
     };
-    // If it's a local file install, onDownloadEnded is never called.
-    // So we call it manually, to handle some error cases.
+    
+    
     if (url.startsWith("file:")) {
       listener.onDownloadEnded(install);
       if (install.state == lazy.AddonManager.STATE_CANCELLED) {
@@ -2656,7 +2661,7 @@ function blockAboutPage(manager, feature, neededOnContentProcess = false) {
     let chromeURL = aboutModule.getChromeURI(Services.io.newURI(feature)).spec;
     gBlockedAboutPages.push(chromeURL);
   } catch (e) {
-    // Some about pages don't have chrome URLS (compat)
+    
   }
 }
 
@@ -2726,8 +2731,8 @@ function processMIMEInfo(mimeInfo, realMIMEInfo) {
   if ("handlers" in mimeInfo) {
     let firstHandler = true;
     for (let handler of mimeInfo.handlers) {
-      // handler can be null which means they don't
-      // want a preferred handler.
+      
+      
       if (handler) {
         let handlerApp;
         if ("path" in handler) {
@@ -2796,18 +2801,18 @@ function processMIMEInfo(mimeInfo, realMIMEInfo) {
   lazy.gHandlerService.store(realMIMEInfo);
 }
 
-// Copied from PlacesUIUtils.jsm
 
-// Keep a hasher for repeated hashings
+
+
 let gCryptoHash = null;
 
-/**
- * Run some text through md5 and return the base64 result.
- * @param {string} data The string to hash.
- * @returns {string} md5 hash of the input string.
- */
+
+
+
+
+
 function md5Hash(data) {
-  // Lazily create a reusable hasher
+  
   if (gCryptoHash === null) {
     gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
       Ci.nsICryptoHash
@@ -2816,11 +2821,11 @@ function md5Hash(data) {
 
   gCryptoHash.init(gCryptoHash.MD5);
 
-  // Convert the data to a byte array for hashing
+  
   gCryptoHash.update(
     data.split("").map(c => c.charCodeAt(0)),
     data.length
   );
-  // Request the has result as ASCII base64
+  
   return gCryptoHash.finish(true);
 }

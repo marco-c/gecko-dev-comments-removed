@@ -1,10 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 const PREF_LOGLEVEL = "browser.policies.loglevel";
 
@@ -14,16 +16,16 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   return new ConsoleAPI({
     prefix: "ProxyPolicies.jsm",
-    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
-    // messages during development. See LOG_LEVELS in Console.jsm for details.
+    
+    
     maxLogLevel: "error",
     maxLogLevelPref: PREF_LOGLEVEL,
   });
 });
 
-// Don't use const here because this is acessed by
-// tests through the BackstagePass object.
-export var PROXY_TYPES_MAP = new Map([
+
+
+var PROXY_TYPES_MAP = new Map([
   ["none", Ci.nsIProtocolProxyService.PROXYCONFIG_DIRECT],
   ["system", Ci.nsIProtocolProxyService.PROXYCONFIG_SYSTEM],
   ["manual", Ci.nsIProtocolProxyService.PROXYCONFIG_MANUAL],
@@ -31,7 +33,9 @@ export var PROXY_TYPES_MAP = new Map([
   ["autoConfig", Ci.nsIProtocolProxyService.PROXYCONFIG_PAC],
 ]);
 
-export var ProxyPolicies = {
+var EXPORTED_SYMBOLS = ["ProxyPolicies", "PROXY_TYPES_MAP"];
+
+var ProxyPolicies = {
   configureProxySettings(param, setPref) {
     if (param.Mode) {
       setPref("network.proxy.type", PROXY_TYPES_MAP.get(param.Mode));
@@ -75,8 +79,8 @@ export var ProxyPolicies = {
     function setProxyHostAndPort(type, address) {
       let url;
       try {
-        // Prepend https just so we can use the URL parser
-        // instead of parsing manually.
+        
+        
         url = new URL(`https://${address}`);
       } catch (e) {
         lazy.log.error(`Invalid address for ${type} proxy: ${address}`);
@@ -92,9 +96,9 @@ export var ProxyPolicies = {
     if (param.HTTPProxy) {
       setProxyHostAndPort("http", param.HTTPProxy);
 
-      // network.proxy.share_proxy_settings is a UI feature, not handled by the
-      // network code. That pref only controls if the checkbox is checked, and
-      // then we must manually set the other values.
+      
+      
+      
       if (param.UseHTTPProxyForAllProtocols) {
         param.SSLProxy = param.SOCKSProxy = param.HTTPProxy;
       }

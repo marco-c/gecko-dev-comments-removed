@@ -8,8 +8,8 @@ add_task(async function test_proxy_modes_and_autoconfig() {
   
 
   
-  let { ProxyPolicies, PROXY_TYPES_MAP } = ChromeUtils.importESModule(
-    "resource:///modules/policies/ProxyPolicies.sys.mjs"
+  let { ProxyPolicies, PROXY_TYPES_MAP } = ChromeUtils.import(
+    "resource:///modules/policies/ProxyPolicies.jsm"
   );
 
   for (let [mode, expectedValue] of PROXY_TYPES_MAP) {

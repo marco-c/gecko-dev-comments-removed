@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -15,9 +15,11 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/FileTestUtils.jsm"
 );
 
-export var EnterprisePolicyTesting = {
-  // |json| must be an object representing the desired policy configuration, OR a
-  // path to the JSON file containing the policy configuration.
+var EXPORTED_SYMBOLS = ["EnterprisePolicyTesting", "PoliciesPrefTracker"];
+
+var EnterprisePolicyTesting = {
+  
+  
   setupPolicyEngineWithJson: async function setupPolicyEngineWithJson(
     json,
     customSchema
@@ -26,8 +28,8 @@ export var EnterprisePolicyTesting = {
     if (typeof json == "object") {
       filePath = lazy.FileTestUtils.getTempFile("policies.json").path;
 
-      // This file gets automatically deleted by FileTestUtils
-      // at the end of the test run.
+      
+      
       await IOUtils.writeJSON(filePath, json);
     } else {
       filePath = json;
@@ -45,7 +47,7 @@ export var EnterprisePolicyTesting = {
       }, "EnterprisePolicies:AllPoliciesApplied");
     });
 
-    // Clear any previously used custom schema
+    
     Cu.unload("resource:///modules/policies/schema.jsm");
 
     if (customSchema) {
@@ -90,20 +92,20 @@ export var EnterprisePolicyTesting = {
   },
 };
 
-/**
- * This helper will track prefs that have been changed
- * by the policy engine through the setAndLockPref and
- * setDefaultPref APIs (from Policies.jsm) and make sure
- * that they are restored to their original values when
- * the test ends or another test case restarts the engine.
- */
-export var PoliciesPrefTracker = {
+
+
+
+
+
+
+
+var PoliciesPrefTracker = {
   _originalFunc: null,
   _originalValues: new Map(),
 
   start() {
-    let { PoliciesUtils } = ChromeUtils.importESModule(
-      "resource:///modules/policies/Policies.sys.mjs"
+    let { PoliciesUtils } = ChromeUtils.import(
+      "resource:///modules/policies/Policies.jsm"
     );
     this._originalFunc = PoliciesUtils.setDefaultPref;
     PoliciesUtils.setDefaultPref = this.hoistedSetDefaultPref.bind(this);
@@ -112,16 +114,16 @@ export var PoliciesPrefTracker = {
   stop() {
     this.restoreDefaultValues();
 
-    let { PoliciesUtils } = ChromeUtils.importESModule(
-      "resource:///modules/policies/Policies.sys.mjs"
+    let { PoliciesUtils } = ChromeUtils.import(
+      "resource:///modules/policies/Policies.jsm"
     );
     PoliciesUtils.setDefaultPref = this._originalFunc;
     this._originalFunc = null;
   },
 
   hoistedSetDefaultPref(prefName, prefValue, locked = false) {
-    // If this pref is seen multiple times, the very first
-    // value seen is the one that is actually the default.
+    
+    
     if (!this._originalValues.has(prefName)) {
       let defaults = new Preferences({ defaultBranch: true });
       let stored = {};
@@ -136,18 +138,18 @@ export var PoliciesPrefTracker = {
         Preferences.isSet(prefName) &&
         Preferences.get(prefName) == prefValue
       ) {
-        // If a user value exists, and we're changing the default
-        // value to be th same as the user value, that will cause
-        // the user value to be dropped. In that case, let's also
-        // store it to ensure that we restore everything correctly.
+        
+        
+        
+        
         stored.originalUserValue = Preferences.get(prefName);
       }
 
       this._originalValues.set(prefName, stored);
     }
 
-    // Now that we've stored the original values, call the
-    // original setDefaultPref function.
+    
+    
     this._originalFunc(prefName, prefValue, locked);
   },
 
@@ -155,9 +157,9 @@ export var PoliciesPrefTracker = {
     let defaults = new Preferences({ defaultBranch: true });
 
     for (let [prefName, stored] of this._originalValues) {
-      // If a pref was used through setDefaultPref instead
-      // of setAndLockPref, it wasn't locked, but calling
-      // unlockPref is harmless
+      
+      
+      
       Preferences.unlock(prefName);
 
       if (stored.originalDefaultValue !== undefined) {
