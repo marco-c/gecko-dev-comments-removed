@@ -220,11 +220,6 @@ const updateCertBlocklist = async function({
 };
 
 var RemoteSecuritySettings = {
-  _initialized: false,
-  OneCRLBlocklistClient: null,
-  IntermediatePreloadsClient: null,
-  CRLiteFiltersClient: null,
-
   
 
 
@@ -232,24 +227,24 @@ var RemoteSecuritySettings = {
 
 
   init() {
-    
-    if (this._initialized) {
-      return this;
-    }
-    this._initialized = true;
-
-    this.OneCRLBlocklistClient = RemoteSettings("onecrl", {
+    const OneCRLBlocklistClient = RemoteSettings("onecrl", {
       bucketName: SECURITY_STATE_BUCKET,
       signerName: SECURITY_STATE_SIGNER,
     });
-    this.OneCRLBlocklistClient.on("sync", updateCertBlocklist);
+    OneCRLBlocklistClient.on("sync", updateCertBlocklist);
 
-    this.IntermediatePreloadsClient = new IntermediatePreloads();
+    let IntermediatePreloadsClient = new IntermediatePreloads();
+    let CRLiteFiltersClient = new CRLiteFilters();
 
-    this.CRLiteFiltersClient = new CRLiteFilters();
-    this.CRLiteFiltersClient.cleanAttachmentCache();
+    this.OneCRLBlocklistClient = OneCRLBlocklistClient;
+    this.IntermediatePreloadsClient = IntermediatePreloadsClient;
+    this.CRLiteFiltersClient = CRLiteFiltersClient;
 
-    return this;
+    return {
+      OneCRLBlocklistClient,
+      IntermediatePreloadsClient,
+      CRLiteFiltersClient,
+    };
   },
 };
 
@@ -509,39 +504,6 @@ class CRLiteFilters {
     );
   }
 
-  async cleanAttachmentCache() {
-    
-    
-    
-    
-    let cachePath = PathUtils.join(
-      PathUtils.localProfileDir,
-      ...this.client.attachments.folders
-    );
-
-    try {
-      let needCleanup = await IOUtils.exists(cachePath);
-      if (needCleanup) {
-        let cacheFiles = await IOUtils.getChildren(cachePath);
-        let staleFilters = cacheFiles.filter(
-          path => path.endsWith("filter") || path.endsWith("filter.stash")
-        );
-        if (cacheFiles.length == staleFilters.length) {
-          
-          
-          await IOUtils.remove(cachePath, { recursive: true });
-        } else {
-          for (let filter of staleFilters) {
-            await IOUtils.remove(filter);
-          }
-        }
-      }
-    } catch (e) {
-      lazy.log.debug(e);
-      Cu.reportError("Could not clean cert-revocations attachment cache", e);
-    }
-  }
-
   async onObservePollEnd(subject, topic, data) {
     if (!Services.prefs.getBoolPref(CRLITE_FILTERS_ENABLED_PREF, true)) {
       lazy.log.debug("CRLite filter downloading is disabled");
@@ -628,8 +590,10 @@ class CRLiteFilters {
     let filtersDownloaded = [];
     for (let filter of filtersToDownload) {
       try {
-        let attachment = await this.client.attachments.downloadAsBytes(filter);
-        let bytes = new Uint8Array(attachment.buffer);
+        
+        let localURI = await this.client.attachments.downloadToDisk(filter);
+        let buffer = await (await fetch(localURI)).arrayBuffer();
+        let bytes = new Uint8Array(buffer);
         lazy.log.debug(
           `Downloaded ${filter.details.name}: ${bytes.length} bytes`
         );
