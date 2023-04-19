@@ -394,13 +394,13 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   VideoStreamInputStateProvider input_state_provider_;
 
-  std::unique_ptr<VideoStreamAdapter> video_stream_adapter_
+  const std::unique_ptr<VideoStreamAdapter> video_stream_adapter_
       RTC_GUARDED_BY(&encoder_queue_);
   
   
   
   std::unique_ptr<ResourceAdaptationProcessorInterface>
-      resource_adaptation_processor_;
+      resource_adaptation_processor_ RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<DegradationPreferenceManager> degradation_preference_manager_
       RTC_GUARDED_BY(&encoder_queue_);
   std::vector<AdaptationConstraint*> adaptation_constraints_
