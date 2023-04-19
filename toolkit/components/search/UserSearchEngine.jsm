@@ -4,20 +4,14 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { SearchEngine } = ChromeUtils.import(
+  "resource://gre/modules/SearchEngine.jsm"
 );
 
-const lazy = {};
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  SearchEngine: "resource://gre/modules/SearchEngine.jsm",
-});
 
 
 
-
-class UserSearchEngine extends lazy.SearchEngine {
+class UserSearchEngine extends SearchEngine {
   
 
 
