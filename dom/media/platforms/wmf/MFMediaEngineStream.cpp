@@ -179,11 +179,11 @@ HRESULT MFMediaEngineStream::Start(const PROPVARIANT* aPosition) {
             !isFromCurrentPosition && IsEnded()) {
           SLOG("Stream restarts again from a new position, reset EOS");
           mReceivedEOS = false;
-        } else if (!IsEnded()) {
-          
-          
-          ReplySampleRequestIfPossible();
         }
+        
+        
+        
+        ReplySampleRequestIfPossible();
       }));
   return S_OK;
 }
@@ -443,7 +443,7 @@ void MFMediaEngineStream::NotifyNewData(MediaRawData* aSample) {
   }
 }
 
-void MFMediaEngineStream::NotifyEndOfStream() {
+void MFMediaEngineStream::NotifyEndOfStreamInternal() {
   AssertOnTaskQueue();
   if (mReceivedEOS) {
     return;
@@ -454,6 +454,7 @@ void MFMediaEngineStream::NotifyEndOfStream() {
 }
 
 bool MFMediaEngineStream::IsEnded() const {
+  AssertOnTaskQueue();
   return mReceivedEOS && mRawDataQueue.GetSize() == 0;
 }
 

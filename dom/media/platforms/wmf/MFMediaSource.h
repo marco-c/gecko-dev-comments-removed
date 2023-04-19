@@ -86,7 +86,7 @@ class MFMediaSource
   MFMediaEngineStream* GetAudioStream();
   MFMediaEngineStream* GetVideoStream();
 
-  TaskQueue* GetTaskQueue() { return mTaskQueue; }
+  TaskQueue* GetTaskQueue() const { return mTaskQueue; }
 
   MediaEventSource<SampleRequest>& RequestSampleEvent() {
     return mRequestSampleEvent;
@@ -94,12 +94,7 @@ class MFMediaSource
 
   
   
-  void NotifyEndOfStream(TrackInfo::TrackType aType) {
-    Unused << GetTaskQueue()->Dispatch(NS_NewRunnableFunction(
-        "MFMediaSource::NotifyEndOfStream", [aType, self = RefPtr{this}]() {
-          self->NotifyEndOfStreamInternal(aType);
-        }));
-  }
+  void NotifyEndOfStream(TrackInfo::TrackType aType);
 
   
   
@@ -117,7 +112,6 @@ class MFMediaSource
   void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle);
 
  private:
-  void AssertOnTaskQueue() const;
   void AssertOnManagerThread() const;
   void AssertOnMFThreadPool() const;
 
@@ -129,9 +123,9 @@ class MFMediaSource
   
   Microsoft::WRL::ComPtr<IMFMediaEventQueue> mMediaEventQueue;
 
+  
   RefPtr<TaskQueue> mTaskQueue;
 
-  
   
   RefPtr<nsISerialEventTarget> mManagerThread;
 
@@ -151,6 +145,8 @@ class MFMediaSource
   
   
   bool mPresentationEnded MOZ_GUARDED_BY(mMutex);
+  bool mIsAudioEnded MOZ_GUARDED_BY(mMutex);
+  bool mIsVideoEnded MOZ_GUARDED_BY(mMutex);
 
   
   State mState MOZ_GUARDED_BY(mMutex);
