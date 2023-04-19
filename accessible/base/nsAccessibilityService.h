@@ -157,6 +157,13 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
+  void DeckPanelSwitched(mozilla::PresShell* aPresShell, nsIContent* aDeckNode,
+                         nsIFrame* aPrevBoxFrame, nsIFrame* aCurrentBoxFrame);
+
+  
+
+
+
   void ContentRangeInserted(mozilla::PresShell* aPresShell,
                             nsIContent* aStartChild, nsIContent* aEndChild);
 
@@ -232,10 +239,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   void NotifyOfComputedStyleChange(mozilla::PresShell* aPresShell,
                                    nsIContent* aContent);
-
-  void NotifyOfTabPanelVisibilityChange(mozilla::PresShell* aPresShell,
-                                        mozilla::dom::Element* aPanel,
-                                        bool aVisible);
 
   void NotifyOfResolutionChange(mozilla::PresShell* aPresShell,
                                 float aResolution);

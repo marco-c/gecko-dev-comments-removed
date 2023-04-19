@@ -75,6 +75,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/SVGGeometryFrame.h"
+#include "nsDeckFrame.h"
 
 #include "XULAlertAccessible.h"
 #include "XULComboboxAccessible.h"
@@ -442,19 +443,62 @@ LocalAccessible* nsAccessibilityService::GetRootDocumentAccessible(
   return nullptr;
 }
 
-void nsAccessibilityService::NotifyOfTabPanelVisibilityChange(
-    PresShell* aPresShell, Element* aPanel, bool aNowVisible) {
-  MOZ_ASSERT(aPanel->GetParent()->IsXULElement(nsGkAtoms::tabpanels));
-
+void nsAccessibilityService::DeckPanelSwitched(PresShell* aPresShell,
+                                               nsIContent* aDeckNode,
+                                               nsIFrame* aPrevBoxFrame,
+                                               nsIFrame* aCurrentBoxFrame) {
   DocAccessible* document = GetDocAccessible(aPresShell);
   if (!document) {
     return;
   }
+  
+  const bool isTabPanels = document->HasAccessible(aDeckNode);
+  MOZ_ASSERT(!isTabPanels || aDeckNode->IsXULElement(nsGkAtoms::tabpanels),
+             "A deck with a LocalAccessible should be a tabpanels element");
 
-  if (LocalAccessible* acc = document->GetAccessible(aPanel)) {
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(acc, states::OFFSCREEN, aNowVisible);
-    document->FireDelayedEvent(event);
+  if (aPrevBoxFrame) {
+    nsIContent* panelNode = aPrevBoxFrame->GetContent();
+#ifdef A11Y_LOG
+    if (logging::IsEnabled(logging::eTree)) {
+      logging::MsgBegin("TREE", "deck panel unselected");
+      logging::Node("container", panelNode);
+      logging::Node("content", aDeckNode);
+      logging::MsgEnd();
+    }
+#endif
+    if (isTabPanels) {
+      
+      if (LocalAccessible* acc = document->GetAccessible(panelNode)) {
+        RefPtr<AccEvent> event =
+            new AccStateChangeEvent(acc, states::OFFSCREEN, true);
+        document->FireDelayedEvent(event);
+      }
+    } else {
+      document->ContentRemoved(panelNode);
+    }
+  }
+
+  if (aCurrentBoxFrame) {
+    nsIContent* panelNode = aCurrentBoxFrame->GetContent();
+#ifdef A11Y_LOG
+    if (logging::IsEnabled(logging::eTree)) {
+      logging::MsgBegin("TREE", "deck panel selected");
+      logging::Node("container", panelNode);
+      logging::Node("content", aDeckNode);
+      logging::MsgEnd();
+    }
+#endif
+    if (isTabPanels) {
+      
+      
+      if (LocalAccessible* acc = document->GetAccessible(panelNode)) {
+        RefPtr<AccEvent> event =
+            new AccStateChangeEvent(acc, states::OFFSCREEN, false);
+        document->FireDelayedEvent(event);
+      }
+    } else {
+      document->ContentInserted(panelNode, panelNode->GetNextSibling());
+    }
   }
 }
 
@@ -1084,6 +1128,16 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   
   if (!newAcc && content->IsXULElement()) {
+    
+    if (!aContext->IsXULTabpanels()) {
+      nsDeckFrame* deckFrame = do_QueryFrame(frame->GetParent());
+      if (deckFrame && deckFrame->GetSelectedBox() != frame) {
+        if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
+
+        return nullptr;
+      }
+    }
+
     if (content->IsXULElement(nsGkAtoms::panel)) {
       
       

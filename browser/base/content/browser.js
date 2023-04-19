@@ -2171,23 +2171,23 @@ var gBrowserInit = {
         return;
       }
 
-      
-      
-      
-      
-      let promise = gBrowser.selectedBrowser.isRemoteBrowser
-        ? this._firstContentWindowPaintDeferred.promise
-        : Promise.resolve();
-
-      promise.then(() => {
+      if (gBrowser.selectedBrowser.isRemoteBrowser) {
         
         
-        if (
-          document.commandDispatcher.focusedElement == initiallyFocusedElement
-        ) {
-          gBrowser.selectedBrowser.focus();
-        }
-      });
+        this._firstContentWindowPaintDeferred.promise.then(() => {
+          
+          
+          if (
+            document.commandDispatcher.focusedElement == initiallyFocusedElement
+          ) {
+            gBrowser.selectedBrowser.focus();
+          }
+        });
+      } else {
+        
+        
+        gBrowser.selectedBrowser.focus();
+      }
     });
 
     

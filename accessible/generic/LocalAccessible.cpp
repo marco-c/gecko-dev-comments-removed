@@ -50,6 +50,7 @@
 #include "nsIContent.h"
 #include "nsIFormControl.h"
 
+#include "nsDeckFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsIFrame.h"
@@ -69,7 +70,6 @@
 #include "nsArrayUtils.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsAttrName.h"
-#include "nsContainerFrame.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/BasicEvents.h"
@@ -324,16 +324,22 @@ uint64_t LocalAccessible::VisibilityState() const {
       return states::INVISIBLE;
     }
 
-    if (nsLayoutUtils::IsPopup(curFrame)) {
-      return 0;
-    }
+    if (nsLayoutUtils::IsPopup(curFrame)) return 0;
 
-    if (curFrame->StyleUIReset()->mMozSubtreeHiddenOnlyVisually) {
-      
-      return states::OFFSCREEN;
-    }
-
+    
+    
     nsIFrame* parentFrame = curFrame->GetParent();
+    nsDeckFrame* deckFrame = do_QueryFrame(parentFrame);
+    if (deckFrame && deckFrame->GetSelectedBox() != curFrame) {
+      if (deckFrame->GetContent()->IsXULElement(nsGkAtoms::tabpanels)) {
+        return states::OFFSCREEN;
+      }
+
+      MOZ_ASSERT_UNREACHABLE(
+          "Children of not selected deck panel are not accessible.");
+      return states::INVISIBLE;
+    }
+
     
     
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(parentFrame);
