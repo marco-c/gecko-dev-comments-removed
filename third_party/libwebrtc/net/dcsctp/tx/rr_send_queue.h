@@ -47,8 +47,7 @@ class RRSendQueue : public SendQueue {
               size_t buffer_size,
               std::function<void(StreamID)> on_buffered_amount_low,
               size_t total_buffered_amount_low_threshold,
-              std::function<void()> on_total_buffered_amount_low,
-              const DcSctpSocketHandoverState* handover_state = nullptr);
+              std::function<void()> on_total_buffered_amount_low);
 
   
   
