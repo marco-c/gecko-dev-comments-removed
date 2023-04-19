@@ -634,6 +634,9 @@ static constexpr double MinBalancedHeapLimitMB = 10.0;
 static constexpr double MinBalancedHeadroomMB = 3.0;
 
 
+static constexpr double MaxHeapGrowth = 3.0;
+
+
 
 
 static constexpr double DefaultAllocationRate = 0.0;
@@ -655,7 +658,8 @@ double GCHeapThreshold::computeBalancedHeapLimit(
   double d = tunables.heapGrowthFactor();  
   double g = allocationRate;
   double s = collectionRate;
-  double M = W + d * sqrt((W + W0) * (g / s));
+  double f = d * sqrt((W + W0) * (g / s));
+  double M = W + std::min(f, MaxHeapGrowth) * W;
   M = std::max({MinBalancedHeapLimitMB, W + MinBalancedHeadroomMB, M});
 
   return M * double(BytesPerMB);
