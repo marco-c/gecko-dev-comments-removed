@@ -360,4 +360,28 @@ class EditorTestUtils {
       throw `Failed to set selection to the given ranges whose length is ${ranges.length}, but only ${this.selection.rangeCount} ranges are added`;
     }
   }
+
+  
+  normalizeStyleAttributeValues() {
+    for (const element of Array.from(
+      this.editingHost.querySelectorAll("[style]")
+    )) {
+      element.setAttribute(
+        "style",
+        element
+          .getAttribute("style")
+          
+          .replace(/; ?$/, "")
+          .replace(/: /g, ":")
+          
+          .replace(/transparent/g, "rgba(0, 0, 0, 0)")
+          
+          .replace(/, 0.496094\)/g, ", 0.5)")
+          
+          
+          
+          .replace(/rgba\([0-9]+, [0-9]+, [0-9]+, 0\)/g, "rgba(0, 0, 0, 0)")
+      );
+    }
+  }
 }
