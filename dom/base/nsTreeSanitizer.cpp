@@ -18,6 +18,7 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
+#include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/NullPrincipal.h"
 #include "nsAtom.h"
@@ -1241,28 +1242,77 @@ bool nsTreeSanitizer::MustPrune(int32_t aNamespace, nsAtom* aLocal,
   return false;
 }
 
-bool nsTreeSanitizer::MustPruneForSanitizerAPI(
-    int32_t aNamespace, nsAtom* aLocal, mozilla::dom::Element* aElement) {
-  
+enum class ElementKind {
+  Regular,
+  Custom,
+  Unknown,
+};
+
+
+static ElementKind GetElementKind(int32_t aNamespace, nsAtom* aLocal,
+                                  Element* aElement) {
   
   
 
   
   
-  
-
-  
-  
-  if (!sBaselineElementAllowlist->Contains(aLocal)) {
-    return true;
+  if (nsContentUtils::IsCustomElementName(aLocal, kNameSpaceID_XHTML)) {
+    return ElementKind::Custom;
   }
 
   
   
   
+  if (aNamespace != kNameSpaceID_XHTML) {
+    return ElementKind::Unknown;
+  }
+
   
   
   
+  if (nsCOMPtr<HTMLUnknownElement> el = do_QueryInterface(aElement)) {
+    return ElementKind::Unknown;
+  }
+
+  
+  return ElementKind::Regular;
+}
+
+bool nsTreeSanitizer::MustPruneForSanitizerAPI(int32_t aNamespace,
+                                               nsAtom* aLocal,
+                                               Element* aElement) {
+  
+  
+  
+
+  
+  ElementKind kind = GetElementKind(aNamespace, aLocal, aElement);
+
+  switch (kind) {
+    case ElementKind::Regular:
+      
+      
+      if (!sBaselineElementAllowlist->Contains(aLocal)) {
+        return true;
+      }
+      break;
+
+    case ElementKind::Custom:
+      
+      
+      if (!mAllowCustomElements) {
+        return true;
+      }
+      break;
+
+    case ElementKind::Unknown:
+      
+      
+      if (!mAllowUnknownMarkup) {
+        return true;
+      }
+      break;
+  }
 
   
   
@@ -1826,6 +1876,12 @@ void nsTreeSanitizer::WithWebSanitizerOptions(
 
   if (aOptions.mAllowComments.WasPassed()) {
     mAllowComments = aOptions.mAllowComments.Value();
+  }
+  if (aOptions.mAllowCustomElements.WasPassed()) {
+    mAllowCustomElements = aOptions.mAllowCustomElements.Value();
+  }
+  if (aOptions.mAllowUnknownMarkup.WasPassed()) {
+    mAllowUnknownMarkup = aOptions.mAllowUnknownMarkup.Value();
   }
 
   if (aOptions.mAllowElements.WasPassed()) {

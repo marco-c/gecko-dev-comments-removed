@@ -306,6 +306,9 @@ class nsTreeSanitizer {
   
   bool mIsForSanitizerAPI = false;
 
+  bool mAllowCustomElements = false;
+  bool mAllowUnknownMarkup = false;
+
   
   mozilla::UniquePtr<DynamicAtomsTable> mAllowElements;
 
