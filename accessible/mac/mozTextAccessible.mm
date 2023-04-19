@@ -388,7 +388,8 @@ inline NSString* ToNSString(id aValue) {
 }
 
 - (NSString*)moxValue {
-  return [super moxTitle];
+  NSString* val = [super moxTitle];
+  return [val length] ? val : nil;
 }
 
 - (NSString*)moxTitle {
@@ -397,6 +398,11 @@ inline NSString* ToNSString(id aValue) {
 
 - (NSString*)moxLabel {
   return nil;
+}
+
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
+  
+  return [self moxValue] == nil;
 }
 
 - (NSString*)moxStringForRange:(NSValue*)range {
