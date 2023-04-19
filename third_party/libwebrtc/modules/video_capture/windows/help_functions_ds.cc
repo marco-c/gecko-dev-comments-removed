@@ -60,7 +60,6 @@ IPin* GetInputPin(IBaseFilter* filter) {
 }
 
 IPin* GetOutputPin(IBaseFilter* filter, REFGUID Category) {
-  HRESULT hr;
   IPin* pin = NULL;
   IEnumPins* pPinEnum = NULL;
   filter->EnumPins(&pPinEnum);
@@ -68,7 +67,7 @@ IPin* GetOutputPin(IBaseFilter* filter, REFGUID Category) {
     return NULL;
   }
   
-  hr = pPinEnum->Reset();  
+  pPinEnum->Reset();  
   while (S_OK == pPinEnum->Next(1, &pin, NULL)) {
     PIN_DIRECTION pPinDir;
     pin->QueryDirection(&pPinDir);
