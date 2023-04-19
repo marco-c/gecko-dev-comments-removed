@@ -6140,7 +6140,13 @@ TEST_F(VideoStreamEncoderTest,
 
 TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-Video-QualityRampupSettings/min_pixels:1,min_duration_ms:2000/");
+      "WebRTC-Video-QualityRampupSettings/"
+      "min_pixels:921600,min_duration_ms:2000/");
+
+  const int kWidth = 1280;
+  const int kHeight = 720;
+  const int kFps = 10;
+  max_framerate_ = kFps;
 
   
   VideoEncoderConfig config = video_encoder_config_.Copy();
@@ -6163,9 +6169,7 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
       DataRate::BitsPerSec(kLowBitrateBps), 0, 0, 0);
 
   
-  const int kWidth = 1280;
-  const int kHeight = 720;
-  const int64_t kFrameIntervalMs = 100;
+  const int64_t kFrameIntervalMs = 1000 / kFps;
   int64_t timestamp_ms = kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   ExpectDroppedFrame();
@@ -6177,15 +6181,21 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
       max_bitrate, max_bitrate, max_bitrate, 0, 0, 0);
 
   
+  const int64_t start_bw_high_ms = CurrentTimeMs();
   for (size_t i = 1; i <= 10; i++) {
     timestamp_ms += kFrameIntervalMs;
     source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
     WaitForEncodedFrame(timestamp_ms);
   }
+
+  
+  int64_t elapsed_bw_high_ms = CurrentTimeMs() - start_bw_high_ms;
+  AdvanceTime(TimeDelta::Millis(2000 - elapsed_bw_high_ms - 1));
+  timestamp_ms += kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
+  WaitForEncodedFrame(timestamp_ms);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_LT(source.sink_wants().max_pixel_count, kWidth * kHeight);
-
-  AdvanceTime(TimeDelta::Millis(2000));
 
   
   timestamp_ms += kFrameIntervalMs;

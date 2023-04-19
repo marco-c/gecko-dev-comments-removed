@@ -33,6 +33,7 @@ class QualityRampupExperiment final {
   
   bool BwHigh(int64_t now_ms, uint32_t available_bw_kbps);
 
+  void Reset();
   bool Enabled() const;
 
  private:
