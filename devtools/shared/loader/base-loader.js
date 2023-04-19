@@ -8,7 +8,7 @@
 
 this.EXPORTED_SYMBOLS = ["Loader", "resolveURI", "Module", "Require", "unload"];
 
-const { Constructor: CC, manager: Cm } = Components;
+const { Constructor: CC } = Components;
 const systemPrincipal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -34,7 +34,6 @@ ChromeUtils.defineModuleGetter(
 );
 
 
-const bind = Function.call.bind(Function.bind);
 function* getOwnIdentifiers(x) {
   yield* Object.getOwnPropertyNames(x);
   yield* Object.getOwnPropertySymbols(x);
@@ -110,8 +109,8 @@ function Sandbox(options) {
   
   options = {
     
-    
-    wantComponents: false,
+    wantComponents: true,
+
     
     
     
@@ -149,11 +148,7 @@ function Sandbox(options) {
     freshCompartment: options.freshCompartment || false,
   };
 
-  const sandbox = Cu.Sandbox(systemPrincipal, options);
-
-  delete sandbox.Components;
-
-  return sandbox;
+  return Cu.Sandbox(systemPrincipal, options);
 }
 
 
@@ -522,17 +517,6 @@ function Loader(options) {
   const builtinModuleExports = {
     "@loader/unload": destructor,
     "@loader/options": options,
-    chrome: {
-      Cc,
-      Ci,
-      Cu,
-      Cr,
-      Cm,
-      CC: bind(CC, Components),
-      components: Components,
-      ChromeWorker,
-      Services,
-    },
   };
 
   const modules = {};

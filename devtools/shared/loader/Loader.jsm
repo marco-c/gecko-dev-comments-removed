@@ -133,6 +133,11 @@ function DevToolsLoader({
   this.require = Require(this.loader, { id: "devtools" });
 
   
+  
+  
+  this.loader.globals.Services = Services;
+
+  
   const { modules, globals } = this.require(
     "devtools/shared/loader/builtin-modules"
   );

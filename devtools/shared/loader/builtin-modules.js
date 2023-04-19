@@ -15,7 +15,6 @@
 
 
 
-const { Cu, Cc, Ci, Services } = require("chrome");
 const jsmScope = require("resource://devtools/shared/loader/Loader.jsm");
 
 const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
@@ -41,6 +40,7 @@ const {
   PathUtils,
   StructuredCloneHolder,
   TelemetryStopwatch,
+  ChromeWorker,
 } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -205,12 +205,17 @@ defineLazyGetter(exports.modules, "xpcInspector", () => {
 
 exports.globals = {
   CanonicalBrowsingContext,
+  Ci,
   ChromeUtils,
+  Components,
+  Cr,
+  Cu,
   BrowsingContext,
   WebExtensionPolicy,
   WindowGlobalParent,
   WindowGlobalChild,
   console,
+  ChromeWorker,
   DOMPoint,
   DOMQuad,
   NamedNodeMap,
@@ -230,7 +235,6 @@ exports.globals = {
   Localization,
   PathUtils,
   reportError: Cu.reportError,
-  Services: Object.create(Services),
   StructuredCloneHolder,
 };
 

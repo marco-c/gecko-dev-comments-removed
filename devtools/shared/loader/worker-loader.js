@@ -323,22 +323,6 @@ function WorkerDebuggerLoader(options) {
 
 this.WorkerDebuggerLoader = WorkerDebuggerLoader;
 
-
-
-
-
-var chrome = {
-  CC: undefined,
-  Cc: undefined,
-  ChromeWorker: undefined,
-  Cm: undefined,
-  Ci: undefined,
-  Cu: undefined,
-  Cr: undefined,
-  components: undefined,
-  Services: undefined,
-};
-
 var loader = {
   lazyGetter(object, name, lambda) {
     Object.defineProperty(object, name, {
@@ -529,11 +513,20 @@ this.worker = new WorkerDebuggerLoader({
     atob: this.atob,
     Services: Object.create(null),
     ChromeUtils,
+
+    
+    
+    
+    Cc: undefined,
+    ChromeWorker: undefined,
+    Ci: undefined,
+    Cu: undefined,
+    Cr: undefined,
+    Components: undefined,
   },
   loadSubScript,
   modules: {
     Debugger,
-    chrome,
     xpcInspector,
     DebuggerNotificationObserver,
   },
