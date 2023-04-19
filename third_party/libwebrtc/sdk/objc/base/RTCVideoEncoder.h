@@ -43,6 +43,13 @@ RTC_OBJC_EXPORT
 
 - (nullable RTC_OBJC_TYPE(RTCVideoEncoderQpThresholds) *)scalingSettings;
 
+
+@property(nonatomic, readonly) NSInteger resolutionAlignment;
+
+
+
+@property(nonatomic, readonly) BOOL applyAlignmentToAllSimulcastLayers;
+
 @end
 
 NS_ASSUME_NONNULL_END
