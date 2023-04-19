@@ -10,7 +10,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["UrlbarPrefs", "UrlbarPrefsObserver"];
+var EXPORTED_SYMBOLS = ["UrlbarPrefs"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
