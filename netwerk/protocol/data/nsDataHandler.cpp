@@ -12,6 +12,7 @@
 #include "plstr.h"
 #include "nsSimpleURI.h"
 #include "mozilla/dom/MimeType.h"
+#include "mozilla/StaticPrefs_network.h"
 
 
 
@@ -59,7 +60,8 @@ nsDataHandler::GetProtocolFlags(uint32_t* result) {
   
   
   nsresult rv;
-  if (base64 || (strncmp(contentType.get(), "text/", 5) != 0 &&
+  if (base64 || (StaticPrefs::network_url_strip_data_url_whitespace() &&
+                 strncmp(contentType.get(), "text/", 5) != 0 &&
                  contentType.Find("xml") == kNotFound)) {
     
     rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
