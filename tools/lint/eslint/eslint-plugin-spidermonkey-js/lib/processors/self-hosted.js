@@ -30,7 +30,9 @@ module.exports = {
       }
 
       for (; i < lines.length; i++) {
-        lines[i] = "// " + lines[i];
+        
+        
+        lines[i] = "// eslint-disable-line prettier/prettier -- " + lines[i];
 
         
         
