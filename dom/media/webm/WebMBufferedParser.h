@@ -45,32 +45,7 @@ struct WebMTimeDataOffset {
 
 
 struct WebMBufferedParser {
-  explicit WebMBufferedParser(int64_t aOffset)
-      : mStartOffset(aOffset),
-        mCurrentOffset(aOffset),
-        mInitEndOffset(-1),
-        mBlockEndOffset(-1),
-        mState(READ_ELEMENT_ID),
-        mNextState(READ_ELEMENT_ID),
-        mVIntRaw(false),
-        mLastInitStartOffset(-1),
-        mClusterSyncPos(0),
-        mVIntLeft(0),
-        mBlockSize(0),
-        mClusterTimecode(0),
-        mClusterOffset(-1),
-        mClusterEndOffset(-1),
-        mBlockOffset(0),
-        mBlockTimecode(0),
-        mBlockTimecodeLength(0),
-        mSkipBytes(0),
-        mTimecodeScale(1000000),
-        mGotTimecodeScale(false),
-        mGotClusterTimecode(false) {
-    if (mStartOffset != 0) {
-      mState = FIND_CLUSTER_SYNC;
-    }
-  }
+  explicit WebMBufferedParser(int64_t aOffset);
 
   uint32_t GetTimecodeScale() {
     MOZ_ASSERT(mGotTimecodeScale);
@@ -170,6 +145,14 @@ struct WebMBufferedParser {
 
     
     
+    READ_EBML_MAX_ID_LENGTH,
+
+    
+    
+    READ_EBML_MAX_SIZE_LENGTH,
+
+    
+    
     
     CHECK_INIT_FOUND,
 
@@ -205,6 +188,18 @@ struct WebMBufferedParser {
   
   
   int64_t mLastInitStartOffset;
+
+  
+  
+  uint32_t mLastInitSize;
+
+  
+  
+  uint8_t mEBMLMaxIdLength;
+
+  
+  
+  uint8_t mEBMLMaxSizeLength;
 
   
   
