@@ -20,6 +20,12 @@ namespace webrtc {
 bool IsRtcpPacket(rtc::ArrayView<const uint8_t> packet);
 bool IsRtpPacket(rtc::ArrayView<const uint8_t> packet);
 
+
+
+int ParseRtpPayloadType(rtc::ArrayView<const uint8_t> rtp_packet);
+uint16_t ParseRtpSequenceNumber(rtc::ArrayView<const uint8_t> rtp_packet);
+uint32_t ParseRtpSsrc(rtc::ArrayView<const uint8_t> rtp_packet);
+
 }  
 
 #endif  
