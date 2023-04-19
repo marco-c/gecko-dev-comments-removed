@@ -26,13 +26,6 @@ already_AddRefed<PlatformDecoderModule> MFMediaEngineDecoderModule::Create() {
   return module.forget();
 }
 
-
-bool MFMediaEngineDecoderModule::SupportsConfig(const TrackInfo& aConfig) {
-  RefPtr<MFMediaEngineDecoderModule> module = new MFMediaEngineDecoderModule();
-  return module->SupportInternal(SupportDecoderParams(aConfig), nullptr) !=
-         media::DecodeSupport::Unsupported;
-}
-
 already_AddRefed<MediaDataDecoder>
 MFMediaEngineDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
@@ -97,51 +90,11 @@ media::DecodeSupportSet MFMediaEngineDecoderModule::SupportInternal(
   if (!StaticPrefs::media_wmf_media_engine_enabled()) {
     return media::DecodeSupport::Unsupported;
   }
-  bool supports = false;
-  WMFStreamType type = GetStreamTypeFromMimeType(aParams.MimeType());
-  if (type != WMFStreamType::Unknown) {
-    supports = CanCreateMFTDecoder(type);
-  }
-  MOZ_LOG(sPDMLog, LogLevel::Debug,
-          ("MFMediaEngine decoder %s requested type '%s'",
-           supports ? "supports" : "rejects", aParams.MimeType().get()));
-  return supports ? media::DecodeSupport::SoftwareDecode
-                  : media::DecodeSupport::Unsupported;
-}
-
-static bool CreateMFTDecoderOnMTA(const WMFStreamType& aType) {
-  RefPtr<MFTDecoder> decoder = new MFTDecoder();
-  switch (aType) {
-    case WMFStreamType::MP3:
-      return SUCCEEDED(decoder->Create(CLSID_CMP3DecMediaObject));
-    case WMFStreamType::AAC:
-      return SUCCEEDED(decoder->Create(CLSID_CMSAACDecMFT));
-    
-    
-    case WMFStreamType::OPUS:
-      return SUCCEEDED(decoder->Create(CLSID_MSOpusDecoder));
-    case WMFStreamType::VORBIS:
-      return SUCCEEDED(decoder->Create(
-          MFT_CATEGORY_AUDIO_DECODER, MFAudioFormat_Vorbis, MFAudioFormat_PCM));
-    case WMFStreamType::H264:
-    case WMFStreamType::VP8:
-    case WMFStreamType::VP9:
-    case WMFStreamType::AV1:
-      
-      
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool MFMediaEngineDecoderModule::CanCreateMFTDecoder(
-    const WMFStreamType& aType) const {
   
-  bool canCreateDecoder = false;
-  mozilla::mscom::EnsureMTA(
-      [&]() { canCreateDecoder = CreateMFTDecoderOnMTA(aType); });
-  return canCreateDecoder;
+  
+  
+  
+  return media::DecodeSupport::SoftwareDecode;
 }
 
 #undef LOG

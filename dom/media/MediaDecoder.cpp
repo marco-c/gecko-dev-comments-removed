@@ -339,9 +339,23 @@ void MediaDecoder::Shutdown() {
   
   
   if (mDecoderStateMachine) {
-    ShutdownStateMachine()->Then(mAbstractMainThread, __func__, this,
-                                 &MediaDecoder::FinishShutdown,
-                                 &MediaDecoder::FinishShutdown);
+    mTimedMetadataListener.Disconnect();
+    mMetadataLoadedListener.Disconnect();
+    mFirstFrameLoadedListener.Disconnect();
+    mOnPlaybackEvent.Disconnect();
+    mOnPlaybackErrorEvent.Disconnect();
+    mOnDecoderDoctorEvent.Disconnect();
+    mOnMediaNotSeekable.Disconnect();
+    mOnEncrypted.Disconnect();
+    mOnWaitingForKey.Disconnect();
+    mOnDecodeWarning.Disconnect();
+    mOnNextFrameStatus.Disconnect();
+    mOnSecondaryVideoContainerInstalled.Disconnect();
+    mOnStoreDecoderBenchmark.Disconnect();
+
+    mDecoderStateMachine->BeginShutdown()->Then(
+        mAbstractMainThread, __func__, this, &MediaDecoder::FinishShutdown,
+        &MediaDecoder::FinishShutdown);
   } else {
     
     
@@ -419,44 +433,7 @@ bool MediaDecoder::IsVideoDecodingSuspended() const {
 }
 
 void MediaDecoder::OnPlaybackErrorEvent(const MediaResult& aError) {
-  MOZ_ASSERT(NS_IsMainThread());
-#ifndef MOZ_WMF
   DecodeError(aError);
-#else
-  if (aError != NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR) {
-    DecodeError(aError);
-    return;
-  }
-
-  
-  if (mPlayState == PLAY_STATE_SHUTDOWN) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aError == NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR);
-  RefPtr<MediaDecoderStateMachineBase> discardStateMachine =
-      mDecoderStateMachine;
-
-  
-  SetStateMachine(nullptr);
-  DisconnectEvents();
-
-  
-  LOG("Need to create a new state machine");
-  nsresult rv =
-      CreateAndInitStateMachine(false, true );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    LOG("Failed to create a new state machine!");
-  }
-  discardStateMachine->BeginShutdown()->Then(
-      AbstractThread::MainThread(), __func__, [discardStateMachine] {});
-#endif
 }
 
 void MediaDecoder::OnDecoderDoctorEvent(DecoderDoctorEvent aEvent) {
@@ -541,13 +518,9 @@ void MediaDecoder::FinishShutdown() {
   ShutdownInternal();
 }
 
-nsresult MediaDecoder::CreateAndInitStateMachine(bool aIsLiveStream,
-                                                 bool aDisableExternalEngine) {
+nsresult MediaDecoder::InitializeStateMachine() {
   MOZ_ASSERT(NS_IsMainThread());
-  SetStateMachine(CreateStateMachine(aDisableExternalEngine));
-
-  NS_ENSURE_TRUE(GetStateMachine(), NS_ERROR_FAILURE);
-  GetStateMachine()->DispatchIsLiveStream(aIsLiveStream);
+  NS_ASSERTION(mDecoderStateMachine, "Cannot initialize null state machine!");
 
   nsresult rv = mDecoderStateMachine->Init(this);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -595,30 +568,6 @@ void MediaDecoder::SetStateMachineParameters() {
       mAbstractMainThread, GetOwner(), &MediaDecoderOwner::NotifyWaitingForKey);
   mOnDecodeWarning = mReader->OnDecodeWarning().Connect(
       mAbstractMainThread, GetOwner(), &MediaDecoderOwner::DecodeWarning);
-}
-
-void MediaDecoder::DisconnectEvents() {
-  MOZ_ASSERT(NS_IsMainThread());
-  mTimedMetadataListener.Disconnect();
-  mMetadataLoadedListener.Disconnect();
-  mFirstFrameLoadedListener.Disconnect();
-  mOnPlaybackEvent.Disconnect();
-  mOnPlaybackErrorEvent.Disconnect();
-  mOnDecoderDoctorEvent.Disconnect();
-  mOnMediaNotSeekable.Disconnect();
-  mOnEncrypted.Disconnect();
-  mOnWaitingForKey.Disconnect();
-  mOnDecodeWarning.Disconnect();
-  mOnNextFrameStatus.Disconnect();
-  mOnSecondaryVideoContainerInstalled.Disconnect();
-  mOnStoreDecoderBenchmark.Disconnect();
-}
-
-RefPtr<ShutdownPromise> MediaDecoder::ShutdownStateMachine() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(GetStateMachine());
-  DisconnectEvents();
-  return mDecoderStateMachine->BeginShutdown();
 }
 
 void MediaDecoder::Play() {

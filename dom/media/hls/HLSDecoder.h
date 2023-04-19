@@ -52,8 +52,7 @@ class HLSDecoder final : public MediaDecoder {
 
   explicit HLSDecoder(MediaDecoderInit& aInit);
   ~HLSDecoder();
-  MediaDecoderStateMachineBase* CreateStateMachine(
-      bool aDisableExternalEngine) override;
+  MediaDecoderStateMachineBase* CreateStateMachine();
 
   bool CanPlayThroughImpl() final {
     

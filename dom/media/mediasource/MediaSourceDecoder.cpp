@@ -35,15 +35,9 @@ MediaSourceDecoder::MediaSourceDecoder(MediaDecoderInit& aInit)
   mExplicitDuration.emplace(UnspecifiedNaN<double>());
 }
 
-MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
-    bool aDisableExternalEngine) {
+MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine() {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  if (!mDemuxer) {
-    mDemuxer = new MediaSourceDemuxer(AbstractMainThread());
-  }
+  mDemuxer = new MediaSourceDemuxer(AbstractMainThread());
   MediaFormatReaderInit init;
   init.mVideoFrameContainer = GetVideoFrameContainer();
   init.mKnowsCompositor = GetCompositor();
@@ -54,8 +48,7 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
 #ifdef MOZ_WMF
   
   
-  if (StaticPrefs::media_wmf_media_engine_enabled() &&
-      !aDisableExternalEngine) {
+  if (StaticPrefs::media_wmf_media_engine_enabled()) {
     return new ExternalEngineStateMachine(this, mReader);
   }
 #endif
@@ -72,7 +65,15 @@ nsresult MediaSourceDecoder::Load(nsIPrincipal* aPrincipal) {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  return CreateAndInitStateMachine(!mEnded);
+
+  SetStateMachine(CreateStateMachine());
+  if (!GetStateMachine()) {
+    NS_WARNING("Failed to create state machine!");
+    return NS_ERROR_FAILURE;
+  }
+
+  GetStateMachine()->DispatchIsLiveStream(!mEnded);
+  return InitializeStateMachine();
 }
 
 media::TimeIntervals MediaSourceDecoder::GetSeekable() {
