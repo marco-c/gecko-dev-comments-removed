@@ -21,7 +21,7 @@ class RelocationOverlay;
 class StringRelocationOverlay;
 }  
 
-class TenuringTracer final : public GenericTracer {
+class TenuringTracer final : public JSTracer {
   Nursery& nursery_;
 
   
