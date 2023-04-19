@@ -54,13 +54,9 @@ constexpr bool kIsArm = false;
 #endif
 
 absl::optional<LibvpxVp8Decoder::DeblockParams> DefaultDeblockParams() {
-  if (kIsArm) {
-    
-    
-    return LibvpxVp8Decoder::DeblockParams();
-  }
-  
-  return absl::nullopt;
+  return LibvpxVp8Decoder::DeblockParams(8,
+                                         60,
+                                         30);
 }
 
 absl::optional<LibvpxVp8Decoder::DeblockParams>
