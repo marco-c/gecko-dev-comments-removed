@@ -71,7 +71,7 @@ class SctpTransport : public SctpTransportInterface,
   void OnInternalClosingProcedureStartedRemotely(int sid);
   void OnInternalClosingProcedureComplete(int sid);
   void OnDtlsStateChange(cricket::DtlsTransportInternal* transport,
-                         cricket::DtlsTransportState state);
+                         DtlsTransportState state);
 
   
   

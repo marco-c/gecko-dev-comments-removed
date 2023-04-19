@@ -32,24 +32,6 @@
 
 namespace cricket {
 
-enum DtlsTransportState {
-  
-  DTLS_TRANSPORT_NEW = static_cast<int>(webrtc::DtlsTransportState::kNew),
-  
-  DTLS_TRANSPORT_CONNECTING =
-      static_cast<int>(webrtc::DtlsTransportState::kConnecting),
-  
-  DTLS_TRANSPORT_CONNECTED =
-      static_cast<int>(webrtc::DtlsTransportState::kConnected),
-  
-  DTLS_TRANSPORT_CLOSED = static_cast<int>(webrtc::DtlsTransportState::kClosed),
-  
-  DTLS_TRANSPORT_FAILED = static_cast<int>(webrtc::DtlsTransportState::kFailed),
-};
-
-webrtc::DtlsTransportState ConvertDtlsTransportState(
-    cricket::DtlsTransportState cricket_state);
-
 enum PacketFlags {
   PF_NORMAL = 0x00,       
   PF_SRTP_BYPASS = 0x01,  
@@ -66,7 +48,7 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
  public:
   ~DtlsTransportInternal() override;
 
-  virtual DtlsTransportState dtls_state() const = 0;
+  virtual webrtc::DtlsTransportState dtls_state() const = 0;
 
   virtual int component() const = 0;
 
@@ -119,21 +101,6 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
 
   
   template <typename F>
-  void SubscribeDtlsState(F&& callback) {
-    dtls_state_callback_list_.AddReceiver(std::forward<F>(callback));
-  }
-
-  template <typename F>
-  void SubscribeDtlsState(const void* id, F&& callback) {
-    dtls_state_callback_list_.AddReceiver(id, std::forward<F>(callback));
-  }
-  
-  void UnsubscribeDtlsState(const void* id) {
-    dtls_state_callback_list_.RemoveReceivers(id);
-  }
-
-  
-  template <typename F>
   void SubscribeDtlsTransportState(F&& callback) {
     dtls_transport_state_callback_list_.AddReceiver(std::forward<F>(callback));
   }
@@ -149,10 +116,8 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   }
 
   void SendDtlsState(DtlsTransportInternal* transport,
-                     DtlsTransportState state) {
-    dtls_state_callback_list_.Send(transport, state);
-    dtls_transport_state_callback_list_.Send(transport,
-                                             ConvertDtlsTransportState(state));
+                     webrtc::DtlsTransportState state) {
+    dtls_transport_state_callback_list_.Send(transport, state);
   }
 
   
@@ -173,10 +138,6 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportInternal);
   webrtc::CallbackList<const rtc::SSLHandshakeError>
       dtls_handshake_error_callback_list_;
-  
-  
-  webrtc::CallbackList<DtlsTransportInternal*, const DtlsTransportState>
-      dtls_state_callback_list_;
   webrtc::CallbackList<DtlsTransportInternal*, const webrtc::DtlsTransportState>
       dtls_transport_state_callback_list_;
 };
