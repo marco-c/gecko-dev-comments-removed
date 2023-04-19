@@ -254,6 +254,7 @@ add_task(async () => {
     set: [
       ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
       ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["browser.swipe.navigation-icon-move-distance", 0],
       ["widget.disable-swipe-tracker", false],
       ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
       
@@ -302,6 +303,20 @@ add_task(async () => {
   let opacity = gHistorySwipeAnimation._prevBox.style.opacity;
   ok(0.98 < opacity && opacity < 0.99, "opacity of prevbox is not quite 1");
 
+  const translateDistance = Services.prefs.getIntPref(
+    "browser.swipe.navigation-icon-move-distance",
+    0
+  );
+  if (translateDistance != 0) {
+    isnot(
+      window
+        .getComputedStyle(gHistorySwipeAnimation._prevBox)
+        .getPropertyValue("translate"),
+      "none",
+      "translate of prevbox is not `none` during gestures"
+    );
+  }
+
   await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 0.9);
 
   
@@ -335,6 +350,18 @@ add_task(async () => {
   ok(computedOpacity == 1, "computed opacity of prevbox is 1");
   opacity = gHistorySwipeAnimation._prevBox.style.opacity;
   ok(opacity == 0, "element.style opacity of prevbox 0");
+
+  if (translateDistance != 0) {
+    
+    
+    isnot(
+      window
+        .getComputedStyle(gHistorySwipeAnimation._prevBox)
+        .getPropertyValue("translate"),
+      "none",
+      "translate of prevbox is not `none` during the opacity transition"
+    );
+  }
 
   
   await Promise.all([startLoadingPromise, stoppedLoadingPromise]);

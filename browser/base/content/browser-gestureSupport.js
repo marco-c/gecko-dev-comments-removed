@@ -733,23 +733,51 @@ var gHistorySwipeAnimation = {
       return;
     }
 
+    const translateDistance = Services.prefs.getIntPref(
+      "browser.swipe.navigation-icon-move-distance",
+      0
+    );
     
     
     
     
     let opacity = Math.abs(aVal) * 4;
+
+    
+    
+    
+    if (translateDistance > 0) {
+      opacity *= 2;
+    }
+
+    
+    
+    let translate =
+      Math.abs(aVal) * 4 * translateDistance - 0.2 * translateDistance;
+    if (!this.isLTR) {
+      translate = -translate;
+    }
+
+    
+    translate = Math.min(
+      Math.max(-translateDistance * 0.2, translate),
+      translateDistance * 0.8
+    );
+
     if ((aVal >= 0 && this.isLTR) || (aVal <= 0 && !this.isLTR)) {
       
       if (this._canGoBack) {
         this._prevBox.collapsed = false;
         this._nextBox.collapsed = true;
         this._prevBox.style.opacity = opacity > 1 ? 1 : opacity;
+        this._prevBox.style.translate = `${translate}px 0px`;
       }
     } else if (this._canGoForward) {
       
       this._nextBox.collapsed = false;
       this._prevBox.collapsed = true;
       this._nextBox.style.opacity = opacity > 1 ? 1 : opacity;
+      this._nextBox.style.translate = `${-translate}px 0px`;
     }
   },
 
