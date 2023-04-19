@@ -18,7 +18,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 namespace {
@@ -129,13 +128,14 @@ bool Codec::operator==(const Codec& c) const {
          feedback_params == c.feedback_params;
 }
 
-bool Codec::Matches(const Codec& codec) const {
+bool Codec::Matches(const Codec& codec,
+                    const webrtc::WebRtcKeyValueConfig* field_trials) const {
   
   
 
   
-  if (webrtc::field_trial::IsDisabled(
-          "WebRTC-PayloadTypes-Lower-Dynamic-Range")) {
+  if (field_trials &&
+      field_trials->IsDisabled("WebRTC-PayloadTypes-Lower-Dynamic-Range")) {
     const int kMaxStaticPayloadId = 95;
     return (id <= kMaxStaticPayloadId || codec.id <= kMaxStaticPayloadId)
                ? (id == codec.id)
@@ -238,7 +238,9 @@ bool AudioCodec::operator==(const AudioCodec& c) const {
   return bitrate == c.bitrate && channels == c.channels && Codec::operator==(c);
 }
 
-bool AudioCodec::Matches(const AudioCodec& codec) const {
+bool AudioCodec::Matches(
+    const AudioCodec& codec,
+    const webrtc::WebRtcKeyValueConfig* field_trials) const {
   
   
   
@@ -248,7 +250,7 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
   
   
   
-  return Codec::Matches(codec) &&
+  return Codec::Matches(codec, field_trials) &&
          ((codec.clockrate == 0 ) ||
           clockrate == codec.clockrate) &&
          (codec.bitrate == 0 || bitrate <= 0 || bitrate == codec.bitrate) &&
@@ -324,8 +326,10 @@ bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c) && packetization == c.packetization;
 }
 
-bool VideoCodec::Matches(const VideoCodec& other) const {
-  return Codec::Matches(other) &&
+bool VideoCodec::Matches(
+    const VideoCodec& other,
+    const webrtc::WebRtcKeyValueConfig* field_trials) const {
+  return Codec::Matches(other, field_trials) &&
          IsSameCodecSpecific(name, params, other.name, other.params);
 }
 

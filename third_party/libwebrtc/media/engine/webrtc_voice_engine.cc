@@ -125,9 +125,10 @@ bool IsCodec(const AudioCodec& codec, const char* ref_name) {
 
 bool FindCodec(const std::vector<AudioCodec>& codecs,
                const AudioCodec& codec,
-               AudioCodec* found_codec) {
+               AudioCodec* found_codec,
+               const webrtc::WebRtcKeyValueConfig* field_trials) {
   for (const AudioCodec& c : codecs) {
-    if (c.Matches(codec)) {
+    if (c.Matches(codec, field_trials)) {
       if (found_codec != NULL) {
         *found_codec = c;
       }
@@ -1557,7 +1558,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     
     
     AudioCodec old_codec;
-    if (FindCodec(recv_codecs_, codec, &old_codec) &&
+    if (FindCodec(recv_codecs_, codec, &old_codec, &call_->trials()) &&
         old_codec.id != codec.id) {
       RTC_LOG(LS_WARNING) << codec.name << " mapped to a second payload type ("
                           << codec.id << ", was already mapped to "
