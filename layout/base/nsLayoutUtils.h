@@ -680,8 +680,8 @@ class nsLayoutUtils {
 
   
   
-  static mozilla::StyleClear CombineBreakType(
-      mozilla::StyleClear aOrigBreakType, mozilla::StyleClear aNewBreakType);
+  static mozilla::StyleClear CombineClearType(
+      mozilla::StyleClear aOrigClearType, mozilla::StyleClear aNewClearType);
 
   
 

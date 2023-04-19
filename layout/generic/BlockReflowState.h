@@ -389,7 +389,9 @@ class BlockReflowState {
 
   Flags mFlags;
 
-  StyleClear mFloatBreakType;
+  
+  
+  StyleClear mTrailingClearFromPIF;
 
   
   

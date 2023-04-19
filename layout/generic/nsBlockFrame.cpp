@@ -2581,7 +2581,7 @@ static bool LinesAreEmpty(const nsLineList& aList) {
 void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool keepGoing = true;
   bool repositionViews = false;  
-  bool foundAnyClears = aState.mFloatBreakType != StyleClear::None;
+  bool foundAnyClears = aState.mTrailingClearFromPIF != StyleClear::None;
   bool willReflowAgain = false;
 
 #ifdef DEBUG
@@ -2624,7 +2624,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
       mFloats.FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
   bool lastLineMovedUp = false;
   
-  StyleClear inlineFloatBreakType = aState.mFloatBreakType;
+  StyleClear inlineFloatBreakType = aState.mTrailingClearFromPIF;
 
   LineIterator line = LinesBegin(), line_end = LinesEnd();
 
@@ -3711,10 +3711,10 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
 
   StyleClear breakType = frame->StyleDisplay()->mBreakType;
-  if (StyleClear::None != aState.mFloatBreakType) {
-    breakType =
-        nsLayoutUtils::CombineBreakType(breakType, aState.mFloatBreakType);
-    aState.mFloatBreakType = StyleClear::None;
+  if (aState.mTrailingClearFromPIF != StyleClear::None) {
+    breakType = nsLayoutUtils::CombineClearType(breakType,
+                                                aState.mTrailingClearFromPIF);
+    aState.mTrailingClearFromPIF = StyleClear::None;
   }
 
   
@@ -4751,7 +4751,7 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
   
   aLine->SetBreakTypeAfter(StyleClear::None);
   if (frameReflowStatus.IsInlineBreak() ||
-      StyleClear::None != aState.mFloatBreakType) {
+      aState.mTrailingClearFromPIF != StyleClear::None) {
     
     
     *aLineReflowStatus = LineReflowStatus::Stop;
@@ -4759,7 +4759,7 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
     
     StyleClear breakType = frameReflowStatus.BreakType();
     MOZ_ASSERT(StyleClear::None != breakType ||
-                   StyleClear::None != aState.mFloatBreakType,
+                   StyleClear::None != aState.mTrailingClearFromPIF,
                "bad break type");
 
     if (frameReflowStatus.IsInlineBreakBefore()) {
@@ -4786,10 +4786,10 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
       
       
       
-      if (StyleClear::None != aState.mFloatBreakType) {
-        breakType =
-            nsLayoutUtils::CombineBreakType(breakType, aState.mFloatBreakType);
-        aState.mFloatBreakType = StyleClear::None;
+      if (aState.mTrailingClearFromPIF != StyleClear::None) {
+        breakType = nsLayoutUtils::CombineClearType(
+            breakType, aState.mTrailingClearFromPIF);
+        aState.mTrailingClearFromPIF = StyleClear::None;
       }
       
       if (breakType == StyleClear::Line) {
@@ -6811,12 +6811,10 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
 }
 
 StyleClear nsBlockFrame::FindTrailingClear() {
-  
-  for (nsIFrame* b = this; b; b = b->GetPrevInFlow()) {
-    nsBlockFrame* block = static_cast<nsBlockFrame*>(b);
-    LineIterator endLine = block->LinesEnd();
-    if (endLine != block->LinesBegin()) {
-      --endLine;
+  for (nsBlockFrame* b = this; b;
+       b = static_cast<nsBlockFrame*>(b->GetPrevInFlow())) {
+    auto endLine = b->LinesRBegin();
+    if (endLine != b->LinesREnd()) {
       return endLine->GetBreakTypeAfter();
     }
   }
@@ -6895,9 +6893,8 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
   if (auto [bCoord, result] = aState.ClearFloats(0, StyleClear::Both);
       result != ClearFloatsResult::BCoordNoChange) {
     Unused << bCoord;
-    nsBlockFrame* prevBlock = static_cast<nsBlockFrame*>(GetPrevInFlow());
-    if (prevBlock) {
-      aState.mFloatBreakType = prevBlock->FindTrailingClear();
+    if (auto* prevBlock = static_cast<nsBlockFrame*>(GetPrevInFlow())) {
+      aState.mTrailingClearFromPIF = prevBlock->FindTrailingClear();
     }
   }
 }
