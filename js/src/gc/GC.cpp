@@ -428,9 +428,6 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       sweepZone(nullptr),
       abortSweepAfterCurrentGroup(false),
       sweepMarkResult(IncrementalProgress::NotFinished),
-#ifdef DEBUG
-      testMarkQueue(rt),
-#endif
       startedCompacting(false),
       zonesCompacted(0),
 #ifdef DEBUG
@@ -465,6 +462,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       nursery_(this),
       storeBuffer_(rt, nursery()),
       lastAllocRateUpdateTime(TimeStamp::Now()) {
+  marker.setIncrementalGCEnabled(incrementalGCEnabled);
 }
 
 using CharRange = mozilla::Range<const char>;
@@ -824,12 +822,10 @@ bool GCRuntime::init(uint32_t maxbytes) {
 
     MOZ_ALWAYS_TRUE(tunables.setParameter(JSGC_MAX_BYTES, maxbytes));
 
-#ifdef JS_GC_ZEAL
     const char* size = getenv("JSGC_MARK_STACK_LIMIT");
     if (size) {
       setMarkStackLimit(atoi(size), lock);
     }
-#endif
 
     if (!nursery().init(lock)) {
       return false;
@@ -1009,6 +1005,12 @@ bool GCRuntime::setParameter(JSGCParamKey key, uint32_t value,
     case JSGC_SLICE_TIME_BUDGET_MS:
       defaultTimeBudgetMS_ = value;
       break;
+    case JSGC_MARK_STACK_LIMIT:
+      if (value == 0) {
+        return false;
+      }
+      setMarkStackLimit(value, lock);
+      break;
     case JSGC_INCREMENTAL_GC_ENABLED:
       setIncrementalGCEnabled(value != 0);
       break;
@@ -1070,6 +1072,9 @@ void GCRuntime::resetParameter(JSGCParamKey key, AutoLockGC& lock) {
   switch (key) {
     case JSGC_SLICE_TIME_BUDGET_MS:
       defaultTimeBudgetMS_ = TuningDefaults::DefaultTimeBudgetMS;
+      break;
+    case JSGC_MARK_STACK_LIMIT:
+      setMarkStackLimit(MarkStack::DefaultCapacity, lock);
       break;
     case JSGC_INCREMENTAL_GC_ENABLED:
       setIncrementalGCEnabled(TuningDefaults::IncrementalGCEnabled);
@@ -1149,6 +1154,8 @@ uint32_t GCRuntime::getParameter(JSGCParamKey key, const AutoLockGC& lock) {
       MOZ_RELEASE_ASSERT(defaultTimeBudgetMS_ >= 0);
       MOZ_RELEASE_ASSERT(defaultTimeBudgetMS_ <= UINT32_MAX);
       return uint32_t(defaultTimeBudgetMS_);
+    case JSGC_MARK_STACK_LIMIT:
+      return marker.maxCapacity();
     case JSGC_HIGH_FREQUENCY_TIME_LIMIT:
       return tunables.highFrequencyThreshold().ToMilliseconds();
     case JSGC_SMALL_HEAP_SIZE_MAX:
@@ -1219,17 +1226,16 @@ uint32_t GCRuntime::getParameter(JSGCParamKey key, const AutoLockGC& lock) {
   }
 }
 
-#ifdef JS_GC_ZEAL
 void GCRuntime::setMarkStackLimit(size_t limit, AutoLockGC& lock) {
   MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
   AutoUnlockGC unlock(lock);
   AutoStopVerifyingBarriers pauseVerification(rt, false);
   marker.setMaxCapacity(limit);
 }
-#endif
 
 void GCRuntime::setIncrementalGCEnabled(bool enabled) {
   incrementalGCEnabled = enabled;
+  marker.setIncrementalGCEnabled(enabled);
 }
 
 void GCRuntime::updateHelperThreadCount() {
@@ -2656,8 +2662,8 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
       }
 
 #ifdef DEBUG
-      testMarkQueue.clear();
-      queuePos = 0;
+      marker.markQueue.clear();
+      marker.queuePos = 0;
 #endif
     }
   }
@@ -2705,11 +2711,6 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
 
   marker.start();
   MOZ_ASSERT(marker.isDrained());
-
-#ifdef DEBUG
-  queuePos = 0;
-  queueMarkColor.reset();
-#endif
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     
@@ -2825,7 +2826,7 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
   AutoSetThreadIsMarking threadIsMarking;
 #endif  
 
-  if (processTestMarkQueue() == QueueYielded) {
+  if (marker.processMarkQueue() == GCMarker::QueueYielded) {
     return NotFinished;
   }
 
@@ -2836,154 +2837,6 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
 void GCRuntime::drainMarkStack() {
   auto unlimited = SliceBudget::unlimited();
   MOZ_RELEASE_ASSERT(marker.markUntilBudgetExhausted(unlimited));
-}
-
-#ifdef DEBUG
-
-const GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>&
-GCRuntime::getTestMarkQueue() const {
-  return testMarkQueue.get();
-}
-
-bool GCRuntime::appendTestMarkQueue(const JS::Value& value) {
-  return testMarkQueue.append(value);
-}
-
-void GCRuntime::clearTestMarkQueue() { testMarkQueue.clear(); }
-
-size_t GCRuntime::testMarkQueuePos() const { return queuePos; }
-
-#endif
-
-GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
-#ifdef DEBUG
-  if (testMarkQueue.empty()) {
-    return QueueComplete;
-  }
-
-  if (queueMarkColor == mozilla::Some(MarkColor::Gray) &&
-      state() != State::Sweep) {
-    return QueueSuspended;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (queueMarkColor == mozilla::Some(MarkColor::Gray) &&
-      marker.hasBlackEntries()) {
-    return QueueSuspended;
-  }
-
-  
-  
-  
-  bool willRevertToGray = marker.markColor() == MarkColor::Gray;
-  AutoSetMarkColor autoRevertColor(marker,
-                                   queueMarkColor.valueOr(marker.markColor()));
-
-  
-  
-  
-  while (queuePos < testMarkQueue.length()) {
-    Value val = testMarkQueue[queuePos++].get();
-    if (val.isObject()) {
-      JSObject* obj = &val.toObject();
-      JS::Zone* zone = obj->zone();
-      if (!zone->isGCMarking() || obj->isMarkedAtLeast(marker.markColor())) {
-        continue;
-      }
-
-      
-      
-      
-      
-      if (state() == State::Sweep && initialState != State::Sweep) {
-        if (zone->gcSweepGroupIndex < getCurrentSweepGroupIndex()) {
-          
-          
-          continue;
-        }
-        if (zone->gcSweepGroupIndex > getCurrentSweepGroupIndex()) {
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-      }
-
-      if (marker.markColor() == MarkColor::Gray &&
-          zone->isGCMarkingBlackOnly()) {
-        
-        
-        queuePos--;
-        return QueueSuspended;
-      }
-
-      if (marker.markColor() == MarkColor::Black && willRevertToGray) {
-        
-        
-        
-        queuePos--;
-        return QueueSuspended;
-      }
-
-      
-      size_t oldPosition = marker.stack.position();
-      marker.markAndTraverse(obj);
-
-      
-      
-      if (marker.stack.position() == oldPosition) {
-        MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        oomUnsafe.crash("Overflowed stack while marking test queue");
-      }
-
-      SliceBudget unlimited = SliceBudget::unlimited();
-      marker.processMarkStackTop(unlimited);
-    } else if (val.isString()) {
-      JSLinearString* str = &val.toString()->asLinear();
-      if (js::StringEqualsLiteral(str, "yield") && isIncrementalGc()) {
-        return QueueYielded;
-      } else if (js::StringEqualsLiteral(str, "enter-weak-marking-mode") ||
-                 js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-        if (marker.isRegularMarking()) {
-          
-          
-          
-          
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-        if (js::StringEqualsLiteral(str, "abort-weak-marking-mode")) {
-          marker.abortLinearWeakMarking();
-        }
-      } else if (js::StringEqualsLiteral(str, "drain")) {
-        auto unlimited = SliceBudget::unlimited();
-        MOZ_RELEASE_ASSERT(marker.markUntilBudgetExhausted(
-            unlimited, GCMarker::DontReportMarkTime));
-      } else if (js::StringEqualsLiteral(str, "set-color-gray")) {
-        queueMarkColor = mozilla::Some(MarkColor::Gray);
-        if (state() != State::Sweep || marker.hasBlackEntries()) {
-          
-          queuePos--;
-          return QueueSuspended;
-        }
-        marker.setMarkColor(MarkColor::Gray);
-      } else if (js::StringEqualsLiteral(str, "set-color-black")) {
-        queueMarkColor = mozilla::Some(MarkColor::Black);
-        marker.setMarkColor(MarkColor::Black);
-      } else if (js::StringEqualsLiteral(str, "unset-color")) {
-        queueMarkColor.reset();
-      }
-    }
-  }
-#endif
-
-  return QueueComplete;
 }
 
 void GCRuntime::finishCollection() {

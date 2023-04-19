@@ -135,6 +135,14 @@ typedef enum JSGCParamKey {
 
 
 
+  JSGC_MARK_STACK_LIMIT = 10,
+
+  
+
+
+
+
+
 
 
 

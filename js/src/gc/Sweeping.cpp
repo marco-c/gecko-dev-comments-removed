@@ -502,12 +502,6 @@ IncrementalProgress GCRuntime::markWeakReferences(
     
     
     
-    while (processTestMarkQueue() == QueueYielded) {
-    };
-
-    
-    
-    
     
     
     if (!marker.incrementalWeakMapMarkingEnabled) {
@@ -670,7 +664,7 @@ bool Zone::findSweepGroupEdges(Zone* atomsZone) {
   return WeakMapBase::findSweepGroupEdgesForZone(this);
 }
 
-bool GCRuntime::addEdgesForMarkQueue() {
+static bool AddEdgesForMarkQueue(GCMarker& marker) {
 #ifdef DEBUG
   
   
@@ -681,8 +675,8 @@ bool GCRuntime::addEdgesForMarkQueue() {
   
   
   JS::Zone* prevZone = nullptr;
-  for (size_t i = 0; i < testMarkQueue.length(); i++) {
-    Value val = testMarkQueue[i].get();
+  for (size_t i = 0; i < marker.markQueue.length(); i++) {
+    Value val = marker.markQueue[i].get();
     if (!val.isObject()) {
       continue;
     }
@@ -709,7 +703,7 @@ bool GCRuntime::findSweepGroupEdges() {
     }
   }
 
-  if (!addEdgesForMarkQueue()) {
+  if (!AddEdgesForMarkQueue(marker)) {
     return false;
   }
 
