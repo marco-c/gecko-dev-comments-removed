@@ -6477,7 +6477,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  StorageAccess storageAccess = CookieAllowedForDocument(this);
+  StorageAccess storageAccess = StorageAllowedForDocument(this);
   if (storageAccess == StorageAccess::eDeny) {
     return;
   }
@@ -6516,7 +6516,7 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
     return;
   }
 
-  StorageAccess storageAccess = CookieAllowedForDocument(this);
+  StorageAccess storageAccess = StorageAllowedForDocument(this);
   if (storageAccess == StorageAccess::eDeny) {
     return;
   }
@@ -12056,7 +12056,6 @@ nsresult Document::CloneDocHelper(Document* clone) const {
   clone->SetChromeXHRDocURI(mChromeXHRDocURI);
   clone->SetPrincipals(NodePrincipal(), mPartitionedPrincipal);
   clone->mActiveStoragePrincipal = mActiveStoragePrincipal;
-  clone->mActiveCookiePrincipal = mActiveCookiePrincipal;
   
   
   
@@ -17803,11 +17802,6 @@ bool Document::HasStorageAccessPermissionGrantedByAllowList() {
 }
 
 nsIPrincipal* Document::EffectiveStoragePrincipal() const {
-  if (!StaticPrefs::
-          privacy_partition_always_partition_third_party_non_cookie_storage()) {
-    return EffectiveCookiePrincipal();
-  }
-
   nsPIDOMWindowInner* inner = GetInnerWindow();
   if (!inner) {
     return NodePrincipal();
@@ -17820,49 +17814,9 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
 
   
   
-  
-  
-  
-  nsIPrincipal* principal = NodePrincipal();
-  if (principal && (principal->IsSystemPrincipal() ||
-                    principal->GetIsAddonOrExpandedAddonPrincipal())) {
-    return mActiveStoragePrincipal = NodePrincipal();
-  }
-
-  auto cookieJarSettings = const_cast<Document*>(this)->CookieJarSettings();
-  if (cookieJarSettings->GetIsOnContentBlockingAllowList()) {
-    return mActiveStoragePrincipal = NodePrincipal();
-  }
-
-  StorageAccess storageAccess = StorageAllowedForDocument(this);
-  if (!ShouldPartitionStorage(storageAccess) ||
-      !StoragePartitioningEnabled(storageAccess, cookieJarSettings)) {
-    return mActiveStoragePrincipal = NodePrincipal();
-  }
-
-  Unused << NS_WARN_IF(NS_FAILED(StoragePrincipalHelper::GetPrincipal(
-      nsGlobalWindowInner::Cast(inner),
-      StoragePrincipalHelper::eForeignPartitionedPrincipal,
-      getter_AddRefs(mActiveStoragePrincipal))));
-  return mActiveStoragePrincipal;
-}
-
-nsIPrincipal* Document::EffectiveCookiePrincipal() const {
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (!inner) {
-    return NodePrincipal();
-  }
-
-  
-  if (mActiveCookiePrincipal) {
-    return mActiveCookiePrincipal;
-  }
-
-  
-  
   uint32_t rejectedReason = 0;
   if (ShouldAllowAccessFor(inner, GetDocumentURI(), &rejectedReason)) {
-    return mActiveCookiePrincipal = NodePrincipal();
+    return mActiveStoragePrincipal = NodePrincipal();
   }
 
   
@@ -17871,10 +17825,10 @@ nsIPrincipal* Document::EffectiveCookiePrincipal() const {
   if (ShouldPartitionStorage(rejectedReason) &&
       !StoragePartitioningEnabled(
           rejectedReason, const_cast<Document*>(this)->CookieJarSettings())) {
-    return mActiveCookiePrincipal = NodePrincipal();
+    return mActiveStoragePrincipal = NodePrincipal();
   }
 
-  return mActiveCookiePrincipal = mPartitionedPrincipal;
+  return mActiveStoragePrincipal = mPartitionedPrincipal;
 }
 
 nsIPrincipal* Document::GetPrincipalForPrefBasedHacks() const {

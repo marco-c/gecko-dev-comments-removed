@@ -1,9 +1,6 @@
 
 
 
-const APS_PREF =
-  "privacy.partition.always_partition_third_party_non_cookie_storage";
-
 AntiTracking.runTest(
   "Storage Access API called in a sandboxed iframe",
   
@@ -27,10 +24,7 @@ AntiTracking.runTest(
       );
     });
   },
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   0, 
@@ -71,7 +65,6 @@ AntiTracking.runTest(
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
-    [APS_PREF, false],
   ], 
   false, 
   false, 
@@ -94,10 +87,7 @@ AntiTracking.runTest(
 
   null, 
   null, 
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
@@ -122,10 +112,7 @@ AntiTracking.runTest(
 
   null, 
   null, 
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
@@ -147,10 +134,7 @@ AntiTracking.runTest(
 
   null, 
   null, 
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   0, 
@@ -175,10 +159,7 @@ AntiTracking.runTest(
 
   null, 
   null, 
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
@@ -205,10 +186,7 @@ AntiTracking.runTest(
       );
     });
   },
-  [
-    ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
-  ], 
+  [["dom.storage_access.enabled", true]], 
   false, 
   false, 
   0 
