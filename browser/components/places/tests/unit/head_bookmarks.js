@@ -16,9 +16,11 @@ if (commonFile) {
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUIUtils",
+  "resource:///modules/PlacesUIUtils.jsm"
+);
 
 
 const { updateAppInfo } = ChromeUtils.import(

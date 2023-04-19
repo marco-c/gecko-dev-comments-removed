@@ -7,12 +7,12 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProviderHeuristicFallback:
-    "resource:///modules/UrlbarProviderHeuristicFallback.sys.mjs",
-  UrlbarProviderPlaces: "resource:///modules/UrlbarProviderPlaces.sys.mjs",
+    "resource:///modules/UrlbarProviderHeuristicFallback.jsm",
+  UrlbarProviderPlaces: "resource:///modules/UrlbarProviderPlaces.jsm",
   UrlbarProviderTabToSearch:
-    "resource:///modules/UrlbarProviderTabToSearch.sys.mjs",
+    "resource:///modules/UrlbarProviderTabToSearch.jsm",
 });
 
 const SPONSORED_SECOND_POSITION_SUGGEST = {

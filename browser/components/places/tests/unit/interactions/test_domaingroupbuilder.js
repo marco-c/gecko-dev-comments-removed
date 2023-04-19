@@ -5,9 +5,11 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  DomainGroupBuilder: "resource:///modules/DomainGroupBuilder.sys.mjs",
-});
+ChromeUtils.defineModuleGetter(
+  this,
+  "DomainGroupBuilder",
+  "resource:///modules/DomainGroupBuilder.jsm"
+);
 
 const TEST_URLS = [
   "https://example.com/1",
