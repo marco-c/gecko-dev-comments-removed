@@ -8,16 +8,16 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP8_TEST_MOCK_LIBVPX_INTERFACE_H_
-#define MODULES_VIDEO_CODING_CODECS_VP8_TEST_MOCK_LIBVPX_INTERFACE_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_INTERFACE_MOCK_LIBVPX_INTERFACE_H_
+#define MODULES_VIDEO_CODING_CODECS_INTERFACE_MOCK_LIBVPX_INTERFACE_H_
 
-#include "modules/video_coding/codecs/vp8/libvpx_interface.h"
+#include "modules/video_coding/codecs/interface/libvpx_interface.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
-class MockLibvpxVp8Interface : public LibvpxInterface {
+class MockLibvpxInterface : public LibvpxInterface {
  public:
   MOCK_METHOD(
       vpx_image_t*,
