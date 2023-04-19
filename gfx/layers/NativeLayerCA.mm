@@ -553,12 +553,15 @@ VideoLowPowerType NativeLayerRootCA::CheckVideoLowPower() {
     return VideoLowPowerType::NotVideo;
   }
 
-  if (videoLayerCount > 1) {
-    return VideoLowPowerType::FailMultipleVideo;
-  }
-
+  
+  
+  
   if (!mWindowIsFullscreen) {
     return VideoLowPowerType::FailWindowed;
+  }
+
+  if (videoLayerCount > 1) {
+    return VideoLowPowerType::FailMultipleVideo;
   }
 
   if (!topLayerIsVideo) {
