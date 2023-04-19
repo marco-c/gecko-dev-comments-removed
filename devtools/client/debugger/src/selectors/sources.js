@@ -16,7 +16,6 @@ import {
   isJavaScript,
   removeThreadActorId,
 } from "../utils/source";
-import { stripQuery } from "../utils/url";
 
 import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
@@ -263,7 +262,6 @@ export const getDisplayedSources = createSelector(
   getMainThreadHost,
   (list, mainThreadHost) => {
     const result = {};
-    const entriesByNoQueryURL = {};
     for (const source of list) {
       const displayURL = getDisplayURL(source.url, mainThreadHost);
 
@@ -293,27 +291,6 @@ export const getDisplayedSources = createSelector(
         result[thread] = {};
       }
       result[thread][displayedSource.id] = displayedSource;
-
-      
-      
-      const noQueryURL = stripQuery(displayedSource.url);
-      
-      if (noQueryURL != displayedSource.url) {
-        if (!entriesByNoQueryURL[noQueryURL]) {
-          entriesByNoQueryURL[noQueryURL] = [];
-        }
-        entriesByNoQueryURL[noQueryURL].push(displayedSource);
-      }
-    }
-
-    
-    
-    
-    for (const noQueryURL in entriesByNoQueryURL) {
-      const entries = entriesByNoQueryURL[noQueryURL];
-      if (entries.length === 1) {
-        entries[0].displayURL = getDisplayURL(noQueryURL, mainThreadHost);
-      }
     }
 
     return result;
