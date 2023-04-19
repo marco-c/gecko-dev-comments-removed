@@ -819,6 +819,7 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   mHFlip = false;
   mAlignmentOffset = 0;
   mPositionedOffset = 0;
+  mPositionedByMoveToRect = false;
 
   mAnchorType = aAnchorType;
 
@@ -1537,12 +1538,16 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
       
       
       
-      mUntransformedAnchorRect = anchorRect;
+      if (!mPositionedByMoveToRect) {
+        mUntransformedAnchorRect = anchorRect;
+      }
       screenPoint = AdjustPositionForAnchorAlign(anchorRect, hFlip, vFlip);
     } else {
       
       anchorRect = rootScreenRect;
-      mUntransformedAnchorRect = anchorRect;
+      if (!mPositionedByMoveToRect) {
+        mUntransformedAnchorRect = anchorRect;
+      }
       screenPoint = anchorRect.TopLeft() + nsPoint(margin.left, margin.top);
     }
 
@@ -1579,7 +1584,9 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   } else {
     screenPoint = mScreenRect.TopLeft();
     anchorRect = nsRect(screenPoint, nsSize());
-    mUntransformedAnchorRect = anchorRect;
+    if (!mPositionedByMoveToRect) {
+      mUntransformedAnchorRect = anchorRect;
+    }
 
     
     
@@ -2408,7 +2415,8 @@ nsMargin nsMenuPopupFrame::GetMargin() const {
   return margin;
 }
 
-void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs) {
+void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
+                              bool aByMoveToRect) {
   nsIWidget* widget = GetWidget();
   nsPoint appUnitsPos = CSSPixel::ToAppUnits(aPos);
 
@@ -2433,6 +2441,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs) {
     return;
   }
 
+  mPositionedByMoveToRect = aByMoveToRect;
   mScreenRect.MoveTo(appUnitsPos);
   if (mAnchorType == MenuPopupAnchorType_Rect) {
     
