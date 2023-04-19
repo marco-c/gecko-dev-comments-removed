@@ -135,17 +135,19 @@ class BlockReflowState {
       nsFloatManager::SavedState* aState) const;
 
   
-
-
-
-
-
-
-
+  
+  
+  
+  
   bool AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
                 nscoord aAvailableISize);
 
-  bool FlowAndPlaceFloat(nsIFrame* aFloat);
+  enum class PlaceFloatResult : uint8_t {
+    Placed,
+    ShouldPlaceBelowCurrentLine,
+    ShouldPlaceInNextContinuation,
+  };
+  PlaceFloatResult FlowAndPlaceFloat(nsIFrame* aFloat);
 
   void PlaceBelowCurrentLineFloats(nsLineBox* aLine);
 

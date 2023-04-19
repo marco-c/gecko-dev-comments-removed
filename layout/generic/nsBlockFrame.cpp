@@ -6794,7 +6794,8 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
     
     
     
-    if (aState.FlowAndPlaceFloat(f)) {
+    if (aState.FlowAndPlaceFloat(f) ==
+        BlockReflowState::PlaceFloatResult::Placed) {
       ConsiderChildOverflow(aOverflowAreas, f);
     }
 
