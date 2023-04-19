@@ -761,6 +761,9 @@ static void TestMatchingHolder(CacheIRWriter& writer, NativeObject* obj,
 
 static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
                                  ObjOperandId objId) {
+  uint32_t depth = 0;
+  static const uint32_t MAX_CACHED_LOADS = 4;
+
   while (true) {
     JSObject* proto = obj->staticPrototype();
     if (!proto) {
@@ -768,7 +771,18 @@ static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
     }
 
     obj = &proto->as<NativeObject>();
-    objId = writer.loadProto(objId);
+
+    
+    
+    
+    
+    
+    if (depth < MAX_CACHED_LOADS) {
+      objId = writer.loadObject(obj);
+    } else {
+      objId = writer.loadProto(objId);
+    }
+    depth++;
 
     writer.guardShape(objId, obj->shape());
   }
