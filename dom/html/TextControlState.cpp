@@ -1493,6 +1493,7 @@ void TextControlState::DeleteOrCacheForReuse() {
     
     UnlinkInternal();
     mValue.SetIsVoid(true);
+    mLastInteractiveValue.SetIsVoid(true);
     mTextCtrlElement = nullptr;
 
     
