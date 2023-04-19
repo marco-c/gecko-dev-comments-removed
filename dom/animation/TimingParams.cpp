@@ -214,13 +214,78 @@ bool TimingParams::operator==(const TimingParams& aOther) const {
          mFunction == aOther.mFunction;
 }
 
-void TimingParams::Normalize() {
-  
-  mDuration = Some(StickyTimeDuration::FromMilliseconds(
-      PROGRESS_TIMELINE_DURATION_MILLISEC));
-  mDelay = TimeDuration::FromMilliseconds(0);
 
-  Update();
+
+
+
+
+
+
+
+
+
+
+TimingParams TimingParams::Normalize(
+    const TimeDuration& aTimelineDuration) const {
+  MOZ_ASSERT(aTimelineDuration,
+             "the timeline duration of scroll-timeline is always non-zero now");
+
+  TimingParams normalizedTiming(*this);
+
+  
+  
+  
+  
+  
+  if (!mDuration) {
+    
+    
+    
+    normalizedTiming.mDelay = TimeDuration();
+    normalizedTiming.mEndDelay = TimeDuration();
+    normalizedTiming.Update();
+    return normalizedTiming;
+  }
+
+  if (mEndTime.IsZero()) {
+    
+    
+    
+    
+    
+    normalizedTiming.mDelay = TimeDuration();
+    normalizedTiming.mEndDelay = TimeDuration();
+    normalizedTiming.mDuration = Some(TimeDuration());
+  } else if (mEndTime == TimeDuration::Forever()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    normalizedTiming.mDelay = TimeDuration();
+    normalizedTiming.mEndDelay = TimeDuration();
+    normalizedTiming.mDuration =
+        Some(aTimelineDuration.MultDouble(1.0 / mIterations));
+  } else {
+    
+    const double endTimeInSec = mEndTime.ToSeconds();
+    normalizedTiming.mDelay =
+        aTimelineDuration.MultDouble(mDelay.ToSeconds() / endTimeInSec);
+    normalizedTiming.mEndDelay =
+        aTimelineDuration.MultDouble(mEndDelay.ToSeconds() / endTimeInSec);
+    normalizedTiming.mDuration = Some(StickyTimeDuration(
+        aTimelineDuration.MultDouble(mDuration->ToSeconds() / endTimeInSec)));
+  }
+
+  normalizedTiming.Update();
+  return normalizedTiming;
 }
 
 }  

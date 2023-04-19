@@ -21,8 +21,6 @@
 #include "mozilla/dom/AnimationEffectBinding.h"  
                                                  
 
-#define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
-
 namespace mozilla {
 
 namespace dom {
@@ -204,7 +202,9 @@ struct TimingParams {
     return mFunction;
   }
 
-  void Normalize();
+  
+  
+  TimingParams Normalize(const TimeDuration& aTimelineDuration) const;
 
  private:
   void Update() {
