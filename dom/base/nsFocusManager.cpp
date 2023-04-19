@@ -2636,14 +2636,15 @@ void nsFocusManager::Focus(
 
     aWindow->SetFocusedElement(aElement, focusMethod, false);
 
-    
-    if (aElement && aFocusChanged) {
-      ScrollIntoView(presShell, aElement, aFlags);
-    }
     const RefPtr<nsPresContext> presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
       NotifyFocusStateChange(aElement, nullptr, aFlags,
                               true, shouldShowFocusRing);
+
+      
+      if (aFocusChanged) {
+        ScrollIntoView(presShell, aElement, aFlags);
+      }
 
       
       
