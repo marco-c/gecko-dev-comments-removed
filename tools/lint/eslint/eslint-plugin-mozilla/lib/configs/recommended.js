@@ -32,6 +32,7 @@ module.exports = {
     InstallTrigger: false,
     
     InternalError: true,
+    Services: false,
     
     dump: true,
     openDialog: false,

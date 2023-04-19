@@ -14,8 +14,10 @@ const EXPORTED_SYMBOLS = [
 let Services;
 if (typeof module == "object") {
   
+  
   Services = require("Services");
 } else {
+  
   ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
 }
 
