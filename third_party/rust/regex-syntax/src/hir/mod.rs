@@ -243,7 +243,7 @@ impl Hir {
         info.set_match_empty(true);
         info.set_literal(false);
         info.set_alternation_literal(false);
-        Hir { kind: HirKind::Empty, info: info }
+        Hir { kind: HirKind::Empty, info }
     }
 
     
@@ -268,7 +268,7 @@ impl Hir {
         info.set_match_empty(false);
         info.set_literal(true);
         info.set_alternation_literal(true);
-        Hir { kind: HirKind::Literal(lit), info: info }
+        Hir { kind: HirKind::Literal(lit), info }
     }
 
     
@@ -285,7 +285,7 @@ impl Hir {
         info.set_match_empty(false);
         info.set_literal(false);
         info.set_alternation_literal(false);
-        Hir { kind: HirKind::Class(class), info: info }
+        Hir { kind: HirKind::Class(class), info }
     }
 
     
@@ -318,7 +318,7 @@ impl Hir {
         if let Anchor::EndLine = anchor {
             info.set_line_anchored_end(true);
         }
-        Hir { kind: HirKind::Anchor(anchor), info: info }
+        Hir { kind: HirKind::Anchor(anchor), info }
     }
 
     
@@ -345,7 +345,7 @@ impl Hir {
         if let WordBoundary::AsciiNegate = word_boundary {
             info.set_always_utf8(false);
         }
-        Hir { kind: HirKind::WordBoundary(word_boundary), info: info }
+        Hir { kind: HirKind::WordBoundary(word_boundary), info }
     }
 
     
@@ -372,7 +372,7 @@ impl Hir {
         info.set_match_empty(rep.is_match_empty() || rep.hir.is_match_empty());
         info.set_literal(false);
         info.set_alternation_literal(false);
-        Hir { kind: HirKind::Repetition(rep), info: info }
+        Hir { kind: HirKind::Repetition(rep), info }
     }
 
     
@@ -389,7 +389,7 @@ impl Hir {
         info.set_match_empty(group.hir.is_match_empty());
         info.set_literal(false);
         info.set_alternation_literal(false);
-        Hir { kind: HirKind::Group(group), info: info }
+        Hir { kind: HirKind::Group(group), info }
     }
 
     
@@ -480,7 +480,7 @@ impl Hir {
                         })
                         .any(|e| e.is_line_anchored_end()),
                 );
-                Hir { kind: HirKind::Concat(exprs), info: info }
+                Hir { kind: HirKind::Concat(exprs), info }
             }
         }
     }
@@ -542,7 +542,7 @@ impl Hir {
                     let x = info.is_alternation_literal() && e.is_literal();
                     info.set_alternation_literal(x);
                 }
-                Hir { kind: HirKind::Alternation(exprs), info: info }
+                Hir { kind: HirKind::Alternation(exprs), info }
             }
         }
     }

@@ -61,7 +61,7 @@ impl<'t> Match<'t> {
     
     #[inline]
     fn new(haystack: &'t str, start: usize, end: usize) -> Match<'t> {
-        Match { text: haystack, start: start, end: end }
+        Match { text: haystack, start, end }
     }
 }
 
@@ -311,7 +311,7 @@ impl Regex {
     pub fn captures<'t>(&self, text: &'t str) -> Option<Captures<'t>> {
         let mut locs = self.capture_locations();
         self.captures_read_at(&mut locs, text, 0).map(move |_| Captures {
-            text: text,
+            text,
             locs: locs.0,
             named_groups: self.0.capture_name_idx().clone(),
         })
@@ -636,7 +636,7 @@ impl Regex {
     
     
     pub fn is_match_at(&self, text: &str, start: usize) -> bool {
-        self.shortest_match_at(text, start).is_some()
+        self.0.searcher_str().is_match_at(text, start)
     }
 
     
@@ -1092,7 +1092,17 @@ impl<'c, 't> Iterator for SubCaptureMatches<'c, 't> {
             .next()
             .map(|cap| cap.map(|(s, e)| Match::new(self.caps.text, s, e)))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.it.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.it.count()
+    }
 }
+
+impl<'c, 't> ExactSizeIterator for SubCaptureMatches<'c, 't> {}
 
 impl<'c, 't> FusedIterator for SubCaptureMatches<'c, 't> {}
 
@@ -1114,7 +1124,7 @@ impl<'r, 't> Iterator for CaptureMatches<'r, 't> {
     fn next(&mut self) -> Option<Captures<'t>> {
         self.0.next().map(|locs| Captures {
             text: self.0.text(),
-            locs: locs,
+            locs,
             named_groups: self.0.regex().capture_name_idx().clone(),
         })
     }

@@ -385,7 +385,7 @@ impl PartialOrd for Position {
 impl Span {
     
     pub fn new(start: Position, end: Position) -> Span {
-        Span { start: start, end: end }
+        Span { start, end }
     }
 
     
@@ -427,7 +427,7 @@ impl Position {
     
     
     pub fn new(offset: usize, line: usize, column: usize) -> Position {
-        Position { offset: offset, line: line, column: column }
+        Position { offset, line, column }
     }
 }
 

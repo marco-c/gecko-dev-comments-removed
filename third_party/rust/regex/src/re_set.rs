@@ -72,6 +72,38 @@ $(#[$doc_regexset_example])*
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 pub struct RegexSet(Exec);
 
