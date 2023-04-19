@@ -1722,6 +1722,45 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
     return EditActionHandled();
   }
 
+  
+  
+  
+  auto CollapseSelection =
+      [this](const EditorDOMPoint& aCandidatePointToPutCaret,
+             const Element* aBlockElementShouldHaveCaret,
+             const SuggestCaretOptions& aOptions)
+          MOZ_CAN_RUN_SCRIPT -> nsresult {
+    if (!aCandidatePointToPutCaret.IsSet()) {
+      if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion)) {
+        return NS_OK;
+      }
+      return aOptions.contains(SuggestCaret::AndIgnoreTrivialError)
+                 ? NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR
+                 : NS_ERROR_FAILURE;
+    }
+    EditorDOMPoint pointToPutCaret(aCandidatePointToPutCaret);
+    if (aBlockElementShouldHaveCaret) {
+      Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          HTMLEditUtils::ComputePointToPutCaretInElementIfOutside<
+              EditorDOMPoint>(*aBlockElementShouldHaveCaret,
+                              aCandidatePointToPutCaret);
+      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+        NS_WARNING(
+            "HTMLEditUtils::ComputePointToPutCaretInElementIfOutside() "
+            "failed, but ignored");
+      } else if (pointToPutCaretOrError.inspect().IsSet()) {
+        pointToPutCaret = pointToPutCaretOrError.unwrap();
+      }
+    }
+    nsresult rv = CollapseSelectionTo(pointToPutCaret);
+    if (NS_FAILED(rv) && MOZ_LIKELY(rv != NS_ERROR_EDITOR_DESTROYED) &&
+        aOptions.contains(SuggestCaret::AndIgnoreTrivialError)) {
+      rv = NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR;
+    }
+    return rv;
+  };
+
+  RefPtr<Element> blockElementToPutCaret;
   if (!HTMLEditUtils::IsSplittableNode(*editableBlockElement) &&
       separator != ParagraphSeparator::br) {
     
@@ -1744,10 +1783,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
       return EditActionIgnored(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
     MOZ_ASSERT(pointToInsert.IsSetAndValid());
-    if (suggestBlockElementToPutCaretOrError.inspect()) {
-      TopLevelEditSubActionDataRef().mNewBlockElement =
-          suggestBlockElementToPutCaretOrError.unwrap();
-    }
+    blockElementToPutCaret = suggestBlockElementToPutCaretOrError.unwrap();
 
     editableBlockElement = HTMLEditUtils::GetInclusiveAncestorElement(
         *pointToInsert.ContainerAsContent(),
@@ -1763,21 +1799,24 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
         NS_WARNING("HTMLEditor::HandleInsertBRElement() failed");
         return EditActionResult(insertBRElementResult.unwrapErr());
       }
-      nsresult rv = insertBRElementResult.SuggestCaretPointTo(*this, {});
+      EditorDOMPoint pointToPutCaret = insertBRElementResult.UnwrapCaretPoint();
+      if (MOZ_UNLIKELY(!pointToPutCaret.IsSet())) {
+        NS_WARNING(
+            "HTMLEditor::HandleInsertBRElement() didn't suggest a point to put "
+            "caret");
+        return EditActionHandled(NS_ERROR_FAILURE);
+      }
+      nsresult rv =
+          CollapseSelection(pointToPutCaret, blockElementToPutCaret, {});
       if (NS_FAILED(rv)) {
-        NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+        NS_WARNING("CollapseSelection() failed");
         return EditActionHandled(rv);
       }
       return EditActionHandled();
     }
     
-    
-    
-    
-    
-    
-    
-    TopLevelEditSubActionDataRef().mNewBlockElement = editableBlockElement;
+    TopLevelEditSubActionDataRef().mNewBlockElement = nullptr;
+    blockElementToPutCaret = editableBlockElement;
   }
 
   
@@ -1822,15 +1861,15 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
           "ignored");
       return EditActionHandled();
     }
-    nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.unwrap());
-    if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      NS_WARNING(
-          "EditorBase::CollapseSelectionTo() caused destroying the editor");
-      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    nsresult rv = CollapseSelection(pointToPutCaretOrError.inspect(),
+                                    blockElementToPutCaret,
+                                    {SuggestCaret::AndIgnoreTrivialError});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("CollapseSelection() failed");
+      return EditActionHandled(rv);
     }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "EditorBase::CollapseSelectionTo() failed, but ignored");
+    NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+                         "CollapseSelection() failed, but ignored");
     return EditActionHandled();
   }
 
@@ -1842,16 +1881,17 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
       NS_WARNING("HTMLEditor::HandleInsertParagraphInHeadingElement() failed");
       return EditActionHandled();
     }
-    nsresult rv = splitHeadingElementResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::AndIgnoreTrivialError});
+    EditorDOMPoint pointToPutCaret =
+        splitHeadingElementResult.UnwrapCaretPoint();
+    nsresult rv = CollapseSelection(pointToPutCaret, blockElementToPutCaret,
+                                    {SuggestCaret::OnlyIfHasSuggestion,
+                                     SuggestCaret::AndIgnoreTrivialError});
     if (NS_FAILED(rv)) {
-      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+      NS_WARNING("CollapseSelection() failed");
       return EditActionHandled(rv);
     }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "SplitNodeResult::SuggestCaretPointTo() failed, but ignored");
+    NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+                         "CollapseSelection() failed, but ignored");
     return EditActionHandled();
   }
 
@@ -1868,7 +1908,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
        editableBlockElement->IsAnyOfHTMLElements(nsGkAtoms::p,
                                                  nsGkAtoms::div))) {
     
-    const SplitNodeResult splitResult = HandleInsertParagraphInParagraph(
+    SplitNodeResult splitResult = HandleInsertParagraphInParagraph(
         *editableBlockElement,
         insertedPaddingBRElement ? EditorDOMPoint(insertedPaddingBRElement)
                                  : pointToInsert,
@@ -1878,15 +1918,15 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
       return EditActionResult(splitResult.unwrapErr());
     }
     if (splitResult.Handled()) {
-      nsresult rv = splitResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::AndIgnoreTrivialError});
+      EditorDOMPoint pointToPutCaret = splitResult.UnwrapCaretPoint();
+      nsresult rv = CollapseSelection(pointToPutCaret, blockElementToPutCaret,
+                                      {SuggestCaret::AndIgnoreTrivialError});
       if (NS_FAILED(rv)) {
-        NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+        NS_WARNING("CollapseSelection() failed");
         return EditActionResult(rv);
       }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "SplitNodeResult::SuggestCaretPointTo() failed, but ignored");
+      NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+                           "CollapseSelection() failed, but ignored");
       return EditActionHandled();
     }
     MOZ_ASSERT(!splitResult.HasCaretPointSuggestion());
@@ -1906,7 +1946,8 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
     NS_WARNING("HTMLEditor::HandleInsertBRElement() failed");
     return EditActionIgnored(insertBRElementResult.unwrapErr());
   }
-  rv = insertBRElementResult.SuggestCaretPointTo(*this, {});
+  EditorDOMPoint pointToPutCaret = insertBRElementResult.UnwrapCaretPoint();
+  rv = CollapseSelection(pointToPutCaret, blockElementToPutCaret, {});
   if (NS_FAILED(rv)) {
     NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
     return EditActionHandled(rv);
