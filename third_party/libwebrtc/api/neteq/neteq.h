@@ -216,9 +216,13 @@ class NetEq {
   
   
   
+  
+  
+  
   virtual int GetAudio(
       AudioFrame* audio_frame,
       bool* muted,
+      int* current_sample_rate_hz = nullptr,
       absl::optional<Operation> action_override = absl::nullopt) = 0;
 
   
