@@ -84,9 +84,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     
-    
-    
-    RtcpStatisticsCallback* rtcp_statistics_callback = nullptr;
     RtcpCnameCallback* rtcp_cname_callback = nullptr;
     ReportBlockDataObserver* report_block_data_observer = nullptr;
 
