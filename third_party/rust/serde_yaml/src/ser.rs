@@ -49,6 +49,12 @@ where
     }
 
     
+    
+    pub fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
+    }
+
+    
     pub fn into_inner(self) -> W {
         self.writer
     }
