@@ -13,8 +13,6 @@
 #  include "prenv.h"
 #  include "prprf.h"
 #  include <string.h>
-#elif defined(XP_WIN)
-#  include <stdlib.h>
 #endif
 
 #if defined(XP_WIN)
@@ -31,6 +29,7 @@
 
 #include <ctype.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifndef NS_NO_XPCOM
 #  include "nsIFile.h"
@@ -193,8 +192,8 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
 }
 
 template <typename CharT>
-inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
-                                  const CharT** aAcceptableArgs) {
+inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
+                                      CharT const* const* aAcceptableArgs) {
   
   
   
@@ -209,7 +208,7 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
     
     
     if (aArgc != 4) {
-      exit(127);
+      return false;
     }
 
     
@@ -219,14 +218,14 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
         && *arg != '/'
 #endif
     ) {
-      exit(127);
+      return false;
     }
     ++arg;
     if (*arg == '-') {
       ++arg;
     }
     if (!strimatch(osintLit, arg)) {
-      exit(127);
+      return false;
     }
 
     
@@ -236,14 +235,14 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
         && *arg != '/'
 #endif
     ) {
-      exit(127);
+      return false;
     }
     ++arg;
     if (*arg == '-') {
       ++arg;
     }
     bool haveAcceptableArg = false;
-    const CharT** acceptableArg = aAcceptableArgs;
+    const CharT* const* acceptableArg = aAcceptableArgs;
     while (*acceptableArg) {
       if (strimatch(*acceptableArg, arg)) {
         haveAcceptableArg = true;
@@ -252,7 +251,7 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
       acceptableArg++;
     }
     if (!haveAcceptableArg) {
-      exit(127);
+      return false;
     }
     
     arg = aArgv[3];
@@ -261,11 +260,21 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
         || *arg == '/'
 #endif
     ) {
-      exit(127);
+      return false;
     }
   }
+
   
   
+  return true;
+}
+
+template <typename CharT>
+inline void EnsureCommandlineSafe(int aArgc, CharT** aArgv,
+                                  CharT const* const* aAcceptableArgs) {
+  if (!EnsureCommandlineSafeImpl(aArgc, aArgv, aAcceptableArgs)) {
+    exit(127);
+  }
 }
 
 #if defined(XP_WIN)
