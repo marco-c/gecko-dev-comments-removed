@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "net/dcsctp/public/strong_alias.h"
+#include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
 
@@ -33,6 +34,14 @@ using ReconfigRequestSN = StrongAlias<class ReconfigRequestSNTag, uint32_t>;
 
 
 using VerificationTag = StrongAlias<class VerificationTagTag, uint32_t>;
+
+
+struct UnorderedStreamHash {
+  size_t operator()(const std::pair<IsUnordered, StreamID>& p) const {
+    return std::hash<IsUnordered::UnderlyingType>{}(*p.first) ^
+           (std::hash<StreamID::UnderlyingType>{}(*p.second) << 1);
+  }
+};
 
 }  
 #endif  
