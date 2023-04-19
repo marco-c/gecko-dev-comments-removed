@@ -393,18 +393,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
     ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
     nsReflowStatus& aReflowStatus, ReflowConfig& aConfig,
     bool aUnboundedLastColumn) {
-  const ColumnBalanceData colData = ReflowChildren(
-      aDesiredSize, aReflowInput, aReflowStatus, aConfig, aUnboundedLastColumn);
-
-  if (!colData.mHasExcessBSize) {
-    return colData;
-  }
-
-  aConfig = ChooseColumnStrategy(aReflowInput, true);
-
-  
-  
-  
   return ReflowChildren(aDesiredSize, aReflowInput, aReflowStatus, aConfig,
                         aUnboundedLastColumn);
 }
@@ -774,14 +762,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       aStatus.SetNextInFlowNeedsReflow();
       reflowNext = true;
       kidNextInFlow->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-    }
-
-    if (contentBEnd > aReflowInput.mCBReflowInput->ComputedMaxBSize() &&
-        aConfig.mIsBalancing) {
-      
-      
-      
-      colData.mHasExcessBSize = true;
     }
 
     

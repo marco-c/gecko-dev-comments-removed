@@ -140,11 +140,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
-    
-    bool mHasExcessBSize = false;
-
-    
-    
     bool mFeasible = false;
   };
 
