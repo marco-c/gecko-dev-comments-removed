@@ -24,6 +24,7 @@
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/CycleCollectedJSContext.h"  
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"  
 #include "nsNetUtil.h"            
@@ -599,14 +600,13 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
 
 ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
     LoadedScript* aScript, const nsAString& aSpecifier) {
-  bool importMapsEnabled = Preferences::GetBool("dom.importMaps.enabled");
   
   
   
   
   
   
-  if (importMapsEnabled) {
+  if (mozilla::StaticPrefs::dom_importMaps_enabled()) {
     return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
                                              aSpecifier);
   }
