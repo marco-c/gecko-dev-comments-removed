@@ -3327,7 +3327,7 @@ class HTMLEditor final : public EditorBase,
 
 
   enum class RemoveRelatedElements { Yes, No };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertyInternal(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertyAsSubAction(
       nsStaticAtom* aHTMLProperty, nsStaticAtom* aAttribute,
       RemoveRelatedElements aRemoveRelatedElements);
 
