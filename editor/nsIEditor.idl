@@ -192,6 +192,11 @@ interface nsIEditor  : nsISupports
 
   
 
+
+
+
+
+
   readonly attribute nsITransactionManager transactionManager;
 
   
