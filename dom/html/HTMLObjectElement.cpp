@@ -188,9 +188,8 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   
-  if (IsEditableRoot() ||
-      ((Type() == eType_Document || Type() == eType_FakePlugin) &&
-       nsContentUtils::IsSubDocumentTabbable(this))) {
+  if (IsEditableRoot() || Type() == eType_Document ||
+      Type() == eType_FakePlugin) {
     if (aTabIndex) {
       *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : 0;
     }

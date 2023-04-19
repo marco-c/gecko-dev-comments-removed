@@ -1270,6 +1270,11 @@ class PresShell final : public nsStubDocumentObserver,
   void SelectionWillLoseFocus() override;
 
   
+  
+  
+  MOZ_CAN_RUN_SCRIPT bool FixUpFocus();
+
+  
 
 
 

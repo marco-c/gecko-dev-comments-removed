@@ -2491,16 +2491,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-  static bool IsSubDocumentTabbable(nsIContent* aContent);
-
-  
-
-
-
   static bool HasScrollgrab(nsIContent* aContent);
 
   
