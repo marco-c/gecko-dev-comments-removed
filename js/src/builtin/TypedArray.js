@@ -5,52 +5,52 @@
 #include "TypedArrayConstants.h"
 
 function ViewedArrayBufferIfReified(tarray) {
-    assert(IsTypedArray(tarray), "non-typed array asked for its buffer");
+  assert(IsTypedArray(tarray), "non-typed array asked for its buffer");
 
-    var buf = UnsafeGetReservedSlot(tarray, JS_TYPEDARRAYLAYOUT_BUFFER_SLOT);
-    assert(buf === null || (IsObject(buf) && (GuardToArrayBuffer(buf) !== null || GuardToSharedArrayBuffer(buf) !== null)),
-           "unexpected value in buffer slot");
-    return buf;
+  var buf = UnsafeGetReservedSlot(tarray, JS_TYPEDARRAYLAYOUT_BUFFER_SLOT);
+  assert(buf === null || (IsObject(buf) && (GuardToArrayBuffer(buf) !== null || GuardToSharedArrayBuffer(buf) !== null)),
+         "unexpected value in buffer slot");
+  return buf;
 }
 
 function IsDetachedBuffer(buffer) {
-    
-    
-    if (buffer === null) {
-        return false;
-    }
+  
+  
+  if (buffer === null) {
+    return false;
+  }
 
-    assert(GuardToArrayBuffer(buffer) !== null || GuardToSharedArrayBuffer(buffer) !== null,
-           "non-ArrayBuffer passed to IsDetachedBuffer");
+  assert(GuardToArrayBuffer(buffer) !== null || GuardToSharedArrayBuffer(buffer) !== null,
+         "non-ArrayBuffer passed to IsDetachedBuffer");
 
-    
-    
-    
-    
-    
-    
-    if ((buffer = GuardToArrayBuffer(buffer)) === null) {
-        return false;
-    }
+  
+  
+  
+  
+  
+  
+  if ((buffer = GuardToArrayBuffer(buffer)) === null) {
+    return false;
+  }
 
-    var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
-    return (flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0;
+  var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
+  return (flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0;
 }
 
 function TypedArrayLengthMethod() {
-    return TypedArrayLength(this);
+  return TypedArrayLength(this);
 }
 
 function GetAttachedArrayBuffer(tarray) {
-    var buffer = ViewedArrayBufferIfReified(tarray);
-    if (IsDetachedBuffer(buffer)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    }
-    return buffer;
+  var buffer = ViewedArrayBufferIfReified(tarray);
+  if (IsDetachedBuffer(buffer)) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+  return buffer;
 }
 
 function GetAttachedArrayBufferMethod() {
-    return GetAttachedArrayBuffer(this);
+  return GetAttachedArrayBuffer(this);
 }
 
 
@@ -60,13 +60,13 @@ function GetAttachedArrayBufferMethod() {
 
 
 function IsTypedArrayEnsuringArrayBuffer(arg) {
-    if (IsObject(arg) && IsTypedArray(arg)) {
-        GetAttachedArrayBuffer(arg);
-        return true;
-    }
+  if (IsObject(arg) && IsTypedArray(arg)) {
+    GetAttachedArrayBuffer(arg);
+    return true;
+  }
 
-    callFunction(CallTypedArrayMethodIfWrapped, arg, "GetAttachedArrayBufferMethod");
-    return false;
+  callFunction(CallTypedArrayMethodIfWrapped, arg, "GetAttachedArrayBufferMethod");
+  return false;
 }
 
 
@@ -76,200 +76,200 @@ function IsTypedArrayEnsuringArrayBuffer(arg) {
 
 
 function TypedArraySpeciesConstructor(obj) {
-    
-    assert(IsObject(obj), "not passed an object");
+  
+  assert(IsObject(obj), "not passed an object");
 
-    
-    var ctor = obj.constructor;
+  
+  var ctor = obj.constructor;
 
-    
-    if (ctor === undefined) {
-        return ConstructorForTypedArray(obj);
-    }
+  
+  if (ctor === undefined) {
+    return ConstructorForTypedArray(obj);
+  }
 
-    
-    if (!IsObject(ctor)) {
-        ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
-    }
+  
+  if (!IsObject(ctor)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
+  }
 
-    
-    var s = ctor[GetBuiltinSymbol("species")];
+  
+  var s = ctor[GetBuiltinSymbol("species")];
 
-    
-    if (s === undefined || s === null) {
-        return ConstructorForTypedArray(obj);
-    }
+  
+  if (s === undefined || s === null) {
+    return ConstructorForTypedArray(obj);
+  }
 
-    
-    if (IsConstructor(s)) {
-        return s;
-    }
+  
+  if (IsConstructor(s)) {
+    return s;
+  }
 
-    
-    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
+  
+  ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
 }
 
 
 
 function ValidateTypedArray(obj) {
-    if (IsObject(obj)) {
-        
-        if (IsTypedArray(obj)) {
-            
-            GetAttachedArrayBuffer(obj);
-            return true;
-        }
-
-        
-        if (IsPossiblyWrappedTypedArray(obj)) {
-            if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
-                ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-            }
-            return false;
-        }
+  if (IsObject(obj)) {
+    
+    if (IsTypedArray(obj)) {
+      
+      GetAttachedArrayBuffer(obj);
+      return true;
     }
 
     
-    ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
+    if (IsPossiblyWrappedTypedArray(obj)) {
+      if (PossiblyWrappedTypedArrayHasDetachedBuffer(obj)) {
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+      }
+      return false;
+    }
+  }
+
+  
+  ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
 }
 
 
 
 function TypedArrayCreateWithLength(constructor, length) {
-    
-    var newTypedArray = constructContentFunction(constructor, constructor,
-                                                 length);
+  
+  var newTypedArray = constructContentFunction(constructor, constructor,
+                                               length);
 
-    
-    var isTypedArray = ValidateTypedArray(newTypedArray);
+  
+  var isTypedArray = ValidateTypedArray(newTypedArray);
 
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(newTypedArray);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, newTypedArray,
-                           "TypedArrayLengthMethod");
-    }
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(newTypedArray);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, newTypedArray,
+                       "TypedArrayLengthMethod");
+  }
 
-    if (len < length) {
-        ThrowTypeError(JSMSG_SHORT_TYPED_ARRAY_RETURNED, length, len);
-    }
+  if (len < length) {
+    ThrowTypeError(JSMSG_SHORT_TYPED_ARRAY_RETURNED, length, len);
+  }
 
-    
-    return newTypedArray;
+  
+  return newTypedArray;
 }
 
 
 
 function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
-    
-    var newTypedArray = constructContentFunction(constructor, constructor,
-                                                 buffer, byteOffset, length);
+  
+  var newTypedArray = constructContentFunction(constructor, constructor,
+                                               buffer, byteOffset, length);
 
-    
-    ValidateTypedArray(newTypedArray);
+  
+  ValidateTypedArray(newTypedArray);
 
-    
+  
 
-    
-    return newTypedArray;
+  
+  return newTypedArray;
 }
 
 
 
 function TypedArraySpeciesCreateWithLength(exemplar, length) {
-    
+  
 
-    
-    var C = TypedArraySpeciesConstructor(exemplar);
+  
+  var C = TypedArraySpeciesConstructor(exemplar);
 
-    
-    return TypedArrayCreateWithLength(C, length);
+  
+  return TypedArrayCreateWithLength(C, length);
 }
 
 
 
 function TypedArraySpeciesCreateWithBuffer(exemplar, buffer, byteOffset, length) {
-    
+  
 
-    
-    var C = TypedArraySpeciesConstructor(exemplar);
+  
+  var C = TypedArraySpeciesConstructor(exemplar);
 
-    
-    return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
+  
+  return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
 }
 
 
 function TypedArrayEntries() {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    IsTypedArrayEnsuringArrayBuffer(O);
+  
+  IsTypedArrayEnsuringArrayBuffer(O);
 
-    
-    return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
+  
+  return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
 }
 
 
 
 
 function TypedArrayEvery(callbackfn) {
+  
+  var O = this;
+
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.every");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = this;
+    var kValue = O[k];
 
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+    var testResult = callContentFunction(callbackfn, thisArg, kValue, k, O);
 
     
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (!testResult) {
+      return false;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.every");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = O[k];
-
-        
-        var testResult = callContentFunction(callbackfn, thisArg, kValue, k, O);
-
-        
-        if (!testResult) {
-            return false;
-        }
-    }
-
-    
-    return true;
+  
+  return true;
 }
 
 SetIsInlinableLargeFunction(TypedArrayEvery);
@@ -277,256 +277,256 @@ SetIsInlinableLargeFunction(TypedArrayEvery);
 
 
 function TypedArrayFill(value, start = 0, end = undefined) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, value, start, end,
-                            "TypedArrayFill");
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, value, start, end,
+                        "TypedArrayFill");
+  }
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var buffer = GetAttachedArrayBuffer(this);
+  
+  var buffer = GetAttachedArrayBuffer(this);
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    var kind = GetTypedArrayKind(O);
-    if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
-        value = ToBigInt(value);
-    } else {
-        value = ToNumber(value);
-    }
+  
+  var kind = GetTypedArrayKind(O);
+  if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
+    value = ToBigInt(value);
+  } else {
+    value = ToNumber(value);
+  }
 
-    
-    var relativeStart = ToInteger(start);
+  
+  var relativeStart = ToInteger(start);
 
-    
-    var k = relativeStart < 0
-            ? std_Math_max(len + relativeStart, 0)
-            : std_Math_min(relativeStart, len);
+  
+  var k = relativeStart < 0
+          ? std_Math_max(len + relativeStart, 0)
+          : std_Math_min(relativeStart, len);
 
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
 
-    
-    var final = relativeEnd < 0
-                ? std_Math_max(len + relativeEnd, 0)
-                : std_Math_min(relativeEnd, len);
+  
+  var final = relativeEnd < 0
+              ? std_Math_max(len + relativeEnd, 0)
+              : std_Math_min(relativeEnd, len);
 
+  
+  if (buffer === null) {
     
-    if (buffer === null) {
-        
-        
-        buffer = ViewedArrayBufferIfReified(O);
-    }
-
-    if (IsDetachedBuffer(buffer)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    }
-
     
-    for (; k < final; k++) {
-        O[k] = value;
-    }
+    buffer = ViewedArrayBufferIfReified(O);
+  }
 
-    
-    return O;
+  if (IsDetachedBuffer(buffer)) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  
+  for (; k < final; k++) {
+    O[k] = value;
+  }
+
+  
+  return O;
 }
 
 
 
 function TypedArrayFilter(callbackfn) {
+  
+  var O = this;
+
+  
+  
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.filter");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  var kept = new_List();
+
+  
+  var captured = 0;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = this;
+    var kValue = O[k];
 
     
-    
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+    var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, O));
 
     
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (selected) {
+      
+      kept[captured++] = kValue;
     }
+  }
 
+  
+  var A = TypedArraySpeciesCreateWithLength(O, captured);
+
+  
+  for (var n = 0; n < captured; n++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.filter");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+    A[n] = kept[n];
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    var kept = new_List();
-
-    
-    var captured = 0;
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = O[k];
-
-        
-        var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, O));
-
-        
-        if (selected) {
-            
-            kept[captured++] = kValue;
-        }
-    }
-
-    
-    var A = TypedArraySpeciesCreateWithLength(O, captured);
-
-    
-    for (var n = 0; n < captured; n++) {
-        
-        A[n] = kept[n];
-    }
-
-    
-    return A;
+  
+  return A;
 }
 
 
 
 
 function TypedArrayFind(predicate) {
+  
+  var O = this;
+
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.find");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = this;
+    var kValue = O[k];
 
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
-
-    
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
+      return kValue;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.find");
-    }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = O[k];
-
-        
-        if (callContentFunction(predicate, thisArg, kValue, k, O)) {
-            return kValue;
-        }
-    }
-
-    
-    return undefined;
+  
+  return undefined;
 }
 
 
 
 
 function TypedArrayFindIndex(predicate) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
-    
+  
 
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findIndex");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (callContentFunction(predicate, thisArg, O[k], k, O)) {
+      return k;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findIndex");
-    }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (callContentFunction(predicate, thisArg, O[k], k, O)) {
-            return k;
-        }
-    }
-
-    
-    return -1;
+  
+  return -1;
 }
 
 
 
 
 function TypedArrayForEach(callbackfn) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
-    
+  
 
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
-    }
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "TypedArray.prototype.forEach");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "TypedArray.prototype.forEach");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
 
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
 
+  
+  for (var k = 0; k < len; k++) {
     
-    for (var k = 0; k < len; k++) {
-        
-        callContentFunction(callbackfn, thisArg, O[k], k, O);
-    }
+    callContentFunction(callbackfn, thisArg, O[k], k, O);
+  }
 
-    
-    return undefined;
+  
+  return undefined;
 }
 
 SetIsInlinableLargeFunction(TypedArrayForEach);
@@ -535,250 +535,250 @@ SetIsInlinableLargeFunction(TypedArrayForEach);
 
 
 function TypedArrayIndexOf(searchElement, fromIndex = 0) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, fromIndex,
-                            "TypedArrayIndexOf");
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, fromIndex,
+                        "TypedArrayIndexOf");
+  }
 
-    GetAttachedArrayBuffer(this);
+  GetAttachedArrayBuffer(this);
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    if (len === 0) {
-        return -1;
-    }
-
-    
-    var n = ToInteger(fromIndex);
-
-    
-    assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
-
-    
-    
-    len = TypedArrayLength(O);
-
-    assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
-           "TypedArrays with detached buffers have a length of zero");
-
-    
-    if (n >= len) {
-        return -1;
-    }
-
-    
-    
-    var k;
-    if (n >= 0) {
-        
-        k = n;
-    } else {
-        
-        k = len + n;
-
-        
-        if (k < 0) {
-            k = 0;
-        }
-    }
-
-    
-    for (; k < len; k++) {
-        
-        assert(k in O, "unexpected missing element");
-
-        
-        if (O[k] === searchElement) {
-            return k;
-        }
-    }
-
-    
+  
+  if (len === 0) {
     return -1;
+  }
+
+  
+  var n = ToInteger(fromIndex);
+
+  
+  assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+  
+  
+  len = TypedArrayLength(O);
+
+  assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+         "TypedArrays with detached buffers have a length of zero");
+
+  
+  if (n >= len) {
+    return -1;
+  }
+
+  
+  
+  var k;
+  if (n >= 0) {
+    
+    k = n;
+  } else {
+    
+    k = len + n;
+
+    
+    if (k < 0) {
+      k = 0;
+    }
+  }
+
+  
+  for (; k < len; k++) {
+    
+    assert(k in O, "unexpected missing element");
+
+    
+    if (O[k] === searchElement) {
+      return k;
+    }
+  }
+
+  
+  return -1;
 }
 
 
 
 
 function TypedArrayJoin(separator) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, separator, "TypedArrayJoin");
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, separator, "TypedArrayJoin");
+  }
 
-    GetAttachedArrayBuffer(this);
+  GetAttachedArrayBuffer(this);
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    var sep = separator === undefined ? "," : ToString(separator);
+  
+  var sep = separator === undefined ? "," : ToString(separator);
 
-    
-    if (len === 0) {
-        return "";
-    }
+  
+  if (len === 0) {
+    return "";
+  }
 
-    
-    
-    if (TypedArrayLength(O) === 0) {
-        assert(IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
-               "TypedArrays with detached buffers have a length of zero");
-
-        return callFunction(String_repeat, ",", len - 1);
-    }
-
-    assert(!IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+  
+  
+  if (TypedArrayLength(O) === 0) {
+    assert(IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
            "TypedArrays with detached buffers have a length of zero");
 
-    var element0 = O[0];
+    return callFunction(String_repeat, ",", len - 1);
+  }
+
+  assert(!IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+         "TypedArrays with detached buffers have a length of zero");
+
+  var element0 = O[0];
+
+  
+  assert(element0 !== undefined, "unexpected undefined element");
+
+  
+  var R = ToString(element0);
+
+  
+  for (var k = 1; k < len; k++) {
+    
+    var element = O[k];
 
     
-    assert(element0 !== undefined, "unexpected undefined element");
+    assert(element !== undefined, "unexpected undefined element");
 
     
-    var R = ToString(element0);
+    R += sep + ToString(element);
+  }
 
-    
-    for (var k = 1; k < len; k++) {
-        
-        var element = O[k];
-
-        
-        assert(element !== undefined, "unexpected undefined element");
-
-        
-        R += sep + ToString(element);
-    }
-
-    
-    return R;
+  
+  return R;
 }
 
 
 function TypedArrayKeys() {
-    
-    var O = this;
+  
+  var O = this;
 
-    
+  
 
-    
-    IsTypedArrayEnsuringArrayBuffer(O);
+  
+  IsTypedArrayEnsuringArrayBuffer(O);
 
-    
-    return CreateArrayIterator(O, ITEM_KIND_KEY);
+  
+  return CreateArrayIterator(O, ITEM_KIND_KEY);
 }
 
 
 
 
 function TypedArrayLastIndexOf(searchElement) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        if (arguments.length > 1) {
-            return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, arguments[1],
-                                "TypedArrayLastIndexOf");
-        }
-        return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
-                            "TypedArrayLastIndexOf");
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    if (arguments.length > 1) {
+      return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement, arguments[1],
+                          "TypedArrayLastIndexOf");
     }
+    return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
+                        "TypedArrayLastIndexOf");
+  }
 
-    GetAttachedArrayBuffer(this);
+  GetAttachedArrayBuffer(this);
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    if (len === 0) {
-        return -1;
-    }
-
-    
-    var n = arguments.length > 1 ? ToInteger(arguments[1]) : len - 1;
-
-    
-    
-    len = TypedArrayLength(O);
-
-    assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
-           "TypedArrays with detached buffers have a length of zero");
-
-    
-    var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;
-
-    
-    for (; k >= 0; k--) {
-        
-        assert(k in O, "unexpected missing element");
-
-        
-        if (O[k] === searchElement) {
-            return k;
-        }
-    }
-
-    
+  
+  if (len === 0) {
     return -1;
+  }
+
+  
+  var n = arguments.length > 1 ? ToInteger(arguments[1]) : len - 1;
+
+  
+  
+  len = TypedArrayLength(O);
+
+  assert(len === 0 || !IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+         "TypedArrays with detached buffers have a length of zero");
+
+  
+  var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;
+
+  
+  for (; k >= 0; k--) {
+    
+    assert(k in O, "unexpected missing element");
+
+    
+    if (O[k] === searchElement) {
+      return k;
+    }
+  }
+
+  
+  return -1;
 }
 
 
 
 function TypedArrayMap(callbackfn) {
+  
+  var O = this;
+
+  
+  
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.map");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  var A = TypedArraySpeciesCreateWithLength(O, len);
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = this;
+    var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
 
     
-    
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+    A[k] = mappedValue;
+  }
 
-    
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
-    }
-
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.map");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    var A = TypedArraySpeciesCreateWithLength(O, len);
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
-
-        
-        A[k] = mappedValue;
-    }
-
-    
-    return A;
+  
+  return A;
 }
 
 SetIsInlinableLargeFunction(TypedArrayMap);
@@ -787,255 +787,255 @@ SetIsInlinableLargeFunction(TypedArrayMap);
 
 
 function TypedArrayReduce(callbackfn) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
-    
+  
 
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
-    }
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduce");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduce");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
 
-    
-    if (len === 0 && arguments.length === 1) {
-        ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-    }
+  
+  if (len === 0 && arguments.length === 1) {
+    ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+  }
 
-    
-    var k = 0;
+  
+  var k = 0;
 
-    
-    var accumulator = arguments.length > 1 ? arguments[1] : O[k++];
+  
+  var accumulator = arguments.length > 1 ? arguments[1] : O[k++];
 
-    
-    for (; k < len; k++) {
-        accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
-    }
+  
+  for (; k < len; k++) {
+    accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+  }
 
-    
-    return accumulator;
+  
+  return accumulator;
 }
 
 
 
 
 function TypedArrayReduceRight(callbackfn) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
-    
+  
 
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
-    }
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduceRight");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.reduceRight");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
 
-    
-    if (len === 0 && arguments.length === 1) {
-        ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-    }
+  
+  if (len === 0 && arguments.length === 1) {
+    ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+  }
 
-    
-    var k = len - 1;
+  
+  var k = len - 1;
 
-    
-    var accumulator = arguments.length > 1 ? arguments[1] : O[k--];
+  
+  var accumulator = arguments.length > 1 ? arguments[1] : O[k--];
 
-    
-    for (; k >= 0; k--) {
-        accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
-    }
+  
+  for (; k >= 0; k--) {
+    accumulator = callContentFunction(callbackfn, undefined, accumulator, O[k], k, O);
+  }
 
-    
-    return accumulator;
+  
+  return accumulator;
 }
 
 
 
 
 function TypedArrayReverse() {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayReverse");
+  }
+
+  GetAttachedArrayBuffer(this);
+
+  
+  var O = this;
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var middle = std_Math_floor(len / 2);
+
+  
+  for (var lower = 0; lower !== middle; lower++) {
     
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayReverse");
-    }
-
-    GetAttachedArrayBuffer(this);
-
-    
-    var O = this;
-
-    
-    var len = TypedArrayLength(O);
-
-    
-    var middle = std_Math_floor(len / 2);
-
-    
-    for (var lower = 0; lower !== middle; lower++) {
-        
-        var upper = len - lower - 1;
-
-        
-        var lowerValue = O[lower];
-
-        
-        var upperValue = O[upper];
-
-        
-        O[lower] = upperValue;
-        O[upper] = lowerValue;
-    }
+    var upper = len - lower - 1;
 
     
-    return O;
+    var lowerValue = O[lower];
+
+    
+    var upperValue = O[upper];
+
+    
+    O[lower] = upperValue;
+    O[upper] = lowerValue;
+  }
+
+  
+  return O;
 }
 
 
 
 function TypedArraySlice(start, end) {
-    
-    var O = this;
+  
+  var O = this;
 
+  
+  if (!IsObject(O) || !IsTypedArray(O)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, O, start, end, "TypedArraySlice");
+  }
+
+  var buffer = GetAttachedArrayBuffer(O);
+
+  
+  var len = TypedArrayLength(O);
+
+  
+  var relativeStart = ToInteger(start);
+
+  
+  var k = relativeStart < 0
+          ? std_Math_max(len + relativeStart, 0)
+          : std_Math_min(relativeStart, len);
+
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
+
+  
+  var final = relativeEnd < 0
+              ? std_Math_max(len + relativeEnd, 0)
+              : std_Math_min(relativeEnd, len);
+
+  
+  var count = std_Math_max(final - k, 0);
+
+  
+  var A = TypedArraySpeciesCreateWithLength(O, count);
+
+  
+  if (count > 0) {
     
-    if (!IsObject(O) || !IsTypedArray(O)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, O, start, end, "TypedArraySlice");
+    if (buffer === null) {
+      
+      
+      buffer = ViewedArrayBufferIfReified(O);
     }
 
-    var buffer = GetAttachedArrayBuffer(O);
-
-    
-    var len = TypedArrayLength(O);
-
-    
-    var relativeStart = ToInteger(start);
-
-    
-    var k = relativeStart < 0
-            ? std_Math_max(len + relativeStart, 0)
-            : std_Math_min(relativeStart, len);
-
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
-
-    
-    var final = relativeEnd < 0
-                ? std_Math_max(len + relativeEnd, 0)
-                : std_Math_min(relativeEnd, len);
-
-    
-    var count = std_Math_max(final - k, 0);
-
-    
-    var A = TypedArraySpeciesCreateWithLength(O, count);
-
-    
-    if (count > 0) {
-        
-        if (buffer === null) {
-            
-            
-            buffer = ViewedArrayBufferIfReified(O);
-        }
-
-        if (IsDetachedBuffer(buffer)) {
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-        }
-
-        
-        var sliced = TypedArrayBitwiseSlice(O, A, k, count);
-
-        
-        if (!sliced) {
-            
-            var n = 0;
-
-            
-            while (k < final) {
-                
-                A[n++] = O[k++];
-            }
-        }
+    if (IsDetachedBuffer(buffer)) {
+      ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
     }
 
     
-    return A;
+    var sliced = TypedArrayBitwiseSlice(O, A, k, count);
+
+    
+    if (!sliced) {
+      
+      var n = 0;
+
+      
+      while (k < final) {
+        
+        A[n++] = O[k++];
+      }
+    }
+  }
+
+  
+  return A;
 }
 
 
 
 
 function TypedArraySome(callbackfn) {
+  
+  var O = this;
+
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.some");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = this;
+    var kValue = O[k];
 
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+    var testResult = callContentFunction(callbackfn, thisArg, kValue, k, O);
 
     
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (testResult) {
+      return true;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.some");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = O[k];
-
-        
-        var testResult = callContentFunction(callbackfn, thisArg, kValue, k, O);
-
-        
-        if (testResult) {
-            return true;
-        }
-    }
-
-    
-    return false;
+  
+  return false;
 }
 
 SetIsInlinableLargeFunction(TypedArraySome);
@@ -1043,54 +1043,54 @@ SetIsInlinableLargeFunction(TypedArraySome);
 
 
 function TypedArraySort(comparefn) {
+  
+
+  
+  if (comparefn !== undefined) {
+    if (!IsCallable(comparefn)) {
+      ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
+    }
+  }
+
+  
+  var obj = this;
+
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(obj);
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(obj);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, obj, "TypedArrayLengthMethod");
+  }
+
+  
+  if (len <= 1) {
+    return obj;
+  }
+
+  if (comparefn === undefined) {
+    return TypedArrayNativeSort(obj);
+  }
+
+  
+  
+  var wrappedCompareFn = function(x, y) {
     
+    var v = +callContentFunction(comparefn, undefined, x, y);
 
     
-    if (comparefn !== undefined) {
-        if (!IsCallable(comparefn)) {
-            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
-        }
+    if (v !== v) {
+      return 0;
     }
 
     
-    var obj = this;
+    return v;
+  };
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(obj);
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(obj);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, obj, "TypedArrayLengthMethod");
-    }
-
-    
-    if (len <= 1) {
-        return obj;
-    }
-
-    if (comparefn === undefined) {
-        return TypedArrayNativeSort(obj);
-    }
-
-    
-    
-    var wrappedCompareFn = function(x, y) {
-        
-        var v = +callContentFunction(comparefn, undefined, x, y);
-
-        
-        if (v !== v) {
-            return 0;
-        }
-
-        
-        return v;
-    };
-
-    return MergeSortTypedArray(obj, len, wrappedCompareFn);
+  return MergeSortTypedArray(obj, len, wrappedCompareFn);
 }
 
 
@@ -1098,164 +1098,164 @@ function TypedArraySort(comparefn) {
 
 
 function TypedArrayToLocaleString(locales = undefined, options = undefined) {
+  
+  var array = this;
+
+  
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(array);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(array);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, array, "TypedArrayLengthMethod");
+  }
+
+  
+  if (len === 0) {
+    return "";
+  }
+
+  
+  var firstElement = array[0];
+
+  
+  
+  
+#if JS_HAS_INTL_API
+  var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
+#else
+  var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+#endif
+
+  
+  
+  var separator = ",";
+
+  
+  for (var k = 1; k < len; k++) {
     
-    var array = this;
+    var S = R + separator;
+
+    
+    var nextElement = array[k];
 
     
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(array);
+    
+    
+    
+    
 
-    
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(array);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, array, "TypedArrayLengthMethod");
-    }
-
-    
-    if (len === 0) {
-        return "";
-    }
-
-    
-    var firstElement = array[0];
-
-    
-    
     
 #if JS_HAS_INTL_API
-    var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
+    R = ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
 #else
-    var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+    R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
 #endif
 
     
-    
-    var separator = ",";
+    R = S + R;
+  }
 
-    
-    for (var k = 1; k < len; k++) {
-        
-        var S = R + separator;
-
-        
-        var nextElement = array[k];
-
-        
-        
-        
-        
-        
-        
-
-        
-#if JS_HAS_INTL_API
-        R = ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
-#else
-        R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
-#endif
-
-        
-        R = S + R;
-    }
-
-    
-    return R;
+  
+  return R;
 }
 
 
 
 function TypedArraySubarray(begin, end) {
-    
-    var obj = this;
+  
+  var obj = this;
 
-    
-    
-    if (!IsObject(obj) || !IsTypedArray(obj)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, begin, end,
-                            "TypedArraySubarray");
-    }
+  
+  
+  if (!IsObject(obj) || !IsTypedArray(obj)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, begin, end,
+                        "TypedArraySubarray");
+  }
 
-    
-    var buffer = ViewedArrayBufferIfReified(obj);
-    if (buffer === null) {
-        buffer = TypedArrayBuffer(obj);
-    }
+  
+  var buffer = ViewedArrayBufferIfReified(obj);
+  if (buffer === null) {
+    buffer = TypedArrayBuffer(obj);
+  }
 
-    
-    var srcLength = TypedArrayLength(obj);
+  
+  var srcLength = TypedArrayLength(obj);
 
-    
-    
-    var srcByteOffset = TypedArrayByteOffset(obj);
+  
+  
+  var srcByteOffset = TypedArrayByteOffset(obj);
 
-    
-    var relativeBegin = ToInteger(begin);
+  
+  var relativeBegin = ToInteger(begin);
 
-    
-    var beginIndex = relativeBegin < 0 ? std_Math_max(srcLength + relativeBegin, 0)
-                                       : std_Math_min(relativeBegin, srcLength);
+  
+  var beginIndex = relativeBegin < 0 ? std_Math_max(srcLength + relativeBegin, 0)
+                                     : std_Math_min(relativeBegin, srcLength);
 
-    
-    var relativeEnd = end === undefined ? srcLength : ToInteger(end);
+  
+  var relativeEnd = end === undefined ? srcLength : ToInteger(end);
 
-    
-    var endIndex = relativeEnd < 0 ? std_Math_max(srcLength + relativeEnd, 0)
-                                   : std_Math_min(relativeEnd, srcLength);
+  
+  var endIndex = relativeEnd < 0 ? std_Math_max(srcLength + relativeEnd, 0)
+                                 : std_Math_min(relativeEnd, srcLength);
 
-    
-    var newLength = std_Math_max(endIndex - beginIndex, 0);
+  
+  var newLength = std_Math_max(endIndex - beginIndex, 0);
 
-    
-    var elementSize = TypedArrayElementSize(obj);
+  
+  var elementSize = TypedArrayElementSize(obj);
 
-    
-    var beginByteOffset = srcByteOffset + (beginIndex * elementSize);
+  
+  var beginByteOffset = srcByteOffset + (beginIndex * elementSize);
 
-    
-    return TypedArraySpeciesCreateWithBuffer(obj, buffer, beginByteOffset, newLength);
+  
+  return TypedArraySpeciesCreateWithBuffer(obj, buffer, beginByteOffset, newLength);
 }
 
 
 
 function TypedArrayAt(index) {
-    
-    var obj = this;
+  
+  var obj = this;
 
-    
-    
-    if (!IsObject(obj) || !IsTypedArray(obj)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, obj, index,
-                            "TypedArrayAt");
-    }
-    GetAttachedArrayBuffer(obj);
+  
+  
+  if (!IsObject(obj) || !IsTypedArray(obj)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, obj, index,
+                        "TypedArrayAt");
+  }
+  GetAttachedArrayBuffer(obj);
 
-    
+  
 
-    
-    var len = TypedArrayLength(obj);
+  
+  var len = TypedArrayLength(obj);
 
-    
-    var relativeIndex = ToInteger(index);
+  
+  var relativeIndex = ToInteger(index);
 
-    
-    var k;
-    if (relativeIndex >= 0) {
-        k = relativeIndex;
-    } else {
-        k = len + relativeIndex;
-    }
+  
+  var k;
+  if (relativeIndex >= 0) {
+    k = relativeIndex;
+  } else {
+    k = len + relativeIndex;
+  }
 
-    
-    if (k < 0 || k >= len) {
-        return undefined;
-    }
+  
+  if (k < 0 || k >= len) {
+    return undefined;
+  }
 
-    
-    return obj[k];
+  
+  return obj[k];
 }
 
 SetIsInlinableLargeFunction(TypedArrayAt);
@@ -1263,86 +1263,86 @@ SetIsInlinableLargeFunction(TypedArrayAt);
 
 
 function TypedArrayFindLast(predicate) {
+  
+  var O = this;
+
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLast");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = len - 1; k >= 0; k--) {
     
-    var O = this;
+    var kValue = O[k];
 
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
-
-    
-
-    
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
+      return kValue;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLast");
-    }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = len - 1; k >= 0; k--) {
-        
-        var kValue = O[k];
-
-        
-        if (callContentFunction(predicate, thisArg, kValue, k, O)) {
-            return kValue;
-        }
-    }
-
-    
-    return undefined;
+  
+  return undefined;
 }
 
 
 
 function TypedArrayFindLastIndex(predicate) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
+  
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
-    
+  
 
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+  }
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLastIndex");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = len - 1; k >= 0; k--) {
     
-    var len;
-    if (isTypedArray) {
-        len = TypedArrayLength(O);
-    } else {
-        len = callFunction(CallTypedArrayMethodIfWrapped, O, "TypedArrayLengthMethod");
+    if (callContentFunction(predicate, thisArg, O[k], k, O)) {
+      return k;
     }
+  }
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "%TypedArray%.prototype.findLastIndex");
-    }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
-
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = len - 1; k >= 0; k--) {
-        
-        if (callContentFunction(predicate, thisArg, O[k], k, O)) {
-            return k;
-        }
-    }
-
-    
-    return -1;
+  
+  return -1;
 }
 
 
@@ -1350,14 +1350,14 @@ function TypedArrayFindLastIndex(predicate) {
 
 
 function $TypedArrayValues() {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    IsTypedArrayEnsuringArrayBuffer(O);
+  
+  IsTypedArrayEnsuringArrayBuffer(O);
 
-    
-    return CreateArrayIterator(O, ITEM_KIND_VALUE);
+  
+  return CreateArrayIterator(O, ITEM_KIND_VALUE);
 }
 SetCanonicalName($TypedArrayValues, "values");
 
@@ -1365,369 +1365,369 @@ SetCanonicalName($TypedArrayValues, "values");
 
 
 function TypedArrayIncludes(searchElement, fromIndex = 0) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
-                            fromIndex, "TypedArrayIncludes");
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, searchElement,
+                        fromIndex, "TypedArrayIncludes");
+  }
 
-    GetAttachedArrayBuffer(this);
+  GetAttachedArrayBuffer(this);
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    if (len === 0) {
-        return false;
-    }
-
-    
-    var n = ToInteger(fromIndex);
-
-    
-    assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
-
-    
-    
-    var k;
-    if (n >= 0) {
-        
-        k = n;
-    } else {
-        
-        k = len + n;
-
-        
-        if (k < 0) {
-            k = 0;
-        }
-    }
-
-    
-    while (k < len) {
-        
-        if (SameValueZero(searchElement, O[k])) {
-            return true;
-        }
-
-        
-        k++;
-    }
-
-    
+  
+  if (len === 0) {
     return false;
+  }
+
+  
+  var n = ToInteger(fromIndex);
+
+  
+  assert(fromIndex !== undefined || n === 0, "ToInteger(undefined) is zero");
+
+  
+  
+  var k;
+  if (n >= 0) {
+    
+    k = n;
+  } else {
+    
+    k = len + n;
+
+    
+    if (k < 0) {
+      k = 0;
+    }
+  }
+
+  
+  while (k < len) {
+    
+    if (SameValueZero(searchElement, O[k])) {
+      return true;
+    }
+
+    
+    k++;
+  }
+
+  
+  return false;
 }
 
 
 
 function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
-    
-    var C = this;
+  
+  var C = this;
 
+  
+  if (!IsConstructor(C)) {
+    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
+  }
+
+  
+  var mapping;
+  if (mapfn !== undefined) {
     
-    if (!IsConstructor(C)) {
-        ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
+    if (!IsCallable(mapfn)) {
+      ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
     }
 
     
-    var mapping;
-    if (mapfn !== undefined) {
-        
-        if (!IsCallable(mapfn)) {
-            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
-        }
+    mapping = true;
+  } else {
+    
+    mapping = false;
+  }
 
-        
-        mapping = true;
-    } else {
-        
-        mapping = false;
+  
+  var T = thisArg;
+
+  
+  
+  var usingIterator = source[GetBuiltinSymbol("iterator")];
+
+  
+  
+  if (usingIterator !== undefined && usingIterator !== null) {
+    
+    if (!IsCallable(usingIterator)) {
+      ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, source));
     }
 
     
-    var T = thisArg;
-
     
-    
-    var usingIterator = source[GetBuiltinSymbol("iterator")];
-
-    
-    
-    if (usingIterator !== undefined && usingIterator !== null) {
-        
-        if (!IsCallable(usingIterator)) {
-            ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, source));
-        }
-
+    if (!mapping && IsTypedArrayConstructor(C) && IsObject(source)) {
+      
+      if (usingIterator === $TypedArrayValues && IsTypedArray(source) &&
+          ArrayIteratorPrototypeOptimizable())
+      {
         
         
-        if (!mapping && IsTypedArrayConstructor(C) && IsObject(source)) {
-            
-            if (usingIterator === $TypedArrayValues && IsTypedArray(source) &&
-                ArrayIteratorPrototypeOptimizable())
-            {
-                
-                
-                GetAttachedArrayBuffer(source);
-
-                
-                var len = TypedArrayLength(source);
-
-                
-                var targetObj = constructContentFunction(C, C, len);
-
-                
-                for (var k = 0; k < len; k++) {
-                    targetObj[k] = source[k];
-                }
-
-                
-                return targetObj;
-            }
-
-            
-            if (usingIterator === $ArrayValues && IsPackedArray(source) &&
-                ArrayIteratorPrototypeOptimizable())
-            {
-                
-                var targetObj = constructContentFunction(C, C, source.length);
-
-                
-                TypedArrayInitFromPackedArray(targetObj, source);
-
-                
-                return targetObj;
-            }
-        }
+        GetAttachedArrayBuffer(source);
 
         
-        var values = IterableToList(source, usingIterator);
+        var len = TypedArrayLength(source);
 
         
-        var len = values.length;
-
-        
-        var targetObj = TypedArrayCreateWithLength(C, len);
+        var targetObj = constructContentFunction(C, C, len);
 
         
         for (var k = 0; k < len; k++) {
-            
-            var kValue = values[k];
-
-            
-            var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
-
-            
-            targetObj[k] = mappedValue;
+          targetObj[k] = source[k];
         }
 
         
+        return targetObj;
+      }
+
+      
+      if (usingIterator === $ArrayValues && IsPackedArray(source) &&
+          ArrayIteratorPrototypeOptimizable())
+      {
         
+        var targetObj = constructContentFunction(C, C, source.length);
+
         
-        
+        TypedArrayInitFromPackedArray(targetObj, source);
 
         
         return targetObj;
+      }
     }
 
     
-    
+    var values = IterableToList(source, usingIterator);
 
     
-    var arrayLike = ToObject(source);
-
-    
-    var len = ToLength(arrayLike.length);
+    var len = values.length;
 
     
     var targetObj = TypedArrayCreateWithLength(C, len);
 
     
     for (var k = 0; k < len; k++) {
-        
-        var kValue = arrayLike[k];
+      
+      var kValue = values[k];
 
-        
-        var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+      
+      var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
 
-        
-        targetObj[k] = mappedValue;
+      
+      targetObj[k] = mappedValue;
     }
 
     
+    
+    
+    
+
+    
     return targetObj;
+  }
+
+  
+  
+
+  
+  var arrayLike = ToObject(source);
+
+  
+  var len = ToLength(arrayLike.length);
+
+  
+  var targetObj = TypedArrayCreateWithLength(C, len);
+
+  
+  for (var k = 0; k < len; k++) {
+    
+    var kValue = arrayLike[k];
+
+    
+    var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+
+    
+    targetObj[k] = mappedValue;
+  }
+
+  
+  return targetObj;
 }
 
 
 
 function TypedArrayStaticOf() {
-    
-    var len = arguments.length;
+  
+  var len = arguments.length;
 
-    
-    var items = arguments;
+  
+  var items = arguments;
 
-    
-    var C = this;
+  
+  var C = this;
 
-    
-    if (!IsConstructor(C)) {
-        ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
-    }
+  
+  if (!IsConstructor(C)) {
+    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, typeof C);
+  }
 
-    
-    var newObj = TypedArrayCreateWithLength(C, len);
+  
+  var newObj = TypedArrayCreateWithLength(C, len);
 
-    
-    for (var k = 0; k < len; k++) {
-        newObj[k] = items[k];
-    }
+  
+  for (var k = 0; k < len; k++) {
+    newObj[k] = items[k];
+  }
 
-    
-    return newObj;
+  
+  return newObj;
 }
 
 
 function $TypedArraySpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($TypedArraySpecies, "get [Symbol.species]");
 
 
 
 function IterableToList(items, method) {
-    
+  
 
-    
-    assert(IsCallable(method), "method argument is a function");
+  
+  assert(IsCallable(method), "method argument is a function");
 
-    
-    var iterator = callContentFunction(method, items);
+  
+  var iterator = callContentFunction(method, items);
 
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_GET_ITER_RETURNED_PRIMITIVE);
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var values = [];
+
+  
+  var i = 0;
+  while (true) {
     
-    if (!IsObject(iterator)) {
-        ThrowTypeError(JSMSG_GET_ITER_RETURNED_PRIMITIVE);
+    var next = callContentFunction(nextMethod, iterator);
+    if (!IsObject(next)) {
+      ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
     }
 
     
-    var nextMethod = iterator.next;
-
-    
-    var values = [];
-
-    
-    var i = 0;
-    while (true) {
-        
-        var next = callContentFunction(nextMethod, iterator);
-        if (!IsObject(next)) {
-            ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
-        }
-
-        
-        if (next.done) {
-            break;
-        }
-        DefineDataProperty(values, i++, next.value);
+    if (next.done) {
+      break;
     }
+    DefineDataProperty(values, i++, next.value);
+  }
 
-    
-    return values;
+  
+  return values;
 }
 
 
 
 function ArrayBufferSlice(start, end) {
+  
+  var O = this;
+
+  
+  
+  if (!IsObject(O) || (O = GuardToArrayBuffer(O)) === null) {
+    return callFunction(CallArrayBufferMethodIfWrapped, this, start, end,
+                        "ArrayBufferSlice");
+  }
+
+  
+  if (IsDetachedBuffer(O)) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  
+  var len = ArrayBufferByteLength(O);
+
+  
+  var relativeStart = ToInteger(start);
+
+  
+  var first = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
+                                : std_Math_min(relativeStart, len);
+
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
+
+  
+  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
+                              : std_Math_min(relativeEnd, len);
+
+  
+  var newLen = std_Math_max(final - first, 0);
+
+  
+  var ctor = SpeciesConstructor(O, GetBuiltinConstructor("ArrayBuffer"));
+
+  
+  var new_ = constructContentFunction(ctor, ctor, newLen);
+
+  
+  var isWrapped = false;
+  var newBuffer;
+  if ((newBuffer = GuardToArrayBuffer(new_)) !== null) {
     
-    var O = this;
+    if (IsDetachedBuffer(newBuffer)) {
+      ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    }
+  } else {
+    newBuffer = new_;
 
     
-    
-    if (!IsObject(O) || (O = GuardToArrayBuffer(O)) === null) {
-        return callFunction(CallArrayBufferMethodIfWrapped, this, start, end,
-                            "ArrayBufferSlice");
+    if (!IsWrappedArrayBuffer(newBuffer)) {
+      ThrowTypeError(JSMSG_NON_ARRAY_BUFFER_RETURNED);
     }
 
+    isWrapped = true;
+
     
-    if (IsDetachedBuffer(O)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+    if (callFunction(CallArrayBufferMethodIfWrapped, newBuffer, "IsDetachedBufferThis")) {
+      ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
     }
+  }
 
-    
-    var len = ArrayBufferByteLength(O);
+  
+  if (newBuffer === O) {
+    ThrowTypeError(JSMSG_SAME_ARRAY_BUFFER_RETURNED);
+  }
 
-    
-    var relativeStart = ToInteger(start);
+  
+  var actualLen = PossiblyWrappedArrayBufferByteLength(newBuffer);
+  if (actualLen < newLen) {
+    ThrowTypeError(JSMSG_SHORT_ARRAY_BUFFER_RETURNED, newLen, actualLen);
+  }
 
-    
-    var first = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
-                                  : std_Math_min(relativeStart, len);
+  
+  if (IsDetachedBuffer(O)) {
+    ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+  }
 
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
+  
+  ArrayBufferCopyData(newBuffer, 0, O, first, newLen, isWrapped);
 
-    
-    var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
-                                : std_Math_min(relativeEnd, len);
-
-    
-    var newLen = std_Math_max(final - first, 0);
-
-    
-    var ctor = SpeciesConstructor(O, GetBuiltinConstructor("ArrayBuffer"));
-
-    
-    var new_ = constructContentFunction(ctor, ctor, newLen);
-
-    
-    var isWrapped = false;
-    var newBuffer;
-    if ((newBuffer = GuardToArrayBuffer(new_)) !== null) {
-        
-        if (IsDetachedBuffer(newBuffer)) {
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-        }
-    } else {
-        newBuffer = new_;
-
-        
-        if (!IsWrappedArrayBuffer(newBuffer)) {
-            ThrowTypeError(JSMSG_NON_ARRAY_BUFFER_RETURNED);
-        }
-
-        isWrapped = true;
-
-        
-        if (callFunction(CallArrayBufferMethodIfWrapped, newBuffer, "IsDetachedBufferThis")) {
-            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-        }
-    }
-
-    
-    if (newBuffer === O) {
-        ThrowTypeError(JSMSG_SAME_ARRAY_BUFFER_RETURNED);
-    }
-
-    
-    var actualLen = PossiblyWrappedArrayBufferByteLength(newBuffer);
-    if (actualLen < newLen) {
-        ThrowTypeError(JSMSG_SHORT_ARRAY_BUFFER_RETURNED, newLen, actualLen);
-    }
-
-    
-    if (IsDetachedBuffer(O)) {
-        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-    }
-
-    
-    ArrayBufferCopyData(newBuffer, 0, O, first, newLen, isWrapped);
-
-    
-    return newBuffer;
+  
+  return newBuffer;
 }
 
 function IsDetachedBufferThis() {
@@ -1736,338 +1736,336 @@ function IsDetachedBufferThis() {
 
 
 function $ArrayBufferSpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($ArrayBufferSpecies, "get [Symbol.species]");
 
 
 function $SharedArrayBufferSpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($SharedArrayBufferSpecies, "get [Symbol.species]");
 
 
 
 function SharedArrayBufferSlice(start, end) {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    
-    if (!IsObject(O) || (O = GuardToSharedArrayBuffer(O)) === null) {
-        return callFunction(CallSharedArrayBufferMethodIfWrapped, this, start, end,
-                            "SharedArrayBufferSlice");
+  
+  
+  if (!IsObject(O) || (O = GuardToSharedArrayBuffer(O)) === null) {
+    return callFunction(CallSharedArrayBufferMethodIfWrapped, this, start, end,
+                        "SharedArrayBufferSlice");
+  }
+
+  
+  var len = SharedArrayBufferByteLength(O);
+
+  
+  var relativeStart = ToInteger(start);
+
+  
+  var first = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
+                                : std_Math_min(relativeStart, len);
+
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
+
+  
+  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
+                              : std_Math_min(relativeEnd, len);
+
+  
+  var newLen = std_Math_max(final - first, 0);
+
+  
+  var ctor = SpeciesConstructor(O, GetBuiltinConstructor("SharedArrayBuffer"));
+
+  
+  var new_ = constructContentFunction(ctor, ctor, newLen);
+
+  
+  var isWrapped = false;
+  var newObj;
+  if ((newObj = GuardToSharedArrayBuffer(new_)) === null) {
+    if (!IsWrappedSharedArrayBuffer(new_)) {
+      ThrowTypeError(JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED);
     }
+    isWrapped = true;
+    newObj = new_;
+  }
 
-    
-    var len = SharedArrayBufferByteLength(O);
+  
+  if (newObj === O || SharedArrayBuffersMemorySame(newObj, O)) {
+    ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
+  }
 
-    
-    var relativeStart = ToInteger(start);
+  
+  var actualLen = PossiblyWrappedSharedArrayBufferByteLength(newObj);
+  if (actualLen < newLen) {
+    ThrowTypeError(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, newLen, actualLen);
+  }
 
-    
-    var first = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
-                                  : std_Math_min(relativeStart, len);
+  
+  SharedArrayBufferCopyData(newObj, 0, O, first, newLen, isWrapped);
 
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
-
-    
-    var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
-                                : std_Math_min(relativeEnd, len);
-
-    
-    var newLen = std_Math_max(final - first, 0);
-
-    
-    var ctor = SpeciesConstructor(O, GetBuiltinConstructor("SharedArrayBuffer"));
-
-    
-    var new_ = constructContentFunction(ctor, ctor, newLen);
-
-    
-    var isWrapped = false;
-    var newObj;
-    if ((newObj = GuardToSharedArrayBuffer(new_)) === null) {
-        if (!IsWrappedSharedArrayBuffer(new_)) {
-            ThrowTypeError(JSMSG_NON_SHARED_ARRAY_BUFFER_RETURNED);
-        }
-        isWrapped = true;
-        newObj = new_;
-    }
-
-    
-    if (newObj === O || SharedArrayBuffersMemorySame(newObj, O)) {
-        ThrowTypeError(JSMSG_SAME_SHARED_ARRAY_BUFFER_RETURNED);
-    }
-
-    
-    var actualLen = PossiblyWrappedSharedArrayBufferByteLength(newObj);
-    if (actualLen < newLen) {
-        ThrowTypeError(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, newLen, actualLen);
-    }
-
-    
-    SharedArrayBufferCopyData(newObj, 0, O, first, newLen, isWrapped);
-
-    
-    return newObj;
+  
+  return newObj;
 }
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
 
 function TypedArrayCreateSameType(exemplar, length) {
+  
+  let contentType = GetTypedArrayKind(exemplar);
+  assert(contentType !== undefined, "in TypedArrayCreateSameType, exemplar does not have a [[ContentType]] internal slot");
 
-    
-    let contentType = GetTypedArrayKind(exemplar);
-    assert(contentType !== undefined, "in TypedArrayCreateSameType, exemplar does not have a [[ContentType]] internal slot");
-
-    
-    let constructor = GetTypedArrayConstructorFromKind(contentType);
+  
+  let constructor = GetTypedArrayConstructorFromKind(contentType);
 
 
-    
-    
+  
+  
 
-    
-    
-    return TypedArrayCreateWithLength(constructor, length);
+  
+  
+  return TypedArrayCreateWithLength(constructor, length);
 }
 
 
 
 function TypedArrayToReversed() {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToReversed");
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToReversed");
+  }
 
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    var len = TypedArrayLength(O);
+  
+  var len = TypedArrayLength(O);
 
-    
-    var A = TypedArrayCreateSameType(O, len);
+  
+  var A = TypedArrayCreateSameType(O, len);
 
+  
+  
+  for (var k = 0; k < len; k++) {
+    
+    var from = len - k - 1;
     
     
-    for (var k = 0; k < len; k++) {
-        
-        var from = len - k - 1;
-        
-        
-        
-        var fromValue = O[from];
-        
-        DefineDataProperty(A, k, fromValue);
-    }
+    
+    var fromValue = O[from];
+    
+    DefineDataProperty(A, k, fromValue);
+  }
 
-    
-    return A;
+  
+  return A;
 }
 
 
 
 function isValidIntegerIndex(a, index) {
-    return (!IsDetachedBuffer(ViewedArrayBufferIfReified(a))
-            && Number_isInteger(index)
-            && !SameValue(index, -0)
-            && index >= 0
-            && index < TypedArrayLength(a));
+  return (!IsDetachedBuffer(ViewedArrayBufferIfReified(a))
+          && Number_isInteger(index)
+          && !SameValue(index, -0)
+          && index >= 0
+          && index < TypedArrayLength(a));
 }
 
 
 
 function TypedArrayWith(index, value) {
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWith", index, value);
+  }
 
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWith", index, value);
-    }
+  
+  let O = this;
 
-    
-    let O = this;
+  
+  let len = TypedArrayLength(O);
 
-    
-    let len = TypedArrayLength(O);
+  
+  let relativeIndex = ToInteger(index);
 
+  
+  var actualIndex;
+  if (relativeIndex >= 0) {
+    actualIndex = relativeIndex;
+  } else {
     
-    let relativeIndex = ToInteger(index);
+    actualIndex = len + relativeIndex;
+  }
 
-    
-    var actualIndex;
-    if (relativeIndex >= 0) {
-        actualIndex = relativeIndex;
-    } else {
-        
-        actualIndex = len + relativeIndex;
-    }
+  
+  
+  if (actualIndex >= len || actualIndex < 0) {
+    ThrowRangeError(JSMSG_BAD_INDEX);
+  }
 
-    
-    
-    if (actualIndex >= len || actualIndex < 0) {
-        ThrowRangeError(JSMSG_BAD_INDEX);
-    }
+  
+  var A = TypedArrayCreateSameType(O, len);
 
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    var A = TypedArrayCreateSameType(O, len);
-
     
     
-    for (var k = 0; k < len; k++) {
-        
-        
-        
-        
+    
 
 
-        var fromValue = k == actualIndex ? value : O[k];
-        DefineDataProperty(A, k, fromValue);
-    }
+    var fromValue = k == actualIndex ? value : O[k];
+    DefineDataProperty(A, k, fromValue);
+  }
 
-    
-    return A;
+  
+  return A;
 }
 
 
 
 function TypedArrayToSorted(comparefn) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSorted", comparefn);
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSorted", comparefn);
+  }
+
+  
+  if (comparefn !== undefined) {
+    if (!IsCallable(comparefn)) {
+      ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
     }
+  }
 
-    
-    if (comparefn !== undefined) {
-        if (!IsCallable(comparefn)) {
-            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
-        }
-    }
+  
+  var O = this;
 
-    
-    var O = this;
+  
 
-    
+  
+  var len = TypedArrayLength(O);
 
-    
-    var len = TypedArrayLength(O);
+  
+  var A = TypedArrayCreateSameType(O, len);
 
-    
-    var A = TypedArrayCreateSameType(O, len);
-
-    
+  
 
 
-    
-    for(var k = 0; k < len; k++) {
-        A[k] = O[k];
-    }
+  
+  for(var k = 0; k < len; k++) {
+    A[k] = O[k];
+  }
 
-    
-    return callFunction(CallTypedArrayMethodIfWrapped, A, comparefn, "TypedArraySort");
+  
+  return callFunction(CallTypedArrayMethodIfWrapped, A, comparefn, "TypedArraySort");
 }
 
 
 
 function TypedArrayToSpliced(start, deleteCount, ...items) {
-    
-    if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSpliced", start, deleteCount, items);
-    }
+  
+  if (!IsObject(this) || !IsTypedArray(this)) {
+    return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSpliced", start, deleteCount, items);
+  }
 
-    
-    let O = this;
+  
+  let O = this;
 
-    
-    let len = TypedArrayLength(O);
+  
+  let len = TypedArrayLength(O);
 
-    
-    let relativeStart = ToInteger(start);
+  
+  let relativeStart = ToInteger(start);
 
+  
+  var actualStart;
+  if (!Global_isFinite(relativeStart) && relativeStart < 0) {
+    actualStart = 0;
+  } else if (relativeStart < 0) {
     
-    var actualStart;
-    if (!Global_isFinite(relativeStart) && relativeStart < 0) {
-        actualStart = 0;
-    } else if (relativeStart < 0) {
-        
-        actualStart = std_Math_max(len + relativeStart, 0);
-    } else {
-        
-        actualStart = std_Math_min(relativeStart, len);
-    }
+    actualStart = std_Math_max(len + relativeStart, 0);
+  } else {
+    
+    actualStart = std_Math_min(relativeStart, len);
+  }
 
-    
-    let insertCount = items.length;
+  
+  let insertCount = items.length;
 
-    var actualDeleteCount;
+  var actualDeleteCount;
+  
+  if (arguments.length < 1) {
+    actualDeleteCount = 0;
+  } else if (arguments.length < 2) {
     
-    if (arguments.length < 1) {
-        actualDeleteCount = 0;
-    } else if (arguments.length < 2) {
-        
-        actualDeleteCount = len - actualStart;
-    } else {
-        
-        var dc = ToInteger(deleteCount);
-        
-        actualDeleteCount = std_Math_min(len - actualStart, std_Math_max(0, dc));
-    }
+    actualDeleteCount = len - actualStart;
+  } else {
+    
+    var dc = ToInteger(deleteCount);
+    
+    actualDeleteCount = std_Math_min(len - actualStart, std_Math_max(0, dc));
+  }
 
-    
-    let newLen = len + insertCount - actualDeleteCount;
+  
+  let newLen = len + insertCount - actualDeleteCount;
 
-    
-    let A = TypedArrayCreateSameType(O, newLen);
+  
+  let A = TypedArrayCreateSameType(O, newLen);
 
-    
-    var i = 0;
+  
+  var i = 0;
 
-    
-    var r = actualStart + actualDeleteCount;
+  
+  var r = actualStart + actualDeleteCount;
 
+  
+  
+  while (i < actualStart) {
     
     
-    while (i < actualStart) {
-        
-        
-        
-        var iValue = O[i];
-        
-        
-        DefineDataProperty(A, i++, iValue);
-    }
+    
+    var iValue = O[i];
+    
+    
+    DefineDataProperty(A, i++, iValue);
+  }
 
+  
+  
+  for(var j = 0; j < insertCount; j++) {
     
     
-    for(var j = 0; j < insertCount; j++) {
-        
-        
-        
-        
-        DefineDataProperty(A, i++, items[j]);
-    }
+    
+    
+    DefineDataProperty(A, i++, items[j]);
+  }
 
+  
+  
+  while(i < newLen) {
     
     
-    while(i < newLen) {
-        
-        
-        
-        
-        
-        
-        let fromValue = O[r++];
-        
-        
-        DefineDataProperty(A, i++, fromValue);
-    }
+    
+    
+    
+    
+    let fromValue = O[r++];
+    
+    
+    DefineDataProperty(A, i++, fromValue);
+  }
 
-    
-    return A;
+  
+  return A;
 }
 #endif
