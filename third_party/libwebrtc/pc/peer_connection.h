@@ -36,6 +36,7 @@
 #include "pc/stats_collector.h"
 #include "pc/stream_collection.h"
 #include "pc/transceiver_list.h"
+#include "pc/usage_pattern.h"
 #include "pc/webrtc_session_description_factory.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/operations_chain.h"
@@ -70,53 +71,6 @@ class PeerConnection : public PeerConnectionInternal,
                        public RtpSenderBase::SetStreamsObserver,
                        public sigslot::has_slots<> {
  public:
-  
-  
-  enum class UsageEvent : int {
-    TURN_SERVER_ADDED = 0x01,
-    STUN_SERVER_ADDED = 0x02,
-    DATA_ADDED = 0x04,
-    AUDIO_ADDED = 0x08,
-    VIDEO_ADDED = 0x10,
-    
-    SET_LOCAL_DESCRIPTION_SUCCEEDED = 0x20,
-    
-    SET_REMOTE_DESCRIPTION_SUCCEEDED = 0x40,
-    
-    
-    CANDIDATE_COLLECTED = 0x80,
-    
-    ADD_ICE_CANDIDATE_SUCCEEDED = 0x100,
-    ICE_STATE_CONNECTED = 0x200,
-    CLOSE_CALLED = 0x400,
-    
-    PRIVATE_CANDIDATE_COLLECTED = 0x800,
-    
-    
-    REMOTE_PRIVATE_CANDIDATE_ADDED = 0x1000,
-    
-    MDNS_CANDIDATE_COLLECTED = 0x2000,
-    
-    
-    REMOTE_MDNS_CANDIDATE_ADDED = 0x4000,
-    
-    IPV6_CANDIDATE_COLLECTED = 0x8000,
-    
-    
-    REMOTE_IPV6_CANDIDATE_ADDED = 0x10000,
-    
-    
-    
-    REMOTE_CANDIDATE_ADDED = 0x20000,
-    
-    
-    
-    
-    
-    DIRECT_CONNECTION_SELECTED = 0x40000,
-    MAX_VALUE = 0x80000,
-  };
-
   explicit PeerConnection(PeerConnectionFactory* factory,
                           std::unique_ptr<RtcEventLog> event_log,
                           std::unique_ptr<Call> call);
@@ -873,7 +827,7 @@ class PeerConnection : public PeerConnectionInternal,
   cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
   cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
 
-  int usage_event_accumulator_ RTC_GUARDED_BY(signaling_thread()) = 0;
+  UsagePattern usage_pattern_ RTC_GUARDED_BY(signaling_thread());
   bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
       false;
 
