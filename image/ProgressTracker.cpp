@@ -13,6 +13,7 @@
 #include "nsNetUtil.h"
 #include "nsIObserverService.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Services.h"
 
@@ -198,7 +199,8 @@ void ProgressTracker::Notify(IProgressObserver* aObserver) {
   
   if (mRunnable) {
     mRunnable->AddObserver(aObserver);
-  } else {
+  } else if (!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
+    
     RefPtr<AsyncNotifyRunnable> ev = new AsyncNotifyRunnable(this, aObserver);
     mRunnable = ProgressTracker::RenderBlockingRunnable::Create(ev.forget());
     mEventTarget->Dispatch(mRunnable, NS_DISPATCH_NORMAL);
@@ -253,9 +255,12 @@ void ProgressTracker::NotifyCurrentState(IProgressObserver* aObserver) {
 
   aObserver->MarkPendingNotify();
 
-  nsCOMPtr<nsIRunnable> ev =
-      new AsyncNotifyCurrentStateRunnable(this, aObserver);
-  mEventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
+  
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
+    nsCOMPtr<nsIRunnable> ev =
+        new AsyncNotifyCurrentStateRunnable(this, aObserver);
+    mEventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
+  }
 }
 
 
@@ -466,8 +471,8 @@ bool ProgressTracker::RemoveObserver(IProgressObserver* aObserver) {
       --mObserversWithTargets;
 
       
-      
-      if ((mObserversWithTargets == 0) && !gXPCOMThreadsShutDown) {
+      if ((mObserversWithTargets == 0) &&
+          !AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
         MutexAutoLock lock(mMutex);
         nsCOMPtr<nsIEventTarget> target(do_GetMainThread());
         mEventTarget = WrapNotNull(target);
