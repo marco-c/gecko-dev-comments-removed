@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+#include "api/array_view.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
@@ -74,6 +75,8 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
   
   
   
+  
+  
   virtual const I420BufferInterface* GetI420() const;
 
   
@@ -101,9 +104,20 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
   const I010BufferInterface* GetI010() const;
   const NV12BufferInterface* GetNV12() const;
 
+  
+  
+  
+  
+  
+  virtual rtc::scoped_refptr<VideoFrameBuffer> GetMappedFrameBuffer(
+      rtc::ArrayView<Type> types);
+
  protected:
   ~VideoFrameBuffer() override {}
 };
+
+
+const char* VideoFrameBufferTypeToString(VideoFrameBuffer::Type type);
 
 
 class PlanarYuvBuffer : public VideoFrameBuffer {

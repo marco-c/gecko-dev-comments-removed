@@ -254,6 +254,12 @@ class RTC_EXPORT VideoEncoder {
     
     
     bool supports_simulcast;
+
+    
+    
+    
+    absl::InlinedVector<VideoFrameBuffer::Type, kMaxPreferredPixelFormats>
+        preferred_pixel_formats;
   };
 
   struct RTC_EXPORT RateControlParameters {
