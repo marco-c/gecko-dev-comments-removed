@@ -245,7 +245,7 @@ bool Watchtower::watchFreezeOrSealSlow(JSContext* cx,
 }
 
 
-bool Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
+void Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
                                      HandleObject b) {
   MOZ_ASSERT(watchesObjectSwap(a, b));
 
@@ -256,18 +256,6 @@ bool Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
     InvalidateMegamorphicCache(cx, b.as<NativeObject>());
   }
 
-  if (MOZ_UNLIKELY(a->useWatchtowerTestingCallback() ||
-                   b->useWatchtowerTestingCallback())) {
-    RootedValue extra(cx, ObjectValue(*b));
-    if (!InvokeWatchtowerCallback(cx, "object-swap", a, extra)) {
-      
-      
-      if (cx->isThrowingOutOfMemory()) {
-        return false;
-      }
-      cx->clearPendingException();
-    }
-  }
-
-  return true;
+  
+  
 }
