@@ -49,7 +49,7 @@ function IteratorClose(iteratorRecord, value) {
 
 function GetIteratorSync(obj) {
   
-  var method = GetMethod(obj, GetBuiltinSymbol("iterator"))
+  var method = GetMethod(obj, GetBuiltinSymbol("iterator"));
 
   
   var iterator = callContentFunction(method, obj);
@@ -66,7 +66,7 @@ function GetIteratorSync(obj) {
   var iteratorRecord = {
     iterator,
     nextMethod,
-    done: false
+    done: false,
   };
 
   
@@ -123,7 +123,7 @@ function GetIteratorDirectWrapper(obj) {
       if (returnMethod !== undefined && returnMethod !== null) {
         return callContentFunction(returnMethod, obj, value);
       }
-      return {done: true, value};
+      return { done: true, value };
     },
   };
 }
@@ -608,7 +608,7 @@ function* IteratorFlatMapGenerator(iterated, mapper) {
 }
 
 
-function IteratorReduce(reducer) {
+function IteratorReduce(reducer ) {
   
   const iterated = GetIteratorDirectWrapper(this);
 
@@ -647,7 +647,7 @@ function IteratorReduce(reducer) {
 function IteratorToArray() {
   
   const iterated = {
-    [GetBuiltinSymbol("iterator")]: () => this
+    [GetBuiltinSymbol("iterator")]: () => this,
   };
   
   return [...allowContentIter(iterated)];

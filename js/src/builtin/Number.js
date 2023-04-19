@@ -92,6 +92,7 @@ function Number_isSafeInteger(number) {
   }
 
   
+  
   return -((2 ** 53) - 1) <= integer && integer <= (2 ** 53) - 1;
 }
 

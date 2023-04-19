@@ -27,6 +27,7 @@ function Promise_finally(onFinally) {
   } else {
     
     
+    
     (thenFinally) = function(value) {
       
 
@@ -48,6 +49,7 @@ function Promise_finally(onFinally) {
       });
     };
 
+    
     
     (catchFinally) = function(reason) {
       

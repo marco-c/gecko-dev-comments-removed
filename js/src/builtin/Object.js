@@ -242,8 +242,11 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
   }
 
   
-  var attrs = 0, hasValue = false;
-  var value, getter = null, setter = null;
+  var attrs = 0;
+  var hasValue = false;
+  var value;
+  var getter = null;
+  var setter = null;
 
   
   if ("enumerable" in attributes) {

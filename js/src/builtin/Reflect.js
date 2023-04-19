@@ -52,7 +52,7 @@ function Reflect_apply(target, thisArgument, argumentsList) {
 
 
 
-function Reflect_construct(target, argumentsList) {
+function Reflect_construct(target, argumentsList ) {
   
   if (!IsConstructor(target)) {
     ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, DecompileArg(0, target));
@@ -81,7 +81,7 @@ function Reflect_construct(target, argumentsList) {
 
   
   var args =
-    (IsPackedArray(argumentsList) && argumentsList.length <= MAX_ARGS_LENGTH)
+    IsPackedArray(argumentsList) && argumentsList.length <= MAX_ARGS_LENGTH
       ? argumentsList
       : CreateListFromArrayLikeForArgs(argumentsList);
 
@@ -152,7 +152,7 @@ function Reflect_has(target, propertyKey) {
 
 
 
-function Reflect_get(target, propertyKey) {
+function Reflect_get(target, propertyKey ) {
   
   if (!IsObject(target)) {
     ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.get", ToSource(target));
