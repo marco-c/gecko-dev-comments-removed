@@ -349,6 +349,11 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
   
   
   if (DocAccessibleParent* doc = IsDoc() ? AsDoc() : mDoc) {
+    if (!doc->mCachedFields) {
+      
+      
+      return nullptr;
+    }
     if (auto maybeViewportCache =
             doc->mCachedFields->GetAttribute<nsTArray<uint64_t>>(
                 nsGkAtoms::viewport)) {
