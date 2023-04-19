@@ -1240,11 +1240,6 @@ AutoSocketServerThread::~AutoSocketServerThread() {
   
   
   
-  ProcessMessages(0);
-  
-  
-  
-  
   Stop();
   DoDestroy();
   rtc::ThreadManager::Instance()->SetCurrentThread(nullptr);
