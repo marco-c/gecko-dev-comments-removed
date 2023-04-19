@@ -1399,7 +1399,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   WrapContentsInBlockquoteElementsWithTransaction(
       const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
       const Element& aEditingHost);
@@ -1437,7 +1439,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   CreateOrChangeBlockContainerElement(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag,
       const Element& aEditingHost);
@@ -1461,9 +1464,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerWithTransaction(
-      AutoRangeArray& aSelectionRanges, nsAtom& aBlockType,
-      const Element& aEditingHost);
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  FormatBlockContainerWithTransaction(AutoRangeArray& aSelectionRanges,
+                                      nsAtom& aBlockType,
+                                      const Element& aEditingHost);
 
   
 
