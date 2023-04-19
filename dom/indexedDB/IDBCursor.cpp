@@ -60,6 +60,9 @@ IDBTypedCursor<CursorType>::~IDBTypedCursor() {
     (*mBackgroundActor)->SendDeleteMeInternal();
     MOZ_ASSERT(!mBackgroundActor, "SendDeleteMeInternal should have cleared!");
   }
+
+  
+  mTransaction = nullptr;
 }
 
 
