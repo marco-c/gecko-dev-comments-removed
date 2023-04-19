@@ -2120,17 +2120,35 @@ public class GeckoSessionTestRule implements TestRule {
 
 
   public void setMockLocation(
-      LocationManager locationManager, String mockproviderName, double latitude, double longitude) {
-    Location location = new Location(mockproviderName);
+      LocationManager locationManager, String mockProviderName, double latitude, double longitude) {
     
-    location.setAccuracy(.000001f);
+    setMockLocation(locationManager, mockProviderName, latitude, longitude, .000001f);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public void setMockLocation(
+      LocationManager locationManager,
+      String mockProviderName,
+      double latitude,
+      double longitude,
+      float accuracy) {
+    Location location = new Location(mockProviderName);
+    location.setAccuracy(accuracy);
     location.setLatitude(latitude);
     location.setLongitude(longitude);
     location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
     location.setTime(System.currentTimeMillis());
-    locationManager.setTestProviderLocation(mockproviderName, location);
+    locationManager.setTestProviderLocation(mockProviderName, location);
   }
-
   
 
 

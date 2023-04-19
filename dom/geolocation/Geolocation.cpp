@@ -304,18 +304,23 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
   }
 
   
-  nsresult rv = gs->StartDevice();
-
-  if (NS_FAILED(rv)) {
-    
-    NotifyError(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
-    return NS_OK;
-  }
-
-  if (mIsWatchPositionRequest || !canUseCache) {
+  bool allowedRequest = mIsWatchPositionRequest || !canUseCache;
+  if (allowedRequest) {
     
     
     mLocator->NotifyAllowedRequest(this);
+  }
+
+  
+  nsresult rv = gs->StartDevice();
+
+  if (NS_FAILED(rv)) {
+    if (allowedRequest) {
+      mLocator->RemoveRequest(this);
+    }
+    
+    NotifyError(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
+    return NS_OK;
   }
 
   SetTimeoutTimer();
