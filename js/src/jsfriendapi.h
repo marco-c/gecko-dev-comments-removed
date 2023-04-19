@@ -736,7 +736,13 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoAssertNoContentJS {
 
 
 
-extern JS_PUBLIC_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
+
+
+
+
+
+
+extern JS_PUBLIC_API uint64_t GetMemoryUsageForObjectZone(JSObject* obj);
 
 
 
