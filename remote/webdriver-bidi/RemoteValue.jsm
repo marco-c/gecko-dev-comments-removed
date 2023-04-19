@@ -49,6 +49,20 @@ function getUUID() {
     .slice(1, -1);
 }
 
+const TYPED_ARRAY_CLASSES = [
+  "Uint8Array",
+  "Uint8ClampedArray",
+  "Uint16Array",
+  "Uint32Array",
+  "Int8Array",
+  "Int16Array",
+  "Int32Array",
+  "Float32Array",
+  "Float64Array",
+  "BigInt64Array",
+  "BigUint64Array",
+];
+
 
 
 
@@ -472,7 +486,6 @@ function serialize(
     return { type, value };
   }
 
-  const className = ChromeUtils.getClassName(value);
   const handleId = getHandleForObject(realm, ownershipType, value);
   const knownObject = serializationInternalMap.has(value);
 
@@ -480,6 +493,16 @@ function serialize(
   const childOwnership = OwnershipModel.None;
 
   
+
+  
+  
+  if (type == "symbol") {
+    return buildSerialized("symbol", handleId);
+  }
+
+  
+  
+  const className = ChromeUtils.getClassName(value);
   if (className == "Array") {
     const serialized = buildSerialized("array", handleId);
     setInternalIdsIfNeeded(serializationInternalMap, serialized, value);
@@ -530,8 +553,22 @@ function serialize(
         realm
       );
     }
-
     return serialized;
+  } else if (
+    [
+      "ArrayBuffer",
+      "Function",
+      "Promise",
+      "WeakMap",
+      "WeakSet",
+      "Window",
+    ].includes(className)
+  ) {
+    return buildSerialized(className.toLowerCase(), handleId);
+  } else if (lazy.error.isError(value)) {
+    return buildSerialized("error", handleId);
+  } else if (TYPED_ARRAY_CLASSES.includes(className)) {
+    return buildSerialized("typedarray", handleId);
   }
   
   
