@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
 <!DOCTYPE HTML>
 <html class="reftest-wait"><head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
@@ -70,7 +70,8 @@ function init() {
   // perhaps by running it inline (not as an onload handler) or something.
 
   // workaround bug 936936
-  document.body.style.display="block";
+  document.body.style.display = "block";
+  document.body.getBoundingClientRect();
 
   document.getElementById('rtl_auto').scrollLeft=999999;
 
