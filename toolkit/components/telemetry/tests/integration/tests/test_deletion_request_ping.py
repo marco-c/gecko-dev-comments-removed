@@ -26,7 +26,7 @@ def test_deletion_request_ping(browser, helpers):
     assert "environment" not in ping["payload"]
 
     
-    browser.quit(in_app=True)
+    browser.quit()
 
     
     browser.start_session()

@@ -14,7 +14,7 @@ class ServiceWorkerAtStartupTestCase(MarionetteTestCase):
         self.install_service_worker()
 
     def tearDown(self):
-        self.marionette.restart(clean=True)
+        self.marionette.restart(in_app=False, clean=True)
         super(ServiceWorkerAtStartupTestCase, self).tearDown()
 
     def install_service_worker(self):
@@ -41,7 +41,7 @@ class ServiceWorkerAtStartupTestCase(MarionetteTestCase):
         
         
         
-        self.marionette.quit(clean=False, in_app=True)
+        self.marionette.quit()
         self.marionette.start_session()
 
         Wait(self.marionette).until(

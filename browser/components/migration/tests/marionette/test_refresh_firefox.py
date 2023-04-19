@@ -575,7 +575,7 @@ class TestFirefoxRefresh(MarionetteTestCase):
         
         
         
-        self.marionette.restart(clean=True, in_app=False)
+        self.marionette.restart(in_app=False, clean=True)
         self.setUpScriptData()
 
         
