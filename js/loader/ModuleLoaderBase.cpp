@@ -142,6 +142,75 @@ JSObject* ModuleLoaderBase::HostResolveImportedModule(
 }
 
 
+bool ModuleLoaderBase::ImportMetaResolve(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedValue modulePrivate(
+      cx, js::GetFunctionNativeReserved(&args.callee(), ModulePrivateSlot));
+
+  
+  
+  
+  
+  RootedValue v(cx, args.get(ImportMetaResolveSpecifierArg));
+  RootedString specifier(cx, JS::ToString(cx, v));
+  if (!specifier) {
+    return false;
+  }
+
+  
+  RootedString url(cx, ImportMetaResolveImpl(cx, modulePrivate, specifier));
+  if (!url) {
+    return false;
+  }
+
+  
+  args.rval().setString(url);
+  return true;
+}
+
+
+JSString* ModuleLoaderBase::ImportMetaResolveImpl(
+    JSContext* aCx, JS::Handle<JS::Value> aReferencingPrivate,
+    JS::Handle<JSString*> aSpecifier) {
+  RefPtr<ModuleScript> script =
+      static_cast<ModuleScript*>(aReferencingPrivate.toPrivate());
+  MOZ_ASSERT(script->IsModuleScript());
+  MOZ_ASSERT(JS::GetModulePrivate(script->ModuleRecord()) ==
+             aReferencingPrivate);
+
+  RefPtr<ModuleLoaderBase> loader = GetCurrentModuleLoader(aCx);
+  if (!loader) {
+    return nullptr;
+  }
+
+  nsAutoJSString specifier;
+  if (!specifier.init(aCx, aSpecifier)) {
+    return nullptr;
+  }
+
+  auto result = loader->ResolveModuleSpecifier(script, specifier);
+  if (result.isErr()) {
+    JS::Rooted<JS::Value> error(aCx);
+    nsresult rv = HandleResolveFailure(aCx, script, specifier,
+                                       result.unwrapErr(), 0, 0, &error);
+    if (NS_FAILED(rv)) {
+      JS_ReportOutOfMemory(aCx);
+      return nullptr;
+    }
+
+    JS_SetPendingException(aCx, error);
+
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> uri = result.unwrap();
+  nsAutoCString url;
+  MOZ_ALWAYS_SUCCEEDS(uri->GetAsciiSpec(url));
+  return JS_NewStringCopyZ(aCx, url.get());
+}
+
+
 bool ModuleLoaderBase::HostPopulateImportMeta(
     JSContext* aCx, JS::Handle<JS::Value> aReferencingPrivate,
     JS::Handle<JSObject*> aMetaObject) {
@@ -161,8 +230,28 @@ bool ModuleLoaderBase::HostPopulateImportMeta(
     return false;
   }
 
-  return JS_DefineProperty(aCx, aMetaObject, "url", urlString,
-                           JSPROP_ENUMERATE);
+  
+  if (!JS_DefineProperty(aCx, aMetaObject, "url", urlString,
+                         JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  
+  JSFunction* resolveFunc = js::DefineFunctionWithReserved(
+      aCx, aMetaObject, "resolve", ImportMetaResolve, ImportMetaResolveNumArgs,
+      JSPROP_ENUMERATE);
+  if (!resolveFunc) {
+    return false;
+  }
+
+  
+  
+  RootedObject resolveFuncObj(aCx, JS_GetFunctionObject(resolveFunc));
+  js::SetFunctionNativeReserved(resolveFuncObj, ModulePrivateSlot,
+                                aReferencingPrivate);
+
+  return true;
 }
 
 
