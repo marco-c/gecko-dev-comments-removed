@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface AddIceObserver {
+  
+  @CalledByNative public void onAddSuccess();
+
+  
+  @CalledByNative public void onAddFailure(String error);
+}
