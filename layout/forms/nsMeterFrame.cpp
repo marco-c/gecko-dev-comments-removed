@@ -102,8 +102,6 @@ void nsMeterFrame::Reflow(nsPresContext* aPresContext,
   FinishAndStoreOverflow(&aDesiredSize);
 
   aStatus.Reset();  
-
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 void nsMeterFrame::ReflowBarFrame(nsIFrame* aBarFrame,

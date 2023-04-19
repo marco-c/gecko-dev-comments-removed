@@ -362,8 +362,6 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   
-
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
 nsresult nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,

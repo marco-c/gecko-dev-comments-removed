@@ -1520,7 +1520,6 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   mHelper.UpdatePrevScrolledRect();
 
   aStatus.Reset();  
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
   mHelper.PostOverflowEvent();
 }
 

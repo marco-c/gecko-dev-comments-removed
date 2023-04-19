@@ -210,7 +210,6 @@ class nsReflowStatus final {
         mInlineBreak(InlineBreak::None),
         mCompletion(Completion::FullyComplete),
         mNextInFlowNeedsReflow(false),
-        mTruncated(false),
         mFirstLetterComplete(false) {}
 
   
@@ -219,14 +218,13 @@ class nsReflowStatus final {
     mInlineBreak = InlineBreak::None;
     mCompletion = Completion::FullyComplete;
     mNextInFlowNeedsReflow = false;
-    mTruncated = false;
     mFirstLetterComplete = false;
   }
 
   
   bool IsEmpty() const {
     return (IsFullyComplete() && !IsInlineBreak() && !mNextInFlowNeedsReflow &&
-            !mTruncated && !mFirstLetterComplete);
+            !mFirstLetterComplete);
   }
 
   
@@ -274,15 +272,6 @@ class nsReflowStatus final {
   void SetNextInFlowNeedsReflow() { mNextInFlowNeedsReflow = true; }
 
   
-  
-  
-  
-  
-  bool IsTruncated() const { return mTruncated; }
-  void UpdateTruncated(const mozilla::ReflowInput& aReflowInput,
-                       const mozilla::ReflowOutput& aMetrics);
-
-  
   void MergeCompletionStatusFrom(const nsReflowStatus& aStatus) {
     if (mCompletion < aStatus.mCompletion) {
       mCompletion = aStatus.mCompletion;
@@ -296,7 +285,6 @@ class nsReflowStatus final {
         "mCompletion merging won't work without this!");
 
     mNextInFlowNeedsReflow |= aStatus.mNextInFlowNeedsReflow;
-    mTruncated |= aStatus.mTruncated;
   }
 
   
@@ -321,6 +309,12 @@ class nsReflowStatus final {
   bool IsInlineBreakAfter() const { return mInlineBreak == InlineBreak::After; }
   StyleClear BreakType() const { return mBreakType; }
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -349,12 +343,8 @@ class nsReflowStatus final {
   InlineBreak mInlineBreak;
   Completion mCompletion;
   bool mNextInFlowNeedsReflow : 1;
-  bool mTruncated : 1;
   bool mFirstLetterComplete : 1;
 };
-
-#define NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics) \
-  aStatus.UpdateTruncated(aReflowInput, aMetrics);
 
 
 std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);

@@ -109,8 +109,6 @@ void nsProgressFrame::Reflow(nsPresContext* aPresContext,
   FinishAndStoreOverflow(&aDesiredSize);
 
   aStatus.Reset();  
-
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,

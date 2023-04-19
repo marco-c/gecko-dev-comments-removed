@@ -191,7 +191,6 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
     
     ReportChildCountError();
     ReflowError(drawTarget, aDesiredSize);
-    NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
     
     DidReflowChildren(mFrames.FirstChild(), childFrame);
     return;
@@ -331,8 +330,6 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
 
   mReference.x = 0;
   mReference.y = aDesiredSize.BlockStartAscent();
-
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 

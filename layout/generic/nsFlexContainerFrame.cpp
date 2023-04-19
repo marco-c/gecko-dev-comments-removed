@@ -4796,8 +4796,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   FinishReflowWithAbsoluteFrames(PresContext(), aReflowOutput, aReflowInput,
                                  aStatus);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput)
-
   
   if (MOZ_UNLIKELY(containerInfo)) {
     UpdateFlexLineAndItemInfo(*containerInfo, flr.mLines);
