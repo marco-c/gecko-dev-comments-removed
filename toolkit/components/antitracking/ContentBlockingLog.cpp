@@ -12,6 +12,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsTArray.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
@@ -19,6 +20,7 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_telemetry.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
@@ -35,6 +37,22 @@ static constexpr double kRatioReportUser = 0.01;
 
 
 static constexpr double kRatioReportDocument = 0.0014;
+
+namespace {
+
+StaticAutoPtr<nsCString> gEmailWebAppDomainsPref;
+static constexpr char kEmailWebAppDomainPrefName[] =
+    "privacy.trackingprotection.emailtracking.webapp.domains";
+
+void EmailWebAppDomainPrefChangeCallback(const char* aPrefName, void*) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!strcmp(aPrefName, kEmailWebAppDomainPrefName));
+  MOZ_ASSERT(gEmailWebAppDomainsPref);
+
+  Preferences::GetCString(kEmailWebAppDomainPrefName, *gEmailWebAppDomainsPref);
+}
+
+}  
 
 static bool IsReportingPerUserEnabled() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -369,8 +387,22 @@ void ContentBlockingLog::ReportEmailTrackingLog(
     }
   }
 
-  bool isTopEmailWebApp = aFirstPartyPrincipal->IsURIInPrefList(
-      "privacy.trackingprotection.emailtracking.webapp.domains");
+  
+  
+  if (!gEmailWebAppDomainsPref) {
+    gEmailWebAppDomainsPref = new nsCString();
+
+    Preferences::RegisterCallbackAndCall(EmailWebAppDomainPrefChangeCallback,
+                                         kEmailWebAppDomainPrefName);
+    RunOnShutdown([]() {
+      Preferences::UnregisterCallback(EmailWebAppDomainPrefChangeCallback,
+                                      kEmailWebAppDomainPrefName);
+      gEmailWebAppDomainsPref = nullptr;
+    });
+  }
+
+  bool isTopEmailWebApp =
+      aFirstPartyPrincipal->IsURIInList(*gEmailWebAppDomainsPref);
   uint32_t level1Count = level1SiteSet.Count();
   uint32_t level2Count = level2SiteSet.Count();
 
