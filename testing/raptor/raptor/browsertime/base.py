@@ -7,6 +7,7 @@
 from __future__ import absolute_import, division
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 
 import os
 import json
@@ -183,7 +184,7 @@ class Browsertime(Perftest):
     def clean_up(self):
         super(Browsertime, self).clean_up()
 
-    def _compose_cmd(self, test, timeout):
+    def _compose_cmd(self, test, timeout, extra_profiler_run=False):
         """Browsertime has the following overwrite priorities(in order of highest-lowest)
         (1) User - input commandline flag.
         (2) Browsertime args mentioned for a test
@@ -248,6 +249,17 @@ class Browsertime(Perftest):
             
             page_cycle_delay = "5000"
 
+        page_cycles = (
+            test.get("page_cycles", 1)
+            if not extra_profiler_run
+            else test.get("extra_profiler_run_page_cycles", 1)
+        )
+        browser_cycles = (
+            test.get("browser_cycles", 1)
+            if not extra_profiler_run
+            else test.get("extra_profiler_run_browser_cycles", 1)
+        )
+
         
         
         browsertime_options = [
@@ -271,9 +283,9 @@ class Browsertime(Perftest):
             "--timeouts.pageLoad",
             str(timeout),
             "--timeouts.script",
-            str(timeout * int(test.get("page_cycles", 1))),
+            str(timeout * int(page_cycles)),
             "--browsertime.page_cycles",
-            str(test.get("page_cycles", 1)),
+            str(page_cycles),
             
             "--pageCompleteWaitTime",
             str(test.get("page_complete_wait_time", "5000")),
@@ -281,9 +293,12 @@ class Browsertime(Perftest):
             test["test_url"],
             
             "--browsertime.post_startup_delay",
-            str(self.post_startup_delay),
+            
+            str(min(self.post_startup_delay, 1000))
+            if extra_profiler_run
+            else str(self.post_startup_delay),
             "--iterations",
-            str(test.get("browser_cycles", 1)),
+            str(browser_cycles),
             "--videoParams.androidVideoWaitTime",
             "10000",
             
@@ -343,13 +358,21 @@ class Browsertime(Perftest):
         if self.debug_mode:
             browsertime_options.extend(["-vv", "--debug", "true"])
 
-        
-        self.results_handler.remove_result_dir_for_test(test)
+        if not extra_profiler_run:
+            
+            self.results_handler.remove_result_dir_for_test(test)
+            priority1_options.extend(
+                ["--resultDir", self.results_handler.result_dir_for_test(test)]
+            )
+        else:
+            priority1_options.extend(
+                [
+                    "--resultDir",
+                    self.results_handler.result_dir_for_test_profiling(test),
+                ]
+            )
         priority1_options.extend(
             ["--firefox.profileTemplate", str(self.profile.profile)]
-        )
-        priority1_options.extend(
-            ["--resultDir", self.results_handler.result_dir_for_test(test)]
         )
 
         
@@ -410,11 +433,7 @@ class Browsertime(Perftest):
         else:
             priority1_options.extend(["--video", "false", "--visualMetrics", "false"])
 
-        
-        if self.config.get("conditioned_profile"):
-            self.profile.profile = self.conditioned_profile_dir
-
-        if self.config["gecko_profile"]:
+        if self.config["gecko_profile"] or extra_profiler_run:
             self.config[
                 "browsertime_result_dir"
             ] = self.results_handler.result_dir_for_test(test)
@@ -619,6 +638,43 @@ class Browsertime(Perftest):
 
         return True
 
+    def run_extra_profiler_run(
+        self, test, timeout, proc_timeout, output_timeout, line_handler, env
+    ):
+        try:
+            LOG.info(
+                "Running browsertime with the profiler enabled after the main run."
+            )
+            profiler_test = deepcopy(test)
+            cmd = self._compose_cmd(profiler_test, timeout, True)
+            LOG.info(
+                "browsertime profiling cmd: {}".format(" ".join([str(c) for c in cmd]))
+            )
+            proc = self.process_handler(cmd, processOutputLine=line_handler, env=env)
+            proc.run(timeout=proc_timeout, outputTimeout=output_timeout)
+            proc.wait()
+
+            
+            
+            if proc.outputTimedOut:
+                LOG.info(
+                    "Browsertime process for extra profiler run timed out after "
+                    f"waiting {output_timeout} seconds for output"
+                )
+            if proc.timedOut:
+                LOG.info(
+                    "Browsertime process for extra profiler run timed out after "
+                    f"{proc_timeout} seconds"
+                )
+
+            if self.browsertime_failure:
+                LOG.info(
+                    f"Browsertime for extra profiler run failure: {self.browsertime_failure}"
+                )
+
+        except Exception as e:
+            LOG.info("Failed during the extra profiler run: " + str(e))
+
     def run_test(self, test, timeout):
         global BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT
 
@@ -728,6 +784,17 @@ class Browsertime(Perftest):
 
             if self.browsertime_failure:
                 raise Exception(self.browsertime_failure)
+
+            
+            
+            
+            if (
+                self.config.get("extra_profiler_run")
+                and not self.config["gecko_profile"]
+            ):
+                self.run_extra_profiler_run(
+                    test, timeout, proc_timeout, output_timeout, _line_handler, env
+                )
 
         except Exception as e:
             LOG.critical(str(e))

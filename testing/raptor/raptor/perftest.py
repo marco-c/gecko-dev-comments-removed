@@ -498,7 +498,10 @@ class Perftest(object):
         res = self.results_handler.summarize_and_output(self.config, tests, test_names)
 
         
-        if self.config["gecko_profile"]:
+        
+        
+        
+        if self.config["gecko_profile"] or self.config.get("extra_profiler_run"):
             self.gecko_profiler.symbolicate()
             
             LOG.info("cleaning up after gecko profiling")
