@@ -17,7 +17,7 @@ let chromeScript = runChecksAfterCommonInit();
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 
   <form id="form1" action="http://autocomplete:8888/formtest.js" onsubmit="return false;">
@@ -32,17 +32,6 @@ let chromeScript = runChecksAfterCommonInit();
 <script class="testbody" type="text/javascript">
 
 /** Test for Login Manager: contextual insecure password warning without saved logins. **/
-
-// Set to pref before the document loads.
-let originalInsecureEnabled = SpecialPowers.getBoolPref(
-  "security.insecure_field_warning.contextual.enabled");
-SpecialPowers.setBoolPref(
-  "security.insecure_field_warning.contextual.enabled", true);
-
-SimpleTest.registerCleanupFunction(() => {
-  SpecialPowers.setBoolPref(
-    "security.insecure_field_warning.contextual.enabled", originalInsecureEnabled);
-});
 
 let uname = $_(1, "uname");
 let pword = $_(1, "pword");
