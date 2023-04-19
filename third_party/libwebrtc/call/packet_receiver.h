@@ -10,13 +10,6 @@
 #ifndef CALL_PACKET_RECEIVER_H_
 #define CALL_PACKET_RECEIVER_H_
 
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "api/media_types.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
@@ -29,32 +22,6 @@ class PacketReceiver {
     DELIVERY_UNKNOWN_SSRC,
     DELIVERY_PACKET_ERROR,
   };
-
-  
-  
-  typedef std::function<
-      void(DeliveryStatus, MediaType, rtc::CopyOnWriteBuffer, int64_t)>
-      PacketCallback;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void DeliverPacketAsync(MediaType media_type,
-                                  rtc::CopyOnWriteBuffer packet,
-                                  int64_t packet_time_us,
-                                  PacketCallback callback) {
-    DeliveryStatus status = DeliverPacket(media_type, packet, packet_time_us);
-    if (callback)
-      callback(status, media_type, std::move(packet), packet_time_us);
-  }
 
   virtual DeliveryStatus DeliverPacket(MediaType media_type,
                                        rtc::CopyOnWriteBuffer packet,
