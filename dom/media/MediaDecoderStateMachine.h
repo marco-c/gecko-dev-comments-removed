@@ -524,6 +524,19 @@ class MediaDecoderStateMachine
   
   int64_t mPlaybackOffset = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mBypassingSkipToNextKeyFrameCheck = false;
+
  private:
   
   Mirror<nsAutoString> mStreamName;
