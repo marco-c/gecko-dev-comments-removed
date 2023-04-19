@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/types/optional.h"
 #include "net/dcsctp/public/types.h"
 
 namespace dcsctp {
@@ -151,10 +152,12 @@ struct DcSctpOptions {
   int max_burst = 4;
 
   
-  int max_retransmissions = 10;
+  
+  absl::optional<int> max_retransmissions = 10;
 
   
-  int max_init_retransmits = 8;
+  
+  absl::optional<int> max_init_retransmits = 8;
 
   
   bool enable_partial_reliability = true;

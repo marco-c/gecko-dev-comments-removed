@@ -33,7 +33,7 @@ class RetransmissionErrorCounter {
   
   
   bool Increment(absl::string_view reason);
-  bool IsExhausted() const { return counter_ > limit_; }
+  bool IsExhausted() const { return limit_.has_value() && counter_ > *limit_; }
 
   
   void Clear();
@@ -43,7 +43,7 @@ class RetransmissionErrorCounter {
 
  private:
   const std::string log_prefix_;
-  const int limit_;
+  const absl::optional<int> limit_;
   int counter_ = 0;
 };
 }  
