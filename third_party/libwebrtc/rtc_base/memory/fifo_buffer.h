@@ -15,8 +15,6 @@
 
 #include "rtc_base/stream.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/task_utils/pending_task_safety_flag.h"
-#include "rtc_base/task_utils/to_queued_task.h"
 
 namespace rtc {
 
@@ -100,12 +98,6 @@ class FifoBuffer final : public StreamInterface {
   bool GetWriteRemaining(size_t* size) const;
 
  private:
-  void PostEvent(int events, int err) {
-    owner_->PostTask(webrtc::ToQueuedTask(task_safety_, [this, events, err]() {
-      SignalEvent(this, events, err);
-    }));
-  }
-
   
   
   StreamResult ReadOffsetLocked(void* buffer,
@@ -122,8 +114,6 @@ class FifoBuffer final : public StreamInterface {
                                  size_t* bytes_written)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  webrtc::ScopedTaskSafety task_safety_;
-
   
   StreamState state_ RTC_GUARDED_BY(mutex_);
   
@@ -135,7 +125,7 @@ class FifoBuffer final : public StreamInterface {
   
   size_t read_position_ RTC_GUARDED_BY(mutex_);
   
-  Thread* const owner_;
+  Thread* owner_;
   
   mutable webrtc::Mutex mutex_;
   RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
