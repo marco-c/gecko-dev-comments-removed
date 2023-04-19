@@ -42,7 +42,7 @@ static uint32_t ToUnicodeCodePoint(const nsString& aOperator) {
   }
   if (aOperator.Length() == 2 &&
       NS_IS_SURROGATE_PAIR(aOperator[0], aOperator[1])) {
-    SURROGATE_TO_UCS4(aOperator[0], aOperator[1]);
+    return SURROGATE_TO_UCS4(aOperator[0], aOperator[1]);
   }
   return 0;
 }
@@ -323,14 +323,32 @@ bool nsMathMLOperators::LookupOperator(const nsString& aOperator,
     return false;
   }
 
-  
-  
-  if (aOperator.Length() == 2 &&
-      (aOperator[1] == 0x0338 || aOperator[1] == 0x20D2)) {
-    nsAutoString newOperator;
-    newOperator.Append(aOperator[0]);
-    return LookupOperator(newOperator, aForm, aFlags, aLeadingSpace,
-                          aTrailingSpace);
+  if (aOperator.Length() == 2) {
+    
+    
+    if (auto codePoint = ToUnicodeCodePoint(aOperator)) {
+      if (aForm == NS_MATHML_OPERATOR_FORM_POSTFIX &&
+          (codePoint == 0x1EEF0 || codePoint == 0x1EEF1)) {
+        
+        
+        *aFlags = NS_MATHML_OPERATOR_FORM_POSTFIX |
+                  NS_MATHML_OPERATOR_STRETCHY |
+                  NS_MATHML_OPERATOR_DIRECTION_HORIZONTAL;
+        *aLeadingSpace = 0;
+        *aTrailingSpace = 0;
+        return true;
+      }
+      return false;
+    }
+
+    
+    
+    if (aOperator[1] == 0x0338 || aOperator[1] == 0x20D2) {
+      nsAutoString newOperator;
+      newOperator.Append(aOperator[0]);
+      return LookupOperator(newOperator, aForm, aFlags, aLeadingSpace,
+                            aTrailingSpace);
+    }
   }
 
   if (!gGlobalsInitialized) {
