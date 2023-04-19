@@ -101,7 +101,7 @@ function AdvanceStringIndex(S, index) {
   var first = callFunction(std_String_charCodeAt, S, index);
 
   
-  if (first < 0xD800 || first > 0xDBFF) {
+  if (first < 0xd800 || first > 0xdbff) {
     return index + 1;
   }
 
@@ -109,7 +109,7 @@ function AdvanceStringIndex(S, index) {
   var second = callFunction(std_String_charCodeAt, S, index + 1);
 
   
-  if (second < 0xDC00 || second > 0xDFFF) {
+  if (second < 0xdc00 || second > 0xdfff) {
     return index + 1;
   }
 
@@ -179,7 +179,7 @@ function RegExpMatchSlowPath(rx, S) {
 
     
     if (result === null) {
-      return (n === 0) ? null : A;
+      return n === 0 ? null : A;
     }
 
     
@@ -222,7 +222,7 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
 
     
     if (result === null) {
-      return (n === 0) ? null : A;
+      return n === 0 ? null : A;
     }
 
     lastIndex = result.index + result[0].length;
@@ -894,7 +894,7 @@ function RegExpSplit(string, limit) {
     flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
 
     
-    unicodeMatching = !!(flags & (REGEXP_UNICODE_FLAG));
+    unicodeMatching = !!(flags & REGEXP_UNICODE_FLAG);
 
     
     
@@ -1363,7 +1363,7 @@ function RegExpStringIteratorNext() {
         lastIndex = 0;
       }
 
-      var match = (lastIndex <= string.length) ? RegExpMatcher(regexp, string, lastIndex) : null;
+      var match = lastIndex <= string.length ? RegExpMatcher(regexp, string, lastIndex) : null;
 
       
       if (match === null) {
