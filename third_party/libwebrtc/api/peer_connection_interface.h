@@ -1106,10 +1106,8 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   
   
   
-  
   virtual void SetAudioPlayout(bool playout) {}
 
-  
   
   
   
