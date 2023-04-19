@@ -26,3 +26,23 @@ function getTextFromClipboard() {
   transferable.getTransferData("text/unicode", results);
   return results.value.QueryInterface(Ci.nsISupportsString)?.data ?? "";
 }
+
+
+
+
+function getTelemetryScalars() {
+  const snapshot = Services.telemetry.getSnapshotForKeyedScalars(
+    "main",
+    true 
+  );
+
+  if (!snapshot.parent) {
+    return {};
+  }
+
+  return snapshot.parent;
+}
+
+function clearTelemetry() {
+  Services.telemetry.clearScalars();
+}
