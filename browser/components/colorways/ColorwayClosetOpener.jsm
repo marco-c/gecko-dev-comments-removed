@@ -11,14 +11,21 @@ const { BrowserWindowTracker } = ChromeUtils.import(
 );
 
 let ColorwayClosetOpener = {
-  openModal: () => {
+  
+
+
+
+
+
+  openModal: ({ source = "unknown" } = {}) => {
     let { gBrowser } = BrowserWindowTracker.getTopWindow();
     let dialogBox = gBrowser.getTabDialogBox(gBrowser.selectedBrowser);
     let rv = dialogBox.open(
       "chrome://browser/content/colorways/colorwaycloset.html",
       {
         features: "resizable=no",
-      }
+      },
+      { source }
     );
     let { dialog } = rv;
     dialog._dialogReady.then(() => {
