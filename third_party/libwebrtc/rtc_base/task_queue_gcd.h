@@ -19,6 +19,11 @@ namespace webrtc {
 
 std::unique_ptr<TaskQueueFactory> CreateTaskQueueGcdFactory();
 
+
+void PostTaskToGlobalQueue(
+    std::unique_ptr<QueuedTask> task,
+    TaskQueueFactory::Priority priority = TaskQueueFactory::Priority::NORMAL);
+
 }  
 
 #endif  
