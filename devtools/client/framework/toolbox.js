@@ -1878,15 +1878,24 @@ Toolbox.prototype = {
   },
 
   async _setInitialMeatballState() {
+    let disableAutohide, pseudoLocale;
     
-    if (this.isBrowserChromeTarget) {
-      
-      
-      const [disableAutohide, pseudoLocale] = await Promise.all([
-        this._isDisableAutohideEnabled(),
-        this.getPseudoLocale(),
-      ]);
+    if (
+      this.isBrowserToolbox ||
+      this.descriptorFront.isWebExtensionDescriptor
+    ) {
+      disableAutohide = await this._isDisableAutohideEnabled();
+    }
+    
+    if (this.isBrowserToolbox) {
+      pseudoLocale = await this.getPseudoLocale();
+    }
+    
+    
+    if (typeof disableAutohide == "boolean") {
       this.component.setDisableAutohide(disableAutohide);
+    }
+    if (typeof pseudoLocale == "string") {
       this.component.setPseudoLocale(pseudoLocale);
     }
   },
@@ -3270,12 +3279,6 @@ Toolbox.prototype = {
   },
 
   
-  
-  get isBrowserChromeTarget() {
-    return this.target.chrome;
-  },
-
-  
 
 
 
@@ -3298,7 +3301,7 @@ Toolbox.prototype = {
 
 
   async getPseudoLocale() {
-    if (!this.isBrowserChromeTarget) {
+    if (!this.isBrowserToolbox) {
       return undefined;
     }
 
@@ -3321,14 +3324,20 @@ Toolbox.prototype = {
 
     front.setBoolPref(DISABLE_AUTOHIDE_PREF, toggledValue);
 
-    if (this.isBrowserChromeTarget) {
+    if (
+      this.isBrowserToolbox ||
+      this.descriptorFront.isWebExtensionDescriptor
+    ) {
       this.component.setDisableAutohide(toggledValue);
     }
     this._autohideHasBeenToggled = true;
   },
 
   async _isDisableAutohideEnabled() {
-    if (!this.isBrowserChromeTarget) {
+    if (
+      !this.isBrowserToolbox &&
+      !this.descriptorFront.isWebExtensionDescriptor
+    ) {
       return false;
     }
 
