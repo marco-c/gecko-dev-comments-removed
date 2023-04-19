@@ -1386,23 +1386,33 @@ constexpr size_t kMaxAttempts = 10;
 
 constexpr size_t kDelayMs = 50;
 
+struct StallSpecs {
+  size_t maxAttempts;
+  size_t delayMs;
+};
+
+static constexpr StallSpecs maxStall = {.maxAttempts = kMaxAttempts,
+                                        .delayMs = kDelayMs};
+static constexpr StallSpecs doNotStall
+    [[maybe_unused]] = {.maxAttempts = 0, .delayMs = 0};
+
 Atomic<bool> sHasStalled{false};
-static inline bool ShouldStallAndRetry() {
+static inline StallSpecs GetStallSpecs() {
 #  if defined(JS_STANDALONE)
   
   
   
-  return true;
+  return maxStall;
 #  elif defined(NIGHTLY_BUILD)
   
-  return true;
+  return maxStall;
 #  else
   
   if (GetGeckoProcessType() == GeckoProcessType::GeckoProcessType_Default) {
-    return true;
+    return maxStall;
   }
   
-  return sHasStalled.compareExchange(false, true);
+  return sHasStalled.compareExchange(false, true) ? maxStall : doNotStall;
 #  endif
 }
 
@@ -1439,12 +1449,10 @@ static inline bool ShouldStallAndRetry() {
   }
 
   
-  
-  if (!ShouldStallAndRetry()) return nullptr;
+  const StallSpecs stallSpecs = GetStallSpecs();
 
-  
-  for (size_t i = 0; i < kMaxAttempts; ++i) {
-    ::Sleep(kDelayMs);
+  for (size_t i = 0; i < stallSpecs.maxAttempts; ++i) {
+    ::Sleep(stallSpecs.delayMs);
     void* ptr = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
 
     if (ptr) {
