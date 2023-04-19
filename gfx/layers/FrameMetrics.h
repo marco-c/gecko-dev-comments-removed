@@ -854,7 +854,6 @@ struct ScrollMetadata {
         mResolutionUpdated(false),
         mIsRDMTouchSimulationActive(false),
         mDidContentGetPainted(true),
-        mPrefersReducedMotion(false),
         mForceMousewheelAutodir(false),
         mForceMousewheelAutodirHonourRoot(false),
         mIsPaginatedPresentation(false),
@@ -874,7 +873,6 @@ struct ScrollMetadata {
            mResolutionUpdated == aOther.mResolutionUpdated &&
            mIsRDMTouchSimulationActive == aOther.mIsRDMTouchSimulationActive &&
            mDidContentGetPainted == aOther.mDidContentGetPainted &&
-           mPrefersReducedMotion == aOther.mPrefersReducedMotion &&
            mForceMousewheelAutodir == aOther.mForceMousewheelAutodir &&
            mForceMousewheelAutodirHonourRoot ==
                aOther.mForceMousewheelAutodirHonourRoot &&
@@ -949,9 +947,6 @@ struct ScrollMetadata {
   bool GetIsRDMTouchSimulationActive() const {
     return mIsRDMTouchSimulationActive;
   }
-
-  void SetPrefersReducedMotion(bool aValue) { mPrefersReducedMotion = aValue; }
-  bool PrefersReducedMotion() const { return mPrefersReducedMotion; }
 
   void SetForceMousewheelAutodir(bool aValue) {
     mForceMousewheelAutodir = aValue;
@@ -1074,11 +1069,6 @@ struct ScrollMetadata {
   
   
   bool mDidContentGetPainted : 1;
-
-  
-  
-  
-  bool mPrefersReducedMotion : 1;
 
   
   
