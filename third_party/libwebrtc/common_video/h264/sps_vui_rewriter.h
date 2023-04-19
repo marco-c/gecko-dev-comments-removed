@@ -51,7 +51,8 @@ class SpsVuiRewriter : private SpsParser {
       Direction Direction);
 
   
-  static rtc::Buffer ParseOutgoingBitstreamAndRewriteSps(
+  
+  static rtc::Buffer ParseOutgoingBitstreamAndRewrite(
       rtc::ArrayView<const uint8_t> buffer,
       const ColorSpace* color_space);
 

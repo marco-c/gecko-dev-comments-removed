@@ -213,7 +213,7 @@ void FrameEncodeMetadataWriter::UpdateBitstream(
   
   const EncodedImage& buffer = *encoded_image;
   rtc::Buffer modified_buffer =
-      SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
+      SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
           buffer, encoded_image->ColorSpace());
 
   encoded_image->SetEncodedData(
