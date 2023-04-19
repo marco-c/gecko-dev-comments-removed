@@ -94,6 +94,11 @@ async function makeValidators() {
       "resource://testing-common/WhatsNewMessage.schema.json",
       { common: true }
     ),
+    feature_callout: await schemaValidatorFor(
+      
+      "resource://testing-common/Spotlight.schema.json",
+      { common: true }
+    ),
   };
 
   messageValidators.milestone_message = messageValidators.cfr_doorhanger;
