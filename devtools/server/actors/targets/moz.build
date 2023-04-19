@@ -5,7 +5,7 @@
 
 
 DIRS += [
-    "session-data",
+    "session-data-processors",
 ]
 
 DevToolsModules(
