@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 html,
 body {
@@ -28,37 +28,37 @@ body {
   --attachment-margin-block-end: 3px;
   --primary-toolbar-height: 29px;
   display: grid;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+    * Here's the design we want in in-line mode
+    * +----------------------------------------------+
+    * |    Filter bar primary      ↔                 |
+    * +----------------------------↔                 |
+    * |   [Filter bar secondary]   ↔                 |
+    * +----------------------------↔                 |
+    * |                            ↔                 |
+    * +  +----------------------+  ↔                 |
+    * |  |                      |  ↔                 |
+    * |  |        Output        |  ↔    [sidebar]    |
+    * |  |                      |  ↔                 |
+    * |  +----------------------+  ↔                 |
+    * |  |   [NotificationBox]  |  ↔                 |
+    * |  +----------------------+  ↔                 |
+    * |  |                      |  ↔                 |
+    * |  |        JSTerm        |  ↔                 |
+    * |  |                      |  ↔                 |
+    * |  +----------------------+  ↔                 |
+    * |  |  [EagerEvaluation]   |  ↔                 |
+    * |  +----------------------+  ↔                 |
+    * |                            ↔                 |
+    * +----------------------------↔                 |
+    * |  [Reverse search input]    ↔                 |
+    * +----------------------------------------------+
+    *
+     * - ↔ are width resizers
+     * - Elements inside brackets may not be visible, so we set
+     *   rows/columns to "auto" to make them collapse when the element
+     *   they contain is hidden.
+    */
   grid-template-areas: "filter-toolbar           sidebar"
                        "filter-toolbar-secondary sidebar"
                        "output-input             sidebar"
@@ -83,7 +83,7 @@ body {
   grid-row: filter-toolbar;
 }
 
-
+/* Only put the filter buttons toolbar on its own row in narrow filterbar layout  */
 .narrow .devtools-toolbar.webconsole-filterbar-secondary {
   grid-row: filter-toolbar-secondary;
 }
@@ -92,7 +92,7 @@ body {
   display: flex;
   flex-direction: column;
   grid-area: output-input;
-  
+  /* Don't take more height than the grid allows to */
   max-height: 100%;
   overflow: hidden;
 }
@@ -106,7 +106,7 @@ body {
   min-height: var(--console-row-height);
 }
 
-
+/* webconsole.css | chrome://devtools/skin/webconsole.css */
 .webconsole-filteringbar-wrapper .devtools-toolbar {
   padding-inline-end: 0;
 }
@@ -123,20 +123,20 @@ body {
 .webconsole-app .jsterm-input-container {
   overflow-y: auto;
   overflow-x: hidden;
-  
+  /* We display the open editor button at the end of the input */
   display: grid;
   grid-template-columns: 1fr auto;
-  
+  /* This allows us to not define a column for the CodeMirror container */
   grid-auto-flow: column;
-  
-
+  /* This element has tabindex="-1" and can briefly show a focus outline when
+   * clicked, before we move the focus to CodeMirror. */
   outline: none;
 }
 
 .webconsole-app:not(.jsterm-editor) .jsterm-input-container {
   direction: ltr;
-  
-
+  /* Define the border width and padding as variables so that we can keep
+   * border-top-width, padding and min-height in sync. */
   --jsterm-border-width: 0;
   --jsterm-padding-top: 0;
   --jsterm-padding-bottom: 0;
@@ -158,7 +158,7 @@ body {
 }
 
 .webconsole-app:not(.jsterm-editor, .eager-evaluation) .jsterm-input-container {
-  
+  /* The input should be full-height when eager evaluation is disabled. */
   flex-grow: 1;
   --jsterm-padding-top: var(--console-input-extra-padding);
   --jsterm-padding-bottom: var(--console-input-extra-padding);
@@ -190,11 +190,11 @@ body {
 
 .webconsole-app .reverse-search {
   grid-area: reverse-search;
-  
-
+  /* Those 2 next lines make it so the element isn't impacting the grid column size, but
+     will still take the whole available space. */
   width: 0;
   min-width: 100%;
-  
+  /* Let the reverse search buttons wrap to the next line */
   flex-wrap: wrap;
   justify-content: end;
 }
@@ -242,35 +242,35 @@ body {
   min-width: 100%;
 }
 
-
+/** EDITOR MODE */
 .webconsole-app.jsterm-editor {
   display: grid;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+     * Here's the design we want in editor mode
+     * +-----------------------------------------------------------------------+
+     * |                 [Notification Box (self XSS warning)]                 |
+     * +--------------------------+--------------------------+-----------------+
+     * |    Editor Toolbar        ↔    Filter bar primary    ↔                 |
+     * +--------------------------↔--------------------------↔                 |
+     * |                          ↔  [Filter bar secondary]  ↔                 |
+     * |                          ↔--------------------------↔                 |
+     * |                          ↔                          ↔                 |
+     * |         Editor           ↔        output            ↔    [sidebar]    |
+     * |                          ↔                          ↔                 |
+     * |                          ↔                          ↔                 |
+     * |                          ↔                          ↔                 |
+     * |                          ↔                          ↔                 |
+     * +--------------------------↔                          ↔                 |
+     * |    [Eager evaluation]    ↔                          ↔                 |
+     * +--------------------------↔                          ↔                 |
+     * |  [Reverse search input]  ↔                          ↔                 |
+     * +-----------------------------------------------------+-----------------+
+     *
+     * - ↔ are width resizers
+     * - Elements inside brackets may not be visible, so we set
+     *   rows/columns to "auto" to make them collapse when the element
+     *   they contain is hidden.
+     */
   grid-template-areas: "notification      notification               notification"
                        "editor-toolbar    filter-toolbar             sidebar"
                        "editor            filter-toolbar-secondary   sidebar"
@@ -288,7 +288,7 @@ body {
 }
 
 .jsterm-editor .flexible-output-input {
-  
+  /* This allow us to place the div children (jsterm, output, notification) on the grid */
   display: contents;
 }
 
@@ -297,21 +297,21 @@ body {
   border-inline-end: 1px solid var(--theme-splitter-color);
   display: grid;
   align-items: center;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+     * The following elements are going to be present in the toolbar:
+     *   - The run button
+     *   - The evaluation selector button
+     *   - The pretty print button
+     *   - A separator
+     *   - The history nav
+     *   - A separator
+     *   - The close button
+     *
+     * +-------------------------------------------+
+     * | ▶︎ Run  Top↕               {} | ˄ ˅ 🔍 | ✕ |
+     * +-------------------------------------------+
+     *
+     */
   grid-template-columns: auto auto 1fr auto auto auto auto auto auto auto;
   height: unset;
 }
@@ -398,12 +398,12 @@ body {
 .jsterm-editor .jsterm-input-container {
   grid-area: editor;
   width: 30vw;
-  
+  /* Don't allow the input to be narrower than the grid-column it's in  */
   min-width: 100%;
   border-top: none;
   border-inline-end: 1px solid var(--theme-splitter-color);
   padding: 0;
-  
+  /* Needed as we might have the onboarding UI displayed */
   display: flex;
   flex-direction: column;
   background-color: var(--theme-sidebar-background);
@@ -423,15 +423,15 @@ body {
 
 .jsterm-editor .eager-evaluation-result {
   grid-area: eager-evaluation;
-  
-
+  /* The next 2 lines make it so the element isn't impacting the grid column size, but
+    will still take the whole available space. */
   min-width: 100%;
   width: 0;
 }
 
 .jsterm-editor .editor-resizer {
   grid-column: editor;
-  
+  /* We want the splitter to cover the whole column (minus self-xss message) */
   grid-row: editor / reverse-search;
 }
 
@@ -441,18 +441,18 @@ body {
 
 .jsterm-editor .editor-onboarding {
   display: grid;
-  
-
-
-
-
-
-
-
+  /**
+   * Here's the design we want:
+   * ┌──────┬────────────────────────┐
+   * │ Icon │    Onboarding text     │
+   * ├──────┼────────────────────────┤
+   * │      │                 Got it!│
+   * └──────┴────────────────────────┘
+   **/
   grid-template-columns: 22px 1fr;
   border-bottom: 1px solid var(--theme-splitter-color);
   padding: 8px 16px;
-  background-color: var(--theme-selection-background-hover);
+  background-color: var(--theme-body-alternate-emphasized-background);
   grid-gap: 0 14px;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 12px;
