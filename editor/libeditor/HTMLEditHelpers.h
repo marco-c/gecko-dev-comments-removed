@@ -21,6 +21,7 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/StaticRange.h"
 #include "nsCOMPtr.h"
@@ -75,29 +76,23 @@ static inline std::ostream& operator<<(std::ostream& aStream,
 
 
 
-
-
-
 class MOZ_STACK_CLASS MoveNodeResult final {
  public:
-  
-  
-  bool isOk() const { return NS_SUCCEEDED(mRv); }
-  bool isErr() const { return NS_FAILED(mRv); }
   constexpr bool Handled() const { return mHandled; }
   constexpr bool Ignored() const { return !Handled(); }
-  constexpr nsresult inspectErr() const { return mRv; }
-  constexpr nsresult unwrapErr() const { return mRv; }
-  constexpr bool EditorDestroyed() const {
-    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
-  }
-  constexpr bool NotInitialized() const {
-    return mRv == NS_ERROR_NOT_INITIALIZED;
-  }
   constexpr const EditorDOMPoint& NextInsertionPointRef() const {
     return mNextInsertionPoint;
   }
-  EditorDOMPoint NextInsertionPoint() const { return mNextInsertionPoint; }
+  constexpr EditorDOMPoint&& UnwrapNextInsertionPoint() {
+    return std::move(mNextInsertionPoint);
+  }
+  template <typename EditorDOMPointType>
+  EditorDOMPointType NextInsertionPoint() const {
+    return mNextInsertionPoint.To<EditorDOMPointType>();
+  }
+
+  
+
 
   void MarkAsHandled() { mHandled = true; }
 
@@ -134,18 +129,13 @@ class MOZ_STACK_CLASS MoveNodeResult final {
                         const HTMLEditor& aHTMLEditor,
                         const SuggestCaretOptions& aOptions);
 
-  MoveNodeResult() : mRv(NS_ERROR_NOT_INITIALIZED), mHandled(false) {}
-
-  explicit MoveNodeResult(nsresult aRv) : mRv(aRv), mHandled(false) {
-    MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(mRv));
-  }
-
   MoveNodeResult(const MoveNodeResult& aOther) = delete;
   MoveNodeResult& operator=(const MoveNodeResult& aOther) = delete;
   MoveNodeResult(MoveNodeResult&& aOther) = default;
   MoveNodeResult& operator=(MoveNodeResult&& aOther) = default;
 
   MoveNodeResult& operator|=(const MoveNodeResult& aOther) {
+    MOZ_ASSERT(this != &aOther);
     
     
     aOther.mHandledCaretPoint = true;
@@ -153,44 +143,11 @@ class MOZ_STACK_CLASS MoveNodeResult final {
     mHandledCaretPoint = false;
 
     mHandled |= aOther.mHandled;
+
     
-    if (mRv == aOther.mRv) {
-      mNextInsertionPoint = aOther.mNextInsertionPoint;
-      if (aOther.mCaretPoint.IsSet()) {
-        mCaretPoint = aOther.mCaretPoint;
-      }
-      return *this;
-    }
-    
-    
-    if (EditorDestroyed() || aOther.EditorDestroyed()) {
-      mRv = NS_ERROR_EDITOR_DESTROYED;
-      mNextInsertionPoint.Clear();
-      mCaretPoint.Clear();
-      return *this;
-    }
-    
-    
-    if (aOther.NotInitialized()) {
-      return *this;
-    }
-    
-    if (NotInitialized()) {
-      mRv = aOther.mRv;
-      mNextInsertionPoint = aOther.mNextInsertionPoint;
-      mCaretPoint = aOther.mCaretPoint;
-      return *this;
-    }
-    
-    if (isErr() || aOther.isErr()) {
-      mRv = NS_ERROR_FAILURE;
-      mNextInsertionPoint.Clear();
-      mCaretPoint.Clear();
-      return *this;
-    }
-    
-    mRv = NS_OK;
     mNextInsertionPoint = aOther.mNextInsertionPoint;
+
+    
     if (aOther.mCaretPoint.IsSet()) {
       mCaretPoint = aOther.mCaretPoint;
     }
@@ -199,147 +156,111 @@ class MOZ_STACK_CLASS MoveNodeResult final {
 
 #ifdef DEBUG
   ~MoveNodeResult() {
-    MOZ_ASSERT_IF(isOk() && Handled(),
-                  !mCaretPoint.IsSet() || mHandledCaretPoint);
+    MOZ_ASSERT_IF(Handled(), !mCaretPoint.IsSet() || mHandledCaretPoint);
   }
 #endif
+
+  
+
+
+
+
+  static MoveNodeResult IgnoredResult(
+      const EditorDOMPoint& aNextInsertionPoint) {
+    return MoveNodeResult(aNextInsertionPoint, false);
+  }
+  static MoveNodeResult IgnoredResult(EditorDOMPoint&& aNextInsertionPoint) {
+    return MoveNodeResult(std::move(aNextInsertionPoint), false);
+  }
+
+  
+
+
+
+
+  static MoveNodeResult HandledResult(
+      const EditorDOMPoint& aNextInsertionPoint) {
+    return MoveNodeResult(aNextInsertionPoint, true);
+  }
+
+  static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint) {
+    return MoveNodeResult(std::move(aNextInsertionPoint), true);
+  }
+
+  static MoveNodeResult HandledResult(const EditorDOMPoint& aNextInsertionPoint,
+                                      const EditorDOMPoint& aPointToPutCaret) {
+    return MoveNodeResult(aNextInsertionPoint, aPointToPutCaret);
+  }
+
+  static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint,
+                                      const EditorDOMPoint& aPointToPutCaret) {
+    return MoveNodeResult(std::move(aNextInsertionPoint), aPointToPutCaret);
+  }
+
+  static MoveNodeResult HandledResult(const EditorDOMPoint& aNextInsertionPoint,
+                                      EditorDOMPoint&& aPointToPutCaret) {
+    return MoveNodeResult(aNextInsertionPoint, std::move(aPointToPutCaret));
+  }
+
+  static MoveNodeResult HandledResult(EditorDOMPoint&& aNextInsertionPoint,
+                                      EditorDOMPoint&& aPointToPutCaret) {
+    return MoveNodeResult(std::move(aNextInsertionPoint),
+                          std::move(aPointToPutCaret));
+  }
 
  private:
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           bool aHandled)
       : mNextInsertionPoint(aNextInsertionPoint),
-        mRv(aNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(aHandled && aNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint, bool aHandled)
       : mNextInsertionPoint(std::move(aNextInsertionPoint)),
-        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(aHandled && mNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           const EditorDOMPoint& aPointToPutCaret)
       : mNextInsertionPoint(aNextInsertionPoint),
         mCaretPoint(aPointToPutCaret),
-        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(mNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint,
                           const EditorDOMPoint& aPointToPutCaret)
       : mNextInsertionPoint(std::move(aNextInsertionPoint)),
         mCaretPoint(aPointToPutCaret),
-        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(mNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
   explicit MoveNodeResult(const EditorDOMPoint& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
       : mNextInsertionPoint(aNextInsertionPoint),
         mCaretPoint(std::move(aPointToPutCaret)),
-        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(mNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
   explicit MoveNodeResult(EditorDOMPoint&& aNextInsertionPoint,
                           EditorDOMPoint&& aPointToPutCaret)
       : mNextInsertionPoint(std::move(aNextInsertionPoint)),
         mCaretPoint(std::move(aPointToPutCaret)),
-        mRv(mNextInsertionPoint.IsSet() ? NS_OK : NS_ERROR_FAILURE),
         mHandled(mNextInsertionPoint.IsSet()) {
-    if (mNextInsertionPoint.IsSet()) {
-      AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
-          mNextInsertionPoint);
-    }
+    AutoEditorDOMPointChildInvalidator computeOffsetAndForgetChild(
+        mNextInsertionPoint);
   }
 
   EditorDOMPoint mNextInsertionPoint;
   
   EditorDOMPoint mCaretPoint;
-  nsresult mRv;
   bool mHandled;
   bool mutable mHandledCaretPoint = false;
-
-  friend MoveNodeResult MoveNodeIgnored(
-      const EditorDOMPoint& aNextInsertionPoint);
-  friend MoveNodeResult MoveNodeIgnored(EditorDOMPoint&& aNextInsertionPoint);
-  friend MoveNodeResult MoveNodeHandled(
-      const EditorDOMPoint& aNextInsertionPoint);
-  friend MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint);
-  friend MoveNodeResult MoveNodeHandled(
-      const EditorDOMPoint& aNextInsertionPoint,
-      const EditorDOMPoint& aPointToPutCaret);
-  friend MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint,
-                                        const EditorDOMPoint& aPointToPutCaret);
-  friend MoveNodeResult MoveNodeHandled(
-      const EditorDOMPoint& aNextInsertionPoint,
-      EditorDOMPoint&& aPointToPutCaret);
-  friend MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint,
-                                        EditorDOMPoint&& aPointToPutCaret);
 };
-
-
-
-
-
-inline MoveNodeResult MoveNodeIgnored(
-    const EditorDOMPoint& aNextInsertionPoint) {
-  return MoveNodeResult(aNextInsertionPoint, false);
-}
-
-inline MoveNodeResult MoveNodeIgnored(EditorDOMPoint&& aNextInsertionPoint) {
-  return MoveNodeResult(std::move(aNextInsertionPoint), false);
-}
-
-
-
-
-
-inline MoveNodeResult MoveNodeHandled(
-    const EditorDOMPoint& aNextInsertionPoint) {
-  return MoveNodeResult(aNextInsertionPoint, true);
-}
-
-inline MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint) {
-  return MoveNodeResult(std::move(aNextInsertionPoint), true);
-}
-
-inline MoveNodeResult MoveNodeHandled(const EditorDOMPoint& aNextInsertionPoint,
-                                      const EditorDOMPoint& aPointToPutCaret) {
-  return MoveNodeResult(aNextInsertionPoint, aPointToPutCaret);
-}
-
-inline MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint,
-                                      const EditorDOMPoint& aPointToPutCaret) {
-  return MoveNodeResult(std::move(aNextInsertionPoint), aPointToPutCaret);
-}
-
-inline MoveNodeResult MoveNodeHandled(const EditorDOMPoint& aNextInsertionPoint,
-                                      EditorDOMPoint&& aPointToPutCaret) {
-  return MoveNodeResult(aNextInsertionPoint, std::move(aPointToPutCaret));
-}
-
-inline MoveNodeResult MoveNodeHandled(EditorDOMPoint&& aNextInsertionPoint,
-                                      EditorDOMPoint&& aPointToPutCaret) {
-  return MoveNodeResult(std::move(aNextInsertionPoint),
-                        std::move(aPointToPutCaret));
-}
 
 
 
