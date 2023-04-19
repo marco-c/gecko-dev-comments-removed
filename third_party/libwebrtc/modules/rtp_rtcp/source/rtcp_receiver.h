@@ -125,7 +125,6 @@ class RTCPReceiver final {
   
   
   
-  
   std::vector<ReportBlockData> GetLatestReportBlockData() const;
 
   
@@ -231,14 +230,26 @@ class RTCPReceiver final {
     uint8_t sequence_number;
   };
 
-  
-  
-  
+  class RttStats {
+   public:
+    RttStats() = default;
+    RttStats(const RttStats&) = default;
+    RttStats& operator=(const RttStats&) = default;
 
-  
-  using ReportBlockDataMap = std::map<uint32_t, ReportBlockData>;
-  
-  using ReportBlockMap = std::map<uint32_t, ReportBlockDataMap>;
+    void AddRtt(TimeDelta rtt);
+
+    TimeDelta last_rtt() const { return last_rtt_; }
+    TimeDelta min_rtt() const { return min_rtt_; }
+    TimeDelta max_rtt() const { return max_rtt_; }
+    TimeDelta average_rtt() const { return sum_rtt_ / num_rtts_; }
+
+   private:
+    TimeDelta last_rtt_ = TimeDelta::Zero();
+    TimeDelta min_rtt_ = TimeDelta::PlusInfinity();
+    TimeDelta max_rtt_ = TimeDelta::MinusInfinity();
+    TimeDelta sum_rtt_ = TimeDelta::Zero();
+    size_t num_rtts_ = 0;
+  };
 
   bool ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                            PacketInformation* packet_information);
@@ -376,7 +387,17 @@ class RTCPReceiver final {
   std::unordered_map<uint32_t, TmmbrInformation> tmmbr_infos_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
-  ReportBlockMap received_report_blocks_ RTC_GUARDED_BY(rtcp_receiver_lock_);
+  
+  std::unordered_map<uint32_t, RttStats> rtts_
+      RTC_GUARDED_BY(rtcp_receiver_lock_);
+
+  
+  
+  
+
+  
+  std::map<uint32_t, ReportBlockData> received_report_blocks_
+      RTC_GUARDED_BY(rtcp_receiver_lock_);
   std::unordered_map<uint32_t, LastFirStatus> last_fir_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
