@@ -3357,11 +3357,7 @@ class Document : public nsINode,
                mozilla::ErrorResult& rv);
   Nullable<WindowProxyHolder> GetDefaultView() const;
   Element* GetActiveElement();
-  enum class IncludeChromeOnly : bool { No, Yes };
-  
-  
-  nsIContent* GetUnretargetedFocusedContent(
-      IncludeChromeOnly = IncludeChromeOnly::No) const;
+  nsIContent* GetUnretargetedFocusedContent() const;
   bool HasFocus(ErrorResult& rv) const;
   void GetDesignMode(nsAString& aDesignMode);
   void SetDesignMode(const nsAString& aDesignMode,

@@ -6654,6 +6654,49 @@ bool nsContentUtils::IsFocusedContent(const nsIContent* aContent) {
   return fm && fm->GetFocusedElement() == aContent;
 }
 
+bool nsContentUtils::IsSubDocumentTabbable(nsIContent* aContent) {
+  Document* doc = aContent->GetComposedDoc();
+  if (!doc) {
+    return false;
+  }
+
+  
+  
+  if (EventStateManager::IsRemoteTarget(aContent)) {
+    return true;
+  }
+
+  
+  
+  Document* subDoc = doc->GetSubDocumentFor(aContent);
+  if (!subDoc) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDocShell> docShell = subDoc->GetDocShell();
+  if (!docShell) {
+    return false;
+  }
+
+  nsCOMPtr<nsIContentViewer> contentViewer;
+  docShell->GetContentViewer(getter_AddRefs(contentViewer));
+  if (!contentViewer) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (contentViewer->GetPreviousViewer()) {
+    bool inOnLoad = false;
+    docShell->GetIsExecutingOnLoadHandler(&inOnLoad);
+    return inOnLoad;
+  }
+
+  return true;
+}
+
 bool nsContentUtils::HasScrollgrab(nsIContent* aContent) {
   
   
