@@ -19,6 +19,7 @@
 #include "mozilla/EditorForwards.h"
 #include "mozilla/EditorUtils.h"  
 #include "mozilla/IntegerRange.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/StaticRange.h"
@@ -565,28 +566,34 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
   SplitNodeResult(nsIContent& aNewNode, nsIContent& aSplitNode,
-                  SplitNodeDirection aDirection)
+                  SplitNodeDirection aDirection,
+                  const Maybe<EditorDOMPoint>& aNewCaretPoint = Nothing())
       : mPreviousNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                           ? &aNewNode
                           : &aSplitNode),
         mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                       ? &aSplitNode
                       : &aNewNode),
-        mCaretPoint(EditorDOMPoint::AtEndOf(mPreviousNode)),
+        mCaretPoint(aNewCaretPoint.isSome()
+                        ? aNewCaretPoint.ref()
+                        : EditorDOMPoint::AtEndOf(mPreviousNode)),
         mRv(NS_OK),
         mDirection(aDirection) {}
   SplitNodeResult(nsCOMPtr<nsIContent>&& aNewNode,
                   nsCOMPtr<nsIContent>&& aSplitNode,
-                  SplitNodeDirection aDirection)
+                  SplitNodeDirection aDirection,
+                  const Maybe<EditorDOMPoint>& aNewCaretPoint = Nothing())
       : mPreviousNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                           ? std::move(aNewNode)
                           : std::move(aSplitNode)),
         mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
                       ? std::move(aSplitNode)
                       : std::move(aNewNode)),
-        mCaretPoint(MOZ_LIKELY(mPreviousNode)
-                        ? EditorDOMPoint::AtEndOf(mPreviousNode)
-                        : EditorDOMPoint()),
+        mCaretPoint(aNewCaretPoint.isSome()
+                        ? aNewCaretPoint.ref()
+                        : (MOZ_LIKELY(mPreviousNode)
+                               ? EditorDOMPoint::AtEndOf(mPreviousNode)
+                               : EditorDOMPoint())),
         mRv(NS_OK),
         mDirection(aDirection) {
     MOZ_DIAGNOSTIC_ASSERT(mPreviousNode);
@@ -614,6 +621,15 @@ class MOZ_STACK_CLASS SplitNodeResult final {
     result.mCaretPoint = mCaretPoint;
     return result;
   }
+
+  
+
+
+
+
+
+
+
 
   static inline SplitNodeResult HandledButDidNotSplitDueToEndOfContainer(
       nsIContent& aNotSplitNode, SplitNodeDirection aDirection,
