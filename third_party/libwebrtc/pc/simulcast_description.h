@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 namespace cricket {
 
 
@@ -23,7 +25,7 @@ namespace cricket {
 
 
 struct SimulcastLayer final {
-  SimulcastLayer(const std::string& rid, bool is_paused);
+  SimulcastLayer(absl::string_view rid, bool is_paused);
 
   SimulcastLayer(const SimulcastLayer& other) = default;
   SimulcastLayer& operator=(const SimulcastLayer& other) = default;
