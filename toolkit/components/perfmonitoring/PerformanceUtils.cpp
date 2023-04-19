@@ -107,11 +107,21 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
   
   nsTabSizes sizes;
 
+  using WindowSet = mozilla::HashSet<nsGlobalWindowOuter*>;
+  WindowSet windowsVisited;
   for (const auto& document : *aDocGroup) {
     nsGlobalWindowOuter* window =
         document ? nsGlobalWindowOuter::Cast(document->GetWindow()) : nullptr;
     if (window) {
-      AddWindowTabSizes(window, &sizes);
+      WindowSet::AddPtr p = windowsVisited.lookupForAdd(window);
+      if (!p) {
+        
+        AddWindowTabSizes(window, &sizes);
+        if (!windowsVisited.add(p, window)) {
+          
+          break;
+        }
+      }
     }
   }
 
