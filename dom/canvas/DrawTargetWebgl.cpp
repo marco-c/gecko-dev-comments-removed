@@ -2517,18 +2517,28 @@ void DrawTargetWebgl::SetTransform(const Matrix& aTransform) {
   mSkia->SetTransform(aTransform);
 }
 
+bool DrawTargetWebgl::StrokeRectAccel(const Rect& aRect,
+                                      const Pattern& aPattern,
+                                      const StrokeOptions& aStrokeOptions,
+                                      const DrawOptions& aOptions) {
+  
+  
+  if (mWebglValid && SupportsPattern(aPattern) &&
+      aStrokeOptions == StrokeOptions() && mTransform.PreservesDistance()) {
+    DrawRect(aRect, aPattern, aOptions, Nothing(), nullptr, true, true, false,
+             false, &aStrokeOptions);
+    return true;
+  }
+  return false;
+}
+
 void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
                                  const StrokeOptions& aStrokeOptions,
                                  const DrawOptions& aOptions) {
-  
-  
-  if (aStrokeOptions == StrokeOptions() && mTransform.PreservesDistance()) {
-    DrawRect(aRect, aPattern, aOptions, Nothing(), nullptr, true, true, false,
-             false, &aStrokeOptions);
-  } else if (!mWebglValid || !SupportsPattern(aPattern)) {
+  if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->StrokeRect(aRect, aPattern, aStrokeOptions, aOptions);
-  } else {
+  } else if (!StrokeRectAccel(aRect, aPattern, aStrokeOptions, aOptions)) {
     
     
     SkPath skiaPath;
@@ -2538,10 +2548,10 @@ void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
   }
 }
 
-void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
-                                 const Pattern& aPattern,
-                                 const StrokeOptions& aStrokeOptions,
-                                 const DrawOptions& aOptions) {
+bool DrawTargetWebgl::StrokeLineAccel(const Point& aStart, const Point& aEnd,
+                                      const Pattern& aPattern,
+                                      const StrokeOptions& aStrokeOptions,
+                                      const DrawOptions& aOptions) {
   if (mWebglValid && SupportsPattern(aPattern) &&
       (aStrokeOptions.mLineCap == CapStyle::BUTT ||
        aStrokeOptions.mLineCap == CapStyle::SQUARE) &&
@@ -2565,13 +2575,29 @@ void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
     ConcatTransform(lineXform);
     if (DrawRect(Rect(0, 0, 1, 1), aPattern, aOptions, Nothing(), nullptr, true,
                  true, true)) {
-      return;
+      return true;
     }
-    
-    
   }
-  MarkSkiaChanged(aOptions);
-  mSkia->StrokeLine(aStart, aEnd, aPattern, aStrokeOptions, aOptions);
+  return false;
+}
+
+void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
+                                 const Pattern& aPattern,
+                                 const StrokeOptions& aStrokeOptions,
+                                 const DrawOptions& aOptions) {
+  if (!mWebglValid) {
+    MarkSkiaChanged(aOptions);
+    mSkia->StrokeLine(aStart, aEnd, aPattern, aStrokeOptions, aOptions);
+  } else if (!StrokeLineAccel(aStart, aEnd, aPattern, aStrokeOptions,
+                              aOptions)) {
+    
+    
+    SkPath skiaPath;
+    skiaPath.moveTo(PointToSkPoint(aStart));
+    skiaPath.lineTo(PointToSkPoint(aEnd));
+    RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
+    DrawPath(path, aPattern, aOptions, &aStrokeOptions);
+  }
 }
 
 void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
@@ -2585,8 +2611,14 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
   if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->Stroke(aPath, aPattern, aStrokeOptions, aOptions);
-  } else if (skiaPath.isRect(&rect)) {
-    StrokeRect(SkRectToRect(rect), aPattern, aStrokeOptions, aOptions);
+    return;
+  }
+  if (skiaPath.isRect(&rect)) {
+    if (StrokeRectAccel(SkRectToRect(rect), aPattern, aStrokeOptions,
+                        aOptions)) {
+      return;
+    }
+    
   } else {
     
     
@@ -2599,15 +2631,17 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
           (numVerbs < 3 || verbs[2] == SkPath::kClose_Verb)) {
         Point start = SkPointToPoint(skiaPath.getPoint(0));
         Point end = SkPointToPoint(skiaPath.getPoint(1));
-        StrokeLine(start, end, aPattern, aStrokeOptions, aOptions);
-        if (numVerbs >= 3) {
-          StrokeLine(end, start, aPattern, aStrokeOptions, aOptions);
+        if (StrokeLineAccel(start, end, aPattern, aStrokeOptions, aOptions)) {
+          if (numVerbs >= 3) {
+            StrokeLineAccel(end, start, aPattern, aStrokeOptions, aOptions);
+          }
+          return;
         }
-        return;
+        
       }
     }
-    DrawPath(aPath, aPattern, aOptions, &aStrokeOptions);
   }
+  DrawPath(aPath, aPattern, aOptions, &aStrokeOptions);
 }
 
 bool DrawTargetWebgl::ShouldUseSubpixelAA(ScaledFont* aFont,
