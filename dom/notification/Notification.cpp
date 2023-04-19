@@ -1500,7 +1500,7 @@ NotificationPermission Notification::GetPermission(const GlobalObject& aGlobal,
 NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
                                                    ErrorResult& aRv) {
   if (NS_IsMainThread()) {
-    return GetPermissionInternal(aGlobal, aRv);
+    return GetPermissionInternal(aGlobal->AsInnerWindow(), aRv);
   } else {
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(worker);
@@ -1515,16 +1515,27 @@ NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
 }
 
 
-NotificationPermission Notification::GetPermissionInternal(nsISupports* aGlobal,
-                                                           ErrorResult& aRv) {
+NotificationPermission Notification::GetPermissionInternal(
+    nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
   
-  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aGlobal);
+  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aWindow);
   if (!sop) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return NotificationPermission::Denied;
   }
 
   nsCOMPtr<nsIPrincipal> principal = sop->GetPrincipal();
+  
+  
+  if (!StaticPrefs::dom_webnotifications_allowcrossoriginiframe()) {
+    nsCOMPtr<nsIScriptObjectPrincipal> topSop =
+        do_QueryInterface(aWindow->GetBrowsingContext()->Top()->GetDOMWindow());
+    nsIPrincipal* topPrincipal = topSop ? topSop->GetPrincipal() : nullptr;
+    if (!topPrincipal || !principal->Subsumes(topPrincipal)) {
+      return NotificationPermission::Denied;
+    }
+  }
+
   return GetPermissionInternal(principal, aRv);
 }
 
