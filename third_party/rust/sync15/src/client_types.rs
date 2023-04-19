@@ -10,14 +10,14 @@ use std::collections::HashMap;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ClientData {
     pub local_client_id: String,
     pub recent_clients: HashMap<String, RemoteClient>,
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct RemoteClient {
     pub fxa_device_id: Option<String>,
     pub device_name: String,

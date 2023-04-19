@@ -51,6 +51,13 @@ pub trait BridgedEngine {
 
     
     
+    
+    fn prepare_for_sync(&self, _client_data: &str) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    
+    
     fn sync_started(&self) -> Result<(), Self::Error>;
 
     

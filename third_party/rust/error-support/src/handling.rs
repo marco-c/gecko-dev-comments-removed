@@ -64,6 +64,11 @@ impl<E> ErrorHandling<E> {
     }
 
     
+    pub fn log_info(self) -> Self {
+        self.log(log::Level::Info)
+    }
+
+    
     pub fn report_error(self, report_class: impl Into<String>) -> Self {
         Self {
             err: self.err,
