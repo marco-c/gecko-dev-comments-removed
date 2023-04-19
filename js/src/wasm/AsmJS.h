@@ -25,6 +25,7 @@
 
 #include "jstypes.h"      
 #include "js/CallArgs.h"  
+#include "js/Stack.h"     
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSFunction;
@@ -39,6 +40,8 @@ class Handle;
 }  
 
 namespace js {
+
+class ErrorContext;
 
 namespace frontend {
 
@@ -62,13 +65,15 @@ using AsmJSParser = frontend::Parser<frontend::FullParseHandler, Unit>;
 
 
 
-[[nodiscard]] extern bool CompileAsmJS(JSContext* cx,
+[[nodiscard]] extern bool CompileAsmJS(JSContext* cx, ErrorContext* ec,
+                                       JS::NativeStackLimit stackLimit,
                                        frontend::ParserAtomsTable& parserAtoms,
                                        AsmJSParser<mozilla::Utf8Unit>& parser,
                                        frontend::ParseNode* stmtList,
                                        bool* validated);
 
-[[nodiscard]] extern bool CompileAsmJS(JSContext* cx,
+[[nodiscard]] extern bool CompileAsmJS(JSContext* cx, ErrorContext* ec,
+                                       JS::NativeStackLimit stackLimit,
                                        frontend::ParserAtomsTable& parserAtoms,
                                        AsmJSParser<char16_t>& parser,
                                        frontend::ParseNode* stmtList,

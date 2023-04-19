@@ -3902,7 +3902,8 @@ bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
   
   
   bool validated;
-  if (!CompileAsmJS(cx_, this->parserAtoms(), *this, list, &validated)) {
+  if (!CompileAsmJS(cx_, this->ec_, this->stackLimit_, this->parserAtoms(),
+                    *this, list, &validated)) {
     return false;
   }
   if (!validated) {
