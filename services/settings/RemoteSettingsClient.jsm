@@ -402,12 +402,14 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
+
   async get(options = {}) {
     const {
       filters = {},
       order = "", 
       dumpFallback = true,
       emptyListFallback = true,
+      forceSync = false,
       loadDumpIfNewer = true,
       syncIfEmpty = true,
     } = options;
@@ -416,10 +418,17 @@ class RemoteSettingsClient extends EventEmitter {
     const hasParallelCall = !!this._importingPromise;
     let data;
     try {
-      let lastModified = await this.db.getLastModified();
+      let lastModified = forceSync ? null : await this.db.getLastModified();
       let hasLocalData = lastModified !== null;
 
-      if (syncIfEmpty && !hasLocalData) {
+      if (forceSync) {
+        if (!this._importingPromise) {
+          this._importingPromise = (async () => {
+            await this.sync({ sendEvents: false, trigger: "forced" });
+            return true; 
+          })();
+        }
+      } else if (syncIfEmpty && !hasLocalData) {
         
         
         if (!this._importingPromise) {
