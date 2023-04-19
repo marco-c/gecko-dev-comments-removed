@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const mozIntlHelper = Cc["@mozilla.org/mozintlhelper;1"].getService(
   Ci.mozIMozIntlHelper
@@ -9,10 +9,10 @@ const osPrefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(
   Ci.mozIOSPreferences
 );
 
-
-
-
-
+/**
+ * RegExp used to parse variant subtags from a BCP47 language tag.
+ * For example: ca-valencia
+ */
 const variantSubtagsMatch = /(?:-(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))+$/;
 
 function getDateTimePatternStyle(option) {
@@ -30,27 +30,27 @@ function getDateTimePatternStyle(option) {
   }
 }
 
-
-
-
-
-
-
+/**
+ * Number of milliseconds in other time units.
+ *
+ * This is used by relative time format best unit
+ * calculations.
+ */
 const second = 1e3;
 const minute = 6e4;
 const hour = 36e5;
 const day = 864e5;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Use by RelativeTimeFormat.
+ *
+ * Allows for defining a cached getter to perform
+ * calculations only once.
+ *
+ * @param {Object} obj - Object to place the getter on.
+ * @param {String} prop - Name of the property.
+ * @param {Function} get - Function that will be used as a getter.
+ */
 function defineCachedGetter(obj, prop, get) {
   defineGetter(obj, prop, function() {
     if (!this._[prop]) {
@@ -60,72 +60,72 @@ function defineCachedGetter(obj, prop, get) {
   });
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Used by RelativeTimeFormat.
+ *
+ * Defines a getter on an object
+ *
+ * @param {Object} obj - Object to place the getter on.
+ * @param {String} prop - Name of the property.
+ * @param {Function} get - Function that will be used as a getter.
+ */
 function defineGetter(obj, prop, get) {
   Object.defineProperty(obj, prop, { get });
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Used by RelativeTimeFormat.
+ *
+ * Allows for calculation of the beginning of
+ * a period for discrete distances.
+ *
+ * @param {Date} date - Date of which we're looking to find a start of.
+ * @param {String} unit - Period to calculate the start of.
+ *
+ * @returns {Date}
+ */
 function startOf(date, unit) {
   date = new Date(date.getTime());
   switch (unit) {
     case "year":
       date.setMonth(0);
-    
+    // falls through
     case "month":
       date.setDate(1);
-    
+    // falls through
     case "day":
       date.setHours(0);
-    
+    // falls through
     case "hour":
       date.setMinutes(0);
-    
+    // falls through
     case "minute":
       date.setSeconds(0);
-    
+    // falls through
     case "second":
       date.setMilliseconds(0);
   }
   return date;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Used by RelativeTimeFormat.
+ *
+ * Calculates the best fit unit to use for an absolute diff distance based
+ * on thresholds.
+ *
+ * @param {Object} absDiff - Object with absolute diff per unit calculated.
+ *
+ * @returns {String}
+ */
 function bestFit(absDiff) {
   switch (true) {
     case absDiff.years > 0 && absDiff.months > threshold.month:
       return "year";
     case absDiff.months > 0 && absDiff.days > threshold.day:
       return "month";
-    
-    
+    // case absDiff.months > 0 && absDiff.weeks > threshold.week: return "month";
+    // case absDiff.weeks > 0 && absDiff.days > threshold.day: return "week";
     case absDiff.days > 0 && absDiff.hours > threshold.hour:
       return "day";
     case absDiff.hours > 0 && absDiff.minutes > threshold.minute:
@@ -137,25 +137,25 @@ function bestFit(absDiff) {
   }
 }
 
-
-
-
-
-
+/**
+ * Used by RelativeTimeFormat.
+ *
+ * Thresholds to use for calculating the best unit for relative time fromatting.
+ */
 const threshold = {
-  month: 2, 
-  
-  day: 6, 
-  hour: 6, 
-  minute: 59, 
-  second: 59, 
+  month: 2, // at least 2 months before using year.
+  // week: 4, // at least 4 weeks before using month.
+  day: 6, // at least 6 days before using month.
+  hour: 6, // at least 6 hours before using day.
+  minute: 59, // at least 59 minutes before using hour.
+  second: 59, // at least 59 seconds before using minute.
 };
 
-
-
-
-
-
+/**
+ * Notice: If you're updating this list, you should also
+ *         update the list in
+ *         languageNames.ftl and regionNames.ftl.
+ */
 const availableLocaleDisplayNames = {
   region: new Set([
     "ad",
@@ -758,8 +758,8 @@ const nativeLocaleNames = new Map(
 
 class MozRelativeTimeFormat extends Intl.RelativeTimeFormat {
   constructor(locales, options = {}, ...args) {
-    
-    
+    // If someone is asking for MozRelativeTimeFormat, it's likely they'll want
+    // to use `formatBestUnit` which works better with `auto`
     if (options.numeric === undefined) {
       options.numeric = "auto";
     }
@@ -838,7 +838,7 @@ class MozRelativeTimeFormat extends Intl.RelativeTimeFormat {
   }
 }
 
-class MozIntl {
+export class MozIntl {
   Collator = Intl.Collator;
   ListFormat = Intl.ListFormat;
   Locale = Intl.Locale;
@@ -852,7 +852,7 @@ class MozIntl {
   }
 
   observe() {
-    
+    // Clear cache when things change.
     this._cache = {};
   }
 
@@ -865,8 +865,8 @@ class MozIntl {
   }
 
   getDisplayNamesDeprecated(locales, options = {}) {
-    
-    
+    // Helper for IntlUtils.webidl, will be removed once Intl.DisplayNames is
+    // available in non-privileged code.
 
     let { type, style, calendar, keys = [] } = options;
 
@@ -956,8 +956,8 @@ class MozIntl {
     if (locales !== undefined) {
       throw new Error("First argument support not implemented yet");
     }
-    
-    
+    // Patterns hardcoded from CLDR 33 english.
+    // We can later look into fetching them from CLDR directly.
     const localePattern = "{0} ({1})";
     const localeSeparator = ", ";
 
@@ -1000,7 +1000,7 @@ class MozIntl {
       }
 
       if (variantSubtags) {
-        displayName.push(...variantSubtags[0].substr(1).split("-")); 
+        displayName.push(...variantSubtags[0].substr(1).split("-")); // Collapse multiple variants.
       }
 
       let modifiers;
@@ -1018,8 +1018,8 @@ class MozIntl {
   }
 
   getScriptDirection(locale) {
-    
-    
+    // This is a crude implementation until Bug 1693576 lands.
+    // See justification in toolkit/components/mozintl/mozIMozIntl.idl
     const { language } = new Intl.Locale(locale);
     if (
       language == "ar" ||
@@ -1050,7 +1050,7 @@ class MozIntl {
                 resolvedLocales[0]
               );
             } else {
-              
+              // make sure that user doesn't pass a pattern explicitly
               options.pattern = undefined;
             }
           }
@@ -1080,5 +1080,3 @@ MozIntl.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIObserver",
   "nsISupportsWeakReference",
 ]);
-
-var EXPORTED_SYMBOLS = ["MozIntl"];
