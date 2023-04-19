@@ -10,6 +10,7 @@
 #include <stdio.h> 
 #include "nsDebug.h"
 #include "nsTArray.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/RefPtr.h"
 
@@ -330,10 +331,13 @@ class nsFrameList {
 
 
 
-
   inline void AppendIfNonempty(
       nsTArray<mozilla::layout::FrameChildList>* aLists,
-      mozilla::layout::FrameChildListID aListID) const;
+      mozilla::layout::FrameChildListID aListID) const {
+    if (NotEmpty()) {
+      aLists->EmplaceBack(*this, aListID);
+    }
+  }
 
   
 
@@ -460,6 +464,23 @@ class nsFrameList {
 };
 
 namespace mozilla {
+namespace layout {
+
+#ifdef DEBUG_FRAME_DUMP
+extern const char* ChildListName(FrameChildListID aListID);
+#endif
+
+using FrameChildListIDs = EnumSet<FrameChildListID>;
+
+class FrameChildList {
+ public:
+  FrameChildList(const nsFrameList& aList, FrameChildListID aID)
+      : mList(aList.Clone()), mID(aID) {}
+  nsFrameList mList;
+  FrameChildListID mID;
+};
+
+}  
 
 
 
