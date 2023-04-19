@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -100,8 +99,8 @@ async function doChunkingTest(resultCount, keywordCountPerResult) {
   }
 
   
-  QuickSuggest.remoteSettings._resultsByKeyword.clear();
-  await QuickSuggest.remoteSettings._addResults(results);
+  QuickSuggest.remoteSettings._test_resultsByKeyword.clear();
+  await QuickSuggest.remoteSettings._test_addResults(results);
 
   
   for (let i = 0; i < resultCount; i++) {
@@ -112,14 +111,14 @@ async function doChunkingTest(resultCount, keywordCountPerResult) {
       
       
       
-      let actualResult = QuickSuggest.remoteSettings._resultsByKeyword.get(
+      let actualResult = QuickSuggest.remoteSettings._test_resultsByKeyword.get(
         keyword
       );
       if (!ObjectUtils.deepEqual(actualResult, results[i])) {
         Assert.deepEqual(
           actualResult,
           results[i],
-          `Result ${i} is in _resultsByKeyword for keyword ${keyword}`
+          `Result ${i} is in _test_resultsByKeyword for keyword ${keyword}`
         );
       }
 
@@ -141,7 +140,7 @@ async function doChunkingTest(resultCount, keywordCountPerResult) {
           advertiser: "TestAdvertiser",
           iab_category: "22 - Shopping",
           is_sponsored: true,
-          score: QuickSuggestRemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
+          score: RemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
           source: "remote-settings",
           icon: null,
           position: undefined,
