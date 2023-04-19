@@ -534,6 +534,28 @@ module.exports = {
 
 
 
+  getIsGlobalThis(ancestors) {
+    for (let parent of ancestors) {
+      switch (parent.type) {
+        case "FunctionDeclaration":
+        case "FunctionExpression":
+        case "PropertyDefinition":
+        case "StaticBlock":
+          return false;
+      }
+    }
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
 
   getIsHeadFile(scope) {
     var pathAndFilename = this.cleanUpPath(scope.getFilename());
