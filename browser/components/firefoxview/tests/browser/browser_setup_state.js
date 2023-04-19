@@ -1,10 +1,10 @@
 
 
 
+const { UIState } = ChromeUtils.import("resource://services-sync/UIState.jsm");
 const { TabsSetupFlowManager } = ChromeUtils.importESModule(
   "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs"
 );
-
 const MOBILE_PROMO_DISMISSED_PREF =
   "browser.tabs.firefox-view.mobilePromo.dismissed";
 
