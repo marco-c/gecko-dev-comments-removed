@@ -97,6 +97,9 @@ class MIDIPlatformService {
   
   void Close(MIDIPortParent* aPort);
 
+  
+  bool HasDevice() { return !mPortInfo.IsEmpty(); }
+
  protected:
   MIDIPlatformService();
   virtual ~MIDIPlatformService();
