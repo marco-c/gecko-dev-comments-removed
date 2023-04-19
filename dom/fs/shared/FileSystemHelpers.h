@@ -7,6 +7,9 @@
 #ifndef DOM_FS_SHARED_FILESYSTEMHELPERS_H_
 #define DOM_FS_SHARED_FILESYSTEMHELPERS_H_
 
+#include "FileSystemTypes.h"
+#include "mozilla/RefPtr.h"
+
 namespace mozilla::dom::fs {
 
 
@@ -133,6 +136,11 @@ class Registered {
 
   T* operator->() const { return get(); }
 };
+
+
+
+
+bool IsValidName(const fs::Name& aName);
 
 }  
 
