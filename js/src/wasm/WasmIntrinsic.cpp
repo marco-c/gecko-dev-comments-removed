@@ -98,8 +98,8 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   featureOptions.intrinsics = true;
 
   
-  SharedCompileArgs compileArgs =
-      CompileArgs::buildAndReport(cx, ScriptedCaller(), featureOptions);
+  SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
+      cx, ScriptedCaller(), featureOptions,  true);
   if (!compileArgs) {
     return false;
   }
@@ -115,6 +115,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   CacheableName emptyString;
   CacheableName memoryString;
   if (!CacheableName::fromUTF8Chars("memory", &memoryString)) {
+    ReportOutOfMemory(cx);
     return false;
   }
   if (!moduleEnv.imports.append(Import(std::move(emptyString),
@@ -127,6 +128,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
   
   if (!moduleEnv.initTypes(ids.size())) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
@@ -216,6 +218,12 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
   
   SharedBytes bytecode = js_new<ShareableBytes>();
+  if (!bytecode) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
   SharedModule module = mg.finishModule(*bytecode, nullptr);
   if (!module) {
     ReportOutOfMemory(cx);

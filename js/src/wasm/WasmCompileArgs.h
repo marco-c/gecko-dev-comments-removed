@@ -148,13 +148,16 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   
   
   
+  
+  
 
   static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller,
                                  const FeatureOptions& options,
                                  CompileArgsError* error);
   static SharedCompileArgs buildAndReport(JSContext* cx,
                                           ScriptedCaller&& scriptedCaller,
-                                          const FeatureOptions& options);
+                                          const FeatureOptions& options,
+                                          bool reportOOM = false);
 
   explicit CompileArgs(ScriptedCaller&& scriptedCaller)
       : scriptedCaller(std::move(scriptedCaller)),
