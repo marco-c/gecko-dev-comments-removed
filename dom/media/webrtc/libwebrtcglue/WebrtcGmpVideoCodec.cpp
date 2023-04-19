@@ -936,8 +936,6 @@ void WebrtcGmpVideoDecoder::Terminated() {
   
 }
 
-static void DeleteBuffer(uint8_t* data) { delete[] data; }
-
 void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
   
   
@@ -979,7 +977,7 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
                                  aDecodedFrame->Stride(kGMPYPlane), buffer_u,
                                  aDecodedFrame->Stride(kGMPUPlane), buffer_v,
                                  aDecodedFrame->Stride(kGMPVPlane),
-                                 [&buffer] { DeleteBuffer(buffer.get()); });
+                                 [buf = buffer.release()] {});
 
       GMP_LOG_DEBUG("GMP Decoded: %" PRIu64, aDecodedFrame->Timestamp());
       auto videoFrame =
