@@ -153,6 +153,9 @@ class TransmissionControlBlock : public Context {
   void MaybeSendSack();
 
   
+  void MaybeSendForwardTsn(SctpPacket::Builder& builder, TimeMs now);
+
+  
   
   
   
@@ -206,6 +209,8 @@ class TransmissionControlBlock : public Context {
   const TieTag tie_tag_;
   const std::function<bool()> is_connection_established_;
   PacketSender& packet_sender_;
+  
+  TimeMs limit_forward_tsn_until_ = TimeMs(0);
 
   RetransmissionTimeout rto_;
   RetransmissionErrorCounter tx_error_counter_;
