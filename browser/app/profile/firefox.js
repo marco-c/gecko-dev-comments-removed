@@ -345,11 +345,7 @@ pref("browser.warnOnQuit", true);
 
 pref("browser.overlink-delay", 80);
 
-#ifdef NIGHTLY_BUILD
 pref("browser.theme.colorway-closet", true);
-#else
-pref("browser.theme.colorway-closet", false);
-#endif
 
 
 
