@@ -317,9 +317,7 @@ struct JSRuntime {
 
  public:
   
-  
-  
-  void addTelemetry(int id, uint32_t sample, const char* key = nullptr);
+  void addTelemetry(JSMetric id, uint32_t sample);
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
