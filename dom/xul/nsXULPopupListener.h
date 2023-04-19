@@ -46,12 +46,6 @@ class nsXULPopupListener : public nsIDOMEventListener {
   virtual void ClosePopup();
 
  private:
-#ifndef NS_CONTEXT_MENU_IS_MOUSEUP
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
-#endif
-
   
   RefPtr<mozilla::dom::Element> mElement;
 
