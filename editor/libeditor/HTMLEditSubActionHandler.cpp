@@ -131,35 +131,10 @@ HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
 nsresult HTMLEditor::InitEditorContentAndSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+  nsresult rv = EditorBase::InitEditorContentAndSelection();
   if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() failed");
+    NS_WARNING("EditorBase::InitEditorContentAndSelection() failed");
     return rv;
-  }
-
-  
-  
-  
-  
-  
-  if (!SelectionRef().RangeCount()) {
-    nsresult rv = CollapseSelectionToEndOfLastLeafNodeOfDocument();
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "HTMLEditor::CollapseSelectionToEndOfLastLeafNodeOfDocument() "
-          "failed");
-      return rv;
-    }
-  }
-
-  if (IsInPlaintextMode()) {
-    nsresult rv = EnsurePaddingBRElementInMultilineEditor();
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
-      return rv;
-    }
   }
 
   Element* bodyOrDocumentElement = GetRoot();

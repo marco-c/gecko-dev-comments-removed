@@ -158,7 +158,6 @@ class HTMLEditor final : public EditorBase,
 
   
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD BeginningOfDocument() final;
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndOfDocument() final;
 
   NS_IMETHOD GetDocumentCharacterSet(nsACString& aCharacterSet) final;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD
@@ -2684,14 +2683,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CollapseSelectionToEndOfLastLeafNodeOfDocument() const;
 
   MOZ_CAN_RUN_SCRIPT nsresult SelectAllInternal() final;
 

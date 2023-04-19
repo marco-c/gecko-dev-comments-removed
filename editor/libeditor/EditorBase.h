@@ -1924,6 +1924,12 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult CollapseSelectionToEndOfLastLeafNode() const;
+
+  
+
+
+
 
   inline bool AllowsTransactionsToChangeSelection() const {
     return mAllowsTransactionsToChangeSelection;
@@ -2238,6 +2244,13 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FlushPendingSpellCheck();
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult EnsureEmptyTextFirstChild();
+
+  
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
 
   int32_t WrapWidth() const { return mWrapColumn; }
 
