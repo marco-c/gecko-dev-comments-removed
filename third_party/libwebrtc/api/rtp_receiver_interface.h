@@ -22,7 +22,6 @@
 #include "api/frame_transformer_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
-#include "api/proxy.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/rtp/rtp_source.h"
@@ -118,36 +117,6 @@ class RTC_EXPORT RtpReceiverInterface : public rtc::RefCountInterface {
  protected:
   ~RtpReceiverInterface() override = default;
 };
-
-
-
-
-BEGIN_PROXY_MAP(RtpReceiver)
-PROXY_PRIMARY_THREAD_DESTRUCTOR()
-BYPASS_PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtlsTransportInterface>, dtls_transport)
-PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
-PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
-                   streams)
-BYPASS_PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
-BYPASS_PROXY_CONSTMETHOD0(std::string, id)
-PROXY_SECONDARY_CONSTMETHOD0(RtpParameters, GetParameters)
-PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*)
-PROXY_SECONDARY_METHOD1(void,
-                        SetJitterBufferMinimumDelay,
-                        absl::optional<double>)
-PROXY_SECONDARY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)
-
-PROXY_SECONDARY_METHOD1(void,
-                        SetFrameDecryptor,
-                        rtc::scoped_refptr<FrameDecryptorInterface>)
-
-PROXY_SECONDARY_CONSTMETHOD0(rtc::scoped_refptr<FrameDecryptorInterface>,
-                             GetFrameDecryptor)
-PROXY_SECONDARY_METHOD1(void,
-                        SetDepacketizerToDecoderFrameTransformer,
-                        rtc::scoped_refptr<FrameTransformerInterface>)
-END_PROXY_MAP()
 
 }  
 
