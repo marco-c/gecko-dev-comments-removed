@@ -3880,13 +3880,18 @@ ssl3_InitHandshakeHashes(sslSocket *ss)
         
 
 
+
+
         if (ssl3_UpdateDefaultHandshakeHashes(ss, ss->ssl3.hs.messages.buf,
                                               ss->ssl3.hs.messages.len) != SECSuccess) {
             return SECFailure;
         }
         
 
-        if (!ss->ssl3.hs.echHpkeCtx) {
+
+
+
+        if (!ss->ssl3.hs.echHpkeCtx && !ss->opt.enableTls13BackendEch) {
             sslBuffer_Clear(&ss->ssl3.hs.messages);
         }
     }

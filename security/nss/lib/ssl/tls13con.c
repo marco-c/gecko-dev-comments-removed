@@ -2169,6 +2169,7 @@ tls13_ConstructHelloRetryRequest(sslSocket *ss,
                                  ssl3CipherSuite cipherSuite,
                                  const sslNamedGroupDef *selectedGroup,
                                  PRUint8 *cookie, unsigned int cookieLen,
+                                 const PRUint8 *cookieGreaseEchSignal,
                                  sslBuffer *buffer)
 {
     SECStatus rv;
@@ -2180,8 +2181,24 @@ tls13_ConstructHelloRetryRequest(sslSocket *ss,
     ss->xtnData.selectedGroup = selectedGroup;
     ss->xtnData.cookie.data = cookie;
     ss->xtnData.cookie.len = cookieLen;
+
+    
+
+    if (cookieGreaseEchSignal) {
+        PORT_Assert(!ss->ssl3.hs.greaseEchBuf.len);
+        rv = sslBuffer_Append(&ss->ssl3.hs.greaseEchBuf,
+                              cookieGreaseEchSignal,
+                              TLS13_ECH_SIGNAL_LEN);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+    }
     rv = ssl_ConstructExtensions(ss, &extensionsBuf,
                                  ssl_hs_hello_retry_request);
+    
+    if (cookieGreaseEchSignal) {
+        sslBuffer_Clear(&ss->ssl3.hs.greaseEchBuf);
+    }
     if (rv != SECSuccess) {
         goto loser;
     }
@@ -2220,13 +2237,28 @@ tls13_SendHelloRetryRequest(sslSocket *ss,
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
+    
+
+
+
+
+
+
+
+
+
+
     if (ss->xtnData.ech) {
         PRUint8 echGreaseRaw[TLS13_ECH_SIGNAL_LEN] = { 0 };
-        if (!ss->ssl3.hs.echAccepted) {
+        if (!(ss->ssl3.hs.echAccepted ||
+              (ss->opt.enableTls13BackendEch &&
+               ss->xtnData.ech &&
+               ss->xtnData.ech->receivedInnerXtn))) {
             rv = PK11_GenerateRandom(echGreaseRaw, TLS13_ECH_SIGNAL_LEN);
             if (rv != SECSuccess) {
                 return SECFailure;
             }
+            SSL_TRC(100, ("Generated random value for ECH HRR GREASE."));
         }
         sslBuffer echGreaseBuffer = SSL_BUFFER_EMPTY;
         rv = sslBuffer_Append(&echGreaseBuffer, echGreaseRaw, sizeof(echGreaseRaw));
@@ -2234,7 +2266,6 @@ tls13_SendHelloRetryRequest(sslSocket *ss,
             return SECFailure;
         }
         
-        SSL_TRC(100, ("Generating and storing a random value for ECH HRR Grease value."));
         ss->ssl3.hs.greaseEchBuf = echGreaseBuffer;
     }
 
@@ -2250,7 +2281,8 @@ tls13_SendHelloRetryRequest(sslSocket *ss,
     
     rv = tls13_ConstructHelloRetryRequest(ss, ss->ssl3.hs.cipher_suite,
                                           requestedGroup,
-                                          cookie, cookieLen, &messageBuf);
+                                          cookie, cookieLen,
+                                          NULL, &messageBuf);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, SEC_ERROR_LIBRARY_FAILURE, internal_error);
         return SECFailure;
@@ -5048,8 +5080,11 @@ tls13_FinishHandshake(sslSocket *ss)
 
     TLS13_SET_HS_STATE(ss, idle_handshake);
 
-    PORT_Assert(ss->ssl3.hs.echAccepted ==
-                ssl3_ExtensionNegotiated(ss, ssl_tls13_encrypted_client_hello_xtn));
+    PORT_Assert(ss->ssl3.hs.echAccepted ||
+                (ss->opt.enableTls13BackendEch &&
+                 ss->xtnData.ech &&
+                 ss->xtnData.ech->receivedInnerXtn) ==
+                    ssl3_ExtensionNegotiated(ss, ssl_tls13_encrypted_client_hello_xtn));
     if (offeredEch && !ss->ssl3.hs.echAccepted) {
         SSL3_SendAlert(ss, alert_fatal, ech_required);
 

@@ -1241,6 +1241,33 @@ tls13_ClientHandleEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     PRCList parsedConfigs;
     PR_INIT_CLIST(&parsedConfigs);
 
+    
+
+
+
+    if (ss->ssl3.hs.echAccepted) {
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
+        ssl3_ExtSendAlert(ss, alert_fatal, unsupported_extension);
+        return SECFailure;
+    }
+
+    
+
+
+
+    if (ss->ssl3.hs.msg_type != ssl_hs_encrypted_extensions) {
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
+        if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+            
+            ssl3_ExtSendAlert(ss, alert_fatal, unsupported_extension);
+        } else {
+            
+
+            ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
+        }
+        return SECFailure;
+    }
+
     PORT_Assert(!xtnData->ech);
     xtnData->ech = PORT_ZNew(sslEchXtnState);
     if (!xtnData->ech) {
@@ -1483,12 +1510,26 @@ tls13_ServerSendEchXtn(const sslSocket *ss,
 }
 
 
+
+
+
+
+
+
+
+
+
 SECStatus
 tls13_ServerSendHrrEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                           sslBuffer *buf, PRBool *added)
 {
     SECStatus rv;
-    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3 || !xtnData->ech || (!ss->echPubKey && !ss->opt.enableTls13GreaseEch)) {
+    
+
+
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3 ||
+        !xtnData->ech ||
+        (!ss->echPubKey && !ss->opt.enableTls13BackendEch && !ss->opt.enableTls13GreaseEch)) {
         SSL_TRC(100, ("%d: TLS13[%d]: server not sending HRR ECH Xtn",
                       SSL_GETPID(), ss->fd));
         return SECSuccess;

@@ -176,6 +176,7 @@ tls13_DecodeEchConfigContents(const sslReadBuffer *rawConfig,
     sslReader suiteReader;
     sslReader extensionReader;
     PRBool hasValidSuite = PR_FALSE;
+    PRBool unsupportedMandatoryXtn = PR_FALSE;
 
     
     
@@ -298,9 +299,11 @@ tls13_DecodeEchConfigContents(const sslReadBuffer *rawConfig,
         extensionTypes[extensionIndex++] = (PRUint16)tmpn;
 
         
+
+
+
         if (tmpn & (1 << 15)) {
-            PORT_SetError(SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION);
-            goto loser;
+            unsupportedMandatoryXtn = PR_TRUE;
         }
 
         
@@ -319,7 +322,7 @@ tls13_DecodeEchConfigContents(const sslReadBuffer *rawConfig,
     
 
 
-    if (hasValidSuite) {
+    if (hasValidSuite && !unsupportedMandatoryXtn) {
         decodedConfig = PORT_ZNew(sslEchConfig);
         if (!decodedConfig) {
             goto loser;
@@ -758,11 +761,6 @@ tls13_ClientSetupEch(sslSocket *ss, sslClientHelloType type)
 
 
     cfg = (sslEchConfig *)PR_LIST_HEAD(&ss->echConfigs);
-
-    
-    if (0 == PORT_Strcmp(cfg->contents.publicName, ss->url)) {
-        return SECSuccess;
-    }
 
     SSL_TRC(50, ("%d: TLS13[%d]: Setup client ECH",
                  SSL_GETPID(), ss->fd));
@@ -1380,6 +1378,17 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
         rv = sslRead_ReadVariable(&rdr, 2, &extensionData);
         if (rv != SECSuccess) {
             goto loser;
+        }
+
+        
+
+
+
+        SSLExtensionSupport sslSupported;
+        (void)SSLExp_GetExtensionSupport(extensionType, &sslSupported);
+        if (sslSupported != ssl_ext_none &&
+            tls13_ExtensionStatus(extensionType, ssl_hs_client_hello) == tls13_extension_unknown) {
+            continue;
         }
 
         switch (extensionType) {
@@ -2402,7 +2411,12 @@ tls13_MaybeHandleEchSignal(sslSocket *ss, const PRUint8 *sh, PRUint32 shLen, PRB
             return SECFailure;
         }
         ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ssl_tls13_encrypted_client_hello_xtn;
-        PORT_Memcpy(ss->ssl3.hs.client_random, ss->ssl3.hs.client_inner_random, SSL3_RANDOM_LENGTH);
+
+        
+
+        if (!isHrr) {
+            PORT_Memcpy(ss->ssl3.hs.client_random, ss->ssl3.hs.client_inner_random, SSL3_RANDOM_LENGTH);
+        }
     }
     
     ssl3_CoalesceEchHandshakeHashes(ss);
@@ -2655,11 +2669,10 @@ tls13_MaybeAcceptEch(sslSocket *ss, const SECItem *sidBytes, const PRUint8 *chOu
         }
 
         ss->ssl3.hs.echHpkeCtx = echData.hpkeCtx;
-        ss->ssl3.hs.greaseEchBuf = echData.signal;
 
         const PRUint8 greaseConstant[TLS13_ECH_SIGNAL_LEN] = { 0 };
         ss->ssl3.hs.echAccepted = previouslyOfferedEch &&
-                                  !NSS_SecureMemcmp(greaseConstant, ss->ssl3.hs.greaseEchBuf.buf, TLS13_ECH_SIGNAL_LEN);
+                                  !NSS_SecureMemcmp(greaseConstant, echData.signal, TLS13_ECH_SIGNAL_LEN);
 
         if (echData.configId != ss->xtnData.ech->configId ||
             echData.kdfId != ss->xtnData.ech->kdfId ||
@@ -2788,6 +2801,7 @@ tls13_WriteServerEchHrrSignal(sslSocket *ss, PRUint8 *sh, unsigned int shLen)
         return SECFailure;
     }
     
+
     sslBuffer_Clear(&ss->ssl3.hs.greaseEchBuf);
     return SECSuccess;
 }
