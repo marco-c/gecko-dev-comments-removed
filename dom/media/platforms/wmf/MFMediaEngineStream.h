@@ -157,9 +157,6 @@ class MFMediaEngineStream
   
   
   bool mReceivedEOS;
-
-  
-  bool mHasDispatchedEndEvent;
 };
 
 
