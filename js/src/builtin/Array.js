@@ -866,38 +866,13 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
     
-    let iteratorRecord = undefined;
 
     
     if (usingAsyncIterator !== undefined) {
       
-      let iterator = callContentFunction(usingAsyncIterator, asyncItems);
-
-      if (!IsObject(iterator)) {
-        ThrowTypeError(JSMSG_GET_ASYNC_ITER_RETURNED_PRIMITIVE);
-      }
-
-      iteratorRecord = { iterator, nextMethod: iterator.next };
     } else if (usingSyncIterator !== undefined) {
       
       
-      let iterator = callContentFunction(usingSyncIterator, asyncItems);
-
-      if (!IsObject(iterator)) {
-        ThrowTypeError(JSMSG_GET_ITER_RETURNED_PRIMITIVE);
-      }
-
-      
-      
-      let asyncFromSyncIteratorObject = CreateAsyncFromSyncIterator(
-        iterator,
-        iterator.next
-      );
-
-      iteratorRecord = {
-        iterator: asyncFromSyncIteratorObject,
-        nextMethod: asyncFromSyncIteratorObject.next,
-      };
     } else {
       
       
@@ -952,90 +927,61 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     }
 
     
+    
+    
+    
+
+    
     let k = 0;
 
     
-    
-    let mustClose = false;
-    try {
+    for await (let nextValue of allowContentIterWith(
+      asyncItems,
+      usingAsyncIterator,
+      usingSyncIterator
+    )) {
       
-      do {
+      
+      
+      
+      
+      
+      
+
+      
+
+      
+
+      
+      let mappedValue = nextValue;
+
+      
+      if (mapping) {
         
         
         
-        
-        
-        
-        
+        mappedValue = callContentFunction(mapfn, thisArg, nextValue, k);
 
         
         
-        
-        
-        
-        let nextResult = callContentFunction(
-          iteratorRecord.nextMethod,
-          iteratorRecord.iterator
-        );
-
-        
-        nextResult = await nextResult;
-
-        
-        if (!IsObject(nextResult)) {
-          ThrowTypeError(JSMSG_OBJECT_REQUIRED, nextResult);
-        }
-
-        
-        let done = nextResult.done;
-
-        
-        if (done) {
-          
-          A.length = k;
-
-          
-          return A;
-        }
-
-        
-        let nextValue = nextResult.value;
-
-        
-        let mappedValue = nextValue;
-
-        
-        
-        mustClose = true;
-
-        
-        if (mapping) {
-          
-          mappedValue = callContentFunction(mapfn, thisArg, nextValue, k);
-
-          
-          
-          
-          
-          mappedValue = await mappedValue;
-          
-        }
-
-        
-        
-        DefineDataProperty(A, k, mappedValue);
-
-        
-        mustClose = false;
-
-        
-        k = k + 1;
-      } while (true);
-    } finally {
-      if (mustClose) {
-        AsyncIteratorClose(iteratorRecord);
+        mappedValue = await mappedValue;
       }
+
+      
+      
+      DefineDataProperty(A, k, mappedValue);
+
+      
+      k = k + 1;
     }
+
+    
+
+    
+    A.length = k;
+
+    
+    return A;
   };
 
   
