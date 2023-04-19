@@ -1756,22 +1756,18 @@ bool nsGlobalWindowOuter::WouldReuseInnerWindow(Document* aNewDocument) {
   return false;
 }
 
-void nsGlobalWindowOuter::SetInitialPrincipalToSubject(
-    nsIContentSecurityPolicy* aCSP,
+void nsGlobalWindowOuter::SetInitialPrincipal(
+    nsIPrincipal* aNewWindowPrincipal, nsIContentSecurityPolicy* aCSP,
     const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP) {
   
-  nsCOMPtr<nsIPrincipal> newWindowPrincipal =
-      nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
-
   
   
   
   
-  
-  if (nsContentUtils::IsExpandedPrincipal(newWindowPrincipal) ||
-      (newWindowPrincipal->IsSystemPrincipal() &&
+  if (nsContentUtils::IsExpandedPrincipal(aNewWindowPrincipal) ||
+      (aNewWindowPrincipal->IsSystemPrincipal() &&
        GetBrowsingContext()->IsContent())) {
-    newWindowPrincipal = nullptr;
+    aNewWindowPrincipal = nullptr;
   }
 
   
@@ -1779,7 +1775,7 @@ void nsGlobalWindowOuter::SetInitialPrincipalToSubject(
     
     if (!mDoc->IsInitialDocument()) return;
     
-    if (mDoc->NodePrincipal() == newWindowPrincipal) return;
+    if (mDoc->NodePrincipal() == aNewWindowPrincipal) return;
 
 #ifdef DEBUG
     
@@ -1795,7 +1791,7 @@ void nsGlobalWindowOuter::SetInitialPrincipalToSubject(
   
   
   nsDocShell::Cast(GetDocShell())
-      ->CreateAboutBlankContentViewer(newWindowPrincipal, newWindowPrincipal,
+      ->CreateAboutBlankContentViewer(aNewWindowPrincipal, aNewWindowPrincipal,
                                       aCSP, nullptr,
                                        true, aCOEP);
 
