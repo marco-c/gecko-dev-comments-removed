@@ -99,7 +99,8 @@ class MFMediaEngineStream
   }
 
  protected:
-  HRESULT GenerateStreamDescriptor(uint64_t aStreamId, const TrackInfo& aInfo);
+  HRESULT GenerateStreamDescriptor(
+      Microsoft::WRL::ComPtr<IMFMediaType>& aMediaType);
 
   
   
@@ -123,6 +124,10 @@ class MFMediaEngineStream
 
   
   DWORD mStreamDescriptorId = 0;
+
+  
+  
+  uint64_t mStreamId = 0;
 
   RefPtr<TaskQueue> mTaskQueue;
 
