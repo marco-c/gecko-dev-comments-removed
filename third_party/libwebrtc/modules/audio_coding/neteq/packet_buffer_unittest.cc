@@ -19,6 +19,7 @@
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
 #include "modules/audio_coding/neteq/packet.h"
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -117,10 +118,16 @@ TEST(PacketBuffer, InsertPacket) {
   PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(17u, 4711u, 0, 10);
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   const int payload_len = 100;
   const Packet packet = gen.NextPacket(payload_len, nullptr);
-  EXPECT_EQ(0, buffer.InsertPacket(packet.Clone(), &mock_stats));
+  EXPECT_EQ(0, buffer.InsertPacket(packet.Clone(),
+                                   &mock_stats,
+                                   payload_len,
+                                   10000,
+                                   60,
+                                   decoder_database));
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(4711u, next_ts);
@@ -128,6 +135,7 @@ TEST(PacketBuffer, InsertPacket) {
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   const Packet* next_packet = buffer.PeekNextPacket();
   EXPECT_EQ(packet, *next_packet);  
+  EXPECT_CALL(decoder_database, Die());  
 
   
   
@@ -140,20 +148,28 @@ TEST(PacketBuffer, FlushBuffer) {
   PacketGenerator gen(0, 0, 0, 10);
   const int payload_len = 10;
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(
         PacketBuffer::kOK,
-        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr),
+                            &mock_stats,
+                            payload_len,
+                            1000,
+                            60,
+                            decoder_database));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   EXPECT_FALSE(buffer.Empty());
 
-  buffer.Flush();
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(10);
+  buffer.Flush(&mock_stats);
   
   EXPECT_EQ(0u, buffer.NumPacketsInBuffer());
   EXPECT_TRUE(buffer.Empty());
+  EXPECT_CALL(decoder_database, Die());  
 }
 
 
@@ -162,6 +178,7 @@ TEST(PacketBuffer, OverfillBuffer) {
   PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(0, 0, 0, 10);
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   
   const int payload_len = 10;
@@ -169,7 +186,99 @@ TEST(PacketBuffer, OverfillBuffer) {
   for (i = 0; i < 10; ++i) {
     EXPECT_EQ(
         PacketBuffer::kOK,
-        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr),
+                            &mock_stats,
+                            payload_len,
+                            1000,
+                            60,
+                            decoder_database));
+  }
+  EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
+  uint32_t next_ts;
+  EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
+  EXPECT_EQ(0u, next_ts);  
+
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(10);
+  const Packet packet = gen.NextPacket(payload_len, nullptr);
+  
+  EXPECT_EQ(PacketBuffer::kFlushed,
+            buffer.InsertPacket(packet.Clone(),
+                                &mock_stats,
+                                payload_len,
+                                1000,
+                                60,
+                                decoder_database));
+  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
+  EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
+  
+  EXPECT_EQ(packet.timestamp, next_ts);
+
+  EXPECT_CALL(decoder_database, Die());  
+}
+
+
+TEST(PacketBuffer, PartialFlush) {
+  
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-NetEqSmartFlushing/enabled:true,"
+      "target_level_threshold_ms:0,target_level_multiplier:2/");
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
+  PacketGenerator gen(0, 0, 0, 10);
+  const int payload_len = 10;
+  StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
+
+  
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(
+        PacketBuffer::kOK,
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr),
+                            &mock_stats,
+                            payload_len,
+                            1000,
+                            100,
+                            decoder_database));
+  }
+  EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
+  EXPECT_FALSE(buffer.Empty());
+
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(7);
+  buffer.PartialFlush(30,
+                      1000,
+                      payload_len,
+                      &mock_stats);
+  
+  EXPECT_EQ(3u, buffer.NumPacketsInBuffer());
+  EXPECT_FALSE(buffer.Empty());
+  EXPECT_CALL(decoder_database, Die());  
+}
+
+
+
+TEST(PacketBuffer, SmartFlushOverfillBuffer) {
+  
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-NetEqSmartFlushing/enabled:true,"
+      "target_level_threshold_ms:0,target_level_multiplier:2/");
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
+  PacketGenerator gen(0, 0, 0, 10);
+  StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
+
+  
+  const int payload_len = 10;
+  int i;
+  for (i = 0; i < 10; ++i) {
+    EXPECT_EQ(
+        PacketBuffer::kOK,
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr),
+                            &mock_stats,
+                            payload_len,
+                            1000,
+                            100,
+                            decoder_database));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   uint32_t next_ts;
@@ -177,16 +286,18 @@ TEST(PacketBuffer, OverfillBuffer) {
   EXPECT_EQ(0u, next_ts);  
 
   const Packet packet = gen.NextPacket(payload_len, nullptr);
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(6);
   
-  EXPECT_EQ(PacketBuffer::kFlushed,
-            buffer.InsertPacket(packet.Clone(), &mock_stats));
-  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   
-  EXPECT_EQ(packet.timestamp, next_ts);
-
-  
-  buffer.Flush();
+  EXPECT_EQ(PacketBuffer::kPartialFlush,
+            buffer.InsertPacket(packet.Clone(),
+                                &mock_stats,
+                                payload_len,
+                                1000,
+                                40,
+                                decoder_database));
+  EXPECT_EQ(5u, buffer.NumPacketsInBuffer());
+  EXPECT_CALL(decoder_database, Die());  
 }
 
 
@@ -213,15 +324,20 @@ TEST(PacketBuffer, InsertPacketList) {
 
   absl::optional<uint8_t> current_pt;
   absl::optional<uint8_t> current_cng_pt;
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(&list, decoder_database, &current_pt,
-                                    &current_cng_pt, &mock_stats));
+  EXPECT_EQ(
+      PacketBuffer::kOK,
+      buffer.InsertPacketList(&list,
+                              decoder_database,
+                              &current_pt,
+                              &current_cng_pt,
+                              &mock_stats,
+                              payload_len,
+                              1000,
+                              30));
   EXPECT_TRUE(list.empty());  
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   EXPECT_EQ(0, current_pt);  
   EXPECT_EQ(absl::nullopt, current_cng_pt);  
-
-  buffer.Flush();  
 
   EXPECT_CALL(decoder_database, Die());  
 }
@@ -262,15 +378,21 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
   absl::optional<uint8_t> current_pt;
   absl::optional<uint8_t> current_cng_pt;
-  EXPECT_EQ(PacketBuffer::kFlushed,
-            buffer.InsertPacketList(&list, decoder_database, &current_pt,
-                                    &current_cng_pt, &mock_stats));
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1)).Times(10);
+  EXPECT_EQ(
+      PacketBuffer::kFlushed,
+      buffer.InsertPacketList(&list,
+                              decoder_database,
+                              &current_pt,
+                              &current_cng_pt,
+                              &mock_stats,
+                              payload_len,
+                              1000,
+                              30));
   EXPECT_TRUE(list.empty());  
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());  
   EXPECT_EQ(1, current_pt);  
   EXPECT_EQ(absl::nullopt, current_cng_pt);  
-
-  buffer.Flush();  
 
   EXPECT_CALL(decoder_database, Die());  
 }
@@ -293,6 +415,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
       {0x0005, 0x0000001E, 0, true, -1},  {0x0005, 0x00000014, 1, false, -1},
       {0x0006, 0x00000028, 0, true, 8},   {0x0006, 0x0000001E, 1, false, -1},
   };
+  MockDecoderDatabase decoder_database;
 
   const size_t kExpectPacketsInBuffer = 9;
 
@@ -321,7 +444,12 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
     }
     EXPECT_CALL(check, Call(i));
     EXPECT_EQ(PacketBuffer::kOK,
-              buffer.InsertPacket(packet.Clone(), &mock_stats));
+              buffer.InsertPacket(packet.Clone(),
+                                  &mock_stats,
+                                  kPayloadLength,
+                                  1000,
+                                  60,
+                                  decoder_database));
     if (packet_facts[i].extract_order >= 0) {
       expect_order[packet_facts[i].extract_order] = std::move(packet);
     }
@@ -335,6 +463,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
     EXPECT_EQ(packet, expect_order[i]);  
   }
   EXPECT_TRUE(buffer.Empty());
+  EXPECT_CALL(decoder_database, Die());  
 }
 
 TEST(PacketBuffer, DiscardPackets) {
@@ -347,11 +476,17 @@ TEST(PacketBuffer, DiscardPackets) {
   PacketList list;
   const int payload_len = 10;
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   constexpr int kTotalPackets = 10;
   
   for (int i = 0; i < kTotalPackets; ++i) {
-    buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats);
+    buffer.InsertPacket(gen.NextPacket(payload_len, nullptr),
+                        &mock_stats,
+                        payload_len,
+                        1000,
+                        60,
+                        decoder_database);
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
@@ -399,6 +534,7 @@ TEST(PacketBuffer, DiscardPackets) {
                               &mock_stats);
 
   EXPECT_TRUE(buffer.Empty());
+  EXPECT_CALL(decoder_database, Die());  
 }
 
 TEST(PacketBuffer, Reordering) {
@@ -434,9 +570,16 @@ TEST(PacketBuffer, Reordering) {
 
   StrictMock<MockStatisticsCalculator> mock_stats;
 
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(&list, decoder_database, &current_pt,
-                                    &current_cng_pt, &mock_stats));
+  EXPECT_EQ(
+      PacketBuffer::kOK,
+      buffer.InsertPacketList(&list,
+                              decoder_database,
+                              &current_pt,
+                              &current_cng_pt,
+                              &mock_stats,
+                              payload_len,
+                              1000,
+                              30));
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
   
@@ -483,9 +626,16 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
 
   StrictMock<MockStatisticsCalculator> mock_stats;
 
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacketList(&list, decoder_database, &current_pt,
-                                    &current_cng_pt, &mock_stats));
+  EXPECT_EQ(
+      PacketBuffer::kOK,
+      buffer.InsertPacketList(&list,
+                              decoder_database,
+                              &current_pt,
+                              &current_cng_pt,
+                              &mock_stats,
+                              kPayloadLen,
+                              1000,
+                              30));
   EXPECT_TRUE(list.empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   ASSERT_TRUE(buffer.PeekNextPacket());
@@ -501,9 +651,17 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
   }
   
   
-  EXPECT_EQ(PacketBuffer::kFlushed,
-            buffer.InsertPacketList(&list, decoder_database, &current_pt,
-                                    &current_cng_pt, &mock_stats));
+  EXPECT_CALL(mock_stats, PacketsDiscarded(1));
+  EXPECT_EQ(
+      PacketBuffer::kFlushed,
+      buffer.InsertPacketList(&list,
+                              decoder_database,
+                              &current_pt,
+                              &current_cng_pt,
+                              &mock_stats,
+                              kPayloadLen,
+                              1000,
+                              30));
   EXPECT_TRUE(list.empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   ASSERT_TRUE(buffer.PeekNextPacket());
@@ -512,7 +670,6 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
   EXPECT_EQ(kSpeechPt, current_pt);          
   EXPECT_EQ(absl::nullopt, current_cng_pt);  
 
-  buffer.Flush();                        
   EXPECT_CALL(decoder_database, Die());  
 }
 
@@ -524,13 +681,19 @@ TEST(PacketBuffer, Failures) {
   PacketGenerator gen(start_seq_no, start_ts, 0, ts_increment);
   TickTimer tick_timer;
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   PacketBuffer* buffer = new PacketBuffer(100, &tick_timer);  
   {
     Packet packet = gen.NextPacket(payload_len, nullptr);
     packet.payload.Clear();
     EXPECT_EQ(PacketBuffer::kInvalidPacket,
-              buffer->InsertPacket(std::move(packet), &mock_stats));
+              buffer->InsertPacket(std::move(packet),
+                                   &mock_stats,
+                                   payload_len,
+                                   1000,
+                                   60,
+                                   decoder_database));
   }
   
   uint32_t temp_ts;
@@ -548,7 +711,12 @@ TEST(PacketBuffer, Failures) {
   
   EXPECT_EQ(
       PacketBuffer::kOK,
-      buffer->InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
+      buffer->InsertPacket(gen.NextPacket(payload_len, nullptr),
+                           &mock_stats,
+                           payload_len,
+                           1000,
+                           60,
+                           decoder_database));
   EXPECT_EQ(PacketBuffer::kInvalidPointer, buffer->NextTimestamp(NULL));
   EXPECT_EQ(PacketBuffer::kInvalidPointer,
             buffer->NextHigherTimestamp(0, NULL));
@@ -566,7 +734,6 @@ TEST(PacketBuffer, Failures) {
     list.push_back(std::move(packet));
   }
   list.push_back(gen.NextPacket(payload_len, nullptr));  
-  MockDecoderDatabase decoder_database;
   auto factory = CreateBuiltinAudioDecoderFactory();
   const DecoderDatabase::DecoderInfo info(SdpAudioFormat("pcmu", 8000, 1),
                                           absl::nullopt, factory);
@@ -574,9 +741,16 @@ TEST(PacketBuffer, Failures) {
       .WillRepeatedly(Return(&info));
   absl::optional<uint8_t> current_pt;
   absl::optional<uint8_t> current_cng_pt;
-  EXPECT_EQ(PacketBuffer::kInvalidPacket,
-            buffer->InsertPacketList(&list, decoder_database, &current_pt,
-                                     &current_cng_pt, &mock_stats));
+  EXPECT_EQ(
+      PacketBuffer::kInvalidPacket,
+      buffer->InsertPacketList(&list,
+                               decoder_database,
+                               &current_pt,
+                               &current_cng_pt,
+                               &mock_stats,
+                               payload_len,
+                               1000,
+                               30));
   EXPECT_TRUE(list.empty());  
   EXPECT_EQ(1u, buffer->NumPacketsInBuffer());
   delete buffer;
@@ -702,6 +876,7 @@ TEST(PacketBuffer, GetSpanSamples) {
   PacketBuffer buffer(3, &tick_timer);
   PacketGenerator gen(0, kStartTimeStamp, 0, kFrameSizeSamples);
   StrictMock<MockStatisticsCalculator> mock_stats;
+  MockDecoderDatabase decoder_database;
 
   Packet packet_1 = gen.NextPacket(kPayloadSizeBytes, nullptr);
 
@@ -716,7 +891,12 @@ TEST(PacketBuffer, GetSpanSamples) {
                 packet_2.timestamp);  
 
   EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacket(std::move(packet_1), &mock_stats));
+            buffer.InsertPacket(std::move(packet_1),
+                                &mock_stats,
+                                kFrameSizeSamples,
+                                1000,
+                                60,
+                                decoder_database));
 
   constexpr size_t kLastDecodedSizeSamples = 2;
   
@@ -726,7 +906,12 @@ TEST(PacketBuffer, GetSpanSamples) {
                                   KCountDtxWaitingTime));
 
   EXPECT_EQ(PacketBuffer::kOK,
-            buffer.InsertPacket(std::move(packet_2), &mock_stats));
+            buffer.InsertPacket(std::move(packet_2),
+                                &mock_stats,
+                                kFrameSizeSamples,
+                                1000,
+                                60,
+                                decoder_database));
 
   EXPECT_EQ(kFrameSizeSamples * 2,
             buffer.GetSpanSamples(0, kSampleRateHz, KCountDtxWaitingTime));
