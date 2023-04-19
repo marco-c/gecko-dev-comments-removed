@@ -177,14 +177,19 @@ def _RunPesq(executable_path,
   
   
   
+  
+  
   process = subprocess.Popen(_LogCommand(command),
+                             bufsize=0,
                              cwd=directory,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
   try:
+    logging.info('Waiting for termination ...')
     out, err = process.communicate(timeout=120)
   except TimeoutExpired:
+    logging.error('Timeout, killing the process.')
     process.kill()
     out, err = process.communicate()
 
