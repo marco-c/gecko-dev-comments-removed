@@ -38,18 +38,18 @@ std::vector<int> CryptoOptions::GetSupportedDtlsSrtpCryptoSuites() const {
   
   
   if (srtp.enable_aes128_sha1_32_crypto_cipher) {
-    crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_32);
+    crypto_suites.push_back(rtc::kSrtpAes128CmSha1_32);
   }
   if (srtp.enable_aes128_sha1_80_crypto_cipher) {
-    crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_80);
+    crypto_suites.push_back(rtc::kSrtpAes128CmSha1_80);
   }
 
   
   
   
   if (srtp.enable_gcm_crypto_suites) {
-    crypto_suites.push_back(rtc::SRTP_AEAD_AES_256_GCM);
-    crypto_suites.push_back(rtc::SRTP_AEAD_AES_128_GCM);
+    crypto_suites.push_back(rtc::kSrtpAeadAes256Gcm);
+    crypto_suites.push_back(rtc::kSrtpAeadAes128Gcm);
   }
   RTC_CHECK(!crypto_suites.empty());
   return crypto_suites;

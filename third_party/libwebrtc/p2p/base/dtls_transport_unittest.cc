@@ -339,13 +339,13 @@ class DtlsTransportTestBase {
     if (use_dtls_) {
       
       
-      client1_.CheckSrtp(rtc::SRTP_AES128_CM_SHA1_80);
-      client2_.CheckSrtp(rtc::SRTP_AES128_CM_SHA1_80);
+      client1_.CheckSrtp(rtc::kSrtpAes128CmSha1_80);
+      client2_.CheckSrtp(rtc::kSrtpAes128CmSha1_80);
     } else {
       
       
-      client1_.CheckSrtp(rtc::SRTP_INVALID_CRYPTO_SUITE);
-      client2_.CheckSrtp(rtc::SRTP_INVALID_CRYPTO_SUITE);
+      client1_.CheckSrtp(rtc::kSrtpInvalidCryptoSuite);
+      client2_.CheckSrtp(rtc::kSrtpInvalidCryptoSuite);
     }
 
     client1_.CheckSsl();
