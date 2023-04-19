@@ -16,6 +16,7 @@ import json
 import os
 import shutil
 import tempfile
+from collections import OrderedDict
 
 
 pytest = None
@@ -79,7 +80,8 @@ def run(path, server_config, session_config, timeout=0, environ=None):
     finally:
         os.environ = old_environ
 
-    return (harness.outcome, subtests.results)
+    subtests_results = [(key,) + value for (key, value) in subtests.results.items()]
+    return (harness.outcome, subtests_results)
 
 
 class HarnessResultRecorder:
@@ -100,7 +102,7 @@ class HarnessResultRecorder:
 
 class SubtestResultRecorder:
     def __init__(self):
-        self.results = []
+        self.results = OrderedDict()
 
     def pytest_runtest_logreport(self, report):
         if report.passed and report.when == "call":
@@ -144,8 +146,15 @@ class SubtestResultRecorder:
     def record(self, test, status, message=None, stack=None):
         if stack is not None:
             stack = str(stack)
-        new_result = (test.split("::")[-1], status, message, stack)
-        self.results.append(new_result)
+        
+        
+        
+        subtest_id = test.split("::")[-1]
+        if subtest_id in self.results and status == "PASS":
+            
+            return
+        new_result = (status, message, stack)
+        self.results[subtest_id] = new_result
 
 
 class TemporaryDirectory:
