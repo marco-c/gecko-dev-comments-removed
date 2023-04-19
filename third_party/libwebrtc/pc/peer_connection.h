@@ -683,7 +683,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  bool IsUnifiedPlan() const RTC_RUN_ON(signaling_thread()) {
+  bool IsUnifiedPlan() const {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
   }
 
@@ -1048,9 +1049,6 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_GUARDED_BY(signaling_thread());  
   rtc::scoped_refptr<RTCStatsCollector> stats_collector_
       RTC_GUARDED_BY(signaling_thread());
-  
-  bool have_pending_rtp_data_channel_ RTC_GUARDED_BY(signaling_thread()) =
-      false;
   TransceiverList transceivers_;
 
   
