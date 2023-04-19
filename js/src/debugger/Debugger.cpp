@@ -57,6 +57,7 @@
 #include "jit/BaselineJIT.h"           
 #include "jit/Invalidation.h"         
 #include "jit/JitContext.h"           
+#include "jit/JitOptions.h"           
 #include "jit/JitScript.h"            
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  
@@ -5955,6 +5956,13 @@ bool Debugger::CallData::findObjects() {
 
   if (!query.findObjects()) {
     return false;
+  }
+
+  
+  
+  
+  if (fuzzingSafe) {
+    query.objects.clear();
   }
 
   size_t length = query.objects.length();
