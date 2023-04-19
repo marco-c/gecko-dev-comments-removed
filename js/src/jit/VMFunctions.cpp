@@ -1298,6 +1298,9 @@ bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj, int32_t index,
   
   
 
+  MOZ_ASSERT(obj->isExtensible());
+  MOZ_ASSERT(index >= 0);
+
   DenseElementResult result =
       obj->setOrExtendDenseElements(cx, index, value.address(), 1);
   if (result != DenseElementResult::Incomplete) {
