@@ -479,6 +479,7 @@ DevToolsStartup.prototype = {
         this.sendEntryPointTelemetry("CommandLine");
       }
     }
+    this.setSlowScriptDebugHandler();
   },
 
   
@@ -1092,6 +1093,92 @@ DevToolsStartup.prototype = {
       dump("DevTools telemetry entry point failed: " + e + "\n");
     }
     this.recorded = true;
+  },
+
+  
+
+
+  setSlowScriptDebugHandler() {
+    const debugService = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(
+      Ci.nsISlowScriptDebug
+    );
+
+    debugService.activationHandler = window => {
+      const chromeWindow = window.browsingContext.topChromeWindow;
+
+      let setupFinished = false;
+      this.slowScriptDebugHandler(chromeWindow.gBrowser.selectedTab).then(
+        () => {
+          setupFinished = true;
+        }
+      );
+
+      
+      
+      const utils = window.windowUtils;
+      utils.enterModalState();
+      Services.tm.spinEventLoopUntil(
+        "devtools-browser.js:debugService.activationHandler",
+        () => {
+          return setupFinished;
+        }
+      );
+      utils.leaveModalState();
+    };
+
+    debugService.remoteActivationHandler = async (browser, callback) => {
+      try {
+        
+        const chromeWindow = browser.ownerGlobal;
+        const tab = chromeWindow.gBrowser.getTabForBrowser(browser);
+        chromeWindow.gBrowser.selectedTab = tab;
+
+        await this.slowScriptDebugHandler(tab);
+      } catch (e) {
+        console.error(e);
+      }
+      callback.finishDebuggerStartup();
+    };
+  },
+
+  
+
+
+  async slowScriptDebugHandler(tab) {
+    const require = this.initDevTools("SlowScript");
+    const { gDevTools } = require("devtools/client/framework/devtools");
+    const toolbox = await gDevTools.showToolboxForTab(tab, {
+      toolId: "jsdebugger",
+    });
+    const threadFront = toolbox.threadFront;
+
+    
+    
+    switch (threadFront.state) {
+      case "paused":
+        
+        threadFront.resumeThenPause();
+        break;
+      case "attached":
+        
+        const onPaused = threadFront.once("paused");
+        threadFront.interrupt();
+        await onPaused;
+        threadFront.resumeThenPause();
+        break;
+      case "resuming":
+        
+        const onResumed = threadFront.once("resumed");
+        await threadFront.interrupt();
+        await onResumed;
+        threadFront.resumeThenPause();
+        break;
+      default:
+        throw Error(
+          "invalid thread front state in slow script debug handler: " +
+            threadFront.state
+        );
+    }
   },
 
   
