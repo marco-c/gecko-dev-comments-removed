@@ -3,7 +3,7 @@
 
 
 use super::super::shader_source::{OPTIMIZED_SHADERS, UNOPTIMIZED_SHADERS};
-use api::{ColorF, ImageDescriptor, ImageFormat, Parameter, BoolParameter, IntParameter};
+use api::{ImageDescriptor, ImageFormat, Parameter, BoolParameter, IntParameter};
 use api::{MixBlendMode, ImageBufferKind, VoidPtrToSizeFn};
 use api::{CrashAnnotator, CrashAnnotation, CrashAnnotatorGuard};
 use api::units::*;
@@ -3843,14 +3843,6 @@ impl Device {
         self.set_blend_factors(
             (gl::ONE, gl::ONE),
             (gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
-        );
-    }
-    pub fn set_blend_mode_subpixel_constant_text_color(&mut self, color: ColorF) {
-        
-        self.gl.blend_color(color.r, color.g, color.b, 1.0);
-        self.set_blend_factors(
-            (gl::CONSTANT_COLOR, gl::ONE_MINUS_SRC_COLOR),
-            (gl::CONSTANT_ALPHA, gl::ONE_MINUS_SRC_ALPHA),
         );
     }
     pub fn set_blend_mode_subpixel_dual_source(&mut self) {

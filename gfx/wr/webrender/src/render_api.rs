@@ -889,8 +889,6 @@ pub enum DebugCommand {
     
     SetFlags(DebugFlags),
     
-    EnableDualSourceBlending(bool),
-    
     SaveCapture(PathBuf, CaptureBits),
     
     LoadCapture(PathBuf, Option<(u32, u32)>, Sender<CapturedDocument>),
