@@ -131,6 +131,10 @@ class DelayBasedBweTest : public ::testing::Test {
                         int64_t send_time_ms,
                         size_t payload_size,
                         const PacedPacketInfo& pacing_info);
+  void IncomingFeedback(Timestamp receive_time,
+                        Timestamp send_time,
+                        size_t payload_size,
+                        const PacedPacketInfo& pacing_info);
 
   
   
