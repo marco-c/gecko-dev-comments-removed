@@ -379,8 +379,10 @@
                           ] );
 
       var line4 = [ // "riend "
-        [ "TextBeforeOffset", BOUNDARY_WORD_END, kTodo, kTodo, kTodo ],
-        [ "TextAfterOffset", BOUNDARY_WORD_END, kTodo, kTodo, kTodo ],
+        [ "TextBeforeOffset", BOUNDARY_WORD_END,
+          kOkIfCache, kOkIfCache, kOkIfCache],
+        [ "TextAfterOffset", BOUNDARY_WORD_END,
+          kOkIfCache, kOkIfCache, kOkIfCache ],
       ];
       traverseTextByLines(gQueue, "ta_wrapped",
                           [ [ "hi ", "", 0, 3, { words: [ 0, 2 ] } ],
@@ -413,10 +415,10 @@
   <textarea id="textarea" cols="5">aword
 two words</textarea>
 
-  
-
-
-
+  <!-- scrollbar-width: none is needed so that the width of the scrollbar
+    doesn't incorrectly affect the width of the textarea on some systems.
+    See bug 1600170 and bug 33654.
+    -->
   <textarea id="ta_wrapped" cols="5" style="scrollbar-width: none;">hi hello my longfriend t sq t</textarea>
   </pre>
 </body>

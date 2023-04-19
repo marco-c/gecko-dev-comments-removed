@@ -21,6 +21,15 @@ const kOk = 2;
 
 
 
+const kOkIfCache = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+)
+  ? kOk
+  : kTodo;
+
+
+
 
 
 
