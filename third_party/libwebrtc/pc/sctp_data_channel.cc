@@ -10,6 +10,7 @@
 
 #include "pc/sctp_data_channel.h"
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -80,15 +81,25 @@ InternalDataChannelInit::InternalDataChannelInit(const DataChannelInit& base)
   }
   
   
-  if (maxRetransmits && *maxRetransmits == -1) {
-    RTC_LOG(LS_ERROR)
-        << "Accepting maxRetransmits = -1 for backwards compatibility";
-    maxRetransmits = absl::nullopt;
+  
+  if (maxRetransmits) {
+    if (*maxRetransmits < 0) {
+      RTC_LOG(LS_ERROR)
+          << "Accepting maxRetransmits < 0 for backwards compatibility";
+      maxRetransmits = absl::nullopt;
+    } else if (*maxRetransmits > std::numeric_limits<uint16_t>::max()) {
+      maxRetransmits = std::numeric_limits<uint16_t>::max();
+    }
   }
-  if (maxRetransmitTime && *maxRetransmitTime == -1) {
-    RTC_LOG(LS_ERROR)
-        << "Accepting maxRetransmitTime = -1 for backwards compatibility";
-    maxRetransmitTime = absl::nullopt;
+
+  if (maxRetransmitTime) {
+    if (*maxRetransmitTime < 0) {
+      RTC_LOG(LS_ERROR)
+          << "Accepting maxRetransmitTime < 0 for backwards compatibility";
+      maxRetransmitTime = absl::nullopt;
+    } else if (*maxRetransmitTime > std::numeric_limits<uint16_t>::max()) {
+      maxRetransmitTime = std::numeric_limits<uint16_t>::max();
+    }
   }
 }
 
@@ -620,10 +631,8 @@ bool SctpDataChannel::SendDataMessage(const DataBuffer& buffer,
            "because the OPEN_ACK message has not been received.";
   }
 
-  send_params.max_rtx_count =
-      config_.maxRetransmits ? *config_.maxRetransmits : -1;
-  send_params.max_rtx_ms =
-      config_.maxRetransmitTime ? *config_.maxRetransmitTime : -1;
+  send_params.max_rtx_count = config_.maxRetransmits;
+  send_params.max_rtx_ms = config_.maxRetransmitTime;
   send_params.sid = config_.id;
   send_params.type = buffer.binary ? cricket::DMT_BINARY : cricket::DMT_TEXT;
 

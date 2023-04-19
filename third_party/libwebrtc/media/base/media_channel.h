@@ -924,19 +924,13 @@ struct SendDataParams {
 
   
   
-  
   bool ordered = false;
   
   
-  bool reliable = false;
+  absl::optional<int> max_rtx_count;
   
   
-  
-  int max_rtx_count = 0;
-  
-  
-  
-  int max_rtx_ms = 0;
+  absl::optional<int> max_rtx_ms;
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
