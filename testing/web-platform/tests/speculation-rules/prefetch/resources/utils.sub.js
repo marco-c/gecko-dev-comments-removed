@@ -118,8 +118,8 @@ async function isUrlPrefetched(url) {
 }
 
 
-async function spawnWindow(t, options = {}) {
-  let agent = new PrefetchAgent(token(), t);
+async function spawnWindow(t, options = {}, uuid = token()) {
+  let agent = new PrefetchAgent(uuid, t);
   let w = window.open(agent.getExecutorURL(options), options);
   t.add_cleanup(() => w.close());
   return agent;
