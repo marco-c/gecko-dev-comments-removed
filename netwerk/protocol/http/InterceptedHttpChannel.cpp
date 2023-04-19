@@ -1002,7 +1002,12 @@ InterceptedHttpChannel::OnStartRequest(nsIRequest* aRequest) {
     GetCallback(mProgressSink);
   }
 
-  if (EnsureOpaqueResponseIsAllowed() == OpaqueResponseAllowed::No) {
+  if (mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
+    
+    
+    
+    mCheckIsOpaqueResponseAllowedAfterSniff = false;
+  } else if (EnsureOpaqueResponseIsAllowed() == OpaqueResponseAllowed::No) {
     mChannelBlockedByOpaqueResponse = true;
     return NS_ERROR_FAILURE;
   }
