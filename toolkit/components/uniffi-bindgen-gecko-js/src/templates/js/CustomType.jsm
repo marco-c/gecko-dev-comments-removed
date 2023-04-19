@@ -20,3 +20,4 @@ class {{ ffi_converter }} extends FfiConverter {
         return {{ builtin.ffi_converter() }}.computeSize(value);
     }
 }
+

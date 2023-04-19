@@ -235,8 +235,6 @@ class FfiConverterArrayBuffer extends FfiConverter {
 const uniffiObjectPtr = Symbol("uniffiObjectPtr");
 const constructUniffiObject = Symbol("constructUniffiObject");
 
-
-
 class FfiConverterString extends FfiConverter {
     static lift(buf) {
         const decoder = new TextDecoder();
@@ -262,6 +260,8 @@ class FfiConverterString extends FfiConverter {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterString");
 
 class TodoList {
     
@@ -488,6 +488,9 @@ class FfiConverterTypeTodoList extends FfiConverter {
 
 EXPORTED_SYMBOLS.push("TodoList");
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTodoList");
+
 class TodoEntry {
     constructor(text) {
         FfiConverterString.checkType("text", text);
@@ -527,6 +530,10 @@ class FfiConverterTypeTodoEntry extends FfiConverter {
 }
 
 EXPORTED_SYMBOLS.push("TodoEntry");
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTodoEntry");
+
 
 
 class TodoError extends Error {}
@@ -593,6 +600,9 @@ class FfiConverterTypeTodoError extends FfiConverterArrayBuffer {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTodoError");
+
 class FfiConverterOptionalTypeTodoList extends FfiConverterArrayBuffer {
     static checkType(name, value) {
         if (value !== undefined && value !== null) {
@@ -627,7 +637,12 @@ class FfiConverterOptionalTypeTodoList extends FfiConverterArrayBuffer {
         }
         return 1 + FfiConverterTypeTodoList.computeSize(value)
     }
-}class FfiConverterSequencestring extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterOptionalTypeTodoList");
+
+class FfiConverterSequencestring extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -652,7 +667,12 @@ class FfiConverterOptionalTypeTodoList extends FfiConverterArrayBuffer {
         }
         return size;
     }
-}class FfiConverterSequenceTypeTodoEntry extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequencestring");
+
+class FfiConverterSequenceTypeTodoEntry extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -678,6 +698,11 @@ class FfiConverterOptionalTypeTodoList extends FfiConverterArrayBuffer {
         return size;
     }
 }
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequenceTypeTodoEntry");
+
+
 
 
 function getDefaultList() {

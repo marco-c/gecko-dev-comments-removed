@@ -279,6 +279,9 @@ class FfiConverterI64 extends FfiConverter {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterI64");
+
 class FfiConverterString extends FfiConverter {
     static lift(buf) {
         const decoder = new TextDecoder();
@@ -304,6 +307,8 @@ class FfiConverterString extends FfiConverter {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterString");
 
 class TabsBridgedEngine {
     
@@ -542,6 +547,8 @@ class FfiConverterTypeTabsBridgedEngine extends FfiConverter {
 EXPORTED_SYMBOLS.push("TabsBridgedEngine");
 
 
+EXPORTED_SYMBOLS.push("FfiConverterTypeTabsBridgedEngine");
+
 class TabsStore {
     
     
@@ -701,6 +708,9 @@ class FfiConverterTypeTabsStore extends FfiConverter {
 
 EXPORTED_SYMBOLS.push("TabsStore");
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTabsStore");
+
 class ClientRemoteTabs {
     constructor(clientId,clientName,deviceType,remoteTabs) {
         FfiConverterString.checkType("clientId", clientId);
@@ -758,6 +768,9 @@ class FfiConverterTypeClientRemoteTabs extends FfiConverter {
 }
 
 EXPORTED_SYMBOLS.push("ClientRemoteTabs");
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeClientRemoteTabs");
 
 class RemoteTabRecord {
     constructor(title,urlHistory,icon,lastUsed) {
@@ -817,6 +830,8 @@ class FfiConverterTypeRemoteTabRecord extends FfiConverter {
 
 EXPORTED_SYMBOLS.push("RemoteTabRecord");
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeRemoteTabRecord");
 
 const TabsDeviceType = {
     DESKTOP: 1,
@@ -883,6 +898,8 @@ class FfiConverterTypeTabsDeviceType extends FfiConverterArrayBuffer {
 
 EXPORTED_SYMBOLS.push("TabsDeviceType");
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTabsDeviceType");
 
 
 
@@ -970,6 +987,9 @@ class FfiConverterTypeTabsError extends FfiConverterArrayBuffer {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTabsError");
+
 class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
     static checkType(name, value) {
         if (value !== undefined && value !== null) {
@@ -1004,7 +1024,12 @@ class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
         }
         return 1 + FfiConverterString.computeSize(value)
     }
-}class FfiConverterSequencestring extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterOptionalstring");
+
+class FfiConverterSequencestring extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -1029,7 +1054,12 @@ class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
         }
         return size;
     }
-}class FfiConverterSequenceTypeClientRemoteTabs extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequencestring");
+
+class FfiConverterSequenceTypeClientRemoteTabs extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -1054,7 +1084,12 @@ class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
         }
         return size;
     }
-}class FfiConverterSequenceTypeRemoteTabRecord extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequenceTypeClientRemoteTabs");
+
+class FfiConverterSequenceTypeRemoteTabRecord extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -1079,7 +1114,12 @@ class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
         }
         return size;
     }
-}class FfiConverterSequenceTypeTabsGuid extends FfiConverterArrayBuffer {
+}
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequenceTypeRemoteTabRecord");
+
+class FfiConverterSequenceTypeTabsGuid extends FfiConverterArrayBuffer {
     static read(dataStream) {
         const len = dataStream.readInt32();
         const arr = [];
@@ -1105,6 +1145,10 @@ class FfiConverterOptionalstring extends FfiConverterArrayBuffer {
         return size;
     }
 }
+
+
+EXPORTED_SYMBOLS.push("FfiConverterSequenceTypeTabsGuid");
+
 class FfiConverterTypeTabsGuid extends FfiConverter {
 
     static lift(buf) {  
@@ -1127,6 +1171,11 @@ class FfiConverterTypeTabsGuid extends FfiConverter {
         return FfiConverterString.computeSize(value);
     }
 }
+
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeTabsGuid");
+
 
 
 

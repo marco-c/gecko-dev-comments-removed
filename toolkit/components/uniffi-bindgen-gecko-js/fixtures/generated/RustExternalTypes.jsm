@@ -215,16 +215,7 @@ class FfiConverterArrayBuffer extends FfiConverter {
 const uniffiObjectPtr = Symbol("uniffiObjectPtr");
 const constructUniffiObject = Symbol("constructUniffiObject");
 
-class FfiConverterU64 extends FfiConverter {
-    static checkType(name, value) {
-        super.checkType(name, value);
-        if (!Number.isSafeInteger(value)) {
-            throw TypeError(`${name} exceeds the safe integer bounds (${value})`);
-        }
-        if (value < 0) {
-            throw TypeError(`${name} exceeds the U64 bounds (${value})`);
-        }
-    }
+class FfiConverterF64 extends FfiConverter {
     static computeSize() {
         return 8;
     }
@@ -235,40 +226,15 @@ class FfiConverterU64 extends FfiConverter {
         return value;
     }
     static write(dataStream, value) {
-        dataStream.writeUint64(value)
+        dataStream.writeFloat64(value)
     }
     static read(dataStream) {
-        return dataStream.readUint64()
+        return dataStream.readFloat64()
     }
 }
 
 
-EXPORTED_SYMBOLS.push("FfiConverterU64");
-
-class FfiConverterBool extends FfiConverter {
-    static computeSize() {
-        return 1;
-    }
-    static lift(value) {
-        return value == 1;
-    }
-    static lower(value) {
-        if (value) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-    static write(dataStream, value) {
-        dataStream.writeUint8(this.lower(value))
-    }
-    static read(dataStream) {
-        return this.lift(dataStream.readUint8())
-    }
-}
-
-
-EXPORTED_SYMBOLS.push("FfiConverterBool");
+EXPORTED_SYMBOLS.push("FfiConverterF64");
 
 class FfiConverterString extends FfiConverter {
     static lift(buf) {
@@ -298,91 +264,73 @@ class FfiConverterString extends FfiConverter {
 
 EXPORTED_SYMBOLS.push("FfiConverterString");
 
-
-
-class ArithmeticError extends Error {}
-EXPORTED_SYMBOLS.push("ArithmeticError");
-
-
-class IntegerOverflow extends ArithmeticError {
-    
-    constructor(message, ...params) {
-        super(...params);
-        this.message = message;
-    }
-}
-EXPORTED_SYMBOLS.push("IntegerOverflow");
-
-class FfiConverterTypeArithmeticError extends FfiConverterArrayBuffer {
-    static read(dataStream) {
-        switch (dataStream.readInt32()) {
-            case 1:
-                return new IntegerOverflow(FfiConverterString.read(dataStream));
-            default:
-                return new Error("Unknown ArithmeticError variant");
+class FfiConverterOptionalTypeLine extends FfiConverterArrayBuffer {
+    static checkType(name, value) {
+        if (value !== undefined && value !== null) {
+            FfiConverterTypeLine.checkType(name, value)
         }
     }
-}
 
-
-EXPORTED_SYMBOLS.push("FfiConverterTypeArithmeticError");
-
-
-
-
-function add(a,b) {
-    
-    const liftResult = (result) => FfiConverterU64.lift(result);
-    const liftError = (data) => FfiConverterTypeArithmeticError.lift(data);
-    const functionCall = () => {
-        FfiConverterU64.checkType("a", a);
-        FfiConverterU64.checkType("b", b);
-        return UniFFIScaffolding.callAsync(
-            22, 
-            FfiConverterU64.lower(a),
-            FfiConverterU64.lower(b),
-        )
+    static read(dataStream) {
+        const code = dataStream.readUint8(0);
+        switch (code) {
+            case 0:
+                return null
+            case 1:
+                return FfiConverterTypeLine.read(dataStream)
+            default:
+                throw UniFFIError(`Unexpected code: ${code}`);
+        }
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }
-}
 
-EXPORTED_SYMBOLS.push("add");
-function sub(a,b) {
-    
-    const liftResult = (result) => FfiConverterU64.lift(result);
-    const liftError = (data) => FfiConverterTypeArithmeticError.lift(data);
-    const functionCall = () => {
-        FfiConverterU64.checkType("a", a);
-        FfiConverterU64.checkType("b", b);
-        return UniFFIScaffolding.callAsync(
-            23, 
-            FfiConverterU64.lower(a),
-            FfiConverterU64.lower(b),
-        )
+    static write(dataStream, value) {
+        if (value === null || value === undefined) {
+            dataStream.writeUint8(0);
+            return;
+        }
+        dataStream.writeUint8(1);
+        FfiConverterTypeLine.write(dataStream, value)
     }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
+
+    static computeSize(value) {
+        if (value === null || value === undefined) {
+            return 1;
+        }
+        return 1 + FfiConverterTypeLine.computeSize(value)
     }
 }
 
-EXPORTED_SYMBOLS.push("sub");
-function div(dividend,divisor) {
+
+EXPORTED_SYMBOLS.push("FfiConverterOptionalTypeLine");
+
+const { Line, FfiConverterTypeLine } = ChromeUtils.import(
+   "resource://gre/modules/RustGeometry.jsm"
+);
+EXPORTED_SYMBOLS.push("Line");
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeLine");
+
+const { Point, FfiConverterTypePoint } = ChromeUtils.import(
+   "resource://gre/modules/RustGeometry.jsm"
+);
+EXPORTED_SYMBOLS.push("Point");
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypePoint");
+
+
+
+
+function gradient(value) {
     
-    const liftResult = (result) => FfiConverterU64.lift(result);
+    const liftResult = (result) => FfiConverterF64.lift(result);
     const liftError = null;
     const functionCall = () => {
-        FfiConverterU64.checkType("dividend", dividend);
-        FfiConverterU64.checkType("divisor", divisor);
+        FfiConverterOptionalTypeLine.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            24, 
-            FfiConverterU64.lower(dividend),
-            FfiConverterU64.lower(divisor),
+            108, 
+            FfiConverterOptionalTypeLine.lower(value),
         )
     }
     try {
@@ -392,25 +340,4 @@ function div(dividend,divisor) {
     }
 }
 
-EXPORTED_SYMBOLS.push("div");
-function equal(a,b) {
-    
-    const liftResult = (result) => FfiConverterBool.lift(result);
-    const liftError = null;
-    const functionCall = () => {
-        FfiConverterU64.checkType("a", a);
-        FfiConverterU64.checkType("b", b);
-        return UniFFIScaffolding.callAsync(
-            25, 
-            FfiConverterU64.lower(a),
-            FfiConverterU64.lower(b),
-        )
-    }
-    try {
-        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-    }  catch (error) {
-        return Promise.reject(error)
-    }
-}
-
-EXPORTED_SYMBOLS.push("equal");
+EXPORTED_SYMBOLS.push("gradient");

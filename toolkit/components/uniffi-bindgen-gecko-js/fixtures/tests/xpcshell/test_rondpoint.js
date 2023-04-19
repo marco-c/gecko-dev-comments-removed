@@ -2,7 +2,7 @@
 
 
 const Rondpoint = ChromeUtils.import(
-  "resource://gre/modules/components-utils/RustRondpoint.jsm"
+  "resource://gre/modules/RustRondpoint.jsm"
 );
 
 const {

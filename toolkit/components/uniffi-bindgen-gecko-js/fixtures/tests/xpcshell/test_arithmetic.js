@@ -2,7 +2,7 @@
 
 
 const Arithmetic = ChromeUtils.import(
-  "resource://gre/modules/components-utils/RustArithmetic.jsm"
+  "resource://gre/modules/RustArithmetic.jsm"
 );
 
 add_task(async function() {

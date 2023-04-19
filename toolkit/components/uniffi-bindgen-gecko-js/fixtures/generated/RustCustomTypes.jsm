@@ -239,6 +239,9 @@ class FfiConverterI64 extends FfiConverter {
     }
 }
 
+
+EXPORTED_SYMBOLS.push("FfiConverterI64");
+
 class FfiConverterString extends FfiConverter {
     static lift(buf) {
         const decoder = new TextDecoder();
@@ -263,6 +266,9 @@ class FfiConverterString extends FfiConverter {
         return 4 + encoder.encode(value).length
     }
 }
+
+
+EXPORTED_SYMBOLS.push("FfiConverterString");
 
 class CustomTypesDemo {
     constructor(url,handle) {
@@ -308,7 +314,12 @@ class FfiConverterTypeCustomTypesDemo extends FfiConverter {
     }
 }
 
-EXPORTED_SYMBOLS.push("CustomTypesDemo");class FfiConverterOptionalTypeCustomTypesDemo extends FfiConverterArrayBuffer {
+EXPORTED_SYMBOLS.push("CustomTypesDemo");
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeCustomTypesDemo");
+
+class FfiConverterOptionalTypeCustomTypesDemo extends FfiConverterArrayBuffer {
     static checkType(name, value) {
         if (value !== undefined && value !== null) {
             FfiConverterTypeCustomTypesDemo.checkType(name, value)
@@ -343,6 +354,10 @@ EXPORTED_SYMBOLS.push("CustomTypesDemo");class FfiConverterOptionalTypeCustomTyp
         return 1 + FfiConverterTypeCustomTypesDemo.computeSize(value)
     }
 }
+
+
+EXPORTED_SYMBOLS.push("FfiConverterOptionalTypeCustomTypesDemo");
+
 class FfiConverterTypeHandle extends FfiConverter {
 
     static lift(buf) {  
@@ -366,6 +381,10 @@ class FfiConverterTypeHandle extends FfiConverter {
     }
 }
 
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeHandle");
+
 class FfiConverterTypeUrl extends FfiConverter {
 
     static lift(buf) {  
@@ -388,6 +407,11 @@ class FfiConverterTypeUrl extends FfiConverter {
         return FfiConverterString.computeSize(value);
     }
 }
+
+
+
+EXPORTED_SYMBOLS.push("FfiConverterTypeUrl");
+
 
 
 

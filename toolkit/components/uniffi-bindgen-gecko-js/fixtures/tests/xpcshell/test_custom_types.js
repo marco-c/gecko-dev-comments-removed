@@ -1,13 +1,13 @@
 
 
 
-const Customtypes = ChromeUtils.import(
-  "resource://gre/modules/components-utils/RustCustomtypes.jsm"
+const CustomTypes = ChromeUtils.import(
+  "resource://gre/modules/RustCustomTypes.jsm"
 );
 
 add_task(async function() {
   
-  let demo = await Customtypes.getCustomTypesDemo();
+  let demo = await CustomTypes.getCustomTypesDemo();
   Assert.equal(demo.url, "http://example.com/");
   Assert.equal(demo.handle, 123);
 });
