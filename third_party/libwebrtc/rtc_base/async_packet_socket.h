@@ -118,7 +118,6 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   
   
-  
   sigslot::signal2<AsyncPacketSocket*, const SocketAddress&> SignalAddressReady;
 
   

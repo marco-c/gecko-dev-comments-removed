@@ -168,7 +168,6 @@ void TCPPort::PrepareAddress() {
   if (socket_) {
     
     
-    
     RTC_LOG(LS_VERBOSE) << "Preparing TCP address, current state: "
                         << socket_->GetState();
     if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND ||
@@ -300,7 +299,6 @@ void TCPPort::TryCreateServerSocket() {
     return;
   }
   socket_->SignalNewConnection.connect(this, &TCPPort::OnNewConnection);
-  socket_->SignalAddressReady.connect(this, &TCPPort::OnAddressReady);
 }
 
 rtc::AsyncPacketSocket* TCPPort::GetIncoming(const rtc::SocketAddress& addr,
@@ -333,13 +331,6 @@ void TCPPort::OnSentPacket(rtc::AsyncPacketSocket* socket,
 
 void TCPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
   Port::OnReadyToSend();
-}
-
-void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
-                             const rtc::SocketAddress& address) {
-  AddAddress(address, address, rtc::SocketAddress(), TCP_PROTOCOL_NAME, "",
-             TCPTYPE_PASSIVE_STR, LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP,
-             0, "", true);
 }
 
 
