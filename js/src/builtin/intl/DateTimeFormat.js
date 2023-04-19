@@ -81,8 +81,9 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
-    if (r.hc !== null && formatOpt.hour12 === undefined)
+    if (r.hc !== null && formatOpt.hour12 === undefined) {
         formatOpt.hourCycle = r.hc;
+    }
 
     
     if (lazyDateTimeFormatData.patternOption !== undefined) {
@@ -127,8 +128,9 @@ function getDateTimeFormatInternals(obj) {
 
     
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     
     internalProps = resolveDateTimeFormatInternals(internals.lazyData);
@@ -192,8 +194,9 @@ var timeZoneCache = {
 
 
 function DefaultTimeZone() {
-    if (intl_isDefaultTimeZone(timeZoneCache.icuDefaultTimeZone))
+    if (intl_isDefaultTimeZone(timeZoneCache.icuDefaultTimeZone)) {
         return timeZoneCache.defaultTimeZone;
+    }
 
     
     var icuDefaultTimeZone = intl_defaultTimeZone();
@@ -217,8 +220,9 @@ function DefaultTimeZone() {
         }
 
         
-        if (timeZone === null)
+        if (timeZone === null) {
             timeZone = "UTC";
+        }
     }
 
     
@@ -341,8 +345,9 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
 
         
         var timeZone = intl_IsValidTimeZoneName(tz);
-        if (timeZone === null)
+        if (timeZone === null) {
             ThrowRangeError(JSMSG_INVALID_TIME_ZONE, tz);
+        }
 
         
         tz = CanonicalizeTimeZoneName(timeZone);
@@ -423,8 +428,9 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
 
     
     
-    if (hr12 !== undefined)
+    if (hr12 !== undefined) {
         formatOpt.hour12 = hr12;
+    }
 
     
     
@@ -459,10 +465,11 @@ function ToDateTimeOptions(options, required, defaults) {
     assert(typeof defaults === "string", "ToDateTimeOptions");
 
     
-    if (options === undefined)
+    if (options === undefined) {
         options = null;
-    else
+    } else {
         options = ToObject(options);
+    }
     options = std_Object_create(options);
 
     
@@ -470,28 +477,37 @@ function ToDateTimeOptions(options, required, defaults) {
 
     
     if (required === "date" || required === "any") {
-        if (options.weekday !== undefined)
+        if (options.weekday !== undefined) {
             needDefaults = false;
-        if (options.year !== undefined)
+        }
+        if (options.year !== undefined) {
             needDefaults = false;
-        if (options.month !== undefined)
+        }
+        if (options.month !== undefined) {
             needDefaults = false;
-        if (options.day !== undefined)
+        }
+        if (options.day !== undefined) {
             needDefaults = false;
+        }
     }
 
     
     if (required === "time" || required === "any") {
-        if (options.dayPeriod !== undefined)
+        if (options.dayPeriod !== undefined) {
             needDefaults = false;
-        if (options.hour !== undefined)
+        }
+        if (options.hour !== undefined) {
             needDefaults = false;
-        if (options.minute !== undefined)
+        }
+        if (options.minute !== undefined) {
             needDefaults = false;
-        if (options.second !== undefined)
+        }
+        if (options.second !== undefined) {
             needDefaults = false;
-        if (options.fractionalSecondDigits !== undefined)
+        }
+        if (options.fractionalSecondDigits !== undefined) {
             needDefaults = false;
+        }
     }
 
     
@@ -499,14 +515,17 @@ function ToDateTimeOptions(options, required, defaults) {
     var dateStyle = options.dateStyle;
     var timeStyle = options.timeStyle;
 
-    if (dateStyle !== undefined || timeStyle !== undefined)
+    if (dateStyle !== undefined || timeStyle !== undefined) {
         needDefaults = false;
+    }
 
-    if (required === "date" && timeStyle !== undefined)
+    if (required === "date" && timeStyle !== undefined) {
         ThrowTypeError(JSMSG_INVALID_DATETIME_STYLE, "timeStyle", "toLocaleDateString");
+    }
 
-    if (required === "time" && dateStyle !== undefined)
+    if (required === "time" && dateStyle !== undefined) {
         ThrowTypeError(JSMSG_INVALID_DATETIME_STYLE, "dateStyle", "toLocaleTimeString");
+    }
 
     
     if (needDefaults && (defaults === "date" || defaults === "all")) {
