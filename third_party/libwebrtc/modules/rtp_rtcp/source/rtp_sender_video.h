@@ -70,8 +70,6 @@ class RTPSenderVideo {
     
     Clock* clock = nullptr;
     RTPSender* rtp_sender = nullptr;
-    FlexfecSender* flexfec_sender = nullptr;
-    VideoFecGenerator* fec_generator = nullptr;
     
     
     absl::optional<VideoFecGenerator::FecType> fec_type;
@@ -123,8 +121,8 @@ class RTPSenderVideo {
   void SetVideoStructureUnderLock(
       const FrameDependencyStructure* video_structure);
 
-  uint32_t VideoBitrateSent() const;
-
+  
+  
   
   
   
@@ -198,13 +196,10 @@ class RTPSenderVideo {
   Mutex mutex_;
 
   const absl::optional<int> red_payload_type_;
-  VideoFecGenerator* const fec_generator_;
   absl::optional<VideoFecGenerator::FecType> fec_type_;
   const size_t fec_overhead_bytes_;  
 
   mutable Mutex stats_mutex_;
-  
-  RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_mutex_);
   RateStatistics packetization_overhead_bitrate_ RTC_GUARDED_BY(stats_mutex_);
 
   std::map<int, TemporalLayerStats> frame_stats_by_temporal_layer_
