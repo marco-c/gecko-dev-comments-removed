@@ -751,13 +751,6 @@ class PlanarYCbCrImage : public Image {
   
 
 
-
-
-  virtual void SetDelayedConversion(bool aDelayed) {}
-
-  
-
-
   virtual const Data* GetData() const { return &mData; }
 
   
