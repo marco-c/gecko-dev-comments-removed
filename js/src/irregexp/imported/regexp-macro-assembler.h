@@ -12,17 +12,18 @@
 namespace v8 {
 namespace internal {
 
-class ByteArray;
-class JSRegExp;
-class Label;
-class String;
+static const uc32 kLeadSurrogateStart = 0xd800;
+static const uc32 kLeadSurrogateEnd = 0xdbff;
+static const uc32 kTrailSurrogateStart = 0xdc00;
+static const uc32 kTrailSurrogateEnd = 0xdfff;
+static const uc32 kNonBmpStart = 0x10000;
+static const uc32 kNonBmpEnd = 0x10ffff;
 
-static const base::uc32 kLeadSurrogateStart = 0xd800;
-static const base::uc32 kLeadSurrogateEnd = 0xdbff;
-static const base::uc32 kTrailSurrogateStart = 0xdc00;
-static const base::uc32 kTrailSurrogateEnd = 0xdfff;
-static const base::uc32 kNonBmpStart = 0x10000;
-static const base::uc32 kNonBmpEnd = 0x10ffff;
+struct DisjunctDecisionRow {
+  RegExpCharacterClass cc;
+  Label* on_match;
+};
+
 
 class RegExpMacroAssembler {
  public:
@@ -38,134 +39,11 @@ class RegExpMacroAssembler {
 
   static constexpr int kUseCharactersValue = -1;
 
-  RegExpMacroAssembler(Isolate* isolate, Zone* zone);
-  virtual ~RegExpMacroAssembler() = default;
-
-  virtual Handle<HeapObject> GetCode(Handle<String> source) = 0;
-
-  
-  
-  virtual void AbortedCodeGeneration() {}
-  
-  
-  
-  virtual int stack_limit_slack() = 0;
-  virtual bool CanReadUnaligned() const = 0;
-
-  virtual void AdvanceCurrentPosition(int by) = 0;  
-  virtual void AdvanceRegister(int reg, int by) = 0;  
-  
-  
-  virtual void Backtrack() = 0;
-  virtual void Bind(Label* label) = 0;
-  
-  
-  virtual void CheckCharacter(unsigned c, Label* on_equal) = 0;
-  
-  
-  virtual void CheckCharacterAfterAnd(unsigned c,
-                                      unsigned and_with,
-                                      Label* on_equal) = 0;
-  virtual void CheckCharacterGT(base::uc16 limit, Label* on_greater) = 0;
-  virtual void CheckCharacterLT(base::uc16 limit, Label* on_less) = 0;
-  virtual void CheckGreedyLoop(Label* on_tos_equals_current_position) = 0;
-  virtual void CheckAtStart(int cp_offset, Label* on_at_start) = 0;
-  virtual void CheckNotAtStart(int cp_offset, Label* on_not_at_start) = 0;
-  virtual void CheckNotBackReference(int start_reg, bool read_backward,
-                                     Label* on_no_match) = 0;
-  virtual void CheckNotBackReferenceIgnoreCase(int start_reg,
-                                               bool read_backward, bool unicode,
-                                               Label* on_no_match) = 0;
-  
-  
-  
-  
-  virtual void CheckNotCharacter(unsigned c, Label* on_not_equal) = 0;
-  virtual void CheckNotCharacterAfterAnd(unsigned c,
-                                         unsigned and_with,
-                                         Label* on_not_equal) = 0;
-  
-  
-  virtual void CheckNotCharacterAfterMinusAnd(base::uc16 c, base::uc16 minus,
-                                              base::uc16 and_with,
-                                              Label* on_not_equal) = 0;
-  virtual void CheckCharacterInRange(base::uc16 from,
-                                     base::uc16 to,  
-                                     Label* on_in_range) = 0;
-  virtual void CheckCharacterNotInRange(base::uc16 from,
-                                        base::uc16 to,  
-                                        Label* on_not_in_range) = 0;
-  
-  virtual bool CheckCharacterInRangeArray(
-      const ZoneList<CharacterRange>* ranges, Label* on_in_range) = 0;
-  virtual bool CheckCharacterNotInRangeArray(
-      const ZoneList<CharacterRange>* ranges, Label* on_not_in_range) = 0;
-
-  
-  
-  virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set) = 0;
-
-  
-  
-  virtual void CheckPosition(int cp_offset, Label* on_outside_input);
-  
-  
-  
-  
-  virtual bool CheckSpecialCharacterClass(StandardCharacterSet type,
-                                          Label* on_no_match) {
-    return false;
-  }
-
-  
-  
-  virtual void BindJumpTarget(Label* label) { Bind(label); }
-
-  virtual void Fail() = 0;
-  virtual void GoTo(Label* label) = 0;
-  
-  
-  virtual void IfRegisterGE(int reg, int comparand, Label* if_ge) = 0;
-  
-  
-  virtual void IfRegisterLT(int reg, int comparand, Label* if_lt) = 0;
-  
-  
-  virtual void IfRegisterEqPos(int reg, Label* if_eq) = 0;
-  V8_EXPORT_PRIVATE void LoadCurrentCharacter(
-      int cp_offset, Label* on_end_of_input, bool check_bounds = true,
-      int characters = 1, int eats_at_least = kUseCharactersValue);
-  virtual void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
-                                        bool check_bounds, int characters,
-                                        int eats_at_least) = 0;
-  virtual void PopCurrentPosition() = 0;
-  virtual void PopRegister(int register_index) = 0;
-  
-  
-  virtual void PushBacktrack(Label* label) = 0;
-  virtual void PushCurrentPosition() = 0;
-  enum StackCheckFlag { kNoStackLimitCheck = false, kCheckStackLimit = true };
-  virtual void PushRegister(int register_index,
-                            StackCheckFlag check_stack_limit) = 0;
-  virtual void ReadCurrentPositionFromRegister(int reg) = 0;
-  virtual void ReadStackPointerFromRegister(int reg) = 0;
-  virtual void SetCurrentPositionFromEnd(int by) = 0;
-  virtual void SetRegister(int register_index, int to) = 0;
-  
-  virtual bool Succeed() = 0;
-  virtual void WriteCurrentPositionToRegister(int reg, int cp_offset) = 0;
-  virtual void ClearRegisters(int reg_from, int reg_to) = 0;
-  virtual void WriteStackPointerToRegister(int reg) = 0;
-
-  
-  void CheckNotInSurrogatePair(int cp_offset, Label* on_failure);
-
 #define IMPLEMENTATIONS_LIST(V) \
   V(IA32)                       \
   V(ARM)                        \
   V(ARM64)                      \
   V(MIPS)                       \
-  V(LOONG64)                    \
   V(RISCV)                      \
   V(S390)                       \
   V(PPC)                        \
@@ -187,9 +65,121 @@ class RegExpMacroAssembler {
     return kNames[impl];
   }
 #undef IMPLEMENTATIONS_LIST
-  virtual IrregexpImplementation Implementation() = 0;
+
+  enum StackCheckFlag {
+    kNoStackLimitCheck = false,
+    kCheckStackLimit = true
+  };
+
+  RegExpMacroAssembler(Isolate* isolate, Zone* zone);
+  virtual ~RegExpMacroAssembler();
+  
+  
+  virtual void AbortedCodeGeneration() {}
+  
+  
+  
+  virtual int stack_limit_slack() = 0;
+  virtual bool CanReadUnaligned() = 0;
+  virtual void AdvanceCurrentPosition(int by) = 0;  
+  virtual void AdvanceRegister(int reg, int by) = 0;  
+  
+  
+  virtual void Backtrack() = 0;
+  virtual void Bind(Label* label) = 0;
+  
+  
+  virtual void CheckCharacter(unsigned c, Label* on_equal) = 0;
+  
+  
+  virtual void CheckCharacterAfterAnd(unsigned c,
+                                      unsigned and_with,
+                                      Label* on_equal) = 0;
+  virtual void CheckCharacterGT(uc16 limit, Label* on_greater) = 0;
+  virtual void CheckCharacterLT(uc16 limit, Label* on_less) = 0;
+  virtual void CheckGreedyLoop(Label* on_tos_equals_current_position) = 0;
+  virtual void CheckAtStart(int cp_offset, Label* on_at_start) = 0;
+  virtual void CheckNotAtStart(int cp_offset, Label* on_not_at_start) = 0;
+  virtual void CheckNotBackReference(int start_reg, bool read_backward,
+                                     Label* on_no_match) = 0;
+  virtual void CheckNotBackReferenceIgnoreCase(int start_reg,
+                                               bool read_backward, bool unicode,
+                                               Label* on_no_match) = 0;
+  
+  
+  
+  
+  virtual void CheckNotCharacter(unsigned c, Label* on_not_equal) = 0;
+  virtual void CheckNotCharacterAfterAnd(unsigned c,
+                                         unsigned and_with,
+                                         Label* on_not_equal) = 0;
+  
+  
+  virtual void CheckNotCharacterAfterMinusAnd(uc16 c,
+                                              uc16 minus,
+                                              uc16 and_with,
+                                              Label* on_not_equal) = 0;
+  virtual void CheckCharacterInRange(uc16 from,
+                                     uc16 to,  
+                                     Label* on_in_range) = 0;
+  virtual void CheckCharacterNotInRange(uc16 from,
+                                        uc16 to,  
+                                        Label* on_not_in_range) = 0;
 
   
+  
+  virtual void CheckBitInTable(Handle<ByteArray> table, Label* on_bit_set) = 0;
+
+  
+  
+  virtual void CheckPosition(int cp_offset, Label* on_outside_input);
+  
+  
+  
+  
+  virtual bool CheckSpecialCharacterClass(uc16 type, Label* on_no_match);
+
+  
+  
+  virtual void BindJumpTarget(Label* label) { Bind(label); }
+
+  virtual void Fail() = 0;
+  virtual Handle<HeapObject> GetCode(Handle<String> source) = 0;
+  virtual void GoTo(Label* label) = 0;
+  
+  
+  virtual void IfRegisterGE(int reg, int comparand, Label* if_ge) = 0;
+  
+  
+  virtual void IfRegisterLT(int reg, int comparand, Label* if_lt) = 0;
+  
+  
+  virtual void IfRegisterEqPos(int reg, Label* if_eq) = 0;
+  virtual IrregexpImplementation Implementation() = 0;
+  V8_EXPORT_PRIVATE void LoadCurrentCharacter(
+      int cp_offset, Label* on_end_of_input, bool check_bounds = true,
+      int characters = 1, int eats_at_least = kUseCharactersValue);
+  virtual void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
+                                        bool check_bounds, int characters,
+                                        int eats_at_least) = 0;
+  virtual void PopCurrentPosition() = 0;
+  virtual void PopRegister(int register_index) = 0;
+  
+  
+  virtual void PushBacktrack(Label* label) = 0;
+  virtual void PushCurrentPosition() = 0;
+  virtual void PushRegister(int register_index,
+                            StackCheckFlag check_stack_limit) = 0;
+  virtual void ReadCurrentPositionFromRegister(int reg) = 0;
+  virtual void ReadStackPointerFromRegister(int reg) = 0;
+  virtual void SetCurrentPositionFromEnd(int by) = 0;
+  virtual void SetRegister(int register_index, int to) = 0;
+  
+  virtual bool Succeed() = 0;
+  virtual void WriteCurrentPositionToRegister(int reg, int cp_offset) = 0;
+  virtual void ClearRegisters(int reg_from, int reg_to) = 0;
+  virtual void WriteStackPointerToRegister(int reg) = 0;
+
   
   
   static int CaseInsensitiveCompareNonUnicode(Address byte_offset1,
@@ -202,22 +192,11 @@ class RegExpMacroAssembler {
                                            Isolate* isolate);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static uint32_t IsCharacterInRangeArray(uint32_t current_char,
-                                          Address raw_byte_array,
-                                          Isolate* isolate);
+  void CheckNotInSurrogatePair(int cp_offset, Label* on_failure);
 
   
   void set_slow_safe(bool ssc) { slow_safe_compiler_ = ssc; }
-  bool slow_safe() const { return slow_safe_compiler_; }
+  bool slow_safe() { return slow_safe_compiler_; }
 
   
   
@@ -241,28 +220,30 @@ class RegExpMacroAssembler {
   
   
   inline void set_global_mode(GlobalMode mode) { global_mode_ = mode; }
-  inline bool global() const { return global_mode_ != NOT_GLOBAL; }
-  inline bool global_with_zero_length_check() const {
+  inline bool global() { return global_mode_ != NOT_GLOBAL; }
+  inline bool global_with_zero_length_check() {
     return global_mode_ == GLOBAL || global_mode_ == GLOBAL_UNICODE;
   }
-  inline bool global_unicode() const { return global_mode_ == GLOBAL_UNICODE; }
+  inline bool global_unicode() { return global_mode_ == GLOBAL_UNICODE; }
 
   Isolate* isolate() const { return isolate_; }
   Zone* zone() const { return zone_; }
 
  protected:
-  bool has_backtrack_limit() const;
+  bool has_backtrack_limit() const {
+    return backtrack_limit_ != JSRegExp::kNoBacktrackLimit;
+  }
   uint32_t backtrack_limit() const { return backtrack_limit_; }
 
   bool can_fallback() const { return can_fallback_; }
 
  private:
   bool slow_safe_compiler_;
-  uint32_t backtrack_limit_;
+  uint32_t backtrack_limit_ = JSRegExp::kNoBacktrackLimit;
   bool can_fallback_ = false;
   GlobalMode global_mode_;
-  Isolate* const isolate_;
-  Zone* const zone_;
+  Isolate* isolate_;
+  Zone* zone_;
 };
 
 class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
@@ -290,24 +271,44 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
     SMALLEST_REGEXP_RESULT = RegExp::kInternalRegExpSmallestResult,
   };
 
-  NativeRegExpMacroAssembler(Isolate* isolate, Zone* zone)
-      : RegExpMacroAssembler(isolate, zone), range_array_cache_(zone) {}
-  ~NativeRegExpMacroAssembler() override = default;
+  NativeRegExpMacroAssembler(Isolate* isolate, Zone* zone);
+  ~NativeRegExpMacroAssembler() override;
+  bool CanReadUnaligned() override;
 
   
   static int Match(Handle<JSRegExp> regexp, Handle<String> subject,
                    int* offsets_vector, int offsets_vector_length,
                    int previous_index, Isolate* isolate);
 
-  V8_EXPORT_PRIVATE static int ExecuteForTesting(String input, int start_offset,
-                                                 const byte* input_start,
-                                                 const byte* input_end,
-                                                 int* output, int output_size,
-                                                 Isolate* isolate,
-                                                 JSRegExp regexp);
+  
+  
+  
+  
+  
+  static Address GrowStack(Address stack_pointer, Address* stack_top,
+                           Isolate* isolate);
 
-  bool CanReadUnaligned() const override;
+  static int CheckStackGuardState(Isolate* isolate, int start_index,
+                                  RegExp::CallOrigin call_origin,
+                                  Address* return_address, Code re_code,
+                                  Address* subject, const byte** input_start,
+                                  const byte** input_end);
 
+  
+  
+  
+  static const byte word_character_map[256];
+
+  static Address word_character_map_address() {
+    return reinterpret_cast<Address>(&word_character_map[0]);
+  }
+
+  
+  V8_EXPORT_PRIVATE static int Execute(String input, int start_offset,
+                                       const byte* input_start,
+                                       const byte* input_end, int* output,
+                                       int output_size, Isolate* isolate,
+                                       JSRegExp regexp);
   void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
                                 bool check_bounds, int characters,
                                 int eats_at_least) override;
@@ -315,41 +316,6 @@ class NativeRegExpMacroAssembler: public RegExpMacroAssembler {
   
   virtual void LoadCurrentCharacterUnchecked(int cp_offset,
                                              int character_count) = 0;
-
-  
-  
-  
-  
-  
-  
-  static Address GrowStack(Isolate* isolate);
-
-  
-  static int CheckStackGuardState(Isolate* isolate, int start_index,
-                                  RegExp::CallOrigin call_origin,
-                                  Address* return_address, Code re_code,
-                                  Address* subject, const byte** input_start,
-                                  const byte** input_end);
-
-  static Address word_character_map_address() {
-    return reinterpret_cast<Address>(&word_character_map[0]);
-  }
-
- protected:
-  
-  
-  
-  static const byte word_character_map[256];
-
-  Handle<ByteArray> GetOrAddRangeArray(const ZoneList<CharacterRange>* ranges);
-
- private:
-  
-  static int Execute(String input, int start_offset, const byte* input_start,
-                     const byte* input_end, int* output, int output_size,
-                     Isolate* isolate, JSRegExp regexp);
-
-  ZoneUnorderedMap<uint32_t, Handle<ByteArray>> range_array_cache_;
 };
 
 }  

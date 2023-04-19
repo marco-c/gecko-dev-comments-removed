@@ -12,8 +12,6 @@
 namespace v8 {
 namespace internal {
 
-class ByteArray;
-
 class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
  public:
   enum Result {
@@ -42,10 +40,12 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
   
   
   
+  
   static Result MatchForCallFromJs(Address subject, int32_t start_position,
                                    Address input_start, Address input_end,
                                    int* output_registers,
                                    int32_t output_register_count,
+                                   Address backtrack_stack,
                                    RegExp::CallOrigin call_origin,
                                    Isolate* isolate, Address regexp);
 

@@ -14,7 +14,10 @@ class RegExpStack;
 
 
 
-class V8_NODISCARD RegExpStackScope final {
+
+
+
+class V8_NODISCARD RegExpStackScope {
  public:
   
 
@@ -27,11 +30,10 @@ class V8_NODISCARD RegExpStackScope final {
   RegExpStack* stack() const { return regexp_stack_; }
 
  private:
-  RegExpStack* const regexp_stack_;
-  const ptrdiff_t old_sp_top_delta_;
+  RegExpStack* regexp_stack_;
 };
 
-class RegExpStack final {
+class RegExpStack {
  public:
   RegExpStack();
   ~RegExpStack();
@@ -40,31 +42,33 @@ class RegExpStack final {
 
   
   
+  
   static constexpr int kStackLimitSlack = 32;
 
-  Address memory_top() const {
+  
+  Address stack_base() {
     DCHECK_NE(0, thread_local_.memory_size_);
     DCHECK_EQ(thread_local_.memory_top_,
               thread_local_.memory_ + thread_local_.memory_size_);
     return reinterpret_cast<Address>(thread_local_.memory_top_);
   }
 
-  Address stack_pointer() const {
-    return reinterpret_cast<Address>(thread_local_.stack_pointer_);
-  }
-
-  size_t memory_size() const { return thread_local_.memory_size_; }
+  
+  size_t stack_capacity() { return thread_local_.memory_size_; }
 
   
   
   
   
   
-  Address* limit_address_address() { return &thread_local_.limit_; }
+  Address* limit_address_address() { return &(thread_local_.limit_); }
 
   
   
   Address EnsureCapacity(size_t size);
+
+  bool is_in_use() const { return thread_local_.is_in_use_; }
+  void set_is_in_use(bool v) { thread_local_.is_in_use_ = v; }
 
   
   static constexpr int ArchiveSpacePerThread() {
@@ -95,9 +99,8 @@ class RegExpStack final {
       2 * kStackLimitSlack * kSystemPointerSize;
   byte static_stack_[kStaticStackSize] = {0};
 
-  static_assert(kStaticStackSize <= kMaximumStackSize);
+  STATIC_ASSERT(kStaticStackSize <= kMaximumStackSize);
 
-  
   
   struct ThreadLocal {
     explicit ThreadLocal(RegExpStack* regexp_stack) {
@@ -106,50 +109,36 @@ class RegExpStack final {
 
     
     
-    
-    
     byte* memory_ = nullptr;
     byte* memory_top_ = nullptr;
     size_t memory_size_ = 0;
-    byte* stack_pointer_ = nullptr;
     Address limit_ = kNullAddress;
     bool owns_memory_ = false;  
+    bool is_in_use_ = false;    
 
     void ResetToStaticStack(RegExpStack* regexp_stack);
-    void ResetToStaticStackIfEmpty(RegExpStack* regexp_stack) {
-      if (stack_pointer_ == memory_top_) ResetToStaticStack(regexp_stack);
-    }
     void FreeAndInvalidate();
   };
   static constexpr size_t kThreadLocalSize = sizeof(ThreadLocal);
 
+  
   Address memory_top_address_address() {
     return reinterpret_cast<Address>(&thread_local_.memory_top_);
   }
 
-  Address stack_pointer_address() {
-    return reinterpret_cast<Address>(&thread_local_.stack_pointer_);
-  }
-
-  
-  ptrdiff_t sp_top_delta() const {
-    ptrdiff_t result =
-        reinterpret_cast<intptr_t>(thread_local_.stack_pointer_) -
-        reinterpret_cast<intptr_t>(thread_local_.memory_top_);
-    DCHECK_LE(result, 0);
-    return result;
-  }
-
   
   
-  void ResetIfEmpty() { thread_local_.ResetToStaticStackIfEmpty(this); }
+  
+  void Reset();
 
   
   bool IsValid() const { return thread_local_.memory_ != nullptr; }
 
   ThreadLocal thread_local_;
+  Isolate* isolate_;
 
   friend class ExternalReference;
+  friend class Isolate;
   friend class RegExpStackScope;
 };
 

@@ -54,8 +54,6 @@ class Zone {
     return lifoAlloc_.computedSizeOfExcludingThis() > kExcessLimit;
   }
 
-  js::LifoAlloc& inner() { return lifoAlloc_; }
-
  private:
   js::LifoAlloc& lifoAlloc_;
 };
@@ -104,12 +102,6 @@ class ZoneList final : public ZoneObject {
   }
 
   
-  ZoneList(const base::Vector<const T>& other, Zone* zone)
-      : ZoneList(other.length(), zone) {
-    AddAll(other, zone);
-  }
-
-  
   
   
   inline T& operator[](int i) const {
@@ -129,13 +121,13 @@ class ZoneList final : public ZoneObject {
   inline int length() const { return length_; }
   inline int capacity() const { return capacity_; }
 
-  base::Vector<T> ToVector() const { return base::Vector<T>(data_, length_); }
-  base::Vector<T> ToVector(int start, int length) const {
-    return base::Vector<T>(data_ + start, std::min(length_ - start, length));
+  Vector<T> ToVector() const { return Vector<T>(data_, length_); }
+  Vector<T> ToVector(int start, int length) const {
+    return Vector<T>(data_ + start, std::min(length_ - start, length));
   }
 
-  base::Vector<const T> ToConstVector() const {
-    return base::Vector<const T>(data_, length_);
+  Vector<const T> ToConstVector() const {
+    return Vector<const T>(data_, length_);
   }
 
   
@@ -152,7 +144,7 @@ class ZoneList final : public ZoneObject {
     AddAll(other.ToVector(), zone);
   }
   
-  void AddAll(const base::Vector<const T>& other, Zone* zone) {
+  void AddAll(const Vector<T>& other, Zone* zone) {
     int result_length = length_ + other.length();
     if (capacity_ < result_length) {
       Resize(result_length, zone);
@@ -301,11 +293,6 @@ class ZoneAllocator {
     return zone_ != other.zone_;
   }
 
-  using Policy = js::LifoAllocPolicy<js::Fallible>;
-  Policy policy() const {
-    return js::LifoAllocPolicy<js::Fallible>(zone_->inner());
-  }
-
  private:
   Zone* zone_;
 };
@@ -322,11 +309,6 @@ class ZoneVector : public std::vector<T, ZoneAllocator<T>> {
  public:
   ZoneVector(Zone* zone)
       : std::vector<T, ZoneAllocator<T>>(ZoneAllocator<T>(zone)) {}
-
-  
-  
-  ZoneVector(size_t size, Zone* zone)
-      : std::vector<T, ZoneAllocator<T>>(size, T(), ZoneAllocator<T>(zone)) {}
 
   
   
