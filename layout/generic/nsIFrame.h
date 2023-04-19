@@ -3148,20 +3148,20 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  bool IsContentHidden() const;
+
+  bool HidesContent() const;
 
   
 
 
 
-
-  bool IsContentHiddenForLayout() const;
+  bool IsHiddenByContentVisibilityOnAnyAncestor() const;
 
   
 
 
 
-  bool AncestorHidesContent() const;
+  bool IsHiddenByContentVisibilityOfInFlowParentForLayout() const;
 
   
 
