@@ -15,6 +15,8 @@
 
 #include <vector>
 
+#include "absl/types/optional.h"
+
 namespace webrtc {
 
 
@@ -23,9 +25,13 @@ namespace webrtc {
 
 class MultiChannelContentDetector {
  public:
+  
+  
+  
   MultiChannelContentDetector(bool detect_stereo_content,
                               int num_render_input_channels,
-                              float detection_threshold);
+                              float detection_threshold,
+                              int stereo_detection_timeout_threshold_seconds);
 
   
   
@@ -40,7 +46,9 @@ class MultiChannelContentDetector {
  private:
   const bool detect_stereo_content_;
   const float detection_threshold_;
+  const absl::optional<int> detection_timeout_threshold_frames_;
   bool proper_multichannel_content_detected_;
+  int frames_since_stereo_detected_ = 0;
 };
 
 }  
