@@ -135,7 +135,7 @@ add_task(async function test_AWMultistage_RemovePinScreen() {
   
   await test_element_styles(
     browser,
-    "nav.steps",
+    "div.steps",
     
     {
       display: "none",
