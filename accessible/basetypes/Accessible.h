@@ -629,6 +629,12 @@ class Accessible {
 
   virtual bool HasPrimaryAction() const = 0;
 
+  
+
+
+
+  void ApplyImplicitState(uint64_t& aState) const;
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;
