@@ -480,19 +480,19 @@ TEST(NackTrackerTest, PacketLossRateCorrect) {
   nack.SetMaxNackListSize(kNackListSize);
   uint16_t seq_num = 0;
   uint32_t timestamp = 0x87654321;
-  auto add_packet = [&nack, &seq_num, &timestamp] {
-    nack.UpdateLastReceivedPacket(seq_num, timestamp);
+  auto add_packet = [&nack, &seq_num, &timestamp](bool received) {
+    if (received) {
+      nack.UpdateLastReceivedPacket(seq_num, timestamp);
+    }
     seq_num++;
     timestamp += kTimestampIncrement;
   };
   
   for (int i = 0; i < 300; i++) {
-    add_packet();
-    add_packet();
-    add_packet();
-    
-    seq_num++;
-    timestamp += kTimestampIncrement;
+    add_packet(true);
+    add_packet(true);
+    add_packet(true);
+    add_packet(false);
   }
   
   
@@ -512,6 +512,54 @@ TEST(NackTrackerTest, DoNotNackAfterDtx) {
   nack.UpdateLastReceivedPacket(seq_num + 2,
                                 timestamp + kDtxPeriod * kSampleRateHz / 1000);
   EXPECT_TRUE(nack.GetNackList(0).empty());
+}
+
+TEST(NackTrackerTest, DoNotNackIfLossRateIsTooHigh) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-NetEqNackTrackerConfig/max_loss_rate:0.4/");
+  const int kNackListSize = 200;
+  NackTracker nack;
+  nack.UpdateSampleRate(kSampleRateHz);
+  nack.SetMaxNackListSize(kNackListSize);
+  uint16_t seq_num = 0;
+  uint32_t timestamp = 0x87654321;
+  auto add_packet = [&nack, &seq_num, &timestamp](bool received) {
+    if (received) {
+      nack.UpdateLastReceivedPacket(seq_num, timestamp);
+    }
+    seq_num++;
+    timestamp += kTimestampIncrement;
+  };
+  for (int i = 0; i < 500; i++) {
+    add_packet(true);
+    add_packet(false);
+  }
+  
+  EXPECT_NEAR(nack.GetPacketLossRateForTest(), 1 << 29, (1 << 30) / 100);
+  EXPECT_TRUE(nack.GetNackList(0).empty());
+}
+
+TEST(NackTrackerTest, OnlyNackIfRttIsValid) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-NetEqNackTrackerConfig/require_valid_rtt:true/");
+  const int kNackListSize = 200;
+  NackTracker nack;
+  nack.UpdateSampleRate(kSampleRateHz);
+  nack.SetMaxNackListSize(kNackListSize);
+  uint16_t seq_num = 0;
+  uint32_t timestamp = 0x87654321;
+  auto add_packet = [&nack, &seq_num, &timestamp](bool received) {
+    if (received) {
+      nack.UpdateLastReceivedPacket(seq_num, timestamp);
+    }
+    seq_num++;
+    timestamp += kTimestampIncrement;
+  };
+  add_packet(true);
+  add_packet(false);
+  add_packet(true);
+  EXPECT_TRUE(nack.GetNackList(0).empty());
+  EXPECT_FALSE(nack.GetNackList(10).empty());
 }
 
 }  

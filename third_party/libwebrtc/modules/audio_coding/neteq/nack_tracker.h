@@ -109,6 +109,10 @@ class NackTracker {
     int ms_per_loss_percent = 20;
     
     bool never_nack_multiple_times = false;
+    
+    bool require_valid_rtt = false;
+    
+    double max_loss_rate = 1.0;
   };
 
   struct NackElement {
