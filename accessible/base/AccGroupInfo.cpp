@@ -300,6 +300,12 @@ Accessible* AccGroupInfo::NextItemTo(Accessible* aItem) {
   return nullptr;
 }
 
+size_t AccGroupInfo::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
+  
+  
+  return aMallocSizeOf(this);
+}
+
 bool AccGroupInfo::ShouldReportRelations(role aRole, role aParentRole) {
   
   

@@ -1192,7 +1192,7 @@ a11y::PDocAccessibleParent* BrowserParent::AllocPDocAccessibleParent(
     const MaybeDiscardedBrowsingContext&, const uint32_t&,
     const IAccessibleHolder&) {
   
-  return do_AddRef(new a11y::DocAccessibleParent()).take();
+  return a11y::DocAccessibleParent::New().take();
 }
 
 bool BrowserParent::DeallocPDocAccessibleParent(PDocAccessibleParent* aParent) {

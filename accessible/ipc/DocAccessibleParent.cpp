@@ -77,9 +77,18 @@ DocAccessibleParent::DocAccessibleParent()
 }
 
 DocAccessibleParent::~DocAccessibleParent() {
+  UnregisterWeakMemoryReporter(this);
   LiveDocs().Remove(mActorID);
   MOZ_ASSERT(mChildDocs.Length() == 0);
   MOZ_ASSERT(!ParentDoc());
+}
+
+already_AddRefed<DocAccessibleParent> DocAccessibleParent::New() {
+  RefPtr<DocAccessibleParent> dap(new DocAccessibleParent());
+  
+  
+  RegisterWeakMemoryReporter(dap);
+  return dap.forget();
 }
 
 void DocAccessibleParent::SetBrowsingContext(
@@ -1306,7 +1315,7 @@ Accessible* DocAccessibleParent::FocusedChild() {
   return rootDocument->FocusedChild();
 }
 
-void DocAccessibleParent::URL(nsAString& aURL) const {
+void DocAccessibleParent::URL(nsACString& aURL) const {
   if (!mBrowsingContext) {
     return;
   }
@@ -1328,8 +1337,12 @@ void DocAccessibleParent::URL(nsAString& aURL) const {
       MOZ_UNLIKELY(!exposableURI)) {
     return;
   }
+  exposableURI->GetSpec(aURL);
+}
+
+void DocAccessibleParent::URL(nsAString& aURL) const {
   nsAutoCString url;
-  exposableURI->GetSpec(url);
+  URL(url);
   CopyUTF8toUTF16(url, aURL);
 }
 
@@ -1371,6 +1384,64 @@ DocAccessibleParent* DocAccessibleParent::GetFrom(
 
   return nullptr;
 }
+
+size_t DocAccessibleParent::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) {
+  size_t size = 0;
+
+  size += RemoteAccessibleBase::SizeOfExcludingThis(aMallocSizeOf);
+
+  size += mReverseRelations.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto i = mReverseRelations.Iter(); !i.Done(); i.Next()) {
+    size += i.Data().ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (auto j = i.Data().Iter(); !j.Done(); j.Next()) {
+      size += j.Data().ShallowSizeOfExcludingThis(aMallocSizeOf);
+    }
+  }
+
+  size += mOnScreenAccessibles.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  size += mChildDocs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  
+  
+  size += mAccessibles.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  size += mPendingOOPChildDocs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  
+  
+  size += mTextSelections.ShallowSizeOfExcludingThis(aMallocSizeOf);
+
+  return size;
+}
+
+MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOfAccessibilityCache);
+
+NS_IMETHODIMP
+DocAccessibleParent::CollectReports(nsIHandleReportCallback* aHandleReport,
+                                    nsISupports* aData, bool aAnon) {
+  nsAutoCString path;
+
+  if (aAnon) {
+    path = nsPrintfCString("explicit/a11y/cache(%" PRIu64 ")", mActorID);
+  } else {
+    nsCString url;
+    URL(url);
+    url.ReplaceChar(
+        '/', '\\');  
+    path = nsPrintfCString("explicit/a11y/cache(%s)", url.get());
+  }
+
+  aHandleReport->Callback(
+       ""_ns, path, KIND_HEAP, UNITS_BYTES,
+      SizeOfIncludingThis(MallocSizeOfAccessibilityCache),
+      nsLiteralCString("Size of the accessability cache for this document."),
+      aData);
+
+  return NS_OK;
+}
+
+NS_IMPL_ISUPPORTS(DocAccessibleParent, nsIMemoryReporter);
 
 }  
 }  
