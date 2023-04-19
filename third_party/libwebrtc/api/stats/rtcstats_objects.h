@@ -374,34 +374,46 @@ class RTC_EXPORT RTCRTPStreamStats : public RTCStats {
   ~RTCRTPStreamStats() override;
 
   RTCStatsMember<uint32_t> ssrc;
-  
-  
-  RTCStatsMember<bool> is_remote;          
-  RTCStatsMember<std::string> media_type;  
   RTCStatsMember<std::string> kind;
   RTCStatsMember<std::string> track_id;
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> codec_id;
+
   
-  RTCStatsMember<uint32_t> fir_count;
-  RTCStatsMember<uint32_t> pli_count;
-  
-  
-  RTCStatsMember<uint32_t> nack_count;
-  
-  
-  RTCStatsMember<uint32_t> sli_count;
-  RTCStatsMember<uint64_t> qp_sum;
+  RTCStatsMember<std::string> media_type;  
 
  protected:
   RTCRTPStreamStats(const std::string& id, int64_t timestamp_us);
   RTCRTPStreamStats(std::string&& id, int64_t timestamp_us);
 };
 
+class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRTPStreamStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCReceivedRtpStreamStats(const RTCReceivedRtpStreamStats& other);
+  ~RTCReceivedRtpStreamStats() override;
+
+  
+  
+  
+  
+  
+  
+  
+  RTCStatsMember<double> jitter;
+  RTCStatsMember<int32_t> packets_lost;  
+
+ protected:
+  RTCReceivedRtpStreamStats(const std::string&& id, int64_t timestamp_us);
+  RTCReceivedRtpStreamStats(std::string&& id, int64_t timestamp_us);
+};
 
 
 
-class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
+
+class RTC_EXPORT RTCInboundRTPStreamStats final
+    : public RTCReceivedRtpStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
@@ -415,9 +427,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint64_t> fec_packets_discarded;
   RTCStatsMember<uint64_t> bytes_received;
   RTCStatsMember<uint64_t> header_bytes_received;
-  RTCStatsMember<int32_t> packets_lost;  
   RTCStatsMember<double> last_packet_received_timestamp;
-  RTCStatsMember<double> jitter;
   RTCStatsMember<double> jitter_buffer_delay;
   RTCStatsMember<uint64_t> jitter_buffer_emitted_count;
   RTCStatsMember<uint64_t> total_samples_received;
@@ -467,6 +477,16 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   
   
   RTCStatsMember<std::string> decoder_implementation;
+  
+  RTCStatsMember<uint32_t> fir_count;
+  RTCStatsMember<uint32_t> pli_count;
+  
+  
+  RTCStatsMember<uint32_t> nack_count;
+  RTCStatsMember<uint64_t> qp_sum;
+
+  
+  RTCStatsMember<bool> is_remote;  
 };
 
 
@@ -515,18 +535,21 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   
   
   RTCStatsMember<std::string> encoder_implementation;
+  
+  RTCStatsMember<uint32_t> fir_count;
+  RTCStatsMember<uint32_t> pli_count;
+  
+  
+  RTCStatsMember<uint32_t> nack_count;
+  RTCStatsMember<uint64_t> qp_sum;
+
+  
+  RTCStatsMember<bool> is_remote;  
 };
 
 
-
-
-
-
-
-
-
-
-class RTC_EXPORT RTCRemoteInboundRtpStreamStats final : public RTCStats {
+class RTC_EXPORT RTCRemoteInboundRtpStreamStats final
+    : public RTCReceivedRtpStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
@@ -535,17 +558,6 @@ class RTC_EXPORT RTCRemoteInboundRtpStreamStats final : public RTCStats {
   RTCRemoteInboundRtpStreamStats(const RTCRemoteInboundRtpStreamStats& other);
   ~RTCRemoteInboundRtpStreamStats() override;
 
-  
-  
-  
-  
-  RTCStatsMember<uint32_t> ssrc;
-  RTCStatsMember<std::string> kind;
-  RTCStatsMember<std::string> transport_id;
-  RTCStatsMember<std::string> codec_id;
-  
-  RTCStatsMember<int32_t> packets_lost;
-  RTCStatsMember<double> jitter;
   RTCStatsMember<uint64_t> packets_discarded;
   
   
