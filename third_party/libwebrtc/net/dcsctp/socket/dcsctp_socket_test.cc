@@ -254,8 +254,10 @@ class DcSctpSocketTest : public testing::Test {
       : options_(MakeOptionsForTest(enable_message_interleaving)),
         cb_a_("A"),
         cb_z_("Z"),
-        sock_a_("A", cb_a_, GetPacketObserver("A"), options_),
-        sock_z_("Z", cb_z_, GetPacketObserver("Z"), options_) {}
+        sock_a_(std::make_unique<DcSctpSocket>(
+            "A", cb_a_, GetPacketObserver("A"), options_)),
+        sock_z_(std::make_unique<DcSctpSocket>(
+            "Z", cb_z_, GetPacketObserver("Z"), options_)) {}
 
   void AdvanceTime(DurationMs duration) {
     cb_a_.AdvanceTime(duration);
@@ -293,8 +295,8 @@ class DcSctpSocketTest : public testing::Test {
   }
 
   void RunTimers() {
-    RunTimers(cb_a_, sock_a_);
-    RunTimers(cb_z_, sock_z_);
+    RunTimers(cb_a_, *sock_a_);
+    RunTimers(cb_z_, *sock_z_);
   }
 
   
@@ -302,22 +304,22 @@ class DcSctpSocketTest : public testing::Test {
     EXPECT_CALL(cb_a_, OnConnected).Times(1);
     EXPECT_CALL(cb_z_, OnConnected).Times(1);
 
-    sock_a_.Connect();
+    sock_a_->Connect();
     
-    sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
-    sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
-    sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
-    sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+    sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
+    sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
+    sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
+    sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-    EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-    EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+    EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+    EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
   }
 
   const DcSctpOptions options_;
   testing::NiceMock<MockDcSctpSocketCallbacks> cb_a_;
   testing::NiceMock<MockDcSctpSocketCallbacks> cb_z_;
-  DcSctpSocket sock_a_;
-  DcSctpSocket sock_z_;
+  std::unique_ptr<DcSctpSocket> sock_a_;
+  std::unique_ptr<DcSctpSocket> sock_z_;
 };
 
 TEST_F(DcSctpSocketTest, EstablishConnection) {
@@ -326,18 +328,18 @@ TEST_F(DcSctpSocketTest, EstablishConnection) {
   EXPECT_CALL(cb_a_, OnConnectionRestarted).Times(0);
   EXPECT_CALL(cb_z_, OnConnectionRestarted).Times(0);
 
-  sock_a_.Connect();
+  sock_a_->Connect();
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, EstablishConnectionWithSetupCollision) {
@@ -345,53 +347,53 @@ TEST_F(DcSctpSocketTest, EstablishConnectionWithSetupCollision) {
   EXPECT_CALL(cb_z_, OnConnected).Times(1);
   EXPECT_CALL(cb_a_, OnConnectionRestarted).Times(0);
   EXPECT_CALL(cb_z_, OnConnectionRestarted).Times(0);
-  sock_a_.Connect();
-  sock_z_.Connect();
+  sock_a_->Connect();
+  sock_z_->Connect();
 
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, ShuttingDownWhileEstablishingConnection) {
   EXPECT_CALL(cb_a_, OnConnected).Times(0);
   EXPECT_CALL(cb_z_, OnConnected).Times(1);
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
   cb_z_.ConsumeSentPacket();
 
   
   
   
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnecting);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnecting);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 
   
-  sock_a_.Shutdown();
+  sock_a_->Shutdown();
 
   EXPECT_CALL(cb_a_, OnClosed).Times(1);
   EXPECT_CALL(cb_z_, OnClosed).Times(1);
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   EXPECT_TRUE(cb_a_.ConsumeSentPacket().empty());
   EXPECT_TRUE(cb_z_.ConsumeSentPacket().empty());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kClosed);
-  EXPECT_EQ(sock_z_.state(), SocketState::kClosed);
+  EXPECT_EQ(sock_a_->state(), SocketState::kClosed);
+  EXPECT_EQ(sock_z_->state(), SocketState::kClosed);
 }
 
 TEST_F(DcSctpSocketTest, EstablishSimultaneousConnection) {
@@ -399,29 +401,29 @@ TEST_F(DcSctpSocketTest, EstablishSimultaneousConnection) {
   EXPECT_CALL(cb_z_, OnConnected).Times(1);
   EXPECT_CALL(cb_a_, OnConnectionRestarted).Times(0);
   EXPECT_CALL(cb_z_, OnConnectionRestarted).Times(0);
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
   cb_a_.ConsumeSentPacket();
 
-  sock_z_.Connect();
+  sock_z_->Connect();
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
 
   
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, EstablishConnectionLostCookieAck) {
@@ -430,34 +432,34 @@ TEST_F(DcSctpSocketTest, EstablishConnectionLostCookieAck) {
   EXPECT_CALL(cb_a_, OnConnectionRestarted).Times(0);
   EXPECT_CALL(cb_z_, OnConnectionRestarted).Times(0);
 
-  sock_a_.Connect();
+  sock_a_->Connect();
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
   cb_z_.ConsumeSentPacket();
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnecting);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnecting);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 
   
   AdvanceTime(DurationMs(options_.t1_cookie_timeout));
   RunTimers();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, ResendInitAndEstablishConnection) {
-  sock_a_.Connect();
+  sock_a_->Connect();
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket init_packet,
                               SctpPacket::Parse(cb_a_.ConsumeSentPacket()));
@@ -467,20 +469,20 @@ TEST_F(DcSctpSocketTest, ResendInitAndEstablishConnection) {
   RunTimers();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, ResendingInitTooManyTimesAborts) {
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket init_packet,
@@ -502,16 +504,16 @@ TEST_F(DcSctpSocketTest, ResendingInitTooManyTimesAborts) {
   EXPECT_CALL(cb_a_, OnAborted).Times(1);
   RunTimers();
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kClosed);
+  EXPECT_EQ(sock_a_->state(), SocketState::kClosed);
 }
 
 TEST_F(DcSctpSocketTest, ResendCookieEchoAndEstablishConnection) {
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket init_packet,
@@ -522,21 +524,21 @@ TEST_F(DcSctpSocketTest, ResendCookieEchoAndEstablishConnection) {
   RunTimers();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 }
 
 TEST_F(DcSctpSocketTest, ResendingCookieEchoTooManyTimesAborts) {
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket init_packet,
@@ -559,19 +561,19 @@ TEST_F(DcSctpSocketTest, ResendingCookieEchoTooManyTimesAborts) {
   EXPECT_CALL(cb_a_, OnAborted).Times(1);
   RunTimers();
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kClosed);
+  EXPECT_EQ(sock_a_->state(), SocketState::kClosed);
 }
 
 TEST_F(DcSctpSocketTest, DoesntSendMorePacketsUntilCookieAckHasBeenReceived) {
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kLargeMessageSize)),
                kSendOptions);
-  sock_a_.Connect();
+  sock_a_->Connect();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket cookie_echo_packet1,
@@ -609,14 +611,14 @@ TEST_F(DcSctpSocketTest, DoesntSendMorePacketsUntilCookieAckHasBeenReceived) {
   RunTimers();
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
   EXPECT_THAT(cb_z_.ConsumeReceivedMessage()->payload(),
               SizeIs(kLargeMessageSize));
 }
@@ -626,26 +628,26 @@ TEST_F(DcSctpSocketTest, ShutdownConnection) {
 
   RTC_LOG(LS_INFO) << "Shutting down";
 
-  sock_a_.Shutdown();
+  sock_a_->Shutdown();
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kClosed);
-  EXPECT_EQ(sock_z_.state(), SocketState::kClosed);
+  EXPECT_EQ(sock_a_->state(), SocketState::kClosed);
+  EXPECT_EQ(sock_z_->state(), SocketState::kClosed);
 }
 
 TEST_F(DcSctpSocketTest, ShutdownTimerExpiresTooManyTimeClosesConnection) {
   ConnectSockets();
 
-  sock_a_.Shutdown();
+  sock_a_->Shutdown();
   
   cb_a_.ConsumeSentPacket();
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kShuttingDown);
+  EXPECT_EQ(sock_a_->state(), SocketState::kShuttingDown);
 
   for (int i = 0; i < *options_.max_retransmissions; ++i) {
     AdvanceTime(DurationMs(options_.rto_initial * (1 << i)));
@@ -662,7 +664,7 @@ TEST_F(DcSctpSocketTest, ShutdownTimerExpiresTooManyTimeClosesConnection) {
   EXPECT_CALL(cb_a_, OnAborted).Times(1);
   RunTimers();
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kClosed);
+  EXPECT_EQ(sock_a_->state(), SocketState::kClosed);
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet,
                               SctpPacket::Parse(cb_a_.ConsumeSentPacket()));
   EXPECT_EQ(packet.descriptors()[0].type, AbortChunk::kType);
@@ -670,21 +672,21 @@ TEST_F(DcSctpSocketTest, ShutdownTimerExpiresTooManyTimeClosesConnection) {
 }
 
 TEST_F(DcSctpSocketTest, EstablishConnectionWhileSendingData) {
-  sock_a_.Connect();
+  sock_a_->Connect();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  EXPECT_EQ(sock_a_.state(), SocketState::kConnected);
-  EXPECT_EQ(sock_z_.state(), SocketState::kConnected);
+  EXPECT_EQ(sock_a_->state(), SocketState::kConnected);
+  EXPECT_EQ(sock_z_->state(), SocketState::kConnected);
 
   absl::optional<DcSctpMessage> msg = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
@@ -694,8 +696,8 @@ TEST_F(DcSctpSocketTest, EstablishConnectionWhileSendingData) {
 TEST_F(DcSctpSocketTest, SendMessageAfterEstablished) {
   ConnectSockets();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   absl::optional<DcSctpMessage> msg = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
@@ -705,14 +707,14 @@ TEST_F(DcSctpSocketTest, SendMessageAfterEstablished) {
 TEST_F(DcSctpSocketTest, TimeoutResendsPacket) {
   ConnectSockets();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
   cb_a_.ConsumeSentPacket();
 
   RTC_LOG(LS_INFO) << "Advancing time";
   AdvanceTime(options_.rto_initial);
   RunTimers();
 
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   absl::optional<DcSctpMessage> msg = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
@@ -723,15 +725,15 @@ TEST_F(DcSctpSocketTest, SendALotOfBytesMissedSecondPacket) {
   ConnectSockets();
 
   std::vector<uint8_t> payload(kLargeMessageSize);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
   cb_a_.ConsumeSentPacket();
 
   
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
   absl::optional<DcSctpMessage> msg = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
@@ -743,12 +745,12 @@ TEST_F(DcSctpSocketTest, SendingHeartbeatAnswersWithAck) {
   ConnectSockets();
 
   
-  SctpPacket::Builder b(sock_a_.verification_tag(), DcSctpOptions());
+  SctpPacket::Builder b(sock_a_->verification_tag(), DcSctpOptions());
   uint8_t info[] = {1, 2, 3, 4};
   Parameters::Builder params_builder;
   params_builder.Add(HeartbeatInfoParameter(info));
   b.Add(HeartbeatRequestChunk(params_builder.Build()));
-  sock_a_.ReceivePacket(b.Build());
+  sock_a_->ReceivePacket(b.Build());
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket ack_packet,
@@ -782,8 +784,8 @@ TEST_F(DcSctpSocketTest, ExpectHeartbeatToBeSent) {
   EXPECT_THAT(hb.info()->info(), SizeIs(8));
 
   
-  sock_z_.ReceivePacket(hb_packet_raw);
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(hb_packet_raw);
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 }
 
 TEST_F(DcSctpSocketTest, CloseConnectionAfterTooManyLostHeartbeats) {
@@ -791,7 +793,7 @@ TEST_F(DcSctpSocketTest, CloseConnectionAfterTooManyLostHeartbeats) {
 
   EXPECT_THAT(cb_a_.ConsumeSentPacket(), testing::IsEmpty());
   
-  sock_z_.Close();
+  sock_z_->Close();
 
   DurationMs time_to_next_hearbeat = options_.heartbeat_interval;
 
@@ -830,7 +832,7 @@ TEST_F(DcSctpSocketTest, RecoversAfterASuccessfulAck) {
 
   EXPECT_THAT(cb_a_.ConsumeSentPacket(), testing::IsEmpty());
   
-  sock_z_.Close();
+  sock_z_->Close();
 
   DurationMs time_to_next_hearbeat = options_.heartbeat_interval;
 
@@ -860,9 +862,9 @@ TEST_F(DcSctpSocketTest, RecoversAfterASuccessfulAck) {
       HeartbeatRequestChunk hb,
       HeartbeatRequestChunk::Parse(hb_packet.descriptors()[0].data));
 
-  SctpPacket::Builder b(sock_a_.verification_tag(), options_);
+  SctpPacket::Builder b(sock_a_->verification_tag(), options_);
   b.Add(HeartbeatAckChunk(std::move(hb).extract_parameters()));
-  sock_a_.ReceivePacket(b.Build());
+  sock_a_->ReceivePacket(b.Build());
 
   
   EXPECT_CALL(cb_a_, OnAborted).Times(0);
@@ -883,27 +885,27 @@ TEST_F(DcSctpSocketTest, RecoversAfterASuccessfulAck) {
 TEST_F(DcSctpSocketTest, ResetStream) {
   ConnectSockets();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), {});
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), {});
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   absl::optional<DcSctpMessage> msg = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
   EXPECT_EQ(msg->stream_id(), StreamID(1));
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
-  sock_a_.ResetStreams(std::vector<StreamID>({StreamID(1)}));
+  sock_a_->ResetStreams(std::vector<StreamID>({StreamID(1)}));
 
   
   
   EXPECT_CALL(cb_z_, OnIncomingStreamsReset).Times(1);
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   
   EXPECT_CALL(cb_a_, OnStreamsResetPerformed).Times(1);
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 }
 
 TEST_F(DcSctpSocketTest, ResetStreamWillMakeChunksStartAtZeroSsn) {
@@ -911,19 +913,19 @@ TEST_F(DcSctpSocketTest, ResetStreamWillMakeChunksStartAtZeroSsn) {
 
   std::vector<uint8_t> payload(options_.mtu - 100);
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
 
   auto packet1 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet1, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(packet1);
+  sock_z_->ReceivePacket(packet1);
 
   auto packet2 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet2, HasDataChunkWithSsn(SSN(1)));
-  sock_z_.ReceivePacket(packet2);
+  sock_z_->ReceivePacket(packet2);
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   absl::optional<DcSctpMessage> msg1 = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg1.has_value());
@@ -934,26 +936,26 @@ TEST_F(DcSctpSocketTest, ResetStreamWillMakeChunksStartAtZeroSsn) {
   EXPECT_EQ(msg2->stream_id(), StreamID(1));
 
   
-  sock_a_.ResetStreams(std::vector<StreamID>({StreamID(1)}));
+  sock_a_->ResetStreams(std::vector<StreamID>({StreamID(1)}));
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
 
   auto packet3 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet3, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(packet3);
+  sock_z_->ReceivePacket(packet3);
 
   auto packet4 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet4, HasDataChunkWithSsn(SSN(1)));
-  sock_z_.ReceivePacket(packet4);
+  sock_z_->ReceivePacket(packet4);
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 }
 
 TEST_F(DcSctpSocketTest, ResetStreamWillOnlyResetTheRequestedStreams) {
@@ -962,34 +964,34 @@ TEST_F(DcSctpSocketTest, ResetStreamWillOnlyResetTheRequestedStreams) {
   std::vector<uint8_t> payload(options_.mtu - 100);
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
 
   auto packet1 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet1, HasDataChunkWithStreamId(StreamID(1)));
   EXPECT_THAT(packet1, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(packet1);
+  sock_z_->ReceivePacket(packet1);
 
   auto packet2 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet1, HasDataChunkWithStreamId(StreamID(1)));
   EXPECT_THAT(packet2, HasDataChunkWithSsn(SSN(1)));
-  sock_z_.ReceivePacket(packet2);
+  sock_z_->ReceivePacket(packet2);
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
-  sock_a_.Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
   auto packet3 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet3, HasDataChunkWithStreamId(StreamID(3)));
   EXPECT_THAT(packet3, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(packet3);
+  sock_z_->ReceivePacket(packet3);
   auto packet4 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet4, HasDataChunkWithStreamId(StreamID(3)));
   EXPECT_THAT(packet4, HasDataChunkWithSsn(SSN(1)));
-  sock_z_.ReceivePacket(packet4);
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(packet4);
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   absl::optional<DcSctpMessage> msg1 = cb_z_.ConsumeReceivedMessage();
@@ -1009,29 +1011,29 @@ TEST_F(DcSctpSocketTest, ResetStreamWillOnlyResetTheRequestedStreams) {
   EXPECT_EQ(msg4->stream_id(), StreamID(3));
 
   
-  sock_a_.ResetStreams(std::vector<StreamID>({StreamID(3)}));
+  sock_a_->ResetStreams(std::vector<StreamID>({StreamID(3)}));
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), {});
 
-  sock_a_.Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
+  sock_a_->Send(DcSctpMessage(StreamID(3), PPID(53), payload), {});
 
   auto packet5 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet5, HasDataChunkWithStreamId(StreamID(1)));
   EXPECT_THAT(packet5, HasDataChunkWithSsn(SSN(2)));  
-  sock_z_.ReceivePacket(packet5);
+  sock_z_->ReceivePacket(packet5);
 
   auto packet6 = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet6, HasDataChunkWithStreamId(StreamID(3)));
   EXPECT_THAT(packet6, HasDataChunkWithSsn(SSN(0)));  
-  sock_z_.ReceivePacket(packet6);
+  sock_z_->ReceivePacket(packet6);
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 }
 
 TEST_F(DcSctpSocketTest, OnePeerReconnects) {
@@ -1041,10 +1043,10 @@ TEST_F(DcSctpSocketTest, OnePeerReconnects) {
   
   
   std::vector<uint8_t> payload(kLargeMessageSize);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   
   testing::NiceMock<MockDcSctpSocketCallbacks> cb_z2("Z2");
@@ -1054,7 +1056,7 @@ TEST_F(DcSctpSocketTest, OnePeerReconnects) {
 
   
   
-  ExchangeMessages(sock_a_, cb_a_, sock_z2, cb_z2);
+  ExchangeMessages(*sock_a_, cb_a_, sock_z2, cb_z2);
 
   absl::optional<DcSctpMessage> msg = cb_z2.ConsumeReceivedMessage();
   ASSERT_TRUE(msg.has_value());
@@ -1068,26 +1070,26 @@ TEST_F(DcSctpSocketTest, SendMessageWithLimitedRtx) {
   SendOptions send_options;
   send_options.max_retransmissions = 0;
   std::vector<uint8_t> payload(options_.mtu - 100);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(52), payload), send_options);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(52), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), send_options);
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
   cb_a_.ConsumeSentPacket();
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   AdvanceTime(options_.delayed_ack_max_timeout);
   RunTimers();
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   
   
@@ -1100,10 +1102,10 @@ TEST_F(DcSctpSocketTest, SendMessageWithLimitedRtx) {
   
 
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
 
   absl::optional<DcSctpMessage> msg1 = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg1.has_value());
@@ -1125,18 +1127,18 @@ TEST_F(DcSctpSocketTest, SendManyFragmentedMessagesWithLimitedRtx) {
   send_options.max_retransmissions = 0;
   std::vector<uint8_t> payload(options_.mtu * 2 - 100 );
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(52), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(52), payload), send_options);
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), send_options);
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(54), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(54), payload), send_options);
 
   
   std::vector<uint8_t> packet = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet, HasDataChunkWithPPID(PPID(51)));
-  sock_z_.ReceivePacket(std::move(packet));
+  sock_z_->ReceivePacket(std::move(packet));
 
   
   packet = cb_a_.ConsumeSentPacket();
@@ -1145,7 +1147,7 @@ TEST_F(DcSctpSocketTest, SendManyFragmentedMessagesWithLimitedRtx) {
   
   packet = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet, HasDataChunkWithPPID(PPID(52)));
-  sock_z_.ReceivePacket(std::move(packet));
+  sock_z_->ReceivePacket(std::move(packet));
 
   
   packet = cb_a_.ConsumeSentPacket();
@@ -1156,7 +1158,7 @@ TEST_F(DcSctpSocketTest, SendManyFragmentedMessagesWithLimitedRtx) {
   packet = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet, HasDataChunkWithPPID(PPID(53)));
   EXPECT_THAT(packet, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(std::move(packet));
+  sock_z_->ReceivePacket(std::move(packet));
 
   
   packet = cb_a_.ConsumeSentPacket();
@@ -1167,20 +1169,20 @@ TEST_F(DcSctpSocketTest, SendManyFragmentedMessagesWithLimitedRtx) {
   packet = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet, HasDataChunkWithPPID(PPID(54)));
   EXPECT_THAT(packet, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(std::move(packet));
+  sock_z_->ReceivePacket(std::move(packet));
 
   
   packet = cb_a_.ConsumeSentPacket();
   EXPECT_THAT(packet, HasDataChunkWithPPID(PPID(54)));
   EXPECT_THAT(packet, HasDataChunkWithSsn(SSN(0)));
-  sock_z_.ReceivePacket(std::move(packet));
+  sock_z_->ReceivePacket(std::move(packet));
 
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
   
   AdvanceTime(options_.rto_initial);
   RunTimers();
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
   absl::optional<DcSctpMessage> msg1 = cb_z_.ConsumeReceivedMessage();
   ASSERT_TRUE(msg1.has_value());
@@ -1212,9 +1214,9 @@ TEST_F(DcSctpSocketTest, ReceivingUnknownChunkRespondsWithError) {
   ConnectSockets();
 
   
-  SctpPacket::Builder b(sock_a_.verification_tag(), DcSctpOptions());
+  SctpPacket::Builder b(sock_a_->verification_tag(), DcSctpOptions());
   b.Add(FakeChunk());
-  sock_a_.ReceivePacket(b.Build());
+  sock_a_->ReceivePacket(b.Build());
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket reply_packet,
@@ -1232,7 +1234,7 @@ TEST_F(DcSctpSocketTest, ReceivingErrorChunkReportsAsCallback) {
   ConnectSockets();
 
   
-  SctpPacket::Builder b(sock_a_.verification_tag(), DcSctpOptions());
+  SctpPacket::Builder b(sock_a_->verification_tag(), DcSctpOptions());
   b.Add(
       ErrorChunk(Parameters::Builder()
                      .Add(UnrecognizedChunkTypeCause({0x49, 0x00, 0x00, 0x04}))
@@ -1240,7 +1242,7 @@ TEST_F(DcSctpSocketTest, ReceivingErrorChunkReportsAsCallback) {
 
   EXPECT_CALL(cb_a_, OnError(ErrorKind::kPeerReported,
                              HasSubstr("Unrecognized Chunk Type")));
-  sock_a_.ReceivePacket(b.Build());
+  sock_a_->ReceivePacket(b.Build());
 }
 
 TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
@@ -1255,7 +1257,7 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
   EXPECT_CALL(cb_z2, OnClosed).Times(0);
   EXPECT_CALL(cb_z2, OnAborted).Times(0);
 
-  sock_a_.Connect();
+  sock_a_->Connect();
   std::vector<uint8_t> init_data = cb_a_.ConsumeSentPacket();
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket init_packet,
                               SctpPacket::Parse(init_data));
@@ -1263,9 +1265,9 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
       InitChunk init_chunk,
       InitChunk::Parse(init_packet.descriptors()[0].data));
   sock_z2.ReceivePacket(init_data);
-  sock_a_.ReceivePacket(cb_z2.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z2.ConsumeSentPacket());
   sock_z2.ReceivePacket(cb_a_.ConsumeSentPacket());
-  sock_a_.ReceivePacket(cb_z2.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z2.ConsumeSentPacket());
 
   
   constexpr size_t kWatermarkLimit =
@@ -1353,8 +1355,8 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
 }
 
 TEST_F(DcSctpSocketTest, SetMaxMessageSize) {
-  sock_a_.SetMaxMessageSize(42u);
-  EXPECT_EQ(sock_a_.options().max_message_size, 42u);
+  sock_a_->SetMaxMessageSize(42u);
+  EXPECT_EQ(sock_a_->options().max_message_size, 42u);
 }
 
 TEST_F(DcSctpSocketTest, SendsMessagesWithLowLifetime) {
@@ -1379,10 +1381,10 @@ TEST_F(DcSctpSocketTest, SendsMessagesWithLowLifetime) {
     send_options.unordered = IsUnordered((i % 2) == 0);
     send_options.lifetime = DurationMs(i % 3);  
 
-    sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), send_options);
+    sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), send_options);
   }
 
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
   for (int i = 0; i < kIterations; ++i) {
     EXPECT_TRUE(cb_z_.ConsumeReceivedMessage().has_value());
@@ -1418,12 +1420,12 @@ TEST_F(DcSctpSocketTest, DiscardsMessagesWithLowLifetimeIfMustBuffer) {
 
   
   std::vector<uint8_t> payload(kLargeMessageSize);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), payload), kSendOptions);
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2, 3}), lifetime_0);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {4, 5, 6}), lifetime_1);
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {7, 8, 9}), lifetime_0);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2, 3}), lifetime_0);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {4, 5, 6}), lifetime_1);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {7, 8, 9}), lifetime_0);
 
   
   for (;;) {
@@ -1431,14 +1433,14 @@ TEST_F(DcSctpSocketTest, DiscardsMessagesWithLowLifetimeIfMustBuffer) {
     if (packet_from_a.empty()) {
       break;
     }
-    sock_z_.ReceivePacket(std::move(packet_from_a));
+    sock_z_->ReceivePacket(std::move(packet_from_a));
   }
 
   
   EXPECT_FALSE(cb_z_.ConsumeReceivedMessage().has_value());
 
   
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
   
   ASSERT_HAS_VALUE_AND_ASSIGN(DcSctpMessage m1, cb_z_.ConsumeReceivedMessage());
@@ -1452,27 +1454,27 @@ TEST_F(DcSctpSocketTest, DiscardsMessagesWithLowLifetimeIfMustBuffer) {
 TEST_F(DcSctpSocketTest, HasReasonableBufferedAmountValues) {
   ConnectSockets();
 
-  EXPECT_EQ(sock_a_.buffered_amount(StreamID(1)), 0u);
+  EXPECT_EQ(sock_a_->buffered_amount(StreamID(1)), 0u);
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kSmallMessageSize)),
                kSendOptions);
   
   
-  EXPECT_EQ(sock_a_.buffered_amount(StreamID(1)), 0u);
+  EXPECT_EQ(sock_a_->buffered_amount(StreamID(1)), 0u);
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kLargeMessageSize)),
                kSendOptions);
 
   
   
-  EXPECT_GT(sock_a_.buffered_amount(StreamID(1)), 0u);
-  EXPECT_LT(sock_a_.buffered_amount(StreamID(1)), kLargeMessageSize);
+  EXPECT_GT(sock_a_->buffered_amount(StreamID(1)), 0u);
+  EXPECT_LT(sock_a_->buffered_amount(StreamID(1)), kLargeMessageSize);
 }
 
 TEST_F(DcSctpSocketTest, HasDefaultOnBufferedAmountLowValueZero) {
-  EXPECT_EQ(sock_a_.buffered_amount_low_threshold(StreamID(1)), 0u);
+  EXPECT_EQ(sock_a_->buffered_amount_low_threshold(StreamID(1)), 0u);
 }
 
 TEST_F(DcSctpSocketTest, TriggersOnBufferedAmountLowWithDefaultValueZero) {
@@ -1480,75 +1482,75 @@ TEST_F(DcSctpSocketTest, TriggersOnBufferedAmountLowWithDefaultValueZero) {
   ConnectSockets();
 
   EXPECT_CALL(cb_a_, OnBufferedAmountLow(StreamID(1)));
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kSmallMessageSize)),
                kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, DoesntTriggerOnBufferedAmountLowIfBelowThreshold) {
   static constexpr size_t kMessageSize = 1000;
   static constexpr size_t kBufferedAmountLowThreshold = kMessageSize * 10;
 
-  sock_a_.SetBufferedAmountLowThreshold(StreamID(1),
+  sock_a_->SetBufferedAmountLowThreshold(StreamID(1),
                                         kBufferedAmountLowThreshold);
   EXPECT_CALL(cb_a_, OnBufferedAmountLow).Times(0);
   ConnectSockets();
 
   EXPECT_CALL(cb_a_, OnBufferedAmountLow(StreamID(1))).Times(0);
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, TriggersOnBufferedAmountMultipleTimes) {
   static constexpr size_t kMessageSize = 1000;
   static constexpr size_t kBufferedAmountLowThreshold = kMessageSize / 2;
 
-  sock_a_.SetBufferedAmountLowThreshold(StreamID(1),
+  sock_a_->SetBufferedAmountLowThreshold(StreamID(1),
                                         kBufferedAmountLowThreshold);
   EXPECT_CALL(cb_a_, OnBufferedAmountLow).Times(0);
   ConnectSockets();
 
   EXPECT_CALL(cb_a_, OnBufferedAmountLow(StreamID(1))).Times(3);
   EXPECT_CALL(cb_a_, OnBufferedAmountLow(StreamID(2))).Times(2);
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(2), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(2), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, TriggersOnBufferedAmountLowOnlyWhenCrossingThreshold) {
   static constexpr size_t kMessageSize = 1000;
   static constexpr size_t kBufferedAmountLowThreshold = kMessageSize * 1.5;
 
-  sock_a_.SetBufferedAmountLowThreshold(StreamID(1),
+  sock_a_->SetBufferedAmountLowThreshold(StreamID(1),
                                         kBufferedAmountLowThreshold);
   EXPECT_CALL(cb_a_, OnBufferedAmountLow).Times(0);
   ConnectSockets();
@@ -1557,18 +1559,18 @@ TEST_F(DcSctpSocketTest, TriggersOnBufferedAmountLowOnlyWhenCrossingThreshold) {
 
   
   
-  while (sock_a_.buffered_amount(StreamID(1)) <= kBufferedAmountLowThreshold) {
-    sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  while (sock_a_->buffered_amount(StreamID(1)) <= kBufferedAmountLowThreshold) {
+    sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                                std::vector<uint8_t>(kMessageSize)),
                  kSendOptions);
   }
-  size_t initial_buffered = sock_a_.buffered_amount(StreamID(1));
+  size_t initial_buffered = sock_a_->buffered_amount(StreamID(1));
   ASSERT_GT(initial_buffered, kBufferedAmountLowThreshold);
 
   
   
   EXPECT_CALL(cb_a_, OnBufferedAmountLow(StreamID(1))).Times(1);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, DoesntTriggerOnTotalBufferAmountLowWhenBelow) {
@@ -1576,11 +1578,11 @@ TEST_F(DcSctpSocketTest, DoesntTriggerOnTotalBufferAmountLowWhenBelow) {
 
   EXPECT_CALL(cb_a_, OnTotalBufferedAmountLow).Times(0);
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kLargeMessageSize)),
                kSendOptions);
 
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, TriggersOnTotalBufferAmountLowWhenCrossingThreshold) {
@@ -1590,7 +1592,7 @@ TEST_F(DcSctpSocketTest, TriggersOnTotalBufferAmountLowWhenCrossingThreshold) {
 
   
   for (;;) {
-    if (sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+    if (sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                                    std::vector<uint8_t>(kLargeMessageSize)),
                      kSendOptions) == SendStatus::kErrorResourceExhaustion) {
       break;
@@ -1598,11 +1600,11 @@ TEST_F(DcSctpSocketTest, TriggersOnTotalBufferAmountLowWhenCrossingThreshold) {
   }
 
   EXPECT_CALL(cb_a_, OnTotalBufferedAmountLow).Times(1);
-  ExchangeMessages(sock_a_, cb_a_, sock_z_, cb_z_);
+  ExchangeMessages(*sock_a_, cb_a_, *sock_z_, cb_z_);
 }
 
 TEST_F(DcSctpSocketTest, InitialMetricsAreZeroed) {
-  Metrics metrics = sock_a_.GetMetrics();
+  Metrics metrics = sock_a_->GetMetrics();
   EXPECT_EQ(metrics.tx_packets_count, 0u);
   EXPECT_EQ(metrics.tx_messages_count, 0u);
   EXPECT_EQ(metrics.cwnd_bytes.has_value(), false);
@@ -1619,72 +1621,72 @@ TEST_F(DcSctpSocketTest, RxAndTxPacketMetricsIncrease) {
   const size_t initial_a_rwnd = options_.max_receiver_window_buffer_size *
                                 ReassemblyQueue::kHighWatermarkLimit;
 
-  EXPECT_EQ(sock_a_.GetMetrics().tx_packets_count, 2u);
-  EXPECT_EQ(sock_a_.GetMetrics().rx_packets_count, 2u);
-  EXPECT_EQ(sock_a_.GetMetrics().tx_messages_count, 0u);
-  EXPECT_EQ(*sock_a_.GetMetrics().cwnd_bytes,
+  EXPECT_EQ(sock_a_->GetMetrics().tx_packets_count, 2u);
+  EXPECT_EQ(sock_a_->GetMetrics().rx_packets_count, 2u);
+  EXPECT_EQ(sock_a_->GetMetrics().tx_messages_count, 0u);
+  EXPECT_EQ(*sock_a_->GetMetrics().cwnd_bytes,
             options_.cwnd_mtus_initial * options_.mtu);
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 0u);
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 0u);
 
-  EXPECT_EQ(sock_z_.GetMetrics().rx_packets_count, 2u);
-  EXPECT_EQ(sock_z_.GetMetrics().rx_messages_count, 0u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_packets_count, 2u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_messages_count, 0u);
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 1u);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53), {1, 2}), kSendOptions);
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 1u);
 
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());  
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());  
-  EXPECT_EQ(*sock_a_.GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 0u);
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());  
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());  
+  EXPECT_EQ(*sock_a_->GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 0u);
 
   EXPECT_TRUE(cb_z_.ConsumeReceivedMessage().has_value());
 
-  EXPECT_EQ(sock_a_.GetMetrics().tx_packets_count, 3u);
-  EXPECT_EQ(sock_a_.GetMetrics().rx_packets_count, 3u);
-  EXPECT_EQ(sock_a_.GetMetrics().tx_messages_count, 1u);
+  EXPECT_EQ(sock_a_->GetMetrics().tx_packets_count, 3u);
+  EXPECT_EQ(sock_a_->GetMetrics().rx_packets_count, 3u);
+  EXPECT_EQ(sock_a_->GetMetrics().tx_messages_count, 1u);
 
-  EXPECT_EQ(sock_z_.GetMetrics().rx_packets_count, 3u);
-  EXPECT_EQ(sock_z_.GetMetrics().rx_messages_count, 1u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_packets_count, 3u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_messages_count, 1u);
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(options_.mtu * 2 + 1)),
                kSendOptions);
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 3u);
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 3u);
 
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());  
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());  
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());  
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());  
 
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());  
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 1u);
-  EXPECT_GT(*sock_a_.GetMetrics().peer_rwnd_bytes, 0u);
-  EXPECT_LT(*sock_a_.GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());  
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 1u);
+  EXPECT_GT(*sock_a_->GetMetrics().peer_rwnd_bytes, 0u);
+  EXPECT_LT(*sock_a_->GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
 
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());  
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());  
 
   EXPECT_TRUE(cb_z_.ConsumeReceivedMessage().has_value());
 
-  EXPECT_EQ(sock_a_.GetMetrics().tx_packets_count, 6u);
-  EXPECT_EQ(sock_a_.GetMetrics().rx_packets_count, 4u);
-  EXPECT_EQ(sock_a_.GetMetrics().tx_messages_count, 2u);
+  EXPECT_EQ(sock_a_->GetMetrics().tx_packets_count, 6u);
+  EXPECT_EQ(sock_a_->GetMetrics().rx_packets_count, 4u);
+  EXPECT_EQ(sock_a_->GetMetrics().tx_messages_count, 2u);
 
-  EXPECT_EQ(sock_z_.GetMetrics().rx_packets_count, 6u);
-  EXPECT_EQ(sock_z_.GetMetrics().rx_messages_count, 2u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_packets_count, 6u);
+  EXPECT_EQ(sock_z_->GetMetrics().rx_messages_count, 2u);
 
   
   AdvanceTime(options_.delayed_ack_max_timeout);
   RunTimers();
 
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());  
-  EXPECT_EQ(sock_a_.GetMetrics().unack_data_count, 0u);
-  EXPECT_EQ(sock_a_.GetMetrics().rx_packets_count, 5u);
-  EXPECT_EQ(*sock_a_.GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());  
+  EXPECT_EQ(sock_a_->GetMetrics().unack_data_count, 0u);
+  EXPECT_EQ(sock_a_->GetMetrics().rx_packets_count, 5u);
+  EXPECT_EQ(*sock_a_->GetMetrics().peer_rwnd_bytes, initial_a_rwnd);
 }
 
 TEST_F(DcSctpSocketTest, UnackDataAlsoIncludesSendQueue) {
   ConnectSockets();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kLargeMessageSize)),
                kSendOptions);
   size_t payload_bytes =
@@ -1699,24 +1701,24 @@ TEST_F(DcSctpSocketTest, UnackDataAlsoIncludesSendQueue) {
 
   
   
-  EXPECT_GE(sock_a_.GetMetrics().unack_data_count,
+  EXPECT_GE(sock_a_->GetMetrics().unack_data_count,
             expected_sent_packets + expected_queued_packets);
 
-  EXPECT_LE(sock_a_.GetMetrics().unack_data_count,
+  EXPECT_LE(sock_a_->GetMetrics().unack_data_count,
             expected_sent_packets + expected_queued_packets + 2);
 }
 
 TEST_F(DcSctpSocketTest, DoesntSendMoreThanMaxBurstPackets) {
   ConnectSockets();
 
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(53),
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(53),
                              std::vector<uint8_t>(kLargeMessageSize)),
                kSendOptions);
 
   for (int i = 0; i < kMaxBurstPackets; ++i) {
     std::vector<uint8_t> packet = cb_a_.ConsumeSentPacket();
     EXPECT_THAT(packet, Not(IsEmpty()));
-    sock_z_.ReceivePacket(std::move(packet));  
+    sock_z_->ReceivePacket(std::move(packet));  
   }
 
   EXPECT_THAT(cb_a_.ConsumeSentPacket(), IsEmpty());
@@ -1727,7 +1729,7 @@ TEST_F(DcSctpSocketTest, SendsOnlyLargePackets) {
 
   
   constexpr size_t kMessageSize = 100000;
-  sock_a_.Send(
+  sock_a_->Send(
       DcSctpMessage(StreamID(1), PPID(53), std::vector<uint8_t>(kMessageSize)),
       kSendOptions);
 
@@ -1739,12 +1741,12 @@ TEST_F(DcSctpSocketTest, SendsOnlyLargePackets) {
     if (!packet_from_a.empty()) {
       data_packet_sizes.push_back(packet_from_a.size());
       delivered_packet = true;
-      sock_z_.ReceivePacket(std::move(packet_from_a));
+      sock_z_->ReceivePacket(std::move(packet_from_a));
     }
     std::vector<uint8_t> packet_from_z = cb_z_.ConsumeSentPacket();
     if (!packet_from_z.empty()) {
       delivered_packet = true;
-      sock_a_.ReceivePacket(std::move(packet_from_z));
+      sock_a_->ReceivePacket(std::move(packet_from_z));
     }
   } while (delivered_packet);
 
@@ -1778,31 +1780,31 @@ TEST_F(DcSctpSocketTest, DoesntBundleForwardTsnWithData) {
 
   constexpr DurationMs kRtt = DurationMs(80);
   AdvanceTime(kRtt);
-  sock_z_.ReceivePacket(hb_req_a);
-  sock_a_.ReceivePacket(hb_req_z);
+  sock_z_->ReceivePacket(hb_req_a);
+  sock_a_->ReceivePacket(hb_req_z);
 
   
-  sock_a_.ReceivePacket(cb_z_.ConsumeSentPacket());
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_a_->ReceivePacket(cb_z_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
 
   SendOptions send_options;
   send_options.max_retransmissions = 0;
   std::vector<uint8_t> payload(options_.mtu - 100);
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
   
-  sock_z_.ReceivePacket(cb_a_.ConsumeSentPacket());
+  sock_z_->ReceivePacket(cb_a_.ConsumeSentPacket());
   
   std::vector<uint8_t> sack = cb_z_.ConsumeSentPacket();
 
   
   do {
-    sock_a_.Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
+    sock_a_->Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
   } while (!cb_a_.ConsumeSentPacket().empty());
 
   
-  sock_a_.Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
+  sock_a_->Send(DcSctpMessage(StreamID(1), PPID(51), payload), send_options);
 
   
   AdvanceTime(options_.rto_initial);
@@ -1825,7 +1827,7 @@ TEST_F(DcSctpSocketTest, DoesntBundleForwardTsnWithData) {
   }
 
   
-  sock_a_.ReceivePacket(sack);
+  sock_a_->ReceivePacket(sack);
 
   
   
@@ -1837,7 +1839,7 @@ TEST_F(DcSctpSocketTest, DoesntBundleForwardTsnWithData) {
 
   
   AdvanceTime(kRtt);
-  sock_a_.ReceivePacket(sack);
+  sock_a_->ReceivePacket(sack);
 
   std::vector<uint8_t> sent4 = cb_a_.ConsumeSentPacket();
   ASSERT_HAS_VALUE_AND_ASSIGN(SctpPacket packet4, SctpPacket::Parse(sent4));
