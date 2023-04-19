@@ -2781,22 +2781,21 @@ static bool CopyArrayElements(JSContext* cx, HandleObject obj, uint64_t begin,
 
 
 
-
-
-static bool GetActualStart(JSContext* cx, const CallArgs& args, uint64_t len,
+static bool GetActualStart(JSContext* cx, HandleValue start, uint64_t len,
                            uint64_t* result) {
+  MOZ_ASSERT(len < DOUBLE_INTEGRAL_PRECISION_LIMIT);
+
+  
+  
+
+  
   double relativeStart;
-  
-
-
-
-  
-  if (!ToInteger(cx, args.get(0), &relativeStart)) {
+  if (!ToInteger(cx, start, &relativeStart)) {
     return false;
   }
+
   
-
-
+  
   if (relativeStart < 0) {
     *result = uint64_t(std::max(double(len) + relativeStart, 0.0));
   } else {
@@ -2815,34 +2814,39 @@ static uint32_t GetItemCount(const CallArgs& args) {
 
 static bool GetActualDeleteCount(JSContext* cx, const CallArgs& args,
                                  HandleObject obj, uint64_t len,
-                                 uint64_t actualStart, uint64_t insertCount,
+                                 uint64_t actualStart, uint32_t insertCount,
                                  uint64_t* actualDeleteCount) {
+  MOZ_ASSERT(len < DOUBLE_INTEGRAL_PRECISION_LIMIT);
+  MOZ_ASSERT(actualStart <= len);
+  MOZ_ASSERT(insertCount == GetItemCount(args));
+
+  
   
 
-
-
-  
   if (args.length() < 1) {
-    *actualDeleteCount = 0;
     
-
+    *actualDeleteCount = 0;
   } else if (args.length() < 2) {
+    
+    
     *actualDeleteCount = len - actualStart;
   } else {
-    double deleteCount;
     
+    double deleteCount;
     if (!ToInteger(cx, args.get(1), &deleteCount)) {
       return false;
     }
-    
-
-    *actualDeleteCount = uint64_t(std::min(std::max(0.0, deleteCount),
-                                           double(len) - double(actualStart)));
 
     
     
-    if (double(len + insertCount - *actualDeleteCount) >=
-        DOUBLE_INTEGRAL_PRECISION_LIMIT) {
+    *actualDeleteCount = uint64_t(
+        std::min(std::max(0.0, deleteCount), double(len - actualStart)));
+    MOZ_ASSERT(*actualDeleteCount <= len);
+
+    
+    
+    if (len + uint64_t(insertCount) - *actualDeleteCount >=
+        uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT)) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TOO_LONG_ARRAY);
       return false;
@@ -2874,7 +2878,7 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
   
 
   uint64_t actualStart;
-  if (!GetActualStart(cx, args, len, &actualStart)) {
+  if (!GetActualStart(cx, args.get(0), len, &actualStart)) {
     return false;
   }
 
@@ -3197,7 +3201,7 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
 
 
   uint64_t actualStart;
-  if (!GetActualStart(cx, args, len, &actualStart)) {
+  if (!GetActualStart(cx, args.get(0), len, &actualStart)) {
     return false;
   }
 
