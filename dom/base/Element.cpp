@@ -724,7 +724,7 @@ bool Element::CheckVisibility(const CheckVisibilityOptions& aOptions) {
     return false;
   }
 
-  if (f->IsHiddenByContentVisibilityOnAnyAncestor()) {
+  if (f->AncestorHidesContent()) {
     
     
     return false;

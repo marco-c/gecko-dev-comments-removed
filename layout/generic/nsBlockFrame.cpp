@@ -1314,7 +1314,7 @@ void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
 void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
                           nsReflowStatus& aStatus) {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+  if (GetInFlowParent() && GetInFlowParent()->IsContentHiddenForLayout()) {
     FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
     return;
   }
@@ -2573,6 +2573,10 @@ static bool LinesAreEmpty(const nsLineList& aList) {
 }
 
 void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
+  if (IsContentHiddenForLayout()) {
+    return;
+  }
+
   bool keepGoing = true;
   bool repositionViews = false;  
   bool foundAnyClears = aState.mFloatBreakType != StyleClear::None;
@@ -3360,15 +3364,6 @@ void nsBlockFrame::ReflowLine(BlockReflowState& aState, LineIterator aLine,
   aLine->ClearHadFloatPushed();
 
   
-  
-  
-  
-  nsIFrame* firstChild = aLine->mFirstChild;
-  if (firstChild->IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
-    return;
-  }
-
-  
   if (aLine->IsBlock()) {
     ReflowBlockFrame(aState, aLine, aKeepReflowGoing);
   } else {
@@ -3576,10 +3571,6 @@ static inline bool IsNonAutoNonZeroBSize(const StyleSize& aCoord) {
 
 
 bool nsBlockFrame::IsSelfEmpty() {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
-    return true;
-  }
-
   
   
   
