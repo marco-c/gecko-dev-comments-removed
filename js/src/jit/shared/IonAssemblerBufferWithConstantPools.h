@@ -640,10 +640,6 @@ struct AssemblerBufferWithConstantPools
   Slice* getTail() const { return this->tail; }
 
  public:
-  
-  
-  
-  
   AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
                                    size_t instBufferAlign, size_t poolMaxOffset,
                                    unsigned pcBias, uint32_t alignFillInst,
@@ -667,15 +663,6 @@ struct AssemblerBufferWithConstantPools
         nopFill_(nopFill),
         inhibitNops_(false),
         id(-1) {
-  }
-
-  
-  
-  void initWithAllocator() {
-    
-    
-    MOZ_ASSERT(this->lifoAlloc_.isEmpty(),
-               "Illegal LIFO allocations before AutoJitContextAlloc");
   }
 
  private:

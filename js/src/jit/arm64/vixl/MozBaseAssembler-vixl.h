@@ -106,12 +106,6 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
 
  public:
   
-  
-  void initWithAllocator() {
-    armbuffer_.initWithAllocator();
-  }
-
-  
   Instruction* getInstructionAt(BufferOffset offset) {
     return armbuffer_.getInst(offset);
   }

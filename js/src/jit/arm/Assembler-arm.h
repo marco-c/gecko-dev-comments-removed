@@ -1259,10 +1259,6 @@ class Assembler : public AssemblerShared {
 #endif
   }
 
-  
-  
-  void initWithAllocator() { m_buffer.initWithAllocator(); }
-
   void setUnlimitedBuffer() { m_buffer.setUnlimited(); }
 
   static Condition InvertCondition(Condition cond);
