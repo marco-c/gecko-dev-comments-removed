@@ -28,7 +28,7 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
       WindowCapturerWinGdi::CreateRawWindowCapturer(options));
 #if defined(RTC_ENABLE_WIN_WGC)
   if (options.allow_wgc_capturer_fallback() &&
-      rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN10_RS5) {
+      rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN11) {
     
     
     
