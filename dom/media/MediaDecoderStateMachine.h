@@ -512,7 +512,6 @@ class MediaDecoderStateMachine
   
   void AdjustByLooping(media::TimeUnit& aTime) const;
   Maybe<media::TimeUnit> mAudioDecodedDuration;
-  Maybe<media::TimeUnit> mVideoDecodedDuration;
 
   
   int64_t mPlaybackOffset = 0;
