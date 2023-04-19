@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -148,8 +150,9 @@ let setupTest = async function(options, testFunction) {
     Services.obs.addObserver(observer, o);
   }
 
-  let private = options.private || false;
-  let newWin = await promiseNewWindowLoaded({ private });
+  let newWin = await promiseNewWindowLoaded({
+    private: options.private || false,
+  });
 
   await injectTestTabs(newWin);
 
