@@ -363,7 +363,7 @@ if (!isDevtools) {
   
   
   if (!AppConstants.ENABLE_WEBDRIVER) {
-    whitelist.add("resource://gre/modules/jsdebugger.jsm");
+    whitelist.add("resource://gre/modules/jsdebugger.sys.mjs");
   }
 }
 

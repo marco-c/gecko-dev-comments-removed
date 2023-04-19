@@ -1,36 +1,33 @@
+/* -*-  indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["addDebuggerToGlobal", "addSandboxedDebuggerToGlobal"];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This is the js module for Debugger. Import it like so:
+ *   const { addDebuggerToGlobal } = ChromeUtils.importESModule(
+ *     "resource://gre/modules/jsdebugger.sys.mjs"
+ *   );
+ *   addDebuggerToGlobal(globalThis);
+ *
+ * This will create a 'Debugger' object, which provides an interface to debug
+ * JavaScript code running in other compartments in the same process, on the
+ * same thread.
+ *
+ * For documentation on the API, see:
+ *   https://developer.mozilla.org/en-US/docs/Tools/Debugger-API
+ */
 
 const init = Cc["@mozilla.org/jsdebugger;1"].createInstance(Ci.IJSDebugger);
-function addDebuggerToGlobal(global) {
+
+export function addDebuggerToGlobal(global) {
   init.addClass(global);
   initPromiseDebugging(global);
 }
 
-
-
-function addSandboxedDebuggerToGlobal(global) {
+// Defines the Debugger in a sandbox global in a separate compartment. This
+// ensures the debugger and debuggee are in different compartments.
+export function addSandboxedDebuggerToGlobal(global) {
   const sb = Cu.Sandbox(global, { freshCompartment: true });
   addDebuggerToGlobal(sb);
   global.Debugger = sb.Debugger;
@@ -41,13 +38,13 @@ function initPromiseDebugging(global) {
     return;
   }
 
-  
-  
+  // If the PromiseDebugging object doesn't have all legacy functions, we're
+  // using the new accessors on Debugger.Object already.
   if (!PromiseDebugging.getDependentPromises) {
     return;
   }
 
-  
+  // Otherwise, polyfill them using PromiseDebugging.
   global.Debugger.Object.prototype.PromiseDebugging = PromiseDebugging;
   global.eval(polyfillSource);
 }

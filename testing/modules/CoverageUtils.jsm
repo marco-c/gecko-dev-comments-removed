@@ -7,8 +7,8 @@
 var EXPORTED_SYMBOLS = ["CoverageCollector"];
 
 
-const { addDebuggerToGlobal } = ChromeUtils.import(
-  "resource://gre/modules/jsdebugger.jsm"
+const { addDebuggerToGlobal } = ChromeUtils.importESModule(
+  "resource://gre/modules/jsdebugger.sys.mjs"
 );
 
 addDebuggerToGlobal(globalThis);
