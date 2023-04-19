@@ -382,7 +382,7 @@ async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
   }
 
   
-  if (Object.keys(setupOptions.requestDeviceOptions).length !== 0) {
+  if (setupOptions.requestDeviceOptions) {
     preconnectedDevice.device =
         await requestDeviceWithTrustedClick(setupOptions.requestDeviceOptions);
   }
@@ -394,6 +394,38 @@ async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
   }
 
   return preconnectedDevice;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function setUpPreconnectedDevice({
+  address = '00:00:00:00:00:00',
+  name = 'LE Device',
+  manufacturerData = {},
+  knownServiceUUIDs = []
+}) {
+  await initializeFakeCentral({state: 'powered-on'});
+  return await fake_central.simulatePreconnectedPeripheral({
+    address: address,
+    name: name,
+    manufacturerData: manufacturerData,
+    knownServiceUUIDs: knownServiceUUIDs,
+  });
 }
 
 
@@ -713,25 +745,19 @@ async function getHIDDevice(options) {
 
 
 
-const healthTherometerFakeDeviceOptionsDefault = {
-  address: '09:09:09:09:09:09',
-  name: 'Health Thermometer',
-  manufacturerData: {0x0001: manufacturer1Data, 0x0002: manufacturer2Data},
-  knownServiceUUIDs: ['generic_access', 'health_thermometer'],
-};
 
 
 
 
 
 
-
-
-async function setUpHealthThermometerDevice(setupOptionsOverride = {}) {
-  let setupOptions = createSetupOptions(
-      {fakeDeviceOptions: healthTherometerFakeDeviceOptionsDefault},
-      setupOptionsOverride);
-  return await setUpPreconnectedFakeDevice(setupOptions);
+function setUpHealthThermometerDevice() {
+  return setUpPreconnectedDevice({
+    address: '09:09:09:09:09:09',
+    name: 'Health Thermometer',
+    manufacturerData: {0x0001: manufacturer1Data, 0x0002: manufacturer2Data},
+    knownServiceUUIDs: ['generic_access', 'health_thermometer'],
+  });
 }
 
 
@@ -741,9 +767,11 @@ async function setUpHealthThermometerDevice(setupOptionsOverride = {}) {
 
 
 async function setUpConnectableHealthThermometerDevice() {
-  let fake_device = await setUpHealthThermometerDevice(
-      {fakeDeviceOptions: {connectable: true}});
-  return fake_device;
+  let fake_peripheral = await setUpHealthThermometerDevice();
+  await fake_peripheral.setNextGATTConnectionResponse({
+    code: HCI_SUCCESS,
+  });
+  return fake_peripheral;
 }
 
 
@@ -763,11 +791,12 @@ async function setUpConnectableHealthThermometerDevice() {
 
 
 
-async function populateHealthThermometerFakes(fake_device) {
-  let fake_peripheral = fake_device.fake_peripheral;
-  let fake_generic_access = fake_device.fake_services.get('generic_access');
-  let fake_health_thermometer =
-      fake_device.fake_services.get('health_thermometer');
+async function populateHealthThermometerFakes(fake_peripheral) {
+  let fake_generic_access =
+      await fake_peripheral.addFakeService({uuid: 'generic_access'});
+  let fake_health_thermometer = await fake_peripheral.addFakeService({
+    uuid: 'health_thermometer',
+  });
   let fake_measurement_interval =
       await fake_health_thermometer.addFakeCharacteristic({
         uuid: 'measurement_interval',
@@ -822,9 +851,9 @@ async function populateHealthThermometerFakes(fake_device) {
 
 async function getHealthThermometerDeviceWithServicesDiscovered(options) {
   let iframe = document.createElement('iframe');
-  let fake_device = await setUpConnectableHealthThermometerDevice();
-  let fakes = populateHealthThermometerFakes(fake_device);
-  await fake_device.fake_peripheral.setNextGATTDiscoveryResponse({
+  let fake_peripheral = await setUpConnectableHealthThermometerDevice();
+  let fakes = populateHealthThermometerFakes(fake_peripheral);
+  await fake_peripheral.setNextGATTDiscoveryResponse({
     code: HCI_SUCCESS,
   });
   await new Promise(resolve => {
@@ -878,8 +907,8 @@ async function getHealthThermometerDeviceWithServicesDiscovered(options) {
 
 
 async function getHealthThermometerDeviceFromIframe(iframe) {
-  const fake_device = await setUpConnectableHealthThermometerDevice();
-  const fakes = await populateHealthThermometerFakes(fake_device);
+  const fake_peripheral = await setUpConnectableHealthThermometerDevice();
+  const fakes = await populateHealthThermometerFakes(fake_peripheral);
   await new Promise(resolve => {
     let src = '/bluetooth/resources/health-thermometer-iframe.html';
     iframe.src = src;
@@ -923,7 +952,9 @@ async function getHealthThermometerDeviceFromIframe(iframe) {
 async function getDiscoveredHealthThermometerDevice(options = {
   filters: [{services: ['health_thermometer']}]
 }) {
-  return await setUpHealthThermometerDevice({requestDeviceOptions: options});
+  let fake_peripheral = await setUpHealthThermometerDevice();
+  let device = await requestDeviceWithTrustedClick(options);
+  return {device: device, fake_peripheral: fake_peripheral};
 }
 
 
@@ -935,19 +966,13 @@ async function getDiscoveredHealthThermometerDevice(options = {
 
 
 async function getEmptyHealthThermometerDevice(options) {
-  let fake_device = await getDiscoveredHealthThermometerDevice(options);
-  let fake_generic_access = fake_device.fake_services.get('generic_access');
-  let fake_health_thermometer =
-      fake_device.fake_services.get('health_thermometer');
-  
-  await fake_generic_access.remove();
-  await fake_health_thermometer.remove();
-  await fake_device.fake_peripheral.setNextGATTConnectionResponse(
+  let result = await getDiscoveredHealthThermometerDevice(options);
+  await result.fake_peripheral.setNextGATTConnectionResponse(
       {code: HCI_SUCCESS});
-  await fake_device.device.gatt.connect();
-  await fake_device.fake_peripheral.setNextGATTDiscoveryResponse(
+  await result.device.gatt.connect();
+  await result.fake_peripheral.setNextGATTDiscoveryResponse(
       {code: HCI_SUCCESS});
-  return fake_device;
+  return result;
 }
 
 
@@ -994,13 +1019,13 @@ async function getEmptyHealthThermometerService(options) {
 
 
 async function getConnectedHealthThermometerDevice(options) {
-  let fake_device = await getDiscoveredHealthThermometerDevice(options);
-  await fake_device.fake_peripheral.setNextGATTConnectionResponse({
+  let result = await getDiscoveredHealthThermometerDevice(options);
+  await result.fake_peripheral.setNextGATTConnectionResponse({
     code: HCI_SUCCESS,
   });
-  let fakes = await populateHealthThermometerFakes(fake_device);
-  await fake_device.device.gatt.connect();
-  return Object.assign({device: fake_device.device}, fakes);
+  let fakes = await populateHealthThermometerFakes(result.fake_peripheral);
+  await result.device.gatt.connect();
+  return Object.assign({device: result.device}, fakes);
 }
 
 
