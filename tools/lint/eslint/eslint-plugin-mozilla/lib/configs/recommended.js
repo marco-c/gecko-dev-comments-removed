@@ -69,6 +69,14 @@ module.exports = {
       },
     },
     {
+      files: ["**/*.mjs"],
+      rules: {
+        
+        
+        strict: "error",
+      },
+    },
+    {
       files: ["**/*.jsm", "**/*.jsm.js"],
       rules: {
         "mozilla/mark-exported-symbols-as-used": "error",
