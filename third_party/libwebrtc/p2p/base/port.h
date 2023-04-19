@@ -160,7 +160,7 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 
 class Port : public PortInterface,
-             public rtc::MessageHandlerAutoCleanup,
+             public rtc::MessageHandler,
              public sigslot::has_slots<> {
  public:
   
@@ -208,6 +208,9 @@ class Port : public PortInterface,
   void KeepAliveUntilPruned();
   
   void Prune();
+
+  
+  void CancelPendingTasks();
 
   
   rtc::Thread* thread() { return thread_; }
@@ -322,7 +325,7 @@ class Port : public PortInterface,
   uint16_t max_port() { return max_port_; }
 
   
-  void set_timeout_delay(int delay) { timeout_delay_ = delay; }
+  void set_timeout_delay(int delay);
 
   
   
@@ -437,7 +440,7 @@ class Port : public PortInterface,
 
   void OnNetworkTypeChanged(const rtc::Network* network);
 
-  rtc::Thread* thread_;
+  rtc::Thread* const thread_;
   rtc::PacketSocketFactory* factory_;
   std::string type_;
   bool send_retransmit_count_attribute_;
