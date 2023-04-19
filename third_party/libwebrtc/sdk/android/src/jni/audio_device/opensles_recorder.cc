@@ -13,11 +13,11 @@
 #include <android/log.h>
 
 #include <memory>
+
 #include "api/array_view.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/format_macros.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/time_utils.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
@@ -188,7 +188,7 @@ void OpenSLESRecorder::AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) {
   
   
   const size_t channels = audio_parameters_.channels();
-  ALOGD("SetRecordingChannels(%" RTC_PRIuS ")", channels);
+  ALOGD("SetRecordingChannels(%zu)", channels);
   audio_device_buffer_->SetRecordingChannels(channels);
   
   AllocateDataBuffers();
@@ -345,12 +345,10 @@ void OpenSLESRecorder::AllocateDataBuffers() {
   
   
   
-  ALOGD("frames per native buffer: %" RTC_PRIuS,
-        audio_parameters_.frames_per_buffer());
-  ALOGD("frames per 10ms buffer: %" RTC_PRIuS,
+  ALOGD("frames per native buffer: %zu", audio_parameters_.frames_per_buffer());
+  ALOGD("frames per 10ms buffer: %zu",
         audio_parameters_.frames_per_10ms_buffer());
-  ALOGD("bytes per native buffer: %" RTC_PRIuS,
-        audio_parameters_.GetBytesPerBuffer());
+  ALOGD("bytes per native buffer: %zu", audio_parameters_.GetBytesPerBuffer());
   ALOGD("native sample rate: %d", audio_parameters_.sample_rate());
   RTC_DCHECK(audio_device_buffer_);
   fine_audio_buffer_ = std::make_unique<FineAudioBuffer>(audio_device_buffer_);
