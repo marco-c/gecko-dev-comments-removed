@@ -314,13 +314,6 @@ bool operator==(const webrtc::RtpConfig& aThis,
 }
 #endif
 
-
-bool operator==(const webrtc::VideoReceiveStream::Decoder& aThis,
-                const webrtc::VideoReceiveStream::Decoder& aOther) {
-  return aThis.video_format == aOther.video_format &&
-         aThis.payload_type == aOther.payload_type;
-}
-
 }  
 
 
