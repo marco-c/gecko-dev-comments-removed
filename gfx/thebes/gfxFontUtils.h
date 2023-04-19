@@ -30,6 +30,7 @@ struct gfxFontVariationInstance;
 
 namespace mozilla {
 class Encoding;
+class ServoStyleSet;
 namespace gfx {
 struct DeviceColor;
 }
@@ -1174,6 +1175,22 @@ class gfxFontUtils {
       const nsACString& aFamilyName, const char* aNameData,
       uint32_t aDataLength, nsTArray<nsCString>& aOtherFamilyNames,
       bool useFullName);
+
+  
+  
+  static bool IsInServoTraversal();
+
+  
+  
+  static mozilla::ServoStyleSet* CurrentServoStyleSet();
+
+  static void AssertSafeThreadOrServoFontMetricsLocked()
+#ifdef DEBUG
+      ;
+#else
+  {
+  }
+#endif
 
  protected:
   friend struct MacCharsetMappingComparator;

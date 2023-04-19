@@ -200,6 +200,7 @@ class FontFaceImpl final {
 
   
   void DoLoad();
+  void UpdateOwnerPromise();
 
   
   

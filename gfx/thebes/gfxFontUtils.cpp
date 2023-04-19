@@ -22,6 +22,9 @@
 #include "nsIUUIDGenerator.h"
 #include "mozilla/Encoding.h"
 
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/dom/WorkerCommon.h"
+
 #include "harfbuzz/hb.h"
 
 #include "plbase64.h"
@@ -1967,6 +1970,40 @@ bool gfxFontUtils::IsCffFont(const uint8_t* aFontData) {
   return (sfntHeader->sfntVersion == TRUETYPE_TAG('O', 'T', 'T', 'O'));
 }
 
+#endif
+
+ bool gfxFontUtils::IsInServoTraversal() {
+  if (NS_IsMainThread()) {
+    return ServoStyleSet::IsInServoTraversal();
+  }
+
+  if (dom::GetCurrentThreadWorkerPrivate()) {
+    return false;
+  }
+
+  
+  
+  bool traversing = ServoStyleSet::IsInServoTraversal();
+  MOZ_ASSERT(traversing);
+  return traversing;
+}
+
+ ServoStyleSet* gfxFontUtils::CurrentServoStyleSet() {
+  
+  
+  if (dom::GetCurrentThreadWorkerPrivate()) {
+    return nullptr;
+  }
+
+  return ServoStyleSet::Current();
+}
+
+#ifdef DEBUG
+ void gfxFontUtils::AssertSafeThreadOrServoFontMetricsLocked() {
+  if (!dom::GetCurrentThreadWorkerPrivate()) {
+    AssertIsMainThreadOrServoFontMetricsLocked();
+  }
+}
 #endif
 
 #undef acceptablePlatform

@@ -16,7 +16,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxPlatformFontList.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/PostTraversalTask.h"
 #include "gfxOTSUtils.h"
 #include "nsIFontLoadCompleteCallback.h"
@@ -102,7 +101,7 @@ gfxUserFontEntry::~gfxUserFontEntry() {
   
   
   
-  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
+  MOZ_ASSERT(!gfxFontUtils::IsInServoTraversal());
 }
 
 bool gfxUserFontEntry::Matches(
@@ -469,7 +468,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
     else if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_URL) {
       if (gfxPlatform::GetPlatform()->IsFontFormatSupported(
               currSrc.mFormatFlags)) {
-        if (ServoStyleSet* set = ServoStyleSet::Current()) {
+        if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
           
           
           
@@ -498,7 +497,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
           return;
         }
 
-        if (ServoStyleSet* set = ServoStyleSet::Current()) {
+        if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
           
           
           set->AppendTask(PostTraversalTask::LoadFontEntry(this));
