@@ -743,6 +743,16 @@ struct ScrollSnapInfo {
              mScrollSnapStop == aOther.mScrollSnapStop &&
              mTargetId == aOther.mTargetId;
     }
+    bool IsValidFor(const nsPoint& aDestination,
+                    const nsSize aSnapportSize) const {
+      nsPoint snapPoint(mSnapPositionX ? *mSnapPositionX : aDestination.x,
+                        mSnapPositionY ? *mSnapPositionY : aDestination.y);
+      nsRect snappedPort = nsRect(snapPoint, aSnapportSize);
+      
+      
+      
+      return snappedPort.Intersects(mSnapArea);
+    }
   };
 
   CopyableTArray<SnapTarget> mSnapTargets;
