@@ -21,8 +21,8 @@ namespace webrtc {
 
 
 
-enum { kBandFirst = 12 };
-enum { kBandLast = 43 };
+constexpr int kBandFirst = 12;
+constexpr int kBandLast = 43;
 
 static __inline uint32_t SetBit(uint32_t in, int pos) {
   uint32_t mask = (1 << pos);

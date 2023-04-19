@@ -363,7 +363,7 @@ namespace webrtc {
 namespace metrics {
 
 
-enum { kMinRunTimeInSeconds = 10 };
+constexpr int kMinRunTimeInSeconds = 10;
 
 class Histogram;
 

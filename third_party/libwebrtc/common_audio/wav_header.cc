@@ -80,8 +80,6 @@ const uint32_t kFmtIeeeFloatSubchunkSize =
 
 #pragma pack(2)
 struct WavHeaderPcm {
-  WavHeaderPcm(const WavHeaderPcm&) = default;
-  WavHeaderPcm& operator=(const WavHeaderPcm&) = default;
   RiffHeader riff;
   FmtPcmSubchunk fmt;
   struct {
@@ -95,8 +93,6 @@ static_assert(sizeof(WavHeaderPcm) == kPcmWavHeaderSize,
 
 #pragma pack(2)
 struct WavHeaderIeeeFloat {
-  WavHeaderIeeeFloat(const WavHeaderIeeeFloat&) = default;
-  WavHeaderIeeeFloat& operator=(const WavHeaderIeeeFloat&) = default;
   RiffHeader riff;
   FmtIeeeFloatSubchunk fmt;
   struct {

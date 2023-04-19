@@ -26,10 +26,10 @@ namespace media_optimization {
 
 
 
-enum { kLossPrHistorySize = 10 };
+constexpr int kLossPrHistorySize = 10;
 
 
-enum { kLossPrShortFilterWinMs = 1000 };
+constexpr int kLossPrShortFilterWinMs = 1000;
 
 
 enum FilterPacketLossMode {
@@ -41,11 +41,11 @@ enum FilterPacketLossMode {
 
 
 
-const int64_t kLowRttNackMs = 20;
+constexpr int64_t kLowRttNackMs = 20;
 
 
 
-const int kMaxRttDelayThreshold = 500;
+constexpr int kMaxRttDelayThreshold = 500;
 
 struct VCMProtectionParameters {
   VCMProtectionParameters();
@@ -175,15 +175,15 @@ class VCMFecMethod : public VCMProtectionMethod {
   int BitsPerFrame(const VCMProtectionParameters* parameters);
 
  protected:
-  enum { kUpperLimitFramesFec = 6 };
+  static constexpr int kUpperLimitFramesFec = 6;
   
   
   
-  enum { kMaxBytesPerFrameForFec = 700 };
+  static constexpr int kMaxBytesPerFrameForFec = 700;
   
-  enum { kMaxBytesPerFrameForFecLow = 400 };
+  static constexpr int kMaxBytesPerFrameForFecLow = 400;
   
-  enum { kMaxBytesPerFrameForFecHigh = 1000 };
+  static constexpr int kMaxBytesPerFrameForFecHigh = 1000;
 
   const RateControlSettings rate_control_settings_;
 };
