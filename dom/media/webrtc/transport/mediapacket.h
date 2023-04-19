@@ -28,7 +28,9 @@ class MediaPacket {
  public:
   MediaPacket() = default;
   MediaPacket(MediaPacket&& orig) = default;
-  MediaPacket(const MediaPacket& orig);
+  MediaPacket& operator=(MediaPacket&& orig) = default;
+
+  MediaPacket Clone() const;
 
   
   void Take(UniquePtr<uint8_t[]>&& data, size_t len, size_t capacity = 0) {
