@@ -15,35 +15,7 @@
 
 
 
-const jsmScope = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/Loader.sys.mjs"
-);
-
 const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-
-
-const {
-  CanonicalBrowsingContext,
-  BrowsingContext,
-  WebExtensionPolicy,
-  WindowGlobalParent,
-  WindowGlobalChild,
-  console,
-  DebuggerNotificationObserver,
-  DOMPoint,
-  DOMQuad,
-  DOMRect,
-  HeapSnapshot,
-  IOUtils,
-  L10nRegistry,
-  Localization,
-  NamedNodeMap,
-  NodeFilter,
-  PathUtils,
-  StructuredCloneHolder,
-  TelemetryStopwatch,
-  ChromeWorker,
-} = Cu.getGlobalForObject(jsmScope);
 
 
 
@@ -138,7 +110,6 @@ function lazyRequireGetter(obj, properties, module, destructure) {
 
 
 exports.modules = {
-  DebuggerNotificationObserver,
   HeapSnapshot,
   InspectorUtils,
   
@@ -184,26 +155,7 @@ defineLazyGetter(exports.modules, "xpcInspector", () => {
 
 
 exports.globals = {
-  CanonicalBrowsingContext,
-  Ci,
-  ChromeUtils,
-  Components,
-  Cr,
-  Cu,
-  BrowsingContext,
-  WebExtensionPolicy,
-  WindowGlobalParent,
-  WindowGlobalChild,
-  console,
-  ChromeWorker,
-  DOMPoint,
-  DOMQuad,
-  NamedNodeMap,
-  NodeFilter,
-  DOMRect,
-  IOUtils,
   isWorker: false,
-  L10nRegistry,
   loader: {
     lazyGetter: defineLazyGetter,
     lazyServiceGetter: defineLazyServiceGetter,
@@ -211,9 +163,6 @@ exports.globals = {
     
     id: null,
   },
-  Localization,
-  PathUtils,
-  StructuredCloneHolder,
 };
 
 

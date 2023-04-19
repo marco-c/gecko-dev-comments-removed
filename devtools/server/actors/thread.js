@@ -8,7 +8,6 @@
 
 
 
-const DebuggerNotificationObserver = require("DebuggerNotificationObserver");
 const { Pool } = require("resource://devtools/shared/protocol/Pool.js");
 const {
   createValueGrip,

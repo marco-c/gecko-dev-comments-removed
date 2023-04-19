@@ -505,6 +505,7 @@ this.worker = new WorkerDebuggerLoader({
     atob: this.atob,
     Services: Object.create(null),
     ChromeUtils,
+    DebuggerNotificationObserver,
 
     
     
@@ -520,7 +521,6 @@ this.worker = new WorkerDebuggerLoader({
   modules: {
     Debugger,
     xpcInspector,
-    DebuggerNotificationObserver,
   },
   paths: {
     
