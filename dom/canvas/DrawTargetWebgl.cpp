@@ -2920,10 +2920,6 @@ Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
   
   
   
-  if (mSharedContext->mWebgl->GetTexTypeForSwapChain() ==
-      layers::TextureType::Unknown) {
-    return Nothing();
-  }
   if (mNeedsPresent) {
     mNeedsPresent = false;
     if (mWebglValid || FlushFromSkia()) {

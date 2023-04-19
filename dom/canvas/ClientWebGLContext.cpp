@@ -391,27 +391,61 @@ layers::TextureType ClientWebGLContext::GetTexTypeForSwapChain() const {
 }
 
 void ClientWebGLContext::Present(WebGLFramebufferJS* const xrFb,
-                                 const bool webvr) {
+                                 const bool webvr,
+                                 const webgl::SwapChainOptions& options) {
   const auto texType = GetTexTypeForSwapChain();
-  Present(xrFb, texType, webvr);
+  Present(xrFb, texType, webvr, options);
+}
+
+
+webgl::SwapChainOptions ClientWebGLContext::PrepareAsyncSwapChainOptions(
+    WebGLFramebufferJS* fb, bool webvr,
+    const webgl::SwapChainOptions& options) {
+  
+  MOZ_ASSERT(!options.remoteTextureOwnerId.IsValid() &&
+             !options.remoteTextureId.IsValid());
+  auto& ownerId = fb ? fb->mRemoteTextureOwnerId : mRemoteTextureOwnerId;
+  auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
+  
+  
+  if (!IsContextLost() && !mNotLost->inProcess && !webvr &&
+      (options.forceAsyncPresent ||
+       StaticPrefs::webgl_out_of_process_async_present())) {
+    if (!ownerId) {
+      ownerId = Some(layers::RemoteTextureOwnerId::GetNext());
+    }
+    textureId = Some(layers::RemoteTextureId::GetNext());
+    webgl::SwapChainOptions asyncOptions = options;
+    asyncOptions.remoteTextureOwnerId = *ownerId;
+    asyncOptions.remoteTextureId = *textureId;
+    return asyncOptions;
+  }
+  
+  textureId = Nothing();
+  return options;
 }
 
 void ClientWebGLContext::Present(WebGLFramebufferJS* const xrFb,
                                  const layers::TextureType type,
-                                 const bool webvr) {
+                                 const bool webvr,
+                                 const webgl::SwapChainOptions& options) {
   if (!mIsCanvasDirty && !xrFb) return;
   if (!xrFb) {
     mIsCanvasDirty = false;
   }
   CancelAutoFlush();
-  Run<RPROC(Present)>(xrFb ? xrFb->mId : 0, type, webvr);
+  webgl::SwapChainOptions asyncOptions =
+      PrepareAsyncSwapChainOptions(xrFb, webvr, options);
+  Run<RPROC(Present)>(xrFb ? xrFb->mId : 0, type, webvr, asyncOptions);
 }
 
 void ClientWebGLContext::CopyToSwapChain(
     WebGLFramebufferJS* const fb, const webgl::SwapChainOptions& options) {
   CancelAutoFlush();
   const auto texType = GetTexTypeForSwapChain();
-  Run<RPROC(CopyToSwapChain)>(fb ? fb->mId : 0, texType, options);
+  webgl::SwapChainOptions asyncOptions =
+      PrepareAsyncSwapChainOptions(fb, false, options);
+  Run<RPROC(CopyToSwapChain)>(fb ? fb->mId : 0, texType, asyncOptions);
 }
 
 void ClientWebGLContext::EndOfFrame() {
@@ -432,19 +466,11 @@ Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
   const auto& child = mNotLost->outOfProcess;
   child->FlushPendingCmds();
 
-  bool asyncPresent = !vr && StaticPrefs::webgl_out_of_process_async_present();
-  if (asyncPresent) {
-    const auto textureId = layers::RemoteTextureId::GetNext();
-    auto& ownerId = fb ? fb->mOwnerId : mOwnerId;
-    if (!ownerId) {
-      ownerId = Some(layers::RemoteTextureOwnerId::GetNext());
-    }
-
-    if (!child->SendPresentFrontBufferToCompositor(fb ? fb->mId : 0, textureId,
-                                                   *ownerId))
-      return {};
-
-    return Some(layers::SurfaceDescriptorRemoteTexture(textureId, *ownerId));
+  
+  const auto& ownerId = fb ? fb->mRemoteTextureOwnerId : mRemoteTextureOwnerId;
+  const auto& textureId = fb ? fb->mLastRemoteTextureId : mLastRemoteTextureId;
+  if (ownerId && textureId) {
+    return Some(layers::SurfaceDescriptorRemoteTexture(*textureId, *ownerId));
   }
 
   Maybe<layers::SurfaceDescriptor> ret;

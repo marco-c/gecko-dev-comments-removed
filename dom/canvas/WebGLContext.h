@@ -98,6 +98,7 @@ class Texture;
 
 namespace layers {
 class CompositableHost;
+class RemoteTextureOwnerClient;
 class SurfaceDescriptor;
 }  
 
@@ -491,7 +492,9 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   
   
   
-  void Present(WebGLFramebuffer*, layers::TextureType, const bool webvr);
+  void Present(
+      WebGLFramebuffer*, layers::TextureType, const bool webvr,
+      const webgl::SwapChainOptions& options = webgl::SwapChainOptions());
   
   
   
@@ -514,6 +517,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   Maybe<uvec2> FrontBufferSnapshotInto(
       const std::shared_ptr<gl::SharedSurface>& front,
       const Maybe<Range<uint8_t>>);
+  Maybe<uvec2> SnapshotInto(GLuint srcFb, const gfx::IntSize& size,
+                            const Range<uint8_t>& dest);
   gl::SwapChain* GetSwapChain(WebGLFramebuffer*, const bool webvr);
   Maybe<layers::SurfaceDescriptor> GetFrontBuffer(WebGLFramebuffer*,
                                                   const bool webvr);
@@ -1232,6 +1237,12 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   gl::SwapChain mSwapChain;
   gl::SwapChain mWebVRSwapChain;
+
+  RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
+
+  bool PushRemoteTexture(WebGLFramebuffer*, gl::SwapChain&,
+                         std::shared_ptr<gl::SharedSurface>,
+                         const webgl::SwapChainOptions& options);
 
   
 

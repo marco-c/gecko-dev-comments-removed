@@ -8,7 +8,6 @@
 
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/dom/PWebGLParent.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 
 namespace mozilla {
@@ -17,13 +16,8 @@ class HostWebGLContext;
 class WebGLChild;
 
 namespace layers {
-class RemoteTextureOwnerClient;
 class SharedSurfaceTextureClient;
 class SurfaceDescriptor;
-}  
-
-namespace gl {
-class SharedSurface;
 }  
 
 namespace dom {
@@ -78,9 +72,6 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
                                                   Maybe<double>* ret);
   IPCResult RecvGetFrontBuffer(ObjectId fb, bool vr,
                                Maybe<layers::SurfaceDescriptor>* ret);
-  IPCResult RecvPresentFrontBufferToCompositor(
-      uint64_t fb, layers::RemoteTextureId textureId,
-      layers::RemoteTextureOwnerId ownerId);
   IPCResult RecvGetIndexedParameter(GLenum target, GLuint index,
                                     Maybe<double>* ret);
   IPCResult RecvGetInternalformatParameter(GLenum target, GLuint format,
@@ -119,8 +110,6 @@ class WebGLParent : public PWebGLParent, public SupportsWeakPtr {
 
   
   RefPtr<Runnable> mRunCommandsRunnable;
-
-  RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
 };
 
 }  

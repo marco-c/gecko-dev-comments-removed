@@ -51,10 +51,10 @@ class RemoteTextureOwnerClient final {
   void RegisterTextureOwner(const RemoteTextureOwnerId aOwnerId);
   void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerId);
   void UnregisterAllTextureOwners();
-  void PushTexure(const RemoteTextureId aTextureId,
-                  const RemoteTextureOwnerId aOwnerId,
-                  UniquePtr<TextureData>&& aTextureData,
-                  const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
+  void PushTexture(const RemoteTextureId aTextureId,
+                   const RemoteTextureOwnerId aOwnerId,
+                   UniquePtr<TextureData>&& aTextureData,
+                   const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
   UniquePtr<TextureData> CreateOrRecycleBufferTextureData(
       const RemoteTextureOwnerId aOwnerId, gfx::IntSize aSize,
       gfx::SurfaceFormat aFormat);
@@ -146,11 +146,11 @@ class RemoteTextureMap {
   
   
   
-  void PushTexure(const RemoteTextureId aTextureId,
-                  const RemoteTextureOwnerId aOwnerId,
-                  const base::ProcessId aForPid,
-                  UniquePtr<TextureData>&& aTextureData,
-                  const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
+  void PushTexture(const RemoteTextureId aTextureId,
+                   const RemoteTextureOwnerId aOwnerId,
+                   const base::ProcessId aForPid,
+                   UniquePtr<TextureData>&& aTextureData,
+                   const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
   void RegisterTextureOwner(const RemoteTextureOwnerId aOwnerId,
                             const base::ProcessId aForPid);
   void UnregisterTextureOwner(const RemoteTextureOwnerId aOwnerIds,
