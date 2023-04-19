@@ -413,7 +413,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   
-  ScrollSnapInfo ComputeScrollSnapInfo(SnapTargetSet* aSnapTargets = nullptr);
+  ScrollSnapInfo ComputeScrollSnapInfo();
 
   bool NeedsScrollSnap() const;
 

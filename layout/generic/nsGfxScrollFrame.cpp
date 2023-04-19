@@ -7936,8 +7936,7 @@ nsMargin ScrollFrameHelper::GetScrollPadding() const {
                                    GetScrollPortRect().Size());
 }
 
-layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo(
-    SnapTargetSet* aSnapTargets) {
+layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo() {
   ScrollSnapInfo result;
 
   nsIFrame* scrollSnapFrame = GetFrameForStyle();
@@ -7961,7 +7960,7 @@ layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo(
   result.mSnapportSize = snapport.Size();
   CollectScrollPositionsForSnap(mScrolledFrame, mScrolledFrame,
                                 GetScrolledRect(), scrollPadding, writingMode,
-                                result, aSnapTargets);
+                                result, &mSnapTargets);
   return result;
 }
 
@@ -7980,8 +7979,8 @@ Maybe<SnapTarget> ScrollFrameHelper::GetSnapPointForDestination(
   
   mSnapTargets.Clear();
   return ScrollSnapUtils::GetSnapPointForDestination(
-      ComputeScrollSnapInfo(&mSnapTargets), aUnit, aFlags,
-      GetLayoutScrollRange(), aStartPos, aDestination);
+      ComputeScrollSnapInfo(), aUnit, aFlags, GetLayoutScrollRange(), aStartPos,
+      aDestination);
 }
 
 Maybe<SnapTarget> ScrollFrameHelper::GetSnapPointForResnap() {
@@ -7991,8 +7990,8 @@ Maybe<SnapTarget> ScrollFrameHelper::GetSnapPointForResnap() {
   nsIContent* focusedContent =
       mOuter->GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
   return ScrollSnapUtils::GetSnapPointForResnap(
-      ComputeScrollSnapInfo(&mSnapTargets), GetLayoutScrollRange(),
-      GetScrollPosition(), mLastSnapTargetIds, focusedContent);
+      ComputeScrollSnapInfo(), GetLayoutScrollRange(), GetScrollPosition(),
+      mLastSnapTargetIds, focusedContent);
 }
 
 bool ScrollFrameHelper::NeedsResnap() {
