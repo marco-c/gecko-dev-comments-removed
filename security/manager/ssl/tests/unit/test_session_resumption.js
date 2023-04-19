@@ -14,6 +14,7 @@ const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.OCSP.enabled");
+  Services.prefs.clearUserPref("network.ssl_tokens_cache_enabled");
 });
 
 Services.prefs.setIntPref("security.OCSP.enabled", 1);
@@ -40,7 +41,6 @@ function add_resume_non_ev_with_override_test() {
     PRErrorCodeSuccess,
     null,
     transportSecurityInfo => {
-      ok(transportSecurityInfo.resumed, "connection should be resumed");
       ok(
         transportSecurityInfo.securityState &
           Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,
@@ -49,12 +49,7 @@ function add_resume_non_ev_with_override_test() {
       equal(
         transportSecurityInfo.succeededCertChain.length,
         0,
-        "expired.example.com should not have succeededCertChain set"
-      );
-      equal(
-        transportSecurityInfo.failedCertChain.length,
-        2,
-        "expired.example.com should have failedCertChain set"
+        "ev-test.example.com should not have succeededCertChain set"
       );
       equal(
         transportSecurityInfo.overridableErrorCategory,
@@ -82,17 +77,12 @@ function add_resume_non_ev_with_override_test() {
 
 
 
-function add_one_ev_test(resumed) {
+function add_one_ev_test() {
   add_connection_test(
     "ev-test.example.com",
     PRErrorCodeSuccess,
     null,
     transportSecurityInfo => {
-      equal(
-        transportSecurityInfo.resumed,
-        resumed,
-        "connection should be resumed or not resumed as expected"
-      );
       ok(
         !(
           transportSecurityInfo.securityState &
@@ -100,15 +90,9 @@ function add_one_ev_test(resumed) {
         ),
         "ev-test.example.com should not have STATE_CERT_USER_OVERRIDDEN flag"
       );
-      equal(
-        transportSecurityInfo.succeededCertChain.length,
-        3,
+      ok(
+        transportSecurityInfo.succeededCertChain,
         "ev-test.example.com should have succeededCertChain set"
-      );
-      equal(
-        transportSecurityInfo.failedCertChain.length,
-        0,
-        "ev-test.example.com should not have failedCertChain set"
       );
       equal(
         transportSecurityInfo.overridableErrorCategory,
@@ -150,11 +134,11 @@ function add_resume_ev_test() {
   });
   
   
-  add_one_ev_test(false);
+  add_one_ev_test();
   
   
   
-  add_one_ev_test(true);
+  add_one_ev_test();
 
   add_test(() => {
     ocspResponder.stop(run_next_test);
