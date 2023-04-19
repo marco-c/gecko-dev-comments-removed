@@ -30,11 +30,9 @@ using mozilla::net::CookieJarSettings;
 
 
 
-static void GetCookieLifetimePolicyFromCookieJarSettings(
+static void GetCookiePermissionFromCookieJarSettings(
     nsICookieJarSettings* aCookieJarSettings, nsIPrincipal* aPrincipal,
-    uint32_t* aLifetimePolicy) {
-  *aLifetimePolicy = StaticPrefs::network_cookie_lifetimePolicy();
-
+    uint32_t* aPermission) {
   if (aCookieJarSettings) {
     uint32_t cookiePermission = 0;
     nsresult rv =
@@ -45,13 +43,13 @@ static void GetCookieLifetimePolicyFromCookieJarSettings(
 
     switch (cookiePermission) {
       case nsICookiePermission::ACCESS_ALLOW:
-        *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+        *aPermission = nsICookieService::ACCEPT_NORMALLY;
         break;
       case nsICookiePermission::ACCESS_DENY:
-        *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+        *aPermission = nsICookieService::ACCEPT_NORMALLY;
         break;
       case nsICookiePermission::ACCESS_SESSION:
-        *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
+        *aPermission = nsICookieService::ACCEPT_SESSION;
         break;
     }
   }
@@ -125,21 +123,21 @@ static StorageAccess InternalStorageAllowedCheck(
     documentURI = document ? document->GetDocumentURI() : nullptr;
   }
 
-  uint32_t lifetimePolicy;
+  uint32_t permission;
 
   
   
   auto policy = BasePrincipal::Cast(aPrincipal)->AddonPolicy();
 
   if (policy) {
-    lifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+    permission = nsICookieService::ACCEPT_NORMALLY;
   } else {
-    GetCookieLifetimePolicyFromCookieJarSettings(aCookieJarSettings, aPrincipal,
-                                                 &lifetimePolicy);
+    GetCookiePermissionFromCookieJarSettings(aCookieJarSettings, aPrincipal,
+                                             &permission);
   }
 
   
-  if (lifetimePolicy == nsICookieService::ACCEPT_SESSION) {
+  if (permission == nsICookieService::ACCEPT_SESSION) {
     
     
     
