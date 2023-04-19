@@ -3314,6 +3314,12 @@ template <typename Unit, class AnyCharsAccess>
         }
         break;
 
+#ifdef ENABLE_DECORATORS
+      case '@':
+        simpleKind = TokenKind::At;
+        break;
+#endif
+
       default:
         
         
