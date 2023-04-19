@@ -557,6 +557,15 @@ Tester.prototype = {
   },
 
   async ensureVsyncDisabled() {
+    
+    
+    let env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    if (env.get("MOZ_HEADLESS")) {
+      return;
+    }
+
     try {
       await this.TestUtils.waitForCondition(
         () => !ChromeUtils.vsyncEnabled(),

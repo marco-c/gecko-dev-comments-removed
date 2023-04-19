@@ -66,6 +66,9 @@ add_task(async () => {
       );
 
       await BrowserTestUtils.closeWindow(pipWin);
+
+      
+      window.restore();
     }
   );
 });
