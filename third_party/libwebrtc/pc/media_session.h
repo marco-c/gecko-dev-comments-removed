@@ -34,7 +34,6 @@
 #include "pc/media_protocol_names.h"
 #include "pc/session_description.h"
 #include "pc/simulcast_description.h"
-#include "rtc_base/memory/always_valid_pointer.h"
 #include "rtc_base/unique_id_generator.h"
 
 namespace webrtc {
@@ -329,10 +328,6 @@ class MediaSessionDescriptionFactory {
 
   void ComputeVideoCodecsIntersectionAndUnion();
 
-  rtc::UniqueRandomIdGenerator* ssrc_generator() const {
-    return ssrc_generator_.get();
-  }
-
   bool is_unified_plan_ = false;
   AudioCodecs audio_send_codecs_;
   AudioCodecs audio_recv_codecs_;
@@ -347,8 +342,7 @@ class MediaSessionDescriptionFactory {
   
   VideoCodecs all_video_codecs_;
   
-  webrtc::AlwaysValidPointer<rtc::UniqueRandomIdGenerator> const
-      ssrc_generator_;
+  rtc::UniqueRandomIdGenerator* const ssrc_generator_;
   bool enable_encrypted_rtp_header_extensions_ = false;
   
   

@@ -1262,13 +1262,6 @@ void SdpOfferAnswerHandler::Initialize(
 cricket::ChannelManager* SdpOfferAnswerHandler::channel_manager() const {
   return context_->channel_manager();
 }
-
-cricket::MediaEngineInterface* SdpOfferAnswerHandler::media_engine() const {
-  RTC_DCHECK(context_);
-  RTC_DCHECK(context_->channel_manager());
-  return context_->channel_manager()->media_engine();
-}
-
 TransceiverList* SdpOfferAnswerHandler::transceivers() {
   if (!pc_->rtp_manager()) {
     return nullptr;
@@ -1564,60 +1557,56 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
                         << ")";
       return error;
     }
-    if (ConfiguredForMedia()) {
-      std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
-      for (const auto& transceiver_ext : transceivers()->List()) {
-        auto transceiver = transceiver_ext->internal();
-        if (transceiver->stopped()) {
-          continue;
-        }
+    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
+    for (const auto& transceiver_ext : transceivers()->List()) {
+      auto transceiver = transceiver_ext->internal();
+      if (transceiver->stopped()) {
+        continue;
+      }
 
-        
-        
-        
-        if (transceiver->mid()) {
-          auto dtls_transport = LookupDtlsTransportByMid(
-              context_->network_thread(), transport_controller_s(),
-              *transceiver->mid());
-          transceiver->sender_internal()->set_transport(dtls_transport);
-          transceiver->receiver_internal()->set_transport(dtls_transport);
-        }
+      
+      
+      
+      if (transceiver->mid()) {
+        auto dtls_transport = LookupDtlsTransportByMid(
+            context_->network_thread(), transport_controller_s(),
+            *transceiver->mid());
+        transceiver->sender_internal()->set_transport(dtls_transport);
+        transceiver->receiver_internal()->set_transport(dtls_transport);
+      }
 
-        const ContentInfo* content =
-            FindMediaSectionForTransceiver(transceiver, local_description());
-        if (!content) {
-          continue;
-        }
-        const MediaContentDescription* media_desc =
-            content->media_description();
+      const ContentInfo* content =
+          FindMediaSectionForTransceiver(transceiver, local_description());
+      if (!content) {
+        continue;
+      }
+      const MediaContentDescription* media_desc = content->media_description();
+      
+      
+      if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
         
         
-        if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
-          
-          
-          
-          
-          if (!RtpTransceiverDirectionHasRecv(media_desc->direction()) &&
-              (transceiver->fired_direction() &&
-               RtpTransceiverDirectionHasRecv(
-                   *transceiver->fired_direction()))) {
-            ProcessRemovalOfRemoteTrack(transceiver_ext, &remove_list,
-                                        &removed_streams);
-          }
-          
-          
-          transceiver->set_current_direction(media_desc->direction());
-          transceiver->set_fired_direction(media_desc->direction());
+        
+        
+        if (!RtpTransceiverDirectionHasRecv(media_desc->direction()) &&
+            (transceiver->fired_direction() &&
+             RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
+          ProcessRemovalOfRemoteTrack(transceiver_ext, &remove_list,
+                                      &removed_streams);
         }
+        
+        
+        transceiver->set_current_direction(media_desc->direction());
+        transceiver->set_fired_direction(media_desc->direction());
       }
-      auto observer = pc_->Observer();
-      for (const auto& transceiver : remove_list) {
-        observer->OnRemoveTrack(transceiver->receiver());
-      }
-      for (const auto& stream : removed_streams) {
-        observer->OnRemoveStream(stream);
-      }
+    }
+    auto observer = pc_->Observer();
+    for (const auto& transceiver : remove_list) {
+      observer->OnRemoveTrack(transceiver->receiver());
+    }
+    for (const auto& stream : removed_streams) {
+      observer->OnRemoveStream(stream);
     }
   } else {
     
@@ -1661,39 +1650,35 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
   }
 
   if (IsUnifiedPlan()) {
-    if (ConfiguredForMedia()) {
-      
-      
-      for (const auto& transceiver_ext : transceivers()->List()) {
-        auto transceiver = transceiver_ext->internal();
-        if (transceiver->stopped()) {
-          continue;
-        }
-        const ContentInfo* content =
-            FindMediaSectionForTransceiver(transceiver, local_description());
-        if (!content) {
-          continue;
-        }
-        cricket::ChannelInterface* channel = transceiver->channel();
-        if (content->rejected || !channel || channel->local_streams().empty()) {
-          
-          
-          
-          
-          transceiver->sender_internal()->SetSsrc(0);
-        } else {
-          
-          const std::vector<StreamParams>& streams = channel->local_streams();
-          transceiver->sender_internal()->set_stream_ids(
-              streams[0].stream_ids());
-          auto encodings =
-              transceiver->sender_internal()->init_send_encodings();
-          transceiver->sender_internal()->SetSsrc(streams[0].first_ssrc());
-          if (!encodings.empty()) {
-            transceivers()
-                ->StableState(transceiver_ext)
-                ->SetInitSendEncodings(encodings);
-          }
+    
+    
+    for (const auto& transceiver_ext : transceivers()->List()) {
+      auto transceiver = transceiver_ext->internal();
+      if (transceiver->stopped()) {
+        continue;
+      }
+      const ContentInfo* content =
+          FindMediaSectionForTransceiver(transceiver, local_description());
+      if (!content) {
+        continue;
+      }
+      cricket::ChannelInterface* channel = transceiver->channel();
+      if (content->rejected || !channel || channel->local_streams().empty()) {
+        
+        
+        
+        
+        transceiver->sender_internal()->SetSsrc(0);
+      } else {
+        
+        const std::vector<StreamParams>& streams = channel->local_streams();
+        transceiver->sender_internal()->set_stream_ids(streams[0].stream_ids());
+        auto encodings = transceiver->sender_internal()->init_send_encodings();
+        transceiver->sender_internal()->SetSsrc(streams[0].first_ssrc());
+        if (!encodings.empty()) {
+          transceivers()
+              ->StableState(transceiver_ext)
+              ->SetInitSendEncodings(encodings);
         }
       }
     }
@@ -1953,9 +1938,6 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
     SdpType sdp_type) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(IsUnifiedPlan());
-  if (!ConfiguredForMedia()) {
-    return;
-  }
   std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
       now_receiving_transceivers;
   std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
@@ -2743,9 +2725,7 @@ RTCError SdpOfferAnswerHandler::UpdateSessionState(
   } else {
     RTC_DCHECK(type == SdpType::kAnswer);
     ChangeSignalingState(PeerConnectionInterface::kStable);
-    if (ConfiguredForMedia()) {
-      transceivers()->DiscardStableStates();
-    }
+    transceivers()->DiscardStableStates();
   }
 
   
@@ -3171,9 +3151,6 @@ bool SdpOfferAnswerHandler::CheckIfNegotiationIsNeeded() {
     if (!cricket::GetFirstDataContent(description->description()->contents()))
       return true;
   }
-  if (!ConfiguredForMedia()) {
-    return false;
-  }
 
   
   
@@ -3285,6 +3262,7 @@ bool SdpOfferAnswerHandler::CheckIfNegotiationIsNeeded() {
       }
     }
   }
+
   
   
   return false;
@@ -3863,43 +3841,38 @@ void SdpOfferAnswerHandler::GetOptionsForOffer(
 void SdpOfferAnswerHandler::GetOptionsForPlanBOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
-  bool offer_new_data_description =
-      data_channel_controller()->HasDataChannels();
-  bool send_audio = false;
-  bool send_video = false;
-  bool recv_audio = false;
-  bool recv_video = false;
-  if (ConfiguredForMedia()) {
-    
-    send_audio =
-        !rtp_manager()->GetAudioTransceiver()->internal()->senders().empty();
-    send_video =
-        !rtp_manager()->GetVideoTransceiver()->internal()->senders().empty();
+  
+  bool send_audio =
+      !rtp_manager()->GetAudioTransceiver()->internal()->senders().empty();
+  bool send_video =
+      !rtp_manager()->GetVideoTransceiver()->internal()->senders().empty();
 
-    
-    recv_audio = true;
-    recv_video = true;
-  }
+  
+  bool recv_audio = true;
+  bool recv_video = true;
+
   
   bool offer_new_audio_description = send_audio;
   bool offer_new_video_description = send_video;
-  if (ConfiguredForMedia()) {
-    
-    if (offer_answer_options.offer_to_receive_audio !=
-        PeerConnectionInterface::RTCOfferAnswerOptions::kUndefined) {
-      recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
-      offer_new_audio_description =
-          offer_new_audio_description ||
-          (offer_answer_options.offer_to_receive_audio > 0);
-    }
-    if (offer_answer_options.offer_to_receive_video !=
-        RTCOfferAnswerOptions::kUndefined) {
-      recv_video = (offer_answer_options.offer_to_receive_video > 0);
-      offer_new_video_description =
-          offer_new_video_description ||
-          (offer_answer_options.offer_to_receive_video > 0);
-    }
+  bool offer_new_data_description =
+      data_channel_controller()->HasDataChannels();
+
+  
+  if (offer_answer_options.offer_to_receive_audio !=
+      PeerConnectionInterface::RTCOfferAnswerOptions::kUndefined) {
+    recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
+    offer_new_audio_description =
+        offer_new_audio_description ||
+        (offer_answer_options.offer_to_receive_audio > 0);
   }
+  if (offer_answer_options.offer_to_receive_video !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_video = (offer_answer_options.offer_to_receive_video > 0);
+    offer_new_video_description =
+        offer_new_video_description ||
+        (offer_answer_options.offer_to_receive_video > 0);
+  }
+
   absl::optional<size_t> audio_index;
   absl::optional<size_t> video_index;
   absl::optional<size_t> data_index;
@@ -3914,44 +3887,42 @@ void SdpOfferAnswerHandler::GetOptionsForPlanBOffer(
         &audio_index, &video_index, &data_index, session_options);
   }
 
-  if (ConfiguredForMedia()) {
-    
-    if (!audio_index && offer_new_audio_description) {
-      cricket::MediaDescriptionOptions options(
-          cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
-          RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio), false);
-      options.header_extensions =
-          media_engine()->voice().GetRtpHeaderExtensions();
-      session_options->media_description_options.push_back(options);
-      audio_index = session_options->media_description_options.size() - 1;
-    }
-    if (!video_index && offer_new_video_description) {
-      cricket::MediaDescriptionOptions options(
-          cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
-          RtpTransceiverDirectionFromSendRecv(send_video, recv_video), false);
-      options.header_extensions =
-          media_engine()->video().GetRtpHeaderExtensions();
-      session_options->media_description_options.push_back(options);
-      video_index = session_options->media_description_options.size() - 1;
-    }
-    cricket::MediaDescriptionOptions* audio_media_description_options =
-        !audio_index
-            ? nullptr
-            : &session_options->media_description_options[*audio_index];
-    cricket::MediaDescriptionOptions* video_media_description_options =
-        !video_index
-            ? nullptr
-            : &session_options->media_description_options[*video_index];
-
-    AddPlanBRtpSenderOptions(rtp_manager()->GetSendersInternal(),
-                             audio_media_description_options,
-                             video_media_description_options,
-                             offer_answer_options.num_simulcast_layers);
+  
+  if (!audio_index && offer_new_audio_description) {
+    cricket::MediaDescriptionOptions options(
+        cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
+        RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio), false);
+    options.header_extensions =
+        channel_manager()->GetSupportedAudioRtpHeaderExtensions();
+    session_options->media_description_options.push_back(options);
+    audio_index = session_options->media_description_options.size() - 1;
+  }
+  if (!video_index && offer_new_video_description) {
+    cricket::MediaDescriptionOptions options(
+        cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
+        RtpTransceiverDirectionFromSendRecv(send_video, recv_video), false);
+    options.header_extensions =
+        channel_manager()->GetSupportedVideoRtpHeaderExtensions();
+    session_options->media_description_options.push_back(options);
+    video_index = session_options->media_description_options.size() - 1;
   }
   if (!data_index && offer_new_data_description) {
     session_options->media_description_options.push_back(
         GetMediaDescriptionOptionsForActiveData(cricket::CN_DATA));
+    data_index = session_options->media_description_options.size() - 1;
   }
+
+  cricket::MediaDescriptionOptions* audio_media_description_options =
+      !audio_index ? nullptr
+                   : &session_options->media_description_options[*audio_index];
+  cricket::MediaDescriptionOptions* video_media_description_options =
+      !video_index ? nullptr
+                   : &session_options->media_description_options[*video_index];
+
+  AddPlanBRtpSenderOptions(rtp_manager()->GetSendersInternal(),
+                           audio_media_description_options,
+                           video_media_description_options,
+                           offer_answer_options.num_simulcast_layers);
 }
 
 void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
@@ -4057,29 +4028,27 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
   
   
   
-  if (ConfiguredForMedia()) {
-    for (const auto& transceiver : transceivers()->ListInternal()) {
-      if (transceiver->mid() || transceiver->stopping()) {
-        continue;
-      }
-      size_t mline_index;
-      if (!recycleable_mline_indices.empty()) {
-        mline_index = recycleable_mline_indices.front();
-        recycleable_mline_indices.pop();
-        session_options->media_description_options[mline_index] =
-            GetMediaDescriptionOptionsForTransceiver(
-                transceiver, mid_generator_.GenerateString(),
-                true);
-      } else {
-        mline_index = session_options->media_description_options.size();
-        session_options->media_description_options.push_back(
-            GetMediaDescriptionOptionsForTransceiver(
-                transceiver, mid_generator_.GenerateString(),
-                true));
-      }
-      
-      transceiver->set_mline_index(mline_index);
+  for (const auto& transceiver : transceivers()->ListInternal()) {
+    if (transceiver->mid() || transceiver->stopping()) {
+      continue;
     }
+    size_t mline_index;
+    if (!recycleable_mline_indices.empty()) {
+      mline_index = recycleable_mline_indices.front();
+      recycleable_mline_indices.pop();
+      session_options->media_description_options[mline_index] =
+          GetMediaDescriptionOptionsForTransceiver(
+              transceiver, mid_generator_.GenerateString(),
+              true);
+    } else {
+      mline_index = session_options->media_description_options.size();
+      session_options->media_description_options.push_back(
+          GetMediaDescriptionOptionsForTransceiver(
+              transceiver, mid_generator_.GenerateString(),
+              true));
+    }
+    
+    transceiver->set_mline_index(mline_index);
   }
   
   
@@ -4119,32 +4088,25 @@ void SdpOfferAnswerHandler::GetOptionsForAnswer(
 void SdpOfferAnswerHandler::GetOptionsForPlanBAnswer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
-  bool send_audio = false;
-  bool recv_audio = false;
-  bool send_video = false;
-  bool recv_video = false;
+  
+  bool send_audio =
+      !rtp_manager()->GetAudioTransceiver()->internal()->senders().empty();
+  bool send_video =
+      !rtp_manager()->GetVideoTransceiver()->internal()->senders().empty();
 
-  if (ConfiguredForMedia()) {
-    
-    send_audio =
-        !rtp_manager()->GetAudioTransceiver()->internal()->senders().empty();
-    send_video =
-        !rtp_manager()->GetVideoTransceiver()->internal()->senders().empty();
+  
+  
+  bool recv_audio = true;
+  bool recv_video = true;
 
-    
-    
-    recv_audio = true;
-    recv_video = true;
-
-    
-    if (offer_answer_options.offer_to_receive_audio !=
-        RTCOfferAnswerOptions::kUndefined) {
-      recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
-    }
-    if (offer_answer_options.offer_to_receive_video !=
-        RTCOfferAnswerOptions::kUndefined) {
-      recv_video = (offer_answer_options.offer_to_receive_video > 0);
-    }
+  
+  if (offer_answer_options.offer_to_receive_audio !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
+  }
+  if (offer_answer_options.offer_to_receive_video !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_video = (offer_answer_options.offer_to_receive_video > 0);
   }
 
   absl::optional<size_t> audio_index;
@@ -4167,12 +4129,10 @@ void SdpOfferAnswerHandler::GetOptionsForPlanBAnswer(
       !video_index ? nullptr
                    : &session_options->media_description_options[*video_index];
 
-  if (ConfiguredForMedia()) {
-    AddPlanBRtpSenderOptions(rtp_manager()->GetSendersInternal(),
-                             audio_media_description_options,
-                             video_media_description_options,
-                             offer_answer_options.num_simulcast_layers);
-  }
+  AddPlanBRtpSenderOptions(rtp_manager()->GetSendersInternal(),
+                           audio_media_description_options,
+                           video_media_description_options,
+                           offer_answer_options.num_simulcast_layers);
 }
 
 void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanAnswer(
@@ -4517,9 +4477,6 @@ void SdpOfferAnswerHandler::UpdateRemoteSendersList(
 void SdpOfferAnswerHandler::EnableSending() {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::EnableSending");
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!ConfiguredForMedia()) {
-    return;
-  }
   for (const auto& transceiver : transceivers()->ListInternal()) {
     cricket::ChannelInterface* channel = transceiver->channel();
     if (channel) {
@@ -4540,63 +4497,60 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(sdesc);
 
-  if (ConfiguredForMedia()) {
+  
+  
+  if (!UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid)) {
     
     
-    if (!UpdatePayloadTypeDemuxingState(source, bundle_groups_by_mid)) {
-      
-      
-      
-      return RTCError(RTCErrorType::INTERNAL_ERROR,
-                      "Failed to update payload type demuxing state.");
+    
+    return RTCError(RTCErrorType::INTERNAL_ERROR,
+                    "Failed to update payload type demuxing state.");
+  }
+
+  
+  auto rtp_transceivers = transceivers()->ListInternal();
+  std::vector<
+      std::pair<cricket::ChannelInterface*, const MediaContentDescription*>>
+      channels;
+  for (const auto& transceiver : rtp_transceivers) {
+    const ContentInfo* content_info =
+        FindMediaSectionForTransceiver(transceiver, sdesc);
+    cricket::ChannelInterface* channel = transceiver->channel();
+    if (!channel || !content_info || content_info->rejected) {
+      continue;
+    }
+    const MediaContentDescription* content_desc =
+        content_info->media_description();
+    if (!content_desc) {
+      continue;
     }
 
-    
-    auto rtp_transceivers = transceivers()->ListInternal();
-    std::vector<
-        std::pair<cricket::ChannelInterface*, const MediaContentDescription*>>
-        channels;
-    for (const auto& transceiver : rtp_transceivers) {
-      const ContentInfo* content_info =
-          FindMediaSectionForTransceiver(transceiver, sdesc);
-      cricket::ChannelInterface* channel = transceiver->channel();
-      if (!channel || !content_info || content_info->rejected) {
-        continue;
-      }
-      const MediaContentDescription* content_desc =
-          content_info->media_description();
-      if (!content_desc) {
-        continue;
-      }
+    transceiver->OnNegotiationUpdate(type, content_desc);
+    channels.push_back(std::make_pair(channel, content_desc));
+  }
 
-      transceiver->OnNegotiationUpdate(type, content_desc);
-      channels.push_back(std::make_pair(channel, content_desc));
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (const auto& entry : channels) {
-      std::string error;
-      bool success =
-          context_->worker_thread()->Invoke<bool>(RTC_FROM_HERE, [&]() {
-            return (source == cricket::CS_LOCAL)
-                       ? entry.first->SetLocalContent(entry.second, type, error)
-                       : entry.first->SetRemoteContent(entry.second, type,
-                                                       error);
-          });
-      if (!success) {
-        return RTCError(RTCErrorType::INVALID_PARAMETER, error);
-      }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const auto& entry : channels) {
+    std::string error;
+    bool success =
+        context_->worker_thread()->Invoke<bool>(RTC_FROM_HERE, [&]() {
+          return (source == cricket::CS_LOCAL)
+                     ? entry.first->SetLocalContent(entry.second, type, error)
+                     : entry.first->SetRemoteContent(entry.second, type, error);
+        });
+    if (!success) {
+      return RTCError(RTCErrorType::INVALID_PARAMETER, error);
     }
   }
+
   
   
   if (pc_->sctp_mid() && local_description() && remote_description()) {
@@ -4650,9 +4604,6 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
   
   if (!IsUnifiedPlan())
     return;
-  if (!ConfiguredForMedia()) {
-    return;
-  }
   
   auto transceiver_list = transceivers()->List();
   for (auto transceiver : transceiver_list) {
@@ -4687,21 +4638,18 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
 void SdpOfferAnswerHandler::RemoveUnusedChannels(
     const SessionDescription* desc) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (ConfiguredForMedia()) {
-    
-    
-    const cricket::ContentInfo* video_info =
-        cricket::GetFirstVideoContent(desc);
-    if (!video_info || video_info->rejected) {
-      rtp_manager()->GetVideoTransceiver()->internal()->ClearChannel();
-    }
-
-    const cricket::ContentInfo* audio_info =
-        cricket::GetFirstAudioContent(desc);
-    if (!audio_info || audio_info->rejected) {
-      rtp_manager()->GetAudioTransceiver()->internal()->ClearChannel();
-    }
+  
+  
+  const cricket::ContentInfo* video_info = cricket::GetFirstVideoContent(desc);
+  if (!video_info || video_info->rejected) {
+    rtp_manager()->GetVideoTransceiver()->internal()->ClearChannel();
   }
+
+  const cricket::ContentInfo* audio_info = cricket::GetFirstAudioContent(desc);
+  if (!audio_info || audio_info->rejected) {
+    rtp_manager()->GetAudioTransceiver()->internal()->ClearChannel();
+  }
+
   const cricket::ContentInfo* data_info = cricket::GetFirstDataContent(desc);
   if (!data_info) {
     RTCError error(RTCErrorType::OPERATION_ERROR_WITH_DATA,
@@ -5019,7 +4967,7 @@ void SdpOfferAnswerHandler::GenerateMediaDescriptionOptions(
         *audio_index = session_options->media_description_options.size() - 1;
       }
       session_options->media_description_options.back().header_extensions =
-          media_engine()->voice().GetRtpHeaderExtensions();
+          channel_manager()->GetSupportedAudioRtpHeaderExtensions();
     } else if (IsVideoContent(&content)) {
       
       if (*video_index) {
@@ -5036,7 +4984,7 @@ void SdpOfferAnswerHandler::GenerateMediaDescriptionOptions(
         *video_index = session_options->media_description_options.size() - 1;
       }
       session_options->media_description_options.back().header_extensions =
-          media_engine()->video().GetRtpHeaderExtensions();
+          channel_manager()->GetSupportedVideoRtpHeaderExtensions();
     } else if (IsUnsupportedContent(&content)) {
       session_options->media_description_options.push_back(
           cricket::MediaDescriptionOptions(cricket::MEDIA_TYPE_UNSUPPORTED,
@@ -5258,10 +5206,6 @@ bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
         }
         return true;
       });
-}
-
-bool SdpOfferAnswerHandler::ConfiguredForMedia() const {
-  return context_->channel_manager();
 }
 
 }  

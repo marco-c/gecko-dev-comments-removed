@@ -64,10 +64,17 @@ class ChannelManager : public ChannelFactoryInterface {
   rtc::UniqueRandomIdGenerator& ssrc_generator() { return ssrc_generator_; }
 
   
+  
+  void GetSupportedAudioSendCodecs(std::vector<AudioCodec>* codecs) const;
+  void GetSupportedAudioReceiveCodecs(std::vector<AudioCodec>* codecs) const;
   void GetSupportedVideoSendCodecs(std::vector<VideoCodec>* codecs) const;
   void GetSupportedVideoReceiveCodecs(std::vector<VideoCodec>* codecs) const;
   RtpHeaderExtensions GetDefaultEnabledAudioRtpHeaderExtensions() const;
+  std::vector<webrtc::RtpHeaderExtensionCapability>
+  GetSupportedAudioRtpHeaderExtensions() const;
   RtpHeaderExtensions GetDefaultEnabledVideoRtpHeaderExtensions() const;
+  std::vector<webrtc::RtpHeaderExtensionCapability>
+  GetSupportedVideoRtpHeaderExtensions() const;
 
   
   
@@ -116,7 +123,7 @@ class ChannelManager : public ChannelFactoryInterface {
   void DestroyVideoChannel(VideoChannel* video_channel);
 
  private:
-  const std::unique_ptr<MediaEngineInterface> media_engine_;
+  const std::unique_ptr<MediaEngineInterface> media_engine_;  
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
