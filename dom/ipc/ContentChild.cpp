@@ -3041,6 +3041,10 @@ void ContentChild::ShutdownInternal() {
                     : "Not profiling - SendShutdownProfile (failed)"_ns));
   }
 
+  if (PerfStats::GetCollectionMask() != 0) {
+    SendShutdownPerfStats(PerfStats::CollectLocalPerfStatsJSON());
+  }
+
   
   
   

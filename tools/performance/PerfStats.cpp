@@ -32,14 +32,7 @@ StaticAutoPtr<PerfStats> PerfStats::sSingleton;
 
 void PerfStats::SetCollectionMask(MetricMask aMask) {
   sCollectionMask = aMask;
-  for (uint64_t i = 0; i < static_cast<uint64_t>(Metric::Max); i++) {
-    if (!(sCollectionMask & 1 << i)) {
-      continue;
-    }
-
-    GetSingleton()->mRecordedTimes[i] = 0;
-    GetSingleton()->mRecordedCounts[i] = 0;
-  }
+  GetSingleton()->ResetCollection();
 
   if (!XRE_IsParentProcess()) {
     return;
@@ -133,42 +126,51 @@ void AppendJSONStringAsProperty(nsCString& aDest, const char* aPropertyName,
   aDest.Append(aJSON);
 }
 
+static void WriteContentParent(nsCString& aRawString, JSONWriter& aWriter,
+                               const nsCString& aString,
+                               ContentParent* aParent) {
+  aWriter.StringProperty("type", "content");
+  aWriter.IntProperty("id", aParent->ChildID());
+  const ManagedContainer<PBrowserParent>& browsers =
+      aParent->ManagedPBrowserParent();
+
+  aWriter.StartArrayProperty("urls");
+  for (const auto& key : browsers) {
+    
+    
+    
+    RefPtr<BrowserParent> parent = BrowserParent::GetFrom(key);
+
+    CanonicalBrowsingContext* ctx = parent->GetBrowsingContext();
+    if (!ctx) {
+      continue;
+    }
+
+    WindowGlobalParent* windowGlobal = ctx->GetCurrentWindowGlobal();
+    if (!windowGlobal) {
+      continue;
+    }
+
+    RefPtr<nsIURI> uri = windowGlobal->GetDocumentURI();
+    if (!uri) {
+      continue;
+    }
+
+    nsAutoCString url;
+    uri->GetSpec(url);
+
+    aWriter.StringElement(url);
+  }
+  aWriter.EndArray();
+  AppendJSONStringAsProperty(aRawString, "perfstats", aString);
+}
+
 struct PerfStatsCollector {
   PerfStatsCollector() : writer(MakeUnique<StringWriteFunc>(string)) {}
 
   void AppendPerfStats(const nsCString& aString, ContentParent* aParent) {
     writer.StartObjectElement();
-    writer.StringProperty("type", "content");
-    writer.IntProperty("id", aParent->ChildID());
-    const ManagedContainer<PBrowserParent>& browsers =
-        aParent->ManagedPBrowserParent();
-
-    writer.StartArrayProperty("urls");
-    for (const auto& key : browsers) {
-      RefPtr<BrowserParent> parent = BrowserParent::GetFrom(key);
-
-      CanonicalBrowsingContext* ctx = parent->GetBrowsingContext();
-      if (!ctx) {
-        continue;
-      }
-
-      WindowGlobalParent* windowGlobal = ctx->GetCurrentWindowGlobal();
-      if (!windowGlobal) {
-        continue;
-      }
-
-      RefPtr<nsIURI> uri = windowGlobal->GetDocumentURI();
-      if (!uri) {
-        continue;
-      }
-
-      nsAutoCString url;
-      uri->GetSpec(url);
-
-      writer.StringElement(url);
-    }
-    writer.EndArray();
-    AppendJSONStringAsProperty(string, "perfstats", aString);
+    WriteContentParent(string, writer, aString, aParent);
     writer.EndObject();
   }
 
@@ -189,6 +191,31 @@ struct PerfStatsCollector {
   JSONWriter writer;
   MozPromiseHolder<PerfStats::PerfStatsPromise> promise;
 };
+
+void PerfStats::ResetCollection() {
+  for (uint64_t i = 0; i < static_cast<uint64_t>(Metric::Max); i++) {
+    if (!(sCollectionMask & 1 << i)) {
+      continue;
+    }
+
+    mRecordedTimes[i] = 0;
+    mRecordedCounts[i] = 0;
+  }
+
+  mStoredPerfStats.Clear();
+}
+
+void PerfStats::StorePerfStatsInternal(dom::ContentParent* aParent,
+                                       const nsCString& aPerfStats) {
+  nsCString jsonString;
+  JSONWriter w(MakeUnique<StringWriteFunc>(jsonString));
+
+  
+  
+  WriteContentParent(jsonString, w, aPerfStats, aParent);
+
+  mStoredPerfStats.AppendElement(jsonString);
+}
 
 auto PerfStats::CollectPerfStatsJSONInternal() -> RefPtr<PerfStatsPromise> {
   if (!PerfStats::sCollectionMask) {
@@ -216,6 +243,17 @@ auto PerfStats::CollectPerfStatsJSONInternal() -> RefPtr<PerfStatsPromise> {
                                    CollectLocalPerfStatsJSONInternal());
       }
       w.EndObject();
+
+      
+      for (nsCString& string : mStoredPerfStats) {
+        w.StartObjectElement();
+        
+        
+        collector->string.Append(string);
+        w.EndObject();
+      }
+      
+      
 
       GPUProcessManager* gpuManager = GPUProcessManager::Get();
       GPUChild* gpuChild = nullptr;
