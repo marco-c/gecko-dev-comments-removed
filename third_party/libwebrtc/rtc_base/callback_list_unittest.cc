@@ -11,7 +11,6 @@
 #include <type_traits>
 
 #include "api/function_view.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/callback_list.h"
 #include "test/gtest.h"
 
@@ -207,8 +206,6 @@ TEST(CallbackList, MemberFunctionTest) {
 
   EXPECT_EQ(index, 2);
 }
-
-
 
 
 

@@ -4744,12 +4744,6 @@ void SdpOfferAnswerHandler::DestroyDataChannelTransport() {
     data_channel_controller()->set_rtp_data_channel(nullptr);
   }
 
-  
-  
-  
-  
-  
-
   if (pc_->sctp_mid()) {
     RTC_DCHECK_RUN_ON(pc_->signaling_thread());
     data_channel_controller()->OnTransportChannelClosed();
