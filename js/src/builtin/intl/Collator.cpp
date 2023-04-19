@@ -30,6 +30,7 @@
 #include "vm/StringType.h"
 #include "vm/WellKnownAtom.h"  
 
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
 
 using namespace js;
@@ -99,6 +100,8 @@ const ClassSpec CollatorObject::classSpec_ = {
 
 
 static bool Collator(JSContext* cx, const CallArgs& args) {
+  AutoJSConstructorProfilerEntry pseudoFrame(cx, "Intl.Collator");
+
   
 
   

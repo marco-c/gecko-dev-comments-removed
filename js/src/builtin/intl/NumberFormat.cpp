@@ -53,6 +53,7 @@
 #include "vm/StringType.h"
 #include "vm/WellKnownAtom.h"  
 
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
@@ -134,6 +135,8 @@ const ClassSpec NumberFormatObject::classSpec_ = {
 
 
 static bool NumberFormat(JSContext* cx, const CallArgs& args, bool construct) {
+  AutoJSConstructorProfilerEntry pseudoFrame(cx, "Intl.NumberFormat");
+
   
 
   
