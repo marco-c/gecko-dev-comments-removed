@@ -31,9 +31,7 @@ std::string MediaTypeToString(MediaType type) {
       RTC_NOTREACHED();
       return "";
   }
-  FATAL();
-  
-  return "";
+  RTC_CHECK(false);
 }
 
 }  
