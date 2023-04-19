@@ -84,7 +84,7 @@ void EarlyHintsService::FinalResponse(uint32_t aResponseStatus) {
   
   
   CollectTelemetry(Some(aResponseStatus));
-  if (aResponseStatus >= 300 && aResponseStatus < 400) {
+  if (aResponseStatus >= 300) {
     mOngoingEarlyHints->CancelAllOngoingPreloads();
     mCanceled = true;
   }
