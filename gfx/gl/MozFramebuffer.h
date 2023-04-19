@@ -57,6 +57,7 @@ class MozFramebuffer final {
 
  public:
   
+  
   static UniquePtr<MozFramebuffer> Create(GLContext* gl,
                                           const gfx::IntSize& size,
                                           uint32_t samples, bool depthStencil);
