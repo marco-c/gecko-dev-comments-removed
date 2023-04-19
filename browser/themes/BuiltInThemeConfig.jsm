@@ -6,10 +6,6 @@
 
 const EXPORTED_SYMBOLS = ["_applyColorwayConfig", "BuiltInThemeConfig"];
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
-
 
 
 
@@ -504,7 +500,7 @@ const ColorwayCollections = [
   },
   {
     id: "independent-voices",
-    expiry: AppConstants.NIGHTLY_BUILD ? "2023-01-24" : "1970-01-01",
+    expiry: "2023-01-24",
     l10nId: {
       title: "colorway-collection-independent-voices",
       description: "colorway-collection-independent-voices-description",
