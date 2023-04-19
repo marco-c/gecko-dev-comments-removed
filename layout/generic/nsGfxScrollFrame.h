@@ -314,10 +314,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
 
 
-  bool GetSnapPointForDestination(mozilla::ScrollUnit aUnit,
-                                  mozilla::ScrollSnapFlags aFlags,
-                                  const nsPoint& aStartPos,
-                                  nsPoint& aDestination);
+  Maybe<SnapTarget> GetSnapPointForDestination(mozilla::ScrollUnit aUnit,
+                                               mozilla::ScrollSnapFlags aFlags,
+                                               const nsPoint& aStartPos,
+                                               const nsPoint& aDestination);
 
   nsMargin GetScrollPadding() const;
 
@@ -799,10 +799,27 @@ class ScrollFrameHelper : public nsIReflowCallback {
   };
 
   struct ScrollOperationParams {
+    ScrollOperationParams(const ScrollOperationParams&) = delete;
+    ScrollOperationParams(ScrollMode aMode, ScrollOrigin aOrigin)
+        : mMode(aMode), mOrigin(aOrigin) {}
+    ScrollOperationParams(ScrollMode aMode, ScrollOrigin aOrigin,
+                          ScrollSnapTargetIds&& aSnapTargetIds)
+        : ScrollOperationParams(aMode, aOrigin) {
+      mTargetIds = std::move(aSnapTargetIds);
+    }
+    ScrollOperationParams(ScrollMode aMode, ScrollOrigin aOrigin,
+                          mozilla::ScrollSnapFlags aSnapFlags,
+                          ScrollTriggeredByScript aTriggeredByScript)
+        : ScrollOperationParams(aMode, aOrigin) {
+      mSnapFlags = aSnapFlags;
+      mTriggeredByScript = aTriggeredByScript;
+    }
+
     ScrollMode mMode;
     ScrollOrigin mOrigin;
     mozilla::ScrollSnapFlags mSnapFlags = mozilla::ScrollSnapFlags::Disabled;
     ScrollTriggeredByScript mTriggeredByScript = ScrollTriggeredByScript::No;
+    ScrollSnapTargetIds mTargetIds;
 
     bool IsInstant() const { return mMode == ScrollMode::Instant; }
     bool IsSmoothMsd() const { return mMode == ScrollMode::SmoothMsd; }
@@ -813,6 +830,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   };
 
   
+
+
+
+
+
+
 
 
   void ScrollToWithOrigin(nsPoint aScrollPosition, const nsRect* aRange,
