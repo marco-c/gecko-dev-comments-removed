@@ -264,7 +264,12 @@ var gLanguagesDialog = {
       if (localeCode == this._availableLanguagesList[i].code) {
         return this._availableLanguagesList[i].name;
       }
+      
+      if (localeCode.split("-")[0] == this._availableLanguagesList[i].code) {
+        return this._availableLanguagesList[i].name;
+      }
     }
+
     return "";
   },
 
