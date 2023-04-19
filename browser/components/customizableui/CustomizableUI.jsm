@@ -64,7 +64,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
 
 
 
-var kVersion = 17;
+var kVersion = 18;
 
 
 
@@ -273,16 +273,12 @@ var CustomizableUIInternal = {
       CustomizableUI.AREA_TABSTRIP,
       {
         type: CustomizableUI.TYPE_TOOLBAR,
-        defaultPlacements: Services.prefs.getBoolPref(
-          "browser.tabs.firefox-view"
-        )
-          ? [
-              "firefox-view-button",
-              "tabbrowser-tabs",
-              "new-tab-button",
-              "alltabs-button",
-            ]
-          : ["tabbrowser-tabs", "new-tab-button", "alltabs-button"],
+        defaultPlacements: [
+          "firefox-view-button",
+          "tabbrowser-tabs",
+          "new-tab-button",
+          "alltabs-button",
+        ],
         defaultCollapsed: null,
       },
       true
@@ -380,9 +376,13 @@ var CustomizableUIInternal = {
       }
     }
 
+    
+    if (!gSavedState.placements) {
+      return;
+    }
+
     if (
       currentVersion < 7 &&
-      gSavedState.placements &&
       gSavedState.placements[CustomizableUI.AREA_NAVBAR]
     ) {
       let placements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
@@ -405,11 +405,7 @@ var CustomizableUIInternal = {
       gSavedState.placements[CustomizableUI.AREA_NAVBAR] = newPlacements;
     }
 
-    if (
-      currentVersion < 8 &&
-      gSavedState.placements &&
-      gSavedState.placements["PanelUI-contents"]
-    ) {
+    if (currentVersion < 8 && gSavedState.placements["PanelUI-contents"]) {
       let savedPanelPlacements = gSavedState.placements["PanelUI-contents"];
       delete gSavedState.placements["PanelUI-contents"];
       let defaultPlacements = [
@@ -450,11 +446,7 @@ var CustomizableUIInternal = {
       }
     }
 
-    if (
-      currentVersion < 9 &&
-      gSavedState.placements &&
-      gSavedState.placements["nav-bar"]
-    ) {
+    if (currentVersion < 9 && gSavedState.placements["nav-bar"]) {
       let placements = gSavedState.placements["nav-bar"];
       if (placements.includes("urlbar-container")) {
         let urlbarIndex = placements.indexOf("urlbar-container");
@@ -496,7 +488,7 @@ var CustomizableUIInternal = {
       }
     }
 
-    if (currentVersion < 10 && gSavedState.placements) {
+    if (currentVersion < 10) {
       for (let placements of Object.values(gSavedState.placements)) {
         if (placements.includes("webcompat-reporter-button")) {
           placements.splice(placements.indexOf("webcompat-reporter-button"), 1);
@@ -507,7 +499,7 @@ var CustomizableUIInternal = {
 
     
     
-    if (currentVersion < 11 && gSavedState.placements) {
+    if (currentVersion < 11) {
       let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
       
       for (let placements of Object.values(gSavedState.placements)) {
@@ -539,7 +531,7 @@ var CustomizableUIInternal = {
       }
     }
 
-    if (currentVersion < 12 && gSavedState.placements) {
+    if (currentVersion < 12) {
       const removedButtons = [
         "loop-call-button",
         "loop-button-throttled",
@@ -557,7 +549,7 @@ var CustomizableUIInternal = {
 
     
     
-    if (currentVersion < 13 && gSavedState.placements) {
+    if (currentVersion < 13) {
       for (let placements of Object.values(gSavedState.placements)) {
         let buttonIndex = placements.indexOf("e10s-button");
         if (buttonIndex != -1) {
@@ -567,7 +559,7 @@ var CustomizableUIInternal = {
     }
 
     
-    if (currentVersion < 14 && gSavedState.placements) {
+    if (currentVersion < 14) {
       for (let area in gSavedState.placements) {
         if (!this._builtinAreas.has(area)) {
           delete gSavedState.placements[area];
@@ -576,7 +568,7 @@ var CustomizableUIInternal = {
     }
 
     
-    if (currentVersion < 16 && gSavedState.placements) {
+    if (currentVersion < 16) {
       let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
       
       if (navbarPlacements) {
@@ -585,7 +577,7 @@ var CustomizableUIInternal = {
     }
 
     
-    if (currentVersion < 17 && gSavedState.placements) {
+    if (currentVersion < 17) {
       let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
       let persistedPageActionsPref = Services.prefs.getCharPref(
         "browser.pageActions.persistedActions",
@@ -608,6 +600,18 @@ var CustomizableUIInternal = {
           navbarPlacements.length;
 
         navbarPlacements.splice(newPosition, 0, "save-to-pocket-button");
+      }
+    }
+
+    
+    if (currentVersion < 18) {
+      let tabstripPlacements =
+        gSavedState.placements[CustomizableUI.AREA_TABSTRIP];
+      if (
+        tabstripPlacements &&
+        !tabstripPlacements.includes("firefox-view-button")
+      ) {
+        tabstripPlacements.unshift("firefox-view-button");
       }
     }
   },
