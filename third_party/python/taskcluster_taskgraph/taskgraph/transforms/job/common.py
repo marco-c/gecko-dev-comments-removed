@@ -191,6 +191,11 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs, sparse=False):
         if repo_config.ssh_secret_name:
             taskdesc["scopes"].append(f"secrets:get:{repo_config.ssh_secret_name}")
 
+    if any(repo_config.type == "hg" for repo_config in repo_configs.values()):
+        
+        
+        taskdesc["scopes"].append("secrets:get:project/taskcluster/gecko/hgfingerprint")
+
     
     if job["worker"]["implementation"] in ("docker-worker",):
         taskdesc["worker"]["taskcluster-proxy"] = True
