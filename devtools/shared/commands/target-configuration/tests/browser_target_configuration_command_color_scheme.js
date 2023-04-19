@@ -160,11 +160,16 @@ function topLevelDocumentMatchPrefersDarkColorSchemeMediaAtStartup() {
 }
 
 function getIframeBrowsingContext() {
-  return SpecialPowers.spawn(
-    gBrowser.selectedBrowser,
-    [],
-    () => content.document.querySelector("iframe").browsingContext
-  );
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    
+    
+    await new Promise(resolve => {
+      content.requestAnimationFrame(() =>
+        content.requestAnimationFrame(resolve)
+      );
+    });
+    return content.document.querySelector("iframe").browsingContext;
+  });
 }
 
 async function iframeDocumentMatchPrefersDarkColorSchemeMedia() {
