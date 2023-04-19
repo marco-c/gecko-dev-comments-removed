@@ -1350,19 +1350,12 @@ already_AddRefed<WebRenderLayerManager> nsBaseWidget::CreateCompositorSession(
 
     
     
-    
-    
     bool supportsAcceleration = WidgetTypeSupportsAcceleration();
-    bool enableWR;
-    bool enableSWWR;
+    bool enableSWWR = true;
     if (supportsAcceleration ||
         StaticPrefs::gfx_webrender_unaccelerated_widget_force()) {
-      enableWR = gfx::gfxVars::UseWebRender();
       enableSWWR = gfx::gfxVars::UseSoftwareWebRender();
-    } else {
-      enableWR = enableSWWR = gfx::gfxVars::UseWebRender();
     }
-    MOZ_RELEASE_ASSERT(enableWR);
     bool enableAPZ = UseAPZ();
     CompositorOptions options(enableAPZ, enableSWWR);
 

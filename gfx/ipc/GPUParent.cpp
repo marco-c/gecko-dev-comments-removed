@@ -273,9 +273,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     
     ScopedGfxFeatureReporter reporter("WR",
                                       gfxPlatform::WebRenderPrefEnabled());
-    if (gfxVars::UseWebRender()) {
-      reporter.SetSuccessful();
-    }
+    reporter.SetSuccessful();
   }
 
   for (const LayerTreeIdMapping& map : aMappings) {
@@ -299,14 +297,12 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
       }
     }
   }
-  if (gfxVars::UseWebRender()) {
-    DeviceManagerDx::Get()->CreateDirectCompositionDevice();
-    
-    nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-    Unused << gfxInfo;
+  DeviceManagerDx::Get()->CreateDirectCompositionDevice();
+  
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  Unused << gfxInfo;
 
-    Factory::EnsureDWriteFactory();
-  }
+  Factory::EnsureDWriteFactory();
 #endif
 
 #if defined(MOZ_WIDGET_GTK)
@@ -335,15 +331,13 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   
   
   
-  if (gfxVars::UseWebRender()) {
-    FT_Library library = Factory::NewFTLibrary();
-    MOZ_ASSERT(library);
-    Factory::SetFTLibrary(library);
+  FT_Library library = Factory::NewFTLibrary();
+  MOZ_ASSERT(library);
+  Factory::SetFTLibrary(library);
 
-    
-    
-    SkInitCairoFT(true);
-  }
+  
+  
+  SkInitCairoFT(true);
 
   
   nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
@@ -371,22 +365,11 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 #endif
 
   
-  if (gfxVars::UseWebRender()) {
-    if (gfxVars::UseCanvasRenderThread()) {
-      gfx::CanvasRenderThread::Start();
-    }
-    wr::RenderThread::Start(aWrNamespace);
-    image::ImageMemoryReporter::InitForWebRender();
+  if (gfxVars::UseCanvasRenderThread()) {
+    gfx::CanvasRenderThread::Start();
   }
-#ifdef XP_WIN
-  else {
-    if (gfxVars::UseDoubleBufferingWithCompositor()) {
-      
-      
-      widget::WinCompositorWindowThread::Start();
-    }
-  }
-#endif
+  wr::RenderThread::Start(aWrNamespace);
+  image::ImageMemoryReporter::InitForWebRender();
 
   VRManager::ManagerInit();
   

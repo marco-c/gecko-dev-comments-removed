@@ -25,7 +25,6 @@
 #include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Maybe.h"
@@ -11497,8 +11496,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     
     
     
-    if (!gfxVars::UseWebRender() ||
-        !SVGIntegrationUtils::UsingSimpleClipPathForFrame(this)) {
+    if (!SVGIntegrationUtils::UsingSimpleClipPathForFrame(this)) {
       result += CompositorHitTestFlags::eIrregularArea;
     }
   }
