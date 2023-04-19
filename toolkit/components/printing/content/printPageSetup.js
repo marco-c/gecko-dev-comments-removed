@@ -522,7 +522,7 @@ function onAccept() {
   
   
   
-  gPrintService.savePrintSettingsToPrefs(gPrintSettings, true, flags);
+  gPrintService.savePrintSettingsToPrefs(gPrintSettings, flags);
 }
 
 

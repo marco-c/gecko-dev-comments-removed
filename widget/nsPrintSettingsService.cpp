@@ -930,14 +930,16 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
 
 
 
-nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(
-    nsIPrintSettings* aPS, bool aUsePrinterNamePrefix, uint32_t aFlags) {
+nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(nsIPrintSettings* aPS,
+                                                          uint32_t aFlags) {
   NS_ENSURE_ARG_POINTER(aPS);
   MOZ_DIAGNOSTIC_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+  MOZ_ASSERT(!(aFlags & nsIPrintSettings::kInitSavePrinterName),
+             "Use SaveLastUsedPrintNameToPrefs");
 
   
   nsAutoString prtName;
-  nsresult rv = GetAdjustedPrinterName(aPS, aUsePrinterNamePrefix, prtName);
+  nsresult rv = GetAdjustedPrinterName(aPS, true, prtName);
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifndef MOZ_WIDGET_ANDROID
@@ -946,13 +948,23 @@ nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(
   
   
   
-  if (prtName.IsEmpty() && aFlags != nsIPrintSettings::kInitSavePrinterName) {
+  if (prtName.IsEmpty()) {
     MOZ_DIAGNOSTIC_ASSERT(false, "Print settings must be saved with a prefix");
     return NS_ERROR_FAILURE;
   }
 #endif
 
   return WritePrefs(aPS, prtName, aFlags);
+}
+
+nsresult nsPrintSettingsService::SaveLastUsedPrinterNameToPrefs(
+    const nsAString& aPrinterName) {
+  MOZ_DIAGNOSTIC_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
+
+  if (!aPrinterName.IsEmpty()) {
+    Preferences::SetString(kPrinterName, aPrinterName);
+  }
+  return NS_OK;
 }
 
 
