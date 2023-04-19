@@ -5876,8 +5876,8 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
         
         
         
-        *aResult = kidPosition +
-                   aFrame->GetLogicalUsedBorderAndPadding(aWM).BStart(aWM);
+        
+        *aResult = kidPosition + aFrame->GetLogicalUsedBorder(aWM).BStart(aWM);
         return true;
       }
       return false;
