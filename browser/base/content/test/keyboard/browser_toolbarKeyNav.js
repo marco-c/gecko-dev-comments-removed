@@ -92,6 +92,10 @@ function withNewBlankTab(taskFn) {
   });
 }
 
+function removeFirefoxViewButton() {
+  CustomizableUI.removeWidgetFromArea("firefox-view-button");
+}
+
 const BOOKMARKS_COUNT = 100;
 
 add_setup(async function() {
@@ -519,4 +523,78 @@ add_task(async function testTabStopsAfterSearchBarAdded() {
   });
   await SpecialPowers.popPrefEnv();
   RemoveOldMenuSideButtons();
+});
+
+
+
+add_task(async function testFirefoxViewButtonNavigation() {
+  
+  
+  await BrowserTestUtils.overflowTabs(registerCleanupFunction, window);
+
+  
+  
+  
+  
+  
+  
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
+    await SpecialPowers.spawn(aBrowser, [], async () => {
+      content.document.querySelector("#camera").focus();
+    });
+
+    await expectFocusAfterKey("Tab", "firefox-view-button");
+    let selectedTab = document.querySelector("tab[selected]");
+    await expectFocusAfterKey("Tab", selectedTab);
+    await expectFocusAfterKey("Tab", "new-tab-button");
+    await expectFocusAfterKey("Shift+Tab", selectedTab);
+    await expectFocusAfterKey("Shift+Tab", "firefox-view-button");
+
+    
+    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+    await SpecialPowers.spawn(aBrowser, [], async () => {
+      let activeElement = content.document.activeElement;
+      let expectedElement = content.document.querySelector("#camera");
+      is(
+        activeElement,
+        expectedElement,
+        "Focus should be returned to the 'camera' button"
+      );
+    });
+  });
+
+  
+  
+  
+  
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(aBrowser) {
+    removeFirefoxViewButton();
+
+    await SpecialPowers.spawn(aBrowser, [], async () => {
+      content.document.querySelector("#camera").focus();
+    });
+
+    let selectedTab = document.querySelector("tab[selected]");
+    await expectFocusAfterKey("Tab", selectedTab);
+    await expectFocusAfterKey("Tab", "new-tab-button");
+    await expectFocusAfterKey("Shift+Tab", selectedTab);
+
+    
+    EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+    await SpecialPowers.spawn(aBrowser, [], async () => {
+      let activeElement = content.document.activeElement;
+      let expectedElement = content.document.querySelector("#camera");
+      is(
+        activeElement,
+        expectedElement,
+        "Focus should be returned to the 'camera' button"
+      );
+    });
+  });
+
+  
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+  }
+  CustomizableUI.reset();
 });

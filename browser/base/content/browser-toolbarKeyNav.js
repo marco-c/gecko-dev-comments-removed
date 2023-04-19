@@ -74,7 +74,7 @@ ToolbarKeyboardNavigator = {
       
       let bounds = window.windowUtils.getBoundsWithoutFlushing(aNode);
       if (bounds.width == 0) {
-        return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_SKIP;
       }
 
       if (this._isButton(aNode)) {
