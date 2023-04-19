@@ -389,5 +389,21 @@ TEST_F(ReassemblyQueueTest, HandoverAfterHavingAssembedOneMessage) {
   reasm2.Add(TSN(11), gen_.Ordered({1, 2, 3, 4}, "BE"));
   EXPECT_THAT(reasm2.FlushMessages(), SizeIs(1));
 }
+
+TEST_F(ReassemblyQueueTest, HandleInconsistentForwardTSN) {
+  
+  ReassemblyQueue reasm("log: ", TSN(10), kBufferSize);
+  
+  reasm.Add(TSN(43), Data(kStreamID, SSN(7), MID(0), FSN(0), kPPID,
+                          std::vector<uint8_t>(10), Data::IsBeginning(true),
+                          Data::IsEnd(true), IsUnordered(false)));
+
+  
+  reasm.Handle(ForwardTsnChunk(
+      TSN(44), {ForwardTsnChunk::SkippedStream(kStreamID, SSN(6))}));
+
+  
+  EXPECT_FALSE(reasm.HasMessages());
+}
 }  
 }  

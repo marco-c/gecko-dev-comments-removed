@@ -210,8 +210,16 @@ void ReassemblyQueue::AddReassembledMessage(
                        << ", payload=" << message.payload().size() << " bytes";
 
   for (const UnwrappedTSN tsn : tsns) {
-    
-    if (tsn == last_assembled_tsn_watermark_.next_value()) {
+    if (tsn <= last_assembled_tsn_watermark_) {
+      
+      
+      
+      RTC_DLOG(LS_VERBOSE)
+          << log_prefix_
+          << "Message is built from fragments already seen - skipping";
+      return;
+    } else if (tsn == last_assembled_tsn_watermark_.next_value()) {
+      
       last_assembled_tsn_watermark_.Increment();
     } else {
       delivered_tsns_.insert(tsn);
