@@ -3,6 +3,7 @@
 
 
 
+#include "ErrorList.h"
 #include "HTMLEditor.h"
 
 #include "EditAction.h"
@@ -1100,6 +1101,11 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
+  
+
+  
+  
+  
   const SplitNodeResult splitResult =
       SplitAncestorStyledInlineElementsAt(aPoint, aProperty, aAttribute);
   if (splitResult.isErr()) {
@@ -1117,6 +1123,9 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
     return EditResult(aPoint);
   }
 
+  
+  
+  
   
   
   
@@ -1183,23 +1192,38 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   splitResultAtStartOfNextNode.IgnoreCaretPointSuggestion();
 
-  
-  
   if (splitResultAtStartOfNextNode.Handled() &&
-      splitResultAtStartOfNextNode.GetNextContent() &&
-      HTMLEditUtils::IsEmptyNode(
-          *splitResultAtStartOfNextNode.GetNextContent(),
-          {EmptyCheckOption::TreatSingleBRElementAsVisible,
-           EmptyCheckOption::TreatListItemAsVisible,
-           EmptyCheckOption::TreatTableCellAsVisible})) {
+      splitResultAtStartOfNextNode.GetNextContent()) {
     
     
     
-    nsresult rv = DeleteNodeWithTransaction(
-        MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-      return EditResult(rv);
+    
+    
+    
+    
+    
+    
+    
+    
+    bool seenBR = false;
+    if (HTMLEditUtils::IsEmptyNode(
+            *splitResultAtStartOfNextNode.GetNextContent(),
+            {EmptyCheckOption::TreatListItemAsVisible,
+             EmptyCheckOption::TreatTableCellAsVisible},
+            &seenBR)) {
+      
+      
+      
+      nsresult rv = DeleteNodeWithTransaction(
+          MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+        return EditResult(rv);
+      }
+      if (seenBR && !brElement) {
+        brElement = HTMLEditUtils::GetFirstBRElement(
+            *splitResultAtStartOfNextNode.GetNextContent()->AsElement());
+      }
     }
   }
 
@@ -1227,6 +1251,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
           ? firstLeafChildOfPreviousNode
           : splitResultAtStartOfNextNode.GetPreviousContent(),
       0);
+
   
   
   
@@ -1248,6 +1273,60 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
     NS_WARNING_ASSERTION(
         rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
         "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
+
+    if (splitResultAtStartOfNextNode.GetNextContent() &&
+        splitResultAtStartOfNextNode.GetNextContent()->IsInComposedDoc()) {
+      
+      
+      
+      
+      
+      
+      
+      if (HTMLEditUtils::IsEmptyNode(
+              *splitResultAtStartOfNextNode.GetNextContent(),
+              {EmptyCheckOption::TreatSingleBRElementAsVisible,
+               EmptyCheckOption::TreatListItemAsVisible,
+               EmptyCheckOption::TreatTableCellAsVisible})) {
+        
+        
+        nsresult rv = DeleteNodeWithTransaction(
+            MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          return EditResult(rv);
+        }
+      }
+      
+      
+      
+      
+      
+      
+      else if (HTMLEditUtils::IsEmptyNode(
+                   *splitResultAtStartOfNextNode.GetNextContent(),
+                   {EmptyCheckOption::TreatListItemAsVisible,
+                    EmptyCheckOption::TreatTableCellAsVisible})) {
+        AutoTArray<OwningNonNull<nsIContent>, 4> emptyInlineContainerElements;
+        HTMLEditUtils::CollectEmptyInlineContainerDescendants(
+            *splitResultAtStartOfNextNode.GetNextContent()->AsElement(),
+            emptyInlineContainerElements,
+            {EmptyCheckOption::TreatSingleBRElementAsVisible,
+             EmptyCheckOption::TreatListItemAsVisible,
+             EmptyCheckOption::TreatTableCellAsVisible});
+        for (const OwningNonNull<nsIContent>& emptyInlineContainerElement :
+             emptyInlineContainerElements) {
+          
+          nsresult rv = DeleteNodeWithTransaction(
+              MOZ_KnownLive(emptyInlineContainerElement));
+          if (NS_FAILED(rv)) {
+            NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+            return EditResult(rv);
+          }
+        }
+      }
+    }
+
     
     pointToPutCaret.Set(pointToPutCaret.GetContainer(), 0);
   }
