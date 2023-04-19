@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_DEVICE_INFO_LINUX_H_
-#define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_LINUX_DEVICE_INFO_LINUX_H_
+#ifndef MODULES_VIDEO_CAPTURE_LINUX_DEVICE_INFO_V4L2_H_
+#define MODULES_VIDEO_CAPTURE_LINUX_DEVICE_INFO_V4L2_H_
 
 #include <stdint.h>
 
@@ -24,10 +24,10 @@ struct v4l2_capability;
 
 namespace webrtc {
 namespace videocapturemodule {
-class DeviceInfoLinux : public DeviceInfoImpl {
+class DeviceInfoV4l2 : public DeviceInfoImpl {
  public:
-  DeviceInfoLinux();
-  ~DeviceInfoLinux() override;
+  DeviceInfoV4l2();
+  ~DeviceInfoV4l2() override;
   uint32_t NumberOfDevices() override;
   int32_t GetDeviceName(uint32_t deviceNumber,
                         char* deviceNameUTF8,
