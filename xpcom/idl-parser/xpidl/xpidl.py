@@ -197,6 +197,12 @@ builtinNames = [
     Builtin("string", "char *", "*const libc::c_char", False, False),
     Builtin("wchar", "char16_t", "u16", False, False),
     Builtin("wstring", "char16_t *", "*const u16", False, False),
+    
+    
+    
+    Builtin(
+        "MozExternalRefCountType", "MozExternalRefCountType", "MozExternalRefCountType"
+    ),
 ]
 
 builtinMap = {}
