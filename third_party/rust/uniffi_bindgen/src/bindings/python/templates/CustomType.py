@@ -1,5 +1,5 @@
-{%- match config %}
-{%- when None %}
+{%- match python_config.custom_types.get(name.as_str())  %}
+{% when None %}
 {
 class FfiConverterType{{ name }}:
     @staticmethod
@@ -18,7 +18,16 @@ class FfiConverterType{{ name }}:
     def lower(value):
         return {{ builtin|ffi_converter_name }}.lower(value)
 
-{%- when Some with (config) %}
+{%- when Some(config) %}
+
+{%- match config.imports %}
+{%- when Some(imports) %}
+{%- for import_name in imports %}
+{{ self.add_import(import_name) }}
+{%- endfor %}
+{%- else %}
+{%- endmatch %}
+
 {
 class FfiConverterType{{ name }}:
     @staticmethod

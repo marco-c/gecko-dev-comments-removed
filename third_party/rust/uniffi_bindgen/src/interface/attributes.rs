@@ -14,8 +14,6 @@
 
 
 
-use std::convert::{TryFrom, TryInto};
-
 use anyhow::{bail, Result};
 
 
@@ -112,7 +110,7 @@ where
         .map(Attribute::try_from)
         .collect::<Result<Vec<_>, _>>()?;
 
-    for attr in attrs.iter() {
+    for attr in &attrs {
         validator(attr)?;
     }
 
