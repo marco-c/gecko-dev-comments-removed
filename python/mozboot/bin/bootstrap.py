@@ -16,10 +16,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import sys
 
 major, minor = sys.version_info[:2]
-if (major < 3) or (major == 3 and minor < 5):
+if (major < 3) or (major == 3 and minor < 6):
     print(
-        "Bootstrap currently only runs on Python 3.5+."
-        "Please try re-running with python3.5+."
+        "Bootstrap currently only runs on Python 3.6+."
+        "Please try re-running with python3.6+."
     )
     sys.exit(1)
 
