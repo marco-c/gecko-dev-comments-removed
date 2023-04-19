@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "FileSystemLog.h"
+
+namespace mozilla {
+
+LazyLogModule gOPFSLog("OPFS");
+
+}
