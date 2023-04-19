@@ -250,21 +250,6 @@ bool nsTableFrame::PageBreakAfter(nsIFrame* aSourceFrame,
 
 
 void nsTableFrame::RegisterPositionedTablePart(nsIFrame* aFrame) {
-  
-  
-  
-  
-  if (!aFrame->IsTableCellFrame()) {
-    nsIContent* content = aFrame->GetContent();
-    nsPresContext* presContext = aFrame->PresContext();
-    if (content && !presContext->HasWarnedAboutPositionedTableParts()) {
-      presContext->SetHasWarnedAboutPositionedTableParts();
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "Layout: Tables"_ns, content->OwnerDoc(),
-          nsContentUtils::eLAYOUT_PROPERTIES, "TablePartRelPosWarning");
-    }
-  }
-
   nsTableFrame* tableFrame = nsTableFrame::GetTableFrame(aFrame);
   MOZ_ASSERT(tableFrame, "Should have a table frame here");
   tableFrame = static_cast<nsTableFrame*>(tableFrame->FirstContinuation());
