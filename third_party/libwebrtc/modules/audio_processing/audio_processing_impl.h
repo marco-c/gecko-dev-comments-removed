@@ -56,8 +56,8 @@ class AudioProcessingImpl : public AudioProcessing {
   
   
   AudioProcessingImpl();
-  
-  AudioProcessingImpl(std::unique_ptr<CustomProcessing> capture_post_processor,
+  AudioProcessingImpl(const AudioProcessing::Config& config,
+                      std::unique_ptr<CustomProcessing> capture_post_processor,
                       std::unique_ptr<CustomProcessing> render_pre_processor,
                       std::unique_ptr<EchoControlFactory> echo_control_factory,
                       rtc::scoped_refptr<EchoDetector> echo_detector,
