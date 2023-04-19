@@ -21,17 +21,10 @@ std::unique_ptr<RenderPipelineStage> GetWriteToImageBundleStage(
 std::unique_ptr<RenderPipelineStage> GetWriteToImage3FStage(Image3F* image);
 
 
-std::unique_ptr<RenderPipelineStage> GetWriteToU8Stage(uint8_t* rgb,
-                                                       size_t stride,
-                                                       size_t height, bool rgba,
-                                                       bool has_alpha,
-                                                       size_t alpha_c);
-
-
-std::unique_ptr<RenderPipelineStage> GetWriteToPixelCallbackStage(
-    const PixelCallback& pixel_callback, size_t width, size_t height,
-    size_t num_channels, bool has_alpha, bool unpremul_alpha, size_t alpha_c,
-    bool swap_endianness, Orientation undo_orientation);
+std::unique_ptr<RenderPipelineStage> GetWriteToOutputStage(
+    const PixelCallback& pixel_callback, void* buffer, size_t width,
+    size_t height, size_t stride, JxlPixelFormat format, bool has_alpha,
+    bool unpremul_alpha, size_t alpha_c, Orientation undo_orientation);
 
 }  
 

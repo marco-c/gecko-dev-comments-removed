@@ -59,7 +59,7 @@ void RandomImage(Xorshift128Plus* rng, const Rect& rect,
   
   constexpr size_t kFloatsPerBatch =
       Xorshift128Plus::N * sizeof(uint64_t) / sizeof(float);
-  HWY_ALIGN uint64_t batch[Xorshift128Plus::N];
+  HWY_ALIGN uint64_t batch[Xorshift128Plus::N] = {};
 
   const HWY_FULL(float) df;
   const size_t N = Lanes(df);

@@ -28,6 +28,8 @@ enum class ExtraTF {
   kSRGB,
 };
 
+
+
 Status MaybeCreateProfile(const ColorEncoding& c,
                           PaddedBytes* JXL_RESTRICT icc);
 

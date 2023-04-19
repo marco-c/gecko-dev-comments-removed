@@ -29,6 +29,10 @@ const ImageBundle* ToXYB(const ImageBundle& in, ThreadPool* pool,
 
 
 
+void ScaleXYB(Image3F* opsin);
+
+
+
 
 Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
                   const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,

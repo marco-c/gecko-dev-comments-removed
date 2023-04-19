@@ -18,6 +18,7 @@ namespace jpeg {
 struct HuffmanCodeTable {
   int depth[256];
   int code[256];
+  void InitDepths() { std::fill(std::begin(depth), std::end(depth), 0); }
 };
 
 
@@ -36,7 +37,7 @@ struct DCTCodingState {
   
   int eob_run_;
   
-  const HuffmanCodeTable* cur_ac_huff_;
+  HuffmanCodeTable* cur_ac_huff_;
   
   
   std::vector<int> refinement_bits_;

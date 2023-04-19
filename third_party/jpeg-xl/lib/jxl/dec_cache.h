@@ -78,34 +78,27 @@ struct PassesDecoderState {
   ImageF sigma;
 
   
+  void* image_buffer;
   
+  size_t width;
+  size_t height;
   
+  size_t stride;
   
-  uint8_t* rgb_output;
-  size_t rgb_stride = 0;
-
-  size_t output_channels;
+  PixelCallback pixel_callback;
+  
+  JxlPixelFormat format;
 
   
   bool fast_xyb_srgb8_conversion;
 
   
   
-  bool rgb_output_is_rgba;
-  
-  
   bool unpremul_alpha;
 
-  bool swap_endianness;
+  
+  
   Orientation undo_orientation;
-
-  
-  PixelCallback pixel_callback;
-
-  
-  std::vector<float> opaque_alpha;
-  
-  std::vector<std::vector<float>> pixel_callback_rows;
 
   
   size_t visible_frame_index = 0;
@@ -141,14 +134,13 @@ struct PassesDecoderState {
     b_dm_multiplier =
         std::pow(1 / (1.25f), shared->frame_header.b_qm_scale - 2.0f);
 
-    rgb_output = nullptr;
-    rgb_output_is_rgba = false;
-    output_channels = 3;
-    unpremul_alpha = false;
-    swap_endianness = false;
-    undo_orientation = Orientation::kIdentity;
-    fast_xyb_srgb8_conversion = false;
     pixel_callback = PixelCallback();
+    image_buffer = nullptr;
+
+    fast_xyb_srgb8_conversion = false;
+    unpremul_alpha = false;
+    undo_orientation = Orientation::kIdentity;
+
     used_acs = 0;
 
     upsampler8x = GetUpsamplingStage(shared->metadata->transform_data, 0, 3);
