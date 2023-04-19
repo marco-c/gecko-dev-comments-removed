@@ -70,7 +70,7 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
 }
 
 void SharedStyleSheetCache::InsertIfNeeded(css::SheetLoadData& aData) {
-  MOZ_ASSERT(aData.mLoader->GetDocument(),
+  MOZ_ASSERT(aData.mLoader->IsDocumentAssociated(),
              "We only cache document-associated sheets");
   LOG("SharedStyleSheetCache::InsertIfNeeded");
   

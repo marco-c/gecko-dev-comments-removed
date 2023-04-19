@@ -409,6 +409,8 @@ class Loader final {
 
   dom::Document* GetDocument() const { return mDocument; }
 
+  bool IsDocumentAssociated() const { return mIsDocumentAssociated; }
+
   
 
 
@@ -631,6 +633,9 @@ class Loader final {
   uint32_t mParsedSheetCount = 0;
 
   bool mEnabled = true;
+
+  
+  bool mIsDocumentAssociated = false;
 
 #ifdef DEBUG
   
