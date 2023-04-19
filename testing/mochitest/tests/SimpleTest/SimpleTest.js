@@ -2042,7 +2042,7 @@ var add_task = (function() {
   }
 
   
-  return function(generatorFunction) {
+  return function(generatorFunction, options = { isSetup: false }) {
     if (task_list.length === 0) {
       
       
@@ -2099,12 +2099,18 @@ var add_task = (function() {
                 skipTask(name);
                 continue;
               }
-              info("add_task | Entering test " + name);
+              const taskInfo = action =>
+                info(
+                  `${
+                    task.isSetup ? "add_setup" : "add_task"
+                  } | ${action} ${name}`
+                );
+              taskInfo("Entering");
               let result = await task();
               if (isGenerator(result)) {
                 ok(false, "Task returned a generator");
               }
-              info("add_task | Leaving test " + name);
+              taskInfo("Leaving");
             }
           } catch (ex) {
             try {
@@ -2139,10 +2145,21 @@ var add_task = (function() {
     generatorFunction.only = () => (run_only_this_task = generatorFunction);
     
     
-    task_list.push(generatorFunction);
+    if (options.isSetup) {
+      generatorFunction.isSetup = true;
+      let lastSetupIndex = task_list.findLastIndex(t => t.isSetup) + 1;
+      task_list.splice(lastSetupIndex, 0, generatorFunction);
+    } else {
+      task_list.push(generatorFunction);
+    }
     return generatorFunction;
   };
 })();
+
+
+function add_setup(generatorFunction) {
+  return add_task(generatorFunction, { isSetup: true });
+}
 
 
 
