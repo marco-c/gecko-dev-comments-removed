@@ -52,7 +52,7 @@ constexpr int kSurplusCompressionGain = 6;
 
 
 
-constexpr int kClippingPredictorEvaluatorHistorySize = 32;
+constexpr int kClippingPredictorEvaluatorHistorySize = 500;
 
 using ClippingPredictorConfig = AudioProcessing::Config::GainController1::
     AnalogGainController::ClippingPredictor;
@@ -609,9 +609,14 @@ void AgcManagerDirect::AnalyzePreProcess(const float* const* audio,
       }
     }
     
+    
+    
+    const bool one_or_more_clipped_samples =
+        clipped_ratio >= (1.0f / samples_per_channel);
     absl::optional<int> prediction_interval =
-        clipping_predictor_evaluator_.Observe(clipping_detected,
-                                              clipping_predicted);
+        clipping_predictor_evaluator_.Observe(
+            one_or_more_clipped_samples,
+            clipping_predicted);
     if (prediction_interval.has_value()) {
       RTC_HISTOGRAM_COUNTS_LINEAR(
           "WebRTC.Audio.Agc.ClippingPredictor.PredictionInterval",
