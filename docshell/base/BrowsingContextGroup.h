@@ -114,9 +114,14 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   static already_AddRefed<BrowsingContextGroup> GetOrCreate(uint64_t aId);
   static already_AddRefed<BrowsingContextGroup> GetExisting(uint64_t aId);
-  static already_AddRefed<BrowsingContextGroup> Create();
+  static already_AddRefed<BrowsingContextGroup> Create(
+      bool aPotentiallyCrossOriginIsolated = false);
   static already_AddRefed<BrowsingContextGroup> Select(
       WindowContext* aParent, BrowsingContext* aOpener);
+
+  
+  
+  static uint64_t CreateId(bool aPotentiallyCrossOriginIsolated = false);
 
   
   
@@ -186,6 +191,14 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void SetLastDialogQuitTime(TimeStamp aLastDialogQuitTime) {
     mLastDialogQuitTime = aLastDialogQuitTime;
   }
+
+  
+  
+  
+  
+  
+  
+  bool IsPotentiallyCrossOriginIsolated();
 
   static void GetAllGroups(nsTArray<RefPtr<BrowsingContextGroup>>& aGroups);
 

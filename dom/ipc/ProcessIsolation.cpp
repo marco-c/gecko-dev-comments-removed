@@ -847,6 +847,15 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   if (coop ==
       nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP) {
     webProcessType = WebProcessType::WebCoopCoep;
+
+    
+    
+    if (options.mReplaceBrowsingContext) {
+      MOZ_ASSERT(!options.mSpecificGroupId,
+                 "overriding previously-specified BCG ID");
+      options.mSpecificGroupId = BrowsingContextGroup::CreateId(
+           true);
+    }
   }
 
   switch (webProcessType) {

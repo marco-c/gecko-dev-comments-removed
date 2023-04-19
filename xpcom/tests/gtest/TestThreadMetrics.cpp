@@ -9,6 +9,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/TaskCategory.h"
 #include "mozilla/PerformanceCounter.h"
@@ -22,6 +23,7 @@
 using namespace mozilla;
 using mozilla::Runnable;
 using mozilla::dom::DocGroup;
+using mozilla::dom::Document;
 
 
 
@@ -119,10 +121,18 @@ class ThreadMetrics : public ::testing::Test {
  protected:
   virtual void SetUp() {
     
+    
+    
+    
+    
+
+    
     RefPtr<dom::BrowsingContextGroup> group =
         dom::BrowsingContextGroup::Create();
-    mDocGroup = group->AddDocument("key"_ns, nullptr);
-    mDocGroup2 = group->AddDocument("key2"_ns, nullptr);
+    MOZ_ALWAYS_SUCCEEDS(NS_NewHTMLDocument(getter_AddRefs(mDocument), true));
+    MOZ_ALWAYS_SUCCEEDS(NS_NewHTMLDocument(getter_AddRefs(mDocument2), true));
+    mDocGroup = group->AddDocument("key"_ns, mDocument);
+    mDocGroup2 = group->AddDocument("key2"_ns, mDocument2);
     mCounter = mDocGroup->GetPerformanceCounter();
     mCounter2 = mDocGroup2->GetPerformanceCounter();
     mThreadMgr = do_GetService("@mozilla.org/thread-manager;1");
@@ -132,10 +142,12 @@ class ThreadMetrics : public ::testing::Test {
 
   virtual void TearDown() {
     
-    mDocGroup->RemoveDocument(nullptr);
-    mDocGroup2->RemoveDocument(nullptr);
+    mDocGroup->RemoveDocument(mDocument);
+    mDocGroup2->RemoveDocument(mDocument2);
     mDocGroup = nullptr;
     mDocGroup2 = nullptr;
+    mDocument = nullptr;
+    mDocument2 = nullptr;
     ProcessAllEvents();
   }
 
@@ -151,6 +163,8 @@ class ThreadMetrics : public ::testing::Test {
 
   uint32_t mOther;
   bool mOldPref;
+  RefPtr<Document> mDocument;
+  RefPtr<Document> mDocument2;
   RefPtr<DocGroup> mDocGroup;
   RefPtr<DocGroup> mDocGroup2;
   RefPtr<PerformanceCounter> mCounter;
