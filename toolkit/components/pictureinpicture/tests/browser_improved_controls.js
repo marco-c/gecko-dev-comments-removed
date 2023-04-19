@@ -16,6 +16,10 @@ add_task(async () => {
       gBrowser,
     },
     async browser => {
+      let waitForVideoEvent = eventType => {
+        return BrowserTestUtils.waitForContentEvent(browser, eventType, true);
+      };
+
       await ensureVideosReady(browser);
       await SpecialPowers.spawn(browser, [videoID], async videoID => {
         await content.document.getElementById(videoID).play();
@@ -33,9 +37,27 @@ add_task(async () => {
       ok(pipWin, "Got Picture-in-Picture window.");
 
       let fullscreenButton = pipWin.document.getElementById("fullscreen");
+      let seekForwardButton = pipWin.document.getElementById("seekForward");
+      let seekBackwardButton = pipWin.document.getElementById("seekBackward");
+
+      
+      let seekedForwardPromise = waitForVideoEvent("seeked");
+      EventUtils.synthesizeMouseAtCenter(seekForwardButton, {}, pipWin);
+      ok(await seekedForwardPromise, "The Forward button triggers");
+
+      
+      let seekedBackwardPromise = waitForVideoEvent("seeked");
+      EventUtils.synthesizeMouseAtCenter(seekBackwardButton, {}, pipWin);
+      ok(await seekedBackwardPromise, "The Backward button triggers");
 
       
       Assert.ok(!fullscreenButton.hidden, "The Fullscreen button is visible");
+
+      
+      Assert.ok(!seekForwardButton.hidden, "The Forward button is visible");
+
+      
+      Assert.ok(!seekBackwardButton.hidden, "The Backward button is visible");
 
       
       let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
@@ -52,11 +74,22 @@ add_task(async () => {
       ok(pipWin, "Got Picture-in-Picture window.");
 
       fullscreenButton = pipWin.document.getElementById("fullscreen");
+      seekForwardButton = pipWin.document.getElementById("seekForward");
+      seekBackwardButton = pipWin.document.getElementById("seekBackward");
 
       
       Assert.ok(
         fullscreenButton.hidden,
         "The Fullscreen button is not visible"
+      );
+
+      
+      Assert.ok(seekForwardButton.hidden, "The Forward button is not visible");
+
+      
+      Assert.ok(
+        seekBackwardButton.hidden,
+        "The Backward button is not visible"
       );
     }
   );
