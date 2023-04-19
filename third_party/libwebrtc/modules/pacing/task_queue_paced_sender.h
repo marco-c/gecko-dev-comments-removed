@@ -154,9 +154,7 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
 
   
   
-  
-  
-  bool is_started_ RTC_GUARDED_BY(task_queue_) = true;
+  bool is_started_ RTC_GUARDED_BY(task_queue_) = false;
 
   
   

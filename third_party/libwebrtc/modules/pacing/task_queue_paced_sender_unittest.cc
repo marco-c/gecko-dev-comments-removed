@@ -562,8 +562,7 @@ namespace test {
               kProbingRate * TimeDelta::Millis(1) + DataSize::Bytes(1));
   }
 
-  
-  TEST(TaskQueuePacedSenderTest, DISABLED_NoStatsUpdatesBeforeStart) {
+  TEST(TaskQueuePacedSenderTest, NoStatsUpdatesBeforeStart) {
     const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
