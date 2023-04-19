@@ -1019,12 +1019,6 @@ pref("plugins.show_infobar", false);
 pref("plugins.favorfallback.mode", "follow-ctp");
 pref("plugins.favorfallback.rules", "nosrc,video");
 
-#ifdef XP_WIN
-  pref("browser.preferences.instantApply", false);
-#else
-  pref("browser.preferences.instantApply", true);
-#endif
-
 
 pref("browser.preferences.search", true);
 #if defined(NIGHTLY_BUILD)

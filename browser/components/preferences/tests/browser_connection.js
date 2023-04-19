@@ -14,7 +14,6 @@ function test() {
   registerCleanupFunction(function() {
     Services.prefs.setIntPref("network.proxy.type", oldNetworkProxyType);
     Services.prefs.clearUserPref("network.proxy.no_proxies_on");
-    Services.prefs.clearUserPref("browser.preferences.instantApply");
     
     
     Services.prefs.clearUserPref("network.trr.mode");

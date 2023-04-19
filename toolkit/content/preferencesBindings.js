@@ -80,21 +80,14 @@ const Preferences = (window.Preferences = (function() {
 
     get instantApply() {
       
+      
+      
       if (this._instantApplyForceEnabled) {
         return true;
       }
 
       
-      if (this.type === "child") {
-        return false;
-      }
-
-      
-      
-      
-      
-      
-      return Services.prefs.getBoolPref("browser.preferences.instantApply");
+      return this.type !== "child";
     },
 
     _instantApplyForceEnabled: false,

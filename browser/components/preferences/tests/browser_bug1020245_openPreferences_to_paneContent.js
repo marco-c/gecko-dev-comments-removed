@@ -1,12 +1,6 @@
 
 
 
-Services.prefs.setBoolPref("browser.preferences.instantApply", true);
-
-registerCleanupFunction(function() {
-  Services.prefs.clearUserPref("browser.preferences.instantApply");
-});
-
 
 add_task(async function() {
   let prefs = await openPreferencesViaOpenPreferencesAPI("panePrivacy");
