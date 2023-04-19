@@ -19,7 +19,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Downloads } = ChromeUtils.import(
   "resource://gre/modules/Downloads.jsm"
 );

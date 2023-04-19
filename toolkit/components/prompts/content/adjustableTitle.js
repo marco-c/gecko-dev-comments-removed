@@ -8,9 +8,6 @@ let { PromptUtils } = ChromeUtils.import(
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
-
-
-
 const AdjustableTitle = {
   _cssSnippet: `
     #titleContainer {

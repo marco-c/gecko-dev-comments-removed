@@ -41,9 +41,7 @@ var _XPCSHELL_PROCESS;
 
 
 
-let { Services: _Services } = ChromeUtils.import(
-  "resource://gre/modules/Services.jsm"
-);
+let _Services = Services;
 _register_modules_protocol_handler();
 
 let { AppConstants: _AppConstants } = ChromeUtils.import(
