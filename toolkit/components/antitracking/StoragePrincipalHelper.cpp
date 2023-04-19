@@ -389,7 +389,9 @@ bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
   } else {
     
     
-    cookieJarSettings = CookieJarSettings::Create(CookieJarSettings::eRegular);
+    
+    cookieJarSettings = CookieJarSettings::Create(
+        CookieJarSettings::eRegular,  false);
   }
 
   

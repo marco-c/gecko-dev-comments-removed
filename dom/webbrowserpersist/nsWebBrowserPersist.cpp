@@ -1343,10 +1343,17 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
   
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings = aCookieJarSettings;
   if (!cookieJarSettings) {
+    
+    
+    
+    bool shouldResistFingerprinting =
+        nsContentUtils::ShouldResistFingerprinting(aTriggeringPrincipal);
     cookieJarSettings =
         aIsPrivate
-            ? net::CookieJarSettings::Create(net::CookieJarSettings::ePrivate)
-            : net::CookieJarSettings::Create(net::CookieJarSettings::eRegular);
+            ? net::CookieJarSettings::Create(net::CookieJarSettings::ePrivate,
+                                             shouldResistFingerprinting)
+            : net::CookieJarSettings::Create(net::CookieJarSettings::eRegular,
+                                             shouldResistFingerprinting);
   }
 
   

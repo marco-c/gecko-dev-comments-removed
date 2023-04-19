@@ -89,8 +89,11 @@ void SetACookieInternal(nsICookieService* aCookieService, const char* aSpec,
                 nsIContentPolicy::TYPE_OTHER);
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
-      aAllowed ? CookieJarSettings::Create(CookieJarSettings::eRegular)
-               : CookieJarSettings::GetBlockingAll();
+      aAllowed
+          ? CookieJarSettings::Create(CookieJarSettings::eRegular,
+                                       false)
+          : CookieJarSettings::GetBlockingAll(
+                 false);
   MOZ_ASSERT(cookieJarSettings);
 
   nsCOMPtr<nsILoadInfo> loadInfo = dummyChannel->LoadInfo();
