@@ -39,6 +39,10 @@ namespace {
 constexpr size_t kMaxFramesBuffered = 800;
 
 
+
+constexpr size_t kZeroPlayoutDelayDefaultMaxDecodeQueueSize = 8;
+
+
 constexpr int kMaxFramesHistory = 1 << 13;
 
 
@@ -64,8 +68,9 @@ FrameBuffer::FrameBuffer(Clock* clock,
       add_rtt_to_playout_delay_(
           webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")),
       rtt_mult_settings_(RttMultExperiment::GetRttMultValue()),
-      zero_playout_delay_max_decode_queue_size_("max_decode_queue_size",
-                                                kMaxFramesBuffered) {
+      zero_playout_delay_max_decode_queue_size_(
+          "max_decode_queue_size",
+          kZeroPlayoutDelayDefaultMaxDecodeQueueSize) {
   ParseFieldTrial({&zero_playout_delay_max_decode_queue_size_},
                   field_trial::FindFullName("WebRTC-ZeroPlayoutDelay"));
   callback_checker_.Detach();

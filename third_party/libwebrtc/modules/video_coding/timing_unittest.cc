@@ -137,6 +137,7 @@ TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
   SimulatedClock clock(kStartTimeUs);
   VCMTiming timing(&clock);
   timing.Reset();
+  timing.set_max_playout_delay(0);
   for (int i = 0; i < 10; ++i) {
     clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
     int64_t now_ms = clock.TimeInMilliseconds();
