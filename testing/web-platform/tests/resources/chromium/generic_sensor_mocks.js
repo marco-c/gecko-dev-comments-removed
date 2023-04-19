@@ -38,6 +38,9 @@ self.GenericSensorTest = (() => {
   
   
   class MockSensor {
+    static #BUFFER_OFFSET_TIMESTAMP = 1;
+    static #BUFFER_OFFSET_READINGS = 2;
+
     constructor(sensorRequest, buffer, reportingMode) {
       this.client_ = null;
       this.startShouldFail_ = false;
@@ -51,6 +54,19 @@ self.GenericSensorTest = (() => {
       
       
       this.timestamp_ = window.performance.timeOrigin;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       this.buffer_ = buffer;
       this.buffer_.fill(0);
       this.receiver_ = new SensorReceiver(this);
@@ -130,8 +146,8 @@ self.GenericSensorTest = (() => {
       this.setSensorReading(readingData);
 
       const reading = this.readingData_.value();
-      this.buffer_.set(reading, 2);
-      this.buffer_[1] = this.timestamp_++;
+      this.buffer_.set(reading, MockSensor.#BUFFER_OFFSET_READINGS);
+      this.buffer_[MockSensor.#BUFFER_OFFSET_TIMESTAMP] = this.timestamp_++;
     }
 
     
@@ -154,11 +170,11 @@ self.GenericSensorTest = (() => {
             throw new TypeError("startReading(): The readings passed to " +
               "setSensorReading() must be arrays");
           }
-          this.buffer_.set(reading, 2);
+          this.buffer_.set(reading, MockSensor.#BUFFER_OFFSET_READINGS);
         }
         
         
-        this.buffer_[1] = this.timestamp_++;
+        this.buffer_[MockSensor.#BUFFER_OFFSET_TIMESTAMP] = this.timestamp_++;
 
         if (this.reportingMode_ === ReportingMode.ON_CHANGE &&
             this.notifyOnReadingChange_) {
