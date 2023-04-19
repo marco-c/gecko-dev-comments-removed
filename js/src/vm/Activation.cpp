@@ -8,7 +8,11 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "gc/GC.h"            
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "debugger/DebugAPI.h"  
+#include "gc/GC.h"              
 #include "jit/CalleeToken.h"  
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       

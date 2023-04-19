@@ -9,6 +9,7 @@
 
 #include "gc/AllocKind.h"     
 #include "js/Class.h"         
+#include "js/Result.h"        
 #include "js/RootingAPI.h"    
 #include "vm/JSObject.h"      
 #include "vm/NativeObject.h"  

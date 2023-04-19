@@ -4,12 +4,16 @@
 
 
 
+#include "mozilla/DebugOnly.h"
+
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
+#include "js/HashTable.h"
 #include "vm/Realm.h"
 #include "vm/Runtime.h"
 
 #include "gc/PrivateIterators-inl.h"
+#include "vm/JSContext-inl.h"
 
 using namespace js;
 using namespace js::gc;

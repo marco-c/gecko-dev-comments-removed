@@ -32,14 +32,12 @@
 
 #include "jsmath.h"
 
-#include "frontend/BytecodeCompiler.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
 #include "frontend/ParserAtom.h"     
 #include "frontend/SharedContext.h"  
 #include "frontend/TaggedParserAtomIndexHasher.h"  
-#include "gc/GC.h"
 #include "gc/Policy.h"
 #include "jit/InlinableNatives.h"
 #include "js/BuildId.h"  
@@ -58,7 +56,6 @@
 #include "vm/ErrorReporting.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/Interpreter.h"
 #include "vm/SelfHosting.h"
 #include "vm/Time.h"
 #include "vm/TypedArrayObject.h"

@@ -8,17 +8,16 @@
 
 #include "js/CompilationAndEvaluation.h"
 
-#include "mozilla/Maybe.h"  
-#include "mozilla/Utf8.h"   
+#include "mozilla/Maybe.h"      
+#include "mozilla/TextUtils.h"  
+#include "mozilla/Utf8.h"       
 
 #include <utility>  
 
 #include "jsapi.h"    
 #include "jstypes.h"  
 
-#include "debugger/DebugAPI.h"
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/BytecodeCompiler.h"     
 #include "frontend/CompilationStencil.h"  
 #include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
@@ -32,11 +31,13 @@
 #include "util/CompleteFile.h"     
 #include "util/StringBuffer.h"     
 #include "vm/EnvironmentObject.h"  
-#include "vm/ErrorContext.h"       
+#include "vm/ErrorReporting.h"     
+#include "vm/FunctionFlags.h"      
 #include "vm/Interpreter.h"        
 #include "vm/JSContext.h"          
 
-#include "vm/JSContext-inl.h"  
+#include "debugger/DebugAPI-inl.h"  
+#include "vm/JSContext-inl.h"       
 
 using mozilla::Utf8Unit;
 

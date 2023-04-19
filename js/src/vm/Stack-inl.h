@@ -9,18 +9,23 @@
 
 #include "vm/Stack.h"
 
+#include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 
+#include "builtin/Array.h"  
+#include "builtin/ModuleObject.h"
 #include "jit/BaselineFrame.h"
 #include "jit/RematerializedFrame.h"
+#include "js/Debug.h"
 #include "js/friend/StackLimits.h"  
 #include "vm/EnvironmentObject.h"
-#include "vm/Interpreter.h"
+#include "vm/FrameIter.h"  
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
 
 #include "jit/BaselineFrame-inl.h"
 #include "jit/RematerializedFrame-inl.h"  
+#include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
 

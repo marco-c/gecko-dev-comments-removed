@@ -13,10 +13,12 @@
 
 #include "jstypes.h"  
 
-#include "js/CallArgs.h"    
-#include "js/GCVector.h"    
-#include "js/Id.h"          
-#include "js/RootingAPI.h"  
+#include "js/CallArgs.h"            
+#include "js/Class.h"               
+#include "js/GCVector.h"            
+#include "js/Id.h"                  
+#include "js/PropertyDescriptor.h"  
+#include "js/RootingAPI.h"          
 
 struct JSContext;
 class JSFunction;
@@ -24,9 +26,6 @@ class JSObject;
 class JSString;
 
 namespace JS {
-
-class ObjectOpResult;
-class JS_PUBLIC_API PropertyDescriptor;
 
 using IdVector = JS::GCVector<jsid>;
 

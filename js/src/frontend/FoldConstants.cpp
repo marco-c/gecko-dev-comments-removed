@@ -20,6 +20,7 @@
 #include "js/friend/StackLimits.h"  
 #include "js/Stack.h"               
 #include "util/StringBuffer.h"      
+#include "vm/StringType.h"
 
 using namespace js;
 using namespace js::frontend;

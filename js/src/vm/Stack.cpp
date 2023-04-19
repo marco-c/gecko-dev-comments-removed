@@ -12,7 +12,10 @@
 #include <iterator>   
 #include <stddef.h>   
 #include <stdint.h>   
+#include <utility>    
 
+#include "debugger/DebugAPI.h"
+#include "gc/Marking.h"
 #include "gc/Tracer.h"  
 #include "jit/JitcodeMap.h"
 #include "jit/JitRuntime.h"
@@ -20,9 +23,13 @@
 #include "js/Value.h"                 
 #include "vm/FrameIter.h"             
 #include "vm/JSContext.h"
+#include "vm/Opcodes.h"
 #include "wasm/WasmProcess.h"
 
 #include "jit/JSJitFrameIter-inl.h"
+#include "vm/Compartment-inl.h"
+#include "vm/EnvironmentObject-inl.h"
+#include "vm/Interpreter-inl.h"
 #include "vm/Probes-inl.h"
 
 using namespace js;

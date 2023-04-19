@@ -38,7 +38,9 @@
 #include "vm/EnvironmentObject.h"
 #include "vm/ErrorContext.h"
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSContext.h"              
+#include "vm/HelperThreads.h"          
+#include "vm/HelperThreadState.h"
+#include "vm/JSContext.h"  
 #include "vm/JSFunction.h"  
 #include "vm/JSObject.h"      
 #include "vm/JSONPrinter.h"   
@@ -52,6 +54,7 @@
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
 #include "wasm/AsmJS.h"       
+#include "wasm/WasmModule.h"  
 
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSFunction-inl.h"         

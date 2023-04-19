@@ -34,7 +34,6 @@
 #include "gc/ZoneAllocator.h"       
 #include "js/Debug.h"               
 #include "js/GCAPI.h"               
-#include "js/GCVariant.h"           
 #include "js/Proxy.h"               
 #include "js/RootingAPI.h"          
 #include "js/TracingAPI.h"          

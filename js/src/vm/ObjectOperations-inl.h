@@ -18,11 +18,13 @@
 #include <stdint.h>  
 
 #include "js/Class.h"  
-#include "js/GCAPI.h"         
-#include "js/Id.h"            
-#include "js/RootingAPI.h"    
-#include "js/Value.h"         
-#include "proxy/Proxy.h"      
+#include "js/GCAPI.h"  
+#include "js/Id.h"     
+#include "js/PropertyDescriptor.h"  
+#include "js/RootingAPI.h"          
+#include "js/Value.h"               
+#include "proxy/Proxy.h"            
+#include "vm/GlobalObject.h"
 #include "vm/JSContext.h"     
 #include "vm/JSObject.h"      
 #include "vm/NativeObject.h"  

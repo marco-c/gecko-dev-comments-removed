@@ -5,7 +5,6 @@
 
 
 #include "builtin/FinalizationRegistryObject.h"
-#include "gc/GC.h"
 #include "gc/PublicIterators.h"
 #include "js/friend/WindowProxy.h"  
 #include "js/Wrapper.h"

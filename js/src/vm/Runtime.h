@@ -13,60 +13,78 @@
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Vector.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include <algorithm>
 
+#include "builtin/AtomicsObject.h"
+#include "vm/ErrorContext.h"
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/SharedIntlData.h"
 #endif
 #include "frontend/ScriptIndex.h"
 #include "gc/GCRuntime.h"
+#include "gc/Tracer.h"
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
+#include "js/CompilationAndEvaluation.h"
 #include "js/Context.h"
-#include "js/experimental/CTypes.h"     
-#include "js/friend/StackLimits.h"      
-#include "js/friend/UsageStatistics.h"  
+#include "js/Debug.h"
+#include "js/experimental/CTypes.h"      
+#include "js/experimental/JSStencil.h"   
+#include "js/experimental/SourceHook.h"  
+#include "js/friend/StackLimits.h"       
+#include "js/friend/UsageStatistics.h"   
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/Initialization.h"
 #include "js/MemoryCallbacks.h"
 #include "js/Modules.h"  
+#ifdef DEBUG
+#  include "js/Proxy.h"  
+#endif
 #include "js/ScriptPrivate.h"
 #include "js/ShadowRealmCallbacks.h"
 #include "js/Stack.h"
+#include "js/Stream.h"  
 #include "js/StreamConsumer.h"
 #include "js/Symbol.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
+#include "js/Vector.h"
 #include "js/WaitCallbacks.h"
 #include "js/Warnings.h"  
+#include "js/WrapperCallbacks.h"
 #include "js/Zone.h"
+#include "threading/Thread.h"
 #include "vm/Caches.h"  
 #include "vm/CodeCoverage.h"
+#include "vm/CommonPropertyNames.h"
 #include "vm/GeckoProfiler.h"
+#include "vm/JSAtom.h"
+#include "vm/JSAtomState.h"
 #include "vm/JSScript.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
+#include "vm/Scope.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/SharedStencil.h"  
 #include "vm/Stack.h"
+#include "vm/SymbolType.h"
 #include "wasm/WasmTypeDecls.h"
 
-struct JSAtomState;
 struct JSClass;
 struct JSErrorInterceptor;
-struct JSWrapObjectCallbacks;
 
 namespace js {
 
 class AutoAssertNoContentJS;
-class Debugger;
 class EnterDebuggeeNoExecute;
 class ErrorContext;
-class StaticStrings;
 
 }  
 
@@ -89,8 +107,6 @@ extern MOZ_COLD void ReportOversizedAllocation(JSContext* cx,
 
 class Activation;
 class ActivationIterator;
-class Shape;
-class SourceHook;
 
 namespace jit {
 class JitRuntime;
@@ -106,6 +122,7 @@ class Simulator;
 }  
 
 namespace frontend {
+struct CompilationGCOutput;
 struct CompilationInput;
 struct CompilationStencil;
 class WellKnownParserAtoms;

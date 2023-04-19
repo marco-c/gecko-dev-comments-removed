@@ -12,7 +12,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "gc/AllocKind.h"     
+#include "gc/Allocator.h"     
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
 #include "vm/JSFunction.h"    

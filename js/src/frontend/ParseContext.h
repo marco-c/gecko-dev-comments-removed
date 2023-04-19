@@ -8,6 +8,7 @@
 #define frontend_ParseContext_h
 
 #include "ds/Nestable.h"
+#include "frontend/BytecodeCompiler.h"
 #include "frontend/ErrorReporter.h"
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/NameCollections.h"
@@ -455,7 +456,7 @@ class ParseContext : public Nestable<ParseContext> {
     return *closedOverBindingsForLazy_;
   }
 
-  enum class BreakStatementError : uint8_t {
+  enum class BreakStatementError {
     
     ToughBreak,
     LabelNotFound,
@@ -466,7 +467,7 @@ class ParseContext : public Nestable<ParseContext> {
   [[nodiscard]] inline JS::Result<Ok, BreakStatementError> checkBreakStatement(
       TaggedParserAtomIndex label);
 
-  enum class ContinueStatementError : uint8_t {
+  enum class ContinueStatementError {
     NotInALoop,
     LabelNotFound,
   };

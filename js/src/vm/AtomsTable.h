@@ -11,11 +11,10 @@
 #ifndef vm_AtomsTable_h
 #define vm_AtomsTable_h
 
-#include "gc/Barrier.h"
 #include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
-#include "vm/StringType.h"
+#include "vm/JSAtom.h"
 
 
 

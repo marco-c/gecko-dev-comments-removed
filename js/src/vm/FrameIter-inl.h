@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"  
 
 #include "jit/JSJitFrameIter.h"  
+#include "vm/Stack.h"  
 
 #include "vm/Stack-inl.h"  
 

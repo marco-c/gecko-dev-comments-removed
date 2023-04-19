@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/MaybeOneOf.h"  
+#include "mozilla/RefPtr.h"      
 #include "mozilla/Result.h"      
 #include "mozilla/Utf8.h"        
 
@@ -17,7 +18,8 @@
 #include <string.h>     
 #include <type_traits>  
 
-#include "js/AllocPolicy.h"  
+#include "js/AllocPolicy.h"     
+#include "js/CompileOptions.h"  
 #include "js/Transcoding.h"  
 #include "js/TypeDecls.h"    
 #include "js/UniquePtr.h"    

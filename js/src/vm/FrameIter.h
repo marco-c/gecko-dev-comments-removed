@@ -8,7 +8,9 @@
 #define vm_FrameIter_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Atomics.h"     
 #include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 #include "mozilla/MaybeOneOf.h"  
 
 #include <stddef.h>  
@@ -19,9 +21,12 @@
 #include "jit/JSJitFrameIter.h"  
 #include "js/RootingAPI.h"       
 #include "js/TypeDecls.h"  
-#include "js/Value.h"       
-#include "vm/Activation.h"  
-#include "vm/Stack.h"       
+#include "js/UniquePtr.h"        
+#include "js/Value.h"            
+#include "vm/Activation.h"       
+#include "vm/Stack.h"            
+#include "wasm/WasmConstants.h"  
+#include "wasm/WasmFrame.h"      
 #include "wasm/WasmFrameIter.h"  
 
 struct JSPrincipals;
@@ -37,6 +42,7 @@ namespace js {
 
 class ArgumentsObject;
 class CallObject;
+class InterpreterFrame;
 
 namespace jit {
 class CommonFrameLayout;

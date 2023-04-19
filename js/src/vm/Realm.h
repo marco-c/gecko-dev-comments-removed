@@ -8,9 +8,12 @@
 #define vm_Realm_h
 
 #include "mozilla/Array.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/Variant.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
@@ -19,14 +22,16 @@
 #include "builtin/Array.h"
 #include "gc/Barrier.h"
 #include "js/GCVariant.h"
-#include "js/RealmOptions.h"
 #include "js/TelemetryTimers.h"
 #include "js/UniquePtr.h"
 #include "vm/ArrayBufferObject.h"
-#include "vm/JSContext.h"
+#include "vm/Compartment.h"
+#include "vm/NativeObject.h"
+#include "vm/PlainObject.h"    
 #include "vm/PromiseLookup.h"  
 #include "vm/RegExpShared.h"
 #include "vm/SavedStacks.h"
+#include "vm/Time.h"
 #include "wasm/WasmRealm.h"
 
 namespace js {
@@ -40,12 +45,13 @@ class JitRealm;
 }  
 
 class AutoRestoreRealmDebugMode;
-class Debugger;
 class GlobalObject;
 class GlobalObjectData;
 class GlobalLexicalEnvironmentObject;
+class MapObject;
 class NonSyntacticLexicalEnvironmentObject;
-struct IdValuePair;
+class ScriptSourceObject;
+class SetObject;
 struct NativeIterator;
 
 
@@ -235,6 +241,7 @@ struct IteratorHashPolicy {
 
 class DebugEnvironments;
 class ObjectWeakMap;
+class WeakMapBase;
 
 
 

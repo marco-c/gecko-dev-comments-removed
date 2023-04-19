@@ -18,7 +18,6 @@
 
 #include "wasm/WasmValType.h"
 
-#include "js/Conversions.h"
 #include "js/ErrorReport.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"

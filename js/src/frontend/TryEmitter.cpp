@@ -11,6 +11,7 @@
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/IfEmitter.h"        
 #include "frontend/SharedContext.h"    
+#include "vm/BytecodeUtil.h"           
 #include "vm/Opcodes.h"                
 
 using namespace js;

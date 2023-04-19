@@ -10,10 +10,12 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 
+#include "gc/Barrier.h"
 #include "gc/MaybeRooted.h"
 #include "js/Class.h"
 #include "js/experimental/TypedData.h"  
-#include "js/ScalarType.h"              
+#include "js/Result.h"
+#include "js/ScalarType.h"  
 #include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/JSObject.h"

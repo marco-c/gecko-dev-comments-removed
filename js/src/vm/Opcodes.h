@@ -11,8 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "js/TypeDecls.h"
-
 
 
 

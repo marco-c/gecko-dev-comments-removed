@@ -17,7 +17,6 @@
 #include "js/Promise.h"  
 #include "js/Utility.h"  
 #include "threading/ProtectedData.h"  
-#include "vm/HelperThreads.h"         
 #include "vm/JSContext.h"             
 #include "vm/PromiseObject.h"         
 #include "vm/Realm.h"                 

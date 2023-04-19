@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"  
 
 #include <algorithm>  
+#include <stdint.h>   
 
 #include "js/AllocPolicy.h"         
 #include "js/friend/StackLimits.h"  

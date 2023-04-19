@@ -9,16 +9,19 @@
 #include "mozilla/Maybe.h"
 
 #include "builtin/ModuleObject.h"
+#include "gc/Policy.h"
 #include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
 #include "js/PropertyAndElement.h"  
 #include "vm/ArgumentsObject.h"
+#include "vm/AsyncFunction.h"
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/GeneratorObject.h"  
 #include "vm/GlobalObject.h"
+#include "vm/Iteration.h"
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 #include "vm/Realm.h"
@@ -30,6 +33,7 @@
 
 #include "gc/Marking-inl.h"
 #include "vm/BytecodeIterator-inl.h"
+#include "vm/BytecodeLocation-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/Stack-inl.h"
 

@@ -19,17 +19,19 @@
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "js/Context.h"                 
-#include "js/RootingAPI.h"              
-#include "js/Value.h"                   
-#include "vm/EnvironmentObject.h"       
-#include "vm/ErrorContext.h"            
-#include "vm/JSContext.h"               
-#include "vm/JSObject.h"                
-#include "vm/List.h"                    
-#include "vm/Runtime.h"                 
+#include "js/PropertyAndElement.h"
+#include "js/RootingAPI.h"         
+#include "js/Value.h"              
+#include "vm/EnvironmentObject.h"  
+#include "vm/ErrorContext.h"       
+#include "vm/JSContext.h"          
+#include "vm/JSObject.h"           
+#include "vm/List.h"               
+#include "vm/Runtime.h"            
 
-#include "vm/JSAtom-inl.h"
+#include "builtin/Array-inl.h"
 #include "vm/JSContext-inl.h"  
+#include "vm/JSObject-inl.h"
 
 using namespace js;
 

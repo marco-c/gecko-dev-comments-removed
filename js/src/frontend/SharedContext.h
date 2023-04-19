@@ -20,7 +20,8 @@
 #include "frontend/ParserAtom.h"          
 #include "frontend/ScopeIndex.h"          
 #include "frontend/ScriptIndex.h"         
-#include "vm/FunctionFlags.h"             
+#include "vm/ErrorContext.h"
+#include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/Scope.h"
 #include "vm/ScopeKind.h"
@@ -30,14 +31,11 @@
 struct JS_PUBLIC_API JSContext;
 
 namespace JS {
-class JS_PUBLIC_API ReadOnlyCompileOptions;
+class ReadOnlyCompileOptions;
 struct WasmModule;
 }  
 
 namespace js {
-
-class ErrorContext;
-
 namespace frontend {
 
 struct CompilationState;

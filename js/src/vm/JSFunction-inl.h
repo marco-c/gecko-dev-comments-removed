@@ -11,6 +11,8 @@
 
 #include "gc/Allocator.h"
 #include "gc/GCProbes.h"
+#include "js/CharacterEncoding.h"
+#include "vm/EnvironmentObject.h"
 #include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"

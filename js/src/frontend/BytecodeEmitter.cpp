@@ -16,6 +16,7 @@
 #include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"          
 #include "mozilla/PodOperations.h"  
+#include "mozilla/Sprintf.h"        
 #include "mozilla/Variant.h"        
 
 #include <algorithm>
@@ -35,6 +36,7 @@
 #include "frontend/ExpressionStatementEmitter.h"  
 #include "frontend/ForInEmitter.h"                
 #include "frontend/ForOfEmitter.h"                
+#include "frontend/ForOfLoopControl.h"            
 #include "frontend/FunctionEmitter.h"  
 #include "frontend/IfEmitter.h"     
 #include "frontend/LabelEmitter.h"  
@@ -60,6 +62,7 @@
 #include "js/friend/StackLimits.h"                 
 #include "js/Stack.h"                              
 #include "util/StringBuffer.h"                     
+#include "vm/AsyncFunctionResolveKind.h"           
 #include "vm/BytecodeUtil.h"  
 #include "vm/CompletionKind.h"      
 #include "vm/FunctionPrefixKind.h"  

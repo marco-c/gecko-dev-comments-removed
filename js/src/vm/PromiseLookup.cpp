@@ -8,12 +8,11 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jspubtd.h"  
-
 #include "builtin/Promise.h"  
-#include "js/HeapAPI.h"  
-#include "js/Id.h"       
-#include "js/Value.h"    
+#include "js/HeapAPI.h"   
+#include "js/Id.h"        
+#include "js/ProtoKey.h"  
+#include "js/Value.h"     
 #include "util/Poison.h"  
 #include "vm/GlobalObject.h"  
 #include "vm/JSContext.h"     

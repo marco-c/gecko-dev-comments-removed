@@ -16,9 +16,10 @@
 #include "js/Printf.h"                
 #include "js/Warnings.h"              
 #include "vm/ErrorContext.h"  
-#include "vm/FrameIter.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
+
+#include "vm/JSContext-inl.h"
 
 using namespace js;
 

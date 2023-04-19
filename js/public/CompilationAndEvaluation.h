@@ -13,8 +13,9 @@
 
 #include "jstypes.h"  
 
+#include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"  
-#include "js/TypeDecls.h"
+#include "js/Value.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSFunction;
@@ -26,9 +27,6 @@ union Utf8Unit;
 }
 
 namespace JS {
-
-class JS_PUBLIC_API InstantiateOptions;
-class JS_PUBLIC_API ReadOnlyCompileOptions;
 
 template <typename UnitT>
 class SourceText;

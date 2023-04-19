@@ -9,12 +9,16 @@
 
 #include "mozilla/Attributes.h"  
 
-#include "jstypes.h"                
+#include "jstypes.h"               
+#include "builtin/ModuleObject.h"  
 #include "frontend/EitherParser.h"  
 #include "frontend/ParserAtom.h"    
 #include "frontend/Stencil.h"       
 #include "frontend/TaggedParserAtomIndexHasher.h"  
+#include "js/GCHashTable.h"                        
 #include "js/GCVector.h"                           
+#include "js/RootingAPI.h"                         
+#include "vm/AtomsTable.h"                         
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSAtom;

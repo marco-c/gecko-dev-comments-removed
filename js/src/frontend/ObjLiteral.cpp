@@ -20,6 +20,7 @@
 #include "js/Id.h"                                 
 #include "js/RootingAPI.h"                         
 #include "js/TypeDecls.h"                          
+#include "vm/JSAtom.h"                             
 #include "vm/JSObject.h"                           
 #include "vm/JSONPrinter.h"                        
 #include "vm/NativeObject.h"                       

@@ -7,6 +7,7 @@
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 
+#include "mozilla/HashFunctions.h"    
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Range.h"            
 #include "mozilla/Span.h"             

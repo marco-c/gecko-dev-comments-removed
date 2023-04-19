@@ -13,12 +13,11 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "js/CompileOptions.h"
 #include "js/UniquePtr.h"
 #include "vm/ErrorReporting.h"  
 
-namespace JS {
-class JS_PUBLIC_API ReadOnlyCompileOptions;
-}
+class JSErrorNotes;
 
 namespace js {
 namespace frontend {

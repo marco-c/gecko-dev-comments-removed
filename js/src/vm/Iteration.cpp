@@ -24,18 +24,22 @@
 #include "builtin/SelfHostingDefines.h"
 #include "ds/Sort.h"
 #include "gc/GCContext.h"
+#include "gc/Marking.h"
+#include "js/CallAndConstruct.h"      
 #include "js/ForOfIterator.h"         
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
+#include "js/Proxy.h"
 #include "util/DifferentialTesting.h"
 #include "util/Poison.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
+#include "vm/JSAtom.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
+#include "vm/JSScript.h"
 #include "vm/NativeObject.h"  
 #include "vm/Shape.h"
-#include "vm/StringType.h"
 #include "vm/TypedArrayObject.h"
 #include "vm/WellKnownAtom.h"  
 
@@ -44,8 +48,12 @@
 #  include "builtin/TupleObject.h"
 #endif
 
+#include "vm/Compartment-inl.h"
+#include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/PlainObject-inl.h"  
+#include "vm/Stack-inl.h"
+#include "vm/StringType-inl.h"
 
 using namespace js;
 

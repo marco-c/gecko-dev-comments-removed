@@ -32,7 +32,6 @@
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/FunctionFlags.h"  
-#include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/TypedArrayObject.h"
 #include "wasm/WasmBuiltins.h"

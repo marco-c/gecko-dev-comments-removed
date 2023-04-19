@@ -14,21 +14,23 @@
 #include "mozilla/TextUtils.h"
 
 #include <string_view>  
+#include <type_traits>  
 
 #include "jstypes.h"  
 
 #include "gc/Allocator.h"
+#include "gc/Barrier.h"
 #include "gc/Cell.h"
 #include "gc/MaybeRooted.h"
 #include "gc/Nursery.h"
 #include "gc/RelocationOverlay.h"
-#include "gc/StoreBuffer.h"
 #include "js/CharacterEncoding.h"
 #include "js/RootingAPI.h"
 #include "js/shadow/String.h"  
 #include "js/String.h"         
 #include "js/UniquePtr.h"
 #include "util/Text.h"
+#include "vm/Printer.h"
 
 class JSDependentString;
 class JSExtensibleString;
@@ -54,7 +56,6 @@ struct CompilationAtomCache;
 }  
 
 class ArrayObject;
-class GenericPrinter;
 class PropertyName;
 class StringBuffer;
 
