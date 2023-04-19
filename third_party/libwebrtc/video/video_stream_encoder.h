@@ -352,38 +352,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   const std::array<uint8_t, 2> experiment_groups_;
 
-  struct EncoderSwitchExperiment {
-    struct Thresholds {
-      absl::optional<DataRate> bitrate;
-      absl::optional<int> pixel_count;
-    };
-
-    
-    std::map<VideoCodecType, Thresholds> codec_thresholds;
-
-    
-    
-    rtc::ExpFilter bitrate_filter{1.0};
-
-    
-    std::string to_codec;
-    absl::optional<std::string> to_param;
-    absl::optional<std::string> to_value;
-
-    
-    Thresholds current_thresholds;
-
-    
-    bool IsBitrateBelowThreshold(const DataRate& target_bitrate);
-    bool IsPixelCountBelowThreshold(int pixel_count) const;
-    void SetCodec(VideoCodecType codec);
-  };
-
-  EncoderSwitchExperiment ParseEncoderSwitchFieldTrial() const;
-
-  EncoderSwitchExperiment encoder_switch_experiment_
-      RTC_GUARDED_BY(&encoder_queue_);
-
   struct AutomaticAnimationDetectionExperiment {
     bool enabled = false;
     int min_duration_ms = 2000;
@@ -403,10 +371,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   AutomaticAnimationDetectionExperiment
       automatic_animation_detection_experiment_ RTC_GUARDED_BY(&encoder_queue_);
-
-  
-  
-  bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
 
   
   VideoStreamInputStateProvider input_state_provider_;
