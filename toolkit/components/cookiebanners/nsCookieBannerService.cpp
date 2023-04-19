@@ -4,6 +4,7 @@
 
 #include "nsCookieBannerService.h"
 
+#include "CookieBannerDomainPrefService.h"
 #include "nsCookieBannerRule.h"
 #include "nsCookieInjector.h"
 #include "nsIClickRule.h"
@@ -127,6 +128,9 @@ nsresult nsCookieBannerService::Init() {
   mListService = do_GetService(NS_COOKIEBANNERLISTSERVICE_CONTRACTID);
   NS_ENSURE_TRUE(mListService, NS_ERROR_FAILURE);
 
+  mDomainPrefService = CookieBannerDomainPrefService::GetOrCreate();
+  NS_ENSURE_TRUE(mDomainPrefService, NS_ERROR_FAILURE);
+
   
   
   
@@ -137,7 +141,10 @@ nsresult nsCookieBannerService::Init() {
   
   nsresult rv = NS_DispatchToCurrentThreadQueue(
       NS_NewRunnableFunction("CookieBannerListService init startup",
-                             [&] { mListService->Init(); }),
+                             [&] {
+                               mListService->Init();
+                               mDomainPrefService->Init();
+                             }),
       EventQueuePriority::Idle);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -451,6 +458,97 @@ nsCookieBannerService::RemoveRule(nsICookieBannerRule* aRule) {
 
   
   mRules.Remove(domain);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::GetDomainPref(nsIURI* aTopLevelURI,
+                                     const bool aIsPrivate,
+                                     nsICookieBannerService::Modes* aModes) {
+  NS_ENSURE_ARG_POINTER(aTopLevelURI);
+
+  if (!mIsInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService(
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCString baseDomain;
+  rv = eTLDService->GetBaseDomain(aTopLevelURI, 0, baseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  auto pref = mDomainPrefService->GetPref(baseDomain, aIsPrivate);
+
+  *aModes = nsICookieBannerService::MODE_UNSET;
+
+  if (pref.isSome()) {
+    *aModes = pref.value();
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::SetDomainPref(nsIURI* aTopLevelURI,
+                                     nsICookieBannerService::Modes aModes,
+                                     const bool aIsPrivate) {
+  NS_ENSURE_ARG_POINTER(aTopLevelURI);
+
+  if (!mIsInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService(
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCString baseDomain;
+  rv = eTLDService->GetBaseDomain(aTopLevelURI, 0, baseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mDomainPrefService->SetPref(baseDomain, aModes, aIsPrivate);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::RemoveDomainPref(nsIURI* aTopLevelURI,
+                                        const bool aIsPrivate) {
+  NS_ENSURE_ARG_POINTER(aTopLevelURI);
+
+  if (!mIsInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService(
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCString baseDomain;
+  rv = eTLDService->GetBaseDomain(aTopLevelURI, 0, baseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mDomainPrefService->RemovePref(baseDomain, aIsPrivate);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::RemoveAllDomainPrefs(const bool aIsPrivate) {
+  if (!mIsInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = mDomainPrefService->RemoveAll(aIsPrivate);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return NS_OK;
 }
 
