@@ -57,16 +57,18 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
  public:
   
   struct EncoderStats {
+    std::string encoder_name = "unknown";
     
     
     
-    uint32_t target_encode_bitrate;
+    uint32_t target_encode_bitrate = 0;
   };
   
   struct DecoderStats {
+    std::string decoder_name = "unknown";
     
     
-    absl::optional<int32_t> decode_time_ms;
+    absl::optional<int32_t> decode_time_ms = absl::nullopt;
   };
 
   ~VideoQualityAnalyzerInterface() override = default;

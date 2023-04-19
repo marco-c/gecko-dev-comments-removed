@@ -92,8 +92,8 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
 
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> dummy_frame_buffer_;
 
-    Mutex callback_lock_;
-    DecodedImageCallback* delegate_callback_ RTC_GUARDED_BY(callback_lock_);
+    Mutex callback_mutex_;
+    DecodedImageCallback* delegate_callback_ RTC_GUARDED_BY(callback_mutex_);
   };
 
   void OnFrameDecoded(VideoFrame* frame,
@@ -110,14 +110,16 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
   
   
   
-  Mutex lock_;
+  Mutex mutex_;
 
-  std::map<uint32_t, uint16_t> timestamp_to_frame_id_ RTC_GUARDED_BY(lock_);
+  
+  std::string codec_name_ RTC_GUARDED_BY(mutex_);
+  std::map<uint32_t, uint16_t> timestamp_to_frame_id_ RTC_GUARDED_BY(mutex_);
   
   
   
   
-  std::map<uint16_t, EncodedImage> decoding_images_ RTC_GUARDED_BY(lock_);
+  std::map<uint16_t, EncodedImage> decoding_images_ RTC_GUARDED_BY(mutex_);
 };
 
 

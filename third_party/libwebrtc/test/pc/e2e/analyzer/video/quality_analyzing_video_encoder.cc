@@ -77,7 +77,7 @@ void QualityAnalyzingVideoEncoder::SetFecControllerOverride(
 int32_t QualityAnalyzingVideoEncoder::InitEncode(
     const VideoCodec* codec_settings,
     const Settings& settings) {
-  MutexLock lock(&lock_);
+  MutexLock lock(&mutex_);
   codec_settings_ = *codec_settings;
   mode_ = SimulcastMode::kNormal;
   if (codec_settings->codecType == kVideoCodecVP9) {
@@ -108,7 +108,7 @@ int32_t QualityAnalyzingVideoEncoder::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   
   
-  MutexLock lock(&lock_);
+  MutexLock lock(&mutex_);
   delegate_callback_ = callback;
   return delegate_->RegisterEncodeCompleteCallback(this);
 }
@@ -118,7 +118,7 @@ int32_t QualityAnalyzingVideoEncoder::Release() {
   
   int32_t result = delegate_->Release();
 
-  MutexLock lock(&lock_);
+  MutexLock lock(&mutex_);
   delegate_callback_ = nullptr;
   return result;
 }
@@ -127,7 +127,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
     const VideoFrame& frame,
     const std::vector<VideoFrameType>* frame_types) {
   {
-    MutexLock lock(&lock_);
+    MutexLock lock(&mutex_);
     
     timestamp_to_frame_id_list_.push_back({frame.timestamp(), frame.id()});
     
@@ -139,7 +139,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     
     {
-      MutexLock lock(&lock_);
+      MutexLock lock(&mutex_);
       
       
       
@@ -162,50 +162,50 @@ void QualityAnalyzingVideoEncoder::SetRates(
   RTC_DCHECK_GT(bitrate_multiplier_, 0.0);
   if (fabs(bitrate_multiplier_ - kNoMultiplier) < kEps) {
     {
-      MutexLock lock(&lock_);
+      MutexLock lock(&mutex_);
       bitrate_allocation_ = parameters.bitrate;
     }
     return delegate_->SetRates(parameters);
   }
 
-  
-  
-  
-  VideoBitrateAllocation multiplied_allocation;
-  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
-    const uint32_t spatial_layer_bitrate_bps =
-        parameters.bitrate.GetSpatialLayerSum(si);
-    if (spatial_layer_bitrate_bps == 0) {
-      continue;
-    }
+  RateControlParameters adjusted_params = parameters;
+  {
+    MutexLock lock(&mutex_);
+    
+    
+    
+    VideoBitrateAllocation multiplied_allocation;
+    for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+      const uint32_t spatial_layer_bitrate_bps =
+          parameters.bitrate.GetSpatialLayerSum(si);
+      if (spatial_layer_bitrate_bps == 0) {
+        continue;
+      }
 
-    uint32_t min_bitrate_bps;
-    uint32_t max_bitrate_bps;
-    std::tie(min_bitrate_bps, max_bitrate_bps) =
-        GetMinMaxBitratesBps(codec_settings_, si);
-    double bitrate_multiplier = bitrate_multiplier_;
-    const uint32_t corrected_bitrate = rtc::checked_cast<uint32_t>(
-        bitrate_multiplier * spatial_layer_bitrate_bps);
-    if (corrected_bitrate < min_bitrate_bps) {
-      bitrate_multiplier = min_bitrate_bps / spatial_layer_bitrate_bps;
-    } else if (corrected_bitrate > max_bitrate_bps) {
-      bitrate_multiplier = max_bitrate_bps / spatial_layer_bitrate_bps;
-    }
+      uint32_t min_bitrate_bps;
+      uint32_t max_bitrate_bps;
+      std::tie(min_bitrate_bps, max_bitrate_bps) =
+          GetMinMaxBitratesBps(codec_settings_, si);
+      double bitrate_multiplier = bitrate_multiplier_;
+      const uint32_t corrected_bitrate = rtc::checked_cast<uint32_t>(
+          bitrate_multiplier * spatial_layer_bitrate_bps);
+      if (corrected_bitrate < min_bitrate_bps) {
+        bitrate_multiplier = min_bitrate_bps / spatial_layer_bitrate_bps;
+      } else if (corrected_bitrate > max_bitrate_bps) {
+        bitrate_multiplier = max_bitrate_bps / spatial_layer_bitrate_bps;
+      }
 
-    for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-      if (parameters.bitrate.HasBitrate(si, ti)) {
-        multiplied_allocation.SetBitrate(
-            si, ti,
-            rtc::checked_cast<uint32_t>(bitrate_multiplier *
-                                        parameters.bitrate.GetBitrate(si, ti)));
+      for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
+        if (parameters.bitrate.HasBitrate(si, ti)) {
+          multiplied_allocation.SetBitrate(
+              si, ti,
+              rtc::checked_cast<uint32_t>(
+                  bitrate_multiplier * parameters.bitrate.GetBitrate(si, ti)));
+        }
       }
     }
-  }
 
-  RateControlParameters adjusted_params = parameters;
-  adjusted_params.bitrate = multiplied_allocation;
-  {
-    MutexLock lock(&lock_);
+    adjusted_params.bitrate = multiplied_allocation;
     bitrate_allocation_ = adjusted_params.bitrate;
   }
   return delegate_->SetRates(adjusted_params);
@@ -234,8 +234,9 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
   uint16_t frame_id;
   bool discard = false;
   uint32_t target_encode_bitrate = 0;
+  std::string codec_name;
   {
-    MutexLock lock(&lock_);
+    MutexLock lock(&mutex_);
     std::pair<uint32_t, uint16_t> timestamp_frame_id;
     while (!timestamp_to_frame_id_list_.empty()) {
       timestamp_frame_id = timestamp_to_frame_id_list_.front();
@@ -269,12 +270,16 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
       target_encode_bitrate = bitrate_allocation_.GetSpatialLayerSum(
           encoded_image.SpatialIndex().value_or(0));
     }
+    codec_name =
+        std::string(CodecTypeToPayloadString(codec_settings_.codecType)) + "_" +
+        delegate_->GetEncoderInfo().implementation_name;
   }
 
   if (!discard) {
     
     
     VideoQualityAnalyzerInterface::EncoderStats stats;
+    stats.encoder_name = codec_name;
     stats.target_encode_bitrate = target_encode_bitrate;
     analyzer_->OnFrameEncoded(peer_name_, frame_id, encoded_image, stats);
   }
@@ -287,7 +292,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
   const EncodedImage& image =
       injector_->InjectData(frame_id, discard, encoded_image);
   {
-    MutexLock lock(&lock_);
+    MutexLock lock(&mutex_);
     RTC_DCHECK(delegate_callback_);
     return delegate_callback_->OnEncodedImage(image, codec_specific_info);
   }
@@ -295,7 +300,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
 
 void QualityAnalyzingVideoEncoder::OnDroppedFrame(
     EncodedImageCallback::DropReason reason) {
-  MutexLock lock(&lock_);
+  MutexLock lock(&mutex_);
   analyzer_->OnFrameDropped(peer_name_, reason);
   RTC_DCHECK(delegate_callback_);
   delegate_callback_->OnDroppedFrame(reason);
