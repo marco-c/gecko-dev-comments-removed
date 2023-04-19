@@ -13,12 +13,15 @@ addRDMTaskWithPreAndPost(
     
     FullZoom.setZoom(2.0, browser);
   },
-  async function task({ browser }) {
+  async function task({ browser, ui }) {
     is(
       ZoomManager.getZoomForBrowser(browser),
       2.0,
       "Zoom shouldn't have got lost"
     );
+
+    
+    await waitForDeviceAndViewportState(ui);
   },
   async function post() {}
 );
