@@ -2406,7 +2406,8 @@ nsresult HttpBaseChannel::ProcessCrossOriginEmbedderPolicyHeader() {
           ExtContentPolicy::TYPE_SUBDOCUMENT &&
       mLoadInfo->GetLoadingEmbedderPolicy() !=
           nsILoadInfo::EMBEDDER_POLICY_NULL &&
-      resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+      resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP &&
+      resultPolicy != nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS) {
     return NS_ERROR_DOM_COEP_FAILED;
   }
 
@@ -2458,13 +2459,29 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
                                      content);
 
   if (StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-    
-    
-    
-    
-    if (content.IsEmpty() && mLoadInfo->GetLoadingEmbedderPolicy() ==
-                                 nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
-      content = "same-origin"_ns;
+    if (content.IsEmpty()) {
+      if (mLoadInfo->GetLoadingEmbedderPolicy() ==
+              nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS &&
+          StaticPrefs::browser_tabs_remote_coep_credentialless()) {
+        bool requestIncludesCredentials = false;
+        nsresult rv = GetCorsIncludeCredentials(&requestIncludesCredentials);
+        if (NS_FAILED(rv)) {
+          return NS_OK;
+        }
+        
+        
+        if (requestIncludesCredentials ||
+            extContentPolicyType == ExtContentPolicyType::TYPE_SUBDOCUMENT) {
+          content = "same-origin"_ns;
+        }
+      } else if (mLoadInfo->GetLoadingEmbedderPolicy() ==
+                 nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+        
+        
+        
+        
+        content = "same-origin"_ns;
+      }
     }
   }
 
@@ -5726,7 +5743,8 @@ NS_IMETHODIMP HttpBaseChannel::ComputeCrossOriginOpenerPolicy(
     nsILoadInfo::CrossOriginEmbedderPolicy coep =
         nsILoadInfo::EMBEDDER_POLICY_NULL;
     if (NS_SUCCEEDED(GetResponseEmbedderPolicy(&coep)) &&
-        coep == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+        (coep == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP ||
+         coep == nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS)) {
       policy =
           nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
     }
