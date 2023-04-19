@@ -158,27 +158,44 @@ int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
     current_superframe.push_back(frame_it);
     bool last_layer_completed = frame_it->second.frame->is_last_spatial_layer;
     FrameMap::iterator next_frame_it = frame_it;
-    while (true) {
+    while (!last_layer_completed) {
       ++next_frame_it;
-      if (next_frame_it == frames_.end() ||
-          next_frame_it->first.picture_id != frame->id.picture_id ||
+
+      if (next_frame_it == frames_.end() || !next_frame_it->second.frame) {
+        break;
+      }
+
+      if (next_frame_it->second.frame->Timestamp() != frame->Timestamp() ||
           !next_frame_it->second.continuous) {
         break;
       }
-      
-      
-      size_t num_allowed_undecoded_refs =
-          (next_frame_it->second.frame->inter_layer_predicted) ? 1 : 0;
-      if (next_frame_it->second.num_missing_decodable >
-          num_allowed_undecoded_refs) {
-        break;
+
+      if (next_frame_it->second.num_missing_decodable > 0) {
+        
+        
+        
+        bool has_inter_layer_dependency =
+            next_frame_it->second.frame->inter_layer_predicted;
+        for (size_t i = 0; !has_inter_layer_dependency &&
+                           i < EncodedFrame::kMaxFrameReferences &&
+                           i < next_frame_it->second.frame->num_references;
+             ++i) {
+          if (next_frame_it->second.frame->references[i] >=
+              frame_it->first.picture_id) {
+            has_inter_layer_dependency = true;
+          }
+        }
+
+        
+        
+        
+        
+        if (!has_inter_layer_dependency ||
+            next_frame_it->second.num_missing_decodable > 1) {
+          break;
+        }
       }
-      
-      if (frame->Timestamp() != next_frame_it->second.frame->Timestamp()) {
-        RTC_LOG(LS_WARNING) << "Frames in a single superframe have different"
-                               " timestamps. Skipping undecodable superframe.";
-        break;
-      }
+
       current_superframe.push_back(next_frame_it);
       last_layer_completed = next_frame_it->second.frame->is_last_spatial_layer;
     }
