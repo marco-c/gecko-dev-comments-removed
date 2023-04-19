@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "video/stream_synchronization.h"
@@ -54,7 +55,7 @@ class RtpStreamsSynchronizer {
   
   
   
-  SequenceChecker main_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker main_checker_;
 
   Syncable* const syncable_video_;
 

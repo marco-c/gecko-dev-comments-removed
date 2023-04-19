@@ -17,6 +17,7 @@
 #include "pc/video_track_source.h"
 #include "rtc_base/callback.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
 
@@ -67,7 +68,7 @@ class VideoRtpTrackSource : public VideoTrackSource {
       rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) override;
 
  private:
-  SequenceChecker worker_sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
   
   
   
