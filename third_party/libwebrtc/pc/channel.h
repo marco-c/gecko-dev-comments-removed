@@ -272,10 +272,11 @@ class BaseChannel : public ChannelInterface,
                                   webrtc::SdpType type,
                                   std::string* error_desc)
       RTC_RUN_ON(worker_thread()) = 0;
+
   
   
   
-  RtpHeaderExtensions GetFilteredRtpHeaderExtensions(
+  RtpHeaderExtensions GetDeduplicatedRtpHeaderExtensions(
       const RtpHeaderExtensions& extensions);
 
   
