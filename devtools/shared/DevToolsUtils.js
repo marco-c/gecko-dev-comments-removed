@@ -468,27 +468,6 @@ Object.defineProperty(exports, "assert", {
       : exports.noop,
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-exports.defineLazyModuleGetter = function(object, name, resource, symbol) {
-  this.defineLazyGetter(object, name, function() {
-    const temp = ChromeUtils.import(resource);
-    return temp[symbol || name];
-  });
-};
-
 DevToolsUtils.defineLazyGetter(this, "NetUtil", () => {
   return require("resource://gre/modules/NetUtil.jsm").NetUtil;
 });

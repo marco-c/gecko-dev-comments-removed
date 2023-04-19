@@ -106,28 +106,6 @@ function defineLazyServiceGetter(object, name, contract, interfaceName) {
 
 
 
-function defineLazyModuleGetter(object, name, resource) {
-  defineLazyGetter(object, name, function() {
-    try {
-      return ChromeUtils.import(resource)[name];
-    } catch (ex) {
-      Cu.reportError("Failed to load module " + resource + ".");
-      throw ex;
-    }
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -226,7 +204,6 @@ exports.globals = {
   L10nRegistry,
   loader: {
     lazyGetter: defineLazyGetter,
-    lazyImporter: defineLazyModuleGetter,
     lazyServiceGetter: defineLazyServiceGetter,
     lazyRequireGetter,
     

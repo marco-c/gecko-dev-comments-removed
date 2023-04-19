@@ -179,7 +179,6 @@ function BrowserLoaderBuilder({
       
       loader: {
         lazyGetter: loader.lazyGetter,
-        lazyImporter: loader.lazyImporter,
         lazyServiceGetter: loader.lazyServiceGetter,
         lazyRequireGetter: this.lazyRequireGetter.bind(this),
       },

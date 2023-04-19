@@ -172,7 +172,6 @@ function DevToolsLoader({
   
   
   this.lazyGetter = globals.loader.lazyGetter;
-  this.lazyImporter = globals.loader.lazyImporter;
   this.lazyServiceGetter = globals.loader.lazyServiceGetter;
   this.lazyRequireGetter = globals.loader.lazyRequireGetter;
 }

@@ -6,10 +6,20 @@
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 
-loader.lazyImporter(this, "Downloads", "resource://gre/modules/Downloads.jsm");
-loader.lazyImporter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
-loader.lazyImporter(
-  this,
+const lazy = {};
+
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "Downloads",
+  "resource://gre/modules/Downloads.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "FileUtils",
+  "resource://gre/modules/FileUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -355,7 +365,7 @@ async function saveToFile(window, image) {
     filename += ".png";
   }
 
-  const downloadsDir = await Downloads.getPreferredDownloadsDirectory();
+  const downloadsDir = await lazy.Downloads.getPreferredDownloadsDirectory();
   const downloadsDirExists = await IOUtils.exists(downloadsDir);
   if (downloadsDirExists) {
     
@@ -365,25 +375,25 @@ async function saveToFile(window, image) {
       : PathUtils.joinRelative(downloadsDir, filename);
   }
 
-  const targetFile = new FileUtils.File(filename);
+  const targetFile = new lazy.FileUtils.File(filename);
 
   
   try {
-    const download = await Downloads.createDownload({
+    const download = await lazy.Downloads.createDownload({
       source: {
         url: image.data,
         
         
         
         isPrivate: window.isChromeWindow
-          ? PrivateBrowsingUtils.isWindowPrivate(window)
-          : PrivateBrowsingUtils.isBrowserPrivate(
+          ? lazy.PrivateBrowsingUtils.isWindowPrivate(window)
+          : lazy.PrivateBrowsingUtils.isBrowserPrivate(
               window.browsingContext.embedderElement
             ),
       },
       target: targetFile,
     });
-    const list = await Downloads.getList(Downloads.ALL);
+    const list = await lazy.Downloads.getList(lazy.Downloads.ALL);
     
     list.add(download);
     
