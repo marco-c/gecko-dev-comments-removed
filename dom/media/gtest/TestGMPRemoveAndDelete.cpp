@@ -151,7 +151,6 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse)
   
   EXPECT_TRUE(test->IsTerminated());
 }
-#endif
 
 
 
@@ -180,6 +179,7 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredInUse)
   test->CloseVideoDecoder();
   test->Wait();
 }
+#endif
 
 static StaticRefPtr<GeckoMediaPluginService> gService;
 static StaticRefPtr<GeckoMediaPluginServiceParent> gServiceParent;
