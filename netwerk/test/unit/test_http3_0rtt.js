@@ -81,6 +81,7 @@ async function test_0RTT(enable_ssl_tokens_cache, enable_0rtt, resumed) {
 
   
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   
