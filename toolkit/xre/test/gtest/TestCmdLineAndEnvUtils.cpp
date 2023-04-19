@@ -20,18 +20,6 @@
 
 namespace testzilla {
 
-template <typename CharT>
-struct AcceptableArgs;
-
-template <>
-struct AcceptableArgs<char> {
-  constexpr static const char* value[] = {"aleph", "beth", nullptr};
-};
-template <>
-struct AcceptableArgs<wchar_t> {
-  constexpr static const wchar_t* value[] = {L"aleph", L"beth", nullptr};
-};
-
 
 
 class CommandLine {
@@ -160,17 +148,38 @@ constexpr std::pair<TestCaseState, NarrowTestCase> kStrMatches8[] = {
     {FAIL, {"I", "i"}},
     {FAIL, {"Mozilla", "mozilla"}},
     {FAIL, {"Mozilla", "Mozilla"}},
+
+    
+    {FAIL, {"*", "*"}},
+    {FAIL, {"*", "word"}},
+    {FAIL, {".", "."}},
+    {FAIL, {".", "a"}},
+    {FAIL, {"_", "_"}},
+
+    
+    {FAIL, {" ", " "}},
+    {FAIL, {"two words", "two words"}},
+
+    
+    
+    
+    
+    {FAIL, {"à", "a"}},
+    {FAIL, {"a", "à"}},
+    {FAIL, {"à", "à"}},
 };
 
 #ifdef XP_WIN
-using WideTestCase = std::pair<const wchar_t*, const wchar_t*>;
-constexpr std::pair<TestCaseState, WideTestCase> kStrMatches16[] = {
+using WideTestCase = std::pair<const char*, const wchar_t*>;
+std::pair<TestCaseState, WideTestCase> kStrMatches16[] = {
     
     
-    {FAIL, {L"i", L"İ"}},
-    {FAIL, {L"mozilla", L"ṁozilla"}},
+    {FAIL, {"i", L"İ"}},
+    {FAIL, {"mozilla", L"ṁozilla"}},
 };
 #endif
+
+constexpr const char* kRequiredArgs[] = {"aleph", "beth"};
 
 std::pair<TestCaseState, std::vector<const char*>> const kCommandLines[] = {
     
@@ -243,8 +252,8 @@ bool TestCommandLineImpl(CommandLine const& cl) {
   
   
   CharT** argv = const_cast<CharT**>(cl.argv<CharT>());
-  return mozilla::EnsureCommandlineSafeImpl<CharT>(
-      argc, argv, AcceptableArgs<CharT>::value);
+  return mozilla::internal::EnsureCommandlineSafeImpl(argc, argv,
+                                                      kRequiredArgs);
 }
 
 
@@ -271,12 +280,10 @@ TEST(CmdLineAndEnvUtils, strimatch)
         << '<' << left << "> !~ <" << right << '>';
 
 #ifdef XP_WIN
-    wchar_t left_wide[200];
     wchar_t right_wide[200];
-    ::mbstowcs(left_wide, left, 200);
     ::mbstowcs(right_wide, right, 200);
-    EXPECT_EQ(strimatch(left_wide, right_wide), result)
-        << '<' << left_wide << "> !~ L<" << right << '>';
+    EXPECT_EQ(strimatch(left, right_wide), result)
+        << '<' << left << "> !~ L<" << right << '>';
 #endif
   }
 

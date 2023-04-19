@@ -59,13 +59,51 @@ inline void RemoveArg(int& argc, CharT** argv) {
 
 namespace internal {
 
-template <typename FuncT, typename CharT>
-static inline bool strimatch(FuncT aToLowerFn, const CharT* lowerstr,
-                             const CharT* mixedstr) {
+#if 'a' == '\x61'
+
+
+static inline constexpr bool isValidOptionCharacter(char c) {
+  
+  
+  return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || c == '-';
+};
+
+
+static inline constexpr char toLowercase(char c) {
+  
+  
+  
+  return ('A' <= c && c <= 'Z') ? char(c | ' ') : c;
+};
+
+
+
+template <typename CharT>
+static inline constexpr char toNarrow(CharT c) {
+  
+  return (c & static_cast<CharT>(0xff)) == c ? c : 0xff;
+};
+#else
+
+
+#  error Character conversion functions not implemented for this platform.
+#endif
+
+
+
+template <typename CharT>
+static inline bool strimatch(const char* lowerstr, const CharT* mixedstr) {
   while (*lowerstr) {
     if (!*mixedstr) return false;  
-    if (static_cast<CharT>(aToLowerFn(*mixedstr)) != *lowerstr)
+
+    
+    
+    
+    if (!isValidOptionCharacter(*lowerstr)) return false;
+
+    if (toLowercase(toNarrow(*mixedstr)) != *lowerstr) {
       return false;  
+    }
 
     ++lowerstr;
     ++mixedstr;
@@ -78,34 +116,9 @@ static inline bool strimatch(FuncT aToLowerFn, const CharT* lowerstr,
 
 }  
 
-inline bool strimatch(const char* lowerstr, const char* mixedstr) {
-  return internal::strimatch(&tolower, lowerstr, mixedstr);
-}
-
-inline bool strimatch(const wchar_t* lowerstr, const wchar_t* mixedstr) {
-  return internal::strimatch(&towlower, lowerstr, mixedstr);
-}
+using internal::strimatch;
 
 const wchar_t kCommandLineDelimiter[] = L" \t";
-
-enum class FlagLiteral { osint, safemode };
-
-template <typename CharT, FlagLiteral Literal>
-inline const CharT* GetLiteral();
-
-#define DECLARE_FLAG_LITERAL(enum_name, literal)                        \
-  template <>                                                           \
-  inline const char* GetLiteral<char, FlagLiteral::enum_name>() {       \
-    return literal;                                                     \
-  }                                                                     \
-                                                                        \
-  template <>                                                           \
-  inline const wchar_t* GetLiteral<wchar_t, FlagLiteral::enum_name>() { \
-    return L##literal;                                                  \
-  }
-
-DECLARE_FLAG_LITERAL(osint, "osint")
-DECLARE_FLAG_LITERAL(safemode, "safe-mode")
 
 enum class CheckArgFlag : uint32_t {
   None = 0,
@@ -128,7 +141,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CheckArgFlag)
 
 
 template <typename CharT>
-inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
+inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const char* aArg,
                           const CharT** aParam = nullptr,
                           CheckArgFlag aFlags = CheckArgFlag::RemoveArg) {
   MOZ_ASSERT(aArgv && aArg);
@@ -191,9 +204,15 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
   return ar;
 }
 
-template <typename CharT>
+namespace internal {
+
+
+
+
+template <typename CharT, typename ReqContainerT>
+
 inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
-                                      CharT const* const* aAcceptableArgs) {
+                                      ReqContainerT const& requiredParams) {
   
   
   
@@ -201,7 +220,7 @@ inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
   
   
 
-  const CharT* osintLit = GetLiteral<CharT, FlagLiteral::osint>();
+  static constexpr const char* osintLit = "osint";
 
   if (CheckArg(aArgc, aArgv, osintLit, static_cast<const CharT**>(nullptr),
                CheckArgFlag::None) == ARG_FOUND) {
@@ -241,16 +260,15 @@ inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
     if (*arg == '-') {
       ++arg;
     }
-    bool haveAcceptableArg = false;
-    const CharT* const* acceptableArg = aAcceptableArgs;
-    while (*acceptableArg) {
-      if (strimatch(*acceptableArg, arg)) {
-        haveAcceptableArg = true;
-        break;
+    const bool haveRequiredArg = [&] {
+      for (const char* a : requiredParams) {
+        if (strimatch(a, arg)) {
+          return true;
+        }
       }
-      acceptableArg++;
-    }
-    if (!haveAcceptableArg) {
+      return false;
+    }();
+    if (!haveRequiredArg) {
       return false;
     }
     
@@ -268,11 +286,12 @@ inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
   
   return true;
 }
+}  
 
-template <typename CharT>
+template <typename CharT, typename ReqContainerT>
 inline void EnsureCommandlineSafe(int aArgc, CharT** aArgv,
-                                  CharT const* const* aAcceptableArgs) {
-  if (!EnsureCommandlineSafeImpl(aArgc, aArgv, aAcceptableArgs)) {
+                                  ReqContainerT const& requiredParams) {
+  if (!internal::EnsureCommandlineSafeImpl(aArgc, aArgv, requiredParams)) {
     exit(127);
   }
 }
