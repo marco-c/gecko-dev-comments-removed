@@ -140,7 +140,7 @@ JS_PUBLIC_API bool JS::ModuleInstantiate(JSContext* cx,
   CHECK_THREAD(cx);
   cx->releaseCheck(moduleArg);
 
-  return ModuleObject::Instantiate(cx, moduleArg.as<ModuleObject>());
+  return js::ModuleInstantiate(cx, moduleArg.as<ModuleObject>());
 }
 
 JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
@@ -302,6 +302,8 @@ using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 using ModuleSet =
     GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
 
+using ModuleVector = GCVector<ModuleObject*, 0, SystemAllocPolicy>;
+
 static ModuleObject* HostResolveImportedModule(
     JSContext* cx, Handle<ModuleObject*> module,
     Handle<ModuleRequestObject*> moduleRequest,
@@ -312,6 +314,9 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 MutableHandle<Value> result);
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module, Handle<ArrayObject*> exports);
+static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
+                               MutableHandle<ModuleVector> stack, size_t index,
+                               size_t* indexOut);
 
 static ArrayObject* NewList(JSContext* cx) {
   
@@ -329,6 +334,31 @@ static bool ArrayContainsName(Handle<ArrayObject*> array,
 
   return false;
 }
+
+#ifdef DEBUG
+
+static bool ContainsElement(Handle<ModuleVector> stack, ModuleObject* module) {
+  for (ModuleObject* m : stack) {
+    if (m == module) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static size_t CountElements(Handle<ModuleVector> stack, ModuleObject* module) {
+  size_t count = 0;
+  for (ModuleObject* m : stack) {
+    if (m == module) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+#endif
 
 
 
@@ -1011,4 +1041,175 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
   
   
   return ModuleObject::instantiateFunctionDeclarations(cx, module);
+}
+
+
+
+bool js::ModuleInstantiate(JSContext* cx, Handle<ModuleObject*> module) {
+  
+  MOZ_ASSERT(module->status() != MODULE_STATUS_LINKING &&
+             module->status() != MODULE_STATUS_EVALUATING);
+
+  
+  Rooted<ModuleVector> stack(cx);
+
+  
+  size_t ignored;
+  bool ok = InnerModuleLinking(cx, module, &stack, 0, &ignored);
+
+  
+  if (!ok) {
+    
+    for (ModuleObject* m : stack) {
+      
+      MOZ_ASSERT(m->status() == MODULE_STATUS_LINKING);
+      
+      m->setStatus(MODULE_STATUS_UNLINKED);
+      m->clearDfsIndexes();
+    }
+
+    
+    MOZ_ASSERT(module->status() == MODULE_STATUS_UNLINKED);
+
+    
+    return false;
+  }
+
+  
+  
+  MOZ_ASSERT(module->status() == MODULE_STATUS_LINKED ||
+             module->status() == MODULE_STATUS_EVALUATED ||
+             module->status() == MODULE_STATUS_EVALUATED_ERROR);
+
+  
+  MOZ_ASSERT(stack.empty());
+
+  
+  return true;
+}
+
+
+
+static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
+                               MutableHandle<ModuleVector> stack, size_t index,
+                               size_t* indexOut) {
+  
+  
+  if (module->status() == MODULE_STATUS_LINKING ||
+      module->status() == MODULE_STATUS_LINKED ||
+      module->status() == MODULE_STATUS_EVALUATED ||
+      module->status() == MODULE_STATUS_EVALUATED_ERROR) {
+    
+    *indexOut = index;
+    return true;
+  }
+
+  
+  if (module->status() != MODULE_STATUS_UNLINKED) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_BAD_MODULE_STATUS);
+    return false;
+  }
+
+  
+  
+  if (!stack.append(module)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  module->setStatus(MODULE_STATUS_LINKING);
+
+  
+  module->setDfsIndex(index);
+
+  
+  module->setDfsAncestorIndex(index);
+
+  
+  index++;
+
+  
+  
+  Rooted<ArrayObject*> requestedModules(cx, &module->requestedModules());
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleObject*> requiredModule(cx);
+  for (uint32_t i = 0; i != requestedModules->length(); i++) {
+    moduleRequest = requestedModules->getDenseElement(i)
+                        .toObject()
+                        .as<RequestedModuleObject>()
+                        .moduleRequest();
+
+    
+    
+    requiredModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                               MODULE_STATUS_UNLINKED);
+    if (!requiredModule) {
+      return false;
+    }
+
+    
+    
+    if (!InnerModuleLinking(cx, requiredModule, stack, index, &index)) {
+      return false;
+    }
+
+    
+    
+    
+    MOZ_ASSERT(requiredModule->status() == MODULE_STATUS_LINKING ||
+               requiredModule->status() == MODULE_STATUS_LINKED ||
+               requiredModule->status() == MODULE_STATUS_EVALUATED ||
+               requiredModule->status() == MODULE_STATUS_EVALUATED_ERROR);
+
+    
+    
+    MOZ_ASSERT((requiredModule->status() == MODULE_STATUS_LINKING) ==
+               ContainsElement(stack, requiredModule));
+
+    
+    if (requiredModule->status() == MODULE_STATUS_LINKING) {
+      
+      
+      
+      module->setDfsAncestorIndex(std::min(module->dfsAncestorIndex(),
+                                           requiredModule->dfsAncestorIndex()));
+    }
+  }
+
+  
+  if (!ModuleInitializeEnvironment(cx, module)) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(CountElements(stack, module) == 1);
+
+  
+  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+
+  
+  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+    
+    bool done = false;
+
+    
+    while (!done) {
+      
+      
+      requiredModule = stack.popCopy();
+
+      
+      requiredModule->setStatus(MODULE_STATUS_LINKED);
+
+      
+      
+      done = requiredModule == module;
+    }
+  }
+
+  
+  *indexOut = index;
+  return true;
 }
