@@ -92,6 +92,7 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface {
       absl::string_view if_name) override;
   rtc::NetworkPreference GetNetworkPreference(
       absl::string_view if_name) override;
+  bool IsAdapterAvailable(absl::string_view if_name) override;
 
   
   void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
@@ -152,6 +153,11 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface {
   
   
   bool bind_using_ifname_ RTC_GUARDED_BY(network_thread_) = true;
+
+  
+  
+  bool disable_is_adapter_available_ RTC_GUARDED_BY(network_thread_) = false;
+
   rtc::scoped_refptr<PendingTaskSafetyFlag> safety_flag_
       RTC_PT_GUARDED_BY(network_thread_) = nullptr;
 };

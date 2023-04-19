@@ -250,6 +250,8 @@ void AndroidNetworkMonitor::Start() {
           "WebRTC-FindNetworkHandleWithoutIpv6TemporaryPart");
   bind_using_ifname_ =
       !webrtc::field_trial::IsDisabled("WebRTC-BindUsingInterfaceName");
+  disable_is_adapter_available_ = webrtc::field_trial::IsDisabled(
+      "WebRTC-AndroidNetworkMonitor-IsAdapterAvailable");
 
   
   
@@ -449,9 +451,9 @@ AndroidNetworkMonitor::FindNetworkHandleFromIfname(
   RTC_DCHECK_RUN_ON(network_thread_);
   if (bind_using_ifname_) {
     for (auto const& iter : network_info_by_handle_) {
+      
+      
       if (if_name.find(iter.second.interface_name) != absl::string_view::npos) {
-        
-        
         return absl::make_optional(iter.first);
       }
     }
@@ -564,6 +566,32 @@ rtc::NetworkPreference AndroidNetworkMonitor::GetNetworkPreference(
   }
 
   return preference_iter->second;
+}
+
+
+
+bool AndroidNetworkMonitor::IsAdapterAvailable(absl::string_view if_name) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  if (disable_is_adapter_available_) {
+    return true;
+  }
+  if (if_name == "lo") {
+    
+    return true;
+  }
+  bool val = adapter_type_by_name_.find(if_name) != adapter_type_by_name_.end();
+  if (!val && bind_using_ifname_) {
+    for (auto const& iter : network_info_by_handle_) {
+      
+      
+      if (if_name.find(iter.second.interface_name) != absl::string_view::npos) {
+        val = true;
+        break;
+      }
+    }
+  }
+
+  return val;
 }
 
 AndroidNetworkMonitorFactory::AndroidNetworkMonitorFactory()
