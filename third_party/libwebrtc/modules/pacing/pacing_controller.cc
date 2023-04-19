@@ -38,11 +38,6 @@ constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
 
 constexpr TimeDelta kMaxProcessingInterval = TimeDelta::Millis(30);
 
-
-
-
-constexpr TimeDelta kMaxEarlyProbeProcessing = TimeDelta::Millis(1);
-
 constexpr int kFirstPriority = 0;
 
 bool IsDisabled(const WebRtcKeyValueConfig& field_trials,
@@ -94,6 +89,8 @@ const float PacingController::kDefaultPaceMultiplier = 2.5f;
 const TimeDelta PacingController::kPausedProcessInterval =
     kCongestedPacketInterval;
 const TimeDelta PacingController::kMinSleepTime = TimeDelta::Millis(1);
+const TimeDelta PacingController::kMaxEarlyProbeProcessing =
+    TimeDelta::Millis(1);
 
 PacingController::PacingController(Clock* clock,
                                    PacketSender* packet_sender,
@@ -133,7 +130,7 @@ PacingController::PacingController(Clock* clock,
       packet_counter_(0),
       congestion_window_size_(DataSize::PlusInfinity()),
       outstanding_data_(DataSize::Zero()),
-      queue_time_limit(kMaxExpectedQueueLength),
+      queue_time_limit_(kMaxExpectedQueueLength),
       account_for_audio_(false),
       include_overhead_(false) {
   if (!drain_large_queues_) {
@@ -224,6 +221,7 @@ void PacingController::SetPacingRates(DataRate pacing_rate,
   media_rate_ = pacing_rate;
   padding_rate_ = padding_rate;
   pacing_bitrate_ = pacing_rate;
+  media_budget_.set_target_rate_kbps(pacing_rate.kbps());
   padding_budget_.set_target_rate_kbps(padding_rate.kbps());
 
   RTC_LOG(LS_VERBOSE) << "bwe:pacer_updated pacing_kbps="
@@ -302,10 +300,7 @@ void PacingController::EnqueuePacketInternal(
       
       target_process_time = std::min(now, next_send_time);
     }
-
-    TimeDelta elapsed_time = UpdateTimeAndGetElapsed(target_process_time);
-    UpdateBudgetWithElapsedTime(elapsed_time);
-    last_process_time_ = target_process_time;
+    UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(target_process_time));
   }
   packet_queue_.Push(priority, now, packet_counter_++, std::move(packet));
 }
@@ -316,7 +311,6 @@ TimeDelta PacingController::UpdateTimeAndGetElapsed(Timestamp now) {
   if (last_process_time_.IsMinusInfinity() || now < last_process_time_) {
     return TimeDelta::Zero();
   }
-  RTC_DCHECK_GE(now, last_process_time_);
   TimeDelta elapsed_time = now - last_process_time_;
   last_process_time_ = now;
   if (elapsed_time > kMaxElapsedTime) {
@@ -333,8 +327,7 @@ bool PacingController::ShouldSendKeepalive(Timestamp now) const {
       packet_counter_ == 0) {
     
     
-    TimeDelta elapsed_since_last_send = now - last_send_time_;
-    if (elapsed_since_last_send >= kCongestedPacketInterval) {
+    if (now - last_send_time_ >= kCongestedPacketInterval) {
       return true;
     }
   }
@@ -343,17 +336,17 @@ bool PacingController::ShouldSendKeepalive(Timestamp now) const {
 
 Timestamp PacingController::NextSendTime() const {
   const Timestamp now = CurrentTime();
+  Timestamp next_send_time = Timestamp::PlusInfinity();
 
   if (paused_) {
     return last_send_time_ + kPausedProcessInterval;
   }
 
   
-  if (prober_.is_probing()) {
+  if (prober_.is_probing() && !probing_send_failure_) {
     Timestamp probe_time = prober_.NextProbeTime(now);
-    
-    if (probe_time != Timestamp::PlusInfinity() && !probing_send_failure_) {
-      return probe_time;
+    if (!probe_time.IsPlusInfinity()) {
+      return probe_time.IsMinusInfinity() ? now : probe_time;
     }
   }
 
@@ -365,86 +358,53 @@ Timestamp PacingController::NextSendTime() const {
   
   
 
-  if (!pace_audio_) {
-    
-    
-    absl::optional<Timestamp> audio_enqueue_time =
-        packet_queue_.LeadingAudioPacketEnqueueTime();
-    if (audio_enqueue_time.has_value()) {
-      return *audio_enqueue_time;
-    }
+  
+  
+  absl::optional<Timestamp> unpaced_audio_time =
+      pace_audio_ ? absl::nullopt
+                  : packet_queue_.LeadingAudioPacketEnqueueTime();
+  if (unpaced_audio_time) {
+    return *unpaced_audio_time;
   }
 
+  
   if (Congested() || packet_counter_ == 0) {
-    
     return last_send_time_ + kCongestedPacketInterval;
   }
 
-  
   if (media_rate_ > DataRate::Zero() && !packet_queue_.Empty()) {
-    return std::min(last_send_time_ + kPausedProcessInterval,
-                    last_process_time_ + media_debt_ / media_rate_);
-  }
-
-  
-  
-  
-  if (padding_rate_ > DataRate::Zero() && packet_queue_.Empty()) {
+    
+    next_send_time = last_process_time_ + media_debt_ / media_rate_;
+  } else if (padding_rate_ > DataRate::Zero() && packet_queue_.Empty()) {
+    
+    
+    
+    RTC_DCHECK_GT(media_rate_, DataRate::Zero());
     TimeDelta drain_time =
         std::max(media_debt_ / media_rate_, padding_debt_ / padding_rate_);
-    return std::min(last_send_time_ + kPausedProcessInterval,
-                    last_process_time_ + drain_time);
+    next_send_time = last_process_time_ + drain_time;
+  } else {
+    
+    next_send_time = last_process_time_ + kPausedProcessInterval;
   }
 
   if (send_padding_if_silent_) {
-    return last_send_time_ + kPausedProcessInterval;
+    next_send_time =
+        std::min(next_send_time, last_send_time_ + kPausedProcessInterval);
   }
-  return last_process_time_ + kPausedProcessInterval;
+
+  return next_send_time;
 }
 
 void PacingController::ProcessPackets() {
   Timestamp now = CurrentTime();
   Timestamp target_send_time = now;
-  if (mode_ == ProcessMode::kDynamic) {
-    target_send_time = NextSendTime();
-    TimeDelta early_execute_margin =
-        prober_.is_probing() ? kMaxEarlyProbeProcessing : TimeDelta::Zero();
-    if (target_send_time.IsMinusInfinity()) {
-      target_send_time = now;
-    } else if (now < target_send_time - early_execute_margin) {
-      
-      
-      TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
-      UpdateBudgetWithElapsedTime(elapsed_time);
-      return;
-    }
-
-    if (target_send_time < last_process_time_) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      UpdateBudgetWithElapsedTime(last_process_time_ - target_send_time);
-      target_send_time = last_process_time_;
-    }
-  }
-
-  Timestamp previous_process_time = last_process_time_;
-  TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
 
   if (ShouldSendKeepalive(now)) {
+    DataSize keepalive_data_sent = DataSize::Zero();
     
     
-    if (packet_counter_ == 0) {
-      last_send_time_ = now;
-    } else {
-      DataSize keepalive_data_sent = DataSize::Zero();
+    if (packet_counter_ > 0) {
       std::vector<std::unique_ptr<RtpPacketToSend>> keepalive_packets =
           packet_sender_->GeneratePadding(DataSize::Bytes(1));
       for (auto& packet : keepalive_packets) {
@@ -455,13 +415,28 @@ void PacingController::ProcessPackets() {
           EnqueuePacket(std::move(packet));
         }
       }
-      OnPaddingSent(keepalive_data_sent);
     }
+    OnPacketSent(RtpPacketMediaType::kPadding, keepalive_data_sent, now);
   }
 
   if (paused_) {
     return;
   }
+
+  if (mode_ == ProcessMode::kDynamic) {
+    TimeDelta early_execute_margin =
+        prober_.is_probing() ? kMaxEarlyProbeProcessing : TimeDelta::Zero();
+
+    target_send_time = NextSendTime();
+    if (now + early_execute_margin < target_send_time) {
+      
+      
+      UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(now));
+      return;
+    }
+  }
+
+  TimeDelta elapsed_time = UpdateTimeAndGetElapsed(target_send_time);
 
   if (elapsed_time > TimeDelta::Zero()) {
     DataRate target_rate = pacing_bitrate_;
@@ -474,7 +449,7 @@ void PacingController::ProcessPackets() {
       if (drain_large_queues_) {
         TimeDelta avg_time_left =
             std::max(TimeDelta::Millis(1),
-                     queue_time_limit - packet_queue_.AverageQueueTime());
+                     queue_time_limit_ - packet_queue_.AverageQueueTime());
         DataRate min_rate_needed = queue_size_data / avg_time_left;
         if (min_rate_needed > target_rate) {
           target_rate = min_rate_needed;
@@ -489,13 +464,12 @@ void PacingController::ProcessPackets() {
       
       
       media_budget_.set_target_rate_kbps(target_rate.kbps());
-      UpdateBudgetWithElapsedTime(elapsed_time);
     } else {
       media_rate_ = target_rate;
     }
+    UpdateBudgetWithElapsedTime(elapsed_time);
   }
 
-  bool first_packet_in_probe = false;
   PacedPacketInfo pacing_info;
   DataSize recommended_probe_size = DataSize::Zero();
   bool is_probing = prober_.is_probing();
@@ -504,9 +478,23 @@ void PacingController::ProcessPackets() {
     
     pacing_info = prober_.CurrentCluster(now).value_or(PacedPacketInfo());
     if (pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
-      first_packet_in_probe = pacing_info.probe_cluster_bytes_sent == 0;
       recommended_probe_size = prober_.RecommendedMinProbeSize();
       RTC_DCHECK_GT(recommended_probe_size, DataSize::Zero());
+
+      
+      
+      if (pacing_info.probe_cluster_bytes_sent == 0) {
+        auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));
+        
+        
+        if (!padding.empty()) {
+          
+          EnqueuePacketInternal(std::move(padding[0]), kFirstPriority);
+          
+          
+          RTC_DCHECK_EQ(padding.size(), 1u);
+        }
+      }
     } else {
       
       is_probing = false;
@@ -514,101 +502,73 @@ void PacingController::ProcessPackets() {
   }
 
   DataSize data_sent = DataSize::Zero();
-
-  
-  
-  while (!paused_) {
-    if (first_packet_in_probe) {
-      
-      
-      auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));
-      
-      
-      if (!padding.empty()) {
-        
-        EnqueuePacketInternal(std::move(padding[0]), kFirstPriority);
-        
-        
-        RTC_DCHECK_EQ(padding.size(), 1u);
-      }
-      first_packet_in_probe = false;
-    }
-
-    if (mode_ == ProcessMode::kDynamic &&
-        previous_process_time < target_send_time) {
-      
-      
-      
-      
-      UpdateBudgetWithElapsedTime(target_send_time - previous_process_time);
-      previous_process_time = target_send_time;
-    }
-
+  while (true) {
     
     
     std::unique_ptr<RtpPacketToSend> rtp_packet =
         GetPendingPacket(pacing_info, target_send_time, now);
-
     if (rtp_packet == nullptr) {
       
       DataSize padding_to_add = PaddingToAdd(recommended_probe_size, data_sent);
       if (padding_to_add > DataSize::Zero()) {
         std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
             packet_sender_->GeneratePadding(padding_to_add);
-        if (padding_packets.empty()) {
+        if (!padding_packets.empty()) {
+          for (auto& packet : padding_packets) {
+            EnqueuePacket(std::move(packet));
+          }
           
-          break;
+          continue;
+        } else {
+          
+          
+          UpdatePaddingBudgetWithSentData(padding_to_add);
         }
-        for (auto& packet : padding_packets) {
-          EnqueuePacket(std::move(packet));
-        }
-        
-        continue;
+      }
+      
+      break;
+    } else {
+      RTC_DCHECK(rtp_packet);
+      RTC_DCHECK(rtp_packet->packet_type().has_value());
+      const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
+      DataSize packet_size = DataSize::Bytes(rtp_packet->payload_size() +
+                                             rtp_packet->padding_size());
+
+      if (include_overhead_) {
+        packet_size += DataSize::Bytes(rtp_packet->headers_size()) +
+                       transport_overhead_per_packet_;
+      }
+
+      packet_sender_->SendPacket(std::move(rtp_packet), pacing_info);
+      for (auto& packet : packet_sender_->FetchFec()) {
+        EnqueuePacket(std::move(packet));
+      }
+      data_sent += packet_size;
+
+      
+      OnPacketSent(packet_type, packet_size, now);
+
+      
+      
+      if (is_probing && data_sent >= recommended_probe_size) {
+        break;
       }
 
       
-      break;
-    }
-
-    RTC_DCHECK(rtp_packet);
-    RTC_DCHECK(rtp_packet->packet_type().has_value());
-    const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
-    DataSize packet_size = DataSize::Bytes(rtp_packet->payload_size() +
-                                           rtp_packet->padding_size());
-
-    if (include_overhead_) {
-      packet_size += DataSize::Bytes(rtp_packet->headers_size()) +
-                     transport_overhead_per_packet_;
-    }
-
-    packet_sender_->SendPacket(std::move(rtp_packet), pacing_info);
-    for (auto& packet : packet_sender_->FetchFec()) {
-      EnqueuePacket(std::move(packet));
-    }
-    data_sent += packet_size;
-
-    
-    OnPacketSent(packet_type, packet_size, target_send_time);
-
-    
-    
-    if (is_probing && data_sent >= recommended_probe_size) {
-      break;
-    }
-
-    if (mode_ == ProcessMode::kDynamic) {
       
-      
-      Timestamp next_send_time = NextSendTime();
-      if (next_send_time.IsMinusInfinity()) {
-        target_send_time = now;
-      } else {
-        target_send_time = std::min(now, next_send_time);
+      if (mode_ == ProcessMode::kDynamic) {
+        target_send_time = NextSendTime();
+        if (target_send_time > now) {
+          
+          if (!is_probing) {
+            break;
+          }
+          target_send_time = now;
+        }
+        UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(target_send_time));
       }
     }
   }
-
-  last_process_time_ = std::max(last_process_time_, previous_process_time);
 
   if (is_probing) {
     probing_send_failure_ = data_sent == DataSize::Zero();
@@ -697,25 +657,16 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
 void PacingController::OnPacketSent(RtpPacketMediaType packet_type,
                                     DataSize packet_size,
                                     Timestamp send_time) {
-  if (!first_sent_packet_time_) {
+  if (!first_sent_packet_time_ && packet_type != RtpPacketMediaType::kPadding) {
     first_sent_packet_time_ = send_time;
   }
+
   bool audio_packet = packet_type == RtpPacketMediaType::kAudio;
-  if (!audio_packet || account_for_audio_) {
-    
+  if ((!audio_packet || account_for_audio_) && packet_size > DataSize::Zero()) {
     UpdateBudgetWithSentData(packet_size);
   }
-  last_send_time_ = send_time;
-  last_process_time_ = send_time;
-}
 
-void PacingController::OnPaddingSent(DataSize data_sent) {
-  if (data_sent > DataSize::Zero()) {
-    UpdateBudgetWithSentData(data_sent);
-  }
-  Timestamp now = CurrentTime();
-  last_send_time_ = now;
-  last_process_time_ = now;
+  last_send_time_ = send_time;
 }
 
 void PacingController::UpdateBudgetWithElapsedTime(TimeDelta delta) {
@@ -733,17 +684,24 @@ void PacingController::UpdateBudgetWithSentData(DataSize size) {
   outstanding_data_ += size;
   if (mode_ == ProcessMode::kPeriodic) {
     media_budget_.UseBudget(size.bytes());
-    padding_budget_.UseBudget(size.bytes());
   } else {
     media_debt_ += size;
     media_debt_ = std::min(media_debt_, media_rate_ * kMaxDebtInTime);
+  }
+  UpdatePaddingBudgetWithSentData(size);
+}
+
+void PacingController::UpdatePaddingBudgetWithSentData(DataSize size) {
+  if (mode_ == ProcessMode::kPeriodic) {
+    padding_budget_.UseBudget(size.bytes());
+  } else {
     padding_debt_ += size;
     padding_debt_ = std::min(padding_debt_, padding_rate_ * kMaxDebtInTime);
   }
 }
 
 void PacingController::SetQueueTimeLimit(TimeDelta limit) {
-  queue_time_limit = limit;
+  queue_time_limit_ = limit;
 }
 
 }  
