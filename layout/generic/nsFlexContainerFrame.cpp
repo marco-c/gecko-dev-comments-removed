@@ -4623,64 +4623,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   aReflowOutput.SetOverflowAreasToDesiredBounds();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const bool isScrolledContent =
-      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
-  MOZ_ASSERT(
-      !isScrolledContent || aReflowInput.ComputedLogicalBorderPadding(wm) ==
-                                aReflowInput.ComputedLogicalPadding(wm),
-      "A scrolled inner frame shouldn't have any border!");
-
-  bool anyScrolledContentItem = false;
-  
-  nsRect itemMarginBoxes;
-  
-  nsRect relPosItemMarginBoxes;
-  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
-  for (nsIFrame* f : mFrames) {
-    if (useMozBoxCollapseBehavior && f->StyleVisibility()->IsCollapse()) {
-      continue;
-    }
-    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, f);
-    if (!isScrolledContent) {
-      continue;
-    }
-    if (f->IsPlaceholderFrame()) {
-      continue;
-    }
-    anyScrolledContentItem = true;
-    if (MOZ_UNLIKELY(f->IsRelativelyOrStickyPositioned())) {
-      const nsRect marginRect = f->GetMarginRectRelativeToSelf();
-      itemMarginBoxes =
-          itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
-      relPosItemMarginBoxes =
-          relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
-    } else {
-      itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
-    }
-  }
-
-  if (anyScrolledContentItem) {
-    itemMarginBoxes.Inflate(borderPadding.GetPhysicalMargin(wm));
-    aReflowOutput.mOverflowAreas.UnionAllWith(itemMarginBoxes);
-    aReflowOutput.mOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
-  }
+  UnionChildOverflow(aReflowOutput.mOverflowAreas);
 
   
   aReflowOutput.mOverflowAreas.UnionWith(ocBounds);
@@ -4719,6 +4662,61 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   } else {
     SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
+  }
+}
+
+void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool isScrolledContent =
+      Style()->GetPseudoType() == PseudoStyleType::scrolledContent;
+  bool anyScrolledContentItem = false;
+  
+  nsRect itemMarginBoxes;
+  
+  nsRect relPosItemMarginBoxes;
+  const bool useMozBoxCollapseBehavior = IsLegacyMozBox(this);
+  for (nsIFrame* f : mFrames) {
+    if (useMozBoxCollapseBehavior && f->StyleVisibility()->IsCollapse()) {
+      continue;
+    }
+    ConsiderChildOverflow(aOverflowAreas, f);
+    if (!isScrolledContent) {
+      continue;
+    }
+    if (f->IsPlaceholderFrame()) {
+      continue;
+    }
+    anyScrolledContentItem = true;
+    if (MOZ_UNLIKELY(f->IsRelativelyOrStickyPositioned())) {
+      const nsRect marginRect = f->GetMarginRectRelativeToSelf();
+      itemMarginBoxes =
+          itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
+      relPosItemMarginBoxes =
+          relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
+    } else {
+      itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
+    }
+  }
+
+  if (anyScrolledContentItem) {
+    itemMarginBoxes.Inflate(GetUsedPadding());
+    aOverflowAreas.UnionAllWith(itemMarginBoxes);
+    aOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
   }
 }
 

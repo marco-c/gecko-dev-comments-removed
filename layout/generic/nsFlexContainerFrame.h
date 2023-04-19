@@ -185,6 +185,8 @@ class nsFlexContainerFrame final : public nsContainerFrame,
     return true;
   }
 
+  void UnionChildOverflow(mozilla::OverflowAreas&) final;
+
   
   bool DrainSelfOverflowList() override;
   void AppendFrames(ChildListID aListID, nsFrameList& aFrameList) override;
