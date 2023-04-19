@@ -70,11 +70,6 @@ static void SetProperty(OperatorData* aOperatorData, nsString aName,
                         nsString aValue) {
   if (aName.IsEmpty() || aValue.IsEmpty()) return;
 
-  
-  
-  
-  
-
   if (aName.EqualsLiteral("direction")) {
     if (aValue.EqualsLiteral("vertical"))
       aOperatorData->mFlags |= NS_MATHML_OPERATOR_DIRECTION_VERTICAL;
