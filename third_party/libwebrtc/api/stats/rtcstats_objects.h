@@ -406,6 +406,7 @@ class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRTPStreamStats {
   
   RTCStatsMember<double> jitter;
   RTCStatsMember<int32_t> packets_lost;  
+  RTCStatsMember<uint64_t> packets_discarded;
 
  protected:
   RTCReceivedRtpStreamStats(const std::string&& id, int64_t timestamp_us);
