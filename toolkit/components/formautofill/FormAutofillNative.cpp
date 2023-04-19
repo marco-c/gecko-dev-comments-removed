@@ -348,7 +348,7 @@ constexpr AutofillParams kCoefficents{
 
 
 constexpr float kCCNumberBias = -4.948795795440674;
-
+constexpr float kCCNameBias = -5.3578081130981445;
 
 
 
@@ -1184,6 +1184,9 @@ void FormAutofillImpl::GetFormAutofillConfidences(
     bool inputTypeNotNumbery = InputTypeNotNumbery(element);
     bool idOrNameMatchSubscription =
         IdOrNameMatchRegExp(element, RegexKey::SUBSCRIPTION);
+    bool idOrNameMatchFirstAndLast =
+        IdOrNameMatchRegExp(element, RegexKey::FIRST) &&
+        IdOrNameMatchRegExp(element, RegexKey::LAST);
 
 #define RULE_IMPL2(rule, type) params.m##type##Params[type##Params::rule]
 #define RULE_IMPL(rule, type) RULE_IMPL2(rule, type)
@@ -1215,43 +1218,40 @@ void FormAutofillImpl::GetFormAutofillConfidences(
 #undef RULE_TYPE
 
     
+#define RULE_TYPE CCName
+    RULE(idOrNameMatchNameRegExp) =
+        IdOrNameMatchRegExp(element, RegexKey::CC_NAME);
+    RULE(labelsMatchNameRegExp) =
+        LabelMatchesRegExp(element, labelStrings, RegexKey::CC_NAME);
+    RULE(closestLabelMatchesNameRegExp) =
+        ClosestLabelMatchesRegExp(element, RegexKey::CC_NAME);
+    RULE(placeholderMatchesNameRegExp) =
+        PlaceholderMatchesRegExp(element, RegexKey::CC_NAME);
+    RULE(ariaLabelMatchesNameRegExp) =
+        AriaLabelMatchesRegExp(element, RegexKey::CC_NAME);
+    RULE(idOrNameMatchFirst) = IdOrNameMatchRegExp(element, RegexKey::FIRST);
+    RULE(labelsMatchFirst) =
+        LabelMatchesRegExp(element, labelStrings, RegexKey::FIRST);
+    RULE(placeholderMatchesFirst) =
+        PlaceholderMatchesRegExp(element, RegexKey::FIRST);
+    RULE(ariaLabelMatchesFirst) =
+        AriaLabelMatchesRegExp(element, RegexKey::FIRST);
+    RULE(idOrNameMatchLast) = IdOrNameMatchRegExp(element, RegexKey::LAST);
+    RULE(labelsMatchLast) =
+        LabelMatchesRegExp(element, labelStrings, RegexKey::LAST);
+    RULE(placeholderMatchesLast) =
+        PlaceholderMatchesRegExp(element, RegexKey::LAST);
+    RULE(ariaLabelMatchesLast) =
+        AriaLabelMatchesRegExp(element, RegexKey::LAST);
+    RULE(idOrNameMatchSubscription) = idOrNameMatchSubscription;
+    RULE(idOrNameMatchFirstAndLast) = idOrNameMatchFirstAndLast;
+    RULE(idOrNameMatchDwfrmAndBml) = idOrNameMatchDwfrmAndBml;
+    RULE(hasTemplatedValue) = hasTemplatedValue;
+#undef RULE_TYPE
+
     
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
@@ -1448,8 +1448,8 @@ void FormAutofillImpl::GetFormAutofillConfidences(
     
     FormAutofillConfidences score;
     CALCULATE_SCORE(CCNumber, score.mCcNumber)
+    CALCULATE_SCORE(CCName, score.mCcName)
 
-    
     
     
     

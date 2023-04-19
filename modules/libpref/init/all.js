@@ -4277,8 +4277,8 @@ pref("extensions.formautofill.creditCards.hideui", false);
 
 
 pref("extensions.formautofill.creditCards.heuristics.mode", 2);
-pref("extensions.formautofill.creditCards.heuristics.confidenceThreshold", "0.5");
-
+pref("extensions.formautofill.creditCards.heuristics.fathom.types", "cc-number");
+pref("extensions.formautofill.creditCards.heuristics.fathom.confidenceThreshold", "0.5");
 
 
 #ifdef EARLY_BETA_OR_EARLIER

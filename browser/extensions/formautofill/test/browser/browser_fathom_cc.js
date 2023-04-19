@@ -103,7 +103,7 @@ async function run_test(path, dirs) {
 
           
           
-          const EXPECTED_NUM_OF_CONFIDENCE = 1;
+          const EXPECTED_NUM_OF_CONFIDENCE = 2;
           for (let i = 0; i < eligibleFields.length; i++) {
             if (
               Object.keys(nativeConfidencesKeyedByType[i]).length !=

@@ -1194,21 +1194,22 @@ const biases = [
 
 var creditCardRulesets = {
   init() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "supportedTypes",
+      "extensions.formautofill.creditCards.heuristics.fathom.types",
+      null,
+      null,
+      val => val.split(",")
+    );
+
     for (const type of this.types) {
       this[type] = makeRuleset([...coefficients[type]], biases);
     }
   },
 
   get types() {
-    return [
-      
-      "cc-number",
-      
-      
-      
-      
-      
-    ];
+    return this.supportedTypes;
   },
 };
 this.creditCardRulesets.init();
