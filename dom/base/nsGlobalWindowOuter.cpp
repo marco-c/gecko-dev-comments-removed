@@ -5138,6 +5138,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
 
   nsCOMPtr<nsIPrintSettings> ps = aPrintSettings;
   if (!ps) {
+    
     printSettingsService->GetDefaultPrintSettingsForPrinting(
         getter_AddRefs(ps));
   }
