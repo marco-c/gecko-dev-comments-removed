@@ -75,7 +75,7 @@ impl<T> Abortable<T> {
 
 #[derive(Debug)]
 pub struct AbortRegistration {
-    inner: Arc<AbortInner>,
+    pub(crate) inner: Arc<AbortInner>,
 }
 
 
@@ -100,9 +100,9 @@ impl AbortHandle {
 
 
 #[derive(Debug)]
-struct AbortInner {
-    waker: AtomicWaker,
-    aborted: AtomicBool,
+pub(crate) struct AbortInner {
+    pub(crate) waker: AtomicWaker,
+    pub(crate) aborted: AtomicBool,
 }
 
 

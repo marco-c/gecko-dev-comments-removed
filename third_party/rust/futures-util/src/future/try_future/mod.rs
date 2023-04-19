@@ -302,6 +302,9 @@ pub trait TryFutureExt: TryFuture {
     
     
     
+    
+    
+    
     fn map_err<E, F>(self, f: F) -> MapErr<Self, F>
     where
         F: FnOnce(Self::Error) -> E,
@@ -310,6 +313,9 @@ pub trait TryFutureExt: TryFuture {
         assert_future::<Result<Self::Ok, E>, _>(MapErr::new(self, f))
     }
 
+    
+    
+    
     
     
     

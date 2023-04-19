@@ -1,5 +1,3 @@
-#![cfg(not(miri))] 
-
 use futures::{
     stream::{self, StreamExt, TryStreamExt},
     task::Poll,

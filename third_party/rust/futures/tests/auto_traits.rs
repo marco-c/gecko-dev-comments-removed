@@ -576,10 +576,10 @@ pub mod future {
 
     
 
-    assert_impl!(TryJoinAll<SendTryFuture<()>>: Send);
+    assert_impl!(TryJoinAll<SendTryFuture<(), ()>>: Send);
     assert_not_impl!(TryJoinAll<LocalTryFuture>: Send);
     assert_not_impl!(TryJoinAll<SendTryFuture>: Send);
-    assert_impl!(TryJoinAll<SyncTryFuture<()>>: Sync);
+    assert_impl!(TryJoinAll<SyncTryFuture<(), ()>>: Sync);
     assert_not_impl!(TryJoinAll<LocalTryFuture>: Sync);
     assert_not_impl!(TryJoinAll<SyncTryFuture>: Sync);
     assert_impl!(TryJoinAll<PinnedTryFuture>: Unpin);

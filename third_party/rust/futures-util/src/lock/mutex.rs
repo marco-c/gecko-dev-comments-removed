@@ -1,13 +1,15 @@
-use futures_core::future::{FusedFuture, Future};
-use futures_core::task::{Context, Poll, Waker};
-use slab::Slab;
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex as StdMutex;
+use std::sync::{Arc, Mutex as StdMutex};
 use std::{fmt, mem};
+
+use slab::Slab;
+
+use futures_core::future::{FusedFuture, Future};
+use futures_core::task::{Context, Poll, Waker};
 
 
 
@@ -110,9 +112,29 @@ impl<T: ?Sized> Mutex<T> {
     
     
     
+    pub fn try_lock_owned(self: &Arc<Self>) -> Option<OwnedMutexGuard<T>> {
+        let old_state = self.state.fetch_or(IS_LOCKED, Ordering::Acquire);
+        if (old_state & IS_LOCKED) == 0 {
+            Some(OwnedMutexGuard { mutex: self.clone() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
     
     pub fn lock(&self) -> MutexLockFuture<'_, T> {
         MutexLockFuture { mutex: Some(self), wait_key: WAIT_KEY_NONE }
+    }
+
+    
+    
+    
+    
+    pub fn lock_owned(self: Arc<Self>) -> OwnedMutexLockFuture<T> {
+        OwnedMutexLockFuture { mutex: Some(self), wait_key: WAIT_KEY_NONE }
     }
 
     
@@ -173,7 +195,118 @@ impl<T: ?Sized> Mutex<T> {
 }
 
 
-const WAIT_KEY_NONE: usize = usize::max_value();
+const WAIT_KEY_NONE: usize = usize::MAX;
+
+
+pub struct OwnedMutexLockFuture<T: ?Sized> {
+    
+    mutex: Option<Arc<Mutex<T>>>,
+    wait_key: usize,
+}
+
+impl<T: ?Sized> fmt::Debug for OwnedMutexLockFuture<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OwnedMutexLockFuture")
+            .field("was_acquired", &self.mutex.is_none())
+            .field("mutex", &self.mutex)
+            .field(
+                "wait_key",
+                &(if self.wait_key == WAIT_KEY_NONE { None } else { Some(self.wait_key) }),
+            )
+            .finish()
+    }
+}
+
+impl<T: ?Sized> FusedFuture for OwnedMutexLockFuture<T> {
+    fn is_terminated(&self) -> bool {
+        self.mutex.is_none()
+    }
+}
+
+impl<T: ?Sized> Future for OwnedMutexLockFuture<T> {
+    type Output = OwnedMutexGuard<T>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.get_mut();
+
+        let mutex = this.mutex.as_ref().expect("polled OwnedMutexLockFuture after completion");
+
+        if let Some(lock) = mutex.try_lock_owned() {
+            mutex.remove_waker(this.wait_key, false);
+            this.mutex = None;
+            return Poll::Ready(lock);
+        }
+
+        {
+            let mut waiters = mutex.waiters.lock().unwrap();
+            if this.wait_key == WAIT_KEY_NONE {
+                this.wait_key = waiters.insert(Waiter::Waiting(cx.waker().clone()));
+                if waiters.len() == 1 {
+                    mutex.state.fetch_or(HAS_WAITERS, Ordering::Relaxed); 
+                }
+            } else {
+                waiters[this.wait_key].register(cx.waker());
+            }
+        }
+
+        
+        
+        if let Some(lock) = mutex.try_lock_owned() {
+            mutex.remove_waker(this.wait_key, false);
+            this.mutex = None;
+            return Poll::Ready(lock);
+        }
+
+        Poll::Pending
+    }
+}
+
+impl<T: ?Sized> Drop for OwnedMutexLockFuture<T> {
+    fn drop(&mut self) {
+        if let Some(mutex) = self.mutex.as_ref() {
+            
+            
+            
+            
+            mutex.remove_waker(self.wait_key, true);
+        }
+    }
+}
+
+
+
+
+pub struct OwnedMutexGuard<T: ?Sized> {
+    mutex: Arc<Mutex<T>>,
+}
+
+impl<T: ?Sized + fmt::Debug> fmt::Debug for OwnedMutexGuard<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OwnedMutexGuard")
+            .field("value", &&**self)
+            .field("mutex", &self.mutex)
+            .finish()
+    }
+}
+
+impl<T: ?Sized> Drop for OwnedMutexGuard<T> {
+    fn drop(&mut self) {
+        self.mutex.unlock()
+    }
+}
+
+impl<T: ?Sized> Deref for OwnedMutexGuard<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        unsafe { &*self.mutex.value.get() }
+    }
+}
+
+impl<T: ?Sized> DerefMut for OwnedMutexGuard<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { &mut *self.mutex.value.get() }
+    }
+}
 
 
 pub struct MutexLockFuture<'a, T: ?Sized> {
@@ -387,12 +520,24 @@ unsafe impl<T: ?Sized + Send> Sync for Mutex<T> {}
 
 unsafe impl<T: ?Sized + Send> Send for MutexLockFuture<'_, T> {}
 
+
 unsafe impl<T: ?Sized> Sync for MutexLockFuture<'_, T> {}
+
+
+
+unsafe impl<T: ?Sized + Send> Send for OwnedMutexLockFuture<T> {}
+
+
+unsafe impl<T: ?Sized> Sync for OwnedMutexLockFuture<T> {}
 
 
 
 unsafe impl<T: ?Sized + Send> Send for MutexGuard<'_, T> {}
 unsafe impl<T: ?Sized + Sync> Sync for MutexGuard<'_, T> {}
+
+unsafe impl<T: ?Sized + Send> Send for OwnedMutexGuard<T> {}
+unsafe impl<T: ?Sized + Sync> Sync for OwnedMutexGuard<T> {}
+
 unsafe impl<T: ?Sized + Send, U: ?Sized + Send> Send for MappedMutexGuard<'_, T, U> {}
 unsafe impl<T: ?Sized + Sync, U: ?Sized + Sync> Sync for MappedMutexGuard<'_, T, U> {}
 

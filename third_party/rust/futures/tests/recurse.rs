@@ -3,7 +3,6 @@ use futures::future::{self, BoxFuture, FutureExt};
 use std::sync::mpsc;
 use std::thread;
 
-#[cfg_attr(miri, ignore)] 
 #[test]
 fn lots() {
     #[cfg(not(futures_sanitizer))]

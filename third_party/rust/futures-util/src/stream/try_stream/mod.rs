@@ -1051,17 +1051,12 @@ pub trait TryStreamExt: TryStream {
     
     
     
-    
-    
-    
-    
-    
     #[cfg(feature = "io")]
     #[cfg_attr(docsrs, doc(cfg(feature = "io")))]
     #[cfg(feature = "std")]
     fn into_async_read(self) -> IntoAsyncRead<Self>
     where
-        Self: Sized + TryStreamExt<Error = std::io::Error> + Unpin,
+        Self: Sized + TryStreamExt<Error = std::io::Error>,
         Self::Ok: AsRef<[u8]>,
     {
         crate::io::assert_read(IntoAsyncRead::new(self))

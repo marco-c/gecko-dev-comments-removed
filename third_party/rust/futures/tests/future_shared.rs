@@ -3,6 +3,7 @@ use futures::executor::{block_on, LocalPool};
 use futures::future::{self, FutureExt, LocalFutureObj, TryFutureExt};
 use futures::task::LocalSpawn;
 use std::cell::{Cell, RefCell};
+use std::panic::AssertUnwindSafe;
 use std::rc::Rc;
 use std::task::Poll;
 use std::thread;
@@ -96,7 +97,6 @@ fn drop_in_poll() {
     assert_eq!(block_on(future1), 1);
 }
 
-#[cfg_attr(miri, ignore)] 
 #[test]
 fn peek() {
     let mut local_pool = LocalPool::new();
@@ -193,4 +193,35 @@ fn shared_future_that_wakes_itself_until_pending_is_returned() {
     
     
     assert_eq!(block_on(futures::future::join(fut, async { proceed.set(true) })), ((), ()));
+}
+
+#[test]
+#[should_panic(expected = "inner future panicked during poll")]
+fn panic_while_poll() {
+    let fut = futures::future::poll_fn::<i8, _>(|_cx| panic!("test")).shared();
+
+    let fut_captured = fut.clone();
+    std::panic::catch_unwind(AssertUnwindSafe(|| {
+        block_on(fut_captured);
+    }))
+    .unwrap_err();
+
+    block_on(fut);
+}
+
+#[test]
+#[should_panic(expected = "test_marker")]
+fn poll_while_panic() {
+    struct S;
+
+    impl Drop for S {
+        fn drop(&mut self) {
+            let fut = futures::future::ready(1).shared();
+            assert_eq!(block_on(fut.clone()), 1);
+            assert_eq!(block_on(fut), 1);
+        }
+    }
+
+    let _s = S {};
+    panic!("test_marker");
 }

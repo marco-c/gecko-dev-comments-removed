@@ -118,6 +118,9 @@ impl ThreadPool {
     
     
     
+    
+    
+    
     pub fn spawn_ok<Fut>(&self, future: Fut)
     where
         Fut: Future<Output = ()> + Send + 'static,
@@ -346,9 +349,8 @@ impl fmt::Debug for Task {
 
 impl ArcWake for WakeHandle {
     fn wake_by_ref(arc_self: &Arc<Self>) {
-        match arc_self.mutex.notify() {
-            Ok(task) => arc_self.exec.state.send(Message::Run(task)),
-            Err(()) => {}
+        if let Ok(task) = arc_self.mutex.notify() {
+            arc_self.exec.state.send(Message::Run(task))
         }
     }
 }
@@ -360,16 +362,19 @@ mod tests {
 
     #[test]
     fn test_drop_after_start() {
-        let (tx, rx) = mpsc::sync_channel(2);
-        let _cpu_pool = ThreadPoolBuilder::new()
-            .pool_size(2)
-            .after_start(move |_| tx.send(1).unwrap())
-            .create()
-            .unwrap();
+        {
+            let (tx, rx) = mpsc::sync_channel(2);
+            let _cpu_pool = ThreadPoolBuilder::new()
+                .pool_size(2)
+                .after_start(move |_| tx.send(1).unwrap())
+                .create()
+                .unwrap();
 
-        
-        
-        let count = rx.into_iter().count();
-        assert_eq!(count, 2);
+            
+            
+            let count = rx.into_iter().count();
+            assert_eq!(count, 2);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(500)); 
     }
 }

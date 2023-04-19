@@ -18,6 +18,7 @@ pub struct WakerRef<'a> {
 
 impl<'a> WakerRef<'a> {
     
+    #[inline]
     pub fn new(waker: &'a Waker) -> Self {
         
         
@@ -31,6 +32,7 @@ impl<'a> WakerRef<'a> {
     
     
     
+    #[inline]
     pub fn new_unowned(waker: ManuallyDrop<Waker>) -> Self {
         Self { waker, _marker: PhantomData }
     }
@@ -39,6 +41,7 @@ impl<'a> WakerRef<'a> {
 impl Deref for WakerRef<'_> {
     type Target = Waker;
 
+    #[inline]
     fn deref(&self) -> &Waker {
         &self.waker
     }

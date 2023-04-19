@@ -63,7 +63,7 @@ thread_local! {
 impl ArcWake for ThreadNotify {
     fn wake_by_ref(arc_self: &Arc<Self>) {
         
-        let unparked = arc_self.unparked.swap(true, Ordering::Relaxed);
+        let unparked = arc_self.unparked.swap(true, Ordering::Release);
         if !unparked {
             
             
@@ -90,33 +90,21 @@ fn run_executor<T, F: FnMut(&mut Context<'_>) -> Poll<T>>(mut f: F) -> T {
             if let Poll::Ready(t) = f(&mut cx) {
                 return t;
             }
+
             
-            let unparked = thread_notify.unparked.swap(false, Ordering::Acquire);
-            if !unparked {
+            while !thread_notify.unparked.swap(false, Ordering::Acquire) {
                 
                 
                 
                 thread::park();
-                
-                
-                
-                thread_notify.unparked.store(false, Ordering::Release);
             }
         }
     })
 }
 
-fn poll_executor<T, F: FnMut(&mut Context<'_>) -> T>(mut f: F) -> T {
-    let _enter = enter().expect(
-        "cannot execute `LocalPool` executor from within \
-         another executor",
-    );
 
-    CURRENT_THREAD_NOTIFY.with(|thread_notify| {
-        let waker = waker_ref(thread_notify);
-        let mut cx = Context::from_waker(&waker);
-        f(&mut cx)
-    })
+fn woken() -> bool {
+    CURRENT_THREAD_NOTIFY.with(|thread_notify| thread_notify.unparked.load(Ordering::Acquire))
 }
 
 impl LocalPool {
@@ -212,20 +200,26 @@ impl LocalPool {
     
     
     pub fn try_run_one(&mut self) -> bool {
-        poll_executor(|ctx| {
+        run_executor(|cx| {
             loop {
-                let ret = self.poll_pool_once(ctx);
+                self.drain_incoming();
 
-                
-                if let Poll::Ready(Some(_)) = ret {
-                    return true;
+                match self.pool.poll_next_unpin(cx) {
+                    
+                    Poll::Ready(Some(())) => return Poll::Ready(true),
+                    
+                    Poll::Ready(None) => return Poll::Ready(false),
+                    Poll::Pending => (),
                 }
 
-                
-                
-                
-                if self.incoming.borrow().is_empty() {
-                    return false;
+                if !self.incoming.borrow().is_empty() {
+                    
+                    continue;
+                } else if woken() {
+                    
+                    return Poll::Pending;
+                } else {
+                    return Poll::Ready(false);
                 }
             }
         })
@@ -257,44 +251,52 @@ impl LocalPool {
     
     
     pub fn run_until_stalled(&mut self) {
-        poll_executor(|ctx| {
-            let _ = self.poll_pool(ctx);
+        run_executor(|cx| match self.poll_pool(cx) {
+            
+            Poll::Ready(()) => Poll::Ready(()),
+            Poll::Pending => {
+                if woken() {
+                    Poll::Pending
+                } else {
+                    
+                    Poll::Ready(())
+                }
+            }
         });
     }
 
     
     
+    
+    
+    
+    
+    
     fn poll_pool(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        
         loop {
-            let ret = self.poll_pool_once(cx);
+            self.drain_incoming();
+
+            let pool_ret = self.pool.poll_next_unpin(cx);
 
             
             if !self.incoming.borrow().is_empty() {
                 continue;
             }
 
-            
-            match ret {
-                Poll::Pending => return Poll::Pending,
+            match pool_ret {
+                Poll::Ready(Some(())) => continue,
                 Poll::Ready(None) => return Poll::Ready(()),
-                _ => {}
+                Poll::Pending => return Poll::Pending,
             }
         }
     }
 
     
-    fn poll_pool_once(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        
-        {
-            let mut incoming = self.incoming.borrow_mut();
-            for task in incoming.drain(..) {
-                self.pool.push(task)
-            }
+    fn drain_incoming(&mut self) {
+        let mut incoming = self.incoming.borrow_mut();
+        for task in incoming.drain(..) {
+            self.pool.push(task)
         }
-
-        
-        self.pool.poll_next_unpin(cx)
     }
 }
 

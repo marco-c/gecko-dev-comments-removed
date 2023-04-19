@@ -1674,6 +1674,8 @@ pub trait StreamExt: Stream {
     
     
     
+    
+    
     fn select_next_some(&mut self) -> SelectNextSome<'_, Self>
     where
         Self: Unpin + FusedStream,
