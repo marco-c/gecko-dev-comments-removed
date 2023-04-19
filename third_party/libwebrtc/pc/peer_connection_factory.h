@@ -121,10 +121,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   explicit PeerConnectionFactory(
       PeerConnectionFactoryDependencies dependencies);
 
-  
-  
-  virtual void ActionsBeforeInitializeForTesting(PeerConnectionInterface*) {}
-
   virtual ~PeerConnectionFactory();
 
  private:

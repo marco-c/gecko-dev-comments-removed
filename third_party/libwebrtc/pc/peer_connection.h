@@ -118,11 +118,16 @@ class PeerConnection : public PeerConnectionInternal,
                        public JsepTransportController::Observer,
                        public sigslot::has_slots<> {
  public:
-  explicit PeerConnection(rtc::scoped_refptr<ConnectionContext> context,
-                          std::unique_ptr<RtcEventLog> event_log,
-                          std::unique_ptr<Call> call);
-
-  bool Initialize(
+  
+  
+  
+  
+  
+  
+  static rtc::scoped_refptr<PeerConnection> Create(
+      rtc::scoped_refptr<ConnectionContext> context,
+      std::unique_ptr<RtcEventLog> event_log,
+      std::unique_ptr<Call> call,
       const PeerConnectionInterface::RTCConfiguration& configuration,
       PeerConnectionDependencies dependencies);
 
@@ -396,7 +401,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   bool IsUnifiedPlan() const {
     RTC_DCHECK_RUN_ON(signaling_thread());
-    return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
+    return is_unified_plan_;
   }
   bool ValidateBundleSettings(const cricket::SessionDescription* desc);
 
@@ -454,9 +459,19 @@ class PeerConnection : public PeerConnectionInternal,
   void RequestUsagePatternReportForTesting();
 
  protected:
+  
+  explicit PeerConnection(rtc::scoped_refptr<ConnectionContext> context,
+                          bool is_unified_plan,
+                          std::unique_ptr<RtcEventLog> event_log,
+                          std::unique_ptr<Call> call);
+
   ~PeerConnection() override;
 
  private:
+  bool Initialize(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies dependencies);
+
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender)
       RTC_RUN_ON(signaling_thread());
@@ -529,16 +544,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  
-  
-  RTCError ValidateConfiguration(const RTCConfiguration& config) const;
-
-  cricket::IceConfig ParseIceConfig(
-      const PeerConnectionInterface::RTCConfiguration& config) const;
-
-
-  
-  
   static bool GetTransportDescription(
       const cricket::SessionDescription* description,
       const std::string& content_name,
@@ -550,12 +555,6 @@ class PeerConnection : public PeerConnectionInternal,
   bool GetLocalCandidateMediaIndex(const std::string& content_name,
                                    int* sdp_mline_index)
       RTC_RUN_ON(signaling_thread());
-
-  bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
-
-  
-  bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
-                                  SdpType type);
 
   
   void OnTransportControllerConnectionState(cricket::IceConnectionState state)
@@ -608,15 +607,11 @@ class PeerConnection : public PeerConnectionInternal,
                      int64_t packet_time_us)>
   InitializeRtcpCallback();
 
-  
-  
-  
-  
-  
-  
   const rtc::scoped_refptr<ConnectionContext> context_;
   PeerConnectionObserver* observer_ RTC_GUARDED_BY(signaling_thread()) =
       nullptr;
+
+  const bool is_unified_plan_;
 
   
   std::unique_ptr<RtcEventLog> event_log_ RTC_GUARDED_BY(worker_thread());
