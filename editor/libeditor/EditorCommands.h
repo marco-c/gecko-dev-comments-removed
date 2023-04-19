@@ -562,7 +562,7 @@ class StateUpdatingCommandBase : public EditorCommand {
 
   
   MOZ_CAN_RUN_SCRIPT virtual nsresult GetCurrentState(
-      nsAtom* aTagName, HTMLEditor* aHTMLEditor,
+      nsStaticAtom& aTagName, HTMLEditor& aHTMLEditor,
       nsCommandParams& aParams) const = 0;
 
   
@@ -635,7 +635,7 @@ class StyleUpdatingCommand final : public StateUpdatingCommandBase {
 
   
   MOZ_CAN_RUN_SCRIPT nsresult
-  GetCurrentState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
+  GetCurrentState(nsStaticAtom& aTagName, HTMLEditor& aHTMLEditor,
                   nsCommandParams& aParams) const final;
 
   
@@ -681,7 +681,7 @@ class ListCommand final : public StateUpdatingCommandBase {
 
   
   MOZ_CAN_RUN_SCRIPT nsresult
-  GetCurrentState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
+  GetCurrentState(nsStaticAtom& aTagName, HTMLEditor& aHTMLEditor,
                   nsCommandParams& aParams) const final;
 
   
@@ -700,7 +700,7 @@ class ListItemCommand final : public StateUpdatingCommandBase {
 
   
   MOZ_CAN_RUN_SCRIPT nsresult
-  GetCurrentState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
+  GetCurrentState(nsStaticAtom& aTagName, HTMLEditor& aHTMLEditor,
                   nsCommandParams& aParams) const final;
 
   
@@ -842,7 +842,7 @@ class AbsolutePositioningCommand final : public StateUpdatingCommandBase {
   virtual ~AbsolutePositioningCommand() = default;
 
   MOZ_CAN_RUN_SCRIPT nsresult
-  GetCurrentState(nsAtom* aTagName, HTMLEditor* aHTMLEditor,
+  GetCurrentState(nsStaticAtom& aTagName, HTMLEditor& aHTMLEditor,
                   nsCommandParams& aParams) const final;
   MOZ_CAN_RUN_SCRIPT nsresult ToggleState(nsStaticAtom& aTagName,
                                           HTMLEditor& aHTMLEditor,

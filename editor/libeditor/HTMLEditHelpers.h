@@ -1266,6 +1266,16 @@ struct MOZ_STACK_CLASS EditorInlineStyleAndValue : public EditorInlineStyle {
                             RefPtr<nsAtom>&& aAttribute, nsString&& aValue)
       : EditorInlineStyle(aHTMLProperty, std::move(aAttribute)),
         mAttributeValue(aValue) {}
+
+  
+  
+  MOZ_KNOWN_LIVE nsStaticAtom& HTMLPropertyRef() const {
+    MOZ_DIAGNOSTIC_ASSERT(mHTMLProperty);
+    return *mHTMLProperty;
+  }
+
+ private:
+  using EditorInlineStyle::mHTMLProperty;
 };
 
 }  
