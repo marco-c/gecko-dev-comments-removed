@@ -752,21 +752,18 @@ nsresult nsAppShellService::JustCreateTopWindow(
     
     
     
-    
-    
-    
     if (nsContentUtils::IsInitialized()) {  
                                             
-      MOZ_DIAGNOSTIC_ASSERT(
-          nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
-          "Previously, this method would use the subject principal rather than "
-          "hardcoding the system principal");
+      nsCOMPtr<nsIPrincipal> principal =
+          nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
+      if (nsContentUtils::IsExpandedPrincipal(principal)) {
+        principal = nullptr;
+      }
+      
       
       
       rv = docShell->CreateAboutBlankContentViewer(
-          nsContentUtils::GetSystemPrincipal(),
-          nsContentUtils::GetSystemPrincipal(),
-           nullptr,  nullptr,
+          principal, principal,  nullptr,  nullptr,
            true);
       NS_ENSURE_SUCCESS(rv, rv);
       RefPtr<Document> doc = docShell->GetDocument();
@@ -850,18 +847,7 @@ nsAppShellService::RegisterTopLevelWindow(nsIAppWindow* aWindow) {
 
   nsCOMPtr<nsPIDOMWindowOuter> domWindow(docShell->GetWindow());
   NS_ENSURE_TRUE(domWindow, NS_ERROR_FAILURE);
-
-  
-  
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(
-      nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
-      "Previously, this method would use the subject principal rather than "
-      "hardcoding the system principal");
-  domWindow->SetInitialPrincipal(nsContentUtils::GetSystemPrincipal(), nullptr,
-                                 Nothing());
+  domWindow->SetInitialPrincipalToSubject(nullptr, Nothing());
 
   
   nsCOMPtr<nsIWindowMediator> mediator(
