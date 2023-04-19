@@ -3747,6 +3747,10 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
       
       
       mDoc->QueueCacheUpdate(this, CacheDomain::TransformMatrix);
+      
+      
+      
+      mDoc->QueueCacheUpdate(this, CacheDomain::Viewport);
     }
 
     mOldComputedStyle = newStyle;
