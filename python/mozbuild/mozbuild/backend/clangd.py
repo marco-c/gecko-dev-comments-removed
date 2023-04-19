@@ -28,6 +28,8 @@ def find_vscode_cmd():
     if path is not None:
         return [path]
 
+    cmd_and_path = []
+
     
     
     if sys.platform.startswith("darwin"):
