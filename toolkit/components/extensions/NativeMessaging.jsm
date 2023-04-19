@@ -93,6 +93,8 @@ var NativeApp = class extends EventEmitter {
             lazy.OS.Path.dirname(hostInfo.path),
             command
           );
+          
+          command = command.replaceAll("/", "\\");
         }
 
         let subprocessOpts = {
