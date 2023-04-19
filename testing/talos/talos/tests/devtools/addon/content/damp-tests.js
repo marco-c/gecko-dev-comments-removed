@@ -88,6 +88,10 @@ module.exports = {
       name: "custom.inspector",
       path: "inspector/custom.js",
     },
+    {
+      name: "custom.styleeditor",
+      path: "styleeditor/custom.js",
+    },
     
     {
       name: "inspector.mutations",
