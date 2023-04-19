@@ -126,31 +126,26 @@ function promiseClickContentToTriggerClipboardReadText(
     [contentButtonId],
     async _contentButtonId => {
       const contentButton = content.document.getElementById(_contentButtonId);
+      let promise = new Promise(resolve => {
+        contentButton.addEventListener(
+          "click",
+          function(e) {
+            resolve({ x: e.screenX, y: e.screenY });
+          },
+          { once: true }
+        );
+      });
 
       
       
-      await EventUtils.promiseNativeMouseEventAndWaitForEvent({
+      EventUtils.promiseNativeMouseEventAndWaitForEvent({
         type: "click",
         target: contentButton,
         atCenter: true,
         win: content.window,
       });
 
-      
-      
-      
-      
-      
-      
-      const coordinateParams = content.window.eval(`({
-        target: window.document.getElementById("${_contentButtonId}"),
-        atCenter: true,
-      })`);
-      const coords = await content.wrappedJSObject.coordinatesRelativeToScreen(
-        coordinateParams
-      );
-
-      return coords;
+      return promise;
     }
   );
 }
