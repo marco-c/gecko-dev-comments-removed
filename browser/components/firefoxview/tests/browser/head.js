@@ -455,6 +455,23 @@ const clickPrimaryButton = async doc => {
 
 
 
+const closeCallout = async doc => {
+  
+  const dismissBtn = doc.querySelector(`${calloutSelector} .dismiss-button`);
+  if (!dismissBtn) {
+    return;
+  }
+  doc.querySelector(`${calloutSelector} .dismiss-button`).click();
+  await BrowserTestUtils.waitForCondition(() => {
+    return !document.querySelector(calloutSelector);
+  });
+};
+
+
+
+
+
+
 
 
 
