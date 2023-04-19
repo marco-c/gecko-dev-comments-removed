@@ -8,6 +8,7 @@ import { features } from "../utils/prefs";
 
 import { recordEvent } from "../utils/telemetry";
 import sourceQueue from "../utils/source-queue";
+import { getContext } from "../selectors";
 
 let actions;
 let commands;
@@ -61,10 +62,10 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
   await commands.threadConfigurationCommand.updateConfiguration(options);
 
   
-  
-  
-  
-  await actions.connect(targetFront.url, targetFront.threadFront.actor);
+  await actions.selectThread(
+    getContext(store.getState()),
+    targetFront.threadFront.actor
+  );
 
   await targetCommand.watchTargets({
     types: targetCommand.ALL_TYPES,
