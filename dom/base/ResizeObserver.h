@@ -186,7 +186,7 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   
   
   
-  bool mHasSkippedTargets;
+  bool mHasSkippedTargets = false;
 
   
   
