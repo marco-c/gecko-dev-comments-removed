@@ -237,7 +237,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   void OnProtocolEnabled(AllocationSequence* seq, ProtocolType proto);
   void OnPortDestroyed(PortInterface* port);
   void MaybeSignalCandidatesAllocationDone();
-  void OnPortAllocationComplete(AllocationSequence* seq);
+  void OnPortAllocationComplete();
   PortData* FindPort(Port* port);
   std::vector<rtc::Network*> GetNetworks();
   std::vector<rtc::Network*> GetFailedNetworks();
@@ -338,10 +338,18 @@ class AllocationSequence : public rtc::MessageHandler,
 
     
   };
+  
+  
+  
+  
+  
+  
+  
   AllocationSequence(BasicPortAllocatorSession* session,
                      rtc::Network* network,
                      PortConfiguration* config,
-                     uint32_t flags);
+                     uint32_t flags,
+                     std::function<void()> port_allocation_complete_callback);
   ~AllocationSequence() override;
   void Init();
   void Clear();
@@ -366,14 +374,6 @@ class AllocationSequence : public rtc::MessageHandler,
 
   
   void OnMessage(rtc::Message* msg) override;
-
-  
-  
-  
-  
-  
-  
-  sigslot::signal1<AllocationSequence*> SignalPortAllocationComplete;
 
  protected:
   
@@ -410,6 +410,7 @@ class AllocationSequence : public rtc::MessageHandler,
   UDPPort* udp_port_;
   std::vector<Port*> relay_ports_;
   int phase_;
+  std::function<void()> port_allocation_complete_callback_;
 };
 
 }  
