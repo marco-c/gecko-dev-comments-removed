@@ -112,7 +112,7 @@ MIDIPermissionRequest::Run() {
   
   if (StaticPrefs::dom_webmidi_gated() &&
       !nsContentUtils::HasSitePerm(mPrincipal, kPermName) &&
-      !BasePrincipal::Cast(mPrincipal)->IsLoopbackHost()) {
+      !mPrincipal->GetIsLoopbackHost()) {
     Cancel();
     return NS_OK;
   }
