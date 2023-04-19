@@ -323,6 +323,16 @@ bool nsMathMLOperators::LookupOperator(const nsString& aOperator,
     return false;
   }
 
+  
+  
+  if (aOperator.Length() == 2 &&
+      (aOperator[1] == 0x0338 || aOperator[1] == 0x20D2)) {
+    nsAutoString newOperator;
+    newOperator.Append(aOperator[0]);
+    return LookupOperator(newOperator, aForm, aFlags, aLeadingSpace,
+                          aTrailingSpace);
+  }
+
   if (!gGlobalsInitialized) {
     InitOperatorGlobals();
   }
