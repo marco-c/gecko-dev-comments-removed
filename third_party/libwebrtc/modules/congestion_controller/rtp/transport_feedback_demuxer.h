@@ -14,14 +14,27 @@
 #include <utility>
 #include <vector>
 
+#include "api/sequence_checker.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 
 namespace webrtc {
 
-class TransportFeedbackDemuxer : public StreamFeedbackProvider {
+
+
+
+
+
+
+
+
+
+class TransportFeedbackDemuxer final : public StreamFeedbackProvider {
  public:
+  TransportFeedbackDemuxer();
+
   
   void RegisterStreamFeedbackObserver(
       std::vector<uint32_t> ssrcs,
@@ -40,9 +53,9 @@ class TransportFeedbackDemuxer : public StreamFeedbackProvider {
   
   
   
-  Mutex observers_lock_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker observer_checker_;
   std::vector<std::pair<std::vector<uint32_t>, StreamFeedbackObserver*>>
-      observers_ RTC_GUARDED_BY(&observers_lock_);
+      observers_ RTC_GUARDED_BY(&observer_checker_);
 };
 }  
 
