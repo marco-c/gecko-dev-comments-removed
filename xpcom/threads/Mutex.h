@@ -34,8 +34,8 @@ namespace mozilla {
 
 
 
-class MOZ_CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
-                                        BlockingResourceBase {
+class MOZ_CAPABILITY("mutex") OffTheBooksMutex : public detail::MutexImpl,
+                                                 BlockingResourceBase {
  public:
   
 

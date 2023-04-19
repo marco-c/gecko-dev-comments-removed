@@ -38,7 +38,7 @@ OS_EXPORT OS_NOTHROW OS_NONNULL_ALL void os_unfair_lock_lock_with_options(
 
 
 
-struct MOZ_CAPABILITY Mutex {
+struct MOZ_CAPABILITY("mutex") Mutex {
 #if defined(XP_WIN)
   CRITICAL_SECTION mMutex;
 #elif defined(XP_DARWIN)
@@ -148,7 +148,7 @@ struct MOZ_CAPABILITY Mutex {
 
 
 #if defined(XP_WIN)
-struct MOZ_CAPABILITY StaticMutex {
+struct MOZ_CAPABILITY("mutex") StaticMutex {
   SRWLOCK mMutex;
 
   inline void Lock() MOZ_CAPABILITY_ACQUIRE() {

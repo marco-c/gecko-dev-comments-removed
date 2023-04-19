@@ -28,7 +28,7 @@ namespace detail {
 
 
 
-class MOZ_CAPABILITY PortMutex : private ::mozilla::detail::MutexImpl {
+class MOZ_CAPABILITY("mutex") PortMutex : private ::mozilla::detail::MutexImpl {
  public:
   void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
 #ifdef DEBUG

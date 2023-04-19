@@ -40,8 +40,8 @@ namespace mozilla {
 
 
 
-class MOZ_CAPABILITY RWLock : public detail::RWLockImpl,
-                              public BlockingResourceBase {
+class MOZ_CAPABILITY("rwlock") RWLock : public detail::RWLockImpl,
+                                        public BlockingResourceBase {
  public:
   explicit RWLock(const char* aName);
 
@@ -182,7 +182,8 @@ typedef BaseAutoTryWriteLock<RWLock> AutoTryWriteLock;
 
 typedef BaseAutoWriteLock<RWLock> AutoWriteLock;
 
-class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY StaticRWLock {
+class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("rwlock")
+    StaticRWLock {
  public:
   
   

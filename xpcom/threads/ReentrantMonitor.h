@@ -34,7 +34,8 @@ namespace mozilla {
 
 
 
-class MOZ_CAPABILITY ReentrantMonitor : BlockingResourceBase {
+class MOZ_CAPABILITY("reentrant monitor") ReentrantMonitor
+    : BlockingResourceBase {
  public:
   
 

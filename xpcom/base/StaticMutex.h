@@ -26,7 +26,8 @@ namespace mozilla {
 
 
 
-class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY StaticMutex {
+class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY("mutex")
+    StaticMutex {
  public:
   
   

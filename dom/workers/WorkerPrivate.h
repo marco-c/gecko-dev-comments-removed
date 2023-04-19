@@ -85,10 +85,10 @@ class WorkerThread;
 
 
 
-class MOZ_CAPABILITY SharedMutex {
+class MOZ_CAPABILITY("mutex") SharedMutex {
   using Mutex = mozilla::Mutex;
 
-  class MOZ_CAPABILITY RefCountedMutex final : public Mutex {
+  class MOZ_CAPABILITY("mutex") RefCountedMutex final : public Mutex {
    public:
     explicit RefCountedMutex(const char* aName) : Mutex(aName) {}
 

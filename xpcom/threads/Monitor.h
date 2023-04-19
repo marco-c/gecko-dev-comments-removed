@@ -21,7 +21,7 @@ namespace mozilla {
 
 
 
-class MOZ_CAPABILITY Monitor {
+class MOZ_CAPABILITY("monitor") Monitor {
  public:
   explicit Monitor(const char* aName)
       : mMutex(aName), mCondVar(mMutex, "[Monitor.mCondVar]") {}

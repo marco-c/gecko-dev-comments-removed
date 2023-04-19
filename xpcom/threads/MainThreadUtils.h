@@ -37,7 +37,7 @@ namespace mozilla {
 
 
 
-class MOZ_CAPABILITY MainThreadCapability final {};
+class MOZ_CAPABILITY("main thread") MainThreadCapability final {};
 constexpr MainThreadCapability sMainThreadCapability;
 
 #  ifdef DEBUG
