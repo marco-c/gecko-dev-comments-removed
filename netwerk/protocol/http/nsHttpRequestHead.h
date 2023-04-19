@@ -32,6 +32,7 @@ class nsHttpRequestHead {
  public:
   nsHttpRequestHead();
   explicit nsHttpRequestHead(const nsHttpRequestHead& aRequestHead);
+  nsHttpRequestHead(nsHttpRequestHead&& aRequestHead);
   ~nsHttpRequestHead();
 
   nsHttpRequestHead& operator=(const nsHttpRequestHead& aRequestHead);
@@ -127,6 +128,7 @@ class nsHttpRequestHead {
   nsCString mMethod GUARDED_BY(mRecursiveMutex){"GET"_ns};
   HttpVersion mVersion GUARDED_BY(mRecursiveMutex){HttpVersion::v1_1};
 
+  
   
   
   nsCString mRequestURI GUARDED_BY(mRecursiveMutex);
