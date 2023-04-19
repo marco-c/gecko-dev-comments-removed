@@ -31,6 +31,11 @@ namespace webrtc {
 
 class FrameBuffer {
  public:
+  struct DecodabilityInfo {
+    uint32_t next_rtp_timestamp;
+    uint32_t last_rtp_timestamp;
+  };
+
   
   
   
@@ -56,8 +61,7 @@ class FrameBuffer {
 
   absl::optional<int64_t> LastContinuousFrameId() const;
   absl::optional<int64_t> LastContinuousTemporalUnitFrameId() const;
-  absl::optional<uint32_t> NextDecodableTemporalUnitRtpTimestamp() const;
-  absl::optional<uint32_t> LastDecodableTemporalUnitRtpTimestamp() const;
+  absl::optional<DecodabilityInfo> DecodableTemporalUnitsInfo() const;
 
   int GetTotalNumberOfContinuousTemporalUnits() const;
   int GetTotalNumberOfDroppedFrames() const;
@@ -87,7 +91,7 @@ class FrameBuffer {
   const size_t max_size_;
   FrameMap frames_;
   absl::optional<TemporalUnit> next_decodable_temporal_unit_;
-  absl::optional<uint32_t> last_decodable_temporal_unit_timestamp_;
+  absl::optional<DecodabilityInfo> decodable_temporal_units_info_;
   absl::optional<int64_t> last_continuous_frame_id_;
   absl::optional<int64_t> last_continuous_temporal_unit_frame_id_;
   video_coding::DecodedFramesHistory decoded_frame_history_;
