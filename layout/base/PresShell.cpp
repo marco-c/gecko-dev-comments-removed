@@ -6059,6 +6059,11 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
     }
 
     for (nsIFrame* child : list) {
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(child, "shouldn't have null values in child lists");
       nsRect r = rect - child->GetPosition();
       if (!r.IntersectRect(r, child->InkOverflowRect())) {
         continue;
