@@ -4,6 +4,11 @@
 
 "use strict";
 
+add_setup(async () => {
+  
+  await PlacesUtils.bookmarks.eraseEverything();
+});
+
 add_task(async function test() {
   let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -46,6 +51,13 @@ add_task(async function test() {
   
   
   let toolbarItems = document.getElementById("PlacesToolbarItems");
+  
+  
+  await TestUtils.waitForCondition(
+    () => toolbarItems.children.length == 1,
+    "Should have only one item on the toolbar"
+  );
+
   let placesContext = document.getElementById("placesContext");
   let popupShownPromise = BrowserTestUtils.waitForEvent(
     placesContext,
