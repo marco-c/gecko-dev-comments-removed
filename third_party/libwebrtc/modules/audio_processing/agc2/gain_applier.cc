@@ -88,6 +88,7 @@ void GainApplier::ApplyGain(AudioFrameView<float> signal) {
   }
 }
 
+
 void GainApplier::SetGainFactor(float gain_factor) {
   RTC_DCHECK_GT(gain_factor, 0.f);
   current_gain_factor_ = gain_factor;
