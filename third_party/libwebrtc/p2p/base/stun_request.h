@@ -55,16 +55,15 @@ class StunRequestManager {
   bool HasRequestForTest(int msg_type);
 
   
-  
-  void Remove(StunRequest* request);
-
-  
   void Clear();
 
   
   
   bool CheckResponse(StunMessage* msg);
   bool CheckResponse(const char* data, size_t size);
+
+  
+  void OnRequestTimedOut(StunRequest* request);
 
   bool empty() const;
 
@@ -75,7 +74,7 @@ class StunRequestManager {
   sigslot::signal3<const void*, size_t, StunRequest*> SignalSendPacket;
 
  private:
-  typedef std::map<std::string, StunRequest*> RequestMap;
+  typedef std::map<std::string, std::unique_ptr<StunRequest>> RequestMap;
 
   rtc::Thread* const thread_;
   RequestMap requests_ RTC_GUARDED_BY(thread_);
