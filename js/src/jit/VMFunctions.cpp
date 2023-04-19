@@ -643,25 +643,34 @@ template bool StringsCompare<ComparisonKind::GreaterThanOrEqual>(
 
 bool ArrayPushDense(JSContext* cx, Handle<ArrayObject*> arr, HandleValue v,
                     uint32_t* length) {
-  *length = arr->length();
+  
+  
+  MOZ_ASSERT(arr->isExtensible());
+  MOZ_ASSERT(arr->lengthIsWritable());
+  MOZ_ASSERT(!arr->isIndexed());
+
+  
+  
+  MOZ_ASSERT(!PrototypeMayHaveIndexedProperties(arr));
+
+  
+  
+  uint32_t index = arr->length();
+  MOZ_ASSERT(index < uint32_t(INT32_MAX));
+
   DenseElementResult result =
-      arr->setOrExtendDenseElements(cx, *length, v.address(), 1);
+      arr->setOrExtendDenseElements(cx, index, v.address(), 1);
   if (result != DenseElementResult::Incomplete) {
-    (*length)++;
+    *length = index + 1;
     return result == DenseElementResult::Success;
   }
 
-  JS::RootedValueArray<3> argv(cx);
-  argv[0].setUndefined();
-  argv[1].setObject(*arr);
-  argv[2].set(v);
-  if (!js::array_push(cx, 1, argv.begin())) {
+  if (!DefineDataElement(cx, arr, index, v)) {
     return false;
   }
 
-  
-  
-  *length = argv[0].toInt32();
+  arr->setLength(index + 1);
+  *length = index + 1;
   return true;
 }
 
