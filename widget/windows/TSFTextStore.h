@@ -1066,7 +1066,7 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   
-  bool mDeferNotifyingTSF = false;
+  bool mDeferNotifyingTSFUntilNextUpdate = false;
   
   
   
