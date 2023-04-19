@@ -752,6 +752,24 @@ static bool CertIsSelfSigned(const BackCert& backCert, void* pinarg) {
   return rv == Success;
 }
 
+static Result CheckCertHostnameHelper(Input peerCertInput,
+                                      const nsACString& hostname) {
+  Input hostnameInput;
+  Result rv = hostnameInput.Init(
+      BitwiseCast<const uint8_t*, const char*>(hostname.BeginReading()),
+      hostname.Length());
+  if (rv != Success) {
+    return Result::FATAL_ERROR_INVALID_ARGS;
+  }
+
+  rv = CheckCertHostname(peerCertInput, hostnameInput);
+  
+  if (rv == Result::ERROR_BAD_DER) {
+    return Result::ERROR_BAD_CERT_DOMAIN;
+  }
+  return rv;
+}
+
 Result CertVerifier::VerifySSLServerCert(
     const nsTArray<uint8_t>& peerCertBytes, Time time,
      void* pinarg, const nsACString& hostname,
@@ -836,6 +854,17 @@ Result CertVerifier::VerifySSLServerCert(
         return Result::ERROR_MITM_DETECTED;
       }
     }
+    
+    
+    
+    if (rv == Result::ERROR_EXPIRED_CERTIFICATE ||
+        rv == Result::ERROR_NOT_YET_VALID_CERTIFICATE ||
+        rv == Result::ERROR_INVALID_DER_TIME) {
+      Result hostnameResult = CheckCertHostnameHelper(peerCertInput, hostname);
+      if (hostnameResult != Success) {
+        return hostnameResult;
+      }
+    }
     return rv;
   }
 
@@ -865,21 +894,8 @@ Result CertVerifier::VerifySSLServerCert(
     }
   }
 
-  Input hostnameInput;
-  rv = hostnameInput.Init(
-      BitwiseCast<const uint8_t*, const char*>(hostname.BeginReading()),
-      hostname.Length());
+  rv = CheckCertHostnameHelper(peerCertInput, hostname);
   if (rv != Success) {
-    return Result::FATAL_ERROR_INVALID_ARGS;
-  }
-
-  rv = CheckCertHostname(peerCertInput, hostnameInput);
-  if (rv != Success) {
-    
-    if (rv == Result::ERROR_BAD_DER) {
-      return Result::ERROR_BAD_CERT_DOMAIN;
-    }
-
     return rv;
   }
 

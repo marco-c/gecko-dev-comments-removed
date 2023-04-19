@@ -31,11 +31,7 @@ addCertFromFile(certdb, "bad_certs/ev-test-intermediate.pem", ",,");
 
 function add_resume_non_ev_with_override_test() {
   
-  add_cert_override_test(
-    "expired.example.com",
-    Ci.nsICertOverrideService.ERROR_TIME,
-    SEC_ERROR_EXPIRED_CERTIFICATE
-  );
+  add_cert_override_test("expired.example.com", SEC_ERROR_EXPIRED_CERTIFICATE);
 
   
   

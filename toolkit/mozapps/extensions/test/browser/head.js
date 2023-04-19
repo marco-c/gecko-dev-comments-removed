@@ -589,7 +589,7 @@ CategoryUtilities.prototype = {
 
 
 
-function addCertOverride(host, bits) {
+function addCertOverride(host) {
   return new Promise((resolve, reject) => {
     let req = new XMLHttpRequest();
     req.open("GET", "https://" + host + "/");
@@ -608,7 +608,6 @@ function addCertOverride(host, bits) {
             -1,
             {},
             securityInfo.serverCert,
-            bits,
             false
           );
           resolve();
@@ -624,22 +623,10 @@ function addCertOverride(host, bits) {
 
 function addCertOverrides() {
   return Promise.all([
-    addCertOverride(
-      "nocert.example.com",
-      Ci.nsICertOverrideService.ERROR_MISMATCH
-    ),
-    addCertOverride(
-      "self-signed.example.com",
-      Ci.nsICertOverrideService.ERROR_UNTRUSTED
-    ),
-    addCertOverride(
-      "untrusted.example.com",
-      Ci.nsICertOverrideService.ERROR_UNTRUSTED
-    ),
-    addCertOverride(
-      "expired.example.com",
-      Ci.nsICertOverrideService.ERROR_TIME
-    ),
+    addCertOverride("nocert.example.com"),
+    addCertOverride("self-signed.example.com"),
+    addCertOverride("untrusted.example.com"),
+    addCertOverride("expired.example.com"),
   ]);
 }
 

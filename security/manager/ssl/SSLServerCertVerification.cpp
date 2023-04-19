@@ -145,12 +145,8 @@ using namespace mozilla::pkix;
 namespace mozilla {
 namespace psm {
 
-namespace {
-
 
 nsIThreadPool* gCertVerificationThreadPool = nullptr;
-
-}  
 
 
 
@@ -189,8 +185,6 @@ void StopSSLServerCertVerificationThreads() {
     NS_RELEASE(gCertVerificationThreadPool);
   }
 }
-
-namespace {
 
 
 uint32_t MapOverridableErrorToProbeValue(PRErrorCode errorCode) {
@@ -236,7 +230,7 @@ uint32_t MapOverridableErrorToProbeValue(PRErrorCode errorCode) {
   }
   NS_WARNING(
       "Unknown certificate error code. Does MapOverridableErrorToProbeValue "
-      "handle everything in DetermineCertOverrideErrors?");
+      "handle everything in CategorizeCertificateError?");
   return 0;
 }
 
@@ -270,35 +264,19 @@ static uint32_t MapCertErrorToProbeValue(PRErrorCode errorCode) {
   return probeValue;
 }
 
-SECStatus DetermineCertOverrideErrors(const nsCOMPtr<nsIX509Cert>& cert,
-                                      const nsACString& hostName,
-                                      mozilla::pkix::Time now,
-                                      PRErrorCode defaultErrorCodeToReport,
-                                       uint32_t& collectedErrors,
-                                       PRErrorCode& errorCodeTrust,
-                                       PRErrorCode& errorCodeMismatch,
-                                       PRErrorCode& errorCodeTime) {
-  MOZ_ASSERT(cert);
-  MOZ_ASSERT(collectedErrors == 0);
-  MOZ_ASSERT(errorCodeTrust == 0);
-  MOZ_ASSERT(errorCodeMismatch == 0);
-  MOZ_ASSERT(errorCodeTime == 0);
+enum class OverridableErrorCategory : uint32_t {
+  Unset = 0,
+  Trust = 1,
+  Domain = 2,
+  Time = 3,
+};
 
-  nsTArray<uint8_t> certDER;
-  if (NS_FAILED(cert->GetRawDER(certDER))) {
-    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-    return SECFailure;
-  }
-  mozilla::pkix::Input certInput;
-  if (certInput.Init(certDER.Elements(), certDER.Length()) != Success) {
-    PR_SetError(SEC_ERROR_BAD_DER, 0);
-    return SECFailure;
-  }
 
-  
-  
-  
-  switch (defaultErrorCodeToReport) {
+
+
+Maybe<OverridableErrorCategory> CategorizeCertificateError(
+    PRErrorCode certificateError) {
+  switch (certificateError) {
     case SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED:
     case SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE:
     case SEC_ERROR_UNKNOWN_ISSUER:
@@ -310,95 +288,21 @@ SECStatus DetermineCertOverrideErrors(const nsCOMPtr<nsIX509Cert>& cert,
     case mozilla::pkix::MOZILLA_PKIX_ERROR_MITM_DETECTED:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT:
-    case mozilla::pkix::MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA: {
-      collectedErrors = nsICertOverrideService::ERROR_UNTRUSTED;
-      errorCodeTrust = defaultErrorCodeToReport;
-
-      mozilla::pkix::BackCert backCert(
-          certInput, mozilla::pkix::EndEntityOrCA::MustBeEndEntity, nullptr);
-      Result rv = backCert.Init();
-      if (rv != Success) {
-        PR_SetError(MapResultToPRErrorCode(rv), 0);
-        return SECFailure;
-      }
-      mozilla::pkix::Time notBefore(mozilla::pkix::Time::uninitialized);
-      mozilla::pkix::Time notAfter(mozilla::pkix::Time::uninitialized);
-      
-      
-      rv = mozilla::pkix::ParseValidity(backCert.GetValidity(), &notBefore,
-                                        &notAfter);
-      if (rv != Success) {
-        collectedErrors |= nsICertOverrideService::ERROR_TIME;
-        errorCodeTime = MapResultToPRErrorCode(rv);
-        break;
-      }
-      
-      
-      
-      
-      rv = mozilla::pkix::CheckValidity(now, notBefore, notAfter);
-      if (rv != Success) {
-        collectedErrors |= nsICertOverrideService::ERROR_TIME;
-        errorCodeTime = MapResultToPRErrorCode(rv);
-      }
-      break;
-    }
+    case mozilla::pkix::MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA:
+      return Some(OverridableErrorCategory::Trust);
 
     case SEC_ERROR_INVALID_TIME:
     case SEC_ERROR_EXPIRED_CERTIFICATE:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE:
-      collectedErrors = nsICertOverrideService::ERROR_TIME;
-      errorCodeTime = defaultErrorCodeToReport;
-      break;
+      return Some(OverridableErrorCategory::Time);
 
     case SSL_ERROR_BAD_CERT_DOMAIN:
-      collectedErrors = nsICertOverrideService::ERROR_MISMATCH;
-      errorCodeMismatch = SSL_ERROR_BAD_CERT_DOMAIN;
-      break;
-
-    case 0:
-      NS_ERROR("No error code set during certificate validation failure.");
-      PR_SetError(PR_INVALID_STATE_ERROR, 0);
-      return SECFailure;
+      return Some(OverridableErrorCategory::Domain);
 
     default:
-      PR_SetError(defaultErrorCodeToReport, 0);
-      return SECFailure;
+      break;
   }
-
-  if (defaultErrorCodeToReport != SSL_ERROR_BAD_CERT_DOMAIN) {
-    Input hostnameInput;
-    Result result = hostnameInput.Init(
-        BitwiseCast<const uint8_t*, const char*>(hostName.BeginReading()),
-        hostName.Length());
-    if (result != Success) {
-      PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
-      return SECFailure;
-    }
-    
-    
-    
-    
-    
-    
-    
-    result = CheckCertHostname(certInput, hostnameInput);
-    
-    if (result == Result::ERROR_BAD_DER ||
-        result == Result::ERROR_BAD_CERT_DOMAIN) {
-      collectedErrors |= nsICertOverrideService::ERROR_MISMATCH;
-      errorCodeMismatch = SSL_ERROR_BAD_CERT_DOMAIN;
-    } else if (IsFatalError(result)) {
-      
-      
-      
-      
-      PR_SetError(MapResultToPRErrorCode(result), 0);
-      return SECFailure;
-    }
-  }
-
-  return SECSuccess;
+  return Nothing();
 }
 
 
@@ -727,111 +631,59 @@ PRErrorCode AuthCertificateParseResults(
     uint64_t aPtrForLog, const nsACString& aHostName, int32_t aPort,
     const OriginAttributes& aOriginAttributes,
     const nsCOMPtr<nsIX509Cert>& aCert, mozilla::pkix::Time aTime,
-    PRErrorCode aDefaultErrorCodeToReport,
-     uint32_t& aCollectedErrors) {
-  if (aDefaultErrorCodeToReport == 0) {
-    MOZ_ASSERT_UNREACHABLE(
-        "No error set during certificate validation failure");
-    return SEC_ERROR_LIBRARY_FAILURE;
-  }
-
-  uint32_t probeValue = MapCertErrorToProbeValue(aDefaultErrorCodeToReport);
+    PRErrorCode aCertVerificationError,
+     OverridableErrorCategory& aOverridableErrorCategory) {
+  uint32_t probeValue = MapCertErrorToProbeValue(aCertVerificationError);
   Telemetry::Accumulate(Telemetry::SSL_CERT_VERIFICATION_ERRORS, probeValue);
 
-  aCollectedErrors = 0;
-  PRErrorCode errorCodeTrust = 0;
-  PRErrorCode errorCodeMismatch = 0;
-  PRErrorCode errorCodeTime = 0;
-  if (DetermineCertOverrideErrors(
-          aCert, aHostName, aTime, aDefaultErrorCodeToReport, aCollectedErrors,
-          errorCodeTrust, errorCodeMismatch, errorCodeTime) != SECSuccess) {
-    PRErrorCode errorCode = PR_GetError();
-    MOZ_ASSERT(!ErrorIsOverridable(errorCode));
-    if (errorCode == 0) {
-      MOZ_ASSERT_UNREACHABLE(
-          "No error set during DetermineCertOverrideErrors failure");
-      return SEC_ERROR_LIBRARY_FAILURE;
-    }
-    return errorCode;
+  Maybe<OverridableErrorCategory> maybeOverridableErrorCategory =
+      CategorizeCertificateError(aCertVerificationError);
+  
+  
+  if (!maybeOverridableErrorCategory.isSome()) {
+    return aCertVerificationError;
   }
-
-  if (!aCollectedErrors) {
-    MOZ_ASSERT_UNREACHABLE("aCollectedErrors should not be 0");
-    return SEC_ERROR_LIBRARY_FAILURE;
-  }
+  aOverridableErrorCategory = *maybeOverridableErrorCategory;
 
   bool overrideAllowed = false;
-  if (NS_FAILED(OverrideAllowedForHost(aPtrForLog, aHostName, aOriginAttributes,
-                                       overrideAllowed))) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[0x%" PRIx64 "] AuthCertificateParseResults - "
-             "OverrideAllowedForHost failed\n",
-             aPtrForLog));
-    return aDefaultErrorCodeToReport;
+  nsresult rv = OverrideAllowedForHost(aPtrForLog, aHostName, aOriginAttributes,
+                                       overrideAllowed);
+  if (NS_FAILED(rv)) {
+    return aCertVerificationError;
   }
 
-  if (overrideAllowed) {
-    nsCOMPtr<nsICertOverrideService> overrideService =
-        do_GetService(NS_CERTOVERRIDE_CONTRACTID);
-
-    uint32_t overrideBits = 0;
-    uint32_t remainingDisplayErrors = aCollectedErrors;
-
-    
-    if (overrideService) {
-      bool haveOverride;
-      bool isTemporaryOverride;  
-      nsresult rv = overrideService->HasMatchingOverride(
-          aHostName, aPort, aOriginAttributes, aCert, &overrideBits,
-          &isTemporaryOverride, &haveOverride);
-      if (NS_SUCCEEDED(rv) && haveOverride) {
-        
-        remainingDisplayErrors &= ~overrideBits;
-      }
-    }
-
-    if (!remainingDisplayErrors) {
-      
-      
-      
-      if (errorCodeTrust != 0) {
-        uint32_t probeValue = MapOverridableErrorToProbeValue(errorCodeTrust);
-        Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, probeValue);
-      }
-      if (errorCodeMismatch != 0) {
-        uint32_t probeValue =
-            MapOverridableErrorToProbeValue(errorCodeMismatch);
-        Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, probeValue);
-      }
-      if (errorCodeTime != 0) {
-        uint32_t probeValue = MapOverridableErrorToProbeValue(errorCodeTime);
-        Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, probeValue);
-      }
-
-      
-      MOZ_LOG(
-          gPIPNSSLog, LogLevel::Debug,
-          ("[0x%" PRIx64 "] All errors covered by override rules", aPtrForLog));
-      return 0;
-    }
-  } else {
+  if (!overrideAllowed) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[0x%" PRIx64 "] HSTS or pinned host - no overrides allowed\n",
+            ("[0x%" PRIx64 "] HSTS or pinned host - no overrides allowed",
              aPtrForLog));
+    return aCertVerificationError;
   }
 
-  MOZ_LOG(
-      gPIPNSSLog, LogLevel::Debug,
-      ("[0x%" PRIx64 "] Certificate error was not overridden\n", aPtrForLog));
+  nsCOMPtr<nsICertOverrideService> overrideService =
+      do_GetService(NS_CERTOVERRIDE_CONTRACTID);
+  if (!overrideService) {
+    return aCertVerificationError;
+  }
+  bool haveOverride;
+  bool isTemporaryOverride;
+  rv = overrideService->HasMatchingOverride(aHostName, aPort, aOriginAttributes,
+                                            aCert, &isTemporaryOverride,
+                                            &haveOverride);
+  if (NS_FAILED(rv)) {
+    return aCertVerificationError;
+  }
+  Unused << isTemporaryOverride;
+  if (haveOverride) {
+    uint32_t probeValue =
+        MapOverridableErrorToProbeValue(aCertVerificationError);
+    Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, probeValue);
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("[0x%" PRIx64 "] certificate error overridden", aPtrForLog));
+    return 0;
+  }
 
-  
-  return errorCodeTrust      ? errorCodeTrust
-         : errorCodeMismatch ? errorCodeMismatch
-         : errorCodeTime     ? errorCodeTime
-                             : aDefaultErrorCodeToReport;
+  return aCertVerificationError;
 }
-
-}  
 
 static nsTArray<nsTArray<uint8_t>> CreateCertBytesArray(
     const UniqueCERTCertList& aCertChain) {
@@ -928,7 +780,8 @@ SSLServerCertVerificationJob::Run() {
         std::move(builtChainBytesArray), std::move(mPeerCertChain),
         TransportSecurityInfo::ConvertCertificateTransparencyInfoToStatus(
             certificateTransparencyInfo),
-        evStatus, true, 0, 0, isCertChainRootBuiltInRoot, mProviderFlags);
+        evStatus, true, 0, OverridableErrorCategory::Unset,
+        isCertChainRootBuiltInRoot, mProviderFlags);
     return NS_OK;
   }
 
@@ -937,17 +790,18 @@ SSLServerCertVerificationJob::Run() {
       jobStartTime, TimeStamp::Now());
 
   PRErrorCode error = MapResultToPRErrorCode(rv);
-  uint32_t collectedErrors = 0;
+  OverridableErrorCategory overridableErrorCategory =
+      OverridableErrorCategory::Unset;
   nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
   PRErrorCode finalError = AuthCertificateParseResults(
       mAddrForLogging, mHostName, mPort, mOriginAttributes, cert, mTime, error,
-      collectedErrors);
+      overridableErrorCategory);
 
   
   mResultTask->Dispatch(
       std::move(builtChainBytesArray), std::move(mPeerCertChain),
       nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE,
-      EVStatus::NotEV, false, finalError, collectedErrors, false,
+      EVStatus::NotEV, false, finalError, overridableErrorCategory, false,
       mProviderFlags);
   return NS_OK;
 }
@@ -1168,14 +1022,15 @@ SSLServerCertVerificationResult::SSLServerCertVerificationResult(
       mEVStatus(EVStatus::NotEV),
       mSucceeded(false),
       mFinalError(0),
-      mCollectedErrors(0),
+      mOverridableErrorCategory(OverridableErrorCategory::Unset),
       mProviderFlags(0) {}
 
 void SSLServerCertVerificationResult::Dispatch(
     nsTArray<nsTArray<uint8_t>>&& aBuiltChain,
     nsTArray<nsTArray<uint8_t>>&& aPeerCertChain,
     uint16_t aCertificateTransparencyStatus, EVStatus aEVStatus,
-    bool aSucceeded, PRErrorCode aFinalError, uint32_t aCollectedErrors,
+    bool aSucceeded, PRErrorCode aFinalError,
+    OverridableErrorCategory aOverridableErrorCategory,
     bool aIsBuiltCertChainRootBuiltInRoot, uint32_t aProviderFlags) {
   mBuiltChain = std::move(aBuiltChain);
   mPeerCertChain = std::move(aPeerCertChain);
@@ -1183,7 +1038,7 @@ void SSLServerCertVerificationResult::Dispatch(
   mEVStatus = aEVStatus;
   mSucceeded = aSucceeded;
   mFinalError = aFinalError;
-  mCollectedErrors = aCollectedErrors;
+  mOverridableErrorCategory = aOverridableErrorCategory;
   mIsBuiltCertChainRootBuiltInRoot = aIsBuiltCertChainRootBuiltInRoot;
   mProviderFlags = aProviderFlags;
 
@@ -1251,8 +1106,8 @@ SSLServerCertVerificationResult::Run() {
     
     
     mInfoObject->SetFailedCertChain(std::move(mPeerCertChain));
-    if (mCollectedErrors != 0) {
-      mInfoObject->SetStatusErrorBits(cert, mCollectedErrors);
+    if (mOverridableErrorCategory != OverridableErrorCategory::Unset) {
+      mInfoObject->SetStatusErrorBits(cert, mOverridableErrorCategory);
     }
   }
 

@@ -909,47 +909,23 @@ function stopOCSPResponder(responder) {
 
 
 
-function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
-  let bits =
-    (aSecurityInfo.isUntrusted
-      ? Ci.nsICertOverrideService.ERROR_UNTRUSTED
-      : 0) |
-    (aSecurityInfo.isDomainMismatch
-      ? Ci.nsICertOverrideService.ERROR_MISMATCH
-      : 0) |
-    (aSecurityInfo.isNotValidAtThisTime
-      ? Ci.nsICertOverrideService.ERROR_TIME
-      : 0);
-
-  Assert.equal(
-    bits,
-    aExpectedBits,
-    "Actual and expected override bits should match"
-  );
+function add_cert_override(aHost, aSecurityInfo) {
   let cert = aSecurityInfo.serverCert;
   let certOverrideService = Cc[
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
-  certOverrideService.rememberValidityOverride(
-    aHost,
-    8443,
-    {},
-    cert,
-    aExpectedBits,
-    true
-  );
+  certOverrideService.rememberValidityOverride(aHost, 8443, {}, cert, true);
 }
 
 
 
 
-
-function add_cert_override_test(aHost, aExpectedBits, aExpectedError) {
+function add_cert_override_test(aHost, aExpectedError) {
   add_connection_test(
     aHost,
     aExpectedError,
     null,
-    add_cert_override.bind(this, aHost, aExpectedBits)
+    add_cert_override.bind(this, aHost)
   );
   add_connection_test(aHost, PRErrorCodeSuccess, null, aSecurityInfo => {
     Assert.ok(
@@ -964,35 +940,13 @@ function add_cert_override_test(aHost, aExpectedBits, aExpectedError) {
 
 
 
-function attempt_adding_cert_override(aHost, aExpectedBits, aSecurityInfo) {
+function attempt_adding_cert_override(aHost, aSecurityInfo) {
   if (aSecurityInfo.serverCert) {
-    let bits =
-      (aSecurityInfo.isUntrusted
-        ? Ci.nsICertOverrideService.ERROR_UNTRUSTED
-        : 0) |
-      (aSecurityInfo.isDomainMismatch
-        ? Ci.nsICertOverrideService.ERROR_MISMATCH
-        : 0) |
-      (aSecurityInfo.isNotValidAtThisTime
-        ? Ci.nsICertOverrideService.ERROR_TIME
-        : 0);
-    Assert.equal(
-      bits,
-      aExpectedBits,
-      "Actual and expected override bits should match"
-    );
     let cert = aSecurityInfo.serverCert;
     let certOverrideService = Cc[
       "@mozilla.org/security/certoverride;1"
     ].getService(Ci.nsICertOverrideService);
-    certOverrideService.rememberValidityOverride(
-      aHost,
-      8443,
-      {},
-      cert,
-      aExpectedBits,
-      true
-    );
+    certOverrideService.rememberValidityOverride(aHost, 8443, {}, cert, true);
   }
 }
 
@@ -1002,16 +956,12 @@ function attempt_adding_cert_override(aHost, aExpectedBits, aSecurityInfo) {
 
 
 
-function add_prevented_cert_override_test(
-  aHost,
-  aExpectedBits,
-  aExpectedError
-) {
+function add_prevented_cert_override_test(aHost, aExpectedError) {
   add_connection_test(
     aHost,
     aExpectedError,
     null,
-    attempt_adding_cert_override.bind(this, aHost, aExpectedBits)
+    attempt_adding_cert_override.bind(this, aHost)
   );
   add_connection_test(aHost, aExpectedError);
 }

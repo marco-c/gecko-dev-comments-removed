@@ -9,53 +9,25 @@
 
 
 
-function add_read_only_cert_override(aHost, aExpectedBits, aSecurityInfo) {
-  let bits =
-    (aSecurityInfo.isUntrusted
-      ? Ci.nsICertOverrideService.ERROR_UNTRUSTED
-      : 0) |
-    (aSecurityInfo.isDomainMismatch
-      ? Ci.nsICertOverrideService.ERROR_MISMATCH
-      : 0) |
-    (aSecurityInfo.isNotValidAtThisTime
-      ? Ci.nsICertOverrideService.ERROR_TIME
-      : 0);
-
-  Assert.equal(
-    bits,
-    aExpectedBits,
-    "Actual and expected override bits should match"
-  );
+function add_read_only_cert_override(aHost, aSecurityInfo) {
   let cert = aSecurityInfo.serverCert;
   let certOverrideService = Cc[
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
   
   
-  certOverrideService.rememberValidityOverride(
-    aHost,
-    8443,
-    {},
-    cert,
-    aExpectedBits,
-    false
-  );
+  certOverrideService.rememberValidityOverride(aHost, 8443, {}, cert, false);
 }
 
 
 
 
-
-function add_read_only_cert_override_test(
-  aHost,
-  aExpectedBits,
-  aExpectedError
-) {
+function add_read_only_cert_override_test(aHost, aExpectedError) {
   add_connection_test(
     aHost,
     aExpectedError,
     null,
-    add_read_only_cert_override.bind(this, aHost, aExpectedBits)
+    add_read_only_cert_override.bind(this, aHost)
   );
   add_connection_test(aHost, PRErrorCodeSuccess, null, aSecurityInfo => {
     Assert.ok(
@@ -103,19 +75,14 @@ function run_test() {
   
   add_read_only_cert_override_test(
     "expired.example.com",
-    Ci.nsICertOverrideService.ERROR_TIME |
-      Ci.nsICertOverrideService.ERROR_UNTRUSTED,
     SEC_ERROR_UNKNOWN_ISSUER
   );
   add_read_only_cert_override_test(
     "selfsigned.example.com",
-    Ci.nsICertOverrideService.ERROR_UNTRUSTED,
     MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
   );
   add_read_only_cert_override_test(
     "mismatch.example.com",
-    Ci.nsICertOverrideService.ERROR_MISMATCH |
-      Ci.nsICertOverrideService.ERROR_UNTRUSTED,
     SEC_ERROR_UNKNOWN_ISSUER
   );
 
