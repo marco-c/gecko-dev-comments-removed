@@ -102,6 +102,12 @@ class ZoneList final : public ZoneObject {
   }
 
   
+  ZoneList(const base::Vector<const T>& other, Zone* zone)
+      : ZoneList(other.length(), zone) {
+    AddAll(other, zone);
+  }
+
+  
   
   
   inline T& operator[](int i) const {
@@ -309,6 +315,11 @@ class ZoneVector : public std::vector<T, ZoneAllocator<T>> {
  public:
   ZoneVector(Zone* zone)
       : std::vector<T, ZoneAllocator<T>>(ZoneAllocator<T>(zone)) {}
+
+  
+  
+  ZoneVector(size_t size, Zone* zone)
+      : std::vector<T, ZoneAllocator<T>>(size, T(), ZoneAllocator<T>(zone)) {}
 
   
   
