@@ -8,8 +8,8 @@
 
 
 
-#ifndef API_AUDIO_CODECS_G722_AUDIO_DECODER_G722_H_
-#define API_AUDIO_CODECS_G722_AUDIO_DECODER_G722_H_
+#ifndef API_AUDIO_CODECS_ILBC_AUDIO_DECODER_ILBC_H_
+#define API_AUDIO_CODECS_ILBC_AUDIO_DECODER_ILBC_H_
 
 #include <memory>
 #include <vector>
@@ -19,17 +19,13 @@
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/webrtc_key_value_config.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
 
-struct RTC_EXPORT AudioDecoderG722 {
-  struct Config {
-    bool IsOk() const { return num_channels == 1 || num_channels == 2; }
-    int num_channels;
-  };
+struct AudioDecoderIlbc {
+  struct Config {};  
   static absl::optional<Config> SdpToConfig(const SdpAudioFormat& audio_format);
   static void AppendSupportedDecoders(std::vector<AudioCodecSpec>* specs);
   static std::unique_ptr<AudioDecoder> MakeAudioDecoder(

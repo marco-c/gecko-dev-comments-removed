@@ -8,8 +8,8 @@
 
 
 
-#ifndef API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
-#define API_AUDIO_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
+#ifndef API_AUDIO_CODECS_G722_AUDIO_ENCODER_G722_H_
+#define API_AUDIO_CODECS_G722_AUDIO_ENCODER_G722_H_
 
 #include <memory>
 #include <vector>
@@ -18,7 +18,7 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
-#include "api/audio_codecs/opus/audio_encoder_opus_config.h"
+#include "api/audio_codecs/g722/audio_encoder_g722_config.h"
 #include "api/webrtc_key_value_config.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -26,14 +26,14 @@ namespace webrtc {
 
 
 
-struct RTC_EXPORT AudioEncoderOpus {
-  using Config = AudioEncoderOpusConfig;
-  static absl::optional<AudioEncoderOpusConfig> SdpToConfig(
+struct RTC_EXPORT AudioEncoderG722 {
+  using Config = AudioEncoderG722Config;
+  static absl::optional<AudioEncoderG722Config> SdpToConfig(
       const SdpAudioFormat& audio_format);
   static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs);
-  static AudioCodecInfo QueryAudioEncoder(const AudioEncoderOpusConfig& config);
+  static AudioCodecInfo QueryAudioEncoder(const AudioEncoderG722Config& config);
   static std::unique_ptr<AudioEncoder> MakeAudioEncoder(
-      const AudioEncoderOpusConfig& config,
+      const AudioEncoderG722Config& config,
       int payload_type,
       absl::optional<AudioCodecPairId> codec_pair_id = absl::nullopt,
       const WebRtcKeyValueConfig* field_trials = nullptr);

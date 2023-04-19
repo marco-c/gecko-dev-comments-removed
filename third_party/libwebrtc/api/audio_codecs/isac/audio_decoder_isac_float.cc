@@ -42,7 +42,8 @@ void AudioDecoderIsacFloat::AppendSupportedDecoders(
 
 std::unique_ptr<AudioDecoder> AudioDecoderIsacFloat::MakeAudioDecoder(
     Config config,
-    absl::optional<AudioCodecPairId> ) {
+    absl::optional<AudioCodecPairId> ,
+    const WebRtcKeyValueConfig* field_trials) {
   AudioDecoderIsacFloatImpl::Config c;
   c.sample_rate_hz = config.sample_rate_hz;
   if (!config.IsOk()) {

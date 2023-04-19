@@ -37,7 +37,8 @@ void AudioDecoderL16::AppendSupportedDecoders(
 
 std::unique_ptr<AudioDecoder> AudioDecoderL16::MakeAudioDecoder(
     const Config& config,
-    absl::optional<AudioCodecPairId> ) {
+    absl::optional<AudioCodecPairId> ,
+    const WebRtcKeyValueConfig* field_trials) {
   if (!config.IsOk()) {
     return nullptr;
   }

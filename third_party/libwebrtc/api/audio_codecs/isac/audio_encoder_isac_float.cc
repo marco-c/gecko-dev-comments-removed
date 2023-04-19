@@ -68,7 +68,8 @@ AudioCodecInfo AudioEncoderIsacFloat::QueryAudioEncoder(
 std::unique_ptr<AudioEncoder> AudioEncoderIsacFloat::MakeAudioEncoder(
     const AudioEncoderIsacFloat::Config& config,
     int payload_type,
-    absl::optional<AudioCodecPairId> ) {
+    absl::optional<AudioCodecPairId> ,
+    const WebRtcKeyValueConfig* field_trials) {
   AudioEncoderIsacFloatImpl::Config c;
   c.payload_type = payload_type;
   c.sample_rate_hz = config.sample_rate_hz;

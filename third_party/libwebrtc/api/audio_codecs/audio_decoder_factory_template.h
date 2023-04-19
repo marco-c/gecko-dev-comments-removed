@@ -16,6 +16,7 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/scoped_refptr.h"
+#include "api/webrtc_key_value_config.h"
 #include "rtc_base/ref_counted_object.h"
 
 namespace webrtc {
@@ -32,7 +33,8 @@ struct Helper<> {
   static bool IsSupportedDecoder(const SdpAudioFormat& format) { return false; }
   static std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format,
-      absl::optional<AudioCodecPairId> codec_pair_id) {
+      absl::optional<AudioCodecPairId> codec_pair_id,
+      const WebRtcKeyValueConfig* field_trials) {
     return nullptr;
   }
 };
@@ -55,16 +57,22 @@ struct Helper<T, Ts...> {
   }
   static std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format,
-      absl::optional<AudioCodecPairId> codec_pair_id) {
+      absl::optional<AudioCodecPairId> codec_pair_id,
+      const WebRtcKeyValueConfig* field_trials) {
     auto opt_config = T::SdpToConfig(format);
     return opt_config ? T::MakeAudioDecoder(*opt_config, codec_pair_id)
-                      : Helper<Ts...>::MakeAudioDecoder(format, codec_pair_id);
+                      : Helper<Ts...>::MakeAudioDecoder(format, codec_pair_id,
+                                                        field_trials);
   }
 };
 
 template <typename... Ts>
 class AudioDecoderFactoryT : public AudioDecoderFactory {
  public:
+  explicit AudioDecoderFactoryT(const WebRtcKeyValueConfig* field_trials) {
+    field_trials_ = field_trials;
+  }
+
   std::vector<AudioCodecSpec> GetSupportedDecoders() override {
     std::vector<AudioCodecSpec> specs;
     Helper<Ts...>::AppendSupportedDecoders(&specs);
@@ -78,8 +86,11 @@ class AudioDecoderFactoryT : public AudioDecoderFactory {
   std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format,
       absl::optional<AudioCodecPairId> codec_pair_id) override {
-    return Helper<Ts...>::MakeAudioDecoder(format, codec_pair_id);
+    return Helper<Ts...>::MakeAudioDecoder(format, codec_pair_id,
+                                           field_trials_);
   }
+
+  const WebRtcKeyValueConfig* field_trials_;
 };
 
 }  
@@ -115,7 +126,8 @@ class AudioDecoderFactoryT : public AudioDecoderFactory {
 
 
 template <typename... Ts>
-rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
+rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory(
+    const WebRtcKeyValueConfig* field_trials = nullptr) {
   
   
   
@@ -124,7 +136,8 @@ rtc::scoped_refptr<AudioDecoderFactory> CreateAudioDecoderFactory() {
                 "Caller must give at least one template parameter");
 
   return rtc::make_ref_counted<
-      audio_decoder_factory_template_impl::AudioDecoderFactoryT<Ts...>>();
+      audio_decoder_factory_template_impl::AudioDecoderFactoryT<Ts...>>(
+      field_trials);
 }
 
 }  
