@@ -842,7 +842,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
   
 
   if (IsPartialUpdate()) {
-    if (aItem->Frame()->Style()->IsRootElementStyle()) {
+    if (aItem->Frame()->IsDocElementBoxFrame()) {
 #ifdef DEBUG
       if (mHasGlassItemDuringPartial) {
         NS_WARNING("Multiple glass backgrounds found?");
@@ -856,7 +856,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
     return;
   }
 
-  if (aItem->Frame()->Style()->IsRootElementStyle()) {
+  if (aItem->Frame()->IsDocElementBoxFrame()) {
 #ifdef DEBUG
     if (mGlassDisplayItem) {
       NS_WARNING("Multiple glass backgrounds found?");
