@@ -7,6 +7,7 @@
 
 
 
+#if !defined(WEBRTC_MOZILLA_BUILD)
 
 #include "modules/desktop_capture/linux/egl_dmabuf.h"
 
@@ -582,3 +583,4 @@ absl::optional<std::string> EglDmaBuf::GetRenderNode() {
 }
 
 }  
+#endif  
