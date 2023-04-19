@@ -623,12 +623,8 @@ static bool PrepPing(const PingThreadContext& aContext, const std::wstring& aId,
 }
 
 static bool DoSendPing(const PingThreadContext& aContext) {
-  auto writeFunc = mozilla::MakeUnique<TempFileWriter>();
-  if (!(*writeFunc)) {
-    return false;
-  }
-
-  mozilla::JSONWriter json(std::move(writeFunc));
+  TempFileWriter tempFile;
+  mozilla::JSONWriter json(tempFile);
 
   UUID uuid;
   if (::UuidCreate(&uuid) != RPC_S_OK) {
@@ -650,7 +646,6 @@ static bool DoSendPing(const PingThreadContext& aContext) {
   }
 
   
-  TempFileWriter& tempFile = static_cast<TempFileWriter&>(json.WriteFunc());
   const std::wstring& fileName = tempFile.GetFileName();
 
   
