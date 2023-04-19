@@ -455,8 +455,7 @@ class PeerConnection : public PeerConnectionInternal,
                  bool is_unified_plan,
                  std::unique_ptr<RtcEventLog> event_log,
                  std::unique_ptr<Call> call,
-                 PeerConnectionDependencies& dependencies,
-                 bool dtls_enabled);
+                 PeerConnectionDependencies& dependencies);
 
   ~PeerConnection() override;
 
@@ -464,10 +463,6 @@ class PeerConnection : public PeerConnectionInternal,
   RTCError Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       PeerConnectionDependencies dependencies);
-  void InitializeTransportController_n(
-      const RTCConfiguration& configuration,
-      const PeerConnectionDependencies& dependencies)
-      RTC_RUN_ON(network_thread());
 
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender)
@@ -578,12 +573,11 @@ class PeerConnection : public PeerConnectionInternal,
   void ReportTransportStats() RTC_RUN_ON(signaling_thread());
 
   
-  static void ReportBestConnectionState(const cricket::TransportStats& stats);
+  void ReportBestConnectionState(const cricket::TransportStats& stats);
 
-  static void ReportNegotiatedCiphers(
-      bool dtls_enabled,
-      const cricket::TransportStats& stats,
-      const std::set<cricket::MediaType>& media_types);
+  void ReportNegotiatedCiphers(const cricket::TransportStats& stats,
+                               const std::set<cricket::MediaType>& media_types)
+      RTC_RUN_ON(signaling_thread());
   void ReportIceCandidateCollected(const cricket::Candidate& candidate)
       RTC_RUN_ON(signaling_thread());
 
@@ -633,9 +627,8 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  
-  
-  const std::unique_ptr<AsyncResolverFactory> async_resolver_factory_;
+  const std::unique_ptr<AsyncResolverFactory> async_resolver_factory_
+      RTC_GUARDED_BY(signaling_thread());
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  
                         
@@ -653,7 +646,8 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<Call> call_ RTC_GUARDED_BY(worker_thread());
   ScopedTaskSafety signaling_thread_safety_;
   rtc::scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;
-  rtc::scoped_refptr<PendingTaskSafetyFlag> worker_thread_safety_;
+  std::unique_ptr<ScopedTaskSafety> call_safety_
+      RTC_GUARDED_BY(worker_thread());
 
   
   
@@ -687,7 +681,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
       RTC_GUARDED_BY(signaling_thread());
 
-  const bool dtls_enabled_;
+  bool dtls_enabled_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   UsagePattern usage_pattern_ RTC_GUARDED_BY(signaling_thread());
   bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =

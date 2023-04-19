@@ -54,6 +54,7 @@
 #include "pc/session_description.h"
 #include "pc/srtp_transport.h"
 #include "pc/transport_stats.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/callback_list.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -138,9 +139,8 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   
   
-  
-  
-  JsepTransportController(rtc::Thread* network_thread,
+  JsepTransportController(rtc::Thread* signaling_thread,
+                          rtc::Thread* network_thread,
                           cricket::PortAllocator* port_allocator,
                           AsyncResolverFactory* async_resolver_factory,
                           Config config);
@@ -227,28 +227,26 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   template <typename F>
   void SubscribeIceCandidateGathered(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
+    
+    
     signal_ice_candidates_gathered_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeIceConnectionState(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_ice_connection_state_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeConnectionState(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_connection_state_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeStandardizedIceConnectionState(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_standardized_ice_connection_state_.AddReceiver(
         std::forward<F>(callback));
   }
@@ -256,28 +254,24 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   template <typename F>
   void SubscribeIceGatheringState(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_ice_gathering_state_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeIceCandidateError(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_ice_candidate_error_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeIceCandidatesRemoved(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_ice_candidates_removed_.AddReceiver(std::forward<F>(callback));
   }
 
   
   template <typename F>
   void SubscribeIceCandidatePairChanged(F&& callback) {
-    RTC_DCHECK_RUN_ON(network_thread_);
     signal_ice_candidate_pair_changed_.AddReceiver(std::forward<F>(callback));
   }
 
@@ -288,33 +282,32 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   
-  CallbackList<cricket::IceConnectionState> signal_ice_connection_state_
-      RTC_GUARDED_BY(network_thread_);
+  CallbackList<cricket::IceConnectionState> signal_ice_connection_state_;
 
   CallbackList<PeerConnectionInterface::PeerConnectionState>
-      signal_connection_state_ RTC_GUARDED_BY(network_thread_);
+      signal_connection_state_;
 
   CallbackList<PeerConnectionInterface::IceConnectionState>
-      signal_standardized_ice_connection_state_ RTC_GUARDED_BY(network_thread_);
+      signal_standardized_ice_connection_state_;
 
   
   
   
-  CallbackList<cricket::IceGatheringState> signal_ice_gathering_state_
-      RTC_GUARDED_BY(network_thread_);
+  CallbackList<cricket::IceGatheringState> signal_ice_gathering_state_;
 
+  
   
   CallbackList<const std::string&, const std::vector<cricket::Candidate>&>
-      signal_ice_candidates_gathered_ RTC_GUARDED_BY(network_thread_);
+      signal_ice_candidates_gathered_;
 
   CallbackList<const cricket::IceCandidateErrorEvent&>
-      signal_ice_candidate_error_ RTC_GUARDED_BY(network_thread_);
+      signal_ice_candidate_error_;
 
   CallbackList<const std::vector<cricket::Candidate>&>
-      signal_ice_candidates_removed_ RTC_GUARDED_BY(network_thread_);
+      signal_ice_candidates_removed_;
 
   CallbackList<const cricket::CandidatePairChangeEvent&>
-      signal_ice_candidate_pair_changed_ RTC_GUARDED_BY(network_thread_);
+      signal_ice_candidate_pair_changed_;
 
   RTCError ApplyDescription_n(bool local,
                               SdpType type,
@@ -459,6 +452,7 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
 
+  rtc::Thread* const signaling_thread_ = nullptr;
   rtc::Thread* const network_thread_ = nullptr;
   cricket::PortAllocator* const port_allocator_ = nullptr;
   AsyncResolverFactory* const async_resolver_factory_ = nullptr;
@@ -496,6 +490,7 @@ class JsepTransportController : public sigslot::has_slots<> {
   cricket::IceRole ice_role_ = cricket::ICEROLE_CONTROLLING;
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
+  rtc::AsyncInvoker invoker_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransportController);
 };
