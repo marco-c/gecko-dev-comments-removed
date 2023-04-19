@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef mozilla_loader_SkipCheckForBrokenURLOrZeroSized_h
+#define mozilla_loader_SkipCheckForBrokenURLOrZeroSized_h
+
+#include <stdint.h>  
+
+namespace mozilla {
+namespace loader {
+
+
+
+enum class SkipCheckForBrokenURLOrZeroSized : uint8_t { No, Yes };
+
+}  
+}  
+
+#endif  

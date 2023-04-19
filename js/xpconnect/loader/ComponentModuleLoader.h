@@ -10,6 +10,8 @@
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ModuleLoaderBase.h"
 
+#include "SkipCheckForBrokenURLOrZeroSized.h"
+
 class mozJSModuleLoader;
 
 namespace mozilla {
@@ -102,6 +104,8 @@ class ComponentLoadContext : public JS::loader::LoadContextBase {
   
   
   nsresult mRv;
+
+  SkipCheckForBrokenURLOrZeroSized mSkipCheck;
 
   
   

@@ -289,10 +289,25 @@ mozJSModuleLoader::mozJSModuleLoader()
 
 class MOZ_STACK_CLASS ModuleLoaderInfo {
  public:
-  explicit ModuleLoaderInfo(const nsACString& aLocation)
-      : mLocation(&aLocation), mIsModule(false) {}
+  explicit ModuleLoaderInfo(const nsACString& aLocation,
+                            SkipCheckForBrokenURLOrZeroSized aSkipCheck =
+                                SkipCheckForBrokenURLOrZeroSized::No)
+      : mLocation(&aLocation), mIsModule(false), mSkipCheck(aSkipCheck) {}
   explicit ModuleLoaderInfo(JS::loader::ModuleLoadRequest* aRequest)
-      : mLocation(nullptr), mURI(aRequest->mURI), mIsModule(true) {}
+      : mLocation(nullptr),
+        mURI(aRequest->mURI),
+        mIsModule(true),
+        mSkipCheck(aRequest->GetComponentLoadContext()->mSkipCheck) {}
+
+  SkipCheckForBrokenURLOrZeroSized getSkipCheckForBrokenURLOrZeroSized() const {
+    return mSkipCheck;
+  }
+
+  void resetChannelWithCheckForBrokenURLOrZeroSized() {
+    MOZ_ASSERT(mSkipCheck == SkipCheckForBrokenURLOrZeroSized::Yes);
+    mSkipCheck = SkipCheckForBrokenURLOrZeroSized::No;
+    mScriptChannel = nullptr;
+  }
 
   nsIIOService* IOService() {
     MOZ_ASSERT(mIOService);
@@ -326,13 +341,6 @@ class MOZ_STACK_CLASS ModuleLoaderInfo {
     BEGIN_ENSURE(ScriptChannel, IOService, URI);
 
     
-    
-    
-    
-    
-    
-    bool skipCheckForBrokenURLOrZeroSized = !IsModule();
-
     return NS_NewChannel(
         getter_AddRefs(mScriptChannel), mURI,
         nsContentUtils::GetSystemPrincipal(),
@@ -342,7 +350,7 @@ class MOZ_STACK_CLASS ModuleLoaderInfo {
          nullptr,
          nullptr,  nullptr,
         nsIRequest::LOAD_NORMAL, mIOService,  0,
-        skipCheckForBrokenURLOrZeroSized);
+        mSkipCheck == SkipCheckForBrokenURLOrZeroSized::Yes);
   }
 
   nsIURI* ResolvedURI() {
@@ -374,6 +382,7 @@ class MOZ_STACK_CLASS ModuleLoaderInfo {
   nsCOMPtr<nsIChannel> mScriptChannel;
   nsCOMPtr<nsIURI> mResolvedURI;
   const bool mIsModule;
+  SkipCheckForBrokenURLOrZeroSized mSkipCheck;
 };
 
 template <typename... Args>
@@ -1394,7 +1403,14 @@ nsresult mozJSModuleLoader::Import(JSContext* aCx, const nsACString& aLocation,
                     MarkerInnerWindowIdFromJSContext(aCx)),
       aLocation);
 
-  ModuleLoaderInfo info(aLocation);
+  
+  
+  
+  
+  
+  
+  
+  ModuleLoaderInfo info(aLocation, SkipCheckForBrokenURLOrZeroSized::Yes);
 
   nsresult rv;
   ModuleEntry* mod;
@@ -1467,8 +1483,23 @@ nsresult mozJSModuleLoader::Import(JSContext* aCx, const nsACString& aLocation,
       }
 
       if (rv == NS_ERROR_FILE_NOT_FOUND) {
-        return TryFallbackToImportESModule(aCx, aLocation, aModuleGlobal,
-                                           aModuleExports, aIgnoreExports);
+        rv = TryFallbackToImportESModule(aCx, aLocation, aModuleGlobal,
+                                         aModuleExports, aIgnoreExports);
+
+        if (rv == NS_ERROR_FILE_NOT_FOUND) {
+          
+          
+          
+          
+          
+          if (NS_SUCCEEDED(info.EnsureURI()) &&
+              !LocationIsRealFile(info.URI())) {
+            info.resetChannelWithCheckForBrokenURLOrZeroSized();
+            (void)ReadScript(info);
+          }
+        }
+
+        return rv;
       }
 
       
@@ -1526,7 +1557,10 @@ nsresult mozJSModuleLoader::TryFallbackToImportESModule(
   }
 
   JS::RootedObject moduleNamespace(aCx);
-  nsresult rv = ImportESModule(aCx, mjsLocation, &moduleNamespace);
+  
+  
+  nsresult rv = ImportESModule(aCx, mjsLocation, &moduleNamespace,
+                               SkipCheckForBrokenURLOrZeroSized::Yes);
   if (rv == NS_ERROR_FILE_NOT_FOUND) {
     
     if (JS_IsExceptionPending(aCx)) {
@@ -1605,7 +1639,9 @@ nsresult mozJSModuleLoader::TryCachedFallbackToImportESModule(
 
 nsresult mozJSModuleLoader::ImportESModule(
     JSContext* aCx, const nsACString& aLocation,
-    JS::MutableHandleObject aModuleNamespace) {
+    JS::MutableHandleObject aModuleNamespace,
+    SkipCheckForBrokenURLOrZeroSized
+        aSkipCheck ) {
   using namespace JS::loader;
 
   MOZ_ASSERT(mModuleLoader);
@@ -1643,6 +1679,7 @@ nsresult mozJSModuleLoader::ImportESModule(
       CORS_NONE, dom::ReferrerPolicy::No_referrer, principal);
 
   RefPtr<ComponentLoadContext> context = new ComponentLoadContext();
+  context->mSkipCheck = aSkipCheck;
 
   RefPtr<VisitedURLSet> visitedSet =
       ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri);

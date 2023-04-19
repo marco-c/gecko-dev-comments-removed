@@ -18,6 +18,7 @@
 #include "nsClassHashtable.h"
 #include "jsapi.h"
 #include "js/experimental/JSStencil.h"
+#include "SkipCheckForBrokenURLOrZeroSized.h"
 
 #include "xpcpublic.h"
 
@@ -75,8 +76,11 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
                   bool aIgnoreExports = false);
 
   
-  nsresult ImportESModule(JSContext* aCx, const nsACString& aResourceURI,
-                          JS::MutableHandleObject aModuleNamespace);
+  nsresult ImportESModule(
+      JSContext* aCx, const nsACString& aResourceURI,
+      JS::MutableHandleObject aModuleNamespace,
+      mozilla::loader::SkipCheckForBrokenURLOrZeroSized aSkipCheck =
+          mozilla::loader::SkipCheckForBrokenURLOrZeroSized::No);
 
   
   nsresult TryFallbackToImportESModule(JSContext* aCx,
