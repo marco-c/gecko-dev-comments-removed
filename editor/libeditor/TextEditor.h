@@ -536,13 +536,6 @@ class TextEditor final : public EditorBase,
   
 
 
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT nsresult SelectEntireDocument() final;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult

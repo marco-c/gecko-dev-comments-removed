@@ -138,7 +138,7 @@ nsresult TextEditor::Init(Document& aDocument, Element& aAnonymousDivElement,
 
   rv = InitEditorContentAndSelection();
   if (NS_FAILED(rv)) {
-    NS_WARNING("TextEditor::InitEditorContentAndSelection() failed");
+    NS_WARNING("EditorBase::InitEditorContentAndSelection() failed");
     
     
     mInitSucceeded = false;
@@ -149,33 +149,6 @@ nsresult TextEditor::Init(Document& aDocument, Element& aAnonymousDivElement,
   
   ClearUndoRedo();
   EnableUndoRedo();
-  return NS_OK;
-}
-
-nsresult TextEditor::InitEditorContentAndSelection() {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  MOZ_TRY(EnsureEmptyTextFirstChild());
-
-  
-  
-  if (!SelectionRef().RangeCount()) {
-    nsresult rv = CollapseSelectionToEndOfLastLeafNode();
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::CollapseSelectionToEndOfLastLeafNode() failed");
-      return rv;
-    }
-  }
-
-  if (!IsSingleLineEditor()) {
-    nsresult rv = EnsurePaddingBRElementInMultilineEditor();
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
-      return rv;
-    }
-  }
-
   return NS_OK;
 }
 
