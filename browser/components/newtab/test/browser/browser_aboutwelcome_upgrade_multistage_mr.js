@@ -163,7 +163,6 @@ add_task(async function test_aboutwelcome_upgrade_mr_prefs_off() {
 
 
 
-
 add_task(
   async function test_aboutwelcome_upgrade_mr_prefs_non_default_unchecked() {
     await pushPrefs([HOMEPAGE_PREF, "about:blank"], [NEWTAB_PREF, false]);
@@ -190,7 +189,6 @@ add_task(
       
       []
     );
-    browser.document.querySelector("#action-checkbox").click();
 
     await clickVisibleButton(browser, ".action-buttons button.primary");
     await waitForDialogClose(browser);
@@ -208,7 +206,6 @@ add_task(
     await popPrefs();
   }
 );
-
 
 
 
@@ -238,6 +235,8 @@ add_task(
       
       []
     );
+
+    browser.document.querySelector("#action-checkbox").click();
 
     await clickVisibleButton(browser, ".action-buttons button.primary");
     await waitForDialogClose(browser);
