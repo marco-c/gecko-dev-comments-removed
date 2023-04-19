@@ -559,12 +559,6 @@ enum class StyleEmptyCells : uint8_t {
 };
 
 
-#define NS_STYLE_CELL_SCOPE_ROW 0
-#define NS_STYLE_CELL_SCOPE_COL 1
-#define NS_STYLE_CELL_SCOPE_ROWGROUP 2
-#define NS_STYLE_CELL_SCOPE_COLGROUP 3
-
-
 enum class StyleImeMode : uint8_t {
   Auto,
   Normal,
