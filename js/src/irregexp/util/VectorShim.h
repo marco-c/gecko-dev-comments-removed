@@ -38,6 +38,10 @@ void DeleteArray(T* array) {
   js_free(array);
 }
 
+}  
+
+namespace base {
+
 
 
 
@@ -55,7 +59,7 @@ class Vector {
   }
 
   static Vector<T> New(size_t length) {
-    return Vector<T>(NewArray<T>(length), length);
+    return Vector<T>(v8::internal::NewArray<T>(length), length);
   }
 
   
@@ -102,7 +106,7 @@ class Vector {
 
   
   Vector<T> Clone() const {
-    T* result = NewArray<T>(length_);
+    T* result = v8::internal::NewArray<T>(length_);
     for (size_t i = 0; i < length_; i++) result[i] = start_[i];
     return Vector<T>(result, length_);
   }
@@ -165,9 +169,17 @@ inline Vector<const char> CStrVector(const char* data) {
   return Vector<const char>(data, strlen(data));
 }
 
-}  
 
-namespace base {
+template <typename T>
+inline constexpr Vector<T> VectorOf(T* start, size_t size) {
+  return {start, size};
+}
+
+class DefaultAllocator {
+ public:
+  using Policy = js::SystemAllocPolicy;
+  Policy policy() const { return js::SystemAllocPolicy(); }
+};
 
 
 
