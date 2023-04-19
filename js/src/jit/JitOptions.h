@@ -21,6 +21,11 @@ enum IonRegisterAllocator {
   RegisterAllocator_Testbed,
 };
 
+
+
+
+enum class BaseRegForAddress { Default, FP, SP };
+
 static inline mozilla::Maybe<IonRegisterAllocator> LookupRegisterAllocator(
     const char* name) {
   if (!strcmp(name, "backtracking")) {
@@ -122,6 +127,7 @@ struct DefaultJitOptions {
   bool spectreJitToCxxCalls;
 
   bool supportsUnalignedAccesses;
+  BaseRegForAddress baseRegForLocals;
 
   DefaultJitOptions();
   bool isSmallFunction(JSScript* script) const;

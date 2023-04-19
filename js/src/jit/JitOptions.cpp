@@ -273,6 +273,25 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  baseRegForLocals = BaseRegForAddress::FP;
+#else
+  baseRegForLocals = BaseRegForAddress::SP;
+#endif
+
+  
+  
   SET_DEFAULT(wasmFoldOffsets, true);
 
   
