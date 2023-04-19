@@ -591,6 +591,7 @@ const Localized = ({
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "MultiStageProtonScreen": () => ( MultiStageProtonScreen),
+   "ProtonScreenActionButtons": () => ( ProtonScreenActionButtons),
    "ProtonScreen": () => ( ProtonScreen)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
@@ -655,6 +656,43 @@ const MultiStageProtonScreen = props => {
     negotiatedLanguage: props.negotiatedLanguage,
     langPackInstallPhase: props.langPackInstallPhase
   });
+};
+const ProtonScreenActionButtons = props => {
+  var _content$primary_butt, _content$primary_butt2;
+
+  const {
+    content
+  } = props;
+  const [isChecked, setIsChecked] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "action-buttons"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    className: "primary" 
+    
+    
+    
+    ,
+    value: isChecked ? "checkbox" : "primary_button",
+    disabled: ((_content$primary_butt2 = content.primary_button) === null || _content$primary_butt2 === void 0 ? void 0 : _content$primary_butt2.disabled) === true,
+    onClick: props.handleAction
+  })), content.checkbox ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "checkbox-container"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
+    type: "checkbox",
+    id: "action-checkbox",
+    onChange: () => {
+      setIsChecked(!isChecked);
+    }
+  }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.checkbox.label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
+    htmlFor: "action-checkbox"
+  }))) : null, content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
+    content: content,
+    handleAction: props.handleAction
+  }) : null);
 };
 class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureComponent) {
   componentDidMount() {
@@ -772,7 +810,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
 
   render() {
-    var _this$props$appAndSys, _content$primary_butt, _content$primary_butt2;
+    var _this$props$appAndSys;
 
     const {
       autoAdvance,
@@ -836,19 +874,10 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     })), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_7__.CTAParagraph, {
       content: content.cta_paragraph,
       handleAction: this.props.handleAction
-    }) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "action-buttons"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
-      className: "primary",
-      value: "primary_button",
-      disabled: ((_content$primary_butt2 = content.primary_button) === null || _content$primary_butt2 === void 0 ? void 0 : _content$primary_butt2.disabled) === true,
-      onClick: this.props.handleAction
-    })), content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
+    }) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
       content: content,
       handleAction: this.props.handleAction
-    }) : null)), hideStepsIndicator ? null : react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    })), hideStepsIndicator ? null : react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `steps ${content.progress_bar ? "progress-bar" : ""}`,
       "data-l10n-id": "onboarding-welcome-steps-indicator2",
       "data-l10n-args": JSON.stringify({

@@ -2443,6 +2443,25 @@ var BrowserTestUtils = {
 
 
 
+  async waitForDialogClose(dialog) {
+    return this.waitForEvent(dialog, "close").then(() => {
+      return this.waitForMutationCondition(
+        dialog,
+        { childList: true, attributes: true },
+        () => !dialog.hasChildNodes() && !dialog.open
+      );
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -2461,14 +2480,8 @@ var BrowserTestUtils = {
     if (!win.docShell.browsingContext.embedderElement) {
       return this.windowClosed(win);
     }
-    let container = win.top.document.getElementById("window-modal-dialog");
-    return this.waitForEvent(container, "close").then(() => {
-      return this.waitForMutationCondition(
-        container,
-        { childList: true, attributes: true },
-        () => !container.hasChildNodes() && !container.open
-      );
-    });
+    const dialog = win.top.document.getElementById("window-modal-dialog");
+    return this.waitForDialogClose(dialog);
   },
 
   
