@@ -6,9 +6,6 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
-const {
-  WebConsoleConnectionProxy,
-} = require("devtools/client/webconsole/webconsole-connection-proxy");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const { l10n } = require("devtools/client/webconsole/utils/messages");
 
@@ -80,6 +77,7 @@ class WebConsoleUI {
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
     this._onNetworkResourceUpdated = this._onNetworkResourceUpdated.bind(this);
+    this.clearPrivateMessages = this.clearPrivateMessages.bind(this);
 
     EventEmitter.decorate(this);
   }
@@ -89,23 +87,7 @@ class WebConsoleUI {
 
 
   get webConsoleFront() {
-    const proxy = this.getProxy();
-
-    if (!proxy) {
-      return null;
-    }
-
-    return proxy.webConsoleFront;
-  }
-
-  
-
-
-
-
-
-  getProxy() {
-    return this.proxy;
+    return this._webConsoleFront;
   }
 
   
@@ -205,11 +187,7 @@ class WebConsoleUI {
 
     this.stopWatchingNetworkResources();
 
-    if (this.proxy) {
-      this.proxy.disconnect();
-      this.proxy = null;
-    }
-
+    this._webConsoleFront = null;
     this.networkDataProvider.destroy();
     this.networkDataProvider = null;
 
@@ -539,12 +517,38 @@ class WebConsoleUI {
 
   async _onTargetAvailable({ targetFront }) {
     
-    if (!targetFront.isTopLevel) {
-      return;
+    
+    const { targetCommand, resourceCommand } = this.hud.commands;
+    const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
+      resourceCommand.TYPES.NETWORK_EVENT
+    );
+    const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport();
+    if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
+      
+      
+      const saveBodies =
+        !this.isBrowserConsole &&
+        Services.prefs.getBoolPref(
+          "devtools.netmonitor.saveRequestAndResponseBodies"
+        );
+
+      const front = await targetFront.getFront("console");
+      
+      await front.setPreferences({
+        "NetworkMonitor.saveRequestAndResponseBodies": saveBodies,
+      });
     }
 
-    this.proxy = new WebConsoleConnectionProxy(this, targetFront);
-    await this.proxy.connect();
+    if (targetFront.isTopLevel) {
+      this._webConsoleFront = await targetFront.getFront("console");
+      if (this.isBrowserConsole || this.isBrowserToolboxConsole) {
+        
+        this.webConsoleFront.on(
+          "lastPrivateContextExited",
+          this.clearPrivateMessages
+        );
+      }
+    }
   }
 
   
@@ -555,12 +559,6 @@ class WebConsoleUI {
 
   _onTargetDestroyed({ targetFront }) {
     
-    if (!targetFront.isTopLevel || !this.proxy) {
-      return;
-    }
-
-    this.proxy.disconnect();
-    this.proxy = null;
   }
 
   _initUI() {
