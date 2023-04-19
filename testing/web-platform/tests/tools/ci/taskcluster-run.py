@@ -19,7 +19,7 @@ def get_browser_args(product, channel):
         return ["--install-browser", "--install-webdriver"]
     if product == "servo":
         return ["--install-browser", "--processes=12"]
-    if product == "chrome":
+    if product == "chrome" or product == "chromium":
         
         args = ["--enable-swiftshader"]
         if channel == "nightly":
