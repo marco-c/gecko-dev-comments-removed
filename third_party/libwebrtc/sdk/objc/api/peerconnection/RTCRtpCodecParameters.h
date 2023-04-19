@@ -66,7 +66,7 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, readonly, nonnull) NSDictionary *parameters;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+- (instancetype)init;
 
 @end
 

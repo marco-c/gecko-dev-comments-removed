@@ -23,7 +23,7 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) BOOL isReducedSize;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+- (instancetype)init;
 
 @end
 

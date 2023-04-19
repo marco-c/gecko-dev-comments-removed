@@ -26,7 +26,7 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, readonly, getter=isEncrypted) BOOL encrypted;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
+- (instancetype)init;
 
 @end
 
