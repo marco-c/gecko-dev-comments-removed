@@ -42,6 +42,16 @@ const ALLOWED_SERVICEWORKER_SCHEMES = ["https", "http", "moz-extension"];
 
 
 
+const MV3_RESTRICTED_HEADERS_PATTERNS = [
+  /^cross-origin-embedder-policy$/,
+  /^cross-origin-opener-policy$/,
+  /^cross-origin-resource-policy$/,
+  /^x-frame-options$/,
+  /^access-control-/,
+];
+
+
+
 
 const URGENT_CLASSES =
   Ci.nsIClassOfService.Leader |
@@ -269,12 +279,31 @@ class ResponseHeaderChanger extends HeaderChanger {
       }
 
       this.didModifyCSP = true;
+    } else if (
+      opts.policy.manifestVersion > 2 &&
+      this.isResponseHeaderRestricted(lowerCaseName)
+    ) {
+      
+      
+      
+      
+      Cu.reportError(
+        `Disallowed change restricted response header ${name} on ${this.channel.finalURL} from ${opts.policy.debugName}`
+      );
+      return;
     }
+
     try {
       this.channel.setResponseHeader(name, value, merge);
     } catch (e) {
       Cu.reportError(new Error(`Error setting response header ${name}: ${e}`));
     }
+  }
+
+  isResponseHeaderRestricted(lowerCaseHeaderName) {
+    return MV3_RESTRICTED_HEADERS_PATTERNS.some(regex =>
+      regex.test(lowerCaseHeaderName)
+    );
   }
 
   readHeaders() {
