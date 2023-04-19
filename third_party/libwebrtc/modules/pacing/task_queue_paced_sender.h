@@ -29,6 +29,7 @@
 #include "modules/pacing/pacing_controller.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -50,7 +51,8 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
       RtcEventLog* event_log,
       const WebRtcKeyValueConfig* field_trials,
       TaskQueueFactory* task_queue_factory,
-      TimeDelta hold_back_window = PacingController::kMinSleepTime);
+      TimeDelta max_hold_back_window = PacingController::kMinSleepTime,
+      int max_hold_back_window_in_packets = -1);
 
   ~TaskQueuePacedSender() override;
 
@@ -132,7 +134,9 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   Stats GetStats() const;
 
   Clock* const clock_;
-  const TimeDelta hold_back_window_;
+  const TimeDelta max_hold_back_window_;
+  const int max_hold_back_window_in_packets_;
+
   PacingController pacing_controller_ RTC_GUARDED_BY(task_queue_);
 
   
@@ -160,6 +164,9 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   
   bool is_shutdown_ RTC_GUARDED_BY(task_queue_);
+
+  
+  rtc::ExpFilter packet_size_ RTC_GUARDED_BY(task_queue_);
 
   mutable Mutex stats_mutex_;
   Stats current_stats_ RTC_GUARDED_BY(stats_mutex_);

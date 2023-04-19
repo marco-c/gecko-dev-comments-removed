@@ -103,6 +103,7 @@ class PacingController {
 
   
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
+  DataRate pacing_rate() const { return pacing_bitrate_; }
 
   
   
