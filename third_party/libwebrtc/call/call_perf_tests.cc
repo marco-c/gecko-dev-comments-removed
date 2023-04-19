@@ -563,6 +563,18 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
                             const rtc::VideoSinkWants& wants) override {
       
       
+      
+      
+      bool did_adapt =
+          last_wants_.max_pixel_count != wants.max_pixel_count ||
+          last_wants_.target_pixel_count != wants.target_pixel_count ||
+          last_wants_.max_framerate_fps != wants.max_framerate_fps;
+      last_wants_ = wants;
+      if (!did_adapt) {
+        return;
+      }
+      
+      
       switch (test_phase_) {
         case TestPhase::kInit:
           
@@ -625,6 +637,9 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
       kAdaptedDown,
       kAdaptedUp
     } test_phase_;
+
+   private:
+    rtc::VideoSinkWants last_wants_;
   } test;
 
   RunBaseTest(&test);

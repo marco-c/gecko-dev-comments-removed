@@ -12,6 +12,7 @@
 #define API_VIDEO_VIDEO_SOURCE_INTERFACE_H_
 
 #include <limits>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video/video_sink_interface.h"
@@ -22,6 +23,15 @@ namespace rtc {
 
 
 struct RTC_EXPORT VideoSinkWants {
+  struct FrameSize {
+    FrameSize(int width, int height) : width(width), height(height) {}
+    FrameSize(const FrameSize&) = default;
+    ~FrameSize() = default;
+
+    int width;
+    int height;
+  };
+
   VideoSinkWants();
   VideoSinkWants(const VideoSinkWants&);
   ~VideoSinkWants();
@@ -49,7 +59,33 @@ struct RTC_EXPORT VideoSinkWants {
   
   
   int resolution_alignment = 1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::vector<FrameSize> resolutions;
 };
+
+inline bool operator==(const VideoSinkWants::FrameSize& a,
+                       const VideoSinkWants::FrameSize& b) {
+  return a.width == b.width && a.height == b.height;
+}
 
 template <typename VideoFrameT>
 class VideoSourceInterface {
