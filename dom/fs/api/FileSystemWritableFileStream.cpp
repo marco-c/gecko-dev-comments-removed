@@ -199,69 +199,6 @@ JSObject* FileSystemWritableFileStream::WrapObject(
 
 
 
-already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
-    uint64_t aPosition, ErrorResult& aError) {
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-  if (IsClosed()) {
-    promise->MaybeRejectWithTypeError("WritableFileStream closed");
-    return promise.forget();
-  }
-  if (DoSeek(promise, aPosition)) {
-    promise->MaybeResolveWithUndefined();
-  }  
-
-  return promise.forget();
-}
-
-already_AddRefed<Promise> FileSystemWritableFileStream::Truncate(
-    uint64_t aSize, ErrorResult& aError) {
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-  if (IsClosed()) {
-    promise->MaybeRejectWithTypeError("WritableFileStream closed");
-    return promise.forget();
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  if (mActor->MutableFileDescPtr()) {
-    LOG(("%p: Truncate to %" PRIu64, mActor->MutableFileDescPtr(), aSize));
-    if (NS_WARN_IF(NS_FAILED(TruncFile(mActor->MutableFileDescPtr(), aSize)))) {
-      promise->MaybeReject(NS_ErrorAccordingToNSPR());
-    } else {
-      
-      
-      int64_t where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_CUR);
-      if (where == -1) {
-        promise->MaybeReject(NS_ErrorAccordingToNSPR());
-        return promise.forget();
-      }
-      if (where > (int64_t)aSize) {
-        where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_END);
-        if (where == -1) {
-          promise->MaybeReject(NS_ErrorAccordingToNSPR());
-        }
-      }
-      promise->MaybeResolveWithUndefined();
-    }
-  } else {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-  }
-
-  return promise.forget();
-}
-
 already_AddRefed<Promise> FileSystemWritableFileStream::Write(
     const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
     ErrorResult& aError) {
@@ -409,6 +346,69 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
                      length);  
   promise->MaybeResolve(written);
 #endif
+  return promise.forget();
+}
+
+already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
+    uint64_t aPosition, ErrorResult& aError) {
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
+  if (DoSeek(promise, aPosition)) {
+    promise->MaybeResolveWithUndefined();
+  }  
+
+  return promise.forget();
+}
+
+already_AddRefed<Promise> FileSystemWritableFileStream::Truncate(
+    uint64_t aSize, ErrorResult& aError) {
+  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+  if (IsClosed()) {
+    promise->MaybeRejectWithTypeError("WritableFileStream closed");
+    return promise.forget();
+  }
+
+  
+  
+  
+  
+  
+  
+
+  
+  if (mActor->MutableFileDescPtr()) {
+    LOG(("%p: Truncate to %" PRIu64, mActor->MutableFileDescPtr(), aSize));
+    if (NS_WARN_IF(NS_FAILED(TruncFile(mActor->MutableFileDescPtr(), aSize)))) {
+      promise->MaybeReject(NS_ErrorAccordingToNSPR());
+    } else {
+      
+      
+      int64_t where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_CUR);
+      if (where == -1) {
+        promise->MaybeReject(NS_ErrorAccordingToNSPR());
+        return promise.forget();
+      }
+      if (where > (int64_t)aSize) {
+        where = PR_Seek(mActor->MutableFileDescPtr(), 0, PR_SEEK_END);
+        if (where == -1) {
+          promise->MaybeReject(NS_ErrorAccordingToNSPR());
+        }
+      }
+      promise->MaybeResolveWithUndefined();
+    }
+  } else {
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+  }
+
   return promise.forget();
 }
 
