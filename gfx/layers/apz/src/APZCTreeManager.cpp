@@ -1713,9 +1713,21 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(
           return state.Finish(*this, std::move(aCallback));
         }
 
+        
+        
+        
+        
+        {
+          RecursiveMutexAutoLock lock(mTreeLock);
+          mTapGestureHitResult =
+              mHitTester->CloneHitTestResult(lock, state.mHit);
+        }
+
         state.mResult = mInputQueue->ReceiveInputEvent(
             state.mHit.mTargetApzc,
             TargetConfirmationFlags{state.mHit.mHitResult}, tapInput);
+
+        mTapGestureHitResult = HitTestResult();
 
         
         tapInput.mPoint = *untransformedPoint;
@@ -3235,8 +3247,13 @@ Maybe<ScreenIntPoint> APZCTreeManager::ConvertToGecko(
   
   
   
+  
+  
+  const HitTestResult& hit = mInputQueue->GetCurrentTouchBlock()
+                                 ? mTouchBlockHitResult
+                                 : mTapGestureHitResult;
   AsyncTransformComponents components =
-      mTouchBlockHitResult.mFixedPosSides == SideBits::eNone
+      hit.mFixedPosSides == SideBits::eNone
           ? LayoutAndVisual
           : AsyncTransformComponents{AsyncTransformComponent::eVisual};
   ScreenToScreenMatrix4x4 transformScreenToGecko =
@@ -3245,15 +3262,13 @@ Maybe<ScreenIntPoint> APZCTreeManager::ConvertToGecko(
   Maybe<ScreenIntPoint> geckoPoint =
       UntransformBy(transformScreenToGecko, aPoint);
   if (geckoPoint) {
-    if (mTouchBlockHitResult.mFixedPosSides != SideBits::eNone) {
+    if (hit.mFixedPosSides != SideBits::eNone) {
       MutexAutoLock mapLock(mMapLock);
       *geckoPoint -= RoundedToInt(apz::ComputeFixedMarginsOffset(
-          GetCompositorFixedLayerMargins(mapLock),
-          mTouchBlockHitResult.mFixedPosSides, mGeckoFixedLayerMargins));
-    } else if (mTouchBlockHitResult.mNode &&
-               mTouchBlockHitResult.mNode->GetStickyPositionAnimationId()) {
-      SideBits sideBits =
-          SidesStuckToRootContent(mTouchBlockHitResult.mNode.Get(lock));
+          GetCompositorFixedLayerMargins(mapLock), hit.mFixedPosSides,
+          mGeckoFixedLayerMargins));
+    } else if (hit.mNode && hit.mNode->GetStickyPositionAnimationId()) {
+      SideBits sideBits = SidesStuckToRootContent(hit.mNode.Get(lock));
 
       MutexAutoLock mapLock(mMapLock);
       *geckoPoint -= RoundedToInt(apz::ComputeFixedMarginsOffset(

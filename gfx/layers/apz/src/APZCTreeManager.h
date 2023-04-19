@@ -989,6 +989,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   TouchCounter mTouchCounter;
   
 
+
+
+  HitTestResult mTapGestureHitResult;
+  
+
   mutable DataMutex<ScreenPoint> mCurrentMousePosition;
   
 
