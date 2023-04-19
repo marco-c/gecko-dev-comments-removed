@@ -222,7 +222,7 @@ struct LoadingSessionHistoryInfo {
   explicit LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry);
   
   LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry,
-                            LoadingSessionHistoryInfo* aInfo);
+                            const LoadingSessionHistoryInfo* aInfo);
   
   explicit LoadingSessionHistoryInfo(const SessionHistoryInfo& aInfo);
 
