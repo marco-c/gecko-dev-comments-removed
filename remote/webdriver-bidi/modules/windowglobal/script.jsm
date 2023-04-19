@@ -223,6 +223,8 @@ class ScriptModule extends Module {
 
 
 
+
+
   async callFunctionDeclaration(options) {
     const {
       awaitPromise,
@@ -253,6 +255,28 @@ class ScriptModule extends Module {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+  disownHandles(options) {
+    const { handles, sandbox: sandboxName = null } = options;
+    const realm = this.#getRealmFromSandboxName(sandboxName);
+    for (const handle of handles) {
+      realm.removeObjectHandle(handle);
+    }
+  }
+
+  
+
+
 
 
 
