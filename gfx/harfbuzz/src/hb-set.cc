@@ -56,8 +56,6 @@ hb_set_create ()
   if (!(set = hb_object_create<hb_set_t> ()))
     return hb_set_get_empty ();
 
-  set->init_shallow ();
-
   return set;
 }
 
@@ -107,8 +105,6 @@ hb_set_destroy (hb_set_t *set)
 {
   if (!hb_object_destroy (set)) return;
 
-  set->fini_shallow ();
-
   hb_free (set);
 }
 
@@ -149,7 +145,7 @@ hb_set_set_user_data (hb_set_t           *set,
 
 
 void *
-hb_set_get_user_data (hb_set_t           *set,
+hb_set_get_user_data (const hb_set_t     *set,
 		      hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (set, key);

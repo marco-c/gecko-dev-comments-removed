@@ -12,27 +12,28 @@ typedef AnchorMatrix Mark2Array;
 
 
 
-struct MarkMarkPosFormat1
+template <typename Types>
+struct MarkMarkPosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 mark1Coverage;          
 
 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 mark2Coverage;          
 
 
   HBUINT16      classCount;             
-  Offset16To<MarkArray>
+  typename Types::template OffsetTo<MarkArray>
                 mark1Array;             
 
-  Offset16To<Mark2Array>
+  typename Types::template OffsetTo<Mark2Array>
                 mark2Array;             
 
   public:
-  DEFINE_SIZE_STATIC (12);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -100,7 +101,7 @@ struct MarkMarkPosFormat1
     
     hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
     skippy_iter.reset (buffer->idx, 1);
-    skippy_iter.set_lookup_props (c->lookup_props & ~LookupFlag::IgnoreFlags);
+    skippy_iter.set_lookup_props (c->lookup_props & ~(uint32_t)LookupFlag::IgnoreFlags);
     unsigned unsafe_from;
     if (!skippy_iter.prev (&unsafe_from))
     {

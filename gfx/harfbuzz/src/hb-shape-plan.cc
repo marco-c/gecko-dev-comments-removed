@@ -117,7 +117,7 @@ hb_shape_plan_key_t::init (bool                           copy,
   }
   else
   {
-    const hb_shaper_entry_t *shapers = _hb_shapers_get ();
+    const HB_UNUSED hb_shaper_entry_t *shapers = _hb_shapers_get ();
     for (unsigned int i = 0; i < HB_SHAPERS_COUNT; i++)
       if (false)
 	;
@@ -318,10 +318,6 @@ hb_shape_plan_destroy (hb_shape_plan_t *shape_plan)
 {
   if (!hb_object_destroy (shape_plan)) return;
 
-#ifndef HB_NO_OT_SHAPE
-  shape_plan->ot.fini ();
-#endif
-  shape_plan->key.fini ();
   hb_free (shape_plan);
 }
 
@@ -362,8 +358,8 @@ hb_shape_plan_set_user_data (hb_shape_plan_t    *shape_plan,
 
 
 void *
-hb_shape_plan_get_user_data (hb_shape_plan_t    *shape_plan,
-			     hb_user_data_key_t *key)
+hb_shape_plan_get_user_data (const hb_shape_plan_t *shape_plan,
+			     hb_user_data_key_t    *key)
 {
   return hb_object_get_user_data (shape_plan, key);
 }

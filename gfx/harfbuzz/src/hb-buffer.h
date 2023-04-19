@@ -148,11 +148,21 @@ typedef struct hb_glyph_info_t {
 
 
 
-typedef enum { 
-  HB_GLYPH_FLAG_UNSAFE_TO_BREAK		= 0x00000001,
-  HB_GLYPH_FLAG_UNSAFE_TO_CONCAT	= 0x00000002,
 
-  HB_GLYPH_FLAG_DEFINED			= 0x00000003 
+
+
+
+
+
+
+
+
+typedef enum { 
+  HB_GLYPH_FLAG_UNSAFE_TO_BREAK			= 0x00000001,
+  HB_GLYPH_FLAG_UNSAFE_TO_CONCAT		= 0x00000002,
+  HB_GLYPH_FLAG_SAFE_TO_INSERT_TATWEEL		= 0x00000004,
+
+  HB_GLYPH_FLAG_DEFINED				= 0x00000007 
 } hb_glyph_flags_t;
 
 HB_EXTERN hb_glyph_flags_t
@@ -266,7 +276,7 @@ hb_buffer_set_user_data (hb_buffer_t        *buffer,
 			 hb_bool_t           replace);
 
 HB_EXTERN void *
-hb_buffer_get_user_data (hb_buffer_t        *buffer,
+hb_buffer_get_user_data (const hb_buffer_t  *buffer,
 			 hb_user_data_key_t *key);
 
 
@@ -379,6 +389,10 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
 
 
 
+
+
+
+
 typedef enum { 
   HB_BUFFER_FLAG_DEFAULT			= 0x00000000u,
   HB_BUFFER_FLAG_BOT				= 0x00000001u, 
@@ -388,8 +402,9 @@ typedef enum {
   HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE	= 0x00000010u,
   HB_BUFFER_FLAG_VERIFY				= 0x00000020u,
   HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT	= 0x00000040u,
+  HB_BUFFER_FLAG_PRODUCE_SAFE_TO_INSERT_TATWEEL	= 0x00000080u,
 
-  HB_BUFFER_FLAG_DEFINED			= 0x0000007Fu
+  HB_BUFFER_FLAG_DEFINED			= 0x000000FFu
 } hb_buffer_flags_t;
 
 HB_EXTERN void

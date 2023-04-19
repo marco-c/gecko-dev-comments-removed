@@ -7,11 +7,12 @@ namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-struct PairPosFormat2
+template <typename Types>
+struct PairPosFormat2_4
 {
   protected:
   HBUINT16      format;                 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 coverage;               
 
   ValueFormat   valueFormat1;           
@@ -20,11 +21,11 @@ struct PairPosFormat2
   ValueFormat   valueFormat2;           
 
 
-  Offset16To<ClassDef>
+  typename Types::template OffsetTo<ClassDef>
                 classDef1;              
 
 
-  Offset16To<ClassDef>
+  typename Types::template OffsetTo<ClassDef>
                 classDef2;              
 
 
@@ -36,7 +37,7 @@ struct PairPosFormat2
 
 
   public:
-  DEFINE_SIZE_ARRAY (16, values);
+  DEFINE_SIZE_ARRAY (10 + 3 * Types::size, values);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -216,9 +217,22 @@ struct PairPosFormat2
     }
     bail:
 
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+			  "kerning glyphs at %d,%d",
+			  c->buffer->idx, skippy_iter.idx);
+    }
 
     applied_first = valueFormat1.apply_value (c, this, v, buffer->cur_pos());
     applied_second = valueFormat2.apply_value (c, this, v + len1, buffer->pos[skippy_iter.idx]);
+
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+			  "kerned glyphs at %d,%d",
+			  c->buffer->idx, skippy_iter.idx);
+    }
 
     success:
     if (applied_first || applied_second)

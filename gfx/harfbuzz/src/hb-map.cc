@@ -56,8 +56,6 @@ hb_map_create ()
   if (!(map = hb_object_create<hb_map_t> ()))
     return hb_map_get_empty ();
 
-  map->init_shallow ();
-
   return map;
 }
 
@@ -107,8 +105,6 @@ hb_map_destroy (hb_map_t *map)
 {
   if (!hb_object_destroy (map)) return;
 
-  map->fini_shallow ();
-
   hb_free (map);
 }
 
@@ -149,7 +145,7 @@ hb_map_set_user_data (hb_map_t           *map,
 
 
 void *
-hb_map_get_user_data (hb_map_t           *map,
+hb_map_get_user_data (const hb_map_t     *map,
 		      hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (map, key);

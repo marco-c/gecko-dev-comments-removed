@@ -175,15 +175,11 @@ _hb_ot_name_entry_cmp_key (const void *pa, const void *pb, bool exact)
 
   signed c = strcmp (astr, bstr);
 
-  if (!exact && c)
-  {
-    unsigned la = strlen (astr);
-    unsigned lb = strlen (bstr);
-    
-    
-    if (la > lb && astr[lb] == '-' && !strncmp (astr, bstr, lb))
-      return 0;
-  }
+  
+  
+  if (!exact && c &&
+      hb_language_matches (b->language, a->language))
+    return 0;
 
   return c;
 }

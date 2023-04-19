@@ -263,8 +263,6 @@ hb_blob_destroy (hb_blob_t *blob)
 {
   if (!hb_object_destroy (blob)) return;
 
-  blob->fini_shallow ();
-
   hb_free (blob);
 }
 
@@ -305,7 +303,7 @@ hb_blob_set_user_data (hb_blob_t          *blob,
 
 
 void *
-hb_blob_get_user_data (hb_blob_t          *blob,
+hb_blob_get_user_data (const hb_blob_t    *blob,
 		       hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (blob, key);

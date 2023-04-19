@@ -415,18 +415,7 @@ struct Lookup
   public:
   DEFINE_SIZE_UNION (2, format);
 };
-
-
-
-} 
-
-extern HB_INTERNAL const unsigned char _hb_Null_AAT_Lookup[2];
-template <typename T>
-struct Null<AAT::Lookup<T>> {
-  static AAT::Lookup<T> const & get_null ()
-  { return *reinterpret_cast<const AAT::Lookup<T> *> (_hb_Null_AAT_Lookup); }
-};
-namespace AAT {
+DECLARE_NULL_NAMESPACE_BYTES_TEMPLATE1 (AAT, Lookup, 2);
 
 enum { DELETED_GLYPH = 0xFFFF };
 
@@ -681,6 +670,13 @@ struct ObsoleteTypes
 				     const void *base,
 				     const T *array)
   {
+    
+    
+
+
+    if (unlikely (offset < unsigned ((const char *) array - (const char *) base)))
+      return INT_MAX / T::static_size;
+
     
     return (offset - unsigned ((const char *) array - (const char *) base)) / T::static_size;
   }

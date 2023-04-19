@@ -101,9 +101,8 @@ struct hb_array_t : hb_iter_with_fallback_t<hb_array_t<Type>, Type&>
 
 
 
-
   bool operator != (const hb_array_t& o) const
-  { return arrayZ != o.arrayZ; }
+  { return this->arrayZ != o.arrayZ || this->length != o.length; }
 
   
 
@@ -220,11 +219,8 @@ struct hb_array_t : hb_iter_with_fallback_t<hb_array_t<Type>, Type&>
     if (end < start + 2)
       return;
 
-    for (unsigned lhs = start, rhs = end - 1; lhs < rhs; lhs++, rhs--) {
-      Type temp = arrayZ[rhs];
-      arrayZ[rhs] = arrayZ[lhs];
-      arrayZ[lhs] = temp;
-    }
+    for (unsigned lhs = start, rhs = end - 1; lhs < rhs; lhs++, rhs--)
+      hb_swap (arrayZ[rhs], arrayZ[lhs]);
   }
 
   hb_array_t sub_array (unsigned int start_offset = 0, unsigned int *seg_count = nullptr ) const
@@ -326,6 +322,8 @@ struct hb_sorted_array_t :
 	    hb_enable_if (hb_is_cr_convertible(U, Type))>
   hb_sorted_array_t& operator = (const hb_array_t<U> &o)
   { hb_array_t<Type> (*this) = o; return *this; }
+
+  
 
   
   bool operator != (const hb_sorted_array_t& o) const

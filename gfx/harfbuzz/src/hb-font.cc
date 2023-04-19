@@ -781,8 +781,8 @@ hb_font_funcs_set_user_data (hb_font_funcs_t    *ffuncs,
 
 
 void *
-hb_font_funcs_get_user_data (hb_font_funcs_t    *ffuncs,
-			     hb_user_data_key_t *key)
+hb_font_funcs_get_user_data (const hb_font_funcs_t *ffuncs,
+			     hb_user_data_key_t    *key)
 {
   return hb_object_get_user_data (ffuncs, key);
 }
@@ -1675,6 +1675,7 @@ _hb_font_create (hb_face_t *face)
 
   if (unlikely (!face))
     face = hb_face_get_empty ();
+
   if (!(font = hb_object_create<hb_font_t> ()))
     return hb_font_get_empty ();
 
@@ -1896,7 +1897,7 @@ hb_font_set_user_data (hb_font_t          *font,
 
 
 void *
-hb_font_get_user_data (hb_font_t          *font,
+hb_font_get_user_data (const hb_font_t    *font,
 		       hb_user_data_key_t *key)
 {
   return hb_object_get_user_data (font, key);
@@ -2385,6 +2386,10 @@ hb_font_set_variations (hb_font_t            *font,
     hb_free (design_coords);
     return;
   }
+
+  
+  for (unsigned int i = 0; i < coords_length; i++)
+    design_coords[i] = axes[i].get_default ();
 
   for (unsigned int i = 0; i < variations_length; i++)
   {

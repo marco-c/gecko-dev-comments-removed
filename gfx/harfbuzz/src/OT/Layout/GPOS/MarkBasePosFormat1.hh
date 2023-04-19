@@ -12,26 +12,27 @@ typedef AnchorMatrix BaseArray;
 
 
 
-struct MarkBasePosFormat1
+template <typename Types>
+struct MarkBasePosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 markCoverage;           
 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 baseCoverage;           
 
   HBUINT16      classCount;             
-  Offset16To<MarkArray>
+  typename Types::template OffsetTo<MarkArray>
                 markArray;              
 
-  Offset16To<BaseArray>
+  typename Types::template OffsetTo<BaseArray>
                 baseArray;              
 
 
   public:
-  DEFINE_SIZE_STATIC (12);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
 
     bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -117,6 +118,7 @@ struct MarkBasePosFormat1
           0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) ||
           (skippy_iter.idx == 0 ||
            _hb_glyph_info_is_mark (&buffer->info[skippy_iter.idx - 1]) ||
+           !_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx - 1]) ||
            _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx]) !=
            _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx - 1]) ||
            _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) !=

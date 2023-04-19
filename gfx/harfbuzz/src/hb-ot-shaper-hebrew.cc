@@ -162,6 +162,32 @@ compose_hebrew (const hb_ot_shape_normalize_context_t *c,
   return found;
 }
 
+static void
+reorder_marks_hebrew (const hb_ot_shape_plan_t *plan HB_UNUSED,
+		      hb_buffer_t              *buffer,
+		      unsigned int              start,
+		      unsigned int              end)
+{
+  hb_glyph_info_t *info = buffer->info;
+
+  for (unsigned i = start + 2; i < end; i++)
+  {
+    unsigned c0 = info_cc (info[i - 2]);
+    unsigned c1 = info_cc (info[i - 1]);
+    unsigned c2 = info_cc (info[i - 0]);
+
+    if ((c0 == HB_MODIFIED_COMBINING_CLASS_CCC17 || c0 == HB_MODIFIED_COMBINING_CLASS_CCC18)  &&
+	(c1 == HB_MODIFIED_COMBINING_CLASS_CCC10 || c1 == HB_MODIFIED_COMBINING_CLASS_CCC14)  &&
+	(c2 == HB_MODIFIED_COMBINING_CLASS_CCC22 || c2 == HB_UNICODE_COMBINING_CLASS_BELOW) )
+    {
+      buffer->merge_clusters (i - 1, i + 1);
+      hb_swap (info[i - 1], info[i]);
+      break;
+    }
+  }
+
+
+}
 
 const hb_ot_shaper_t _hb_ot_shaper_hebrew =
 {
@@ -171,12 +197,12 @@ const hb_ot_shaper_t _hb_ot_shaper_hebrew =
   nullptr, 
   nullptr, 
   nullptr, 
-  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   nullptr, 
   compose_hebrew,
   nullptr, 
+  reorder_marks_hebrew,
   HB_TAG ('h','e','b','r'), 
-  nullptr, 
+  HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 
 };

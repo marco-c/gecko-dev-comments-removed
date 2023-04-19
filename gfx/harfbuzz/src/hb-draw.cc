@@ -120,6 +120,7 @@ hb_draw_funcs_set_##name##_func (hb_draw_funcs_t	 *dfuncs,		\
     if (dfuncs->destroy)						\
       dfuncs->destroy->name = nullptr;					\
   }									\
+  return;                                                                \
                                                                          \
 fail:                                                                    \
   if (destroy)                                                           \
@@ -207,6 +208,9 @@ hb_draw_funcs_destroy (hb_draw_funcs_t *dfuncs)
       HB_DRAW_FUNCS_IMPLEMENT_CALLBACKS
 #undef HB_DRAW_FUNC_IMPLEMENT
   }
+
+  hb_free (dfuncs->destroy);
+  hb_free (dfuncs->user_data);
 
   hb_free (dfuncs);
 }

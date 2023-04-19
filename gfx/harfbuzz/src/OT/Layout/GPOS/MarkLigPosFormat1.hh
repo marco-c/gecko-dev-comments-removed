@@ -1,72 +1,34 @@
 #ifndef OT_LAYOUT_GPOS_MARKLIGPOSFORMAT1_HH
 #define OT_LAYOUT_GPOS_MARKLIGPOSFORMAT1_HH
 
+#include "LigatureArray.hh"
+
 namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-typedef AnchorMatrix LigatureAttach;    
 
-
-
-
-
-struct LigatureArray : List16OfOffset16To<LigatureAttach>
-{
-  template <typename Iterator,
-            hb_requires (hb_is_iterator (Iterator))>
-  bool subset (hb_subset_context_t *c,
-               Iterator             coverage,
-               unsigned             class_count,
-               const hb_map_t      *klass_mapping) const
-  {
-    TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->glyphset_gsub ();
-
-    auto *out = c->serializer->start_embed (this);
-    if (unlikely (!c->serializer->extend_min (out)))  return_trace (false);
-
-    for (const auto _ : + hb_zip (coverage, *this)
-                  | hb_filter (glyphset, hb_first))
-    {
-      auto *matrix = out->serialize_append (c->serializer);
-      if (unlikely (!matrix)) return_trace (false);
-
-      const LigatureAttach& src = (this + _.second);
-      auto indexes =
-          + hb_range (src.rows * class_count)
-          | hb_filter ([=] (unsigned index) { return klass_mapping->has (index % class_count); })
-          ;
-      matrix->serialize_subset (c,
-                                _.second,
-                                this,
-                                src.rows,
-                                indexes);
-    }
-    return_trace (this->len);
-  }
-};
-
-struct MarkLigPosFormat1
+template <typename Types>
+struct MarkLigPosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 markCoverage;           
 
-  Offset16To<Coverage>
+  typename Types::template OffsetTo<Coverage>
                 ligatureCoverage;       
 
 
   HBUINT16      classCount;             
-  Offset16To<MarkArray>
+  typename Types::template OffsetTo<MarkArray>
                 markArray;              
 
-  Offset16To<LigatureArray>
+  typename Types::template OffsetTo<LigatureArray>
                 ligatureArray;          
 
   public:
-  DEFINE_SIZE_STATIC (12);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

@@ -117,8 +117,6 @@ struct hb_ot_shaper_t
 			      hb_font_t                *font);
 
 
-  hb_ot_shape_normalization_mode_t normalization_preference;
-
   
 
 
@@ -151,17 +149,19 @@ struct hb_ot_shaper_t
 
 
 
-  hb_tag_t gpos_tag;
-
-  
-
-
-
 
   void (*reorder_marks) (const hb_ot_shape_plan_t *plan,
 			 hb_buffer_t              *buffer,
 			 unsigned int              start,
 			 unsigned int              end);
+
+  
+
+
+
+  hb_tag_t gpos_tag;
+
+  hb_ot_shape_normalization_mode_t normalization_preference;
 
   hb_ot_shape_zero_width_marks_type_t zero_width_marks;
 
