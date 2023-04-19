@@ -180,9 +180,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<JS::ContextOptions> options_;
 
   
-  js::ContextData<js::gc::FreeLists*> freeLists_;
-
-  
   
   
   uint32_t allocsThisZoneSinceMinorGC_;
@@ -248,11 +245,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   bool isHelperThreadContext() const {
     return kind_ == js::ContextKind::HelperThread;
-  }
-
-  js::gc::FreeLists& freeLists() {
-    MOZ_ASSERT(freeLists_);
-    return *freeLists_;
   }
 
   template <typename T>

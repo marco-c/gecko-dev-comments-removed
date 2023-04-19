@@ -349,7 +349,8 @@ template <typename T, AllowGC allowGC>
 T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
                                  size_t thingSize) {
   
-  auto* t = reinterpret_cast<T*>(cx->freeLists().allocate(kind));
+  Zone* zone = cx->zone();
+  auto* t = reinterpret_cast<T*>(zone->arenas.freeLists().allocate(kind));
   if (MOZ_UNLIKELY(!t)) {
     
     
@@ -490,7 +491,7 @@ void GCRuntime::startBackgroundAllocTaskIfIdle() {
 
 
 TenuredCell* GCRuntime::refillFreeList(JSContext* cx, AllocKind thingKind) {
-  MOZ_ASSERT(cx->freeLists().isEmpty(thingKind));
+  MOZ_ASSERT(cx->zone()->arenas.freeLists().isEmpty(thingKind));
   MOZ_ASSERT(!cx->isHelperThreadContext());
 
   
@@ -498,7 +499,8 @@ TenuredCell* GCRuntime::refillFreeList(JSContext* cx, AllocKind thingKind) {
   MOZ_ASSERT(!JS::RuntimeHeapIsBusy(), "allocating while under GC");
 
   return cx->zone()->arenas.refillFreeListAndAllocate(
-      cx->freeLists(), thingKind, ShouldCheckThresholds::CheckThresholds);
+      cx->zone()->arenas.freeLists(), thingKind,
+      ShouldCheckThresholds::CheckThresholds);
 }
 
 
