@@ -7,30 +7,15 @@
 use euclid::approxeq::ApproxEq;
 
 use crate::bezier::Bezier;
-use crate::piecewise_linear::{PiecewiseLinearFunction, PiecewiseLinearFunctionBuildParameters};
-use crate::values::computed::{Integer, Number, Percentage};
+use crate::piecewise_linear::PiecewiseLinearFunction;
+use crate::values::computed::{Integer, Number};
 use crate::values::generics::easing::{self, BeforeFlag, StepPosition, TimingKeyword};
 
 
-pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number, Percentage>;
+pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number, PiecewiseLinearFunction>;
 
 
 pub type TimingFunction = ComputedTimingFunction;
-
-
-pub type ComputedLinearStop = easing::LinearStop<Number, Percentage>;
-
-impl ComputedLinearStop {
-    
-    pub fn to_piecewise_linear_build_parameters(
-        x: &ComputedLinearStop,
-    ) -> PiecewiseLinearFunctionBuildParameters {
-        (
-            x.output,
-            x.input.into_rust().map(|x| x.0),
-        )
-    }
-}
 
 impl ComputedTimingFunction {
     fn calculate_step_output(
@@ -91,17 +76,7 @@ impl ComputedTimingFunction {
             TimingFunction::Steps(steps, pos) => {
                 Self::calculate_step_output(*steps, *pos, progress, before_flag)
             },
-            TimingFunction::LinearFunction(elements) => {
-                
-                
-                PiecewiseLinearFunction::from_iter(
-                    elements
-                        .iter()
-                        .map(ComputedLinearStop::to_piecewise_linear_build_parameters),
-                )
-                .at(progress as f32)
-                .into()
-            },
+            TimingFunction::LinearFunction(function) => function.at(progress as f32).into(),
             TimingFunction::Keyword(keyword) => match keyword {
                 TimingKeyword::Linear => return progress,
                 TimingKeyword::Ease => {
