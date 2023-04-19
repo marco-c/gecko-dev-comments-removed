@@ -26,6 +26,11 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
     
 
 
+    [must_use] readonly attribute ACString rfpUserAgent;
+
+    
+
+
 
 
     [must_use] readonly attribute ACString appName;
