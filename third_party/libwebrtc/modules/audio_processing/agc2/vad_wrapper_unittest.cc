@@ -8,10 +8,12 @@
 
 
 
-#include "modules/audio_processing/agc2/vad_with_level.h"
+#include "modules/audio_processing/agc2/vad_wrapper.h"
 
 #include <limits>
 #include <memory>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "modules/audio_processing/agc2/agc2_common.h"
@@ -61,7 +63,7 @@ std::unique_ptr<VadLevelAnalyzer> CreateVadLevelAnalyzerWithMockVad(
 
 struct FrameWithView {
   
-  FrameWithView(float value = 0.0f)
+  explicit FrameWithView(float value = 0.0f)
       : channel0(samples.data()),
         view(&channel0, 1, samples.size()) {
     samples.fill(value);
