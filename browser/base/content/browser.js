@@ -150,12 +150,7 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
-  [
-    "BrowserAddonUI",
-    "gExtensionsNotifications",
-    "gUnifiedExtensions",
-    "gXPInstallObserver",
-  ],
+  ["BrowserAddonUI", "gExtensionsNotifications", "gXPInstallObserver"],
   "chrome://browser/content/browser-addons.js"
 );
 XPCOMUtils.defineLazyScriptGetter(
@@ -2304,11 +2299,6 @@ var gBrowserInit = {
     scheduleIdleTask(() => {
       
       gSync.init();
-    });
-
-    scheduleIdleTask(() => {
-      
-      gUnifiedExtensions.init();
     });
 
     scheduleIdleTask(() => {

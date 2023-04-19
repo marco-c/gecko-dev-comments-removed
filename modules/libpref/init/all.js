@@ -2072,8 +2072,6 @@ pref("extensions.eventPages.enabled", false);
 
 pref("extensions.manifestV3.enabled", false);
 
-pref("extensions.unifiedExtensions.enabled", false);
-
 
 
 
