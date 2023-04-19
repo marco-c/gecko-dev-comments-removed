@@ -43,7 +43,9 @@ function Promise_finally(onFinally) {
       
 
       
-      return callContentFunction(promise.then, promise, function() { return value; });
+      return callContentFunction(promise.then, promise, function() {
+        return value;
+      });
     };
 
     
@@ -63,7 +65,9 @@ function Promise_finally(onFinally) {
       
 
       
-      return callContentFunction(promise.then, promise, function() { throw reason; });
+      return callContentFunction(promise.then, promise, function() {
+        throw reason;
+      });
     };
   }
 

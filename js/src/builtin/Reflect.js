@@ -38,8 +38,12 @@ function Reflect_apply(target, thisArgument, argumentsList) {
 
   
   if (!IsObject(argumentsList)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`argumentsList`", "Reflect.apply",
-                   ToSource(argumentsList));
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED_ARG,
+      "`argumentsList`",
+      "Reflect.apply",
+      ToSource(argumentsList)
+    );
   }
 
   
@@ -67,14 +71,19 @@ function Reflect_construct(target, argumentsList) {
 
   
   if (!IsObject(argumentsList)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`argumentsList`", "Reflect.construct",
-                   ToSource(argumentsList));
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED_ARG,
+      "`argumentsList`",
+      "Reflect.construct",
+      ToSource(argumentsList)
+    );
   }
 
   
-  var args = (IsPackedArray(argumentsList) && argumentsList.length <= MAX_ARGS_LENGTH)
-             ? argumentsList
-             : CreateListFromArrayLikeForArgs(argumentsList);
+  var args =
+    (IsPackedArray(argumentsList) && argumentsList.length <= MAX_ARGS_LENGTH)
+      ? argumentsList
+      : CreateListFromArrayLikeForArgs(argumentsList);
 
   
   switch (args.length) {
@@ -134,8 +143,7 @@ function Reflect_getOwnPropertyDescriptor(target, propertyKey) {
 function Reflect_has(target, propertyKey) {
   
   if (!IsObject(target)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.has",
-                   ToSource(target));
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.has", ToSource(target));
   }
 
   
@@ -147,8 +155,7 @@ function Reflect_has(target, propertyKey) {
 function Reflect_get(target, propertyKey) {
   
   if (!IsObject(target)) {
-    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.get",
-                   ToSource(target));
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED_ARG, "`target`", "Reflect.get", ToSource(target));
   }
 
   
