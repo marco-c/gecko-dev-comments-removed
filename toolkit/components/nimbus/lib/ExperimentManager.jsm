@@ -53,6 +53,12 @@ function featuresCompat(branch) {
   return features;
 }
 
+function getFeatureFromBranch(branch, featureId) {
+  return featuresCompat(branch).find(
+    featureConfig => featureConfig.featureId === featureId
+  );
+}
+
 
 
 
@@ -66,6 +72,14 @@ class _ExperimentManager {
     this.extraContext = {};
     Services.prefs.addObserver(UPLOAD_ENABLED_PREF, this);
     Services.prefs.addObserver(STUDIES_OPT_OUT_PREF, this);
+
+    
+    
+    this._prefs = new Map();
+    
+    
+    
+    this._prefsBySlug = new Map();
   }
 
   get studiesEnabled() {
@@ -121,10 +135,12 @@ class _ExperimentManager {
     for (const experiment of restoredExperiments) {
       this.setExperimentActive(experiment);
       this._restoreEnrollmentPrefs(experiment);
+      this._updatePrefObservers(experiment);
     }
     for (const rollout of restoredRollouts) {
       this.setExperimentActive(rollout);
       this._restoreEnrollmentPrefs(rollout);
+      this._updatePrefObservers(rollout);
     }
 
     this.observe();
@@ -382,9 +398,8 @@ class _ExperimentManager {
     }
     this.sendEnrollmentTelemetry(experiment);
 
-    for (const { name, value, prefBranch } of prefsToSet) {
-      lazy.PrefUtils.setPref(name, value, { branch: prefBranch });
-    }
+    this._setEnrollmentPrefs(prefsToSet);
+    this._updatePrefObservers(experiment);
 
     lazy.log.debug(
       `New ${isRollout ? "rollout" : "experiment"} started: ${slug}, ${
@@ -474,12 +489,44 @@ class _ExperimentManager {
 
 
 
+
+
+
+
   unenroll(slug, reason = "unknown") {
     const enrollment = this.store.get(slug);
     if (!enrollment) {
       this.sendFailureTelemetry("unenrollFailed", slug, "does-not-exist");
       throw new Error(`Could not find an experiment with the slug "${slug}"`);
     }
+
+    this._unenroll(enrollment, { reason });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _unenroll(enrollment, { reason = "unknown", changedPref = undefined } = {}) {
+    const { slug } = enrollment;
 
     if (!enrollment.active) {
       this.sendFailureTelemetry("unenrollFailed", slug, "already-unenrolled");
@@ -508,7 +555,7 @@ class _ExperimentManager {
       reason,
     });
 
-    this._unsetEnrollmentPrefs(enrollment);
+    this._unsetEnrollmentPrefs(enrollment, changedPref);
 
     lazy.log.debug(`Recipe unenrolled: ${slug}`);
   }
@@ -794,7 +841,54 @@ class _ExperimentManager {
 
 
 
-  _unsetEnrollmentPrefs(enrollment) {
+
+
+
+
+
+  _setEnrollmentPrefs(prefsToSet) {
+    for (const { name, value, prefBranch } of prefsToSet) {
+      const entry = this._prefs.get(name);
+
+      
+      
+      if (entry) {
+        entry.enrollmentChanging = true;
+      }
+
+      lazy.PrefUtils.setPref(name, value, { branch: prefBranch });
+
+      if (entry) {
+        entry.enrollmentChanging = false;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _unsetEnrollmentPrefs(enrollment, changedPref) {
     if (!enrollment.prefs?.length) {
       return;
     }
@@ -804,6 +898,17 @@ class _ExperimentManager {
     );
 
     for (const pref of enrollment.prefs) {
+      this._removePrefObserver(pref.name, enrollment.slug);
+
+      if (
+        changedPref?.name == pref.name &&
+        changedPref.branch === pref.branch
+      ) {
+        
+        
+        continue;
+      }
+
       let newValue = pref.originalValue;
       const conflictingEnrollment = getConflictingEnrollment(pref.featureId);
       const conflictingPref = conflictingEnrollment?.prefs?.find(
@@ -820,15 +925,28 @@ class _ExperimentManager {
           
           
           
-          newValue = featuresCompat(conflictingEnrollment.branch).find(
-            f => f.featureId === pref.featureId
+          newValue = getFeatureFromBranch(
+            conflictingEnrollment.branch,
+            pref.featureId
           ).value[pref.variable];
         }
+      }
+
+      
+      
+      
+      const entry = this._prefs.get(pref.name);
+      if (entry) {
+        entry.enrollmentChanging = true;
       }
 
       lazy.PrefUtils.setPref(pref.name, newValue, {
         branch: pref.branch,
       });
+
+      if (entry) {
+        entry.enrollmentChanging = false;
+      }
     }
   }
 
@@ -903,6 +1021,184 @@ class _ExperimentManager {
 
       return conflictingEnrollments[featureId];
     };
+  }
+
+  
+
+
+
+
+
+  _updatePrefObservers({ slug, prefs }) {
+    if (!prefs?.length) {
+      return;
+    }
+
+    for (const pref of prefs) {
+      const { name } = pref;
+
+      if (!this._prefs.has(name)) {
+        const observer = () => this._onExperimentPrefChanged(pref);
+        const entry = {
+          slugs: new Set([slug]),
+          enrollmentChanging: false,
+          observer,
+        };
+
+        Services.prefs.addObserver(name, observer);
+
+        this._prefs.set(name, entry);
+      } else {
+        this._prefs.get(name).slugs.add(slug);
+      }
+
+      if (!this._prefsBySlug.has(slug)) {
+        this._prefsBySlug.set(slug, new Set([name]));
+      } else {
+        this._prefsBySlug.get(slug).add(name);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _removePrefObserver(name, slug) {
+    
+    
+    
+    
+    
+    const entry = this._prefs.get(name);
+
+    
+    if (entry) {
+      entry.slugs.delete(slug);
+      if (entry.slugs.size == 0) {
+        Services.prefs.removeObserver(name, entry.observer);
+        this._prefs.delete(name);
+      }
+    }
+
+    const bySlug = this._prefsBySlug.get(slug);
+    if (bySlug) {
+      bySlug.delete(name);
+      if (bySlug.size == 0) {
+        this._prefsBySlug.delete(slug);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _onExperimentPrefChanged(pref) {
+    const entry = this._prefs.get(pref.name);
+    
+    
+    
+    
+    
+    
+    if (entry.enrollmentChanging) {
+      return;
+    }
+
+    
+    
+    const slugs = Array.from(entry.slugs);
+
+    
+    
+    
+    for (const slug of slugs) {
+      const toRemove = Array.from(this._prefsBySlug.get(slug) ?? []);
+      for (const name of toRemove) {
+        this._removePrefObserver(name, slug);
+      }
+    }
+
+    
+    const enrollments = Array.from(slugs).map(slug => this.store.get(slug));
+
+    
+    if (enrollments.length == 2) {
+      
+      if (!enrollments[0].isRollout) {
+        enrollments.reverse();
+      }
+    }
+
+    
+    
+    
+
+    
+    
+    
+    
+
+    let branch;
+    if (Services.prefs.prefHasUserValue(pref.name)) {
+      
+      branch = "user";
+    } else if (!Services.prefs.prefHasDefaultValue(pref.name)) {
+      
+      
+      branch = "user";
+    } else if (pref.branch === "default") {
+      const feature = getFeatureFromBranch(
+        enrollments.at(-1).branch,
+        pref.featureId
+      );
+      const expectedValue = feature.value[pref.variable];
+      const value = lazy.PrefUtils.getPref(pref.name, { branch: pref.branch });
+
+      if (value === expectedValue) {
+        
+        
+        branch = "user";
+      } else {
+        branch = "default";
+      }
+    } else {
+      
+      
+      branch = "user";
+    }
+
+    const changedPref = {
+      name: pref.name,
+      branch,
+    };
+
+    for (const enrollment of enrollments) {
+      this._unenroll(enrollment, { reason: "changed-pref", changedPref });
+    }
   }
 }
 
