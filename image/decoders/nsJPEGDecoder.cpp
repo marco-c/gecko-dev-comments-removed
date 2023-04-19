@@ -202,12 +202,17 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
   
   if ((error_code = static_cast<nsresult>(setjmp(mErr.setjmp_buffer))) !=
       NS_OK) {
+    bool fatal = true;
     if (error_code == NS_ERROR_FAILURE) {
       
       
       mState = JPEG_SINK_NON_JPEG_TRAILER;
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
               ("} (setjmp returned NS_ERROR_FAILURE)"));
+    } else if (error_code == NS_ERROR_ILLEGAL_VALUE) {
+      
+      mInfo.unread_marker = 0;
+      fatal = false;
     } else {
       
       mState = JPEG_ERROR;
@@ -215,7 +220,9 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
               ("} (setjmp returned an error)"));
     }
 
-    return Transition::TerminateFailure();
+    if (fatal) {
+      return Transition::TerminateFailure();
+    }
   }
 
   MOZ_LOG(sJPEGLog, LogLevel::Debug,
@@ -674,9 +681,17 @@ my_error_exit(j_common_ptr cinfo) {
   decoder_error_mgr* err = (decoder_error_mgr*)cinfo->err;
 
   
-  nsresult error_code = err->pub.msg_code == JERR_OUT_OF_MEMORY
-                            ? NS_ERROR_OUT_OF_MEMORY
-                            : NS_ERROR_FAILURE;
+  nsresult error_code;
+  switch (err->pub.msg_code) {
+    case JERR_OUT_OF_MEMORY:
+      error_code = NS_ERROR_OUT_OF_MEMORY;
+      break;
+    case JERR_UNKNOWN_MARKER:
+      error_code = NS_ERROR_ILLEGAL_VALUE;
+      break;
+    default:
+      error_code = NS_ERROR_FAILURE;
+  }
 
 #ifdef DEBUG
   char buffer[JMSG_LENGTH_MAX];
