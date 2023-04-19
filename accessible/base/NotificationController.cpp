@@ -17,7 +17,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/Telemetry.h"
 
@@ -611,7 +611,10 @@ void NotificationController::ProcessMutationEvents() {
 
 
 void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
+  AUTO_PROFILER_MARKER_TEXT("NotificationController::WillRefresh", A11Y, {},
+                            ""_ns);
   Telemetry::AutoTimer<Telemetry::A11Y_TREE_UPDATE_TIMING_MS> timer;
+  
 
   AUTO_PROFILER_LABEL("NotificationController::WillRefresh", A11Y);
 
