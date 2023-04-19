@@ -907,8 +907,6 @@ struct ReceiveDataParams {
   DataMessageType type = DMT_TEXT;
   
   int seq_num = 0;
-  
-  int timestamp = 0;
 };
 
 struct SendDataParams {

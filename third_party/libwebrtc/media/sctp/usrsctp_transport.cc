@@ -1318,8 +1318,6 @@ void UsrsctpTransport::OnDataOrNotificationFromSctp(const void* data,
   
   
   params.seq_num = rcv.rcv_ssn;
-  
-  params.timestamp = 0;
 
   
   partial_incoming_message_.AppendData(reinterpret_cast<const uint8_t*>(data),
