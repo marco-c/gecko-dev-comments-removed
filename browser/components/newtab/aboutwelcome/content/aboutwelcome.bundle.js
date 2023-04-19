@@ -1442,7 +1442,7 @@ function LanguageSwitcher(props) {
   }) : 
   negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPackDisplayName)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
     type: "button",
-    className: "secondary",
+    className: "primary",
     value: "decline",
     onClick: event => {
       window.AWSetRequestedLocales(negotiatedLanguage.originalAppLocales);
