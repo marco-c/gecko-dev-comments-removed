@@ -3678,29 +3678,42 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
 
     
     
-    RefPtr<Element> newListItemElement =
+    const CreateElementResult wrapContentInListItemElementResult =
         InsertContainerWithTransaction(*content, aListItemElementTagName);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (!newListItemElement) {
+    if (wrapContentInListItemElementResult.isErr()) {
       NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
-      return EditActionResult(NS_ERROR_FAILURE);
+      return EditActionResult(wrapContentInListItemElementResult.unwrapErr());
     }
+    MOZ_ASSERT(wrapContentInListItemElementResult.GetNewNode());
+    nsresult rv = wrapContentInListItemElementResult.SuggestCaretPointTo(
+        *this, {SuggestCaret::OnlyIfHasSuggestion,
+                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                SuggestCaret::AndIgnoreTrivialError});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
+      return EditActionResult(rv);
+    }
+    NS_WARNING_ASSERTION(
+        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+        "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
     
     
     if (HTMLEditUtils::IsInlineElement(content)) {
-      prevListItem = newListItemElement;
+      prevListItem = wrapContentInListItemElementResult.GetNewNode();
     } else {
       prevListItem = nullptr;
     }
+    
+    
     const MoveNodeResult moveListItemElementResult =
-        MoveNodeToEndWithTransaction(*newListItemElement, *curList);
+        MoveNodeToEndWithTransaction(
+            MOZ_KnownLive(*wrapContentInListItemElementResult.GetNewNode()),
+            *curList);
     if (moveListItemElementResult.isErr()) {
       NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
       return EditActionResult(moveListItemElementResult.unwrapErr());
     }
-    nsresult rv = moveListItemElementResult.SuggestCaretPointTo(
+    rv = moveListItemElementResult.SuggestCaretPointTo(
         *this, {SuggestCaret::OnlyIfHasSuggestion,
                 SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
                 SuggestCaret::AndIgnoreTrivialError});

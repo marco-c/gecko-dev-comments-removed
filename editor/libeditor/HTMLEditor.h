@@ -1764,11 +1764,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
-      nsIContent& aContent, nsAtom& aTagName) {
-    return InsertContainerWithTransactionInternal(aContent, aTagName,
-                                                  *nsGkAtoms::_empty, u""_ns);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
+                                 nsAtom& aWrapperTagName) {
+    return InsertContainerWithTransactionInternal(
+        aContentToBeWrapped, aWrapperTagName, *nsGkAtoms::_empty, u""_ns);
   }
 
   
@@ -1788,11 +1788,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
-      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
-      const nsAString& aAttributeValue) {
-    return InsertContainerWithTransactionInternal(aContent, aTagName,
-                                                  aAttribute, aAttributeValue);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
+                                 nsAtom& aWrapperTagName, nsAtom& aAttribute,
+                                 const nsAString& aAttributeValue) {
+    return InsertContainerWithTransactionInternal(
+        aContentToBeWrapped, aWrapperTagName, aAttribute, aAttributeValue);
   }
 
   
@@ -3216,8 +3217,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
-  InsertContainerWithTransactionInternal(nsIContent& aContent, nsAtom& aTagName,
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  InsertContainerWithTransactionInternal(nsIContent& aContentToBeWrapped,
+                                         nsAtom& aWrapperTagName,
                                          nsAtom& aAttribute,
                                          const nsAString& aAttributeValue);
 

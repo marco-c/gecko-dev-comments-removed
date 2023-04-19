@@ -3822,12 +3822,12 @@ CreateElementResult HTMLEditor::InsertBRElement(
   }
 }
 
-already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
-    nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
-    const nsAString& aAttributeValue) {
-  EditorDOMPoint pointToInsertNewContainer(&aContent);
+CreateElementResult HTMLEditor::InsertContainerWithTransactionInternal(
+    nsIContent& aContentToBeWrapped, nsAtom& aWrapperTagName,
+    nsAtom& aAttribute, const nsAString& aAttributeValue) {
+  EditorDOMPoint pointToInsertNewContainer(&aContentToBeWrapped);
   if (NS_WARN_IF(!pointToInsertNewContainer.IsSet())) {
-    return nullptr;
+    return CreateElementResult(NS_ERROR_FAILURE);
   }
   
   
@@ -3835,22 +3835,24 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
   
   
   
-  DebugOnly<bool> advanced = pointToInsertNewContainer.AdvanceOffset();
-  NS_WARNING_ASSERTION(advanced, "Failed to advance offset to after aContent");
+  MOZ_ALWAYS_TRUE(pointToInsertNewContainer.AdvanceOffset());
 
   
-  RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
+  RefPtr<Element> newContainer = CreateHTMLContent(&aWrapperTagName);
   if (NS_WARN_IF(!newContainer)) {
-    return nullptr;
+    return CreateElementResult(NS_ERROR_FAILURE);
   }
 
   
   if (&aAttribute != nsGkAtoms::_empty) {
     nsresult rv = newContainer->SetAttr(kNameSpaceID_None, &aAttribute,
                                         aAttributeValue, true);
+    if (NS_WARN_IF(Destroyed())) {
+      return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
+    }
     if (NS_FAILED(rv)) {
       NS_WARNING("Element::SetAttr() failed");
-      return nullptr;
+      return CreateElementResult(rv);
     }
   }
 
@@ -3859,10 +3861,10 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
 
   
   
-  nsresult rv = DeleteNodeWithTransaction(aContent);
+  nsresult rv = DeleteNodeWithTransaction(aContentToBeWrapped);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-    return nullptr;
+    return CreateElementResult(rv);
   }
 
   {
@@ -3871,11 +3873,11 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
     
     
     AutoTransactionsConserveSelection conserveSelection(*this);
-    CreateContentResult insertContentNodeResult =
-        InsertNodeWithTransaction(aContent, EditorDOMPoint(newContainer, 0u));
+    CreateContentResult insertContentNodeResult = InsertNodeWithTransaction(
+        aContentToBeWrapped, EditorDOMPoint(newContainer, 0u));
     if (insertContentNodeResult.isErr()) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return nullptr;
+      return CreateElementResult(insertContentNodeResult.unwrapErr());
     }
     insertContentNodeResult.IgnoreCaretPointSuggestion();
   }
@@ -3884,22 +3886,9 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
   CreateElementResult insertNewContainerElementResult =
       InsertNodeWithTransaction<Element>(*newContainer,
                                          pointToInsertNewContainer);
-  if (insertNewContainerElementResult.isErr()) {
-    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-    return nullptr;
-  }
-  rv = insertNewContainerElementResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-    return nullptr;
-  }
-  NS_WARNING_ASSERTION(
-      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-  return newContainer.forget();
+  NS_WARNING_ASSERTION(insertNewContainerElementResult.isOk(),
+                       "EditorBase::InsertNodeWithTransaction() failed");
+  return insertNewContainerElementResult;
 }
 
 CreateElementResult HTMLEditor::ReplaceContainerWithTransactionInternal(
@@ -3986,6 +3975,8 @@ CreateElementResult HTMLEditor::ReplaceContainerWithTransactionInternal(
                                        : EditorDOMPoint::AtEndOf(*parentNode));
   NS_WARNING_ASSERTION(insertNewContainerElementResult.isOk(),
                        "EditorBase::InsertNodeWithTransaction() failed");
+  MOZ_ASSERT_IF(insertNewContainerElementResult.isOk(),
+                insertNewContainerElementResult.GetNewNode() == newContainer);
   return insertNewContainerElementResult;
 }
 
@@ -6006,12 +5997,17 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     }
     
     
-    lastClonedElement =
+    CreateElementResult wrapClonedElementResult =
         InsertContainerWithTransaction(*lastClonedElement, tagName);
-    if (MOZ_UNLIKELY(!lastClonedElement)) {
+    if (wrapClonedElementResult.isErr()) {
       NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
-      return Err(NS_ERROR_FAILURE);
+      return Err(wrapClonedElementResult.unwrapErr());
     }
+    
+    
+    wrapClonedElementResult.IgnoreCaretPointSuggestion();
+    MOZ_ASSERT(wrapClonedElementResult.GetNewNode());
+    lastClonedElement = wrapClonedElementResult.UnwrapNewNode();
     CloneAttributesWithTransaction(*lastClonedElement, *elementInPreviousBlock);
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
