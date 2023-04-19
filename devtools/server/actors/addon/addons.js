@@ -17,7 +17,7 @@ const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
     protocol.Actor.prototype.initialize.call(this, conn);
   },
 
-  async installTemporaryAddon(addonPath) {
+  async installTemporaryAddon(addonPath, openDevTools) {
     let addonFile;
     let addon;
     try {
@@ -28,6 +28,17 @@ const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
     }
 
     Services.obs.notifyObservers(null, "devtools-installed-addon", addon.id);
+
+    
+    
+    
+    
+    
+    if (openDevTools) {
+      
+      const { gDevTools } = require("devtools/client/framework/devtools");
+      gDevTools.showToolboxForWebExtension(addon.id);
+    }
 
     
     
