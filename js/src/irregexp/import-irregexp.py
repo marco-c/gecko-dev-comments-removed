@@ -53,6 +53,7 @@ def copy_and_update_includes(src_path, dst_path):
         "regexp-error.h",
         "regexp.h",
         "regexp-macro-assembler.h",
+        "regexp-parser.h",
         "regexp-stack.h",
         "special-case.h",
     ]
@@ -61,7 +62,8 @@ def copy_and_update_includes(src_path, dst_path):
     dst = open(str(dst_path), "w")
 
     
-    regexp_include = re.compile('#include "src/regexp')
+    
+    regexp_include = re.compile('#include "src/regexp(?!/regexp-flags.h)')
     regexp_include_new = '#include "irregexp/imported'
 
     
@@ -98,6 +100,7 @@ def import_from(srcdir, dstdir):
         "DIR_METADATA",
         "OWNERS",
         "regexp.cc",
+        "regexp-flags.h",
         "regexp-utils.cc",
         "regexp-utils.h",
         "regexp-macro-assembler-arch.h",
