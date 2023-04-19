@@ -1356,7 +1356,7 @@ void Http2Session::CloseStream(Http2StreamBase* aStream, nsresult aResult) {
   RemoveStreamFromQueues(aStream);
 
   
-  aStream->Close(aResult);
+  aStream->CloseStream(aResult);
 }
 
 nsresult Http2Session::SetInputFrameDataStream(uint32_t streamID) {
