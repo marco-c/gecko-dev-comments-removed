@@ -2171,26 +2171,6 @@ var gBrowserInit = {
         return;
       }
 
-      
-      
-      
-      if (!isBlankPageURL(uriToLoad) && HomePage.get(window) == uriToLoad) {
-        gURLBar.inputField.addEventListener(
-          "SetURI",
-          () => {
-            if (
-              initiallyFocusedElement ==
-              document.commandDispatcher.focusedElement
-            ) {
-              gURLBar.select();
-            }
-          },
-          { once: true }
-        );
-        shouldRemoveFocusedAttribute = false;
-        return;
-      }
-
       if (gBrowser.selectedBrowser.isRemoteBrowser) {
         
         
