@@ -96,7 +96,7 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             });
       } else {
         
-        allocator.complete(RemoteSurfaceAllocator.getInstance());
+        allocator.complete(RemoteSurfaceAllocator.getInstance(0));
       }
       return allocator.poll(100);
     } catch (final Throwable e) {
@@ -326,14 +326,27 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
     private CompositorSurfaceManager mCompositorSurfaceManager;
     private ISurfaceAllocator mSurfaceAllocator;
 
+    
+    
+    private int mUniqueGpuProcessId;
+    
+    private static int sUniqueGpuProcessIdCounter = 0;
+
     public GpuProcessConnection(@NonNull final ServiceAllocator allocator) {
       super(allocator, GeckoProcessType.GPU);
+
+      
+      
+      if (sUniqueGpuProcessIdCounter == 0) {
+        sUniqueGpuProcessIdCounter++;
+      }
+      mUniqueGpuProcessId = sUniqueGpuProcessIdCounter++;
     }
 
     @Override
     protected void onBinderConnected(@NonNull final IChildProcess child) throws RemoteException {
       mCompositorSurfaceManager = new CompositorSurfaceManager(child.getCompositorSurfaceManager());
-      mSurfaceAllocator = child.getSurfaceAllocator();
+      mSurfaceAllocator = child.getSurfaceAllocator(mUniqueGpuProcessId);
     }
 
     public CompositorSurfaceManager getCompositorSurfaceManager() {
