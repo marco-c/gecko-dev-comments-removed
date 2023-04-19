@@ -104,31 +104,29 @@ TEST(RnnVadTest, FindBestPitchPeriodsBitExactness) {
   PitchTestData test_data;
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
   Decimate2x(test_data.GetPitchBufView(), pitch_buf_decimated);
-  std::array<size_t, 2> pitch_candidates_inv_lags;
+  CandidatePitchPeriods pitch_candidates;
   {
     
     
     auto auto_corr_view = test_data.GetPitchBufAutoCorrCoeffsView();
-    pitch_candidates_inv_lags =
-        FindBestPitchPeriods({auto_corr_view.data(), auto_corr_view.size()},
-                             pitch_buf_decimated, kMaxPitch12kHz);
+    pitch_candidates = FindBestPitchPeriods(auto_corr_view, pitch_buf_decimated,
+                                            kMaxPitch12kHz);
   }
-  EXPECT_EQ(pitch_candidates_inv_lags[0], static_cast<size_t>(140));
-  EXPECT_EQ(pitch_candidates_inv_lags[1], static_cast<size_t>(142));
+  EXPECT_EQ(pitch_candidates.best, 140);
+  EXPECT_EQ(pitch_candidates.second_best, 142);
 }
 
 
 TEST(RnnVadTest, RefinePitchPeriod48kHzBitExactness) {
   PitchTestData test_data;
-  size_t pitch_inv_lag;
-  {
-    
-    
-    const std::array<size_t, 2> pitch_candidates_inv_lags = {280, 284};
-    pitch_inv_lag = RefinePitchPeriod48kHz(test_data.GetPitchBufView(),
-                                           pitch_candidates_inv_lags);
-  }
-  EXPECT_EQ(560u, pitch_inv_lag);
+  
+  
+  EXPECT_EQ(RefinePitchPeriod48kHz(test_data.GetPitchBufView(),
+                                   {280, 284}),
+            560);
+  EXPECT_EQ(RefinePitchPeriod48kHz(test_data.GetPitchBufView(),
+                                   {260, 284}),
+            568);
 }
 
 class CheckLowerPitchPeriodsAndComputePitchGainTest

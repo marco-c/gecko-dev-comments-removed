@@ -14,6 +14,7 @@
 #include <stddef.h>
 
 #include <array>
+#include <utility>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
@@ -50,19 +51,25 @@ void ComputeSlidingFrameSquareEnergies(
     rtc::ArrayView<float, kMaxPitch24kHz + 1> yy_values);
 
 
+struct CandidatePitchPeriods {
+  int best;
+  int second_best;
+};
 
 
-std::array<size_t, 2> FindBestPitchPeriods(
+
+
+CandidatePitchPeriods FindBestPitchPeriods(
     rtc::ArrayView<const float> auto_corr,
     rtc::ArrayView<const float> pitch_buf,
-    size_t max_pitch_period);
+    int max_pitch_period);
 
 
 
 
-size_t RefinePitchPeriod48kHz(
+int RefinePitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-    rtc::ArrayView<const size_t, 2> inv_lags);
+    CandidatePitchPeriods pitch_candidates_inverted_lags);
 
 
 
