@@ -1204,26 +1204,24 @@ static void reportHandshakeResult(int32_t bytesTransferred, bool wasReading,
 
   if (bucket == 0) {
     
-    
     bool success = true;
 
     bool usedPrivateDNS = false;
     success &= socketInfo->GetUsedPrivateDNS(&usedPrivateDNS) == NS_OK;
-    MOZ_ASSERT(success, "Transport Security Getters should not fail.");
 
     bool madeOCSPRequest = false;
     success &= socketInfo->GetMadeOCSPRequests(&madeOCSPRequest) == NS_OK;
-    MOZ_ASSERT(success, "Transport Security Getters should not fail.");
 
     uint16_t protocolVersion = 0;
     success &= socketInfo->GetProtocolVersion(&protocolVersion) == NS_OK;
-    MOZ_ASSERT(success, "Transport Security Getters should not fail.");
     bool usedTLS13 = protocolVersion == 4;
 
     bool usedECH = false;
     success &= socketInfo->GetIsAcceptedEch(&usedECH) == NS_OK;
-    MOZ_ASSERT(success, "Transport Security Getters should not fail.");
 
+    
+    
+    
     if (success) {
       uint8_t TLSPrivacyResult = 0;
       TLSPrivacyResult |= usedTLS13 << 0;
