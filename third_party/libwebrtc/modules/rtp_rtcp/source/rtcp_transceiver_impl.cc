@@ -370,6 +370,14 @@ void RtcpTransceiverImpl::HandleExtendedReports(
   if (!extended_reports.Parse(rtcp_packet_header))
     return;
 
+  if (config_.reply_to_non_sender_rtt_measurement && extended_reports.rrtr()) {
+    RrtrTimes& rrtr = received_rrtrs_[extended_reports.sender_ssrc()];
+    rrtr.received_remote_mid_ntp_time =
+        CompactNtp(extended_reports.rrtr()->ntp());
+    rrtr.local_receive_mid_ntp_time =
+        CompactNtp(config_.clock->ConvertTimestampToNtpTime(now));
+  }
+
   if (extended_reports.dlrr())
     HandleDlrr(extended_reports.dlrr(), now);
 
@@ -620,7 +628,29 @@ void RtcpTransceiverImpl::CreateCompoundPacket(Timestamp now,
   if (remb_.has_value()) {
     reserved_bytes += remb_->BlockLength();
   }
+  absl::optional<rtcp::ExtendedReports> xr;
+  if (!received_rrtrs_.empty()) {
+    RTC_DCHECK(config_.reply_to_non_sender_rtt_measurement);
+    xr.emplace();
+    uint32_t now_ntp =
+        CompactNtp(config_.clock->ConvertTimestampToNtpTime(now));
+    for (const auto& [ssrc, rrtr_info] : received_rrtrs_) {
+      rtcp::ReceiveTimeInfo reply;
+      reply.ssrc = ssrc;
+      reply.last_rr = rrtr_info.received_remote_mid_ntp_time;
+      reply.delay_since_last_rr =
+          now_ntp - rrtr_info.local_receive_mid_ntp_time;
+      xr->AddDlrrItem(reply);
+    }
+    reserved_bytes += xr->BlockLength();
+  }
   if (config_.non_sender_rtt_measurement) {
+    
+    
+    
+    
+    
+
     
     reserved_bytes += (4 + 4 + rtcp::Rrtr::kLength);
   }
@@ -635,14 +665,16 @@ void RtcpTransceiverImpl::CreateCompoundPacket(Timestamp now,
     sender.AppendPacket(*remb_);
   }
   if (!result.has_sender_report && config_.non_sender_rtt_measurement) {
-    rtcp::ExtendedReports xr;
-    xr.SetSenderSsrc(result.sender_ssrc);
-
+    if (!xr.has_value()) {
+      xr.emplace();
+    }
     rtcp::Rrtr rrtr;
     rrtr.SetNtp(config_.clock->ConvertTimestampToNtpTime(now));
-    xr.SetRrtr(rrtr);
-
-    sender.AppendPacket(xr);
+    xr->SetRrtr(rrtr);
+  }
+  if (xr.has_value()) {
+    xr->SetSenderSsrc(result.sender_ssrc);
+    sender.AppendPacket(*xr);
   }
 }
 
