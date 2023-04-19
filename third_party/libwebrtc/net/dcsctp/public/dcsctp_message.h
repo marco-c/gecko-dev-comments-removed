@@ -16,6 +16,7 @@
 
 #include "api/array_view.h"
 #include "net/dcsctp/public/types.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace dcsctp {
 
@@ -24,7 +25,14 @@ namespace dcsctp {
 
 class DcSctpMessage {
  public:
+  
   DcSctpMessage(StreamID stream_id, PPID ppid, std::vector<uint8_t> payload)
+      : stream_id_(stream_id), ppid_(ppid), payload_(payload) {}
+
+  explicit DcSctpMessage(StreamID stream_id,
+                         PPID ppid,
+                         rtc::CopyOnWriteBuffer payload,
+                         bool)
       : stream_id_(stream_id), ppid_(ppid), payload_(std::move(payload)) {}
 
   DcSctpMessage(DcSctpMessage&& other) = default;
@@ -40,14 +48,25 @@ class DcSctpMessage {
 
   
   rtc::ArrayView<const uint8_t> payload() const { return payload_; }
+  const rtc::CopyOnWriteBuffer& buffer_payload() const { return payload_; }
 
   
-  std::vector<uint8_t> ReleasePayload() && { return std::move(payload_); }
+  
+  ABSL_DEPRECATED("Use ReleaseBufferPayload instead")
+  std::vector<uint8_t> ReleasePayload() && {
+    return std::vector<uint8_t>(payload_.cdata(),
+                                payload_.cdata() + payload_.size());
+  }
+
+  
+  rtc::CopyOnWriteBuffer ReleaseBufferPayload() && {
+    return std::move(payload_);
+  }
 
  private:
   StreamID stream_id_;
   PPID ppid_;
-  std::vector<uint8_t> payload_;
+  rtc::CopyOnWriteBuffer payload_;
 };
 }  
 

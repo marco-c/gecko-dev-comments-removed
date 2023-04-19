@@ -1396,8 +1396,10 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
   opts.is_beginning = Data::IsBeginning(true);
   sock_z2.ReceivePacket(
       SctpPacket::Builder(sock_z2.verification_tag(), options)
-          .Add(DataChunk(tsn, StreamID(1), SSN(0), PPID(53),
-                         std::vector<uint8_t>(kWatermarkLimit + 1), opts))
+          .Add(DataChunk(
+              tsn, StreamID(1), SSN(0), PPID(53),
+              rtc::CopyOnWriteBuffer(std::vector<uint8_t>(kWatermarkLimit + 1)),
+              opts))
           .Build());
 
   
@@ -1405,11 +1407,12 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
               AllOf(HasSackWithCumAckTsn(tsn), HasSackWithNoGapAckBlocks()));
 
   
-  sock_z2.ReceivePacket(SctpPacket::Builder(sock_z2.verification_tag(), options)
-                            .Add(DataChunk(AddTo(tsn, 1), StreamID(1), SSN(0),
-                                           PPID(53), std::vector<uint8_t>(1),
-                                           {}))
-                            .Build());
+  sock_z2.ReceivePacket(
+      SctpPacket::Builder(sock_z2.verification_tag(), options)
+          .Add(DataChunk(AddTo(tsn, 1), StreamID(1), SSN(0), PPID(53),
+                         rtc::CopyOnWriteBuffer(std::vector<uint8_t>(1)),
+                         {}))
+          .Build());
 
   
   cb_z2.AdvanceTime(options.rto_initial);
@@ -1420,23 +1423,12 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
       AllOf(HasSackWithCumAckTsn(AddTo(tsn, 1)), HasSackWithNoGapAckBlocks()));
 
   
-  sock_z2.ReceivePacket(SctpPacket::Builder(sock_z2.verification_tag(), options)
-                            .Add(DataChunk(AddTo(tsn, 3), StreamID(1), SSN(0),
-                                           PPID(53), std::vector<uint8_t>(1),
-                                           {}))
-                            .Build());
-
-  
-  EXPECT_THAT(
-      cb_z2.ConsumeSentPacket(),
-      AllOf(HasSackWithCumAckTsn(AddTo(tsn, 1)), HasSackWithNoGapAckBlocks()));
-
-  
-  sock_z2.ReceivePacket(SctpPacket::Builder(sock_z2.verification_tag(), options)
-                            .Add(DataChunk(AddTo(tsn, 4), StreamID(1), SSN(0),
-                                           PPID(53), std::vector<uint8_t>(1),
-                                           {}))
-                            .Build());
+  sock_z2.ReceivePacket(
+      SctpPacket::Builder(sock_z2.verification_tag(), options)
+          .Add(DataChunk(AddTo(tsn, 3), StreamID(1), SSN(0), PPID(53),
+                         rtc::CopyOnWriteBuffer(std::vector<uint8_t>(1)),
+                         {}))
+          .Build());
 
   
   EXPECT_THAT(
@@ -1446,9 +1438,23 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
   
   sock_z2.ReceivePacket(
       SctpPacket::Builder(sock_z2.verification_tag(), options)
-          .Add(DataChunk(AddTo(tsn, 2), StreamID(1), SSN(0), PPID(53),
-                         std::vector<uint8_t>(kRemainingSize),
+          .Add(DataChunk(AddTo(tsn, 4), StreamID(1), SSN(0), PPID(53),
+                         rtc::CopyOnWriteBuffer(std::vector<uint8_t>(1)),
                          {}))
+          .Build());
+
+  
+  EXPECT_THAT(
+      cb_z2.ConsumeSentPacket(),
+      AllOf(HasSackWithCumAckTsn(AddTo(tsn, 1)), HasSackWithNoGapAckBlocks()));
+
+  
+  sock_z2.ReceivePacket(
+      SctpPacket::Builder(sock_z2.verification_tag(), options)
+          .Add(DataChunk(
+              AddTo(tsn, 2), StreamID(1), SSN(0), PPID(53),
+              rtc::CopyOnWriteBuffer(std::vector<uint8_t>(kRemainingSize)),
+              {}))
           .Build());
 
   
@@ -1465,9 +1471,10 @@ TEST_F(DcSctpSocketTest, PassingHighWatermarkWillOnlyAcceptCumAckTsn) {
   
   sock_z2.ReceivePacket(
       SctpPacket::Builder(sock_z2.verification_tag(), options)
-          .Add(DataChunk(AddTo(tsn, 3), StreamID(1), SSN(0), PPID(53),
-                         std::vector<uint8_t>(kSmallMessageSize),
-                         {}))
+          .Add(DataChunk(
+              AddTo(tsn, 3), StreamID(1), SSN(0), PPID(53),
+              rtc::CopyOnWriteBuffer(std::vector<uint8_t>(kSmallMessageSize)),
+              {}))
           .Build());
 }
 
