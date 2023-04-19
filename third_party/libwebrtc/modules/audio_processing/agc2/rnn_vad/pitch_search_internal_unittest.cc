@@ -63,12 +63,17 @@ TEST(RnnVadTest, ComputePitchPeriod12kHzBitExactness) {
 
 TEST(RnnVadTest, ComputePitchPeriod48kHzBitExactness) {
   PitchTestData test_data;
+  std::vector<float> y_energy(kRefineNumLags24kHz);
+  rtc::ArrayView<float, kRefineNumLags24kHz> y_energy_view(y_energy.data(),
+                                                           kRefineNumLags24kHz);
+  ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
+                                         y_energy_view);
   
   
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(),
+  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
                                     {280, 284}),
             560);
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(),
+  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
                                     {260, 284}),
             568);
 }
@@ -88,9 +93,14 @@ class PitchCandidatesParametrization
 TEST_P(PitchCandidatesParametrization,
        ComputePitchPeriod48kHzOrderDoesNotMatter) {
   PitchTestData test_data;
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(),
+  std::vector<float> y_energy(kRefineNumLags24kHz);
+  rtc::ArrayView<float, kRefineNumLags24kHz> y_energy_view(y_energy.data(),
+                                                           kRefineNumLags24kHz);
+  ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
+                                         y_energy_view);
+  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
                                     GetPitchCandidates()),
-            ComputePitchPeriod48kHz(test_data.GetPitchBufView(),
+            ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
                                     GetSwappedPitchCandidates()));
 }
 
@@ -118,10 +128,15 @@ class ExtendedPitchPeriodSearchParametrizaion
 TEST_P(ExtendedPitchPeriodSearchParametrizaion,
        PeriodBitExactnessGainWithinTolerance) {
   PitchTestData test_data;
+  std::vector<float> y_energy(kMaxPitch24kHz + 1);
+  rtc::ArrayView<float, kMaxPitch24kHz + 1> y_energy_view(y_energy.data(),
+                                                          kMaxPitch24kHz + 1);
+  ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
+                                         y_energy_view);
   
   
   const auto computed_output = ComputeExtendedPitchPeriod48kHz(
-      test_data.GetPitchBufView(), GetInitialPitchPeriod(),
+      test_data.GetPitchBufView(), y_energy_view, GetInitialPitchPeriod(),
       {GetLastPitchPeriod(), GetLastPitchStrength()});
   EXPECT_EQ(GetExpectedPitchPeriod(), computed_output.period);
   EXPECT_NEAR(GetExpectedPitchStrength(), computed_output.strength, 1e-6f);
