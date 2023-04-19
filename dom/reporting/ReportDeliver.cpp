@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/JSONStringWriteFuncs.h"
+#include "mozilla/JSONWriter.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/EndpointForReportChild.h"
 #include "mozilla/dom/Fetch.h"
@@ -94,16 +94,24 @@ class ReportFetchHandler final : public PromiseNativeHandler {
 
 NS_IMPL_ISUPPORTS0(ReportFetchHandler)
 
+struct StringWriteFunc final : public JSONWriteFunc {
+  nsACString&
+      mBuffer;  
+  explicit StringWriteFunc(nsACString& aBuffer) : mBuffer(aBuffer) {}
+
+  void Write(const Span<const char>& aStr) override { mBuffer.Append(aStr); }
+};
+
 class ReportJSONWriter final : public JSONWriter {
  public:
-  explicit ReportJSONWriter(JSONStringWriteFunc<nsAutoCString>& aOutput)
-      : JSONWriter(aOutput) {}
+  explicit ReportJSONWriter(nsACString& aOutput)
+      : JSONWriter(MakeUnique<StringWriteFunc>(aOutput)) {}
 
   void JSONProperty(const Span<const char>& aProperty,
                     const Span<const char>& aJSON) {
     Separator();
     PropertyNameAndColon(aProperty);
-    mWriter.Write(aJSON);
+    mWriter->Write(aJSON);
   }
 };
 
@@ -140,7 +148,7 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
   }
 
   
-  JSONStringWriteFunc<nsAutoCString> body;
+  nsAutoCString body;
   ReportJSONWriter w(body);
 
   w.StartArrayElement();
@@ -162,8 +170,7 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
 
   
   nsCOMPtr<nsIInputStream> streamBody;
-  nsresult rv =
-      NS_NewCStringInputStream(getter_AddRefs(streamBody), body.StringCRef());
+  nsresult rv = NS_NewCStringInputStream(getter_AddRefs(streamBody), body);
 
   
   IgnoredErrorResult error;
@@ -202,7 +209,7 @@ void SendReports(nsTArray<ReportDeliver::ReportData>& aReports,
   auto internalRequest = MakeSafeRefPtr<InternalRequest>(uriSpec, uriFragment);
 
   internalRequest->SetMethod("POST"_ns);
-  internalRequest->SetBody(streamBody, body.StringCRef().Length());
+  internalRequest->SetBody(streamBody, body.Length());
   internalRequest->SetHeaders(internalHeaders);
   internalRequest->SetSkipServiceWorker();
   
@@ -242,7 +249,7 @@ void ReportDeliver::Record(nsPIDOMWindowInner* aWindow, const nsAString& aType,
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aBody);
 
-  JSONStringWriteFunc<nsAutoCString> reportBodyJSON;
+  nsAutoCString reportBodyJSON;
   ReportJSONWriter w(reportBodyJSON);
 
   w.Start();
@@ -276,7 +283,7 @@ void ReportDeliver::Record(nsPIDOMWindowInner* aWindow, const nsAString& aType,
   data.mGroupName = aGroupName;
   data.mURL = aURL;
   data.mCreationTime = TimeStamp::Now();
-  data.mReportBodyJSON = std::move(reportBodyJSON).StringRRef();
+  data.mReportBodyJSON = reportBodyJSON;
   data.mPrincipal = principal;
   data.mFailures = 0;
 

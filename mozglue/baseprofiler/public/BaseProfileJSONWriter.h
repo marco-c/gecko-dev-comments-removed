@@ -52,7 +52,7 @@ class ChunkedJSONWriteFunc final : public JSONWriteFunc {
     return totalLen;
   }
 
-  void Write(const Span<const char>& aStr) final {
+  void Write(const Span<const char>& aStr) override {
     MOZ_ASSERT(mChunkPtr >= mChunkList.back().get() && mChunkPtr <= mChunkEnd);
     MOZ_ASSERT(mChunkEnd >= mChunkList.back().get() + mChunkLengths.back());
     MOZ_ASSERT(*mChunkPtr == '\0');
@@ -151,7 +151,7 @@ class ChunkedJSONWriteFunc final : public JSONWriteFunc {
 struct OStreamJSONWriteFunc final : public JSONWriteFunc {
   explicit OStreamJSONWriteFunc(std::ostream& aStream) : mStream(aStream) {}
 
-  void Write(const Span<const char>& aStr) final {
+  void Write(const Span<const char>& aStr) override {
     std::string_view sv(aStr.data(), aStr.size());
     mStream << sv;
   }
@@ -163,9 +163,6 @@ class UniqueJSONStrings;
 
 class SpliceableJSONWriter : public JSONWriter {
  public:
-  explicit SpliceableJSONWriter(JSONWriteFunc& aWriter)
-      : JSONWriter(aWriter, JSONWriter::SingleLineStyle) {}
-
   explicit SpliceableJSONWriter(UniquePtr<JSONWriteFunc> aWriter)
       : JSONWriter(std::move(aWriter), JSONWriter::SingleLineStyle) {}
 
@@ -258,13 +255,13 @@ class SpliceableJSONWriter : public JSONWriter {
 
   void Splice(const Span<const char>& aStr) {
     Separator();
-    WriteFunc().Write(aStr);
+    WriteFunc()->Write(aStr);
     mNeedComma[mDepth] = true;
   }
 
   void Splice(const char* aStr, size_t aLen) {
     Separator();
-    WriteFunc().Write(Span<const char>(aStr, aLen));
+    WriteFunc()->Write(Span<const char>(aStr, aLen));
     mNeedComma[mDepth] = true;
   }
 
@@ -277,7 +274,7 @@ class SpliceableJSONWriter : public JSONWriter {
   void CopyAndSplice(const ChunkedJSONWriteFunc& aFunc) {
     Separator();
     for (size_t i = 0; i < aFunc.mChunkList.length(); i++) {
-      WriteFunc().Write(
+      WriteFunc()->Write(
           Span<const char>(aFunc.mChunkList[i].get(), aFunc.mChunkLengths[i]));
     }
     mNeedComma[mDepth] = true;
@@ -289,7 +286,7 @@ class SpliceableJSONWriter : public JSONWriter {
   virtual void TakeAndSplice(ChunkedJSONWriteFunc&& aFunc) {
     Separator();
     for (size_t i = 0; i < aFunc.mChunkList.length(); i++) {
-      WriteFunc().Write(
+      WriteFunc()->Write(
           Span<const char>(aFunc.mChunkList[i].get(), aFunc.mChunkLengths[i]));
     }
     aFunc.mChunkPtr = nullptr;
@@ -357,7 +354,7 @@ class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
     MOZ_ASSERT(!mTaken);
     
     
-    return static_cast<const ChunkedJSONWriteFunc&>(WriteFunc());
+    return *static_cast<const ChunkedJSONWriteFunc*>(WriteFunc());
   }
 
   
@@ -369,7 +366,7 @@ class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
 #endif  
     
     
-    return std::move(static_cast<ChunkedJSONWriteFunc&>(WriteFunc()));
+    return std::move(*static_cast<ChunkedJSONWriteFunc*>(WriteFunc()));
   }
 
   
@@ -378,7 +375,7 @@ class SpliceableChunkedJSONWriter final : public SpliceableJSONWriter {
     Separator();
     
     
-    static_cast<ChunkedJSONWriteFunc&>(WriteFunc()).Take(std::move(aFunc));
+    static_cast<ChunkedJSONWriteFunc*>(WriteFunc())->Take(std::move(aFunc));
     mNeedComma[mDepth] = true;
   }
 

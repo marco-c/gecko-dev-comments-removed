@@ -385,11 +385,11 @@ static void MakeFilename(const char* aPrefix, const nsAString& aIdentifier,
 
 
 
-class GZWriterWrapper final : public JSONWriteFunc {
+class GZWriterWrapper : public JSONWriteFunc {
  public:
   explicit GZWriterWrapper(nsGZFileWriter* aGZWriter) : mGZWriter(aGZWriter) {}
 
-  void Write(const Span<const char>& aStr) final {
+  void Write(const Span<const char>& aStr) override {
     
     
     Unused << mGZWriter->Write(aStr.data(), aStr.size());
@@ -471,7 +471,7 @@ class HandleReportAndFinishReportingCallbacks final
     
     
     
-    nsresult rv = static_cast<GZWriterWrapper&>(mWriter->WriteFunc()).Finish();
+    nsresult rv = static_cast<GZWriterWrapper*>(mWriter->WriteFunc())->Finish();
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!mFinishDumping) {
