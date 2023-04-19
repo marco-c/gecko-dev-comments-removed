@@ -17,7 +17,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/spatial_layer.h"
@@ -136,12 +135,6 @@ class RTC_EXPORT VideoCodec {
 
   VideoCodecMode mode;
   bool expect_encode_from_texture;
-
-  
-  
-  
-  
-  absl::optional<int> buffer_pool_size;
 
   
   
