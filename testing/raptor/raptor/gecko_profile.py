@@ -109,7 +109,9 @@ class GeckoProfile(object):
             raise
         except Exception:
             LOG.critical("Encountered an exception during profile symbolication")
-            raise
+            
+            
+            return profile
 
     def collect_profiles(self):
         """Returns all profiles files."""
