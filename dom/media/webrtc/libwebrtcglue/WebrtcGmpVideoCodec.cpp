@@ -949,8 +949,15 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
           ((aDecodedFrame->Height() + 1) / 2);
   int32_t size = length.value();
   MOZ_RELEASE_ASSERT(length.isValid() && size > 0);
-  auto buffer = MakeUniqueFallible<uint8_t[]>(size);
-  if (buffer) {
+
+  
+  
+  
+  
+  auto falliblebuffer = new (std::nothrow) uint8_t[size];
+  if (falliblebuffer) {
+    auto buffer = std::shared_ptr<uint8_t>(falliblebuffer);
+
     
     
     uint8_t* buffer_y = buffer.get();
@@ -971,13 +978,16 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
 
     MutexAutoLock lock(mCallbackMutex);
     if (mCallback) {
+      
+      
+      
       rtc::scoped_refptr<webrtc::I420BufferInterface> video_frame_buffer =
           webrtc::WrapI420Buffer(aDecodedFrame->Width(),
                                  aDecodedFrame->Height(), buffer_y,
                                  aDecodedFrame->Stride(kGMPYPlane), buffer_u,
                                  aDecodedFrame->Stride(kGMPUPlane), buffer_v,
                                  aDecodedFrame->Stride(kGMPVPlane),
-                                 [buf = buffer.release()] {});
+                                 [buffer] {});
 
       GMP_LOG_DEBUG("GMP Decoded: %" PRIu64, aDecodedFrame->Timestamp());
       auto videoFrame =
