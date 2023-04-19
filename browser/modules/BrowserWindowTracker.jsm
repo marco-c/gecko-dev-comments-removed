@@ -214,6 +214,17 @@ const BrowserWindowTracker = {
     return WindowHelper.addWindow(window);
   },
 
+  getBrowserById(browserId) {
+    for (let win of BrowserWindowTracker.orderedWindows) {
+      for (let tab of win.gBrowser.visibleTabs) {
+        if (tab.linkedPanel && tab.linkedBrowser.browserId === browserId) {
+          return tab.linkedBrowser;
+        }
+      }
+    }
+    return null;
+  },
+
   
   
   
