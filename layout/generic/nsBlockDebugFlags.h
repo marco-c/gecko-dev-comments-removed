@@ -9,11 +9,8 @@
 
 #undef NOISY_FIRST_LETTER  // enables debug output for first-letter specific
                            
-#undef NOISY_FLOAT  // enables debug output for float reflow (the in/out metrics
-                    
-#undef NOISY_FLOAT_CLEARING
-#undef NOISY_FINAL_SIZE  // enables debug output for desired width/height
-                         
+#undef NOISY_FINAL_SIZE    // enables debug output for desired width/height
+                           
 #undef NOISY_REMOVE_FRAME
 #undef NOISY_COMBINED_AREA  // enables debug output for combined area
                             
