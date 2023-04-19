@@ -55,12 +55,12 @@ const LAST_HOST = "devtools.toolbox.host";
 const PREVIOUS_HOST = "devtools.toolbox.previousHost";
 let ID_COUNTER = 1;
 
-function ToolboxHostManager(commands, hostType, hostOptions) {
-  this.commands = commands;
+function ToolboxHostManager(descriptor, hostType, hostOptions) {
+  this.descriptor = descriptor;
 
   
   
-  this.currentTab = this.commands.descriptorFront.localTab;
+  this.currentTab = this.descriptor.localTab;
 
   
   
@@ -107,7 +107,7 @@ ToolboxHostManager.prototype = {
       10
     );
     const toolbox = new Toolbox(
-      this.commands,
+      this.descriptor,
       toolId,
       this.host.type,
       this.host.frame.contentWindow,
@@ -207,7 +207,7 @@ ToolboxHostManager.prototype = {
     this.hostPerTab.clear();
     this.host = null;
     this.hostType = null;
-    this.commands = null;
+    this.descriptor = null;
   },
 
   

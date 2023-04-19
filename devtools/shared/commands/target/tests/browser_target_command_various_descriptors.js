@@ -91,6 +91,11 @@ async function testLocalTab() {
     "Descriptor front isTabDescriptor is correct"
   );
 
+  
+  
+  
+  descriptorFront.shouldCloseClient = false;
+
   const targetCommand = commands.targetCommand;
   await targetCommand.startListening();
 
@@ -118,9 +123,9 @@ async function testRemoteTab() {
   );
 
   const tab = await addTab(TEST_URL);
-  const commands = await CommandsFactory.forRemoteTab(
-    tab.linkedBrowser.browserId
-  );
+  const commands = await CommandsFactory.forRemoteTabInTest({
+    browserId: tab.linkedBrowser.browserId,
+  });
   const { descriptorFront } = commands;
   is(
     descriptorFront.descriptorType,

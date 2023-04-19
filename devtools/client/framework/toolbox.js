@@ -46,6 +46,10 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
+const {
+  createCommandsDictionary,
+} = require("resource://devtools/shared/commands/index.js");
+
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/shared/loader/browser-loader.js"
 );
@@ -229,7 +233,7 @@ const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
 function Toolbox(
-  commands,
+  descriptorFront,
   selectedTool,
   hostType,
   contentWindow,
@@ -241,12 +245,7 @@ function Toolbox(
   this.selection = new Selection();
   this.telemetry = new Telemetry();
 
-  
-  
-  
-  
-  this.commands = commands;
-  this._descriptorFront = commands.descriptorFront;
+  this.descriptorFront = descriptorFront;
 
   
   
@@ -774,7 +773,7 @@ Toolbox.prototype = {
     if (
       targetFront.targetForm.isPopup &&
       !targetFront.isTopLevel &&
-      this._descriptorFront.isLocalTab
+      this.descriptorFront.isLocalTab
     ) {
       await this.switchHostToTab(targetFront.targetForm.browsingContextID);
     }
@@ -857,6 +856,13 @@ Toolbox.prototype = {
           this._URL
         );
       });
+
+      
+      
+      
+      
+      
+      this.commands = await createCommandsDictionary(this.descriptorFront);
 
       this.commands.targetCommand.on(
         "target-thread-wrong-order-on-resume",
@@ -1344,7 +1350,7 @@ Toolbox.prototype = {
     return {
       connectionType,
       runtimeInfo,
-      descriptorType: this._descriptorFront.descriptorType,
+      descriptorType: this.descriptorFront.descriptorType,
     };
   },
 
@@ -1830,7 +1836,7 @@ Toolbox.prototype = {
 
 
   _buildDockOptions() {
-    if (!this._descriptorFront.isLocalTab) {
+    if (!this.descriptorFront.isLocalTab) {
       this.component.setDockOptionsEnabled(false);
       this.component.setCanCloseToolbox(false);
       return;
@@ -1894,7 +1900,7 @@ Toolbox.prototype = {
     
     if (
       this.isBrowserToolbox ||
-      this._descriptorFront.isWebExtensionDescriptor
+      this.descriptorFront.isWebExtensionDescriptor
     ) {
       disableAutohide = await this._isDisableAutohideEnabled();
     }
@@ -1911,7 +1917,7 @@ Toolbox.prototype = {
       this.component.setPseudoLocale(pseudoLocale);
     }
     if (
-      this._descriptorFront.isWebExtensionDescriptor &&
+      this.descriptorFront.isWebExtensionDescriptor &&
       this.hostType === Toolbox.HostType.WINDOW
     ) {
       const alwaysOnTop = Services.prefs.getBoolPref(
@@ -3368,7 +3374,7 @@ Toolbox.prototype = {
 
     if (
       this.isBrowserToolbox ||
-      this._descriptorFront.isWebExtensionDescriptor
+      this.descriptorFront.isWebExtensionDescriptor
     ) {
       this.component.setDisableAutohide(toggledValue);
     }
@@ -3389,7 +3395,7 @@ Toolbox.prototype = {
     );
     Services.prefs.setBoolPref(DEVTOOLS_ALWAYS_ON_TOP, !currentValue);
 
-    const addonId = this._descriptorFront.id;
+    const addonId = this.descriptorFront.id;
     await this.destroy();
     gDevTools.showToolboxForWebExtension(addonId);
   },
@@ -3397,7 +3403,7 @@ Toolbox.prototype = {
   async _isDisableAutohideEnabled() {
     if (
       !this.isBrowserToolbox &&
-      !this._descriptorFront.isWebExtensionDescriptor
+      !this.descriptorFront.isWebExtensionDescriptor
     ) {
       return false;
     }
@@ -3627,7 +3633,7 @@ Toolbox.prototype = {
 
 
   switchHost(hostType) {
-    if (hostType == this.hostType || !this._descriptorFront.isLocalTab) {
+    if (hostType == this.hostType || !this.descriptorFront.isLocalTab) {
       return null;
     }
 
@@ -4254,8 +4260,8 @@ Toolbox.prototype = {
             
             
             
-            
-            return this.commands.destroy();
+            this.commands.targetCommand.destroy();
+            return this.descriptorFront.destroy();
           }, console.error)
           .then(() => {
             this.emit("destroyed");
@@ -4265,7 +4271,7 @@ Toolbox.prototype = {
             this._host = null;
             this._win = null;
             this._toolPanels.clear();
-            this._descriptorFront = null;
+            this.descriptorFront = null;
             this.resourceCommand = null;
             this.commands = null;
 
@@ -4684,7 +4690,7 @@ Toolbox.prototype = {
     
     if (
       this.hostType === Toolbox.HostType.PAGE ||
-      this._descriptorFront.isWebExtensionDescriptor
+      this.descriptorFront.isWebExtensionDescriptor
     ) {
       
       
