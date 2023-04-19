@@ -92,6 +92,11 @@ definite_length_decoder(const unsigned char* buf,
         }
     }
 
+    if ((tag & SEC_ASN1_TAGNUM_MASK) == SEC_ASN1_NULL && data_length != 0) {
+        
+        return NULL;
+    }
+
     if (data_length > (buf_length - used_length)) {
         
         return NULL;

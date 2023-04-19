@@ -57,10 +57,23 @@ extern char *PK11URI_FormatURI(PLArenaPool *arena, PK11URI *uri);
 extern void PK11URI_DestroyURI(PK11URI *uri);
 
 
+
+
+
+
 extern const char *PK11URI_GetPathAttribute(PK11URI *uri, const char *name);
 
 
+
+
+
 extern const char *PK11URI_GetQueryAttribute(PK11URI *uri, const char *name);
+
+
+extern const SECItem *PK11URI_GetPathAttributeItem(PK11URI *uri, const char *name);
+
+
+extern const SECItem *PK11URI_GetQueryAttributeItem(PK11URI *uri, const char *name);
 
 SEC_END_PROTOS
 
