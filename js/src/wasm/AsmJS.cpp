@@ -7075,9 +7075,7 @@ bool js::InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp) {
 
 
 
-static bool NoExceptionPending(JSContext* cx) {
-  return cx->isHelperThreadContext() || !cx->isExceptionPending();
-}
+static bool NoExceptionPending(ErrorContext* ec) { return !ec->hadErrors(); }
 
 static bool SuccessfulValidation(frontend::ParserBase& parser,
                                  unsigned compilationTime) {
@@ -7166,7 +7164,7 @@ static bool DoCompileAsmJS(JSContext* cx, ErrorContext* ec,
 
   
   if (!EstablishPreconditions(cx, parser)) {
-    return NoExceptionPending(cx);
+    return NoExceptionPending(ec);
   }
 
   
@@ -7175,7 +7173,7 @@ static bool DoCompileAsmJS(JSContext* cx, ErrorContext* ec,
   SharedModule module =
       CheckModule(cx, ec, stackLimit, parserAtoms, parser, stmtList, &time);
   if (!module) {
-    return NoExceptionPending(cx);
+    return NoExceptionPending(ec);
   }
 
   
@@ -7183,14 +7181,14 @@ static bool DoCompileAsmJS(JSContext* cx, ErrorContext* ec,
   FunctionBox* funbox = parser.pc_->functionBox();
   MOZ_ASSERT(funbox->isInterpreted());
   if (!funbox->setAsmJSModule(module)) {
-    return NoExceptionPending(cx);
+    return NoExceptionPending(ec);
   }
 
   
   
   *validated = true;
   SuccessfulValidation(parser, time);
-  return NoExceptionPending(cx);
+  return NoExceptionPending(ec);
 }
 
 bool js::CompileAsmJS(JSContext* cx, ErrorContext* ec,
