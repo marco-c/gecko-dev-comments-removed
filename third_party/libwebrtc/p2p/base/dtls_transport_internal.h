@@ -132,9 +132,27 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
     dtls_state_callback_list_.RemoveReceivers(id);
   }
 
+  
+  template <typename F>
+  void SubscribeDtlsTransportState(F&& callback) {
+    dtls_transport_state_callback_list_.AddReceiver(std::forward<F>(callback));
+  }
+
+  template <typename F>
+  void SubscribeDtlsTransportState(const void* id, F&& callback) {
+    dtls_transport_state_callback_list_.AddReceiver(id,
+                                                    std::forward<F>(callback));
+  }
+  
+  void UnsubscribeDtlsTransportState(const void* id) {
+    dtls_transport_state_callback_list_.RemoveReceivers(id);
+  }
+
   void SendDtlsState(DtlsTransportInternal* transport,
                      DtlsTransportState state) {
     dtls_state_callback_list_.Send(transport, state);
+    dtls_transport_state_callback_list_.Send(transport,
+                                             ConvertDtlsTransportState(state));
   }
 
   
@@ -155,8 +173,12 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportInternal);
   webrtc::CallbackList<const rtc::SSLHandshakeError>
       dtls_handshake_error_callback_list_;
+  
+  
   webrtc::CallbackList<DtlsTransportInternal*, const DtlsTransportState>
       dtls_state_callback_list_;
+  webrtc::CallbackList<DtlsTransportInternal*, const webrtc::DtlsTransportState>
+      dtls_transport_state_callback_list_;
 };
 
 }  
