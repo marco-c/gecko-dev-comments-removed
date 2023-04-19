@@ -158,6 +158,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+
+
+
   virtual ENameValueFlag Name(nsString& aName) const override;
 
   
