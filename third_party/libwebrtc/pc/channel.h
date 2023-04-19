@@ -192,10 +192,6 @@ class BaseChannel : public ChannelInterface,
   }
 
  protected:
-  bool was_ever_writable() const {
-    RTC_DCHECK_RUN_ON(worker_thread());
-    return was_ever_writable_;
-  }
   void set_local_content_direction(webrtc::RtpTransceiverDirection direction) {
     RTC_DCHECK_RUN_ON(worker_thread());
     local_content_direction_ = direction;
@@ -358,13 +354,10 @@ class BaseChannel : public ChannelInterface,
   bool payload_type_demuxing_enabled_ RTC_GUARDED_BY(worker_thread()) = true;
   std::vector<StreamParams> local_streams_ RTC_GUARDED_BY(worker_thread());
   std::vector<StreamParams> remote_streams_ RTC_GUARDED_BY(worker_thread());
-  
-  
-  
-  webrtc::RtpTransceiverDirection local_content_direction_ =
-      webrtc::RtpTransceiverDirection::kInactive;
-  webrtc::RtpTransceiverDirection remote_content_direction_ =
-      webrtc::RtpTransceiverDirection::kInactive;
+  webrtc::RtpTransceiverDirection local_content_direction_ RTC_GUARDED_BY(
+      worker_thread()) = webrtc::RtpTransceiverDirection::kInactive;
+  webrtc::RtpTransceiverDirection remote_content_direction_ RTC_GUARDED_BY(
+      worker_thread()) = webrtc::RtpTransceiverDirection::kInactive;
 
   
   std::set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
