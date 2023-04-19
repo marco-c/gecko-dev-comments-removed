@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+#include "rtc_base/callback_list.h"
+
+namespace webrtc {
+namespace callback_list_impl {
+
+CallbackListReceivers::CallbackListReceivers() = default;
+CallbackListReceivers::~CallbackListReceivers() = default;
+
+void CallbackListReceivers::Foreach(
+    rtc::FunctionView<void(UntypedFunction&)> fv) {
+  for (auto& r : receivers_) {
+    fv(r);
+  }
+}
+
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::TrivialUntypedFunctionArgs<1>);
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::TrivialUntypedFunctionArgs<2>);
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::TrivialUntypedFunctionArgs<3>);
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::TrivialUntypedFunctionArgs<4>);
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::NontrivialUntypedFunctionArgs);
+template void CallbackListReceivers::AddReceiver(
+    UntypedFunction::FunctionPointerUntypedFunctionArgs);
+
+}  
+}  

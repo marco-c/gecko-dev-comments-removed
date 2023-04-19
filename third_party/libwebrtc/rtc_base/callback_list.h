@@ -8,8 +8,8 @@
 
 
 
-#ifndef RTC_BASE_ROBO_CALLER_H_
-#define RTC_BASE_ROBO_CALLER_H_
+#ifndef RTC_BASE_CALLBACK_LIST_H_
+#define RTC_BASE_CALLBACK_LIST_H_
 
 #include <utility>
 #include <vector>
@@ -20,16 +20,16 @@
 #include "rtc_base/untyped_function.h"
 
 namespace webrtc {
-namespace robo_caller_impl {
+namespace callback_list_impl {
 
-class RoboCallerReceivers {
+class CallbackListReceivers {
  public:
-  RoboCallerReceivers();
-  RoboCallerReceivers(const RoboCallerReceivers&) = delete;
-  RoboCallerReceivers& operator=(const RoboCallerReceivers&) = delete;
-  RoboCallerReceivers(RoboCallerReceivers&&) = delete;
-  RoboCallerReceivers& operator=(RoboCallerReceivers&&) = delete;
-  ~RoboCallerReceivers();
+  CallbackListReceivers();
+  CallbackListReceivers(const CallbackListReceivers&) = delete;
+  CallbackListReceivers& operator=(const CallbackListReceivers&) = delete;
+  CallbackListReceivers(CallbackListReceivers&&) = delete;
+  CallbackListReceivers& operator=(CallbackListReceivers&&) = delete;
+  ~CallbackListReceivers();
 
   template <typename UntypedFunctionArgsT>
   RTC_NO_INLINE void AddReceiver(UntypedFunctionArgsT args) {
@@ -42,17 +42,17 @@ class RoboCallerReceivers {
   std::vector<UntypedFunction> receivers_;
 };
 
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::TrivialUntypedFunctionArgs<1>);
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::TrivialUntypedFunctionArgs<2>);
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::TrivialUntypedFunctionArgs<3>);
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::TrivialUntypedFunctionArgs<4>);
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::NontrivialUntypedFunctionArgs);
-extern template void RoboCallerReceivers::AddReceiver(
+extern template void CallbackListReceivers::AddReceiver(
     UntypedFunction::FunctionPointerUntypedFunctionArgs);
 
 }  
@@ -68,13 +68,13 @@ extern template void RoboCallerReceivers::AddReceiver(
 
 
 template <typename... ArgT>
-class RoboCaller {
+class CallbackList {
  public:
-  RoboCaller() = default;
-  RoboCaller(const RoboCaller&) = delete;
-  RoboCaller& operator=(const RoboCaller&) = delete;
-  RoboCaller(RoboCaller&&) = delete;
-  RoboCaller& operator=(RoboCaller&&) = delete;
+  CallbackList() = default;
+  CallbackList(const CallbackList&) = delete;
+  CallbackList& operator=(const CallbackList&) = delete;
+  CallbackList(CallbackList&&) = delete;
+  CallbackList& operator=(CallbackList&&) = delete;
 
   
   
@@ -94,7 +94,7 @@ class RoboCaller {
   }
 
  private:
-  robo_caller_impl::RoboCallerReceivers receivers_;
+  callback_list_impl::CallbackListReceivers receivers_;
 };
 
 }  
