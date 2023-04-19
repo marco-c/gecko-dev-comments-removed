@@ -10,7 +10,6 @@ pub enum OriginTrial {
     
     TestTrial = 1,
     OffscreenCanvas = 2,
-    CoepCredentialless = 3,
 
     MAX,
 }
@@ -20,7 +19,6 @@ impl OriginTrial {
         Some(match s {
             "TestTrial" => Self::TestTrial,
             "OffscreenCanvas" => Self::OffscreenCanvas,
-            "CoepCredentialless" => Self::CoepCredentialless,
             _ => return None,
         })
     }
