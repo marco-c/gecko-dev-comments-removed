@@ -105,7 +105,7 @@ class ReassemblyQueue {
   size_t queued_bytes() const { return queued_bytes_; }
 
   
-  size_t remaining_bytes() const { return max_size_bytes_ - queued_bytes_; }
+  size_t remaining_bytes() const { return watermark_bytes_ - queued_bytes_; }
 
   
   
