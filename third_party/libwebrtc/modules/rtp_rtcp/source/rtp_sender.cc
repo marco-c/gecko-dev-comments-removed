@@ -47,6 +47,9 @@ constexpr uint32_t kTimestampTicksPerMs = 90;
 
 constexpr int kMinPayloadPaddingBytes = 50;
 
+
+constexpr size_t kRedForFecHeaderLength = 1;
+
 template <typename Extension>
 constexpr RtpExtensionSize CreateExtensionSize() {
   return {Extension::kId, Extension::kValueSizeBytes};
@@ -615,16 +618,40 @@ bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
   RTC_DCHECK(packet->Ssrc() == ssrc_);
   packet->SetSequenceNumber(sequence_number_++);
 
-  
-  
-  last_packet_marker_bit_ = packet->Marker();
-  
-  last_payload_type_ = packet->PayloadType();
-  
-  last_rtp_timestamp_ = packet->Timestamp();
-  last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
-  capture_time_ms_ = packet->capture_time_ms();
+  UpdateLastPacketState(*packet);
   return true;
+}
+
+bool RTPSender::AssignSequenceNumbersAndStoreLastPacketState(
+    rtc::ArrayView<std::unique_ptr<RtpPacketToSend>> packets) {
+  RTC_DCHECK(!packets.empty());
+  MutexLock lock(&send_mutex_);
+  if (!sending_media_)
+    return false;
+  for (auto& packet : packets) {
+    RTC_DCHECK_EQ(packet->Ssrc(), ssrc_);
+    packet->SetSequenceNumber(sequence_number_++);
+  }
+  UpdateLastPacketState(**packets.rbegin());
+  return true;
+}
+
+void RTPSender::UpdateLastPacketState(const RtpPacketToSend& packet) {
+  
+  
+  last_packet_marker_bit_ = packet.Marker();
+  
+  
+  if (packet.is_red()) {
+    RTC_DCHECK_GE(packet.payload_size(), kRedForFecHeaderLength);
+    last_payload_type_ = packet.PayloadBuffer()[0];
+  } else {
+    last_payload_type_ = packet.PayloadType();
+  }
+  
+  last_rtp_timestamp_ = packet.Timestamp();
+  last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
+  capture_time_ms_ = packet.capture_time_ms();
 }
 
 void RTPSender::SetSendingMediaStatus(bool enabled) {
