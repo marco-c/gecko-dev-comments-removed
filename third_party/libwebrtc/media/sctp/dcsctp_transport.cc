@@ -406,9 +406,18 @@ void DcSctpTransport::OnMessageReceived(dcsctp::DcSctpMessage message) {
 
 void DcSctpTransport::OnError(dcsctp::ErrorKind error,
                               absl::string_view message) {
-  RTC_LOG(LS_ERROR) << debug_name_
-                    << "->OnError(error=" << dcsctp::ToString(error)
-                    << ", message=" << message << ").";
+  if (error == dcsctp::ErrorKind::kResourceExhaustion) {
+    
+    
+    
+    RTC_LOG(LS_VERBOSE) << debug_name_
+                        << "->OnError(error=" << dcsctp::ToString(error)
+                        << ", message=" << message << ").";
+  } else {
+    RTC_LOG(LS_ERROR) << debug_name_
+                      << "->OnError(error=" << dcsctp::ToString(error)
+                      << ", message=" << message << ").";
+  }
 }
 
 void DcSctpTransport::OnAborted(dcsctp::ErrorKind error,
