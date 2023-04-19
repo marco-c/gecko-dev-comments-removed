@@ -80,6 +80,10 @@ struct NativeIterator {
 
     
     
+    static constexpr uint32_t IsEmptyIteratorSingleton = 0x8;
+
+    
+    
     
     
     static constexpr uint32_t NotReusable =
@@ -87,7 +91,7 @@ struct NativeIterator {
   };
 
  private:
-  static constexpr uint32_t FlagsBits = 3;
+  static constexpr uint32_t FlagsBits = 4;
   static constexpr uint32_t FlagsMask = (1 << FlagsBits) - 1;
 
  public:
@@ -280,12 +284,20 @@ struct NativeIterator {
   
   bool isEmptyIteratorSingleton() const {
     
-    bool res = objectBeingIterated() == nullptr;
-    MOZ_ASSERT_IF(res, flags() == Flags::Initialized);
+    bool res = flags() & Flags::IsEmptyIteratorSingleton;
+    MOZ_ASSERT_IF(
+        res, flags() == (Flags::Initialized | Flags::IsEmptyIteratorSingleton));
+    MOZ_ASSERT_IF(res, !objectBeingIterated_);
     MOZ_ASSERT_IF(res, initialPropertyCount() == 0);
     MOZ_ASSERT_IF(res, shapeCount() == 0);
     MOZ_ASSERT_IF(res, isUnlinked());
     return res;
+  }
+  void markEmptyIteratorSingleton() {
+    flagsAndCount_ |= Flags::IsEmptyIteratorSingleton;
+
+    
+    MOZ_ASSERT(isEmptyIteratorSingleton());
   }
 
   bool isActive() const {
