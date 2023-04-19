@@ -198,31 +198,22 @@ TEST_P(AudioEncoderOpusTest,
   
   const int kMinBitrateBps = 6000;
   const int kMaxBitrateBps = 510000;
-  const int kOverheadBytesPerPacket = 64;
-  states->encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
-  const int kOverheadBps = 8 * kOverheadBytesPerPacket *
-                           rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
   
-  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps + kOverheadBps - 1,
-                                             absl::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1, absl::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   
-  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + kOverheadBps + 1,
-                                             absl::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + 1, absl::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   
-  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps + kOverheadBps,
-                                             absl::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps, absl::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   
-  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + kOverheadBps,
-                                             absl::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps, absl::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   
-  for (int rate = kMinBitrateBps + kOverheadBps; rate <= 32000 + kOverheadBps;
-       rate += 1000) {
+  for (int rate = kMinBitrateBps; rate <= 32000; rate += 1000) {
     states->encoder->OnReceivedUplinkBandwidth(rate, absl::nullopt);
-    EXPECT_EQ(rate - kOverheadBps, states->encoder->GetTargetBitrate());
+    EXPECT_EQ(rate, states->encoder->GetTargetBitrate());
   }
 }
 
@@ -383,6 +374,53 @@ TEST_P(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
   
   
   EXPECT_EQ(kDefaultOpusRate, states->encoder->GetTargetBitrate());
+}
+
+TEST_P(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+
+  auto states = CreateCodec(sample_rate_hz_, 2);
+
+  constexpr size_t kOverheadBytesPerPacket = 64;
+  states->encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
+
+  constexpr int kTargetBitrateBps = 40000;
+  states->encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps, absl::nullopt);
+
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
+  EXPECT_EQ(kTargetBitrateBps -
+                8 * static_cast<int>(kOverheadBytesPerPacket) * packet_rate,
+            states->encoder->GetTargetBitrate());
+}
+
+TEST_P(AudioEncoderOpusTest, BitrateBounded) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+
+  constexpr int kMinBitrateBps = 6000;
+  constexpr int kMaxBitrateBps = 510000;
+
+  auto states = CreateCodec(sample_rate_hz_, 2);
+
+  constexpr size_t kOverheadBytesPerPacket = 64;
+  states->encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
+
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
+
+  
+  
+  int target_bitrate =
+      kOverheadBytesPerPacket * 8 * packet_rate + kMinBitrateBps - 1;
+  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, absl::nullopt);
+  EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
+
+  
+  
+  target_bitrate =
+      kOverheadBytesPerPacket * 8 * packet_rate + kMaxBitrateBps + 1;
+  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, absl::nullopt);
+  EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
 }
 
 
