@@ -188,19 +188,6 @@ public class ContentBlocking {
 
 
 
-      @Deprecated
-      @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
-      public @NonNull Builder cookieLifetime(final @CBCookieLifetime int lifetime) {
-        return this;
-      }
-
-      
-
-
-
-
-
-
 
       public @NonNull Builder enhancedTrackingProtectionLevel(final @CBEtpLevel int level) {
         getSettings().setEnhancedTrackingProtectionLevel(level);
@@ -565,32 +552,6 @@ public class ContentBlocking {
 
     public @NonNull Settings setCookieBehaviorPrivateMode(final @CBCookieBehavior int behavior) {
       mCookieBehaviorPrivateMode.commit(behavior);
-      return this;
-    }
-
-    
-
-
-
-
-
-    @Deprecated
-    @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
-    @SuppressLint("WrongConstant")
-    public @CBCookieLifetime int getCookieLifetime() {
-      return 0;
-    }
-
-    
-
-
-
-
-
-
-    @Deprecated
-    @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
-    public @NonNull Settings setCookieLifetime(final @CBCookieLifetime int lifetime) {
       return this;
     }
 
@@ -1248,30 +1209,6 @@ public class ContentBlocking {
     CookieBehavior.ACCEPT_NON_TRACKERS
   })
   public @interface CBCookieBehavior {}
-
-  
-  
-  @Deprecated
-  @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
-  public static class CookieLifetime {
-    
-    public static final int NORMAL = 0;
-
-    
-    public static final int RUNTIME = 2;
-
-    
-    public static final int DAYS = 3;
-
-    protected CookieLifetime() {}
-  }
-
-  
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({CookieLifetime.NORMAL, CookieLifetime.RUNTIME, CookieLifetime.DAYS})
-  @Deprecated
-  @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
-  public @interface CBCookieLifetime {}
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpLevel.NONE, EtpLevel.DEFAULT, EtpLevel.STRICT})
