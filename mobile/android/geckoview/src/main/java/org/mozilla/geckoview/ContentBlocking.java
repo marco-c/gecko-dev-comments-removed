@@ -187,8 +187,10 @@ public class ContentBlocking {
 
 
 
+
+      @Deprecated
+      @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
       public @NonNull Builder cookieLifetime(final @CBCookieLifetime int lifetime) {
-        getSettings().setCookieLifetime(lifetime);
         return this;
       }
 
@@ -267,8 +269,6 @@ public class ContentBlocking {
      final Pref<Integer> mCookieBehaviorPrivateMode =
         new Pref<Integer>(
             "network.cookie.cookieBehavior.pbmode", CookieBehavior.ACCEPT_NON_TRACKERS);
-     final Pref<Integer> mCookieLifetime =
-        new Pref<Integer>("network.cookie.lifetimePolicy", CookieLifetime.NORMAL);
      final Pref<Boolean> mCookiePurging =
         new Pref<Boolean>("privacy.purge_trackers.enabled", false);
 
@@ -573,9 +573,12 @@ public class ContentBlocking {
 
 
 
+
+    @Deprecated
+    @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
     @SuppressLint("WrongConstant")
     public @CBCookieLifetime int getCookieLifetime() {
-      return mCookieLifetime.get();
+      return 0;
     }
 
     
@@ -584,8 +587,10 @@ public class ContentBlocking {
 
 
 
+
+    @Deprecated
+    @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
     public @NonNull Settings setCookieLifetime(final @CBCookieLifetime int lifetime) {
-      mCookieLifetime.commit(lifetime);
       return this;
     }
 
@@ -1245,6 +1250,9 @@ public class ContentBlocking {
   public @interface CBCookieBehavior {}
 
   
+  
+  @Deprecated
+  @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
   public static class CookieLifetime {
     
     public static final int NORMAL = 0;
@@ -1258,8 +1266,11 @@ public class ContentBlocking {
     protected CookieLifetime() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({CookieLifetime.NORMAL, CookieLifetime.RUNTIME, CookieLifetime.DAYS})
+  @Deprecated
+  @DeprecationSchedule(id = "cookie-lifetime-policy", version = 106)
   public @interface CBCookieLifetime {}
 
   @Retention(RetentionPolicy.SOURCE)

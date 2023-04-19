@@ -38,12 +38,6 @@ function log(msg) {
 
 var gPendingSanitizationSerial = 0;
 
-
-
-
-
-const PREF_COOKIE_LIFETIME = "network.cookie.lifetimePolicy";
-
 var Sanitizer = {
   
 
@@ -799,9 +793,6 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
 async function sanitizeOnShutdown(progress) {
   log("Sanitizing on shutdown");
   progress.sanitizationPrefs = {
-    network_cookie_lifetimePolicy: Services.prefs.getIntPref(
-      "network.cookie.lifetimePolicy"
-    ),
     privacy_sanitize_sanitizeOnShutdown: Services.prefs.getBoolPref(
       "privacy.sanitize.sanitizeOnShutdown"
     ),
@@ -860,52 +851,9 @@ async function sanitizeOnShutdown(progress) {
     Services.prefs.savePrefFile(null);
   }
 
+  
+  
   let principalsCollector = new lazy.PrincipalsCollector();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (
-    Services.prefs.getIntPref(
-      PREF_COOKIE_LIFETIME,
-      Ci.nsICookieService.ACCEPT_NORMALLY
-    ) == Ci.nsICookieService.ACCEPT_SESSION
-  ) {
-    log("Session-only configuration detected");
-    progress.advancement = "session-only";
-
-    let principals = await principalsCollector.getAllPrincipals(progress);
-    await maybeSanitizeSessionPrincipals(
-      progress,
-      principals,
-      Ci.nsIClearDataService.CLEAR_ALL_CACHES |
-        Ci.nsIClearDataService.CLEAR_COOKIES |
-        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
-        Ci.nsIClearDataService.CLEAR_EME
-    );
-
-    progress.advancement = "done";
-    return;
-  }
 
   progress.advancement = "session-permission";
 

@@ -242,8 +242,6 @@ add_task(async function testExceptionsOnShutdown() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      
-      ["network.cookie.lifetimePolicy", Ci.nsICookieService.ACCEPT_NORMALLY],
       ["browser.sanitizer.loglevel", "All"],
       ["privacy.clearOnShutdown.offlineApps", true],
       ["privacy.sanitize.sanitizeOnShutdown", true],

@@ -3,6 +3,22 @@ const { SiteDataTestUtils } = ChromeUtils.import(
   "resource://testing-common/SiteDataTestUtils.jsm"
 );
 
+add_setup(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.sanitize.sanitizeOnShutdown", true],
+      ["privacy.clearOnShutdown.cookies", true],
+      ["privacy.clearOnShutdown.offlineApps", true],
+      ["privacy.clearOnShutdown.cache", false],
+      ["privacy.clearOnShutdown.sessions", false],
+      ["privacy.clearOnShutdown.history", false],
+      ["privacy.clearOnShutdown.formdata", false],
+      ["privacy.clearOnShutdown.downloads", false],
+      ["privacy.clearOnShutdown.siteSettings", false],
+      ["browser.sanitizer.loglevel", "All"],
+    ],
+  });
+});
 
 
 add_task(async function subDomains1() {
@@ -11,13 +27,6 @@ add_task(async function subDomains1() {
   
   await new Promise(resolve => {
     Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["network.cookie.lifetimePolicy", Ci.nsICookieService.ACCEPT_NORMALLY],
-      ["browser.sanitizer.loglevel", "All"],
-    ],
   });
 
   
@@ -86,13 +95,6 @@ add_task(async function subDomains2() {
     Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
   });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["network.cookie.lifetimePolicy", Ci.nsICookieService.ACCEPT_SESSION],
-      ["browser.sanitizer.loglevel", "All"],
-    ],
-  });
-
   
   let originA = "https://sub.mozilla.org";
   PermissionTestUtils.add(
@@ -154,13 +156,6 @@ add_task(async function subDomains3() {
   
   await new Promise(resolve => {
     Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["network.cookie.lifetimePolicy", Ci.nsICookieService.ACCEPT_SESSION],
-      ["browser.sanitizer.loglevel", "All"],
-    ],
   });
 
   
@@ -234,15 +229,6 @@ add_task(async function subDomains4() {
   
   await new Promise(resolve => {
     Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.sanitize.sanitizeOnShutdown", true],
-      ["privacy.clearOnShutdown.cookies", true],
-      ["privacy.clearOnShutdown.offlineApps", true],
-      ["browser.sanitizer.loglevel", "All"],
-    ],
   });
 
   
