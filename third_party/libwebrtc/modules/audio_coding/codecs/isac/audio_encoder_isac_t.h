@@ -93,7 +93,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
 
   
   const bool send_side_bwe_with_overhead_ =
-      !field_trial::IsDisabled("WebRTC-SendSideBwe-WithOverhead");
+      field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead");
 
   
   
