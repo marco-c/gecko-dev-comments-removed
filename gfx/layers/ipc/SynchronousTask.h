@@ -20,10 +20,21 @@ class MOZ_STACK_CLASS SynchronousTask {
   explicit SynchronousTask(const char* name)
       : mMonitor(name), mAutoEnter(mMonitor), mDone(false) {}
 
-  void Wait() {
-    while (!mDone) {
+  nsresult Wait(PRIntervalTime aInterval = PR_INTERVAL_NO_TIMEOUT) {
+    
+    
+    while (aInterval == PR_INTERVAL_NO_TIMEOUT && !mDone) {
       mMonitor.Wait();
     }
+
+    
+    
+    
+    if (!mDone) {
+      return mMonitor.Wait(aInterval);
+    }
+
+    return NS_OK;
   }
 
  private:
