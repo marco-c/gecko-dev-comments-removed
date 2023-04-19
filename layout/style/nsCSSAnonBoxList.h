@@ -127,11 +127,7 @@ CSS_ANON_BOX(viewportScroll, ":-moz-viewport-scroll")
 
 
 
-CSS_WRAPPER_ANON_BOX(anonymousFlexItem, ":-moz-anonymous-flex-item")
-
-
-
-CSS_WRAPPER_ANON_BOX(anonymousGridItem, ":-moz-anonymous-grid-item")
+CSS_WRAPPER_ANON_BOX(anonymousItem, ":-moz-anonymous-item")
 
 CSS_ANON_BOX(blockRubyContent, ":-moz-block-ruby-content")
 CSS_WRAPPER_ANON_BOX(ruby, ":-moz-ruby")
