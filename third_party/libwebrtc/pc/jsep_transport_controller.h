@@ -137,6 +137,9 @@ class JsepTransportController : public sigslot::has_slots<> {
     
     SctpTransportFactoryInterface* sctp_factory = nullptr;
     std::function<void(rtc::SSLHandshakeError)> on_dtls_handshake_error_;
+
+    
+    const webrtc::WebRtcKeyValueConfig* field_trials;
   };
 
   

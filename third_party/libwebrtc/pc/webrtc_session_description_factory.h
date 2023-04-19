@@ -79,8 +79,7 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
   
   
   WebRtcSessionDescriptionFactory(
-      rtc::Thread* signaling_thread,
-      cricket::ChannelManager* channel_manager,
+      ConnectionContext* context,
       const SdpStateProvider* sdp_info,
       const std::string& session_id,
       bool dtls_enabled,

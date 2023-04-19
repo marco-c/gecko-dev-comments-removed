@@ -451,6 +451,8 @@ class PeerConnection : public PeerConnectionInternal,
   }
   void RequestUsagePatternReportForTesting();
 
+  const WebRtcKeyValueConfig& trials() override { return context_->trials(); }
+
  protected:
   
   PeerConnection(rtc::scoped_refptr<ConnectionContext> context,
