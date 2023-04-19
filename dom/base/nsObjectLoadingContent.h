@@ -189,8 +189,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
       const mozilla::Maybe<mozilla::IntrinsicSize>& aIntrinsicSize,
       const mozilla::Maybe<mozilla::AspectRatio>& aIntrinsicRatio);
 
-  void SubdocumentImageLoadComplete(nsresult aResult);
-
  protected:
   
 
@@ -450,8 +448,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
   void NotifyStateChanged(ObjectType aOldType,
-                          mozilla::dom::ElementState aOldState, bool aNotify,
-                          bool aForceRestyle);
+                          mozilla::dom::ElementState aOldState, bool aNotify);
 
   
 
@@ -576,8 +573,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   
   bool mRewrittenYoutubeEmbed : 1;
-
-  bool mLoadingSyntheticDocument : 1;
 
   nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
   nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
