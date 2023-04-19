@@ -36,6 +36,36 @@ async function read_datagrams(reader, controller, N) {
   return receivedTokens;
 }
 
+
+async function write_numbers(writer, signal) {
+  let counter = 0;
+  const sentNumbers = [];
+  const aborted = new Promise((resolve) => {
+    signal.addEventListener('abort', resolve);
+  });
+  
+  while (true && counter < 256) {
+    await Promise.race([writer.ready, aborted])
+    if (signal.aborted) {
+      break;
+    }
+    sentNumbers.push(counter);
+    chunk = new Uint8Array(1);
+    chunk[0] = counter;
+    writer.write(chunk);
+    counter++;
+  }
+  return sentNumbers;
+}
+
+
+async function read_numbers_byob(reader, controller, N) {
+  let buffer = new ArrayBuffer(N);
+  buffer = await readInto(reader, buffer);
+  controller.abort();
+  return Array.from(new Uint8Array(buffer));
+}
+
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
@@ -58,6 +88,33 @@ promise_test(async t => {
   const subset = receivedTokens.every(token => sentTokens.includes(token));
   assert_true(subset);
 }, 'Datagrams are echoed successfully');
+
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  const writer = wt.datagrams.writable.getWriter();
+  const reader = wt.datagrams.readable.getReader({ mode: 'byob' });
+
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  
+  
+  const N = 5;
+  const [sentNumbers, receiveNumbers] = await Promise.all([
+    write_numbers(writer, signal),
+    read_numbers_byob(reader, controller, N)
+  ]);
+
+  
+  assert_equals((new Set(receiveNumbers)).size, N);
+
+  
+  const subset = receiveNumbers.every(token => sentNumbers.includes(token));
+  assert_true(subset);
+}, 'Successfully reading datagrams with BYOB reader.');
 
 promise_test(async t => {
   
@@ -173,4 +230,3 @@ promise_test(async t => {
   
   assert_less_than_equal(receivedDatagrams, N);
 }, 'Datagrams read is less than or equal to the incomingHighWaterMark');
-
