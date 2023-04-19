@@ -658,7 +658,8 @@ void ModuleRtpRtcpImpl2::SetRemoteSSRC(const uint32_t ssrc) {
 }
 
 RtpSendRates ModuleRtpRtcpImpl2::GetSendRates() const {
-  RTC_DCHECK_RUN_ON(worker_queue_);
+  
+  
   return rtp_sender_->packet_sender.GetSendRates();
 }
 
