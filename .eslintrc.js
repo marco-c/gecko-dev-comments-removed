@@ -130,7 +130,6 @@ module.exports = {
     {
       ...removeOverrides(xpcshellTestConfig),
       files: testPaths.xpcshell.map(path => `${path}**`),
-      excludedFiles: "devtools/**",
     },
     {
       
