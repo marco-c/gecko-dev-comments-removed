@@ -220,6 +220,11 @@ const updateCertBlocklist = async function({
 };
 
 var RemoteSecuritySettings = {
+  _initialized: false,
+  OneCRLBlocklistClient: null,
+  IntermediatePreloadsClient: null,
+  CRLiteFiltersClient: null,
+
   
 
 
@@ -227,24 +232,24 @@ var RemoteSecuritySettings = {
 
 
   init() {
-    const OneCRLBlocklistClient = RemoteSettings("onecrl", {
+    
+    if (this._initialized) {
+      return this;
+    }
+    this._initialized = true;
+
+    this.OneCRLBlocklistClient = RemoteSettings("onecrl", {
       bucketName: SECURITY_STATE_BUCKET,
       signerName: SECURITY_STATE_SIGNER,
     });
-    OneCRLBlocklistClient.on("sync", updateCertBlocklist);
+    this.OneCRLBlocklistClient.on("sync", updateCertBlocklist);
 
-    let IntermediatePreloadsClient = new IntermediatePreloads();
-    let CRLiteFiltersClient = new CRLiteFilters();
+    this.IntermediatePreloadsClient = new IntermediatePreloads();
 
-    this.OneCRLBlocklistClient = OneCRLBlocklistClient;
-    this.IntermediatePreloadsClient = IntermediatePreloadsClient;
-    this.CRLiteFiltersClient = CRLiteFiltersClient;
+    this.CRLiteFiltersClient = new CRLiteFilters();
+    this.CRLiteFiltersClient.cleanAttachmentCache();
 
-    return {
-      OneCRLBlocklistClient,
-      IntermediatePreloadsClient,
-      CRLiteFiltersClient,
-    };
+    return this;
   },
 };
 
@@ -502,6 +507,39 @@ class CRLiteFilters {
       this.onObservePollEnd.bind(this),
       "remote-settings:changes-poll-end"
     );
+  }
+
+  async cleanAttachmentCache() {
+    
+    
+    
+    
+    let cachePath = PathUtils.join(
+      PathUtils.localProfileDir,
+      ...this.client.attachments.folders
+    );
+
+    try {
+      let needCleanup = await IOUtils.exists(cachePath);
+      if (needCleanup) {
+        let cacheFiles = await IOUtils.getChildren(cachePath);
+        let staleFilters = cacheFiles.filter(
+          path => path.endsWith("filter") || path.endsWith("filter.stash")
+        );
+        if (cacheFiles.length == staleFilters.length) {
+          
+          
+          await IOUtils.remove(cachePath, { recursive: true });
+        } else {
+          for (let filter of staleFilters) {
+            await IOUtils.remove(filter);
+          }
+        }
+      }
+    } catch (e) {
+      lazy.log.debug(e);
+      Cu.reportError("Could not clean cert-revocations attachment cache", e);
+    }
   }
 
   async onObservePollEnd(subject, topic, data) {
