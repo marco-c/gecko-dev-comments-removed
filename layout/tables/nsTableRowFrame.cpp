@@ -1073,6 +1073,8 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
                                          nsTableCellFrame* aCellFrame,
                                          nscoord aAvailableBSize,
                                          nsReflowStatus& aStatus) {
+  MOZ_ASSERT(aAvailableBSize != NS_UNCONSTRAINEDSIZE,
+             "Why split cell frame if available bsize is unconstrained?");
   WritingMode wm = aReflowInput.GetWritingMode();
 
   
@@ -1096,8 +1098,11 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
 
   ReflowChild(aCellFrame, aPresContext, desiredSize, cellReflowInput, 0, 0,
               ReflowChildFlags::NoMoveFrame, aStatus);
-  bool fullyComplete = aStatus.IsComplete() && !aStatus.IsTruncated();
-  if (fullyComplete) {
+  const bool isTruncated =
+      aAvailableBSize < desiredSize.BSize(wm) &&
+      !aIsTopOfPage;  
+  const bool isCompleteAndNotTruncated = aStatus.IsComplete() && !isTruncated;
+  if (isCompleteAndNotTruncated) {
     desiredSize.BSize(wm) = aAvailableBSize;
   }
   aCellFrame->SetSize(
@@ -1106,7 +1111,7 @@ nscoord nsTableRowFrame::ReflowCellFrame(nsPresContext* aPresContext,
   
   
   
-  if (fullyComplete) {
+  if (isCompleteAndNotTruncated) {
     aCellFrame->BlockDirAlignChild(wm, mMaxCellAscent);
   }
 
