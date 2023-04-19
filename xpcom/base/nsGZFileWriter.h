@@ -7,13 +7,22 @@
 #ifndef nsGZFileWriter_h
 #define nsGZFileWriter_h
 
-#include "nsIGZFileWriter.h"
+#include "nsISupportsImpl.h"
 #include "zlib.h"
+#include "nsDependentString.h"
+#include <stdio.h>
 
 
 
 
-class nsGZFileWriter final : public nsIGZFileWriter {
+
+
+
+
+
+
+
+class nsGZFileWriter final {
   virtual ~nsGZFileWriter();
 
  public:
@@ -21,21 +30,44 @@ class nsGZFileWriter final : public nsIGZFileWriter {
 
   explicit nsGZFileWriter(Operation aMode = Create);
 
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIGZFILEWRITER
+  NS_INLINE_DECL_REFCOUNTING(nsGZFileWriter)
 
   
 
 
 
 
-  [[nodiscard]] nsresult Write(const char* aStr) {
-    return nsIGZFileWriter::Write(aStr);
-  }
+
+
+  [[nodiscard]] nsresult Init(nsIFile* aFile);
+
+  
+
+
+
+  [[nodiscard]] nsresult InitANSIFileDesc(FILE* aFile);
+
+  
+
+
+  [[nodiscard]] nsresult Write(const nsACString& aStr);
+
+  
+
 
   [[nodiscard]] nsresult Write(const char* aStr, uint32_t aLen) {
-    return nsIGZFileWriter::Write(aStr, aLen);
+    return Write(nsDependentCSubstring(aStr, aLen));
   }
+
+  
+
+
+
+
+
+
+
+  nsresult Finish();
 
  private:
   Operation mMode;
