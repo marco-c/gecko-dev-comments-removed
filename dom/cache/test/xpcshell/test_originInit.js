@@ -3,7 +3,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   
   
   const basePath = `${storageDirName}/${defaultPersistenceDirName}/`;
@@ -246,4 +246,4 @@ async function testSteps() {
   }
 
   await testPermanentCacheDir();
-}
+});

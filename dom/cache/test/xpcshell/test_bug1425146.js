@@ -20,7 +20,7 @@
 
 
 
-async function testSteps() {
+add_task(async function testSteps() {
   
   
   
@@ -48,4 +48,4 @@ async function testSteps() {
   } catch (ex) {
     ok(false, "Should not have thrown");
   }
-}
+});

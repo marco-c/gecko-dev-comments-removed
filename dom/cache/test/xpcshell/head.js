@@ -42,11 +42,7 @@ class RequestError extends Error {
   }
 }
 
-function run_test() {
-  runTest();
-}
-
-function runTest() {
+add_setup(function() {
   do_get_profile();
 
   enableTesting();
@@ -54,23 +50,8 @@ function runTest() {
   
   Cu.importGlobalProperties(["caches", "fetch"]);
 
-  Assert.ok(
-    typeof testSteps === "function",
-    "There should be a testSteps function"
-  );
-  Assert.ok(
-    testSteps.constructor.name === "AsyncFunction",
-    "testSteps should be an async function"
-  );
-
   registerCleanupFunction(resetTesting);
-
-  add_task(testSteps);
-
-  
-  
-  run_next_test();
-}
+});
 
 function enableTesting() {
   Services.prefs.setBoolPref("dom.simpleDB.enabled", true);
