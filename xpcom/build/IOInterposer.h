@@ -212,8 +212,14 @@ bool IsObservedOperation(IOInterposeObserver::Operation aOp);
 
 
 
+
+
+
 void Register(IOInterposeObserver::Operation aOp,
-              IOInterposeObserver* aObserver);
+              IOInterposeObserver* aStaticObserver);
+
+
+
 
 
 
@@ -224,7 +230,7 @@ void Register(IOInterposeObserver::Operation aOp,
 
 
 void Unregister(IOInterposeObserver::Operation aOp,
-                IOInterposeObserver* aObserver);
+                IOInterposeObserver* aStaticObserver);
 
 
 
