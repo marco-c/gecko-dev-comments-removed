@@ -5,9 +5,9 @@
 
 #include "gfxFontInfoLoader.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/AppShutdown.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
-#include "nsXPCOM.h"        
 #include "nsThreadUtils.h"  
 #include "gfxPlatformFontList.h"
 
@@ -113,8 +113,6 @@ nsresult AsyncFontInfoLoader::Run() {
 
 NS_IMPL_ISUPPORTS(gfxFontInfoLoader::ShutdownObserver, nsIObserver)
 
-static bool sFontLoaderShutdownObserved = false;
-
 NS_IMETHODIMP
 gfxFontInfoLoader::ShutdownObserver::Observe(nsISupports* aSubject,
                                              const char* aTopic,
@@ -122,7 +120,6 @@ gfxFontInfoLoader::ShutdownObserver::Observe(nsISupports* aSubject,
   if (!nsCRT::strcmp(aTopic, "quit-application") ||
       !nsCRT::strcmp(aTopic, "xpcom-shutdown")) {
     mLoader->CancelLoader();
-    sFontLoaderShutdownObserved = true;
   } else {
     MOZ_ASSERT_UNREACHABLE("unexpected notification topic");
   }
@@ -140,6 +137,12 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
   if (aDelay == 0 && (mState == stateTimerOff || mState == stateAsyncLoad)) {
     
     
+    return;
+  }
+
+  
+  if (NS_WARN_IF(AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown))) {
+    MOZ_ASSERT(!aDelay, "Delayed gfxFontInfoLoader startup after AppShutdown?");
     return;
   }
 
@@ -165,12 +168,6 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
 
   
   if (aDelay) {
-    NS_ASSERTION(!sFontLoaderShutdownObserved,
-                 "Bug 1508626 - Setting delay timer for font loader after "
-                 "shutdown observed");
-    NS_ASSERTION(!gXPCOMThreadsShutDown,
-                 "Bug 1508626 - Setting delay timer for font loader after "
-                 "shutdown but before observer");
     
     
     
@@ -197,13 +194,6 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
     mTimer->Cancel();
     mTimer = nullptr;
   }
-
-  NS_ASSERTION(
-      !sFontLoaderShutdownObserved,
-      "Bug 1508626 - Initializing font loader after shutdown observed");
-  NS_ASSERTION(!gXPCOMThreadsShutDown,
-               "Bug 1508626 - Initializing font loader after shutdown but "
-               "before observer");
 
   
   InitLoader();
