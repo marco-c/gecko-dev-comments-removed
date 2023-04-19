@@ -11,7 +11,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_IMPL_H_
 #define MODULES_RTP_RTCP_SOURCE_RTCP_TRANSCEIVER_IMPL_H_
 
-#include <map>
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -48,6 +48,11 @@ class RtcpTransceiverImpl {
   void RemoveMediaReceiverRtcpObserver(uint32_t remote_ssrc,
                                        MediaReceiverRtcpObserver* observer);
 
+  
+  
+  bool AddMediaSender(uint32_t local_ssrc, RtpStreamRtcpHandler* handler);
+  bool RemoveMediaSender(uint32_t local_ssrc);
+
   void SetReadyToSend(bool ready);
 
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, Timestamp now);
@@ -76,6 +81,7 @@ class RtcpTransceiverImpl {
  private:
   class PacketSender;
   struct RemoteSenderState;
+  struct LocalSenderState;
 
   void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
                             Timestamp now,
@@ -106,9 +112,14 @@ class RtcpTransceiverImpl {
   void SchedulePeriodicCompoundPackets(int64_t delay_ms);
   
   
-  void FillReports(Timestamp now,
-                   size_t reserved_bytes,
-                   PacketSender& rtcp_sender);
+  
+  struct CompoundPacketInfo {
+    uint32_t sender_ssrc;
+    bool has_sender_report;
+  };
+  CompoundPacketInfo FillReports(Timestamp now,
+                                 size_t reserved_bytes,
+                                 PacketSender& rtcp_sender);
 
   
   
@@ -130,6 +141,9 @@ class RtcpTransceiverImpl {
   
   
   flat_map<uint32_t, RemoteSenderState> remote_senders_;
+  std::list<LocalSenderState> local_senders_;
+  flat_map<uint32_t, std::list<LocalSenderState>::iterator>
+      local_senders_by_ssrc_;
   RepeatingTaskHandle periodic_task_handle_;
 };
 
