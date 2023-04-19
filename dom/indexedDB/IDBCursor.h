@@ -60,7 +60,7 @@ class IDBCursor : public nsISupports, public nsWrapperCache {
   RefPtr<IDBRequest> mRequest;
 
   
-  CheckedUnsafePtr<IDBTransaction> mTransaction;
+  const CheckedUnsafePtr<IDBTransaction> mTransaction;
 
  protected:
   
