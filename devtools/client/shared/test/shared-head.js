@@ -31,12 +31,17 @@ if (DEBUG_ALLOCATIONS) {
   
   
   
-  const { DevToolsLoader } = ChromeUtils.importESModule(
+  const {
+    useDistinctSystemPrincipalLoader,
+    releaseDistinctSystemPrincipalLoader,
+  } = ChromeUtils.importESModule(
     "resource://devtools/shared/loader/Loader.sys.mjs"
   );
-  const loader = new DevToolsLoader({
-    invisibleToDebugger: true,
-  });
+  const requester = {};
+  const loader = useDistinctSystemPrincipalLoader(requester);
+  registerCleanupFunction(() =>
+    releaseDistinctSystemPrincipalLoader(requester)
+  );
 
   const { allocationTracker } = loader.require(
     "resource://devtools/shared/test-helpers/allocation-tracker.js"
