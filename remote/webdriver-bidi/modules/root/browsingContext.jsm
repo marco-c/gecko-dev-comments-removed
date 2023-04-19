@@ -514,11 +514,6 @@ class BrowsingContextModule extends Module {
       return;
     }
 
-    
-    await lazy.waitForInitialNavigationCompleted(browsingContext.webProgress, {
-      resolveWhenStarted: true,
-    });
-
     const contextInfo = this.#getBrowsingContextInfo(browsingContext, {
       maxDepth: 0,
     });
