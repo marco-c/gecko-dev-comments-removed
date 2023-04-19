@@ -2642,6 +2642,27 @@ MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
   if (lhs() == rhs()) {
     return lhs();
   }
+
+  
+  if (lhs()->isMinMax() || rhs()->isMinMax()) {
+    auto* other = lhs()->isMinMax() ? lhs()->toMinMax() : rhs()->toMinMax();
+    auto* operand = lhs()->isMinMax() ? rhs() : lhs();
+
+    if (operand == other->lhs() || operand == other->rhs()) {
+      if (isMax() == other->isMax()) {
+        
+        
+        return other;
+      }
+      if (!IsFloatingPointType(type())) {
+        
+        
+        
+        return operand;
+      }
+    }
+  }
+
   if (!lhs()->isConstant() && !rhs()->isConstant()) {
     return this;
   }
