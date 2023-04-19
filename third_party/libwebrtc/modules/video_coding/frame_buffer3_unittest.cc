@@ -275,7 +275,8 @@ TEST(FrameBuffer3Test, InterleavedStream) {
 
 TEST(FrameBuffer3Test, LegacyFrameIdJumpBehavior) {
   {
-    
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-LegacyFrameIdJumpBehavior/Disabled/");
     FrameBuffer buffer(10, 100);
 
     buffer.InsertFrame(Builder().Time(20).Id(3).AsLast().Build());
@@ -286,8 +287,7 @@ TEST(FrameBuffer3Test, LegacyFrameIdJumpBehavior) {
   }
 
   {
-    test::ScopedFieldTrials field_trial(
-        "WebRTC-LegacyFrameIdJumpBehavior/Enabled/");
+    
     FrameBuffer buffer(10, 100);
 
     buffer.InsertFrame(Builder().Time(20).Id(3).AsLast().Build());
