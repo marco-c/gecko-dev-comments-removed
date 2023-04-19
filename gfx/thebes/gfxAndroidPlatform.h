@@ -40,16 +40,16 @@ class gfxAndroidPlatform final : public gfxPlatform {
   already_AddRefed<mozilla::gfx::VsyncSource> CreateGlobalHardwareVsyncSource()
       override;
 
- protected:
-  void InitAcceleration() override;
-
-  bool AccelerateLayersByDefault() override { return true; }
-
-  bool CheckVariationFontSupport() override {
+  static bool CheckVariationFontSupport() {
     
     
     return true;
   }
+
+ protected:
+  void InitAcceleration() override;
+
+  bool AccelerateLayersByDefault() override { return true; }
 
  private:
   gfxImageFormat mOffscreenFormat;
