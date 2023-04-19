@@ -5646,7 +5646,7 @@ void ClientWebGLContext::GetSupportedProfilesASTC(
 bool ClientWebGLContext::ShouldResistFingerprinting() const {
   if (mCanvasElement) {
     
-    return nsContentUtils::ShouldResistFingerprinting(GetOwnerDoc());
+    return mCanvasElement->OwnerDoc()->ShouldResistFingerprinting();
   }
   if (mOffscreenCanvas) {
     
