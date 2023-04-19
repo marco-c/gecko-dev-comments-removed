@@ -746,6 +746,11 @@ nsTArray<bool> RemoteAccessibleBase<Derived>::PreProcessRelations(
       }
     }
 
+    if (!data.mReverseType) {
+      updateTracker.AppendElement(false);
+      continue;
+    }
+
     nsStaticAtom* const relAtom = data.mAtom;
     auto newRelationTargets =
         aFields->GetAttribute<nsTArray<uint64_t>>(relAtom);
@@ -768,7 +773,7 @@ nsTArray<bool> RemoteAccessibleBase<Derived>::PreProcessRelations(
               Document()->mReverseRelations.LookupOrInsert(id);
           
           nsTArray<uint64_t>& reverseRelIDs = reverseRels.LookupOrInsert(
-              static_cast<uint64_t>(data.mReverseType));
+              static_cast<uint64_t>(*data.mReverseType));
           
           
           DebugOnly<bool> removed = reverseRelIDs.RemoveElement(ID());
@@ -801,8 +806,10 @@ void RemoteAccessibleBase<Derived>::PostProcessRelations(
       for (uint64_t id : newIDs) {
         nsTHashMap<nsUint64HashKey, nsTArray<uint64_t>>& relations =
             Document()->mReverseRelations.LookupOrInsert(id);
+        MOZ_ASSERT(data.mReverseType,
+                   "Updating implicit rels, but no implicit rel exists?");
         nsTArray<uint64_t>& ids =
-            relations.LookupOrInsert(static_cast<uint64_t>(data.mReverseType));
+            relations.LookupOrInsert(static_cast<uint64_t>(*data.mReverseType));
         ids.AppendElement(ID());
       }
     }
