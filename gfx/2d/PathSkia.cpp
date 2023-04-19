@@ -5,9 +5,6 @@
 
 
 #include "PathSkia.h"
-#include <math.h>
-#include "DrawTargetSkia.h"
-#include "Logging.h"
 #include "HelpersSkia.h"
 #include "PathHelpers.h"
 #include "skia/src/core/SkDraw.h"
