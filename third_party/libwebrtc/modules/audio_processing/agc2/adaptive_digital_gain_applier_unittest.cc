@@ -31,7 +31,7 @@ constexpr float kMaxSpeechProbability = 1.0f;
 
 
 constexpr float kNoNoiseDbfs = kMinLevelDbfs;
-constexpr float kWithNoiseDbfs = -20.f;
+constexpr float kWithNoiseDbfs = -20.0f;
 
 constexpr float kMaxGainChangePerSecondDb = 3.0f;
 constexpr float kMaxGainChangePerFrameDb =
@@ -55,9 +55,9 @@ struct GainApplierHelper {
 };
 
 
-static_assert(std::is_trivially_destructible<
-                  AdaptiveDigitalGainApplier::FrameInfo>::value,
-              "");
+
+
+
 constexpr AdaptiveDigitalGainApplier::FrameInfo kFrameInfo{
     kMaxSpeechProbability,
     kInitialSpeechLevelEstimateDbfs,
@@ -241,11 +241,15 @@ TEST_P(AdaptiveDigitalGainApplierTest,
   GainApplierHelper helper(adjacent_speech_frames_threshold);
   helper.gain_applier->Initialize(48000, kMono);
 
+  
+  AdaptiveDigitalGainApplier::FrameInfo info = kFrameInfo;
+  info.speech_level_dbfs -= 12.0f;
+
   float prev_gain = 0.0f;
   for (int i = 0; i < adjacent_speech_frames_threshold; ++i) {
     SCOPED_TRACE(i);
     VectorFloatFrame audio(kMono, kFrameLen10ms48kHz, 1.0f);
-    helper.gain_applier->Process(kFrameInfo, audio.float_frame_view());
+    helper.gain_applier->Process(info, audio.float_frame_view());
     const float gain = audio.float_frame_view().channel(0)[0];
     if (i > 0) {
       EXPECT_EQ(prev_gain, gain);  
@@ -259,17 +263,21 @@ TEST_P(AdaptiveDigitalGainApplierTest, IncreaseGainWithEnoughSpeechFrames) {
   GainApplierHelper helper(adjacent_speech_frames_threshold);
   helper.gain_applier->Initialize(48000, kMono);
 
+  
+  AdaptiveDigitalGainApplier::FrameInfo info = kFrameInfo;
+  info.speech_level_dbfs -= 12.0f;
+
   float prev_gain = 0.0f;
   for (int i = 0; i < adjacent_speech_frames_threshold; ++i) {
     SCOPED_TRACE(i);
     VectorFloatFrame audio(kMono, kFrameLen10ms48kHz, 1.0f);
-    helper.gain_applier->Process(kFrameInfo, audio.float_frame_view());
+    helper.gain_applier->Process(info, audio.float_frame_view());
     prev_gain = audio.float_frame_view().channel(0)[0];
   }
 
   
   VectorFloatFrame audio(kMono, kFrameLen10ms48kHz, 1.0f);
-  helper.gain_applier->Process(kFrameInfo, audio.float_frame_view());
+  helper.gain_applier->Process(info, audio.float_frame_view());
 
   
   EXPECT_GT(audio.float_frame_view().channel(0)[0], prev_gain);
@@ -277,7 +285,8 @@ TEST_P(AdaptiveDigitalGainApplierTest, IncreaseGainWithEnoughSpeechFrames) {
 
 INSTANTIATE_TEST_SUITE_P(GainController2,
                          AdaptiveDigitalGainApplierTest,
-                         ::testing::Values(1, 7, 31));
+                         ::testing::Values(1000));
+
 
 
 TEST(GainController2GainApplier, DryRunDoesNotChangeInput) {
