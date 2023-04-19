@@ -701,22 +701,8 @@ class MOZ_STACK_CLASS JoinNodesResult final {
 
 
 
-
-
-
-
 class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
  public:
-  
-  
-  bool isOk() const { return NS_SUCCEEDED(mRv); }
-  bool isErr() const { return NS_FAILED(mRv); }
-  constexpr nsresult inspectErr() const { return mRv; }
-  constexpr nsresult unwrapErr() const { return inspectErr(); }
-  constexpr bool EditorDestroyed() const {
-    return MOZ_UNLIKELY(mRv == NS_ERROR_EDITOR_DESTROYED);
-  }
-
   
 
 
@@ -726,6 +712,10 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   template <typename ContentNodeType>
   MOZ_KNOWN_LIVE ContentNodeType* GetLeftContentAs() const {
     return ContentNodeType::FromNodeOrNull(GetLeftContent());
+  }
+  constexpr nsCOMPtr<nsIContent>&& UnwrapLeftContent() {
+    mMovedContent = true;
+    return std::move(mLeftContent);
   }
 
   
@@ -738,6 +728,10 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   MOZ_KNOWN_LIVE ContentNodeType* GetMiddleContentAs() const {
     return ContentNodeType::FromNodeOrNull(GetMiddleContent());
   }
+  constexpr nsCOMPtr<nsIContent>&& UnwrapMiddleContent() {
+    mMovedContent = true;
+    return std::move(mMiddleContent);
+  }
 
   
 
@@ -749,12 +743,17 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   MOZ_KNOWN_LIVE ContentNodeType* GetRightContentAs() const {
     return ContentNodeType::FromNodeOrNull(GetRightContent());
   }
+  constexpr nsCOMPtr<nsIContent>&& UnwrapRightContent() {
+    mMovedContent = true;
+    return std::move(mRightContent);
+  }
 
   
 
 
 
   MOZ_KNOWN_LIVE nsIContent* GetLeftmostContent() const {
+    MOZ_ASSERT(!mMovedContent);
     return mLeftContent ? mLeftContent
                         : (mMiddleContent ? mMiddleContent : mRightContent);
   }
@@ -768,6 +767,7 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
 
 
   MOZ_KNOWN_LIVE nsIContent* GetRightmostContent() const {
+    MOZ_ASSERT(!mMovedContent);
     return mRightContent ? mRightContent
                          : (mMiddleContent ? mMiddleContent : mLeftContent);
   }
@@ -816,8 +816,7 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
                               nsIContent* aRightContent)
       : mLeftContent(aLeftContent),
         mMiddleContent(aMiddleContent),
-        mRightContent(aRightContent),
-        mRv(NS_OK) {}
+        mRightContent(aRightContent) {}
 
   SplitRangeOffFromNodeResult(nsIContent* aLeftContent,
                               nsIContent* aMiddleContent,
@@ -826,24 +825,25 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
       : mLeftContent(aLeftContent),
         mMiddleContent(aMiddleContent),
         mRightContent(aRightContent),
-        mCaretPoint(std::move(aPointToPutCaret)),
-        mRv(NS_OK) {}
-
-  explicit SplitRangeOffFromNodeResult(nsresult aRv) : mRv(aRv) {
-    MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(mRv));
-  }
+        mCaretPoint(std::move(aPointToPutCaret)) {}
 
   SplitRangeOffFromNodeResult(const SplitRangeOffFromNodeResult& aOther) =
       delete;
   SplitRangeOffFromNodeResult& operator=(
       const SplitRangeOffFromNodeResult& aOther) = delete;
-  SplitRangeOffFromNodeResult(SplitRangeOffFromNodeResult&& aOther) = default;
+  SplitRangeOffFromNodeResult(SplitRangeOffFromNodeResult&& aOther) noexcept
+      : mLeftContent(std::move(aOther.mLeftContent)),
+        mMiddleContent(std::move(aOther.mMiddleContent)),
+        mRightContent(std::move(aOther.mRightContent)),
+        mCaretPoint(std::move(aOther.mCaretPoint)) {
+    MOZ_ASSERT(!aOther.mMovedContent);
+  }
   SplitRangeOffFromNodeResult& operator=(SplitRangeOffFromNodeResult&& aOther) =
-      default;
+      delete;  
 
 #ifdef DEBUG
   ~SplitRangeOffFromNodeResult() {
-    MOZ_ASSERT_IF(isOk(), !mCaretPoint.IsSet() || mHandledCaretPoint);
+    MOZ_ASSERT(!mCaretPoint.IsSet() || mHandledCaretPoint);
   }
 #endif
 
@@ -856,9 +856,8 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   
   EditorDOMPoint mCaretPoint;
 
-  nsresult mRv;
-
   bool mutable mHandledCaretPoint = false;
+  bool mutable mMovedContent = false;
 };
 
 

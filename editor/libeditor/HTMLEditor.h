@@ -1382,7 +1382,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   SplitRangeOffFromBlock(Element& aBlockElement,
                          nsIContent& aStartOfMiddleElement,
                          nsIContent& aEndOfMiddleElement);
@@ -1407,7 +1407,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   RemoveBlockContainerElementWithTransactionBetween(
       Element& aBlockContainerElement, nsIContent& aStartOfRange,
       nsIContent& aEndOfRange);
@@ -2427,9 +2427,9 @@ class HTMLEditor final : public EditorBase,
 
 
   enum class BlockIndentedWith { CSS, HTML };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   OutdentPartOfBlock(Element& aBlockElement, nsIContent& aStartOfOutdent,
-                     nsIContent& aEndOutdent,
+                     nsIContent& aEndOfOutdent,
                      BlockIndentedWith aBlockIndentedWith,
                      const Element& aEditingHost);
 
@@ -2448,7 +2448,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   HandleOutdentAtSelectionInternal(const Element& aEditingHost);
 
   
@@ -3979,7 +3979,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   SetInlinePropertyOnTextNode(Text& aData, uint32_t aStartOffset,
                               uint32_t aEndOffset, nsAtom& aProperty,
                               nsAtom* aAttribute, const nsAString& aValue);
