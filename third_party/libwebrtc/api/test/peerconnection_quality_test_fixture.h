@@ -19,6 +19,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/async_resolver_factory.h"
 #include "api/audio/audio_mixer.h"
 #include "api/call/call_factory_interface.h"
@@ -328,6 +329,99 @@ class PeerConnectionE2EQualityTestFixture {
   };
 
   
+  
+  class VideoSubscription {
+   public:
+    class Resolution {
+     public:
+      
+      
+      enum class Spec {
+        
+        
+        kNone,
+        
+        
+        kMaxFromSender
+      };
+
+      Resolution(size_t width, size_t height, int32_t fps);
+      explicit Resolution(const VideoConfig& video_config);
+      explicit Resolution(Spec spec = Spec::kNone);
+
+      bool operator==(const Resolution& other) const;
+      bool operator!=(const Resolution& other) const {
+        return !(*this == other);
+      }
+
+      size_t width() const { return width_; }
+      void set_width(size_t width) { width_ = width; }
+      size_t height() const { return height_; }
+      void set_height(size_t height) { height_ = height; }
+      int32_t fps() const { return fps_; }
+      void set_fps(int32_t fps) { fps_ = fps; }
+
+     private:
+      size_t width_ = 0;
+      size_t height_ = 0;
+      int32_t fps_ = 0;
+      Spec spec_ = Spec::kNone;
+    };
+
+    
+    
+    static absl::optional<VideoSubscription::Resolution> GetMaxResolution(
+        rtc::ArrayView<const VideoConfig> video_configs);
+
+    
+    
+    
+    VideoSubscription& SubscribeToPeer(
+        absl::string_view peer_name,
+        Resolution resolution = Resolution(Resolution::Spec::kMaxFromSender)) {
+      peers_resolution_[std::string(peer_name)] = resolution;
+      return *this;
+    }
+
+    
+    
+    
+    
+    VideoSubscription& SubscribeToAllPeers(
+        Resolution resolution = Resolution(Resolution::Spec::kMaxFromSender)) {
+      default_resolution_ = resolution;
+      return *this;
+    }
+
+    
+    
+    
+    
+    absl::optional<Resolution> GetResolutionForPeer(
+        absl::string_view peer_name) const {
+      auto it = peers_resolution_.find(std::string(peer_name));
+      if (it == peers_resolution_.end()) {
+        return default_resolution_;
+      }
+      return it->second;
+    }
+
+    
+    
+    std::vector<std::string> GetSubscribedPeers() const {
+      std::vector<std::string> subscribed_streams;
+      for (const auto& entry : peers_resolution_) {
+        subscribed_streams.push_back(entry.first);
+      }
+      return subscribed_streams;
+    }
+
+   private:
+    absl::optional<Resolution> default_resolution_ = absl::nullopt;
+    std::map<std::string, Resolution> peers_resolution_;
+  };
+
+  
   class PeerConfigurer {
    public:
     virtual ~PeerConfigurer() = default;
@@ -396,6 +490,11 @@ class PeerConnectionE2EQualityTestFixture {
     virtual PeerConfigurer* AddVideoConfig(
         VideoConfig config,
         CapturingDeviceIndex capturing_device_index) = 0;
+    
+    
+    
+    virtual PeerConfigurer* SetVideoSubscription(
+        VideoSubscription subscription) = 0;
     
     
     
