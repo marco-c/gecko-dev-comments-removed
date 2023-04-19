@@ -40,6 +40,10 @@ async function createAndShutdownContentProcess(url) {
       );
 
       
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      
     }
   );
 
