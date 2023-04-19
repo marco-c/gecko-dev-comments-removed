@@ -1,18 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// This file is an XPCOM service-ified copy of ../devtools/server/socket/websocket-server.js.
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["WebSocketHandshake"];
-
-
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const CC = Components.Constructor;
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 
 const lazy = {};
 
@@ -32,12 +26,12 @@ XPCOMUtils.defineLazyGetter(lazy, "threadManager", () => {
   return Cc["@mozilla.org/thread-manager;1"].getService();
 });
 
-
-
-
-
-
-
+/**
+ * Allowed origins are exposed through 2 separate getters because while most
+ * of the values should be valid URIs, `null` is also a valid origin and cannot
+ * be converted to a URI. Call sites interested in checking for null should use
+ * `allowedOrigins`, those interested in URIs should use `allowedOriginURIs`.
+ */
 XPCOMUtils.defineLazyGetter(lazy, "allowedOrigins", () =>
   lazy.RemoteAgent.allowOrigins !== null ? lazy.RemoteAgent.allowOrigins : []
 );
@@ -47,8 +41,8 @@ XPCOMUtils.defineLazyGetter(lazy, "allowedOriginURIs", () => {
     .map(origin => {
       try {
         const originURI = Services.io.newURI(origin);
-        
-        
+        // Make sure to read host/port/scheme as those getters could throw for
+        // invalid URIs.
         return {
           host: originURI.host,
           port: originURI.port,
@@ -61,12 +55,12 @@ XPCOMUtils.defineLazyGetter(lazy, "allowedOriginURIs", () => {
     .filter(uri => uri !== null);
 });
 
-
-
-
-
-
-
+/**
+ * Write a string of bytes to async output stream
+ * and return promise that resolves once all data has been written.
+ * Doesn't do any UTF-16/UTF-8 conversion.
+ * The string is treated as an array of bytes.
+ */
 function writeString(output, data) {
   return new Promise((resolve, reject) => {
     const wait = () => {
@@ -95,10 +89,10 @@ function writeString(output, data) {
   });
 }
 
-
-
-
-
+/**
+ * Write HTTP response with headers (array of strings) and body
+ * to async output stream.
+ */
 function writeHttpResponse(output, headers, body = "") {
   headers.push(`Content-Length: ${body.length}`);
 
@@ -106,16 +100,16 @@ function writeHttpResponse(output, headers, body = "") {
   return writeString(output, s);
 }
 
-
-
-
-
-
-
-
+/**
+ * Check if the provided URI's host is an IP address.
+ *
+ * @param {nsIURI} uri
+ *     The URI to check.
+ * @return {boolean}
+ */
 function isIPAddress(uri) {
   try {
-    
+    // getBaseDomain throws an explicit error if the uri host is an IP address.
     Services.eTLD.getBaseDomain(uri);
   } catch (e) {
     return e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS;
@@ -125,12 +119,12 @@ function isIPAddress(uri) {
 
 function isHostValid(hostHeader) {
   try {
-    
+    // Might throw both when calling newURI or when accessing the host/port.
     const hostUri = Services.io.newURI(`https://${hostHeader}`);
     const { host, port } = hostUri;
     const isHostnameValid =
       isIPAddress(hostUri) || lazy.RemoteAgent.allowHosts.includes(host);
-    
+    // For nsIURI a port value of -1 corresponds to the protocol's default port.
     const isPortValid = [-1, lazy.RemoteAgent.port].includes(port);
     return isHostnameValid && isPortValid;
   } catch (e) {
@@ -140,32 +134,32 @@ function isHostValid(hostHeader) {
 
 function isOriginValid(originHeader) {
   if (originHeader === undefined) {
-    
+    // Always accept no origin header.
     return true;
   }
 
-  
+  // Special case "null" origins, used for privacy sensitive or opaque origins.
   if (originHeader === "null") {
     return lazy.allowedOrigins.includes("null");
   }
 
   try {
-    
+    // Extract the host, port and scheme from the provided origin header.
     const { host, port, scheme } = Services.io.newURI(originHeader);
-    
+    // Check if any allowed origin matches the provided host, port and scheme.
     return lazy.allowedOriginURIs.some(
       uri => uri.host === host && uri.port === port && uri.scheme === scheme
     );
   } catch (e) {
-    
+    // Reject invalid origin headers
     return false;
   }
 }
 
-
-
-
-
+/**
+ * Process the WebSocket handshake headers and return the key to be sent in
+ * Sec-WebSocket-Accept response header.
+ */
 function processRequest({ requestLine, headers }) {
   if (!isOriginValid(headers.get("origin"))) {
     lazy.logger.debug(
@@ -217,7 +211,7 @@ function processRequest({ requestLine, headers }) {
     );
   }
 
-  
+  // Compute the accept key
   const key = headers.get("sec-websocket-key");
   if (!key) {
     throw new Error(
@@ -236,16 +230,16 @@ function computeKey(key) {
   return hash.finish(true);
 }
 
-
-
-
-
+/**
+ * Perform the server part of a WebSocket opening handshake
+ * on an incoming connection.
+ */
 async function serverHandshake(request, output) {
   try {
-    
+    // Check and extract info from the request
     const { acceptKey } = processRequest(request);
 
-    
+    // Send response headers
     await writeHttpResponse(output, [
       "HTTP/1.1 101 Switching Protocols",
       "Server: httpd.js",
@@ -254,7 +248,7 @@ async function serverHandshake(request, output) {
       `Sec-WebSocket-Accept: ${acceptKey}`,
     ]);
   } catch (error) {
-    
+    // Send error response in case of error
     await writeHttpResponse(
       output,
       [
@@ -272,7 +266,7 @@ async function serverHandshake(request, output) {
 async function createWebSocket(transport, input, output) {
   const transportProvider = {
     setListener(upgradeListener) {
-      
+      // onTransportAvailable callback shouldn't be called synchronously
       lazy.executeSoon(() => {
         upgradeListener.onTransportAvailable(transport, input, output);
       });
@@ -296,9 +290,9 @@ async function createWebSocket(transport, input, output) {
   });
 }
 
-
+/** Upgrade an existing HTTP request from httpd.js to WebSocket. */
 async function upgrade(request, response) {
-  
+  // handle response manually, allowing us to send arbitrary data
   response._powerSeized = true;
 
   const { transport, input, output } = response._connection;
@@ -320,4 +314,4 @@ async function upgrade(request, response) {
   return createWebSocket(transport, input, output);
 }
 
-const WebSocketHandshake = { upgrade };
+export const WebSocketHandshake = { upgrade };
