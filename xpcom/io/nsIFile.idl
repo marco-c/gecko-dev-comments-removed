@@ -247,13 +247,6 @@ interface nsIFile : nsISupports
 
 
 
-    attribute PRTime lastAccessedTime;
-    attribute PRTime lastAccessedTimeOfLink;
-
-    
-
-
-
 
     attribute PRTime lastModifiedTime;
     attribute PRTime lastModifiedTimeOfLink;
