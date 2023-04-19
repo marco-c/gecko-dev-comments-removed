@@ -807,7 +807,6 @@ int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
 
 void ChannelReceive::SetAssociatedSendChannel(
     const ChannelSendInterface* channel) {
-  
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   MutexLock lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
