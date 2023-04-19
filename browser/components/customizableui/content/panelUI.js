@@ -97,7 +97,7 @@ const PanelUI = {
     this.overflowFixedList.hidden = false;
     
     this.overflowFixedList.previousElementSibling.hidden = false;
-    CustomizableUI.registerMenuPanel(
+    CustomizableUI.registerPanelNode(
       this.overflowFixedList,
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
     );

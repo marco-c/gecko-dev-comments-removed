@@ -503,7 +503,7 @@ const DownloadsIndicatorView = {
     
     
     let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL;
+    let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_PANEL;
 
     
     
@@ -613,7 +613,7 @@ const DownloadsIndicatorView = {
 
   get indicatorAnchor() {
     let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+    if (widgetGroup.areaType == CustomizableUI.TYPE_PANEL) {
       let overflowIcon = widgetGroup.forWindow(window).anchor;
       return overflowIcon.icon;
     }

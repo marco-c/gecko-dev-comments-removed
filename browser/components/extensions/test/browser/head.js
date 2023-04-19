@@ -368,7 +368,7 @@ async function triggerBrowserActionWithKeyboard(
 
   if (group.areaType == CustomizableUI.TYPE_TOOLBAR) {
     await focusButtonAndPressKey(key, node, modifiers);
-  } else if (group.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+  } else if (group.areaType == CustomizableUI.TYPE_PANEL) {
     
     let panel = win.document.getElementById("widget-overflow");
     while (win.document.activeElement != node) {

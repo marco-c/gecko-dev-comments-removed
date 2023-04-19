@@ -236,7 +236,7 @@ var CustomizableUIInternal = {
     this.registerArea(
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
       {
-        type: CustomizableUI.TYPE_MENU_PANEL,
+        type: CustomizableUI.TYPE_PANEL,
         defaultPlacements: [],
         anchor: "nav-bar-overflow-button",
       },
@@ -857,10 +857,7 @@ var CustomizableUIInternal = {
       throw new Error("defaultCollapsed only applies for TYPE_TOOLBAR areas.");
     }
     
-    let allTypes = [
-      CustomizableUI.TYPE_TOOLBAR,
-      CustomizableUI.TYPE_MENU_PANEL,
-    ];
+    let allTypes = [CustomizableUI.TYPE_TOOLBAR, CustomizableUI.TYPE_PANEL];
     if (!allTypes.includes(props.get("type"))) {
       throw new Error("Invalid area type " + props.get("type"));
     }
@@ -1049,7 +1046,7 @@ var CustomizableUIInternal = {
     let inPrivateWindow = lazy.PrivateBrowsingUtils.isWindowPrivate(window);
     let container = this.getCustomizationTarget(aAreaNode);
     let areaIsPanel =
-      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_MENU_PANEL;
+      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_PANEL;
 
     if (!container) {
       throw new Error(
@@ -1227,7 +1224,7 @@ var CustomizableUIInternal = {
     let currentContextMenu =
       aNode.getAttribute("context") || aNode.getAttribute("contextmenu");
     let contextMenuForPlace =
-      forcePanel || "menu-panel" == CustomizableUI.getPlaceForItem(aAreaNode)
+      forcePanel || "panel" == CustomizableUI.getPlaceForItem(aAreaNode)
         ? kPanelItemContextMenu
         : null;
     if (contextMenuForPlace && !currentContextMenu) {
@@ -1297,29 +1294,29 @@ var CustomizableUIInternal = {
     return [null, null];
   },
 
-  registerMenuPanel(aPanelContents, aArea) {
-    if (gBuildAreas.has(aArea) && gBuildAreas.get(aArea).has(aPanelContents)) {
+  registerPanelNode(aNode, aArea) {
+    if (gBuildAreas.has(aArea) && gBuildAreas.get(aArea).has(aNode)) {
       return;
     }
 
-    aPanelContents._customizationTarget = aPanelContents;
-    this.addPanelCloseListeners(this._getPanelForNode(aPanelContents));
+    aNode._customizationTarget = aNode;
+    this.addPanelCloseListeners(this._getPanelForNode(aNode));
 
     let placements = gPlacements.get(aArea);
-    this.buildArea(aArea, placements, aPanelContents);
-    this.notifyListeners("onAreaNodeRegistered", aArea, aPanelContents);
+    this.buildArea(aArea, placements, aNode);
+    this.notifyListeners("onAreaNodeRegistered", aArea, aNode);
 
-    for (let child of aPanelContents.children) {
+    for (let child of aNode.children) {
       if (child.localName != "toolbarbutton") {
         if (child.localName == "toolbaritem") {
-          this.ensureButtonContextMenu(child, aPanelContents, true);
+          this.ensureButtonContextMenu(child, aNode, true);
         }
         continue;
       }
-      this.ensureButtonContextMenu(child, aPanelContents, true);
+      this.ensureButtonContextMenu(child, aNode, true);
     }
 
-    this.registerBuildArea(aArea, aPanelContents);
+    this.registerBuildArea(aArea, aNode);
   },
 
   onWidgetAdded(aWidgetId, aArea, aPosition) {
@@ -2096,7 +2093,7 @@ var CustomizableUIInternal = {
 
     if (
       aWidget.disallowSubView &&
-      (areaType == CustomizableUI.TYPE_MENU_PANEL ||
+      (areaType == CustomizableUI.TYPE_PANEL ||
         aNode.hasAttribute("overflowedItem"))
     ) {
       
@@ -2105,7 +2102,7 @@ var CustomizableUIInternal = {
         this.hidePanelForNode(aNode);
         anchor = wrapper.anchor;
       }
-    } else if (areaType != CustomizableUI.TYPE_MENU_PANEL) {
+    } else if (areaType != CustomizableUI.TYPE_PANEL) {
       let wrapper = this.wrapWidget(aWidget.id).forWindow(ownerWindow);
 
       let hasMultiView = !!aNode.closest("panelmultiview");
@@ -2361,7 +2358,7 @@ var CustomizableUIInternal = {
     
     
     if (
-      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_MENU_PANEL &&
+      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_PANEL &&
       this.isSpecialWidget(aWidgetId)
     ) {
       return;
@@ -3369,7 +3366,7 @@ var CustomizableUIInternal = {
     if (
       this.isSpecialWidget(aWidgetId) &&
       gAreas.has(aArea) &&
-      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_MENU_PANEL
+      gAreas.get(aArea).get("type") == CustomizableUI.TYPE_PANEL
     ) {
       return false;
     }
@@ -3609,7 +3606,7 @@ var CustomizableUI = {
   
 
 
-  TYPE_MENU_PANEL: "menu-panel",
+  TYPE_PANEL: "panel",
   
 
 
@@ -3814,8 +3811,10 @@ var CustomizableUI = {
 
 
 
-  registerMenuPanel(aPanelContents, aArea) {
-    CustomizableUIInternal.registerMenuPanel(aPanelContents, aArea);
+
+
+  registerPanelNode(aNode, aArea) {
+    CustomizableUIInternal.registerPanelNode(aNode, aArea);
   },
   
 
@@ -4565,7 +4564,7 @@ var CustomizableUI = {
       if (node.localName == "toolbar") {
         place = "toolbar";
       } else if (node.id == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
-        place = "menu-panel";
+        place = "panel";
       } else if (node.id == "customization-palette") {
         place = "palette";
       }
