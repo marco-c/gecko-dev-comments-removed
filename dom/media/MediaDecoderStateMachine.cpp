@@ -835,8 +835,32 @@ class MediaDecoderStateMachine::LoopingDecodingState
   explicit LoopingDecodingState(Master* aPtr)
       : DecodingState(aPtr),
         mIsReachingAudioEOS(!mMaster->IsAudioDecoding()),
-        mIsReachingVideoEOS(!mMaster->IsVideoDecoding()) {
+        mIsReachingVideoEOS(!mMaster->IsVideoDecoding()),
+        mAudioEndedBeforeEnteringStateWithoutDuration(false),
+        mVideoEndedBeforeEnteringStateWithoutDuration(false) {
     MOZ_ASSERT(mMaster->mLooping);
+    
+    
+    
+    if (mIsReachingAudioEOS) {
+      if (mMaster->HasLastDecodedData(MediaData::Type::AUDIO_DATA) &&
+          !mMaster->mAudioTrackDecodedDuration) {
+        mMaster->mAudioTrackDecodedDuration.emplace(
+            mMaster->mDecodedAudioEndTime);
+      } else {
+        mAudioEndedBeforeEnteringStateWithoutDuration = true;
+      }
+    }
+
+    if (mIsReachingVideoEOS) {
+      if (mMaster->HasLastDecodedData(MediaData::Type::VIDEO_DATA) &&
+          !mMaster->mVideoTrackDecodedDuration) {
+        mMaster->mVideoTrackDecodedDuration.emplace(
+            mMaster->mDecodedVideoEndTime);
+      } else {
+        mVideoEndedBeforeEnteringStateWithoutDuration = true;
+      }
+    }
   }
 
   void Enter() {
@@ -853,20 +877,43 @@ class MediaDecoderStateMachine::LoopingDecodingState
   }
 
   void Exit() override {
-    if (ShouldDiscardLoopedAudioData()) {
+    SLOG("Leaving looping state, offset [a=%" PRId64 ",v=%" PRId64
+         "], endtime [a=%" PRId64 ",v=%" PRId64 "], track duration [a=%" PRId64
+         ",v=%" PRId64 "], waiting=%s",
+         mAudioLoopingOffset.ToMicroseconds(),
+         mVideoLoopingOffset.ToMicroseconds(),
+         mMaster->mDecodedAudioEndTime.ToMicroseconds(),
+         mMaster->mDecodedVideoEndTime.ToMicroseconds(),
+         mMaster->mAudioTrackDecodedDuration
+             ? mMaster->mAudioTrackDecodedDuration->ToMicroseconds()
+             : 0,
+         mMaster->mVideoTrackDecodedDuration
+             ? mMaster->mVideoTrackDecodedDuration->ToMicroseconds()
+             : 0,
+         mDataWaitingTimestampAdjustment
+             ? MediaData::TypeToStr(mDataWaitingTimestampAdjustment->mType)
+             : "none");
+    if (ShouldDiscardLoopedData(MediaData::Type::AUDIO_DATA)) {
       mMaster->mAudioDataRequest.DisconnectIfExists();
-      DiscardLoopedAudioData();
+      DiscardLoopedData(MediaData::Type::AUDIO_DATA);
     }
-    if (ShouldDiscardLoopedVideoData()) {
+    if (ShouldDiscardLoopedData(MediaData::Type::VIDEO_DATA)) {
       mMaster->mVideoDataRequest.DisconnectIfExists();
-      DiscardLoopedVideoData();
+      DiscardLoopedData(MediaData::Type::VIDEO_DATA);
     }
+
     if (mMaster->HasAudio() && HasDecodedLastAudioFrame()) {
+      SLOG("Mark audio queue as finished");
       AudioQueue().Finish();
     }
     if (mMaster->HasVideo() && HasDecodedLastVideoFrame()) {
+      SLOG("Mark video queue as finished");
       VideoQueue().Finish();
     }
+
+    
+    mDataWaitingTimestampAdjustment = nullptr;
+
     mAudioDataRequest.DisconnectIfExists();
     mVideoDataRequest.DisconnectIfExists();
     mAudioSeekRequest.DisconnectIfExists();
@@ -877,6 +924,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
   State GetState() const override { return DECODER_STATE_LOOPING_DECODING; }
 
   void HandleAudioDecoded(AudioData* aAudio) override {
+    
     MediaResult rv = LoopingAudioTimeAdjustment(aAudio);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mMaster->DecodeError(rv);
@@ -890,6 +938,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
   }
 
   void HandleVideoDecoded(VideoData* aVideo) override {
+    
     MediaResult rv = LoopingVideoTimeAdjustment(aVideo);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mMaster->DecodeError(rv);
@@ -904,38 +953,44 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   void HandleEndOfAudio() override {
     mIsReachingAudioEOS = true;
-    
-    
-    
-    mAudioLoopingOffset = mMaster->mDecodedAudioEndTime;
-
-    if (mMaster->mAudioDecodedDuration.isNothing()) {
-      mMaster->mAudioDecodedDuration.emplace(mMaster->mDecodedAudioEndTime);
+    if (!mMaster->mAudioTrackDecodedDuration &&
+        mMaster->HasLastDecodedData(MediaData::Type::AUDIO_DATA)) {
+      mMaster->mAudioTrackDecodedDuration.emplace(
+          mMaster->mDecodedAudioEndTime);
+    }
+    if (DetermineOriginalDecodedDurationIfNeeded()) {
+      mAudioLoopingOffset += mMaster->mOriginalDecodedDuration;
     }
 
     SLOG(
         "received audio EOS when seamless looping, starts seeking, "
-        "AudioLoopingOffset=[%" PRId64 "]",
-        mAudioLoopingOffset.ToMicroseconds());
+        "mAudioLoopingOffset=[%" PRId64
+        "], mAudioTrackDecodedDuration=[%" PRId64 "]",
+        mAudioLoopingOffset.ToMicroseconds(),
+        mMaster->mAudioTrackDecodedDuration->ToMicroseconds());
     RequestDataFromStartPosition(TrackInfo::TrackType::kAudioTrack);
+    ProcessSamplesWaitingAdjustmentIfAny();
   }
 
   void HandleEndOfVideo() override {
     mIsReachingVideoEOS = true;
-    
-    
-    
-    mVideoLoopingOffset = mMaster->mDecodedVideoEndTime;
-
-    if (mMaster->mVideoDecodedDuration.isNothing()) {
-      mMaster->mVideoDecodedDuration.emplace(mMaster->mDecodedVideoEndTime);
+    if (!mMaster->mVideoTrackDecodedDuration &&
+        mMaster->HasLastDecodedData(MediaData::Type::VIDEO_DATA)) {
+      mMaster->mVideoTrackDecodedDuration.emplace(
+          mMaster->mDecodedVideoEndTime);
+    }
+    if (DetermineOriginalDecodedDurationIfNeeded()) {
+      mVideoLoopingOffset += mMaster->mOriginalDecodedDuration;
     }
 
     SLOG(
         "received video EOS when seamless looping, starts seeking, "
-        "VideoLoopingOffset=[%" PRId64 "]",
-        mVideoLoopingOffset.ToMicroseconds());
+        "mVideoLoopingOffset=[%" PRId64
+        "], mVideoTrackDecodedDuration=[%" PRId64 "]",
+        mVideoLoopingOffset.ToMicroseconds(),
+        mMaster->mVideoTrackDecodedDuration->ToMicroseconds());
     RequestDataFromStartPosition(TrackInfo::TrackType::kVideoTrack);
+    ProcessSamplesWaitingAdjustmentIfAny();
   }
 
  private:
@@ -984,9 +1039,9 @@ class MediaDecoderStateMachine::LoopingDecodingState
                   isAudio ? Reader()->SizeOfAudioQueueInFrames()
                           : Reader()->SizeOfVideoQueueInFrames());
               if (isAudio) {
-                RequestAudioDataFromReader();
+                RequestAudioDataFromReaderAfterEOS();
               } else {
-                RequestVideoDataFromReader();
+                RequestVideoDataFromReaderAfterEOS();
               }
               if (mPendingSeekingType) {
                 auto seekingType = *mPendingSeekingType;
@@ -1013,7 +1068,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
         ->Track(seekRequest);
   }
 
-  void RequestAudioDataFromReader() {
+  void RequestAudioDataFromReaderAfterEOS() {
     MOZ_ASSERT(mMaster->HasAudio());
     Reader()
         ->RequestAudioData()
@@ -1032,7 +1087,15 @@ class MediaDecoderStateMachine::LoopingDecodingState
                   "[%" PRId64 ",%" PRId64 "]",
                   aAudio->mTime.ToMicroseconds(),
                   aAudio->GetEndTime().ToMicroseconds());
+              if (ShouldPutDataOnWaiting(MediaData::Type::AUDIO_DATA)) {
+                SLOG(
+                    "decoded audio sample needs to wait for timestamp "
+                    "adjustment after EOS");
+                PutDataOnWaiting(aAudio);
+                return;
+              }
               HandleAudioDecoded(aAudio);
+              ProcessSamplesWaitingAdjustmentIfAny();
             },
             [this](const MediaResult& aError) {
               AUTO_PROFILER_LABEL(
@@ -1046,7 +1109,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
         ->Track(mAudioDataRequest);
   }
 
-  void RequestVideoDataFromReader() {
+  void RequestVideoDataFromReaderAfterEOS() {
     MOZ_ASSERT(mMaster->HasVideo());
     Reader()
         ->RequestVideoData(media::TimeUnit(),
@@ -1056,7 +1119,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
             [this](const RefPtr<VideoData>& aVideo) {
               AUTO_PROFILER_LABEL(
                   "LoopingDecodingState::"
-                  "RequestVideoDataFromReader::"
+                  "RequestVideoDataFromReaderAfterEOS()::"
                   "RequestDataResolved",
                   MEDIA_PLAYBACK);
               mIsReachingVideoEOS = false;
@@ -1066,12 +1129,20 @@ class MediaDecoderStateMachine::LoopingDecodingState
                   "[%" PRId64 ",%" PRId64 "]",
                   aVideo->mTime.ToMicroseconds(),
                   aVideo->GetEndTime().ToMicroseconds());
+              if (ShouldPutDataOnWaiting(MediaData::Type::VIDEO_DATA)) {
+                SLOG(
+                    "decoded video sample needs to wait for timestamp "
+                    "adjustment after EOS");
+                PutDataOnWaiting(aVideo);
+                return;
+              }
               HandleVideoDecoded(aVideo);
+              ProcessSamplesWaitingAdjustmentIfAny();
             },
             [this](const MediaResult& aError) {
               AUTO_PROFILER_LABEL(
                   "LoopingDecodingState::"
-                  "RequestVideoDataFromReader::"
+                  "RequestVideoDataFromReaderAfterEOS()::"
                   "RequestDataRejected",
                   MEDIA_PLAYBACK);
               mVideoDataRequest.Complete();
@@ -1108,20 +1179,147 @@ class MediaDecoderStateMachine::LoopingDecodingState
   void HandleError(const MediaResult& aError, bool aIsAudio);
 
   void EnsureAudioDecodeTaskQueued() override {
-    if (mAudioSeekRequest.Exists() || mAudioDataRequest.Exists()) {
+    if (mAudioSeekRequest.Exists() || mAudioDataRequest.Exists() ||
+        IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA)) {
       return;
     }
     DecodingState::EnsureAudioDecodeTaskQueued();
   }
 
   void EnsureVideoDecodeTaskQueued() override {
-    if (mVideoSeekRequest.Exists() || mVideoDataRequest.Exists()) {
+    if (mVideoSeekRequest.Exists() || mVideoDataRequest.Exists() ||
+        IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA)) {
       return;
     }
     DecodingState::EnsureVideoDecodeTaskQueued();
   }
 
-  MediaResult LoopingAudioTimeAdjustment(AudioData* aAudio) const {
+  bool DetermineOriginalDecodedDurationIfNeeded() {
+    
+    
+    if (mMaster->mOriginalDecodedDuration != media::TimeUnit::Zero()) {
+      return true;
+    }
+
+    
+    if (mMaster->HasAudio() && !mMaster->HasVideo()) {
+      MOZ_ASSERT(mMaster->mAudioTrackDecodedDuration);
+      mMaster->mOriginalDecodedDuration = *mMaster->mAudioTrackDecodedDuration;
+      SLOG("audio only, duration=%" PRId64,
+           mMaster->mOriginalDecodedDuration.ToMicroseconds());
+      return true;
+    }
+    if (mMaster->HasVideo() && !mMaster->HasAudio()) {
+      MOZ_ASSERT(mMaster->mVideoTrackDecodedDuration);
+      mMaster->mOriginalDecodedDuration = *mMaster->mVideoTrackDecodedDuration;
+      SLOG("video only, duration=%" PRId64,
+           mMaster->mOriginalDecodedDuration.ToMicroseconds());
+      return true;
+    }
+
+    MOZ_ASSERT(mMaster->HasAudio() && mMaster->HasVideo());
+
+    
+    if (mMaster->mAudioTrackDecodedDuration &&
+        mMaster->mVideoTrackDecodedDuration) {
+      mMaster->mOriginalDecodedDuration =
+          std::max(*mMaster->mVideoTrackDecodedDuration,
+                   *mMaster->mAudioTrackDecodedDuration);
+      SLOG("Both tracks ended, original duration=%" PRId64 " (a=%" PRId64
+           ", v=%" PRId64 ")",
+           mMaster->mOriginalDecodedDuration.ToMicroseconds(),
+           mMaster->mAudioTrackDecodedDuration->ToMicroseconds(),
+           mMaster->mVideoTrackDecodedDuration->ToMicroseconds());
+      return true;
+    }
+    
+    
+    if (mMaster->mAudioTrackDecodedDuration &&
+        mVideoEndedBeforeEnteringStateWithoutDuration) {
+      mMaster->mOriginalDecodedDuration = *mMaster->mAudioTrackDecodedDuration;
+      mVideoEndedBeforeEnteringStateWithoutDuration = false;
+      SLOG("audio is longer, duration=%" PRId64,
+           mMaster->mOriginalDecodedDuration.ToMicroseconds());
+      return true;
+    }
+    
+    
+    if (mMaster->mVideoTrackDecodedDuration &&
+        mAudioEndedBeforeEnteringStateWithoutDuration) {
+      mMaster->mOriginalDecodedDuration = *mMaster->mVideoTrackDecodedDuration;
+      mAudioEndedBeforeEnteringStateWithoutDuration = false;
+      SLOG("video is longer, duration=%" PRId64,
+           mMaster->mOriginalDecodedDuration.ToMicroseconds());
+      return true;
+    }
+
+    SLOG("Still waiting for another track ends...");
+    MOZ_ASSERT(!mMaster->mAudioTrackDecodedDuration ||
+               !mMaster->mVideoTrackDecodedDuration);
+    MOZ_ASSERT(mMaster->mOriginalDecodedDuration == media::TimeUnit::Zero());
+    return false;
+  }
+
+  void ProcessSamplesWaitingAdjustmentIfAny() {
+    if (!mDataWaitingTimestampAdjustment) {
+      return;
+    }
+
+    RefPtr<MediaData> data = mDataWaitingTimestampAdjustment;
+    mDataWaitingTimestampAdjustment = nullptr;
+    const bool isAudio = data->mType == MediaData::Type::AUDIO_DATA;
+    SLOG("process %s sample waiting for timestamp adjustment",
+         isAudio ? "audio" : "video");
+    if (isAudio) {
+      HandleAudioDecoded(data->As<AudioData>());
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(data->mType == MediaData::Type::VIDEO_DATA);
+      HandleVideoDecoded(data->As<VideoData>());
+    }
+  }
+
+  bool IsDataWaitingForTimestampAdjustment(MediaData::Type aType) const {
+    return mDataWaitingTimestampAdjustment &&
+           mDataWaitingTimestampAdjustment->mType == aType;
+  }
+
+  bool ShouldPutDataOnWaiting(MediaData::Type aType) const {
+    
+    
+    
+    
+    
+    if (mDataWaitingTimestampAdjustment &&
+        !IsDataWaitingForTimestampAdjustment(aType)) {
+      return false;
+    }
+
+    
+    if ((aType == MediaData::Type::AUDIO_DATA && !mMaster->HasVideo()) ||
+        (aType == MediaData::Type::VIDEO_DATA && !mMaster->HasAudio())) {
+      return false;
+    }
+
+    
+    return mMaster->mOriginalDecodedDuration == media::TimeUnit::Zero();
+  }
+
+  void PutDataOnWaiting(MediaData* aData) {
+    MOZ_ASSERT(!mDataWaitingTimestampAdjustment);
+    mDataWaitingTimestampAdjustment = aData;
+    SLOG("put %s [%" PRId64 ",%" PRId64 "] on waiting",
+         MediaData::TypeToStr(aData->mType), aData->mTime.ToMicroseconds(),
+         aData->GetEndTime().ToMicroseconds());
+  }
+
+  MediaResult LoopingAudioTimeAdjustment(AudioData* aAudio) {
+    
+    
+    
+    if (mAudioLoopingOffset == media::TimeUnit::Zero() &&
+        mMaster->mOriginalDecodedDuration != media::TimeUnit::Zero()) {
+      mAudioLoopingOffset += mMaster->mOriginalDecodedDuration;
+    }
     if (mAudioLoopingOffset != media::TimeUnit::Zero()) {
       aAudio->mTime += mAudioLoopingOffset;
     }
@@ -1132,7 +1330,14 @@ class MediaDecoderStateMachine::LoopingDecodingState
                      "Audio sample overflow during looping time adjustment");
   }
 
-  MediaResult LoopingVideoTimeAdjustment(VideoData* aVideo) const {
+  MediaResult LoopingVideoTimeAdjustment(VideoData* aVideo) {
+    
+    
+    
+    if (mVideoLoopingOffset == media::TimeUnit::Zero() &&
+        mMaster->mOriginalDecodedDuration != media::TimeUnit::Zero()) {
+      mVideoLoopingOffset += mMaster->mOriginalDecodedDuration;
+    }
     if (mVideoLoopingOffset != media::TimeUnit::Zero()) {
       aVideo->mTime += mVideoLoopingOffset;
     }
@@ -1143,13 +1348,21 @@ class MediaDecoderStateMachine::LoopingDecodingState
                      "Video sample overflow during looping time adjustment");
   }
 
-  bool ShouldDiscardLoopedAudioData() const {
+  bool ShouldDiscardLoopedData(MediaData::Type aType) const {
     if (!mMaster->mMediaSink->IsStarted()) {
       return false;
     }
-    if (!mMaster->HasAudio()) {
+
+    MOZ_DIAGNOSTIC_ASSERT(aType == MediaData::Type::AUDIO_DATA ||
+                          aType == MediaData::Type::VIDEO_DATA);
+    const bool isAudio = aType == MediaData::Type::AUDIO_DATA;
+    if (isAudio && !mMaster->HasAudio()) {
       return false;
     }
+    if (!isAudio && !mMaster->HasVideo()) {
+      return false;
+    }
+
     
 
 
@@ -1162,71 +1375,50 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
 
 
-    return (mAudioLoopingOffset != media::TimeUnit::Zero() &&
-            mMaster->GetClock() < mAudioLoopingOffset &&
-            mAudioLoopingOffset < mMaster->mDecodedAudioEndTime);
+    const auto offset = isAudio ? mAudioLoopingOffset : mVideoLoopingOffset;
+    const auto endTime =
+        isAudio ? mMaster->mDecodedAudioEndTime : mMaster->mDecodedVideoEndTime;
+    const auto clockTime = mMaster->GetClock();
+    return (offset != media::TimeUnit::Zero() && clockTime < offset &&
+            offset < endTime);
   }
 
-  bool ShouldDiscardLoopedVideoData() const {
-    if (!mMaster->mMediaSink->IsStarted()) {
-      return false;
-    }
-    if (!mMaster->HasVideo()) {
-      return false;
-    }
-    
-
-
-
-
-
-
-
-
-
-
-
-    return (mVideoLoopingOffset != media::TimeUnit::Zero() &&
-            mMaster->GetClock() < mVideoLoopingOffset &&
-            mVideoLoopingOffset < mMaster->mDecodedVideoEndTime);
-  }
-
-  void DiscardLoopedAudioData() {
-    if (mAudioLoopingOffset == media::TimeUnit::Zero()) {
+  void DiscardLoopedData(MediaData::Type aType) {
+    MOZ_DIAGNOSTIC_ASSERT(aType == MediaData::Type::AUDIO_DATA ||
+                          aType == MediaData::Type::VIDEO_DATA);
+    const bool isAudio = aType == MediaData::Type::AUDIO_DATA;
+    const auto offset = isAudio ? mAudioLoopingOffset : mVideoLoopingOffset;
+    if (offset == media::TimeUnit::Zero()) {
       return;
     }
 
-    SLOG("Discard audio frames after the time=%" PRId64,
-         mAudioLoopingOffset.ToMicroseconds());
-    DiscardFramesFromTail(AudioQueue(), [&](int64_t aSampleTime) {
-      return aSampleTime > mAudioLoopingOffset.ToMicroseconds();
-    });
-  }
-
-  void DiscardLoopedVideoData() {
-    if (mVideoLoopingOffset == media::TimeUnit::Zero()) {
-      return;
+    SLOG("Discard %s frames after the time=%" PRId64,
+         isAudio ? "audio" : "video", offset.ToMicroseconds());
+    if (isAudio) {
+      DiscardFramesFromTail(AudioQueue(), [&](int64_t aSampleTime) {
+        return aSampleTime > offset.ToMicroseconds();
+      });
+    } else {
+      DiscardFramesFromTail(VideoQueue(), [&](int64_t aSampleTime) {
+        return aSampleTime > offset.ToMicroseconds();
+      });
     }
-
-    SLOG("Discard video frames after the time=%" PRId64,
-         mVideoLoopingOffset.ToMicroseconds());
-    DiscardFramesFromTail(VideoQueue(), [&](int64_t aSampleTime) {
-      return aSampleTime > mVideoLoopingOffset.ToMicroseconds();
-    });
   }
 
   bool HasDecodedLastAudioFrame() const {
     
     
     return mAudioDataRequest.Exists() || mAudioSeekRequest.Exists() ||
-           ShouldDiscardLoopedAudioData();
+           ShouldDiscardLoopedData(MediaData::Type::AUDIO_DATA) ||
+           IsDataWaitingForTimestampAdjustment(MediaData::Type::AUDIO_DATA);
   }
 
   bool HasDecodedLastVideoFrame() const {
     
     
     return mVideoDataRequest.Exists() || mVideoSeekRequest.Exists() ||
-           ShouldDiscardLoopedVideoData();
+           ShouldDiscardLoopedData(MediaData::Type::VIDEO_DATA) ||
+           IsDataWaitingForTimestampAdjustment(MediaData::Type::VIDEO_DATA);
   }
 
   bool ShouldStopPrerolling() const override {
@@ -1249,15 +1441,61 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   bool mIsReachingAudioEOS;
   bool mIsReachingVideoEOS;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  RefPtr<MediaData> mDataWaitingTimestampAdjustment;
+
+  
+  
+  
+  
+  
+  
   media::TimeUnit mAudioLoopingOffset = media::TimeUnit::Zero();
   media::TimeUnit mVideoLoopingOffset = media::TimeUnit::Zero();
+
   MozPromiseRequestHolder<MediaFormatReader::SeekPromise> mAudioSeekRequest;
   MozPromiseRequestHolder<MediaFormatReader::SeekPromise> mVideoSeekRequest;
   MozPromiseRequestHolder<AudioDataPromise> mAudioDataRequest;
   MozPromiseRequestHolder<VideoDataPromise> mVideoDataRequest;
+
   
   
   Maybe<TrackInfo::TrackType> mPendingSeekingType;
+
+  
+  
+  
+  
+  bool mAudioEndedBeforeEnteringStateWithoutDuration;
+  bool mVideoEndedBeforeEnteringStateWithoutDuration;
 };
 
 
@@ -2751,12 +2989,14 @@ void MediaDecoderStateMachine::DecodingState::MaybeStartBuffering() {
   if (mMaster->OutOfDecodedAudio() && mMaster->IsWaitingAudioData()) {
     PROFILER_MARKER_TEXT("MDSM::StartBuffering", MEDIA_PLAYBACK, {},
                          "OutOfDecodedAudio");
+    SLOG("Enter buffering due to out of decoded audio");
     SetState<BufferingState>();
     return;
   }
   if (mMaster->OutOfDecodedVideo() && mMaster->IsWaitingVideoData()) {
     PROFILER_MARKER_TEXT("MDSM::StartBuffering", MEDIA_PLAYBACK, {},
                          "OutOfDecodedVideo");
+    SLOG("Enter buffering due to out of decoded video");
     SetState<BufferingState>();
     return;
   }
@@ -2765,6 +3005,7 @@ void MediaDecoderStateMachine::DecodingState::MaybeStartBuffering() {
       mMaster->HasLowBufferedData() && !mMaster->mCanPlayThrough) {
     PROFILER_MARKER_TEXT("MDSM::StartBuffering", MEDIA_PLAYBACK, {},
                          "BufferingHeuristics");
+    SLOG("Enter buffering due to buffering heruistics");
     SetState<BufferingState>();
   }
 }
@@ -3862,7 +4103,6 @@ void MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically() {
   
   if (VideoEndTime() > TimeUnit::Zero() || AudioEndTime() > TimeUnit::Zero()) {
     auto clockTime = GetClock();
-
     
     
     AdjustByLooping(clockTime);
@@ -4354,20 +4594,24 @@ void MediaDecoderStateMachine::CancelSuspendTimer() {
 void MediaDecoderStateMachine::AdjustByLooping(media::TimeUnit& aTime) const {
   MOZ_ASSERT(OnTaskQueue());
   
-  if (mAudioDecodedDuration.isSome() &&
-      mAudioDecodedDuration.ref().IsPositive()) {
-    aTime = aTime % mAudioDecodedDuration.ref();
-  }
   
-  else if (mVideoDecodedDuration.isSome() &&
-           mVideoDecodedDuration.ref().IsPositive()) {
-    aTime = aTime % mVideoDecodedDuration.ref();
+  if (mOriginalDecodedDuration != media::TimeUnit::Zero()) {
+    aTime = aTime % mOriginalDecodedDuration;
   }
   
 }
 
 bool MediaDecoderStateMachine::IsInSeamlessLooping() const {
   return mLooping && mSeamlessLoopingAllowed;
+}
+
+bool MediaDecoderStateMachine::HasLastDecodedData(MediaData::Type aType) {
+  MOZ_DIAGNOSTIC_ASSERT(aType == MediaData::Type::AUDIO_DATA ||
+                        aType == MediaData::Type::VIDEO_DATA);
+  if (aType == MediaData::Type::AUDIO_DATA) {
+    return mDecodedAudioEndTime != TimeUnit::Zero();
+  }
+  return mDecodedVideoEndTime != TimeUnit::Zero();
 }
 
 }  
