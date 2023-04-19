@@ -177,7 +177,7 @@ void nsMathMLmoFrame::ProcessTextData() {
 
 void nsMathMLmoFrame::ProcessOperatorData() {
   
-  nsOperatorFlags form = NS_MATHML_OPERATOR_GET_FORM(mFlags);
+  uint8_t form = NS_MATHML_OPERATOR_GET_FORM(mFlags);
   nsAutoString value;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
 
