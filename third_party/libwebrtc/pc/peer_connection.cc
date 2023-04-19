@@ -528,6 +528,9 @@ RTCError PeerConnection::Initialize(
 
   
   
+  
+  
+  
   const auto pa_result =
       network_thread()->Invoke<InitializePortAllocatorResult>(
           RTC_FROM_HERE, [this, &stun_servers, &turn_servers, &configuration] {
@@ -615,6 +618,10 @@ RTCError PeerConnection::Initialize(
       signaling_thread(), network_thread(), port_allocator_.get(),
       async_resolver_factory_.get(), config));
 
+  
+  
+  
+  
   
   
   
@@ -1379,10 +1386,29 @@ RTCError PeerConnection::SetConfiguration(
 
   const bool has_local_description = local_description() != nullptr;
 
+  const bool needs_ice_restart =
+      modified_config.servers != configuration_.servers ||
+      NeedIceRestart(
+          configuration_.surface_ice_candidates_on_ice_transport_type_changed,
+          configuration_.type, modified_config.type) ||
+      modified_config.GetTurnPortPrunePolicy() !=
+          configuration_.GetTurnPortPrunePolicy();
+  cricket::IceConfig ice_config = ParseIceConfig(modified_config);
+
+  
   
   if (!network_thread()->Invoke<bool>(
-          RTC_FROM_HERE, [this, &stun_servers, &turn_servers, &modified_config,
-                          has_local_description] {
+          RTC_FROM_HERE,
+          [this, needs_ice_restart, &ice_config, &stun_servers, &turn_servers,
+           &modified_config, has_local_description] {
+            
+            
+            
+            
+            if (needs_ice_restart)
+              transport_controller_->SetNeedsIceRestartFlag();
+
+            transport_controller_->SetIceConfig(ice_config);
             return ReconfigurePortAllocator_n(
                 stun_servers, turn_servers, modified_config.type,
                 modified_config.ice_candidate_pool_size,
@@ -1394,20 +1420,6 @@ RTCError PeerConnection::SetConfiguration(
     LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                          "Failed to apply configuration to PortAllocator.");
   }
-
-  
-  
-  
-  if (modified_config.servers != configuration_.servers ||
-      NeedIceRestart(
-          configuration_.surface_ice_candidates_on_ice_transport_type_changed,
-          configuration_.type, modified_config.type) ||
-      modified_config.GetTurnPortPrunePolicy() !=
-          configuration_.GetTurnPortPrunePolicy()) {
-    transport_controller_->SetNeedsIceRestartFlag();
-  }
-
-  transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
@@ -2155,6 +2167,8 @@ void PeerConnection::OnTransportControllerConnectionState(
 void PeerConnection::OnTransportControllerCandidatesGathered(
     const std::string& transport_name,
     const cricket::Candidates& candidates) {
+  
+  
   int sdp_mline_index;
   if (!GetLocalCandidateMediaIndex(transport_name, &sdp_mline_index)) {
     RTC_LOG(LS_ERROR)
