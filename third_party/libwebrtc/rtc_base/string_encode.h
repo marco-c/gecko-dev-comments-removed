@@ -73,11 +73,6 @@ size_t tokenize(const std::string& source,
                 std::vector<std::string>* fields);
 
 
-size_t tokenize_with_empty_tokens(const std::string& source,
-                                  char delimiter,
-                                  std::vector<std::string>* fields);
-
-
 
 
 bool tokenize_first(const std::string& source,
