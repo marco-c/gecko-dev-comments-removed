@@ -38,6 +38,13 @@ namespace dcsctp {
 
 class DataTracker {
  public:
+  
+  
+  
+  
+  
+  static constexpr uint32_t kMaxAcceptedOutstandingFragments = 256;
+
   explicit DataTracker(absl::string_view log_prefix,
                        Timer* delayed_ack_timer,
                        TSN peer_initial_tsn)
@@ -45,6 +52,11 @@ class DataTracker {
         delayed_ack_timer_(*delayed_ack_timer),
         last_cumulative_acked_tsn_(
             tsn_unwrapper_.Unwrap(TSN(*peer_initial_tsn - 1))) {}
+
+  
+  
+  
+  bool IsTSNValid(TSN tsn) const;
 
   
   void Observe(TSN tsn,
@@ -113,7 +125,7 @@ class DataTracker {
   
   UnwrappedTSN last_cumulative_acked_tsn_;
   
-  std::set<UnwrappedTSN> additional_tsns;
+  std::set<UnwrappedTSN> additional_tsns_;
   std::set<UnwrappedTSN> duplicates_;
 };
 }  
