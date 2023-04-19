@@ -597,8 +597,11 @@ class MediaDecoderStateMachine::DecodingState
   }
 
   void HandleVideoDecoded(VideoData* aVideo) override {
+    
+    
     const auto currentTime = mMaster->GetMediaTime();
-    if (aVideo->GetEndTime() < currentTime) {
+    if (aVideo->GetEndTime() < currentTime &&
+        VideoQueue().GetOffset() == media::TimeUnit::Zero()) {
       if (!mVideoFirstLateTime) {
         mVideoFirstLateTime = Some(TimeStamp::Now());
       }
