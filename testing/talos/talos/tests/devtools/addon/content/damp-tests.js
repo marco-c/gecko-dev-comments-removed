@@ -238,6 +238,11 @@ module.exports = {
       path: "server/protocol.js",
       description: "Measure RDP/protocol.js performance",
     },
+    {
+      name: "source-map-loader",
+      path: "source-map/source-map-loader.js",
+      description: "Measure source map loader performance",
+    },
     
     
     
