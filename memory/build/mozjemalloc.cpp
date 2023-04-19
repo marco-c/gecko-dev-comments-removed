@@ -121,9 +121,6 @@
 
 
 
-
-
-
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -420,11 +417,7 @@ static const size_t kMaxTinyClass = 8;
 
 static const size_t kMinQuantumClass = kMaxTinyClass * 2;
 static const size_t kMinQuantumWideClass = 512;
-#ifdef XP_MACOSX
-static const size_t kMinSubPageClass = 512;
-#else
 static const size_t kMinSubPageClass = 4_KiB;
-#endif
 
 
 static const size_t kQuantum = 16;
