@@ -15,11 +15,13 @@
 
 #include "hwy/nanobenchmark.h"
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>  
-#include <string.h>  
+#include <stdlib.h>
 #include <time.h>    
 
 #include <algorithm>  
@@ -414,7 +416,7 @@ std::string BrandString() {
 
   for (size_t i = 0; i < 3; ++i) {
     Cpuid(static_cast<uint32_t>(0x80000002U + i), 0, abcd.data());
-    memcpy(brand_string + i * 16, abcd.data(), sizeof(abcd));
+    CopyBytes<sizeof(abcd)>(&abcd[0], brand_string + i * 16);  
   }
   brand_string[48] = 0;
   return brand_string;

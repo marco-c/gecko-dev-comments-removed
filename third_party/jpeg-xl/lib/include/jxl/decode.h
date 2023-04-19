@@ -22,6 +22,7 @@
 #include "jxl/memory_manager.h"
 #include "jxl/parallel_runner.h"
 #include "jxl/types.h"
+#include "jxl/version.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -762,6 +763,18 @@ typedef enum {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsEncodedProfile(
     const JxlDecoder* dec, const JxlPixelFormat* unused_format,
     JxlColorProfileTarget target, JxlColorEncoding* color_encoding);
@@ -1436,6 +1449,21 @@ JXL_EXPORT size_t JxlDecoderGetIntendedDownsamplingRatio(JxlDecoder* dec);
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderFlushImage(JxlDecoder* dec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus
+JxlDecoderSetImageOutBitDepth(JxlDecoder* dec, const JxlBitDepth* bit_depth);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

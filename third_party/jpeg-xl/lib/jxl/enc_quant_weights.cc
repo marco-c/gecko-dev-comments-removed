@@ -183,6 +183,18 @@ void DequantMatricesScaleDC(DequantMatrices* matrices, const float scale) {
   DequantMatricesSetCustomDC(matrices, dc);
 }
 
+void DequantMatricesRoundtrip(DequantMatrices* matrices) {
+  
+  
+  BitWriter writer;
+  JXL_CHECK(DequantMatricesEncode(matrices, &writer, 0, nullptr));
+  writer.ZeroPadToByte();
+  BitReader br(writer.GetSpan());
+  
+  JXL_CHECK(matrices->Decode(&br));
+  JXL_CHECK(br.Close());
+}
+
 void DequantMatricesSetCustom(DequantMatrices* matrices,
                               const std::vector<QuantEncoding>& encodings,
                               ModularFrameEncoder* encoder) {
@@ -195,16 +207,7 @@ void DequantMatricesSetCustom(DequantMatrices* matrices,
                              encodings[i], i);
     }
   }
-  
-  
-  
-  BitWriter writer;
-  JXL_CHECK(DequantMatricesEncode(matrices, &writer, 0, nullptr));
-  writer.ZeroPadToByte();
-  BitReader br(writer.GetSpan());
-  
-  JXL_CHECK(matrices->Decode(&br));
-  JXL_CHECK(br.Close());
+  DequantMatricesRoundtrip(matrices);
 }
 
 }  

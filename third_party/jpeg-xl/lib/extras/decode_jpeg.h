@@ -1,0 +1,26 @@
+
+
+
+
+
+#ifndef LIB_EXTRAS_DECODE_JPEG_H_
+#define LIB_EXTRAS_DECODE_JPEG_H_
+
+#include <stdint.h>
+
+#include <vector>
+
+#include "lib/extras/packed_image.h"
+#include "lib/jxl/base/data_parallel.h"
+
+namespace jxl {
+namespace extras {
+
+Status DecodeJpeg(const std::vector<uint8_t>& compressed,
+                  JxlDataType output_data_type, ThreadPool* pool,
+                  PackedPixelFile* ppf);
+
+}  
+}  
+
+#endif  

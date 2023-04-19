@@ -26,6 +26,9 @@ void DequantMatricesSetCustom(DequantMatrices* matrices,
                               const std::vector<QuantEncoding>& encodings,
                               ModularFrameEncoder* encoder);
 
+
+void DequantMatricesRoundtrip(DequantMatrices* matrices);
+
 }  
 
 #endif  

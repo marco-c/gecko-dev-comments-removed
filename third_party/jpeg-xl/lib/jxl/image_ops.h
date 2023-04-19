@@ -795,7 +795,8 @@ Image3F PadImageMirror(const Image3F& in, size_t xborder, size_t yborder);
 
 
 
-void PadImageToBlockMultipleInPlace(Image3F* JXL_RESTRICT in);
+void PadImageToBlockMultipleInPlace(Image3F* JXL_RESTRICT in,
+                                    size_t block_dim = kBlockDim);
 
 
 void DownsampleImage(Image3F* opsin, size_t factor);

@@ -56,6 +56,20 @@ struct PixelCallback {
   void* init_opaque = nullptr;
 };
 
+struct ImageOutput {
+  
+  JxlPixelFormat format;
+  
+  size_t bits_per_sample;
+  
+  PixelCallback callback;
+  
+  void* buffer;
+  size_t buffer_size;
+  
+  size_t stride;
+};
+
 
 
 struct PassesDecoderState {
@@ -78,16 +92,10 @@ struct PassesDecoderState {
   ImageF sigma;
 
   
-  void* image_buffer;
-  
   size_t width;
   size_t height;
-  
-  size_t stride;
-  
-  PixelCallback pixel_callback;
-  
-  JxlPixelFormat format;
+  ImageOutput main_output;
+  std::vector<ImageOutput> extra_output;
 
   
   bool fast_xyb_srgb8_conversion;
@@ -134,8 +142,9 @@ struct PassesDecoderState {
     b_dm_multiplier =
         std::pow(1 / (1.25f), shared->frame_header.b_qm_scale - 2.0f);
 
-    pixel_callback = PixelCallback();
-    image_buffer = nullptr;
+    main_output.callback = PixelCallback();
+    main_output.buffer = nullptr;
+    extra_output.clear();
 
     fast_xyb_srgb8_conversion = false;
     unpremul_alpha = false;

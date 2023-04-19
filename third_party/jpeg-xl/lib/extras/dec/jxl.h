@@ -53,6 +53,9 @@ struct JXLDecompressParams {
   bool use_image_callback = true;
   
   bool unpremultiply_alpha = false;
+
+  
+  JxlBitDepth output_bitdepth = {JXL_BIT_DEPTH_FROM_PIXEL_FORMAT, 0, 0};
 };
 
 bool DecodeImageJXL(const uint8_t* bytes, size_t bytes_size,

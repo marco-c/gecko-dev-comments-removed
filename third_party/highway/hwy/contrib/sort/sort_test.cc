@@ -13,6 +13,10 @@
 
 
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>  
@@ -218,9 +222,6 @@ HWY_NOINLINE void TestAllBaseCase() {
 #if defined(_MSC_VER)
   return;
 #endif
-  
-  if (!HWY_ARCH_X86 && (HWY_TARGET == HWY_EMU128)) return;
-
   TestBaseCase<TraitsLane<OrderAscending<int32_t> > >();
   TestBaseCase<TraitsLane<OrderDescending<int64_t> > >();
   TestBaseCase<Traits128<OrderAscending128> >();
@@ -356,9 +357,6 @@ static HWY_NOINLINE void TestPartition() {
 }
 
 HWY_NOINLINE void TestAllPartition() {
-  
-  if (!HWY_ARCH_X86 && (HWY_TARGET == HWY_EMU128)) return;
-
   TestPartition<TraitsLane<OrderAscending<int16_t> > >();
   TestPartition<TraitsLane<OrderDescending<int32_t> > >();
   TestPartition<TraitsLane<OrderAscending<int64_t> > >();
@@ -490,9 +488,6 @@ void TestSort(size_t num_lanes) {
 #if defined(_MSC_VER)
   return;
 #endif
-  
-  if (!HWY_ARCH_X86 && (HWY_TARGET == HWY_EMU128)) return;
-
   using Order = typename Traits::Order;
   using LaneType = typename Traits::LaneType;
   using KeyType = typename Traits::KeyType;

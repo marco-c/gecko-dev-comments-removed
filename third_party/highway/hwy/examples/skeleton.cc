@@ -18,6 +18,8 @@
 #include <stdio.h>
 
 
+
+
 #undef HWY_TARGET_INCLUDE
 
 
@@ -26,11 +28,15 @@
 #include "hwy/foreach_target.h"  
 
 
+
+
 #include "hwy/highway.h"
 
 
 HWY_BEFORE_NAMESPACE();
+
 namespace skeleton {
+
 
 
 namespace HWY_NAMESPACE {
@@ -102,6 +108,7 @@ HWY_EXPORT(FloorLog2);
 HWY_DLLEXPORT void CallFloorLog2(const uint8_t* HWY_RESTRICT in,
                                  const size_t count,
                                  uint8_t* HWY_RESTRICT out) {
+  
   
   
   return HWY_DYNAMIC_DISPATCH(FloorLog2)(in, count, out);

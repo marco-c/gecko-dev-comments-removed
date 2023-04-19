@@ -105,8 +105,8 @@ TU ComputeUlpDelta(const T expected, const T actual) {
   
   
   TU ux, uy;
-  CopyBytes<sizeof(T)>(&expected, &ux);
-  CopyBytes<sizeof(T)>(&actual, &uy);
+  CopySameSize(&expected, &ux);
+  CopySameSize(&actual, &uy);
 
   
   const TU ulp = HWY_MAX(ux, uy) - HWY_MIN(ux, uy);

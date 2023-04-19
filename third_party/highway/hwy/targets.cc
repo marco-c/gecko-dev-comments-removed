@@ -15,6 +15,9 @@
 
 #include "hwy/targets.h"
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>  
 #include <stdarg.h>
 #include <stddef.h>
@@ -23,7 +26,7 @@
 
 #include <atomic>
 
-#include "hwy/per_target.h"
+#include "hwy/per_target.h"  
 
 #if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
 #include "sanitizer/common_interface_defs.h"  

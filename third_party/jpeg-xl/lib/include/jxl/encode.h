@@ -18,6 +18,7 @@
 #include "jxl/jxl_export.h"
 #include "jxl/memory_manager.h"
 #include "jxl/parallel_runner.h"
+#include "jxl/version.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -527,6 +528,22 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameName(
 
 
 
+JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameBitDepth(
+    JxlEncoderFrameSettings* frame_settings, const JxlBitDepth* bit_depth);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -543,6 +560,13 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetFrameName(
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
                        const uint8_t* buffer, size_t size);
+
+
+
+
+
+
+
 
 
 

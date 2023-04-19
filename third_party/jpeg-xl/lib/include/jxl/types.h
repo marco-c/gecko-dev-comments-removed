@@ -113,6 +113,43 @@ typedef struct {
 
 
 
+typedef enum {
+  
+
+
+
+
+
+
+  JXL_BIT_DEPTH_FROM_PIXEL_FORMAT = 0,
+
+  
+
+
+
+
+  JXL_BIT_DEPTH_FROM_CODESTREAM = 1,
+
+  
+
+  JXL_BIT_DEPTH_CUSTOM = 2,
+} JxlBitDepthType;
+
+
+
+typedef struct {
+  
+  JxlBitDepthType type;
+
+  
+  uint32_t bits_per_sample;
+
+  
+  uint32_t exponent_bits_per_sample;
+} JxlBitDepth;
+
+
+
 typedef char JxlBoxType[4];
 
 

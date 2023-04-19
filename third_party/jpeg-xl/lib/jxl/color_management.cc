@@ -249,7 +249,7 @@ Status CreateICCHeader(const ColorEncoding& c,
 
   WriteICCUint32(0, 0, header);  
   WriteICCTag(kCmm, 4, header);
-  WriteICCUint32(0x04300000u, 8, header);
+  WriteICCUint32(0x04400000u, 8, header);
   const char* profile_type =
       c.GetColorSpace() == ColorSpace::kXYB ? "scnr" : "mntr";
   WriteICCTag(profile_type, 12, header);
@@ -339,6 +339,44 @@ Status CreateICCChadTag(float chad[9], PaddedBytes* JXL_RESTRICT tags) {
   return true;
 }
 
+void MaybeCreateICCCICPTag(const ColorEncoding& c,
+                           PaddedBytes* JXL_RESTRICT tags, size_t* offset,
+                           size_t* size, PaddedBytes* JXL_RESTRICT tagtable,
+                           std::vector<size_t>* offsets) {
+  if (c.GetColorSpace() != ColorSpace::kRGB) {
+    return;
+  }
+  uint8_t primaries = 0;
+  if (c.primaries == Primaries::kP3) {
+    if (c.white_point == WhitePoint::kD65) {
+      primaries = 12;
+    } else if (c.white_point == WhitePoint::kDCI) {
+      primaries = 11;
+    } else {
+      return;
+    }
+  } else if (c.primaries != Primaries::kCustom &&
+             c.white_point == WhitePoint::kD65) {
+    primaries = static_cast<uint8_t>(c.primaries);
+  } else {
+    return;
+  }
+  if (c.tf.IsUnknown() || c.tf.IsGamma()) {
+    return;
+  }
+  WriteICCTag("cicp", tags->size(), tags);
+  WriteICCUint32(0, tags->size(), tags);
+  WriteICCUint8(primaries, tags->size(), tags);
+  WriteICCUint8(static_cast<uint8_t>(c.tf.GetTransferFunction()), tags->size(),
+                tags);
+  
+  WriteICCUint8(0, tags->size(), tags);
+  
+  WriteICCUint8(1, tags->size(), tags);
+  FinalizeICCTag(tags, offset, size);
+  AddToICCTagTable("cicp", *offset, *size, tagtable, offsets);
+}
+
 void CreateICCCurvCurvTag(const std::vector<uint16_t>& curve,
                           PaddedBytes* JXL_RESTRICT tags) {
   size_t pos = tags->size();
@@ -350,6 +388,7 @@ void CreateICCCurvCurvTag(const std::vector<uint16_t>& curve,
     WriteICCUint16(curve[i], pos + 12 + i * 2, tags);
   }
 }
+
 
 Status CreateICCCurvParaTag(std::vector<float> params, size_t curve_type,
                             PaddedBytes* JXL_RESTRICT tags) {
@@ -365,30 +404,50 @@ Status CreateICCCurvParaTag(std::vector<float> params, size_t curve_type,
 
 Status CreateICCLutAtoBTagForXYB(PaddedBytes* JXL_RESTRICT tags) {
   WriteICCTag("mAB ", tags->size(), tags);
+  
   WriteICCUint32(0, tags->size(), tags);
+  
   WriteICCUint8(3, tags->size(), tags);
+  
   WriteICCUint8(3, tags->size(), tags);
+  
   WriteICCUint16(0, tags->size(), tags);
-  WriteICCUint32(316, tags->size(), tags);
-  WriteICCUint32(268, tags->size(), tags);
-  WriteICCUint32(148, tags->size(), tags);
-  WriteICCUint32(80, tags->size(), tags);
+  
   WriteICCUint32(32, tags->size(), tags);
+  
+  WriteICCUint32(244, tags->size(), tags);
+  
+  WriteICCUint32(148, tags->size(), tags);
+  
+  WriteICCUint32(80, tags->size(), tags);
+  
+  
+  WriteICCUint32(32, tags->size(), tags);
+
+  
+  
   JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
   JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
   JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
+  
+  
+  for (int i = 0; i < 16; ++i) {
+    WriteICCUint8(i < 3 ? 2 : 0, tags->size(), tags);
+  }
+  
   WriteICCUint8(2, tags->size(), tags);
-  WriteICCUint8(2, tags->size(), tags);
-  WriteICCUint8(2, tags->size(), tags);
-  WriteICCUint8(0, tags->size(), tags);
-  WriteICCUint32(0, tags->size(), tags);
-  WriteICCUint32(0, tags->size(), tags);
-  WriteICCUint32(0, tags->size(), tags);
-  WriteICCUint8(2, tags->size(), tags);
+  
   WriteICCUint8(0, tags->size(), tags);
   WriteICCUint16(0, tags->size(), tags);
-  const float kOffsets[3] = {0.015387, 0.028101, 0.277706};
-  const float kScaling[3] = {1.125, 1.125, 1. / 1.511027};
+  const float kOffsets[3] = {
+      kScaledXYBOffset[0] + kScaledXYBOffset[1],
+      kScaledXYBOffset[1] - kScaledXYBOffset[0] + 1.0f / kScaledXYBScale[0],
+      kScaledXYBOffset[1] + kScaledXYBOffset[2]};
+  const float kScaling[3] = {
+      1.0f / (1.0f / kScaledXYBScale[0] + 1.0f / kScaledXYBScale[1]),
+      1.0f / (1.0f / kScaledXYBScale[0] + 1.0f / kScaledXYBScale[1]),
+      1.0f / (1.0f / kScaledXYBScale[1] + 1.0f / kScaledXYBScale[2])};
+  
   for (size_t ix = 0; ix < 2; ++ix) {
     for (size_t iy = 0; iy < 2; ++iy) {
       for (size_t ib = 0; ib < 2; ++ib) {
@@ -414,6 +473,8 @@ Status CreateICCLutAtoBTagForXYB(PaddedBytes* JXL_RESTRICT tags) {
       }
     }
   }
+  
+  
   for (size_t i = 0; i < 3; ++i) {
     const float b =
         -kOffsets[i] - std::cbrt(jxl::kNegOpsinAbsorbanceBiasRGB[i]);
@@ -423,23 +484,24 @@ Status CreateICCLutAtoBTagForXYB(PaddedBytes* JXL_RESTRICT tags) {
         b,
         0,                                
         std::max(0.f, -b * kScaling[i]),  
-        jxl::kNegOpsinAbsorbanceBiasRGB[i],
-        0,  
     };
-    JXL_RETURN_IF_ERROR(CreateICCCurvParaTag(params, 4, tags));
+    JXL_RETURN_IF_ERROR(CreateICCCurvParaTag(params, 3, tags));
   }
+  
   const double matrix[] = {1.5170095, -1.1065225, 0.071623,
                            -0.050022, 0.5683655,  -0.018344,
                            -1.387676, 1.1145555,  0.6857255};
+  
   for (size_t i = 0; i < 9; ++i) {
     JXL_RETURN_IF_ERROR(WriteICCS15Fixed16(matrix[i], tags->size(), tags));
   }
-  JXL_RETURN_IF_ERROR(WriteICCS15Fixed16(0.0f, tags->size(), tags));
-  JXL_RETURN_IF_ERROR(WriteICCS15Fixed16(0.0f, tags->size(), tags));
-  JXL_RETURN_IF_ERROR(WriteICCS15Fixed16(0.0f, tags->size(), tags));
-  JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
-  JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
-  JXL_RETURN_IF_ERROR(CreateICCCurvParaTag({1.0f}, 0, tags));
+  for (size_t i = 0; i < 3; ++i) {
+    float intercept = 0;
+    for (size_t j = 0; j < 3; ++j) {
+      intercept += matrix[i * 3 + j] * jxl::kNegOpsinAbsorbanceBiasRGB[j];
+    }
+    JXL_RETURN_IF_ERROR(WriteICCS15Fixed16(intercept, tags->size(), tags));
+  }
   return true;
 }
 }  
@@ -481,9 +543,7 @@ Status MaybeCreateProfile(const ColorEncoding& c,
   FinalizeICCTag(&tags, &tag_offset, &tag_size);
   AddToICCTagTable("desc", tag_offset, tag_size, &tagtable, &offsets);
 
-  const std::string copyright =
-      "Copyright 2019 Google LLC, CC-BY-SA 3.0 Unported "
-      "license(https://creativecommons.org/licenses/by-sa/3.0/legalcode)";
+  const std::string copyright = "CC0";
   CreateICCMlucTag(copyright, &tags);
   FinalizeICCTag(&tags, &tag_offset, &tag_size);
   AddToICCTagTable("cprt", tag_offset, tag_size, &tagtable, &offsets);
@@ -511,6 +571,9 @@ Status MaybeCreateProfile(const ColorEncoding& c,
   }
 
   if (c.GetColorSpace() == ColorSpace::kRGB) {
+    MaybeCreateICCCICPTag(c, &tags, &tag_offset, &tag_size, &tagtable,
+                          &offsets);
+
     const PrimariesCIExy primaries = c.GetPrimaries();
     float m[9];
     JXL_RETURN_IF_ERROR(CreateICCRGBMatrix(primaries.r, primaries.g,
