@@ -117,8 +117,7 @@ namespace webrtc {
 
 
 class PeerConnection : public PeerConnectionInternal,
-                       public JsepTransportController::Observer,
-                       public sigslot::has_slots<> {
+                       public JsepTransportController::Observer {
  public:
   
   
@@ -289,11 +288,6 @@ class PeerConnection : public PeerConnectionInternal,
     return rtp_manager()->transceivers()->List();
   }
 
-  sigslot::signal1<SctpDataChannel*>& SignalSctpDataChannelCreated() override {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return data_channel_controller_.SignalSctpDataChannelCreated();
-  }
-
   std::vector<DataChannelStats> GetDataChannelStats() const override;
 
   absl::optional<std::string> sctp_transport_name() const override;
@@ -312,9 +306,10 @@ class PeerConnection : public PeerConnectionInternal,
   bool IceRestartPending(const std::string& content_name) const override;
   bool NeedsIceRestart(const std::string& content_name) const override;
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role) override;
-
+  void SubscribeDataChannelCreated(
+      std::function<void(SctpDataChannel*)> callback) override;
   
-  void NoteDataAddedEvent() { NoteUsageEvent(UsageEvent::DATA_ADDED); }
+  void NoteDataAddedEvent() override { NoteUsageEvent(UsageEvent::DATA_ADDED); }
   
   PeerConnectionObserver* Observer() const override;
   bool IsClosed() const override {
@@ -325,7 +320,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   bool GetSctpSslRole(rtc::SSLRole* role) override;
   
-  void OnSctpDataChannelClosed(DataChannelInterface* channel);
+  void OnSctpDataChannelClosed(DataChannelInterface* channel) override;
 
   bool ShouldFireNegotiationNeededEvent(uint32_t event_id) override;
 

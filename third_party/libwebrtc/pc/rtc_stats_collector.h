@@ -84,6 +84,10 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   
   void WaitForPendingRequest();
 
+  
+  
+  void OnSctpDataChannelCreated(SctpDataChannel* channel);
+
  protected:
   RTCStatsCollector(PeerConnectionInternal* pc, int64_t cache_lifetime_us);
   ~RTCStatsCollector();
@@ -238,8 +242,6 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   
   void MergeNetworkReport_s();
 
-  
-  void OnSctpDataChannelCreated(SctpDataChannel* channel);
   
   void OnDataChannelOpened(DataChannelInterface* channel);
   void OnDataChannelClosed(DataChannelInterface* channel);

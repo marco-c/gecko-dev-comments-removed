@@ -27,23 +27,21 @@
 #include "media/base/stream_params.h"
 #include "pc/channel.h"
 #include "pc/data_channel_utils.h"
+#include "pc/peer_connection_internal.h"
 #include "pc/sctp_data_channel.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ssl_stream_adapter.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 
-class PeerConnection;
-
 class DataChannelController : public SctpDataChannelProviderInterface,
                               public DataChannelSink {
  public:
-  explicit DataChannelController(PeerConnection* pc) : pc_(pc) {}
+  explicit DataChannelController(PeerConnectionInternal* pc) : pc_(pc) {}
 
   
   DataChannelController(DataChannelController&) = delete;
@@ -106,10 +104,12 @@ class DataChannelController : public SctpDataChannelProviderInterface,
   DataChannelTransportInterface* data_channel_transport() const;
   void set_data_channel_transport(DataChannelTransportInterface* transport);
 
-  sigslot::signal1<SctpDataChannel*>& SignalSctpDataChannelCreated() {
+  template <typename F>
+  void SubscribeDataChannelCreated(F&& callback) {
     RTC_DCHECK_RUN_ON(signaling_thread());
-    return SignalSctpDataChannelCreated_;
+    sctp_data_channel_created_callbacks_.AddReceiver(callback);
   }
+
   
   void OnTransportChannelClosed(RTCError error);
 
@@ -165,22 +165,21 @@ class DataChannelController : public SctpDataChannelProviderInterface,
   
   
   
-  sigslot::signal1<bool> SignalDataChannelTransportWritable_s
+  CallbackList<bool> data_transport_writable_callbacks_
       RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal2<const cricket::ReceiveDataParams&,
-                   const rtc::CopyOnWriteBuffer&>
-      SignalDataChannelTransportReceivedData_s
+  CallbackList<const cricket::ReceiveDataParams&, rtc::CopyOnWriteBuffer>
+      data_channel_transport_received_data_callbacks_
           RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalDataChannelTransportChannelClosing_s
+  CallbackList<int> data_channel_transport_channel_closing_callbacks_
       RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalDataChannelTransportChannelClosed_s
-      RTC_GUARDED_BY(signaling_thread());
-
-  sigslot::signal1<SctpDataChannel*> SignalSctpDataChannelCreated_
+  CallbackList<int> data_channel_transport_channel_closed_callbacks_
       RTC_GUARDED_BY(signaling_thread());
 
   
-  PeerConnection* const pc_;
+  CallbackList<SctpDataChannel*> sctp_data_channel_created_callbacks_
+      RTC_GUARDED_BY(signaling_thread());
+  
+  PeerConnectionInternal* const pc_;
   
   
   rtc::WeakPtrFactory<DataChannelController> weak_factory_{this};
