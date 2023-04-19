@@ -1229,12 +1229,18 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   
+  if (module->hadEvaluationError()) {
+    Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
+    MOZ_ASSERT(JS::GetPromiseState(promise) == JS::PromiseState::Rejected);
+    MOZ_ASSERT(JS::GetPromiseResult(promise) == module->evaluationError());
+    result.set(ObjectValue(*promise));
+    return true;
+  }
+
   
   
-  
-  if ((module->status() == ModuleStatus::EvaluatingAsync ||
-       module->status() == ModuleStatus::Evaluated) &&
-      !module->hadEvaluationError()) {
+  if (module->status() == ModuleStatus::EvaluatingAsync ||
+      module->status() == ModuleStatus::Evaluated) {
     module = module->getCycleRoot();
   }
 
