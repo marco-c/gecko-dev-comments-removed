@@ -4,12 +4,13 @@ var top = bottom;
 function nearNativeStackLimit() {
   function inner() {
     try {
-      with ({}) { 
+      with ({}) {
+        
         top = stackPointerInfo();
         var stepsFromLimit = eval("inner()"); 
       }
       return stepsFromLimit + 1;
-    } catch(e) {
+    } catch (e) {
       
       
       
@@ -21,6 +22,13 @@ function nearNativeStackLimit() {
 
 var nbFrames = nearNativeStackLimit();
 var frameSize = bottom - top;
-print("Max stack size:", frameSize, "bytes",
-      "\nMaximum number of frames:", nbFrames,
-      "\nAverage frame size:", Math.ceil(frameSize / nbFrames), "bytes");
+print(
+  "Max stack size:",
+  frameSize,
+  "bytes",
+  "\nMaximum number of frames:",
+  nbFrames,
+  "\nAverage frame size:",
+  Math.ceil(frameSize / nbFrames),
+  "bytes"
+);

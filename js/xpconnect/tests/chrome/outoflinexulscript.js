@@ -1,6 +1,5 @@
 
 
 function outoflinefunction() {
-    return 42;
+  return 42;
 }
-
