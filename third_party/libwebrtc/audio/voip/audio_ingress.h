@@ -22,7 +22,6 @@
 #include "api/audio/audio_mixer.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
-#include "api/voip/voip_statistics.h"
 #include "audio/audio_level.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -87,8 +86,6 @@ class AudioIngress : public AudioMixer::Source {
     return stats;
   }
 
-  ChannelStatistics GetChannelStatistics();
-
   
   AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sampling_rate,
@@ -105,6 +102,10 @@ class AudioIngress : public AudioMixer::Source {
   }
 
  private:
+  
+  
+  absl::optional<int64_t> GetRoundTripTime();
+
   
   
   

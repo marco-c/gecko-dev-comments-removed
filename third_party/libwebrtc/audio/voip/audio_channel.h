@@ -84,7 +84,6 @@ class AudioChannel : public rtc::RefCountInterface {
     ingress_->SetReceiveCodecs(codecs);
   }
   IngressStatistics GetIngressStatistics();
-  ChannelStatistics GetChannelStatistics();
 
   
   
@@ -105,12 +104,6 @@ class AudioChannel : public rtc::RefCountInterface {
   }
   double GetOutputTotalDuration() const {
     return ingress_->GetOutputTotalDuration();
-  }
-
-  
-  void SendRTCPReportForTesting(RTCPPacketType type) {
-    int32_t result = rtp_rtcp_->SendRTCP(type);
-    RTC_DCHECK(result == 0);
   }
 
  private:
