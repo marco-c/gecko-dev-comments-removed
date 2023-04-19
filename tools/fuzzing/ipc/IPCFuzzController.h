@@ -125,6 +125,16 @@ class IPCFuzzController {
       actorIds;
 
   
+  Atomic<bool> useLastPortName;
+
+  
+  mojo::core::ports::PortName lastActorPortName;
+
+  
+  
+  Atomic<uint32_t> useLastActor;
+
+  
   
   
   
