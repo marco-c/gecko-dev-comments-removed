@@ -4,5 +4,9 @@
 
 
 
-BROWSER_CHROME_MANIFESTS += ["browser.ini", "browser_audio_shutdown.ini"]
+BROWSER_CHROME_MANIFESTS += [
+    "browser.ini",
+    "browser_audio_shutdown.ini",
+    "browser_child_hang.ini",
+]
 MOCHITEST_MANIFESTS += ["mochitest_audio_off.ini", "mochitest_audio_on.ini"]
