@@ -47,8 +47,7 @@ WebRenderTextureHost::WebRenderTextureHost(
   
   
   
-  MOZ_ASSERT(!(aFlags & TextureFlags::DEALLOCATE_CLIENT) ||
-             (aFlags & TextureFlags::REMOTE_TEXTURE));
+  MOZ_ASSERT(!(aFlags & TextureFlags::DEALLOCATE_CLIENT));
   MOZ_COUNT_CTOR(WebRenderTextureHost);
 
   mExternalImageId = Some(aExternalImageId);
@@ -106,6 +105,9 @@ void WebRenderTextureHost::NotifyNotUsed() {
     wr::RenderThread::Get()->NotifyNotUsed(GetExternalImageKey());
   }
 #endif
+  if (mWrappedTextureHost->AsRemoteTextureHostWrapper()) {
+    mWrappedTextureHost->NotifyNotUsed();
+  }
   TextureHost::NotifyNotUsed();
 }
 

@@ -12,7 +12,6 @@
 #include <memory>
 #include <queue>
 #include <stack>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -20,10 +19,12 @@
 #include "mozilla/gfx/Types.h"               
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"   
+#include "mozilla/layers/TextureHost.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 
 class nsISerialEventTarget;
 
@@ -35,6 +36,7 @@ class SharedSurface;
 
 namespace layers {
 
+class RemoteTextureHostWrapper;
 class TextureData;
 class TextureHost;
 
@@ -70,64 +72,6 @@ class RemoteTextureOwnerClient final {
       mOwnerIds;
 };
 
-using RemoteTextureCallback = std::function<void(
-    const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
-    const base::ProcessId aForPid)>;
-
-
-
-
-
-class RemoteTextureConsumerClient {
- public:
-  static UniquePtr<RemoteTextureConsumerClient> Create(
-      const RemoteTextureOwnerId aOwnerId, const CompositableHandle& aHandle,
-      const base::ProcessId aForPid);
-
-  RemoteTextureConsumerClient(const RemoteTextureOwnerId aOwnerId,
-                              const CompositableHandle& aHandle,
-                              const base::ProcessId aForPid);
-  ~RemoteTextureConsumerClient();
-
-  RefPtr<TextureHost> GetTextureHost(const RemoteTextureId aTextureId,
-                                     const gfx::IntSize aSize,
-                                     const TextureFlags aFlags,
-                                     const RemoteTextureCallback& aCallback);
-
-  const RemoteTextureOwnerId mOwnerId;
-  const CompositableHandle mHandle;
-  const base::ProcessId mForPid;
-};
-
-
-
-
-
-class SharedSurfaceWrapper
-    : public SupportsThreadSafeWeakPtr<SharedSurfaceWrapper> {
- public:
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(SharedSurfaceWrapper)
-
-  explicit SharedSurfaceWrapper(
-      const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
-  virtual ~SharedSurfaceWrapper();
-
-  bool IsUsed() { return mIsUsed; }
-  void EndUsage() { mIsUsed = false; }
-
-  const std::shared_ptr<gl::SharedSurface> mSharedSurface;
-
- protected:
-  Atomic<bool> mIsUsed{true};
-};
-
-
-
-
-
-
-
-
 
 
 
@@ -160,25 +104,18 @@ class RemoteTextureMap {
                                RemoteTextureOwnerId::HashFn>& aOwnerIds,
       const base::ProcessId aForPid);
 
-  UniquePtr<RemoteTextureConsumerClient> RegisterTextureConsumer(
-      const RemoteTextureOwnerId aOwnerId, const CompositableHandle& aHandle,
-      const base::ProcessId aForPid);
+  void GetRemoteTextureHost(RemoteTextureHostWrapper* aTextureHostWrapper);
 
-  void UnregisterTextureConsumer(const RemoteTextureOwnerId aOwnerId,
-                                 const CompositableHandle& aHandle,
-                                 const base::ProcessId aForPid);
+  void ReleaseRemoteTextureHost(RemoteTextureHostWrapper* aTextureHostWrapper);
 
-  RefPtr<TextureHost> GetTextureHost(const RemoteTextureId aTextureId,
-                                     const RemoteTextureOwnerId aOwnerId,
-                                     const CompositableHandle& aHandle,
-                                     const base::ProcessId aForPid,
-                                     const gfx::IntSize aSize,
-                                     const TextureFlags aFlags,
-                                     const RemoteTextureCallback& aCallback);
+  RefPtr<TextureHost> GetOrCreateRemoteTextureHostWrapper(
+      const RemoteTextureId aTextureId, const RemoteTextureOwnerId aOwnerId,
+      const base::ProcessId aForPid, const gfx::IntSize aSize,
+      const TextureFlags aFlags);
 
-  void NotifyReleased(const RemoteTextureId aTextureId,
-                      const RemoteTextureOwnerId aOwnerId,
-                      const base::ProcessId aForPid);
+  void UnregisterRemoteTextureHostWrapper(const RemoteTextureId aTextureId,
+                                          const RemoteTextureOwnerId aOwnerId,
+                                          const base::ProcessId aForPid);
 
   UniquePtr<TextureData> GetRecycledBufferTextureData(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,
@@ -189,46 +126,44 @@ class RemoteTextureMap {
 
  protected:
   
-  struct TextureDataWrapper {
-    TextureDataWrapper(
-        const RemoteTextureId aTextureId, UniquePtr<TextureData>&& aTextureData,
-        const ThreadSafeWeakPtr<SharedSurfaceWrapper>& aSharedSurface);
+  struct TextureDataHolder {
+    TextureDataHolder(const RemoteTextureId aTextureId,
+                      RefPtr<TextureHost> aTextureHost,
+                      UniquePtr<TextureData>&& aTextureData,
+                      const std::shared_ptr<gl::SharedSurface>& aSharedSurface);
 
     const RemoteTextureId mTextureId;
+    
+    
+    
+    
+    RefPtr<TextureHost> mTextureHost;
+    
     UniquePtr<TextureData> mTextureData;
-    ThreadSafeWeakPtr<SharedSurfaceWrapper> mSharedSurface;
+    
+    std::shared_ptr<gl::SharedSurface> mSharedSurface;
   };
 
   struct TextureOwner {
-    std::queue<UniquePtr<TextureDataWrapper>> mTextureDataWrappers;
+    
+    std::queue<UniquePtr<TextureDataHolder>> mWaitingTextureDataHolders;
+    
+    std::queue<UniquePtr<TextureDataHolder>> mUsingTextureDataHolders;
     RemoteTextureId mLatestTextureId = {0};
-    RefPtr<TextureHost> mLatestTextureHost;
-    std::queue<RefPtr<SharedSurfaceWrapper>> mSharedSurfaces;
+    CompositableTextureHostRef mLatestTextureHost;
     std::stack<UniquePtr<TextureData>> mRecycledTextures;
-    std::stack<RefPtr<SharedSurfaceWrapper>> mRecycledSharedSurfaces;
+    std::stack<std::shared_ptr<gl::SharedSurface>> mRecycledSharedSurfaces;
   };
 
-  
-  
-  
-  struct TextureConsumer {
-    explicit TextureConsumer(const CompositableHandle& aHandle)
-        : mHandle(aHandle) {}
-    CompositableHandle mHandle;
-    std::queue<std::pair<RemoteTextureId, RemoteTextureCallback>> mCallbacks;
-  };
+  void UpdateTexture(const MutexAutoLock& aProofOfLock,
+                     RemoteTextureMap::TextureOwner* aOwner,
+                     const RemoteTextureId aTextureId);
 
   RemoteTextureMap::TextureOwner* GetTextureOwner(
       const MutexAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
       const base::ProcessId aForPid);
 
-  RemoteTextureMap::TextureConsumer* GetTextureConsumer(
-      const MutexAutoLock& aProofOfLock, const RemoteTextureOwnerId aOwnerId,
-      const base::ProcessId aForPid);
-
-  RefPtr<TextureHost> CreateRemoteTexture(const gfx::IntSize aSize,
-                                          const TextureFlags aFlags,
-                                          TextureDataWrapper* aTextureData);
+  static RefPtr<TextureHost> CreateRemoteTexture(TextureData* aTextureData);
 
   Mutex mMutex MOZ_UNANNOTATED;
 
@@ -236,15 +171,8 @@ class RemoteTextureMap {
            UniquePtr<TextureOwner>>
       mTextureOwners;
 
-  
-  std::map<std::pair<base::ProcessId, RemoteTextureOwnerId>,
-           UniquePtr<TextureConsumer>>
-      mTextureConsumers;
-
-  
-  std::map<std::pair<base::ProcessId, RemoteTextureId>,
-           UniquePtr<TextureDataWrapper>>
-      mKeepAlives;
+  std::map<std::pair<base::ProcessId, RemoteTextureId>, RefPtr<TextureHost>>
+      mRemoteTextureHostWrappers;
 
   static StaticAutoPtr<RemoteTextureMap> sInstance;
 };

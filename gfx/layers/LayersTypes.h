@@ -359,6 +359,10 @@ struct RemoteTextureId {
     return !(*this == aOther);
   }
 
+  bool operator>=(const RemoteTextureId& aOther) const {
+    return mId >= aOther.mId;
+  }
+
   
   
   
