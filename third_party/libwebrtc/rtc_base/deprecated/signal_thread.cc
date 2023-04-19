@@ -31,7 +31,7 @@ DEPRECATED_SignalThread::DEPRECATED_SignalThread()
 }
 
 DEPRECATED_SignalThread::~DEPRECATED_SignalThread() {
-  rtc::CritScope lock(&cs_);
+  webrtc::MutexLock lock(&mutex_);
   RTC_DCHECK(refcount_ == 0);
 }
 
@@ -74,9 +74,9 @@ void DEPRECATED_SignalThread::Destroy(bool wait) {
     OnWorkStop();
     if (wait) {
       
-      cs_.Leave();
+      mutex_.Unlock();
       worker_.Stop();
-      cs_.Enter();
+      mutex_.Lock();
       refcount_--;
     }
   } else {
@@ -84,8 +84,11 @@ void DEPRECATED_SignalThread::Destroy(bool wait) {
   }
 }
 
-void DEPRECATED_SignalThread::Release() {
-  EnterExit ee(this);
+
+
+
+
+void DEPRECATED_SignalThread::Release() RTC_NO_THREAD_SAFETY_ANALYSIS {
   RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
   if (kComplete == state_) {
