@@ -77,7 +77,8 @@ class StatsCollector : public StatsCollectorInterface {
   
   
   
-  void GetStats(MediaStreamTrackInterface* track, StatsReports* reports);
+  void GetStats(MediaStreamTrackInterface* track,
+                StatsReports* reports) override;
 
   
   
