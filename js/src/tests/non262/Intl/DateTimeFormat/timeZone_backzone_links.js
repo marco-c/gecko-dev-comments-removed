@@ -23,7 +23,12 @@ const links = {
     "America/St_Barthelemy": "America/Port_of_Spain",
     "America/Virgin": "America/St_Thomas",
     "Antarctica/South_Pole": "Antarctica/McMurdo",
+    "Arctic/Longyearbyen": "Europe/Oslo",
     "Asia/Chungking": "Asia/Chongqing",
+    "Iceland": "Atlantic/Reykjavik",
+    "Pacific/Ponape": "Pacific/Pohnpei",
+    "Pacific/Truk": "Pacific/Chuuk",
+    "Pacific/Yap": "Pacific/Chuuk",
 };
 
 for (let [linkName, target] of Object.entries(links)) {

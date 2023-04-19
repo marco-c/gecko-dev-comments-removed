@@ -69,6 +69,7 @@ const links = {
     "Egypt": "Africa/Cairo",
     "Eire": "Europe/Dublin",
     "Etc/UCT": "Etc/UTC",
+    "Europe/Kiev": "Europe/Kyiv",
     "GB": "Europe/London",
     "GB-Eire": "Europe/London",
     "GMT+0": "Etc/GMT",
