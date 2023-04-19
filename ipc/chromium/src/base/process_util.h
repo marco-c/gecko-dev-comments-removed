@@ -125,6 +125,10 @@ struct LaunchOptions {
 
   
   
+  bool start_independent = false;
+
+  
+  
   EnvironmentMap env_map;
 
   std::vector<HANDLE> handles_to_inherit;
