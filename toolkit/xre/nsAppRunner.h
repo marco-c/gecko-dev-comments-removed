@@ -78,8 +78,6 @@ int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
 nsresult NS_CreateNativeAppSupport(nsINativeAppSupport** aResult);
 already_AddRefed<nsINativeAppSupport> NS_GetNativeAppSupport();
 
-nsresult NS_NewToolkitProfileService(nsIToolkitProfileService** aResult);
-
 
 
 
