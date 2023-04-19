@@ -218,9 +218,6 @@ class Port : public PortInterface,
 
   
   rtc::PacketSocketFactory* socket_factory() const { return factory_; }
-  void set_socket_factory(rtc::PacketSocketFactory* factory) {
-    factory_ = factory;
-  }
 
   
   const std::string& content_name() const { return content_name_; }
@@ -445,7 +442,7 @@ class Port : public PortInterface,
   void OnNetworkTypeChanged(const rtc::Network* network);
 
   rtc::Thread* const thread_;
-  rtc::PacketSocketFactory* factory_;
+  rtc::PacketSocketFactory* const factory_;
   std::string type_;
   bool send_retransmit_count_attribute_;
   rtc::Network* network_;
