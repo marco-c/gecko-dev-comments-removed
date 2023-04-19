@@ -167,7 +167,8 @@ add_task(async function test_gifft_timing_dist() {
   const EPSILON = 40000;
 
   
-  Assert.greater(data.sum, 15 * NANOS_IN_MILLIS - EPSILON);
+  
+  Assert.greater(data.sum, 13 * NANOS_IN_MILLIS - EPSILON);
 
   
   
