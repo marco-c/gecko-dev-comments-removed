@@ -857,23 +857,6 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
                                              bool aAlwaysLoad) {
   double currentDensity = 1.0;  
 
-  
-  
-  
-  
-  
-  
-  
-  auto UpdateDensityOnly = [&]() -> void {
-    if (mCurrentDensity == currentDensity) {
-      return;
-    }
-    mCurrentDensity = currentDensity;
-    if (nsImageFrame* f = do_QueryFrame(GetPrimaryFrame())) {
-      f->ResponsiveContentDensityChanged();
-    }
-  };
-
   if (aForce) {
     
     
@@ -886,7 +869,9 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     }
 
     if (!sourceChanged && !aAlwaysLoad) {
-      UpdateDensityOnly();
+      
+      
+      MOZ_ASSERT(currentDensity == mCurrentDensity);
       return NS_OK;
     }
   } else if (mResponsiveSelector) {
@@ -919,7 +904,15 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
   }
 
   if (!aAlwaysLoad && SelectedSourceMatchesLast(selectedSource)) {
-    UpdateDensityOnly();
+    
+    
+    
+    
+    
+    
+    
+    
+    SetDensity(currentDensity);
     return NS_OK;
   }
 
@@ -1030,13 +1023,13 @@ bool HTMLImageElement::UpdateResponsiveSource() {
   nsIContent* currentSource =
       mResponsiveSelector ? mResponsiveSelector->Content() : nullptr;
 
-  nsINode* candidateSource = nullptr;
-  if (IsInPicture()) {
-    
-    candidateSource = GetParentElement()->GetFirstChild();
-  } else {
-    candidateSource = this;
-  }
+  
+  nsINode* candidateSource =
+      IsInPicture() ? GetParentElement()->GetFirstChild() : this;
+
+  
+  
+  RefPtr<ResponsiveImageSelector> newResponsiveSelector = nullptr;
 
   while (candidateSource) {
     if (candidateSource == currentSource) {
@@ -1054,41 +1047,41 @@ bool HTMLImageElement::UpdateResponsiveSource() {
         }
 
         if (isUsableCandidate) {
+          
+          
+          SetDensity(mResponsiveSelector->GetSelectedImageDensity());
           return changed;
         }
       }
 
       
-      mResponsiveSelector = nullptr;
+      newResponsiveSelector = nullptr;
       if (candidateSource == this) {
         
         break;
       }
     } else if (candidateSource == this) {
       
-      if (!TryCreateResponsiveSelector(candidateSource->AsElement())) {
+      newResponsiveSelector =
+          TryCreateResponsiveSelector(candidateSource->AsElement());
+      break;
+    } else if (auto* source = HTMLSourceElement::FromNode(candidateSource)) {
+      if (RefPtr<ResponsiveImageSelector> selector =
+              TryCreateResponsiveSelector(source)) {
+        newResponsiveSelector = selector.forget();
         
-        mResponsiveSelector = nullptr;
+        break;
       }
-      break;
-    } else if (candidateSource->IsHTMLElement(nsGkAtoms::source) &&
-               TryCreateResponsiveSelector(candidateSource->AsElement())) {
-      
-      break;
     }
     candidateSource = candidateSource->GetNextSibling();
   }
 
-  if (!candidateSource) {
-    
-    mResponsiveSelector = nullptr;
-  }
-
   
   
   
   
   
+  SetResponsiveSelector(std::move(newResponsiveSelector));
   return hadSelector || mResponsiveSelector;
 }
 
@@ -1127,14 +1120,15 @@ bool HTMLImageElement::SourceElementMatches(Element* aSourceElement) {
   return true;
 }
 
-bool HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
+already_AddRefed<ResponsiveImageSelector>
+HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
   nsCOMPtr<nsIPrincipal> principal;
 
   
   bool isSourceTag = aSourceElement->IsHTMLElement(nsGkAtoms::source);
   if (isSourceTag) {
     if (!SourceElementMatches(aSourceElement)) {
-      return false;
+      return nullptr;
     }
     auto* source = HTMLSourceElement::FromNode(aSourceElement);
     principal = source->GetSrcsetTriggeringPrincipal();
@@ -1147,11 +1141,11 @@ bool HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
   
   nsString srcset;
   if (!aSourceElement->GetAttr(nsGkAtoms::srcset, srcset)) {
-    return false;
+    return nullptr;
   }
 
   if (srcset.IsEmpty()) {
-    return false;
+    return nullptr;
   }
 
   
@@ -1159,7 +1153,7 @@ bool HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
       new ResponsiveImageSelector(aSourceElement);
   if (!sel->SetCandidatesFromSourceSet(srcset, principal)) {
     
-    return false;
+    return nullptr;
   }
 
   nsAutoString sizes;
@@ -1175,8 +1169,7 @@ bool HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
     }
   }
 
-  mResponsiveSelector = sel;
-  return true;
+  return sel.forget();
 }
 
 
@@ -1320,6 +1313,34 @@ void HTMLImageElement::LazyLoadImageReachedViewport() {
     obs->Unobserve(*this);
   }
   doc->IncLazyLoadImageReachViewport(!Complete());
+}
+
+void HTMLImageElement::SetResponsiveSelector(
+    RefPtr<ResponsiveImageSelector>&& aSource) {
+  if (mResponsiveSelector == aSource) {
+    return;
+  }
+
+  mResponsiveSelector = std::move(aSource);
+
+  
+
+  SetDensity(mResponsiveSelector
+                 ? mResponsiveSelector->GetSelectedImageDensity()
+                 : 1.0);
+}
+
+void HTMLImageElement::SetDensity(double aDensity) {
+  if (mCurrentDensity == aDensity) {
+    return;
+  }
+
+  mCurrentDensity = aDensity;
+
+  
+  if (nsImageFrame* f = do_QueryFrame(GetPrimaryFrame())) {
+    f->ResponsiveContentDensityChanged();
+  }
 }
 
 }  

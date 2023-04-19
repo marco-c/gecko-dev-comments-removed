@@ -333,7 +333,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   
   
-  bool TryCreateResponsiveSelector(Element* aSourceElement);
+  already_AddRefed<ResponsiveImageSelector> TryCreateResponsiveSelector(
+      Element* aSourceElement);
 
   MOZ_CAN_RUN_SCRIPT CSSIntPoint GetXY();
   virtual JSObject* WrapNode(JSContext* aCx,
@@ -399,6 +400,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
     return GetParentElement() &&
            GetParentElement()->IsHTMLElement(nsGkAtoms::picture);
   }
+
+  void SetResponsiveSelector(RefPtr<ResponsiveImageSelector>&& aSource);
+  void SetDensity(double aDensity);
 
   bool mInDocResponsiveContent;
 
