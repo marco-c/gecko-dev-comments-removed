@@ -530,6 +530,9 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
   show: function PopupNotifications_show(
     browser,
     id,
@@ -1336,7 +1339,14 @@ PopupNotifications.prototype = {
       this._popupshownListener = this._popupshownListener.bind(this);
       target.addEventListener("popupshown", this._popupshownListener, true);
 
-      this.panel.openPopup(anchorElement, "bottomcenter topleft", 0, 0);
+      let popupOptions = notificationsToShow.findLast(
+        n => n.options?.popupOptions
+      )?.options?.popupOptions;
+      if (popupOptions) {
+        this.panel.openPopup(anchorElement, popupOptions);
+      } else {
+        this.panel.openPopup(anchorElement, "bottomcenter topleft", 0, 0);
+      }
     });
   },
 

@@ -270,14 +270,20 @@ var gXPInstallObserver = {
       return;
     }
 
-    const anchorID = "addons-notification-icon";
-
     
     var options = {
       displayURI: installInfo.originatingURI,
       persistent: true,
       hideClose: true,
     };
+
+    if (gUnifiedExtensions.isEnabled) {
+      options.popupOptions = {
+        position: "bottomcenter topright",
+        x: 2,
+        y: 0,
+      };
+    }
 
     let acceptInstallation = () => {
       for (let install of installInfo.installs) {
@@ -422,7 +428,7 @@ var gXPInstallObserver = {
       browser,
       "addon-install-confirmation",
       messageString,
-      anchorID,
+      gUnifiedExtensions.getPopupAnchorID(browser, window),
       action,
       [secondaryAction],
       options
@@ -496,7 +502,6 @@ var gXPInstallObserver = {
       return;
     }
 
-    const anchorID = "addons-notification-icon";
     var messageString, action;
     var brandShortName = brandBundle.getString("brandShortName");
 
@@ -508,6 +513,14 @@ var gXPInstallObserver = {
       hideClose: true,
       timeout: Date.now() + 30000,
     };
+
+    if (gUnifiedExtensions.isEnabled) {
+      options.popupOptions = {
+        position: "bottomcenter topright",
+        x: 2,
+        y: 0,
+      };
+    }
 
     switch (aTopic) {
       case "addon-install-disabled": {
@@ -550,7 +563,7 @@ var gXPInstallObserver = {
           browser,
           notificationID,
           messageString,
-          anchorID,
+          gUnifiedExtensions.getPopupAnchorID(browser, window),
           action,
           secondaryActions,
           options
@@ -597,7 +610,7 @@ var gXPInstallObserver = {
           browser,
           notificationID,
           messageString,
-          anchorID,
+          gUnifiedExtensions.getPopupAnchorID(browser, window),
           null,
           null,
           options
@@ -728,7 +741,7 @@ var gXPInstallObserver = {
           browser,
           notificationID,
           messageString,
-          anchorID,
+          gUnifiedExtensions.getPopupAnchorID(browser, window),
           action,
           [dontAllowAction, neverAllowAction],
           options
@@ -793,7 +806,7 @@ var gXPInstallObserver = {
           browser,
           notificationID,
           messageString,
-          anchorID,
+          gUnifiedExtensions.getPopupAnchorID(browser, window),
           action,
           [secondaryAction],
           options
@@ -876,7 +889,7 @@ var gXPInstallObserver = {
             browser,
             notificationID,
             messageString,
-            anchorID,
+            gUnifiedExtensions.getPopupAnchorID(browser, window),
             action,
             null,
             options
@@ -950,7 +963,7 @@ var gXPInstallObserver = {
           browser,
           notificationID,
           messageString,
-          anchorID,
+          gUnifiedExtensions.getPopupAnchorID(browser, window),
           action,
           secondaryActions,
           options
@@ -1291,20 +1304,44 @@ var gUnifiedExtensions = {
       return;
     }
 
-    const unifiedExtensionsEnabled = Services.prefs.getBoolPref(
-      "extensions.unifiedExtensions.enabled",
-      false
-    );
-
-    if (unifiedExtensionsEnabled) {
+    if (this.isEnabled) {
       MozXULElement.insertFTLIfNeeded("preview/unifiedExtensions.ftl");
 
       this._button = document.getElementById("unified-extensions-button");
       
-      this._button.hidden = !unifiedExtensionsEnabled;
+      this._button.hidden = false;
     }
 
     this._initialized = true;
+  },
+
+  get isEnabled() {
+    return Services.prefs.getBoolPref(
+      "extensions.unifiedExtensions.enabled",
+      false
+    );
+  },
+
+  getPopupAnchorID(aBrowser, aWindow) {
+    if (this.isEnabled) {
+      const anchorID = "unified-extensions-button";
+      const attr = anchorID + "popupnotificationanchor";
+
+      if (!aBrowser[attr]) {
+        
+        
+        
+        aBrowser[attr] = aWindow.document.getElementById(
+          anchorID
+          
+          
+        ).firstElementChild;
+      }
+
+      return anchorID;
+    }
+
+    return "addons-notification-icon";
   },
 
   get button() {
