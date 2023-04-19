@@ -746,7 +746,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult> InsertBRElement(
+  MOZ_CAN_RUN_SCRIPT CreateElementResult InsertBRElement(
       WithTransaction aWithTransaction, const EditorDOMPoint& aPointToInsert,
       EDirection aSelect = eNone);
 
@@ -877,7 +877,7 @@ class HTMLEditor final : public EditorBase,
 
 
   enum class FontSize { incr, decr };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   SetFontSizeOnTextNode(Text& aTextNode, uint32_t aStartOffset,
                         uint32_t aEndOffset, FontSize aIncrementOrDecrement);
 
@@ -1156,9 +1156,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
-                        const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult HandleInsertBRElement(
+      const EditorDOMPoint& aPointToBreak, const Element& aEditingHost);
 
   
 
@@ -1306,8 +1305,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  CreateAndInsertElement(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult CreateAndInsertElement(
       WithTransaction aWithTransaction, nsAtom& aTagName,
       const EditorDOMPoint& aPointToInsert,
       const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
@@ -1358,7 +1356,7 @@ class HTMLEditor final : public EditorBase,
 
 
   enum class BRElementNextToSplitPoint { Keep, Delete };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertElementWithSplittingAncestorsWithTransaction(
       nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
       BRElementNextToSplitPoint aBRElementNextToSplitPoint,
@@ -1419,7 +1417,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   WrapContentsInBlockquoteElementsWithTransaction(
       const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
       const Element& aEditingHost);
@@ -1458,7 +1456,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   CreateOrChangeBlockContainerElement(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag,
       const Element& aEditingHost);
@@ -1614,9 +1612,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  ChangeListElementType(Element& aListElement, nsAtom& aListType,
-                        nsAtom& aItemType);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult ChangeListElementType(
+      Element& aListElement, nsAtom& aListType, nsAtom& aItemType);
 
   
 
@@ -1745,7 +1742,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
                                                     nsAtom& aTagName) {
     return ReplaceContainerWithTransactionInternal(
@@ -1764,7 +1761,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   ReplaceContainerWithTransaction(Element& aOldContainer, nsAtom& aTagName,
                                   nsAtom& aAttribute,
                                   const nsAString& aAttributeValue) {
@@ -1781,7 +1778,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   ReplaceContainerWithTransaction(Element& aOldContainer, nsAtom& aTagName) {
     return ReplaceContainerWithTransactionInternal(
         aOldContainer, aTagName, *nsGkAtoms::_empty, u""_ns, false);
@@ -1810,7 +1807,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
                                  nsAtom& aWrapperTagName) {
     return InsertContainerWithTransactionInternal(
@@ -1834,7 +1831,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
                                  nsAtom& aWrapperTagName, nsAtom& aAttribute,
                                  const nsAString& aAttributeValue) {
@@ -2478,7 +2475,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   EnsureHardLineBeginsWithFirstChildOf(Element& aRemovingContainerElement);
 
   
@@ -2486,7 +2483,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   EnsureHardLineEndsWithLastChildOf(Element& aRemovingContainerElement);
 
   
@@ -2549,7 +2546,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertDivElementToAlignContents(const EditorDOMPoint& aPointToInsert,
                                   const nsAString& aAlignType,
                                   const Element& aEditingHost);
@@ -2565,8 +2562,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  AlignNodesAndDescendants(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult AlignNodesAndDescendants(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
       const nsAString& aAlignType, const Element& aEditingHost);
 
@@ -3201,11 +3197,10 @@ class HTMLEditor final : public EditorBase,
 
 
   template <typename NodeType>
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT
-      Result<CreateNodeResultBase<NodeType>, nsresult>
-      InsertNodeIntoProperAncestorWithTransaction(
-          NodeType& aContent, const EditorDOMPoint& aPointToInsert,
-          SplitAtEdges aSplitAtEdges);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateNodeResultBase<NodeType>
+  InsertNodeIntoProperAncestorWithTransaction(
+      NodeType& aContent, const EditorDOMPoint& aPointToInsert,
+      SplitAtEdges aSplitAtEdges);
 
   
 
@@ -3234,7 +3229,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   ReplaceContainerWithTransactionInternal(Element& aElement, nsAtom& aTagName,
                                           nsAtom& aAttribute,
                                           const nsAString& aAttributeValue,
@@ -3258,7 +3253,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertContainerWithTransactionInternal(nsIContent& aContentToBeWrapped,
                                          nsAtom& aWrapperTagName,
                                          nsAtom& aAttribute,
@@ -3512,7 +3507,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertTableCellsWithTransaction(const EditorDOMPoint& aPointToInsert,
                                   int32_t aNumberOfCellsToInsert);
 

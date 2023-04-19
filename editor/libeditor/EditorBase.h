@@ -1718,10 +1718,9 @@ class EditorBase : public nsIEditor,
 
 
   template <typename ContentNodeType>
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT
-      Result<CreateNodeResultBase<ContentNodeType>, nsresult>
-      InsertNodeWithTransaction(ContentNodeType& aContentToInsert,
-                                const EditorDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateNodeResultBase<ContentNodeType>
+  InsertNodeWithTransaction(ContentNodeType& aContentToInsert,
+                            const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -1733,7 +1732,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertPaddingBRElementForEmptyLastLineWithTransaction(
       const EditorDOMPoint& aPointToInsert);
 
