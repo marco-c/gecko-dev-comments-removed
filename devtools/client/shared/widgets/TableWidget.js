@@ -1437,7 +1437,7 @@ Column.prototype = {
 
 
   toggleColumn(id, checked) {
-    if (arguments.length == 0) {
+    if (!arguments.length) {
       
       id = this.id;
       checked = this.wrapper.hidden;

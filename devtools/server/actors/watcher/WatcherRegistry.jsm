@@ -213,7 +213,7 @@ const WatcherRegistry = {
     }
 
     const isWatchingSomething = SUPPORTED_DATA_TYPES.some(
-      dataType => sessionData[dataType] && sessionData[dataType].length > 0
+      dataType => sessionData[dataType] && !!sessionData[dataType].length
     );
 
     

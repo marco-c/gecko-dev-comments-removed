@@ -135,7 +135,7 @@ async function assertBreakablePositions(
     
     
     
-    if (columns.length == 0) {
+    if (!columns.length) {
       
       const lineElement = await getTokenFromPosition(dbg, { line, ch: -1 });
       const columnMarkers = lineElement.querySelectorAll(".column-breakpoint");

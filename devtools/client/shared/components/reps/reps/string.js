@@ -302,7 +302,7 @@ define(function(require, exports, module) {
 
     
     
-    if (text.length > 0) {
+    if (text.length) {
       if (currentIndex < endCropIndex) {
         text = getCroppedString(
           text,

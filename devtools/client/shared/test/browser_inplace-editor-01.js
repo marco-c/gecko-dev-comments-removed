@@ -123,7 +123,7 @@ function testAdvanceCharsFunction(doc) {
           }
 
           
-          return text.length > 0;
+          return !!text.length;
         },
         start(editor) {
           for (const ch of ":Test:") {

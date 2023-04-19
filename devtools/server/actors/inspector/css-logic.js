@@ -519,7 +519,7 @@ CssLogic.prototype = {
         
         return true;
       });
-      return properties.length == 0;
+      return !properties.length;
     }, this);
 
     return result;
@@ -590,7 +590,7 @@ CssLogic.prototype = {
       }
 
       
-      if (element.style && element.style.length > 0) {
+      if (element.style && element.style.length) {
         const rule = new CssRule(null, { style: element.style }, element);
         rule._matchId = this._matchId;
         rule._passId = this._passId;
@@ -1302,7 +1302,7 @@ CssPropertyInfo.prototype = {
 
     
     if (
-      this._matchedSelectors.length > 0 &&
+      this._matchedSelectors.length &&
       this._matchedSelectors[0].status > STATUS.UNMATCHED
     ) {
       this._matchedSelectors[0].status = STATUS.BEST;

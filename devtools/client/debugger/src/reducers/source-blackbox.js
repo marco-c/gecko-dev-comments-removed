@@ -98,7 +98,7 @@ function updateBlackboxRangesForSourceUrl(
     });
 
     
-    if (currentRanges[url].length == 0) {
+    if (!currentRanges[url].length) {
       currentSet.delete(url);
       delete currentRanges[url];
     }

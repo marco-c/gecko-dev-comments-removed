@@ -728,7 +728,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       }
       lineMatches.sort((a, b) => a.columnNumber - b.columnNumber);
 
-      if (lineMatches.length > 0) {
+      if (lineMatches.length) {
         
         
         

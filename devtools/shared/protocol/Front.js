@@ -91,7 +91,7 @@ class Front extends Pool {
   baseFrontClassDestroy() {
     
     
-    while (this._requests.length > 0) {
+    while (this._requests.length) {
       const { deferred, to, type, stack } = this._requests.shift();
       
       

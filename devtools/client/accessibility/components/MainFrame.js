@@ -175,7 +175,7 @@ class MainFrame extends Component {
     }
 
     
-    const isAuditing = auditing.length > 0;
+    const isAuditing = !!auditing.length;
 
     return LocalizationProvider(
       { bundles: fluentBundles },

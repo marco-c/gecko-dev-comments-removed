@@ -78,7 +78,7 @@ function getInnerLocations(locations, position) {
 
 
 function removeOverlaps(locations) {
-  if (locations.length == 0) {
+  if (!locations.length) {
     return [];
   }
   const firstParent = locations[0];

@@ -36,9 +36,7 @@ add_task(async function() {
   nmStore.dispatch(panelWin.actions.toggleRequestBlockingPanel());
   
   
-  await waitFor(
-    () => nmStore.getState().requestBlocking.blockedUrls.length > 0
-  );
+  await waitFor(() => !!nmStore.getState().requestBlocking.blockedUrls.length);
   const netMonitorState1 = nmStore.getState();
   is(
     netMonitorState1.requestBlocking.blockedUrls[0].url,

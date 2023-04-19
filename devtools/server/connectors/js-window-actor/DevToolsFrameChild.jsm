@@ -289,7 +289,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       const entries = sessionData[type];
-      if (!Array.isArray(entries) || entries.length == 0) {
+      if (!Array.isArray(entries) || !entries.length) {
         continue;
       }
       targetActor.addSessionDataEntry(type, entries, isDocumentCreation);
@@ -661,7 +661,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         existingTarget.destroy();
       }
 
-      if (actors.length > 0) {
+      if (actors.length) {
         
         
         

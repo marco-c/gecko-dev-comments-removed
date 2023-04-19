@@ -1005,7 +1005,7 @@ class EventCollector {
       
       
       
-      if (parameterNames && parameterNames.length > 0) {
+      if (parameterNames && parameterNames.length) {
         const prefix = "function " + name + "()";
         const paramString = parameterNames.join(", ");
 

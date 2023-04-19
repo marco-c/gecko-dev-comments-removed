@@ -46,7 +46,7 @@ async function addTestTab(url) {
   
   const doc = panel.panelWin.document;
   const nodes = [...doc.querySelectorAll(".treeLabel")];
-  ok(nodes.length > 0, "The DOM panel is already populated");
+  ok(!!nodes.length, "The DOM panel is already populated");
 
   return {
     tab,

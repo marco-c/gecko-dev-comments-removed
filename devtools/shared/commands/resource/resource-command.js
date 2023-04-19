@@ -294,7 +294,7 @@ class ResourceCommand {
     }
     this._watchers = this._watchers.filter(entry => {
       
-      return entry.resources.length > 0;
+      return !!entry.resources.length;
     });
 
     
@@ -836,7 +836,7 @@ class ResourceCommand {
         continue;
       }
       
-      if (pendingEvents.length > 0) {
+      if (pendingEvents.length) {
         const lastEvent = pendingEvents[pendingEvents.length - 1];
         if (lastEvent.callbackType == callbackType) {
           lastEvent.updates.push(update);
@@ -1047,7 +1047,7 @@ class ResourceCommand {
         existingResources.push(resource);
       }
     }
-    if (existingResources.length > 0) {
+    if (existingResources.length) {
       await onAvailable(existingResources, { areExistingResources: true });
     }
   }

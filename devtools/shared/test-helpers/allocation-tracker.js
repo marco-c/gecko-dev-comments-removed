@@ -200,7 +200,7 @@ exports.allocationTracker = function({
       
       if (!watchAllGlobals) {
         const allocations = dbg.memory.drainAllocationsLog();
-        if (allocations.length > 0) {
+        if (allocations.length) {
           this.logAllocationLog(
             allocations,
             "Allocation that happened during the GC"

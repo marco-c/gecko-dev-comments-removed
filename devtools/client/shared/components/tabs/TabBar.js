@@ -241,7 +241,7 @@ class Tabbar extends Component {
       () => {
         
         
-        if (tabs.length > 0 && this.props.onSelect) {
+        if (tabs.length && this.props.onSelect) {
           this.props.onSelect(this.getTabId(activeTab));
         }
       }

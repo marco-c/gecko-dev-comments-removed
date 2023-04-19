@@ -349,7 +349,7 @@ async function testToggleWebExtensions() {
   
   for (const ext of toggleableWebExtensions) {
     ok(
-      toolbox.listWebExtensions().length > 0,
+      !!toolbox.listWebExtensions().length,
       "There should still be extensions registered"
     );
     toolbox.unregisterWebExtension(ext.uuid);

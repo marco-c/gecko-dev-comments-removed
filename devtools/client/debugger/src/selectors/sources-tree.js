@@ -20,7 +20,7 @@ export const getSourcesTreeSources = createSelector(
     
     
     threadItems = threadItems.filter(
-      item => !!item.thread && item.children.length > 0
+      item => !!item.thread && !!item.children.length
     );
 
     if (projectDirectoryRoot) {
@@ -106,7 +106,7 @@ function getDirectoryForUniquePath(projectRoot, threadItems) {
 
   
   
-  if (sections.length == 0) {
+  if (!sections.length) {
     return threadItem;
   }
 
@@ -117,7 +117,7 @@ function getDirectoryForUniquePath(projectRoot, threadItems) {
     }
     
     
-    if (sections.length == 0) {
+    if (!sections.length) {
       return child;
     }
     

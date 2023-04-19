@@ -201,7 +201,7 @@ export class QuickOpenModal extends Component {
     
     
     
-    if (tabUrls.length > 0) {
+    if (tabUrls.length) {
       displayedSources = displayedSources.filter(
         source => !!source.url && tabUrls.includes(source.url)
       );
@@ -431,7 +431,7 @@ export class QuickOpenModal extends Component {
       return null;
     }
     const items = this.highlightMatching(query, results || []);
-    const expanded = !!items && items.length > 0;
+    const expanded = !!items && !!items.length;
 
     return (
       <Modal in={enabled} handleClose={this.closeModal}>

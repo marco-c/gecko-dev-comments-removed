@@ -37,7 +37,7 @@ class WorkersPage extends PureComponent {
 
     
     const domainWorkers = registrations.filter(
-      x => x.workers.length > 0 && new URL(x.workers[0].url).hostname === domain
+      x => !!x.workers.length && new URL(x.workers[0].url).hostname === domain
     );
     const isListEmpty = domainWorkers.length === 0;
 

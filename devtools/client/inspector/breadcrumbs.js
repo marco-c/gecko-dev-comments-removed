@@ -936,7 +936,7 @@ HTMLBreadcrumbs.prototype = {
       this.setCursor(idx);
     } else {
       
-      if (this.nodeHierarchy.length > 0) {
+      if (this.nodeHierarchy.length) {
         
         
         const parent = this.selection.nodeFront.parentNode();

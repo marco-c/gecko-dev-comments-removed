@@ -70,7 +70,7 @@ class DominatorTreeItem extends Component {
     
     
 
-    assert(item.label.length > 0, "Our label should not be empty");
+    assert(!!item.label.length, "Our label should not be empty");
     const label = Array(item.label.length * 2 - 1);
     label.fill(undefined);
 

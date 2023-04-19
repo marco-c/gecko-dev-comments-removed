@@ -152,13 +152,12 @@ async function getElementNodeRectWithinTarget(selectors) {
   
   const inBCSelector = selectors.pop();
   const frameSelectors = selectors;
-  const bc =
-    frameSelectors.length > 0
-      ? await getBrowsingContextInFrames(
-          gBrowser.selectedBrowser.browsingContext,
-          frameSelectors
-        )
-      : gBrowser.selectedBrowser.browsingContext;
+  const bc = frameSelectors.length
+    ? await getBrowsingContextInFrames(
+        gBrowser.selectedBrowser.browsingContext,
+        frameSelectors
+      )
+    : gBrowser.selectedBrowser.browsingContext;
 
   
   const elementBounds = await SpecialPowers.spawn(

@@ -232,7 +232,7 @@ function insertSourceActors(state, action) {
   const scriptActors = items.filter(
     item => item.introductionType === "scriptElement"
   );
-  if (scriptActors.length > 0) {
+  if (scriptActors.length) {
     const { ...breakpointPositions } = state.breakpointPositions;
 
     
