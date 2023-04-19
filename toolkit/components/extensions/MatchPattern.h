@@ -34,20 +34,18 @@ using dom::MatchPatternOptions;
 
 
 
-class AtomSet final : public RefCounted<AtomSet> {
+class AtomSet final {
+ public:
   using ArrayType = AutoTArray<RefPtr<nsAtom>, 1>;
 
- public:
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(AtomSet)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AtomSet)
 
   explicit AtomSet(const nsTArray<nsString>& aElems);
-
-  explicit AtomSet(const char** aElems);
 
   MOZ_IMPLICIT AtomSet(std::initializer_list<nsAtom*> aIL);
 
   bool Contains(const nsAString& elem) const {
-    RefPtr<nsAtom> atom = NS_AtomizeMainThread(elem);
+    RefPtr<nsAtom> atom = NS_Atomize(elem);
     return Contains(atom);
   }
 
@@ -61,45 +59,6 @@ class AtomSet final : public RefCounted<AtomSet> {
   }
 
   bool Intersects(const AtomSet& aOther) const;
-
-  void Add(nsAtom* aElem);
-  void Remove(nsAtom* aElem);
-
-  void Add(const nsAString& aElem) {
-    RefPtr<nsAtom> atom = NS_AtomizeMainThread(aElem);
-    return Add(atom);
-  }
-
-  void Remove(const nsAString& aElem) {
-    RefPtr<nsAtom> atom = NS_AtomizeMainThread(aElem);
-    return Remove(atom);
-  }
-
-  
-  
-  template <const char** schemes>
-  [[nodiscard]] static nsresult Get(RefPtr<AtomSet>& aMatcherOut) {
-    static RefPtr<AtomSet> sMatcher;
-
-    if (MOZ_UNLIKELY(!sMatcher)) {
-      
-      
-      
-      
-      
-      if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
-        aMatcherOut = nullptr;
-        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-      }
-
-      sMatcher = new AtomSet(schemes);
-      ClearOnShutdown(&sMatcher);
-    }
-
-    MOZ_ASSERT(sMatcher);
-    aMatcherOut = do_AddRef(sMatcher);
-    return NS_OK;
-  }
 
   void Get(nsTArray<nsString>& aResult) const {
     aResult.SetCapacity(mElems.Length());
@@ -118,9 +77,9 @@ class AtomSet final : public RefCounted<AtomSet> {
   }
 
  private:
-  ArrayType mElems;
+  ~AtomSet() = default;
 
-  void SortAndUniquify();
+  const ArrayType mElems;
 };
 
 
