@@ -4163,9 +4163,9 @@ async function waitForUpdateCheck(aSuccess, aExpectedValues = {}) {
 
 
 
-function waitForUpdateDownload(aUpdates, aExpectedStatus) {
+async function waitForUpdateDownload(aUpdates, aExpectedStatus) {
   let bestUpdate = gAUS.selectUpdate(aUpdates);
-  let success = gAUS.downloadUpdate(bestUpdate, false);
+  let success = await gAUS.downloadUpdate(bestUpdate, false);
   if (!success) {
     do_throw("nsIApplicationUpdateService:downloadUpdate returned " + success);
   }
