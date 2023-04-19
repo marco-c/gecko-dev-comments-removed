@@ -58,6 +58,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   using APZScrollAnimationType = mozilla::APZScrollAnimationType;
   using Element = mozilla::dom::Element;
   using AnimationState = nsIScrollableFrame::AnimationState;
+  using SnapTargetSet = nsTHashSet<RefPtr<nsIContent>>;
 
   class AsyncScroll;
   class AsyncSmoothMSDScroll;
@@ -319,6 +320,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
                                                const nsPoint& aStartPos,
                                                const nsPoint& aDestination);
 
+  void SetLastSnapTargetIds(UniquePtr<ScrollSnapTargetIds> aId);
+
   nsMargin GetScrollPadding() const;
 
   nsSize GetLineScrollAmount() const;
@@ -399,7 +402,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsIFrame* GetFrameForStyle() const;
 
   
-  ScrollSnapInfo ComputeScrollSnapInfo() const;
+  
+  ScrollSnapInfo ComputeScrollSnapInfo(SnapTargetSet* aSnapTargets = nullptr);
 
   bool NeedsScrollSnap() const;
 
@@ -469,7 +473,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool UsesOverlayScrollbars() const;
 
-  ScrollSnapInfo GetScrollSnapInfo() const;
+  ScrollSnapInfo GetScrollSnapInfo();
 
   static bool ShouldActivateAllScrollFrames();
   nsRect RestrictToRootDisplayPort(const nsRect& aDisplayportBase);
@@ -649,6 +653,13 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsCOMPtr<nsITimer> mDisplayPortExpiryTimer;
 
   ScrollAnchorContainer mAnchor;
+
+  
+  
+  
+  
+  
+  SnapTargetSet mSnapTargets;
 
   
   
@@ -842,6 +853,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
                           ScrollOperationParams&& aParams);
 
   void CompleteAsyncScroll(const nsRect& aRange,
+                           UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
                            ScrollOrigin aOrigin = ScrollOrigin::NotSpecified);
 
   bool HasPerspective() const { return mOuter->ChildrenHavePerspective(); }
@@ -862,6 +874,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   nsRect mScrollPort;
+  UniquePtr<ScrollSnapTargetIds> mLastSnapTargetIds;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ScrollFrameHelper::OverflowState)
@@ -1263,7 +1276,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     mHelper.SetHasOutOfFlowContentInsideFilter();
   }
 
-  ScrollSnapInfo GetScrollSnapInfo() const final {
+  ScrollSnapInfo GetScrollSnapInfo() final {
     return mHelper.GetScrollSnapInfo();
   }
 
@@ -1735,7 +1748,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
     mHelper.TriggerDisplayPortExpiration();
   }
 
-  ScrollSnapInfo GetScrollSnapInfo() const final {
+  ScrollSnapInfo GetScrollSnapInfo() final {
     return mHelper.GetScrollSnapInfo();
   }
 

@@ -572,7 +572,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  virtual ScrollSnapInfo GetScrollSnapInfo() const = 0;
+  virtual ScrollSnapInfo GetScrollSnapInfo() = 0;
 
   
 
