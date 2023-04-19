@@ -41,7 +41,6 @@ constexpr uint32_t kVideoSsrc = 234565;
 constexpr uint32_t kVideoRtxSsrc = 34567;
 constexpr uint32_t kFlexFecSsrc = 45678;
 constexpr size_t kDefaultPacketSize = 1234;
-constexpr int kNoPacketHoldback = -1;
 
 class MockPacketRouter : public PacketRouter {
  public:
@@ -206,7 +205,7 @@ TEST(TaskQueuePacedSenderTest, PacesPackets) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   static constexpr size_t kPacketsToSend = 42;
@@ -246,7 +245,7 @@ TEST(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   const size_t kPacketsPerSecond = 5;
@@ -298,7 +297,7 @@ TEST(TaskQueuePacedSenderTest, SendsAudioImmediately) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   const DataRate kPacingDataRate = DataRate::KilobitsPerSec(125);
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -330,7 +329,8 @@ TEST(TaskQueuePacedSenderTest, SleepsDuringCoalscingWindow) {
   ScopedKeyValueConfig trials;
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
-                             kCoalescingWindow, kNoPacketHoldback);
+                             kCoalescingWindow,
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -366,7 +366,8 @@ TEST(TaskQueuePacedSenderTest, ProbingOverridesCoalescingWindow) {
   ScopedKeyValueConfig trials;
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
-                             kCoalescingWindow, kNoPacketHoldback);
+                             kCoalescingWindow,
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -390,7 +391,7 @@ TEST(TaskQueuePacedSenderTest, ProbingOverridesCoalescingWindow) {
   time_controller.AdvanceTime(kCoalescingWindow - TimeDelta::Millis(1));
 }
 
-TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSetTime) {
+TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSentTime) {
   ScopedKeyValueConfig trials(
       "WebRTC-Bwe-ProbingBehavior/min_probe_delta:1ms/");
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
@@ -398,7 +399,7 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSetTime) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -429,6 +430,7 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSetTime) {
   const int kProbeClusterId = 1;
   pacer.CreateProbeCluster(kProbeRate, kProbeClusterId);
 
+  
   
   
   
@@ -465,7 +467,7 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -507,8 +509,8 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   
   
   
-  EXPECT_EQ(data_sent,
-            kProbingRate * TimeDelta::Millis(1) + DataSize::Bytes(1));
+  const DataSize kMinProbeSize = 2 * kMinProbeDelta * kProbingRate;
+  EXPECT_EQ(data_sent, DataSize::Bytes(1) + kPacketSize + 4 * kMinProbeSize);
 }
 
 TEST(TaskQueuePacedSenderTest, PacketBasedCoalescing) {
@@ -608,6 +610,50 @@ TEST(TaskQueuePacedSenderTest, FixedHoldBackHasPriorityOverPackets) {
   time_controller.AdvanceTime(kFixedCoalescingWindow);
 }
 
+TEST(TaskQueuePacedSenderTest, ProbingStopDuringSendLoop) {
+  
+  ScopedKeyValueConfig trials(
+      "WebRTC-Bwe-ProbingBehavior/min_probe_delta:100us/");
+
+  GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
+  MockPacketRouter packet_router;
+  TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
+                             time_controller.GetTaskQueueFactory(),
+                             PacingController::kMinSleepTime,
+                             TaskQueuePacedSender::kNoPacketHoldback);
+
+  
+  const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
+  const TimeDelta kPacketPacingTime = TimeDelta::Millis(1);
+  const DataRate kPacingDataRate = 2 * kPacketSize / kPacketPacingTime;
+
+  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.EnsureStarted();
+
+  EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
+    return std::vector<std::unique_ptr<RtpPacketToSend>>();
+  });
+  EXPECT_CALL(packet_router, GeneratePadding(_))
+      .WillRepeatedly(
+          [](DataSize target_size) { return GeneratePadding(target_size); });
+
+  
+  const int kProbeClusterId = 1;
+  const DataRate kProbingRate = kPacingDataRate;
+  pacer.CreateProbeCluster(kProbingRate, kProbeClusterId);
+
+  const int kPacketsToSend = 100;
+  const TimeDelta kPacketsPacedTime =
+      std::max(kPacketsToSend * kPacketSize / kPacingDataRate,
+               kPacketsToSend * kPacketSize / kProbingRate);
+
+  
+  EXPECT_CALL(packet_router, SendPacket).Times(kPacketsToSend + 1);
+  pacer.EnqueuePackets(
+      GeneratePackets(RtpPacketMediaType::kVideo, kPacketsToSend));
+  time_controller.AdvanceTime(kPacketsPacedTime + TimeDelta::Millis(1));
+}
+
 TEST(TaskQueuePacedSenderTest, Stats) {
   static constexpr Timestamp kStartTime = Timestamp::Millis(1234);
   GlobalSimulatedTimeController time_controller(kStartTime);
@@ -616,7 +662,7 @@ TEST(TaskQueuePacedSenderTest, Stats) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              time_controller.GetTaskQueueFactory(),
                              PacingController::kMinSleepTime,
-                             kNoPacketHoldback);
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   static constexpr size_t kPacketsToSend = 200;
@@ -688,9 +734,10 @@ TEST(TaskQueuePacedSenderTest, HighPrecisionPacingWhenSlackIsDisabled) {
       time_controller.GetTaskQueueFactory());
 
   MockPacketRouter packet_router;
-  TaskQueuePacedSender pacer(
-      time_controller.GetClock(), &packet_router, experiments,
-      &task_queue_factory, PacingController::kMinSleepTime, kNoPacketHoldback);
+  TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
+                             experiments, &task_queue_factory,
+                             PacingController::kMinSleepTime,
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   
@@ -731,9 +778,10 @@ TEST(TaskQueuePacedSenderTest, LowPrecisionPacingWhenSlackIsEnabled) {
       time_controller.GetTaskQueueFactory());
 
   MockPacketRouter packet_router;
-  TaskQueuePacedSender pacer(
-      time_controller.GetClock(), &packet_router, experiments,
-      &task_queue_factory, PacingController::kMinSleepTime, kNoPacketHoldback);
+  TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
+                             experiments, &task_queue_factory,
+                             PacingController::kMinSleepTime,
+                             TaskQueuePacedSender::kNoPacketHoldback);
 
   
   

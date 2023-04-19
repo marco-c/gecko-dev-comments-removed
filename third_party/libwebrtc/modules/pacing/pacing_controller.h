@@ -78,6 +78,11 @@ class PacingController {
 
   static const TimeDelta kMinSleepTime;
 
+  
+  
+  
+  static const TimeDelta kMaxEarlyProbeProcessing;
+
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
                    const WebRtcKeyValueConfig& field_trials,
@@ -153,6 +158,7 @@ class PacingController {
   
   void UpdateBudgetWithElapsedTime(TimeDelta delta);
   void UpdateBudgetWithSentData(DataSize size);
+  void UpdatePaddingBudgetWithSentData(DataSize size);
 
   DataSize PaddingToAdd(DataSize recommended_probe_size,
                         DataSize data_sent) const;
@@ -164,7 +170,6 @@ class PacingController {
   void OnPacketSent(RtpPacketMediaType packet_type,
                     DataSize packet_size,
                     Timestamp send_time);
-  void OnPaddingSent(DataSize padding_sent);
 
   Timestamp CurrentTime() const;
 
@@ -222,7 +227,7 @@ class PacingController {
 
   bool congested_;
 
-  TimeDelta queue_time_limit;
+  TimeDelta queue_time_limit_;
   bool account_for_audio_;
   bool include_overhead_;
 };
