@@ -3,20 +3,21 @@
 
 
 
-#ifndef mozilla_HTMLEditUtils_h
-#define mozilla_HTMLEditUtils_h
+#ifndef HTMLEditUtils_h
+#define HTMLEditUtils_h
 
 
 
 
 
 
+
+#include "EditorBase.h"
+#include "EditorDOMPoint.h"
+#include "EditorForwards.h"
+#include "EditorUtils.h"
 
 #include "mozilla/Attributes.h"
-#include "mozilla/EditorBase.h"
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditorForwards.h"
-#include "mozilla/EditorUtils.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
@@ -27,6 +28,7 @@
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
+
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsGkAtoms.h"
