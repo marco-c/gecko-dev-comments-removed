@@ -14,18 +14,17 @@
 
 
 
-import {sync} from 'pkg-dir';
 import {Product} from './common/Product.js';
 import {rootDirname} from './constants.js';
 import {PuppeteerNode} from './node/Puppeteer.js';
 import {PUPPETEER_REVISIONS} from './revisions.js';
+import {getPackageDirectory} from './util/getPackageDirectory.js';
 
 
 
 
 export const initializePuppeteer = (packageName: string): PuppeteerNode => {
   const isPuppeteerCore = packageName === 'puppeteer-core';
-  const puppeteerRootDirectory = sync(rootDirname);
   let preferredRevision = PUPPETEER_REVISIONS.chromium;
   
   const productName = !isPuppeteerCore
@@ -39,7 +38,7 @@ export const initializePuppeteer = (packageName: string): PuppeteerNode => {
   }
 
   return new PuppeteerNode({
-    projectRoot: puppeteerRootDirectory,
+    projectRoot: isPuppeteerCore ? undefined : getPackageDirectory(rootDirname),
     preferredRevision,
     isPuppeteerCore,
     productName,

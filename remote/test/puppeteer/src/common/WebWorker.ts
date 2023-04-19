@@ -21,6 +21,7 @@ import {EventEmitter} from './EventEmitter.js';
 import {ExecutionContext} from './ExecutionContext.js';
 import {JSHandle} from './JSHandle.js';
 import {debugError} from './util.js';
+import {createDeferredPromise} from '../util/DeferredPromise.js';
 
 
 
@@ -37,8 +38,6 @@ export type ConsoleAPICalledCallback = (
 export type ExceptionThrownCallback = (
   details: Protocol.Runtime.ExceptionDetails
 ) => void;
-
-type JSHandleFactory = (obj: Protocol.Runtime.RemoteObject) => JSHandle;
 
 
 
@@ -67,10 +66,10 @@ type JSHandleFactory = (obj: Protocol.Runtime.RemoteObject) => JSHandle;
 
 
 export class WebWorker extends EventEmitter {
+  #executionContext = createDeferredPromise<ExecutionContext>();
+
   #client: CDPSession;
   #url: string;
-  #executionContextPromise: Promise<ExecutionContext>;
-  #executionContextCallback!: (value: ExecutionContext) => void;
 
   
 
@@ -84,32 +83,34 @@ export class WebWorker extends EventEmitter {
     super();
     this.#client = client;
     this.#url = url;
-    this.#executionContextPromise = new Promise<ExecutionContext>(x => {
-      return (this.#executionContextCallback = x);
-    });
 
-    let jsHandleFactory: JSHandleFactory;
     this.#client.once('Runtime.executionContextCreated', async event => {
-      
-      jsHandleFactory = remoteObject => {
-        return new JSHandle(executionContext, client, remoteObject);
-      };
-      const executionContext = new ExecutionContext(client, event.context);
-      this.#executionContextCallback(executionContext);
+      const context = new ExecutionContext(client, event.context);
+      this.#executionContext.resolve(context);
     });
-
-    
-    this.#client.send('Runtime.enable').catch(debugError);
-    this.#client.on('Runtime.consoleAPICalled', event => {
+    this.#client.on('Runtime.consoleAPICalled', async event => {
+      const context = await this.#executionContext;
       return consoleAPICalled(
         event.type,
-        event.args.map(jsHandleFactory),
+        event.args.map((object: Protocol.Runtime.RemoteObject) => {
+          return new JSHandle(context, object);
+        }),
         event.stackTrace
       );
     });
     this.#client.on('Runtime.exceptionThrown', exception => {
       return exceptionThrown(exception.exceptionDetails);
     });
+
+    
+    this.#client.send('Runtime.enable').catch(debugError);
+  }
+
+  
+
+
+  async executionContext(): Promise<ExecutionContext> {
+    return this.#executionContext;
   }
 
   
@@ -117,14 +118,6 @@ export class WebWorker extends EventEmitter {
 
   url(): string {
     return this.#url;
-  }
-
-  
-
-
-
-  async executionContext(): Promise<ExecutionContext> {
-    return this.#executionContextPromise;
   }
 
   
@@ -148,10 +141,8 @@ export class WebWorker extends EventEmitter {
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>> {
-    return (await this.#executionContextPromise).evaluate(
-      pageFunction,
-      ...args
-    );
+    const context = await this.#executionContext;
+    return context.evaluate(pageFunction, ...args);
   }
 
   
@@ -173,9 +164,7 @@ export class WebWorker extends EventEmitter {
     pageFunction: Func | string,
     ...args: Params
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    return (await this.#executionContextPromise).evaluateHandle(
-      pageFunction,
-      ...args
-    );
+    const context = await this.#executionContext;
+    return context.evaluateHandle(pageFunction, ...args);
   }
 }

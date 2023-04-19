@@ -16,26 +16,32 @@
 
 import {Protocol} from 'devtools-protocol';
 import type {Readable} from 'stream';
+import {assert} from '../util/assert.js';
+import {
+  createDeferredPromise,
+  DeferredPromise,
+} from '../util/DeferredPromise.js';
+import {isErrorLike} from '../util/ErrorLike.js';
 import {Accessibility} from './Accessibility.js';
-import {assert} from './assert.js';
 import {Browser, BrowserContext} from './Browser.js';
 import {CDPSession, CDPSessionEmittedEvents} from './Connection.js';
 import {ConsoleMessage, ConsoleMessageType} from './ConsoleMessage.js';
 import {Coverage} from './Coverage.js';
 import {Dialog} from './Dialog.js';
-import {MAIN_WORLD, WaitForSelectorOptions} from './IsolatedWorld.js';
 import {ElementHandle} from './ElementHandle.js';
 import {EmulationManager} from './EmulationManager.js';
 import {EventEmitter, Handler} from './EventEmitter.js';
 import {FileChooser} from './FileChooser.js';
 import {
   Frame,
-  FrameManager,
-  FrameManagerEmittedEvents,
-} from './FrameManager.js';
+  FrameAddScriptTagOptions,
+  FrameAddStyleTagOptions,
+} from './Frame.js';
+import {FrameManager, FrameManagerEmittedEvents} from './FrameManager.js';
 import {HTTPRequest} from './HTTPRequest.js';
 import {HTTPResponse} from './HTTPResponse.js';
 import {Keyboard, Mouse, MouseButton, Touchscreen} from './Input.js';
+import {MAIN_WORLD, WaitForSelectorOptions} from './IsolatedWorld.js';
 import {JSHandle} from './JSHandle.js';
 import {PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
 import {
@@ -56,10 +62,9 @@ import {
   debugError,
   evaluationString,
   getExceptionMessage,
-  importFS,
   getReadableAsBuffer,
   getReadableFromProtocolStream,
-  isErrorLike,
+  importFS,
   isNumber,
   isString,
   pageBindingDeliverErrorString,
@@ -70,8 +75,6 @@ import {
   valueFromRemoteObject,
   waitForEvent,
   waitWithTimeout,
-  createDeferredPromiseWithTimer,
-  DeferredPromise,
 } from './util.js';
 import {WebWorker} from './WebWorker.js';
 
@@ -160,6 +163,10 @@ export interface ScreenshotClip {
   y: number;
   width: number;
   height: number;
+  
+
+
+  scale?: number;
 }
 
 
@@ -760,24 +767,28 @@ export class Page extends EventEmitter {
 
 
 
-  async waitForFileChooser(
-    options: WaitTimeoutOptions = {}
-  ): Promise<FileChooser> {
-    if (!this.#fileChooserPromises.size) {
-      await this.#client.send('Page.setInterceptFileChooserDialog', {
+  waitForFileChooser(options: WaitTimeoutOptions = {}): Promise<FileChooser> {
+    const needsEnable = this.#fileChooserPromises.size === 0;
+    const {timeout = this.#timeoutSettings.timeout()} = options;
+    const promise = createDeferredPromise<FileChooser>({
+      message: `Waiting for \`FileChooser\` failed: ${timeout}ms exceeded`,
+      timeout,
+    });
+    this.#fileChooserPromises.add(promise);
+    let enablePromise: Promise<void> | undefined;
+    if (needsEnable) {
+      enablePromise = this.#client.send('Page.setInterceptFileChooserDialog', {
         enabled: true,
       });
     }
-
-    const {timeout = this.#timeoutSettings.timeout()} = options;
-    const promise = createDeferredPromiseWithTimer<FileChooser>(
-      `Waiting for \`FileChooser\` failed: ${timeout}ms exceeded`
-    );
-    this.#fileChooserPromises.add(promise);
-    return promise.catch(error => {
-      this.#fileChooserPromises.delete(promise);
-      throw error;
-    });
+    return Promise.all([promise, enablePromise])
+      .then(([result]) => {
+        return result;
+      })
+      .catch(error => {
+        this.#fileChooserPromises.delete(promise);
+        throw error;
+      });
   }
 
   
@@ -1041,6 +1052,13 @@ export class Page extends EventEmitter {
   
 
 
+  getDefaultTimeout(): number {
+    return this.#timeoutSettings.timeout();
+  }
+
+  
+
+
 
 
 
@@ -1156,16 +1174,20 @@ export class Page extends EventEmitter {
 
 
 
-
-
-
-
-
   async queryObjects<Prototype>(
     prototypeHandle: JSHandle<Prototype>
   ): Promise<JSHandle<Prototype[]>> {
     const context = await this.mainFrame().executionContext();
-    return context.queryObjects(prototypeHandle);
+    assert(!prototypeHandle.disposed, 'Prototype JSHandle is disposed!');
+    const remoteObject = prototypeHandle.remoteObject();
+    assert(
+      remoteObject.objectId,
+      'Prototype JSHandle must not be referencing primitive value'
+    );
+    const response = await context._client.send('Runtime.queryObjects', {
+      prototypeObjectId: remoteObject.objectId,
+    });
+    return createJSHandle(context, response.objects) as HandleFor<Prototype[]>;
   }
 
   
@@ -1411,13 +1433,10 @@ export class Page extends EventEmitter {
 
 
 
-  async addScriptTag(options: {
-    url?: string;
-    path?: string;
-    content?: string;
-    type?: string;
-    id?: string;
-  }): Promise<ElementHandle<HTMLScriptElement>> {
+
+  async addScriptTag(
+    options: FrameAddScriptTagOptions
+  ): Promise<ElementHandle<HTMLScriptElement>> {
     return this.mainFrame().addScriptTag(options);
   }
 
@@ -1427,11 +1446,19 @@ export class Page extends EventEmitter {
 
 
 
-  async addStyleTag(options: {
-    url?: string;
-    path?: string;
-    content?: string;
-  }): Promise<ElementHandle<Node>> {
+
+
+
+
+  async addStyleTag(
+    options: Omit<FrameAddStyleTagOptions, 'url'>
+  ): Promise<ElementHandle<HTMLStyleElement>>;
+  async addStyleTag(
+    options: FrameAddStyleTagOptions
+  ): Promise<ElementHandle<HTMLLinkElement>>;
+  async addStyleTag(
+    options: FrameAddStyleTagOptions
+  ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>> {
     return this.mainFrame().addStyleTag(options);
   }
 
@@ -2989,7 +3016,12 @@ export class Page extends EventEmitter {
     const result = await this.#client.send('Page.captureScreenshot', {
       format,
       quality: options.quality,
-      clip,
+      clip: clip
+        ? {
+            ...clip,
+            scale: clip.scale === undefined ? 1 : clip.scale,
+          }
+        : undefined,
       captureBeyondViewport,
       fromSurface,
     });
@@ -3021,14 +3053,12 @@ export class Page extends EventEmitter {
     }
     return buffer;
 
-    function processClip(
-      clip: ScreenshotClip
-    ): ScreenshotClip & {scale: number} {
+    function processClip(clip: ScreenshotClip): ScreenshotClip {
       const x = Math.round(clip.x);
       const y = Math.round(clip.y);
       const width = Math.round(clip.width + clip.x - x);
       const height = Math.round(clip.height + clip.y - y);
-      return {x, y, width, height, scale: 1};
+      return {x, y, width, height, scale: clip.scale};
     }
   }
 
@@ -3393,7 +3423,7 @@ export class Page extends EventEmitter {
 
   async waitForSelector<Selector extends string>(
     selector: Selector,
-    options: Exclude<WaitForSelectorOptions, 'root'> = {}
+    options: WaitForSelectorOptions = {}
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
     return await this.mainFrame().waitForSelector(selector, options);
   }

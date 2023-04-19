@@ -13,7 +13,7 @@
 
 
 
-import {assert} from '../common/assert.js';
+import {assert} from '../util/assert.js';
 import {ConnectionTransport} from '../common/ConnectionTransport.js';
 import {
   addEventListener,

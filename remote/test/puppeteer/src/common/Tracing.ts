@@ -13,12 +13,9 @@
 
 
 
-import {assert} from './assert.js';
-import {
-  getReadableAsBuffer,
-  getReadableFromProtocolStream,
-  isErrorLike,
-} from './util.js';
+import {assert} from '../util/assert.js';
+import {getReadableAsBuffer, getReadableFromProtocolStream} from './util.js';
+import {isErrorLike} from '../util/ErrorLike.js';
 import {CDPSession} from './Connection.js';
 
 

@@ -16,27 +16,12 @@
 import NodeWebSocket from 'ws';
 import {ConnectionTransport} from '../common/ConnectionTransport.js';
 import {packageVersion} from '../generated/version.js';
-import {promises as dns} from 'dns';
-import {URL} from 'url';
 
 
 
 
 export class NodeWebSocketTransport implements ConnectionTransport {
-  static async create(urlString: string): Promise<NodeWebSocketTransport> {
-    
-    
-    
-    
-    
-    
-    
-    const url = new URL(urlString);
-    if (url.hostname === 'localhost') {
-      const {address} = await dns.lookup(url.hostname, {verbatim: false});
-      url.hostname = address;
-    }
-
+  static create(url: string): Promise<NodeWebSocketTransport> {
     return new Promise((resolve, reject) => {
       const ws = new NodeWebSocket(url, [], {
         followRedirects: true,

@@ -15,9 +15,7 @@
 
 
 import {Protocol} from 'devtools-protocol';
-import {assert} from './assert.js';
 import {CDPSession} from './Connection.js';
-import {Frame} from './FrameManager.js';
 import {IsolatedWorld} from './IsolatedWorld.js';
 import {JSHandle} from './JSHandle.js';
 import {EvaluateFunc, HandleFor} from './types.js';
@@ -86,18 +84,6 @@ export class ExecutionContext {
     this._world = world;
     this._contextId = contextPayload.id;
     this._contextName = contextPayload.name;
-  }
-
-  
-
-
-
-
-
-
-
-  frame(): Frame | null {
-    return this._world ? this._world.frame() : null;
   }
 
   
@@ -355,61 +341,24 @@ export class ExecutionContext {
       }
       return {value: arg};
     }
-
-    function rewriteError(error: Error): Protocol.Runtime.EvaluateResponse {
-      if (error.message.includes('Object reference chain is too long')) {
-        return {result: {type: 'undefined'}};
-      }
-      if (error.message.includes("Object couldn't be returned by value")) {
-        return {result: {type: 'undefined'}};
-      }
-
-      if (
-        error.message.endsWith('Cannot find context with specified id') ||
-        error.message.endsWith('Inspected target navigated or closed')
-      ) {
-        throw new Error(
-          'Execution context was destroyed, most likely because of a navigation.'
-        );
-      }
-      throw error;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async queryObjects<Prototype>(
-    prototypeHandle: JSHandle<Prototype>
-  ): Promise<HandleFor<Prototype[]>> {
-    assert(!prototypeHandle.disposed, 'Prototype JSHandle is disposed!');
-    const remoteObject = prototypeHandle.remoteObject();
-    assert(
-      remoteObject.objectId,
-      'Prototype JSHandle must not be referencing primitive value'
-    );
-    const response = await this._client.send('Runtime.queryObjects', {
-      prototypeObjectId: remoteObject.objectId,
-    });
-    return createJSHandle(this, response.objects) as HandleFor<Prototype[]>;
   }
 }
+
+const rewriteError = (error: Error): Protocol.Runtime.EvaluateResponse => {
+  if (error.message.includes('Object reference chain is too long')) {
+    return {result: {type: 'undefined'}};
+  }
+  if (error.message.includes("Object couldn't be returned by value")) {
+    return {result: {type: 'undefined'}};
+  }
+
+  if (
+    error.message.endsWith('Cannot find context with specified id') ||
+    error.message.endsWith('Inspected target navigated or closed')
+  ) {
+    throw new Error(
+      'Execution context was destroyed, most likely because of a navigation.'
+    );
+  }
+  throw error;
+};

@@ -14,7 +14,7 @@
 
 
 
-import {assert} from './assert.js';
+import {assert} from '../util/assert.js';
 import {addEventListener, debugError, PuppeteerEventListener} from './util.js';
 import {Protocol} from 'devtools-protocol';
 import {CDPSession} from './Connection.js';
@@ -484,6 +484,6 @@ function convertToDisjointRanges(
   }
   
   return results.filter(range => {
-    return range.end - range.start > 1;
+    return range.end - range.start > 0;
   });
 }

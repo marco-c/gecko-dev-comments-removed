@@ -14,9 +14,10 @@
 
 
 
-import {debugError, isErrorLike} from './util.js';
+import {debugError} from './util.js';
+import {isErrorLike} from '../util/ErrorLike.js';
 import {isNode} from '../environment.js';
-import {assert} from './assert.js';
+import {assert} from '../util/assert.js';
 import {
   Browser,
   IsPageTargetCallback,

@@ -13,7 +13,7 @@
 
 
 
-import {assert} from './assert.js';
+import {assert} from '../util/assert.js';
 import {debug} from './Debug.js';
 const debugProtocolSend = debug('puppeteer:protocol:SEND ►');
 const debugProtocolReceive = debug('puppeteer:protocol:RECV ◀');

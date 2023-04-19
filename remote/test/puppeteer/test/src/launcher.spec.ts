@@ -375,9 +375,7 @@ describe('Launcher specs', function () {
         
         await rmAsync(userDataDir).catch(() => {});
       });
-      
-      
-      xit('userDataDir option should restore cookies', async () => {
+      it('userDataDir option should restore cookies', async () => {
         const {server, puppeteer, defaultBrowserOptions} = getTestState();
 
         const userDataDir = await mkdtempAsync(TMP_FOLDER);
