@@ -18,17 +18,60 @@ const privilegedGlobals = Object.keys(
 
 
 
-function pointsToDOMInterface(expression) {
-  if (
-    expression.type === "MemberExpression" &&
-    maybeGetMemberPropertyName(expression.object) === "OS" &&
-    expression.property.name === "File"
-  ) {
-    
+
+
+
+
+
+
+function refersToEnvironmentGlobals(currentScope, id) {
+  const reference = currentScope.references.find(ref => ref.identifier === id);
+  const { resolved } = reference || {};
+  if (!resolved) {
     return false;
   }
+
   
-  return privilegedGlobals.includes(maybeGetMemberPropertyName(expression));
+  return resolved.scope.type === "global" && resolved.defs.length === 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function pointsToDOMInterface(currentScope, node) {
+  if (node.type === "MemberExpression") {
+    const objectName = maybeGetMemberPropertyName(node.object);
+    if (objectName === "lazy") {
+      
+      return false;
+    }
+    if (objectName === "OS" && node.property.name === "File") {
+      
+      return false;
+    }
+    
+    return privilegedGlobals.includes(node.property.name);
+  }
+
+  if (
+    node.type === "Identifier" &&
+    refersToEnvironmentGlobals(currentScope, node)
+  ) {
+    return privilegedGlobals.includes(node.name);
+  }
+
+  return false;
 }
 
 module.exports = {
@@ -41,11 +84,17 @@ module.exports = {
     schema: [],
     type: "problem",
   },
+  
+
+
   create(context) {
     return {
       BinaryExpression(node) {
         const { operator, right } = node;
-        if (operator === "instanceof" && pointsToDOMInterface(right)) {
+        if (
+          operator === "instanceof" &&
+          pointsToDOMInterface(context.getScope(), right)
+        ) {
           context.report({
             node,
             message:
