@@ -198,6 +198,12 @@ def set_worker_type(config, tasks):
                 win_worker_type_platform = WINDOWS_WORKER_TYPES[
                     test_platform.split("/")[0]
                 ]
+                if task[
+                    "virtualization"
+                ] == "virtual-with-gpu" and test_platform.startswith("windows10"):
+                    
+                    task["mozharness"]["extra-options"].append("--requires-gpu")
+
             
             task["worker-type"] = win_worker_type_platform[task["virtualization"]]
         elif test_platform.startswith("android-hw-g5"):
