@@ -621,7 +621,6 @@
     impl<'a> LonghandsToSerialize<'a> {
         
         fn is_grid_template(&self) -> bool {
-            *self.grid_template_areas == GridTemplateAreas::None &&
             self.grid_auto_rows.is_initial() &&
             self.grid_auto_columns.is_initial() &&
             *self.grid_auto_flow == grid_auto_flow::get_initial_value()
@@ -630,13 +629,19 @@
 
     impl<'a> ToCss for LonghandsToSerialize<'a> {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
-            if *self.grid_template_areas != GridTemplateAreas::None ||
-               (!self.grid_template_rows.is_initial() &&
-                !self.grid_template_columns.is_initial()) ||
-               self.is_grid_template() {
-                return super::grid_template::serialize_grid_template(self.grid_template_rows,
-                                                                     self.grid_template_columns,
-                                                                     self.grid_template_areas, dest);
+            if self.is_grid_template() {
+                return super::grid_template::serialize_grid_template(
+                    self.grid_template_rows,
+                    self.grid_template_columns,
+                    self.grid_template_areas,
+                    dest
+                );
+            }
+
+            if *self.grid_template_areas != GridTemplateAreas::None {
+                
+                
+                return Ok(());
             }
 
             if self.grid_auto_flow.contains(GridAutoFlow::COLUMN) {
@@ -663,33 +668,35 @@
                     dest.write_str(" ")?;
                     self.grid_auto_columns.to_css(dest)?;
                 }
-            } else {
-                
-                if !self.grid_auto_columns.is_initial() ||
-                    !self.grid_template_rows.is_initial() {
+
+                return Ok(());
+            }
+
+            
+            if !self.grid_auto_columns.is_initial() ||
+                !self.grid_template_rows.is_initial() {
+                return Ok(());
+            }
+
+            
+            if let GenericGridTemplateComponent::TrackList(ref list) = *self.grid_template_columns {
+                if !list.is_explicit() {
                     return Ok(());
                 }
-
-                
-                if let GenericGridTemplateComponent::TrackList(ref list) = *self.grid_template_columns {
-                    if !list.is_explicit() {
-                        return Ok(());
-                    }
-                }
-
-                dest.write_str("auto-flow")?;
-                if self.grid_auto_flow.contains(GridAutoFlow::DENSE) {
-                    dest.write_str(" dense")?;
-                }
-
-                if !self.grid_auto_rows.is_initial() {
-                    dest.write_str(" ")?;
-                    self.grid_auto_rows.to_css(dest)?;
-                }
-
-                dest.write_str(" / ")?;
-                self.grid_template_columns.to_css(dest)?;
             }
+
+            dest.write_str("auto-flow")?;
+            if self.grid_auto_flow.contains(GridAutoFlow::DENSE) {
+                dest.write_str(" dense")?;
+            }
+
+            if !self.grid_auto_rows.is_initial() {
+                dest.write_str(" ")?;
+                self.grid_auto_rows.to_css(dest)?;
+            }
+
+            dest.write_str(" / ")?;
+            self.grid_template_columns.to_css(dest)?;
             Ok(())
         }
     }
