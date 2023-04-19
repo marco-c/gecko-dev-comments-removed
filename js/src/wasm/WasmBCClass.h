@@ -128,9 +128,8 @@ struct AccessCheck {
 
 
 struct FunctionCall {
-  explicit FunctionCall(uint32_t lineOrBytecode)
-      : lineOrBytecode(lineOrBytecode),
-        restoreRegisterStateAndRealm(false),
+  FunctionCall()
+      : restoreRegisterStateAndRealm(false),
         usesSystemAbi(false),
 #ifdef JS_CODEGEN_ARM
         hardFP(true),
@@ -139,7 +138,6 @@ struct FunctionCall {
         stackArgAreaSize(0) {
   }
 
-  uint32_t lineOrBytecode;
   WasmABIArgGenerator abi;
   bool restoreRegisterStateAndRealm;
   bool usesSystemAbi;
@@ -275,10 +273,6 @@ struct BaseCompiler final {
 
   
   bool deadCode_;
-
-  
-  
-  size_t lastReadCallSite_;
 
   
   
@@ -1244,9 +1238,6 @@ struct BaseCompiler final {
   
 
   
-  inline uint32_t readCallSiteLineOrBytecode();
-
-  
   inline BytecodeOffset bytecodeOffset() const;
 
   
@@ -1254,7 +1245,7 @@ struct BaseCompiler final {
 
   
   
-  [[nodiscard]] bool throwFrom(RegRef exn, uint32_t lineOrBytecode);
+  [[nodiscard]] bool throwFrom(RegRef exn);
 
   
   void loadTag(RegPtr instanceData, uint32_t tagIndex, RegRef tagDst);
@@ -1574,8 +1565,7 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool emitInstanceCall(uint32_t lineOrBytecode,
-                                      const SymbolicAddressSignature& builtin);
+  [[nodiscard]] bool emitInstanceCall(const SymbolicAddressSignature& builtin);
 
   [[nodiscard]] bool emitMemoryGrow();
   [[nodiscard]] bool emitMemorySize();
@@ -1596,21 +1586,19 @@ struct BaseCompiler final {
                                    AtomicOp op);
   [[nodiscard]] bool emitAtomicStore(ValType type, Scalar::Type viewType);
   [[nodiscard]] bool emitWait(ValType type, uint32_t byteSize);
-  [[nodiscard]] bool atomicWait(ValType type, MemoryAccessDesc* access,
-                                uint32_t lineOrBytecode);
+  [[nodiscard]] bool atomicWait(ValType type, MemoryAccessDesc* access);
   [[nodiscard]] bool emitWake();
-  [[nodiscard]] bool atomicWake(MemoryAccessDesc* access,
-                                uint32_t lineOrBytecode);
+  [[nodiscard]] bool atomicWake(MemoryAccessDesc* access);
   [[nodiscard]] bool emitFence();
   [[nodiscard]] bool emitAtomicXchg(ValType type, Scalar::Type viewType);
   [[nodiscard]] bool emitMemInit();
   [[nodiscard]] bool emitMemCopy();
-  [[nodiscard]] bool memCopyCall(uint32_t lineOrBytecode);
+  [[nodiscard]] bool memCopyCall();
   void memCopyInlineM32();
   [[nodiscard]] bool emitTableCopy();
   [[nodiscard]] bool emitDataOrElemDrop(bool isData);
   [[nodiscard]] bool emitMemFill();
-  [[nodiscard]] bool memFillCall(uint32_t lineOrBytecode);
+  [[nodiscard]] bool memFillCall();
   void memFillInlineM32();
   [[nodiscard]] bool emitTableInit();
   [[nodiscard]] bool emitTableFill();
