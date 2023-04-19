@@ -37,11 +37,11 @@
 
 namespace webrtc {
 class Clock;
-class RtcEventLog;
 
 class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
  public:
-  ABSL_DEPRECATED("Use the version with field_trials reference instead.")
+  
+  ABSL_DEPRECATED("Use the other version instead.")
   TaskQueuePacedSender(
       Clock* clock,
       PacingController::PacketSender* packet_sender,
@@ -55,15 +55,12 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   
   
-  
-  TaskQueuePacedSender(
-      Clock* clock,
-      PacingController::PacketSender* packet_sender,
-      RtcEventLog* event_log,
-      const WebRtcKeyValueConfig& field_trials,
-      TaskQueueFactory* task_queue_factory,
-      TimeDelta max_hold_back_window = PacingController::kMinSleepTime,
-      int max_hold_back_window_in_packets = -1);
+  TaskQueuePacedSender(Clock* clock,
+                       PacingController::PacketSender* packet_sender,
+                       const WebRtcKeyValueConfig& field_trials,
+                       TaskQueueFactory* task_queue_factory,
+                       TimeDelta max_hold_back_window,
+                       int max_hold_back_window_in_packets);
 
   ~TaskQueuePacedSender() override;
 
