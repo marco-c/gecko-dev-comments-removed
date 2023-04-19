@@ -18,6 +18,7 @@
 #include "gfxContext.h"
 #include "SVGPaintServerFrame.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/CSSClipPathInstance.h"
 #include "mozilla/FilterInstance.h"
 #include "mozilla/StaticPrefs_layers.h"
@@ -1100,8 +1101,13 @@ bool SVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(nsIFrame* aFrame) {
 bool SVGIntegrationUtils::UsesSVGEffectsNotSupportedInCompositor(
     nsIFrame* aFrame) {
   
+  
   if (aFrame->StyleEffects()->HasFilters()) {
-    return !SVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(aFrame);
+    return !gfx::gfxVars::UseWebRender() ||
+           !SVGIntegrationUtils::CanCreateWebRenderFiltersForFrame(aFrame);
+  }
+  if (SVGIntegrationUtils::UsingMaskOrClipPathForFrame(aFrame)) {
+    return !gfx::gfxVars::UseWebRender();
   }
   return false;
 }

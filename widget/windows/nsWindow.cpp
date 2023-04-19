@@ -7957,6 +7957,14 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
                reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
     ReleaseDC(mWnd, hdc);
   }
+
+  
+  
+  if (HasGlass() && !gfxVars::UseWebRender() &&
+      gfxVars::UseDoubleBufferingWithCompositor()) {
+    gfxVars::SetUseDoubleBufferingWithCompositor(false);
+    GPUProcessManager::Get()->ResetCompositors();
+  }
 }
 
 

@@ -18,6 +18,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGDocument.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
@@ -971,7 +972,13 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
   
   
   
-  if (aContext->GetDrawTarget()->GetBackendType() == BackendType::RECORDING) {
+  
+  
+  
+  
+  if (aContext->GetDrawTarget()->GetBackendType() == BackendType::RECORDING ||
+      (!gfxVars::UseWebRender() &&
+       aSize != SurfaceCache::ClampVectorSize(aSize))) {
     aFlags |= FLAG_BYPASS_SURFACE_CACHE;
   }
 

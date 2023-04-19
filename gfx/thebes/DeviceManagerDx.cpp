@@ -113,6 +113,7 @@ bool DeviceManagerDx::LoadD3D11() {
 
 bool DeviceManagerDx::LoadDcomp() {
   MOZ_ASSERT(gfxConfig::GetFeature(Feature::D3D11_COMPOSITING).IsEnabled());
+  MOZ_ASSERT(gfxVars::UseWebRender());
   MOZ_ASSERT(gfxVars::UseWebRenderANGLE());
   MOZ_ASSERT(gfxVars::UseWebRenderDCompWin());
 
@@ -316,7 +317,7 @@ bool DeviceManagerDx::CreateCompositorDevicesLocked() {
   
   
   
-  if (gfx::gfxVars::UseSoftwareWebRender()) {
+  if (!gfx::gfxVars::UseWebRender() || gfx::gfxVars::UseSoftwareWebRender()) {
     PreloadAttachmentsOnCompositorThread();
   }
 
