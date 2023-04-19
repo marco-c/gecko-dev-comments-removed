@@ -77,10 +77,8 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
 
   
   
-  
-  
-  
   static mozilla::Maybe<nscolor> GenericDarkColor(ColorID);
+  mozilla::Maybe<nscolor> GetUncachedColor(ColorID, ColorScheme, UseStandins);
 
   void RecordTelemetry();
   virtual void RecordLookAndFeelSpecificTelemetry() {}
