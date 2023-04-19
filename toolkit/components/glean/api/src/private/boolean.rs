@@ -3,6 +3,7 @@
 
 
 use inherent::inherent;
+use std::sync::Arc;
 
 use glean::traits::Boolean;
 
@@ -16,7 +17,7 @@ use crate::private::MetricId;
 
 #[derive(Clone)]
 pub enum BooleanMetric {
-    Parent(glean::private::BooleanMetric),
+    Parent(Arc<glean::private::BooleanMetric>),
     Child(BooleanMetricIpc),
 }
 #[derive(Clone, Debug)]
@@ -28,7 +29,7 @@ impl BooleanMetric {
         if need_ipc() {
             BooleanMetric::Child(BooleanMetricIpc)
         } else {
-            BooleanMetric::Parent(glean::private::BooleanMetric::new(meta))
+            BooleanMetric::Parent(Arc::new(glean::private::BooleanMetric::new(meta)))
         }
     }
 

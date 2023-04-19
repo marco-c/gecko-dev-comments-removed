@@ -18,6 +18,7 @@ mod private {
         need_ipc, LabeledBooleanMetric, LabeledCounterMetric, LabeledStringMetric, MetricId,
     };
     use crate::private::CounterMetric;
+    use std::sync::Arc;
 
     
     
@@ -25,7 +26,7 @@ mod private {
     
     pub trait Sealed {
         type GleanMetric: glean::private::AllowLabeled + Clone;
-        fn from_glean_metric(id: MetricId, metric: Self::GleanMetric, label: &str) -> Self;
+        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self;
     }
 
     
@@ -33,7 +34,7 @@ mod private {
     
     impl Sealed for LabeledBooleanMetric {
         type GleanMetric = glean::private::BooleanMetric;
-        fn from_glean_metric(_id: MetricId, metric: Self::GleanMetric, _label: &str) -> Self {
+        fn from_glean_metric(_id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
             if need_ipc() {
                 
                 LabeledBooleanMetric::Child(crate::private::boolean::BooleanMetricIpc)
@@ -48,7 +49,7 @@ mod private {
     
     impl Sealed for LabeledStringMetric {
         type GleanMetric = glean::private::StringMetric;
-        fn from_glean_metric(_id: MetricId, metric: Self::GleanMetric, _label: &str) -> Self {
+        fn from_glean_metric(_id: MetricId, metric: Arc<Self::GleanMetric>, _label: &str) -> Self {
             if need_ipc() {
                 
                 LabeledStringMetric::Child(crate::private::string::StringMetricIpc)
@@ -63,7 +64,7 @@ mod private {
     
     impl Sealed for LabeledCounterMetric {
         type GleanMetric = glean::private::CounterMetric;
-        fn from_glean_metric(id: MetricId, metric: Self::GleanMetric, label: &str) -> Self {
+        fn from_glean_metric(id: MetricId, metric: Arc<Self::GleanMetric>, label: &str) -> Self {
             if need_ipc() {
                 LabeledCounterMetric::Child {
                     id,
@@ -158,8 +159,6 @@ where
     
     pub fn get(&self, label: &str) -> U {
         let metric = self.core.get(label);
-        
-        let metric = (*metric).clone();
         U::from_glean_metric(self.id, metric, label)
     }
 
