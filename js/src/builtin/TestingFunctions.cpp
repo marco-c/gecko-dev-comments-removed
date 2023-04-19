@@ -44,7 +44,6 @@
 #include "fdlibm.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "jsmath.h"
 
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/CommonFunctions.h"
@@ -52,7 +51,6 @@
 #  include "builtin/intl/SharedIntlData.h"
 #endif
 #include "builtin/Promise.h"
-#include "builtin/SelfHostingDefines.h"
 #include "builtin/TestingUtility.h"  
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"  
@@ -75,7 +73,6 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
 #include "js/Date.h"
-#include "js/Debug.h"
 #include "js/experimental/CodeCoverage.h"      
 #include "js/experimental/JSStencil.h"         
 #include "js/experimental/PCCountProfiling.h"  
@@ -90,7 +87,6 @@
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
-#include "js/RegExpFlags.h"  
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
 #include "js/Stack.h"
@@ -106,14 +102,11 @@
 #include "util/DifferentialTesting.h"
 #include "util/StringBuffer.h"
 #include "util/Text.h"
-#include "vm/AsyncFunction.h"
-#include "vm/AsyncIteration.h"
 #include "vm/ErrorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/HelperThreads.h"
 #include "vm/HelperThreadState.h"
 #include "vm/Interpreter.h"
-#include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/PlainObject.h"    
@@ -131,7 +124,6 @@
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmModule.h"
-#include "wasm/WasmSignalHandlers.h"
 #include "wasm/WasmValType.h"
 #include "wasm/WasmValue.h"
 
@@ -156,8 +148,6 @@ using mozilla::Tuple;
 
 using JS::AutoStableStringChars;
 using JS::CompileOptions;
-using JS::RegExpFlag;
-using JS::RegExpFlags;
 using JS::SourceOwnership;
 using JS::SourceText;
 

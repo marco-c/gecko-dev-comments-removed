@@ -9,14 +9,13 @@
 
 #include "mozilla/CheckedInt.h"
 
-#include "gc/Barrier.h"
 #include "js/Class.h"
-#include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/JSObject.h"
-#include "vm/SharedArrayObject.h"
 
 namespace js {
+
+class ArrayBufferObjectMaybeShared;
 
 
 

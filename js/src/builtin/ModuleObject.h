@@ -13,34 +13,33 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "builtin/SelfHostingDefines.h"  
-#include "gc/Barrier.h"                  
-#include "gc/ZoneAllocator.h"            
-#include "js/Class.h"                    
-#include "js/GCVector.h"                 
-#include "js/Id.h"                       
+#include "gc/Barrier.h"        
+#include "gc/ZoneAllocator.h"  
+#include "js/Class.h"          
+#include "js/Id.h"             
 #include "js/Modules.h"
-#include "js/PropertyDescriptor.h"  
-#include "js/Proxy.h"               
-#include "js/RootingAPI.h"          
+#include "js/Proxy.h"       
+#include "js/RootingAPI.h"  
 #include "js/TypeDecls.h"  
 #include "js/UniquePtr.h"  
-#include "js/Value.h"      
-#include "vm/JSAtom.h"     
 #include "vm/JSObject.h"   
-#include "vm/List.h"       
-#include "vm/NativeObject.h"   
-#include "vm/PromiseObject.h"  
-#include "vm/ProxyObject.h"    
+#include "vm/NativeObject.h"  
+#include "vm/ProxyObject.h"   
 
+class JSAtom;
 class JSScript;
 class JSTracer;
+
+namespace JS {
+class PropertyDescriptor;
+class Value;
+}  
 
 namespace js {
 
 class ArrayObject;
-class Shape;
-class Scope;
+class ListObject;
+class PromiseObject;
 class ScriptSourceObject;
 
 class ModuleEnvironmentObject;
