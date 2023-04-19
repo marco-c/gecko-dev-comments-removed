@@ -643,6 +643,14 @@ class AutoLockImage {
   AutoTArray<ImageContainer::OwningImage, 4> mImages;
 };
 
+
+
+struct PlanarAlphaData {
+  uint8_t* mChannel = nullptr;
+  gfx::IntSize mSize = gfx::IntSize(0, 0);
+  gfx::ColorDepth mDepth = gfx::ColorDepth::COLOR_8;
+  bool mPremultiplied = false;
+};
 struct PlanarYCbCrData {
   
   uint8_t* mYChannel = nullptr;
@@ -654,6 +662,8 @@ struct PlanarYCbCrData {
   int32_t mCbCrStride = 0;
   int32_t mCbSkip = 0;
   int32_t mCrSkip = 0;
+  
+  Maybe<PlanarAlphaData> mAlpha = Nothing();
   
   gfx::IntRect mPictureRect = gfx::IntRect(0, 0, 0, 0);
   StereoMode mStereoMode = StereoMode::MONO;
@@ -684,15 +694,6 @@ struct PlanarYCbCrData {
   }
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
-};
-
-
-
-struct PlanarAlphaData {
-  uint8_t* mChannel = nullptr;
-  gfx::IntSize mSize = gfx::IntSize(0, 0);
-  gfx::ColorDepth mDepth = gfx::ColorDepth::COLOR_8;
-  bool mPremultiplied = false;
 };
 
 

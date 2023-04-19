@@ -333,9 +333,7 @@ class AVIFParser {
 
 
 
-
 struct AVIFDecodedData : layers::PlanarYCbCrData {
-  Maybe<layers::PlanarAlphaData> mAlpha = Nothing();
   CICP::ColourPrimaries mColourPrimaries = CICP::CP_UNSPECIFIED;
   CICP::TransferCharacteristics mTransferCharacteristics = CICP::TC_UNSPECIFIED;
   CICP::MatrixCoefficients mMatrixCoefficients = CICP::MC_UNSPECIFIED;
