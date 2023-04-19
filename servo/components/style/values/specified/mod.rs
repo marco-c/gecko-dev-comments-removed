@@ -412,6 +412,18 @@ impl NonNegativeNumber {
 }
 
 
+pub type NonNegativeInteger = NonNegative<Integer>;
+
+impl Parse for NonNegativeInteger {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(NonNegative(Integer::parse_non_negative(context, input)?))
+    }
+}
+
+
 pub type GreaterThanOrEqualToOneNumber = GreaterThanOrEqualToOne<Number>;
 
 impl Parse for GreaterThanOrEqualToOneNumber {

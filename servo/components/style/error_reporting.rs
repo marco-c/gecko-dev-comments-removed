@@ -27,6 +27,8 @@ pub enum ContextualParseError<'a> {
     
     UnsupportedFontFeatureValuesDescriptor(&'a str, ParseError<'a>),
     
+    UnsupportedFontPaletteValuesDescriptor(&'a str, ParseError<'a>),
+    
     InvalidKeyframeRule(&'a str, ParseError<'a>),
     
     InvalidFontFeatureValuesRule(&'a str, ParseError<'a>),
@@ -145,6 +147,14 @@ impl<'a> fmt::Display for ContextualParseError<'a> {
                 write!(
                     f,
                     "Unsupported @font-feature-values descriptor declaration: '{}', ",
+                    decl
+                )?;
+                parse_error_to_str(err, f)
+            },
+            ContextualParseError::UnsupportedFontPaletteValuesDescriptor(decl, ref err) => {
+                write!(
+                    f,
+                    "Unsupported @font-palette-values descriptor declaration: '{}', ",
                     decl
                 )?;
                 parse_error_to_str(err, f)
