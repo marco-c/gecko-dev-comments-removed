@@ -545,6 +545,9 @@ class nsWindow final : public nsBaseWidget {
 
   
   nsSizeMode mSizeMode = nsSizeMode_Normal;
+  
+  
+  nsSizeMode mLastSizeModeRequest = nsSizeMode_Normal;
   nsSizeMode mLastSizeModeBeforeFullscreen = nsSizeMode_Normal;
 
   float mAspectRatio = 0.0f;

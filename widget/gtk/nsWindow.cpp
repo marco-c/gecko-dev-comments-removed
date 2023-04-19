@@ -2654,19 +2654,30 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
 
   
   
-  if (!mShell || mSizeMode == aMode) {
+  if (!mShell) {
+    LOG("    no shell");
+    return;
+  }
+
+  if (mSizeMode == aMode && mLastSizeModeRequest == aMode) {
     LOG("    already set");
     return;
   }
 
-  if (mSizeMode == nsSizeMode_Fullscreen) {
-    LOG("    unfullscreening");
-    MakeFullScreen(false);
-    
-    
-    if (mLastSizeModeBeforeFullscreen == aMode) {
-      LOG("    will restore to desired state");
-      return;
+  
+  
+  
+  const auto SizeModeMightBe = [&](nsSizeMode aModeToTest) {
+    if (mSizeMode != mLastSizeModeRequest) {
+      
+      return true;
+    }
+    return mSizeMode == aModeToTest;
+  };
+
+  if (aMode != nsSizeMode_Fullscreen) {
+    if (SizeModeMightBe(nsSizeMode_Fullscreen)) {
+      MakeFullScreen(false);
     }
   }
 
@@ -2687,16 +2698,17 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
       MOZ_FALLTHROUGH_ASSERT("Unknown size mode");
     case nsSizeMode_Normal:
       LOG("    set normal");
-      
-      if (mSizeMode == nsSizeMode_Minimized) {
+      if (SizeModeMightBe(nsSizeMode_Maximized)) {
+        gtk_window_unmaximize(GTK_WINDOW(mShell));
+      }
+      if (SizeModeMightBe(nsSizeMode_Minimized)) {
         gtk_window_deiconify(GTK_WINDOW(mShell));
         
         gtk_window_present(GTK_WINDOW(mShell));
-      } else if (mSizeMode == nsSizeMode_Maximized) {
-        gtk_window_unmaximize(GTK_WINDOW(mShell));
       }
       break;
   }
+  mLastSizeModeRequest = aMode;
 }
 
 static bool GetWindowManagerName(GdkWindow* gdk_window, nsACString& wmName) {
