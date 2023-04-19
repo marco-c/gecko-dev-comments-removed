@@ -1375,7 +1375,19 @@ void DisplayListBuilder::PushIFrame(const LayoutDeviceRect& aDevPxBounds,
                                     PipelineId aPipeline,
                                     bool aIgnoreMissingPipeline) {
   mRemotePipelineIds.AppendElement(aPipeline);
-  const auto bounds = wr::ToLayoutRect(aDevPxBounds);
+  
+  
+  
+  
+  
+  
+  auto snapped = aDevPxBounds;
+  auto tl = snapped.TopLeft().Round();
+  auto br = snapped.BottomRight().Round();
+
+  snapped.SizeTo(LayoutDeviceSize(br.x - tl.x, br.y - tl.y));
+
+  const auto bounds = wr::ToLayoutRect(snapped);
   wr_dp_push_iframe(mWrState, bounds, MergeClipLeaf(bounds), aIsBackfaceVisible,
                     &mCurrentSpaceAndClipChain, aPipeline,
                     aIgnoreMissingPipeline);
