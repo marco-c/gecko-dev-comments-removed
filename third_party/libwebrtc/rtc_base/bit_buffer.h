@@ -14,7 +14,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "absl/base/attributes.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace rtc {
@@ -23,12 +22,10 @@ namespace rtc {
 
 
 
-
-
-
-class BitBuffer {
+class BitBufferWriter {
  public:
-  BitBuffer(const uint8_t* bytes, size_t byte_count);
+  
+  BitBufferWriter(uint8_t* bytes, size_t byte_count);
 
   
   
@@ -36,75 +33,6 @@ class BitBuffer {
 
   
   uint64_t RemainingBitCount() const;
-
-  
-  
-  bool ReadUInt8(uint8_t& val);
-  bool ReadUInt16(uint16_t& val);
-  bool ReadUInt32(uint32_t& val);
-  ABSL_DEPRECATED("") bool ReadUInt8(uint8_t* val) {
-    return val ? ReadUInt8(*val) : false;
-  }
-  ABSL_DEPRECATED("") bool ReadUInt16(uint16_t* val) {
-    return val ? ReadUInt16(*val) : false;
-  }
-  ABSL_DEPRECATED("") bool ReadUInt32(uint32_t* val) {
-    return val ? ReadUInt32(*val) : false;
-  }
-
-  
-  
-  bool ReadBits(size_t bit_count, uint32_t& val);
-  bool ReadBits(size_t bit_count, uint64_t& val);
-  ABSL_DEPRECATED("") bool ReadBits(uint32_t* val, size_t bit_count) {
-    return val ? ReadBits(bit_count, *val) : false;
-  }
-
-  
-  
-  
-  bool PeekBits(size_t bit_count, uint32_t& val);
-  bool PeekBits(size_t bit_count, uint64_t& val);
-  ABSL_DEPRECATED("") bool PeekBits(uint32_t* val, size_t bit_count) {
-    return val ? PeekBits(bit_count, *val) : false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ReadNonSymmetric(uint32_t num_values, uint32_t& val);
-  ABSL_DEPRECATED("")
-  bool ReadNonSymmetric(uint32_t* val, uint32_t num_values) {
-    return val ? ReadNonSymmetric(num_values, *val) : false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ReadExponentialGolomb(uint32_t& val);
-  ABSL_DEPRECATED("") bool ReadExponentialGolomb(uint32_t* val) {
-    return val ? ReadExponentialGolomb(*val) : false;
-  }
-
-  
-  
-  
-  bool ReadSignedExponentialGolomb(int32_t& val);
-  ABSL_DEPRECATED("") bool ReadSignedExponentialGolomb(int32_t* val) {
-    return val ? ReadSignedExponentialGolomb(*val) : false;
-  }
 
   
   
@@ -116,26 +44,6 @@ class BitBuffer {
   
   
   bool Seek(size_t byte_offset, size_t bit_offset);
-
- protected:
-  const uint8_t* const bytes_;
-  
-  size_t byte_count_;
-  
-  size_t byte_offset_;
-  
-  size_t bit_offset_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(BitBuffer);
-};
-
-
-
-
-class BitBufferWriter : public BitBuffer {
- public:
-  
-  BitBufferWriter(uint8_t* bytes, size_t byte_count);
 
   
   
@@ -166,6 +74,12 @@ class BitBufferWriter : public BitBuffer {
  private:
   
   uint8_t* const writable_bytes_;
+  
+  const size_t byte_count_;
+  
+  size_t byte_offset_;
+  
+  size_t bit_offset_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(BitBufferWriter);
 };
