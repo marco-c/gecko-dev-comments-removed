@@ -146,7 +146,14 @@ function check_PointerEvent(event, testNamePrefix) {
             assert_equals(event.tiltY, 0, event.type + ".tiltY is 0 for mouse");
             assert_true(event.isPrimary, event.type + ".isPrimary is true for mouse");
         }, pointerTestName + " properties for pointerType = mouse");
-        
+    }
+
+    
+    if (event.type == "pointerup") {
+        test(function () {
+            assert_equals(event.width, 1, "width of pointerup should be 1");
+            assert_equals(event.height, 1, "height of pointerup should be 1");
+        }, pointerTestName + " properties for pointerup");
     }
 }
 
