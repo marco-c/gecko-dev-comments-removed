@@ -15,6 +15,7 @@
 #include "nsIScriptError.h"
 #include "nsNetUtil.h"
 
+#include "mozilla/Encoding.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/ServiceWorkerBinding.h"
@@ -41,6 +42,10 @@ NetworkLoadHandler::NetworkLoadHandler(WorkerScriptLoader* aLoader,
       mWorkerPrivate(aLoader->mWorkerPrivate),
       mLoadContext(aRequest->GetWorkerLoadContext()) {
   MOZ_ASSERT(mLoader);
+
+  
+  mDecoder = MakeUnique<ScriptDecoder>(UTF_8_ENCODING,
+                                       ScriptDecoder::BOMHandling::Remove);
 }
 
 NS_IMETHODIMP
@@ -145,29 +150,15 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   Document* parentDoc = mWorkerPrivate->GetDocument();
 
   
-  
-  
-  
-  if (StaticPrefs::dom_worker_script_loader_utf8_parsing_enabled()) {
-    mLoadContext->InitUTF8Script();
-    rv = ScriptLoader::ConvertToUTF8(nullptr, aString, aStringLen, u"UTF-8"_ns,
-                                     parentDoc, mLoadContext->mScript.mUTF8,
-                                     mLoadContext->mScriptLength);
-  } else {
-    mLoadContext->InitUTF16Script();
-    rv = ScriptLoader::ConvertToUTF16(nullptr, aString, aStringLen, u"UTF-8"_ns,
-                                      parentDoc, mLoadContext->mScript.mUTF16,
-                                      mLoadContext->mScriptLength);
-  }
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  mLoadContext->mRequest->SetTextSource();
 
-  if (mLoadContext->ScriptTextIsNull()) {
-    if (mLoadContext->mScriptLength != 0) {
-      return NS_ERROR_FAILURE;
-    }
+  
+  
+  rv = mDecoder->DecodeRawData(mLoadContext->mRequest, aString, aStringLen,
+                                true);
+  NS_ENSURE_SUCCESS(rv, rv);
 
+  if (!mLoadContext->mRequest->ScriptTextLength()) {
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                     parentDoc, nsContentUtils::eDOM_PROPERTIES,
                                     "EmptyWorkerSourceWarning");
