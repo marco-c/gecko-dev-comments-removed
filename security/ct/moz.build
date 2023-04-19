@@ -37,12 +37,6 @@ TEST_DIRS += [
 if not CONFIG["MOZ_DEBUG"]:
     DEFINES["NDEBUG"] = True
 
-if CONFIG["CC_TYPE"] == "clang-cl":
-    
-    
-    CXXFLAGS += ["-Xclang"]
-CXXFLAGS += ["-Wall"]
-
 CXXFLAGS += [
     "-Wextra",
     "-Wunreachable-code",

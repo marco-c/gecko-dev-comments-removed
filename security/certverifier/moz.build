@@ -36,12 +36,6 @@ TEST_DIRS += [
     "tests/gtest",
 ]
 
-if CONFIG["CC_TYPE"] == "clang-cl":
-    
-    
-    CXXFLAGS += ["-Xclang"]
-CXXFLAGS += ["-Wall"]
-
 CXXFLAGS += [
     "-Wextra",
     "-Wunreachable-code",
