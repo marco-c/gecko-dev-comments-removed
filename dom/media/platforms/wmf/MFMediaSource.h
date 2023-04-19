@@ -83,7 +83,6 @@ class MFMediaSource : public Microsoft::WRL::RuntimeClass<
           self->NotifyEndOfStreamInternal(aType);
         }));
   }
-  void NotifyEndOfStreamInternal(TrackInfo::TrackType aType);
 
   
   
@@ -101,6 +100,8 @@ class MFMediaSource : public Microsoft::WRL::RuntimeClass<
  private:
   void AssertOnTaskQueue() const;
   void AssertOnMFThreadPool() const;
+
+  void NotifyEndOfStreamInternal(TrackInfo::TrackType aType);
 
   bool IsSeekable() const;
   MFMediaEngineStream* GetStreamByDescriptorId(DWORD aId) const;
@@ -122,10 +123,16 @@ class MFMediaSource : public Microsoft::WRL::RuntimeClass<
 
   
   
+  
+
+  
+  
   Atomic<bool> mPresentationEnded;
 
   
-  State mState;
+  Atomic<State> mState;
+
+  
 };
 
 }  
