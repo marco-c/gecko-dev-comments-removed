@@ -297,10 +297,21 @@ void PacingController::EnqueuePacketInternal(
 
   Timestamp now = CurrentTime();
 
-  if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty() &&
-      NextSendTime() <= now) {
-    TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
+  if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty()) {
+    
+    
+    
+    Timestamp target_process_time = now;
+    Timestamp next_send_time = NextSendTime();
+    if (next_send_time.IsFinite()) {
+      
+      
+      target_process_time = std::min(now, next_send_time);
+    }
+
+    TimeDelta elapsed_time = UpdateTimeAndGetElapsed(target_process_time);
     UpdateBudgetWithElapsedTime(elapsed_time);
+    last_process_time_ = target_process_time;
   }
   packet_queue_.Push(priority, now, packet_counter_++, std::move(packet));
 }
