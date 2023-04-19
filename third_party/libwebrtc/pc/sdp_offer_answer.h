@@ -96,7 +96,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   static std::unique_ptr<SdpOfferAnswerHandler> Create(
       PeerConnectionSdpMethods* pc,
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies& dependencies);
+      PeerConnectionDependencies& dependencies,
+      ConnectionContext* context);
 
   void ResetSessionDescFactory() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -205,7 +206,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   class LocalIceCredentialsToReplace;
 
   
-  explicit SdpOfferAnswerHandler(PeerConnectionSdpMethods* pc);
+  explicit SdpOfferAnswerHandler(PeerConnectionSdpMethods* pc,
+                                 ConnectionContext* context);
   
   
   void Initialize(
@@ -592,6 +594,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   const cricket::VideoOptions& video_options() { return video_options_; }
 
   PeerConnectionSdpMethods* const pc_;
+  ConnectionContext* const context_;
 
   std::unique_ptr<WebRtcSessionDescriptionFactory> webrtc_session_desc_factory_
       RTC_GUARDED_BY(signaling_thread());
