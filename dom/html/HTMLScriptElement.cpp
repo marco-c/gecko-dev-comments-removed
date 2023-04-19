@@ -186,6 +186,7 @@ void HTMLScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
     
     
     
+    
     if (aOwnerDoc->ImportMapsEnabled() &&
         type.LowerCaseEqualsASCII("importmap")) {
       mKind = ScriptKind::eImportMap;
