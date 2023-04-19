@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["RemoteAgent", "RemoteAgentFactory"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -70,12 +64,12 @@ class RemoteAgentParentProcess {
     this.#classID = Components.ID("{8f685a9d-8181-46d6-a71d-869289099c6d}");
     this.#enabled = false;
 
-    
+    // Configuration for httpd.js
     this.#host = DEFAULT_HOST;
     this.#port = DEFAULT_PORT;
     this.#server = null;
 
-    
+    // Supported protocols
     this.#cdp = null;
     this.#webDriverBiDi = null;
 
@@ -88,26 +82,26 @@ class RemoteAgentParentProcess {
     }
 
     if (this.#server) {
-      
-      
+      // If the server is bound to a hostname, not an IP address, return it as
+      // allowed host.
       const hostUri = Services.io.newURI(`https://${this.#host}`);
       if (!this.#isIPAddress(hostUri)) {
         return [RemoteAgent.host];
       }
 
-      
-      
-      
+      // Following Bug 1220810 localhost is guaranteed to resolve to a loopback
+      // address (127.0.0.1 or ::1) unless network.proxy.allow_hijacking_localhost
+      // is set to true, which should not be the case.
       const loopbackAddresses = ["127.0.0.1", "[::1]"];
 
-      
-      
+      // If the server is bound to an IP address and this IP address is a localhost
+      // loopback address, return localhost as allowed host.
       if (loopbackAddresses.includes(this.#host)) {
         return ["localhost"];
       }
     }
 
-    
+    // Otherwise return an empty array.
     return [];
   }
 
@@ -115,12 +109,12 @@ class RemoteAgentParentProcess {
     return this.#allowOrigins;
   }
 
-  
-
-
-
-
-
+  /**
+   * A promise that resolves when the initial application window has been opened.
+   *
+   * @returns {Promise}
+   *     Promise that resolves when the initial application window is open.
+   */
   get browserStartupFinished() {
     return this.#browserStartupFinished.promise;
   }
@@ -508,7 +502,7 @@ class RemoteAgentContentProcess {
   }
 }
 
-var RemoteAgent;
+export var RemoteAgent;
 if (isRemote) {
   RemoteAgent = new RemoteAgentContentProcess();
 } else {
@@ -516,6 +510,6 @@ if (isRemote) {
 }
 
 // This is used by the XPCOM codepath which expects a constructor
-var RemoteAgentFactory = function() {
+export var RemoteAgentFactory = function() {
   return RemoteAgent;
 };
