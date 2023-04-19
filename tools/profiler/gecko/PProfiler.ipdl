@@ -32,6 +32,8 @@ child:
   async AwaitNextChunkManagerUpdate() returns (ProfileBufferChunkManagerUpdate update);
   async DestroyReleasedChunksAtOrBefore(TimeStamp timeStamp);
 
+  
+  
   async GatherProfile() returns (Shmem profile);
   async GetGatherProfileProgress() returns (GatherProfileProgress progress);
 
