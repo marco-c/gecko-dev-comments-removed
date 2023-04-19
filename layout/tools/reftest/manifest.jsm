@@ -589,6 +589,9 @@ function BuildConditionSandbox(aURL) {
     httpProps.forEach((x) => sandbox.http[x] = hh[x]);
 
     
+    sandbox.Android13 = sandbox.Android && (sandbox.http["platform"] == "Android 13");
+
+    
     
     
     
