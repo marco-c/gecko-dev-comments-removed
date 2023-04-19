@@ -26,7 +26,11 @@ class NS_NO_VTABLE DirectoryLock {
 
   virtual int64_t Id() const = 0;
 
+  
+  
   virtual void Acquire(RefPtr<OpenDirectoryListener> aOpenListener) = 0;
+
+  virtual RefPtr<BoolPromise> Acquire() = 0;
 
   virtual void AcquireImmediately() = 0;
 
