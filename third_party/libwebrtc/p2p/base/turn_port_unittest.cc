@@ -634,6 +634,11 @@ class TurnPortTest : public ::testing::Test,
                                                     Port::ORIGIN_MESSAGE);
     Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                      Port::ORIGIN_MESSAGE);
+
+    
+    
+    turn_port_->set_timeout_delay(10 * 60 * 1000);
+
     ASSERT_TRUE(conn2 != NULL);
     ASSERT_TRUE_SIMULATED_WAIT(turn_create_permission_success_, kSimulatedRtt,
                                fake_clock_);
@@ -654,7 +659,7 @@ class TurnPortTest : public ::testing::Test,
     
     
     turn_unknown_address_ = false;
-    turn_port_->invoker()->Flush(rtc::Thread::Current());
+    fake_clock_.AdvanceTime(webrtc::TimeDelta::Seconds(5 * 60));
     conn1->Ping(0);
     EXPECT_TRUE_SIMULATED_WAIT(turn_unknown_address_, kSimulatedRtt,
                                fake_clock_);
