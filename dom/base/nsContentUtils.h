@@ -352,6 +352,7 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting(const Document* aDoc);
   static bool ShouldResistFingerprinting(nsIChannel* aChannel);
+  static bool ShouldResistFingerprinting(nsILoadInfo* aPrincipal);
   
   
   
@@ -362,7 +363,8 @@ class nsContentUtils {
   static bool ShouldResistFingerprinting_dangerous(
       nsIURI* aURI, const mozilla::OriginAttributes& aOriginAttributes,
       const char* aJustification);
-  static bool ShouldResistFingerprinting(nsIPrincipal* aPrincipal);
+  static bool ShouldResistFingerprinting_dangerous(nsIPrincipal* aPrincipal,
+                                                   const char* aJustification);
 
   
 

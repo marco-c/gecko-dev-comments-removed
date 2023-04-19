@@ -2132,37 +2132,6 @@ bool nsContentUtils::ShouldResistFingerprinting(
 
 
 
-
-bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification) {
-  
-  return ShouldResistFingerprinting();
-}
-
-bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell) {
-  if (!aDocShell) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Called nsContentUtils::ShouldResistFingerprinting(const "
-             "nsIDocShell* aDocShell) with NULL docshell"));
-    return ShouldResistFingerprinting();
-  }
-  return ShouldResistFingerprinting(aDocShell->GetDocument());
-}
-
-
-bool nsContentUtils::ShouldResistFingerprinting(const Document* aDoc) {
-  if (!aDoc) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Called nsContentUtils::ShouldResistFingerprinting(const "
-             "Document* aDoc) with NULL document"));
-    return ShouldResistFingerprinting();
-  }
-  bool isChrome = nsContentUtils::IsChromeDoc(aDoc);
-  if (isChrome) {
-    return false;
-  }
-  return ShouldResistFingerprinting(aDoc->GetChannel());
-}
-
 inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
                                  nsAutoCString& url, bool isExemptDomain) {
   nsAutoCString list;
@@ -2179,6 +2148,41 @@ const unsigned int sNonPBMExemptMask = 0x02;
 const unsigned int sSpecificDomainsExemptMask = 0x04;
 const char* kExemptedDomainsPrefName =
     "privacy.resistFingerprinting.exemptedDomains";
+
+
+
+bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification) {
+  
+  return ShouldResistFingerprinting();
+}
+
+
+bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell) {
+  if (!aDocShell) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(const "
+             "nsIDocShell* aDocShell) with NULL docshell"));
+    return ShouldResistFingerprinting();
+  }
+  return ShouldResistFingerprinting(aDocShell->GetDocument());
+}
+
+
+
+bool nsContentUtils::ShouldResistFingerprinting(const Document* aDoc) {
+  if (!aDoc) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(const "
+             "Document* aDoc) with NULL document"));
+    return ShouldResistFingerprinting();
+  }
+  bool isChrome = nsContentUtils::IsChromeDoc(aDoc);
+  if (isChrome) {
+    return false;
+  }
+  return ShouldResistFingerprinting(aDoc->GetChannel());
+}
+
 
 
 bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
@@ -2204,27 +2208,31 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
   
   
   
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  nsresult rv =
-      loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
-             "aChannel) but the channel's loadinfo's CookieJarSettings "
-             "couldn't be retrieved: %d",
-             rv));
-    return true;
-  }
-  if (cookieJarSettings->GetShouldResistFingerprinting()) {
-    return true;
-  }
-
-  
-  
-  
   auto contentType = loadInfo->GetExternalContentPolicyType();
   if (contentType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    
+    
+    
+    
+
+    
+    
+    
+    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+    nsresult rv =
+        loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+              ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
+               "aChannel) but the channel's loadinfo's CookieJarSettings "
+               "couldn't be retrieved"));
+      return true;
+    }
+    if (cookieJarSettings->GetShouldResistFingerprinting()) {
+      return true;
+    }
+
     nsCOMPtr<nsIURI> channelURI;
     rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
     MOZ_ASSERT(
@@ -2265,10 +2273,9 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel) {
   }
 
   
-  MOZ_ASSERT(BasePrincipal::Cast(loadInfo->GetLoadingPrincipal())
-                 ->OriginAttributesRef() == loadInfo->GetOriginAttributes());
-  return ShouldResistFingerprinting(loadInfo->GetLoadingPrincipal());
+  return ShouldResistFingerprinting(loadInfo);
 }
+
 
 
 bool nsContentUtils::ShouldResistFingerprinting_dangerous(
@@ -2319,14 +2326,57 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 }
 
 
-bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
+
+bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo) {
+  MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() != ExtContentPolicy::TYPE_DOCUMENT &&
+             aLoadInfo->GetExternalContentPolicyType() != ExtContentPolicy::TYPE_SUBDOCUMENT);
+
   if (!ShouldResistFingerprinting("Legacy quick-check")) {
     return false;
   }
 
+  
+  
+  
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  nsresult rv =
+      aLoadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(nsIChannel* "
+             "aChannel) but the channel's loadinfo's CookieJarSettings "
+             "couldn't be retrieved"));
+    return true;
+  }
+  if (cookieJarSettings->GetShouldResistFingerprinting()) {
+    return true;
+  }
+
+  
+  
+  nsIPrincipal* principal = aLoadInfo->GetLoadingPrincipal();
+  MOZ_ASSERT(BasePrincipal::Cast(principal)->OriginAttributesRef() ==
+             aLoadInfo->GetOriginAttributes());
+  return ShouldResistFingerprinting_dangerous(principal, "Internal Call");
+}
+
+
+
+bool nsContentUtils::ShouldResistFingerprinting_dangerous(
+    nsIPrincipal* aPrincipal, const char* aJustification) {
+  if (!ShouldResistFingerprinting("Legacy quick-check")) {
+    return false;
+  }
+
+  if (!aPrincipal) {
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+            ("Called nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* "
+             "aChannel) but the loadinfo's loadingprincipal was NULL"));
+    return true;
+  }
+
   auto originAttributes =
       BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
-
   if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
       sNonPBMExemptMask) {
     
@@ -2390,6 +2440,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
 
   return !isExemptDomain;
 }
+
 
 
 void nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
