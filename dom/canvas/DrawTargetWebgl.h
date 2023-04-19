@@ -316,10 +316,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
   static MOZ_THREAD_LOCAL(SharedContext*) sSharedContext;
 
-  
-  
-  static RefPtr<SharedContext> sMainSharedContext;
-
  public:
   DrawTargetWebgl();
   ~DrawTargetWebgl();

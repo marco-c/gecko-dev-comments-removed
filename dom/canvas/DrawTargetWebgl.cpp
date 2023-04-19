@@ -7,7 +7,6 @@
 #include "DrawTargetWebglInternal.h"
 #include "SourceSurfaceWebgl.h"
 
-#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Blur.h"
 #include "mozilla/gfx/DrawTargetSkia.h"
@@ -330,13 +329,8 @@ void DrawTargetWebgl::SharedContext::ClearCachesIfNecessary() {
   ClearLastTexture();
 }
 
-
-static Atomic<bool> sContextInitError(false);
-
 MOZ_THREAD_LOCAL(DrawTargetWebgl::SharedContext*)
 DrawTargetWebgl::sSharedContext;
-
-RefPtr<DrawTargetWebgl::SharedContext> DrawTargetWebgl::sMainSharedContext;
 
 
 
@@ -346,6 +340,10 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
 
   mSize = size;
   mFormat = format;
+
+  if (!Factory::AllowedSurfaceSize(size)) {
+    return false;
+  }
 
   if (!sSharedContext.init()) {
     return false;
@@ -360,15 +358,6 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
     }
 
     sSharedContext.set(mSharedContext.get());
-
-    if (NS_IsMainThread()) {
-      
-      
-      if (!sMainSharedContext) {
-        ClearOnShutdown(&sMainSharedContext);
-      }
-      sMainSharedContext = mSharedContext;
-    }
   } else {
     mSharedContext = sharedContext;
   }
@@ -416,7 +405,7 @@ bool DrawTargetWebgl::SharedContext::Initialize() {
 
   mWebgl = new ClientWebGLContext(true);
   mWebgl->SetContextOptions(options);
-  if (mWebgl->SetDimensions(1, 1) != NS_OK || mWebgl->IsContextLost()) {
+  if (mWebgl->SetDimensions(1, 1) != NS_OK) {
     mWebgl = nullptr;
     return false;
   }
@@ -424,8 +413,6 @@ bool DrawTargetWebgl::SharedContext::Initialize() {
   mMaxTextureSize = mWebgl->Limits().maxTex2dSize;
 
   if (!CreateShaders()) {
-    
-    sContextInitError = true;
     mWebgl = nullptr;
     return false;
   }
@@ -684,15 +671,6 @@ bool DrawTargetWebgl::IsValid() const {
 already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
     const IntSize& aSize, SurfaceFormat aFormat) {
   if (!StaticPrefs::gfx_canvas_accelerated()) {
-    return nullptr;
-  }
-
-  
-  if (sContextInitError) {
-    return nullptr;
-  }
-
-  if (!Factory::AllowedSurfaceSize(aSize)) {
     return nullptr;
   }
 
