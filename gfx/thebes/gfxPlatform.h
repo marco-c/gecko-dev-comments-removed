@@ -497,7 +497,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   
   
-  virtual bool IsFontFormatSupported(uint32_t aFormatFlags);
+  virtual bool IsFontFormatSupported(uint8_t aFormatHint);
 
   virtual bool DidRenderingDeviceReset(
       DeviceResetReason* aResetReason = nullptr) {

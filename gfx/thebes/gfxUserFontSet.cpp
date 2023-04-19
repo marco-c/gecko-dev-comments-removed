@@ -231,7 +231,7 @@ void gfxUserFontEntry::StoreUserFontData(gfxFontEntry* aFontEntry,
       break;
   }
   userFontData->mPrivate = aPrivate;
-  userFontData->mFormat = src.mFormatFlags;
+  userFontData->mFormatHint = src.mFormatHint;
   userFontData->mRealName = aOriginalName;
   if (aMetadata) {
     userFontData->mMetadata = std::move(*aMetadata);
@@ -469,7 +469,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
     
     else if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_URL) {
       if (gfxPlatform::GetPlatform()->IsFontFormatSupported(
-              currSrc.mFormatFlags)) {
+              currSrc.mFormatHint)) {
         if (ServoStyleSet* set = gfxFontUtils::CurrentServoStyleSet()) {
           
           
