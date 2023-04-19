@@ -11,9 +11,10 @@
 #include "nsAHttpTransaction.h"
 #include "HttpTrafficAnalyzer.h"
 
-class nsISocketTransport;
 class nsIAsyncInputStream;
 class nsIAsyncOutputStream;
+class nsISSLSocketControl;
+class nsISocketTransport;
 
 namespace mozilla {
 namespace net {
@@ -106,7 +107,7 @@ class nsAHttpConnection : public nsISupports {
                                                nsIAsyncOutputStream**) = 0;
 
   
-  virtual void GetSecurityInfo(nsISupports**) = 0;
+  virtual void GetTLSSocketControl(nsISSLSocketControl**) = 0;
 
   
   
@@ -195,12 +196,12 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
     }                                                                        \
     return (fwdObject)->GetConnectionInfo(result);                           \
   }                                                                          \
-  void GetSecurityInfo(nsISupports** result) override {                      \
+  void GetTLSSocketControl(nsISSLSocketControl** result) override {          \
     if (!(fwdObject)) {                                                      \
       *result = nullptr;                                                     \
       return;                                                                \
     }                                                                        \
-    return (fwdObject)->GetSecurityInfo(result);                             \
+    return (fwdObject)->GetTLSSocketControl(result);                         \
   }                                                                          \
   [[nodiscard]] nsresult ResumeSend() override {                             \
     if (!(fwdObject)) return NS_ERROR_FAILURE;                               \
