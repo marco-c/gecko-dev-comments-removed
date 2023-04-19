@@ -6767,6 +6767,12 @@ class MStoreElementHole
 
   bool needsNegativeIntCheck() const { return needsNegativeIntCheck_; }
 
+  AliasSet getAliasSet() const override {
+    
+    
+    return AliasSet::Store(AliasSet::ObjectFields | AliasSet::Element);
+  }
+
   void collectRangeInfoPreTrunc() override;
 
   ALLOW_CLONE(MStoreElementHole)
