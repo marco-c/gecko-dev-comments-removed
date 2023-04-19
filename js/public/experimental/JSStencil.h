@@ -168,18 +168,14 @@ namespace JS {
 
 
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
-    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
-extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
     JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
-    InstantiationStorage* storage);
+    InstantiationStorage* storage = nullptr);
 
 
 
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
-    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
-extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
     JSContext* cx, const InstantiateOptions& options, Stencil* stencil,
-    InstantiationStorage* storage);
+    InstantiationStorage* storage = nullptr);
 
 }  
 
