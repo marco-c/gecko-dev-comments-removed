@@ -15,23 +15,49 @@
 
 
 const DevToolsSocketStatus = {
-  _openedSockets: 0,
-
-  notifySocketOpened() {
-    this._openedSockets++;
-    Services.obs.notifyObservers(this, "devtools-socket");
-  },
-
-  notifySocketClosed() {
-    this._openedSockets--;
-    Services.obs.notifyObservers(this, "devtools-socket");
-  },
+  _browserToolboxSockets: 0,
+  _otherSockets: 0,
 
   
 
 
-  get opened() {
-    return this._openedSockets > 0;
+
+
+
+
+
+
+
+
+
+  hasSocketOpened(options = {}) {
+    const { excludeBrowserToolboxSockets = false } = options;
+    if (excludeBrowserToolboxSockets) {
+      return this._otherSockets > 0;
+    }
+    return this._browserToolboxSockets + this._otherSockets > 0;
+  },
+
+  notifySocketOpened(options) {
+    const { fromBrowserToolbox } = options;
+    if (fromBrowserToolbox) {
+      this._browserToolboxSockets++;
+    } else {
+      this._otherSockets++;
+    }
+
+    Services.obs.notifyObservers(this, "devtools-socket");
+  },
+
+  notifySocketClosed(options) {
+    const { fromBrowserToolbox } = options;
+    if (fromBrowserToolbox) {
+      this._browserToolboxSockets--;
+    } else {
+      this._otherSockets--;
+    }
+
+    Services.obs.notifyObservers(this, "devtools-socket");
   },
 };
 

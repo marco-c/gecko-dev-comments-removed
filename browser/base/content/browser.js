@@ -8379,7 +8379,13 @@ const gRemoteControl = {
   },
 
   getRemoteControlComponent() {
-    if (DevToolsSocketStatus.opened) {
+    
+    
+    if (
+      DevToolsSocketStatus.hasSocketOpened({
+        excludeBrowserToolboxSockets: true,
+      })
+    ) {
       return "DevTools";
     }
 

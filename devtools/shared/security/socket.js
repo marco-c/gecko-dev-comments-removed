@@ -326,7 +326,6 @@ function _isInputAlive(input) {
 
 
 
-
 function SocketListener(devToolsServer, socketOptions) {
   this._devToolsServer = devToolsServer;
 
@@ -410,9 +409,9 @@ SocketListener.prototype = {
       dumpn("Socket listening on: " + (self.port || self.portOrPath));
     })()
       .then(() => {
-        if (!self.fromBrowserToolbox) {
-          DevToolsSocketStatus.notifySocketOpened();
-        }
+        DevToolsSocketStatus.notifySocketOpened({
+          fromBrowserToolbox: self.fromBrowserToolbox,
+        });
         this._advertise();
       })
       .catch(e => {
@@ -458,9 +457,9 @@ SocketListener.prototype = {
       this._socket.close();
       this._socket = null;
 
-      if (!this.fromBrowserToolbox) {
-        DevToolsSocketStatus.notifySocketClosed();
-      }
+      DevToolsSocketStatus.notifySocketClosed({
+        fromBrowserToolbox: this.fromBrowserToolbox,
+      });
     }
     this._devToolsServer.removeSocketListener(this);
   },
