@@ -1694,6 +1694,25 @@ var BookmarkingUI = {
     }
   },
 
+  onWidgetBeforeDOMChange: function BUI_onWidgetBeforeDOMChange(
+    aNode,
+    aNextNode,
+    aContainer,
+    aIsRemoval
+  ) {
+    if (aNode.id == "import-button") {
+      this._updateImportButton(aNode, aContainer);
+    }
+  },
+
+  _updateImportButton: function BUI_updateImportButton(aNode, aContainer) {
+    
+    
+    let isBookmarkItem = aContainer == this.toolbar;
+    aNode.classList.toggle("toolbarbutton-1", !isBookmarkItem);
+    aNode.classList.toggle("bookmark-item", isBookmarkItem);
+  },
+
   _onWidgetWasMoved: function BUI_widgetWasMoved() {
     
     
@@ -1711,6 +1730,10 @@ var BookmarkingUI = {
 
   init() {
     CustomizableUI.addListener(this);
+    let importButton = document.getElementById("import-button");
+    if (importButton) {
+      this._updateImportButton(importButton, importButton.parentNode);
+    }
     this.updateEmptyToolbarMessage();
   },
 
