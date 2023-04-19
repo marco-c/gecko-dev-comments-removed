@@ -232,8 +232,6 @@ var whitelist = [
   
   { file: "resource://gre/modules/Manifest.jsm" },
   
-  { file: "chrome://global/content/test-ipc.xhtml" },
-  
   
   
   {
