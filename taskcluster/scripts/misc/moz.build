@@ -1,0 +1,8 @@
+
+
+
+
+
+
+with Files("verify-updatebot.py"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Mach Vendor & Updatebot")

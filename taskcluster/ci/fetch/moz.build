@@ -1,0 +1,8 @@
+
+
+
+
+
+
+with Files("updatebot.yml"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Mach Vendor & Updatebot")
