@@ -127,7 +127,7 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
         
         
         received_packet->seq_num =
-            ByteReader<uint16_t>::ReadBigEndian(&packet->data[2]);
+            ByteReader<uint16_t>::ReadBigEndian(packet->data.data() + 2);
       } else {
         received_packet->ssrc = ForwardErrorCorrectionType::kFecSsrc;
         
@@ -222,10 +222,10 @@ TYPED_TEST(RtpFecTest, WillProtectMediaPacketsWithLargeSequenceNumberGap) {
       this->media_packet_generator_.ConstructMediaPackets(kNumMediaPackets);
 
   
-  ByteWriter<uint16_t>::WriteBigEndian(&this->media_packets_.front()->data[2],
-                                       1);
-  ByteWriter<uint16_t>::WriteBigEndian(&this->media_packets_.back()->data[2],
-                                       kMaxMediaPackets);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      this->media_packets_.front()->data.MutableData() + 2, 1);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      this->media_packets_.back()->data.MutableData() + 2, kMaxMediaPackets);
 
   EXPECT_EQ(
       0, this->fec_.EncodeFec(this->media_packets_, kProtectionFactor,
@@ -245,10 +245,11 @@ TYPED_TEST(RtpFecTest,
       this->media_packet_generator_.ConstructMediaPackets(kNumMediaPackets);
 
   
-  ByteWriter<uint16_t>::WriteBigEndian(&this->media_packets_.front()->data[2],
-                                       1);
-  ByteWriter<uint16_t>::WriteBigEndian(&this->media_packets_.back()->data[2],
-                                       kMaxMediaPackets + 1);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      this->media_packets_.front()->data.MutableData() + 2, 1);
+  ByteWriter<uint16_t>::WriteBigEndian(
+      this->media_packets_.back()->data.MutableData() + 2,
+      kMaxMediaPackets + 1);
 
   EXPECT_EQ(
       -1, this->fec_.EncodeFec(this->media_packets_, kProtectionFactor,
@@ -526,9 +527,9 @@ TEST_F(RtpFecTestFlexfecOnly, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
   
   
   auto it = this->generated_fec_packets_.begin();
-  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 65535);
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data.MutableData()[2], 65535);
   ++it;
-  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 0);
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data.MutableData()[2], 0);
 
   
   memset(this->media_loss_mask_, 0, sizeof(this->media_loss_mask_));

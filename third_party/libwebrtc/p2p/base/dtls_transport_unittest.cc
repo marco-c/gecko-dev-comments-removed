@@ -52,7 +52,7 @@ void SetRemoteFingerprintFromCert(
   std::unique_ptr<rtc::SSLFingerprint> fingerprint =
       rtc::SSLFingerprint::CreateFromCertificate(*cert);
   if (modify_digest) {
-    ++fingerprint->digest[0];
+    ++fingerprint->digest.MutableData()[0];
   }
   
   EXPECT_TRUE(transport->SetRemoteFingerprint(
