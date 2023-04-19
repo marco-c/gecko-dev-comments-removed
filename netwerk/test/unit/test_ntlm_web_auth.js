@@ -117,6 +117,8 @@ const NTLM_CHALLENGE =
 
 
 function successfulAuth(metadata, response) {
+  let authorization;
+  let authPrefix;
   switch (requestsMade) {
     case 0:
       
@@ -126,22 +128,22 @@ function successfulAuth(metadata, response) {
       break;
     case 1:
       
-      var authorization = metadata.getHeader("Authorization");
-      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      authorization = metadata.getHeader("Authorization");
+      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       response.setStatusLine(metadata.httpVersion, 401, "Unauthorized");
       response.setHeader("WWW-Authenticate", NTLM_CHALLENGE, false);
       break;
     case 2:
       
-      var authorization = metadata.getHeader("Authorization");
-      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      authorization = metadata.getHeader("Authorization");
+      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       response.setStatusLine(metadata.httpVersion, 200, "Successful");
       break;
     default:
       
-      var authorization = metadata.getHeader("Authorization");
+      authorization = metadata.getHeader("Authorization");
       Assert.isnull(authorization);
       response.setStatusLine(metadata.httpVersion, 200, "Successful");
   }
@@ -150,6 +152,8 @@ function successfulAuth(metadata, response) {
 
 
 function failedAuth(metadata, response) {
+  let authorization;
+  let authPrefix;
   switch (requestsMade) {
     case 0:
       
@@ -158,8 +162,8 @@ function failedAuth(metadata, response) {
       break;
     case 1:
       
-      var authorization = metadata.getHeader("Authorization");
-      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      authorization = metadata.getHeader("Authorization");
+      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       response.setStatusLine(metadata.httpVersion, 401, "Unauthorized");
       response.setHeader("WWW-Authenticate", NTLM_CHALLENGE, false);
@@ -167,8 +171,8 @@ function failedAuth(metadata, response) {
     case 2:
       
       
-      var authorization = metadata.getHeader("Authorization");
-      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      authorization = metadata.getHeader("Authorization");
+      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 1 message");
       response.setStatusLine(metadata.httpVersion, 401, "Unauthorized");
       break;

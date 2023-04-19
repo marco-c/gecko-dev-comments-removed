@@ -753,7 +753,6 @@ function host_filter_cb(proxy) {
 
 
 var uriStrUseProxyList;
-var uriStrUseProxyList;
 var hostFilterList;
 var uriStrFilterList;
 
