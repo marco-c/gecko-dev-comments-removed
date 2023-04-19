@@ -4338,52 +4338,84 @@ nsresult HTMLEditor::SelectAllInternal() {
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  
-  
-  
-  
-  
-
-  nsINode* anchorNode = SelectionRef().GetAnchorNode();
-  if (NS_WARN_IF(!anchorNode) || NS_WARN_IF(!anchorNode->IsContent())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIContent> anchorContent = anchorNode->AsContent();
-  nsCOMPtr<nsIContent> rootContent;
-  if (anchorContent->HasIndependentSelection()) {
-    SelectionRef().SetAncestorLimiter(nullptr);
-    rootContent = mRootElement;
-    if (NS_WARN_IF(!rootContent)) {
-      return NS_ERROR_UNEXPECTED;
+  auto GetBodyElementIfElementIsParentOfHTMLBody =
+      [](const Element& aElement) -> Element* {
+    if (!aElement.OwnerDoc()->IsHTMLDocument()) {
+      return const_cast<Element*>(&aElement);
     }
-  } else {
-    RefPtr<PresShell> presShell = GetPresShell();
-    rootContent = anchorContent->GetSelectionRootContent(presShell);
-    if (NS_WARN_IF(!rootContent)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-    
-    
-    
-    if (Document* document = GetDocument()) {
-      if (document->IsHTMLDocument()) {
-        if (HTMLBodyElement* bodyElement = document->GetBodyElement()) {
-          if (nsContentUtils::ContentIsFlattenedTreeDescendantOf(bodyElement,
-                                                                 rootContent)) {
-            rootContent = bodyElement;
+    HTMLBodyElement* bodyElement = aElement.OwnerDoc()->GetBodyElement();
+    return bodyElement && nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+                              bodyElement, &aElement)
+               ? bodyElement
+               : const_cast<Element*>(&aElement);
+  };
+
+  nsCOMPtr<nsIContent> selectionRootContent =
+      [&]() MOZ_CAN_RUN_SCRIPT -> nsIContent* {
+    RefPtr<Element> elementToBeSelected = [&]() -> Element* {
+      
+      
+      if (SelectionRef().RangeCount()) {
+        if (nsIContent* content =
+                nsIContent::FromNodeOrNull(SelectionRef().GetAnchorNode())) {
+          if (content->IsElement()) {
+            return content->AsElement();
+          }
+          if (Element* parentElement =
+                  content->GetParentElementCrossingShadowRoot()) {
+            return parentElement;
           }
         }
       }
+      
+      
+      if (Element* focusedElement = GetFocusedElement()) {
+        return focusedElement;
+      }
+      
+      Element* bodyOrDocumentElement = GetRoot();
+      NS_WARNING_ASSERTION(bodyOrDocumentElement,
+                           "There was no element in the document");
+      return bodyOrDocumentElement;
+    }();
+
+    
+    
+    
+    
+    if (elementToBeSelected->HasIndependentSelection()) {
+      Element* parentElement = elementToBeSelected->GetParentElement();
+      if (MOZ_LIKELY(parentElement)) {
+        elementToBeSelected = parentElement;
+      }
     }
+
+    
+    
+    RefPtr<PresShell> presShell = GetPresShell();
+    nsIContent* computedSelectionRootContent =
+        elementToBeSelected->GetSelectionRootContent(presShell);
+    if (NS_WARN_IF(!computedSelectionRootContent)) {
+      return nullptr;
+    }
+    if (MOZ_UNLIKELY(!computedSelectionRootContent->IsElement())) {
+      return computedSelectionRootContent;
+    }
+    return GetBodyElementIfElementIsParentOfHTMLBody(
+        *computedSelectionRootContent->AsElement());
+  }();
+  if (NS_WARN_IF(!selectionRootContent)) {
+    return NS_ERROR_FAILURE;
   }
 
   Maybe<Selection::AutoUserInitiated> userSelection;
-  if (!rootContent->IsEditable()) {
+  
+  
+  if (!selectionRootContent->IsEditable()) {
     userSelection.emplace(SelectionRef());
   }
   ErrorResult error;
-  SelectionRef().SelectAllChildren(*rootContent, error);
+  SelectionRef().SelectAllChildren(*selectionRootContent, error);
   NS_WARNING_ASSERTION(!error.Failed(),
                        "Selection::SelectAllChildren() failed");
   return error.StealNSResult();
