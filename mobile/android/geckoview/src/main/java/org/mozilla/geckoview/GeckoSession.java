@@ -13,6 +13,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -895,6 +896,8 @@ public class GeckoSession {
             "GeckoView:ShowSelectionAction",
             "GeckoView:HideMagnifier",
             "GeckoView:ShowMagnifier",
+            "GeckoView:ClipboardPermissionRequest",
+            "GeckoView:DismissClipboardPermissionRequest",
           }) {
         @Override
         public void handleMessage(
@@ -902,6 +905,7 @@ public class GeckoSession {
             final String event,
             final GeckoBundle message,
             final EventCallback callback) {
+          Log.d(LOGTAG, "handleMessage: " + event);
           if ("GeckoView:ShowSelectionAction".equals(event)) {
             final @SelectionActionDelegateAction HashSet<String> actionsSet =
                 new HashSet<>(Arrays.asList(message.getStringArray("actions")));
@@ -941,6 +945,25 @@ public class GeckoSession {
             GeckoSession.this.getMagnifier().show(new PointF(origin[0], origin[1]));
           } else if ("GeckoView:HideMagnifier".equals(event)) {
             GeckoSession.this.getMagnifier().dismiss();
+          } else if ("GeckoView:ClipboardPermissionRequest".equals(event)) {
+            final SelectionActionDelegate.ClipboardPermission permission =
+                new SelectionActionDelegate.ClipboardPermission(message);
+
+            final GeckoResult<AllowOrDeny> result =
+                delegate.onShowClipboardPermissionRequest(GeckoSession.this, permission);
+            callback.resolveTo(
+                result.map(
+                    value -> {
+                      if (value == AllowOrDeny.ALLOW) {
+                        return true;
+                      }
+                      if (value == AllowOrDeny.DENY) {
+                        return false;
+                      }
+                      throw new IllegalArgumentException("Invalid response");
+                    }));
+          } else if ("GeckoView:DismissClipboardPermissionRequest".equals(event)) {
+            delegate.onDismissClipboardPermissionRequest(GeckoSession.this);
           }
         }
       };
@@ -3671,6 +3694,63 @@ public class GeckoSession {
     @UiThread
     default void onHideAction(
         @NonNull final GeckoSession session, @SelectionActionDelegateHideReason final int reason) {}
+
+    
+
+
+
+    int PERMISSION_CLIPBOARD_READ = 1;
+
+    
+    public class ClipboardPermission {
+      
+      public final @NonNull String uri;
+
+      
+
+
+
+      public final @ClipboardPermissionType int type;
+      
+
+
+      public final @Nullable Point screenPoint;
+
+      
+      protected ClipboardPermission() {
+        this.uri = "";
+        this.type = PERMISSION_CLIPBOARD_READ;
+        this.screenPoint = null;
+      }
+
+      private ClipboardPermission(final @NonNull GeckoBundle bundle) {
+        this.uri = bundle.getString("uri");
+        this.type = PERMISSION_CLIPBOARD_READ;
+        this.screenPoint = bundle.getPoint("screenPoint");
+      }
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<AllowOrDeny> onShowClipboardPermissionRequest(
+        @NonNull final GeckoSession session, @NonNull ClipboardPermission permission) {
+      return GeckoResult.deny();
+    }
+
+    
+
+
+
+
+    @UiThread
+    default void onDismissClipboardPermissionRequest(@NonNull final GeckoSession session) {}
   }
 
   @Retention(RetentionPolicy.SOURCE)
@@ -3706,6 +3786,12 @@ public class GeckoSession {
     SelectionActionDelegate.HIDE_REASON_ACTIVE_SCROLL
   })
   public @interface SelectionActionDelegateHideReason {}
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    SelectionActionDelegate.PERMISSION_CLIPBOARD_READ,
+  })
+  public @interface ClipboardPermissionType {}
 
   public interface NavigationDelegate {
     
