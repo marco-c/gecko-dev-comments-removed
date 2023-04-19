@@ -238,39 +238,50 @@ class AsyncIterableIteratorBase : public IterableIteratorBase {
 
 template <typename T>
 class AsyncIterableIterator : public AsyncIterableIteratorBase {
+ private:
+  using IteratorData = typename T::IteratorData;
+
  public:
   AsyncIterableIterator(T* aIterableObj, IteratorType aIteratorType)
       : AsyncIterableIteratorBase(aIteratorType), mIterableObj(aIterableObj) {
     MOZ_ASSERT(mIterableObj);
   }
 
-  void SetData(void* aData) { mData = aData; }
-
-  void* GetData() { return mData; }
+  IteratorData& Data() { return mData; }
 
  protected:
-  virtual ~AsyncIterableIterator() {
-    
-    
-    
-    if (mIterableObj) {
-      mIterableObj->DestroyAsyncIterator(this);
-    }
+  
+  
+  
+  
+  template <typename Data>
+  auto TraverseData(Data& aData, nsCycleCollectionTraversalCallback& aCallback,
+                    int) -> decltype(aData.Traverse(aCallback)) {
+    return aData.Traverse(aCallback);
   }
+  template <typename Data>
+  void TraverseData(Data& aData, nsCycleCollectionTraversalCallback& aCallback,
+                    double) {}
 
-  
-  
-  
+  template <typename Data>
+  auto UnlinkData(Data& aData, int) -> decltype(aData.Unlink()) {
+    return aData.Unlink();
+  }
+  template <typename Data>
+  void UnlinkData(Data& aData, double) {}
+
   
   
   void UnlinkHelper() final {
-    mIterableObj->DestroyAsyncIterator(this);
-    mIterableObj = nullptr;
+    AsyncIterableIterator<T>* tmp = this;
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mIterableObj);
+    UnlinkData(tmp->mData, 0);
   }
 
   virtual void TraverseHelper(nsCycleCollectionTraversalCallback& cb) override {
     AsyncIterableIterator<T>* tmp = this;
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIterableObj);
+    TraverseData(tmp->mData, cb, 0);
   }
 
   
@@ -282,7 +293,7 @@ class AsyncIterableIterator : public AsyncIterableIteratorBase {
   
 
   
-  void* mData{nullptr};
+  IteratorData mData;
 };
 
 namespace binding_detail {
