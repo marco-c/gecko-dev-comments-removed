@@ -5963,6 +5963,99 @@ const ConfirmDialog = (0,external_ReactRedux_namespaceObject.connect)(state => s
 
 
 
+const PLACEHOLDER_IMAGE_DATA_ARRAY = [{
+  rotation: "0deg",
+  offsetx: "20px",
+  offsety: "8px",
+  scale: "45%"
+}, {
+  rotation: "54deg",
+  offsetx: "-26px",
+  offsety: "62px",
+  scale: "55%"
+}, {
+  rotation: "-30deg",
+  offsetx: "78px",
+  offsety: "30px",
+  scale: "68%"
+}, {
+  rotation: "-22deg",
+  offsetx: "0",
+  offsety: "92px",
+  scale: "60%"
+}, {
+  rotation: "-65deg",
+  offsetx: "66px",
+  offsety: "28px",
+  scale: "60%"
+}, {
+  rotation: "22deg",
+  offsetx: "-35px",
+  offsety: "62px",
+  scale: "52%"
+}, {
+  rotation: "-25deg",
+  offsetx: "86px",
+  offsety: "-15px",
+  scale: "68%"
+}];
+const PLACEHOLDER_IMAGE_COLORS_ARRAY = "#0090ED #FF4F5F #2AC3A2 #FF7139 #A172FF #FFA437 #FF2A8A".split(" ");
+
+function generateIndex({
+  keyCode,
+  max
+}) {
+  if (!keyCode) {
+    
+    return Math.floor(Math.random() * max);
+  }
+
+  const hashStr = str => {
+    let hash = 0;
+
+    for (let i = 0; i < str.length; i++) {
+      let charCode = str.charCodeAt(i);
+      hash += charCode;
+    }
+
+    return hash;
+  };
+
+  const hash = hashStr(keyCode);
+  return hash % max;
+}
+
+function PlaceholderImage({
+  urlKey,
+  titleKey
+}) {
+  const dataIndex = generateIndex({
+    keyCode: urlKey,
+    max: PLACEHOLDER_IMAGE_DATA_ARRAY.length
+  });
+  const colorIndex = generateIndex({
+    keyCode: titleKey,
+    max: PLACEHOLDER_IMAGE_COLORS_ARRAY.length
+  });
+  const {
+    rotation,
+    offsetx,
+    offsety,
+    scale
+  } = PLACEHOLDER_IMAGE_DATA_ARRAY[dataIndex];
+  const color = PLACEHOLDER_IMAGE_COLORS_ARRAY[colorIndex];
+  const style = {
+    "--placeholderBackgroundColor": color,
+    "--placeholderBackgroundRotation": rotation,
+    "--placeholderBackgroundOffsetx": offsetx,
+    "--placeholderBackgroundOffsety": offsety,
+    "--placeholderBackgroundScale": scale
+  };
+  return external_React_default().createElement("div", {
+    style: style,
+    className: "placeholder-image"
+  });
+}
 class DSImage extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -6045,7 +6138,7 @@ class DSImage extends (external_React_default()).PureComponent {
           src: baseSource,
           srcSet: srcSetRules.join(",")
         });
-      } else if (!this.state.nonOptimizedImageFailed) {
+      } else if (this.props.source && !this.state.nonOptimizedImageFailed) {
         img = external_React_default().createElement("img", {
           loading: "lazy",
           alt: this.props.alt_text,
@@ -6056,8 +6149,12 @@ class DSImage extends (external_React_default()).PureComponent {
         });
       } else {
         
-        img = external_React_default().createElement("div", {
-          className: "broken-image"
+        classNames = `${classNames} loaded`; 
+        
+
+        img = external_React_default().createElement(PlaceholderImage, {
+          urlKey: this.props.url,
+          titleKey: this.props.title
         });
       }
     }
@@ -7625,7 +7722,9 @@ class _DSCard extends (external_React_default()).PureComponent {
       extraClassNames: "img",
       source: this.props.image_src,
       rawSource: this.props.raw_image_src,
-      sizes: this.dsImageSizes
+      sizes: this.dsImageSizes,
+      url: this.props.url,
+      title: this.props.title
     })), external_React_default().createElement(DefaultMeta, {
       source: this.props.source,
       title: this.props.title,
