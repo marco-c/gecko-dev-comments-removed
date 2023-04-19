@@ -177,10 +177,6 @@ check_and_add_warning("-Wno-multistatement-macros")
 
 
 
-check_and_add_warning("-Wno-error=return-std-move")
-
-
-
 check_and_add_warning("-Wno-error=class-memaccess")
 
 
