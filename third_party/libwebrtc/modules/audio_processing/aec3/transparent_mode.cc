@@ -24,7 +24,9 @@ bool DeactivateTransparentMode() {
 }
 
 bool DeactivateTransparentModeHmm() {
-  return field_trial::IsEnabled("WebRTC-Aec3TransparentModeHmmKillSwitch");
+  
+  return true;
+  
 }
 
 }  
