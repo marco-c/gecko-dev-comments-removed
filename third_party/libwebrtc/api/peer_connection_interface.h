@@ -173,12 +173,6 @@ enum class SdpSemantics {
   kPlanB_DEPRECATED,
   kPlanB [[deprecated]] = kPlanB_DEPRECATED,
   kUnifiedPlan,
-  
-  
-  
-  
-  
-  kNotSpecified
 };
 
 class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
@@ -648,15 +642,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    SdpSemantics sdp_semantics = SdpSemantics::kNotSpecified;
+    SdpSemantics sdp_semantics = SdpSemantics::kUnifiedPlan;
 
     
     

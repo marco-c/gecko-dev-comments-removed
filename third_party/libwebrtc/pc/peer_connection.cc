@@ -419,18 +419,10 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RTC_CHECK(configuration.sdp_semantics != SdpSemantics::kNotSpecified)
-      << "Please specify sdp_semantics. The default is about to change to "
-      << "kUnifiedPlan.";
+  if (configuration.sdp_semantics == SdpSemantics::kPlanB_DEPRECATED) {
+    RTC_LOG(LS_WARNING)
+        << "PeerConnection constructed with legacy SDP semantics!";
+  }
 
   RTCError config_error = cricket::P2PTransportChannel::ValidateIceConfig(
       ParseIceConfig(configuration));
