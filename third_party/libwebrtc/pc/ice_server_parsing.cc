@@ -237,7 +237,7 @@ static RTCErrorType ParseIceServerUrl(
       if (server.username.empty() || server.password.empty()) {
         
         
-        RTC_LOG(LS_ERROR) << "TURN server with empty username or password";
+        RTC_LOG(LS_WARNING) << "TURN server with empty username or password";
         return RTCErrorType::INVALID_PARAMETER;
       }
       
@@ -251,7 +251,7 @@ static RTCErrorType ParseIceServerUrl(
         if (!IPFromString(address, &ip)) {
           
           
-          RTC_LOG(LS_ERROR)
+          RTC_LOG(LS_WARNING)
               << "IceServer has hostname field set, but URI does not "
                  "contain an IP address.";
           return RTCErrorType::INVALID_PARAMETER;
@@ -289,7 +289,7 @@ RTCErrorType ParseIceServers(
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
         if (url.empty()) {
-          RTC_LOG(LS_ERROR) << "Empty uri.";
+          RTC_LOG(LS_WARNING) << "Empty uri.";
           return RTCErrorType::SYNTAX_ERROR;
         }
         RTCErrorType err =
@@ -306,7 +306,7 @@ RTCErrorType ParseIceServers(
         return err;
       }
     } else {
-      RTC_LOG(LS_ERROR) << "Empty uri.";
+      RTC_LOG(LS_WARNING) << "Empty uri.";
       return RTCErrorType::SYNTAX_ERROR;
     }
   }
