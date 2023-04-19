@@ -846,12 +846,12 @@ void VirtualSocketServer::CancelConnects(VirtualSocket* socket) {
     MessageAddress* data = static_cast<MessageAddress*>(it->pdata);
     SocketAddress local_addr = socket->GetLocalAddress();
     
-    VirtualSocket* socket = LookupConnection(local_addr, data->addr);
-    if (socket) {
+    VirtualSocket* lookup_socket = LookupConnection(local_addr, data->addr);
+    if (lookup_socket) {
       
       
       
-      Disconnect(socket);
+      Disconnect(lookup_socket);
       RemoveConnection(local_addr, data->addr);
     } else {
       Disconnect(data->addr);
