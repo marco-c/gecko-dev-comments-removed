@@ -970,8 +970,9 @@ NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
   
   
   
+  
   JSScript* script = cx->currentScript();
-  if (script && script->selfHosted()) {
+  if (script && script->selfHosted() && reason != CallReason::CallContent) {
     return NativeResumeMode::Continue;
   }
 
