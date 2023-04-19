@@ -10,6 +10,7 @@
 #include "mozilla/EditorForwards.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAtom.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
@@ -18,7 +19,6 @@
 #include "nsTArray.h"
 #include "nscore.h"
 
-class nsAtom;
 class nsINode;
 
 namespace mozilla {
@@ -147,16 +147,56 @@ class TypeInState final {
                   aStyleToPreserve.AttributeValueOrCSSValueRef());
   }
 
-  void ClearAllProps();
-  void ClearProp(nsStaticAtom* aProp, nsAtom* aAttr,
-                 SpecifiedStyle aSpecifiedStyle = SpecifiedStyle::Preserve);
-  void ClearLinkPropAndDiscardItsSpecifiedStyle();
+  
+
+
+
+
+
+
+
+
+
+
+
+  void ClearStyle(nsStaticAtom& aHTMLProperty, nsAtom* aAttribute) {
+    ClearStyleInternal(&aHTMLProperty, aAttribute);
+  }
 
   
 
 
 
-  UniquePtr<PropItem> TakeClearProperty();
+  void ClearStyles(const nsTArray<EditorInlineStyle>& aStylesToClear);
+
+  
+
+
+
+
+  void ClearAllStyles() {
+    
+    ClearStyleInternal(nullptr, nullptr);
+  }
+
+  
+
+
+  void ClearLinkAndItsSpecifiedStyle() {
+    ClearStyleInternal(nsGkAtoms::a, nullptr, SpecifiedStyle::Discard);
+  }
+
+  
+
+
+
+
+  UniquePtr<PropItem> TakeClearingStyle() {
+    if (mClearingStyles.IsEmpty()) {
+      return nullptr;
+    }
+    return mClearingStyles.PopLastElement();
+  }
 
   
 
@@ -181,6 +221,10 @@ class TypeInState final {
 
  protected:
   virtual ~TypeInState();
+
+  void ClearStyleInternal(
+      nsStaticAtom* aHTMLProperty, nsAtom* aAttribute,
+      SpecifiedStyle aSpecifiedStyle = SpecifiedStyle::Preserve);
 
   void RemovePropFromSetList(nsStaticAtom* aProp, nsAtom* aAttr);
   void RemovePropFromClearedList(nsStaticAtom* aProp, nsAtom* aAttr);

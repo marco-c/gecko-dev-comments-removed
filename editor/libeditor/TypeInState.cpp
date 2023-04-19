@@ -139,12 +139,12 @@ void TypeInState::PostHandleSelectionChangeCommand(
   
   if (AreSomeStylesSet() ||
       (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
-    ClearLinkPropAndDiscardItsSpecifiedStyle();
+    ClearLinkAndItsSpecifiedStyle();
     return;
   }
 
   Reset();
-  ClearLinkPropAndDiscardItsSpecifiedStyle();
+  ClearLinkAndItsSpecifiedStyle();
 }
 
 void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
@@ -317,7 +317,7 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
   if (resetAllStyles) {
     Reset();
     if (unlink) {
-      ClearLinkPropAndDiscardItsSpecifiedStyle();
+      ClearLinkAndItsSpecifiedStyle();
     }
     return;
   }
@@ -329,7 +329,7 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
   
   
   if (unlink) {
-    ClearLinkPropAndDiscardItsSpecifiedStyle();
+    ClearLinkAndItsSpecifiedStyle();
   } else if (!unlink) {
     RemovePropFromClearedList(nsGkAtoms::a, nullptr);
   }
@@ -375,36 +375,36 @@ void TypeInState::PreserveStyle(nsStaticAtom& aHTMLProperty, nsAtom* aAttribute,
   RemovePropFromClearedList(&aHTMLProperty, aAttribute);
 }
 
-void TypeInState::ClearAllProps() {
-  
-  ClearProp(nullptr, nullptr);
+void TypeInState::ClearStyles(
+    const nsTArray<EditorInlineStyle>& aStylesToClear) {
+  for (const EditorInlineStyle& styleToClear : aStylesToClear) {
+    if (styleToClear.IsStyleToClearAllInlineStyles()) {
+      ClearAllStyles();
+      return;
+    }
+    if (styleToClear.mHTMLProperty == nsGkAtoms::href ||
+        styleToClear.mHTMLProperty == nsGkAtoms::name) {
+      ClearStyleInternal(nsGkAtoms::a, nullptr);
+    } else {
+      ClearStyleInternal(styleToClear.mHTMLProperty, styleToClear.mAttribute);
+    }
+  }
 }
 
-void TypeInState::ClearProp(
-    nsStaticAtom* aProp, nsAtom* aAttr,
+void TypeInState::ClearStyleInternal(
+    nsStaticAtom* aHTMLProperty, nsAtom* aAttribute,
     SpecifiedStyle aSpecifiedStyle ) {
   
-  if (IsPropCleared(aProp, aAttr)) {
+  if (IsPropCleared(aHTMLProperty, aAttribute)) {
     return;
   }
 
   
-  RemovePropFromSetList(aProp, aAttr);
+  RemovePropFromSetList(aHTMLProperty, aAttribute);
 
   
   mClearingStyles.AppendElement(
-      MakeUnique<PropItem>(aProp, aAttr, u""_ns, aSpecifiedStyle));
-}
-
-void TypeInState::ClearLinkPropAndDiscardItsSpecifiedStyle() {
-  ClearProp(nsGkAtoms::a, nullptr, SpecifiedStyle::Discard);
-}
-
-UniquePtr<PropItem> TypeInState::TakeClearProperty() {
-  if (mClearingStyles.IsEmpty()) {
-    return nullptr;
-  }
-  return mClearingStyles.PopLastElement();
+      MakeUnique<PropItem>(aHTMLProperty, aAttribute, u""_ns, aSpecifiedStyle));
 }
 
 
