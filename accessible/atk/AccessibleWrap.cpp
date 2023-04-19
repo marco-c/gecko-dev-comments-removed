@@ -1461,7 +1461,7 @@ void a11y::ProxySelectionEvent(RemoteAccessible*, RemoteAccessible* aWidget,
 }
 
 
-void AccessibleWrap::GetKeyBinding(Accessible* aAccessible,
+void AccessibleWrap::GetKeyBinding(LocalAccessible* aAccessible,
                                    nsAString& aResult) {
   
 
@@ -1471,7 +1471,7 @@ void AccessibleWrap::GetKeyBinding(Accessible* aAccessible,
   if (!keyBinding.IsEmpty()) {
     keyBinding.AppendToString(keyBindingsStr, KeyBinding::eAtkFormat);
 
-    Accessible* parent = aAccessible->Parent();
+    LocalAccessible* parent = aAccessible->LocalParent();
     roles::Role role = parent ? parent->Role() : roles::NOTHING;
     if (role == roles::PARENT_MENUITEM || role == roles::MENUITEM ||
         role == roles::RADIO_MENU_ITEM || role == roles::CHECK_MENU_ITEM) {
@@ -1487,7 +1487,8 @@ void AccessibleWrap::GetKeyBinding(Accessible* aAccessible,
 
           keysInHierarchyStr.Insert(str, 0);
         }
-      } while ((parent = parent->Parent()) && parent->Role() != roles::MENUBAR);
+      } while ((parent = parent->LocalParent()) &&
+               parent->Role() != roles::MENUBAR);
 
       keyBindingsStr.Append(';');
       keyBindingsStr.Append(keysInHierarchyStr);
@@ -1499,11 +1500,9 @@ void AccessibleWrap::GetKeyBinding(Accessible* aAccessible,
 
   
   keyBindingsStr.Append(';');
-  if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
-    keyBinding = localAcc->KeyboardShortcut();
-    if (!keyBinding.IsEmpty()) {
-      keyBinding.AppendToString(keyBindingsStr, KeyBinding::eAtkFormat);
-    }
+  keyBinding = aAccessible->KeyboardShortcut();
+  if (!keyBinding.IsEmpty()) {
+    keyBinding.AppendToString(keyBindingsStr, KeyBinding::eAtkFormat);
   }
   aResult = keyBindingsStr;
 }
