@@ -29,15 +29,6 @@ const ADDON_ID = "test-startup-cache-telemetry@xpcshell.mozilla.org";
 
 add_setup(async () => {
   
-  
-  
-  
-  Services.prefs.setBoolPref(
-    "toolkit.telemetry.testing.overrideProductsCheck",
-    true
-  );
-
-  
   do_get_profile();
   
   Services.fog.initializeFOG();
