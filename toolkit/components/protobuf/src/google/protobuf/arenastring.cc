@@ -55,6 +55,7 @@ namespace  {
 
 
 
+
 #ifdef __STDCPP_DEFAULT_NEW_ALIGNMENT__
 constexpr size_t kNewAlign = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
 #elif (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40900
@@ -64,8 +65,8 @@ constexpr size_t kNewAlign = alignof(std::max_align_t);
 #endif
 constexpr size_t kStringAlign = alignof(std::string);
 
-static_assert((kStringAlign > kNewAlign ? kStringAlign : kNewAlign) >= 8, "");
-static_assert(alignof(ExplicitlyConstructedArenaString) >= 8, "");
+static_assert((kStringAlign > kNewAlign ? kStringAlign : kNewAlign) >= 4, "");
+static_assert(alignof(ExplicitlyConstructedArenaString) >= 4, "");
 
 }  
 

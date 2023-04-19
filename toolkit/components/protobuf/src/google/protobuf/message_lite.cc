@@ -521,17 +521,13 @@ void GenericTypeHandler<std::string>::Merge(const std::string& from,
 }
 
 
-#if defined(NDEBUG) || defined(_MSC_VER)
 
-#else
-
-InternalMetadata::~InternalMetadata() {
+void InternalMetadata::CheckedDestruct() {
   if (HasMessageOwnedArenaTag()) {
     GOOGLE_DCHECK(!HasUnknownFieldsTag());
     delete reinterpret_cast<Arena*>(ptr_ - kMessageOwnedArenaTagMask);
   }
 }
-#endif
 
 
 

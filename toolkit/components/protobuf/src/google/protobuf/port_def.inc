@@ -178,7 +178,7 @@
 #ifdef PROTOBUF_VERSION
 #error PROTOBUF_VERSION was previously defined
 #endif
-#define PROTOBUF_VERSION 3021002
+#define PROTOBUF_VERSION 3021004
 
 #ifdef PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC
 #error PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC was previously defined
@@ -638,20 +638,25 @@
 #ifdef PROTOBUF_CONSTINIT
 #error PROTOBUF_CONSTINIT was previously defined
 #endif
-#if defined(__cpp_constinit)
+#if defined(__cpp_constinit) && !defined(_MSC_VER)
 #define PROTOBUF_CONSTINIT constinit
 #define PROTOBUF_CONSTEXPR constexpr
 
 
 
 
-#elif __has_cpp_attribute(clang::require_constant_initialization) && \
+
+#elif !defined(_MSC_VER) && __has_cpp_attribute(clang::require_constant_initialization) && \
     ((defined(__APPLE__) && __clang_major__ >= 13) ||                \
      (!defined(__APPLE__) && __clang_major__ >= 12))
 #define PROTOBUF_CONSTINIT [[clang::require_constant_initialization]]
 #define PROTOBUF_CONSTEXPR constexpr
 #elif PROTOBUF_GNUC_MIN(12, 2)
 #define PROTOBUF_CONSTINIT __constinit
+#define PROTOBUF_CONSTEXPR constexpr
+
+#elif defined(_MSC_VER) && _MSC_VER >= 1930
+#define PROTOBUF_CONSTINIT
 #define PROTOBUF_CONSTEXPR constexpr
 #else
 #define PROTOBUF_CONSTINIT
