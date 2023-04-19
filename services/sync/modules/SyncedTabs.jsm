@@ -150,9 +150,17 @@ let SyncedTabsInternal = {
 
     
     
-    if (Weave.Status.checkSetup() == Weave.CLIENT_NOT_CONFIGURED) {
+    if (Weave.Status.checkSetup() === Weave.CLIENT_NOT_CONFIGURED) {
       lazy.log.info(
         "Sync client is not configured, so not attempting a tab sync"
+      );
+      return false;
+    }
+    
+    if (Weave.Status.login !== Weave.STATUS_OK) {
+      lazy.log.info(
+        "Can't sync tabs due to the login status",
+        Weave.Status.login
       );
       return false;
     }
