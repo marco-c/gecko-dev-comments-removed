@@ -1160,8 +1160,6 @@ nsSize nsSprocketLayout::GetXULPrefSize(nsIFrame* aBox,
   nsSize vpref(0, 0);
   bool isHorizontal = IsXULHorizontal(aBox);
 
-  nscoord biggestPref = 0;
-
   
   
 
