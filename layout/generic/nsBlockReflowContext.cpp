@@ -158,7 +158,7 @@ bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
                                          availSpace);
             
             
-            if (kid->StyleDisplay()->mBreakType != StyleClear::None ||
+            if (kid->StyleDisplay()->mClear != StyleClear::None ||
                 !nsBlockFrame::BlockCanIntersectFloats(kid)) {
               *aMayNeedRetry = true;
             }

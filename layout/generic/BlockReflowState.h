@@ -164,7 +164,7 @@ class BlockReflowState {
     FloatsPushedOrSplit,
   };
   std::tuple<nscoord, ClearFloatsResult> ClearFloats(
-      nscoord aBCoord, StyleClear aBreakType,
+      nscoord aBCoord, StyleClear aClearType,
       nsIFrame* aFloatAvoidingBlock = nullptr);
 
   nsFloatManager* FloatManager() const {

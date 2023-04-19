@@ -5936,15 +5936,10 @@ void nsIFrame::InlineMinISizeData::OptionallyBreak(nscoord aHyphenWidth) {
   ForceBreak();
 }
 
-void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType) {
-  MOZ_ASSERT(aBreakType == StyleClear::None || aBreakType == StyleClear::Both ||
-                 aBreakType == StyleClear::Left ||
-                 aBreakType == StyleClear::Right,
-             "Must be a physical break type");
-
+void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aClearType) {
   
   
-  if (mFloats.Length() != 0 && aBreakType != StyleClear::None) {
+  if (!mFloats.IsEmpty() && aClearType != StyleClear::None) {
     
     
     nscoord floats_done = 0,
@@ -5952,21 +5947,20 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType) {
             
         floats_cur_left = 0, floats_cur_right = 0;
 
-    for (uint32_t i = 0, i_end = mFloats.Length(); i != i_end; ++i) {
-      const FloatInfo& floatInfo = mFloats[i];
+    for (const FloatInfo& floatInfo : mFloats) {
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      StyleClear breakType = floatDisp->mBreakType;
-      if (breakType == StyleClear::Left || breakType == StyleClear::Right ||
-          breakType == StyleClear::Both) {
+      StyleClear clearType = floatDisp->mClear;
+      if (clearType == StyleClear::Left || clearType == StyleClear::Right ||
+          clearType == StyleClear::Both) {
         nscoord floats_cur =
             NSCoordSaturatingAdd(floats_cur_left, floats_cur_right);
         if (floats_cur > floats_done) {
           floats_done = floats_cur;
         }
-        if (breakType != StyleClear::Right) {
+        if (clearType != StyleClear::Right) {
           floats_cur_left = 0;
         }
-        if (breakType != StyleClear::Left) {
+        if (clearType != StyleClear::Left) {
           floats_cur_right = 0;
         }
       }
@@ -5986,7 +5980,7 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType) {
 
     mCurrentLine = NSCoordSaturatingAdd(mCurrentLine, floats_done);
 
-    if (aBreakType == StyleClear::Both) {
+    if (aClearType == StyleClear::Both) {
       mFloats.Clear();
     } else {
       
@@ -5996,10 +5990,10 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType) {
       
       nsTArray<FloatInfo> newFloats;
       MOZ_ASSERT(
-          aBreakType == StyleClear::Left || aBreakType == StyleClear::Right,
+          aClearType == StyleClear::Left || aClearType == StyleClear::Right,
           "Other values should have been handled in other branches");
       StyleFloat clearFloatType =
-          aBreakType == StyleClear::Left ? StyleFloat::Left : StyleFloat::Right;
+          aClearType == StyleClear::Left ? StyleFloat::Left : StyleFloat::Right;
       
       
       for (FloatInfo& floatInfo : Reversed(mFloats)) {
@@ -6014,9 +6008,8 @@ void nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType) {
           
           
           
-          StyleClear floatBreakType = floatDisp->mBreakType;
-          if (floatBreakType != aBreakType &&
-              floatBreakType != StyleClear::None) {
+          StyleClear clearType = floatDisp->mClear;
+          if (clearType != aClearType && clearType != StyleClear::None) {
             break;
           }
         }

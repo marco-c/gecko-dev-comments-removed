@@ -673,10 +673,10 @@ void nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
       
       
       
-      StyleClear oldBreakType = aStatus.BreakType();
+      StyleClear oldClearType = aStatus.FloatClearType();
       aStatus.Reset();
       aStatus.SetIncomplete();
-      aStatus.SetInlineLineBreakAfter(oldBreakType);
+      aStatus.SetInlineLineBreakAfter(oldClearType);
       PushFrames(aPresContext, aFrame, irs.mPrevFrame, irs);
     } else {
       

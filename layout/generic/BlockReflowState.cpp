@@ -723,9 +723,9 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   
   
   
-  if (StyleClear::None != floatDisplay->mBreakType) {
+  if (StyleClear::None != floatDisplay->mClear) {
     
-    auto [bCoord, result] = ClearFloats(mBCoord, floatDisplay->mBreakType);
+    auto [bCoord, result] = ClearFloats(mBCoord, floatDisplay->mClear);
     if (result == ClearFloatsResult::FloatsPushedOrSplit) {
       PushFloatPastBreak(aFloat);
       return PlaceFloatResult::ShouldPlaceInNextContinuation;
@@ -1038,7 +1038,7 @@ void BlockReflowState::PlaceBelowCurrentLineFloats(nsLineBox* aLine) {
 }
 
 std::tuple<nscoord, BlockReflowState::ClearFloatsResult>
-BlockReflowState::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
+BlockReflowState::ClearFloats(nscoord aBCoord, StyleClear aClearType,
                               nsIFrame* aFloatAvoidingBlock) {
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
@@ -1053,10 +1053,10 @@ BlockReflowState::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
 
   nscoord newBCoord = aBCoord;
 
-  if (aBreakType != StyleClear::None) {
-    newBCoord = FloatManager()->ClearFloats(newBCoord, aBreakType);
+  if (aClearType != StyleClear::None) {
+    newBCoord = FloatManager()->ClearFloats(newBCoord, aClearType);
 
-    if (FloatManager()->ClearContinues(aBreakType)) {
+    if (FloatManager()->ClearContinues(aClearType)) {
       return {newBCoord, ClearFloatsResult::FloatsPushedOrSplit};
     }
   }

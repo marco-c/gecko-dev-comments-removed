@@ -202,11 +202,9 @@ enum nsSelectionAmount {
 
 
 class nsReflowStatus final {
-  using StyleClear = mozilla::StyleClear;
-
  public:
   nsReflowStatus()
-      : mBreakType(StyleClear::None),
+      : mFloatClearType(mozilla::StyleClear::None),
         mInlineBreak(InlineBreak::None),
         mCompletion(Completion::FullyComplete),
         mNextInFlowNeedsReflow(false),
@@ -214,7 +212,7 @@ class nsReflowStatus final {
 
   
   void Reset() {
-    mBreakType = StyleClear::None;
+    mFloatClearType = mozilla::StyleClear::None;
     mInlineBreak = InlineBreak::None;
     mCompletion = Completion::FullyComplete;
     mNextInFlowNeedsReflow = false;
@@ -307,7 +305,7 @@ class nsReflowStatus final {
     return mInlineBreak == InlineBreak::Before;
   }
   bool IsInlineBreakAfter() const { return mInlineBreak == InlineBreak::After; }
-  StyleClear BreakType() const { return mBreakType; }
+  mozilla::StyleClear FloatClearType() const { return mFloatClearType; }
 
   
   
@@ -320,14 +318,15 @@ class nsReflowStatus final {
   
   void SetInlineLineBreakBeforeAndReset() {
     Reset();
-    mBreakType = StyleClear::None;
+    mFloatClearType = mozilla::StyleClear::None;
     mInlineBreak = InlineBreak::Before;
   }
 
   
   
-  void SetInlineLineBreakAfter(StyleClear aBreakType = StyleClear::None) {
-    mBreakType = aBreakType;
+  void SetInlineLineBreakAfter(
+      mozilla::StyleClear aClearType = mozilla::StyleClear::None) {
+    mFloatClearType = aClearType;
     mInlineBreak = InlineBreak::After;
   }
 
@@ -337,7 +336,7 @@ class nsReflowStatus final {
   void SetFirstLetterComplete() { mFirstLetterComplete = true; }
 
  private:
-  StyleClear mBreakType;
+  mozilla::StyleClear mFloatClearType;
   InlineBreak mInlineBreak;
   Completion mCompletion;
   bool mNextInFlowNeedsReflow : 1;
@@ -2535,8 +2534,6 @@ class nsIFrame : public nsQueryFrame {
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
-    typedef mozilla::StyleClear StyleClear;
-
     InlinePrefISizeData() : mLineIsEmpty(true) {}
 
     
@@ -2553,9 +2550,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-    void ForceBreak(StyleClear aBreakType = StyleClear::Both);
+    void ForceBreak(mozilla::StyleClear aClearType = mozilla::StyleClear::Both);
 
     
     void DefaultAddInlinePrefISize(nscoord aISize);
