@@ -16,6 +16,8 @@ var {
   callFunctionWithAsyncStack,
 } = require("devtools/shared/platform/stack");
 
+loader.lazyRequireGetter(this, "OS", "resource://gre/modules/osfile.jsm", true);
+
 loader.lazyRequireGetter(
   this,
   "FileUtils",
@@ -670,7 +672,9 @@ function mainThreadFetch(
           
 
           uri.QueryInterface(Ci.nsIFileURL);
-          const result = IOUtils.read(uri.file.path).then(bytes => {
+          
+          
+          const result = OS.File.read(uri.file.path).then(bytes => {
             
             const decoder = new TextDecoder();
             const content = decoder.decode(bytes);
