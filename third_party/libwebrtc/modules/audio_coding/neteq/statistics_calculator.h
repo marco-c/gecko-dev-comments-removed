@@ -65,6 +65,9 @@ class StatisticsCalculator {
   void AcceleratedSamples(size_t num_samples);
 
   
+  void GeneratedNoiseSamples(size_t num_samples);
+
+  
   virtual void PacketsDiscarded(size_t num_packets);
 
   
