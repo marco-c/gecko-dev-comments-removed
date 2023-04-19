@@ -57,11 +57,14 @@ class BodyConsumer final : public nsIObserver,
 
 
 
+
+
   static already_AddRefed<Promise> Create(
       nsIGlobalObject* aGlobal, nsIEventTarget* aMainThreadEventTarget,
       nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
       ConsumeType aType, const nsACString& aBodyBlobURISpec,
       const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
+      const nsACString& aMixedCaseMimeType,
       MutableBlobStorage::MutableBlobStorageType aBlobStorageType,
       ErrorResult& aRv);
 
@@ -96,6 +99,7 @@ class BodyConsumer final : public nsIObserver,
                Promise* aPromise, ConsumeType aType,
                const nsACString& aBodyBlobURISpec,
                const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
+               const nsACString& aMixedCaseMimeType,
                MutableBlobStorage::MutableBlobStorageType aBlobStorageType);
 
   ~BodyConsumer();
@@ -112,6 +116,7 @@ class BodyConsumer final : public nsIObserver,
 
   MutableBlobStorage::MutableBlobStorageType mBlobStorageType;
   nsCString mBodyMimeType;
+  nsCString mMixedCaseMimeType;
 
   nsCString mBodyBlobURISpec;
   nsString mBodyLocalPath;

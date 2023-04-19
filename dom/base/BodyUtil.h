@@ -46,10 +46,10 @@ class BodyUtil final {
 
 
 
-  static already_AddRefed<FormData> ConsumeFormData(nsIGlobalObject* aParent,
-                                                    const nsCString& aMimeType,
-                                                    const nsCString& aStr,
-                                                    ErrorResult& aRv);
+  static already_AddRefed<FormData> ConsumeFormData(
+      nsIGlobalObject* aParent, const nsCString& aMimeType,
+      const nsACString& aMixedCaseMimeType, const nsCString& aStr,
+      ErrorResult& aRv);
 
   
 
