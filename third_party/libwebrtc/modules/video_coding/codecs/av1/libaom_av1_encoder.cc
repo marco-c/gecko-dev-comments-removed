@@ -671,8 +671,15 @@ int32_t LibaomAv1Encoder::Encode(
         encoded_image.content_type_ = VideoContentType::UNSPECIFIED;
         
         
-        encoded_image._encodedHeight = frame.height();
-        encoded_image._encodedWidth = frame.width();
+        if (svc_params_) {
+          int n = svc_params_->scaling_factor_num[layer_frame.SpatialId()];
+          int d = svc_params_->scaling_factor_den[layer_frame.SpatialId()];
+          encoded_image._encodedWidth = cfg_.g_w * n / d;
+          encoded_image._encodedHeight = cfg_.g_h * n / d;
+        } else {
+          encoded_image._encodedWidth = cfg_.g_w;
+          encoded_image._encodedHeight = cfg_.g_h;
+        }
         encoded_image.timing_.flags = VideoSendTiming::kInvalid;
         int qp = -1;
         ret = aom_codec_control(&ctx_, AOME_GET_LAST_QUANTIZER, &qp);
