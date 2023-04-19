@@ -11,6 +11,8 @@
 #ifndef gc_ZoneAllocator_h
 #define gc_ZoneAllocator_h
 
+#include "mozilla/Maybe.h"
+
 #include "jstypes.h"
 #include "gc/Cell.h"
 #include "gc/Scheduling.h"
@@ -57,7 +59,7 @@ class ZoneAllocator : public JS::shadow::Zone,
                                     void* reallocPtr = nullptr);
   void reportAllocationOverflow() const;
 
-  void updateMemoryCountersOnGCStart();
+  void updateSchedulingStateOnGCStart();
   void updateGCStartThresholds(gc::GCRuntime& gc);
   void setGCSliceThresholds(gc::GCRuntime& gc, bool waitingOnBGTask);
   void clearGCSliceThresholds();
@@ -164,6 +166,9 @@ class ZoneAllocator : public JS::shadow::Zone,
     }
   }
 
+  void updateCollectionRate(mozilla::TimeDuration mainThreadGCTime,
+                            size_t initialBytesForAllZones);
+
  public:
   
   gc::HeapSizeChild gcHeapSize;
@@ -188,6 +193,11 @@ class ZoneAllocator : public JS::shadow::Zone,
   
   
   gc::SharedMemoryMap sharedMemoryUseCounts;
+
+  
+  
+  MainThreadData<mozilla::Maybe<double>> smoothedCollectionRate;
+  MainThreadOrGCTaskData<mozilla::TimeDuration> perZoneGCTime;
 
  private:
 #ifdef DEBUG

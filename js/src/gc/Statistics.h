@@ -289,6 +289,9 @@ struct Statistics {
 
   TimeStamp creationTime() const { return creationTime_; }
 
+  TimeDuration totalGCTime() const { return totalGCTime_; }
+  size_t initialCollectedBytes() const { return preCollectedHeapBytes; }
+
   
   
   FILE* profileFile() const { return gcProfileFile; }
@@ -359,7 +362,7 @@ struct Statistics {
   PhaseTimes phaseTimes;
 
   
-  PhaseKindTimes parallelTimes;
+  TimeDuration totalGCTime_;
 
   
   EnumeratedArray<Count, COUNT_LIMIT,

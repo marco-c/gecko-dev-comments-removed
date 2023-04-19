@@ -730,6 +730,11 @@ class HeapSize {
   
 
 
+  MainThreadData<size_t> initialBytes_;
+
+  
+
+
 
 
   AtomicByteCount retainedBytes_;
@@ -741,9 +746,10 @@ class HeapSize {
   }
 
   size_t bytes() const { return bytes_; }
+  size_t initialBytes() const { return initialBytes_; }
   size_t retainedBytes() const { return retainedBytes_; }
 
-  void updateOnGCStart() { retainedBytes_ = size_t(bytes_); }
+  void updateOnGCStart() { retainedBytes_ = initialBytes_ = bytes(); }
 
   void addGCArena() { addBytes(ArenaSize); }
   void removeGCArena() {
