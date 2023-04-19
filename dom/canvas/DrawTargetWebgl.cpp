@@ -2751,10 +2751,12 @@ inline bool GlyphCacheEntry::MatchesGlyphs(
   }
   
   if (aStrokeOptions) {
+    
     if (!(mStrokeOptions && *aStrokeOptions == *mStrokeOptions)) {
       return false;
     }
-  } else if (!mStrokeOptions) {
+  } else if (mStrokeOptions) {
+    
     return false;
   }
   
