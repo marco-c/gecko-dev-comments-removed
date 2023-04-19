@@ -44,7 +44,13 @@ class WindowCapturerTest : public ::testing::Test,
 };
 
 
-TEST_F(WindowCapturerTest, Enumerate) {
+
+#if defined(WEBRTC_LINUX) && defined(MEMORY_SANITIZER)
+#define MAYBE_Enumerate DISABLED_Enumerate
+#else
+#define MAYBE_Enumerate Enumerate
+#endif
+TEST_F(WindowCapturerTest, MAYBE_Enumerate) {
   DesktopCapturer::SourceList sources;
   EXPECT_TRUE(capturer_->GetSourceList(&sources));
 
