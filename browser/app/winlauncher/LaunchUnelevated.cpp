@@ -136,7 +136,38 @@ LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
   }
 
   
-  UniquePtr<wchar_t[]> cmdLine(MakeCommandLine(aArgc - 1, aArgv + 1));
+  
+  
+  UniquePtr<wchar_t[]> cmdLine = [&]() {
+    constexpr wchar_t const* kTagArg = L"--" ATTEMPTING_DEELEVATION_FLAG;
+
+    
+    EnsureBrowserCommandlineSafe(aArgc, aArgv);
+
+    if (mozilla::CheckArg(aArgc, aArgv, "osint",
+                          static_cast<const wchar_t**>(nullptr),
+                          CheckArgFlag::None)) {
+      
+      
+      
+      
+      
+      
+      
+      auto const aArgvCopy = MakeUnique<wchar_t const*[]>(aArgc + 1);
+      aArgvCopy[0] = aArgv[1];
+      aArgvCopy[1] = kTagArg;
+      for (int i = 2; i < aArgc; ++i) {
+        aArgvCopy[i] = aArgv[i];
+      }
+      aArgvCopy[aArgc] = nullptr;  
+      return MakeCommandLine(aArgc, aArgvCopy.get(), 0, nullptr);
+    } else {
+      
+      constexpr wchar_t const* const kTagArgArray[] = {kTagArg};
+      return MakeCommandLine(aArgc - 1, aArgv + 1, 1, kTagArgArray);
+    }
+  }();
   if (!cmdLine) {
     return LAUNCHER_ERROR_GENERIC();
   }

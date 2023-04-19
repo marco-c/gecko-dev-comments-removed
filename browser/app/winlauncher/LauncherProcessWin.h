@@ -30,9 +30,29 @@ enum class LauncherFlags : uint32_t {
   eNone = 0,
   eWaitForBrowser = (1 << 0),  
   eNoDeelevate = (1 << 1),     
+  eDeelevating = (1 << 2),     
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LauncherFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LauncherFlags);
+
+enum class DeelevationStatus : uint32_t {
+  
+  Unknown = 0,
+
+  
+  
+  StartedUnprivileged = 1,
+  
+  DeelevationProhibited = 2,
+  
+  SuccessfullyDeelevated = 3,
+  
+  
+  PartiallyDeelevated = 4,
+  
+  
+  UnsuccessfullyDeelevated = 5,
+};
 
 }  
 

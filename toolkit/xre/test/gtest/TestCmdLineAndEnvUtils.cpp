@@ -6,6 +6,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -254,16 +255,28 @@ constexpr static char const* const kOptionalArgs[] = {"mozilla", "allizom"};
 
 
 std::pair<TestCaseState, std::vector<const char*>> kCommandLinesOpt[] = {
+    
     {PASS, {"-osint", "-mozilla", "-aleph", "http://www.example.com/"}},
     {PASS, {"-osint", "-allizom", "-aleph", "http://www.example.com/"}},
+
+    
     {PASS,
      {"-osint", "-mozilla", "-allizom", "-aleph", "http://www.example.com/"}},
     {PASS,
      {"-osint", "-allizom", "-mozilla", "-aleph", "http://www.example.com/"}},
 
+    
     {FAIL, {"-mozilla", "-osint", "-aleph", "http://www.example.com/"}},
     {FAIL, {"-osint", "-aleph", "-mozilla", "http://www.example.com/"}},
     {FAIL, {"-osint", "-aleph", "http://www.example.com/", "-mozilla"}},
+
+    
+    {FAIL,
+     {"-mozilla", "-osint", "-allizom", "-aleph", "http://www.example.com/"}},
+    {FAIL,
+     {"-osint", "-allizom", "-aleph", "-mozilla", "http://www.example.com/"}},
+    {FAIL,
+     {"-osint", "-allizom", "-aleph", "http://www.example.com/", "-mozilla"}},
 };
 
 enum WithOptionalState : bool {
