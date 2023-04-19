@@ -91,6 +91,8 @@ enum class StyleDisplay : uint16_t {
       StyleDisplayFrom(StyleDisplayOutside::Block, StyleDisplayInside::MozBox),
   MozInlineBox =
       StyleDisplayFrom(StyleDisplayOutside::Inline, StyleDisplayInside::MozBox),
+  MozPopup =
+      StyleDisplayFrom(StyleDisplayOutside::XUL, StyleDisplayInside::MozPopup),
 };
 
 bool operator<(const StyleDisplay&, const StyleDisplay&) = delete;
