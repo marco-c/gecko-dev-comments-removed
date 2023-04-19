@@ -20,6 +20,7 @@ const FXA_MOBILE_EVENT = [
 
 var gMockFxaDevices = null;
 var gUIStateStatus;
+var gUIStateSyncEnabled;
 
 function promiseSyncReady() {
   let service = Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
@@ -30,6 +31,7 @@ function promiseSyncReady() {
 var gSandbox;
 function setupMocks({ fxaDevices = null, state, syncEnabled = true }) {
   gUIStateStatus = state || UIState.STATUS_SIGNED_IN;
+  gUIStateSyncEnabled = syncEnabled;
   if (gSandbox) {
     gSandbox.restore();
   }
@@ -39,7 +41,11 @@ function setupMocks({ fxaDevices = null, state, syncEnabled = true }) {
   sandbox.stub(UIState, "get").callsFake(() => {
     return {
       status: gUIStateStatus,
-      syncEnabled,
+      
+      
+      ...(gUIStateSyncEnabled != undefined && {
+        syncEnabled: gUIStateSyncEnabled,
+      }),
     };
   });
   sandbox
@@ -468,7 +474,10 @@ add_task(async function test_mobile_promo() {
       mobilePromo: true,
       mobileConfirmation: false,
     });
+
+    
     gUIStateStatus = UIState.STATUS_NOT_CONFIGURED;
+    gUIStateSyncEnabled = undefined;
 
     info(
       "notifying that we've signed out of fxa, UIState.get().status:" +
