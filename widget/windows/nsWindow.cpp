@@ -1113,7 +1113,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   if (aInitData->mIsPrivate) {
     if (Preferences::GetBool(
-            "browser.privacySegmentation.windowSeparation.enabled", false)) {
+            "browser.privacySegmentation.windowSeparation.enabled", false) &&
+        
+        
+        
+        
+        !Preferences::GetBool("browser.privatebrowsing.autostart", false)) {
       RefPtr<IPropertyStore> pPropStore;
       if (!FAILED(SHGetPropertyStoreForWindow(mWnd, IID_IPropertyStore,
                                               getter_AddRefs(pPropStore)))) {
