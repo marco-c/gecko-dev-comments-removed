@@ -49,8 +49,6 @@ const {
 
 
 
-FormAutofill.defineLazyLogGetter(lazy, EXPORTED_SYMBOLS[0]);
-
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 function FormAutofillPreferences() {
