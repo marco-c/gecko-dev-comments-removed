@@ -297,7 +297,7 @@ class ScriptModule extends Module {
   }
 
   #buildReturnValue(evaluationResult) {
-    const rv = { realm: evaluationResult.realm.realm };
+    const rv = { realm: evaluationResult.realmId };
     switch (evaluationResult.evaluationStatus) {
       
       case "normal":
