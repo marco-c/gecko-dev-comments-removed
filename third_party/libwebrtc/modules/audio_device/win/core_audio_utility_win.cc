@@ -1020,7 +1020,7 @@ HRESULT GetSharedModeMixFormat(IAudioClient* client,
   
   
   if (!wrapped_format.IsExtensible()) {
-    RTC_DLOG(WARNING)
+    RTC_DLOG(LS_WARNING)
         << "The returned format contains no extended information. "
            "The size is "
         << wrapped_format.size() << " bytes.";

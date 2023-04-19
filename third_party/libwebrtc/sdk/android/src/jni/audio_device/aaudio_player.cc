@@ -158,7 +158,7 @@ void AAudioPlayer::OnErrorCallback(aaudio_result_t error) {
   if (aaudio_.stream_state() == AAUDIO_STREAM_STATE_DISCONNECTED) {
     
     
-    RTC_LOG(WARNING) << "Output stream disconnected";
+    RTC_LOG(LS_WARNING) << "Output stream disconnected";
     
     
     

@@ -113,7 +113,8 @@ SLObjectItf OpenSLEngineManager::GetOpenSLEngine() {
   
   
   if (engine_object_.Get() != nullptr) {
-    RTC_LOG(WARNING) << "The OpenSL ES engine object has already been created";
+    RTC_LOG(LS_WARNING)
+        << "The OpenSL ES engine object has already been created";
     return engine_object_.Get();
   }
   

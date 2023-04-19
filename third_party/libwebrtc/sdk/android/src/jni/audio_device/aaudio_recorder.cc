@@ -148,7 +148,7 @@ void AAudioRecorder::OnErrorCallback(aaudio_result_t error) {
   if (aaudio_.stream_state() == AAUDIO_STREAM_STATE_DISCONNECTED) {
     
     
-    RTC_LOG(WARNING) << "Input stream disconnected => restart is required";
+    RTC_LOG(LS_WARNING) << "Input stream disconnected => restart is required";
     
     
     

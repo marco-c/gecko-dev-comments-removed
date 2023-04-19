@@ -1569,8 +1569,8 @@ int P2PTransportChannel::SetOption(rtc::Socket::Option opt, int value) {
     if (val < 0) {
       
       
-      RTC_LOG(WARNING) << "SetOption(" << opt << ", " << value
-                       << ") failed: " << port->GetError();
+      RTC_LOG(LS_WARNING) << "SetOption(" << opt << ", " << value
+                          << ") failed: " << port->GetError();
     }
   }
   return 0;
