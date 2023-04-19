@@ -77,7 +77,14 @@ class OutstandingData {
   AckInfo HandleSack(
       UnwrappedTSN cumulative_tsn_ack,
       rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-      bool is_in_fast_retransmit);
+      bool is_in_fast_recovery);
+
+  
+  
+  
+  
+  std::vector<std::pair<TSN, Data>> GetChunksToBeFastRetransmitted(
+      size_t max_size);
 
   
   
@@ -94,8 +101,12 @@ class OutstandingData {
 
   bool empty() const { return outstanding_data_.empty(); }
 
+  bool has_data_to_be_fast_retransmitted() const {
+    return !to_be_fast_retransmitted_.empty();
+  }
+
   bool has_data_to_be_retransmitted() const {
-    return !to_be_retransmitted_.empty();
+    return !to_be_retransmitted_.empty() || !to_be_fast_retransmitted_.empty();
   }
 
   UnwrappedTSN last_cumulative_tsn_ack() const {
@@ -167,7 +178,7 @@ class OutstandingData {
     
     
     
-    NackAction Nack(bool retransmit_now = false);
+    NackAction Nack(bool retransmit_now);
 
     
     
@@ -266,12 +277,23 @@ class OutstandingData {
   
   
   
-  bool NackItem(UnwrappedTSN tsn, Item& item, bool retransmit_now);
+  
+  
+  
+  
+  bool NackItem(UnwrappedTSN tsn,
+                Item& item,
+                bool retransmit_now,
+                bool do_fast_retransmit);
 
   
   
   
   void AbandonAllFor(const OutstandingData::Item& item);
+
+  std::vector<std::pair<TSN, Data>> ExtractChunksThatCanFit(
+      std::set<UnwrappedTSN>& chunks,
+      size_t max_size);
 
   bool IsConsistent() const;
 
@@ -290,6 +312,8 @@ class OutstandingData {
   
   
   size_t outstanding_items_ = 0;
+  
+  std::set<UnwrappedTSN> to_be_fast_retransmitted_;
   
   std::set<UnwrappedTSN> to_be_retransmitted_;
 };

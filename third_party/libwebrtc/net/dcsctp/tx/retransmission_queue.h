@@ -229,8 +229,6 @@ class RetransmissionQueue {
   
   
   absl::optional<UnwrappedTSN> fast_recovery_exit_tsn_ = absl::nullopt;
-  
-  bool is_in_fast_retransmit_ = false;
 
   
   SendQueue& send_queue_;

@@ -278,8 +278,12 @@ bool RetransmissionQueue::HandleSack(TimeMs now, const SackChunk& sack) {
     UpdateRTT(now, cumulative_tsn_ack);
   }
 
+  
+  
+  MaybeExitFastRecovery(cumulative_tsn_ack);
+
   OutstandingData::AckInfo ack_info = outstanding_data_.HandleSack(
-      cumulative_tsn_ack, sack.gap_ack_blocks(), is_in_fast_retransmit_);
+      cumulative_tsn_ack, sack.gap_ack_blocks(), is_in_fast_recovery());
 
   
   UpdateReceiverWindow(sack.a_rwnd());
@@ -291,8 +295,6 @@ bool RetransmissionQueue::HandleSack(TimeMs now, const SackChunk& sack) {
                        << outstanding_data_.outstanding_bytes() << " ("
                        << old_outstanding_bytes << "), rwnd=" << rwnd_ << " ("
                        << old_rwnd << ")";
-
-  MaybeExitFastRecovery(cumulative_tsn_ack);
 
   if (cumulative_tsn_ack > old_last_cumulative_tsn_ack) {
     
@@ -308,7 +310,6 @@ bool RetransmissionQueue::HandleSack(TimeMs now, const SackChunk& sack) {
   }
 
   if (ack_info.has_packet_loss) {
-    is_in_fast_retransmit_ = true;
     HandlePacketLoss(ack_info.highest_tsn_acked);
   }
 
@@ -395,16 +396,15 @@ std::vector<std::pair<TSN, Data>> RetransmissionQueue::GetChunksToSend(
   std::vector<std::pair<TSN, Data>> to_be_sent;
   size_t old_outstanding_bytes = outstanding_bytes();
   size_t old_rwnd = rwnd_;
-  if (is_in_fast_retransmit_) {
+  if (outstanding_data_.has_data_to_be_fast_retransmitted()) {
     
     
     
     
     
     
-    is_in_fast_retransmit_ = false;
-    to_be_sent =
-        outstanding_data_.GetChunksToBeRetransmitted(bytes_remaining_in_packet);
+    to_be_sent = outstanding_data_.GetChunksToBeFastRetransmitted(
+        bytes_remaining_in_packet);
     size_t to_be_sent_bytes = absl::c_accumulate(
         to_be_sent, 0, [&](size_t r, const std::pair<TSN, Data>& d) {
           return r + GetSerializedChunkSize(d.second);
@@ -412,7 +412,8 @@ std::vector<std::pair<TSN, Data>> RetransmissionQueue::GetChunksToSend(
     RTC_DLOG(LS_VERBOSE) << log_prefix_ << "fast-retransmit: sending "
                          << to_be_sent.size() << " chunks, " << to_be_sent_bytes
                          << " bytes";
-  } else {
+  }
+  if (to_be_sent.empty()) {
     
     
     
