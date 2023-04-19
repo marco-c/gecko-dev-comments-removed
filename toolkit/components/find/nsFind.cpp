@@ -849,8 +849,9 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     }
 
     
-    bool wordBreakPrev = false;
-    if (mEntireWord) {
+    
+    bool wordBreakPrev = true;
+    if (mEntireWord && prevChar) {
       if (prevChar == NBSP_CHARCODE) {
         prevChar = CHAR_TO_UNICHAR(' ');
       }
@@ -911,7 +912,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
           }
 
           
-          if (mEntireWord && !BreakInBetween(c, nextChar)) {
+          if (mEntireWord && nextChar && !BreakInBetween(c, nextChar)) {
             matchAnchorNode = nullptr;
             continue;
           }
