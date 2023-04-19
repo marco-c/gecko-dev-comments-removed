@@ -9,6 +9,16 @@ const { Schemas } = ChromeUtils.import("resource://gre/modules/Schemas.jsm");
 
 add_task(async function test_webrequest_url_classification_enum() {
   
+  
+  
+  let file = PathUtils.join(
+    Services.dirsvc.get("ProfLD", Ci.nsIFile).path,
+    "startupCache",
+    "webext.sc.lz4"
+  );
+  await IOUtils.remove(file, { ignoreAbsent: true });
+
+  
   await ExtensionTestUtils.normalizeManifest({ permissions: ["webRequest"] });
 
   let ns = Schemas.getNamespace("webRequest");
