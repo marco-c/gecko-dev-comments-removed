@@ -1,30 +1,28 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
+// This testing component is used in test_vacuum* tests.
 
-
-
-
-
-var EXPORTED_SYMBOLS = ["VacuumParticipant"];
-
-
-
-
-
+/**
+ * Returns a new nsIFile reference for a profile database.
+ * @param filename for the database, excluded the .sqlite extension.
+ */
 function new_db_file(name) {
   let file = Services.dirsvc.get("ProfD", Ci.nsIFile);
   file.append(name + ".sqlite");
   return file;
 }
 
-
-
-
-
+/**
+ * Opens and returns a connection to the provided database file.
+ * @param nsIFile interface to the database file.
+ */
 function getDatabase(aFile) {
   return Services.storage.openDatabase(aFile);
 }
 
-function VacuumParticipant() {
+export function VacuumParticipant() {
   this._dbConn = getDatabase(new_db_file("testVacuum"));
   Services.obs.addObserver(this, "test-options");
 }
@@ -60,19 +58,19 @@ VacuumParticipant.prototype = {
       try {
         this._dbConn.close();
       } catch (e) {
-        
+        // Do nothing.
       }
       this._dbConn = getDatabase(new_db_file("testVacuum2"));
     } else if (aData == "wal-fail") {
       try {
         this._dbConn.close();
       } catch (e) {
-        
+        // Do nothing.
       }
       this._dbConn = getDatabase(new_db_file("testVacuum3"));
-      
+      // Use WAL journal mode.
       this._dbConn.executeSimpleSQL("PRAGMA journal_mode = WAL");
-      
+      // Create a not finalized statement.
       this._stmt = this._dbConn.createStatement("SELECT :test");
       this._stmt.params.test = 1;
       this._stmt.executeStep();
@@ -80,7 +78,7 @@ VacuumParticipant.prototype = {
       try {
         this._dbConn.asyncClose();
       } catch (e) {
-        
+        // Do nothing.
       }
       this._dbConn = Services.storage.openSpecialDatabase("memory");
     } else if (aData == "dispose") {
@@ -88,7 +86,7 @@ VacuumParticipant.prototype = {
       try {
         this._dbConn.asyncClose();
       } catch (e) {
-        
+        // Do nothing.
       }
     }
   },
