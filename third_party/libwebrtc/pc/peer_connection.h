@@ -288,6 +288,7 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   sigslot::signal1<SctpDataChannel*>& SignalSctpDataChannelCreated() override {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return data_channel_controller_.SignalSctpDataChannelCreated();
   }
 
@@ -676,7 +677,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
-      RTC_GUARDED_BY(signaling_thread());
+      RTC_GUARDED_BY(signaling_thread()) RTC_PT_GUARDED_BY(signaling_thread());
 
   const bool dtls_enabled_;
 
@@ -684,20 +685,24 @@ class PeerConnection : public PeerConnectionInternal,
   bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
       false;
 
+  
+  
   DataChannelController data_channel_controller_;
 
   
-  PeerConnectionMessageHandler message_handler_;
+  PeerConnectionMessageHandler message_handler_
+      RTC_GUARDED_BY(signaling_thread());
 
   
   
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
-  rtc::WeakPtrFactory<PeerConnection> weak_factory_;
-
   
   
   bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
+
+  
+  rtc::WeakPtrFactory<PeerConnection> weak_factory_;
 };
 
 }  
