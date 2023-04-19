@@ -119,6 +119,12 @@ void TabCapturerWebrtc::CaptureFrame() {
   auto request = MakeRefPtr<CaptureFrameRequest>();
   InvokeAsync(mMainThreadWorker, __func__,
               [this, request]() mutable {
+                if (mRequests.GetSize() > 2) {
+                  
+                  request->Disconnect();
+                  return CapturePromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
+                                                         __func__);
+                }
                 mRequests.PushFront(request.forget());
                 return CaptureFrameNow();
               })
