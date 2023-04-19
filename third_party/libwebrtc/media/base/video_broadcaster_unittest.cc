@@ -66,7 +66,7 @@ TEST(VideoBroadcasterTest, OnFrame) {
   rtc::scoped_refptr<webrtc::I420Buffer> buffer(
       webrtc::I420Buffer::Create(kWidth, kHeight));
   
-  webrtc::I420Buffer::SetBlack(buffer);
+  webrtc::I420Buffer::SetBlack(buffer.get());
 
   webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
                                  .set_video_frame_buffer(buffer)
