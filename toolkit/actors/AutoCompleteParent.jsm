@@ -456,15 +456,6 @@ class AutoCompleteParent extends JSWindowActorParent {
         this.closePopup();
         break;
       }
-
-      case "FormAutoComplete:Disconnect": {
-        
-        
-        
-        
-        AutoCompleteResultView.clearResults();
-        break;
-      }
     }
     
     
