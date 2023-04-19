@@ -375,19 +375,11 @@ bool BaseChannel::SendPacket(bool rtcp,
                              rtc::CopyOnWriteBuffer* packet,
                              const rtc::PacketOptions& options) {
   RTC_DCHECK_RUN_ON(network_thread());
-  
-  RtpPacketType packet_type = rtcp ? RtpPacketType::kRtcp : RtpPacketType::kRtp;
-  
-  
-  
-  
-  
-  
-  
-
   TRACE_EVENT0("webrtc", "BaseChannel::SendPacket");
 
   
+  RtpPacketType packet_type = rtcp ? RtpPacketType::kRtcp : RtpPacketType::kRtp;
+
   
   
   
@@ -408,24 +400,18 @@ bool BaseChannel::SendPacket(bool rtcp,
       
       
       
-      if (rtcp) {
-        return false;
-      }
       
       
-      RTC_LOG(LS_ERROR) << "Can't send outgoing RTP packet for " << ToString()
-                        << " when SRTP is inactive and crypto is required";
-      RTC_DCHECK_NOTREACHED();
+      RTC_DCHECK(rtcp) << "Can't send outgoing RTP packet for " << ToString()
+                       << " when SRTP is inactive and crypto is required";
       return false;
     }
 
-    std::string packet_type = rtcp ? "RTCP" : "RTP";
-    RTC_DLOG(LS_WARNING) << "Sending an " << packet_type
+    RTC_DLOG(LS_WARNING) << "Sending an " << (rtcp ? "RTCP" : "RTP")
                          << " packet without encryption for " << ToString()
                          << ".";
   }
 
-  
   return rtcp ? rtp_transport_->SendRtcpPacket(packet, options, PF_SRTP_BYPASS)
               : rtp_transport_->SendRtpPacket(packet, options, PF_SRTP_BYPASS);
 }
