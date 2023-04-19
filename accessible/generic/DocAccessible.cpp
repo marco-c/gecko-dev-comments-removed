@@ -758,16 +758,24 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
     return;
   }
 
-  
-  
-  
-  
-  
   LocalAccessible* accessible = GetAccessible(aElement);
   if (!accessible) {
-    if (mContent != aElement) return;
-
-    accessible = this;
+    if (mContent == aElement) {
+      
+      
+      accessible = this;
+    } else {
+      if (aModType == dom::MutationEvent_Binding::ADDITION &&
+          aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
+        
+        
+        ContentInserted(aElement, aElement->GetNextSibling());
+        return;
+      }
+      
+      
+      return;
+    }
   }
 
   MOZ_ASSERT(accessible->IsBoundToParent() || accessible->IsDoc(),
