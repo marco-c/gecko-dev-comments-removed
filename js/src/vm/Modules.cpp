@@ -1778,41 +1778,59 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
 }
 
 
+
 void js::AsyncModuleExecutionRejected(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       HandleValue error) {
   
-  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
-
-  
-  if (!module->isAsyncEvaluating()) {
+  if (module->status() == ModuleStatus::Evaluated) {
+    
     MOZ_ASSERT(module->hadEvaluationError());
+
+    
     return;
   }
 
-  ModuleObject::onTopLevelEvaluationFinished(module);
+  
+  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
+
+  
+  MOZ_ASSERT(module->isAsyncEvaluating());
 
   
   MOZ_ASSERT(!module->hadEvaluationError());
+
+  ModuleObject::onTopLevelEvaluationFinished(module);
 
   
   module->setEvaluationError(error);
 
   
+  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
+
+  
+  
+  
   module->setAsyncEvaluatingFalse();
 
   
-  uint32_t length = module->asyncParentModules()->length();
+  
+  Rooted<ListObject*> parents(cx, module->asyncParentModules());
   Rooted<ModuleObject*> parent(cx);
-  for (uint32_t i = 0; i < length; i++) {
-    parent =
-        &module->asyncParentModules()->get(i).toObject().as<ModuleObject>();
+  for (uint32_t i = 0; i < parents->length(); i++) {
+    parent = &parents->get(i).toObject().as<ModuleObject>();
+
+    
     AsyncModuleExecutionRejected(cx, parent, error);
   }
 
   
   if (module->hasTopLevelCapability()) {
+    
     MOZ_ASSERT(module->getCycleRoot() == module);
+
+    
+    
     if (!ModuleObject::topLevelCapabilityReject(cx, module, error)) {
       
       cx->clearPendingException();
