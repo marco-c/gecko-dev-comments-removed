@@ -1840,6 +1840,9 @@ function getContextSelectorItems(hud) {
 
 
 
+
+
+
 function checkContextSelectorMenu(hud, expected) {
   const items = getContextSelectorItems(hud);
 
@@ -1849,41 +1852,30 @@ function checkContextSelectorMenu(hud, expected) {
     "The context selector menu has the expected number of items"
   );
 
-  expected.forEach((expectedItem, i) => {
-    checkContextSelectorMenuItemAt(hud, i, expectedItem);
+  expected.forEach(({ label, tooltip, checked, separator }, i) => {
+    const el = items[i];
+
+    if (separator === true) {
+      is(
+        el.getAttribute("role"),
+        "menuseparator",
+        "The element is a separator"
+      );
+      return;
+    }
+
+    const elChecked = el.getAttribute("aria-checked") === "true";
+    const elTooltip = el.getAttribute("title");
+    const elLabel = el.querySelector(".label").innerText;
+
+    is(elLabel, label, `The item has the expected label`);
+    is(elTooltip, tooltip, `Item "${label}" has the expected tooltip`);
+    is(
+      elChecked,
+      checked,
+      `Item "${label}" is ${checked ? "checked" : "unchecked"}`
+    );
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function checkContextSelectorMenuItemAt(hud, index, expected) {
-  const el = getContextSelectorItems(hud).at(index);
-
-  if (expected.separator === true) {
-    is(el.getAttribute("role"), "menuseparator", "The element is a separator");
-    return;
-  }
-
-  const elChecked = el.getAttribute("aria-checked") === "true";
-  const elTooltip = el.getAttribute("title");
-  const elLabel = el.querySelector(".label").innerText;
-
-  is(elLabel, expected.label, `The item has the expected label`);
-  is(elTooltip, expected.tooltip, `Item "${elLabel}" has the expected tooltip`);
-  is(
-    elChecked,
-    expected.checked,
-    `Item "${elLabel}" is ${expected.checked ? "checked" : "unchecked"}`
-  );
 }
 
 
