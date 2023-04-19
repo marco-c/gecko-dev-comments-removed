@@ -200,12 +200,8 @@ enum class DeviceFamily : uint8_t {
   Bug1207665,
   Bug1447141,
   AmdR600,
-  NvidiaRolloutWebRender,
-  IntelRolloutWebRender,
-  IntelModernRolloutWebRender,
   IntelWebRenderBlocked,
   NvidiaWebRenderBlocked,
-  AtiRolloutWebRender,
 
   Max
 };
@@ -251,6 +247,8 @@ enum DriverVendor : uint8_t {
   HardwareMesaAll,
   
   SoftwareMesaAll,
+  
+  MesaNonIntelNvidiaAtiAll,
 
   Max
 };
