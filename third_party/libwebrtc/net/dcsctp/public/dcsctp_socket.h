@@ -200,9 +200,8 @@ class DcSctpSocketCallbacks {
   
   
   
-  
-  
-  virtual void NotifyOutgoingMessageBufferEmpty() = 0;
+  ABSL_DEPRECATED("Use OnTotalBufferedAmountLow instead")
+  virtual void NotifyOutgoingMessageBufferEmpty() {}
 
   
   
@@ -263,6 +262,17 @@ class DcSctpSocketCallbacks {
   
   virtual void OnIncomingStreamsReset(
       rtc::ArrayView<const StreamID> incoming_streams) = 0;
+
+  
+  
+  
+  
+  virtual void OnBufferedAmountLow(StreamID stream_id) {}
+
+  
+  
+  
+  virtual void OnTotalBufferedAmountLow() {}
 };
 
 
@@ -326,6 +336,20 @@ class DcSctpSocketInterface {
   
   virtual ResetStreamsStatus ResetStreams(
       rtc::ArrayView<const StreamID> outgoing_streams) = 0;
+
+  
+  
+  virtual size_t buffered_amount(StreamID stream_id) const = 0;
+
+  
+  
+  virtual size_t buffered_amount_low_threshold(StreamID stream_id) const = 0;
+
+  
+  
+  
+  virtual void SetBufferedAmountLowThreshold(StreamID stream_id,
+                                             size_t bytes) = 0;
 };
 }  
 

@@ -72,7 +72,6 @@ class RetransmissionQueue {
                       size_t a_rwnd,
                       SendQueue& send_queue,
                       std::function<void(DurationMs rtt)> on_new_rtt,
-                      std::function<void()> on_send_queue_empty,
                       std::function<void()> on_clear_retransmission_counter,
                       Timer& t3_rtx,
                       const DcSctpOptions& options,
@@ -330,8 +329,6 @@ class RetransmissionQueue {
   const size_t data_chunk_header_size_;
   
   const std::function<void(DurationMs rtt)> on_new_rtt_;
-  
-  const std::function<void()> on_send_queue_empty_;
   
   const std::function<void()> on_clear_retransmission_counter_;
   

@@ -81,7 +81,11 @@ struct DcSctpOptions {
 
   
   
-  size_t max_send_buffer_size = 2 * 1024 * 1024;
+  size_t max_send_buffer_size = 2'000'000;
+
+  
+  
+  size_t total_buffered_amount_low_threshold = 1'800'000;
 
   
   
