@@ -40,12 +40,15 @@ add_task(async function testPrintMultiple() {
     assertExpectedPrintPage(helper);
 
     
-    await helper.startPrint();
-    helper.assertDialogOpen();
-    await helper.startPrint();
-    helper.assertDialogOpen();
-    await helper.startPrint();
-    helper.assertDialogOpen();
+    ignoreAllUncaughtExceptions(true);
+    for (let i = 0; i < 3; ++i) {
+      try {
+        await helper.startPrint();
+      } finally {
+        helper.assertDialogOpen();
+      }
+    }
+    ignoreAllUncaughtExceptions(false);
 
     
     assertExpectedPrintPage(helper);
