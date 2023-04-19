@@ -37,7 +37,6 @@ class ToolboxController extends Component {
       canCloseToolbox: true,
       isSplitConsoleActive: false,
       disableAutohide: undefined,
-      alwaysOnTop: undefined,
       pseudoLocale: undefined,
       canRender: false,
       buttonIds: [],
@@ -166,23 +165,6 @@ class ToolboxController extends Component {
 
   setDisableAutohide(disableAutohide) {
     this.setState({ disableAutohide });
-  }
-
-  
-
-
-  setAlwaysOnTop(alwaysOnTop) {
-    this.setState({ alwaysOnTop });
-  }
-
-  
-
-
-  setFocusedState(focusedState) {
-    
-    if (this.state.alwaysOnTop) {
-      this.setState({ focusedState });
-    }
   }
 
   

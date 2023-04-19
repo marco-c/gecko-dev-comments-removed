@@ -99,23 +99,11 @@ class ToolboxToolbar extends Component {
       
       disableAutohide: PropTypes.bool,
       
-      
-      
-      
-      
-      alwaysOnTop: PropTypes.bool,
-      
-      
-      
-      focusedState: PropTypes.bool,
-      
       toggleOptions: PropTypes.func.isRequired,
       
       toggleSplitConsole: PropTypes.func,
       
       toggleNoAutohide: PropTypes.func,
-      
-      toggleAlwaysOnTop: PropTypes.func,
       
       closeToolbox: PropTypes.func,
       
@@ -435,8 +423,6 @@ class ToolboxToolbar extends Component {
 
 
 
-
-
   renderToolboxControls() {
     const {
       focusedButton,
@@ -515,14 +501,7 @@ class ToolboxToolbar extends Component {
       : div({ className: classnames.join(" ") });
 
     const debugTargetInfo = debugTargetData
-      ? DebugTargetInfo({
-          alwaysOnTop: this.props.alwaysOnTop,
-          focusedState: this.props.focusedState,
-          toggleAlwaysOnTop: this.props.toggleAlwaysOnTop,
-          debugTargetData,
-          L10N,
-          toolbox,
-        })
+      ? DebugTargetInfo({ debugTargetData, L10N, toolbox })
       : null;
 
     

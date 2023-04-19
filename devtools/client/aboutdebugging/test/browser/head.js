@@ -85,48 +85,16 @@ async function openAboutDevtoolsToolbox(
   info("Open about:devtools-toolbox page");
   const target = findDebugTargetByText(targetText, doc);
   ok(target, `${targetText} tab target appeared`);
-
-  const {
-    DEBUG_TARGETS,
-  } = require("devtools/client/aboutdebugging/src/constants");
-  const isWebExtension = target.dataset.qaTargetType == DEBUG_TARGETS.EXTENSION;
-
   const inspectButton = target.querySelector(".qa-debug-target-inspect-button");
   ok(inspectButton, `Inspect button for ${targetText} appeared`);
   inspectButton.click();
-  const onToolboxReady = gDevTools.once("toolbox-ready");
   await Promise.all([
+    waitUntil(() => tab.nextElementSibling),
     waitForAboutDebuggingRequests(win.AboutDebugging.store),
-    shouldWaitToolboxReady ? onToolboxReady : Promise.resolve(),
+    shouldWaitToolboxReady
+      ? gDevTools.once("toolbox-ready")
+      : Promise.resolve(),
   ]);
-
-  
-  if (isWebExtension) {
-    const toolbox = await onToolboxReady;
-    
-    
-    const focusedWin = Services.focus.focusedWindow;
-    if (focusedWin?.top != toolbox.win) {
-      info("Wait for the toolbox window to be focused");
-      await new Promise(r => {
-        
-        toolbox.win.docShell.chromeEventHandler.addEventListener("focus", r, {
-          once: true,
-          capture: true,
-        });
-        toolbox.win.focus();
-      });
-      info("The toolbox is focused");
-    }
-    return {
-      devtoolsBrowser: null,
-      devtoolsDocument: toolbox.doc,
-      devtoolsTab: null,
-      devtoolsWindow: toolbox.win,
-    };
-  }
-
-  await waitUntil(() => tab.nextElementSibling);
 
   info("Wait for about:devtools-toolbox tab will be selected");
   const devtoolsTab = tab.nextElementSibling;
@@ -183,17 +151,6 @@ async function closeAboutDevtoolsToolbox(
   await waitUntil(
     () => !findDebugTargetByText("Toolbox - ", aboutDebuggingDocument)
   );
-
-  await waitForAboutDebuggingRequests(win.AboutDebugging.store);
-}
-
-async function closeWebExtAboutDevtoolsToolbox(devtoolsWindow, win) {
-  
-  const toolbox = getToolbox(devtoolsWindow);
-  await toolbox.commands.client.waitForRequestsToSettle();
-
-  info("Close the toolbox and wait for its destruction");
-  await toolbox.destroy();
 
   await waitForAboutDebuggingRequests(win.AboutDebugging.store);
 }
@@ -487,12 +444,6 @@ async function synthesizeUrlKeyInput(toolbox, inputEl, url) {
 
 function clickOnAddonWidget(addonId) {
   
-  
-  const focusedWin = Services.focus.focusedWindow;
-  if (focusedWin != window) {
-    window.focus();
-  }
-  
   const widgetId = addonId.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
   const browserActionId = widgetId + "-browser-action";
   const browserActionEl = window.document.getElementById(browserActionId);
@@ -500,9 +451,4 @@ function clickOnAddonWidget(addonId) {
 
   info("Show the web extension popup");
   browserActionEl.click();
-
-  
-  if (focusedWin != window) {
-    focusedWin.focus();
-  }
 }
