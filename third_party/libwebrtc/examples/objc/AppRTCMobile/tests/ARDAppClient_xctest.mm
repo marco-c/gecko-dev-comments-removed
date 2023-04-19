@@ -162,6 +162,8 @@
 #pragma mark - Cases
 
 
+#if !TARGET_IPHONE_SIMULATOR
+
 
 
 
@@ -227,6 +229,7 @@
     }
   }];
 }
+#endif
 
 
 
