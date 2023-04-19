@@ -8,14 +8,15 @@ const TEST_URLS = [
   `data:text/html,
     <div name="div" id="div" style="width: 100px; height: 100px; background: red;">
     <iframe id="iframe" allowfullscreen="yes"
-     src="http://mochi.test:8888/browser/dom/html/test/file_fullscreen-iframe-middle.html"></iframe>
+     src="http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-iframe-middle.html"></iframe>
     </div>`,
   
   
-  `http://example.org/browser/dom/html/test/file_fullscreen-iframe-top.html`,
+  
+  `http://example.org/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
   
   
-  `http://mochi.test:8888/browser/dom/html/test/file_fullscreen-iframe-top.html`,
+  `http://mochi.test:8888/browser/dom/base/test/fullscreen/file_fullscreen-iframe-top.html`,
 ];
 
 function waitRemoteFullscreenExitEvents(aBrowsingContexts) {
@@ -127,7 +128,8 @@ async function waitForFullscreenExit(aDocument) {
   
   if (promiseFsObserver) {
     info(`waitForFullscreenExit, promiseFsObserver`);
-    return promiseFsObserver;
+    await promiseFsObserver;
+    return;
   }
 
   Services.obs.removeObserver(observer, "fullscreen-painted");
@@ -135,6 +137,6 @@ async function waitForFullscreenExit(aDocument) {
   
   if (aDocument.documentElement.hasAttribute("inDOMFullscreen")) {
     info(`waitForFullscreenExit, inDOMFullscreen`);
-    return waitForFullScreenObserver(aDocument, false, true);
+    await waitForFullScreenObserver(aDocument, false, true);
   }
 }
