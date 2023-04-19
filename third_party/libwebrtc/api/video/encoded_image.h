@@ -147,11 +147,6 @@ class RTC_EXPORT EncodedImage {
     return encoded_data_;
   }
 
-  
-  uint8_t* data() {
-    return buffer_ ? buffer_
-                   : (encoded_data_ ? encoded_data_->data() : nullptr);
-  }
   const uint8_t* data() const {
     return buffer_ ? buffer_
                    : (encoded_data_ ? encoded_data_->data() : nullptr);
