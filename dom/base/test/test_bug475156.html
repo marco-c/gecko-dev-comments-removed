@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=475156
+-->
 <head>
   <title>Test for Bug 475156</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -285,7 +285,7 @@ function drive(test)
       }
       if (this.readyState == 4) {
         test.done(this);
-        if (tests.length == 0)
+        if (!tests.length)
           SimpleTest.finish();
         else
           drive(tests.shift());

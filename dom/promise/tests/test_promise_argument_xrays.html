@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1233324
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1233324</title>
@@ -71,7 +71,7 @@ var tests = [
 ];
 
 function nextTest() {
-  if (tests.length == 0) {
+  if (!tests.length) {
     SimpleTest.finish();
     return;
   }

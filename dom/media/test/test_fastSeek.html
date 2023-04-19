@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=778077
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 778077</title>
@@ -75,7 +75,7 @@
       v.target = 0;
       v.keyframes = test.keyframes;
       v.keyframeIndex = 0;
-      ok(v.keyframes.length > 0, v.name + " - video should have at least one sync point");
+      ok(v.keyframes.length, v.name + " - video should have at least one sync point");
       v.addEventListener("loadedmetadata", onloadedmetadata);
       v.addEventListener("seeked", onseeked);
       document.body.appendChild(v);

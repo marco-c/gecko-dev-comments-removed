@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 
@@ -228,7 +228,7 @@
   SimpleTest.waitForExplicitFinish();
 
   async function nextTest() {
-    if (tests.length == 0) {
+    if (!tests.length) {
       SimpleTest.finish();
       return;
     }

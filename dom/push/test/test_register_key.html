@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+Bug 1247685: Implement `applicationServerKey` for subscription association.
 
+Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
+-->
 <head>
   <title>Test for Bug 1247685</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -40,7 +40,7 @@
   add_task(async function start() {
     await setupPrefsAndReplaceService({
       register(pageRecord) {
-        ok(pageRecord.appServerKey.length > 0,
+        ok(pageRecord.appServerKey.length,
           "App server key should not be empty");
         if (pageRecord.appServerKey.length != 65) {
           // eslint-disable-next-line no-throw-literal

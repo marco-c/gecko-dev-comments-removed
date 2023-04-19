@@ -74,7 +74,7 @@ self.onpush = function(event) {
   
   
   self.clients.matchAll().then(function(client) {
-    if (client.length == 0) {
+    if (!client.length) {
       dump("ERROR: no clients to send the response to.\n");
     }
 

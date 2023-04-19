@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=782342
+-->
 <head>
   <title>Test for bug 782342 - blob: protocol no Content-Length header</title>
 
@@ -45,9 +45,9 @@ function checkHeaders(xhrInner) {
   ok(contentType == true, "Content-type is part of the headers!");
 
   var ct = xhrInner.getResponseHeader('content-type');
-  ok(ct.length > 0, 'Get Response Header - content type: ' + ct);
+  ok(ct.length, 'Get Response Header - content type: ' + ct);
   var cl = xhrInner.getResponseHeader('content-length');
-  ok(cl.length > 0, 'Get Response Header - content length: ' + cl);
+  ok(cl.length, 'Get Response Header - content length: ' + cl);
 }
 
 xhr.addEventListener("load", function () {

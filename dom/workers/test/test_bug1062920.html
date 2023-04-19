@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -52,7 +52,7 @@
   ];
 
   function runTests() {
-    if (tests.length == 0) {
+    if (!tests.length) {
       SimpleTest.finish();
       return;
     }

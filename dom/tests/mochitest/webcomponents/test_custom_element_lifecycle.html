@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=783129
+-->
 <head>
   <title>Test for custom elements lifecycle callback</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -241,7 +241,7 @@ function testAttributeChanged() {
   {
     attributeChangedCallback(name, oldValue, newValue) {
       is(this, createdElement, "The 'this' value should be the custom element.");
-      ok(expectedCallbackArguments.length > 0, "Attribute changed callback should not be called more than expected.");
+      ok(expectedCallbackArguments.length, "Attribute changed callback should not be called more than expected.");
 
       is(name, "changeme", "name arugment in attribute changed callback should be the name of the changed attribute.");
 
@@ -416,7 +416,7 @@ var testFunctions = [
 ];
 
 function runNextTest() {
-  if (testFunctions.length > 0) {
+  if (testFunctions.length) {
     var nextTestFunction = testFunctions.shift();
     info(`Start ${nextTestFunction.name} ...`);
     nextTestFunction();

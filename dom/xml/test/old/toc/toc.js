@@ -99,7 +99,7 @@ function addToToc(root, tocFrame) {
 
 
 function createToc() {
-  if (document.getElementsByTagName("toc").length == 0) {
+  if (!document.getElementsByTagName("toc").length) {
     var toc = document.createElement("toc");
     var title = document.createElement("title");
     title.appendChild(document.createTextNode("Table of Contents"));

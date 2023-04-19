@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1337234
+-->
 <head>
   <title>Test for Bug 1337234</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
@@ -20,7 +20,7 @@ const localeService =
 let rpLocales = localeService.negotiateLanguages(window.getRegionalPrefsLocales(),
                                                  localeService.availableLocales);
 
-ok(rpLocales.length > 0, "getRegionalPrefsLocales returns at least one locale.");
+ok(rpLocales.length, "getRegionalPrefsLocales returns at least one locale.");
 is(rpLocales[0], "en-US", "The first regional prefs locale should resolve to en-US.");
 
 </script>

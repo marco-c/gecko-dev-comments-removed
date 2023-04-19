@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=479711
+-->
 <head>
   <title>Test for Bug 479711</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -96,7 +96,7 @@ v.onloadstart = function(e) {
 v.load(); // load started while in this document, this doc's load will block until
           // the video's finished loading (in the other document).
 
-if (gRegisteredElements.length > 0) {
+if (gRegisteredElements.length) {
   SimpleTest.waitForExplicitFinish();
 } else {
   todo(false, "No types supported");

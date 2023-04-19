@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=721569
+-->
 <head>
   <title>Test for Blob constructor (Bug 721569)</title>
   <script type="text/javascript" src="/MochiKit/MochiKit.js"></script>
@@ -200,8 +200,8 @@ let currentTest = null;
 let testCounter = 0;
 
 function runTests() {
-  if (!currentTest || currentTest[2].length == 0) {
-    if (testData.length == 0) {
+  if (!currentTest || !currentTest[2].length) {
+    if (!testData.length) {
       SimpleTest.finish();
       return;
     }

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=584480
+-->
 <head>
   <title>Test for Bug 584480</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -76,7 +76,7 @@ for (var i=0; i<gSmallTests.length; ++i) {
   media.push(v);
 }
 
-if (media.length == 0) {
+if (!media.length) {
   todo(false, "No types supported");
 } else {
   SimpleTest.waitForExplicitFinish();

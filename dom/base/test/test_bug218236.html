@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=218236
+-->
 <head>
   <title>Test for Bug 218236</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -62,7 +62,7 @@ function doAbort2() {
 /* Utility functions */
 
 function runNextTest() {
-  if (tests.length > 0) {
+  if (tests.length) {
     var test = tests.shift();
 
     // Initialize state variables
