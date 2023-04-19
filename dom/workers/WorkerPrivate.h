@@ -1116,7 +1116,8 @@ class WorkerPrivate final
   
   
   
-  already_AddRefed<nsIEventTarget> CreateNewSyncLoop(WorkerStatus aFailStatus);
+  already_AddRefed<nsISerialEventTarget> CreateNewSyncLoop(
+      WorkerStatus aFailStatus);
 
   bool RunCurrentSyncLoop();
 
@@ -1474,7 +1475,7 @@ class WorkerPrivate final
 
 class AutoSyncLoopHolder {
   CheckedUnsafePtr<WorkerPrivate> mWorkerPrivate;
-  nsCOMPtr<nsIEventTarget> mTarget;
+  nsCOMPtr<nsISerialEventTarget> mTarget;
   uint32_t mIndex;
 
  public:
@@ -1504,7 +1505,7 @@ class AutoSyncLoopHolder {
     return workerPrivate->RunCurrentSyncLoop();
   }
 
-  nsIEventTarget* GetEventTarget() const {
+  nsISerialEventTarget* GetSerialEventTarget() const {
     
     return mTarget;
   }

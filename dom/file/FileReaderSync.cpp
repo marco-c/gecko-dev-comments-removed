@@ -422,7 +422,8 @@ nsresult FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
 
     AutoSyncLoopHolder syncLoop(workerPrivate, Canceling);
 
-    nsCOMPtr<nsIEventTarget> syncLoopTarget = syncLoop.GetEventTarget();
+    nsCOMPtr<nsISerialEventTarget> syncLoopTarget =
+        syncLoop.GetSerialEventTarget();
     if (!syncLoopTarget) {
       
       return NS_ERROR_DOM_INVALID_STATE_ERR;
