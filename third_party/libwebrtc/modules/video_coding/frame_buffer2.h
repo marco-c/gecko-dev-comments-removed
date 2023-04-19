@@ -151,9 +151,6 @@ class FrameBuffer {
 
   void ClearFramesAndHistory() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  bool HasBadRenderTiming(const EncodedFrame& frame, int64_t now_ms)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-
   
   
   
