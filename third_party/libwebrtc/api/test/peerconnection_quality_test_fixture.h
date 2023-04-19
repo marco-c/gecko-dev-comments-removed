@@ -236,6 +236,28 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     absl::optional<std::string> output_dump_file_name;
     
     
