@@ -19,11 +19,10 @@
 #include "rtc_base/gunit.h"
 
 namespace webrtc {
-namespace test {
 namespace {
 
-constexpr size_t kFrameSize = 8;
-constexpr size_t kNumFrames = 4;
+constexpr int kFrameSize = 8;
+constexpr int kNumFrames = 4;
 using FloatArraySequence =
     std::array<std::array<float, kFrameSize>, kNumFrames>;
 
@@ -38,7 +37,7 @@ constexpr FloatArraySequence kBiQuadInputSeq = {
        -40.019642f, -98.612228f, -8.330326f}}}};
 
 
-const BiQuadFilter::BiQuadCoefficients kBiQuadConfig = {
+constexpr BiQuadFilter::Config kBiQuadConfig{
     {0.99446179f, -1.98892358f, 0.99446179f},
     {-1.98889291f, 0.98895425f}};
 
@@ -66,13 +65,14 @@ void ExpectNearRelative(rtc::ArrayView<const float> expected,
   
   
   
-  auto safe_den = [](float x) { return (x == 0.f) ? 1.f : std::fabs(x); };
+  auto safe_den = [](float x) { return (x == 0.0f) ? 1.0f : std::fabs(x); };
   ASSERT_EQ(expected.size(), computed.size());
   for (size_t i = 0; i < expected.size(); ++i) {
     const float abs_diff = std::fabs(expected[i] - computed[i]);
     
-    if (abs_diff == 0.f)
+    if (abs_diff == 0.0f) {
       continue;
+    }
     SCOPED_TRACE(i);
     SCOPED_TRACE(expected[i]);
     SCOPED_TRACE(computed[i]);
@@ -80,32 +80,32 @@ void ExpectNearRelative(rtc::ArrayView<const float> expected,
   }
 }
 
-}  
+
 
 TEST(BiQuadFilterTest, FilterNotInPlace) {
-  BiQuadFilter filter;
-  filter.Initialize(kBiQuadConfig);
+  BiQuadFilter filter(kBiQuadConfig);
   std::array<float, kFrameSize> samples;
 
   
   
 
-  for (size_t i = 0; i < kNumFrames; ++i) {
+  for (int i = 0; i < kNumFrames; ++i) {
     SCOPED_TRACE(i);
     filter.Process(kBiQuadInputSeq[i], samples);
     ExpectNearRelative(kBiQuadOutputSeq[i], samples, 2e-4f);
   }
 }
 
+
+
 TEST(BiQuadFilterTest, FilterInPlace) {
-  BiQuadFilter filter;
-  filter.Initialize(kBiQuadConfig);
+  BiQuadFilter filter(kBiQuadConfig);
   std::array<float, kFrameSize> samples;
 
   
   
 
-  for (size_t i = 0; i < kNumFrames; ++i) {
+  for (int i = 0; i < kNumFrames; ++i) {
     SCOPED_TRACE(i);
     std::copy(kBiQuadInputSeq[i].begin(), kBiQuadInputSeq[i].end(),
               samples.begin());
@@ -114,18 +114,57 @@ TEST(BiQuadFilterTest, FilterInPlace) {
   }
 }
 
-TEST(BiQuadFilterTest, Reset) {
-  BiQuadFilter filter;
-  filter.Initialize(kBiQuadConfig);
+
+TEST(BiQuadFilterTest, SetConfigDifferentOutput) {
+  BiQuadFilter filter({{0.97803048f, -1.95606096f, 0.97803048f},
+                                  {-1.95557824f, 0.95654368f}});
 
   std::array<float, kFrameSize> samples1;
-  for (size_t i = 0; i < kNumFrames; ++i) {
+  for (int i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples1);
+  }
+
+  filter.SetConfig(
+      {{0.09763107f, 0.19526215f, 0.09763107f}, {-0.94280904f, 0.33333333f}});
+  std::array<float, kFrameSize> samples2;
+  for (int i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples2);
+  }
+
+  EXPECT_NE(samples1, samples2);
+}
+
+
+
+TEST(BiQuadFilterTest, SetConfigResetsState) {
+  BiQuadFilter filter(kBiQuadConfig);
+
+  std::array<float, kFrameSize> samples1;
+  for (int i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples1);
+  }
+
+  filter.SetConfig(kBiQuadConfig);
+  std::array<float, kFrameSize> samples2;
+  for (int i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples2);
+  }
+
+  EXPECT_EQ(samples1, samples2);
+}
+
+
+TEST(BiQuadFilterTest, Reset) {
+  BiQuadFilter filter(kBiQuadConfig);
+
+  std::array<float, kFrameSize> samples1;
+  for (int i = 0; i < kNumFrames; ++i) {
     filter.Process(kBiQuadInputSeq[i], samples1);
   }
 
   filter.Reset();
   std::array<float, kFrameSize> samples2;
-  for (size_t i = 0; i < kNumFrames; ++i) {
+  for (int i = 0; i < kNumFrames; ++i) {
     filter.Process(kBiQuadInputSeq[i], samples2);
   }
 
