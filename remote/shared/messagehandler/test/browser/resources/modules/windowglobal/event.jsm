@@ -17,22 +17,15 @@ class EventModule extends Module {
 
 
 
-  testEmitInternalEvent() {
+  testEmitEvent() {
     
     
-    const text = `internal event from ${this.messageHandler.contextId}`;
-    this.emitEvent("internal-event-from-window-global", { text });
+    const text = `event from ${this.messageHandler.contextId}`;
+    this.emitEvent("event-from-window-global", { text });
   }
 
-  testEmitProtocolEvent() {
-    
-    
-    const text = `protocol event from ${this.messageHandler.contextId}`;
-    this.emitProtocolEvent("event.testEvent", { text });
-  }
-
-  testEmitProtocolEventWithInterception() {
-    this.emitProtocolEvent("event.testEventWithInterception", {});
+  testEmitEventWithInterception() {
+    this.emitEvent("event.testEventWithInterception", {});
   }
 }
 

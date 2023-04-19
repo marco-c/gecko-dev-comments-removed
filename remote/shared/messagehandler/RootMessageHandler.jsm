@@ -103,6 +103,23 @@ class RootMessageHandler extends MessageHandler {
 
 
 
+  emitProtocolEvent(name, data) {
+    this.emit("message-handler-protocol-event", {
+      name,
+      data,
+      sessionId: this.sessionId,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
   forwardCommand(command) {
     switch (command.destination.type) {
       case lazy.WindowGlobalMessageHandler.type:

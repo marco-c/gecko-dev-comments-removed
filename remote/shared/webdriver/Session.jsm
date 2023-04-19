@@ -216,8 +216,8 @@ class WebDriverSession {
     
     if (this._messageHandler) {
       this._messageHandler.off(
-        "message-handler-event",
-        this._onMessageHandlerEvent
+        "message-handler-protocol-event",
+        this._onMessageHandlerProtocolEvent
       );
       this._messageHandler.destroy();
     }
@@ -255,10 +255,12 @@ class WebDriverSession {
       this._messageHandler = lazy.RootMessageHandlerRegistry.getOrCreateMessageHandler(
         this.id
       );
-      this._onMessageHandlerEvent = this._onMessageHandlerEvent.bind(this);
+      this._onMessageHandlerProtocolEvent = this._onMessageHandlerProtocolEvent.bind(
+        this
+      );
       this._messageHandler.on(
-        "message-handler-event",
-        this._onMessageHandlerEvent
+        "message-handler-protocol-event",
+        this._onMessageHandlerProtocolEvent
       );
     }
 
@@ -330,14 +332,8 @@ class WebDriverSession {
     this._connections.add(conn);
   }
 
-  _onMessageHandlerEvent(eventName, messageHandlerEvent) {
-    const { name, data, isProtocolEvent } = messageHandlerEvent;
-
-    
-    if (!isProtocolEvent) {
-      return;
-    }
-
+  _onMessageHandlerProtocolEvent(eventName, messageHandlerEvent) {
+    const { name, data } = messageHandlerEvent;
     this._connections.forEach(connection => connection.sendEvent(name, data));
   }
 

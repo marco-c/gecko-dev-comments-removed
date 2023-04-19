@@ -31,9 +31,7 @@ add_task(async function test_event() {
   
   
   const onHandlerEvent = rootMessageHandler.once("message-handler-event");
-  const onNamedEvent = rootMessageHandler.once(
-    "internal-event-from-window-global"
-  );
+  const onNamedEvent = rootMessageHandler.once("event-from-window-global");
   
   const onRegistryEvent = RootMessageHandlerRegistry.once(
     "message-handler-registry-event"
@@ -44,23 +42,19 @@ add_task(async function test_event() {
   const messageHandlerEvent = await onHandlerEvent;
   is(
     messageHandlerEvent.name,
-    "internal-event-from-window-global",
+    "event-from-window-global",
     "Received event on the ROOT MessageHandler"
   );
   is(
     messageHandlerEvent.data.text,
-    `internal event from ${browsingContext.id}`,
+    `event from ${browsingContext.id}`,
     "Received the expected payload"
-  );
-  ok(
-    !messageHandlerEvent.isProtocolEvent,
-    "Received expected flag for internal event"
   );
 
   const namedEvent = await onNamedEvent;
   is(
     namedEvent.text,
-    `internal event from ${browsingContext.id}`,
+    `event from ${browsingContext.id}`,
     "Received the expected payload"
   );
 
@@ -85,31 +79,22 @@ add_task(async function test_root_event() {
   
   
   const onHandlerEvent = rootMessageHandler.once("message-handler-event");
-  const onNamedEvent = rootMessageHandler.once("internal-event-from-root");
+  const onNamedEvent = rootMessageHandler.once("event-from-root");
 
   rootMessageHandler.handleCommand({
     moduleName: "event",
-    commandName: "testEmitInternalRootEvent",
+    commandName: "testEmitRootEvent",
     destination: {
       type: RootMessageHandler.type,
     },
   });
 
-  const { name, data, isProtocolEvent } = await onHandlerEvent;
-  is(
-    name,
-    "internal-event-from-root",
-    "Received event on the ROOT MessageHandler"
-  );
-  is(data.text, "internal event from root", "Received the expected payload");
-  ok(!isProtocolEvent, "Received expected flag for internal event");
+  const { name, data } = await onHandlerEvent;
+  is(name, "event-from-root", "Received event on the ROOT MessageHandler");
+  is(data.text, "event from root", "Received the expected payload");
 
   const namedEvent = await onNamedEvent;
-  is(
-    namedEvent.text,
-    "internal event from root",
-    "Received the expected payload"
-  );
+  is(namedEvent.text, "event from root", "Received the expected payload");
 
   rootMessageHandler.destroy();
 });
@@ -134,34 +119,33 @@ add_task(async function test_windowglobal_in_root_event() {
   
   const onHandlerEvent = rootMessageHandler.once("message-handler-event");
   const onNamedEvent = rootMessageHandler.once(
-    "internal-event-from-window-global-in-root"
+    "event-from-window-global-in-root"
   );
   rootMessageHandler.handleCommand({
     moduleName: "event",
-    commandName: "testEmitInternalWindowGlobalInRootEvent",
+    commandName: "testEmitWindowGlobalInRootEvent",
     destination: {
       type: WindowGlobalMessageHandler.type,
       id: browsingContext.id,
     },
   });
 
-  const { name, data, isProtocolEvent } = await onHandlerEvent;
+  const { name, data } = await onHandlerEvent;
   is(
     name,
-    "internal-event-from-window-global-in-root",
+    "event-from-window-global-in-root",
     "Received event on the ROOT MessageHandler"
   );
   is(
     data.text,
-    `internal windowglobal-in-root event for ${browsingContext.id}`,
+    `windowglobal-in-root event for ${browsingContext.id}`,
     "Received the expected payload"
   );
-  ok(!isProtocolEvent, "Received expected flag for internal event");
 
   const namedEvent = await onNamedEvent;
   is(
     namedEvent.text,
-    `internal windowglobal-in-root event for ${browsingContext.id}`,
+    `windowglobal-in-root event for ${browsingContext.id}`,
     "Received the expected payload"
   );
 
@@ -185,7 +169,7 @@ add_task(async function test_event_multisession() {
   const root1 = createRootMessageHandler("session-id-event_multisession-1");
   let root1Events = 0;
   const onRoot1Event = function(evtName, wrappedEvt) {
-    if (wrappedEvt.name === "internal-event-from-window-global") {
+    if (wrappedEvt.name === "event-from-window-global") {
       root1Events++;
     }
   };
@@ -194,7 +178,7 @@ add_task(async function test_event_multisession() {
   const root2 = createRootMessageHandler("session-id-event_multisession-2");
   let root2Events = 0;
   const onRoot2Event = function(evtName, wrappedEvt) {
-    if (wrappedEvt.name === "internal-event-from-window-global") {
+    if (wrappedEvt.name === "event-from-window-global") {
       root2Events++;
     }
   };
@@ -202,7 +186,7 @@ add_task(async function test_event_multisession() {
 
   let registryEvents = 0;
   const onRegistryEvent = function(evtName, wrappedEvt) {
-    if (wrappedEvt.name === "internal-event-from-window-global") {
+    if (wrappedEvt.name === "event-from-window-global") {
       registryEvents++;
     }
   };
@@ -258,7 +242,7 @@ add_task(async function test_event_with_frames() {
 
   const rootEvents = [];
   const onRootEvent = function(evtName, wrappedEvt) {
-    if (wrappedEvt.name === "internal-event-from-window-global") {
+    if (wrappedEvt.name === "event-from-window-global") {
       rootEvents.push(wrappedEvt.data.text);
     }
   };
@@ -266,14 +250,14 @@ add_task(async function test_event_with_frames() {
 
   const namedEvents = [];
   const onNamedEvent = (name, event) => namedEvents.push(event.text);
-  rootMessageHandler.on("internal-event-from-window-global", onNamedEvent);
+  rootMessageHandler.on("event-from-window-global", onNamedEvent);
 
   for (const context of contexts) {
     callTestEmitEvent(rootMessageHandler, context.id);
     info("Wait for root event to be received in both event arrays");
     await TestUtils.waitForCondition(() =>
       [namedEvents, rootEvents].every(events =>
-        events.includes(`internal event from ${context.id}`)
+        events.includes(`event from ${context.id}`)
       )
     );
   }
@@ -283,14 +267,14 @@ add_task(async function test_event_with_frames() {
   is(rootEvents.length, 4, "Only received 4 events");
 
   rootMessageHandler.off("message-handler-event", onRootEvent);
-  rootMessageHandler.off("internal-event-from-window-global", onNamedEvent);
+  rootMessageHandler.off("event-from-window-global", onNamedEvent);
   rootMessageHandler.destroy();
 });
 
 function callTestEmitEvent(rootMessageHandler, browsingContextId) {
   rootMessageHandler.handleCommand({
     moduleName: "event",
-    commandName: "testEmitInternalEvent",
+    commandName: "testEmitEvent",
     destination: {
       type: WindowGlobalMessageHandler.type,
       id: browsingContextId,

@@ -24,7 +24,24 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 class SessionModule extends Module {
-  destroy() {}
+  #globalEventSet;
+
+  constructor(messageHandler) {
+    super(messageHandler);
+
+    
+    
+    
+    
+    
+    
+    
+    this.#globalEventSet = new Set();
+  }
+
+  destroy() {
+    this.#globalEventSet = null;
+  }
 
   
 
@@ -66,6 +83,13 @@ class SessionModule extends Module {
       allEvents.map(event => {
         const [moduleName] = event.split(".");
         this.#assertModuleSupportsEvent(moduleName, event);
+
+        if (this.#globalEventSet.has(event)) {
+          return Promise.resolve();
+        }
+
+        this.#globalEventSet.add(event);
+        this.messageHandler.on(event, this.#onMessageHandlerEvent);
 
         return this.messageHandler.handleCommand({
           moduleName,
@@ -117,6 +141,12 @@ class SessionModule extends Module {
       allEvents.map(event => {
         const [moduleName] = event.split(".");
         this.#assertModuleSupportsEvent(moduleName, event);
+
+        if (!this.#globalEventSet.has(event)) {
+          return Promise.resolve();
+        }
+        this.#globalEventSet.delete(event);
+        this.messageHandler.off(event, this.#onMessageHandlerEvent);
 
         return this.messageHandler.handleCommand({
           moduleName,
@@ -196,6 +226,16 @@ class SessionModule extends Module {
 
     return events;
   }
+
+  #onMessageHandlerEvent = (name, event) => {
+    
+    
+    
+    
+    
+    
+    this.messageHandler.emitProtocolEvent(name, event);
+  };
 }
 
 

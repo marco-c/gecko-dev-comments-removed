@@ -65,7 +65,7 @@ class BrowsingContextModule extends Module {
     
     
     const { category, added = [], removed = [] } = params;
-    if (category === "internal-event") {
+    if (category === "event") {
       for (const event of added) {
         this.#subscribeEvent(event);
       }

@@ -174,7 +174,7 @@ class LogModule extends Module {
     
     
 
-    this.emitProtocolEvent("log.entryAdded", entry);
+    this.emitEvent("log.entryAdded", entry);
   };
 
   #onJavaScriptError = (eventName, data = {}) => {
@@ -190,7 +190,7 @@ class LogModule extends Module {
       stackTrace: this.#buildStackTrace(stacktrace),
     };
 
-    this.emitProtocolEvent("log.entryAdded", entry);
+    this.emitEvent("log.entryAdded", entry);
   };
 
   #subscribeEvent(event) {

@@ -119,7 +119,7 @@ class EventsDispatcher {
     const [moduleName] = event.split(".");
     return {
       moduleName,
-      category: "internal-event",
+      category: "event",
       contextDescriptor,
       values: [event],
     };

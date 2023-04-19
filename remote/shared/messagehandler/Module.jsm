@@ -75,24 +75,7 @@ class Module {
 
 
   emitEvent(name, data) {
-    this.messageHandler.emitEvent(name, data, { isProtocolEvent: false });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  emitProtocolEvent(name, data) {
-    this.messageHandler.emitEvent(name, data, {
-      isProtocolEvent: true,
-    });
+    this.messageHandler.emitEvent(name, data);
   }
 
   
