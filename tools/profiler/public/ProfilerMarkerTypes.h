@@ -29,8 +29,6 @@ namespace geckoprofiler::markers {
 
 
 using MediaSampleMarker = mozilla::baseprofiler::markers::MediaSampleMarker;
-using VideoFallingBehindMarker =
-    mozilla::baseprofiler::markers::VideoFallingBehindMarker;
 using ContentBuildMarker = mozilla::baseprofiler::markers::ContentBuildMarker;
 
 }  
