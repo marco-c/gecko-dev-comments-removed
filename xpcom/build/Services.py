@@ -145,8 +145,6 @@ if buildconfig.substs.get("ENABLE_WEBDRIVER"):
 
 
 
-
-
 def services_h(output):
     output.write(
         """\

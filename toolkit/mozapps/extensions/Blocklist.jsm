@@ -1299,7 +1299,6 @@ var gBlocklistLevel = DEFAULT_LEVEL;
 
 
 
-
 XPCOMUtils.defineLazyGetter(lazy, "gApp", function() {
   
   let appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);

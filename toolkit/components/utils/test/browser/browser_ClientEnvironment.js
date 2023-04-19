@@ -7,7 +7,6 @@
 
 
 
-
 const { ClientEnvironmentBase } = ChromeUtils.import(
   "resource://gre/modules/components-utils/ClientEnvironment.jsm"
 );
