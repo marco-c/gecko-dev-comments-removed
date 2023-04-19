@@ -157,11 +157,9 @@ local int gz_look(state)
 
 
     state->x.next = state->out;
-    if (strm->avail_in) {
-        memcpy(state->x.next, strm->next_in, strm->avail_in);
-        state->x.have = strm->avail_in;
-        strm->avail_in = 0;
-    }
+    memcpy(state->x.next, strm->next_in, strm->avail_in);
+    state->x.have = strm->avail_in;
+    strm->avail_in = 0;
     state->how = COPY;
     state->direct = 1;
     return 0;
