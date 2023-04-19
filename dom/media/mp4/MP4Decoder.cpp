@@ -94,7 +94,7 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
     
     
     if (codec.EqualsLiteral("opus") || codec.EqualsLiteral("Opus") ||
-        codec.EqualsLiteral("flac")) {
+        codec.EqualsLiteral("flac") || codec.EqualsLiteral("fLaC")) {
       NS_ConvertUTF16toUTF8 c(codec);
       ToLowerCase(c);
       tracks.AppendElement(
