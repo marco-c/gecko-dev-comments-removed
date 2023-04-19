@@ -255,7 +255,6 @@ add_task(async function test_xpcom_graph_wait() {
       ![
         "ChromeUtils.import", 
         "ChromeUtils.importESModule", 
-        "ChromeUtils.importESModule static import",
         "GetService", 
       ].includes(markerName)
     ) {
@@ -265,8 +264,7 @@ add_task(async function test_xpcom_graph_wait() {
     let markerData = m[dataCol];
     if (
       markerName == "ChromeUtils.import" ||
-      markerName == "ChromeUtils.importESModule" ||
-      markerName == "ChromeUtils.importESModule static import"
+      markerName == "ChromeUtils.importESModule"
     ) {
       let module = markerData.name;
       if (!markersForAllPhases.modules.includes(module)) {
