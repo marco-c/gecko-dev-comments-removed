@@ -344,23 +344,29 @@ bool IsCodecDisabledForSimulcast(const std::string& codec_name,
 }
 
 
-
 static int GetMaxDefaultVideoBitrateKbps(int width,
                                          int height,
                                          bool is_screenshare) {
-  int max_bitrate;
-  if (width * height <= 320 * 240) {
-    max_bitrate = 600;
-  } else if (width * height <= 640 * 480) {
-    max_bitrate = 1700;
-  } else if (width * height <= 960 * 540) {
-    max_bitrate = 2000;
-  } else {
-    max_bitrate = 2500;
-  }
+  double pixel_count = width * height;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double max_kbps = (3000 * pixel_count) / (310000 + pixel_count) +
+                    0.0003 * std::pow(pixel_count, 1.005);
+  
+  int max_bitrate_kbps =
+      100 * std::max(1, static_cast<int>(std::round(max_kbps / 100)));
+
   if (is_screenshare)
-    max_bitrate = std::max(max_bitrate, 1200);
-  return max_bitrate;
+    max_bitrate_kbps = std::max(max_bitrate_kbps, 1200);
+  return max_bitrate_kbps;
 }
 
 
