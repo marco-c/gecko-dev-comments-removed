@@ -134,16 +134,6 @@ class BaseChannel : public ChannelInterface,
   }
 
   
-  bool SrtpActiveForTesting() const {
-    if (!network_thread_->IsCurrent()) {
-      return network_thread_->Invoke<bool>(RTC_FROM_HERE,
-                                           [this] { return srtp_active(); });
-    }
-    RTC_DCHECK_RUN_ON(network_thread());
-    return srtp_active();
-  }
-
-  
   
   
   
@@ -152,16 +142,6 @@ class BaseChannel : public ChannelInterface,
   webrtc::RtpTransportInternal* rtp_transport() const {
     RTC_DCHECK_RUN_ON(network_thread());
     return rtp_transport_;
-  }
-
-  
-  webrtc::RtpTransportInternal* RtpTransportForTesting() const {
-    if (!network_thread_->IsCurrent()) {
-      return network_thread_->Invoke<webrtc::RtpTransportInternal*>(
-          RTC_FROM_HERE, [this] { return rtp_transport(); });
-    }
-    RTC_DCHECK_RUN_ON(network_thread());
-    return rtp_transport();
   }
 
   
@@ -206,12 +186,6 @@ class BaseChannel : public ChannelInterface,
 
   
   void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
-
-  
-  
-  void set_transport_name_for_testing(const std::string& transport_name) {
-    transport_name_ = transport_name;
-  }
 
   MediaChannel* media_channel() const override {
     return media_channel_.get();
