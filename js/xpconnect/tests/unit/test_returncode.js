@@ -2,8 +2,6 @@
 
 
 
-const Cm = Components.manager;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function getConsoleMessages() {
@@ -17,7 +15,6 @@ function getConsoleMessages() {
 function run_test() {
   
   registerXPCTestComponents();
-  registerAppManifest(do_get_file('../components/js/xpctest.manifest'));
 
   
   test_simple();

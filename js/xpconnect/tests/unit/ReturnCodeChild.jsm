@@ -1,15 +1,20 @@
 
 
 
-const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
-function TestReturnCodeChild() {}
-TestReturnCodeChild.prototype = {
+var EXPORTED_SYMBOLS = ["ReturnCodeChild"];
 
-  
+function xpcWrap(obj, iface) {
+  let ifacePointer = Cc[
+    "@mozilla.org/supports-interface-pointer;1"
+  ].createInstance(Ci.nsISupportsInterfacePointer);
+
+  ifacePointer.data = obj;
+  return ifacePointer.data.QueryInterface(iface);
+}
+
+var ReturnCodeChild = {
   QueryInterface: ChromeUtils.generateQI(["nsIXPCTestReturnCodeChild"]),
-  contractID: "@mozilla.org/js/xpc/test/js/ReturnCodeChild;1",
-  classID: Components.ID("{38dd78aa-467f-4fad-8dcf-4383a743e235}"),
 
   doIt(behaviour) {
     switch (behaviour) {
@@ -29,7 +34,7 @@ TestReturnCodeChild.prototype = {
         
         Components.returnCode = Cr.NS_ERROR_UNEXPECTED;
         
-        let sub = Cc[this.contractID].createInstance(Ci.nsIXPCTestReturnCodeChild);
+        let sub = xpcWrap(ReturnCodeChild, Ci.nsIXPCTestReturnCodeChild);
         let childResult = Cr.NS_OK;
         try {
           sub.doIt(Ci.nsIXPCTestReturnCodeChild.CHILD_SHOULD_RETURN_RESULTCODE);
@@ -44,5 +49,3 @@ TestReturnCodeChild.prototype = {
     }
   }
 };
-
-this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestReturnCodeChild]);

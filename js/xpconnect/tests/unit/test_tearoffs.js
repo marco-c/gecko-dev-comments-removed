@@ -2,11 +2,24 @@
 
 
 
-function run_test() {
+function TestInterfaceAll() {}
+TestInterfaceAll.prototype = {
+  QueryInterface: ChromeUtils.generateQI(["nsIXPCTestInterfaceA",
+                                          "nsIXPCTestInterfaceB",
+                                          "nsIXPCTestInterfaceC"]),
 
   
-  Components.manager.autoRegister(do_get_file('../components/js/xpctest.manifest'));
+  name: "TestInterfaceAllDefaultName",
 
+  
+  someInteger: 42
+};
+
+function newWrappedJS() {
+  return xpcWrap(new TestInterfaceAll());
+}
+
+function run_test() {
   
   var ifs = {
     a: Ci['nsIXPCTestInterfaceA'],
@@ -15,19 +28,16 @@ function run_test() {
   };
 
   
-  var cls = Cc["@mozilla.org/js/xpc/test/js/TestInterfaceAll;1"];
-
-  
-  for (i = 0; i < 2; ++i)
-    play_with_tearoffs(ifs, cls);
+  for (let i = 0; i < 2; ++i)
+    play_with_tearoffs(ifs);
 }
 
-function play_with_tearoffs(ifs, cls) {
+function play_with_tearoffs(ifs) {
 
   
   var instances = [];
   for (var i = 0; i < 300; ++i)
-    instances.push(cls.createInstance(ifs.b));
+    instances.push(newWrappedJS().QueryInterface(ifs.b));
 
   
   gc();
