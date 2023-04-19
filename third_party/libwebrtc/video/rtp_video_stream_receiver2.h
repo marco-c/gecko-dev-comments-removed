@@ -155,6 +155,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   bool IsDecryptable() const;
 
   
+  
+  
+  
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
   

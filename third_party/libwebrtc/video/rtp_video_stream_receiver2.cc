@@ -734,6 +734,7 @@ bool RtpVideoStreamReceiver2::IsDecryptable() const {
 
 void RtpVideoStreamReceiver2::OnInsertedPacket(
     video_coding::PacketBuffer::InsertResult result) {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   video_coding::PacketBuffer::Packet* first_packet = nullptr;
   int max_nack_count;
   int64_t min_recv_time;
@@ -968,6 +969,7 @@ void RtpVideoStreamReceiver2::ManageFrame(
 
 
 void RtpVideoStreamReceiver2::ReceivePacket(const RtpPacketReceived& packet) {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   if (packet.payload_size() == 0) {
     
     
@@ -1018,6 +1020,8 @@ void RtpVideoStreamReceiver2::ParseAndHandleEncapsulatingHeader(
 
 
 void RtpVideoStreamReceiver2::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+
   OnCompleteFrames(reference_finder_->PaddingReceived(seq_num));
 
   OnInsertedPacket(packet_buffer_.InsertPadding(seq_num));
@@ -1158,6 +1162,8 @@ void RtpVideoStreamReceiver2::UpdateHistograms() {
 
 
 void RtpVideoStreamReceiver2::InsertSpsPpsIntoTracker(uint8_t payload_type) {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+
   auto codec_params_it = pt_codec_params_.find(payload_type);
   if (codec_params_it == pt_codec_params_.end())
     return;
