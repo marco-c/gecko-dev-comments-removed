@@ -449,6 +449,12 @@ pub const TCP_MAXSEG: ::c_int = 2;
 
 pub const PIPE_BUF: usize = 512;
 
+
+pub const BUS_ADRALN: ::c_int = 1;
+pub const BUS_ADRERR: ::c_int = 2;
+pub const BUS_OBJERR: ::c_int = 3;
+
+
 pub const CLD_EXITED: ::c_int = 1;
 pub const CLD_KILLED: ::c_int = 2;
 pub const CLD_DUMPED: ::c_int = 3;

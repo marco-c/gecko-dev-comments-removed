@@ -97,11 +97,18 @@ fn main() {
         println!("cargo:rustc-cfg=libc_thread_local");
     }
 
-    if const_extern_fn_cargo_feature {
-        if !is_nightly || rustc_minor_ver < 40 {
-            panic!("const-extern-fn requires a nightly compiler >= 1.40")
-        }
+    
+    if rustc_minor_ver >= 62 {
         println!("cargo:rustc-cfg=libc_const_extern_fn");
+    } else {
+        
+        if const_extern_fn_cargo_feature {
+            if !is_nightly || rustc_minor_ver < 40 {
+                panic!("const-extern-fn requires a nightly compiler >= 1.40");
+            }
+            println!("cargo:rustc-cfg=libc_const_extern_fn_unstable");
+            println!("cargo:rustc-cfg=libc_const_extern_fn");
+        }
     }
 }
 

@@ -1628,6 +1628,17 @@ pub const EPROC_SLEADER: i32 = 0x02;
 pub const EPROC_UNVEIL: i32 = 0x04; 
 pub const EPROC_LKUNVEIL: i32 = 0x08; 
 
+
+pub const UF_SETTABLE: ::c_uint = 0x0000ffff;
+pub const UF_NODUMP: ::c_uint = 0x00000001;
+pub const UF_IMMUTABLE: ::c_uint = 0x00000002;
+pub const UF_APPEND: ::c_uint = 0x00000004;
+pub const UF_OPAQUE: ::c_uint = 0x00000008;
+pub const SF_SETTABLE: ::c_uint = 0xffff0000;
+pub const SF_ARCHIVED: ::c_uint = 0x00010000;
+pub const SF_IMMUTABLE: ::c_uint = 0x00020000;
+pub const SF_APPEND: ::c_uint = 0x00040000;
+
 const_fn! {
     {const} fn _ALIGN(p: usize) -> usize {
         (p + _ALIGNBYTES) & !_ALIGNBYTES
