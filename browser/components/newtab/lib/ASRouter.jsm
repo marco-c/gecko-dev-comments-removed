@@ -1403,6 +1403,11 @@ class _ASRouter {
       const [item] = items.filter(x => x.id === id);
       
       if (!item || !item.frequency || !Array.isArray(impressions[id])) {
+        lazy.ASRouterPreferences.console.debug(
+          "Cleaning up Impression ",
+          impressions[id]
+        );
+        lazy.ASRouterPreferences.console.trace();
         delete impressions[id];
         needsUpdate = true;
         return;
@@ -1754,10 +1759,12 @@ class _ASRouter {
     await this.setState(state => ({
       messages: state.messages.filter(
         m =>
-          m.template === "pb_newtab" &&
-          Services.prefs.getBoolPref(
-            PromoInfo[m.content?.promoType]?.enabledPref,
-            true
+          !(
+            m.template === "pb_newtab" &&
+            !Services.prefs.getBoolPref(
+              PromoInfo[m.content?.promoType]?.enabledPref,
+              true
+            )
           )
       ),
     }));
