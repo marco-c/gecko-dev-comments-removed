@@ -703,6 +703,12 @@ Relation RemoteAccessibleBase<Derived>::RelationByType(
       for (auto s : href.Split('#')) {
         href = s;
       }
+      if (href.IsEmpty()) {
+        
+        
+        return Relation();
+      }
+
       MustPruneSameDocRule rule;
       Accessible* nameMatch = nullptr;
       for (Accessible* match = p.Next(mDoc, rule); match;
