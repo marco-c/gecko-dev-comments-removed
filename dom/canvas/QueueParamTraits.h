@@ -21,6 +21,8 @@
 #include "nsString.h"
 #include "WebGLTypes.h"
 
+#include <optional>
+
 namespace mozilla::webgl {
 
 template <typename T>
@@ -28,11 +30,6 @@ struct RemoveCVR {
   using Type =
       typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 };
-
-template <typename T>
-struct IsTriviallySerializable
-    : public std::integral_constant<bool, std::is_arithmetic<T>::value &&
-                                              !std::is_same<T, bool>::value> {};
 
 
 
@@ -70,6 +67,37 @@ inline Range<T> AsRange(T* const begin, T* const end) {
 
 
 
+template <class T>
+struct BytesAlwaysValidT {
+  using non_cv = typename std::remove_cv<T>::type;
+  static constexpr bool value =
+      std::is_arithmetic<T>::value && !std::is_same<non_cv, bool>::value;
+};
+static_assert(BytesAlwaysValidT<float>::value);
+static_assert(!BytesAlwaysValidT<bool>::value);
+static_assert(!BytesAlwaysValidT<const bool>::value);
+static_assert(!BytesAlwaysValidT<int*>::value);
+static_assert(BytesAlwaysValidT<intptr_t>::value);
+
+template <class T, size_t N>
+struct BytesAlwaysValidT<std::array<T, N>> {
+  static constexpr bool value = BytesAlwaysValidT<T>::value;
+};
+static_assert(BytesAlwaysValidT<std::array<int, 4>>::value);
+static_assert(!BytesAlwaysValidT<std::array<bool, 4>>::value);
+
+template <class T, size_t N>
+struct BytesAlwaysValidT<T[N]> {
+  static constexpr bool value = BytesAlwaysValidT<T>::value;
+};
+static_assert(BytesAlwaysValidT<int[4]>::value);
+static_assert(!BytesAlwaysValidT<bool[4]>::value);
+
+
+
+
+
+
 
 
 
@@ -82,6 +110,7 @@ class ProducerView {
 
   template <typename T>
   bool WriteFromRange(const Range<const T>& src) {
+    static_assert(BytesAlwaysValidT<T>::value);
     if (MOZ_LIKELY(mOk)) {
       mOk &= mProducer->WriteFromRange(src);
     }
@@ -96,13 +125,6 @@ class ProducerView {
   inline bool Write(const T* begin, const T* end) {
     MOZ_RELEASE_ASSERT(begin <= end);
     return WriteFromRange(AsRange(begin, end));
-  }
-
-  template <typename T>
-  inline bool WritePod(const T& in) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    const auto begin = &in;
-    return Write(begin, begin + 1);
   }
 
   
@@ -155,16 +177,11 @@ class ConsumerView {
   
   template <typename T>
   inline Maybe<Range<const T>> ReadRange(const size_t elemCount) {
+    static_assert(BytesAlwaysValidT<T>::value);
     if (MOZ_UNLIKELY(!mOk)) return {};
     const auto view = mConsumer->template ReadRange<T>(elemCount);
     mOk &= bool(view);
     return view;
-  }
-
-  template <typename T>
-  inline bool ReadPod(T* out) {
-    static_assert(std::is_trivially_copyable_v<T>);
-    return Read(out, out + 1);
   }
 
   
@@ -187,26 +204,23 @@ class ConsumerView {
 
 
 
-
-
-
 template <typename Arg>
 struct QueueParamTraits {
-  template <typename U>
-  static bool Write(ProducerView<U>& aProducerView, const Arg& aArg) {
-    static_assert(std::is_trivially_copyable<Arg>::value,
+  template <typename ProducerView>
+  static bool Write(ProducerView& aProducerView, const Arg& aArg) {
+    static_assert(BytesAlwaysValidT<Arg>::value,
                   "No QueueParamTraits specialization was found for this type "
-                  "and it does not satisfy is_trivially_copyable.");
+                  "and it does not satisfy BytesAlwaysValid.");
     
-    const auto begin = &aArg;
-    return aProducerView.Write(begin, begin + 1);
+    const auto pArg = &aArg;
+    return aProducerView.Write(pArg, pArg + 1);
   }
 
-  template <typename U>
-  static bool Read(ConsumerView<U>& aConsumerView, Arg* aArg) {
-    static_assert(std::is_trivially_copyable<Arg>::value,
+  template <typename ConsumerView>
+  static bool Read(ConsumerView& aConsumerView, Arg* aArg) {
+    static_assert(BytesAlwaysValidT<Arg>::value,
                   "No QueueParamTraits specialization was found for this type "
-                  "and it does not satisfy is_trivially_copyable.");
+                  "and it does not satisfy BytesAlwaysValid.");
     
     return aConsumerView.Read(aArg, aArg + 1);
   }
@@ -232,6 +246,84 @@ struct QueueParamTraits<bool> {
       *aArg = temp ? true : false;
     }
     return aConsumerView.Ok();
+  }
+};
+
+
+
+template <class T, class UT = std::underlying_type_t<T>>
+Maybe<T> AsValidEnum(const UT raw_val) {
+  const auto raw_enum = T{raw_val};  
+  if (!IsEnumCase(raw_enum)) return {};
+  return Some(raw_enum);
+}
+
+
+
+template <class TT>
+struct QueueParamTraits_IsEnumCase {
+  using T = TT;
+  using UT = std::underlying_type_t<T>;
+
+  template <typename ProducerView>
+  static bool Write(ProducerView& aProducerView, const T& aArg) {
+    MOZ_ASSERT(IsEnumCase(aArg));
+    const auto shadow = static_cast<UT>(aArg);
+    aProducerView.WriteParam(shadow);
+    return true;
+  }
+
+  template <typename ConsumerView>
+  static bool Read(ConsumerView& aConsumerView, T* aArg) {
+    auto shadow = UT{};
+    aConsumerView.ReadParam(&shadow);
+    const auto e = AsValidEnum<T>(shadow);
+    if (!e) return false;
+    *aArg = *e;
+    return true;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class TT>
+struct QueueParamTraits_TiedFields {
+  using T = TT;
+
+  template <typename ProducerView>
+  static bool Write(ProducerView& aProducerView, const T& aArg) {
+    const auto fields = TiedFields(aArg);
+    static_assert(SizeofTupleArgs(fields) == sizeof(T), "Are there missing fields or padding between fields?");
+
+    bool ok = true;
+    MapTuple(fields, [&](const auto& field) {
+      ok &= aProducerView.WriteParam(field);
+      return true;
+    });
+    return ok;
+  }
+
+  template <typename ConsumerView>
+  static bool Read(ConsumerView& aConsumerView, T* aArg) {
+    const auto fields = TiedFields(*aArg);
+    static_assert(SizeofTupleArgs(fields) == sizeof(T));
+
+    bool ok = true;
+    MapTuple(fields, [&](auto& field) {
+      ok &= aConsumerView.ReadParam(&field);
+      return true;
+    });
+    return ok;
   }
 };
 
@@ -485,8 +577,7 @@ struct QueueParamTraits<nsString> : public QueueParamTraits<nsAString> {
 
 
 template <typename NSTArrayType,
-          bool =
-              IsTriviallySerializable<typename NSTArrayType::value_type>::value>
+          bool = BytesAlwaysValidT<typename NSTArrayType::value_type>::value>
 struct NSArrayQueueParamTraits;
 
 
@@ -561,8 +652,7 @@ struct QueueParamTraits<nsTArray<ElementType>>
 
 
 template <typename ArrayType,
-          bool =
-              IsTriviallySerializable<typename ArrayType::ElementType>::value>
+          bool = BytesAlwaysValidT<typename ArrayType::ElementType>::value>
 struct ArrayQueueParamTraits;
 
 
