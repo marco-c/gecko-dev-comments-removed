@@ -311,7 +311,7 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         
         
-        if (aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
+        if (GetContainSizeAxes().mBContained) {
           contentBoxBSize = 0;
         } else {
           contentBoxBSize = myWM.IsOrthogonalTo(wm) ? kidDesiredSize.ISize(wm)
@@ -420,7 +420,7 @@ AspectRatio nsVideoFrame::GetIntrinsicRatio() const {
   }
 
   
-  if (StyleDisplay()->GetContainSizeAxes().IsAny()) {
+  if (GetContainSizeAxes().IsAny()) {
     return AspectRatio();
   }
 
@@ -470,7 +470,7 @@ bool nsVideoFrame::ShouldDisplayPoster() const {
 }
 
 IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
-  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
+  const auto containAxes = GetContainSizeAxes();
   const auto isVideo = HasVideoElement();
   
   

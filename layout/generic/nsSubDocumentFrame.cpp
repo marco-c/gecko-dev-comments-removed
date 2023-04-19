@@ -623,7 +623,7 @@ nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
 
 
 IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
-  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
+  const auto containAxes = GetContainSizeAxes();
   if (containAxes.IsBoth()) {
     
     

@@ -213,7 +213,7 @@ nscoord nsListControlFrame::CalcBSizeOfARow() {
   
   
   nscoord rowBSize(0);
-  if (StyleDisplay()->GetContainSizeAxes().mBContained ||
+  if (GetContainSizeAxes().mBContained ||
       !GetMaxRowBSize(GetOptionsContainer(), GetWritingMode(), &rowBSize)) {
     
     

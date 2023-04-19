@@ -724,9 +724,7 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     PresContext()->RegisterContainerQueryFrame(this);
   }
 
-  if (disp->IsContainLayout() && disp->GetContainSizeAxes().IsBoth() &&
-      
-      IsFrameOfType(eSupportsContainLayoutAndPaint) && !IsTableWrapperFrame()) {
+  if (disp->IsContainLayout() && GetContainSizeAxes().IsBoth()) {
     
     
     
@@ -1445,7 +1443,7 @@ void nsIFrame::HandleLastRememberedSize() {
     element->RemoveLastRememberedISize();
   }
   if (canRememberBSize || canRememberISize) {
-    const auto containAxes = StyleDisplay()->GetContainSizeAxes();
+    const auto containAxes = GetContainSizeAxes();
     if ((canRememberBSize && !containAxes.mBContained) ||
         (canRememberISize && !containAxes.mIContained)) {
       bool isNonReplacedInline = IsFrameOfType(nsIFrame::eLineParticipant) &&
@@ -11352,6 +11350,33 @@ gfx::Matrix nsIFrame::ComputeWidgetTransform() {
   }
 
   return result2d;
+}
+
+ContainSizeAxes nsIFrame::GetContainSizeAxes() const {
+  auto contain = StyleDisplay()->EffectiveContainment();
+  
+  if (MOZ_LIKELY(!contain)) {
+    return ContainSizeAxes(false, false);
+  }
+
+  
+  
+  bool isNonReplacedInline = IsFrameOfType(nsIFrame::eLineParticipant) &&
+                             !IsFrameOfType(nsIFrame::eReplaced);
+  if (isNonReplacedInline || StyleDisplay()->PrecludesSizeContainment()) {
+    return ContainSizeAxes(false, false);
+  }
+
+  
+  
+  
+  if (MOZ_LIKELY(!(contain & StyleContain::SIZE)) &&
+      MOZ_UNLIKELY(HidesContent())) {
+    contain |= StyleContain::SIZE;
+  }
+
+  return ContainSizeAxes(static_cast<bool>(contain & StyleContain::INLINE_SIZE),
+                         static_cast<bool>(contain & StyleContain::BLOCK_SIZE));
 }
 
 void nsIFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoRestyleState& aRestyleState) {

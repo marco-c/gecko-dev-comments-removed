@@ -427,7 +427,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
     }
   }
 
-  if (mStyleDisplay->GetContainSizeAxes().mBContained) {
+  if (mFrame->GetContainSizeAxes().mBContained) {
     
     
     
