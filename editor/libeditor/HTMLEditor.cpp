@@ -4902,68 +4902,119 @@ SplitNodeResult HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   
   nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChild();
   IgnoredErrorResult error;
-  parent->InsertBefore(aNewNode, aStartOfRightNode.GetContainer(), error);
+  parent->InsertBefore(aNewNode,
+                       aDirection == SplitNodeDirection::LeftNodeIsNewOne
+                           ? aStartOfRightNode.GetContainer()
+                           : aStartOfRightNode.GetContainer()->GetNextSibling(),
+                       error);
   if (MOZ_UNLIKELY(error.Failed())) {
     NS_WARNING("nsINode::InsertBefore() failed");
     return SplitNodeResult(error.StealNSResult());
   }
 
+  MOZ_DIAGNOSTIC_ASSERT_IF(aStartOfRightNode.IsInTextNode(), aNewNode.IsText());
+  MOZ_DIAGNOSTIC_ASSERT_IF(!aStartOfRightNode.IsInTextNode(),
+                           !aNewNode.IsText());
+
   
   
-  if (!aStartOfRightNode.IsStartOfContainer()) {
-    
-    Text* rightAsText = aStartOfRightNode.GetContainerAs<Text>();
-    Text* leftAsText = aNewNode.GetAsText();
-    if (rightAsText && leftAsText) {
-      
-      nsAutoString leftText;
-      IgnoredErrorResult ignoredError;
-      rightAsText->SubstringData(0, aStartOfRightNode.Offset(), leftText,
-                                 ignoredError);
-      NS_WARNING_ASSERTION(!ignoredError.Failed(),
+  if (aStartOfRightNode.IsInTextNode()) {
+    if (!(aDirection == SplitNodeDirection::LeftNodeIsNewOne &&
+          aStartOfRightNode.IsStartOfContainer()) &&
+        !(aDirection == SplitNodeDirection::RightNodeIsNewOne &&
+          aStartOfRightNode.IsEndOfContainer())) {
+      Text* originalTextNode = aStartOfRightNode.ContainerAs<Text>();
+      Text* newTextNode = aNewNode.AsText();
+      nsAutoString movingText;
+      const uint32_t cutStartOffset =
+          aDirection == SplitNodeDirection::LeftNodeIsNewOne
+              ? 0u
+              : aStartOfRightNode.Offset();
+      const uint32_t cutLength =
+          aDirection == SplitNodeDirection::LeftNodeIsNewOne
+              ? aStartOfRightNode.Offset()
+              : originalTextNode->Length() - aStartOfRightNode.Offset();
+      IgnoredErrorResult error;
+      originalTextNode->SubstringData(cutStartOffset, cutLength, movingText,
+                                      error);
+      NS_WARNING_ASSERTION(!error.Failed(),
                            "Text::SubstringData() failed, but ignored");
-      ignoredError.SuppressException();
+      error.SuppressException();
 
       
-      DoDeleteText(MOZ_KnownLive(*rightAsText), 0, aStartOfRightNode.Offset(),
-                   ignoredError);
-      NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      DoDeleteText(MOZ_KnownLive(*originalTextNode), cutStartOffset, cutLength,
+                   error);
+      NS_WARNING_ASSERTION(!error.Failed(),
                            "EditorBase::DoDeleteText() failed, but ignored");
-      ignoredError.SuppressException();
+      error.SuppressException();
 
       
-      
-      DoSetText(MOZ_KnownLive(*leftAsText), leftText, ignoredError);
-      NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      DoSetText(MOZ_KnownLive(*newTextNode), movingText, error);
+      NS_WARNING_ASSERTION(!error.Failed(),
                            "EditorBase::DoSetText() failed, but ignored");
-    } else {
-      MOZ_DIAGNOSTIC_ASSERT(!rightAsText && !leftAsText);
+    }
+  }
+  
+  
+  else if (firstChildOfRightNode &&
+           aStartOfRightNode.GetContainer() !=
+               firstChildOfRightNode->GetParentNode()) {
+    NS_WARNING(
+        "The web app interupped us and touched the DOM tree, we stopped "
+        "splitting anything");
+  } else if (aDirection == SplitNodeDirection::LeftNodeIsNewOne) {
+    
+    
+    if (!firstChildOfRightNode) {
       
       
-      if (!firstChildOfRightNode) {
-        
-        
-        IgnoredErrorResult ignoredError;
-        MoveAllChildren(*aStartOfRightNode.GetContainer(),
-                        EditorRawDOMPoint(&aNewNode, 0u), ignoredError);
-        NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
-            "HTMLEditor::MoveAllChildren() failed, but ignored");
-      } else if (NS_WARN_IF(aStartOfRightNode.GetContainer() !=
-                            firstChildOfRightNode->GetParentNode())) {
-        
-        
-        
-      } else {
-        
-        
-        IgnoredErrorResult ignoredError;
-        MovePreviousSiblings(*firstChildOfRightNode,
-                             EditorRawDOMPoint(&aNewNode, 0u), ignoredError);
-        NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
-            "HTMLEditor::MovePreviousSiblings() failed, but ignored");
-      }
+      IgnoredErrorResult error;
+      MoveAllChildren(*aStartOfRightNode.GetContainer(),
+                      EditorRawDOMPoint(&aNewNode, 0u), error);
+      NS_WARNING_ASSERTION(!error.Failed(),
+                           "HTMLEditor::MoveAllChildren() failed, but ignored");
+    }
+    
+    
+    else if (firstChildOfRightNode->GetPreviousSibling()) {
+      
+      
+      IgnoredErrorResult error;
+      MovePreviousSiblings(*firstChildOfRightNode,
+                           EditorRawDOMPoint(&aNewNode, 0u), error);
+      NS_WARNING_ASSERTION(
+          !error.Failed(),
+          "HTMLEditor::MovePreviousSiblings() failed, but ignored");
+    }
+  } else {
+    MOZ_ASSERT(aDirection == SplitNodeDirection::RightNodeIsNewOne);
+    
+    
+    if (!firstChildOfRightNode) {
+      
+    }
+    
+    
+    else if (!firstChildOfRightNode->GetPreviousSibling()) {
+      
+      
+      IgnoredErrorResult error;
+      MoveAllChildren(*aStartOfRightNode.GetContainer(),
+                      EditorRawDOMPoint(&aNewNode, 0u), error);
+      NS_WARNING_ASSERTION(!error.Failed(),
+                           "HTMLEditor::MoveAllChildren() failed, but ignored");
+    }
+    
+    
+    else {
+      
+      
+      IgnoredErrorResult error;
+      MoveInclusiveNextSiblings(*firstChildOfRightNode,
+                                EditorRawDOMPoint(&aNewNode, 0u), error);
+      NS_WARNING_ASSERTION(
+          !error.Failed(),
+          "HTMLEditor::MoveInclusiveNextSiblings() failed, but ignored");
     }
   }
 
@@ -5075,8 +5126,12 @@ SplitNodeResult HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
           NS_WARN_IF(parent !=
                      aStartOfRightNode.GetContainer()->GetParentNode()) ||
           NS_WARN_IF(parent != aNewNode.GetParentNode()) ||
-          NS_WARN_IF(aNewNode.GetNextSibling() !=
-                     aStartOfRightNode.GetContainer()))) {
+          (aDirection == SplitNodeDirection::LeftNodeIsNewOne &&
+           NS_WARN_IF(aNewNode.GetNextSibling() !=
+                      aStartOfRightNode.GetContainer())) ||
+          (aDirection == SplitNodeDirection::RightNodeIsNewOne &&
+           NS_WARN_IF(aNewNode.GetPreviousSibling() !=
+                      aStartOfRightNode.GetContainer())))) {
     return SplitNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 

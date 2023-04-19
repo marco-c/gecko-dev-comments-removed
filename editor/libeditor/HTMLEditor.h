@@ -1996,6 +1996,21 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  void MoveInclusiveNextSiblings(nsIContent& aChild,
+                                 const EditorRawDOMPoint& aPointToInsert,
+                                 ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
