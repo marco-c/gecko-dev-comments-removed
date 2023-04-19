@@ -29,8 +29,6 @@ class VideoBitrateAllocatorFactory;
 namespace cricket {
 
 class MediaContentDescription;
-class VideoChannel;
-class VoiceChannel;
 struct MediaConfig;
 
 
@@ -50,6 +48,10 @@ class ChannelInterface {
   virtual cricket::MediaType media_type() const = 0;
 
   virtual MediaChannel* media_channel() const = 0;
+  
+  
+  virtual VideoMediaChannel* video_media_channel() const = 0;
+  virtual VoiceMediaChannel* voice_media_channel() const = 0;
 
   
   
@@ -86,30 +88,6 @@ class ChannelInterface {
   
   
   virtual bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) = 0;
-};
-
-class ChannelFactoryInterface {
- public:
-  virtual std::unique_ptr<VideoChannel> CreateVideoChannel(
-      webrtc::Call* call,
-      const MediaConfig& media_config,
-      const std::string& mid,
-      bool srtp_required,
-      const webrtc::CryptoOptions& crypto_options,
-      const VideoOptions& options,
-      webrtc::VideoBitrateAllocatorFactory*
-          video_bitrate_allocator_factory) = 0;
-
-  virtual std::unique_ptr<VoiceChannel> CreateVoiceChannel(
-      webrtc::Call* call,
-      const MediaConfig& media_config,
-      const std::string& mid,
-      bool srtp_required,
-      const webrtc::CryptoOptions& crypto_options,
-      const AudioOptions& options) = 0;
-
- protected:
-  virtual ~ChannelFactoryInterface() = default;
 };
 
 }  
