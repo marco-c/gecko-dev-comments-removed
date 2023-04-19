@@ -1382,9 +1382,6 @@ var gUnifiedExtensions = {
     }
 
     if (this.isEnabled) {
-      MozXULElement.insertFTLIfNeeded("preview/originControls.ftl");
-      MozXULElement.insertFTLIfNeeded("preview/unifiedExtensions.ftl");
-
       this._button = document.getElementById("unified-extensions-button");
       
       this._button.hidden = false;
