@@ -214,7 +214,7 @@ class MatchPattern final : public nsISupports, public nsWrapperCache {
 
   
   
-  RefPtr<MatchGlob> mPath;
+  RefPtr<MatchGlobCore> mPath;
 
  public:
   
