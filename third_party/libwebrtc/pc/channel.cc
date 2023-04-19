@@ -488,11 +488,6 @@ void BaseChannel::UpdateRtpHeaderExtensionMap(
 }
 
 bool BaseChannel::RegisterRtpDemuxerSink_w() {
-  
-  
-  if (demuxer_criteria_ == previous_demuxer_criteria_) {
-    return true;
-  }
   media_channel_->OnDemuxerCriteriaUpdatePending();
   
   
@@ -500,6 +495,9 @@ bool BaseChannel::RegisterRtpDemuxerSink_w() {
       RTC_FROM_HERE, [this, demuxer_criteria = demuxer_criteria_] {
         RTC_DCHECK_RUN_ON(network_thread());
         RTC_DCHECK(rtp_transport_);
+        if (demuxer_criteria_ == previous_demuxer_criteria_)
+          return true;
+
         bool result =
             rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria, this);
         if (result) {
