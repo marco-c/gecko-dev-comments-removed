@@ -136,7 +136,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
   
   
   static const int kFirstDynamicPayloadTypeLowerRange = 35;
-  static const int kLastDynamicPayloadTypeLowerRange = 65;
+  static const int kLastDynamicPayloadTypeLowerRange = 63;
 
   static const int kFirstDynamicPayloadTypeUpperRange = 96;
   static const int kLastDynamicPayloadTypeUpperRange = 127;
@@ -187,7 +187,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
       
       
       RTC_LOG(LS_ERROR)
-          << "Out of dynamic payload types [35,65], skipping the rest.";
+          << "Out of dynamic payload types [35,63], skipping the rest.";
       break;
     }
 
@@ -213,7 +213,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
         
         
         RTC_LOG(LS_ERROR)
-            << "Out of dynamic payload types [35,65], skipping rtx.";
+            << "Out of dynamic payload types [35,63], skipping rtx.";
         break;
       }
     }
