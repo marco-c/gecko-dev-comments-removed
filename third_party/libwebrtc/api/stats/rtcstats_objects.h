@@ -98,6 +98,13 @@ struct RTCDtlsRole {
 };
 
 
+struct RTCIceRole {
+  static const char* const kUnknown;
+  static const char* const kControlled;
+  static const char* const kControlling;
+};
+
+
 class RTC_EXPORT RTCCertificateStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -702,6 +709,7 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   RTCStatsMember<std::string> dtls_role;
   RTCStatsMember<std::string> srtp_cipher;
   RTCStatsMember<uint32_t> selected_candidate_pair_changes;
+  RTCStatsMember<std::string> ice_role;
 };
 
 }  
