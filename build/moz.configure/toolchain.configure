@@ -1497,6 +1497,8 @@ set_config("CXX_IS_ICECREAM", cxx_is_icecream)
 
 
 
+
+
 @depends(target)
 def is_linker_option_enabled(target):
     if target.kernel not in ("WINNT", "SunOS"):
@@ -1516,8 +1518,14 @@ def enable_linker_default(target, developer_options):
     
     
     
-    if target.os == "Android" and target.cpu in ("x86", "x86_64"):
-        return "lld" if developer_options else "bfd"
+    
+    
+    
+    
+    
+    
+    if target.os == "Android" and not developer_options:
+        return "bfd" if target.cpu in ("x86", "x86_64", "aarch64") else "gold"
 
 
 option(
