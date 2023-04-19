@@ -17,7 +17,10 @@ const Layout = {
 
   zoomDocument(doc, zoom) {
     const bc = BrowsingContext.getFromWindow(doc.defaultView);
-    bc.fullZoom = zoom;
+    
+    
+    
+    bc.top.fullZoom = zoom;
   },
 
   
