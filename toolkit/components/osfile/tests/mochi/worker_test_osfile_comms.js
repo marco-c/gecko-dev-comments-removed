@@ -5,8 +5,6 @@
 
 "use strict";
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 
 importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
 

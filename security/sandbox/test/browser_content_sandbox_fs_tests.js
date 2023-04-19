@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 
 async function createFileInHome() {
   let browser = gBrowser.selectedBrowser;
