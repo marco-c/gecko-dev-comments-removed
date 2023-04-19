@@ -1473,13 +1473,19 @@ bool BrowserChild::NotifyAPZStateChange(
     const layers::GeckoContentController::APZStateChange& aChange,
     const int& aArg) {
   mAPZEventState->ProcessAPZStateChange(aViewId, aChange, aArg);
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
   if (aChange ==
       layers::GeckoContentController::APZStateChange::eTransformEnd) {
     
     
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
     observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
+    observerService->NotifyObservers(nullptr, "PanZoom:StateChange",
+                                     u"NOTHING");
+  } else if (aChange ==
+             layers::GeckoContentController::APZStateChange::eTransformBegin) {
+    observerService->NotifyObservers(nullptr, "PanZoom:StateChange",
+                                     u"PANNING");
   }
   return true;
 }
