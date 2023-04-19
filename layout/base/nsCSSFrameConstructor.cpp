@@ -5502,13 +5502,89 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     return;
   }
 
+  bool pageNameBreak = false;
+  
+  
+  if (aParentFrame && aState.mPresContext->IsPaginated() &&
+      StaticPrefs::layout_css_named_pages_enabled() &&
+      !aContent->TextIsOnlyWhitespace()) {
+    
+    
+    
+    
+    
+    
+    const StylePageName& pageName = aComputedStyle->StylePage()->mPage;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsAtom* const pageNameAtom =
+        (pageName.IsPageName() &&
+         aComputedStyle->StyleDisplay()->IsBlockOutsideStyle())
+            ? pageName.AsPageName().AsAtom()
+            : aState.mAutoPageNameValue;
+
+    
+    
+    
+    nsIFrame::PageValues* const framePageValues =
+        aParentFrame->GetProperty(nsIFrame::PageValuesProperty());
+    
+    
+    MOZ_ASSERT(framePageValues,
+               "child box page names should have been created by "
+               "AutoFrameConstructionPageName");
+    if (!framePageValues->mStartPageValue) {
+      framePageValues->mStartPageValue = pageNameAtom;
+      if (nsIFrame* const prevFrame = aParentFrame->GetPrevSibling()) {
+        const nsIFrame::PageValues* const prevPageValues =
+            prevFrame->GetProperty(nsIFrame::PageValuesProperty());
+        if (prevPageValues && prevPageValues->mEndPageValue != pageNameAtom) {
+          pageNameBreak = true;
+        }
+      }
+      
+      
+      
+      for (nsContainerFrame* frame = aParentFrame->GetParent(); frame;
+           frame = frame->GetParent()) {
+        nsIFrame::PageValues* const parentPageValues =
+            frame->GetProperty(nsIFrame::PageValuesProperty());
+        if (!parentPageValues || parentPageValues->mStartPageValue) {
+          break;
+        }
+        parentPageValues->mStartPageValue = pageNameAtom;
+      }
+    }
+    framePageValues->mEndPageValue = pageNameAtom;
+  }
+
   const bool canHavePageBreak =
       aFlags.contains(ItemFlag::AllowPageBreak) &&
       aState.mPresContext->IsPaginated() &&
       !display.IsAbsolutelyPositionedStyle() &&
       !(aParentFrame && aParentFrame->IsGridContainerFrame()) &&
       !(bits & FCDATA_IS_TABLE_PART) && !(bits & FCDATA_IS_SVG_TEXT);
-  if (canHavePageBreak && display.BreakBefore()) {
+  if (canHavePageBreak && (pageNameBreak || display.BreakBefore())) {
     AppendPageBreakItem(aContent, aItems);
   }
 
@@ -9549,89 +9625,6 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
   }
 
   VerifyGridFlexContainerChildren(aParentFrame, aFrameList);
-
-  
-  
-  if (aState.mPresContext->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled() &&
-      aParentFrame->IsBlockFrameOrSubclass()) {
-    
-    
-    
-    const nsAtom* startPageValue = nullptr;
-    const nsAtom* endPageValue = nullptr;
-    for (nsIFrame* f : aFrameList) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      const StylePageName& pageName = f->StylePage()->mPage;
-      const nsAtom* const pageNameAtom =
-          (pageName.IsPageName() && f->IsBlockOutside())
-              ? pageName.AsPageName().AsAtom()
-              : aState.mAutoPageNameValue;
-      nsIFrame::PageValues* pageValues =
-          f->GetProperty(nsIFrame::PageValuesProperty());
-      if (!pageValues) {
-        pageValues = new nsIFrame::PageValues();
-        f->AddProperty(nsIFrame::PageValuesProperty(), pageValues);
-      }
-      MOZ_ASSERT(!pageValues->mStartPageValue == !pageValues->mEndPageValue,
-                 "Both or neither mStartPageValue and mEndPageValue should "
-                 "have been set");
-      if (!pageValues->mStartPageValue) {
-        pageValues->mStartPageValue = pageNameAtom;
-        pageValues->mEndPageValue = pageNameAtom;
-      }
-      if (!startPageValue) {
-        startPageValue = pageValues->mStartPageValue;
-      }
-      endPageValue = pageValues->mEndPageValue;
-    }
-    MOZ_ASSERT(!startPageValue == !endPageValue,
-               "Should have set both or neither page values");
-    if (startPageValue) {
-      
-      
-      
-      
-      
-      
-      for (nsContainerFrame* frame = aParentFrame;
-           frame && frame->IsBlockFrameOrSubclass();
-           frame = frame->GetParent()) {
-        nsIFrame::PageValues* const parentPageValues =
-            frame->GetProperty(nsIFrame::PageValuesProperty());
-        
-        
-        
-        if (!parentPageValues) {
-          break;
-        }
-        if (!parentPageValues->mStartPageValue) {
-          parentPageValues->mStartPageValue = startPageValue;
-        }
-        parentPageValues->mEndPageValue = endPageValue;
-      }
-    }
-  }
 
   if (aParentIsWrapperAnonBox) {
     for (nsIFrame* f : aFrameList) {
