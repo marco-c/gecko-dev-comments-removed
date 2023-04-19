@@ -7,4 +7,16 @@ module.exports = {
   env: {
     jest: true,
   },
+  overrides: [
+    {
+      files: [
+        
+        
+        "components/debug-target-info.test.js",
+      ],
+      rules: {
+        "@microsoft/sdl/no-insecure-url": "off",
+      },
+    },
+  ],
 };

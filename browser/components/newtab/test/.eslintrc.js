@@ -1,5 +1,7 @@
 
 
+
+const xpcshellTestPaths = ["./unit*/**", "./xpcshell/**"];
 module.exports = {
   env: {
     mocha: true,
@@ -16,4 +18,24 @@ module.exports = {
     "react/jsx-no-bind": 0,
     "require-await": 0,
   },
+  overrides: [
+    {
+      
+      
+      files: "*",
+      excludedFiles: ["**/test**", "**/test*/**", "Test*/**"],
+      rules: {
+        "@microsoft/sdl/no-insecure-url": "off",
+      },
+    },
+    {
+      
+      files: xpcshellTestPaths.map(path => `${path}`),
+      rules: {
+        
+        
+        "@microsoft/sdl/no-insecure-url": "off",
+      },
+    },
+  ],
 };

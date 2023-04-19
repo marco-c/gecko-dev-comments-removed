@@ -58,9 +58,27 @@ module.exports = {
     waitForFocus: false,
   },
 
-  plugins: ["mozilla"],
+  plugins: ["mozilla", "@microsoft/sdl"],
 
   rules: {
+    
+    "@microsoft/sdl/no-insecure-url": [
+      "error",
+      {
+        exceptions: [
+          "^http:\\/\\/mochi\\.test?.*",
+          "^http:\\/\\/localhost?.*",
+          "^http:\\/\\/127\\.0\\.0\\.1?.*",
+          
+          "^http:\\/\\/www\\.w3\\.org?.*",
+          "^http:\\/\\/www\\.mozilla\\.org\\/keymaster\\/gatekeeper?.*",
+          
+          "^ws:?.*",
+          "^ftp:?.*",
+        ],
+        varExceptions: ["insecure?.*"],
+      },
+    ],
     "mozilla/import-content-task-globals": "error",
     "mozilla/import-headjs-globals": "error",
     "mozilla/mark-test-function-used": "error",
