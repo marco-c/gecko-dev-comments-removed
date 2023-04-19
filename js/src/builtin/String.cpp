@@ -58,6 +58,7 @@
 #include "vm/ToSource.h"       
 #include "vm/WellKnownAtom.h"  
 
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/InlineCharBuffer-inl.h"
 #include "vm/Interpreter-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -189,6 +190,7 @@ static bool Escape(JSContext* cx, const CharT* chars, uint32_t length,
 }
 
 static bool str_escape(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "escape");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   Rooted<JSLinearString*> str(cx, ArgToLinearString(cx, args, 0));
@@ -322,6 +324,7 @@ static bool Unescape(StringBuffer& sb,
 
 
 static bool str_unescape(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "unescape");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -869,6 +872,7 @@ JSString* js::StringToLowerCase(JSContext* cx, HandleString string) {
 }
 
 static bool str_toLowerCase(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "toLowerCase");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx,
@@ -975,6 +979,8 @@ bool js::intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype",
+                                        "toLocaleLowerCase");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(
@@ -1301,6 +1307,7 @@ JSString* js::StringToUpperCase(JSContext* cx, HandleString string) {
 }
 
 static bool str_toUpperCase(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "toUpperCase");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx,
@@ -1381,6 +1388,8 @@ bool js::intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype",
+                                        "toLocaleUpperCase");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(
@@ -1431,7 +1440,10 @@ static bool str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype",
+                                        "localeCompare");
   CallArgs args = CallArgsFromVp(argc, vp);
+
   RootedString str(
       cx, ToStringForStringFunction(cx, "localeCompare", args.thisv()));
   if (!str) {
@@ -1474,6 +1486,7 @@ static bool str_localeCompare(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "normalize");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1560,6 +1573,7 @@ static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
 #endif  
 
 static bool str_charAt(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "charAt");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedString str(cx);
@@ -1631,7 +1645,9 @@ out_of_range:
 }
 
 bool js::str_charCodeAt(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "charCodeAt");
   CallArgs args = CallArgsFromVp(argc, vp);
+
   RootedString str(cx);
   RootedValue index(cx);
   if (args.thisv().isString()) {
@@ -2125,6 +2141,7 @@ static MOZ_ALWAYS_INLINE bool ReportErrorIfFirstArgIsRegExp(
 
 
 bool js::str_includes(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "includes");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -2177,6 +2194,7 @@ bool js::str_includes(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::str_indexOf(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "indexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -2261,6 +2279,7 @@ static int32_t LastIndexOfImpl(const TextChar* text, size_t textLen,
 
 
 static bool str_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "lastIndexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -2359,6 +2378,7 @@ static bool str_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::str_startsWith(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "startsWith");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -2422,6 +2442,7 @@ bool js::str_startsWith(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::str_endsWith(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "endsWith");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -2539,16 +2560,19 @@ static bool TrimString(JSContext* cx, const CallArgs& args, const char* funName,
 }
 
 static bool str_trim(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "trim");
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, "trim", true, true);
 }
 
 static bool str_trimStart(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "trimStart");
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, "trimStart", true, false);
 }
 
 static bool str_trimEnd(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "trimEnd");
   CallArgs args = CallArgsFromVp(argc, vp);
   return TrimString(cx, args, "trimEnd", false, true);
 }
@@ -4248,6 +4272,7 @@ static bool Decode(JSContext* cx, Handle<JSLinearString*> str,
 }
 
 static bool str_decodeURI(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "decodeURI");
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSLinearString*> str(cx, ArgToLinearString(cx, args, 0));
   if (!str) {
@@ -4258,6 +4283,7 @@ static bool str_decodeURI(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool str_decodeURI_Component(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "decodeURIComponent");
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSLinearString*> str(cx, ArgToLinearString(cx, args, 0));
   if (!str) {
@@ -4268,6 +4294,7 @@ static bool str_decodeURI_Component(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool str_encodeURI(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "encodeURI");
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSLinearString*> str(cx, ArgToLinearString(cx, args, 0));
   if (!str) {
@@ -4278,6 +4305,7 @@ static bool str_encodeURI(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool str_encodeURI_Component(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "encodeURIComponent");
   CallArgs args = CallArgsFromVp(argc, vp);
   Rooted<JSLinearString*> str(cx, ArgToLinearString(cx, args, 0));
   if (!str) {
