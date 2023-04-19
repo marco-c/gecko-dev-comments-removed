@@ -653,22 +653,6 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
       return isRefEquivalent(first.refType(), second.refType(), cache);
     }
 
-#ifdef ENABLE_WASM_GC
-    
-    if (first.isRtt() && second.isRtt()) {
-      
-      if (first.hasRttDepth() != second.hasRttDepth()) {
-        return TypeResult::False;
-      }
-      
-      if (second.hasRttDepth() && first.rttDepth() != second.rttDepth()) {
-        return TypeResult::False;
-      }
-      return isTypeIndexEquivalent(first.typeIndex(), second.typeIndex(),
-                                   cache);
-    }
-#endif
-
     return TypeResult::False;
   }
 
@@ -704,23 +688,6 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
     if (subType.isRefType() && superType.isRefType()) {
       return isRefSubtypeOf(subType.refType(), superType.refType(), cache);
     }
-
-    
-#ifdef ENABLE_WASM_GC
-    if (subType.isRtt() && superType.isRtt()) {
-      
-      if (!subType.hasRttDepth() && superType.hasRttDepth()) {
-        return TypeResult::False;
-      }
-      
-      if (superType.hasRttDepth() &&
-          subType.rttDepth() != superType.rttDepth()) {
-        return TypeResult::False;
-      }
-      return isTypeIndexEquivalent(subType.typeIndex(), superType.typeIndex(),
-                                   cache);
-    }
-#endif
 
     return TypeResult::False;
   }
