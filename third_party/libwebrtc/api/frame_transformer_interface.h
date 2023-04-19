@@ -36,6 +36,16 @@ class TransformableFrameInterface {
   virtual uint8_t GetPayloadType() const = 0;
   virtual uint32_t GetSsrc() const = 0;
   virtual uint32_t GetTimestamp() const = 0;
+
+  enum class Direction {
+    kUnknown,
+    kReceiver,
+    kSender,
+  };
+  
+  
+  
+  virtual Direction GetDirection() const { return Direction::kUnknown; }
 };
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {
