@@ -212,13 +212,6 @@ class RTC_EXPORT VideoEncoder {
     
     
     
-    bool has_internal_source;
-
-    
-    
-    
-    
-    
     
     
     

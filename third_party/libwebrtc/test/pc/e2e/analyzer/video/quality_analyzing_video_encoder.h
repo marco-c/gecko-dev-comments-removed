@@ -176,8 +176,6 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
 
   
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
-  VideoEncoderFactory::CodecInfo QueryVideoEncoder(
-      const SdpVideoFormat& format) const override;
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
 

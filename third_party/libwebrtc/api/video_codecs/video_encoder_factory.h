@@ -29,12 +29,6 @@ class VideoEncoderFactory {
  public:
   
   struct CodecInfo {
-    
-    
-    
-    
-    
-    bool has_internal_source = false;
   };
 
   struct CodecSupport {

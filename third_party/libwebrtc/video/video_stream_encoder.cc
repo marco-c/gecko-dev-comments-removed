@@ -843,17 +843,8 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
         
         
         
-        
         if (last_frame_info_) {
           ReconfigureEncoder();
-        } else {
-          codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
-              encoder_config_.video_format);
-          if (HasInternalSource()) {
-            last_frame_info_ = VideoFrameInfo(kDefaultInputPixelsWidth,
-                                              kDefaultInputPixelsHeight, false);
-            ReconfigureEncoder();
-          }
         }
       });
 }
@@ -883,9 +874,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     }
 
     encoder_->SetFecControllerOverride(fec_controller_override_);
-
-    codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
-        encoder_config_.video_format);
 
     encoder_reset_required = true;
   }
@@ -1158,8 +1146,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     } else {
       encoder_initialized_ = true;
       encoder_->RegisterEncodeCompleteCallback(this);
-      frame_encode_metadata_writer_.OnEncoderInit(send_codec_,
-                                                  HasInternalSource());
+      frame_encode_metadata_writer_.OnEncoderInit(send_codec_);
       next_frame_types_.clear();
       next_frame_types_.resize(
           std::max(static_cast<int>(codec.numberOfSimulcastStreams), 1),
@@ -1486,10 +1473,7 @@ void VideoStreamEncoder::SetEncoderRates(
   
   
   
-  
-  
-  if (!HasInternalSource() &&
-      rate_settings.rate_control.bitrate.get_sum_bps() == 0) {
+  if (rate_settings.rate_control.bitrate.get_sum_bps() == 0) {
     return;
   }
 
@@ -1839,29 +1823,6 @@ void VideoStreamEncoder::SendKeyFrame() {
   
   std::fill(next_frame_types_.begin(), next_frame_types_.end(),
             VideoFrameType::kVideoFrameKey);
-
-  if (HasInternalSource()) {
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (encoder_->Encode(VideoFrame::Builder()
-                             .set_video_frame_buffer(I420Buffer::Create(1, 1))
-                             .set_rotation(kVideoRotation_0)
-                             .set_timestamp_us(0)
-                             .build(),
-                         &next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
-      
-      std::fill(next_frame_types_.begin(), next_frame_types_.end(),
-                VideoFrameType::kVideoFrameDelta);
-    }
-  }
 }
 
 void VideoStreamEncoder::OnLossNotification(
@@ -2204,28 +2165,12 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
     frame_dropper_.Fill(frame_size.bytes(), !keyframe);
   }
 
-  if (HasInternalSource()) {
-    
-    input_framerate_.Update(1u, clock_->TimeInMilliseconds());
-    frame_dropper_.Leak(GetInputFramerateFps());
-    
-    if (frame_dropper_.DropFrame()) {
-      pending_frame_drops_.fetch_add(1);
-    }
-  }
-
   stream_resource_manager_.OnEncodeCompleted(encoded_image, time_sent_us,
                                              encode_duration_us, frame_size);
   if (bitrate_adjuster_) {
     bitrate_adjuster_->OnEncodedFrame(
         frame_size, encoded_image.SpatialIndex().value_or(0), temporal_index);
   }
-}
-
-bool VideoStreamEncoder::HasInternalSource() const {
-  
-  
-  return codec_info_.has_internal_source || encoder_info_.has_internal_source;
 }
 
 void VideoStreamEncoder::ReleaseEncoder() {

@@ -32,15 +32,6 @@ class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
   BuiltinVideoEncoderFactory()
       : internal_encoder_factory_(new InternalEncoderFactory()) {}
 
-  VideoEncoderFactory::CodecInfo QueryVideoEncoder(
-      const SdpVideoFormat& format) const override {
-    
-    RTC_DCHECK(
-        format.IsCodecInList(internal_encoder_factory_->GetSupportedFormats()));
-    VideoEncoderFactory::CodecInfo info;
-    return info;
-  }
-
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
     
