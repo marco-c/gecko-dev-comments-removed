@@ -1234,13 +1234,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Element* GetParentListElementAtSelection() const;
-
-  
-
-
-
-
 
 
   [[nodiscard]] Result<EditorRawDOMRange, nsresult>

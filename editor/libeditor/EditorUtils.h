@@ -724,6 +724,13 @@ class MOZ_STACK_CLASS AutoRangeArray final {
       EditSubAction aEditSubAction,
       CollectNonEditableNodes aCollectNonEditableNodes) const;
 
+  
+
+
+
+
+  dom::Element* GetClosestAncestorAnyListElementOfRange() const;
+
  private:
   static nsresult ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
       nsRange& aRange, EditSubAction aEditSubAction,
