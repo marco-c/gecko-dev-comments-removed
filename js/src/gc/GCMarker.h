@@ -315,7 +315,7 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
 
 
   void setMarkColor(gc::MarkColor newColor);
-  gc::MarkColor markColor() const { return color; }
+  gc::MarkColor markColor() const { return markColor_; }
 
   bool enterWeakMarkingMode();
   void leaveWeakMarkingMode();
@@ -477,7 +477,7 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   MainThreadOrGCTaskData<size_t> grayPosition;
 
   
-  MainThreadOrGCTaskData<gc::MarkColor> color;
+  MainThreadOrGCTaskData<gc::MarkColor> markColor_;
 
   
   MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
