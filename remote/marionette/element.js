@@ -259,22 +259,11 @@ element.ReferenceStore = class {
 
 
 
-
-
-
-
-
-
-
-
-
-element.find = function(container, strategy, selector, opts = {}) {
-  let all = !!opts.all;
-  let timeout = opts.timeout || 0;
-  let startNode = opts.startNode;
+element.find = function(container, strategy, selector, options = {}) {
+  const { all = false, startNode, timeout = 0 } = options;
 
   let searchFn;
-  if (opts.all) {
+  if (all) {
     searchFn = findElements.bind(this);
   } else {
     searchFn = findElement.bind(this);
@@ -299,12 +288,12 @@ element.find = function(container, strategy, selector, opts = {}) {
     findElements.then(foundEls => {
       
       
-      if (!opts.all && (!foundEls || foundEls.length == 0)) {
+      if (!all && (!foundEls || foundEls.length == 0)) {
         let msg = `Unable to locate element: ${selector}`;
         reject(new lazy.error.NoSuchElementError(msg));
       }
 
-      if (opts.all) {
+      if (all) {
         resolve(foundEls);
       }
       resolve(foundEls[0]);
@@ -1284,8 +1273,8 @@ element.scrollIntoView = function(el) {
 
 
 
-element.isElement = function(node) {
-  return element.isDOMElement(node) || element.isXULElement(node);
+element.isElement = function(obj) {
+  return element.isDOMElement(obj) || element.isXULElement(obj);
 };
 
 
@@ -1296,8 +1285,8 @@ element.isElement = function(node) {
 
 
 
-element.getShadowRoot = function(node) {
-  const shadowRoot = node.openOrClosedShadowRoot;
+element.getShadowRoot = function(el) {
+  const shadowRoot = el.openOrClosedShadowRoot;
   if (!shadowRoot) {
     throw new lazy.error.NoSuchShadowRootError();
   }
@@ -1311,11 +1300,11 @@ element.getShadowRoot = function(node) {
 
 
 
-element.isShadowRoot = function(node) {
+
+
+element.isShadowRoot = function(obj) {
   return (
-    node !== null &&
-    typeof node == "object" &&
-    node.containingShadowRoot == node
+    obj !== null && typeof obj == "object" && obj.containingShadowRoot == obj
   );
 };
 
@@ -1328,13 +1317,13 @@ element.isShadowRoot = function(node) {
 
 
 
-element.isDOMElement = function(node) {
+element.isDOMElement = function(obj) {
   return (
-    typeof node == "object" &&
-    node !== null &&
-    "nodeType" in node &&
-    [ELEMENT_NODE, DOCUMENT_NODE].includes(node.nodeType) &&
-    !element.isXULElement(node)
+    typeof obj == "object" &&
+    obj !== null &&
+    "nodeType" in obj &&
+    [ELEMENT_NODE, DOCUMENT_NODE].includes(obj.nodeType) &&
+    !element.isXULElement(obj)
   );
 };
 
@@ -1347,14 +1336,13 @@ element.isDOMElement = function(node) {
 
 
 
-
-element.isXULElement = function(node) {
+element.isXULElement = function(obj) {
   return (
-    typeof node == "object" &&
-    node !== null &&
-    "nodeType" in node &&
-    node.nodeType === node.ELEMENT_NODE &&
-    node.namespaceURI === XUL_NS
+    typeof obj == "object" &&
+    obj !== null &&
+    "nodeType" in obj &&
+    obj.nodeType === obj.ELEMENT_NODE &&
+    obj.namespaceURI === XUL_NS
   );
 };
 
@@ -1381,16 +1369,16 @@ element.isInPrivilegedDocument = function(node) {
 
 
 
-element.isDOMWindow = function(node) {
+element.isDOMWindow = function(obj) {
   
   
   
   return (
-    typeof node == "object" &&
-    node !== null &&
-    typeof node.toString == "function" &&
-    node.toString() == "[object Window]" &&
-    node.self === node
+    typeof obj == "object" &&
+    obj !== null &&
+    typeof obj.toString == "function" &&
+    obj.toString() == "[object Window]" &&
+    obj.self === obj
   );
 };
 
@@ -1544,7 +1532,6 @@ class WebReference {
 
 
 
-
   static fromJSON(json) {
     lazy.assert.object(json);
     if (json instanceof WebReference) {
@@ -1572,7 +1559,7 @@ class WebReference {
     }
 
     throw new lazy.error.InvalidArgumentError(
-      lazy.pprint`Expected web element reference, got: ${json}`
+      lazy.pprint`Expected web reference, got: ${json}`
     );
   }
 
@@ -1618,6 +1605,7 @@ class WebReference {
   }
 
   
+
 
 
 
