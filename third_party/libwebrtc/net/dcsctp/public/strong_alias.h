@@ -22,9 +22,10 @@ namespace dcsctp {
 
 
 
-template <typename TagType, typename UnderlyingType>
+template <typename TagType, typename TheUnderlyingType>
 class StrongAlias {
  public:
+  using UnderlyingType = TheUnderlyingType;
   constexpr StrongAlias() = default;
   constexpr explicit StrongAlias(const UnderlyingType& v) : value_(v) {}
   constexpr explicit StrongAlias(UnderlyingType&& v) noexcept
