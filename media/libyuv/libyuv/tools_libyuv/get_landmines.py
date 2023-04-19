@@ -7,6 +7,7 @@
 
 
 
+
 """
 This file emits the list of reasons why a particular build needs to be clobbered
 (or a list of 'landmines').
@@ -25,8 +26,8 @@ def print_landmines():
   
   
   
-  print 'Clobber to remove GYP artifacts after switching bots to GN.'
-  print 'Another try to remove GYP artifacts after switching bots to GN.'
+  print('Clobber to remove GYP artifacts after switching bots to GN.')
+  print('Another try to remove GYP artifacts after switching bots to GN.')
 
 
 def main():
