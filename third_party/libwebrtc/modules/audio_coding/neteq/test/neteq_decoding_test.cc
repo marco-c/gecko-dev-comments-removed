@@ -245,9 +245,15 @@ void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
       NetEqNetworkStatistics network_stats;
       ASSERT_EQ(0, neteq_->NetworkStatistics(&network_stats));
 
-      EXPECT_LE(network_stats.preferred_buffer_size_ms, 80);
-      EXPECT_LE(network_stats.current_buffer_size_ms,
-                80 + algorithmic_delay_ms_);
+      
+      
+      
+      if (packets_inserted > 4) {
+        
+        EXPECT_LE(network_stats.preferred_buffer_size_ms, kFrameSizeMs * 2);
+        EXPECT_LE(network_stats.current_buffer_size_ms,
+                  kFrameSizeMs * 2 + algorithmic_delay_ms_);
+      }
       last_seq_no = seq_no;
       last_timestamp = timestamp;
 
