@@ -27,6 +27,71 @@ MSGFEventMsgInfo gMSGFEvents[] = {
 static long gEventCounter = 0;
 static UINT gLastEventMsg = 0;
 
+namespace mozilla::widget {
+nsAutoCString DefaultParamInfoFn(uint64_t wParam, uint64_t lParam,
+                                 bool ) {
+  nsAutoCString result;
+  result.AppendPrintf("(0x%08llX 0x%08llX)", wParam, lParam);
+  return result;
+}
+
+nsAutoCString EmptyParamInfoFn(uint64_t wParam, uint64_t lParam,
+                               bool ) {
+  nsAutoCString result;
+  return result;
+}
+
+void AppendEnumValueInfo(
+    nsAutoCString& str, uint64_t value,
+    const std::unordered_map<uint64_t, const char*>& valuesAndNames,
+    const char* name) {
+  if (name != nullptr) {
+    str.AppendPrintf("%s=", name);
+  }
+  auto entry = valuesAndNames.find(value);
+  if (entry == valuesAndNames.end()) {
+    str.AppendPrintf("Unknown (0x%08llX)", value);
+  } else {
+    str.AppendASCII(entry->second);
+  }
+}
+
+bool AppendFlagsInfo(nsAutoCString& str, uint64_t flags,
+                     const nsTArray<EnumValueAndName>& flagsAndNames,
+                     const char* name) {
+  if (name != nullptr) {
+    str.AppendPrintf("%s=", name);
+  }
+  bool firstAppend = true;
+  for (const EnumValueAndName& flagAndName : flagsAndNames) {
+    if (MOZ_UNLIKELY(flagAndName.mFlag == 0)) {
+      
+      
+      
+      if (flags == 0 && firstAppend) {
+        firstAppend = false;
+        str.AppendASCII(flagAndName.mName);
+      }
+    } else if ((flags & flagAndName.mFlag) == flagAndName.mFlag) {
+      if (MOZ_LIKELY(!firstAppend)) {
+        str.Append('|');
+      }
+      firstAppend = false;
+      str.AppendASCII(flagAndName.mName);
+      flags = flags & ~flagAndName.mFlag;
+    }
+  }
+  if (flags != 0) {
+    if (MOZ_LIKELY(!firstAppend)) {
+      str.Append('|');
+    }
+    firstAppend = false;
+    str.AppendPrintf("Unknown (0x%08llX)", flags);
+  }
+  return !firstAppend;
+}
+}  
+
 PrintEvent::PrintEvent(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT retValue)
     : mMsg(msg),
       mWParam(wParam),
@@ -52,6 +117,23 @@ PrintEvent::~PrintEvent() {
   }
 }
 
+void EventMsgInfo::LogParameters(nsAutoCString& str, WPARAM wParam,
+                                 LPARAM lParam, bool isPreCall) {
+  if (mParamInfoFn) {
+    str = mParamInfoFn(wParam, lParam, isPreCall);
+  } else {
+    if (mWParamInfoFn) {
+      mWParamInfoFn(str, wParam, mWParamName, isPreCall);
+    }
+    if (mLParamInfoFn) {
+      if (mWParamInfoFn) {
+        str.AppendASCII(" ");
+      }
+      mLParamInfoFn(str, lParam, mLParamName, isPreCall);
+    }
+  }
+}
+
 
 
 
@@ -59,10 +141,6 @@ PrintEvent::~PrintEvent() {
 
 
 bool PrintEvent::PrintEventInternal() {
-  const auto eventMsgInfo = gAllEvents.find(mMsg);
-  const char* msgText =
-      eventMsgInfo != gAllEvents.end() ? eventMsgInfo->second.mStr : nullptr;
-
   mozilla::LogLevel logLevel = (*gWindowsEventLog).Level();
   bool isPreCall = mResult.isNothing();
   if (isPreCall || mShouldLogPostCall) {
@@ -73,6 +151,8 @@ bool PrintEvent::PrintEventInternal() {
           (logLevel >= mozilla::LogLevel::Verbose ||
            (mMsg != WM_SETCURSOR && mMsg != WM_MOUSEMOVE &&
             mMsg != WM_NCHITTEST));
+      
+      
       if (!shouldLogAtAll) {
         return false;
       }
@@ -83,14 +163,23 @@ bool PrintEvent::PrintEventInternal() {
         return false;
       }
     }
+    const auto& eventMsgInfo = gAllEvents.find(mMsg);
+    const char* msgText =
+        eventMsgInfo != gAllEvents.end() ? eventMsgInfo->second.mStr : nullptr;
+    nsAutoCString paramInfo;
+    if (eventMsgInfo != gAllEvents.end()) {
+      eventMsgInfo->second.LogParameters(paramInfo, mWParam, mLParam,
+                                         isPreCall);
+    } else {
+      paramInfo = DefaultParamInfoFn(mWParam, mLParam, isPreCall);
+    }
     const char* resultMsg = mResult.isSome()
                                 ? (mResult.value() ? "true" : "false")
                                 : "initial call";
     MOZ_LOG(
         gWindowsEventLog, LogLevel::Info,
-        ("%6ld - 0x%04X (0x%08llX 0x%08llX) %s: 0x%08llX (%s)\n",
-         mEventCounter.valueOr(gEventCounter), mMsg,
-         static_cast<uint64_t>(mWParam), static_cast<uint64_t>(mLParam),
+        ("%6ld - 0x%04X %s %s: 0x%08llX (%s)\n",
+         mEventCounter.valueOr(gEventCounter), mMsg, paramInfo.get(),
          msgText ? msgText : "Unknown",
          mResult.isSome() ? static_cast<uint64_t>(mRetValue) : 0, resultMsg));
     gLastEventMsg = mMsg;

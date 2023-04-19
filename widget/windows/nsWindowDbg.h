@@ -44,6 +44,31 @@ class PrintEvent final {
   bool mShouldLogPostCall;
 };
 
+namespace mozilla::widget {
+
+nsAutoCString DefaultParamInfoFn(uint64_t wParam, uint64_t lParam,
+                                 bool firstCall);
+
+struct EnumValueAndName {
+  uint64_t mFlag;
+  const char* mName;
+};
+
+
+
+
+
+
+
+
+
+
+bool AppendFlagsInfo(nsAutoCString& str, uint64_t flags,
+                     const nsTArray<EnumValueAndName>& flagsAndNames,
+                     const char* name);
+
+}  
+
 #if defined(POPUP_ROLLUP_DEBUG_OUTPUT)
 typedef struct {
   char* mStr;
