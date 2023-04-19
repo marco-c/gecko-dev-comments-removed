@@ -1463,10 +1463,14 @@ nsIFrame* SVGObserverUtils::GetAndObserveTemplate(
 
     
     nsIContent* content = aFrame->GetContent();
+
+    nsCOMPtr<nsIURI> baseURI = content->GetBaseURI();
+    if (nsContentUtils::IsLocalRefURL(href)) {
+      baseURI = GetBaseURLForLocalRef(content, baseURI);
+    }
     nsCOMPtr<nsIURI> targetURI;
-    nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
-                                              content->GetUncomposedDoc(),
-                                              content->GetBaseURI());
+    nsContentUtils::NewURIWithDocumentCharset(
+        getter_AddRefs(targetURI), href, content->GetUncomposedDoc(), baseURI);
 
     
     
