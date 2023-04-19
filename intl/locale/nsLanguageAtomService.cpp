@@ -195,6 +195,9 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       
       if (langStr.Contains('_')) {
         langStr.ReplaceChar('_', '-');
+
+        
+        loc = {};
         result = LocaleParser::TryParse(langStr, loc);
       }
     }
