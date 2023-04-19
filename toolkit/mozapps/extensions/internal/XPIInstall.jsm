@@ -468,6 +468,9 @@ async function loadManifestFromWebManifest(aPackage, aLocation) {
     throw error;
   }
 
+  
+  
+  
   let bss = manifest.applications?.gecko || {};
 
   

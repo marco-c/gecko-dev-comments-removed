@@ -1257,6 +1257,12 @@ class ExtensionData {
     
     
     
+    
+    
+    
+    
+    
+    
     if (manifest.browser_specific_settings?.gecko) {
       if (manifest.applications) {
         this.manifestWarning(
