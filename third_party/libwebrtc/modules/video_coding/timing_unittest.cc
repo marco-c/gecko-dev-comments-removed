@@ -36,7 +36,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.set_render_delay(0);
   uint32_t wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   
   
   EXPECT_EQ(jitter_delay_ms, wait_time_ms);
@@ -48,7 +48,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.UpdateCurrentDelay(timestamp);
   wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   
   EXPECT_EQ(jitter_delay_ms - 10, wait_time_ms);
 
@@ -57,7 +57,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.UpdateCurrentDelay(timestamp);
   wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   EXPECT_EQ(jitter_delay_ms, wait_time_ms);
 
   
@@ -70,7 +70,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.UpdateCurrentDelay(timestamp);
   wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   EXPECT_EQ(jitter_delay_ms, wait_time_ms);
 
   
@@ -85,7 +85,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.UpdateCurrentDelay(timestamp);
   wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   EXPECT_EQ(jitter_delay_ms, wait_time_ms);
 
   const int kMinTotalDelayMs = 200;
@@ -97,7 +97,7 @@ TEST(ReceiverTimingTest, JitterDelay) {
   timing.set_render_delay(kRenderDelayMs);
   wait_time_ms = timing.MaxWaitingTime(
       timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds());
+      clock.TimeInMilliseconds(), false);
   
   
   EXPECT_EQ(kMinTotalDelayMs - kDecodeTimeMs - kRenderDelayMs, wait_time_ms);
@@ -140,16 +140,26 @@ TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
   for (int i = 0; i < 10; ++i) {
     clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
     int64_t now_ms = clock.TimeInMilliseconds();
-    EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+    EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                    false),
+              0);
   }
   
   
   int64_t now_ms = clock.TimeInMilliseconds();
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            0);
   
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            0);
 }
 
 TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
@@ -168,27 +178,38 @@ TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
   for (int i = 0; i < 10; ++i) {
     clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
     int64_t now_ms = clock.TimeInMilliseconds();
-    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                    false),
+              0);
     timing.SetLastDecodeScheduledTimestamp(now_ms);
   }
   
   
   int64_t now_ms = clock.TimeInMilliseconds();
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            kMinPacingMs);
   
   
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            kMinPacingMs);
   
   constexpr int64_t kTwoMs = 2;
   clock.AdvanceTimeMilliseconds(kTwoMs);
   now_ms = clock.TimeInMilliseconds();
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms),
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
             kMinPacingMs - kTwoMs);
   
   
   timing.SetLastDecodeScheduledTimestamp(now_ms);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            kMinPacingMs);
 }
 
 TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
@@ -206,16 +227,56 @@ TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
   int64_t render_time_ms = now_ms + 30;
   
   int64_t estimated_processing_delay =
-      (render_time_ms - now_ms) - timing.MaxWaitingTime(render_time_ms, now_ms);
+      (render_time_ms - now_ms) -
+      timing.MaxWaitingTime(render_time_ms, now_ms,
+                            false);
   EXPECT_GT(estimated_processing_delay, 0);
 
   
   
   for (int i = 0; i < 5; ++i) {
     render_time_ms += kTimeDeltaMs;
-    EXPECT_EQ(timing.MaxWaitingTime(render_time_ms, now_ms),
+    EXPECT_EQ(timing.MaxWaitingTime(render_time_ms, now_ms,
+                                    false),
               render_time_ms - now_ms - estimated_processing_delay);
   }
+}
+
+TEST(ReceiverTiminTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
+  
+  
+  constexpr int64_t kMinPacingMs = 3;
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
+  constexpr int64_t kStartTimeUs = 3.15e13;  
+  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
+  constexpr int64_t kZeroRenderTimeMs = 0;
+  SimulatedClock clock(kStartTimeUs);
+  VCMTiming timing(&clock);
+  timing.Reset();
+  
+  for (int i = 0; i < 10; ++i) {
+    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
+    int64_t now_ms = clock.TimeInMilliseconds();
+    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                    false),
+              0);
+    timing.SetLastDecodeScheduledTimestamp(now_ms);
+  }
+  
+  
+  int64_t now_ms = clock.TimeInMilliseconds();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  false),
+            kMinPacingMs);
+  
+  
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  true),
+            0);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+                                  true),
+            0);
 }
 
 }  

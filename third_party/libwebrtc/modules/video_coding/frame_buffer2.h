@@ -25,6 +25,7 @@
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/utility/decoded_frames_history.h"
 #include "rtc_base/event.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/rtt_mult_experiment.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -192,6 +193,13 @@ class FrameBuffer {
 
   
   const absl::optional<RttMultExperiment::Settings> rtt_mult_settings_;
+
+  
+  
+  
+  
+  
+  FieldTrialParameter<unsigned> zero_playout_delay_max_decode_queue_size_;
 };
 
 }  

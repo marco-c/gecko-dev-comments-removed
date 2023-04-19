@@ -140,7 +140,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
     uint16_t new_max_wait_time =
         static_cast<uint16_t>(VCM_MAX(available_wait_time, 0));
     uint32_t wait_time_ms = rtc::saturated_cast<uint32_t>(
-        timing_->MaxWaitingTime(render_time_ms, clock_->TimeInMilliseconds()));
+        timing_->MaxWaitingTime(render_time_ms, clock_->TimeInMilliseconds(),
+                                false));
     if (new_max_wait_time < wait_time_ms) {
       
       
