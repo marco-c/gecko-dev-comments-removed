@@ -104,7 +104,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
         : owner_(owner),
           enable_receive_own_stream_(enable_receive_own_stream),
           stream_started_time_(stream_started_time),
-          frame_ids_(peers_count) {}
+          frame_ids_(enable_receive_own_stream ? peers_count + 1
+                                               : peers_count) {}
 
     size_t owner() const { return owner_; }
     Timestamp stream_started_time() const { return stream_started_time_; }
@@ -113,16 +114,22 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
     
     
     uint16_t PopFront(size_t peer);
-    bool IsEmpty(size_t peer) const { return frame_ids_.IsEmpty(peer); }
+    bool IsEmpty(size_t peer) const {
+      return frame_ids_.IsEmpty(GetPeerQueueIndex(peer));
+    }
     
-    uint16_t Front(size_t peer) const { return frame_ids_.Front(peer).value(); }
+    uint16_t Front(size_t peer) const {
+      return frame_ids_.Front(GetPeerQueueIndex(peer)).value();
+    }
 
     
     
     
-    void AddPeer() { frame_ids_.AddHead(owner_); }
+    void AddPeer() { frame_ids_.AddHead(GetAliveFramesQueueIndex()); }
 
-    size_t GetAliveFramesCount() { return frame_ids_.size(owner_); }
+    size_t GetAliveFramesCount() const {
+      return frame_ids_.size(GetAliveFramesQueueIndex());
+    }
     uint16_t MarkNextAliveFrameAsDead();
 
     void SetLastRenderedFrameTime(size_t peer, Timestamp time);
@@ -130,13 +137,18 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
    private:
     
+    
+    size_t GetPeerQueueIndex(size_t peer_index) const;
+
+    
+    
+    
+    size_t GetAliveFramesQueueIndex() const;
+
+    
     const size_t owner_;
     const bool enable_receive_own_stream_;
     const Timestamp stream_started_time_;
-    
-    
-    
-    
     
     
     

@@ -36,6 +36,8 @@ class MultiHeadQueue {
   }
 
   
+  
+  
   void AddHead(size_t copy_index) { queues_.push_back(queues_[copy_index]); }
 
   
