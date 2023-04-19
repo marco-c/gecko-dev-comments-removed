@@ -919,8 +919,8 @@ TEST_F(TestVp9Impl, EndOfPicture) {
   std::vector<EncodedImage> frames;
   std::vector<CodecSpecificInfo> codec_specific;
   ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
-  EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.end_of_picture);
-  EXPECT_TRUE(codec_specific[1].codecSpecific.VP9.end_of_picture);
+  EXPECT_FALSE(codec_specific[0].end_of_picture);
+  EXPECT_TRUE(codec_specific[1].end_of_picture);
 
   
   
@@ -935,7 +935,7 @@ TEST_F(TestVp9Impl, EndOfPicture) {
 
   ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
   EXPECT_FALSE(frames[0].SpatialIndex());
-  EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_picture);
+  EXPECT_TRUE(codec_specific[0].end_of_picture);
 }
 
 TEST_F(TestVp9Impl, InterLayerPred) {
