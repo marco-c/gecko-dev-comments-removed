@@ -24,6 +24,7 @@
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -721,14 +722,57 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
   MOZ_DIAGNOSTIC_ASSERT(BoundsUseDesktopPixels(),
                         "non-desktop windows cannot be made fullscreen");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool hasAdjustedOSChrome = false;
+  const auto adjustOSChrome = [&]() {
+    if (hasAdjustedOSChrome) {
+      MOZ_ASSERT_UNREACHABLE("window chrome should only be adjusted once");
+      return;
+    }
+    HideWindowChrome(aFullScreen);
+    hasAdjustedOSChrome = true;
+  };
+  const auto adjustChromeOnScopeExit = MakeScopeExit([&]() {
+    if (hasAdjustedOSChrome) {
+      return;
+    }
+
+    
+    auto rect = GetBounds();
+    adjustOSChrome();
+    Resize(rect.X(), rect.Y(), rect.Width(), rect.Height(), true);
+  });
+
+  
   const auto doReposition = [&](auto rect) {
     static_assert(std::is_base_of_v<DesktopPixel,
                                     std::remove_reference_t<decltype(rect)>>,
                   "doReposition requires a rectangle using desktop pixels");
+
+    adjustOSChrome();
     Resize(rect.X(), rect.Y(), rect.Width(), rect.Height(), true);
   };
-
-  HideWindowChrome(aFullScreen);
 
   if (aFullScreen) {
     if (!mOriginalBounds) {
