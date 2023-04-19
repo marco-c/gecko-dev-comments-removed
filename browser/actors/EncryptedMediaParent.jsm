@@ -1,11 +1,15 @@
-/* vim: set ts=2 sw=2 sts=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 "use strict";
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+var EXPORTED_SYMBOLS = ["EncryptedMediaParent"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 const lazy = {};
 
@@ -25,7 +29,7 @@ XPCOMUtils.defineLazyGetter(lazy, "gFluentStrings", function() {
   return new Localization(["branding/brand.ftl", "browser/browser.ftl"], true);
 });
 
-export class EncryptedMediaParent extends JSWindowActorParent {
+class EncryptedMediaParent extends JSWindowActorParent {
   isUiEnabled() {
     return Services.prefs.getBoolPref("browser.eme.ui.enabled");
   }
@@ -64,11 +68,11 @@ export class EncryptedMediaParent extends JSWindowActorParent {
   }
 
   receiveMessage(aMessage) {
-    // The top level browsing context's embedding element should be a xul browser element.
+    
     let browser = this.browsingContext.top.embedderElement;
 
     if (!browser) {
-      // We don't have a browser so bail!
+      
       return;
     }
 
@@ -81,8 +85,8 @@ export class EncryptedMediaParent extends JSWindowActorParent {
     }
     let { status, keySystem } = parsedData;
 
-    // First, see if we need to do updates. We don't need to do anything for
-    // hidden keysystems:
+    
+    
     if (!this.isKeySystemVisible(keySystem)) {
       return;
     }
@@ -90,7 +94,7 @@ export class EncryptedMediaParent extends JSWindowActorParent {
       Services.obs.notifyObservers(browser, "EMEVideo:CDMMissing");
     }
 
-    // Don't need to show UI if disabled.
+    
     if (!this.isUiEnabled()) {
       return;
     }
@@ -98,16 +102,16 @@ export class EncryptedMediaParent extends JSWindowActorParent {
     let notificationId;
     let buttonCallback;
     let supportPage;
-    // Notification message can be either a string or a DOM fragment.
+    
     let notificationMessage;
     switch (status) {
       case "available":
       case "cdm-created":
-        // Only show the chain icon for proprietary CDMs. Clearkey is not one.
+        
         if (keySystem != "org.w3.clearkey") {
           this.showPopupNotificationForSuccess(browser, keySystem);
         }
-        // ... and bail!
+        
         return;
 
       case "api-disabled":
@@ -128,8 +132,8 @@ export class EncryptedMediaParent extends JSWindowActorParent {
         break;
 
       case "cdm-not-supported":
-        // Not to pop up user-level notification because they cannot do anything
-        // about it.
+        
+        
         return;
       default:
         Cu.reportError(
@@ -143,7 +147,7 @@ export class EncryptedMediaParent extends JSWindowActorParent {
         return;
     }
 
-    // Now actually create the notification
+    
 
     let notificationBox = browser.getTabBrowser().getNotificationBox(browser);
     if (notificationBox.getNotificationWithValue(notificationId)) {
@@ -178,7 +182,7 @@ export class EncryptedMediaParent extends JSWindowActorParent {
   }
 
   async showPopupNotificationForSuccess(aBrowser) {
-    // We're playing EME content! Remove any "we can't play because..." messages.
+    
     let notificationBox = aBrowser.getTabBrowser().getNotificationBox(aBrowser);
     ["drmContentDisabled", "drmContentCDMInstalling"].forEach(function(value) {
       let notification = notificationBox.getNotificationWithValue(value);
@@ -187,7 +191,7 @@ export class EncryptedMediaParent extends JSWindowActorParent {
       }
     });
 
-    // Don't bother creating it if it's already there:
+    
     if (
       aBrowser.ownerGlobal.PopupNotifications.getNotification(
         "drmContentPlaying",
