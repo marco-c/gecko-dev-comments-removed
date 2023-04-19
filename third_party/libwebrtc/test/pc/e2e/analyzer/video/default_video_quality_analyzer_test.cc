@@ -8,6 +8,7 @@
 
 
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
@@ -96,6 +97,15 @@ std::string ToString(const std::vector<StatsSample>& values) {
     out << "{ time_ms=" << v.time.ms() << "; value=" << v.value << "}, ";
   }
   return out.str();
+}
+
+void FakeCPULoad() {
+  std::vector<int> temp(100000);
+  for (size_t i = 0; i < temp.size(); ++i) {
+    temp[i] = rand();
+  }
+  std::sort(temp.begin(), temp.end());
+  ASSERT_TRUE(std::is_sorted(temp.begin(), temp.end()));
 }
 
 TEST(DefaultVideoQualityAnalyzerTest,
@@ -712,6 +722,10 @@ TEST(DefaultVideoQualityAnalyzerTest, CpuUsage) {
                             VideoQualityAnalyzerInterface::EncoderStats());
   }
 
+  
+  
+  FakeCPULoad();
+
   for (size_t i = 1; i < frames_order.size(); i += 2) {
     uint16_t frame_id = frames_order.at(i);
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
@@ -729,15 +743,7 @@ TEST(DefaultVideoQualityAnalyzerTest, CpuUsage) {
   analyzer.Stop();
 
   double cpu_usage = analyzer.GetCpuUsagePercent();
-  
-  
-  
-  
-#if defined(WEBRTC_WIN)
-  ASSERT_GE(cpu_usage, 0);
-#else
   ASSERT_GT(cpu_usage, 0);
-#endif
 
   SleepMs(100);
   analyzer.Stop();
