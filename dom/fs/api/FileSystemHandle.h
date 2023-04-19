@@ -23,7 +23,6 @@ extern LazyLogModule gOPFSLog;
   MOZ_LOG(mozilla::gOPFSLog, mozilla::LogLevel::Debug, args)
 
 class nsIGlobalObject;
-struct PRFileDesc;
 
 namespace mozilla {
 
@@ -37,13 +36,6 @@ extern LazyLogModule gOPFSLog;
 class ErrorResult;
 
 namespace dom {
-
-
-
-
-
-
-nsresult TruncFile(PRFileDesc* aFD, int64_t aEOF);
 
 class FileSystemDirectoryHandle;
 class FileSystemFileHandle;
