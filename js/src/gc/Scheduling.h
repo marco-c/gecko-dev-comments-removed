@@ -457,7 +457,7 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<size_t> gcMaxBytes_;
+  MainThreadData<size_t> gcMaxBytes_;
 
   
 
@@ -475,29 +475,21 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
+  MainThreadData<size_t> gcZoneAllocThresholdBase_;
 
   
 
 
 
 
-  UnprotectedData<double> smallHeapIncrementalLimit_;
+  MainThreadData<double> smallHeapIncrementalLimit_;
 
   
 
 
 
 
-  UnprotectedData<double> largeHeapIncrementalLimit_;
-
-  
-
-
-
-
-
-  UnprotectedData<size_t> zoneAllocDelayBytes_;
+  MainThreadData<double> largeHeapIncrementalLimit_;
 
   
 
@@ -505,7 +497,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<mozilla::TimeDuration> highFrequencyThreshold_;
+  MainThreadData<size_t> zoneAllocDelayBytes_;
 
   
 
@@ -513,30 +505,7 @@ class GCSchedulingTunables {
 
 
 
-
-
-
-  MainThreadOrGCTaskData<size_t> smallHeapSizeMaxBytes_;
-  MainThreadOrGCTaskData<size_t> largeHeapSizeMinBytes_;
-  MainThreadOrGCTaskData<double> highFrequencySmallHeapGrowth_;
-  MainThreadOrGCTaskData<double> highFrequencyLargeHeapGrowth_;
-
-  
-
-
-
-
-
-  MainThreadOrGCTaskData<double> lowFrequencyHeapGrowth_;
-
-  
-
-
-
-
-
-  UnprotectedData<uint32_t> minEmptyChunkCount_;
-  UnprotectedData<uint32_t> maxEmptyChunkCount_;
+  MainThreadData<mozilla::TimeDuration> highFrequencyThreshold_;
 
   
 
@@ -546,8 +515,30 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
-  UnprotectedData<double> nurseryFreeThresholdForIdleCollectionFraction_;
+
+  MainThreadData<size_t> smallHeapSizeMaxBytes_;
+  MainThreadData<size_t> largeHeapSizeMinBytes_;
+  MainThreadData<double> highFrequencySmallHeapGrowth_;
+  MainThreadData<double> highFrequencyLargeHeapGrowth_;
+
+  
+
+
+
+
+
+  MainThreadData<double> lowFrequencyHeapGrowth_;
+
+  
+
+
+
+
+
+
+
+  MainThreadData<uint32_t> nurseryFreeThresholdForIdleCollection_;
+  MainThreadData<double> nurseryFreeThresholdForIdleCollectionFraction_;
 
   
   MainThreadData<mozilla::TimeDuration> nurseryTimeoutForIdleCollection_;
@@ -560,7 +551,7 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<double> pretenureThreshold_;
+  MainThreadData<double> pretenureThreshold_;
 
   
 
@@ -568,7 +559,7 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<uint32_t> pretenureGroupThreshold_;
+  MainThreadData<uint32_t> pretenureGroupThreshold_;
 
   
 
@@ -635,10 +626,6 @@ class GCSchedulingTunables {
     return highFrequencyLargeHeapGrowth_;
   }
   double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
-  unsigned minEmptyChunkCount(const AutoLockGC&) const {
-    return minEmptyChunkCount_;
-  }
-  unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
   }
@@ -665,9 +652,8 @@ class GCSchedulingTunables {
 
   size_t urgentThresholdBytes() const { return urgentThresholdBytes_; }
 
-  [[nodiscard]] bool setParameter(JSGCParamKey key, uint32_t value,
-                                  const AutoLockGC& lock);
-  void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
+  [[nodiscard]] bool setParameter(JSGCParamKey key, uint32_t value);
+  void resetParameter(JSGCParamKey key);
 
  private:
   void setSmallHeapSizeMaxBytes(size_t value);
@@ -675,8 +661,6 @@ class GCSchedulingTunables {
   void setHighFrequencySmallHeapGrowth(double value);
   void setHighFrequencyLargeHeapGrowth(double value);
   void setLowFrequencyHeapGrowth(double value);
-  void setMinEmptyChunkCount(uint32_t value);
-  void setMaxEmptyChunkCount(uint32_t value);
 
   static bool megabytesToBytes(uint32_t value, size_t* bytesOut);
   static bool kilobytesToBytes(uint32_t value, size_t* bytesOut);

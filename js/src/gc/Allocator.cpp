@@ -604,7 +604,7 @@ bool GCRuntime::wantBackgroundAllocation(const AutoLockGC& lock) const {
   
   
   return allocTask.enabled() &&
-         emptyChunks(lock).count() < tunables.minEmptyChunkCount(lock) &&
+         emptyChunks(lock).count() < minEmptyChunkCount(lock) &&
          (fullChunks(lock).count() + availableChunks(lock).count()) >= 4;
 }
 

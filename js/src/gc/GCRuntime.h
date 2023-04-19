@@ -576,6 +576,12 @@ class GCRuntime {
   NonEmptyChunksIter allNonEmptyChunks(const AutoLockGC& lock) {
     return NonEmptyChunksIter(availableChunks(lock), fullChunks(lock));
   }
+  uint32_t minEmptyChunkCount(const AutoLockGC& lock) const {
+    return minEmptyChunkCount_;
+  }
+  uint32_t maxEmptyChunkCount(const AutoLockGC& lock) const {
+    return maxEmptyChunkCount_;
+  }
 #ifdef DEBUG
   void verifyAllChunks();
 #endif
@@ -682,6 +688,8 @@ class GCRuntime {
   ChunkPool expireEmptyChunkPool(const AutoLockGC& lock);
   void freeEmptyChunks(const AutoLockGC& lock);
   void prepareToFreeChunk(TenuredChunkInfo& info);
+  void setMinEmptyChunkCount(uint32_t value, const AutoLockGC& lock);
+  void setMaxEmptyChunkCount(uint32_t value, const AutoLockGC& lock);
 
   friend class BackgroundAllocTask;
   bool wantBackgroundAllocation(const AutoLockGC& lock) const;
@@ -994,6 +1002,18 @@ class GCRuntime {
   
   
   GCLockData<ChunkPool> fullChunks_;
+
+  
+
+
+
+
+
+
+
+
+  GCLockData<uint32_t> minEmptyChunkCount_;
+  GCLockData<uint32_t> maxEmptyChunkCount_;
 
   MainThreadData<RootedValueMap> rootsHash;
 
