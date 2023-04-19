@@ -1714,6 +1714,10 @@ class AsyncPanZoomController {
 
   bool IsOverscrolled() const;
 
+  
+  
+  bool IsPhysicallyOverscrolled() const;
+
  private:
   bool IsInInvalidOverscroll() const;
 

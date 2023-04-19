@@ -153,6 +153,8 @@ class OverscrollEffectBase {
   
   virtual void RelieveOverscroll(const ParentLayerPoint& aVelocity,
                                  SideBits aOverscrollSideBits) = 0;
+
+  virtual bool IsOverscrolled() const = 0;
 };
 
 
@@ -191,6 +193,10 @@ class GenericOverscrollEffect : public OverscrollEffectBase {
     mApzc.StartOverscrollAnimation(aVelocity, aOverscrollSideBits);
   }
 
+  bool IsOverscrolled() const override {
+    return mApzc.IsPhysicallyOverscrolled();
+  }
+
  private:
   AsyncPanZoomController& mApzc;
 };
@@ -200,13 +206,14 @@ class GenericOverscrollEffect : public OverscrollEffectBase {
 class WidgetOverscrollEffect : public OverscrollEffectBase {
  public:
   explicit WidgetOverscrollEffect(AsyncPanZoomController& aApzc)
-      : mApzc(aApzc) {}
+      : mApzc(aApzc), mIsOverscrolled(false) {}
 
   void ConsumeOverscroll(ParentLayerPoint& aOverscroll,
                          ScrollDirections aOverscrollableDirections) override {
     RefPtr<GeckoContentController> controller =
         mApzc.GetGeckoContentController();
     if (controller && !aOverscrollableDirections.isEmpty()) {
+      mIsOverscrolled = true;
       controller->UpdateOverscrollOffset(mApzc.GetGuid(), aOverscroll.x,
                                          aOverscroll.y, mApzc.IsRootContent());
       aOverscroll = ParentLayerPoint();
@@ -217,14 +224,22 @@ class WidgetOverscrollEffect : public OverscrollEffectBase {
                          SideBits aOverscrollSideBits) override {
     RefPtr<GeckoContentController> controller =
         mApzc.GetGeckoContentController();
+    
+    
+    
+    
+    mIsOverscrolled = false;
     if (controller) {
       controller->UpdateOverscrollVelocity(mApzc.GetGuid(), aVelocity.x,
                                            aVelocity.y, mApzc.IsRootContent());
     }
   }
 
+  bool IsOverscrolled() const override { return mIsOverscrolled; }
+
  private:
   AsyncPanZoomController& mApzc;
+  bool mIsOverscrolled;
 };
 
 }  

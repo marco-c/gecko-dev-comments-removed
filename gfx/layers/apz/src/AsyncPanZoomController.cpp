@@ -3144,7 +3144,7 @@ bool AsyncPanZoomController::Contains(const ScreenIntPoint& aPoint) const {
 
 bool AsyncPanZoomController::IsInOverscrollGutter(
     const ScreenPoint& aHitTestPoint) const {
-  if (!IsOverscrolled()) {
+  if (!IsPhysicallyOverscrolled()) {
     return false;
   }
 
@@ -3179,6 +3179,10 @@ bool AsyncPanZoomController::IsInOverscrollGutter(
 }
 
 bool AsyncPanZoomController::IsOverscrolled() const {
+  return mOverscrollEffect->IsOverscrolled();
+}
+
+bool AsyncPanZoomController::IsPhysicallyOverscrolled() const {
   
   
   if (StaticPrefs::apz_overscroll_test_async_scroll_offset_enabled()) {
@@ -4613,7 +4617,7 @@ AsyncTransformComponentMatrix AsyncPanZoomController::GetOverscrollTransform(
     return AsyncTransformComponentMatrix();
   }
 
-  if (!IsOverscrolled()) {
+  if (!IsPhysicallyOverscrolled()) {
     return AsyncTransformComponentMatrix();
   }
 
