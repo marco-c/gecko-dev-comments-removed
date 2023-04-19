@@ -609,8 +609,8 @@ already_AddRefed<DataTransfer> DataTransfer::MozCloneForEvent(
 
 
 static const char* kNonPlainTextExternalFormats[] = {
-    kCustomTypesMime, kFileMime,    kHTMLMime,    kRTFMime,
-    kURLMime,         kURLDataMime, kUnicodeMime, kPNGImageMime};
+    kCustomTypesMime, kFileMime,    kHTMLMime,     kRTFMime,  kURLMime,
+    kURLDataMime,     kUnicodeMime, kPNGImageMime, kPDFJSMime};
 
 
 void DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
@@ -909,7 +909,8 @@ already_AddRefed<nsITransferable> DataTransfer::GetTransferable(
                                 kMozTextInternal,
                                 kHTMLContext,
                                 kHTMLInfo,
-                                kImageRequestMime};
+                                kImageRequestMime,
+                                kPDFJSMime};
 
   
 
