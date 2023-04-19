@@ -683,18 +683,6 @@ pref("toolkit.telemetry.debugSlowSql", false);
 pref("toolkit.telemetry.unified", true);
 
 
-pref("toolkit.telemetry.dap_enabled", false);
-
-pref("toolkit.telemetry.dap_leader", "https://interop-00.api.divviup.org");
-
-pref("toolkit.telemetry.dap_leader_owner", "ISRG");
-
-pref("toolkit.telemetry.dap_helper", "https://helper1.dap.cloudflareresearch.com/v01");
-pref("toolkit.telemetry.dap_helper_owner", "Cloudflare");
-pref("toolkit.telemetry.dap.logLevel", "Warn");
-
-
-
 
 #if defined(MOZ_ASAN)
   pref("toolkit.asyncshutdown.crash_timeout", 300000); 
