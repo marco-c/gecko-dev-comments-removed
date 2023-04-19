@@ -222,7 +222,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     rv = mWorkerRef->Private()->SetPrincipalsAndCSPFromChannel(channel);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerRef->Private()->GetCSP();
+    nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerRef->Private()->GetCsp();
     
     
     if (!csp) {
