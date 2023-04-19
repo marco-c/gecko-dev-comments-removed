@@ -2100,28 +2100,31 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT nsresult PrepareToInsertContent(
-      const EditorDOMPoint& aPointToInsert, bool aDoDeleteSelection);
-
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAt(const nsAString& aStringToInsert,
-                                           const EditorDOMPoint& aPointToInsert,
-                                           bool aDoDeleteSelection);
+  enum class DeleteSelectedContent : bool {
+    No,   
+    Yes,  
+  };
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PrepareToInsertContent(const EditorDOMPoint& aPointToInsert,
+                         DeleteSelectedContent aDeleteSelectedContent);
 
   
 
 
 
 
-  bool IsSafeToInsertData(nsIPrincipal* aSourcePrincipal) const;
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAt(
+      const nsAString& aStringToInsert, const EditorDOMPoint& aPointToInsert,
+      DeleteSelectedContent aDeleteSelectedContent);
+
+  
+
+
+
+
+  enum class SafeToInsertData : bool { No, Yes };
+  SafeToInsertData IsSafeToInsertData(nsIPrincipal* aSourcePrincipal) const;
 
  protected:  
   
