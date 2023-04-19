@@ -1,0 +1,10 @@
+
+
+
+
+
+"use strict";
+
+add_task(function test_ua_snap_ubuntu() {
+  ok(navigator.userAgent.match(/X11; Ubuntu; Linux/));
+});
