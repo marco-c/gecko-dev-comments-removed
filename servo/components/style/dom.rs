@@ -212,6 +212,18 @@ pub trait TNode: Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     }
 
     
+    fn parent_element_or_host(&self) -> Option<Self::ConcreteElement> {
+        let parent = self.parent_node()?;
+        if let Some(e) = parent.as_element() {
+            return Some(e);
+        }
+        if let Some(root) = parent.as_shadow_root() {
+            return Some(root.host());
+        }
+        None
+    }
+
+    
     fn opaque(&self) -> OpaqueNode;
 
     

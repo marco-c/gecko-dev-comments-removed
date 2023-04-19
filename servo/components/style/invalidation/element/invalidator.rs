@@ -81,6 +81,10 @@ where
     fn invalidated_self(&mut self, element: E);
 
     
+    
+    fn invalidated_sibling(&mut self, sibling: E, of: E);
+
+    
     fn invalidated_descendants(&mut self, element: E, child: E);
 }
 
@@ -397,7 +401,7 @@ where
             );
 
             if invalidated_sibling {
-                sibling_invalidator.processor.invalidated_self(sibling);
+                sibling_invalidator.processor.invalidated_sibling(sibling, self.element);
             }
 
             any_invalidated |= invalidated_sibling;
