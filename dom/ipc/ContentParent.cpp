@@ -1855,11 +1855,24 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   ShutDownMessageManager();
 }
 
+mozilla::ipc::IPCResult ContentParent::RecvNotifyShutdownSuccess() {
+  if (!mShutdownPending) {
+    return IPC_FAIL(this, "RecvNotifyShutdownSuccess without mShutdownPending");
+  }
+
+  mIsNotifiedShutdownSuccess = true;
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentParent::RecvFinishShutdown() {
+  if (!mShutdownPending) {
+    return IPC_FAIL(this, "RecvFinishShutdown without mShutdownPending");
+  }
+
   
   
   
-  MOZ_ASSERT(mShutdownPending);
   if (mCalledClose) {
     MaybeLogBlockShutdownDiagnostics(
         this, "RecvFinishShutdown: Channel already closed.", __FILE__,
@@ -4318,10 +4331,16 @@ void ContentParent::KillHard(const char* aReason) {
   mForceKillTimer = nullptr;
 
   RemoveShutdownBlockers();
+  nsCString reason = nsDependentCString(aReason);
 
-  GeneratePairedMinidump(aReason);
-
-  nsDependentCString reason(aReason);
+  
+  
+  
+  if (!mIsNotifiedShutdownSuccess) {
+    GeneratePairedMinidump(aReason);
+  } else {
+    reason = nsDependentCString("KillHard after IsNotifiedShutdownSuccess.");
+  }
   Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
 
   ProcessHandle otherProcessHandle;

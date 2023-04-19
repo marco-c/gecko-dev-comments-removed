@@ -3065,7 +3065,16 @@ void ContentChild::ShutdownInternal() {
   CrashReporter::AppendToCrashReportAnnotation(
       CrashReporter::Annotation::IPCShutdownState,
       "SendFinishShutdown (sending)"_ns);
+
+  
+  
+  Unused << SendNotifyShutdownSuccess();
+
+  
+  
+  
   bool sent = SendFinishShutdown();
+
   CrashReporter::AppendToCrashReportAnnotation(
       CrashReporter::Annotation::IPCShutdownState,
       sent ? "SendFinishShutdown (sent)"_ns : "SendFinishShutdown (failed)"_ns);
