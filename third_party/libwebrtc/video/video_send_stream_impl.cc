@@ -529,7 +529,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
   rtp_video_sender_->SetEncodingData(streams[0].width, streams[0].height,
                                      num_temporal_layers);
 
-  if (rtp_video_sender_->IsActive() && !timed_out_) {
+  if (rtp_video_sender_->IsActive()) {
     
     
     bitrate_allocator_->AddObserver(this, GetAllocationConfig());
