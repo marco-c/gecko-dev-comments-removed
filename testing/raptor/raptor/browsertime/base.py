@@ -300,7 +300,7 @@ class Browsertime(Perftest):
             "--iterations",
             str(browser_cycles),
             "--videoParams.androidVideoWaitTime",
-            "10000",
+            "20000",
             
             "--browsertime.chimera",
             "true" if self.config["chimera"] else "false",
