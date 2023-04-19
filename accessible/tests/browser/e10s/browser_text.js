@@ -380,9 +380,16 @@ function misspelledRangesMatch(acc, ranges) {
 
 
 function waitForMisspelledRanges(acc, ranges) {
-  return waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, () =>
-    misspelledRangesMatch(acc, ranges)
-  ).then(() => {
+  let promise = null;
+  if (misspelledRangesMatch(acc, ranges)) {
+    promise = Promise.resolve();
+  } else {
+    promise = waitForEvent(EVENT_TEXT_ATTRIBUTE_CHANGED, () =>
+      misspelledRangesMatch(acc, ranges)
+    );
+  }
+
+  return promise.then(() => {
     ok(true, `Misspelled ranges match: ${JSON.stringify(ranges)}`);
   });
 }
