@@ -179,6 +179,48 @@ const SpecialMessageActions = {
 
 
 
+  setPref(pref) {
+    
+    const allowedPrefs = [
+      "browser.privacySegmentation.enabled",
+      "browser.startup.homepage",
+      "browser.privacySegmentation.windowSeparation.enabled",
+    ];
+
+    if (!allowedPrefs.includes(pref.name)) {
+      throw new Error(
+        `Special message action with type SET_PREF and pref of "${pref.name}" is unsupported.`
+      );
+    }
+    
+    switch (typeof pref.value) {
+      case "object":
+      case "undefined":
+        Services.prefs.clearUserPref(pref.name);
+        break;
+      case "string":
+        Services.prefs.setStringPref(pref.name, pref.value);
+        break;
+      case "number":
+        Services.prefs.setIntPref(pref.name, pref.value);
+        break;
+      case "boolean":
+        Services.prefs.setBoolPref(pref.name, pref.value);
+        break;
+      default:
+        throw new Error(
+          `Special message action with type SET_PREF, pref of "${pref.name}" is an unsupported type.`
+        );
+    }
+  },
+
+  
+
+
+
+
+
+
 
   async handleAction(action, browser) {
     const window = browser.ownerGlobal;
@@ -330,6 +372,9 @@ const SpecialMessageActions = {
         break;
       case "SHOW_SPOTLIGHT":
         lazy.Spotlight.showSpotlightDialog(browser, action.data);
+        break;
+      case "SET_PREF":
+        this.setPref(action.data.pref);
         break;
       default:
         throw new Error(
