@@ -216,7 +216,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         
         
         if (typeof sourceOrUrl == "string") {
-          if (!source.url.includes(sourceOrUrl)) {
+          if (!source.url.includes(encodeURI(sourceOrUrl))) {
             return false;
           }
         } else if (source.id != sourceOrUrl.id) {
