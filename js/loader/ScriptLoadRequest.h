@@ -106,8 +106,11 @@ class ScriptFetchOptions {
   
 
 
+
+
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   
+
 
 
 
