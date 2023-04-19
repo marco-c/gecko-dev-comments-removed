@@ -11,9 +11,11 @@
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 
 #include <array>
+#include <string>
 #include <tuple>
 
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
+#include "rtc_base/strings/string_builder.h"
 
 
 #include "test/gtest.h"
@@ -26,20 +28,46 @@ namespace {
 constexpr int kTestPitchPeriodsLow = 3 * kMinPitch48kHz / 2;
 constexpr int kTestPitchPeriodsHigh = (3 * kMinPitch48kHz + kMaxPitch48kHz) / 2;
 
-constexpr float kTestPitchGainsLow = 0.35f;
-constexpr float kTestPitchGainsHigh = 0.75f;
+constexpr float kTestPitchStrengthLow = 0.35f;
+constexpr float kTestPitchStrengthHigh = 0.75f;
 
-}  
+template <class T>
+std::string PrintTestIndexAndCpuFeatures(
+    const ::testing::TestParamInfo<T>& info) {
+  rtc::StringBuilder builder;
+  builder << info.index << "_" << info.param.cpu_features.ToString();
+  return builder.str();
+}
+
+
+std::vector<AvailableCpuFeatures> GetCpuFeaturesToTest() {
+  std::vector<AvailableCpuFeatures> v;
+  v.push_back({false, false, false});
+  AvailableCpuFeatures available = GetAvailableCpuFeatures();
+  if (available.avx2) {
+    AvailableCpuFeatures features(
+        {false, true, false});
+    v.push_back(features);
+  }
+  if (available.sse2) {
+    AvailableCpuFeatures features(
+        {true, false, false});
+    v.push_back(features);
+  }
+  return v;
+}
 
 
 
 TEST(RnnVadTest, ComputeSlidingFrameSquareEnergies24kHzWithinTolerance) {
+  const AvailableCpuFeatures cpu_features = GetAvailableCpuFeatures();
+
   PitchTestData test_data;
   std::array<float, kNumPitchBufSquareEnergies> computed_output;
   
   
   ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
-                                         computed_output);
+                                         computed_output, cpu_features);
   auto square_energies_view = test_data.GetPitchBufSquareEnergiesView();
   ExpectNearAbsolute({square_energies_view.data(), square_energies_view.size()},
                      computed_output, 1e-3f);
@@ -47,6 +75,8 @@ TEST(RnnVadTest, ComputeSlidingFrameSquareEnergies24kHzWithinTolerance) {
 
 
 TEST(RnnVadTest, ComputePitchPeriod12kHzBitExactness) {
+  const AvailableCpuFeatures cpu_features = GetAvailableCpuFeatures();
+
   PitchTestData test_data;
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
   Decimate2x(test_data.GetPitchBufView(), pitch_buf_decimated);
@@ -54,138 +84,141 @@ TEST(RnnVadTest, ComputePitchPeriod12kHzBitExactness) {
   
   
   auto auto_corr_view = test_data.GetPitchBufAutoCorrCoeffsView();
-  pitch_candidates =
-      ComputePitchPeriod12kHz(pitch_buf_decimated, auto_corr_view);
+  pitch_candidates = ComputePitchPeriod12kHz(pitch_buf_decimated,
+                                             auto_corr_view, cpu_features);
   EXPECT_EQ(pitch_candidates.best, 140);
   EXPECT_EQ(pitch_candidates.second_best, 142);
 }
 
 
 TEST(RnnVadTest, ComputePitchPeriod48kHzBitExactness) {
+  const AvailableCpuFeatures cpu_features = GetAvailableCpuFeatures();
+
   PitchTestData test_data;
   std::vector<float> y_energy(kRefineNumLags24kHz);
   rtc::ArrayView<float, kRefineNumLags24kHz> y_energy_view(y_energy.data(),
                                                            kRefineNumLags24kHz);
   ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
-                                         y_energy_view);
+                                         y_energy_view, cpu_features);
   
   
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
-                                    {280, 284}),
-            560);
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
-                                    {260, 284}),
-            568);
+  EXPECT_EQ(
+      ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
+                              {280, 284}, cpu_features),
+      560);
+  EXPECT_EQ(
+      ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
+                              {260, 284}, cpu_features),
+      568);
 }
 
-class PitchCandidatesParametrization
-    : public ::testing::TestWithParam<CandidatePitchPeriods> {
- protected:
-  CandidatePitchPeriods GetPitchCandidates() const { return GetParam(); }
-  CandidatePitchPeriods GetSwappedPitchCandidates() const {
-    CandidatePitchPeriods candidate = GetParam();
-    return {candidate.second_best, candidate.best};
-  }
+struct PitchCandidatesParameters {
+  CandidatePitchPeriods pitch_candidates;
+  AvailableCpuFeatures cpu_features;
 };
+
+class PitchCandidatesParametrization
+    : public ::testing::TestWithParam<PitchCandidatesParameters> {};
 
 
 
 TEST_P(PitchCandidatesParametrization,
        ComputePitchPeriod48kHzOrderDoesNotMatter) {
+  const PitchCandidatesParameters params = GetParam();
+  const CandidatePitchPeriods swapped_pitch_candidates{
+      params.pitch_candidates.second_best, params.pitch_candidates.best};
+
   PitchTestData test_data;
   std::vector<float> y_energy(kRefineNumLags24kHz);
   rtc::ArrayView<float, kRefineNumLags24kHz> y_energy_view(y_energy.data(),
                                                            kRefineNumLags24kHz);
   ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
-                                         y_energy_view);
-  EXPECT_EQ(ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
-                                    GetPitchCandidates()),
-            ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
-                                    GetSwappedPitchCandidates()));
+                                         y_energy_view, params.cpu_features);
+  EXPECT_EQ(
+      ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
+                              params.pitch_candidates, params.cpu_features),
+      ComputePitchPeriod48kHz(test_data.GetPitchBufView(), y_energy_view,
+                              swapped_pitch_candidates, params.cpu_features));
 }
 
-INSTANTIATE_TEST_SUITE_P(RnnVadTest,
-                         PitchCandidatesParametrization,
-                         ::testing::Values(CandidatePitchPeriods{0, 2},
-                                           CandidatePitchPeriods{260, 284},
-                                           CandidatePitchPeriods{280, 284},
-                                           CandidatePitchPeriods{
-                                               kInitialNumLags24kHz - 2,
-                                               kInitialNumLags24kHz - 1}));
+std::vector<PitchCandidatesParameters> CreatePitchCandidatesParameters() {
+  std::vector<PitchCandidatesParameters> v;
+  for (AvailableCpuFeatures cpu_features : GetCpuFeaturesToTest()) {
+    v.push_back({{0, 2}, cpu_features});
+    v.push_back({{260, 284}, cpu_features});
+    v.push_back({{280, 284}, cpu_features});
+    v.push_back(
+        {{kInitialNumLags24kHz - 2, kInitialNumLags24kHz - 1}, cpu_features});
+  }
+  return v;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    RnnVadTest,
+    PitchCandidatesParametrization,
+    ::testing::ValuesIn(CreatePitchCandidatesParameters()),
+    PrintTestIndexAndCpuFeatures<PitchCandidatesParameters>);
+
+struct ExtendedPitchPeriodSearchParameters {
+  int initial_pitch_period;
+  PitchInfo last_pitch;
+  PitchInfo expected_pitch;
+  AvailableCpuFeatures cpu_features;
+};
 
 class ExtendedPitchPeriodSearchParametrizaion
-    : public ::testing::TestWithParam<std::tuple<int, int, float, int, float>> {
- protected:
-  int GetInitialPitchPeriod() const { return std::get<0>(GetParam()); }
-  int GetLastPitchPeriod() const { return std::get<1>(GetParam()); }
-  float GetLastPitchStrength() const { return std::get<2>(GetParam()); }
-  int GetExpectedPitchPeriod() const { return std::get<3>(GetParam()); }
-  float GetExpectedPitchStrength() const { return std::get<4>(GetParam()); }
-};
+    : public ::testing::TestWithParam<ExtendedPitchPeriodSearchParameters> {};
 
 
 
 TEST_P(ExtendedPitchPeriodSearchParametrizaion,
        PeriodBitExactnessGainWithinTolerance) {
+  const ExtendedPitchPeriodSearchParameters params = GetParam();
+
   PitchTestData test_data;
   std::vector<float> y_energy(kRefineNumLags24kHz);
   rtc::ArrayView<float, kRefineNumLags24kHz> y_energy_view(y_energy.data(),
                                                            kRefineNumLags24kHz);
   ComputeSlidingFrameSquareEnergies24kHz(test_data.GetPitchBufView(),
-                                         y_energy_view);
+                                         y_energy_view, params.cpu_features);
   
   
   const auto computed_output = ComputeExtendedPitchPeriod48kHz(
-      test_data.GetPitchBufView(), y_energy_view, GetInitialPitchPeriod(),
-      {GetLastPitchPeriod(), GetLastPitchStrength()});
-  EXPECT_EQ(GetExpectedPitchPeriod(), computed_output.period);
-  EXPECT_NEAR(GetExpectedPitchStrength(), computed_output.strength, 1e-6f);
+      test_data.GetPitchBufView(), y_energy_view, params.initial_pitch_period,
+      params.last_pitch, params.cpu_features);
+  EXPECT_EQ(params.expected_pitch.period, computed_output.period);
+  EXPECT_NEAR(params.expected_pitch.strength, computed_output.strength, 1e-6f);
+}
+
+std::vector<ExtendedPitchPeriodSearchParameters>
+CreateExtendedPitchPeriodSearchParameters() {
+  std::vector<ExtendedPitchPeriodSearchParameters> v;
+  for (AvailableCpuFeatures cpu_features : GetCpuFeaturesToTest()) {
+    for (int last_pitch_period :
+         {kTestPitchPeriodsLow, kTestPitchPeriodsHigh}) {
+      for (float last_pitch_strength :
+           {kTestPitchStrengthLow, kTestPitchStrengthHigh}) {
+        v.push_back({kTestPitchPeriodsLow,
+                     {last_pitch_period, last_pitch_strength},
+                     {91, -0.0188608f},
+                     cpu_features});
+        v.push_back({kTestPitchPeriodsHigh,
+                     {last_pitch_period, last_pitch_strength},
+                     {475, -0.0904344f},
+                     cpu_features});
+      }
+    }
+  }
+  return v;
 }
 
 INSTANTIATE_TEST_SUITE_P(
     RnnVadTest,
     ExtendedPitchPeriodSearchParametrizaion,
-    ::testing::Values(std::make_tuple(kTestPitchPeriodsLow,
-                                      kTestPitchPeriodsLow,
-                                      kTestPitchGainsLow,
-                                      91,
-                                      -0.0188608f),
-                      std::make_tuple(kTestPitchPeriodsLow,
-                                      kTestPitchPeriodsLow,
-                                      kTestPitchGainsHigh,
-                                      91,
-                                      -0.0188608f),
-                      std::make_tuple(kTestPitchPeriodsLow,
-                                      kTestPitchPeriodsHigh,
-                                      kTestPitchGainsLow,
-                                      91,
-                                      -0.0188608f),
-                      std::make_tuple(kTestPitchPeriodsLow,
-                                      kTestPitchPeriodsHigh,
-                                      kTestPitchGainsHigh,
-                                      91,
-                                      -0.0188608f),
-                      std::make_tuple(kTestPitchPeriodsHigh,
-                                      kTestPitchPeriodsLow,
-                                      kTestPitchGainsLow,
-                                      475,
-                                      -0.0904344f),
-                      std::make_tuple(kTestPitchPeriodsHigh,
-                                      kTestPitchPeriodsLow,
-                                      kTestPitchGainsHigh,
-                                      475,
-                                      -0.0904344f),
-                      std::make_tuple(kTestPitchPeriodsHigh,
-                                      kTestPitchPeriodsHigh,
-                                      kTestPitchGainsLow,
-                                      475,
-                                      -0.0904344f),
-                      std::make_tuple(kTestPitchPeriodsHigh,
-                                      kTestPitchPeriodsHigh,
-                                      kTestPitchGainsHigh,
-                                      475,
-                                      -0.0904344f)));
+    ::testing::ValuesIn(CreateExtendedPitchPeriodSearchParameters()),
+    PrintTestIndexAndCpuFeatures<ExtendedPitchPeriodSearchParameters>);
 
+}  
 }  
 }  
 }  

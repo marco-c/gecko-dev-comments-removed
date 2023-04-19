@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 
 namespace webrtc {
@@ -65,7 +66,8 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 
 void ComputeSlidingFrameSquareEnergies24kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kRefineNumLags24kHz> y_energy);
+    rtc::ArrayView<float, kRefineNumLags24kHz> y_energy,
+    AvailableCpuFeatures cpu_features);
 
 
 struct CandidatePitchPeriods {
@@ -78,7 +80,8 @@ struct CandidatePitchPeriods {
 
 CandidatePitchPeriods ComputePitchPeriod12kHz(
     rtc::ArrayView<const float, kBufSize12kHz> pitch_buffer,
-    rtc::ArrayView<const float, kNumLags12kHz> auto_correlation);
+    rtc::ArrayView<const float, kNumLags12kHz> auto_correlation,
+    AvailableCpuFeatures cpu_features);
 
 
 
@@ -86,7 +89,8 @@ CandidatePitchPeriods ComputePitchPeriod12kHz(
 int ComputePitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
     rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
-    CandidatePitchPeriods pitch_candidates_24kHz);
+    CandidatePitchPeriods pitch_candidates_24kHz,
+    AvailableCpuFeatures cpu_features);
 
 struct PitchInfo {
   int period;
@@ -101,7 +105,8 @@ PitchInfo ComputeExtendedPitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
     rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
     int initial_pitch_period_48kHz,
-    PitchInfo last_pitch_48kHz);
+    PitchInfo last_pitch_48kHz,
+    AvailableCpuFeatures cpu_features);
 
 }  
 }  
