@@ -10,7 +10,6 @@
 
 package org.webrtc.voiceengine;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
@@ -46,7 +45,7 @@ public class WebRtcAudioTrack {
 
   
   
-  private static final int DEFAULT_USAGE = getDefaultUsageAttribute();
+  private static final int DEFAULT_USAGE = AudioAttributes.USAGE_VOICE_COMMUNICATION;
   private static int usageAttribute = DEFAULT_USAGE;
 
   
@@ -58,15 +57,6 @@ public class WebRtcAudioTrack {
     Logging.w(TAG, "Default usage attribute is changed from: "
         + DEFAULT_USAGE + " to " + usage);
     usageAttribute = usage;
-  }
-
-  private static int getDefaultUsageAttribute() {
-    if (Build.VERSION.SDK_INT >= 21) {
-      return AudioAttributes.USAGE_VOICE_COMMUNICATION;
-    } else {
-      
-      return 0;
-    }
   }
 
   private final long nativeAudioTrack;
@@ -154,7 +144,7 @@ public class WebRtcAudioTrack {
           byteBuffer.put(emptyBytes);
           byteBuffer.position(0);
         }
-        int bytesWritten = writeBytes(audioTrack, byteBuffer, sizeInBytes);
+        int bytesWritten = audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
         if (bytesWritten != sizeInBytes) {
           Logging.e(TAG, "AudioTrack.write played invalid number of bytes: " + bytesWritten);
           
@@ -185,14 +175,6 @@ public class WebRtcAudioTrack {
         } catch (IllegalStateException e) {
           Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
         }
-      }
-    }
-
-    private int writeBytes(AudioTrack audioTrack, ByteBuffer byteBuffer, int sizeInBytes) {
-      if (Build.VERSION.SDK_INT >= 21) {
-        return audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
-      } else {
-        return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
       }
     }
 
@@ -257,19 +239,12 @@ public class WebRtcAudioTrack {
       
       
       
-      if (Build.VERSION.SDK_INT >= 21) {
-        
-        
-        
-        
-        
-        audioTrack = createAudioTrackOnLollipopOrHigher(
-            sampleRate, channelConfig, minBufferSizeInBytes);
-      } else {
-        
-        audioTrack =
-            createAudioTrackOnLowerThanLollipop(sampleRate, channelConfig, minBufferSizeInBytes);
-      }
+      
+      
+      
+      
+      
+      audioTrack = createAudioTrack(sampleRate, channelConfig, minBufferSizeInBytes);
     } catch (IllegalArgumentException e) {
       reportWebRtcAudioTrackInitError(e.getMessage());
       releaseAudioResources();
@@ -353,18 +328,12 @@ public class WebRtcAudioTrack {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
-    if (isVolumeFixed()) {
+    if (audioManager.isVolumeFixed()) {
       Logging.e(TAG, "The device implements a fixed volume policy.");
       return false;
     }
     audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0);
     return true;
-  }
-
-  private boolean isVolumeFixed() {
-    if (Build.VERSION.SDK_INT < 21)
-      return false;
-    return audioManager.isVolumeFixed();
   }
 
   
@@ -387,10 +356,9 @@ public class WebRtcAudioTrack {
   
   
   
-  @TargetApi(21)
-  private static AudioTrack createAudioTrackOnLollipopOrHigher(
+  private static AudioTrack createAudioTrack(
       int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
-    Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
+    Logging.d(TAG, "createAudioTrack");
     
     
     final int nativeOutputSampleRate =
@@ -416,13 +384,6 @@ public class WebRtcAudioTrack {
         bufferSizeInBytes,
         AudioTrack.MODE_STREAM,
         AudioManager.AUDIO_SESSION_ID_GENERATE);
-  }
-
-  @SuppressWarnings("deprecation") 
-  private static AudioTrack createAudioTrackOnLowerThanLollipop(
-      int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
-    return new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRateInHz, channelConfig,
-        AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
   }
 
   private void logBufferSizeInFrames() {

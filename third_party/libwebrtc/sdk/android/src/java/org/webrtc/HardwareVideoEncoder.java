@@ -10,7 +10,6 @@
 
 package org.webrtc;
 
-import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -30,10 +29,6 @@ import org.webrtc.ThreadUtils.ThreadChecker;
 
 
 
-
-
-@TargetApi(19)
-@SuppressWarnings("deprecation") 
 class HardwareVideoEncoder implements VideoEncoder {
   private static final String TAG = "HardwareVideoEncoder";
 

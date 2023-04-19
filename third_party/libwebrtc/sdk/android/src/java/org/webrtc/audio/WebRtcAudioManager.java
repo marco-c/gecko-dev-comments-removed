@@ -64,7 +64,7 @@ class WebRtcAudioManager {
     
     
     
-    return Build.VERSION.SDK_INT >= 21 && isLowLatencyOutputSupported(context);
+    return isLowLatencyOutputSupported(context);
   }
 
   
@@ -85,18 +85,12 @@ class WebRtcAudioManager {
   }
 
   private static int getSampleRateForApiLevel(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 17) {
-      return DEFAULT_SAMPLE_RATE_HZ;
-    }
     String sampleRateString = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
     return (sampleRateString == null) ? DEFAULT_SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
   }
 
   
   private static int getLowLatencyFramesPerBuffer(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 17) {
-      return DEFAULT_FRAME_PER_BUFFER;
-    }
     String framesPerBuffer =
         audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
     return framesPerBuffer == null ? DEFAULT_FRAME_PER_BUFFER : Integer.parseInt(framesPerBuffer);

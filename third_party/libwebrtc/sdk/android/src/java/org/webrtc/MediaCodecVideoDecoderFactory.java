@@ -83,11 +83,6 @@ class MediaCodecVideoDecoderFactory implements VideoDecoderFactory {
   }
 
   private @Nullable MediaCodecInfo findCodecForType(VideoCodecMimeType type) {
-    
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-      return null;
-    }
-
     for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
       MediaCodecInfo info = null;
       try {
@@ -132,7 +127,7 @@ class MediaCodecVideoDecoderFactory implements VideoDecoderFactory {
   private boolean isH264HighProfileSupported(MediaCodecInfo info) {
     String name = info.getName();
     
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && name.startsWith(QCOM_PREFIX)) {
+    if (name.startsWith(QCOM_PREFIX)) {
       return true;
     }
     
