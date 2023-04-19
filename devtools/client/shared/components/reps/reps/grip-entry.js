@@ -17,20 +17,11 @@ define(function(require, exports, module) {
   const {
     MODE,
   } = require("devtools/client/shared/components/reps/reps/constants");
+
   
 
 
-
-
-
-
-
-
-
-
-
-
-  GripMapEntry.propTypes = {
+  GripEntry.propTypes = {
     object: PropTypes.object,
     mode: PropTypes.oneOf(Object.values(MODE)),
     onDOMNodeMouseOver: PropTypes.func,
@@ -38,7 +29,7 @@ define(function(require, exports, module) {
     onInspectIconClick: PropTypes.func,
   };
 
-  function GripMapEntry(props) {
+  function GripEntry(props) {
     const { object } = props;
 
     let { key, value } = object.preview;
@@ -90,7 +81,7 @@ define(function(require, exports, module) {
 
   
   module.exports = {
-    rep: wrapRender(GripMapEntry),
+    rep: wrapRender(GripEntry),
     createGripMapEntry,
     supportsObject,
   };
