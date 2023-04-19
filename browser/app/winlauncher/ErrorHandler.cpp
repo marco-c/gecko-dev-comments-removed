@@ -650,11 +650,7 @@ static bool DoSendPing(const PingThreadContext& aContext) {
   }
 
   
-  TempFileWriter& tempFile = *static_cast<TempFileWriter*>(json.WriteFunc());
-  if (!tempFile) {
-    return false;
-  }
-
+  TempFileWriter& tempFile = static_cast<TempFileWriter&>(json.WriteFunc());
   const std::wstring& fileName = tempFile.GetFileName();
 
   

@@ -471,7 +471,7 @@ class HandleReportAndFinishReportingCallbacks final
     
     
     
-    nsresult rv = static_cast<GZWriterWrapper*>(mWriter->WriteFunc())->Finish();
+    nsresult rv = static_cast<GZWriterWrapper&>(mWriter->WriteFunc()).Finish();
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!mFinishDumping) {

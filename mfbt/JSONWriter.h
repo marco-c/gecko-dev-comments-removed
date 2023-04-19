@@ -346,12 +346,15 @@ class JSONWriter {
   explicit JSONWriter(UniquePtr<JSONWriteFunc> aWriter,
                       CollectionStyle aStyle = MultiLineStyle)
       : mWriter(std::move(aWriter)), mNeedComma(), mNeedNewlines(), mDepth(0) {
+    MOZ_RELEASE_ASSERT(
+        mWriter,
+        "JSONWriter must be given a non-null UniquePtr<JSONWriteFunc>");
     NewVectorEntries(aStyle == MultiLineStyle);
   }
 
   
   
-  JSONWriteFunc* WriteFunc() const { return mWriter.get(); }
+  JSONWriteFunc& WriteFunc() const { return *mWriter.get(); }
 
   
   
