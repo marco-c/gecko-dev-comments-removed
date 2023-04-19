@@ -731,10 +731,11 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
   HideWindowChrome(aFullScreen);
 
   if (aFullScreen) {
-    if (!mOriginalBounds) {
-      mOriginalBounds = mozilla::MakeUnique<DesktopRect>();
+    if (!mSavedBounds) {
+      mSavedBounds = mozilla::MakeUnique<FullscreenSavedState>();
     }
-    *mOriginalBounds = GetScreenBounds() / GetDesktopToDeviceScale();
+    
+    mSavedBounds->windowRect = GetScreenBounds() / GetDesktopToDeviceScale();
 
     nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
     if (!screen) {
@@ -743,16 +744,80 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
 
     
     const auto screenRect = screen->GetRectDisplayPix();
+    mSavedBounds->screenRect = screenRect;
     doReposition(screenRect);
   } else {
-    if (!mOriginalBounds) {
+    if (!mSavedBounds) {
       
       
       MOZ_ASSERT(false, "fullscreen window did not have saved position");
       return;
     }
 
-    doReposition(*mOriginalBounds);
+    
+    
+    
+    
+    
+    
+
+    const DesktopRect currentWinRect =
+        GetScreenBounds() / GetDesktopToDeviceScale();
+
+    
+    
+    if (currentWinRect == DesktopRect(mSavedBounds->screenRect)) {
+      doReposition(mSavedBounds->windowRect);
+      return;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+    const auto splat = [](auto rect) {
+      return std::tuple(rect.X(), rect.Y(), rect.Width(), rect.Height());
+    };
+
+    
+    
+    using Range = std::pair<double, double>;
+    const auto remap = [](Range dst, Range src, double val) {
+      
+      const auto lerp = [](double lo, double hi, double t) {
+        return lo + t * (hi - lo);
+      };
+      const auto colerp = [](double lo, double hi, double mid) {
+        return (mid - lo) / (hi - lo);
+      };
+
+      const auto [dst_a, dst_b] = dst;
+      const auto [src_a, src_b] = src;
+      return lerp(dst_a, dst_b, colerp(src_a, src_b, val));
+    };
+
+    
+    const auto [px, py, pw, ph] = splat(mSavedBounds->windowRect);
+    
+    const auto [sx, sy, sw, sh] = splat(mSavedBounds->screenRect);
+    
+    const auto [tx, ty, tw, th] = splat(currentWinRect);
+
+    const double nx = remap({tx, tx + tw}, {sx, sx + sw}, px);
+    const double ny = remap({ty, ty + th}, {sy, sy + sh}, py);
+    const double nw = remap({0, tw}, {0, sw}, pw);
+    const double nh = remap({0, th}, {0, sh}, ph);
+
+    Resize(nx, ny, nw, nh, true);
   }
 }
 
