@@ -1,0 +1,52 @@
+
+
+
+"use strict";
+
+
+
+const {
+  LocalTabCommandsFactory,
+} = require("devtools/client/framework/local-tab-commands-factory");
+
+add_task(async function() {
+  await testTabDescriptorWithURL("data:text/html;charset=utf-8,foo");
+
+  
+  
+  await testTabDescriptorWithURL("about:robots");
+});
+
+async function testTabDescriptorWithURL(url) {
+  info(`Test TabDescriptor against url ${url}\n`);
+  const tab = await addTab(url);
+
+  const commands = await LocalTabCommandsFactory.createCommandsForTab(tab);
+  is(
+    commands.descriptorFront.localTab,
+    tab,
+    "TabDescriptor's localTab is set correctly"
+  );
+
+  info(
+    "Calling a second time createCommandsForTab with the same tab, will return the same commands"
+  );
+  const secondCommands = await LocalTabCommandsFactory.createCommandsForTab(
+    tab
+  );
+  is(commands, secondCommands, "second commands is the same");
+
+  
+  await commands.targetCommand.startListening();
+
+  info("Wait for descriptor's target");
+  const target = await commands.descriptorFront.getTarget();
+
+  info("Call any method to ensure that each target works");
+  await target.logInPage("foo");
+
+  info("Destroy the command");
+  await commands.destroy();
+
+  gBrowser.removeCurrentTab();
+}

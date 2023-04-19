@@ -799,7 +799,7 @@ function addA11yPanelTestsTask(tests, uri, msg, options) {
 
 
 async function closeTabToolboxAccessibility(tab = gBrowser.selectedTab) {
-  if (TabDescriptorFactory.isKnownTab(tab)) {
+  if (gDevTools.hasToolboxForTab(tab)) {
     await gDevTools.closeToolboxForTab(tab);
   }
 
