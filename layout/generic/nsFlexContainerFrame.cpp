@@ -1375,7 +1375,12 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
       
       
       
-      if (aChildFrame->GetAspectRatio()) {
+      if (aChildFrame->GetAspectRatio() ||
+          aChildFrame->IsFrameOfType(eReplacedSizing)) {
+        
+        
+        
+        
         
         
         
