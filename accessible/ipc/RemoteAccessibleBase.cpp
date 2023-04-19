@@ -346,16 +346,6 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
           break;
         }
 
-        if (acc == doc) {
-          
-          
-          
-          
-          
-          
-          continue;
-        }
-
         if (acc->Bounds().Contains(aX, aY)) {
           if (acc->IsDoc()) {
             

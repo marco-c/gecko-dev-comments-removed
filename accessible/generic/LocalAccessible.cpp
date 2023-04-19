@@ -3236,7 +3236,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         }
 
         LocalAccessible* acc = doc->GetAccessibleOrContainer(content);
-        if (!acc) {
+        
+        
+        
+        
+        if (!acc || acc == mDoc) {
           continue;
         }
 
