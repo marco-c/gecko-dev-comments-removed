@@ -438,13 +438,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   void DisallowBlockingCalls() { SetAllowBlockingCalls(false); }
 
-#ifdef WEBRTC_ANDROID
-  
-  
-  
-  void DEPRECATED_AllowBlockingCalls() { SetAllowBlockingCalls(true); }
-#endif
-
  protected:
   class CurrentThreadSetter : CurrentTaskQueueSetter {
    public:
