@@ -49,4 +49,9 @@
 #define RTC_FWD_DECL_OBJC_CLASS(classname) typedef struct objc_object classname
 #endif
 
+
+
+
+#define RTC_OBJC_HAVE_LEGACY_RTC_RTP_FRAGMENTATION_HEADER 1
+
 #endif  
