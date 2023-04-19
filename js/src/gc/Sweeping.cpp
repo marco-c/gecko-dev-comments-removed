@@ -2301,11 +2301,7 @@ void GCRuntime::endSweepPhase(bool destroyingRuntime) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DESTROY);
 
     
-
-
-
-
-
+    
     SweepScriptData(rt);
   }
 
