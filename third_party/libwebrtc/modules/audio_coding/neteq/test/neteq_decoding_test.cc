@@ -193,7 +193,7 @@ void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
   rtp_info->timestamp = timestamp;
   rtp_info->ssrc = 0x1234;     
   rtp_info->payloadType = 94;  
-  rtp_info->markerBit = 0;
+  rtp_info->markerBit = false;
 }
 
 void NetEqDecodingTest::PopulateCng(int frame_index,
@@ -205,7 +205,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   rtp_info->timestamp = timestamp;
   rtp_info->ssrc = 0x1234;     
   rtp_info->payloadType = 98;  
-  rtp_info->markerBit = 0;
+  rtp_info->markerBit = false;
   payload[0] = 64;   
   *payload_len = 1;  
 }

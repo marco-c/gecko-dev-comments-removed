@@ -508,7 +508,7 @@ void TestStereo::Run(TestPackStereo* channel,
   in_file_stereo_->FastForward(100);
   in_file_mono_->FastForward(100);
 
-  while (1) {
+  while (true) {
     
     
     if (percent_loss > 0) {

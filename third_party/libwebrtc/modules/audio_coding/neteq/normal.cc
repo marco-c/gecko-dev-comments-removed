@@ -159,7 +159,7 @@ int Normal::Process(const int16_t* input,
 
     if (cng_decoder) {
       
-      if (!cng_decoder->Generate(cng_output, 0)) {
+      if (!cng_decoder->Generate(cng_output, false)) {
         
         memset(cng_output, 0, sizeof(cng_output));
       }
