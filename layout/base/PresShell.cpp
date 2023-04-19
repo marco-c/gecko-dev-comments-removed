@@ -3707,17 +3707,16 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
   return NS_OK;
 }
 
-static nsMargin GetScrollMargin(const nsIContent* aContentToScrollTo,
-                                const nsIFrame* aFrame) {
-  MOZ_ASSERT(aContentToScrollTo->GetPrimaryFrame() == aFrame);
+static nsMargin GetScrollMargin(const nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
   
   
   
   
   
-  if (aContentToScrollTo->ChromeOnlyAccess()) {
+  if (aFrame->GetContent() && aFrame->GetContent()->ChromeOnlyAccess()) {
     if (const nsIContent* userContent =
-            aContentToScrollTo->GetChromeOnlyAccessSubtreeRootParent()) {
+            aFrame->GetContent()->GetChromeOnlyAccessSubtreeRootParent()) {
       if (const nsIFrame* frame = userContent->GetPrimaryFrame()) {
         return frame->StyleMargin()->GetScrollMargin();
       }
@@ -3743,20 +3742,6 @@ void PresShell::DoScrollContentIntoView() {
     return;
   }
 
-  
-  
-  
-  
-  nsIFrame* container = nsLayoutUtils::GetClosestFrameOfType(
-      frame->GetParent(), LayoutFrameType::Scroll);
-  if (!container) {
-    container = frame->PresShell()->GetRootFrame();
-    MOZ_DIAGNOSTIC_ASSERT(container);
-    if (!container) {
-      return;
-    }
-  }
-
   auto* data = static_cast<ScrollIntoViewData*>(
       mContentToScrollTo->GetProperty(nsGkAtoms::scrolling));
   if (MOZ_UNLIKELY(!data)) {
@@ -3764,65 +3749,70 @@ void PresShell::DoScrollContentIntoView() {
     return;
   }
 
-  
-  
-  const nsMargin scrollMargin = GetScrollMargin(mContentToScrollTo, frame);
-
-  const nsIFrame* target = frame;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsRect frameBounds;
-  bool haveRect = false;
-  bool useWholeLineHeightForInlines = data->mContentScrollVAxis.mWhenToScroll !=
-                                      WhenToScroll::IfNotFullyVisible;
-  {
-    AutoAssertNoDomMutations guard;  
-    nsIFrame* prevBlock = nullptr;
-    
-    
-    nsILineIterator* lines = nullptr;
-    
-    
-    int32_t curLine = 0;
-    do {
-      AccumulateFrameBounds(container, frame, useWholeLineHeightForInlines,
-                            frameBounds, haveRect, prevBlock, lines, curLine);
-    } while ((frame = frame->GetNextContinuation()));
-  }
-
-  ScrollFrameRectIntoView(container, frameBounds, scrollMargin,
-                          data->mContentScrollVAxis, data->mContentScrollHAxis,
-                          data->mContentToScrollToFlags, target);
+  ScrollFrameIntoView(frame, Nothing(), data->mContentScrollVAxis,
+                      data->mContentScrollHAxis, data->mContentToScrollToFlags);
 }
 
-bool PresShell::ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
-                                        const nsMargin& aMargin,
-                                        ScrollAxis aVertical,
-                                        ScrollAxis aHorizontal,
-                                        ScrollFlags aScrollFlags,
-                                        const nsIFrame* aTarget) {
-  if (aFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+bool PresShell::ScrollFrameIntoView(
+    nsIFrame* aTargetFrame, const Maybe<nsRect>& aKnownRectRelativeToTarget,
+    ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
+  if (aTargetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return false;
   }
 
-  bool didScroll = false;
   
-  nsRect rect = aRect;
-  nsIFrame* container = aFrame;
-  const nsIFrame* target = aTarget ? aTarget : aFrame;
+  
+  const nsMargin scrollMargin =
+      aKnownRectRelativeToTarget ? nsMargin() : GetScrollMargin(aTargetFrame);
+
+  nsIFrame* container = aTargetFrame;
+
+  
+  nsRect rect = [&] {
+    if (aKnownRectRelativeToTarget) {
+      return *aKnownRectRelativeToTarget;
+    }
+    
+    
+    
+    
+    nsIFrame* container = nsLayoutUtils::GetClosestFrameOfType(
+        aTargetFrame->GetParent(), LayoutFrameType::Scroll);
+    if (!container) {
+      container = aTargetFrame->PresShell()->GetRootFrame();
+      MOZ_DIAGNOSTIC_ASSERT(container);
+    }
+    nsRect targetFrameBounds;
+    {
+      bool haveRect = false;
+      const bool useWholeLineHeightForInlines =
+          aVertical.mWhenToScroll != WhenToScroll::IfNotFullyVisible;
+      AutoAssertNoDomMutations
+          guard;  
+      nsIFrame* prevBlock = nullptr;
+      
+      
+      nsILineIterator* lines = nullptr;
+      
+      
+      int32_t curLine = 0;
+      nsIFrame* frame = aTargetFrame;
+      do {
+        AccumulateFrameBounds(container, frame, useWholeLineHeightForInlines,
+                              targetFrameBounds, haveRect, prevBlock, lines,
+                              curLine);
+      } while ((frame = frame->GetNextContinuation()));
+    }
+
+    return targetFrameBounds;
+  }();
+
+  bool didScroll = false;
+  const nsIFrame* target = aTargetFrame;
   
   
   do {
-    nsIScrollableFrame* sf = do_QueryFrame(container);
-    if (sf) {
+    if (nsIScrollableFrame* sf = do_QueryFrame(container)) {
       nsPoint oldPosition = sf->GetScrollPosition();
       nsRect targetRect = rect;
       
@@ -3851,8 +3841,8 @@ bool PresShell::ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
 
       {
         AutoWeakFrame wf(container);
-        ScrollToShowRect(sf, container, target, targetRect, aMargin, aVertical,
-                         aHorizontal, aScrollFlags);
+        ScrollToShowRect(sf, container, target, targetRect,
+                         scrollMargin, aVertical, aHorizontal, aScrollFlags);
         if (!wf.IsAlive()) {
           return didScroll;
         }
