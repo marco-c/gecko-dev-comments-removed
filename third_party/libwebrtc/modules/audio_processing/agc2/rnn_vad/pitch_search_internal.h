@@ -18,7 +18,6 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
-#include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -30,12 +29,6 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 
 
 
-float ComputePitchGainThreshold(int candidate_pitch_period,
-                                int pitch_period_ratio,
-                                int initial_pitch_period,
-                                float initial_pitch_gain,
-                                int prev_pitch_period,
-                                float prev_pitch_gain);
 
 
 
@@ -46,9 +39,33 @@ float ComputePitchGainThreshold(int candidate_pitch_period,
 
 
 
-void ComputeSlidingFrameSquareEnergies(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-    rtc::ArrayView<float, kMaxPitch24kHz + 1> yy_values);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ComputeSlidingFrameSquareEnergies24kHz(
+    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    rtc::ArrayView<float, kRefineNumLags24kHz> yy_values);
 
 
 struct CandidatePitchPeriods {
@@ -59,24 +76,28 @@ struct CandidatePitchPeriods {
 
 
 
-CandidatePitchPeriods FindBestPitchPeriods(
-    rtc::ArrayView<const float> auto_corr,
-    rtc::ArrayView<const float> pitch_buf,
-    int max_pitch_period);
+CandidatePitchPeriods ComputePitchPeriod12kHz(
+    rtc::ArrayView<const float, kBufSize12kHz> pitch_buffer,
+    rtc::ArrayView<const float, kNumLags12kHz> auto_correlation);
+
+
+
+int ComputePitchPeriod48kHz(
+    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    CandidatePitchPeriods pitch_candidates_24kHz);
+
+struct PitchInfo {
+  int period;
+  float strength;
+};
 
 
 
 
-int RefinePitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-    CandidatePitchPeriods pitch_candidates_inverted_lags);
-
-
-
-PitchInfo CheckLowerPitchPeriodsAndComputePitchGain(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
+PitchInfo ComputeExtendedPitchPeriod48kHz(
+    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
     int initial_pitch_period_48kHz,
-    PitchInfo prev_pitch_48kHz);
+    PitchInfo last_pitch_48kHz);
 
 }  
 }  
