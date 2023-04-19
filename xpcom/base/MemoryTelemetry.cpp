@@ -276,7 +276,11 @@ nsresult MemoryTelemetry::GatherReports(
 #endif
         RECORD(MEMORY_RESIDENT_FAST, ResidentFast, UNITS_BYTES);
         RECORD(MEMORY_RESIDENT_PEAK, ResidentPeak, UNITS_BYTES);
+
+
+#ifndef XP_MACOSX
         RECORD(MEMORY_UNIQUE, ResidentUnique, UNITS_BYTES);
+#endif
         RECORD(MEMORY_HEAP_ALLOCATED, HeapAllocated, UNITS_BYTES);
         RECORD(MEMORY_HEAP_OVERHEAD_FRACTION, HeapOverheadFraction,
                UNITS_PERCENTAGE);
