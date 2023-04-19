@@ -221,6 +221,29 @@ public class ContentBlocking {
         getSettings().setCookiePurging(enabled);
         return this;
       }
+
+      
+
+
+
+
+
+      public @NonNull Builder cookieBannerHandlingMode(final @CBCookieBannerMode int mode) {
+        getSettings().setCookieBannerMode(mode);
+        return this;
+      }
+
+      
+
+
+
+
+
+      public @NonNull Builder cookieBannerHandlingModePrivateBrowsing(
+          final @CBCookieBannerMode int mode) {
+        getSettings().setCookieBannerModePrivateBrowsing(mode);
+        return this;
+      }
     }
 
      final Pref<String> mAt =
@@ -263,6 +286,14 @@ public class ContentBlocking {
         new Pref<Boolean>("privacy.trackingprotection.annotate_channels", false);
      final Pref<Boolean> mEtpStrict =
         new Pref<Boolean>("privacy.annotate_channels.strict_list.enabled", false);
+
+     final Pref<Integer> mCbhMode =
+        new Pref<Integer>(
+            "cookiebanners.service.mode", CookieBannerMode.COOKIE_BANNER_MODE_DISABLED);
+     final Pref<Integer> mCbhModePrivateBrowsing =
+        new Pref<Integer>(
+            "cookiebanners.service.mode.privateBrowsing",
+            CookieBannerMode.COOKIE_BANNER_MODE_REJECT);
 
      final Pref<String> mSafeBrowsingMalwareTable =
         new Pref<>(
@@ -576,6 +607,50 @@ public class ContentBlocking {
     public @NonNull Settings setCookiePurging(final boolean enabled) {
       mCookiePurging.commit(enabled);
       return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setCookieBannerMode(final @CBCookieBannerMode int mode) {
+      mCbhMode.commit(mode);
+      return this;
+    }
+
+    
+
+
+
+
+    @SuppressLint("WrongConstant")
+    public @CBCookieBannerMode int getCookieBannerMode() {
+      return mCbhMode.get();
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setCookieBannerModePrivateBrowsing(
+        final @CBCookieBannerMode int mode) {
+      mCbhModePrivateBrowsing.commit(mode);
+      return this;
+    }
+
+    
+
+
+
+
+    @SuppressLint("WrongConstant")
+    public @CBCookieBannerMode int getCookieBannerModePrivateBrowsing() {
+      return mCbhModePrivateBrowsing.get();
     }
 
     public static final Parcelable.Creator<Settings> CREATOR =
@@ -1551,4 +1626,27 @@ public class ContentBlocking {
     
     return CookieBehavior.ACCEPT_ALL;
   }
+
+  
+
+  public static class CookieBannerMode {
+    
+    public static final int COOKIE_BANNER_MODE_DISABLED = 0;
+
+    
+    public static final int COOKIE_BANNER_MODE_REJECT = 1;
+
+    
+    public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
+
+    protected CookieBannerMode() {}
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    CookieBannerMode.COOKIE_BANNER_MODE_DISABLED,
+    CookieBannerMode.COOKIE_BANNER_MODE_REJECT,
+    CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT
+  })
+  public @interface CBCookieBannerMode {}
 }
