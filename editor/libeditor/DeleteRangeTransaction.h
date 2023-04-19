@@ -8,11 +8,9 @@
 
 #include "EditAggregateTransaction.h"
 
-#include "EditorBase.h"
 #include "EditorForwards.h"
 
-#include "mozilla/RefPtr.h"
-
+#include "mozilla/RangeBoundary.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
 #include "nsIEditor.h"
@@ -90,8 +88,14 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
 
-  nsresult AppendTransactionsToDeleteIn(
-      const EditorRawDOMRange& aRangeToDelete);
+
+
+
+
+  nsresult CreateTxnsToDeleteBetween(const RawRangeBoundary& aStart,
+                                     const RawRangeBoundary& aEnd);
+
+  nsresult CreateTxnsToDeleteNodesBetween(nsRange* aRangeToDelete);
 
   
 
@@ -101,10 +105,6 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
 
-  nsresult AppendTransactionsToDeleteNodesWhoseEndBoundaryIn(
-      const EditorRawDOMRange& aRangeToDelete);
-
-  
 
 
 
@@ -118,16 +118,8 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
 
-
-
-
-
-
-
-
-  nsresult AppendTransactionToDeleteText(
-      const EditorRawDOMPoint& aMaybePointInText,
-      nsIEditor::EDirection aAction);
+  nsresult CreateTxnsToDeleteContent(const RawRangeBoundary& aPoint,
+                                     nsIEditor::EDirection aAction);
 
   
   RefPtr<EditorBase> mEditorBase;

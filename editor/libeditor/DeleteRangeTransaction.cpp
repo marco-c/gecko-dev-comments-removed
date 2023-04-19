@@ -125,58 +125,38 @@ NS_IMETHODIMP DeleteRangeTransaction::DoTransaction() {
   MaybeExtendDeletingRangeWithSurroundingWhitespace(*rangeToDelete);
 
   
-  
-  
-  
-  {
-    EditorRawDOMRange extendedRange(*rangeToDelete);
-    MOZ_ASSERT(extendedRange.IsPositionedAndValid());
+  const RangeBoundary& startRef = rangeToDelete->StartRef();
+  const RangeBoundary& endRef = rangeToDelete->EndRef();
+  MOZ_ASSERT(startRef.IsSetAndValid());
+  MOZ_ASSERT(endRef.IsSetAndValid());
 
-    if (extendedRange.InSameContainer()) {
-      
-      nsresult rv = AppendTransactionsToDeleteIn(extendedRange);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "DeleteRangeTransaction::AppendTransactionsToDeleteIn() failed");
-        return rv;
-      }
-    } else {
-      
-      
-      
-      for (EditorRawDOMPoint endOfRange = extendedRange.EndRef();
-           endOfRange.IsInContentNode() && endOfRange.IsEndOfContainer() &&
-           endOfRange.GetContainer() != extendedRange.StartRef().GetContainer();
-           endOfRange = extendedRange.EndRef()) {
-        extendedRange.SetEnd(
-            EditorRawDOMPoint::After(*endOfRange.ContainerAs<nsIContent>()));
-      }
-
-      
-      
-      nsresult rv = AppendTransactionToDeleteText(extendedRange.StartRef(),
-                                                  nsIEditor::eNext);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "DeleteRangeTransaction::AppendTransactionToDeleteText() failed");
-        return rv;
-      }
-      
-      rv = AppendTransactionsToDeleteNodesWhoseEndBoundaryIn(extendedRange);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "DeleteRangeTransaction::"
-            "AppendTransactionsToDeleteNodesWhoseEndBoundaryIn() failed");
-        return rv;
-      }
-      
-      rv = AppendTransactionToDeleteText(extendedRange.EndRef(),
-                                         nsIEditor::ePrevious);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "DeleteRangeTransaction::AppendTransactionToDeleteText() failed");
-        return rv;
-      }
+  if (startRef.Container() == endRef.Container()) {
+    
+    nsresult rv = CreateTxnsToDeleteBetween(startRef.AsRaw(), endRef.AsRaw());
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteBetween() failed");
+      return rv;
+    }
+  } else {
+    
+    
+    nsresult rv = CreateTxnsToDeleteContent(startRef.AsRaw(), nsIEditor::eNext);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteContent() failed");
+      return rv;
+    }
+    
+    rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween() failed");
+      return rv;
+    }
+    
+    rv = CreateTxnsToDeleteContent(endRef.AsRaw(), nsIEditor::ePrevious);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteContent() failed");
+      return rv;
     }
   }
 
@@ -198,8 +178,7 @@ NS_IMETHODIMP DeleteRangeTransaction::DoTransaction() {
   }
 
   OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  rv = editorBase->CollapseSelectionTo(
-      EditorRawDOMPoint(rangeToDelete->StartRef()));
+  rv = editorBase->CollapseSelectionTo(EditorRawDOMPoint(startRef));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
   return rv;
@@ -243,19 +222,20 @@ NS_IMETHODIMP DeleteRangeTransaction::RedoTransaction() {
   return rv;
 }
 
-nsresult DeleteRangeTransaction::AppendTransactionsToDeleteIn(
-    const EditorRawDOMRange& aRangeToDelete) {
-  if (NS_WARN_IF(!aRangeToDelete.IsPositionedAndValid())) {
+nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
+    const RawRangeBoundary& aStart, const RawRangeBoundary& aEnd) {
+  if (NS_WARN_IF(!aStart.IsSetAndValid()) ||
+      NS_WARN_IF(!aEnd.IsSetAndValid()) ||
+      NS_WARN_IF(aStart.Container() != aEnd.Container())) {
     return NS_ERROR_INVALID_ARG;
   }
-  MOZ_ASSERT(aRangeToDelete.InSameContainer());
 
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   
-  if (Text* textNode = aRangeToDelete.StartRef().GetContainerAs<Text>()) {
+  if (Text* textNode = Text::FromNode(aStart.Container())) {
     if (mEditorBase->IsHTMLEditor() &&
         NS_WARN_IF(
             !EditorUtils::IsEditableContent(*textNode, EditorType::HTML))) {
@@ -264,18 +244,20 @@ nsresult DeleteRangeTransaction::AppendTransactionsToDeleteIn(
     }
     
     uint32_t textLengthToDelete;
-    if (aRangeToDelete.Collapsed()) {
+    if (aStart == aEnd) {
       textLengthToDelete = 1;
     } else {
       textLengthToDelete =
-          aRangeToDelete.EndRef().Offset() - aRangeToDelete.StartRef().Offset();
+          *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) -
+          *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
       MOZ_DIAGNOSTIC_ASSERT(textLengthToDelete > 0);
     }
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode,
-                                           aRangeToDelete.StartRef().Offset(),
-                                           textLengthToDelete);
+        DeleteTextTransaction::MaybeCreate(
+            *mEditorBase, *textNode,
+            *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets),
+            textLengthToDelete);
     
     
     if (!deleteTextTransaction) {
@@ -295,8 +277,8 @@ nsresult DeleteRangeTransaction::AppendTransactionsToDeleteIn(
   
   
   
-  for (nsIContent* child = aRangeToDelete.StartRef().GetChild();
-       child && child != aRangeToDelete.EndRef().GetChild();
+  for (nsIContent* child = aStart.GetChildAtOffset();
+       child && child != aEnd.GetChildAtOffset();
        child = child->GetNextSibling()) {
     if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(*child))) {
       continue;  
@@ -314,9 +296,9 @@ nsresult DeleteRangeTransaction::AppendTransactionsToDeleteIn(
   return NS_OK;
 }
 
-nsresult DeleteRangeTransaction::AppendTransactionToDeleteText(
-    const EditorRawDOMPoint& aMaybePointInText, nsIEditor::EDirection aAction) {
-  if (NS_WARN_IF(!aMaybePointInText.IsSetAndValid())) {
+nsresult DeleteRangeTransaction::CreateTxnsToDeleteContent(
+    const RawRangeBoundary& aPoint, nsIEditor::EDirection aAction) {
+  if (NS_WARN_IF(!aPoint.IsSetAndValid())) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -324,19 +306,19 @@ nsresult DeleteRangeTransaction::AppendTransactionToDeleteText(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (!aMaybePointInText.IsInTextNode()) {
+  Text* textNode = Text::FromNode(aPoint.Container());
+  if (!textNode) {
     return NS_OK;
   }
 
   
-  Text& textNode = *aMaybePointInText.ContainerAs<Text>();
   uint32_t startOffset, numToDelete;
   if (nsIEditor::eNext == aAction) {
-    startOffset = aMaybePointInText.Offset();
-    numToDelete = textNode.TextDataLength() - startOffset;
+    startOffset = *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+    numToDelete = aPoint.Container()->Length() - startOffset;
   } else {
     startOffset = 0;
-    numToDelete = aMaybePointInText.Offset();
+    numToDelete = *aPoint.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
   }
 
   if (!numToDelete) {
@@ -344,12 +326,13 @@ nsresult DeleteRangeTransaction::AppendTransactionToDeleteText(
   }
 
   RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      DeleteTextTransaction::MaybeCreate(*mEditorBase, textNode, startOffset,
+      DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode, startOffset,
                                          numToDelete);
+  NS_WARNING_ASSERTION(deleteTextTransaction,
+                       "DeleteTextTransaction::MaybeCreate() failed");
   
   
-  if (MOZ_UNLIKELY(!deleteTextTransaction)) {
-    NS_WARNING("DeleteTextTransaction::MaybeCreate() failed");
+  if (!deleteTextTransaction) {
     return NS_ERROR_FAILURE;
   }
   DebugOnly<nsresult> rvIgnored = AppendChild(deleteTextTransaction);
@@ -359,16 +342,14 @@ nsresult DeleteRangeTransaction::AppendTransactionToDeleteText(
   return NS_OK;
 }
 
-nsresult
-DeleteRangeTransaction::AppendTransactionsToDeleteNodesWhoseEndBoundaryIn(
-    const EditorRawDOMRange& aRangeToDelete) {
+nsresult DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween(
+    nsRange* aRangeToDelete) {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   ContentSubtreeIterator subtreeIter;
-  nsresult rv = subtreeIter.Init(aRangeToDelete.StartRef().ToRawRangeBoundary(),
-                                 aRangeToDelete.EndRef().ToRawRangeBoundary());
+  nsresult rv = subtreeIter.Init(aRangeToDelete);
   if (NS_FAILED(rv)) {
     NS_WARNING("ContentSubtreeIterator::Init() failed");
     return rv;
