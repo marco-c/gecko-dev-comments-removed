@@ -202,16 +202,6 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   void DoSecurityCheck(nsIPrincipal* aPrincipal, bool forceWriteOnly,
                        bool CORSUsed);
 
-  
-  
-  
-
-  
-  
-  
-  
-  NS_IMETHOD SetIsIPC(bool isIPC) = 0;
-
  protected:
   RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
   RefPtr<mozilla::dom::OffscreenCanvas> mOffscreenCanvas;

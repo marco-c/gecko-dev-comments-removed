@@ -459,7 +459,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   Watchable<FrameCaptureState>* GetFrameCaptureState() override {
     return &mFrameCaptureState;
   }
-  NS_IMETHOD SetIsIPC(bool aIsIPC) override;
   
   void Redraw(const mozilla::gfx::Rect& aR);
   NS_IMETHOD Redraw(const gfxRect& aR) override {
