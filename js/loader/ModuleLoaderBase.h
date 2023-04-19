@@ -49,6 +49,27 @@ class ModuleLoaderBase;
 class ModuleLoadRequest;
 class ModuleScript;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ScriptLoaderInterface : public nsISupports {
  public:
   
