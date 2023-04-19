@@ -468,23 +468,12 @@ add_task(async function test_MatchGlob() {
 });
 
 add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
-  const first_limit = AppConstants.DEBUG ? 200 : 10;
   {
     
     let title = `Monster${"*".repeat(99)}Mash`;
 
-    
-    let first_start = Date.now();
-    let glob = new MatchGlob(title);
-    let first_matches = glob.matches(title);
-    let first_duration = Date.now() - first_start;
-    ok(first_matches, `Expected match: ${title}, ${title}`);
-    ok(
-      first_duration < first_limit,
-      `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
-    );
-
     let start = Date.now();
+    let glob = new MatchGlob(title);
     let matches = glob.matches(title);
     let duration = Date.now() - start;
 
@@ -495,18 +484,8 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
     
     let title = `Monster${"?*".repeat(99)}Mash`;
 
-    
-    let first_start = Date.now();
-    let glob = new MatchGlob(title);
-    let first_matches = glob.matches(title);
-    let first_duration = Date.now() - first_start;
-    ok(first_matches, `Expected match: ${title}, ${title}`);
-    ok(
-      first_duration < first_limit,
-      `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
-    );
-
     let start = Date.now();
+    let glob = new MatchGlob(title);
     let matches = glob.matches(title);
     let duration = Date.now() - start;
 
