@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_ScriptLoadInfo_h__
-#define mozilla_dom_workers_ScriptLoadInfo_h__
+#ifndef mozilla_dom_workers_WorkerLoadContext_h__
+#define mozilla_dom_workers_WorkerLoadContext_h__
 
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
@@ -27,11 +27,11 @@ namespace workerinternals::loader {
 class CacheCreator;
 }
 
-class ScriptLoadInfo : public JS::loader::LoadContextBase {
+class WorkerLoadContext : public JS::loader::LoadContextBase {
  public:
-  explicit ScriptLoadInfo(const nsString& aURL);
+  explicit WorkerLoadContext(const nsString& aURL);
 
-  ~ScriptLoadInfo();
+  ~WorkerLoadContext();
 
   nsString mURL;
 
