@@ -506,14 +506,14 @@ void SMRegExpMacroAssembler::CheckPosition(int cp_offset,
 
 
 
-bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
-                                                        Label* on_no_match) {
+bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(
+    StandardCharacterSet type, Label* on_no_match) {
   js::jit::Label* no_match = LabelOrBacktrack(on_no_match);
 
   
   
   switch (type) {
-    case 's': {
+    case StandardCharacterSet::kWhitespace: {
       
       if (mode_ != LATIN1) {
         return false;
@@ -537,21 +537,21 @@ bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
       masm_.bind(&success);
       return true;
     }
-    case 'S':
+    case StandardCharacterSet::kNotWhitespace:
       
       return false;
-    case 'd':
+    case StandardCharacterSet::kDigit:
       
       masm_.computeEffectiveAddress(Address(current_character_, -'0'), temp0_);
       masm_.branch32(Assembler::Above, temp0_, Imm32('9' - '0'), no_match);
       return true;
-    case 'D':
+    case StandardCharacterSet::kNotDigit:
       
       masm_.computeEffectiveAddress(Address(current_character_, -'0'), temp0_);
       masm_.branch32(Assembler::BelowOrEqual, temp0_, Imm32('9' - '0'),
                      no_match);
       return true;
-    case '.':
+    case StandardCharacterSet::kNotLineTerminator:
       
       
       
@@ -574,7 +574,7 @@ bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
                        no_match);
       }
       return true;
-    case 'w':
+    case StandardCharacterSet::kWord:
       
       
       
@@ -590,7 +590,7 @@ bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
           BaseIndex(temp0_, current_character_, js::jit::TimesOne), temp0_);
       masm_.branchTest32(Assembler::Zero, temp0_, temp0_, no_match);
       return true;
-    case 'W': {
+    case StandardCharacterSet::kNotWord: {
       
       js::jit::Label done;
       if (mode_ != LATIN1) {
@@ -609,10 +609,10 @@ bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
       
       
       
-    case '*':
+    case StandardCharacterSet::kEverything:
       
       return true;
-    case 'n':
+    case StandardCharacterSet::kLineTerminator:
       
       masm_.move32(current_character_, temp0_);
       masm_.xor32(Imm32(0x01), temp0_);
@@ -634,11 +634,8 @@ bool SMRegExpMacroAssembler::CheckSpecialCharacterClass(uc16 type,
         masm_.bind(&done);
       }
       return true;
-
-      
-    default:
-      return false;
   }
+  return false;
 }
 
 void SMRegExpMacroAssembler::Fail() {
@@ -1284,7 +1281,7 @@ bool SMRegExpMacroAssembler::GrowBacktrackStack(RegExpStack* regexp_stack) {
   return !!regexp_stack->EnsureCapacity(size * 2);
 }
 
-bool SMRegExpMacroAssembler::CanReadUnaligned() {
+bool SMRegExpMacroAssembler::CanReadUnaligned() const {
 #if defined(JS_CODEGEN_ARM)
   return !js::jit::HasAlignmentFault();
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
