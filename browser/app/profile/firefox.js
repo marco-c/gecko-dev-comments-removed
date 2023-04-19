@@ -773,7 +773,11 @@ pref("security.allow_eval_in_parent_process", false);
 pref("security.allow_parent_unrestricted_js_loads", false);
 
 
-pref("browser.tabs.unloadOnLowMemory", true);
+#if defined(XP_MACOSX) || defined(XP_WIN)
+    pref("browser.tabs.unloadOnLowMemory", true);
+#else
+    pref("browser.tabs.unloadOnLowMemory", false);
+#endif
 
 
 
