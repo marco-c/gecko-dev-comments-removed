@@ -1464,7 +1464,7 @@ void nsWindow::WaylandPopupHierarchyCalculatePositions() {
     if (popup->mPopupContextMenu && !popup->mPopupAnchored) {
       LOG("  popup [%p] is first context menu", popup);
       popup->mRelativePopupPosition = popup->mPopupPosition;
-    } else if (popup->mWaylandPopupPrev->mWaylandToplevel == nullptr) {
+    } else if (popup->WaylandPopupIsFirst()) {
       LOG("  popup [%p] has toplevel as parent", popup);
       popup->mRelativePopupPosition = popup->mPopupPosition;
     } else {
@@ -1534,6 +1534,10 @@ bool nsWindow::IsWidgetOverflowWindow() {
     return nodeId.Equals("widget-overflow");
   }
   return false;
+}
+
+bool nsWindow::WaylandPopupIsFirst() {
+  return !mWaylandPopupPrev || !mWaylandPopupPrev->mWaylandToplevel;
 }
 
 GdkPoint nsWindow::WaylandGetParentPosition() {
@@ -1835,9 +1839,8 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       
       
       
-      
       bool useIt = mPopupType == ePopupTypeTooltip || popup->mPopupAnchored ||
-                   !popup->mWaylandPopupPrev->mWaylandToplevel;
+                   popup->WaylandPopupIsFirst();
       if (!useIt) {
         return false;
       }
@@ -1853,7 +1856,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
     LOG("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
         "move-to-rect %d\n",
         popup, popup->mPopupMatchesLayout, popup->mPopupAnchored,
-        popup->mWaylandPopupPrev->mWaylandToplevel == nullptr, useMoveToRect);
+        popup->WaylandPopupIsFirst(), useMoveToRect);
 
     popup->mPopupUseMoveToRect = useMoveToRect;
     popup->WaylandPopupMove();
@@ -2469,7 +2472,7 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor) {
   
   
   LayoutDeviceIntRect anchorRect = mPopupMoveToRectParams.mAnchorRect;
-  if (mWaylandPopupPrev->mWaylandToplevel) {
+  if (!WaylandPopupIsFirst()) {
     GdkPoint parent = WaylandGetParentPosition();
     LOG("  subtract parent position from anchor [%d, %d]\n", parent.x,
         parent.y);

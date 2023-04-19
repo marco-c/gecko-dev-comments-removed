@@ -814,6 +814,8 @@ class nsWindow final : public nsBaseWidget {
   bool WaylandPopupIsMenu();
   bool WaylandPopupIsContextMenu();
   bool WaylandPopupIsPermanent();
+  
+  bool WaylandPopupIsFirst();
   bool IsWidgetOverflowWindow();
   void RemovePopupFromHierarchyList();
   void ShowWaylandPopupWindow();
