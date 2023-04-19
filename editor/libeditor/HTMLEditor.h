@@ -1032,7 +1032,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Result<EditActionResult, nsresult> CanHandleHTMLEditSubAction() const;
+  enum class CheckSelectionInReplacedElement { Yes, OnlyWhenNotInSameNode };
+  Result<EditActionResult, nsresult> CanHandleHTMLEditSubAction(
+      CheckSelectionInReplacedElement aCheckSelectionInReplacedElement =
+          CheckSelectionInReplacedElement::Yes) const;
 
   
 
