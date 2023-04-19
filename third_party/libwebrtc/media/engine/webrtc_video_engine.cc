@@ -716,7 +716,8 @@ WebRtcVideoChannel::WebRtcVideoChannel(
                     "WebRTC-Video-BufferPacketsWithUnknownSsrc")
               ? new UnhandledPacketsBuffer()
               : nullptr) {
-  RTC_DCHECK(thread_checker_.IsCurrent());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  network_thread_checker_.Detach();
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
@@ -1684,67 +1685,75 @@ void WebRtcVideoChannel::FillSendAndReceiveCodecStats(
 
 void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                           int64_t packet_time_us) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  const webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
-                                       packet_time_us);
-  switch (delivery_result) {
-    case webrtc::PacketReceiver::DELIVERY_OK:
-      return;
-    case webrtc::PacketReceiver::DELIVERY_PACKET_ERROR:
-      return;
-    case webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC:
-      break;
-  }
-
-  uint32_t ssrc = 0;
-  if (!GetRtpSsrc(packet.cdata(), packet.size(), &ssrc)) {
-    return;
-  }
-
-  if (unknown_ssrc_packet_buffer_) {
-    unknown_ssrc_packet_buffer_->AddPacket(ssrc, packet_time_us, packet);
-    return;
-  }
-
-  if (discard_unknown_ssrc_packets_) {
-    return;
-  }
-
-  int payload_type = 0;
-  if (!GetRtpPayloadType(packet.cdata(), packet.size(), &payload_type)) {
-    return;
-  }
-
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
   
   
   
   
   
-  for (auto& codec : recv_codecs_) {
-    if (payload_type == codec.rtx_payload_type ||
-        payload_type == codec.ulpfec.red_rtx_payload_type ||
-        payload_type == codec.ulpfec.ulpfec_payload_type) {
-      return;
-    }
-  }
-  if (payload_type == recv_flexfec_payload_type_) {
-    return;
-  }
+  worker_thread_->PostTask(
+      ToQueuedTask(task_safety_, [this, packet, packet_time_us] {
+        RTC_DCHECK_RUN_ON(&thread_checker_);
+        const webrtc::PacketReceiver::DeliveryStatus delivery_result =
+            call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
+                                             packet_time_us);
+        switch (delivery_result) {
+          case webrtc::PacketReceiver::DELIVERY_OK:
+            return;
+          case webrtc::PacketReceiver::DELIVERY_PACKET_ERROR:
+            return;
+          case webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC:
+            break;
+        }
 
-  switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
-    case UnsignalledSsrcHandler::kDropPacket:
-      return;
-    case UnsignalledSsrcHandler::kDeliverPacket:
-      break;
-  }
+        uint32_t ssrc = 0;
+        if (!GetRtpSsrc(packet.cdata(), packet.size(), &ssrc)) {
+          return;
+        }
 
-  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
-                                       packet_time_us) !=
-      webrtc::PacketReceiver::DELIVERY_OK) {
-    RTC_LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
-    return;
-  }
+        if (unknown_ssrc_packet_buffer_) {
+          unknown_ssrc_packet_buffer_->AddPacket(ssrc, packet_time_us, packet);
+          return;
+        }
+
+        if (discard_unknown_ssrc_packets_) {
+          return;
+        }
+
+        int payload_type = 0;
+        if (!GetRtpPayloadType(packet.cdata(), packet.size(), &payload_type)) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        for (auto& codec : recv_codecs_) {
+          if (payload_type == codec.rtx_payload_type ||
+              payload_type == codec.ulpfec.red_rtx_payload_type ||
+              payload_type == codec.ulpfec.ulpfec_payload_type) {
+            return;
+          }
+        }
+        if (payload_type == recv_flexfec_payload_type_) {
+          return;
+        }
+
+        switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
+          case UnsignalledSsrcHandler::kDropPacket:
+            return;
+          case UnsignalledSsrcHandler::kDeliverPacket:
+            break;
+        }
+
+        if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
+                                             packet_time_us) !=
+            webrtc::PacketReceiver::DELIVERY_OK) {
+          RTC_LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
+        }
+      }));
 }
 
 void WebRtcVideoChannel::BackfillBufferedPackets(
