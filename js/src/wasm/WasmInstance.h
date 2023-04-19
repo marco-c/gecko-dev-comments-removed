@@ -359,6 +359,11 @@ class alignas(16) Instance {
                                uint32_t dstOffset, uint32_t srcOffset,
                                uint32_t len);
 
+#ifdef ENABLE_WASM_GC
+  
+  RttValue* rttCanon(uint32_t typeIndex) const;
+#endif
+
   
 
   JSString* createDisplayURL(JSContext* cx);
