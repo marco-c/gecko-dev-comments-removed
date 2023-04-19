@@ -148,9 +148,9 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
       
       
       
-      if (FuzzyEqualsAdditive(overscroll.x, 0.0f, COORDINATE_EPSILON)) {
+      if (mApzc.IsZero(overscroll.x)) {
         velocity.x = 0;
-      } else if (FuzzyEqualsAdditive(overscroll.y, 0.0f, COORDINATE_EPSILON)) {
+      } else if (mApzc.IsZero(overscroll.y)) {
         velocity.y = 0;
       }
 
