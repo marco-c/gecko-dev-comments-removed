@@ -13,7 +13,7 @@
 
 
 
-const CURRENT_SCHEMA_VERSION = 68;
+const CURRENT_SCHEMA_VERSION = 69;
 const FIRST_UPGRADABLE_SCHEMA_VERSION = 43;
 
 async function assertAnnotationsRemoved(db, expectedAnnos) {
