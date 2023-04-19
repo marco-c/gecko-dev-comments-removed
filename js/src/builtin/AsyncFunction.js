@@ -3,13 +3,17 @@
 
 
 function AsyncFunctionNext(val) {
-  assert(IsAsyncFunctionGeneratorObject(this),
-         "ThisArgument must be a generator object for async functions");
+  assert(
+    IsAsyncFunctionGeneratorObject(this),
+    "ThisArgument must be a generator object for async functions"
+  );
   return resumeGenerator(this, val, "next");
 }
 
 function AsyncFunctionThrow(val) {
-  assert(IsAsyncFunctionGeneratorObject(this),
-         "ThisArgument must be a generator object for async functions");
+  assert(
+    IsAsyncFunctionGeneratorObject(this),
+    "ThisArgument must be a generator object for async functions"
+  );
   return resumeGenerator(this, val, "throw");
 }

@@ -3,8 +3,7 @@
 
 
 
-function ErrorToString()
-{
+function ErrorToString() {
   
   var obj = this;
   if (!IsObject(obj)) {
@@ -33,7 +32,6 @@ function ErrorToString()
   return name + ": " + msg;
 }
 
-function ErrorToStringWithTrailingNewline()
-{
+function ErrorToStringWithTrailingNewline() {
   return FUN_APPLY(ErrorToString, this, []) + "\n";
 }
