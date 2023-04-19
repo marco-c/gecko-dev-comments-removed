@@ -70,6 +70,8 @@ StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
 
 StorageAccess StorageAllowedForDocument(const dom::Document* aDoc);
 
+StorageAccess CookieAllowedForDocument(const dom::Document* aDoc);
+
 
 
 
