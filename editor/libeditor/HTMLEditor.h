@@ -2446,16 +2446,16 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureHardLineBeginsWithFirstChildOf(dom::Element& aRemovingContainerElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  EnsureHardLineBeginsWithFirstChildOf(Element& aRemovingContainerElement);
 
   
 
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureHardLineEndsWithLastChildOf(dom::Element& aRemovingContainerElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  EnsureHardLineEndsWithLastChildOf(Element& aRemovingContainerElement);
 
   
 

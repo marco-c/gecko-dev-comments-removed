@@ -816,31 +816,50 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
     return NS_OK;
   }
 
+  EditorDOMPoint pointToPutCaret;
   
   
-  
-  
-  rv = EnsureHardLineBeginsWithFirstChildOf(MOZ_KnownLive(*styledElement));
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::EnsureHardLineBeginsWithFirstChildOf() failed");
-    return rv;
+  {
+    
+    
+    CreateElementResult maybeInsertBRElementBeforeFirstChildResult =
+        EnsureHardLineBeginsWithFirstChildOf(MOZ_KnownLive(*styledElement));
+    if (maybeInsertBRElementBeforeFirstChildResult.isErr()) {
+      NS_WARNING("HTMLEditor::EnsureHardLineBeginsWithFirstChildOf() failed");
+      return maybeInsertBRElementBeforeFirstChildResult.unwrapErr();
+    }
+    if (maybeInsertBRElementBeforeFirstChildResult.HasCaretPointSuggestion()) {
+      pointToPutCaret =
+          maybeInsertBRElementBeforeFirstChildResult.UnwrapCaretPoint();
+    }
   }
-  
-  
-  rv = EnsureHardLineEndsWithLastChildOf(MOZ_KnownLive(*styledElement));
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::EnsureHardLineEndsWithLastChildOf() failed");
-    return rv;
+  {
+    
+    
+    CreateElementResult maybeInsertBRElementAfterLastChildResult =
+        EnsureHardLineEndsWithLastChildOf(MOZ_KnownLive(*styledElement));
+    if (maybeInsertBRElementAfterLastChildResult.isErr()) {
+      NS_WARNING("HTMLEditor::EnsureHardLineEndsWithLastChildOf() failed");
+      return maybeInsertBRElementAfterLastChildResult.unwrapErr();
+    }
+    if (maybeInsertBRElementAfterLastChildResult.HasCaretPointSuggestion()) {
+      pointToPutCaret =
+          maybeInsertBRElementAfterLastChildResult.UnwrapCaretPoint();
+    }
   }
-  
-  
-  const Result<EditorDOMPoint, nsresult> unwrapStyledElementResult =
-      RemoveContainerWithTransaction(MOZ_KnownLive(*styledElement));
-  if (MOZ_UNLIKELY(unwrapStyledElementResult.isErr())) {
-    NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-    return unwrapStyledElementResult.inspectErr();
+  {
+    
+    
+    Result<EditorDOMPoint, nsresult> unwrapStyledElementResult =
+        RemoveContainerWithTransaction(MOZ_KnownLive(*styledElement));
+    if (MOZ_UNLIKELY(unwrapStyledElementResult.isErr())) {
+      NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
+      return unwrapStyledElementResult.unwrapErr();
+    }
+    if (unwrapStyledElementResult.inspect().IsSet()) {
+      pointToPutCaret = unwrapStyledElementResult.unwrap();
+    }
   }
-  const EditorDOMPoint& pointToPutCaret = unwrapStyledElementResult.inspect();
   if (!AllowsTransactionsToChangeSelection() || !pointToPutCaret.IsSet()) {
     return NS_OK;
   }
