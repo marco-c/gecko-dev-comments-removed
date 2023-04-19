@@ -29,11 +29,8 @@ class DrawTarget;
 }  
 }  
 
-nsIFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
-                         mozilla::ComputedStyle* aStyle, bool aIsRoot,
-                         nsBoxLayout* aLayoutManager);
-nsIFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
-                         mozilla::ComputedStyle* aStyle);
+nsContainerFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
+                                 mozilla::ComputedStyle* aStyle);
 
 class nsBoxFrame : public nsContainerFrame {
  protected:
@@ -45,11 +42,8 @@ class nsBoxFrame : public nsContainerFrame {
   NS_DECL_QUERYFRAME
 #endif
 
-  friend nsIFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
-                                  ComputedStyle* aStyle, bool aIsRoot,
-                                  nsBoxLayout* aLayoutManager);
-  friend nsIFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
-                                  ComputedStyle* aStyle);
+  friend nsContainerFrame* NS_NewBoxFrame(mozilla::PresShell* aPresShell,
+                                          ComputedStyle* aStyle);
 
   
   
@@ -150,11 +144,10 @@ class nsBoxFrame : public nsContainerFrame {
 
  private:
   explicit nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-      : nsBoxFrame(aStyle, aPresContext, kClassID, false, nullptr) {}
+      : nsBoxFrame(aStyle, aPresContext, kClassID) {}
 
  protected:
-  nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID,
-             bool aIsRoot = false, nsBoxLayout* aLayoutManager = nullptr);
+  nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID);
   virtual ~nsBoxFrame();
 
   virtual bool GetInitialEqualSize(bool& aEqualSize);
