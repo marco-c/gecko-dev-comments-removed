@@ -154,24 +154,50 @@ class RetransmissionQueue {
 
     TimeMs time_sent() const { return time_sent_; }
 
-    State state() const { return state_; }
-    void SetState(State state) { state_ = state; }
-
     const Data& data() const { return data_; }
 
     
+    void Ack();
+
     
-    void Nack();
+    
+    
+    bool Nack(bool retransmit_now = false);
+
+    
+    
     void Retransmit();
 
-    bool has_been_retransmitted() { return num_retransmissions_ > 0; }
+    
+    void Abandon();
+
+    bool is_outstanding() const { return ack_state_ == AckState::kUnacked; }
+    bool is_acked() const { return ack_state_ == AckState::kAcked; }
+    bool is_abandoned() const { return is_abandoned_; }
+
+    
+    bool should_be_retransmitted() const { return should_be_retransmitted_; }
+    
+    bool has_been_retransmitted() const { return num_retransmissions_ > 0; }
 
     
     
     bool has_expired(TimeMs now) const;
 
    private:
-    State state_ = State::kInFlight;
+    enum class AckState {
+      kUnacked,
+      kAcked,
+      kNacked,
+    };
+    
+    
+    AckState ack_state_ = AckState::kUnacked;
+    
+    bool is_abandoned_ = false;
+    
+    bool should_be_retransmitted_ = false;
+
     
     
     size_t nack_count_ = 0;
@@ -213,6 +239,8 @@ class RetransmissionQueue {
     
     UnwrappedTSN highest_tsn_acked;
   };
+
+  bool IsConsistent() const;
 
   
   size_t GetSerializedChunkSize(const Data& data) const;
@@ -270,8 +298,6 @@ class RetransmissionQueue {
   
   
   void HandlePacketLoss(UnwrappedTSN highest_tsn_acked);
-  
-  void RecalculateOutstandingBytes();
   
   void UpdateReceiverWindow(uint32_t a_rwnd);
   
