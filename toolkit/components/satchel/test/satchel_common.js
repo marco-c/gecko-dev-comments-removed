@@ -26,28 +26,16 @@ const TelemetryFilterPropsAC = Object.freeze({
 
 
 function getFormElementByName(formNum, name) {
-  let form = document.getElementById("form" + formNum);
-  if (!form) {
-    ok(false, "getFormElementByName couldn't find requested form " + formNum);
+  const formElement = document.querySelector(
+    `#form${formNum} [name="${name}"]`
+  );
+
+  if (!formElement) {
+    ok(false, `getFormElementByName: Couldn't find specified CSS selector.`);
     return null;
   }
 
-  let element = form.elements.namedItem(name);
-  if (!element) {
-    ok(false, "getFormElementByName couldn't find requested element " + name);
-    return null;
-  }
-
-  
-  
-  
-
-  if (element.hasAttribute("name") && element.getAttribute("name") != name) {
-    ok(false, "getFormElementByName got confused.");
-    return null;
-  }
-
-  return element;
+  return formElement;
 }
 
 function registerPopupShownListener(listener) {
