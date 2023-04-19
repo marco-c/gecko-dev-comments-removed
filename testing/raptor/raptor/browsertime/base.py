@@ -706,7 +706,10 @@ class Browsertime(Perftest):
 
             
             if self.config["live_sites"] or self.config["app"] in ("fenix",):
-                output_timeout *= 2
+                
+                
+                if output_timeout is not None:
+                    output_timeout *= 2
                 proc_timeout *= 2
 
             proc = self.process_handler(cmd, processOutputLine=_line_handler, env=env)
