@@ -68,6 +68,7 @@ RtpFrameObject::RtpFrameObject(
 
   rotation_ = rotation;
   SetColorSpace(color_space);
+  SetVideoFrameTrackingId(rtp_video_header_.video_frame_tracking_id);
   content_type_ = content_type;
   if (timing.flags != VideoSendTiming::kInvalid) {
     

@@ -359,6 +359,10 @@ struct RTC_EXPORT RtpExtension {
       "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
 
   
+  static constexpr char kVideoFrameTrackingIdUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/video-frame-tracking-id";
+
+  
   
   static constexpr int kMinId = 1;
   static constexpr int kMaxId = 255;

@@ -109,6 +109,15 @@ class RTC_EXPORT EncodedImage {
     color_space_ = color_space;
   }
 
+  
+  
+  absl::optional<uint16_t> VideoFrameTrackingId() const {
+    return video_frame_tracking_id_;
+  }
+  void SetVideoFrameTrackingId(absl::optional<uint16_t> tracking_id) {
+    video_frame_tracking_id_ = tracking_id;
+  }
+
   const RtpPacketInfos& PacketInfos() const { return packet_infos_; }
   void SetPacketInfos(RtpPacketInfos packet_infos) {
     packet_infos_ = std::move(packet_infos);
@@ -182,6 +191,9 @@ class RTC_EXPORT EncodedImage {
   absl::optional<int> spatial_index_;
   std::map<int, size_t> spatial_layer_frame_size_bytes_;
   absl::optional<webrtc::ColorSpace> color_space_;
+  
+  
+  absl::optional<uint16_t> video_frame_tracking_id_;
   
   
   
