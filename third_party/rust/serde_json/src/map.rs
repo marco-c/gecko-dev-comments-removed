@@ -530,9 +530,9 @@ impl<'a> Entry<'a> {
     
     
     pub fn key(&self) -> &String {
-        match *self {
-            Entry::Vacant(ref e) => e.key(),
-            Entry::Occupied(ref e) => e.key(),
+        match self {
+            Entry::Vacant(e) => e.key(),
+            Entry::Occupied(e) => e.key(),
         }
     }
 
