@@ -436,8 +436,7 @@ ComPtr<IXmlDocument> ToastNotificationHandler::CreateToastXmlDocument() {
           ("launchArg: '%s'", NS_ConvertUTF16toUTF8(launchArg).get()));
 
   
-  
-  if (IsWin10OrLater() && mIsSystemPrincipal) {
+  if (IsWin10OrLater()) {
     ComPtr<IXmlNodeList> bindingElements;
     hr = toastXml->GetElementsByTagName(HStringReference(L"binding").Get(),
                                         &bindingElements);
