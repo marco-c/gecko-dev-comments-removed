@@ -1848,17 +1848,16 @@ already_AddRefed<PathBuilder> DrawTargetSkia::CreatePathBuilder(
   return MakeAndAddRef<PathBuilderSkia>(aFillRule);
 }
 
-void DrawTargetSkia::Clear(const Rect* aRect) {
+void DrawTargetSkia::Clear(const Rect& aRect, bool aClipped) {
   MarkChanged();
   mCanvas->save();
-  if (aRect) {
+  if (aClipped) {
     
-    mCanvas->clipRect(RectToSkRect(*aRect), SkClipOp::kIntersect, true);
+    mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kIntersect, true);
   } else {
     
     mCanvas->resetMatrix();
-    mCanvas->clipRect(IntRectToSkRect(GetRect()),
-                      SkClipOp::kReplace_deprecated);
+    mCanvas->clipRect(RectToSkRect(aRect), SkClipOp::kReplace_deprecated);
   }
   SkColor clearColor = (mFormat == SurfaceFormat::B8G8R8X8)
                            ? SK_ColorBLACK
@@ -1904,14 +1903,17 @@ void DrawTargetSkia::PopClip() {
   SetTransform(GetTransform());
 }
 
-Maybe<Rect> DrawTargetSkia::GetDeviceClipRect() const {
+
+
+
+Maybe<IntRect> DrawTargetSkia::GetDeviceClipRect(bool aAllowComplex) const {
   if (mCanvas->isClipEmpty()) {
-    return Some(Rect());
+    return Some(IntRect());
   }
-  if (mCanvas->isClipRect()) {
+  if (aAllowComplex || mCanvas->isClipRect()) {
     SkIRect deviceBounds;
     if (mCanvas->getDeviceClipBounds(&deviceBounds)) {
-      return Some(Rect(SkIRectToIntRect(deviceBounds)));
+      return Some(SkIRectToIntRect(deviceBounds));
     }
   }
   return Nothing();
