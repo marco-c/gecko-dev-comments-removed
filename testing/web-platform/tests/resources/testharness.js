@@ -2731,19 +2731,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     Test.prototype.step_wait_func = function(cond, func, description,
                                              timeout=3000, interval=100) {
         var timeout_full = timeout * tests.timeout_multiplier;
@@ -2767,6 +2754,19 @@
     };
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
