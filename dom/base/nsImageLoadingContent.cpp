@@ -52,6 +52,8 @@
 #include "mozilla/dom/ImageTextBinding.h"
 #include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/intl/LocaleService.h"
+#include "mozilla/intl/Locale.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/widget/TextRecognition.h"
 
@@ -1232,60 +1234,98 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
     return nullptr;
   }
 
-  TextRecognition::FindText(*image)->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [weak = RefPtr{do_GetWeakReference(this)},
-       request = RefPtr{mCurrentRequest}, domPromise](
-          TextRecognition::NativePromise::ResolveOrRejectValue&& aValue) {
-        if (aValue.IsReject()) {
-          domPromise->MaybeRejectWithNotSupportedError(aValue.RejectValue());
-          return;
-        }
-        RefPtr<nsIImageLoadingContent> iilc = do_QueryReferent(weak.get());
-        if (!iilc) {
-          domPromise->MaybeRejectWithInvalidStateError(
-              "Element was dead when we got the results");
-          return;
-        }
-        auto* ilc = static_cast<nsImageLoadingContent*>(iilc.get());
-        if (ilc->mCurrentRequest != request) {
-          domPromise->MaybeRejectWithInvalidStateError("Request not current");
-          return;
-        }
-        auto& textRecognitionResult = aValue.ResolveValue();
-        Element* el = ilc->AsContent()->AsElement();
+  
+  AutoTArray<nsCString, 4> languages;
+  {
+    
+    
+    nsAutoCString elementLanguage;
+    nsAtom* imgLanguage = AsContent()->GetLang();
+    intl::Locale locale;
+    if (imgLanguage) {
+      imgLanguage->ToUTF8String(elementLanguage);
+      auto result = intl::LocaleParser::TryParse(elementLanguage, locale);
+      if (result.isOk()) {
+        languages.AppendElement(locale.Language().Span());
+      }
+    }
+  }
 
-        
-        
-        
-        if (Preferences::GetBool("dom.text-recognition.shadow-dom-enabled",
-                                 false)) {
-          el->AttachAndSetUAShadowRoot(Element::NotifyUAWidgetSetup::Yes);
-          TextRecognition::FillShadow(*el->GetShadowRoot(),
-                                      textRecognitionResult);
-          el->NotifyUAWidgetSetupOrChange();
-        }
+  {
+    
+    
+    nsTArray<nsCString> appLocales;
+    intl::LocaleService::GetInstance()->GetAppLocalesAsBCP47(appLocales);
 
-        nsTArray<ImageText> imageTexts(textRecognitionResult.quads().Length());
-        nsIGlobalObject* global = el->OwnerDoc()->GetOwnerGlobal();
+    for (const auto& localeString : appLocales) {
+      intl::Locale locale;
+      auto result = intl::LocaleParser::TryParse(localeString, locale);
+      if (result.isErr()) {
+        NS_WARNING("Could not parse an app locale string, ignoring it.");
+        continue;
+      }
+      languages.AppendElement(locale.Language().Span());
+    }
+  }
 
-        for (const auto& quad : textRecognitionResult.quads()) {
-          NotNull<ImageText*> imageText = imageTexts.AppendElement();
+  TextRecognition::FindText(*image, languages)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [weak = RefPtr{do_GetWeakReference(this)},
+           request = RefPtr{mCurrentRequest}, domPromise](
+              TextRecognition::NativePromise::ResolveOrRejectValue&& aValue) {
+            if (aValue.IsReject()) {
+              domPromise->MaybeRejectWithNotSupportedError(
+                  aValue.RejectValue());
+              return;
+            }
+            RefPtr<nsIImageLoadingContent> iilc = do_QueryReferent(weak.get());
+            if (!iilc) {
+              domPromise->MaybeRejectWithInvalidStateError(
+                  "Element was dead when we got the results");
+              return;
+            }
+            auto* ilc = static_cast<nsImageLoadingContent*>(iilc.get());
+            if (ilc->mCurrentRequest != request) {
+              domPromise->MaybeRejectWithInvalidStateError(
+                  "Request not current");
+              return;
+            }
+            auto& textRecognitionResult = aValue.ResolveValue();
+            Element* el = ilc->AsContent()->AsElement();
 
-          
-          
-          CSSPoint points[4];
-          points[0] = CSSPoint(quad.points()[0].x, quad.points()[0].y);
-          points[1] = CSSPoint(quad.points()[1].x, quad.points()[1].y);
-          points[2] = CSSPoint(quad.points()[2].x, quad.points()[2].y);
-          points[3] = CSSPoint(quad.points()[3].x, quad.points()[3].y);
+            
+            
+            
+            if (Preferences::GetBool("dom.text-recognition.shadow-dom-enabled",
+                                     false)) {
+              el->AttachAndSetUAShadowRoot(Element::NotifyUAWidgetSetup::Yes);
+              TextRecognition::FillShadow(*el->GetShadowRoot(),
+                                          textRecognitionResult);
+              el->NotifyUAWidgetSetupOrChange();
+            }
 
-          imageText->mQuad = new DOMQuad(global, points);
-          imageText->mConfidence = quad.confidence();
-          imageText->mString = quad.string();
-        }
-        domPromise->MaybeResolve(std::move(imageTexts));
-      });
+            nsTArray<ImageText> imageTexts(
+                textRecognitionResult.quads().Length());
+            nsIGlobalObject* global = el->OwnerDoc()->GetOwnerGlobal();
+
+            for (const auto& quad : textRecognitionResult.quads()) {
+              NotNull<ImageText*> imageText = imageTexts.AppendElement();
+
+              
+              
+              CSSPoint points[4];
+              points[0] = CSSPoint(quad.points()[0].x, quad.points()[0].y);
+              points[1] = CSSPoint(quad.points()[1].x, quad.points()[1].y);
+              points[2] = CSSPoint(quad.points()[2].x, quad.points()[2].y);
+              points[3] = CSSPoint(quad.points()[3].x, quad.points()[3].y);
+
+              imageText->mQuad = new DOMQuad(global, points);
+              imageText->mConfidence = quad.confidence();
+              imageText->mString = quad.string();
+            }
+            domPromise->MaybeResolve(std::move(imageTexts));
+          });
   return domPromise.forget();
 }
 
