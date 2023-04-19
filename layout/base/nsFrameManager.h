@@ -60,10 +60,10 @@ class nsFrameManager {
 
   
   void AppendFrames(nsContainerFrame* aParentFrame, ChildListID aListID,
-                    nsFrameList& aFrameList);
+                    nsFrameList&& aFrameList);
 
   void InsertFrames(nsContainerFrame* aParentFrame, ChildListID aListID,
-                    nsIFrame* aPrevFrame, nsFrameList& aFrameList);
+                    nsIFrame* aPrevFrame, nsFrameList&& aFrameList);
 
   void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame);
 
