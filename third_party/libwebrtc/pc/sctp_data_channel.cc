@@ -65,7 +65,7 @@ PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
 PROXY_METHOD0(void, Close)
 
 PROXY_METHOD1(bool, Send, const DataBuffer&)
-END_PROXY_MAP()
+END_PROXY_MAP(DataChannel)
 
 }  
 
