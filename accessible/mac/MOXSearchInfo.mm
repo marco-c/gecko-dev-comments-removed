@@ -123,7 +123,9 @@ using namespace mozilla::a11y;
 
 - (BOOL)shouldApplyPostFilter {
   
-  return !!mSearchText;
+  
+  
+  return !!mSearchText && [mSearchText length] > 0;
 }
 
 - (NSArray<mozAccessible*>*)applyPostFilter:(NSArray<mozAccessible*>*)matches {
