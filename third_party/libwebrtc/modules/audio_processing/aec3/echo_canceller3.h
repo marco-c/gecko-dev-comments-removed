@@ -84,18 +84,13 @@ class Aec3RenderQueueItemVerifier {
 
 class EchoCanceller3 : public EchoControl {
  public:
-  
   EchoCanceller3(const EchoCanceller3Config& config,
                  int sample_rate_hz,
                  size_t num_render_channels,
                  size_t num_capture_channels);
-  
-  EchoCanceller3(const EchoCanceller3Config& config,
-                 int sample_rate_hz,
-                 size_t num_render_channels,
-                 size_t num_capture_channels,
-                 std::unique_ptr<BlockProcessor> block_processor);
+
   ~EchoCanceller3() override;
+
   EchoCanceller3(const EchoCanceller3&) = delete;
   EchoCanceller3& operator=(const EchoCanceller3&) = delete;
 
@@ -142,6 +137,12 @@ class EchoCanceller3 : public EchoControl {
 
  private:
   class RenderWriter;
+  friend class EchoCanceller3Tester;
+  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3Metrics, EchoReturnLossEnhancement);
+
+  
+  void SetBlockProcessorForTesting(
+      std::unique_ptr<BlockProcessor> block_processor);
 
   
   void EmptyRenderQueue();
