@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=159849
+-->
 <head>
   <title>Test for Bug 159849</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,6 +22,8 @@ function testFunc() {
 }
 
 var c = $("content");
+// Intentionally testing the 'with' statement.
+/* eslint-disable-next-line no-with */
 with (c) {
   onmouseover = testFunc;
   fooExpando = testFunc;
