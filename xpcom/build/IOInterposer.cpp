@@ -90,7 +90,7 @@ class PerThreadData {
 
     mIsHandlingObservation = true;
     
-    std::vector<mozilla::IOInterposeObserver*>* observers = nullptr;
+    const std::vector<mozilla::IOInterposeObserver*>* observers = nullptr;
     switch (aObservation.ObservedOperation()) {
       case mozilla::IOInterposeObserver::OpCreateOrOpen:
         observers = &mObserverLists->mCreateObservers;
@@ -135,7 +135,7 @@ class PerThreadData {
   inline bool IsMainThread() const { return mIsMainThread; }
 
   inline void SetObserverLists(uint32_t aNewGeneration,
-                               RefPtr<ObserverLists>& aNewLists) {
+                               RefPtr<const ObserverLists>& aNewLists) {
     mCurrentGeneration = aNewGeneration;
     mObserverLists = aNewLists;
   }
@@ -151,7 +151,7 @@ class PerThreadData {
   bool mIsMainThread;
   bool mIsHandlingObservation;
   uint32_t mCurrentGeneration;
-  RefPtr<ObserverLists> mObserverLists;
+  RefPtr<const ObserverLists> mObserverLists;
 };
 
 
@@ -300,7 +300,7 @@ class SourceList {
   }
 
  private:
-  RefPtr<ObserverLists> mObserverLists GUARDED_BY(mLock);
+  RefPtr<const ObserverLists> mObserverLists GUARDED_BY(mLock);
   
   
   
