@@ -2810,17 +2810,18 @@ bool AppWindow::RequestWindowClose(nsIWidget* aWidget) {
   return false;
 }
 
-void AppWindow::SizeModeChanged(nsSizeMode sizeMode) {
+void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
   
   
   
   
-  if (sizeMode == nsSizeMode_Maximized || sizeMode == nsSizeMode_Fullscreen) {
+  if (aSizeMode == nsSizeMode_Maximized || aSizeMode == nsSizeMode_Fullscreen) {
     uint32_t zLevel;
     GetZLevel(&zLevel);
-    if (zLevel > nsIAppWindow::normalZ) SetZLevel(nsIAppWindow::normalZ);
+    if (zLevel > nsIAppWindow::normalZ) {
+      SetZLevel(nsIAppWindow::normalZ);
+    }
   }
-  mWindow->SetSizeMode(sizeMode);
 
   RecomputeBrowsingContextVisibility();
 
@@ -2833,9 +2834,9 @@ void AppWindow::SizeModeChanged(nsSizeMode sizeMode) {
   if (ourWindow) {
     
     
-    if (sizeMode == nsSizeMode_Fullscreen) {
+    if (aSizeMode == nsSizeMode_Fullscreen) {
       ourWindow->SetFullScreen(true);
-    } else if (sizeMode != nsSizeMode_Minimized) {
+    } else if (aSizeMode != nsSizeMode_Minimized) {
       if (ourWindow->GetFullScreen()) {
         
         
@@ -2854,7 +2855,7 @@ void AppWindow::SizeModeChanged(nsSizeMode sizeMode) {
   }
 
   if (PresShell* presShell = GetPresShell()) {
-    presShell->GetPresContext()->SizeModeChanged(sizeMode);
+    presShell->GetPresContext()->SizeModeChanged(aSizeMode);
   }
 
   
