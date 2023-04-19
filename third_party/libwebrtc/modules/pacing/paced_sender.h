@@ -39,11 +39,7 @@ namespace webrtc {
 class Clock;
 class RtcEventLog;
 
-
-
-class PacedSender : public Module,
-                    public RtpPacketPacer,
-                    public RtpPacketSender {
+class PacedSender : public RtpPacketPacer, public RtpPacketSender {
  public:
   
   
@@ -119,22 +115,11 @@ class PacedSender : public Module,
  private:
   
   
+  int64_t TimeUntilNextProcess();
   
-
+  void ProcessThreadAttached(ProcessThread* process_thread);
   
-  
-  int64_t TimeUntilNextProcess() override;
-
-  
-  
-  
- public:
-  
-  void Process() override;
-
- private:
-  
-  void ProcessThreadAttached(ProcessThread* process_thread) override;
+  void Process();
 
   
   void MaybeWakupProcessThread();
