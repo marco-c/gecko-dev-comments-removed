@@ -71,6 +71,11 @@ class RenderTextureHost {
   
   
   virtual bool SyncObjectNeeded() { return false; }
+  
+  bool IsFromDRMSource() { return mIsFromDRMSource; }
+  void SetIsFromDRMSource(bool aIsFromDRMSource) {
+    mIsFromDRMSource = aIsFromDRMSource;
+  }
 
   virtual size_t Bytes() = 0;
 
@@ -106,6 +111,8 @@ class RenderTextureHost {
       gfx::IntSize aTextureSize) const;
 
   wr::ImageRendering mCachedRendering;
+
+  bool mIsFromDRMSource;
 };
 
 }  
