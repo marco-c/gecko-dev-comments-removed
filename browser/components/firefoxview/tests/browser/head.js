@@ -10,6 +10,9 @@ const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
 
+const MOBILE_PROMO_DISMISSED_PREF =
+  "browser.tabs.firefox-view.mobilePromo.dismissed";
+
 const syncedTabsData1 = [
   {
     id: 1,
@@ -347,6 +350,35 @@ async function touchLastTabFetch() {
   await TestUtils.waitForTick();
 }
 
+let gUIStateSyncEnabled;
+function setupMocks({ fxaDevices = null, state, syncEnabled = true }) {
+  gUIStateStatus = state || UIState.STATUS_SIGNED_IN;
+  gUIStateSyncEnabled = syncEnabled;
+  if (gSandbox) {
+    gSandbox.restore();
+  }
+  const sandbox = (gSandbox = sinon.createSandbox());
+  gMockFxaDevices = fxaDevices;
+  sandbox.stub(fxAccounts.device, "recentDeviceList").get(() => fxaDevices);
+  sandbox.stub(UIState, "get").callsFake(() => {
+    return {
+      status: gUIStateStatus,
+      
+      
+      ...(gUIStateSyncEnabled != undefined && {
+        syncEnabled: gUIStateSyncEnabled,
+      }),
+    };
+  });
+  return sandbox;
+}
+
+async function tearDown(sandbox) {
+  sandbox?.restore();
+  Services.prefs.clearUserPref("services.sync.lastTabFetch");
+  Services.prefs.clearUserPref(MOBILE_PROMO_DISMISSED_PREF);
+}
+
 
 
 
@@ -369,6 +401,10 @@ async function open_then_close(url) {
   await updatePromise;
   return TestUtils.topicObserved("sessionstore-closed-objects-changed");
 }
+
+
+
+
 
 function clearHistory() {
   Services.obs.notifyObservers(null, "browser:purge-session-history");
