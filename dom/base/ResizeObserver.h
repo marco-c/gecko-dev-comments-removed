@@ -105,8 +105,6 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
   
   
-  
-  
   LogicalPixelSize mLastReportedSize;
 };
 
