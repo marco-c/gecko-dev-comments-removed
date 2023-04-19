@@ -43,19 +43,19 @@ class VoiceActivityDetectorWrapper {
   
   
   
+  VoiceActivityDetectorWrapper(int vad_reset_period_ms,
+                               const AvailableCpuFeatures& cpu_features,
+                               int sample_rate_hz);
   
   VoiceActivityDetectorWrapper(int vad_reset_period_ms,
-                               const AvailableCpuFeatures& cpu_features);
-  
-  VoiceActivityDetectorWrapper(int vad_reset_period_ms,
-                               std::unique_ptr<MonoVad> vad);
+                               std::unique_ptr<MonoVad> vad,
+                               int sample_rate_hz);
 
   VoiceActivityDetectorWrapper(const VoiceActivityDetectorWrapper&) = delete;
   VoiceActivityDetectorWrapper& operator=(const VoiceActivityDetectorWrapper&) =
       delete;
   ~VoiceActivityDetectorWrapper();
 
-  
   
   void Initialize(int sample_rate_hz);
 
@@ -66,8 +66,6 @@ class VoiceActivityDetectorWrapper {
 
  private:
   const int vad_reset_period_frames_;
-  
-  bool initialized_;
   int frame_size_;
   int time_to_vad_reset_;
   PushResampler<float> resampler_;

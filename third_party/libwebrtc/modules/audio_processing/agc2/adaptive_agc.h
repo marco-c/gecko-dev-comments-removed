@@ -17,7 +17,6 @@
 #include "modules/audio_processing/agc2/adaptive_mode_level_estimator.h"
 #include "modules/audio_processing/agc2/noise_level_estimator.h"
 #include "modules/audio_processing/agc2/saturation_protector.h"
-#include "modules/audio_processing/agc2/vad_wrapper.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/include/audio_processing.h"
 
@@ -40,14 +39,15 @@ class AdaptiveAgc {
   
   
   
-  void Process(AudioFrameView<float> frame, float limiter_envelope);
+  void Process(AudioFrameView<float> frame,
+               float speech_probability,
+               float limiter_envelope);
 
   
   void HandleInputGainChange();
 
  private:
   AdaptiveModeLevelEstimator speech_level_estimator_;
-  VoiceActivityDetectorWrapper vad_;
   AdaptiveDigitalGainApplier gain_controller_;
   ApmDataDumper* const apm_data_dumper_;
   std::unique_ptr<NoiseLevelEstimator> noise_level_estimator_;
