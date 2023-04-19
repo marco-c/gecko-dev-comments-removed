@@ -173,10 +173,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   absl::optional<bool> is_caller();
   bool HasNewIceCredentials();
   void UpdateNegotiationNeeded();
-  void SetHavePendingRtpDataChannel() {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    have_pending_rtp_data_channel_ = true;
-  }
 
   
   
@@ -548,7 +544,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
       const std::string& mid) const;
 
-  const std::string GetTransportName(const std::string& content_name);
   
   
   bool UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
