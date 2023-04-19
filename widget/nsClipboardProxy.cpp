@@ -33,9 +33,8 @@ nsClipboardProxy::SetData(nsITransferable* aTransferable,
   nsCOMPtr<nsIPrincipal> requestingPrincipal =
       aTransferable->GetRequestingPrincipal();
   nsContentPolicyType contentPolicyType = aTransferable->GetContentPolicyType();
-  child->SendSetClipboard(std::move(ipcDataTransfer), isPrivateData,
-                          requestingPrincipal, contentPolicyType,
-                          aWhichClipboard);
+  child->SendSetClipboard(ipcDataTransfer, isPrivateData, requestingPrincipal,
+                          contentPolicyType, aWhichClipboard);
 
   return NS_OK;
 }
@@ -50,7 +49,8 @@ nsClipboardProxy::GetData(nsITransferable* aTransferable,
   ContentChild::GetSingleton()->SendGetClipboard(types, aWhichClipboard,
                                                  &dataTransfer);
   return nsContentUtils::IPCTransferableToTransferable(
-      dataTransfer, false , aTransferable);
+      dataTransfer, false , aTransferable,
+      ContentChild::GetSingleton());
 }
 
 NS_IMETHODIMP
@@ -129,7 +129,8 @@ RefPtr<GenericPromise> nsClipboardProxy::AsyncGetData(
           
           [promise, transferable](const IPCDataTransfer& ipcDataTransfer) {
             nsresult rv = nsContentUtils::IPCTransferableToTransferable(
-                ipcDataTransfer, false , transferable);
+                ipcDataTransfer, false , transferable,
+                ContentChild::GetSingleton());
             if (NS_FAILED(rv)) {
               promise->Reject(rv, __func__);
               return;
