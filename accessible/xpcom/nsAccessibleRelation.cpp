@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsAccessibleRelation.h"
 
@@ -17,7 +17,7 @@ using namespace mozilla::a11y;
 nsAccessibleRelation::nsAccessibleRelation(uint32_t aType, Relation* aRel)
     : mType(aType) {
   mTargets = do_CreateInstance(NS_ARRAY_CONTRACTID);
-  LocalAccessible* targetAcc = nullptr;
+  Accessible* targetAcc = nullptr;
   while ((targetAcc = aRel->Next())) {
     mTargets->AppendElement(static_cast<nsIAccessible*>(ToXPC(targetAcc)));
   }
@@ -35,10 +35,10 @@ nsAccessibleRelation::nsAccessibleRelation(
 
 nsAccessibleRelation::~nsAccessibleRelation() {}
 
-// nsISupports
+
 NS_IMPL_ISUPPORTS(nsAccessibleRelation, nsIAccessibleRelation)
 
-// nsIAccessibleRelation
+
 NS_IMETHODIMP
 nsAccessibleRelation::GetRelationType(uint32_t* aType) {
   NS_ENSURE_ARG_POINTER(aType);
