@@ -168,7 +168,11 @@ class StatsObserver : public rtc::RefCountInterface {
   ~StatsObserver() override = default;
 };
 
-enum class SdpSemantics { kPlanB, kUnifiedPlan };
+enum class SdpSemantics {
+  kPlanB_DEPRECATED,
+  kPlanB [[deprecated]] = kPlanB_DEPRECATED,
+  kUnifiedPlan
+};
 
 class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
  public:
@@ -638,8 +642,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     
     
-    
-    SdpSemantics sdp_semantics = SdpSemantics::kPlanB;
+    SdpSemantics sdp_semantics = SdpSemantics::kPlanB_DEPRECATED;
 
     
     
