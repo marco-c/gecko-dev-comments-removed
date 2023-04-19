@@ -6527,7 +6527,7 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx);
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
   if (!input.get().initForGlobal(cx, &ec)) {
@@ -6543,11 +6543,13 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
     return false;
   }
   if (!succeeded) {
+    ec.clearAutoReport();
     JS_ReportErrorASCII(cx, "Decoding failure");
     return false;
   }
 
   if (stencil.isModule()) {
+    ec.clearAutoReport();
     JS_ReportErrorASCII(cx,
                         "evalStencilXDR: Module stencil cannot be evaluated. "
                         "Use instantiateModuleStencilXDR instead");

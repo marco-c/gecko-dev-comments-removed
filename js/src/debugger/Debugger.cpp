@@ -74,7 +74,6 @@
 #include "js/StableStringChars.h"     
 #include "js/UbiNode.h"               
 #include "js/UbiNodeBreadthFirst.h"   
-#include "js/Warnings.h"              
 #include "js/Wrapper.h"               
 #include "util/Text.h"                
 #include "vm/ArrayObject.h"           
@@ -6109,7 +6108,8 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
 
   bool result = true;
 
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx,
+                               AutoReportFrontendContext::Warning::Suppress);
   CompileOptions options(cx);
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
@@ -6124,7 +6124,6 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, &ec, cx->stackLimitForCurrentPrincipal(), options,
       chars.twoByteChars(), length,
@@ -6133,7 +6132,7 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   if (!parser.checkOptions() || !parser.parse()) {
     
     
-    if (cx->isThrowingOutOfMemory()) {
+    if (ec.hadOutOfMemory()) {
       return false;
     }
 
@@ -6143,7 +6142,7 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
       result = false;
     }
 
-    cx->clearPendingException();
+    ec.clearAutoReport();
   }
 
   args.rval().setBoolean(result);

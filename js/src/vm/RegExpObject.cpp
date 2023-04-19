@@ -1193,7 +1193,7 @@ JS_PUBLIC_API bool JS::CheckRegExpSyntax(JSContext* cx, const char16_t* chars,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  MainThreadErrorContext ec(cx);
+  AutoReportFrontendContext ec(cx);
   CompileOptions dummyOptions(cx);
   frontend::DummyTokenStream dummyTokenStream(cx, &ec, dummyOptions);
 
@@ -1205,9 +1205,11 @@ JS_PUBLIC_API bool JS::CheckRegExpSyntax(JSContext* cx, const char16_t* chars,
   error.set(UndefinedValue());
   if (!success) {
     
-    if (cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed()) {
+    if (ec.hadOutOfMemory() || ec.hadOverRecursed()) {
       return false;
     }
+
+    ec.convertToRuntimeErrorAndClear();
     if (!cx->getPendingException(error)) {
       return false;
     }
