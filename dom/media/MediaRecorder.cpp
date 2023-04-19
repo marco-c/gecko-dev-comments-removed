@@ -1242,6 +1242,12 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
   
   if (mStream) {
     RefPtr<nsIPrincipal> streamPrincipal = mStream->GetPrincipal();
+    if (!streamPrincipal) {
+      
+      aResult.ThrowNotSupportedError("The MediaStream is inactive");
+      return;
+    }
+
     if (!PrincipalSubsumes(this, streamPrincipal)) {
       aResult.ThrowSecurityError(
           "The MediaStream's isolation properties disallow access from "
