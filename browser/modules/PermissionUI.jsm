@@ -168,6 +168,14 @@ var PermissionPromptPrototype = {
 
 
 
+  get temporaryPermissionURI() {
+    return undefined;
+  },
+
+  
+
+
+
 
 
 
@@ -374,7 +382,8 @@ var PermissionPromptPrototype = {
       let { state } = lazy.SitePermissions.getForPrincipal(
         this.principal,
         this.permissionKey,
-        this.browser
+        this.browser,
+        this.temporaryPermissionURI
       );
 
       if (state == lazy.SitePermissions.BLOCK) {
@@ -405,7 +414,8 @@ var PermissionPromptPrototype = {
       let { state } = lazy.SitePermissions.getForPrincipal(
         null,
         this.permissionKey,
-        this.browser
+        this.browser,
+        this.temporaryPermissionURI
       );
 
       if (state == lazy.SitePermissions.BLOCK) {
@@ -468,7 +478,9 @@ var PermissionPromptPrototype = {
                 this.permissionKey,
                 promptAction.action,
                 lazy.SitePermissions.SCOPE_TEMPORARY,
-                this.browser
+                this.browser,
+                undefined,
+                this.temporaryPermissionURI
               );
             }
 
@@ -489,7 +501,9 @@ var PermissionPromptPrototype = {
                 this.permissionKey,
                 promptAction.action,
                 lazy.SitePermissions.SCOPE_TEMPORARY,
-                this.browser
+                this.browser,
+                undefined,
+                this.temporaryPermissionURI
               );
             }
           }
@@ -1252,6 +1266,18 @@ PermissionUI.MIDIPermissionPrompt = MIDIPermissionPrompt;
 
 function StorageAccessPermissionPrompt(request) {
   this.request = request;
+  this.siteOption = null;
+
+  let types = this.request.types.QueryInterface(Ci.nsIArray);
+  let perm = types.queryElementAt(0, Ci.nsIContentPermissionType);
+  let options = perm.options.QueryInterface(Ci.nsIArray);
+  
+  
+  
+  
+  if (options.length) {
+    this.siteOption = options.queryElementAt(0, Ci.nsISupportsString).data;
+  }
 }
 
 StorageAccessPermissionPrompt.prototype = {
@@ -1268,6 +1294,13 @@ StorageAccessPermissionPrompt.prototype = {
   get permissionKey() {
     
     return `3rdPartyStorage${lazy.SitePermissions.PERM_KEY_DELIMITER}${this.principal.origin}`;
+  },
+
+  get temporaryPermissionURI() {
+    if (this.siteOption) {
+      return Services.io.newURI(this.siteOption);
+    }
+    return undefined;
   },
 
   prettifyHostPort(hostport) {
@@ -1305,9 +1338,15 @@ StorageAccessPermissionPrompt.prototype = {
   },
 
   get message() {
+    let embeddingHost = this.topLevelPrincipal.host;
+
+    if (this.siteOption) {
+      embeddingHost = this.siteOption.split("://").at(-1);
+    }
+
     return lazy.gBrowserBundle.formatStringFromName("storageAccess4.message", [
       this.prettifyHostPort(this.principal.hostPort),
-      this.prettifyHostPort(this.topLevelPrincipal.hostPort),
+      this.prettifyHostPort(embeddingHost),
     ]);
   },
 
