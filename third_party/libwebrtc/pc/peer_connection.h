@@ -23,6 +23,7 @@
 
 #include "absl/types/optional.h"
 #include "api/adaptation/resource.h"
+#include "api/async_dns_resolver.h"
 #include "api/async_resolver_factory.h"
 #include "api/audio_options.h"
 #include "api/candidate.h"
@@ -635,11 +636,8 @@ class PeerConnection : public PeerConnectionInternal,
   PeerConnectionInterface::RTCConfiguration configuration_
       RTC_GUARDED_BY(signaling_thread());
 
-  
-  
-  
-  
-  const std::unique_ptr<AsyncResolverFactory> async_resolver_factory_;
+  const std::unique_ptr<AsyncDnsResolverFactoryInterface>
+      async_dns_resolver_factory_;
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  
                         
