@@ -127,7 +127,8 @@ class PeerConnectionSdpMethods {
 
 
 class PeerConnectionInternal : public PeerConnectionInterface,
-                               public PeerConnectionSdpMethods {
+                               public PeerConnectionSdpMethods,
+                               public sigslot::has_slots<> {
  public:
   virtual rtc::Thread* network_thread() const = 0;
   virtual rtc::Thread* worker_thread() const = 0;
@@ -172,6 +173,10 @@ class PeerConnectionInternal : public PeerConnectionInterface,
   
   virtual bool GetSslRole(const std::string& content_name,
                           rtc::SSLRole* role) = 0;
+  
+  virtual void NoteDataAddedEvent() {}
+  
+  virtual void OnSctpDataChannelClosed(DataChannelInterface* channel) {}
 };
 
 }  

@@ -38,12 +38,12 @@
 
 namespace webrtc {
 
-class PeerConnection;
+class PeerConnectionInternal;
 
 class DataChannelController : public SctpDataChannelProviderInterface,
                               public DataChannelSink {
  public:
-  explicit DataChannelController(PeerConnection* pc) : pc_(pc) {}
+  explicit DataChannelController(PeerConnectionInternal* pc) : pc_(pc) {}
 
   
   DataChannelController(DataChannelController&) = delete;
@@ -180,7 +180,7 @@ class DataChannelController : public SctpDataChannelProviderInterface,
       RTC_GUARDED_BY(signaling_thread());
 
   
-  PeerConnection* const pc_;
+  PeerConnectionInternal* const pc_;
   
   
   rtc::WeakPtrFactory<DataChannelController> weak_factory_{this};
