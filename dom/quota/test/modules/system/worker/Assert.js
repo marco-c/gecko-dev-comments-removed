@@ -1,0 +1,22 @@
+
+
+
+
+
+const Assert = {
+  ok(value, message) {
+    postMessage({
+      op: "ok",
+      value: !!value,
+      message,
+    });
+  },
+  equal(a, b, message) {
+    postMessage({
+      op: "is",
+      a,
+      b,
+      message,
+    });
+  },
+};
