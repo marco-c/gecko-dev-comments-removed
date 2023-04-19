@@ -461,7 +461,8 @@ class PeerConnectionImpl final
   
   dom::RTCSignalingState GetSignalingState() const;
 
-  void OnSetDescriptionSuccess(JsepSdpType sdpType, bool remote);
+  already_AddRefed<dom::Promise> OnSetDescriptionSuccess(
+      dom::RTCSdpType aSdpType, bool aRemote, ErrorResult& aError);
 
   bool IsClosed() const;
   
@@ -554,6 +555,9 @@ class PeerConnectionImpl final
 
   MOZ_CAN_RUN_SCRIPT
   void RunNextOperation(ErrorResult& aError);
+
+  void SyncToJsep();
+  void SyncFromJsep();
 
   
   

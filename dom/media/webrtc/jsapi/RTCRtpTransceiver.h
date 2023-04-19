@@ -104,7 +104,8 @@ class RTCRtpTransceiver : public nsISupports,
 
   bool CanSendDTMF() const;
   bool Stopped() const { return mStopped; }
-  void SyncWithJsep();
+  void SyncToJsep() const;
+  void SyncFromJsep();
   std::string GetMidAscii() const;
 
   void UpdateDtlsTransportState(const std::string& aTransportId,
@@ -220,6 +221,9 @@ class RTCRtpTransceiver : public nsISupports,
   bool mShutdown = false;
   bool mHasBeenUsedToSend = false;
   bool mPrivacyNeeded = false;
+  bool mShouldRemove = false;
+  bool mAddTrackMagic = false;
+  bool mHasTransport = false;
   bool mIsVideo;
   
   
@@ -235,6 +239,7 @@ class RTCRtpTransceiver : public nsISupports,
   
   
   bool mHandlingUnlink = false;
+  std::string mTransportId;
 
   Canonical<std::string> mMid;
   Canonical<std::string> mSyncGroup;

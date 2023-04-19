@@ -766,6 +766,17 @@ bool RTCRtpReceiver::HasTrack(const dom::MediaStreamTrack* aTrack) const {
   return !aTrack || (mTrack == aTrack);
 }
 
+void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
+  
+  
+  if (!aJsepTransceiver.mRecvTrack.GetRemoteSetSendBit() ||
+      !aJsepTransceiver.mRecvTrack.GetActive()) {
+    Stop();
+  }
+}
+
+void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {}
+
 void RTCRtpReceiver::UpdateStreams(StreamAssociationChanges* aChanges) {
   
   

@@ -87,6 +87,8 @@ class RTCRtpSender : public nsISupports, public nsWrapperCache {
   
   void UpdateTransport();
   void UpdateConduit();
+  void SyncToJsep(JsepTransceiver& aJsepTransceiver) const;
+  void SyncFromJsep(const JsepTransceiver& aJsepTransceiver);
 
   AbstractCanonical<Ssrcs>* CanonicalSsrcs() { return &mSsrcs; }
   AbstractCanonical<Ssrcs>* CanonicalVideoRtxSsrcs() { return &mVideoRtxSsrcs; }
