@@ -108,6 +108,7 @@ add_task(async function testNoSoundIndicatorWhenSimplyCreateAudioContext() {
 
 
 function initWebAudioDocument(tab, { duration } = {}) {
+  
   return SpecialPowers.spawn(tab.linkedBrowser, [duration], async duration => {
     content.ac = new content.AudioContext();
     const ac = content.ac;

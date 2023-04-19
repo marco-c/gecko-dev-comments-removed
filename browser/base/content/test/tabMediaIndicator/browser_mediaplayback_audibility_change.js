@@ -187,6 +187,7 @@ function initMediaPlaybackDocument(
   return SpecialPowers.spawn(
     tab.linkedBrowser,
     [fileName, preload, createVideo, muted, volume],
+    
     async (fileName, preload, createVideo, muted, volume) => {
       if (createVideo) {
         content.media = content.document.createElement("video");
@@ -214,6 +215,7 @@ function playMedia(tab, { resolveOnTimeupdate } = {}) {
   return SpecialPowers.spawn(
     tab.linkedBrowser,
     [resolveOnTimeupdate],
+    
     async resolveOnTimeupdate => {
       await content.media.play();
       if (resolveOnTimeupdate) {
@@ -230,6 +232,7 @@ function pauseMedia(tab) {
 }
 
 function assignNewSourceForAudio(tab, fileName) {
+  
   return SpecialPowers.spawn(tab.linkedBrowser, [fileName], async fileName => {
     content.media.src = "";
     content.media.removeAttribute("src");
@@ -241,6 +244,7 @@ function updateMedia(tab, { muted, volume } = {}) {
   return SpecialPowers.spawn(
     tab.linkedBrowser,
     [muted, volume],
+    
     (muted, volume) => {
       if (muted != undefined) {
         content.media.muted = muted;

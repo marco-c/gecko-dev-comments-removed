@@ -33,6 +33,7 @@ add_task(async function testDestroyAudibleIframe() {
 });
 
 function createIframeAndLoadURL(tab, url) {
+  
   return SpecialPowers.spawn(tab.linkedBrowser, [url], async url => {
     const iframe = content.document.createElement("iframe");
     content.document.body.appendChild(iframe);
