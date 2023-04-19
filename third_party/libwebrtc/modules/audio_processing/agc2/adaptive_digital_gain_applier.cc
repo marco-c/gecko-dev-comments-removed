@@ -85,6 +85,7 @@ float ComputeGainChangeThisFrameDb(float target_gain_db,
 }
 }  
 
+
 AdaptiveDigitalGainApplier::AdaptiveDigitalGainApplier(
     ApmDataDumper* apm_data_dumper)
     : AdaptiveDigitalGainApplier(
