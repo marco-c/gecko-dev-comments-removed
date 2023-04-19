@@ -213,7 +213,9 @@ let JSWINDOWACTORS = {
         DOMContentLoaded: {},
       },
     },
-
+    
+    
+    matches: ["https://*/*", "http://*/*"],
     allFrames: true,
     enablePreference: "cookiebanners.bannerClicking.enabled",
   },
