@@ -47,11 +47,9 @@ class VCMTiming {
 
   
   void set_min_playout_delay(TimeDelta min_playout_delay);
-  TimeDelta min_playout_delay();
 
   
   void set_max_playout_delay(TimeDelta max_playout_delay);
-  TimeDelta max_playout_delay();
 
   
   
@@ -100,6 +98,7 @@ class VCMTiming {
     TimeDelta target_delay;
     TimeDelta jitter_buffer_delay;
     TimeDelta min_playout_delay;
+    TimeDelta max_playout_delay;
     TimeDelta render_delay;
     size_t num_decoded_frames;
   };
