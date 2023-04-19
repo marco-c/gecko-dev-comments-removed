@@ -196,7 +196,7 @@ def _ReadGitilesContent(url):
   
   
   base64_content = ReadUrlContent(url + '?format=TEXT')
-  return base64.b64decode(base64_content[0].decode('utf-8'))
+  return base64.b64decode(base64_content[0]).decode('utf-8')
 
 
 def ReadRemoteCrFile(path_below_src, revision):
