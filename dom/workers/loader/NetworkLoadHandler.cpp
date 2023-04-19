@@ -36,10 +36,10 @@ NS_IMPL_ISUPPORTS(NetworkLoadHandler, nsIStreamLoaderObserver,
                   nsIRequestObserver)
 
 NetworkLoadHandler::NetworkLoadHandler(WorkerScriptLoader* aLoader,
-                                       ScriptLoadInfo* aLoadInfo)
+                                       ScriptLoadInfo* aRequest)
     : mLoader(aLoader),
       mWorkerPrivate(aLoader->mWorkerPrivate),
-      mLoadInfo(aLoadInfo) {
+      mRequest(aRequest) {
   MOZ_ASSERT(mLoader);
 }
 
@@ -49,7 +49,7 @@ NetworkLoadHandler::OnStreamComplete(nsIStreamLoader* aLoader,
                                      uint32_t aStringLen,
                                      const uint8_t* aString) {
   nsresult rv = DataReceivedFromNetwork(aLoader, aStatus, aStringLen, aString);
-  return mLoader->OnStreamComplete(mLoadInfo, rv);
+  return mLoader->OnStreamComplete(mRequest, rv);
 }
 
 nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
@@ -109,8 +109,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   
   
   
-  mLoadInfo->mMutedErrorFlag.emplace(!mLoader->IsMainWorkerScript() &&
-                                     !principal->Subsumes(channelPrincipal));
+  mRequest->mMutedErrorFlag.emplace(!mLoader->IsMainWorkerScript() &&
+                                    !principal->Subsumes(channelPrincipal));
 
   
   
@@ -137,7 +137,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
 
     nsAutoCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
-      mLoadInfo->mSourceMapURL = Some(NS_ConvertUTF8toUTF16(sourceMapURL));
+      mRequest->mSourceMapURL = Some(NS_ConvertUTF8toUTF16(sourceMapURL));
     }
   }
 
@@ -149,22 +149,22 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   
   
   if (StaticPrefs::dom_worker_script_loader_utf8_parsing_enabled()) {
-    mLoadInfo->InitUTF8Script();
+    mRequest->InitUTF8Script();
     rv = ScriptLoader::ConvertToUTF8(nullptr, aString, aStringLen, u"UTF-8"_ns,
-                                     parentDoc, mLoadInfo->mScript.mUTF8,
-                                     mLoadInfo->mScriptLength);
+                                     parentDoc, mRequest->mScript.mUTF8,
+                                     mRequest->mScriptLength);
   } else {
-    mLoadInfo->InitUTF16Script();
+    mRequest->InitUTF16Script();
     rv = ScriptLoader::ConvertToUTF16(nullptr, aString, aStringLen, u"UTF-8"_ns,
-                                      parentDoc, mLoadInfo->mScript.mUTF16,
-                                      mLoadInfo->mScriptLength);
+                                      parentDoc, mRequest->mScript.mUTF16,
+                                      mRequest->mScriptLength);
   }
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  if (mLoadInfo->ScriptTextIsNull()) {
-    if (mLoadInfo->mScriptLength != 0) {
+  if (mRequest->ScriptTextIsNull()) {
+    if (mRequest->mScriptLength != 0) {
       return NS_ERROR_FAILURE;
     }
 
@@ -186,7 +186,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     if (!filename.IsEmpty()) {
       
       
-      mLoadInfo->mURL.Assign(NS_ConvertUTF8toUTF16(filename));
+      mRequest->mURL.Assign(NS_ConvertUTF8toUTF16(filename));
     }
   }
 
@@ -295,7 +295,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
       ServiceWorkerManager::LocalizeAndReportToAllClients(
           scope, "ServiceWorkerRegisterMimeTypeError2",
           nsTArray<nsString>{NS_ConvertUTF8toUTF16(scope),
-                             NS_ConvertUTF8toUTF16(mimeType), mLoadInfo->mURL});
+                             NS_ConvertUTF8toUTF16(mimeType), mRequest->mURL});
 
       return NS_ERROR_DOM_NETWORK_ERR;
     }
@@ -304,11 +304,11 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   
   SafeRefPtr<mozilla::dom::InternalResponse> ir =
       MakeSafeRefPtr<mozilla::dom::InternalResponse>(200, "OK"_ns);
-  ir->SetBody(mLoadInfo->mCacheReadStream, InternalResponse::UNKNOWN_BODY_SIZE);
+  ir->SetBody(mRequest->mCacheReadStream, InternalResponse::UNKNOWN_BODY_SIZE);
 
   
   
-  mLoadInfo->mCacheReadStream = nullptr;
+  mRequest->mCacheReadStream = nullptr;
 
   
   
@@ -330,12 +330,12 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   ir->Headers()->FillResponseHeaders(channel);
 
   RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
-      mLoadInfo->GetCacheCreator()->Global(), std::move(ir), nullptr);
+      mRequest->GetCacheCreator()->Global(), std::move(ir), nullptr);
 
   mozilla::dom::RequestOrUSVString request;
 
-  MOZ_ASSERT(!mLoadInfo->mFullURL.IsEmpty());
-  request.SetAsUSVString().ShareOrDependUpon(mLoadInfo->mFullURL);
+  MOZ_ASSERT(!mRequest->mFullURL.IsEmpty());
+  request.SetAsUSVString().ShareOrDependUpon(mRequest->mFullURL);
 
   
   
@@ -343,7 +343,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   jsapi.Init();
 
   ErrorResult error;
-  RefPtr<Promise> cachePromise = mLoadInfo->GetCacheCreator()->Cache_()->Put(
+  RefPtr<Promise> cachePromise = mRequest->GetCacheCreator()->Cache_()->Put(
       jsapi.cx(), request, *response, error);
   error.WouldReportJSException();
   if (NS_WARN_IF(error.Failed())) {
@@ -351,11 +351,11 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   }
 
   RefPtr<CachePromiseHandler> promiseHandler =
-      new CachePromiseHandler(mLoader, mLoadInfo);
+      new CachePromiseHandler(mLoader, mRequest);
   cachePromise->AppendNativeHandler(promiseHandler);
 
-  mLoadInfo->mCachePromise.swap(cachePromise);
-  mLoadInfo->mCacheStatus = ScriptLoadInfo::WritingToCache;
+  mRequest->mCachePromise.swap(cachePromise);
+  mRequest->mCacheStatus = ScriptLoadInfo::WritingToCache;
 
   return NS_OK;
 }
