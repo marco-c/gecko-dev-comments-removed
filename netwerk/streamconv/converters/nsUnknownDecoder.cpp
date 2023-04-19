@@ -8,7 +8,6 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsMimeTypes.h"
-#include "nsIPrefBranch.h"
 
 #include "nsCRT.h"
 
@@ -25,7 +24,6 @@
 #include "nsQueryObject.h"
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIPrefService.h"
 
 #include <algorithm>
 
@@ -85,17 +83,8 @@ nsUnknownDecoder::nsUnknownDecoder(nsIStreamListener* aListener)
     : mNextListener(aListener),
       mBuffer(nullptr),
       mBufferLen(0),
-      mRequireHTMLsuffix(false),
       mMutex("nsUnknownDecoder"),
-      mDecodedData("") {
-  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefs) {
-    bool val;
-    if (NS_SUCCEEDED(prefs->GetBoolPref("security.requireHTMLsuffix", &val))) {
-      mRequireHTMLsuffix = val;
-    }
-  }
-}
+      mDecodedData("") {}
 
 nsUnknownDecoder::~nsUnknownDecoder() {
   if (mBuffer) {
@@ -343,30 +332,6 @@ nsUnknownDecoder::GetMIMETypeFromContent(nsIRequest* aRequest,
 
 
 
-bool nsUnknownDecoder::AllowSniffing(nsIRequest* aRequest) {
-  if (!mRequireHTMLsuffix) {
-    return true;
-  }
-
-  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-  if (!channel) {
-    NS_ERROR("QI failed");
-    return false;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  if (NS_FAILED(channel->GetURI(getter_AddRefs(uri))) || !uri) {
-    return false;
-  }
-
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  if (loadInfo->GetSkipContentSniffing()) {
-    return false;
-  }
-
-  return !uri->SchemeIs("file");
-}
-
 
 
 
@@ -528,15 +493,6 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
 }
 
 bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
-  
-
-
-
-
-  if (!AllowSniffing(aRequest)) {
-    return false;
-  }
-
   MutexAutoLock lock(mMutex);
 
   
@@ -595,11 +551,6 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
 }
 
 bool nsUnknownDecoder::SniffForXML(nsIRequest* aRequest) {
-  
-  if (!AllowSniffing(aRequest)) {
-    return false;
-  }
-
   
   if (!SniffURI(aRequest)) {
     

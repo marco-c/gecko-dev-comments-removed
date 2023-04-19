@@ -74,13 +74,6 @@ class nsUnknownDecoder : public nsIStreamConverter,
 
   
   
-  
-  
-  
-  bool AllowSniffing(nsIRequest* aRequest);
-
-  
-  
   bool SniffForHTML(nsIRequest* aRequest);
   bool SniffForXML(nsIRequest* aRequest);
 
@@ -126,7 +119,6 @@ class nsUnknownDecoder : public nsIStreamConverter,
   
   mozilla::Atomic<char*> mBuffer;
   mozilla::Atomic<uint32_t> mBufferLen;
-  mozilla::Atomic<bool> mRequireHTMLsuffix;
 
   nsCString mContentType;
 
