@@ -295,6 +295,18 @@ void ResizeObserver::Observe(Element& aTarget,
   observation =
       new ResizeObservation(aTarget, *this, aOptions.mBox,
                             frame ? frame->GetWritingMode() : WritingMode());
+  if (this == mDocument->GetLastRememberedSizeObserver()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    observation->UpdateLastReportedSize(gfx::Size(-1, -1));
+    MOZ_ASSERT(observation->IsActive());
+  }
   mObservationList.insertBack(observation);
 
   
@@ -489,6 +501,17 @@ void ResizeObserverEntry::SetDevicePixelContentSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
   mDevicePixelContentBoxSize = new ResizeObserverSize(mOwner, aSize, wm);
+}
+
+static void LastRememberedSizeCallback(
+    const Sequence<OwningNonNull<ResizeObserverEntry>>& aEntries,
+    ResizeObserver& aObserver) {
+  
+}
+
+ already_AddRefed<ResizeObserver>
+ResizeObserver::CreateLastRememberedSizeObserver(Document& aDocument) {
+  return do_AddRef(new ResizeObserver(aDocument, LastRememberedSizeCallback));
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserverSize, mOwner)

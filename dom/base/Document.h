@@ -3748,6 +3748,13 @@ class Document : public nsINode,
   void IncLazyLoadImageStarted() { ++mLazyLoadImageStarted; }
   void IncLazyLoadImageReachViewport(bool aLoading);
 
+  ResizeObserver* GetLastRememberedSizeObserver() {
+    return mLastRememberedSizeObserver;
+  }
+  ResizeObserver& EnsureLastRememberedSizeObserver();
+  void ObserveForLastRememberedSize(Element&);
+  void UnobserveForLastRememberedSize(Element&);
+
   
   nsresult Dispatch(TaskCategory aCategory,
                     already_AddRefed<nsIRunnable>&& aRunnable) final;
@@ -5112,6 +5119,10 @@ class Document : public nsINode,
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
   
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserverViewport;
+
+  
+  
+  RefPtr<ResizeObserver> mLastRememberedSizeObserver;
 
   
   nsTArray<nsWeakPtr> mTopLayer;
