@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-  
-
-
+  <!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1339722
+-->
   <head>
     <meta charset="utf-8" />
     <title>Test for Bug 1339722</title>
@@ -24,9 +24,6 @@
        * 4. Verify that it doesn't crash.
        **/
 
-      const { Services } = ChromeUtils.import(
-        "resource://gre/modules/Services.jsm"
-      );
       // This topic used to be http-on-useragent-request, but that got removed in
       // bug 1513574. on-modify-request is called around the same time, and should
       // behave similarly.
