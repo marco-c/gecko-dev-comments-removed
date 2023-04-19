@@ -11,6 +11,7 @@
 #include "modules/video_coding/timing.h"
 
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -18,7 +19,7 @@ namespace {
 const int kFps = 25;
 }  
 
-TEST(ReceiverTiming, Tests) {
+TEST(ReceiverTimingTest, JitterDelay) {
   SimulatedClock clock(0);
   VCMTiming timing(&clock);
   timing.Reset();
@@ -110,7 +111,7 @@ TEST(ReceiverTiming, Tests) {
   timing.UpdateCurrentDelay(timestamp);
 }
 
-TEST(ReceiverTiming, WrapAround) {
+TEST(ReceiverTimingTest, TimestampWrapAround) {
   SimulatedClock clock(0);
   VCMTiming timing(&clock);
   
@@ -124,6 +125,91 @@ TEST(ReceiverTiming, WrapAround) {
     EXPECT_EQ(3 * 1000 / kFps + 1,
               timing.RenderTimeMs(89u,  
                                   clock.TimeInMilliseconds()));
+  }
+}
+
+TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
+  
+  
+  constexpr int64_t kStartTimeUs = 3.15e13;  
+  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
+  constexpr int64_t kZeroRenderTimeMs = 0;
+  SimulatedClock clock(kStartTimeUs);
+  VCMTiming timing(&clock);
+  timing.Reset();
+  for (int i = 0; i < 10; ++i) {
+    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
+    int64_t now_ms = clock.TimeInMilliseconds();
+    EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  }
+  
+  
+  int64_t now_ms = clock.TimeInMilliseconds();
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+}
+
+TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
+  
+  
+  constexpr int64_t kMinPacingMs = 3;
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
+  constexpr int64_t kStartTimeUs = 3.15e13;  
+  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
+  constexpr int64_t kZeroRenderTimeMs = 0;
+  SimulatedClock clock(kStartTimeUs);
+  VCMTiming timing(&clock);
+  timing.Reset();
+  
+  for (int i = 0; i < 10; ++i) {
+    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
+    int64_t now_ms = clock.TimeInMilliseconds();
+    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+  }
+  
+  
+  int64_t now_ms = clock.TimeInMilliseconds();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
+  
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 2 * kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 3 * kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 4 * kMinPacingMs);
+  
+  constexpr int64_t kTwoMs = 2;
+  clock.AdvanceTimeMilliseconds(kTwoMs);
+  now_ms = clock.TimeInMilliseconds();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms),
+            5 * kMinPacingMs - kTwoMs);
+}
+
+TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
+  
+  
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
+  constexpr int64_t kStartTimeUs = 3.15e13;  
+  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
+  SimulatedClock clock(kStartTimeUs);
+  VCMTiming timing(&clock);
+  timing.Reset();
+  clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
+  int64_t now_ms = clock.TimeInMilliseconds();
+  int64_t render_time_ms = now_ms + 30;
+  
+  int64_t estimated_processing_delay =
+      (render_time_ms - now_ms) - timing.MaxWaitingTime(render_time_ms, now_ms);
+  EXPECT_GT(estimated_processing_delay, 0);
+
+  
+  
+  for (int i = 0; i < 5; ++i) {
+    render_time_ms += kTimeDeltaMs;
+    EXPECT_EQ(timing.MaxWaitingTime(render_time_ms, now_ms),
+              render_time_ms - now_ms - estimated_processing_delay);
   }
 }
 
