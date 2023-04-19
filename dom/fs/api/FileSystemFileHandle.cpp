@@ -5,8 +5,8 @@
 
 
 #include "FileSystemFileHandle.h"
-#include "fs/FileSystemRequestHandler.h"
 
+#include "fs/FileSystemRequestHandler.h"
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
@@ -77,7 +77,7 @@ already_AddRefed<Promise> FileSystemFileHandle::CreateSyncAccessHandle(
     return nullptr;
   }
 
-  promise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
+  mRequestHandler->GetAccessHandle(mManager, mMetadata, promise);
 
   return promise.forget();
 }

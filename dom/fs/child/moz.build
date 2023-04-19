@@ -5,13 +5,16 @@
 
 
 EXPORTS.mozilla.dom += [
+    "FileSystemAccessHandleChild.h",
     "FileSystemManagerChild.h",
 ]
 
 UNIFIED_SOURCES += [
+    "FileSystemAccessHandleChild.cpp",
     "FileSystemBackgroundRequestHandler.cpp",
     "FileSystemChildFactory.cpp",
     "FileSystemDirectoryIteratorFactory.cpp",
+    "FileSystemManagerChild.cpp", 
     "FileSystemRequestHandler.cpp",
 ]
 
