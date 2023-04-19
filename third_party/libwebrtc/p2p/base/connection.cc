@@ -843,18 +843,18 @@ bool Connection::Shutdown() {
 
   RTC_DLOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
 
+  LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
+
+  
+  
+  port_.reset();
+
   
   
   
   
   SignalDestroyed(this);
   SignalDestroyed.disconnect_all();
-
-  LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
-
-  
-  
-  port_.reset();
 
   return true;
 }
