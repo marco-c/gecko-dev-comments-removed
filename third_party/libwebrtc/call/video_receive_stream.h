@@ -56,11 +56,6 @@ class VideoReceiveStream {
     std::function<void(const RecordableEncodedFrame&)> callback;
     
     
-    
-    
-    bool keyframe_needed = false;
-    
-    
     absl::optional<int64_t> last_keyframe_request_ms;
   };
 
