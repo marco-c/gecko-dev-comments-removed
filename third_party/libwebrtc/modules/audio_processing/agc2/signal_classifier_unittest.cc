@@ -14,25 +14,25 @@
 #include <functional>
 #include <limits>
 
+#include "api/function_view.h"
 #include "modules/audio_processing/agc2/agc2_testing_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/random.h"
 
 namespace webrtc {
-
 namespace {
-Random rand_gen(42);
-ApmDataDumper data_dumper(0);
 constexpr int kNumIterations = 100;
 
 
 
-int RunClassifier(std::function<float()> sample_generator, int rate) {
+float RunClassifier(rtc::FunctionView<float()> sample_generator,
+                    int sample_rate_hz) {
+  ApmDataDumper data_dumper(0);
   SignalClassifier classifier(&data_dumper);
   std::array<float, 480> signal;
-  classifier.Initialize(rate);
-  const size_t samples_per_channel = rtc::CheckedDivExact(rate, 100);
+  classifier.Initialize(sample_rate_hz);
+  const size_t samples_per_channel = rtc::CheckedDivExact(sample_rate_hz, 100);
   int number_of_noise_frames = 0;
   for (int i = 0; i < kNumIterations; ++i) {
     for (size_t j = 0; j < samples_per_channel; ++j) {
@@ -45,38 +45,42 @@ int RunClassifier(std::function<float()> sample_generator, int rate) {
   return number_of_noise_frames;
 }
 
-float WhiteNoiseGenerator() {
-  return static_cast<float>(rand_gen.Rand(std::numeric_limits<int16_t>::min(),
-                                          std::numeric_limits<int16_t>::max()));
+class SignalClassifierParametrization : public ::testing::TestWithParam<int> {
+ protected:
+  int sample_rate_hz() const { return GetParam(); }
+};
+
+
+
+TEST_P(SignalClassifierParametrization, WhiteNoise) {
+  test::WhiteNoiseGenerator gen(test::kMinS16,
+                                test::kMaxS16);
+  const int number_of_noise_frames = RunClassifier(gen, sample_rate_hz());
+  EXPECT_GT(number_of_noise_frames, kNumIterations / 2);
 }
+
+
+
+TEST_P(SignalClassifierParametrization, SineTone) {
+  test::SineGenerator gen(test::kMaxS16, 600.0f,
+                          sample_rate_hz());
+  const int number_of_noise_frames = RunClassifier(gen, sample_rate_hz());
+  EXPECT_GE(number_of_noise_frames, kNumIterations - 5);
+}
+
+
+
+TEST_P(SignalClassifierParametrization, PulseTone) {
+  test::PulseGenerator gen(test::kMaxS16,
+                           10.0f, 20.0f,
+                           sample_rate_hz());
+  const int number_of_noise_frames = RunClassifier(gen, sample_rate_hz());
+  EXPECT_EQ(number_of_noise_frames, 0);
+}
+
+INSTANTIATE_TEST_SUITE_P(GainController2SignalClassifier,
+                         SignalClassifierParametrization,
+                         ::testing::Values(8000, 16000, 32000, 48000));
+
 }  
-
-
-
-TEST(AutomaticGainController2SignalClassifier, WhiteNoise) {
-  for (const auto rate : {8000, 16000, 32000, 48000}) {
-    const int number_of_noise_frames = RunClassifier(WhiteNoiseGenerator, rate);
-    EXPECT_GT(number_of_noise_frames, kNumIterations / 2);
-  }
-}
-
-
-
-TEST(AutomaticGainController2SignalClassifier, SineTone) {
-  for (const auto rate : {8000, 16000, 32000, 48000}) {
-    test::SineGenerator gen(600.f, rate);
-    const int number_of_noise_frames = RunClassifier(gen, rate);
-    EXPECT_GE(number_of_noise_frames, kNumIterations - 5);
-  }
-}
-
-
-
-TEST(AutomaticGainController2SignalClassifier, PulseTone) {
-  for (const auto rate : {8000, 16000, 32000, 48000}) {
-    test::PulseGenerator gen(30.f, rate);
-    const int number_of_noise_frames = RunClassifier(gen, rate);
-    EXPECT_EQ(number_of_noise_frames, 0);
-  }
-}
 }  
