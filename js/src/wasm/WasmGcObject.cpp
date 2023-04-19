@@ -409,7 +409,7 @@ bool WasmGcObject::loadValue(JSContext* cx, const RttValue::PropOffset& offset,
   
   
   
-  if (type.isTypeRef()) {
+  if (type.isTypeIndex()) {
     type = RefType::fromTypeCode(TypeCode::EqRef, true);
   }
 

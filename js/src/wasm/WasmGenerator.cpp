@@ -229,25 +229,25 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
       codeSectionSize / ByteCodesPerOOBTrap);
 
   
+
   MOZ_ASSERT(metadata_->globalDataLength == 0);
 
-  
-  size_t typeIdsSize = moduleEnv_->types->length() * sizeof(void*);
-  if (!allocateGlobalBytes(typeIdsSize, sizeof(void*),
-                           &moduleEnv_->typeIdsOffsetStart)) {
-    return false;
-  }
-  metadata_->typeIdsOffsetStart = moduleEnv_->typeIdsOffsetStart;
+  for (size_t i = 0; i < moduleEnv_->funcImportGlobalDataOffsets.length();
+       i++) {
+    uint32_t globalDataOffset;
+    if (!allocateGlobalBytes(sizeof(FuncImportInstanceData), sizeof(void*),
+                             &globalDataOffset)) {
+      return false;
+    }
 
-  
-  size_t funcImportsSize =
-      sizeof(FuncImportInstanceData) * moduleEnv_->numFuncImports;
-  if (!allocateGlobalBytes(funcImportsSize, sizeof(void*),
-                           &moduleEnv_->funcImportsOffsetStart)) {
-    return false;
+    moduleEnv_->funcImportGlobalDataOffsets[i] = globalDataOffset;
+
+    if (!metadataTier_->funcImports.emplaceBack(
+            FuncImport(moduleEnv_->funcs[i].typeIndex, globalDataOffset))) {
+      return false;
+    }
   }
 
-  
   for (TableDesc& table : moduleEnv_->tables) {
     if (!allocateGlobalBytes(sizeof(TableInstanceData), sizeof(void*),
                              &table.globalDataOffset)) {
@@ -255,7 +255,55 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
     }
   }
 
+  for (TagDesc& tag : moduleEnv_->tags) {
+    if (!allocateGlobalBytes(sizeof(void*), sizeof(void*),
+                             &tag.globalDataOffset)) {
+      return false;
+    }
+  }
+
   
+  if (!metadata_->types.resize(moduleEnv_->types->length())) {
+    return false;
+  }
+
+  for (uint32_t i = 0; i < moduleEnv_->types->length(); i++) {
+    const TypeDef& typeDef = (*moduleEnv_->types)[i];
+    if (!metadata_->types[i].clone(typeDef)) {
+      return false;
+    }
+  }
+
+  
+  
+  if (!metadata_->typeIds.resize(moduleEnv_->types->length())) {
+    return false;
+  }
+
+  
+  
+  if (!isAsmJS()) {
+    for (uint32_t i = 0; i < moduleEnv_->types->length(); i++) {
+      const TypeDef& typeDef = (*moduleEnv_->types)[i];
+
+      TypeIdDesc typeId;
+      if (TypeIdDesc::isGlobal(typeDef)) {
+        uint32_t globalDataOffset;
+        if (!allocateGlobalBytes(sizeof(void*), sizeof(void*),
+                                 &globalDataOffset)) {
+          return false;
+        }
+
+        typeId = TypeIdDesc::global(typeDef, globalDataOffset);
+      } else {
+        typeId = TypeIdDesc::immediate(typeDef);
+      }
+
+      moduleEnv_->typeIds[i] = typeId;
+      metadata_->typeIds[i] = typeId;
+    }
+  }
+
   for (GlobalDesc& global : moduleEnv_->globals) {
     if (global.isConstant()) {
       continue;
@@ -270,28 +318,6 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
 
     global.setOffset(globalDataOffset);
   }
-
-  
-  for (TagDesc& tag : moduleEnv_->tags) {
-    if (!allocateGlobalBytes(sizeof(void*), sizeof(void*),
-                             &tag.globalDataOffset)) {
-      return false;
-    }
-  }
-
-  
-  if (!metadataTier_->funcImports.resize(moduleEnv_->numFuncImports)) {
-    return false;
-  }
-
-  for (size_t i = 0; i < moduleEnv_->numFuncImports; i++) {
-    metadataTier_->funcImports[i] =
-        FuncImport(moduleEnv_->funcs[i].typeIndex,
-                   moduleEnv_->offsetOfFuncImportInstanceData(i));
-  }
-
-  
-  metadata_->types = moduleEnv_->types;
 
   
   

@@ -44,7 +44,6 @@ namespace wasm {
 
 using mozilla::EnumeratedArray;
 
-struct ModuleEnvironment;
 struct TableDesc;
 struct V128;
 
@@ -618,42 +617,6 @@ WASM_DECLARE_POD_VECTOR(TryNote, TryNoteVector)
 
 
 
-enum class CallIndirectIdKind { None, Immediate, Global };
-
-class CallIndirectId {
-  CallIndirectIdKind kind_;
-  size_t bits_;
-
-  CallIndirectId(CallIndirectIdKind kind, size_t bits)
-      : kind_(kind), bits_(bits) {}
-
- public:
-  CallIndirectId() : kind_(CallIndirectIdKind::None), bits_(0) {}
-
-  
-  static CallIndirectId forFunc(const ModuleEnvironment& moduleEnv,
-                                uint32_t funcIndex);
-
-  
-  static CallIndirectId forFuncType(const ModuleEnvironment& moduleEnv,
-                                    uint32_t funcTypeIndex);
-
-  CallIndirectIdKind kind() const { return kind_; }
-  bool isGlobal() const { return kind_ == CallIndirectIdKind::Global; }
-
-  uint32_t immediate() const {
-    MOZ_ASSERT(kind_ == CallIndirectIdKind::Immediate);
-    return bits_;
-  }
-  uint32_t globalDataOffset() const {
-    MOZ_ASSERT(kind_ == CallIndirectIdKind::Global);
-    return bits_;
-  }
-};
-
-
-
-
 class CalleeDesc {
  public:
   enum Which {
@@ -695,17 +658,20 @@ class CalleeDesc {
       uint32_t globalDataOffset_;
       uint32_t minLength_;
       Maybe<uint32_t> maxLength_;
-      CallIndirectId callIndirectId_;
+      TypeIdDesc funcTypeId_;
     } table;
     SymbolicAddress builtin_;
   } u;
+
+  WASM_CHECK_CACHEABLE_POD(which_, u.funcIndex_, u.import.globalDataOffset_,
+                           u.table.globalDataOffset_, u.table.minLength_,
+                           u.table.maxLength_, u.table.funcTypeId_, u.builtin_);
 
  public:
   CalleeDesc() = default;
   static CalleeDesc function(uint32_t funcIndex);
   static CalleeDesc import(uint32_t globalDataOffset);
-  static CalleeDesc wasmTable(const TableDesc& desc,
-                              CallIndirectId callIndirectId);
+  static CalleeDesc wasmTable(const TableDesc& desc, TypeIdDesc funcTypeId);
   static CalleeDesc asmJSTable(const TableDesc& desc);
   static CalleeDesc builtin(SymbolicAddress callee);
   static CalleeDesc builtinInstanceMethod(SymbolicAddress callee);
@@ -728,9 +694,9 @@ class CalleeDesc {
     MOZ_ASSERT(isTable());
     return u.table.globalDataOffset_ + offsetof(TableInstanceData, elements);
   }
-  CallIndirectId wasmTableSigId() const {
+  TypeIdDesc wasmTableSigId() const {
     MOZ_ASSERT(which_ == WasmTable);
-    return u.table.callIndirectId_;
+    return u.table.funcTypeId_;
   }
   uint32_t wasmTableMinLength() const {
     MOZ_ASSERT(which_ == WasmTable);
@@ -746,6 +712,8 @@ class CalleeDesc {
   }
   bool isFuncRef() const { return which_ == FuncRef; }
 };
+
+WASM_DECLARE_CACHEABLE_POD(CalleeDesc);
 
 }  
 }  
