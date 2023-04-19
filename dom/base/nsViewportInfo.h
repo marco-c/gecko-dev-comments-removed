@@ -105,11 +105,11 @@ class MOZ_STACK_CLASS nsViewportInfo {
 
   mozilla::dom::ViewportFitType GetViewportFit() const { return mViewportFit; }
 
-  enum {
-    Auto = -1,
-    ExtendToZoom = -2,
-    DeviceSize = -3,  
-  };
+  static constexpr float kAuto = -1.0f;
+  static constexpr float kExtendToZoom = -2.0f;
+  static constexpr float kDeviceSize =
+      -3.0f;  
+
   
   
   
