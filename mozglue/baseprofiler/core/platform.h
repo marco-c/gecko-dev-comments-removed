@@ -137,8 +137,7 @@ void profiler_get_profile_json_into_lazily_allocated_buffer(
 
 enum class JSInstrumentationFlags {
   StackSampling = 0x1,
-  TraceLogging = 0x2,
-  Allocations = 0x4,
+  Allocations = 0x2,
 };
 
 
