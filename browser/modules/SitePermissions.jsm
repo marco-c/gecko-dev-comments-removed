@@ -83,7 +83,7 @@ const TemporaryPermissions = {
       !browserURI ||
       !SitePermissions.isSupportedScheme(browserURI.scheme)
     ) {
-      return;
+      return false;
     }
     let entry = this._stateByBrowser.get(browser);
     if (!entry) {
@@ -112,6 +112,7 @@ const TemporaryPermissions = {
     }
 
     let expireTimeout = uriToPerm[setKey][id]?.expireTimeout;
+    let previousState = uriToPerm[setKey][id]?.state;
     
     if (expireTimeout) {
       lazy.clearTimeout(expireTimeout);
@@ -139,14 +140,15 @@ const TemporaryPermissions = {
     
     
     let permissions = uriToPerm[deleteKey];
-    if (!permissions) {
-      return;
+    if (permissions) {
+      expireTimeout = permissions[id]?.expireTimeout;
+      if (expireTimeout) {
+        lazy.clearTimeout(expireTimeout);
+      }
+      delete permissions[id];
     }
-    expireTimeout = permissions[id]?.expireTimeout;
-    if (expireTimeout) {
-      lazy.clearTimeout(expireTimeout);
-    }
-    delete permissions[id];
+
+    return state != previousState;
   },
 
   
@@ -156,7 +158,7 @@ const TemporaryPermissions = {
       !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
       !this._stateByBrowser.has(browser)
     ) {
-      return;
+      return false;
     }
     
     
@@ -172,9 +174,10 @@ const TemporaryPermissions = {
         
         
         
-        return;
+        return true;
       }
     }
+    return false;
   },
 
   
@@ -321,7 +324,7 @@ const GloballyBlockedPermissions = {
     }
 
     if (entry[prePath][id]) {
-      return;
+      return false;
     }
     entry[prePath][id] = true;
 
@@ -350,6 +353,7 @@ const GloballyBlockedPermissions = {
       },
       Ci.nsIWebProgress.NOTIFY_LOCATION
     );
+    return true;
   },
 
   
@@ -806,10 +810,11 @@ var SitePermissions = {
       );
     }
     if (scope == this.SCOPE_GLOBAL && state == this.BLOCK) {
-      GloballyBlockedPermissions.set(browser, permissionID);
-      browser.dispatchEvent(
-        new browser.ownerGlobal.CustomEvent("PermissionStateChange")
-      );
+      if (GloballyBlockedPermissions.set(browser, permissionID)) {
+        browser.dispatchEvent(
+          new browser.ownerGlobal.CustomEvent("PermissionStateChange")
+        );
+      }
       return;
     }
 
@@ -840,26 +845,28 @@ var SitePermissions = {
         throw new Error("expireTime must be a positive integer");
       }
 
-      TemporaryPermissions.set(
-        browser,
-        permissionID,
-        state,
-        expireTimeMS,
-        browserURI,
-        
-        origBrowser => {
-          if (!origBrowser.ownerGlobal) {
-            return;
+      if (
+        TemporaryPermissions.set(
+          browser,
+          permissionID,
+          state,
+          expireTimeMS,
+          browserURI,
+          
+          origBrowser => {
+            if (!origBrowser.ownerGlobal) {
+              return;
+            }
+            origBrowser.dispatchEvent(
+              new origBrowser.ownerGlobal.CustomEvent("PermissionStateChange")
+            );
           }
-          origBrowser.dispatchEvent(
-            new origBrowser.ownerGlobal.CustomEvent("PermissionStateChange")
-          );
-        }
-      );
-
-      browser.dispatchEvent(
-        new browser.ownerGlobal.CustomEvent("PermissionStateChange")
-      );
+        )
+      ) {
+        browser.dispatchEvent(
+          new browser.ownerGlobal.CustomEvent("PermissionStateChange")
+        );
+      }
     } else if (this.isSupportedPrincipal(principal)) {
       let perms_scope = Services.perms.EXPIRE_NEVER;
       if (scope == this.SCOPE_SESSION) {
@@ -900,9 +907,8 @@ var SitePermissions = {
     }
 
     
-    if (TemporaryPermissions.get(browser, permissionID)) {
-      
-      TemporaryPermissions.remove(browser, permissionID);
+    
+    if (TemporaryPermissions.remove(browser, permissionID)) {
       
       browser.dispatchEvent(
         new browser.ownerGlobal.CustomEvent("PermissionStateChange")
