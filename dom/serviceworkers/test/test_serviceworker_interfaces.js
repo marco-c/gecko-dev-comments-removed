@@ -125,9 +125,9 @@ var interfaceNamesInGlobalScope = [
   
   "CacheStorage",
   
-  { name: "CanvasGradient", earlyBetaOrEarlier: true },
+  "CanvasGradient",
   
-  { name: "CanvasPattern", earlyBetaOrEarlier: true },
+  "CanvasPattern",
   
   "Client",
   
@@ -181,11 +181,11 @@ var interfaceNamesInGlobalScope = [
   
   "FileReader",
   
-  { name: "FontFace", earlyBetaOrEarlier: true },
+  "FontFace",
   
-  { name: "FontFaceSet", earlyBetaOrEarlier: true },
+  "FontFaceSet",
   
-  { name: "FontFaceSetLoadEvent", earlyBetaOrEarlier: true },
+  "FontFaceSetLoadEvent",
   
   "FormData",
   
@@ -241,11 +241,11 @@ var interfaceNamesInGlobalScope = [
   
   "NotificationEvent",
   
-  { name: "OffscreenCanvas", earlyBetaOrEarlier: true },
+  "OffscreenCanvas",
   
-  { name: "OffscreenCanvasRenderingContext2D", earlyBetaOrEarlier: true },
+  "OffscreenCanvasRenderingContext2D",
   
-  { name: "Path2D", earlyBetaOrEarlier: true },
+  "Path2D",
   
   "Performance",
   
@@ -333,39 +333,39 @@ var interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
-  { name: "WebGL2RenderingContext", earlyBetaOrEarlier: true },
+  "WebGL2RenderingContext",
   
-  { name: "WebGLActiveInfo", earlyBetaOrEarlier: true },
+  "WebGLActiveInfo",
   
-  { name: "WebGLBuffer", earlyBetaOrEarlier: true },
+  "WebGLBuffer",
   
-  { name: "WebGLContextEvent", earlyBetaOrEarlier: true },
+  "WebGLContextEvent",
   
-  { name: "WebGLFramebuffer", earlyBetaOrEarlier: true },
+  "WebGLFramebuffer",
   
-  { name: "WebGLProgram", earlyBetaOrEarlier: true },
+  "WebGLProgram",
   
   "WebGLQuery",
   
-  { name: "WebGLRenderbuffer", earlyBetaOrEarlier: true },
+  "WebGLRenderbuffer",
   
-  { name: "WebGLRenderingContext", earlyBetaOrEarlier: true },
+  "WebGLRenderingContext",
   
-  { name: "WebGLSampler", earlyBetaOrEarlier: true },
+  "WebGLSampler",
   
-  { name: "WebGLShader", earlyBetaOrEarlier: true },
+  "WebGLShader",
   
-  { name: "WebGLShaderPrecisionFormat", earlyBetaOrEarlier: true },
+  "WebGLShaderPrecisionFormat",
   
-  { name: "WebGLSync", earlyBetaOrEarlier: true },
+  "WebGLSync",
   
-  { name: "WebGLTexture", earlyBetaOrEarlier: true },
+  "WebGLTexture",
   
-  { name: "WebGLTransformFeedback", earlyBetaOrEarlier: true },
+  "WebGLTransformFeedback",
   
-  { name: "WebGLUniformLocation", earlyBetaOrEarlier: true },
+  "WebGLUniformLocation",
   
-  { name: "WebGLVertexArrayObject", earlyBetaOrEarlier: true },
+  "WebGLVertexArrayObject",
   
   "WindowClient",
   
