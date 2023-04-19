@@ -1407,6 +1407,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branch8(Condition cond, const Address& lhs, Imm32 rhs,
                       Label* label) PER_SHARED_ARCH;
 
+  
+  
+  
+  
+  inline void branch8(Condition cond, const BaseIndex& lhs, Register rhs,
+                      Label* label) PER_SHARED_ARCH;
+
   inline void branch16(Condition cond, const Address& lhs, Imm32 rhs,
                        Label* label) PER_SHARED_ARCH;
 
