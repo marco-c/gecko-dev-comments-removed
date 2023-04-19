@@ -79,6 +79,14 @@ void ReleaseMultiInstanceLock(MultiInstLockHandle lock);
 
 bool IsOtherInstanceRunning(MultiInstLockHandle lock, bool* aResult);
 
+
+
+
+
+
+
+already_AddRefed<nsIFile> GetNormalizedAppFile(nsIFile* aAppFile);
+
 };  
 
 #endif  

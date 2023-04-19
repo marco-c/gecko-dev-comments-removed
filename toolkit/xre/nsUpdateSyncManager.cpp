@@ -16,10 +16,6 @@
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 
-#ifdef XP_WIN
-#  include "WinUtils.h"
-#endif
-
 
 
 #define UPDATE_LOCK_NAME_TOKEN "UpdateLock"
@@ -71,59 +67,21 @@ NS_IMETHODIMP nsUpdateSyncManager::Observe(nsISupports* aSubject,
 }
 
 nsresult nsUpdateSyncManager::OpenLock(nsIFile* anAppFile) {
+  nsresult rv;
   if (mLock != MULTI_INSTANCE_LOCK_HANDLE_ERROR) {
     
     return NS_OK;
   }
 
   
-  
   if (NS_WARN_IF(XRE_GetProcessType() != GeckoProcessType_Default)) {
     return NS_OK;
   }
 
-  
-  
-  nsresult rv;
-  nsCOMPtr<nsIFile> appFile;
-  if (anAppFile) {
-    rv = anAppFile->Clone(getter_AddRefs(appFile));
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    nsCOMPtr<nsIProperties> dirSvc =
-        do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID);
-    NS_ENSURE_TRUE(dirSvc, NS_ERROR_SERVICE_NOT_AVAILABLE);
-
-    rv = dirSvc->Get(XRE_EXECUTABLE_FILE, NS_GET_IID(nsIFile),
-                     getter_AddRefs(appFile));
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIFile> appFile = mozilla::GetNormalizedAppFile(anAppFile);
+  if (!appFile) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef XP_WIN
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(appFile)) {
-    NS_WARNING("Failed to resolve install directory.");
-  }
-#elif defined(MOZ_WIDGET_COCOA)
-  
-  FSRef ref;
-  nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(appFile);
-  if (macFile && NS_SUCCEEDED(macFile->GetFSRef(&ref)) &&
-      NS_SUCCEEDED(
-          NS_NewLocalFileWithFSRef(&ref, true, getter_AddRefs(macFile)))) {
-    appFile = static_cast<nsIFile*>(macFile);
-  } else {
-    NS_WARNING("Failed to resolve install directory.");
-  }
-#endif
 
   nsCOMPtr<nsIFile> appDirFile;
   rv = appFile->GetParent(getter_AddRefs(appDirFile));
@@ -133,8 +91,8 @@ nsresult nsUpdateSyncManager::OpenLock(nsIFile* anAppFile) {
   rv = appDirFile->GetPath(appDirPath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mLock = mozilla::OpenMultiInstanceLock(UPDATE_LOCK_NAME_TOKEN,
-                                         PromiseFlatString(appDirPath).get());
+  mLock =
+      mozilla::OpenMultiInstanceLock(UPDATE_LOCK_NAME_TOKEN, appDirPath.get());
   NS_ENSURE_TRUE(mLock, NS_ERROR_FAILURE);
 
   return NS_OK;
