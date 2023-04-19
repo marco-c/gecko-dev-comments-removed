@@ -26,7 +26,7 @@ use style_traits::{CssWriter, ParseError, ToCss};
 pub use crate::values::computed::Length as MozScriptMinSize;
 pub use crate::values::specified::font::FontPalette;
 pub use crate::values::specified::font::{FontSynthesis, MozScriptSizeMultiplier};
-pub use crate::values::specified::font::{XLang, XTextZoom};
+pub use crate::values::specified::font::{FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric, XLang, XTextZoom};
 pub use crate::values::specified::Integer as SpecifiedInteger;
 
 
@@ -698,26 +698,6 @@ impl FontSizeAdjust {
         FontSizeAdjust::None
     }
 }
-
-
-pub type FontVariantAlternates = specified::VariantAlternatesList;
-
-impl FontVariantAlternates {
-    
-    #[inline]
-    pub fn get_initial_value() -> Self {
-        Self::default()
-    }
-}
-
-
-pub type FontVariantEastAsian = specified::VariantEastAsian;
-
-
-pub type FontVariantLigatures = specified::VariantLigatures;
-
-
-pub type FontVariantNumeric = specified::VariantNumeric;
 
 
 pub type FontFeatureSettings = FontSettings<FeatureTagValue<Integer>>;

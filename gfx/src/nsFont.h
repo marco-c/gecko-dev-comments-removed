@@ -60,7 +60,7 @@ struct nsFont final {
   
   
   
-  mozilla::StyleVariantAlternatesList variantAlternates;
+  mozilla::StyleFontVariantAlternates variantAlternates;
 
   
   uint16_t variantLigatures = NS_FONT_VARIANT_LIGATURES_NORMAL;

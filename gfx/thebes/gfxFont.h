@@ -110,7 +110,7 @@ struct gfxFontStyle {
   
 
   
-  mozilla::StyleVariantAlternatesList variantAlternates;
+  mozilla::StyleFontVariantAlternates variantAlternates;
 
   
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
