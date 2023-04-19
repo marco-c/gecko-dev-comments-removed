@@ -10294,7 +10294,8 @@ void nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
     nsIFrame* nextFrame = frame->GetNextSibling();
 
     
-    if (frame->Style()->GetPseudoType() == PseudoStyleType::marker) {
+    if (frame->Style()->GetPseudoType() == PseudoStyleType::marker ||
+        frame->IsPlaceholderFrame()) {
       prevFrame = frame;
       frame = nextFrame;
       continue;
