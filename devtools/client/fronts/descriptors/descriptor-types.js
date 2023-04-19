@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+module.exports = {
+  PROCESS: "process",
+  WORKER: "worker",
+  TAB: "tab",
+  EXTENSION: "extension",
+};
