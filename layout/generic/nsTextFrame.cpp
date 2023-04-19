@@ -2343,24 +2343,6 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     } else if (mLineContainer->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
       flags2 |= nsTextFrameUtils::Flags::IsSingleCharMi;
       anyMathMLStyling = true;
-      
-      
-      
-      if (parent) {
-        nsIContent* content = parent->GetContent();
-        if (content && content->IsElement()) {
-          if (content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                nsGkAtoms::fontstyle_,
-                                                u"normal"_ns, eCaseMatters)) {
-            mathFlags |= MathMLTextRunFactory::MATH_FONT_STYLING_NORMAL;
-          }
-          if (content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                nsGkAtoms::fontweight_,
-                                                u"bold"_ns, eCaseMatters)) {
-            mathFlags |= MathMLTextRunFactory::MATH_FONT_WEIGHT_BOLD;
-          }
-        }
-      }
     }
     if (mLineContainer->HasAnyStateBits(TEXT_IS_IN_TOKEN_MATHML)) {
       

@@ -524,23 +524,7 @@ void MathMLTextRunFactory::RebuildTextRun(
     mathVar = styles[i]->mMathVariant;
 
     if (singleCharMI && mathVar == StyleMathVariant::None) {
-      
-      
-      
-      
-      if (mFlags & MATH_FONT_WEIGHT_BOLD) {
-        font.weight = FontWeight::BOLD;
-        if (mFlags & MATH_FONT_STYLING_NORMAL) {
-          font.style = FontSlantStyle::NORMAL;
-        } else {
-          font.style = FontSlantStyle::ITALIC;
-        }
-      } else if (mFlags & MATH_FONT_STYLING_NORMAL) {
-        font.style = FontSlantStyle::NORMAL;
-        font.weight = FontWeight::NORMAL;
-      } else {
-        mathVar = StyleMathVariant::Italic;
-      }
+      mathVar = StyleMathVariant::Italic;
     }
 
     uint32_t ch = str[i];

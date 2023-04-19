@@ -30,8 +30,6 @@ class MathMLTextRunFactory : public nsTransformingTextRunFactory {
                               gfxMissingFontRecorder* aMFR) override;
   enum {
     
-    MATH_FONT_STYLING_NORMAL = 0x1,  
-    MATH_FONT_WEIGHT_BOLD = 0x2,     
     MATH_FONT_FEATURE_DTLS = 0x4,    
   };
 
