@@ -103,6 +103,8 @@ var WebConsoleUtils = {
         }
       
       case "function":
+      case "record":
+      case "tuple":
         return objectWrapper(value);
       default:
         console.error(

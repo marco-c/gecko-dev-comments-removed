@@ -137,6 +137,16 @@ function createValueGrip(value, pool, makeObjectGrip) {
         text: value.toString(),
       };
 
+    
+    
+    case "record":
+      return {
+        class: "Record",
+      };
+    case "tuple":
+      return {
+        class: "Tuple",
+      };
     case "undefined":
       return { type: "undefined" };
 
