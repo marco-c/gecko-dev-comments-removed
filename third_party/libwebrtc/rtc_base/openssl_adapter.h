@@ -89,6 +89,16 @@ class OpenSSLAdapter final : public SSLAdapter,
   void OnCloseEvent(AsyncSocket* socket, int err) override;
 
  private:
+  class EarlyExitCatcher {
+   public:
+    EarlyExitCatcher(OpenSSLAdapter& adapter_ptr);
+    void disable();
+    ~EarlyExitCatcher();
+
+   private:
+    bool disabled_ = false;
+    OpenSSLAdapter& adapter_ptr_;
+  };
   enum SSLState {
     SSL_NONE,
     SSL_WAIT,
@@ -201,6 +211,10 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   friend class OpenSSLAdapter;
 };
+
+
+
+
 
 std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
