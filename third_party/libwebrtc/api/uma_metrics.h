@@ -170,6 +170,30 @@ enum SimulcastApiVersion {
 
 
 
+enum BundleUsage {
+  
+  kBundleUsageEmpty = 0,
+  
+  kBundleUsageNoBundleDatachannelOnly = 1,
+  
+  kBundleUsageNoBundleSimple = 2,
+  
+  kBundleUsageNoBundleComplex = 3,
+  
+  kBundleUsageBundleDatachannelOnly = 4,
+  
+  kBundleUsageBundleSimple = 5,
+  
+  kBundleUsageBundleComplex = 6,
+  
+  kBundleUsageNoBundlePlanB = 7,
+  kBundleUsageBundlePlanB = 8,
+  kBundleUsageMax
+};
+
+
+
+
 
 }  
 

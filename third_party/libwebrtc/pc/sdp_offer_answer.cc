@@ -2156,6 +2156,7 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
       desc->GetType() == SdpType::kAnswer) {
     
     pc_->ReportSdpFormatReceived(*desc);
+    pc_->ReportSdpBundleUsage(*desc);
   }
 
   
