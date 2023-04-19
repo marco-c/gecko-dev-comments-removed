@@ -34,9 +34,6 @@ class JOG {
 
 
 
-
-
-
   static bool EnsureRuntimeMetricsRegistered(bool aForce = false);
 
   

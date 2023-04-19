@@ -1,10 +1,6 @@
 
 
 
-extern crate mozbuild;
-extern crate nsstring;
-use nsstring::nsString;
-
 fn nonfatal_fail(msg: String) {
     extern "C" {
         fn GTest_FOG_ExpectFailure(message: *const ::std::os::raw::c_char);
@@ -40,17 +36,4 @@ pub extern "C" fn Rust_TestRustInGTest() {
     
     fog::metrics::test_only::bad_code.add(12);
     expect!(fog::metrics::test_only::bad_code.test_get_value(None) == Some(12));
-}
-
-#[no_mangle]
-pub extern "C" fn Rust_TestJogfile() {
-    
-    
-    
-    
-    let jogfile_path =
-        mozbuild::TOPSRCDIR.join("toolkit/components/glean/tests/pytest/jogfile_output");
-    expect!(jog::jog_load_jogfile(&nsString::from(
-        jogfile_path.to_str().unwrap()
-    )));
 }
