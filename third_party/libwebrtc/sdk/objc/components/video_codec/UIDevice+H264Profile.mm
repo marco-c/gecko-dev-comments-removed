@@ -24,6 +24,10 @@ struct SupportedH264Profile {
 
 constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     
+    {RTCDeviceTypeIPhone12ProMax, {kProfileHigh, kLevel5_2}},  
+    {RTCDeviceTypeIPhone12Pro, {kProfileHigh, kLevel5_2}},     
+    {RTCDeviceTypeIPhone12, {kProfileHigh, kLevel5_2}},        
+    {RTCDeviceTypeIPhone12Mini, {kProfileHigh, kLevel5_2}},    
     {RTCDeviceTypeIPhone11ProMax, {kProfileHigh, kLevel5_2}},  
     {RTCDeviceTypeIPhone11Pro, {kProfileHigh, kLevel5_2}},     
     {RTCDeviceTypeIPhone11, {kProfileHigh, kLevel5_2}},        
@@ -57,6 +61,10 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     {RTCDeviceTypeIPodTouch5G, {kProfileMain, kLevel3_1}},  
 
     
+    {RTCDeviceTypeIPadAir4Gen, {kProfileHigh, kLevel4_1}},   
+    {RTCDeviceTypeIPad8, {kProfileHigh, kLevel4_1}},   
+    {RTCDeviceTypeIPadPro4Gen12Inch, {kProfileHigh, kLevel4_1}},   
+    {RTCDeviceTypeIPadPro4Gen11Inch, {kProfileHigh, kLevel4_1}},   
     {RTCDeviceTypeIPadAir3Gen, {kProfileHigh, kLevel4_1}},   
     {RTCDeviceTypeIPadMini5Gen, {kProfileHigh, kLevel4_1}},  
     {RTCDeviceTypeIPadPro3Gen12Inch,
