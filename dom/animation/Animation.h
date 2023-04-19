@@ -236,14 +236,12 @@ class Animation : public DOMEventTargetHelper,
 
 
 
+
+
+
+
+
   void TriggerNow();
-  
-
-
-
-
-
-  bool TryTriggerNowForFiniteTimeline();
   
 
 
@@ -596,9 +594,6 @@ class Animation : public DOMEventTargetHelper,
   bool HasFiniteTimeline() const {
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
   }
-
-  void UpdatePendingAnimationTracker(AnimationTimeline* aOldTimeline,
-                                     AnimationTimeline* aNewTimeline);
 
   RefPtr<AnimationTimeline> mTimeline;
   RefPtr<AnimationEffect> mEffect;

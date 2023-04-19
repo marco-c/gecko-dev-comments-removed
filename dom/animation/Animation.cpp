@@ -29,7 +29,6 @@
 #include "nsThreadUtils.h"  
 #include "nsTransitionManager.h"      
 #include "PendingAnimationTracker.h"  
-#include "ScrollTimelineAnimationTracker.h"
 
 namespace mozilla::dom {
 
@@ -268,9 +267,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   if (!aTimeline) {
     MaybeQueueCancelEvent(activeTime);
   }
-
-  UpdatePendingAnimationTracker(oldTimeline, aTimeline);
-
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 }
 
@@ -911,37 +907,15 @@ void Animation::TriggerNow() {
   
   
   
+  
+  
+  
   if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     NS_WARNING("Failed to trigger an animation with an active timeline");
     return;
   }
 
   FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
-}
-
-bool Animation::TryTriggerNowForFiniteTimeline() {
-  
-  
-  
-  
-  if (!Pending()) {
-    return true;
-  }
-
-  MOZ_ASSERT(mTimeline && !mTimeline->IsMonotonicallyIncreasing());
-
-  
-  
-  
-  
-  
-  const auto currentTime = mTimeline->GetCurrentTimeAsDuration();
-  if (currentTime.IsNull()) {
-    return false;
-  }
-
-  FinishPendingAt(currentTime.Value());
-  return true;
 }
 
 Nullable<TimeDuration> Animation::GetCurrentOrPendingStartTime() const {
@@ -1468,14 +1442,10 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   mSyncWithGeometricAnimations = false;
 
+  
+  
   if (HasFiniteTimeline()) {
-    
-    
-    
-    if (Document* doc = GetRenderedDocument()) {
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }  
-       
+    TriggerNow();
   } else {
     if (Document* doc = GetRenderedDocument()) {
       PendingAnimationTracker* tracker =
@@ -1534,14 +1504,10 @@ void Animation::Pause(ErrorResult& aRv) {
 
   mPendingState = PendingState::PausePending;
 
+  
+  
   if (HasFiniteTimeline()) {
-    
-    
-    
-    if (Document* doc = GetRenderedDocument()) {
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }  
-       
+    TriggerNow();
   } else {
     if (Document* doc = GetRenderedDocument()) {
       PendingAnimationTracker* tracker =
@@ -1842,9 +1808,6 @@ bool Animation::IsPossiblyOrphanedPendingAnimation() const {
   
   
   
-  
-  
-  
 
   
   if (mPendingState == PendingState::NotPending) {
@@ -1897,50 +1860,6 @@ Document* Animation::GetRenderedDocument() const {
 
 Document* Animation::GetTimelineDocument() const {
   return mTimeline ? mTimeline->GetDocument() : nullptr;
-}
-
-void Animation::UpdatePendingAnimationTracker(AnimationTimeline* aOldTimeline,
-                                              AnimationTimeline* aNewTimeline) {
-  
-  
-  Document* doc = GetRenderedDocument();
-  if (!doc || !Pending()) {
-    return;
-  }
-
-  const bool fromFiniteTimeline =
-      aOldTimeline && !aOldTimeline->IsMonotonicallyIncreasing();
-  const bool toFiniteTimeline =
-      aNewTimeline && !aNewTimeline->IsMonotonicallyIncreasing();
-  if (fromFiniteTimeline == toFiniteTimeline) {
-    return;
-  }
-
-  const bool isPlayPending = mPendingState == PendingState::PlayPending;
-  if (toFiniteTimeline) {
-    
-    if (auto* tracker = doc->GetPendingAnimationTracker()) {
-      if (isPlayPending) {
-        tracker->RemovePlayPending(*this);
-      } else {
-        tracker->RemovePausePending(*this);
-      }
-    }
-
-    doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-  } else {
-    
-    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
-      tracker->RemovePending(*this);
-    }
-
-    auto* tracker = doc->GetOrCreatePendingAnimationTracker();
-    if (isPlayPending) {
-      tracker->AddPlayPending(*this);
-    } else {
-      tracker->AddPausePending(*this);
-    }
-  }
 }
 
 class AsyncFinishNotification : public MicroTaskRunnable {

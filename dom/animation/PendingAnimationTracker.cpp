@@ -64,8 +64,8 @@ void PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(
       }
 
       MOZ_ASSERT(timeline->IsMonotonicallyIncreasing(),
-                 "The non-monotonicially-increasing timeline should be in "
-                 "ScrollTimelineAnimationTracker");
+                 "Don't put non-MonotoniciallyIncreasing timeline into "
+                 "PendingAnimationTracker");
 
       
       
