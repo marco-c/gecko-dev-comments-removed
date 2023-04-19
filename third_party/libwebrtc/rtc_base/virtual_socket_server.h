@@ -165,8 +165,10 @@ class VirtualSocketServer : public SocketServer {
 
   
   
-  IPAddress GetDefaultRoute(int family);
-  void SetDefaultRoute(const IPAddress& from_addr);
+  
+  
+  IPAddress GetDefaultSourceAddress(int family);
+  void SetDefaultSourceAddress(const IPAddress& from_addr);
 
   
   
@@ -411,8 +413,8 @@ class VirtualSocketServer : public SocketServer {
   AddressMap* bindings_;
   ConnectionMap* connections_;
 
-  IPAddress default_route_v4_;
-  IPAddress default_route_v6_;
+  IPAddress default_source_address_v4_;
+  IPAddress default_source_address_v6_;
 
   uint32_t bandwidth_;
   uint32_t network_capacity_;

@@ -182,11 +182,11 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   
   
   
-  void AddInterfaceAsDefaultRoute(const SocketAddress& addr) {
+  void AddInterfaceAsDefaultSourceAddresss(const SocketAddress& addr) {
     AddInterface(addr);
     
     
-    vss_->SetDefaultRoute(addr.ipaddr());
+    vss_->SetDefaultSourceAddress(addr.ipaddr());
   }
   void RemoveInterface(const SocketAddress& addr) {
     network_manager_.RemoveInterface(addr);
@@ -1322,7 +1322,7 @@ TEST_F(BasicPortAllocatorTest,
 TEST_F(BasicPortAllocatorTest,
        TestDisableAdapterEnumerationWithoutNatLocalhostCandDisabledDiffRoute) {
   ResetWithStunServerNoNat(kStunAddr);
-  AddInterfaceAsDefaultRoute(kClientAddr);
+  AddInterfaceAsDefaultSourceAddresss(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->set_flags(PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   
