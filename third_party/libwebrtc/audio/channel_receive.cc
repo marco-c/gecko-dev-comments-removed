@@ -266,10 +266,8 @@ class ChannelReceive : public ChannelReceiveInterface {
   AudioDeviceModule* _audioDeviceModulePtr;
   float _outputGain RTC_GUARDED_BY(volume_settings_mutex_);
 
-  
-  mutable Mutex assoc_send_channel_lock_;
   const ChannelSendInterface* associated_send_channel_
-      RTC_GUARDED_BY(assoc_send_channel_lock_);
+      RTC_GUARDED_BY(worker_thread_checker_);
 
   PacketRouter* packet_router_ = nullptr;
 
@@ -593,8 +591,8 @@ void ChannelReceive::SetReceiveCodecs(
   acm_receiver_.SetCodecs(codecs);
 }
 
-
 void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   
   
   
@@ -684,8 +682,8 @@ void ChannelReceive::ReceivePacket(const uint8_t* packet,
   }
 }
 
-
 void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   
   
 
@@ -845,7 +843,6 @@ void ChannelReceive::SetAssociatedSendChannel(
     const ChannelSendInterface* channel) {
   
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  MutexLock lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
 }
 
@@ -1026,11 +1023,11 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
 }
 
 int64_t ChannelReceive::GetRTT() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   std::vector<ReportBlockData> report_blocks =
       rtp_rtcp_->GetLatestReportBlockData();
 
   if (report_blocks.empty()) {
-    MutexLock lock(&assoc_send_channel_lock_);
     
     if (!associated_send_channel_) {
       return 0;
