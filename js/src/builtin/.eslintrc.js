@@ -44,6 +44,15 @@ module.exports = {
         },
       },
 
+      rules: {
+        
+        "no-self-compare": "off",
+        "no-lonely-if": "off",
+        
+        
+        "no-redeclare": "off",
+      },
+
       globals: {
         
         allowContentIter: "readonly",
@@ -96,13 +105,4 @@ module.exports = {
       },
     },
   ],
-
-  rules: {
-    
-    "no-self-compare": "off",
-    "no-lonely-if": "off",
-    
-    
-    "no-redeclare": "off",
-  },
 };
