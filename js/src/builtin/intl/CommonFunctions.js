@@ -33,14 +33,16 @@ function startOfUnicodeExtensions(locale) {
 
     
     var start = callFunction(std_String_indexOf, locale, "-u-");
-    if (start < 0)
+    if (start < 0) {
         return -1;
+    }
 
     
     
     var privateExt = callFunction(std_String_indexOf, locale, "-x-");
-    if (privateExt >= 0 && privateExt < start)
+    if (privateExt >= 0 && privateExt < start) {
         return -1;
+    }
 
     return start;
 }
@@ -65,10 +67,12 @@ function endOfUnicodeExtensions(locale, start) {
     
     
     for (var i = start + 5, end = locale.length - 4; i <= end; i++) {
-        if (callFunction(std_String_charCodeAt, locale, i) !== HYPHEN)
+        if (callFunction(std_String_charCodeAt, locale, i) !== HYPHEN) {
             continue;
-        if (callFunction(std_String_charCodeAt, locale, i + 2) === HYPHEN)
+        }
+        if (callFunction(std_String_charCodeAt, locale, i + 2) === HYPHEN) {
             return i;
+        }
 
         
         
@@ -89,8 +93,9 @@ function removeUnicodeExtensions(locale) {
     assertIsValidAndCanonicalLanguageTag(locale, "locale with possible Unicode extension");
 
     var start = startOfUnicodeExtensions(locale);
-    if (start < 0)
+    if (start < 0) {
         return locale;
+    }
 
     var end = endOfUnicodeExtensions(locale, start);
 
@@ -126,8 +131,9 @@ function IsASCIIAlphaString(s) {
 
     for (var i = 0; i < s.length; i++) {
         var c = callFunction(std_String_charCodeAt, s, i);
-        if (!((0x41 <= c && c <= 0x5A) || (0x61 <= c && c <= 0x7A)))
+        if (!((0x41 <= c && c <= 0x5A) || (0x61 <= c && c <= 0x7A))) {
             return false;
+        }
     }
     return true;
 }
@@ -143,8 +149,9 @@ var localeCache = {
 
 
 function DefaultLocale() {
-    if (intl_IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale))
+    if (intl_IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale)) {
         return localeCache.defaultLocale;
+    }
 
     
     var runtimeDefaultLocale = intl_RuntimeDefaultLocale();
@@ -168,8 +175,9 @@ function DefaultLocale() {
 
 function CanonicalizeLocaleList(locales) {
     
-    if (locales === undefined)
+    if (locales === undefined) {
         return [];
+    }
 
     
     var tag = intl_ValidateAndCanonicalizeLanguageTag(locales, false);
@@ -199,8 +207,9 @@ function CanonicalizeLocaleList(locales) {
             var kValue = O[k];
 
             
-            if (!(typeof kValue === "string" || IsObject(kValue)))
+            if (!(typeof kValue === "string" || IsObject(kValue))) {
                 ThrowTypeError(JSMSG_INVALID_LOCALES_ELEMENT);
+            }
 
             
             var tag = intl_ValidateAndCanonicalizeLanguageTag(kValue, true);
@@ -208,8 +217,9 @@ function CanonicalizeLocaleList(locales) {
                    "ValidateAndCanonicalizeLanguageTag returns a string value");
 
             
-            if (callFunction(std_Array_indexOf, seen, tag) === -1)
+            if (callFunction(std_Array_indexOf, seen, tag) === -1) {
                 DefineDataProperty(seen, seen.length, tag);
+            }
         }
 
         
@@ -272,8 +282,9 @@ function LookupMatcher(availableLocales, requestedLocales) {
             result.locale = availableLocale;
 
             
-            if (locale !== noExtensionsLocale)
+            if (locale !== noExtensionsLocale) {
                 result.extension = getUnicodeExtensions(locale);
+            }
 
             
             return result;
@@ -345,8 +356,9 @@ function UnicodeExtensionValue(extension, key) {
             var len = e === -1 ? size - k : e - k;
 
             
-            if (len === 2)
+            if (len === 2) {
                 break;
+            }
 
             
             if (e === -1) {
@@ -367,8 +379,9 @@ function UnicodeExtensionValue(extension, key) {
     searchValue = "-" + key;
 
     
-    if (callFunction(std_String_endsWith, extension, searchValue))
+    if (callFunction(std_String_endsWith, extension, searchValue)) {
         return "";
+    }
 
     
 }
@@ -462,8 +475,9 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         
         if (optionsValue !== undefined && optionsValue !== value) {
             
-            if (keyLocaleData === undefined)
+            if (keyLocaleData === undefined) {
                 keyLocaleData = callFunction(localeDataProvider[key], null, foundLocale);
+            }
 
             
             if (callFunction(std_Array_indexOf, keyLocaleData, optionsValue) !== -1) {
@@ -489,8 +503,9 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
     }
 
     
-    if (supportedExtension.length > 2)
+    if (supportedExtension.length > 2) {
         foundLocale = addUnicodeExtension(foundLocale, supportedExtension);
+    }
 
     
     result.locale = foundLocale;
@@ -557,8 +572,9 @@ function LookupSupportedLocales(availableLocales, requestedLocales) {
         var availableLocale = BestAvailableLocale(availableLocales, noExtensionsLocale);
 
         
-        if (availableLocale !== undefined)
+        if (availableLocale !== undefined) {
             DefineDataProperty(subset, subset.length, locale);
+        }
     }
 
     
@@ -595,8 +611,9 @@ function SupportedLocales(availableLocales, requestedLocales, options) {
         matcher = options.localeMatcher;
         if (matcher !== undefined) {
             matcher = ToString(matcher);
-            if (matcher !== "lookup" && matcher !== "best fit")
+            if (matcher !== "lookup" && matcher !== "best fit") {
                 ThrowRangeError(JSMSG_INVALID_LOCALE_MATCHER, matcher);
+            }
         }
     }
 
@@ -620,16 +637,18 @@ function GetOption(options, property, type, values, fallback) {
     
     if (value !== undefined) {
         
-        if (type === "boolean")
+        if (type === "boolean") {
             value = ToBoolean(value);
-        else if (type === "string")
+        } else if (type === "string") {
             value = ToString(value);
-        else
+        } else {
             assert(false, "GetOption");
+        }
 
         
-        if (values !== undefined && callFunction(std_Array_indexOf, values, value) === -1)
+        if (values !== undefined && callFunction(std_Array_indexOf, values, value) === -1) {
             ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, property, `"${value}"`);
+        }
 
         
         return value;
@@ -651,23 +670,27 @@ function GetStringOrBooleanOption(options, property, values, trueValue, falsyVal
     var value = options[property];
 
     
-    if (value === undefined)
+    if (value === undefined) {
         return fallback;
+    }
 
     
-    if (value === true)
+    if (value === true) {
         return trueValue;
+    }
 
     
-    if (!value)
+    if (!value) {
         return falsyValue;
+    }
 
     
     value = ToString(value);
 
     
-    if (callFunction(std_Array_indexOf, values, value) === -1)
+    if (callFunction(std_Array_indexOf, values, value) === -1) {
         return fallback;
+    }
 
     
     return value;
@@ -689,15 +712,17 @@ function DefaultNumberOption(value, minimum, maximum, fallback) {
            "DefaultNumberOption");
 
     
-    if (value === undefined)
+    if (value === undefined) {
         return fallback;
+    }
 
     
     value = ToNumber(value);
 
     
-    if (Number_isNaN(value) || value < minimum || value > maximum)
+    if (Number_isNaN(value) || value < minimum || value > maximum) {
         ThrowRangeError(JSMSG_INVALID_DIGITS_VALUE, value);
+    }
 
     
     
@@ -803,8 +828,9 @@ function setInternalProperties(internals, internalProps) {
 function maybeInternalProperties(internals) {
     assert(IsObject(internals), "non-object passed to maybeInternalProperties");
     var lazyData = internals.lazyData;
-    if (lazyData)
+    if (lazyData) {
         return null;
+    }
     assert(IsObject(internals.internalProps), "missing lazy data and computed internals");
     return internals.internalProps;
 }
@@ -855,25 +881,27 @@ function getInternals(obj) {
 
     
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     
     var type = internals.type;
-    if (type === "Collator")
+    if (type === "Collator") {
         internalProps = resolveCollatorInternals(internals.lazyData);
-    else if (type === "DateTimeFormat")
+    } else if (type === "DateTimeFormat") {
         internalProps = resolveDateTimeFormatInternals(internals.lazyData);
-    else if (type === "DisplayNames")
+    } else if (type === "DisplayNames") {
       internalProps = resolveDisplayNamesInternals(internals.lazyData);
-    else if (type === "ListFormat")
+    } else if (type === "ListFormat") {
         internalProps = resolveListFormatInternals(internals.lazyData);
-    else if (type === "NumberFormat")
+    } else if (type === "NumberFormat") {
         internalProps = resolveNumberFormatInternals(internals.lazyData);
-    else if (type === "PluralRules")
+    } else if (type === "PluralRules") {
         internalProps = resolvePluralRulesInternals(internals.lazyData);
-    else
+    } else {
         internalProps = resolveRelativeTimeFormatInternals(internals.lazyData);
+    }
     setInternalProperties(internals, internalProps);
     return internalProps;
 }
