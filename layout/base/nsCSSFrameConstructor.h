@@ -1382,12 +1382,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    nsFrameList& aFrameList);
 
   
-  
-  nsIFrame* ConstructDetailsFrame(nsFrameConstructorState& aState,
-                                  FrameConstructionItem& aItem,
-                                  nsContainerFrame* aParentFrame,
-                                  const nsStyleDisplay* aStyleDisplay,
-                                  nsFrameList& aFrameList);
+  nsIFrame* ConstructDetails(nsFrameConstructorState& aState,
+                             FrameConstructionItem& aItem,
+                             nsContainerFrame* aParentFrame,
+                             const nsStyleDisplay* aStyleDisplay,
+                             nsFrameList& aFrameList);
 
   
   nsIFrame* ConstructBlockRubyFrame(nsFrameConstructorState& aState,
@@ -1582,29 +1581,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
 
-
-  nsIFrame* ConstructScrollableBlockWithConstructor(
-      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
-      nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
-      nsFrameList& aFrameList, BlockFrameCreationFunc aConstructor);
-
-  
-
-
   nsIFrame* ConstructNonScrollableBlock(nsFrameConstructorState& aState,
                                         FrameConstructionItem& aItem,
                                         nsContainerFrame* aParentFrame,
                                         const nsStyleDisplay* aDisplay,
                                         nsFrameList& aFrameList);
-
-  
-
-
-
-  nsIFrame* ConstructNonScrollableBlockWithConstructor(
-      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
-      nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
-      nsFrameList& aFrameList, BlockFrameCreationFunc aConstructor);
 
   
 

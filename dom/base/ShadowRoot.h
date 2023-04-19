@@ -22,7 +22,6 @@
 
 class nsAtom;
 class nsIContent;
-class nsXBLPrototypeBinding;
 
 namespace mozilla {
 
@@ -158,6 +157,21 @@ class ShadowRoot final : public DocumentFragment,
 
 
   SlotInsertionPoint SlotInsertionPointFor(nsIContent&);
+
+  
+
+
+
+
+  void GetSlotNameFor(const nsIContent&, nsAString&) const;
+
+  
+
+
+
+
+  enum class SummaryChangeReason { Deletion, Insertion };
+  void MaybeReassignMainSummary(SummaryChangeReason);
 
  public:
   void AddSlot(HTMLSlotElement* aSlot);
@@ -296,6 +310,9 @@ class ShadowRoot final : public DocumentFragment,
   nsTArray<const Element*> mParts;
 
   bool mIsUAWidget : 1;
+
+  
+  bool mIsDetailsShadowTree : 1;
 
   
   bool mIsAvailableToElementInternals : 1;
