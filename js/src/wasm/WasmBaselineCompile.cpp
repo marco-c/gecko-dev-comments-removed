@@ -6359,6 +6359,17 @@ RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   return rdata;
 }
 
+void BaseCompiler::emitGcArrayAdjustDataPointer(RegPtr rdata) {
+  
+  
+  
+  
+  STATIC_ASSERT_NUMELEMENTS_IS_U32;
+  masm.addPtr(ImmWord(OutlineTypedObject::offsetOfNumElements() +
+                      sizeof(OutlineTypedObject::NumElements)),
+              rdata);
+}
+
 RegI32 BaseCompiler::emitGcArrayGetNumElements(RegPtr rdata,
                                                bool adjustDataPointer) {
   STATIC_ASSERT_NUMELEMENTS_IS_U32;
@@ -6366,9 +6377,7 @@ RegI32 BaseCompiler::emitGcArrayGetNumElements(RegPtr rdata,
   masm.load32(Address(rdata, OutlineTypedObject::offsetOfNumElements()),
               length);
   if (adjustDataPointer) {
-    masm.addPtr(ImmWord(OutlineTypedObject::offsetOfNumElements() +
-                        sizeof(OutlineTypedObject::NumElements)),
-                rdata);
+    emitGcArrayAdjustDataPointer(rdata);
   }
   return length;
 }
@@ -6859,6 +6868,77 @@ bool BaseCompiler::emitArrayNew() {
   freePtr(rdata);
   pushRef(rp);
 
+  return true;
+}
+
+bool BaseCompiler::emitArrayNewFixed() {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+  uint32_t typeIndex, numElements;
+  if (!iter_.readArrayNewFixed(&typeIndex, &numElements)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
+
+  
+  
+  
+  
+  pushI32(numElements);
+  emitGcCanon(typeIndex);
+  if (!emitInstanceCall(lineOrBytecode, SASigArrayNew)) {
+    return false;
+  }
+
+  
+  
+  bool avoidPreBarrierReg = arrayType.elementType_.isRefRepr();
+  if (avoidPreBarrierReg) {
+    needPtr(RegPtr(PreBarrierReg));
+  }
+
+  
+  RegRef rp = popRef();
+
+  
+  RegPtr rdata = emitGcArrayGetData(rp);
+
+  
+  if (avoidPreBarrierReg) {
+    freePtr(RegPtr(PreBarrierReg));
+  }
+
+  
+  emitGcArrayAdjustDataPointer(rdata);
+
+  
+  
+  
+  for (uint32_t i = 0; i < numElements; i++) {
+    if (avoidPreBarrierReg) {
+      needPtr(RegPtr(PreBarrierReg));
+    }
+    AnyReg value = popAny();
+    pushI32(i);
+    RegI32 index = popI32();
+    if (avoidPreBarrierReg) {
+      freePtr(RegPtr(PreBarrierReg));
+    }
+    if (!emitGcArraySet(rp, rdata, index, arrayType, value)) {
+      return false;
+    }
+    freeI32(index);
+    freeAny(value);
+  }
+
+  freePtr(rdata);
+
+  pushRef(rp);
   return true;
 }
 
@@ -9232,6 +9312,8 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitStructSet());
           case uint32_t(GcOp::ArrayNew):
             CHECK_NEXT(emitArrayNew());
+          case uint32_t(GcOp::ArrayNewFixed):
+            CHECK_NEXT(emitArrayNewFixed());
           case uint32_t(GcOp::ArrayNewDefault):
             CHECK_NEXT(emitArrayNewDefault());
           case uint32_t(GcOp::ArrayGet):
