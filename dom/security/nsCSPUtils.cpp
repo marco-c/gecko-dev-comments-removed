@@ -18,7 +18,6 @@
 #include "nsIStringBundle.h"
 #include "nsIURL.h"
 #include "nsNetUtil.h"
-#include "nsNSSComponent.h"
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
 #include "nsServiceManagerUtils.h"
@@ -985,13 +984,6 @@ bool nsCSPHashSrc::allows(enum CSPKeyword aKeyword,
 
   
   NS_ConvertUTF16toUTF8 utf8_hash(aHashOrNonce);
-
-  
-  
-  
-  if (NS_WARN_IF(!EnsureNSSInitializedChromeOrContent())) {
-    return false;
-  }
 
   nsCOMPtr<nsICryptoHash> hasher;
   nsresult rv = NS_NewCryptoHash(NS_ConvertUTF16toUTF8(mAlgorithm),
