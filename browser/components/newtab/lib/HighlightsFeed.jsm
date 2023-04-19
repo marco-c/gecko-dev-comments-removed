@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const { actionTypes: at } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );

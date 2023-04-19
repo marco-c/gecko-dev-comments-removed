@@ -8,7 +8,6 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var { Loader, Require, resolveURI, unload } = ChromeUtils.import(
   "resource://devtools/shared/loader/base-loader.js"
 );

@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function ModuleLoader(base, depth, proto) {
   const modules = {};
 

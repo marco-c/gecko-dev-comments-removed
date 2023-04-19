@@ -2,7 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var EXPORTED_SYMBOLS = ["ContentCollector"];

@@ -6,8 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["sinon"];
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

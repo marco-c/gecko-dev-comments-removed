@@ -38,7 +38,6 @@ const orientationTypes = new Set([
 ]);
 const textDirections = new Set(["ltr", "rtl", "auto"]);
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const { ValueExtractor } = ChromeUtils.import(

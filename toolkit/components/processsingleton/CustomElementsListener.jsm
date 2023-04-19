@@ -5,8 +5,6 @@
 
 var EXPORTED_SYMBOLS = [];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

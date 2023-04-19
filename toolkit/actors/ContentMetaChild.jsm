@@ -6,8 +6,6 @@
 
 const EXPORTED_SYMBOLS = ["ContentMetaChild"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 const TIMEOUT_DELAY = 1000;

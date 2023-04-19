@@ -11,16 +11,6 @@ const EXPORTED_SYMBOLS = [
   "getAllBrowsingContextsForContext",
 ];
 
-let Services;
-if (typeof module == "object") {
-  
-  
-  Services = require("Services");
-} else {
-  
-  ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
-}
-
 const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
   "devtools.every-frame-target.enabled",
   false

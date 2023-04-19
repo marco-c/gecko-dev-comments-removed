@@ -6,8 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["SubDialog", "SubDialogManager"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

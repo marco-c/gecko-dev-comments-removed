@@ -6,8 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["NormandyUtils"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var NormandyUtils = {
   generateUuid() {
     

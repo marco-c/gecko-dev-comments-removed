@@ -3,8 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var EXPORTED_SYMBOLS = ["TelemetryEvents"];
 
 const TELEMETRY_CATEGORY = "normandy";

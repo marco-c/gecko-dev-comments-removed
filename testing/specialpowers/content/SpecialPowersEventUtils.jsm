@@ -11,8 +11,6 @@ var EXPORTED_SYMBOLS = ["EventUtils"];
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 let EventUtils = {};
 
 EventUtils.window = {};

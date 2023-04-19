@@ -64,8 +64,6 @@ const FileInputStream = Components.Constructor(
   "init"
 );
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

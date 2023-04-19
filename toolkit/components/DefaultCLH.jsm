@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const nsICommandLineHandler = Ci.nsICommandLineHandler;
 const nsIPrefBranch = Ci.nsIPrefBranch;
 const nsIWindowWatcher = Ci.nsIWindowWatcher;

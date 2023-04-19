@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { NewTabUtils } = ChromeUtils.import(
   "resource://gre/modules/NewTabUtils.jsm"
 );

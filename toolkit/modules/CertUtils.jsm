@@ -6,8 +6,6 @@ var EXPORTED_SYMBOLS = ["CertUtils"];
 
 const Ce = Components.Exception;
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

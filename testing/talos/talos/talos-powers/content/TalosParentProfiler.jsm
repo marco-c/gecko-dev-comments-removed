@@ -16,8 +16,6 @@
 
 var EXPORTED_SYMBOLS = ["TalosParentProfiler"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const TalosParentProfiler = {
   
   

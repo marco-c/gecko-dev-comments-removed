@@ -24,7 +24,6 @@ const ABOUT_NEWTAB_SEGREGATION_PREF =
 const { PageThumbs, PageThumbsStorage } = ChromeUtils.import(
   "resource://gre/modules/PageThumbs.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const TEL_CAPTURE_DONE_OK = 0;

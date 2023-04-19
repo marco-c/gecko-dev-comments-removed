@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const TIPPYTOP_PATH = "chrome://activity-stream/content/data/content/tippytop/";
 const TIPPYTOP_JSON_PATH =
   "chrome://activity-stream/content/data/content/tippytop/top_sites.json";

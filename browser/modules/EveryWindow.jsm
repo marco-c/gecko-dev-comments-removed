@@ -28,8 +28,6 @@ var EXPORTED_SYMBOLS = ["EveryWindow"];
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var initialized = false;
 var callbacks = new Map();
 

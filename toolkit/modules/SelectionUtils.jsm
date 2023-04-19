@@ -7,8 +7,6 @@
 
 var EXPORTED_SYMBOLS = ["SelectionUtils"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var SelectionUtils = {
   
 

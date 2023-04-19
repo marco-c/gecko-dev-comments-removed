@@ -4,8 +4,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
 
 var EXPORTED_SYMBOLS = ["ViewSourcePageParent"];

@@ -6,8 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["DOMFullscreenParent"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 class DOMFullscreenParent extends JSWindowActorParent {
   
   

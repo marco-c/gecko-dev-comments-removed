@@ -2,8 +2,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const mozIntlHelper = Cc["@mozilla.org/mozintlhelper;1"].getService(
   Ci.mozIMozIntlHelper
 );

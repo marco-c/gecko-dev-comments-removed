@@ -4,8 +4,6 @@
 
 var EXPORTED_SYMBOLS = ["PromptUtils", "EnableDelayHelper"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var PromptUtils = {
   
   

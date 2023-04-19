@@ -12,8 +12,6 @@ var EXPORTED_SYMBOLS = ["WebChannel", "WebChannelBroker"];
 const ERRNO_UNKNOWN_ERROR = 999;
 const ERROR_UNKNOWN = "UNKNOWN_ERROR";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 

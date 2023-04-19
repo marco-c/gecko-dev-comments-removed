@@ -4,7 +4,6 @@
 
 
 var EXPORTED_SYMBOLS = ["BlockedSiteParent"];
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class BlockedSiteParent extends JSWindowActorParent {
   receiveMessage(msg) {

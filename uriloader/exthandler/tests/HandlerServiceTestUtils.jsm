@@ -38,8 +38,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIHandlerService"
 );
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var HandlerServiceTestUtils = {
   
 

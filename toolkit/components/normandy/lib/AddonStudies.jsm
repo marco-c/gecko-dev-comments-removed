@@ -44,7 +44,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { LogManager } = ChromeUtils.import(
   "resource://normandy/lib/LogManager.jsm"
 );

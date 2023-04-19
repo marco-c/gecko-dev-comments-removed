@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 const lazy = {};

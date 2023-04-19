@@ -30,17 +30,12 @@
 
 
 var Meta;
-let Services;
 if (typeof Components != "undefined") {
   
   
   
   
   this.exports = {};
-  
-  ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
-  
-  this.Services = Services;
   Meta = ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm")
     .BasePromiseWorker.Meta;
 } else {

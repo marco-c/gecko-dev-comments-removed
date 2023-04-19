@@ -37,8 +37,6 @@ var EXPORTED_SYMBOLS = ["DownloadUtils"];
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const lazy = {};
 
 ChromeUtils.defineModuleGetter(
