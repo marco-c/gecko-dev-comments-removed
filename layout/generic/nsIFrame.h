@@ -4263,12 +4263,6 @@ class nsIFrame : public nsQueryFrame {
 
   virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState);
 
-  
-
-
-
-  virtual nsSize GetXULMinSizeForScrollArea(nsBoxLayoutState& aBoxLayoutState);
-
   virtual nscoord GetXULFlex();
   virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState);
   virtual bool IsXULCollapsed();
