@@ -10,45 +10,18 @@
 #ifndef TEST_RTP_HEADER_PARSER_H_
 #define TEST_RTP_HEADER_PARSER_H_
 
-#include <memory>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "api/rtp_parameters.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 
-struct RTPHeader;
-
 class RtpHeaderParser {
  public:
-  static std::unique_ptr<RtpHeaderParser> CreateForTest();
-  virtual ~RtpHeaderParser() {}
-
   
   static bool IsRtcp(const uint8_t* packet, size_t length);
   static absl::optional<uint32_t> GetSsrc(const uint8_t* packet, size_t length);
-
-  
-  
-  
-  
-  virtual bool Parse(const uint8_t* packet,
-                     size_t length,
-                     RTPHeader* header,
-                     bool secured = false) const = 0;
-
-  
-  virtual bool RegisterRtpHeaderExtension(RTPExtensionType type,
-                                          uint8_t id) = 0;
-
-  
-  virtual bool RegisterRtpHeaderExtension(RtpExtension extension) = 0;
-
-  
-  virtual bool DeregisterRtpHeaderExtension(RTPExtensionType type) = 0;
-
-  
-  virtual bool DeregisterRtpHeaderExtension(RtpExtension extension) = 0;
 };
 }  
 #endif  
