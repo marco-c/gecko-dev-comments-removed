@@ -178,12 +178,12 @@ class JITFrameInfo final {
     return mLocalFailureLatchSource;
   }
 
-  mozilla::Vector<JITFrameInfoForBufferRange>&& MoveRanges() && {
-    return std::move(mRanges);
-  }
-  mozilla::UniquePtr<UniqueJSONStrings>&& MoveUniqueStrings() && {
-    return std::move(mUniqueStrings);
-  }
+  
+  
+  mozilla::Vector<JITFrameInfoForBufferRange>&& MoveRangesWithNewFailureLatch(
+      mozilla::FailureLatch& aFailureLatch) &&;
+  mozilla::UniquePtr<UniqueJSONStrings>&& MoveUniqueStringsWithNewFailureLatch(
+      mozilla::FailureLatch& aFailureLatch) &&;
 
  private:
   
@@ -202,7 +202,7 @@ class JITFrameInfo final {
   mozilla::UniquePtr<UniqueJSONStrings> mUniqueStrings;
 };
 
-class UniqueStacks {
+class UniqueStacks final : public mozilla::FailureLatch {
  public:
   struct FrameKey {
     explicit FrameKey(const char* aLocation)
@@ -332,9 +332,9 @@ class UniqueStacks {
     }
   };
 
-  explicit UniqueStacks(
-      JITFrameInfo&& aJITFrameInfo,
-      ProfilerCodeAddressService* aCodeAddressService = nullptr);
+  UniqueStacks(mozilla::FailureLatch& aFailureLatch,
+               JITFrameInfo&& aJITFrameInfo,
+               ProfilerCodeAddressService* aCodeAddressService = nullptr);
 
   
   [[nodiscard]] StackKey BeginStack(const FrameKey& aFrame);
@@ -366,6 +366,8 @@ class UniqueStacks {
   
   
   [[nodiscard]] nsAutoCString FunctionNameOrAddress(void* aPC);
+
+  FAILURELATCH_IMPL_PROXY(mFrameTableWriter)
 
  private:
   void StreamNonJITFrame(const FrameKey& aFrame);
