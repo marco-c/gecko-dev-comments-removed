@@ -124,7 +124,7 @@ class RRSendQueue : public SendQueue {
 
     
     void Add(DcSctpMessage message,
-             absl::optional<TimeMs> expires_at,
+             TimeMs expires_at,
              const SendOptions& send_options);
 
     
@@ -161,7 +161,7 @@ class RRSendQueue : public SendQueue {
     
     struct Item {
       explicit Item(DcSctpMessage msg,
-                    absl::optional<TimeMs> expires_at,
+                    TimeMs expires_at,
                     const SendOptions& send_options)
           : message(std::move(msg)),
             expires_at(expires_at),
@@ -169,7 +169,7 @@ class RRSendQueue : public SendQueue {
             remaining_offset(0),
             remaining_size(message.payload().size()) {}
       DcSctpMessage message;
-      absl::optional<TimeMs> expires_at;
+      TimeMs expires_at;
       SendOptions send_options;
       
       

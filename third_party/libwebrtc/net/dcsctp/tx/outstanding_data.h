@@ -109,11 +109,10 @@ class OutstandingData {
   
   
   
-  absl::optional<UnwrappedTSN> Insert(
-      const Data& data,
-      absl::optional<size_t> max_retransmissions,
-      TimeMs time_sent,
-      absl::optional<TimeMs> expires_at);
+  absl::optional<UnwrappedTSN> Insert(const Data& data,
+                                      MaxRetransmits max_retransmissions,
+                                      TimeMs time_sent,
+                                      TimeMs expires_at);
 
   
   void NackAll();
@@ -149,9 +148,9 @@ class OutstandingData {
     };
 
     explicit Item(Data data,
-                  absl::optional<size_t> max_retransmissions,
+                  MaxRetransmits max_retransmissions,
                   TimeMs time_sent,
-                  absl::optional<TimeMs> expires_at)
+                  TimeMs expires_at)
         : max_retransmissions_(max_retransmissions),
           time_sent_(time_sent),
           expires_at_(expires_at),
@@ -207,18 +206,18 @@ class OutstandingData {
 
     
     
-    size_t nack_count_ = 0;
+    uint8_t nack_count_ = 0;
     
-    size_t num_retransmissions_ = 0;
+    uint16_t num_retransmissions_ = 0;
     
     
     
-    const absl::optional<size_t> max_retransmissions_;
+    const MaxRetransmits max_retransmissions_;
     
     const TimeMs time_sent_;
     
     
-    const absl::optional<TimeMs> expires_at_;
+    const TimeMs expires_at_;
     
     Data data_;
   };
