@@ -12,18 +12,17 @@
 #include "nsRefreshObservers.h"
 #include "nsStubMutationObserver.h"
 #include "nsTHashSet.h"
-#include "mozilla/dom/DOMLocalization.h"
 
 class nsRefreshDriver;
 
 namespace mozilla::dom {
+class DOMLocalization;
 
 
 
 
 
-
-class L10nMutations final : public nsStubMutationObserver,
+class L10nMutations final : public nsStubMultiMutationObserver,
                             public nsARefreshObserver {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

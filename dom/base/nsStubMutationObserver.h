@@ -14,6 +14,7 @@
 #ifndef nsStubMutationObserver_h_
 #define nsStubMutationObserver_h_
 
+#include "nsTHashMap.h"
 #include "nsIMutationObserver.h"
 
 
@@ -32,4 +33,51 @@ class nsStubMutationObserver : public nsIMutationObserver {
   NS_DECL_NSIMUTATIONOBSERVER
 };
 
-#endif 
+class MutationObserverWrapper;
+
+
+
+
+
+
+
+
+
+
+
+
+class nsMultiMutationObserver : public nsIMutationObserver {
+ public:
+  
+
+
+
+
+  void AddMutationObserverToNode(nsINode* aNode);
+
+  
+
+
+
+  void RemoveMutationObserverFromNode(nsINode* aNode);
+
+  
+
+
+  bool ContainsNode(const nsINode* aNode) const;
+
+ private:
+  friend class MutationObserverWrapper;
+  nsTHashMap<nsINode*, MutationObserverWrapper*> mWrapperForNode;
+};
+
+
+
+
+
+class nsStubMultiMutationObserver : public nsMultiMutationObserver {
+ public:
+  NS_DECL_NSIMUTATIONOBSERVER
+};
+
+#endif

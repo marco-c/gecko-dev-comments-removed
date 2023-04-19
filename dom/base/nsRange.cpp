@@ -141,7 +141,7 @@ nsRange::nsRange(nsINode* aNode)
       mNextStartRef(nullptr),
       mNextEndRef(nullptr) {
   
-  static_assert(sizeof(nsRange) <= 192,
+  static_assert(sizeof(nsRange) <= 208,
                 "nsRange size shouldn't be increased as far as possible");
 }
 

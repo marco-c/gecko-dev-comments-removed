@@ -10,6 +10,7 @@
 #include "nsISupports.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/DoublyLinkedList.h"
 
 class nsAttrValue;
 class nsAtom;
@@ -102,7 +103,15 @@ struct CharacterDataChangeInfo {
 
 
 
-class nsIMutationObserver : public nsISupports {
+
+
+
+
+class nsIMutationObserver
+    : public nsISupports,
+      mozilla::DoublyLinkedListElement<nsIMutationObserver> {
+  friend struct mozilla::GetDoublyLinkedListElement<nsIMutationObserver>;
+
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IMUTATION_OBSERVER_IID)
 

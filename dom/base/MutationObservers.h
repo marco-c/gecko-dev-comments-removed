@@ -7,10 +7,10 @@
 #ifndef DOM_BASE_MUTATIONOBSERVERS_H_
 #define DOM_BASE_MUTATIONOBSERVERS_H_
 
+#include "mozilla/DoublyLinkedList.h"
 #include "nsIContent.h"  
 #include "nsIMutationObserver.h"  
 #include "nsINode.h"
-#include "nsTObserverArray.h"
 
 class nsAtom;
 class nsAttrValue;
@@ -120,11 +120,12 @@ class MutationObservers {
 
 
   static inline void NotifyParentChainChanged(nsIContent* aContent) {
-    nsAutoTObserverArray<nsIMutationObserver*, 1>* observers =
+    mozilla::SafeDoublyLinkedList<nsIMutationObserver>* observers =
         aContent->GetMutationObservers();
-    if (observers && !observers->IsEmpty()) {
-      NS_OBSERVER_ARRAY_NOTIFY_OBSERVERS(*observers, ParentChainChanged,
-                                         (aContent));
+    if (observers && !observers->isEmpty()) {
+      for (auto iter = observers->begin(); iter != observers->end(); ++iter) {
+        iter->ParentChainChanged(aContent);
+      }
     }
   }
 

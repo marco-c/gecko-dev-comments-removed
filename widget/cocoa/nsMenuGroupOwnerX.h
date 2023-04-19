@@ -10,7 +10,7 @@
 
 #include "mozilla/WeakPtr.h"
 
-#include "nsIMutationObserver.h"
+#include "nsStubMutationObserver.h"
 #include "nsHashKeys.h"
 #include "nsIObserver.h"
 #include "nsTHashMap.h"
@@ -42,7 +42,7 @@ enum {
 
 
 
-class nsMenuGroupOwnerX : public nsIMutationObserver, public nsIObserver {
+class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
  public:
   
   nsMenuGroupOwnerX(mozilla::dom::Element* aElement, nsMenuBarX* aMenuBarIfMenuBar);
