@@ -1,2 +1,0 @@
-
-gcparam('markStackLimit', 0);
