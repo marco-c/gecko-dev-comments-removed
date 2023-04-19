@@ -50,12 +50,11 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   }
 
   virtual absl::optional<std::string> sctp_transport_name() const = 0;
+  virtual absl::optional<std::string> sctp_mid() const = 0;
 
   virtual cricket::CandidateStatsList GetPooledCandidateStats() const = 0;
 
   
-  virtual std::map<std::string, std::string> GetTransportNamesByMid() const = 0;
-
   
   
   virtual std::map<std::string, cricket::TransportStats>

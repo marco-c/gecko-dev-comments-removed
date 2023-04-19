@@ -227,12 +227,13 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
       const std::map<std::string, cricket::TransportStats>&
           transport_stats_by_name) const;
   
-  void PrepareTransceiverStatsInfosAndCallStats_s_w();
-  std::set<std::string> PrepareTransportNames_s() const;
+  void PrepareTransceiverStatsInfosAndCallStats_s_w_n();
 
   
   void ProducePartialResultsOnSignalingThread(int64_t timestamp_us);
-  void ProducePartialResultsOnNetworkThread(int64_t timestamp_us);
+  void ProducePartialResultsOnNetworkThread(
+      int64_t timestamp_us,
+      absl::optional<std::string> sctp_transport_name);
   
   
   void MergeNetworkReport_s();
@@ -270,8 +271,12 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   
   
   
+  
+  
+  
+  
+  
   std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_;
-  std::set<std::string> transport_names_;
 
   Call::Stats call_stats_;
 

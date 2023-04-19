@@ -124,7 +124,13 @@ class BaseChannel : public ChannelInterface,
   rtc::Thread* network_thread() const { return network_thread_; }
   const std::string& content_name() const override { return content_name_; }
   
-  const std::string& transport_name() const override { return transport_name_; }
+  const std::string& transport_name() const override {
+    RTC_DCHECK_RUN_ON(network_thread());
+    if (rtp_transport_)
+      return rtp_transport_->transport_name();
+    
+    return transport_name_;
+  }
   bool enabled() const override { return enabled_; }
 
   
@@ -329,6 +335,9 @@ class BaseChannel : public ChannelInterface,
 
   bool has_received_packet_ = false;
 
+  
+  
+  
   
   
   
