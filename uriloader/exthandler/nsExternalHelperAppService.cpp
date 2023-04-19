@@ -3402,9 +3402,13 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
         if (aOriginalURI) {
           nsCOMPtr<nsIURL> originalURL(do_QueryInterface(aOriginalURI));
           if (originalURL) {
-            originalURL->GetFileExtension(extension);
-            if (!extension.IsEmpty()) {
-              mimeInfo->ExtensionExists(extension, &useOldExtension);
+            nsAutoCString uriExtension;
+            originalURL->GetFileExtension(uriExtension);
+            if (!uriExtension.IsEmpty()) {
+              mimeInfo->ExtensionExists(uriExtension, &useOldExtension);
+              if (useOldExtension) {
+                extension = uriExtension;
+              }
             }
           }
         }
@@ -3414,7 +3418,11 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
           
           
           
-          mimeInfo->GetPrimaryExtension(extension);
+          nsAutoCString primaryExtension;
+          mimeInfo->GetPrimaryExtension(primaryExtension);
+          if (!primaryExtension.IsEmpty()) {
+            extension = primaryExtension;
+          }
         }
 
         ModifyExtensionType modify =
@@ -3441,6 +3449,15 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
 #ifdef XP_WIN
   nsLocalFile::CheckForReservedFileName(fileName);
 #endif
+
+  
+  
+  
+  if (StringEndsWith(fileName, u".lnk"_ns) ||
+      StringEndsWith(fileName, u".local"_ns)) {
+    fileName.AppendLiteral(".download");
+    extension.AssignLiteral("download");
+  }
 
   
   if (!(aFlags & VALIDATE_NO_DEFAULT_FILENAME) &&
