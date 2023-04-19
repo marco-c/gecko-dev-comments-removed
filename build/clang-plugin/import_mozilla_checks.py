@@ -95,8 +95,14 @@ def add_moz_module(cmake_path):
 def write_third_party_paths(mozilla_path, module_path):
     tpp_txt = os.path.join(mozilla_path, "../../tools/rewriting/ThirdPartyPaths.txt")
     generated_txt = os.path.join(mozilla_path, "../../tools/rewriting/Generated.txt")
+    
+    
+    
+    unvalidated_txt = os.path.join(
+        mozilla_path, "../../tools/rewriting/Unvalidated.txt"
+    )
     with open(os.path.join(module_path, "ThirdPartyPaths.cpp"), "w") as f:
-        ThirdPartyPaths.generate(f, tpp_txt, generated_txt)
+        ThirdPartyPaths.generate(f, tpp_txt, generated_txt, unvalidated_txt)
 
 
 def generate_thread_allows(mozilla_path, module_path):
