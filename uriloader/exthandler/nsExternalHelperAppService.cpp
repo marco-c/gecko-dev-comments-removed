@@ -3425,22 +3425,24 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
           }
         }
 
-        ModifyExtensionType modify =
-            ShouldModifyExtension(mimeInfo, originalExtension);
-        if (modify == ModifyExtension_Replace) {
-          int32_t dotidx = fileName.RFind(".");
-          if (dotidx != -1) {
-            
-            fileName.Truncate(dotidx);
+        if (!extension.IsEmpty()) {
+          ModifyExtensionType modify =
+              ShouldModifyExtension(mimeInfo, originalExtension);
+          if (modify == ModifyExtension_Replace) {
+            int32_t dotidx = fileName.RFind(".");
+            if (dotidx != -1) {
+              
+              fileName.Truncate(dotidx);
+            }
           }
-        }
 
-        
-        
-        
-        if (modify != ModifyExtension_Ignore && !extension.IsEmpty()) {
-          fileName.AppendLiteral(".");
-          fileName.Append(NS_ConvertUTF8toUTF16(extension));
+          
+          
+          
+          if (modify != ModifyExtension_Ignore) {
+            fileName.AppendLiteral(".");
+            fileName.Append(NS_ConvertUTF8toUTF16(extension));
+          }
         }
       }
     }
