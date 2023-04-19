@@ -13,7 +13,6 @@ const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { CertUtils } = ChromeUtils.import(
   "resource://gre/modules/CertUtils.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 const lazy = {};
 
@@ -37,8 +36,6 @@ logger.manageLevelFromPref("extensions.logging.productaddons.level");
 
 
 const TIMEOUT_DELAY_MS = 20000;
-
-const HASH_CHUNK_SIZE = 8192;
 
 
 
@@ -425,13 +422,13 @@ function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
         return;
       }
       (async function() {
-        let f = await OS.File.openUnique(
-          OS.Path.join(OS.Constants.Path.tmpDir, "tmpaddon")
+        const path = await IOUtils.createUniqueFile(
+          PathUtils.osTempDir,
+          "tmpaddon"
         );
-        let path = f.path;
         logger.info(`Downloaded file will be saved to ${path}`);
-        await f.file.close();
-        await OS.File.writeAtomic(path, new Uint8Array(sr.response));
+        await IOUtils.write(path, new Uint8Array(sr.response));
+
         return path;
       })().then(resolve, reject);
     };
@@ -470,51 +467,6 @@ function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
 
 
 
-function binaryToHex(input) {
-  let result = "";
-  for (let i = 0; i < input.length; ++i) {
-    let hex = input.charCodeAt(i).toString(16);
-    if (hex.length == 1) {
-      hex = "0" + hex;
-    }
-    result += hex;
-  }
-  return result;
-}
-
-
-
-
-
-
-
-
-
-
-
-var computeHash = async function(hashFunction, path) {
-  let file = await OS.File.open(path, { existing: true, read: true });
-  try {
-    let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
-      Ci.nsICryptoHash
-    );
-    hasher.initWithString(hashFunction);
-
-    let bytes;
-    do {
-      bytes = await file.read(HASH_CHUNK_SIZE);
-      hasher.update(bytes, bytes.length);
-    } while (bytes.length == HASH_CHUNK_SIZE);
-
-    return binaryToHex(hasher.finish(false));
-  } finally {
-    await file.close();
-  }
-};
-
-
-
-
 
 
 
@@ -525,7 +477,7 @@ var computeHash = async function(hashFunction, path) {
 
 var verifyFile = async function(properties, path) {
   if (properties.size !== undefined) {
-    let stat = await OS.File.stat(path);
+    let stat = await IOUtils.stat(path);
     if (stat.size != properties.size) {
       throw new Error(
         "Downloaded file was " +
@@ -539,7 +491,7 @@ var verifyFile = async function(properties, path) {
 
   if (properties.hashFunction !== undefined) {
     let expectedDigest = properties.hashValue.toLowerCase();
-    let digest = await computeHash(properties.hashFunction, path);
+    let digest = await IOUtils.computeHexDigest(path, properties.hashFunction);
     if (digest != expectedDigest) {
       throw new Error(
         "Hash was `" + digest + "` but expected `" + expectedDigest + "`."
@@ -610,7 +562,7 @@ const ProductAddonChecker = {
       await verifyFile(addon, path);
       return path;
     } catch (e) {
-      await OS.File.remove(path);
+      await IOUtils.remove(path);
       throw e;
     }
   },
@@ -618,8 +570,6 @@ const ProductAddonChecker = {
 
 
 const ProductAddonCheckerTestUtils = {
-  computeHash,
-
   
 
 
