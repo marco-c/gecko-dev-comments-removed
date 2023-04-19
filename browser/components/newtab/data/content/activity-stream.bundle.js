@@ -6152,10 +6152,16 @@ class DSImage extends (external_React_default()).PureComponent {
         classNames = `${classNames} loaded`; 
         
 
-        img = external_React_default().createElement(PlaceholderImage, {
-          urlKey: this.props.url,
-          titleKey: this.props.title
-        });
+        if (this.props.isRecentSave && !this.props.rawSource && !this.props.source) {
+          img = external_React_default().createElement(PlaceholderImage, {
+            urlKey: this.props.url,
+            titleKey: this.props.title
+          });
+        } else {
+          img = external_React_default().createElement("div", {
+            className: "broken-image"
+          });
+        }
       }
     }
 
@@ -7728,7 +7734,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       rawSource: this.props.raw_image_src,
       sizes: this.dsImageSizes,
       url: this.props.url,
-      title: this.props.title
+      title: this.props.title,
+      isRecentSave: isRecentSave
     })), external_React_default().createElement(DefaultMeta, {
       source: this.props.source,
       title: this.props.title,
