@@ -630,6 +630,8 @@ class WebDriverRefTestExecutor(RefTestExecutor):
         self.protocol.base.execute_script(self.wait_script, True)
 
         screenshot = self.protocol.webdriver.screenshot()
+        if screenshot is None:
+            raise ValueError('screenshot is None')
 
         
         if screenshot.startswith("data:image/png;base64,"):
