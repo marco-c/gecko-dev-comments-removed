@@ -23,6 +23,7 @@ namespace webrtc {
 
 
 
+
 class MultiChannelContentDetector {
  public:
   
@@ -50,10 +51,38 @@ class MultiChannelContentDetector {
   }
 
  private:
+  
+  class MetricsLogger {
+   public:
+    MetricsLogger();
+
+    
+    ~MetricsLogger();
+
+    
+    void Update(bool persistent_multichannel_content_detected);
+
+   private:
+    int frame_counter_ = 0;
+
+    
+    
+    int persistent_multichannel_frame_counter_ = 0;
+
+    
+    bool any_multichannel_content_detected_ = false;
+  };
+
   const bool detect_stereo_content_;
   const float detection_threshold_;
   const absl::optional<int> detection_timeout_threshold_frames_;
   const int stereo_detection_hysteresis_frames_;
+
+  
+  
+  
+  const std::unique_ptr<MetricsLogger> metrics_logger_;
+
   bool persistent_multichannel_content_detected_;
   bool temporary_multichannel_content_detected_ = false;
   int64_t frames_since_stereo_detected_last_ = 0;
