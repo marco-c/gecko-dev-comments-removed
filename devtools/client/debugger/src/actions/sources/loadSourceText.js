@@ -27,7 +27,12 @@ const Telemetry = require("devtools/client/shared/telemetry");
 const loadSourceHistogram = "DEVTOOLS_DEBUGGER_LOAD_SOURCE_MS";
 const telemetry = new Telemetry();
 
-async function loadSource(state, source, { sourceMaps, client, getState }) {
+async function loadSource(
+  state,
+  source,
+  sourceActor,
+  { dispatch, sourceMaps, client, getState }
+) {
   if (isPretty(source) && source.isOriginal) {
     const generatedSource = getGeneratedSource(state, source);
     if (!generatedSource) {
@@ -58,46 +63,65 @@ async function loadSource(state, source, { sourceMaps, client, getState }) {
     return result;
   }
 
-  
-  
-  
   let response;
-  const handledActors = new Set();
-  while (true) {
-    const actors = getSourceActorsForSource(state, source.id);
-    const actor = actors.find(({ actor: a }) => !handledActors.has(a));
-    if (!actor) {
-      throw new Error("Unknown source");
-    }
-    handledActors.add(actor.actor);
+  if (!sourceActor) {
+    
+    
+    
+    const handledActors = new Set();
+    while (true) {
+      const actors = getSourceActorsForSource(state, source.id);
+      sourceActor = actors.find(({ actor: a }) => !handledActors.has(a));
+      if (!sourceActor) {
+        throw new Error("Unknown source");
+      }
+      handledActors.add(sourceActor.actor);
 
-    try {
-      telemetry.start(loadSourceHistogram, source);
-      response = await client.sourceContents(actor);
-      telemetry.finish(loadSourceHistogram, source);
-      break;
-    } catch (e) {
-      console.warn(`sourceContents failed: ${e}`);
+      response = await fetchTextContent(client, source, sourceActor);
+      if (response) {
+        break;
+      }
     }
+  } else {
+    response = await fetchTextContent(client, source, sourceActor);
   }
 
   return {
+    actorId: sourceActor.actor,
     text: response.source,
     contentType: response.contentType || "text/javascript",
   };
 }
 
+async function fetchTextContent(client, source, sourceActor) {
+  let response;
+  try {
+    telemetry.start(loadSourceHistogram, source);
+    response = await client.sourceContents(sourceActor);
+    telemetry.finish(loadSourceHistogram, source);
+  } catch (e) {
+    console.warn(`sourceContents failed: ${e}`);
+  }
+  return response;
+}
+
 async function loadSourceTextPromise(
   cx,
   source,
+  sourceActor,
   { dispatch, getState, client, sourceMaps, parser }
 ) {
   const epoch = getSourcesEpoch(getState());
+
   await dispatch({
     type: "LOAD_SOURCE_TEXT",
     sourceId: source.id,
     epoch,
-    [PROMISE]: loadSource(getState(), source, { sourceMaps, client, getState }),
+    [PROMISE]: loadSource(getState(), source, sourceActor, {
+      sourceMaps,
+      client,
+      getState,
+    }),
   });
 
   const newSource = getSource(getState(), source.id);
@@ -131,8 +155,7 @@ export function loadSourceById(cx, sourceId) {
 }
 
 export const loadSourceText = memoizeableAction("loadSourceText", {
-  getValue: ({ source }, { getState }) => {
-    source = source ? getSource(getState(), source.id) : null;
+  getValue: ({ source, sourceActor }, { getState }) => {
     if (!source) {
       return null;
     }
@@ -144,6 +167,17 @@ export const loadSourceText = memoizeableAction("loadSourceText", {
 
     
     
+    if (sourceActor && sourceTextContent && isFulfilled(sourceTextContent)) {
+      if (
+        sourceTextContent.value.actorId &&
+        sourceTextContent.value.actorId !== sourceActor?.actor
+      ) {
+        return null;
+      }
+    }
+
+    
+    
     
     return fulfilled(source);
   },
@@ -151,6 +185,6 @@ export const loadSourceText = memoizeableAction("loadSourceText", {
     const epoch = getSourcesEpoch(getState());
     return `${epoch}:${source.id}`;
   },
-  action: ({ cx, source }, thunkArgs) =>
-    loadSourceTextPromise(cx, source, thunkArgs),
+  action: ({ cx, source, sourceActor }, thunkArgs) =>
+    loadSourceTextPromise(cx, source, sourceActor, thunkArgs),
 });
