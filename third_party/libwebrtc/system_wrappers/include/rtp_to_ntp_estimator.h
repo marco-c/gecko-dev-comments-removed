@@ -18,60 +18,51 @@
 #include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/numerics/moving_median_filter.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
 
 
+
 class RtpToNtpEstimator {
  public:
-  RtpToNtpEstimator();
-  ~RtpToNtpEstimator();
+  static constexpr int kMaxInvalidSamples = 3;
+
+  RtpToNtpEstimator() = default;
+  RtpToNtpEstimator(const RtpToNtpEstimator&) = delete;
+  RtpToNtpEstimator& operator=(const RtpToNtpEstimator&) = delete;
+  ~RtpToNtpEstimator() = default;
+
+  enum UpdateResult { kInvalidMeasurement, kSameMeasurement, kNewMeasurement };
+  
+  UpdateResult UpdateMeasurements(NtpTime ntp, uint32_t rtp_timestamp);
+
+  
+  
+  NtpTime Estimate(uint32_t rtp_timestamp) const;
+
+  
+  double EstimatedFrequencyKhz() const;
+
+ private:
+  
+  
+  
+  struct Parameters {
+    double slope;
+    double offset;
+  };
 
   
   struct RtcpMeasurement {
-    RtcpMeasurement(uint32_t ntp_secs,
-                    uint32_t ntp_frac,
-                    int64_t unwrapped_timestamp);
-    bool IsEqual(const RtcpMeasurement& other) const;
-
     NtpTime ntp_time;
     int64_t unwrapped_rtp_timestamp;
   };
 
-  
-  struct Parameters {
-    Parameters() : frequency_khz(0.0), offset_ms(0.0) {}
-
-    Parameters(double frequency_khz, double offset_ms)
-        : frequency_khz(frequency_khz), offset_ms(offset_ms) {}
-
-    double frequency_khz;
-    double offset_ms;
-  };
-
-  
-  
-  bool UpdateMeasurements(uint32_t ntp_secs,
-                          uint32_t ntp_frac,
-                          uint32_t rtp_timestamp,
-                          bool* new_rtcp_sr);
-
-  
-  
-  bool Estimate(int64_t rtp_timestamp, int64_t* ntp_timestamp_ms) const;
-
-  
-  const absl::optional<Parameters> params() const;
-
-  static const int kMaxInvalidSamples = 3;
-
- private:
   void UpdateParameters();
 
-  int consecutive_invalid_samples_;
+  int consecutive_invalid_samples_ = 0;
   std::list<RtcpMeasurement> measurements_;
   absl::optional<Parameters> params_;
   mutable TimestampUnwrapper unwrapper_;

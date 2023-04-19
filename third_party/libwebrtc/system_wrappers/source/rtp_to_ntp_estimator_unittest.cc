@@ -17,332 +17,249 @@
 
 namespace webrtc {
 namespace {
-const uint32_t kOneMsInNtpFrac = 4294967;
-const uint32_t kOneHourInNtpSec = 60 * 60;
-const uint32_t kTimestampTicksPerMs = 90;
+constexpr uint64_t kOneMsInNtp = 4294967;
+constexpr uint64_t kOneHourInNtp = uint64_t{60 * 60} << 32;
+constexpr uint32_t kTimestampTicksPerMs = 90;
 }  
 
 TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(kOneMsInNtp), 0),
+            RtpToNtpEstimator::kNewMeasurement);
   
   
   
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(2 * kOneMsInNtp),
+                                         -kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp_Wraparound_Detected) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFE;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += 2 * kOneMsInNtpFrac;
-  timestamp += 2 * kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFE),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + 2 * kOneMsInNtp),
+                                         0xFFFFFFFE + 2 * kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
   
   
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + 3 * kOneMsInNtp),
+                                         0xFFFFFFFE + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(WrapAroundTests, NewRtcpWrapped) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFF;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  int64_t timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(0xFFFFFFFF, &timestamp_ms));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFF),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + kOneMsInNtp),
+                                         0xFFFFFFFF + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
   
   
-  EXPECT_EQ(0, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF), NtpTime(1));
 }
 
 TEST(WrapAroundTests, RtpWrapped) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFF - 2 * kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1),
+                                         0xFFFFFFFF - 2 * kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + kOneMsInNtp),
+                                         0xFFFFFFFF - kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
 
-  int64_t timestamp_ms = -1;
-  EXPECT_TRUE(
-      estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs, &timestamp_ms));
   
   
-  EXPECT_EQ(0, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs),
+            NtpTime(1));
   
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  EXPECT_EQ(2, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF), NtpTime(1 + 2 * kOneMsInNtp));
   
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  EXPECT_EQ(3, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF + kTimestampTicksPerMs),
+            NtpTime(1 + 3 * kOneMsInNtp));
 }
 
 TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFF;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  timestamp -= 2 * kTimestampTicksPerMs;
-  int64_t timestamp_ms = 0xFFFFFFFF;
-  EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFF),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + kOneMsInNtp),
+                                         0xFFFFFFFF + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
+
+  EXPECT_FALSE(estimator.Estimate(0xFFFFFFFF - kTimestampTicksPerMs).Valid());
 }
 
 TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0xFFFFFFFF;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  timestamp -= kTimestampTicksPerMs;
-  int64_t timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFF),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + kOneMsInNtp),
+                                         0xFFFFFFFF + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
+
   
   
-  EXPECT_EQ(0, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF), NtpTime(1));
 }
 
 TEST(WrapAroundTests, GracefullyHandleRtpJump) {
   RtpToNtpEstimator estimator;
-  bool new_sr;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 1;
-  uint32_t timestamp = 0;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
-  int64_t timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  
-  
-  EXPECT_EQ(0, timestamp_ms);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), 0xFFFFFFFF),
+            RtpToNtpEstimator::kNewMeasurement);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1 + kOneMsInNtp),
+                                         0xFFFFFFFF + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
 
-  timestamp -= 0xFFFFF;
+  
+  
+  EXPECT_EQ(estimator.Estimate(0xFFFFFFFF), NtpTime(1));
+
+  uint32_t timestamp = 0xFFFFFFFF - 0xFFFFF;
+  uint64_t ntp_raw = 1 + 2 * kOneMsInNtp;
   for (int i = 0; i < RtpToNtpEstimator::kMaxInvalidSamples - 1; ++i) {
-    EXPECT_FALSE(
-        estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-    ntp_frac += kOneMsInNtpFrac;
+    EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw), timestamp),
+              RtpToNtpEstimator::kInvalidMeasurement);
+    ntp_raw += kOneMsInNtp;
     timestamp += kTimestampTicksPerMs;
   }
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
+  ntp_raw += kOneMsInNtp;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
 
-  timestamp_ms = -1;
-  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
-  
-  EXPECT_EQ(6, timestamp_ms);
+  EXPECT_EQ(estimator.Estimate(timestamp), NtpTime(ntp_raw));
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForZeroNtp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 0;
-  uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_FALSE(new_sr);
+
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(0), 0x12345678),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForEqualNtp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 699925050;
+  NtpTime ntp(0, 699925050);
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+
+  EXPECT_EQ(estimator.UpdateMeasurements(ntp, timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
   
-  ++timestamp;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_FALSE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(ntp, timestamp + 1),
+            RtpToNtpEstimator::kSameMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForOldNtp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 1;
-  uint32_t ntp_frac = 699925050;
+  uint64_t ntp_raw = 699925050;
+  NtpTime ntp(ntp_raw);
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(ntp, timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
+
   
-  ntp_frac -= kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw - kOneMsInNtp),
+                                         timestamp + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForTooNewNtp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 1;
-  uint32_t ntp_frac = 699925050;
+
+  uint64_t ntp_raw = 699925050;
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
+
   
-  ntp_sec += kOneHourInNtpSec * 2;
-  timestamp += kTimestampTicksPerMs * 10;
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw + 2 * kOneHourInNtp),
+                                         timestamp + 10 * kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForEqualTimestamp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 2;
+
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(2), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
   
-  ++ntp_frac;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_FALSE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(3), timestamp),
+            RtpToNtpEstimator::kSameMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, FailsForOldRtpTimestamp) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 0;
-  uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(2), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
   
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp -= kTimestampTicksPerMs;
-  EXPECT_FALSE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_FALSE(new_sr);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(2 + kOneMsInNtp),
+                                         timestamp - kTimestampTicksPerMs),
+            RtpToNtpEstimator::kInvalidMeasurement);
 }
 
 TEST(UpdateRtcpMeasurementTests, VerifyParameters) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 1;
-  uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
-  EXPECT_FALSE(estimator.params());
+
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(kOneMsInNtp), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
+
+  EXPECT_DOUBLE_EQ(estimator.EstimatedFrequencyKhz(), 0.0);
+
   
-  ntp_frac += kOneMsInNtpFrac;
-  timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(estimator.params());
-  EXPECT_DOUBLE_EQ(90.0, estimator.params()->frequency_khz);
-  EXPECT_NE(0.0, estimator.params()->offset_ms);
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(2 * kOneMsInNtp),
+                                         timestamp + kTimestampTicksPerMs),
+            RtpToNtpEstimator::kNewMeasurement);
+
+  EXPECT_NEAR(estimator.EstimatedFrequencyKhz(), kTimestampTicksPerMs, 0.01);
 }
 
 TEST(RtpToNtpTests, FailsForNoParameters) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 1;
-  uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(1), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
   
-  EXPECT_FALSE(estimator.params());
-  int64_t timestamp_ms = -1;
-  EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
+  EXPECT_DOUBLE_EQ(estimator.EstimatedFrequencyKhz(), 0.0);
+  EXPECT_FALSE(estimator.Estimate(timestamp).Valid());
 }
 
 TEST(RtpToNtpTests, AveragesErrorOut) {
   RtpToNtpEstimator estimator;
-  uint32_t ntp_sec = 1;
-  uint32_t ntp_frac = 90000000;  
+  uint64_t ntp_raw = 90000000;  
+  ASSERT_GT(ntp_raw, kOneMsInNtp);
   uint32_t timestamp = 0x12345678;
-  const int kNtpSecStep = 1;  
-  const int kRtpTicksPerMs = 90;
-  const int kRtpStep = kRtpTicksPerMs * 1000;
-  bool new_sr;
-  EXPECT_TRUE(
-      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
-  EXPECT_TRUE(new_sr);
+  constexpr uint64_t kNtpSecStep = uint64_t{1} << 32;  
+  constexpr int kRtpTicksPerMs = 90;
+  constexpr int kRtpStep = kRtpTicksPerMs * 1000;
+
+  EXPECT_EQ(estimator.UpdateMeasurements(NtpTime(ntp_raw), timestamp),
+            RtpToNtpEstimator::kNewMeasurement);
 
   Random rand(1123536L);
   for (size_t i = 0; i < 1000; i++) {
     
-    ntp_sec += kNtpSecStep;
+    ntp_raw += kNtpSecStep;
     timestamp += kRtpStep;
     
-    EXPECT_TRUE(estimator.UpdateMeasurements(
-        ntp_sec,
-        ntp_frac + rand.Rand(-static_cast<int>(kOneMsInNtpFrac),
-                             static_cast<int>(kOneMsInNtpFrac)),
-        timestamp + rand.Rand(-kRtpTicksPerMs, kRtpTicksPerMs), &new_sr));
-    EXPECT_TRUE(new_sr);
+    EXPECT_EQ(
+        estimator.UpdateMeasurements(
+            NtpTime(ntp_raw + rand.Rand(-int{kOneMsInNtp}, int{kOneMsInNtp})),
+            timestamp + rand.Rand(-kRtpTicksPerMs, kRtpTicksPerMs)),
+        RtpToNtpEstimator::kNewMeasurement);
 
-    int64_t estimated_ntp_ms;
-    EXPECT_TRUE(estimator.Estimate(timestamp, &estimated_ntp_ms));
+    NtpTime estimated_ntp = estimator.Estimate(timestamp);
+    EXPECT_TRUE(estimated_ntp.Valid());
     
-    EXPECT_NEAR(NtpTime(ntp_sec, ntp_frac).ToMs(), estimated_ntp_ms, 2);
+    EXPECT_NEAR(ntp_raw, static_cast<uint64_t>(estimated_ntp), 2 * kOneMsInNtp);
   }
 }
 
