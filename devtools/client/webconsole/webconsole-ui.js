@@ -238,10 +238,6 @@ class WebConsoleUI {
       return;
     }
 
-    const {
-      hasWebConsoleClearMessagesCacheAsync,
-    } = this.hud.commands.client.mainRoot.traits;
-
     
     try {
       const consoleFronts = await this.hud.commands.targetCommand.getAllFronts(
@@ -250,12 +246,7 @@ class WebConsoleUI {
       );
       const promises = [];
       for (const consoleFront of consoleFronts) {
-        
-        promises.push(
-          hasWebConsoleClearMessagesCacheAsync
-            ? consoleFront.clearMessagesCacheAsync()
-            : consoleFront.clearMessagesCache()
-        );
+        promises.push(consoleFront.clearMessagesCacheAsync());
       }
       await Promise.all(promises);
       this.emitForTests("messages-cache-cleared");

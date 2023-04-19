@@ -127,8 +127,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     }
 
     this.traits = {
-      
-      hasWebConsoleClearMessagesCacheAsync: true,
       networkMonitor: true,
       resources: supportedResources,
       

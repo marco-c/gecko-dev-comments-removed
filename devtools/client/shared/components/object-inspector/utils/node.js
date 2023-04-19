@@ -285,10 +285,7 @@ function nodeHasEntries(item) {
     className === "WeakMap" ||
     className === "WeakSet" ||
     className === "Storage" ||
-    
-    
-    
-    (className === "URLSearchParams" && Array.isArray(value.preview?.entries)) ||
+    className === "URLSearchParams" ||
     
     
     

@@ -186,13 +186,6 @@ const webconsoleSpecPrototype = {
       },
       response: RetVal("console.autocomplete"),
     },
-    
-
-
-    
-    clearMessagesCache: {
-      oneway: true,
-    },
 
     
 
