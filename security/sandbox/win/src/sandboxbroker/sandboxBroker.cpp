@@ -1339,13 +1339,6 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
 
-  if (exceptionModules.isSome()) {
-    
-    
-    result = InitSignedPolicyRulesToBypassCig(mPolicy, exceptionModules.ref());
-    SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
-  }
-
   
   
   if (IsWin10FallCreatorsUpdateOrLater()
@@ -1388,6 +1381,17 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   result = mPolicy->SetDelayedProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
+
+  
+  
+  if (exceptionModules.isSome()) {
+    result = InitSignedPolicyRulesToBypassCig(mPolicy, exceptionModules.ref());
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
+  } else {
+    const Vector<const wchar_t*> emptyVector;
+    result = InitSignedPolicyRulesToBypassCig(mPolicy, emptyVector);
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
+  }
 
   
   
