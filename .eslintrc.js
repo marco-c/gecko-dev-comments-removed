@@ -139,12 +139,7 @@ module.exports = {
       },
     },
     {
-      files: [
-        "*.html",
-        "*.xhtml",
-        "*.xml",
-        "js/src/builtin/**/*.js",
-      ],
+      files: ["*.html", "*.xhtml", "*.xml", "js/src/builtin/**/*.js"],
       rules: {
         
         

@@ -2331,8 +2331,10 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
 
 bool nsContentUtils::ShouldResistFingerprinting(nsILoadInfo* aLoadInfo) {
-  MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() != ExtContentPolicy::TYPE_DOCUMENT &&
-             aLoadInfo->GetExternalContentPolicyType() != ExtContentPolicy::TYPE_SUBDOCUMENT);
+  MOZ_ASSERT(aLoadInfo->GetExternalContentPolicyType() !=
+                 ExtContentPolicy::TYPE_DOCUMENT &&
+             aLoadInfo->GetExternalContentPolicyType() !=
+                 ExtContentPolicy::TYPE_SUBDOCUMENT);
 
   if (!ShouldResistFingerprinting("Legacy quick-check")) {
     return false;
