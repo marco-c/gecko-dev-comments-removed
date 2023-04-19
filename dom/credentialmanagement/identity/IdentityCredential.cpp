@@ -10,6 +10,7 @@
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/IdentityNetworkHelpers.h"
 #include "mozilla/dom/Request.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/NullPrincipal.h"
 #include "nsEffectiveTLDService.h"
@@ -61,8 +62,95 @@ RefPtr<IdentityCredential::GetIdentityCredentialPromise>
 IdentityCredential::DiscoverFromExternalSource(
     nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
     bool aSameOriginWithAncestors) {
-  return IdentityCredential::GetIdentityCredentialPromise::CreateAndReject(
-      NS_ERROR_FAILURE, __func__);
+  MOZ_ASSERT(XRE_IsContentProcess());
+  MOZ_ASSERT(aParent);
+  
+  
+  if (!aSameOriginWithAncestors) {
+    return IdentityCredential::GetIdentityCredentialPromise::CreateAndReject(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
+  }
+
+  Document* parentDocument = aParent->GetExtantDoc();
+  if (!parentDocument) {
+    return IdentityCredential::GetIdentityCredentialPromise::CreateAndReject(
+        NS_ERROR_FAILURE, __func__);
+  }
+
+  RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private> result =
+      new IdentityCredential::GetIdentityCredentialPromise::Private(__func__);
+
+  nsCOMPtr<nsITimer> timeout;
+  RefPtr<IdentityCredential::GetIdentityCredentialPromise::Private> promise =
+      result;
+  nsresult rv = NS_NewTimerWithFuncCallback(
+      getter_AddRefs(timeout),
+      [](nsITimer* aTimer, void* aClosure) -> void {
+        auto* promise = static_cast<
+            IdentityCredential::GetIdentityCredentialPromise::Private*>(
+            aClosure);
+        if (!promise->IsResolved()) {
+          promise->Reject(NS_ERROR_DOM_NETWORK_ERR, __func__);
+        }
+        
+        
+        NS_RELEASE(promise);
+      },
+      promise, 120000, nsITimer::TYPE_ONE_SHOT,
+      "IdentityCredentialTimeoutCallback");
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    result->Reject(NS_ERROR_FAILURE, __func__);
+    return result.forget();
+  }
+
+  
+  
+  MOZ_ASSERT(aOptions.mIdentity.WasPassed());
+  RefPtr<WindowGlobalChild> wgc = aParent->GetWindowGlobalChild();
+  MOZ_ASSERT(wgc);
+  RefPtr<IdentityCredential> credential = new IdentityCredential(aParent);
+  wgc->SendDiscoverIdentityCredentialFromExternalSource(
+         aOptions.mIdentity.Value())
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [result, timeout,
+           credential](const WindowGlobalChild::
+                           DiscoverIdentityCredentialFromExternalSourcePromise::
+                               ResolveValueType& aResult) {
+            if (aResult.isSome()) {
+              credential->CopyValuesFrom(aResult.value());
+              result->Resolve(credential, __func__);
+            } else if (
+                !StaticPrefs::
+                    dom_security_credentialmanagement_identity_wait_for_timeout()) {
+              result->Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+            }
+          },
+          [result](const WindowGlobalChild::
+                       DiscoverIdentityCredentialFromExternalSourcePromise::
+                           RejectValueType& aResult) { return; });
+
+  return result;
+}
+
+
+RefPtr<IdentityCredential::GetIPCIdentityCredentialPromise>
+IdentityCredential::DiscoverFromExternalSourceInMainProcess(
+    nsIPrincipal* aPrincipal,
+    const IdentityCredentialRequestOptions& aOptions) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  
+  if (!aOptions.mProviders.WasPassed() ||
+      aOptions.mProviders.Value().Length() != 1) {
+    return IdentityCredential::GetIPCIdentityCredentialPromise::CreateAndReject(
+        NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
+  }
+
+  
+  IdentityProvider provider(aOptions.mProviders.Value()[0]);
+
+  return IdentityCredential::CreateCredential(aPrincipal, provider);
 }
 
 }  
