@@ -26,7 +26,9 @@ namespace webrtc {
 class ReceiveStream {
  public:
   
-  struct RtpConfig {
+  
+  
+  struct ReceiveStreamRtpConfig {
     
     
     
@@ -64,7 +66,9 @@ class ReceiveStream {
   
   
   
-  virtual const RtpConfig& rtp_config() const = 0;
+  
+  
+  virtual bool transport_cc() const = 0;
 
  protected:
   virtual ~ReceiveStream() {}

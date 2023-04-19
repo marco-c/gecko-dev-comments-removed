@@ -50,7 +50,7 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface,
     
     int payload_type = -1;
 
-    RtpConfig rtp;
+    ReceiveStreamRtpConfig rtp;
 
     
     
