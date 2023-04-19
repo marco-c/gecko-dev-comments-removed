@@ -4817,7 +4817,10 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
       data->mContentBoxCrossSize = flr.mContentBoxCrossSize;
 
       SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
-    } else if (data) {
+    } else if (data && !GetNextInFlow()) {
+      
+      
+      
       
       
       RemoveProperty(SharedFlexData::Prop());
