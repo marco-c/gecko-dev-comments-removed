@@ -7,6 +7,7 @@
 #include "FileSystemManagerParentFactory.h"
 
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/FileSystemDataManager.h"
 #include "mozilla/dom/FileSystemManagerParent.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -32,20 +33,6 @@ namespace fs::data {
 
 EntryId GetRootHandle(const Origin& aOrigin) { return "not implemented"_ns; }
 
-
-class FileSystemDataManager : public FileSystemDataManagerBase {
- public:
-  using result_t = Result<FileSystemDataManager*, nsresult>;
-  static FileSystemDataManager::result_t CreateFileSystemDataManager(
-      const fs::Origin& aOrigin);
-};
-
-FileSystemDataManager::result_t
-FileSystemDataManager::CreateFileSystemDataManager(
-    const fs::Origin& ) {
-  return nullptr;
-}
-
 }  
 
 mozilla::ipc::IPCResult CreateFileSystemManagerParent(
@@ -67,10 +54,10 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
 
   
   QM_TRY_UNWRAP(
-      fs::data::FileSystemDataManager * dataRaw,
+      fs::data::FileSystemDataManager * dataManagerRaw,
       fs::data::FileSystemDataManager::CreateFileSystemDataManager(origin),
       IPC_OK(), sendBackError);
-  UniquePtr<fs::data::FileSystemDataManager> data(dataRaw);
+  UniquePtr<fs::data::FileSystemDataManager> dataManager(dataManagerRaw);
 
   nsCOMPtr<nsIThread> pbackground = NS_GetCurrentThread();
 
@@ -85,18 +72,18 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
   
   
   
-  InvokeAsync(taskqueue, __func__,
-              [origin, parentEp = std::move(aParentEndpoint), aResolver, rootId,
-               data = std::move(data), taskqueue, pbackground]() mutable {
-                RefPtr<FileSystemManagerParent> parent =
-                    new FileSystemManagerParent(taskqueue, rootId);
-                if (!parentEp.Bind(parent)) {
-                  return BoolPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                      __func__);
-                }
-                
-                return BoolPromise::CreateAndResolve(true, __func__);
-              })
+  InvokeAsync(
+      taskqueue, __func__,
+      [origin, parentEp = std::move(aParentEndpoint), aResolver, rootId,
+       dataManager = std::move(dataManager), taskqueue, pbackground]() mutable {
+        RefPtr<FileSystemManagerParent> parent =
+            new FileSystemManagerParent(taskqueue, rootId);
+        if (!parentEp.Bind(parent)) {
+          return BoolPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+        }
+        
+        return BoolPromise::CreateAndResolve(true, __func__);
+      })
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [aResolver](const BoolPromise::ResolveOrRejectValue& aValue) {
                if (aValue.IsReject()) {

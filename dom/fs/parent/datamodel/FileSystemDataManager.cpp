@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "FileSystemDataManager.h"
+
+#include "mozilla/Result.h"
+
+namespace mozilla::dom::fs::data {
+
+FileSystemDataManager::result_t
+FileSystemDataManager::CreateFileSystemDataManager(
+    const fs::Origin& ) {
+  return nullptr;
+}
+
+}  

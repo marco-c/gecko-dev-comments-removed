@@ -4,6 +4,10 @@
 
 
 
+DIRS += [
+    "datamodel",
+]
+
 EXPORTS.mozilla.dom += [
     "FileSystemManagerParent.h",
     "FileSystemManagerParentFactory.h",
