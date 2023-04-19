@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "absl/base/attributes.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/video/video_frame.h"
@@ -95,11 +96,17 @@ class FrameCadenceAdapterInterface
   virtual void UpdateFrameRate() = 0;
 
   
+  
+  
   virtual void UpdateLayerQualityConvergence(int spatial_index,
                                              bool converged) = 0;
 
   
   virtual void UpdateLayerStatus(int spatial_index, bool enabled) = 0;
+
+  
+  
+  virtual ABSL_MUST_USE_RESULT bool ProcessKeyFrameRequest() = 0;
 };
 
 }  

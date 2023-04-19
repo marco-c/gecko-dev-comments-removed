@@ -1818,6 +1818,14 @@ void VideoStreamEncoder::SendKeyFrame() {
   if (!encoder_)
     return;  
 
+  if (frame_cadence_adapter_ &&
+      frame_cadence_adapter_->ProcessKeyFrameRequest()) {
+    worker_queue_->PostTask(ToQueuedTask(task_safety_, [this] {
+      RTC_DCHECK_RUN_ON(worker_queue_);
+      video_source_sink_controller_.RequestRefreshFrame();
+    }));
+  }
+
   
   std::fill(next_frame_types_.begin(), next_frame_types_.end(),
             VideoFrameType::kVideoFrameKey);

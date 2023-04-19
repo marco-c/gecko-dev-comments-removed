@@ -39,6 +39,9 @@ class VideoSourceSinkController {
   bool HasSource() const;
 
   
+  void RequestRefreshFrame();
+
+  
   
   void PushSourceSinkSettings();
 

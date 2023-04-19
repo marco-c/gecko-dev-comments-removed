@@ -97,6 +97,10 @@ class VideoSourceInterface {
   
   
   virtual void RemoveSink(VideoSinkInterface<VideoFrameT>* sink) = 0;
+
+  
+  
+  virtual void RequestRefreshFrame() {}
 };
 
 }  
