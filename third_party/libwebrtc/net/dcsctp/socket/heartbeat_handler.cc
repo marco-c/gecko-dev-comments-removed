@@ -104,10 +104,15 @@ HeartbeatHandler::HeartbeatHandler(absl::string_view log_prefix,
                        TimerBackoffAlgorithm::kExponential,
                        0))) {
   
-  interval_timer_->Start();
+  RestartTimer();
 }
 
 void HeartbeatHandler::RestartTimer() {
+  if (interval_duration_ == DurationMs(0)) {
+    
+    return;
+  }
+
   if (interval_duration_should_include_rtt_) {
     
     
