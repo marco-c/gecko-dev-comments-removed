@@ -228,7 +228,7 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       
       MOZ_ASSERT(sideBits == hit.mNode->GetFixedPosSides(),
                  "Fixed position side bits do not match");
-    } else if (hit.mTargetApzc->IsRootContent()) {
+    } else if (hit.mTargetApzc && hit.mTargetApzc->IsRootContent()) {
       
       
       MOZ_ASSERT(sideBits == SideBits::eNone,
