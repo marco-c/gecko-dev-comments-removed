@@ -5003,7 +5003,7 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
                       true);
 #endif
   auto wm = aChild->GetWritingMode();
-  ComputeSizeFlags csFlags = ComputeSizeFlag::UseAutoBSize;
+  ComputeSizeFlags csFlags = ComputeSizeFlag::IsGridMeasuringReflow;
   if (aAvailableSize.ISize(wm) == INFINITE_ISIZE_COORD) {
     csFlags += ComputeSizeFlag::ShrinkWrap;
   }
@@ -5020,10 +5020,6 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   ReflowInput childRI(pc, *rs, aChild, aAvailableSize, Some(aCBSize), {}, {},
                       csFlags);
 
-  
-  
-  
-  
   
   
   
@@ -5801,7 +5797,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
       
       
       
-      LogicalSize cbSize(childWM, 0, 0);
+      LogicalSize cbSize(childWM, 0, NS_UNCONSTRAINEDSIZE);
       ::MeasuringReflow(child, aState.mReflowInput, rc, avail, cbSize);
       nscoord baseline;
       nsGridContainerFrame* grid = do_QueryFrame(child);
@@ -7334,10 +7330,6 @@ void nsGridContainerFrame::ReflowInFlowChild(
   childRI.mFlags.mIsTopOfPage =
       aFragmentainer ? aFragmentainer->mIsTopOfPage : false;
 
-  
-  
-  
-  
   
   
   

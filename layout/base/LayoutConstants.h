@@ -47,10 +47,7 @@ enum class ComputeSizeFlag : uint8_t {
   
 
 
-
-
-
-  UseAutoBSize,
+  IsGridMeasuringReflow,
 
   
 

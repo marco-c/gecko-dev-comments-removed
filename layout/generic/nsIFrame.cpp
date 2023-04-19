@@ -6281,8 +6281,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   const bool isOrthogonal = aWM.IsOrthogonalTo(alignCB->GetWritingMode());
   const bool isAutoISize = styleISize.IsAuto();
   const bool isAutoBSize =
-      nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM)) ||
-      aFlags.contains(ComputeSizeFlag::UseAutoBSize);
+      nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM));
   
   if (!isAutoISize) {
     auto iSizeResult = ComputeISizeValue(
@@ -6455,15 +6454,12 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   
-  
   if (!isAutoBSize) {
     result.BSize(aWM) = nsLayoutUtils::ComputeBSizeValue(
         aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
         styleBSize.AsLengthPercentage());
-  } else if (MOZ_UNLIKELY(isGridItem) &&
-             
-             styleBSize.IsAuto() &&
-             !aFlags.contains(ComputeSizeFlag::UseAutoBSize) &&
+  } else if (MOZ_UNLIKELY(isGridItem) && styleBSize.IsAuto() &&
+             !aFlags.contains(ComputeSizeFlag::IsGridMeasuringReflow) &&
              !IsTrueOverflowContainer() &&
              !alignCB->IsMasonry(isOrthogonal ? eLogicalAxisInline
                                               : eLogicalAxisBlock)) {
@@ -6639,8 +6635,7 @@ Maybe<nscoord> nsIFrame::ComputeInlineSizeFromAspectRatio(
   const StyleSize& styleBSize = aSizeOverrides.mStyleBSize
                                     ? *aSizeOverrides.mStyleBSize
                                     : StylePosition()->BSize(aWM);
-  if (aFlags.contains(ComputeSizeFlag::UseAutoBSize) ||
-      nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
+  if (nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
     return Nothing();
   }
 
