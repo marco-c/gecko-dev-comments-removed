@@ -37,7 +37,15 @@ const randomDelay = () => {
 
 const limiter = concurrencyLimiter(6);
 
-const send = async function(uuid, message) {
+
+
+
+
+const sendQueues = new Map();
+
+
+
+const sendItem = async function (uuid, resolver, message) {
   await limiter(async () => {
     
     
@@ -47,15 +55,45 @@ const send = async function(uuid, message) {
           method: 'POST',
           body: message
         })
-        if (await response.text() == "done")
+        if (await response.text() == "done") {
+          resolver();
           return;
+        }
       } catch (fetch_error) {}
       await randomDelay();
     };
   });
 }
 
-const receive = async function(uuid) {
+
+
+const processQueue = async function (uuid, queue) {
+  while (queue.length) {
+    const [resolver, message] = queue.shift();
+    await sendItem(uuid, resolver, message);
+  }
+  
+  sendQueues.delete(uuid);
+}
+
+const send = async function (uuid, message) {
+  const itemSentPromise = new Promise((resolve) => {
+    const item = [resolve, message];
+    if (sendQueues.has(uuid)) {
+      
+      sendQueues.get(uuid).push(item);
+    } else {
+      
+      const queue = [item];
+      sendQueues.set(uuid, queue);
+      processQueue(uuid, queue);
+    }
+  });
+  
+  await itemSentPromise;
+}
+
+const receive = async function (uuid) {
   while(1) {
     let data = "not ready";
     try {
