@@ -33,7 +33,7 @@ class WebSocketChannelChild final : public BaseWebSocketChannel,
   
   
   NS_IMETHOD AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
-                       JS::HandleValue aOriginAttributes,
+                       JS::Handle<JS::Value> aOriginAttributes,
                        uint64_t aInnerWindowID, nsIWebSocketListener* aListener,
                        nsISupports* aContext, JSContext* aCx) override;
   NS_IMETHOD AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
