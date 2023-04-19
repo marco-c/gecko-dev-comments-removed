@@ -2001,11 +2001,6 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void ClearWebrenderAnimationResources() {}
-
-  
-
-
 
   virtual bool SetNeedFastSnaphot() { return false; }
 

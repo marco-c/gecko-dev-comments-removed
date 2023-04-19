@@ -1098,13 +1098,6 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState) {
   mCurrentMenu = nullptr;  
   mHFlip = mVFlip = false;
 
-  if (auto* widget = GetWidget()) {
-    
-    
-    
-    widget->ClearWebrenderAnimationResources();
-  }
-
   nsView* view = GetView();
   nsViewManager* viewManager = view->GetViewManager();
   viewManager->SetViewVisibility(view, nsViewVisibility_kHide);
