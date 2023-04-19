@@ -401,10 +401,12 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
+  
   void AllowInvokesToThread(Thread* thread);
 
   
   void DisallowAllInvokes();
+  
   
   
   
