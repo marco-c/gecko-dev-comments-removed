@@ -3,7 +3,9 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "addDebuggerToGlobal", "addSandboxedDebuggerToGlobal" ];
+"use strict";
+
+var EXPORTED_SYMBOLS = ["addDebuggerToGlobal", "addSandboxedDebuggerToGlobal"];
 
 
 
@@ -29,7 +31,7 @@ function addDebuggerToGlobal(global) {
 
 
 function addSandboxedDebuggerToGlobal(global) {
-  var sb = Cu.Sandbox(global, {freshCompartment: true});
+  const sb = Cu.Sandbox(global, { freshCompartment: true });
   addDebuggerToGlobal(sb);
   global.Debugger = sb.Debugger;
 }
@@ -50,7 +52,7 @@ function initPromiseDebugging(global) {
   global.eval(polyfillSource);
 }
 
-let polyfillSource = `
+const polyfillSource = `
   Object.defineProperty(Debugger.Object.prototype, "promiseState", {
     get() {
       const state = this.PromiseDebugging.getState(this.unsafeDereference());
