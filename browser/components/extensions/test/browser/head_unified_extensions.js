@@ -98,7 +98,8 @@ const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
   ok(menu, "expected menu");
 
   const shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(button, { type: "contextmenu" }, win);
+  
+  EventUtils.synthesizeMouseAtCenter(button, {}, win);
   await shown;
 
   return menu;
