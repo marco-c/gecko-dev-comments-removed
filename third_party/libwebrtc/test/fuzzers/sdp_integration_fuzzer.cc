@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
 #include "pc/test/integration_test_helpers.h"
 
 namespace webrtc {
@@ -20,6 +21,36 @@ class FuzzerTest : public PeerConnectionIntegrationBaseTest {
   FuzzerTest()
       : PeerConnectionIntegrationBaseTest(SdpSemantics::kUnifiedPlan) {}
 
+  void RunNegotiateCycle(absl::string_view message) {
+    CreatePeerConnectionWrappers();
+    
+    
+
+    auto srd_observer =
+        rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+
+    SdpParseError error;
+    std::unique_ptr<SessionDescriptionInterface> sdp(
+        CreateSessionDescription("offer", std::string(message), &error));
+    
+    caller()->pc()->SetRemoteDescription(srd_observer, sdp.release());
+    
+    
+    EXPECT_TRUE_WAIT(srd_observer->called(), 100);
+
+    
+    auto sld_observer =
+        rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+    if (srd_observer->result()) {
+      caller()->pc()->SetLocalDescription(sld_observer.get());
+      EXPECT_TRUE_WAIT(sld_observer->called(), 100);
+    }
+    
+    RTC_CHECK(!HasFailure());
+  }
+
+  
+  
   void TestBody() override {}
 };
 
@@ -27,32 +58,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 16384) {
     return;
   }
-  std::string message(reinterpret_cast<const char*>(data), size);
 
   FuzzerTest test;
-  test.CreatePeerConnectionWrappers();
-  
-  
-
-  auto srd_observer =
-      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
-
-  webrtc::SdpParseError error;
-  std::unique_ptr<webrtc::SessionDescriptionInterface> sdp(
-      CreateSessionDescription("offer", message, &error));
-  
-  test.caller()->pc()->SetRemoteDescription(srd_observer, sdp.release());
-  
-  
-  EXPECT_TRUE_WAIT(srd_observer->called(), 100);
-
-  
-  auto sld_observer =
-      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
-  if (srd_observer->result()) {
-    test.caller()->pc()->SetLocalDescription(sld_observer.get());
-    EXPECT_TRUE_WAIT(sld_observer->called(), 100);
-  }
+  test.RunNegotiateCycle(
+      absl::string_view(reinterpret_cast<const char*>(data), size));
 }
 
 }  
