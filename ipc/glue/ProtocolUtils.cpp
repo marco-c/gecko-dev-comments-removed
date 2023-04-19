@@ -550,9 +550,11 @@ void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
   fuzzing::IPCFuzzController::instance().OnActorDestroyed(this);
 #endif
 
+  int32_t id = Id();
+
   
   if (Manager()) {
-    Unregister(Id());
+    Unregister(id);
   }
 
   
@@ -579,7 +581,7 @@ void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
   
   
   
-  GetIPCChannel()->RejectPendingResponsesForActor(this);
+  GetIPCChannel()->RejectPendingResponsesForActor(id);
   ActorDestroy(aWhy);
   mLinkStatus = LinkStatus::Destroyed;
 }
