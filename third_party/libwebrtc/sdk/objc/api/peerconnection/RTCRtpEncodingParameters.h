@@ -65,6 +65,10 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) RTCPriority networkPriority;
 
+
+
+@property(nonatomic, assign) BOOL adaptiveAudioPacketTime;
+
 - (instancetype)init;
 
 @end
