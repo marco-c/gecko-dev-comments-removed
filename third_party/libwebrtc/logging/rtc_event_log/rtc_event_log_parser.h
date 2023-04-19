@@ -21,6 +21,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
+#include "logging/rtc_event_log/events/logged_rtp_rtcp.h"
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
@@ -43,9 +44,12 @@
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
 #include "logging/rtc_event_log/events/rtc_event_remote_estimate.h"
 #include "logging/rtc_event_log/events/rtc_event_route_change.h"
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
+#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
-#include "logging/rtc_event_log/logged_events.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "rtc_base/ignore_wundef.h"
@@ -64,6 +68,80 @@ RTC_POP_IGNORING_WUNDEF()
 namespace webrtc {
 
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
+
+enum class LoggedMediaType : uint8_t { kUnknown, kAudio, kVideo };
+
+struct LoggedPacketInfo {
+  LoggedPacketInfo(const LoggedRtpPacket& rtp,
+                   LoggedMediaType media_type,
+                   bool rtx,
+                   Timestamp capture_time);
+  LoggedPacketInfo(const LoggedPacketInfo&);
+  ~LoggedPacketInfo();
+  int64_t log_time_ms() const { return log_packet_time.ms(); }
+  int64_t log_time_us() const { return log_packet_time.us(); }
+  uint32_t ssrc;
+  uint16_t stream_seq_no;
+  uint16_t size;
+  uint16_t payload_size;
+  uint16_t padding_size;
+  uint16_t overhead = 0;
+  uint8_t payload_type;
+  LoggedMediaType media_type = LoggedMediaType::kUnknown;
+  bool rtx = false;
+  bool marker_bit = false;
+  bool has_transport_seq_no = false;
+  bool last_in_feedback = false;
+  uint16_t transport_seq_no = 0;
+  
+  
+  Timestamp capture_time;
+  
+  
+  Timestamp log_packet_time;
+  
+  
+  Timestamp reported_send_time;
+  
+  
+  
+  Timestamp reported_recv_time = Timestamp::MinusInfinity();
+  
+  
+  
+  Timestamp log_feedback_time = Timestamp::MinusInfinity();
+  
+  
+  
+  
+  TimeDelta feedback_hold_duration = TimeDelta::MinusInfinity();
+};
+
+struct InferredRouteChangeEvent {
+  int64_t log_time_ms() const { return log_time.ms(); }
+  int64_t log_time_us() const { return log_time.us(); }
+  uint32_t route_id;
+  Timestamp log_time = Timestamp::MinusInfinity();
+  uint16_t send_overhead;
+  uint16_t return_overhead;
+};
+
+enum class LoggedIceEventType {
+  kAdded,
+  kUpdated,
+  kDestroyed,
+  kSelected,
+  kCheckSent,
+  kCheckReceived,
+  kCheckResponseSent,
+  kCheckResponseReceived,
+};
+
+struct LoggedIceEvent {
+  uint32_t candidate_pair_id;
+  Timestamp log_time;
+  LoggedIceEventType event_type;
+};
 
 
 
