@@ -336,7 +336,7 @@ class CallObject : public EnvironmentObject {
 
 
 
-  static CallObject* create(JSContext* cx, Handle<Shape*> shape);
+  static CallObject* createWithShape(JSContext* cx, Handle<Shape*> shape);
 
   static CallObject* createTemplateObject(JSContext* cx, HandleScript script,
                                           HandleObject enclosing);

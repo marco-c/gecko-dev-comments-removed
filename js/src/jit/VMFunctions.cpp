@@ -781,22 +781,6 @@ bool InterruptCheck(JSContext* cx) {
   return CheckForInterrupt(cx);
 }
 
-JSObject* NewCallObject(JSContext* cx, Handle<Shape*> shape) {
-  JSObject* obj = CallObject::create(cx, shape);
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  
-  
-  if (!IsInsideNursery(obj)) {
-    cx->runtime()->gc.storeBuffer().putWholeCell(obj);
-  }
-
-  return obj;
-}
-
 JSObject* NewStringObject(JSContext* cx, HandleString str) {
   return StringObject::create(cx, str);
 }
