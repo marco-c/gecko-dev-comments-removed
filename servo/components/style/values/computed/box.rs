@@ -152,6 +152,7 @@ impl ToComputedValue for SpecifiedFloat {
     ToResolvedValue,
 )]
 
+#[repr(u8)]
 pub enum Clear {
     None,
     Left,
