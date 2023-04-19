@@ -32,8 +32,7 @@ module.exports = {
     sendSyncMessage: false,
 
     
-    content: false,
-    docShell: false,
-    tabEventTarget: false,
+    initialProcessData: false,
+    sharedData: false,
   },
 };
