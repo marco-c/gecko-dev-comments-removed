@@ -16,6 +16,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 public class SurfaceViewWrapper {
@@ -111,6 +112,17 @@ public class SurfaceViewWrapper {
   public View getView() {
     return mView;
   }
+
+  
+
+
+
+
+
+
+
+  @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+  public static native boolean isSurfaceAbandoned(final Surface surface);
 
   
 

@@ -105,13 +105,26 @@ public class GeckoView extends FrameLayout {
       onGlobalLayout();
       if (GeckoView.this.mSurfaceWrapper != null) {
         final SurfaceViewWrapper wrapper = GeckoView.this.mSurfaceWrapper;
-        mDisplay.surfaceChanged(
-            new GeckoDisplay.SurfaceInfo.Builder(wrapper.getSurface())
-                .surfaceControl(wrapper.getSurfaceControl())
-                .size(wrapper.getWidth(), wrapper.getHeight())
-                .build());
-        mDisplay.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
-        GeckoView.this.setActive(true);
+
+        
+        
+        
+        
+        
+        
+        final boolean isAbandoned = SurfaceViewWrapper.isSurfaceAbandoned(wrapper.getSurface());
+        if (isAbandoned && wrapper.getView().getVisibility() == View.VISIBLE) {
+          wrapper.getView().setVisibility(View.INVISIBLE);
+          wrapper.getView().setVisibility(View.VISIBLE);
+        } else {
+          mDisplay.surfaceChanged(
+              new GeckoDisplay.SurfaceInfo.Builder(wrapper.getSurface())
+                  .surfaceControl(wrapper.getSurfaceControl())
+                  .size(wrapper.getWidth(), wrapper.getHeight())
+                  .build());
+          mDisplay.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
+          GeckoView.this.setActive(true);
+        }
       }
     }
 
