@@ -173,14 +173,12 @@ class ThreadMetrics : public ::testing::Test {
   uint32_t mDispatchCount;
 };
 
-
-#if !defined(_WIN64)
 TEST_F(ThreadMetrics, CollectMetrics) {
   nsresult rv;
   initScheduler();
 
   
-  nsCOMPtr<nsIRunnable> runnable = new TimedRunnable(25, 25);
+  RefPtr<TimedRunnable> runnable = new TimedRunnable(25, 25);
   rv = Dispatch(runnable);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
@@ -199,9 +197,8 @@ TEST_F(ThreadMetrics, CollectMetrics) {
 
   
   uint64_t duration = mCounter->GetExecutionDuration();
-  ASSERT_GE(duration, 50000u);
+  ASSERT_GE(duration, runnable->TotalSlept());
 }
-#endif
 
 TEST_F(ThreadMetrics, CollectRecursiveMetrics) {
   nsresult rv;
