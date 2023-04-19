@@ -42,6 +42,18 @@ class RTC_EXPORT DecodedImageCallback {
 
 class RTC_EXPORT VideoDecoder {
  public:
+  struct DecoderInfo {
+    
+    std::string implementation_name;
+
+    
+    bool is_hardware_accelerated = false;
+
+    std::string ToString() const;
+    bool operator==(const DecoderInfo& rhs) const;
+    bool operator!=(const DecoderInfo& rhs) const { return !(*this == rhs); }
+  };
+
   virtual ~VideoDecoder() {}
 
   virtual int32_t InitDecode(const VideoCodec* codec_settings,
@@ -56,12 +68,15 @@ class RTC_EXPORT VideoDecoder {
 
   virtual int32_t Release() = 0;
 
+  virtual DecoderInfo GetDecoderInfo() const;
+
+  
   
   
   
   
   virtual bool PrefersLateDecoding() const;
-
+  
   virtual const char* ImplementationName() const;
 };
 
