@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function networkRequest(url, opts) {
   const supportedProtocols = ["http:", "https:", "data:"];
 

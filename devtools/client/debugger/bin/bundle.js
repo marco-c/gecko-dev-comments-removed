@@ -2,7 +2,6 @@
 
 
 
-const sourceMapAssets = require("devtools-source-map/assets");
 const path = require("path");
 var fs = require("fs");
 const rimraf = require("rimraf");
@@ -22,11 +21,6 @@ function moveFile(src, dest) {
   fs.copyFileSync(src, dest);
   rimraf.sync(src);
 }
-
-
-
-
-
 
 
 
@@ -60,27 +54,5 @@ function moveFile(src, dest) {
     return;
   }
 
-  console.log(`[bundle] Done bundling. Copy bundles to devtools/client/shared`);
-
-  moveFile(
-    path.join(bundlePath, "source-map-worker.js"),
-    path.join(clientPath, "shared/source-map/worker.js")
-  );
-
-  for (const filename of Object.keys(sourceMapAssets)) {
-    if (filename.startsWith("resource:")) {
-      continue;
-    }
-    moveFile(
-      path.join(bundlePath, "source-map-worker-assets", filename),
-      path.join(clientPath, "shared/source-map/assets", filename)
-    );
-  }
-
-  moveFile(
-    path.join(bundlePath, "source-map-index.js"),
-    path.join(clientPath, "shared/source-map/index.js")
-  );
-
-  console.log("[bundle] Task completed.");
+  console.log(`[bundle] Done bundling.`);
 })();

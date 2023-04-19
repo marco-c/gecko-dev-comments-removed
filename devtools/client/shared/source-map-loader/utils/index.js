@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const md5 = require("resource://devtools/client/shared/vendor/md5.js");
 
 function originalToGeneratedId(sourceId) {

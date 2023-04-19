@@ -4,6 +4,10 @@
 
 
 
+DIRS += [
+    "source-map",
+]
+
 DevToolsModules(
     'fluent-react.js',
     'immutable.js',

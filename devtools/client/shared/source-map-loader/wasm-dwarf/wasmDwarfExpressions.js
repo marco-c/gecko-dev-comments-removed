@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 class Value {
   val;
 

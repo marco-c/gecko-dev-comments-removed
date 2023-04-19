@@ -2,7 +2,7 @@
 
 
 
-import { generatedToOriginalId } from "devtools/client/shared/source-map/index";
+import { generatedToOriginalId } from "devtools/client/shared/source-map-loader/index";
 
 import assert from "../../utils/assert";
 import { recordEvent } from "../../utils/telemetry";

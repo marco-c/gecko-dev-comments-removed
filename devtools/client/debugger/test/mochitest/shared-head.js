@@ -50,7 +50,7 @@ const {
   isGeneratedId,
   isOriginalId,
   originalToGeneratedId,
-} = require("devtools/client/shared/source-map/index");
+} = require("devtools/client/shared/source-map-loader/index");
 
 
 

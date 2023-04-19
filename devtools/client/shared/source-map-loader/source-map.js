@@ -2,35 +2,46 @@
 
 
 
+"use strict";
 
 
 
 
 
-const { networkRequest } = require("./utils/network-request");
-const { SourceMapConsumer, SourceMapGenerator } = require("devtools/client/shared/vendor/source-map/source-map.js");
 
-const { createConsumer } = require("./utils/createConsumer");
-const assert = require("./utils/assert");
+const {
+  networkRequest,
+} = require("resource://devtools/client/shared/source-map-loader/utils/network-request.js");
+const {
+  SourceMapConsumer,
+  SourceMapGenerator,
+} = require("resource://devtools/client/shared/vendor/source-map/source-map.js");
+
+const {
+  createConsumer,
+} = require("resource://devtools/client/shared/source-map-loader/utils/createConsumer.js");
+const assert = require("resource://devtools/client/shared/source-map-loader/utils/assert.js");
 const {
   fetchSourceMap,
   hasOriginalURL,
   clearOriginalURLs,
-} = require("./utils/fetchSourceMap");
+} = require("resource://devtools/client/shared/source-map-loader/utils/fetchSourceMap.js");
 const {
   getSourceMap,
   getSourceMapWithMetadata,
   setSourceMap,
   clearSourceMaps: clearSourceMapsRequests,
-} = require("./utils/sourceMapRequests");
+} = require("resource://devtools/client/shared/source-map-loader/utils/sourceMapRequests.js");
 const {
   originalToGeneratedId,
   generatedToOriginalId,
   isGeneratedId,
   isOriginalId,
   getContentType,
-} = require("./utils");
-const { clearWasmXScopes } = require("./wasm-dwarf/wasmXScopes");
+} = require("resource://devtools/client/shared/source-map-loader/utils/index.js");
+const {
+  clearWasmXScopes,
+} = require("resource://devtools/client/shared/source-map-loader/wasm-dwarf/wasmXScopes.js");
 
 async function getOriginalURLs(generatedSource) {
   await fetchSourceMap(generatedSource);
@@ -396,10 +407,7 @@ async function getGeneratedRangesForOriginal(
             column: mapping.lastGeneratedColumn + 1,
           },
         });
-      } else if (
-        typeof mapping.source === "string" &&
-        currentGroup.length > 0
-      ) {
+      } else if (typeof mapping.source === "string" && currentGroup.length) {
         
         
         currentGroup = [];
@@ -416,7 +424,7 @@ async function getGeneratedRangesForOriginal(
     
     
     for (const group of originalGroups) {
-      if (group.length > 0) {
+      if (group.length) {
         generatedMappingsForOriginal.push({
           start: group[0].start,
           end: group[group.length - 1].end,
@@ -474,7 +482,7 @@ async function getFileGeneratedRange(originalSourceId) {
     originalToGeneratedId(originalSourceId)
   );
   if (!data) {
-    return;
+    return null;
   }
   const { urlsById, map } = data;
 

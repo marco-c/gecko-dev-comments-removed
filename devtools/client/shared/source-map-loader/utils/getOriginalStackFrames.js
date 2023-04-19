@@ -2,9 +2,17 @@
 
 
 
-const { getWasmXScopes } = require("../wasm-dwarf/wasmXScopes");
-const { getSourceMap } = require("./sourceMapRequests");
-const { generatedToOriginalId } = require("./index");
+"use strict";
+
+const {
+  getWasmXScopes,
+} = require("resource://devtools/client/shared/source-map-loader/wasm-dwarf/wasmXScopes");
+const {
+  getSourceMap,
+} = require("resource://devtools/client/shared/source-map-loader/utils/sourceMapRequests");
+const {
+  generatedToOriginalId,
+} = require("resource://devtools/client/shared/source-map-loader/utils/index");
 
 
 

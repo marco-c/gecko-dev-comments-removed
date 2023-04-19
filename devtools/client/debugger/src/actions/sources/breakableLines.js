@@ -2,7 +2,7 @@
 
 
 
-import { isOriginalId } from "devtools/client/shared/source-map/index";
+import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
 import { getSourceActorsForSource, getBreakableLines } from "../../selectors";
 import { setBreakpointPositions } from "../breakpoints/breakpointPositions";
 import { loadSourceActorBreakableLines } from "../source-actors";

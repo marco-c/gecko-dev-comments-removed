@@ -2,6 +2,12 @@
 
 
 
+
+
+"use strict";
+
+importScripts("resource://gre/modules/workers/require.js");
+
 const {
   getOriginalURLs,
   hasOriginalURL,
@@ -16,12 +22,18 @@ const {
   getFileGeneratedRange,
   clearSourceMaps,
   applySourceMap,
-} = require("./source-map");
+} = require("resource://devtools/client/shared/source-map-loader/source-map.js");
 
-const { getOriginalStackFrames } = require("./utils/getOriginalStackFrames");
-const { setAssetRootURL } = require("./utils/assetRoot");
+const {
+  getOriginalStackFrames,
+} = require("resource://devtools/client/shared/source-map-loader/utils/getOriginalStackFrames.js");
+const {
+  setAssetRootURL,
+} = require("resource://devtools/client/shared/source-map-loader/utils/assetRoot.js");
 
-const { workerHandler } = require("devtools/client/shared/worker-utils");
+const {
+  workerHandler,
+} = require("resource://devtools/client/shared/worker-utils.js");
 
 
 

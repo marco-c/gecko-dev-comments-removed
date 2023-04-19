@@ -2,7 +2,11 @@
 
 
 
-const { generatedToOriginalId } = require(".");
+"use strict";
+
+const {
+  generatedToOriginalId,
+} = require("resource://devtools/client/shared/source-map-loader/utils/index.js");
 
 const sourceMapRequests = new Map();
 

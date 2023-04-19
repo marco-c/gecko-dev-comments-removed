@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const {
+  SourceMapConsumer,
+} = require("resource://devtools/client/shared/vendor/source-map/source-map.js");
+
+function setAssetRootURL() {
+  SourceMapConsumer.initialize({
+    "lib/mappings.wasm":
+      "resource://devtools/client/shared/vendor/source-map/lib/mappings.wasm",
+  });
+}
+
+module.exports = {
+  setAssetRootURL,
+};

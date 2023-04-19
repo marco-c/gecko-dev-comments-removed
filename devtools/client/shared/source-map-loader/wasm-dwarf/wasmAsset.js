@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+async function getDwarfToWasmData(name) {
+  const response = await fetch(
+    "resource://devtools/client/shared/source-map-loader/wasm-dwarf/dwarf_to_json.wasm"
+  );
+
+  return response.arrayBuffer();
+}
+
+module.exports = {
+  getDwarfToWasmData,
+};

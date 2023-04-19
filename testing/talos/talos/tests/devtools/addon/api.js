@@ -34,6 +34,7 @@ this.damp = class extends ExtensionAPI {
 
           
           loader.loader.globals.dampWindow = context.appWindow;
+          loader.loader.globals.fetch = context.appWindow.fetch;
 
           dump("[damp-api] Retrieve the DAMP runner and start the test\n");
           const { damp } = require("damp-test/damp");

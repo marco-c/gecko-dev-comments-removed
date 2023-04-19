@@ -2,7 +2,11 @@
 
 
 
-const { SourceMapConsumer } = require("devtools/client/shared/vendor/source-map/source-map.js");
+"use strict";
+
+const {
+  SourceMapConsumer,
+} = require("resource://devtools/client/shared/vendor/source-map/source-map.js");
 
 async function createConsumer(map, sourceMapUrl) {
   return new SourceMapConsumer(map, sourceMapUrl);
