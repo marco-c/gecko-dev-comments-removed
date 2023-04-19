@@ -466,7 +466,6 @@ bool PeerConnectionClient::ParseServerResponse(const std::string& response,
   *peer_id = -1;
 
   
-  
   GetHeaderValue(response, *eoh, "\r\nPragma: ", peer_id);
 
   return true;
