@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "absl/strings/internal/str_format/parser.h"
 
 #include <assert.h>
@@ -20,60 +34,67 @@ namespace str_format_internal {
 using CC = FormatConversionCharInternal;
 using LM = LengthMod;
 
+
+constexpr auto f_sign = Flags::kSignCol;
+constexpr auto f_alt = Flags::kAlt;
+constexpr auto f_pos = Flags::kShowPos;
+constexpr auto f_left = Flags::kLeft;
+constexpr auto f_zero = Flags::kZero;
+
 ABSL_CONST_INIT const ConvTag kTags[256] = {
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    CC::A, {},    {},    {},    CC::E, CC::F, CC::G,  
-    {},    {},    {},    {},    LM::L, {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    CC::X, {},    {},    {},    {},    {},    {},    {},     
-    {},    CC::a, {},    CC::c, CC::d, CC::e, CC::f, CC::g,  
-    LM::h, CC::i, LM::j, {},    LM::l, {},    CC::n, CC::o,  
-    CC::p, LM::q, {},    CC::s, LM::t, CC::u, {},    {},     
-    CC::x, {},    LM::z, {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
-    {},    {},    {},    {},    {},    {},    {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    f_sign, {},    {},    f_alt, {},    {},     {},    {},     
+    {},     {},    {},    f_pos, {},    f_left, {},    {},     
+    f_zero, {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     CC::A, {},    {},    {},    CC::E,  CC::F, CC::G,  
+    {},     {},    {},    {},    LM::L, {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    CC::X,  {},    {},    {},    {},    {},     {},    {},     
+    {},     CC::a, {},    CC::c, CC::d, CC::e,  CC::f, CC::g,  
+    LM::h,  CC::i, LM::j, {},    LM::l, {},     CC::n, CC::o,  
+    CC::p,  LM::q, {},    CC::s, LM::t, CC::u,  {},    {},     
+    CC::x,  {},    LM::z, {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
+    {},     {},    {},    {},    {},    {},     {},    {},     
 };
 
 namespace {
 
 bool CheckFastPathSetting(const UnboundConversion& conv) {
-  bool should_be_basic = !conv.flags.left &&      
-                         !conv.flags.show_pos &&  
-                         !conv.flags.sign_col &&  
-                         !conv.flags.alt &&       
-                         !conv.flags.zero &&      
-                         (conv.width.value() == -1) &&
-                         (conv.precision.value() == -1);
-  if (should_be_basic != conv.flags.basic) {
+  bool width_precision_needed =
+      conv.width.value() >= 0 || conv.precision.value() >= 0;
+  if (width_precision_needed && conv.flags == Flags::kBasic) {
     fprintf(stderr,
             "basic=%d left=%d show_pos=%d sign_col=%d alt=%d zero=%d "
             "width=%d precision=%d\n",
-            conv.flags.basic, conv.flags.left, conv.flags.show_pos,
-            conv.flags.sign_col, conv.flags.alt, conv.flags.zero,
-            conv.width.value(), conv.precision.value());
+            conv.flags == Flags::kBasic ? 1 : 0,
+            FlagsContains(conv.flags, Flags::kLeft) ? 1 : 0,
+            FlagsContains(conv.flags, Flags::kShowPos) ? 1 : 0,
+            FlagsContains(conv.flags, Flags::kSignCol) ? 1 : 0,
+            FlagsContains(conv.flags, Flags::kAlt) ? 1 : 0,
+            FlagsContains(conv.flags, Flags::kZero) ? 1 : 0, conv.width.value(),
+            conv.precision.value());
+    return false;
   }
-  return should_be_basic == conv.flags.basic;
+  return true;
 }
 
 template <bool is_positional>
@@ -117,40 +138,21 @@ const char *ConsumeConversion(const char *pos, const char *const end,
   ABSL_FORMAT_PARSER_INTERNAL_GET_CHAR();
 
   
-  assert(conv->flags.basic);
+  assert(conv->flags == Flags::kBasic);
 
   
   
   
   if (c < 'A') {
-    conv->flags.basic = false;
-
-    for (; c <= '0';) {
-      
-      
-      
-      switch (c) {
-        case '-':
-          conv->flags.left = true;
-          break;
-        case '+':
-          conv->flags.show_pos = true;
-          break;
-        case ' ':
-          conv->flags.sign_col = true;
-          break;
-        case '#':
-          conv->flags.alt = true;
-          break;
-        case '0':
-          conv->flags.zero = true;
-          break;
-        default:
-          goto flags_done;
+    while (c <= '0') {
+      auto tag = GetTagForChar(c);
+      if (tag.is_flags()) {
+        conv->flags = conv->flags | tag.as_flags();
+        ABSL_FORMAT_PARSER_INTERNAL_GET_CHAR();
+      } else {
+        break;
       }
-      ABSL_FORMAT_PARSER_INTERNAL_GET_CHAR();
     }
-flags_done:
 
     if (c <= '9') {
       if (c >= '0') {
@@ -159,12 +161,12 @@ flags_done:
           if (ABSL_PREDICT_FALSE(*next_arg != 0)) return nullptr;
           
           *next_arg = -1;
-          conv->flags = Flags();
-          conv->flags.basic = true;
           return ConsumeConversion<true>(original_pos, end, conv, next_arg);
         }
+        conv->flags = conv->flags | Flags::kNonBasic;
         conv->width.set_value(maybe_width);
       } else if (c == '*') {
+        conv->flags = conv->flags | Flags::kNonBasic;
         ABSL_FORMAT_PARSER_INTERNAL_GET_CHAR();
         if (is_positional) {
           if (ABSL_PREDICT_FALSE(c < '1' || c > '9')) return nullptr;
@@ -178,6 +180,7 @@ flags_done:
     }
 
     if (c == '.') {
+      conv->flags = conv->flags | Flags::kNonBasic;
       ABSL_FORMAT_PARSER_INTERNAL_GET_CHAR();
       if (std::isdigit(c)) {
         conv->precision.set_value(parse_digits());

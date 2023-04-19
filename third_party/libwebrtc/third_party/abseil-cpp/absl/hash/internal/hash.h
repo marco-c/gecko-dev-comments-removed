@@ -38,9 +38,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/internal/endian.h"
+#include "absl/base/config.h"
+#include "absl/base/internal/unaligned_access.h"
 #include "absl/base/port.h"
 #include "absl/container/fixed_array.h"
+#include "absl/hash/internal/low_level_hash.h"
 #include "absl/meta/type_traits.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/string_view.h"
@@ -377,7 +379,7 @@ template <typename H, typename... Ts>
 
 
 H
-#else  
+#else   
 typename std::enable_if<absl::conjunction<is_hashable<Ts>...>::value, H>::type
 #endif  
 AbslHashValue(H hash_state, const std::tuple<Ts...>& t) {
@@ -713,8 +715,7 @@ struct is_hashable
     : std::integral_constant<bool, HashSelect::template Apply<T>::value> {};
 
 
-class ABSL_DLL CityHashState
-    : public HashStateBase<CityHashState> {
+class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   
   
 #ifdef ABSL_HAVE_INTRINSIC_INT128
@@ -733,21 +734,21 @@ class ABSL_DLL CityHashState
 
  public:
   
-  CityHashState(CityHashState&&) = default;
-  CityHashState& operator=(CityHashState&&) = default;
+  MixingHashState(MixingHashState&&) = default;
+  MixingHashState& operator=(MixingHashState&&) = default;
 
   
   
   
   
-  static CityHashState combine_contiguous(CityHashState hash_state,
-                                          const unsigned char* first,
-                                          size_t size) {
-    return CityHashState(
+  static MixingHashState combine_contiguous(MixingHashState hash_state,
+                                            const unsigned char* first,
+                                            size_t size) {
+    return MixingHashState(
         CombineContiguousImpl(hash_state.state_, first, size,
                               std::integral_constant<int, sizeof(size_t)>{}));
   }
-  using CityHashState::HashStateBase::combine_contiguous;
+  using MixingHashState::HashStateBase::combine_contiguous;
 
   
   
@@ -764,21 +765,21 @@ class ABSL_DLL CityHashState
   
   template <typename T, absl::enable_if_t<!IntegralFastPath<T>::value, int> = 0>
   static size_t hash(const T& value) {
-    return static_cast<size_t>(combine(CityHashState{}, value).state_);
+    return static_cast<size_t>(combine(MixingHashState{}, value).state_);
   }
 
  private:
   
   
-  CityHashState() : state_(Seed()) {}
+  MixingHashState() : state_(Seed()) {}
 
   
   
   
   
-  CityHashState(const CityHashState&) = default;
+  MixingHashState(const MixingHashState&) = default;
 
-  explicit CityHashState(uint64_t state) : state_(state) {}
+  explicit MixingHashState(uint64_t state) : state_(state) {}
 
   
   
@@ -808,27 +809,62 @@ class ABSL_DLL CityHashState
   
   static std::pair<uint64_t, uint64_t> Read9To16(const unsigned char* p,
                                                  size_t len) {
-    uint64_t high = little_endian::Load64(p + len - 8);
-    return {little_endian::Load64(p), high >> (128 - len * 8)};
+    uint64_t low_mem = absl::base_internal::UnalignedLoad64(p);
+    uint64_t high_mem = absl::base_internal::UnalignedLoad64(p + len - 8);
+#ifdef ABSL_IS_LITTLE_ENDIAN
+    uint64_t most_significant = high_mem;
+    uint64_t least_significant = low_mem;
+#else
+    uint64_t most_significant = low_mem;
+    uint64_t least_significant = high_mem;
+#endif
+    return {least_significant, most_significant >> (128 - len * 8)};
   }
 
   
   static uint64_t Read4To8(const unsigned char* p, size_t len) {
-    return (static_cast<uint64_t>(little_endian::Load32(p + len - 4))
-            << (len - 4) * 8) |
-           little_endian::Load32(p);
+    uint32_t low_mem = absl::base_internal::UnalignedLoad32(p);
+    uint32_t high_mem = absl::base_internal::UnalignedLoad32(p + len - 4);
+#ifdef ABSL_IS_LITTLE_ENDIAN
+    uint32_t most_significant = high_mem;
+    uint32_t least_significant = low_mem;
+#else
+    uint32_t most_significant = low_mem;
+    uint32_t least_significant = high_mem;
+#endif
+    return (static_cast<uint64_t>(most_significant) << (len - 4) * 8) |
+           least_significant;
   }
 
   
   static uint32_t Read1To3(const unsigned char* p, size_t len) {
-    return static_cast<uint32_t>((p[0]) |                         
-                                 (p[len / 2] << (len / 2 * 8)) |  
-                                 (p[len - 1] << ((len - 1) * 8)));
+    unsigned char mem0 = p[0];
+    unsigned char mem1 = p[len / 2];
+    unsigned char mem2 = p[len - 1];
+#ifdef ABSL_IS_LITTLE_ENDIAN
+    unsigned char significant2 = mem2;
+    unsigned char significant1 = mem1;
+    unsigned char significant0 = mem0;
+#else
+    unsigned char significant2 = mem0;
+    unsigned char significant1 = mem1;
+    unsigned char significant0 = mem2;
+#endif
+    return static_cast<uint32_t>(significant0 |                     
+                                 (significant1 << (len / 2 * 8)) |  
+                                 (significant2 << ((len - 1) * 8)));
   }
 
   ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Mix(uint64_t state, uint64_t v) {
+#if defined(__aarch64__)
+    
+    
+    
+    using MultType = uint64_t;
+#else
     using MultType =
         absl::conditional_t<sizeof(size_t) == 4, uint64_t, uint128>;
+#endif
     
     
     
@@ -836,6 +872,19 @@ class ABSL_DLL CityHashState
     MultType m = state + v;
     m *= kMul;
     return static_cast<uint64_t>(m ^ (m >> (sizeof(m) * 8 / 2)));
+  }
+
+  
+  
+  static uint64_t LowLevelHashImpl(const unsigned char* data, size_t len);
+
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Hash64(const unsigned char* data,
+                                                      size_t len) {
+#ifdef ABSL_HAVE_INTRINSIC_INT128
+    return LowLevelHashImpl(data, len);
+#else
+    return absl::hash_internal::CityHash64(reinterpret_cast<const char*>(data), len);
+#endif
   }
 
   
@@ -855,7 +904,14 @@ class ABSL_DLL CityHashState
   
   
   ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Seed() {
+#if (!defined(__clang__) || __clang_major__ > 11) && \
+    !defined(__apple_build_version__)
+    return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(&kSeed));
+#else
+    
+    
     return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(kSeed));
+#endif
   }
   static const void* const kSeed;
 
@@ -863,7 +919,7 @@ class ABSL_DLL CityHashState
 };
 
 
-inline uint64_t CityHashState::CombineContiguousImpl(
+inline uint64_t MixingHashState::CombineContiguousImpl(
     uint64_t state, const unsigned char* first, size_t len,
     std::integral_constant<int, 4> ) {
   
@@ -886,7 +942,7 @@ inline uint64_t CityHashState::CombineContiguousImpl(
 }
 
 
-inline uint64_t CityHashState::CombineContiguousImpl(
+inline uint64_t MixingHashState::CombineContiguousImpl(
     uint64_t state, const unsigned char* first, size_t len,
     std::integral_constant<int, 8> ) {
   
@@ -896,7 +952,7 @@ inline uint64_t CityHashState::CombineContiguousImpl(
     if (ABSL_PREDICT_FALSE(len > PiecewiseChunkSize())) {
       return CombineLargeContiguousImpl64(state, first, len);
     }
-    v = absl::hash_internal::CityHash64(reinterpret_cast<const char*>(first), len);
+    v = Hash64(first, len);
   } else if (len > 8) {
     auto p = Read9To16(first, len);
     state = Mix(state, p.first);
@@ -927,7 +983,9 @@ struct PoisonedHash : private AggregateBarrier {
 
 template <typename T>
 struct HashImpl {
-  size_t operator()(const T& value) const { return CityHashState::hash(value); }
+  size_t operator()(const T& value) const {
+    return MixingHashState::hash(value);
+  }
 };
 
 template <typename T>

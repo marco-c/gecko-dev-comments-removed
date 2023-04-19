@@ -356,7 +356,7 @@ namespace time_internal {
 
 
 int64_t IDivDuration(bool satq, const Duration num, const Duration den,
-                   Duration* rem) {
+                     Duration* rem) {
   int64_t q = 0;
   if (IDivFastPath(num, den, &q, rem)) {
     return q;
@@ -757,6 +757,7 @@ void AppendNumberUnit(std::string* out, double n, DisplayUnit unit) {
 }
 
 }  
+
 
 
 

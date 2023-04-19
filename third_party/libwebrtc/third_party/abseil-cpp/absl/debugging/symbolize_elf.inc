@@ -701,6 +701,16 @@ static ABSL_ATTRIBUTE_NOINLINE FindSymbolResult FindSymbol(
       const char *start_address =
           ComputeOffset(original_start_address, relocation);
 
+#ifdef __arm__
+      
+      
+      
+      
+      
+      start_address = reinterpret_cast<const char *>(
+          reinterpret_cast<uintptr_t>(start_address) & ~1);
+#endif
+
       if (deref_function_descriptor_pointer &&
           InSection(original_start_address, opd)) {
         
@@ -1281,7 +1291,7 @@ static bool MaybeInitializeObjFile(ObjFile *obj) {
     const int phnum = obj->elf_header.e_phnum;
     const int phentsize = obj->elf_header.e_phentsize;
     size_t phoff = obj->elf_header.e_phoff;
-    int num_executable_load_segments = 0;
+    size_t num_executable_load_segments = 0;
     for (int j = 0; j < phnum; j++) {
       ElfW(Phdr) phdr;
       if (!ReadFromOffsetExact(obj->fd, &phdr, sizeof(phdr), phoff)) {
@@ -1342,7 +1352,7 @@ const char *Symbolizer::GetSymbol(const void *const pc) {
         
         
         ElfW(Phdr) *phdr = nullptr;
-        for (int j = 0; j < obj->phdr.size(); j++) {
+        for (size_t j = 0; j < obj->phdr.size(); j++) {
           ElfW(Phdr) &p = obj->phdr[j];
           if (p.p_type != PT_LOAD) {
             

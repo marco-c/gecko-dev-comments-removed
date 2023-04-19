@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef ABSL_STRINGS_INTERNAL_STR_FORMAT_PARSER_H_
 #define ABSL_STRINGS_INTERNAL_STR_FORMAT_PARSER_H_
 
@@ -27,10 +41,7 @@ std::string LengthModToString(LengthMod v);
 
 
 struct UnboundConversion {
-  UnboundConversion()
-      : flags()  {
-    flags.basic = true;
-  }
+  UnboundConversion() {}
 
   class InputValue {
    public:
@@ -65,7 +76,7 @@ struct UnboundConversion {
   InputValue width;
   InputValue precision;
 
-  Flags flags;
+  Flags flags = Flags::kBasic;
   LengthMod length_mod = LengthMod::none;
   FormatConversionChar conv = FormatConversionCharInternal::kNone;
 };
@@ -84,27 +95,38 @@ const char* ConsumeUnboundConversion(const char* p, const char* end,
 class ConvTag {
  public:
   constexpr ConvTag(FormatConversionChar conversion_char)  
-      : tag_(static_cast<int8_t>(conversion_char)) {}
-  
-  
+      : tag_(static_cast<uint8_t>(conversion_char)) {}
   constexpr ConvTag(LengthMod length_mod)  
-      : tag_(~static_cast<std::int8_t>(length_mod)) {}
-  
-  constexpr ConvTag() : tag_(-128) {}
+      : tag_(0x80 | static_cast<uint8_t>(length_mod)) {}
+  constexpr ConvTag(Flags flags)  
+      : tag_(0xc0 | static_cast<uint8_t>(flags)) {}
+  constexpr ConvTag() : tag_(0xFF) {}
 
-  bool is_conv() const { return tag_ >= 0; }
-  bool is_length() const { return tag_ < 0 && tag_ != -128; }
+  bool is_conv() const { return (tag_ & 0x80) == 0; }
+  bool is_length() const { return (tag_ & 0xC0) == 0x80; }
+  bool is_flags() const { return (tag_ & 0xE0) == 0xC0; }
+
   FormatConversionChar as_conv() const {
     assert(is_conv());
+    assert(!is_length());
+    assert(!is_flags());
     return static_cast<FormatConversionChar>(tag_);
   }
   LengthMod as_length() const {
+    assert(!is_conv());
     assert(is_length());
-    return static_cast<LengthMod>(~tag_);
+    assert(!is_flags());
+    return static_cast<LengthMod>(tag_ & 0x3F);
+  }
+  Flags as_flags() const {
+    assert(!is_conv());
+    assert(!is_length());
+    assert(is_flags());
+    return static_cast<Flags>(tag_ & 0x1F);
   }
 
  private:
-  std::int8_t tag_;
+  uint8_t tag_;
 };
 
 extern const ConvTag kTags[256];

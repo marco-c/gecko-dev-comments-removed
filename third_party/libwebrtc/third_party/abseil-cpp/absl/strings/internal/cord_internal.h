@@ -21,7 +21,10 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "absl/base/config.h"
+#include "absl/base/internal/endian.h"
 #include "absl/base/internal/invoke.h"
+#include "absl/base/optimization.h"
 #include "absl/container/internal/compressed_tuple.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
@@ -30,14 +33,64 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
 
+class CordzInfo;
+
+
+enum CordFeatureDefaults {
+  kCordEnableBtreeDefault = false,
+  kCordEnableRingBufferDefault = false,
+  kCordShallowSubcordsDefault = false
+};
+
+extern std::atomic<bool> cord_btree_enabled;
+extern std::atomic<bool> cord_ring_buffer_enabled;
+extern std::atomic<bool> shallow_subcords_enabled;
+
+
+
+
+
+extern std::atomic<bool> cord_btree_exhaustive_validation;
+
+inline void enable_cord_btree(bool enable) {
+  cord_btree_enabled.store(enable, std::memory_order_relaxed);
+}
+
+inline void enable_cord_ring_buffer(bool enable) {
+  cord_ring_buffer_enabled.store(enable, std::memory_order_relaxed);
+}
+
+inline void enable_shallow_subcords(bool enable) {
+  shallow_subcords_enabled.store(enable, std::memory_order_relaxed);
+}
+
+enum Constants {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  kInlinedVectorSize = 47,
+
+  
+  kMaxBytesToCopy = 511
+};
+
 
 class Refcount {
  public:
-  Refcount() : count_{1} {}
-  ~Refcount() {}
+  constexpr Refcount() : count_{kRefIncrement} {}
+  struct Immortal {};
+  explicit constexpr Refcount(Immortal) : count_(kImmortalTag) {}
 
   
-  inline void Increment() { count_.fetch_add(1, std::memory_order_relaxed); }
+  inline void Increment() {
+    count_.fetch_add(kRefIncrement, std::memory_order_relaxed);
+  }
 
   
   
@@ -48,19 +101,24 @@ class Refcount {
   
   inline bool Decrement() {
     int32_t refcount = count_.load(std::memory_order_acquire);
-    assert(refcount > 0);
-    return refcount != 1 && count_.fetch_sub(1, std::memory_order_acq_rel) != 1;
+    assert(refcount > 0 || refcount & kImmortalTag);
+    return refcount != kRefIncrement &&
+           count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) !=
+               kRefIncrement;
   }
 
   
   inline bool DecrementExpectHighRefcount() {
-    int32_t refcount = count_.fetch_sub(1, std::memory_order_acq_rel);
-    assert(refcount > 0);
-    return refcount != 1;
+    int32_t refcount =
+        count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel);
+    assert(refcount > 0 || refcount & kImmortalTag);
+    return refcount != kRefIncrement;
   }
 
   
-  inline int32_t Get() const { return count_.load(std::memory_order_acquire); }
+  inline int32_t Get() const {
+    return count_.load(std::memory_order_acquire) >> kImmortalShift;
+  }
 
   
   
@@ -70,9 +128,27 @@ class Refcount {
   
   
   
-  inline bool IsOne() { return count_.load(std::memory_order_acquire) == 1; }
+  inline bool IsOne() {
+    return count_.load(std::memory_order_acquire) == kRefIncrement;
+  }
+
+  bool IsImmortal() const {
+    return (count_.load(std::memory_order_relaxed) & kImmortalTag) != 0;
+  }
 
  private:
+  
+  
+  
+  
+  
+  
+  enum {
+    kImmortalShift = 1,
+    kRefIncrement = 1 << kImmortalShift,
+    kImmortalTag = kRefIncrement - 1
+  };
+
   std::atomic<int32_t> count_;
 };
 
@@ -82,10 +158,46 @@ class Refcount {
 
 
 struct CordRepConcat;
-struct CordRepSubstring;
 struct CordRepExternal;
+struct CordRepFlat;
+struct CordRepSubstring;
+class CordRepRing;
+class CordRepBtree;
+
+
+enum CordRepKind {
+  CONCAT = 0,
+  SUBSTRING = 1,
+  BTREE = 2,
+  RING = 3,
+  EXTERNAL = 4,
+
+  
+  
+  
+  
+  
+  
+  FLAT = 5,
+  MAX_FLAT_TAG = 225
+};
+
+
+
+
+
+
+
+
+static_assert(RING == BTREE + 1, "BTREE and RING not consecutive");
+static_assert(EXTERNAL == RING + 1, "BTREE and EXTERNAL not consecutive");
+static_assert(FLAT == EXTERNAL + 1, "EXTERNAL and FLAT not consecutive");
 
 struct CordRep {
+  CordRep() = default;
+  constexpr CordRep(Refcount::Immortal immortal, size_t l)
+      : length(l), refcount(immortal), tag(EXTERNAL), storage{} {}
+
   
   
   size_t length;
@@ -93,22 +205,59 @@ struct CordRep {
   
   
   uint8_t tag;
-  char data[1];  
 
+  
+  
+  
+  
+  
+  
+  
+  
+  uint8_t storage[3];
+
+  
+  constexpr bool IsRing() const { return tag == RING; }
+  constexpr bool IsConcat() const { return tag == CONCAT; }
+  constexpr bool IsSubstring() const { return tag == SUBSTRING; }
+  constexpr bool IsExternal() const { return tag == EXTERNAL; }
+  constexpr bool IsFlat() const { return tag >= FLAT; }
+  constexpr bool IsBtree() const { return tag == BTREE; }
+
+  inline CordRepRing* ring();
+  inline const CordRepRing* ring() const;
   inline CordRepConcat* concat();
   inline const CordRepConcat* concat() const;
   inline CordRepSubstring* substring();
   inline const CordRepSubstring* substring() const;
   inline CordRepExternal* external();
   inline const CordRepExternal* external() const;
+  inline CordRepFlat* flat();
+  inline const CordRepFlat* flat() const;
+  inline CordRepBtree* btree();
+  inline const CordRepBtree* btree() const;
+
+  
+  
+
+  
+  static void Destroy(CordRep* rep);
+
+  
+  
+  static inline CordRep* Ref(CordRep* rep);
+
+  
+  
+  static inline void Unref(CordRep* rep);
 };
 
 struct CordRepConcat : public CordRep {
   CordRep* left;
   CordRep* right;
 
-  uint8_t depth() const { return static_cast<uint8_t>(data[0]); }
-  void set_depth(uint8_t depth) { data[0] = static_cast<char>(depth); }
+  uint8_t depth() const { return storage[0]; }
+  void set_depth(uint8_t depth) { storage[0] = depth; }
 };
 
 struct CordRepSubstring : public CordRep {
@@ -124,9 +273,19 @@ using ExternalReleaserInvoker = void (*)(CordRepExternal*);
 
 
 struct CordRepExternal : public CordRep {
+  CordRepExternal() = default;
+  explicit constexpr CordRepExternal(absl::string_view str)
+      : CordRep(Refcount::Immortal{}, str.size()),
+        base(str.data()),
+        releaser_invoker(nullptr) {}
+
   const char* base;
   
   ExternalReleaserInvoker releaser_invoker;
+
+  
+  
+  static void Delete(CordRep* rep);
 };
 
 struct Rank1 {};
@@ -167,7 +326,264 @@ struct CordRepExternalImpl
   }
 };
 
+inline void CordRepExternal::Delete(CordRep* rep) {
+  assert(rep != nullptr && rep->IsExternal());
+  auto* rep_external = static_cast<CordRepExternal*>(rep);
+  assert(rep_external->releaser_invoker != nullptr);
+  rep_external->releaser_invoker(rep_external);
+}
+
+template <typename Str>
+struct ConstInitExternalStorage {
+  ABSL_CONST_INIT static CordRepExternal value;
+};
+
+template <typename Str>
+CordRepExternal ConstInitExternalStorage<Str>::value(Str::value);
+
+enum {
+  kMaxInline = 15,
+};
+
+constexpr char GetOrNull(absl::string_view data, size_t pos) {
+  return pos < data.size() ? data[pos] : '\0';
+}
+
+
+
+
+
+using cordz_info_t = int64_t;
+
+
+
+static_assert(sizeof(cordz_info_t) * 2 == kMaxInline + 1, "");
+static_assert(sizeof(cordz_info_t) >= sizeof(intptr_t), "");
+
+
+
+
+static constexpr cordz_info_t BigEndianByte(unsigned char value) {
+#if defined(ABSL_IS_BIG_ENDIAN)
+  return value;
+#else
+  return static_cast<cordz_info_t>(value) << ((sizeof(cordz_info_t) - 1) * 8);
+#endif
+}
+
+class InlineData {
+ public:
+  
+  enum DefaultInitType { kDefaultInit };
+
+  
+  
+  
+  
+  static constexpr cordz_info_t kNullCordzInfo = BigEndianByte(1);
+
+  constexpr InlineData() : as_chars_{0} {}
+  explicit InlineData(DefaultInitType) {}
+  explicit constexpr InlineData(CordRep* rep) : as_tree_(rep) {}
+  explicit constexpr InlineData(absl::string_view chars)
+      : as_chars_{
+            GetOrNull(chars, 0),  GetOrNull(chars, 1),
+            GetOrNull(chars, 2),  GetOrNull(chars, 3),
+            GetOrNull(chars, 4),  GetOrNull(chars, 5),
+            GetOrNull(chars, 6),  GetOrNull(chars, 7),
+            GetOrNull(chars, 8),  GetOrNull(chars, 9),
+            GetOrNull(chars, 10), GetOrNull(chars, 11),
+            GetOrNull(chars, 12), GetOrNull(chars, 13),
+            GetOrNull(chars, 14), static_cast<char>((chars.size() << 1))} {}
+
+  
+  
+  bool is_empty() const { return tag() == 0; }
+
+  
+  bool is_tree() const { return (tag() & 1) != 0; }
+
+  
+  
+  bool is_profiled() const {
+    assert(is_tree());
+    return as_tree_.cordz_info != kNullCordzInfo;
+  }
+
+  
+  
+  
+  static bool is_either_profiled(const InlineData& data1,
+                                 const InlineData& data2) {
+    assert(data1.is_tree() && data2.is_tree());
+    return (data1.as_tree_.cordz_info | data2.as_tree_.cordz_info) !=
+           kNullCordzInfo;
+  }
+
+  
+  
+  
+  CordzInfo* cordz_info() const {
+    assert(is_tree());
+    intptr_t info =
+        static_cast<intptr_t>(absl::big_endian::ToHost64(as_tree_.cordz_info));
+    assert(info & 1);
+    return reinterpret_cast<CordzInfo*>(info - 1);
+  }
+
+  
+  
+  
+  void set_cordz_info(CordzInfo* cordz_info) {
+    assert(is_tree());
+    intptr_t info = reinterpret_cast<intptr_t>(cordz_info) | 1;
+    as_tree_.cordz_info = absl::big_endian::FromHost64(info);
+  }
+
+  
+  void clear_cordz_info() {
+    assert(is_tree());
+    as_tree_.cordz_info = kNullCordzInfo;
+  }
+
+  
+  
+  const char* as_chars() const {
+    assert(!is_tree());
+    return as_chars_;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  char* as_chars() { return as_chars_; }
+
+  
+  
+  CordRep* as_tree() const {
+    assert(is_tree());
+    return as_tree_.rep;
+  }
+
+  
+  
+  void make_tree(CordRep* rep) {
+    as_tree_.rep = rep;
+    as_tree_.cordz_info = kNullCordzInfo;
+  }
+
+  
+  
+  
+  void set_tree(CordRep* rep) {
+    assert(is_tree());
+    as_tree_.rep = rep;
+  }
+
+  
+  
+  size_t inline_size() const {
+    assert(!is_tree());
+    return tag() >> 1;
+  }
+
+  
+  
+  
+  void set_inline_size(size_t size) {
+    ABSL_ASSERT(size <= kMaxInline);
+    tag() = static_cast<char>(size << 1);
+  }
+
+ private:
+  
+  struct AsTree {
+    explicit constexpr AsTree(absl::cord_internal::CordRep* tree)
+        : rep(tree), cordz_info(kNullCordzInfo) {}
+    
+    
+    
+    union {
+      absl::cord_internal::CordRep* rep;
+      cordz_info_t unused_aligner;
+    };
+    cordz_info_t cordz_info;
+  };
+
+  char& tag() { return reinterpret_cast<char*>(this)[kMaxInline]; }
+  char tag() const { return reinterpret_cast<const char*>(this)[kMaxInline]; }
+
+  
+  
+  
+  
+  union  {
+    char as_chars_[kMaxInline + 1];
+    AsTree as_tree_;
+  };
+};
+
+static_assert(sizeof(InlineData) == kMaxInline + 1, "");
+
+inline CordRepConcat* CordRep::concat() {
+  assert(IsConcat());
+  return static_cast<CordRepConcat*>(this);
+}
+
+inline const CordRepConcat* CordRep::concat() const {
+  assert(IsConcat());
+  return static_cast<const CordRepConcat*>(this);
+}
+
+inline CordRepSubstring* CordRep::substring() {
+  assert(IsSubstring());
+  return static_cast<CordRepSubstring*>(this);
+}
+
+inline const CordRepSubstring* CordRep::substring() const {
+  assert(IsSubstring());
+  return static_cast<const CordRepSubstring*>(this);
+}
+
+inline CordRepExternal* CordRep::external() {
+  assert(IsExternal());
+  return static_cast<CordRepExternal*>(this);
+}
+
+inline const CordRepExternal* CordRep::external() const {
+  assert(IsExternal());
+  return static_cast<const CordRepExternal*>(this);
+}
+
+inline CordRep* CordRep::Ref(CordRep* rep) {
+  assert(rep != nullptr);
+  rep->refcount.Increment();
+  return rep;
+}
+
+inline void CordRep::Unref(CordRep* rep) {
+  assert(rep != nullptr);
+  
+  
+  if (ABSL_PREDICT_FALSE(!rep->refcount.DecrementExpectHighRefcount())) {
+    Destroy(rep);
+  }
+}
+
 }  
+
 ABSL_NAMESPACE_END
 }  
 #endif  

@@ -23,6 +23,7 @@
 #include <cassert>
 #include <memory>
 
+#include "absl/base/attributes.h"
 #include "absl/base/call_once.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/internal/spinlock.h"
@@ -53,7 +54,9 @@ void AllocateThreadIdentityKey(ThreadIdentityReclaimerFunction reclaimer) {
 
 
 
-#ifdef __GNUC__
+
+
+#if ABSL_HAVE_ATTRIBUTE(visibility) && !defined(__APPLE__)
 __attribute__((visibility("protected")))
 #endif  
 #if ABSL_PER_THREAD_TLS
@@ -120,7 +123,7 @@ void SetCurrentThreadIdentity(
 
 
 
-#if defined(ABSL_BUILD_DLL) || defined(ABSL_CONSUME_DLL)
+#ifndef ABSL_INTERNAL_INLINE_CURRENT_THREAD_IDENTITY_IF_PRESENT
 ThreadIdentity* CurrentThreadIdentityIfPresent() { return thread_identity_ptr; }
 #endif
 #endif

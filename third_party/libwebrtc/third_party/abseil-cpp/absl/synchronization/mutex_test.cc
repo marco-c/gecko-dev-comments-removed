@@ -707,6 +707,40 @@ TEST(Mutex, LockWhen) {
   t.join();
 }
 
+TEST(Mutex, LockWhenGuard) {
+  absl::Mutex mu;
+  int n = 30;
+  bool done = false;
+
+  
+  bool (*cond_eq_10)(int *) = [](int *p) { return *p == 10; };
+  bool (*cond_lt_10)(int *) = [](int *p) { return *p < 10; };
+
+  std::thread t1([&mu, &n, &done, cond_eq_10]() {
+    absl::ReaderMutexLock lock(&mu, absl::Condition(cond_eq_10, &n));
+    done = true;
+  });
+
+  std::thread t2[10];
+  for (std::thread &t : t2) {
+    t = std::thread([&mu, &n, cond_lt_10]() {
+      absl::WriterMutexLock lock(&mu, absl::Condition(cond_lt_10, &n));
+      ++n;
+    });
+  }
+
+  {
+    absl::MutexLock lock(&mu);
+    n = 0;
+  }
+
+  for (std::thread &t : t2) t.join();
+  t1.join();
+
+  EXPECT_TRUE(done);
+  EXPECT_EQ(n, 10);
+}
+
 
 
 
@@ -818,7 +852,7 @@ TEST(Mutex, MutexReaderDecrementBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 
 #ifdef ABSL_HAVE_THREAD_SANITIZER
 
-TEST(Mutex, DISABLED_LockedMutexDestructionBug) NO_THREAD_SAFETY_ANALYSIS {
+TEST(Mutex, DISABLED_LockedMutexDestructionBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 #else
 TEST(Mutex, LockedMutexDestructionBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 #endif
@@ -1002,9 +1036,6 @@ TEST(Mutex, AcquireFromCondition) {
   x.mu0.Unlock();
 }
 
-
-#if !defined(ABSL_INTERNAL_USE_NONPROD_MUTEX)
-
 TEST(Mutex, DeadlockDetector) {
   absl::SetMutexDeadlockDetectionMode(absl::OnDeadlockCycle::kAbort);
 
@@ -1102,7 +1133,7 @@ TEST(Mutex, DeadlockDetectorBazelWarning) {
 
 
 
-TEST(Mutex, DeadlockDetectorStessTest) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+TEST(Mutex, DeadlockDetectorStressTest) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   
   
   
@@ -1122,7 +1153,7 @@ TEST(Mutex, DeadlockDetectorStessTest) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 
 #ifdef ABSL_HAVE_THREAD_SANITIZER
 
-TEST(Mutex, DISABLED_DeadlockIdBug) NO_THREAD_SAFETY_ANALYSIS {
+TEST(Mutex, DISABLED_DeadlockIdBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 #else
 TEST(Mutex, DeadlockIdBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
 #endif
@@ -1158,7 +1189,6 @@ TEST(Mutex, DeadlockIdBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   c.Lock();
   c.Unlock();
 }
-#endif  
 
 
 

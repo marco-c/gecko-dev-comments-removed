@@ -67,28 +67,32 @@
 #undef ABSL_HAVE_RAW_IO
 #endif
 
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace raw_logging_internal {
+namespace {
 
 
 
 
-ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES static absl::base_internal::AtomicHook<
-    absl::raw_logging_internal::LogPrefixHook>
-    log_prefix_hook;
-ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES static absl::base_internal::AtomicHook<
-    absl::raw_logging_internal::AbortHook>
-    abort_hook;
+
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES
+    absl::base_internal::AtomicHook<LogPrefixHook>
+        log_prefix_hook;
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES
+    absl::base_internal::AtomicHook<AbortHook>
+        abort_hook;
 
 #ifdef ABSL_LOW_LEVEL_WRITE_SUPPORTED
-static const char kTruncated[] = " ... (message truncated)\n";
+constexpr char kTruncated[] = " ... (message truncated)\n";
 
 
 
 
 
-inline static bool VADoRawLog(char** buf, int* size, const char* format,
-                              va_list ap) ABSL_PRINTF_ATTRIBUTE(3, 0);
-inline static bool VADoRawLog(char** buf, int* size,
-                              const char* format, va_list ap) {
+bool VADoRawLog(char** buf, int* size, const char* format, va_list ap)
+    ABSL_PRINTF_ATTRIBUTE(3, 0);
+bool VADoRawLog(char** buf, int* size, const char* format, va_list ap) {
   int n = vsnprintf(*buf, *size, format, ap);
   bool result = true;
   if (n < 0 || n > *size) {
@@ -96,7 +100,7 @@ inline static bool VADoRawLog(char** buf, int* size,
     if (static_cast<size_t>(*size) > sizeof(kTruncated)) {
       n = *size - sizeof(kTruncated);  
     } else {
-      n = 0;                           
+      n = 0;  
     }
   }
   *size -= n;
@@ -105,9 +109,7 @@ inline static bool VADoRawLog(char** buf, int* size,
 }
 #endif  
 
-static constexpr int kLogBufSize = 3000;
-
-namespace {
+constexpr int kLogBufSize = 3000;
 
 
 
@@ -166,7 +168,7 @@ void RawLogVA(absl::LogSeverity severity, const char* file, int line,
     } else {
       DoRawLog(&buf, &size, "%s", kTruncated);
     }
-    absl::raw_logging_internal::SafeWriteToStderr(buffer, strlen(buffer));
+    SafeWriteToStderr(buffer, strlen(buffer));
   }
 #else
   static_cast<void>(format);
@@ -181,11 +183,18 @@ void RawLogVA(absl::LogSeverity severity, const char* file, int line,
   }
 }
 
+
+
+
+
+void DefaultInternalLog(absl::LogSeverity severity, const char* file, int line,
+                        const std::string& message) {
+  RawLog(severity, file, line, "%.*s", static_cast<int>(message.size()),
+         message.data());
+}
+
 }  
 
-namespace absl {
-ABSL_NAMESPACE_BEGIN
-namespace raw_logging_internal {
 void SafeWriteToStderr(const char *s, size_t len) {
 #if defined(ABSL_HAVE_SYSCALL_WRITE)
   syscall(SYS_write, STDERR_FILENO, s, len);
@@ -201,22 +210,11 @@ void SafeWriteToStderr(const char *s, size_t len) {
 }
 
 void RawLog(absl::LogSeverity severity, const char* file, int line,
-            const char* format, ...) ABSL_PRINTF_ATTRIBUTE(4, 5);
-void RawLog(absl::LogSeverity severity, const char* file, int line,
             const char* format, ...) {
   va_list ap;
   va_start(ap, format);
   RawLogVA(severity, file, line, format, ap);
   va_end(ap);
-}
-
-
-
-
-
-static void DefaultInternalLog(absl::LogSeverity severity, const char* file,
-                               int line, const std::string& message) {
-  RawLog(severity, file, line, "%s", message.c_str());
 }
 
 bool RawLoggingFullySupported() {
@@ -230,6 +228,10 @@ bool RawLoggingFullySupported() {
 ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES ABSL_DLL
     absl::base_internal::AtomicHook<InternalLogFunction>
         internal_log_function(DefaultInternalLog);
+
+void RegisterLogPrefixHook(LogPrefixHook func) { log_prefix_hook.Store(func); }
+
+void RegisterAbortHook(AbortHook func) { abort_hook.Store(func); }
 
 void RegisterInternalLogFunction(InternalLogFunction func) {
   internal_log_function.Store(func);

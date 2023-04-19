@@ -47,7 +47,14 @@ bool HaveLeakSanitizer();
 
 
 
+bool LeakCheckerIsActive();
+
+
+
+
+
 void DoIgnoreLeak(const void* ptr);
+
 
 
 
@@ -69,6 +76,19 @@ T* IgnoreLeak(T* ptr) {
   DoIgnoreLeak(ptr);
   return ptr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+bool FindAndReportLeaks();
 
 
 

@@ -144,4 +144,15 @@ ABSL_NAMESPACE_END
 #define ABSL_INTERNAL_RETHROW do {} while (false)
 #endif  
 
+
+
+
+#if defined(__GNUC__) || ABSL_HAVE_BUILTIN(__builtin_unreachable)
+#define ABSL_INTERNAL_UNREACHABLE __builtin_unreachable()
+#elif defined(_MSC_VER)
+#define ABSL_INTERNAL_UNREACHABLE __assume(0)
+#else
+#define ABSL_INTERNAL_UNREACHABLE
+#endif
+
 #endif  

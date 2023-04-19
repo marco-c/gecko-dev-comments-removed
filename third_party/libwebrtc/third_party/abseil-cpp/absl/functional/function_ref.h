@@ -122,6 +122,7 @@ class FunctionRef<R(Args...)> {
   
   
   FunctionRef& operator=(const FunctionRef& rhs) = delete;
+  FunctionRef(const FunctionRef& rhs) = default;
 
   
   R operator()(Args... args) const {

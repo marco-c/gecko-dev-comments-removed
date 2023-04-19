@@ -81,6 +81,13 @@ class MockHelpers {
 
  public:
   
+  template <typename URBG>
+  static inline bool PrivateInvokeMock(URBG* urbg, IdType type,
+                                       void* args_tuple, void* result) {
+    return urbg->InvokeMock(type, args_tuple, result);
+  }
+
+  
   
   
   
@@ -109,14 +116,14 @@ class MockHelpers {
   
   
   template <typename KeyT, typename MockURBG>
-  static auto MockFor(MockURBG& m) -> decltype(
-      std::declval<MockURBG>()
-          .template RegisterMock<typename KeySignature<KeyT>::result_type,
-                                 typename KeySignature<KeyT>::arg_tuple_type>(
-              std::declval<IdType>())) {
+  static auto MockFor(MockURBG& m)
+      -> decltype(m.template RegisterMock<
+                  typename KeySignature<KeyT>::result_type,
+                  typename KeySignature<KeyT>::arg_tuple_type>(
+          m, std::declval<IdType>())) {
     return m.template RegisterMock<typename KeySignature<KeyT>::result_type,
                                    typename KeySignature<KeyT>::arg_tuple_type>(
-        ::absl::base_internal::FastTypeId<KeyT>());
+        m, ::absl::base_internal::FastTypeId<KeyT>());
   }
 };
 

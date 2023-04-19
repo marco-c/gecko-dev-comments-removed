@@ -71,11 +71,33 @@ TEST(Demangle, Clones) {
   EXPECT_TRUE(Demangle("_ZL3Foov.isra.2.constprop.18", tmp, sizeof(tmp)));
   EXPECT_STREQ("Foo()", tmp);
   
-  EXPECT_FALSE(Demangle("_ZL3Foov.clo", tmp, sizeof(tmp)));
+  EXPECT_TRUE(Demangle("_ZL3Foov.__uniq.12345", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  EXPECT_TRUE(Demangle("_ZL3Foov.__uniq.12345.isra.2.constprop.18", tmp,
+                       sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_TRUE(Demangle("_ZL3Foov.clo", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_TRUE(Demangle("_ZL3Foov.123", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_TRUE(Demangle("_ZL3Foov.clone.foo", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_TRUE(Demangle("_ZL3Foov.clone.123.456", tmp, sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_TRUE(Demangle("_ZL3Foov.part.9.165493.constprop.775.31805", tmp,
+                       sizeof(tmp)));
+  EXPECT_STREQ("Foo()", tmp);
+  
+  EXPECT_FALSE(Demangle("_ZL3Foov.", tmp, sizeof(tmp)));
+  
+  EXPECT_FALSE(Demangle("_ZL3Foov.abc123", tmp, sizeof(tmp)));
   
   EXPECT_FALSE(Demangle("_ZL3Foov.clone.", tmp, sizeof(tmp)));
-  
-  EXPECT_FALSE(Demangle("_ZL3Foov.clone.foo", tmp, sizeof(tmp)));
   
   EXPECT_FALSE(Demangle("_ZL3Foov.isra.2.constprop.", tmp, sizeof(tmp)));
 }

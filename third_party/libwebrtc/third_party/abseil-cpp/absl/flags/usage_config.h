@@ -127,7 +127,8 @@ extern "C" {
 
 
 
-void AbslInternalReportFatalUsageError(absl::string_view);
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalReportFatalUsageError)(
+    absl::string_view);
 
 }  
 

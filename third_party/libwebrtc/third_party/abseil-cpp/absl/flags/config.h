@@ -47,17 +47,6 @@
 
 
 
-
-
-#ifdef ABSL_FLAGS_INTERNAL_ATOMIC_DOUBLE_WORD
-#error "ABSL_FLAGS_INTERNAL_ATOMIC_DOUBLE_WORD should not be defined."
-#elif defined(__clang__) && defined(__x86_64__) && \
-    defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
-#define ABSL_FLAGS_INTERNAL_ATOMIC_DOUBLE_WORD 1
-#endif
-
-
-
 #ifdef ABSL_FLAGS_INTERNAL_HAS_RTTI
 #error ABSL_FLAGS_INTERNAL_HAS_RTTI cannot be directly set
 #elif !defined(__GNUC__) || defined(__GXX_RTTI)

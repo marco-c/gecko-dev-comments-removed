@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -215,6 +229,9 @@ TEST_F(FormatConvertTest, BasicString) {
   TestStringConvert(static_cast<const char*>("hello"));
   TestStringConvert(std::string("hello"));
   TestStringConvert(string_view("hello"));
+#if defined(ABSL_HAVE_STD_STRING_VIEW)
+  TestStringConvert(std::string_view("hello"));
+#endif  
 }
 
 TEST_F(FormatConvertTest, NullString) {
@@ -540,7 +557,8 @@ TEST_F(FormatConvertTest, Uint128) {
 }
 
 template <typename Floating>
-void TestWithMultipleFormatsHelper(const std::vector<Floating> &floats) {
+void TestWithMultipleFormatsHelper(const std::vector<Floating> &floats,
+                                   const std::set<Floating> &skip_verify) {
   const NativePrintfTraits &native_traits = VerifyNativeImplementation();
   
   std::string str_format_result;
@@ -588,7 +606,16 @@ void TestWithMultipleFormatsHelper(const std::vector<Floating> &floats) {
           AppendPack(&str_format_result, format, absl::MakeSpan(args));
         }
 
-        if (string_printf_result != str_format_result) {
+#ifdef _MSC_VER
+        
+        
+        continue;
+#elif defined(__APPLE__)
+        
+        if (std::isnan(d)) continue;
+#endif
+        if (string_printf_result != str_format_result &&
+            skip_verify.find(d) == skip_verify.end()) {
           
           
           
@@ -602,12 +629,6 @@ void TestWithMultipleFormatsHelper(const std::vector<Floating> &floats) {
 }
 
 TEST_F(FormatConvertTest, Float) {
-#ifdef _MSC_VER
-  
-  
-  return;
-#endif  
-
   std::vector<float> floats = {0.0f,
                                -0.0f,
                                .9999999f,
@@ -621,7 +642,8 @@ TEST_F(FormatConvertTest, Float) {
                                std::numeric_limits<float>::epsilon(),
                                std::numeric_limits<float>::epsilon() + 1.0f,
                                std::numeric_limits<float>::infinity(),
-                               -std::numeric_limits<float>::infinity()};
+                               -std::numeric_limits<float>::infinity(),
+                               std::nanf("")};
 
   
   floats.push_back(0.999999989f);
@@ -650,21 +672,14 @@ TEST_F(FormatConvertTest, Float) {
   std::sort(floats.begin(), floats.end());
   floats.erase(std::unique(floats.begin(), floats.end()), floats.end());
 
-#ifndef __APPLE__
-  
-  floats.push_back(std::nan(""));
-#endif
-
-  TestWithMultipleFormatsHelper(floats);
+  TestWithMultipleFormatsHelper(floats, {});
 }
 
 TEST_F(FormatConvertTest, Double) {
-#ifdef _MSC_VER
   
   
-  return;
-#endif  
-
+  
+  std::set<double> skip_verify;
   std::vector<double> doubles = {0.0,
                                  -0.0,
                                  .99999999999999,
@@ -678,7 +693,8 @@ TEST_F(FormatConvertTest, Double) {
                                  std::numeric_limits<double>::epsilon(),
                                  std::numeric_limits<double>::epsilon() + 1,
                                  std::numeric_limits<double>::infinity(),
-                                 -std::numeric_limits<double>::infinity()};
+                                 -std::numeric_limits<double>::infinity(),
+                                 std::nan("")};
 
   
   doubles.push_back(0.99999999999999989);
@@ -708,33 +724,29 @@ TEST_F(FormatConvertTest, Double) {
       "5084551339423045832369032229481658085593321233482747978262041447231"
       "68738177180919299881250404026184124858368.000000";
 
-  if (!gcc_bug_22142) {
-    for (int exp = -300; exp <= 300; ++exp) {
-      const double all_ones_mantissa = 0x1fffffffffffff;
-      doubles.push_back(std::ldexp(all_ones_mantissa, exp));
+  for (int exp = -300; exp <= 300; ++exp) {
+    const double all_ones_mantissa = 0x1fffffffffffff;
+    doubles.push_back(std::ldexp(all_ones_mantissa, exp));
+    if (gcc_bug_22142) {
+      skip_verify.insert(doubles.back());
     }
   }
 
   if (gcc_bug_22142) {
-    for (auto &d : doubles) {
-      using L = std::numeric_limits<double>;
-      double d2 = std::abs(d);
-      if (d2 == L::max() || d2 == L::min() || d2 == L::denorm_min()) {
-        d = 0;
-      }
-    }
+    using L = std::numeric_limits<double>;
+    skip_verify.insert(L::max());
+    skip_verify.insert(L::min());  
+    skip_verify.insert(L::denorm_min());
+    skip_verify.insert(-L::max());
+    skip_verify.insert(-L::min());  
+    skip_verify.insert(-L::denorm_min());
   }
 
   
   std::sort(doubles.begin(), doubles.end());
   doubles.erase(std::unique(doubles.begin(), doubles.end()), doubles.end());
 
-#ifndef __APPLE__
-  
-  doubles.push_back(std::nan(""));
-#endif
-
-  TestWithMultipleFormatsHelper(doubles);
+  TestWithMultipleFormatsHelper(doubles, skip_verify);
 }
 
 TEST_F(FormatConvertTest, DoubleRound) {
@@ -1055,11 +1067,6 @@ TEST_F(FormatConvertTest, ExtremeWidthPrecision) {
 }
 
 TEST_F(FormatConvertTest, LongDouble) {
-#ifdef _MSC_VER
-  
-  
-  return;
-#endif  
   const NativePrintfTraits &native_traits = VerifyNativeImplementation();
   const char *const kFormats[] = {"%",    "%.3", "%8.5", "%9",  "%.5000",
                                   "%.60", "%+",  "% ",   "%-10"};
@@ -1120,10 +1127,18 @@ TEST_F(FormatConvertTest, LongDouble) {
       for (auto d : doubles) {
         FormatArgImpl arg(d);
         UntypedFormatSpecImpl format(fmt_str);
+        std::string result = FormatPack(format, {&arg, 1});
+
+#ifdef _MSC_VER
+        
+        
+        continue;
+#endif  
+
         
         
         
-        ASSERT_EQ(StrPrint(fmt_str.c_str(), d), FormatPack(format, {&arg, 1}))
+        ASSERT_EQ(StrPrint(fmt_str.c_str(), d), result)
             << fmt_str << " " << StrPrint("%.18Lg", d) << " "
             << StrPrint("%La", d) << " " << StrPrint("%.1080Lf", d);
       }

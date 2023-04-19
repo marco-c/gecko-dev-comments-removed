@@ -36,6 +36,7 @@
 #include <limits>
 #include <string>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/throw_delegate.h"
 #include "absl/base/macros.h"
@@ -60,6 +61,12 @@ ABSL_NAMESPACE_END
 #else  
 #define ABSL_INTERNAL_STRING_VIEW_MEMCMP memcmp
 #endif  
+
+#if defined(__cplusplus) && __cplusplus >= 201402L
+#define ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR constexpr
+#else
+#define ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -180,18 +187,20 @@ class string_view {
 
   template <typename Allocator>
   string_view(  
-      const std::basic_string<char, std::char_traits<char>, Allocator>&
-          str) noexcept
+      const std::basic_string<char, std::char_traits<char>, Allocator>& str
+          ABSL_ATTRIBUTE_LIFETIME_BOUND) noexcept
       
       
-      : string_view(str.data(), str.size()) {}
+      
+      
+      : string_view(str.data(), str.size(), SkipCheckLengthTag{}) {}
 
   
   
   
+  
   constexpr string_view(const char* str)  
-      : ptr_(str),
-        length_(str ? CheckLengthInternal(StrlenInternal(str)) : 0) {}
+      : ptr_(str), length_(str ? StrlenInternal(str) : 0) {}
 
   
   constexpr string_view(const char* data, size_type len)
@@ -264,9 +273,7 @@ class string_view {
   
   
   
-  constexpr size_type size() const noexcept {
-    return length_;
-  }
+  constexpr size_type size() const noexcept { return length_; }
 
   
   
@@ -333,7 +340,7 @@ class string_view {
   
   
   
-  void remove_prefix(size_type n) {
+  ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR void remove_prefix(size_type n) {
     ABSL_HARDENING_ASSERT(n <= length_);
     ptr_ += n;
     length_ -= n;
@@ -343,7 +350,7 @@ class string_view {
   
   
   
-  void remove_suffix(size_type n) {
+  ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR void remove_suffix(size_type n) {
     ABSL_HARDENING_ASSERT(n <= length_);
     length_ -= n;
   }
@@ -351,7 +358,7 @@ class string_view {
   
   
   
-  void swap(string_view& s) noexcept {
+  ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR void swap(string_view& s) noexcept {
     auto t = *this;
     *this = s;
     s = t;
@@ -388,7 +395,7 @@ class string_view {
   
   
   
-  constexpr string_view substr(size_type pos, size_type n = npos) const {
+  constexpr string_view substr(size_type pos = 0, size_type n = npos) const {
     return ABSL_PREDICT_FALSE(pos > length_)
                ? (base_internal::ThrowStdOutOfRange(
                       "absl::string_view::substr"),
@@ -396,8 +403,6 @@ class string_view {
                : string_view(ptr_ + pos, Min(n, length_ - pos));
   }
 
-  
-  
   
   
   
@@ -414,31 +419,31 @@ class string_view {
 
   
   
-  int compare(size_type pos1, size_type count1, string_view v) const {
+  constexpr int compare(size_type pos1, size_type count1, string_view v) const {
     return substr(pos1, count1).compare(v);
   }
 
   
   
-  int compare(size_type pos1, size_type count1, string_view v, size_type pos2,
-              size_type count2) const {
+  constexpr int compare(size_type pos1, size_type count1, string_view v,
+                        size_type pos2, size_type count2) const {
     return substr(pos1, count1).compare(v.substr(pos2, count2));
   }
 
   
   
-  int compare(const char* s) const { return compare(string_view(s)); }
+  constexpr int compare(const char* s) const { return compare(string_view(s)); }
 
   
   
-  int compare(size_type pos1, size_type count1, const char* s) const {
+  constexpr int compare(size_type pos1, size_type count1, const char* s) const {
     return substr(pos1, count1).compare(string_view(s));
   }
 
   
   
-  int compare(size_type pos1, size_type count1, const char* s,
-              size_type count2) const {
+  constexpr int compare(size_type pos1, size_type count1, const char* s,
+                        size_type count2) const {
     return substr(pos1, count1).compare(string_view(s, count2));
   }
 
@@ -457,29 +462,14 @@ class string_view {
 
   
   
-  
-  
-  
-  size_type rfind(string_view s, size_type pos = npos) const
-      noexcept;
+  size_type find(const char* s, size_type pos, size_type count) const {
+    return find(string_view(s, count), pos);
+  }
 
   
   
-  size_type rfind(char c, size_type pos = npos) const noexcept;
-
-  
-  
-  
-  
-  
-  size_type find_first_of(string_view s, size_type pos = 0) const
-      noexcept;
-
-  
-  
-  size_type find_first_of(char c, size_type pos = 0) const
-      noexcept {
-    return find(c, pos);
+  size_type find(const char* s, size_type pos = 0) const {
+    return find(string_view(s), pos);
   }
 
   
@@ -487,14 +477,73 @@ class string_view {
   
   
   
-  size_type find_last_of(string_view s, size_type pos = npos) const
-      noexcept;
+  size_type rfind(string_view s, size_type pos = npos) const noexcept;
 
   
   
-  size_type find_last_of(char c, size_type pos = npos) const
-      noexcept {
+  size_type rfind(char c, size_type pos = npos) const noexcept;
+
+  
+  
+  size_type rfind(const char* s, size_type pos, size_type count) const {
+    return rfind(string_view(s, count), pos);
+  }
+
+  
+  
+  size_type rfind(const char* s, size_type pos = npos) const {
+    return rfind(string_view(s), pos);
+  }
+
+  
+  
+  
+  
+  
+  size_type find_first_of(string_view s, size_type pos = 0) const noexcept;
+
+  
+  
+  size_type find_first_of(char c, size_type pos = 0) const noexcept {
+    return find(c, pos);
+  }
+
+  
+  
+  size_type find_first_of(const char* s, size_type pos,
+                                    size_type count) const {
+    return find_first_of(string_view(s, count), pos);
+  }
+
+  
+  
+  size_type find_first_of(const char* s, size_type pos = 0) const {
+    return find_first_of(string_view(s), pos);
+  }
+
+  
+  
+  
+  
+  
+  size_type find_last_of(string_view s, size_type pos = npos) const noexcept;
+
+  
+  
+  size_type find_last_of(char c, size_type pos = npos) const noexcept {
     return rfind(c, pos);
+  }
+
+  
+  
+  size_type find_last_of(const char* s, size_type pos, size_type count) const {
+    return find_last_of(string_view(s, count), pos);
+  }
+
+  
+  
+  size_type find_last_of(const char* s, size_type pos = npos) const {
+    return find_last_of(string_view(s), pos);
   }
 
   
@@ -510,18 +559,49 @@ class string_view {
 
   
   
+  size_type find_first_not_of(const char* s, size_type pos,
+                              size_type count) const {
+    return find_first_not_of(string_view(s, count), pos);
+  }
+
+  
+  
+  size_type find_first_not_of(const char* s, size_type pos = 0) const {
+    return find_first_not_of(string_view(s), pos);
+  }
+
+  
+  
   
   
   
   size_type find_last_not_of(string_view s,
-                                          size_type pos = npos) const noexcept;
+                             size_type pos = npos) const noexcept;
 
   
   
-  size_type find_last_not_of(char c, size_type pos = npos) const
-      noexcept;
+  size_type find_last_not_of(char c, size_type pos = npos) const noexcept;
+
+  
+  
+  size_type find_last_not_of(const char* s, size_type pos,
+                             size_type count) const {
+    return find_last_not_of(string_view(s, count), pos);
+  }
+
+  
+  
+  size_type find_last_not_of(const char* s, size_type pos = npos) const {
+    return find_last_not_of(string_view(s), pos);
+  }
 
  private:
+  
+  
+  struct SkipCheckLengthTag {};
+  string_view(const char* data, size_type len, SkipCheckLengthTag) noexcept
+      : ptr_(data), length_(len) {}
+
   static constexpr size_type kMaxSize =
       (std::numeric_limits<difference_type>::max)();
 
@@ -597,6 +677,7 @@ std::ostream& operator<<(std::ostream& o, string_view piece);
 ABSL_NAMESPACE_END
 }  
 
+#undef ABSL_INTERNAL_STRING_VIEW_CXX14_CONSTEXPR
 #undef ABSL_INTERNAL_STRING_VIEW_MEMCMP
 
 #endif  

@@ -22,6 +22,8 @@
 #ifndef ABSL_BASE_OPTIMIZATION_H_
 #define ABSL_BASE_OPTIMIZATION_H_
 
+#include <assert.h>
+
 #include "absl/base/config.h"
 
 
@@ -95,6 +97,7 @@
 
 #define ABSL_CACHELINE_SIZE 64
 #endif
+
 
 
 

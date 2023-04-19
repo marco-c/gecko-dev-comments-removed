@@ -20,9 +20,9 @@
 
 extern "C" {
 
-void AbslInternalSpinLockDelay(std::atomic<uint32_t>* ,
-                               uint32_t , int loop,
-                               absl::base_internal::SchedulingMode ) {
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalSpinLockDelay)(
+    std::atomic<uint32_t>* , uint32_t , int loop,
+    absl::base_internal::SchedulingMode ) {
   if (loop == 0) {
   } else if (loop == 1) {
     Sleep(0);
@@ -31,7 +31,7 @@ void AbslInternalSpinLockDelay(std::atomic<uint32_t>* ,
   }
 }
 
-void AbslInternalSpinLockWake(std::atomic<uint32_t>* ,
-                              bool ) {}
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalSpinLockWake)(
+    std::atomic<uint32_t>* , bool ) {}
 
 }  

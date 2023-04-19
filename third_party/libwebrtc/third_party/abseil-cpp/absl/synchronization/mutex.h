@@ -54,6 +54,7 @@
 
 
 
+
 #ifndef ABSL_SYNCHRONIZATION_MUTEX_H_
 #define ABSL_SYNCHRONIZATION_MUTEX_H_
 
@@ -71,15 +72,6 @@
 #include "absl/synchronization/internal/kernel_timeout.h"
 #include "absl/synchronization/internal/per_thread_sem.h"
 #include "absl/time/time.h"
-
-
-
-#ifdef ABSL_INTERNAL_USE_NONPROD_MUTEX
-#error ABSL_INTERNAL_USE_NONPROD_MUTEX cannot be directly set
-#elif defined(ABSL_LOW_LEVEL_ALLOC_MISSING)
-#define ABSL_INTERNAL_USE_NONPROD_MUTEX 1
-#include "absl/synchronization/internal/mutex_nonprod.inc"
-#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -461,24 +453,13 @@ class ABSL_LOCKABLE Mutex {
   static void InternalAttemptToUseMutexInFatalSignalHandler();
 
  private:
-#ifdef ABSL_INTERNAL_USE_NONPROD_MUTEX
-  friend class CondVar;
-
-  synchronization_internal::MutexImpl *impl() { return impl_.get(); }
-
-  synchronization_internal::SynchronizationStorage<
-      synchronization_internal::MutexImpl>
-      impl_;
-#else
   std::atomic<intptr_t> mu_;  
 
   
   
-  static inline void IncrementSynchSem(Mutex *mu,
-                                       base_internal::PerThreadSynch *w);
-  static inline bool DecrementSynchSem(
-      Mutex *mu, base_internal::PerThreadSynch *w,
-      synchronization_internal::KernelTimeout t);
+  static void IncrementSynchSem(Mutex *mu, base_internal::PerThreadSynch *w);
+  static bool DecrementSynchSem(Mutex *mu, base_internal::PerThreadSynch *w,
+                                synchronization_internal::KernelTimeout t);
 
   
   void LockSlowLoop(SynchWaitParams *waitp, int flags);
@@ -504,7 +485,6 @@ class ABSL_LOCKABLE Mutex {
   void Trans(MuHow how);  
   void Fer(
       base_internal::PerThreadSynch *w);  
-#endif
 
   
   Mutex(const volatile Mutex * ) {}  
@@ -537,8 +517,22 @@ class ABSL_LOCKABLE Mutex {
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
+  
+
+  
+  
+  
   explicit MutexLock(Mutex *mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     this->mu_->Lock();
+  }
+
+  
+  
+  
+  explicit MutexLock(Mutex *mu, const Condition &cond)
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    this->mu_->LockWhen(cond);
   }
 
   MutexLock(const MutexLock &) = delete;  
@@ -560,6 +554,12 @@ class ABSL_SCOPED_LOCKABLE ReaderMutexLock {
  public:
   explicit ReaderMutexLock(Mutex *mu) ABSL_SHARED_LOCK_FUNCTION(mu) : mu_(mu) {
     mu->ReaderLock();
+  }
+
+  explicit ReaderMutexLock(Mutex *mu, const Condition &cond)
+      ABSL_SHARED_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    mu->ReaderLockWhen(cond);
   }
 
   ReaderMutexLock(const ReaderMutexLock&) = delete;
@@ -584,6 +584,12 @@ class ABSL_SCOPED_LOCKABLE WriterMutexLock {
     mu->WriterLock();
   }
 
+  explicit WriterMutexLock(Mutex *mu, const Condition &cond)
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    mu->WriterLockWhen(cond);
+  }
+
   WriterMutexLock(const WriterMutexLock&) = delete;
   WriterMutexLock(WriterMutexLock&&) = delete;
   WriterMutexLock& operator=(const WriterMutexLock&) = delete;
@@ -594,6 +600,16 @@ class ABSL_SCOPED_LOCKABLE WriterMutexLock {
  private:
   Mutex *const mu_;
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -838,17 +854,10 @@ class CondVar {
   void EnableDebugLog(const char *name);
 
  private:
-#ifdef ABSL_INTERNAL_USE_NONPROD_MUTEX
-  synchronization_internal::CondVarImpl *impl() { return impl_.get(); }
-  synchronization_internal::SynchronizationStorage<
-      synchronization_internal::CondVarImpl>
-      impl_;
-#else
   bool WaitCommon(Mutex *mutex, synchronization_internal::KernelTimeout t);
   void Remove(base_internal::PerThreadSynch *s);
   void Wakeup(base_internal::PerThreadSynch *w);
   std::atomic<intptr_t> cv_;  
-#endif
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
 };
@@ -870,6 +879,15 @@ class ABSL_SCOPED_LOCKABLE MutexLockMaybe {
       this->mu_->Lock();
     }
   }
+
+  explicit MutexLockMaybe(Mutex *mu, const Condition &cond)
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    if (this->mu_ != nullptr) {
+      this->mu_->LockWhen(cond);
+    }
+  }
+
   ~MutexLockMaybe() ABSL_UNLOCK_FUNCTION() {
     if (this->mu_ != nullptr) { this->mu_->Unlock(); }
   }
@@ -892,6 +910,13 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
       : mu_(mu) {
     this->mu_->Lock();
   }
+
+  explicit ReleasableMutexLock(Mutex *mu, const Condition &cond)
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    this->mu_->LockWhen(cond);
+  }
+
   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
     if (this->mu_ != nullptr) { this->mu_->Unlock(); }
   }
@@ -906,12 +931,6 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   ReleasableMutexLock& operator=(ReleasableMutexLock&&) = delete;
 };
 
-#ifdef ABSL_INTERNAL_USE_NONPROD_MUTEX
-
-inline constexpr Mutex::Mutex(absl::ConstInitType) : impl_(absl::kConstInit) {}
-
-#else
-
 inline Mutex::Mutex() : mu_(0) {
   ABSL_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static);
 }
@@ -919,8 +938,6 @@ inline Mutex::Mutex() : mu_(0) {
 inline constexpr Mutex::Mutex(absl::ConstInitType) : mu_(0) {}
 
 inline CondVar::CondVar() : cv_(0) {}
-
-#endif  
 
 
 template <typename T>
@@ -988,7 +1005,7 @@ void RegisterMutexProfiler(void (*fn)(int64_t wait_timestamp));
 
 
 void RegisterMutexTracer(void (*fn)(const char *msg, const void *obj,
-                              int64_t wait_cycles));
+                                    int64_t wait_cycles));
 
 
 
@@ -1059,7 +1076,7 @@ ABSL_NAMESPACE_END
 
 
 extern "C" {
-void AbslInternalMutexYield();
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalMutexYield)();
 }  
 
 #endif  

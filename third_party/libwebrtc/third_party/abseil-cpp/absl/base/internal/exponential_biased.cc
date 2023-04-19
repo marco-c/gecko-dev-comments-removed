@@ -64,7 +64,7 @@ int64_t ExponentialBiased::GetSkipCount(int64_t mean) {
     
     return std::numeric_limits<int64_t>::max() / 2;
   }
-  double value = std::round(interval);
+  double value = std::rint(interval);
   bias_ = interval - value;
   return value;
 }

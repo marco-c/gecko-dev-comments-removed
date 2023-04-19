@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef ABSL_STRINGS_INTERNAL_STR_FORMAT_BIND_H_
 #define ABSL_STRINGS_INTERNAL_STR_FORMAT_BIND_H_
 
@@ -119,10 +133,11 @@ class FormatSpecTemplate
 
 #endif  
 
-  template <FormatConversionCharSet... C,
-            typename = typename std::enable_if<
-                AllOf(sizeof...(C) == sizeof...(Args), Contains(Args,
-                                                                C)...)>::type>
+  template <
+      FormatConversionCharSet... C,
+      typename = typename std::enable_if<sizeof...(C) == sizeof...(Args)>::type,
+      typename = typename std::enable_if<AllOf(Contains(Args,
+                                                        C)...)>::type>
   FormatSpecTemplate(const ExtendedParsedFormat<C...>& pc)  
       : Base(&pc) {}
 };

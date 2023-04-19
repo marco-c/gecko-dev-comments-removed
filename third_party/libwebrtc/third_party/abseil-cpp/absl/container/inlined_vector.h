@@ -167,11 +167,13 @@ class InlinedVector {
   
   InlinedVector(const InlinedVector& other, const allocator_type& alloc)
       : storage_(alloc) {
-    if (IsMemcpyOk::value && !other.storage_.GetIsAllocated()) {
+    if (other.empty()) {
+      
+    } else if (IsMemcpyOk::value && !other.storage_.GetIsAllocated()) {
+      
       storage_.MemcpyFrom(other.storage_);
     } else {
-      storage_.Initialize(IteratorValueAdapter<const_pointer>(other.data()),
-                          other.size());
+      storage_.InitFrom(other.storage_);
     }
   }
 

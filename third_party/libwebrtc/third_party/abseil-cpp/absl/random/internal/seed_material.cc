@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "absl/base/dynamic_annotations.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
@@ -48,6 +49,18 @@
 #elif defined(__Fuchsia__)
 #include <zircon/syscalls.h>
 
+#endif
+
+#if defined(__GLIBC__) && \
+    (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
+
+#define ABSL_RANDOM_USE_GET_ENTROPY 1
+#endif
+
+#if defined(__EMSCRIPTEN__)
+#include <sys/random.h>
+
+#define ABSL_RANDOM_USE_GET_ENTROPY 1
 #endif
 
 #if defined(ABSL_RANDOM_USE_BCRYPT)
@@ -122,8 +135,32 @@ bool ReadSeedMaterialFromOSEntropyImpl(absl::Span<uint32_t> values) {
 
 #else
 
+#if defined(ABSL_RANDOM_USE_GET_ENTROPY)
 
-bool ReadSeedMaterialFromOSEntropyImpl(absl::Span<uint32_t> values) {
+
+
+bool ReadSeedMaterialFromGetEntropy(absl::Span<uint32_t> values) {
+  auto buffer = reinterpret_cast<uint8_t*>(values.data());
+  size_t buffer_size = sizeof(uint32_t) * values.size();
+  while (buffer_size > 0) {
+    
+    size_t to_read = std::min<size_t>(buffer_size, 256);
+    int result = getentropy(buffer, to_read);
+    if (result < 0) {
+      return false;
+    }
+    
+    
+    ABSL_ANNOTATE_MEMORY_IS_INITIALIZED(buffer, to_read);
+    buffer += to_read;
+    buffer_size -= to_read;
+  }
+  return true;
+}
+#endif  
+
+
+bool ReadSeedMaterialFromDevURandom(absl::Span<uint32_t> values) {
   const char kEntropyFile[] = "/dev/urandom";
 
   auto buffer = reinterpret_cast<uint8_t*>(values.data());
@@ -148,6 +185,17 @@ bool ReadSeedMaterialFromOSEntropyImpl(absl::Span<uint32_t> values) {
   }
   close(dev_urandom);
   return success;
+}
+
+bool ReadSeedMaterialFromOSEntropyImpl(absl::Span<uint32_t> values) {
+#if defined(ABSL_RANDOM_USE_GET_ENTROPY)
+  if (ReadSeedMaterialFromGetEntropy(values)) {
+    return true;
+  }
+#endif
+  
+  
+  return ReadSeedMaterialFromDevURandom(values);
 }
 
 #endif

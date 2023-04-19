@@ -43,14 +43,20 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-inline bool StrContains(absl::string_view haystack, absl::string_view needle) {
+inline bool StrContains(absl::string_view haystack,
+                        absl::string_view needle) noexcept {
   return haystack.find(needle, 0) != haystack.npos;
+}
+
+inline bool StrContains(absl::string_view haystack, char needle) noexcept {
+  return haystack.find(needle) != haystack.npos;
 }
 
 
 
 
-inline bool StartsWith(absl::string_view text, absl::string_view prefix) {
+inline bool StartsWith(absl::string_view text,
+                       absl::string_view prefix) noexcept {
   return prefix.empty() ||
          (text.size() >= prefix.size() &&
           memcmp(text.data(), prefix.data(), prefix.size()) == 0);
@@ -59,7 +65,8 @@ inline bool StartsWith(absl::string_view text, absl::string_view prefix) {
 
 
 
-inline bool EndsWith(absl::string_view text, absl::string_view suffix) {
+inline bool EndsWith(absl::string_view text,
+                     absl::string_view suffix) noexcept {
   return suffix.empty() ||
          (text.size() >= suffix.size() &&
           memcmp(text.data() + (text.size() - suffix.size()), suffix.data(),
@@ -70,19 +77,22 @@ inline bool EndsWith(absl::string_view text, absl::string_view suffix) {
 
 
 
-bool EqualsIgnoreCase(absl::string_view piece1, absl::string_view piece2);
+bool EqualsIgnoreCase(absl::string_view piece1,
+                      absl::string_view piece2) noexcept;
 
 
 
 
 
-bool StartsWithIgnoreCase(absl::string_view text, absl::string_view prefix);
+bool StartsWithIgnoreCase(absl::string_view text,
+                          absl::string_view prefix) noexcept;
 
 
 
 
 
-bool EndsWithIgnoreCase(absl::string_view text, absl::string_view suffix);
+bool EndsWithIgnoreCase(absl::string_view text,
+                        absl::string_view suffix) noexcept;
 
 ABSL_NAMESPACE_END
 }  

@@ -17,6 +17,7 @@
 #ifndef ABSL_STRINGS_INTERNAL_RESIZE_UNINITIALIZED_H_
 #define ABSL_STRINGS_INTERNAL_RESIZE_UNINITIALIZED_H_
 
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -64,6 +65,28 @@ inline constexpr bool STLStringSupportsNontrashingResize(string_type*) {
 template <typename string_type, typename = void>
 inline void STLStringResizeUninitialized(string_type* s, size_t new_size) {
   ResizeUninitializedTraits<string_type>::Resize(s, new_size);
+}
+
+
+
+
+template <typename string_type>
+void STLStringReserveAmortized(string_type* s, size_t new_size) {
+  const size_t cap = s->capacity();
+  if (new_size > cap) {
+    
+    s->reserve((std::max)(new_size, 2 * cap));
+  }
+}
+
+
+
+
+
+template <typename string_type>
+void STLStringResizeUninitializedAmortized(string_type* s, size_t new_size) {
+  STLStringReserveAmortized(s, new_size);
+  STLStringResizeUninitialized(s, new_size);
 }
 
 }  

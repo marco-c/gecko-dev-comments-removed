@@ -67,7 +67,7 @@ class bad_optional_access : public std::exception {
 namespace optional_internal {
 
 
-[[noreturn]] void throw_bad_optional_access();
+[[noreturn]] ABSL_DLL void throw_bad_optional_access();
 
 }  
 ABSL_NAMESPACE_END

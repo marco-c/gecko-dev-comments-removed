@@ -139,7 +139,6 @@ static uintptr_t GetFP(const void *vuc) {
     
     
     
-    
     if (bp >= sp && bp - sp <= kMaxFrameBytes) return bp;
 
     

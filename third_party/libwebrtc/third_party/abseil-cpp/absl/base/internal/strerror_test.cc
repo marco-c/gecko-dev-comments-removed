@@ -63,11 +63,13 @@ TEST(StrErrorTest, MultipleThreads) {
       errno = ERANGE;
       const std::string value = absl::base_internal::StrError(i);
       
+      int check_err = errno;
+      EXPECT_THAT(check_err, Eq(ERANGE));
+      
       
       if (!absl::StartsWith(value, "Unknown error ")) {
-        EXPECT_THAT(absl::base_internal::StrError(i), Eq(expected_strings[i]));
+        EXPECT_THAT(value, Eq(expected_strings[i]));
       }
-      EXPECT_THAT(errno, Eq(ERANGE));
     }
   };
 

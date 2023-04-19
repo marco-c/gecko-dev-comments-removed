@@ -15,18 +15,21 @@
 #include "absl/random/beta_distribution.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <random>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/internal/raw_logging.h"
+#include "absl/numeric/internal/representation.h"
 #include "absl/random/internal/chi_square.h"
 #include "absl/random/internal/distribution_test_util.h"
 #include "absl/random/internal/pcg_engine.h"
@@ -42,7 +45,15 @@ namespace {
 template <typename IntType>
 class BetaDistributionInterfaceTest : public ::testing::Test {};
 
-using RealTypes = ::testing::Types<float, double, long double>;
+
+
+
+
+
+using RealTypes =
+    std::conditional<absl::numeric_internal::IsDoubleDouble(),
+                     ::testing::Types<float, double>,
+                     ::testing::Types<float, double, long double>>::type;
 TYPED_TEST_CASE(BetaDistributionInterfaceTest, RealTypes);
 
 TYPED_TEST(BetaDistributionInterfaceTest, SerializeTest) {
@@ -53,9 +64,6 @@ TYPED_TEST(BetaDistributionInterfaceTest, SerializeTest) {
   const TypeParam kLargeA =
       std::exp(std::log((std::numeric_limits<TypeParam>::max)()) -
                std::log(std::log((std::numeric_limits<TypeParam>::max)())));
-  const TypeParam kLargeAPPC = std::exp(
-      std::log((std::numeric_limits<TypeParam>::max)()) -
-      std::log(std::log((std::numeric_limits<TypeParam>::max)())) - 10.0f);
   using param_type = typename absl::beta_distribution<TypeParam>::param_type;
 
   constexpr int kCount = 1000;
@@ -76,9 +84,6 @@ TYPED_TEST(BetaDistributionInterfaceTest, SerializeTest) {
       kLargeA,                                
       std::nextafter(kLargeA, TypeParam(0)),  
       std::nextafter(kLargeA, std::numeric_limits<TypeParam>::max()),
-      kLargeAPPC,  
-      std::nextafter(kLargeAPPC, TypeParam(0)),
-      std::nextafter(kLargeAPPC, std::numeric_limits<TypeParam>::max()),
       
       std::numeric_limits<TypeParam>::max(),
       std::numeric_limits<TypeParam>::epsilon(),
@@ -124,28 +129,6 @@ TYPED_TEST(BetaDistributionInterfaceTest, SerializeTest) {
       EXPECT_NE(before, after);
 
       ss >> after;
-
-#if defined(__powerpc64__) || defined(__PPC64__) || defined(__powerpc__) || \
-    defined(__ppc__) || defined(__PPC__)
-      if (std::is_same<TypeParam, long double>::value) {
-        
-        
-        
-        if (alpha <= std::numeric_limits<double>::max() &&
-            alpha >= std::numeric_limits<double>::lowest()) {
-          EXPECT_EQ(static_cast<double>(before.alpha()),
-                    static_cast<double>(after.alpha()))
-              << ss.str();
-        }
-        if (beta <= std::numeric_limits<double>::max() &&
-            beta >= std::numeric_limits<double>::lowest()) {
-          EXPECT_EQ(static_cast<double>(before.beta()),
-                    static_cast<double>(after.beta()))
-              << ss.str();
-        }
-        continue;
-      }
-#endif
 
       EXPECT_EQ(before.alpha(), after.alpha());
       EXPECT_EQ(before.beta(), after.beta());
@@ -576,6 +559,14 @@ TEST(BetaDistributionTest, StabilityTest) {
 
 
 TEST(BetaDistributionTest, AlgorithmBounds) {
+#if (defined(__i386__) || defined(_M_IX86)) && FLT_EVAL_METHOD != 0
+  
+  
+  
+  GTEST_SKIP()
+      << "Skipping the test because we detected x87 floating-point semantics";
+#endif
+
   {
     absl::random_internal::sequence_urbg urbg(
         {0x7fbe76c8b4395800ull, 0x8000000000000000ull});

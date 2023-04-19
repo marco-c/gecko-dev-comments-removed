@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef ABSL_STRINGS_INTERNAL_STR_FORMAT_ARG_H_
 #define ABSL_STRINGS_INTERNAL_STR_FORMAT_ARG_H_
 
@@ -108,6 +122,14 @@ StringConvertResult FormatConvertImpl(const std::string& v,
 StringConvertResult FormatConvertImpl(string_view v,
                                       FormatConversionSpecImpl conv,
                                       FormatSinkImpl* sink);
+#if defined(ABSL_HAVE_STD_STRING_VIEW) && !defined(ABSL_USES_STD_STRING_VIEW)
+inline StringConvertResult FormatConvertImpl(std::string_view v,
+                                             FormatConversionSpecImpl conv,
+                                             FormatSinkImpl* sink) {
+  return FormatConvertImpl(absl::string_view(v.data(), v.size()), conv, sink);
+}
+#endif  
+
 ArgConvertResult<FormatConversionCharSetUnion(
     FormatConversionCharSetInternal::s, FormatConversionCharSetInternal::p)>
 FormatConvertImpl(const char* v, const FormatConversionSpecImpl conv,

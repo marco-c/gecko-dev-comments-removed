@@ -32,14 +32,13 @@ namespace flags_internal {
 
 
 
-void ForEachFlagUnlocked(std::function<void(CommandLineFlag&)> visitor);
-
-
 void ForEachFlag(std::function<void(CommandLineFlag&)> visitor);
 
 
 
-bool RegisterCommandLineFlag(CommandLineFlag&);
+bool RegisterCommandLineFlag(CommandLineFlag&, const char* filename);
+
+void FinalizeRegistry();
 
 
 

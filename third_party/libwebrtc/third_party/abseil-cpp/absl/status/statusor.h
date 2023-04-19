@@ -44,6 +44,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/internal/statusor_internal.h"
 #include "absl/status/status.h"
@@ -72,7 +73,12 @@ ABSL_NAMESPACE_BEGIN
 class BadStatusOrAccess : public std::exception {
  public:
   explicit BadStatusOrAccess(absl::Status status);
-  ~BadStatusOrAccess() override;
+  ~BadStatusOrAccess() override = default;
+
+  BadStatusOrAccess(const BadStatusOrAccess& other);
+  BadStatusOrAccess& operator=(const BadStatusOrAccess& other);
+  BadStatusOrAccess(BadStatusOrAccess&& other);
+  BadStatusOrAccess& operator=(BadStatusOrAccess&& other);
 
   
   
@@ -91,7 +97,11 @@ class BadStatusOrAccess : public std::exception {
   const absl::Status& status() const;
 
  private:
+  void InitWhat() const;
+
   absl::Status status_;
+  mutable absl::once_flag init_what_;
+  mutable std::string what_;
 };
 
 
@@ -437,8 +447,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
                               T, U&&>>>>>::value,
           int> = 0>
   StatusOr(U&& u)  
-      : StatusOr(absl::in_place, std::forward<U>(u)) {
-  }
+      : StatusOr(absl::in_place, std::forward<U>(u)) {}
 
   template <
       typename U = T,
@@ -457,8 +466,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
               absl::negation<std::is_convertible<U&&, T>>>::value,
           int> = 0>
   explicit StatusOr(U&& u)  
-      : StatusOr(absl::in_place, std::forward<U>(u)) {
-  }
+      : StatusOr(absl::in_place, std::forward<U>(u)) {}
 
   
   
@@ -481,7 +489,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   
   
   
-  const Status& status() const &;
+  const Status& status() const&;
   Status status() &&;
 
   
@@ -661,7 +669,9 @@ StatusOr<T>::StatusOr(absl::in_place_t, std::initializer_list<U> ilist,
     : Base(absl::in_place, ilist, std::forward<Args>(args)...) {}
 
 template <typename T>
-const Status& StatusOr<T>::status() const & { return this->status_; }
+const Status& StatusOr<T>::status() const& {
+  return this->status_;
+}
 template <typename T>
 Status StatusOr<T>::status() && {
   return ok() ? OkStatus() : std::move(this->status_);

@@ -22,16 +22,11 @@
 #include <cmath>
 #include <cstdint>
 
-#include "absl/base/internal/bits.h"
+#include "absl/numeric/bits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace random_internal {
-
-
-inline int LeadingSetBit(uint64_t n) {
-  return 64 - base_internal::CountLeadingZeros64(n);
-}
 
 
 
@@ -39,10 +34,10 @@ inline int LeadingSetBit(uint64_t n) {
 
 
 inline int IntLog2Floor(uint64_t n) {
-  return (n <= 1) ? 0 : (63 - base_internal::CountLeadingZeros64(n));
+  return (n <= 1) ? 0 : (63 - countl_zero(n));
 }
 inline int IntLog2Ceil(uint64_t n) {
-  return (n <= 1) ? 0 : (64 - base_internal::CountLeadingZeros64(n - 1));
+  return (n <= 1) ? 0 : (64 - countl_zero(n - 1));
 }
 
 inline double StirlingLogFactorial(double n) {
@@ -53,18 +48,6 @@ inline double StirlingLogFactorial(double n) {
   const double ninv = 1.0 / static_cast<double>(n);
   return n * logn - n + 0.5 * (kLog2PI + logn) + (1.0 / 12.0) * ninv -
          (1.0 / 360.0) * ninv * ninv * ninv;
-}
-
-
-
-
-
-
-inline constexpr uint32_t rotr(uint32_t value, uint8_t bits) {
-  return (value >> (bits & 31)) | (value << ((-bits) & 31));
-}
-inline constexpr uint64_t rotr(uint64_t value, uint8_t bits) {
-  return (value >> (bits & 63)) | (value << ((-bits) & 63));
 }
 
 }  

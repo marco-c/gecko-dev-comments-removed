@@ -31,8 +31,6 @@
 
 
 
-
-
 #ifndef ABSL_BASE_ATTRIBUTES_H_
 #define ABSL_BASE_ATTRIBUTES_H_
 
@@ -121,7 +119,7 @@
 #if ABSL_HAVE_ATTRIBUTE(disable_tail_calls)
 #define ABSL_HAVE_ATTRIBUTE_NO_TAIL_CALL 1
 #define ABSL_ATTRIBUTE_NO_TAIL_CALL __attribute__((disable_tail_calls))
-#elif defined(__GNUC__) && !defined(__clang__)
+#elif defined(__GNUC__) && !defined(__clang__) && !defined(__e2k__)
 #define ABSL_HAVE_ATTRIBUTE_NO_TAIL_CALL 1
 #define ABSL_ATTRIBUTE_NO_TAIL_CALL \
   __attribute__((optimize("no-optimize-sibling-calls")))
@@ -140,7 +138,7 @@
 
 #if (ABSL_HAVE_ATTRIBUTE(weak) ||                   \
      (defined(__GNUC__) && !defined(__clang__))) && \
-    !(defined(__llvm__) && defined(_WIN32)) && !defined(__MINGW32__)
+    (!defined(_WIN32) || __clang_major__ < 9) && !defined(__MINGW32__)
 #undef ABSL_ATTRIBUTE_WEAK
 #define ABSL_ATTRIBUTE_WEAK __attribute__((weak))
 #define ABSL_HAVE_ATTRIBUTE_WEAK 1
@@ -283,10 +281,7 @@
 
 
 
-#if ABSL_HAVE_ATTRIBUTE(returns_nonnull) || \
-    (defined(__GNUC__) && \
-     (__GNUC__ > 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)) && \
-     !defined(__clang__))
+#if ABSL_HAVE_ATTRIBUTE(returns_nonnull)
 #define ABSL_ATTRIBUTE_RETURNS_NONNULL __attribute__((returns_nonnull))
 #else
 #define ABSL_ATTRIBUTE_RETURNS_NONNULL
@@ -526,6 +521,13 @@
 
 
 
+
+
+
+
+
+
+
 #if ABSL_HAVE_ATTRIBUTE(unused) || (defined(__GNUC__) && !defined(__clang__))
 #undef ABSL_ATTRIBUTE_UNUSED
 #define ABSL_ATTRIBUTE_UNUSED __attribute__((__unused__))
@@ -606,21 +608,15 @@
 
 
 
-
 #ifdef ABSL_FALLTHROUGH_INTENDED
 #error "ABSL_FALLTHROUGH_INTENDED should not be defined."
-#endif
-
-
-#if defined(__clang__) && defined(__has_warning)
-#if __has_feature(cxx_attributes) && __has_warning("-Wimplicit-fallthrough")
+#elif ABSL_HAVE_CPP_ATTRIBUTE(fallthrough)
+#define ABSL_FALLTHROUGH_INTENDED [[fallthrough]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::fallthrough)
 #define ABSL_FALLTHROUGH_INTENDED [[clang::fallthrough]]
-#endif
-#elif defined(__GNUC__) && __GNUC__ >= 7
+#elif ABSL_HAVE_CPP_ATTRIBUTE(gnu::fallthrough)
 #define ABSL_FALLTHROUGH_INTENDED [[gnu::fallthrough]]
-#endif
-
-#ifndef ABSL_FALLTHROUGH_INTENDED
+#else
 #define ABSL_FALLTHROUGH_INTENDED \
   do {                            \
   } while (0)
@@ -645,7 +641,7 @@
 
 
 
-#if defined(__clang__) && __cplusplus >= 201103L
+#if defined(__clang__) && defined(__cplusplus) && __cplusplus >= 201103L
 #define ABSL_DEPRECATED(message) __attribute__((deprecated(message)))
 #endif
 
@@ -678,5 +674,48 @@
 #else
 #define ABSL_CONST_INIT
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(gnu::pure)
+#define ABSL_ATTRIBUTE_PURE_FUNCTION [[gnu::pure]]
+#elif ABSL_HAVE_ATTRIBUTE(pure)
+#define ABSL_ATTRIBUTE_PURE_FUNCTION __attribute__((pure))
+#else
+#define ABSL_ATTRIBUTE_PURE_FUNCTION
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::lifetimebound)
+#define ABSL_ATTRIBUTE_LIFETIME_BOUND [[clang::lifetimebound]]
+#elif ABSL_HAVE_ATTRIBUTE(lifetimebound)
+#define ABSL_ATTRIBUTE_LIFETIME_BOUND __attribute__((lifetimebound))
+#else
+#define ABSL_ATTRIBUTE_LIFETIME_BOUND
+#endif
 
 #endif  

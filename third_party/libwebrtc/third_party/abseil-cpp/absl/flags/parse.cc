@@ -612,6 +612,11 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
   ABSL_INTERNAL_CHECK(argc > 0, "Missing argv[0]");
 
   
+  
+  
+  flags_internal::FinalizeRegistry();
+
+  
   CheckDefaultValuesParsingRoundtrip();
 
   std::vector<std::string> flagfile_value;
@@ -708,6 +713,11 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
     std::tie(flag, is_negative) = LocateFlag(flag_name);
 
     if (flag == nullptr) {
+      
+      if (flags_internal::DeduceUsageFlags(flag_name, value)) {
+        continue;
+      }
+
       if (on_undef_flag != OnUndefinedFlag::kIgnoreUndefined) {
         undefined_flag_names.emplace_back(arg_from_argv,
                                           std::string(flag_name));

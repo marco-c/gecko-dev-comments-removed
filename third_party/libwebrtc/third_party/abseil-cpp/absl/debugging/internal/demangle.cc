@@ -386,24 +386,28 @@ static bool IsDigit(char c) { return c >= '0' && c <= '9'; }
 
 
 
+
 static bool IsFunctionCloneSuffix(const char *str) {
   size_t i = 0;
   while (str[i] != '\0') {
+    bool parsed = false;
     
-    if (str[i] != '.' || !IsAlpha(str[i + 1])) {
+    if (str[i] == '.' && (IsAlpha(str[i + 1]) || str[i + 1] == '_')) {
+      parsed = true;
+      i += 2;
+      while (IsAlpha(str[i]) || str[i] == '_') {
+        ++i;
+      }
+    }
+    if (str[i] == '.' && IsDigit(str[i + 1])) {
+      parsed = true;
+      i += 2;
+      while (IsDigit(str[i])) {
+        ++i;
+      }
+    }
+    if (!parsed)
       return false;
-    }
-    i += 2;
-    while (IsAlpha(str[i])) {
-      ++i;
-    }
-    if (str[i] != '.' || !IsDigit(str[i + 1])) {
-      return false;
-    }
-    i += 2;
-    while (IsDigit(str[i])) {
-      ++i;
-    }
   }
   return true;  
 }
@@ -1628,6 +1632,7 @@ static bool ParseUnresolvedName(State *state) {
 
 
 
+
 static bool ParseExpression(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
@@ -1635,10 +1640,19 @@ static bool ParseExpression(State *state) {
     return true;
   }
 
-  
   ParseState copy = state->parse_state;
+
+  
   if (ParseTwoCharToken(state, "cl") && OneOrMore(ParseExpression, state) &&
       ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  state->parse_state = copy;
+
+  
+  
+  if (ParseTwoCharToken(state, "cp") && ParseSimpleId(state) &&
+      ZeroOrMore(ParseExpression, state) && ParseOneCharToken(state, 'E')) {
     return true;
   }
   state->parse_state = copy;
@@ -1936,7 +1950,8 @@ static bool Overflowed(const State *state) {
 bool Demangle(const char *mangled, char *out, int out_size) {
   State state;
   InitState(&state, mangled, out, out_size);
-  return ParseTopLevelMangledName(&state) && !Overflowed(&state);
+  return ParseTopLevelMangledName(&state) && !Overflowed(&state) &&
+         state.parse_state.out_cur_idx > 0;
 }
 
 }  

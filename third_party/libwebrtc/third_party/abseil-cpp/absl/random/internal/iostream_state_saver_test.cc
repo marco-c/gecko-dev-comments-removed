@@ -14,6 +14,9 @@
 
 #include "absl/random/internal/iostream_state_saver.h"
 
+#include <errno.h>
+#include <stdio.h>
+
 #include <sstream>
 #include <string>
 
@@ -272,7 +275,6 @@ TEST(IOStreamStateSaver, RoundTripDoubles) {
   }
 }
 
-#if !defined(__EMSCRIPTEN__)
 TEST(IOStreamStateSaver, RoundTripLongDoubles) {
   
   
@@ -350,7 +352,6 @@ TEST(IOStreamStateSaver, RoundTripLongDoubles) {
     }
   }
 }
-#endif  
 
 TEST(StrToDTest, DoubleMin) {
   const char kV[] = "2.22507385850720138e-308";

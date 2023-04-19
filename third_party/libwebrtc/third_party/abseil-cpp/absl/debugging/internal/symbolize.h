@@ -28,8 +28,8 @@
 
 #ifdef ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
 #error ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE cannot be directly set
-#elif defined(__ELF__) && defined(__GLIBC__) && !defined(__native_client__) && \
-    !defined(__asmjs__) && !defined(__wasm__)
+#elif defined(__ELF__) && defined(__GLIBC__) && !defined(__native_client__) \
+      && !defined(__asmjs__) && !defined(__wasm__)
 #define ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE 1
 
 #include <elf.h>
@@ -66,6 +66,12 @@ ABSL_NAMESPACE_END
 #error ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE cannot be directly set
 #elif defined(__APPLE__)
 #define ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE 1
+#endif
+
+#ifdef ABSL_INTERNAL_HAVE_EMSCRIPTEN_SYMBOLIZE
+#error ABSL_INTERNAL_HAVE_EMSCRIPTEN_SYMBOLIZE cannot be directly set
+#elif defined(__EMSCRIPTEN__)
+#define ABSL_INTERNAL_HAVE_EMSCRIPTEN_SYMBOLIZE 1
 #endif
 
 namespace absl {
@@ -118,16 +124,14 @@ bool RemoveAllSymbolDecorators(void);
 
 
 
-bool RegisterFileMappingHint(
-    const void* start, const void* end, uint64_t offset, const char* filename);
+bool RegisterFileMappingHint(const void* start, const void* end,
+                             uint64_t offset, const char* filename);
 
 
 
 
 
-bool GetFileMappingHint(const void** start,
-                        const void** end,
-                        uint64_t    *  offset,
+bool GetFileMappingHint(const void** start, const void** end, uint64_t* offset,
                         const char** filename);
 
 }  

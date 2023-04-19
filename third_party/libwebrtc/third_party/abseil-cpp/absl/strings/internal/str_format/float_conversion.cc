@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "absl/strings/internal/str_format/float_conversion.h"
 
 #include <string.h>
@@ -10,11 +24,12 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
-#include "absl/base/internal/bits.h"
 #include "absl/base/optimization.h"
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
+#include "absl/numeric/bits.h"
 #include "absl/numeric/int128.h"
+#include "absl/numeric/internal/representation.h"
 #include "absl/strings/numbers.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
@@ -24,6 +39,8 @@ ABSL_NAMESPACE_BEGIN
 namespace str_format_internal {
 
 namespace {
+
+using ::absl::numeric_internal::IsDoubleDouble;
 
 
 
@@ -98,6 +115,9 @@ inline uint64_t DivideBy10WithCarry(uint64_t *v, uint64_t carry) {
   return next_carry % divisor;
 }
 
+using MaxFloatType =
+    typename std::conditional<IsDoubleDouble(), double, long double>::type;
+
 
 
 
@@ -118,10 +138,10 @@ class BinaryToDecimal {
   static void RunConversion(uint128 v, int exp,
                             absl::FunctionRef<void(BinaryToDecimal)> f) {
     assert(exp > 0);
-    assert(exp <= std::numeric_limits<long double>::max_exponent);
+    assert(exp <= std::numeric_limits<MaxFloatType>::max_exponent);
     static_assert(
-        StackArray::kMaxCapacity >=
-            ChunksNeeded(std::numeric_limits<long double>::max_exponent),
+        static_cast<int>(StackArray::kMaxCapacity) >=
+            ChunksNeeded(std::numeric_limits<MaxFloatType>::max_exponent),
         "");
 
     StackArray::RunWithCapacity(
@@ -225,7 +245,7 @@ class FractionalDigitGenerator {
   
   static void RunConversion(
       uint128 v, int exp, absl::FunctionRef<void(FractionalDigitGenerator)> f) {
-    using Limits = std::numeric_limits<long double>;
+    using Limits = std::numeric_limits<MaxFloatType>;
     assert(-exp < 0);
     assert(-exp >= Limits::min_exponent - 128);
     static_assert(StackArray::kMaxCapacity >=
@@ -301,12 +321,11 @@ class FractionalDigitGenerator {
 };
 
 
-int LeadingZeros(uint64_t v) { return base_internal::CountLeadingZeros64(v); }
+int LeadingZeros(uint64_t v) { return countl_zero(v); }
 int LeadingZeros(uint128 v) {
   auto high = static_cast<uint64_t>(v >> 64);
   auto low = static_cast<uint64_t>(v);
-  return high != 0 ? base_internal::CountLeadingZeros64(high)
-                   : 64 + base_internal::CountLeadingZeros64(low);
+  return high != 0 ? countl_zero(high) : 64 + countl_zero(low);
 }
 
 
@@ -858,10 +877,10 @@ void FormatA(const HexFloatTypeParams float_traits, Int mantissa, int exp,
   
   
   constexpr size_t kBufSizeForHexFloatRepr =
-      2                                               
-      + std::numeric_limits<long double>::digits / 4  
-      + 1                                             
-      + 1;                                            
+      2                                                
+      + std::numeric_limits<MaxFloatType>::digits / 4  
+      + 1                                              
+      + 1;                                             
   char digits_buffer[kBufSizeForHexFloatRepr];
   char *digits_iter = digits_buffer;
   const char *const digits =
@@ -1380,8 +1399,7 @@ bool FloatToSink(const Float v, const FormatConversionSpecImpl &conv,
 
 bool ConvertFloatImpl(long double v, const FormatConversionSpecImpl &conv,
                       FormatSinkImpl *sink) {
-  if (std::numeric_limits<long double>::digits ==
-      2 * std::numeric_limits<double>::digits) {
+  if (IsDoubleDouble()) {
     
     
     return FallbackToSnprintf(v, conv, sink);

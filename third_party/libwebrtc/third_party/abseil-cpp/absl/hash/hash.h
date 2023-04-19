@@ -73,6 +73,8 @@
 #ifndef ABSL_HASH_HASH_H_
 #define ABSL_HASH_HASH_H_
 
+#include <tuple>
+
 #include "absl/hash/internal/hash.h"
 
 namespace absl {
@@ -213,6 +215,26 @@ ABSL_NAMESPACE_BEGIN
 
 template <typename T>
 using Hash = absl::hash_internal::Hash<T>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <int&... ExplicitArgumentBarrier, typename... Types>
+size_t HashOf(const Types&... values) {
+  auto tuple = std::tie(values...);
+  return absl::Hash<decltype(tuple)>{}(tuple);
+}
 
 
 

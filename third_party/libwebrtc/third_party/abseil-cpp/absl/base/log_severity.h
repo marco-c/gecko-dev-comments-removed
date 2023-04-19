@@ -12,8 +12,8 @@
 
 
 
-#ifndef ABSL_BASE_INTERNAL_LOG_SEVERITY_H_
-#define ABSL_BASE_INTERNAL_LOG_SEVERITY_H_
+#ifndef ABSL_BASE_LOG_SEVERITY_H_
+#define ABSL_BASE_LOG_SEVERITY_H_
 
 #include <array>
 #include <ostream>

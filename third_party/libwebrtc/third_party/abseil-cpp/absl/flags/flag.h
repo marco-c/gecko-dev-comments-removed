@@ -285,6 +285,7 @@ ABSL_NAMESPACE_END
 
 
 
+
 #if !defined(_MSC_VER) || defined(__clang__)
 #define ABSL_FLAG_IMPL_FLAG_PTR(flag) flag
 #define ABSL_FLAG_IMPL_HELP_ARG(name)                      \
@@ -301,13 +302,15 @@ ABSL_NAMESPACE_END
 #if ABSL_FLAGS_STRIP_NAMES
 #define ABSL_FLAG_IMPL_FLAGNAME(txt) ""
 #define ABSL_FLAG_IMPL_FILENAME() ""
-#define ABSL_FLAG_IMPL_REGISTRAR(T, flag) \
-  absl::flags_internal::FlagRegistrar<T, false>(ABSL_FLAG_IMPL_FLAG_PTR(flag))
+#define ABSL_FLAG_IMPL_REGISTRAR(T, flag)                                      \
+  absl::flags_internal::FlagRegistrar<T, false>(ABSL_FLAG_IMPL_FLAG_PTR(flag), \
+                                                nullptr)
 #else
 #define ABSL_FLAG_IMPL_FLAGNAME(txt) txt
 #define ABSL_FLAG_IMPL_FILENAME() __FILE__
-#define ABSL_FLAG_IMPL_REGISTRAR(T, flag) \
-  absl::flags_internal::FlagRegistrar<T, true>(ABSL_FLAG_IMPL_FLAG_PTR(flag))
+#define ABSL_FLAG_IMPL_REGISTRAR(T, flag)                                     \
+  absl::flags_internal::FlagRegistrar<T, true>(ABSL_FLAG_IMPL_FLAG_PTR(flag), \
+                                               __FILE__)
 #endif
 
 

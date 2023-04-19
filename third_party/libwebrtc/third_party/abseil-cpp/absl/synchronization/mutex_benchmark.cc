@@ -61,8 +61,124 @@ class RaiiLocker<std::mutex> {
   std::mutex* mu_;
 };
 
+
+class ScopedThreadMutexPriority {
+ public:
+  explicit ScopedThreadMutexPriority(int priority) {
+    absl::base_internal::ThreadIdentity* identity =
+        absl::synchronization_internal::GetOrCreateCurrentThreadIdentity();
+    identity->per_thread_synch.priority = priority;
+    
+    
+    
+    identity->per_thread_synch.next_priority_read_cycles =
+        std::numeric_limits<int64_t>::max();
+  }
+  ~ScopedThreadMutexPriority() {
+    
+    
+    
+    
+    absl::synchronization_internal::GetOrCreateCurrentThreadIdentity()
+        ->per_thread_synch.next_priority_read_cycles =
+        std::numeric_limits<int64_t>::min();
+  }
+};
+
+void BM_MutexEnqueue(benchmark::State& state) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool multiple_priorities = state.range(0);
+  ScopedThreadMutexPriority priority_setter(
+      (multiple_priorities && state.thread_index != 0) ? 1 : 0);
+
+  struct Shared {
+    absl::Mutex mu;
+    std::atomic<int> looping_threads{0};
+    std::atomic<int> blocked_threads{0};
+    std::atomic<bool> thread_has_mutex{false};
+  };
+  static Shared* shared = new Shared;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  absl::synchronization_internal::PerThreadSem::SetThreadBlockedCounter(
+      &shared->blocked_threads);
+
+  
+  
+  
+  
+  ABSL_RAW_CHECK(
+      shared->looping_threads.load(std::memory_order_relaxed) == 0 &&
+          shared->blocked_threads.load(std::memory_order_relaxed) == 0 &&
+          !shared->thread_has_mutex.load(std::memory_order_relaxed),
+      "Shared state isn't zeroed at start of benchmark iteration");
+
+  static constexpr int kBatchSize = 1000;
+  while (state.KeepRunningBatch(kBatchSize)) {
+    shared->looping_threads.fetch_add(1);
+    for (int i = 0; i < kBatchSize; i++) {
+      {
+        absl::MutexLock l(&shared->mu);
+        shared->thread_has_mutex.store(true, std::memory_order_relaxed);
+        
+        
+        
+        
+        while (shared->looping_threads.load(std::memory_order_relaxed) -
+                   shared->blocked_threads.load(std::memory_order_relaxed) !=
+               1) {
+        }
+        shared->thread_has_mutex.store(false);
+      }
+      
+      
+      
+      while (!shared->thread_has_mutex.load(std::memory_order_relaxed) &&
+             shared->looping_threads.load(std::memory_order_relaxed) > 1) {
+      }
+    }
+    
+    
+    
+    
+    
+    
+    shared->looping_threads.fetch_add(-1);
+  }
+  absl::synchronization_internal::PerThreadSem::SetThreadBlockedCounter(
+      nullptr);
+}
+
+BENCHMARK(BM_MutexEnqueue)
+    ->Threads(4)
+    ->Threads(64)
+    ->Threads(128)
+    ->Threads(512)
+    ->ArgName("multiple_priorities")
+    ->Arg(false)
+    ->Arg(true);
+
 template <typename MutexType>
 void BM_Contended(benchmark::State& state) {
+  int priority = state.thread_index % state.range(1);
+  ScopedThreadMutexPriority priority_setter(priority);
+
   struct Shared {
     MutexType mu;
     int data = 0;
@@ -85,81 +201,51 @@ void BM_Contended(benchmark::State& state) {
     DelayNs(state.range(0), &shared->data);
   }
 }
+void SetupBenchmarkArgs(benchmark::internal::Benchmark* bm,
+                        bool do_test_priorities) {
+  const int max_num_priorities = do_test_priorities ? 2 : 1;
+  bm->UseRealTime()
+      
+      ->Threads(1)
+      ->Threads(2)
+      ->Threads(4)
+      ->Threads(6)
+      ->Threads(8)
+      ->Threads(12)
+      ->Threads(16)
+      ->Threads(24)
+      ->Threads(32)
+      ->Threads(48)
+      ->Threads(64)
+      ->Threads(96)
+      ->Threads(128)
+      ->Threads(192)
+      ->Threads(256)
+      ->ArgNames({"cs_ns", "num_prios"});
+  
+  
+  for (int critical_section_ns : {1, 20, 50, 200, 2000}) {
+    for (int num_priorities = 1; num_priorities <= max_num_priorities;
+         num_priorities++) {
+      bm->ArgPair(critical_section_ns, num_priorities);
+    }
+  }
+}
 
 BENCHMARK_TEMPLATE(BM_Contended, absl::Mutex)
-    ->UseRealTime()
-    
-    ->Threads(1)
-    ->Threads(2)
-    ->Threads(4)
-    ->Threads(6)
-    ->Threads(8)
-    ->Threads(12)
-    ->Threads(16)
-    ->Threads(24)
-    ->Threads(32)
-    ->Threads(48)
-    ->Threads(64)
-    ->Threads(96)
-    ->Threads(128)
-    ->Threads(192)
-    ->Threads(256)
-    
-    
-    ->Arg(1)
-    ->Arg(20)
-    ->Arg(50)
-    ->Arg(200);
+    ->Apply([](benchmark::internal::Benchmark* bm) {
+      SetupBenchmarkArgs(bm, true);
+    });
 
 BENCHMARK_TEMPLATE(BM_Contended, absl::base_internal::SpinLock)
-    ->UseRealTime()
-    
-    ->Threads(1)
-    ->Threads(2)
-    ->Threads(4)
-    ->Threads(6)
-    ->Threads(8)
-    ->Threads(12)
-    ->Threads(16)
-    ->Threads(24)
-    ->Threads(32)
-    ->Threads(48)
-    ->Threads(64)
-    ->Threads(96)
-    ->Threads(128)
-    ->Threads(192)
-    ->Threads(256)
-    
-    
-    ->Arg(1)
-    ->Arg(20)
-    ->Arg(50)
-    ->Arg(200);
+    ->Apply([](benchmark::internal::Benchmark* bm) {
+      SetupBenchmarkArgs(bm, false);
+    });
 
 BENCHMARK_TEMPLATE(BM_Contended, std::mutex)
-    ->UseRealTime()
-    
-    ->Threads(1)
-    ->Threads(2)
-    ->Threads(4)
-    ->Threads(6)
-    ->Threads(8)
-    ->Threads(12)
-    ->Threads(16)
-    ->Threads(24)
-    ->Threads(32)
-    ->Threads(48)
-    ->Threads(64)
-    ->Threads(96)
-    ->Threads(128)
-    ->Threads(192)
-    ->Threads(256)
-    
-    
-    ->Arg(1)
-    ->Arg(20)
-    ->Arg(50)
-    ->Arg(200);
+    ->Apply([](benchmark::internal::Benchmark* bm) {
+      SetupBenchmarkArgs(bm, false);
+    });
 
 
 

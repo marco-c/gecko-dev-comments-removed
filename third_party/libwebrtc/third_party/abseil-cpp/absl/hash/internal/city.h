@@ -56,11 +56,6 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace hash_internal {
 
-typedef std::pair<uint64_t, uint64_t> uint128;
-
-inline uint64_t Uint128Low64(const uint128 &x) { return x.first; }
-inline uint64_t Uint128High64(const uint128 &x) { return x.second; }
-
 
 uint64_t CityHash64(const char *s, size_t len);
 
@@ -71,23 +66,10 @@ uint64_t CityHash64WithSeed(const char *s, size_t len, uint64_t seed);
 
 
 uint64_t CityHash64WithSeeds(const char *s, size_t len, uint64_t seed0,
-                           uint64_t seed1);
+                             uint64_t seed1);
 
 
 uint32_t CityHash32(const char *s, size_t len);
-
-
-
-inline uint64_t Hash128to64(const uint128 &x) {
-  
-  const uint64_t kMul = 0x9ddfea08eb382d69ULL;
-  uint64_t a = (Uint128Low64(x) ^ Uint128High64(x)) * kMul;
-  a ^= (a >> 47);
-  uint64_t b = (Uint128High64(x) ^ a) * kMul;
-  b ^= (b >> 47);
-  b *= kMul;
-  return b;
-}
 
 }  
 ABSL_NAMESPACE_END

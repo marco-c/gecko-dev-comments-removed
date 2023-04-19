@@ -34,7 +34,8 @@ extern "C" {
 
 
 
-ABSL_ATTRIBUTE_WEAK void AbslInternalReportFatalUsageError(absl::string_view) {}
+ABSL_ATTRIBUTE_WEAK void ABSL_INTERNAL_C_SYMBOL(
+    AbslInternalReportFatalUsageError)(absl::string_view) {}
 
 }  
 
@@ -128,7 +129,7 @@ void ReportUsageError(absl::string_view msg, bool is_fatal) {
   std::cerr << "ERROR: " << msg << std::endl;
 
   if (is_fatal) {
-    AbslInternalReportFatalUsageError(msg);
+    ABSL_INTERNAL_C_SYMBOL(AbslInternalReportFatalUsageError)(msg);
   }
 }
 

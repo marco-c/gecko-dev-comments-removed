@@ -68,6 +68,7 @@ static void Unpack(uint64_t x, int *pid, int *read_fd, int *write_fd) {
 
 
 static std::atomic<uint64_t> pid_and_fds;  
+
 bool AddressIsReadable(const void *addr) {
   absl::base_internal::ErrnoSaver errno_saver;
   
@@ -86,7 +87,7 @@ bool AddressIsReadable(const void *addr) {
     int pid;
     int read_fd;
     int write_fd;
-    uint64_t local_pid_and_fds = pid_and_fds.load(std::memory_order_relaxed);
+    uint64_t local_pid_and_fds = pid_and_fds.load(std::memory_order_acquire);
     Unpack(local_pid_and_fds, &pid, &read_fd, &write_fd);
     while (current_pid != pid) {
       int p[2];
@@ -98,13 +99,13 @@ bool AddressIsReadable(const void *addr) {
       fcntl(p[1], F_SETFD, FD_CLOEXEC);
       uint64_t new_pid_and_fds = Pack(current_pid, p[0], p[1]);
       if (pid_and_fds.compare_exchange_strong(
-              local_pid_and_fds, new_pid_and_fds, std::memory_order_relaxed,
+              local_pid_and_fds, new_pid_and_fds, std::memory_order_release,
               std::memory_order_relaxed)) {
         local_pid_and_fds = new_pid_and_fds;  
       } else {  
         close(p[0]);
         close(p[1]);
-        local_pid_and_fds = pid_and_fds.load(std::memory_order_relaxed);
+        local_pid_and_fds = pid_and_fds.load(std::memory_order_acquire);
       }
       Unpack(local_pid_and_fds, &pid, &read_fd, &write_fd);
     }
@@ -124,7 +125,7 @@ bool AddressIsReadable(const void *addr) {
       
       
       pid_and_fds.compare_exchange_strong(local_pid_and_fds, 0,
-                                          std::memory_order_relaxed,
+                                          std::memory_order_release,
                                           std::memory_order_relaxed);
     }
   } while (errno == EBADF);

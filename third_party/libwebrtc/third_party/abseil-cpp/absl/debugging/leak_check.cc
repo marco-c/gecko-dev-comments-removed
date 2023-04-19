@@ -16,6 +16,7 @@
 
 
 
+#include "absl/base/attributes.h"
 #include "absl/debugging/leak_check.h"
 
 #ifndef LEAK_SANITIZER
@@ -23,6 +24,7 @@
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 bool HaveLeakSanitizer() { return false; }
+bool LeakCheckerIsActive() { return false; }
 void DoIgnoreLeak(const void*) { }
 void RegisterLivePointers(const void*, size_t) { }
 void UnRegisterLivePointers(const void*, size_t) { }
@@ -35,9 +37,23 @@ ABSL_NAMESPACE_END
 
 #include <sanitizer/lsan_interface.h>
 
+#if ABSL_HAVE_ATTRIBUTE_WEAK
+extern "C" ABSL_ATTRIBUTE_WEAK int __lsan_is_turned_off();
+#endif
+
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 bool HaveLeakSanitizer() { return true; }
+
+#if ABSL_HAVE_ATTRIBUTE_WEAK
+bool LeakCheckerIsActive() {
+  return !(&__lsan_is_turned_off && __lsan_is_turned_off());
+}
+#else
+bool LeakCheckerIsActive() { return true; }
+#endif
+
+bool FindAndReportLeaks() { return __lsan_do_recoverable_leak_check(); }
 void DoIgnoreLeak(const void* ptr) { __lsan_ignore_object(ptr); }
 void RegisterLivePointers(const void* ptr, size_t size) {
   __lsan_register_root_region(ptr, size);

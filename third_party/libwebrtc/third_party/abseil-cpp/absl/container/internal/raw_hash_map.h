@@ -51,6 +51,7 @@ class raw_hash_map : public raw_hash_set<Policy, Hash, Eq, Alloc> {
   using key_arg = typename KeyArgImpl::template type<K, key_type>;
 
   static_assert(!std::is_reference<key_type>::value, "");
+
   
   
   static_assert(!std::is_reference<mapped_type>::value, "");

@@ -21,12 +21,14 @@
 #include <iterator>
 #include <random>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/macros.h"
+#include "absl/numeric/internal/representation.h"
 #include "absl/random/internal/chi_square.h"
 #include "absl/random/internal/distribution_test_util.h"
 #include "absl/random/internal/sequence_urbg.h"
@@ -43,7 +45,15 @@ using absl::random_internal::kChiSquared;
 template <typename RealType>
 class GaussianDistributionInterfaceTest : public ::testing::Test {};
 
-using RealTypes = ::testing::Types<float, double, long double>;
+
+
+
+
+
+using RealTypes =
+    std::conditional<absl::numeric_internal::IsDoubleDouble(),
+                     ::testing::Types<float, double>,
+                     ::testing::Types<float, double, long double>>::type;
 TYPED_TEST_CASE(GaussianDistributionInterfaceTest, RealTypes);
 
 TYPED_TEST(GaussianDistributionInterfaceTest, SerializeTest) {
@@ -128,32 +138,6 @@ TYPED_TEST(GaussianDistributionInterfaceTest, SerializeTest) {
         EXPECT_NE(before, after);
 
         ss >> after;
-
-#if defined(__powerpc64__) || defined(__PPC64__) || defined(__powerpc__) || \
-    defined(__ppc__) || defined(__PPC__) || defined(__EMSCRIPTEN__)
-        if (std::is_same<TypeParam, long double>::value) {
-          
-          
-          
-          
-          
-          
-          
-          if (mean <= std::numeric_limits<double>::max() &&
-              mean >= std::numeric_limits<double>::lowest()) {
-            EXPECT_EQ(static_cast<double>(before.mean()),
-                      static_cast<double>(after.mean()))
-                << ss.str();
-          }
-          if (stddev <= std::numeric_limits<double>::max() &&
-              stddev >= std::numeric_limits<double>::lowest()) {
-            EXPECT_EQ(static_cast<double>(before.stddev()),
-                      static_cast<double>(after.stddev()))
-                << ss.str();
-          }
-          continue;
-        }
-#endif
 
         EXPECT_EQ(before.mean(), after.mean());
         EXPECT_EQ(before.stddev(), after.stddev())  

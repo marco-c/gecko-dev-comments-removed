@@ -1,3 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "absl/strings/internal/str_format/bind.h"
 
 #include <cerrno>
@@ -44,7 +58,7 @@ inline bool ArgContext::Bind(const UnboundConversion* unbound,
   if (static_cast<size_t>(arg_position - 1) >= pack_.size()) return false;
   arg = &pack_[arg_position - 1];  
 
-  if (!unbound->flags.basic) {
+  if (unbound->flags != Flags::kBasic) {
     int width = unbound->width.value();
     bool force_left = false;
     if (unbound->width.is_from_arg()) {
@@ -70,9 +84,8 @@ inline bool ArgContext::Bind(const UnboundConversion* unbound,
     FormatConversionSpecImplFriend::SetPrecision(precision, bound);
 
     if (force_left) {
-      Flags flags = unbound->flags;
-      flags.left = true;
-      FormatConversionSpecImplFriend::SetFlags(flags, bound);
+      FormatConversionSpecImplFriend::SetFlags(unbound->flags | Flags::kLeft,
+                                               bound);
     } else {
       FormatConversionSpecImplFriend::SetFlags(unbound->flags, bound);
     }
@@ -221,7 +234,7 @@ int FprintF(std::FILE* output, const UntypedFormatSpecImpl format,
     errno = sink.error();
     return -1;
   }
-  if (sink.count() > std::numeric_limits<int>::max()) {
+  if (sink.count() > static_cast<size_t>(std::numeric_limits<int>::max())) {
     errno = EFBIG;
     return -1;
   }

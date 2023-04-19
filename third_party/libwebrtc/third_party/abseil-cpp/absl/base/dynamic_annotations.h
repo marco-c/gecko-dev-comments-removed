@@ -117,6 +117,9 @@
 
 
 
+
+
+
 #define ABSL_ANNOTATE_BENIGN_RACE(pointer, description) \
   ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateBenignRaceSized)  \
   (__FILE__, __LINE__, pointer, sizeof(*(pointer)), description)
@@ -288,12 +291,17 @@ ABSL_INTERNAL_END_EXTERN_C
 
 
 
-#define ABSL_ANNOTATE_IGNORE_READS_BEGIN() \
-  ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateIgnoreReadsBegin)(__FILE__, __LINE__)
 
 
-#define ABSL_ANNOTATE_IGNORE_READS_END() \
-  ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateIgnoreReadsEnd)(__FILE__, __LINE__)
+
+#define ABSL_ANNOTATE_IGNORE_READS_BEGIN()              \
+  ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateIgnoreReadsBegin) \
+  (__FILE__, __LINE__)
+
+
+#define ABSL_ANNOTATE_IGNORE_READS_END()              \
+  ABSL_INTERNAL_GLOBAL_SCOPED(AnnotateIgnoreReadsEnd) \
+  (__FILE__, __LINE__)
 
 
 
@@ -313,16 +321,22 @@ ABSL_INTERNAL_END_EXTERN_C
 
 
 
-#define ABSL_ANNOTATE_IGNORE_READS_BEGIN() \
-  ABSL_INTERNAL_GLOBAL_SCOPED(AbslInternalAnnotateIgnoreReadsBegin)()
+#define ABSL_ANNOTATE_IGNORE_READS_BEGIN()                          \
+  ABSL_INTERNAL_GLOBAL_SCOPED(                                      \
+      ABSL_INTERNAL_C_SYMBOL(AbslInternalAnnotateIgnoreReadsBegin)) \
+  ()
 
-#define ABSL_ANNOTATE_IGNORE_READS_END() \
-  ABSL_INTERNAL_GLOBAL_SCOPED(AbslInternalAnnotateIgnoreReadsEnd)()
+#define ABSL_ANNOTATE_IGNORE_READS_END()                          \
+  ABSL_INTERNAL_GLOBAL_SCOPED(                                    \
+      ABSL_INTERNAL_C_SYMBOL(AbslInternalAnnotateIgnoreReadsEnd)) \
+  ()
 
-ABSL_INTERNAL_STATIC_INLINE void AbslInternalAnnotateIgnoreReadsBegin()
+ABSL_INTERNAL_STATIC_INLINE void ABSL_INTERNAL_C_SYMBOL(
+    AbslInternalAnnotateIgnoreReadsBegin)()
     ABSL_INTERNAL_IGNORE_READS_BEGIN_ATTRIBUTE {}
 
-ABSL_INTERNAL_STATIC_INLINE void AbslInternalAnnotateIgnoreReadsEnd()
+ABSL_INTERNAL_STATIC_INLINE void ABSL_INTERNAL_C_SYMBOL(
+    AbslInternalAnnotateIgnoreReadsEnd)()
     ABSL_INTERNAL_IGNORE_READS_END_ATTRIBUTE {}
 
 #else
@@ -454,7 +468,7 @@ using absl::base_internal::ValgrindSlowdown;
   __sanitizer_annotate_contiguous_container(beg, end, old_mid, new_mid)
 #define ABSL_ADDRESS_SANITIZER_REDZONE(name) \
   struct {                                   \
-    char x[8] __attribute__((aligned(8)));   \
+    alignas(8) char x[8];                    \
   } name
 
 #else

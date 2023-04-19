@@ -15,6 +15,7 @@
 #include "absl/random/exponential_distribution.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -30,6 +31,7 @@
 #include "gtest/gtest.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/macros.h"
+#include "absl/numeric/internal/representation.h"
 #include "absl/random/internal/chi_square.h"
 #include "absl/random/internal/distribution_test_util.h"
 #include "absl/random/internal/pcg_engine.h"
@@ -47,11 +49,15 @@ using absl::random_internal::kChiSquared;
 template <typename RealType>
 class ExponentialDistributionTypedTest : public ::testing::Test {};
 
-#if defined(__EMSCRIPTEN__)
-using RealTypes = ::testing::Types<float, double>;
-#else
-using RealTypes = ::testing::Types<float, double, long double>;
-#endif  
+
+
+
+
+
+using RealTypes =
+    std::conditional<absl::numeric_internal::IsDoubleDouble(),
+                     ::testing::Types<float, double>,
+                     ::testing::Types<float, double, long double>>::type;
 TYPED_TEST_CASE(ExponentialDistributionTypedTest, RealTypes);
 
 TYPED_TEST(ExponentialDistributionTypedTest, SerializeTest) {
@@ -129,23 +135,6 @@ TYPED_TEST(ExponentialDistributionTypedTest, SerializeTest) {
     EXPECT_NE(before, after);
 
     ss >> after;
-
-#if defined(__powerpc64__) || defined(__PPC64__) || defined(__powerpc__) || \
-    defined(__ppc__) || defined(__PPC__)
-    if (std::is_same<TypeParam, long double>::value) {
-      
-      
-      
-      
-      if (lambda <= std::numeric_limits<double>::max() &&
-          lambda >= std::numeric_limits<double>::lowest()) {
-        EXPECT_EQ(static_cast<double>(before.lambda()),
-                  static_cast<double>(after.lambda()))
-            << ss.str();
-      }
-      continue;
-    }
-#endif
 
     EXPECT_EQ(before.lambda(), after.lambda())  
         << ss.str() << " "                      
@@ -396,6 +385,15 @@ TEST(ExponentialDistributionTest, StabilityTest) {
 TEST(ExponentialDistributionTest, AlgorithmBounds) {
   
   
+
+#if (defined(__i386__) || defined(_M_IX86)) && FLT_EVAL_METHOD != 0
+  
+  
+  
+  GTEST_SKIP()
+      << "Skipping the test because we detected x87 floating-point semantics";
+#endif
+
   absl::exponential_distribution<double> dist;
 
   {

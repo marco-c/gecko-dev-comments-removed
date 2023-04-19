@@ -104,10 +104,7 @@ class BitGenRef;
 class MockingBitGen {
  public:
   MockingBitGen() = default;
-
-  ~MockingBitGen() {
-    for (const auto& del : deleters_) del();
-  }
+  ~MockingBitGen() = default;
 
   
   using result_type = absl::BitGen::result_type;
@@ -117,14 +114,6 @@ class MockingBitGen {
   result_type operator()() { return gen_(); }
 
  private:
-  using match_impl_fn = void (*)(void* mock_fn, void* t_erased_arg_tuple,
-                                 void* t_erased_result);
-
-  struct MockData {
-    void* mock_fn = nullptr;
-    match_impl_fn match_impl = nullptr;
-  };
-
   
   
   template <typename ResultT, typename... Args>
@@ -136,15 +125,44 @@ class MockingBitGen {
   
   
   
-  template <typename ResultT, typename MockFnType, typename Tuple>
+  template <typename MockFnType, typename ResultT, typename Tuple>
   struct MockFnCaller;
+
   
-  template <typename ResultT, typename MockFnType, typename... Args>
-  struct MockFnCaller<ResultT, MockFnType, std::tuple<Args...>> {
+  template <typename MockFnType, typename ResultT, typename... Args>
+  struct MockFnCaller<MockFnType, ResultT, std::tuple<Args...>> {
     MockFnType* fn;
     inline ResultT operator()(Args... args) {
       return fn->Call(std::move(args)...);
     }
+  };
+
+  
+  
+  
+  class FunctionHolder {
+   public:
+    virtual ~FunctionHolder() = default;
+
+    
+    
+    virtual void Apply( void* args_tuple,
+                        void* result) = 0;
+  };
+
+  template <typename MockFnType, typename ResultT, typename ArgTupleT>
+  class FunctionHolderImpl final : public FunctionHolder {
+   public:
+    void Apply(void* args_tuple, void* result) override {
+      
+      
+      
+      *static_cast<ResultT*>(result) =
+          absl::apply(MockFnCaller<MockFnType, ResultT, ArgTupleT>{&mock_fn_},
+                      *static_cast<ArgTupleT*>(args_tuple));
+    }
+
+    MockFnType mock_fn_;
   };
 
   
@@ -157,37 +175,31 @@ class MockingBitGen {
   
   
   
-  template <typename ResultT, typename ArgTupleT>
-  auto RegisterMock(base_internal::FastTypeIdType type)
+  template <typename ResultT, typename ArgTupleT, typename SelfT>
+  auto RegisterMock(SelfT&, base_internal::FastTypeIdType type)
       -> decltype(GetMockFnType(std::declval<ResultT>(),
                                 std::declval<ArgTupleT>()))& {
-    using MockFnType = decltype(
-        GetMockFnType(std::declval<ResultT>(), std::declval<ArgTupleT>()));
-    auto& mock = mocks_[type];
-    if (!mock.mock_fn) {
-      auto* mock_fn = new MockFnType;
-      mock.mock_fn = mock_fn;
-      mock.match_impl = &MatchImpl<ResultT, ArgTupleT>;
-      deleters_.emplace_back([mock_fn] { delete mock_fn; });
-    }
-    return *static_cast<MockFnType*>(mock.mock_fn);
-  }
+    using MockFnType = decltype(GetMockFnType(std::declval<ResultT>(),
+                                              std::declval<ArgTupleT>()));
 
-  
-  
-  
-  
-  
-  template <typename ResultT, typename ArgTupleT>
-  static void MatchImpl( void* mock_fn,
-                         void* args_tuple,
-                         void* result) {
-    using MockFnType = decltype(
-        GetMockFnType(std::declval<ResultT>(), std::declval<ArgTupleT>()));
-    *static_cast<ResultT*>(result) = absl::apply(
-        MockFnCaller<ResultT, MockFnType, ArgTupleT>{
-            static_cast<MockFnType*>(mock_fn)},
-        *static_cast<ArgTupleT*>(args_tuple));
+    using WrappedFnType = absl::conditional_t<
+        std::is_same<SelfT, ::testing::NiceMock<absl::MockingBitGen>>::value,
+        ::testing::NiceMock<MockFnType>,
+        absl::conditional_t<
+            std::is_same<SelfT,
+                         ::testing::NaggyMock<absl::MockingBitGen>>::value,
+            ::testing::NaggyMock<MockFnType>,
+            absl::conditional_t<
+                std::is_same<SelfT,
+                             ::testing::StrictMock<absl::MockingBitGen>>::value,
+                ::testing::StrictMock<MockFnType>, MockFnType>>>;
+
+    using ImplT = FunctionHolderImpl<WrappedFnType, ResultT, ArgTupleT>;
+    auto& mock = mocks_[type];
+    if (!mock) {
+      mock = absl::make_unique<ImplT>();
+    }
+    return static_cast<ImplT*>(mock.get())->mock_fn_;
   }
 
   
@@ -206,13 +218,13 @@ class MockingBitGen {
     
     auto it = mocks_.find(type);
     if (it == mocks_.end()) return false;
-    auto* mock_data = static_cast<MockData*>(&it->second);
-    mock_data->match_impl(mock_data->mock_fn, args_tuple, result);
+    it->second->Apply(args_tuple, result);
     return true;
   }
 
-  absl::flat_hash_map<base_internal::FastTypeIdType, MockData> mocks_;
-  std::vector<std::function<void()>> deleters_;
+  absl::flat_hash_map<base_internal::FastTypeIdType,
+                      std::unique_ptr<FunctionHolder>>
+      mocks_;
   absl::BitGen gen_;
 
   template <typename>

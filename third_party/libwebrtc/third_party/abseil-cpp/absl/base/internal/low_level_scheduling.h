@@ -61,6 +61,8 @@ class SchedulingGuard {
  public:
   
   static bool ReschedulingIsAllowed();
+  SchedulingGuard(const SchedulingGuard&) = delete;
+  SchedulingGuard& operator=(const SchedulingGuard&) = delete;
 
  private:
   
@@ -101,9 +103,6 @@ class SchedulingGuard {
   friend class SchedulingHelper;
   friend class SpinLock;
   friend int absl::synchronization_internal::MutexDelay(int32_t c, int mode);
-
-  SchedulingGuard(const SchedulingGuard&) = delete;
-  SchedulingGuard& operator=(const SchedulingGuard&) = delete;
 };
 
 

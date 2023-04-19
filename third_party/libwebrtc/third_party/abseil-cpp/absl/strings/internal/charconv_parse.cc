@@ -52,7 +52,7 @@ static_assert(std::numeric_limits<double>::digits == 53, "IEEE double fact");
 
 
 
-static_assert(1000000000000000000u > (uint64_t(1) << (53 + 3)), "(b) above");
+static_assert(1000000000000000000u > (uint64_t{1} << (53 + 3)), "(b) above");
 
 
 
@@ -246,8 +246,8 @@ constexpr int DigitMagnitude<16>() {
 
 
 template <int base, typename T>
-std::size_t ConsumeDigits(const char* begin, const char* end, int max_digits,
-                          T* out, bool* dropped_nonzero_digit) {
+int ConsumeDigits(const char* begin, const char* end, int max_digits, T* out,
+                  bool* dropped_nonzero_digit) {
   if (base == 10) {
     assert(max_digits <= std::numeric_limits<T>::digits10);
   } else if (base == 16) {
@@ -282,7 +282,7 @@ std::size_t ConsumeDigits(const char* begin, const char* end, int max_digits,
     *dropped_nonzero_digit = true;
   }
   *out = accumulator;
-  return begin - original_begin;
+  return static_cast<int>(begin - original_begin);
 }
 
 
@@ -372,7 +372,7 @@ strings_internal::ParsedFloat ParseFloat(const char* begin, const char* end,
 
   int exponent_adjustment = 0;
   bool mantissa_is_inexact = false;
-  std::size_t pre_decimal_digits = ConsumeDigits<base>(
+  int pre_decimal_digits = ConsumeDigits<base>(
       begin, end, MantissaDigitsMax<base>(), &mantissa, &mantissa_is_inexact);
   begin += pre_decimal_digits;
   int digits_left;
@@ -398,14 +398,14 @@ strings_internal::ParsedFloat ParseFloat(const char* begin, const char* end,
       while (begin < end && *begin == '0') {
         ++begin;
       }
-      std::size_t zeros_skipped = begin - begin_zeros;
+      int zeros_skipped = static_cast<int>(begin - begin_zeros);
       if (zeros_skipped >= DigitLimit<base>()) {
         
         return result;
       }
       exponent_adjustment -= static_cast<int>(zeros_skipped);
     }
-    std::size_t post_decimal_digits = ConsumeDigits<base>(
+    int post_decimal_digits = ConsumeDigits<base>(
         begin, end, digits_left, &mantissa, &mantissa_is_inexact);
     begin += post_decimal_digits;
 

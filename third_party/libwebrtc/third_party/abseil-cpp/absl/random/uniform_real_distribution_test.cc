@@ -14,17 +14,20 @@
 
 #include "absl/random/uniform_real_distribution.h"
 
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <iterator>
 #include <random>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/base/internal/raw_logging.h"
+#include "absl/numeric/internal/representation.h"
 #include "absl/random/internal/chi_square.h"
 #include "absl/random/internal/distribution_test_util.h"
 #include "absl/random/internal/pcg_engine.h"
@@ -55,15 +58,27 @@ namespace {
 template <typename RealType>
 class UniformRealDistributionTest : public ::testing::Test {};
 
-#if defined(__EMSCRIPTEN__)
-using RealTypes = ::testing::Types<float, double>;
-#else
-using RealTypes = ::testing::Types<float, double, long double>;
-#endif  
+
+
+
+
+
+using RealTypes =
+    std::conditional<absl::numeric_internal::IsDoubleDouble(),
+                     ::testing::Types<float, double>,
+                     ::testing::Types<float, double, long double>>::type;
 
 TYPED_TEST_SUITE(UniformRealDistributionTest, RealTypes);
 
 TYPED_TEST(UniformRealDistributionTest, ParamSerializeTest) {
+#if (defined(__i386__) || defined(_M_IX86)) && FLT_EVAL_METHOD != 0
+  
+  
+  
+  GTEST_SKIP()
+      << "Skipping the test because we detected x87 floating-point semantics";
+#endif
+
   using param_type =
       typename absl::uniform_real_distribution<TypeParam>::param_type;
 

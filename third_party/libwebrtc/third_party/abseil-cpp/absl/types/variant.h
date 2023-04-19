@@ -611,6 +611,9 @@ class variant<T0, Tn...> : private variant_internal::VariantBase<T0, Tn...> {
   
   
   
+  
+  
+  
   template <
       class T, class... Args,
       typename std::enable_if<std::is_constructible<
@@ -623,6 +626,8 @@ class variant<T0, Tn...> : private variant_internal::VariantBase<T0, Tn...> {
         this, absl::forward<Args>(args)...);
   }
 
+  
+  
   
   
   

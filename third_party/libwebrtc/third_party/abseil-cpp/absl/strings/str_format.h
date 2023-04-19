@@ -558,7 +558,6 @@ using FormatArg = str_format_internal::FormatArgImpl;
 
 
 
-
 ABSL_MUST_USE_RESULT inline bool FormatUntyped(
     FormatRawSink raw_sink, const UntypedFormatSpec& format,
     absl::Span<const FormatArg> args) {

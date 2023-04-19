@@ -78,6 +78,7 @@ struct HashtablezInfo {
   std::atomic<size_t> total_probe_length;
   std::atomic<size_t> hashes_bitwise_or;
   std::atomic<size_t> hashes_bitwise_and;
+  std::atomic<size_t> hashes_bitwise_xor;
 
   
   
@@ -312,7 +313,7 @@ void SetHashtablezMaxSamples(int32_t max);
 
 
 
-extern "C" bool AbslContainerInternalSampleEverything();
+extern "C" bool ABSL_INTERNAL_C_SYMBOL(AbslContainerInternalSampleEverything)();
 
 }  
 ABSL_NAMESPACE_END

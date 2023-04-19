@@ -32,6 +32,7 @@
 
 #include "absl/base/config.h"
 #include "absl/base/internal/per_thread_tls.h"
+#include "absl/base/optimization.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -69,30 +70,28 @@ struct PerThreadSynch {
                          
                          
                          
-
+  bool wake;             
   
   
   
   
   
-  
-  
-  
-  
-  
-  SynchWaitParams *waitp;
-
+  bool cond_waiter;
+  bool maybe_unlocking;  
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
   bool suppress_fatal_errors;  
                                
                                
                                
                                
-
-  intptr_t readers;     
-  int priority;         
-
-  
-  int64_t next_priority_read_cycles;
+  int priority;                
 
   
   
@@ -111,29 +110,29 @@ struct PerThreadSynch {
   };
   std::atomic<State> state;
 
-  bool maybe_unlocking;  
-                         
-                         
-                         
-                         
-                         
-                         
-                         
-                         
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SynchWaitParams* waitp;
 
-  bool wake;  
+  intptr_t readers;     
 
   
-  
-  
-  
-  
-  bool cond_waiter;
+  int64_t next_priority_read_cycles;
 
   
   
   SynchLocksHeld *all_locks;
 };
+
+
 
 struct ThreadIdentity {
   
@@ -144,7 +143,7 @@ struct ThreadIdentity {
 
   
   struct WaiterState {
-    char data[128];
+    alignas(void*) char data[128];
   } waiter_state;
 
   
@@ -189,30 +188,32 @@ void ClearCurrentThreadIdentity();
 
 
 #ifdef ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC
-#error ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC cannot be direcly set
+#error ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC cannot be directly set
 #else
 #define ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC 0
 #endif
 
 #ifdef ABSL_THREAD_IDENTITY_MODE_USE_TLS
-#error ABSL_THREAD_IDENTITY_MODE_USE_TLS cannot be direcly set
+#error ABSL_THREAD_IDENTITY_MODE_USE_TLS cannot be directly set
 #else
 #define ABSL_THREAD_IDENTITY_MODE_USE_TLS 1
 #endif
 
 #ifdef ABSL_THREAD_IDENTITY_MODE_USE_CPP11
-#error ABSL_THREAD_IDENTITY_MODE_USE_CPP11 cannot be direcly set
+#error ABSL_THREAD_IDENTITY_MODE_USE_CPP11 cannot be directly set
 #else
 #define ABSL_THREAD_IDENTITY_MODE_USE_CPP11 2
 #endif
 
 #ifdef ABSL_THREAD_IDENTITY_MODE
-#error ABSL_THREAD_IDENTITY_MODE cannot be direcly set
+#error ABSL_THREAD_IDENTITY_MODE cannot be directly set
 #elif defined(ABSL_FORCE_THREAD_IDENTITY_MODE)
 #define ABSL_THREAD_IDENTITY_MODE ABSL_FORCE_THREAD_IDENTITY_MODE
 #elif defined(_WIN32) && !defined(__MINGW32__)
 #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
-#elif ABSL_PER_THREAD_TLS && defined(__GOOGLE_GRTE_VERSION__) && \
+#elif defined(__APPLE__) && defined(ABSL_HAVE_THREAD_LOCAL)
+#define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
+#elif ABSL_PER_THREAD_TLS && defined(__GOOGLE_GRTE_VERSION__) &&        \
     (__GOOGLE_GRTE_VERSION__ >= 20140228L)
 
 
@@ -241,7 +242,12 @@ ABSL_CONST_INIT extern thread_local ThreadIdentity* thread_identity_ptr;
 
 
 
-#if !defined(ABSL_BUILD_DLL) && !defined(ABSL_CONSUME_DLL)
+#if !defined(__APPLE__) && !defined(ABSL_BUILD_DLL) && \
+    !defined(ABSL_CONSUME_DLL)
+#define ABSL_INTERNAL_INLINE_CURRENT_THREAD_IDENTITY_IF_PRESENT 1
+#endif
+
+#ifdef ABSL_INTERNAL_INLINE_CURRENT_THREAD_IDENTITY_IF_PRESENT
 inline ThreadIdentity* CurrentThreadIdentityIfPresent() {
   return thread_identity_ptr;
 }

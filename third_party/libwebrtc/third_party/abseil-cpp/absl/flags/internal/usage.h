@@ -37,6 +37,7 @@ enum class HelpFormat {
 };
 
 
+
 void FlagHelp(std::ostream& out, const CommandLineFlag& flag,
               HelpFormat format = HelpFormat::kHumanReadable);
 
@@ -65,17 +66,39 @@ void FlagsHelp(std::ostream& out, absl::string_view filter,
 int HandleUsageFlags(std::ostream& out,
                      absl::string_view program_usage_message);
 
+
+
+
+enum class HelpMode {
+  kNone,
+  kImportant,
+  kShort,
+  kFull,
+  kPackage,
+  kMatch,
+  kVersion,
+  kOnlyCheckArgs
+};
+
+
+std::string GetFlagsHelpMatchSubstr();
+
+HelpMode GetFlagsHelpMode();
+
+HelpFormat GetFlagsHelpFormat();
+
+
+void SetFlagsHelpMatchSubstr(absl::string_view);
+void SetFlagsHelpMode(HelpMode);
+void SetFlagsHelpFormat(HelpFormat);
+
+
+
+
+bool DeduceUsageFlags(absl::string_view name, absl::string_view value);
+
 }  
 ABSL_NAMESPACE_END
 }  
-
-ABSL_DECLARE_FLAG(bool, help);
-ABSL_DECLARE_FLAG(bool, helpfull);
-ABSL_DECLARE_FLAG(bool, helpshort);
-ABSL_DECLARE_FLAG(bool, helppackage);
-ABSL_DECLARE_FLAG(bool, version);
-ABSL_DECLARE_FLAG(bool, only_check_args);
-ABSL_DECLARE_FLAG(std::string, helpon);
-ABSL_DECLARE_FLAG(std::string, helpmatch);
 
 #endif  

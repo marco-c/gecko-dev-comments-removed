@@ -57,6 +57,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/internal/status_internal.h"
 #include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace absl {
@@ -140,6 +141,7 @@ enum class StatusCode : int {
   
   kNotFound = 5,
 
+  
   
   
   
@@ -284,9 +286,53 @@ std::ostream& operator<<(std::ostream& os, StatusCode code);
 
 
 
+enum class StatusToStringMode : int {
+  
+  
+  kWithNoExtraData = 0,
+  
+  kWithPayload = 1 << 0,
+  
+  kWithEverything = ~kWithNoExtraData,
+  
+  kDefault = kWithPayload,
+};
 
 
 
+inline constexpr StatusToStringMode operator&(StatusToStringMode lhs,
+                                              StatusToStringMode rhs) {
+  return static_cast<StatusToStringMode>(static_cast<int>(lhs) &
+                                         static_cast<int>(rhs));
+}
+inline constexpr StatusToStringMode operator|(StatusToStringMode lhs,
+                                              StatusToStringMode rhs) {
+  return static_cast<StatusToStringMode>(static_cast<int>(lhs) |
+                                         static_cast<int>(rhs));
+}
+inline constexpr StatusToStringMode operator^(StatusToStringMode lhs,
+                                              StatusToStringMode rhs) {
+  return static_cast<StatusToStringMode>(static_cast<int>(lhs) ^
+                                         static_cast<int>(rhs));
+}
+inline constexpr StatusToStringMode operator~(StatusToStringMode arg) {
+  return static_cast<StatusToStringMode>(~static_cast<int>(arg));
+}
+inline StatusToStringMode& operator&=(StatusToStringMode& lhs,
+                                      StatusToStringMode rhs) {
+  lhs = lhs & rhs;
+  return lhs;
+}
+inline StatusToStringMode& operator|=(StatusToStringMode& lhs,
+                                      StatusToStringMode rhs) {
+  lhs = lhs | rhs;
+  return lhs;
+}
+inline StatusToStringMode& operator^=(StatusToStringMode& lhs,
+                                      StatusToStringMode rhs) {
+  lhs = lhs ^ rhs;
+  return lhs;
+}
 
 
 
@@ -360,7 +406,21 @@ std::ostream& operator<<(std::ostream& os, StatusCode code);
 
 
 
-class ABSL_MUST_USE_RESULT Status final {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Status final {
  public:
   
 
@@ -450,7 +510,9 @@ class ABSL_MUST_USE_RESULT Status final {
   
   
   
-  std::string ToString() const;
+  
+  std::string ToString(
+      StatusToStringMode mode = StatusToStringMode::kDefault) const;
 
   
   
@@ -550,8 +612,9 @@ class ABSL_MUST_USE_RESULT Status final {
   status_internal::Payloads* GetPayloads();
 
   
-  static uintptr_t NewRep(absl::StatusCode code, absl::string_view msg,
-                          std::unique_ptr<status_internal::Payloads> payload);
+  static uintptr_t NewRep(
+      absl::StatusCode code, absl::string_view msg,
+      std::unique_ptr<status_internal::Payloads> payload);
   static bool EqualsSlow(const absl::Status& a, const absl::Status& b);
 
   
@@ -580,8 +643,7 @@ class ABSL_MUST_USE_RESULT Status final {
   static uintptr_t PointerToRep(status_internal::StatusRep* r);
   static status_internal::StatusRep* RepToPointer(uintptr_t r);
 
-  
-  std::string ToStringSlow() const;
+  std::string ToStringSlow(StatusToStringMode mode) const;
 
   
   
@@ -704,9 +766,11 @@ inline Status::Status(Status&& x) noexcept : rep_(x.rep_) {
 
 inline Status& Status::operator=(Status&& x) {
   uintptr_t old_rep = rep_;
-  rep_ = x.rep_;
-  x.rep_ = MovedFromRep();
-  Unref(old_rep);
+  if (x.rep_ != old_rep) {
+    rep_ = x.rep_;
+    x.rep_ = MovedFromRep();
+    Unref(old_rep);
+  }
   return *this;
 }
 
@@ -743,8 +807,8 @@ inline bool operator!=(const Status& lhs, const Status& rhs) {
   return !(lhs == rhs);
 }
 
-inline std::string Status::ToString() const {
-  return ok() ? "OK" : ToStringSlow();
+inline std::string Status::ToString(StatusToStringMode mode) const {
+  return ok() ? "OK" : ToStringSlow(mode);
 }
 
 inline void Status::IgnoreError() const {

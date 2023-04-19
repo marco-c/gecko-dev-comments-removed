@@ -21,6 +21,8 @@
 #ifndef ABSL_DEBUGGING_INTERNAL_STACKTRACE_CONFIG_H_
 #define ABSL_DEBUGGING_INTERNAL_STACKTRACE_CONFIG_H_
 
+#include "absl/base/config.h"
+
 #if defined(ABSL_STACKTRACE_INL_HEADER)
 #error ABSL_STACKTRACE_INL_HEADER cannot be directly set
 
@@ -29,22 +31,15 @@
     "absl/debugging/internal/stacktrace_win32-inl.inc"
 
 #elif defined(__APPLE__)
+#ifdef ABSL_HAVE_THREAD_LOCAL
 
-
-
-
-
-
-
-
-
-
-
-#if __has_feature(cxx_thread_local) && \
-    !(TARGET_OS_IPHONE && __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_9_0)
 #define ABSL_STACKTRACE_INL_HEADER \
   "absl/debugging/internal/stacktrace_generic-inl.inc"
 #endif
+
+#elif defined(__EMSCRIPTEN__)
+#define ABSL_STACKTRACE_INL_HEADER \
+  "absl/debugging/internal/stacktrace_emscripten-inl.inc"
 
 #elif defined(__linux__) && !defined(__ANDROID__)
 
@@ -77,7 +72,6 @@
   "absl/debugging/internal/stacktrace_generic-inl.inc"
 #endif
 #endif
-
 #endif
 
 

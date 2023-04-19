@@ -127,6 +127,7 @@ void SpinLock::SlowLock() {
       
       
       
+      
       if (lockword_.compare_exchange_strong(
               lock_value, lock_value | kSpinLockSleeper,
               std::memory_order_relaxed, std::memory_order_relaxed)) {
@@ -140,6 +141,14 @@ void SpinLock::SlowLock() {
         
         lock_value = TryLockInternal(lock_value, wait_cycles);
         continue;   
+      } else if ((lock_value & kWaitTimeMask) == 0) {
+        
+        
+        
+        
+        
+        
+        continue;
       }
     }
 

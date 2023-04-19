@@ -23,8 +23,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "absl/base/internal/bits.h"
 #include "absl/meta/type_traits.h"
+#include "absl/numeric/bits.h"
 #include "absl/random/internal/fastmath.h"
 #include "absl/random/internal/traits.h"
 
@@ -120,17 +120,15 @@ inline RealType GenerateRealFromBits(uint64_t bits, int exp_bias = 0) {
 
   
   
-  int clz = base_internal::CountLeadingZeros64(bits);
+  int clz = countl_zero(bits);
   bits <<= (IncludeZero ? clz : (clz & 63));  
   exp -= clz;                                 
   bits >>= (63 - kExp);
 
   
   
-  uint_type val =
-      (std::is_same<SignedTag, GeneratePositiveTag>::value ? 0u : sign) |
-      (static_cast<uint_type>(exp) << kExp) |
-      (static_cast<uint_type>(bits) & kMask);
+  uint_type val = sign | (static_cast<uint_type>(exp) << kExp) |
+                  (static_cast<uint_type>(bits) & kMask);
 
   
   real_type result;

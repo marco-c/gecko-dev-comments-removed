@@ -24,9 +24,6 @@
 
 
 
-
-
-
 #ifndef ABSL_BASE_INTERNAL_SPINLOCK_H_
 #define ABSL_BASE_INTERNAL_SPINLOCK_H_
 
@@ -136,6 +133,18 @@ class ABSL_LOCKABLE SpinLock {
   friend struct SpinLockTest;
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   

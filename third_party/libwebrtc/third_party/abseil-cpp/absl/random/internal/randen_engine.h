@@ -23,6 +23,7 @@
 #include <limits>
 #include <type_traits>
 
+#include "absl/base/internal/endian.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/internal/iostream_state_saver.h"
 #include "absl/random/internal/randen.h"
@@ -76,7 +77,7 @@ class alignas(16) randen_engine {
       impl_.Generate(state_);
     }
 
-    return state_[next_++];
+    return little_endian::ToHost(state_[next_++]);
   }
 
   template <class SeedSequence>
@@ -181,7 +182,8 @@ class alignas(16) randen_engine {
       
       
       
-      os << static_cast<numeric_type>(elem) << os.fill();
+      os << static_cast<numeric_type>(little_endian::FromHost(elem))
+         << os.fill();
     }
     os << engine.next_;
     return os;
@@ -200,7 +202,7 @@ class alignas(16) randen_engine {
       
       numeric_type value;
       is >> value;
-      elem = static_cast<result_type>(value);
+      elem = little_endian::ToHost(static_cast<result_type>(value));
     }
     is >> next;
     if (is.fail()) {

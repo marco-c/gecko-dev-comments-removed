@@ -21,6 +21,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <sched.h>
 #include <unistd.h>
 #endif
 
@@ -135,7 +136,8 @@ static bool SetupAlternateStackOnce() {
 #else
   const size_t page_mask = sysconf(_SC_PAGESIZE) - 1;
 #endif
-  size_t stack_size = (std::max(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
+  size_t stack_size =
+      (std::max<size_t>(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
 #if defined(ABSL_HAVE_ADDRESS_SANITIZER) || \
     defined(ABSL_HAVE_MEMORY_SANITIZER) || defined(ABSL_HAVE_THREAD_SANITIZER)
   
@@ -219,17 +221,24 @@ static void WriteToStderr(const char* data) {
   absl::raw_logging_internal::SafeWriteToStderr(data, strlen(data));
 }
 
-static void WriteSignalMessage(int signo, void (*writerfn)(const char*)) {
-  char buf[64];
+static void WriteSignalMessage(int signo, int cpu,
+                               void (*writerfn)(const char*)) {
+  char buf[96];
+  char on_cpu[32] = {0};
+  if (cpu != -1) {
+    snprintf(on_cpu, sizeof(on_cpu), " on cpu %d", cpu);
+  }
   const char* const signal_string =
       debugging_internal::FailureSignalToString(signo);
   if (signal_string != nullptr && signal_string[0] != '\0') {
-    snprintf(buf, sizeof(buf), "*** %s received at time=%ld ***\n",
+    snprintf(buf, sizeof(buf), "*** %s received at time=%ld%s ***\n",
              signal_string,
-             static_cast<long>(time(nullptr)));  
+             static_cast<long>(time(nullptr)),   
+             on_cpu);
   } else {
-    snprintf(buf, sizeof(buf), "*** Signal %d received at time=%ld ***\n",
-             signo, static_cast<long>(time(nullptr)));  
+    snprintf(buf, sizeof(buf), "*** Signal %d received at time=%ld%s ***\n",
+             signo, static_cast<long>(time(nullptr)),  
+             on_cpu);
   }
   writerfn(buf);
 }
@@ -269,10 +278,10 @@ ABSL_ATTRIBUTE_NOINLINE static void WriteStackTrace(
 
 
 
-static void WriteFailureInfo(int signo, void* ucontext,
+static void WriteFailureInfo(int signo, void* ucontext, int cpu,
                              void (*writerfn)(const char*)) {
   WriterFnStruct writerfn_struct{writerfn};
-  WriteSignalMessage(signo, writerfn);
+  WriteSignalMessage(signo, cpu, writerfn);
   WriteStackTrace(ucontext, fsh_options.symbolize_stacktrace, WriterFnWrapper,
                   &writerfn_struct);
 }
@@ -334,6 +343,14 @@ static void AbslFailureSignalHandler(int signo, siginfo_t*, void* ucontext) {
     }
   }
 
+  
+  
+  
+  int my_cpu = -1;
+#ifdef ABSL_HAVE_SCHED_GETCPU
+  my_cpu = sched_getcpu();
+#endif
+
 #ifdef ABSL_HAVE_ALARM
   
   if (fsh_options.alarm_on_failure_secs > 0) {
@@ -344,12 +361,13 @@ static void AbslFailureSignalHandler(int signo, siginfo_t*, void* ucontext) {
 #endif
 
   
-  WriteFailureInfo(signo, ucontext, WriteToStderr);
+  WriteFailureInfo(signo, ucontext, my_cpu, WriteToStderr);
 
   
   
   if (fsh_options.writerfn != nullptr) {
-    WriteFailureInfo(signo, ucontext, fsh_options.writerfn);
+    WriteFailureInfo(signo, ucontext, my_cpu, fsh_options.writerfn);
+    fsh_options.writerfn(nullptr);
   }
 
   if (fsh_options.call_previous_handler) {

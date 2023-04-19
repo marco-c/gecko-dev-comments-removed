@@ -19,6 +19,17 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/cord.h"
 
+#ifndef SWIG
+
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+
+
+class ABSL_MUST_USE_RESULT Status;
+ABSL_NAMESPACE_END
+}  
+#endif  
+
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
@@ -36,6 +47,13 @@ using Payloads = absl::InlinedVector<Payload, 1>;
 
 
 struct StatusRep {
+  StatusRep(absl::StatusCode code_arg, absl::string_view message_arg,
+            std::unique_ptr<status_internal::Payloads> payloads_arg)
+      : ref(int32_t{1}),
+        code(code_arg),
+        message(message_arg),
+        payloads(std::move(payloads_arg)) {}
+
   std::atomic<int32_t> ref;
   absl::StatusCode code;
   std::string message;

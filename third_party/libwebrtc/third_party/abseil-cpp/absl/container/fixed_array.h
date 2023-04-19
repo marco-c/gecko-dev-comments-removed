@@ -73,11 +73,6 @@ constexpr static auto kFixedArrayUseDefault = static_cast<size_t>(-1);
 
 
 
-
-
-
-
-
 template <typename T, size_t N = kFixedArrayUseDefault,
           typename A = std::allocator<T>>
 class FixedArray {

@@ -146,8 +146,22 @@ static const char *TrySymbolize(void *pc) {
   return TrySymbolizeWithLimit(pc, sizeof(try_symbolize_buffer));
 }
 
-#if defined(ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE) || \
-    defined(ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE)
+#if defined(ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE) ||    \
+    defined(ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE) || \
+    defined(ABSL_INTERNAL_HAVE_EMSCRIPTEN_SYMBOLIZE)
+
+
+void ABSL_ATTRIBUTE_NOINLINE TestWithReturnAddress() {
+#if defined(ABSL_HAVE_ATTRIBUTE_NOINLINE)
+  void *return_address = __builtin_return_address(0);
+  const char *symbol = TrySymbolize(return_address);
+  ABSL_RAW_CHECK(symbol != nullptr, "TestWithReturnAddress failed");
+  ABSL_RAW_CHECK(strcmp(symbol, "main") == 0, "TestWithReturnAddress failed");
+  std::cout << "TestWithReturnAddress passed" << std::endl;
+#endif
+}
+
+#ifndef ABSL_INTERNAL_HAVE_EMSCRIPTEN_SYMBOLIZE
 
 TEST(Symbolize, Cached) {
   
@@ -418,6 +432,7 @@ TEST(Symbolize, ForEachSection) {
   close(fd);
 }
 #endif  
+#endif  
 
 
 extern "C" {
@@ -466,16 +481,45 @@ void ABSL_ATTRIBUTE_NOINLINE TestWithPCInsideInlineFunction() {
 }
 }
 
+#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target)
 
-void ABSL_ATTRIBUTE_NOINLINE TestWithReturnAddress() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__attribute__((target("thumb"))) int ArmThumbOverlapThumb(int x) {
+  return x * x * x;
+}
+
+__attribute__((target("arm"))) int ArmThumbOverlapArm(int x) {
+  return x * x * x;
+}
+
+void ABSL_ATTRIBUTE_NOINLINE TestArmThumbOverlap() {
 #if defined(ABSL_HAVE_ATTRIBUTE_NOINLINE)
-  void *return_address = __builtin_return_address(0);
-  const char *symbol = TrySymbolize(return_address);
-  ABSL_RAW_CHECK(symbol != nullptr, "TestWithReturnAddress failed");
-  ABSL_RAW_CHECK(strcmp(symbol, "main") == 0, "TestWithReturnAddress failed");
-  std::cout << "TestWithReturnAddress passed" << std::endl;
+  const char *symbol = TrySymbolize((void *)&ArmThumbOverlapArm);
+  ABSL_RAW_CHECK(symbol != nullptr, "TestArmThumbOverlap failed");
+  ABSL_RAW_CHECK(strcmp("ArmThumbOverlapArm()", symbol) == 0,
+                 "TestArmThumbOverlap failed");
+  std::cout << "TestArmThumbOverlap passed" << std::endl;
 #endif
 }
+
+#endif  
 
 #elif defined(_WIN32)
 #if !defined(ABSL_CONSUME_DLL)
@@ -519,7 +563,6 @@ TEST(Symbolize, SymbolizeWithDemangling) {
 
 #endif  
 #else  
-
 TEST(Symbolize, Unimplemented) {
   char buf[64];
   EXPECT_FALSE(absl::Symbolize((void *)(&nonstatic_func), buf, sizeof(buf)));
@@ -551,6 +594,9 @@ int main(int argc, char **argv) {
   TestWithPCInsideInlineFunction();
   TestWithPCInsideNonInlineFunction();
   TestWithReturnAddress();
+#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target)
+  TestArmThumbOverlap();
+#endif
 #endif
 
   return RUN_ALL_TESTS();

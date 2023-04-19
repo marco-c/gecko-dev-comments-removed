@@ -17,6 +17,7 @@
 #endif
 
 #include <chrono>  
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <ctime>
@@ -1320,7 +1321,7 @@ TEST(Duration, SmallConversions) {
 
   EXPECT_EQ(absl::ZeroDuration(), absl::Seconds(0));
   
-  EXPECT_EQ(absl::ZeroDuration(), absl::Seconds(0.124999999e-9));
+  EXPECT_EQ(absl::ZeroDuration(), absl::Seconds(std::nextafter(0.125e-9, 0)));
   EXPECT_EQ(absl::Nanoseconds(1) / 4, absl::Seconds(0.125e-9));
   EXPECT_EQ(absl::Nanoseconds(1) / 4, absl::Seconds(0.250e-9));
   EXPECT_EQ(absl::Nanoseconds(1) / 2, absl::Seconds(0.375e-9));
@@ -1330,7 +1331,7 @@ TEST(Duration, SmallConversions) {
   EXPECT_EQ(absl::Nanoseconds(1), absl::Seconds(0.875e-9));
   EXPECT_EQ(absl::Nanoseconds(1), absl::Seconds(1.000e-9));
 
-  EXPECT_EQ(absl::ZeroDuration(), absl::Seconds(-0.124999999e-9));
+  EXPECT_EQ(absl::ZeroDuration(), absl::Seconds(std::nextafter(-0.125e-9, 0)));
   EXPECT_EQ(-absl::Nanoseconds(1) / 4, absl::Seconds(-0.125e-9));
   EXPECT_EQ(-absl::Nanoseconds(1) / 4, absl::Seconds(-0.250e-9));
   EXPECT_EQ(-absl::Nanoseconds(1) / 2, absl::Seconds(-0.375e-9));
@@ -1369,10 +1370,13 @@ TEST(Duration, SmallConversions) {
   EXPECT_THAT(ToTimeval(absl::Nanoseconds(2000)), TimevalMatcher(tv));
 }
 
-void VerifySameAsMul(double time_as_seconds, int* const misses) {
+void VerifyApproxSameAsMul(double time_as_seconds, int* const misses) {
   auto direct_seconds = absl::Seconds(time_as_seconds);
   auto mul_by_one_second = time_as_seconds * absl::Seconds(1);
-  if (direct_seconds != mul_by_one_second) {
+  
+  
+  if (absl::AbsDuration(direct_seconds - mul_by_one_second) >
+      absl::time_internal::MakeDuration(0, 1u)) {
     if (*misses > 10) return;
     ASSERT_LE(++(*misses), 10) << "Too many errors, not reporting more.";
     EXPECT_EQ(direct_seconds, mul_by_one_second)
@@ -1385,7 +1389,16 @@ void VerifySameAsMul(double time_as_seconds, int* const misses) {
 
 
 
+
 TEST(Duration, ToDoubleSecondsCheckEdgeCases) {
+#if (defined(__i386__) || defined(_M_IX86)) && FLT_EVAL_METHOD != 0
+  
+  
+  
+  GTEST_SKIP()
+      << "Skipping the test because we detected x87 floating-point semantics";
+#endif
+
   constexpr uint32_t kTicksPerSecond = absl::time_internal::kTicksPerSecond;
   constexpr auto duration_tick = absl::time_internal::MakeDuration(0, 1u);
   int misses = 0;
@@ -1423,8 +1436,8 @@ TEST(Duration, ToDoubleSecondsCheckEdgeCases) {
         }
         
         
-        VerifySameAsMul(low_edge, &misses);
-        VerifySameAsMul(high_edge, &misses);
+        VerifyApproxSameAsMul(low_edge, &misses);
+        VerifyApproxSameAsMul(high_edge, &misses);
       }
     }
   }
@@ -1444,8 +1457,8 @@ TEST(Duration, ToDoubleSecondsCheckRandom) {
   int misses = 0;
   for (int i = 0; i < 1000000; ++i) {
     double d = std::exp(uniform(gen));
-    VerifySameAsMul(d, &misses);
-    VerifySameAsMul(-d, &misses);
+    VerifyApproxSameAsMul(d, &misses);
+    VerifyApproxSameAsMul(-d, &misses);
   }
 }
 

@@ -43,7 +43,7 @@ namespace {
 
 
 #if defined(__i386__) || defined(__x86_64__) || defined(__ppc__) || \
-    defined(__aarch64__)
+    defined(__aarch64__) || defined(__riscv)
 constexpr bool kStackGrowsDown = true;
 #else
 #error Need to define kStackGrowsDown
