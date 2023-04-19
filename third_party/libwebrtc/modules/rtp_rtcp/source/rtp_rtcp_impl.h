@@ -352,7 +352,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   
   mutable Mutex mutex_rtt_;
-  int64_t rtt_ms_;
+  int64_t rtt_ms_ RTC_GUARDED_BY(mutex_rtt_);
 };
 
 }  
