@@ -35,16 +35,6 @@ function init() {
 
   document.getElementById("bookmarks-view").place =
     "place:type=" + Ci.nsINavHistoryQueryOptions.RESULTS_AS_ROOTS_QUERY;
-
-  
-  
-  window.addEventListener(
-    "pageshow",
-    e => {
-      window.windowGlobalChild.getActor("LightweightTheme").handleEvent(e);
-    },
-    { once: true }
-  );
 }
 
 function searchBookmarks(aSearchString) {

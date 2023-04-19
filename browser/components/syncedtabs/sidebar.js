@@ -29,16 +29,6 @@ let onLoaded = () => {
   document
     .getElementById("template-container")
     .appendChild(syncedTabsDeckComponent.container);
-
-  
-  
-  window.addEventListener(
-    "pageshow",
-    e => {
-      window.windowGlobalChild.getActor("LightweightTheme").handleEvent(e);
-    },
-    { once: true }
-  );
 };
 
 let onUnloaded = () => {

@@ -62,16 +62,6 @@ function HistorySidebarInit() {
   }
 
   searchHistory("");
-
-  
-  
-  window.addEventListener(
-    "pageshow",
-    e => {
-      window.windowGlobalChild.getActor("LightweightTheme").handleEvent(e);
-    },
-    { once: true }
-  );
 }
 
 function GroupBy(groupingType) {

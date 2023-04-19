@@ -9,9 +9,6 @@ var EXPORTED_SYMBOLS = ["LightweightThemeChild"];
 
 
 
-
-
-
 class LightweightThemeChild extends JSWindowActorChild {
   constructor() {
     super();
