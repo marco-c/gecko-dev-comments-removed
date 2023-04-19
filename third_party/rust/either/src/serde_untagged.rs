@@ -33,13 +33,9 @@
 
 
 
-
-
-
-
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Serialize, Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 enum Either<L, R> {
     Left(L),
@@ -53,8 +49,8 @@ where
     R: Serialize,
 {
     let untagged = match this {
-        &super::Either::Left(ref left) => Either::Left(left),
-        &super::Either::Right(ref right) => Either::Right(right),
+        super::Either::Left(left) => Either::Left(left),
+        super::Either::Right(right) => Either::Right(right),
     };
     untagged.serialize(serializer)
 }

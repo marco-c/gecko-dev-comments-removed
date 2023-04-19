@@ -13,13 +13,10 @@
 
 
 #![doc(html_root_url = "https://docs.rs/either/1/")]
-#![cfg_attr(all(not(test), not(feature = "use_std")), no_std)]
-#[cfg(all(not(test), not(feature = "use_std")))]
-extern crate core as std;
+#![no_std]
 
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde;
+#[cfg(any(test, feature = "use_std"))]
+extern crate std;
 
 #[cfg(feature = "serde")]
 pub mod serde_untagged;
@@ -27,27 +24,27 @@ pub mod serde_untagged;
 #[cfg(feature = "serde")]
 pub mod serde_untagged_optional;
 
-use std::convert::{AsMut, AsRef};
-use std::fmt;
-use std::iter;
-use std::ops::Deref;
-use std::ops::DerefMut;
+use core::convert::{AsMut, AsRef};
+use core::fmt;
+use core::iter;
+use core::ops::Deref;
+use core::ops::DerefMut;
 
 #[cfg(any(test, feature = "use_std"))]
 use std::error::Error;
 #[cfg(any(test, feature = "use_std"))]
-use std::io::{self, BufRead, Read, Write};
+use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
 
-pub use Either::{Left, Right};
-
-
+pub use crate::Either::{Left, Right};
 
 
 
 
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum Either<L, R> {
     
     Left(L),
@@ -55,15 +52,39 @@ pub enum Either<L, R> {
     Right(R),
 }
 
-macro_rules! either {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! for_both {
     ($value:expr, $pattern:pat => $result:expr) => {
         match $value {
-            Either::Left($pattern) => $result,
-            Either::Right($pattern) => $result,
+            $crate::Either::Left($pattern) => $result,
+            $crate::Either::Right($pattern) => $result,
         }
     };
 }
-
 
 
 
@@ -92,7 +113,7 @@ macro_rules! try_left {
     ($expr:expr) => {
         match $expr {
             $crate::Left(val) => val,
-            $crate::Right(err) => return $crate::Right(::std::convert::From::from(err)),
+            $crate::Right(err) => return $crate::Right(::core::convert::From::from(err)),
         }
     };
 }
@@ -102,10 +123,27 @@ macro_rules! try_left {
 macro_rules! try_right {
     ($expr:expr) => {
         match $expr {
-            $crate::Left(err) => return $crate::Left(::std::convert::From::from(err)),
+            $crate::Left(err) => return $crate::Left(::core::convert::From::from(err)),
             $crate::Right(val) => val,
         }
     };
+}
+
+impl<L: Clone, R: Clone> Clone for Either<L, R> {
+    fn clone(&self) -> Self {
+        match self {
+            Left(inner) => Left(inner.clone()),
+            Right(inner) => Right(inner.clone()),
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        match (self, source) {
+            (Left(dest), Left(source)) => dest.clone_from(source),
+            (Right(dest), Right(source)) => dest.clone_from(source),
+            (dest, source) => *dest = source.clone(),
+        }
+    }
 }
 
 impl<L, R> Either<L, R> {
@@ -388,6 +426,7 @@ impl<L, R> Either<L, R> {
     
     
     
+    #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> Either<L::IntoIter, R::IntoIter>
     where
         L: IntoIterator,
@@ -558,7 +597,7 @@ impl<L, R> Either<L, R> {
     
     pub fn unwrap_left(self) -> L
     where
-        R: std::fmt::Debug,
+        R: core::fmt::Debug,
     {
         match self {
             Either::Left(l) => l,
@@ -589,7 +628,7 @@ impl<L, R> Either<L, R> {
     
     pub fn unwrap_right(self) -> R
     where
-        L: std::fmt::Debug,
+        L: core::fmt::Debug,
     {
         match self {
             Either::Right(r) => r,
@@ -618,7 +657,7 @@ impl<L, R> Either<L, R> {
     
     pub fn expect_left(self, msg: &str) -> L
     where
-        R: std::fmt::Debug,
+        R: core::fmt::Debug,
     {
         match self {
             Either::Left(l) => l,
@@ -647,11 +686,101 @@ impl<L, R> Either<L, R> {
     
     pub fn expect_right(self, msg: &str) -> R
     where
-        L: std::fmt::Debug,
+        L: core::fmt::Debug,
     {
         match self {
             Either::Right(r) => r,
             Either::Left(l) => panic!("{}: {:?}", msg, l),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn either_into<T>(self) -> T
+    where
+        L: Into<T>,
+        R: Into<T>,
+    {
+        match self {
+            Either::Left(l) => l.into(),
+            Either::Right(r) => r.into(),
+        }
+    }
+}
+
+impl<L, R> Either<Option<L>, Option<R>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn factor_none(self) -> Option<Either<L, R>> {
+        match self {
+            Left(l) => l.map(Either::Left),
+            Right(r) => r.map(Either::Right),
+        }
+    }
+}
+
+impl<L, R, E> Either<Result<L, E>, Result<R, E>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn factor_err(self) -> Result<Either<L, R>, E> {
+        match self {
+            Left(l) => l.map(Either::Left),
+            Right(r) => r.map(Either::Right),
+        }
+    }
+}
+
+impl<T, L, R> Either<Result<T, L>, Result<T, R>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn factor_ok(self) -> Result<T, Either<L, R>> {
+        match self {
+            Left(l) => l.map_err(Either::Left),
+            Right(r) => r.map_err(Either::Right),
         }
     }
 }
@@ -711,7 +840,7 @@ impl<T> Either<T, T> {
     
     
     pub fn into_inner(self) -> T {
-        either!(self, inner => inner)
+        for_both!(self, inner => inner)
     }
 
     
@@ -747,6 +876,7 @@ impl<L, R> From<Result<R, L>> for Either<L, R> {
 }
 
 
+#[allow(clippy::from_over_into)] 
 impl<L, R> Into<Result<R, L>> for Either<L, R> {
     fn into(self) -> Result<R, L> {
         match self {
@@ -765,7 +895,7 @@ where
     where
         T: IntoIterator<Item = A>,
     {
-        either!(*self, ref mut inner => inner.extend(iter))
+        for_both!(*self, ref mut inner => inner.extend(iter))
     }
 }
 
@@ -778,44 +908,87 @@ where
     type Item = L::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
-        either!(*self, ref mut inner => inner.next())
+        for_both!(*self, ref mut inner => inner.next())
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        either!(*self, ref inner => inner.size_hint())
+        for_both!(*self, ref inner => inner.size_hint())
     }
 
     fn fold<Acc, G>(self, init: Acc, f: G) -> Acc
     where
         G: FnMut(Acc, Self::Item) -> Acc,
     {
-        either!(self, inner => inner.fold(init, f))
+        for_both!(self, inner => inner.fold(init, f))
+    }
+
+    fn for_each<F>(self, f: F)
+    where
+        F: FnMut(Self::Item),
+    {
+        for_both!(self, inner => inner.for_each(f))
     }
 
     fn count(self) -> usize {
-        either!(self, inner => inner.count())
+        for_both!(self, inner => inner.count())
     }
 
     fn last(self) -> Option<Self::Item> {
-        either!(self, inner => inner.last())
+        for_both!(self, inner => inner.last())
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        either!(*self, ref mut inner => inner.nth(n))
+        for_both!(*self, ref mut inner => inner.nth(n))
     }
 
     fn collect<B>(self) -> B
     where
         B: iter::FromIterator<Self::Item>,
     {
-        either!(self, inner => inner.collect())
+        for_both!(self, inner => inner.collect())
+    }
+
+    fn partition<B, F>(self, f: F) -> (B, B)
+    where
+        B: Default + Extend<Self::Item>,
+        F: FnMut(&Self::Item) -> bool,
+    {
+        for_both!(self, inner => inner.partition(f))
     }
 
     fn all<F>(&mut self, f: F) -> bool
     where
         F: FnMut(Self::Item) -> bool,
     {
-        either!(*self, ref mut inner => inner.all(f))
+        for_both!(*self, ref mut inner => inner.all(f))
+    }
+
+    fn any<F>(&mut self, f: F) -> bool
+    where
+        F: FnMut(Self::Item) -> bool,
+    {
+        for_both!(*self, ref mut inner => inner.any(f))
+    }
+
+    fn find<P>(&mut self, predicate: P) -> Option<Self::Item>
+    where
+        P: FnMut(&Self::Item) -> bool,
+    {
+        for_both!(*self, ref mut inner => inner.find(predicate))
+    }
+
+    fn find_map<B, F>(&mut self, f: F) -> Option<B>
+    where
+        F: FnMut(Self::Item) -> Option<B>,
+    {
+        for_both!(*self, ref mut inner => inner.find_map(f))
+    }
+
+    fn position<P>(&mut self, predicate: P) -> Option<usize>
+    where
+        P: FnMut(Self::Item) -> bool,
+    {
+        for_both!(*self, ref mut inner => inner.position(predicate))
     }
 }
 
@@ -825,7 +998,26 @@ where
     R: DoubleEndedIterator<Item = L::Item>,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        either!(*self, ref mut inner => inner.next_back())
+        for_both!(*self, ref mut inner => inner.next_back())
+    }
+
+    
+    
+    
+    
+
+    fn rfold<Acc, G>(self, init: Acc, f: G) -> Acc
+    where
+        G: FnMut(Acc, Self::Item) -> Acc,
+    {
+        for_both!(self, inner => inner.rfold(init, f))
+    }
+
+    fn rfind<P>(&mut self, predicate: P) -> Option<Self::Item>
+    where
+        P: FnMut(&Self::Item) -> bool,
+    {
+        for_both!(*self, ref mut inner => inner.rfind(predicate))
     }
 }
 
@@ -833,6 +1025,16 @@ impl<L, R> ExactSizeIterator for Either<L, R>
 where
     L: ExactSizeIterator,
     R: ExactSizeIterator<Item = L::Item>,
+{
+    fn len(&self) -> usize {
+        for_both!(*self, ref inner => inner.len())
+    }
+}
+
+impl<L, R> iter::FusedIterator for Either<L, R>
+where
+    L: iter::FusedIterator,
+    R: iter::FusedIterator<Item = L::Item>,
 {
 }
 
@@ -846,11 +1048,25 @@ where
     R: Read,
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        either!(*self, ref mut inner => inner.read(buf))
+        for_both!(*self, ref mut inner => inner.read(buf))
     }
 
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
-        either!(*self, ref mut inner => inner.read_to_end(buf))
+    fn read_to_end(&mut self, buf: &mut std::vec::Vec<u8>) -> io::Result<usize> {
+        for_both!(*self, ref mut inner => inner.read_to_end(buf))
+    }
+}
+
+#[cfg(any(test, feature = "use_std"))]
+
+
+
+impl<L, R> Seek for Either<L, R>
+where
+    L: Seek,
+    R: Seek,
+{
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        for_both!(*self, ref mut inner => inner.seek(pos))
     }
 }
 
@@ -862,11 +1078,11 @@ where
     R: BufRead,
 {
     fn fill_buf(&mut self) -> io::Result<&[u8]> {
-        either!(*self, ref mut inner => inner.fill_buf())
+        for_both!(*self, ref mut inner => inner.fill_buf())
     }
 
     fn consume(&mut self, amt: usize) {
-        either!(*self, ref mut inner => inner.consume(amt))
+        for_both!(*self, ref mut inner => inner.consume(amt))
     }
 }
 
@@ -880,11 +1096,11 @@ where
     R: Write,
 {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        either!(*self, ref mut inner => inner.write(buf))
+        for_both!(*self, ref mut inner => inner.write(buf))
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        either!(*self, ref mut inner => inner.flush())
+        for_both!(*self, ref mut inner => inner.flush())
     }
 }
 
@@ -894,7 +1110,7 @@ where
     R: AsRef<Target>,
 {
     fn as_ref(&self) -> &Target {
-        either!(*self, ref inner => inner.as_ref())
+        for_both!(*self, ref inner => inner.as_ref())
     }
 }
 
@@ -905,7 +1121,7 @@ macro_rules! impl_specific_ref_and_mut {
             where L: AsRef<$t>, R: AsRef<$t>
         {
             fn as_ref(&self) -> &$t {
-                either!(*self, ref inner => inner.as_ref())
+                for_both!(*self, ref inner => inner.as_ref())
             }
         }
 
@@ -914,7 +1130,7 @@ macro_rules! impl_specific_ref_and_mut {
             where L: AsMut<$t>, R: AsMut<$t>
         {
             fn as_mut(&mut self) -> &mut $t {
-                either!(*self, ref mut inner => inner.as_mut())
+                for_both!(*self, ref mut inner => inner.as_mut())
             }
         }
     };
@@ -943,7 +1159,7 @@ where
     R: AsRef<[Target]>,
 {
     fn as_ref(&self) -> &[Target] {
-        either!(*self, ref inner => inner.as_ref())
+        for_both!(*self, ref inner => inner.as_ref())
     }
 }
 
@@ -953,7 +1169,7 @@ where
     R: AsMut<Target>,
 {
     fn as_mut(&mut self) -> &mut Target {
-        either!(*self, ref mut inner => inner.as_mut())
+        for_both!(*self, ref mut inner => inner.as_mut())
     }
 }
 
@@ -963,7 +1179,7 @@ where
     R: AsMut<[Target]>,
 {
     fn as_mut(&mut self) -> &mut [Target] {
-        either!(*self, ref mut inner => inner.as_mut())
+        for_both!(*self, ref mut inner => inner.as_mut())
     }
 }
 
@@ -975,7 +1191,7 @@ where
     type Target = L::Target;
 
     fn deref(&self) -> &Self::Target {
-        either!(*self, ref inner => &*inner)
+        for_both!(*self, ref inner => &**inner)
     }
 }
 
@@ -985,7 +1201,7 @@ where
     R: DerefMut<Target = L::Target>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        either!(*self, ref mut inner => &mut *inner)
+        for_both!(*self, ref mut inner => &mut *inner)
     }
 }
 
@@ -996,15 +1212,18 @@ where
     L: Error,
     R: Error,
 {
-    #[allow(deprecated)]
-    fn description(&self) -> &str {
-        either!(*self, ref inner => inner.description())
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        for_both!(*self, ref inner => inner.source())
     }
 
     #[allow(deprecated)]
-    #[allow(unknown_lints, bare_trait_objects)]
-    fn cause(&self) -> Option<&Error> {
-        either!(*self, ref inner => inner.cause())
+    fn description(&self) -> &str {
+        for_both!(*self, ref inner => inner.description())
+    }
+
+    #[allow(deprecated)]
+    fn cause(&self) -> Option<&dyn Error> {
+        for_both!(*self, ref inner => inner.cause())
     }
 }
 
@@ -1013,8 +1232,8 @@ where
     L: fmt::Display,
     R: fmt::Display,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        either!(*self, ref inner => inner.fmt(f))
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for_both!(*self, ref inner => inner.fmt(f))
     }
 }
 
@@ -1033,6 +1252,8 @@ fn basic() {
 
 #[test]
 fn macros() {
+    use std::string::String;
+
     fn a() -> Either<u32, u32> {
         let x: u32 = try_left!(Right(1337u32));
         Left(x * 2)
@@ -1047,6 +1268,8 @@ fn macros() {
 
 #[test]
 fn deref() {
+    use std::string::String;
+
     fn is_str(_: &str) {}
     let value: Either<String, &str> = Left(String::from("test"));
     is_str(&*value);
@@ -1062,6 +1285,37 @@ fn iter() {
 
     assert_eq!(iter.next(), Some(0));
     assert_eq!(iter.count(), 9);
+}
+
+#[test]
+fn seek() {
+    use std::io;
+
+    let use_empty = false;
+    let mut mockdata = [0x00; 256];
+    for i in 0..256 {
+        mockdata[i] = i as u8;
+    }
+
+    let mut reader = if use_empty {
+        
+        Left(io::Cursor::new([]))
+    } else {
+        Right(io::Cursor::new(&mockdata[..]))
+    };
+
+    let mut buf = [0u8; 16];
+    assert_eq!(reader.read(&mut buf).unwrap(), buf.len());
+    assert_eq!(buf, mockdata[..buf.len()]);
+
+    
+    assert_eq!(reader.read(&mut buf).unwrap(), buf.len());
+    assert_ne!(buf, mockdata[..buf.len()]);
+
+    
+    reader.seek(io::SeekFrom::Start(0)).unwrap();
+    assert_eq!(reader.read(&mut buf).unwrap(), buf.len());
+    assert_eq!(buf, mockdata[..buf.len()]);
 }
 
 #[test]
