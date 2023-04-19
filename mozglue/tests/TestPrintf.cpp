@@ -3,12 +3,13 @@
 
 
 
-#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
 
 #include <cfloat>
 #include <cmath>
+#include <inttypes.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #if defined(__clang__)
 #  pragma clang diagnostic push

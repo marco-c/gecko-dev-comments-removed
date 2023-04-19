@@ -5,8 +5,7 @@
 #ifndef nsComplexBreaker_h__
 #define nsComplexBreaker_h__
 
-#include "nsString.h"
-
+#include <stdint.h>
 
 
 

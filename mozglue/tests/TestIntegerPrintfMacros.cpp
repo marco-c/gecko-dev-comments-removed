@@ -5,10 +5,10 @@
 
 
 #include "mozilla/Assertions.h"
-#include "mozilla/IntegerPrintfMacros.h"  
 #include "mozilla/Sprintf.h"
 
 #include <string.h>
+#include <inttypes.h>
 
 
 static char gOutput[32];

@@ -7,7 +7,6 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StackWalk.h"
 #ifdef XP_WIN
