@@ -34,6 +34,16 @@ enum PortPrunePolicy {
                             
 };
 
+enum class VpnPreference {
+  kDefault,      
+  kOnlyUseVpn,   
+  kNeverUseVpn,  
+  kPreferVpn,    
+                 
+  kAvoidVpn,     
+                 
+};
+
 }  
 
 #endif  
