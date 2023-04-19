@@ -4278,21 +4278,13 @@ pref("extensions.formautofill.creditCards.hideui", false);
 
 
 pref("extensions.formautofill.creditCards.heuristics.mode", 2);
-pref("extensions.formautofill.creditCards.heuristics.fathom.types", "cc-number");
-
+pref("extensions.formautofill.creditCards.heuristics.fathom.types", "cc-number,cc-name");
 
 pref("extensions.formautofill.creditCards.heuristics.fathom.confidenceThreshold", "0.5");
+
 pref("extensions.formautofill.creditCards.heuristics.fathom.highConfidenceThreshold", "0.95");
 
 pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0");
-
-
-
-#ifdef NIGHTLY_BUILD
-pref("extensions.formautofill.creditCards.heuristics.nameExpirySection.enabled", true);
-#else
-pref("extensions.formautofill.creditCards.heuristics.nameExpirySection.enabled", false);
-#endif
 
 
 

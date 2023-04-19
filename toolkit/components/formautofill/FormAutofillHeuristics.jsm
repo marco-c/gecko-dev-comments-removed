@@ -1179,7 +1179,9 @@ FormAutofillHeuristics = {
       
       
       
-      fields = fields.filter(r => !lazy.creditCardRulesets.types.includes(r));
+      
+      
+      
     }
 
     if (fields.length) {

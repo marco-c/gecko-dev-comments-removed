@@ -1019,6 +1019,28 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     this.handler.onFormSubmitted();
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   isValidSection() {
     let ccNumberDetail = null;
     let ccNameDetail = null;
@@ -1053,43 +1075,41 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       return true;
     }
 
-    if (ccNumberDetail) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    
+    
+    
+    if (ccNumberDetail?.confidence > 0) {
       if (ccNameDetail || ccExpiryDetail) {
         return true;
       }
-
-      
-      
-      
-      
-      
-      if (
-        ccNumberDetail.confidence >=
-        FormAutofillUtils.ccHeuristicsNumberOnlyThreshold
-      ) {
-        const element = ccNumberDetail.elementWeakRef.get();
-        const root = element.form || element.ownerDocument;
-        const inputs = root.querySelectorAll("input:not([type=hidden])");
-        if (inputs.length == 1 && inputs[0] == element) {
-          return true;
-        }
+    } else if (ccNameDetail?.confidence > 0) {
+      if (ccNumberDetail || ccExpiryDetail) {
+        return true;
       }
-    } else if (
-      ccNameDetail &&
-      ccExpiryDetail &&
-      FormAutofillUtils.ccHeuristicsNameExpirySection
-    ) {
-      return true;
     }
+
+    
+    let highConfidenceThreshold =
+      FormAutofillUtils.ccFathomHighConfidenceThreshold;
+    let highConfidenceField;
+    if (ccNumberDetail?.confidence > highConfidenceThreshold) {
+      highConfidenceField = ccNumberDetail;
+    } else if (ccNameDetail?.confidence > highConfidenceThreshold) {
+      highConfidenceField = ccNameDetail;
+    }
+    if (highConfidenceField) {
+      
+      
+      
+      
+      const element = highConfidenceField.elementWeakRef.get();
+      const root = element.form || element.ownerDocument;
+      const inputs = root.querySelectorAll("input:not([type=hidden])");
+      if (inputs.length == 1 && inputs[0] == element) {
+        return true;
+      }
+    }
+
     return false;
   }
 
