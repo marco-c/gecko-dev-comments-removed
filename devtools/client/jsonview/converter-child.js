@@ -4,12 +4,6 @@
 
 "use strict";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  NetworkHelper: "resource://devtools/shared/webconsole/NetworkHelper.sys.mjs",
-});
-
 const {
   getTheme,
   addThemeObserver,
@@ -121,7 +115,7 @@ Converter.prototype = {
     this.listener.onStartRequest(request);
 
     
-    const win = lazy.NetworkHelper.getWindowForRequest(request);
+    const win = getWindowForRequest(request);
     if (!win || !Components.isSuccessCode(request.status)) {
       return;
     }
@@ -227,6 +221,52 @@ function getAllStrings() {
     }
   }
   return jsonViewStringDict;
+}
+
+
+
+
+
+
+
+
+
+
+
+function getWindowForRequest(request) {
+  try {
+    return getRequestLoadContext(request).associatedWindow;
+  } catch (ex) {
+    
+    
+    
+    
+    return request.loadInfo.loadingDocument?.defaultView;
+  }
+}
+
+
+
+
+
+
+
+function getRequestLoadContext(request) {
+  try {
+    return request.notificationCallbacks.getInterface(Ci.nsILoadContext);
+  } catch (ex) {
+    
+  }
+
+  try {
+    return request.loadGroup.notificationCallbacks.getInterface(
+      Ci.nsILoadContext
+    );
+  } catch (ex) {
+    
+  }
+
+  return null;
 }
 
 
