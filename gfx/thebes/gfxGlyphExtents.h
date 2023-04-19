@@ -57,8 +57,8 @@ class gfxGlyphExtents {
   
   
   
-  uint16_t GetContainedGlyphWidthAppUnits(uint32_t aGlyphID) const {
-    mozilla::AutoReadLock lock(mLock);
+  uint16_t GetContainedGlyphWidthAppUnitsLocked(uint32_t aGlyphID) const
+      MOZ_REQUIRES_SHARED(mLock) {
     return mContainedGlyphWidths.Get(aGlyphID);
   }
 
@@ -76,8 +76,16 @@ class gfxGlyphExtents {
   
   
   
+  bool GetTightGlyphExtentsAppUnitsLocked(gfxFont* aFont,
+                                          DrawTarget* aDrawTarget,
+                                          uint32_t aGlyphID, gfxRect* aExtents)
+      MOZ_REQUIRES_SHARED(mLock);
   bool GetTightGlyphExtentsAppUnits(gfxFont* aFont, DrawTarget* aDrawTarget,
-                                    uint32_t aGlyphID, gfxRect* aExtents);
+                                    uint32_t aGlyphID, gfxRect* aExtents) {
+    mozilla::AutoReadLock lock(mLock);
+    return GetTightGlyphExtentsAppUnitsLocked(aFont, aDrawTarget, aGlyphID,
+                                              aExtents);
+  }
 
   void SetContainedGlyphWidthAppUnits(uint32_t aGlyphID, uint16_t aWidth) {
     mozilla::AutoWriteLock lock(mLock);
@@ -152,6 +160,8 @@ class gfxGlyphExtents {
   GlyphWidths mContainedGlyphWidths MOZ_GUARDED_BY(mLock);
   nsTHashtable<HashEntry> mTightGlyphExtents MOZ_GUARDED_BY(mLock);
   const int32_t mAppUnitsPerDevUnit;
+
+ public:
   mutable mozilla::RWLock mLock;
 
  private:

@@ -1923,6 +1923,18 @@ class gfxFont {
 
   void CreateVerticalMetrics();
 
+  bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
+                     BoundingBoxType aBoundingBoxType,
+                     DrawTarget* aRefDrawTarget, Spacing* aSpacing,
+                     gfxGlyphExtents* aExtents, bool aIsRTL,
+                     bool aNeedsGlyphExtents, RunMetrics& aMetrics,
+                     gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax);
+
+  bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
+                     BoundingBoxType aBoundingBoxType,
+                     DrawTarget* aRefDrawTarget, Spacing* aSpacing, bool aIsRTL,
+                     RunMetrics& aMetrics);
+
   
   
   enum class FontComplexityT { SimpleFont, ComplexFont };
