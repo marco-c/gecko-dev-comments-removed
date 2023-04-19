@@ -606,8 +606,13 @@ void WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
   aRequest->SetReady();
 
+  
+  MOZ_RELEASE_ASSERT(aRequest->isInList());
+
   while (!mLoadingRequests.isEmpty()) {
     ScriptLoadRequest* request = mLoadingRequests.getFirst();
+    
+    
     if (!request->IsReadyToRun()) {
       break;
     }
@@ -711,6 +716,7 @@ void WorkerScriptLoader::CancelMainThread(
         
         
         
+        MOZ_ASSERT(mWorkerRef->Private()->IsServiceWorker());
         loadContext->mCachePromise->MaybeReject(NS_BINDING_ABORTED);
         loadContext->mCachePromise = nullptr;
       }
@@ -1216,6 +1222,15 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
 bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
                                        WorkerPrivate* aWorkerPrivate) {
   aWorkerPrivate->AssertIsOnWorkerThread();
+
+  
+  
+  {
+    MutexAutoLock lock(mScriptLoader.CleanUpLock());
+    if (mScriptLoader.CleanedUp()) {
+      return true;
+    }
+  }
 
   
   MOZ_ASSERT(
