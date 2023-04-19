@@ -20,6 +20,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CanvasUtils.h"
 #include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/ImageBitmap.h"
@@ -1298,10 +1299,54 @@ already_AddRefed<VideoFrame> VideoFrame::Constructor(
 
 
 already_AddRefed<VideoFrame> VideoFrame::Constructor(
-    const GlobalObject& global, HTMLCanvasElement& canvasElement,
-    const VideoFrameInit& init, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-  return nullptr;
+    const GlobalObject& aGlobal, HTMLCanvasElement& aCanvasElement,
+    const VideoFrameInit& aInit, ErrorResult& aRv) {
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  if (!global) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  if (aCanvasElement.Width() == 0) {
+    aRv.ThrowInvalidStateError("The canvas has a width of 0");
+    return nullptr;
+  }
+
+  if (aCanvasElement.Height() == 0) {
+    aRv.ThrowInvalidStateError("The canvas has a height of 0");
+    return nullptr;
+  }
+
+  
+  
+  SurfaceFromElementResult res = nsLayoutUtils::SurfaceFromElement(
+      &aCanvasElement, nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE);
+  if (res.mIsWriteOnly) {
+    
+    aRv.ThrowSecurityError("The canvas is not same-origin");
+    return nullptr;
+  }
+
+  RefPtr<gfx::SourceSurface> surface = res.GetSourceSurface();
+  if (NS_WARN_IF(!surface)) {
+    aRv.ThrowInvalidStateError("The canvas' surface acquisition failed");
+    return nullptr;
+  }
+
+  if (!aInit.mTimestamp.WasPassed()) {
+    aRv.ThrowTypeError("Missing timestamp");
+    return nullptr;
+  }
+
+  RefPtr<layers::SourceSurfaceImage> image =
+      new layers::SourceSurfaceImage(surface.get());
+  auto r = InitializeFrameWithResourceAndSize(global, aInit, image.forget());
+  if (r.isErr()) {
+    aRv.ThrowTypeError(r.unwrapErr());
+    return nullptr;
+  }
+  return r.unwrap();
 }
 
 
