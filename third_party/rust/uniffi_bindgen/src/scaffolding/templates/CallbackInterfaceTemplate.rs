@@ -20,8 +20,9 @@ static {{ foreign_callback_internals }}: uniffi::ForeignCallbackInternals = unif
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn {{ cbi.ffi_init_callback().name() }}(callback: uniffi::ForeignCallback) {
+pub extern "C" fn {{ cbi.ffi_init_callback().name() }}(callback: uniffi::ForeignCallback, _: &mut uniffi::RustCallStatus) {
     {{ foreign_callback_internals }}.set_callback(callback);
+    
 }
 
 

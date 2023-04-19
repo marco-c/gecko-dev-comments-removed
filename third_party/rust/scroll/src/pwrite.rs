@@ -1,7 +1,6 @@
 use core::result;
-use core::ops::{Index, IndexMut, RangeFrom};
 
-use crate::ctx::{TryIntoCtx, MeasureWith};
+use crate::ctx::TryIntoCtx;
 use crate::error;
 
 
@@ -24,14 +23,19 @@ use crate::error;
 
 
 
-pub trait Pwrite<Ctx, E> : Index<usize> + IndexMut<RangeFrom<usize>> + MeasureWith<Ctx>
- where
-       Ctx: Copy,
-       E: From<error::Error>,
-{
-    fn pwrite<N: TryIntoCtx<Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&mut self, n: N, offset: usize) -> result::Result<usize, E> where Ctx: Default {
+pub trait Pwrite<Ctx: Copy, E> {
+    #[inline]
+    fn pwrite<N: TryIntoCtx<Ctx, Self, Error = E>>(
+        &mut self,
+        n: N,
+        offset: usize,
+    ) -> result::Result<usize, E>
+    where
+        Ctx: Default,
+    {
         self.pwrite_with(n, offset, Ctx::default())
     }
+
     
     
     
@@ -39,36 +43,54 @@ pub trait Pwrite<Ctx, E> : Index<usize> + IndexMut<RangeFrom<usize>> + MeasureWi
     
     
     
-    fn pwrite_with<N: TryIntoCtx<Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&mut self, n: N, offset: usize, ctx: Ctx) -> result::Result<usize, E> {
-        let len = self.measure_with(&ctx);
-        if offset >= len {
-            return Err(error::Error::BadOffset(offset).into())
+    fn pwrite_with<N: TryIntoCtx<Ctx, Self, Error = E>>(
+        &mut self,
+        n: N,
+        offset: usize,
+        ctx: Ctx,
+    ) -> result::Result<usize, E>;
+
+    
+    #[inline]
+    fn gwrite<N: TryIntoCtx<Ctx, Self, Error = E>>(
+        &mut self,
+        n: N,
+        offset: &mut usize,
+    ) -> result::Result<usize, E>
+    where
+        Ctx: Default,
+    {
+        let ctx = Ctx::default();
+        self.gwrite_with(n, offset, ctx)
+    }
+
+    
+    #[inline]
+    fn gwrite_with<N: TryIntoCtx<Ctx, Self, Error = E>>(
+        &mut self,
+        n: N,
+        offset: &mut usize,
+        ctx: Ctx,
+    ) -> result::Result<usize, E> {
+        let o = *offset;
+        self.pwrite_with(n, o, ctx).map(|size| {
+            *offset += size;
+            size
+        })
+    }
+}
+
+impl<Ctx: Copy, E: From<error::Error>> Pwrite<Ctx, E> for [u8] {
+    fn pwrite_with<N: TryIntoCtx<Ctx, Self, Error = E>>(
+        &mut self,
+        n: N,
+        offset: usize,
+        ctx: Ctx,
+    ) -> result::Result<usize, E> {
+        if offset >= self.len() {
+            return Err(error::Error::BadOffset(offset).into());
         }
         let dst = &mut self[offset..];
         n.try_into_ctx(dst, ctx)
     }
-    
-    #[inline]
-    fn gwrite<N: TryIntoCtx<Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&mut self, n: N, offset: &mut usize) -> result::Result<usize, E> where
-        Ctx: Default {
-        let ctx = Ctx::default();
-        self.gwrite_with(n, offset, ctx)
-    }
-    
-    #[inline]
-    fn gwrite_with<N: TryIntoCtx<Ctx, <Self as Index<RangeFrom<usize>>>::Output, Error = E>>(&mut self, n: N, offset: &mut usize, ctx: Ctx) -> result::Result<usize, E> {
-        let o = *offset;
-        match self.pwrite_with(n, o, ctx) {
-            Ok(size) => {
-                *offset += size;
-                Ok(size)
-            },
-            err => err
-        }
-    }
 }
-
-impl<Ctx: Copy,
-     E: From<error::Error>,
-     R: ?Sized + Index<usize> + IndexMut<RangeFrom<usize>> + MeasureWith<Ctx>>
-    Pwrite<Ctx, E> for R {}

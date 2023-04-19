@@ -334,6 +334,8 @@ pub const EM_XCORE: u16 = 203;
 
 pub const EM_MCHP_PIC: u16 = 204;
 
+pub const EM_INTELGT: u16 = 205;
+
 
 pub const EM_KM32: u16 = 210;
 
@@ -370,6 +372,9 @@ pub const EM_RISCV: u16 = 243;
 
 
 pub const EM_BPF: u16 = 247;
+
+
+pub const EM_CSKY: u16 = 252;
 
 pub const EM_NUM: u16 = 248;
 

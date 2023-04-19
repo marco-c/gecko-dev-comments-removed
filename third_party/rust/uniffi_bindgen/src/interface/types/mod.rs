@@ -97,11 +97,11 @@ impl Type {
             
             
             
-            Type::Object(nm) => format!("Type{}", nm),
-            Type::Error(nm) => format!("Type{}", nm),
-            Type::Enum(nm) => format!("Type{}", nm),
-            Type::Record(nm) => format!("Type{}", nm),
-            Type::CallbackInterface(nm) => format!("CallbackInterface{}", nm),
+            Type::Object(nm) => format!("Type{nm}"),
+            Type::Error(nm) => format!("Type{nm}"),
+            Type::Enum(nm) => format!("Type{nm}"),
+            Type::Record(nm) => format!("Type{nm}"),
+            Type::CallbackInterface(nm) => format!("CallbackInterface{nm}"),
             Type::Timestamp => "Timestamp".into(),
             Type::Duration => "Duration".into(),
             
@@ -117,7 +117,7 @@ impl Type {
                 v.canonical_name().to_upper_camel_case()
             ),
             
-            Type::External { name, .. } | Type::Custom { name, .. } => format!("Type{}", name),
+            Type::External { name, .. } | Type::Custom { name, .. } => format!("Type{name}"),
         }
     }
 
@@ -217,14 +217,13 @@ impl TypeUniverse {
     pub fn add_type_definition(&mut self, name: &str, type_: Type) -> Result<()> {
         if resolve_builtin_type(name).is_some() {
             bail!(
-                "please don't shadow builtin types ({}, {})",
-                name,
-                type_.canonical_name()
+                "please don't shadow builtin types ({name}, {})",
+                type_.canonical_name(),
             );
         }
         let type_ = self.add_known_type(type_)?;
         match self.type_definitions.entry(name.to_string()) {
-            Entry::Occupied(_) => bail!("Conflicting type definition for \"{}\"", name),
+            Entry::Occupied(_) => bail!("Conflicting type definition for \"{name}\""),
             Entry::Vacant(e) => {
                 e.insert(type_);
                 Ok(())

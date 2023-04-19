@@ -33,8 +33,8 @@ use crate::ctx::{FromCtx, IntoCtx};
 
 
 
-pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
- where
+pub trait Cread<Ctx, I = usize>: Index<I> + Index<RangeFrom<I>>
+where
     Ctx: Copy,
 {
     
@@ -53,7 +53,11 @@ pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
     
     
     #[inline]
-    fn cread_with<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&self, offset: I, ctx: Ctx) -> N {
+    fn cread_with<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(
+        &self,
+        offset: I,
+        ctx: Ctx,
+    ) -> N {
         N::from_ctx(&self[offset..], ctx)
     }
     
@@ -79,7 +83,10 @@ pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
     
     
     #[inline]
-    fn cread<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&self, offset: I) -> N where Ctx: Default {
+    fn cread<N: FromCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&self, offset: I) -> N
+    where
+        Ctx: Default,
+    {
         let ctx = Ctx::default();
         N::from_ctx(&self[offset..], ctx)
     }
@@ -130,7 +137,10 @@ pub trait Cwrite<Ctx: Copy, I = usize>: Index<I> + IndexMut<RangeFrom<I>> {
     
     
     #[inline]
-    fn cwrite<N: IntoCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&mut self, n: N, offset: I) where Ctx: Default {
+    fn cwrite<N: IntoCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&mut self, n: N, offset: I)
+    where
+        Ctx: Default,
+    {
         let ctx = Ctx::default();
         n.into_ctx(self.index_mut(offset..), ctx)
     }
@@ -146,7 +156,12 @@ pub trait Cwrite<Ctx: Copy, I = usize>: Index<I> + IndexMut<RangeFrom<I>> {
     
     
     #[inline]
-    fn cwrite_with<N: IntoCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(&mut self, n: N, offset: I, ctx: Ctx) {
+    fn cwrite_with<N: IntoCtx<Ctx, <Self as Index<RangeFrom<I>>>::Output>>(
+        &mut self,
+        n: N,
+        offset: I,
+        ctx: Ctx,
+    ) {
         n.into_ctx(self.index_mut(offset..), ctx)
     }
 }

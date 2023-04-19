@@ -1,0 +1,13 @@
+
+#[derive(Debug, Copy, Clone)]
+pub struct ParseOptions {
+    
+    pub resolve_rva: bool,
+}
+
+impl ParseOptions {
+    
+    pub fn default() -> Self {
+        ParseOptions { resolve_rva: true }
+    }
+}

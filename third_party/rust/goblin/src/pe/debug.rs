@@ -1,9 +1,10 @@
-use scroll::{Pread, Pwrite, SizeWith};
 use crate::error;
+use scroll::{Pread, Pwrite, SizeWith};
 
+use crate::pe::data_directories;
+use crate::pe::options;
 use crate::pe::section_table;
 use crate::pe::utils;
-use crate::pe::data_directories;
 
 #[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub struct DebugData<'a> {
@@ -12,27 +13,48 @@ pub struct DebugData<'a> {
 }
 
 impl<'a> DebugData<'a> {
-    pub fn parse(bytes: &'a [u8], dd: data_directories::DataDirectory, sections: &[section_table::SectionTable], file_alignment: u32) -> error::Result<Self> {
-        let image_debug_directory = ImageDebugDirectory::parse(bytes, dd, sections, file_alignment)?;
-        let codeview_pdb70_debug_info = CodeviewPDB70DebugInfo::parse(bytes, &image_debug_directory)?;
+    pub fn parse(
+        bytes: &'a [u8],
+        dd: data_directories::DataDirectory,
+        sections: &[section_table::SectionTable],
+        file_alignment: u32,
+    ) -> error::Result<Self> {
+        Self::parse_with_opts(
+            bytes,
+            dd,
+            sections,
+            file_alignment,
+            &options::ParseOptions::default(),
+        )
+    }
 
-        Ok(DebugData{
+    pub fn parse_with_opts(
+        bytes: &'a [u8],
+        dd: data_directories::DataDirectory,
+        sections: &[section_table::SectionTable],
+        file_alignment: u32,
+        opts: &options::ParseOptions,
+    ) -> error::Result<Self> {
+        let image_debug_directory =
+            ImageDebugDirectory::parse_with_opts(bytes, dd, sections, file_alignment, opts)?;
+        let codeview_pdb70_debug_info =
+            CodeviewPDB70DebugInfo::parse_with_opts(bytes, &image_debug_directory, opts)?;
+
+        Ok(DebugData {
             image_debug_directory,
-            codeview_pdb70_debug_info
+            codeview_pdb70_debug_info,
         })
     }
 
     
     pub fn guid(&self) -> Option<[u8; 16]> {
-        self.codeview_pdb70_debug_info
-            .map(|pdb70| pdb70.signature)
+        self.codeview_pdb70_debug_info.map(|pdb70| pdb70.signature)
     }
 }
 
 
 #[repr(C)]
-#[derive(Debug, PartialEq, Copy, Clone, Default)]
-#[derive(Pread, Pwrite, SizeWith)]
+#[derive(Debug, PartialEq, Copy, Clone, Default, Pread, Pwrite, SizeWith)]
 pub struct ImageDebugDirectory {
     pub characteristics: u32,
     pub time_date_stamp: u32,
@@ -54,11 +76,38 @@ pub const IMAGE_DEBUG_TYPE_FIXUP: u32 = 6;
 pub const IMAGE_DEBUG_TYPE_BORLAND: u32 = 9;
 
 impl ImageDebugDirectory {
-    fn parse(bytes: &[u8], dd: data_directories::DataDirectory, sections: &[section_table::SectionTable], file_alignment: u32) -> error::Result<Self> {
+    #[allow(unused)]
+    fn parse(
+        bytes: &[u8],
+        dd: data_directories::DataDirectory,
+        sections: &[section_table::SectionTable],
+        file_alignment: u32,
+    ) -> error::Result<Self> {
+        Self::parse_with_opts(
+            bytes,
+            dd,
+            sections,
+            file_alignment,
+            &options::ParseOptions::default(),
+        )
+    }
+
+    fn parse_with_opts(
+        bytes: &[u8],
+        dd: data_directories::DataDirectory,
+        sections: &[section_table::SectionTable],
+        file_alignment: u32,
+        opts: &options::ParseOptions,
+    ) -> error::Result<Self> {
         let rva = dd.virtual_address as usize;
-        let offset = utils::find_offset(rva, sections, file_alignment).ok_or_else(|| error::Error::Malformed(format!("Cannot map ImageDebugDirectory rva {:#x} into offset", rva)))?;
+        let offset = utils::find_offset(rva, sections, file_alignment, opts).ok_or_else(|| {
+            error::Error::Malformed(format!(
+                "Cannot map ImageDebugDirectory rva {:#x} into offset",
+                rva
+            ))
+        })?;
         let idd: Self = bytes.pread_with(offset, scroll::LE)?;
-        Ok (idd)
+        Ok(idd)
     }
 }
 
@@ -79,6 +128,14 @@ pub struct CodeviewPDB70DebugInfo<'a> {
 
 impl<'a> CodeviewPDB70DebugInfo<'a> {
     pub fn parse(bytes: &'a [u8], idd: &ImageDebugDirectory) -> error::Result<Option<Self>> {
+        Self::parse_with_opts(bytes, idd, &options::ParseOptions::default())
+    }
+
+    pub fn parse_with_opts(
+        bytes: &'a [u8],
+        idd: &ImageDebugDirectory,
+        opts: &options::ParseOptions,
+    ) -> error::Result<Option<Self>> {
         if idd.data_type != IMAGE_DEBUG_TYPE_CODEVIEW {
             
             
@@ -86,13 +143,19 @@ impl<'a> CodeviewPDB70DebugInfo<'a> {
         }
 
         
-        let mut offset: usize = idd.pointer_to_raw_data as usize;
+        let mut offset: usize = match opts.resolve_rva {
+            true => idd.pointer_to_raw_data as usize,
+            false => idd.address_of_raw_data as usize,
+        };
 
         
         let filename_length = idd.size_of_data as isize - 24;
-        if filename_length < 0 || filename_length > 1024 {
+        if filename_length < 0 {
             
-            return Err(error::Error::Malformed(format!("ImageDebugDirectory size of data seems wrong: {:?}", idd.size_of_data)));
+            return Err(error::Error::Malformed(format!(
+                "ImageDebugDirectory size of data seems wrong: {:?}",
+                idd.size_of_data
+            )));
         }
         let filename_length = filename_length as usize;
 
@@ -108,7 +171,7 @@ impl<'a> CodeviewPDB70DebugInfo<'a> {
         let age: u32 = bytes.gread_with(&mut offset, scroll::LE)?;
         let filename = &bytes[offset..offset + filename_length];
 
-        Ok(Some(CodeviewPDB70DebugInfo{
+        Ok(Some(CodeviewPDB70DebugInfo {
             codeview_signature,
             signature,
             age,

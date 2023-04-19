@@ -32,6 +32,14 @@ pub enum UploadResult {
         
         code: i32,
     },
+
+    
+    
+    Done {
+        #[doc(hidden)]
+        
+        unused: i8,
+    },
 }
 
 impl UploadResult {
@@ -47,6 +55,7 @@ impl UploadResult {
             UploadResult::HttpStatus { .. } => Some("status_code_unknown"),
             UploadResult::UnrecoverableFailure { .. } => Some("unrecoverable"),
             UploadResult::RecoverableFailure { .. } => Some("recoverable"),
+            UploadResult::Done { .. } => None,
         }
     }
 
@@ -72,4 +81,18 @@ impl UploadResult {
     pub fn http_status(code: i32) -> Self {
         Self::HttpStatus { code }
     }
+
+    
+    pub fn done() -> Self {
+        Self::Done { unused: 0 }
+    }
+}
+
+
+#[derive(Debug)]
+pub enum UploadTaskAction {
+    
+    Next,
+    
+    End,
 }

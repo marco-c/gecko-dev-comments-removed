@@ -45,11 +45,10 @@
 
 
 use std::{
-    collections::{hash_map::DefaultHasher, HashSet},
+    collections::HashSet,
     convert::TryFrom,
     hash::{Hash, Hasher},
     iter,
-    str::FromStr,
 };
 
 use anyhow::{bail, Result};
@@ -93,6 +92,8 @@ pub struct ComponentInterface {
     
     namespace: String,
     
+    ffi_namespace: String,
+    
     enums: Vec<Enum>,
     records: Vec<Record>,
     functions: Vec<Function>,
@@ -117,7 +118,7 @@ impl ComponentInterface {
         let (remaining, defns) = weedle::Definitions::parse(idl.trim()).unwrap();
         if !remaining.is_empty() {
             println!("Error parsing the IDL. Text remaining to be parsed is:");
-            println!("{}", remaining);
+            println!("{remaining}");
             bail!("parse error");
         }
         
@@ -127,9 +128,19 @@ impl ComponentInterface {
         ci.types.add_type_definitions_from(defns.as_slice())?;
         
         APIBuilder::process(&defns, &mut ci)?;
+
+        
+        
+        
+        assert!(!ci.namespace.is_empty());
+        ci.ffi_namespace = format!("{}_{:x}", ci.namespace, ci.checksum());
+
+        
+        
         ci.check_consistency()?;
         
         ci.derive_ffi_funcs()?;
+
         Ok(ci)
     }
 
@@ -300,12 +311,8 @@ impl ComponentInterface {
     
     
     
-    pub fn checksum(&self) -> u64 {
-        let mut hasher = DefaultHasher::new();
-        
-        
-        self.hash(&mut hasher);
-        hasher.finish()
+    pub fn checksum(&self) -> u16 {
+        uniffi_meta::checksum(self)
     }
 
     
@@ -320,12 +327,9 @@ impl ComponentInterface {
     
     
     
-    pub fn ffi_namespace(&self) -> String {
-        format!(
-            "{}_{:x}",
-            self.namespace,
-            (self.checksum() & 0x000000000000FFFF) as u16
-        )
+    pub fn ffi_namespace(&self) -> &str {
+        assert!(!self.ffi_namespace.is_empty());
+        &self.ffi_namespace
     }
 
     
@@ -491,7 +495,14 @@ impl ComponentInterface {
     }
 
     
-    fn add_function_definition(&mut self, defn: Function) -> Result<()> {
+    pub(super) fn add_function_definition(&mut self, defn: Function) -> Result<()> {
+        for arg in &defn.arguments {
+            self.types.add_known_type(arg.type_.clone())?;
+        }
+        if let Some(ty) = &defn.return_type {
+            self.types.add_known_type(ty.clone())?;
+        }
+
         
         
         if self.functions.iter().any(|f| f.name == defn.name) {
@@ -527,7 +538,7 @@ impl ComponentInterface {
     
     
     
-    fn check_consistency(&self) -> Result<()> {
+    pub fn check_consistency(&self) -> Result<()> {
         if self.namespace.is_empty() {
             bail!("missing namespace definition");
         }
@@ -549,8 +560,8 @@ impl ComponentInterface {
     
     
     
-    fn derive_ffi_funcs(&mut self) -> Result<()> {
-        let ci_prefix = self.ffi_namespace();
+    pub fn derive_ffi_funcs(&mut self) -> Result<()> {
+        let ci_prefix = self.ffi_namespace().to_owned();
         for func in self.functions.iter_mut() {
             func.derive_ffi_func(&ci_prefix)?;
         }
@@ -561,14 +572,6 @@ impl ComponentInterface {
             callback.derive_ffi_funcs(&ci_prefix);
         }
         Ok(())
-    }
-}
-
-
-impl FromStr for ComponentInterface {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> Result<Self> {
-        ComponentInterface::from_webidl(s)
     }
 }
 

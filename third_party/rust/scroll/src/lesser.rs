@@ -1,5 +1,5 @@
-use std::io::{Result, Read, Write};
 use crate::ctx::{FromCtx, IntoCtx, SizeWith};
+use std::io::{Read, Result, Write};
 
 
 
@@ -54,8 +54,7 @@ use crate::ctx::{FromCtx, IntoCtx, SizeWith};
 
 
 
-pub trait IOread<Ctx: Copy> : Read
-{
+pub trait IOread<Ctx: Copy>: Read {
     
     
     
@@ -73,7 +72,10 @@ pub trait IOread<Ctx: Copy> : Read
     
     
     #[inline]
-    fn ioread<N: FromCtx<Ctx> + SizeWith<Ctx>>(&mut self) -> Result<N> where Ctx: Default {
+    fn ioread<N: FromCtx<Ctx> + SizeWith<Ctx>>(&mut self) -> Result<N>
+    where
+        Ctx: Default,
+    {
         let ctx = Ctx::default();
         self.ioread_with(ctx)
     }
@@ -115,8 +117,7 @@ impl<Ctx: Copy, R: Read + ?Sized> IOread<Ctx> for R {}
 
 
 
-pub trait IOwrite<Ctx: Copy>: Write
-{
+pub trait IOwrite<Ctx: Copy>: Write {
     
     
     
@@ -137,7 +138,10 @@ pub trait IOwrite<Ctx: Copy>: Write
     
     
     #[inline]
-    fn iowrite<N: SizeWith<Ctx> + IntoCtx<Ctx>>(&mut self, n: N) -> Result<()> where Ctx: Default {
+    fn iowrite<N: SizeWith<Ctx> + IntoCtx<Ctx>>(&mut self, n: N) -> Result<()>
+    where
+        Ctx: Default,
+    {
         let ctx = Ctx::default();
         self.iowrite_with(n, ctx)
     }
