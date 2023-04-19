@@ -82,7 +82,6 @@ class VideoSendStream {
     uint64_t total_packet_send_delay_ms = 0;
     StreamDataCounters rtp_stats;
     RtcpPacketTypeCounter rtcp_packet_type_counts;
-    RtcpStatistics rtcp_stats;
     
     
     absl::optional<ReportBlockData> report_block_data;

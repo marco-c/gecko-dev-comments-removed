@@ -15,8 +15,6 @@
 
 #include <map>
 
-#include "modules/rtp_rtcp/include/rtcp_statistics.h"
-
 namespace webrtc {
 
 
@@ -32,7 +30,9 @@ class ReportBlockStats {
   ~ReportBlockStats();
 
   
-  void Store(uint32_t ssrc, const RtcpStatistics& rtcp_stats);
+  void Store(uint32_t ssrc,
+             int packets_lost,
+             uint32_t extended_highest_sequence_number);
 
   
   
@@ -44,10 +44,6 @@ class ReportBlockStats {
     uint32_t extended_highest_sequence_number;
     int32_t packets_lost;
   };
-
-  
-  
-  void StoreAndAddPacketIncrement(uint32_t ssrc, const Report& report);
 
   
   uint32_t num_sequence_numbers_;
