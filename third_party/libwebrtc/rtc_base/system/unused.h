@@ -16,21 +16,6 @@
 
 
 
-#if defined(__clang__)
-#define RTC_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
-#elif defined(__GNUC__)
-
-
-#define RTC_WARN_UNUSED_RESULT
-#else
-#define RTC_WARN_UNUSED_RESULT
-#endif
-
-
-
-
-
-
 
 #ifndef RTC_UNUSED
 #define RTC_UNUSED(x) static_cast<void>(x)
