@@ -13,16 +13,12 @@ const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
 const DampLoadParentModule = require("damp-test/actors/DampLoadParent.jsm");
 const DAMP_TESTS = require("damp-test/damp-tests.js");
 
-const env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
 
 
 
+const DEBUG_ALLOCATIONS = Services.env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
 
-const DEBUG_ALLOCATIONS = env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
-
-const DEBUG_SCREENSHOTS = env.get("DEBUG_DEVTOOLS_SCREENSHOTS");
+const DEBUG_SCREENSHOTS = Services.env.get("DEBUG_DEVTOOLS_SCREENSHOTS");
 
 
 const TEST_TIMEOUT = 5 * 60000;
