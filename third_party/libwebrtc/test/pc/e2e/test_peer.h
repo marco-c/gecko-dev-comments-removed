@@ -33,8 +33,7 @@ namespace webrtc_pc_e2e {
 
 class TestPeer final {
  public:
-  
-  Params* params() { return &params_; }
+  const Params& params() const { return params_; }
 
   
   const Params& params2() const { return params_; }
