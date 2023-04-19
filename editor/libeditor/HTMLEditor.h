@@ -676,6 +676,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  bool EntireDocumentIsEditable() const;
+
+  
+
+
+
+
   bool IsTabbable() const { return IsInteractionAllowed(); }
 
   

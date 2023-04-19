@@ -131,6 +131,12 @@ HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
 nsresult HTMLEditor::InitEditorContentAndSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
+  
+  
+  if (!EntireDocumentIsEditable()) {
+    return NS_OK;
+  }
+
   nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_FAILED(rv)) {
     NS_WARNING(
@@ -154,6 +160,8 @@ nsresult HTMLEditor::InitEditorContentAndSelection() {
   }
 
   if (IsInPlaintextMode()) {
+    
+    
     nsresult rv = EnsurePaddingBRElementInMultilineEditor();
     if (NS_FAILED(rv)) {
       NS_WARNING(

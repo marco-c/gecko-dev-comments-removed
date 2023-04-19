@@ -1,10 +1,10 @@
 <!DOCTYPE HTML>
+<!--
+    Any copyright is dedicated to the Public Domain.
+    http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
+    Test: Selected text, background, decorations
+-->
 <html class="reftest-wait"><head>
 <title>text-overflow: Selected text, background, decorations</title>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
@@ -82,7 +82,11 @@ alert(e+'\n'+elm.id+'\n'+t)
 }
 }
 function selectText() {
- var divs = document.getElementsByTagName('div');
+  // For putting selection ranges to multiple editing hosts, we need to put
+  // a range outside all editable elements first, then, selection's ancestor
+  // limiter won't be set to an editing host.
+  getSelection().collapse(document.body, document.body.childNodes.length);
+  var divs = document.getElementsByTagName('div');
   for (i = 0; i < divs.length; ++i) {
     addRange(divs[i]);
   }
@@ -93,7 +97,7 @@ function selectText() {
 </head><body onload="selectText();">
 
 
-
+<!-- LTR overflow:hidden -->
 <div contenteditable="true" spellcheck="true" class="test ltr hidden">Mispe|led word</div>
 <span style="display:block;width:15em"><div contenteditable="true" spellcheck="true" class="test ltr hidden" style="width:auto; float:right; font-family:TestEllipsisFallback; text-indent:-1em; " start=0 end=9><x>M       ispeled word</x></div></span><br clear="all">
 <div contenteditable="true" spellcheck="true" class="test ltr hidden"><span class="rlo">Mispelled word</span></div>
@@ -101,7 +105,7 @@ function selectText() {
 <div contenteditable="true" spellcheck="true" class="test ltr hidden"><span class="rlo">Mis</span><span class="rlo">pelled word</div>
 <div contenteditable="true" spellcheck="true" class="test ltr hidden" endNode="1" style="text-indent:-0.2em"><span>Mis</span><span>pe|led</span><span> word</span></div>
 
-
+<!-- RTL overflow:hidden -->
 <div contenteditable="true" spellcheck="true" class="test rtl hidden">Mispelled word</div>
 <div contenteditable="true" spellcheck="true" class="test rtl hidden" end="2"><span class="lro">Mispelled word</span></div>
 <div contenteditable="true" spellcheck="true" class="test rtl hidden"><span class="lro">Mispelled</span><span class="rlo"> word</span></div>

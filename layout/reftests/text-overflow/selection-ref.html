@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+    Any copyright is dedicated to the Public Domain.
+    http://creativecommons.org/licenses/publicdomain/
+-->
 <html class="reftest-wait"><head>
 <title>text-overflow: Selected text, background, decorations</title>
 <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
@@ -80,7 +80,11 @@ alert(e+'\n'+elm.id+'\n'+t)
 }
 }
 function selectText() {
- var divs = document.getElementsByTagName('div');
+  // For putting selection ranges to multiple editing hosts, we need to put
+  // a range outside all editable elements first, then, selection's ancestor
+  // limiter won't be set to an editing host.
+  getSelection().collapse(document.body, document.body.childNodes.length);
+  var divs = document.getElementsByTagName('div');
   for (i = 0; i < divs.length; ++i) {
     addRange(divs[i]);
   }
@@ -94,7 +98,7 @@ function selectText() {
 </script>
 </head><body onload="selectText();">
 
-
+<!-- LTR overflow:hidden -->
 <div contenteditable="true" spellcheck="true" class="test ltr hidden" end=6>Mispe|&#x2026;</div>
 <span style="display:block;width:15em"><div contenteditable="true" spellcheck="true" class="test ltr hidden" style="width:auto; float:right; font-family:TestEllipsisFallback; text-align:right; width:9em;" start=0 end=0>...<x><i>z</i>d word</x></div></span><br clear="all">
 
@@ -103,7 +107,7 @@ function selectText() {
 <div contenteditable="true" spellcheck="true" class="test ltr hidden"><span class="rlo">&#x2026;<i>z</i>d word</div>
 <div contenteditable="true" spellcheck="true" class="test ltr hidden" endNode="1" start="2" end="3" style="text-indent:-0.2em"><span>&nbsp;&#x2026;s</span><span>pe|</span>&#x2026;<span></span></div>
 
-
+<!-- RTL overflow:hidden -->
 <div contenteditable="true" spellcheck="true" class="test rtl hidden" endNode="2" start="8" end="6">Misp&nbsp;&nbsp;&nbsp;&#x2026;<i>z</i>d word</div>
 <div contenteditable="true" spellcheck="true" class="test rtl hidden" end="2"><span class="lro">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2026;<i>z</i>d word</span></div>
 <div contenteditable="true" spellcheck="true" class="test rtl hidden" endNode="1" end=0 start=1><span class="lro">&#x2026;<i>z</i>d</span><span class="rlo"> word</span></div>
