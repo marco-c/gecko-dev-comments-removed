@@ -282,6 +282,7 @@
 #include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadTypes.h"
+#include "nsEffectiveTLDService.h"
 #include "nsError.h"
 #include "nsEscape.h"
 #include "nsFocusManager.h"
@@ -17126,18 +17127,65 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
-  
+
   nsCOMPtr<nsIPrincipal> principal(NodePrincipal());
 
   
-  
-  ContentChild* cc = ContentChild::GetSingleton();
-  if (!cc) {
-    
+  nsCOMPtr<nsIPrincipal> argumentPrincipal =
+      BasePrincipal::CreateContentPrincipal(
+          siteURI, NodePrincipal()->OriginAttributesRef());
+  if (!argumentPrincipal) {
+    this->ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
-  cc->SendSetAllowStorageAccessRequestFlag(NodePrincipal(), siteURI)
+  nsCString originNoSuffix;
+  rv = NodePrincipal()->GetOriginNoSuffix(originNoSuffix);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  MOZ_ASSERT(cc);
+  RefPtr<Document> self(this);
+  cc->SendTestStorageAccessPermission(IPC::Principal(argumentPrincipal),
+                                      originNoSuffix)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise, siteURI,
+           self](const ContentChild::TestStorageAccessPermissionPromise::
+                     ResolveValueType& aResult) {
+            if (aResult) {
+              return StorageAccessAPIHelper::
+                  StorageAccessPermissionGrantPromise::CreateAndResolve(
+                      StorageAccessAPIHelper::eAllow, __func__);
+            }
+            
+            
+            nsCString serializedSite;
+            RefPtr<nsEffectiveTLDService> etld =
+                nsEffectiveTLDService::GetInstance();
+            if (!etld) {
+              return StorageAccessAPIHelper::
+                  StorageAccessPermissionGrantPromise::CreateAndReject(
+                      false, __func__);
+            }
+            nsresult rv = etld->GetSite(siteURI, serializedSite);
+            if (NS_FAILED(rv)) {
+              return StorageAccessAPIHelper::
+                  StorageAccessPermissionGrantPromise::CreateAndReject(
+                      false, __func__);
+            }
+            return self->CreatePermissionGrantPromise(
+                self->GetInnerWindow(), self->NodePrincipal(), true,
+                Some(serializedSite))();
+          },
+          [](const ContentChild::TestStorageAccessPermissionPromise::
+                 RejectValueType& aResult) {
+            return StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
+                CreateAndReject(false, __func__);
+          })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [promise, principal, siteURI](int result) {
@@ -17145,11 +17193,26 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
             if (!cc) {
               
               promise->MaybeRejectWithUndefined();
+              return;
             }
+            
+            
+            
+            cc->SendSetAllowStorageAccessRequestFlag(principal, siteURI)
+                ->Then(
+                    GetCurrentSerialEventTarget(), __func__,
+                    [promise](bool success) {
+                      if (success) {
+                        promise->MaybeResolveWithUndefined();
+                      } else {
+                        promise->MaybeRejectWithUndefined();
+                      }
+                    },
+                    [promise](mozilla::ipc::ResponseRejectReason reason) {
+                      promise->MaybeRejectWithUndefined();
+                    });
           },
-          [promise](mozilla::ipc::ResponseRejectReason reason) {
-            promise->MaybeRejectWithUndefined();
-          });
+          [promise](bool result) { promise->MaybeRejectWithUndefined(); });
 
   
   return promise.forget();
