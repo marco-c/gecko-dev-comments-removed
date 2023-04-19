@@ -398,7 +398,7 @@ function getCustomTypesDemo(demo) {
     const functionCall = () => {
         FfiConverterOptionalTypeCustomTypesDemo.checkType("demo", demo);
         return UniFFIScaffolding.callAsync(
-            87, 
+            107, 
             FfiConverterOptionalTypeCustomTypesDemo.lower(demo),
         )
     }

@@ -392,7 +392,7 @@ function gradient(ln) {
     const functionCall = () => {
         FfiConverterTypeLine.checkType("ln", ln);
         return UniFFIScaffolding.callAsync(
-            0, 
+            20, 
             FfiConverterTypeLine.lower(ln),
         )
     }
@@ -412,7 +412,7 @@ function intersection(ln1,ln2) {
         FfiConverterTypeLine.checkType("ln1", ln1);
         FfiConverterTypeLine.checkType("ln2", ln2);
         return UniFFIScaffolding.callAsync(
-            1, 
+            21, 
             FfiConverterTypeLine.lower(ln1),
             FfiConverterTypeLine.lower(ln2),
         )

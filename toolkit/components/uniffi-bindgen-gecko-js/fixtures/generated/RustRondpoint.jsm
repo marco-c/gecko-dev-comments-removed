@@ -158,7 +158,7 @@ class ArrayBufferDataStream {
     
     
     readPointerRetourneur() {
-        const pointerId = 0; 
+        const pointerId = 2; 
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -168,7 +168,7 @@ class ArrayBufferDataStream {
     
     
     writePointerRetourneur(value) {
-        const pointerId = 0; 
+        const pointerId = 2; 
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -178,7 +178,7 @@ class ArrayBufferDataStream {
     
     
     readPointerStringifier() {
-        const pointerId = 1; 
+        const pointerId = 3; 
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -188,7 +188,7 @@ class ArrayBufferDataStream {
     
     
     writePointerStringifier(value) {
-        const pointerId = 1; 
+        const pointerId = 3; 
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -198,7 +198,7 @@ class ArrayBufferDataStream {
     
     
     readPointerOptionneur() {
-        const pointerId = 2; 
+        const pointerId = 4; 
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -208,7 +208,7 @@ class ArrayBufferDataStream {
     
     
     writePointerOptionneur(value) {
-        const pointerId = 2; 
+        const pointerId = 4; 
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -576,7 +576,7 @@ class Optionneur {
     const liftError = null;
     const functionCall = () => {
         return UniFFIScaffolding.callAsync(
-            35, 
+            55, 
         )
     }
     try {
@@ -590,7 +590,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterBool.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            36, 
+            56, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterBool.lower(value),
         )
@@ -606,7 +606,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterString.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            37, 
+            57, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterString.lower(value),
         )
@@ -622,7 +622,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterSequencestring.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            38, 
+            58, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterSequencestring.lower(value),
         )
@@ -638,7 +638,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterOptionalstring.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            39, 
+            59, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterOptionalstring.lower(value),
         )
@@ -654,7 +654,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterOptionali32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            40, 
+            60, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterOptionali32.lower(value),
         )
@@ -670,7 +670,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            41, 
+            61, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU8.lower(value),
         )
@@ -686,7 +686,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            42, 
+            62, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI8.lower(value),
         )
@@ -702,7 +702,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            43, 
+            63, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU16.lower(value),
         )
@@ -718,7 +718,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            44, 
+            64, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI16.lower(value),
         )
@@ -734,7 +734,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            45, 
+            65, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU32.lower(value),
         )
@@ -750,7 +750,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            46, 
+            66, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI32.lower(value),
         )
@@ -766,7 +766,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            47, 
+            67, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU64.lower(value),
         )
@@ -782,7 +782,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            48, 
+            68, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI64.lower(value),
         )
@@ -798,7 +798,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            49, 
+            69, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU8.lower(value),
         )
@@ -814,7 +814,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            50, 
+            70, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI8.lower(value),
         )
@@ -830,7 +830,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            51, 
+            71, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU16.lower(value),
         )
@@ -846,7 +846,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            52, 
+            72, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI16.lower(value),
         )
@@ -862,7 +862,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            53, 
+            73, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU32.lower(value),
         )
@@ -878,7 +878,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            54, 
+            74, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI32.lower(value),
         )
@@ -894,7 +894,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            55, 
+            75, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU64.lower(value),
         )
@@ -910,7 +910,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterI64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            56, 
+            76, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterI64.lower(value),
         )
@@ -926,7 +926,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterU32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            57, 
+            77, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterU32.lower(value),
         )
@@ -942,7 +942,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterF32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            58, 
+            78, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterF32.lower(value),
         )
@@ -958,7 +958,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterF64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            59, 
+            79, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterF64.lower(value),
         )
@@ -974,7 +974,7 @@ class Optionneur {
     const functionCall = () => {
         FfiConverterTypeEnumeration.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            60, 
+            80, 
             FfiConverterTypeOptionneur.lower(this),
             FfiConverterTypeEnumeration.lower(value),
         )
@@ -1038,7 +1038,7 @@ class Retourneur {
     const liftError = null;
     const functionCall = () => {
         return UniFFIScaffolding.callAsync(
-            6, 
+            26, 
         )
     }
     try {
@@ -1052,7 +1052,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterI8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            7, 
+            27, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterI8.lower(value),
         )
@@ -1068,7 +1068,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterU8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            8, 
+            28, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterU8.lower(value),
         )
@@ -1084,7 +1084,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterI16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            9, 
+            29, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterI16.lower(value),
         )
@@ -1100,7 +1100,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterU16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            10, 
+            30, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterU16.lower(value),
         )
@@ -1116,7 +1116,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterI32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            11, 
+            31, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterI32.lower(value),
         )
@@ -1132,7 +1132,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterU32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            12, 
+            32, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterU32.lower(value),
         )
@@ -1148,7 +1148,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterI64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            13, 
+            33, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterI64.lower(value),
         )
@@ -1164,7 +1164,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterU64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            14, 
+            34, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterU64.lower(value),
         )
@@ -1180,7 +1180,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterF32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            15, 
+            35, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterF32.lower(value),
         )
@@ -1196,7 +1196,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterF64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            16, 
+            36, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterF64.lower(value),
         )
@@ -1212,7 +1212,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterBool.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            17, 
+            37, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterBool.lower(value),
         )
@@ -1228,7 +1228,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterString.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            18, 
+            38, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterString.lower(value),
         )
@@ -1244,7 +1244,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterTypeDictionnaireNombresSignes.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            19, 
+            39, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterTypeDictionnaireNombresSignes.lower(value),
         )
@@ -1260,7 +1260,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterTypeDictionnaireNombres.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            20, 
+            40, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterTypeDictionnaireNombres.lower(value),
         )
@@ -1276,7 +1276,7 @@ class Retourneur {
     const functionCall = () => {
         FfiConverterTypeOptionneurDictionnaire.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            21, 
+            41, 
             FfiConverterTypeRetourneur.lower(this),
             FfiConverterTypeOptionneurDictionnaire.lower(value),
         )
@@ -1340,7 +1340,7 @@ class Stringifier {
     const liftError = null;
     const functionCall = () => {
         return UniFFIScaffolding.callAsync(
-            22, 
+            42, 
         )
     }
     try {
@@ -1354,7 +1354,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterString.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            23, 
+            43, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterString.lower(value),
         )
@@ -1370,7 +1370,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterI8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            24, 
+            44, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterI8.lower(value),
         )
@@ -1386,7 +1386,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterU8.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            25, 
+            45, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterU8.lower(value),
         )
@@ -1402,7 +1402,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterI16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            26, 
+            46, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterI16.lower(value),
         )
@@ -1418,7 +1418,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterU16.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            27, 
+            47, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterU16.lower(value),
         )
@@ -1434,7 +1434,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterI32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            28, 
+            48, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterI32.lower(value),
         )
@@ -1450,7 +1450,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterU32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            29, 
+            49, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterU32.lower(value),
         )
@@ -1466,7 +1466,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterI64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            30, 
+            50, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterI64.lower(value),
         )
@@ -1482,7 +1482,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterU64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            31, 
+            51, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterU64.lower(value),
         )
@@ -1498,7 +1498,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterF32.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            32, 
+            52, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterF32.lower(value),
         )
@@ -1514,7 +1514,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterF64.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            33, 
+            53, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterF64.lower(value),
         )
@@ -1530,7 +1530,7 @@ class Stringifier {
     const functionCall = () => {
         FfiConverterBool.checkType("value", value);
         return UniFFIScaffolding.callAsync(
-            34, 
+            54, 
             FfiConverterTypeStringifier.lower(this),
             FfiConverterBool.lower(value),
         )
@@ -2266,7 +2266,7 @@ function copieDictionnaire(d) {
     const functionCall = () => {
         FfiConverterTypeDictionnaire.checkType("d", d);
         return UniFFIScaffolding.callAsync(
-            61, 
+            81, 
             FfiConverterTypeDictionnaire.lower(d),
         )
     }
@@ -2285,7 +2285,7 @@ function copieEnumeration(e) {
     const functionCall = () => {
         FfiConverterTypeEnumeration.checkType("e", e);
         return UniFFIScaffolding.callAsync(
-            62, 
+            82, 
             FfiConverterTypeEnumeration.lower(e),
         )
     }
@@ -2304,7 +2304,7 @@ function copieEnumerations(e) {
     const functionCall = () => {
         FfiConverterSequenceTypeEnumeration.checkType("e", e);
         return UniFFIScaffolding.callAsync(
-            63, 
+            83, 
             FfiConverterSequenceTypeEnumeration.lower(e),
         )
     }
@@ -2323,7 +2323,7 @@ function copieCarte(c) {
     const functionCall = () => {
         FfiConverterMapStringTypeEnumerationAvecDonnees.checkType("c", c);
         return UniFFIScaffolding.callAsync(
-            64, 
+            84, 
             FfiConverterMapStringTypeEnumerationAvecDonnees.lower(c),
         )
     }
@@ -2342,7 +2342,7 @@ function switcheroo(b) {
     const functionCall = () => {
         FfiConverterBool.checkType("b", b);
         return UniFFIScaffolding.callAsync(
-            65, 
+            85, 
             FfiConverterBool.lower(b),
         )
     }

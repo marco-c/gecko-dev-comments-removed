@@ -158,7 +158,7 @@ class ArrayBufferDataStream {
     
     
     readPointerSprite() {
-        const pointerId = 3; 
+        const pointerId = 5; 
         const res = UniFFIScaffolding.readPointer(pointerId, this.dataView.buffer, this.pos);
         this.pos += 8;
         return res;
@@ -168,7 +168,7 @@ class ArrayBufferDataStream {
     
     
     writePointerSprite(value) {
-        const pointerId = 3; 
+        const pointerId = 5; 
         UniFFIScaffolding.writePointer(pointerId, value, this.dataView.buffer, this.pos);
         this.pos += 8;
     }
@@ -304,7 +304,7 @@ class Sprite {
     const functionCall = () => {
         FfiConverterOptionalTypePoint.checkType("initialPosition", initialPosition);
         return UniFFIScaffolding.callAsync(
-            66, 
+            86, 
             FfiConverterOptionalTypePoint.lower(initialPosition),
         )
     }
@@ -326,7 +326,7 @@ class Sprite {
         FfiConverterTypePoint.checkType("reference", reference);
         FfiConverterTypeVector.checkType("direction", direction);
         return UniFFIScaffolding.callAsync(
-            67, 
+            87, 
             FfiConverterTypePoint.lower(reference),
             FfiConverterTypeVector.lower(direction),
         )
@@ -341,7 +341,7 @@ class Sprite {
     const liftError = null;
     const functionCall = () => {
         return UniFFIScaffolding.callAsync(
-            68, 
+            88, 
             FfiConverterTypeSprite.lower(this),
         )
     }
@@ -356,7 +356,7 @@ class Sprite {
     const functionCall = () => {
         FfiConverterTypePoint.checkType("position", position);
         return UniFFIScaffolding.callAsync(
-            69, 
+            89, 
             FfiConverterTypeSprite.lower(this),
             FfiConverterTypePoint.lower(position),
         )
@@ -372,7 +372,7 @@ class Sprite {
     const functionCall = () => {
         FfiConverterTypeVector.checkType("direction", direction);
         return UniFFIScaffolding.callAsync(
-            70, 
+            90, 
             FfiConverterTypeSprite.lower(this),
             FfiConverterTypeVector.lower(direction),
         )
@@ -546,7 +546,7 @@ function translate(position,direction) {
         FfiConverterTypePoint.checkType("position", position);
         FfiConverterTypeVector.checkType("direction", direction);
         return UniFFIScaffolding.callAsync(
-            71, 
+            91, 
             FfiConverterTypePoint.lower(position),
             FfiConverterTypeVector.lower(direction),
         )
