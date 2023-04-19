@@ -2676,9 +2676,11 @@ class RTCStatsCollectorTestWithParamKind
 TEST_P(RTCStatsCollectorTestWithParamKind,
        RTCRemoteInboundRtpStreamStatsCollectedFromReportBlock) {
   const int64_t kReportBlockTimestampUtcUs = 123456789;
-  const int64_t kRoundTripTimeMs = 13000;
-  const double kRoundTripTimeSeconds = 13.0;
   const uint8_t kFractionLost = 12;
+  const int64_t kRoundTripTimeSample1Ms = 1234;
+  const double kRoundTripTimeSample1Seconds = 1.234;
+  const int64_t kRoundTripTimeSample2Ms = 13000;
+  const double kRoundTripTimeSample2Seconds = 13;
 
   
   
@@ -2694,10 +2696,10 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
     report_block.fraction_lost = kFractionLost;
     ReportBlockData report_block_data;
     report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
-    report_block_data.AddRoundTripTimeSample(1234);
+    report_block_data.AddRoundTripTimeSample(kRoundTripTimeSample1Ms);
     
     
-    report_block_data.AddRoundTripTimeSample(kRoundTripTimeMs);
+    report_block_data.AddRoundTripTimeSample(kRoundTripTimeSample2Ms);
     report_block_datas.push_back(report_block_data);
   }
   AddSenderInfoAndMediaChannel("TransportName", report_block_datas,
@@ -2719,7 +2721,10 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
     expected_remote_inbound_rtp.packets_lost = 7;
     expected_remote_inbound_rtp.local_id =
         "RTCOutboundRTP" + MediaTypeUpperCase() + stream_id;
-    expected_remote_inbound_rtp.round_trip_time = kRoundTripTimeSeconds;
+    expected_remote_inbound_rtp.round_trip_time = kRoundTripTimeSample2Seconds;
+    expected_remote_inbound_rtp.total_round_trip_time =
+        kRoundTripTimeSample1Seconds + kRoundTripTimeSample2Seconds;
+    expected_remote_inbound_rtp.round_trip_time_measurements = 2;
     
     
 
