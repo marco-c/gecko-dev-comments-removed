@@ -207,7 +207,6 @@ class CookieBannerListService {
 
     
     
-    
     let schema = await lazy.CookieBannerRuleSchema;
     let validator = new lazy.JsonSchema.Validator(schema);
     let validatedTestRules = [];
