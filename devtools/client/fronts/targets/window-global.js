@@ -27,6 +27,10 @@ class WindowGlobalTargetFront extends TargetMixin(
     
     this._javascriptEnabled = null;
 
+    
+    
+    this._parentNodeFront = null;
+
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onFrameUpdate = this._onFrameUpdate.bind(this);
 
@@ -92,6 +96,14 @@ class WindowGlobalTargetFront extends TargetMixin(
     }
   }
 
+  getParentNodeFront() {
+    return this._parentNodeFront;
+  }
+
+  setParentNodeFront(nodeFront) {
+    this._parentNodeFront = nodeFront;
+  }
+
   
 
 
@@ -143,6 +155,7 @@ class WindowGlobalTargetFront extends TargetMixin(
 
   destroy() {
     const promise = super.destroy();
+    this._parentNodeFront = null;
 
     
     

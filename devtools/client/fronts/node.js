@@ -19,10 +19,22 @@ loader.lazyRequireGetter(
   "devtools/shared/dom-node-constants"
 );
 
+const ChromeUtils = require("ChromeUtils");
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "browserToolboxScope",
+  "devtools.browsertoolbox.scope"
+);
+
 const BROWSER_TOOLBOX_FISSION_ENABLED = Services.prefs.getBoolPref(
   "devtools.browsertoolbox.fission",
   false
 );
+const BROWSER_TOOLBOX_SCOPE_EVERYTHING = "everything";
 
 const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
@@ -301,14 +313,33 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this.getAttribute("class") || "";
   }
 
+  
+  
+  
+  
+  
+  get childrenUnavailable() {
+    return (
+      this._form.useChildTargetToFetchChildren &&
+      !this.useChildTargetToFetchChildren
+    );
+  }
   get hasChildren() {
-    return this._form.numChildren > 0;
+    return this.numChildren > 0;
   }
   get numChildren() {
+    if (this.childrenUnavailable) {
+      return 0;
+    }
+
     return this._form.numChildren;
   }
   get useChildTargetToFetchChildren() {
-    if (!BROWSER_TOOLBOX_FISSION_ENABLED && this._hasParentProcessTarget) {
+    if (
+      this._hasParentProcessTarget &&
+      (!BROWSER_TOOLBOX_FISSION_ENABLED ||
+        browserToolboxScope != BROWSER_TOOLBOX_SCOPE_EVERYTHING)
+    ) {
       return false;
     }
 
@@ -571,6 +602,12 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     this._childBrowsingContextTarget = await this.targetFront.getWindowGlobalTarget(
       this._form.browsingContextID
     );
+
+    
+    
+    
+    this._childBrowsingContextTarget.setParentNodeFront(this);
+
     return this._childBrowsingContextTarget;
   }
 }

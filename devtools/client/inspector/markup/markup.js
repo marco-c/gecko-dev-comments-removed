@@ -296,6 +296,8 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._onWalkerNodeStatesChanged = this._onWalkerNodeStatesChanged.bind(this);
   this._onFocus = this._onFocus.bind(this);
   this._onResourceAvailable = this._onResourceAvailable.bind(this);
+  this._onTargetAvailable = this._onTargetAvailable.bind(this);
+  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   this._onMouseClick = this._onMouseClick.bind(this);
   this._onMouseMove = this._onMouseMove.bind(this);
   this._onMouseOut = this._onMouseOut.bind(this);
@@ -367,6 +369,13 @@ function MarkupView(inspector, frame, controllerWindow) {
   this.resourceCommand = this.inspector.toolbox.resourceCommand;
   this.resourceCommand.watchResources([this.resourceCommand.TYPES.ROOT_NODE], {
     onAvailable: this._onResourceAvailable,
+  });
+
+  this.targetCommand = this.inspector.commands.targetCommand;
+  this.targetCommand.watchTargets({
+    types: [this.targetCommand.TYPES.FRAME],
+    onAvailable: this._onTargetAvailable,
+    onDestroyed: this._onTargetDestroyed,
   });
 }
 
@@ -1474,6 +1483,22 @@ MarkupView.prototype = {
     }
   },
 
+  _onTargetAvailable: function({ targetFront }) {},
+
+  _onTargetDestroyed: function({ targetFront, isModeSwitching }) {
+    
+    
+    
+    if (isModeSwitching) {
+      const container = this.getContainer(targetFront.getParentNodeFront());
+      if (container) {
+        this._forceUpdateChildren(container, {
+          updateLevel: true,
+        });
+      }
+    }
+  },
+
   
 
 
@@ -2171,6 +2196,16 @@ MarkupView.prototype = {
       return Promise.resolve(container);
     }
 
+    
+    
+    if (
+      typeof container?.editor?.hasUnavailableChildren == "function" &&
+      container.editor.hasUnavailableChildren() !=
+        container.node.childrenUnavailable
+    ) {
+      container.update();
+    }
+
     if (
       container.inlineTextChild &&
       container.inlineTextChild != container.node.inlineTextChild
@@ -2410,6 +2445,11 @@ MarkupView.prototype = {
       [this.resourceCommand.TYPES.ROOT_NODE],
       { onAvailable: this._onResourceAvailable }
     );
+    this.targetCommand.unwatchTargets({
+      types: [this.targetCommand.TYPES.FRAME],
+      onAvailable: this._onTargetAvailable,
+      onDestroyed: this._onTargetDestroyed,
+    });
     this.inspector.toolbox.nodePicker.off(
       "picker-node-hovered",
       this._onToolboxPickerHover

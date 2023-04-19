@@ -339,6 +339,7 @@ ElementEditor.prototype = {
     this.updateCustomBadge();
     this.updateScrollableBadge();
     this.updateTextEditor();
+    this.updateUnavailableChildren();
     this.updateOverflowBadge();
     this.updateOverflowHighlight();
   },
@@ -574,6 +575,39 @@ ElementEditor.prototype = {
 
     if (this.textEditor) {
       this.textEditor.update();
+    }
+  },
+
+  hasUnavailableChildren() {
+    return !!this.childrenUnavailableElt;
+  },
+
+  
+
+
+
+
+  updateUnavailableChildren: function() {
+    const childrenUnavailable = this.node.childrenUnavailable;
+
+    if (this.childrenUnavailableElt) {
+      this.elt.removeChild(this.childrenUnavailableElt);
+      this.childrenUnavailableElt = null;
+    }
+
+    if (childrenUnavailable) {
+      this.childrenUnavailableElt = this.doc.createElement("div");
+      this.childrenUnavailableElt.className = "unavailable-children";
+      this.childrenUnavailableElt.dataset.label = INSPECTOR_L10N.getStr(
+        "markupView.unavailableChildren.label"
+      );
+      this.childrenUnavailableElt.title = INSPECTOR_L10N.getStr(
+        "markupView.unavailableChildren.title"
+      );
+      this.elt.insertBefore(
+        this.childrenUnavailableElt,
+        this.elt.querySelector(".close")
+      );
     }
   },
 
