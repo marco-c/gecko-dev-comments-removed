@@ -651,10 +651,6 @@ bool ArrayPushDense(JSContext* cx, Handle<ArrayObject*> arr, HandleValue v,
 
   
   
-  MOZ_ASSERT(!PrototypeMayHaveIndexedProperties(arr));
-
-  
-  
   uint32_t index = arr->length();
   MOZ_ASSERT(index < uint32_t(INT32_MAX));
 
