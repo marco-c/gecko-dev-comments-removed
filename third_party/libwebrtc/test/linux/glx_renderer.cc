@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/linux/glx_renderer.h"
 
@@ -20,8 +20,8 @@ namespace test {
 
 GlxRenderer::GlxRenderer(size_t width, size_t height)
     : width_(width), height_(height), display_(NULL), context_(NULL) {
-  assert(width > 0);
-  assert(height > 0);
+  RTC_DCHECK_GT(width, 0);
+  RTC_DCHECK_GT(height, 0);
 }
 
 GlxRenderer::~GlxRenderer() {
@@ -108,7 +108,7 @@ GlxRenderer* GlxRenderer::Create(const char* window_title,
                                  size_t height) {
   GlxRenderer* glx_renderer = new GlxRenderer(width, height);
   if (!glx_renderer->Init(window_title)) {
-    // TODO(pbos): Add GLX-failed warning here?
+    
     delete glx_renderer;
     return NULL;
   }
@@ -172,5 +172,5 @@ void GlxRenderer::OnFrame(const webrtc::VideoFrame& frame) {
     abort();
   }
 }
-}  // namespace test
-}  // namespace webrtc
+}  
+}  

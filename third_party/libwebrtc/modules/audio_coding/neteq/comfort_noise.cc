@@ -45,8 +45,8 @@ int ComfortNoise::UpdateParameters(const Packet& packet) {
 
 int ComfortNoise::Generate(size_t requested_length, AudioMultiVector* output) {
   
-  assert(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ == 32000 ||
-         fs_hz_ == 48000);
+  RTC_DCHECK(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ == 32000 ||
+             fs_hz_ == 48000);
   
   if (output->Channels() != 1) {
     RTC_LOG(LS_ERROR) << "No multi-channel support";

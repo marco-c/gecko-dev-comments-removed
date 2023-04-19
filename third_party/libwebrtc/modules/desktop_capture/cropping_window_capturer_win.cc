@@ -118,7 +118,7 @@ struct TopWindowVerifierContext : public SelectedWindowContext {
       
       
       RTC_LOG(LS_ERROR) << "Failed to enumerate windows: " << lastError;
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       return false;
     }
   }

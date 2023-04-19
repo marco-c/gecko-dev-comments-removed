@@ -69,7 +69,7 @@ Accelerate::ReturnCodes Accelerate::CheckCriteriaAndStretch(
       peak_index = (fs_mult_120 / peak_index) * peak_index;
     }
 
-    assert(fs_mult_120 >= peak_index);  
+    RTC_DCHECK_GE(fs_mult_120, peak_index);  
     
     output->PushBackInterleaved(
         rtc::ArrayView<const int16_t>(input, fs_mult_120 * num_channels_));

@@ -66,7 +66,7 @@ TimeStretch::ReturnCodes TimeStretch::Process(const int16_t* input,
   DspHelper::PeakDetection(auto_correlation_, kCorrelationLen, kNumPeaks,
                            fs_mult_, &peak_index, &peak_value);
   
-  assert(peak_index <= (2 * kCorrelationLen - 1) * fs_mult_);
+  RTC_DCHECK_LE(peak_index, (2 * kCorrelationLen - 1) * fs_mult_);
 
   
   
@@ -74,8 +74,9 @@ TimeStretch::ReturnCodes TimeStretch::Process(const int16_t* input,
   
   peak_index += kMinLag * fs_mult_ * 2;
   
-  assert(peak_index >= static_cast<size_t>(20 * fs_mult_));
-  assert(peak_index <= 20 * fs_mult_ + (2 * kCorrelationLen - 1) * fs_mult_);
+  RTC_DCHECK_GE(peak_index, static_cast<size_t>(20 * fs_mult_));
+  RTC_DCHECK_LE(peak_index,
+                20 * fs_mult_ + (2 * kCorrelationLen - 1) * fs_mult_);
 
   
   

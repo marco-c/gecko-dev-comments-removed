@@ -225,7 +225,7 @@ int32_t AudioMixerManagerMac::SetSpeakerVolume(uint32_t volume) {
   
   const Float32 vol = (Float32)(volume / 255.0);
 
-  assert(vol <= 1.0 && vol >= 0.0);
+  RTC_DCHECK(vol <= 1.0 && vol >= 0.0);
 
   
   
@@ -311,7 +311,7 @@ int32_t AudioMixerManagerMac::SpeakerVolume(uint32_t& volume) const {
       return -1;
     }
 
-    assert(channels > 0);
+    RTC_DCHECK_GT(channels, 0);
     
     volume = static_cast<uint32_t>(255 * vol / channels + 0.5);
   }
@@ -522,7 +522,7 @@ int32_t AudioMixerManagerMac::SpeakerMute(bool& enabled) const {
       return -1;
     }
 
-    assert(channels > 0);
+    RTC_DCHECK_GT(channels, 0);
     
     enabled = static_cast<bool>(muted);
   }
@@ -690,7 +690,7 @@ int32_t AudioMixerManagerMac::MicrophoneMute(bool& enabled) const {
       return -1;
     }
 
-    assert(channels > 0);
+    RTC_DCHECK_GT(channels, 0);
     
     enabled = static_cast<bool>(muted);
   }
@@ -757,7 +757,7 @@ int32_t AudioMixerManagerMac::SetMicrophoneVolume(uint32_t volume) {
   
   const Float32 vol = (Float32)(volume / 255.0);
 
-  assert(vol <= 1.0 && vol >= 0.0);
+  RTC_DCHECK(vol <= 1.0 && vol >= 0.0);
 
   
   
@@ -843,7 +843,7 @@ int32_t AudioMixerManagerMac::MicrophoneVolume(uint32_t& volume) const {
       return -1;
     }
 
-    assert(channels > 0);
+    RTC_DCHECK_GT(channels, 0);
     
     volume = static_cast<uint32_t>(255 * volFloat32 / channels + 0.5);
   }
