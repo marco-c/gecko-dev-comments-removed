@@ -31,6 +31,58 @@ self.RingBuffer = class {
   }
 };
 
+class DefaultSensorTraits {
+  
+  static isSignificantlyDifferent(reading1, reading2) {
+    return true;
+  }
+
+  
+  static roundToMultiple(reading) {
+    return reading;
+  }
+
+  
+  static areReadingsEqual(reading1, reading2) {
+    return false;
+  }
+}
+
+class AmbientLightSensorTraits extends DefaultSensorTraits {
+  
+  static #ROUNDING_MULTIPLE = 50;
+  static #SIGNIFICANCE_THRESHOLD = 25;
+
+  
+  static isSignificantlyDifferent([illuminance1], [illuminance2]) {
+    return Math.abs(illuminance1 - illuminance2) >=
+        this.#SIGNIFICANCE_THRESHOLD;
+  }
+
+  
+  static roundToMultiple(reading) {
+    const illuminance = reading[0];
+    const scaledValue =
+        illuminance / AmbientLightSensorTraits.#ROUNDING_MULTIPLE;
+    let roundedReading = reading.splice();
+
+    if (illuminance < 0.0) {
+      roundedReading[0] = -AmbientLightSensorTraits.#ROUNDING_MULTIPLE *
+          Math.floor(-scaledValue + 0.5);
+    } else {
+      roundedReading[0] = AmbientLightSensorTraits.#ROUNDING_MULTIPLE *
+          Math.floor(scaledValue + 0.5);
+    }
+
+    return roundedReading;
+  }
+
+  
+  static areReadingsEqual([illuminance1], [illuminance2]) {
+    return illuminance1 === illuminance2;
+  }
+}
+
 self.GenericSensorTest = (() => {
   
   const DEFAULT_FREQUENCY = 5;
@@ -41,11 +93,12 @@ self.GenericSensorTest = (() => {
     static #BUFFER_OFFSET_TIMESTAMP = 1;
     static #BUFFER_OFFSET_READINGS = 2;
 
-    constructor(sensorRequest, buffer, reportingMode) {
+    constructor(sensorRequest, buffer, reportingMode, sensorType) {
       this.client_ = null;
       this.startShouldFail_ = false;
       this.notifyOnReadingChange_ = true;
       this.reportingMode_ = reportingMode;
+      this.sensorType_ = sensorType;
       this.sensorReadingTimerId_ = null;
       this.readingData_ = null;
       this.requestedFrequencies_ = [];
@@ -71,6 +124,14 @@ self.GenericSensorTest = (() => {
       this.buffer_.fill(0);
       this.receiver_ = new SensorReceiver(this);
       this.receiver_.$.bindHandle(sensorRequest.handle);
+      this.lastRawReading_ = null;
+      this.lastRoundedReading_ = null;
+
+      if (sensorType == SensorType.AMBIENT_LIGHT) {
+        this.sensorTraits = AmbientLightSensorTraits;
+      } else {
+        this.sensorTraits = DefaultSensorTraits;
+      }
     }
 
     
@@ -131,6 +192,8 @@ self.GenericSensorTest = (() => {
       this.readingData_ = null;
       this.buffer_.fill(0);
       this.receiver_.$.close();
+      this.lastRawReading_ = null;
+      this.lastRoundedReading_ = null;
     }
 
     
@@ -169,8 +232,31 @@ self.GenericSensorTest = (() => {
             throw new TypeError("startReading(): The readings passed to " +
               "setSensorReading() must be arrays");
           }
-          this.buffer_.set(reading, MockSensor.#BUFFER_OFFSET_READINGS);
+
+          if (this.reportingMode_ == ReportingMode.ON_CHANGE &&
+              this.lastRawReading_ !== null &&
+              !this.sensorTraits.isSignificantlyDifferent(
+                  this.lastRawReading_, reading)) {
+            
+            
+            return;
+          }
+
+          this.lastRawReading_ = reading.slice();
+          const roundedReading = this.sensorTraits.roundToMultiple(reading);
+
+          if (this.reportingMode_ == ReportingMode.ON_CHANGE &&
+              this.lastRoundedReading_ !== null &&
+              this.sensorTraits.areReadingsEqual(
+                roundedReading, this.lastRoundedReading_)) {
+            
+            
+            return;
+          }
+          this.buffer_.set(roundedReading, MockSensor.#BUFFER_OFFSET_READINGS);
+          this.lastRoundedReading_ = roundedReading;
         }
+
         
         
         this.buffer_[MockSensor.#BUFFER_OFFSET_TIMESTAMP] = this.timestamp_++;
@@ -278,7 +364,8 @@ self.GenericSensorTest = (() => {
             this.shmemArrayBuffer_, offset,
             this.readingSizeInBytes_ / Float64Array.BYTES_PER_ELEMENT);
         const mockSensor = new MockSensor(
-            sensor.$.bindNewPipeAndPassReceiver(), shmemView, reportingMode);
+            sensor.$.bindNewPipeAndPassReceiver(), shmemView, reportingMode,
+            type);
         this.activeSensors_.set(type, mockSensor);
         this.activeSensors_.get(type).client_ = new SensorClientRemote();
       }
@@ -294,19 +381,6 @@ self.GenericSensorTest = (() => {
       
       if (type == SensorType.AMBIENT_LIGHT || type == SensorType.MAGNETOMETER) {
         this.maxFrequency_ = Math.min(10, this.maxFrequency_);
-      }
-
-      
-      
-      
-      
-      
-      
-      if (type == SensorType.AMBIENT_LIGHT) {
-        this.activeSensors_.get(type).setSensorReading([
-          [window.performance.now() * 100],
-          [(window.performance.now() + 50) * 100]
-        ]);
       }
 
       const client = this.activeSensors_.get(type).client_;
