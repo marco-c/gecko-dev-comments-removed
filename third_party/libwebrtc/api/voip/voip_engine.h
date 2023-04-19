@@ -17,6 +17,7 @@ class VoipBase;
 class VoipCodec;
 class VoipNetwork;
 class VoipDtmf;
+class VoipStatistics;
 
 
 
@@ -84,6 +85,10 @@ class VoipEngine {
 
   
   virtual VoipDtmf& Dtmf() = 0;
+
+  
+  
+  virtual VoipStatistics& Statistics() = 0;
 };
 
 }  
