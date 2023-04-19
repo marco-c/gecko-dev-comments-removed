@@ -15,7 +15,7 @@
 #include "mozilla/Likely.h"              
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
-#include "mozilla/TypeInState.h"         
+#include "mozilla/PendingStyles.h"       
 #include "mozilla/RangeBoundary.h"       
 #include "mozilla/SelectionState.h"      
 #include "mozilla/StyleSheet.h"          
@@ -804,7 +804,7 @@ class EditorBase : public nsIEditor,
     
     
     
-    Maybe<AutoStyleCacheArray> mCachedInlineStyles;
+    Maybe<AutoPendingStyleCacheArray> mCachedPendingStyles;
 
     
     bool mDidDeleteSelection;
@@ -881,8 +881,8 @@ class EditorBase : public nsIEditor,
       }
       mSelectedRange->Clear();
       mChangedRange->Reset();
-      if (mCachedInlineStyles.isSome()) {
-        mCachedInlineStyles->Clear();
+      if (mCachedPendingStyles.isSome()) {
+        mCachedPendingStyles->Clear();
       }
       mDidDeleteSelection = false;
       mDidDeleteNonCollapsedRange = false;
@@ -2891,12 +2891,13 @@ class EditorBase : public nsIEditor,
   friend class MoveNodeTransaction;            
   friend class ParagraphStateAtSelection;      
                                                
+  friend class PendingStyles;                  
+                                               
+                                               
   friend class ReplaceTextTransaction;  
                                         
                                         
   friend class SplitNodeTransaction;    
-  friend class TypeInState;  
-                             
   friend class WhiteSpaceVisibilityKeeper;  
   friend class nsIEditor;                   
 

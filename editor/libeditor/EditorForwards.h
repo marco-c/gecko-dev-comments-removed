@@ -71,20 +71,21 @@ using EditorRawDOMPointInText = EditorDOMPointBase<dom::Text*, nsIContent*>;
 
 
 
-class AutoSelectionRangeArray;  
-class AutoStyleCacheArray;      
-class ChangeStyleTransaction;   
-class CSSEditUtils;             
-class EditActionResult;         
-class EditTransactionBase;      
-class EditorBase;               
-class HTMLEditor;               
-class ManualNACPtr;             
-class RangeUpdater;             
-class SelectionState;           
-class StyleCache;               
-class TextEditor;               
-class TypeInState;              
+class AutoPendingStyleCacheArray;  
+class AutoSelectionRangeArray;     
+class ChangeStyleTransaction;      
+class CSSEditUtils;                
+class EditActionResult;            
+class EditTransactionBase;         
+class EditorBase;                  
+class HTMLEditor;                  
+class ManualNACPtr;                
+class PendingStyle;                
+class PendingStyleCache;           
+class PendingStyles;               
+class RangeUpdater;                
+class SelectionState;              
+class TextEditor;                  
 
 class AutoRangeArray;               
 class ChangeAttributeTransaction;   
@@ -119,7 +120,6 @@ class WSScanResult;
 
 struct EditorInlineStyle;          
 struct EditorInlineStyleAndValue;  
-struct PropItem;                   
 struct RangeItem;                  
 
 

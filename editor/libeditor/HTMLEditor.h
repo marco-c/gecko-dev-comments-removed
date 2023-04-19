@@ -1073,7 +1073,8 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetInlineStyles(nsIContent& aContent, AutoStyleCacheArray& aStyleCacheArray);
+  GetInlineStyles(nsIContent& aContent,
+                  AutoPendingStyleCacheArray& aPendingStyleCacheArray);
 
   
 
@@ -3315,6 +3316,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertiesAsSubAction(
       const nsTArray<EditorInlineStyle>& aStylesToRemove);
 
@@ -4432,7 +4434,7 @@ class HTMLEditor final : public EditorBase,
     const char* const mRequesterFuncName;
   };
 
-  RefPtr<TypeInState> mTypeInState;
+  RefPtr<PendingStyles> mPendingStylesToApplyToNewContent;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
 
   

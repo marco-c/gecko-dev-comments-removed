@@ -16,7 +16,7 @@
 #include "EditorUtils.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
-#include "TypeInState.h"  
+#include "PendingStyles.h"  
 #include "WSRunObject.h"
 
 #include "mozilla/Assertions.h"
@@ -86,7 +86,8 @@ using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 
 
-static bool IsStyleCachePreservingSubAction(EditSubAction aEditSubAction) {
+static bool IsPendingStyleCachePreservingSubAction(
+    EditSubAction aEditSubAction) {
   switch (aEditSubAction) {
     case EditSubAction::eDeleteSelectedContent:
     case EditSubAction::eInsertLineBreak:
@@ -220,7 +221,7 @@ void HTMLEditor::OnStartToHandleTopLevelEditSubAction(
       break;
     default:
       cacheInlineStyles =
-          IsStyleCachePreservingSubAction(aTopLevelEditSubAction);
+          IsPendingStyleCachePreservingSubAction(aTopLevelEditSubAction);
       break;
   }
   if (cacheInlineStyles) {
@@ -598,7 +599,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         break;
       default:
         reapplyCachedStyle =
-            IsStyleCachePreservingSubAction(GetTopLevelEditSubAction());
+            IsPendingStyleCachePreservingSubAction(GetTopLevelEditSubAction());
         break;
     }
 
@@ -632,14 +633,16 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
 
     
     if (reapplyCachedStyle) {
-      DebugOnly<nsresult> rvIgnored = mTypeInState->UpdateSelState(*this);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "TypeInState::UpdateSelState() failed, but ignored");
+      DebugOnly<nsresult> rvIgnored =
+          mPendingStylesToApplyToNewContent->UpdateSelState(*this);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rvIgnored),
+          "PendingStyles::UpdateSelState() failed, but ignored");
       rvIgnored = ReapplyCachedStyles();
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "HTMLEditor::ReapplyCachedStyles() failed, but ignored");
-      TopLevelEditSubActionDataRef().mCachedInlineStyles->Clear();
+      TopLevelEditSubActionDataRef().mCachedPendingStyles->Clear();
     }
   }
 
@@ -947,8 +950,8 @@ nsresult HTMLEditor::PrepareInlineStylesForCaret() {
   }
   
   
-  if (!IsStyleCachePreservingSubAction(GetTopLevelEditSubAction())) {
-    TopLevelEditSubActionDataRef().mCachedInlineStyles->Clear();
+  if (!IsPendingStyleCachePreservingSubAction(GetTopLevelEditSubAction())) {
+    TopLevelEditSubActionDataRef().mCachedPendingStyles->Clear();
   }
   return NS_OK;
 }
@@ -5770,7 +5773,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
     const EditorDOMPoint& aPointToInsertText) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsertText.IsSetAndValid());
-  MOZ_ASSERT(mTypeInState);
+  MOZ_ASSERT(mPendingStylesToApplyToNewContent);
 
   const RefPtr<Element> documentRootElement = GetDocument()->GetRootElement();
   if (NS_WARN_IF(!documentRootElement)) {
@@ -5778,33 +5781,37 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
   }
 
   
-  UniquePtr<PropItem> style = mTypeInState->TakeClearingStyle();
+  UniquePtr<PendingStyle> pendingStyle =
+      mPendingStylesToApplyToNewContent->TakeClearingStyle();
 
   EditorDOMPoint pointToPutCaret(aPointToInsertText);
   {
     
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-    while (style && pointToPutCaret.GetContainer() != documentRootElement) {
+    while (pendingStyle &&
+           pointToPutCaret.GetContainer() != documentRootElement) {
       
       
-      Result<EditorDOMPoint, nsresult> pointToPutCaretOrError = ClearStyleAt(
-          pointToPutCaret, MOZ_KnownLive(style->mTag),
-          MOZ_KnownLive(style->mAttribute), style->mSpecifiedStyle);
+      Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          ClearStyleAt(pointToPutCaret, MOZ_KnownLive(pendingStyle->GetTag()),
+                       MOZ_KnownLive(pendingStyle->GetAttribute()),
+                       pendingStyle->GetSpecifiedStyle());
       if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
         NS_WARNING("HTMLEditor::ClearStyleAt() failed");
         return pointToPutCaretOrError;
       }
       pointToPutCaret = pointToPutCaretOrError.unwrap();
-      style = mTypeInState->TakeClearingStyle();
+      pendingStyle = mPendingStylesToApplyToNewContent->TakeClearingStyle();
     }
   }
 
   
-  const int32_t relFontSize = mTypeInState->TakeRelativeFontSize();
-  style = mTypeInState->TakePreservedStyle();
+  const int32_t relFontSize =
+      mPendingStylesToApplyToNewContent->TakeRelativeFontSize();
+  pendingStyle = mPendingStylesToApplyToNewContent->TakePreservedStyle();
 
-  if (style || relFontSize) {
+  if (pendingStyle || relFontSize) {
     
     
     EditorDOMPoint pointToInsertTextNode(pointToPutCaret);
@@ -5864,15 +5871,16 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
       }
     }
 
-    while (style) {
+    while (pendingStyle) {
       
       
       
       
       Result<EditorDOMPoint, nsresult> setStyleResult = SetInlinePropertyOnNode(
           MOZ_KnownLive(*pointToPutCaret.ContainerAs<nsIContent>()),
-          MOZ_KnownLive(*style->mTag), MOZ_KnownLive(style->mAttribute),
-          style->mAttributeValueOrCSSValue);
+          MOZ_KnownLive(*pendingStyle->GetTag()),
+          MOZ_KnownLive(pendingStyle->GetAttribute()),
+          pendingStyle->AttributeValueOrCSSValueRef());
       if (MOZ_UNLIKELY(setStyleResult.isErr())) {
         NS_WARNING("HTMLEditor::SetInlinePropertyOnNode() failed");
         return Err(setStyleResult.unwrapErr());
@@ -5880,7 +5888,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
       
       
       MOZ_ASSERT(pointToPutCaret.IsSet());
-      style = mTypeInState->TakePreservedStyle();
+      pendingStyle = mPendingStylesToApplyToNewContent->TakePreservedStyle();
     }
   }
 
@@ -7101,8 +7109,8 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
     return SplitNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  TopLevelEditSubActionDataRef().mCachedInlineStyles->Clear();
-  mTypeInState->ClearAllStyles();
+  TopLevelEditSubActionDataRef().mCachedPendingStyles->Clear();
+  mPendingStylesToApplyToNewContent->ClearAllStyles();
 
   
   
@@ -8614,16 +8622,16 @@ nsresult HTMLEditor::CacheInlineStyles(nsIContent& aContent) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
   nsresult rv = GetInlineStyles(
-      aContent, *TopLevelEditSubActionDataRef().mCachedInlineStyles);
+      aContent, *TopLevelEditSubActionDataRef().mCachedPendingStyles);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::GetInlineStyles() failed");
   return rv;
 }
 
-nsresult HTMLEditor::GetInlineStyles(nsIContent& aContent,
-                                     AutoStyleCacheArray& aStyleCacheArray) {
+nsresult HTMLEditor::GetInlineStyles(
+    nsIContent& aContent, AutoPendingStyleCacheArray& aPendingStyleCacheArray) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aStyleCacheArray.IsEmpty());
+  MOZ_ASSERT(aPendingStyleCacheArray.IsEmpty());
 
   bool useCSS = IsCSSEnabled();
 
@@ -8659,7 +8667,8 @@ nsresult HTMLEditor::GetInlineStyles(nsIContent& aContent,
     }
     
     bool typeInSet, unused;
-    mTypeInState->GetTypingState(typeInSet, unused, *tag, attribute, nullptr);
+    mPendingStylesToApplyToNewContent->GetTypingState(typeInSet, unused, *tag,
+                                                      attribute, nullptr);
     if (typeInSet) {
       continue;
     }
@@ -8682,7 +8691,8 @@ nsresult HTMLEditor::GetInlineStyles(nsIContent& aContent,
       isSet = isComputedCSSEquivalentToHTMLInlineStyleOrError.unwrap();
     }
     if (isSet) {
-      aStyleCacheArray.AppendElement(StyleCache(*tag, attribute, value));
+      aPendingStyleCacheArray.AppendElement(
+          PendingStyleCache(*tag, attribute, value));
     }
   }
   return NS_OK;
@@ -8695,7 +8705,7 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
   
   
 
-  if (TopLevelEditSubActionDataRef().mCachedInlineStyles->IsEmpty() ||
+  if (TopLevelEditSubActionDataRef().mCachedPendingStyles->IsEmpty() ||
       !SelectionRef().RangeCount()) {
     return NS_OK;
   }
@@ -8714,7 +8724,7 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
     return NS_OK;
   }
 
-  AutoStyleCacheArray styleCacheArrayAtInsertionPoint;
+  AutoPendingStyleCacheArray styleCacheArrayAtInsertionPoint;
   nsresult rv =
       GetInlineStyles(*startContainerContent, styleCacheArrayAtInsertionPoint);
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -8725,8 +8735,8 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
     return NS_OK;
   }
 
-  for (StyleCache& styleCacheBeforeEdit :
-       *TopLevelEditSubActionDataRef().mCachedInlineStyles) {
+  for (PendingStyleCache& styleCacheBeforeEdit :
+       *TopLevelEditSubActionDataRef().mCachedPendingStyles) {
     bool isFirst = false, isAny = false, isAll = false;
     nsAutoString currentValue;
     if (useCSS) {
@@ -8762,17 +8772,19 @@ nsresult HTMLEditor::ReapplyCachedStyles() {
     }
     
     
-    if (isAny && !IsStyleCachePreservingSubAction(GetTopLevelEditSubAction())) {
+    
+    if (isAny &&
+        !IsPendingStyleCachePreservingSubAction(GetTopLevelEditSubAction())) {
       continue;
     }
-    AutoStyleCacheArray::index_type index =
+    AutoPendingStyleCacheArray::index_type index =
         styleCacheArrayAtInsertionPoint.IndexOf(
             styleCacheBeforeEdit.TagRef(), styleCacheBeforeEdit.GetAttribute());
-    if (index == AutoStyleCacheArray::NoIndex ||
+    if (index == AutoPendingStyleCacheArray::NoIndex ||
         styleCacheBeforeEdit.AttributeValueOrCSSValueRef() !=
             styleCacheArrayAtInsertionPoint.ElementAt(index)
                 .AttributeValueOrCSSValueRef()) {
-      mTypeInState->PreserveStyle(styleCacheBeforeEdit);
+      mPendingStylesToApplyToNewContent->PreserveStyle(styleCacheBeforeEdit);
     }
   }
   return NS_OK;

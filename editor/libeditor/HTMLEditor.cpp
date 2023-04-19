@@ -15,9 +15,9 @@
 #include "InsertNodeTransaction.h"
 #include "JoinNodesTransaction.h"
 #include "MoveNodeTransaction.h"
+#include "PendingStyles.h"
 #include "ReplaceTextTransaction.h"
 #include "SplitNodeTransaction.h"
-#include "TypeInState.h"
 #include "WSRunObject.h"
 
 #include "mozilla/ComposerCommandsUpdater.h"
@@ -227,7 +227,7 @@ HTMLEditor::~HTMLEditor() {
             : 0);
   }
 
-  mTypeInState = nullptr;
+  mPendingStylesToApplyToNewContent = nullptr;
 
   if (mDisabledLinkHandling) {
     if (Document* doc = GetDocument()) {
@@ -243,7 +243,7 @@ HTMLEditor::~HTMLEditor() {
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLEditor)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, EditorBase)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTypeInState)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingStylesToApplyToNewContent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mChangedRangeForTopLevelEditSubAction)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPaddingBRElementForEmptyEditor)
@@ -251,7 +251,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, EditorBase)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, EditorBase)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTypeInState)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingStylesToApplyToNewContent)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChangedRangeForTopLevelEditSubAction)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaddingBRElementForEmptyEditor)
@@ -349,7 +349,7 @@ nsresult HTMLEditor::Init(Document& aDocument,
   }
 
   
-  mTypeInState = new TypeInState();
+  mPendingStylesToApplyToNewContent = new PendingStyles();
 
   if (!IsInteractionAllowed()) {
     nsCOMPtr<nsIURI> uaURI;
@@ -592,9 +592,9 @@ NS_IMETHODIMP HTMLEditor::NotifySelectionChanged(Document* aDocument,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  if (mTypeInState) {
-    RefPtr<TypeInState> typeInState = mTypeInState;
-    typeInState->OnSelectionChange(*this, aReason);
+  if (mPendingStylesToApplyToNewContent) {
+    RefPtr<PendingStyles> pendingStyles = mPendingStylesToApplyToNewContent;
+    pendingStyles->OnSelectionChange(*this, aReason);
 
     
     
@@ -1030,31 +1030,32 @@ void HTMLEditor::StopPreservingSelection() {
 }
 
 void HTMLEditor::PreHandleMouseDown(const MouseEvent& aMouseDownEvent) {
-  if (mTypeInState) {
+  if (mPendingStylesToApplyToNewContent) {
     
     
     
-    mTypeInState->PreHandleMouseEvent(aMouseDownEvent);
+    mPendingStylesToApplyToNewContent->PreHandleMouseEvent(aMouseDownEvent);
   }
 }
 
 void HTMLEditor::PreHandleMouseUp(const MouseEvent& aMouseUpEvent) {
-  if (mTypeInState) {
+  if (mPendingStylesToApplyToNewContent) {
     
     
     
-    mTypeInState->PreHandleMouseEvent(aMouseUpEvent);
+    mPendingStylesToApplyToNewContent->PreHandleMouseEvent(aMouseUpEvent);
   }
 }
 
 void HTMLEditor::PreHandleSelectionChangeCommand(Command aCommand) {
-  if (mTypeInState) {
-    mTypeInState->PreHandleSelectionChangeCommand(aCommand);
+  if (mPendingStylesToApplyToNewContent) {
+    mPendingStylesToApplyToNewContent->PreHandleSelectionChangeCommand(
+        aCommand);
   }
 }
 
 void HTMLEditor::PostHandleSelectionChangeCommand(Command aCommand) {
-  if (!mTypeInState) {
+  if (!mPendingStylesToApplyToNewContent) {
     return;
   }
 
@@ -1062,7 +1063,8 @@ void HTMLEditor::PostHandleSelectionChangeCommand(Command aCommand) {
   if (!editActionData.CanHandle()) {
     return;
   }
-  mTypeInState->PostHandleSelectionChangeCommand(*this, aCommand);
+  mPendingStylesToApplyToNewContent->PostHandleSelectionChangeCommand(*this,
+                                                                      aCommand);
 }
 
 nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
