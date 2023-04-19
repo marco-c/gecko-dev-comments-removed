@@ -144,16 +144,7 @@ add_task(async function revert_and_change_tab() {
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab);
-  Assert.equal(
-    gURLBar.value,
-    expectedSearchUrl,
-    `Urlbar should still have the reverted URI ${expectedSearchUrl} as its value.`
-  );
-  Assert.equal(
-    gURLBar.getAttribute("pageproxystate"),
-    "valid",
-    "Pageproxystate should be valid"
-  );
+  assertSearchStringIsInUrlbar(SEARCH_STRING);
 
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);
