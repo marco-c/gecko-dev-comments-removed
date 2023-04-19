@@ -117,7 +117,8 @@ IPCResult FileSystemManagerParent::RecvGetFileHandle(
 
 
 mozilla::ipc::IPCResult FileSystemManagerParent::RecvGetAccessHandle(
-    FileSystemGetFileRequest&& aRequest, GetAccessHandleResolver&& aResolver) {
+    FileSystemGetAccessHandleRequest&& aRequest,
+    GetAccessHandleResolver&& aResolver) {
   AssertIsOnIOTarget();
   MOZ_ASSERT(mDataManager);
 
