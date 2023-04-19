@@ -3013,22 +3013,6 @@ void HTMLInputElement::Select() {
                            TextControlState::ScrollAfterSelection::No);
 }
 
-void HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {
-  
-  if (!mHandlingSelectEvent) {
-    
-    
-    
-    
-    WidgetEvent event(true, eFormSelect);
-
-    mHandlingSelectEvent = true;
-    EventDispatcher::Dispatch(static_cast<nsIContent*>(this), aPresContext,
-                              &event);
-    mHandlingSelectEvent = false;
-  }
-}
-
 void HTMLInputElement::SelectAll(nsPresContext* aPresContext) {
   nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
 
@@ -3747,7 +3731,6 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               if (shouldSelectAllOnFocus) {
                 RefPtr<nsPresContext> presContext =
                     GetPresContext(eForComposedDoc);
-                DispatchSelectEvent(presContext);
                 SelectAll(presContext);
               }
             }
