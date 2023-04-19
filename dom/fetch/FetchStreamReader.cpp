@@ -147,10 +147,16 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
       
       
       
-      RefPtr<Promise> ignoredResultPromise =
+      RefPtr<Promise> cancelResultPromise =
           MOZ_KnownLive(mReader)->Cancel(aCx, errorValue, ignoredError);
       NS_WARNING_ASSERTION(!ignoredError.Failed(),
                            "Failed to cancel stream during close and release");
+      if (cancelResultPromise) {
+        bool setHandled = cancelResultPromise->SetAnyPromiseIsHandled();
+        NS_WARNING_ASSERTION(setHandled,
+                             "Failed to mark cancel promise as handled.");
+        (void)setHandled;
+      }
     }
 
     
