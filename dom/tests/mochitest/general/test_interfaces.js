@@ -332,8 +332,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "DelayNode", insecureContext: true },
   
-  { name: "DeprecationReportBody", insecureContext: true, nightly: true },
-  
   { name: "DeviceLightEvent", insecureContext: true, disabled: true },
   
   { name: "DeviceMotionEvent", insecureContext: true },
@@ -966,12 +964,6 @@ var interfaceNamesInGlobalScope = [
   { name: "ReadableStreamDefaultController", insecureContext: true },
   
   { name: "ReadableStreamDefaultReader", insecureContext: true },
-  
-  { name: "Report", insecureContext: true, nightly: true },
-  
-  { name: "ReportBody", insecureContext: true, nightly: true },
-  
-  { name: "ReportingObserver", insecureContext: true, nightly: true },
   
   { name: "Request", insecureContext: true },
   
