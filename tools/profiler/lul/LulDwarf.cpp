@@ -50,6 +50,7 @@
 #include <string>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Vector.h"
 
@@ -961,7 +962,17 @@ class CallFrameInfo::State {
   
   
   
-  bool DoInstruction();
+  MOZ_ALWAYS_INLINE bool DoInstruction();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_NEVER_INLINE bool DoInstructions();
 
   
   
@@ -1041,8 +1052,9 @@ class CallFrameInfo::State {
 bool CallFrameInfo::State::InterpretCIE(const CIE& cie) {
   entry_ = &cie;
   cursor_ = entry_->instructions;
-  while (cursor_ < entry_->end)
-    if (!DoInstruction()) return false;
+  if (!DoInstructions()) {
+    return false;
+  }
   
   
   cie_rules_ = rules_;
@@ -1052,9 +1064,7 @@ bool CallFrameInfo::State::InterpretCIE(const CIE& cie) {
 bool CallFrameInfo::State::InterpretFDE(const FDE& fde) {
   entry_ = &fde;
   cursor_ = entry_->instructions;
-  while (cursor_ < entry_->end)
-    if (!DoInstruction()) return false;
-  return true;
+  return DoInstructions();
 }
 
 bool CallFrameInfo::State::ParseOperands(const char* format,
@@ -1131,6 +1141,7 @@ bool CallFrameInfo::State::ParseOperands(const char* format,
   return true;
 }
 
+MOZ_ALWAYS_INLINE
 bool CallFrameInfo::State::DoInstruction() {
   CIE* cie = entry_->cie;
   Operands ops;
@@ -1404,6 +1415,17 @@ bool CallFrameInfo::State::DoInstruction() {
     }
   }
 
+  return true;
+}
+
+
+MOZ_NEVER_INLINE
+bool CallFrameInfo::State::DoInstructions() {
+  while (cursor_ < entry_->end) {
+    if (!DoInstruction()) {
+      return false;
+    }
+  }
   return true;
 }
 
