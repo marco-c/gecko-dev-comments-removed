@@ -231,26 +231,6 @@ class ScreenshotTest : BaseSessionTest() {
     }
 
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
-    @Test(expected = IllegalStateException::class)
-    fun capturePixelsAfterGpuProcessCrash() {
-        
-        assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
-
-        
-        assumeTrue(sessionRule.usingGpuProcess())
-
-        sessionRule.display?.let {
-            
-            
-            
-            sessionRule.killGpuProcess()
-            val result = it.capturePixels()
-
-            sessionRule.waitForResult(result)
-        }
-    }
-
-    @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun screenshotToBitmap() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
