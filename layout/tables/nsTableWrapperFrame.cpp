@@ -106,7 +106,7 @@ void nsTableWrapperFrame::SetInitialChildList(ChildListID aListID,
 }
 
 void nsTableWrapperFrame::AppendFrames(ChildListID aListID,
-                                       nsFrameList& aFrameList) {
+                                       nsFrameList&& aFrameList) {
   
   
   MOZ_ASSERT(kCaptionList == aListID, "unexpected child list");

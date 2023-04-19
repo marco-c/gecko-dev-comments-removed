@@ -101,7 +101,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  virtual void AppendFrames(ChildListID aListID, nsFrameList& aFrameList);
+  virtual void AppendFrames(ChildListID aListID, nsFrameList&& aFrameList);
 
   
 

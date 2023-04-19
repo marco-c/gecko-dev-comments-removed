@@ -129,11 +129,12 @@ void nsSliderFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   if (wasEmpty) AddListener();
 }
 
-void nsSliderFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
+void nsSliderFrame::AppendFrames(ChildListID aListID,
+                                 nsFrameList&& aFrameList) {
   
   
   bool wasEmpty = mFrames.IsEmpty();
-  nsBoxFrame::AppendFrames(aListID, aFrameList);
+  nsBoxFrame::AppendFrames(aListID, std::move(aFrameList));
   if (wasEmpty) AddListener();
 }
 
