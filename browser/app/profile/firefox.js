@@ -1657,6 +1657,10 @@ pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
 
 
+pref("nimbus.qa.pref-1", "default");
+pref("nimbus.qa.pref-2", "default");
+
+
 pref("full-screen-api.enabled", true);
 
 
