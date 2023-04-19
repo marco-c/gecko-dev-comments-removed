@@ -47,6 +47,11 @@ char kTSanDefaultSuppressions[] =
 
     
     
+    "deadlock:usrsctp_conninput\n"
+    "deadlock:usrsctp_connect\n"
+
+    
+    
     "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
 
     
