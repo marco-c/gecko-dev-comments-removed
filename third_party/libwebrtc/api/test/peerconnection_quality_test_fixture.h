@@ -391,19 +391,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     TimeDelta run_duration;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    std::vector<VideoCodecConfig> video_codecs;
     bool use_ulp_fec = false;
     bool use_flex_fec = false;
     
