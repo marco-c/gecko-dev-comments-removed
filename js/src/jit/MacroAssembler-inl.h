@@ -1038,12 +1038,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
 }
 
 void MacroAssembler::storeCallBoolResult(Register reg) {
-  if (reg != ReturnReg) {
-    mov(ReturnReg, reg);
-  }
-  
-  
-  and32(Imm32(0xFF), reg);
+  convertBoolToInt32(ReturnReg, reg);
 }
 
 void MacroAssembler::storeCallInt32Result(Register reg) {
