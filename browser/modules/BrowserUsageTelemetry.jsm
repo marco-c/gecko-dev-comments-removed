@@ -833,7 +833,8 @@ let BrowserUsageTelemetry = {
       )
     ) {
       node = node.parentNode;
-      if (!node) {
+      if (!node?.parentNode) {
+        
         
         return;
       }
