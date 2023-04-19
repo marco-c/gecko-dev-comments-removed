@@ -88,3 +88,14 @@ async function hitTest(browser, container, child, grandChild) {
     )}, sought ${grandChild ? roleToString(grandChild.role) : "unknown"}`
   );
 }
+
+
+
+
+async function testOffsetAtPoint(hyperText, x, y, coordType, expectedOffset) {
+  await untilCacheIs(
+    () => hyperText.getOffsetAtPoint(x, y, coordType),
+    expectedOffset,
+    `Wrong offset at given point (${x}, ${y}) for ${prettyName(hyperText)}`
+  );
+}

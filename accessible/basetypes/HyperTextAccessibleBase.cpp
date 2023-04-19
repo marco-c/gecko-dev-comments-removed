@@ -272,10 +272,15 @@ int32_t HyperTextAccessibleBase::OffsetAtPoint(int32_t aX, int32_t aY,
                              false);
   
   
-  for (; !point.ContainsPoint(coords.x, coords.y) && point != endPoint;
-       point = point.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
-                                   false)) {
-  };
+  
+  
+  
+  if (point <= endPoint) {
+    for (; !point.ContainsPoint(coords.x, coords.y) && point != endPoint;
+         point = point.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
+                                     false)) {
+    }
+  }
   return point.ContainsPoint(coords.x, coords.y) ? point.mOffset : -1;
 }
 
