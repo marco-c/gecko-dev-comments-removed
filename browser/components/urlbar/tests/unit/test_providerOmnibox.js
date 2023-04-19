@@ -4,8 +4,8 @@
 
 
 
-const { ExtensionSearchHandler } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionSearchHandler.jsm"
+const { ExtensionSearchHandler } = ChromeUtils.importESModule(
+  "resource://gre/modules/ExtensionSearchHandler.sys.mjs"
 );
 
 let controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
