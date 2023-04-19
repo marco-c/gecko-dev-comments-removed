@@ -11,8 +11,6 @@
 
 
 
-
-
 print("child process is running");
 
 

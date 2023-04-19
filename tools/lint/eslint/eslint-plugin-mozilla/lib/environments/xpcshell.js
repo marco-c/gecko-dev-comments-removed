@@ -12,6 +12,23 @@ var { getScriptGlobals } = require("./utils");
 
 const extraGlobals = [
   
+  "print",
+  "readline",
+  "load",
+  "quit",
+  "dumpXPC",
+  "dump",
+  "gc",
+  "gczeal",
+  "options",
+  "sendCommand",
+  "atob",
+  "btoa",
+  "setInterruptCallback",
+  "simulateNoScriptActivity",
+  "registerXPCTestComponents",
+
+  
   "setReporter",
   "report",
   "ok",
@@ -30,8 +47,6 @@ const extraGlobals = [
   
   "allocationMarker",
   "byteSize",
-  "gc",
-  "gczeal",
   "saveStack",
 ];
 
