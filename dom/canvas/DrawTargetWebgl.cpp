@@ -2424,6 +2424,37 @@ void DrawTargetWebgl::StrokeGlyphs(ScaledFont* aFont,
 
 
 
+
+
+
+
+
+
+static inline IntPoint QuantizeScale(ScaledFont* aFont,
+                                     const Matrix& aTransform) {
+  if (!aFont->UseSubpixelPosition()) {
+    return {1, 1};
+  }
+  if (aTransform._12 == 0) {
+    
+    return {4, 1};
+  }
+  if (aTransform._11 == 0) {
+    
+    return {1, 4};
+  }
+  
+  return {4, 4};
+}
+
+
+
+
+
+
+
+
+
 static inline IntPoint QuantizePosition(const Matrix& aTransform,
                                         const IntPoint& aOffset,
                                         const Point& aPosition) {
@@ -2433,11 +2464,24 @@ static inline IntPoint QuantizePosition(const Matrix& aTransform,
 
 
 
-HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
-                                       const Matrix& aTransform) {
-  HashNumber hash = 0;
+static inline IntPoint QuantizeOffset(const Matrix& aTransform,
+                                      const IntPoint& aQuantizeScale,
+                                      const GlyphBuffer& aBuffer) {
   IntPoint offset =
       RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
+  offset.x &= ~(aQuantizeScale.x - 1);
+  offset.y &= ~(aQuantizeScale.y - 1);
+  return offset;
+}
+
+
+
+
+HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
+                                       const Matrix& aTransform,
+                                       const IntPoint& aQuantizeScale) {
+  HashNumber hash = 0;
+  IntPoint offset = QuantizeOffset(aTransform, aQuantizeScale, aBuffer);
   for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
     const Glyph& glyph = aBuffer.mGlyphs[i];
     hash = AddToHash(hash, glyph.mIndex);
@@ -2452,20 +2496,16 @@ HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
 bool GlyphCacheEntry::MatchesGlyphs(const GlyphBuffer& aBuffer,
                                     const DeviceColor& aColor,
                                     const Matrix& aTransform,
-                                    const IntRect& aBounds, HashNumber aHash) {
+                                    const IntPoint& aQuantizeScale,
+                                    HashNumber aHash) {
   
   
   
   if (aHash != mHash || aBuffer.mNumGlyphs != mBuffer.mNumGlyphs ||
-      aColor != mColor || !HasMatchingScale(aTransform, mTransform) ||
-      aBounds.Size() != mBounds.Size()) {
+      aColor != mColor || !HasMatchingScale(aTransform, mTransform)) {
     return false;
   }
-  IntPoint offset =
-      RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
-  if (aBounds.TopLeft() - offset != mBounds.TopLeft()) {
-    return false;
-  }
+  IntPoint offset = QuantizeOffset(aTransform, aQuantizeScale, aBuffer);
   
   for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
     const Glyph& dst = mBuffer.mGlyphs[i];
@@ -2482,15 +2522,16 @@ bool GlyphCacheEntry::MatchesGlyphs(const GlyphBuffer& aBuffer,
 GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
                                  const DeviceColor& aColor,
                                  const Matrix& aTransform,
+                                 const IntPoint& aQuantizeScale,
                                  const IntRect& aBounds, HashNumber aHash)
     : CacheEntryImpl<GlyphCacheEntry>(aTransform, aBounds, aHash),
       mColor(aColor) {
   
   
   Glyph* glyphs = new Glyph[aBuffer.mNumGlyphs];
-  IntPoint offset =
-      RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
-  mBounds -= offset;
+  IntPoint offset = QuantizeOffset(aTransform, aQuantizeScale, aBuffer);
+  
+  mBounds -= IntPoint(offset.x / aQuantizeScale.x, offset.y / aQuantizeScale.y);
   for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
     Glyph& dst = glyphs[i];
     const Glyph& src = aBuffer.mGlyphs[i];
@@ -2506,18 +2547,26 @@ GlyphCacheEntry::~GlyphCacheEntry() { delete[] mBuffer.mGlyphs; }
 
 
 
-
-already_AddRefed<GlyphCacheEntry> GlyphCache::FindOrInsertEntry(
+already_AddRefed<GlyphCacheEntry> GlyphCache::FindEntry(
     const GlyphBuffer& aBuffer, const DeviceColor& aColor,
-    const Matrix& aTransform, const IntRect& aBounds) {
-  HashNumber hash = GlyphCacheEntry::HashGlyphs(aBuffer, aTransform);
-  for (const RefPtr<GlyphCacheEntry>& entry : GetChain(hash)) {
-    if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, aBounds, hash)) {
+    const Matrix& aTransform, const IntPoint& aQuantizeScale,
+    HashNumber aHash) {
+  for (const RefPtr<GlyphCacheEntry>& entry : GetChain(aHash)) {
+    if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, aQuantizeScale,
+                             aHash)) {
       return do_AddRef(entry);
     }
   }
-  RefPtr<GlyphCacheEntry> entry =
-      new GlyphCacheEntry(aBuffer, aColor, aTransform, aBounds, hash);
+  return nullptr;
+}
+
+
+already_AddRefed<GlyphCacheEntry> GlyphCache::InsertEntry(
+    const GlyphBuffer& aBuffer, const DeviceColor& aColor,
+    const Matrix& aTransform, const IntPoint& aQuantizeScale,
+    const IntRect& aBounds, HashNumber aHash) {
+  RefPtr<GlyphCacheEntry> entry = new GlyphCacheEntry(
+      aBuffer, aColor, aTransform, aQuantizeScale, aBounds, aHash);
   Insert(entry);
   return entry.forget();
 }
@@ -2565,31 +2614,12 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
   return false;
 }
 
+
+
+
 bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
     const DrawOptions& aOptions, bool aUseSubpixelAA) {
-  
-  
-  
-  
-  Maybe<Rect> bounds = mCurrentTarget->mSkia->GetGlyphLocalBounds(
-      aFont, aBuffer, aPattern, nullptr, aOptions);
-  if (!bounds) {
-    return false;
-  }
-
-  
-  
-  const Matrix& currentTransform = GetTransform();
-  Rect xformBounds = currentTransform.TransformBounds(*bounds).Intersect(
-      Rect(IntRect(IntPoint(), mViewportSize)));
-  if (xformBounds.IsEmpty()) {
-    return true;
-  }
-  
-  xformBounds.Inflate(2);
-  IntRect intBounds = RoundedOut(xformBounds);
-
   
   
   
@@ -2598,39 +2628,6 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   bool useBitmaps = aFont->MayUseBitmaps();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Matrix quantizeTransform = currentTransform;
-  IntRect quantizeBounds = intBounds;
-  if (aFont->UseSubpixelPosition()) {
-    IntPoint scale;
-    if (currentTransform._12 == 0) {
-      
-      scale = {4, 1};
-    } else if (currentTransform._11 == 0) {
-      
-      scale = {1, 4};
-    } else {
-      
-      scale = {4, 4};
-    }
-    quantizeTransform.PostScale(scale.x, scale.y);
-    
-    quantizeBounds.Scale(scale.x, scale.y);
-  }
 
   
   GlyphCache* cache =
@@ -2656,15 +2653,53 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   
-  RefPtr<GlyphCacheEntry> entry = cache->FindOrInsertEntry(
-      aBuffer,
+  const Matrix& currentTransform = GetTransform();
+  IntPoint quantizeScale = QuantizeScale(aFont, currentTransform);
+  Matrix quantizeTransform = currentTransform;
+  quantizeTransform.PostScale(quantizeScale.x, quantizeScale.y);
+  HashNumber hash =
+      GlyphCacheEntry::HashGlyphs(aBuffer, quantizeTransform, quantizeScale);
+  DeviceColor colorOrMask =
       useBitmaps
           ? color
-          : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0),
-      quantizeTransform, quantizeBounds);
+          : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0);
+  RefPtr<GlyphCacheEntry> entry = cache->FindEntry(
+      aBuffer, colorOrMask, quantizeTransform, quantizeScale, hash);
   if (!entry) {
-    return false;
+    
+    
+    
+    Maybe<Rect> bounds = mCurrentTarget->mSkia->GetGlyphLocalBounds(
+        aFont, aBuffer, aPattern, nullptr, aOptions);
+    if (!bounds) {
+      return true;
+    }
+    
+    
+    Rect xformBounds = currentTransform.TransformBounds(*bounds).Intersect(
+        Rect(IntRect(IntPoint(), mViewportSize)));
+    if (xformBounds.IsEmpty()) {
+      return true;
+    }
+    
+    xformBounds.Inflate(2);
+    IntRect intBounds = RoundedOut(xformBounds);
+    entry = cache->InsertEntry(aBuffer, colorOrMask, quantizeTransform,
+                               quantizeScale, intBounds, hash);
+    if (!entry) {
+      return false;
+    }
   }
+
+  
+  
+  
+  
+  IntRect intBounds = entry->GetBounds();
+  IntPoint newOffset =
+      QuantizeOffset(quantizeTransform, quantizeScale, aBuffer);
+  intBounds +=
+      IntPoint(newOffset.x / quantizeScale.x, newOffset.y / quantizeScale.y);
 
   RefPtr<TextureHandle> handle = entry->GetHandle();
   if (handle && handle->IsValid()) {
