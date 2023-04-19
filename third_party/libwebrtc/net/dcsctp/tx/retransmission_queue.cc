@@ -724,11 +724,16 @@ void RetransmissionQueue::ExpireChunks(TimeMs now) {
     
     
     
-    if (item.has_expired(now)) {
+    if (item.is_abandoned()) {
+      
+    } else if (item.has_expired(now)) {
       RTC_DLOG(LS_VERBOSE) << log_prefix_ << "Marking chunk " << *tsn.Wrap()
                            << " and message " << *item.data().message_id
                            << " as expired";
       ExpireAllFor(item);
+    } else {
+      
+      break;
     }
   }
 }
