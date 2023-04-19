@@ -172,9 +172,8 @@ extern JS_PUBLIC_API Value GetModulePrivate(JSObject* module);
 
 
 
-
-extern JS_PUBLIC_API bool ModuleInstantiate(JSContext* cx,
-                                            Handle<JSObject*> moduleRecord);
+extern JS_PUBLIC_API bool ModuleLink(JSContext* cx,
+                                     Handle<JSObject*> moduleRecord);
 
 
 

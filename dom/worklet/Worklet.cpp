@@ -382,9 +382,7 @@ bool ExecutionRunnable::ParseAndLinkModule(
     return false;
   }
   
-  
-  
-  if (!JS::ModuleInstantiate(aCx, module)) {
+  if (!JS::ModuleLink(aCx, module)) {
     return false;
   }
   aModule.set(module);

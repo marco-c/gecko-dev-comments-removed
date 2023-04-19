@@ -32,7 +32,7 @@ ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
 
 bool ModuleInitializeEnvironment(JSContext* cx, Handle<ModuleObject*> module);
 
-bool ModuleInstantiate(JSContext* cx, Handle<ModuleObject*> module);
+bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module);
 
 
 bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,

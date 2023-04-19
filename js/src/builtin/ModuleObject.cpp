@@ -1402,7 +1402,7 @@ bool ModuleObject::createEnvironment(JSContext* cx,
 
 static bool module_InstantiateImpl(JSContext* cx, const CallArgs& args) {
   Rooted<ModuleObject*> module(cx, &args.thisv().toObject().as<ModuleObject>());
-  return js::ModuleInstantiate(cx, module);
+  return js::ModuleLink(cx, module);
 }
 
 static bool module_Instantiate(JSContext* cx, unsigned argc, Value* vp) {
