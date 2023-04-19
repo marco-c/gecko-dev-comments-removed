@@ -278,8 +278,11 @@ void WaylandVsyncSource::FrameCallback(uint32_t aTime) {
   LOG("WaylandVsyncSource::FrameCallback");
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
-  
-  RefPtr(mWindow)->NotifyOcclusionState(OcclusionState::VISIBLE);
+  {
+    
+    RefPtr window = mWindow;
+    window->NotifyOcclusionState(OcclusionState::VISIBLE);
+  }
 
   MutexAutoLock lock(mMutex);
   mCallbackRequested = false;
