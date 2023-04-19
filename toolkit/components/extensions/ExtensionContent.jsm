@@ -669,8 +669,6 @@ class UserScript extends Script {
   }
 
   async inject(context) {
-    const { extension } = context;
-
     DocumentManager.lazyInit();
 
     let scripts = this.getCompiledScripts(context);
@@ -691,42 +689,29 @@ class UserScript extends Script {
       context.executeAPIScript(apiScript);
     }
 
+    let userScriptSandbox = this.sandboxes.get(context);
+
+    context.callOnClose({
+      close: () => {
+        
+        
+        this.sandboxes.delete(context);
+        Cu.nukeSandbox(userScriptSandbox);
+      },
+    });
+
     
     
-    lazy.ExtensionTelemetry.userScriptInjection.stopwatchStart(
-      extension,
-      context
-    );
-    try {
-      let userScriptSandbox = this.sandboxes.get(context);
-
-      context.callOnClose({
-        close: () => {
-          
-          
-          this.sandboxes.delete(context);
-          Cu.nukeSandbox(userScriptSandbox);
-        },
-      });
-
-      
-      
-      if (apiScript) {
-        context.userScriptsEvents.emit(
-          "on-before-script",
-          this.scriptMetadata,
-          userScriptSandbox
-        );
-      }
-
-      for (let script of sandboxScripts) {
-        script.executeInGlobal(userScriptSandbox);
-      }
-    } finally {
-      lazy.ExtensionTelemetry.userScriptInjection.stopwatchFinish(
-        extension,
-        context
+    if (apiScript) {
+      context.userScriptsEvents.emit(
+        "on-before-script",
+        this.scriptMetadata,
+        userScriptSandbox
       );
+    }
+
+    for (let script of sandboxScripts) {
+      script.executeInGlobal(userScriptSandbox);
     }
   }
 
