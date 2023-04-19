@@ -98,6 +98,9 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 
 
+
+
+
 function NetworkObserver(filters, owner) {
   this.filters = filters;
   this.owner = owner;
@@ -236,12 +239,31 @@ NetworkObserver.prototype = {
     return this._throttler;
   },
 
+  
+
+
+
+
+
+
+
+
+  _shouldIgnoreChannel(channel) {
+    if (
+      typeof this.owner.shouldIgnoreChannel == "function" &&
+      this.owner.shouldIgnoreChannel(channel)
+    ) {
+      return true;
+    }
+    return !NetworkUtils.matchRequest(channel, this.filters);
+  },
+
   _decodedCertificateCache: null,
 
   _serviceWorkerRequest(subject, topic, data) {
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!NetworkUtils.matchRequest(channel, this.filters)) {
+    if (this._shouldIgnoreChannel(channel)) {
       return;
     }
 
@@ -268,7 +290,7 @@ NetworkObserver.prototype = {
     }
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (!NetworkUtils.matchRequest(channel, this.filters)) {
+    if (this._shouldIgnoreChannel(channel)) {
       return;
     }
 
@@ -295,7 +317,7 @@ NetworkObserver.prototype = {
     }
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (!NetworkUtils.matchRequest(channel, this.filters)) {
+    if (this._shouldIgnoreChannel(channel)) {
       return;
     }
 
@@ -380,7 +402,7 @@ NetworkObserver.prototype = {
     subject.QueryInterface(Ci.nsIClassifiedChannel);
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!NetworkUtils.matchRequest(channel, this.filters)) {
+    if (this._shouldIgnoreChannel(channel)) {
       return;
     }
 
@@ -509,14 +531,15 @@ NetworkObserver.prototype = {
     const throttler = this._getThrottler();
     if (throttler) {
       const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      if (NetworkUtils.matchRequest(channel, this.filters)) {
-        logPlatformEvent("http-on-modify-request", channel);
-
-        
-        const httpActivity = this.createOrGetActivityObject(channel);
-        this._onRequestBodySent(httpActivity);
-        throttler.manageUpload(channel);
+      if (this._shouldIgnoreChannel(channel)) {
+        return;
       }
+      logPlatformEvent("http-on-modify-request", channel);
+
+      
+      const httpActivity = this.createOrGetActivityObject(channel);
+      this._onRequestBodySent(httpActivity);
+      throttler.manageUpload(channel);
     }
   },
 
@@ -749,7 +772,7 @@ NetworkObserver.prototype = {
 
 
   _onRequestHeader(channel, timestamp, extraStringData) {
-    if (!NetworkUtils.matchRequest(channel, this.filters)) {
+    if (this._shouldIgnoreChannel(channel)) {
       return;
     }
 

@@ -9,12 +9,22 @@ const { Pool } = require("devtools/shared/protocol/Pool");
 const {
   isWindowGlobalPartOfContext,
 } = require("devtools/server/actors/watcher/browsing-context-helpers.jsm");
+const {
+  WatcherRegistry,
+} = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
+const Targets = require("devtools/server/actors/targets/index");
 
 loader.lazyRequireGetter(
   this,
   "NetworkObserver",
   "devtools/server/actors/network-monitor/network-observer",
   true
+);
+
+loader.lazyRequireGetter(
+  this,
+  "NetworkUtils",
+  "devtools/server/actors/network-monitor/utils/network-utils"
 );
 
 loader.lazyRequireGetter(
@@ -53,7 +63,10 @@ class NetworkEventWatcher {
     this.persist = false;
     this.listener = new NetworkObserver(
       { sessionContext: watcherActor.sessionContext },
-      { onNetworkEvent: this.onNetworkEvent.bind(this) }
+      {
+        onNetworkEvent: this.onNetworkEvent.bind(this),
+        shouldIgnoreChannel: this.shouldIgnoreChannel.bind(this),
+      }
     );
 
     this.listener.init();
@@ -206,6 +219,41 @@ class NetworkEventWatcher {
     }
   }
 
+  
+
+
+  shouldIgnoreChannel(channel) {
+    
+    
+    
+    
+    const isParentProcessOnlyBrowserToolbox =
+      this.watcherActor.sessionContext.type == "all" &&
+      !WatcherRegistry.isWatchingTargets(
+        this.watcherActor,
+        Targets.TYPES.FRAME
+      );
+    if (isParentProcessOnlyBrowserToolbox) {
+      
+      const browsingContextID = NetworkUtils.getChannelBrowsingContextID(
+        channel
+      );
+      const browsingContext = BrowsingContext.get(browsingContextID);
+      
+      
+      
+      
+      
+      
+      
+      
+      if (browsingContext?.currentWindowGlobal.isInProcess === false) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   onNetworkEvent(event) {
     const { channelId } = event;
 
@@ -214,6 +262,7 @@ class NetworkEventWatcher {
         `Got notified about channel ${channelId} more than once.`
       );
     }
+
     const actor = new NetworkEventActor(
       this.watcherActor.conn,
       this.watcherActor.sessionContext,
