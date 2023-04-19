@@ -850,16 +850,6 @@ impl BatchBuilder {
             }
         };
 
-        
-        
-        
-        
-        
-        if vis_flags.contains(PrimitiveVisibilityFlags::IS_BACKDROP) {
-            self.clear_batches();
-            return;
-        }
-
         let transform_id = transforms
             .get_id(
                 prim_spatial_node_index,
@@ -873,6 +863,16 @@ impl BatchBuilder {
         let transform_kind = transform_id.transform_kind();
         let prim_info = &prim_instance.vis;
         let bounding_rect = &prim_info.clip_chain.pic_coverage_rect;
+
+        
+        
+        
+        
+        
+        if vis_flags.contains(PrimitiveVisibilityFlags::IS_BACKDROP) {
+            self.clear_batches();
+            return;
+        }
 
         let z_id = z_generator.next();
 
