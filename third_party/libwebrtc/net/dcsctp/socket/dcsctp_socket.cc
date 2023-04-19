@@ -279,10 +279,16 @@ void DcSctpSocket::Shutdown() {
     
     
     
-    SetState(State::kShutdownPending, "Shutdown called");
-    t1_init_->Stop();
-    t1_cookie_->Stop();
-    MaybeSendShutdownOrAck();
+
+    
+    
+    
+    if (state_ != State::kShutdownSent && state_ != State::kShutdownAckSent) {
+      SetState(State::kShutdownPending, "Shutdown called");
+      t1_init_->Stop();
+      t1_cookie_->Stop();
+      MaybeSendShutdownOrAck();
+    }
   } else {
     
     
@@ -1368,6 +1374,10 @@ void DcSctpSocket::HandleShutdown(
     
     SendShutdownAck();
     SetState(State::kShutdownAckSent, "SHUTDOWN received");
+  } else if (state_ == State::kShutdownAckSent) {
+    
+    
+    return;
   } else if (state_ != State::kShutdownReceived) {
     RTC_DLOG(LS_VERBOSE) << log_prefix()
                          << "Received SHUTDOWN - shutting down the socket";
