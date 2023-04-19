@@ -101,12 +101,14 @@ interface nsIPrintSettingsService : nsISupports
 
 
 
-  void savePrintSettingsToPrefs(in nsIPrintSettings aPrintSettings, in unsigned long aFlags);
+
+  void maybeSavePrintSettingsToPrefs(in nsIPrintSettings aPrintSettings, in unsigned long aFlags);
 
   
 
 
-  void saveLastUsedPrinterNameToPrefs(in AString aPrinterName);
+
+  void maybeSaveLastUsedPrinterNameToPrefs(in AString aPrinterName);
 
   
 

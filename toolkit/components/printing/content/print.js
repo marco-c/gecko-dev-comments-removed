@@ -398,7 +398,7 @@ var PrintEventHandler = {
     await window._initialized;
 
     
-    PSSVC.saveLastUsedPrinterNameToPrefs(settings.printerName);
+    PSSVC.maybeSaveLastUsedPrinterNameToPrefs(settings.printerName);
 
     try {
       
@@ -795,7 +795,7 @@ var PrintEventHandler = {
   },
 
   saveSettingsToPrefs(flags) {
-    PSSVC.savePrintSettingsToPrefs(this.settings, flags);
+    PSSVC.maybeSavePrintSettingsToPrefs(this.settings, flags);
   },
 
   
