@@ -5519,8 +5519,11 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     return IPC_OK();
   }
 
+  WindowFeatures features;
+  features.Tokenize(aFeatures);
+
   aResult = pwwatch->OpenWindowWithRemoteTab(
-      thisBrowserHost, aFeatures, aCalledFromJS, aParent.FullZoom(), openInfo,
+      thisBrowserHost, features, aCalledFromJS, aParent.FullZoom(), openInfo,
       getter_AddRefs(aNewRemoteTab));
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return IPC_OK();
@@ -5535,12 +5538,15 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   
-  
-  
-  
-  {
-    nsCOMPtr<Element> frameElement = newBrowserHost->GetOwnerElement();
-    MOZ_ASSERT(frameElement);
+  nsCOMPtr<Element> frameElement = newBrowserHost->GetOwnerElement();
+  MOZ_ASSERT(frameElement);
+  if (nsWindowWatcher::HaveSpecifiedSize(features)) {
+    
+    
+    RefPtr<Document> chromeDoc = frameElement->OwnerDoc();
+    MOZ_ASSERT(chromeDoc);
+    chromeDoc->FlushPendingNotifications(FlushType::Layout);
+  } else {
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(frameElement);
     MOZ_ASSERT(frameLoaderOwner);
     RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();

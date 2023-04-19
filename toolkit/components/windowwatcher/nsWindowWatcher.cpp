@@ -476,7 +476,7 @@ static void MaybeDisablePersistence(const SizeSpec& aSizeSpec,
 
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
-                                         const nsACString& aFeatures,
+                                         const WindowFeatures& aFeatures,
                                          bool aCalledFromJS,
                                          float aOpenerFullZoom,
                                          nsIOpenWindowInfo* aOpenWindowInfo,
@@ -534,22 +534,19 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
     return NS_ERROR_UNEXPECTED;
   }
 
-  WindowFeatures features;
-  features.Tokenize(aFeatures);
-
   
   CSSToDesktopScale cssToDesktopScale(1.0f);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentTreeOwner)) {
     cssToDesktopScale = win->GetUnscaledCSSToDesktopScale();
   }
-  SizeSpec sizeSpec = CalcSizeSpec(features, false, cssToDesktopScale);
+  SizeSpec sizeSpec = CalcSizeSpec(aFeatures, false, cssToDesktopScale);
   sizeSpec.ScaleBy(aOpenerFullZoom);
 
   
   
   
   bool unused = false;
-  uint32_t chromeFlags = CalculateChromeFlagsForContent(features, &unused);
+  uint32_t chromeFlags = CalculateChromeFlagsForContent(aFeatures, &unused);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -1166,8 +1163,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         newWindowPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
             targetBC->OriginAttributesRef()));
 
-    bool autoPrivateBrowsing =
-        StaticPrefs::browser_privatebrowsing_autostart();
+    bool autoPrivateBrowsing = StaticPrefs::browser_privatebrowsing_autostart();
 
     if (!autoPrivateBrowsing &&
         (chromeFlags & nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW)) {
@@ -2059,6 +2055,11 @@ already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
   }
 
   return foundContext.forget();
+}
+
+
+bool nsWindowWatcher::HaveSpecifiedSize(const WindowFeatures& features) {
+  return CalcSizeSpec(features, false, CSSToDesktopScale()).SizeSpecified();
 }
 
 
