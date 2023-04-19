@@ -80,7 +80,7 @@ using ::testing::AllOf;
 using ::testing::AtLeast;
 using ::testing::Contains;
 using ::testing::Each;
-using ::testing::ElementsAreArray;
+using ::testing::ElementsAre;
 using ::testing::Eq;
 using ::testing::Field;
 using ::testing::Gt;
@@ -1784,126 +1784,65 @@ TEST_P(RtpSenderTest, SupportsPadding) {
   }
 }
 
-TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
-  rtp_sender()->RegisterRtpHeaderExtension(TransmissionOffset::kUri,
-                                           kTransmissionTimeOffsetExtensionId);
+TEST_P(RtpSenderTest, SetsCaptureTimeOnRtxRetransmissions) {
+  EnableRtx();
 
-  rtp_sender()->SetSendingMediaStatus(true);
-  rtp_sender()->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
-  rtp_sender()->SetRtxPayloadType(kRtxPayload, kPayload);
-  rtp_sender_context_->packet_history_.SetStorePacketsStatus(
-      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
-
-  const int64_t kMissingCaptureTimeMs = 0;
-  const int64_t kOffsetMs = 10;
-
-  auto packet =
-      BuildRtpPacket(kPayload, kMarkerBit, clock_->TimeInMilliseconds(),
-                     kMissingCaptureTimeMs);
-  packet->set_packet_type(RtpPacketMediaType::kVideo);
-  packet->ReserveExtension<TransmissionOffset>();
-  packet->AllocatePayload(sizeof(kPayloadData));
-
-  std::unique_ptr<RtpPacketToSend> packet_to_pace;
-  EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
-      .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
-        EXPECT_EQ(packets.size(), 1u);
-        EXPECT_GT(packets[0]->capture_time_ms(), 0);
-        packet_to_pace = std::move(packets[0]);
-      });
-
+  
+  const int64_t start_time_ms = clock_->TimeInMilliseconds();
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, kMarkerBit, start_time_ms,
+                     start_time_ms);
   packet->set_allow_retransmission(true);
-  EXPECT_TRUE(rtp_sender()->SendToNetwork(std::move(packet)));
-
-  time_controller_.AdvanceTime(TimeDelta::Millis(kOffsetMs));
-
-  rtp_sender_context_->InjectPacket(std::move(packet_to_pace),
-                                    PacedPacketInfo());
-
-  EXPECT_EQ(1, transport_.packets_sent());
-  absl::optional<int32_t> transmission_time_extension =
-      transport_.sent_packets_.back().GetExtension<TransmissionOffset>();
-  ASSERT_TRUE(transmission_time_extension.has_value());
-  EXPECT_EQ(*transmission_time_extension, kOffsetMs * kTimestampTicksPerMs);
+  rtp_sender_context_->packet_history_.PutRtpPacket(std::move(packet),
+                                                    start_time_ms);
 
   
   
-  time_controller_.AdvanceTime(TimeDelta::Millis(kOffsetMs));
+  time_controller_.AdvanceTime(TimeDelta::Millis(10));
 
-  std::unique_ptr<RtpPacketToSend> rtx_packet_to_pace;
-  EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
-      .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
-        EXPECT_GT(packets[0]->capture_time_ms(), 0);
-        rtx_packet_to_pace = std::move(packets[0]);
-      });
-
+  EXPECT_CALL(mock_paced_sender_,
+              EnqueuePackets(ElementsAre(Pointee(Property(
+                  &RtpPacketToSend::capture_time_ms, start_time_ms)))));
   EXPECT_GT(rtp_sender()->ReSendPacket(kSeqNum), 0);
-  rtp_sender_context_->InjectPacket(std::move(rtx_packet_to_pace),
-                                    PacedPacketInfo());
-
-  EXPECT_EQ(2, transport_.packets_sent());
-  transmission_time_extension =
-      transport_.sent_packets_.back().GetExtension<TransmissionOffset>();
-  ASSERT_TRUE(transmission_time_extension.has_value());
-  EXPECT_EQ(*transmission_time_extension, 2 * kOffsetMs * kTimestampTicksPerMs);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, ClearHistoryOnSequenceNumberCange) {
-  const int64_t kRtt = 10;
-
-  rtp_sender()->SetSendingMediaStatus(true);
-  rtp_sender()->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
-  rtp_sender()->SetRtxPayloadType(kRtxPayload, kPayload);
-  rtp_sender_context_->packet_history_.SetStorePacketsStatus(
-      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
-  rtp_sender_context_->packet_history_.SetRtt(kRtt);
+  EnableRtx();
 
   
-  SendGenericPacket();
-  ASSERT_EQ(1u, transport_.sent_packets_.size());
-  const uint16_t packet_seqence_number =
-      transport_.sent_packets_.back().SequenceNumber();
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, kMarkerBit, now_ms, now_ms);
+  packet->set_allow_retransmission(true);
+  rtp_sender_context_->packet_history_.PutRtpPacket(std::move(packet), now_ms);
 
-  
-  
-  rtp_sender()->SetSequenceNumber(rtp_sender()->SequenceNumber());
-  time_controller_.AdvanceTime(TimeDelta::Millis(kRtt));
-  EXPECT_GT(rtp_sender()->ReSendPacket(packet_seqence_number), 0);
+  EXPECT_TRUE(rtp_sender_context_->packet_history_.GetPacketState(kSeqNum));
 
   
   
   rtp_sender()->SetSequenceNumber(rtp_sender()->SequenceNumber() - 1);
-  time_controller_.AdvanceTime(TimeDelta::Millis(kRtt));
-  EXPECT_EQ(rtp_sender()->ReSendPacket(packet_seqence_number), 0);
+  EXPECT_FALSE(rtp_sender_context_->packet_history_.GetPacketState(kSeqNum));
 }
 
 TEST_P(RtpSenderTest, IgnoresNackAfterDisablingMedia) {
   const int64_t kRtt = 10;
 
-  rtp_sender()->SetSendingMediaStatus(true);
-  rtp_sender()->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
-  rtp_sender()->SetRtxPayloadType(kRtxPayload, kPayload);
-  rtp_sender_context_->packet_history_.SetStorePacketsStatus(
-      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
+  EnableRtx();
   rtp_sender_context_->packet_history_.SetRtt(kRtt);
 
   
-    std::unique_ptr<RtpPacketToSend> packet_to_pace;
-    EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
-        .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
-          packet_to_pace = std::move(packets[0]);
-        });
+  const int64_t start_time_ms = clock_->TimeInMilliseconds();
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, kMarkerBit, start_time_ms,
+                     start_time_ms);
+  packet->set_allow_retransmission(true);
+  rtp_sender_context_->packet_history_.PutRtpPacket(std::move(packet),
+                                                    start_time_ms);
 
-    SendGenericPacket();
-    rtp_sender_context_->InjectPacket(std::move(packet_to_pace),
-                                      PacedPacketInfo());
-
-    ASSERT_EQ(1u, transport_.sent_packets_.size());
-
-    
-    rtp_sender()->SetSendingMediaStatus(false);
-    time_controller_.AdvanceTime(TimeDelta::Millis(kRtt));
-    EXPECT_LT(rtp_sender()->ReSendPacket(kSeqNum), 0);
+  
+  rtp_sender()->SetSendingMediaStatus(false);
+  time_controller_.AdvanceTime(TimeDelta::Millis(kRtt));
+  EXPECT_LT(rtp_sender()->ReSendPacket(kSeqNum), 0);
 }
 
 TEST_P(RtpSenderTest, DoesntFecProtectRetransmissions) {
@@ -1917,24 +1856,19 @@ TEST_P(RtpSenderTest, DoesntFecProtectRetransmissions) {
   rtp_sender_context_->packet_history_.SetRtt(kRtt);
 
   
-  
-  std::unique_ptr<RtpPacketToSend> packet_to_pace;
-  EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
-      .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
-        packet_to_pace = std::move(packets[0]);
-      });
-
-  SendGenericPacket();
-  packet_to_pace->set_fec_protect_packet(true);
-  rtp_sender_context_->InjectPacket(std::move(packet_to_pace),
-                                    PacedPacketInfo());
-
-  ASSERT_EQ(1u, transport_.sent_packets_.size());
+  const int64_t start_time_ms = clock_->TimeInMilliseconds();
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, kMarkerBit, start_time_ms,
+                     start_time_ms);
+  packet->set_allow_retransmission(true);
+  packet->set_fec_protect_packet(true);
+  rtp_sender_context_->packet_history_.PutRtpPacket(std::move(packet),
+                                                    start_time_ms);
 
   
   
   EXPECT_CALL(mock_paced_sender_,
-              EnqueuePackets(Each(Pointee(
+              EnqueuePackets(ElementsAre(Pointee(
                   Property(&RtpPacketToSend::fec_protect_packet, false)))));
 
   time_controller_.AdvanceTime(TimeDelta::Millis(kRtt));
