@@ -48,19 +48,20 @@
 
 
 #![no_std]
-
 #![cfg_attr(all(test, feature = "nightly"), feature(test))]
-#[cfg(all(test, feature = "nightly"))] extern crate test;
-#[cfg(all(test, feature = "nightly"))] extern crate rand;
 extern crate bit_vec;
+#[cfg(all(test, feature = "nightly"))]
+extern crate rand;
+#[cfg(all(test, feature = "nightly"))]
+extern crate test;
 
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
-use bit_vec::{BitVec, Blocks, BitBlock};
-use core::cmp::Ordering;
+use bit_vec::{BitBlock, BitVec, Blocks};
 use core::cmp;
+use core::cmp::Ordering;
 use core::fmt;
 use core::hash;
 use core::iter::{self, Chain, Enumerate, FromIterator, Repeat, Skip, Take};
@@ -86,19 +87,32 @@ fn blocks_for_bits<B: BitBlock>(bits: usize) -> usize {
 
 
 
-fn match_words<'a, 'b, B: BitBlock>(a: &'a BitVec<B>, b: &'b BitVec<B>)
-    -> (MatchWords<'a, B>, MatchWords<'b, B>)
-{
+fn match_words<'a, 'b, B: BitBlock>(
+    a: &'a BitVec<B>,
+    b: &'b BitVec<B>,
+) -> (MatchWords<'a, B>, MatchWords<'b, B>) {
     let a_len = a.storage().len();
     let b_len = b.storage().len();
 
     
     if a_len < b_len {
-        (a.blocks().enumerate().chain(iter::repeat(B::zero()).enumerate().take(b_len).skip(a_len)),
-         b.blocks().enumerate().chain(iter::repeat(B::zero()).enumerate().take(0).skip(0)))
+        (
+            a.blocks()
+                .enumerate()
+                .chain(iter::repeat(B::zero()).enumerate().take(b_len).skip(a_len)),
+            b.blocks()
+                .enumerate()
+                .chain(iter::repeat(B::zero()).enumerate().take(0).skip(0)),
+        )
     } else {
-        (a.blocks().enumerate().chain(iter::repeat(B::zero()).enumerate().take(0).skip(0)),
-         b.blocks().enumerate().chain(iter::repeat(B::zero()).enumerate().take(a_len).skip(b_len)))
+        (
+            a.blocks()
+                .enumerate()
+                .chain(iter::repeat(B::zero()).enumerate().take(0).skip(0)),
+            b.blocks()
+                .enumerate()
+                .chain(iter::repeat(B::zero()).enumerate().take(a_len).skip(b_len)),
+        )
     }
 }
 
@@ -120,7 +134,11 @@ impl<B: BitBlock> Clone for BitSet<B> {
 
 impl<B: BitBlock> Default for BitSet<B> {
     #[inline]
-    fn default() -> Self { BitSet { bit_vec: Default::default() } }
+    fn default() -> Self {
+        BitSet {
+            bit_vec: Default::default(),
+        }
+    }
 }
 
 impl<B: BitBlock> FromIterator<usize> for BitSet<B> {
@@ -218,16 +236,17 @@ impl BitSet<u32> {
     
     #[inline]
     pub fn from_bit_vec(bit_vec: BitVec) -> Self {
-        BitSet { bit_vec: bit_vec }
+        BitSet { bit_vec }
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        BitSet { bit_vec: BitVec::from_bytes(bytes) }
+        BitSet {
+            bit_vec: BitVec::from_bytes(bytes),
+        }
     }
 }
 
 impl<B: BitBlock> BitSet<B> {
-
     
     
     
@@ -331,7 +350,10 @@ impl<B: BitBlock> BitSet<B> {
     }
 
     #[inline]
-    fn other_op<F>(&mut self, other: &Self, mut f: F) where F: FnMut(B, B) -> B {
+    fn other_op<F>(&mut self, other: &Self, mut f: F)
+    where
+        F: FnMut(B, B) -> B,
+    {
         
         let self_bit_vec = &mut self.bit_vec;
         let other_bit_vec = &other.bit_vec;
@@ -384,12 +406,18 @@ impl<B: BitBlock> BitSet<B> {
         
         let old_len = bit_vec.storage().len();
         
-        let n = bit_vec.storage().iter().rev().take_while(|&&n| n == B::zero()).count();
+        let n = bit_vec
+            .storage()
+            .iter()
+            .rev()
+            .take_while(|&&n| n == B::zero())
+            .count();
         
-        let trunc_len = cmp::max(old_len - n, 1);
+        let trunc_len = old_len - n;
         unsafe {
             bit_vec.storage_mut().truncate(trunc_len);
             bit_vec.set_len(trunc_len * B::bits());
+            bit_vec.shrink_to_fit();
         }
     }
 
@@ -430,7 +458,9 @@ impl<B: BitBlock> BitSet<B> {
     
     #[inline]
     pub fn union<'a>(&'a self, other: &'a Self) -> Union<'a, B> {
-        fn or<B: BitBlock>(w1: B, w2: B) -> B { w1 | w2 }
+        fn or<B: BitBlock>(w1: B, w2: B) -> B {
+            w1 | w2
+        }
 
         Union(BlockIter::from_blocks(TwoBitPositions {
             set: self.bit_vec.blocks(),
@@ -457,14 +487,19 @@ impl<B: BitBlock> BitSet<B> {
     
     #[inline]
     pub fn intersection<'a>(&'a self, other: &'a Self) -> Intersection<'a, B> {
-        fn bitand<B: BitBlock>(w1: B, w2: B) -> B { w1 & w2 }
+        fn bitand<B: BitBlock>(w1: B, w2: B) -> B {
+            w1 & w2
+        }
         let min = cmp::min(self.bit_vec.len(), other.bit_vec.len());
 
-        Intersection(BlockIter::from_blocks(TwoBitPositions {
-            set: self.bit_vec.blocks(),
-            other: other.bit_vec.blocks(),
-            merge: bitand,
-        }).take(min))
+        Intersection(
+            BlockIter::from_blocks(TwoBitPositions {
+                set: self.bit_vec.blocks(),
+                other: other.bit_vec.blocks(),
+                merge: bitand,
+            })
+            .take(min),
+        )
     }
 
     
@@ -492,7 +527,9 @@ impl<B: BitBlock> BitSet<B> {
     
     #[inline]
     pub fn difference<'a>(&'a self, other: &'a Self) -> Difference<'a, B> {
-        fn diff<B: BitBlock>(w1: B, w2: B) -> B { w1 & !w2 }
+        fn diff<B: BitBlock>(w1: B, w2: B) -> B {
+            w1 & !w2
+        }
 
         Difference(BlockIter::from_blocks(TwoBitPositions {
             set: self.bit_vec.blocks(),
@@ -520,7 +557,9 @@ impl<B: BitBlock> BitSet<B> {
     
     #[inline]
     pub fn symmetric_difference<'a>(&'a self, other: &'a Self) -> SymmetricDifference<'a, B> {
-        fn bitxor<B: BitBlock>(w1: B, w2: B) -> B { w1 ^ w2 }
+        fn bitxor<B: BitBlock>(w1: B, w2: B) -> B {
+            w1 ^ w2
+        }
 
         SymmetricDifference(BlockIter::from_blocks(TwoBitPositions {
             set: self.bit_vec.blocks(),
@@ -631,7 +670,7 @@ impl<B: BitBlock> BitSet<B> {
         self.other_op(other, |w1, w2| w1 ^ w2);
     }
 
-
+    
 
 
 
@@ -713,8 +752,10 @@ impl<B: BitBlock> BitSet<B> {
 
     
     #[inline]
-    pub fn len(&self) -> usize  {
-        self.bit_vec.blocks().fold(0, |acc, n| acc + n.count_ones() as usize)
+    pub fn len(&self) -> usize {
+        self.bit_vec
+            .blocks()
+            .fold(0, |acc, n| acc + n.count_ones() as usize)
     }
 
     
@@ -776,7 +817,7 @@ impl<B: BitBlock> BitSet<B> {
         }
 
         self.bit_vec.set(value, true);
-        return true;
+        true
     }
 
     
@@ -788,7 +829,7 @@ impl<B: BitBlock> BitSet<B> {
 
         self.bit_vec.set(value, false);
 
-        return true;
+        true
     }
 }
 
@@ -813,10 +854,17 @@ struct BlockIter<T, B> {
     tail: T,
 }
 
-impl<T, B: BitBlock> BlockIter<T, B> where T: Iterator<Item=B> {
+impl<T, B: BitBlock> BlockIter<T, B>
+where
+    T: Iterator<Item = B>,
+{
     fn from_blocks(mut blocks: T) -> BlockIter<T, B> {
-        let h = blocks.next().unwrap_or(B::zero());
-        BlockIter {tail: blocks, head: h, head_offset: 0}
+        let h = blocks.next().unwrap_or_else(B::zero);
+        BlockIter {
+            tail: blocks,
+            head: h,
+            head_offset: 0,
+        }
     }
 }
 
@@ -840,14 +888,17 @@ pub struct Difference<'a, B: 'a>(BlockIter<TwoBitPositions<'a, B>, B>);
 #[derive(Clone)]
 pub struct SymmetricDifference<'a, B: 'a>(BlockIter<TwoBitPositions<'a, B>, B>);
 
-impl<'a, T, B: BitBlock> Iterator for BlockIter<T, B> where T: Iterator<Item=B> {
+impl<'a, T, B: BitBlock> Iterator for BlockIter<T, B>
+where
+    T: Iterator<Item = B>,
+{
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
         while self.head == B::zero() {
             match self.tail.next() {
                 Some(w) => self.head = w,
-                None => return None
+                None => return None,
             }
             self.head_offset += B::bits();
         }
@@ -867,7 +918,7 @@ impl<'a, T, B: BitBlock> Iterator for BlockIter<T, B> where T: Iterator<Item=B> 
     fn size_hint(&self) -> (usize, Option<usize>) {
         match self.tail.size_hint() {
             (_, Some(h)) => (0, Some(1 + h * B::bits())),
-            _ => (0, None)
+            _ => (0, None),
         }
     }
 }
@@ -880,7 +931,7 @@ impl<'a, B: BitBlock> Iterator for TwoBitPositions<'a, B> {
             (Some(a), Some(b)) => Some((self.merge)(a, b)),
             (Some(a), None) => Some((self.merge)(a, B::zero())),
             (None, Some(b)) => Some((self.merge)(B::zero(), b)),
-            _ => return None
+            _ => None,
         }
     }
 
@@ -891,7 +942,7 @@ impl<'a, B: BitBlock> Iterator for TwoBitPositions<'a, B> {
 
         let upper = match (au, bu) {
             (Some(au), Some(bu)) => Some(cmp::max(au, bu)),
-            _ => None
+            _ => None,
         };
 
         (cmp::max(a, b), upper)
@@ -901,36 +952,66 @@ impl<'a, B: BitBlock> Iterator for TwoBitPositions<'a, B> {
 impl<'a, B: BitBlock> Iterator for Iter<'a, B> {
     type Item = usize;
 
-    #[inline] fn next(&mut self) -> Option<usize> { self.0.next() }
-    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.0.size_hint() }
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.0.next()
+    }
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
 }
 
 impl<'a, B: BitBlock> Iterator for Union<'a, B> {
     type Item = usize;
 
-    #[inline] fn next(&mut self) -> Option<usize> { self.0.next() }
-    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.0.size_hint() }
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.0.next()
+    }
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
 }
 
 impl<'a, B: BitBlock> Iterator for Intersection<'a, B> {
     type Item = usize;
 
-    #[inline] fn next(&mut self) -> Option<usize> { self.0.next() }
-    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.0.size_hint() }
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.0.next()
+    }
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
 }
 
 impl<'a, B: BitBlock> Iterator for Difference<'a, B> {
     type Item = usize;
 
-    #[inline] fn next(&mut self) -> Option<usize> { self.0.next() }
-    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.0.size_hint() }
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.0.next()
+    }
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
 }
 
 impl<'a, B: BitBlock> Iterator for SymmetricDifference<'a, B> {
     type Item = usize;
 
-    #[inline] fn next(&mut self) -> Option<usize> { self.0.next() }
-    #[inline] fn size_hint(&self) -> (usize, Option<usize>) { self.0.size_hint() }
+    #[inline]
+    fn next(&mut self) -> Option<usize> {
+        self.0.next()
+    }
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
 }
 
 impl<'a, B: BitBlock> IntoIterator for &'a BitSet<B> {
@@ -944,9 +1025,9 @@ impl<'a, B: BitBlock> IntoIterator for &'a BitSet<B> {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering::{Equal, Greater, Less};
     use super::BitSet;
     use bit_vec::BitVec;
+    use std::cmp::Ordering::{Equal, Greater, Less};
     use std::vec::Vec;
 
     #[test]
@@ -979,7 +1060,7 @@ mod tests {
         assert_eq!(idxs, [0, 2, 3]);
 
         let long: BitSet = (0..10000).filter(|&n| n % 2 == 0).collect();
-        let real: Vec<_> = (0..10000/2).map(|x| x*2).collect();
+        let real: Vec<_> = (0..10000 / 2).map(|x| x * 2).collect();
 
         let idxs: Vec<_> = long.iter().collect();
         assert_eq!(idxs, real);
@@ -993,7 +1074,7 @@ mod tests {
             for &l in &lengths {
                 let bitset = BitSet::from_bit_vec(BitVec::from_elem(l, b));
                 assert_eq!(bitset.contains(1), b);
-                assert_eq!(bitset.contains((l-1)), b);
+                assert_eq!(bitset.contains(l - 1), b);
                 assert!(!bitset.contains(l));
             }
         }
@@ -1292,6 +1373,91 @@ mod tests {
     }
 
     #[test]
+    fn test_bit_set_shrink_to_fit_new() {
+        
+        
+        
+        let mut a = BitSet::new();
+        assert_eq!(a.len(), 0);
+        assert_eq!(a.capacity(), 0);
+        a.shrink_to_fit();
+        assert_eq!(a.len(), 0);
+        assert_eq!(a.capacity(), 0);
+        assert!(!a.contains(1));
+        a.insert(3);
+        assert!(a.contains(3));
+        assert_eq!(a.len(), 1);
+        assert!(a.capacity() > 0);
+        a.shrink_to_fit();
+        assert!(a.contains(3));
+        assert_eq!(a.len(), 1);
+        assert!(a.capacity() > 0);
+    }
+
+    #[test]
+    fn test_bit_set_shrink_to_fit() {
+        let mut a = BitSet::new();
+        assert_eq!(a.len(), 0);
+        assert_eq!(a.capacity(), 0);
+        a.insert(259);
+        a.insert(98);
+        a.insert(3);
+        assert_eq!(a.len(), 3);
+        assert!(a.capacity() > 0);
+        assert!(!a.contains(1));
+        assert!(a.contains(259));
+        assert!(a.contains(98));
+        assert!(a.contains(3));
+
+        a.shrink_to_fit();
+        assert!(!a.contains(1));
+        assert!(a.contains(259));
+        assert!(a.contains(98));
+        assert!(a.contains(3));
+        assert_eq!(a.len(), 3);
+        assert!(a.capacity() > 0);
+
+        let old_cap = a.capacity();
+        assert!(a.remove(259));
+        a.shrink_to_fit();
+        assert!(a.capacity() < old_cap, "{} {}", a.capacity(), old_cap);
+        assert!(!a.contains(1));
+        assert!(!a.contains(259));
+        assert!(a.contains(98));
+        assert!(a.contains(3));
+        assert_eq!(a.len(), 2);
+
+        let old_cap2 = a.capacity();
+        a.clear();
+        assert_eq!(a.capacity(), old_cap2);
+        assert_eq!(a.len(), 0);
+        assert!(!a.contains(1));
+        assert!(!a.contains(259));
+        assert!(!a.contains(98));
+        assert!(!a.contains(3));
+
+        a.insert(512);
+        assert!(a.capacity() > 0);
+        assert_eq!(a.len(), 1);
+        assert!(a.contains(512));
+        assert!(!a.contains(1));
+        assert!(!a.contains(259));
+        assert!(!a.contains(98));
+        assert!(!a.contains(3));
+
+        a.remove(512);
+        a.shrink_to_fit();
+        assert_eq!(a.capacity(), 0);
+        assert_eq!(a.len(), 0);
+        assert!(!a.contains(512));
+        assert!(!a.contains(1));
+        assert!(!a.contains(259));
+        assert!(!a.contains(98));
+        assert!(!a.contains(3));
+        assert!(!a.contains(0));
+    }
+
+    #[test]
     fn test_bit_vec_remove() {
         let mut a = BitSet::new();
 
@@ -1325,7 +1491,7 @@ mod tests {
         assert!(b.contains(1000));
     }
 
-
+    
 
 
 
@@ -1393,9 +1559,9 @@ mod tests {
 mod bench {
     use super::BitSet;
     use bit_vec::BitVec;
-    use rand::{Rng, thread_rng, ThreadRng};
+    use rand::{thread_rng, Rng, ThreadRng};
 
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     const BENCH_BITS: usize = 1 << 14;
     const BITS: usize = 32;
@@ -1430,8 +1596,7 @@ mod bench {
 
     #[bench]
     fn bench_bit_vecset_iter(b: &mut Bencher) {
-        let bit_vec = BitSet::from_bit_vec(BitVec::from_fn(BENCH_BITS,
-                                              |idx| {idx % 3 == 0}));
+        let bit_vec = BitSet::from_bit_vec(BitVec::from_fn(BENCH_BITS, |idx| idx % 3 == 0));
         b.iter(|| {
             let mut sum = 0;
             for idx in &bit_vec {
