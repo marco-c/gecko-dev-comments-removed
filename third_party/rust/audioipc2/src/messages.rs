@@ -5,13 +5,13 @@
 
 use crate::PlatformHandle;
 use crate::PlatformHandleType;
+use crate::INVALID_HANDLE_VALUE;
 #[cfg(target_os = "linux")]
 use audio_thread_priority::RtPriorityThreadInfo;
 use cubeb::{self, ffi};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::ffi::{CStr, CString};
-use std::io;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr;
 
@@ -312,13 +312,15 @@ pub enum DeviceCollectionResp {
 
 
 
+
+
 #[derive(Debug)]
 pub enum SerializableHandle {
     
     Owned(PlatformHandle, Option<u32>),
     
-    SerializableValue(PlatformHandleType),
-    Empty,
+    SerializableValue(PlatformHandleType), 
+    Empty,                                 
 }
 
 
@@ -330,6 +332,7 @@ impl SerializableHandle {
         SerializableHandle::Owned(handle, Some(target_pid))
     }
 
+    
     pub fn take_handle(&mut self) -> PlatformHandle {
         match std::mem::replace(self, SerializableHandle::Empty) {
             SerializableHandle::Owned(handle, target_pid) => {
@@ -340,18 +343,31 @@ impl SerializableHandle {
         }
     }
 
-    unsafe fn take_handle_for_send(&mut self) -> (PlatformHandleType, u32) {
+    
+    
+    fn take_handle_for_send(&mut self) -> RemoteHandle {
         match std::mem::replace(self, SerializableHandle::Empty) {
-            SerializableHandle::Owned(handle, target_pid) => (
-                handle.into_raw(),
-                target_pid.expect("need valid target_pid"),
-            ),
-            _ => panic!("take_handle_with_target called in invalid state"),
+            SerializableHandle::Owned(handle, target_pid) => unsafe {
+                RemoteHandle::new(
+                    handle.into_raw(),
+                    target_pid.expect("target process required"),
+                )
+            },
+            _ => panic!("take_handle_for_send called in invalid state"),
         }
     }
 
     fn new_owned(handle: PlatformHandleType) -> SerializableHandle {
         SerializableHandle::Owned(PlatformHandle::new(handle), None)
+    }
+
+    #[cfg(windows)]
+    fn make_owned(&mut self) {
+        if let SerializableHandle::SerializableValue(handle) = self {
+            *self = SerializableHandle::new_owned(*handle);
+        } else {
+            panic!("make_owned called in invalid state")
+        }
     }
 
     fn new_serializable_value(handle: PlatformHandleType) -> SerializableHandle {
@@ -361,6 +377,7 @@ impl SerializableHandle {
     fn get_serializable_value(&self) -> PlatformHandleType {
         match *self {
             SerializableHandle::SerializableValue(handle) => handle,
+            SerializableHandle::Empty => INVALID_HANDLE_VALUE,
             _ => panic!("get_remote_handle called in invalid state"),
         }
     }
@@ -399,103 +416,181 @@ impl serde::de::Visitor<'_> for SerializableHandleVisitor {
     where
         E: serde::de::Error,
     {
-        let value = value as PlatformHandleType;
-        Ok(if cfg!(windows) {
-            SerializableHandle::new_owned(value)
-        } else {
-            
-            
-            SerializableHandle::new_serializable_value(value)
-        })
+        Ok(SerializableHandle::new_serializable_value(
+            value as PlatformHandleType,
+        ))
     }
 }
 
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct RemoteHandle {
+    pub(crate) handle: PlatformHandleType,
+    #[cfg(windows)]
+    pub(crate) target: u32,
+    #[cfg(windows)]
+    pub(crate) target_handle: Option<PlatformHandleType>,
+}
+
+impl RemoteHandle {
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn new(handle: PlatformHandleType, _target: u32) -> Self {
+        RemoteHandle {
+            handle,
+            #[cfg(windows)]
+            target: _target,
+            #[cfg(windows)]
+            target_handle: None,
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn mark_sent(&mut self) {
+        self.target_handle.take();
+    }
+
+    #[cfg(windows)]
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn send_to_target(&mut self) -> std::io::Result<PlatformHandleType> {
+        let target_handle = crate::duplicate_platform_handle(self.handle, Some(self.target))?;
+        self.target_handle = Some(target_handle);
+        Ok(target_handle)
+    }
+
+    #[cfg(unix)]
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn take(self) -> PlatformHandleType {
+        let h = self.handle;
+        std::mem::forget(self);
+        h
+    }
+}
+
+impl Drop for RemoteHandle {
+    fn drop(&mut self) {
+        unsafe {
+            crate::close_platform_handle(self.handle);
+        }
+        #[cfg(windows)]
+        unsafe {
+            if let Some(target_handle) = self.target_handle {
+                if let Err(e) = crate::close_target_handle(target_handle, self.target) {
+                    trace!("RemoteHandle failed to close target handle: {:?}", e);
+                }
+            }
+        }
+    }
+}
+
+unsafe impl Send for RemoteHandle {}
+
 pub trait AssociateHandleForMessage {
     
-    
-    
-    
-    fn prepare_send_message_handle<F>(&mut self, _f: F) -> io::Result<()>
-    where
-        F: FnOnce(PlatformHandleType, u32) -> io::Result<PlatformHandleType>,
-    {
-        Ok(())
+    fn has_associated_handle(&self) -> bool {
+        false
     }
 
     
     
+    fn take_handle(&mut self) -> RemoteHandle {
+        panic!("take_handle called on item without associated handle");
+    }
+
+    #[allow(clippy::missing_safety_doc)]
+    
+    
+    #[cfg(windows)]
+    unsafe fn set_remote_handle(&mut self, _: PlatformHandleType) {
+        panic!("set_remote_handle called on item without associated handle");
+    }
+
+    #[allow(clippy::missing_safety_doc)]
+    
+    #[cfg(windows)]
+    unsafe fn set_local_handle(&mut self) {
+        panic!("set_local_handle called on item without associated handle");
+    }
+
+    #[allow(clippy::missing_safety_doc)]
     
     #[cfg(unix)]
-    fn receive_owned_message_handle<F>(&mut self, _: F)
-    where
-        F: FnOnce() -> PlatformHandleType,
-    {
+    unsafe fn set_local_handle(&mut self, _: PlatformHandleType) {
+        panic!("set_local_handle called on item without associated handle");
+    }
+}
+
+impl AssociateHandleForMessage for ClientMessage {
+    fn has_associated_handle(&self) -> bool {
+        matches!(
+            *self,
+            ClientMessage::StreamCreated(_)
+                | ClientMessage::StreamInitialized(_)
+                | ClientMessage::ContextSetupDeviceCollectionCallback(_)
+        )
+    }
+
+    fn take_handle(&mut self) -> RemoteHandle {
+        match *self {
+            ClientMessage::StreamCreated(ref mut data) => data.shm_handle.take_handle_for_send(),
+            ClientMessage::StreamInitialized(ref mut data) => data.take_handle_for_send(),
+            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
+                data.platform_handle.take_handle_for_send()
+            }
+            _ => panic!("take_handle called on item without associated handle"),
+        }
+    }
+
+    #[cfg(windows)]
+    unsafe fn set_remote_handle(&mut self, handle: PlatformHandleType) {
+        match *self {
+            ClientMessage::StreamCreated(ref mut data) => {
+                data.shm_handle = SerializableHandle::new_serializable_value(handle);
+            }
+            ClientMessage::StreamInitialized(ref mut data) => {
+                *data = SerializableHandle::new_serializable_value(handle);
+            }
+            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
+                data.platform_handle = SerializableHandle::new_serializable_value(handle);
+            }
+            _ => panic!("set_remote_handle called on item without associated handle"),
+        }
+    }
+
+    #[cfg(windows)]
+    unsafe fn set_local_handle(&mut self) {
+        match *self {
+            ClientMessage::StreamCreated(ref mut data) => data.shm_handle.make_owned(),
+            ClientMessage::StreamInitialized(ref mut data) => data.make_owned(),
+            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
+                data.platform_handle.make_owned()
+            }
+            _ => panic!("set_local_handle called on item without associated handle"),
+        }
+    }
+
+    #[cfg(unix)]
+    unsafe fn set_local_handle(&mut self, handle: PlatformHandleType) {
+        match *self {
+            ClientMessage::StreamCreated(ref mut data) => {
+                data.shm_handle = SerializableHandle::new_owned(handle);
+            }
+            ClientMessage::StreamInitialized(ref mut data) => {
+                *data = SerializableHandle::new_owned(handle);
+            }
+            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
+                data.platform_handle = SerializableHandle::new_owned(handle);
+            }
+            _ => panic!("set_local_handle called on item without associated handle"),
+        }
     }
 }
 
 impl AssociateHandleForMessage for ServerMessage {}
-
-impl AssociateHandleForMessage for ClientMessage {
-    fn prepare_send_message_handle<F>(&mut self, f: F) -> io::Result<()>
-    where
-        F: FnOnce(PlatformHandleType, u32) -> io::Result<PlatformHandleType>,
-    {
-        unsafe {
-            match *self {
-                ClientMessage::StreamCreated(ref mut data) => {
-                    let handle = data.shm_handle.take_handle_for_send();
-                    data.shm_handle =
-                        SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
-                    trace!(
-                        "StreamCreated handle: {:?} remote_handle: {:?}",
-                        handle,
-                        data.shm_handle
-                    );
-                }
-                ClientMessage::StreamInitialized(ref mut data) => {
-                    let handle = data.take_handle_for_send();
-                    *data = SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
-                    trace!(
-                        "StreamInitialized handle: {:?} remote_handle: {:?}",
-                        handle,
-                        data
-                    );
-                }
-                ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
-                    let handle = data.platform_handle.take_handle_for_send();
-                    data.platform_handle =
-                        SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
-                    trace!(
-                        "ContextSetupDeviceCollectionCallback handle: {:?} remote_handle: {:?}",
-                        handle,
-                        data.platform_handle
-                    );
-                }
-                _ => {}
-            }
-        }
-        Ok(())
-    }
-
-    #[cfg(unix)]
-    fn receive_owned_message_handle<F>(&mut self, f: F)
-    where
-        F: FnOnce() -> PlatformHandleType,
-    {
-        match *self {
-            ClientMessage::StreamCreated(ref mut data) => {
-                data.shm_handle = SerializableHandle::new_owned(f());
-            }
-            ClientMessage::StreamInitialized(ref mut data) => {
-                *data = SerializableHandle::new_owned(f());
-            }
-            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
-                data.platform_handle = SerializableHandle::new_owned(f());
-            }
-            _ => {}
-        }
-    }
-}
 
 impl AssociateHandleForMessage for DeviceCollectionReq {}
 impl AssociateHandleForMessage for DeviceCollectionResp {}
