@@ -350,14 +350,18 @@ int SimulcastEncoderAdapter::InitEncode(
   
   
   
-  
 
+  int active_streams_count = CountActiveStreams(*inst);
   
-  if (total_streams_count_ == 1 ||
-      encoder_context->encoder().GetEncoderInfo().supports_simulcast) {
+  
+  
+  bool separate_encoders_needed =
+      !encoder_context->encoder().GetEncoderInfo().supports_simulcast ||
+      active_streams_count == 1;
+  
+  if (total_streams_count_ == 1 || !separate_encoders_needed) {
     int ret = encoder_context->encoder().InitEncode(&codec_, settings);
     if (ret >= 0) {
-      int active_streams_count = CountActiveStreams(*inst);
       stream_contexts_.emplace_back(
           nullptr, std::move(encoder_context),
           nullptr, 0, codec_.width,
