@@ -60,6 +60,10 @@ struct ScrollSnapUtils {
       const nsIContent* aFocusedContent);
 
   static ScrollSnapTargetId GetTargetIdFor(const nsIFrame* aFrame);
+
+  
+  
+  static void PostPendingResnapIfNeededFor(nsIFrame* aFrame);
 };
 
 }  

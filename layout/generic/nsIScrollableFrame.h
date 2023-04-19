@@ -574,6 +574,14 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
   virtual ScrollSnapInfo GetScrollSnapInfo() = 0;
 
+  virtual void TryResnap() = 0;
+  
+
+
+
+  virtual void PostPendingResnapIfNeeded(const nsIFrame* aFrame) = 0;
+  virtual void PostPendingResnap() = 0;
+
   
 
 
