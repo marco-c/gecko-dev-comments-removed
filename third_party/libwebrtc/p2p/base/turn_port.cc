@@ -724,16 +724,6 @@ bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
     return false;
   }
 
-  
-  
-  if (IsStunSuccessResponseType(msg_type) &&
-      !StunMessage::ValidateMessageIntegrity(data, size, hash())) {
-    RTC_LOG(LS_WARNING) << ToString()
-                        << ": Received TURN message with invalid "
-                           "message integrity, msg_type: "
-                        << msg_type;
-    return true;
-  }
   request_manager_.CheckResponse(data, size);
 
   return true;

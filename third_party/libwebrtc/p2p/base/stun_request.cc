@@ -120,6 +120,18 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
   }
 
   StunRequest* request = iter->second;
+
+  
+  
+  
+  
+  bool skip_integrity_checking = false;
+  if (request->msg()->integrity() == StunMessage::IntegrityStatus::kNotSet) {
+    skip_integrity_checking = true;
+  } else {
+    msg->ValidateMessageIntegrity(request->msg()->password());
+  }
+
   if (!msg->GetNonComprehendedAttributes().empty()) {
     
     
@@ -129,6 +141,9 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
     delete request;
     return false;
   } else if (msg->type() == GetStunSuccessResponseType(request->type())) {
+    if (!msg->IntegrityOk() && !skip_integrity_checking) {
+      return false;
+    }
     request->OnResponse(msg);
   } else if (msg->type() == GetStunErrorResponseType(request->type())) {
     request->OnErrorResponse(msg);

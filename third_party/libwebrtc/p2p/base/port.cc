@@ -493,7 +493,8 @@ bool Port::GetStunMessage(const char* data,
     }
 
     
-    if (!stun_msg->ValidateMessageIntegrity(data, size, password_)) {
+    if (stun_msg->ValidateMessageIntegrity(password_) !=
+        StunMessage::IntegrityStatus::kIntegrityOk) {
       RTC_LOG(LS_ERROR) << ToString() << ": Received "
                         << StunMethodToString(stun_msg->type())
                         << " with bad M-I from " << addr.ToSensitiveString()
@@ -559,7 +560,8 @@ bool Port::GetStunMessage(const char* data,
     
     
   } else if (stun_msg->type() == GOOG_PING_REQUEST) {
-    if (!stun_msg->ValidateMessageIntegrity32(data, size, password_)) {
+    if (stun_msg->ValidateMessageIntegrity(password_) !=
+        StunMessage::IntegrityStatus::kIntegrityOk) {
       RTC_LOG(LS_ERROR) << ToString() << ": Received "
                         << StunMethodToString(stun_msg->type())
                         << " with bad M-I from " << addr.ToSensitiveString()

@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -149,6 +150,15 @@ class StunMessage {
   StunMessage();
   virtual ~StunMessage();
 
+  
+  
+  enum class IntegrityStatus {
+    kNotSet,
+    kNoIntegrity,   
+    kIntegrityOk,   
+    kIntegrityBad,  
+  };
+
   int type() const { return type_; }
   size_t length() const { return length_; }
   const std::string& transaction_id() const { return transaction_id_; }
@@ -193,17 +203,25 @@ class StunMessage {
 
   
   
+  IntegrityStatus ValidateMessageIntegrity(const std::string& password);
+
   
-  static bool ValidateMessageIntegrity(const char* data,
-                                       size_t size,
-                                       const std::string& password);
-  static bool ValidateMessageIntegrity32(const char* data,
-                                         size_t size,
-                                         const std::string& password);
+  IntegrityStatus integrity() const { return integrity_; }
+
+  
+  bool IntegrityOk() const {
+    return integrity_ == IntegrityStatus::kIntegrityOk;
+  }
+
+  
+  
+  std::string password() const {
+    RTC_DCHECK(integrity_ != IntegrityStatus::kNotSet);
+    return password_;
+  }
 
   
   bool AddMessageIntegrity(const std::string& password);
-  bool AddMessageIntegrity(const char* key, size_t keylen);
 
   
   
@@ -244,6 +262,30 @@ class StunMessage {
   bool EqualAttributes(const StunMessage* other,
                        std::function<bool(int type)> attribute_type_mask) const;
 
+  
+  static bool ValidateMessageIntegrityForTesting(const char* data,
+                                                 size_t size,
+                                                 const std::string& password) {
+    return ValidateMessageIntegrity(data, size, password);
+  }
+  
+  static bool ValidateMessageIntegrity32ForTesting(
+      const char* data,
+      size_t size,
+      const std::string& password) {
+    return ValidateMessageIntegrity32(data, size, password);
+  }
+  
+  
+  
+  
+  static bool ValidateMessageIntegrity(const char* data,
+                                       size_t size,
+                                       const std::string& password);
+  static bool ValidateMessageIntegrity32(const char* data,
+                                         size_t size,
+                                         const std::string& password);
+
  protected:
   
   virtual StunAttributeValueType GetAttributeValueType(int type) const;
@@ -269,6 +311,10 @@ class StunMessage {
   std::string transaction_id_;
   uint32_t reduced_transaction_id_;
   uint32_t stun_magic_cookie_;
+  
+  std::string buffer_;
+  IntegrityStatus integrity_ = IntegrityStatus::kNotSet;
+  std::string password_;
 };
 
 
