@@ -250,15 +250,17 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.96")]
+#![doc(html_root_url = "https://docs.rs/syn/1.0.99")]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(non_camel_case_types)]
 #![allow(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
+    clippy::cast_ptr_alignment,
     clippy::default_trait_access,
     clippy::doc_markdown,
     clippy::expl_impl_clone_on_copy,
+    clippy::explicit_auto_deref,
     clippy::if_not_else,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
@@ -299,11 +301,9 @@ extern crate quote;
 #[macro_use]
 mod macros;
 
-
 #[cfg(feature = "parsing")]
-#[doc(hidden)]
 #[macro_use]
-pub mod group;
+mod group;
 
 #[macro_use]
 pub mod token;
