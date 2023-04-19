@@ -5,26 +5,30 @@
 
 
 
-const nodeConstants = require("devtools/shared/dom-node-constants");
+const nodeConstants = require("resource://devtools/shared/dom-node-constants.js");
 
 
 const {
   createFactory,
   createElement,
-} = require("devtools/client/shared/vendor/react");
-const ReactDOM = require("devtools/client/shared/vendor/react-dom");
-const { Provider } = require("devtools/client/shared/vendor/react-redux");
+} = require("resource://devtools/client/shared/vendor/react.js");
+const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.js");
+const {
+  Provider,
+} = require("resource://devtools/client/shared/vendor/react-redux.js");
 
 
 const MainFrame = createFactory(
-  require("devtools/client/accessibility/components/MainFrame")
+  require("resource://devtools/client/accessibility/components/MainFrame.js")
 );
 
 
-const createStore = require("devtools/client/shared/redux/create-store");
+const createStore = require("resource://devtools/client/shared/redux/create-store.js");
 
 
-const { reducers } = require("devtools/client/accessibility/reducers/index");
+const {
+  reducers,
+} = require("resource://devtools/client/accessibility/reducers/index.js");
 const thunkOptions = { options: {} };
 const store = createStore(reducers, {
   
@@ -33,11 +37,13 @@ const store = createStore(reducers, {
 });
 
 
-const { reset } = require("devtools/client/accessibility/actions/ui");
+const {
+  reset,
+} = require("resource://devtools/client/accessibility/actions/ui.js");
 const {
   select,
   highlight,
-} = require("devtools/client/accessibility/actions/accessibles");
+} = require("resource://devtools/client/accessibility/actions/accessibles.js");
 
 
 

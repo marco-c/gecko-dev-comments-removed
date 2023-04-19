@@ -5,7 +5,7 @@
 
 const {
   fetchChildren,
-} = require("devtools/client/accessibility/actions/accessibles");
+} = require("resource://devtools/client/accessibility/actions/accessibles.js");
 
 
 

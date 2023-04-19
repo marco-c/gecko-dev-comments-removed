@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { UPDATE_DETAILS } = require("devtools/client/accessibility/constants");
+const {
+  UPDATE_DETAILS,
+} = require("resource://devtools/client/accessibility/constants.js");
 
 
 
