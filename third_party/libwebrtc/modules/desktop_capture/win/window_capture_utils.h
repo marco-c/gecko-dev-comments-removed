@@ -89,7 +89,9 @@ enum GetWindowListFlags {
 
 
 
-bool GetWindowList(int flags, DesktopCapturer::SourceList* windows);
+bool GetWindowList(int flags,
+                   DesktopCapturer::SourceList* windows,
+                   LONG ex_style_filters = 0);
 
 typedef HRESULT(WINAPI* DwmIsCompositionEnabledFunc)(BOOL* enabled);
 typedef HRESULT(WINAPI* DwmGetWindowAttributeFunc)(HWND hwnd,
@@ -109,8 +111,13 @@ class WindowCaptureHelperWin {
   bool IsWindowOnCurrentDesktop(HWND hwnd);
   bool IsWindowVisibleOnCurrentDesktop(HWND hwnd);
   bool IsWindowCloaked(HWND hwnd);
+
+  
+  
+  
   bool EnumerateCapturableWindows(DesktopCapturer::SourceList* results,
-                                  bool enumerate_current_process_windows);
+                                  bool enumerate_current_process_windows,
+                                  LONG ex_style_filters = 0);
 
  private:
   HMODULE dwmapi_library_ = nullptr;

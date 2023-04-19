@@ -41,7 +41,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
 
 WindowInfo CreateTestWindow(const WCHAR* window_title,
                             const int height,
-                            const int width) {
+                            const int width,
+                            const LONG extended_styles) {
   WindowInfo info;
   ::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -61,11 +62,12 @@ WindowInfo CreateTestWindow(const WCHAR* window_title,
   
   int window_height = height <= 0 ? kWindowHeight : height;
   int window_width = width <= 0 ? kWindowWidth : width;
-  info.hwnd = ::CreateWindowW(kWindowClass, window_title, WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT, CW_USEDEFAULT, window_width,
-                              window_height, nullptr,
-                              nullptr, info.window_instance,
-                              nullptr);
+  info.hwnd =
+      ::CreateWindowExW(extended_styles, kWindowClass, window_title,
+                        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+                        window_width, window_height, nullptr,
+                        nullptr, info.window_instance,
+                        nullptr);
 
   ::ShowWindow(info.hwnd, SW_SHOWNORMAL);
   ::UpdateWindow(info.hwnd);
