@@ -2871,17 +2871,16 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
         old_remote_content =
             &old_remote_description->description()->contents()[i];
       }
-      
-      
-      if (old_local_content && old_local_content->rejected &&
-          old_remote_content && old_remote_content->rejected &&
-          new_content.rejected) {
-        continue;
-      }
       auto transceiver_or_error =
           AssociateTransceiver(source, new_session.GetType(), i, new_content,
                                old_local_content, old_remote_content);
       if (!transceiver_or_error.ok()) {
+        
+        
+        
+        if (new_content.rejected) {
+          continue;
+        }
         return transceiver_or_error.MoveError();
       }
       auto transceiver = transceiver_or_error.MoveValue();
@@ -2946,8 +2945,9 @@ SdpOfferAnswerHandler::AssociateTransceiver(
       transceiver = transceivers().FindByMLineIndex(mline_index);
     }
     if (!transceiver) {
+      
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                           "Unknown transceiver");
+                           "Transceiver not found based on m-line index");
     }
   } else {
     RTC_DCHECK_EQ(source, cricket::CS_REMOTE);

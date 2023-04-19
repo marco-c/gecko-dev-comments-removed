@@ -164,6 +164,28 @@ class PeerConnectionRtpTestUnifiedPlan : public PeerConnectionRtpBaseTest {
  protected:
   PeerConnectionRtpTestUnifiedPlan()
       : PeerConnectionRtpBaseTest(SdpSemantics::kUnifiedPlan) {}
+
+  
+  
+  bool ExchangeOfferAnswerWhereRemoteStopsTransceiver(
+      PeerConnectionWrapper* caller,
+      PeerConnectionWrapper* callee,
+      size_t mid_to_stop) {
+    auto offer = caller->CreateOffer();
+    caller->SetLocalDescription(CloneSessionDescription(offer.get()));
+    callee->SetRemoteDescription(std::move(offer));
+    EXPECT_LT(mid_to_stop, callee->pc()->GetTransceivers().size());
+    
+    callee->pc()->GetTransceivers()[mid_to_stop]->StopInternal();
+    auto answer = callee->CreateAnswer();
+    EXPECT_TRUE(answer);
+    bool set_local_answer =
+        callee->SetLocalDescription(CloneSessionDescription(answer.get()));
+    EXPECT_TRUE(set_local_answer);
+    bool set_remote_answer = caller->SetRemoteDescription(std::move(answer));
+    EXPECT_TRUE(set_remote_answer);
+    return set_remote_answer;
+  }
 };
 
 
@@ -1571,6 +1593,42 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   EXPECT_EQ(0U, callee->pc()->GetSenders().size());
   EXPECT_EQ(0U, caller->pc()->GetReceivers().size());
   EXPECT_EQ(0U, callee->pc()->GetReceivers().size());
+}
+
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       SetLocalDescriptionWorksAfterRepeatedAddRemove) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto video_track = caller->CreateVideoTrack("v");
+  auto track = caller->CreateAudioTrack("a");
+  caller->AddTransceiver(video_track);
+  auto transceiver = caller->AddTransceiver(track);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->pc()->RemoveTrack(transceiver->sender());
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->AddTrack(track);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->pc()->RemoveTrack(transceiver->sender());
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+}
+
+
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       SetLocalDescriptionWorksAfterRepeatedAddRemoveWithRemoteReject) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto video_track = caller->CreateVideoTrack("v");
+  auto track = caller->CreateAudioTrack("a");
+  caller->AddTransceiver(video_track);
+  auto transceiver = caller->AddTransceiver(track);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->pc()->RemoveTrack(transceiver->sender());
+  ExchangeOfferAnswerWhereRemoteStopsTransceiver(caller.get(), callee.get(), 1);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->AddTrack(track);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->pc()->RemoveTrack(transceiver->sender());
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 }
 
 
