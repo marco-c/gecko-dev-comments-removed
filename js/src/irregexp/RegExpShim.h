@@ -135,6 +135,10 @@ using byte = uint8_t;
 using Address = uintptr_t;
 static const Address kNullAddress = 0;
 
+inline uintptr_t GetCurrentStackPosition() {
+  return reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
+}
+
 namespace base {
 
 
@@ -1143,11 +1147,12 @@ class Isolate {
 
 class StackLimitCheck {
  public:
-  StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()), recursion_(cx_) {}
+  StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()) {}
 
   
   bool HasOverflowed() {
-    bool overflowed = !recursion_.checkDontReport(cx_);
+    js::AutoCheckRecursionLimit recursion(cx_);
+    bool overflowed = !recursion.checkDontReport(cx_);
     if (overflowed && js::SupportDifferentialTesting()) {
       
       
@@ -1164,12 +1169,12 @@ class StackLimitCheck {
 
   
   bool JsHasOverflowed() {
-    return !recursion_.checkConservativeDontReport(cx_);
+    js::AutoCheckRecursionLimit recursion(cx_);
+    return !recursion.checkConservativeDontReport(cx_);
   }
 
  private:
   JSContext* cx_;
-  js::AutoCheckRecursionLimit recursion_;
 };
 
 class ExternalReference {
