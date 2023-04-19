@@ -169,14 +169,18 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
       
       
       
-      const parentNodeFront = ctx
-        .marshallPool()
-        .ensureDOMNodeFront(form.parent);
-      this.reparent(parentNodeFront);
+      const owner = ctx.marshallPool();
+      if (typeof owner.ensureDOMNodeFront === "function") {
+        const parentNodeFront = owner.ensureDOMNodeFront(form.parent);
+        this.reparent(parentNodeFront);
+      }
     }
 
     if (form.host) {
-      this.host = ctx.marshallPool().ensureDOMNodeFront(form.host);
+      const owner = ctx.marshallPool();
+      if (typeof owner.ensureDOMNodeFront === "function") {
+        this.host = owner.ensureDOMNodeFront(form.host);
+      }
     }
 
     if (form.inlineTextChild) {

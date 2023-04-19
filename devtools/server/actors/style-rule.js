@@ -312,6 +312,8 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         canSetRuleText: this.canSetRuleText,
+        
+        hasGetQueryContainerForNode: true,
       },
     };
 
@@ -1119,6 +1121,30 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       return { ruleProps, isMatching };
     });
+  },
+
+  getQueryContainerForNode(ancestorRuleIndex, nodeFront) {
+    const ancestorRule = this.ancestorRules[ancestorRuleIndex];
+    if (!ancestorRule) {
+      console.error(
+        `Couldn't not find an ancestor rule at index ${ancestorRuleIndex}`
+      );
+      return null;
+    }
+
+    const containerEl = ancestorRule.rawRule.queryContainerFor(
+      nodeFront.rawNode
+    );
+
+    
+    
+    if (!containerEl) {
+      return this.pageStyle.walker.getNode(
+        nodeFront.rawNode.ownerDocument.documentElement
+      );
+    }
+
+    return this.pageStyle.walker.getNode(containerEl);
   },
 
   

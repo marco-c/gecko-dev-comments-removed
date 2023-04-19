@@ -142,47 +142,125 @@ RuleEditor.prototype = {
     this.updateSourceLink();
 
     if (this.rule.domRule.ancestorData.length) {
-      const parts = this.rule.domRule.ancestorData.map(ancestorData => {
-        if (ancestorData.type == "container") {
-          const containerQueryParts = [
-            "@container",
-            ancestorData.containerName,
-            ancestorData.containerQuery,
-          ].filter(p => !!p);
-          return containerQueryParts.join(" ");
-        }
-        if (ancestorData.type == "layer") {
-          return `@layer${ancestorData.value ? " " + ancestorData.value : ""}`;
-        }
-        if (ancestorData.type == "media") {
-          return `@media ${ancestorData.value}`;
-        }
+      const parts = this.rule.domRule.ancestorData.map(
+        (ancestorData, index) => {
+          if (ancestorData.type == "container") {
+            const container = this.doc.createElement("li");
+            container.classList.add("container-query");
 
-        if (ancestorData.type == "supports") {
-          return `@supports ${ancestorData.conditionText}`;
+            createChild(container, "span", {
+              textContent: `@container${
+                ancestorData.containerName
+                  ? " " + ancestorData.containerName
+                  : ""
+              }`,
+            });
+
+            
+            if (this.rule.domRule.traits.hasGetQueryContainerForNode) {
+              const jumpToNodeButton = createChild(container, "button", {
+                class: "open-inspector",
+                title: l10n(
+                  "rule.containerQuery.selectContainerButton.tooltip"
+                ),
+              });
+
+              let containerNodeFront;
+              const getNodeFront = async () => {
+                if (!containerNodeFront) {
+                  containerNodeFront = await this.rule.domRule.getQueryContainerForNode(
+                    index,
+                    this.rule.inherited ||
+                      this.ruleView.inspector.selection.nodeFront
+                  );
+                }
+                return containerNodeFront;
+              };
+
+              jumpToNodeButton.addEventListener("click", async () => {
+                const front = await getNodeFront();
+                if (!front) {
+                  return;
+                }
+                this.ruleView.inspector.selection.setNodeFront(front);
+                await this.ruleView.inspector.highlighters.hideHighlighterType(
+                  this.ruleView.inspector.highlighters.TYPES.BOXMODEL
+                );
+              });
+              container.append(jumpToNodeButton);
+
+              container.addEventListener("mouseenter", async () => {
+                const front = await getNodeFront();
+                if (!front) {
+                  return;
+                }
+
+                await this.ruleView.inspector.highlighters.showHighlighterTypeForNode(
+                  this.ruleView.inspector.highlighters.TYPES.BOXMODEL,
+                  front
+                );
+              });
+              container.addEventListener("mouseleave", async () => {
+                await this.ruleView.inspector.highlighters.hideHighlighterType(
+                  this.ruleView.inspector.highlighters.TYPES.BOXMODEL
+                );
+              });
+            }
+
+            createChild(container, "span", {
+              
+              
+              textContent: " " + ancestorData.containerQuery,
+            });
+            return container;
+          }
+          if (ancestorData.type == "layer") {
+            return `@layer${
+              ancestorData.value ? " " + ancestorData.value : ""
+            }`;
+          }
+          if (ancestorData.type == "media") {
+            return `@media ${ancestorData.value}`;
+          }
+
+          if (ancestorData.type == "supports") {
+            return `@supports ${ancestorData.conditionText}`;
+          }
+          
+          
+          
+          console.warn("Unknown ancestor data type:", ancestorData.type);
+          return ``;
         }
-        
-        
-        
-        console.warn("Unknown ancestor data type:", ancestorData.type);
-        return ``;
-      });
+      );
 
       
       
       
       
       
-      const title = `${parts.join("\n").replaceAll("@", "\u202A@")}`;
+      const title = parts
+        .map(part => {
+          if (typeof part == "string") {
+            return part;
+          }
+          return part.textContent;
+        })
+        .join("\n")
+        .replaceAll("@", "\u202A@");
 
       this.ancestorDataEl = createChild(this.element, "ul", {
         class: "ruleview-rule-ancestor-data theme-link",
         title,
       });
       for (const part of parts) {
-        createChild(this.ancestorDataEl, "li", {
-          textContent: part,
-        });
+        if (typeof part == "string") {
+          createChild(this.ancestorDataEl, "li", {
+            textContent: part,
+          });
+        } else {
+          this.ancestorDataEl.append(part);
+        }
       }
     }
 
