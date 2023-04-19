@@ -9,19 +9,11 @@
 #ifndef HWY_DLLEXPORT_H
 #define HWY_DLLEXPORT_H
 
-
-#if !defined(HWY_SHARED_DEFINE) && !defined(HWY_STATIC_DEFINE)
-#define HWY_STATIC_DEFINE
-#endif
-
-#ifdef HWY_STATIC_DEFINE
+#if !defined(HWY_SHARED_DEFINE)
 #define HWY_DLLEXPORT
-#define HWY_NO_EXPORT
 #define HWY_CONTRIB_DLLEXPORT
-#define HWY_CONTRIB_NO_EXPORT
 #define HWY_TEST_DLLEXPORT
-#define HWY_TEST_NO_EXPORT
-#else
+#else  
 
 #ifndef HWY_DLLEXPORT
 #if defined(hwy_EXPORTS)
@@ -31,23 +23,15 @@
 #else
 #define HWY_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#else
+#else  
 
 #ifdef _WIN32
 #define HWY_DLLEXPORT __declspec(dllimport)
 #else
 #define HWY_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#endif
-#endif
-
-#ifndef HWY_NO_EXPORT
-#ifdef _WIN32
-#define HWY_NO_EXPORT
-#else
-#define HWY_NO_EXPORT __attribute__((visibility("hidden")))
-#endif
-#endif
+#endif  
+#endif  
 
 #ifndef HWY_CONTRIB_DLLEXPORT
 #if defined(hwy_contrib_EXPORTS)
@@ -57,23 +41,15 @@
 #else
 #define HWY_CONTRIB_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#else
+#else  
 
 #ifdef _WIN32
 #define HWY_CONTRIB_DLLEXPORT __declspec(dllimport)
 #else
 #define HWY_CONTRIB_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#endif
-#endif
-
-#ifndef HWY_CONTRIB_NO_EXPORT
-#ifdef _WIN32
-#define HWY_CONTRIB_NO_EXPORT
-#else
-#define HWY_CONTRIB_NO_EXPORT __attribute__((visibility("hidden")))
-#endif
-#endif
+#endif  
+#endif  
 
 #ifndef HWY_TEST_DLLEXPORT
 #if defined(hwy_test_EXPORTS)
@@ -83,24 +59,16 @@
 #else
 #define HWY_TEST_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#else
+#else  
 
 #ifdef _WIN32
 #define HWY_TEST_DLLEXPORT __declspec(dllimport)
 #else
 #define HWY_TEST_DLLEXPORT __attribute__((visibility("default")))
 #endif
-#endif
-#endif
+#endif  
+#endif  
 
-#ifndef HWY_TEST_NO_EXPORT
-#ifdef _WIN32
-#define HWY_TEST_NO_EXPORT
-#else
-#define HWY_TEST_NO_EXPORT __attribute__((visibility("hidden")))
-#endif
-#endif
-
-#endif
+#endif  
 
 #endif 

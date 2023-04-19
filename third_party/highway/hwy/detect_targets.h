@@ -12,6 +12,7 @@
 
 
 
+
 #ifndef HIGHWAY_HWY_DETECT_TARGETS_H_
 #define HIGHWAY_HWY_DETECT_TARGETS_H_
 
@@ -54,49 +55,65 @@
 
 
 
-#define HWY_AVX3_DL 4  // see HWY_WANT_AVX3_DL below
-#define HWY_AVX3 8
-#define HWY_AVX2 16
-
-#define HWY_SSE4 64
-#define HWY_SSSE3 128
 
 
 
 
 
 
-#define HWY_HIGHEST_TARGET_BIT_X86 9
 
-#define HWY_SVE2 0x400
-#define HWY_SVE 0x800
+#define HWY_AVX3_DL (1LL << 7)  // see HWY_WANT_AVX3_DL below
+#define HWY_AVX3 (1LL << 8)
+#define HWY_AVX2 (1LL << 9)
 
-#define HWY_NEON 0x2000
-
-#define HWY_HIGHEST_TARGET_BIT_ARM 13
-
-
-#define HWY_PPC8 0x10000  // v2.07 or 3
-
-
-#define HWY_HIGHEST_TARGET_BIT_PPC 18
-
-#define HWY_WASM2 0x80000  // Experimental
-#define HWY_WASM 0x100000
-
-#define HWY_HIGHEST_TARGET_BIT_WASM 20
+#define HWY_SSE4 (1LL << 11)
+#define HWY_SSSE3 (1LL << 12)
 
 
 
-#define HWY_RVV 0x1000000
-
-#define HWY_HIGHEST_TARGET_BIT_RVV 24
 
 
+#define HWY_HIGHEST_TARGET_BIT_X86 14
 
-#define HWY_SCALAR 0x20000000
 
-#define HWY_HIGHEST_TARGET_BIT_SCALAR 29
+
+#define HWY_SVE2_128 (1LL << 24)  // specialized target (e.g. Arm N2)
+#define HWY_SVE_256 (1LL << 25)   // specialized target (e.g. Arm V1)
+#define HWY_SVE2 (1LL << 26)
+#define HWY_SVE (1LL << 27)
+#define HWY_NEON (1LL << 28)  // On A64, includes/requires AES
+
+#define HWY_HIGHEST_TARGET_BIT_ARM 29
+
+
+
+#define HWY_RVV (1LL << 37)
+
+#define HWY_HIGHEST_TARGET_BIT_RVV 38
+
+
+
+
+
+
+
+#define HWY_PPC8 (1LL << 49)  // v2.07 or 3
+
+#define HWY_HIGHEST_TARGET_BIT_PPC 51
+
+
+
+#define HWY_WASM_EMU256 (1LL << 58)  // Experimental
+#define HWY_WASM (1LL << 59)
+
+#define HWY_HIGHEST_TARGET_BIT_WASM 60
+
+
+
+#define HWY_EMU128 (1LL << 61)
+
+#define HWY_SCALAR (1LL << 62)
+#define HWY_HIGHEST_TARGET_BIT_SCALAR 62
 
 
 
@@ -138,9 +155,9 @@
 #define HWY_BROKEN_TARGETS (HWY_NEON)
 
 
-#elif (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1100) ||\
-(!HWY_COMPILER_CLANG && HWY_COMPILER_GCC && HWY_COMPILER_GCC < 1000)
-#define HWY_BROKEN_TARGETS (HWY_SVE | HWY_SVE2)
+#elif (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1100) || \
+    (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000)
+#define HWY_BROKEN_TARGETS (HWY_SVE | HWY_SVE2 | HWY_SVE_256 | HWY_SVE2_128)
 
 #else
 #define HWY_BROKEN_TARGETS 0
@@ -157,19 +174,36 @@
 
 
 
+#if !defined(HWY_BROKEN_EMU128)  
+#if HWY_ARCH_ARM_V7 && HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1140
+#define HWY_BROKEN_EMU128 1
+#else
+#define HWY_BROKEN_EMU128 0
+#endif
+#endif  
 
 
-#ifndef HWY_BASELINE_TARGETS
+
+
+
+
+
+
+#if defined(HWY_COMPILE_ONLY_SCALAR) || HWY_BROKEN_EMU128
+#define HWY_BASELINE_SCALAR HWY_SCALAR
+#else
+#define HWY_BASELINE_SCALAR HWY_EMU128
+#endif
 
 
 
 
 #if HWY_ARCH_WASM && defined(__wasm_simd128__)
 #if defined(HWY_WANT_WASM2)
-#define HWY_BASELINE_WASM HWY_WASM2
+#define HWY_BASELINE_WASM HWY_WASM_EMU256
 #else
 #define HWY_BASELINE_WASM HWY_WASM
-#endif 
+#endif  
 #else
 #define HWY_BASELINE_WASM 0
 #endif
@@ -181,7 +215,6 @@
 #define HWY_BASELINE_PPC8 0
 #endif
 
-
 #if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE2)
 #define HWY_BASELINE_SVE2 HWY_SVE2
 #else
@@ -189,6 +222,11 @@
 #endif
 
 #if HWY_ARCH_ARM && defined(__ARM_FEATURE_SVE)
+
+
+
+
+
 #define HWY_BASELINE_SVE HWY_SVE
 #else
 #define HWY_BASELINE_SVE 0
@@ -202,7 +240,7 @@
 #endif
 
 
-#if HWY_COMPILER_MSVC && !HWY_COMPILER_CLANG
+#if HWY_COMPILER_MSVC
 
 
 
@@ -255,13 +293,13 @@
 
 #endif  
 
-#if HWY_ARCH_X86 && HWY_CHECK_SSSE3
+#if HWY_ARCH_X86 && (HWY_WANT_SSSE3 || HWY_CHECK_SSSE3)
 #define HWY_BASELINE_SSSE3 HWY_SSSE3
 #else
 #define HWY_BASELINE_SSSE3 0
 #endif
 
-#if HWY_ARCH_X86 && HWY_CHECK_SSE4 && HWY_CHECK_PCLMUL_AES
+#if HWY_ARCH_X86 && (HWY_WANT_SSE4 || (HWY_CHECK_SSE4 && HWY_CHECK_PCLMUL_AES))
 #define HWY_BASELINE_SSE4 HWY_SSE4
 #else
 #define HWY_BASELINE_SSE4 0
@@ -284,7 +322,9 @@
 
 
 #if HWY_BASELINE_AVX3 != 0 && defined(__AVXVNNI__) && defined(__VAES__) && \
-    defined(__VPCLMULQDQ__)
+    defined(__VPCLMULQDQ__) && defined(__AVX512VBMI__) &&                  \
+    defined(__AVX512VBMI2__) && defined(__AVX512VPOPCNTDQ__) &&            \
+    defined(__AVX512BITALG__)
 #define HWY_BASELINE_AVX3_DL HWY_AVX3_DL
 #else
 #define HWY_BASELINE_AVX3_DL 0
@@ -296,16 +336,13 @@
 #define HWY_BASELINE_RVV 0
 #endif
 
-#define HWY_BASELINE_TARGETS                                                \
-  (HWY_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 | HWY_BASELINE_SVE2 | \
-   HWY_BASELINE_SVE | HWY_BASELINE_NEON | HWY_BASELINE_SSSE3 |              \
-   HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 | HWY_BASELINE_AVX3 |              \
-   HWY_BASELINE_AVX3_DL | HWY_BASELINE_RVV)
 
-#else
-
-
-#define HWY_BASELINE_AVX3_DL (HWY_BASELINE_TARGETS & HWY_AVX3_DL)
+#ifndef HWY_BASELINE_TARGETS
+#define HWY_BASELINE_TARGETS                                     \
+  (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 | \
+   HWY_BASELINE_SVE2 | HWY_BASELINE_SVE | HWY_BASELINE_NEON |    \
+   HWY_BASELINE_SSSE3 | HWY_BASELINE_SSE4 | HWY_BASELINE_AVX2 |  \
+   HWY_BASELINE_AVX3 | HWY_BASELINE_AVX3_DL | HWY_BASELINE_RVV)
 #endif  
 
 
@@ -329,33 +366,68 @@
 
 
 
-#if (defined(HWY_COMPILE_ONLY_SCALAR) + defined(HWY_COMPILE_ONLY_STATIC) + \
-     defined(HWY_COMPILE_ALL_ATTAINABLE)) > 1
-#error "Invalid config: can only define a single policy for targets"
+#if 1 < (defined(HWY_COMPILE_ONLY_SCALAR) + defined(HWY_COMPILE_ONLY_EMU128) + \
+         defined(HWY_COMPILE_ONLY_STATIC))
+#error "Can only define one of HWY_COMPILE_ONLY_{SCALAR|EMU128|STATIC} - bug?"
 #endif
 
 
 
 
-#if defined(HWY_WANT_AVX3_DL)
-#define HWY_CHECK_AVX3_DL HWY_AVX3_DL
+#if HWY_ARCH_X86 || (HWY_ARCH_ARM && HWY_COMPILER_GCC_ACTUAL && HWY_OS_LINUX)
+#define HWY_HAVE_RUNTIME_DISPATCH 1
 #else
-#define HWY_CHECK_AVX3_DL HWY_BASELINE_AVX3_DL
+#define HWY_HAVE_RUNTIME_DISPATCH 0
+#endif
+
+
+
+
+#if defined(HWY_WANT_AVX3_DL) || (HWY_BASELINE & HWY_AVX3_DL)
+#define HWY_ATTAINABLE_AVX3_DL HWY_AVX3_DL
+#else
+#define HWY_ATTAINABLE_AVX3_DL 0
+#endif
+
+#if HWY_ARCH_ARM_A64 && \
+    ((HWY_ENABLED_BASELINE & HWY_SVE) || HWY_HAVE_RUNTIME_DISPATCH)
+#define HWY_ATTAINABLE_SVE HWY_ENABLED(HWY_SVE | HWY_SVE_256)
+#else
+#define HWY_ATTAINABLE_SVE 0
+#endif
+
+#if HWY_ARCH_ARM_A64 && \
+    ((HWY_ENABLED_BASELINE & HWY_SVE2) || HWY_HAVE_RUNTIME_DISPATCH)
+#define HWY_ATTAINABLE_SVE2 HWY_ENABLED(HWY_SVE2 | HWY_SVE2_128)
+#else
+#define HWY_ATTAINABLE_SVE2 0
 #endif
 
 
 
 #if HWY_ARCH_X86
-#define HWY_ATTAINABLE_TARGETS                                          \
-  HWY_ENABLED(HWY_SCALAR | HWY_SSSE3 | HWY_SSE4 | HWY_AVX2 | HWY_AVX3 | \
-              HWY_CHECK_AVX3_DL)
+#define HWY_ATTAINABLE_TARGETS                                        \
+  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_SSSE3 | HWY_SSE4 | HWY_AVX2 | \
+              HWY_AVX3 | HWY_ATTAINABLE_AVX3_DL)
+#elif HWY_ARCH_ARM && HWY_HAVE_RUNTIME_DISPATCH
+#define HWY_ATTAINABLE_TARGETS                                      \
+  HWY_ENABLED(HWY_BASELINE_SCALAR | HWY_NEON | HWY_ATTAINABLE_SVE | \
+              HWY_ATTAINABLE_SVE2)
 #else
-#define HWY_ATTAINABLE_TARGETS HWY_ENABLED_BASELINE
+#define HWY_ATTAINABLE_TARGETS \
+  (HWY_ENABLED_BASELINE | HWY_ATTAINABLE_SVE | HWY_ATTAINABLE_SVE2)
 #endif
 
 
+#if defined(HWY_COMPILE_ONLY_EMU128) && !HWY_BROKEN_EMU128
+#undef HWY_STATIC_TARGET
+#define HWY_STATIC_TARGET HWY_EMU128  // override baseline
+#define HWY_TARGETS HWY_EMU128
 
-#if defined(HWY_COMPILE_ONLY_SCALAR)
+
+
+#elif defined(HWY_COMPILE_ONLY_SCALAR) || \
+    (defined(HWY_COMPILE_ONLY_EMU128) && HWY_BROKEN_EMU128)
 #undef HWY_STATIC_TARGET
 #define HWY_STATIC_TARGET HWY_SCALAR  // override baseline
 #define HWY_TARGETS HWY_SCALAR
@@ -370,8 +442,11 @@
 
 
 
+
+
 #else
-#define HWY_TARGETS (HWY_ATTAINABLE_TARGETS & (2 * HWY_STATIC_TARGET - 1))
+#define HWY_TARGETS \
+  (HWY_ATTAINABLE_TARGETS & ((HWY_STATIC_TARGET - 1LL) | HWY_STATIC_TARGET))
 
 #endif  
 

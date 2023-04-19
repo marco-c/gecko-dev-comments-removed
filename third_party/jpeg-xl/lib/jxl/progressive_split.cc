@@ -15,31 +15,6 @@
 
 namespace jxl {
 
-bool ProgressiveSplitter::SuperblockIsSalient(size_t row_start,
-                                              size_t col_start, size_t num_rows,
-                                              size_t num_cols) const {
-  if (saliency_map_ == nullptr || saliency_map_->xsize() == 0 ||
-      saliency_threshold_ == 0.0) {
-    
-    
-    return true;
-  }
-  const size_t row_end = std::min(saliency_map_->ysize(), row_start + num_rows);
-  const size_t col_end = std::min(saliency_map_->xsize(), col_start + num_cols);
-  for (size_t num_row = row_start; num_row < row_end; num_row++) {
-    const float* JXL_RESTRICT map_row = saliency_map_->ConstRow(num_row);
-    for (size_t num_col = col_start; num_col < col_end; num_col++) {
-      if (map_row[num_col] >= saliency_threshold_) {
-        
-        
-        return true;
-      }
-    }
-  }
-  
-  return false;
-}
-
 template <typename T>
 void ProgressiveSplitter::SplitACCoefficients(
     const T* JXL_RESTRICT block, size_t size, const AcStrategy& acs, size_t bx,
@@ -57,7 +32,6 @@ void ProgressiveSplitter::SplitACCoefficients(
     return;
   }
   size_t ncoeffs_all_done_from_earlier_passes = 1;
-  size_t previous_pass_salient_only = false;
 
   int previous_pass_shift = 0;
   for (size_t num_pass = 0; num_pass < mode_.num_passes; num_pass++) {  
@@ -65,30 +39,17 @@ void ProgressiveSplitter::SplitACCoefficients(
     for (size_t c = 0; c < 3; c++) {
       memset(output[num_pass][c] + offset, 0, size * sizeof(T));
     }
-    const bool current_pass_salient_only = mode_.passes[num_pass].salient_only;
     const int pass_shift = mode_.passes[num_pass].shift;
     size_t frame_ncoeffs = mode_.passes[num_pass].num_coefficients;
     for (size_t c = 0; c < 3; c++) {  
       size_t xsize = acs.covered_blocks_x();
       size_t ysize = acs.covered_blocks_y();
       CoefficientLayout(&ysize, &xsize);
-      if (current_pass_salient_only || previous_pass_salient_only) {
-        
-        const bool superblock_is_salient =
-            SuperblockIsSalient(by, bx, ysize, xsize);
-        if (current_pass_salient_only != superblock_is_salient) {
-          
-          
-          
-          continue;
-        }
-      }
       for (size_t y = 0; y < ysize * frame_ncoeffs; y++) {    
         for (size_t x = 0; x < xsize * frame_ncoeffs; x++) {  
           size_t pos = y * xsize * kBlockDim + x;
           if (x < xsize * ncoeffs_all_done_from_earlier_passes &&
               y < ysize * ncoeffs_all_done_from_earlier_passes) {
-            
             
             
             continue;
@@ -104,15 +65,12 @@ void ProgressiveSplitter::SplitACCoefficients(
         }  
       }    
     }      
-    if (!current_pass_salient_only) {
-      
-      
-      
-      if (mode_.passes[num_pass].shift == 0) {
-        ncoeffs_all_done_from_earlier_passes = frame_ncoeffs;
-      }
+    
+    
+    
+    if (mode_.passes[num_pass].shift == 0) {
+      ncoeffs_all_done_from_earlier_passes = frame_ncoeffs;
     }
-    previous_pass_salient_only = current_pass_salient_only;
     previous_pass_shift = mode_.passes[num_pass].shift;
   }  
 }

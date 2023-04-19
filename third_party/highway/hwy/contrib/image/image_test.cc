@@ -12,22 +12,21 @@
 
 
 
+
 #include "hwy/contrib/image/image.h"
 
-#include <cstddef>
-
-#include "hwy/base.h"
-
-#undef HWY_TARGET_INCLUDE
-#define HWY_TARGET_INCLUDE "hwy/contrib/image/image_test.cc"
-#include "hwy/foreach_target.h"
-
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <random>
 #include <utility>
+
+#undef HWY_TARGET_INCLUDE
+#define HWY_TARGET_INCLUDE "hwy/contrib/image/image_test.cc"
+#include "hwy/foreach_target.h"  
+
 
 #include "hwy/highway.h"
 #include "hwy/tests/test_util-inl.h"
@@ -82,7 +81,7 @@ struct TestUnalignedT {
 
 
 
-#if defined(MEMORY_SANITIZER) || HWY_IDE
+#if HWY_IS_MSAN || HWY_IDE
         
         for (size_t y = 0; y < ysize; ++y) {
           T* HWY_RESTRICT row = img.MutableRow(y);
@@ -149,11 +148,5 @@ HWY_BEFORE_TEST(ImageTest);
 HWY_EXPORT_AND_TEST_P(ImageTest, TestAligned);
 HWY_EXPORT_AND_TEST_P(ImageTest, TestUnaligned);
 }  
-
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
 
 #endif

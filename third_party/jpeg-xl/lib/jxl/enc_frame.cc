@@ -69,6 +69,22 @@
 namespace jxl {
 namespace {
 
+PassDefinition progressive_passes_dc_vlf_lf_full_ac[] = {
+    {2, 0,
+     4},
+    {3, 0,
+     2},
+    {8, 0,
+     0},
+};
+
+PassDefinition progressive_passes_dc_quant_ac_full_ac[] = {
+    {8, 1,
+     2},
+    {8, 0,
+     0},
+};
+
 void ClusterGroups(PassesEncoderState* enc_state) {
   if (enc_state->shared.frame_header.passes.num_passes > 1) {
     
@@ -1126,6 +1142,14 @@ Status EncodeFrame(const CompressParams& cparams_orig,
   ib.VerifyMetadata();
 
   passes_enc_state->special_frames.clear();
+
+  if (cparams.qprogressive_mode) {
+    passes_enc_state->progressive_splitter.SetProgressiveMode(
+        ProgressiveMode{progressive_passes_dc_quant_ac_full_ac});
+  } else if (cparams.progressive_mode) {
+    passes_enc_state->progressive_splitter.SetProgressiveMode(
+        ProgressiveMode{progressive_passes_dc_vlf_lf_full_ac});
+  }
 
   JXL_RETURN_IF_ERROR(ParamsPostInit(&cparams));
 

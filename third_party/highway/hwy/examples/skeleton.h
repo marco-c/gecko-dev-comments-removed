@@ -15,6 +15,7 @@
 
 
 
+
 #ifndef HIGHWAY_HWY_EXAMPLES_SKELETON_H_
 #define HIGHWAY_HWY_EXAMPLES_SKELETON_H_
 
@@ -27,8 +28,8 @@
 namespace skeleton {
 
 
-void CallFloorLog2(const uint8_t* HWY_RESTRICT in, const size_t count,
-                   uint8_t* HWY_RESTRICT out);
+HWY_DLLEXPORT void CallFloorLog2(const uint8_t* HWY_RESTRICT in,
+                                 const size_t count, uint8_t* HWY_RESTRICT out);
 
 }  
 

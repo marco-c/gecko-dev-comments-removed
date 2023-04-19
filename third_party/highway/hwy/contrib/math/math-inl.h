@@ -13,6 +13,7 @@
 
 
 
+
 #if defined(HIGHWAY_HWY_CONTRIB_MATH_MATH_INL_H_) == \
     defined(HWY_TARGET_TOGGLE)
 #ifdef HIGHWAY_HWY_CONTRIB_MATH_MATH_INL_H_

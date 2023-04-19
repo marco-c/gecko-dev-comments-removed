@@ -43,19 +43,15 @@ struct PassDefinition {
 
   
   
-  bool salient_only;
-
-  
-  
   
   size_t suitable_for_downsampling_of_at_least;
 };
 
 struct ProgressiveMode {
   size_t num_passes = 1;
-  PassDefinition passes[kMaxNumPasses] = {PassDefinition{
-      8, 0, false,
-      1}};
+  PassDefinition passes[kMaxNumPasses] = {
+      PassDefinition{8, 0,
+                     1}};
 
   ProgressiveMode() = default;
 
@@ -65,13 +61,10 @@ struct ProgressiveMode {
     num_passes = nump;
     PassDefinition previous_pass{
         1, 0,
-        false,
         kNoDownsamplingFactor};
     size_t last_downsampling_factor = kNoDownsamplingFactor;
     for (size_t i = 0; i < nump; i++) {
       JXL_ASSERT(p[i].num_coefficients > previous_pass.num_coefficients ||
-                 (p[i].num_coefficients == previous_pass.num_coefficients &&
-                  !p[i].salient_only && previous_pass.salient_only) ||
                  (p[i].num_coefficients == previous_pass.num_coefficients &&
                   p[i].shift < previous_pass.shift));
       JXL_ASSERT(p[i].suitable_for_downsampling_of_at_least ==
@@ -89,14 +82,6 @@ struct ProgressiveMode {
 class ProgressiveSplitter {
  public:
   void SetProgressiveMode(ProgressiveMode mode) { mode_ = mode; }
-
-  void SetSaliencyMap(const ImageF* saliency_map) {
-    saliency_map_ = saliency_map;
-  }
-
-  void SetSaliencyThreshold(float threshold) {
-    saliency_threshold_ = threshold;
-  }
 
   size_t GetNumPasses() const { return mode_.num_passes; }
 
@@ -130,13 +115,7 @@ class ProgressiveSplitter {
                            T* JXL_RESTRICT output[kMaxNumPasses][3]);
 
  private:
-  bool SuperblockIsSalient(size_t row_start, size_t col_start, size_t num_rows,
-                           size_t num_cols) const;
   ProgressiveMode mode_;
-
-  
-  const ImageF* saliency_map_ = nullptr;
-  float saliency_threshold_ = 0.0;
 };
 
 extern template void ProgressiveSplitter::SplitACCoefficients<int32_t>(
