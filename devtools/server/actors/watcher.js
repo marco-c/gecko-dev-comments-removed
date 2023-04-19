@@ -124,10 +124,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     
     this._currentWindowGlobalTargets = new Map();
-
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-    this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
-    this.notifyResourceUpdated = this.notifyResourceUpdated.bind(this);
   },
 
   get sessionContext() {
@@ -400,36 +396,19 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  notifyResourceAvailable(resources) {
-    if (this.sessionContext.type == "webextension") {
-      this._overrideResourceBrowsingContextForWebExtension(resources);
-    }
-    this._emitResourcesForm("resource-available-form", resources);
-  },
-
-  notifyResourceDestroyed(resources) {
-    if (this.sessionContext.type == "webextension") {
-      this._overrideResourceBrowsingContextForWebExtension(resources);
-    }
-    this._emitResourcesForm("resource-destroyed-form", resources);
-  },
-
-  notifyResourceUpdated(resources) {
-    if (this.sessionContext.type == "webextension") {
-      this._overrideResourceBrowsingContextForWebExtension(resources);
-    }
-    this._emitResourcesForm("resource-updated-form", resources);
-  },
-
-  
 
 
-  _emitResourcesForm(name, resources) {
+  notifyResources(updateType, resources) {
     if (resources.length === 0) {
       
       return;
     }
-    this.emit(name, resources);
+
+    if (this.sessionContext.type == "webextension") {
+      this._overrideResourceBrowsingContextForWebExtension(resources);
+    }
+
+    this.emit(`resource-${updateType}-form`, resources);
   },
 
   

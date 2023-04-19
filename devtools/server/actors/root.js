@@ -113,8 +113,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       this
     );
     this._onProcessListChanged = this.onProcessListChanged.bind(this);
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-    this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
 
     this._extraActors = {};
 
@@ -582,23 +580,29 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
 
 
-  notifyResourceAvailable(resources) {
-    this._emitResourcesForm("resource-available-form", resources);
-  },
-
-  notifyResourceDestroyed(resources) {
-    this._emitResourcesForm("resource-destroyed-form", resources);
-  },
-
-  
 
 
-  _emitResourcesForm(name, resources) {
+
+
+  notifyResources(updateType, resources) {
     if (resources.length === 0) {
       
       return;
     }
-    this.emit(name, resources);
+
+    switch (updateType) {
+      case "available":
+        this.emit(`resource-available-form`, resources);
+        break;
+      case "updated":
+        this.emit(`resource-updated-form`, resources);
+        break;
+      case "destroyed":
+        this.emit(`resource-destroyed-form`, resources);
+        break;
+      default:
+        throw new Error("Unsupported update type: " + updateType);
+    }
   },
 });
 

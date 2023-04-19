@@ -6,8 +6,6 @@
 
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
 
-const Resources = require("devtools/server/actors/resources/index");
-
 loader.lazyRequireGetter(
   this,
   "SessionData",
@@ -67,40 +65,19 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
 
-    _watchTargetResources(resourceTypes) {
-      return Resources.watchResources(this, resourceTypes);
-    },
 
-    _unwatchTargetResources(resourceTypes) {
-      return Resources.unwatchResources(this, resourceTypes);
-    },
+    notifyResources(updateType, resources) {
+      if (resources.length === 0 || this.isDestroyed()) {
+        
+        
+        return;
+      }
 
-    
-
-
-
-
-
-
-    notifyResourceAvailable(resources) {
       if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
         this.overrideResourceBrowsingContextForWebExtension(resources);
       }
-      this._emitResourcesForm("resource-available-form", resources);
-    },
 
-    notifyResourceDestroyed(resources) {
-      if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
-        this.overrideResourceBrowsingContextForWebExtension(resources);
-      }
-      this._emitResourcesForm("resource-destroyed-form", resources);
-    },
-
-    notifyResourceUpdated(resources) {
-      if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
-        this.overrideResourceBrowsingContextForWebExtension(resources);
-      }
-      this._emitResourcesForm("resource-updated-form", resources);
+      this.emit(`resource-${updateType}-form`, resources);
     },
 
     
@@ -120,18 +97,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
       );
     },
 
-    
-
-
-    _emitResourcesForm(name, resources) {
-      if (resources.length === 0 || this.isDestroyed()) {
-        
-        
-        return;
-      }
-      this.emit(name, resources);
-    },
-
     getStyleSheetManager() {
       if (!this._styleSheetManager) {
         this._styleSheetManager = new StyleSheetsManager(this);
@@ -145,10 +110,6 @@ module.exports = function(targetType, targetActorSpec, implementation) {
     Object.getOwnPropertyDescriptors(implementation)
   );
   proto.initialize = function() {
-    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
-    this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
-    this.notifyResourceUpdated = this.notifyResourceUpdated.bind(this);
-
     if (typeof implementation.initialize == "function") {
       implementation.initialize.apply(this, arguments);
     }

@@ -264,6 +264,10 @@ function getResourceTypeEntry(rootOrWatcherOrTargetActor, resourceType) {
 
 
 
+
+
+
+
 async function watchResources(rootOrWatcherOrTargetActor, resourceTypes) {
   
   
@@ -296,9 +300,18 @@ async function watchResources(rootOrWatcherOrTargetActor, resourceTypes) {
 
     const watcher = new WatcherClass();
     await watcher.watch(rootOrWatcherOrTargetActor, {
-      onAvailable: rootOrWatcherOrTargetActor.notifyResourceAvailable,
-      onDestroyed: rootOrWatcherOrTargetActor.notifyResourceDestroyed,
-      onUpdated: rootOrWatcherOrTargetActor.notifyResourceUpdated,
+      onAvailable: rootOrWatcherOrTargetActor.notifyResources.bind(
+        rootOrWatcherOrTargetActor,
+        "available"
+      ),
+      onUpdated: rootOrWatcherOrTargetActor.notifyResources.bind(
+        rootOrWatcherOrTargetActor,
+        "updated"
+      ),
+      onDestroyed: rootOrWatcherOrTargetActor.notifyResources.bind(
+        rootOrWatcherOrTargetActor,
+        "destroyed"
+      ),
     });
     watchers.set(rootOrWatcherOrTargetActor, watcher);
   }
