@@ -246,18 +246,6 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
 
 
 struct RTC_EXPORT RtpExtension {
-  enum Filter {
-    
-    
-    kDiscardEncryptedExtension,
-    
-    
-    kPreferEncryptedExtension,
-    
-    
-    kRequireEncryptedExtension,
-  };
-
   RtpExtension();
   RtpExtension(absl::string_view uri, int id);
   RtpExtension(absl::string_view uri, int id, bool encrypt);
@@ -273,22 +261,16 @@ struct RTC_EXPORT RtpExtension {
   static bool IsEncryptionSupported(absl::string_view uri);
 
   
+  
   static const RtpExtension* FindHeaderExtensionByUri(
       const std::vector<RtpExtension>& extensions,
-      absl::string_view uri,
-      Filter filter);
+      absl::string_view uri);
 
   
   
-  static const RtpExtension* FindHeaderExtensionByUriAndEncryption(
-      const std::vector<RtpExtension>& extensions,
-      absl::string_view uri,
-      bool encrypt);
-
   
-  static const std::vector<RtpExtension> DeduplicateHeaderExtensions(
-      const std::vector<RtpExtension>& extensions,
-      Filter filter);
+  static std::vector<RtpExtension> FilterDuplicateNonEncrypted(
+      const std::vector<RtpExtension>& extensions);
 
   
   

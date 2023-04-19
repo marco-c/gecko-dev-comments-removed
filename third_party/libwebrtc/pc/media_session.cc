@@ -988,6 +988,68 @@ static Codecs MatchCodecPreference(
   return filtered_codecs;
 }
 
+static bool FindByUriAndEncryption(const RtpHeaderExtensions& extensions,
+                                   const webrtc::RtpExtension& ext_to_match,
+                                   webrtc::RtpExtension* found_extension) {
+  auto it = absl::c_find_if(
+      extensions, [&ext_to_match](const webrtc::RtpExtension& extension) {
+        
+        
+        return extension.uri == ext_to_match.uri &&
+               extension.encrypt == ext_to_match.encrypt;
+      });
+  if (it == extensions.end()) {
+    return false;
+  }
+  if (found_extension) {
+    *found_extension = *it;
+  }
+  return true;
+}
+
+static bool FindByUri(const RtpHeaderExtensions& extensions,
+                      const webrtc::RtpExtension& ext_to_match,
+                      webrtc::RtpExtension* found_extension) {
+  
+  const webrtc::RtpExtension* found =
+      webrtc::RtpExtension::FindHeaderExtensionByUri(extensions,
+                                                     ext_to_match.uri);
+  if (!found) {
+    return false;
+  }
+  if (found_extension) {
+    *found_extension = *found;
+  }
+  return true;
+}
+
+static bool FindByUriWithEncryptionPreference(
+    const RtpHeaderExtensions& extensions,
+    absl::string_view uri_to_match,
+    bool encryption_preference,
+    webrtc::RtpExtension* found_extension) {
+  const webrtc::RtpExtension* unencrypted_extension = nullptr;
+  for (const webrtc::RtpExtension& extension : extensions) {
+    
+    if (extension.uri == uri_to_match) {
+      if (!encryption_preference || extension.encrypt) {
+        if (found_extension) {
+          *found_extension = extension;
+        }
+        return true;
+      }
+      unencrypted_extension = &extension;
+    }
+  }
+  if (unencrypted_extension) {
+    if (found_extension) {
+      *found_extension = *unencrypted_extension;
+    }
+    return true;
+  }
+  return false;
+}
+
 
 
 
@@ -1002,28 +1064,22 @@ static void MergeRtpHdrExts(const RtpHeaderExtensions& reference_extensions,
                             RtpHeaderExtensions* encrypted_extensions,
                             UsedRtpHeaderExtensionIds* used_ids) {
   for (auto reference_extension : reference_extensions) {
-    if (!webrtc::RtpExtension::FindHeaderExtensionByUriAndEncryption(
-            *offered_extensions, reference_extension.uri,
-            reference_extension.encrypt)) {
+    if (!FindByUriAndEncryption(*offered_extensions, reference_extension,
+                                nullptr)) {
+      webrtc::RtpExtension existing;
       if (reference_extension.encrypt) {
-        const webrtc::RtpExtension* existing =
-            webrtc::RtpExtension::FindHeaderExtensionByUriAndEncryption(
-                *encrypted_extensions, reference_extension.uri,
-                reference_extension.encrypt);
-        if (existing) {
-          offered_extensions->push_back(*existing);
+        if (FindByUriAndEncryption(*encrypted_extensions, reference_extension,
+                                   &existing)) {
+          offered_extensions->push_back(existing);
         } else {
           used_ids->FindAndSetIdUsed(&reference_extension);
           encrypted_extensions->push_back(reference_extension);
           offered_extensions->push_back(reference_extension);
         }
       } else {
-        const webrtc::RtpExtension* existing =
-            webrtc::RtpExtension::FindHeaderExtensionByUriAndEncryption(
-                *regular_extensions, reference_extension.uri,
-                reference_extension.encrypt);
-        if (existing) {
-          offered_extensions->push_back(*existing);
+        if (FindByUriAndEncryption(*regular_extensions, reference_extension,
+                                   &existing)) {
+          offered_extensions->push_back(existing);
         } else {
           used_ids->FindAndSetIdUsed(&reference_extension);
           regular_extensions->push_back(reference_extension);
@@ -1034,86 +1090,41 @@ static void MergeRtpHdrExts(const RtpHeaderExtensions& reference_extensions,
   }
 }
 
-static void AddEncryptedVersionsOfHdrExts(
-    RtpHeaderExtensions* offered_extensions,
-    RtpHeaderExtensions* encrypted_extensions,
-    UsedRtpHeaderExtensionIds* used_ids) {
-  RtpHeaderExtensions encrypted_extensions_to_add;
-  for (const auto& extension : *offered_extensions) {
+static void AddEncryptedVersionsOfHdrExts(RtpHeaderExtensions* extensions,
+                                          RtpHeaderExtensions* all_extensions,
+                                          UsedRtpHeaderExtensionIds* used_ids) {
+  RtpHeaderExtensions encrypted_extensions;
+  for (const webrtc::RtpExtension& extension : *extensions) {
+    webrtc::RtpExtension existing;
     
-    if (extension.encrypt) {
+    
+    
+    if (extension.encrypt ||
+        !webrtc::RtpExtension::IsEncryptionSupported(extension.uri) ||
+        (FindByUriWithEncryptionPreference(*extensions, extension.uri, true,
+                                           &existing) &&
+         existing.encrypt)) {
       continue;
     }
 
-    
-    if (!webrtc::RtpExtension::IsEncryptionSupported(extension.uri)) {
-      continue;
+    if (FindByUri(*all_extensions, extension, &existing)) {
+      encrypted_extensions.push_back(existing);
+    } else {
+      webrtc::RtpExtension encrypted(extension);
+      encrypted.encrypt = true;
+      used_ids->FindAndSetIdUsed(&encrypted);
+      all_extensions->push_back(encrypted);
+      encrypted_extensions.push_back(encrypted);
     }
-
-    
-    
-    const bool have_encrypted_extension =
-        webrtc::RtpExtension::FindHeaderExtensionByUriAndEncryption(
-            *offered_extensions, extension.uri, true);
-    if (have_encrypted_extension) {
-      continue;
-    }
-
-    
-    const webrtc::RtpExtension* shared_encrypted_extension =
-        webrtc::RtpExtension::FindHeaderExtensionByUriAndEncryption(
-            *encrypted_extensions, extension.uri, true);
-    if (shared_encrypted_extension) {
-      
-      encrypted_extensions_to_add.push_back(*shared_encrypted_extension);
-      continue;
-    }
-
-    
-    
-    webrtc::RtpExtension new_encrypted_extension(extension);
-    new_encrypted_extension.encrypt = true;
-    used_ids->FindAndSetIdUsed(&new_encrypted_extension);
-    encrypted_extensions->push_back(new_encrypted_extension);
-    encrypted_extensions_to_add.push_back(new_encrypted_extension);
   }
-
-  
-  offered_extensions->insert(offered_extensions->end(),
-                             encrypted_extensions_to_add.begin(),
-                             encrypted_extensions_to_add.end());
-}
-
-
-
-static const webrtc::RtpExtension* FindHeaderExtensionByUriDiscardUnsupported(
-    const std::vector<webrtc::RtpExtension>& extensions,
-    absl::string_view uri,
-    webrtc::RtpExtension::Filter filter) {
-  
-  
-  
-  
-  
-  if (!webrtc::RtpExtension::IsEncryptionSupported(uri)) {
-    
-    
-    if (filter == webrtc::RtpExtension::kRequireEncryptedExtension) {
-      return nullptr;
-    }
-
-    
-    filter = webrtc::RtpExtension::Filter::kDiscardEncryptedExtension;
-  }
-
-  return webrtc::RtpExtension::FindHeaderExtensionByUri(extensions, uri,
-                                                        filter);
+  extensions->insert(extensions->end(), encrypted_extensions.begin(),
+                     encrypted_extensions.end());
 }
 
 static void NegotiateRtpHeaderExtensions(
     const RtpHeaderExtensions& local_extensions,
     const RtpHeaderExtensions& offered_extensions,
-    webrtc::RtpExtension::Filter filter,
+    bool enable_encrypted_rtp_header_extensions,
     RtpHeaderExtensions* negotiated_extensions) {
   
   
@@ -1122,9 +1133,9 @@ static void NegotiateRtpHeaderExtensions(
   
   
   const webrtc::RtpExtension* transport_sequence_number_v2_offer =
-      FindHeaderExtensionByUriDiscardUnsupported(
+      webrtc::RtpExtension::FindHeaderExtensionByUri(
           offered_extensions,
-          webrtc::RtpExtension::kTransportSequenceNumberV2Uri, filter);
+          webrtc::RtpExtension::kTransportSequenceNumberV2Uri);
 
   bool frame_descriptor_in_local = false;
   bool dependency_descriptor_in_local = false;
@@ -1137,10 +1148,10 @@ static void NegotiateRtpHeaderExtensions(
       dependency_descriptor_in_local = true;
     else if (ours.uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri)
       abs_capture_time_in_local = true;
-    const webrtc::RtpExtension* theirs =
-        FindHeaderExtensionByUriDiscardUnsupported(offered_extensions, ours.uri,
-                                                   filter);
-    if (theirs) {
+    webrtc::RtpExtension theirs;
+    if (FindByUriWithEncryptionPreference(
+            offered_extensions, ours.uri,
+            enable_encrypted_rtp_header_extensions, &theirs)) {
       if (transport_sequence_number_v2_offer &&
           ours.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
         
@@ -1150,7 +1161,7 @@ static void NegotiateRtpHeaderExtensions(
         continue;
       } else {
         
-        negotiated_extensions->push_back(*theirs);
+        negotiated_extensions->push_back(theirs);
       }
     }
   }
@@ -1162,35 +1173,28 @@ static void NegotiateRtpHeaderExtensions(
 
   
   
-  if (!dependency_descriptor_in_local) {
-    const webrtc::RtpExtension* theirs =
-        FindHeaderExtensionByUriDiscardUnsupported(
-            offered_extensions, webrtc::RtpExtension::kDependencyDescriptorUri,
-            filter);
-    if (theirs) {
-      negotiated_extensions->push_back(*theirs);
-    }
+  webrtc::RtpExtension theirs;
+  if (!dependency_descriptor_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions, webrtc::RtpExtension::kDependencyDescriptorUri,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
   }
-  if (!frame_descriptor_in_local) {
-    const webrtc::RtpExtension* theirs =
-        FindHeaderExtensionByUriDiscardUnsupported(
-            offered_extensions,
-            webrtc::RtpExtension::kGenericFrameDescriptorUri00, filter);
-    if (theirs) {
-      negotiated_extensions->push_back(*theirs);
-    }
+  if (!frame_descriptor_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions,
+          webrtc::RtpExtension::kGenericFrameDescriptorUri00,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
   }
 
   
   
-  if (!abs_capture_time_in_local) {
-    const webrtc::RtpExtension* theirs =
-        FindHeaderExtensionByUriDiscardUnsupported(
-            offered_extensions, webrtc::RtpExtension::kAbsoluteCaptureTimeUri,
-            filter);
-    if (theirs) {
-      negotiated_extensions->push_back(*theirs);
-    }
+  if (!abs_capture_time_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions, webrtc::RtpExtension::kAbsoluteCaptureTimeUri,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
   }
 }
 
@@ -1245,14 +1249,10 @@ static bool CreateMediaContentAnswer(
     bool bundle_enabled,
     MediaContentDescription* answer) {
   answer->set_extmap_allow_mixed_enum(offer->extmap_allow_mixed_enum());
-  const webrtc::RtpExtension::Filter extensions_filter =
-      enable_encrypted_rtp_header_extensions
-          ? webrtc::RtpExtension::Filter::kPreferEncryptedExtension
-          : webrtc::RtpExtension::Filter::kDiscardEncryptedExtension;
   RtpHeaderExtensions negotiated_rtp_extensions;
-  NegotiateRtpHeaderExtensions(local_rtp_extensions,
-                               offer->rtp_header_extensions(),
-                               extensions_filter, &negotiated_rtp_extensions);
+  NegotiateRtpHeaderExtensions(
+      local_rtp_extensions, offer->rtp_header_extensions(),
+      enable_encrypted_rtp_header_extensions, &negotiated_rtp_extensions);
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());
