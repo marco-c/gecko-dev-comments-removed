@@ -15,54 +15,92 @@ import java.nio.ByteBuffer;
 
 public class YuvHelper {
   
-  public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
-      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int width, int height) {
-    final int chromaHeight = (height + 1) / 2;
-    final int chromaWidth = (width + 1) / 2;
 
-    final int minSize = width * height + chromaWidth * chromaHeight * 2;
-    if (dst.capacity() < minSize) {
+
+
+
+
+
+
+
+
+
+  public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int dstWidth, int dstHeight, int dstStrideY,
+      int dstSliceHeightY, int dstStrideU, int dstSliceHeightU) {
+    final int chromaWidth = (dstWidth + 1) / 2;
+    final int chromaHeight = (dstHeight + 1) / 2;
+
+    final int dstStartY = 0;
+    final int dstEndY = dstStartY + dstStrideY * dstHeight;
+    final int dstStartU = dstStartY + dstStrideY * dstSliceHeightY;
+    final int dstEndU = dstStartU + dstStrideU * chromaHeight;
+    final int dstStartV = dstStartU + dstStrideU * dstSliceHeightU;
+    
+    
+    final int dstEndV = dstStartV + dstStrideU * (chromaHeight - 1) + chromaWidth;
+    if (dst.capacity() < dstEndV) {
       throw new IllegalArgumentException("Expected destination buffer capacity to be at least "
-          + minSize + " was " + dst.capacity());
+          + dstEndV + " was " + dst.capacity());
     }
 
-    final int startY = 0;
-    final int startU = height * width;
-    final int startV = startU + chromaHeight * chromaWidth;
-
-    dst.position(startY);
+    dst.limit(dstEndY);
+    dst.position(dstStartY);
     final ByteBuffer dstY = dst.slice();
-    dst.position(startU);
+    dst.limit(dstEndU);
+    dst.position(dstStartU);
     final ByteBuffer dstU = dst.slice();
-    dst.position(startV);
+    dst.limit(dstEndV);
+    dst.position(dstStartV);
     final ByteBuffer dstV = dst.slice();
 
-    nativeI420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstU,
-        chromaWidth, dstV, chromaWidth, width, height);
+    I420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstU,
+        dstStrideU, dstV, dstStrideU, dstWidth, dstHeight);
+  }
+
+  
+  public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int dstWidth, int dstHeight) {
+    I420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dst, dstWidth, dstHeight,
+        dstWidth, dstHeight, (dstWidth + 1) / 2, (dstHeight + 1) / 2);
+  }
+
+  
+
+
+
+
+  public static void I420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int dstWidth, int dstHeight, int dstStrideY,
+      int dstSliceHeightY) {
+    final int chromaHeight = (dstHeight + 1) / 2;
+    final int chromaWidth = (dstWidth + 1) / 2;
+
+    final int dstStartY = 0;
+    final int dstEndY = dstStartY + dstStrideY * dstHeight;
+    final int dstStartUV = dstStartY + dstStrideY * dstSliceHeightY;
+    final int dstEndUV = dstStartUV + chromaWidth * chromaHeight * 2;
+    if (dst.capacity() < dstEndUV) {
+      throw new IllegalArgumentException("Expected destination buffer capacity to be at least "
+          + dstEndUV + " was " + dst.capacity());
+    }
+
+    dst.limit(dstEndY);
+    dst.position(dstStartY);
+    final ByteBuffer dstY = dst.slice();
+    dst.limit(dstEndUV);
+    dst.position(dstStartUV);
+    final ByteBuffer dstUV = dst.slice();
+
+    I420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstUV,
+        chromaWidth * 2, dstWidth, dstHeight);
   }
 
   
   public static void I420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
-      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int width, int height) {
-    final int chromaWidth = (width + 1) / 2;
-    final int chromaHeight = (height + 1) / 2;
-
-    final int minSize = width * height + chromaWidth * chromaHeight * 2;
-    if (dst.capacity() < minSize) {
-      throw new IllegalArgumentException("Expected destination buffer capacity to be at least "
-          + minSize + " was " + dst.capacity());
-    }
-
-    final int startY = 0;
-    final int startUV = height * width;
-
-    dst.position(startY);
-    final ByteBuffer dstY = dst.slice();
-    dst.position(startUV);
-    final ByteBuffer dstUV = dst.slice();
-
-    nativeI420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstUV,
-        chromaWidth * 2, width, height);
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dst, int dstWidth, int dstHeight) {
+    I420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dst, dstWidth, dstHeight,
+        dstWidth, dstHeight);
   }
 
   
@@ -109,9 +147,18 @@ public class YuvHelper {
         src, srcStride, dstY, dstStrideY, dstU, dstStrideU, dstV, dstStrideV, width, height);
   }
 
+  
+
+
+
+
   public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
       ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY, ByteBuffer dstU,
       int dstStrideU, ByteBuffer dstV, int dstStrideV, int width, int height) {
+    if (srcY == null || srcU == null || srcV == null || dstY == null || dstU == null || dstV == null
+        || width <= 0 || height <= 0) {
+      throw new IllegalArgumentException("Invalid I420Copy input arguments");
+    }
     nativeI420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstU,
         dstStrideU, dstV, dstStrideV, width, height);
   }
@@ -119,6 +166,10 @@ public class YuvHelper {
   public static void I420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
       ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY, ByteBuffer dstUV,
       int dstStrideUV, int width, int height) {
+    if (srcY == null || srcU == null || srcV == null || dstY == null || dstUV == null || width <= 0
+        || height <= 0) {
+      throw new IllegalArgumentException("Invalid I420ToNV12 input arguments");
+    }
     nativeI420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstUV,
         dstStrideUV, width, height);
   }

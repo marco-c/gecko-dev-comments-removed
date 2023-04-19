@@ -161,9 +161,10 @@ public class HardwareVideoEncoderTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    MediaFormat inputFormat = new MediaFormat();
     MediaFormat outputFormat = new MediaFormat();
     
-    fakeMediaCodecWrapper = spy(new FakeMediaCodecWrapper(outputFormat));
+    fakeMediaCodecWrapper = spy(new FakeMediaCodecWrapper(inputFormat, outputFormat));
   }
 
   @Test

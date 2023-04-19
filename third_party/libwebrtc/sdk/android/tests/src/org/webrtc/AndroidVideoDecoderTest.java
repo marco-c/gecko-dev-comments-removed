@@ -201,9 +201,10 @@ public class AndroidVideoDecoderTest {
     MockitoAnnotations.initMocks(this);
     when(mockSurfaceTextureHelper.getSurfaceTexture())
         .thenReturn(new SurfaceTexture(0));
+    MediaFormat inputFormat = new MediaFormat();
     MediaFormat outputFormat = new MediaFormat();
     
-    fakeMediaCodecWrapper = spy(new FakeMediaCodecWrapper(outputFormat));
+    fakeMediaCodecWrapper = spy(new FakeMediaCodecWrapper(inputFormat, outputFormat));
     fakeDecoderCallback = new FakeDecoderCallback();
   }
 
