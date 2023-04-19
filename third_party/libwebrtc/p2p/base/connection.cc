@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/checks.h"
@@ -320,7 +321,6 @@ Connection::Connection(rtc::WeakPtr<Port> port,
 
 Connection::~Connection() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK(!port_);
 }
 
 webrtc::TaskQueueBase* Connection::network_thread() const {
@@ -832,14 +832,8 @@ void Connection::Prune() {
 
 void Connection::Destroy() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (port_)
-    port_->DestroyConnection(this);
-}
-
-bool Connection::Shutdown() {
-  RTC_DCHECK_RUN_ON(network_thread_);
   if (!port_)
-    return false;  
+    return;
 
   RTC_DLOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
 
@@ -856,7 +850,20 @@ bool Connection::Shutdown() {
   
   port_.reset();
 
-  return true;
+  
+  
+  
+  
+  
+  
+  network_thread_->PostTask(
+      webrtc::ToQueuedTask([me = absl::WrapUnique(this)]() {}));
+}
+
+void Connection::FailAndDestroy() {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  set_state(IceCandidatePairState::FAILED);
+  Destroy();
 }
 
 void Connection::FailAndPrune() {
@@ -968,7 +975,7 @@ void Connection::UpdateState(int64_t now) {
   
   UpdateReceiving(now);
   if (dead(now)) {
-    port_->DestroyConnectionAsync(this);
+    Destroy();
   }
 }
 
@@ -1386,8 +1393,7 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
     RTC_LOG(LS_ERROR) << ToString()
                       << ": Received STUN error response, code=" << error_code
                       << "; killing connection";
-    set_state(IceCandidatePairState::FAILED);
-    port_->DestroyConnectionAsync(this);
+    FailAndDestroy();
   }
 }
 

@@ -189,17 +189,10 @@ class Connection : public CandidatePairInterface {
   void set_receiving_timeout(absl::optional<int> receiving_timeout_ms);
 
   
-  
-  
-  
-  [[deprecated]] void Destroy();
+  void Destroy();
 
   
-  
-  
-  
-  
-  bool Shutdown();
+  void FailAndDestroy();
 
   
   
