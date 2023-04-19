@@ -366,7 +366,7 @@ TEST(ThreadTest, Wrap) {
   ThreadManager::Instance()->SetCurrentThread(current_thread);
 }
 
-#if (!defined(NDEBUG) || defined(RTC_DCHECK_ALWAYS_ON))
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
 TEST(ThreadTest, InvokeToThreadAllowedReturnsTrueWithoutPolicies) {
   
   auto thread1 = Thread::CreateWithSocketServer();
