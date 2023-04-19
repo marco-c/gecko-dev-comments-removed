@@ -156,8 +156,6 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(
   
   
   encoder_queue_.Detach();
-
-  memset(&codec_, 0, sizeof(webrtc::VideoCodec));
 }
 
 SimulcastEncoderAdapter::~SimulcastEncoderAdapter() {

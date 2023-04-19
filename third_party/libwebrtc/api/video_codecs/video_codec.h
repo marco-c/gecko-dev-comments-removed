@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
@@ -104,6 +105,14 @@ class RTC_EXPORT VideoCodec {
   VideoCodec();
 
   
+  
+  
+  absl::string_view ScalabilityMode() const { return scalability_mode_; }
+  void SetScalabilityMode(absl::string_view scalability_mode) {
+    scalability_mode_ = std::string(scalability_mode);
+  }
+
+  
   VideoCodecType codecType;
 
   
@@ -168,6 +177,7 @@ class RTC_EXPORT VideoCodec {
   
   
   VideoCodecUnion codec_specific_;
+  std::string scalability_mode_;
 };
 
 }  
