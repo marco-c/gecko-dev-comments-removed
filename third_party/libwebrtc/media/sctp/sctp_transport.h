@@ -22,10 +22,10 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/sctp_transport_factory_interface.h"
-#include "rtc_base/async_invoker.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -199,7 +199,7 @@ class SctpTransport : public SctpTransportInternal,
   
   rtc::Thread* network_thread_;
   
-  rtc::AsyncInvoker invoker_;
+  webrtc::ScopedTaskSafety task_safety_;
   
   rtc::PacketTransportInternal* transport_ = nullptr;
 

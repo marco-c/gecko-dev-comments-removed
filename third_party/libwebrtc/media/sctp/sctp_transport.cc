@@ -46,6 +46,7 @@ constexpr int kSctpSuccessReturn = 1;
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
@@ -386,11 +387,12 @@ class SctpTransport::UsrSctpWrapper {
     VerboseLogPacket(data, length, SCTP_DUMP_OUTBOUND);
     
     rtc::CopyOnWriteBuffer buf(reinterpret_cast<uint8_t*>(data), length);
-    
-    
-    transport->invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, transport->network_thread_,
-        rtc::Bind(&SctpTransport::OnPacketFromSctpToNetwork, transport, buf));
+
+    transport->network_thread_->PostTask(ToQueuedTask(
+        transport->task_safety_, [transport, buf = std::move(buf)]() {
+          transport->OnPacketFromSctpToNetwork(buf);
+        }));
+
     return 0;
   }
 
@@ -497,6 +499,7 @@ SctpTransport::SctpTransport(rtc::Thread* network_thread,
 }
 
 SctpTransport::~SctpTransport() {
+  RTC_DCHECK_RUN_ON(network_thread_);
   
   CloseSctpSocket();
   
@@ -1165,9 +1168,10 @@ int SctpTransport::OnDataOrNotificationFromSctp(void* data,
     
     rtc::CopyOnWriteBuffer notification(reinterpret_cast<uint8_t*>(data),
                                         length);
-    invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, network_thread_,
-        rtc::Bind(&SctpTransport::OnNotificationFromSctp, this, notification));
+    network_thread_->PostTask(ToQueuedTask(
+        task_safety_, [this, notification = std::move(notification)]() {
+          OnNotificationFromSctp(notification);
+        }));
     return kSctpSuccessReturn;
   }
 
@@ -1239,10 +1243,11 @@ int SctpTransport::OnDataOrNotificationFromSctp(void* data,
   
   
   
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, network_thread_,
-      rtc::Bind(&SctpTransport::OnDataFromSctpToTransport, this, params,
-                partial_incoming_message_));
+  network_thread_->PostTask(webrtc::ToQueuedTask(
+      task_safety_, [this, params = std::move(params),
+                     message = partial_incoming_message_]() {
+        OnDataFromSctpToTransport(params, message);
+      }));
 
   
   partial_incoming_message_.Clear();
