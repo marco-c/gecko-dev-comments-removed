@@ -871,17 +871,27 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     
     if (usingAsyncIterator !== undefined) {
       
-      iteratorRecord = GetIterator(asyncItems, "async", usingAsyncIterator);
+      let iterator = callContentFunction(usingAsyncIterator, asyncItems);
+
+      if (!IsObject(iterator)) {
+        ThrowTypeError(JSMSG_GET_ASYNC_ITER_RETURNED_PRIMITIVE);
+      }
+
+      iteratorRecord = { iterator, nextMethod: iterator.next };
     } else if (usingSyncIterator !== undefined) {
       
       
-      let asyncIterator = GetIterator(asyncItems, "sync", usingSyncIterator);
+      let iterator = callContentFunction(usingSyncIterator, asyncItems);
+
+      if (!IsObject(iterator)) {
+        ThrowTypeError(JSMSG_GET_ITER_RETURNED_PRIMITIVE);
+      }
 
       
       
       let asyncFromSyncIteratorObject = CreateAsyncFromSyncIterator(
-        asyncIterator.iterator,
-        asyncIterator.nextMethod
+        iterator,
+        iterator.next
       );
 
       iteratorRecord = {
