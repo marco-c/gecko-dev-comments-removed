@@ -205,6 +205,7 @@ const WRITE_ERROR_EXTRACT = 70;
 
 
 
+const ERR_UPDATER_CRASHED = 89;
 const ERR_OLDER_VERSION_OR_SAME_BUILD = 90;
 const ERR_UPDATE_STATE_NONE = 91;
 const ERR_CHANNEL_CHANGE = 92;
@@ -309,6 +310,13 @@ const ONLY_INSTANCE_CHECK_DEFAULT_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 const ONLY_INSTANCE_CHECK_MAX_TIMEOUT_MS = 2 * 24 * 60 * 60 * 1000; 
 
+
+
+const STAGING_POLLING_MIN_INTERVAL_MS = 15 * 1000; 
+const STAGING_POLLING_MAX_INTERVAL_MS = 5 * 60 * 1000; 
+const STAGING_POLLING_ATTEMPTS_PER_INTERVAL = 5;
+const STAGING_POLLING_MAX_DURATION_MS = 1 * 60 * 60 * 1000; 
+
 var gUpdateMutexHandle = null;
 
 var gLogfileOutputStream;
@@ -320,15 +328,28 @@ var gBITSInUseByAnotherUser = false;
 
 
 
-let gStagingInProgress = false;
-
-
-
 
 
 
 
 let gOnlyDownloadUpdatesThisSession = false;
+
+var gUpdateState = Ci.nsIApplicationUpdateService.STATE_IDLE;
+
+
+
+
+class SelfContainedPromise {
+  constructor() {
+    this.promise = new Promise(resolve => {
+      this.resolve = resolve;
+    });
+  }
+}
+
+
+
+var gStateTransitionPromise = new SelfContainedPromise();
 
 XPCOMUtils.defineLazyGetter(lazy, "gLogEnabled", function aus_gLogEnabled() {
   return (
@@ -373,6 +394,28 @@ XPCOMUtils.defineLazyGetter(
     return bts.isBackgroundTaskMode;
   }
 );
+
+
+
+
+
+function transitionState(newState) {
+  if (newState == gUpdateState) {
+    LOG("transitionState - Not transitioning state because it isn't changing.");
+    return;
+  }
+  LOG(
+    `transitionState - "${lazy.AUS.getStateName(gUpdateState)}" -> ` +
+      `"${lazy.AUS.getStateName(newState)}".`
+  );
+  gUpdateState = newState;
+  
+  
+  
+  let oldStateTransitionPromise = gStateTransitionPromise;
+  gStateTransitionPromise = new SelfContainedPromise();
+  oldStateTransitionPromise.resolve();
+}
 
 
 
@@ -1415,6 +1458,8 @@ function cleanupReadyUpdate() {
   
   
   if (shouldSetDownloadingStatus) {
+    LOG("cleanupReadyUpdate - Transitioning back to downloading state.");
+    transitionState(Ci.nsIApplicationUpdateService.STATE_DOWNLOADING);
     writeStatusFile(readyUpdateDir, STATE_DOWNLOADING);
   }
 }
@@ -1528,10 +1573,14 @@ function readStringFromFile(file) {
   return readStringFromInputStream(fis);
 }
 
-function handleUpdateFailure(update, errorCode) {
-  update.errorCode = parseInt(errorCode);
+
+
+
+
+function handleUpdateFailure(update) {
   if (WRITE_ERRORS.includes(update.errorCode)) {
     writeStatusFile(getReadyUpdateDir(), (update.state = STATE_PENDING));
+    transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
     return true;
   }
 
@@ -1550,6 +1599,7 @@ function handleUpdateFailure(update, errorCode) {
     );
     writeStatusFile(getReadyUpdateDir(), (update.state = bestState));
 
+    transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
     
     return true;
   }
@@ -1615,18 +1665,19 @@ function handleUpdateFailure(update, errorCode) {
       maxCancels = Math.min(maxCancels, 5);
       if (osxCancelations >= maxCancels) {
         cleanupReadyUpdate();
-      } else {
-        writeStatusFile(
-          getReadyUpdateDir(),
-          (update.state = STATE_PENDING_ELEVATE)
-        );
+        return false;
       }
+      writeStatusFile(
+        getReadyUpdateDir(),
+        (update.state = STATE_PENDING_ELEVATE)
+      );
       update.statusText = lazy.gUpdateBundle.GetStringFromName(
         "elevationFailure"
       );
     } else {
       writeStatusFile(getReadyUpdateDir(), (update.state = STATE_PENDING));
     }
+    transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
     return true;
   }
 
@@ -1660,6 +1711,7 @@ function handleUpdateFailure(update, errorCode) {
     }
 
     writeStatusFile(getReadyUpdateDir(), (update.state = STATE_PENDING));
+    transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
     return true;
   }
 
@@ -1694,7 +1746,8 @@ function getPatchOfType(update, patch_type) {
 
 
 
-async function handleFallbackToCompleteUpdate(postStaging) {
+
+async function handleFallbackToCompleteUpdate() {
   
   
   
@@ -1749,6 +1802,7 @@ async function handleFallbackToCompleteUpdate(postStaging) {
         "oldType: " +
         oldType
     );
+    transitionState(Ci.nsIApplicationUpdateService.STATE_IDLE);
     Services.obs.notifyObservers(update, "update-error", "unknown");
   }
 }
@@ -1893,6 +1947,72 @@ function isServiceSpecificErrorCode(errorCode) {
   return (
     (errorCode >= 24 && errorCode <= 33) || (errorCode >= 49 && errorCode <= 58)
   );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function pollForStagingEnd() {
+  let pollingIntervalMs = STAGING_POLLING_MIN_INTERVAL_MS;
+  
+  let pollAttemptsAtIntervalRemaining = STAGING_POLLING_ATTEMPTS_PER_INTERVAL;
+  let timeElapsedMs = 0;
+
+  let pollingFn = () => {
+    pollAttemptsAtIntervalRemaining -= 1;
+    
+    
+    timeElapsedMs += pollingIntervalMs;
+
+    if (timeElapsedMs >= STAGING_POLLING_MAX_DURATION_MS) {
+      lazy.UM.refreshUpdateStatus();
+      return;
+    }
+
+    if (readStatusFile(getReadyUpdateDir()) != STATE_APPLYING) {
+      lazy.UM.refreshUpdateStatus();
+      return;
+    }
+
+    if (pollAttemptsAtIntervalRemaining <= 0) {
+      pollingIntervalMs = Math.min(
+        pollingIntervalMs * 2,
+        STAGING_POLLING_MAX_INTERVAL_MS
+      );
+      pollAttemptsAtIntervalRemaining = STAGING_POLLING_ATTEMPTS_PER_INTERVAL;
+    }
+
+    lazy.setTimeout(pollingFn, pollingIntervalMs);
+  };
+
+  lazy.setTimeout(pollingFn, pollingIntervalMs);
 }
 
 
@@ -2887,6 +3007,8 @@ UpdateService.prototype = {
         );
         update.state = STATE_APPLYING;
         lazy.UM.saveUpdates();
+        transitionState(Ci.nsIApplicationUpdateService.STATE_STAGING);
+        pollForStagingEnd();
       } else {
         
         LOG(
@@ -2948,35 +3070,39 @@ UpdateService.prototype = {
             "but there isn't a ready update, removing update"
         );
         cleanupReadyUpdate();
-      } else if (Services.startup.wasSilentlyStarted) {
-        
-        
-        
-        
-        
-        LOG(
-          "UpdateService:_postUpdateProcessing - status is pending-elevate, " +
-            "but this is a silent startup, so the elevation window has been " +
-            "suppressed."
-        );
       } else {
-        let uri = "chrome://mozapps/content/update/updateElevation.xhtml";
-        let features =
-          "chrome,centerscreen,resizable=no,titlebar,toolbar=no,dialog=no";
-        Services.ww.openWindow(null, uri, "Update:Elevation", features, null);
+        transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
+        if (Services.startup.wasSilentlyStarted) {
+          
+          
+          
+          
+          
+          
+          LOG(
+            "UpdateService:_postUpdateProcessing - status is " +
+              "pending-elevate, but this is a silent startup, so the " +
+              "elevation window has been suppressed."
+          );
+        } else {
+          let uri = "chrome://mozapps/content/update/updateElevation.xhtml";
+          let features =
+            "chrome,centerscreen,resizable=no,titlebar,toolbar=no,dialog=no";
+          Services.ww.openWindow(null, uri, "Update:Elevation", features, null);
+        }
       }
     } else {
       
       
       
       if (update.state == STATE_FAILED && update.errorCode) {
-        if (handleUpdateFailure(update, update.errorCode)) {
+        if (handleUpdateFailure(update)) {
           return;
         }
       }
 
       
-      await handleFallbackToCompleteUpdate(false);
+      await handleFallbackToCompleteUpdate();
     }
   },
 
@@ -3336,7 +3462,7 @@ UpdateService.prototype = {
     
     
     
-    if (gStagingInProgress) {
+    if (this.currentState == Ci.nsIApplicationUpdateService.STATE_STAGING) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
       return false;
     }
@@ -3946,6 +4072,8 @@ UpdateService.prototype = {
   
 
 
+
+
   get isDownloading() {
     return this._downloader && this._downloader.isBusy;
   },
@@ -4011,6 +4139,39 @@ UpdateService.prototype = {
 
   set onlyDownloadUpdatesThisSession(newValue) {
     gOnlyDownloadUpdatesThisSession = newValue;
+  },
+
+  
+
+
+  getStateName(state) {
+    switch (state) {
+      case Ci.nsIApplicationUpdateService.STATE_IDLE:
+        return "STATE_IDLE";
+      case Ci.nsIApplicationUpdateService.STATE_DOWNLOADING:
+        return "STATE_DOWNLOADING";
+      case Ci.nsIApplicationUpdateService.STATE_STAGING:
+        return "STATE_STAGING";
+      case Ci.nsIApplicationUpdateService.STATE_PENDING:
+        return "STATE_PENDING";
+      case Ci.nsIApplicationUpdateService.STATE_SWAP:
+        return "STATE_SWAP";
+    }
+    return `[unknown update state: ${state}]`;
+  },
+
+  
+
+
+  get currentState() {
+    return gUpdateState;
+  },
+
+  
+
+
+  get stateTransition() {
+    return gStateTransitionPromise.promise;
   },
 
   classID: UPDATESERVICE_CID,
@@ -4107,6 +4268,7 @@ UpdateManager.prototype = {
       this._updatesDirty = true;
       this._readyUpdate = null;
       this._downloadingUpdate = null;
+      transitionState(Ci.nsIApplicationUpdateService.STATE_IDLE);
       if (data != "skip-files") {
         let activeUpdates = this._loadXMLFileIntoArray(FILE_ACTIVE_UPDATE_XML);
         if (activeUpdates.length) {
@@ -4114,9 +4276,21 @@ UpdateManager.prototype = {
           if (activeUpdates.length >= 2) {
             this._downloadingUpdate = activeUpdates[1];
           }
-          if (readStatusFile(getReadyUpdateDir()) == STATE_DOWNLOADING) {
+          let status = readStatusFile(getReadyUpdateDir());
+          if (status == STATE_DOWNLOADING) {
             this._downloadingUpdate = this._readyUpdate;
             this._readyUpdate = null;
+            transitionState(Ci.nsIApplicationUpdateService.STATE_DOWNLOADING);
+          } else if (
+            [
+              STATE_PENDING,
+              STATE_PENDING_SERVICE,
+              STATE_PENDING_ELEVATE,
+              STATE_APPLIED,
+              STATE_APPLIED_SERVICE,
+            ].includes(status)
+          ) {
+            transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
           }
         }
         updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
@@ -4416,69 +4590,102 @@ UpdateManager.prototype = {
 
 
   refreshUpdateStatus: async function UM_refreshUpdateStatus() {
-    gStagingInProgress = false;
+    try {
+      var update = this._readyUpdate;
+      if (!update) {
+        return;
+      }
 
-    var update = this._readyUpdate;
-    if (!update) {
-      return;
-    }
+      var status = readStatusFile(getReadyUpdateDir());
+      pingStateAndStatusCodes(update, false, status);
 
-    var status = readStatusFile(getReadyUpdateDir());
-    pingStateAndStatusCodes(update, false, status);
-    var parts = status.split(":");
-    update.state = parts[0];
-    if (update.state == STATE_FAILED && parts[1]) {
-      update.errorCode = parseInt(parts[1]);
-    }
+      let parts = status.split(":");
+      update.state = parts[0];
+      if (update.state == STATE_APPLYING) {
+        update.state = STATE_FAILED;
+        update.errorCode = ERR_UPDATER_CRASHED;
+      } else if (update.state == STATE_FAILED) {
+        if (parts[1]) {
+          update.errorCode = parseInt(parts[1]) || INVALID_UPDATER_STATUS_CODE;
+        } else {
+          update.errorCode = INVALID_UPDATER_STATUS_CODE;
+        }
+      }
 
-    
-    
-    
-    cleanUpReadyUpdateDir(false);
+      
+      
+      
+      cleanUpReadyUpdateDir(false);
 
-    if (update.state == STATE_FAILED && parts[1]) {
-      if (
-        parts[1] == DELETE_ERROR_STAGING_LOCK_FILE ||
-        parts[1] == UNEXPECTED_STAGING_ERROR
-      ) {
-        update.state = getBestPendingState();
-        writeStatusFile(getReadyUpdateDir(), update.state);
-      } else if (isServiceSpecificErrorCode(parts[1])) {
-        
-        
-        
-        LOG(
-          `UpdateManager:refreshUpdateStatus - Encountered service specific ` +
-            `error code: ${parts[1]}. Will try installing update without the ` +
-            `Maintenance Service.`
+      if (update.state == STATE_FAILED) {
+        if (
+          update.errorCode == DELETE_ERROR_STAGING_LOCK_FILE ||
+          update.errorCode == UNEXPECTED_STAGING_ERROR
+        ) {
+          update.state = getBestPendingState();
+          writeStatusFile(getReadyUpdateDir(), update.state);
+        } else if (isServiceSpecificErrorCode(update.errorCode)) {
+          
+          
+          
+          LOG(
+            `UpdateManager:refreshUpdateStatus - Encountered service ` +
+              `specific error code: ${update.errorCode}. Will try installing ` +
+              `update without the Maintenance Service.`
+          );
+          update.state = STATE_PENDING;
+          writeStatusFile(getReadyUpdateDir(), update.state);
+        } else if (!handleUpdateFailure(update)) {
+          await handleFallbackToCompleteUpdate();
+        }
+      }
+      if (update.state == STATE_APPLIED && shouldUseService()) {
+        writeStatusFile(
+          getReadyUpdateDir(),
+          (update.state = STATE_APPLIED_SERVICE)
         );
-        update.state = STATE_PENDING;
-        writeStatusFile(getReadyUpdateDir(), update.state);
-      } else if (!handleUpdateFailure(update, parts[1])) {
-        await handleFallbackToCompleteUpdate(true);
+      }
+
+      
+      
+      
+      this.saveUpdates();
+
+      
+      
+      await promiseLangPacksUpdated(update);
+
+      if (
+        update.state == STATE_APPLIED ||
+        update.state == STATE_APPLIED_SERVICE ||
+        update.state == STATE_PENDING ||
+        update.state == STATE_PENDING_SERVICE ||
+        update.state == STATE_PENDING_ELEVATE
+      ) {
+        LOG("UpdateManager:refreshUpdateStatus - Setting state STATE_PENDING");
+        transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
+      }
+
+      LOG(
+        "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+          "the update was staged. topic: update-staged, status: " +
+          update.state
+      );
+      Services.obs.notifyObservers(update, "update-staged", update.state);
+    } finally {
+      
+      
+      
+      
+      
+      
+      if (
+        lazy.AUS.currentState == Ci.nsIApplicationUpdateService.STATE_STAGING
+      ) {
+        LOG("UpdateManager:refreshUpdateStatus - Setting state STATE_IDLE");
+        transitionState(Ci.nsIApplicationUpdateService.STATE_IDLE);
       }
     }
-    if (update.state == STATE_APPLIED && shouldUseService()) {
-      writeStatusFile(
-        getReadyUpdateDir(),
-        (update.state = STATE_APPLIED_SERVICE)
-      );
-    }
-
-    
-    
-    
-    this.saveUpdates();
-
-    
-    
-    await promiseLangPacksUpdated(update);
-    LOG(
-      "UpdateManager:refreshUpdateStatus - Notifying observers that " +
-        "the update was staged. topic: update-staged, status: " +
-        update.state
-    );
-    Services.obs.notifyObservers(update, "update-staged", update.state);
   },
 
   
@@ -5712,6 +5919,20 @@ Downloader.prototype = {
       lazy.UM.saveUpdates();
     }
 
+    
+    
+    if (lazy.AUS.currentState == Ci.nsIApplicationUpdateService.STATE_PENDING) {
+      LOG(
+        "Downloader:downloadUpdate - not setting state because download is " +
+          "already pending."
+      );
+    } else {
+      LOG(
+        "Downloader:downloadUpdate - setting currentState to STATE_DOWNLOADING"
+      );
+      transitionState(Ci.nsIApplicationUpdateService.STATE_DOWNLOADING);
+    }
+
     this._startLangPackUpdates();
 
     this._notifyDownloadStatusObservers();
@@ -6023,6 +6244,16 @@ Downloader.prototype = {
         
         
         
+        lazy.UM.readyUpdate = null;
+
+        
+        
+        
+        if (
+          lazy.AUS.currentState == Ci.nsIApplicationUpdateService.STATE_PENDING
+        ) {
+          transitionState(Ci.nsIApplicationUpdateService.STATE_SWAP);
+        }
         Services.obs.notifyObservers(this._update, "update-swap");
 
         
@@ -6283,6 +6514,8 @@ Downloader.prototype = {
           10
         );
 
+        transitionState(Ci.nsIApplicationUpdateService.STATE_IDLE);
+
         if (downloadAttempts > maxAttempts) {
           LOG(
             "Downloader:onStopRequest - notifying observers of error. " +
@@ -6310,8 +6543,6 @@ Downloader.prototype = {
             "download-attempt-failed"
           );
         }
-      }
-      if (allFailed) {
         
         this._langPackTimeout = null;
         LangPackUpdates.delete(unwrap(this._update));
@@ -6346,17 +6577,22 @@ Downloader.prototype = {
             this._update.name
         );
         
+        let stagingStarted = true;
         try {
           Cc["@mozilla.org/updates/update-processor;1"]
             .createInstance(Ci.nsIUpdateProcessor)
             .processUpdate();
-          gStagingInProgress = true;
         } catch (e) {
-          
-          
           LOG(
             "Downloader:onStopRequest - failed to stage update. Exception: " + e
           );
+          stagingStarted = false;
+        }
+        if (stagingStarted) {
+          transitionState(Ci.nsIApplicationUpdateService.STATE_STAGING);
+        } else {
+          
+          
           shouldShowPrompt = true;
         }
       }
@@ -6393,6 +6629,7 @@ Downloader.prototype = {
             "an update was downloaded. topic: update-downloaded, status: " +
             update.state
         );
+        transitionState(Ci.nsIApplicationUpdateService.STATE_PENDING);
         Services.obs.notifyObservers(update, "update-downloaded", update.state);
       });
     }
