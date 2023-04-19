@@ -1,6 +1,9 @@
 
 
 
+
+
+
 var gErr =
   "Abort: firstNonBlankPaint value is not available after loading the page";
 var gRetryCounter = 0;
