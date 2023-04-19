@@ -28,36 +28,21 @@ namespace dom {
 struct ProfileTimelineMarker;
 }
 
-class TimelineConsumers : public nsIObserver {
+class TimelineConsumers {
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
+  
+  
+  
+  
+  
+  static void AddConsumer(nsDocShell* aDocShell);
+  static void RemoveConsumer(nsDocShell* aDocShell);
 
- private:
-  TimelineConsumers();
-  TimelineConsumers(const TimelineConsumers& aOther) = delete;
-  void operator=(const TimelineConsumers& aOther) = delete;
-  virtual ~TimelineConsumers() = default;
-
-  bool RemoveObservers();
-
- public:
-  static void Init();
-  static already_AddRefed<TimelineConsumers> Get();
+  static bool HasConsumer(nsIDocShell* aDocShell);
 
   
   
-  
-  
-  
-  void AddConsumer(nsDocShell* aDocShell);
-  void RemoveConsumer(nsDocShell* aDocShell);
-
-  bool HasConsumer(nsIDocShell* aDocShell);
-
-  
-  
-  bool IsEmpty();
+  static bool IsEmpty();
 
   
   
@@ -70,18 +55,18 @@ class TimelineConsumers : public nsIObserver {
   
   
   
-  void AddMarkerForDocShell(
+  static void AddMarkerForDocShell(
       nsDocShell* aDocShell, const char* aName, MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
-  void AddMarkerForDocShell(
+  static void AddMarkerForDocShell(
       nsIDocShell* aDocShell, const char* aName, MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
 
-  void AddMarkerForDocShell(
+  static void AddMarkerForDocShell(
       nsDocShell* aDocShell, const char* aName, const TimeStamp& aTime,
       MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
-  void AddMarkerForDocShell(
+  static void AddMarkerForDocShell(
       nsIDocShell* aDocShell, const char* aName, const TimeStamp& aTime,
       MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
@@ -89,41 +74,38 @@ class TimelineConsumers : public nsIObserver {
   
   
   
-  void AddMarkerForDocShell(nsDocShell* aDocShell,
-                            UniquePtr<AbstractTimelineMarker>&& aMarker);
-  void AddMarkerForDocShell(nsIDocShell* aDocShell,
-                            UniquePtr<AbstractTimelineMarker>&& aMarker);
+  static void AddMarkerForDocShell(nsDocShell* aDocShell,
+                                   UniquePtr<AbstractTimelineMarker>&& aMarker);
+  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                                   UniquePtr<AbstractTimelineMarker>&& aMarker);
 
   
   
   
-  void AddMarkerForAllObservedDocShells(
+  static void AddMarkerForAllObservedDocShells(
       const char* aName, MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
-  void AddMarkerForAllObservedDocShells(
+  static void AddMarkerForAllObservedDocShells(
       const char* aName, const TimeStamp& aTime, MarkerTracingType aTracingType,
       MarkerStackRequest aStackRequest = MarkerStackRequest::STACK);
 
   
   
   
-  void AddMarkerForAllObservedDocShells(
+  static void AddMarkerForAllObservedDocShells(
       UniquePtr<AbstractTimelineMarker>& aMarker);
 
-  void PopMarkers(nsDocShell* aDocShell, JSContext* aCx,
-                  nsTArray<dom::ProfileTimelineMarker>& aStore);
+  static void PopMarkers(nsDocShell* aDocShell, JSContext* aCx,
+                         nsTArray<dom::ProfileTimelineMarker>& aStore);
 
  private:
-  static StaticRefPtr<TimelineConsumers> sInstance;
-  static Atomic<bool> sInShutdown;
+  static StaticMutex sMutex;
 
-  
-  
-  unsigned long mActiveConsumers;
-  LinkedList<MarkersStorage> mMarkersStores;
+  static LinkedList<MarkersStorage>& MarkersStores() REQUIRES(sMutex);
 
-  
-  static StaticMutex sMutex MOZ_UNANNOTATED;
+  static uint32_t sActiveConsumers GUARDED_BY(sMutex);
+  static StaticAutoPtr<LinkedList<MarkersStorage>> sMarkersStores
+      GUARDED_BY(sMutex);
 };
 
 }  
