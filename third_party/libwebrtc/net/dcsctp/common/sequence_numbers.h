@@ -121,19 +121,26 @@ class UnwrappedSequenceNumber {
 
   
   void Increment() { ++value_; }
+
+  
   UnwrappedSequenceNumber<WrappedType> next_value() const {
     return UnwrappedSequenceNumber<WrappedType>(value_ + 1);
   }
 
   
-  UnwrappedSequenceNumber<WrappedType> AddTo(int delta) const {
-    return UnwrappedSequenceNumber<WrappedType>(value_ + delta);
+  
+  static UnwrappedSequenceNumber<WrappedType> AddTo(
+      UnwrappedSequenceNumber<WrappedType> value,
+      int delta) {
+    return UnwrappedSequenceNumber<WrappedType>(value.value_ + delta);
   }
 
   
-  typename WrappedType::UnderlyingType Difference(
-      UnwrappedSequenceNumber<WrappedType> other) const {
-    return value_ - other.value_;
+  static typename WrappedType::UnderlyingType Difference(
+      UnwrappedSequenceNumber<WrappedType> lhs,
+      UnwrappedSequenceNumber<WrappedType> rhs) {
+    return (lhs.value_ > rhs.value_) ? (lhs.value_ - rhs.value_)
+                                     : (rhs.value_ - lhs.value_);
   }
 
  private:
