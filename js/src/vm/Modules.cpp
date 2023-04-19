@@ -1075,8 +1075,8 @@ bool js::ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   
   
   MOZ_ASSERT(module->status() == ModuleStatus::Linked ||
-             module->status() == ModuleStatus::EvaluatingAsync ||
-             module->status() == ModuleStatus::Evaluated);
+             module->status() == ModuleStatus::Evaluated ||
+             module->status() == ModuleStatus::Evaluated_Error);
 
   
   MOZ_ASSERT(stack.empty());
@@ -1094,8 +1094,8 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   
   if (module->status() == ModuleStatus::Linking ||
       module->status() == ModuleStatus::Linked ||
-      module->status() == ModuleStatus::EvaluatingAsync ||
-      module->status() == ModuleStatus::Evaluated) {
+      module->status() == ModuleStatus::Evaluated ||
+      module->status() == ModuleStatus::Evaluated_Error) {
     
     *indexOut = index;
     return true;
@@ -1157,8 +1157,8 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     
     MOZ_ASSERT(requiredModule->status() == ModuleStatus::Linking ||
                requiredModule->status() == ModuleStatus::Linked ||
-               requiredModule->status() == ModuleStatus::EvaluatingAsync ||
-               requiredModule->status() == ModuleStatus::Evaluated);
+               requiredModule->status() == ModuleStatus::Evaluated ||
+               requiredModule->status() == ModuleStatus::Evaluated_Error);
 
     
     
@@ -1220,8 +1220,8 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
   
   
   if (module->status() != ModuleStatus::Linked &&
-      module->status() != ModuleStatus::EvaluatingAsync &&
-      module->status() != ModuleStatus::Evaluated) {
+      module->status() != ModuleStatus::Evaluated &&
+      module->status() != ModuleStatus::Evaluated_Error) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_BAD_MODULE_STATUS);
     return false;
@@ -1229,18 +1229,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   
-  if (module->hadEvaluationError()) {
-    Rooted<PromiseObject*> promise(cx, module->topLevelCapability());
-    MOZ_ASSERT(JS::GetPromiseState(promise) == JS::PromiseState::Rejected);
-    MOZ_ASSERT(JS::GetPromiseResult(promise) == module->evaluationError());
-    result.set(ObjectValue(*promise));
-    return true;
-  }
-
-  
-  
-  if (module->status() == ModuleStatus::EvaluatingAsync ||
-      module->status() == ModuleStatus::Evaluated) {
+  if (module->status() == ModuleStatus::Evaluated) {
     module = module->getCycleRoot();
   }
 
@@ -1295,7 +1284,7 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     }
 
     
-    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
+    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated_Error);
 
     
     MOZ_ASSERT(module->evaluationError() == error);
@@ -1308,11 +1297,9 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
   } else {
     
     
-    MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync ||
-               module->status() == ModuleStatus::Evaluated);
-
     
-    MOZ_ASSERT(!module->hadEvaluationError());
+    MOZ_ASSERT(module->status() == ModuleStatus::Evaluating ||
+               module->status() == ModuleStatus::Evaluated);
 
     
     if (!module->isAsyncEvaluating()) {
@@ -1341,22 +1328,19 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
                                   MutableHandle<ModuleVector> stack,
                                   size_t index, size_t* indexOut) {
   
-  if (module->status() == ModuleStatus::EvaluatingAsync ||
-      module->status() == ModuleStatus::Evaluated) {
-    
-    if (!module->hadEvaluationError()) {
-      *indexOut = index;
-      return true;
-    }
+  
+  
+  
 
-    
+  
+  
+  if (module->hadEvaluationError()) {
     Rooted<Value> error(cx, module->evaluationError());
     cx->setPendingException(error, ShouldCaptureStack::Maybe);
     return false;
   }
-
-  
-  if (module->status() == ModuleStatus::Evaluating) {
+  if (module->status() == ModuleStatus::Evaluating ||
+      module->status() == ModuleStatus::Evaluated) {
     *indexOut = index;
     return true;
   }
@@ -1417,7 +1401,6 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
     
     
     MOZ_ASSERT(requiredModule->status() == ModuleStatus::Evaluating ||
-               requiredModule->status() == ModuleStatus::EvaluatingAsync ||
                requiredModule->status() == ModuleStatus::Evaluated);
 
     
@@ -1439,12 +1422,11 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
       
       
-      MOZ_ASSERT(requiredModule->status() >= ModuleStatus::EvaluatingAsync ||
-                 requiredModule->status() == ModuleStatus::Evaluated);
+      MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Evaluated);
 
       
       
-      if (requiredModule->hadEvaluationError()) {
+      if (requiredModule->status() == ModuleStatus::Evaluated_Error) {
         Rooted<Value> error(cx, requiredModule->evaluationError());
         cx->setPendingException(error, ShouldCaptureStack::Maybe);
         return false;
@@ -1511,13 +1493,11 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
       
       
-      if (!requiredModule->isAsyncEvaluating()) {
-        requiredModule->setStatus(ModuleStatus::Evaluated);
-      } else {
-        
-        
-        requiredModule->setStatus(ModuleStatus::EvaluatingAsync);
-      }
+      
+      
+
+      
+      requiredModule->setStatus(ModuleStatus::Evaluated);
 
       
       
@@ -1538,7 +1518,7 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
   
   MOZ_ASSERT(module->status() == ModuleStatus::Evaluating ||
-             module->status() == ModuleStatus::EvaluatingAsync);
+             module->status() == ModuleStatus::Evaluated);
 
   
   MOZ_ASSERT(module->hasTopLevelAwait());
@@ -1559,11 +1539,10 @@ struct EvalOrderComparator {
   }
 };
 
-
 bool js::GatherAvailableModuleAncestors(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleVector> sortedList) {
-  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
+  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
   MOZ_ASSERT(sortedList.empty());
 
   if (!::GatherAvailableModuleAncestors(cx, module, sortedList)) {
@@ -1604,7 +1583,9 @@ static bool GatherAvailableModuleAncestors(
     if (!m->getCycleRoot()->hadEvaluationError() &&
         !ContainsElement(execList, m)) {
       
-      MOZ_ASSERT(m->status() == ModuleStatus::EvaluatingAsync);
+
+      
+      MOZ_ASSERT(m->status() == ModuleStatus::Evaluated);
 
       
       MOZ_ASSERT(!m->hadEvaluationError());
@@ -1644,7 +1625,7 @@ static bool GatherAvailableModuleAncestors(
 void js::AsyncModuleExecutionFulfilled(JSContext* cx,
                                        Handle<ModuleObject*> module) {
   
-  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
+  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
   
   MOZ_ASSERT(module->isAsyncEvaluating());
@@ -1723,7 +1704,8 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       HandleValue error) {
   
-  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
+  MOZ_ASSERT(module->status() == ModuleStatus::Evaluated ||
+             module->status() == ModuleStatus::Evaluated_Error);
 
   
   if (!module->isAsyncEvaluating()) {
