@@ -17,6 +17,8 @@ pub use synchronous::GenerateBundlesSync;
 
 pub type FluentResourceSet = Vec<Rc<FluentResource>>;
 
+
+
 #[derive(Default)]
 struct Shared<P, B> {
     sources: Mutex<Vec<Vec<FileSource>>>,
@@ -78,9 +80,16 @@ impl<'a> L10nRegistryLocked<'a> {
     }
 }
 
+
+
+
 pub trait BundleAdapter {
     fn adapt_bundle(&self, bundle: &mut FluentBundle);
 }
+
+
+
+
 
 #[derive(Clone)]
 pub struct L10nRegistry<P, B> {
@@ -88,6 +97,7 @@ pub struct L10nRegistry<P, B> {
 }
 
 impl<P, B> L10nRegistry<P, B> {
+    
     pub fn with_provider(provider: P) -> Self {
         Self {
             shared: Rc::new(Shared {
@@ -98,6 +108,7 @@ impl<P, B> L10nRegistry<P, B> {
         }
     }
 
+    
     pub fn set_bundle_adapter(&mut self, bundle_adapter: B) -> Result<(), L10nRegistrySetupError>
     where
         B: BundleAdapter,
@@ -247,6 +258,7 @@ impl<P, B> L10nRegistry<P, B> {
     }
 }
 
+
 impl<P, B> BundleGenerator for L10nRegistry<P, B>
 where
     P: ErrorReporter + Clone,
@@ -257,6 +269,8 @@ where
     type Stream = GenerateBundles<P, B>;
     type LocalesIter = std::vec::IntoIter<LanguageIdentifier>;
 
+    
+    
     fn bundles_iter(
         &self,
         locales: Self::LocalesIter,
@@ -266,6 +280,8 @@ where
         self.generate_bundles_sync(locales, resource_ids)
     }
 
+    
+    
     fn bundles_stream(
         &self,
         locales: Self::LocalesIter,
