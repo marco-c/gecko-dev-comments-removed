@@ -113,6 +113,12 @@ class IdleSchedulerParent final
 
   
   
+  static bool sRecordGCTelemetry;
+  
+  static uint32_t sNumWaitingGC;
+
+  
+  
   static uint32_t sChildProcessesRunningPrioritizedOperation;
 
   

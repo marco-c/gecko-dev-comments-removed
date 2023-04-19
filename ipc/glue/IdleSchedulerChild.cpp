@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/ipc/IdleSchedulerParent.h"
@@ -63,8 +63,8 @@ void IdleSchedulerChild::SetActive() {
 bool IdleSchedulerChild::SetPaused() {
   if (mChildId && CanSend() && mActiveCounter.memory()) {
     --(static_cast<Atomic<int32_t>*>(mActiveCounter.memory())[mChildId]);
-    // The following expression reduces the global activity count and checks if
-    // it drops below the cpu counter limit.
+    
+    
     return (static_cast<Atomic<int32_t>*>(
                mActiveCounter
                    .memory())[NS_IDLE_SCHEDULER_INDEX_OF_ACTIVITY_COUNTER])-- ==
@@ -79,16 +79,19 @@ RefPtr<IdleSchedulerChild::MayGCPromise> IdleSchedulerChild::MayGCNow() {
   if (mIsRequestingGC || mIsDoingGC) {
     return MayGCPromise::CreateAndResolve(false, __func__);
   }
+  TimeStamp wait_since = TimeStamp::Now();
 
   mIsRequestingGC = true;
   return SendRequestGC()->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr(this)](bool aIgnored) {
-        // Only one of these may be true at a time.
+      [self = RefPtr(this), wait_since](bool aIgnored) {
+        
         MOZ_ASSERT(!(self->mIsRequestingGC && self->mIsDoingGC));
 
-        // The parent process always says yes, sometimes after a delay.
+        
         if (self->mIsRequestingGC) {
+          Telemetry::AccumulateTimeDelta(Telemetry::GC_WAIT_FOR_IDLE_MS,
+                                         wait_since);
           self->mIsRequestingGC = false;
           self->mIsDoingGC = true;
           return MayGCPromise::CreateAndResolve(true, __func__);
@@ -102,11 +105,11 @@ RefPtr<IdleSchedulerChild::MayGCPromise> IdleSchedulerChild::MayGCNow() {
 }
 
 void IdleSchedulerChild::StartedGC() {
-  // Only one of these may be true at a time.
+  
   MOZ_ASSERT(!(mIsRequestingGC && mIsDoingGC));
 
-  // If mRequestingGC was true then when the outstanding GC request returns
-  // it'll see that the GC has already started.
+  
+  
   mIsRequestingGC = false;
 
   if (!mIsDoingGC) {
@@ -146,4 +149,4 @@ IdleSchedulerChild* IdleSchedulerChild::GetMainThreadIdleScheduler() {
   return sMainThreadIdleScheduler;
 }
 
-}  // namespace mozilla::ipc
+}  
