@@ -37,6 +37,7 @@ XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
 });
 
 
+
 const PREF_LOG_LEVEL = "browser.uitour.loglevel";
 
 const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
