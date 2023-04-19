@@ -364,6 +364,14 @@ class CallFlags {
   friend class CacheIRWriter;
 };
 
+
+
+
+const uint32_t MaxUnrolledArgCopy = 5;
+inline uint32_t ClampFixedArgc(uint32_t argc) {
+  return std::min(argc, MaxUnrolledArgCopy);
+}
+
 enum class AttachDecision {
   
   NoAction,

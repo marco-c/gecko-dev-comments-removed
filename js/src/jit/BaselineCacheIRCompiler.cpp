@@ -481,7 +481,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
 
   
   
-  masm.alignJitStackBasedOnNArgs(0);
+  masm.alignJitStackBasedOnNArgs(0,  false);
 
   
   
@@ -1523,7 +1523,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
 
   
   
-  masm.alignJitStackBasedOnNArgs(1);
+  masm.alignJitStackBasedOnNArgs(1,  false);
 
   
   
@@ -2274,10 +2274,11 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
 void BaselineCacheIRCompiler::pushArguments(Register argcReg,
                                             Register calleeReg,
                                             Register scratch, Register scratch2,
-                                            CallFlags flags, bool isJitCall) {
+                                            CallFlags flags, uint32_t argcFixed,
+                                            bool isJitCall) {
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
-      pushStandardArguments(argcReg, scratch, scratch2, isJitCall,
+      pushStandardArguments(argcReg, scratch, scratch2, argcFixed, isJitCall,
                             flags.isConstructing());
       break;
     case CallFlags::Spread:
@@ -2285,7 +2286,8 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
                          flags.isConstructing());
       break;
     case CallFlags::FunCall:
-      pushFunCallArguments(argcReg, calleeReg, scratch, scratch2, isJitCall);
+      pushFunCallArguments(argcReg, calleeReg, scratch, scratch2, argcFixed,
+                           isJitCall);
       break;
     case CallFlags::FunApplyArgsObj:
       pushFunApplyArgsObj(argcReg, calleeReg, scratch, scratch2, isJitCall);
@@ -2299,47 +2301,69 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
   }
 }
 
-void BaselineCacheIRCompiler::pushStandardArguments(Register argcReg,
-                                                    Register scratch,
-                                                    Register scratch2,
-                                                    bool isJitCall,
-                                                    bool isConstructing) {
+void BaselineCacheIRCompiler::pushStandardArguments(
+    Register argcReg, Register scratch, Register scratch2, uint32_t argcFixed,
+    bool isJitCall, bool isConstructing) {
   
   
   
 
-  
-  
-  
-  
-  
-  
-  Register countReg = scratch;
-  masm.move32(argcReg, countReg);
-  masm.add32(Imm32(1 + !isJitCall + isConstructing), countReg);
+  int additionalArgc = 1 + !isJitCall + isConstructing;
+  if (argcFixed < MaxUnrolledArgCopy) {
+#ifdef DEBUG
+    Label ok;
+    masm.branch32(Assembler::Equal, argcReg, Imm32(argcFixed), &ok);
+    masm.assumeUnreachable("Invalid argcFixed value");
+    masm.bind(&ok);
+#endif
 
-  
-  Register argPtr = scratch2;
-  Address argAddress(FramePointer, BaselineStubFrameLayout::Size());
-  masm.computeEffectiveAddress(argAddress, argPtr);
+    size_t realArgc = argcFixed + additionalArgc;
 
-  
-  
-  if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(countReg,  true);
+    if (isJitCall) {
+      masm.alignJitStackBasedOnNArgs(realArgc,  true);
+    }
+
+    for (size_t i = 0; i < realArgc; ++i) {
+      masm.pushValue(Address(
+          FramePointer, BaselineStubFrameLayout::Size() + i * sizeof(Value)));
+    }
+  } else {
+    MOZ_ASSERT(argcFixed == MaxUnrolledArgCopy);
+
+    
+    Register argPtr = scratch2;
+    Address argAddress(FramePointer, BaselineStubFrameLayout::Size());
+    masm.computeEffectiveAddress(argAddress, argPtr);
+
+    
+    
+    
+    
+    
+    
+    
+    Register countReg = scratch;
+    masm.move32(argcReg, countReg);
+    masm.add32(Imm32(additionalArgc), countReg);
+
+    
+    
+    if (isJitCall) {
+      masm.alignJitStackBasedOnNArgs(countReg,  true);
+    }
+
+    
+    Label loop, done;
+    masm.branchTest32(Assembler::Zero, countReg, countReg, &done);
+    masm.bind(&loop);
+    {
+      masm.pushValue(Address(argPtr, 0));
+      masm.addPtr(Imm32(sizeof(Value)), argPtr);
+
+      masm.branchSub32(Assembler::NonZero, Imm32(1), countReg, &loop);
+    }
+    masm.bind(&done);
   }
-
-  
-  Label loop, done;
-  masm.branchTest32(Assembler::Zero, countReg, countReg, &done);
-  masm.bind(&loop);
-  {
-    masm.pushValue(Address(argPtr, 0));
-    masm.addPtr(Imm32(sizeof(Value)), argPtr);
-
-    masm.branchSub32(Assembler::NonZero, Imm32(1), countReg, &loop);
-  }
-  masm.bind(&done);
 }
 
 void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
@@ -2399,60 +2423,79 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
   }
 }
 
-void BaselineCacheIRCompiler::pushFunCallArguments(Register argcReg,
-                                                   Register calleeReg,
-                                                   Register scratch,
-                                                   Register scratch2,
-                                                   bool isJitCall) {
-  Label zeroArgs, done;
-  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &zeroArgs);
+void BaselineCacheIRCompiler::pushFunCallArguments(
+    Register argcReg, Register calleeReg, Register scratch, Register scratch2,
+    uint32_t argcFixed, bool isJitCall) {
+  if (argcFixed == 0) {
+    if (isJitCall) {
+      
+      masm.alignJitStackBasedOnNArgs(0,  false);
+    }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  masm.sub32(Imm32(1), argcReg);
-
-  pushStandardArguments(argcReg, scratch, scratch2, isJitCall,
-                        false);
-
-  masm.jump(&done);
-  masm.bind(&zeroArgs);
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (isJitCall) {
     
-    masm.alignJitStackBasedOnNArgs(0);
+    masm.pushValue(UndefinedValue());
+
+    
+    if (!isJitCall) {
+      masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
+    }
+  } else if (argcFixed < MaxUnrolledArgCopy) {
+    
+    argcFixed -= 1;
+    masm.sub32(Imm32(1), argcReg);
+    pushStandardArguments(argcReg, scratch, scratch2, argcFixed, isJitCall,
+                          false);
+  } else {
+    Label zeroArgs, done;
+    masm.branchTest32(Assembler::Zero, argcReg, argcReg, &zeroArgs);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    masm.sub32(Imm32(1), argcReg);
+
+    pushStandardArguments(argcReg, scratch, scratch2, argcFixed, isJitCall,
+                          false);
+
+    masm.jump(&done);
+    masm.bind(&zeroArgs);
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (isJitCall) {
+      
+      masm.alignJitStackBasedOnNArgs(0,  false);
+    }
+
+    
+    masm.pushValue(UndefinedValue());
+
+    
+    if (!isJitCall) {
+      masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
+    }
+
+    masm.bind(&done);
   }
-
-  
-  masm.pushValue(UndefinedValue());
-
-  
-  if (!isJitCall) {
-    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
-  }
-
-  masm.bind(&done);
 }
 
 void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
@@ -2515,7 +2558,7 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
 
 bool BaselineCacheIRCompiler::emitCallNativeShared(
     NativeCallType callType, ObjOperandId calleeId, Int32OperandId argcId,
-    CallFlags flags, Maybe<bool> ignoresReturnValue,
+    CallFlags flags, uint32_t argcFixed, Maybe<bool> ignoresReturnValue,
     Maybe<uint32_t> targetOffset) {
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
@@ -2542,7 +2585,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
+  pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
                 false);
 
   
@@ -2621,58 +2664,61 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
 bool BaselineCacheIRCompiler::emitCallNativeFunction(ObjOperandId calleeId,
                                                      Int32OperandId argcId,
                                                      CallFlags flags,
+                                                     uint32_t argcFixed,
                                                      uint32_t targetOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Maybe<bool> ignoresReturnValue;
   Maybe<uint32_t> targetOffset_ = mozilla::Some(targetOffset);
   return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
-                              ignoresReturnValue, targetOffset_);
+                              argcFixed, ignoresReturnValue, targetOffset_);
+}
+
+bool BaselineCacheIRCompiler::emitCallDOMFunction(
+    ObjOperandId calleeId, Int32OperandId argcId, ObjOperandId thisObjId,
+    CallFlags flags, uint32_t argcFixed, uint32_t targetOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Maybe<bool> ignoresReturnValue;
+  Maybe<uint32_t> targetOffset_ = mozilla::Some(targetOffset);
+  return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
+                              argcFixed, ignoresReturnValue, targetOffset_);
+}
+#else
+bool BaselineCacheIRCompiler::emitCallNativeFunction(ObjOperandId calleeId,
+                                                     Int32OperandId argcId,
+                                                     CallFlags flags,
+                                                     uint32_t argcFixed,
+                                                     bool ignoresReturnValue) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Maybe<bool> ignoresReturnValue_ = mozilla::Some(ignoresReturnValue);
+  Maybe<uint32_t> targetOffset;
+  return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
+                              argcFixed, ignoresReturnValue_, targetOffset);
 }
 
 bool BaselineCacheIRCompiler::emitCallDOMFunction(ObjOperandId calleeId,
                                                   Int32OperandId argcId,
                                                   ObjOperandId thisObjId,
                                                   CallFlags flags,
-                                                  uint32_t targetOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  Maybe<bool> ignoresReturnValue;
-  Maybe<uint32_t> targetOffset_ = mozilla::Some(targetOffset);
-  return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
-                              ignoresReturnValue, targetOffset_);
-}
-#else
-bool BaselineCacheIRCompiler::emitCallNativeFunction(ObjOperandId calleeId,
-                                                     Int32OperandId argcId,
-                                                     CallFlags flags,
-                                                     bool ignoresReturnValue) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  Maybe<bool> ignoresReturnValue_ = mozilla::Some(ignoresReturnValue);
-  Maybe<uint32_t> targetOffset;
-  return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
-                              ignoresReturnValue_, targetOffset);
-}
-
-bool BaselineCacheIRCompiler::emitCallDOMFunction(ObjOperandId calleeId,
-                                                  Int32OperandId argcId,
-                                                  ObjOperandId thisObjId,
-                                                  CallFlags flags) {
+                                                  uint32_t argcFixed) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Maybe<bool> ignoresReturnValue = mozilla::Some(false);
   Maybe<uint32_t> targetOffset;
   return emitCallNativeShared(NativeCallType::Native, calleeId, argcId, flags,
-                              ignoresReturnValue, targetOffset);
+                              argcFixed, ignoresReturnValue, targetOffset);
 }
 #endif
 
 bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
                                                 Int32OperandId argcId,
                                                 CallFlags flags,
+                                                uint32_t argcFixed,
                                                 uint32_t targetOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Maybe<bool> ignoresReturnValue;
   Maybe<uint32_t> targetOffset_ = mozilla::Some(targetOffset);
   return emitCallNativeShared(NativeCallType::ClassHook, calleeId, argcId,
-                              flags, ignoresReturnValue, targetOffset_);
+                              flags, argcFixed, ignoresReturnValue,
+                              targetOffset_);
 }
 
 
@@ -2814,7 +2860,8 @@ void BaselineCacheIRCompiler::updateReturnValue() {
 
 bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
                                                        Int32OperandId argcId,
-                                                       CallFlags flags) {
+                                                       CallFlags flags,
+                                                       uint32_t argcFixed) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
@@ -2845,7 +2892,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
     createThis(argcReg, calleeReg, scratch, flags);
   }
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
+  pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
                 true);
 
   
@@ -2886,18 +2933,17 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitCallWasmFunction(ObjOperandId calleeId,
-                                                   Int32OperandId argcId,
-                                                   CallFlags flags,
-                                                   uint32_t funcExportOffset,
-                                                   uint32_t instanceOffset) {
-  return emitCallScriptedFunction(calleeId, argcId, flags);
+bool BaselineCacheIRCompiler::emitCallWasmFunction(
+    ObjOperandId calleeId, Int32OperandId argcId, CallFlags flags,
+    uint32_t argcFixed, uint32_t funcExportOffset, uint32_t instanceOffset) {
+  return emitCallScriptedFunction(calleeId, argcId, flags, argcFixed);
 }
 
 bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
                                                       Int32OperandId argcId,
                                                       uint32_t icScriptOffset,
-                                                      CallFlags flags) {
+                                                      CallFlags flags,
+                                                      uint32_t argcFixed) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
@@ -2956,7 +3002,7 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
     masm.bind(&skip);
   }
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
+  pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
                 true);
 
   
@@ -3130,7 +3176,7 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
   stubFrame.enter(masm, scratch);
 
   
-  masm.alignJitStackBasedOnNArgs(calleeNargs);
+  masm.alignJitStackBasedOnNArgs(calleeNargs,  false);
   for (uint32_t i = 0; i < calleeNargs; i++) {
     masm.pushValue(UndefinedValue());
   }
