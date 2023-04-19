@@ -280,6 +280,11 @@ static bool GetPrefValueForFeature(int32_t aFeature, int32_t& aValue,
     return false;
   }
 
+  if (aValue == nsIGfxInfo::FEATURE_DENIED) {
+    
+    return false;
+  }
+
   nsCString failureprefname(prefname);
   failureprefname += ".failureid";
   nsAutoCString failureValue;
@@ -303,7 +308,7 @@ static void SetPrefValueForFeature(int32_t aFeature, int32_t aValue,
 
   Preferences::SetInt(prefname, aValue);
   if (!aFailureId.IsEmpty()) {
-    nsCString failureprefname(prefname);
+    nsAutoCString failureprefname(prefname);
     failureprefname += ".failureid";
     Preferences::SetCString(failureprefname.get(), aFailureId);
   }
@@ -810,6 +815,8 @@ GfxInfoBase::GetFeatureStatus(int32_t aFeature, nsACString& aFailureId,
     return NS_OK;
   }
 
+  
+  
   if (GetPrefValueForFeature(aFeature, *aStatus, aFailureId)) {
     return NS_OK;
   }
@@ -1309,9 +1316,6 @@ nsresult GfxInfoBase::GetFeatureStatusImpl(
   }
 
   
-  
-  
-  
   int32_t status;
   if (aDriverInfo.Length()) {
     status =
@@ -1377,41 +1381,60 @@ void GfxInfoBase::EvaluateDownloadedBlocklist(
   
   
   
+  if (aDriverInfo.IsEmpty()) {
+    gfxCriticalNoteOnce << "Evaluate empty downloaded blocklist";
+    return;
+  }
+
+  OperatingSystem os = GetOperatingSystem();
+
+  
+  
+  
   
   for (int feature = 1; feature <= nsIGfxInfo::FEATURE_MAX_VALUE; ++feature) {
-    int32_t status;
+    int32_t status = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
     nsCString failureId;
     nsAutoString suggestedVersion;
-    if (NS_SUCCEEDED(GetFeatureStatusImpl(feature, &status, suggestedVersion,
-                                          aDriverInfo, failureId))) {
-      switch (status) {
-        default:
-          MOZ_FALLTHROUGH_ASSERT("Unhandled feature status!");
-        case nsIGfxInfo::FEATURE_STATUS_UNKNOWN:
-          
-        case nsIGfxInfo::FEATURE_STATUS_OK:
-        case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
-        case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
-          RemovePrefForFeature(feature);
-          break;
 
-        case nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION:
-          if (!suggestedVersion.IsEmpty()) {
-            SetPrefValueForDriverVersion(suggestedVersion);
-          } else {
-            RemovePrefForDriverVersion();
-          }
-          [[fallthrough]];
+    
+    
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(GfxInfoBase::GetFeatureStatusImpl(
+        feature, &status, suggestedVersion, aDriverInfo, failureId, &os)));
 
-        case nsIGfxInfo::FEATURE_BLOCKED_MISMATCHED_VERSION:
-        case nsIGfxInfo::FEATURE_BLOCKED_DEVICE:
-        case nsIGfxInfo::FEATURE_DISCOURAGED:
-        case nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION:
-        case nsIGfxInfo::FEATURE_DENIED:
-        case nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST:
-          SetPrefValueForFeature(feature, status, failureId);
-          break;
-      }
+    switch (status) {
+      default:
+        MOZ_FALLTHROUGH_ASSERT("Unhandled feature status!");
+      case nsIGfxInfo::FEATURE_STATUS_UNKNOWN:
+        
+      case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
+      case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
+      case nsIGfxInfo::FEATURE_DENIED:
+        
+        
+        
+        
+        
+        
+      case nsIGfxInfo::FEATURE_STATUS_OK:
+        RemovePrefForFeature(feature);
+        break;
+
+      case nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION:
+        if (!suggestedVersion.IsEmpty()) {
+          SetPrefValueForDriverVersion(suggestedVersion);
+        } else {
+          RemovePrefForDriverVersion();
+        }
+        [[fallthrough]];
+
+      case nsIGfxInfo::FEATURE_BLOCKED_MISMATCHED_VERSION:
+      case nsIGfxInfo::FEATURE_BLOCKED_DEVICE:
+      case nsIGfxInfo::FEATURE_DISCOURAGED:
+      case nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION:
+      case nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST:
+        SetPrefValueForFeature(feature, status, failureId);
+        break;
     }
   }
 }
