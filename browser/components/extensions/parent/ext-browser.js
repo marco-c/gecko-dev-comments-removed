@@ -1045,7 +1045,10 @@ class Window extends WindowBase {
       return;
     }
 
-    if (initialState == window.STATE_FULLSCREEN) {
+    
+    
+    
+    if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
       window.fullScreen = false;
     }
 
