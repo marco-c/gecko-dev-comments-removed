@@ -1,6 +1,12 @@
 const executor_path = "/common/dispatcher/executor.html?pipe=";
 const coep_header = '|header(Cross-Origin-Embedder-Policy,require-corp)';
 
+
+
+const reportToken = () => {
+  return token().replace(/./, 'a');
+}
+
 const isWPTSubEnabled = "{{GET[pipe]}}".includes("sub");
 
 const getReportEndpointURL = (reportID) =>
@@ -385,6 +391,10 @@ const reportToHeaders = function(uuid) {
 
 
 const reportingEndpointsHeaders = function (uuid) {
+  
+  
+  assert_true(uuid.match(/^[a-z].*/) != null, 'Use reportToken() instead.');
+
   const report_endpoint_url = dispatcher_path + `?uuid=${uuid}`;
   const reporting_endpoints_header = `${uuid}="${report_endpoint_url}"`;
 
