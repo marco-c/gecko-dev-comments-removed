@@ -2906,8 +2906,10 @@ class AddonDetails extends HTMLElement {
       "upgrade"
     );
 
-    
-    if (addon.type != "extension" && addon.type != "sitepermission") {
+    if (addon.type != "extension") {
+      
+      
+      
       
       
     } else if (addon.incognito == "not_allowed") {
@@ -3443,10 +3445,9 @@ class AddonCard extends HTMLElement {
     }
 
     
-    if (
-      addon.incognito != "not_allowed" &&
-      (addon.type == "extension" || addon.type == "sitepermission")
-    ) {
+    
+    
+    if (addon.incognito != "not_allowed" && addon.type == "extension") {
       
       isAllowedInPrivateBrowsing(addon).then(isAllowed => {
         card.querySelector(
