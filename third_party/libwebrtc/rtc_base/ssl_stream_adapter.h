@@ -118,7 +118,7 @@ enum { SSE_MSG_TRUNC = 0xff0001 };
 
 enum class SSLHandshakeError { UNKNOWN, INCOMPATIBLE_CIPHERSUITE, MAX_VALUE };
 
-class SSLStreamAdapter : public StreamAdapterInterface {
+class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
  public:
   
   
@@ -126,8 +126,8 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   static std::unique_ptr<SSLStreamAdapter> Create(
       std::unique_ptr<StreamInterface> stream);
 
-  explicit SSLStreamAdapter(std::unique_ptr<StreamInterface> stream);
-  ~SSLStreamAdapter() override;
+  SSLStreamAdapter() = default;
+  ~SSLStreamAdapter() override = default;
 
   
   

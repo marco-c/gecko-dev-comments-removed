@@ -136,9 +136,6 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   
   static void EnableTimeCallbackForTesting();
 
- protected:
-  void OnEvent(StreamInterface* stream, int events, int err) override;
-
  private:
   enum SSLState {
     
@@ -150,6 +147,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
     SSL_ERROR,       
     SSL_CLOSED       
   };
+
+  void OnEvent(StreamInterface* stream, int events, int err);
 
   void PostEvent(int events, int err);
   void SetTimeout(int delay_ms);
@@ -202,6 +201,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
     return !peer_certificate_digest_algorithm_.empty() &&
            !peer_certificate_digest_value_.empty();
   }
+
+  const std::unique_ptr<StreamInterface> stream_;
 
   rtc::Thread* const owner_;
   webrtc::ScopedTaskSafety task_safety_;
