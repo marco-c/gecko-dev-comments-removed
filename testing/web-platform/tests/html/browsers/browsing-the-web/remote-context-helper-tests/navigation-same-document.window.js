@@ -28,9 +28,7 @@ promise_test(async t => {
   const newLocation = oldLocation + '#fragment';
 
   
-  rc.navigate((newLocation) => {
-    location = newLocation;
-  }, [newLocation]);
+  await rc.navigateTo(newLocation);
 
   
   await assertLocationIs(rc, newLocation);

@@ -28,7 +28,7 @@ promise_test(async t => {
   await assertSimplestScriptRuns(rc2);
 
   
-  rc2.historyBack();
+  await rc2.historyBack();
 
   
   assert_true(await rc1.executeScript(() => {

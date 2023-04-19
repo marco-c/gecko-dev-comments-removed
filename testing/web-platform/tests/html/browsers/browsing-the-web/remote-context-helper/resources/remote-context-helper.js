@@ -67,7 +67,7 @@
     if (!origin) {
       return location.origin;
     }
-    if (origin.indexOf('/') == -1) {
+    if (!origin.includes('/')) {
       const origins = get_host_info();
       if (origin in origins) {
         return origins[origin];
@@ -103,8 +103,10 @@
 
 
 
+
+
     constructor(
-        {origin = null, scripts = [], headers = [], startOn = null} = {}) {
+        {origin, scripts = [], headers = [], startOn} = {}) {
       this.origin = origin;
       this.scripts = scripts;
       this.headers = headers;
@@ -138,16 +140,16 @@
         origin = extraConfig.origin;
       }
       let startOn = this.startOn;
-      if (extraConfig.startOn !== null) {
+      if (extraConfig.startOn) {
         startOn = extraConfig.startOn;
       }
       const headers = this.headers.concat(extraConfig.headers);
       const scripts = this.scripts.concat(extraConfig.scripts);
       return new RemoteContextConfig({
-        origin: origin,
-        headers: headers,
-        scripts: scripts,
-        startOn: startOn,
+        origin,
+        headers,
+        scripts,
+        startOn,
       });
     }
   }
@@ -169,7 +171,7 @@
 
 
 
-    constructor(config = null) {
+    constructor(config) {
       this.config = RemoteContextConfig.ensure(config);
     }
 
@@ -185,9 +187,11 @@
 
 
 
+
+
     async createContext({
-      executorCreator: executorCreator,
-      extraConfig = null,
+      executorCreator,
+      extraConfig,
       isWorker = false,
     }) {
       const config =
@@ -212,8 +216,8 @@
         url.searchParams.append('startOn', config.startOn);
       }
 
-      executorCreator(url);
-      return new RemoteContextWrapper(new RemoteContext(uuid), this);
+      await executorCreator(url.href);
+      return new RemoteContextWrapper(new RemoteContext(uuid), this, url.href);
     }
 
     
@@ -226,13 +230,11 @@
 
 
 
-    addWindow(extraConfig = null, options = {
-      target: null,
-      features: null,
-    }) {
+
+    addWindow(extraConfig, options) {
       return this.createContext({
         executorCreator: windowExecutorCreator(options),
-        extraConfig: extraConfig,
+        extraConfig,
       });
     }
   }
@@ -256,10 +258,7 @@
     url.searchParams.append('pipe', formattedHeaders.join('|'));
   }
 
-  function windowExecutorCreator({target, features}) {
-    if (!target) {
-      target = '_blank';
-    }
+  function windowExecutorCreator({target = '_blank', features} = {}) {
     return url => {
       window.open(url, target, features);
     };
@@ -268,7 +267,7 @@
   function elementExecutorCreator(
       remoteContextWrapper, elementName, attributes) {
     return url => {
-      remoteContextWrapper.executeScript((url, elementName, attributes) => {
+      return remoteContextWrapper.executeScript((url, elementName, attributes) => {
         const el = document.createElement(elementName);
         for (const attribute in attributes) {
           el.setAttribute(attribute, attributes[attribute]);
@@ -287,7 +286,7 @@
 
   function navigateExecutorCreator(remoteContextWrapper) {
     return url => {
-      remoteContextWrapper.navigate((url) => {
+      return remoteContextWrapper.navigate((url) => {
         window.location = url;
       }, [url]);
     };
@@ -327,7 +326,7 @@
 
 
 
-    async addHtml(html) {
+    async addHTML(html) {
       return this.executeScript((htmlSource) => {
         document.body.insertAdjacentHTML('beforebegin', htmlSource);
       }, [html]);
@@ -356,10 +355,10 @@
 
 
 
-    addIframe(extraConfig = null, attributes = {}) {
+    addIframe(extraConfig, attributes = {}) {
       return this.helper.createContext({
         executorCreator: elementExecutorCreator(this, 'iframe', attributes),
-        extraConfig: extraConfig,
+        extraConfig,
       });
     }
 
@@ -368,10 +367,10 @@
 
 
 
-    addWorker(extraConfig = null) {
+    addWorker(extraConfig) {
       return this.helper.createContext({
         executorCreator: workerExecutorCreator(),
-        extraConfig: extraConfig,
+        extraConfig,
         isWorker: true,
       });
     }
@@ -404,8 +403,10 @@
 
 
 
+
+
     navigate(fn, args) {
-      this.executeScript((fnText, args) => {
+      return this.executeScript((fnText, args) => {
         executeScriptToNavigate(fnText, args);
       }, [fn.toString(), args]);
     }
@@ -415,10 +416,35 @@
 
 
 
-    async navigateToNew(extraConfig = null) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    navigateTo(url) {
+      return this.navigate(url => {
+        location.href = url;
+      }, [url.toString()]);
+    }
+
+    
+
+
+
+
+    async navigateToNew(extraConfig) {
       return this.helper.createContext({
         executorCreator: navigateExecutorCreator(this),
-        extraConfig: extraConfig,
+        extraConfig,
       });
     }
 
@@ -436,14 +462,14 @@
 
     async waitUntilLocationIs(expectedLocation) {
       return this.executeScript(async (expectedLocation) => {
-        if (location == expectedLocation) {
+        if (location.href === expectedLocation) {
           return;
         }
 
         
         await new Promise(resolve => {
           const listener = addEventListener('hashchange', (event) => {
-            if (event.newURL == expectedLocation) {
+            if (event.newURL === expectedLocation) {
               removeEventListener(listener);
               resolve();
             }
@@ -458,12 +484,12 @@
 
 
 
-    async historyGo(n, expectedLocation = null) {
-      this.navigate((n) => {
+    async historyGo(n, expectedLocation) {
+      await this.navigate((n) => {
         history.go(n);
       }, [n]);
       if (expectedLocation) {
-        return this.waitUntilLocationIs(expectedLocation);
+        await this.waitUntilLocationIs(expectedLocation);
       }
     }
 
@@ -472,12 +498,12 @@
 
 
 
-    async historyBack(expectedLocation = null) {
-      this.navigate(() => {
+    async historyBack(expectedLocation) {
+      await this.navigate(() => {
         history.back();
       });
       if (expectedLocation) {
-        return this.waitUntilLocationIs(expectedLocation);
+        await this.waitUntilLocationIs(expectedLocation);
       }
     }
 
@@ -486,12 +512,12 @@
 
 
 
-    async historyForward(expectedLocation = null) {
-      this.navigate(() => {
+    async historyForward(expectedLocation) {
+      await this.navigate(() => {
         history.forward();
       });
       if (expectedLocation) {
-        return this.waitUntilLocationIs(expectedLocation);
+        await this.waitUntilLocationIs(expectedLocation);
       }
     }
   }
