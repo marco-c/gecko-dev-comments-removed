@@ -8,22 +8,15 @@
 
 
 
+
 const instance = new Temporal.ZonedDateTime(1_000_000_000_000_000_000n, "UTC");
 
-const ambiguousStrings = [
-  "2021-12",  
-  "1214",     
-  "0229",     
-  "1130",     
-  "12-14",    
-  "202112",   
-];
-ambiguousStrings.forEach((string) => {
+TemporalHelpers.ISO.plainTimeStringsAmbiguous().forEach((string) => {
   let arg = string;
   assert.throws(
     RangeError,
     () => instance.withPlainTime(arg),
-    `${string} is ambiguous and requires T prefix`
+    `'${arg}' is ambiguous and requires T prefix`
   );
   
   arg = `T${string}`;
@@ -33,24 +26,12 @@ ambiguousStrings.forEach((string) => {
   assert.throws(
     RangeError,
     () => instance.withPlainTime(arg),
-    "space is not accepted as a substitute for T prefix"
+    `space is not accepted as a substitute for T prefix: '${arg}'`
   );
 });
 
 
-const unambiguousStrings = [
-  "2021-13",  
-  "202113",   
-  "0000-00",  
-  "000000",   
-  "1314",     
-  "13-14",    
-  "1232",     
-  "0230",     
-  "0631",     
-  "0000",     
-  "00-00",    
-];
-unambiguousStrings.forEach((arg) => instance.withPlainTime(arg));
+TemporalHelpers.ISO.plainTimeStringsUnambiguous().forEach(
+  (arg) => instance.withPlainTime(arg));
 
 reportCompare(0, 0);

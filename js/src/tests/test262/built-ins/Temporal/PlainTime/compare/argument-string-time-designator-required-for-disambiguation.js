@@ -8,27 +8,20 @@
 
 
 
+
 const midnight = new Temporal.PlainTime();
 
-const ambiguousStrings = [
-  "2021-12",  
-  "1214",     
-  "0229",     
-  "1130",     
-  "12-14",    
-  "202112",   
-];
-ambiguousStrings.forEach((string) => {
+TemporalHelpers.ISO.plainTimeStringsAmbiguous().forEach((string) => {
   let arg = string;
   assert.throws(
     RangeError,
     () => Temporal.PlainTime.compare(arg, midnight),
-    `${string} is ambiguous and requires T prefix (first argument)`
+    `'${arg}' is ambiguous and requires T prefix (first argument)`
   );
   assert.throws(
     RangeError,
     () => Temporal.PlainTime.compare(midnight, arg),
-    `${string} is ambiguous and requires T prefix (second argument)`
+    `'${arg}' is ambiguous and requires T prefix (second argument)`
   );
   
   arg = `T${string}`;
@@ -39,30 +32,17 @@ ambiguousStrings.forEach((string) => {
   assert.throws(
     RangeError,
     () => Temporal.PlainTime.compare(arg, midnight),
-    'space is not accepted as a substitute for T prefix (first argument)'
+    `space is not accepted as a substitute for T prefix (first argument): '${arg}'`
   );
   assert.throws(
     RangeError,
     () => Temporal.PlainTime.compare(midnight, arg),
-    'space is not accepted as a substitute for T prefix (second argument)'
+    `space is not accepted as a substitute for T prefix (second argument): '${arg}'`
   );
 });
 
 
-const unambiguousStrings = [
-  "2021-13",  
-  "202113",   
-  "0000-00",  
-  "000000",   
-  "1314",     
-  "13-14",    
-  "1232",     
-  "0230",     
-  "0631",     
-  "0000",     
-  "00-00",    
-];
-unambiguousStrings.forEach((arg) => {
+TemporalHelpers.ISO.plainTimeStringsUnambiguous().forEach((arg) => {
   Temporal.PlainTime.compare(arg, midnight);
   Temporal.PlainTime.compare(midnight, arg);
 });

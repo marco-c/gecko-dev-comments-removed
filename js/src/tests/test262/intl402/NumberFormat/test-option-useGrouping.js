@@ -13,6 +13,7 @@
 
 
 
+
 function resolveUseGrouping(option) {
   return new Intl.NumberFormat(undefined, { useGrouping: option }).resolvedOptions().useGrouping;
 }
@@ -24,13 +25,19 @@ for (let string of ["min2", "auto", "always"]) {
 assert.sameValue(resolveUseGrouping(true), "always");
 assert.sameValue(resolveUseGrouping(false), false);
 assert.sameValue(resolveUseGrouping(undefined), "auto");
+assert.sameValue(resolveUseGrouping("true"), "auto");
+assert.sameValue(resolveUseGrouping("false"), "auto");
 
 for (let falsy of [0, null, ""]) {
   assert.sameValue(resolveUseGrouping(falsy), false);
 }
 
-for (let truthy of [42, "MIN2", {}]) {
-  assert.sameValue(resolveUseGrouping(truthy), "auto");
+for (let invalidOptions of [42, "MIN2", {} , "True",  "TRUE" , "FALSE" , "False"]) {
+  assert.throws(RangeError, function () {
+    return new Intl.NumberFormat(undefined, { useGrouping: invalidOptions });
+  }, "Throws RangeError when useGrouping value is not supported");
 }
+
+
 
 reportCompare(0, 0);

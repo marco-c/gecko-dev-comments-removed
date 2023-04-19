@@ -77,6 +77,9 @@
 
 
 
+
+
+
 var expected = [
   "start",
 
@@ -84,13 +87,10 @@ var expected = [
   "tick 1",
 
   
-  "tick 2",
-
-  
   "get then",
 
   
-  "tick 3",
+  "tick 2",
 
   
   "get return",
@@ -99,7 +99,7 @@ var expected = [
   "get then",
 
   
-  "tick 4",
+  "tick 3",
 ];
 
 var actual = [];
@@ -128,7 +128,6 @@ Promise.resolve(0)
   .then(() => actual.push("tick 1"))
   .then(() => actual.push("tick 2"))
   .then(() => actual.push("tick 3"))
-  .then(() => actual.push("tick 4"))
   .then(() => {
     assert.compareArray(actual, expected, "Ticks for return with thenable getter");
 }).then($DONE, $DONE);
