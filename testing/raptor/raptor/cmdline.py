@@ -357,6 +357,14 @@ def create_parser(mach_interface=False):
         help="Name of conditioned profile to use. Prefix with `artifact:` "
         "if we should obtain the profile from CI.",
     )
+    add_arg(
+        "--webext",
+        dest="webext",
+        action="store_true",
+        default=False,
+        help="Whether to use webextension to execute pageload tests "
+        "(WebExtension is being deprecated).",
+    )
 
     
     add_arg(
@@ -370,7 +378,7 @@ def create_parser(mach_interface=False):
     add_arg(
         "--browsertime",
         dest="browsertime",
-        default=False,
+        default=True,
         action="store_true",
         help="Whether to use browsertime to execute pageload tests",
     )
@@ -466,6 +474,10 @@ def verify_options(parser, args):
     
     if hasattr(args, "run_local") and (not args.run_local and args.debug_mode):
         parser.error("Cannot run debug mode in CI")
+
+    
+    if args.webext:
+        args.browsertime = False
 
     
     if args.browsertime_visualmetrics and not args.browsertime_video:
