@@ -1003,11 +1003,6 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  void UpdateFileList();
-
-  
-
-
 
   void AfterSetFilesOrDirectories(bool aSetValueChanged);
 

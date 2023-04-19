@@ -2524,7 +2524,11 @@ void HTMLInputElement::AfterSetFilesOrDirectories(bool aSetValueChanged) {
     }
   }
 
-  UpdateFileList();
+  
+  
+  if (mFileData->mFileList) {
+    mFileData->mFileList = nullptr;
+  }
 
   if (aSetValueChanged) {
     SetValueChanged(true);
@@ -2557,7 +2561,11 @@ FileList* HTMLInputElement::GetFiles() {
 
   if (!mFileData->mFileList) {
     mFileData->mFileList = new FileList(static_cast<nsIContent*>(this));
-    UpdateFileList();
+    for (const OwningFileOrDirectory& item : GetFilesOrDirectoriesInternal()) {
+      if (item.IsFile()) {
+        mFileData->mFileList->Append(item.GetAsFile());
+      }
+    }
   }
 
   return mFileData->mFileList;
@@ -2569,13 +2577,9 @@ void HTMLInputElement::SetFiles(FileList* aFiles) {
   }
 
   
-  if (mFileData->mFileList) {
-    mFileData->mFileList->Clear();
-    mFileData->mFileList = nullptr;
-  }
-
-  
   SetFiles(aFiles, true);
+
+  MOZ_ASSERT(!mFileData->mFileList, "Should've cleared the existing file list");
 
   
   mFileData->mFileList = aFiles;
@@ -2598,23 +2602,6 @@ void HTMLInputElement::HandleNumberControlSpin(void* aData) {
   } else {
     input->StepNumberControlForUserEvent(
         input->mNumberControlSpinnerSpinsUp ? 1 : -1);
-  }
-}
-
-void HTMLInputElement::UpdateFileList() {
-  MOZ_ASSERT(mFileData);
-
-  if (mFileData->mFileList) {
-    mFileData->mFileList->Clear();
-
-    const nsTArray<OwningFileOrDirectory>& array =
-        GetFilesOrDirectoriesInternal();
-
-    for (uint32_t i = 0; i < array.Length(); ++i) {
-      if (array[i].IsFile()) {
-        mFileData->mFileList->Append(array[i].GetAsFile());
-      }
-    }
   }
 }
 
