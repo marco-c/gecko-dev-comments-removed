@@ -20,11 +20,73 @@ namespace mozilla {
 
 using media::TimeUnit;
 
+static void AACAudioSpecificConfigToUserData(uint8_t aAACProfileLevelIndication,
+                                             const uint8_t* aAudioSpecConfig,
+                                             uint32_t aConfigLength,
+                                             nsTArray<BYTE>& aOutUserData) {
+  MOZ_ASSERT(aOutUserData.IsEmpty());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const UINT32 heeInfoLen = 4 * sizeof(WORD) + sizeof(DWORD);
+
+  
+  
+  BYTE heeInfo[heeInfoLen] = {0};
+  WORD* w = (WORD*)heeInfo;
+  w[0] = 0x0;  
+  w[1] = aAACProfileLevelIndication;
+
+  aOutUserData.AppendElements(heeInfo, heeInfoLen);
+
+  if (aAACProfileLevelIndication == 2 && aConfigLength > 2) {
+    
+    
+    
+    int8_t frequency =
+        (aAudioSpecConfig[0] & 0x7) << 1 | (aAudioSpecConfig[1] & 0x80) >> 7;
+    int8_t channels = (aAudioSpecConfig[1] & 0x78) >> 3;
+    int8_t gasc = aAudioSpecConfig[1] & 0x7;
+    if (frequency != 0xf && channels && !gasc) {
+      
+      
+      
+      
+      aConfigLength = 2;
+    }
+  }
+  aOutUserData.AppendElements(aAudioSpecConfig, aConfigLength);
+}
+
 WMFAudioMFTManager::WMFAudioMFTManager(const AudioInfo& aConfig)
     : mAudioChannels(aConfig.mChannels),
       mChannelsMap(AudioConfig::ChannelLayout::UNKNOWN_MAP),
       mAudioRate(aConfig.mRate),
-      mStreamType(GetStreamTypeFromMimeType(aConfig.mMimeType)) {
+      mStreamType(
+          WMFDecoderModule::GetStreamTypeFromMimeType(aConfig.mMimeType)) {
   MOZ_COUNT_CTOR(WMFAudioMFTManager);
 
   if (mStreamType == WMFStreamType::AAC) {
@@ -56,7 +118,7 @@ WMFAudioMFTManager::~WMFAudioMFTManager() {
 }
 
 const GUID& WMFAudioMFTManager::GetMediaSubtypeGUID() {
-  MOZ_ASSERT(StreamTypeIsAudio(mStreamType));
+  MOZ_ASSERT(WMFDecoderModule::StreamTypeIsAudio(mStreamType));
   switch (mStreamType) {
     case WMFStreamType::AAC:
       return MFAudioFormat_AAC;
@@ -68,7 +130,7 @@ const GUID& WMFAudioMFTManager::GetMediaSubtypeGUID() {
 }
 
 bool WMFAudioMFTManager::Init() {
-  NS_ENSURE_TRUE(StreamTypeIsAudio(mStreamType), false);
+  NS_ENSURE_TRUE(WMFDecoderModule::StreamTypeIsAudio(mStreamType), false);
 
   RefPtr<MFTDecoder> decoder(new MFTDecoder());
   

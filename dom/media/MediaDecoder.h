@@ -136,6 +136,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   void Seek(double aTime, SeekTarget::Type aSeekType);
 
   
+  nsresult InitializeStateMachine();
+
+  
   
   virtual void Play();
 
@@ -402,20 +405,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void FirstFrameLoaded(UniquePtr<MediaInfo> aInfo,
                                 MediaDecoderEventVisibility aEventVisibility);
 
-  
-  nsresult CreateAndInitStateMachine(bool aIsLiveStream,
-                                     bool aDisableExternalEngine = false);
-
-  
-  
-  virtual MediaDecoderStateMachineBase* CreateStateMachine(
-      bool aDisableExternalEngine) MOZ_NONNULL_RETURN = 0;
-
   void SetStateMachineParameters();
-
-  
-  void DisconnectEvents();
-  RefPtr<ShutdownPromise> ShutdownStateMachine();
 
   
   
