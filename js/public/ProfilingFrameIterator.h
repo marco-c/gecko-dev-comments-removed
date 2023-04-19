@@ -46,6 +46,12 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
   JSContext* cx_;
   mozilla::Maybe<uint64_t> samplePositionInProfilerBuffer_;
   js::Activation* activation_;
+  
+  
+  
+  
+  
+  void* endStackAddress_ = nullptr;
   Kind kind_;
 
   static const unsigned StorageSpace = 8 * sizeof(void*);
@@ -75,6 +81,14 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
     MOZ_ASSERT(!done());
     MOZ_ASSERT(isJSJit());
     return *static_cast<const js::jit::JSJitProfilingFrameIterator*>(storage());
+  }
+
+  void maybeSetEndStackAddress(void* addr) {
+    
+    
+    if (!endStackAddress_) {
+      endStackAddress_ = addr;
+    }
   }
 
   void settleFrames();

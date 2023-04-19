@@ -480,7 +480,7 @@ bool JSJitFrameIter::verifyReturnAddressUsingNativeToBytecodeMap() {
 #endif  
 
 JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
-                                                         void* pc) {
+                                                         void* pc, void* sp) {
   
   
   if (!cx->profilingActivation()) {
@@ -508,10 +508,15 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
   fp_ = (uint8_t*)act->lastProfilingFrame();
 
   
+  
+  endStackAddress_ = fp_;
+
+  
   MOZ_ASSERT(cx->isProfilerSamplingEnabled());
 
   
   if (tryInitWithPC(pc)) {
+    endStackAddress_ = sp;
     return;
   }
 
@@ -519,6 +524,7 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
   JitcodeGlobalTable* table =
       cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
   if (tryInitWithTable(table, pc,  false)) {
+    endStackAddress_ = sp;
     return;
   }
 
@@ -555,6 +561,7 @@ static inline ReturnType GetPreviousRawFrame(CommonFrameLayout* frame) {
 
 JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(
     CommonFrameLayout* fp) {
+  endStackAddress_ = fp;
   moveToNextFrame(fp);
 }
 
