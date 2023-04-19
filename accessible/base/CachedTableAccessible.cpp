@@ -72,8 +72,19 @@ void CachedTableAccessible::Invalidate(Accessible* aAcc) {
   if (!sCachedTables) {
     return;
   }
-
-  if (Accessible* table = nsAccUtils::TableFor(aAcc)) {
+  Accessible* table = nullptr;
+  if (aAcc->IsTable()) {
+    table = aAcc;
+  } else if (aAcc->IsTableCell()) {
+    for (table = aAcc->Parent(); table; table = table->Parent()) {
+      if (table->IsTable()) {
+        break;
+      }
+    }
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Should only be called on a table or a cell");
+  }
+  if (table) {
     
     
     sCachedTables->Remove(table);
