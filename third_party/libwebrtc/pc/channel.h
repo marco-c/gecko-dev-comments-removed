@@ -289,13 +289,6 @@ class BaseChannel : public ChannelInterface,
   void OnMessage(rtc::Message* pmsg) override;
 
   
-  template <class T>
-  T InvokeOnWorker(const rtc::Location& posted_from,
-                   rtc::FunctionView<T()> functor) {
-    return worker_thread_->Invoke<T>(posted_from, functor);
-  }
-
-  
   
   void MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
 
@@ -309,15 +302,10 @@ class BaseChannel : public ChannelInterface,
   
   std::string ToString() const;
 
-  
-  RtpHeaderExtensions GetNegotiatedRtpHeaderExtensions() const override;
-
  private:
   bool ConnectToRtpTransport() RTC_RUN_ON(network_thread());
   void DisconnectFromRtpTransport() RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
-  void SetContent_s(const MediaContentDescription* content,
-                    webrtc::SdpType type) RTC_RUN_ON(signaling_thread());
 
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
@@ -348,6 +336,24 @@ class BaseChannel : public ChannelInterface,
   bool was_ever_writable_n_ RTC_GUARDED_BY(network_thread()) = false;
   bool was_ever_writable_ RTC_GUARDED_BY(worker_thread()) = false;
   const bool srtp_required_ = true;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const webrtc::CryptoOptions crypto_options_;
 
   
@@ -382,12 +388,6 @@ class BaseChannel : public ChannelInterface,
   
   
   rtc::UniqueRandomIdGenerator* const ssrc_generator_;
-
-  
-  
-  
-  RtpHeaderExtensions negotiated_header_extensions_
-      RTC_GUARDED_BY(signaling_thread());
 };
 
 

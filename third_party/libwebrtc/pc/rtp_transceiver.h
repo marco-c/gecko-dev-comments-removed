@@ -233,6 +233,16 @@ class RtpTransceiver final
       rtc::ArrayView<const RtpHeaderExtensionCapability>
           header_extensions_to_offer) override;
 
+  
+  
+  
+  
+  
+  
+  
+  void OnNegotiationUpdate(SdpType sdp_type,
+                           const cricket::MediaContentDescription* content);
+
  private:
   void OnFirstPacketReceived();
   void StopSendingAndReceiving();
@@ -264,6 +274,13 @@ class RtpTransceiver final
   cricket::ChannelManager* channel_manager_ = nullptr;
   std::vector<RtpCodecCapability> codec_preferences_;
   std::vector<RtpHeaderExtensionCapability> header_extensions_to_offer_;
+
+  
+  
+  
+  cricket::RtpHeaderExtensions negotiated_header_extensions_
+      RTC_GUARDED_BY(thread_);
+
   const std::function<void()> on_negotiation_needed_;
 };
 
