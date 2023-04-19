@@ -392,7 +392,8 @@ bool nsAccUtils::MustPrune(Accessible* aAccessible) {
   MOZ_ASSERT(aAccessible);
   roles::Role role = aAccessible->Role();
 
-  if (role == roles::SLIDER) {
+  if (role == roles::SLIDER || role == roles::PROGRESSBAR) {
+    
     
     
     return true;
@@ -402,8 +403,7 @@ bool nsAccUtils::MustPrune(Accessible* aAccessible) {
       role != roles::OPTION && role != roles::ENTRY &&
       role != roles::FLAT_EQUATION && role != roles::PASSWORD_TEXT &&
       role != roles::PUSHBUTTON && role != roles::TOGGLE_BUTTON &&
-      role != roles::GRAPHIC && role != roles::PROGRESSBAR &&
-      role != roles::SEPARATOR) {
+      role != roles::GRAPHIC && role != roles::SEPARATOR) {
     
     return false;
   }
