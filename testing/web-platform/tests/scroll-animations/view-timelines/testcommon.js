@@ -1,15 +1,21 @@
 'use strict';
 
-function CreateViewTimelineOpacityAnimation(test, target,
-                                            orientation = 'block') {
+function CreateViewTimelineOpacityAnimation(test, target, options) {
+  const viewTimelineOptions = {
+    subject: target,
+    axis: 'block'
+  };
+  if (options) {
+    for (let key in options) {
+      viewTimelineOptions[key] = options[key];
+    }
+  }
+
   const anim =
       target.animate(
           { opacity: [0.3, 0.7] },
           {
-            timeline: new ViewTimeline({
-              subject: target,
-              axis: orientation
-            }),
+            timeline: new ViewTimeline(viewTimelineOptions),
             fill: 'none'
           });
   test.add_cleanup(() => {
@@ -28,21 +34,47 @@ function CreateViewTimelineOpacityAnimation(test, target,
 
 
 
-async function runTimelineDelayTest(t, options) {
+async function runTimelineRangeTest(t, options, message) {
   container.scrollLeft = 0;
   await waitForNextFrame();
 
-  const anim = CreateViewTimelineOpacityAnimation(t, target, 'inline');
-  anim.effect.updateTiming({
-    delay: options.delay,
-    endDelay: options.endDelay,
-    
-    
-    fill: 'both'
-  });
+  const anim = CreateViewTimelineOpacityAnimation(t, target, options.timeline);
+  if (options.timing)
+    anim.effect.updateTiming(options.timing);
+
   const timeline = anim.timeline;
   await anim.ready;
 
+  
+  container.scrollLeft = options.rangeStart;
+  await waitForNextFrame();
+  assert_equals(getComputedStyle(target).opacity, '0.3',
+                `Effect at the start of the active phase: ${message}`);
+
+  
+  container.scrollLeft = (options.rangeStart + options.rangeEnd) / 2;
+  await waitForNextFrame();
+  assert_equals(getComputedStyle(target).opacity,'0.5',
+                `Effect at the midpoint of the active range: ${message}`);
+
+  
+  container.scrollLeft = options.rangeEnd;
+  await waitForNextFrame();
+  assert_equals(getComputedStyle(target).opacity, '0.7',
+                `Effect is in the active phase at effect end time: ${message}`);
+}
+
+
+
+
+
+
+
+
+
+
+
+async function runTimelineDelayTest(t, options) {
   const delayToString = delay => {
     const parts = [];
     if (delay.phase)
@@ -51,26 +83,44 @@ async function runTimelineDelayTest(t, options) {
       parts.push(`${delay.percent.value}%`);
     return parts.join(' ');
   };
-
-  
-  container.scrollLeft = options.rangeStart;
-  await waitForNextFrame();
   const range =
      `${delayToString(options.delay)} to ` +
      `${delayToString(options.endDelay)}`;
-  assert_equals(getComputedStyle(target).opacity, '0.3',
-                `Effect at the start of the active phase: ${range}`);
 
-  
-  container.scrollLeft = (options.rangeStart + options.rangeEnd) / 2;
-  await waitForNextFrame();
-  assert_equals(getComputedStyle(target).opacity,'0.5',
-                `Effect at the midpoint of the active range: ${range}`);
+  options.timeline = {
+    axis: 'inline'
+  };
+  options.timing = {
+    delay: options.delay,
+    endDelay: options.endDelay,
+    
+    
+    fill: 'both'
+  };
 
-  
-  container.scrollLeft = options.rangeEnd;
-  await waitForNextFrame();
-  assert_equals(getComputedStyle(target).opacity, '0.7',
-                `Effect is in the active phase at effect end time: ${range}`);
+  await runTimelineRangeTest(t, options, range);
 }
 
+
+
+
+
+
+
+
+
+
+async function runTimelineInsetTest(t, options) {
+  options.timeline = {
+    axis: 'inline',
+    inset: options.inset
+  };
+  options.timing = {
+    
+    
+    fill: 'both'
+  }
+  const length = options.inset.length;
+  const range = options.inset.join(' ');
+  await runTimelineRangeTest(t, options, range);
+}
