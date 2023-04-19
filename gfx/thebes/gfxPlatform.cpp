@@ -1344,9 +1344,9 @@ void gfxPlatform::ShutdownLayersIPC() {
     layers::ImageBridgeChild::ShutDown();
     
     gfx::CanvasManagerParent::Shutdown();
-    RemoteTextureMap::Shutdown();
     
     layers::CompositorThreadHolder::Shutdown();
+    RemoteTextureMap::Shutdown();
     image::ImageMemoryReporter::ShutdownForWebRender();
     
     

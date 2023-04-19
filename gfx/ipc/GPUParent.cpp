@@ -691,8 +691,8 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         
         
         CanvasManagerParent::Shutdown();
-        RemoteTextureMap::Shutdown();
         CompositorThreadHolder::Shutdown();
+        RemoteTextureMap::Shutdown();
         
         
         
