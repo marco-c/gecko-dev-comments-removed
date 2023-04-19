@@ -666,8 +666,6 @@ struct ColorLineT {
     }
     
     
-    
-    
     *aFirstStop = aStops[0].offset;
     *aLastStop = aStops.LastElement().offset;
     if ((*aLastStop > *aFirstStop) &&
@@ -1045,25 +1043,16 @@ struct PaintRadialGradient : public PaintPatternBase {
         if (aColorLine->extend != T::EXTEND_PAD) {
           return MakeUnique<ColorPattern>(DeviceColor());
         }
+      } else {
         
         
-        
-        
-        for (auto& gs : stopArray) {
-          gs.offset = 0.0f;
-        }
-        stopArray.AppendElement(
-            GradientStop{1.0f, stopArray.LastElement().color});
-        lastStop += 1.0f;
+        Point vec = c2 - c1;
+        c1 += vec * firstStop;
+        c2 -= vec * (1.0f - lastStop);
+        float deltaR = r2 - r1;
+        r1 = r1 + deltaR * firstStop;
+        r2 = r2 - deltaR * (1.0f - lastStop);
       }
-      
-      
-      Point vec = c2 - c1;
-      c1 += vec * firstStop;
-      c2 -= vec * (1.0f - lastStop);
-      float deltaR = r2 - r1;
-      r1 = r1 + deltaR * firstStop;
-      r2 = r2 - deltaR * (1.0f - lastStop);
     }
     if ((r1 < 0.0f || r2 < 0.0f) && aColorLine->extend == T::EXTEND_PAD) {
       
@@ -1130,9 +1119,6 @@ struct PaintRadialGradient : public PaintPatternBase {
       c2 += vec;
     }
     RefPtr stops = aColorLine->MakeGradientStops(aState, stopArray);
-    if (!stops) {
-      return MakeUnique<ColorPattern>(DeviceColor());
-    }
     return MakeUnique<RadialGradientPattern>(c1, c2, r1, r2, std::move(stops),
                                              Matrix::Scaling(1.0, -1.0));
   }
