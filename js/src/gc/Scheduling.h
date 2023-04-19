@@ -406,6 +406,9 @@ static const bool PerZoneGCEnabled = false;
 static const bool CompactingEnabled = true;
 
 
+static const bool BalancedHeapLimitsEnabled = false;
+
+
 static const bool IncrementalWeakMapMarkingEnabled = true;
 
 
@@ -531,6 +534,11 @@ class GCSchedulingTunables {
   
 
 
+  MainThreadOrGCTaskData<bool> balancedHeapLimitsEnabled_;
+
+  
+
+
 
 
 
@@ -625,6 +633,7 @@ class GCSchedulingTunables {
     return highFrequencyLargeHeapGrowth_;
   }
   double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
+  bool balancedHeapLimitsEnabled() const { return balancedHeapLimitsEnabled_; }
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
   }

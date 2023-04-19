@@ -228,6 +228,19 @@ typedef enum JSGCParamKey {
 
 
 
+
+
+
+  JSGC_BALANCED_HEAP_LIMITS_ENABLED = 17,
+
+  
+
+
+
+
+
+
+
   JSGC_ALLOCATION_THRESHOLD = 19,
 
   
