@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { Property } = require("devtools/client/dom/content/reducers/grips");
+const {
+  Property,
+} = require("resource://devtools/client/dom/content/reducers/grips.js");
 
 
 

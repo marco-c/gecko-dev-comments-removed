@@ -4,19 +4,23 @@
 "use strict";
 
 
-const React = require("devtools/client/shared/vendor/react");
-const ReactDOM = require("devtools/client/shared/vendor/react-dom");
-const { Provider } = require("devtools/client/shared/vendor/react-redux");
+const React = require("resource://devtools/client/shared/vendor/react.js");
+const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.js");
+const {
+  Provider,
+} = require("resource://devtools/client/shared/vendor/react-redux.js");
 
 
 const MainFrame = React.createFactory(
-  require("devtools/client/dom/content/components/MainFrame")
+  require("resource://devtools/client/dom/content/components/MainFrame.js")
 );
 
 
-const createStore = require("devtools/client/shared/redux/create-store");
+const createStore = require("resource://devtools/client/shared/redux/create-store.js");
 
-const { reducers } = require("devtools/client/dom/content/reducers/index");
+const {
+  reducers,
+} = require("resource://devtools/client/dom/content/reducers/index.js");
 const store = createStore(reducers);
 
 

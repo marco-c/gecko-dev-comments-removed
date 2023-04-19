@@ -12,7 +12,7 @@ Services.scriptloader.loadSubScript(
 );
 
 
-const constants = require("devtools/client/dom/content/constants");
+const constants = require("resource://devtools/client/dom/content/constants.js");
 
 
 
