@@ -88,14 +88,13 @@ namespace webrtc {
 class SdpOfferAnswerHandler : public SdpStateProvider,
                               public sigslot::has_slots<> {
  public:
-  explicit SdpOfferAnswerHandler(PeerConnection* pc);
   ~SdpOfferAnswerHandler();
 
   
-  
-  void Initialize(
+  static std::unique_ptr<SdpOfferAnswerHandler> Create(
+      PeerConnection* pc,
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      PeerConnectionDependencies* dependencies);
+      PeerConnectionDependencies& dependencies);
 
   void ResetSessionDescFactory() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -214,6 +213,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   
   class LocalIceCredentialsToReplace;
+
+  
+  explicit SdpOfferAnswerHandler(PeerConnection* pc);
+  
+  
+  void Initialize(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies& dependencies);
 
   rtc::Thread* signaling_thread() const;
   
