@@ -250,9 +250,12 @@ void CCGCScheduler::NoteGCSliceEnd(TimeStamp aStart, TimeStamp aEnd) {
   PerfStats::RecordMeasurement(PerfStats::Metric::MajorGC, sliceDuration);
 
   
+  
+  
   TimeDuration nonIdleDuration;
-  bool startedIdle =
-      mTriggeredGCDeadline.isSome() && !mTriggeredGCDeadline->IsNull();
+  bool startedIdle = mTriggeredGCDeadline.isSome() &&
+                     !mTriggeredGCDeadline->IsNull() &&
+                     *mTriggeredGCDeadline > aStart;
   if (!startedIdle) {
     nonIdleDuration = sliceDuration;
   } else {
