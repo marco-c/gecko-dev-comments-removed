@@ -1481,18 +1481,18 @@ function _loadURI(browser, uri, params = {}) {
   }
 
   
-  try {
-    let fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
-    if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-    }
-    if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
-    }
-    if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
-      fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-    }
+  let fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
+  if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+  }
+  if (loadFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
+  }
+  if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+    fixupFlags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+  }
 
+  try {
     let uriObject = Services.uriFixup.getFixupURIInfo(uri, fixupFlags)
       .preferredURI;
     if (uriObject && handleUriInChrome(browser, uriObject)) {
@@ -1518,13 +1518,18 @@ function _loadURI(browser, uri, params = {}) {
   }
 
   if (globalHistoryOptions?.triggeringSponsoredURL) {
-    browser.setAttribute(
-      "triggeringSponsoredURL",
-      globalHistoryOptions.triggeringSponsoredURL
-    );
-    const time =
-      globalHistoryOptions.triggeringSponsoredURLVisitTimeMS || Date.now();
-    browser.setAttribute("triggeringSponsoredURLVisitTimeMS", time);
+    try {
+      
+      
+      const triggeringSponsoredURL = Services.uriFixup.getFixupURIInfo(
+        globalHistoryOptions.triggeringSponsoredURL,
+        fixupFlags
+      ).fixedURI.spec;
+      browser.setAttribute("triggeringSponsoredURL", triggeringSponsoredURL);
+      const time =
+        globalHistoryOptions.triggeringSponsoredURLVisitTimeMS || Date.now();
+      browser.setAttribute("triggeringSponsoredURLVisitTimeMS", time);
+    } catch (e) {}
   }
 
   let loadURIOptions = {
