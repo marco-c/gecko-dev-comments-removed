@@ -70,4 +70,11 @@ bool RepeatingTaskHandle::Running() const {
   return repeating_task_ != nullptr;
 }
 
+namespace webrtc_repeating_task_impl {
+
+
+void RepeatingTaskHandleDTraceProbeStart() {}
+void RepeatingTaskHandleDTraceProbeDelayedStart() {}
+void RepeatingTaskImplDTraceProbeRun() {}
+}  
 }  
