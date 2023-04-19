@@ -4064,29 +4064,31 @@ void nsWindow::OnMap() {
 void nsWindow::OnUnmap() {
   LOG("nsWindow::OnUnmap");
 
-  
-  
-  if (GdkIsWaylandDisplay() && mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->DisableRendering();
-  }
 #ifdef MOZ_WAYLAND
-  if (moz_container_wayland_has_egl_window(mContainer)) {
-    
-    
-    
-    
-    
-    
-    
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      remoteRenderer->SendResume();
+  
+  
+  if (GdkIsWaylandDisplay()) {
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->DisableRendering();
+    }
+    if (moz_container_wayland_has_egl_window(mContainer)) {
+      
+      
+      
+      
+      
+      
+      
+      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+        remoteRenderer->SendResume();
+      }
+    }
+    if (GdkIsWaylandDisplay()) {
+      moz_container_wayland_unmap(GTK_WIDGET(mContainer));
     }
   }
 #endif
   moz_container_unmap(GTK_WIDGET(mContainer));
-  if (GdkIsWaylandDisplay()) {
-    moz_container_wayland_unmap(GTK_WIDGET(mContainer));
-  }
 }
 
 void nsWindow::OnUnrealize() {
