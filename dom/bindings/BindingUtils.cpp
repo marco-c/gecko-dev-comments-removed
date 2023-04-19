@@ -4361,8 +4361,8 @@ bool IsGetterEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj,
 
 already_AddRefed<Promise> CreateRejectedPromiseFromThrownException(
     JSContext* aCx, ErrorResult& aError) {
-  JS::Rooted<JS::Value> exn(aCx);
-  if (!JS_GetPendingException(aCx, &exn)) {
+  if (!JS_IsExceptionPending(aCx)) {
+    
     
     
     
@@ -4370,16 +4370,7 @@ already_AddRefed<Promise> CreateRejectedPromiseFromThrownException(
     return nullptr;
   }
 
-  JS_ClearPendingException(aCx);
-
-  JS::Rooted<JSObject*> globalObj(aCx, GetEntryGlobal()->GetGlobalJSObject());
-  JSAutoRealm ar(aCx, globalObj);
-  if (!JS_WrapValue(aCx, &exn)) {
-    aError.StealExceptionFromJSContext(aCx);
-    return nullptr;
-  }
-
-  GlobalObject promiseGlobal(aCx, globalObj);
+  GlobalObject promiseGlobal(aCx, GetEntryGlobal()->GetGlobalJSObject());
   if (promiseGlobal.Failed()) {
     aError.StealExceptionFromJSContext(aCx);
     return nullptr;
@@ -4392,7 +4383,7 @@ already_AddRefed<Promise> CreateRejectedPromiseFromThrownException(
     return nullptr;
   }
 
-  return Promise::Reject(global, aCx, exn, aError);
+  return Promise::RejectWithExceptionFromContext(global, aCx, aError);
 }
 
 }  

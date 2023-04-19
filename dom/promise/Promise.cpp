@@ -547,6 +547,38 @@ void Promise::HandleException(JSContext* aCx) {
 }
 
 
+already_AddRefed<Promise> Promise::RejectWithExceptionFromContext(
+    nsIGlobalObject* aGlobal, JSContext* aCx, ErrorResult& aError) {
+  JS::Rooted<JS::Value> exn(aCx);
+  if (!JS_GetPendingException(aCx, &exn)) {
+    
+    
+    
+    aError.ThrowUncatchableException();
+    return nullptr;
+  }
+
+  JSAutoRealm ar(aCx, aGlobal->GetGlobalJSObject());
+  if (!JS_WrapValue(aCx, &exn)) {
+    
+    aError.StealExceptionFromJSContext(aCx);
+    return nullptr;
+  }
+
+  JS_ClearPendingException(aCx);
+
+  IgnoredErrorResult error;
+  RefPtr<Promise> promise = Promise::Reject(aGlobal, aCx, exn, error);
+  if (!promise) {
+    
+    aError.ThrowJSException(aCx, exn);
+    return nullptr;
+  }
+
+  return promise.forget();
+}
+
+
 already_AddRefed<Promise> Promise::CreateFromExisting(
     nsIGlobalObject* aGlobal, JS::Handle<JSObject*> aPromiseObj,
     PropagateUserInteraction aPropagateUserInteraction) {

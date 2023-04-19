@@ -109,7 +109,14 @@ already_AddRefed<Promise> AsyncIterableNextImpl::NextSteps(
 
   
   
-  RefPtr<Promise> nextPromise = GetNextResult(aRv);
+  RefPtr<Promise> nextPromise;
+  {
+    ErrorResult error;
+    nextPromise = GetNextResult(error);
+    if (error.Failed()) {
+      nextPromise = Promise::Reject(aGlobalObject, std::move(error), aRv);
+    }
+  }
 
   
   auto fulfillSteps = [](JSContext* aCx, JS::Handle<JS::Value> aNext,
@@ -246,7 +253,13 @@ already_AddRefed<Promise> AsyncIterableReturnImpl::ReturnSteps(
 
   
   
-  return GetReturnPromise(aCx, aValue, aRv);
+  ErrorResult error;
+  RefPtr<Promise> returnPromise = GetReturnPromise(aCx, aValue, error);
+  if (error.Failed()) {
+    return Promise::Reject(aGlobalObject, std::move(error), aRv);
+  }
+
+  return returnPromise.forget();
 }
 
 already_AddRefed<Promise> AsyncIterableReturnImpl::Return(
