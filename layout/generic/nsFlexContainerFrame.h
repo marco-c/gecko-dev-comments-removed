@@ -185,6 +185,10 @@ class nsFlexContainerFrame final : public nsContainerFrame,
     return true;
   }
 
+  
+  void UnionInFlowChildOverflow(mozilla::OverflowAreas&);
+
+  
   void UnionChildOverflow(mozilla::OverflowAreas&) final;
 
   

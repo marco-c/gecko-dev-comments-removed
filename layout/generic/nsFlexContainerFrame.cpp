@@ -4623,7 +4623,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   aReflowOutput.SetOverflowAreasToDesiredBounds();
-  UnionChildOverflow(aReflowOutput.mOverflowAreas);
+  UnionInFlowChildOverflow(aReflowOutput.mOverflowAreas);
 
   
   aReflowOutput.mOverflowAreas.UnionWith(ocBounds);
@@ -4665,7 +4665,8 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   }
 }
 
-void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
+void nsFlexContainerFrame::UnionInFlowChildOverflow(
+    OverflowAreas& aOverflowAreas) {
   
   
   
@@ -4718,6 +4719,13 @@ void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
     aOverflowAreas.UnionAllWith(itemMarginBoxes);
     aOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
   }
+}
+
+void nsFlexContainerFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
+  UnionInFlowChildOverflow(aOverflowAreas);
+  
+  
+  nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas, {kPrincipalList});
 }
 
 void nsFlexContainerFrame::CalculatePackingSpace(
