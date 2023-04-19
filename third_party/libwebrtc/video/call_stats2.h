@@ -36,6 +36,9 @@ class CallStats {
   ~CallStats();
 
   
+  void EnsureStarted();
+
+  
   
   
   
