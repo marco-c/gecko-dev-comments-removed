@@ -30,14 +30,6 @@ const NOTIFY_INITIATING_MANUAL_RESTORE =
   "sessionstore-initiating-manual-restore";
 const NOTIFY_CLOSED_OBJECTS_CHANGED = "sessionstore-closed-objects-changed";
 
-
-
-
-
-
-const NOTIFY_CLOSED_OBJECTS_TAB_STATE_CHANGED =
-  "sessionstore-closed-objects-tab-state-changed";
-
 const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored"; 
 const NOTIFY_DOMWINDOWCLOSED_HANDLED =
   "sessionstore-debug-domwindowclosed-handled"; 
@@ -1312,15 +1304,6 @@ var SessionStoreInternal = {
       
       
       lazy.TabState.copyFromCache(permanentKey, closedTab.tabData.state);
-
-      
-      
-      lazy.setTimeout(() => {
-        Services.obs.notifyObservers(
-          null,
-          NOTIFY_CLOSED_OBJECTS_TAB_STATE_CHANGED
-        );
-      }, 0);
     }
   },
 
