@@ -532,10 +532,14 @@ function String_substring(start, end) {
     var finalEnd = std_Math_min(std_Math_max(intEnd, 0), len);
 
     
-    var from = std_Math_min(finalStart, finalEnd);
-
-    
-    var to = std_Math_max(finalStart, finalEnd);
+    var from, to;
+    if (finalStart < finalEnd) {
+        from = finalStart;
+        to = finalEnd;
+    } else {
+        from = finalEnd;
+        to = finalStart;
+    }
 
     
     
@@ -574,8 +578,9 @@ function String_substr(start, length) {
     var resultLength = std_Math_min(std_Math_max(end, 0), size - intStart);
 
     
-    
-    resultLength = std_Math_max(resultLength, 0);
+    if (resultLength <= 0) {
+        return "";
+    }
 
     
     
