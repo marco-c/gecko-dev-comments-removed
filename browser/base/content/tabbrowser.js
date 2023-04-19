@@ -6836,6 +6836,34 @@
         this.mBrowser.lastURI = aLocation;
         this.mBrowser.lastLocationChange = Date.now();
       }
+
+      
+      
+      
+      if (aLocation.spec.endsWith(".pdf")) {
+        this.showFeatureCalloutIfApplicable(aLocation);
+      }
+    }
+
+    showFeatureCalloutIfApplicable(location) {
+      
+      if (!this._showFeatureCallout) {
+        const { FeatureCallout } = ChromeUtils.importESModule(
+          "chrome://browser/content/featureCallout.mjs"
+        );
+        
+        
+        let Callout = new FeatureCallout({
+          win: window,
+          prefName: "browser.pdfjs.feature-tour",
+          source: location.spec,
+          browser: this.mBrowser,
+        });
+        this._showFeatureCallout = Callout.showFeatureCallout.bind(Callout);
+        this._showFeatureCallout();
+      } else {
+        this._showFeatureCallout();
+      }
     }
 
     onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
