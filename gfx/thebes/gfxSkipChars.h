@@ -156,22 +156,6 @@ class gfxSkipCharsIterator {
 
 
 
-  gfxSkipCharsIterator()
-      : mSkipChars(nullptr),
-        mOriginalStringOffset(0),
-        mSkippedStringOffset(0),
-        mCurrentRangeIndex(0),
-        mOriginalStringToSkipCharsOffset(0) {}
-
-  
-
-
-  bool IsInitialized() const { return mSkipChars != nullptr; }
-
-  
-
-
-
 
   void SetOriginalOffset(int32_t aOriginalStringOffset);
 
