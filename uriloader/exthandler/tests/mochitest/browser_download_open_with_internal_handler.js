@@ -767,7 +767,8 @@ add_task(async function test_check_open_with_internal_handler_noask() {
 
   
   let matrix = {
-    expectDialog: [false, true],
+    alwaysOpenPDFInline: [false, true],
+    improvements: [false, true],
     file: [
       "file_pdf_application_pdf.pdf",
       "file_pdf_binary_octet_stream.pdf",
@@ -784,14 +785,27 @@ add_task(async function test_check_open_with_internal_handler_noask() {
 
   for (let test of tests) {
     info(`test case: ${JSON.stringify(test)}`);
-    let { expectDialog, file, where } = test;
+    let { alwaysOpenPDFInline, improvements, file, where } = test;
+
+    
+    
+    let canHandleInline =
+      file == "file_pdf_application_pdf.pdf" ||
+      (file == "file_pdf_application_octet_stream.pdf" && where != "frame");
+
+    
+    
+    
+    let expectDialog =
+      !improvements && (!alwaysOpenPDFInline || !canHandleInline);
 
     await SpecialPowers.pushPrefEnv({
       set: [
         ["browser.helperApps.showOpenOptionForPdfJS", true],
         ["browser.helperApps.showOpenOptionForViewableInternally", true],
-        ["browser.download.improvements_to_download_panel", !expectDialog],
+        ["browser.download.improvements_to_download_panel", improvements],
         ["browser.download.always_ask_before_handling_new_types", expectDialog],
+        ["browser.download.open_pdf_attachments_inline", alwaysOpenPDFInline],
       ],
     });
 
@@ -820,10 +834,12 @@ add_task(async function test_check_open_with_internal_handler_noask() {
       );
     }
 
+    
+    
+    
     let openPDFDirectly =
-      !expectDialog &&
-      (file == "file_pdf_application_pdf.pdf" ||
-        (file == "file_pdf_application_octet_stream.pdf" && where != "frame"));
+      !expectDialog && alwaysOpenPDFInline && canHandleInline;
+
     await BrowserTestUtils.withNewTab(
       { gBrowser, url: TEST_PATH + "blank.html" },
       async browser => {

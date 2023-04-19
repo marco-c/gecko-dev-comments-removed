@@ -268,7 +268,8 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
 
   LOG(("  forceExternalHandling: %s", forceExternalHandling ? "yes" : "no"));
 
-  if (forceExternalHandling) {
+  if (forceExternalHandling &&
+      StaticPrefs::browser_download_open_pdf_attachments_inline()) {
     
     
     bool isPDF = mContentType.LowerCaseEqualsASCII(APPLICATION_PDF);
@@ -293,8 +294,7 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request) {
     
     
     
-    if (isPDF &&
-        StaticPrefs::browser_download_improvements_to_download_panel()) {
+    if (isPDF) {
       nsCOMPtr<nsILoadInfo> loadInfo;
       aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
 
