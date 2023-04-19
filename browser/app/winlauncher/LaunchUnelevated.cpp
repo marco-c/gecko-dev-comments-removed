@@ -144,9 +144,7 @@ LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
     
     EnsureBrowserCommandlineSafe(aArgc, aArgv);
 
-    if (mozilla::CheckArg(aArgc, aArgv, "osint",
-                          static_cast<const wchar_t**>(nullptr),
-                          CheckArgFlag::None)) {
+    if (mozilla::CheckArg(aArgc, aArgv, "osint", nullptr, CheckArgFlag::None)) {
       
       
       

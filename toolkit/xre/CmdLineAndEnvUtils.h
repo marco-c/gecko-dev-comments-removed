@@ -212,6 +212,14 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const char* aArg,
   return ar;
 }
 
+template <typename CharT>
+inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const char* aArg,
+                          std::nullptr_t,
+                          CheckArgFlag aFlags = CheckArgFlag::RemoveArg) {
+  return CheckArg<CharT>(aArgc, aArgv, aArg,
+                         static_cast<const CharT**>(nullptr), aFlags);
+}
+
 namespace internal {
 
 
@@ -248,8 +256,8 @@ inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
 
   
   
-  if (CheckArg(aArgc, aArgv, osintLit, static_cast<const CharT**>(nullptr),
-               CheckArgFlag::None) != ARG_FOUND) {
+  if (CheckArg(aArgc, aArgv, osintLit, nullptr, CheckArgFlag::None) !=
+      ARG_FOUND) {
     return true;
   }
 
