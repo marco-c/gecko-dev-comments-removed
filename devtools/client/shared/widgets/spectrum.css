@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --learn-more-underline: var(--grey-30);
@@ -19,7 +19,7 @@
   background-image: url(chrome://devtools/skin/images/command-eyedropper.svg);
 }
 
-
+/* Mix-in classes */
 
 .spectrum-checker {
   background-color: #eee;
@@ -49,15 +49,15 @@
   background-clip: content-box;
 }
 
-
+/* Elements */
 
 #spectrum-tooltip {
   padding: 5px;
 }
 
-
-
-
+/**
+ * Spectrum controls set the layout for the controls section of the color picker.
+ */
 .spectrum-controls {
   display: flex;
   justify-content: space-between;
@@ -76,10 +76,10 @@
   padding-block-end: 6px;
 }
 
-
-
-
-
+/**
+ * This styles the color preview and adds a checkered background overlay inside of it. The overlay
+ * can be manipulated using the --overlay-color variable.
+ */
 .spectrum-color-preview {
   --overlay-color: transparent;
   border: 1px solid transparent;
@@ -107,8 +107,8 @@
   height: 30px;
 }
 
-
-
+/* Keep aspect ratio:
+http://www.briangrinstead.com/blog/keep-aspect-ratio-with-html-and-css */
 .spectrum-color-picker {
   position: relative;
   width: 205px;
@@ -152,7 +152,7 @@
   direction: initial;
 }
 
-
+/* Focus style already exists on input[type="range"]. Remove overlap */
 .spectrum-hue-input:focus,
 .spectrum-alpha-input:focus {
   outline: none;
@@ -307,6 +307,8 @@
   border: none;
   margin-inline-start: auto;
   margin-block-start: 1px;
+  aspect-ratio: 1 / 1;
+  width: 12px;
 }
 
 .learn-more:-moz-locale-dir(ltr) {
