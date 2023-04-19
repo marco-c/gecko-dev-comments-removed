@@ -99,8 +99,10 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
   RefPtr<Buffer> buffer =
       new Buffer(aDevice, id, aDesc.mSize, aDesc.mUsage, std::move(shmem));
   if (aDesc.mMappedAtCreation) {
-    buffer->SetMapped(0, aDesc.mSize,
-                      !(aDesc.mUsage & dom::GPUBufferUsage_Binding::MAP_READ));
+    
+    
+    bool writable = true;
+    buffer->SetMapped(0, aDesc.mSize, writable);
   }
 
   return buffer.forget();
