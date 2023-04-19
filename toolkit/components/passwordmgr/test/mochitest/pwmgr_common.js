@@ -80,13 +80,24 @@ function recreateTree(element) {
   element.outerHTML = element.outerHTML;
 }
 
+function _checkArrayValues(actualValues, expectedValues, msg) {
+  is(
+    actualValues.length,
+    expectedValues.length,
+    "Checking array values: " + msg
+  );
+  for (let i = 0; i < expectedValues.length; i++) {
+    is(actualValues[i], expectedValues[i], msg + " Checking array entry #" + i);
+  }
+}
+
 
 
 
 
 function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
   if (hostname === null) {
-    checkArrayValues(actualValues, expectedValues, msg);
+    _checkArrayValues(actualValues, expectedValues, msg);
     return;
   }
 
@@ -118,7 +129,7 @@ function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
   }
 
   
-  checkArrayValues(actualValues.slice(0, -1), expectedValues, msg);
+  _checkArrayValues(actualValues.slice(0, -1), expectedValues, msg);
 }
 
 function getIframeBrowsingContext(window, iframeNumber = 0) {
