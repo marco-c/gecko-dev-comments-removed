@@ -108,6 +108,17 @@ class SendQueue {
   
   
   virtual void Reset() = 0;
+
+  
+  
+  virtual size_t buffered_amount(StreamID stream_id) const = 0;
+
+  
+  virtual size_t buffered_amount_low_threshold(StreamID stream_id) const = 0;
+
+  
+  virtual void SetBufferedAmountLowThreshold(StreamID stream_id,
+                                             size_t bytes) = 0;
 };
 }  
 

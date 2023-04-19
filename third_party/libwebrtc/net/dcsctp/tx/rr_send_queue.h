@@ -44,9 +44,12 @@ class RRSendQueue : public SendQueue {
   
   static constexpr size_t kMinimumFragmentedPayload = 10;
 
-  RRSendQueue(absl::string_view log_prefix, size_t buffer_size)
+  RRSendQueue(absl::string_view log_prefix,
+              size_t buffer_size,
+              std::function<void(StreamID)> on_buffered_amount_low)
       : log_prefix_(std::string(log_prefix) + "fcfs: "),
-        buffer_size_(buffer_size) {}
+        buffer_size_(buffer_size),
+        on_buffered_amount_low_(std::move(on_buffered_amount_low)) {}
 
   
   
@@ -72,14 +75,43 @@ class RRSendQueue : public SendQueue {
   void CommitResetStreams() override;
   void RollbackResetStreams() override;
   void Reset() override;
+  size_t buffered_amount(StreamID stream_id) const override;
+  size_t buffered_amount_low_threshold(StreamID stream_id) const override;
+  void SetBufferedAmountLowThreshold(StreamID stream_id, size_t bytes) override;
 
   
   size_t total_bytes() const;
 
  private:
   
+  
+  
+  class ThresholdWatcher {
+   public:
+    explicit ThresholdWatcher(std::function<void()> on_threshold_reached)
+        : on_threshold_reached_(std::move(on_threshold_reached)) {}
+    
+    void Increase(size_t bytes) { value_ += bytes; }
+    
+    
+    void Decrease(size_t bytes);
+
+    size_t value() const { return value_; }
+    size_t low_threshold() const { return low_threshold_; }
+    void SetLowThreshold(size_t low_threshold);
+
+   private:
+    const std::function<void()> on_threshold_reached_;
+    size_t value_ = 0;
+    size_t low_threshold_ = 0;
+  };
+
+  
   class OutgoingStream {
    public:
+    explicit OutgoingStream(std::function<void()> on_buffered_amount_low)
+        : buffered_amount_(std::move(on_buffered_amount_low)) {}
+
     
     void Add(DcSctpMessage message,
              absl::optional<TimeMs> expires_at,
@@ -88,8 +120,8 @@ class RRSendQueue : public SendQueue {
     
     absl::optional<DataToSend> Produce(TimeMs now, size_t max_size);
 
-    
-    size_t buffered_amount() const;
+    const ThresholdWatcher& buffered_amount() const { return buffered_amount_; }
+    ThresholdWatcher& buffered_amount() { return buffered_amount_; }
 
     
     bool Discard(IsUnordered unordered, MID message_id);
@@ -136,6 +168,7 @@ class RRSendQueue : public SendQueue {
 
     
     Item* GetFirstNonExpiredMessage(TimeMs now);
+    bool IsConsistent() const;
 
     
     bool is_paused_ = false;
@@ -146,6 +179,9 @@ class RRSendQueue : public SendQueue {
     SSN next_ssn_ = SSN(0);
     
     std::deque<Item> items_;
+
+    
+    ThresholdWatcher buffered_amount_;
   };
 
   OutgoingStream& GetOrCreateStreamInfo(StreamID stream_id);
@@ -156,6 +192,9 @@ class RRSendQueue : public SendQueue {
 
   const std::string log_prefix_;
   const size_t buffer_size_;
+  
+  
+  const std::function<void(StreamID)> on_buffered_amount_low_;
 
   
   StreamID next_stream_id_ = StreamID(0);
