@@ -42,7 +42,7 @@ void silk_LTP_scale_ctrl_FIX(
 
     if( condCoding == CODE_INDEPENDENTLY ) {
         
-        round_loss = psEnc->sCmn.PacketLoss_perc + psEnc->sCmn.nFramesPerPacket;
+        round_loss = psEnc->sCmn.PacketLoss_perc * psEnc->sCmn.nFramesPerPacket;
         if ( psEnc->sCmn.LBRR_flag ) {
             
 
