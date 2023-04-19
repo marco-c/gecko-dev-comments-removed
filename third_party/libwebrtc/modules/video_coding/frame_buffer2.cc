@@ -154,12 +154,6 @@ int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
     }
 
     
-    
-    if (frame->inter_layer_predicted) {
-      continue;
-    }
-
-    
     std::vector<FrameMap::iterator> current_superframe;
     current_superframe.push_back(frame_it);
     bool last_layer_completed = frame_it->second.frame->is_last_spatial_layer;
