@@ -36,11 +36,13 @@ function run_test() {
 
 function run_test_number(num) {
   var testPath = testPathBase + num;
+  
   httpserver.registerPathHandler(testPath, eval("handler" + num));
 
   var channel = setupChannel(testPath);
   var flags = test_flags[num]; 
   channel.asyncOpen(
+    
     new ChannelListener(eval("completeTest" + num), channel, flags)
   );
 }
