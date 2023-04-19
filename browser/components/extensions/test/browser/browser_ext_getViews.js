@@ -120,6 +120,21 @@ add_task(async function() {
   let win1 = await BrowserTestUtils.openNewBrowserWindow();
   let win2 = await BrowserTestUtils.openNewBrowserWindow();
 
+  
+  
+  
+  
+  
+  
+  
+  for (const win of [window, win1, win2]) {
+    EventUtils.synthesizeMouseAtCenter(
+      win.gURLBar.textbox,
+      { type: "mouseover" },
+      win
+    );
+  }
+
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary", 
     manifest: {
