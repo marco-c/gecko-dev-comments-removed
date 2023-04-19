@@ -6,19 +6,8 @@
 
 
 
-add_task(async function setup() {
-  
-  let engine = await addTestSuggestionsEngine();
 
-  let oldDefaultEngine = await Services.search.getDefault();
-  registerCleanupFunction(async () => {
-    Services.search.setDefault(oldDefaultEngine);
-    Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
-    Services.prefs.clearUserPref("keyword.enabled");
-  });
-  Services.search.setDefault(engine);
-  Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
-});
+testEngine_setup();
 
 
 
