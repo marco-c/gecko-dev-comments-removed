@@ -371,6 +371,11 @@ class PeerConnectionE2EQualityTestFixture {
         std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) = 0;
     virtual PeerConfigurer* SetIceTransportFactory(
         std::unique_ptr<IceTransportFactory> factory) = 0;
+    
+    
+    
+    virtual PeerConfigurer* SetPortAllocatorExtraFlags(
+        uint32_t extra_flags) = 0;
 
     
     

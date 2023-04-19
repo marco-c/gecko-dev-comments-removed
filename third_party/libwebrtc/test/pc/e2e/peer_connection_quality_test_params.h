@@ -24,6 +24,7 @@
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "p2p/base/port_allocator.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -112,6 +113,9 @@ struct Params {
   std::vector<PeerConnectionE2EQualityTestFixture::VideoConfig> video_configs;
   
   absl::optional<PeerConnectionE2EQualityTestFixture::AudioConfig> audio_config;
+  
+  
+  uint32_t port_allocator_extra_flags = cricket::kDefaultPortAllocatorFlags;
   
   
   absl::optional<std::string> rtc_event_log_path;
