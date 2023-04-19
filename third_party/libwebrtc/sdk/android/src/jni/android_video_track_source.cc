@@ -67,7 +67,7 @@ void AndroidVideoTrackSource::SetState(JNIEnv* env,
     } else {
       
       
-      signaling_thread_->PostTask(RTC_FROM_HERE, [this] { FireOnChanged(); });
+      signaling_thread_->PostTask([this] { FireOnChanged(); });
     }
   }
 }

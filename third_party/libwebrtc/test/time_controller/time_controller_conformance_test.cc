@@ -88,8 +88,8 @@ TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostOrderTest) {
   
   
   ExecutionOrderKeeper execution_order;
-  thread->PostTask(RTC_FROM_HERE, [&]() { execution_order.Executed(1); });
-  thread->PostTask(RTC_FROM_HERE, [&]() { execution_order.Executed(2); });
+  thread->PostTask([&]() { execution_order.Executed(1); });
+  thread->PostTask([&]() { execution_order.Executed(2); });
   time_controller->AdvanceTime(TimeDelta::Millis(100));
   EXPECT_THAT(execution_order.order(), ElementsAreArray({1, 2}));
   
@@ -121,7 +121,7 @@ TEST_P(SimulatedRealTimeControllerConformanceTest, ThreadPostInvokeOrderTest) {
   
   
   ExecutionOrderKeeper execution_order;
-  thread->PostTask(RTC_FROM_HERE, [&]() { execution_order.Executed(1); });
+  thread->PostTask([&]() { execution_order.Executed(1); });
   thread->Invoke<void>(RTC_FROM_HERE, [&]() { execution_order.Executed(2); });
   time_controller->AdvanceTime(TimeDelta::Millis(100));
   EXPECT_THAT(execution_order.order(), ElementsAreArray({1, 2}));
@@ -139,8 +139,8 @@ TEST_P(SimulatedRealTimeControllerConformanceTest,
   
   
   ExecutionOrderKeeper execution_order;
-  thread->PostTask(RTC_FROM_HERE, [&]() {
-    thread->PostTask(RTC_FROM_HERE, [&]() { execution_order.Executed(2); });
+  thread->PostTask([&]() {
+    thread->PostTask([&]() { execution_order.Executed(2); });
     thread->Invoke<void>(RTC_FROM_HERE, [&]() { execution_order.Executed(1); });
   });
   time_controller->AdvanceTime(TimeDelta::Millis(100));

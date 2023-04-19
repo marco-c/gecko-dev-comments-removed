@@ -79,13 +79,13 @@ void RTCCertificateGenerator::GenerateCertificateAsync(
   
   
   
-  worker_thread_->PostTask(RTC_FROM_HERE, [key_params, expires_ms,
-                                           signaling_thread = signaling_thread_,
-                                           cb = callback]() {
+  worker_thread_->PostTask([key_params, expires_ms,
+                            signaling_thread = signaling_thread_,
+                            cb = callback]() {
     scoped_refptr<RTCCertificate> certificate =
         RTCCertificateGenerator::GenerateCertificate(key_params, expires_ms);
     signaling_thread->PostTask(
-        RTC_FROM_HERE, [cert = std::move(certificate), cb = std::move(cb)]() {
+        [cert = std::move(certificate), cb = std::move(cb)]() {
           cert ? cb->OnSuccess(cert) : cb->OnFailure();
         });
   });

@@ -25,6 +25,7 @@
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
+#include "absl/base/attributes.h"
 #include "api/function_view.h"
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
@@ -35,6 +36,7 @@
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_message.h"
 
@@ -456,23 +458,39 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
+  
+  
+  
+  
+  
+  
   template <class FunctorT>
-  void PostTask(const Location& posted_from, FunctorT&& functor) {
+  void DEPRECATED_PostTask(const Location& posted_from, FunctorT&& functor) {
     Post(posted_from, GetPostTaskMessageHandler(), 0,
          new rtc_thread_internal::MessageWithFunctor<FunctorT>(
              std::forward<FunctorT>(functor)));
   }
-  
-  
-  
   template <class FunctorT>
-  void PostDelayedTask(const Location& posted_from,
-                       FunctorT&& functor,
-                       uint32_t milliseconds) {
+  ABSL_DEPRECATED("bugs.webrtc.org/13582")
+  void PostTask(const Location& posted_from, FunctorT&& functor) {
+    DEPRECATED_PostTask(posted_from, std::forward<FunctorT>(functor));
+  }
+  template <class FunctorT>
+  void DEPRECATED_PostDelayedTask(const Location& posted_from,
+                                  FunctorT&& functor,
+                                  uint32_t milliseconds) {
     PostDelayed(posted_from, milliseconds, GetPostTaskMessageHandler(),
                 0,
                 new rtc_thread_internal::MessageWithFunctor<FunctorT>(
                     std::forward<FunctorT>(functor)));
+  }
+  template <class FunctorT>
+  ABSL_DEPRECATED("bugs.webrtc.org/13582")
+  void PostDelayedTask(const Location& posted_from,
+                       FunctorT&& functor,
+                       uint32_t milliseconds) {
+    DEPRECATED_PostDelayedTask(posted_from, std::forward<FunctorT>(functor),
+                               milliseconds);
   }
 
   
@@ -482,6 +500,31 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   void PostDelayedHighPrecisionTask(std::unique_ptr<webrtc::QueuedTask> task,
                                     uint32_t milliseconds) override;
   void Delete() override;
+
+  
+  template <class Closure,
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
+  void PostTask(Closure&& closure) {
+    PostTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)));
+  }
+  template <class Closure,
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
+  void PostDelayedTask(Closure&& closure, uint32_t milliseconds) {
+    PostDelayedTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)),
+                    milliseconds);
+  }
+  template <class Closure,
+            typename std::enable_if<!std::is_convertible<
+                Closure,
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
+  void PostDelayedHighPrecisionTask(Closure&& closure, uint32_t milliseconds) {
+    PostDelayedHighPrecisionTask(
+        webrtc::ToQueuedTask(std::forward<Closure>(closure)), milliseconds);
+  }
 
   
   
