@@ -3429,6 +3429,9 @@ toolbar#nav-bar {
                 
                 timeout = 370.0
 
+            if "MOZ_CHAOSMODE=0xfb" in options.environment and timeout:
+                timeout *= 2
+
             
             
             detectShutdownLeaks = False

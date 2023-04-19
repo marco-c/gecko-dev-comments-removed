@@ -1307,6 +1307,9 @@ SimpleTest.testInChaosMode = function() {
   }
   SpecialPowers.DOMWindowUtils.enterChaosMode();
   SimpleTest._inChaosMode = true;
+  
+  
+  SimpleTest.requestLongerTimeout(20);
 };
 
 SimpleTest.timeout = async function() {
