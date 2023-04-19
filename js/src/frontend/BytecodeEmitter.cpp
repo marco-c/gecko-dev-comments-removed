@@ -2837,6 +2837,24 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
   return true;
 }
 
+JSOp BytecodeEmitter::getIterCallOp(JSOp callOp,
+                                    SelfHostedIter selfHostedIter) {
+  if (emitterMode == BytecodeEmitter::SelfHosting) {
+    MOZ_ASSERT(selfHostedIter == SelfHostedIter::Allow);
+
+    switch (callOp) {
+      case JSOp::Call:
+        return JSOp::CallContent;
+      case JSOp::CallIter:
+        return JSOp::CallContentIter;
+      default:
+        MOZ_CRASH("Unknown iterator call op");
+    }
+  }
+
+  return callOp;
+}
+
 bool BytecodeEmitter::emitIteratorNext(
     const Maybe<uint32_t>& callSourceCoordOffset,
     IteratorKind iterKind ,
@@ -2846,10 +2864,16 @@ bool BytecodeEmitter::emitIteratorNext(
              ".next() iteration is prohibited in self-hosted code because it"
              "can run user-modifiable iteration code");
 
+  MOZ_ASSERT(selfHostedIter == SelfHostedIter::Allow ||
+                 emitterMode != BytecodeEmitter::SelfHosting,
+             ".next() iteration is prohibited in self-hosted code because it"
+             "can run user-modifiable iteration code");
+
   
   MOZ_ASSERT(bytecodeSection().stackDepth() >= 2);
 
-  if (!emitCall(JSOp::Call, 0, callSourceCoordOffset)) {
+  if (!emitCall(getIterCallOp(JSOp::Call, selfHostedIter), 0,
+                callSourceCoordOffset)) {
     
     return false;
   }
@@ -2955,7 +2979,7 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
     return false;
   }
 
-  if (!emitCall(JSOp::Call, 0)) {
+  if (!emitCall(getIterCallOp(JSOp::Call, selfHostedIter), 0)) {
     
     return false;
   }
@@ -5094,6 +5118,7 @@ bool BytecodeEmitter::emitCopyDataProperties(CopyOption option) {
       return false;
     }
   }
+  
   if (!emitCall(JSOp::CallIgnoresRv, argc)) {
     
     return false;
@@ -5140,7 +5165,7 @@ bool BytecodeEmitter::emitIterator(
     
     return false;
   }
-  if (!emitCall(JSOp::CallIter, 0)) {
+  if (!emitCall(getIterCallOp(JSOp::CallIter, selfHostedIter), 0)) {
     
     return false;
   }
@@ -5214,7 +5239,7 @@ bool BytecodeEmitter::emitAsyncIterator(
     
     return false;
   }
-  if (!emitCall(JSOp::CallIter, 0)) {
+  if (!emitCall(getIterCallOp(JSOp::CallIter, selfHostedIter), 0)) {
     
     return false;
   }
@@ -5246,7 +5271,7 @@ bool BytecodeEmitter::emitAsyncIterator(
     
     return false;
   }
-  if (!emitCall(JSOp::CallIter, 0)) {
+  if (!emitCall(getIterCallOp(JSOp::CallIter, selfHostedIter), 0)) {
     
     return false;
   }
@@ -9835,6 +9860,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
       return false;
     }
 
+    
     if (!emitCall(JSOp::CallIgnoresRv, 0)) {
       
       return false;
@@ -9893,6 +9919,7 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
       return false;
     }
 
+    
     if (!emitCall(JSOp::CallIgnoresRv, 0)) {
       
       return false;

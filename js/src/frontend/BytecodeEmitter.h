@@ -813,6 +813,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   [[nodiscard]] bool emitCopyDataProperties(CopyOption option);
 
+  JSOp getIterCallOp(JSOp callOp, SelfHostedIter selfHostedIter);
+
   
   
   [[nodiscard]] bool emitIterator(
