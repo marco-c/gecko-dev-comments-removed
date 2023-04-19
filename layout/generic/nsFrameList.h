@@ -72,9 +72,6 @@ struct PostFrameDestroyData {
 
 class nsFrameList {
  public:
-  class Iterator;
-  class Slice;
-
   nsFrameList() : mFirstChild(nullptr), mLastChild(nullptr) {}
 
   nsFrameList(nsIFrame* aFirstFrame, nsIFrame* aLastFrame)
@@ -140,6 +137,8 @@ class nsFrameList {
     mLastChild = aFrameList.LastChild();
     aFrameList.Clear();
   }
+
+  class Slice;
 
   
 
@@ -237,6 +236,8 @@ class nsFrameList {
   Slice InsertFrames(nsContainerFrame* aParent, nsIFrame* aPrevSibling,
                      nsFrameList& aFrameList);
 
+  class FrameLinkEnumerator;
+
   
 
 
@@ -258,8 +259,9 @@ class nsFrameList {
                          nsIFrame*>::value,
         "aPredicate should be of this function signature: bool(nsIFrame*)");
 
-    auto firstMatch = std::find_if(begin(), end(), aPredicate);
-    return ExtractHead(*firstMatch);
+    FrameLinkEnumerator link(*this);
+    link.Find(aPredicate);
+    return ExtractHead(link);
   }
 
   
@@ -267,16 +269,14 @@ class nsFrameList {
 
 
 
-
-  nsFrameList ExtractHead(nsIFrame* aFrame);
+  nsFrameList ExtractHead(FrameLinkEnumerator& aLink);
 
   
 
 
 
 
-
-  nsFrameList ExtractTail(nsIFrame* aFrame);
+  nsFrameList ExtractTail(FrameLinkEnumerator& aLink);
 
   nsIFrame* FirstChild() const { return mFirstChild; }
 
@@ -452,6 +452,59 @@ class nsFrameList {
     nsIFrame* mFrame;            
     const nsIFrame* const mEnd;  
                                  
+  };
+
+  
+
+
+
+
+
+
+
+
+  class FrameLinkEnumerator : private Enumerator {
+   public:
+    friend class nsFrameList;
+
+    explicit FrameLinkEnumerator(const nsFrameList& aList)
+        : Enumerator(aList), mPrev(nullptr) {}
+
+    FrameLinkEnumerator(const FrameLinkEnumerator& aOther) = default;
+
+    
+
+
+    inline FrameLinkEnumerator(const nsFrameList& aList, nsIFrame* aPrevFrame);
+
+    void operator=(const FrameLinkEnumerator& aOther) {
+      MOZ_ASSERT(&List() == &aOther.List(), "Different lists?");
+      mFrame = aOther.mFrame;
+      mPrev = aOther.mPrev;
+    }
+
+    inline void Next();
+
+    
+
+
+
+
+
+
+
+
+
+    template <typename Predicate>
+    inline void Find(Predicate&& aPredicate);
+
+    bool AtEnd() const { return Enumerator::AtEnd(); }
+
+    nsIFrame* PrevFrame() const { return mPrev; }
+    nsIFrame* NextFrame() const { return mFrame; }
+
+   protected:
+    nsIFrame* mPrev;
   };
 
   class Iterator {

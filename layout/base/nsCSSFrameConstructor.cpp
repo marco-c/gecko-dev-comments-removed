@@ -10036,16 +10036,13 @@ nsFirstLetterFrame* nsCSSFrameConstructor::CreateFloatingLetterFrame(
   
   
   
-  nsIFrame* prevSibling = nullptr;
-  for (nsIFrame* f : aState.mFloatedList) {
-    if (f->GetParent() == containingBlock) {
-      break;
-    }
-    prevSibling = f;
+  nsFrameList::FrameLinkEnumerator link(aState.mFloatedList);
+  while (!link.AtEnd() && link.NextFrame()->GetParent() != containingBlock) {
+    link.Next();
   }
 
   aState.AddChild(letterFrame, aResult, letterContent, aParentFrame, false,
-                  true, false, true, prevSibling);
+                  true, false, true, link.PrevFrame());
 
   if (nextTextFrame) {
     aResult.AppendFrame(nullptr, nextTextFrame);
@@ -11010,14 +11007,13 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   ConstructFramesFromItemList(aState, aItem.mChildItems, newFrame,
                                false, childList);
 
-  auto firstBlock = aItem.mIsAllInline
-                        ? childList.end()
-                        : std::find_if(childList.begin(), childList.end(),
-                                       [](nsIFrame* aFrame) {
-                                         return aFrame->IsBlockOutside();
-                                       });
+  nsFrameList::FrameLinkEnumerator firstBlockEnumerator(childList);
+  if (!aItem.mIsAllInline) {
+    firstBlockEnumerator.Find(
+        [](nsIFrame* aFrame) { return aFrame->IsBlockOutside(); });
+  }
 
-  if (aItem.mIsAllInline || firstBlock == childList.end()) {
+  if (aItem.mIsAllInline || firstBlockEnumerator.AtEnd()) {
     
     
     
@@ -11033,7 +11029,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructInline(
   
 
   
-  nsFrameList firstInlineKids = childList.ExtractHead(*firstBlock);
+  nsFrameList firstInlineKids = childList.ExtractHead(firstBlockEnumerator);
   newFrame->SetInitialChildList(kPrincipalList, firstInlineKids);
 
   aFrameList.AppendFrame(nullptr, newFrame);
