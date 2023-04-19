@@ -286,13 +286,6 @@ fn prepare_interned_prim_for_render(
                 
                 
                 
-                task_size.width = task_size.width.max(1);
-                task_size.height = task_size.height.max(1);
-
-                
-                
-                
-                
                 
                 *render_task = Some(frame_state.resource_cache.request_render_task(
                     RenderTaskCacheKey {
