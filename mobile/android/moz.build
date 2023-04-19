@@ -8,6 +8,9 @@ with Files("**"):
     BUG_COMPONENT = ("GeckoView", "General")
     SCHEDULES.exclusive = ["android"]
 
+with Files("geckoview_example/**"):
+    BUG_COMPONENT = ("GeckoView", "GeckoViewExample")
+
 
 
 
