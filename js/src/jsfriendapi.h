@@ -744,6 +744,35 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoAssertNoContentJS {
 
 extern JS_PUBLIC_API uint64_t GetMemoryUsageForZone(JS::Zone* zone);
 
+enum class MemoryUse : uint8_t;
+
+namespace gc {
+
+struct SharedMemoryUse {
+  explicit SharedMemoryUse(MemoryUse use) : count(0), nbytes(0) {
+#ifdef DEBUG
+    this->use = use;
+#endif
+  }
+
+  size_t count;
+  size_t nbytes;
+#ifdef DEBUG
+  MemoryUse use;
+#endif
+};
+
+
+
+
+using SharedMemoryMap =
+    HashMap<void*, SharedMemoryUse, DefaultHasher<void*>, SystemAllocPolicy>;
+
+} 
+
+extern JS_PUBLIC_API const gc::SharedMemoryMap& GetSharedMemoryUsageForZone(
+    JS::Zone* zone);
+
 
 
 

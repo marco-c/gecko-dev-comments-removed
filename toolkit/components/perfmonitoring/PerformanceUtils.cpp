@@ -126,7 +126,9 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
   }
 
   using ZoneSet = mozilla::HashSet<JS::Zone*>;
+  using SharedSet = mozilla::HashSet<void*>;
   ZoneSet zonesVisited;
+  SharedSet sharedVisited;
   
   uint64_t jsMemUsed = 0;
   for (auto* doc : *aDocGroup) {
@@ -138,17 +140,32 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
         MOZ_ASSERT(NS_IsMainThread(),
                    "We cannot get the object zone on another thread");
         JS::Zone* zone = JS::GetObjectZone(object);
-        ZoneSet::AddPtr p = zonesVisited.lookupForAdd(zone);
-        if (!p) {
-          
-          
-          
-          
+        ZoneSet::AddPtr addZone = zonesVisited.lookupForAdd(zone);
+        if (!addZone) {
           
           jsMemUsed += js::GetMemoryUsageForZone(zone);
-          if (!zonesVisited.add(p, zone)) {
+          if (!zonesVisited.add(addZone, zone)) {
             
             break;
+          }
+
+          const js::gc::SharedMemoryMap& shared =
+              js::GetSharedMemoryUsageForZone(zone);
+          for (auto iter = shared.iter(); !iter.done(); iter.next()) {
+            void* sharedMem = iter.get().key();
+            SharedSet::AddPtr addShared = sharedVisited.lookupForAdd(sharedMem);
+            if (addShared) {
+              
+
+              
+              
+              
+              
+              jsMemUsed -= iter.get().value().nbytes;
+            } else if (!sharedVisited.add(addShared, sharedMem)) {
+              
+              break;
+            }
           }
         }
       }

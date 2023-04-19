@@ -13,7 +13,9 @@
 #include <limits.h>
 #include <type_traits>
 
+#include "js/AllocPolicy.h"
 #include "js/GCAnnotations.h"
+#include "js/HashTable.h"
 #include "js/shadow/String.h"  
 #include "js/shadow/Symbol.h"  
 #include "js/shadow/Zone.h"    
