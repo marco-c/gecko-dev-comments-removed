@@ -550,10 +550,7 @@ TabTracker.prototype = {
 
     
     
-    if (lazy.TABS_FILTERED_SCHEMES.has(locationURI.scheme)) {
-      return;
-    }
-
+    
     this.callScheduleSync();
   },
 
