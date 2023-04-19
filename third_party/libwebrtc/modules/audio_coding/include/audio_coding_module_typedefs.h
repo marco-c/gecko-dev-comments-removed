@@ -121,10 +121,6 @@ struct NetworkStatistics {
   
   int meanWaitingTimeMs;
   
-  int medianWaitingTimeMs;
-  
-  int minWaitingTimeMs;
-  
   int maxWaitingTimeMs;
   
   uint64_t packetBufferFlushes;
