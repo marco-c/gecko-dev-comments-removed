@@ -634,9 +634,12 @@ bool FunctionScriptEmitter::emitEndBody() {
   
   
   
-  if (!bce_->emitReturnRval()) {
-    
-    return false;
+  
+  if (!funbox_->hasExprBody() || funbox_->isAsync()) {
+    if (!bce_->emitReturnRval()) {
+      
+      return false;
+    }
   }
 
   if (namedLambdaEmitterScope_) {
