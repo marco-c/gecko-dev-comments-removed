@@ -114,6 +114,7 @@ void TaskQueuePacedSender::UpdateOutstandingData(DataSize outstanding_data) {
     
     
     pacing_controller_.UpdateOutstandingData(outstanding_data);
+    MaybeProcessPackets(Timestamp::MinusInfinity());
     return;
   }
 
