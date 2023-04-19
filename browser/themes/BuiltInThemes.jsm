@@ -16,6 +16,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   BuiltInThemeConfig: "resource:///modules/BuiltInThemeConfig.jsm",
 });
 
+const ColorwayL10n = new Localization(["preview/colorways.ftl"], true);
+
 const kActiveThemePref = "extensions.activeThemeID";
 const kRetainedThemesPref = "browser.theme.retainedExpiredThemes";
 
@@ -223,6 +225,46 @@ class _BuiltInThemes {
     return (
       collection && this.builtInThemeMap.get(id)?.collection == collection.id
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getLocalizedColorwayGroupName(colorwayId) {
+    return this._getColorwayString(colorwayId, "groupName");
+  }
+
+  
+
+
+
+
+
+
+  getLocalizedColorwayDescription(colorwayId) {
+    return this._getColorwayString(colorwayId, "description");
+  }
+
+  _getColorwayString(colorwayId, stringType) {
+    let l10nId = this.builtInThemeMap.get(colorwayId)?.l10nId?.[stringType];
+    let s;
+    if (l10nId) {
+      [s] = ColorwayL10n.formatMessagesSync([
+        {
+          id: l10nId,
+        },
+      ]);
+    }
+    return s?.value || null;
   }
 }
 

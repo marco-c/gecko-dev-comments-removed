@@ -83,9 +83,7 @@ const ColorwayCloset = {
       input.type = "radio";
       input.name = "colorway";
       input.value = addon.id;
-      
-      
-      input.setAttribute("title", addon.name);
+      input.setAttribute("title", this._getColorwayGroupName(addon));
       input.style.setProperty("--colorway-icon", `url(${addon.iconURL})`);
       this.el.colorwayRadios.appendChild(input);
     }
@@ -147,10 +145,10 @@ const ColorwayCloset = {
   },
 
   _displayColorwayData() {
-    
-    
-    this.el.colorwayName.innerText = this.selectedColorway.name;
-    this.el.colorwayDescription.innerText = this.groupIdForSelectedColorway;
+    this.el.colorwayName.innerText = this._getColorwayGroupName(
+      this.selectedColorway
+    );
+    this.el.colorwayDescription.innerText = this.selectedColorway.description;
     this.el.colorwayFigure.src = this._getFigureUrl();
 
     this.el.intensityContainer.hidden = !this.hasIntensities;
@@ -181,6 +179,10 @@ const ColorwayCloset = {
     return this.colorwayGroups.map(addon => addon.id).includes(groupId)
       ? groupId
       : null;
+  },
+
+  _getColorwayGroupName(addon) {
+    return BuiltInThemes.getLocalizedColorwayGroupName(addon.id) || addon.name;
   },
 
   handleEvent(e) {

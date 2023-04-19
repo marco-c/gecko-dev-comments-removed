@@ -49,6 +49,21 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   verifyBundleSignedState: "resource://gre/modules/addons/XPIInstall.jsm",
 });
 
+
+
+
+XPCOMUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
+  try {
+    let { BuiltInThemes } = ChromeUtils.import(
+      "resource:///modules/BuiltInThemes.jsm"
+    );
+    return BuiltInThemes;
+  } catch (e) {
+    Cu.reportError(`Unable to load BuiltInThemes.jsm: ${e}`);
+  }
+  return undefined;
+});
+
 const { nsIBlocklistService } = Ci;
 
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
@@ -1531,31 +1546,42 @@ const updatedAddonFluentIds = new Map([
       let addonIdPrefix = addon.id.replace("@mozilla.org", "");
       const colorwaySuffix = "colorway";
       if (addonIdPrefix.endsWith(colorwaySuffix)) {
+        
+        
         if (aProp == "description") {
-          
-          return null;
+          return lazy.BuiltInThemes?.getLocalizedColorwayDescription(addon.id);
         }
         
         
         
         
         
-        let [colorName, variantName] = addonIdPrefix.split("-", 2);
-        if (variantName == colorwaySuffix) {
+        
+        
+        
+        
+        
+        let localizedColorwayGroupName = lazy.BuiltInThemes?.getLocalizedColorwayGroupName(
+          addon.id
+        );
+        let [colorwayGroupName, intensity] = addonIdPrefix.split("-", 2);
+        if (intensity == colorwaySuffix) {
           
-          return addon.defaultLocale.name;
+          return localizedColorwayGroupName || addon.defaultLocale.name;
         }
         
         
-        colorName = colorName[0].toUpperCase() + colorName.slice(1);
-        let defaultFluentId = `extension-colorways-${variantName}-name`;
+        colorwayGroupName =
+          localizedColorwayGroupName ||
+          colorwayGroupName[0].toUpperCase() + colorwayGroupName.slice(1);
+        let defaultFluentId = `extension-colorways-${intensity}-name`;
         let fluentId =
           updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
         [formattedMessage] = l10n.formatMessagesSync([
           {
             id: fluentId,
             args: {
-              "colorway-name": colorName,
+              "colorway-name": colorwayGroupName,
             },
           },
         ]);
