@@ -7,18 +7,15 @@
 #ifndef mozilla_dom_ChannelInfo_h
 #define mozilla_dom_ChannelInfo_h
 
-#include "nsString.h"
 #include "nsCOMPtr.h"
+#include "nsITransportSecurityInfo.h"
+#include "nsString.h"
 
 class nsIChannel;
 class nsIGlobalObject;
 class nsIURI;
 
 namespace mozilla {
-namespace ipc {
-class IPCChannelInfo;
-}  
-
 namespace dom {
 
 class Document;
@@ -39,11 +36,8 @@ class Document;
 
 
 
-
 class ChannelInfo final {
  public:
-  typedef mozilla::ipc::IPCChannelInfo IPCChannelInfo;
-
   ChannelInfo() : mInited(false) {}
 
   ChannelInfo(const ChannelInfo& aRHS) = default;
@@ -53,7 +47,7 @@ class ChannelInfo final {
   void InitFromDocument(Document* aDoc);
   void InitFromChannel(nsIChannel* aChannel);
   void InitFromChromeGlobal(nsIGlobalObject* aGlobal);
-  void InitFromIPCChannelInfo(const IPCChannelInfo& aChannelInfo);
+  void InitFromTransportSecurityInfo(nsITransportSecurityInfo* aSecurityInfo);
 
   
   
@@ -61,13 +55,12 @@ class ChannelInfo final {
 
   bool IsInitialized() const { return mInited; }
 
-  IPCChannelInfo AsIPCChannelInfo() const;
+  already_AddRefed<nsITransportSecurityInfo> SecurityInfo() const;
 
  private:
-  void SetSecurityInfo(nsISupports* aSecurityInfo);
+  void SetSecurityInfo(nsITransportSecurityInfo* aSecurityInfo);
 
- private:
-  nsCString mSecurityInfo;
+  nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
   bool mInited;
 };
 
