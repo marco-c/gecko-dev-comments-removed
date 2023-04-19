@@ -8162,7 +8162,27 @@ var MailIntegration = {
   },
 };
 
-function BrowserOpenAddonsMgr(aView) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function BrowserOpenAddonsMgr(aView, { selectTabByViewId = false } = {}) {
   return new Promise(resolve => {
     let emWindow;
     let browserWindow;
@@ -8170,6 +8190,13 @@ function BrowserOpenAddonsMgr(aView) {
     var receivePong = function(aSubject, aTopic, aData) {
       let browserWin = aSubject.browsingContext.topChromeWindow;
       if (!emWindow || browserWin == window ) {
+        if (
+          selectTabByViewId &&
+          aSubject.gViewController.currentViewId !== aView
+        ) {
+          return;
+        }
+
         emWindow = aSubject;
         browserWindow = browserWin;
       }
@@ -8179,7 +8206,7 @@ function BrowserOpenAddonsMgr(aView) {
     Services.obs.removeObserver(receivePong, "EM-pong");
 
     if (emWindow) {
-      if (aView) {
+      if (aView && !selectTabByViewId) {
         emWindow.loadView(aView);
       }
       let tab = browserWindow.gBrowser.getTabForBrowser(
@@ -8191,9 +8218,16 @@ function BrowserOpenAddonsMgr(aView) {
       return;
     }
 
-    
-    
-    switchToTabHavingURI("about:addons", true);
+    if (selectTabByViewId) {
+      const target = isBlankPageURL(gBrowser.currentURI.spec)
+        ? "current"
+        : "tab";
+      openTrustedLinkIn("about:addons", target);
+    } else {
+      
+      
+      switchToTabHavingURI("about:addons", true);
+    }
 
     Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
       Services.obs.removeObserver(observer, aTopic);
