@@ -224,7 +224,7 @@ DrawTargetWebgl::~DrawTargetWebgl() {
       
       mSkia->DetachAllSnapshots();
       
-      mSharedContext->WaitForShmem();
+      mSharedContext->WaitForShmem(this);
       auto* child = mSharedContext->mWebgl->GetChild();
       if (child && child->CanSend()) {
         child->DeallocShmem(mShmem);
@@ -3226,7 +3226,7 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
 }
 
-void DrawTargetWebgl::SharedContext::WaitForShmem() {
+void DrawTargetWebgl::SharedContext::WaitForShmem(DrawTargetWebgl* aTarget) {
   if (mWaitForShmem) {
     
     
@@ -3235,7 +3235,9 @@ void DrawTargetWebgl::SharedContext::WaitForShmem() {
     mWaitForShmem = false;
     
     
-    mCurrentTarget->mProfile.OnReadback();
+    if (aTarget) {
+      aTarget->mProfile.OnReadback();
+    }
   }
 }
 
