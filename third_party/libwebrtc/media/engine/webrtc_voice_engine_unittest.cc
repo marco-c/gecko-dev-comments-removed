@@ -1023,10 +1023,7 @@ TEST_P(WebRtcVoiceEngineTestFake, ChangeRecvCodecPayloadType) {
 }
 
 
-TEST_P(WebRtcVoiceEngineTestFake, RecvRed) {
-  webrtc::test::ScopedFieldTrials override_field_trials(
-      "WebRTC-Audio-Red-For-Opus/Enabled/");
-
+TEST_P(WebRtcVoiceEngineTestFake, RecvRedDefault) {
   EXPECT_TRUE(SetupRecvStream());
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kOpusCodec);
@@ -1038,7 +1035,10 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvRed) {
 }
 
 
-TEST_P(WebRtcVoiceEngineTestFake, RecvRedDefault) {
+TEST_P(WebRtcVoiceEngineTestFake, RecvRed) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-Red-For-Opus/Disabled/");
+
   EXPECT_TRUE(SetupRecvStream());
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kOpusCodec);

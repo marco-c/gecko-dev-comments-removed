@@ -135,7 +135,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
   
   
-  const bool audio_red_for_opus_trial_enabled_;
+  const bool audio_red_for_opus_enabled_;
   const bool minimized_remsampling_on_mobile_trial_enabled_;
 };
 
@@ -328,7 +328,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
       unsignaled_frame_decryptor_;
 
-  const bool audio_red_for_opus_trial_enabled_;
+  const bool audio_red_for_opus_enabled_;
 };
 }  
 
