@@ -138,8 +138,6 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, readonly) BOOL isActive;
 
-@property(nonatomic, readonly) BOOL isLocked;
-
 
 
 
