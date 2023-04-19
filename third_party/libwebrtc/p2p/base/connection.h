@@ -57,7 +57,7 @@ struct CandidatePair final : public CandidatePairInterface {
 
 class ConnectionRequest : public StunRequest {
  public:
-  explicit ConnectionRequest(Connection* connection);
+  ConnectionRequest(StunRequestManager& manager, Connection* connection);
   void Prepare(StunMessage* request) override;
   void OnResponse(StunMessage* response) override;
   void OnErrorResponse(StunMessage* response) override;

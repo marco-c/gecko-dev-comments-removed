@@ -163,8 +163,10 @@ constexpr int kSupportGoogPingVersionResponseIndex =
 namespace cricket {
 
 
-ConnectionRequest::ConnectionRequest(Connection* connection)
-    : StunRequest(new IceMessage()), connection_(connection) {}
+ConnectionRequest::ConnectionRequest(StunRequestManager& manager,
+                                     Connection* connection)
+    : StunRequest(manager, std::make_unique<IceMessage>()),
+      connection_(connection) {}
 
 void ConnectionRequest::Prepare(StunMessage* request) {
   RTC_DCHECK_RUN_ON(connection_->network_thread_);
@@ -276,7 +278,7 @@ void ConnectionRequest::OnSent() {
   connection_->OnConnectionRequestSent(this);
   
   
-  timeout_ = true;
+  set_timed_out();
 }
 
 int ConnectionRequest::resend_delay() {
@@ -986,7 +988,7 @@ int64_t Connection::last_ping_sent() const {
 void Connection::Ping(int64_t now) {
   RTC_DCHECK_RUN_ON(network_thread_);
   last_ping_sent_ = now;
-  ConnectionRequest* req = new ConnectionRequest(this);
+  ConnectionRequest* req = new ConnectionRequest(requests_, this);
   
   
   

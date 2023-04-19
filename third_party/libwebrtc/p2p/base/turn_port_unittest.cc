@@ -1241,10 +1241,10 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   
   
   
-  turn_port_->FlushRequests(TURN_REFRESH_REQUEST);
+  turn_port_->FlushRequestsForTest(TURN_REFRESH_REQUEST);
   EXPECT_TRUE_SIMULATED_WAIT(turn_refresh_success_, kSimulatedRtt, fake_clock_);
   
-  turn_port_->FlushRequests(TURN_REFRESH_REQUEST);
+  turn_port_->FlushRequestsForTest(TURN_REFRESH_REQUEST);
   EXPECT_TRUE_SIMULATED_WAIT(!turn_refresh_success_, kSimulatedRtt,
                              fake_clock_);
   EXPECT_FALSE(turn_port_->connected());
@@ -1458,11 +1458,11 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   
   RelayCredentials bad_credentials("bad_user", "bad_pwd");
   turn_port_->set_credentials(bad_credentials);
-  turn_port_->FlushRequests(kAllRequests);
+  turn_port_->FlushRequestsForTest(kAllRequests);
   EXPECT_TRUE_SIMULATED_WAIT(turn_create_permission_success_, kSimulatedRtt,
                              fake_clock_);
   
-  turn_port_->FlushRequests(kAllRequests);
+  turn_port_->FlushRequestsForTest(kAllRequests);
   EXPECT_TRUE_SIMULATED_WAIT(!turn_create_permission_success_, kSimulatedRtt,
                              fake_clock_);
   EXPECT_TRUE(CheckConnectionFailedAndPruned(conn));

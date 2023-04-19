@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "api/transport/stun.h"
@@ -47,11 +48,11 @@ class StunRequestManager {
   
   
   
-  void Flush(int msg_type);
+  void FlushForTest(int msg_type);
 
   
   
-  bool HasRequest(int msg_type);
+  bool HasRequestForTest(int msg_type);
 
   
   
@@ -65,7 +66,10 @@ class StunRequestManager {
   bool CheckResponse(StunMessage* msg);
   bool CheckResponse(const char* data, size_t size);
 
-  bool empty() { return requests_.empty(); }
+  bool empty() const;
+
+  
+  rtc::Thread* network_thread() const { return thread_; }
 
   
   sigslot::signal3<const void*, size_t, StunRequest*> SignalSendPacket;
@@ -74,27 +78,26 @@ class StunRequestManager {
   typedef std::map<std::string, StunRequest*> RequestMap;
 
   rtc::Thread* const thread_;
-  RequestMap requests_;
-
-  friend class StunRequest;
+  RequestMap requests_ RTC_GUARDED_BY(thread_);
 };
 
 
 
 class StunRequest : public rtc::MessageHandler {
  public:
-  StunRequest();
-  explicit StunRequest(StunMessage* request);
+  explicit StunRequest(StunRequestManager& manager);
+  StunRequest(StunRequestManager& manager,
+              std::unique_ptr<StunMessage> request);
   ~StunRequest() override;
 
   
   void Construct();
 
   
-  StunRequestManager* manager() { return manager_; }
+  StunRequestManager* manager() { return &manager_; }
 
   
-  const std::string& id() { return msg_->transaction_id(); }
+  const std::string& id() const { return msg_->transaction_id(); }
 
   
   uint32_t reduced_transaction_id() const {
@@ -108,14 +111,10 @@ class StunRequest : public rtc::MessageHandler {
   const StunMessage* msg() const;
 
   
-  StunMessage* mutable_msg();
-
-  
   int Elapsed() const;
 
  protected:
-  int count_;
-  bool timeout_;
+  friend class StunRequestManager;
 
   
   
@@ -130,17 +129,21 @@ class StunRequest : public rtc::MessageHandler {
   
   virtual int resend_delay();
 
- private:
-  void set_manager(StunRequestManager* manager);
+  webrtc::TaskQueueBase* network_thread() const {
+    return manager_.network_thread();
+  }
 
+  void set_timed_out();
+
+ private:
   
   void OnMessage(rtc::Message* pmsg) override;
 
-  StunRequestManager* manager_;
-  StunMessage* msg_;
-  int64_t tstamp_;
-
-  friend class StunRequestManager;
+  StunRequestManager& manager_;
+  const std::unique_ptr<StunMessage> msg_;
+  int64_t tstamp_ RTC_GUARDED_BY(network_thread());
+  int count_ RTC_GUARDED_BY(network_thread());
+  bool timeout_ RTC_GUARDED_BY(network_thread());
 };
 
 }  
