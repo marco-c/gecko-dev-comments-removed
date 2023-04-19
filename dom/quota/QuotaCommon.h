@@ -418,6 +418,12 @@ class NotNull;
 
 
 
+
+
+
+
+
+
 #define QM_VOID
 
 #define QM_PROPAGATE Err(tryTempError)
@@ -1448,6 +1454,8 @@ auto HandleCustomRetVal(const char* aFunc, const char* aExpr, const T& aRv,
   } else if constexpr (std::is_invocable<CustomRetVal, const char*,
                                          const T&>::value) {
     return aCustomRetVal(aFunc, aRv);
+  } else if constexpr (std::is_invocable<CustomRetVal, const T&>::value) {
+    return aCustomRetVal(aRv);
   } else {
     return std::forward<CustomRetVal>(aCustomRetVal);
   }
