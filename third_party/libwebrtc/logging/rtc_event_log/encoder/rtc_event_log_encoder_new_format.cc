@@ -289,10 +289,8 @@ rtclog2::IceCandidatePairEvent::IceCandidatePairEventType ConvertToProtoFormat(
 
 
 
-
 size_t RemoveNonWhitelistedRtcpBlocks(const rtc::Buffer& packet,
                                       uint8_t* buffer) {
-  RTC_DCHECK(packet.size() <= IP_PACKET_SIZE);
   RTC_DCHECK(buffer != nullptr);
   rtcp::CommonHeader header;
   const uint8_t* block_begin = packet.data();
@@ -346,10 +344,10 @@ void EncodeRtcpPacket(rtc::ArrayView<const EventType*> batch,
   const EventType* const base_event = batch[0];
   proto_batch->set_timestamp_ms(base_event->timestamp_ms());
   {
-    uint8_t buffer[IP_PACKET_SIZE];
+    std::vector<uint8_t> buffer(base_event->packet().size());
     size_t buffer_length =
-        RemoveNonWhitelistedRtcpBlocks(base_event->packet(), buffer);
-    proto_batch->set_raw_packet(buffer, buffer_length);
+        RemoveNonWhitelistedRtcpBlocks(base_event->packet(), buffer.data());
+    proto_batch->set_raw_packet(buffer.data(), buffer_length);
   }
 
   if (batch.size() == 1) {
