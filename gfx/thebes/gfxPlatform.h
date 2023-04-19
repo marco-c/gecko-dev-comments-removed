@@ -610,7 +610,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   virtual void FontsPrefsChanged(const char* aPref);
 
-  int32_t GetBidiNumeralOption();
+  uint32_t GetBidiNumeralOption();
 
   
 
@@ -917,14 +917,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual bool CheckVariationFontSupport() = 0;
 
   int8_t mAllowDownloadableFonts;
-  int8_t mGraphiteShapingEnabled;
-  int8_t mOpenTypeSVGEnabled;
-
-  int8_t mBidiNumeralOption;
-
-  
-  
-  int8_t mFallbackUsesCmaps;
 
   
   bool mHasVariationFontSupport;
@@ -932,12 +924,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   
   bool mHasNativeColrFontSupport = false;
-
-  
-  int32_t mWordCacheCharLimit;
-
-  
-  int32_t mWordCacheMaxEntries;
 
   
   

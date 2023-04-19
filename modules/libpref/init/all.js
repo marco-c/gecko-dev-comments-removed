@@ -478,17 +478,6 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 pref("gfx.downloadable_fonts.disable_cache", false);
 
-
-pref("gfx.font_rendering.fallback.always_use_cmaps", false);
-
-
-pref("gfx.font_rendering.wordcache.charlimit", 32);
-
-
-pref("gfx.font_rendering.wordcache.maxentries", 10000);
-
-pref("gfx.font_rendering.graphite.enabled", true);
-
 #ifdef XP_WIN
   pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
@@ -2160,36 +2149,6 @@ pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
 pref("profile.manage_only_at_launch", false);
-
-
-
-
-
-
-pref("bidi.direction", 1);
-
-
-
-
-
-
-pref("bidi.texttype", 1);
-
-
-
-
-
-
-
-
-
-
-pref("bidi.numeral", 0);
-
-
-
-
-pref("bidi.browser.ui", false);
 
 
 

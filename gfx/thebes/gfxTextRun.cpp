@@ -2537,7 +2537,7 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
 
   
   
-  int32_t numOption = gfxPlatform::GetPlatform()->GetBidiNumeralOption();
+  uint32_t numOption = gfxPlatform::GetPlatform()->GetBidiNumeralOption();
   UniquePtr<char16_t[]> transformedString;
   if (numOption != IBMBIDI_NUMERAL_NOMINAL) {
     
