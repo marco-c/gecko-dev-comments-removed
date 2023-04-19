@@ -8596,14 +8596,24 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       grid.mGridColEnd = subgrid->mGridColEnd;
       grid.mGridRowEnd = subgrid->mGridRowEnd;
     }
-    gridReflowInput.CalculateTrackSizes(grid, computedSize,
+    
+    
+    
+    
+    const Maybe<nscoord> containBSize =
+        aReflowInput.mFrame->ContainIntrinsicBSize();
+    const nscoord trackSizingBSize = [&] {
+      
+      if (containBSize && computedBSize == NS_UNCONSTRAINEDSIZE) {
+        return NS_CSS_MINMAX(*containBSize, aReflowInput.ComputedMinBSize(),
+                             aReflowInput.ComputedMaxBSize());
+      }
+      return computedBSize;
+    }();
+    const LogicalSize containLogicalSize(wm, computedISize, trackSizingBSize);
+    gridReflowInput.CalculateTrackSizes(grid, containLogicalSize,
                                         SizingConstraint::NoConstraint);
-    
-    
-    
-    
-    if (Maybe<nscoord> containBSize =
-            aReflowInput.mFrame->ContainIntrinsicBSize()) {
+    if (containBSize) {
       bSize = *containBSize;
     } else {
       if (IsMasonry(eLogicalAxisBlock)) {
