@@ -1,0 +1,22 @@
+
+
+
+
+
+
+"use strict";
+
+this.declarativeNetRequest = class extends ExtensionAPI {
+  getAPI(context) {
+    return {
+      declarativeNetRequest: {
+        async testMatchOutcome(request) {
+          
+          
+          
+          return [];
+        },
+      },
+    };
+  }
+};
