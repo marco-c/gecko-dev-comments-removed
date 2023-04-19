@@ -107,6 +107,20 @@ class RTC_EXPORT RTCCertificateStats final : public RTCStats {
 };
 
 
+struct RTCNetworkAdapterType {
+  static constexpr char kUnknown[] = "unknown";
+  static constexpr char kEthernet[] = "ethernet";
+  static constexpr char kWifi[] = "wifi";
+  static constexpr char kCellular[] = "cellular";
+  static constexpr char kLoopback[] = "loopback";
+  static constexpr char kAny[] = "any";
+  static constexpr char kCellular2g[] = "cellular2g";
+  static constexpr char kCellular3g[] = "cellular3g";
+  static constexpr char kCellular4g[] = "cellular4g";
+  static constexpr char kCellular5g[] = "cellular5g";
+};
+
+
 class RTC_EXPORT RTCCodecStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -226,6 +240,9 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<std::string> candidate_type;
   RTCStatsMember<int32_t> priority;
   RTCStatsMember<std::string> url;
+
+  RTCNonStandardStatsMember<bool> vpn;
+  RTCNonStandardStatsMember<std::string> network_adapter_type;
 
  protected:
   RTCIceCandidateStats(const std::string& id,
