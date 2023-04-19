@@ -120,6 +120,24 @@ class JS_PUBLIC_API Value;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define JSVAL_INT_BITS 32
 #define JSVAL_INT_MIN ((int32_t)0x80000000)
 #define JSVAL_INT_MAX ((int32_t)0x7fffffff)
