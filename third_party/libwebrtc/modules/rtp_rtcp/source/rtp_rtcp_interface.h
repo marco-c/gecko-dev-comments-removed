@@ -173,6 +173,16 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     uint64_t reports_count;
   };
+  
+  
+  struct NonSenderRttStats {
+    
+    absl::optional<TimeDelta> round_trip_time;
+    
+    TimeDelta total_round_trip_time = TimeDelta::Zero();
+    
+    int round_trip_time_measurements = 0;
+  };
 
   
   
@@ -412,6 +422,8 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
   
   virtual absl::optional<SenderReportStats> GetSenderReportStats() const = 0;
+  
+  virtual absl::optional<NonSenderRttStats> GetNonSenderRttStats() const = 0;
 
   
   

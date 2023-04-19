@@ -218,6 +218,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   
   std::vector<ReportBlockData> GetLatestReportBlockData() const override;
   absl::optional<SenderReportStats> GetSenderReportStats() const override;
+  absl::optional<NonSenderRttStats> GetNonSenderRttStats() const override;
 
   
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override;
