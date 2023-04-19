@@ -697,9 +697,17 @@ bool FetchUtil::StreamResponseToJS(JSContext* aCx, JS::Handle<JSObject*> aObj,
   response->GetMimeType(mimeType, mixedCaseMimeType);
 
   if (!mimeType.EqualsASCII(requiredMimeType)) {
+    
+    
+    
+    ErrorResult result;
+    nsAutoCString contentType;
+    response->GetInternalHeaders()->Get("Content-Type"_ns, contentType, result);
+    MOZ_ALWAYS_TRUE(!result.Failed());
+
     JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
-                              JSMSG_WASM_BAD_RESPONSE_MIME_TYPE, mimeType.get(),
-                              requiredMimeType);
+                              JSMSG_WASM_BAD_RESPONSE_MIME_TYPE,
+                              contentType.get(), requiredMimeType);
     return false;
   }
 
