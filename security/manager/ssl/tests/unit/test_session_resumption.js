@@ -40,6 +40,7 @@ function add_resume_non_ev_with_override_test() {
     PRErrorCodeSuccess,
     null,
     transportSecurityInfo => {
+      ok(transportSecurityInfo.resumed, "connection should be resumed");
       ok(
         transportSecurityInfo.securityState &
           Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,
@@ -48,7 +49,12 @@ function add_resume_non_ev_with_override_test() {
       equal(
         transportSecurityInfo.succeededCertChain.length,
         0,
-        "ev-test.example.com should not have succeededCertChain set"
+        "expired.example.com should not have succeededCertChain set"
+      );
+      equal(
+        transportSecurityInfo.failedCertChain.length,
+        2,
+        "expired.example.com should have failedCertChain set"
       );
       equal(
         transportSecurityInfo.overridableErrorCategory,
@@ -76,12 +82,17 @@ function add_resume_non_ev_with_override_test() {
 
 
 
-function add_one_ev_test() {
+function add_one_ev_test(resumed) {
   add_connection_test(
     "ev-test.example.com",
     PRErrorCodeSuccess,
     null,
     transportSecurityInfo => {
+      equal(
+        transportSecurityInfo.resumed,
+        resumed,
+        "connection should be resumed or not resumed as expected"
+      );
       ok(
         !(
           transportSecurityInfo.securityState &
@@ -89,9 +100,15 @@ function add_one_ev_test() {
         ),
         "ev-test.example.com should not have STATE_CERT_USER_OVERRIDDEN flag"
       );
-      ok(
-        transportSecurityInfo.succeededCertChain,
+      equal(
+        transportSecurityInfo.succeededCertChain.length,
+        3,
         "ev-test.example.com should have succeededCertChain set"
+      );
+      equal(
+        transportSecurityInfo.failedCertChain.length,
+        0,
+        "ev-test.example.com should not have failedCertChain set"
       );
       equal(
         transportSecurityInfo.overridableErrorCategory,
@@ -133,11 +150,11 @@ function add_resume_ev_test() {
   });
   
   
-  add_one_ev_test();
+  add_one_ev_test(false);
   
   
   
-  add_one_ev_test();
+  add_one_ev_test(true);
 
   add_test(() => {
     ocspResponder.stop(run_next_test);
