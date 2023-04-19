@@ -5,7 +5,6 @@
 
 
 export const Assert = {
-  ok(value, message) {
-    ok(value, message);
-  },
+  ok,
+  equal: is,
 };
