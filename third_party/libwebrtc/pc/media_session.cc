@@ -1673,10 +1673,19 @@ MediaSessionDescriptionFactory::CreateAnswer(
 
   
   
-  const ContentGroup* offer_bundle = offer->GetGroupByName(GROUP_TYPE_BUNDLE);
-  ContentGroup answer_bundle(GROUP_TYPE_BUNDLE);
+  std::vector<const ContentGroup*> offer_bundles =
+      offer->GetGroupsByName(GROUP_TYPE_BUNDLE);
   
-  std::unique_ptr<TransportInfo> bundle_transport;
+  
+  
+  std::vector<ContentGroup> answer_bundles;
+  std::vector<std::unique_ptr<TransportInfo>> bundle_transports;
+  answer_bundles.reserve(offer_bundles.size());
+  bundle_transports.reserve(offer_bundles.size());
+  for (size_t i = 0; i < offer_bundles.size(); ++i) {
+    answer_bundles.emplace_back(GROUP_TYPE_BUNDLE);
+    bundle_transports.emplace_back(nullptr);
+  }
 
   answer->set_extmap_allow_mixed(offer->extmap_allow_mixed());
 
@@ -1691,6 +1700,18 @@ MediaSessionDescriptionFactory::CreateAnswer(
     RTC_DCHECK(
         IsMediaContentOfType(offer_content, media_description_options.type));
     RTC_DCHECK(media_description_options.mid == offer_content->name);
+    
+    absl::optional<size_t> bundle_index;
+    for (size_t i = 0; i < offer_bundles.size(); ++i) {
+      if (offer_bundles[i]->HasContentName(media_description_options.mid)) {
+        bundle_index = i;
+        break;
+      }
+    }
+    TransportInfo* bundle_transport =
+        bundle_index.has_value() ? bundle_transports[bundle_index.value()].get()
+                                 : nullptr;
+
     const ContentInfo* current_content = nullptr;
     if (current_description &&
         msection_index < current_description->contents().size()) {
@@ -1703,35 +1724,34 @@ MediaSessionDescriptionFactory::CreateAnswer(
       case MEDIA_TYPE_AUDIO:
         if (!AddAudioContentForAnswer(
                 media_description_options, session_options, offer_content,
-                offer, current_content, current_description,
-                bundle_transport.get(), answer_audio_codecs, header_extensions,
-                &current_streams, answer.get(), &ice_credentials)) {
+                offer, current_content, current_description, bundle_transport,
+                answer_audio_codecs, header_extensions, &current_streams,
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
       case MEDIA_TYPE_VIDEO:
         if (!AddVideoContentForAnswer(
                 media_description_options, session_options, offer_content,
-                offer, current_content, current_description,
-                bundle_transport.get(), answer_video_codecs, header_extensions,
-                &current_streams, answer.get(), &ice_credentials)) {
+                offer, current_content, current_description, bundle_transport,
+                answer_video_codecs, header_extensions, &current_streams,
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
       case MEDIA_TYPE_DATA:
-        if (!AddDataContentForAnswer(media_description_options, session_options,
-                                     offer_content, offer, current_content,
-                                     current_description,
-                                     bundle_transport.get(), &current_streams,
-                                     answer.get(), &ice_credentials)) {
+        if (!AddDataContentForAnswer(
+                media_description_options, session_options, offer_content,
+                offer, current_content, current_description, bundle_transport,
+                &current_streams, answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
       case MEDIA_TYPE_UNSUPPORTED:
         if (!AddUnsupportedContentForAnswer(
                 media_description_options, session_options, offer_content,
-                offer, current_content, current_description,
-                bundle_transport.get(), answer.get(), &ice_credentials)) {
+                offer, current_content, current_description, bundle_transport,
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
@@ -1742,10 +1762,12 @@ MediaSessionDescriptionFactory::CreateAnswer(
     
     
     ContentInfo& added = answer->contents().back();
-    if (!added.rejected && session_options.bundle_enabled && offer_bundle &&
-        offer_bundle->HasContentName(added.name)) {
-      answer_bundle.AddContentName(added.name);
-      bundle_transport.reset(
+    if (!added.rejected && session_options.bundle_enabled &&
+        bundle_index.has_value()) {
+      
+      RTC_DCHECK_EQ(media_description_options.mid, added.name);
+      answer_bundles[bundle_index.value()].AddContentName(added.name);
+      bundle_transports[bundle_index.value()].reset(
           new TransportInfo(*answer->GetTransportInfoByName(added.name)));
     }
   }
@@ -1756,23 +1778,25 @@ MediaSessionDescriptionFactory::CreateAnswer(
   
   
   
-  if (offer_bundle) {
-    answer->AddGroup(answer_bundle);
-  }
+  if (!offer_bundles.empty()) {
+    for (const ContentGroup& answer_bundle : answer_bundles) {
+      answer->AddGroup(answer_bundle);
 
-  if (answer_bundle.FirstContentName()) {
-    
-    
-    if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
-      RTC_LOG(LS_ERROR)
-          << "CreateAnswer failed to UpdateTransportInfoForBundle.";
-      return NULL;
-    }
+      if (answer_bundle.FirstContentName()) {
+        
+        
+        if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
+          RTC_LOG(LS_ERROR)
+              << "CreateAnswer failed to UpdateTransportInfoForBundle.";
+          return NULL;
+        }
 
-    if (!UpdateCryptoParamsForBundle(answer_bundle, answer.get())) {
-      RTC_LOG(LS_ERROR)
-          << "CreateAnswer failed to UpdateCryptoParamsForBundle.";
-      return NULL;
+        if (!UpdateCryptoParamsForBundle(answer_bundle, answer.get())) {
+          RTC_LOG(LS_ERROR)
+              << "CreateAnswer failed to UpdateCryptoParamsForBundle.";
+          return NULL;
+        }
+      }
     }
   }
 

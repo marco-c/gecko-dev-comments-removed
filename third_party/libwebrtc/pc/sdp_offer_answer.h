@@ -227,9 +227,13 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   
   RTCError ApplyLocalDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc);
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
   RTCError ApplyRemoteDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc);
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
 
   
   
@@ -251,9 +255,12 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   void ChangeSignalingState(
       PeerConnectionInterface::SignalingState signaling_state);
 
-  RTCError UpdateSessionState(SdpType type,
-                              cricket::ContentSource source,
-                              const cricket::SessionDescription* description);
+  RTCError UpdateSessionState(
+      SdpType type,
+      cricket::ContentSource source,
+      const cricket::SessionDescription* description,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
 
   bool IsUnifiedPlan() const RTC_RUN_ON(signaling_thread());
 
@@ -286,9 +293,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   bool CheckIfNegotiationIsNeeded();
   void GenerateNegotiationNeededEvent();
   
-  RTCError ValidateSessionDescription(const SessionDescriptionInterface* sdesc,
-                                      cricket::ContentSource source)
-      RTC_RUN_ON(signaling_thread());
+  RTCError ValidateSessionDescription(
+      const SessionDescriptionInterface* sdesc,
+      cricket::ContentSource source,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid) RTC_RUN_ON(signaling_thread());
 
   
   
@@ -296,7 +305,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
       cricket::ContentSource source,
       const SessionDescriptionInterface& new_session,
       const SessionDescriptionInterface* old_local_description,
-      const SessionDescriptionInterface* old_remote_description);
+      const SessionDescriptionInterface* old_remote_description,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
 
   
   RTCErrorOr<
@@ -316,15 +327,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   const cricket::ContentInfo* FindMediaSectionForTransceiver(
       const RtpTransceiver* transceiver,
       const SessionDescriptionInterface* sdesc) const;
-
-  
-  
-  
-  
-  
-  RTCErrorOr<const cricket::ContentGroup*> GetEarlyBundleGroup(
-      const cricket::SessionDescription& desc) const
-      RTC_RUN_ON(signaling_thread());
 
   
   
@@ -456,8 +458,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   void EnableSending();
   
   
-  RTCError PushdownMediaDescription(SdpType type,
-                                    cricket::ContentSource source);
+  RTCError PushdownMediaDescription(
+      SdpType type,
+      cricket::ContentSource source,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
 
   RTCError PushdownTransportDescription(cricket::ContentSource source,
                                         SdpType type);
@@ -544,7 +549,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  bool UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
+  bool UpdatePayloadTypeDemuxingState(
+      cricket::ContentSource source,
+      const std::map<std::string, const cricket::ContentGroup*>&
+          bundle_groups_by_mid);
 
   
   

@@ -901,10 +901,10 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   AddLine(kTimeDescription, &message);
 
   
-  if (desc->HasGroup(cricket::GROUP_TYPE_BUNDLE)) {
+  std::vector<const cricket::ContentGroup*> groups =
+      desc->GetGroupsByName(cricket::GROUP_TYPE_BUNDLE);
+  for (const cricket::ContentGroup* group : groups) {
     std::string group_line = kAttrGroup;
-    const cricket::ContentGroup* group =
-        desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
     RTC_DCHECK(group != NULL);
     for (const std::string& content_name : group->content_names()) {
       group_line.append(" ");
