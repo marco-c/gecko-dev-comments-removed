@@ -1721,8 +1721,7 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
 NS_IMETHODIMP
 nsCSPContext::Permits(Element* aTriggeringElement,
                       nsICSPEventListener* aCSPEventListener, nsIURI* aURI,
-                      CSPDirective aDir, bool aSpecific,
-                      bool aSendViolationReports, bool* outPermits) {
+                      CSPDirective aDir, bool aSpecific, bool* outPermits) {
   
   if (aURI == nullptr) {
     return NS_ERROR_FAILURE;
@@ -1744,14 +1743,14 @@ nsCSPContext::Permits(Element* aTriggeringElement,
       permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
                       nullptr,  
                       u""_ns,   
-                      aSpecific, aSendViolationReports,
+                      aSpecific,
+                      true,    
                       true,    
                       false);  
 
   if (CSPCONTEXTLOGENABLED()) {
-    CSPCONTEXTLOG(("nsCSPContext::Permits, aUri: %s, aDir: %s, isAllowed: %s",
-                   aURI->GetSpecOrDefault().get(),
-                   CSP_CSPDirectiveToString(aDir),
+    CSPCONTEXTLOG(("nsCSPContext::Permits, aUri: %s, aDir: %d, isAllowed: %s",
+                   aURI->GetSpecOrDefault().get(), aDir,
                    *outPermits ? "allow" : "deny"));
   }
 
