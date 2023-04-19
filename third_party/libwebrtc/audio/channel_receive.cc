@@ -163,6 +163,8 @@ class ChannelReceive : public ChannelReceiveInterface {
 
   int PreferredSampleRate() const override;
 
+  void SetSourceTracker(SourceTracker* source_tracker) override;
+
   
   
   void SetAssociatedSendChannel(const ChannelSendInterface* channel) override;
@@ -220,6 +222,7 @@ class ChannelReceive : public ChannelReceiveInterface {
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   const uint32_t remote_ssrc_;
+  SourceTracker* source_tracker_ = nullptr;
 
   
   
@@ -234,6 +237,7 @@ class ChannelReceive : public ChannelReceiveInterface {
   AudioSinkInterface* audio_sink_ = nullptr;
   AudioLevel _outputAudioLevel;
 
+  Clock* const clock_;
   RemoteNtpTimeEstimator ntp_estimator_ RTC_GUARDED_BY(ts_stats_lock_);
 
   
@@ -288,6 +292,21 @@ void ChannelReceive::OnReceivedPayloadData(
   if (!Playing()) {
     
     
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (source_tracker_) {
+      RtpPacketInfos::vector_type packet_vector = {
+          RtpPacketInfo(rtpHeader, clock_->TimeInMilliseconds())};
+      source_tracker_->OnFrameDelivered(RtpPacketInfos(packet_vector));
+    }
+
     return;
   }
 
@@ -443,6 +462,10 @@ int ChannelReceive::PreferredSampleRate() const {
                   acm_receiver_.last_output_sample_rate_hz());
 }
 
+void ChannelReceive::SetSourceTracker(SourceTracker* source_tracker) {
+  source_tracker_ = source_tracker;
+}
+
 ChannelReceive::ChannelReceive(
     Clock* clock,
     ProcessThread* module_process_thread,
@@ -471,6 +494,7 @@ ChannelReceive::ChannelReceive(
                               jitter_buffer_max_packets,
                               jitter_buffer_fast_playout)),
       _outputAudioLevel(),
+      clock_(clock),
       ntp_estimator_(clock),
       playout_timestamp_rtp_(0),
       playout_delay_ms_(0),
