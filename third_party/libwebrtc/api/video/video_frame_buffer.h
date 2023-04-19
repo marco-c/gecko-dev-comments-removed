@@ -69,6 +69,8 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
   
   
   
+  
+  
   virtual rtc::scoped_refptr<I420BufferInterface> ToI420() = 0;
 
   

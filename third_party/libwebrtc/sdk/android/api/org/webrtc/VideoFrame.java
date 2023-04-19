@@ -13,6 +13,7 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 
 
@@ -54,7 +55,10 @@ public class VideoFrame implements RefCounted {
 
 
 
-    @CalledByNative("Buffer") I420Buffer toI420();
+
+
+
+    @Nullable @CalledByNative("Buffer") I420Buffer toI420();
 
     @Override @CalledByNative("Buffer") void retain();
     @Override @CalledByNative("Buffer") void release();
