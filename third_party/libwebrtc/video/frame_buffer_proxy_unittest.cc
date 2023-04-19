@@ -28,6 +28,7 @@
 #include "api/video/video_timing.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
+#include "test/fake_encoded_frame.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/run_loop.h"
@@ -51,16 +52,6 @@ using ::testing::VariantWith;
 
 namespace webrtc {
 
-
-void PrintTo(const EncodedFrame& frame, std::ostream* os) {
-  *os << "EncodedFrame with id=" << frame.Id() << " rtp=" << frame.Timestamp()
-      << " size=" << frame.size() << " refs=[";
-  for (size_t ref = 0; ref < frame.num_references; ++ref) {
-    *os << frame.references[ref] << ",";
-  }
-  *os << "]";
-}
-
 namespace {
 
 constexpr size_t kFrameSize = 10;
@@ -68,28 +59,6 @@ constexpr uint32_t kFps30Rtp = 90000 / 30;
 constexpr TimeDelta kFps30Delay = 1 / Frequency::Hertz(30);
 const VideoPlayoutDelay kZeroPlayoutDelay = {0, 0};
 constexpr Timestamp kClockStart = Timestamp::Millis(1000);
-
-class FakeEncodedFrame : public EncodedFrame {
- public:
-  
-  int64_t ReceivedTime() const override { return received_time_; }
-  int64_t RenderTime() const override { return _renderTimeMs; }
-
-  void SetReceivedTime(int64_t received_time) {
-    received_time_ = received_time;
-  }
-
- private:
-  int64_t received_time_;
-};
-
-MATCHER_P(WithId, id, "") {
-  return Matches(Eq(id))(arg.Id());
-}
-
-MATCHER_P(FrameWithSize, id, "") {
-  return Matches(Eq(id))(arg.size());
-}
 
 auto TimedOut() {
   return Optional(VariantWith<TimeDelta>(_));
@@ -99,80 +68,17 @@ auto Frame(testing::Matcher<EncodedFrame> m) {
   return Optional(VariantWith<std::unique_ptr<EncodedFrame>>(Pointee(m)));
 }
 
-class Builder {
- public:
-  Builder& Time(uint32_t rtp_timestamp) {
-    rtp_timestamp_ = rtp_timestamp;
-    return *this;
+std::unique_ptr<test::FakeEncodedFrame> WithReceiveTimeFromRtpTimestamp(
+    std::unique_ptr<test::FakeEncodedFrame> frame) {
+  if (frame->Timestamp() == 0) {
+    frame->SetReceivedTime(kClockStart.ms());
+  } else {
+    frame->SetReceivedTime(
+        TimeDelta::Seconds(frame->Timestamp() / 90000.0).ms() +
+        kClockStart.ms());
   }
-  Builder& Id(int64_t frame_id) {
-    frame_id_ = frame_id;
-    return *this;
-  }
-  Builder& AsLast() {
-    last_spatial_layer_ = true;
-    return *this;
-  }
-  Builder& Refs(const std::vector<int64_t>& references) {
-    references_ = references;
-    return *this;
-  }
-  Builder& PlayoutDelay(VideoPlayoutDelay playout_delay) {
-    playout_delay_ = playout_delay;
-    return *this;
-  }
-  Builder& SpatialLayer(int spatial_layer) {
-    spatial_layer_ = spatial_layer;
-    return *this;
-  }
-  Builder& ReceivedTime(Timestamp receive_time) {
-    received_time_ = receive_time;
-    return *this;
-  }
-
-  std::unique_ptr<FakeEncodedFrame> Build() {
-    RTC_CHECK_LE(references_.size(), EncodedFrame::kMaxFrameReferences);
-    RTC_CHECK(rtp_timestamp_);
-    RTC_CHECK(frame_id_);
-
-    auto frame = std::make_unique<FakeEncodedFrame>();
-    frame->SetTimestamp(*rtp_timestamp_);
-    frame->SetId(*frame_id_);
-    frame->is_last_spatial_layer = last_spatial_layer_;
-    frame->SetEncodedData(EncodedImageBuffer::Create(kFrameSize));
-
-    if (playout_delay_)
-      frame->SetPlayoutDelay(*playout_delay_);
-
-    for (int64_t ref : references_) {
-      frame->references[frame->num_references] = ref;
-      frame->num_references++;
-    }
-    if (spatial_layer_) {
-      frame->SetSpatialIndex(spatial_layer_);
-    }
-    if (received_time_) {
-      frame->SetReceivedTime(received_time_->ms());
-    } else {
-      if (*rtp_timestamp_ == 0)
-        frame->SetReceivedTime(kClockStart.ms());
-      frame->SetReceivedTime(
-          TimeDelta::Seconds(*rtp_timestamp_ / 90000.0).ms() +
-          kClockStart.ms());
-    }
-
-    return frame;
-  }
-
- private:
-  absl::optional<uint32_t> rtp_timestamp_;
-  absl::optional<int64_t> frame_id_;
-  absl::optional<VideoPlayoutDelay> playout_delay_;
-  absl::optional<int> spatial_layer_;
-  absl::optional<Timestamp> received_time_;
-  bool last_spatial_layer_ = false;
-  std::vector<int64_t> references_;
-};
+  return frame;
+}
 
 class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
  public:
@@ -349,19 +255,20 @@ TEST_P(FrameBufferProxyTest, KeyFramesAreScheduled) {
   StartNextDecodeForceKeyframe();
   time_controller_.AdvanceTime(TimeDelta::Millis(50));
 
-  auto frame = Builder().Id(0).Time(0).AsLast().Build();
+  auto frame = test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build();
   proxy_->InsertFrame(std::move(frame));
 
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 }
 
 TEST_P(FrameBufferProxyTest, DeltaFrameTimeoutAfterKeyframeExtracted) {
   StartNextDecodeForceKeyframe();
 
   time_controller_.AdvanceTime(TimeDelta::Millis(50));
-  auto frame = Builder().Id(0).Time(0).AsLast().Build();
+  auto frame = test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build();
   proxy_->InsertFrame(std::move(frame));
-  EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForKeyframe), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForKeyframe),
+              Frame(test::WithId(0)));
 
   StartNextDecode();
   time_controller_.AdvanceTime(TimeDelta::Millis(50));
@@ -376,44 +283,64 @@ TEST_P(FrameBufferProxyTest, DeltaFrameTimeoutAfterKeyframeExtracted) {
 
 TEST_P(FrameBufferProxyTest, DependantFramesAreScheduled) {
   StartNextDecodeForceKeyframe();
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   StartNextDecode();
 
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).AsLast().Refs({0}).Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(1)));
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(1)));
 }
 
 TEST_P(FrameBufferProxyTest, SpatialLayersAreScheduled) {
   StartNextDecodeForceKeyframe();
-  proxy_->InsertFrame(Builder().Id(0).SpatialLayer(0).Time(0).Build());
-  proxy_->InsertFrame(Builder().Id(1).SpatialLayer(1).Time(0).Build());
-  proxy_->InsertFrame(Builder().Id(2).SpatialLayer(2).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()),
-              Frame(AllOf(WithId(0), FrameWithSize(3 * kFrameSize))));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(0).SpatialLayer(0).Time(0).Build()));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(1).SpatialLayer(1).Time(0).Build()));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(2).SpatialLayer(2).Time(0).AsLast().Build()));
+  EXPECT_THAT(
+      WaitForFrameOrTimeout(TimeDelta::Zero()),
+      Frame(AllOf(test::WithId(0), test::FrameWithSize(3 * kFrameSize))));
 
-  proxy_->InsertFrame(Builder().Id(3).Time(kFps30Rtp).SpatialLayer(0).Build());
-  proxy_->InsertFrame(Builder().Id(4).Time(kFps30Rtp).SpatialLayer(1).Build());
-  proxy_->InsertFrame(
-      Builder().Id(5).Time(kFps30Rtp).SpatialLayer(2).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(3).Time(kFps30Rtp).SpatialLayer(0).Build()));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(4).Time(kFps30Rtp).SpatialLayer(1).Build()));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(test::FakeFrameBuilder()
+                                                          .Id(5)
+                                                          .Time(kFps30Rtp)
+                                                          .SpatialLayer(2)
+                                                          .AsLast()
+                                                          .Build()));
 
   StartNextDecode();
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay * 10),
-              Frame(AllOf(WithId(3), FrameWithSize(3 * kFrameSize))));
+  EXPECT_THAT(
+      WaitForFrameOrTimeout(kFps30Delay * 10),
+      Frame(AllOf(test::WithId(3), test::FrameWithSize(3 * kFrameSize))));
 }
 
 TEST_P(FrameBufferProxyTest, OutstandingFrameTasksAreCancelledAfterDeletion) {
   StartNextDecodeForceKeyframe();
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build()));
   
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   StartNextDecode();
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).AsLast().Refs({0}).Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(test::FakeFrameBuilder()
+                                                          .Id(1)
+                                                          .Time(kFps30Rtp)
+                                                          .AsLast()
+                                                          .Refs({0})
+                                                          .Build()));
   proxy_->StopOnWorker();
   
   
@@ -424,20 +351,24 @@ TEST_P(FrameBufferProxyTest, FramesWaitForDecoderToComplete) {
   StartNextDecodeForceKeyframe();
 
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   ResetLastResult();
   
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).AsLast().Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
 
   
   
   EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Eq(absl::nullopt));
   
   StartNextDecode();
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(1)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(1)));
 }
 
 TEST_P(FrameBufferProxyTest, LateFrameDropped) {
@@ -445,22 +376,30 @@ TEST_P(FrameBufferProxyTest, LateFrameDropped) {
   
   
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
   
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   StartNextDecode();
 
   
   time_controller_.AdvanceTime(kFps30Delay * 2);
-  proxy_->InsertFrame(
-      Builder().Id(2).Time(2 * kFps30Rtp).AsLast().Refs({0}).Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(2)));
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(2)
+                          .Time(2 * kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(2)));
 
   StartNextDecode();
 
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(1 * kFps30Rtp).AsLast().Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(1 * kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
   
   EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForFrame), TimedOut());
 }
@@ -470,40 +409,53 @@ TEST_P(FrameBufferProxyTest, FramesFastForwardOnSystemHalt) {
   
   
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
 
   
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).AsLast().Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(
-      Builder().Id(2).Time(2 * kFps30Rtp).AsLast().Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(2)
+                          .Time(2 * kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
 
   
   time_controller_.AdvanceTime(kFps30Delay * 2);
   StartNextDecode();
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(2)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(2)));
   EXPECT_EQ(dropped_frames(), 1);
 }
 
 TEST_P(FrameBufferProxyTest, ForceKeyFrame) {
   StartNextDecodeForceKeyframe();
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   StartNextDecodeForceKeyframe();
 
   
   
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(kFps30Rtp)
+                          .AsLast()
+                          .Refs({0})
+                          .Build());
   proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).AsLast().Refs({0}).Build());
-  proxy_->InsertFrame(Builder().Id(2).Time(kFps30Rtp * 2).AsLast().Build());
+      test::FakeFrameBuilder().Id(2).Time(kFps30Rtp * 2).AsLast().Build());
 
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay * 3), Frame(WithId(2)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay * 3), Frame(test::WithId(2)));
 }
 
 TEST_P(FrameBufferProxyTest, SlowDecoderDropsTemporalLayers) {
@@ -513,40 +465,60 @@ TEST_P(FrameBufferProxyTest, SlowDecoderDropsTemporalLayers) {
   
   
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
   
   
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(1 * kFps30Rtp).Refs({0}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(1)
+                          .Time(1 * kFps30Rtp)
+                          .Refs({0})
+                          .AsLast()
+                          .Build());
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(
-      Builder().Id(2).Time(2 * kFps30Rtp).Refs({0}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(2)
+                          .Time(2 * kFps30Rtp)
+                          .Refs({0})
+                          .AsLast()
+                          .Build());
 
   
   time_controller_.AdvanceTime(kFps30Delay * 1.5);
   StartNextDecode();
   
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay * 2), Frame(WithId(2)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay * 2), Frame(test::WithId(2)));
   EXPECT_EQ(dropped_frames(), 1);
   time_controller_.AdvanceTime(kFps30Delay / 2);
 
-  proxy_->InsertFrame(
-      Builder().Id(3).Time(3 * kFps30Rtp).Refs({1, 2}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(3)
+                          .Time(3 * kFps30Rtp)
+                          .Refs({1, 2})
+                          .AsLast()
+                          .Build());
   time_controller_.AdvanceTime(kFps30Delay / 2);
-  proxy_->InsertFrame(
-      Builder().Id(4).Time(4 * kFps30Rtp).Refs({2}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(4)
+                          .Time(4 * kFps30Rtp)
+                          .Refs({2})
+                          .AsLast()
+                          .Build());
   time_controller_.AdvanceTime(kFps30Delay / 2);
 
   
   time_controller_.AdvanceTime(kFps30Delay);
   StartNextDecode();
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(4)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(4)));
 
-  proxy_->InsertFrame(
-      Builder().Id(5).Time(5 * kFps30Rtp).Refs({3, 4}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder()
+                          .Id(5)
+                          .Time(5 * kFps30Rtp)
+                          .Refs({3, 4})
+                          .AsLast()
+                          .Build());
   time_controller_.AdvanceTime(kFps30Delay / 2);
 
   
@@ -563,20 +535,29 @@ TEST_P(FrameBufferProxyTest, SlowDecoderDropsTemporalLayers) {
 TEST_P(FrameBufferProxyTest, NewFrameInsertedWhileWaitingToReleaseFrame) {
   StartNextDecodeForceKeyframe();
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build()));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   time_controller_.AdvanceTime(kFps30Delay / 2);
-  proxy_->InsertFrame(
-      Builder().Id(1).Time(kFps30Rtp).Refs({0}).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(test::FakeFrameBuilder()
+                                                          .Id(1)
+                                                          .Time(kFps30Rtp)
+                                                          .Refs({0})
+                                                          .AsLast()
+                                                          .Build()));
   StartNextDecode();
   EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Eq(absl::nullopt));
 
   
   
-  proxy_->InsertFrame(
-      Builder().Id(2).Time(kFps30Rtp * 2).Refs({0}).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(1)));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(test::FakeFrameBuilder()
+                                                          .Id(2)
+                                                          .Time(kFps30Rtp * 2)
+                                                          .Refs({0})
+                                                          .AsLast()
+                                                          .Build()));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(1)));
 }
 
 TEST_P(FrameBufferProxyTest, SameFrameNotScheduledTwice) {
@@ -592,34 +573,40 @@ TEST_P(FrameBufferProxyTest, SameFrameNotScheduledTwice) {
   StartNextDecodeForceKeyframe();
 
   
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Millis(15)), Frame(WithId(0)));
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build()));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Millis(15)),
+              Frame(test::WithId(0)));
 
   StartNextDecode();
 
   
   for (int i = 1; i <= 30; ++i) {
-    proxy_->InsertFrame(Builder().Id(i).Time(i * kFps30Rtp).AsLast().Build());
-    EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(i)));
+    proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+        test::FakeFrameBuilder().Id(i).Time(i * kFps30Rtp).AsLast().Build()));
+    EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(i)));
     StartNextDecode();
   }
 
   
-  proxy_->InsertFrame(Builder().Id(32).Time(32 * kFps30Rtp).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(32).Time(32 * kFps30Rtp).AsLast().Build()));
 
   
   time_controller_.AdvanceTime(kFps30Delay);
-  proxy_->InsertFrame(Builder().Id(33).Time(33 * kFps30Rtp).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(33).Time(33 * kFps30Rtp).AsLast().Build()));
 
   
   
   time_controller_.AdvanceTime(kFps30Delay / 2);
-  proxy_->InsertFrame(Builder().Id(31).Time(31 * kFps30Rtp).AsLast().Build());
+  proxy_->InsertFrame(WithReceiveTimeFromRtpTimestamp(
+      test::FakeFrameBuilder().Id(31).Time(31 * kFps30Rtp).AsLast().Build()));
 
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(32)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(32)));
   StartNextDecode();
 
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(33)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(33)));
   StartNextDecode();
   EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForFrame), TimedOut());
   EXPECT_EQ(dropped_frames(), 1);
@@ -633,8 +620,8 @@ TEST_P(FrameBufferProxyTest, TestStatsCallback) {
   
   timing_.StopDecodeTimer(TimeDelta::Millis(1), clock_->CurrentTime());
   StartNextDecodeForceKeyframe();
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   
   time_controller_.AdvanceTime(TimeDelta::Zero());
@@ -646,8 +633,8 @@ TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForDuplicateFrame) {
       .Times(1);
 
   StartNextDecodeForceKeyframe();
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
-  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build());
   
   time_controller_.AdvanceTime(TimeDelta::Zero());
 }
@@ -658,8 +645,8 @@ TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForSingleTemporalUnit) {
   
   
   EXPECT_CALL(stats_callback_, OnCompleteFrame(_, _, _)).Times(0);
-  proxy_->InsertFrame(Builder().Id(0).Time(0).Build());
-  proxy_->InsertFrame(Builder().Id(1).Time(0).Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(1).Time(0).Refs({0}).Build());
   time_controller_.AdvanceTime(TimeDelta::Zero());
   
   ::testing::Mock::VerifyAndClearExpectations(&stats_callback_);
@@ -669,7 +656,8 @@ TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForSingleTemporalUnit) {
   EXPECT_CALL(stats_callback_,
               OnCompleteFrame(false, kFrameSize, VideoContentType::UNSPECIFIED))
       .Times(1);
-  proxy_->InsertFrame(Builder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
+  proxy_->InsertFrame(
+      test::FakeFrameBuilder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
   
   time_controller_.AdvanceTime(TimeDelta::Zero());
 }
@@ -684,8 +672,9 @@ TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForCompleteTemporalUnit) {
   
   
   EXPECT_CALL(stats_callback_, OnCompleteFrame(_, _, _)).Times(0);
-  proxy_->InsertFrame(Builder().Id(0).Time(0).Build());
-  proxy_->InsertFrame(Builder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(0).Time(0).Build());
+  proxy_->InsertFrame(
+      test::FakeFrameBuilder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
   time_controller_.AdvanceTime(TimeDelta::Zero());
   
   ::testing::Mock::VerifyAndClearExpectations(&stats_callback_);
@@ -693,7 +682,7 @@ TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForCompleteTemporalUnit) {
   EXPECT_CALL(stats_callback_,
               OnCompleteFrame(false, kFrameSize, VideoContentType::UNSPECIFIED))
       .Times(1);
-  proxy_->InsertFrame(Builder().Id(1).Time(0).Refs({0}).Build());
+  proxy_->InsertFrame(test::FakeFrameBuilder().Id(1).Time(0).Refs({0}).Build());
   
   time_controller_.AdvanceTime(TimeDelta::Zero());
 }
@@ -711,23 +700,23 @@ TEST_P(FrameBufferProxyTest, NextFrameWithOldTimestamp) {
   
   
   
-  proxy_->InsertFrame(Builder()
+  proxy_->InsertFrame(test::FakeFrameBuilder()
                           .Id(0)
                           .Time(kBaseRtp)
                           .ReceivedTime(clock_->CurrentTime())
                           .AsLast()
                           .Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(0)));
 
   
   StartNextDecode();
-  proxy_->InsertFrame(Builder()
+  proxy_->InsertFrame(test::FakeFrameBuilder()
                           .Id(1)
                           .Time(kBaseRtp + kFps30Rtp)
                           .ReceivedTime(clock_->CurrentTime())
                           .AsLast()
                           .Build());
-  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(1)));
+  EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(1)));
 
   
   
@@ -746,7 +735,7 @@ TEST_P(FrameBufferProxyTest, NextFrameWithOldTimestamp) {
   EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForFrame), Eq(absl::nullopt));
   time_controller_.AdvanceTime(kRolloverDelay - kMaxWaitForFrame);
   StartNextDecode();
-  proxy_->InsertFrame(Builder()
+  proxy_->InsertFrame(test::FakeFrameBuilder()
                           .Id(2)
                           .Time(kRolloverRtp)
                           .ReceivedTime(clock_->CurrentTime())
@@ -754,7 +743,7 @@ TEST_P(FrameBufferProxyTest, NextFrameWithOldTimestamp) {
                           .Build());
   
   if (!IsFrameBuffer2Enabled(field_trials_)) {
-    EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(2)));
+    EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(test::WithId(2)));
   } else {
     EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForFrame), TimedOut());
   }
@@ -776,22 +765,22 @@ TEST_P(LowLatencyFrameBufferProxyTest,
   StartNextDecodeForceKeyframe();
   timing_.set_min_playout_delay(TimeDelta::Zero());
   timing_.set_max_playout_delay(TimeDelta::Millis(10));
-  auto frame = Builder().Id(0).Time(0).AsLast().Build();
+  auto frame = test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 10});
   proxy_->InsertFrame(std::move(frame));
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   
   
   StartNextDecode();
-  frame = Builder().Id(1).Time(kFps30Rtp).AsLast().Build();
+  frame = test::FakeFrameBuilder().Id(1).Time(kFps30Rtp).AsLast().Build();
   frame->SetPlayoutDelay({0, 10});
   proxy_->InsertFrame(std::move(frame));
   
   EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Eq(absl::nullopt));
   time_controller_.AdvanceTime(TimeDelta::Millis(16));
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(1)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(1)));
 }
 
 TEST_P(LowLatencyFrameBufferProxyTest, ZeroPlayoutDelayFullQueue) {
@@ -799,15 +788,16 @@ TEST_P(LowLatencyFrameBufferProxyTest, ZeroPlayoutDelayFullQueue) {
   StartNextDecodeForceKeyframe();
   timing_.set_min_playout_delay(TimeDelta::Zero());
   timing_.set_max_playout_delay(TimeDelta::Millis(10));
-  auto frame = Builder().Id(0).Time(0).AsLast().Build();
+  auto frame = test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 10});
   proxy_->InsertFrame(std::move(frame));
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   
   for (int id = 1; id <= 6; ++id) {
-    frame = Builder().Id(id).Time(kFps30Rtp * id).AsLast().Build();
+    frame =
+        test::FakeFrameBuilder().Id(id).Time(kFps30Rtp * id).AsLast().Build();
     frame->SetPlayoutDelay({0, 10});
     proxy_->InsertFrame(std::move(frame));
   }
@@ -815,7 +805,7 @@ TEST_P(LowLatencyFrameBufferProxyTest, ZeroPlayoutDelayFullQueue) {
   
   
   StartNextDecode();
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(1)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(1)));
 }
 
 TEST_P(LowLatencyFrameBufferProxyTest, MinMaxDelayZeroLowLatencyMode) {
@@ -823,21 +813,21 @@ TEST_P(LowLatencyFrameBufferProxyTest, MinMaxDelayZeroLowLatencyMode) {
   StartNextDecodeForceKeyframe();
   timing_.set_min_playout_delay(TimeDelta::Zero());
   timing_.set_max_playout_delay(TimeDelta::Zero());
-  auto frame = Builder().Id(0).Time(0).AsLast().Build();
+  auto frame = test::FakeFrameBuilder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 0});
   proxy_->InsertFrame(std::move(frame));
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(0)));
 
   
   
   StartNextDecode();
-  frame = Builder().Id(1).Time(kFps30Rtp).AsLast().Build();
+  frame = test::FakeFrameBuilder().Id(1).Time(kFps30Rtp).AsLast().Build();
   frame->SetPlayoutDelay({0, 0});
   proxy_->InsertFrame(std::move(frame));
   
   
-  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(1)));
+  EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(test::WithId(1)));
 }
 
 INSTANTIATE_TEST_SUITE_P(
