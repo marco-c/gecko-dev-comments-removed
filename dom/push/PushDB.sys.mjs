@@ -1,17 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { IndexedDBHelper } = ChromeUtils.import(
-  "resource://gre/modules/IndexedDBHelper.jsm"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const EXPORTED_SYMBOLS = ["PushDB"];
+import { IndexedDBHelper } from "resource://gre/modules/IndexedDBHelper.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -25,13 +17,13 @@ XPCOMUtils.defineLazyGetter(lazy, "console", () => {
   });
 });
 
-function PushDB(dbName, dbVersion, dbStoreName, keyPath, model) {
+export function PushDB(dbName, dbVersion, dbStoreName, keyPath, model) {
   lazy.console.debug("PushDB()");
   this._dbStoreName = dbStoreName;
   this._keyPath = keyPath;
   this._model = model;
 
-  
+  // set the indexeddb database
   this.initDBHelper(dbName, dbVersion, [dbStoreName]);
 }
 
@@ -57,8 +49,8 @@ PushDB.prototype = {
 
   upgradeSchema(aTransaction, aDb, aOldVersion, aNewVersion) {
     if (aOldVersion <= 3) {
-      
-      
+      // XXXnsm We haven't shipped Push during this upgrade, so I'm just going to throw old
+      // registrations away without even informing the app.
       if (aDb.objectStoreNames.contains(this._dbStoreName)) {
         aDb.deleteObjectStore(this._dbStoreName);
       }
@@ -67,14 +59,14 @@ PushDB.prototype = {
         keyPath: this._keyPath,
       });
 
-      
+      // index to fetch records based on endpoints. used by unregister
       objectStore.createIndex("pushEndpoint", "pushEndpoint", { unique: true });
 
-      
-      
-      
-      
-      
+      // index to fetch records by identifiers.
+      // In the current security model, the originAttributes distinguish between
+      // different 'apps' on the same origin. Since ServiceWorkers are
+      // same-origin to the scope they are registered for, the attributes and
+      // scope are enough to reconstruct a valid principal.
       objectStore.createIndex("identifiers", ["scope", "originAttributes"], {
         unique: true,
       });
@@ -86,15 +78,15 @@ PushDB.prototype = {
     if (aOldVersion < 4) {
       let objectStore = aTransaction.objectStore(this._dbStoreName);
 
-      
+      // index to fetch active and expired registrations.
       objectStore.createIndex("quota", "quota", { unique: false });
     }
   },
 
-  
-
-
-
+  /*
+   * @param aRecord
+   *        The record to be added.
+   */
 
   put(aRecord) {
     lazy.console.debug("put()", aRecord);
@@ -128,10 +120,10 @@ PushDB.prototype = {
     );
   },
 
-  
-
-
-
+  /*
+   * @param aKeyID
+   *        The ID of record to be deleted.
+   */
   delete(aKeyID) {
     lazy.console.debug("delete()");
 
@@ -152,8 +144,8 @@ PushDB.prototype = {
     );
   },
 
-  
-  
+  // testFn(record) is called with a database record and should return true if
+  // that record should be deleted.
   clearIf(testFn) {
     lazy.console.debug("clearIf()");
     return new Promise((resolve, reject) =>
@@ -232,17 +224,17 @@ PushDB.prototype = {
     );
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Iterates over all records associated with an origin.
+   *
+   * @param {String} origin The origin, matched as a prefix against the scope.
+   * @param {String} originAttributes Additional origin attributes. Requires
+   *  an exact match.
+   * @param {Function} callback A function with the signature `(record,
+   *  cursor)`, called for each record. `record` is the registration, and
+   *  `cursor` is an `IDBCursor`.
+   * @returns {Promise} Resolves once all records have been processed.
+   */
   forEachOrigin(origin, originAttributes, callback) {
     lazy.console.debug("forEachOrigin()");
 
@@ -273,7 +265,7 @@ PushDB.prototype = {
     );
   },
 
-  
+  // Perform a unique match against { scope, originAttributes }
   getByIdentifiers(aPageRecord) {
     lazy.console.debug("getByIdentifiers()", aPageRecord);
     if (!aPageRecord.scope || aPageRecord.originAttributes == undefined) {
@@ -314,9 +306,9 @@ PushDB.prototype = {
           aTxn.result = undefined;
 
           let index = aStore.index(aKeyName);
-          
-          
-          
+          // It seems ok to use getAll here, since unlike contacts or other
+          // high storage APIs, we don't expect more than a handful of
+          // registrations per domain, and usually only one.
           let getAllReq = index.mozGetAll(aKeyValue);
           getAllReq.onsuccess = aEvent => {
             aTxn.result = aEvent.target.result.map(record =>
@@ -330,7 +322,7 @@ PushDB.prototype = {
     );
   },
 
-  
+  // aOriginAttributes must be a string!
   getAllByOriginAttributes(aOriginAttributes) {
     if (typeof aOriginAttributes !== "string") {
       return Promise.reject("Expected string!");
@@ -394,16 +386,16 @@ PushDB.prototype = {
     return this._getAllByPushQuota(IDBKeyRange.only(0));
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates an existing push registration.
+   *
+   * @param {String} aKeyID The registration ID.
+   * @param {Function} aUpdateFunc A function that receives the existing
+   *  registration record as its argument, and returns a new record.
+   * @returns {Promise} A promise resolved with either the updated record.
+   *  Rejects if the record does not exist, or the function returns an invalid
+   *  record.
+   */
   update(aKeyID, aUpdateFunc) {
     return new Promise((resolve, reject) =>
       this.newTxn(
@@ -440,8 +432,8 @@ PushDB.prototype = {
             if (aKeyID === newRecord.keyID) {
               putRecord();
             } else {
-              
-              
+              // If we changed the primary key, delete the old record to avoid
+              // unique constraint errors.
               aStore.delete(aKeyID).onsuccess = putRecord;
             }
           };
