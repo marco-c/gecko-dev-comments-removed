@@ -98,6 +98,11 @@ function removeFirefoxViewButton() {
 
 const BOOKMARKS_COUNT = 100;
 
+const hasUnifiedExtensionsButton = Services.prefs.getBoolPref(
+  "extensions.unifiedExtensions.enabled",
+  false
+);
+
 add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -241,6 +246,9 @@ add_task(async function testArrowsToolbarbuttons() {
     await expectFocusAfterKey("ArrowRight", "fxa-toolbar-menu-button");
     
     
+    if (hasUnifiedExtensionsButton) {
+      await expectFocusAfterKey("ArrowRight", "unified-extensions-button");
+    }
     await expectFocusAfterKey("ArrowRight", "PanelUI-menu-button");
     EventUtils.synthesizeKey("KEY_ArrowRight");
     is(
@@ -248,6 +256,9 @@ add_task(async function testArrowsToolbarbuttons() {
       "PanelUI-menu-button",
       "ArrowRight at end of button group does nothing"
     );
+    if (hasUnifiedExtensionsButton) {
+      await expectFocusAfterKey("ArrowLeft", "unified-extensions-button");
+    }
     await expectFocusAfterKey("ArrowLeft", "fxa-toolbar-menu-button");
     await expectFocusAfterKey("ArrowLeft", "sidebar-button");
     await expectFocusAfterKey("ArrowLeft", "library-button");
@@ -315,9 +326,15 @@ add_task(async function testArrowsOverflowButton() {
     await expectFocusAfterKey("ArrowRight", "sidebar-button");
     await expectFocusAfterKey("ArrowRight", "fxa-toolbar-menu-button");
     await expectFocusAfterKey("ArrowRight", "nav-bar-overflow-button");
+    if (hasUnifiedExtensionsButton) {
+      await expectFocusAfterKey("ArrowRight", "unified-extensions-button");
+    }
     
     await expectFocusAfterKey("ArrowRight", "PanelUI-menu-button");
     resetToolbarWithoutDevEditionButtons();
+    if (hasUnifiedExtensionsButton) {
+      await expectFocusAfterKey("ArrowLeft", "unified-extensions-button");
+    }
     
     document.getElementById("nav-bar-overflow-button").clientWidth;
     await expectFocusAfterKey("ArrowLeft", "fxa-toolbar-menu-button");

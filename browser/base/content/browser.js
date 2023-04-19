@@ -1725,6 +1725,8 @@ var gBrowserInit = {
 
     updateFxaToolbarMenu(gFxaToolbarEnabled, true);
 
+    gUnifiedExtensions.init();
+
     
     
     this._setInitialFocus();
@@ -2343,11 +2345,6 @@ var gBrowserInit = {
     scheduleIdleTask(() => {
       
       gSync.init();
-    });
-
-    scheduleIdleTask(() => {
-      
-      gUnifiedExtensions.init();
     });
 
     scheduleIdleTask(() => {

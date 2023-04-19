@@ -7,6 +7,17 @@
 var initialLocation = gBrowser.currentURI.spec;
 
 add_task(async function() {
+  if (
+    Services.prefs.getBoolPref("extensions.unifiedExtensions.enabled", false)
+  ) {
+    
+    
+    
+    
+    ok(true, "Skip task because unifiedExtensions pref is enabled");
+    return;
+  }
+
   CustomizableUI.addWidgetToArea(
     "add-ons-button",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
@@ -38,6 +49,14 @@ add_task(async function() {
 });
 
 add_task(async function asyncCleanup() {
+  if (
+    Services.prefs.getBoolPref("extensions.unifiedExtensions.enabled", false)
+  ) {
+    
+    ok(true, "Skip task because unifiedExtensions pref is enabled");
+    return;
+  }
+
   CustomizableUI.reset();
   BrowserTestUtils.addTab(gBrowser, initialLocation);
   gBrowser.removeTab(gBrowser.selectedTab);

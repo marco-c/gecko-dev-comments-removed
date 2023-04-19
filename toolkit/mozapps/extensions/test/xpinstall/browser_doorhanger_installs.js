@@ -1533,6 +1533,10 @@ add_task(async function() {
       ["extensions.InstallTriggerImpl.enabled", true],
       
       ["xpinstall.userActivation.required", false],
+      
+      
+      
+      ["extensions.unifiedExtensions.enabled", false],
     ],
   });
 
