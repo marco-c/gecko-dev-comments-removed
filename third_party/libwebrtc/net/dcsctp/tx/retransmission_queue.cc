@@ -274,8 +274,10 @@ void RetransmissionQueue::HandleIncreasedCumulativeTsnAck(
       
       
       
-      cwnd_ += options_.mtu;
+
+      
       partial_bytes_acked_ -= cwnd_;
+      cwnd_ += options_.mtu;
       RTC_DLOG(LS_VERBOSE) << log_prefix_ << "CA increase cwnd=" << cwnd_
                            << " (" << old_cwnd << ") ssthresh=" << ssthresh_
                            << ", pba=" << partial_bytes_acked_ << " ("
@@ -488,6 +490,8 @@ void RetransmissionQueue::HandleT3RtxTimerExpiry() {
   
   ssthresh_ = std::max(cwnd_ / 2, 4 * options_.mtu);
   cwnd_ = 1 * options_.mtu;
+  
+  partial_bytes_acked_ = 0;
 
   
   
