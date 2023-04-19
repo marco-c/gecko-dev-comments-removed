@@ -55,5 +55,6 @@ interface nsITextToSubURI : nsISupports
 
 
 
+  [binaryname(UnEscapeNonAsciiURIJS)]
   AString unEscapeNonAsciiURI(in ACString aCharset, in AUTF8String aURIFragment);
 };

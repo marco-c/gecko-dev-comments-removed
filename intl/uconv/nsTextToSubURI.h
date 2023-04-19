@@ -15,12 +15,18 @@ class nsTextToSubURI : public nsITextToSubURI {
   NS_DECL_ISUPPORTS
   NS_DECL_NSITEXTTOSUBURI
 
+  
+  static nsresult UnEscapeNonAsciiURI(const nsACString& aCharset,
+                                      const nsACString& aURIFragment,
+                                      nsAString& _retval);
+
  private:
   virtual ~nsTextToSubURI();
 
   
-  nsresult convertURItoUnicode(const nsCString& aCharset, const nsCString& aURI,
-                               nsAString& _retval);
+  static nsresult convertURItoUnicode(const nsCString& aCharset,
+                                      const nsCString& aURI,
+                                      nsAString& _retval);
 
   
   
