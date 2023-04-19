@@ -62,14 +62,14 @@ metrics_yamls = (
 
 
 gecko_pings = [
-    "toolkit/components/telemetry/pings.yaml",
+    "toolkit/components/glean/pings.yaml",
 ]
 
 
 
 firefox_desktop_pings = [
     "browser/components/newtab/pings.yaml",
-    "toolkit/components/glean/pings.yaml",
+    "toolkit/components/telemetry/pings.yaml",
 ]
 
 
