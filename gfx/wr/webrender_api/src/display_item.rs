@@ -247,7 +247,7 @@ pub struct ImageMaskClipDisplayItem {
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RectClipDisplayItem {
     pub id: ClipId,
-    pub parent_space_and_clip: SpaceAndClipInfo,
+    pub spatial_id: SpatialId,
     pub clip_rect: LayoutRect,
 }
 
@@ -257,13 +257,6 @@ pub struct RoundedRectClipDisplayItem {
     pub spatial_id: SpatialId,
     pub clip: ComplexClipRegion,
 }
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct ClipDisplayItem {
-    pub id: ClipId,
-    pub parent_space_and_clip: SpaceAndClipInfo,
-    pub clip_rect: LayoutRect,
-} 
 
 
 #[repr(C)]
