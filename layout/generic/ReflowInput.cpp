@@ -113,7 +113,9 @@ SizeComputationInput::SizeComputationInput(nsIFrame* aFrame,
       mWritingMode(aFrame->GetWritingMode()),
       mComputedMargin(mWritingMode),
       mComputedBorderPadding(mWritingMode),
-      mComputedPadding(mWritingMode) {}
+      mComputedPadding(mWritingMode) {
+  MOZ_ASSERT(mFrame);
+}
 
 SizeComputationInput::SizeComputationInput(
     nsIFrame* aFrame, gfxContext* aRenderingContext,
@@ -270,7 +272,6 @@ bool ReflowInput::ShouldReflowAllKids() const {
 }
 
 void ReflowInput::SetComputedISize(nscoord aComputedISize) {
-  NS_ASSERTION(mFrame, "Must have a frame!");
   
   
   
@@ -295,7 +296,6 @@ void ReflowInput::SetComputedISize(nscoord aComputedISize) {
 }
 
 void ReflowInput::SetComputedBSize(nscoord aComputedBSize) {
-  NS_ASSERTION(mFrame, "Must have a frame!");
   
   
   

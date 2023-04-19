@@ -96,7 +96,7 @@ namespace mozilla {
 struct SizeComputationInput {
  public:
   
-  nsIFrame* mFrame;
+  nsIFrame* const mFrame;
 
   
   gfxContext* mRenderingContext;
