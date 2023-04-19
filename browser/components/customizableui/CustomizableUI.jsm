@@ -243,6 +243,16 @@ var CustomizableUIInternal = {
       true
     );
 
+    this.registerArea(
+      CustomizableUI.AREA_ADDONS,
+      {
+        type: CustomizableUI.TYPE_PANEL,
+        defaultPlacements: [],
+        anchor: "unified-extensions-button",
+      },
+      false
+    );
+
     let navbarPlacements = [
       "back-button",
       "forward-button",
@@ -321,6 +331,7 @@ var CustomizableUIInternal = {
     return new Set([
       ...this._builtinToolbars,
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
+      CustomizableUI.AREA_ADDONS,
     ]);
   },
 
@@ -3602,7 +3613,10 @@ var CustomizableUI = {
 
 
   AREA_FIXED_OVERFLOW_PANEL: "widget-overflow-fixed-list",
+  
 
+
+  AREA_ADDONS: "unified-extensions-area",
   
 
 
