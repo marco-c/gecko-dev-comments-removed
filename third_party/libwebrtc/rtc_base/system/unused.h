@@ -18,7 +18,11 @@
 
 
 #ifndef RTC_UNUSED
+#ifdef __cplusplus
 #define RTC_UNUSED(x) static_cast<void>(x)
+#else
+#define RTC_UNUSED(x) (void)(x)
+#endif
 #endif  
 
 #endif  
