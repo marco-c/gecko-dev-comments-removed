@@ -823,11 +823,16 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
   mSpecializeVideo = ShouldSpecializeVideo(lock);
   bool changedSpecializeVideo = (mSpecializeVideo != oldSpecializeVideo);
 
+  bool oldIsDRM = mIsDRM;
+  mIsDRM = aExternalImage->IsFromDRMSource();
+  bool changedIsDRM = (mIsDRM != oldIsDRM);
+
   ForAllRepresentations([&](Representation& r) {
     r.mMutatedFrontSurface = true;
     r.mMutatedDisplayRect |= changedSizeAndDisplayRect;
     r.mMutatedSize |= changedSizeAndDisplayRect;
     r.mMutatedSpecializeVideo |= changedSpecializeVideo;
+    r.mMutatedIsDRM |= changedIsDRM;
   });
 }
 
@@ -852,12 +857,14 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
     return false;
   }
 
-  
-
   MOZ_ASSERT(mTextureHost);
-  if (!mTextureHost) {
-    return false;
+
+  
+  if (mTextureHost->IsFromDRMSource()) {
+    return true;
   }
+
+  
   MacIOSurface* macIOSurface = mTextureHost->GetSurface();
   if (macIOSurface->GetYUVColorSpace() == gfx::YUVColorSpace::BT2020) {
     
@@ -1120,7 +1127,8 @@ NativeLayerCA::Representation::Representation()
       mMutatedSurfaceIsFlipped(true),
       mMutatedFrontSurface(true),
       mMutatedSamplingFilter(true),
-      mMutatedSpecializeVideo(true) {}
+      mMutatedSpecializeVideo(true),
+      mMutatedIsDRM(true) {}
 
 NativeLayerCA::Representation::~Representation() {
   [mContentCALayer release];
@@ -1334,7 +1342,7 @@ bool NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
   return GetRepresentation(aRepresentation)
       .ApplyChanges(aUpdate, mSize, mIsOpaque, mPosition, mTransform, mDisplayRect, mClipRect,
                     mBackingScale, mSurfaceIsFlipped, mSamplingFilter, mSpecializeVideo, surface,
-                    mColor);
+                    mColor, mIsDRM);
 }
 
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
@@ -1512,7 +1520,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
     const IntPoint& aPosition, const Matrix4x4& aTransform, const IntRect& aDisplayRect,
     const Maybe<IntRect>& aClipRect, float aBackingScale, bool aSurfaceIsFlipped,
     gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
-    CFTypeRefPtr<IOSurfaceRef> aFrontSurface, CFTypeRefPtr<CGColorRef> aColor) {
+    CFTypeRefPtr<IOSurfaceRef> aFrontSurface, CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM) {
   
   if (aUpdate == UpdateType::OnlyVideo) {
     
@@ -1599,6 +1607,12 @@ bool NativeLayerCA::Representation::ApplyChanges(
       }
 
       [mWrappingCALayer addSublayer:mContentCALayer];
+    }
+  }
+
+  if (@available(macOS 10.15, iOS 13.0, *)) {
+    if (aSpecializeVideo && mMutatedIsDRM) {
+      ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
     }
   }
 
@@ -1748,6 +1762,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
   mMutatedFrontSurface = false;
   mMutatedSamplingFilter = false;
   mMutatedSpecializeVideo = false;
+  mMutatedIsDRM = false;
 
   return true;
 }
@@ -1761,7 +1776,7 @@ NativeLayerCA::UpdateType NativeLayerCA::Representation::HasUpdate(bool aIsVideo
   
   if (mMutatedPosition || mMutatedTransform || mMutatedDisplayRect || mMutatedClipRect ||
       mMutatedBackingScale || mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedSamplingFilter ||
-      mMutatedSpecializeVideo) {
+      mMutatedSpecializeVideo || mMutatedIsDRM) {
     return UpdateType::All;
   }
 
