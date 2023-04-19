@@ -7626,6 +7626,10 @@ StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
   if (v.isString()) {
     return writer.guardToString(id);
   }
+  if (v.isBoolean()) {
+    BooleanOperandId boolId = writer.guardToBoolean(id);
+    return writer.booleanToString(boolId);
+  }
   if (v.isInt32()) {
     Int32OperandId intId = writer.guardToInt32(id);
     return writer.callInt32ToString(intId);
@@ -11653,11 +11657,6 @@ AttachDecision BinaryArithIRGenerator::tryAttachStub() {
   
   TRY_ATTACH(tryAttachStringObjectConcat());
 
-  TRY_ATTACH(tryAttachStringNumberConcat());
-
-  
-  TRY_ATTACH(tryAttachStringBooleanConcat());
-
   
   TRY_ATTACH(tryAttachBigInt());
 
@@ -11834,14 +11833,19 @@ AttachDecision BinaryArithIRGenerator::tryAttachInt32() {
   return AttachDecision::Attach;
 }
 
-AttachDecision BinaryArithIRGenerator::tryAttachStringNumberConcat() {
+AttachDecision BinaryArithIRGenerator::tryAttachStringConcat() {
   
   if (op_ != JSOp::Add) {
     return AttachDecision::NoAction;
   }
 
-  if (!(lhs_.isString() && rhs_.isNumber()) &&
-      !(lhs_.isNumber() && rhs_.isString())) {
+  
+  
+  auto canConvertToString = [](const Value& v) {
+    return v.isString() || v.isNumber() || v.isBoolean();
+  };
+  if (!(lhs_.isString() && canConvertToString(rhs_)) &&
+      !(canConvertToString(lhs_) && rhs_.isString())) {
     return AttachDecision::NoAction;
   }
 
@@ -11850,63 +11854,6 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringNumberConcat() {
 
   StringOperandId lhsStrId = emitToStringGuard(lhsId, lhs_);
   StringOperandId rhsStrId = emitToStringGuard(rhsId, rhs_);
-
-  writer.callStringConcatResult(lhsStrId, rhsStrId);
-
-  writer.returnFromIC();
-  trackAttached("BinaryArith.StringNumberConcat");
-  return AttachDecision::Attach;
-}
-
-AttachDecision BinaryArithIRGenerator::tryAttachStringBooleanConcat() {
-  
-  if (op_ != JSOp::Add) {
-    return AttachDecision::NoAction;
-  }
-
-  if ((!lhs_.isString() || !rhs_.isBoolean()) &&
-      (!lhs_.isBoolean() || !rhs_.isString())) {
-    return AttachDecision::NoAction;
-  }
-
-  ValOperandId lhsId(writer.setInputOperandId(0));
-  ValOperandId rhsId(writer.setInputOperandId(1));
-
-  auto guardToString = [&](ValOperandId id, const Value& v) {
-    if (v.isString()) {
-      return writer.guardToString(id);
-    }
-    MOZ_ASSERT(v.isBoolean());
-    BooleanOperandId boolId = writer.guardToBoolean(id);
-    return writer.booleanToString(boolId);
-  };
-
-  StringOperandId lhsStrId = guardToString(lhsId, lhs_);
-  StringOperandId rhsStrId = guardToString(rhsId, rhs_);
-
-  writer.callStringConcatResult(lhsStrId, rhsStrId);
-
-  writer.returnFromIC();
-  trackAttached("BinaryArith.StringBooleanConcat");
-  return AttachDecision::Attach;
-}
-
-AttachDecision BinaryArithIRGenerator::tryAttachStringConcat() {
-  
-  if (op_ != JSOp::Add) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (!lhs_.isString() || !rhs_.isString()) {
-    return AttachDecision::NoAction;
-  }
-
-  ValOperandId lhsId(writer.setInputOperandId(0));
-  ValOperandId rhsId(writer.setInputOperandId(1));
-
-  StringOperandId lhsStrId = writer.guardToString(lhsId);
-  StringOperandId rhsStrId = writer.guardToString(rhsId);
 
   writer.callStringConcatResult(lhsStrId, rhsStrId);
 
