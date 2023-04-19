@@ -327,6 +327,12 @@ struct ReflowInput : public SizeComputationInput {
     return mComputedMaxSize.BSize(mWritingMode);
   }
 
+  
+  
+  
+  
+  
+  
   void SetAvailableISize(nscoord aAvailableISize) {
     mAvailableSize.ISize(mWritingMode) = aAvailableISize;
   }

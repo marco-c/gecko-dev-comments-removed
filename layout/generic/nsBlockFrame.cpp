@@ -6617,11 +6617,9 @@ const nsStyleText* nsBlockFrame::StyleTextForLineLayout() {
   return StyleText();
 }
 
-void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
+void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
                                const LogicalSize& aAvailableSize,
-                               nsIFrame* aFloat, LogicalMargin& aFloatMargin,
-                               LogicalMargin& aFloatOffsets,
-                               bool aFloatPushedDown,
+                               nsIFrame* aFloat, bool aFloatPushedDown,
                                nsReflowStatus& aReflowStatus) {
   MOZ_ASSERT(aReflowStatus.IsEmpty(),
              "Caller should pass a fresh reflow status!");
@@ -6630,16 +6628,13 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
 
   WritingMode wm = aState.mReflowInput.GetWritingMode();
 
-  ReflowInput floatRS(aState.mPresContext, aState.mReflowInput, aFloat,
-                      aAvailableSize.ConvertTo(aFloat->GetWritingMode(), wm));
-
   
   
   
   
-  if (floatRS.mFlags.mIsTopOfPage &&
+  if (aFloatRI.mFlags.mIsTopOfPage &&
       (aFloatPushedDown || aAvailableSize.ISize(wm) != aState.ContentISize())) {
-    floatRS.mFlags.mIsTopOfPage = false;
+    aFloatRI.mFlags.mIsTopOfPage = false;
   }
 
   
@@ -6649,14 +6644,14 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
   do {
     nsCollapsingMargin margin;
     bool mayNeedRetry = false;
-    floatRS.mDiscoveredClearance = nullptr;
+    aFloatRI.mDiscoveredClearance = nullptr;
     
     if (!aFloat->GetPrevInFlow()) {
-      brc.ComputeCollapsedBStartMargin(floatRS, &margin, clearanceFrame,
+      brc.ComputeCollapsedBStartMargin(aFloatRI, &margin, clearanceFrame,
                                        &mayNeedRetry);
 
       if (mayNeedRetry && !clearanceFrame) {
-        floatRS.mDiscoveredClearance = &clearanceFrame;
+        aFloatRI.mDiscoveredClearance = &clearanceFrame;
         
         
       }
@@ -6665,7 +6660,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
     
     
     
-    brc.ReflowBlock(LogicalRect(wm), true, margin, 0, nullptr, floatRS,
+    brc.ReflowBlock(LogicalRect(wm), true, margin, 0, nullptr, aFloatRI,
                     aReflowStatus, aState);
   } while (clearanceFrame);
 
@@ -6678,7 +6673,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
     }
   }
 
-  if (!aReflowStatus.IsFullyComplete() && ShouldAvoidBreakInside(floatRS)) {
+  if (!aReflowStatus.IsFullyComplete() && ShouldAvoidBreakInside(aFloatRI)) {
     aReflowStatus.SetInlineLineBreakBeforeAndReset();
   } else if (aReflowStatus.IsIncomplete() &&
              aAvailableSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
@@ -6690,12 +6685,6 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
   if (aReflowStatus.NextInFlowNeedsReflow()) {
     aState.mReflowStatus.SetNextInFlowNeedsReflow();
   }
-
-  
-  aFloatMargin =
-      
-      floatRS.ComputedLogicalMargin(wm);
-  aFloatOffsets = floatRS.ComputedLogicalOffsets(wm);
 
   const ReflowOutput& metrics = brc.GetMetrics();
 
@@ -6712,9 +6701,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
         aState.mPresContext, aFloat, aFloat->GetView(), metrics.InkOverflow(),
         ReflowChildFlags::NoMoveView);
   }
-  
-  
-  aFloat->DidReflow(aState.mPresContext, &floatRS);
+  aFloat->DidReflow(aState.mPresContext, &aFloatRI);
 }
 
 StyleClear nsBlockFrame::FindTrailingClear() {
