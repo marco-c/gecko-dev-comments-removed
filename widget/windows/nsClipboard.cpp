@@ -62,7 +62,6 @@ UINT nsClipboard::GetCustomClipboardFormat() {
 
 
 nsClipboard::nsClipboard() : nsBaseClipboard() {
-  mIgnoreEmptyNotification = false;
   mWindow = nullptr;
 
   
@@ -458,8 +457,6 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
     return NS_ERROR_FAILURE;
   }
 
-  mIgnoreEmptyNotification = true;
-
   
   if (nullptr == mTransferable) {
     return NS_ERROR_FAILURE;
@@ -474,8 +471,6 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
     
     RepeatedlyTryOleSetClipboard(nullptr);
   }
-
-  mIgnoreEmptyNotification = false;
 
   return NS_OK;
 }
