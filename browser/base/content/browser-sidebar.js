@@ -664,20 +664,10 @@ var SidebarUI = {
 
 
 
-var docWeak = Cu.getWeakReference(document);
-
-
-
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarUI,
   "_positionStart",
   SidebarUI.POSITION_START_PREF,
   true,
-  () => {
-    let doc = docWeak.get();
-    if (!doc) {
-      return;
-    }
-    SidebarUI.setPosition();
-  }
+  SidebarUI.setPosition.bind(SidebarUI)
 );
