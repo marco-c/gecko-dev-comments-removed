@@ -589,6 +589,17 @@ static bool EnsureScriptOffsetIsValid(JSContext* cx, JSScript* script,
   return false;
 }
 
+static bool IsGeneratorSlotInitialization(JSScript* script, size_t offset,
+                                          JSContext* cx) {
+  jsbytecode* pc = script->offsetToPC(offset);
+  if (JSOp(*pc) != JSOp::SetAliasedVar) {
+    return false;
+  }
+
+  PropertyName* name = EnvironmentCoordinateNameSlow(script, pc);
+  return name == cx->names().dotGenerator;
+}
+
 static bool EnsureBreakpointIsAllowed(JSContext* cx, JSScript* script,
                                       size_t offset) {
   
@@ -598,14 +609,10 @@ static bool EnsureBreakpointIsAllowed(JSContext* cx, JSScript* script,
   
   
   
-  jsbytecode* pc = script->offsetToPC(offset);
-  if (JSOp(*pc) == JSOp::SetAliasedVar) {
-    PropertyName* name = EnvironmentCoordinateNameSlow(script, pc);
-    if (name == cx->names().dotGenerator) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEBUG_BREAKPOINT_NOT_ALLOWED);
-      return false;
-    }
+  if (IsGeneratorSlotInitialization(script, offset, cx)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_DEBUG_BREAKPOINT_NOT_ALLOWED);
+    return false;
   }
 
   return true;
@@ -1637,10 +1644,21 @@ bool DebuggerScript::CallData::getEffectfulOffsets() {
     return false;
   }
   for (BytecodeRange r(cx, script); !r.empty(); r.popFront()) {
-    if (BytecodeIsEffectful(r.frontOpcode())) {
-      if (!NewbornArrayPush(cx, result, NumberValue(r.frontOffset()))) {
-        return false;
-      }
+    if (!BytecodeIsEffectful(r.frontOpcode())) {
+      continue;
+    }
+
+    size_t offset = r.frontOffset();
+    if (IsGeneratorSlotInitialization(script, offset, cx)) {
+      
+      
+      
+      
+      continue;
+    }
+
+    if (!NewbornArrayPush(cx, result, NumberValue(offset))) {
+      return false;
     }
   }
 
