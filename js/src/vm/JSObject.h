@@ -808,10 +808,6 @@ MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
 }
 
 
-extern JSObject* CreateThis(JSContext* cx, const JSClass* clasp,
-                            js::HandleObject callee);
-
-
 bool ToPropertyDescriptor(JSContext* cx, HandleValue descval,
                           bool checkAccessors,
                           MutableHandle<JS::PropertyDescriptor> desc);
