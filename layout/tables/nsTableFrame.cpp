@@ -2156,7 +2156,7 @@ void nsTableFrame::AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) {
 
 void nsTableFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                                 const nsLineList::iterator* aPrevFrameLine,
-                                nsFrameList& aFrameList) {
+                                nsFrameList&& aFrameList) {
   
   
   

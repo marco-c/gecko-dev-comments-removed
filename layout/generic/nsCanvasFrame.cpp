@@ -290,7 +290,7 @@ void nsCanvasFrame::AppendFrames(ChildListID aListID,
 
 void nsCanvasFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                                  const nsLineList::iterator* aPrevFrameLine,
-                                 nsFrameList& aFrameList) {
+                                 nsFrameList&& aFrameList) {
   
   
   MOZ_ASSERT(!aPrevFrame, "unexpected previous sibling frame");

@@ -314,8 +314,8 @@ void nsFirstLetterFrame::CreateContinuationForFloatingParent(
   
   
   
-  nsFrameList temp(continuation, continuation);
-  parent->InsertFrames(kNoReflowPrincipalList, placeholderFrame, nullptr, temp);
+  parent->InsertFrames(kNoReflowPrincipalList, placeholderFrame, nullptr,
+                       nsFrameList(continuation, continuation));
 
   *aContinuation = continuation;
 }

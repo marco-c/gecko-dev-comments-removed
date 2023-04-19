@@ -650,7 +650,7 @@ static void SplitInlineAncestors(nsContainerFrame* aParent,
       MOZ_ASSERT(!newParent->IsBlockFrameOrSubclass(),
                  "blocks should not be IsBidiSplittable");
       newParent->InsertFrames(nsIFrame::kNoReflowPrincipalList, nullptr,
-                              nullptr, tail);
+                              nullptr, std::move(tail));
 
       
       
@@ -666,9 +666,8 @@ static void SplitInlineAncestors(nsContainerFrame* aParent,
 
       
       
-      nsFrameList temp(newParent, newParent);
       grandparent->InsertFrames(nsIFrame::kNoReflowPrincipalList, parent,
-                                parentLine, temp);
+                                parentLine, nsFrameList(newParent, newParent));
     }
 
     frame = parent;
@@ -762,9 +761,8 @@ static void CreateContinuation(nsIFrame* aFrame,
 
   
   
-  nsFrameList temp(*aNewFrame, *aNewFrame);
   parent->InsertFrames(nsIFrame::kNoReflowPrincipalList, aFrame, parentLine,
-                       temp);
+                       nsFrameList(*aNewFrame, *aNewFrame));
 
   if (!aIsFluid) {
     
