@@ -1321,6 +1321,10 @@ var gUnifiedExtensions = {
       this._button = document.getElementById("unified-extensions-button");
       
       this._button.hidden = false;
+
+      document
+        .getElementById("nav-bar")
+        .setAttribute("unifiedextensionsbuttonshown", true);
     }
 
     this._initialized = true;
