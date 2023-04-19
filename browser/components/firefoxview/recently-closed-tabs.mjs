@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -16,7 +16,7 @@ import {
   formatURIForDisplay,
   convertTimestamp,
   createFaviconElement,
-} from "./helpers.js";
+} from "./helpers.mjs";
 
 const SS_NOTIFY_CLOSED_OBJECTS_CHANGED = "sessionstore-closed-objects-changed";
 
@@ -94,7 +94,7 @@ class RecentlyClosedTabsList extends HTMLElement {
     newClosedTabs = newClosedTabs.slice(0, this.maxTabsLength);
 
     if (this.closedTabsData.length && !newClosedTabs.length) {
-      
+      // if a user purges history, clear the list
       [...this.tabsList.children].forEach(node =>
         this.tabsList.removeChild(node)
       );
@@ -130,9 +130,9 @@ class RecentlyClosedTabsList extends HTMLElement {
 
     this.closedTabsData = newClosedTabs;
 
-    
-    
-    
+    // for situations where the tab list will initially be empty (such as
+    // with new profiles or automatic session restore is disabled) and
+    // this.initiateTabsList won't be called
     if (this.tabsList.hidden) {
       this.tabsList.hidden = false;
       document
@@ -210,9 +210,9 @@ class RecentlyClosedTabsContainer extends HTMLElement {
     }
   }
 
-  
-  
-  
+  // we observe when a tab closes but since this notification fires more frequently and on
+  // all windows, we remove the observer when another tab is selected; we check for changes
+  // to the session store once the user return to this tab.
   handleObservers(contentDocument) {
     if (
       !this.observerAdded &&

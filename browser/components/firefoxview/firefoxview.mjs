@@ -1,11 +1,10 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-import { tabsSetupFlowManager } from "./tabs-pickup.js";
-import "./recently-closed-tabs.js";
+import { tabsSetupFlowManager } from "./tabs-pickup.mjs";
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -14,7 +13,8 @@ const { BuiltInThemes } = ChromeUtils.import(
   "resource:///modules/BuiltInThemes.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(globalThis, {
+let lazy = {};
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   ColorwayClosetOpener: "resource:///modules/ColorwayClosetOpener.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
 });
@@ -33,19 +33,17 @@ async function getColorway() {
   }
   BuiltInThemes.ensureBuiltInThemes();
   let colorwayProperties = {};
-  const colorway = (
-    await globalThis.AddonManager.getAddonsByTypes(["theme"])
-  ).find(
+  const colorway = (await lazy.AddonManager.getAddonsByTypes(["theme"])).find(
     theme => theme.isActive && BuiltInThemes.isMonochromaticTheme(theme.id)
   );
   if (colorway) {
-    
-    
-    
-    
+    // The colorway.id has the format
+    // `{colorName}-{intensitytName}-colorway@mozilla.org`
+    // or `{colorName}-colorway@mozilla.org` where intensitytName is optional
+    // Bug 1776682 will localize these strings
     const re = /^([a-z\.]+)(-(soft|balanced|bold))?-colorway@mozilla.org$/;
     let [, colorwayName, , intensity] = re.exec(colorway.id);
-    
+    // Apply title casing until Bug 1770030 is completed
     colorwayProperties = {
       colorwayName: titleCase(colorwayName),
       intensity: titleCase(intensity),
@@ -76,7 +74,7 @@ function showColorway({
     expiry: document.querySelector("#colorways-collection-expiry-date > span"),
   };
   el.button.addEventListener("click", () => {
-    globalThis.ColorwayClosetOpener.openModal();
+    lazy.ColorwayClosetOpener.openModal();
   });
   document.l10n.setAttributes(
     el.expiry,

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -11,7 +11,7 @@ XPCOMUtils.defineLazyModuleGetters(globalThis, {
 });
 
 export function formatURIForDisplay(uriString) {
-  
+  // TODO: Bug 1764816: Make sure we handle file:///, jar:, blob, IP4/IP6 etc. addresses
   let uri;
   try {
     uri = Services.io.newURI(uriString);
@@ -23,7 +23,7 @@ export function formatURIForDisplay(uriString) {
   }
   let displayHost;
   try {
-    
+    // This might fail if it's an IP address or doesn't have more than 1 part
     displayHost = Services.eTLD.getBaseDomain(uri);
   } catch (ex) {
     return uri.displayHostPort;
@@ -37,11 +37,11 @@ export function convertTimestamp(timestamp, fluentStrings) {
     {}
   );
   const elapsed = Date.now() - timestamp;
-  
+  // Cutoff of 1.5 minutes + 1 second to determine what text string to display
   const nowThresholdMs = 91000;
   let formattedTime;
   if (elapsed <= nowThresholdMs) {
-    
+    // Use a different string for very recent timestamps
     formattedTime = fluentStrings.formatValueSync(
       "firefoxview-just-now-timestamp"
     );

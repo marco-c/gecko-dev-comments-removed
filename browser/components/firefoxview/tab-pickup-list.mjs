@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -16,7 +16,7 @@ import {
   formatURIForDisplay,
   convertTimestamp,
   createFaviconElement,
-} from "./helpers.js";
+} from "./helpers.mjs";
 
 const SYNCED_TABS_CHANGED = "services.sync.tabs.changed";
 
@@ -88,7 +88,7 @@ class TabPickupList extends HTMLElement {
     }
 
     if (!syncedTabs.length) {
-      
+      // TODO show empty state placeholder, see bug 1774168
       this.tabsList.hidden = true;
       return;
     }
@@ -166,7 +166,7 @@ class TabPickupList extends HTMLElement {
     url.classList.add("synced-tab-li-url");
     device.classList.add("synced-tab-li-device");
 
-    
+    // the first list item is diffent from second and third
     if (index == 0) {
       const badge = this.createBadge();
       li.append(favicon, badge, title, url, device, time);

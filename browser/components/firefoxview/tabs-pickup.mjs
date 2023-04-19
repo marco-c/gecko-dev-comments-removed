@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint-env mozilla/frame-script */
 
 const { switchToTabHavingURI } = window.docShell.chromeEventHandler.ownerGlobal;
 
@@ -35,7 +35,7 @@ const tabsSetupFlowManager = new (class {
       "resource://services-sync/UIState.jsm"
     );
 
-    
+    // this.syncTabsPrefEnabled will track the value of the tabs pref
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "syncTabsPrefEnabled",
@@ -62,7 +62,7 @@ const tabsSetupFlowManager = new (class {
         return this.fxaSignedIn;
       },
     });
-    
+    // TODO: handle offline, sync service not ready or available
     this.registerSetupState({
       uiStateIndex: 1,
       name: "connect-mobile-device",
@@ -93,7 +93,7 @@ const tabsSetupFlowManager = new (class {
       uiStateIndex: 4,
       name: "synced-tabs-loaded",
       exitConditions: () => {
-        
+        // This is the end state
         return false;
       },
     });
@@ -168,7 +168,7 @@ const tabsSetupFlowManager = new (class {
   maybeUpdateUI() {
     let nextSetupStateName = this._currentSetupStateName;
 
-    
+    // state transition conditions
     for (let state of this.setupState.values()) {
       nextSetupStateName = state.name;
       if (!state.exitConditions()) {
@@ -197,8 +197,8 @@ const tabsSetupFlowManager = new (class {
     switchToTabHavingURI(url, true);
   }
   syncOpenTabs(containerElem) {
-    
-    
+    // Flip the pref on.
+    // The observer should trigger re-evaluating state and advance to next step
     this.Services.prefs.setBoolPref(SYNC_TABS_PREF, true);
   }
 })();
@@ -223,7 +223,7 @@ class TabsPickupContainer extends HTMLElement {
     const templateContent = template.content;
     const cloned = templateContent.cloneNode(true);
     if (elementId) {
-      
+      // populate id-prefixed attributes on elements that need them
       for (let elem of cloned.querySelectorAll("[data-prefix]")) {
         let [name, value] = elem.dataset.prefix
           .split(":")
@@ -258,7 +258,7 @@ class TabsPickupContainer extends HTMLElement {
     let tabsElem = this.tabsContainerElem;
     const stateIndex = this._currentSetupStateIndex;
 
-    
+    // show/hide either the setup or tab list containers, creating each as necessary
     if (stateIndex < 3) {
       if (!setupElem) {
         this.appendTemplatedElement("sync-setup-template", "tabpickup-steps");
