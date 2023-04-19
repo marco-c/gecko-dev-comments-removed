@@ -3511,7 +3511,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 129;
+    const UI_VERSION = 130;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4293,6 +4293,7 @@ BrowserGlue.prototype = {
         if (value) {
           Services.xulStore.setValue(
             BROWSER_DOCURL,
+            id,
             "style",
             `width: ${value}px;`
           );
@@ -4303,7 +4304,11 @@ BrowserGlue.prototype = {
     }
 
     
-    if (currentUIVersion < 129) {
+    
+    
+
+    
+    if (currentUIVersion < 130) {
       migrateXULAttributeToStyle("sidebar-box", "width");
     }
 
