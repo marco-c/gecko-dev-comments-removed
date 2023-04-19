@@ -28,6 +28,7 @@
 #include "modules/pacing/pacing_controller.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -129,14 +130,22 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   Stats GetStats() const;
 
   Clock* const clock_;
-  
-  
-  
-  
-  
-  
-  
-  const bool allow_low_precision_;
+  struct SlackedPacerFlags {
+    
+    
+    explicit SlackedPacerFlags(const FieldTrialsView& field_trials);
+    
+    
+    
+    
+    
+    FieldTrialFlag allow_low_precision;
+    
+    
+    
+    FieldTrialOptional<TimeDelta> max_low_precision_expected_queue_time;
+  };
+  const SlackedPacerFlags slacked_pacer_flags_;
   
   
   const TimeDelta max_hold_back_window_;
