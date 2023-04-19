@@ -5463,9 +5463,14 @@ void nsWindow::ConfigureCompositor() {
       LOG("  quit, mIsDestroyed = %d mIsMapped = %d", mIsDestroyed, mIsMapped);
       return;
     }
-
     
     if (mCompositorState == COMPOSITOR_PAUSED_FLICKERING) {
+      LOG("  quit, will be resumed by ResumeCompositorFlickering.");
+      return;
+    }
+    
+    if (!mCompositorWidgetDelegate) {
+      LOG("  quit, missing mCompositorWidgetDelegate");
       return;
     }
 
