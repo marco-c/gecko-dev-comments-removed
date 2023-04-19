@@ -1,0 +1,13 @@
+
+
+
+
+
+exports.J = true;
+exports.foo = "foo";
+
+
+if ("loadedJ" in self) {
+  throw new Error("J has been evaluted twice");
+}
+self.loadedJ = true;
