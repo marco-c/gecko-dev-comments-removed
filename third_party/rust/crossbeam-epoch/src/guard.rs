@@ -67,6 +67,7 @@ use crate::internal::Local;
 
 
 
+
 pub struct Guard {
     pub(crate) local: *const Local,
 }
@@ -97,6 +98,7 @@ impl Guard {
         }
     }
 
+    
     
     
     
@@ -264,6 +266,7 @@ impl Guard {
     
     
     
+    
     pub unsafe fn defer_destroy<T>(&self, ptr: Shared<'_, T>) {
         self.defer_unchecked(move || ptr.into_owned());
     }
@@ -321,12 +324,14 @@ impl Guard {
     
     
     
+    
     pub fn repin(&mut self) {
         if let Some(local) = unsafe { self.local.as_ref() } {
             local.repin();
         }
     }
 
+    
     
     
     
@@ -414,6 +419,7 @@ impl fmt::Debug for Guard {
         f.pad("Guard { .. }")
     }
 }
+
 
 
 

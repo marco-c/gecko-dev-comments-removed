@@ -44,14 +44,12 @@ fn main() {
     
     
     
-    
     if NO_ATOMIC_CAS.contains(&&*target) {
         println!("cargo:rustc-cfg=crossbeam_no_atomic_cas");
     }
 
-    if cfg.probe_rustc_version(1, 61) {
-        
-        println!("cargo:rustc-cfg=crossbeam_const_fn_trait_bound");
+    if !cfg.probe_rustc_version(1, 61) {
+        println!("cargo:rustc-cfg=crossbeam_no_const_fn_trait_bound");
     }
 
     println!("cargo:rerun-if-changed=no_atomic.rs");

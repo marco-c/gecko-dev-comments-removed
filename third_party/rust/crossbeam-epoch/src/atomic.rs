@@ -252,7 +252,7 @@ impl<T> Pointable for [MaybeUninit<T>] {
         let size = mem::size_of::<Array<T>>() + mem::size_of::<MaybeUninit<T>>() * len;
         let align = mem::align_of::<Array<T>>();
         let layout = alloc::Layout::from_size_align(size, align).unwrap();
-        let ptr = alloc::alloc(layout) as *mut Array<T>;
+        let ptr = alloc::alloc(layout).cast::<Array<T>>();
         if ptr.is_null() {
             alloc::handle_alloc_error(layout);
         }
@@ -306,12 +306,14 @@ impl<T> Atomic<T> {
     
     
     
+    
     pub fn new(init: T) -> Atomic<T> {
         Self::init(init)
     }
 }
 
 impl<T: ?Sized + Pointable> Atomic<T> {
+    
     
     
     
@@ -342,7 +344,7 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
-    #[cfg(all(crossbeam_const_fn_trait_bound, not(crossbeam_loom)))]
+    #[cfg(all(not(crossbeam_no_const_fn_trait_bound), not(crossbeam_loom)))]
     pub const fn null() -> Atomic<T> {
         Self {
             data: AtomicUsize::new(0),
@@ -351,7 +353,7 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     }
 
     
-    #[cfg(not(all(crossbeam_const_fn_trait_bound, not(crossbeam_loom))))]
+    #[cfg(not(all(not(crossbeam_no_const_fn_trait_bound), not(crossbeam_loom))))]
     pub fn null() -> Atomic<T> {
         Self {
             data: AtomicUsize::new(0),
@@ -359,6 +361,7 @@ impl<T: ?Sized + Pointable> Atomic<T> {
         }
     }
 
+    
     
     
     
@@ -399,10 +402,13 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
     pub fn load_consume<'g>(&self, _: &'g Guard) -> Shared<'g, T> {
         unsafe { Shared::from_usize(self.data.load_consume()) }
     }
 
+    
+    
     
     
     
@@ -438,10 +444,12 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
     pub fn swap<'g, P: Pointer<T>>(&self, new: P, ord: Ordering, _: &'g Guard) -> Shared<'g, T> {
         unsafe { Shared::from_usize(self.data.swap(new.into_usize(), ord)) }
     }
 
+    
     
     
     
@@ -495,6 +503,8 @@ impl<T: ?Sized + Pointable> Atomic<T> {
             })
     }
 
+    
+    
     
     
     
@@ -609,6 +619,7 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
     pub fn fetch_update<'g, F>(
         &self,
         set_order: Ordering,
@@ -668,6 +679,7 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
     #[allow(deprecated)]
     #[deprecated(note = "Use `compare_exchange` instead")]
     pub fn compare_and_set<'g, O, P>(
@@ -684,6 +696,8 @@ impl<T: ?Sized + Pointable> Atomic<T> {
         self.compare_exchange(current, new, ord.success(), ord.failure(), guard)
     }
 
+    
+    
     
     
     
@@ -877,6 +891,52 @@ impl<T: ?Sized + Pointable> Atomic<T> {
             Owned::from_usize(self.data.into_inner())
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn try_into_owned(self) -> Option<Owned<T>> {
+        
+        #[cfg(crossbeam_loom)]
+        let data = self.data.unsync_load();
+        #[cfg(not(crossbeam_loom))]
+        let data = self.data.into_inner();
+        if decompose_tag::<T>(data).0 == 0 {
+            None
+        } else {
+            Some(Owned::from_usize(data))
+        }
+    }
 }
 
 impl<T: ?Sized + Pointable> fmt::Debug for Atomic<T> {
@@ -917,6 +977,7 @@ impl<T: ?Sized + Pointable> Default for Atomic<T> {
 }
 
 impl<T: ?Sized + Pointable> From<Owned<T>> for Atomic<T> {
+    
     
     
     
@@ -1098,6 +1159,7 @@ impl<T: ?Sized + Pointable> Owned<T> {
         unsafe { Self::from_usize(T::init(init)) }
     }
 
+    
     
     
     
@@ -1292,6 +1354,7 @@ impl<'g, T> Shared<'g, T> {
     
     
     
+    
     pub fn as_raw(&self) -> *const T {
         let (raw, _) = decompose_tag::<T>(self.data);
         raw as *const _
@@ -1330,11 +1393,13 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
+    
     pub fn is_null(&self) -> bool {
         let (raw, _) = decompose_tag::<T>(self.data);
         raw == 0
     }
 
+    
     
     
     
@@ -1407,11 +1472,13 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
+    
     pub unsafe fn deref_mut(&mut self) -> &'g mut T {
         let (raw, _) = decompose_tag::<T>(self.data);
         T::deref_mut(raw)
     }
 
+    
     
     
     
@@ -1494,11 +1561,43 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn try_into_owned(self) -> Option<Owned<T>> {
+        if self.is_null() {
+            None
+        } else {
+            Some(Owned::from_usize(self.data))
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn tag(&self) -> usize {
         let (_, tag) = decompose_tag::<T>(self.data);
         tag
     }
 
+    
     
     
     
@@ -1523,6 +1622,7 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
 }
 
 impl<T> From<*const T> for Shared<'_, T> {
+    
     
     
     
@@ -1612,7 +1712,7 @@ mod tests {
     #[test]
     fn array_init() {
         let owned = Owned::<[MaybeUninit<usize>]>::init(10);
-        let arr: &[MaybeUninit<usize>] = &*owned;
+        let arr: &[MaybeUninit<usize>] = &owned;
         assert_eq!(arr.len(), 10);
     }
 }

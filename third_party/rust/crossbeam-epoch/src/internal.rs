@@ -55,9 +55,10 @@ use crate::sync::list::{Entry, IsElement, IterError, List};
 use crate::sync::queue::Queue;
 
 
-#[cfg(not(crossbeam_sanitize))]
-const MAX_OBJECTS: usize = 62;
-#[cfg(crossbeam_sanitize)]
+#[cfg(not(any(crossbeam_sanitize, miri)))]
+const MAX_OBJECTS: usize = 64;
+
+#[cfg(any(crossbeam_sanitize, miri))]
 const MAX_OBJECTS: usize = 4;
 
 
@@ -106,87 +107,11 @@ impl Bag {
 }
 
 impl Default for Bag {
-    #[rustfmt::skip]
     fn default() -> Self {
-        
-        #[cfg(not(crossbeam_sanitize))]
-        return Bag {
+        Bag {
             len: 0,
-            deferreds: [
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-            ],
-        };
-        #[cfg(crossbeam_sanitize)]
-        return Bag {
-            len: 0,
-            deferreds: [
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-            ],
-        };
+            deferreds: [Deferred::NO_OP; MAX_OBJECTS],
+        }
     }
 }
 
@@ -194,7 +119,7 @@ impl Drop for Bag {
     fn drop(&mut self) {
         
         for deferred in &mut self.deferreds[..self.len] {
-            let no_op = Deferred::new(no_op_func);
+            let no_op = Deferred::NO_OP;
             let owned_deferred = mem::replace(deferred, no_op);
             owned_deferred.call();
         }
@@ -209,8 +134,6 @@ impl fmt::Debug for Bag {
             .finish()
     }
 }
-
-fn no_op_func() {}
 
 
 #[derive(Default, Debug)]
@@ -375,13 +298,14 @@ pub(crate) struct Local {
 
 
 
-#[cfg(not(crossbeam_sanitize))] 
+#[cfg(not(any(crossbeam_sanitize, miri)))] 
 #[test]
 fn local_size() {
-    assert!(
-        core::mem::size_of::<Local>() <= 2048,
-        "An allocation of `Local` should be <= 2048 bytes."
-    );
+    
+    
+    
+    
+    
 }
 
 impl Local {
@@ -468,7 +392,10 @@ impl Local {
             
             
             
-            if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
+            if cfg!(all(
+                any(target_arch = "x86", target_arch = "x86_64"),
+                not(miri)
+            )) {
                 
                 
                 
