@@ -167,7 +167,8 @@ class TabBase {
 
   get hasActiveTabPermission() {
     return (
-      this.extension.hasPermission("activeTab") &&
+      (this.extension.originControls ||
+        this.extension.hasPermission("activeTab")) &&
       this.activeTabWindowID != null &&
       this.activeTabWindowID === this.innerWindowID
     );
@@ -1919,12 +1920,16 @@ class TabManagerBase {
 
 
   addActiveTabPermission(nativeTab) {
-    if (this.extension.hasPermission("activeTab")) {
+    let tab = this.getWrapper(nativeTab);
+    if (
+      this.extension.hasPermission("activeTab") ||
+      (this.extension.originControls &&
+        this.extension.optionalOrigins.matches(tab._uri))
+    ) {
       
       
       
       
-      let tab = this.getWrapper(nativeTab);
       tab.activeTabWindowID = tab.innerWindowID;
     }
   }
