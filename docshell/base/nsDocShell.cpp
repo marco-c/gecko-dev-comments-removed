@@ -9223,7 +9223,9 @@ static bool NavigationShouldTakeFocus(nsDocShell* aDocShell,
   if (!aLoadState->AllowFocusMove()) {
     return false;
   }
-
+  if (!aLoadState->HasValidUserGestureActivation()) {
+    return false;
+  }
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (!sourceBC || !sourceBC->IsActive()) {
     
