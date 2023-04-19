@@ -7706,28 +7706,6 @@ TEST_F(WebRtcVideoChannelTest,
             channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
 }
 
-TEST_F(WebRtcVideoChannelTest,
-       SetRtpSendParametersNumTemporalLayersFailsForInvalidModification) {
-  const size_t kNumSimulcastStreams = 3;
-  SetUpSimulcast(true, false);
-
-  
-  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
-
-  
-  parameters.encodings[0].num_temporal_layers = 1;
-  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION,
-            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
-
-  
-  parameters.encodings[0].num_temporal_layers = 1;
-  parameters.encodings[1].num_temporal_layers = 2;
-  parameters.encodings[2].num_temporal_layers = 2;
-  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION,
-            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
-}
-
 TEST_F(WebRtcVideoChannelTest, GetAndSetRtpSendParametersNumTemporalLayers) {
   const size_t kNumSimulcastStreams = 3;
   SetUpSimulcast(true, false);
@@ -7767,9 +7745,9 @@ TEST_F(WebRtcVideoChannelTest, NumTemporalLayersPropagatedToEncoder) {
   
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
   EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
-  parameters.encodings[0].num_temporal_layers = 2;
+  parameters.encodings[0].num_temporal_layers = 3;
   parameters.encodings[1].num_temporal_layers = 2;
-  parameters.encodings[2].num_temporal_layers = 2;
+  parameters.encodings[2].num_temporal_layers = 1;
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
 
   
@@ -7778,16 +7756,16 @@ TEST_F(WebRtcVideoChannelTest, NumTemporalLayersPropagatedToEncoder) {
   webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
   EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
   EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
-  EXPECT_EQ(2UL, encoder_config.simulcast_layers[0].num_temporal_layers);
+  EXPECT_EQ(3UL, encoder_config.simulcast_layers[0].num_temporal_layers);
   EXPECT_EQ(2UL, encoder_config.simulcast_layers[1].num_temporal_layers);
-  EXPECT_EQ(2UL, encoder_config.simulcast_layers[2].num_temporal_layers);
+  EXPECT_EQ(1UL, encoder_config.simulcast_layers[2].num_temporal_layers);
 
   
   
   EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
-  EXPECT_EQ(2UL, stream->GetVideoStreams()[0].num_temporal_layers);
+  EXPECT_EQ(3UL, stream->GetVideoStreams()[0].num_temporal_layers);
   EXPECT_EQ(2UL, stream->GetVideoStreams()[1].num_temporal_layers);
-  EXPECT_EQ(2UL, stream->GetVideoStreams()[2].num_temporal_layers);
+  EXPECT_EQ(1UL, stream->GetVideoStreams()[2].num_temporal_layers);
 
   
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
@@ -7812,26 +7790,25 @@ TEST_F(WebRtcVideoChannelTest,
   
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
   EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
-  parameters.encodings[0].min_bitrate_bps = 33000;
+  parameters.encodings[0].num_temporal_layers = 2;
+  parameters.encodings[2].num_temporal_layers = 1;
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
 
   
   webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
   EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
   EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
-  EXPECT_FALSE(encoder_config.simulcast_layers[0].num_temporal_layers);
+  EXPECT_EQ(2UL, encoder_config.simulcast_layers[0].num_temporal_layers);
   EXPECT_FALSE(encoder_config.simulcast_layers[1].num_temporal_layers);
-  EXPECT_FALSE(encoder_config.simulcast_layers[2].num_temporal_layers);
+  EXPECT_EQ(1UL, encoder_config.simulcast_layers[2].num_temporal_layers);
 
   
   
   EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
-  EXPECT_EQ(kDefaultNumTemporalLayers,
-            stream->GetVideoStreams()[0].num_temporal_layers);
+  EXPECT_EQ(2UL, stream->GetVideoStreams()[0].num_temporal_layers);
   EXPECT_EQ(kDefaultNumTemporalLayers,
             stream->GetVideoStreams()[1].num_temporal_layers);
-  EXPECT_EQ(kDefaultNumTemporalLayers,
-            stream->GetVideoStreams()[2].num_temporal_layers);
+  EXPECT_EQ(1UL, stream->GetVideoStreams()[2].num_temporal_layers);
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }

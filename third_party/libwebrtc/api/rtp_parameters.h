@@ -499,8 +499,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
-  
-  
   absl::optional<int> num_temporal_layers;
 
   
