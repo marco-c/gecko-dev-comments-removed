@@ -53,7 +53,7 @@ var gExceptionPaths = [
 
   
   
-  "chrome://browser/content/certerror/supportpages/",
+  "chrome://global/content/neterror/supportpages/",
 
   
   

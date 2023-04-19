@@ -1,8 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* eslint-env mozilla/remote-page */
+/* eslint-disable import/no-unassigned-import */
 
 import "chrome://global/content/certviewer/pvutils_bundle.jsm";
 import "chrome://global/content/certviewer/asn1js_bundle.jsm";
@@ -25,9 +26,9 @@ const formatter = new Intl.DateTimeFormat();
 
 const HOST_NAME = new URL(RPMGetInnerMostURI(document.location.href)).hostname;
 
-
+// Used to check if we have a specific localized message for an error.
 const KNOWN_ERROR_TITLE_IDS = new Set([
-  
+  // Error titles:
   "connectionFailure-title",
   "deniedPortAccess-title",
   "dnsNotFound-title",
@@ -61,22 +62,22 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
   "certerror-mitm-title",
 ]);
 
+/* The error message IDs from nsserror.ftl get processed into
+ * aboutNetErrorCodes.js which is loaded before we are: */
+/* global KNOWN_ERROR_MESSAGE_IDS */
 
+// The following parameters are parsed from the error URL:
+//   e - the error code
+//   s - custom CSS class to allow alternate styling/favicons
+//   d - error description
+//   captive - "true" to indicate we're behind a captive portal.
+//             Any other value is ignored.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Note that this file uses document.documentURI to get
+// the URL (with the format from above). This is because
+// document.location.href gets the current URI off the docshell,
+// which is the URL displayed in the location bar, i.e.
+// the URI that the user attempted to load.
 
 let searchParams = new URLSearchParams(document.documentURI.split("?")[1]);
 
@@ -84,9 +85,9 @@ let gErrorCode = searchParams.get("e");
 let gIsCertError = gErrorCode == "nssBadCert";
 let gHasSts = gIsCertError && getCSSClass() === "badStsCert";
 
-
-
-
+// If the location of the favicon changes, FAVICON_CERTERRORPAGE_URL and/or
+// FAVICON_ERRORPAGE_URL in toolkit/components/places/nsFaviconService.idl
+// should also be updated.
 document.getElementById("favicon").href =
   gIsCertError || gErrorCode == "nssFailure2"
     ? "chrome://global/skin/icons/warning.svg"
@@ -104,13 +105,13 @@ function isCaptive() {
   return searchParams.get("captive") == "true";
 }
 
-
-
-
-
-
-
-
+/**
+ * We don't actually know what the MitM is called (since we don't
+ * maintain a list), so we'll try and display the common name of the
+ * root issuer to the user. In the worst case they are as clueless as
+ * before, in the best case this gives them an actionable hint.
+ * This may be revised in the future.
+ */
 function getMitmName(failedCertInfo) {
   return failedCertInfo.issuerCommonName;
 }
@@ -147,10 +148,10 @@ function toggleCertErrorDebugInfoVisibility(shouldShow) {
 }
 
 function setupAdvancedButton() {
-  
+  // Get the hostname and add it to the panel
   var panel = document.getElementById("badCertAdvancedPanel");
 
-  
+  // Register click handler for the weakCryptoAdvancedPanel
   document
     .getElementById("advancedButton")
     .addEventListener("click", togglePanelVisibility);
@@ -158,13 +159,13 @@ function setupAdvancedButton() {
   function togglePanelVisibility() {
     panel.hidden = !panel.hidden;
 
-    
-    
-    
+    // Toggling the advanced panel must ensure that the debugging
+    // information panel is hidden as well, since it's opened by the
+    // error code link in the advanced panel.
     toggleCertErrorDebugInfoVisibility(false);
 
     if (panel.style.display == "block") {
-      
+      // send event to trigger telemetry ping
       var event = new CustomEvent("AboutNetErrorUIExpanded", { bubbles: true });
       document.dispatchEvent(event);
     }
@@ -176,9 +177,9 @@ function setupAdvancedButton() {
 }
 
 function disallowCertOverridesIfNeeded() {
-  
-  
-  
+  // Disallow overrides if this is a Strict-Transport-Security
+  // host and the cert is bad (STS Spec section 7.3) or if the
+  // certerror is in a frame (bug 633691).
   if (gHasSts || window != top) {
     document.getElementById("exceptionDialogButton").hidden = true;
   }
@@ -203,14 +204,14 @@ function disallowCertOverridesIfNeeded() {
 }
 
 function initPage() {
-  
-  
-  
-  
-  
-  
-  
-  
+  // We show an offline support page in case of a system-wide error,
+  // when a user cannot connect to the internet and access the SUMO website.
+  // For example, clock error, which causes certerrors across the web or
+  // a security software conflict where the user is unable to connect
+  // to the internet.
+  // The URL that prompts us to show an offline support page should have the following
+  // format: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/supportPageSlug",
+  // so we can extract the support page slug.
   let baseURL = RPMGetFormatURLPref("app.support.baseURL");
   let location = document.location.href;
   if (location.startsWith(baseURL)) {
@@ -278,8 +279,8 @@ function initPage() {
       pageTitleId = "neterror-blocked-by-policy-page-title";
       document.body.classList.add("blocked");
 
-      
-      
+      // Remove the "Try again" button from pages that don't need it.
+      // For pages blocked by policy, trying again won't help.
       netErrorButton.style.display = "none";
       break;
 
@@ -287,16 +288,16 @@ function initPage() {
     case "xfoBlocked": {
       bodyTitleId = "csp-xfo-error-title";
 
-      
-      
+      // Remove the "Try again" button for XFO and CSP violations,
+      // since it's almost certainly useless. (Bug 553180)
       netErrorButton.style.display = "none";
 
-      
-      
+      // Adding a button for opening websites blocked for CSP and XFO violations
+      // in a new window. (Bug 1461195)
       document.getElementById("errorShortDesc").style.display = "none";
 
       document.l10n.setAttributes(longDesc, "csp-xfo-blocked-long-desc", {
-        hostname: document.location.hostname, 
+        hostname: document.location.hostname, // FIXME - should this be HOST_NAME?
       });
       longDesc = null;
 
@@ -308,7 +309,7 @@ function initPage() {
       );
       openInNewWindowButton.href = document.location.href;
 
-      
+      // Add a learn more link
       learnMore.style.display = "block";
       learnMoreLink.setAttribute("href", baseURL + "xframe-neterror-page");
 
@@ -322,8 +323,8 @@ function initPage() {
       break;
 
     case "inadequateSecurityError":
-      
-      
+      // Remove the "Try again" button from pages that don't need it.
+      // For HTTP/2 inadequate security, trying again won't help.
       netErrorButton.style.display = "none";
       break;
 
@@ -331,7 +332,7 @@ function initPage() {
       pageTitleId = "neterror-malformed-uri-page-title";
       break;
 
-    
+    // Pinning errors are of type nssFailure2
     case "nssFailure2": {
       learnMore.style.display = "block";
 
@@ -343,15 +344,15 @@ function initPage() {
           tlsNotice.hidden = false;
           document.l10n.setAttributes(tlsNotice, "cert-error-old-tls-version");
         }
-        
+        // fallthrough
 
-        case "interrupted": 
+        case "interrupted": // This happens with subresources that are above the max tls
         case "SSL_ERROR_NO_CIPHERS_SUPPORTED":
         case "SSL_ERROR_NO_CYPHER_OVERLAP":
         case "SSL_ERROR_SSL_DISABLED":
           RPMAddMessageListener("HasChangedCertPrefs", msg => {
             if (msg.data.hasChangedCertPrefs) {
-              
+              // Configuration overrides might have caused this; offer to reset.
               showPrefChangeContainer();
             }
           });
@@ -388,12 +389,12 @@ function initPage() {
   setNetErrorMessageFromCode();
 }
 
-
-
-
-
-
-
+/**
+ * Builds HTML elements from `parts` and appends them to `parent`.
+ *
+ * @param {HTMLElement} parent
+ * @param {Array<["li" | "p" | "span", string, Record<string, string> | undefined]>} parts
+ */
 function setNetErrorMessageFromParts(parent, parts) {
   let list = null;
 
@@ -419,14 +420,14 @@ function setNetErrorMessageFromParts(parent, parts) {
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Returns an array of tuples determining the parts of an error message:
+ * - HTML tag name
+ * - l10n id
+ * - l10n args (optional)
+ *
+ * @returns { Array<["li" | "p" | "span", string, Record<string, string> | undefined]> }
+ */
 function getNetErrorDescParts() {
   switch (gErrorCode) {
     case "connectionFailure":
@@ -539,7 +540,7 @@ function setupBlockingReportingUI() {
   checkbox.addEventListener("change", function({ target: { checked } }) {
     RPMSetBoolPref("security.xfocsp.errorReporting.automatic", checked);
 
-    
+    // If we're enabling reports, send a report for this failure.
     if (checked) {
       reportBlockingError();
     }
@@ -550,7 +551,7 @@ function setupBlockingReportingUI() {
   );
 
   if (reportingEnabled) {
-    
+    // Display blocking error reporting UI for XFO error and CSP error.
     document.getElementById("blockingErrorReporting").hidden = false;
 
     if (reportingAutomatic) {
@@ -560,13 +561,13 @@ function setupBlockingReportingUI() {
 }
 
 function reportBlockingError() {
-  
+  // We only report if we are in a frame.
   if (window === window.top) {
     return;
   }
 
   let err = gErrorCode;
-  
+  // Ensure we only deal with XFO and CSP here.
   if (!["xfoBlocked", "cspBlocked"].includes(err)) {
     return;
   }
@@ -574,14 +575,14 @@ function reportBlockingError() {
   let xfo_header = RPMGetHttpResponseHeader("X-Frame-Options");
   let csp_header = RPMGetHttpResponseHeader("Content-Security-Policy");
 
-  
+  // Extract the 'CSP: frame-ancestors' from the CSP header.
   let reg = /(?:^|\s)frame-ancestors\s([^;]*)[$]*/i;
   let match = reg.exec(csp_header);
   csp_header = match ? match[1] : "";
 
-  
-  
-  
+  // If it's the csp error page without the CSP: frame-ancestors, this means
+  // this error page is not triggered by CSP: frame-ancestors. So, we bail out
+  // early.
   if (err === "cspBlocked" && !csp_header) {
     return;
   }
@@ -592,7 +593,7 @@ function reportBlockingError() {
     csp_header,
   };
 
-  
+  // Trimming the tail colon symbol.
   let scheme = document.location.protocol.slice(0, -1);
 
   RPMSendAsyncMessage("ReportBlockingError", {
@@ -616,7 +617,7 @@ async function setNetErrorMessageFromCode() {
   try {
     securityInfo = document.getNetErrorInfo();
   } catch (ex) {
-    
+    // We don't have a securityInfo when this is for example a DNS error.
     return;
   }
 
@@ -664,8 +665,8 @@ function initPageCaptivePortal() {
   setupAdvancedButton();
   disallowCertOverridesIfNeeded();
 
-  
-  
+  // When the portal is freed, an event is sent by the parent process
+  // that we can pick up and attempt to reload the original page.
   RPMAddMessageListener("AboutNetErrorCaptivePortalFreed", () => {
     document.location.reload();
   });
@@ -692,8 +693,8 @@ function initPageCertError() {
   }
 
   const failedCertInfo = document.getFailedCertSecurityInfo();
-  
-  
+  // Truncate the error code to avoid going over the allowed
+  // string size limit for telemetry events.
   const errorCode = failedCertInfo.errorCodeString.substring(0, 40);
   RPMRecordTelemetryEvent(
     "security.ui.certerror",
@@ -713,8 +714,8 @@ function recordClickTelemetry(e) {
   let target = e.originalTarget;
   let telemetryId = target.dataset.telemetryId;
   let failedCertInfo = document.getFailedCertSecurityInfo();
-  
-  
+  // Truncate the error code to avoid going over the allowed
+  // string size limit for telemetry events.
   let errorCode = failedCertInfo.errorCodeString.substring(0, 40);
   RPMRecordTelemetryEvent(
     "security.ui.certerror",
@@ -809,9 +810,9 @@ async function getFailedCertificatesAsPEMString() {
 }
 
 function setCertErrorDetails() {
-  
-  
-  
+  // Check if the connection is being man-in-the-middled. When the parent
+  // detects an intercepted connection, the page may be reloaded with a new
+  // error code (MOZILLA_PKIX_ERROR_MITM_DETECTED).
   const failedCertInfo = document.getFailedCertSecurityInfo();
   const mitmPrimingEnabled = RPMGetBoolPref(
     "security.certerrors.mitm.priming.enabled"
@@ -819,7 +820,7 @@ function setCertErrorDetails() {
   if (
     mitmPrimingEnabled &&
     failedCertInfo.errorCodeString == "SEC_ERROR_UNKNOWN_ISSUER" &&
-    
+    // Only do this check for top-level failures.
     window.parent == window
   ) {
     RPMSendAsyncMessage("Browser:PrimeMitm");
@@ -847,7 +848,7 @@ function setCertErrorDetails() {
       ];
       break;
 
-    case "SEC_ERROR_OCSP_INVALID_SIGNING_CERT": 
+    case "SEC_ERROR_OCSP_INVALID_SIGNING_CERT": // FIXME - this would have thrown?
       break;
 
     case "SEC_ERROR_UNKNOWN_ISSUER":
@@ -860,11 +861,11 @@ function setCertErrorDetails() {
       ];
       break;
 
-    
-    
-    
-    
-    
+    // This error code currently only exists for the Symantec distrust
+    // in Firefox 63, so we add copy explaining that to the user.
+    // In case of future distrusts of that scale we might need to add
+    // additional parameters that allow us to identify the affected party
+    // without replicating the complex logic from certverifier code.
     case "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED": {
       document.l10n.setAttributes(
         shortDesc2,
@@ -872,7 +873,7 @@ function setCertErrorDetails() {
         { hostname: HOST_NAME }
       );
 
-      
+      // FIXME - this does nothing
       const adminDesc = document.createElement("p");
       document.l10n.setAttributes(
         adminDesc,
@@ -916,17 +917,17 @@ function setCertErrorDetails() {
       learnMoreLink.href = baseURL + "security-error";
       break;
 
-    
-    
-    
+    // In case the certificate expired we make sure the system clock
+    // matches the remote-settings service (blocklist via Kinto) ping time
+    // and is not before the build date.
     case "SEC_ERROR_EXPIRED_CERTIFICATE":
     case "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE":
     case "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE":
     case "MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE": {
       learnMoreLink.href = baseURL + "time-errors";
 
-      
-      
+      // We check against the remote-settings server time first if available, because that allows us
+      // to give the user an approximation of what the correct time is.
       const difference = RPMGetIntPref(
         "services.settings.clock_skew_seconds",
         0
@@ -934,7 +935,7 @@ function setCertErrorDetails() {
       const lastFetched =
         RPMGetIntPref("services.settings.last_update_seconds", 0) * 1000;
 
-      
+      // This is set to true later if the user's system clock is at fault for this error.
       let clockSkew = false;
 
       const now = Date.now();
@@ -943,8 +944,8 @@ function setCertErrorDetails() {
         notAfter: failedCertInfo.certValidityRangeNotAfter,
       };
       const approximateDate = now - difference * 1000;
-      
-      
+      // If the difference is more than a day, we last fetched the date in the last 5 days,
+      // and adjusting the date per the interval would make the cert valid, warn the user:
       if (
         Math.abs(difference) > 60 * 60 * 24 &&
         now - lastFetched <= 60 * 60 * 24 * 5 * 1000 &&
@@ -952,8 +953,8 @@ function setCertErrorDetails() {
         certRange.notAfter > approximateDate
       ) {
         clockSkew = true;
-        
-        
+        // If there is no clock skew with Kinto servers, check against the build date.
+        // (The Kinto ping could have happened when the time was still right, or not at all)
       } else {
         const appBuildID = RPMGetAppBuildID();
         const year = parseInt(appBuildID.substr(0, 4), 10);
@@ -962,10 +963,10 @@ function setCertErrorDetails() {
 
         const buildDate = new Date(year, month, day);
 
-        
-        
-        
-        
+        // We don't check the notBefore of the cert with the build date,
+        // as it is of course almost certain that it is now later than the build date,
+        // so we shouldn't exclude the possibility that the cert has become valid
+        // since the build date.
         if (buildDate > now && new Date(certRange.notAfter) > buildDate) {
           clockSkew = true;
         }
@@ -985,9 +986,9 @@ function setCertErrorDetails() {
         hostname: HOST_NAME,
       });
 
-      
-      
-      
+      // The secondary description mentions expired certificates explicitly
+      // and should only be shown if the certificate has actually expired
+      // instead of being not yet valid.
       if (failedCertInfo.errorCodeString == "SEC_ERROR_EXPIRED_CERTIFICATE") {
         const sd2Id = gHasSts
           ? "certerror-expired-cert-sts-second-para"
@@ -1028,7 +1029,7 @@ function setCertErrorDetails() {
   }
 }
 
-
+// The optional argument is only here for testing purposes.
 async function setTechnicalDetailsOnCertError(
   failedCertInfo = document.getFailedCertSecurityInfo()
 ) {
@@ -1133,55 +1134,55 @@ async function setTechnicalDetailsOnCertError(
       if (numSubjectAltNames == 1) {
         args["alt-name"] = subjectAltNames[0];
 
-        
+        // Let's check if we want to make this a link.
         let okHost = subjectAltNames[0];
         let href = "";
         let thisHost = HOST_NAME;
         let proto = document.location.protocol + "//";
-        
-        
-        
+        // If okHost is a wildcard domain ("*.example.com") let's
+        // use "www" instead.  "*.example.com" isn't going to
+        // get anyone anywhere useful. bug 432491
         okHost = okHost.replace(/^\*\./, "www.");
-        
-
-
-
-
-
-
-
-
-
-
-
-
+        /* case #1:
+         * example.com uses an invalid security certificate.
+         *
+         * The certificate is only valid for www.example.com
+         *
+         * Make sure to include the "." ahead of thisHost so that
+         * a MitM attack on paypal.com doesn't hyperlink to "notpaypal.com"
+         *
+         * We'd normally just use a RegExp here except that we lack a
+         * library function to escape them properly (bug 248062), and
+         * domain names are famous for having '.' characters in them,
+         * which would allow spurious and possibly hostile matches.
+         */
 
         if (okHost.endsWith("." + thisHost)) {
           href = proto + okHost;
         }
-        
-
-
-
-
+        /* case #2:
+         * browser.garage.maemo.org uses an invalid security certificate.
+         *
+         * The certificate is only valid for garage.maemo.org
+         */
         if (thisHost.endsWith("." + okHost)) {
           href = proto + okHost;
         }
 
-        
-        
+        // If we set a link, meaning there's something helpful for
+        // the user here, expand the section by default
         if (href && cssClass != "expertBadCert") {
           document.getElementById("badCertAdvancedPanel").style.display =
             "block";
           if (error == "nssBadCert") {
-            
-            
-            
+            // Toggling the advanced panel must ensure that the debugging
+            // information panel is hidden as well, since it's opened by the
+            // error code link in the advanced panel.
             toggleCertErrorDebugInfoVisibility(false);
           }
         }
 
-        
+        // Set the link if we want it.
         if (href) {
           setL10NLabel("cert-error-domain-mismatch-single", args, {
             href,
@@ -1233,9 +1234,9 @@ async function setTechnicalDetailsOnCertError(
   );
   let errorCodeLink = document.getElementById("errorCode");
   if (errorCodeLink) {
-    
-    
-    
+    // We're attaching the event listener to the parent element and not on
+    // the errorCodeLink itself because event listeners cannot be attached
+    // to fluent DOM overlays.
     technicalInfo.addEventListener("click", handleErrorCodeClick);
   }
 
@@ -1252,18 +1253,18 @@ function handleErrorCodeClick(event) {
   recordClickTelemetry(event);
 }
 
-
-
-
+/* Only focus if we're the toplevel frame; otherwise we
+   don't want to call attention to ourselves!
+*/
 function setFocus(selector, position = "afterbegin") {
   if (window.top == window) {
     var button = document.querySelector(selector);
     var parent = button.parentNode;
     parent.insertAdjacentElement(position, button);
-    
-    
-    
-    
+    // It's possible setFocus was called via the DOMContentLoaded event
+    // handler and that the button has no frame. Things without a frame cannot
+    // be focused. We use a requestAnimationFrame to queue up the focus to occur
+    // once the button has its frame.
     requestAnimationFrame(() => {
       button.focus({ focusVisible: false });
     });
@@ -1277,11 +1278,11 @@ for (let button of document.querySelectorAll(".try-again")) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  
+  // Expose this so tests can call it.
   window.setTechnicalDetailsOnCertError = setTechnicalDetailsOnCertError;
 
   initPage();
-  
+  // Dispatch this event so tests can detect that we finished loading the error page.
   let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
   document.dispatchEvent(event);
 });
