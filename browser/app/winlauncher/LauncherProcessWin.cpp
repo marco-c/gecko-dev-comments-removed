@@ -36,13 +36,6 @@
 #  include "SameBinary.h"
 #endif  
 
-namespace mozilla {
-
-
-const volatile DeelevationStatus gDeelevationStatus =
-    DeelevationStatus::DefaultStaticValue;
-}  
-
 
 
 
@@ -51,28 +44,7 @@ const volatile DeelevationStatus gDeelevationStatus =
 
 static mozilla::LauncherVoidResult PostCreationSetup(
     const wchar_t* aFullImagePath, HANDLE aChildProcess,
-    HANDLE aChildMainThread, mozilla::DeelevationStatus aDStatus,
-    const bool aIsSafeMode) {
-   {
-    mozilla::nt::CrossExecTransferManager txManager(aChildProcess);
-    if (!txManager) {
-      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
-    }
-
-    using mozilla::gDeelevationStatus;
-
-    void* targetAddress = (LPVOID)&gDeelevationStatus;
-
-    auto const guard = txManager.Protect(
-        targetAddress, sizeof(gDeelevationStatus), PAGE_READWRITE);
-
-    mozilla::LauncherVoidResult result =
-        txManager.Transfer(targetAddress, &aDStatus, sizeof(aDStatus));
-    if (result.isErr()) {
-      return result;
-    }
-  }
-
+    HANDLE aChildMainThread, const bool aIsSafeMode) {
   return mozilla::InitializeDllBlocklistOOPFromLauncher(aFullImagePath,
                                                         aChildProcess);
 }
@@ -168,11 +140,6 @@ static mozilla::LauncherFlags ProcessCmdLine(int& aArgc, wchar_t* aArgv[]) {
 
   if (mozilla::CheckArg(aArgc, aArgv, L"no-deelevate") == mozilla::ARG_FOUND) {
     result |= mozilla::LauncherFlags::eNoDeelevate;
-  }
-
-  if (mozilla::CheckArg(aArgc, aArgv, ATTEMPTING_DEELEVATION_FLAG) ==
-      mozilla::ARG_FOUND) {
-    result |= mozilla::LauncherFlags::eDeelevating;
   }
 
   return result;
@@ -348,48 +315,19 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
 
   
   
-  DeelevationStatus deelevationStatus = DeelevationStatus::Unknown;
-  if (mediumIlToken.get()) {
-    
-    
-    deelevationStatus = DeelevationStatus::PartiallyDeelevated;
-  } else if (elevationState.unwrap() == ElevationState::eElevated) {
-    if (flags & LauncherFlags::eWaitForBrowser) {
-      
-      
-      deelevationStatus = DeelevationStatus::DeelevationProhibited;
-    } else if (flags & LauncherFlags::eNoDeelevate) {
-      
-      
-      deelevationStatus = DeelevationStatus::DeelevationProhibited;
-    } else if (flags & LauncherFlags::eDeelevating) {
-      
-      deelevationStatus = DeelevationStatus::UnsuccessfullyDeelevated;
-    } else {
-      
-      
-      LauncherVoidResult launchedUnelevated = LaunchUnelevated(argc, argv);
-      if (launchedUnelevated.isErr()) {
-        
-        
-        HandleLauncherError(launchedUnelevated);
-        return Nothing();
-      }
-      
-      return Some(0);
+  
+  if (elevationState.unwrap() == ElevationState::eElevated &&
+      !(flags &
+        (LauncherFlags::eWaitForBrowser | LauncherFlags::eNoDeelevate)) &&
+      !mediumIlToken.get()) {
+    LauncherVoidResult launchedUnelevated = LaunchUnelevated(argc, argv);
+    bool failed = launchedUnelevated.isErr();
+    if (failed) {
+      HandleLauncherError(launchedUnelevated);
+      return Nothing();
     }
-  } else if (elevationState.unwrap() == ElevationState::eNormalUser) {
-    if (flags & LauncherFlags::eDeelevating) {
-      
-      deelevationStatus = DeelevationStatus::SuccessfullyDeelevated;
-    } else {
-      
-      deelevationStatus = DeelevationStatus::StartedUnprivileged;
-    }
-  } else {
-    
-    
-    deelevationStatus = DeelevationStatus::Unknown;
+
+    return Some(0);
   }
 
 #if defined(MOZ_LAUNCHER_PROCESS)
@@ -486,9 +424,8 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
     job = CreateJobAndAssignProcess(process.get());
   }
 
-  LauncherVoidResult setupResult =
-      PostCreationSetup(argv[0], process.get(), mainThread.get(),
-                        deelevationStatus, isSafeMode.value());
+  LauncherVoidResult setupResult = PostCreationSetup(
+      argv[0], process.get(), mainThread.get(), isSafeMode.value());
   if (setupResult.isErr()) {
     HandleLauncherError(setupResult);
     ::TerminateProcess(process.get(), 1);
