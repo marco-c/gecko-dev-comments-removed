@@ -26,7 +26,7 @@ void RateCounter::AddEvent(Timestamp event_time) {
     event_first_time_ = event_time;
   }
   event_last_time_ = event_time;
-  event_count_++;
+  events_count_++;
 }
 
 double RateCounter::GetEventsPerSecond() const {
@@ -34,7 +34,7 @@ double RateCounter::GetEventsPerSecond() const {
   
   
   
-  return static_cast<double>(event_count_) /
+  return static_cast<double>(events_count_) /
          (event_last_time_ - event_first_time_).us() * kMicrosPerSecond;
 }
 

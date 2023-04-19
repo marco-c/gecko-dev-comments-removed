@@ -39,7 +39,7 @@ class RateCounter {
  private:
   Timestamp event_first_time_ = Timestamp::MinusInfinity();
   Timestamp event_last_time_ = Timestamp::MinusInfinity();
-  int64_t event_count_ = 0;
+  int64_t events_count_ = 0;
 };
 
 struct FrameCounters {
@@ -164,6 +164,27 @@ struct StatsKey {
 
 bool operator<(const StatsKey& a, const StatsKey& b);
 bool operator==(const StatsKey& a, const StatsKey& b);
+
+struct DefaultVideoQualityAnalyzerOptions {
+  
+  
+  bool heavy_metrics_computation_enabled = true;
+  
+  
+  
+  
+  
+  
+  
+  bool adjust_cropping_before_comparing_frames = false;
+  
+  
+  
+  size_t max_frames_in_flight_per_stream_count =
+      kDefaultMaxFramesInFlightPerStream;
+  
+  bool enable_receive_own_stream = false;
+};
 
 }  
 }  

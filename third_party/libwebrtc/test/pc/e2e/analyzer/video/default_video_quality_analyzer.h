@@ -30,6 +30,7 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_cpu_measurer.h"
+#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_frames_comparator.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_internal_shared_objects.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_shared_objects.h"
 #include "test/pc/e2e/analyzer/video/multi_head_queue.h"
@@ -38,33 +39,11 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-struct DefaultVideoQualityAnalyzerOptions {
-  
-  
-  bool heavy_metrics_computation_enabled = true;
-  
-  
-  
-  
-  
-  
-  
-  bool adjust_cropping_before_comparing_frames = false;
-  
-  
-  
-  size_t max_frames_in_flight_per_stream_count =
-      kDefaultMaxFramesInFlightPerStream;
-  
-  bool enable_receive_own_stream = false;
-};
-
 class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
  public:
   explicit DefaultVideoQualityAnalyzer(
       webrtc::Clock* clock,
-      DefaultVideoQualityAnalyzerOptions options =
-          DefaultVideoQualityAnalyzerOptions());
+      DefaultVideoQualityAnalyzerOptions options = {});
   ~DefaultVideoQualityAnalyzer() override;
 
   void Start(std::string test_case_name,
@@ -307,21 +286,12 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
     std::map<absl::string_view, size_t> index_;
   };
 
-  void AddComparison(InternalStatsKey stats_key,
-                     absl::optional<VideoFrame> captured,
-                     absl::optional<VideoFrame> rendered,
-                     bool dropped,
-                     FrameStats frame_stats)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(comparison_lock_);
-  static void ProcessComparisonsThread(void* obj);
-  void ProcessComparisons();
-  void ProcessComparison(const FrameComparison& comparison);
   
   void ReportResults();
   void ReportResults(const std::string& test_case_name,
                      const StreamStats& stats,
                      const FrameCounters& frame_counters)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   
   static void ReportResult(const std::string& metric_name,
                            const std::string& test_case_name,
@@ -333,26 +303,25 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string GetTestCaseName(const std::string& stream_label) const;
   Timestamp Now();
   StatsKey ToStatsKey(const InternalStatsKey& key) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   
   
   std::string StatsKeyToMetricName(const StatsKey& key) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  
-  DefaultVideoQualityAnalyzerOptions options_;
+  const DefaultVideoQualityAnalyzerOptions options_;
   webrtc::Clock* const clock_;
   std::atomic<uint16_t> next_frame_id_{0};
 
   std::string test_label_;
 
-  mutable Mutex lock_;
-  std::unique_ptr<NamesCollection> peers_ RTC_GUARDED_BY(lock_);
-  State state_ RTC_GUARDED_BY(lock_) = State::kNew;
-  Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
+  mutable Mutex mutex_;
+  std::unique_ptr<NamesCollection> peers_ RTC_GUARDED_BY(mutex_);
+  State state_ RTC_GUARDED_BY(mutex_) = State::kNew;
+  Timestamp start_time_ RTC_GUARDED_BY(mutex_) = Timestamp::MinusInfinity();
   
   
-  NamesCollection streams_ RTC_GUARDED_BY(lock_);
+  NamesCollection streams_ RTC_GUARDED_BY(mutex_);
   
   
   
@@ -365,36 +334,27 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   
   std::map<uint16_t, FrameInFlight> captured_frames_in_flight_
-      RTC_GUARDED_BY(lock_);
+      RTC_GUARDED_BY(mutex_);
   
-  FrameCounters frame_counters_ RTC_GUARDED_BY(lock_);
+  FrameCounters frame_counters_ RTC_GUARDED_BY(mutex_);
   
   std::map<InternalStatsKey, FrameCounters> stream_frame_counters_
-      RTC_GUARDED_BY(lock_);
+      RTC_GUARDED_BY(mutex_);
   
-  std::map<size_t, StreamState> stream_states_ RTC_GUARDED_BY(lock_);
+  std::map<size_t, StreamState> stream_states_ RTC_GUARDED_BY(mutex_);
   
-  std::map<size_t, size_t> stream_to_sender_ RTC_GUARDED_BY(lock_);
+  std::map<size_t, size_t> stream_to_sender_ RTC_GUARDED_BY(mutex_);
 
   
   
   
   
   std::map<size_t, std::set<uint16_t>> stream_to_frame_id_history_
-      RTC_GUARDED_BY(lock_);
-
-  mutable Mutex comparison_lock_;
-  std::map<InternalStatsKey, StreamStats> stream_stats_
-      RTC_GUARDED_BY(comparison_lock_);
-  std::map<InternalStatsKey, Timestamp> stream_last_freeze_end_time_
-      RTC_GUARDED_BY(comparison_lock_);
-  std::deque<FrameComparison> comparisons_ RTC_GUARDED_BY(comparison_lock_);
-  AnalyzerStats analyzer_stats_ RTC_GUARDED_BY(comparison_lock_);
-
-  std::vector<rtc::PlatformThread> thread_pool_;
-  rtc::Event comparison_available_event_;
+      RTC_GUARDED_BY(mutex_);
+  AnalyzerStats analyzer_stats_ RTC_GUARDED_BY(mutex_);
 
   DefaultVideoQualityAnalyzerCpuMeasurer cpu_measurer_;
+  DefaultVideoQualityAnalyzerFramesComparator frames_comparator_;
 };
 
 }  
