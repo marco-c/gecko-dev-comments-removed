@@ -9,6 +9,10 @@ pref("services.sync.prefs.sync.testing.string", true);
 pref("services.sync.prefs.sync.testing.bool", true);
 pref("services.sync.prefs.sync.testing.dont.change", true);
 
+pref("services.sync.prefs.sync.testing.seen", true);
+pref("services.sync.prefs.sync-seen.testing.seen", false);
+
+
 user_pref("services.sync.prefs.sync.testing.turned.off", false);
 pref("services.sync.prefs.sync.testing.nonexistent", true);
 pref("services.sync.prefs.sync.testing.default", true);
@@ -32,5 +36,9 @@ user_pref("testing.synced.url", "https://www.example.com");
 
 
 pref("testing.default", "I'm the default value");
+
+
+
+pref("testing.seen", "the value");
 
 

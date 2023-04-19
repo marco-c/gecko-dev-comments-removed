@@ -4,7 +4,28 @@
 
 var EXPORTED_SYMBOLS = ["PrefsEngine", "PrefRec", "getPrefsGUIDForTest"];
 
+
+
 const PREF_SYNC_PREFS_PREFIX = "services.sync.prefs.sync.";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const PREF_SYNC_SEEN_PREFIX = "services.sync.prefs.sync-seen.";
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -204,10 +225,20 @@ PrefStore.prototype = {
       
       
       if (this._isSynced(pref) && !isUnsyncableURLPref(pref)) {
+        let isSet = this._prefs.isSet(pref);
         
-        values[pref] = this._prefs.isSet(pref)
-          ? this._prefs.get(pref, null)
-          : null;
+        
+        let forceValue = this._prefs.get(PREF_SYNC_SEEN_PREFIX + pref, false);
+        values[pref] = isSet || forceValue ? this._prefs.get(pref, null) : null;
+        
+        
+        if (
+          isSet &&
+          this._prefs.get(PREF_SYNC_SEEN_PREFIX + pref, false) === false
+        ) {
+          this._log.trace(`toggling sync-seen pref for '${pref}' to true`);
+          this._prefs.set(PREF_SYNC_SEEN_PREFIX + pref, true);
+        }
       }
     }
     return values;
@@ -285,6 +316,12 @@ PrefStore.prototype = {
             } catch (ex) {
               this._log.trace(`Failed to set pref: ${pref}`, ex);
             }
+          }
+          
+          
+          let seenPref = PREF_SYNC_SEEN_PREFIX + pref;
+          if (this._prefs.get(seenPref, undefined) === false) {
+            this._prefs.set(PREF_SYNC_SEEN_PREFIX + pref, true);
           }
       }
     }
