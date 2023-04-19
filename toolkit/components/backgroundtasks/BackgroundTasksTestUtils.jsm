@@ -67,7 +67,7 @@ var BackgroundTasksTestUtils = {
       args,
       extraEnv: options.extraEnv,
     });
-    let { proc, readPromise } = await Subprocess.call({
+    let proc = await Subprocess.call({
       command,
       arguments: args,
       environment: options.extraEnv,
@@ -103,20 +103,12 @@ var BackgroundTasksTestUtils = {
           }
         }
       };
-      let readPromise = dumpPipe(p.stdout);
+      dumpPipe(p.stdout);
 
-      return { proc: p, readPromise };
+      return p;
     });
 
     let { exitCode } = await proc.wait();
-    try {
-      
-      await readPromise;
-    } catch (e) {
-      if (e.message !== "File closed") {
-        throw e;
-      }
-    }
 
     return exitCode;
   },
