@@ -2,8 +2,8 @@
 
 
 
-const { error } = ChromeUtils.import(
-  "chrome://remote/content/shared/webdriver/Errors.jsm"
+const { error } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/webdriver/Errors.sys.mjs"
 );
 const { Command, Message, Response } = ChromeUtils.import(
   "chrome://remote/content/marionette/message.js"

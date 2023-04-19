@@ -9,7 +9,7 @@ const {
   Deferred,
   EventPromise,
   PollPromise,
-} = ChromeUtils.import("chrome://remote/content/shared/Sync.jsm");
+} = ChromeUtils.importESModule("chrome://remote/content/shared/Sync.sys.mjs");
 
 
 
@@ -272,7 +272,9 @@ add_task(async function test_EventPromise_wantUntrustedEvent() {
 add_task(function test_executeSoon_callback() {
   
   
-  let sync = ChromeUtils.import("chrome://remote/content/shared/Sync.jsm");
+  let sync = ChromeUtils.importESModule(
+    "chrome://remote/content/shared/Sync.sys.mjs"
+  );
 
   for (let func of ["foo", null, true, [], {}]) {
     Assert.throws(() => sync.executeSoon(func), /TypeError/);

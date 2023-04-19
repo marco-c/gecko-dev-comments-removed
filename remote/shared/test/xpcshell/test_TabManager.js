@@ -2,8 +2,8 @@
 
 
 
-const { TabManager } = ChromeUtils.import(
-  "chrome://remote/content/shared/TabManager.jsm"
+const { TabManager } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/TabManager.sys.mjs"
 );
 
 class MockTopBrowsingContext {

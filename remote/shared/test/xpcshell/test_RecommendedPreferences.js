@@ -2,8 +2,8 @@
 
 
 
-const { RecommendedPreferences } = ChromeUtils.import(
-  "chrome://remote/content/shared/RecommendedPreferences.jsm"
+const { RecommendedPreferences } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/RecommendedPreferences.sys.mjs"
 );
 
 const COMMON_PREF = "toolkit.startup.max_resumed_crashes";

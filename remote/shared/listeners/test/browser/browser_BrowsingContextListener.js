@@ -2,8 +2,8 @@
 
 
 
-const { BrowsingContextListener } = ChromeUtils.import(
-  "chrome://remote/content/shared/listeners/BrowsingContextListener.jsm"
+const { BrowsingContextListener } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/listeners/BrowsingContextListener.sys.mjs"
 );
 
 add_task(async function test_attachedOnNewTab() {

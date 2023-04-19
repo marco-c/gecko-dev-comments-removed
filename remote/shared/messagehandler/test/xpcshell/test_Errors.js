@@ -2,8 +2,8 @@
 
 
 
-const { error } = ChromeUtils.import(
-  "chrome://remote/content/shared/messagehandler/Errors.jsm"
+const { error } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/messagehandler/Errors.sys.mjs"
 );
 
 

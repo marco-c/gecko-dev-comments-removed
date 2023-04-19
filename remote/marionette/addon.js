@@ -14,11 +14,12 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+
+  error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
-  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
 });
 
 

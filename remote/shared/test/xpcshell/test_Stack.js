@@ -2,8 +2,8 @@
 
 
 
-const { getFramesFromStack, isChromeFrame } = ChromeUtils.import(
-  "chrome://remote/content/shared/Stack.jsm"
+const { getFramesFromStack, isChromeFrame } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/Stack.sys.mjs"
 );
 
 const sourceFrames = [
