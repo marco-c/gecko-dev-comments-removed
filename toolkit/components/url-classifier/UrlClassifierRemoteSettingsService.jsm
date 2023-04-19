@@ -74,22 +74,6 @@ UrlClassifierRemoteSettingsService.prototype = {
     return requests;
   },
 
-  
-
-
-
-
-
-  _parseChunkNumFromShavarData(aData) {
-    
-    
-    
-
-    let line = aData.split("\n", 1)[0];
-    
-    return line?.split(":", 2)[1];
-  },
-
   async _getLists(aRequest, aListener) {
     await this.lazyInit();
 
@@ -104,22 +88,19 @@ UrlClassifierRemoteSettingsService.prototype = {
         continue;
       }
 
-      let rsChunkNum;
+      
+      
+      if (entry.Version == reqChunkNum) {
+        continue;
+      }
+
       let downloadError = false;
       try {
-        let { buffer } = await rs.attachments.download(entry, {
-          useCache: true,
-        });
+        
+        
+        let buffer = await rs.attachments.downloadAsBytes(entry);
         let bytes = new Uint8Array(buffer);
         let strData = String.fromCharCode.apply(String, bytes);
-
-        
-        
-        rsChunkNum = this._parseChunkNumFromShavarData(strData);
-
-        if (rsChunkNum == reqChunkNum) {
-          continue;
-        }
 
         
         payload += "i:" + reqTableName + "\n";
