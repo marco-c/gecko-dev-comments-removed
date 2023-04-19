@@ -4,6 +4,7 @@
 
 
 
+#include "ThreadEventTarget.h"
 #include "XPCOMModule.h"
 
 #include "base/basictypes.h"
@@ -146,8 +147,6 @@ nsresult nsLocalFileConstructor(const nsIID& aIID, void** aInstancePtr) {
 
 nsComponentManagerImpl* nsComponentManagerImpl::gComponentManager = nullptr;
 bool gXPCOMShuttingDown = false;
-mozilla::Atomic<bool, mozilla::SequentiallyConsistent> gXPCOMThreadsShutDown(
-    false);
 bool gXPCOMMainThreadEventsAreDoomed = false;
 char16_t* gGREBinPath = nullptr;
 
@@ -591,7 +590,11 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     mozilla::AppShutdown::AdvanceShutdownPhase(
         mozilla::ShutdownPhase::XPCOMShutdownThreads);
-    gXPCOMThreadsShutDown = true;
+#ifdef DEBUG
+    
+    
+    ThreadEventTarget::XPCOMShutdownThreadsNotificationFinished();
+#endif
     NS_ProcessPendingEvents(thread);
 
     
