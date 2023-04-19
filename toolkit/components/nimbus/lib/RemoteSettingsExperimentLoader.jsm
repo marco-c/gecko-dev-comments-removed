@@ -129,7 +129,18 @@ class _RemoteSettingsExperimentLoader {
     return this.manager.studiesEnabled;
   }
 
-  async init() {
+  
+
+
+
+
+
+
+
+
+  async init(options = {}) {
+    const { forceSync = false } = options;
+
     if (this._initialized || !this.enabled || !this.studiesEnabled) {
       return;
     }
@@ -138,7 +149,7 @@ class _RemoteSettingsExperimentLoader {
     lazy.CleanupManager.addCleanupHandler(() => this.uninit());
     this._initialized = true;
 
-    await this.updateRecipes();
+    await this.updateRecipes(undefined, { forceSync });
   }
 
   uninit() {
@@ -208,10 +219,16 @@ class _RemoteSettingsExperimentLoader {
 
 
 
-  async updateRecipes(trigger) {
+
+
+
+
+  async updateRecipes(trigger, options = {}) {
     if (this._updating || !this._initialized) {
       return;
     }
+
+    const { forceSync = false } = options;
 
     
     
@@ -226,6 +243,21 @@ class _RemoteSettingsExperimentLoader {
 
     let recipes;
     let loadingError = false;
+
+    if (forceSync) {
+      try {
+        await this.remoteSettingsClient.sync({
+          trigger: "RemoteSettingsExperimentLoader",
+        });
+      } catch (e) {
+        lazy.log.debug(
+          "Error forcing sync of recipes from remote settings.",
+          e
+        );
+        Cu.reportError(e);
+        throw e;
+      }
+    }
 
     try {
       recipes = await this.remoteSettingsClient.get({
