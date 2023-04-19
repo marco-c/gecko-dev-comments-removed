@@ -244,7 +244,7 @@ class RTCErrorOr {
   
   
   RTCErrorOr(RTCError&& error) : error_(std::move(error)) {  
-    RTC_DCHECK(!error.ok());
+    RTC_DCHECK(!error_.ok());
   }
 
   
