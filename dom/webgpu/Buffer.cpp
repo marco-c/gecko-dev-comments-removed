@@ -166,21 +166,8 @@ already_AddRefed<dom::Promise> Buffer::MapAsync(
 
   RefPtr<Buffer> self(this);
 
-  ffi::WGPUHostMap mode;
-  switch (aMode) {
-    case dom::GPUMapMode_Binding::READ:
-      mode = ffi::WGPUHostMap_Read;
-      break;
-    case dom::GPUMapMode_Binding::WRITE:
-      mode = ffi::WGPUHostMap_Write;
-      break;
-    default:
-      
-      MOZ_CRASH();
-  }
-
   auto mappingPromise =
-      GetDevice().GetBridge()->SendBufferMap(mId, mode, aOffset, size);
+      GetDevice().GetBridge()->SendBufferMap(mId, aMode, aOffset, size);
   MOZ_ASSERT(mappingPromise);
 
   mMapRequest = promise;
