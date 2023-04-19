@@ -7,8 +7,8 @@ var EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
 const TABS_TTL = 31622400; 
 const TAB_ENTRIES_LIMIT = 5; 
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 const { TabStateFlusher } = ChromeUtils.import(
   "resource:///modules/sessionstore/TabStateFlusher.jsm"

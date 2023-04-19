@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs");
 
 
 
