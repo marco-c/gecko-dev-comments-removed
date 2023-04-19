@@ -411,18 +411,6 @@ RtpVideoSender::RtpVideoSender(
 
   
 
-  
-  
-  
-
-  
-  
-  for (const RtpStreamSender& stream : rtp_streams_) {
-    constexpr bool remb_candidate = true;
-    transport->packet_router()->AddSendRtpModule(stream.rtp_rtcp.get(),
-                                                 remb_candidate);
-  }
-
   for (size_t i = 0; i < rtp_config_.extensions.size(); ++i) {
     const std::string& extension = rtp_config_.extensions[i].uri;
     int id = rtp_config_.extensions[i].id;
@@ -463,9 +451,8 @@ RtpVideoSender::RtpVideoSender(
 }
 
 RtpVideoSender::~RtpVideoSender() {
-  for (const RtpStreamSender& stream : rtp_streams_) {
-    transport_->packet_router()->RemoveSendRtpModule(stream.rtp_rtcp.get());
-  }
+  SetActiveModulesLocked(
+      std::vector<bool>(rtp_streams_.size(), false));
   transport_->GetStreamFeedbackProvider()->DeRegisterStreamFeedbackObserver(
       this);
 }
@@ -509,10 +496,30 @@ void RtpVideoSender::SetActiveModulesLocked(
     if (active_modules[i]) {
       active_ = true;
     }
+
+    const bool was_active = rtp_streams_[i].rtp_rtcp->SendingMedia();
+    const bool should_be_active = active_modules[i];
+
     
     rtp_streams_[i].rtp_rtcp->SetSendingStatus(active_modules[i]);
+
+    if (was_active && !should_be_active) {
+      
+      
+      
+      transport_->packet_router()->RemoveSendRtpModule(
+          rtp_streams_[i].rtp_rtcp.get());
+    }
+
     
     rtp_streams_[i].rtp_rtcp->SetSendingMediaStatus(active_modules[i]);
+
+    if (!was_active && should_be_active) {
+      
+      transport_->packet_router()->AddSendRtpModule(
+          rtp_streams_[i].rtp_rtcp.get(),
+          true);
+    }
   }
 }
 
