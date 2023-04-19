@@ -178,7 +178,9 @@ void AndroidCallClient::CreatePeerConnection() {
   webrtc::PeerConnectionInterface::RTCConfiguration config;
   config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
   
-  config.enable_dtls_srtp = false;
+  webrtc::PeerConnectionFactoryInterface::Options options;
+  options.disable_encryption = true;
+  pcf_->SetOptions(options);
   webrtc::PeerConnectionDependencies deps(pc_observer_.get());
   pc_ = pcf_->CreatePeerConnectionOrError(config, std::move(deps)).MoveValue();
 

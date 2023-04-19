@@ -430,12 +430,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     
     
-    
-    absl::optional<bool> enable_dtls_srtp;
-
-    
-    
-    
 
     
     TcpCandidatePolicy tcp_candidate_policy = kTcpCandidatePolicyEnabled;

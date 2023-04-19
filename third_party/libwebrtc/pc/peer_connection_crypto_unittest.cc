@@ -181,7 +181,6 @@ SdpContentMutator RemoveDtlsFingerprint() {
 
 TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWhenDtlsEnabled) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
 
   auto offer = caller->CreateOffer();
@@ -195,7 +194,6 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWhenDtlsEnabled) {
 }
 TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenDtlsEnabled) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -212,46 +210,12 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenDtlsEnabled) {
 
 
 
-TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWhenDtlsDisabled) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  ASSERT_TRUE(offer);
-
-  ASSERT_FALSE(offer->description()->contents().empty());
-  EXPECT_TRUE(SdpContentsAll(HaveSdesCryptos(), offer->description()));
-  EXPECT_TRUE(SdpContentsNone(HaveDtlsFingerprint(), offer->description()));
-  EXPECT_TRUE(SdpContentsAll(HaveProtocol(cricket::kMediaProtocolSavpf),
-                             offer->description()));
-}
-TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenDtlsDisabled) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  callee->SetRemoteDescription(caller->CreateOffer());
-  auto answer = callee->CreateAnswer();
-  ASSERT_TRUE(answer);
-
-  ASSERT_FALSE(answer->description()->contents().empty());
-  EXPECT_TRUE(SdpContentsAll(HaveSdesCryptos(), answer->description()));
-  EXPECT_TRUE(SdpContentsNone(HaveDtlsFingerprint(), answer->description()));
-  EXPECT_TRUE(SdpContentsAll(HaveProtocol(cricket::kMediaProtocolSavpf),
-                             answer->description()));
-}
-
-
-
 TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWhenEncryptionDisabled) {
   PeerConnectionFactoryInterface::Options options;
   options.disable_encryption = true;
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
 
   auto offer = caller->CreateOffer();
@@ -269,7 +233,6 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenEncryptionDisabled) {
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -284,80 +247,12 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenEncryptionDisabled) {
                              answer->description()));
 }
 
-
-
-TEST_P(PeerConnectionCryptoTest, RTCConfigurationCryptoOptionOverridesFactory) {
-  PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
-  pc_factory_->SetOptions(options);
-
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  CryptoOptions crypto_options;
-  crypto_options.srtp.enable_gcm_crypto_suites = false;
-  config.crypto_options = crypto_options;
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  ASSERT_TRUE(offer);
-
-  ASSERT_FALSE(offer->description()->contents().empty());
-  
-  EXPECT_FALSE(SdpContentsAll(HaveSdesGcmCryptos(3), offer->description()));
-}
-
-
-
-
-
-TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWithSdesAndGcm) {
-  PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
-  pc_factory_->SetOptions(options);
-
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  ASSERT_TRUE(offer);
-
-  ASSERT_FALSE(offer->description()->contents().empty());
-  EXPECT_TRUE(SdpContentsAll(HaveSdesGcmCryptos(3), offer->description()));
-}
-
-TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWithSdesAndGcm) {
-  PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
-  pc_factory_->SetOptions(options);
-
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  for (cricket::ContentInfo& content : offer->description()->contents()) {
-    auto cryptos = content.media_description()->cryptos();
-    cryptos.erase(cryptos.begin());  
-    content.media_description()->set_cryptos(cryptos);
-  }
-
-  callee->SetRemoteDescription(std::move(offer));
-  auto answer = callee->CreateAnswer();
-  ASSERT_TRUE(answer);
-
-  ASSERT_FALSE(answer->description()->contents().empty());
-  EXPECT_TRUE(SdpContentsAll(HaveSdesGcmCryptos(1), answer->description()));
-}
-
 TEST_P(PeerConnectionCryptoTest, CanSetSdesGcmRemoteOfferAndLocalAnswer) {
   PeerConnectionFactoryInterface::Options options;
   options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -368,69 +263,8 @@ TEST_P(PeerConnectionCryptoTest, CanSetSdesGcmRemoteOfferAndLocalAnswer) {
   auto answer = callee->CreateAnswer();
   ASSERT_TRUE(answer);
   ASSERT_TRUE(callee->SetLocalDescription(std::move(answer)));
-}
-
-
-
-
-TEST_P(PeerConnectionCryptoTest, ExchangeOfferAnswerWhenSdesOn) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOfferAndSetAsLocal();
-  ASSERT_TRUE(offer);
-  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
-
-  auto answer = callee->CreateAnswerAndSetAsLocal();
-  ASSERT_TRUE(answer);
-  ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
-}
-TEST_P(PeerConnectionCryptoTest, FailToSetLocalOfferWithNoCryptosWhenSdesOn) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  SdpContentsForEach(RemoveSdesCryptos(), offer->description());
-
-  EXPECT_FALSE(caller->SetLocalDescription(std::move(offer)));
-}
-TEST_P(PeerConnectionCryptoTest, FailToSetRemoteOfferWithNoCryptosWhenSdesOn) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  auto offer = caller->CreateOffer();
-  SdpContentsForEach(RemoveSdesCryptos(), offer->description());
-
-  EXPECT_FALSE(callee->SetRemoteDescription(std::move(offer)));
-}
-TEST_P(PeerConnectionCryptoTest, FailToSetLocalAnswerWithNoCryptosWhenSdesOn) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal());
-  auto answer = callee->CreateAnswer();
-  SdpContentsForEach(RemoveSdesCryptos(), answer->description());
-
-  EXPECT_FALSE(callee->SetLocalDescription(std::move(answer)));
-}
-TEST_P(PeerConnectionCryptoTest, FailToSetRemoteAnswerWithNoCryptosWhenSdesOn) {
-  RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
-
-  callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal());
-  auto answer = callee->CreateAnswerAndSetAsLocal();
-  SdpContentsForEach(RemoveSdesCryptos(), answer->description());
-
-  EXPECT_FALSE(caller->SetRemoteDescription(std::move(answer)));
+  
+  
 }
 
 
@@ -438,7 +272,6 @@ TEST_P(PeerConnectionCryptoTest, FailToSetRemoteAnswerWithNoCryptosWhenSdesOn) {
 
 TEST_P(PeerConnectionCryptoTest, ExchangeOfferAnswerWhenDtlsOn) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -453,7 +286,6 @@ TEST_P(PeerConnectionCryptoTest, ExchangeOfferAnswerWhenDtlsOn) {
 TEST_P(PeerConnectionCryptoTest,
        FailToSetLocalOfferWithNoFingerprintWhenDtlsOn) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
 
   auto offer = caller->CreateOffer();
@@ -464,7 +296,6 @@ TEST_P(PeerConnectionCryptoTest,
 TEST_P(PeerConnectionCryptoTest,
        FailToSetRemoteOfferWithNoFingerprintWhenDtlsOn) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -476,7 +307,6 @@ TEST_P(PeerConnectionCryptoTest,
 TEST_P(PeerConnectionCryptoTest,
        FailToSetLocalAnswerWithNoFingerprintWhenDtlsOn) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -487,7 +317,6 @@ TEST_P(PeerConnectionCryptoTest,
 TEST_P(PeerConnectionCryptoTest,
        FailToSetRemoteAnswerWithNoFingerprintWhenDtlsOn) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -505,7 +334,6 @@ TEST_P(PeerConnectionCryptoTest, ExchangeOfferAnswerWhenNoEncryption) {
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(false);
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
@@ -523,13 +351,11 @@ TEST_P(PeerConnectionCryptoTest, ExchangeOfferAnswerWhenNoEncryption) {
 TEST_P(PeerConnectionCryptoTest,
        ExchangeOfferAnswerWhenDtlsCertificateInConfig) {
   RTCConfiguration caller_config;
-  caller_config.enable_dtls_srtp.emplace(true);
   caller_config.certificates.push_back(
       FakeRTCCertificateGenerator::GenerateCertificate());
   auto caller = CreatePeerConnectionWithAudioVideo(caller_config);
 
   RTCConfiguration callee_config;
-  callee_config.enable_dtls_srtp.emplace(true);
   callee_config.certificates.push_back(
       FakeRTCCertificateGenerator::GenerateCertificate());
   auto callee = CreatePeerConnectionWithAudioVideo(callee_config);
@@ -600,7 +426,6 @@ class PeerConnectionCryptoDtlsCertGenTest
 
 TEST_P(PeerConnectionCryptoDtlsCertGenTest, TestCertificateGeneration) {
   RTCConfiguration config;
-  config.enable_dtls_srtp.emplace(true);
   auto owned_fake_certificate_generator =
       std::make_unique<FakeRTCCertificateGenerator>();
   auto* fake_certificate_generator = owned_fake_certificate_generator.get();
@@ -724,7 +549,6 @@ TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
 
   auto caller = CreatePeerConnectionWithAudioVideo();
   RTCConfiguration callee_config;
-  callee_config.enable_dtls_srtp.emplace(true);
   callee_config.certificates.push_back(callee_certificate);
   auto callee = CreatePeerConnectionWithAudioVideo(callee_config);
 

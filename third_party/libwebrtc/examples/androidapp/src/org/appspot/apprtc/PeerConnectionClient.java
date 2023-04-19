@@ -442,6 +442,10 @@ public class PeerConnectionClient {
       decoderFactory = new SoftwareVideoDecoderFactory();
     }
 
+    
+    if (peerConnectionParameters.loopback) {
+      options.disableEncryption = true;
+    }
     factory = PeerConnectionFactory.builder()
                   .setOptions(options)
                   .setAudioDeviceModule(adm)
@@ -600,8 +604,6 @@ public class PeerConnectionClient {
     rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
     
     rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
-    
-    rtcConfig.enableDtlsSrtp = !peerConnectionParameters.loopback;
     rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
     peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
