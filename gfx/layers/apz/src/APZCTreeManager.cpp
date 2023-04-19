@@ -1956,6 +1956,7 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
     RecursiveMutexAutoLock lock(mTreeLock);
     
     mTouchBlockHitResult = mHitTester->CloneHitTestResult(lock, aState.mHit);
+    hitScrollbarNode = std::move(aState.mHit.mScrollbarNode);
 
     
     
