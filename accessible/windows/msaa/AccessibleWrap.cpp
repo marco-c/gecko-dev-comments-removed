@@ -270,3 +270,20 @@ bool AccessibleWrap::DispatchTextChangeToHandler(Accessible* aAcc,
 
   return SUCCEEDED(hr);
 }
+
+
+void AccessibleWrap::SuppressHandlerA11yForClipboardCopy() {
+  if (!sHandlerControllers || sHandlerControllers->IsEmpty()) {
+    return;
+  }
+  
+  
+  
+  
+  
+  auto& controller = sHandlerControllers->ElementAt(0);
+  MOZ_ASSERT(controller.mPid == ::GetCurrentProcessId() &&
+             !controller.mIsProxy);
+  DebugOnly<HRESULT> hr = controller.mCtrl->SuppressA11yForClipboardCopy();
+  MOZ_ASSERT(SUCCEEDED(hr));
+}

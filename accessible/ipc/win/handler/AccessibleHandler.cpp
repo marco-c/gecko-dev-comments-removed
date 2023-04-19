@@ -687,6 +687,25 @@ AccessibleHandler::get_accChildCount(long* pcountChildren) {
   }
 
   BEGIN_CACHE_ACCESS;
+  if (mCachedData.mDynamicData.mIA2Role == ROLE_SYSTEM_DOCUMENT) {
+    RefPtr<AccessibleHandlerControl> ctl(
+        gControlFactory.GetOrCreateSingleton());
+    if (!ctl) {
+      return E_OUTOFMEMORY;
+    }
+    if (ctl->IsA11ySuppressedForClipboardCopy()) {
+      
+      
+      
+      
+      
+      
+      
+      *pcountChildren = 0;
+      return S_OK;
+    }
+  }
+
   GET_FIELD(mChildCount, *pcountChildren);
   return S_OK;
 }
@@ -1824,7 +1843,30 @@ AccessibleHandler::get_nSelections(long* nSelections) {
     return hr;
   }
 
-  return mIAHypertextPassThru->get_nSelections(nSelections);
+  hr = mIAHypertextPassThru->get_nSelections(nSelections);
+  if (SUCCEEDED(hr) && *nSelections == 0 && HasPayload()) {
+    BEGIN_CACHE_ACCESS;
+    if (mCachedData.mDynamicData.mIA2Role == ROLE_SYSTEM_DOCUMENT) {
+      RefPtr<AccessibleHandlerControl> ctl(
+          gControlFactory.GetOrCreateSingleton());
+      if (!ctl) {
+        return E_OUTOFMEMORY;
+      }
+      if (ctl->IsA11ySuppressedForClipboardCopy()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        *nSelections = 1;
+      }
+    }
+  }
+  return hr;
 }
 
 HRESULT

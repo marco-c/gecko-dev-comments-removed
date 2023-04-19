@@ -201,5 +201,21 @@ HRESULT AccessibleHandlerControl::GetCachedAccessible(
   return S_OK;
 }
 
+HRESULT AccessibleHandlerControl::SuppressA11yForClipboardCopy() {
+  mA11yClipboardCopySuppressionStartTime = ::GetTickCount();
+  return S_OK;
+}
+
+bool AccessibleHandlerControl::IsA11ySuppressedForClipboardCopy() {
+  
+  
+  constexpr DWORD kSuppressTimeout = 1500;  
+  if (!mA11yClipboardCopySuppressionStartTime) {
+    return false;
+  }
+  return ::GetTickCount() - mA11yClipboardCopySuppressionStartTime <
+         kSuppressTimeout;
+}
+
 }  
 }  
