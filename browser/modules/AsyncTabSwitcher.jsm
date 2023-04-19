@@ -468,7 +468,7 @@ class AsyncTabSwitcher {
       let index = Array.prototype.indexOf.call(tabpanels.children, showPanel);
       if (index != -1) {
         this.log(`Switch to tab ${index} - ${this.tinfo(showTab)}`);
-        tabpanels.setAttribute("selectedIndex", index);
+        tabpanels.updateSelectedIndex(index);
         if (showTab === this.requestedTab) {
           if (requestedTabState == this.STATE_LOADED) {
             

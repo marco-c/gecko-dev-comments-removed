@@ -254,11 +254,7 @@ add_task(async function() {
 
   
   
-  is(
-    deck.selectedIndex,
-    "" + DECKINDEX_FETCHING,
-    "first deck entry is visible"
-  );
+  is(deck.selectedIndex, DECKINDEX_FETCHING, "first deck entry is visible");
 
   
   mockedInternal.getTabClients = () => {
@@ -269,7 +265,7 @@ add_task(async function() {
   
   is(
     deck.selectedIndex,
-    "" + DECKINDEX_NOCLIENTS,
+    DECKINDEX_NOCLIENTS,
     "no-clients deck entry is visible"
   );
 
@@ -320,11 +316,7 @@ add_task(async function() {
   await updateTabsPanel();
 
   
-  is(
-    deck.selectedIndex,
-    "" + DECKINDEX_TABS,
-    "no-clients deck entry is visible"
-  );
+  is(deck.selectedIndex, DECKINDEX_TABS, "no-clients deck entry is visible");
   let tabList = document.getElementById("PanelUI-remotetabs-tabslist");
   let node = tabList.firstElementChild;
   
@@ -467,7 +459,7 @@ add_task(async function() {
   let subpanel = document.getElementById("PanelUI-remotetabs-main");
   ok(!subpanel.hidden, "main pane is visible");
   let deck = document.getElementById("PanelUI-remotetabs-deck");
-  is(deck.selectedIndex, "" + DECKINDEX_TABS, "we should be showing tabs");
+  is(deck.selectedIndex, DECKINDEX_TABS, "we should be showing tabs");
 
   function checkTabsPage(tabsShownCount, showMoreLabel) {
     let tabList = document.getElementById("PanelUI-remotetabs-tabslist");

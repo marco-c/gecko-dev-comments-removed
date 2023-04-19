@@ -278,9 +278,9 @@ class DisplayPortUtils {
 
 
 
-  static bool MaybeCreateDisplayPort(nsDisplayListBuilder* aBuilder,
-                                     nsIFrame* aScrollFrame,
-                                     RepaintMode aRepaintMode);
+  static bool MaybeCreateDisplayPort(
+      nsDisplayListBuilder* aBuilder, nsIFrame* aScrollFrame,
+      nsIScrollableFrame* aScrollFrameAsScrollable, RepaintMode aRepaintMode);
 
   
 

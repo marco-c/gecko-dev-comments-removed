@@ -206,11 +206,20 @@ class PresShell final : public nsStubDocumentObserver,
   static void ClearMouseCaptureOnView(nsView* aView);
 
   
-  
-  static void ClearMouseCapture(nsIFrame* aFrame);
+  static void ClearMouseCapture();
 
   
-  static void ClearMouseCapture();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static void ClearMouseCapture(nsIFrame* aFrame);
 
 #ifdef ACCESSIBILITY
   
