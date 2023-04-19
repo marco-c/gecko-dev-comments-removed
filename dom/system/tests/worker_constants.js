@@ -2,6 +2,7 @@
 
 
 
+
 function log(text) {
   dump("WORKER " + text + "\n");
 }
