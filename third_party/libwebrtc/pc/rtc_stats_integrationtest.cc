@@ -1082,12 +1082,6 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsNonNegative<double>(audio_source.audio_level);
     verifier.TestMemberIsPositive<double>(audio_source.total_audio_energy);
     verifier.TestMemberIsPositive<double>(audio_source.total_samples_duration);
-    
-    
-    
-    
-    verifier.MarkMemberTested(audio_source.echo_return_loss, true);
-    verifier.MarkMemberTested(audio_source.echo_return_loss_enhancement, true);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
