@@ -8845,9 +8845,6 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       
 
       if (propVal->isDirectRHSAnonFunction()) {
-        
-        
-        
         if (key->isKind(ParseNodeKind::NumberExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
 
@@ -8867,31 +8864,6 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
           if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
             
             return false;
-          }
-        } else if (key->isKind(ParseNodeKind::ComputedName) &&
-                   (key->as<UnaryNode>().kid()->isKind(
-                        ParseNodeKind::NumberExpr) ||
-                    key->as<UnaryNode>().kid()->isKind(
-                        ParseNodeKind::StringExpr)) &&
-                   accessorType == AccessorType::None) {
-          ParseNode* keyKid = key->as<UnaryNode>().kid();
-          if (keyKid->isKind(ParseNodeKind::NumberExpr)) {
-            auto keyAtom =
-                keyKid->as<NumericLiteral>().toAtom(cx, parserAtoms());
-            if (!keyAtom) {
-              return false;
-            }
-            if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
-              
-              return false;
-            }
-          } else {
-            MOZ_ASSERT(keyKid->isKind(ParseNodeKind::StringExpr));
-            auto keyAtom = keyKid->as<NameNode>().atom();
-            if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
-              
-              return false;
-            }
           }
         } else {
           MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName) ||

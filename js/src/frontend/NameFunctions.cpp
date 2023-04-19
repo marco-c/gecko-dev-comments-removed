@@ -258,7 +258,6 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
     
     if (assignment) {
-      
       if (assignment->is<AssignmentNode>()) {
         assignment = assignment->as<AssignmentNode>().left();
       }
@@ -282,46 +281,13 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
         ParseNode* left = node->as<BinaryNode>().left();
         if (left->isKind(ParseNodeKind::ObjectPropertyName) ||
             left->isKind(ParseNodeKind::StringExpr)) {
-          
-          
-          
           if (!appendPropertyReference(left->as<NameNode>().atom())) {
             return false;
           }
         } else if (left->isKind(ParseNodeKind::NumberExpr)) {
-          
-          
           if (!appendNumericPropertyReference(
                   left->as<NumericLiteral>().value())) {
             return false;
-          }
-        } else if (left->isKind(ParseNodeKind::ComputedName) &&
-                   (left->as<UnaryNode>().kid()->isKind(
-                        ParseNodeKind::StringExpr) ||
-                    left->as<UnaryNode>().kid()->isKind(
-                        ParseNodeKind::NumberExpr)) &&
-                   node->as<PropertyDefinition>().accessorType() ==
-                       AccessorType::None) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          ParseNode* kid = left->as<UnaryNode>().kid();
-          if (kid->isKind(ParseNodeKind::StringExpr)) {
-            if (!appendPropertyReference(kid->as<NameNode>().atom())) {
-              return false;
-            }
-          } else {
-            MOZ_ASSERT(kid->isKind(ParseNodeKind::NumberExpr));
-            if (!appendNumericPropertyReference(
-                    kid->as<NumericLiteral>().value())) {
-              return false;
-            }
           }
         } else {
           MOZ_ASSERT(left->isKind(ParseNodeKind::ComputedName) ||
