@@ -14,21 +14,47 @@ function run_test() {
 
   
   testFailure("resource://test/es6module_not_found.js");
-  
+
   
   testFailure("resource://test/es6module_missing_import.js");
 
   
-  testFailure("resource://test/es6module_parse_error.js", "SyntaxError");
+  testFailure("resource://test/es6module_parse_error.js", {
+    type: "SyntaxError",
+    fileName: "resource://test/es6module_parse_error.js",
+    stack: "testFailure",
+    lineNumber: 1,
+    columnNumber: 5,
+  });
 
   
-  testFailure("resource://test/es6module_parse_error_in_import.js", "SyntaxError");
+  testFailure("resource://test/es6module_parse_error_in_import.js", {
+    type: "SyntaxError",
+    fileName: "resource://test/es6module_parse_error.js",
+    stack: "testFailure",
+    lineNumber: 1,
+    columnNumber: 5,
+  });
 
   
-  let exception1 = testFailure("resource://test/es6module_throws.js", "foobar");
+  let exception1 = testFailure("resource://test/es6module_throws.js", {
+    type: "Error",
+    message: "foobar",
+    stack: "throwFunction",
+    fileName: "resource://test/es6module_throws.js",
+    lineNumber: 2,
+    columnNumber: 9,
+  });
 
   
-  let exception2 = testFailure("resource://test/es6module_throws.js", "foobar");
+  let exception2 = testFailure("resource://test/es6module_throws.js", {
+    type: "Error",
+    message: "foobar",
+    stack: "throwFunction",
+    fileName: "resource://test/es6module_throws.js",
+    lineNumber: 2,
+    columnNumber: 9,
+  });
   Assert.ok(exception1 === exception2);
 
   
@@ -43,10 +69,17 @@ function run_test() {
   Assert.equal(ns.getValueFromA(), "a");
 
   
-  testFailure("resource://test/es6module_top_level_await.js", "not supported");
+  testFailure("resource://test/es6module_top_level_await.js", {
+    type: "SyntaxError",
+    message: "not supported",
+    stack: "testFailure",
+    fileName: "resource://test/es6module_top_level_await.js",
+    lineNumber: 1,
+    columnNumber: 0,
+  });
 }
 
-function testFailure(url, exceptionPart) {
+function testFailure(url, expected) {
   let threw = false;
   let exception;
   try {
@@ -57,8 +90,26 @@ function testFailure(url, exceptionPart) {
   }
 
   Assert.ok(threw);
-  if (exceptionPart) {
-    Assert.ok(exception.toString().includes(exceptionPart));
+
+  if (expected) {
+    if ("type" in expected) {
+      Assert.equal(exception.constructor.name, expected.type, "error type");
+    }
+    if ("message" in expected) {
+      Assert.ok(exception.message.includes(expected.message), "message");
+    }
+    if ("stack" in expected) {
+      Assert.ok(exception.stack.includes(expected.stack), "stack");
+    }
+    if ("fileName" in expected) {
+      Assert.equal(exception.fileName, expected.fileName, "fileName");
+    }
+    if ("lineNumber" in expected) {
+      Assert.equal(exception.lineNumber, expected.lineNumber, "lineNumber");
+    }
+    if ("columnNumber" in expected) {
+      Assert.equal(exception.columnNumber, expected.columnNumber, "columnNumber");
+    }
   }
 
   return exception;
