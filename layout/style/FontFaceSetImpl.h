@@ -121,11 +121,6 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   virtual void DidRefresh() { MOZ_ASSERT_UNREACHABLE("Not implemented!"); }
 
-  
-
-
-  static bool PrefEnabled();
-
   virtual void FlushUserFontSet() {}
 
   static nsPresContext* GetPresContextFor(gfxUserFontSet* aUserFontSet) {

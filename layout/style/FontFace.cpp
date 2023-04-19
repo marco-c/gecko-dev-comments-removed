@@ -303,7 +303,7 @@ void FontFace::EnsurePromise() {
   
   
   
-  if (FontFaceSet::PrefEnabled()) {
+  if (FontFaceSet::IsEnabled()) {
     ErrorResult rv;
     mLoaded = Promise::Create(mParent, rv);
 
