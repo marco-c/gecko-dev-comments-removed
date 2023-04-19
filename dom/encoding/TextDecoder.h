@@ -18,7 +18,47 @@ namespace mozilla::dom {
 
 class ArrayBufferViewOrArrayBuffer;
 
-class TextDecoder final : public NonRefcountedDOMObject {
+class TextDecoderCommon {
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void DecodeNative(mozilla::Span<const uint8_t> aInput, const bool aStream,
+                    nsAString& aOutDecodedString, ErrorResult& aRv);
+
+  
+
+
+
+
+  void GetEncoding(nsAString& aEncoding);
+
+  bool Fatal() const { return mFatal; }
+
+  bool IgnoreBOM() const { return mIgnoreBOM; }
+
+ protected:
+  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
+  nsCString mEncoding;
+  bool mFatal = false;
+  bool mIgnoreBOM = false;
+};
+
+class TextDecoder final : public NonRefcountedDOMObject,
+                          public TextDecoderCommon {
  public:
   
   static TextDecoder* Constructor(const GlobalObject& aGlobal,
@@ -33,9 +73,7 @@ class TextDecoder final : public NonRefcountedDOMObject {
     return txtDecoder.release();
   }
 
-  TextDecoder() : mFatal(false), mIgnoreBOM(false) {
-    MOZ_COUNT_CTOR(TextDecoder);
-  }
+  TextDecoder() { MOZ_COUNT_CTOR(TextDecoder); }
 
   MOZ_COUNTED_DTOR(TextDecoder)
 
@@ -64,45 +102,11 @@ class TextDecoder final : public NonRefcountedDOMObject {
   void InitWithEncoding(NotNull<const Encoding*> aEncoding,
                         const TextDecoderOptions& aOptions);
 
-  
-
-
-
-
-  void GetEncoding(nsAString& aEncoding);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void Decode(mozilla::Span<const uint8_t> aInput, const bool aStream,
-              nsAString& aOutDecodedString, ErrorResult& aRv);
-
   void Decode(const Optional<ArrayBufferViewOrArrayBuffer>& aBuffer,
               const TextDecodeOptions& aOptions, nsAString& aOutDecodedString,
               ErrorResult& aRv);
 
-  bool Fatal() const { return mFatal; }
-
-  bool IgnoreBOM() const { return mIgnoreBOM; }
-
  private:
-  nsCString mEncoding;
-  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
-  bool mFatal;
-  bool mIgnoreBOM;
 };
 
 }  
