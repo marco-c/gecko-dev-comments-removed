@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -532,7 +530,7 @@ var Policies = {
       }
 
       if (param.ExpireAtSessionEnd != undefined) {
-        log.error(
+        lazy.log.error(
           "'ExpireAtSessionEnd' has been deprecated and it has no effect anymore."
         );
       }
