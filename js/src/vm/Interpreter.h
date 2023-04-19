@@ -48,7 +48,16 @@ extern JSObject* ValueToCallable(JSContext* cx, HandleValue v,
                                  MaybeConstruct construct = NO_CONSTRUCT);
 
 
-enum class CallReason { Call, Getter, Setter };
+
+
+
+enum class CallReason {
+  Call,
+  
+  CallContent,
+  Getter,
+  Setter,
+};
 
 
 
@@ -136,7 +145,8 @@ inline bool Call(JSContext* cx, HandleValue fval, JSObject* thisObj,
 
 
 
-extern bool CallFromStack(JSContext* cx, const CallArgs& args);
+extern bool CallFromStack(JSContext* cx, const CallArgs& args,
+                          CallReason reason = CallReason::Call);
 
 
 
@@ -162,7 +172,8 @@ extern bool Construct(JSContext* cx, HandleValue fval,
 
 
 
-extern bool ConstructFromStack(JSContext* cx, const CallArgs& args);
+extern bool ConstructFromStack(JSContext* cx, const CallArgs& args,
+                               CallReason reason = CallReason::Call);
 
 
 
