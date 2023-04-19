@@ -290,7 +290,14 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
 
   if (!mReportedSpdy) {
     mReportedSpdy = true;
-    gHttpHandler->ConnMgr()->ReportSpdyConnection(this, true);
+    
+    
+    
+    
+    
+    bool disallowHttp3 =
+        mTransaction ? mTransaction->Caps() & NS_HTTP_DISALLOW_HTTP3 : false;
+    gHttpHandler->ConnMgr()->ReportSpdyConnection(this, true, disallowHttp3);
   }
 
   
@@ -1544,7 +1551,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
           if (!mReportedSpdy && mTlsHandshaker->NPNComplete()) {
             mReportedSpdy = true;
             MOZ_ASSERT(!mEverUsedSpdy);
-            gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false);
+            gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false, false);
           }
 
           LOG(("  writing transaction request stream\n"));
