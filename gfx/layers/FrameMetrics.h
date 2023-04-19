@@ -22,9 +22,10 @@
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/ScrollPositionUpdate.h"        
-#include "mozilla/StaticPtr.h"                   
-#include "mozilla/TimeStamp.h"                   
-#include "nsTHashMap.h"                          
+#include "mozilla/ScrollSnapTargetId.h"
+#include "mozilla/StaticPtr.h"  
+#include "mozilla/TimeStamp.h"  
+#include "nsTHashMap.h"         
 #include "nsString.h"
 #include "PLDHashTable.h"  
 
@@ -721,20 +722,26 @@ struct ScrollSnapInfo {
     
     StyleScrollSnapStop mScrollSnapStop;
 
+    
+    ScrollSnapTargetId mTargetId;
+
     SnapTarget() = default;
 
     SnapTarget(Maybe<nscoord>&& aSnapPositionX, Maybe<nscoord>&& aSnapPositionY,
-               nsRect&& aSnapArea, StyleScrollSnapStop aScrollSnapStop)
+               nsRect&& aSnapArea, StyleScrollSnapStop aScrollSnapStop,
+               ScrollSnapTargetId aTargetId)
         : mSnapPositionX(std::move(aSnapPositionX)),
           mSnapPositionY(std::move(aSnapPositionY)),
           mSnapArea(std::move(aSnapArea)),
-          mScrollSnapStop(aScrollSnapStop) {}
+          mScrollSnapStop(aScrollSnapStop),
+          mTargetId(aTargetId) {}
 
     bool operator==(const SnapTarget& aOther) const {
       return mSnapPositionX == aOther.mSnapPositionX &&
              mSnapPositionY == aOther.mSnapPositionY &&
              mSnapArea == aOther.mSnapArea &&
-             mScrollSnapStop == aOther.mScrollSnapStop;
+             mScrollSnapStop == aOther.mScrollSnapStop &&
+             mTargetId == aOther.mTargetId;
     }
   };
 
@@ -743,13 +750,16 @@ struct ScrollSnapInfo {
   struct ScrollSnapRange {
     ScrollSnapRange() = default;
 
-    ScrollSnapRange(nscoord aStart, nscoord aEnd)
-        : mStart(aStart), mEnd(aEnd) {}
+    ScrollSnapRange(nscoord aStart, nscoord aEnd, ScrollSnapTargetId aTargetId)
+        : mStart(aStart), mEnd(aEnd), mTargetId(aTargetId) {}
 
     nscoord mStart;
     nscoord mEnd;
+    ScrollSnapTargetId mTargetId;
+
     bool operator==(const ScrollSnapRange& aOther) const {
-      return mStart == aOther.mStart && mEnd == aOther.mEnd;
+      return mStart == aOther.mStart && mEnd == aOther.mEnd &&
+             mTargetId == aOther.mTargetId;
     }
 
     

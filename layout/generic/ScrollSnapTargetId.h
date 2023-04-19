@@ -1,0 +1,20 @@
+
+
+
+
+#ifndef mozilla_ScrollSnapTargetId_h_
+#define mozilla_ScrollSnapTargetId_h_
+
+#include <cstdint>
+
+namespace mozilla {
+
+
+
+enum class ScrollSnapTargetId : uintptr_t {
+  None = 0,
+};
+
+}  
+
+#endif  
