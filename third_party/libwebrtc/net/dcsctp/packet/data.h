@@ -64,7 +64,7 @@ struct Data {
   Data& operator=(Data&& other) = default;
 
   
-  Data Clone() {
+  Data Clone() const {
     return Data(stream_id, ssn, message_id, fsn, ppid, payload, is_beginning,
                 is_end, is_unordered);
   }
