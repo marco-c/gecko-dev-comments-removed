@@ -576,7 +576,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -867,4 +867,5 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
         GTKCSDReversedPlacement
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
+    bool_pref_feature!(atom!("-moz-box-flexbox-emulation"), "layout.css.moz-box-flexbox-emulation.enabled"),
 ];

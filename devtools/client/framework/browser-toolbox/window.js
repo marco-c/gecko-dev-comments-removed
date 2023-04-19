@@ -127,7 +127,6 @@ function setPrefDefaults() {
     "devtools.command-button-noautohide.enabled",
     true
   );
-  Services.prefs.setBoolPref("layout.css.emulate-moz-box-with-flex", false);
 
   
   Services.prefs.setBoolPref("devtools.performance.enabled", true);
