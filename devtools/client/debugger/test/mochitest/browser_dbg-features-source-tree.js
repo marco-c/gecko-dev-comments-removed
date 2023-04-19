@@ -14,14 +14,6 @@
 
 "use strict";
 
-requestLongerTimeout(5);
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
-  this
-);
-
 const testServer = createVersionizedHttpTestServer(
   "examples/sourcemaps-reload-uncompressed"
 );
@@ -41,7 +33,11 @@ add_task(async function testSimpleSourcesWithManualClickExpand() {
   );
 
   
-  is(getLabel(dbg, 1), "Main Thread", "Main thread is labeled properly");
+  is(
+    getSourceTreeLabel(dbg, 1),
+    "Main Thread",
+    "Main thread is labeled properly"
+  );
   info("Before interacting with the source tree, no source are displayed");
   await waitForSourcesInSourceTree(dbg, [], { noExpand: true });
   await clickElement(dbg, "sourceDirectoryLabel", 3);
@@ -393,110 +389,6 @@ add_task(async function testSourceTreeWithWebExtensionContentScript() {
 
   await extension.unload();
 });
-
-
-
-
-add_task(async function testSourceTreeNamesForWebExtensions() {
-  await pushPref("devtools.chrome.enabled", true);
-  await pushPref("devtools.browsertoolbox.fission", true);
-  const extension = await installAndStartContentScriptExtension();
-
-  const dbg = await initDebugger("doc-content-script-sources.html");
-  await waitForSourcesInSourceTree(dbg, [], {
-    noExpand: true,
-  });
-
-  is(
-    getLabel(dbg, 2),
-    "Test content script extension",
-    "Test content script extension is labeled properly"
-  );
-
-  await dbg.toolbox.closeToolbox();
-  await extension.unload();
-
-  
-  await pushPref("devtools.browsertoolbox.panel", "jsdebugger");
-
-  const ToolboxTask = await initBrowserToolboxTask();
-  await ToolboxTask.importFunctions({
-    createDebuggerContext,
-    waitUntil,
-    findSourceNodeWithText,
-    findAllElements,
-    getSelector,
-    findAllElementsWithSelector,
-    assertSourceTreeNode,
-  });
-
-  await ToolboxTask.spawn(selectors, async _selectors => {
-    this.selectors = _selectors;
-  });
-
-  await ToolboxTask.spawn(null, async () => {
-    try {
-      
-      
-      await gToolbox.getPanelWhenReady("jsdebugger");
-      const dbgx = createDebuggerContext(gToolbox);
-      let rootNodeForExtensions = null;
-      await waitUntil(() => {
-        rootNodeForExtensions = findSourceNodeWithText(dbgx, "extension");
-        return !!rootNodeForExtensions;
-      });
-      
-      if (
-        !!rootNodeForExtensions &&
-        !rootNodeForExtensions.querySelector(".arrow.expanded")
-      ) {
-        rootNodeForExtensions.querySelector(".arrow").click();
-      }
-
-      
-      
-      await assertSourceTreeNode(dbgx, "Picture-In-Picture");
-      await assertSourceTreeNode(dbgx, "Form Autofill");
-    } catch (e) {
-      console.log("Caught exception in spawn", e);
-      throw e;
-    }
-  });
-
-  await ToolboxTask.destroy();
-});
-
-
-
-
-
-
-
-
-function getLabel(dbg, index) {
-  return (
-    findElement(dbg, "sourceNode", index)
-      .textContent.trim()
-      
-      .replace(/^[\s\u200b]*/g, "")
-  );
-}
-
-
-
-
-
-
-
-
-async function assertSourceTreeNode(dbg, text) {
-  let node = null;
-  await waitUntil(() => {
-    node = findSourceNodeWithText(dbg, text);
-    return !!node;
-  });
-  ok(!!node, `Source tree node with text "${text}" exists`);
-}
 
 
 
