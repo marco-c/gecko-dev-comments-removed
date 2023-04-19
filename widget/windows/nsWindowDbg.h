@@ -26,11 +26,23 @@
 
 
 
-#define SHOW_REPEAT_EVENTS true
-#define SHOW_MOUSEMOVE_EVENTS false
+class PrintEvent final {
+ public:
+  PrintEvent(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT retValue);
+  void SetResult(bool result) { mResult = mozilla::Some(result); }
+  ~PrintEvent();
 
-void PrintEvent(UINT msg, uint64_t wParam, uint64_t lParam, uint64_t retValue,
-                bool result, bool aShowAllEvents, bool aShowMouseMoves);
+ private:
+  bool PrintEventInternal();
+  const UINT mMsg;
+  const WPARAM mWParam;
+  const LPARAM mLParam;
+  const LRESULT mRetValue;
+  mozilla::Maybe<long> mEventCounter;
+  
+  mozilla::Maybe<bool> mResult;
+  bool mShouldLogPostCall;
+};
 
 #if defined(POPUP_ROLLUP_DEBUG_OUTPUT)
 typedef struct {

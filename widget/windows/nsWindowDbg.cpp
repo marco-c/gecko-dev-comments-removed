@@ -8,6 +8,7 @@
 
 
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "nsWindowDbg.h"
 #include "WinUtils.h"
 
@@ -26,25 +27,76 @@ MSGFEventMsgInfo gMSGFEvents[] = {
 static long gEventCounter = 0;
 static UINT gLastEventMsg = 0;
 
+PrintEvent::PrintEvent(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT retValue)
+    : mMsg(msg),
+      mWParam(wParam),
+      mLParam(lParam),
+      mRetValue(retValue),
+      mResult(mozilla::Nothing()),
+      mShouldLogPostCall(false) {
+  if (PrintEventInternal()) {
+    
+    mEventCounter = mozilla::Some(gEventCounter);
+    ++gEventCounter;
+  }
+}
+
+PrintEvent::~PrintEvent() {
+  
+  
+  if (mResult.isSome()) {
+    if (PrintEventInternal() && mEventCounter.isNothing()) {
+      
+      ++gEventCounter;
+    }
+  }
+}
 
 
-void PrintEvent(UINT msg, uint64_t wParam, uint64_t lParam, uint64_t retValue,
-                bool result, bool aShowAllEvents, bool aShowMouseMoves) {
-  const auto eventMsgInfo = gAllEvents.find(msg);
+
+
+
+
+
+bool PrintEvent::PrintEventInternal() {
+  const auto eventMsgInfo = gAllEvents.find(mMsg);
   const char* msgText =
       eventMsgInfo != gAllEvents.end() ? eventMsgInfo->second.mStr : nullptr;
 
-  if (aShowAllEvents || (gLastEventMsg != msg)) {
-    if (aShowMouseMoves ||
-        (msg != WM_SETCURSOR && msg != WM_MOUSEMOVE && msg != WM_NCHITTEST)) {
-      MOZ_LOG(
-          gWindowsEventLog, LogLevel::Info,
-          ("%6ld - 0x%04X (0x%08llX 0x%08llX) %s: 0x%08llX (%s)\n",
-           gEventCounter++, msg, wParam, lParam, msgText ? msgText : "Unknown",
-           retValue, result ? "true" : "false"));
-      gLastEventMsg = msg;
+  mozilla::LogLevel logLevel = (*gWindowsEventLog).Level();
+  bool isPreCall = mResult.isNothing();
+  if (isPreCall || mShouldLogPostCall) {
+    if (isPreCall) {
+      bool shouldLogAtAll =
+          logLevel >= mozilla::LogLevel::Info &&
+          (logLevel >= mozilla::LogLevel::Debug || (gLastEventMsg != mMsg)) &&
+          (logLevel >= mozilla::LogLevel::Verbose ||
+           (mMsg != WM_SETCURSOR && mMsg != WM_MOUSEMOVE &&
+            mMsg != WM_NCHITTEST));
+      if (!shouldLogAtAll) {
+        return false;
+      }
+      mShouldLogPostCall = true;
+      bool shouldLogPreCall = gEventsToLogOriginalParams.has(mMsg);
+      if (!shouldLogPreCall) {
+        
+        return false;
+      }
     }
+    const char* resultMsg = mResult.isSome()
+                                ? (mResult.value() ? "true" : "false")
+                                : "initial call";
+    MOZ_LOG(
+        gWindowsEventLog, LogLevel::Info,
+        ("%6ld - 0x%04X (0x%08llX 0x%08llX) %s: 0x%08llX (%s)\n",
+         mEventCounter.valueOr(gEventCounter), mMsg,
+         static_cast<uint64_t>(mWParam), static_cast<uint64_t>(mLParam),
+         msgText ? msgText : "Unknown",
+         mResult.isSome() ? static_cast<uint64_t>(mRetValue) : 0, resultMsg));
+    gLastEventMsg = mMsg;
+    return true;
   }
+  return false;
 }
 
 #ifdef DEBUG

@@ -413,6 +413,13 @@ std::unordered_map<UINT, EventMsgInfo> gAllEvents = {
     {0x0, {nullptr, 0x0}}};
 #undef ENTRY
 
+
+const UINT eventsToLogOriginalParams[] = {
+    WM_WINDOWPOSCHANGING, WM_SIZING,        WM_STYLECHANGING,
+    WM_GETTEXT,           WM_GETMINMAXINFO, WM_MEASUREITEM,
+};
+mozilla::HashSet<UINT> gEventsToLogOriginalParams;
+
 #ifdef MOZ_PLACES
 NS_IMPL_ISUPPORTS(myDownloadObserver, nsIDownloadObserver)
 NS_IMPL_ISUPPORTS(AsyncFaviconDataReady, nsIFaviconDataCallback)
@@ -475,6 +482,12 @@ void WinUtils::Initialize() {
 
   if (IsWin8OrLater()) {
     sHasPackageIdentity = mozilla::HasPackageIdentity();
+  }
+
+  MOZ_ASSERT(gEventsToLogOriginalParams.reserve(
+      MOZ_ARRAY_LENGTH(eventsToLogOriginalParams)));
+  for (UINT eventToLogOriginalParam : eventsToLogOriginalParams) {
+    MOZ_ASSERT(gEventsToLogOriginalParams.putNew(eventToLogOriginalParam));
   }
 }
 

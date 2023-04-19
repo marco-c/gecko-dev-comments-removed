@@ -5171,13 +5171,11 @@ bool nsWindow::ExternalHandlerProcessMessage(UINT aMessage, WPARAM& aWParam,
 
 bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                               LRESULT* aRetValue) {
+  
+  
+  PrintEvent printEvent(msg, wParam, lParam, *aRetValue);
   bool result = ProcessMessageInternal(msg, wParam, lParam, aRetValue);
-
-  
-  
-  
-  PrintEvent(msg, wParam, lParam, *aRetValue, result, SHOW_REPEAT_EVENTS,
-             SHOW_MOUSEMOVE_EVENTS);
+  printEvent.SetResult(result);
 
   return result;
 }
