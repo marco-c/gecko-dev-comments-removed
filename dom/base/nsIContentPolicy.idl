@@ -431,6 +431,12 @@ interface nsIContentPolicy : nsISupports
 
 
 
+     TYPE_WEB_IDENTITY = 57,
+
+    
+
+
+
 
 
 
