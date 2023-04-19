@@ -6234,9 +6234,19 @@ fn fill_in_missing_keyframe_values(
         return;
     }
 
+    
+    
+    
+    
+    
+    let composition = structs::CompositeOperationOrAuto::Auto;
     let keyframe = match offset {
-        Offset::Zero => unsafe { Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function) },
-        Offset::One => unsafe { Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function) },
+        Offset::Zero => unsafe {
+            Gecko_GetOrCreateInitialKeyframe(keyframes, timing_function, composition)
+        },
+        Offset::One => unsafe {
+            Gecko_GetOrCreateFinalKeyframe(keyframes, timing_function, composition)
+        },
     };
 
     
@@ -6261,6 +6271,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     inherited_timing_function: &nsTimingFunction,
     keyframes: &mut nsTArray<structs::Keyframe>,
 ) -> bool {
+    use style::gecko_bindings::structs::CompositeOperationOrAuto;
+    use style::properties::longhands::animation_composition::single_value::computed_value::T as Composition;
+
     debug_assert!(keyframes.len() == 0, "keyframes should be initially empty");
 
     let element = GeckoElement(element);
@@ -6302,12 +6315,21 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
         };
 
         
+        let composition =
+            step.get_animation_composition(&guard)
+                .map_or(CompositeOperationOrAuto::Auto, |val| match val {
+                    Composition::Replace => CompositeOperationOrAuto::Replace,
+                    Composition::Add => CompositeOperationOrAuto::Add,
+                    Composition::Accumulate => CompositeOperationOrAuto::Accumulate,
+                });
+
         
         
         let keyframe = Gecko_GetOrCreateKeyframeAtStart(
             keyframes,
             step.start_percentage.0 as f32,
             &timing_function,
+            composition,
         );
 
         match step.value {

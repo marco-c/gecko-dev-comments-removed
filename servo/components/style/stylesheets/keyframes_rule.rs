@@ -6,6 +6,7 @@
 
 use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
+use crate::properties::longhands::animation_composition::single_value::SpecifiedValue as SpecifiedComposition;
 use crate::properties::longhands::transition_timing_function::single_value::SpecifiedValue as SpecifiedTimingFunction;
 use crate::properties::LonghandIdSet;
 use crate::properties::{Importance, PropertyDeclaration};
@@ -284,34 +285,75 @@ pub struct KeyframesStep {
     
     
     pub declared_timing_function: bool,
+    
+    
+    
+    
+    pub declared_composition: bool,
 }
 
 impl KeyframesStep {
     #[inline]
     fn new(
-        percentage: KeyframePercentage,
+        start_percentage: KeyframePercentage,
         value: KeyframesStepValue,
         guard: &SharedRwLockReadGuard,
     ) -> Self {
-        let declared_timing_function = match value {
-            KeyframesStepValue::Declarations { ref block } => block
-                .read_with(guard)
-                .declarations()
-                .iter()
-                .any(|prop_decl| match *prop_decl {
-                    PropertyDeclaration::AnimationTimingFunction(..) => true,
-                    _ => false,
-                }),
-            _ => false,
-        };
+        let mut declared_timing_function = false;
+        let mut declared_composition = false;
+        if let KeyframesStepValue::Declarations { ref block } = value {
+            for prop_decl in block.read_with(guard).declarations().iter() {
+                match *prop_decl {
+                    PropertyDeclaration::AnimationTimingFunction(..) => {
+                        declared_timing_function = true;
+                    },
+                    PropertyDeclaration::AnimationComposition(..) => {
+                        declared_composition = true;
+                    },
+                    _ => continue,
+                }
+                
+                if declared_timing_function && declared_composition {
+                    break;
+                }
+            }
+        }
 
         KeyframesStep {
-            start_percentage: percentage,
-            value: value,
-            declared_timing_function: declared_timing_function,
+            start_percentage,
+            value,
+            declared_timing_function,
+            declared_composition,
         }
     }
 
+    
+    #[inline]
+    fn get_declared_property<'a>(
+        &'a self,
+        guard: &'a SharedRwLockReadGuard,
+        property: LonghandId,
+    ) -> Option<&'a PropertyDeclaration> {
+        match self.value {
+            KeyframesStepValue::Declarations { ref block } => {
+                let guard = block.read_with(guard);
+                let (declaration, _) = guard
+                    .get(PropertyDeclarationId::Longhand(property))
+                    .unwrap();
+                match *declaration {
+                    PropertyDeclaration::CSSWideKeyword(..) => None,
+                    
+                    PropertyDeclaration::WithVariables(..) => None,
+                    _ => Some(declaration),
+                }
+            },
+            KeyframesStepValue::ComputedValues => {
+                panic!("Shouldn't happen to set this property in missing keyframes")
+            },
+        }
+    }
+
+    
     
     pub fn get_animation_timing_function(
         &self,
@@ -320,28 +362,38 @@ impl KeyframesStep {
         if !self.declared_timing_function {
             return None;
         }
-        match self.value {
-            KeyframesStepValue::Declarations { ref block } => {
-                let guard = block.read_with(guard);
-                let (declaration, _) = guard
-                    .get(PropertyDeclarationId::Longhand(
-                        LonghandId::AnimationTimingFunction,
-                    ))
-                    .unwrap();
-                match *declaration {
+
+        self.get_declared_property(guard, LonghandId::AnimationTimingFunction)
+            .map(|decl| {
+                match *decl {
                     PropertyDeclaration::AnimationTimingFunction(ref value) => {
                         
-                        Some(value.0[0].clone())
+                        value.0[0].clone()
                     },
-                    PropertyDeclaration::CSSWideKeyword(..) => None,
-                    PropertyDeclaration::WithVariables(..) => None,
-                    _ => panic!(),
+                    _ => unreachable!("Unexpected PropertyDeclaration"),
                 }
-            },
-            KeyframesStepValue::ComputedValues => {
-                panic!("Shouldn't happen to set animation-timing-function in missing keyframes")
-            },
+            })
+    }
+
+    
+    pub fn get_animation_composition(
+        &self,
+        guard: &SharedRwLockReadGuard,
+    ) -> Option<SpecifiedComposition> {
+        if !self.declared_composition {
+            return None;
         }
+
+        self.get_declared_property(guard, LonghandId::AnimationComposition)
+            .map(|decl| {
+                match *decl {
+                    PropertyDeclaration::AnimationComposition(ref value) => {
+                        
+                        value.0[0].clone()
+                    },
+                    _ => unreachable!("Unexpected PropertyDeclaration"),
+                }
+            })
     }
 }
 

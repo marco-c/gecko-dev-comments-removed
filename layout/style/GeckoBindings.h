@@ -41,6 +41,9 @@ struct Keyframe;
 namespace css {
 class LoaderReusableStyleSheets;
 }
+namespace dom {
+enum class CompositeOperationOrAuto : uint8_t;
+}
 }  
 
 #ifdef NIGHTLY_BUILD
@@ -383,9 +386,12 @@ void Gecko_EnsureStyleTransitionArrayLength(void* array, size_t len);
 
 
 
+
+
 mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
     nsTArray<mozilla::Keyframe>* keyframes, float offset,
-    const nsTimingFunction* timingFunction);
+    const nsTimingFunction* timingFunction,
+    const mozilla::dom::CompositeOperationOrAuto composition);
 
 
 
@@ -394,7 +400,8 @@ mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
 
 mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
     nsTArray<mozilla::Keyframe>* keyframes,
-    const nsTimingFunction* timingFunction);
+    const nsTimingFunction* timingFunction,
+    const mozilla::dom::CompositeOperationOrAuto composition);
 
 
 
@@ -402,7 +409,8 @@ mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
 
 mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
     nsTArray<mozilla::Keyframe>* keyframes,
-    const nsTimingFunction* timingFunction);
+    const nsTimingFunction* timingFunction,
+    const mozilla::dom::CompositeOperationOrAuto composition);
 
 
 
