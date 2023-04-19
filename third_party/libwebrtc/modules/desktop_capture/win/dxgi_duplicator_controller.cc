@@ -25,6 +25,26 @@
 
 namespace webrtc {
 
+namespace {
+
+constexpr DWORD kInvalidSessionId = 0xFFFFFFFF;
+
+DWORD GetCurrentSessionId() {
+  DWORD session_id = kInvalidSessionId;
+  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &session_id)) {
+    RTC_LOG(LS_WARNING)
+        << "Failed to retrieve current session Id, current binary "
+           "may not have required priviledge.";
+  }
+  return session_id;
+}
+
+bool IsConsoleSession() {
+  return WTSGetActiveConsoleSessionId() == GetCurrentSessionId();
+}
+
+}  
+
 
 std::string DxgiDuplicatorController::ResultName(
     DxgiDuplicatorController::Result result) {
@@ -57,14 +77,8 @@ DxgiDuplicatorController::Instance() {
 
 
 bool DxgiDuplicatorController::IsCurrentSessionSupported() {
-  DWORD session_id = 0;
-  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &session_id)) {
-    RTC_LOG(LS_WARNING)
-        << "Failed to retrieve current session Id, current binary "
-           "may not have required priviledge.";
-    return false;
-  }
-  return session_id != 0;
+  DWORD current_session_id = GetCurrentSessionId();
+  return current_session_id != kInvalidSessionId && current_session_id != 0;
 }
 
 DxgiDuplicatorController::DxgiDuplicatorController() : refcount_(0) {}
@@ -425,13 +439,26 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
   const int64_t ms_per_frame = 17;
   
   
-  const int64_t frames_to_skip = 1;
+  int64_t frames_to_skip = 1;
   
   
   
   
   
   const int64_t timeout_ms = 500;
+
+  if (GetNumFramesCaptured() == 0 && !IsConsoleSession()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    frames_to_skip = 5;
+  }
+
   if (GetNumFramesCaptured() >= frames_to_skip) {
     return true;
   }
@@ -450,17 +477,16 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
   }
 
   const int64_t start_ms = rtc::TimeMillis();
-  int64_t last_frame_start_ms = 0;
   while (GetNumFramesCaptured() < frames_to_skip) {
-    if (GetNumFramesCaptured() > 0) {
-      
-      
-      webrtc::SleepMs(ms_per_frame - (rtc::TimeMillis() - last_frame_start_ms));
-    }
-    last_frame_start_ms = rtc::TimeMillis();
     if (!DoDuplicateAll(context, shared_frame)) {
       return false;
     }
+
+    
+    if (GetNumFramesCaptured() >= frames_to_skip) {
+      break;
+    }
+
     if (rtc::TimeMillis() - start_ms > timeout_ms) {
       RTC_LOG(LS_ERROR) << "Failed to capture " << frames_to_skip
                         << " frames "
@@ -468,6 +494,10 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
                         << timeout_ms << " milliseconds.";
       return false;
     }
+
+    
+    
+    webrtc::SleepMs(ms_per_frame);
   }
   return true;
 }
