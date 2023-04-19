@@ -22,6 +22,8 @@ TEST(NimbusFeaturesGet, Errors)
                                  PrefValueKind::User),
             NS_OK);
   ASSERT_TRUE(NimbusFeatures::GetBool("foo"_ns, "enabled"_ns, false));
+
+  ASSERT_EQ(Preferences::ClearUser("nimbus.syncdatastore.foo.value"), NS_OK);
 }
 
 TEST(NimbusFeaturesGetRollout, Errors)
@@ -54,30 +56,43 @@ TEST(NimbusFeaturesExperimentPriorityOverRollouts, Errors)
   ASSERT_TRUE(NimbusFeatures::GetBool("feature"_ns, "enabled"_ns, false));
 }
 
-
 TEST(NimbusFeaturesDataSourcePrecedence, Errors)
 {
-  ASSERT_EQ(
-      Preferences::SetInt("nimbus.testing.testInt", 29, PrefValueKind::User),
-      NS_OK);
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0), 29);
+  const auto FALLBACK_VALUE = 1;
+  const auto EXPERIMENT_VALUE = 2;
+  const auto ROLLOUT_VALUE = 3;
 
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.testFeature.testInt", 12,
+  ASSERT_EQ(Preferences::SetInt("nimbus.testing.testInt", FALLBACK_VALUE,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.testFeature.testInt",
-                                13, PrefValueKind::User),
+
+  
+  
+  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
+            FALLBACK_VALUE);
+
+  
+  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.testFeature.testInt",
+                                EXPERIMENT_VALUE, PrefValueKind::User),
             NS_OK);
+
   
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0), 29);
+  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.testFeature.testInt",
+                                ROLLOUT_VALUE, PrefValueKind::User),
+            NS_OK);
+
   
-  Preferences::ClearUser("nimbus.testing.testInt");
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0), 12);
+  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
+            EXPERIMENT_VALUE);
+
+  
   Preferences::ClearUser("nimbus.syncdatastore.testFeature.testInt");
-  
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0), 13);
+  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
+            ROLLOUT_VALUE);
+
   
   Preferences::ClearUser("nimbus.syncdefaultsstore.testFeature.testInt");
+  Preferences::ClearUser("nimbus.testing.testInt");
 }
 
 static void FooValueUpdated(const char* aPref, void* aUserData) {
@@ -113,8 +128,16 @@ TEST(NimbusFeaturesGetFallback, Errors)
             false);
   Preferences::ClearUser("browser.aboutwelcome.skipFocus");
 
-  Preferences::SetInt("nimbus.testing.testInt", 5, PrefValueKind::Default);
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 42), 5);
+  const auto FALLBACK_VALUE = 5;
+  const auto DEFAULT_VALUE = 42;
+
+  Preferences::SetInt("nimbus.testing.testInt", FALLBACK_VALUE,
+                      PrefValueKind::Default);
+  ASSERT_EQ(
+      NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, DEFAULT_VALUE),
+      FALLBACK_VALUE);
+
+  Preferences::ClearUser("nimbus.testing.testInt");
 }
 
 TEST(NimbusFeaturesUpdate, Errors)

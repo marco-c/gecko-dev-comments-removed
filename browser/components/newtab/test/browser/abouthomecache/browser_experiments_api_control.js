@@ -7,8 +7,6 @@ const { ExperimentFakes } = ChromeUtils.import(
   "resource://testing-common/NimbusTestUtils.jsm"
 );
 
-const ENABLED_PREF = "browser.startup.homepage.abouthome_cache.enabled";
-
 registerCleanupFunction(async () => {
   
   
@@ -22,12 +20,6 @@ registerCleanupFunction(async () => {
 
 
 add_task(async function test_experiments_api_control() {
-  
-  Services.prefs.clearUserPref(ENABLED_PREF);
-  registerCleanupFunction(() => {
-    Services.prefs.setBoolPref(ENABLED_PREF, true);
-  });
-
   
   await BrowserTestUtils.withNewTab("about:home", async browser => {
     let doEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
