@@ -220,9 +220,10 @@ class RightHost extends SidebarHost {
 
 
 
-function WindowHost(hostTab) {
+function WindowHost(hostTab, options) {
   this._boundUnload = this._boundUnload.bind(this);
   this.hostTab = hostTab;
+  this.options = options;
   EventEmitter.decorate(this);
 }
 
@@ -242,10 +243,11 @@ WindowHost.prototype = {
       
       
       
-      if (
-        this.hostTab &&
-        PrivateBrowsingUtils.isWindowPrivate(this.hostTab.ownerGlobal)
-      ) {
+      
+      
+      const owner =
+        this.hostTab?.ownerGlobal || this.options?.browserContentToolboxOpener;
+      if (owner && PrivateBrowsingUtils.isWindowPrivate(owner)) {
         flags += ",private";
       }
 

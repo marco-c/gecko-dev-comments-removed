@@ -384,6 +384,11 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
         
         const toolbox = await gDevTools.showToolbox(descriptor, {
           hostType: Toolbox.HostType.WINDOW,
+          hostOptions: {
+            
+            
+            browserContentToolboxOpener: gBrowser.ownerGlobal,
+          },
         });
 
         
