@@ -277,7 +277,10 @@ OSInfo::OSInfo()
   
   
   
+#pragma warning(push)
+#pragma warning(disable : 4996)
   ::GetVersionExW(reinterpret_cast<OSVERSIONINFOW*>(&version_info));
+#pragma warning(pop)
   version_number_.major = version_info.dwMajorVersion;
   version_number_.minor = version_info.dwMinorVersion;
   version_number_.build = version_info.dwBuildNumber;
