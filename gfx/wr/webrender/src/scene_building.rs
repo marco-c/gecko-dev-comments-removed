@@ -2111,10 +2111,6 @@ impl<'a> SceneBuilder<'a> {
         
         let mut blit_reason = BlitReason::empty();
 
-        if flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) {
-            blit_reason |= BlitReason::ISOLATE;
-        }
-
         
         
         
@@ -2131,13 +2127,49 @@ impl<'a> SceneBuilder<'a> {
             }
         }
 
-        let is_redundant = FlattenedStackingContext::is_redundant(
-            flags,
+        
+        
+        let mut is_redundant = FlattenedStackingContext::is_redundant(
             &context_3d,
             &composite_ops,
             blit_reason,
             self.sc_stack.last(),
         );
+
+        
+        
+        
+        
+        
+        if flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) {
+            
+            match self.sc_stack.last() {
+                Some(_) => {
+                    
+                    
+                    blit_reason |= BlitReason::ISOLATE;
+                    is_redundant = false;
+                }
+                None => {
+                    
+                    
+                    
+                    if self.tile_cache_builder.is_current_slice_empty() &&
+                       self.spatial_tree.is_root_coord_system(spatial_node_index) &&
+                       !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners)
+                    {
+                        self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
+                        self.tile_cache_builder.make_current_slice_atomic();
+                    } else {
+                        
+                        
+                        
+                        blit_reason |= BlitReason::ISOLATE;
+                        is_redundant = false;
+                    }
+                }
+            }
+        }
 
         
         
@@ -2208,31 +2240,6 @@ impl<'a> SceneBuilder<'a> {
         }
 
         let stacking_context = self.sc_stack.pop().unwrap();
-
-        
-        
-        
-        
-        
-        if stacking_context.flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER) &&
-           self.sc_stack.is_empty() &&
-           self.spatial_tree.is_root_coord_system(stacking_context.spatial_node_index) &&
-           !self.clip_tree_builder.clip_node_has_complex_clips(stacking_context.clip_node_id, &self.interners)
-        {
-            self.tile_cache_builder.add_tile_cache(
-                stacking_context.prim_list,
-                self.root_iframe_clip,
-            );
-
-            return;
-        }
-
-        let parent_is_empty = match self.sc_stack.last() {
-            Some(parent_sc) => {
-                parent_sc.prim_list.is_empty()
-            },
-            None => true,
-        };
 
         let mut source = match stacking_context.context_3d {
             
@@ -2449,29 +2456,18 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        if let (Some(mix_blend_mode), false) = (stacking_context.composite_ops.mix_blend_mode, parent_is_empty) {
-            let parent_is_isolated = match self.sc_stack.last() {
-                Some(parent_sc) => parent_sc.blit_reason.contains(BlitReason::ISOLATE),
-                None => false,
-            };
-            if parent_is_isolated {
-                let composite_mode = PictureCompositeMode::MixBlend(mix_blend_mode);
+        if let Some(mix_blend_mode) = stacking_context.composite_ops.mix_blend_mode {
+            let composite_mode = PictureCompositeMode::MixBlend(mix_blend_mode);
 
-                source = source.add_picture(
-                    composite_mode,
-                    stacking_context.clip_node_id,
-                    Picture3DContext::Out,
-                    &mut self.interners,
-                    &mut self.prim_store,
-                    &mut self.prim_instances,
-                    &mut self.clip_tree_builder,
-                );
-            } else {
-                
-                
-                
-                warn!("found a mix-blend-mode outside a blend container, ignoring");
-            }
+            source = source.add_picture(
+                composite_mode,
+                stacking_context.clip_node_id,
+                Picture3DContext::Out,
+                &mut self.interners,
+                &mut self.prim_store,
+                &mut self.prim_instances,
+                &mut self.clip_tree_builder,
+            );
         }
 
         
@@ -3877,17 +3873,11 @@ impl FlattenedStackingContext {
 
     
     pub fn is_redundant(
-        sc_flags: StackingContextFlags,
         context_3d: &Picture3DContext<ExtendedPrimitiveInstance>,
         composite_ops: &CompositeOps,
         blit_reason: BlitReason,
         parent: Option<&FlattenedStackingContext>,
     ) -> bool {
-        
-        if sc_flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER) {
-            return false;
-        }
-
         
         if let Picture3DContext::In { .. } = context_3d {
             return false;
@@ -3899,10 +3889,19 @@ impl FlattenedStackingContext {
         }
 
         
-        
         if composite_ops.mix_blend_mode.is_some() {
-            if let Some(parent) = parent {
-                if !parent.prim_list.is_empty() {
+            match parent {
+                Some(ref parent) => {
+                    
+                    
+                    if !parent.prim_list.is_empty() {
+                        return false;
+                    }
+                }
+                None => {
+                    
+                    
+                    
                     return false;
                 }
             }

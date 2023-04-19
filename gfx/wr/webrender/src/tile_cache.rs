@@ -79,18 +79,6 @@ impl PrimarySlice {
         }
     }
 
-    fn atomic(
-        prim_list: PrimitiveList,
-        iframe_clip: Option<ClipId>,
-    ) -> Self {
-        PrimarySlice {
-            kind: SliceKind::Atomic { prim_list },
-            background_color: None,
-            iframe_clip,
-            slice_flags: SliceFlags::IS_ATOMIC,
-        }
-    }
-
     fn has_too_many_slices(&self) -> bool {
         match self.kind {
             SliceKind::Atomic { .. } => false,
@@ -173,6 +161,25 @@ impl TileCacheBuilder {
     }
 
     
+    pub fn is_current_slice_empty(&self) -> bool {
+        match self.primary_slices.last() {
+            Some(slice) => {
+                match slice.kind {
+                    SliceKind::Default { ref secondary_slices } => {
+                        secondary_slices.is_empty()
+                    }
+                    SliceKind::Atomic { ref prim_list } => {
+                        prim_list.is_empty()
+                    }
+                }
+            }
+            None => {
+                true
+            }
+        }
+    }
+
+    
     pub fn add_tile_cache_barrier(
         &mut self,
         slice_flags: SliceFlags,
@@ -185,27 +192,6 @@ impl TileCacheBuilder {
         );
 
         self.primary_slices.push(new_slice);
-    }
-
-    
-    pub fn add_tile_cache(
-        &mut self,
-        prim_list: PrimitiveList,
-        iframe_clip: Option<ClipId>,
-    ) {
-        let atomic_slice = PrimarySlice::atomic(
-            prim_list,
-            iframe_clip,
-        );
-
-        let next_slice = PrimarySlice::new(
-            SliceFlags::empty(),
-            iframe_clip,
-            None,
-        );
-
-        self.primary_slices.push(atomic_slice);
-        self.primary_slices.push(next_slice);
     }
 
     
