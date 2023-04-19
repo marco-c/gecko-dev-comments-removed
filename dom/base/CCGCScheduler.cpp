@@ -9,6 +9,7 @@
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/PerfStats.h"
 #include "nsRefreshDriver.h"
 
 
@@ -230,6 +231,22 @@ void CCGCScheduler::NoteGCEnd() {
   if (child) {
     child->DoneGC();
   }
+}
+
+void CCGCScheduler::NoteGCSliceEnd(TimeDuration aSliceDuration) {
+  if (mMajorGCReason == JS::GCReason::NO_REASON) {
+    
+    
+    
+    mReadyForMajorGC = true;
+  }
+
+  
+  
+  mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
+
+  mGCUnnotifiedTotalTime += aSliceDuration;
+  PerfStats::RecordMeasurement(PerfStats::Metric::MajorGC, aSliceDuration);
 }
 
 void CCGCScheduler::NoteCCBegin(CCReason aReason, TimeStamp aWhen,

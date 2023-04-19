@@ -288,20 +288,8 @@ class CCGCScheduler {
   void NoteCCEnd(const CycleCollectorResults& aResults, TimeStamp aWhen,
                  mozilla::TimeDuration aMaxSliceTime);
 
-  void NoteGCSliceEnd(TimeDuration aSliceDuration) {
-    if (mMajorGCReason == JS::GCReason::NO_REASON) {
-      
-      
-      
-      mReadyForMajorGC = true;
-    }
-
-    
-    
-    mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
-
-    mGCUnnotifiedTotalTime += aSliceDuration;
-  }
+  
+  void NoteGCSliceEnd(TimeDuration aSliceDuration);
 
   bool GCRunnerFired(TimeStamp aDeadline);
   bool GCRunnerFiredDoGC(TimeStamp aDeadline, const GCRunnerStep& aStep);
