@@ -84,6 +84,12 @@ class AsyncSafeWaitableEvent {
 
 struct SignalHandlerOutputState {
   
+  
+  static _Unwind_Reason_Code UnwindBacktrace(
+      struct _Unwind_Context* unwind_context,
+      void* unwind_output_state);
+
+  
   AsyncSafeWaitableEvent signal_handler_finish_event;
   
   size_t stack_size_counter = 0;
@@ -92,16 +98,10 @@ struct SignalHandlerOutputState {
 };
 
 
-ABSL_CONST_INIT GlobalMutex g_signal_handler_lock(absl::kConstInit);
 
-
-
-SignalHandlerOutputState* volatile g_signal_handler_output_state;
-
-
-
-_Unwind_Reason_Code UnwindBacktrace(struct _Unwind_Context* unwind_context,
-                                    void* unwind_output_state) {
+_Unwind_Reason_Code SignalHandlerOutputState::UnwindBacktrace(
+    struct _Unwind_Context* unwind_context,
+    void* unwind_output_state) {
   SignalHandlerOutputState* const output_state =
       static_cast<SignalHandlerOutputState*>(unwind_output_state);
 
@@ -123,13 +123,43 @@ _Unwind_Reason_Code UnwindBacktrace(struct _Unwind_Context* unwind_context,
   return _URC_NO_REASON;
 }
 
+class GlobalStackUnwinder {
+ public:
+  static GlobalStackUnwinder& Get() {
+    static GlobalStackUnwinder* const instance = new GlobalStackUnwinder();
+    return *instance;
+  }
+  const char* CaptureRawStacktrace(int pid,
+                                   int tid,
+                                   SignalHandlerOutputState* params);
 
-void SignalHandler(int signum, siginfo_t* info, void* ptr) {
+ private:
+  GlobalStackUnwinder() { current_output_state_.store(nullptr); }
+
+  
+  static void SignalHandler(int signum, siginfo_t* info, void* ptr);
+
+  Mutex mutex_;
+
+  
+  static std::atomic<SignalHandlerOutputState*> current_output_state_;
+  
+  static_assert(std::atomic<SignalHandlerOutputState*>::is_always_lock_free);
+};
+
+std::atomic<SignalHandlerOutputState*>
+    GlobalStackUnwinder::current_output_state_;
+
+
+void GlobalStackUnwinder::SignalHandler(int signum,
+                                        siginfo_t* info,
+                                        void* ptr) {
   
   SignalHandlerOutputState* signal_handler_output_state =
-      g_signal_handler_output_state;
+      current_output_state_.load();
   if (signal_handler_output_state != nullptr) {
-    _Unwind_Backtrace(&UnwindBacktrace, signal_handler_output_state);
+    _Unwind_Backtrace(&SignalHandlerOutputState::UnwindBacktrace,
+                      signal_handler_output_state);
     signal_handler_output_state->signal_handler_finish_event.Signal();
   }
 }
@@ -138,9 +168,10 @@ void SignalHandler(int signum, siginfo_t* info, void* ptr) {
 
 
 
-const char* CaptureRawStacktrace(int pid,
-                                 int tid,
-                                 SignalHandlerOutputState* params) {
+const char* GlobalStackUnwinder::CaptureRawStacktrace(
+    int pid,
+    int tid,
+    SignalHandlerOutputState* params) {
   
   
   
@@ -153,8 +184,8 @@ const char* CaptureRawStacktrace(int pid,
   act.sa_flags = SA_RESTART | SA_SIGINFO;
   sigemptyset(&act.sa_mask);
 
-  GlobalMutexLock ls(&g_signal_handler_lock);
-  g_signal_handler_output_state = params;
+  MutexLock loch(&mutex_);
+  current_output_state_.store(params);
 
   if (sigaction(kSignal, &act, &old_act) != 0)
     return "Failed to change signal action";
@@ -210,7 +241,8 @@ std::vector<StackTraceElement> GetStackTrace(int tid) {
   
   SignalHandlerOutputState params;
 
-  const char* error_string = CaptureRawStacktrace(getpid(), tid, &params);
+  const char* error_string =
+      GlobalStackUnwinder::Get().CaptureRawStacktrace(getpid(), tid, &params);
   if (error_string != nullptr) {
     RTC_LOG(LS_ERROR) << error_string << ". tid: " << tid
                       << ". errno: " << errno;
@@ -224,7 +256,7 @@ std::vector<StackTraceElement> GetStackTrace(int tid) {
 
 std::vector<StackTraceElement> GetStackTrace() {
   SignalHandlerOutputState params;
-  _Unwind_Backtrace(&UnwindBacktrace, &params);
+  _Unwind_Backtrace(&SignalHandlerOutputState::UnwindBacktrace, &params);
   if (params.stack_size_counter >= kMaxStackSize) {
     RTC_LOG(LS_WARNING) << "Stack trace was truncated";
   }
