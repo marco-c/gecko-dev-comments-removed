@@ -23,6 +23,7 @@ class EditAutofillForm {
 
 
 
+
   loadRecord(record = {}) {
     for (let field of this._elements.form.elements) {
       let value = record[field.id];
@@ -56,6 +57,7 @@ class EditAutofillForm {
   }
 
   
+
 
 
 
@@ -255,6 +257,7 @@ class EditAddress extends EditAutofillForm {
   }
 
   
+
 
 
 
