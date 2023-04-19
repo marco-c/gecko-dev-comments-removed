@@ -7154,7 +7154,9 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aCandidatePointToSplit.IsSetAndValid());
 
-  const EditorDOMPoint pointToSplitAvoidingEmptyNewLink = [&]() {
+  
+  
+  EditorDOMPoint pointToSplit = [&]() {
     
     
     
@@ -7233,18 +7235,24 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
 
   const bool createNewParagraph = GetReturnInParagraphCreatesNewParagraph();
   RefPtr<HTMLBRElement> brElement;
-  EditorDOMPoint pointToSplit(pointToSplitAvoidingEmptyNewLink);
-  if (createNewParagraph &&
-      pointToSplitAvoidingEmptyNewLink.GetContainer() == &aParentDivOrP) {
+  if (createNewParagraph && pointToSplit.GetContainer() == &aParentDivOrP) {
+    
+    
     
     brElement = nullptr;
-  } else if (pointToSplitAvoidingEmptyNewLink.IsInTextNode()) {
-    
-    if (pointToSplitAvoidingEmptyNewLink.IsStartOfContainer()) {
+  } else if (pointToSplit.IsInTextNode()) {
+    if (pointToSplit.IsStartOfContainer()) {
+      
+      
+      
+      
+      
+      
+      
       
       brElement =
           HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousSibling(
-              *pointToSplitAvoidingEmptyNewLink.ContainerAsText(),
+              *pointToSplit.ContainerAsText(),
               {WalkTreeOption::IgnoreNonEditableNode}));
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
@@ -7253,8 +7261,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
         if (!createNewParagraph) {
           return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
         }
-        const EditorDOMPoint pointToInsertBR =
-            pointToSplitAvoidingEmptyNewLink.ParentPoint();
+        const EditorDOMPoint pointToInsertBR = pointToSplit.ParentPoint();
         MOZ_ASSERT(pointToInsertBR.IsSet());
         CreateElementResult insertBRElementResult =
             InsertBRElement(WithTransaction::Yes, pointToInsertBR);
@@ -7269,11 +7276,16 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
         brElement =
             HTMLBRElement::FromNodeOrNull(insertBRElementResult.GetNewNode());
       }
-    } else if (pointToSplitAvoidingEmptyNewLink.IsEndOfContainer()) {
+    } else if (pointToSplit.IsEndOfContainer()) {
+      
+      
+      
+      
+      
       
       
       brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextSibling(
-          *pointToSplitAvoidingEmptyNewLink.ContainerAsText(),
+          *pointToSplit.ContainerAsText(),
           {WalkTreeOption::IgnoreNonEditableNode}));
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
@@ -7282,8 +7294,8 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
         if (!createNewParagraph) {
           return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
         }
-        const EditorDOMPoint pointToInsertBR = EditorDOMPoint::After(
-            *pointToSplitAvoidingEmptyNewLink.ContainerAsText());
+        const EditorDOMPoint pointToInsertBR =
+            EditorDOMPoint::After(*pointToSplit.ContainerAsText());
         MOZ_ASSERT(pointToInsertBR.IsSet());
         CreateElementResult insertBRElementResult =
             InsertBRElement(WithTransaction::Yes, pointToInsertBR);
@@ -7304,6 +7316,13 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
       if (!createNewParagraph) {
         return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
       }
+
+      
+      
+      
+      
+      
+      
 
       
       
@@ -7362,15 +7381,20 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
   } else {
     
     
+    
+    
+    
+    
+    
+    
     brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousContent(
-        pointToSplitAvoidingEmptyNewLink,
-        {WalkTreeOption::IgnoreNonEditableNode}, &aEditingHost));
+        pointToSplit, {WalkTreeOption::IgnoreNonEditableNode}, &aEditingHost));
     if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
         EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
       
       brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextContent(
-          pointToSplitAvoidingEmptyNewLink,
-          {WalkTreeOption::IgnoreNonEditableNode}, &aEditingHost));
+          pointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
+          &aEditingHost));
       if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
         
@@ -7378,8 +7402,8 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
         if (!createNewParagraph) {
           return EditActionResult(NS_SUCCESS_DOM_NO_OPERATION);
         }
-        CreateElementResult insertBRElementResult = InsertBRElement(
-            WithTransaction::Yes, pointToSplitAvoidingEmptyNewLink);
+        CreateElementResult insertBRElementResult =
+            InsertBRElement(WithTransaction::Yes, pointToSplit);
         if (insertBRElementResult.isErr()) {
           NS_WARNING(
               "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
