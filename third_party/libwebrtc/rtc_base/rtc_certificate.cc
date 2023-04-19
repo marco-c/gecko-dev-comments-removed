@@ -46,11 +46,6 @@ const SSLCertificate& RTCCertificate::GetSSLCertificate() const {
   return identity_->certificate();
 }
 
-
-const SSLCertificate& RTCCertificate::ssl_certificate() const {
-  return identity_->certificate();
-}
-
 const SSLCertChain& RTCCertificate::GetSSLCertificateChain() const {
   return identity_->cert_chain();
 }
