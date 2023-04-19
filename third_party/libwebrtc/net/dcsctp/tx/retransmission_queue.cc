@@ -739,8 +739,35 @@ void RetransmissionQueue::ExpireChunks(TimeMs now) {
 void RetransmissionQueue::ExpireAllFor(
     const RetransmissionQueue::TxData& item) {
   
-  send_queue_.Discard(item.data().is_unordered, item.data().stream_id,
-                      item.data().message_id);
+  if (send_queue_.Discard(item.data().is_unordered, item.data().stream_id,
+                          item.data().message_id)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    UnwrappedTSN tsn = next_tsn_;
+    next_tsn_.Increment();
+    Data message_end(item.data().stream_id, item.data().ssn,
+                     item.data().message_id, item.data().fsn, item.data().ppid,
+                     std::vector<uint8_t>(), Data::IsBeginning(false),
+                     Data::IsEnd(true), item.data().is_unordered);
+    TxData& added_item =
+        outstanding_data_
+            .emplace(tsn, RetransmissionQueue::TxData(std::move(message_end),
+                                                      absl::nullopt, TimeMs(0),
+                                                      absl::nullopt))
+            .first->second;
+    
+    
+    added_item.Ack();
+    RTC_DLOG(LS_VERBOSE) << log_prefix_
+                         << "Adding unsent end placeholder for message at tsn="
+                         << *tsn.Wrap();
+  }
   for (auto& elem : outstanding_data_) {
     UnwrappedTSN tsn = elem.first;
     TxData& other = elem.second;
