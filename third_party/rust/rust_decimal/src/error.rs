@@ -5,11 +5,21 @@ use core::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
+    
+    
+    
+    
     ErrorString(String),
+    
     ExceedsMaximumPossibleValue,
+    
     LessThanMinimumPossibleValue,
+    
     Underflow,
+    
     ScaleExceedsMaximumPrecision(u32),
+    
+    
     ConversionTo(String),
 }
 

@@ -1,13 +1,15 @@
+use std::fmt::Write;
 use std::{fs, path::PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-changed=README.md");
     let readme = fs::read_to_string("README.md").unwrap();
     let output = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("README-lib.md");
-    fs::write(output, prepare(&readme)).unwrap();
+    let contents = prepare(&readme).unwrap();
+    fs::write(output, contents).unwrap();
 }
 
-fn prepare(readme: &str) -> String {
+fn prepare(readme: &str) -> Result<String, Box<dyn std::error::Error>> {
     
     
     
@@ -27,26 +29,30 @@ fn prepare(readme: &str) -> String {
 
         
         if line.contains("(BUILD.md)") {
-            cleaned.push_str(&line.replace(
-                "(BUILD.md)",
-                "(https://github.com/paupino/rust-decimal/blob/master/BUILD.md)",
-            ));
+            write!(
+                cleaned,
+                "{}",
+                &line.replace(
+                    "(BUILD.md)",
+                    "(https://github.com/paupino/rust-decimal/blob/master/BUILD.md)",
+                )
+            )?;
         } else if feature_section && line.starts_with("```rust") {
             
             
-            cleaned.push_str("```rust\n");
-            cleaned.push_str("# use rust_decimal::Decimal;\n");
-            cleaned.push_str("# use serde::{Serialize, Deserialize};\n");
-            cleaned.push_str(&format!("# #[cfg(features = \"{}\")]", feature));
+            writeln!(cleaned, "```rust")?;
+            writeln!(cleaned, "# use rust_decimal::Decimal;")?;
+            writeln!(cleaned, "# use serde::{{Serialize, Deserialize}};")?;
+            write!(cleaned, "# #[cfg(features = \"{}\")]", feature)?;
         } else {
             if !feature_section && line.starts_with("## Features") {
                 feature_section = true;
             } else if feature_section && line.starts_with("### ") {
                 feature = line.replace("### ", "").replace('`', "");
             }
-            cleaned.push_str(line);
+            write!(cleaned, "{}", line)?;
         }
-        cleaned.push('\n');
+        writeln!(cleaned)?;
     }
-    cleaned
+    Ok(cleaned)
 }

@@ -11,12 +11,19 @@ use core::{
     cmp::{Ordering::Equal, *},
     fmt,
     hash::{Hash, Hasher},
-    iter::Sum,
+    iter::{Product, Sum},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign},
     str::FromStr,
 };
-#[cfg(feature = "diesel")]
+
+
+#[cfg(feature = "diesel2")]
+use diesel::deserialize::FromSqlRow;
+#[cfg(feature = "diesel2")]
+use diesel::expression::AsExpression;
+#[cfg(any(feature = "diesel1", feature = "diesel2"))]
 use diesel::sql_types::Numeric;
+
 #[allow(unused_imports)] 
 #[cfg(not(feature = "std"))]
 use num_traits::float::FloatCore;
@@ -99,7 +106,12 @@ pub struct UnpackedDecimal {
 
 
 #[derive(Clone, Copy)]
-#[cfg_attr(feature = "diesel", derive(FromSqlRow, AsExpression), sql_type = "Numeric")]
+#[cfg_attr(
+    all(feature = "diesel1", not(feature = "diesel2")),
+    derive(FromSqlRow, AsExpression),
+    sql_type = "Numeric"
+)]
+#[cfg_attr(feature = "diesel2", derive(FromSqlRow, AsExpression), diesel(sql_type = Numeric))]
 #[cfg_attr(feature = "c-repr", repr(C))]
 #[cfg_attr(
     feature = "borsh",
@@ -2522,6 +2534,28 @@ impl PartialOrd for Decimal {
 impl Ord for Decimal {
     fn cmp(&self, other: &Decimal) -> Ordering {
         ops::cmp_impl(self, other)
+    }
+}
+
+impl Product for Decimal {
+    
+    fn product<I: Iterator<Item = Decimal>>(iter: I) -> Self {
+        let mut product = ONE;
+        for i in iter {
+            product *= i;
+        }
+        product
+    }
+}
+
+impl<'a> Product<&'a Decimal> for Decimal {
+    
+    fn product<I: Iterator<Item = &'a Decimal>>(iter: I) -> Self {
+        let mut product = ONE;
+        for i in iter {
+            product *= i;
+        }
+        product
     }
 }
 
