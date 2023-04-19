@@ -1272,36 +1272,30 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
   StyleAlignFlags alignment{0};
   StyleAlignFlags alignmentFlags{0};
   if (isMainAxis) {
+    
+    
+    
+    
     alignment = SimplifyAlignOrJustifyContentForOneItem(
         containerStylePos->mJustifyContent,
          false);
   } else {
-    const StyleAlignFlags alignContent =
-        SimplifyAlignOrJustifyContentForOneItem(
-            containerStylePos->mAlignContent,
-             true);
-    if (StyleFlexWrap::Nowrap != containerStylePos->mFlexWrap &&
-        alignContent != StyleAlignFlags::STRETCH) {
-      
-      
-      alignment = alignContent;
-    } else {
-      
-      
-      alignment = aChildRI.mStylePosition->UsedAlignSelf(Style())._0;
-      
-      alignmentFlags = alignment & StyleAlignFlags::FLAG_BITS;
-      alignment &= ~StyleAlignFlags::FLAG_BITS;
+    
+    
+    
+    alignment = aChildRI.mStylePosition->UsedAlignSelf(Style())._0;
+    
+    alignmentFlags = alignment & StyleAlignFlags::FLAG_BITS;
+    alignment &= ~StyleAlignFlags::FLAG_BITS;
 
-      if (alignment == StyleAlignFlags::NORMAL) {
-        
-        
-        
-        
-        alignment = aChildRI.mFrame->IsFrameOfType(nsIFrame::eReplaced)
-                        ? StyleAlignFlags::START
-                        : StyleAlignFlags::STRETCH;
-      }
+    if (alignment == StyleAlignFlags::NORMAL) {
+      
+      
+      
+      
+      alignment = aChildRI.mFrame->IsFrameOfType(nsIFrame::eReplaced)
+                      ? StyleAlignFlags::START
+                      : StyleAlignFlags::STRETCH;
     }
   }
 
