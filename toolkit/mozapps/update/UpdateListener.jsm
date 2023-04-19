@@ -251,7 +251,6 @@ var UpdateListener = {
 
   showUpdateAvailableNotification(update, dismissed) {
     this.showUpdateNotification("available", false, dismissed, () => {
-      
       lazy.AppUpdateService.downloadUpdate(update, true);
     });
   },
