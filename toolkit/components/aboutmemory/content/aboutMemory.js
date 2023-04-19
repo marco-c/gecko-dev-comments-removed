@@ -381,6 +381,8 @@ window.onload = function() {
     "opsRowLabel",
     "Show memory reports"
   );
+  labelDiv1.setAttribute("role", "heading");
+  labelDiv1.setAttribute("aria-level", "1");
   let label1 = appendElementWithText(labelDiv1, "label", "");
   gVerbose = appendElement(label1, "input", "");
   gVerbose.type = "checkbox";
@@ -400,6 +402,8 @@ window.onload = function() {
     "opsRowLabel",
     "Save memory reports"
   );
+  labelDiv2.setAttribute("role", "heading");
+  labelDiv2.setAttribute("aria-level", "1");
   appendButton(row2, SvDesc, saveReportsToFile, "Measure and save…");
 
   
@@ -411,14 +415,28 @@ window.onload = function() {
 
   let row3 = appendElement(ops, "div", "opsRow");
 
-  appendElementWithText(row3, "div", "opsRowLabel", "Free memory");
+  let labelDiv3 = appendElementWithText(
+    row3,
+    "div",
+    "opsRowLabel",
+    "Free memory"
+  );
+  labelDiv3.setAttribute("role", "heading");
+  labelDiv3.setAttribute("aria-level", "1");
   appendButton(row3, GCDesc, doGC, "GC");
   appendButton(row3, CCDesc, doCC, "CC");
   appendButton(row3, MMDesc, doMMU, "Minimize memory usage");
 
   let row4 = appendElement(ops, "div", "opsRow");
 
-  appendElementWithText(row4, "div", "opsRowLabel", "Save GC & CC logs");
+  let labelDiv4 = appendElementWithText(
+    row4,
+    "div",
+    "opsRowLabel",
+    "Save GC & CC logs"
+  );
+  labelDiv4.setAttribute("role", "heading");
+  labelDiv4.setAttribute("aria-level", "1");
   appendButton(
     row4,
     GCAndCCLogDesc,
@@ -441,7 +459,14 @@ window.onload = function() {
   if (gMgr.isDMDEnabled) {
     let row5 = appendElement(ops, "div", "opsRow");
 
-    appendElementWithText(row5, "div", "opsRowLabel", "Save DMD output");
+    let labelDiv5 = appendElementWithText(
+      row5,
+      "div",
+      "opsRowLabel",
+      "Save DMD output"
+    );
+    labelDiv5.setAttribute("role", "heading");
+    labelDiv5.setAttribute("aria-level", "1");
     let enableButtons = gMgr.isDMDRunning;
 
     let dmdButton = appendButton(
@@ -462,6 +487,7 @@ window.onload = function() {
   
 
   gFooter = appendElement(document.body, "div", "ancillary hidden");
+  gFooter.setAttribute("role", "contentinfo");
 
   let a = appendElementWithText(
     gFooter,
@@ -1349,6 +1375,7 @@ function appendAboutMemoryMain(
 
     
     let sections = newElement("div", "sections");
+    sections.setAttribute("role", "main");
 
     for (let [i, process] of processes.entries()) {
       let pcolls = pcollsByProcess[process];
@@ -1406,6 +1433,7 @@ function appendAboutMemoryMain(
     outputContainer.appendChild(sections);
 
     let sidebar = appendElement(outputContainer, "div", "sidebar");
+    sidebar.setAttribute("role", "navigation");
     let sidebarContents = appendElement(sidebar, "div", "sidebarContents");
 
     
@@ -2145,7 +2173,11 @@ function toggle(aEvent) {
   
 
   
-  let outerSpan = aEvent.target.parentNode;
+  
+  
+  let outerSpan = aEvent.target.classList.contains("hasKids")
+    ? aEvent.target
+    : aEvent.target.parentNode;
   assertClassListContains(outerSpan, "hasKids");
 
   
@@ -2155,9 +2187,11 @@ function toggle(aEvent) {
   if (sepSpan.textContent === kHideKidsSep) {
     isExpansion = true;
     sepSpan.textContent = kShowKidsSep;
+    outerSpan.setAttribute("aria-expanded", "true");
   } else if (sepSpan.textContent === kShowKidsSep) {
     isExpansion = false;
     sepSpan.textContent = kHideKidsSep;
+    outerSpan.setAttribute("aria-expanded", "false");
   } else {
     assert(false, "bad sepSpan textContent");
   }
@@ -2186,7 +2220,8 @@ function expandPathToThisElement(aElement) {
     let sepSpan = aElement.childNodes[2];
     assertClassListContains(sepSpan, "mrSep");
     sepSpan.textContent = kShowKidsSep;
-    expandPathToThisElement(aElement.parentNode); 
+    aElement.setAttribute("aria-expanded", "true");
+    expandPathToThisElement(aElement.parentNode.parentNode); 
   } else {
     assertClassListContains(aElement, "entries");
   }
@@ -2247,13 +2282,20 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
     }
 
     
+    
+    let p = document.createElement("span");
+    p.setAttribute("role", "listitem");
+    aP.appendChild(p);
+
+    
     let valueText = aT.toString();
     let extraTlLength = Math.max(aParentStringLength - valueText.length, 0);
     if (extraTlLength > 0) {
       aTlThis = appendN(aTlThis, "─", extraTlLength);
       aTlKids = appendN(aTlKids, " ", extraTlLength);
     }
-    appendElementWithText(aP, "span", "treeline", aTlThis);
+    let treeLine = appendElementWithText(p, "span", "treeline", aTlThis);
+    treeLine.setAttribute("aria-hidden", "true");
 
     
     
@@ -2286,14 +2328,16 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
       if (gShowSubtreesBySafeTreeId[safeTreeId] !== undefined) {
         showSubtrees = gShowSubtreesBySafeTreeId[safeTreeId];
       }
-      d = appendElement(aP, "span", "hasKids");
+      d = appendElement(p, "span", "hasKids");
       d.id = safeTreeId;
       d.onclick = toggle;
+      d.setAttribute("role", "button");
       sep = showSubtrees ? kShowKidsSep : kHideKidsSep;
+      d.setAttribute("aria-expanded", showSubtrees ? "true" : "false");
     } else {
       assert(!aT._hideKids, "leaf node with _hideKids set");
       sep = kNoKidsSep;
-      d = aP;
+      d = p;
     }
 
     
@@ -2326,13 +2370,14 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
     
     
     if (!gVerbose.checked && tIsInvalid) {
-      expandPathToThisElement(d);
+      expandPathToThisElement(aT._kids ? d : aP);
     }
 
     
     if (aT._kids) {
       
-      d = appendElement(aP, "span", showSubtrees ? "kids" : "kids hidden");
+      d = appendElement(p, "span", showSubtrees ? "kids" : "kids hidden");
+      d.setAttribute("role", "list");
 
       let tlThisForMost, tlKidsForMost;
       if (aT._kids.length > 1) {
@@ -2377,7 +2422,9 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
 
 function appendSectionHeader(aP, aText) {
   appendElementWithText(aP, "h2", "", aText + "\n");
-  return appendElement(aP, "pre", "entries");
+  let entries = appendElement(aP, "pre", "entries");
+  entries.setAttribute("role", "list");
+  return entries;
 }
 
 
