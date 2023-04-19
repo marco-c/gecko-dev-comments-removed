@@ -284,6 +284,8 @@ TEST_F(NetEqImplTest, RemoveAllPayloadTypes) {
 }
 
 TEST_F(NetEqImplTest, InsertPacket) {
+  using ::testing::AllOf;
+  using ::testing::Field;
   CreateInstance();
   const size_t kPayloadLength = 100;
   const uint8_t kPayloadType = 0;
@@ -347,20 +349,32 @@ TEST_F(NetEqImplTest, InsertPacket) {
     
     InSequence sequence;  
     
-    EXPECT_CALL(*mock_neteq_controller_,
-                PacketArrived( false,
-                               _,
-                               _,
-                               kFirstSequenceNumber,
-                               kFirstTimestamp,
-                               8000));
-    EXPECT_CALL(*mock_neteq_controller_,
-                PacketArrived( false,
-                               _,
-                               _,
-                               kFirstSequenceNumber + 1,
-                               kFirstTimestamp + 160,
-                               8000));
+    EXPECT_CALL(
+        *mock_neteq_controller_,
+        PacketArrived(
+             8000,
+             _,
+            
+            AllOf(
+                Field(&NetEqController::PacketArrivedInfo::is_cng_or_dtmf,
+                      false),
+                Field(&NetEqController::PacketArrivedInfo::main_sequence_number,
+                      kFirstSequenceNumber),
+                Field(&NetEqController::PacketArrivedInfo::main_timestamp,
+                      kFirstTimestamp))));
+    EXPECT_CALL(
+        *mock_neteq_controller_,
+        PacketArrived(
+             8000,
+             _,
+            
+            AllOf(
+                Field(&NetEqController::PacketArrivedInfo::is_cng_or_dtmf,
+                      false),
+                Field(&NetEqController::PacketArrivedInfo::main_sequence_number,
+                      kFirstSequenceNumber + 1),
+                Field(&NetEqController::PacketArrivedInfo::main_timestamp,
+                      kFirstTimestamp + 160))));
   }
 
   
@@ -1517,6 +1531,8 @@ TEST_F(NetEqImplTest, InsertEmptyPacket) {
 }
 
 TEST_F(NetEqImplTest, EnableRtxHandling) {
+  using ::testing::AllOf;
+  using ::testing::Field;
   UseNoMocks();
   use_mock_neteq_controller_ = true;
   config_.enable_rtx_handling = true;
@@ -1545,14 +1561,19 @@ TEST_F(NetEqImplTest, EnableRtxHandling) {
   
   rtp_header.sequenceNumber -= 1;
   rtp_header.timestamp -= kPayloadLengthSamples;
-  EXPECT_CALL(*mock_neteq_controller_,
-              PacketArrived(
-                   _,
-                   kPayloadLengthSamples,
-                   _,
-                   rtp_header.sequenceNumber,
-                   rtp_header.timestamp,
-                   8000));
+  EXPECT_CALL(
+      *mock_neteq_controller_,
+      PacketArrived(
+           8000,
+           _,
+          
+          AllOf(
+              Field(&NetEqController::PacketArrivedInfo::packet_length_samples,
+                    kPayloadLengthSamples),
+              Field(&NetEqController::PacketArrivedInfo::main_sequence_number,
+                    rtp_header.sequenceNumber),
+              Field(&NetEqController::PacketArrivedInfo::main_timestamp,
+                    rtp_header.timestamp))));
 
   EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
 }

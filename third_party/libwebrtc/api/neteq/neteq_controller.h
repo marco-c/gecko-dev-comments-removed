@@ -97,6 +97,14 @@ class NetEqController {
     size_t sync_buffer_samples;
   };
 
+  struct PacketArrivedInfo {
+    size_t packet_length_samples;
+    uint32_t main_timestamp;
+    uint16_t main_sequence_number;
+    bool is_cng_or_dtmf;
+    bool is_dtx;
+  };
+
   virtual ~NetEqController() = default;
 
   
@@ -161,8 +169,26 @@ class NetEqController {
                                             bool should_update_stats,
                                             uint16_t main_sequence_number,
                                             uint32_t main_timestamp,
-                                            int fs_hz) = 0;
+                                            int fs_hz) {
+    PacketArrivedInfo info;
+    info.is_dtx = false;
+    info.is_cng_or_dtmf = last_cng_or_dtmf;
+    info.packet_length_samples = packet_length_samples;
+    info.main_sequence_number = main_sequence_number;
+    info.main_timestamp = main_timestamp;
+    return PacketArrived(fs_hz, should_update_stats, info);
+  }
 
+  
+  
+  
+  virtual absl::optional<int> PacketArrived(int fs_hz,
+                                            bool should_update_stats,
+                                            const PacketArrivedInfo& info) {
+    return PacketArrived(info.is_cng_or_dtmf, info.packet_length_samples,
+                         should_update_stats, info.main_sequence_number,
+                         info.main_timestamp, fs_hz);
+  }
   
   
   virtual void NotifyMutedState() {}
