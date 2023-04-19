@@ -23,17 +23,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "modules/audio_coding/codecs/ilbc/defines.h"
-#include "rtc_base/system/unused.h"
 
 
 
+ABSL_MUST_USE_RESULT
 bool WebRtcIlbcfix_GetCbVec(
     int16_t* cbvec, 
     int16_t* mem,   
     size_t index,   
     size_t lMem,    
     size_t cbveclen 
-    ) RTC_WARN_UNUSED_RESULT;
+);
 
 #endif

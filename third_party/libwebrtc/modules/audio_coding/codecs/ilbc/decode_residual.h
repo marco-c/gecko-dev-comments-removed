@@ -23,8 +23,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "modules/audio_coding/codecs/ilbc/defines.h"
-#include "rtc_base/system/unused.h"
 
 
 
@@ -32,6 +32,7 @@
 
 
 
+ABSL_MUST_USE_RESULT
 bool WebRtcIlbcfix_DecodeResidual(
     IlbcDecoder* iLBCdec_inst, 
     iLBC_bits* iLBC_encbits,   
@@ -39,6 +40,6 @@ bool WebRtcIlbcfix_DecodeResidual(
     int16_t* decresidual,      
     int16_t* syntdenum         
 
-    ) RTC_WARN_UNUSED_RESULT;
+);
 
 #endif

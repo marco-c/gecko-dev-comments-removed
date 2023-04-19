@@ -23,14 +23,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "modules/audio_coding/codecs/ilbc/defines.h"
-#include "rtc_base/system/unused.h"
 
 
 
 
 
 
+ABSL_MUST_USE_RESULT
 bool WebRtcIlbcfix_CbConstruct(
     int16_t* decvector,        
     const int16_t* index,      
@@ -38,6 +39,6 @@ bool WebRtcIlbcfix_CbConstruct(
     int16_t* mem,              
     size_t lMem,               
     size_t veclen              
-    ) RTC_WARN_UNUSED_RESULT;
+);
 
 #endif

@@ -21,21 +21,22 @@
 
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "modules/audio_coding/codecs/ilbc/defines.h"
-#include "rtc_base/system/unused.h"
 
 
 
 
 
 
+ABSL_MUST_USE_RESULT
 int WebRtcIlbcfix_DecodeImpl(
     int16_t* decblock,         
     const uint16_t* bytes,     
     IlbcDecoder* iLBCdec_inst, 
 
-    int16_t mode 
+    int16_t mode               
 
-    ) RTC_WARN_UNUSED_RESULT;
+);
 
 #endif
