@@ -451,6 +451,9 @@ class ResourceCommand {
 
 
 
+
+
+
   async _onTargetAvailable({ targetFront, isTargetSwitching }) {
     const resources = [];
     if (isTargetSwitching) {
@@ -581,11 +584,17 @@ class ResourceCommand {
 
 
 
-  _onTargetDestroyed({ targetFront }) {
+
+
+
+
+  _onTargetDestroyed({ targetFront, isModeSwitching }) {
     
     this._existingLegacyListeners.set(targetFront, []);
     this._offTargetFrontListeners.delete(targetFront);
 
+    
+    
     
     
     
@@ -601,8 +610,17 @@ class ResourceCommand {
 
     
     
-    
-    
+    if (isModeSwitching) {
+      for (const watcherEntry of this._watchers) {
+        for (const pendingEvent of watcherEntry.pendingEvents) {
+          if (pendingEvent.callbackType == "available") {
+            pendingEvent.updates = pendingEvent.updates.filter(
+              update => update.targetFront !== targetFront
+            );
+          }
+        }
+      }
+    }
   }
 
   
