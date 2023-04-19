@@ -655,7 +655,8 @@ pref("browser.privacySegmentation.enabled", false);
 
 
 
-pref("browser.privacySegmentation.windowSeparation.enabled", true);
+
+pref("browser.privacySegmentation.windowSeparation.enabled", false);
 
 
 

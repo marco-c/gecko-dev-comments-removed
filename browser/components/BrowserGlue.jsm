@@ -143,6 +143,8 @@ const PRIVATE_BROWSING_BINARY = "private_browsing.exe";
 
 
 const PRIVATE_BROWSING_EXE_ICON_INDEX = 1;
+const PREF_PRIVATE_WINDOW_SEPARATION =
+  "browser.privacySegmentation.windowSeparation.enabled";
 const PREF_PRIVATE_BROWSING_SHORTCUT_CREATED =
   "browser.privacySegmentation.createdShortcut";
 
@@ -2534,9 +2536,7 @@ BrowserGlue.prototype = {
           
           
           
-          lazy.NimbusFeatures.majorRelease2022.getVariable(
-            "feltPrivacyWindowSeparation"
-          ) &&
+          Services.prefs.getBoolPref(PREF_PRIVATE_WINDOW_SEPARATION, false) &&
           
           
           !Services.sysinfo.getProperty("hasWinPackageId") &&
@@ -2556,10 +2556,10 @@ BrowserGlue.prototype = {
           );
 
           if (
-            !(await shellService.hasMatchingShortcut(
+            !shellService.hasMatchingShortcut(
               winTaskbar.defaultPrivateGroupId,
               true
-            ))
+            )
           ) {
             let appdir = Services.dirsvc.get("GreD", Ci.nsIFile);
             let exe = appdir.clone();
@@ -2571,7 +2571,7 @@ BrowserGlue.prototype = {
             let [desc] = await strings.formatValues([
               "private-browsing-shortcut-text",
             ]);
-            await shellService.createShortcut(
+            shellService.createShortcut(
               exe,
               [],
               desc,
@@ -2583,16 +2583,11 @@ BrowserGlue.prototype = {
               desc + ".lnk",
               appdir
             );
+            Services.prefs.setBoolPref(
+              PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
+              true
+            );
           }
-          
-          
-          
-          
-          
-          Services.prefs.setBoolPref(
-            PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
-            true
-          );
         },
       },
 
