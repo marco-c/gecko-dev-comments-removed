@@ -221,10 +221,11 @@ int VirtualSocket::Close() {
       }
       delete data;
     }
-    
-    if (server_->msg_queue_) {
-      server_->msg_queue_->Clear(this);
-    }
+  }
+
+  
+  if (server_->msg_queue_) {
+    server_->msg_queue_->Clear(this);
   }
 
   state_ = CS_CLOSED;

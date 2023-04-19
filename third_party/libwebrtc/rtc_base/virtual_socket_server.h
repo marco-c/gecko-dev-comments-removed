@@ -305,7 +305,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
 
 
 class VirtualSocket : public AsyncSocket,
-                      public MessageHandlerAutoCleanup,
+                      public MessageHandler,
                       public sigslot::has_slots<> {
  public:
   VirtualSocket(VirtualSocketServer* server, int family, int type, bool async);
