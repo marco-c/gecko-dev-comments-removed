@@ -53,9 +53,6 @@ class VoipCore : public VoipEngine,
                  public VoipVolumeControl {
  public:
   
-  
-  
-  
   VoipCore(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
            rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
            std::unique_ptr<TaskQueueFactory> task_queue_factory,
