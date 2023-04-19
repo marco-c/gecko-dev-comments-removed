@@ -247,33 +247,6 @@ LayoutDeviceIntRect HyperTextAccessibleBase::TextBounds(int32_t aStartOffset,
   return result;
 }
 
-int32_t HyperTextAccessibleBase::OffsetAtPoint(int32_t aX, int32_t aY,
-                                               uint32_t aCoordType) {
-  Accessible* thisAcc = Acc();
-  LayoutDeviceIntPoint coords =
-      nsAccUtils::ConvertToScreenCoords(aX, aY, aCoordType, thisAcc);
-  if (!thisAcc->Bounds().Contains(coords.x, coords.y)) {
-    
-    return -1;
-  }
-
-  TextLeafPoint point = ToTextLeafPoint(0, false);
-  
-  
-  TextLeafPoint endPoint =
-      ToTextLeafPoint(static_cast<int32_t>(CharacterCount()), true);
-  endPoint =
-      endPoint.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
-                             false);
-  
-  
-  for (; !point.ContainsPoint(coords.x, coords.y) && point != endPoint;
-       point = point.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
-                                   false)) {
-  };
-  return point.ContainsPoint(coords.x, coords.y) ? point.mOffset : -1;
-}
-
 TextLeafPoint HyperTextAccessibleBase::ToTextLeafPoint(int32_t aOffset,
                                                        bool aDescendToEnd) {
   Accessible* thisAcc = Acc();

@@ -168,15 +168,6 @@ class TextLeafPoint final {
 
   LayoutDeviceIntRect CharBounds();
 
-  
-
-
-
-
-
-
-  bool ContainsPoint(int32_t aX, int32_t aY);
-
   bool IsLineFeedChar() const { return GetChar() == '\n'; }
 
   bool IsSpace() const;
