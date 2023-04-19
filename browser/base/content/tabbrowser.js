@@ -1383,6 +1383,10 @@
           if (this._asyncTabSwitching) {
             
             
+            newBrowser._awaitingSetURI = true;
+
+            
+            
             
             
             
@@ -1394,6 +1398,7 @@
                 if (currentActiveElement === document.activeElement) {
                   gURLBar.select();
                 }
+                delete newBrowser._awaitingSetURI;
               },
               { once: true }
             );
