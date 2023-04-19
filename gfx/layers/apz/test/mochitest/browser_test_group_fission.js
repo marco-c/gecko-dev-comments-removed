@@ -77,17 +77,19 @@ add_task(async function test_main() {
 
   
   
-  const { FissionTestHelperParent } = ChromeUtils.import(
-    getRootDirectory(gTestPath) + "FissionTestHelperParent.jsm"
+  const { FissionTestHelperParent } = ChromeUtils.importESModule(
+    getRootDirectory(gTestPath) + "FissionTestHelperParent.sys.mjs"
   );
   FissionTestHelperParent.SimpleTest = SimpleTest;
 
   ChromeUtils.registerWindowActor("FissionTestHelper", {
     parent: {
-      moduleURI: getRootDirectory(gTestPath) + "FissionTestHelperParent.jsm",
+      esModuleURI:
+        getRootDirectory(gTestPath) + "FissionTestHelperParent.sys.mjs",
     },
     child: {
-      moduleURI: getRootDirectory(gTestPath) + "FissionTestHelperChild.jsm",
+      esModuleURI:
+        getRootDirectory(gTestPath) + "FissionTestHelperChild.sys.mjs",
       events: {
         "FissionTestHelper:Init": { capture: true, wantUntrusted: true },
       },

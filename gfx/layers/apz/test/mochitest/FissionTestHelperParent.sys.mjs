@@ -1,14 +1,12 @@
-var EXPORTED_SYMBOLS = ["FissionTestHelperParent"];
+// This code always runs in the parent process. There is one instance of
+// this class for each "inner window" (should be one per content document,
+// including iframes/nested iframes).
+// There is a 1:1 relationship between instances of this class and
+// FissionTestHelperChild instances, and the pair are entangled such
+// that they can communicate with each other regardless of which process
+// they live in.
 
-
-
-
-
-
-
-
-
-class FissionTestHelperParent extends JSWindowActorParent {
+export class FissionTestHelperParent extends JSWindowActorParent {
   constructor() {
     super();
     this._testCompletePromise = new Promise(resolve => {
@@ -18,7 +16,7 @@ class FissionTestHelperParent extends JSWindowActorParent {
 
   embedderWindow() {
     let embedder = this.manager.browsingContext.embedderWindowGlobal;
-    
+    // embedder is of type WindowGlobalParent, defined in WindowGlobalActors.webidl
     if (!embedder) {
       dump("ERROR: no embedder found in FissionTestHelperParent\n");
     }
@@ -29,8 +27,8 @@ class FissionTestHelperParent extends JSWindowActorParent {
     return this.manager.documentURI.spec;
   }
 
-  
-  
+  // Returns a promise that is resolved when this parent actor receives a
+  // "Test:Complete" message from the child.
   getTestCompletePromise() {
     return this._testCompletePromise;
   }
@@ -61,8 +59,8 @@ class FissionTestHelperParent extends JSWindowActorParent {
         break;
 
       case "EmbedderToOopif":
-        
-        
+        // This relays messages from the embedder to an OOP-iframe. The browsing
+        // context id in the message data identifies the OOP-iframe.
         let oopifBrowsingContext = BrowsingContext.get(
           msg.data.browsingContextId
         );
@@ -87,8 +85,8 @@ class FissionTestHelperParent extends JSWindowActorParent {
         break;
 
       case "OopifToEmbedder":
-        
-        
+        // This relays messages from the OOP-iframe to the top-level content
+        // window which is embedding it.
         let embedderActor = this.embedderWindow().getActor("FissionTestHelper");
         if (!embedderActor) {
           FissionTestHelperParent.SimpleTest.ok(

@@ -1,15 +1,13 @@
-var EXPORTED_SYMBOLS = ["FissionTestHelperChild"];
+// This code runs in the content process that holds the window to which
+// this actor is attached. There is one instance of this class for each
+// "inner window" (i.e. one per content document, including iframes/nested
+// iframes).
+// There is a 1:1 relationship between instances of this class and
+// FissionTestHelperParent instances, and the pair are entangled such
+// that they can communicate with each other regardless of which process
+// they live in.
 
-
-
-
-
-
-
-
-
-
-class FissionTestHelperChild extends JSWindowActorChild {
+export class FissionTestHelperChild extends JSWindowActorChild {
   constructor() {
     super();
     this._msgCounter = 0;
@@ -21,10 +19,10 @@ class FissionTestHelperChild extends JSWindowActorChild {
   }
 
   initialize() {
-    
-    
-    
-    
+    // This exports a bunch of things into the content window so that
+    // the test can access them. Most things are scoped inside the
+    // FissionTestHelper object on the window to avoid polluting the global
+    // namespace.
 
     let cw = this.cw();
     Cu.exportFunction(
@@ -63,8 +61,8 @@ class FissionTestHelperChild extends JSWindowActorChild {
     });
   }
 
-  
-  
+  // Called by the subtest to indicate completion to the top-level browser-chrome
+  // mochitest.
   subtestDone() {
     let cw = this.cw();
     if (cw.ApzCleanup) {
@@ -73,15 +71,15 @@ class FissionTestHelperChild extends JSWindowActorChild {
     this.sendAsyncMessage("Test:Complete", {});
   }
 
-  
-  
+  // Called by the subtest to indicate subtest failure. Only one of subtestDone
+  // or subtestFailed should be called.
   subtestFailed(msg) {
     this.sendAsyncMessage("ok", { cond: false, msg });
     this.subtestDone();
   }
 
-  
-  
+  // Called by the subtest to eval some code in the OOP iframe. This returns
+  // a promise that resolves to the return value from the eval.
   sendToOopif(iframeElement, stringToEval) {
     let browsingContextId = iframeElement.browsingContext.id;
     let msgId = ++this._msgCounter;
@@ -99,10 +97,10 @@ class FissionTestHelperChild extends JSWindowActorChild {
     return responsePromise;
   }
 
-  
-  
-  
-  
+  // Called by OOP iframes to dispatch an event in the embedder window. This
+  // can be used by the OOP iframe to asynchronously notify the embedder of
+  // things that happen. The embedder can use promiseOneEvent from
+  // helper_fission_utils.js to listen for these events.
   fireEventInEmbedder(eventType, data) {
     this.sendAsyncMessage("OopifToEmbedder", { eventType, data });
   }
