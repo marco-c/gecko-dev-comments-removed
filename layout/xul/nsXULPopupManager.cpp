@@ -52,7 +52,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_ui.h"
-#include "mozilla/StaticPrefs_xul.h"
 #include "mozilla/widget/nsAutoRollup.h"
 #include "mozilla/widget/NativeMenuSupport.h"
 
@@ -1671,9 +1670,9 @@ void nsXULPopupManager::FirePopupHidingEvent(
       
       
       
-      if (StaticPrefs::xul_panel_animations_enabled() && !aNextPopup &&
-          aPopup->IsElement() &&
-          aPopup->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
+      if (LookAndFeel::GetInt(LookAndFeel::IntID::PanelAnimations) &&
+          !aNextPopup && aPopup->IsElement() &&
+          aPopup->AsElement()->HasAttr(nsGkAtoms::animate)) {
         
         
         
