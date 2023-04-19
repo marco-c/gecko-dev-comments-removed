@@ -32,9 +32,9 @@ def _CreateParser():
   parser = argparse.ArgumentParser()
   parser.add_argument('--perf-dashboard-machine-group',
                       required=True,
-                      help='The "master" the bots are grouped under. This '
-                      'string is the group in the the perf dashboard path '
-                      'group/bot/perf_id/metric/subtest.')
+                      help='The "machine_group" the bots are grouped under.'
+                      'This string is the group in the the perf dashboard '
+                      'path group/bot/perf_id/metric/subtest.')
   parser.add_argument('--bot',
                       required=True,
                       help='The bot running the test (e.g. '
@@ -68,27 +68,14 @@ def _CreateParser():
   parser.add_argument('--outdir',
                       required=True,
                       help='Path to the local out/ dir (usually out/Default)')
+  
   parser.add_argument('--wait-for-upload',
                       action='store_true',
-                      help='If specified, script will wait untill Chrome '
-                      'perf dashboard confirms that the data was succesfully '
-                      'proccessed and uploaded')
-  parser.add_argument('--wait-timeout-sec',
-                      type=int,
-                      default=1200,
-                      help='Used only if wait-for-upload is True. Maximum '
-                      'amount of time in seconds that the script will wait '
-                      'for the confirmation.')
-  parser.add_argument('--wait-polling-period-sec',
-                      type=int,
-                      default=120,
-                      help='Used only if wait-for-upload is True. Status '
-                      'will be requested from the Dashboard every '
-                      'wait-polling-period-sec seconds.')
+                      help='DEPRECATED: this option will soon be removed')
   return parser
 
 
-def _ConfigurePythonPath(options):
+def _ConfigurePythonPath(outdir):
   
   
   
@@ -110,8 +97,8 @@ def _ConfigurePythonPath(options):
   
   
   
-  histogram_proto_path = os.path.join(options.outdir, 'pyproto', 'tracing',
-                                      'tracing', 'proto')
+  histogram_proto_path = os.path.join(outdir, 'pyproto', 'tracing', 'tracing',
+                                      'proto')
   sys.path.insert(0, histogram_proto_path)
 
   
@@ -127,11 +114,23 @@ def main(args):
   parser = _CreateParser()
   options = parser.parse_args(args)
 
-  _ConfigurePythonPath(options)
+  _ConfigurePythonPath(options.outdir)
 
   import catapult_uploader
 
-  return catapult_uploader.UploadToDashboard(options)
+  uploader_options = catapult_uploader.UploaderOptions(
+      perf_dashboard_machine_group=options.perf_dashboard_machine_group,
+      bot=options.bot,
+      test_suite=options.test_suite,
+      webrtc_git_hash=options.webrtc_git_hash,
+      commit_position=options.commit_position,
+      build_page_url=options.build_page_url,
+      dashboard_url=options.dashboard_url,
+      input_results_file=options.input_results_file,
+      output_json_file=options.output_json_file,
+  )
+
+  return catapult_uploader.UploadToDashboard(uploader_options)
 
 
 if __name__ == '__main__':
