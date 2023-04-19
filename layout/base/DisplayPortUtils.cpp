@@ -187,33 +187,18 @@ CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
   return mVisualOffset - asyncLayoutViewport.TopLeft();
 }
 
-static nsRect ApplyRectMultiplier(nsRect aRect, float aMultiplier) {
-  if (aMultiplier == 1.0f) {
-    return aRect;
-  }
-  float newWidth = aRect.width * aMultiplier;
-  float newHeight = aRect.height * aMultiplier;
-  float newX = aRect.x - ((newWidth - aRect.width) / 2.0f);
-  float newY = aRect.y - ((newHeight - aRect.height) / 2.0f);
-  
-  return nsRect(ceil(newX), ceil(newY), floor(newWidth), floor(newHeight));
-}
-
 static nsRect GetDisplayPortFromRectData(nsIContent* aContent,
-                                         DisplayPortPropertyData* aRectData,
-                                         float aMultiplier) {
+                                         DisplayPortPropertyData* aRectData) {
   
   
   
   
-  
-  return ApplyRectMultiplier(aRectData->mRect, aMultiplier);
+  return aRectData->mRect;
 }
 
 static nsRect GetDisplayPortFromMarginsData(
     nsIContent* aContent, DisplayPortMarginsPropertyData* aMarginsData,
-    float aMultiplier, const DisplayPortOptions& aOptions) {
-  
+    const DisplayPortOptions& aOptions) {
   
   
   
@@ -229,8 +214,6 @@ static nsRect GetDisplayPortFromMarginsData(
 
   nsIFrame* frame = nsLayoutUtils::GetScrollFrameFromContent(aContent);
   if (!frame) {
-    
-    
     
     
     NS_WARNING(
@@ -347,13 +330,6 @@ static nsRect GetDisplayPortFromMarginsData(
   nsRect result = LayoutDeviceRect::ToAppUnits(screenRect / res, auPerDevPixel);
 
   
-  
-  
-  if (margins != ScreenMargin()) {
-    result = ApplyRectMultiplier(result, aMultiplier);
-  }
-
-  
   result = result.MoveInsideAndClamp(expandedScrollableRect - scrollPos);
 
   return result;
@@ -421,7 +397,6 @@ static void TranslateFromScrollPortToScrollFrame(nsIContent* aContent,
 }
 
 static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
-                               float aMultiplier,
                                const DisplayPortOptions& aOptions) {
   DisplayPortPropertyData* rectData = nullptr;
   DisplayPortMarginsPropertyData* marginsData = nullptr;
@@ -453,7 +428,7 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
 
   nsRect result;
   if (rectData) {
-    result = GetDisplayPortFromRectData(aContent, rectData, aMultiplier);
+    result = GetDisplayPortFromRectData(aContent, rectData);
   } else if (isDisplayportSuppressed ||
              nsLayoutUtils::ShouldDisableApzForElement(aContent) ||
              aContent->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
@@ -464,11 +439,9 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
     
     DisplayPortMarginsPropertyData noMargins = *marginsData;
     noMargins.mMargins.mMargins = ScreenMargin();
-    result = GetDisplayPortFromMarginsData(aContent, &noMargins, aMultiplier,
-                                           aOptions);
+    result = GetDisplayPortFromMarginsData(aContent, &noMargins, aOptions);
   } else {
-    result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier,
-                                           aOptions);
+    result = GetDisplayPortFromMarginsData(aContent, marginsData, aOptions);
   }
 
   if (aOptions.mRelativeTo == DisplayportRelativeTo::ScrollFrame) {
@@ -481,7 +454,7 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
 
 bool DisplayPortUtils::GetDisplayPort(nsIContent* aContent, nsRect* aResult,
                                       const DisplayPortOptions& aOptions) {
-  return GetDisplayPortImpl(aContent, aResult, 1.0f, aOptions);
+  return GetDisplayPortImpl(aContent, aResult, aOptions);
 }
 
 bool DisplayPortUtils::HasDisplayPort(nsIContent* aContent) {
@@ -552,7 +525,7 @@ bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(nsIContent* aContent,
                                                           nsRect* aResult) {
   MOZ_ASSERT(aResult);
   return GetDisplayPortImpl(
-      aContent, aResult, 1.0f,
+      aContent, aResult,
       DisplayPortOptions().With(DisplayportRelativeTo::ScrollFrame));
 }
 
