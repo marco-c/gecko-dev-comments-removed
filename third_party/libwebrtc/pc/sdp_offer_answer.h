@@ -232,10 +232,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
       std::unique_ptr<SessionDescriptionInterface> desc,
       const std::map<std::string, const cricket::ContentGroup*>&
           bundle_groups_by_mid);
-  RTCError ApplyRemoteDescription(
+  void ApplyRemoteDescription(
+      std::unique_ptr<RemoteDescriptionOperation> operation);
+
+  RTCError ReplaceRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      const std::map<std::string, const cricket::ContentGroup*>&
-          bundle_groups_by_mid);
+      SdpType sdp_type,
+      std::unique_ptr<SessionDescriptionInterface>* replaced_description)
+      RTC_RUN_ON(signaling_thread());
 
   
   void ApplyRemoteDescriptionUpdateTransceiverState(SdpType sdp_type);
@@ -497,8 +501,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   void UpdateEndedRemoteMediaStreams();
 
   
-  bool UseCandidatesInSessionDescription(
-      const SessionDescriptionInterface* remote_desc);
+  
+  
+  
+  bool UseCandidatesInRemoteDescription();
   
   bool UseCandidate(const IceCandidateInterface* candidate);
   
