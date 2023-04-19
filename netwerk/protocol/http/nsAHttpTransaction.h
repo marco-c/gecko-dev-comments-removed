@@ -5,6 +5,7 @@
 #ifndef nsAHttpTransaction_h__
 #define nsAHttpTransaction_h__
 
+#include "nsISupports.h"
 #include "nsTArray.h"
 #include "nsWeakReference.h"
 
@@ -18,10 +19,9 @@ typedef __StatusTmp Status;
 
 class nsIDNSHTTPSSVCRecord;
 class nsIInterfaceRequestor;
-class nsIRequestContext;
-class nsISSLSocketControl;
 class nsISVCBRecord;
 class nsITransport;
+class nsIRequestContext;
 
 namespace mozilla {
 namespace net {
@@ -173,8 +173,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  [[nodiscard]] virtual nsresult GetTransactionTLSSocketControl(
-      nsISSLSocketControl**) {
+  [[nodiscard]] virtual nsresult GetTransactionSecurityInfo(nsISupports**) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
