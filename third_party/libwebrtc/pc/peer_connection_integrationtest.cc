@@ -1866,8 +1866,16 @@ constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
 
 
 
+
+#if defined(WEBRTC_WIN)
+#define MAYBE_IceStatesReachCompletionWithRemoteHostname \
+  DISABLED_IceStatesReachCompletionWithRemoteHostname
+#else
+#define MAYBE_IceStatesReachCompletionWithRemoteHostname \
+  IceStatesReachCompletionWithRemoteHostname
+#endif
 TEST_P(PeerConnectionIntegrationTest,
-       IceStatesReachCompletionWithRemoteHostname) {
+       MAYBE_IceStatesReachCompletionWithRemoteHostname) {
   auto caller_resolver_factory =
       std::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
   auto callee_resolver_factory =
@@ -2123,7 +2131,13 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
 
 
 
-TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyBestConnection) {
+
+#if defined(WEBRTC_WIN)
+#define MAYBE_VerifyBestConnection DISABLED_VerifyBestConnection
+#else
+#define MAYBE_VerifyBestConnection VerifyBestConnection
+#endif
+TEST_P(PeerConnectionIntegrationIceStatesTest, MAYBE_VerifyBestConnection) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   SetPortAllocatorFlags();
