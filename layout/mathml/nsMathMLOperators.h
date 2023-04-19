@@ -67,7 +67,10 @@ class nsMathMLOperators {
   
   
   
-  static bool LookupOperator(const nsString& aOperator, const uint8_t aForm,
+  
+  
+  
+  static void LookupOperator(const nsString& aOperator, const uint8_t aForm,
                              nsOperatorFlags* aFlags, float* aLeadingSpace,
                              float* aTrailingSpace);
 
@@ -76,11 +79,11 @@ class nsMathMLOperators {
   
   
   
-  static bool LookupOperatorWithFallback(const nsString& aOperator,
-                                         const uint8_t aForm,
-                                         nsOperatorFlags* aFlags,
-                                         float* aLeadingSpace,
-                                         float* aTrailingSpace);
+  
+  
+  static void LookupOperators(const nsString& aOperator,
+                              nsOperatorFlags* aFlags, float* aLeadingSpace,
+                              float* aTrailingSpace);
 
   
   static bool IsMirrorableOperator(const nsString& aOperator);
