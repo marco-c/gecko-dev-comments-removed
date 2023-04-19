@@ -4,7 +4,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from mozboot.base import BaseBootstrapper
+from mozboot.base import BaseBootstrapper, MERCURIAL_INSTALL_PROMPT
 from mozboot.linux_common import LinuxBootstrapper
 
 
@@ -55,10 +55,6 @@ class OpenSUSEBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def install_browser_artifact_mode_packages(self, mozconfig_builder):
         self.install_browser_packages(mozconfig_builder, artifact_mode=True)
 
-    def install_mercurial(self):
-        self(["pip", "install", "--upgrade", "pip", "--user"])
-        self(["pip", "install", "--upgrade", "Mercurial", "--user"])
-
     def ensure_clang_static_analysis_package(self):
         from mozboot import static_analysis
 
@@ -92,11 +88,31 @@ class OpenSUSEBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         )
 
     def _update_package_manager(self):
-        self.zypper_update
+        self.zypper_update()
 
     def upgrade_mercurial(self, current):
-        self(["pip3", "install", "--upgrade", "pip", "--user"])
-        self(["pip3", "install", "--upgrade", "Mercurial", "--user"])
+        """Install Mercurial from pip because system packages could lag."""
+        if self.no_interactive:
+            
+            
+            self.zypper_install("mercurial")
+            return
+
+        res = self.prompt_int(MERCURIAL_INSTALL_PROMPT, 1, 3)
+
+        
+        if res == 2:
+            self.zypper_install("mercurial")
+            return False
+
+        
+        if res == 3:
+            print("Not installing Mercurial.")
+            return False
+
+        
+        assert res == 1
+        self.run_as_root(["pip3", "install", "--upgrade", "Mercurial"])
 
     def zypper(self, *args):
         if self.no_interactive:
