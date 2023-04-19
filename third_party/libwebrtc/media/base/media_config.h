@@ -18,14 +18,20 @@ namespace cricket {
 struct MediaConfig {
   
   
-  bool enable_dscp = false;
+  
+  
+  bool enable_dscp = true;
 
   
   struct Video {
     
     
+    
+    
     bool enable_cpu_adaptation = true;
 
+    
+    
     
     
     
