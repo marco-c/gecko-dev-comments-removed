@@ -120,7 +120,7 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
-      !mOutOfFlowFrame->IsMenuPopupFrame() &&
+      !HasAnyStateBits(PLACEHOLDER_FOR_POPUP) &&
       !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     
@@ -155,6 +155,9 @@ static nsIFrame::ChildListID ChildListIDForOutOfFlow(
   if (aPlaceholderState & PLACEHOLDER_FOR_FLOAT) {
     return nsIFrame::kFloatList;
   }
+  if (aPlaceholderState & PLACEHOLDER_FOR_POPUP) {
+    return nsIFrame::kPopupList;
+  }
   if (aPlaceholderState & PLACEHOLDER_FOR_FIXEDPOS) {
     return nsLayoutUtils::MayBeReallyFixedPos(aChild) ? nsIFrame::kFixedList
                                                       : nsIFrame::kAbsoluteList;
@@ -176,8 +179,7 @@ void nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot,
     
     
     
-    
-    if (oof->IsMenuPopupFrame() ||
+    if (HasAnyStateBits(PLACEHOLDER_FOR_POPUP) ||
         !nsLayoutUtils::IsProperAncestorFrame(aDestructRoot, oof)) {
       ChildListID listId = ChildListIDForOutOfFlow(GetStateBits(), oof);
       nsFrameManager* fm = PresContext()->FrameConstructor();
