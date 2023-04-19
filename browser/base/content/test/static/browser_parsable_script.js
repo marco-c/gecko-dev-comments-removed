@@ -153,7 +153,7 @@ add_task(async function checkAllTheJS() {
 
   
   
-  await PerfTestHelpers.throttledMapPromises(uris, uri => {
+  await throttledMapPromises(uris, uri => {
     if (uriIsWhiteListed(uri)) {
       info("Not checking whitelisted " + uri.spec);
       return undefined;
