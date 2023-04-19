@@ -99,6 +99,24 @@ static bool GetPrefSetDefaultBrowserUserChoice() {
       .valueOr(false);
 }
 
+static bool SetNeverShowNotificationAgain() {
+  
+  
+  return !RegistrySetValueBool(IsPrefixed::Unprefixed,
+                               L"NeverShowNotificationAgain", true)
+              .isErr();
+}
+
+static bool GetNeverShowNotificationAgain() {
+  
+  
+  
+  return RegistryGetValueBool(IsPrefixed::Unprefixed,
+                              L"NeverShowNotificationAgain")
+      .unwrapOr(mozilla::Some(true))
+      .valueOr(false);
+}
+
 struct ToastStrings {
   mozilla::UniquePtr<wchar_t[]> text1;
   mozilla::UniquePtr<wchar_t[]> text2;
@@ -379,6 +397,9 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
         
         
         activitiesPerformed.action = NotificationAction::DismissedByButton;
+        if (!mIsLocalizedNotification) {
+          SetNeverShowNotificationAgain();
+        }
       }
     } else if ((actionIndex == 1 && !mIsLocalizedNotification) ||
                (actionIndex == 0 && mIsLocalizedNotification)) {
@@ -612,6 +633,11 @@ NotificationActivities MaybeShowNotification(
   if (!mozilla::IsWin10OrLater()) {
     
     
+    return activitiesPerformed;
+  }
+
+  bool neverShowNotificationAgain = GetNeverShowNotificationAgain();
+  if (neverShowNotificationAgain) {
     return activitiesPerformed;
   }
 
