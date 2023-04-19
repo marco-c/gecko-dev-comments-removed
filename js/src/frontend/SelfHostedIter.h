@@ -1,0 +1,28 @@
+
+
+
+
+
+
+#ifndef frontend_SelfHostedIter_h
+#define frontend_SelfHostedIter_h
+
+namespace js::frontend {
+
+
+
+
+
+
+enum class SelfHostedIter {
+  
+  
+  Deny,
+
+  
+  Allow,
+};
+
+} 
+
+#endif 

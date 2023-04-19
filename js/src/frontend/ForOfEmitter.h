@@ -7,14 +7,15 @@
 #ifndef frontend_ForOfEmitter_h
 #define frontend_ForOfEmitter_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 
-#include <stdint.h>
+#include <stdint.h>  
 
-#include "frontend/ForOfLoopControl.h"
-#include "frontend/IteratorKind.h"
-#include "frontend/TDZCheckCache.h"
+#include "frontend/ForOfLoopControl.h"  
+#include "frontend/IteratorKind.h"      
+#include "frontend/SelfHostedIter.h"    
+#include "frontend/TDZCheckCache.h"     
 
 namespace js {
 namespace frontend {
@@ -45,7 +46,7 @@ class MOZ_STACK_CLASS ForOfEmitter {
   int32_t loopDepth_ = 0;
 #endif
 
-  bool allowSelfHostedIter_;
+  SelfHostedIter selfHostedIter_;
   IteratorKind iterKind_;
 
   mozilla::Maybe<ForOfLoopControl> loopInfo_;
@@ -92,7 +93,7 @@ class MOZ_STACK_CLASS ForOfEmitter {
  public:
   ForOfEmitter(BytecodeEmitter* bce,
                const EmitterScope* headLexicalEmitterScope,
-               bool allowSelfHostedIter, IteratorKind iterKind);
+               SelfHostedIter selfHostedIter, IteratorKind iterKind);
 
   
   

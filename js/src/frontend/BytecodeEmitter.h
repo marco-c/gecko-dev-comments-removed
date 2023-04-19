@@ -29,6 +29,7 @@
 #include "frontend/Parser.h"               
 #include "frontend/ParserAtom.h"           
 #include "frontend/ScriptIndex.h"          
+#include "frontend/SelfHostedIter.h"       
 #include "frontend/SourceNotes.h"          
 #include "frontend/ValueUsage.h"           
 #include "js/AllocPolicy.h"                
@@ -814,25 +815,28 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
-  [[nodiscard]] bool emitIterator();
+  [[nodiscard]] bool emitIterator(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
 
-  [[nodiscard]] bool emitAsyncIterator();
+  [[nodiscard]] bool emitAsyncIterator(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
 
   
   
   [[nodiscard]] bool emitIteratorNext(
       const mozilla::Maybe<uint32_t>& callSourceCoordOffset,
-      IteratorKind kind = IteratorKind::Sync, bool allowSelfHosted = false);
+      IteratorKind kind = IteratorKind::Sync,
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
   [[nodiscard]] bool emitIteratorCloseInScope(
       EmitterScope& currentScope, IteratorKind iterKind = IteratorKind::Sync,
       CompletionKind completionKind = CompletionKind::Normal,
-      bool allowSelfHosted = false);
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
   [[nodiscard]] bool emitIteratorCloseInInnermostScope(
       IteratorKind iterKind = IteratorKind::Sync,
       CompletionKind completionKind = CompletionKind::Normal,
-      bool allowSelfHosted = false) {
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny) {
     return emitIteratorCloseInScope(*innermostEmitterScope(), iterKind,
-                                    completionKind, allowSelfHosted);
+                                    completionKind, selfHostedIter);
   }
 
   template <typename InnerEmitter>
@@ -984,12 +988,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
-  [[nodiscard]] bool emitSpread(bool allowSelfHosted, int spreadeeStackItems,
-                                JSOp storeElementOp);
+  [[nodiscard]] bool emitSpread(SelfHostedIter selfHostedIter,
+                                int spreadeeStackItems, JSOp storeElementOp);
   
   
   
-  [[nodiscard]] bool emitSpread(bool allowSelfHosted = false);
+  [[nodiscard]] bool emitSpread(
+      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
 
   enum class ClassNameKind {
     
@@ -1048,7 +1053,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
       JSContext* cx);
 
  private:
-  [[nodiscard]] bool allowSelfHostedIter(ParseNode* parseNode);
+  [[nodiscard]] SelfHostedIter getSelfHostedIterFor(ParseNode* parseNode);
 
   [[nodiscard]] bool emitSelfHostedGetBuiltinConstructorOrPrototype(
       CallNode* callNode, bool isConstructor);
