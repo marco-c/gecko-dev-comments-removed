@@ -668,12 +668,21 @@ IncomingRequest.prototype._onHeaders = function _onHeaders(headers) {
   
   
   this.method = this._checkSpecialHeader(':method'   , headers[':method']);
-  this.scheme = this._checkSpecialHeader(':scheme'   , headers[':scheme']);
   this.host   = this._checkSpecialHeader(':authority', headers[':authority']  );
-  this.url    = this._checkSpecialHeader(':path'     , headers[':path']  );
-  if (!this.method || !this.scheme || !this.host || !this.url) {
-    
-    return;
+  if (this.method == "CONNECT") {
+    this.scheme = headers[':scheme'];
+    this.url    = headers[':path'];
+    if (!this.method || !this.host) {
+      
+      return;
+    }
+  } else {
+    this.scheme = this._checkSpecialHeader(':scheme'   , headers[':scheme']);
+    this.url    = this._checkSpecialHeader(':path'     , headers[':path']  );
+    if (!this.method || !this.scheme || !this.host || !this.url) {
+      
+      return;
+    }
   }
 
   
