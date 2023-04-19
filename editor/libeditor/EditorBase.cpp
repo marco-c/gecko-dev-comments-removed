@@ -5,6 +5,7 @@
 
 #include "EditorBase.h"
 
+#include "ErrorList.h"
 #include "mozilla/DebugOnly.h"  
 
 #include <stdio.h>   
@@ -1343,52 +1344,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP EditorBase::BeginningOfDocument() {
   return rv;
 }
 
-NS_IMETHODIMP EditorBase::EndOfDocument() {
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  nsresult rv = CollapseSelectionToEndOfLastLeafNode();
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "EditorBase::CollapseSelectionToEndOfLastLeafNode() failed");
-  
-  
-  return rv;
-}
-
-nsresult EditorBase::CollapseSelectionToEndOfLastLeafNode() const {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  
-  Element* rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  nsIContent* lastLeafContent = rootElement;
-  if (IsTextEditor()) {
-    lastLeafContent = rootElement->GetFirstChild();
-    MOZ_ASSERT(lastLeafContent && lastLeafContent->IsText());
-  } else {
-    for (nsIContent* child = lastLeafContent->GetLastChild();
-         child && HTMLEditUtils::IsContainerNode(*child);
-         child = child->GetLastChild()) {
-      lastLeafContent = child;
-    }
-  }
-
-  nsresult rv =
-      CollapseSelectionToEndOf(OwningNonNull<nsINode>(*lastLeafContent));
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionToEndOf() failed");
-  return rv;
-}
+NS_IMETHODIMP EditorBase::EndOfDocument() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP EditorBase::GetDocumentModified(bool* aOutDocModified) {
   if (NS_WARN_IF(!aOutDocModified)) {
