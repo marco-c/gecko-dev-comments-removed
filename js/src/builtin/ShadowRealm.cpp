@@ -27,8 +27,10 @@
 #include "js/StableStringChars.h"
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
 #include "js/Wrapper.h"
 #include "vm/GlobalObject.h"
+#include "vm/JSObject.h"
 #include "vm/ObjectOperations.h"
 
 #include "builtin/HandlerFunction-inl.h"
@@ -164,6 +166,27 @@ static ShadowRealmObject* ValidateShadowRealmObject(JSContext* cx,
   }
 
   return &maybeUnwrappedO->as<ShadowRealmObject>();
+}
+
+static void ReportPotentiallyDetailedMessage(JSContext* cx,
+                                             const unsigned detailedError,
+                                             const unsigned genericError) {
+  Rooted<Value> exception(cx);
+  if (!JS_GetPendingException(cx, &exception)) {
+    return;
+  }
+  JS_ClearPendingException(cx);
+
+  JS::ErrorReportBuilder jsReport(cx);
+  JS::ExceptionStack exnStack(cx, exception, nullptr);
+  if (!jsReport.init(cx, exnStack, JS::ErrorReportBuilder::NoSideEffects)) {
+    JS_ClearPendingException(cx);
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, genericError);
+    return;
+  }
+
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, detailedError,
+                           jsReport.toStringResult().c_str());
 }
 
 
@@ -303,21 +326,10 @@ static bool PerformShadowRealmEval(JSContext* cx, HandleString sourceText,
     
     
     
+    ReportPotentiallyDetailedMessage(cx,
+                                     JSMSG_SHADOW_REALM_EVALUATE_FAILURE_DETAIL,
+                                     JSMSG_SHADOW_REALM_EVALUATE_FAILURE);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    JS_ClearPendingException(cx);
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_SHADOW_REALM_EVALUATE_FAILURE);
     return false;
   }
 
