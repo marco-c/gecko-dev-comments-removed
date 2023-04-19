@@ -229,6 +229,7 @@ class Axis {
   
 
 
+  bool CanScroll(CSSCoord aDelta) const;
   bool CanScroll(ParentLayerCoord aDelta) const;
 
   
