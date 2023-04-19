@@ -39,6 +39,12 @@ interface imgIRequest : nsIRequest
 
 
 
+  [infallible] readonly attribute nsIPrincipal triggeringPrincipal;
+
+  
+
+
+
 
 
 

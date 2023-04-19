@@ -424,15 +424,23 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     UpdateIntrinsicSize();
   }
 
-  auto newOrientation = StyleVisibility()->mImageOrientation;
+  nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
+
+  bool shouldUpdateOrientation = false;
+  auto newOrientation = StyleVisibility()->UsedImageOrientation(currentRequest);
 
   
   
   
-  bool shouldUpdateOrientation =
-      mImage &&
-      (!aOldStyle ||
-       aOldStyle->StyleVisibility()->mImageOrientation != newOrientation);
+  if (mImage) {
+    if (aOldStyle) {
+      auto oldOrientation =
+          aOldStyle->StyleVisibility()->UsedImageOrientation(currentRequest);
+      shouldUpdateOrientation = oldOrientation != newOrientation;
+    } else {
+      shouldUpdateOrientation = true;
+    }
+  }
 
   if (shouldUpdateOrientation) {
     nsCOMPtr<imgIContainer> image(mImage->Unwrap());
@@ -939,10 +947,11 @@ void nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
 
 void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
   if (SizeIsAvailable(aRequest)) {
+    StyleImageOrientation orientation =
+        StyleVisibility()->UsedImageOrientation(aRequest);
     
     
-    mImage = nsLayoutUtils::OrientImage(aImage,
-                                        StyleVisibility()->mImageOrientation);
+    mImage = nsLayoutUtils::OrientImage(aImage, orientation);
     MOZ_ASSERT(mImage);
   } else {
     
