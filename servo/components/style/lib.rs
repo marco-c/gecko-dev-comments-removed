@@ -247,6 +247,12 @@ where
 }
 
 
+pub trait ZeroNoPercent {
+    
+    fn is_zero_no_percent(&self) -> bool;
+}
+
+
 
 pub trait One {
     
