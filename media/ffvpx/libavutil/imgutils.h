@@ -27,8 +27,10 @@
 
 
 
-#include "avutil.h"
+#include <stddef.h>
+#include <stdint.h>
 #include "pixdesc.h"
+#include "pixfmt.h"
 #include "rational.h"
 
 
@@ -123,6 +125,24 @@ int av_image_alloc(uint8_t *pointers[4], int linesizes[4],
 void av_image_copy_plane(uint8_t       *dst, int dst_linesize,
                          const uint8_t *src, int src_linesize,
                          int bytewidth, int height);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_image_copy_plane_uc_from(uint8_t       *dst, ptrdiff_t dst_linesize,
+                                 const uint8_t *src, ptrdiff_t src_linesize,
+                                 ptrdiff_t bytewidth, int height);
 
 
 

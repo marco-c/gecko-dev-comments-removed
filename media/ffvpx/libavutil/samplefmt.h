@@ -21,9 +21,6 @@
 
 #include <stdint.h>
 
-#include "avutil.h"
-#include "attributes.h"
-
 
 
 
@@ -159,7 +156,6 @@ int av_sample_fmt_is_planar(enum AVSampleFormat sample_fmt);
 
 int av_samples_get_buffer_size(int *linesize, int nb_channels, int nb_samples,
                                enum AVSampleFormat sample_fmt, int align);
-
 
 
 

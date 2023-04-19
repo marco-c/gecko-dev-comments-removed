@@ -41,14 +41,6 @@
 
 #include "attributes.h"
 #include "macros.h"
-#include "version.h"
-#include "libavutil/avconfig.h"
-
-#if AV_HAVE_BIGENDIAN
-#   define AV_NE(be, le) (be)
-#else
-#   define AV_NE(be, le) (le)
-#endif
 
 
 #define RSHIFT(a,b) ((a) > 0 ? ((a) + ((1<<(b))>>1))>>(b) : ((a) + ((1<<(b))>>1)-1)>>(b))
@@ -88,25 +80,6 @@
 
 #define FFABSU(a) ((a) <= 0 ? -(unsigned)(a) : (unsigned)(a))
 #define FFABS64U(a) ((a) <= 0 ? -(uint64_t)(a) : (uint64_t)(a))
-
-
-
-
-
-
-
-
-
-
-#define FFDIFFSIGN(x,y) (((x)>(y)) - ((x)<(y)))
-
-#define FFMAX(a,b) ((a) > (b) ? (a) : (b))
-#define FFMAX3(a,b,c) FFMAX(FFMAX(a,b),c)
-#define FFMIN(a,b) ((a) > (b) ? (b) : (a))
-#define FFMIN3(a,b,c) FFMIN(FFMIN(a,b),c)
-
-#define FFSWAP(type,a,b) do{type SWAP_tmp= b; b= a; a= SWAP_tmp;}while(0)
-#define FF_ARRAY_ELEMS(a) (sizeof(a) / sizeof((a)[0]))
 
 
 
@@ -410,15 +383,17 @@ static av_always_inline int64_t av_sat_sub64_c(int64_t a, int64_t b) {
 
 
 
+
+
 static av_always_inline av_const float av_clipf_c(float a, float amin, float amax)
 {
 #if defined(HAVE_AV_CONFIG_H) && defined(ASSERT_LEVEL) && ASSERT_LEVEL >= 2
     if (amin > amax) abort();
 #endif
-    if      (a < amin) return amin;
-    else if (a > amax) return amax;
-    else               return a;
+    return FFMIN(FFMAX(a, amin), amax);
 }
+
+
 
 
 
@@ -432,9 +407,7 @@ static av_always_inline av_const double av_clipd_c(double a, double amin, double
 #if defined(HAVE_AV_CONFIG_H) && defined(ASSERT_LEVEL) && ASSERT_LEVEL >= 2
     if (amin > amax) abort();
 #endif
-    if      (a < amin) return amin;
-    else if (a > amax) return amax;
-    else               return a;
+    return FFMIN(FFMAX(a, amin), amax);
 }
 
 
@@ -474,9 +447,6 @@ static av_always_inline av_const int av_parity_c(uint32_t v)
 {
     return av_popcount(v) & 1;
 }
-
-#define MKTAG(a,b,c,d) ((a) | ((b) << 8) | ((c) << 16) | ((unsigned)(d) << 24))
-#define MKBETAG(a,b,c,d) ((d) | ((c) << 8) | ((b) << 16) | ((unsigned)(a) << 24))
 
 
 

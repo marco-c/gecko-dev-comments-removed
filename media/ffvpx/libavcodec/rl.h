@@ -52,20 +52,32 @@ typedef struct RLTable {
 
 
 
+
+
+
+
+
 void ff_rl_init(RLTable *rl, uint8_t static_store[2][2*MAX_RUN + MAX_LEVEL + 3]);
+
+
+
+
+
+
+
+
+
+
 void ff_rl_init_vlc(RLTable *rl, unsigned static_size);
 
 #define INIT_VLC_RL(rl, static_size)\
 {\
-    int q;\
     static RL_VLC_ELEM rl_vlc_table[32][static_size];\
 \
-    if(!rl.rl_vlc[0]){\
-        for(q=0; q<32; q++)\
-            rl.rl_vlc[q]= rl_vlc_table[q];\
+    for (int q = 0; q < 32; q++) \
+        rl.rl_vlc[q] = rl_vlc_table[q]; \
 \
-        ff_rl_init_vlc(&rl, static_size);\
-    }\
+    ff_rl_init_vlc(&rl, static_size); \
 }
 
 #define INIT_FIRST_VLC_RL(rl, static_size)              \

@@ -24,7 +24,9 @@
 
 #include "libavutil/buffer.h"
 
-#include "avcodec.h"
+#include "codec_id.h"
+#include "codec_par.h"
+#include "packet.h"
 
 
 
@@ -40,6 +42,7 @@
 
 
 
+struct AVCodecContext;
 struct CodedBitstreamType;
 
 
@@ -271,7 +274,11 @@ int ff_cbs_read_extradata(CodedBitstreamContext *ctx,
 
 int ff_cbs_read_extradata_from_codec(CodedBitstreamContext *ctx,
                                      CodedBitstreamFragment *frag,
-                                     const AVCodecContext *avctx);
+                                     const struct AVCodecContext *avctx);
+
+int ff_cbs_read_packet_side_data(CodedBitstreamContext *ctx,
+                                 CodedBitstreamFragment *frag,
+                                 const AVPacket *pkt);
 
 
 
@@ -379,15 +386,6 @@ int ff_cbs_alloc_unit_content2(CodedBitstreamContext *ctx,
 
 
 
-int ff_cbs_alloc_unit_data(CodedBitstreamUnit *unit,
-                           size_t size);
-
-
-
-
-
-
-
 int ff_cbs_insert_unit_content(CodedBitstreamFragment *frag,
                                int position,
                                CodedBitstreamUnitType type,
@@ -401,8 +399,7 @@ int ff_cbs_insert_unit_content(CodedBitstreamFragment *frag,
 
 
 
-int ff_cbs_insert_unit_data(CodedBitstreamFragment *frag,
-                            int position,
+int ff_cbs_append_unit_data(CodedBitstreamFragment *frag,
                             CodedBitstreamUnitType type,
                             uint8_t *data, size_t data_size,
                             AVBufferRef *data_buf);
