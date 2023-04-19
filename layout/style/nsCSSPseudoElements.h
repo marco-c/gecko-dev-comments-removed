@@ -13,7 +13,6 @@
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/Compiler.h"
 #include "mozilla/PseudoStyleType.h"
-#include "mozilla/StaticPrefs_layout.h"
 
 
 
