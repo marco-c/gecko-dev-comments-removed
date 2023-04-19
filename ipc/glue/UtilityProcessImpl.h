@@ -26,6 +26,10 @@ class UtilityProcessImpl final : public ipc::ProcessChild {
   bool Init(int aArgc, char* aArgv[]) override;
   void CleanUp() override;
 
+#if defined(XP_WIN)
+  static void LoadLibraryOrCrash(LPCWSTR aLib);
+#endif  
+
  private:
   RefPtr<UtilityProcessChild> mUtility = UtilityProcessChild::GetSingleton();
 
