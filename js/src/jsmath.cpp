@@ -10,6 +10,7 @@
 
 #include "jsmath.h"
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/RandomNum.h"
@@ -46,6 +47,7 @@ using mozilla::IsNegativeZero;
 using mozilla::Maybe;
 using mozilla::NegativeInfinity;
 using mozilla::NumberEqualsInt32;
+using mozilla::NumberEqualsInt64;
 using mozilla::PositiveInfinity;
 using mozilla::WrappingMultiply;
 
@@ -402,29 +404,65 @@ bool js::minmax_impl(JSContext* cx, bool max, HandleValue a, HandleValue b,
 
 double js::powi(double x, int32_t y) {
   AutoUnsafeCallWithABI unsafe;
-  uint32_t n = Abs(y);
-  double m = x;
-  double p = 1;
-  while (true) {
-    if ((n & 1) != 0) p *= m;
-    n >>= 1;
-    if (n == 0) {
-      if (y < 0) {
-        
-        
-        
-        
 
-        double result = 1.0 / p;
-        return (result == 0 && IsInfinite(p))
-                   ? pow(x, static_cast<double>(y))  
-                   : result;
+  
+  
+  if (y >= 0) {
+    uint32_t n = uint32_t(y);
+
+    
+    
+    if (n == 0) {
+      return 1;
+    }
+    if (n == 1) {
+      return x;
+    }
+    if (n == 2) {
+      return x * x;
+    }
+    if (n == 3) {
+      return x * x * x;
+    }
+    if (n == 4) {
+      double z = x * x;
+      return z * z;
+    }
+
+    int64_t i;
+    if (NumberEqualsInt64(x, &i)) {
+      
+      if (i == 0) {
+        return (n & 1) ? x : 0;
       }
 
-      return p;
+      
+      mozilla::CheckedInt64 runningSquare = i;
+      mozilla::CheckedInt64 result = 1;
+      while (true) {
+        if ((n & 1) != 0) {
+          result *= runningSquare;
+          if (!result.isValid()) {
+            break;
+          }
+        }
+
+        n >>= 1;
+        if (n == 0) {
+          return static_cast<double>(result.value());
+        }
+
+        runningSquare *= runningSquare;
+        if (!runningSquare.isValid()) {
+          break;
+        }
+      }
     }
-    m *= m;
+
+    
   }
+
+  return std::pow(x, static_cast<double>(y));  
 }
 
 double js::ecmaPow(double x, double y) {

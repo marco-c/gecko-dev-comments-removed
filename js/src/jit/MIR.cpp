@@ -2756,6 +2756,9 @@ MDefinition* MPow::foldsConstantPower(TempAllocator& alloc) {
 
   MOZ_ASSERT(type() == MIRType::Double || type() == MIRType::Int32);
 
+  
+  
+
   double pow = power()->toConstant()->numberToDouble();
 
   
