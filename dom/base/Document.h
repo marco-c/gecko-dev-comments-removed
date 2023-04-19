@@ -40,6 +40,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/SegmentedVector.h"
+#include "mozilla/StorageAccessAPIHelper.h"
 #include "mozilla/TaskCategory.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -1258,16 +1259,10 @@ class Document : public nsINode,
   nsresult HasStorageAccessSync(bool& aHasStorageAccess);
   already_AddRefed<Promise> HasStorageAccess(ErrorResult& aRv);
 
-  
-  
-  
-  
-  
-  RefPtr<MozPromise<int, bool, true>> RequestStorageAccessAsyncHelper(
-      nsPIDOMWindowInner* aInnerWindow, BrowsingContext* aBrowsingContext,
-      nsIPrincipal* aPrincipal, bool aHasUserInteraction,
-      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
-      bool performFinalChecks);
+  StorageAccessAPIHelper::PerformPermissionGrant CreatePermissionGrantPromise(
+      nsPIDOMWindowInner* aInnerWindow, nsIPrincipal* aPrincipal,
+      bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain);
+
   already_AddRefed<Promise> RequestStorageAccess(ErrorResult& aRv);
 
   already_AddRefed<Promise> RequestStorageAccessForOrigin(
