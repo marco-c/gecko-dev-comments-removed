@@ -25,11 +25,10 @@ function test_handler(metadata, response) {
   response.setHeader("Cache-Control", "no-cache");
   response.setHeader("ETag", "test-etag1");
 
-  let etag;
   try {
-    etag = metadata.getHeader("If-None-Match");
+    var etag = metadata.getHeader("If-None-Match");
   } catch (ex) {
-    etag = "";
+    var etag = "";
   }
 
   if (etag == "test-etag1") {
@@ -106,7 +105,7 @@ function* testSteps() {
   });
 
   
-  let channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 1);
@@ -114,7 +113,7 @@ function* testSteps() {
   equal(g304Counter, 0, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 2);
@@ -122,7 +121,7 @@ function* testSteps() {
   equal(g304Counter, 1, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(200);
@@ -139,7 +138,7 @@ function* testSteps() {
   equal(g304Counter, 2, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -155,7 +154,7 @@ function* testSteps() {
   equal(g304Counter, 3, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -170,7 +169,7 @@ function* testSteps() {
   
   
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -189,7 +188,7 @@ function* testSteps() {
   equal(g304Counter, 3, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -206,7 +205,7 @@ function* testSteps() {
   equal(g304Counter, 4, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 8);
@@ -214,7 +213,7 @@ function* testSteps() {
   equal(g304Counter, 4, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 9);
@@ -223,7 +222,7 @@ function* testSteps() {
 
   
   gIsFromCache = 0;
-  channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -237,7 +236,7 @@ function* testSteps() {
   equal(g304Counter, 4, "check number of 304 responses");
 
   
-  channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
+  var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel
     .QueryInterface(Ci.nsIRaceCacheWithNetwork)
     .test_delayCacheEntryOpeningBy(100000);
@@ -259,7 +258,7 @@ function* testSteps() {
   
   gIsFromCache = 0;
   for (var i = 0; i < 50; i++) {
-    channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
+    var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
     channel
       .QueryInterface(Ci.nsIRaceCacheWithNetwork)
       .test_delayCacheEntryOpeningBy(100000);

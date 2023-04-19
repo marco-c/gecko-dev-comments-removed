@@ -197,7 +197,6 @@ document.getElementById('form').submit();
 
 function frameScript() {
   
-  
   addMessageListener("Test:WaitForIFrame", function() {
     var check = function() {
       if (content) {
@@ -224,7 +223,6 @@ function frameScript() {
 
     check();
   });
-  
 }
 
 function loadTestTab(uri) {

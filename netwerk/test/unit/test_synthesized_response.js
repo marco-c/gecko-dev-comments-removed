@@ -276,7 +276,7 @@ add_test(function() {
 
 add_test(function() {
   var chan = make_channel(URL + "/body", null, function(chan) {
-    throw new Error("boom");
+    throw "boom";
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });

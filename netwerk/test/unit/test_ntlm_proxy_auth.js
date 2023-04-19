@@ -121,8 +121,6 @@ const PROXY_CHALLENGE =
 
 
 function successfulAuth(metadata, response) {
-  let authorization;
-  let authPrefix;
   switch (requestsMade) {
     case 0:
       
@@ -131,8 +129,8 @@ function successfulAuth(metadata, response) {
       break;
     case 1:
       
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
       response.setHeader("Proxy-Authenticate", PROXY_CHALLENGE, false);
@@ -140,14 +138,14 @@ function successfulAuth(metadata, response) {
     case 2:
       
       
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       response.setStatusLine(metadata.httpVersion, 200, "Successful");
       break;
     default:
       
-      authorization = metadata.getHeader("Proxy-Authorization");
+      var authorization = metadata.getHeader("Proxy-Authorization");
       Assert.isnull(authorization);
       response.setStatusLine(metadata.httpVersion, 200, "Successful");
   }
@@ -159,8 +157,6 @@ function successfulAuth(metadata, response) {
 
 
 function failedAuth(metadata, response) {
-  let authorization;
-  let authPrefix;
   switch (requestsMade) {
     case 0:
       
@@ -169,8 +165,8 @@ function failedAuth(metadata, response) {
       break;
     case 1:
       
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
       response.setHeader("Proxy-Authenticate", PROXY_CHALLENGE, false);
@@ -179,8 +175,8 @@ function failedAuth(metadata, response) {
       
       
       
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
       response.setHeader("Proxy-Authenticate", "NTLM", false);
@@ -199,8 +195,6 @@ function failedAuth(metadata, response) {
 
 
 function connectionReset(metadata, response) {
-  let authorization;
-  let authPrefix;
   switch (requestsMade) {
     case 0:
       
@@ -209,16 +203,16 @@ function connectionReset(metadata, response) {
       break;
     case 1:
       
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       ntlmTypeOneCount++;
       response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
       response.setHeader("Proxy-Authenticate", PROXY_CHALLENGE, false);
       break;
     case 2:
-      authorization = metadata.getHeader("Proxy-Authorization");
-      authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
+      var authorization = metadata.getHeader("Proxy-Authorization");
+      var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       ntlmTypeTwoCount++;
       response.seizePower();

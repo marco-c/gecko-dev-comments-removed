@@ -98,7 +98,6 @@ function channelOpenPromise(chan, flags, delay) {
       true
     );
     if (delay) {
-      
       await new Promise(r => setTimeout(r, delay));
     }
     chan.asyncOpen(new ChannelListener(finish, null, flags));
@@ -172,7 +171,6 @@ add_task(async function test_fast_fallback_with_speculative_connection() {
 add_task(async function test_fast_fallback_without_speculative_connection() {
   
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
-  
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   Services.obs.notifyObservers(null, "network:reset-http3-excluded-list");

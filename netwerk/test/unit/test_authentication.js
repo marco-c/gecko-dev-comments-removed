@@ -145,7 +145,6 @@ AuthPrompt2.prototype = {
     const kAllKnownFlags = 127; 
     Assert.equal(expectedFlags, authInfo.flags & kAllKnownFlags);
 
-    
     var expectedScheme = isNTLM ? "ntlm" : isDigest ? "digest" : "basic";
     Assert.equal(expectedScheme, authInfo.authenticationScheme);
 

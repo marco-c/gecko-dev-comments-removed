@@ -68,8 +68,7 @@ function redirect(metadata, response) {
   
   if (called) {
     failed = true;
-    pac(metadata, response);
-    return;
+    return pac(metadata, response);
   }
 
   called = true;

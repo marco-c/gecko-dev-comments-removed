@@ -28,10 +28,18 @@ function parse_priority_response_header(priority) {
   const priority_array = priority.split(",");
 
   
-  const urgency = priority_array.find(element => element.includes("u="));
+  const urgency = priority_array.find(element => {
+    if (element.includes("u=")) {
+      return true;
+    }
+  });
 
   
-  const incremental = !!priority_array.find(element => element == "i");
+  const incremental = !!priority_array.find(element => {
+    if (element == "i") {
+      return true;
+    }
+  });
 
   return [urgency ? urgency : null, incremental];
 }

@@ -147,8 +147,7 @@ function makeChan(origin) {
   }).QueryInterface(Ci.nsIHttpChannel);
 }
 
-
-
+var origin;
 var xaltsvc;
 var retryCounter = 0;
 var loadWithoutClearingMappings = false;

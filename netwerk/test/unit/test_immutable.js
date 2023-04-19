@@ -2,8 +2,7 @@
 
 var prefs;
 var http2pref;
-
-
+var origin;
 var rcwnpref;
 
 function run_test() {

@@ -46,20 +46,17 @@ function run_test() {
 
 function run_test_number(num) {
   let testPath = testPathBase + num;
-  
   httpserver.registerPathHandler(testPath, eval("handler" + num));
 
   var channel = setupChannel(testPath);
   let flags = test_flags[num]; 
   channel.asyncOpen(
-    
     new ChannelListener(eval("completeTest" + num), channel, flags)
   );
 }
 
 function run_gzip_test(num) {
   let testPath = testPathBase + num;
-  
   httpserver.registerPathHandler(testPath, eval("handler" + num));
 
   var channel = setupChannel(testPath);

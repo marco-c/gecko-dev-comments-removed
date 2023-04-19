@@ -45,7 +45,7 @@ function run_test() {
   }
 
   
-  for (let i = 0; i < hosts.length; ++i) {
+  for (var i = 0; i < hosts.length; ++i) {
     let uri = ioService.newURI(hosts[i][0]);
     let principal = secMan.createContentPrincipal(uri, {});
 
@@ -53,7 +53,7 @@ function run_test() {
   }
 
   
-  for (let i = 0; i < results.length; ++i) {
+  for (var i = 0; i < results.length; ++i) {
     let uri = ioService.newURI(results[i][0]);
     let principal = secMan.createContentPrincipal(uri, {});
 
@@ -72,13 +72,13 @@ function run_test() {
   Assert.equal(perms.length, hosts.length);
 
   
-  for (let j = 0; j < perms.length; ++j) {
+  for (var j = 0; j < perms.length; ++j) {
     pm.removePermission(perms[j]);
   }
 
   
-  for (let i = 0; i < hosts.length; ++i) {
-    for (let j = 0; j < perms.length; ++j) {
+  for (var i = 0; i < hosts.length; ++i) {
+    for (var j = 0; j < perms.length; ++j) {
       if (
         perms[j].matchesURI(ioService.newURI(hosts[i][0]), true) &&
         hosts[i][1] == perms[j].type &&
