@@ -18,6 +18,9 @@ namespace webrtc {
 
 class DecoderDatabase;
 
+static const size_t kRedHeaderLength = 4;  
+static const size_t kRedLastHeaderLength =
+    1;  
 
 
 

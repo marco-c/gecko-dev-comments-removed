@@ -31,7 +31,6 @@ namespace webrtc {
 
 static const int kRedPayloadType = 100;
 static const size_t kPayloadLength = 10;
-static const size_t kRedHeaderLength = 4;  
 static const uint16_t kSequenceNumber = 0;
 static const uint32_t kBaseTimestamp = 0x12345678;
 
@@ -366,6 +365,27 @@ TEST(RedPayloadSplitter, WrongPayloadLength) {
                kSequenceNumber, kBaseTimestamp - 2 * kTimestampOffset, 0,
                {0, 2});
   packet_list.pop_front();
+}
+
+
+TEST(RedPayloadSplitter, RejectsIncompleteHeaders) {
+  RedPayloadSplitter splitter;
+
+  uint8_t payload_types[] = {0, 0};
+  const int kTimestampOffset = 160;
+
+  PacketList packet_list;
+
+  
+  packet_list.push_back(CreateRedPayload(2, payload_types, kTimestampOffset));
+  packet_list.front().payload.SetSize(4);
+  EXPECT_FALSE(splitter.SplitRed(&packet_list));
+  EXPECT_FALSE(packet_list.empty());
+
+  
+  packet_list.front().payload.SetSize(3);
+  EXPECT_FALSE(splitter.SplitRed(&packet_list));
+  EXPECT_FALSE(packet_list.empty());
 }
 
 }  
