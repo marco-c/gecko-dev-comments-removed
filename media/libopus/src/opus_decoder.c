@@ -278,8 +278,7 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
       ec_dec_init(&dec,(unsigned char*)data,len);
    } else {
       audiosize = frame_size;
-      
-      mode = st->prev_redundancy ? MODE_CELT_ONLY : st->prev_mode;
+      mode = st->prev_mode;
       bandwidth = 0;
 
       if (mode == 0)
@@ -420,7 +419,7 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
 
    start_band = 0;
    if (!decode_fec && mode != MODE_CELT_ONLY && data != NULL
-    && ec_tell(&dec)+17+20*(mode == MODE_HYBRID) <= 8*len)
+    && ec_tell(&dec)+17+20*(st->mode == MODE_HYBRID) <= 8*len)
    {
       
       if (mode == MODE_HYBRID)
@@ -500,11 +499,6 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
    
    if (redundancy && celt_to_silk)
    {
-      
-
-
-
-
       MUST_SUCCEED(celt_decoder_ctl(celt_dec, CELT_SET_START_BAND(0)));
       celt_decode_with_ec(celt_dec, data+len, redundancy_bytes,
                           redundant_audio, F5, NULL, 0);
@@ -567,10 +561,7 @@ static int opus_decode_frame(OpusDecoder *st, const unsigned char *data,
       smooth_fade(pcm+st->channels*(frame_size-F2_5), redundant_audio+st->channels*F2_5,
                   pcm+st->channels*(frame_size-F2_5), F2_5, st->channels, window, st->Fs);
    }
-   
-
-
-   if (redundancy && celt_to_silk && (st->prev_mode != MODE_SILK_ONLY || st->prev_redundancy))
+   if (redundancy && celt_to_silk)
    {
       for (c=0;c<st->channels;c++)
       {

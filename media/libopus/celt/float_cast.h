@@ -99,7 +99,7 @@ static OPUS_INLINE opus_int32 float2int(float x) {return _mm_cvt_ss2si(_mm_set_s
                 return intgr ;
         }
 
-#elif defined(HAVE_LRINTF) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#elif defined(HAVE_LRINTF)
 
 
 
@@ -117,7 +117,7 @@ static OPUS_INLINE opus_int32 float2int(float x) {return _mm_cvt_ss2si(_mm_set_s
 #include <math.h>
 #define float2int(x) lrintf(x)
 
-#elif defined(HAVE_LRINT) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#elif (defined(HAVE_LRINT))
 
 #define _ISOC9X_SOURCE 1
 #define _ISOC99_SOURCE 1

@@ -87,7 +87,6 @@ struct OpusEncoder {
     int          lfe;
     int          arch;
     int          use_dtx;                 
-    int          fec_config;
 #ifndef DISABLE_FLOAT_API
     TonalityAnalysisState analysis;
 #endif
@@ -1315,8 +1314,6 @@ opus_int32 opus_encode_native(OpusEncoder *st, const opus_val16 *pcm, int frame_
         st->stream_channels = st->force_channels;
     } else {
 #ifdef FUZZING
-        (void)stereo_music_threshold;
-        (void)stereo_voice_threshold;
        
        if (st->channels == 2 && (rand()&0x1F)==0)
           st->stream_channels = 3-st->stream_channels;
@@ -1355,8 +1352,6 @@ opus_int32 opus_encode_native(OpusEncoder *st, const opus_val16 *pcm, int frame_
     } else if (st->user_forced_mode == OPUS_AUTO)
     {
 #ifdef FUZZING
-        (void)stereo_width;
-        (void)mode_thresholds;
        
        if ((rand()&0xF)==0)
        {
@@ -1395,8 +1390,7 @@ opus_int32 opus_encode_native(OpusEncoder *st, const opus_val16 *pcm, int frame_
        st->mode = (equiv_rate >= threshold) ? MODE_CELT_ONLY: MODE_SILK_ONLY;
 
        
-
-       if (st->silk_mode.useInBandFEC && st->silk_mode.packetLossPercentage > (128-voice_est)>>4 && (st->fec_config != 2 || voice_est > 25))
+       if (st->silk_mode.useInBandFEC && st->silk_mode.packetLossPercentage > (128-voice_est)>>4)
           st->mode = MODE_SILK_ONLY;
        
 
@@ -2445,12 +2439,11 @@ int opus_encoder_ctl(OpusEncoder *st, int request, ...)
         case OPUS_SET_INBAND_FEC_REQUEST:
         {
             opus_int32 value = va_arg(ap, opus_int32);
-            if(value<0 || value>2)
+            if(value<0 || value>1)
             {
                goto bad_arg;
             }
-            st->fec_config = value;
-            st->silk_mode.useInBandFEC = (value != 0);
+            st->silk_mode.useInBandFEC = value;
         }
         break;
         case OPUS_GET_INBAND_FEC_REQUEST:
@@ -2460,7 +2453,7 @@ int opus_encoder_ctl(OpusEncoder *st, int request, ...)
             {
                goto bad_arg;
             }
-            *value = st->fec_config;
+            *value = st->silk_mode.useInBandFEC;
         }
         break;
         case OPUS_SET_PACKET_LOSS_PERC_REQUEST:
