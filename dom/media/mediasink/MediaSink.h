@@ -120,7 +120,7 @@ class MediaSink {
 
   
   
-  virtual const AudioDeviceInfo* AudioDevice() { return nullptr; }
+  virtual const AudioDeviceInfo* AudioDevice() const = 0;
 
   
   

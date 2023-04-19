@@ -42,12 +42,13 @@ class AudioSink : private AudioStream::DataSource {
   };
 
   AudioSink(AbstractThread* aThread, MediaQueue<AudioData>& aAudioQueue,
-            const AudioInfo& aInfo, AudioDeviceInfo* aAudioDevice);
+            const AudioInfo& aInfo);
 
   ~AudioSink();
 
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams,
+                                 const RefPtr<AudioDeviceInfo>& aAudioDevice,
                                  InitializationType aInitializationType);
 
   
@@ -82,8 +83,6 @@ class AudioSink : private AudioStream::DataSource {
   MediaEventSource<bool>& AudibleEvent() { return mAudibleEvent; }
 
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo);
-
-  const RefPtr<AudioDeviceInfo>& AudioDevice() { return mAudioDevice; }
 
   
   
@@ -127,12 +126,6 @@ class AudioSink : private AudioStream::DataSource {
   
   
   media::TimeUnit mLastGoodPosition;
-
-  const AudioInfo mInfo;
-
-  
-  
-  const RefPtr<AudioDeviceInfo> mAudioDevice;
 
   
   bool mPlaying;
