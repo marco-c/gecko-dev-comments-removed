@@ -624,14 +624,14 @@ FileReader::Notify(nsITimer* aTimer) {
 
 NS_IMETHODIMP
 FileReader::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  if (mReadyState != LOADING || aStream != mAsyncStream) {
-    return NS_OK;
-  }
-
   
   
   
   FileReaderDecreaseBusyCounter RAII(this);
+
+  if (mReadyState != LOADING || aStream != mAsyncStream) {
+    return NS_OK;
+  }
 
   uint64_t count;
   nsresult rv = aStream->Available(&count);
@@ -731,14 +731,7 @@ void FileReader::Abort() {
 
   MOZ_ASSERT(mReadyState == LOADING);
 
-  ClearProgressEventTimer();
-
-  if (mAsyncWaitRunnable) {
-    mAsyncWaitRunnable->Cancel();
-    mAsyncWaitRunnable = nullptr;
-  }
-
-  mReadyState = DONE;
+  Shutdown();
 
   
   mError = DOMException::Create(NS_ERROR_DOM_ABORT_ERR);
@@ -747,30 +740,12 @@ void FileReader::Abort() {
   SetDOMStringToNull(mResult);
   mResultArrayBuffer = nullptr;
 
-  
-  
-  
-  
-  if (mAsyncStream && mBusyCount) {
-    mAsyncStream->AsyncWait( nullptr,
-                             0,
-                             0, mTarget);
-    DecreaseBusyCounter();
-    MOZ_ASSERT(mBusyCount == 0);
-
-    mAsyncStream->Close();
-  }
-
-  mAsyncStream = nullptr;
   mBlob = nullptr;
-
-  
-  FreeFileData();
 
   
   DispatchProgressEvent(nsLiteralString(ABORT_STR));
   DispatchProgressEvent(nsLiteralString(LOADEND_STR));
-}  
+}
 
 nsresult FileReader::IncreaseBusyCounter() {
   if (mWeakWorkerRef && mBusyCount++ == 0) {
@@ -817,10 +792,8 @@ void FileReader::Shutdown() {
   FreeFileData();
   mResultArrayBuffer = nullptr;
 
-  if (mWeakWorkerRef && mBusyCount != 0) {
-    mStrongWorkerRef = nullptr;
+  if (mWeakWorkerRef) {
     mWeakWorkerRef = nullptr;
-    mBusyCount = 0;
   }
 }
 
