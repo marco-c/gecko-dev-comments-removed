@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import org.mozilla.gecko.util.ThreadUtils;
 
 @UiThread
@@ -42,34 +41,6 @@ public final class OverscrollEdgeEffect {
   }
 
   private static Field sPaintField;
-  private static Method sSetType;
-
-  
-  
-  
-  
-  private void setType(final EdgeEffect edgeEffect) {
-    if (Build.VERSION.SDK_INT < 31 && !Build.VERSION.CODENAME.equals("S")) {
-      
-      
-      return;
-    }
-
-    
-    if (sSetType == null) {
-      try {
-        sSetType = EdgeEffect.class.getDeclaredMethod("setType", int.class);
-      } catch (final NoSuchMethodException e) {
-        
-        return;
-      }
-    }
-
-    try {
-      sSetType.invoke(edgeEffect,  0);
-    } catch (final Exception ex) {
-    }
-  }
 
   private void setBlendMode(final EdgeEffect edgeEffect) {
     if (Build.VERSION.SDK_INT < 29) {
@@ -91,7 +62,6 @@ public final class OverscrollEdgeEffect {
     for (int i = 0; i < mEdges.length; i++) {
       final EdgeEffect edgeEffect = new EdgeEffect(context);
       setBlendMode(edgeEffect);
-      setType(edgeEffect);
       mEdges[i] = edgeEffect;
     }
   }
