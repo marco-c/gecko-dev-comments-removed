@@ -68,11 +68,7 @@ class DecisionLogic : public NetEqController {
   
   void SetCngOff() override { cng_state_ = kCngOff; }
 
-  
-  
-  
-  
-  void ExpandDecision(NetEq::Operation operation) override;
+  void ExpandDecision(NetEq::Operation operation) override {}
 
   
   void AddSampleMemory(int32_t value) override { sample_memory_ += value; }
@@ -85,7 +81,7 @@ class DecisionLogic : public NetEqController {
 
   void RegisterEmptyPacket() override {}
 
-  void NotifyMutedState() override {}
+  void NotifyMutedState() override;
 
   bool SetMaximumDelay(int delay_ms) override {
     return delay_manager_->SetMaximumDelay(delay_ms);
