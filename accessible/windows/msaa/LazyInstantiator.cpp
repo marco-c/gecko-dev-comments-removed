@@ -214,6 +214,14 @@ bool LazyInstantiator::IsBlockedInjection() {
 
 
 bool LazyInstantiator::ShouldInstantiate(const DWORD aClientTid) {
+  if (Compatibility::IsA11ySuppressedForClipboardCopy()) {
+    
+    
+    
+    
+    return false;
+  }
+
   if (!aClientTid) {
     
     

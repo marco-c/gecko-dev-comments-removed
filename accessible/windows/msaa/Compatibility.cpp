@@ -243,3 +243,40 @@ void Compatibility::GetHumanReadableConsumersStr(nsAString& aResult) {
     }
   }
 }
+
+
+
+static DWORD sA11yClipboardCopySuppressionStartTime = 0;
+
+
+void Compatibility::SuppressA11yForClipboardCopy() {
+  
+  
+  
+  
+  bool doSuppress = [&] {
+    switch (
+        StaticPrefs::accessibility_windows_suppress_after_clipboard_copy()) {
+      case 0:
+        return false;
+      case 1:
+        return true;
+      default:
+        return NeedsWindows11SuggestedActionsWorkaround();
+    }
+  }();
+
+  if (doSuppress) {
+    sA11yClipboardCopySuppressionStartTime = ::GetTickCount();
+  }
+}
+
+
+bool Compatibility::IsA11ySuppressedForClipboardCopy() {
+  constexpr DWORD kSuppressTimeout = 1000;  
+  if (!sA11yClipboardCopySuppressionStartTime) {
+    return false;
+  }
+  return ::GetTickCount() - sA11yClipboardCopySuppressionStartTime <
+         kSuppressTimeout;
+}
