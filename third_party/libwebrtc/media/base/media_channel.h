@@ -217,6 +217,9 @@ class MediaChannel {
   
   
   
+  
+  
+  
   virtual void OnDemuxerCriteriaUpdatePending() = 0;
   virtual void OnDemuxerCriteriaUpdateComplete() = 0;
   
