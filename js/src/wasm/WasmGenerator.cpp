@@ -90,9 +90,7 @@ ModuleGenerator::ModuleGenerator(const CompileArgs& args,
       outstanding_(0),
       currentTask_(nullptr),
       batchedBytecode_(0),
-      finishedFuncDefs_(false) {
-  MOZ_ASSERT(IsCompilingWasm());
-}
+      finishedFuncDefs_(false) {}
 
 ModuleGenerator::~ModuleGenerator() {
   MOZ_ASSERT_IF(finishedFuncDefs_, !batchedBytecode_);
@@ -615,6 +613,7 @@ static bool AppendForEach(Vec* dstVec, const Vec& srcVec, MutateOp mutateOp) {
 
 bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   AutoCreatedBy acb(masm_, "ModuleGenerator::linkCompiledCode");
+  JitContext jcx;
 
   
   

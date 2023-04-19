@@ -77,8 +77,9 @@ static_assert(sizeof(AbortReasonOr<uint16_t*>) == sizeof(uintptr_t),
 
 
 
+
+
 class JitContext {
-  JitContext* prev_ = nullptr;
   CompileRealm* realm_ = nullptr;
   int assemblerCount_ = 0;
 

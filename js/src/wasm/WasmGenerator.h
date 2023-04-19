@@ -182,7 +182,6 @@ class MOZ_STACK_CLASS ModuleGenerator {
   
   CompileTaskState taskState_;
   LifoAlloc lifo_;
-  jit::JitContext jcx_;
   jit::TempAllocator masmAlloc_;
   jit::WasmMacroAssembler masm_;
   Uint32Vector funcToCodeRange_;
