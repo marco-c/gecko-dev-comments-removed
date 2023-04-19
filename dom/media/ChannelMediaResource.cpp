@@ -797,8 +797,16 @@ void ChannelMediaResource::UpdatePrincipal() {
     return;
   }
   bool hadData = mSharedInfo->mPrincipal != nullptr;
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIPrincipal> principal;
-  secMan->GetChannelResultPrincipal(mChannel, getter_AddRefs(principal));
+  secMan->GetChannelResultPrincipalIfNotSandboxed(mChannel,
+                                                  getter_AddRefs(principal));
   if (nsContentUtils::CombineResourcePrincipals(&mSharedInfo->mPrincipal,
                                                 principal)) {
     for (auto* r : mSharedInfo->mResources) {
