@@ -2308,18 +2308,25 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
   
   
   
+  
   JS::SetReservedSlot(newobj, DOM_OBJECT_SLOT,
                       JS::GetReservedSlot(aObj, DOM_OBJECT_SLOT));
   JS::SetReservedSlot(aObj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
+  nsWrapperCache* cache = nullptr;
+  CallQueryInterface(native, &cache);
+  cache->UpdateWrapperForNewGlobal(native, newobj);
 
   aObj = xpc::TransplantObjectRetainingXrayExpandos(aCx, aObj, newobj);
   if (!aObj) {
     MOZ_CRASH();
   }
 
-  nsWrapperCache* cache = nullptr;
-  CallQueryInterface(native, &cache);
-  cache->UpdateWrapperForNewGlobal(native, aObj);
+  
+  
+  if (aObj != newobj) {
+    MOZ_ASSERT(UnwrapDOMObjectToISupports(aObj) == native);
+    cache->UpdateWrapperForNewGlobal(native, aObj);
+  }
 
   if (propertyHolder) {
     JS::Rooted<JSObject*> copyTo(aCx);
