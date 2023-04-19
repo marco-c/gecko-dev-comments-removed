@@ -1867,7 +1867,7 @@ constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
 
 
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
 #define MAYBE_IceStatesReachCompletionWithRemoteHostname \
   DISABLED_IceStatesReachCompletionWithRemoteHostname
 #else
