@@ -82,7 +82,11 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   bool mWebglValid = true;
   
-  bool mClipDirty = true;
+  bool mClipChanged = true;
+  
+  
+  
+  bool mRefreshClipState = true;
   
   bool mNeedsPresent = true;
   

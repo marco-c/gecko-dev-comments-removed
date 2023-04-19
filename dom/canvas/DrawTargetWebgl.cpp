@@ -532,7 +532,7 @@ bool DrawTargetWebgl::SharedContext::SetNoClipMask() {
 
 
 bool DrawTargetWebgl::GenerateComplexClipMask() {
-  if (!mClipDirty) {
+  if (!mClipChanged) {
     
     mSharedContext->SetClipMask(mClipMask);
     mSharedContext->SetClipRect(mClipBounds);
@@ -596,7 +596,6 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   mSharedContext->SetClipRect(mClipBounds);
   
   mSkiaValid = false;
-  mClipDirty = false;
   return !!data;
 }
 
@@ -617,7 +616,6 @@ bool DrawTargetWebgl::SetSimpleClipRect() {
   }
   mSharedContext->SetClipRect(*clip);
   mSharedContext->SetNoClipMask();
-  mClipDirty = false;
   return true;
 }
 
@@ -629,13 +627,15 @@ bool DrawTargetWebgl::PrepareContext(bool aClipped) {
     mSharedContext->SetClipRect(IntRect(IntPoint(), mSize));
     mSharedContext->SetNoClipMask();
     
-    mClipDirty = true;
-  } else if (mClipDirty || !mSharedContext->IsCurrentTarget(this)) {
+    mRefreshClipState = true;
+  } else if (mRefreshClipState || !mSharedContext->IsCurrentTarget(this)) {
     
     
     if (!SetSimpleClipRect() && !GenerateComplexClipMask()) {
       return false;
     }
+    mClipChanged = false;
+    mRefreshClipState = false;
   }
   return mSharedContext->SetTarget(this);
 }
@@ -786,7 +786,7 @@ inline DrawTargetWebgl::AutoRestoreContext::~AutoRestoreContext() {
   if (mLastClipMask) {
     mTarget->mSharedContext->SetClipMask(mLastClipMask);
   }
-  mTarget->mClipDirty = true;
+  mTarget->mRefreshClipState = true;
 }
 
 
@@ -1217,23 +1217,27 @@ void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
 }
 
 void DrawTargetWebgl::PushClip(const Path* aPath) {
-  mClipDirty = true;
+  mClipChanged = true;
+  mRefreshClipState = true;
   mSkia->PushClip(aPath);
 }
 
 void DrawTargetWebgl::PushClipRect(const Rect& aRect) {
-  mClipDirty = true;
+  mClipChanged = true;
+  mRefreshClipState = true;
   mSkia->PushClipRect(aRect);
 }
 
 void DrawTargetWebgl::PushDeviceSpaceClipRects(const IntRect* aRects,
                                                uint32_t aCount) {
-  mClipDirty = true;
+  mClipChanged = true;
+  mRefreshClipState = true;
   mSkia->PushDeviceSpaceClipRects(aRects, aCount);
 }
 
 void DrawTargetWebgl::PopClip() {
-  mClipDirty = true;
+  mClipChanged = true;
+  mRefreshClipState = true;
   mSkia->PopClip();
 }
 
