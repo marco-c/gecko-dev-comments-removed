@@ -3,16 +3,16 @@
 <title>
 Test chrome-only MutationObserver animation notifications (sync tests)
 </title>
+<!--
 
+  This file contains synchronous tests for animation mutation observers.
 
+  In general we prefer to write synchronous tests since they are less likely to
+  timeout when run on automation. Tests that require asynchronous steps (e.g.
+  waiting on events) should be added to test_animations_observers_async.html
+  instead.
 
-
-
-
-
-
-
-
+-->
 <script type="application/javascript" src="../testharness.js"></script>
 <script type="application/javascript" src="../testharnessreport.js"></script>
 <script type="application/javascript" src="../testcommon.js"></script>
@@ -1568,6 +1568,7 @@ function runTest() {
   }, "exclude_animations_targeting_pseudo_elements");
 }
 
+W3CTest.runner.expectAssertions(0, 12); // bug 1189015
 setup({explicit_done: true});
 SpecialPowers.pushPrefEnv(
   {
