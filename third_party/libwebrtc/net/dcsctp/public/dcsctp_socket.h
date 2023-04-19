@@ -157,6 +157,43 @@ inline constexpr absl::string_view ToString(ResetStreamsStatus error) {
 
 
 
+struct Metrics {
+  
+
+  
+  size_t tx_packets_count = 0;
+
+  
+  size_t tx_messages_count = 0;
+
+  
+  
+  absl::optional<size_t> cwnd_bytes = absl::nullopt;
+
+  
+  absl::optional<int> srtt_ms = absl::nullopt;
+
+  
+  
+  
+  
+  size_t unack_data_count = 0;
+
+  
+
+  
+  size_t rx_packets_count = 0;
+
+  
+  size_t rx_messages_count = 0;
+
+  
+  
+  absl::optional<uint32_t> peer_rwnd_bytes = absl::nullopt;
+};
+
+
+
 
 
 
@@ -350,6 +387,9 @@ class DcSctpSocketInterface {
   
   virtual void SetBufferedAmountLowThreshold(StreamID stream_id,
                                              size_t bytes) = 0;
+
+  
+  virtual Metrics GetMetrics() const = 0;
 };
 }  
 
