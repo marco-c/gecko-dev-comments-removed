@@ -1615,16 +1615,37 @@ struct PaintComposite {
     if (compositeMode == COMPOSITE_DEST) {
       return DispatchPaint(aState, aOffset + backdropPaintOffset);
     }
-    aState.mDrawTarget->PushLayer(true, 1.0, nullptr, Matrix());
-    bool ok = DispatchPaint(aState, aOffset + backdropPaintOffset);
-    if (ok) {
-      aState.mDrawTarget->PushLayerWithBlend(true, 1.0, nullptr, Matrix(),
-                                             IntRect(), false,
-                                             mapCompositionMode(compositeMode));
-      ok = DispatchPaint(aState, aOffset + sourcePaintOffset);
-      aState.mDrawTarget->PopLayer();
+    Rect r = GetBoundingRect(aState, aOffset);
+    if (r.IsEmpty()) {
+      return true;
     }
-    aState.mDrawTarget->PopLayer();
+    r.RoundOut();
+    
+    
+    
+    
+    RefPtr dt = Factory::CreateDrawTarget(BackendType::SKIA,
+                                          IntSize(int(r.width), int(r.height)),
+                                          SurfaceFormat::B8G8R8A8);
+    if (!dt) {
+      
+      
+      return true;
+    }
+    dt->SetTransform(Matrix::Translation(-r.TopLeft()));
+    PaintState state = aState;
+    state.mDrawTarget = dt;
+    bool ok = DispatchPaint(state, aOffset + backdropPaintOffset);
+    if (ok) {
+      dt->PushLayerWithBlend(true, 1.0, nullptr, Matrix(), IntRect(), false,
+                             mapCompositionMode(compositeMode));
+      ok = DispatchPaint(state, aOffset + sourcePaintOffset);
+      dt->PopLayer();
+    }
+    if (ok) {
+      RefPtr snapshot = dt->Snapshot();
+      aState.mDrawTarget->DrawSurface(snapshot, r, Rect(Point(), r.Size()));
+    }
     return ok;
   }
 
