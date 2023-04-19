@@ -483,7 +483,7 @@ void VideoSendStreamImpl::OnVideoLayersAllocationUpdated(
     });
     return;
   }
-  
+  rtp_video_sender_->OnVideoLayersAllocationUpdated(allocation);
 }
 
 void VideoSendStreamImpl::SignalEncoderActive() {
