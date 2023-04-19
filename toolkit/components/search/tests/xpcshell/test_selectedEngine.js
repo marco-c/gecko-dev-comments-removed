@@ -34,7 +34,7 @@ add_task(async function test_persistAcrossRestarts() {
 
   
   let metadata = await promiseGlobalMetadata();
-  Assert.equal(metadata.hash.length, 44);
+  Assert.equal(metadata.defaultEngineIdHash.length, 44);
 
   
   Services.search.wrappedJSObject.reset();
@@ -58,7 +58,7 @@ add_task(async function test_ignoreInvalidHash() {
 
   
   let metadata = await promiseGlobalMetadata();
-  metadata.hash = "invalid";
+  metadata.defaultEngineIdHash = "invalid";
   await promiseSaveGlobalMetadata(metadata);
 
   
@@ -79,7 +79,8 @@ add_task(async function test_settingToDefault() {
 
   
   let metadata = await promiseGlobalMetadata();
-  Assert.equal(metadata.current, kTestEngineName);
+  let currentEngine = Services.search.getEngineByName(kTestEngineName);
+  Assert.equal(metadata.defaultEngineId, currentEngine.id);
 
   
   await Services.search.setDefault(
@@ -90,7 +91,7 @@ add_task(async function test_settingToDefault() {
 
   
   metadata = await promiseGlobalMetadata();
-  Assert.equal(metadata.current, "");
+  Assert.equal(metadata.defaultEngineId, "");
 });
 
 add_task(async function test_resetToOriginalDefaultEngine() {

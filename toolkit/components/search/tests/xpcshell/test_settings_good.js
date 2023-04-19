@@ -24,8 +24,8 @@ const enginesSettings = {
     
     
     
-    current: "engine2",
-    hash: "TBD",
+    defaultEngineId: "engine2@search.mozilla.orgdefault",
+    defaultEngineIdHash: "TBD",
     visibleDefaultEngines: "engine1,engine2",
     visibleDefaultEnginesHash: "TBD",
   },
@@ -61,8 +61,8 @@ add_task(async function setup() {
   enginesSettings.metaData.searchDefaultHash = SearchUtils.getVerificationHash(
     enginesSettings.metaData.searchDefault
   );
-  enginesSettings.metaData.hash = SearchUtils.getVerificationHash(
-    enginesSettings.metaData.current
+  enginesSettings.metaData.defaultEngineIdHash = SearchUtils.getVerificationHash(
+    enginesSettings.metaData.defaultEngineId
   );
   enginesSettings.metaData.visibleDefaultEnginesHash = SearchUtils.getVerificationHash(
     enginesSettings.metaData.visibleDefaultEngines
