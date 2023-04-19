@@ -16,6 +16,7 @@
 #include "absl/memory/memory.h"
 #include "api/async_dns_resolver.h"
 #include "rtc_base/async_resolver.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -46,11 +47,19 @@ class WrappingAsyncDnsResolver : public AsyncDnsResolverInterface,
   explicit WrappingAsyncDnsResolver(rtc::AsyncResolverInterface* wrapped)
       : wrapped_(absl::WrapUnique(wrapped)), result_(this) {}
 
-  ~WrappingAsyncDnsResolver() override { wrapped_.release()->Destroy(false); }
+  ~WrappingAsyncDnsResolver() override {
+    
+    
+    
+    
+    RTC_CHECK(!within_resolve_result_);
+    wrapped_.release()->Destroy(false);
+  }
 
   void Start(const rtc::SocketAddress& addr,
              std::function<void()> callback) override {
-    RTC_DCHECK(state_ == State::kNotStarted);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    RTC_DCHECK_EQ(State::kNotStarted, state_);
     state_ = State::kStarted;
     callback_ = callback;
     wrapped_->SignalDone.connect(this,
@@ -59,27 +68,39 @@ class WrappingAsyncDnsResolver : public AsyncDnsResolverInterface,
   }
 
   const AsyncDnsResolverResult& result() const override {
-    RTC_DCHECK(state_ == State::kResolved);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    RTC_DCHECK_EQ(State::kResolved, state_);
     return result_;
   }
-
-  
-  rtc::AsyncResolverInterface* wrapped() const { return wrapped_.get(); }
 
  private:
   enum class State { kNotStarted, kStarted, kResolved };
 
+  friend class WrappingAsyncDnsResolverResult;
+  
+  rtc::AsyncResolverInterface* wrapped() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return wrapped_.get();
+  }
+
   void OnResolveResult(rtc::AsyncResolverInterface* ref) {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     RTC_DCHECK(state_ == State::kStarted);
     RTC_DCHECK_EQ(ref, wrapped_.get());
     state_ = State::kResolved;
+    within_resolve_result_ = true;
     callback_();
+    within_resolve_result_ = false;
   }
 
-  std::function<void()> callback_;
-  std::unique_ptr<rtc::AsyncResolverInterface> wrapped_;
-  State state_ = State::kNotStarted;
-  WrappingAsyncDnsResolverResult result_;
+  
+  SequenceChecker sequence_checker_;
+  std::function<void()> callback_ RTC_GUARDED_BY(sequence_checker_);
+  std::unique_ptr<rtc::AsyncResolverInterface> wrapped_
+      RTC_GUARDED_BY(sequence_checker_);
+  State state_ RTC_GUARDED_BY(sequence_checker_) = State::kNotStarted;
+  WrappingAsyncDnsResolverResult result_ RTC_GUARDED_BY(sequence_checker_);
+  bool within_resolve_result_ RTC_GUARDED_BY(sequence_checker_) = false;
 };
 
 bool WrappingAsyncDnsResolverResult::GetResolvedAddress(
