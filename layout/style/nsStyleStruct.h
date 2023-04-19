@@ -1316,7 +1316,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   mozilla::StyleVerticalAlign mVerticalAlign;
 
-  uint32_t mLineClamp;
+  mozilla::StyleLineClamp mWebkitLineClamp;
 
   
   float mShapeImageThreshold = 0.0f;

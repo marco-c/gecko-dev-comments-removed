@@ -543,16 +543,13 @@ ${helpers.predefined_type(
     spec="https://compat.spec.whatwg.org/#touch-action",
 )}
 
-
-
-
 ${helpers.predefined_type(
     "-webkit-line-clamp",
-    "PositiveIntegerOrNone",
-    "Either::Second(None_)",
+    "LineClamp",
+    "computed::LineClamp::none()",
     engines="gecko",
     gecko_pref="layout.css.webkit-line-clamp.enabled",
-    animation_value_type="Integer",
+    animation_value_type="ComputedValue",
     spec="https://drafts.csswg.org/css-overflow-3/#line-clamp",
 )}
 

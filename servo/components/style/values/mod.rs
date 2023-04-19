@@ -48,9 +48,6 @@ pub fn normalize(v: CSSFloat) -> CSSFloat {
 
 pub type CSSInteger = i32;
 
-define_keyword_type!(None_, "none");
-define_keyword_type!(Auto, "auto");
-
 
 #[cfg(feature = "gecko")]
 pub fn serialize_atom_identifier<W>(ident: &Atom, dest: &mut W) -> fmt::Result

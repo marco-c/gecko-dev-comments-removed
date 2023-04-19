@@ -107,7 +107,6 @@ pub enum GenericContainIntrinsicSize<L> {
 pub use self::GenericContainIntrinsicSize as ContainIntrinsicSize;
 
 impl<L: ToCss> ToCss for ContainIntrinsicSize<L> {
-
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -124,6 +123,55 @@ impl<L: ToCss> ToCss for ContainIntrinsicSize<L> {
 }
 
 
+
+
+
+
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(transparent)]
+#[value_info(other_values = "auto")]
+pub struct GenericLineClamp<I>(pub I);
+
+pub use self::GenericLineClamp as LineClamp;
+
+impl<I: crate::Zero> LineClamp<I> {
+    
+    pub fn none() -> Self {
+        Self(crate::Zero::zero())
+    }
+
+    
+    pub fn is_none(&self) -> bool {
+        self.0.is_zero()
+    }
+}
+
+impl<I: crate::Zero + ToCss> ToCss for LineClamp<I> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.is_none() {
+            return dest.write_str("none");
+        }
+        self.0.to_css(dest)
+    }
+}
+
+
 #[derive(
     Clone,
     Debug,
@@ -135,12 +183,14 @@ impl<L: ToCss> ToCss for ContainIntrinsicSize<L> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum AnimationIterationCount<Number> {
+pub enum GenericAnimationIterationCount<Number> {
     
     Number(Number),
     
     Infinite,
 }
+
+pub use self::GenericAnimationIterationCount as AnimationIterationCount;
 
 
 #[derive(
