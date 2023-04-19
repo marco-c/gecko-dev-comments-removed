@@ -1044,98 +1044,121 @@ add_task(async function nimbusExposure() {
 
 
 
-add_task(async function telemetryEnvironmentUpdateNotification() {
-  
-  
+
+add_task(async function telemetryEnvironmentOnStartup() {
   await QuickSuggestTestUtils.setScenario(null);
-  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
-  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 
   
-  let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
-  Assert.ok(
-    defaults.getBoolPref("suggest.quicksuggest.nonsponsored"),
-    "suggest.quicksuggest.nonsponsored is true initially"
-  );
-  Assert.ok(
-    defaults.getBoolPref("suggest.quicksuggest.sponsored"),
-    "suggest.quicksuggest.sponsored is true initially"
-  );
+  
+  await TelemetryEnvironment.testCleanRestart().onInitialized();
 
   
-  await TelemetryEnvironment.testWatchPreferences(new Map());
+  
+  
+  let prefs = [
+    ...new Set([
+      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_UI_PREFS_BY_VARIABLE),
+      ...Object.values(UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS)
+        .map(valuesByPrefName => Object.keys(valuesByPrefName))
+        .flat(),
+    ]),
+  ];
 
   
-  defaults.setBoolPref("suggest.quicksuggest.nonsponsored", false);
-  defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
-  Assert.ok(
-    !(
-      "browser.urlbar.suggest.quicksuggest.nonsponsored" in
+  
+  prefs = prefs.filter(
+    p =>
+      `browser.urlbar.${p}` in
       TelemetryEnvironment.currentEnvironment.settings.userPrefs
-    ),
-    "suggest.quicksuggest.nonsponsored not in TelemetryEnvironment"
   );
-  Assert.ok(
-    !(
-      "browser.urlbar.suggest.quicksuggest.sponsored" in
-      TelemetryEnvironment.currentEnvironment.settings.userPrefs
-    ),
-    "suggest.quicksuggest.sponsored not in TelemetryEnvironment"
+
+  info("Got startup prefs: " + JSON.stringify(prefs));
+
+  
+  
+  
+  
+  
+  Assert.deepEqual(
+    prefs.sort(),
+    [
+      "quicksuggest.dataCollection.enabled",
+      "suggest.quicksuggest.nonsponsored",
+      "suggest.quicksuggest.sponsored",
+    ],
+    "Expected startup prefs"
   );
 
   
   
-  Services.obs.notifyObservers(null, "firefox-suggest-update");
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.nonsponsored"
-    ],
-    false,
-    "suggest.quicksuggest.nonsponsored is false in TelemetryEnvironment"
-  );
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ],
-    false,
-    "suggest.quicksuggest.sponsored is false in TelemetryEnvironment"
-  );
+  for (let p of prefs) {
+    UrlbarPrefs.clear(p);
+  }
 
   
-  defaults.setBoolPref("suggest.quicksuggest.nonsponsored", true);
-  defaults.setBoolPref("suggest.quicksuggest.sponsored", true);
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.nonsponsored"
-    ],
-    false,
-    "suggest.quicksuggest.nonsponsored remains false in TelemetryEnvironment"
-  );
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ],
-    false,
-    "suggest.quicksuggest.sponsored remains false in TelemetryEnvironment"
+  let defaultValues = Object.fromEntries(
+    prefs.map(p => [p, UrlbarPrefs.get(p)])
   );
 
   
   
-  Services.obs.notifyObservers(null, "firefox-suggest-update");
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.nonsponsored"
-    ],
-    true,
-    "suggest.quicksuggest.nonsponsored is false in TelemetryEnvironment"
-  );
-  Assert.strictEqual(
-    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ],
-    true,
-    "suggest.quicksuggest.sponsored is false in TelemetryEnvironment"
-  );
+  
+  
+  let environmentInitPromise = TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  
+  
+  await UrlbarPrefs.updateFirefoxSuggestScenario({
+    isStartup: true,
+    scenario: "online",
+    defaultPrefs: {
+      online: Object.fromEntries(
+        Object.entries(defaultValues).map(([p, value]) => [p, !value])
+      ),
+    },
+  });
+
+  
+  
+  await environmentInitPromise;
+
+  
+  for (let [p, value] of Object.entries(defaultValues)) {
+    let expected = !value;
+    Assert.strictEqual(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        `browser.urlbar.${p}`
+      ],
+      expected,
+      `Check 1: ${p} is ${expected} in TelemetryEnvironment`
+    );
+  }
+
+  
+  
+  environmentInitPromise = TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  await UrlbarPrefs.updateFirefoxSuggestScenario({
+    isStartup: true,
+    scenario: "online",
+    defaultPrefs: {
+      online: defaultValues,
+    },
+  });
+
+  await environmentInitPromise;
+
+  
+  for (let [p, value] of Object.entries(defaultValues)) {
+    let expected = value;
+    Assert.strictEqual(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        `browser.urlbar.${p}`
+      ],
+      expected,
+      `Check 2: ${p} is ${expected} in TelemetryEnvironment`
+    );
+  }
 
   await TelemetryEnvironment.testCleanRestart().onInitialized();
 });

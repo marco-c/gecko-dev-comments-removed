@@ -13,6 +13,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
 });
 
+add_setup(async function setUpQuickSuggestXpcshellTest() {
+  
+  
+  
+  
+  UrlbarPrefs._testSkipTelemetryEnvironmentInit = true;
+});
+
 
 
 
