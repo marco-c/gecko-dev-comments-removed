@@ -3692,6 +3692,8 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
 
   for (size_t i = 0; i < layers.size(); ++i) {
     layers[i].active = encoder_config.simulcast_layers[i].active;
+    layers[i].scalability_mode =
+        encoder_config.simulcast_layers[i].scalability_mode;
     
     if (encoder_config.simulcast_layers[i].num_temporal_layers &&
         IsTemporalLayersSupported(codec_name_)) {
