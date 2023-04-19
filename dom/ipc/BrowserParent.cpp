@@ -1218,10 +1218,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     return IPC_OK();
   }
 
-  if (aBrowsingContext) {
-    doc->SetBrowsingContext(aBrowsingContext.get_canonical());
-  }
-
   if (aParentDoc) {
     
     
@@ -1240,6 +1236,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
       
       doc->MarkAsShutdown();
       return IPC_OK();
+    }
+
+    if (aBrowsingContext) {
+      doc->SetBrowsingContext(aBrowsingContext.get_canonical());
     }
 
     mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
@@ -1264,6 +1264,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
 #  endif
 
     return IPC_OK();
+  }
+
+  if (aBrowsingContext) {
+    doc->SetBrowsingContext(aBrowsingContext.get_canonical());
   }
 
   if (auto* bridge = GetBrowserBridgeParent()) {
