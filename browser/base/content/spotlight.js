@@ -151,8 +151,10 @@ function renderMultistage(ready) {
 
   
   const { classList } = browser.closest(".dialogBox");
-  classList.add("noShadow");
-  addEventListener("pagehide", () => classList.remove("noShadow"));
+  classList.add("noShadow", "fullScreen");
+  addEventListener("pagehide", () =>
+    classList.remove("noShadow", "fullScreen")
+  );
 
   
   document.head.appendChild(document.createElement("script")).src =
