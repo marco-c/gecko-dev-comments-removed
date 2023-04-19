@@ -6904,9 +6904,6 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotByValueResult(ObjOperandId objId,
   }
 
   
-  masm.branchIfNonNativeObj(obj, scratch, failure->label());
-
-  
   masm.reserveStack(sizeof(Value));
   masm.Push(idVal);
   masm.moveStackPtrTo(idVal.scratchReg());
@@ -7208,9 +7205,6 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotResult(ObjOperandId objId,
   if (!addFailurePath(&failure)) {
     return false;
   }
-
-  
-  masm.branchIfNonNativeObj(obj, scratch3, failure->label());
 
   masm.Push(UndefinedValue());
   masm.moveStackPtrTo(scratch3.get());
