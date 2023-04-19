@@ -95,10 +95,6 @@ class RTC_EXPORT VCMEncodedFrame : protected EncodedImage {
   
 
 
-  bool Complete() const { return _completeFrame; }
-  
-
-
   bool MissingFrame() const { return _missingFrame; }
   
 

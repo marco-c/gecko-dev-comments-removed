@@ -161,18 +161,6 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
   frame->SetRenderTime(render_time_ms);
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame->Timestamp(), "SetRenderTS",
                           "render_time", frame->RenderTimeMs());
-  if (!frame->Complete()) {
-    
-    bool retransmitted = false;
-    const int64_t last_packet_time_ms =
-        jitter_buffer_.LastPacketTime(frame, &retransmitted);
-    if (last_packet_time_ms >= 0 && !retransmitted) {
-      
-      
-      
-      timing_->IncomingTimestamp(frame_timestamp, last_packet_time_ms);
-    }
-  }
   return frame;
 }
 

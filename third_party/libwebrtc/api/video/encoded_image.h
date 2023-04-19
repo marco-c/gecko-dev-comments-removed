@@ -165,6 +165,7 @@ class RTC_EXPORT EncodedImage {
   VideoFrameType _frameType = VideoFrameType::kVideoFrameDelta;
   VideoRotation rotation_ = kVideoRotation_0;
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
+  
   bool _completeFrame = false;
   int qp_ = -1;  
 

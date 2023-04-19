@@ -70,11 +70,6 @@ void VCMFrameBuffer::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
       gof_info.temporal_up_switch[idx];
 }
 
-bool VCMFrameBuffer::IsSessionComplete() const {
-  TRACE_EVENT0("webrtc", "VCMFrameBuffer::IsSessionComplete");
-  return _sessionInfo.complete();
-}
-
 
 VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
                                                 int64_t timeInMs,
@@ -265,7 +260,6 @@ void VCMFrameBuffer::PrepareForDecode(bool continuous) {
   
   
   _frameType = _sessionInfo.FrameType();
-  _completeFrame = _sessionInfo.complete();
   _missingFrame = !continuous;
 }
 
