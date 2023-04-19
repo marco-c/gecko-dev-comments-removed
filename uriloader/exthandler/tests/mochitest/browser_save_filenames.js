@@ -202,14 +202,12 @@ function getItems(parentid) {
           elem.localName == "img" && elem.dataset.nodrag != "true";
         let unknown = elem.dataset.unknown;
         let noattach = elem.dataset.noattach;
-        let winexeext = elem.dataset.winexeext;
         elements.push({
           draggable,
           unknown,
           filename,
           url,
           noattach,
-          winexeext,
         });
         elem = elem.nextElementSibling;
       }
@@ -588,16 +586,6 @@ add_task(async function save_links() {
     let filename = PathUtils.filename(download.target.path);
 
     let expectedFilename = expectedItems[idx].filename;
-    if (AppConstants.platform == "win") {
-      
-      
-      
-      
-      if (expectedItems[idx].winexeext) {
-        expectedFilename += "." + expectedItems[idx].winexeext;
-      }
-    }
-
     
     if (expectedItems[idx].filename.length > 240) {
       ok(
