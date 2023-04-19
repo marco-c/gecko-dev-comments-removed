@@ -130,6 +130,23 @@ class RTCPReceiver final {
   void NotifyTmmbrUpdated();
 
  private:
+  
+  class RegisteredSsrcs {
+   public:
+    static constexpr size_t kMaxSsrcs = 3;
+    
+    
+    explicit RegisteredSsrcs(const RtpRtcpInterface::Configuration& config);
+
+    
+    bool contains(uint32_t ssrc) const {
+      return absl::c_linear_search(ssrcs_, ssrc);
+    }
+
+   private:
+    absl::InlinedVector<uint32_t, kMaxSsrcs> ssrcs_;
+  };
+
   struct PacketInformation;
   struct TmmbrInformation;
   struct RrtrInformation;
@@ -235,7 +252,8 @@ class RTCPReceiver final {
   const bool receiver_only_;
   ModuleRtpRtcp* const rtp_rtcp_;
   const uint32_t main_ssrc_;
-  const std::set<uint32_t> registered_ssrcs_;
+  
+  const RegisteredSsrcs registered_ssrcs_;
 
   RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
   RtcpEventObserver* const rtcp_event_observer_;
