@@ -618,7 +618,8 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
   const auto containAxes = StyleDisplay()->GetContainSizeAxes();
   if (containAxes.IsBoth()) {
     
-    return IntrinsicSize(0, 0);
+    
+    return containAxes.ContainIntrinsicSize(IntrinsicSize(0, 0), *this);
   }
 
   if (nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent)) {
