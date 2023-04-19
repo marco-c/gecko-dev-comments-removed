@@ -314,6 +314,16 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetEmbedderColorScheme(GetEmbedderColorScheme());
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
+
+  
+  
+  
+  txn.SetAllowJavascript(GetAllowJavascript());
+  txn.SetForceEnableTrackingProtection(GetForceEnableTrackingProtection());
+  txn.SetUserAgentOverride(GetUserAgentOverride());
+  txn.SetSuspendMediaWhenInactive(GetSuspendMediaWhenInactive());
+  txn.SetDisplayMode(GetDisplayMode());
+
   
   
   

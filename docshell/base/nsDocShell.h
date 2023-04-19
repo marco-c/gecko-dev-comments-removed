@@ -1364,10 +1364,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  bool mSuspendMediaWhenInactive : 1;
-
-  
-  
   bool mForcedAutodetection : 1;
 
   
