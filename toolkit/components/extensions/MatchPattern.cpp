@@ -123,24 +123,20 @@ const nsAtom* URLInfo::HostAtom() const {
   return mHostAtom;
 }
 
-const nsString& URLInfo::FilePath() const {
+const nsCString& URLInfo::FilePath() const {
   if (mFilePath.IsEmpty()) {
-    nsCString path;
     nsCOMPtr<nsIURL> url = do_QueryInterface(mURI);
-    if (url && NS_SUCCEEDED(url->GetFilePath(path))) {
-      AppendUTF8toUTF16(path, mFilePath);
-    } else {
+    if (!url || NS_FAILED(url->GetFilePath(mFilePath))) {
       mFilePath = Path();
     }
   }
   return mFilePath;
 }
 
-const nsString& URLInfo::Path() const {
+const nsCString& URLInfo::Path() const {
   if (mPath.IsEmpty()) {
-    nsCString path;
-    if (NS_SUCCEEDED(URINoRef()->GetPathQueryRef(path))) {
-      AppendUTF8toUTF16(path, mPath);
+    if (NS_FAILED(URINoRef()->GetPathQueryRef(mPath))) {
+      mPath.Truncate();
     }
   }
   return mPath;
@@ -359,14 +355,13 @@ void MatchPattern::Init(JSContext* aCx, const nsAString& aPattern,
     return;
   }
 
-  auto path = tail;
+  NS_ConvertUTF16toUTF8 path(tail);
   if (path.IsEmpty()) {
     aRv.Throw(NS_ERROR_INVALID_ARG);
     return;
   }
 
-  mPath = new MatchGlob(this);
-  mPath->Init(aCx, path, false, aRv);
+  mPath = new MatchGlob(this, path, false, aRv);
 }
 
 bool MatchPattern::MatchesDomain(const nsACString& aDomain) const {
@@ -622,27 +617,26 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MatchPatternSet)
 
 
 
-MatchGlob::~MatchGlob() { mozilla::DropJSObjects(this); }
+MatchGlob::~MatchGlob() = default;
 
 
 already_AddRefed<MatchGlob> MatchGlob::Constructor(dom::GlobalObject& aGlobal,
-                                                   const nsAString& aGlob,
+                                                   const nsACString& aGlob,
                                                    bool aAllowQuestion,
                                                    ErrorResult& aRv) {
-  RefPtr<MatchGlob> glob = new MatchGlob(aGlobal.GetAsSupports());
-  glob->Init(aGlobal.Context(), aGlob, aAllowQuestion, aRv);
+  RefPtr<MatchGlob> glob =
+      new MatchGlob(aGlobal.GetAsSupports(), aGlob, aAllowQuestion, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
   return glob.forget();
 }
 
-void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
-                     bool aAllowQuestion, ErrorResult& aRv) {
-  mGlob = aGlob;
-
+MatchGlob::MatchGlob(nsISupports* aParent, const nsACString& aGlob,
+                     bool aAllowQuestion, ErrorResult& aRv)
+    : mParent(aParent), mGlob(aGlob) {
   
-  auto index = mGlob.FindCharInSet(aAllowQuestion ? u"*?" : u"*");
+  auto index = mGlob.FindCharInSet(aAllowQuestion ? "*?" : "*");
   if (index < 0) {
     mPathLiteral = mGlob;
     return;
@@ -659,7 +653,7 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
   
   constexpr auto metaChars = ".+*?^${}()|[]\\"_ns;
 
-  nsAutoString escaped;
+  nsAutoCString escaped;
   escaped.Append('^');
 
   
@@ -688,37 +682,15 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
 
   escaped.Append('$');
 
-  
-  
-  
-  mRegExp = JS::NewUCRegExpObject(aCx, escaped.get(), escaped.Length(), 0);
-  if (mRegExp) {
-    mozilla::HoldJSObjects(this);
-  } else {
-    aRv.NoteJSContextException(aCx);
+  mRegExp = RustRegex(escaped);
+  if (!mRegExp) {
+    aRv.ThrowTypeError("failed to compile regex for glob");
   }
 }
 
-bool MatchGlob::Matches(const nsAString& aString) const {
+bool MatchGlob::Matches(const nsACString& aString) const {
   if (mRegExp) {
-    AutoJSAPI jsapi;
-    jsapi.Init();
-    JSContext* cx = jsapi.cx();
-
-    JSAutoRealm ar(cx, mRegExp);
-
-    JS::Rooted<JSObject*> regexp(cx, mRegExp);
-    JS::Rooted<JS::Value> result(cx);
-
-    nsString input(aString);
-
-    size_t index = 0;
-    if (!JS::ExecuteRegExpNoStatics(cx, regexp, input.BeginWriting(),
-                                    aString.Length(), &index, true, &result)) {
-      return false;
-    }
-
-    return result.isBoolean() && result.toBoolean();
+    return mRegExp.IsMatch(aString);
   }
 
   if (mIsPrefix) {
@@ -733,22 +705,7 @@ JSObject* MatchGlob::WrapObject(JSContext* aCx,
   return MatchGlob_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(MatchGlob)
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(MatchGlob)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
-  tmp->mRegExp = nullptr;
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MatchGlob)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mParent)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(MatchGlob)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mRegExp)
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(MatchGlob, mParent)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MatchGlob)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -762,7 +719,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MatchGlob)
 
 
 
-bool MatchGlobSet::Matches(const nsAString& aValue) const {
+bool MatchGlobSet::Matches(const nsACString& aValue) const {
   for (auto& glob : *this) {
     if (glob->Matches(aValue)) {
       return true;
