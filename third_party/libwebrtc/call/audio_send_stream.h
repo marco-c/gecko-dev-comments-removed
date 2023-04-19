@@ -60,7 +60,6 @@ class AudioSendStream : public AudioSender {
     
     double total_input_energy = 0.0;
     double total_input_duration = 0.0;
-    bool typing_noise_detected = false;
 
     ANAStats ana_statistics;
     AudioProcessingStats apm_statistics;
