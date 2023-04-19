@@ -43,29 +43,26 @@ class CacheChild final : public PCacheChild, public ActorChild {
 
   
   void StartDestroyFromListener();
+  void NoteDeletedActor() override;
 
-  NS_DECL_OWNINGTHREAD
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheChild, override);
+  NS_INLINE_DECL_REFCOUNTING(CacheChild, override);
 
  private:
   ~CacheChild();
 
+  void DestroyInternal();
   
-
   
   virtual void StartDestroy() override;
 
   
   virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  PCacheOpChild* AllocPCacheOpChild(const CacheOpArgs& aOpArgs);
-
-  bool DeallocPCacheOpChild(PCacheOpChild* aActor);
+  already_AddRefed<PCacheOpChild> AllocPCacheOpChild(
+      const CacheOpArgs& aOpArgs);
 
   
-  void NoteDeletedActor();
-
-  void MaybeFlushDelayedDestroy();
+  inline uint32_t NumChildActors() { return ManagedPCacheOpChild().Count(); }
 
   
   
@@ -77,9 +74,8 @@ class CacheChild final : public PCacheChild, public ActorChild {
   
   
   Cache* MOZ_NON_OWNING_REF mListener;
-  uint32_t mNumChildActors;
-  bool mDelayedDestroy;
   bool mLocked;
+  bool mDelayedDestroy;
 };
 
 }  

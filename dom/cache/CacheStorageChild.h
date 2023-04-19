@@ -30,7 +30,6 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
  public:
   CacheStorageChild(CacheStorage* aListener,
                     SafeRefPtr<CacheWorkerRef> aWorkerRef);
-  ~CacheStorageChild();
 
   
   
@@ -44,9 +43,15 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   
   void StartDestroyFromListener();
 
- private:
-  
+  NS_INLINE_DECL_REFCOUNTING(CacheStorageChild, override)
+  void NoteDeletedActor() override;
 
+ private:
+  ~CacheStorageChild();
+
+  void DestroyInternal();
+
+  
   
   virtual void StartDestroy() override;
 
@@ -58,16 +63,13 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   bool DeallocPCacheOpChild(PCacheOpChild* aActor);
 
   
-  void NoteDeletedActor();
+  inline uint32_t NumChildActors() { return ManagedPCacheOpChild().Count(); }
 
   
   
   
   CacheStorage* MOZ_NON_OWNING_REF mListener;
-  uint32_t mNumChildActors;
   bool mDelayedDestroy;
-
-  NS_DECL_OWNINGTHREAD
 };
 
 }  

@@ -23,10 +23,7 @@ already_AddRefed<PCacheChild> AllocPCacheChild() {
 void DeallocPCacheChild(PCacheChild* aActor) { delete aActor; }
 
 CacheChild::CacheChild()
-    : mListener(nullptr),
-      mNumChildActors(0),
-      mDelayedDestroy(false),
-      mLocked(false) {
+    : mListener(nullptr), mLocked(false), mDelayedDestroy(false) {
   MOZ_COUNT_CTOR(cache::CacheChild);
 }
 
@@ -34,7 +31,6 @@ CacheChild::~CacheChild() {
   MOZ_COUNT_DTOR(cache::CacheChild);
   NS_ASSERT_OWNINGTHREAD(CacheChild);
   MOZ_DIAGNOSTIC_ASSERT(!mListener);
-  MOZ_DIAGNOSTIC_ASSERT(!mNumChildActors);
   MOZ_DIAGNOSTIC_ASSERT(!mLocked);
 }
 
@@ -53,11 +49,10 @@ void CacheChild::ClearListener() {
 
 void CacheChild::ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
                            nsISupports* aParent, const CacheOpArgs& aArgs) {
-  mNumChildActors += 1;
-  MOZ_ALWAYS_TRUE(
-      SendPCacheOpConstructor(new CacheOpChild(GetWorkerRefPtr().clonePtr(),
-                                               aGlobal, aParent, aPromise),
-                              aArgs));
+  MOZ_ALWAYS_TRUE(SendPCacheOpConstructor(
+      new CacheOpChild(GetWorkerRefPtr().clonePtr(), aGlobal, aParent, aPromise,
+                       this),
+      aArgs));
 }
 
 void CacheChild::StartDestroyFromListener() {
@@ -66,24 +61,11 @@ void CacheChild::StartDestroyFromListener() {
   
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!mNumChildActors);
-
+  MOZ_DIAGNOSTIC_ASSERT(NumChildActors() == 0);
   StartDestroy();
 }
 
-void CacheChild::StartDestroy() {
-  NS_ASSERT_OWNINGTHREAD(CacheChild);
-
-  
-  
-  
-  
-  
-  if (mNumChildActors || mLocked) {
-    mDelayedDestroy = true;
-    return;
-  }
-
+void CacheChild::DestroyInternal() {
   RefPtr<Cache> listener = mListener;
 
   
@@ -102,6 +84,17 @@ void CacheChild::StartDestroy() {
   QM_WARNONLY_TRY(OkIf(SendTeardown()));
 }
 
+void CacheChild::StartDestroy() {
+  NS_ASSERT_OWNINGTHREAD(CacheChild);
+
+  if (NumChildActors() != 0 || mLocked) {
+    mDelayedDestroy = true;
+    return;
+  }
+
+  DestroyInternal();
+}
+
 void CacheChild::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
   RefPtr<Cache> listener = mListener;
@@ -114,26 +107,18 @@ void CacheChild::ActorDestroy(ActorDestroyReason aReason) {
   RemoveWorkerRef();
 }
 
-PCacheOpChild* CacheChild::AllocPCacheOpChild(const CacheOpArgs& aOpArgs) {
+void CacheChild::NoteDeletedActor() {
+  
+  
+  
+  
+  if (NumChildActors() == 1 && mDelayedDestroy && !mLocked) DestroyInternal();
+}
+
+already_AddRefed<PCacheOpChild> CacheChild::AllocPCacheOpChild(
+    const CacheOpArgs& aOpArgs) {
   MOZ_CRASH("CacheOpChild should be manually constructed.");
   return nullptr;
-}
-
-bool CacheChild::DeallocPCacheOpChild(PCacheOpChild* aActor) {
-  delete aActor;
-  NoteDeletedActor();
-  return true;
-}
-
-void CacheChild::NoteDeletedActor() {
-  mNumChildActors -= 1;
-  MaybeFlushDelayedDestroy();
-}
-
-void CacheChild::MaybeFlushDelayedDestroy() {
-  if (!mNumChildActors && !mLocked && mDelayedDestroy) {
-    StartDestroy();
-  }
 }
 
 void CacheChild::Lock() {
@@ -146,7 +131,6 @@ void CacheChild::Unlock() {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
   MOZ_DIAGNOSTIC_ASSERT(mLocked);
   mLocked = false;
-  MaybeFlushDelayedDestroy();
 }
 
 }  

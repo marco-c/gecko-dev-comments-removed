@@ -27,11 +27,15 @@ class CacheOpChild final : public PCacheOpChild,
   friend class CacheStorageChild;
   friend class PCacheOpChild;
 
+ public:
+  NS_INLINE_DECL_REFCOUNTING(CacheOpChild, override)
+
  private:
   
   
   CacheOpChild(SafeRefPtr<CacheWorkerRef> aWorkerRef, nsIGlobalObject* aGlobal,
-               nsISupports* aParent, Promise* aPromise);
+               nsISupports* aParent, Promise* aPromise,
+               ActorChild* aParentActor);
   ~CacheOpChild();
 
   
@@ -64,8 +68,7 @@ class CacheOpChild final : public PCacheOpChild,
   
   nsCOMPtr<nsISupports> mParent;
   RefPtr<Promise> mPromise;
-
-  NS_DECL_OWNINGTHREAD
+  ActorChild* mParentActor;
 };
 
 }  
