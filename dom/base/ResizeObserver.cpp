@@ -78,10 +78,14 @@ static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
   nsIFrame* frame = aTarget->GetPrimaryFrame();
 
   if (!frame) {
+    
+    
     return {LogicalPixelSize()};
   }
 
   if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    
+    
     
     
     
@@ -102,6 +106,8 @@ static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
     return {LogicalPixelSize(wm, size)};
   }
 
+  
+  
   
   
   
@@ -151,7 +157,16 @@ static AutoTArray<LogicalPixelSize, 1> CalculateBoxSize(
     }
     return CSSPixel::FromAppUnits(GetContentRectSize(*frame)).ToUnknownSize();
   };
-  return {LogicalPixelSize(frame->GetWritingMode(), GetFrameSize(frame))};
+  if (!StaticPrefs::dom_resize_observer_support_fragments()) {
+    return {LogicalPixelSize(frame->GetWritingMode(), GetFrameSize(frame))};
+  }
+  AutoTArray<LogicalPixelSize, 1> size;
+  while (frame) {
+    const WritingMode wm = frame->GetWritingMode();
+    size.AppendElement(LogicalPixelSize(wm, GetFrameSize(frame)));
+    frame = frame->GetNextContinuation();
+  }
+  return size;
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(ResizeObservation)
