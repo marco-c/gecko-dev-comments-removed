@@ -64,16 +64,10 @@ struct RTC_EXPORT AudioOptions {
   
   
   absl::optional<bool> typing_detection;
-  absl::optional<bool> experimental_agc;
-  absl::optional<bool> experimental_ns;
   
   
   
   absl::optional<bool> residual_echo_detector;
-  
-  absl::optional<uint16_t> tx_agc_target_dbov;
-  absl::optional<uint16_t> tx_agc_digital_compression_gain;
-  absl::optional<bool> tx_agc_limiter;
   
   
   

@@ -59,12 +59,9 @@ class MediaConstraints {
   
   static const char kGoogEchoCancellation[];  
 
-  static const char kAutoGainControl[];               
-  static const char kExperimentalAutoGainControl[];   
-  static const char kNoiseSuppression[];              
-  static const char kExperimentalNoiseSuppression[];  
-  static const char kHighpassFilter[];                
-  static const char kTypingNoiseDetection[];  
+  static const char kAutoGainControl[];       
+  static const char kNoiseSuppression[];      
+  static const char kHighpassFilter[];        
   static const char kAudioMirroring[];        
   static const char
       kAudioNetworkAdaptorConfig[];  
