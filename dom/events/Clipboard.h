@@ -71,13 +71,12 @@ class Clipboard : public DOMEventTargetHelper {
   static bool IsTestingPrefEnabledOrHasReadPermission(
       nsIPrincipal& aSubjectPrincipal);
 
-  
-  already_AddRefed<nsIRunnable> CheckReadTextPermissionAndHandleRequest(
-      Promise& aPromise, nsIPrincipal& aSubjectPrincipal);
+  void CheckReadTextPermissionAndHandleRequest(Promise& aPromise,
+                                               nsIPrincipal& aSubjectPrincipal,
+                                               ReadRequestType aType);
 
-  
-  already_AddRefed<nsIRunnable> HandleReadTextRequestWhichRequiresPasteButton(
-      Promise& aPromise);
+  void HandleReadTextRequestWhichRequiresPasteButton(Promise& aPromise,
+                                                     ReadRequestType aType);
 
   already_AddRefed<Promise> ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                        ReadRequestType aType, ErrorResult& aRv);
@@ -86,17 +85,21 @@ class Clipboard : public DOMEventTargetHelper {
 
   class ReadTextRequest final {
    public:
-    explicit ReadTextRequest(Promise& aPromise) : mPromise{&aPromise} {}
+    ReadTextRequest(Promise& aPromise, ReadRequestType aType,
+                    nsPIDOMWindowInner& aOwner)
+        : mType(aType), mPromise(&aPromise), mOwner(&aOwner) {}
 
     
-    already_AddRefed<nsIRunnable> Answer();
+    void Answer();
 
     void MaybeRejectWithNotAllowedError(const nsACString& aMessage);
 
    private:
+    ReadRequestType mType;
     
     
     RefPtr<Promise> mPromise;
+    RefPtr<nsPIDOMWindowInner> mOwner;
   };
 
   AutoTArray<UniquePtr<ReadTextRequest>, 1> mReadTextRequests;

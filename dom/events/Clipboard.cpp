@@ -78,179 +78,20 @@ static bool MaybeCreateAndDispatchMozClipboardReadTextPasteEvent(
       CanBubble::eNo, Cancelable::eNo)));
 }
 
-already_AddRefed<nsIRunnable> Clipboard::ReadTextRequest::Answer() {
-  return NS_NewRunnableFunction(
-      "Clipboard::ReadText", [p = std::move(mPromise)]() {
-        nsresult rv;
-        nsCOMPtr<nsIClipboard> clipboardService(
-            do_GetService("@mozilla.org/widget/clipboard;1", &rv));
-        if (NS_FAILED(rv)) {
-          p->MaybeReject(NS_ERROR_UNEXPECTED);
-          return;
-        }
+void Clipboard::ReadTextRequest::Answer() {
+  RefPtr<Promise> p(std::move(mPromise));
+  RefPtr<nsPIDOMWindowInner> owner(std::move(mOwner));
 
-        nsCOMPtr<nsITransferable> trans =
-            do_CreateInstance("@mozilla.org/widget/transferable;1");
-        if (NS_WARN_IF(!trans)) {
-          p->MaybeReject(NS_ERROR_UNEXPECTED);
-          return;
-        }
-
-        trans->Init(nullptr);
-        trans->AddDataFlavor(kUnicodeMime);
-        clipboardService->AsyncGetData(trans, nsIClipboard::kGlobalClipboard)
-            ->Then(
-                GetMainThreadSerialEventTarget(), __func__,
-                
-                [trans, p]() {
-                  nsCOMPtr<nsISupports> data;
-                  nsresult rv = trans->GetTransferData(kUnicodeMime,
-                                                       getter_AddRefs(data));
-
-                  nsAutoString str;
-                  if (!NS_WARN_IF(NS_FAILED(rv))) {
-                    nsCOMPtr<nsISupportsString> supportsstr =
-                        do_QueryInterface(data);
-                    MOZ_ASSERT(supportsstr);
-                    if (supportsstr) {
-                      supportsstr->GetData(str);
-                    }
-                  }
-
-                  p->MaybeResolve(str);
-                },
-                
-                [p](nsresult rv) { p->MaybeReject(rv); });
-      });
-}
-
-static bool IsReadTextExposedToContent() {
-  return StaticPrefs::dom_events_asyncClipboard_readText_DoNotUseDirectly();
-}
-
-already_AddRefed<nsIRunnable>
-Clipboard::CheckReadTextPermissionAndHandleRequest(
-    Promise& aPromise, nsIPrincipal& aSubjectPrincipal) {
-  if (IsTestingPrefEnabledOrHasReadPermission(aSubjectPrincipal)) {
-    MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
-            ("%s: testing pref enabled or has read permission", __FUNCTION__));
-    return ReadTextRequest{aPromise}.Answer();
+  nsresult rv;
+  nsCOMPtr<nsIClipboard> clipboardService(
+      do_GetService("@mozilla.org/widget/clipboard;1", &rv));
+  if (NS_FAILED(rv)) {
+    p->MaybeReject(NS_ERROR_UNEXPECTED);
+    return;
   }
 
-  if (aSubjectPrincipal.GetIsAddonOrExpandedAddonPrincipal()) {
-    
-    MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
-            ("%s: Addon without read permssion.", __FUNCTION__));
-    aPromise.MaybeRejectWithUndefined();
-    return nullptr;
-  }
-
-  return HandleReadTextRequestWhichRequiresPasteButton(aPromise);
-}
-
-already_AddRefed<nsIRunnable>
-Clipboard::HandleReadTextRequestWhichRequiresPasteButton(Promise& aPromise) {
-  RefPtr<nsIRunnable> runnable;
-
-  nsPIDOMWindowInner* owner = GetOwner();
-  WindowContext* windowContext = owner ? owner->GetWindowContext() : nullptr;
-  if (!windowContext) {
-    MOZ_ASSERT_UNREACHABLE("There should be a WindowContext.");
-    aPromise.MaybeRejectWithUndefined();
-    return runnable.forget();
-  }
-
-  
-  if (!windowContext->HasValidTransientUserGestureActivation()) {
-    aPromise.MaybeRejectWithNotAllowedError(
-        "`navigator.clipboard.readText()` was blocked due to lack of "
-        "user activation.");
-    return runnable.forget();
-  }
-
-  
-  
-  
-
-  switch (mTransientUserPasteState.RefreshAndGet(*windowContext)) {
-    case TransientUserPasteState::Value::Initial: {
-      MOZ_ASSERT(mReadTextRequests.IsEmpty());
-
-      if (MaybeCreateAndDispatchMozClipboardReadTextPasteEvent(*owner)) {
-        mTransientUserPasteState.OnStartWaitingForUserReactionToPasteMenuPopup(
-            windowContext->GetUserGestureStart());
-        mReadTextRequests.AppendElement(MakeUnique<ReadTextRequest>(aPromise));
-      } else {
-        
-        aPromise.MaybeRejectWithUndefined();
-      }
-      break;
-    }
-    case TransientUserPasteState::Value::
-        WaitingForUserReactionToPasteMenuPopup: {
-      MOZ_ASSERT(!mReadTextRequests.IsEmpty());
-
-      mReadTextRequests.AppendElement(MakeUnique<ReadTextRequest>(aPromise));
-      break;
-    }
-    case TransientUserPasteState::Value::TransientlyForbiddenByUser: {
-      aPromise.MaybeRejectWithNotAllowedError(
-          "`navigator.clipboard.readText()` was blocked due to the user "
-          "dismissing the 'Paste' button.");
-      break;
-    }
-    case TransientUserPasteState::Value::TransientlyAllowedByUser: {
-      runnable = ReadTextRequest{aPromise}.Answer();
-      break;
-    }
-  }
-
-  return runnable.forget();
-}
-
-already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
-                                                ReadRequestType aType,
-                                                ErrorResult& aRv) {
-  
-  RefPtr<Promise> p = dom::Promise::Create(GetOwnerGlobal(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  switch (aType) {
-    case ReadRequestType::eReadText: {
-      RefPtr<nsIRunnable> runnable =
-          CheckReadTextPermissionAndHandleRequest(*p, aSubjectPrincipal);
-
-      if (runnable) {
-        GetParentObject()->Dispatch(TaskCategory::Other, runnable.forget());
-      }
-
-      break;
-    }
+  switch (mType) {
     case ReadRequestType::eRead: {
-      
-      
-      
-      const bool isTestingPrefEnabledOrHasReadPermission =
-          IsTestingPrefEnabledOrHasReadPermission(aSubjectPrincipal);
-
-      if (!isTestingPrefEnabledOrHasReadPermission) {
-        MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
-                ("Clipboard, ReadHelper, "
-                 "Don't have permissions for reading\n"));
-        p->MaybeRejectWithUndefined();
-        return p.forget();
-      }
-
-      nsresult rv;
-      nsCOMPtr<nsIClipboard> clipboardService(
-          do_GetService("@mozilla.org/widget/clipboard;1", &rv));
-      if (NS_FAILED(rv)) {
-        p->MaybeReject(rv);
-        return p.forget();
-      }
-
       clipboardService
           ->AsyncHasDataMatchingFlavors(
               
@@ -262,9 +103,8 @@ already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
           ->Then(
               GetMainThreadSerialEventTarget(), __func__,
               
-              [self = RefPtr{this}, p](nsTArray<nsCString> formats) {
-                nsCOMPtr<nsIGlobalObject> global =
-                    do_QueryInterface(self->GetOwner());
+              [owner, p](nsTArray<nsCString> formats) {
+                nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(owner);
                 if (NS_WARN_IF(!global)) {
                   p->MaybeReject(NS_ERROR_UNEXPECTED);
                   return;
@@ -303,8 +143,146 @@ already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
               [p](nsresult rv) { p->MaybeReject(rv); });
       break;
     }
+    case ReadRequestType::eReadText: {
+      nsCOMPtr<nsITransferable> trans =
+          do_CreateInstance("@mozilla.org/widget/transferable;1");
+      if (NS_WARN_IF(!trans)) {
+        p->MaybeReject(NS_ERROR_UNEXPECTED);
+        return;
+      }
+
+      trans->Init(nullptr);
+      trans->AddDataFlavor(kUnicodeMime);
+      clipboardService->AsyncGetData(trans, nsIClipboard::kGlobalClipboard)
+          ->Then(
+              GetMainThreadSerialEventTarget(), __func__,
+              
+              [trans, p]() {
+                nsCOMPtr<nsISupports> data;
+                nsresult rv =
+                    trans->GetTransferData(kUnicodeMime, getter_AddRefs(data));
+
+                nsAutoString str;
+                if (!NS_WARN_IF(NS_FAILED(rv))) {
+                  nsCOMPtr<nsISupportsString> supportsstr =
+                      do_QueryInterface(data);
+                  MOZ_ASSERT(supportsstr);
+                  if (supportsstr) {
+                    supportsstr->GetData(str);
+                  }
+                }
+
+                p->MaybeResolve(str);
+              },
+              
+              [p](nsresult rv) { p->MaybeReject(rv); });
+      break;
+    }
+    default: {
+      MOZ_ASSERT_UNREACHABLE("Unknown read type");
+      break;
+    }
+  }
+}
+
+static bool IsReadTextExposedToContent() {
+  return StaticPrefs::dom_events_asyncClipboard_readText_DoNotUseDirectly();
+}
+
+void Clipboard::CheckReadTextPermissionAndHandleRequest(
+    Promise& aPromise, nsIPrincipal& aSubjectPrincipal, ReadRequestType aType) {
+  if (IsTestingPrefEnabledOrHasReadPermission(aSubjectPrincipal)) {
+    MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
+            ("%s: testing pref enabled or has read permission", __FUNCTION__));
+    nsPIDOMWindowInner* owner = GetOwner();
+    if (!owner) {
+      aPromise.MaybeRejectWithUndefined();
+      return;
+    }
+
+    ReadTextRequest{aPromise, aType, *owner}.Answer();
+    return;
   }
 
+  if (aSubjectPrincipal.GetIsAddonOrExpandedAddonPrincipal()) {
+    
+    MOZ_LOG(GetClipboardLog(), LogLevel::Debug,
+            ("%s: Addon without read permssion.", __FUNCTION__));
+    aPromise.MaybeRejectWithUndefined();
+    return;
+  }
+
+  HandleReadTextRequestWhichRequiresPasteButton(aPromise, aType);
+}
+
+void Clipboard::HandleReadTextRequestWhichRequiresPasteButton(
+    Promise& aPromise, ReadRequestType aType) {
+  nsPIDOMWindowInner* owner = GetOwner();
+  WindowContext* windowContext = owner ? owner->GetWindowContext() : nullptr;
+  if (!windowContext) {
+    MOZ_ASSERT_UNREACHABLE("There should be a WindowContext.");
+    aPromise.MaybeRejectWithUndefined();
+    return;
+  }
+
+  
+  if (!windowContext->HasValidTransientUserGestureActivation()) {
+    aPromise.MaybeRejectWithNotAllowedError(
+        "`navigator.clipboard.readText()` was blocked due to lack of "
+        "user activation.");
+    return;
+  }
+
+  
+  
+  
+
+  switch (mTransientUserPasteState.RefreshAndGet(*windowContext)) {
+    case TransientUserPasteState::Value::Initial: {
+      MOZ_ASSERT(mReadTextRequests.IsEmpty());
+
+      if (MaybeCreateAndDispatchMozClipboardReadTextPasteEvent(*owner)) {
+        mTransientUserPasteState.OnStartWaitingForUserReactionToPasteMenuPopup(
+            windowContext->GetUserGestureStart());
+        mReadTextRequests.AppendElement(
+            MakeUnique<ReadTextRequest>(aPromise, aType, *owner));
+      } else {
+        
+        aPromise.MaybeRejectWithUndefined();
+      }
+      break;
+    }
+    case TransientUserPasteState::Value::
+        WaitingForUserReactionToPasteMenuPopup: {
+      MOZ_ASSERT(!mReadTextRequests.IsEmpty());
+
+      mReadTextRequests.AppendElement(
+          MakeUnique<ReadTextRequest>(aPromise, aType, *owner));
+      break;
+    }
+    case TransientUserPasteState::Value::TransientlyForbiddenByUser: {
+      aPromise.MaybeRejectWithNotAllowedError(
+          "`navigator.clipboard.readText()` was blocked due to the user "
+          "dismissing the 'Paste' button.");
+      break;
+    }
+    case TransientUserPasteState::Value::TransientlyAllowedByUser: {
+      ReadTextRequest{aPromise, aType, *owner}.Answer();
+      break;
+    }
+  }
+}
+
+already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
+                                                ReadRequestType aType,
+                                                ErrorResult& aRv) {
+  
+  RefPtr<Promise> p = dom::Promise::Create(GetOwnerGlobal(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  CheckReadTextPermissionAndHandleRequest(*p, aSubjectPrincipal, aType);
   return p.forget();
 }
 
@@ -728,7 +706,7 @@ void Clipboard::OnUserReactedToPasteMenuPopup(const bool aAllowed) {
 
   for (UniquePtr<ReadTextRequest>& request : mReadTextRequests) {
     if (aAllowed) {
-      GetParentObject()->Dispatch(TaskCategory::Other, request->Answer());
+      request->Answer();
     } else {
       request->MaybeRejectWithNotAllowedError(
           "The user dismissed the 'Paste' button."_ns);
