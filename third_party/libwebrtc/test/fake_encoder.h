@@ -84,7 +84,10 @@ class FakeEncoder : public VideoEncoder {
 
   
   
-  virtual CodecSpecificInfo EncodeHook(EncodedImage& encoded_image);
+  
+  virtual CodecSpecificInfo EncodeHook(
+      EncodedImage& encoded_image,
+      rtc::scoped_refptr<EncodedImageBuffer> buffer);
 
   void SetRatesLocked(const RateControlParameters& parameters)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -113,7 +116,9 @@ class FakeH264Encoder : public FakeEncoder {
   virtual ~FakeH264Encoder() = default;
 
  private:
-  CodecSpecificInfo EncodeHook(EncodedImage& encoded_image) override;
+  CodecSpecificInfo EncodeHook(
+      EncodedImage& encoded_image,
+      rtc::scoped_refptr<EncodedImageBuffer> buffer) override;
 
   int idr_counter_ RTC_GUARDED_BY(local_mutex_);
   Mutex local_mutex_;

@@ -73,7 +73,7 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
                                                 frame->size());
   RTC_CHECK_LE(max_plaintext_byte_size, frame->size());
   
-  rtc::ArrayView<uint8_t> inline_decrypted_bitstream(frame->data(),
+  rtc::ArrayView<uint8_t> inline_decrypted_bitstream(frame->mutable_data(),
                                                      max_plaintext_byte_size);
 
   
