@@ -2437,7 +2437,7 @@ HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
                                        const Matrix& aTransform) {
   HashNumber hash = 0;
   IntPoint offset =
-      TruncatedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
+      RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
   for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
     const Glyph& glyph = aBuffer.mGlyphs[i];
     hash = AddToHash(hash, glyph.mIndex);
@@ -2462,7 +2462,7 @@ bool GlyphCacheEntry::MatchesGlyphs(const GlyphBuffer& aBuffer,
     return false;
   }
   IntPoint offset =
-      TruncatedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
+      RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
   if (aBounds.TopLeft() - offset != mBounds.TopLeft()) {
     return false;
   }
@@ -2489,7 +2489,7 @@ GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
   
   Glyph* glyphs = new Glyph[aBuffer.mNumGlyphs];
   IntPoint offset =
-      TruncatedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
+      RoundedToInt(aTransform.TransformPoint(aBuffer.mGlyphs[0].mPosition));
   mBounds -= offset;
   for (size_t i = 0; i < aBuffer.mNumGlyphs; i++) {
     Glyph& dst = glyphs[i];
@@ -2614,17 +2614,22 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   Matrix quantizeTransform = currentTransform;
+  IntRect quantizeBounds = intBounds;
   if (aFont->UseSubpixelPosition()) {
+    IntPoint scale;
     if (currentTransform._12 == 0) {
       
-      quantizeTransform.PostScale(4, 1);
+      scale = {4, 1};
     } else if (currentTransform._11 == 0) {
       
-      quantizeTransform.PostScale(1, 4);
+      scale = {1, 4};
     } else {
       
-      quantizeTransform.PostScale(4, 4);
+      scale = {4, 4};
     }
+    quantizeTransform.PostScale(scale.x, scale.y);
+    
+    quantizeBounds.Scale(scale.x, scale.y);
   }
 
   
@@ -2656,7 +2661,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
       useBitmaps
           ? color
           : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0),
-      quantizeTransform, intBounds);
+      quantizeTransform, quantizeBounds);
   if (!entry) {
     return false;
   }
