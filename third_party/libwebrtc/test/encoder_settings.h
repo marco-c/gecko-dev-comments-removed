@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 #ifndef TEST_ENCODER_SETTINGS_H_
 #define TEST_ENCODER_SETTINGS_H_
 
@@ -28,9 +28,9 @@ class DefaultVideoStreamFactory
   DefaultVideoStreamFactory();
 
   static const size_t kMaxNumberOfStreams = 3;
-  // Defined as {150000, 450000, 1500000};
+  
   static const int kMaxBitratePerStream[];
-  // Defined as {50000, 200000, 700000};
+  
   static const int kDefaultMinBitratePerStream[];
 
  private:
@@ -40,10 +40,10 @@ class DefaultVideoStreamFactory
       const VideoEncoderConfig& encoder_config) override;
 };
 
-// Creates |encoder_config.number_of_streams| VideoStreams where index
-// |encoder_config.number_of_streams -1| have width = |width|, height =
-// |height|. The total max bitrate of all VideoStreams is
-// |encoder_config.max_bitrate_bps|.
+
+
+
+
 std::vector<VideoStream> CreateVideoStreams(
     int width,
     int height,
@@ -59,7 +59,7 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
     const VideoSendStream::Config& config);
-}  // namespace test
-}  // namespace webrtc
+}  
+}  
 
-#endif  // TEST_ENCODER_SETTINGS_H_
+#endif  
