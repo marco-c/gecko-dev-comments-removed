@@ -9,6 +9,7 @@
 
 #include "mozilla/Array.h"
 
+#include "frontend/ScopeBindingCache.h"
 #include "gc/Tracer.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
@@ -253,6 +254,11 @@ class RuntimeCaches {
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
   StringToAtomCache stringToAtomCache;
+
+  
+  
+  
+  frontend::RuntimeScopeBindingCache scopeCache;
 
   
   

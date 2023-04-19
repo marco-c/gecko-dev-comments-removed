@@ -21,6 +21,7 @@
 #include "frontend/BytecodeSection.h"     
 #include "frontend/CompilationStencil.h"  
 #include "frontend/NameAnalysisTypes.h"   
+#include "frontend/ScopeBindingCache.h"   
 #include "frontend/SharedContext.h"
 #include "frontend/StencilXdr.h"        
 #include "gc/AllocKind.h"               
@@ -145,7 +146,11 @@ bool InputName::isEqualTo(JSContext* cx, ErrorContext* ec,
 
 bool ScopeContext::init(JSContext* cx, ErrorContext* ec,
                         CompilationInput& input, ParserAtomsTable& parserAtoms,
-                        InheritThis inheritThis, JSObject* enclosingEnv) {
+                        ScopeBindingCache* scopeCache, InheritThis inheritThis,
+                        JSObject* enclosingEnv) {
+  
+  
+  this->scopeCache = scopeCache;
   InputScope maybeNonDefaultEnclosingScope(
       input.maybeNonDefaultEnclosingScope());
 
@@ -4735,10 +4740,11 @@ static already_AddRefed<JS::Stencil> CompileGlobalScriptToStencilImpl(
       options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
 
   MainThreadErrorContext ec(cx);
+  NoScopeBindingCache scopeCache;
   Rooted<CompilationInput> input(cx, CompilationInput(options));
   RefPtr<JS::Stencil> stencil = js::frontend::CompileGlobalScriptToStencil(
       cx, &ec, cx->stackLimitForCurrentPrincipal(), cx->tempLifoAlloc(),
-      input.get(), srcBuf, scopeKind);
+      input.get(), &scopeCache, srcBuf, scopeKind);
   if (!stencil) {
     return nullptr;
   }
@@ -4767,9 +4773,11 @@ static already_AddRefed<JS::Stencil> CompileModuleScriptToStencilImpl(
   options.setModule();
 
   MainThreadErrorContext ec(cx);
+  NoScopeBindingCache scopeCache;
   Rooted<CompilationInput> input(cx, CompilationInput(options));
   RefPtr<JS::Stencil> stencil = js::frontend::ParseModuleToStencil(
-      cx, &ec, cx->stackLimitForCurrentPrincipal(), input.get(), srcBuf);
+      cx, &ec, cx->stackLimitForCurrentPrincipal(), input.get(), &scopeCache,
+      srcBuf);
   if (!stencil) {
     return nullptr;
   }

@@ -116,6 +116,7 @@ class ErrorReporter;
 class FunctionBox;
 class ParseNode;
 class TaggedParserAtomIndex;
+class ScopeBindingCache;
 
 
 ModuleObject* CompileModule(JSContext* cx, ErrorContext* ec,
@@ -131,17 +132,21 @@ ModuleObject* CompileModule(JSContext* cx, ErrorContext* ec,
 
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
     JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<char16_t>& srcBuf);
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<char16_t>& srcBuf);
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
     JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf);
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
     JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<char16_t>& srcBuf);
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<char16_t>& srcBuf);
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
     JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
-    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf);
+    CompilationInput& input, ScopeBindingCache* scopeCache,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
