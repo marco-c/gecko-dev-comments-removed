@@ -17,6 +17,9 @@ const { Module } = ChromeUtils.import(
 const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   addDebuggerToGlobal: "resource://gre/modules/jsdebugger.jsm",
+
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+  serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "dbg", () => {
@@ -38,6 +41,25 @@ class ScriptModule extends Module {
     this.#global = null;
   }
 
+  #toRawObject(maybeDebuggerObject) {
+    if (maybeDebuggerObject instanceof Debugger.Object) {
+      
+      
+      const rawObject = maybeDebuggerObject.unsafeDereference();
+
+      
+      
+      
+      
+      
+      return Cu.waiveXrays(rawObject);
+    }
+
+    
+    
+    return maybeDebuggerObject;
+  }
+
   
 
 
@@ -51,11 +73,17 @@ class ScriptModule extends Module {
 
   evaluateExpression(options) {
     const { expression } = options;
-    this.#global.executeInGlobal(expression);
+    const rv = this.#global.executeInGlobal(expression);
 
-    return {
-      result: null,
-    };
+    if ("return" in rv) {
+      return {
+        result: lazy.serialize(this.#toRawObject(rv.return), 1),
+      };
+    }
+
+    throw new lazy.error.UnsupportedOperationError(
+      `Unsupported completion value for expression evaluation`
+    );
   }
 }
 
