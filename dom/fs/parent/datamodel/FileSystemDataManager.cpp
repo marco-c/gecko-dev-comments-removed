@@ -13,7 +13,7 @@ namespace mozilla::dom::fs::data {
 FileSystemDataManager::result_t
 FileSystemDataManager::CreateFileSystemDataManager(
     const fs::Origin& ) {
-  return nullptr;
+  return RefPtr<FileSystemDataManager>();
 }
 
 }  
