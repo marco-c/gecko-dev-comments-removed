@@ -298,6 +298,13 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   
   void SetForceSyncDecoding(bool aForce) { mForceSyncDecoding = aForce; }
 
+  void AssertSyncDecodingHintIsInSync() const
+#ifndef DEBUG
+      {}
+#else
+      ;
+#endif
+
   
 
 

@@ -130,6 +130,11 @@ interface nsIImageLoadingContent : imgINotificationObserver
   
 
 
+  [noscript, infallible] readonly attribute boolean syncDecodingHint;
+
+  
+
+
 
 
 
