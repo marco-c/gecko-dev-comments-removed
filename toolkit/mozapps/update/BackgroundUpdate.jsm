@@ -629,6 +629,18 @@ var BackgroundUpdate = {
 
     let snapshot = new lazy.JSONFile({
       beforeSave: async () => {
+        if (Services.startup.shuttingDown) {
+          
+          
+          
+          if (lazy.log.shouldLog("debug")) {
+            dump(
+              `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information\n`
+            );
+          }
+          return;
+        }
+
         lazy.log.debug(
           `${SLUG}: preparing to write Firefox Messaging System targeting information to ${path}`
         );
