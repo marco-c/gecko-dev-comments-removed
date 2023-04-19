@@ -460,6 +460,7 @@ function assertRecommendations(recommendations, expected) {
 
 
 
+
 function getPageThumbURL(url) {
   if (PlacesPreviews.enabled) {
     return PlacesPreviews.getPageThumbURL(url);

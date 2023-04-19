@@ -19,6 +19,7 @@ const TEST_LOCAL_JSON_FILE = "file:///Users/user/test.json";
 
 
 
+
 async function create_interaction_and_snapshot(url) {
   let now = Date.now();
   await addInteractions([

@@ -37,8 +37,6 @@ add_task(async function test() {
 
 
 
-
-
   let simulateDragDrop = async function(aEffect) {
     info("Simulates drag/drop of a new javascript:URL to the bookmarks");
     await withBookmarksDialog(

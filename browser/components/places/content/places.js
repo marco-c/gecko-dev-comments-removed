@@ -337,6 +337,7 @@ var PlacesOrganizer = {
 
 
 
+
   _cachedLeftPaneSelectedURI: null,
   onPlaceSelected: function PO_onPlaceSelected(resetSearchBox) {
     
@@ -381,6 +382,7 @@ var PlacesOrganizer = {
 
 
 
+
   _setSearchScopeForNode: function PO__setScopeForNode(aNode) {
     let itemGuid = aNode.bookmarkGuid;
 
@@ -398,6 +400,7 @@ var PlacesOrganizer = {
   },
 
   
+
 
 
 
@@ -439,6 +442,7 @@ var PlacesOrganizer = {
   },
 
   
+
 
 
 
@@ -843,6 +847,7 @@ var PlacesSearchBox = {
 
 
 
+
   search: function PSB_search(filterString) {
     var PO = PlacesOrganizer;
     
@@ -919,6 +924,7 @@ var PlacesSearchBox = {
 
 
 
+
   updateCollectionTitle: function PSB_updateCollectionTitle(aTitle) {
     let title = "";
     switch (this.filterCollection) {
@@ -990,6 +996,7 @@ var PlacesQueryBuilder = {
 
 
 
+
   setScope: function PQB_setScope(aScope) {
     
     var filterCollection;
@@ -1043,6 +1050,7 @@ var ViewMenu = {
 
 
 
+
   _clean: function VM__clean(popup, startID, endID) {
     if (endID && !startID) {
       throw new Error("meaningless to have valid endID and null startID");
@@ -1077,6 +1085,7 @@ var ViewMenu = {
   },
 
   
+
 
 
 
@@ -1193,6 +1202,7 @@ var ViewMenu = {
 
 
 
+
   showHideColumn: function VM_showHideColumn(element) {
     var column = element.column;
 
@@ -1212,6 +1222,7 @@ var ViewMenu = {
 
 
 
+
   _getSortColumn: function VM__getSortColumn() {
     var content = document.getElementById("placeContent");
     var cols = content.columns;
@@ -1226,6 +1237,7 @@ var ViewMenu = {
   },
 
   
+
 
 
 
@@ -1326,6 +1338,7 @@ var ContentArea = {
   },
 
   
+
 
 
 

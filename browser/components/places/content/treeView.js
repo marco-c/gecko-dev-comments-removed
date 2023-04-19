@@ -109,6 +109,7 @@ PlacesTreeView.prototype = {
 
 
 
+
   _isPlainContainer: function PTV__isPlainContainer(aContainer) {
     
     if (!(aContainer instanceof Ci.nsINavHistoryQueryResultNode)) {
@@ -134,6 +135,7 @@ PlacesTreeView.prototype = {
   },
 
   
+
 
 
 

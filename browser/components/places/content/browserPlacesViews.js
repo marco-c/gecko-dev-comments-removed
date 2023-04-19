@@ -726,6 +726,7 @@ PlacesViewBase.prototype = {
 
 
 
+
   _mayAddCommandsItems: function PVB__mayAddCommandsItems(aPopup) {
     
     if (aPopup == this._rootElt) {

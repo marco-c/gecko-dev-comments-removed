@@ -72,7 +72,6 @@ const NUMBER_OF_TRIES = 30;
 
 
 
-
 var waitForResolvedPromise = async function(
   promiseFn,
   timeoutMsg,

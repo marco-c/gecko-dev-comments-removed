@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
+
 function PlacesInsertionPoint({
   parentId,
   parentGuid,
@@ -442,6 +443,7 @@ PlacesController.prototype = {
 
 
 
+
   _shouldShowMenuItem(aMenuItem, aMetaData) {
     if (
       aMenuItem.hasAttribute("hide-if-private-browsing") &&
@@ -782,6 +784,7 @@ PlacesController.prototype = {
 
 
 
+
   _shouldSkipNode: function PC_shouldSkipNode(node, pastFolders) {
     
 
@@ -810,6 +813,7 @@ PlacesController.prototype = {
   },
 
   
+
 
 
 
@@ -932,7 +936,6 @@ PlacesController.prototype = {
 
 
 
-
   async _removeRowsFromHistory() {
     let nodes = this._view.selectedNodes;
     let URIs = new Set();
@@ -1018,6 +1021,7 @@ PlacesController.prototype = {
   },
 
   
+
 
 
 
@@ -1297,6 +1301,7 @@ PlacesController.prototype = {
 
 
 
+
   disallowInsertion(container) {
     if (!container) {
       throw new Error("empty container");
@@ -1453,6 +1458,7 @@ var PlacesControllerDragHelper = {
 
 
 
+
   draggingOverChildNode: function PCDH_draggingOverChildNode(node) {
     let currentNode = this.currentDropTarget;
     while (currentNode) {
@@ -1477,6 +1483,7 @@ var PlacesControllerDragHelper = {
 
 
 
+
   getFirstValidFlavor: function PCDH_getFirstValidFlavor(aFlavors) {
     for (let i = 0; i < aFlavors.length; i++) {
       if (PlacesUIUtils.SUPPORTED_FLAVORS.includes(aFlavors[i])) {
@@ -1495,6 +1502,7 @@ var PlacesControllerDragHelper = {
   },
 
   
+
 
 
 

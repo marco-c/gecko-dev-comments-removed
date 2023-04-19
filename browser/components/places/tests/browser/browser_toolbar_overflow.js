@@ -375,6 +375,7 @@ add_task(async function test_separator_first() {
 
 
 
+
 function promiseUpdateVisibility(condition = true) {
   if (condition) {
     return BrowserTestUtils.waitForEvent(
@@ -390,12 +391,14 @@ function promiseUpdateVisibility(condition = true) {
 
 
 
+
 function getPlacesChildren() {
   return Array.prototype.filter.call(
     document.getElementById("PlacesToolbarItems").children,
     c => c._placesNode?.itemId
   );
 }
+
 
 
 
