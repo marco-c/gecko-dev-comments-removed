@@ -309,10 +309,6 @@ class PeerConnection : public PeerConnectionInternal,
     RTC_DCHECK_RUN_ON(signaling_thread());
     return &configuration_;
   }
-  rtc::scoped_refptr<StreamCollection> remote_streams_internal() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return remote_streams_;
-  }
   absl::optional<std::string> sctp_mid() {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return sctp_mid_s_;
@@ -389,16 +385,12 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void AddAudioTrack(AudioTrackInterface* track, MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
+  void AddAudioTrack(AudioTrackInterface* track, MediaStreamInterface* stream);
   void RemoveAudioTrack(AudioTrackInterface* track,
-                        MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void AddVideoTrack(VideoTrackInterface* track, MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
+                        MediaStreamInterface* stream);
+  void AddVideoTrack(VideoTrackInterface* track, MediaStreamInterface* stream);
   void RemoveVideoTrack(VideoTrackInterface* track,
-                        MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
+                        MediaStreamInterface* stream);
 
   
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
@@ -503,12 +495,14 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   void OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
+                           MediaStreamInterface* stream,
                            cricket::MediaType media_type);
 
   
   
   
   void OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
+                             MediaStreamInterface* stream,
                              cricket::MediaType media_type);
 
   
@@ -763,16 +757,6 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<rtc::SSLCertificateVerifier>
       tls_cert_verifier_;  
                            
-
-  
-  const rtc::scoped_refptr<StreamCollection> local_streams_
-      RTC_GUARDED_BY(signaling_thread());
-  
-  const rtc::scoped_refptr<StreamCollection> remote_streams_
-      RTC_GUARDED_BY(signaling_thread());
-
-  std::vector<std::unique_ptr<MediaStreamObserver>> stream_observers_
-      RTC_GUARDED_BY(signaling_thread());
 
   
   std::vector<RtpSenderInfo> remote_audio_sender_infos_
