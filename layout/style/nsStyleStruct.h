@@ -87,9 +87,9 @@ struct ContainSizeAxes {
 
 
   nsSize ContainSize(const nsSize& aUncontainedSize,
-                     const WritingMode& aWM) const;
+                     const nsIFrame& aFrame) const;
   IntrinsicSize ContainIntrinsicSize(const IntrinsicSize& aUncontainedSize,
-                                     const WritingMode& aWM) const;
+                                     const nsIFrame& aFrame) const;
 
   const bool mIContained;
   const bool mBContained;

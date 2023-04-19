@@ -626,7 +626,7 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 
     if (auto size = olc->GetSubdocumentIntrinsicSize()) {
       
-      return containAxes.ContainIntrinsicSize(*size, GetWritingMode());
+      return containAxes.ContainIntrinsicSize(*size, *this);
     }
   }
 
@@ -640,7 +640,7 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 
   
   return containAxes.ContainIntrinsicSize(IntrinsicSize(kFallbackIntrinsicSize),
-                                          GetWritingMode());
+                                          *this);
 }
 
 
