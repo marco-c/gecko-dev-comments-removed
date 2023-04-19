@@ -109,7 +109,7 @@ function join(base, ...paths) {
 
 function Sandbox(options) {
   
-  options = {
+  const sandboxOptions = {
     
     wantComponents: true,
 
@@ -149,7 +149,7 @@ function Sandbox(options) {
     freshCompartment: options.freshCompartment || false,
   };
 
-  return Cu.Sandbox(systemPrincipal, options);
+  return Cu.Sandbox(systemPrincipal, sandboxOptions);
 }
 
 
@@ -182,12 +182,12 @@ function load(loader, module) {
 
   
   
-  const sandbox = new loader.sharedGlobalSandbox.Object();
-  Object.assign(sandbox, properties);
+  const scopeFromSharedGlobal = new loader.sharedGlobal.Object();
+  Object.assign(scopeFromSharedGlobal, properties);
 
   const originalExports = module.exports;
   try {
-    Services.scriptloader.loadSubScript(module.uri, sandbox);
+    Services.scriptloader.loadSubScript(module.uri, scopeFromSharedGlobal);
   } catch (error) {
     
     
@@ -538,24 +538,30 @@ function Loader(options) {
     modules[uri] = module;
   }
 
-  
-  
-  
-  
-  const sharedGlobalSandbox = Sandbox({
-    name: options.sandboxName || "DevTools",
-    invisibleToDebugger: options.invisibleToDebugger || false,
-    prototype: options.sandboxPrototype || globals,
-    freshCompartment: options.freshCompartment,
-  });
+  let sharedGlobal;
+  if (options.sharedGlobal) {
+    sharedGlobal = options.sharedGlobal;
+  } else {
+    
+    
+    
+    
+    sharedGlobal = Sandbox({
+      name: options.sandboxName || "DevTools",
+      invisibleToDebugger: options.invisibleToDebugger || false,
+      prototype: options.sandboxPrototype || globals,
+      freshCompartment: options.freshCompartment,
+    });
+  }
 
-  if (options.sandboxPrototype) {
+  if (options.sharedGlobal || options.sandboxPrototype) {
+    
     
     
     
     for (const name of getOwnIdentifiers(globals)) {
       Object.defineProperty(
-        sharedGlobalSandbox,
+        sharedGlobal,
         name,
         Object.getOwnPropertyDescriptor(globals, name)
       );
@@ -572,7 +578,7 @@ function Loader(options) {
     mappingCache: { enumerable: false, value: new Map() },
     
     modules: { enumerable: false, value: modules },
-    sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
+    sharedGlobal: { enumerable: false, value: sharedGlobal },
     supportAMDModules: {
       enumerable: false,
       value: options.supportAMDModules || false,

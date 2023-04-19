@@ -11,7 +11,12 @@ const { TargetActorRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs"
 );
 const { WatcherRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs"
+  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
+  {
+    
+    
+    loadInDevToolsLoader: false,
+  }
 );
 const Targets = require("resource://devtools/server/actors/targets/index.js");
 const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
