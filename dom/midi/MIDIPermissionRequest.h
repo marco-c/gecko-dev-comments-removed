@@ -34,6 +34,11 @@ class MIDIPermissionRequest final : public ContentPermissionRequestBase,
 
  private:
   ~MIDIPermissionRequest() = default;
+  nsresult DoPrompt();
+
+  
+  
+  nsCOMPtr<nsITimer> mCancelTimer;
 
   
   RefPtr<Promise> mPromise;
