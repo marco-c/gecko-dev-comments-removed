@@ -19,9 +19,11 @@
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StorageAccess.h"
 
@@ -29,17 +31,67 @@
 #  undef PostMessage
 #endif
 
-using mozilla::ErrorResult;
-using namespace mozilla::dom;
-
 namespace mozilla::dom {
 
-bool ServiceWorkerVisible(JSContext* aCx, JSObject* aObj) {
-  if (NS_IsMainThread()) {
-    return StaticPrefs::dom_serviceWorkers_enabled();
+static bool IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal) {
+  if (const nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+          Navigator::GetWindowFromGlobal(aGlobal)) {
+    if (auto* bc = innerWindow->GetBrowsingContext()) {
+      return bc->Top()->ServiceWorkersTestingEnabled();
+    }
+  }
+  return false;
+}
+
+bool ServiceWorkersEnabled(JSContext* aCx, JSObject* aGlobal) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!StaticPrefs::dom_serviceWorkers_enabled()) {
+    return false;
   }
 
-  return IS_INSTANCE_OF(ServiceWorkerGlobalScope, aObj);
+  
+  JS::Rooted<JSObject*> global(aCx, aGlobal);
+
+  if (const nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx)) {
+    if (global->GetStorageAccess() == StorageAccess::ePrivateBrowsing) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  if (!StaticPrefs::extensions_serviceWorkerRegister_allowed()) {
+    nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
+    if (principal && BasePrincipal::Cast(principal)->AddonPolicy()) {
+      return false;
+    }
+  }
+
+  if (IsSecureContextOrObjectIsFromSecureContext(aCx, aGlobal)) {
+    return true;
+  }
+
+  return StaticPrefs::dom_serviceWorkers_testing_enabled() ||
+         IsServiceWorkersTestingEnabledInWindow(aGlobal);
+}
+
+bool ServiceWorkerVisible(JSContext* aCx, JSObject* aGlobal) {
+  if (NS_IsMainThread()) {
+    
+    
+    
+    
+    
+    
+    return ServiceWorkersEnabled(aCx, aGlobal);
+  }
+
+  
+  
+  
+  return IS_INSTANCE_OF(ServiceWorkerGlobalScope, aGlobal);
 }
 
 
