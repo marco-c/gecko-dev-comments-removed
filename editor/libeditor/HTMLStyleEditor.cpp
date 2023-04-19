@@ -911,35 +911,27 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNode(
 }
 
 SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
-    const EditorDOMPoint& aStartOfRange, const EditorDOMPoint& aEndOfRange,
-    nsAtom* aProperty, nsAtom* aAttribute) {
+    const EditorDOMRange& aRange, nsAtom* aProperty, nsAtom* aAttribute) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aStartOfRange.IsSet()) || NS_WARN_IF(!aEndOfRange.IsSet())) {
-    return SplitRangeOffResult(NS_ERROR_INVALID_ARG);
+  if (NS_WARN_IF(!aRange.IsPositioned())) {
+    return SplitRangeOffResult(NS_ERROR_FAILURE);
   }
 
-  EditorDOMPoint startOfRange(aStartOfRange);
-  EditorDOMPoint endOfRange(aEndOfRange);
+  EditorDOMRange range(aRange);
 
   
   SplitNodeResult resultAtStart = [&]() MOZ_CAN_RUN_SCRIPT {
-    AutoTrackDOMPoint tracker(RangeUpdaterRef(), &endOfRange);
+    AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
     SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
-        startOfRange, aProperty, aAttribute);
+        range.StartRef(), aProperty, aAttribute);
     if (result.isErr()) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return SplitNodeResult(result.unwrapErr());
     }
-    nsresult rv = result.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-      return SplitNodeResult(rv);
-    }
+    tracker.FlushAndStopTracking();
     if (result.Handled()) {
-      startOfRange = result.AtSplitPoint<EditorDOMPoint>();
+      auto startOfRange = result.AtSplitPoint<EditorDOMPoint>();
       if (!startOfRange.IsSet()) {
         result.IgnoreCaretPointSuggestion();
         NS_WARNING(
@@ -947,6 +939,7 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
             "split point");
         return SplitNodeResult(NS_ERROR_FAILURE);
       }
+      range.SetStart(std::move(startOfRange));
     }
     return result;
   }();
@@ -956,22 +949,16 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
 
   
   SplitNodeResult resultAtEnd = [&]() MOZ_CAN_RUN_SCRIPT {
-    AutoTrackDOMPoint tracker(RangeUpdaterRef(), &startOfRange);
-    SplitNodeResult result =
-        SplitAncestorStyledInlineElementsAt(endOfRange, aProperty, aAttribute);
+    AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
+    SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
+        range.EndRef(), aProperty, aAttribute);
     if (result.isErr()) {
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return SplitNodeResult(result.unwrapErr());
     }
-    nsresult rv = result.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
-      return SplitNodeResult(rv);
-    }
+    tracker.FlushAndStopTracking();
     if (result.Handled()) {
-      endOfRange = result.AtSplitPoint<EditorDOMPoint>();
+      auto endOfRange = result.AtSplitPoint<EditorDOMPoint>();
       if (!endOfRange.IsSet()) {
         result.IgnoreCaretPointSuggestion();
         NS_WARNING(
@@ -979,15 +966,17 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
             "split point");
         return SplitNodeResult(NS_ERROR_FAILURE);
       }
+      range.SetEnd(std::move(endOfRange));
     }
     return result;
   }();
   if (resultAtEnd.isErr()) {
+    resultAtStart.IgnoreCaretPointSuggestion();
     return SplitRangeOffResult(resultAtEnd.unwrapErr());
   }
 
-  return SplitRangeOffResult(std::move(startOfRange), std::move(resultAtStart),
-                             std::move(endOfRange), std::move(resultAtEnd));
+  return SplitRangeOffResult(std::move(range), std::move(resultAtStart),
+                             std::move(resultAtEnd));
 }
 
 SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
@@ -2232,8 +2221,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
         
         SplitRangeOffResult splitRangeOffResult =
             SplitAncestorStyledInlineElementsAtRangeEdges(
-                EditorDOMPoint(range->StartRef()),
-                EditorDOMPoint(range->EndRef()), MOZ_KnownLive(style.mProperty),
+                EditorDOMRange(range), MOZ_KnownLive(style.mProperty),
                 MOZ_KnownLive(style.mAttribute));
         if (splitRangeOffResult.isErr()) {
           NS_WARNING(
@@ -2241,21 +2229,21 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
               "failed");
           return splitRangeOffResult.unwrapErr();
         }
+        
+        splitRangeOffResult.IgnoreCaretPointSuggestion();
 
         
         
         
         
-        const EditorDOMPoint& startOfRange(
-            splitRangeOffResult.SplitPointAtStart());
-        const EditorDOMPoint& endOfRange(splitRangeOffResult.SplitPointAtEnd());
-        if (NS_WARN_IF(!startOfRange.IsSet()) ||
-            NS_WARN_IF(!endOfRange.IsSet())) {
+        const EditorDOMRange& splitRange = splitRangeOffResult.RangeRef();
+        if (NS_WARN_IF(!splitRange.IsPositioned())) {
           continue;
         }
 
-        nsresult rv = range->SetStartAndEnd(startOfRange.ToRawRangeBoundary(),
-                                            endOfRange.ToRawRangeBoundary());
+        nsresult rv =
+            range->SetStartAndEnd(splitRange.StartRef().ToRawRangeBoundary(),
+                                  splitRange.EndRef().ToRawRangeBoundary());
         
         
         if (NS_WARN_IF(Destroyed())) {
@@ -2268,34 +2256,37 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
 
         
         AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-        if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
-            startOfRange.IsInTextNode()) {
-          if (!EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
-                                              EditorType::HTML)) {
+        if (splitRange.InSameContainer() &&
+            splitRange.StartRef().IsInTextNode()) {
+          if (!EditorUtils::IsEditableContent(
+                  *splitRange.StartRef().ContainerAs<Text>(),
+                  EditorType::HTML)) {
             continue;
           }
-          arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
-        } else if (startOfRange.IsInTextNode() && endOfRange.IsInTextNode() &&
-                   startOfRange.GetContainer()->GetNextSibling() ==
-                       endOfRange.GetContainer()) {
-          if (EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
-                                             EditorType::HTML)) {
-            arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
-          }
-          if (EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
-                                             EditorType::HTML)) {
-            arrayOfContents.AppendElement(*endOfRange.ContainerAs<Text>());
-          }
-          if (arrayOfContents.IsEmpty()) {
+          arrayOfContents.AppendElement(
+              *splitRange.StartRef().ContainerAs<Text>());
+        } else if (splitRange.IsInTextNodes() &&
+                   splitRange.InAdjacentSiblings()) {
+          
+          
+          if (!EditorUtils::IsEditableContent(
+                  *splitRange.StartRef().ContainerAs<Text>(),
+                  EditorType::HTML)) {
             continue;
           }
+          arrayOfContents.AppendElement(
+              *splitRange.StartRef().ContainerAs<Text>());
+          arrayOfContents.AppendElement(
+              *splitRange.EndRef().ContainerAs<Text>());
         } else {
           
-          if (startOfRange.IsInTextNode() &&
-              !startOfRange.IsStartOfContainer() &&
-              EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
-                                             EditorType::HTML)) {
-            arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
+          if (splitRange.StartRef().IsInTextNode() &&
+              !splitRange.StartRef().IsStartOfContainer() &&
+              EditorUtils::IsEditableContent(
+                  *splitRange.StartRef().ContainerAs<Text>(),
+                  EditorType::HTML)) {
+            arrayOfContents.AppendElement(
+                *splitRange.StartRef().ContainerAs<Text>());
           }
           
           ContentSubtreeIterator subtreeIter;
@@ -2313,11 +2304,13 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
             }
           }
           
-          if (startOfRange.GetContainer() != endOfRange.GetContainer() &&
-              endOfRange.IsInTextNode() && !endOfRange.IsEndOfContainer() &&
-              EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
-                                             EditorType::HTML)) {
-            arrayOfContents.AppendElement(*endOfRange.ContainerAs<Text>());
+          if (!splitRange.InSameContainer() &&
+              splitRange.EndRef().IsInTextNode() &&
+              !splitRange.EndRef().IsEndOfContainer() &&
+              EditorUtils::IsEditableContent(
+                  *splitRange.EndRef().ContainerAs<Text>(), EditorType::HTML)) {
+            arrayOfContents.AppendElement(
+                *splitRange.EndRef().ContainerAs<Text>());
           }
         }
 
@@ -2385,11 +2378,11 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
           
           
           
-          uint32_t startOffset = content == startOfRange.GetContainer()
-                                     ? startOfRange.Offset()
+          uint32_t startOffset = content == splitRange.StartRef().GetContainer()
+                                     ? splitRange.StartRef().Offset()
                                      : 0;
-          uint32_t endOffset = content == endOfRange.GetContainer()
-                                   ? endOfRange.Offset()
+          uint32_t endOffset = content == splitRange.EndRef().GetContainer()
+                                   ? splitRange.EndRef().Offset()
                                    : content->Length();
           nsresult rv = SetInlinePropertyOnTextNode(
               MOZ_KnownLive(*content->AsText()), startOffset, endOffset,

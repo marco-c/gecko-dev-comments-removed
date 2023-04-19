@@ -399,14 +399,21 @@ class MOZ_STACK_CLASS AutoTrackDOMRange final {
     mStartPointTracker.emplace(aRangeUpdater, &mStartPoint);
     mEndPointTracker.emplace(aRangeUpdater, &mEndPoint);
   }
-  ~AutoTrackDOMRange() {
+  ~AutoTrackDOMRange() { FlushAndStopTracking(); }
+
+  void FlushAndStopTracking() {
+    if (!mStartPointTracker || !mEndPointTracker) {
+      return;
+    }
+    mStartPointTracker.reset();
+    mEndPointTracker.reset();
     if (!mRangeRefPtr && !mRangeOwningNonNull) {
+      
+      
       
       return;
     }
     
-    mStartPointTracker.reset();
-    mEndPointTracker.reset();
     if (mRangeRefPtr) {
       (*mRangeRefPtr)
           ->SetStartAndEnd(mStartPoint.ToRawRangeBoundary(),

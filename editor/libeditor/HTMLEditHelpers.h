@@ -938,16 +938,42 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
   
 
 
-  constexpr const EditorDOMPoint& SplitPointAtStart() const {
-    return mSplitPointAtStart;
-  }
+
+
+  constexpr const EditorDOMRange& RangeRef() const { return mRange; }
+
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
+      const HTMLEditor& aHTMLEditor, const SuggestCaretOptions& aOptions) const;
+
   
 
 
 
-  constexpr const EditorDOMPoint& SplitPointAtEnd() const {
-    return mSplitPointAtEnd;
+  void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
+
+  bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
+  constexpr EditorDOMPoint&& UnwrapCaretPoint() {
+    mHandledCaretPoint = true;
+    return std::move(mCaretPoint);
   }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const SuggestCaretOptions& aOptions) {
+    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
+    MOZ_ASSERT(
+        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
+    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
+        !mCaretPoint.IsSet()) {
+      return false;
+    }
+    aPointToPutCaret = UnwrapCaretPoint();
+    return true;
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const HTMLEditor& aHTMLEditor,
+                        const SuggestCaretOptions& aOptions);
 
   SplitRangeOffResult() = delete;
 
@@ -968,19 +994,15 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
 
 
 
-
-
-  SplitRangeOffResult(EditorDOMPoint&& aTrackedRangeStart,
+  SplitRangeOffResult(EditorDOMRange&& aTrackedRange,
                       SplitNodeResult&& aSplitNodeResultAtStart,
-                      EditorDOMPoint&& aTrackedRangeEnd,
                       SplitNodeResult&& aSplitNodeResultAtEnd)
-      : mSplitPointAtStart(aTrackedRangeStart),
-        mSplitPointAtEnd(aTrackedRangeEnd),
+      : mRange(std::move(aTrackedRange)),
         mRv(NS_OK),
         mHandled(aSplitNodeResultAtStart.Handled() ||
                  aSplitNodeResultAtEnd.Handled()) {
-    MOZ_ASSERT(mSplitPointAtStart.IsSet());
-    MOZ_ASSERT(mSplitPointAtEnd.IsSet());
+    MOZ_ASSERT(mRange.StartRef().IsSet());
+    MOZ_ASSERT(mRange.EndRef().IsSet());
     MOZ_ASSERT(aSplitNodeResultAtStart.isOk());
     MOZ_ASSERT(aSplitNodeResultAtEnd.isOk());
     
@@ -988,8 +1010,10 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
     
     SplitNodeResult splitNodeResultAtStart(std::move(aSplitNodeResultAtStart));
     SplitNodeResult splitNodeResultAtEnd(std::move(aSplitNodeResultAtEnd));
-    splitNodeResultAtStart.IgnoreCaretPointSuggestion();
-    splitNodeResultAtEnd.IgnoreCaretPointSuggestion();
+    splitNodeResultAtStart.MoveCaretPointTo(
+        mCaretPoint, {SuggestCaret::OnlyIfHasSuggestion});
+    splitNodeResultAtEnd.MoveCaretPointTo(mCaretPoint,
+                                          {SuggestCaret::OnlyIfHasSuggestion});
   }
 
   explicit SplitRangeOffResult(nsresult aRv) : mRv(aRv), mHandled(false) {
@@ -1002,18 +1026,22 @@ class MOZ_STACK_CLASS SplitRangeOffResult final {
   SplitRangeOffResult& operator=(SplitRangeOffResult&& aOther) = default;
 
  private:
-  EditorDOMPoint mSplitPointAtStart;
-  EditorDOMPoint mSplitPointAtEnd;
+  EditorDOMRange mRange;
 
   
   
   
   
   
+
+  
+  
+  EditorDOMPoint mCaretPoint;
 
   nsresult mRv;
 
   bool mHandled;
+  bool mutable mHandledCaretPoint = false;
 };
 
 
