@@ -1283,16 +1283,13 @@ bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
 
   
   if (!ok) {
-    if (!cx->isExceptionPending()) {
-      return false;  
-    }
-
+    
+    
     Rooted<Value> error(cx);
-    if (!cx->getPendingException(&error)) {
-      return false;
+    if (cx->isExceptionPending()) {
+      std::ignore = cx->getPendingException(&error);
+      cx->clearPendingException();
     }
-
-    cx->clearPendingException();
 
     
     for (ModuleObject* m : stack) {
