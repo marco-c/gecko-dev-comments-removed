@@ -68,8 +68,8 @@ class nsPrintObject final {
 
   nsTArray<mozilla::UniquePtr<nsPrintObject>> mKids;
   const nsPrintObject* mParent;  
-  bool mHasBeenPrinted;
-  bool mInvisible;  
+  bool mHasBeenPrinted = false;
+  bool mInvisible = false;  
 
   
   
