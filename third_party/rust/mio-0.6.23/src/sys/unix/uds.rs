@@ -50,6 +50,8 @@ unsafe fn sockaddr_un(path: &Path)
 }
 
 fn sun_path_offset() -> usize {
+    
+    #[allow(invalid_value)]
     unsafe {
         
         let addr: libc::sockaddr_un = mem::uninitialized();
