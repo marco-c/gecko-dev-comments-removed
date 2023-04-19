@@ -3907,13 +3907,10 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       
       aState.mBCoord = startingBCoord;
       aState.mPrevBEndMargin = incomingMargin;
-      *aKeepReflowGoing = false;
       if (ShouldAvoidBreakInside(aState.mReflowInput)) {
-        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-        aLine->MarkDirty();
+        SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);
       } else {
-        PushLines(aState, aLine.prev());
-        aState.mReflowStatus.SetIncomplete();
+        PushTruncatedLine(aState, aLine, aKeepReflowGoing);
       }
       return;
     }
@@ -4155,13 +4152,10 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
     if (frameReflowStatus.IsInlineBreakBefore()) {
       
-      *aKeepReflowGoing = false;
       if (ShouldAvoidBreakInside(aState.mReflowInput)) {
-        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-        aLine->MarkDirty();
+        SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);
       } else {
-        PushLines(aState, aLine.prev());
-        aState.mReflowStatus.SetIncomplete();
+        PushTruncatedLine(aState, aLine, aKeepReflowGoing);
       }
     } else {
       
@@ -4235,8 +4229,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
               mLines.after_insert(aLine, line);
             }
 
-            PushLines(aState, aLine);
-            aState.mReflowStatus.SetIncomplete();
+            PushTruncatedLine(aState, aLine.next(), aKeepReflowGoing);
 
             
             
@@ -4262,7 +4255,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
                 }
               }
             }
-            *aKeepReflowGoing = false;
 
             
             
@@ -4331,15 +4323,11 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
           
           
           
-          aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-          
-          
-          aLine->MarkDirty();
+          SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);
         } else {
           
           
-          PushLines(aState, aLine.prev());
-          aState.mReflowStatus.SetIncomplete();
+          PushTruncatedLine(aState, aLine, aKeepReflowGoing);
         }
       }
     }
@@ -4431,6 +4419,15 @@ void nsBlockFrame::ReflowInlineFrames(BlockReflowState& aState,
       } while (LineReflowStatus::RedoNoPull == lineReflowStatus);
     } while (LineReflowStatus::RedoMoreFloats == lineReflowStatus);
   } while (LineReflowStatus::RedoNextBand == lineReflowStatus);
+}
+
+void nsBlockFrame::SetBreakBeforeStatusBeforeLine(BlockReflowState& aState,
+                                                  LineIterator aLine,
+                                                  bool* aKeepReflowGoing) {
+  aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+  
+  aLine->MarkDirty();
+  *aKeepReflowGoing = false;
 }
 
 void nsBlockFrame::PushTruncatedLine(BlockReflowState& aState,
@@ -5184,10 +5181,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   if (!aState.mReflowStatus.IsFullyComplete() &&
       ShouldAvoidBreakInside(aState.mReflowInput)) {
     aLine->AppendFloats(std::move(aState.mCurrentLineFloats));
-    aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-    
-    aLine->MarkDirty();
-    *aKeepReflowGoing = false;
+    SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);
     return true;
   }
 
@@ -5198,8 +5192,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     NS_ASSERTION(aState.mCurrentLine == aLine, "oops");
     if (ShouldAvoidBreakInside(aState.mReflowInput)) {
       
-      aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-      *aKeepReflowGoing = false;
+      SetBreakBeforeStatusBeforeLine(aState, aLine, aKeepReflowGoing);
     } else {
       
       

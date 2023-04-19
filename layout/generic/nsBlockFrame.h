@@ -784,6 +784,15 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+  void SetBreakBeforeStatusBeforeLine(BlockReflowState& aState,
+                                      LineIterator aLine,
+                                      bool* aKeepReflowGoing);
+
+  
+
+
+
+
   void PushTruncatedLine(BlockReflowState& aState, LineIterator aLine,
                          bool* aKeepReflowGoing);
 
