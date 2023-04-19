@@ -1398,6 +1398,11 @@ interface nsILoadInfo : nsISupports
 
 
 
+  [infallible] attribute boolean isOriginTrialCoepCredentiallessEnabledForTopLevel;
+  
+
+
+
   [infallible] attribute boolean isMediaRequest;
 
   

@@ -59,6 +59,7 @@ class nsIIncrementalStreamLoaderObserver;
 namespace mozilla {
 class Encoding;
 class OriginAttributes;
+class OriginTrials;
 namespace dom {
 class ClientInfo;
 class PerformanceStorage;
@@ -831,7 +832,8 @@ nsresult NS_MaybeOpenChannelUsingAsyncOpen(nsIChannel* aChannel,
 
 
 nsILoadInfo::CrossOriginEmbedderPolicy
-NS_GetCrossOriginEmbedderPolicyFromHeader(const nsACString& aHeader);
+NS_GetCrossOriginEmbedderPolicyFromHeader(
+    const nsACString& aHeader, bool aIsOriginTrialCoepCredentiallessEnabled);
 
 
 
@@ -1068,5 +1070,7 @@ nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
                           bool* aResult);
 
 void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI);
+
+bool IsCoepCredentiallessEnabled(bool aIsOriginTrialCoepCredentiallessEnabled);
 
 #endif  
