@@ -346,18 +346,6 @@ EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
   }
 
   MOZ_ASSERT(aCompositorWidget);
-#ifdef MOZ_WAYLAND
-  
-  
-  
-  
-  
-  
-  if (widget::GdkIsWaylandDisplay() && aCompositorWidget->IsHidden()) {
-    mozilla::gfx::IntSize pbSize(16, 16);
-    return CreateWaylandBufferSurface(*egl, aConfig, pbSize);
-  }
-#endif
   EGLNativeWindowType window =
       GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aCompositorWidget);
   if (!window) {
