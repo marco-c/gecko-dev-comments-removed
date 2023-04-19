@@ -61,6 +61,11 @@ class JoinNodesTransaction final : public EditTransactionBase {
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
 
   
+  
+  [[nodiscard]] SplitNodeDirection GetSplitNodeDirection() const;
+  [[nodiscard]] JoinNodesDirection GetJoinNodesDirection() const;
+
+  
 
 
 

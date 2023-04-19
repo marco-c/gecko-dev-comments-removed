@@ -610,6 +610,20 @@ class HTMLEditor final : public EditorBase,
   
 
 
+  [[nodiscard]] SplitNodeDirection GetSplitNodeDirection() const {
+    return MOZ_LIKELY(mUseGeckoTraditionalJoinSplitBehavior)
+               ? SplitNodeDirection::LeftNodeIsNewOne
+               : SplitNodeDirection::RightNodeIsNewOne;
+  }
+  [[nodiscard]] JoinNodesDirection GetJoinNodesDirection() const {
+    return MOZ_LIKELY(mUseGeckoTraditionalJoinSplitBehavior)
+               ? JoinNodesDirection::LeftNodeIntoRightNode
+               : JoinNodesDirection::RightNodeIntoLeftNode;
+  }
+
+  
+
+
 
 
   MOZ_CAN_RUN_SCRIPT nsresult
@@ -4391,6 +4405,10 @@ class HTMLEditor final : public EditorBase,
   RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
 
   bool mCRInParagraphCreatesParagraph;
+
+  
+  
+  bool mUseGeckoTraditionalJoinSplitBehavior = true;
 
   UniquePtr<CSSEditUtils> mCSSEditUtils;
 

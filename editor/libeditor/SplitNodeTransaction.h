@@ -38,6 +38,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
 
 
+
   template <typename PT, typename CT>
   static already_AddRefed<SplitNodeTransaction> Create(
       HTMLEditor& aHTMLEditor,
@@ -51,6 +52,11 @@ class SplitNodeTransaction final : public EditTransactionBase {
   NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(SplitNodeTransaction)
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
+
+  
+  
+  [[nodiscard]] SplitNodeDirection GetSplitNodeDirection() const;
+  [[nodiscard]] JoinNodesDirection GetJoinNodesDirection() const;
 
   nsIContent* GetSplitContent() const { return mSplitContent; }
   nsIContent* GetNewContent() const { return mNewContent; }
