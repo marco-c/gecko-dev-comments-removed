@@ -142,13 +142,6 @@ using jsid = JS::PropertyKey;
 #endif
 
 
-#ifdef MOZ_JS_STREAMS
-#  define IF_JS_STREAMS(x, ...) x
-#else
-#  define IF_JS_STREAMS(x, ...) __VA_ARGS__
-#endif
-
-
 #ifdef ENABLE_DECORATORS
 #  define IF_DECORATORS(x, ...) x
 #else
