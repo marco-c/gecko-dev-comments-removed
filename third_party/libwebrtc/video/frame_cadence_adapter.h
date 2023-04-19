@@ -18,6 +18,7 @@
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -34,7 +35,19 @@ class FrameCadenceAdapterInterface
     virtual ~Callback() = default;
 
     
-    virtual void OnFrame(const VideoFrame& frame) = 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual void OnFrame(Timestamp post_time,
+                         int frames_scheduled_for_processing,
+                         const VideoFrame& frame) = 0;
 
     
     virtual void OnDiscardedFrame() = 0;
@@ -42,8 +55,11 @@ class FrameCadenceAdapterInterface
 
   
   
+  
+  
   static std::unique_ptr<FrameCadenceAdapterInterface> Create(
-      TaskQueueBase* worker_queue);
+      Clock* clock,
+      TaskQueueBase* queue);
 
   
   virtual void Initialize(Callback* callback) = 0;
