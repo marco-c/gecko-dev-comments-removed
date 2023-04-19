@@ -79,6 +79,14 @@ struct MediaFeatureChange {
     mReason |= aOther.mReason;
     return *this;
   }
+
+  static MediaFeatureChange ForPreferredColorSchemeChange() {
+    
+    
+    
+    return {RestyleHint::RecascadeSubtree(), nsChangeHint(0),
+            MediaFeatureChangeReason::SystemMetricsChange};
+  }
 };
 
 }  
