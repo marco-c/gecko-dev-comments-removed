@@ -120,6 +120,8 @@ const INTEGRATION_TEST_PAGE_SOURCES = [
   "removed-original.js",
   "named-eval.js",
   
+  "文字コード.js",
+  
   "bootstrap 3b1a221408fdde86aa49",
   "bootstrap a1ecee2f86e1d0ea3fb5",
   "bootstrap 6fda1f7ea9ecbc1a2d5b",
