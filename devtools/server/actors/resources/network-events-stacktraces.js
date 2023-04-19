@@ -49,11 +49,18 @@ class NetworkEventStackTracesWatcher {
   
 
 
+  clear() {
+    this.stacktraces.clear();
+  }
+
+  
+
+
 
 
 
   destroy(targetActor) {
-    this.stacktraces.clear();
+    this.clear();
     Services.obs.removeObserver(this, "http-on-opening-request");
     Services.obs.removeObserver(this, "document-on-opening-request");
     Services.obs.removeObserver(this, "network-monitor-alternate-stack");

@@ -1429,6 +1429,14 @@ NetworkObserver.prototype = {
   
 
 
+  clear: function() {
+    this.openRequests.clear();
+    this.openResponses.clear();
+  },
+
+  
+
+
 
   destroy: function() {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
@@ -1465,6 +1473,7 @@ NetworkObserver.prototype = {
     this.filters = null;
     this._throttler = null;
     this._decodedCertificateCache.clear();
+    this.clear();
   },
 };
 

@@ -144,9 +144,12 @@ function removeSelectedCustomRequest() {
   };
 }
 
+
+
 function clearRequests() {
-  return {
-    type: CLEAR_REQUESTS,
+  return ({ dispatch, connector }) => {
+    dispatch({ type: CLEAR_REQUESTS });
+    connector.clear();
   };
 }
 
