@@ -2,6 +2,16 @@
 
 "use strict";
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
+AddonTestUtils.init(this);
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "1",
+  "43"
+);
+
 const server = createHttpServer({
   hosts: ["example.net", "example.com"],
 });
@@ -32,7 +42,7 @@ let extensionData = {
   },
   background() {
     let csp_value = undefined;
-    browser.test.onMessage.addListener(function(msg, expectedCount) {
+    browser.test.onMessage.addListener(function(msg) {
       csp_value = msg;
       browser.test.sendMessage("csp-set");
     });
@@ -74,9 +84,20 @@ let extensionData = {
 
 
 
-async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
-  let extension1 = await ExtensionTestUtils.loadExtension(extensionData);
-  let extension2 = await ExtensionTestUtils.loadExtension(extensionData);
+
+
+
+
+async function test_csp({
+  site_csp,
+  ext1_csp,
+  ext2_csp,
+  expect,
+  ext1_data = extensionData,
+  ext2_data = extensionData,
+}) {
+  let extension1 = await ExtensionTestUtils.loadExtension(ext1_data);
+  let extension2 = await ExtensionTestUtils.loadExtension(ext2_data);
   await extension1.startup();
   await extension2.startup();
   extension1.sendMessage(ext1_csp);
@@ -91,12 +112,14 @@ async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
   let results = await contentPage.spawn(null, async () => {
     let img1 = this.content.document.getElementById("img1");
     let img3 = this.content.document.getElementById("img3");
+    let cspJSON = JSON.parse(this.content.document.cspJSON);
     return {
       img1_loaded: img1.complete && img1.naturalWidth > 0,
       img3_loaded: img3.complete && img3.naturalWidth > 0,
       
       script1_loaded: !!this.content.document.getElementById("good"),
       script3_loaded: !!this.content.document.getElementById("bad"),
+      cspJSON,
     };
   });
 
@@ -109,7 +132,11 @@ async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
     false: "blocked",
   };
 
-  info(`test_csp: From "${site_csp}" to "${ext1_csp}" to "${ext2_csp}"`);
+  info(
+    `test_csp: From "${site_csp}" to ${JSON.stringify(
+      ext1_csp
+    )} to ${JSON.stringify(ext2_csp)}`
+  );
 
   equal(
     expect.img1_loaded,
@@ -131,84 +158,382 @@ async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
     results.script3_loaded,
     `expected third party script to be ${action[expect.script3_loaded]}`
   );
+
+  if (expect.cspJSON) {
+    Assert.deepEqual(
+      expect.cspJSON,
+      results.cspJSON["csp-policies"],
+      `Got the expected final CSP set on the content document`
+    );
+  }
 }
 
+add_setup(async () => {
+  await AddonTestUtils.promiseStartupManager();
+});
+
+
+
 add_task(async function test_webRequest_mergecsp() {
-  await test_csp("default-src *", "script-src 'none'", null, {
-    img1_loaded: true,
-    img3_loaded: true,
-    script1_loaded: false,
-    script3_loaded: false,
-  });
-  await test_csp(null, "script-src 'none'", null, {
-    img1_loaded: true,
-    img3_loaded: true,
-    script1_loaded: false,
-    script3_loaded: false,
-  });
-  await test_csp("default-src *", "script-src 'none'", "img-src 'none'", {
-    img1_loaded: false,
-    img3_loaded: false,
-    script1_loaded: false,
-    script3_loaded: false,
-  });
-  await test_csp(null, "script-src 'none'", "img-src 'none'", {
-    img1_loaded: false,
-    img3_loaded: false,
-    script1_loaded: false,
-    script3_loaded: false,
-  });
-  await test_csp(
-    "default-src *",
-    "img-src example.com",
-    "img-src example.org",
+  const testCases = [
     {
+      site_csp: "default-src *",
+      ext1_csp: "script-src 'none'",
+      ext2_csp: null,
+      expect: {
+        img1_loaded: true,
+        img3_loaded: true,
+        script1_loaded: false,
+        script3_loaded: false,
+      },
+    },
+    {
+      site_csp: null,
+      ext1_csp: "script-src 'none'",
+      ext2_csp: null,
+      expect: {
+        img1_loaded: true,
+        img3_loaded: true,
+        script1_loaded: false,
+        script3_loaded: false,
+      },
+    },
+    {
+      site_csp: "default-src *",
+      ext1_csp: "script-src 'none'",
+      ext2_csp: "img-src 'none'",
+      expect: {
+        img1_loaded: false,
+        img3_loaded: false,
+        script1_loaded: false,
+        script3_loaded: false,
+      },
+    },
+    {
+      site_csp: null,
+      ext1_csp: "script-src 'none'",
+      ext2_csp: "img-src 'none'",
+      expect: {
+        img1_loaded: false,
+        img3_loaded: false,
+        script1_loaded: false,
+        script3_loaded: false,
+      },
+    },
+    {
+      site_csp: "default-src *",
+      ext1_csp: "img-src example.com",
+      ext2_csp: "img-src example.org",
+      expect: {
+        img1_loaded: false,
+        img3_loaded: false,
+        script1_loaded: true,
+        script3_loaded: true,
+      },
+    },
+  ];
+
+  const extMV2Data = { ...extensionData };
+  const extMV3Data = {
+    ...extensionData,
+    useAddonManager: "temporary",
+    manifest: {
+      ...extensionData.manifest,
+      manifest_version: 3,
+      permissions: ["webRequest", "webRequestBlocking"],
+      host_permissions: ["*://example.net/*"],
+      granted_host_permissions: true,
+    },
+  };
+
+  info("Run all test cases on ext1 MV2 and ext2 MV2");
+  for (const testCase of testCases) {
+    await test_csp({
+      ...testCase,
+      ext1_data: extMV2Data,
+      ext2_data: extMV2Data,
+    });
+  }
+
+  info("Run all test cases on ext1 MV3 and ext2 MV3");
+  for (const testCase of testCases) {
+    await test_csp({
+      ...testCase,
+      ext1_data: extMV3Data,
+      ext2_data: extMV3Data,
+    });
+  }
+
+  info("Run all test cases on ext1 MV3 and ext2 MV2");
+  for (const testCase of testCases) {
+    await test_csp({
+      ...testCase,
+      ext1_data: extMV3Data,
+      ext2_data: extMV2Data,
+    });
+  }
+
+  info("Run all test cases on ext1 MV2 and ext2 MV3");
+  for (const testCase of testCases) {
+    await test_csp({
+      ...testCase,
+      ext1_data: extMV2Data,
+      ext2_data: extMV3Data,
+    });
+  }
+});
+
+add_task(async function test_remove_and_replace_csp_mv2() {
+  
+  await test_csp({
+    site_csp: "img-src 'self'",
+    ext1_csp: "",
+    ext2_csp: "img-src example.com",
+    expect: {
+      img1_loaded: false,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+    },
+  });
+
+  
+  await test_csp({
+    site_csp: "default-src 'none'",
+    ext1_csp: "",
+    ext2_csp: "img-src example.com",
+    expect: {
+      img1_loaded: false,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+    },
+  });
+
+  
+  await test_csp({
+    site_csp: "default-src 'none'",
+    ext1_csp: "img-src example.com",
+    ext2_csp: null,
+    expect: {
+      img1_loaded: false,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+    },
+  });
+
+  
+  await test_csp({
+    site_csp: "default-src 'none'",
+    ext1_csp: null,
+    ext2_csp: "img-src example.com",
+    expect: {
+      img1_loaded: false,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+    },
+  });
+
+  
+  await test_csp({
+    site_csp: "default-src 'none'",
+    ext1_csp: "img-src example.com",
+    ext2_csp: "",
+    expect: {
+      img1_loaded: true,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+    },
+  });
+});
+
+
+
+add_task(async function test_remove_and_replace_csp_mv3() {
+  const extMV2Data = { ...extensionData };
+
+  const extMV3Data = {
+    ...extensionData,
+    useAddonManager: "temporary",
+    manifest: {
+      ...extensionData.manifest,
+      manifest_version: 3,
+      permissions: ["webRequest", "webRequestBlocking"],
+      host_permissions: ["*://example.net/*"],
+      granted_host_permissions: true,
+    },
+  };
+
+  await test_csp({
+    
+    site_csp: "img-src 'self'",
+    
+    ext1_csp: "",
+    
+    ext2_csp: "img-src example.com",
+    expect: {
       img1_loaded: false,
       img3_loaded: false,
       script1_loaded: true,
       script3_loaded: true,
-    }
-  );
-});
-
-add_task(async function test_remove_and_replace_csp() {
-  
-  await test_csp("img-src 'self'", "", "img-src example.com", {
-    img1_loaded: false,
-    img3_loaded: true,
-    script1_loaded: true,
-    script3_loaded: true,
+      cspJSON: [
+        { "img-src": ["'self'"], "report-only": false },
+        { "img-src": ["http://example.com"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
   });
 
-  
-  await test_csp("default-src 'none'", "", "img-src example.com", {
-    img1_loaded: false,
-    img3_loaded: true,
-    script1_loaded: true,
-    script3_loaded: true,
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    ext1_csp: "",
+    
+    ext2_csp: "img-src example.com",
+    expect: {
+      img1_loaded: false,
+      img3_loaded: false,
+      script1_loaded: false,
+      script3_loaded: false,
+      cspJSON: [
+        { "default-src": ["'none'"], "report-only": false },
+        { "img-src": ["http://example.com"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
   });
 
-  
-  await test_csp("default-src 'none'", "img-src example.com", null, {
-    img1_loaded: false,
-    img3_loaded: true,
-    script1_loaded: true,
-    script3_loaded: true,
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    
+    ext1_csp: "img-src example.com",
+    
+    ext2_csp: null,
+    expect: {
+      img1_loaded: false,
+      img3_loaded: false,
+      script1_loaded: false,
+      script3_loaded: false,
+      cspJSON: [
+        { "default-src": ["'none'"], "report-only": false },
+        { "img-src": ["http://example.com"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
   });
 
-  
-  await test_csp("default-src 'none'", null, "img-src example.com", {
-    img1_loaded: false,
-    img3_loaded: true,
-    script1_loaded: true,
-    script3_loaded: true,
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    
+    ext1_csp: "img-src example.com",
+    
+    ext2_csp: "",
+    expect: {
+      img1_loaded: false,
+      img3_loaded: false,
+      script1_loaded: false,
+      script3_loaded: false,
+      cspJSON: [
+        { "default-src": ["'none'"], "report-only": false },
+        { "img-src": ["http://example.com"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
   });
 
-  
-  await test_csp("default-src 'none'", "img-src example.com", "", {
-    img1_loaded: true,
-    img3_loaded: true,
-    script1_loaded: true,
-    script3_loaded: true,
+  await test_csp({
+    
+    site_csp: "default-src *",
+    
+    ext1_csp: "default-src 'none'",
+    
+    ext2_csp: null,
+    expect: {
+      img1_loaded: false,
+      img3_loaded: false,
+      script1_loaded: false,
+      script3_loaded: false,
+      cspJSON: [
+        { "default-src": ["*"], "report-only": false },
+        { "default-src": ["'none'"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
+  });
+
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    
+    
+    ext1_csp: "default-src *",
+    
+    ext2_csp: null,
+    expect: {
+      
+      img1_loaded: false,
+      img3_loaded: false,
+      script1_loaded: false,
+      script3_loaded: false,
+      cspJSON: [
+        { "default-src": ["'none'"], "report-only": false },
+        { "default-src": ["*"], "report-only": false },
+      ],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV3Data,
+  });
+
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    ext1_csp: "",
+    
+    
+    ext2_csp: "default-src *",
+    expect: {
+      img1_loaded: true,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+      cspJSON: [{ "default-src": ["*"], "report-only": false }],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV2Data,
+  });
+
+  await test_csp({
+    
+    site_csp: "default-src 'none'",
+    
+    ext1_csp: "",
+    
+    
+    ext2_csp: "",
+    expect: {
+      img1_loaded: true,
+      img3_loaded: true,
+      script1_loaded: true,
+      script3_loaded: true,
+      
+      cspJSON: [],
+    },
+    ext1_data: extMV3Data,
+    ext2_data: extMV2Data,
   });
 });

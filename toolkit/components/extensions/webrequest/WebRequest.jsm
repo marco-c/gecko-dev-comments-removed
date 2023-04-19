@@ -248,6 +248,26 @@ class ResponseHeaderChanger extends HeaderChanger {
       if (value) {
         merge = merge || this.didModifyCSP;
       }
+
+      
+      
+      
+      
+      
+      
+      if (opts.policy.manifestVersion > 2) {
+        if (value) {
+          
+          
+          merge = true;
+        } else {
+          
+          
+          
+          return;
+        }
+      }
+
       this.didModifyCSP = true;
     }
     try {
