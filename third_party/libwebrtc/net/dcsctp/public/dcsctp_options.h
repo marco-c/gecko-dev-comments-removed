@@ -133,6 +133,14 @@ struct DcSctpOptions {
   size_t cwnd_mtus_min = 4;
 
   
+  
+  
+  
+  
+  
+  int max_burst = 4;
+
+  
   int max_retransmissions = 10;
 
   
