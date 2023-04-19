@@ -530,6 +530,9 @@ void SVGMarkerObserver::OnRenderingChange() {
   MOZ_ASSERT(frame->IsFrameOfType(nsIFrame::eSVG), "SVG frame expected");
 
   
+  
+  
+  
   if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
     
     

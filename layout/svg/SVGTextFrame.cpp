@@ -2851,12 +2851,6 @@ void SVGTextFrame::ReflowSVGNonDisplayText() {
   
   
   
-  
-  SVGObserverUtils::InvalidateRenderingObservers(this);
-
-  
-  
-  
   MaybeReflowAnonymousBlockChild();
   UpdateGlyphPositioning();
 }
