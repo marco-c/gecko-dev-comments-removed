@@ -37,6 +37,9 @@ const TEST_URI = `data:text/html,<!DOCTYPE html><meta charset=utf8>console API c
   console.table(["${FILTER_PREFIX}", {hello: "world"}]);
 </script>`;
 
+
+requestLongerTimeout(2);
+
 add_task(async function() {
   
   await pushPref("devtools.browserconsole.contentMessages", true);
@@ -52,8 +55,11 @@ add_task(async function() {
   await checkMessages(false);
 });
 
-async function checkMessages(isFissionSupported) {
-  await pushPref("devtools.browsertoolbox.fission", isFissionSupported);
+async function checkMessages(isMultiprocessBrowserConsole) {
+  await pushPref(
+    "devtools.browsertoolbox.fission",
+    isMultiprocessBrowserConsole
+  );
 
   
   await openNewTabAndConsole(TEST_URI);
@@ -66,14 +72,14 @@ async function checkMessages(isFissionSupported) {
 
   
   
-  if (!isFissionSupported) {
+  if (!isMultiprocessBrowserConsole) {
     await reloadBrowser();
   }
 
   const chromeDebugToolbar = hud.ui.document.querySelector(
     ".chrome-debug-toolbar"
   );
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     ok(
       !!chromeDebugToolbar,
       "ChromeDebugToolbar is displayed when the Browser Console has fission support"
@@ -108,7 +114,7 @@ async function checkMessages(isFissionSupported) {
   }
 
   let evaluationContextSelectorButton;
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     evaluationContextSelectorButton = await waitFor(() =>
       hud.ui.outputNode.querySelector(".webconsole-evaluation-selector-button")
     );
@@ -150,7 +156,9 @@ async function checkMessages(isFissionSupported) {
   await waitFor(() => findErrorMessage(hud, "Content Cu.reportError"));
   ok(true, "reportError message from content process is displayed");
 
-  const suffix = isFissionSupported ? ` Object { hello: "world" }` : "";
+  const suffix = isMultiprocessBrowserConsole
+    ? ` Object { hello: "world" }`
+    : "";
   const expectedMessages = [
     contentArgs.log + suffix,
     contentArgs.warn + suffix,
@@ -166,7 +174,7 @@ async function checkMessages(isFissionSupported) {
   ];
 
   
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     expectedMessages.push("console.table()");
   }
 
@@ -186,7 +194,7 @@ async function checkMessages(isFissionSupported) {
   );
   ok(true, "Expected messages are displayed in the browser console");
 
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     const tableMessage = findConsoleAPIMessage(
       hud,
       "console.table()",
@@ -206,7 +214,7 @@ async function checkMessages(isFissionSupported) {
     );
   }
 
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     info("Set Browser Console Mode to parent process only");
     chromeDebugToolbar
       .querySelector(
@@ -230,7 +238,7 @@ async function checkMessages(isFissionSupported) {
     );
   }
 
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     is(
       hud.chromeWindow.document.title,
       "Parent process Browser Console",
@@ -264,7 +272,7 @@ async function checkMessages(isFissionSupported) {
     "Parent process message is still displayed"
   );
 
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     info("Set Browser Console Mode to Multiprocess");
     chromeDebugToolbar
       .querySelector(
@@ -305,7 +313,7 @@ async function checkMessages(isFissionSupported) {
     "reportError message from content process is only displayed once"
   );
 
-  if (isFissionSupported) {
+  if (isMultiprocessBrowserConsole) {
     is(
       hud.chromeWindow.document.title,
       "Multiprocess Browser Console",
@@ -315,4 +323,13 @@ async function checkMessages(isFissionSupported) {
 
   info("Clear and close the Browser Console");
   await safeCloseBrowserConsole({ clearOutput: true });
+
+  
+  
+  
+  if (!isMultiprocessBrowserConsole) {
+    await SpecialPowers.spawn(gBrowser.selectedTab.linkedBrowser, [], () =>
+      Services.console.reset()
+    );
+  }
 }
