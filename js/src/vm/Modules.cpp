@@ -114,7 +114,7 @@ static JSObject* CompileModuleHelper(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  GeneralErrorContext ec(cx);
+  MainThreadErrorContext ec(cx);
   return frontend::CompileModule(cx, &ec, options, srcBuf);
 }
 

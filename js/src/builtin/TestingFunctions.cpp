@@ -6439,7 +6439,7 @@ static bool CompileToStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
-  GeneralErrorContext ec(cx);
+  MainThreadErrorContext ec(cx);
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
   UniquePtr<frontend::ExtensibleCompilationStencil> stencil;

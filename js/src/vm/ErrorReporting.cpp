@@ -465,7 +465,7 @@ bool js::ReportErrorNumberVA(JSContext* cx, IsWarning isWarning,
   report.errorNumber = errorNumber;
   PopulateReportBlame(cx, &report);
 
-  GeneralErrorContext ec(cx);
+  MainThreadErrorContext ec(cx);
   if (!ExpandErrorArgumentsVA(&ec, callback, userRef, errorNumber,
                               argumentsType, &report, ap)) {
     return false;
@@ -506,7 +506,7 @@ static bool ReportErrorNumberArray(JSContext* cx, IsWarning isWarning,
   report.errorNumber = errorNumber;
   PopulateReportBlame(cx, &report);
 
-  GeneralErrorContext ec(cx);
+  MainThreadErrorContext ec(cx);
   if (!ExpandErrorArguments(&ec, callback, userRef, errorNumber, args, argType,
                             &report)) {
     return false;

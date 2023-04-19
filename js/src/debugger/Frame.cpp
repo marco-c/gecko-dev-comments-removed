@@ -995,7 +995,7 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
     MOZ_ASSERT(scopeKind == ScopeKind::Global ||
                scopeKind == ScopeKind::NonSyntactic);
 
-    GeneralErrorContext ec(cx);
+    MainThreadErrorContext ec(cx);
     script = frontend::CompileGlobalScript(cx, &ec, options, srcBuf, scopeKind);
     if (!script) {
       return false;
