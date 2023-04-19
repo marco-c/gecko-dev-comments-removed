@@ -118,8 +118,8 @@ void ScriptLoadRequest::Cancel() {
   if (HasWorkerLoadContext()) {
     
     
-    RefPtr<mozilla::dom::WorkerLoadContext> droppedContext =
-        StealWorkerLoadContext();
+    
+    GetWorkerLoadContext()->mRequest = nullptr;
   }
 }
 
