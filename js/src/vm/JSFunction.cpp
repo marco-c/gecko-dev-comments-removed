@@ -662,6 +662,16 @@ inline void JSFunction::trace(JSTracer* trc) {
       }
     }
   }
+  
+  
+  if (isAsmJSNative() || isWasm()) {
+    const Value& v = getExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT);
+    if (!v.isUndefined()) {
+      js::wasm::Instance* instance =
+          static_cast<js::wasm::Instance*>(v.toPrivate());
+      instance->trace(trc);
+    }
+  }
 }
 
 static void fun_trace(JSTracer* trc, JSObject* obj) {
