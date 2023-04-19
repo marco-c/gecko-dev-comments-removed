@@ -1646,6 +1646,7 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
   auto signalOOM = mozilla::MakeScopeExit(
       [&aRequest]() { aRequest->GetScriptLoadContext()->mRunnable = nullptr; });
 
+  
   if (aRequest->IsBytecode()) {
     JS::DecodeOptions decodeOptions(options);
     aRequest->GetScriptLoadContext()->mOffThreadToken =

@@ -106,13 +106,14 @@ void ScriptLoadContext::MaybeCancelOffThreadScript() {
 
   JSContext* cx = danger::GetJSContext();
   
-  if (mRequest->IsModuleRequest()) {
-    JS::CancelCompileModuleToStencilOffThread(cx, mOffThreadToken);
-  } else if (mRequest->IsSource()) {
-    JS::CancelCompileToStencilOffThread(cx, mOffThreadToken);
-  } else {
-    MOZ_ASSERT(mRequest->IsBytecode());
+  if (mRequest->IsBytecode()) {
     JS::CancelDecodeStencilOffThread(cx, mOffThreadToken);
+  } else if (mRequest->IsModuleRequest()) {
+    MOZ_ASSERT(mRequest->IsTextSource());
+    JS::CancelCompileModuleToStencilOffThread(cx, mOffThreadToken);
+  } else {
+    MOZ_ASSERT(mRequest->IsTextSource());
+    JS::CancelCompileToStencilOffThread(cx, mOffThreadToken);
   }
 
   
