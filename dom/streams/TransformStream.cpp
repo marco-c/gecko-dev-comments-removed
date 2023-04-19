@@ -40,63 +40,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStream)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
-
-
-already_AddRefed<TransformStream> TransformStream::CreateGeneric(
-    const GlobalObject& aGlobal, TransformerAlgorithmsWrapper& aAlgorithms,
-    ErrorResult& aRv) {
-  
-  double writableHighWaterMark = 1;
-
-  
-  
-  
-  RefPtr<QueuingStrategySize> writableSizeAlgorithm;
-
-  
-  double readableHighWaterMark = 0;
-
-  
-  
-  
-  RefPtr<QueuingStrategySize> readableSizeAlgorithm;
-
-  
-  
-  
-  
-
-  
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<Promise> startPromise =
-      Promise::CreateResolvedWithUndefined(global, aRv);
-  if (!startPromise) {
-    return nullptr;
-  }
-
-  
-  
-  
-  auto stream = MakeRefPtr<TransformStream>(global, nullptr, nullptr);
-  stream->Initialize(aGlobal.Context(), startPromise, writableHighWaterMark,
-                     writableSizeAlgorithm, readableHighWaterMark,
-                     readableSizeAlgorithm, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  auto controller = MakeRefPtr<TransformStreamDefaultController>(global);
-
-  
-  
-  SetUpTransformStreamDefaultController(aGlobal.Context(), *stream, *controller,
-                                        aAlgorithms);
-
-  return stream.forget();
-}
-
 TransformStream::TransformStream(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
   mozilla::HoldJSObjects(this);
 }
@@ -137,7 +80,7 @@ void TransformStreamErrorWritableAndUnblockWrite(JSContext* aCx,
   
   
   if (aStream->Backpressure()) {
-    aStream->SetBackpressure(false, aRv);
+    TransformStreamSetBackpressure(aStream, false, aRv);
   }
 }
 
@@ -164,7 +107,7 @@ TransformStreamDefaultControllerPerformTransform(
     JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
   
   
-  RefPtr<TransformerAlgorithmsBase> algorithms = aController->Algorithms();
+  RefPtr<TransformerAlgorithms> algorithms = aController->Algorithms();
   RefPtr<Promise> transformPromise =
       algorithms->TransformCallback(aCx, aChunk, *aController, aRv);
   if (aRv.Failed()) {
@@ -337,7 +280,7 @@ class TransformStreamUnderlyingSinkAlgorithms final
 
     
     
-    RefPtr<TransformerAlgorithmsBase> algorithms = controller->Algorithms();
+    RefPtr<TransformerAlgorithms> algorithms = controller->Algorithms();
     RefPtr<Promise> flushPromise =
         algorithms->FlushCallback(aCx, *controller, aRv);
     if (aRv.Failed()) {
@@ -460,7 +403,7 @@ class TransformStreamUnderlyingSourceAlgorithms final
     MOZ_ASSERT(mStream->BackpressureChangePromise());
 
     
-    mStream->SetBackpressure(false, aRv);
+    TransformStreamSetBackpressure(mStream, false, aRv);
 
     
     return do_AddRef(mStream->BackpressureChangePromise());
@@ -508,25 +451,26 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
 NS_INTERFACE_MAP_END_INHERITING(TransformStreamUnderlyingSourceAlgorithms)
 
 
-void TransformStream::SetBackpressure(bool aBackpressure, ErrorResult& aRv) {
+void TransformStreamSetBackpressure(TransformStream* aStream,
+                                    bool aBackpressure, ErrorResult& aRv) {
   
-  MOZ_ASSERT(Backpressure() != aBackpressure);
+  MOZ_ASSERT(aStream->Backpressure() != aBackpressure);
 
   
   
-  if (Promise* promise = BackpressureChangePromise()) {
+  if (Promise* promise = aStream->BackpressureChangePromise()) {
     promise->MaybeResolveWithUndefined();
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
+  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
   if (aRv.Failed()) {
     return;
   }
-  mBackpressureChangePromise = promise;
+  aStream->SetBackpressureChangePromise(promise);
 
   
-  mBackpressure = aBackpressure;
+  aStream->SetBackpressure(aBackpressure);
 }
 
 
@@ -574,7 +518,7 @@ void TransformStream::Initialize(JSContext* aCx, Promise* aStartPromise,
   mBackpressureChangePromise = nullptr;
 
   
-  SetBackpressure(true, aRv);
+  TransformStreamSetBackpressure(this, true, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -702,6 +646,14 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
   }
 
   return transformStream.forget();
+}
+
+already_AddRefed<ReadableStream> TransformStream::GetReadable() {
+  return mReadable.forget();
+}
+
+already_AddRefed<WritableStream> TransformStream::GetWritable() {
+  return mWritable.forget();
 }
 
 }  

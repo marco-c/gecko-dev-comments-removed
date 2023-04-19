@@ -33,12 +33,12 @@ void TransformStreamDefaultController::SetStream(TransformStream& aStream) {
   mStream = &aStream;
 }
 
-TransformerAlgorithmsBase* TransformStreamDefaultController::Algorithms() {
+TransformerAlgorithms* TransformStreamDefaultController::Algorithms() {
   return mTransformerAlgorithms;
 }
 
 void TransformStreamDefaultController::SetAlgorithms(
-    TransformerAlgorithmsBase* aTransformerAlgorithms) {
+    TransformerAlgorithms* aTransformerAlgorithms) {
   mTransformerAlgorithms = aTransformerAlgorithms;
 }
 
@@ -140,7 +140,7 @@ void TransformStreamDefaultController::Enqueue(JSContext* aCx,
     MOZ_ASSERT(backpressure);
 
     
-    stream->SetBackpressure(true, aRv);
+    TransformStreamSetBackpressure(stream, true, aRv);
   }
 }
 
@@ -196,7 +196,7 @@ void TransformStreamDefaultController::Terminate(JSContext* aCx,
 void SetUpTransformStreamDefaultController(
     JSContext* aCx, TransformStream& aStream,
     TransformStreamDefaultController& aController,
-    TransformerAlgorithmsBase& aTransformerAlgorithms) {
+    TransformerAlgorithms& aTransformerAlgorithms) {
   
   
   MOZ_ASSERT(!aStream.Controller());
