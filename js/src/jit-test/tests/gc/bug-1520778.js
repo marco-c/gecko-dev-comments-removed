@@ -1,6 +1,6 @@
 
 gczeal(0);
-setMarkStackLimit(1);
+gcparam("markStackLimit", 1);
 var g = newGlobal({
     newCompartment: true
 });

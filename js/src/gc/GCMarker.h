@@ -21,7 +21,8 @@ namespace js {
 class SliceBudget;
 class WeakMapBase;
 
-static const size_t MARK_STACK_BASE_CAPACITY = 4096;
+static const size_t NON_INCREMENTAL_MARK_STACK_BASE_CAPACITY = 4096;
+static const size_t INCREMENTAL_MARK_STACK_BASE_CAPACITY = 32768;
 
 enum class SlotsOrElementsKind { Elements, FixedSlots, DynamicSlots };
 
@@ -129,20 +130,21 @@ class MarkStack {
     TaggedPtr ptr_;
   };
 
-  explicit MarkStack();
+  explicit MarkStack(size_t maxCapacity = DefaultCapacity);
   ~MarkStack();
+
+  static const size_t DefaultCapacity = SIZE_MAX;
 
   
   size_t capacity() { return stack().length(); }
 
   size_t position() const { return topIndex_; }
 
-  [[nodiscard]] bool init();
-  [[nodiscard]] bool resetStackCapacity();
+  [[nodiscard]] bool init(bool incrementalGCEnabled);
+  [[nodiscard]] bool setStackCapacity(bool incrementalGCEnabled);
 
-#ifdef JS_GC_ZEAL
+  size_t maxCapacity() const { return maxCapacity_; }
   void setMaxCapacity(size_t maxCapacity);
-#endif
 
   template <typename T>
   [[nodiscard]] bool push(T* ptr);
@@ -161,7 +163,13 @@ class MarkStack {
   TaggedPtr popPtr();
   SlotsOrElementsRange popSlotsOrElementsRange();
 
-  void clear();
+  void clear() {
+    
+    
+    stack().clearAndFree();
+    (void)stack().resize(NON_INCREMENTAL_MARK_STACK_BASE_CAPACITY);
+    topIndex_ = 0;
+  }
 
   void poisonUnused();
 
@@ -185,19 +193,39 @@ class MarkStack {
   [[nodiscard]] bool pushTaggedPtr(Tag tag, Cell* ptr);
 
   
-  MainThreadOrGCTaskData<StackVector> stack_;
-
-  
   MainThreadOrGCTaskData<size_t> topIndex_;
 
-#ifdef JS_GC_ZEAL
   
-  MainThreadOrGCTaskData<size_t> maxCapacity_{SIZE_MAX};
-#endif
+  MainThreadOrGCTaskData<size_t> maxCapacity_;
+
+  
+  MainThreadOrGCTaskData<StackVector> stack_;
 
 #ifdef DEBUG
-  mutable size_t iteratorCount_ = 0;
+  mutable size_t iteratorCount_;
 #endif
+
+  friend class MarkStackIter;
+};
+
+class MarkStackIter {
+  MarkStack& stack_;
+  size_t pos_;
+
+ public:
+  explicit MarkStackIter(MarkStack& stack);
+  ~MarkStackIter();
+
+  bool done() const;
+  MarkStack::Tag peekTag() const;
+  MarkStack::TaggedPtr peekPtr() const;
+  MarkStack::SlotsOrElementsRange peekSlotsOrElementsRange() const;
+  void next();
+  void nextPtr();
+  void nextArray();
+
+ private:
+  size_t position() const;
 };
 
 } 
@@ -227,9 +255,8 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   explicit GCMarker(JSRuntime* rt);
   [[nodiscard]] bool init();
 
-#ifdef JS_GC_ZEAL
   void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
-#endif
+  size_t maxCapacity() const { return stack.maxCapacity(); }
 
   bool isActive() const { return state != MarkingState::NotActive; }
 
@@ -311,12 +338,26 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
 
   bool isDrained();
 
+  
+  
+  enum MarkQueueProgress {
+    QueueYielded,   
+    QueueComplete,  
+    QueueSuspended  
+  };
+  MarkQueueProgress processMarkQueue();
+
   enum ShouldReportMarkTime : bool {
     ReportMarkTime = true,
     DontReportMarkTime = false
   };
   [[nodiscard]] bool markUntilBudgetExhausted(
       SliceBudget& budget, ShouldReportMarkTime reportTime = ReportMarkTime);
+
+  void setIncrementalGCEnabled(bool enabled) {
+    
+    (void)stack.setStackCapacity(enabled);
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -338,16 +379,7 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   template <typename T>
   void markImplicitEdges(T* oldThing);
 
-  bool isRegularMarking() const {
-    return state == MarkingState::RegularMarking;
-  }
   bool isWeakMarking() const { return state == MarkingState::WeakMarking; }
-
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
-
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
-
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
 
  private:
 #ifdef DEBUG
@@ -397,8 +429,13 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   inline void pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
                              size_t start, size_t end);
 
-  void processMarkStackTop(SliceBudget& budget);
-  friend class gc::GCRuntime;
+  bool isMarkStackEmpty() { return stack.isEmpty(); }
+
+  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+
+  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+
+  inline void processMarkStackTop(SliceBudget& budget);
 
   void markDelayedChildren(gc::Arena* arena);
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
@@ -456,6 +493,9 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
   MainThreadOrGCTaskData<bool> checkAtomMarking;
 
   
+  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
+
+  
 
 
 
@@ -469,6 +509,21 @@ class GCMarker final : public GenericTracerImpl<GCMarker> {
 
   MainThreadOrGCTaskData<Compartment*> tracingCompartment;
   MainThreadOrGCTaskData<Zone*> tracingZone;
+
+  
+
+
+
+
+
+
+
+
+
+  JS::WeakCache<GCVector<HeapPtr<JS::Value>, 0, SystemAllocPolicy>> markQueue;
+
+  
+  size_t queuePos;
 #endif  
 };
 
