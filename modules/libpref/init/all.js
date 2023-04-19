@@ -2553,8 +2553,6 @@ pref("font.size.monospace.x-math", 13);
   
 
   
-  pref("intl.tsf.hack.atok.create_native_caret", true);
-  
   
   
   
