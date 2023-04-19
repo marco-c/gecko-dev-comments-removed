@@ -47,9 +47,6 @@
 
 
 
-
-
-
 namespace webrtc {
 
 class NackTracker {
@@ -57,9 +54,7 @@ class NackTracker {
   
   static const size_t kNackListSizeLimit = 500;  
                                                  
-  
-  static NackTracker* Create(int nack_threshold_packets);
-
+  NackTracker();
   ~NackTracker();
 
   
@@ -117,12 +112,9 @@ class NackTracker {
   };
 
   struct NackElement {
-    NackElement(int64_t initial_time_to_play_ms,
-                uint32_t initial_timestamp,
-                bool missing)
+    NackElement(int64_t initial_time_to_play_ms, uint32_t initial_timestamp)
         : time_to_play_ms(initial_time_to_play_ms),
-          estimated_timestamp(initial_timestamp),
-          is_missing(missing) {}
+          estimated_timestamp(initial_timestamp) {}
 
     
     
@@ -135,10 +127,6 @@ class NackTracker {
     
     
     uint32_t estimated_timestamp;
-
-    
-    
-    bool is_missing;
   };
 
   class NackListCompare {
@@ -152,16 +140,8 @@ class NackTracker {
   typedef std::map<uint16_t, NackElement, NackListCompare> NackList;
 
   
-  explicit NackTracker(int nack_threshold_packets);
-
-  
   
   NackList GetNackList() const;
-
-  
-  
-  void AddToList(uint16_t sequence_number_current_received_rtp,
-                 uint32_t timestamp_current_received_rtp);
 
   
   
@@ -181,10 +161,6 @@ class NackTracker {
 
   
   
-  void ChangeFromLateToMissing(uint16_t sequence_number_current_received_rtp);
-
-  
-  
   
   void LimitNackListSize();
 
@@ -198,13 +174,6 @@ class NackTracker {
   void UpdatePacketLossRate(int packets_lost);
 
   const Config config_;
-
-  
-  
-  
-  
-  
-  const int nack_threshold_packets_;
 
   
   uint16_t sequence_num_last_received_rtp_;
