@@ -58,7 +58,6 @@ class AudioContentDescription;
 class VideoContentDescription;
 class RtpDataContentDescription;
 class SctpDataContentDescription;
-class UnsupportedContentDescription;
 
 
 
@@ -86,11 +85,6 @@ class MediaContentDescription {
 
   virtual SctpDataContentDescription* as_sctp() { return nullptr; }
   virtual const SctpDataContentDescription* as_sctp() const { return nullptr; }
-
-  virtual UnsupportedContentDescription* as_unsupported() { return nullptr; }
-  virtual const UnsupportedContentDescription* as_unsupported() const {
-    return nullptr;
-  }
 
   virtual bool has_codecs() const = 0;
 
@@ -412,37 +406,13 @@ class SctpDataContentDescription : public MediaContentDescription {
   int max_message_size_ = 64 * 1024;
 };
 
-class UnsupportedContentDescription : public MediaContentDescription {
- public:
-  explicit UnsupportedContentDescription(const std::string& media_type)
-      : media_type_(media_type) {}
-  MediaType type() const override { return MEDIA_TYPE_UNSUPPORTED; }
-
-  UnsupportedContentDescription* as_unsupported() override { return this; }
-  const UnsupportedContentDescription* as_unsupported() const override {
-    return this;
-  }
-
-  bool has_codecs() const override { return false; }
-  const std::string& media_type() const { return media_type_; }
-
- private:
-  UnsupportedContentDescription* CloneInternal() const override {
-    return new UnsupportedContentDescription(*this);
-  }
-
-  std::string media_type_;
-};
-
 
 
 enum class MediaProtocolType {
-  kRtp,   
-          
-  kSctp,  
-          
-  kOther  
-          
+  kRtp,  
+         
+  kSctp  
+         
 };
 
 
