@@ -285,13 +285,13 @@ function addListeners(element, events) {
 
 
 
-async function tap(element) {
-  let actions = new test_driver.Actions()
-    .addPointer("tapPointer", "touch")
+function tap(element) {
+  return new test_driver.Actions()
+    .addPointer("touchPointer", "touch")
     .pointerMove(0, 0, { origin: element })
     .pointerDown()
-    .pointerUp();
-  await actions.send();
+    .pointerUp()
+    .send();
 }
 
 
@@ -302,23 +302,23 @@ async function pressKey(element, key) {
 
 
 
-async function addListenersAndTap(element, events) {
+function addListenersAndTap(element, events) {
   addListeners(element, events);
-  tap(element);
+  return tap(element);
 }
 
 
 
 async function addListenersAndPress(element, key, events) {
   addListeners(element, events);
-  pressKey(element, key);
+  return pressKey(element, key);
 }
 
 
 
-async function addListenersAndClick(element) {
+function addListenersAndClick(element) {
   addListeners(element, ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'click']);
-  await test_driver.click(element);
+  return test_driver.click(element);
 }
 
 function filterAndAddToMap(events, map) {
