@@ -528,6 +528,11 @@ already_AddRefed<PerformanceMeasure> Performance::Measure(
     JSContext* aCx, const nsAString& aName,
     const StringOrPerformanceMeasureOptions& aStartOrMeasureOptions,
     const Optional<nsAString>& aEndMark, ErrorResult& aRv) {
+  if (!GetParentObject()) {
+    aRv.ThrowInvalidStateError("Global object is unavailable");
+    return nullptr;
+  }
+
   
   
   
