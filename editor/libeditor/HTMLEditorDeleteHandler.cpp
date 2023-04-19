@@ -971,6 +971,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     nsCOMPtr<nsIContent> mLeftContent;
     nsCOMPtr<nsIContent> mRightContent;
     nsCOMPtr<nsIContent> mLeafContentInOtherBlock;
+    
+    
+    
+    AutoTArray<OwningNonNull<nsIContent>, 8> mSkippedInvisibleContents;
     RefPtr<dom::HTMLBRElement> mBRElement;
     Mode mMode = Mode::NotInitialized;
   };  
@@ -2820,15 +2824,79 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return false;
   }
 
+  auto ScanJoinTarget = [&]() -> nsIContent* {
+    nsIContent* targetContent =
+        aDirectionAndAmount == nsIEditor::ePrevious
+            ? HTMLEditUtils::GetPreviousContent(
+                  aCurrentBlockElement, {WalkTreeOption::IgnoreNonEditableNode},
+                  editingHost)
+            : HTMLEditUtils::GetNextContent(
+                  aCurrentBlockElement, {WalkTreeOption::IgnoreNonEditableNode},
+                  editingHost);
+    
+    auto IsIgnorableDataNode = [](nsIContent* aContent) {
+      return aContent && HTMLEditUtils::IsRemovableNode(*aContent) &&
+             ((aContent->IsText() &&
+               aContent->AsText()->TextIsOnlyWhitespace() &&
+               !HTMLEditUtils::IsVisibleTextNode(*aContent->AsText())) ||
+              (aContent->IsCharacterData() && !aContent->IsText()));
+    };
+    if (!IsIgnorableDataNode(targetContent)) {
+      return targetContent;
+    }
+    MOZ_ASSERT(mSkippedInvisibleContents.IsEmpty());
+    for (nsIContent* adjacentContent =
+             aDirectionAndAmount == nsIEditor::ePrevious
+                 ? HTMLEditUtils::GetPreviousContent(
+                       *targetContent, {WalkTreeOption::StopAtBlockBoundary},
+                       editingHost)
+                 : HTMLEditUtils::GetNextContent(
+                       *targetContent, {WalkTreeOption::StopAtBlockBoundary},
+                       editingHost);
+         adjacentContent;
+         adjacentContent =
+             aDirectionAndAmount == nsIEditor::ePrevious
+                 ? HTMLEditUtils::GetPreviousContent(
+                       *adjacentContent, {WalkTreeOption::StopAtBlockBoundary},
+                       editingHost)
+                 : HTMLEditUtils::GetNextContent(
+                       *adjacentContent, {WalkTreeOption::StopAtBlockBoundary},
+                       editingHost)) {
+      
+      
+      if (!HTMLEditUtils::IsSimplyEditableNode(*adjacentContent)) {
+        break;
+      }
+      
+      if (HTMLEditUtils::IsBlockElement(*adjacentContent)) {
+        nsIContent* leafContent =
+            aDirectionAndAmount == nsIEditor::ePrevious
+                ? HTMLEditUtils::GetLastLeafContent(
+                      *adjacentContent, {LeafNodeType::OnlyEditableLeafNode})
+                : HTMLEditUtils::GetFirstLeafContent(
+                      *adjacentContent, {LeafNodeType::OnlyEditableLeafNode});
+        mSkippedInvisibleContents.AppendElement(*targetContent);
+        return leafContent ? leafContent : adjacentContent;
+      }
+      
+      
+      if (IsIgnorableDataNode(adjacentContent)) {
+        mSkippedInvisibleContents.AppendElement(*targetContent);
+        targetContent = adjacentContent;
+        continue;
+      }
+      
+      
+      break;
+    }
+    return targetContent;
+  };
+
   if (aDirectionAndAmount == nsIEditor::ePrevious) {
-    mLeftContent = HTMLEditUtils::GetPreviousContent(
-        aCurrentBlockElement, {WalkTreeOption::IgnoreNonEditableNode},
-        editingHost);
+    mLeftContent = ScanJoinTarget();
     mRightContent = aCaretPoint.GetContainerAs<nsIContent>();
   } else {
-    mRightContent = HTMLEditUtils::GetNextContent(
-        aCurrentBlockElement, {WalkTreeOption::IgnoreNonEditableNode},
-        editingHost);
+    mRightContent = ScanJoinTarget();
     mLeftContent = aCaretPoint.GetContainerAs<nsIContent>();
   }
 
@@ -2922,6 +2990,18 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
                    "retruning handled, but returned ignored");
     }
 #endif  
+
+    
+    
+    for (const OwningNonNull<nsIContent>& content : mSkippedInvisibleContents) {
+      nsresult rv =
+          aHTMLEditor.DeleteNodeWithTransaction(MOZ_KnownLive(content));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+        return EditActionResult(rv);
+      }
+    }
+    mSkippedInvisibleContents.Clear();
   }
   
   
