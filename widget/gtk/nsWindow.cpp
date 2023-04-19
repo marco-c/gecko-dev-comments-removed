@@ -2510,17 +2510,22 @@ void nsWindow::WaylandPopupMove() {
 
   if (!mPopupUseMoveToRect) {
     
+    if (gtk_widget_is_visible(mShell)) {
+      HideWaylandPopupWindow( true,
+                              false);
+    }
     
     
-    if (mPopupHint == ePopupTypeMenu) {
-      LOG("  use gtk_window_move(%d, %d) for hidden widget\n", mPopupPosition.x,
-          mPopupPosition.y);
-      gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
-    } else {
-      LOG("  use gtk_window_move(%d, %d) for visible widget\n",
+    
+    if (mPopupHint == ePopupTypeTooltip) {
+      LOG("  use relative gtk_window_move(%d, %d) for tooltips\n",
           mRelativePopupPosition.x, mRelativePopupPosition.y);
       gtk_window_move(GTK_WINDOW(mShell), mRelativePopupPosition.x,
                       mRelativePopupPosition.y);
+    } else {
+      LOG("  use absolute gtk_window_move(%d, %d) for menus\n",
+          mPopupPosition.x, mPopupPosition.y);
+      gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
     }
     
     
