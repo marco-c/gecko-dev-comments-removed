@@ -50,6 +50,7 @@ struct RelationData {
   nsStaticAtom* const mAtom;
   nsStaticAtom* const mValidTag;
   RelationType mType;
+  RelationType mReverseType;
 };
 
 
@@ -64,8 +65,10 @@ struct RelationData {
 
 
 static constexpr RelationData kRelationTypeAtoms[] = {
-    {nsGkAtoms::aria_labelledby, nullptr, RelationType::LABELLED_BY},
-    {nsGkAtoms::_for, nsGkAtoms::label, RelationType::LABEL_FOR},
+    {nsGkAtoms::aria_labelledby, nullptr, RelationType::LABELLED_BY,
+     RelationType::LABEL_FOR},
+    {nsGkAtoms::_for, nsGkAtoms::label, RelationType::LABEL_FOR,
+     RelationType::LABELLED_BY},
 };
 
 }  

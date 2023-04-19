@@ -319,6 +319,12 @@ class DocAccessibleParent : public RemoteAccessible,
 
   void URL(nsAString& aURL) const;
 
+  
+  
+  
+  nsTHashMap<uint64_t, nsTHashMap<uint64_t, nsTArray<uint64_t>>>
+      mReverseRelations;
+
  private:
   ~DocAccessibleParent();
 
