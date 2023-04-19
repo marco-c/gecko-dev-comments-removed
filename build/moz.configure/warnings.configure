@@ -189,6 +189,10 @@ check_and_add_warning("-Wno-error=atomic-alignment")
 check_and_add_warning("-Wno-error=deprecated-copy")
 
 
+
+check_and_add_warning("-Wno-error=deprecated-builtins")
+
+
 c_format_warning, cxx_format_warning = check_and_add_warning(
     "-Wformat", when=depends(target)(lambda t: t.kernel != "WINNT")
 )
