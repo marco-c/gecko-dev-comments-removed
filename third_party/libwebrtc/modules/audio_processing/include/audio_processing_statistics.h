@@ -28,6 +28,8 @@ struct RTC_EXPORT AudioProcessingStats {
   
   
   
+  
+  
   absl::optional<bool> voice_detected;
 
   
