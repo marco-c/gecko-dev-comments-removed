@@ -4,7 +4,7 @@
 
 
 
-#include "QuotaCommon.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
 
 #ifdef QM_ERROR_STACKS_ENABLED
 #  include "base/process_util.h"
