@@ -32,9 +32,15 @@ const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH = 10;
 const TIMESTAMP_REGEXP = /^\d{10}$/;
 
-const MERINO_ENDPOINT_PARAM_QUERY = "q";
-const MERINO_ENDPOINT_PARAM_CLIENT_VARIANTS = "client_variants";
-const MERINO_ENDPOINT_PARAM_PROVIDERS = "providers";
+const MERINO_PARAMS = {
+  CLIENT_VARIANTS: "client_variants",
+  PROVIDERS: "providers",
+  QUERY: "q",
+  SEQUENCE_NUMBER: "seq",
+  SESSION_ID: "sid",
+};
+
+const MERINO_SESSION_TIMEOUT_MS = 5 * 60 * 1000; 
 
 const IMPRESSION_COUNTERS_RESET_INTERVAL_MS = 60 * 60 * 1000; 
 
@@ -152,19 +158,29 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
 
 
-  get timestampTemplate() {
+  get TIMESTAMP_TEMPLATE() {
     return TIMESTAMP_TEMPLATE;
   }
 
   
 
 
-  get timestampLength() {
+  get TIMESTAMP_LENGTH() {
     return TIMESTAMP_LENGTH;
   }
 
-  get telemetryScalars() {
+  
+
+
+  get TELEMETRY_SCALARS() {
     return { ...TELEMETRY_SCALARS };
+  }
+
+  
+
+
+  get MERINO_PARAMS() {
+    return { ...MERINO_PARAMS };
   }
 
   
@@ -462,15 +478,20 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state, queryContext, details) {
-    if (!this._resultFromLastQuery) {
-      return;
-    }
     let result = this._resultFromLastQuery;
     this._resultFromLastQuery = null;
 
     
     
-    if (state == "engagement") {
+    
+    
+    if (this._merinoSessionID && state != "start") {
+      this._resetMerinoSessionID();
+    }
+
+    
+    
+    if (result && state == "engagement") {
       this._recordEngagementTelemetry(
         result,
         isPrivate,
@@ -821,6 +842,22 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let instance = this.queryInstance;
 
     
+    if (!this._merinoSessionID) {
+      this._merinoSessionID = Services.uuid.generateUUID();
+      this._merinoSequenceNumber = 0;
+      this._merinoSessionTimer?.cancel();
+
+      
+      
+      this._merinoSessionTimer = new SkippableTimer({
+        name: "Merino session timeout",
+        time: this._merinoSessionTimeoutMs,
+        logger: this.logger,
+        callback: () => this._resetMerinoSessionID(),
+      });
+    }
+
+    
     
     let endpointString = UrlbarPrefs.get("merino.endpointURL");
     if (!endpointString) {
@@ -833,26 +870,28 @@ class ProviderQuickSuggest extends UrlbarProvider {
       this.logger.error("Could not make Merino endpoint URL: " + error);
       return null;
     }
-    url.searchParams.set(MERINO_ENDPOINT_PARAM_QUERY, searchString);
+    url.searchParams.set(MERINO_PARAMS.QUERY, searchString);
+    url.searchParams.set(MERINO_PARAMS.SESSION_ID, this._merinoSessionID);
+    url.searchParams.set(
+      MERINO_PARAMS.SEQUENCE_NUMBER,
+      this._merinoSequenceNumber
+    );
 
     let clientVariants = UrlbarPrefs.get("merino.clientVariants");
     if (clientVariants) {
-      url.searchParams.set(
-        MERINO_ENDPOINT_PARAM_CLIENT_VARIANTS,
-        clientVariants
-      );
+      url.searchParams.set(MERINO_PARAMS.CLIENT_VARIANTS, clientVariants);
     }
 
     let providers = UrlbarPrefs.get("merino.providers");
     if (providers) {
-      url.searchParams.set(MERINO_ENDPOINT_PARAM_PROVIDERS, providers);
+      url.searchParams.set(MERINO_PARAMS.PROVIDERS, providers);
     } else if (
       !UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") &&
       !UrlbarPrefs.get("suggest.quicksuggest.sponsored")
     ) {
       
       
-      url.searchParams.set(MERINO_ENDPOINT_PARAM_PROVIDERS, "");
+      url.searchParams.set(MERINO_PARAMS.PROVIDERS, "");
     }
 
     let responseHistogram = Services.telemetry.getHistogramById(
@@ -904,6 +943,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
           response = await fetch(url, { signal: controller.signal });
           TelemetryStopwatch.finish(TELEMETRY_MERINO_LATENCY, queryContext);
           maybeRecordResponse(response.ok ? "success" : "http_error");
+
+          
+          
+          
+          
+          
+          
+          
+          this._merinoSequenceNumber++;
         } catch (error) {
           TelemetryStopwatch.cancel(TELEMETRY_MERINO_LATENCY, queryContext);
           if (error.name != "AbortError") {
@@ -954,6 +1002,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
       request_id,
       source: QUICK_SUGGEST_SOURCE.MERINO,
     }));
+  }
+
+  
+
+
+  _resetMerinoSessionID() {
+    this._merinoSessionID = null;
+    this._merinoSequenceNumber = 0;
+    this._merinoSessionTimer?.cancel();
+    this._merinoSessionTimer = null;
   }
 
   
@@ -1560,6 +1618,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   
   _updatingBlockedDigests = false;
+
+  
+  _merinoSessionID = null;
+  _merinoSequenceNumber = 0;
+  _merinoSessionTimer = null;
+  _merinoSessionTimeoutMs = MERINO_SESSION_TIMEOUT_MS;
 }
 
 var UrlbarProviderQuickSuggest = new ProviderQuickSuggest();
