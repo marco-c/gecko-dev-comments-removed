@@ -69,7 +69,7 @@ void IMEHandler::Initialize() {
   TSFTextStore::Initialize();
   sIsInTSFMode = TSFTextStore::IsInTSFMode();
   sIsIMMEnabled =
-      !sIsInTSFMode || Preferences::GetBool("intl.tsf.support_imm", true);
+      !sIsInTSFMode || StaticPrefs::intl_tsf_support_imm_AtStartup();
   if (!sIsInTSFMode) {
     
     

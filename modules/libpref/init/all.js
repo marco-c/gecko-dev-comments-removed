@@ -2542,9 +2542,6 @@ pref("font.size.monospace.x-math", 13);
   pref("intl.tsf.enable", true);
 
   
-  pref("intl.tsf.support_imm", true);
-
-  
   
   
   
