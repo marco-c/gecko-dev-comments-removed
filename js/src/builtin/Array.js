@@ -79,10 +79,6 @@ SetIsInlinableLargeFunction(ArraySome);
 
 
 function ArraySort(comparefn) {
-  return SortArray(this, comparefn);
-}
-
-function SortArray(obj, comparefn) {
   
   if (comparefn !== undefined) {
     if (!IsCallable(comparefn)) {
@@ -91,7 +87,7 @@ function SortArray(obj, comparefn) {
   }
 
   
-  var O = ToObject(obj);
+  var O = ToObject(this);
 
   
   
@@ -1382,7 +1378,7 @@ function ArrayToSorted(comparefn) {
     DefineDataProperty(items, k, O[k]);
   }
 
-  SortArray(items, comparefn);
+  callFunction(ArraySort, items, comparefn);
 
   
   return items;
