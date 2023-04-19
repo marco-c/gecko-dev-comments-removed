@@ -33,7 +33,7 @@ function closeWindow(aClose, aPromptFunction, aSource) {
 
     
     if (aClose) {
-      window.SessionStore?.maybeDontRestoreTabs(window);
+      window.SessionStore?.maybeDontSaveTabs(window);
     }
   } else if (
     typeof aPromptFunction == "function" &&
