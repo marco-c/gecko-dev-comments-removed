@@ -81,11 +81,11 @@ TabCapturerWebrtc::~TabCapturerWebrtc() {
         for (const auto& req : mRequests) {
           req->Disconnect();
         }
+        mMainThreadWorker->BeginShutdown();
       })));
-  mMainThreadWorker->BeginShutdown();
   
   
-  mMainThreadWorker->AwaitIdle();
+  mMainThreadWorker->AwaitShutdownAndIdle();
 }
 
 bool TabCapturerWebrtc::GetSourceList(
