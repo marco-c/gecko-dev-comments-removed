@@ -57,6 +57,7 @@ add_task(async function test_chrome_utils_import() {
 add_task(async function test_cu_import() {
   for (const file of JSMs) {
     try {
+      
       Cu.import(file, {});
       ok(true, `Imported ${file}`);
     } catch (e) {

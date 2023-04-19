@@ -36,7 +36,10 @@ add_task(async function test() {
       
       let leakedConsoleEvent = consoleEvents[0];
 
+      
+      
       let doc = content.document;
+
       let promise = TestUtils.topicObserved(
         "inner-window-nuked",
         (subject, data) => {
