@@ -125,9 +125,9 @@ var interfaceNamesInGlobalScope = [
   
   "CacheStorage",
   
-  { name: "CanvasGradient", nightly: true },
+  { name: "CanvasGradient", earlyBetaOrEarlier: true },
   
-  { name: "CanvasPattern", nightly: true },
+  { name: "CanvasPattern", earlyBetaOrEarlier: true },
   
   "Client",
   
@@ -181,11 +181,11 @@ var interfaceNamesInGlobalScope = [
   
   "FileReader",
   
-  { name: "FontFace", nightly: true },
+  { name: "FontFace", earlyBetaOrEarlier: true },
   
-  { name: "FontFaceSet", nightly: true },
+  { name: "FontFaceSet", earlyBetaOrEarlier: true },
   
-  { name: "FontFaceSetLoadEvent", nightly: true },
+  { name: "FontFaceSetLoadEvent", earlyBetaOrEarlier: true },
   
   "FormData",
   
@@ -241,11 +241,11 @@ var interfaceNamesInGlobalScope = [
   
   "NotificationEvent",
   
-  { name: "OffscreenCanvas", nightly: true },
+  { name: "OffscreenCanvas", earlyBetaOrEarlier: true },
   
-  { name: "OffscreenCanvasRenderingContext2D", nightly: true },
+  { name: "OffscreenCanvasRenderingContext2D", earlyBetaOrEarlier: true },
   
-  { name: "Path2D", nightly: true },
+  { name: "Path2D", earlyBetaOrEarlier: true },
   
   "Performance",
   
@@ -333,39 +333,39 @@ var interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
-  { name: "WebGL2RenderingContext", nightly: true },
+  { name: "WebGL2RenderingContext", earlyBetaOrEarlier: true },
   
-  { name: "WebGLActiveInfo", nightly: true },
+  { name: "WebGLActiveInfo", earlyBetaOrEarlier: true },
   
-  { name: "WebGLBuffer", nightly: true },
+  { name: "WebGLBuffer", earlyBetaOrEarlier: true },
   
-  { name: "WebGLContextEvent", nightly: true },
+  { name: "WebGLContextEvent", earlyBetaOrEarlier: true },
   
-  { name: "WebGLFramebuffer", nightly: true },
+  { name: "WebGLFramebuffer", earlyBetaOrEarlier: true },
   
-  { name: "WebGLProgram", nightly: true },
+  { name: "WebGLProgram", earlyBetaOrEarlier: true },
   
   "WebGLQuery",
   
-  { name: "WebGLRenderbuffer", nightly: true },
+  { name: "WebGLRenderbuffer", earlyBetaOrEarlier: true },
   
-  { name: "WebGLRenderingContext", nightly: true },
+  { name: "WebGLRenderingContext", earlyBetaOrEarlier: true },
   
-  { name: "WebGLSampler", nightly: true },
+  { name: "WebGLSampler", earlyBetaOrEarlier: true },
   
-  { name: "WebGLShader", nightly: true },
+  { name: "WebGLShader", earlyBetaOrEarlier: true },
   
-  { name: "WebGLShaderPrecisionFormat", nightly: true },
+  { name: "WebGLShaderPrecisionFormat", earlyBetaOrEarlier: true },
   
-  { name: "WebGLSync", nightly: true },
+  { name: "WebGLSync", earlyBetaOrEarlier: true },
   
-  { name: "WebGLTexture", nightly: true },
+  { name: "WebGLTexture", earlyBetaOrEarlier: true },
   
-  { name: "WebGLTransformFeedback", nightly: true },
+  { name: "WebGLTransformFeedback", earlyBetaOrEarlier: true },
   
-  { name: "WebGLUniformLocation", nightly: true },
+  { name: "WebGLUniformLocation", earlyBetaOrEarlier: true },
   
-  { name: "WebGLVertexArrayObject", nightly: true },
+  { name: "WebGLVertexArrayObject", earlyBetaOrEarlier: true },
   
   "WindowClient",
   

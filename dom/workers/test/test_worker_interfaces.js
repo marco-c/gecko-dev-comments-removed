@@ -134,9 +134,9 @@ var interfaceNamesInGlobalScope = [
   
   "CacheStorage",
   
-  { name: "CanvasGradient", insecureContext: true, nightly: true },
+  { name: "CanvasGradient", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "CanvasPattern", insecureContext: true, nightly: true },
+  { name: "CanvasPattern", insecureContext: true, earlyBetaOrEarlier: true },
   
   { name: "CloseEvent", insecureContext: true },
   
@@ -186,11 +186,15 @@ var interfaceNamesInGlobalScope = [
   
   { name: "FileReaderSync", insecureContext: true },
   
-  { name: "FontFace", insecureContext: true, nightly: true },
+  { name: "FontFace", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "FontFaceSet", insecureContext: true, nightly: true },
+  { name: "FontFaceSet", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "FontFaceSetLoadEvent", insecureContext: true, nightly: true },
+  {
+    name: "FontFaceSetLoadEvent",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
   { name: "FormData", insecureContext: true },
   
@@ -238,15 +242,15 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Notification", insecureContext: true },
   
-  { name: "OffscreenCanvas", insecureContext: true, nightly: true },
+  { name: "OffscreenCanvas", insecureContext: true, earlyBetaOrEarlier: true },
   
   {
     name: "OffscreenCanvasRenderingContext2D",
     insecureContext: true,
-    nightly: true,
+    earlyBetaOrEarlier: true,
   },
   
-  { name: "Path2D", insecureContext: true, nightly: true },
+  { name: "Path2D", insecureContext: true, earlyBetaOrEarlier: true },
   
   { name: "Performance", insecureContext: true },
   
@@ -326,39 +330,71 @@ var interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
-  { name: "WebGL2RenderingContext", insecureContext: true, nightly: true },
+  {
+    name: "WebGL2RenderingContext",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLActiveInfo", insecureContext: true, nightly: true },
+  { name: "WebGLActiveInfo", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLBuffer", insecureContext: true, nightly: true },
+  { name: "WebGLBuffer", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLContextEvent", insecureContext: true, nightly: true },
+  {
+    name: "WebGLContextEvent",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLFramebuffer", insecureContext: true, nightly: true },
+  { name: "WebGLFramebuffer", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLProgram", insecureContext: true, nightly: true },
+  { name: "WebGLProgram", insecureContext: true, earlyBetaOrEarlier: true },
   
   { name: "WebGLQuery", insecureContext: true },
   
-  { name: "WebGLRenderbuffer", insecureContext: true, nightly: true },
+  {
+    name: "WebGLRenderbuffer",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLRenderingContext", insecureContext: true, nightly: true },
+  {
+    name: "WebGLRenderingContext",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLSampler", insecureContext: true, nightly: true },
+  { name: "WebGLSampler", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLShader", insecureContext: true, nightly: true },
+  { name: "WebGLShader", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLShaderPrecisionFormat", insecureContext: true, nightly: true },
+  {
+    name: "WebGLShaderPrecisionFormat",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLSync", insecureContext: true, nightly: true },
+  { name: "WebGLSync", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLTexture", insecureContext: true, nightly: true },
+  { name: "WebGLTexture", insecureContext: true, earlyBetaOrEarlier: true },
   
-  { name: "WebGLTransformFeedback", insecureContext: true, nightly: true },
+  {
+    name: "WebGLTransformFeedback",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLUniformLocation", insecureContext: true, nightly: true },
+  {
+    name: "WebGLUniformLocation",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
-  { name: "WebGLVertexArrayObject", insecureContext: true, nightly: true },
+  {
+    name: "WebGLVertexArrayObject",
+    insecureContext: true,
+    earlyBetaOrEarlier: true,
+  },
   
   { name: "WebSocket", insecureContext: true },
   
