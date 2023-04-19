@@ -4,26 +4,39 @@
 
 "use strict";
 
+function getNavBarEndPosition() {
+  let navBar = document.getElementById("nav-bar");
+  let boundingRect = navBar.getBoundingClientRect();
+
+  
+  let y = boundingRect.top + Math.floor(boundingRect.height / 2);
+  
+  let x = boundingRect.width - 1;
+  return { x, y };
+}
+
 
 
 
 add_task(async function test_clicking_hamburger_edge_fitts() {
-  let oldWidth = window.outerWidth;
-  let maximizeDone = BrowserTestUtils.waitForEvent(
-    window,
-    "resize",
-    false,
-    () => window.outerWidth >= screen.width - 1
-  );
-  window.maximize();
-  
-  await maximizeDone;
+  if (window.windowState != window.STATE_MAXIMIZED) {
+    info(`Waiting for maximize, current state: ${window.windowState}`);
+    let resizeDone = BrowserTestUtils.waitForEvent(
+      window,
+      "resize",
+      false,
+      () => window.outerWidth >= screen.width - 1
+    );
+    let maximizeDone = BrowserTestUtils.waitForEvent(window, "sizemodechange");
+    window.maximize();
+    await maximizeDone;
+    await resizeDone;
+  }
 
-  
-  var navBar = document.getElementById("nav-bar");
-  var boundingRect = navBar.getBoundingClientRect();
-  var yPixel = boundingRect.top + Math.floor(boundingRect.height / 2);
-  var xPixel = boundingRect.width - 1; 
+  is(window.windowState, window.STATE_MAXIMIZED, "should be maximized");
+
+  let { x, y } = getNavBarEndPosition();
+  info(`Clicking in ${x}, ${y}`);
 
   let popupHiddenResolve;
   let popupHiddenPromise = new Promise(resolve => {
@@ -31,17 +44,13 @@ add_task(async function test_clicking_hamburger_edge_fitts() {
   });
   async function onPopupHidden() {
     PanelUI.panel.removeEventListener("popuphidden", onPopupHidden);
-    let restoreDone = BrowserTestUtils.waitForEvent(
-      window,
-      "resize",
-      false,
-      () => {
-        let w = window.outerWidth;
-        return w > oldWidth - 5 && w < oldWidth + 5;
-      }
-    );
+
+    info("Waiting for restore");
+
+    let restoreDone = BrowserTestUtils.waitForEvent(window, "sizemodechange");
     window.restore();
     await restoreDone;
+
     popupHiddenResolve();
   }
   function onPopupShown() {
@@ -55,6 +64,6 @@ add_task(async function test_clicking_hamburger_edge_fitts() {
     PanelUI.panel.removeEventListener("popuphidden", onPopupHidden);
   });
   PanelUI.panel.addEventListener("popupshown", onPopupShown);
-  EventUtils.synthesizeMouseAtPoint(xPixel, yPixel, {}, window);
+  EventUtils.synthesizeMouseAtPoint(x, y, {}, window);
   await popupHiddenPromise;
 });
