@@ -32,6 +32,9 @@ if (AppConstants.platform == "win") {
     "resource://gre/modules/subprocess/subprocess_win.jsm"
   );
 } else {
+  
+  
+  
   ChromeUtils.defineModuleGetter(
     lazy,
     "SubprocessImpl",

@@ -34,11 +34,15 @@ if (typeof module == "object") {
   const { XPCOMUtils } = ChromeUtils.import(
     "resource://gre/modules/XPCOMUtils.jsm"
   );
+  
+  
+  
   XPCOMUtils.defineLazyGetter(lazy, "validateBreakpointLocation", () => {
     return ChromeUtils.import(
       "resource://devtools/shared/validate-breakpoint.jsm"
     ).validateBreakpointLocation;
   });
+  
   XPCOMUtils.defineLazyGetter(lazy, "validateEventBreakpoint", () => {
     const { loader } = ChromeUtils.import(
       "resource://devtools/shared/loader/Loader.jsm"
