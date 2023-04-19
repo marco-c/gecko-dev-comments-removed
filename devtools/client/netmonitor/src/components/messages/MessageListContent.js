@@ -109,6 +109,11 @@ class MessageListContent extends Component {
     }
 
     
+    if (prevProps.messages.length && this.props.messages.length === 0) {
+      this.currentTruncatedNum = 0;
+    }
+
+    
     if (channelId !== prevProps.channelId && scrollAnchor) {
       scrollAnchor.scrollIntoView();
     }
