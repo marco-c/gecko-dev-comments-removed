@@ -20,6 +20,7 @@
 #include "frontend/Parser.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Range.h"
 #include "mozilla/Sprintf.h"
@@ -805,6 +806,7 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
   PrivateNameKind kind;
   switch (propType) {
     case PropertyType::Field:
+    case PropertyType::FieldWithAccessor:
       kind = PrivateNameKind::Field;
       break;
     case PropertyType::Method:
@@ -7818,7 +7820,8 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
     return false;
   }
 
-  if (propType == PropertyType::Field) {
+  if (propType == PropertyType::Field ||
+      propType == PropertyType::FieldWithAccessor) {
     if (isStatic) {
       if (propAtom == TaggedParserAtomIndex::WellKnown::prototype()) {
         errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
@@ -7864,13 +7867,13 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       return false;
     }
 
-    ClassFieldType field =
-        handler_.newClassFieldDefinition(propName, initializer, isStatic
+    ClassFieldType field = handler_.newClassFieldDefinition(
+        propName, initializer, isStatic
 #ifdef ENABLE_DECORATORS
-                                         ,
-                                         decorators
+        ,
+        decorators, propType == PropertyType::FieldWithAccessor
 #endif
-        );
+    );
     if (!field) {
       return false;
     }
@@ -11708,6 +11711,7 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
   
   
   
+  
 
   TokenKind ltok;
   if (!tokenStream.getToken(&ltok, TokenStream::SlashIsInvalid)) {
@@ -11723,6 +11727,9 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
   bool isAsync = false;
   bool isGetter = false;
   bool isSetter = false;
+#ifdef ENABLE_DECORATORS
+  bool hasAccessor = false;
+#endif
 
   if (ltok == TokenKind::Async) {
     
@@ -11760,6 +11767,24 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
     }
   }
 
+#ifdef ENABLE_DECORATORS
+  if (!isGenerator && !isAsync && propertyNameContext == PropertyNameInClass &&
+      ltok == TokenKind::Accessor) {
+    MOZ_ASSERT(!isGetter && !isSetter);
+    TokenKind tt;
+    if (!tokenStream.peekTokenSameLine(&tt)) {
+      return null();
+    }
+
+    
+    
+    if (TokenKindCanStartPropertyName(tt)) {
+      tokenStream.consumeKnownToken(tt);
+      hasAccessor = true;
+    }
+  }
+#endif
+
   Node propName = propertyName(yieldHandling, propertyNameContext, maybeDecl,
                                propList, propAtomOut);
   if (!propName) {
@@ -11774,7 +11799,11 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
   }
 
   if (tt == TokenKind::Colon) {
-    if (isGenerator || isAsync || isGetter || isSetter) {
+    if (isGenerator || isAsync || isGetter || isSetter
+#ifdef ENABLE_DECORATORS
+        || hasAccessor
+#endif
+    ) {
       error(JSMSG_BAD_PROP_ID);
       return null();
     }
@@ -11786,6 +11815,9 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
       TokenKindIsPossibleIdentifierName(ltok) &&
       (tt == TokenKind::Comma || tt == TokenKind::RightCurly ||
        tt == TokenKind::Assign)) {
+#ifdef ENABLE_DECORATORS
+    MOZ_ASSERT(!hasAccessor);
+#endif
     if (isGenerator || isAsync || isGetter || isSetter) {
       error(JSMSG_BAD_PROP_ID);
       return null();
@@ -11804,6 +11836,13 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
     if (propertyNameContext == PropertyNameInRecord) {
       
       
+      error(JSMSG_BAD_PROP_ID);
+      return null();
+    }
+#endif
+
+#ifdef ENABLE_DECORATORS
+    if (hasAccessor) {
       error(JSMSG_BAD_PROP_ID);
       return null();
     }
@@ -11831,7 +11870,15 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
       return null();
     }
     anyChars.ungetToken();
+#ifdef ENABLE_DECORATORS
+    if (!hasAccessor) {
+      *propType = PropertyType::Field;
+    } else {
+      *propType = PropertyType::FieldWithAccessor;
+    }
+#else
     *propType = PropertyType::Field;
+#endif
     return propName;
   }
 
