@@ -3,27 +3,30 @@
 
 
 
-#ifndef mozilla_HTMLEditHelpers_h
-#define mozilla_HTMLEditHelpers_h
+#ifndef HTMLEditHelpers_h
+#define HTMLEditHelpers_h
 
 
 
 
 
 
+
+#include "EditorDOMPoint.h"
+#include "EditorForwards.h"
+#include "EditorUtils.h"  
+#include "JoinSplitNodeDirection.h"
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EditorForwards.h"
-#include "mozilla/EditorUtils.h"  
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/StaticRange.h"
+
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
@@ -34,42 +37,6 @@
 class nsISimpleEnumerator;
 
 namespace mozilla {
-
-
-
-enum class JoinNodesDirection {
-  LeftNodeIntoRightNode,
-  RightNodeIntoLeftNode,
-};
-
-static inline std::ostream& operator<<(std::ostream& aStream,
-                                       JoinNodesDirection aJoinNodesDirection) {
-  if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-    return aStream << "JoinNodesDirection::LeftNodeIntoRightNode";
-  }
-  if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
-    return aStream << "JoinNodesDirection::RightNodeIntoLeftNode";
-  }
-  return aStream << "Invalid value";
-}
-
-
-
-enum class SplitNodeDirection {
-  LeftNodeIsNewOne,
-  RightNodeIsNewOne,
-};
-
-static inline std::ostream& operator<<(std::ostream& aStream,
-                                       SplitNodeDirection aSplitNodeDirection) {
-  if (aSplitNodeDirection == SplitNodeDirection::LeftNodeIsNewOne) {
-    return aStream << "SplitNodeDirection::LeftNodeIsNewOne";
-  }
-  if (aSplitNodeDirection == SplitNodeDirection::RightNodeIsNewOne) {
-    return aStream << "SplitNodeDirection::RightNodeIsNewOne";
-  }
-  return aStream << "Invalid value";
-}
 
 
 

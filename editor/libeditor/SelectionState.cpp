@@ -5,9 +5,9 @@
 
 #include "SelectionState.h"
 
-#include "AutoRangeArray.h"   
-#include "EditorUtils.h"      
-#include "HTMLEditHelpers.h"  
+#include "AutoRangeArray.h"          
+#include "EditorUtils.h"             
+#include "JoinSplitNodeDirection.h"  
 
 #include "mozilla/Assertions.h"    
 #include "mozilla/IntegerRange.h"  

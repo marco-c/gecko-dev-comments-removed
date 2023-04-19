@@ -9,7 +9,8 @@
 #include "HTMLEditHelpers.h"  
 #include "HTMLEditor.h"       
 #include "HTMLEditUtils.h"
-#include "SelectionState.h"  
+#include "JoinSplitNodeDirection.h"  
+#include "SelectionState.h"          
 
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"

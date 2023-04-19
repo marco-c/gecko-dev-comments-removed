@@ -5,10 +5,11 @@
 
 #include "AutoRangeArray.h"
 
-#include "EditorDOMPoint.h"  
-#include "EditorForwards.h"  
-#include "HTMLEditUtils.h"   
-#include "WSRunObject.h"     
+#include "EditorDOMPoint.h"   
+#include "EditorForwards.h"   
+#include "HTMLEditUtils.h"    
+#include "HTMLEditHelpers.h"  
+#include "WSRunObject.h"      
 
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/dom/Document.h"       
