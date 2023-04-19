@@ -632,9 +632,8 @@ class PeerConnection : public PeerConnectionInternal,
                                
                                
                                
-  const std::unique_ptr<rtc::SSLCertificateVerifier>
-      tls_cert_verifier_;  
-                           
+  const std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier_
+      RTC_GUARDED_BY(network_thread());
 
   
   
