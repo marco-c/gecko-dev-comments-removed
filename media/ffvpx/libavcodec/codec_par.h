@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "libavutil/avutil.h"
+#include "libavutil/channel_layout.h"
 #include "libavutil/rational.h"
 #include "libavutil/pixfmt.h"
 
@@ -154,16 +155,22 @@ typedef struct AVCodecParameters {
 
     int video_delay;
 
+#if FF_API_OLD_CHANNEL_LAYOUT
     
 
 
 
 
+
+    attribute_deprecated
     uint64_t channel_layout;
     
 
 
+
+    attribute_deprecated
     int      channels;
+#endif
     
 
 
@@ -198,6 +205,11 @@ typedef struct AVCodecParameters {
 
 
     int seek_preroll;
+
+    
+
+
+    AVChannelLayout ch_layout;
 } AVCodecParameters;
 
 

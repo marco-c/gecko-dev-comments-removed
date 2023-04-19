@@ -26,7 +26,6 @@
 
 #include "attributes.h"
 #include "pixfmt.h"
-#include "version.h"
 
 typedef struct AVComponentDescriptor {
     
@@ -56,17 +55,6 @@ typedef struct AVComponentDescriptor {
 
 
     int depth;
-
-#if FF_API_PLUS1_MINUS1
-    
-    attribute_deprecated int step_minus1;
-
-    
-    attribute_deprecated int depth_minus1;
-
-    
-    attribute_deprecated int offset_plus1;
-#endif
 } AVComponentDescriptor;
 
 
@@ -146,26 +134,6 @@ typedef struct AVPixFmtDescriptor {
 
 
 #define AV_PIX_FMT_FLAG_RGB          (1 << 5)
-
-#if FF_API_PSEUDOPAL
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define AV_PIX_FMT_FLAG_PSEUDOPAL    (1 << 6)
-#endif
 
 
 

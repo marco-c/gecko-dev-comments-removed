@@ -31,14 +31,6 @@
 
 #include "avcodec.h"
 
-typedef struct ThreadFrame {
-    AVFrame *f;
-    AVCodecContext *owner[2];
-    
-    
-    AVBufferRef *progress;
-} ThreadFrame;
-
 
 
 
@@ -70,32 +62,6 @@ int ff_thread_decode_frame(AVCodecContext *avctx, AVFrame *picture,
 
 void ff_thread_finish_setup(AVCodecContext *avctx);
 
-
-
-
-
-
-
-
-
-
-
-void ff_thread_report_progress(ThreadFrame *f, int progress, int field);
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ff_thread_await_progress(ThreadFrame *f, int progress, int field);
-
 #if FF_API_THREAD_SAFE_CALLBACKS
 
 
@@ -118,7 +84,7 @@ enum AVPixelFormat ff_thread_get_format(AVCodecContext *avctx, const enum AVPixe
 
 
 
-int ff_thread_get_buffer(AVCodecContext *avctx, ThreadFrame *f, int flags);
+int ff_thread_get_buffer(AVCodecContext *avctx, AVFrame *f, int flags);
 
 
 
@@ -131,9 +97,7 @@ int ff_thread_get_buffer(AVCodecContext *avctx, ThreadFrame *f, int flags);
 
 
 
-void ff_thread_release_buffer(AVCodecContext *avctx, ThreadFrame *f);
-
-int ff_thread_ref_frame(ThreadFrame *dst, const ThreadFrame *src);
+void ff_thread_release_buffer(AVCodecContext *avctx, AVFrame *f);
 
 int ff_thread_init(AVCodecContext *s);
 int ff_slice_thread_execute_with_mainfunc(AVCodecContext *avctx,
