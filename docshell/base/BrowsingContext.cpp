@@ -2448,6 +2448,8 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
   }
 
   JS::CloneDataPolicy clonePolicy;
+  clonePolicy.allowErrorStackFrames();
+
   if (callerInnerWindow && callerInnerWindow->IsSharedMemoryAllowed()) {
     clonePolicy.allowSharedMemoryObjects();
   }
