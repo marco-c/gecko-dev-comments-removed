@@ -35,7 +35,14 @@ class ReverbDecayEstimator {
               bool usable_linear_filter,
               bool stationary_signal);
   
-  float Decay() const { return decay_; }
+  
+  float Decay(bool mild) const {
+    if (use_adaptive_echo_decay_) {
+      return decay_;
+    } else {
+      return mild ? mild_decay_ : decay_;
+    }
+  }
   
   void Dump(ApmDataDumper* data_dumper) const;
 
@@ -103,6 +110,7 @@ class ReverbDecayEstimator {
   bool estimation_region_identified_ = false;
   std::vector<float> previous_gains_;
   float decay_;
+  float mild_decay_;
   float tail_gain_ = 0.f;
   float smoothing_constant_ = 0.f;
 };

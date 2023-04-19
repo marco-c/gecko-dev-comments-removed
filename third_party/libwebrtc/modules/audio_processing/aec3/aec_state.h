@@ -117,7 +117,11 @@ class AecState {
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
   
-  float ReverbDecay() const { return reverb_model_estimator_.ReverbDecay(); }
+  
+  
+  float ReverbDecay(bool mild) const {
+    return reverb_model_estimator_.ReverbDecay(mild);
+  }
 
   
   rtc::ArrayView<const float> GetReverbFrequencyResponse() const {

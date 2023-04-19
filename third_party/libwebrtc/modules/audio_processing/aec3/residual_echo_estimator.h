@@ -56,7 +56,8 @@ class ResidualEchoEstimator {
   
   void UpdateReverb(ReverbType reverb_type,
                     const AecState& aec_state,
-                    const RenderBuffer& render_buffer);
+                    const RenderBuffer& render_buffer,
+                    bool dominant_nearend);
 
   
   

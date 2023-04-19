@@ -45,7 +45,11 @@ class ReverbModelEstimator {
 
   
   
-  float ReverbDecay() const { return reverb_decay_estimators_[0]->Decay(); }
+  
+  
+  float ReverbDecay(bool mild) const {
+    return reverb_decay_estimators_[0]->Decay(mild);
+  }
 
   
   
