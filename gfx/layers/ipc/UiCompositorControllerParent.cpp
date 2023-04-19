@@ -70,8 +70,6 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvResume() {
       CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(
           mRootLayerTreeId);
   if (parent) {
-    
-    parent->ForceIsFirstPaint();
     parent->ResumeComposition();
   }
   return IPC_OK();

@@ -98,7 +98,6 @@
 #include "mozilla/layers/CompositorSession.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/UiCompositorControllerChild.h"
-#include "mozilla/layers/UiCompositorControllerMessageTypes.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/widget/AndroidVsync.h"
@@ -894,15 +893,8 @@ class LayerViewSupport final
   WindowPtr mWindow;
   GeckoSession::Compositor::WeakRef mCompositor;
   Atomic<bool, ReleaseAcquire> mCompositorPaused;
-  
-  java::sdk::Surface::GlobalRef mDefaultSurface;
-  
+  java::sdk::Surface::GlobalRef mSurface;
   java::sdk::SurfaceControl::GlobalRef mSurfaceControl;
-  
-  java::sdk::Surface::GlobalRef mChildSurface;
-  
-  
-  bool mIsSurfaceControlBlocked = false;
   int32_t mWidth;
   int32_t mHeight;
   
@@ -1033,17 +1025,16 @@ class LayerViewSupport final
       
       
       
-      if (mSurfaceControl && !mChildSurface) {
-        mChildSurface =
-            java::SurfaceControlManager::GetInstance()->GetChildSurface(
-                mSurfaceControl, mWidth, mHeight);
+      if (mSurfaceControl && !mSurface) {
+        mSurface = java::SurfaceControlManager::GetInstance()->GetChildSurface(
+            mSurfaceControl, mWidth, mHeight);
       }
 
       if (auto window{mWindow.Access()}) {
         nsWindow* gkWindow = window->GetNsWindow();
         if (gkWindow) {
           mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-              gkWindow->mWidgetId, GetSurface());
+              gkWindow->mWidgetId, mSurface);
         }
       }
 
@@ -1059,7 +1050,7 @@ class LayerViewSupport final
     if (mSurfaceControl) {
       
       
-      mChildSurface = nullptr;
+      mSurface = nullptr;
     }
 
     if (auto window = mWindow.Access()) {
@@ -1077,13 +1068,7 @@ class LayerViewSupport final
     }
   }
 
-  java::sdk::Surface::Param GetSurface() {
-    if (mSurfaceControl && !mIsSurfaceControlBlocked) {
-      return mChildSurface;
-    }
-
-    return mDefaultSurface;
-  }
+  java::sdk::Surface::Param GetSurface() { return mSurface; }
 
  private:
   already_AddRefed<DataSourceSurface> FlipScreenPixels(
@@ -1203,8 +1188,7 @@ class LayerViewSupport final
     if (mUiCompositorControllerChild) {
       mUiCompositorControllerChild->Pause();
 
-      mDefaultSurface = nullptr;
-      mChildSurface = nullptr;
+      mSurface = nullptr;
       mSurfaceControl = nullptr;
       if (auto window = mWindow.Access()) {
         nsWindow* gkWindow = window->GetNsWindow();
@@ -1247,7 +1231,6 @@ class LayerViewSupport final
 
     mWidth = aWidth;
     mHeight = aHeight;
-    mDefaultSurface = java::sdk::Surface::GlobalRef::From(aSurface);
     mSurfaceControl =
         java::sdk::SurfaceControl::GlobalRef::From(aSurfaceControl);
     if (mSurfaceControl) {
@@ -1255,11 +1238,10 @@ class LayerViewSupport final
       
       
       
-      mChildSurface =
-          java::SurfaceControlManager::GetInstance()->GetChildSurface(
-              mSurfaceControl, mWidth, mHeight);
+      mSurface = java::SurfaceControlManager::GetInstance()->GetChildSurface(
+          mSurfaceControl, mWidth, mHeight);
     } else {
-      mChildSurface = nullptr;
+      mSurface = java::sdk::Surface::GlobalRef::From(aSurface);
     }
 
     if (mUiCompositorControllerChild) {
@@ -1268,7 +1250,7 @@ class LayerViewSupport final
         if (gkWindow) {
           
           mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-              gkWindow->mWidgetId, GetSurface());
+              gkWindow->mWidgetId, mSurface);
         }
       }
 
@@ -1325,53 +1307,6 @@ class LayerViewSupport final
     
     nsAppShell::PostEvent(
         MakeUnique<LayerViewEvent>(MakeUnique<OnResumedEvent>(aObj)));
-  }
-
-  void BlockSurfaceControl() {
-    MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-    if (!mIsSurfaceControlBlocked) {
-      mIsSurfaceControlBlocked = true;
-      if (mSurfaceControl && mUiCompositorControllerChild) {
-        
-        
-        
-        
-        
-        if (auto window = mWindow.Access()) {
-          nsWindow* gkWindow = window->GetNsWindow();
-          if (gkWindow) {
-            mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-                gkWindow->mWidgetId, GetSurface());
-          }
-        }
-        if (!mCompositorPaused) {
-          mUiCompositorControllerChild->Resume();
-        }
-      }
-    }
-  }
-
-  void AllowSurfaceControl() {
-    MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-    if (mIsSurfaceControlBlocked) {
-      mIsSurfaceControlBlocked = false;
-      if (mSurfaceControl && mUiCompositorControllerChild) {
-        
-        
-        
-        
-        if (auto window = mWindow.Access()) {
-          nsWindow* gkWindow = window->GetNsWindow();
-          if (gkWindow) {
-            mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-                gkWindow->mWidgetId, GetSurface());
-          }
-        }
-        if (!mCompositorPaused) {
-          mUiCompositorControllerChild->Resume();
-        }
-      }
-    }
   }
 
   void SyncInvalidateAndScheduleComposite() {
@@ -1441,18 +1376,6 @@ class LayerViewSupport final
   }
 
   void RecvToolbarAnimatorMessage(int32_t aMessage) {
-    
-    
-    
-    if (aMessage == FIRST_PAINT) {
-      if (mIsSurfaceControlBlocked) {
-        java::SurfaceControlManager::GetInstance()->HideChildSurface(
-            mSurfaceControl);
-      } else {
-        java::SurfaceControlManager::GetInstance()->ShowChildSurface(
-            mSurfaceControl);
-      }
-    }
     auto compositor = GeckoSession::Compositor::LocalRef(mCompositor);
     if (compositor) {
       compositor->RecvToolbarAnimatorMessage(aMessage);
