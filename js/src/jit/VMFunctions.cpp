@@ -1297,8 +1297,9 @@ bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj, int32_t index,
                      HandleValue value, bool strict) {
   
   
-
+  
   MOZ_ASSERT(obj->isExtensible());
+  MOZ_ASSERT(!obj->isIndexed());
   MOZ_ASSERT(index >= 0);
 
   DenseElementResult result =
@@ -1307,8 +1308,7 @@ bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj, int32_t index,
     return result == DenseElementResult::Success;
   }
 
-  RootedValue indexVal(cx, Int32Value(index));
-  return SetObjectElement(cx, obj, indexVal, value, strict);
+  return DefineDataElement(cx, obj, index, value);
 }
 
 void AssertValidBigIntPtr(JSContext* cx, JS::BigInt* bi) {
