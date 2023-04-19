@@ -682,6 +682,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   ScriptLoadRequestList mLoadingAsyncRequests;
+  
+  
   ScriptLoadRequestList mLoadedAsyncRequests;
   ScriptLoadRequestList mDeferRequests;
   ScriptLoadRequestList mXSLTRequests;
