@@ -15,9 +15,11 @@ function IsStringMatchOptimizable() {
   var RegExpProto = GetBuiltinPrototype("RegExp");
   
   
-  return RegExpPrototypeOptimizable(RegExpProto) &&
-         RegExpProto.exec === RegExp_prototype_Exec &&
-         RegExpProto[GetBuiltinSymbol("match")] === RegExpMatch;
+  return (
+    RegExpPrototypeOptimizable(RegExpProto) &&
+    RegExpProto.exec === RegExp_prototype_Exec &&
+    RegExpProto[GetBuiltinSymbol("match")] === RegExpMatch
+  );
 }
 
 function ThrowIncompatibleMethod(name, thisv) {
@@ -154,8 +156,7 @@ function String_pad(maxLength, fillString, padEnd) {
   
   
   
-  let truncatedStringFiller = callFunction(String_repeat, filler,
-                                           (fillLen / filler.length) | 0);
+  let truncatedStringFiller = callFunction(String_repeat, filler, (fillLen / filler.length) | 0);
 
   truncatedStringFiller += Substring(filler, 0, fillLen % filler.length);
 
@@ -201,9 +202,11 @@ function String_replace(searchValue, replaceValue) {
   }
 
   
-  if (!(typeof searchValue === "string" && StringProtoHasNoReplace()) &&
-      searchValue !== undefined && searchValue !== null)
-  {
+  if (
+    !(typeof searchValue === "string" && StringProtoHasNoReplace()) &&
+    searchValue !== undefined &&
+    searchValue !== null
+  ) {
     
     var replacer = GetMethod(searchValue, GetBuiltinSymbol("replace"));
 
@@ -340,8 +343,9 @@ function String_replaceAll(searchValue, replaceValue) {
     position = nextPosition;
 
     
-    var replacement = ToString(callContentFunction(replaceValue, undefined, searchString,
-                                                   position, string));
+    var replacement = ToString(
+      callContentFunction(replaceValue, undefined, searchString, position, string)
+    );
 
     
 
@@ -381,9 +385,11 @@ function IsStringSearchOptimizable() {
   var RegExpProto = GetBuiltinPrototype("RegExp");
   
   
-  return RegExpPrototypeOptimizable(RegExpProto) &&
-         RegExpProto.exec === RegExp_prototype_Exec &&
-         RegExpProto[GetBuiltinSymbol("search")] === RegExpSearch;
+  return (
+    RegExpPrototypeOptimizable(RegExpProto) &&
+    RegExpProto.exec === RegExp_prototype_Exec &&
+    RegExpProto[GetBuiltinSymbol("search")] === RegExpSearch
+  );
 }
 
 
@@ -454,9 +460,11 @@ function String_split(separator, limit) {
   }
 
   
-  if (!(typeof separator == "string" && StringProtoHasNoSplit()) &&
-      separator !== undefined && separator !== null)
-  {
+  if (
+    !(typeof separator == "string" && StringProtoHasNoSplit()) &&
+    separator !== undefined &&
+    separator !== null
+  ) {
     
     var splitter = GetMethod(separator, GetBuiltinSymbol("split"));
 
@@ -731,10 +739,14 @@ function String_repeat(count) {
   
   
   
-  assert(TO_INT32(MAX_STRING_LENGTH + 1) == MAX_STRING_LENGTH + 1,
-         "MAX_STRING_LENGTH + 1 must fit in int32");
-  assert(((MAX_STRING_LENGTH + 1) & (MAX_STRING_LENGTH + 2)) === 0,
-         "MAX_STRING_LENGTH + 1 can be used as a bitmask");
+  assert(
+    TO_INT32(MAX_STRING_LENGTH + 1) == MAX_STRING_LENGTH + 1,
+    "MAX_STRING_LENGTH + 1 must fit in int32"
+  );
+  assert(
+    ((MAX_STRING_LENGTH + 1) & (MAX_STRING_LENGTH + 2)) === 0,
+    "MAX_STRING_LENGTH + 1 can be used as a bitmask"
+  );
   n = n & (MAX_STRING_LENGTH + 1);
 
   
@@ -757,8 +769,7 @@ function String_repeat(count) {
 function String_iterator() {
   
   if (this === undefined || this === null) {
-    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO2, "String", "Symbol.iterator",
-                   ToString(this));
+    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO2, "String", "Symbol.iterator", ToString(this));
   }
 
   
@@ -774,8 +785,7 @@ function String_iterator() {
 function StringIteratorNext() {
   var obj = this;
   if (!IsObject(obj) || (obj = GuardToStringIterator(obj)) === null) {
-    return callFunction(CallStringIteratorMethodIfWrapped, this,
-                        "StringIteratorNext");
+    return callFunction(CallStringIteratorMethodIfWrapped, this, "StringIteratorNext");
   }
 
   var S = UnsafeGetStringFromReservedSlot(obj, ITERATOR_SLOT_TARGET);
