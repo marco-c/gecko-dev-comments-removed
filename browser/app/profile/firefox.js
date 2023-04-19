@@ -2678,7 +2678,7 @@ pref("svg.context-properties.content.allowed-domains", "profile.accounts.firefox
 pref("browser.snapshots.score.Visit", 1);
 pref("browser.snapshots.score.CurrentSession", 1);
 pref("browser.snapshots.score.IsUserPersisted", 1);
-pref("browser.snapshots.score.IsUsedRemoved", -10);
+pref("browser.snapshots.score.IsUserRemoved", -10);
 
 
 
