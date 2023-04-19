@@ -137,11 +137,9 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
     return true;
   }
 
-  
-  
   bool allowsInlineScript = true;
   nsresult rv =
-      aCSP->GetAllowsInline(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE,
+      aCSP->GetAllowsInline(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE,
                             u""_ns,                  
                             true,                    
                             nullptr,                 

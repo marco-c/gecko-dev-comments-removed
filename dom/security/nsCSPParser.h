@@ -182,9 +182,8 @@ class nsCSPParser {
 
   
   
-  bool mHasHashOrNonce;    
-  bool mHasAnyUnsafeEval;  
-  bool mStrictDynamic;     
+  bool mHasHashOrNonce;  
+  bool mStrictDynamic;   
   nsCSPKeywordSrc* mUnsafeInlineKeywordSrc;  
 
   
