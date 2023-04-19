@@ -744,14 +744,13 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
     
     
 
-#if defined(EARLY_BETA_OR_EARLIER)
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
         DeviceFamily::All, nsIGfxInfo::FEATURE_WEBRENDER,
         nsIGfxInfo::FEATURE_ALLOW_ALWAYS, DRIVER_GREATER_THAN_OR_EQUAL,
-        V(21, 0, 0, 0), "FEATURE_MESA", "Mesa 21.0.0.0");
-#endif
+        V(22, 2, 0, 0), "FEATURE_MESA", "Mesa 22.2.0.0");
 
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
