@@ -45,6 +45,8 @@ bool RRSendQueue::OutgoingStream::HasDataToSend(TimeMs now) {
     RRSendQueue::OutgoingStream::Item& item = items_.front();
     if (item.message_id.has_value()) {
       
+      
+      
       return true;
     }
 
