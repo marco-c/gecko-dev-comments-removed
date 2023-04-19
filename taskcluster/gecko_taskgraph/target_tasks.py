@@ -795,6 +795,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
         
         elif accept_raptor_android_build(platform):
             
+            if "chrome-m" in try_name and "-a51" in platform:
+                return False
+            
             if "fennec" in try_name:
                 return False
             
