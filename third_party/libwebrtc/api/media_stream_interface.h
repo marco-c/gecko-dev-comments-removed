@@ -28,6 +28,7 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
+#include "api/video_track_source_constraints.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
@@ -146,14 +147,19 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   
   
   
-  
-  
   virtual void AddEncodedSink(
       rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
 
   
   virtual void RemoveEncodedSink(
       rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
+
+  
+  
+  
+  
+  virtual void ProcessConstraints(
+      const webrtc::VideoTrackSourceConstraints& constraints) {}
 
  protected:
   ~VideoTrackSourceInterface() override = default;

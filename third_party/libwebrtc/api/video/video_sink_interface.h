@@ -11,6 +11,8 @@
 #ifndef API_VIDEO_VIDEO_SINK_INTERFACE_H_
 #define API_VIDEO_VIDEO_SINK_INTERFACE_H_
 
+#include "absl/types/optional.h"
+#include "api/video_track_source_constraints.h"
 #include "rtc_base/checks.h"
 
 namespace rtc {
@@ -25,6 +27,11 @@ class VideoSinkInterface {
   
   
   virtual void OnDiscardedFrame() {}
+
+  
+  
+  virtual void OnConstraintsChanged(
+      const webrtc::VideoTrackSourceConstraints& constraints) {}
 };
 
 }  
