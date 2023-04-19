@@ -85,6 +85,7 @@ if (AppConstants.MOZ_BACKGROUNDTASKS) {
   gExceptionPaths.push("resource://app/defaults/backgroundtasks/");
   
   gExceptionPaths.push("resource://gre/modules/backgroundtasks/");
+  gExceptionPaths.push("resource://app/modules/backgroundtasks/");
 }
 
 
