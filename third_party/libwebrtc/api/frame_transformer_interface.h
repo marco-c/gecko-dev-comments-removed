@@ -33,9 +33,7 @@ class TransformableFrameInterface {
   
   virtual void SetData(rtc::ArrayView<const uint8_t> data) = 0;
 
-  
-  
-  virtual uint8_t GetPayloadType() const { return 255; }
+  virtual uint8_t GetPayloadType() const = 0;
   virtual uint32_t GetSsrc() const = 0;
   virtual uint32_t GetTimestamp() const = 0;
 };
