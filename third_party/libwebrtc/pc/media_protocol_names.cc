@@ -10,6 +10,9 @@
 
 #include "pc/media_protocol_names.h"
 
+#include <ctype.h>
+#include <stddef.h>
+
 namespace cricket {
 
 
