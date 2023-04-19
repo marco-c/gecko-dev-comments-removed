@@ -578,9 +578,22 @@ int32_t LibaomAv1Encoder::Encode(
   
   VideoFrame prepped_input_frame = frame;
   if (prepped_input_frame.video_frame_buffer()->type() !=
-      VideoFrameBuffer::Type::kI420) {
+          VideoFrameBuffer::Type::kI420 &&
+      prepped_input_frame.video_frame_buffer()->type() !=
+          VideoFrameBuffer::Type::kI420A) {
     rtc::scoped_refptr<I420BufferInterface> converted_buffer(
         prepped_input_frame.video_frame_buffer()->ToI420());
+    
+    
+    
+    
+    
+    if (converted_buffer->type() != VideoFrameBuffer::Type::kI420 &&
+        converted_buffer->type() != VideoFrameBuffer::Type::kI420A) {
+      converted_buffer = converted_buffer->ToI420();
+      RTC_CHECK(converted_buffer->type() == VideoFrameBuffer::Type::kI420 ||
+                converted_buffer->type() == VideoFrameBuffer::Type::kI420A);
+    }
     prepped_input_frame = VideoFrame(converted_buffer, frame.timestamp(),
                                      frame.render_time_ms(), frame.rotation());
   }

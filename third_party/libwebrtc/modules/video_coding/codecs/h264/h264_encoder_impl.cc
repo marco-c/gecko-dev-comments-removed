@@ -373,8 +373,19 @@ int32_t H264EncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  rtc::scoped_refptr<const I420BufferInterface> frame_buffer =
+  rtc::scoped_refptr<I420BufferInterface> frame_buffer =
       input_frame.video_frame_buffer()->ToI420();
+  
+  
+  
+  
+  
+  if (frame_buffer->type() != VideoFrameBuffer::Type::kI420 &&
+      frame_buffer->type() != VideoFrameBuffer::Type::kI420A) {
+    frame_buffer = frame_buffer->ToI420();
+    RTC_CHECK(frame_buffer->type() == VideoFrameBuffer::Type::kI420 ||
+              frame_buffer->type() == VideoFrameBuffer::Type::kI420A);
+  }
 
   bool send_key_frame = false;
   for (size_t i = 0; i < configurations_.size(); ++i) {

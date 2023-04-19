@@ -1643,45 +1643,12 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   last_encode_info_ms_ = clock_->TimeInMilliseconds();
 
   VideoFrame out_frame(video_frame);
-  if (out_frame.video_frame_buffer()->type() ==
-          VideoFrameBuffer::Type::kNative &&
-      !info.supports_native_handle) {
-    
-    rtc::scoped_refptr<VideoFrameBuffer> buffer =
-        out_frame.video_frame_buffer()->GetMappedFrameBuffer(
-            info.preferred_pixel_formats);
-    bool buffer_was_converted = false;
-    if (!buffer) {
-      buffer = out_frame.video_frame_buffer()->ToI420();
-      
-      
-      
-      buffer_was_converted =
-          (out_frame.video_frame_buffer()->GetI420() == nullptr);
-    }
-    if (!buffer) {
-      RTC_LOG(LS_ERROR) << "Frame conversion failed, dropping frame.";
-      return;
-    }
-
-    VideoFrame::UpdateRect update_rect = out_frame.update_rect();
-    if (!update_rect.IsEmpty() &&
-        out_frame.video_frame_buffer()->GetI420() == nullptr) {
-      
-      
-      
-      update_rect =
-          VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
-    }
-    out_frame.set_video_frame_buffer(buffer);
-    out_frame.set_update_rect(update_rect);
-  }
-
+  
   
   if ((crop_width_ > 0 || crop_height_ > 0) &&
-      out_frame.video_frame_buffer()->type() !=
-          VideoFrameBuffer::Type::kNative) {
-    
+      (out_frame.video_frame_buffer()->type() !=
+           VideoFrameBuffer::Type::kNative ||
+       !info.supports_native_handle)) {
     int cropped_width = video_frame.width() - crop_width_;
     int cropped_height = video_frame.height() - crop_height_;
     rtc::scoped_refptr<VideoFrameBuffer> cropped_buffer;
@@ -1689,6 +1656,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     
     VideoFrame::UpdateRect update_rect = video_frame.update_rect();
     if (crop_width_ < 4 && crop_height_ < 4) {
+      
       cropped_buffer = video_frame.video_frame_buffer()->CropAndScale(
           crop_width_ / 2, crop_height_ / 2, cropped_width, cropped_height,
           cropped_width, cropped_height);
@@ -1698,6 +1666,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
           VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height});
 
     } else {
+      
       cropped_buffer = video_frame.video_frame_buffer()->Scale(cropped_width,
                                                                cropped_height);
       if (!update_rect.IsEmpty()) {
@@ -1742,14 +1711,12 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   stream_resource_manager_.OnEncodeStarted(out_frame, time_when_posted_us);
 
-  RTC_DCHECK_LE(send_codec_.width, out_frame.width());
-  RTC_DCHECK_LE(send_codec_.height, out_frame.height());
   
-  
-  RTC_DCHECK((out_frame.video_frame_buffer()->type() ==
-              VideoFrameBuffer::Type::kNative) ||
-             (send_codec_.width == out_frame.width() &&
-              send_codec_.height == out_frame.height()));
+  RTC_DCHECK(send_codec_.width <= out_frame.width() &&
+             send_codec_.height <= out_frame.height())
+      << "Encoder configured to " << send_codec_.width << "x"
+      << send_codec_.height << " received a too small frame "
+      << out_frame.width() << "x" << out_frame.height();
 
   TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
                out_frame.timestamp());
