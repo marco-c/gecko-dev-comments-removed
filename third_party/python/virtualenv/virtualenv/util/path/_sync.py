@@ -15,6 +15,7 @@ if PY2 and IS_CPYTHON and IS_WIN:
     def norm(src):
         return ensure_text(str(src))
 
+
 else:
     norm = str
 
