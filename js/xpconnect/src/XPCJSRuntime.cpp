@@ -103,6 +103,7 @@ const char* const XPCJSRuntime::mStrings[] = {
     "Ci",               
     "Cr",               
     "Cu",               
+    "Services",         
     "wrappedJSObject",  
     "prototype",        
     "eval",             
