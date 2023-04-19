@@ -60,6 +60,7 @@ class CallStats2Test : public ::testing::Test {
   }
 
   test::RunLoop loop_;
+  
   std::unique_ptr<ProcessThread> process_thread_{
       ProcessThread::Create("CallStats")};
   
