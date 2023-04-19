@@ -52,5 +52,23 @@ std::ostream& operator<<(std::ostream& aStream, const LayersId& aId) {
   return aStream << nsPrintfCString("0x%" PRIx64, aId.mId).get();
 }
 
+
+CompositableHandle CompositableHandle::GetNext() {
+  static std::atomic<uint64_t> sCounter = 0;
+  return CompositableHandle{++sCounter};
+}
+
+
+RemoteTextureId RemoteTextureId::GetNext() {
+  static std::atomic<uint64_t> sCounter = 0;
+  return RemoteTextureId{++sCounter};
+}
+
+
+RemoteTextureOwnerId RemoteTextureOwnerId::GetNext() {
+  static std::atomic<uint64_t> sCounter = 0;
+  return RemoteTextureOwnerId{++sCounter};
+}
+
 }  
 }  

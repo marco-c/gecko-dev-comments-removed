@@ -302,13 +302,19 @@ class CompositableHandle final {
   friend struct IPC::ParamTraits<mozilla::layers::CompositableHandle>;
 
  public:
+  static CompositableHandle GetNext();
+
   CompositableHandle() : mHandle(0) {}
   CompositableHandle(const CompositableHandle& aOther) = default;
   explicit CompositableHandle(uint64_t aHandle) : mHandle(aHandle) {}
   bool IsValid() const { return mHandle != 0; }
   explicit operator bool() const { return IsValid(); }
+  explicit operator uint64_t() const { return mHandle; }
   bool operator==(const CompositableHandle& aOther) const {
     return mHandle == aOther.mHandle;
+  }
+  bool operator!=(const CompositableHandle& aOther) const {
+    return !(*this == aOther);
   }
   uint64_t Value() const { return mHandle; }
 
@@ -320,6 +326,80 @@ enum class CompositableHandleOwner : uint8_t {
   WebRenderBridge,
   ImageBridge,
   InProcessManager,
+};
+
+struct RemoteTextureId {
+  uint64_t mId = 0;
+
+  static RemoteTextureId GetNext();
+
+  bool IsValid() const { return mId != 0; }
+
+  
+  explicit operator uint64_t() const { return mId; }
+
+  
+  
+  bool operator<(const RemoteTextureId& aOther) const {
+    return mId < aOther.mId;
+  }
+
+  bool operator>(const RemoteTextureId& aOther) const {
+    return mId > aOther.mId;
+  }
+
+  bool operator==(const RemoteTextureId& aOther) const {
+    return mId == aOther.mId;
+  }
+
+  bool operator!=(const RemoteTextureId& aOther) const {
+    return !(*this == aOther);
+  }
+
+  
+  
+  
+  
+  struct HashFn {
+    std::size_t operator()(const RemoteTextureId aKey) const {
+      return std::hash<uint64_t>{}(aKey.mId);
+    }
+  };
+};
+
+struct RemoteTextureOwnerId {
+  uint64_t mId = 0;
+
+  static RemoteTextureOwnerId GetNext();
+
+  bool IsValid() const { return mId != 0; }
+
+  
+  explicit operator uint64_t() const { return mId; }
+
+  
+  
+  bool operator<(const RemoteTextureOwnerId& aOther) const {
+    return mId < aOther.mId;
+  }
+
+  bool operator==(const RemoteTextureOwnerId& aOther) const {
+    return mId == aOther.mId;
+  }
+
+  bool operator!=(const RemoteTextureOwnerId& aOther) const {
+    return !(*this == aOther);
+  }
+
+  
+  
+  
+  
+  struct HashFn {
+    std::size_t operator()(const RemoteTextureOwnerId aKey) const {
+      return std::hash<uint64_t>{}(aKey.mId);
+    }
+  };
 };
 
 

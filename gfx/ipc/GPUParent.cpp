@@ -52,6 +52,7 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
+#include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/VideoBridgeParent.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -194,6 +195,7 @@ bool GPUParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
 #endif
 
   CompositorThreadHolder::Start();
+  RemoteTextureMap::Init();
   APZThreadUtils::SetControllerThread(NS_GetCurrentThread());
   apz::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
@@ -685,6 +687,7 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         
         
         CanvasManagerParent::Shutdown();
+        RemoteTextureMap::Shutdown();
         CompositorThreadHolder::Shutdown();
         
         

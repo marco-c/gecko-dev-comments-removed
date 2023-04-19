@@ -18,6 +18,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayersSurfaces.h"     
+#include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/TextureHostOGL.h"     
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClient.h"
@@ -100,6 +101,9 @@ class TextureParent : public ParentActor<PTextureParent> {
 static bool WrapWithWebRenderTextureHost(ISurfaceAllocator* aDeallocator,
                                          LayersBackend aBackend,
                                          TextureFlags aFlags) {
+  if (!aDeallocator) {
+    return false;
+  }
   if ((aFlags & TextureFlags::SNAPSHOT) ||
       (!aDeallocator->UsesImageBridge() &&
        !aDeallocator->AsCompositorBridgeParentBase())) {
@@ -302,7 +306,7 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
           break;
         }
         case MemoryOrShmem::Tuintptr_t: {
-          if (!aDeallocator->IsSameProcess()) {
+          if (aDeallocator && !aDeallocator->IsSameProcess()) {
             NS_ERROR(
                 "A client process is trying to peek at our address space using "
                 "a MemoryTexture!");
@@ -350,6 +354,9 @@ TextureHost::~TextureHost() {
     
     
     ReadUnlock();
+  }
+  if (mDestroyedCallback) {
+    mDestroyedCallback();
   }
 }
 
