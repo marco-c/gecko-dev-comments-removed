@@ -1008,17 +1008,6 @@ Accessible* SessionAccessibility::GetAccessibleByID(int32_t aID) const {
   return accessible;
 }
 
-#ifdef DEBUG
-static bool IsDetachedDoc(Accessible* aAccessible) {
-  if (!aAccessible->IsRemote() || !aAccessible->AsRemote()->IsDoc()) {
-    return false;
-  }
-
-  return !aAccessible->Parent() ||
-         aAccessible->Parent()->FirstChild() != aAccessible;
-}
-#endif
-
 void SessionAccessibility::RegisterAccessible(Accessible* aAccessible) {
   if (IPCAccessibilityActive()) {
     
@@ -1055,14 +1044,8 @@ void SessionAccessibility::RegisterAccessible(Accessible* aAccessible) {
   }
   AccessibleWrap::SetVirtualViewID(aAccessible, virtualViewID);
 
-  Accessible* oldAcc = sessionAcc->mIDToAccessibleMap.Get(virtualViewID);
-  if (oldAcc) {
-    
-    
-    MOZ_ASSERT(IsDetachedDoc(oldAcc),
-               "ID already registered to non-detached document");
-  }
-
+  MOZ_ASSERT(!sessionAcc->mIDToAccessibleMap.Contains(virtualViewID),
+             "ID already registered");
   sessionAcc->mIDToAccessibleMap.InsertOrUpdate(virtualViewID, aAccessible);
 }
 
@@ -1081,21 +1064,8 @@ void SessionAccessibility::UnregisterAccessible(Accessible* aAccessible) {
   RefPtr<SessionAccessibility> sessionAcc = GetInstanceFor(aAccessible);
   MOZ_ASSERT(sessionAcc, "Need SessionAccessibility to unregister Accessible!");
   if (sessionAcc) {
-    Accessible* registeredAcc =
-        sessionAcc->mIDToAccessibleMap.Get(virtualViewID);
-    if (registeredAcc != aAccessible) {
-      
-      
-      
-      
-      MOZ_ASSERT(!registeredAcc || IsDetachedDoc(aAccessible),
-                 "Accessible is detached document");
-      AccessibleWrap::SetVirtualViewID(aAccessible, kUnsetID);
-      return;
-    }
-
-    MOZ_ASSERT(registeredAcc, "Unregistering unregistered accessible");
-    MOZ_ASSERT(registeredAcc == aAccessible, "Unregistering wrong accessible");
+    MOZ_ASSERT(sessionAcc->mIDToAccessibleMap.Contains(virtualViewID),
+               "Unregistering unregistered accessible");
     sessionAcc->mIDToAccessibleMap.Remove(virtualViewID);
   }
 
