@@ -1616,6 +1616,52 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
     return EditActionHandled(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
   }
 
+  auto InsertLineBreakInstead =
+      [](const Element* aEditableBlockElement,
+         const EditorDOMPoint& aCandidatePointToSplit,
+         ParagraphSeparator aDefaultParagraphSeparator,
+         const Element& aEditingHost) {
+        
+        
+        
+        if (!aEditableBlockElement) {
+          
+          return true;
+        }
+
+        
+        
+        
+        
+        if (!HTMLEditUtils::IsSplittableNode(*aEditableBlockElement)) {
+          return aDefaultParagraphSeparator == ParagraphSeparator::br ||
+                 !HTMLEditUtils::CanElementContainParagraph(aEditingHost) ||
+                 HTMLEditUtils::ShouldInsertLinefeedCharacter(
+                     aCandidatePointToSplit, aEditingHost);
+        }
+
+        
+        
+        
+        if (HTMLEditUtils::IsSingleLineContainer(*aEditableBlockElement)) {
+          return false;
+        }
+
+        
+        
+        for (const Element* editableBlockAncestor = aEditableBlockElement;
+             editableBlockAncestor;
+             editableBlockAncestor = HTMLEditUtils::GetAncestorElement(
+                 *editableBlockAncestor,
+                 HTMLEditUtils::ClosestEditableBlockElement)) {
+          if (HTMLEditUtils::CanElementContainParagraph(
+                  *editableBlockAncestor)) {
+            return false;
+          }
+        }
+        return true;
+      };
+
   
   
   
@@ -1626,47 +1672,11 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction(
                 HTMLEditUtils::ClosestEditableBlockElement)
           : nullptr;
 
-  ParagraphSeparator separator = GetDefaultParagraphSeparator();
-  bool insertLineBreak;
   
   
-  if (!editableBlockElement) {
-    
-    insertLineBreak = true;
-  }
-  
-  
-  
-  else if (!HTMLEditUtils::IsSplittableNode(*editableBlockElement)) {
-    insertLineBreak =
-        separator == ParagraphSeparator::br ||
-        !HTMLEditUtils::CanElementContainParagraph(aEditingHost) ||
-        HTMLEditUtils::ShouldInsertLinefeedCharacter(atStartOfSelection,
-                                                     aEditingHost);
-  }
-  
-  
-  
-  else if (HTMLEditUtils::IsSingleLineContainer(*editableBlockElement)) {
-    insertLineBreak = false;
-  }
-  
-  
-  else {
-    insertLineBreak = true;
-    for (const Element* editableBlockAncestor = editableBlockElement;
-         editableBlockAncestor && insertLineBreak;
-         editableBlockAncestor = HTMLEditUtils::GetAncestorElement(
-             *editableBlockAncestor,
-             HTMLEditUtils::ClosestEditableBlockElement)) {
-      insertLineBreak =
-          !HTMLEditUtils::CanElementContainParagraph(*editableBlockAncestor);
-    }
-  }
-
-  
-  
-  if (insertLineBreak) {
+  const ParagraphSeparator separator = GetDefaultParagraphSeparator();
+  if (InsertLineBreakInstead(editableBlockElement, atStartOfSelection,
+                             separator, aEditingHost)) {
     
     
     if (separator != ParagraphSeparator::br &&
