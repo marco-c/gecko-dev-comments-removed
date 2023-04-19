@@ -32,12 +32,10 @@ AudioChannel::AudioChannel(
     Transport* transport,
     uint32_t local_ssrc,
     TaskQueueFactory* task_queue_factory,
-    ProcessThread* process_thread,
     AudioMixer* audio_mixer,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
-    : audio_mixer_(audio_mixer), process_thread_(process_thread) {
+    : audio_mixer_(audio_mixer) {
   RTC_DCHECK(task_queue_factory);
-  RTC_DCHECK(process_thread);
   RTC_DCHECK(audio_mixer);
 
   Clock* clock = Clock::GetRealTimeClock();
@@ -55,9 +53,6 @@ AudioChannel::AudioChannel(
 
   rtp_rtcp_->SetSendingMediaStatus(false);
   rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);
-
-  
-  process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   ingress_ = std::make_unique<AudioIngress>(rtp_rtcp_.get(), clock,
                                             receive_statistics_.get(),
@@ -84,8 +79,6 @@ AudioChannel::~AudioChannel() {
   
   egress_.reset();
   ingress_.reset();
-
-  process_thread_->DeRegisterModule(rtp_rtcp_.get());
 }
 
 bool AudioChannel::StartSend() {

@@ -22,7 +22,6 @@
 namespace webrtc {
 
 class FlexfecReceiver;
-class ProcessThread;
 class ReceiveStatistics;
 class RecoveredPacketReceiver;
 class RtcpRttStats;
@@ -33,12 +32,10 @@ class RtpStreamReceiverInterface;
 
 class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
  public:
-  FlexfecReceiveStreamImpl(
-      Clock* clock,
-      const Config& config,
-      RecoveredPacketReceiver* recovered_packet_receiver,
-      RtcpRttStats* rtt_stats,
-      ProcessThread* process_thread);
+  FlexfecReceiveStreamImpl(Clock* clock,
+                           const Config& config,
+                           RecoveredPacketReceiver* recovered_packet_receiver,
+                           RtcpRttStats* rtt_stats);
   
   
   
@@ -75,7 +72,6 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
-  ProcessThread* const process_thread_;
 
   std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_
       RTC_GUARDED_BY(packet_sequence_checker_);

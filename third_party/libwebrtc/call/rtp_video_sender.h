@@ -35,7 +35,6 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
-#include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -89,15 +88,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       const CryptoOptions& crypto_options,  
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoSender() override;
-
-  
-  
-  
-  
-  
-  void RegisterProcessThread(ProcessThread* module_process_thread)
-      RTC_LOCKS_EXCLUDED(mutex_) override;
-  void DeRegisterProcessThread() RTC_LOCKS_EXCLUDED(mutex_) override;
 
   
   
@@ -185,8 +175,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   mutable Mutex mutex_;
   bool active_ RTC_GUARDED_BY(mutex_);
 
-  ProcessThread* module_process_thread_;
-  SequenceChecker module_process_thread_checker_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   const std::unique_ptr<FecController> fec_controller_;

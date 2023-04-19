@@ -39,7 +39,6 @@
 
 namespace webrtc {
 namespace {
-const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 
 constexpr TimeDelta kRttUpdateInterval = TimeDelta::Millis(1000);
@@ -84,9 +83,6 @@ ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
           })),
       rtcp_receiver_(configuration, this),
       clock_(configuration.clock),
-      last_rtt_process_time_(clock_->TimeInMilliseconds()),
-      next_process_time_(clock_->TimeInMilliseconds() +
-                         kRtpRtcpMaxIdleTimeProcessMs),
       packet_overhead_(28),  
       nack_last_time_sent_full_ms_(0),
       nack_last_seq_number_sent_(0),
@@ -94,7 +90,6 @@ ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
   RTC_DCHECK(worker_queue_);
-  process_thread_checker_.Detach();
   packet_sequence_checker_.Detach();
   if (!configuration.receiver_only) {
     rtp_sender_ = std::make_unique<RtpSenderContext>(configuration);
@@ -129,39 +124,6 @@ std::unique_ptr<ModuleRtpRtcpImpl2> ModuleRtpRtcpImpl2::Create(
   RTC_DCHECK(configuration.clock);
   RTC_DCHECK(TaskQueueBase::Current());
   return std::make_unique<ModuleRtpRtcpImpl2>(configuration);
-}
-
-
-
-int64_t ModuleRtpRtcpImpl2::TimeUntilNextProcess() {
-  RTC_DCHECK_RUN_ON(&process_thread_checker_);
-  return std::max<int64_t>(0,
-                           next_process_time_ - clock_->TimeInMilliseconds());
-}
-
-
-void ModuleRtpRtcpImpl2::Process() {
-  RTC_DCHECK_RUN_ON(&process_thread_checker_);
-
-  const Timestamp now = clock_->CurrentTime();
-
-  
-  
-  next_process_time_ = now.ms() + kRtpRtcpMaxIdleTimeProcessMs;
-
-  
-  
-  
-  if (remote_bitrate_ && rtcp_sender_.Sending() && rtcp_sender_.TMMBR()) {
-    unsigned int target_bitrate = 0;
-    std::vector<unsigned int> ssrcs;
-    if (remote_bitrate_->LatestEstimate(&ssrcs, &target_bitrate)) {
-      if (!ssrcs.empty()) {
-        target_bitrate = target_bitrate / ssrcs.size();
-      }
-      rtcp_sender_.SetTargetBitrate(target_bitrate);
-    }
-  }
 }
 
 void ModuleRtpRtcpImpl2::SetRtxSendStatus(int mode) {
@@ -787,13 +749,6 @@ void ModuleRtpRtcpImpl2::PeriodicUpdate() {
     rtt_stats_->OnRttUpdate(rtt->ms());
     set_rtt_ms(rtt->ms());
   }
-
-  
-  
-  
-  
-  if (rtcp_sender_.TMMBR() && rtcp_receiver_.UpdateTmmbrTimers())
-    rtcp_receiver_.NotifyTmmbrUpdated();
 }
 
 

@@ -39,7 +39,6 @@
 
 namespace webrtc {
 
-class ProcessThread;
 class RtpStreamReceiverInterface;
 class RtpStreamReceiverControllerInterface;
 class RtxReceiveStream;
@@ -96,7 +95,6 @@ class VideoReceiveStream2
                       int num_cpu_cores,
                       PacketRouter* packet_router,
                       VideoReceiveStream::Config config,
-                      ProcessThread* process_thread,
                       CallStats* call_stats,
                       Clock* clock,
                       VCMTiming* timing);
@@ -199,7 +197,6 @@ class VideoReceiveStream2
   void UpdateHistograms();
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker module_process_sequence_checker_;
   
   
   
