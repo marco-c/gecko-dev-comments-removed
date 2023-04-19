@@ -444,9 +444,12 @@ bool ModuleRtpRtcpImpl::SupportsRtxPayloadPadding() const {
 std::vector<std::unique_ptr<RtpPacketToSend>>
 ModuleRtpRtcpImpl::GeneratePadding(size_t target_size_bytes) {
   RTC_DCHECK(rtp_sender_);
+  
+  
+  
   return rtp_sender_->packet_generator.GeneratePadding(
       target_size_bytes, rtp_sender_->packet_sender.MediaHasBeenSent(),
-      rtp_sender_->sequencer_.CanSendPaddingOnMediaSsrc());
+      false);
 }
 
 std::vector<RtpSequenceNumberMap::Info>
