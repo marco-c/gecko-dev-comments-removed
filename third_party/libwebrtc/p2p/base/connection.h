@@ -111,34 +111,28 @@ class Connection : public CandidatePairInterface,
     STATE_WRITE_TIMEOUT = 3,     
   };
 
-  WriteState write_state() const { return write_state_; }
-  bool writable() const { return write_state_ == STATE_WRITABLE; }
-  bool receiving() const { return receiving_; }
+  WriteState write_state() const;
+  bool writable() const;
+  bool receiving() const;
 
   
   
-  bool connected() const { return connected_; }
-  bool weak() const { return !(writable() && receiving() && connected()); }
-  bool active() const { return write_state_ != STATE_WRITE_TIMEOUT; }
+  bool connected() const;
+  bool weak() const;
+  bool active() const;
 
   
   bool dead(int64_t now) const;
 
   
-  int rtt() const { return rtt_; }
+  int rtt() const;
 
   int unwritable_timeout() const;
-  void set_unwritable_timeout(const absl::optional<int>& value_ms) {
-    unwritable_timeout_ = value_ms;
-  }
+  void set_unwritable_timeout(const absl::optional<int>& value_ms);
   int unwritable_min_checks() const;
-  void set_unwritable_min_checks(const absl::optional<int>& value) {
-    unwritable_min_checks_ = value;
-  }
+  void set_unwritable_min_checks(const absl::optional<int>& value);
   int inactive_timeout() const;
-  void set_inactive_timeout(const absl::optional<int>& value) {
-    inactive_timeout_ = value;
-  }
+  void set_inactive_timeout(const absl::optional<int>& value);
 
   
   
@@ -174,15 +168,15 @@ class Connection : public CandidatePairInterface,
   
   
   
-  bool pruned() const { return pruned_; }
+  bool pruned() const;
   void Prune();
 
-  bool use_candidate_attr() const { return use_candidate_attr_; }
+  bool use_candidate_attr() const;
   void set_use_candidate_attr(bool enable);
 
-  void set_nomination(uint32_t value) { nomination_ = value; }
+  void set_nomination(uint32_t value);
 
-  uint32_t remote_nomination() const { return remote_nomination_; }
+  uint32_t remote_nomination() const;
   
   
   
@@ -190,12 +184,10 @@ class Connection : public CandidatePairInterface,
   
   
   
-  bool nominated() const { return acked_nomination_ || remote_nomination_; }
+  bool nominated() const;
 
   int receiving_timeout() const;
-  void set_receiving_timeout(absl::optional<int> receiving_timeout_ms) {
-    receiving_timeout_ = receiving_timeout_ms;
-  }
+  void set_receiving_timeout(absl::optional<int> receiving_timeout_ms);
 
   
   void Destroy();
@@ -212,24 +204,23 @@ class Connection : public CandidatePairInterface,
   void UpdateState(int64_t now);
 
   
-  int64_t last_ping_sent() const { return last_ping_sent_; }
+  int64_t last_ping_sent() const;
   void Ping(int64_t now);
   void ReceivedPingResponse(
       int rtt,
       const std::string& request_id,
       const absl::optional<uint32_t>& nomination = absl::nullopt);
-  int64_t last_ping_response_received() const {
-    return last_ping_response_received_;
-  }
-  const absl::optional<std::string>& last_ping_id_received() const {
-    return last_ping_id_received_;
-  }
+
+  int64_t last_ping_response_received() const;
+  const absl::optional<std::string>& last_ping_id_received() const;
+
   
-  int rtt_samples() const { return rtt_samples_; }
+  int rtt_samples() const;
 
   
   
-  int64_t last_ping_received() const { return last_ping_received_; }
+  int64_t last_ping_received() const;
+
   void ReceivedPing(
       const absl::optional<std::string>& request_id = absl::nullopt);
   
@@ -239,8 +230,8 @@ class Connection : public CandidatePairInterface,
   
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
   
-  int64_t last_send_data() const { return last_send_data_; }
-  int64_t last_data_received() const { return last_data_received_; }
+  int64_t last_send_data() const;
+  int64_t last_data_received() const;
 
   
   std::string ToDebugId() const;
@@ -248,19 +239,19 @@ class Connection : public CandidatePairInterface,
   std::string ToSensitiveString() const;
   
   const webrtc::IceCandidatePairDescription& ToLogDescription();
-  void set_ice_event_log(webrtc::IceEventLog* ice_event_log) {
-    ice_event_log_ = ice_event_log;
-  }
+  void set_ice_event_log(webrtc::IceEventLog* ice_event_log);
+
   
   void PrintPingsSinceLastResponse(std::string* pings, size_t max);
 
-  bool reported() const { return reported_; }
-  void set_reported(bool reported) { reported_ = reported; }
+  bool reported() const;
+  void set_reported(bool reported);
+
   
   
   
-  bool selected() const { return selected_; }
-  void set_selected(bool selected) { selected_ = selected; }
+  bool selected() const;
+  void set_selected(bool selected);
 
   
   
@@ -269,9 +260,9 @@ class Connection : public CandidatePairInterface,
   
   void HandleRoleConflictFromPeer();
 
-  IceCandidatePairState state() const { return state_; }
+  IceCandidatePairState state() const;
 
-  int num_pings_sent() const { return num_pings_sent_; }
+  int num_pings_sent() const;
 
   uint32_t ComputeNetworkCost() const;
 
@@ -290,9 +281,7 @@ class Connection : public CandidatePairInterface,
   
   int64_t last_received() const;
   
-  int64_t receiving_unchanged_since() const {
-    return receiving_unchanged_since_;
-  }
+  int64_t receiving_unchanged_since() const;
 
   bool stable(int64_t now) const;
 
@@ -327,12 +316,8 @@ class Connection : public CandidatePairInterface,
   const Port* PortForTest() const { return port_; }
 
   
-  uint32_t acked_nomination() const { return acked_nomination_; }
-
-  
-  void set_remote_nomination(uint32_t remote_nomination) {
-    remote_nomination_ = remote_nomination;
-  }
+  uint32_t acked_nomination() const;
+  void set_remote_nomination(uint32_t remote_nomination);
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
@@ -347,9 +332,12 @@ class Connection : public CandidatePairInterface,
   virtual void OnConnectionRequestResponse(ConnectionRequest* req,
                                            StunMessage* response);
   void OnConnectionRequestErrorResponse(ConnectionRequest* req,
-                                        StunMessage* response);
-  void OnConnectionRequestTimeout(ConnectionRequest* req);
-  void OnConnectionRequestSent(ConnectionRequest* req);
+                                        StunMessage* response)
+      RTC_RUN_ON(network_thread_);
+  void OnConnectionRequestTimeout(ConnectionRequest* req)
+      RTC_RUN_ON(network_thread_);
+  void OnConnectionRequestSent(ConnectionRequest* req)
+      RTC_RUN_ON(network_thread_);
 
   bool rtt_converged() const;
 
@@ -362,8 +350,6 @@ class Connection : public CandidatePairInterface,
   void UpdateReceiving(int64_t now);
   void set_state(IceCandidatePairState state);
   void set_connected(bool value);
-
-  uint32_t nomination() const { return nomination_; }
 
   void OnMessage(rtc::Message* pmsg) override;
 
@@ -379,7 +365,7 @@ class Connection : public CandidatePairInterface,
   webrtc::TaskQueueBase* const network_thread_;
   const uint32_t id_;
   Port* const port_;
-  size_t local_candidate_index_;
+  size_t local_candidate_index_ RTC_GUARDED_BY(network_thread_);
   Candidate remote_candidate_;
 
   ConnectionInfo stats_;
@@ -391,80 +377,93 @@ class Connection : public CandidatePairInterface,
   
   
   void MaybeUpdateLocalCandidate(ConnectionRequest* request,
-                                 StunMessage* response);
+                                 StunMessage* response)
+      RTC_RUN_ON(network_thread_);
 
-  void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
+  void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type)
+      RTC_RUN_ON(network_thread_);
   void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
-                             uint32_t transaction_id);
+                             uint32_t transaction_id)
+      RTC_RUN_ON(network_thread_);
 
   
   
-  bool ShouldSendGoogPing(const StunMessage* message);
+  bool ShouldSendGoogPing(const StunMessage* message)
+      RTC_RUN_ON(network_thread_);
 
-  WriteState write_state_;
-  bool receiving_;
-  bool connected_;
-  bool pruned_;
-  bool selected_ = false;
+  WriteState write_state_ RTC_GUARDED_BY(network_thread_);
+  bool receiving_ RTC_GUARDED_BY(network_thread_);
+  bool connected_ RTC_GUARDED_BY(network_thread_);
+  bool pruned_ RTC_GUARDED_BY(network_thread_);
+  bool selected_ RTC_GUARDED_BY(network_thread_) = false;
   
   
   
   
-  bool use_candidate_attr_;
+  bool use_candidate_attr_ RTC_GUARDED_BY(network_thread_);
   
   
   
   
   
-  uint32_t nomination_ = 0;
+  uint32_t nomination_ RTC_GUARDED_BY(network_thread_) = 0;
   
-  uint32_t acked_nomination_ = 0;
+  uint32_t acked_nomination_ RTC_GUARDED_BY(network_thread_) = 0;
   
   
   
-  uint32_t remote_nomination_ = 0;
+  uint32_t remote_nomination_ RTC_GUARDED_BY(network_thread_) = 0;
 
-  StunRequestManager requests_;
-  int rtt_;
-  int rtt_samples_ = 0;
+  StunRequestManager requests_ RTC_GUARDED_BY(network_thread_);
+  int rtt_ RTC_GUARDED_BY(network_thread_);
+  int rtt_samples_ RTC_GUARDED_BY(network_thread_) = 0;
   
-  uint64_t total_round_trip_time_ms_ = 0;
+  uint64_t total_round_trip_time_ms_ RTC_GUARDED_BY(network_thread_) = 0;
   
-  absl::optional<uint32_t> current_round_trip_time_ms_;
-  int64_t last_ping_sent_;      
-  int64_t last_ping_received_;  
-                                
-  int64_t last_data_received_;
-  int64_t last_ping_response_received_;
-  int64_t receiving_unchanged_since_ = 0;
-  std::vector<SentPing> pings_since_last_response_;
+  absl::optional<uint32_t> current_round_trip_time_ms_
+      RTC_GUARDED_BY(network_thread_);
+  int64_t last_ping_sent_ RTC_GUARDED_BY(
+      network_thread_);  
+  int64_t last_ping_received_
+      RTC_GUARDED_BY(network_thread_);  
+                                        
+  int64_t last_data_received_ RTC_GUARDED_BY(network_thread_);
+  int64_t last_ping_response_received_ RTC_GUARDED_BY(network_thread_);
+  int64_t receiving_unchanged_since_ RTC_GUARDED_BY(network_thread_) = 0;
+  std::vector<SentPing> pings_since_last_response_
+      RTC_GUARDED_BY(network_thread_);
   
   
-  absl::optional<std::string> last_ping_id_received_;
+  absl::optional<std::string> last_ping_id_received_
+      RTC_GUARDED_BY(network_thread_);
 
-  absl::optional<int> unwritable_timeout_;
-  absl::optional<int> unwritable_min_checks_;
-  absl::optional<int> inactive_timeout_;
+  absl::optional<int> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
+  absl::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
+  absl::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
 
-  bool reported_;
-  IceCandidatePairState state_;
+  bool reported_ RTC_GUARDED_BY(network_thread_);
+  IceCandidatePairState state_ RTC_GUARDED_BY(network_thread_);
   
-  absl::optional<int> receiving_timeout_;
-  int64_t time_created_ms_;
-  int num_pings_sent_ = 0;
+  absl::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
+  int64_t time_created_ms_ RTC_GUARDED_BY(network_thread_);
+  int num_pings_sent_ RTC_GUARDED_BY(network_thread_) = 0;
 
-  absl::optional<webrtc::IceCandidatePairDescription> log_description_;
-  webrtc::IceEventLog* ice_event_log_ = nullptr;
+  absl::optional<webrtc::IceCandidatePairDescription> log_description_
+      RTC_GUARDED_BY(network_thread_);
+  webrtc::IceEventLog* ice_event_log_ RTC_GUARDED_BY(network_thread_) = nullptr;
 
   
   
   
   
-  absl::optional<bool> remote_support_goog_ping_;
-  std::unique_ptr<StunMessage> cached_stun_binding_;
+  absl::optional<bool> remote_support_goog_ping_
+      RTC_GUARDED_BY(network_thread_);
+  std::unique_ptr<StunMessage> cached_stun_binding_
+      RTC_GUARDED_BY(network_thread_);
 
   const IceFieldTrials* field_trials_;
-  rtc::EventBasedExponentialMovingAverage rtt_estimate_;
+  rtc::EventBasedExponentialMovingAverage rtt_estimate_
+      RTC_GUARDED_BY(network_thread_);
 
   friend class Port;
   friend class ConnectionRequest;
