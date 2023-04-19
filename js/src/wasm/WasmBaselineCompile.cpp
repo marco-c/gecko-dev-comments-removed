@@ -6351,21 +6351,23 @@ void BaseCompiler::emitGcNullCheck(RegRef rp) {
 }
 
 RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
+  
+  
   RegPtr rdata = needPtr();
   
   masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
   return rdata;
 }
 
-RegI32 BaseCompiler::emitGcArrayGetLength(RegPtr rdata,
-                                          bool adjustDataPointer) {
-  STATIC_ASSERT_ARRAYLENGTH_IS_U32;
+RegI32 BaseCompiler::emitGcArrayGetNumElements(RegPtr rdata,
+                                               bool adjustDataPointer) {
+  STATIC_ASSERT_NUMELEMENTS_IS_U32;
   RegI32 length = needI32();
-  masm.load32(Address(rdata, OutlineTypedObject::offsetOfArrayLength()),
+  masm.load32(Address(rdata, OutlineTypedObject::offsetOfNumElements()),
               length);
   if (adjustDataPointer) {
-    masm.addPtr(ImmWord(OutlineTypedObject::offsetOfArrayLength() +
-                        sizeof(OutlineTypedObject::ArrayLength)),
+    masm.addPtr(ImmWord(OutlineTypedObject::offsetOfNumElements() +
+                        sizeof(OutlineTypedObject::NumElements)),
                 rdata);
   }
   return length;
@@ -6825,7 +6827,7 @@ bool BaseCompiler::emitArrayNew() {
 
   
   
-  RegI32 length = emitGcArrayGetLength(rdata, true);
+  RegI32 numElements = emitGcArrayGetNumElements(rdata, true);
 
   
   if (arrayType.elementType_.isRefRepr()) {
@@ -6837,22 +6839,22 @@ bool BaseCompiler::emitArrayNew() {
   Label done;
   Label loop;
   
-  masm.branch32(Assembler::Equal, length, Imm32(0), &done);
+  masm.branch32(Assembler::Equal, numElements, Imm32(0), &done);
   masm.bind(&loop);
 
   
-  masm.sub32(Imm32(1), length);
+  masm.sub32(Imm32(1), numElements);
 
   
-  if (!emitGcArraySet(rp, rdata, length, arrayType, value)) {
+  if (!emitGcArraySet(rp, rdata, numElements, arrayType, value)) {
     return false;
   }
 
   
-  masm.branch32(Assembler::GreaterThan, length, Imm32(0), &loop);
+  masm.branch32(Assembler::GreaterThan, numElements, Imm32(0), &loop);
   masm.bind(&done);
 
-  freeI32(length);
+  freeI32(numElements);
   freeAny(value);
   freePtr(rdata);
   pushRef(rp);
@@ -6903,11 +6905,11 @@ bool BaseCompiler::emitArrayGet(FieldExtension extension) {
 
   
   
-  RegI32 length = emitGcArrayGetLength(rdata, true);
+  RegI32 numElements = emitGcArrayGetNumElements(rdata, true);
 
   
-  emitGcArrayBoundsCheck(index, length);
-  freeI32(length);
+  emitGcArrayBoundsCheck(index, numElements);
+  freeI32(numElements);
 
   
   uint32_t shift = arrayType.elementType_.indexingShift();
@@ -6962,7 +6964,7 @@ bool BaseCompiler::emitArraySet() {
 
   
   
-  RegI32 length = emitGcArrayGetLength(rdata, true);
+  RegI32 numElements = emitGcArrayGetNumElements(rdata, true);
 
   
   if (arrayType.elementType_.isRefRepr()) {
@@ -6970,8 +6972,8 @@ bool BaseCompiler::emitArraySet() {
   }
 
   
-  emitGcArrayBoundsCheck(index, length);
-  freeI32(length);
+  emitGcArrayBoundsCheck(index, numElements);
+  freeI32(numElements);
 
   
   popAny(value);
@@ -7012,7 +7014,7 @@ bool BaseCompiler::emitArrayLen() {
   freeRef(rp);
 
   
-  pushI32(emitGcArrayGetLength(rdata, false));
+  pushI32(emitGcArrayGetNumElements(rdata, false));
   freePtr(rdata);
 
   return true;

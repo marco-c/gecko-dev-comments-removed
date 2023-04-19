@@ -141,8 +141,9 @@ class TypedObject : public JSObject {
 
   
   
+  
   static TypedObject* createArray(JSContext* cx, Handle<RttValue*> rtt,
-                                  uint32_t elementsLength,
+                                  uint32_t numElements,
                                   gc::InitialHeap heap = gc::DefaultHeap);
 
   RttValue& rttValue() const {
@@ -164,39 +165,59 @@ class TypedObject : public JSObject {
 
 class OutlineTypedObject : public TypedObject {
  public:
-  using ArrayLength = uint32_t;
+  
+  
+  using NumElements = uint32_t;
 
  private:
+  
+  
+  
+  
+  
   
   uint8_t* data_;
 
  protected:
   friend class TypedObject;
 
+  
   static OutlineTypedObject* create(JSContext* cx, Handle<RttValue*> rtt,
-                                    size_t byteLength,
+                                    size_t numBytes,
                                     gc::InitialHeap heap = gc::DefaultHeap);
 
+  
+  
   uint8_t* outOfLineTypedMem() const { return data_; }
 
-  void setArrayLength(uint32_t length) { *(uint32_t*)(data_) = length; }
+  void setNumElements(NumElements numElements) {
+    *(NumElements*)(data_ + offsetOfNumElements()) = numElements;
+  }
 
  public:
   static const JSClass class_;
 
   
-  ArrayLength arrayLength() const {
-    return *(ArrayLength*)(data_ + offsetOfArrayLength());
+  uint8_t* addressOfElementZero() const {
+    return data_ + offsetOfNumElements() + sizeof(NumElements);
+  }
+
+  
+  NumElements numElements() const {
+    return *(NumElements*)(data_ + offsetOfNumElements());
   }
 
   
   static gc::AllocKind allocKind();
 
   
+
+  
   static constexpr size_t offsetOfData() {
     return offsetof(OutlineTypedObject, data_);
   }
-  static constexpr size_t offsetOfArrayLength() { return 0; }
+  
+  static constexpr size_t offsetOfNumElements() { return 0; }
 
   
   static void obj_trace(JSTracer* trc, JSObject* object);
@@ -205,8 +226,9 @@ class OutlineTypedObject : public TypedObject {
 
 
 
-#define STATIC_ASSERT_ARRAYLENGTH_IS_U32 \
-  static_assert(1, "ArrayLength is uint32_t")
+#define STATIC_ASSERT_NUMELEMENTS_IS_U32                       \
+  static_assert(sizeof(js::OutlineTypedObject::NumElements) == \
+                sizeof(uint32_t));
 
 
 class InlineTypedObject : public TypedObject {

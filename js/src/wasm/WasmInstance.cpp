@@ -61,10 +61,8 @@ using namespace js::jit;
 using namespace js::wasm;
 
 using mozilla::BitwiseCast;
-using mozilla::CheckedInt;
+using mozilla::CheckedUint32;
 using mozilla::DebugOnly;
-
-using CheckedU32 = CheckedInt<uint32_t>;
 
 
 
@@ -1187,13 +1185,13 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   return TypedObject::createStruct(cx, rttValue);
 }
 
- void* Instance::arrayNew(Instance* instance, uint32_t length,
+ void* Instance::arrayNew(Instance* instance, uint32_t numElements,
                                       void* arrayDescr) {
   MOZ_ASSERT(SASigArrayNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
   Rooted<RttValue*> rttValue(cx, (RttValue*)arrayDescr);
   MOZ_ASSERT(rttValue);
-  return TypedObject::createArray(cx, rttValue, length);
+  return TypedObject::createArray(cx, rttValue, numElements);
 }
 
  void* Instance::exceptionNew(Instance* instance, JSObject* tag) {
