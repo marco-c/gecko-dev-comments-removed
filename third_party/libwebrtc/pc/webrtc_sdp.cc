@@ -396,12 +396,12 @@ static void RemoveInvalidRidsFromSimulcast(
 
 
 
-static bool ParseFailed(const std::string& message,
+static bool ParseFailed(absl::string_view message,
                         size_t line_start,
-                        const std::string& description,
+                        std::string description,
                         SdpParseError* error) {
   
-  std::string first_line;
+  absl::string_view first_line;
   size_t line_end = message.find(kNewLine, line_start);
   if (line_end != std::string::npos) {
     if (line_end > 0 && (message.at(line_end - 1) == kReturnChar)) {
@@ -412,72 +412,72 @@ static bool ParseFailed(const std::string& message,
     first_line = message.substr(line_start);
   }
 
-  if (error) {
-    error->line = first_line;
-    error->description = description;
-  }
   RTC_LOG(LS_ERROR) << "Failed to parse: \"" << first_line
                     << "\". Reason: " << description;
+  if (error) {
+    error->line = std::string(first_line);
+    error->description = std::move(description);
+  }
   return false;
 }
 
 
 
-static bool ParseFailed(const std::string& line,
-                        const std::string& description,
+static bool ParseFailed(absl::string_view line,
+                        std::string description,
                         SdpParseError* error) {
-  return ParseFailed(line, 0, description, error);
+  return ParseFailed(line, 0, std::move(description), error);
 }
 
 
 
-static bool ParseFailed(const std::string& description, SdpParseError* error) {
-  return ParseFailed("", description, error);
+static bool ParseFailed(std::string description, SdpParseError* error) {
+  return ParseFailed("", std::move(description), error);
 }
 
 
 
-static bool ParseFailedExpectFieldNum(const std::string& line,
+static bool ParseFailedExpectFieldNum(absl::string_view line,
                                       int expected_fields,
                                       SdpParseError* error) {
   rtc::StringBuilder description;
   description << "Expects " << expected_fields << " fields.";
-  return ParseFailed(line, description.str(), error);
+  return ParseFailed(line, description.Release(), error);
 }
 
 
 
-static bool ParseFailedExpectMinFieldNum(const std::string& line,
+static bool ParseFailedExpectMinFieldNum(absl::string_view line,
                                          int expected_min_fields,
                                          SdpParseError* error) {
   rtc::StringBuilder description;
   description << "Expects at least " << expected_min_fields << " fields.";
-  return ParseFailed(line, description.str(), error);
+  return ParseFailed(line, description.Release(), error);
 }
 
 
 
-static bool ParseFailedGetValue(const std::string& line,
+static bool ParseFailedGetValue(absl::string_view line,
                                 const std::string& attribute,
                                 SdpParseError* error) {
   rtc::StringBuilder description;
   description << "Failed to get the value of attribute: " << attribute;
-  return ParseFailed(line, description.str(), error);
+  return ParseFailed(line, description.Release(), error);
 }
 
 
 
 
 
-static bool ParseFailedExpectLine(const std::string& message,
+static bool ParseFailedExpectLine(absl::string_view message,
                                   size_t line_start,
                                   const char line_type,
-                                  const std::string& line_value,
+                                  absl::string_view line_value,
                                   SdpParseError* error) {
   rtc::StringBuilder description;
   description << "Expect line: " << std::string(1, line_type) << "="
               << line_value;
-  return ParseFailed(message, line_start, description.str(), error);
+  return ParseFailed(message, line_start, description.Release(), error);
 }
 
 static bool AddLine(const std::string& line, std::string* message) {
@@ -638,7 +638,7 @@ static bool GetSingleTokenValue(const std::string& message,
   if (strspn(value->c_str(), kLegalTokenCharacters) != value->size()) {
     rtc::StringBuilder description;
     description << "Illegal character found in the value of " << attribute;
-    return ParseFailed(message, description.str(), error);
+    return ParseFailed(message, description.Release(), error);
   }
   return true;
 }
@@ -657,7 +657,7 @@ static bool GetValueFromString(const std::string& line,
   if (!rtc::FromString(s, t)) {
     rtc::StringBuilder description;
     description << "Invalid value: " << s << ".";
-    return ParseFailed(line, description.str(), error);
+    return ParseFailed(line, description.Release(), error);
   }
   return true;
 }
@@ -1080,7 +1080,7 @@ bool ParseCandidate(const std::string& message,
       description << "Expect line: " << kAttributeCandidate
                   << ":"
                      "<candidate-str>";
-      return ParseFailed(first_line, 0, description.str(), error);
+      return ParseFailed(first_line, 0, description.Release(), error);
     } else {
       return ParseFailedExpectLine(first_line, 0, kLineTypeAttributes,
                                    kAttributeCandidate, error);
@@ -3426,7 +3426,7 @@ bool ParseSsrcAttribute(const std::string& line,
     rtc::StringBuilder description;
     description << "Failed to get the ssrc attribute value from " << field2
                 << ". Expected format <attribute>:<value>.";
-    return ParseFailed(line, description.str(), error);
+    return ParseFailed(line, description.Release(), error);
   }
 
   
