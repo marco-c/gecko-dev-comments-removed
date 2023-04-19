@@ -1678,115 +1678,7 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
   }
 
   if (is_unified_plan) {
-    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
-        now_receiving_transceivers;
-    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
-    std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
-    std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
-    for (const auto& transceiver_ext : transceivers()->List()) {
-      const auto transceiver = transceiver_ext->internal();
-      const ContentInfo* content =
-          FindMediaSectionForTransceiver(transceiver, remote_description());
-      if (!content) {
-        continue;
-      }
-      const MediaContentDescription* media_desc = content->media_description();
-      RtpTransceiverDirection local_direction =
-          RtpTransceiverDirectionReversed(media_desc->direction());
-      
-      
-      
-      
-      if (RtpTransceiverDirectionHasRecv(local_direction)) {
-        std::vector<std::string> stream_ids;
-        if (!media_desc->streams().empty()) {
-          
-          stream_ids = media_desc->streams()[0].stream_ids();
-        }
-        transceivers()
-            ->StableState(transceiver_ext)
-            ->SetRemoteStreamIdsIfUnset(transceiver->receiver()->stream_ids());
-
-        RTC_LOG(LS_INFO) << "Processing the MSIDs for MID=" << content->name
-                         << " (" << GetStreamIdsString(stream_ids) << ").";
-        SetAssociatedRemoteStreams(transceiver->receiver_internal(), stream_ids,
-                                   &added_streams, &removed_streams);
-        
-        
-        
-        
-        if (!transceiver->fired_direction() ||
-            !RtpTransceiverDirectionHasRecv(*transceiver->fired_direction())) {
-          RTC_LOG(LS_INFO)
-              << "Processing the addition of a remote track for MID="
-              << content->name << ".";
-          
-          
-          now_receiving_transceivers.push_back(transceiver_ext);
-        }
-      }
-      
-      
-      
-      
-      if (!RtpTransceiverDirectionHasRecv(local_direction) &&
-          (transceiver->fired_direction() &&
-           RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
-        ProcessRemovalOfRemoteTrack(transceiver_ext, &remove_list,
-                                    &removed_streams);
-      }
-      
-      transceiver->set_fired_direction(local_direction);
-      
-      
-      if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
-        
-        
-        transceiver->set_current_direction(local_direction);
-        
-        if (transceiver->mid()) {
-          auto dtls_transport = LookupDtlsTransportByMid(pc_->network_thread(),
-                                                         transport_controller(),
-                                                         *transceiver->mid());
-          transceiver->sender_internal()->set_transport(dtls_transport);
-          transceiver->receiver_internal()->set_transport(dtls_transport);
-        }
-      }
-      
-      
-      if (content->rejected && !transceiver->stopped()) {
-        RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
-                         << " since the media section was rejected.";
-        transceiver->StopTransceiverProcedure();
-      }
-      if (!content->rejected &&
-          RtpTransceiverDirectionHasRecv(local_direction)) {
-        if (!media_desc->streams().empty() &&
-            media_desc->streams()[0].has_ssrcs()) {
-          uint32_t ssrc = media_desc->streams()[0].first_ssrc();
-          transceiver->receiver_internal()->SetupMediaChannel(ssrc);
-        } else {
-          transceiver->receiver_internal()->SetupUnsignaledMediaChannel();
-        }
-      }
-    }
-    
-    auto observer = pc_->Observer();
-    for (const auto& transceiver : now_receiving_transceivers) {
-      pc_->stats()->AddTrack(transceiver->receiver()->track());
-      observer->OnTrack(transceiver);
-      observer->OnAddTrack(transceiver->receiver(),
-                           transceiver->receiver()->streams());
-    }
-    for (const auto& stream : added_streams) {
-      observer->OnAddStream(stream);
-    }
-    for (const auto& transceiver : remove_list) {
-      observer->OnRemoveTrack(transceiver->receiver());
-    }
-    for (const auto& stream : removed_streams) {
-      observer->OnRemoveStream(stream);
-    }
+    ApplyRemoteDescriptionUpdateTransceiverState(type);
   }
 
   const cricket::AudioContentDescription* audio_desc =
@@ -1815,6 +1707,118 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
   }
 
   return RTCError::OK();
+}
+
+void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
+    SdpType sdp_type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  RTC_DCHECK(IsUnifiedPlan());
+  std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
+      now_receiving_transceivers;
+  std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
+  for (const auto& transceiver_ext : transceivers()->List()) {
+    const auto transceiver = transceiver_ext->internal();
+    const ContentInfo* content =
+        FindMediaSectionForTransceiver(transceiver, remote_description());
+    if (!content) {
+      continue;
+    }
+    const MediaContentDescription* media_desc = content->media_description();
+    RtpTransceiverDirection local_direction =
+        RtpTransceiverDirectionReversed(media_desc->direction());
+    
+    
+    
+    
+    if (RtpTransceiverDirectionHasRecv(local_direction)) {
+      std::vector<std::string> stream_ids;
+      if (!media_desc->streams().empty()) {
+        
+        stream_ids = media_desc->streams()[0].stream_ids();
+      }
+      transceivers()
+          ->StableState(transceiver_ext)
+          ->SetRemoteStreamIdsIfUnset(transceiver->receiver()->stream_ids());
+
+      RTC_LOG(LS_INFO) << "Processing the MSIDs for MID=" << content->name
+                       << " (" << GetStreamIdsString(stream_ids) << ").";
+      SetAssociatedRemoteStreams(transceiver->receiver_internal(), stream_ids,
+                                 &added_streams, &removed_streams);
+      
+      
+      
+      
+      if (!transceiver->fired_direction() ||
+          !RtpTransceiverDirectionHasRecv(*transceiver->fired_direction())) {
+        RTC_LOG(LS_INFO) << "Processing the addition of a remote track for MID="
+                         << content->name << ".";
+        
+        
+        now_receiving_transceivers.push_back(transceiver_ext);
+      }
+    }
+    
+    
+    
+    
+    if (!RtpTransceiverDirectionHasRecv(local_direction) &&
+        (transceiver->fired_direction() &&
+         RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
+      ProcessRemovalOfRemoteTrack(transceiver_ext, &remove_list,
+                                  &removed_streams);
+    }
+    
+    transceiver->set_fired_direction(local_direction);
+    
+    
+    if (sdp_type == SdpType::kPrAnswer || sdp_type == SdpType::kAnswer) {
+      
+      
+      transceiver->set_current_direction(local_direction);
+      
+      if (transceiver->mid()) {
+        auto dtls_transport = LookupDtlsTransportByMid(
+            pc_->network_thread(), transport_controller(), *transceiver->mid());
+        transceiver->sender_internal()->set_transport(dtls_transport);
+        transceiver->receiver_internal()->set_transport(dtls_transport);
+      }
+    }
+    
+    
+    if (content->rejected && !transceiver->stopped()) {
+      RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
+                       << " since the media section was rejected.";
+      transceiver->StopTransceiverProcedure();
+    }
+    if (!content->rejected && RtpTransceiverDirectionHasRecv(local_direction)) {
+      if (!media_desc->streams().empty() &&
+          media_desc->streams()[0].has_ssrcs()) {
+        uint32_t ssrc = media_desc->streams()[0].first_ssrc();
+        transceiver->receiver_internal()->SetupMediaChannel(ssrc);
+      } else {
+        transceiver->receiver_internal()->SetupUnsignaledMediaChannel();
+      }
+    }
+  }
+  
+  auto observer = pc_->Observer();
+  for (const auto& transceiver : now_receiving_transceivers) {
+    pc_->stats()->AddTrack(transceiver->receiver()->track());
+    observer->OnTrack(transceiver);
+    observer->OnAddTrack(transceiver->receiver(),
+                         transceiver->receiver()->streams());
+  }
+  for (const auto& stream : added_streams) {
+    observer->OnAddStream(stream);
+  }
+  for (const auto& transceiver : remove_list) {
+    observer->OnRemoveTrack(transceiver->receiver());
+  }
+  for (const auto& stream : removed_streams) {
+    observer->OnRemoveStream(stream);
+  }
 }
 
 void SdpOfferAnswerHandler::PlanBUpdateSendersAndReceivers(

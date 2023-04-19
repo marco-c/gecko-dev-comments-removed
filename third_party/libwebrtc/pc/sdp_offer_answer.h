@@ -237,6 +237,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
           bundle_groups_by_mid);
 
   
+  void ApplyRemoteDescriptionUpdateTransceiverState(SdpType sdp_type);
+
+  
   void PlanBUpdateSendersAndReceivers(
       const cricket::ContentInfo* audio_content,
       const cricket::AudioContentDescription* audio_desc,
