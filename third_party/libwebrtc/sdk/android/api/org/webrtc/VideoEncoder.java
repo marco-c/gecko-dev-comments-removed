@@ -258,6 +258,39 @@ public interface VideoEncoder {
     }
   }
 
+  
+
+
+  public class EncoderInfo {
+    
+
+
+
+    public final int requestedResolutionAlignment;
+
+    
+
+
+
+    public final boolean applyAlignmentToAllSimulcastLayers;
+
+    public EncoderInfo(
+        int requestedResolutionAlignment, boolean applyAlignmentToAllSimulcastLayers) {
+      this.requestedResolutionAlignment = requestedResolutionAlignment;
+      this.applyAlignmentToAllSimulcastLayers = applyAlignmentToAllSimulcastLayers;
+    }
+
+    @CalledByNative("EncoderInfo")
+    public int getRequestedResolutionAlignment() {
+      return requestedResolutionAlignment;
+    }
+
+    @CalledByNative("EncoderInfo")
+    public boolean getApplyAlignmentToAllSimulcastLayers() {
+      return applyAlignmentToAllSimulcastLayers;
+    }
+  }
+
   public interface Callback {
     
 
@@ -343,4 +376,10 @@ public interface VideoEncoder {
 
 
   @CalledByNative String getImplementationName();
+
+  @CalledByNative
+  default EncoderInfo getEncoderInfo() {
+    return new EncoderInfo(
+         1,  false);
+  }
 }

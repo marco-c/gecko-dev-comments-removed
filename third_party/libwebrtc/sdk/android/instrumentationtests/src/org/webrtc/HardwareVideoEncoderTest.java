@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -75,6 +76,8 @@ public class HardwareVideoEncoderTest {
   private static final int NUM_TEST_FRAMES = 10;
   private static final int NUM_ENCODE_TRIES = 100;
   private static final int ENCODE_RETRY_SLEEP_MS = 1;
+  private static final int PIXEL_ALIGNMENT_REQUIRED = 16;
+  private static final boolean APPLY_ALIGNMENT_TO_ALL_SIMULCAST_LAYERS = false;
 
   
   
@@ -322,7 +325,7 @@ public class HardwareVideoEncoderTest {
     return useTextures ? generateTextureFrame(width, height) : generateI420Frame(width, height);
   }
 
-  static void testEncodeFrame(
+  static VideoCodecStatus testEncodeFrame(
       VideoEncoder encoder, VideoFrame frame, VideoEncoder.EncodeInfo info) {
     int numTries = 0;
 
@@ -332,8 +335,10 @@ public class HardwareVideoEncoderTest {
 
       final VideoCodecStatus returnValue = encoder.encode(frame, info);
       switch (returnValue) {
-        case OK:
-          return; 
+        case OK: 
+                 
+        case ERR_SIZE: 
+          return returnValue;
         case NO_OUTPUT:
           if (numTries >= NUM_ENCODE_TRIES) {
             fail("encoder.encode keeps returning NO_OUTPUT");
@@ -348,6 +353,14 @@ public class HardwareVideoEncoderTest {
           fail("encoder.encode returned: " + returnValue); 
       }
     }
+  }
+
+  private static int getAlignedNumber(int number, int alignment) {
+    return (number / alignment) * alignment;
+  }
+
+  public static int getPixelAlignmentRequired() {
+    return PIXEL_ALIGNMENT_REQUIRED;
   }
 
   
@@ -446,11 +459,60 @@ public class HardwareVideoEncoderTest {
     callback.assertFrameEncoded(frame);
     frame.release();
 
-    frame = generateFrame(SETTINGS.width / 4, SETTINGS.height / 4);
+    
+    
+    frame = generateFrame(getAlignedNumber(SETTINGS.width / 4, PIXEL_ALIGNMENT_REQUIRED),
+        getAlignedNumber(SETTINGS.height / 4, PIXEL_ALIGNMENT_REQUIRED));
     testEncodeFrame(encoder, frame, info);
     callback.assertFrameEncoded(frame);
     frame.release();
 
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+  }
+
+  @Test
+  @SmallTest
+  public void testEncodeAlignmentCheck() {
+    VideoEncoder encoder = createEncoder();
+    org.webrtc.HardwareVideoEncoderTest.MockEncoderCallback callback =
+        new org.webrtc.HardwareVideoEncoderTest.MockEncoderCallback();
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(SETTINGS, callback));
+
+    VideoFrame frame;
+    VideoEncoder.EncodeInfo info = new VideoEncoder.EncodeInfo(
+        new EncodedImage.FrameType[] {EncodedImage.FrameType.VideoFrameDelta});
+
+    frame = generateFrame(SETTINGS.width / 2, SETTINGS.height / 2);
+    assertEquals(VideoCodecStatus.OK, testEncodeFrame(encoder, frame, info));
+    frame.release();
+
+    
+    
+    frame = generateFrame(SETTINGS.width / 4, SETTINGS.height / 4);
+    assertNotEquals(VideoCodecStatus.OK, testEncodeFrame(encoder, frame, info));
+    frame.release();
+
+    
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(SETTINGS, callback));
+
+    frame = generateFrame(getAlignedNumber(SETTINGS.width / 4, PIXEL_ALIGNMENT_REQUIRED),
+        getAlignedNumber(SETTINGS.height / 4, PIXEL_ALIGNMENT_REQUIRED));
+    assertEquals(VideoCodecStatus.OK, testEncodeFrame(encoder, frame, info));
+    frame.release();
+
+    assertEquals(VideoCodecStatus.OK, encoder.release());
+  }
+
+  @Test
+  @SmallTest
+  public void testGetEncoderInfo() {
+    VideoEncoder encoder = createEncoder();
+    assertEquals(VideoCodecStatus.OK, encoder.initEncode(SETTINGS, null));
+    VideoEncoder.EncoderInfo info = encoder.getEncoderInfo();
+    assertEquals(PIXEL_ALIGNMENT_REQUIRED, info.getRequestedResolutionAlignment());
+    assertEquals(
+        APPLY_ALIGNMENT_TO_ALL_SIMULCAST_LAYERS, info.getApplyAlignmentToAllSimulcastLayers());
     assertEquals(VideoCodecStatus.OK, encoder.release());
   }
 }

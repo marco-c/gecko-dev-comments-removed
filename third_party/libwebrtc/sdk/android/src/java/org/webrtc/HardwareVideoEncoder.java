@@ -55,6 +55,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   private static final int DEQUEUE_OUTPUT_BUFFER_TIMEOUT_US = 100000;
 
   
+  private static final int REQUIRED_RESOLUTION_ALIGNMENT = 16;
+
+  
 
 
 
@@ -207,6 +210,12 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     this.callback = callback;
     automaticResizeOn = settings.automaticResizeOn;
+
+    if (settings.width % REQUIRED_RESOLUTION_ALIGNMENT != 0
+        || settings.height % REQUIRED_RESOLUTION_ALIGNMENT != 0) {
+      Logging.e(TAG, "MediaCodec is only tested with resolutions that are 16x16 aligned.");
+      return VideoCodecStatus.ERR_SIZE;
+    }
     this.width = settings.width;
     this.height = settings.height;
     useSurfaceMode = canUseSurface();
@@ -498,11 +507,27 @@ class HardwareVideoEncoder implements VideoEncoder {
     return "HWEncoder";
   }
 
+  @Override
+  public EncoderInfo getEncoderInfo() {
+    
+    
+    
+    return new EncoderInfo(
+         REQUIRED_RESOLUTION_ALIGNMENT,
+         false);
+  }
+
   private VideoCodecStatus resetCodec(int newWidth, int newHeight, boolean newUseSurfaceMode) {
     encodeThreadChecker.checkIsOnValidThread();
     VideoCodecStatus status = release();
     if (status != VideoCodecStatus.OK) {
       return status;
+    }
+
+    if (newWidth % REQUIRED_RESOLUTION_ALIGNMENT != 0
+        || newHeight % REQUIRED_RESOLUTION_ALIGNMENT != 0) {
+      Logging.e(TAG, "MediaCodec is only tested with resolutions that are 16x16 aligned.");
+      return VideoCodecStatus.ERR_SIZE;
     }
     width = newWidth;
     height = newHeight;
