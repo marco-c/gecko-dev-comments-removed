@@ -3154,6 +3154,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+  bool IsContentHiddenForLayout() const;
+
+  
+
+
+
   bool AncestorHidesContent() const;
 
   
