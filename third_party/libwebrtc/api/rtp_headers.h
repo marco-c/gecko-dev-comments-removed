@@ -158,7 +158,6 @@ struct RTPHeaderExtension {
 
   
   
-  
   std::string stream_id;
   std::string repaired_stream_id;
 
