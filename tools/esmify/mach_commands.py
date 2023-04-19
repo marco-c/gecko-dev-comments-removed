@@ -32,15 +32,10 @@ excluded_from_convert_prefix = list(
         path_sep_to_native,
         [
             
-            "docshell/test/unit/AllowJavascriptChild.jsm",
-            "docshell/test/unit/AllowJavascriptParent.jsm",
             "toolkit/actors/TestProcessActorChild.jsm",
             "toolkit/actors/TestProcessActorParent.jsm",
             "toolkit/actors/TestWindowChild.jsm",
             "toolkit/actors/TestWindowParent.jsm",
-            
-            "docshell/test/browser/Bug1622420Child.jsm",
-            "docshell/test/browser/Bug422543Child.jsm",
             "js/xpconnect/tests/unit/",
             
             "python/mozbuild/mozbuild/test/",

@@ -1,15 +1,11 @@
+/* Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DocShellHelpersParent", "DocShellHelpersChild"];
-
-class DocShellHelpersParent extends JSWindowActorParent {
+export class DocShellHelpersParent extends JSWindowActorParent {
   static eventListener;
 
-  
-  
+  // These static variables should be set when registering the actor
+  // (currently doPageNavigation in docshell_helpers.js).
   static eventsToListenFor;
   static observers;
 
@@ -31,13 +27,13 @@ class DocShellHelpersParent extends JSWindowActorParent {
   }
 }
 
-class DocShellHelpersChild extends JSWindowActorChild {
+export class DocShellHelpersChild extends JSWindowActorChild {
   constructor() {
     super();
   }
   receiveMessage({ name, data }) {
     if (name == "docshell_helpers:preventBFCache") {
-      
+      // Add an RTCPeerConnection to prevent the page from being bfcached.
       let win = this.contentWindow;
       win.blockBFCache = new win.RTCPeerConnection();
     }
