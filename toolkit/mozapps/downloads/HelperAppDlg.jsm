@@ -112,9 +112,6 @@ nsUnknownContentTypeDialogProgressListener.prototype = {
 
 
 
-
-
-
 const PREF_BD_USEDOWNLOADDIR = "browser.download.useDownloadDir";
 const nsITimer = Ci.nsITimer;
 
