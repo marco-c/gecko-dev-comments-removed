@@ -1536,7 +1536,6 @@ bitflags! {
 }
 
 
-#[repr(transparent)]
 #[derive(
     Clone,
     Debug,
@@ -1548,17 +1547,23 @@ bitflags! {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct ContainerName(#[css(iterable, if_empty = "none")] pub crate::OwnedSlice<CustomIdent>);
+#[repr(u8)]
+pub enum ContainerName {
+    
+    None,
+    
+    Ident(CustomIdent),
+}
 
 impl ContainerName {
     
     pub fn none() -> Self {
-        Self(Default::default())
+       Self::None
     }
 
     
     pub fn is_none(&self) -> bool {
-        self.0.is_empty()
+        matches!(self, Self::None)
     }
 }
 
@@ -1567,7 +1572,6 @@ impl Parse for ContainerName {
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let mut idents = vec![];
         let location = input.current_source_location();
         let first = input.expect_ident()?;
         if first.eq_ignore_ascii_case("none") {
@@ -1575,19 +1579,8 @@ impl Parse for ContainerName {
         }
         const DISALLOWED_CONTAINER_NAMES: &'static [&'static str] =
             &["none", "not", "or", "and", "auto", "normal"];
-        idents.push(CustomIdent::from_ident(
-            location,
-            first,
-            DISALLOWED_CONTAINER_NAMES,
-        )?);
-        while let Ok(ident) = input.try_parse(|input| input.expect_ident_cloned()) {
-            idents.push(CustomIdent::from_ident(
-                location,
-                &ident,
-                DISALLOWED_CONTAINER_NAMES,
-            )?);
-        }
-        Ok(ContainerName(idents.into()))
+
+        Ok(ContainerName::Ident(CustomIdent::from_ident(location, first, DISALLOWED_CONTAINER_NAMES)?))
     }
 }
 
