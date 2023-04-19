@@ -147,6 +147,10 @@ class RRSendQueue : public SendQueue {
     
     bool has_partially_sent_message() const;
 
+    
+    
+    bool HasDataToSend(TimeMs now);
+
    private:
     
     struct Item {
@@ -173,8 +177,6 @@ class RRSendQueue : public SendQueue {
       FSN current_fsn = FSN(0);
     };
 
-    
-    Item* GetFirstNonExpiredMessage(TimeMs now);
     bool IsConsistent() const;
 
     
@@ -202,6 +204,9 @@ class RRSendQueue : public SendQueue {
       TimeMs now,
       size_t max_size);
 
+  
+  std::map<StreamID, OutgoingStream>::iterator GetNextStream(TimeMs now);
+
   const std::string log_prefix_;
   const size_t buffer_size_;
 
@@ -217,7 +222,13 @@ class RRSendQueue : public SendQueue {
   ThresholdWatcher total_buffered_amount_;
 
   
-  StreamID next_stream_id_ = StreamID(0);
+  
+  
+  
+  bool previous_message_has_ended_ = true;
+
+  
+  StreamID current_stream_id_ = StreamID(0);
 
   
   std::map<StreamID, OutgoingStream> streams_;
