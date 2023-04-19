@@ -364,12 +364,7 @@ class MetaBuildWrapper(object):
       if out:
         self.Print(out, end='')
       if err:
-        
-        
-        
-        if (ret == 2 and 'Please login to' in err):
-          err = err.replace(' auth.py', ' tools/swarming_client/auth.py')
-          self.Print(err, end='', file=sys.stderr)
+        self.Print(err, end='', file=sys.stderr)
 
       return ret
 
