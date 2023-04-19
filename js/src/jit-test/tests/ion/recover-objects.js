@@ -213,9 +213,7 @@ for (var i = 0; i < max; i++) {
     dynamicSlots(i);
     testNewObject1(i);
     testNewObjectWithBranchPruning(i);
-
-    
-    
+    unknownLoad(i);
 
     
     
