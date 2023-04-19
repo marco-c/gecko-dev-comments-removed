@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -360,6 +361,8 @@ class RetransmissionQueue {
   
   
   std::map<UnwrappedTSN, TxData> outstanding_data_;
+  
+  std::set<UnwrappedTSN> to_be_retransmitted_;
   
   size_t outstanding_bytes_ = 0;
 };
