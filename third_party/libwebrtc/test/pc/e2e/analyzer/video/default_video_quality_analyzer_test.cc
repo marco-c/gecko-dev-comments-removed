@@ -1459,6 +1459,11 @@ TEST(DefaultVideoQualityAnalyzerTest, GetStreamFrames) {
                             VideoQualityAnalyzerInterface::EncoderStats());
   }
   
+
+  
+  
+  
+  SleepMs(100);
   analyzer.Stop();
 
   EXPECT_EQ(analyzer.GetStreamFrames(), stream_to_frame_ids);
