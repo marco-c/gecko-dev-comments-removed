@@ -573,11 +573,18 @@ static bool CanUseJob() {
 
 
 
+
 static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
   static auto dynamicCodeFlag = []() {
 #ifdef _M_X64
     if (IsWin10CreatorsUpdateOrLater()) {
       return sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+    }
+#endif  
+
+#ifdef NIGHTLY_BUILD
+    if (IsWin10AnniversaryUpdateOrLater()) {
+      return sandbox::MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT;
     }
 #endif  
 
