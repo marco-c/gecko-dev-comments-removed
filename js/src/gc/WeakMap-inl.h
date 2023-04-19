@@ -276,18 +276,8 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
       gc::Cell* delegate = gc::detail::GetDelegate(e.front().key());
 
       gc::TenuredCell* tenuredValue = nullptr;
-      if (value) {
-        if (value->isTenured()) {
-          tenuredValue = &value->asTenured();
-        } else {
-          
-          
-          
-          
-          
-          
-          TraceEdge(marker, &e.front().value(), "WeakMap entry value");
-        }
+      if (value && value->isTenured()) {
+        tenuredValue = &value->asTenured();
       }
 
       if (!addImplicitEdges(weakKey, delegate, tenuredValue)) {
