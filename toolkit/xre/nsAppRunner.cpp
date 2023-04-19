@@ -5212,14 +5212,26 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
 #if defined(MOZ_SANDBOX)
 void AddSandboxAnnotations() {
-  
-  int level = GetEffectiveContentSandboxLevel();
+  {
+    
+    int level = GetEffectiveContentSandboxLevel();
 
-  nsAutoCString levelString;
-  levelString.AppendInt(level);
+    nsAutoCString levelString;
+    levelString.AppendInt(level);
 
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::ContentSandboxLevel, levelString);
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::ContentSandboxLevel, levelString);
+  }
+
+  {
+    int level = GetEffectiveGpuSandboxLevel();
+
+    nsAutoCString levelString;
+    levelString.AppendInt(level);
+
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::GpuSandboxLevel, levelString);
+  }
 
   
   bool sandboxCapable = false;
