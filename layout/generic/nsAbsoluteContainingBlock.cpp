@@ -816,59 +816,65 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
   ReflowOutput kidDesiredSize(kidReflowInput);
   aKidFrame->Reflow(aPresContext, kidDesiredSize, kidReflowInput, aStatus);
 
-  const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
-
-  LogicalMargin offsets = kidReflowInput.ComputedLogicalOffsets(outerWM);
-  LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
-
   
   
-  
-  if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
-    margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
-  }
-  if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
-    margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
-  }
+  if (!aKidFrame->IsMenuPopupFrame()) {
+    const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
 
-  
-  
-  ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
-                              &offsets, &logicalCBSize);
+    LogicalMargin offsets = kidReflowInput.ComputedLogicalOffsets(outerWM);
+    LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
 
-  if (kidReflowInput.mFrame->HasIntrinsicKeywordForBSize()) {
-    ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
-                                  margin, offsets);
-  }
-
-  
-  LogicalRect rect(
-      outerWM,
-      border.IStart(outerWM) + offsets.IStart(outerWM) + margin.IStart(outerWM),
-      border.BStart(outerWM) + offsets.BStart(outerWM) + margin.BStart(outerWM),
-      kidSize.ISize(outerWM), kidSize.BSize(outerWM));
-  nsRect r = rect.GetPhysicalRect(
-      outerWM, logicalCBSize.GetPhysicalSize(wm) +
-                   border.Size(outerWM).GetPhysicalSize(outerWM));
-
-  
-  r.x += aContainingBlock.x;
-  r.y += aContainingBlock.y;
-
-  aKidFrame->SetRect(r);
-
-  nsView* view = aKidFrame->GetView();
-  if (view) {
     
     
-    nsContainerFrame::SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
-                                               kidDesiredSize.InkOverflow());
-  } else {
-    nsContainerFrame::PositionChildViews(aKidFrame);
+    
+    if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
+      margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
+    }
+    if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
+      margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
+    }
+
+    
+    
+    ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
+                                &offsets, &logicalCBSize);
+
+    if (kidReflowInput.mFrame->HasIntrinsicKeywordForBSize()) {
+      ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
+                                    margin, offsets);
+    }
+
+    LogicalRect rect(outerWM,
+                     border.IStart(outerWM) + offsets.IStart(outerWM) +
+                         margin.IStart(outerWM),
+                     border.BStart(outerWM) + offsets.BStart(outerWM) +
+                         margin.BStart(outerWM),
+                     kidSize.ISize(outerWM), kidSize.BSize(outerWM));
+    nsRect r = rect.GetPhysicalRect(
+        outerWM, logicalCBSize.GetPhysicalSize(wm) +
+                     border.Size(outerWM).GetPhysicalSize(outerWM));
+
+    
+    
+    r.x += aContainingBlock.x;
+    r.y += aContainingBlock.y;
+
+    aKidFrame->SetRect(r);
+
+    nsView* view = aKidFrame->GetView();
+    if (view) {
+      
+      
+      nsContainerFrame::SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
+                                                 kidDesiredSize.InkOverflow());
+    } else {
+      nsContainerFrame::PositionChildViews(aKidFrame);
+    }
   }
 
   aKidFrame->DidReflow(aPresContext, &kidReflowInput);
 
+  const nsRect r = aKidFrame->GetRect();
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent - 1);
