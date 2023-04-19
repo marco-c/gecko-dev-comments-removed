@@ -47,7 +47,7 @@ impl Parse for Input {
         let attrs = input.call(Attribute::parse_outer)?;
 
         let ahead = input.fork();
-        let _: Visibility = ahead.parse()?;
+        let _vis: Visibility = ahead.parse()?;
         if !ahead.peek(Token![struct]) && !ahead.peek(Token![enum]) {
             
             
