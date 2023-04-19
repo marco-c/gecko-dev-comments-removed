@@ -82,7 +82,7 @@ class nsScriptErrorBase : public nsIScriptError {
   
   uint64_t mOuterWindowID;
   uint64_t mInnerWindowID;
-  int64_t mTimeStamp;
+  int64_t mMicroSecondTimeStamp;
   
   
   mozilla::Atomic<bool> mInitializedOnMainThread;
