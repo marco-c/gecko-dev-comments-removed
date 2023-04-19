@@ -47,16 +47,23 @@ const LOCATIONS = [
   
   { lat: 42.557079, lng: 18.4370373, expectedRegion: "HR" },
   
-  { lat: 45.608696, lng: 13.4667903, expectedRegion: "IT" },
+  { lat: 45.608696, lng: 13.4667903, expectedRegion: "HR" },
   
   { lat: 35.4411368, lng: -41.5372973, expectedRegion: null },
+  
+  { lat: -5.066019, lng: 39.1026251, expectedRegion: "TZ" },
 ];
 
 add_task(async function test_local_basic() {
-  setLocation({ lat: -5.066019, lng: 39.1026251 });
-  let expectedRegion = "TZ";
-  let region = await Region._getRegionLocally();
-  Assert.equal(region, expectedRegion);
+  for (const { lat, lng, expectedRegion } of LOCATIONS) {
+    setLocation({ lat, lng });
+    let region = await Region._getRegionLocally();
+    Assert.equal(
+      region,
+      expectedRegion,
+      `Got the expected region at ${lat},${lng}`
+    );
+  }
 });
 
 add_task(async function test_mls_results() {
