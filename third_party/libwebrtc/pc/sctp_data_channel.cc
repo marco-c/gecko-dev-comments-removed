@@ -309,12 +309,8 @@ bool SctpDataChannel::Send(const DataBuffer& buffer) {
   
   if (!queued_send_data_.Empty()) {
     if (!QueueSendDataMessage(buffer)) {
-      RTC_LOG(LS_ERROR) << "Closing the DataChannel due to a failure to queue "
-                           "additional data.";
       
-      
-      CloseAbruptlyWithError(RTCError(RTCErrorType::RESOURCE_EXHAUSTED,
-                                      "Unable to queue data for sending"));
+      return false;
     }
     return true;
   }

@@ -187,8 +187,6 @@ class RTC_EXPORT DataChannelInterface : public rtc::RefCountInterface {
   
   
   
-  
-  
   virtual bool Send(const DataBuffer& buffer) = 0;
 
   

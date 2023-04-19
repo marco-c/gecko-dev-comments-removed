@@ -545,22 +545,28 @@ TEST_F(SctpDataChannelTest, OpenAckRoleInitialization) {
 }
 
 
-TEST_F(SctpDataChannelTest, ClosedWhenSendBufferFull) {
+
+TEST_F(SctpDataChannelTest, OpenWhenSendBufferFull) {
   SetChannelReady();
 
-  rtc::CopyOnWriteBuffer buffer(1024);
+  const size_t packetSize = 1024;
+
+  rtc::CopyOnWriteBuffer buffer(packetSize);
   memset(buffer.MutableData(), 0, buffer.size());
 
   webrtc::DataBuffer packet(buffer, true);
   provider_->set_send_blocked(true);
 
-  for (size_t i = 0; i < 16 * 1024 + 1; ++i) {
+  for (size_t i = 0;
+       i < webrtc::DataChannelInterface::MaxSendQueueSize() / packetSize; ++i) {
     EXPECT_TRUE(webrtc_data_channel_->Send(packet));
   }
 
-  EXPECT_TRUE(
-      webrtc::DataChannelInterface::kClosed == webrtc_data_channel_->state() ||
-      webrtc::DataChannelInterface::kClosing == webrtc_data_channel_->state());
+  
+  EXPECT_FALSE(webrtc_data_channel_->Send(packet));
+
+  EXPECT_TRUE(webrtc::DataChannelInterface::kOpen ==
+              webrtc_data_channel_->state());
 }
 
 
