@@ -109,7 +109,7 @@
 #include "nsINode.h"                   
 #include "nsISelectionController.h"    
 #include "nsISelectionDisplay.h"       
-#include "nsISupportsBase.h"           
+#include "nsISupports.h"               
 #include "nsISupportsUtils.h"          
 #include "nsITransferable.h"           
 #include "nsITransactionManager.h"

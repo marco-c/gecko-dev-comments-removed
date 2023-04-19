@@ -36,7 +36,7 @@
 #include "nsIEditorSpellCheck.h"     
 #include "nsINode.h"                 
 #include "nsISelectionController.h"  
-#include "nsISupportsBase.h"         
+#include "nsISupports.h"             
 #include "nsISupportsUtils.h"        
 #include "nsRange.h"                 
 #include "nsString.h"                

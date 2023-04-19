@@ -33,7 +33,7 @@
 #include "mozilla/dom/Document.h"     
 #include "nsIEditor.h"                
 #include "nsILoadContext.h"
-#include "nsISupportsBase.h"   
+#include "nsISupports.h"       
 #include "nsISupportsUtils.h"  
 #include "nsIURI.h"            
 #include "nsThreadUtils.h"     
