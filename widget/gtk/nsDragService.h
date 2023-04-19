@@ -99,9 +99,17 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
 
-  void EventLoopEnter() { mEventLoopDepth++; };
-  void EventLoopLeave() { mEventLoopDepth--; };
-  int GetLoopDepth() { return mEventLoopDepth; };
+  class AutoEventLoop {
+    RefPtr<nsDragService> mService;
+
+   public:
+    explicit AutoEventLoop(RefPtr<nsDragService> aService)
+        : mService(std::move(aService)) {
+      mService->mEventLoopDepth++;
+    }
+    ~AutoEventLoop() { mService->mEventLoopDepth--; }
+  };
+  int GetLoopDepth() const { return mEventLoopDepth; };
 
  protected:
   virtual ~nsDragService();
