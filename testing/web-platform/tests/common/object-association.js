@@ -6,14 +6,43 @@
 
 
 
+
+
+
+
 window.testIsPerWindow = propertyName => {
-  test(t => {
+  runTests(propertyName, assert_equals, "must not");
+};
+
+window.testIsPerDocument = propertyName => {
+  runTests(propertyName, assert_not_equals, "must");
+};
+
+function runTests(propertyName, equalityOrInequalityAsserter, mustOrMustNotReplace) {
+  async_test(t => {
     const iframe = document.createElement("iframe");
     document.body.appendChild(iframe);
     const frame = iframe.contentWindow;
 
     const before = frame[propertyName];
-    assert_true(before !== undefined && before !== null, `window.${propertyName} must be implemented`);
+    assert_implements(before, `window.${propertyName} must be implemented`);
+
+    iframe.onload = t.step_func_done(() => {
+      const after = frame[propertyName];
+      equalityOrInequalityAsserter(after, before);
+    });
+
+    iframe.src = "/common/blank.html";
+  }, `Navigating from the initial about:blank ${mustOrMustNotReplace} replace window.${propertyName}`);
+
+  
+  test(() => {
+    const iframe = document.createElement("iframe");
+    document.body.appendChild(iframe);
+    const frame = iframe.contentWindow;
+
+    const before = frame[propertyName];
+    assert_implements(before, `window.${propertyName} must be implemented`);
 
     iframe.remove();
 
@@ -21,30 +50,7 @@ window.testIsPerWindow = propertyName => {
     assert_equals(after, before, `window.${propertyName} should not change after iframe.remove()`);
   }, `Discarding the browsing context must not change window.${propertyName}`);
 
-  async_test(t => {
-    const iframe = document.createElement("iframe");
-    document.body.appendChild(iframe);
-    const frame = iframe.contentWindow;
-
-    const before = frame[propertyName];
-    assert_true(before !== undefined && before !== null, `window.${propertyName} must be implemented`);
-
-    
-    iframe.onload = t.step_func(() => {
-      if (frame.location.href === "about:blank") {
-        
-        
-        return;
-      }
-
-      const after = frame[propertyName];
-      assert_equals(after, before);
-      t.done();
-    });
-
-    iframe.src = "/common/blank.html";
-  }, `Navigating from the initial about:blank must not replace window.${propertyName}`);
-
+  
   
   async_test(t => {
     const iframe = document.createElement("iframe");
@@ -52,7 +58,7 @@ window.testIsPerWindow = propertyName => {
     iframe.onload = t.step_func_done(() => {
       const frame = iframe.contentWindow;
       const before = frame[propertyName];
-      assert_true(before !== undefined && before !== null, `window.${propertyName} must be implemented`);
+      assert_implements(before, `window.${propertyName} must be implemented`);
 
       frame.document.open();
 
@@ -64,5 +70,5 @@ window.testIsPerWindow = propertyName => {
 
     iframe.src = "/common/blank.html";
     document.body.appendChild(iframe);
-  }, `document.open() must replace window.${propertyName}`);
-};
+  }, `document.open() must not replace window.${propertyName}`);
+}
