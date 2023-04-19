@@ -31,8 +31,29 @@ extern "C" {
 
 #include <stdarg.h>
 
+#include <spa/utils/type.h>
 #include <spa/utils/defs.h>
 #include <spa/utils/hook.h>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SPA_LOG_TOPIC_DEFAULT NULL
 
 enum spa_log_level {
 	SPA_LOG_LEVEL_NONE = 0,
@@ -48,11 +69,11 @@ enum spa_log_level {
 
 #define SPA_TYPE_INTERFACE_Log	SPA_TYPE_INFO_INTERFACE_BASE "Log"
 
-#define SPA_VERSION_LOG		0
 
 struct spa_log {
 	
 
+#define SPA_VERSION_LOG		0
 	struct spa_interface iface;
 	
 
@@ -60,10 +81,37 @@ struct spa_log {
 	enum spa_log_level level;
 };
 
-struct spa_log_methods {
-#define SPA_VERSION_LOG_METHODS	0
+
+
+
+
+
+
+
+
+
+
+struct spa_log_topic {
+#define SPA_VERSION_LOG_TOPIC	0
+	
+
 	uint32_t version;
 	
+	const char *topic;
+	
+	enum spa_log_level level;
+	
+	bool has_custom_level;
+};
+
+struct spa_log_methods {
+#define SPA_VERSION_LOG_METHODS		1
+	uint32_t version;
+	
+
+
+
+
 
 
 
@@ -92,6 +140,10 @@ struct spa_log_methods {
 
 
 
+
+
+
+
 	void (*logv) (void *object,
 		      enum spa_log_level level,
 		      const char *file,
@@ -99,30 +151,129 @@ struct spa_log_methods {
 		      const char *func,
 		      const char *fmt,
 		      va_list args) SPA_PRINTF_FUNC(6, 0);
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void (*logt) (void *object,
+		     enum spa_log_level level,
+		     const struct spa_log_topic *topic,
+		     const char *file,
+		     int line,
+		     const char *func,
+		     const char *fmt, ...) SPA_PRINTF_FUNC(7, 8);
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void (*logtv) (void *object,
+		      enum spa_log_level level,
+		      const struct spa_log_topic *topic,
+		      const char *file,
+		      int line,
+		      const char *func,
+		      const char *fmt,
+		      va_list args) SPA_PRINTF_FUNC(7, 0);
+
+	
+
+
+
+
+	void (*topic_init) (void *object, struct spa_log_topic *topic);
 };
+
+
+#define SPA_LOG_TOPIC(v, t) \
+   (struct spa_log_topic){ .version = v, .topic = (t)}
+
+#define spa_log_topic_init(l, topic)				\
+do {								\
+	struct spa_log *_l = l;					\
+	if (SPA_LIKELY(_l)) {					\
+		struct spa_interface *_if = &_l->iface;		\
+		spa_interface_call(_if, struct spa_log_methods,	\
+				topic_init, 1, topic);		\
+	}							\
+} while(0)
+
 
 #define spa_log_level_enabled(l,lev) ((l) && (l)->level >= (lev))
 
-#if defined(__USE_ISOC11) || defined(__USE_ISOC99) || \
-    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
+#define spa_log_level_topic_enabled(l,topic,lev)		\
+({								\
+	struct spa_log *_log = l;				\
+	enum spa_log_level _lev = _log ? _log->level : SPA_LOG_LEVEL_NONE;		\
+	struct spa_log_topic *_t = (struct spa_log_topic *)topic; \
+	if (_t && _t->has_custom_level)							\
+		_lev = _t->level;				\
+	_lev >= lev;						\
+})
+
+
+#define spa_log_logt(l,lev,topic,...)					\
+({									\
+	struct spa_log *_l = l;						\
+	struct spa_interface *_if = &_l->iface;				\
+	if (SPA_UNLIKELY(spa_log_level_topic_enabled(_l, topic, lev))) { \
+		if (!spa_interface_call(_if,				\
+				struct spa_log_methods, logt, 1,	\
+				lev, topic,				\
+				__VA_ARGS__))				\
+		    spa_interface_call(_if,				\
+				struct spa_log_methods, log, 0,		\
+				lev, __VA_ARGS__);			\
+	}								\
+})
+
+
+#define spa_log_logtv(l,lev,topic,...)					\
+({									\
+	struct spa_log *_l = l;						\
+	struct spa_interface *_if = &_l->iface;				\
+	if (SPA_UNLIKELY(spa_log_level_topic_enabled(_l, topic, lev))) { \
+		if (!spa_interface_call(_if,				\
+				struct spa_log_methods, logtv, 1,	\
+				lev, topic,				\
+				__VA_ARGS__))				\
+		    spa_interface_call(_if,				\
+				struct spa_log_methods, logv, 0,	\
+				lev, __VA_ARGS__);			\
+	}								\
+})
 
 #define spa_log_log(l,lev,...)					\
-({								\
-	struct spa_log *_l = l;					\
-	if (SPA_UNLIKELY(spa_log_level_enabled(_l, lev)))	\
-		spa_interface_call(&_l->iface,			\
-			struct spa_log_methods, log, 0, lev,	\
-			__VA_ARGS__);				\
-})
+	spa_log_logt(l,lev,SPA_LOG_TOPIC_DEFAULT,__VA_ARGS__)
 
 #define spa_log_logv(l,lev,...)					\
-({								\
-	struct spa_log *_l = l;					\
-	if (SPA_UNLIKELY(spa_log_level_enabled(_l, lev)))	\
-		spa_interface_call(&_l->iface,			\
-			struct spa_log_methods, logv, 0, lev,	\
-			__VA_ARGS__);				\
-})
+	spa_log_logtv(l,lev,SPA_LOG_TOPIC_DEFAULT,__VA_ARGS__)
 
 #define spa_log_error(l,...)	spa_log_log(l,SPA_LOG_LEVEL_ERROR,__FILE__,__LINE__,__func__,__VA_ARGS__)
 #define spa_log_warn(l,...)	spa_log_log(l,SPA_LOG_LEVEL_WARN,__FILE__,__LINE__,__func__,__VA_ARGS__)
@@ -130,40 +281,19 @@ struct spa_log_methods {
 #define spa_log_debug(l,...)	spa_log_log(l,SPA_LOG_LEVEL_DEBUG,__FILE__,__LINE__,__func__,__VA_ARGS__)
 #define spa_log_trace(l,...)	spa_log_log(l,SPA_LOG_LEVEL_TRACE,__FILE__,__LINE__,__func__,__VA_ARGS__)
 
+#define spa_logt_error(l,t,...)	spa_log_logt(l,SPA_LOG_LEVEL_ERROR,t,__FILE__,__LINE__,__func__,__VA_ARGS__)
+#define spa_logt_warn(l,t,...)	spa_log_logt(l,SPA_LOG_LEVEL_WARN,t,__FILE__,__LINE__,__func__,__VA_ARGS__)
+#define spa_logt_info(l,t,...)	spa_log_logt(l,SPA_LOG_LEVEL_INFO,t,__FILE__,__LINE__,__func__,__VA_ARGS__)
+#define spa_logt_debug(l,t,...)	spa_log_logt(l,SPA_LOG_LEVEL_DEBUG,t,__FILE__,__LINE__,__func__,__VA_ARGS__)
+#define spa_logt_trace(l,t,...)	spa_log_logt(l,SPA_LOG_LEVEL_TRACE,t,__FILE__,__LINE__,__func__,__VA_ARGS__)
+
 #ifndef FASTPATH
 #define spa_log_trace_fp(l,...)	spa_log_log(l,SPA_LOG_LEVEL_TRACE,__FILE__,__LINE__,__func__,__VA_ARGS__)
 #else
 #define spa_log_trace_fp(l,...)
 #endif
 
-#else
 
-#define SPA_LOG_FUNC(name,lev)							\
-static inline SPA_PRINTF_FUNC(2,3) void spa_log_##name (struct spa_log *l, const char *format, ...)  \
-{										\
-	if (SPA_UNLIKELY(spa_log_level_enabled(l, lev))) {			\
-		va_list varargs;						\
-		va_start (varargs, format);					\
-		spa_interface_call(&l->iface,					\
-			struct spa_log_methods, logv, 0, lev,			\
-			__FILE__,__LINE__,__func__,format,varargs);		\
-		va_end (varargs);						\
-	}									\
-}
-
-SPA_LOG_FUNC(error, SPA_LOG_LEVEL_ERROR)
-SPA_LOG_FUNC(warn, SPA_LOG_LEVEL_WARN)
-SPA_LOG_FUNC(info, SPA_LOG_LEVEL_INFO)
-SPA_LOG_FUNC(debug, SPA_LOG_LEVEL_DEBUG)
-SPA_LOG_FUNC(trace, SPA_LOG_LEVEL_TRACE)
-
-#ifndef FASTPATH
-SPA_LOG_FUNC(trace_fp, SPA_LOG_LEVEL_TRACE)
-#else
-static inline void spa_log_trace_fp (struct spa_log *l, const char *format, ...) { }
-#endif
-
-#endif
 
 
 #define SPA_KEY_LOG_LEVEL		"log.level"		/**< the default log level */
@@ -172,6 +302,11 @@ static inline void spa_log_trace_fp (struct spa_log *l, const char *format, ...)
 								  *  stderr. */
 #define SPA_KEY_LOG_TIMESTAMP		"log.timestamp"		
 #define SPA_KEY_LOG_LINE		"log.line"		/**< log file and line numbers */
+#define SPA_KEY_LOG_PATTERNS		"log.patterns"		/**< Spa:String:JSON array of [ {"pattern" : level}, ... ] */
+
+
+
+
 
 #ifdef __cplusplus
 }  

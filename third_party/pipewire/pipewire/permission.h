@@ -41,6 +41,9 @@ extern "C" {
 
 
 
+
+
+
 #define PW_PERM_R	0400	/**< object can be seen and events can be received */
 #define PW_PERM_W	0200	/**< methods can be called that modify the object */
 #define PW_PERM_X	0100	/**< methods can be called on the object. The W flag must be
@@ -71,6 +74,10 @@ struct pw_permission {
 	(permission) & PW_PERM_W ? 'w' : '-',	\
 	(permission) & PW_PERM_X ? 'x' : '-',	\
 	(permission) & PW_PERM_M ? 'm' : '-'
+
+
+
+
 
 #ifdef __cplusplus
 }

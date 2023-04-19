@@ -41,9 +41,12 @@ extern "C" {
 
 
 
+
+
+
+
+
 struct pw_impl_module;
-
-
 
 
 
@@ -75,9 +78,9 @@ struct pw_impl_module_events {
 
 struct pw_impl_module *
 pw_context_load_module(struct pw_context *context,
-	       const char *name,		
-	       const char *args			,
-	       struct pw_properties *properties	);
+	       const char *name,
+	       const char *args,
+	       struct pw_properties *properties);
 
 
 struct pw_context * pw_impl_module_get_context(struct pw_impl_module *module);
@@ -102,6 +105,10 @@ void pw_impl_module_add_listener(struct pw_impl_module *module,
 
 
 void pw_impl_module_destroy(struct pw_impl_module *module);
+
+
+
+
 
 #ifdef __cplusplus
 }

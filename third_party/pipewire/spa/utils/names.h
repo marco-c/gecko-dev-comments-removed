@@ -30,6 +30,15 @@ extern "C" {
 #endif
 
 
+
+
+
+
+
+
+
+
+
 #define SPA_NAME_SUPPORT_CPU		"support.cpu"			/**< A CPU interface */
 #define SPA_NAME_SUPPORT_DBUS		"support.dbus"			/**< A DBUS interface */
 #define SPA_NAME_SUPPORT_LOG		"support.log"			/**< A Log interface */
@@ -73,6 +82,8 @@ extern "C" {
 #define SPA_NAME_AUDIO_ADAPT		"audio.adapt"			/**< combination of a node and an
 									  *  audio.convert. Does clock slaving */
 
+#define SPA_NAME_AEC				"audio.aec"				/**< Echo canceling */
+
 
 #define SPA_NAME_VIDEO_PROCESS_FORMAT	"video.process.format"		/**< processes raw video from one format
 									  *  to another */
@@ -109,6 +120,9 @@ extern "C" {
 #define SPA_NAME_API_BLUEZ5_SCO_SOURCE	"api.bluez5.sco.source"		/**< a capture Node interface for HSP/HFP profiles */
 
 
+#define SPA_NAME_API_CODEC_BLUEZ5_A2DP	"api.codec.bluez5.a2dp"		/**< Bluez5 A2DP codec plugin */
+
+
 #define SPA_NAME_API_V4L2_ENUM_UDEV	"api.v4l2.enum.udev"		/**< a v4l2 udev Device interface */
 #define SPA_NAME_API_V4L2_DEVICE	"api.v4l2.device"		/**< a v4l2 Device interface */
 #define SPA_NAME_API_V4L2_SOURCE	"api.v4l2.source"		/**< a v4l2 Node interface for
@@ -116,6 +130,7 @@ extern "C" {
 
 
 #define SPA_NAME_API_LIBCAMERA_ENUM_CLIENT	"api.libcamera.enum.client"	/**< a libcamera client Device interface */
+#define SPA_NAME_API_LIBCAMERA_ENUM_MANAGER	"api.libcamera.enum.manager"	/**< a libcamera manager Device interface */
 #define SPA_NAME_API_LIBCAMERA_DEVICE		"api.libcamera.device"		/**< a libcamera Device interface */
 #define SPA_NAME_API_LIBCAMERA_SOURCE		"api.libcamera.source"		/**< a libcamera Node interface for
 									  *  capturing */
@@ -129,6 +144,12 @@ extern "C" {
 
 #define SPA_NAME_API_VULKAN_COMPUTE_SOURCE	\
 					"api.vulkan.compute.source"	/**< a vulkan compute source. */
+#define SPA_NAME_API_VULKAN_COMPUTE_FILTER	\
+					"api.vulkan.compute.filter"	/**< a vulkan compute filter. */
+
+
+
+
 
 #ifdef __cplusplus
 }  

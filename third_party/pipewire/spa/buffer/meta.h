@@ -36,6 +36,7 @@ extern "C" {
 
 
 
+
 enum spa_meta_type {
 	SPA_META_Invalid,
 	SPA_META_Header,	
@@ -45,8 +46,9 @@ enum spa_meta_type {
 	SPA_META_Cursor,	
 	SPA_META_Control,	
 
+	SPA_META_Busy,		
 
-	SPA_META_LAST,		
+	_SPA_META_LAST,		
 };
 
 
@@ -63,8 +65,8 @@ struct spa_meta {
 };
 
 #define spa_meta_first(m)	((m)->data)
-#define spa_meta_end(m)		SPA_MEMBER((m)->data,(m)->size,void)
-#define spa_meta_check(p,m)	(SPA_MEMBER(p,sizeof(*p),void) <= spa_meta_end(m))
+#define spa_meta_end(m)		SPA_PTROFF((m)->data,(m)->size,void)
+#define spa_meta_check(p,m)	(SPA_PTROFF(p,sizeof(*p),void) <= spa_meta_end(m))
 
 
 
@@ -143,6 +145,16 @@ struct spa_meta_cursor {
 struct spa_meta_control {
 	struct spa_pod_sequence sequence;
 };
+
+
+struct spa_meta_busy {
+	uint32_t flags;
+	uint32_t count;			
+};
+
+
+
+
 
 #ifdef __cplusplus
 }  

@@ -52,10 +52,6 @@ extern "C" {
 
 
 
-
-
-
-
 struct pw_resource;
 
 #include <pipewire/impl-client.h>
@@ -126,6 +122,10 @@ void pw_resource_add_object_listener(struct pw_resource *resource,
 int pw_resource_ping(struct pw_resource *resource, int seq);
 
 
+void pw_resource_ref(struct pw_resource *resource);
+void pw_resource_unref(struct pw_resource *resource);
+
+
 int pw_resource_set_bound_id(struct pw_resource *resource, uint32_t global_id);
 
 
@@ -160,6 +160,12 @@ int pw_resource_install_marshal(struct pw_resource *resource, bool implementor);
 			type, _res, method, version, ##__VA_ARGS__);	\
 	_res;								\
 })
+
+
+
+
+
+
 
 #ifdef __cplusplus
 }

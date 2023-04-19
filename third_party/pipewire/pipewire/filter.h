@@ -38,11 +38,17 @@ extern "C" {
 
 
 
+
+
+
+
+
 struct pw_filter;
 
 #include <spa/buffer/buffer.h>
 #include <spa/node/io.h>
 #include <spa/param/param.h>
+#include <spa/pod/command.h>
 
 #include <pipewire/core.h>
 #include <pipewire/stream.h>
@@ -71,7 +77,7 @@ struct pw_buffer {
 
 
 struct pw_filter_events {
-#define PW_VERSION_FILTER_EVENTS	0
+#define PW_VERSION_FILTER_EVENTS	1
 	uint32_t version;
 
 	void (*destroy) (void *data);
@@ -98,6 +104,9 @@ struct pw_filter_events {
 
 	
         void (*drained) (void *data);
+
+	
+	void (*command) (void *data, const struct spa_command *command);
 };
 
 
@@ -111,6 +120,9 @@ enum pw_filter_flags {
 
 	PW_FILTER_FLAG_DRIVER		= (1 << 1),	
 	PW_FILTER_FLAG_RT_PROCESS	= (1 << 2),	
+
+	PW_FILTER_FLAG_CUSTOM_LATENCY	= (1 << 3),	
+
 
 };
 
@@ -170,7 +182,7 @@ pw_filter_get_node_id(struct pw_filter *filter);
 int pw_filter_disconnect(struct pw_filter *filter);
 
 
-void *pw_filter_add_port(struct pw_filter *filter,
+void *pw_filter_add_port(struct pw_filter *filter,	
 		enum pw_direction direction,		
 		enum pw_filter_port_flags flags,	
 		size_t port_data_size,			
@@ -193,7 +205,9 @@ int pw_filter_update_properties(struct pw_filter *filter,
 
 int pw_filter_set_error(struct pw_filter *filter,	
 			int res,			
-			const char *error, ...		) SPA_PRINTF_FUNC(3, 4);
+			const char *error,		
+			...
+			) SPA_PRINTF_FUNC(3, 4);
 
 
 int
@@ -203,17 +217,9 @@ pw_filter_update_params(struct pw_filter *filter,
 			uint32_t n_params		);
 
 
-#if 0
-
-struct pw_time {
-	int64_t now;			
-	struct spa_fraction rate;	
-	uint64_t ticks;			
-
-};
-#endif
 
 
+SPA_DEPRECATED
 int pw_filter_get_time(struct pw_filter *filter, struct pw_time *time);
 
 
@@ -232,6 +238,10 @@ int pw_filter_set_active(struct pw_filter *filter, bool active);
 
 
 int pw_filter_flush(struct pw_filter *filter, bool drain);
+
+
+
+
 
 #ifdef __cplusplus
 }

@@ -32,6 +32,16 @@ extern "C" {
 #include <spa/utils/defs.h>
 #include <spa/utils/dict.h>
 
+
+
+
+
+
+
+
+
+
+
 struct spa_handle {
 	
 #define SPA_VERSION_HANDLE	0
@@ -207,6 +217,10 @@ int spa_handle_factory_enum(const struct spa_handle_factory **factory, uint32_t 
 #define SPA_KEY_LIBRARY_NAME		"library.name"		/**< the name of a library. This is usually
 								  *  the filename of the plugin without the
 								  *  path or the plugin extension. */
+
+
+
+
 
 #ifdef __cplusplus
 }  

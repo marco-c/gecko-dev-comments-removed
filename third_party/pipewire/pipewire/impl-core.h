@@ -35,6 +35,12 @@ extern "C" {
 
 
 
+
+
+
+
+
+
 struct pw_impl_core;
 
 #include <pipewire/context.h>
@@ -86,6 +92,10 @@ void pw_impl_core_add_listener(struct pw_impl_core *core,
 			     struct spa_hook *listener,
 			     const struct pw_impl_core_events *events,
 			     void *data);
+
+
+
+
 
 #ifdef __cplusplus
 }

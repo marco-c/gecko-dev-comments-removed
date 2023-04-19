@@ -41,8 +41,40 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 union pw_map_item {
-	uint32_t next;	
+	uintptr_t next;	
 	void *data;	
 };
 
@@ -52,13 +84,22 @@ struct pw_map {
 	uint32_t free_list;	
 };
 
-#define PW_MAP_INIT(extend) (struct pw_map) { PW_ARRAY_INIT(extend), 0 }
+
+#define PW_MAP_INIT(extend) (struct pw_map) { PW_ARRAY_INIT(extend), SPA_ID_INVALID }
+
+
+
+
+
+
 
 #define pw_map_get_size(m)            pw_array_get_len(&(m)->items, union pw_map_item)
 #define pw_map_get_item(m,id)         pw_array_get_unchecked(&(m)->items,id,union pw_map_item)
 #define pw_map_item_is_free(item)     ((item)->next & 0x1)
 #define pw_map_id_is_free(m,id)       (pw_map_item_is_free(pw_map_get_item(m,id)))
+
 #define pw_map_check_id(m,id)         ((id) < pw_map_get_size(m))
+
 #define pw_map_has_item(m,id)         (pw_map_check_id(m,id) && !pw_map_id_is_free(m, id))
 #define pw_map_lookup_unchecked(m,id) pw_map_get_item(m,id)->data
 
@@ -72,14 +113,12 @@ struct pw_map {
 
 
 
-
 static inline void pw_map_init(struct pw_map *map, size_t size, size_t extend)
 {
-	pw_array_init(&map->items, extend);
+	pw_array_init(&map->items, extend * sizeof(union pw_map_item));
 	pw_array_ensure_size(&map->items, size * sizeof(union pw_map_item));
 	map->free_list = SPA_ID_INVALID;
 }
-
 
 
 
@@ -89,12 +128,14 @@ static inline void pw_map_clear(struct pw_map *map)
 	pw_array_clear(&map->items);
 }
 
+
+
+
 static inline void pw_map_reset(struct pw_map *map)
 {
 	pw_array_reset(&map->items);
 	map->free_list = SPA_ID_INVALID;
 }
-
 
 
 
@@ -109,7 +150,7 @@ static inline uint32_t pw_map_insert_new(struct pw_map *map, void *data)
 
 	if (map->free_list != SPA_ID_INVALID) {
 		start = (union pw_map_item *) map->items.data;
-		item = &start[map->free_list >> 1];
+		item = &start[map->free_list >> 1]; 
 		map->free_list = item->next;
 	} else {
 		item = (union pw_map_item *) pw_array_add(&map->items, sizeof(union pw_map_item));
@@ -129,7 +170,6 @@ static inline uint32_t pw_map_insert_new(struct pw_map *map, void *data)
 
 
 
-
 static inline int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
 {
 	size_t size = pw_map_get_size(map);
@@ -141,9 +181,10 @@ static inline int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
 		item = (union pw_map_item *) pw_array_add(&map->items, sizeof(union pw_map_item));
 		if (item == NULL)
 			return -errno;
-	}
-	else {
+	} else {
 		item = pw_map_get_item(map, id);
+		if (pw_map_item_is_free(item))
+			return -EINVAL;
 	}
 	item->data = data;
 	return 0;
@@ -156,10 +197,12 @@ static inline int pw_map_insert_at(struct pw_map *map, uint32_t id, void *data)
 
 static inline void pw_map_remove(struct pw_map *map, uint32_t id)
 {
+	if (pw_map_id_is_free(map, id))
+		return;
+
 	pw_map_get_item(map, id)->next = map->free_list;
 	map->free_list = (id << 1) | 1;
 }
-
 
 
 
@@ -184,7 +227,6 @@ static inline void *pw_map_lookup(struct pw_map *map, uint32_t id)
 
 
 
-
 static inline int pw_map_for_each(struct pw_map *map,
 				   int (*func) (void *item_data, void *data), void *data)
 {
@@ -198,6 +240,10 @@ static inline int pw_map_for_each(struct pw_map *map,
 	}
 	return res;
 }
+
+
+
+
 
 #ifdef __cplusplus
 }  

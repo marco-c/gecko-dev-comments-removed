@@ -29,6 +29,11 @@
 extern "C" {
 #endif
 
+
+
+
+
+
 #include <spa/param/param.h>
 
 
@@ -37,6 +42,7 @@ enum spa_profiler {
 
 	SPA_PROFILER_START_Driver	= 0x10000,	
 	SPA_PROFILER_info,				
+
 
 
 
@@ -64,6 +70,7 @@ enum spa_profiler {
 
 
 
+
 	SPA_PROFILER_START_Follower	= 0x20000,	
 	SPA_PROFILER_followerBlock,			
 
@@ -74,8 +81,14 @@ enum spa_profiler {
 
 
 
+
+
 	SPA_PROFILER_START_CUSTOM	= 0x1000000,
 };
+
+
+
+
 
 #ifdef __cplusplus
 }  

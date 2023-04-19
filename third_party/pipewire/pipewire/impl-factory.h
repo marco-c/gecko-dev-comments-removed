@@ -35,6 +35,9 @@ extern "C" {
 
 
 
+
+
+
 struct pw_impl_factory;
 
 #include <pipewire/context.h>
@@ -116,6 +119,10 @@ void *pw_impl_factory_create_object(struct pw_impl_factory *factory,
 struct pw_impl_factory *
 pw_context_find_factory(struct pw_context *context	,
 		     const char *name			);
+
+
+
+
 
 #ifdef __cplusplus
 }

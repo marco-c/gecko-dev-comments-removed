@@ -33,21 +33,15 @@ extern "C" {
 
 
 
+
+
+
+
+
 struct pw_impl_link;
 struct pw_impl_port;
 
 #include <pipewire/impl.h>
-
-
-
-
-
-
-
-
-
-
-
 
 
 struct pw_impl_link_events {
@@ -120,6 +114,10 @@ struct pw_impl_port *pw_impl_link_get_input(struct pw_impl_link *link);
 
 
 struct pw_impl_link *pw_impl_link_find(struct pw_impl_port *output, struct pw_impl_port *input);
+
+
+
+
 
 #ifdef __cplusplus
 }

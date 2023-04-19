@@ -29,6 +29,11 @@
 extern "C" {
 #endif
 
+
+
+
+
+
 #include <spa/utils/defs.h>
 #include <spa/pod/pod.h>
 
@@ -125,6 +130,7 @@ struct spa_io_range {
 
 
 struct spa_io_clock {
+#define SPA_IO_CLOCK_FLAG_FREEWHEEL (1u<<0)
 	uint32_t flags;			
 	uint32_t id;			
 	char name[64];			
@@ -286,6 +292,10 @@ struct spa_io_rate_match {
 	uint32_t flags;			
 	uint32_t padding[7];
 };
+
+
+
+
 
 #ifdef __cplusplus
 }  

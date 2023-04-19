@@ -42,6 +42,11 @@ extern "C" {
 
 
 
+
+
+
+
+
 #define SPA_TYPE_INTERFACE_Device	SPA_TYPE_INFO_INTERFACE_BASE "Device"
 
 #define SPA_VERSION_DEVICE		0
@@ -288,6 +293,11 @@ struct spa_device_methods {
 								  *  "computer", "portable" */
 #define SPA_KEY_DEVICE_PROFILE		"device.profile	"	
 #define SPA_KEY_DEVICE_PROFILE_SET	"device.profile-set"	
+#define SPA_KEY_DEVICE_STRING		"device.string"		
+
+
+
+
 
 
 #ifdef __cplusplus

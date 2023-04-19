@@ -29,6 +29,11 @@
 extern "C" {
 #endif
 
+
+
+
+
+
 #include <spa/utils/defs.h>
 #include <spa/param/video/chroma.h>
 #include <spa/param/video/color.h>
@@ -36,6 +41,17 @@ extern "C" {
 
 #define SPA_VIDEO_MAX_PLANES 4
 #define SPA_VIDEO_MAX_COMPONENTS 4
+
+
+
+
+
+
+
+
+
+
+
 
 enum spa_video_format {
 	SPA_VIDEO_FORMAT_UNKNOWN,
@@ -121,6 +137,15 @@ enum spa_video_format {
 	SPA_VIDEO_FORMAT_RGBA_F16,
 	SPA_VIDEO_FORMAT_RGBA_F32,
 
+	SPA_VIDEO_FORMAT_xRGB_210LE,	
+	SPA_VIDEO_FORMAT_xBGR_210LE,	
+	SPA_VIDEO_FORMAT_RGBx_102LE,	
+	SPA_VIDEO_FORMAT_BGRx_102LE,	
+	SPA_VIDEO_FORMAT_ARGB_210LE,	
+	SPA_VIDEO_FORMAT_ABGR_210LE,	
+	SPA_VIDEO_FORMAT_RGBA_102LE,	
+	SPA_VIDEO_FORMAT_BGRA_102LE,	
+
 	
 	SPA_VIDEO_FORMAT_DSP_F32 = SPA_VIDEO_FORMAT_RGBA_F32,
 };
@@ -128,81 +153,57 @@ enum spa_video_format {
 
 
 
-
-
-
-
-
-
-
 enum spa_video_flags {
-	SPA_VIDEO_FLAG_NONE = 0,
-	SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),
-	SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1)
+	SPA_VIDEO_FLAG_NONE = 0,			
+	SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),		
+
+	SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1),  
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 
 enum spa_video_interlace_mode {
-	SPA_VIDEO_INTERLACE_MODE_PROGRESSIVE = 0,
-	SPA_VIDEO_INTERLACE_MODE_INTERLEAVED,
-	SPA_VIDEO_INTERLACE_MODE_MIXED,
-	SPA_VIDEO_INTERLACE_MODE_FIELDS
+	SPA_VIDEO_INTERLACE_MODE_PROGRESSIVE = 0,	
+	SPA_VIDEO_INTERLACE_MODE_INTERLEAVED,		
+
+	SPA_VIDEO_INTERLACE_MODE_MIXED,			
+
+
+	SPA_VIDEO_INTERLACE_MODE_FIELDS,		
+
+
+
+
+
+
+
+
 };
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct spa_video_info_raw {
-	enum spa_video_format format;
-	int64_t modifier;
-	struct spa_rectangle size;
-	struct spa_fraction framerate;
-	struct spa_fraction max_framerate;
-	uint32_t views;
-	enum spa_video_interlace_mode interlace_mode;
-	struct spa_fraction pixel_aspect_ratio;
-	enum spa_video_multiview_mode multiview_mode;
-	enum spa_video_multiview_flags multiview_flags;
-	enum spa_video_chroma_site chroma_site;
-	enum spa_video_color_range color_range;
-	enum spa_video_color_matrix color_matrix;
-	enum spa_video_transfer_function transfer_function;
-	enum spa_video_color_primaries color_primaries;
+	enum spa_video_format format;				
+	int64_t modifier;					
+
+	struct spa_rectangle size;				
+	struct spa_fraction framerate;				
+	struct spa_fraction max_framerate;			
+
+	uint32_t views;						
+	enum spa_video_interlace_mode interlace_mode;		
+	struct spa_fraction pixel_aspect_ratio;			
+	enum spa_video_multiview_mode multiview_mode;		
+	enum spa_video_multiview_flags multiview_flags;		
+	enum spa_video_chroma_site chroma_site;			
+	enum spa_video_color_range color_range;			
+
+	enum spa_video_color_matrix color_matrix;		
+
+	enum spa_video_transfer_function transfer_function;	
+	enum spa_video_color_primaries color_primaries;		
 };
 
 #define SPA_VIDEO_INFO_RAW_INIT(...)	(struct spa_video_info_raw) { __VA_ARGS__ }
@@ -213,6 +214,10 @@ struct spa_video_info_dsp {
 };
 
 #define SPA_VIDEO_INFO_DSP_INIT(...)	(struct spa_video_info_dsp) { __VA_ARGS__ }
+
+
+
+
 
 #ifdef __cplusplus
 } 

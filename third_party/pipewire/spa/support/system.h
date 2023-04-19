@@ -40,6 +40,15 @@ struct itimerspec;
 
 
 
+
+
+
+
+
+
+
+
+
 #define SPA_TYPE_INTERFACE_System	SPA_TYPE_INFO_INTERFACE_BASE "System"
 #define SPA_TYPE_INTERFACE_DataSystem	SPA_TYPE_INFO_INTERFACE_BASE "DataSystem"
 
@@ -144,6 +153,10 @@ struct spa_system_methods {
 
 #define spa_system_signalfd_create(s,...)	spa_system_method_r(s,signalfd_create,0,__VA_ARGS__)
 #define spa_system_signalfd_read(s,...)		spa_system_method_r(s,signalfd_read,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

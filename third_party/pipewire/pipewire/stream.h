@@ -147,10 +147,49 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct pw_stream;
 
 #include <spa/buffer/buffer.h>
 #include <spa/param/param.h>
+#include <spa/pod/command.h>
 
 
 enum pw_stream_state {
@@ -161,10 +200,19 @@ enum pw_stream_state {
 	PW_STREAM_STATE_STREAMING = 3		
 };
 
+
+
 struct pw_buffer {
 	struct spa_buffer *buffer;	
 	void *user_data;		
 	uint64_t size;			
+
+
+
+	uint64_t requested;		
+
+
+
 
 };
 
@@ -180,25 +228,107 @@ struct pw_stream_control {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct pw_time {
 	int64_t now;			
+
+
+
+
+
 	struct spa_fraction rate;	
+
 	uint64_t ticks;			
 
+
 	int64_t delay;			
+
+
+
+
+
+
 
 
 	uint64_t queued;		
 
 
+	uint64_t buffered;		
+
+
+	uint32_t queued_buffers;	
+	uint32_t avail_buffers;		
 };
 
-#include <pipewire/pipewire.h>
+#include <pipewire/port.h>
 
 
 
 struct pw_stream_events {
-#define PW_VERSION_STREAM_EVENTS	0
+#define PW_VERSION_STREAM_EVENTS	2
 	uint32_t version;
 
 	void (*destroy) (void *data);
@@ -228,6 +358,11 @@ struct pw_stream_events {
 	
         void (*drained) (void *data);
 
+	
+	void (*command) (void *data, const struct spa_command *command);
+
+	
+	void (*trigger_done) (void *data);
 };
 
 
@@ -252,6 +387,11 @@ enum pw_stream_flags {
 	PW_STREAM_FLAG_DONT_RECONNECT	= (1 << 7),	
 
 	PW_STREAM_FLAG_ALLOC_BUFFERS	= (1 << 8),	
+
+
+	PW_STREAM_FLAG_TRIGGER		= (1 << 9),	
+
+
 
 
 };
@@ -316,7 +456,8 @@ int pw_stream_disconnect(struct pw_stream *stream);
 
 int pw_stream_set_error(struct pw_stream *stream,	
 			int res,			
-			const char *error, ...		) SPA_PRINTF_FUNC(3, 4);
+			const char *error,		
+			...) SPA_PRINTF_FUNC(3, 4);
 
 
 
@@ -332,9 +473,17 @@ pw_stream_update_params(struct pw_stream *stream,
 			uint32_t n_params		);
 
 
+const struct pw_stream_control *pw_stream_get_control(struct pw_stream *stream, uint32_t id);
+
+
 int pw_stream_set_control(struct pw_stream *stream, uint32_t id, uint32_t n_values, float *values, ...);
 
 
+int pw_stream_get_time_n(struct pw_stream *stream, struct pw_time *time, size_t size);
+
+
+
+SPA_DEPRECATED
 int pw_stream_get_time(struct pw_stream *stream, struct pw_time *time);
 
 
@@ -350,6 +499,20 @@ int pw_stream_set_active(struct pw_stream *stream, bool active);
 
 
 int pw_stream_flush(struct pw_stream *stream, bool drain);
+
+
+
+
+
+bool pw_stream_is_driving(struct pw_stream *stream);
+
+
+
+int pw_stream_trigger_process(struct pw_stream *stream);
+
+
+
+
 
 #ifdef __cplusplus
 }

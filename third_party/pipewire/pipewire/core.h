@@ -34,6 +34,23 @@ extern "C" {
 
 #include <spa/utils/hook.h>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Core		PW_TYPE_INFO_INTERFACE_BASE "Core"
 #define PW_TYPE_INTERFACE_Registry	PW_TYPE_INFO_INTERFACE_BASE "Registry"
 
@@ -50,6 +67,7 @@ struct pw_registry;
 
 
 #define PW_ID_ANY		(uint32_t)(0xffffffff)
+
 
 
 struct pw_core_info {
@@ -72,19 +90,13 @@ struct pw_core_info {
 
 struct pw_core_info *
 pw_core_info_update(struct pw_core_info *info,
-		    const struct pw_core_info *update);
+		const struct pw_core_info *update);
 
+struct pw_core_info *
+pw_core_info_merge(struct pw_core_info *info,
+		const struct pw_core_info *update, bool reset);
 
 void pw_core_info_free(struct pw_core_info *info);
-
-
-
-
-
-
-
-
-
 
 
 
@@ -101,7 +113,6 @@ void pw_core_info_free(struct pw_core_info *info);
 
 
 
-
 struct pw_core_events {
 #define PW_VERSION_CORE_EVENTS	0
 	uint32_t version;
@@ -114,7 +125,7 @@ struct pw_core_events {
 
 
 
-	void (*info) (void *object, const struct pw_core_info *info);
+	void (*info) (void *data, const struct pw_core_info *info);
 	
 
 
@@ -123,57 +134,14 @@ struct pw_core_events {
 
 
 
-	void (*done) (void *object, uint32_t id, int seq);
+	void (*done) (void *data, uint32_t id, int seq);
 
 	
 
 
 
 
-	void (*ping) (void *object, uint32_t id, int seq);
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	void (*error) (void *object, uint32_t id, int seq, int res, const char *message);
-	
-
-
-
-
-
-
-
-
-
-
-	void (*remove_id) (void *object, uint32_t id);
-
-	
-
-
-
-
-
-
-
-
-
-	void (*bound_id) (void *object, uint32_t id, uint32_t global_id);
+	void (*ping) (void *data, uint32_t id, int seq);
 
 	
 
@@ -189,14 +157,57 @@ struct pw_core_events {
 
 
 
-	void (*add_mem) (void *object, uint32_t id, uint32_t type, int fd, uint32_t flags);
+
+
+
+	void (*error) (void *data, uint32_t id, int seq, int res, const char *message);
+	
+
+
+
+
+
+
+
+
+
+
+	void (*remove_id) (void *data, uint32_t id);
 
 	
 
 
 
 
-	void (*remove_mem) (void *object, uint32_t id);
+
+
+
+
+
+	void (*bound_id) (void *data, uint32_t id, uint32_t global_id);
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void (*add_mem) (void *data, uint32_t id, uint32_t type, int fd, uint32_t flags);
+
+	
+
+
+
+
+	void (*remove_mem) (void *data, uint32_t id);
 };
 
 #define PW_CORE_METHOD_ADD_LISTENER	0
@@ -404,6 +415,13 @@ pw_core_create_object(struct pw_core *core,
 
 
 
+
+
+
+
+
+
+
 #define PW_REGISTRY_EVENT_GLOBAL             0
 #define PW_REGISTRY_EVENT_GLOBAL_REMOVE      1
 #define PW_REGISTRY_EVENT_NUM                2
@@ -424,7 +442,7 @@ struct pw_registry_events {
 
 
 
-	void (*global) (void *object, uint32_t id,
+	void (*global) (void *data, uint32_t id,
 		       uint32_t permissions, const char *type, uint32_t version,
 		       const struct spa_dict *props);
 	
@@ -436,7 +454,7 @@ struct pw_registry_events {
 
 
 
-	void (*global_remove) (void *object, uint32_t id);
+	void (*global_remove) (void *data, uint32_t id);
 };
 
 #define PW_REGISTRY_METHOD_ADD_LISTENER	0
@@ -508,30 +526,54 @@ pw_registry_bind(struct pw_registry *registry,
 
 
 
-struct pw_core *
-pw_context_connect(struct pw_context *context,		
-	      struct pw_properties *properties,	
-
-	      size_t user_data_size		);
 
 
 
 
 
-struct pw_core *
-pw_context_connect_fd(struct pw_context *context,	
-	      int fd,				
-	      struct pw_properties *properties,	
 
-	      size_t user_data_size		);
+
+
+
+
+
+
 
 
 
 struct pw_core *
-pw_context_connect_self(struct pw_context *context,	
-	      struct pw_properties *properties,	
+pw_context_connect(struct pw_context *context,
+	      struct pw_properties *properties,
+	      size_t user_data_size);
 
-	      size_t user_data_size		);
+
+
+
+
+
+
+
+
+
+
+struct pw_core *
+pw_context_connect_fd(struct pw_context *context,
+	      int fd,
+	      struct pw_properties *properties,
+	      size_t user_data_size);
+
+
+
+
+
+
+
+
+
+struct pw_core *
+pw_context_connect_self(struct pw_context *context,
+	      struct pw_properties *properties,
+	      size_t user_data_size);
 
 
 
@@ -575,6 +617,9 @@ struct pw_proxy *pw_core_export(struct pw_core *core,
 				  const struct spa_dict *props,		
 				  void *object,				
 				  size_t user_data_size			);
+
+
+
 
 
 #ifdef __cplusplus

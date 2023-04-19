@@ -37,6 +37,15 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
 #define SPA_TYPE_INTERFACE_CPU	SPA_TYPE_INFO_INTERFACE_BASE "CPU"
 
 #define SPA_VERSION_CPU		0
@@ -81,12 +90,30 @@ struct spa_cpu { struct spa_interface iface; };
 
 #define SPA_CPU_FORCE_AUTODETECT	((uint32_t)-1)
 
+#define SPA_CPU_VM_NONE			(0)
+#define SPA_CPU_VM_OTHER		(1 << 0)
+#define SPA_CPU_VM_KVM			(1 << 1)
+#define SPA_CPU_VM_QEMU			(1 << 2)
+#define SPA_CPU_VM_BOCHS		(1 << 3)
+#define SPA_CPU_VM_XEN			(1 << 4)
+#define SPA_CPU_VM_UML			(1 << 5)
+#define SPA_CPU_VM_VMWARE		(1 << 6)
+#define SPA_CPU_VM_ORACLE		(1 << 7)
+#define SPA_CPU_VM_MICROSOFT		(1 << 8)
+#define SPA_CPU_VM_ZVM			(1 << 9)
+#define SPA_CPU_VM_PARALLELS		(1 << 10)
+#define SPA_CPU_VM_BHYVE		(1 << 11)
+#define SPA_CPU_VM_QNX			(1 << 12)
+#define SPA_CPU_VM_ACRN			(1 << 13)
+#define SPA_CPU_VM_POWERVM		(1 << 14)
+
+
 
 
 struct spa_cpu_methods {
 	
 
-#define SPA_VERSION_CPU_METHODS	0
+#define SPA_VERSION_CPU_METHODS	2
 	uint32_t version;
 
 	
@@ -100,6 +127,13 @@ struct spa_cpu_methods {
 
 	
 	uint32_t (*get_max_align) (void *object);
+
+	
+	uint32_t (*get_vm_type) (void *object);
+
+	
+
+	int (*zero_denormals) (void *object, bool enable);
 };
 
 #define spa_cpu_method(o,method,version,...)				\
@@ -115,9 +149,17 @@ struct spa_cpu_methods {
 #define spa_cpu_force_flags(c,f)	spa_cpu_method(c, force_flags, 0, f)
 #define spa_cpu_get_count(c)		spa_cpu_method(c, get_count, 0)
 #define spa_cpu_get_max_align(c)	spa_cpu_method(c, get_max_align, 0)
+#define spa_cpu_get_vm_type(c)		spa_cpu_method(c, get_vm_type, 1)
+#define spa_cpu_zero_denormals(c,e)	spa_cpu_method(c, zero_denormals, 2, e)
 
 
 #define SPA_KEY_CPU_FORCE		"cpu.force"		/**< force cpu flags */
+#define SPA_KEY_CPU_VM_TYPE		"cpu.vm.type"		/**< force a VM type */
+#define SPA_KEY_CPU_ZERO_DENORMALS	"cpu.zero.denormals"	/**< zero denormals */
+
+
+
+
 
 #ifdef __cplusplus
 }  

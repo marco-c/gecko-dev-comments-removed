@@ -29,6 +29,11 @@
 extern "C" {
 #endif
 
+
+
+
+
+
 #include <spa/param/param.h>
 
 
@@ -47,6 +52,8 @@ enum spa_media_subtype {
 	SPA_MEDIA_SUBTYPE_unknown,
 	SPA_MEDIA_SUBTYPE_raw,
 	SPA_MEDIA_SUBTYPE_dsp,
+	SPA_MEDIA_SUBTYPE_iec958,	
+	SPA_MEDIA_SUBTYPE_dsd,
 
 	SPA_MEDIA_SUBTYPE_START_Audio	= 0x10000,
 	SPA_MEDIA_SUBTYPE_mp3,
@@ -105,10 +112,16 @@ enum spa_format {
 	SPA_FORMAT_AUDIO_channels,	
 	SPA_FORMAT_AUDIO_position,	
 
+	SPA_FORMAT_AUDIO_iec958Codec,	
+
+	SPA_FORMAT_AUDIO_bitorder,	
+	SPA_FORMAT_AUDIO_interleave,	
+
 	
 	SPA_FORMAT_START_Video = 0x20000,
 	SPA_FORMAT_VIDEO_format,		
 	SPA_FORMAT_VIDEO_modifier,		
+
 	SPA_FORMAT_VIDEO_size,			
 	SPA_FORMAT_VIDEO_framerate,		
 	SPA_FORMAT_VIDEO_maxFramerate,		
@@ -139,6 +152,10 @@ enum spa_format {
 
 #define SPA_KEY_FORMAT_DSP		"format.dsp"		/**< a predefined DSP format,
 								  *  Ex. "32 bit float mono audio" */
+
+
+
+
 
 #ifdef __cplusplus
 }  

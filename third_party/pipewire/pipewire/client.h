@@ -35,6 +35,14 @@ extern "C" {
 #include <pipewire/proxy.h>
 #include <pipewire/permission.h>
 
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Client	PW_TYPE_INFO_INTERFACE_BASE "Client"
 
 #define PW_VERSION_CLIENT		3
@@ -55,8 +63,11 @@ struct pw_client_info {
 
 struct pw_client_info *
 pw_client_info_update(struct pw_client_info *info,
-		      const struct pw_client_info *update);
+		const struct pw_client_info *update);
 
+struct pw_client_info *
+pw_client_info_merge(struct pw_client_info *info,
+		const struct pw_client_info *update, bool reset);
 
 void pw_client_info_free(struct pw_client_info *info);
 
@@ -74,7 +85,7 @@ struct pw_client_events {
 
 
 
-	void (*info) (void *object, const struct pw_client_info *info);
+	void (*info) (void *data, const struct pw_client_info *info);
 	
 
 
@@ -85,7 +96,7 @@ struct pw_client_events {
 
 
 
-	void (*permissions) (void *object,
+	void (*permissions) (void *data,
 			     uint32_t index,
 			     uint32_t n_permissions,
 			     const struct pw_permission *permissions);
@@ -163,6 +174,10 @@ struct pw_client_methods {
 #define pw_client_update_properties(c,...)	pw_client_method(c,update_properties,0,__VA_ARGS__)
 #define pw_client_get_permissions(c,...)	pw_client_method(c,get_permissions,0,__VA_ARGS__)
 #define pw_client_update_permissions(c,...)	pw_client_method(c,update_permissions,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

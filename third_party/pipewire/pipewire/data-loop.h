@@ -30,6 +30,14 @@ extern "C" {
 #endif
 
 #include <spa/utils/hook.h>
+#include <spa/support/thread.h>
+
+
+
+
+
+
+
 
 
 
@@ -82,11 +90,21 @@ int pw_data_loop_stop(struct pw_data_loop *loop);
 
 bool pw_data_loop_in_thread(struct pw_data_loop *loop);
 
+struct spa_thread *pw_data_loop_get_thread(struct pw_data_loop *loop);
+
 
 
 int pw_data_loop_invoke(struct pw_data_loop *loop,
 		spa_invoke_func_t func, uint32_t seq, const void *data, size_t size,
 		bool block, void *user_data);
+
+
+
+void pw_data_loop_set_thread_utils(struct pw_data_loop *loop,
+		struct spa_thread_utils *impl);
+
+
+
 
 #ifdef __cplusplus
 }

@@ -51,11 +51,14 @@ extern "C" {
 
 
 
+
+
+
 struct pw_global;
 
 #include <pipewire/impl.h>
 
-typedef int (*pw_global_bind_func_t) (void *object,
+typedef int (*pw_global_bind_func_t) (void *object,	
 		      struct pw_impl_client *client,	
 		      uint32_t permissions,	
 		      uint32_t version,		
@@ -115,7 +118,7 @@ const struct pw_properties *pw_global_get_properties(struct pw_global *global);
 
 
 int pw_global_update_keys(struct pw_global *global,
-		     const struct spa_dict *dict, const char *keys[]);
+		     const struct spa_dict *dict, const char * const keys[]);
 
 
 
@@ -123,6 +126,9 @@ void *pw_global_get_object(struct pw_global *global);
 
 
 uint32_t pw_global_get_id(struct pw_global *global);
+
+
+uint64_t pw_global_get_serial(struct pw_global *global);
 
 
 int pw_global_add_resource(struct pw_global *global, struct pw_resource *resource);
@@ -147,6 +153,10 @@ int pw_global_update_permissions(struct pw_global *global, struct pw_impl_client
 
 
 void pw_global_destroy(struct pw_global *global);
+
+
+
+
 
 #ifdef __cplusplus
 }

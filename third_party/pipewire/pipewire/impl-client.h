@@ -41,6 +41,43 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct pw_impl_client;
 
 #include <pipewire/context.h>
@@ -48,36 +85,6 @@ struct pw_impl_client;
 #include <pipewire/properties.h>
 #include <pipewire/resource.h>
 #include <pipewire/permission.h>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 struct pw_impl_client_events {
@@ -111,7 +118,7 @@ struct pw_impl_client_events {
 
 struct pw_impl_client *
 pw_context_create_client(struct pw_impl_core *core,		
-			struct pw_protocol *prototol,		
+			struct pw_protocol *protocol,		
 			struct pw_properties *properties,	
 			size_t user_data_size			);
 
@@ -166,6 +173,10 @@ void pw_impl_client_add_listener(struct pw_impl_client *client,
 
 
 void pw_impl_client_set_busy(struct pw_impl_client *client, bool busy);
+
+
+
+
 
 #ifdef __cplusplus
 }

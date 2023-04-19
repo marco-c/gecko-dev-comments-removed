@@ -29,6 +29,15 @@
 extern "C" {
 #endif
 
+
+
+
+
+
+
+
+
+
 #include <spa/utils/defs.h>
 
 
@@ -48,6 +57,8 @@ enum spa_param_type {
 	SPA_PARAM_EnumRoute,		
 	SPA_PARAM_Route,		
 	SPA_PARAM_Control,		
+	SPA_PARAM_Latency,		
+	SPA_PARAM_ProcessLatency,	
 };
 
 
@@ -116,6 +127,10 @@ enum spa_param_profile {
 
 
 
+
+
+
+	SPA_PARAM_PROFILE_save,		
 };
 
 enum spa_param_port_config_mode {
@@ -156,7 +171,38 @@ enum spa_param_route {
 	SPA_PARAM_ROUTE_props,			
 	SPA_PARAM_ROUTE_devices,		
 	SPA_PARAM_ROUTE_profile,		
+	SPA_PARAM_ROUTE_save,			
 };
+
+
+
+enum spa_param_latency {
+	SPA_PARAM_LATENCY_START,
+	SPA_PARAM_LATENCY_direction,		
+	SPA_PARAM_LATENCY_minQuantum,		
+	SPA_PARAM_LATENCY_maxQuantum,		
+	SPA_PARAM_LATENCY_minRate,		
+	SPA_PARAM_LATENCY_maxRate,		
+	SPA_PARAM_LATENCY_minNs,		
+	SPA_PARAM_LATENCY_maxNs,		
+};
+
+
+enum spa_param_process_latency {
+	SPA_PARAM_PROCESS_LATENCY_START,
+	SPA_PARAM_PROCESS_LATENCY_quantum,	
+	SPA_PARAM_PROCESS_LATENCY_rate,		
+	SPA_PARAM_PROCESS_LATENCY_ns,		
+};
+
+enum spa_param_bitorder {
+	SPA_PARAM_BITORDER_unknown,	
+	SPA_PARAM_BITORDER_msb,		
+	SPA_PARAM_BITORDER_lsb,		
+};
+
+
+
 
 
 #ifdef __cplusplus

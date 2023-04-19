@@ -38,6 +38,15 @@ extern "C" {
 
 #include <pipewire/proxy.h>
 
+
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Port	PW_TYPE_INFO_INTERFACE_BASE "Port"
 
 #define PW_VERSION_PORT		3
@@ -50,13 +59,6 @@ struct pw_port;
 
 
 const char * pw_direction_as_string(enum pw_direction direction);
-
-
-
-
-
-
-
 
 struct pw_port_info {
 	uint32_t id;				
@@ -72,7 +74,11 @@ struct pw_port_info {
 
 struct pw_port_info *
 pw_port_info_update(struct pw_port_info *info,
-		    const struct pw_port_info *update);
+		const struct pw_port_info *update);
+
+struct pw_port_info *
+pw_port_info_merge(struct pw_port_info *info,
+		const struct pw_port_info *update, bool reset);
 
 void
 pw_port_info_free(struct pw_port_info *info);
@@ -90,7 +96,7 @@ struct pw_port_events {
 
 
 
-	void (*info) (void *object, const struct pw_port_info *info);
+	void (*info) (void *data, const struct pw_port_info *info);
 	
 
 
@@ -102,7 +108,7 @@ struct pw_port_events {
 
 
 
-	void (*param) (void *object, int seq,
+	void (*param) (void *data, int seq,
 		       uint32_t id, uint32_t index, uint32_t next,
 		       const struct spa_pod *param);
 };
@@ -161,6 +167,10 @@ struct pw_port_methods {
 #define pw_port_add_listener(c,...)	pw_port_method(c,add_listener,0,__VA_ARGS__)
 #define pw_port_subscribe_params(c,...)	pw_port_method(c,subscribe_params,0,__VA_ARGS__)
 #define pw_port_enum_params(c,...)	pw_port_method(c,enum_params,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

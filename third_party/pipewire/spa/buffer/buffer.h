@@ -37,6 +37,11 @@ extern "C" {
 
 
 
+
+
+
+
+
 enum spa_data_type {
 	SPA_DATA_Invalid,
 	SPA_DATA_MemPtr,		
@@ -45,7 +50,7 @@ enum spa_data_type {
 	SPA_DATA_DmaBuf,		
 	SPA_DATA_MemId,			
 
-	SPA_DATA_LAST,			
+	_SPA_DATA_LAST,			
 };
 
 
@@ -58,12 +63,20 @@ struct spa_chunk {
 	int32_t stride;			
 #define SPA_CHUNK_FLAG_NONE		0
 #define SPA_CHUNK_FLAG_CORRUPTED	(1u<<0)	/**< chunk data is corrupted in some way */
+#define SPA_CHUNK_FLAG_EMPTY		(1u<<1)	/**< chunk data is empty with media specific
+						  *  neutral data such as silence or black. This
+						  *  could be used to optimize processing. */
 	int32_t flags;			
 };
 
 
 struct spa_data {
 	uint32_t type;			
+
+
+
+
+
 
 
 #define SPA_DATA_FLAG_NONE	 0
@@ -106,6 +119,10 @@ static inline void *spa_buffer_find_meta_data(const struct spa_buffer *b, uint32
 		return m->data;
 	return NULL;
 }
+
+
+
+
 
 #ifdef __cplusplus
 }  

@@ -32,6 +32,11 @@ extern "C" {
 #include <spa/pod/event.h>
 
 
+
+
+
+
+
 enum spa_device_event {
 	SPA_DEVICE_EVENT_ObjectConfig,
 };
@@ -46,6 +51,10 @@ enum spa_event_device {
 	SPA_EVENT_DEVICE_Object,	
 	SPA_EVENT_DEVICE_Props,		
 };
+
+
+
+
 
 #ifdef __cplusplus
 }  

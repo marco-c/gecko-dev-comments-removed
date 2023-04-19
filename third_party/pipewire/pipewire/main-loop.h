@@ -36,6 +36,10 @@ extern "C" {
 
 
 
+
+
+
+
 struct pw_main_loop;
 
 #include <pipewire/loop.h>
@@ -70,6 +74,10 @@ int pw_main_loop_run(struct pw_main_loop *loop);
 
 
 int pw_main_loop_quit(struct pw_main_loop *loop);
+
+
+
+
 
 #ifdef __cplusplus
 }

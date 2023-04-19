@@ -37,14 +37,23 @@ extern "C" {
 
 
 
+
+
+
+
+
 enum spa_control_type {
 	SPA_CONTROL_Invalid,
 	SPA_CONTROL_Properties,		
 	SPA_CONTROL_Midi,		
 	SPA_CONTROL_OSC,		
 
-	SPA_CONTROL_LAST,		
+	_SPA_CONTROL_LAST,		
 };
+
+
+
+
 
 #ifdef __cplusplus
 }  

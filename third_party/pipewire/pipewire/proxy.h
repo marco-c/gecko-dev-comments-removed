@@ -98,6 +98,11 @@ extern "C" {
 
 
 
+
+
+
+
+
 struct pw_proxy;
 
 #include <pipewire/protocol.h>
@@ -127,7 +132,7 @@ struct pw_proxy_events {
 
 
 struct pw_proxy *
-pw_proxy_new(struct pw_proxy *factory,	
+pw_proxy_new(struct pw_proxy *factory,
 	     const char *type,		
 	     uint32_t version,		
 	     size_t user_data_size	);
@@ -147,6 +152,9 @@ void pw_proxy_add_object_listener(struct pw_proxy *proxy,
 
 
 void pw_proxy_destroy(struct pw_proxy *proxy);
+
+void pw_proxy_ref(struct pw_proxy *proxy);
+void pw_proxy_unref(struct pw_proxy *proxy);
 
 
 void *pw_proxy_get_user_data(struct pw_proxy *proxy);
@@ -199,6 +207,10 @@ int pw_proxy_install_marshal(struct pw_proxy *proxy, bool implementor);
 			type, _res, method, version, ##__VA_ARGS__);	\
 	_res;								\
 })
+
+
+
+
 
 #ifdef __cplusplus
 }

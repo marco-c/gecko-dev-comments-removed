@@ -40,7 +40,6 @@ extern "C" {
 
 
 
-
 struct pw_control;
 
 #include <pipewire/impl.h>
@@ -71,6 +70,10 @@ void pw_control_add_listener(struct pw_control *control,
 			     struct spa_hook *listener,
 			     const struct pw_control_events *events,
 			     void *data);
+
+
+
+
 
 #ifdef __cplusplus
 }

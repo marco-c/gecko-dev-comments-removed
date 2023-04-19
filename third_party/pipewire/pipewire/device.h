@@ -34,6 +34,15 @@ extern "C" {
 
 #include <pipewire/proxy.h>
 
+
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Device	PW_TYPE_INFO_INTERFACE_BASE "Device"
 
 #define PW_VERSION_DEVICE		3
@@ -54,8 +63,11 @@ struct pw_device_info {
 
 struct pw_device_info *
 pw_device_info_update(struct pw_device_info *info,
-		      const struct pw_device_info *update);
+		const struct pw_device_info *update);
 
+struct pw_device_info *
+pw_device_info_merge(struct pw_device_info *info,
+		const struct pw_device_info *update, bool reset);
 
 void pw_device_info_free(struct pw_device_info *info);
 
@@ -72,7 +84,7 @@ struct pw_device_events {
 
 
 
-	void (*info) (void *object, const struct pw_device_info *info);
+	void (*info) (void *data, const struct pw_device_info *info);
 	
 
 
@@ -84,7 +96,7 @@ struct pw_device_events {
 
 
 
-	void (*param) (void *object, int seq,
+	void (*param) (void *data, int seq,
 		      uint32_t id, uint32_t index, uint32_t next,
 		      const struct spa_pod *param);
 };
@@ -154,6 +166,10 @@ struct pw_device_methods {
 #define pw_device_subscribe_params(c,...)	pw_device_method(c,subscribe_params,0,__VA_ARGS__)
 #define pw_device_enum_params(c,...)		pw_device_method(c,enum_params,0,__VA_ARGS__)
 #define pw_device_set_param(c,...)		pw_device_method(c,set_param,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

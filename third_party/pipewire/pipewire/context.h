@@ -56,6 +56,9 @@ extern "C" {
 
 
 
+
+
+
 struct pw_context;
 
 struct pw_global;
@@ -64,33 +67,6 @@ struct pw_impl_client;
 #include <pipewire/core.h>
 #include <pipewire/loop.h>
 #include <pipewire/properties.h>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 struct pw_context_events {
@@ -133,16 +109,41 @@ const struct pw_properties *pw_context_get_properties(struct pw_context *context
 int pw_context_update_properties(struct pw_context *context, const struct spa_dict *dict);
 
 
+
+const char *pw_context_get_conf_section(struct pw_context *context, const char *section);
+
+int pw_context_parse_conf_section(struct pw_context *context,
+		struct pw_properties *conf, const char *section);
+
+
+int pw_context_conf_update_props(struct pw_context *context, const char *section,
+		struct pw_properties *props);
+
+int pw_context_conf_section_for_each(struct pw_context *context, const char *section,
+		int (*callback) (void *data, const char *location, const char *section,
+			const char *str, size_t len),
+		void *data);
+
+int pw_context_conf_section_match_rules(struct pw_context *context, const char *section,
+		const struct spa_dict *props,
+		int (*callback) (void *data, const char *location, const char *action,
+			const char *str, size_t len),
+		void *data);
+
+
 const struct spa_support *pw_context_get_support(struct pw_context *context, uint32_t *n_support);
 
 
 struct pw_loop *pw_context_get_main_loop(struct pw_context *context);
 
 
+struct pw_work_queue *pw_context_get_work_queue(struct pw_context *context);
 
 
 
-int pw_context_for_each_global(struct pw_context *context,	
+
+
+int pw_context_for_each_global(struct pw_context *context,
 			    int (*callback) (void *data, struct pw_global *global),
 			    void *data);
 
@@ -180,6 +181,9 @@ const struct pw_export_type *pw_context_find_export_type(struct pw_context *cont
 int pw_context_set_object(struct pw_context *context, const char *type, void *value);
 
 void *pw_context_get_object(struct pw_context *context, const char *type);
+
+
+
 
 #ifdef __cplusplus
 }

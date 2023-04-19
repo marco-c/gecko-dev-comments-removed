@@ -34,6 +34,14 @@ extern "C" {
 
 #include <pipewire/proxy.h>
 
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Module	PW_TYPE_INFO_INTERFACE_BASE "Module"
 
 #define PW_VERSION_MODULE		3
@@ -54,8 +62,11 @@ struct pw_module_info {
 
 struct pw_module_info *
 pw_module_info_update(struct pw_module_info *info,
-		      const struct pw_module_info *update);
+		const struct pw_module_info *update);
 
+struct pw_module_info *
+pw_module_info_merge(struct pw_module_info *info,
+		const struct pw_module_info *update, bool reset);
 
 void pw_module_info_free(struct pw_module_info *info);
 
@@ -71,7 +82,7 @@ struct pw_module_events {
 
 
 
-	void (*info) (void *object, const struct pw_module_info *info);
+	void (*info) (void *data, const struct pw_module_info *info);
 };
 
 #define PW_MODULE_METHOD_ADD_LISTENER	0
@@ -98,6 +109,10 @@ struct pw_module_methods {
 })
 
 #define pw_module_add_listener(c,...)	pw_module_method(c,add_listener,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

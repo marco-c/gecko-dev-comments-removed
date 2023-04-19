@@ -29,15 +29,23 @@
 extern "C" {
 #endif
 
+
+
+
+
+
+
+
+
+
+
+#include <errno.h>
 #include <spa/utils/defs.h>
 #include <spa/utils/type.h>
 #include <spa/utils/hook.h>
 #include <spa/buffer/buffer.h>
 #include <spa/node/event.h>
 #include <spa/node/command.h>
-
-
-
 
 
 #define SPA_TYPE_INTERFACE_Node		SPA_TYPE_INFO_INTERFACE_BASE "Node"
@@ -68,7 +76,7 @@ struct spa_node_info {
 #define SPA_NODE_FLAG_NEED_CONFIGURE		(1u<<5)	/**< node needs configuration before it can
 							  *  be started. */
 #define SPA_NODE_FLAG_ASYNC			(1u<<6)	/**< the process function might not
-							  *  immediateley produce or consume data
+							  *  immediately produce or consume data
 							  *  but might offload the work to a worker
 							  *  thread. */
 	uint64_t flags;
@@ -654,6 +662,10 @@ struct spa_node_methods {
 
 #define spa_node_port_reuse_buffer(n,...)	spa_node_method(n, port_reuse_buffer, 0, __VA_ARGS__)
 #define spa_node_process(n)			spa_node_method(n, process, 0)
+
+
+
+
 
 #ifdef __cplusplus
 }  

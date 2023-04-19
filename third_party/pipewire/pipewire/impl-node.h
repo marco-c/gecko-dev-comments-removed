@@ -39,8 +39,6 @@ extern "C" {
 
 
 
-
-
 struct pw_impl_node;
 struct pw_impl_port;
 
@@ -174,6 +172,12 @@ int pw_impl_node_set_active(struct pw_impl_node *node, bool active);
 
 
 bool pw_impl_node_is_active(struct pw_impl_node *node);
+
+
+int pw_impl_node_send_command(struct pw_impl_node *node, const struct spa_command *command);
+
+
+
 
 #ifdef __cplusplus
 }

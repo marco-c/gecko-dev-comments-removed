@@ -68,51 +68,6 @@ extern "C" {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void
 pw_init(int *argc, char **argv[]);
 
@@ -138,8 +93,13 @@ pw_get_client_name(void);
 
 bool pw_in_valgrind(void);
 
+bool pw_check_option(const char *option, const char *value);
+
 enum pw_direction
 pw_direction_reverse(enum pw_direction direction);
+
+int pw_set_domain(const char *domain);
+const char *pw_get_domain(void);
 
 uint32_t pw_get_support(struct spa_support *support, uint32_t max_support);
 
@@ -150,6 +110,10 @@ struct spa_handle *pw_load_spa_handle(const char *lib,
 		const struct spa_support support[]);
 
 int pw_unload_spa_handle(struct spa_handle *handle);
+
+
+
+
 
 #ifdef __cplusplus
 }

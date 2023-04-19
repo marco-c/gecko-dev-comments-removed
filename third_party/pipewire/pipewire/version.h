@@ -34,7 +34,7 @@ extern "C" {
 
 
 
-#define pw_get_headers_version() ("0.3.13")
+#define pw_get_headers_version() ("0.3.52")
 
 
 
@@ -52,7 +52,7 @@ const char* pw_get_library_version(void);
 #define PW_MINOR 3
 
 
-#define PW_MICRO 13
+#define PW_MICRO 52
 
 
 

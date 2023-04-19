@@ -40,6 +40,9 @@ extern "C" {
 
 
 
+
+
+
 struct pw_impl_device;
 
 #include <spa/monitor/device.h>
@@ -102,6 +105,10 @@ int pw_impl_device_for_each_param(struct pw_impl_device *device,
 					      uint32_t id, uint32_t index, uint32_t next,
 					      struct spa_pod *param),
 			     void *data);
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

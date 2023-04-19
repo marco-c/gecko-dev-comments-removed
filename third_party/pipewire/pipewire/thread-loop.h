@@ -92,6 +92,9 @@ extern "C" {
 
 
 
+
+
+
 struct pw_thread_loop;
 
 
@@ -160,6 +163,10 @@ void pw_thread_loop_accept(struct pw_thread_loop *loop);
 
 
 bool pw_thread_loop_in_thread(struct pw_thread_loop *loop);
+
+
+
+
 
 #ifdef __cplusplus
 }

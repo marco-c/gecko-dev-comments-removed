@@ -40,7 +40,6 @@ extern "C" {
 
 
 
-
 struct pw_impl_port;
 struct pw_impl_link;
 struct pw_control;
@@ -57,7 +56,7 @@ enum pw_impl_port_state {
 
 
 struct pw_impl_port_events {
-#define PW_VERSION_IMPL_PORT_EVENTS 1
+#define PW_VERSION_IMPL_PORT_EVENTS 2
 	uint32_t version;
 
 	
@@ -90,6 +89,9 @@ struct pw_impl_port_events {
 
 	
 	void (*param_changed) (void *data, uint32_t id);
+
+	
+	void (*latency_changed) (void *data);
 };
 
 
@@ -130,6 +132,10 @@ void pw_impl_port_add_listener(struct pw_impl_port *port,
 			  struct spa_hook *listener,
 			  const struct pw_impl_port_events *events,
 			  void *data);
+
+
+
+
 
 #ifdef __cplusplus
 }

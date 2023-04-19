@@ -39,6 +39,14 @@ extern "C" {
 
 #include <pipewire/proxy.h>
 
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Node	PW_TYPE_INFO_INTERFACE_BASE "Node"
 
 #define PW_VERSION_NODE		3
@@ -81,7 +89,11 @@ struct pw_node_info {
 
 struct pw_node_info *
 pw_node_info_update(struct pw_node_info *info,
-		    const struct pw_node_info *update);
+		const struct pw_node_info *update);
+
+struct pw_node_info *
+pw_node_info_merge(struct pw_node_info *info,
+		const struct pw_node_info *update, bool reset);
 
 void
 pw_node_info_free(struct pw_node_info *info);
@@ -99,7 +111,7 @@ struct pw_node_events {
 
 
 
-	void (*info) (void *object, const struct pw_node_info *info);
+	void (*info) (void *data, const struct pw_node_info *info);
 	
 
 
@@ -111,7 +123,7 @@ struct pw_node_events {
 
 
 
-	void (*param) (void *object, int seq,
+	void (*param) (void *data, int seq,
 		      uint32_t id, uint32_t index, uint32_t next,
 		      const struct spa_pod *param);
 };
@@ -192,6 +204,10 @@ struct pw_node_methods {
 #define pw_node_enum_params(c,...)	pw_node_method(c,enum_params,0,__VA_ARGS__)
 #define pw_node_set_param(c,...)	pw_node_method(c,set_param,0,__VA_ARGS__)
 #define pw_node_send_command(c,...)	pw_node_method(c,send_command,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  

@@ -34,6 +34,21 @@ extern "C" {
 
 #include <pipewire/proxy.h>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define PW_TYPE_INTERFACE_Link	PW_TYPE_INFO_INTERFACE_BASE "Link"
 
 #define PW_VERSION_LINK		3
@@ -47,6 +62,7 @@ enum pw_link_state {
 	PW_LINK_STATE_NEGOTIATING = 1,	
 	PW_LINK_STATE_ALLOCATING = 2,	
 	PW_LINK_STATE_PAUSED = 3,	
+	PW_LINK_STATE_ACTIVE = 4,	
 };
 
 
@@ -71,7 +87,11 @@ struct pw_link_info {
 
 struct pw_link_info *
 pw_link_info_update(struct pw_link_info *info,
-		    const struct pw_link_info *update);
+		const struct pw_link_info *update);
+
+struct pw_link_info *
+pw_link_info_merge(struct pw_link_info *info,
+		const struct pw_link_info *update, bool reset);
 
 void
 pw_link_info_free(struct pw_link_info *info);
@@ -89,7 +109,7 @@ struct pw_link_events {
 
 
 
-	void (*info) (void *object, const struct pw_link_info *info);
+	void (*info) (void *data, const struct pw_link_info *info);
 };
 
 #define PW_LINK_METHOD_ADD_LISTENER	0
@@ -116,6 +136,10 @@ struct pw_link_methods {
 })
 
 #define pw_link_add_listener(c,...)		pw_link_method(c,add_listener,0,__VA_ARGS__)
+
+
+
+
 
 #ifdef __cplusplus
 }  
