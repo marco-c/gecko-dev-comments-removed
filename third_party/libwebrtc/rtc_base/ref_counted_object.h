@@ -20,6 +20,23 @@
 
 namespace rtc {
 
+namespace webrtc_make_ref_counted_internal {
+
+template <typename T>
+class HasAddRefAndRelease {
+ private:
+  template <typename C,
+            decltype(std::declval<C>().AddRef())* = nullptr,
+            decltype(std::declval<C>().Release())* = nullptr>
+  static int Test(int);
+  template <typename>
+  static char Test(...);
+
+ public:
+  static constexpr bool value = std::is_same_v<decltype(Test<T>(0)), int>;
+};
+}  
+
 template <class T>
 class RefCountedObject : public T {
  public:
@@ -66,8 +83,7 @@ class FinalRefCountedObject final : public T {
   using T::T;
   
   
-  FinalRefCountedObject() = default;
-  explicit FinalRefCountedObject(const T& other) : T(other) {}
+  
   explicit FinalRefCountedObject(T&& other) : T(std::move(other)) {}
   FinalRefCountedObject(const FinalRefCountedObject&) = delete;
   FinalRefCountedObject& operator=(const FinalRefCountedObject&) = delete;
@@ -122,11 +138,15 @@ class FinalRefCountedObject final : public T {
 
 
 
-template <
-    typename T,
-    typename... Args,
-    typename std::enable_if<std::is_convertible<T*, RefCountInterface*>::value,
-                            T>::type* = nullptr>
+
+
+
+
+
+template <typename T,
+          typename... Args,
+          typename std::enable_if<std::is_convertible_v<T*, RefCountInterface*>,
+                                  T>::type* = nullptr>
 scoped_refptr<T> make_ref_counted(Args&&... args) {
   return new RefCountedObject<T>(std::forward<Args>(args)...);
 }
@@ -136,8 +156,24 @@ scoped_refptr<T> make_ref_counted(Args&&... args) {
 template <
     typename T,
     typename... Args,
-    typename std::enable_if<!std::is_convertible<T*, RefCountInterface*>::value,
-                            T>::type* = nullptr>
+    typename std::enable_if<
+        !std::is_convertible_v<T*, RefCountInterface*> &&
+            webrtc_make_ref_counted_internal::HasAddRefAndRelease<T>::value,
+        T>::type* = nullptr>
+scoped_refptr<T> make_ref_counted(Args&&... args) {
+  return scoped_refptr<T>(new T(std::forward<Args>(args)...));
+}
+
+
+
+template <
+    typename T,
+    typename... Args,
+    typename std::enable_if<
+        !std::is_convertible_v<T*, RefCountInterface*> &&
+            !webrtc_make_ref_counted_internal::HasAddRefAndRelease<T>::value,
+
+        T>::type* = nullptr>
 scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(Args&&... args) {
   return new FinalRefCountedObject<T>(std::forward<Args>(args)...);
 }
@@ -188,7 +224,7 @@ scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(Args&&... args) {
 template <typename T>
 struct Ref {
   typedef typename std::conditional<
-      std::is_convertible<T*, RefCountInterface*>::value,
+      webrtc_make_ref_counted_internal::HasAddRefAndRelease<T>::value,
       T,
       FinalRefCountedObject<T>>::type Type;
 
