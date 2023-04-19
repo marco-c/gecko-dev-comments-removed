@@ -141,16 +141,6 @@ XPCOM_API(nsresult) NS_GetComponentRegistrar(nsIComponentRegistrar** aResult);
 
 
 
-XPCOM_API(nsresult) NS_GetMemoryManager(nsIMemory** aResult);
-
-
-
-
-
-
-
-
-
 
 
 

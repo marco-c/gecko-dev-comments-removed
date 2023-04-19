@@ -9,15 +9,6 @@
 
 #include "nsError.h"
 
-class nsIMemory;
-
-#define NS_MEMORY_CONTRACTID "@mozilla.org/xpcom/memory-service;1"
-#define NS_MEMORY_CID                                \
-  { /* 30a04e40-38e7-11d4-8cf5-0060b0fc14a3 */       \
-    0x30a04e40, 0x38e7, 0x11d4, {                    \
-      0x8c, 0xf5, 0x00, 0x60, 0xb0, 0xfc, 0x14, 0xa3 \
-    }                                                \
-  }
 
 
 
@@ -28,10 +19,44 @@ class nsIMemory;
 
 
 
-class nsMemory {
- public:
-  static nsresult HeapMinimize(bool aImmediate);
-  static nsIMemory* GetGlobalMemoryService();  
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace nsMemory {
+
+
+
+
+
+
+
+
+
+
+nsresult HeapMinimize(bool aImmediate);
+
+
+
+
+
+
+
+bool IsLowMemoryPlatform();
+}  
 
 #endif  
