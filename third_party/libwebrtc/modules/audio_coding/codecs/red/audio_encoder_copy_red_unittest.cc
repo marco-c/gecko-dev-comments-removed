@@ -34,6 +34,8 @@ namespace webrtc {
 
 namespace {
 static const size_t kMaxNumSamples = 48 * 10 * 2;  
+static const size_t kRedLastHeaderLength =
+    1;  
 }
 
 class AudioEncoderCopyRedTest : public ::testing::Test {
@@ -154,7 +156,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   
   
   EXPECT_EQ(0u, encoded_info_.redundant.size());
-  EXPECT_EQ(kEncodedSize, encoded_info_.encoded_bytes);
+  EXPECT_EQ(kEncodedSize + kRedLastHeaderLength, encoded_info_.encoded_bytes);
 
   
   Encode();
@@ -190,7 +192,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizesSingle) {
   
   Encode();
   EXPECT_EQ(0u, encoded_info_.redundant.size());
-  EXPECT_EQ(1u, encoded_info_.encoded_bytes);
+  EXPECT_EQ(kRedLastHeaderLength + 1u, encoded_info_.encoded_bytes);
 
   for (size_t i = 2; i <= kNumPackets; ++i) {
     Encode();
@@ -217,7 +219,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   
   Encode();
   EXPECT_EQ(0u, encoded_info_.redundant.size());
-  EXPECT_EQ(1u, encoded_info_.encoded_bytes);
+  EXPECT_EQ(kRedLastHeaderLength + 1u, encoded_info_.encoded_bytes);
 
   
   
@@ -259,7 +261,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizesTriple) {
   
   Encode();
   EXPECT_EQ(0u, encoded_info_.redundant.size());
-  EXPECT_EQ(1u, encoded_info_.encoded_bytes);
+  EXPECT_EQ(kRedLastHeaderLength + 1u, encoded_info_.encoded_bytes);
 
   
   
@@ -329,9 +331,10 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
   
   
   Encode();
-  EXPECT_EQ(kPayloadLenBytes, encoded_info_.encoded_bytes);
+  EXPECT_EQ(kRedLastHeaderLength + kPayloadLenBytes,
+            encoded_info_.encoded_bytes);
   for (size_t i = 0; i < kPayloadLenBytes; ++i) {
-    EXPECT_EQ(i, encoded_.data()[i]);
+    EXPECT_EQ(i, encoded_.data()[kRedLastHeaderLength + i]);
   }
 
   for (int j = 0; j < 1; ++j) {
