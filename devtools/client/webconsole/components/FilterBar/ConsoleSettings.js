@@ -83,19 +83,26 @@ class ConsoleSettings extends Component {
 
     if (webConsoleUI.isBrowserConsole || webConsoleUI.isBrowserToolboxConsole) {
       
-      items.push(
-        MenuItem({
-          key: "webconsole-console-settings-menu-item-content-messages",
-          checked: showContentMessages,
-          className:
-            "menu-item webconsole-console-settings-menu-item-contentMessages",
-          label: l10n.getStr("browserconsole.contentMessagesCheckbox.label"),
-          tooltip: l10n.getStr(
-            "browserconsole.contentMessagesCheckbox.tooltip"
-          ),
-          onClick: () => dispatch(actions.contentMessagesToggle()),
-        }),
+      
+      if (!webConsoleUI.fissionSupport) {
         
+        items.push(
+          MenuItem({
+            key: "webconsole-console-settings-menu-item-content-messages",
+            checked: showContentMessages,
+            className:
+              "menu-item webconsole-console-settings-menu-item-contentMessages",
+            label: l10n.getStr("browserconsole.contentMessagesCheckbox.label"),
+            tooltip: l10n.getStr(
+              "browserconsole.contentMessagesCheckbox.tooltip"
+            ),
+            onClick: () => dispatch(actions.contentMessagesToggle()),
+          })
+        );
+      }
+
+      
+      items.push(
         MenuItem({
           key:
             "webconsole-console-settings-menu-item-enable-network-monitoring",

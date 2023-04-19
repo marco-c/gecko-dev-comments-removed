@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 const FILTER_PREFIX = "BC_TEST|";
@@ -38,33 +40,68 @@ const TEST_URI = `data:text/html,<!DOCTYPE html><meta charset=utf8>console API c
 add_task(async function() {
   
   await pushPref("devtools.browserconsole.contentMessages", true);
+  await pushPref("devtools.browsertoolbox.scope", "everything");
 
   info("Run once with Fission enabled");
-  await pushPref("devtools.browsertoolbox.fission", true);
-  await checkContentConsoleApiMessages(true);
+  await checkMessages(true);
 
   info("Run once with Fission disabled");
-  await pushPref("devtools.browsertoolbox.fission", false);
-  await checkContentConsoleApiMessages(false);
+  await checkMessages(false);
 });
 
-async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
+async function checkMessages(isFissionSupported) {
+  await pushPref("devtools.browsertoolbox.fission", isFissionSupported);
+
   
   await addTab(TEST_URI);
 
   
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
+  
+  
   await setFilterState(hud, { text: FILTER_PREFIX });
 
   
   
-  if (!nonPrimitiveVariablesDisplayed) {
+  if (!isFissionSupported) {
     await reloadBrowser();
   }
 
-  const suffix = nonPrimitiveVariablesDisplayed
-    ? ` Object { hello: "world" }`
-    : "";
+  const chromeDebugToolbar = hud.ui.document.querySelector(
+    ".chrome-debug-toolbar"
+  );
+  if (isFissionSupported) {
+    ok(
+      !!chromeDebugToolbar,
+      "ChromeDebugToolbar is displayed when the Browser Console has fission support"
+    );
+    ok(
+      !hud.chromeWindow.document.querySelector(
+        ".webconsole-console-settings-menu-item-contentMessages"
+      ),
+      "Show content messages menu item isn't displayed when Browser Console has Fission support"
+    );
+  } else {
+    ok(
+      !chromeDebugToolbar,
+      "ChromeDebugToolbar is not displayed when the Browser Console does not have fission support"
+    );
+    ok(
+      hud.chromeWindow.document.querySelector(
+        ".webconsole-console-settings-menu-item-contentMessages"
+      ),
+      "Show content messages menu item is displayed when Browser Console does not have Fission support"
+    );
+  }
+
+  
+  
+  Cu.reportError(FILTER_PREFIX + "Cu.reportError");
+
+  await waitFor(() => findErrorMessage(hud, "Cu.reportError"));
+  ok(true, "Parent process message is displayed");
+
+  const suffix = isFissionSupported ? ` Object { hello: "world" }` : "";
   const expectedMessages = [
     contentArgs.log + suffix,
     contentArgs.warn + suffix,
@@ -80,7 +117,7 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   ];
 
   
-  if (nonPrimitiveVariablesDisplayed) {
+  if (isFissionSupported) {
     expectedMessages.push("console.table()");
   }
 
@@ -95,7 +132,7 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   );
   ok(true, "Expected messages are displayed in the browser console");
 
-  if (nonPrimitiveVariablesDisplayed) {
+  if (isFissionSupported) {
     const tableMessage = findConsoleAPIMessage(
       hud,
       "console.table()",
@@ -115,15 +152,22 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
     );
   }
 
-  info("Uncheck the Show content messages checkbox");
-  const onContentMessagesHidden = waitFor(
-    () => !findConsoleAPIMessage(hud, contentArgs.log)
-  );
-  await toggleConsoleSetting(
-    hud,
-    ".webconsole-console-settings-menu-item-contentMessages"
-  );
-  await onContentMessagesHidden;
+  if (isFissionSupported) {
+    info("Set Browser Console Mode to parent process only");
+    chromeDebugToolbar
+      .querySelector(
+        `.chrome-debug-toolbar input[name="chrome-debug-mode"][value="parent-process"]`
+      )
+      .click();
+  } else {
+    info("Uncheck the Show content messages checkbox");
+    await toggleConsoleSetting(
+      hud,
+      ".webconsole-console-settings-menu-item-contentMessages"
+    );
+  }
+  info("Wait for content messages to be hidden");
+  await waitFor(() => !findConsoleAPIMessage(hud, contentArgs.log));
 
   for (const expectedMessage of expectedMessages) {
     ok(
@@ -132,17 +176,34 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
     );
   }
 
-  info("Check the Show content messages checkbox");
-  const onContentMessagesDisplayed = waitFor(() =>
+  info(
+    "Check that message from parent process is still visible in the Browser Console"
+  );
+  ok(
+    !!findErrorMessage(hud, "Cu.reportError"),
+    "Parent process message is still displayed"
+  );
+
+  if (isFissionSupported) {
+    info("Set Browser Console Mode to Multiprocess");
+    chromeDebugToolbar
+      .querySelector(
+        `.chrome-debug-toolbar input[name="chrome-debug-mode"][value="everything"]`
+      )
+      .click();
+  } else {
+    info("Check the Show content messages checkbox");
+    await toggleConsoleSetting(
+      hud,
+      ".webconsole-console-settings-menu-item-contentMessages"
+    );
+  }
+  info("Wait for content messages to be displayed");
+  await waitFor(() =>
     expectedMessages.every(expectedMessage =>
       findConsoleAPIMessage(hud, expectedMessage)
     )
   );
-  await toggleConsoleSetting(
-    hud,
-    ".webconsole-console-settings-menu-item-contentMessages"
-  );
-  await onContentMessagesDisplayed;
 
   for (const expectedMessage of expectedMessages) {
     ok(
