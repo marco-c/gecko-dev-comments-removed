@@ -28,12 +28,14 @@ class ApmDataDumper;
 
 class AdaptiveAgc {
  public:
-  explicit AdaptiveAgc(ApmDataDumper* apm_data_dumper);
-  
   AdaptiveAgc(
       ApmDataDumper* apm_data_dumper,
       const AudioProcessing::Config::GainController2::AdaptiveDigital& config);
   ~AdaptiveAgc();
+
+  void Initialize(int sample_rate_hz, int num_channels);
+
+  
 
   
   

@@ -38,8 +38,6 @@ class VadLevelAnalyzer {
   };
 
   
-  VadLevelAnalyzer();
-  
   
   
   VadLevelAnalyzer(int vad_reset_period_ms,
