@@ -49,7 +49,7 @@ class nsAccUtils {
 
 
   static void SetLiveContainerAttributes(AccAttributes* aAttributes,
-                                         nsIContent* aStartContent);
+                                         Accessible* aStartAcc);
 
   
 
