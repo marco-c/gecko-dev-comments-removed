@@ -99,6 +99,24 @@ add_task(async function revert() {
 
 
 
+add_task(async function revert_and_press_enter() {
+  let { tab, expectedSearchUrl } = await searchWithTab(SEARCH_STRING);
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false,
+    expectedSearchUrl
+  );
+
+  synthesizeRevert();
+  gURLBar.focus();
+  EventUtils.synthesizeKey("KEY_Enter");
+  await browserLoadedPromise;
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
 add_task(async function revert_and_change_tab() {
   let { tab, expectedSearchUrl } = await searchWithTab(SEARCH_STRING);
 
