@@ -5075,8 +5075,7 @@ void CodeGenerator::visitCallNative(LCallNative* call) {
   MOZ_ASSERT(target);
   MOZ_ASSERT(target->isNativeWithoutJitEntry());
 
-  int callargslot = call->argslot();
-  int unusedStack = StackOffsetOfPassedArg(callargslot);
+  int unusedStack = UnusedStackBytesForCall(call->paddedNumStackArgs());
 
   
   const Register argContextReg = ToRegister(call->getArgContextReg());
@@ -5220,8 +5219,7 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   MOZ_ASSERT(target->hasJitInfo());
   MOZ_ASSERT(call->mir()->isCallDOMNative());
 
-  int callargslot = call->argslot();
-  int unusedStack = StackOffsetOfPassedArg(callargslot);
+  int unusedStack = UnusedStackBytesForCall(call->paddedNumStackArgs());
 
   
   const Register argJSContext = ToRegister(call->getArgJSContext());
@@ -5374,7 +5372,7 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   Register calleereg = ToRegister(call->getFunction());
   Register objreg = ToRegister(call->getTempObject());
   Register nargsreg = ToRegister(call->getNargsReg());
-  uint32_t unusedStack = StackOffsetOfPassedArg(call->argslot());
+  uint32_t unusedStack = UnusedStackBytesForCall(call->paddedNumStackArgs());
   Label invoke, thunk, makeCall, end;
 
   
@@ -5497,7 +5495,7 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
 void CodeGenerator::visitCallKnown(LCallKnown* call) {
   Register calleereg = ToRegister(call->getFunction());
   Register objreg = ToRegister(call->getTempObject());
-  uint32_t unusedStack = StackOffsetOfPassedArg(call->argslot());
+  uint32_t unusedStack = UnusedStackBytesForCall(call->paddedNumStackArgs());
   WrappedFunction* target = call->getSingleTarget();
 
   
