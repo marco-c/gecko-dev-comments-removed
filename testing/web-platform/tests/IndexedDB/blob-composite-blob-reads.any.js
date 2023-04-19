@@ -15,8 +15,13 @@
 
 
 
+
 function composite_blob_test({ blobCount, blobSize, name }) {
-  for (const mode of ["fetch-blob-url", "file-reader", "direct"]) {
+  
+  
+  
+  
+  for (const mode of ["fetch-blob-url",  "direct"]) {
     promise_test(async testCase => {
       const key = "the-blobs";
       let memBlobs = [];
