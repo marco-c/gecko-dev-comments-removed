@@ -979,7 +979,7 @@ bool js::fun_call(JSContext* cx, unsigned argc, Value* vp) {
     iargs[i].set(args[i + 1]);
   }
 
-  return Call(cx, func, args.get(0), iargs, args.rval());
+  return Call(cx, func, args.get(0), iargs, args.rval(), CallReason::FunCall);
 }
 
 
@@ -1031,7 +1031,7 @@ bool js::fun_apply(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  return Call(cx, fval, args[0], args2, args.rval());
+  return Call(cx, fval, args[0], args2, args.rval(), CallReason::FunCall);
 }
 
 static const JSFunctionSpec function_methods[] = {

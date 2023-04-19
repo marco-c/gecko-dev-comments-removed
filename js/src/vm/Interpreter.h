@@ -55,6 +55,8 @@ enum class CallReason {
   Call,
   
   CallContent,
+  
+  FunCall,
   Getter,
   Setter,
 };
