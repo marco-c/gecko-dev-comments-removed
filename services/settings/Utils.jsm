@@ -35,6 +35,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
 const log = (() => {
   const { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
