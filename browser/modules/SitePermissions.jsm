@@ -77,6 +77,9 @@ const TemporaryPermissions = {
   },
 
   
+
+
+
   set(browser, id, state, expireTimeMS, browserURI, expireCallback) {
     if (
       !browser ||
@@ -152,6 +155,9 @@ const TemporaryPermissions = {
   },
 
   
+
+
+
   remove(browser, id) {
     if (
       !browser ||
@@ -312,6 +318,9 @@ const TemporaryPermissions = {
 
 const GloballyBlockedPermissions = {
   _stateByBrowser: new WeakMap(),
+
+  
+
 
   set(browser, id) {
     if (!this._stateByBrowser.has(browser)) {
