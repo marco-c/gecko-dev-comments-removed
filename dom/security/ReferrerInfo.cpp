@@ -421,10 +421,21 @@ nsresult ReferrerInfo::HandleUserXOriginSendingPolicy(nsIURI* aURI,
 }
 
 
+
+
 bool ReferrerInfo::ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
                                              nsIURI* aOriginURI) {
   MOZ_ASSERT(aChannel);
   MOZ_ASSERT(aOriginURI);
+
+  
+  
+  
+  uint32_t corsMode = nsIHttpChannelInternal::CORS_MODE_NO_CORS;
+  MOZ_ALWAYS_SUCCEEDS(aChannel->GetCorsMode(&corsMode));
+  if (corsMode == nsIHttpChannelInternal::CORS_MODE_CORS) {
+    return false;
+  }
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
   NS_ENSURE_SUCCESS(aChannel->GetReferrerInfo(getter_AddRefs(referrerInfo)),
