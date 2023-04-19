@@ -17,6 +17,7 @@
 #include <map>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -159,7 +160,8 @@ class NackTracker {
 
   
   
-  void AddToList(uint16_t sequence_number_current_received_rtp);
+  void AddToList(uint16_t sequence_number_current_received_rtp,
+                 uint32_t timestamp_current_received_rtp);
 
   
   
@@ -167,14 +169,15 @@ class NackTracker {
 
   
   
-  
-  void UpdateSamplesPerPacket(uint16_t sequence_number_current_received_rtp,
-                              uint32_t timestamp_current_received_rtp);
+  absl::optional<int> GetSamplesPerPacket(
+      uint16_t sequence_number_current_received_rtp,
+      uint32_t timestamp_current_received_rtp) const;
 
   
   
   
-  void UpdateList(uint16_t sequence_number_current_received_rtp);
+  void UpdateList(uint16_t sequence_number_current_received_rtp,
+                  uint32_t timestamp_current_received_rtp);
 
   
   
@@ -186,7 +189,7 @@ class NackTracker {
   void LimitNackListSize();
 
   
-  uint32_t EstimateTimestamp(uint16_t sequence_number);
+  uint32_t EstimateTimestamp(uint16_t sequence_number, int samples_per_packet);
 
   
   int64_t TimeToPlay(uint32_t timestamp) const;
@@ -214,10 +217,6 @@ class NackTracker {
   bool any_rtp_decoded_;  
 
   int sample_rate_khz_;  
-
-  
-  
-  int samples_per_packet_;
 
   
   
