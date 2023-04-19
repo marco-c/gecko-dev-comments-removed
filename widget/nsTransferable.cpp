@@ -32,6 +32,7 @@
 #include "nsNetUtil.h"
 #include "nsILoadContext.h"
 #include "nsXULAppAPI.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/UniquePtr.h"
 
 using namespace mozilla;
@@ -195,6 +196,10 @@ nsTransferable::Init(nsILoadContext* aContext) {
 
   if (aContext) {
     mPrivateData = aContext->UsePrivateBrowsing();
+  } else {
+    
+    
+    mPrivateData = StaticPrefs::browser_privatebrowsing_autostart();
   }
 #ifdef DEBUG
   mInitialized = true;
