@@ -6462,7 +6462,7 @@ void Document::GetReferrer(nsAString& aReferrer) const {
   CopyUTF8toUTF16(uri, aReferrer);
 }
 
-void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
+void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   aCookie.Truncate();  
                        
 
@@ -6473,7 +6473,9 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
   
   
   if (mSandboxFlags & SANDBOXED_ORIGIN) {
-    rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aRv.ThrowSecurityError(
+        "Forbidden in a sandboxed document without the 'allow-same-origin' "
+        "flag.");
     return;
   }
 
@@ -6512,7 +6514,9 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
   
   
   if (mSandboxFlags & SANDBOXED_ORIGIN) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aRv.ThrowSecurityError(
+        "Forbidden in a sandboxed document without the 'allow-same-origin' "
+        "flag.");
     return;
   }
 
