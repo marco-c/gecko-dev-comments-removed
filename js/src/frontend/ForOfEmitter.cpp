@@ -51,10 +51,7 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos,
   
 
   if (iterKind_ == IteratorKind::Async) {
-    
-    MOZ_ASSERT(!isIteratorMethodOnStack);
-
-    if (!bce_->emitAsyncIterator(selfHostedIter_)) {
+    if (!bce_->emitAsyncIterator(selfHostedIter_, isIteratorMethodOnStack)) {
       
       return false;
     }

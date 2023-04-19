@@ -5140,24 +5140,36 @@ bool BytecodeEmitter::emitIterator(
 }
 
 bool BytecodeEmitter::emitAsyncIterator(
-    SelfHostedIter selfHostedIter ) {
+    SelfHostedIter selfHostedIter ,
+    bool isIteratorMethodOnStack ) {
   MOZ_ASSERT(selfHostedIter == SelfHostedIter::Allow ||
                  emitterMode != BytecodeEmitter::SelfHosting,
              "[Symbol.asyncIterator]() call is prohibited in self-hosted code "
              "because it can run user-modifiable iteration code");
 
-  
-  if (!emit1(JSOp::Dup)) {
+  if (!isIteratorMethodOnStack) {
     
-    return false;
-  }
-  if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::asyncIterator))) {
+
     
-    return false;
-  }
-  if (!emitElemOpBase(JSOp::GetElem)) {
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+    if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::asyncIterator))) {
+      
+      return false;
+    }
+    if (!emitElemOpBase(JSOp::GetElem)) {
+      
+      return false;
+    }
+  } else {
     
-    return false;
+
+    if (!emitElemOpBase(JSOp::Swap)) {
+      
+      return false;
+    }
   }
 
   InternalIfEmitter ifAsyncIterIsUndefined(this);
@@ -5174,18 +5186,24 @@ bool BytecodeEmitter::emitAsyncIterator(
     
     return false;
   }
-  if (!emit1(JSOp::Dup)) {
+
+  if (!isIteratorMethodOnStack) {
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+    if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::iterator))) {
+      
+      return false;
+    }
+    if (!emitElemOpBase(JSOp::GetElem)) {
+      
+      return false;
+    }
+  } else {
     
-    return false;
   }
-  if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::iterator))) {
-    
-    return false;
-  }
-  if (!emitElemOpBase(JSOp::GetElem)) {
-    
-    return false;
-  }
+
   if (!emit1(JSOp::Swap)) {
     
     return false;
@@ -5216,6 +5234,17 @@ bool BytecodeEmitter::emitAsyncIterator(
   if (!ifAsyncIterIsUndefined.emitElse()) {
     
     return false;
+  }
+
+  if (isIteratorMethodOnStack) {
+    if (!emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+    if (!emit1(JSOp::Pop)) {
+      
+      return false;
+    }
   }
 
   if (!emit1(JSOp::Swap)) {
@@ -5474,9 +5503,21 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
     
     
     ListNode* argsList = &forHeadExpr->as<BinaryNode>().right()->as<ListNode>();
+    MOZ_ASSERT_IF(iterKind == IteratorKind::Sync, argsList->count() == 2);
+    MOZ_ASSERT_IF(iterKind == IteratorKind::Async, argsList->count() == 3);
+
     if (!emitTree(argsList->head()->pn_next)) {
       
       return false;
+    }
+
+    
+    
+    if (iterKind == IteratorKind::Async) {
+      if (!emitTree(argsList->head()->pn_next->pn_next)) {
+        
+        return false;
+      }
     }
 
     isIteratorMethodOnStack = true;
@@ -7240,7 +7281,7 @@ bool BytecodeEmitter::emitSelfHostedAllowContentIter(CallNode* callNode) {
 bool BytecodeEmitter::emitSelfHostedAllowContentIterWith(CallNode* callNode) {
   ListNode* argsList = &callNode->right()->as<ListNode>();
 
-  MOZ_ASSERT(argsList->count() == 2);
+  MOZ_ASSERT(argsList->count() == 2 || argsList->count() == 3);
 
   
   return emitTree(argsList->head());
