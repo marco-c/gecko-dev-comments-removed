@@ -728,8 +728,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     this.mainContentHeader.focus();
   }
 
-  getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles) {
+  getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles, isVideoOnboarding) {
     const screenClass = `screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
+    if (isVideoOnboarding) return "with-video";
     return `${isFirstCenteredScreen ? `dialog-initial` : ``} ${isLastCenteredScreen ? `dialog-last` : ``} ${includeNoodles ? `with-noodles` : ``} ${screenClass}`;
   }
 
@@ -857,11 +858,11 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     const includeNoodles = content.has_noodles; 
 
     const isCenterPosition = content.position === "center" || !content.position;
-    const hideStepsIndicator = autoAdvance || isFirstCenteredScreen && isLastCenteredScreen;
+    const hideStepsIndicator = autoAdvance || (content === null || content === void 0 ? void 0 : content.has_video) || isFirstCenteredScreen && isLastCenteredScreen;
     const textColorClass = content.text_color ? `${content.text_color}-text` : ""; 
     
 
-    const screenClassName = isCenterPosition ? this.getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles) : "";
+    const screenClassName = isCenterPosition ? this.getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles, content === null || content === void 0 ? void 0 : content.has_video) : "";
     const currentStep = this.props.order + 1;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("main", {
       className: `screen ${this.props.id || ""} ${screenClassName} ${textColorClass}`,
