@@ -105,7 +105,7 @@ void BufferedReadAdapter::OnReadEvent(Socket* socket) {
                                      buffer_size_ - data_len_, nullptr);
   if (len < 0) {
     
-    RTC_LOG_ERR(INFO) << "Recv";
+    RTC_LOG_ERR(LS_INFO) << "Recv";
     return;
   }
 

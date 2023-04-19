@@ -97,6 +97,8 @@ enum LoggingSeverity {
   LS_WARNING,
   LS_ERROR,
   LS_NONE,
+  
+  
   INFO = LS_INFO,
   WARNING = LS_WARNING,
   LERROR = LS_ERROR
