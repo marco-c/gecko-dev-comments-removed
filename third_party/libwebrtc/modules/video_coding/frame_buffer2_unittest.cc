@@ -29,7 +29,9 @@
 #include "test/time_controller/simulated_time_controller.h"
 
 using ::testing::_;
+using ::testing::IsEmpty;
 using ::testing::Return;
+using ::testing::SizeIs;
 
 namespace webrtc {
 namespace video_coding {
@@ -257,6 +259,29 @@ TEST_F(TestFrameBuffer2, WaitForFrame) {
   InsertFrame(pid, 0, ts, true, kFrameSize);
   time_controller_.AdvanceTime(TimeDelta::Millis(50));
   CheckFrame(0, pid, 0);
+}
+
+TEST_F(TestFrameBuffer2, ClearWhileWaitingForFrame) {
+  const uint16_t pid = Rand();
+
+  
+  InsertFrame(pid, 0, 25, true, kFrameSize);
+  ExtractFrame(100);
+  
+  time_controller_.AdvanceTime(TimeDelta::Millis(10));
+  buffer_->Clear();
+  
+  time_controller_.AdvanceTime(TimeDelta::Millis(15));
+  EXPECT_THAT(frames_, IsEmpty());
+
+  
+  
+  
+  const uint16_t new_pid = pid + 1;
+  InsertFrame(new_pid, 0, 50, true, kFrameSize);
+  time_controller_.AdvanceTime(TimeDelta::Millis(25));
+  ASSERT_THAT(frames_, SizeIs(1));
+  CheckFrame(0, new_pid, 0);
 }
 
 TEST_F(TestFrameBuffer2, OneSuperFrame) {
@@ -661,6 +686,21 @@ TEST_F(TestFrameBuffer2, HigherSpatialLayerNonDecodable) {
   ExtractFrame();
   CheckFrame(1, pid + 3, 1);
   CheckFrame(2, pid + 4, 1);
+}
+
+TEST_F(TestFrameBuffer2, StopWhileWaitingForFrame) {
+  uint16_t pid = Rand();
+  uint32_t ts = Rand();
+
+  InsertFrame(pid, 0, ts, true, kFrameSize);
+  ExtractFrame(10);
+  buffer_->Stop();
+  time_controller_.AdvanceTime(TimeDelta::Millis(10));
+  EXPECT_THAT(frames_, IsEmpty());
+
+  
+  ExtractFrame(0);
+  EXPECT_THAT(frames_, IsEmpty());
 }
 
 }  
