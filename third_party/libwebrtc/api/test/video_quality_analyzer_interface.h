@@ -23,7 +23,6 @@
 #include "api/video_codecs/video_encoder.h"
 
 namespace webrtc {
-namespace webrtc_pc_e2e {
 
 
 
@@ -53,7 +52,8 @@ namespace webrtc_pc_e2e {
 
 
 
-class VideoQualityAnalyzerInterface : public StatsObserverInterface {
+class VideoQualityAnalyzerInterface
+    : public webrtc_pc_e2e::StatsObserverInterface {
  public:
   
   struct EncoderStats {
@@ -149,6 +149,11 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
 
   virtual std::string GetStreamLabel(uint16_t frame_id) = 0;
 };
+
+namespace webrtc_pc_e2e {
+
+
+using VideoQualityAnalyzerInterface = ::webrtc::VideoQualityAnalyzerInterface;
 
 }  
 }  

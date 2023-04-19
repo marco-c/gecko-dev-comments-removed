@@ -19,7 +19,6 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace webrtc_pc_e2e {
 
 
 
@@ -98,7 +97,6 @@ class MultiHeadQueue {
   std::vector<std::deque<T>> queues_;
 };
 
-}  
 }  
 
 #endif  

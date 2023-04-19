@@ -22,14 +22,13 @@
 #include "api/units/timestamp.h"
 
 namespace webrtc {
-namespace webrtc_pc_e2e {
 
 
 
 
 constexpr size_t kDefaultMaxFramesInFlightPerStream = 270;
 
-class RateCounter {
+class SamplesRateCounter {
  public:
   void AddEvent(Timestamp event_time);
 
@@ -106,7 +105,7 @@ struct StreamStats {
   SamplesStatsCounter total_delay_incl_transport_ms;
   
   SamplesStatsCounter time_between_rendered_frames_ms;
-  RateCounter encode_frame_rate;
+  SamplesRateCounter encode_frame_rate;
   SamplesStatsCounter encode_time_ms;
   SamplesStatsCounter decode_time_ms;
   
@@ -198,6 +197,17 @@ struct DefaultVideoQualityAnalyzerOptions {
   
   bool enable_receive_own_stream = false;
 };
+
+namespace webrtc_pc_e2e {
+
+
+using FrameCounters = ::webrtc::FrameCounters;
+using StreamCodecInfo = ::webrtc::StreamCodecInfo;
+using StreamStats = ::webrtc::StreamStats;
+using AnalyzerStats = ::webrtc::AnalyzerStats;
+using StatsKey = ::webrtc::StatsKey;
+using DefaultVideoQualityAnalyzerOptions =
+    ::webrtc::DefaultVideoQualityAnalyzerOptions;
 
 }  
 }  

@@ -60,9 +60,9 @@ struct FrameStats {
   absl::optional<int> rendered_frame_height = absl::nullopt;
 
   
-  absl::optional<webrtc_pc_e2e::StreamCodecInfo> used_encoder = absl::nullopt;
+  absl::optional<StreamCodecInfo> used_encoder = absl::nullopt;
   
-  absl::optional<webrtc_pc_e2e::StreamCodecInfo> used_decoder = absl::nullopt;
+  absl::optional<StreamCodecInfo> used_decoder = absl::nullopt;
 };
 
 

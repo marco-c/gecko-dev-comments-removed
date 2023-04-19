@@ -29,7 +29,6 @@
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer_shared_objects.h"
 
 namespace webrtc {
-namespace webrtc_pc_e2e {
 namespace {
 
 using StatsSample = ::webrtc::SamplesStatsCounter::StatsSample;
@@ -1426,6 +1425,5 @@ TEST(
   }
 }
 
-}  
 }  
 }  
