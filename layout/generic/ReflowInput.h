@@ -834,14 +834,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   void SetComputedBSize(nscoord aComputedBSize);
-  void SetComputedBSizeWithoutResettingResizeFlags(nscoord aComputedBSize) {
-    
-    
-    
-    
-    MOZ_ASSERT(aComputedBSize >= 0, "Invalid computed block-size!");
-    ComputedBSize() = aComputedBSize;
-  }
+  void SetComputedBSizeWithoutResettingResizeFlags(nscoord aComputedBSize);
 
   bool WillReflowAgainForClearance() const {
     return mDiscoveredClearance && *mDiscoveredClearance;

@@ -305,11 +305,20 @@ void ReflowInput::SetComputedBSize(nscoord aComputedBSize) {
   
   
 
-  MOZ_ASSERT(aComputedBSize >= 0, "Invalid computed block-size!");
   if (ComputedBSize() != aComputedBSize) {
-    ComputedBSize() = aComputedBSize;
+    SetComputedBSizeWithoutResettingResizeFlags(aComputedBSize);
     InitResizeFlags(mFrame->PresContext(), mFrame->Type());
   }
+}
+
+void ReflowInput::SetComputedBSizeWithoutResettingResizeFlags(
+    nscoord aComputedBSize) {
+  
+  
+  
+  
+  MOZ_ASSERT(aComputedBSize >= 0, "Invalid computed block-size!");
+  ComputedBSize() = aComputedBSize;
 }
 
 void ReflowInput::Init(nsPresContext* aPresContext,
