@@ -51,10 +51,18 @@ class CallbackListReceivers {
   void Foreach(rtc::FunctionView<void(UntypedFunction&)> fv);
 
  private:
+  
+  
+  
+  
+  
+  const void* pending_removal_tag() const { return &send_in_progress_; }
+
   struct Callback {
     const void* removal_tag;
     UntypedFunction function;
   };
+
   std::vector<Callback> receivers_;
   bool send_in_progress_ = false;
 };
