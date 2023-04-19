@@ -401,16 +401,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  gfxFontGroup* CreateFontGroup(
-      nsPresContext* aPresContext,
-      const mozilla::StyleFontFamilyList& aFontFamilyList,
-      const gfxFontStyle* aStyle, nsAtom* aLanguage, bool aExplicitLanguage,
-      gfxTextPerfMetrics* aTextPerf, gfxUserFontSet* aUserFontSet,
-      gfxFloat aDevToCssSize) const;
-
-  
-
-
 
 
 

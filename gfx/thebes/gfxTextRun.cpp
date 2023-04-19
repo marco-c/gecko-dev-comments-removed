@@ -1884,7 +1884,8 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
                            const gfxFontStyle* aStyle, nsAtom* aLanguage,
                            bool aExplicitLanguage,
                            gfxTextPerfMetrics* aTextPerf,
-                           gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize)
+                           gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize,
+                           StyleFontVariantEmoji aVariantEmoji)
     : mPresContext(aPresContext),  
       mFamilyList(aFontFamilyList),
       mStyle(*aStyle),
@@ -1899,6 +1900,17 @@ gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
       mLastPrefFirstFont(false),
       mSkipDrawing(false),
       mExplicitLanguage(aExplicitLanguage) {
+  switch (aVariantEmoji) {
+    case StyleFontVariantEmoji::Normal:
+    case StyleFontVariantEmoji::Unicode:
+      break;
+    case StyleFontVariantEmoji::Text:
+      mEmojiPresentation = eFontPresentation::Text;
+      break;
+    case StyleFontVariantEmoji::Emoji:
+      mEmojiPresentation = eFontPresentation::EmojiExplicit;
+      break;
+  }
   
   
   mCurrGeneration = GetGeneration();
@@ -3100,6 +3112,9 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   eFontPresentation presentation = eFontPresentation::Any;
   EmojiPresentation emojiPresentation = GetEmojiPresentation(aCh);
   if (emojiPresentation != TextOnly) {
+    
+    presentation = mEmojiPresentation;
+    
     
     
     

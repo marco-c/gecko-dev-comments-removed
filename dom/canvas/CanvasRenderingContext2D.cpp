@@ -3526,15 +3526,16 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   
 
   
-  gfxFontGroup* fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
-      nullptr,           
-      list,              
-      &fontStyle,        
-      language,          
-      explicitLanguage,  
-      nullptr,           
-      fontFaceSetImpl,   
-      1.0);              
+  gfxFontGroup* fontGroup =
+      new gfxFontGroup(nullptr,           
+                       list,              
+                       &fontStyle,        
+                       language,          
+                       explicitLanguage,  
+                       nullptr,           
+                       fontFaceSetImpl,   
+                       1.0,               
+                       StyleFontVariantEmoji::Normal);
   CurrentState().fontGroup = fontGroup;
   SerializeFontForCanvas(list, fontStyle, CurrentState().font);
   CurrentState().fontFont = nsFont(StyleFontFamily{list, false, false},
@@ -4327,10 +4328,10 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
       gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
       const auto* sans =
           Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
-      fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
+      fontGroup = new gfxFontGroup(
           presContext, sans->families, &style, language, explicitLanguage,
           presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
-          devToCssSize);
+          devToCssSize, StyleFontVariantEmoji::Normal);
       if (fontGroup) {
         CurrentState().font = kDefaultFontStyle;
       } else {
