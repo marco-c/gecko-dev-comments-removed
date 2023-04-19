@@ -81,7 +81,7 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
 
     
     
-    kidReflowInput.mStylePadding->GetPadding(padding);
+    frame->StylePadding()->GetPadding(padding);
 
     
     
