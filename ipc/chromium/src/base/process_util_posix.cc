@@ -38,6 +38,14 @@
 #  include "mozilla/ipc/ForkServiceChild.h"
 #endif
 
+
+
+
+
+#ifndef __OpenBSD__
+#  define HAVE_WAITID
+#endif
+
 const int kMicrosecondsPerSecond = 1000000;
 
 namespace base {
@@ -203,6 +211,8 @@ bool IsProcessDead(ProcessHandle handle, bool blocking) {
   }
 #endif
 
+#ifdef HAVE_WAITID
+
   
   
   
@@ -271,6 +281,30 @@ bool IsProcessDead(ProcessHandle handle, bool blocking) {
   DCHECK(si.si_pid == handle);
   DCHECK(si.si_code == old_si_code);
   return true;
+
+#else  
+
+  int status;
+  const int result = waitpid(handle, &status, blocking ? 0 : WNOHANG);
+  if (result == -1) {
+    CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
+                        << " errno:" << errno;
+    return true;
+  }
+  if (result == 0) {
+    return false;
+  }
+
+  if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+    CHROMIUM_LOG(WARNING) << "process " << handle << " exited with status "
+                          << WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    CHROMIUM_LOG(WARNING) << "process " << handle << " exited on signal "
+                          << WTERMSIG(status);
+  }
+  return true;
+
+#endif  
 }
 
 void FreeEnvVarsArray::operator()(char** array) {
