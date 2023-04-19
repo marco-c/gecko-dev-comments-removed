@@ -30,6 +30,8 @@ using namespace JS;
 
 bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, Handle<Value> value,
                          MutableHandle<Value> res) {
+  cx->check(value);
+
   
   if (!value.isObject()) {
     res.set(value);
@@ -275,43 +277,53 @@ const JSClass WrappedFunctionObject::class_ = {
 
 bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
                                HandleObject target, MutableHandle<Value> res) {
-  
-  
-  Rooted<JSObject*> global(cx, callerRealm->maybeGlobal());
-  MOZ_RELEASE_ASSERT(global,
-                     "global is null; executing in a realm that's being GC'd?");
-  AutoRealm ar(cx, global);
+  cx->check(target);
 
-  MOZ_ASSERT(target);
+  WrappedFunctionObject* wrapped = nullptr;
+  {
+    
+    
+    Rooted<JSObject*> global(cx, callerRealm->maybeGlobal());
+    MOZ_RELEASE_ASSERT(
+        global, "global is null; executing in a realm that's being GC'd?");
+    AutoRealm ar(cx, global);
+
+    MOZ_ASSERT(target);
+
+    
+    Rooted<JSObject*> maybeWrappedTarget(cx, target);
+    if (!cx->compartment()->wrap(cx, &maybeWrappedTarget)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    wrapped = NewBuiltinClassInstance<WrappedFunctionObject>(cx);
+    if (!wrapped) {
+      return false;
+    }
+
+    
+    
+    
+    wrapped->setTargetFunction(*maybeWrappedTarget);
+    
+    
+
+    MOZ_ASSERT(wrapped->realm() == callerRealm);
+  }
 
   
-  Rooted<JSObject*> maybeWrappedTarget(cx, target);
-  if (!cx->compartment()->wrap(cx, &maybeWrappedTarget)) {
+  RootedObject obj(cx, wrapped);
+  if (!cx->compartment()->wrap(cx, &obj)) {
     return false;
   }
 
   
-  
-  
-  
-  
-  Rooted<WrappedFunctionObject*> wrapped(
-      cx, NewBuiltinClassInstance<WrappedFunctionObject>(cx));
-  if (!wrapped) {
-    return false;
-  }
-
-  
-  
-  
-  wrapped->setTargetFunction(*maybeWrappedTarget);
-  
-  
-
-  MOZ_ASSERT(wrapped->realm() == callerRealm);
-
-  
-  if (!CopyNameAndLength(cx, wrapped, maybeWrappedTarget)) {
+  if (!CopyNameAndLength(cx, obj, target)) {
     
     cx->clearPendingException();
 
@@ -321,6 +333,6 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
   }
 
   
-  res.set(ObjectValue(*wrapped));
+  res.set(ObjectValue(*obj));
   return true;
 }

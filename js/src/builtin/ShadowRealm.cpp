@@ -335,6 +335,11 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
   }
 
   
+  if (!cx->compartment()->wrap(cx, rval)) {
+    return false;
+  }
+
+  
   return GetWrappedValue(cx, callerRealm, rval, rval);
 }
 
