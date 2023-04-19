@@ -87,6 +87,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
                        nsIReferrerInfo* aReferrerInfo,
                        nsICookieJarSettings* aCookieJarSettings);
 
+  static void CollectResourcesTypeTelemetry(ASDestination aASDestination);
   
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIChannel> mChannel;
