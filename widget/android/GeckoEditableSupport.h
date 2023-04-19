@@ -274,6 +274,10 @@ class GeckoEditableSupport final
 
   
   void OnImeRequestCommit();
+
+  
+  void OnImeInsertImage(jni::ByteArray::Param aData,
+                        jni::String::Param aMimeType);
 };
 
 }  
