@@ -3,7 +3,10 @@
 
 import copy
 
-import gecko_taskgraph
+import taskgraph
+from taskgraph.util.attributes import keymatch
+from taskgraph.util.treeherder import join_symbol, split_symbol
+
 from gecko_taskgraph.transforms.base import TransformSequence
 from gecko_taskgraph.util.attributes import is_try
 from gecko_taskgraph.util.chunking import (
@@ -14,8 +17,6 @@ from gecko_taskgraph.util.chunking import (
     guess_mozinfo_from_task,
 )
 from gecko_taskgraph.util.perfile import perfile_number_of_chunks
-from taskgraph.util.attributes import keymatch
-from taskgraph.util.treeherder import join_symbol, split_symbol
 
 DYNAMIC_CHUNK_DURATION = 20 * 60  
 """The approximate time each test chunk should take to run."""
@@ -73,7 +74,7 @@ def set_test_manifests(config, tasks):
         
         task.setdefault("tags", {})["tests_grouped"] = "1"
 
-        if gecko_taskgraph.fast:
+        if taskgraph.fast:
             
             
             

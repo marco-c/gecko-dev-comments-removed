@@ -19,11 +19,6 @@ MAX_DEPENDENCIES = 99
 tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 
 
-
-
-fast = False
-
-
 def register(graph_config):
     """Used to register Gecko specific extensions.
 
