@@ -33,7 +33,7 @@ class GeckoViewHistory final : public mozilla::BaseHistory {
 
   
   NS_IMETHOD VisitURI(nsIWidget*, nsIURI*, nsIURI* aLastVisitedURI,
-                      uint32_t aFlags) final;
+                      uint32_t aFlags, uint64_t aBrowserId) final;
   NS_IMETHOD SetURITitle(nsIURI*, const nsAString&) final;
 
   static already_AddRefed<GeckoViewHistory> GetSingleton();

@@ -144,8 +144,10 @@ class IHistory : public nsISupports {
 
 
 
+
+
   NS_IMETHOD VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
-                      uint32_t aFlags) = 0;
+                      uint32_t aFlags, uint64_t aBrowserId) = 0;
 
   
 
