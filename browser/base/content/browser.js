@@ -403,15 +403,8 @@ XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
     element.classList.add("global-notificationbox");
     element.setAttribute("notificationside", "top");
     element.setAttribute("prepend-notifications", true);
-    
-    
-    
-    
-    
-    let outer = document.createElement("div");
-    outer.appendChild(element);
-    let tabNotifications = document.getElementById("tab-notification-deck");
-    gNavToolbox.insertBefore(outer, tabNotifications);
+    const tabNotifications = document.getElementById("tab-notification-deck");
+    gNavToolbox.insertBefore(element, tabNotifications);
   });
 });
 
