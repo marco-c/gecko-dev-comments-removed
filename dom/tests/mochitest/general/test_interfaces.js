@@ -762,25 +762,21 @@ let interfaceNamesInGlobalScope = [
   
   { name: "MessagePort", insecureContext: true },
   
-  { name: "MIDIAccess", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIAccess", android: false },
   
-  {
-    name: "MIDIConnectionEvent",
-    android: false,
-    disabled: !isEarlyBetaOrEarlier,
-  },
+  { name: "MIDIConnectionEvent", android: false },
   
-  { name: "MIDIInputMap", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIInputMap", android: false },
   
-  { name: "MIDIInput", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIInput", android: false },
   
-  { name: "MIDIMessageEvent", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIMessageEvent", android: false },
   
-  { name: "MIDIOutputMap", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIOutputMap", android: false },
   
-  { name: "MIDIOutput", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIOutput", android: false },
   
-  { name: "MIDIPort", android: false, disabled: !isEarlyBetaOrEarlier },
+  { name: "MIDIPort", android: false },
   
   { name: "MimeType", insecureContext: true },
   
