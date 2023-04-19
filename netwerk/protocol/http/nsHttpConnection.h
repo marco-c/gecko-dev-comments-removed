@@ -191,10 +191,9 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool IsForWebSocket() { return mForWebSocket; }
 
   
-  [[nodiscard]] static nsresult MakeConnectString(nsAHttpTransaction* trans,
-                                                  nsHttpRequestHead* request,
-                                                  nsACString& result,
-                                                  bool h2ws);
+  [[nodiscard]] static nsresult MakeConnectString(
+      nsAHttpTransaction* trans, nsHttpRequestHead* request, nsACString& result,
+      bool h2ws, bool aShouldResistFingerprinting);
   [[nodiscard]] static nsresult ReadFromStream(nsIInputStream*, void*,
                                                const char*, uint32_t, uint32_t,
                                                uint32_t*);
