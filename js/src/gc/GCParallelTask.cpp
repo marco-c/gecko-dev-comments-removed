@@ -25,6 +25,10 @@ using mozilla::TimeStamp;
 js::GCParallelTask::~GCParallelTask() {
   
   
+  MOZ_DIAGNOSTIC_ASSERT(!isInList());
+
+  
+  
   
   
   assertIdle();
