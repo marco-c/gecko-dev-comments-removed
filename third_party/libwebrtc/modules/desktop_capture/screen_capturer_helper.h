@@ -16,7 +16,8 @@
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -26,8 +27,8 @@ namespace webrtc {
 
 class ScreenCapturerHelper {
  public:
-  ScreenCapturerHelper();
-  ~ScreenCapturerHelper();
+  ScreenCapturerHelper() = default;
+  ~ScreenCapturerHelper() = default;
 
   
   void ClearInvalidRegion();
@@ -69,10 +70,10 @@ class ScreenCapturerHelper {
   
   
   
-  DesktopRegion invalid_region_;
+  DesktopRegion invalid_region_ RTC_GUARDED_BY(invalid_region_mutex_);
 
   
-  std::unique_ptr<RWLockWrapper> invalid_region_lock_;
+  Mutex invalid_region_mutex_;
 
   
   DesktopSize size_most_recent_;
@@ -80,7 +81,7 @@ class ScreenCapturerHelper {
   
   
   
-  int log_grid_size_;
+  int log_grid_size_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerHelper);
 };
