@@ -12,8 +12,6 @@
 #define MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_H_
 
 #include <memory>
-#include <string>
-#include <vector>
 
 #include "modules/include/module.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
@@ -32,44 +30,6 @@ class RtpRtcp : public Module, public RtpRtcpInterface {
 
   static std::unique_ptr<RtpRtcp> DEPRECATED_Create(
       const Configuration& configuration);
-
-  
-  RTC_DEPRECATED virtual bool TMMBR() const = 0;
-
-  RTC_DEPRECATED virtual void SetTMMBRStatus(bool enable) = 0;
-
-  
-  RTC_DEPRECATED virtual int32_t AddMixedCNAME(uint32_t ssrc,
-                                               const char* cname) = 0;
-
-  
-  RTC_DEPRECATED virtual int32_t RemoveMixedCNAME(uint32_t ssrc) = 0;
-
-  
-  
-  RTC_DEPRECATED virtual int32_t RemoteCNAME(
-      uint32_t remote_ssrc,
-      char cname[RTCP_CNAME_SIZE]) const = 0;
-
-  
-  
-  RTC_DEPRECATED virtual int32_t RegisterSendRtpHeaderExtension(
-      RTPExtensionType type,
-      uint8_t id) = 0;
-
-  
-  
-  RTC_DEPRECATED virtual int32_t SetRTCPApplicationSpecificData(
-      uint8_t sub_type,
-      uint32_t name,
-      const uint8_t* data,
-      uint16_t length) = 0;
-
-  
-  
-  RTC_DEPRECATED virtual int32_t DataCountersRTP(
-      size_t* bytes_sent,
-      uint32_t* packets_sent) const = 0;
 
   
   
