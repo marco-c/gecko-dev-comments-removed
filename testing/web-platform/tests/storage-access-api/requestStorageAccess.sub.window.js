@@ -42,29 +42,48 @@ if (topLevelDocument) {
   
 
   
-  RunTestsInIFrame("resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false");
+  let sameOriginFramePromise = RunTestsInIFrame(
+      'resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false');
 
   
-  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false");
-
-  
-  
-  RunTestsInNestedIFrame("resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false");
+  let crossOriginFramePromise = RunTestsInIFrame(
+      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false');
 
   
   
-  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false");
+  let nestedSameOriginFramePromise = RunTestsInNestedIFrame(
+      'resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false');
 
-  promise_test(async t => {
-    await test_driver.set_permission({ name: 'storage-access' }, 'granted');
+  
+  
+  let nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
+      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false')
 
-    var access_promise;
-    let testMethod = function() {
-      access_promise = document.requestStorageAccess();
-    };
-    await ClickButtonWithGesture(testMethod);
+  
+  
+  
+  Promise
+      .all([
+        sameOriginFramePromise,
+        crossOriginFramePromise,
+        nestedSameOriginFramePromise,
+        nestedCrossOriginFramePromise,
+      ])
+      .then(x => {
+        promise_test(
+            async t => {
+              await test_driver.set_permission(
+                  {name: 'storage-access'}, 'granted');
 
-    return access_promise;
-  }, "[" + testPrefix + "] document.requestStorageAccess() should be resolved when called properly with a user gesture");
+              var access_promise;
+              let testMethod = function() {
+                access_promise = document.requestStorageAccess();
+              };
+              await ClickButtonWithGesture(testMethod);
 
+              return access_promise;
+            },
+            '[' + testPrefix +
+                '] document.requestStorageAccess() should be resolved when called properly with a user gesture');
+      });
 }
