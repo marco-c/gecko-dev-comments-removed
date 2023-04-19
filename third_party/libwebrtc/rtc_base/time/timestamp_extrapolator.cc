@@ -13,87 +13,83 @@
 #include <algorithm>
 
 #include "absl/types/optional.h"
+#include "api/units/frequency.h"
+#include "modules/include/module_common_types_public.h"
 
 namespace webrtc {
 
+namespace {
+
+constexpr double kLambda = 1;
+constexpr uint32_t kStartUpFilterDelayInPackets = 2;
+constexpr double kAlarmThreshold = 60e3;
+
+constexpr double kAccDrift = 6600;
+constexpr double kAccMaxError = 7000;
+constexpr double kP11 = 1e10;
+
+}  
+
 TimestampExtrapolator::TimestampExtrapolator(Timestamp start)
-    : _start(Timestamp::Zero()),
-      _prev(Timestamp::Zero()),
-      _firstTimestamp(0),
-      _wrapArounds(0),
-      _prevUnwrappedTimestamp(-1),
-      _prevWrapTimestamp(-1),
-      _lambda(1),
-      _firstAfterReset(true),
-      _packetCount(0),
-      _startUpFilterDelayInPackets(2),
-      _detectorAccumulatorPos(0),
-      _detectorAccumulatorNeg(0),
-      _alarmThreshold(60e3),
-      _accDrift(6600),  
-      _accMaxError(7000),
-      _pP11(1e10) {
+    : start_(Timestamp::Zero()),
+      prev_(Timestamp::Zero()),
+      packet_count_(0),
+      detector_accumulator_pos_(0),
+      detector_accumulator_neg_(0) {
   Reset(start);
 }
 
 void TimestampExtrapolator::Reset(Timestamp start) {
-  _start = start;
-  _prev = _start;
-  _firstTimestamp = 0;
-  _w[0] = 90.0;
-  _w[1] = 0;
-  _pP[0][0] = 1;
-  _pP[1][1] = _pP11;
-  _pP[0][1] = _pP[1][0] = 0;
-  _firstAfterReset = true;
-  _prevUnwrappedTimestamp = -1;
-  _prevWrapTimestamp = -1;
-  _wrapArounds = 0;
-  _packetCount = 0;
-  _detectorAccumulatorPos = 0;
-  _detectorAccumulatorNeg = 0;
+  start_ = start;
+  prev_ = start_;
+  first_unwrapped_timestamp_ = absl::nullopt;
+  w_[0] = 90.0;
+  w_[1] = 0;
+  p_[0][0] = 1;
+  p_[1][1] = kP11;
+  p_[0][1] = p_[1][0] = 0;
+  unwrapper_ = TimestampUnwrapper();
+  packet_count_ = 0;
+  detector_accumulator_pos_ = 0;
+  detector_accumulator_neg_ = 0;
 }
 
 void TimestampExtrapolator::Update(Timestamp now, uint32_t ts90khz) {
-  if (now - _prev > TimeDelta::Seconds(10)) {
+  if (now - prev_ > TimeDelta::Seconds(10)) {
     
     
     Reset(now);
   } else {
-    _prev = now;
+    prev_ = now;
   }
 
   
-  const TimeDelta offset = now - _start;
-  double tMs = offset.ms();
+  const TimeDelta offset = now - start_;
+  double t_ms = offset.ms();
 
-  CheckForWrapArounds(ts90khz);
+  int64_t unwrapped_ts90khz = unwrapper_.Unwrap(ts90khz);
 
-  int64_t unwrapped_ts90khz =
-      static_cast<int64_t>(ts90khz) +
-      _wrapArounds * ((static_cast<int64_t>(1) << 32) - 1);
-
-  if (_firstAfterReset) {
+  if (!first_unwrapped_timestamp_) {
     
     
     
-    _w[1] = -_w[0] * tMs;
-    _firstTimestamp = unwrapped_ts90khz;
-    _firstAfterReset = false;
+    w_[1] = -w_[0] * t_ms;
+    first_unwrapped_timestamp_ = unwrapped_ts90khz;
   }
 
-  double residual = (static_cast<double>(unwrapped_ts90khz) - _firstTimestamp) -
-                    tMs * _w[0] - _w[1];
+  double residual =
+      (static_cast<double>(unwrapped_ts90khz) - *first_unwrapped_timestamp_) -
+      t_ms * w_[0] - w_[1];
   if (DelayChangeDetection(residual) &&
-      _packetCount >= _startUpFilterDelayInPackets) {
+      packet_count_ >= kStartUpFilterDelayInPackets) {
     
     
     
-    _pP[1][1] = _pP11;
+    p_[1][1] = kP11;
   }
 
-  if (_prevUnwrappedTimestamp >= 0 &&
-      unwrapped_ts90khz < _prevUnwrappedTimestamp) {
+  if (prev_unwrapped_timestamp_ &&
+      unwrapped_ts90khz < prev_unwrapped_timestamp_) {
     
     return;
   }
@@ -102,94 +98,62 @@ void TimestampExtrapolator::Update(Timestamp now, uint32_t ts90khz) {
   
   
   double K[2];
-  K[0] = _pP[0][0] * tMs + _pP[0][1];
-  K[1] = _pP[1][0] * tMs + _pP[1][1];
-  double TPT = _lambda + tMs * K[0] + K[1];
+  K[0] = p_[0][0] * t_ms + p_[0][1];
+  K[1] = p_[1][0] * t_ms + p_[1][1];
+  double TPT = kLambda + t_ms * K[0] + K[1];
   K[0] /= TPT;
   K[1] /= TPT;
   
-  _w[0] = _w[0] + K[0] * residual;
-  _w[1] = _w[1] + K[1] * residual;
+  w_[0] = w_[0] + K[0] * residual;
+  w_[1] = w_[1] + K[1] * residual;
   
   double p00 =
-      1 / _lambda * (_pP[0][0] - (K[0] * tMs * _pP[0][0] + K[0] * _pP[1][0]));
+      1 / kLambda * (p_[0][0] - (K[0] * t_ms * p_[0][0] + K[0] * p_[1][0]));
   double p01 =
-      1 / _lambda * (_pP[0][1] - (K[0] * tMs * _pP[0][1] + K[0] * _pP[1][1]));
-  _pP[1][0] =
-      1 / _lambda * (_pP[1][0] - (K[1] * tMs * _pP[0][0] + K[1] * _pP[1][0]));
-  _pP[1][1] =
-      1 / _lambda * (_pP[1][1] - (K[1] * tMs * _pP[0][1] + K[1] * _pP[1][1]));
-  _pP[0][0] = p00;
-  _pP[0][1] = p01;
-  _prevUnwrappedTimestamp = unwrapped_ts90khz;
-  if (_packetCount < _startUpFilterDelayInPackets) {
-    _packetCount++;
+      1 / kLambda * (p_[0][1] - (K[0] * t_ms * p_[0][1] + K[0] * p_[1][1]));
+  p_[1][0] =
+      1 / kLambda * (p_[1][0] - (K[1] * t_ms * p_[0][0] + K[1] * p_[1][0]));
+  p_[1][1] =
+      1 / kLambda * (p_[1][1] - (K[1] * t_ms * p_[0][1] + K[1] * p_[1][1]));
+  p_[0][0] = p00;
+  p_[0][1] = p01;
+  prev_unwrapped_timestamp_ = unwrapped_ts90khz;
+  if (packet_count_ < kStartUpFilterDelayInPackets) {
+    packet_count_++;
   }
 }
 
 absl::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
-    uint32_t timestamp90khz) {
-  CheckForWrapArounds(timestamp90khz);
-  double unwrapped_ts90khz =
-      static_cast<double>(timestamp90khz) +
-      _wrapArounds * ((static_cast<int64_t>(1) << 32) - 1);
-  if (_packetCount == 0) {
+    uint32_t timestamp90khz) const {
+  int64_t unwrapped_ts90khz = unwrapper_.UnwrapWithoutUpdate(timestamp90khz);
+
+  if (!first_unwrapped_timestamp_) {
     return absl::nullopt;
-  } else if (_packetCount < _startUpFilterDelayInPackets) {
-    auto diffMs = static_cast<int64_t>(
-        static_cast<double>(unwrapped_ts90khz - _prevUnwrappedTimestamp) /
-            90.0 +
-        0.5);
-    return _prev + TimeDelta::Millis(diffMs);
-  } else if (_w[0] < 1e-3) {
-    return _start;
+  } else if (packet_count_ < kStartUpFilterDelayInPackets) {
+    constexpr Frequency k90KHz = Frequency::KiloHertz(90);
+    TimeDelta diff = (unwrapped_ts90khz - *prev_unwrapped_timestamp_) / k90KHz;
+    return prev_ + diff;
+  } else if (w_[0] < 1e-3) {
+    return start_;
   } else {
-    double timestampDiff =
-        unwrapped_ts90khz - static_cast<double>(_firstTimestamp);
-    auto diffMs = static_cast<int64_t>((timestampDiff - _w[1]) / _w[0] + 0.5);
-    return _start + TimeDelta::Millis(diffMs);
+    double timestampDiff = unwrapped_ts90khz - *first_unwrapped_timestamp_;
+    auto diff_ms = static_cast<int64_t>((timestampDiff - w_[1]) / w_[0] + 0.5);
+    return start_ + TimeDelta::Millis(diff_ms);
   }
-}
-
-
-
-void TimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz) {
-  if (_prevWrapTimestamp == -1) {
-    _prevWrapTimestamp = ts90khz;
-    return;
-  }
-  if (ts90khz < _prevWrapTimestamp) {
-    
-    
-    
-    if (static_cast<int32_t>(ts90khz - _prevWrapTimestamp) > 0) {
-      
-      _wrapArounds++;
-    }
-  } else {
-    
-    
-    
-    if (static_cast<int32_t>(_prevWrapTimestamp - ts90khz) > 0) {
-      
-      _wrapArounds--;
-    }
-  }
-  _prevWrapTimestamp = ts90khz;
 }
 
 bool TimestampExtrapolator::DelayChangeDetection(double error) {
   
-  error = (error > 0) ? std::min(error, _accMaxError)
-                      : std::max(error, -_accMaxError);
-  _detectorAccumulatorPos =
-      std::max(_detectorAccumulatorPos + error - _accDrift, double{0});
-  _detectorAccumulatorNeg =
-      std::min(_detectorAccumulatorNeg + error + _accDrift, double{0});
-  if (_detectorAccumulatorPos > _alarmThreshold ||
-      _detectorAccumulatorNeg < -_alarmThreshold) {
+  error = (error > 0) ? std::min(error, kAccMaxError)
+                      : std::max(error, -kAccMaxError);
+  detector_accumulator_pos_ =
+      std::max(detector_accumulator_pos_ + error - kAccDrift, double{0});
+  detector_accumulator_neg_ =
+      std::min(detector_accumulator_neg_ + error + kAccDrift, double{0});
+  if (detector_accumulator_pos_ > kAlarmThreshold ||
+      detector_accumulator_neg_ < -kAlarmThreshold) {
     
-    _detectorAccumulatorPos = _detectorAccumulatorNeg = 0;
+    detector_accumulator_pos_ = detector_accumulator_neg_ = 0;
     return true;
   }
   return false;
