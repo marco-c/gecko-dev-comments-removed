@@ -144,6 +144,90 @@ class ScriptModule extends Module {
 
 
 
+
+
+
+
+  async callFunction(options = {}) {
+    const {
+      arguments: commandArguments = null,
+      awaitPromise,
+      functionDeclaration,
+      resultOwnership = OwnershipModel.None,
+      target = {},
+      this: thisParameter = null,
+    } = options;
+
+    lazy.assert.string(
+      functionDeclaration,
+      `Expected "functionDeclaration" to be a string, got ${functionDeclaration}`
+    );
+
+    lazy.assert.boolean(
+      awaitPromise,
+      `Expected "awaitPromise" to be a boolean, got ${awaitPromise}`
+    );
+
+    this.#assertResultOwnership(resultOwnership);
+
+    if (commandArguments != null) {
+      lazy.assert.array(
+        commandArguments,
+        `Expected "arguments" to be an array, got ${commandArguments}`
+      );
+      throw new lazy.error.UnsupportedOperationError(
+        `"arguments" parameter is not supported yet`
+      );
+    }
+
+    if (thisParameter != null) {
+      throw new lazy.error.UnsupportedOperationError(
+        `"this" parameter is not supported yet`
+      );
+    }
+
+    const { contextId, realmId, sandbox } = this.#assertTarget(target);
+    const realm = this.#getRealmInfoFromTarget({ contextId, realmId, sandbox });
+    const evaluationResult = await this.messageHandler.forwardCommand({
+      moduleName: "script",
+      commandName: "callFunctionDeclaration",
+      destination: {
+        type: lazy.WindowGlobalMessageHandler.type,
+        id: realm.context.id,
+      },
+      params: {
+        awaitPromise,
+        commandArguments,
+        functionDeclaration,
+      },
+    });
+
+    return this.#buildReturnValue(evaluationResult, realm);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async evaluate(options = {}) {
     const {
       awaitPromise,
@@ -162,6 +246,27 @@ class ScriptModule extends Module {
       `Expected "awaitPromise" to be a boolean, got ${awaitPromise}`
     );
 
+    this.#assertResultOwnership(resultOwnership);
+
+    const { contextId, realmId, sandbox } = this.#assertTarget(target);
+    const realm = this.#getRealmInfoFromTarget({ contextId, realmId, sandbox });
+    const evaluationResult = await this.messageHandler.forwardCommand({
+      moduleName: "script",
+      commandName: "evaluateExpression",
+      destination: {
+        type: lazy.WindowGlobalMessageHandler.type,
+        id: realm.context.id,
+      },
+      params: {
+        awaitPromise,
+        expression: source,
+      },
+    });
+
+    return this.#buildReturnValue(evaluationResult, realm);
+  }
+
+  #assertResultOwnership(resultOwnership) {
     if (![OwnershipModel.None, OwnershipModel.Root].includes(resultOwnership)) {
       throw new lazy.error.InvalidArgumentError(
         `Expected "resultOwnership" to be one of ${Object.values(
@@ -169,7 +274,9 @@ class ScriptModule extends Module {
         )}, got ${resultOwnership}`
       );
     }
+  }
 
+  #assertTarget(target) {
     lazy.assert.object(
       target,
       `Expected "target" to be an object, got ${target}`
@@ -180,6 +287,7 @@ class ScriptModule extends Module {
       realm: realmId = null,
       sandbox = null,
     } = target;
+
     if (contextId != null) {
       lazy.assert.string(
         contextId,
@@ -207,20 +315,10 @@ class ScriptModule extends Module {
       throw new lazy.error.InvalidArgumentError(`No context or realm provided`);
     }
 
-    const realm = this.#getRealmInfoFromTarget({ contextId, realmId, sandbox });
-    const evaluationResult = await this.messageHandler.forwardCommand({
-      moduleName: "script",
-      commandName: "evaluateExpression",
-      destination: {
-        type: lazy.WindowGlobalMessageHandler.type,
-        id: realm.context.id,
-      },
-      params: {
-        awaitPromise,
-        expression: source,
-      },
-    });
+    return { contextId, realmId, sandbox };
+  }
 
+  #buildReturnValue(evaluationResult, realm) {
     const rv = { realm: realm.realm };
     switch (evaluationResult.evaluationStatus) {
       

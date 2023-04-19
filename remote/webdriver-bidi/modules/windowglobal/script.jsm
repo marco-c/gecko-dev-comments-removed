@@ -94,48 +94,7 @@ class ScriptModule extends Module {
     };
   }
 
-  #toRawObject(maybeDebuggerObject) {
-    if (maybeDebuggerObject instanceof Debugger.Object) {
-      
-      
-      const rawObject = maybeDebuggerObject.unsafeDereference();
-
-      
-      
-      
-      
-      
-      return Cu.waiveXrays(rawObject);
-    }
-
-    
-    
-    return maybeDebuggerObject;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async evaluateExpression(options) {
-    const { awaitPromise, expression } = options;
-    const rv = this.#global.executeInGlobal(expression, {
-      url: this.messageHandler.window.document.baseURI,
-    });
-
+  async #buildReturnValue(rv, awaitPromise) {
     let evaluationStatus, exception, result, stack;
     if ("return" in rv) {
       evaluationStatus = EvaluationStatus.Normal;
@@ -183,6 +142,78 @@ class ScriptModule extends Module {
           `Unsupported completion value for expression evaluation`
         );
     }
+  }
+
+  #toRawObject(maybeDebuggerObject) {
+    if (maybeDebuggerObject instanceof Debugger.Object) {
+      
+      
+      const rawObject = maybeDebuggerObject.unsafeDereference();
+
+      
+      
+      
+      
+      
+      return Cu.waiveXrays(rawObject);
+    }
+
+    
+    
+    return maybeDebuggerObject;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async callFunctionDeclaration(options) {
+    const { awaitPromise, functionDeclaration } = options;
+    const rv = this.#global.executeInGlobal(`(${functionDeclaration})()`, {
+      url: this.messageHandler.window.document.baseURI,
+    });
+    return this.#buildReturnValue(rv, awaitPromise);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async evaluateExpression(options) {
+    const { awaitPromise, expression } = options;
+    const rv = this.#global.executeInGlobal(expression, {
+      url: this.messageHandler.window.document.baseURI,
+    });
+
+    return this.#buildReturnValue(rv, awaitPromise);
   }
 }
 
