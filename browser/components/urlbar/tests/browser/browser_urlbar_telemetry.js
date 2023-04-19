@@ -96,10 +96,7 @@ add_setup(async function() {
   await SearchTestUtils.installSearchExtension({
     name: "MozSearch",
     keyword: "mozalias",
-    
-    
-    search_url: "https://example.com/?q={searchTerms}",
-    search_url_get_params: "",
+    search_url: "https://example.com/",
   });
 
   
@@ -384,6 +381,10 @@ add_task(async function test_oneOff_enterSelection() {
   );
 
   await withNewSearchEngine(async function() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.urlbar.maxHistoricalSearchSuggestions", 1]],
+    });
+
     let tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
       "about:blank"
@@ -419,6 +420,7 @@ add_task(async function test_oneOff_enterSelection() {
       1
     );
 
+    await SpecialPowers.popPrefEnv();
     BrowserTestUtils.removeTab(tab);
   });
 });

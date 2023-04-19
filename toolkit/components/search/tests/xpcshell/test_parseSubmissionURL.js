@@ -35,7 +35,12 @@ add_task(async function test_parseSubmissionURL() {
   let engine4 = Services.search.getEngineByName("idn_addParam");
 
   
-  await SearchTestUtils.promiseNewSearchEngine(`${gDataUrl}engine2.xml`);
+  
+  let engine5 = await SearchTestUtils.promiseNewSearchEngine(
+    `${gDataUrl}engine2.xml`
+  );
+
+  
   await SearchTestUtils.installSearchExtension({
     name: "bacon",
     keyword: "bacon",
@@ -113,19 +118,31 @@ add_task(async function test_parseSubmissionURL() {
   Assert.equal(result.termsLength, "foo+bar".length);
 
   
+  
   Assert.equal(
     Services.search.parseSubmissionURL("https://www.bacon.moz/search?q=")
       .engine,
     null
   );
-  Assert.equal(
-    Services.search.parseSubmissionURL("https://duckduckgo.com?q=test").engine,
-    null
-  );
-  Assert.equal(
-    Services.search.parseSubmissionURL("https://duckduckgo.com/?q=test").engine,
-    null
-  );
+
+  
+  
+  url = "https://duckduckgo.com/?foo=bar&q=caff%C3%A8";
+  result = Services.search.parseSubmissionURL(url);
+  Assert.equal(result.engine.wrappedJSObject, engine5);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
+  Assert.equal(result.termsLength, "caff%C3%A8".length);
+
+  
+  
+  
+  url = "https://duckduckgo.com?foo=bar&q=caff%C3%A8";
+  result = Services.search.parseSubmissionURL(url);
+  Assert.equal(result.engine.wrappedJSObject, engine5);
+  Assert.equal(result.terms, "caff\u00E8");
+  Assert.ok(url.slice(result.termsOffset).startsWith("caff%C3%A8"));
+  Assert.equal(result.termsLength, "caff%C3%A8".length);
 
   
   url = "https://www.google.com/search?q=caff%C3%A8";
