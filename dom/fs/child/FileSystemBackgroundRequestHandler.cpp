@@ -7,89 +7,13 @@
 #include "FileSystemBackgroundRequestHandler.h"
 
 #include "fs/FileSystemChildFactory.h"
-#include "mozilla/dom/BackgroundFileSystemChild.h"
 #include "mozilla/dom/OriginPrivateFileSystemChild.h"
 #include "mozilla/dom/POriginPrivateFileSystem.h"
-#include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "nsIScriptObjectPrincipal.h"
 
 namespace mozilla::dom {
-
-namespace {
-
-
-RefPtr<BackgroundFileSystemChild> CreateBackgroundFileSystemChild(
-    nsIGlobalObject* aGlobal) {
-  using mozilla::dom::BackgroundFileSystemChild;
-  using mozilla::ipc::BackgroundChild;
-  using mozilla::ipc::PBackgroundChild;
-  using mozilla::ipc::PrincipalInfo;
-
-  
-  
-
-  
-  
-  
-
-  PBackgroundChild* backgroundChild =
-      BackgroundChild::GetOrCreateForCurrentThread();
-
-  if (NS_WARN_IF(!backgroundChild)) {
-    MOZ_ASSERT(false);
-    return nullptr;
-  }
-
-  RefPtr<BackgroundFileSystemChild> result;
-
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aGlobal);
-    if (!sop) {
-      return nullptr;
-    }
-
-    nsCOMPtr<nsIPrincipal> principal = sop->GetEffectiveStoragePrincipal();
-    if (!principal) {
-      return nullptr;
-    }
-
-    auto principalInfo = MakeUnique<PrincipalInfo>();
-    nsresult rv = PrincipalToPrincipalInfo(principal, principalInfo.get());
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-
-    auto* child = new BackgroundFileSystemChild();
-
-    result = static_cast<BackgroundFileSystemChild*>(
-        backgroundChild->SendPBackgroundFileSystemConstructor(child,
-                                                              *principalInfo));
-  } else {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    if (!workerPrivate) {
-      return nullptr;
-    }
-
-    const PrincipalInfo& principalInfo =
-        workerPrivate->GetEffectiveStoragePrincipalInfo();
-
-    BackgroundFileSystemChild* child = new BackgroundFileSystemChild();
-
-    result = static_cast<BackgroundFileSystemChild*>(
-        backgroundChild->SendPBackgroundFileSystemConstructor(child,
-                                                              principalInfo));
-  }
-
-  MOZ_ASSERT(result);
-
-  return result;
-}
-
-}  
 
 FileSystemBackgroundRequestHandler::FileSystemBackgroundRequestHandler(
     fs::FileSystemChildFactory* aChildFactory)
@@ -103,8 +27,17 @@ FileSystemBackgroundRequestHandler::~FileSystemBackgroundRequestHandler() =
 
 RefPtr<FileSystemBackgroundRequestHandler::CreateFileSystemManagerChildPromise>
 FileSystemBackgroundRequestHandler::CreateFileSystemManagerChild(
-    nsIGlobalObject* aGlobal) {
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
+  using mozilla::ipc::BackgroundChild;
   using mozilla::ipc::Endpoint;
+  using mozilla::ipc::PBackgroundChild;
+
+  PBackgroundChild* backgroundChild =
+      BackgroundChild::GetOrCreateForCurrentThread();
+  if (NS_WARN_IF(!backgroundChild)) {
+    return CreateFileSystemManagerChildPromise::CreateAndReject(
+        NS_ERROR_FAILURE, __func__);
+  }
 
   
   Endpoint<POriginPrivateFileSystemParent> parentEndpoint;
@@ -121,15 +54,9 @@ FileSystemBackgroundRequestHandler::CreateFileSystemManagerChild(
   
   
   
-  RefPtr<BackgroundFileSystemChild> backgroundFileSystemChild =
-      CreateBackgroundFileSystemChild(aGlobal);
-  if (!backgroundFileSystemChild) {
-    return CreateFileSystemManagerChildPromise::CreateAndReject(
-        NS_ERROR_FAILURE, __func__);
-  }
-
-  return backgroundFileSystemChild
-      ->SendCreateFileSystemManagerParent(std::move(parentEndpoint))
+  return backgroundChild
+      ->SendCreateFileSystemManagerParent(aPrincipalInfo,
+                                          std::move(parentEndpoint))
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [child](nsresult rv) {

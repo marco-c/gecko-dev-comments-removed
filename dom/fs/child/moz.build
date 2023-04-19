@@ -5,7 +5,6 @@
 
 
 EXPORTS.mozilla.dom += [
-    "BackgroundFileSystemChild.h",
     "OriginPrivateFileSystemChild.h",
 ]
 
