@@ -7452,12 +7452,38 @@ nsresult HTMLEditor::SplitParagraph(Element& aParentDivOrP,
   
   
   
+  auto InsertBRElementIfEmptyBlockElement =
+      [&](Element& aElement) MOZ_CAN_RUN_SCRIPT {
+        if (!HTMLEditUtils::IsBlockElement(aElement)) {
+          return NS_OK;
+        }
+
+        if (!HTMLEditUtils::IsEmptyNode(
+                aElement, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+          return NS_OK;
+        }
+
+        CreateElementResult insertBRElementResult = InsertBRElement(
+            WithTransaction::Yes, EditorDOMPoint(&aElement, 0u));
+        if (insertBRElementResult.isErr()) {
+          NS_WARNING(
+              "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
+          return insertBRElementResult.unwrapErr();
+        }
+        
+        
+        
+        insertBRElementResult.IgnoreCaretPointSuggestion();
+        return NS_OK;
+      };
+
   
   
   rv = InsertBRElementIfEmptyBlockElement(
       MOZ_KnownLive(*leftDivOrParagraphElement));
   if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::InsertBRElementIfEmptyBlockElement() failed");
+    NS_WARNING(
+        "InsertBRElementIfEmptyBlockElement(leftDivOrParagraphElement) failed");
     return rv;
   }
   
@@ -7465,7 +7491,9 @@ nsresult HTMLEditor::SplitParagraph(Element& aParentDivOrP,
   rv = InsertBRElementIfEmptyBlockElement(
       MOZ_KnownLive(*rightDivOrParagraphElement));
   if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::InsertBRElementIfEmptyBlockElement() failed");
+    NS_WARNING(
+        "InsertBRElementIfEmptyBlockElement(rightDivOrParagraphElement) "
+        "failed");
     return rv;
   }
 
@@ -9555,40 +9583,6 @@ nsresult HTMLEditor::InsertPaddingBRElementForEmptyLastLineIfNeeded(
   NS_WARNING_ASSERTION(
       rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
       "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-  return NS_OK;
-}
-
-nsresult HTMLEditor::InsertBRElementIfEmptyBlockElement(Element& aElement) {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  if (!HTMLEditUtils::IsBlockElement(aElement)) {
-    return NS_OK;
-  }
-
-  if (!HTMLEditUtils::IsEmptyNode(
-          aElement, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
-    return NS_OK;
-  }
-
-  CreateElementResult insertBRElementResult =
-      InsertBRElement(WithTransaction::Yes, EditorDOMPoint(&aElement, 0u));
-  if (insertBRElementResult.isErr()) {
-    NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-    return insertBRElementResult.unwrapErr();
-  }
-  
-  nsresult rv = insertBRElementResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-    return rv;
-  }
-  NS_WARNING_ASSERTION(
-      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-  MOZ_ASSERT(insertBRElementResult.GetNewNode());
   return NS_OK;
 }
 
