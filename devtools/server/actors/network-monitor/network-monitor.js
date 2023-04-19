@@ -17,6 +17,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NetworkObserver:
     "resource://devtools/shared/network-observer/NetworkObserver.sys.mjs",
+  NetworkUtils:
+    "resource://devtools/shared/network-observer/NetworkUtils.sys.mjs",
 });
 
 loader.lazyRequireGetter(
@@ -46,7 +48,7 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
 
 
-  initialize(conn, filters, parentID, messageManager) {
+  initialize(conn, channelFilters, parentID, messageManager) {
     Actor.prototype.initialize.call(this, conn);
 
     
@@ -55,13 +57,18 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     
     this._networkEventActorsByURL = new Map();
 
+    this.channelFilters = channelFilters;
     this.parentID = parentID;
     this.messageManager = messageManager;
 
     
     
     this.onNetworkEvent = this.onNetworkEvent.bind(this);
-    this.observer = new lazy.NetworkObserver(filters, this.onNetworkEvent);
+    this.shouldIgnoreChannel = this.shouldIgnoreChannel.bind(this);
+    this.observer = new lazy.NetworkObserver(
+      this.shouldIgnoreChannel,
+      this.onNetworkEvent
+    );
     this.observer.init();
 
     this.stackTraces = new Set();
@@ -279,6 +286,10 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
       eventActor: actor.form(),
     });
     return actor;
+  },
+
+  shouldIgnoreChannel(channel) {
+    return !lazy.NetworkUtils.matchRequest(channel, this.channelFilters);
   },
 });
 exports.NetworkMonitorActor = NetworkMonitorActor;

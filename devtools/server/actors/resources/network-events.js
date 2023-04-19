@@ -62,9 +62,8 @@ class NetworkEventWatcher {
     
     this.persist = false;
     this.listener = new lazy.NetworkObserver(
-      { sessionContext: watcherActor.sessionContext },
-      this.onNetworkEvent.bind(this),
-      this.shouldIgnoreChannel.bind(this)
+      this.shouldIgnoreChannel.bind(this),
+      this.onNetworkEvent.bind(this)
     );
 
     this.listener.init();
@@ -221,6 +220,12 @@ class NetworkEventWatcher {
 
 
   shouldIgnoreChannel(channel) {
+    
+    const filters = { sessionContext: this.watcherActor.sessionContext };
+    if (!lazy.NetworkUtils.matchRequest(channel, filters)) {
+      return true;
+    }
+
     
     
     
