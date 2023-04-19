@@ -47,9 +47,6 @@ function isWhitespace(query) {
 
 
 
-
-
-
 function searchOverlay(query, modifiers) {
   const regexQuery = buildQuery(query, modifiers, {
     ignoreSpaces: true,
@@ -68,7 +65,9 @@ function searchOverlay(query, modifiers) {
         
         stream.pos += match[0].length || 1;
         return "highlight highlight-full";
-      } else if (match) {
+      }
+
+      if (match) {
         
         
         stream.pos = match.index;
@@ -76,6 +75,8 @@ function searchOverlay(query, modifiers) {
         
         stream.skipToEnd();
       }
+
+      return null;
     },
   };
 }
@@ -134,14 +135,14 @@ function doSearch(
 ) {
   const { cm, ed } = ctx;
   if (!cm) {
-    return;
+    return null;
   }
   const defaultIndex = { line: -1, ch: -1 };
 
   return cm.operation(function() {
     if (!query || isWhitespace(query)) {
       clearSearch(cm, query);
-      return;
+      return null;
     }
 
     const state = getSearchState(cm, query);
@@ -177,7 +178,7 @@ export function searchSourceForHighlight(
     return;
   }
 
-  return cm.operation(function() {
+  cm.operation(function() {
     const state = getSearchState(cm, query);
     const isNewQuery = state.query !== query;
     state.query = query;
