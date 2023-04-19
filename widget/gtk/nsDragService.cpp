@@ -169,9 +169,7 @@ nsDragService::nsDragService()
 
   
   LOGDRAGSERVICE("nsDragService::nsDragService");
-  
-  
-  mCanDrop = widget::GdkIsWaylandDisplay();
+  mCanDrop = false;
   mTargetDragDataReceived = false;
   mTargetDragData = 0;
   mTargetDragDataLen = 0;
