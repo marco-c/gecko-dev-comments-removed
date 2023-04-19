@@ -3359,6 +3359,19 @@ class nsContentUtils {
   static nsresult AnonymizeId(nsAString& aId, const nsACString& aOriginKey,
                               OriginFormat aFormat = OriginFormat::Base64);
 
+  
+
+
+
+  static bool ShouldHideObjectOrEmbedImageDocument();
+
+  
+
+
+
+
+  static uint32_t ResolveObjectType(uint32_t aType);
+
  private:
   static bool InitializeEventTable();
 
