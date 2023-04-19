@@ -583,13 +583,6 @@ enum class StyleEmptyCells : uint8_t {
 #define NS_STYLE_PAGE_SIZE_LANDSCAPE 2
 
 
-#define NS_STYLE_PAGE_BREAK_AUTO 0
-#define NS_STYLE_PAGE_BREAK_ALWAYS 1
-#define NS_STYLE_PAGE_BREAK_AVOID 2
-#define NS_STYLE_PAGE_BREAK_LEFT 3
-#define NS_STYLE_PAGE_BREAK_RIGHT 4
-
-
 enum class StyleImeMode : uint8_t {
   Auto,
   Normal,
