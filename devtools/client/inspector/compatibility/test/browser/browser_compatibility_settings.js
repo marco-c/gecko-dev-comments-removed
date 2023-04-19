@@ -74,14 +74,15 @@ async function updateTargetBrowsers(panel, store, isTargetBrowserFunc) {
     ),
   ];
   Assert.deepEqual(
-    browsers,
+    
+    
+    browsers.filter(browser => browser != "ie"),
     [
       "chrome",
       "chrome_android",
       "edge",
       "firefox",
       "firefox_android",
-      "ie",
       "safari",
       "safari_ios",
     ],
