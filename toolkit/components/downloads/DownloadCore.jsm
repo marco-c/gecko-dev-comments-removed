@@ -488,16 +488,6 @@ Download.prototype = {
 
           
           
-          if (
-            await lazy.DownloadIntegration.shouldBlockForRuntimePermissions()
-          ) {
-            throw new DownloadError({
-              becauseBlockedByRuntimePermissions: true,
-            });
-          }
-
-          
-          
           
           if (this._promiseCanceled) {
             
@@ -1854,8 +1844,7 @@ var DownloadError = function(aProperties) {
   } else if (
     aProperties.becauseBlocked ||
     aProperties.becauseBlockedByParentalControls ||
-    aProperties.becauseBlockedByReputationCheck ||
-    aProperties.becauseBlockedByRuntimePermissions
+    aProperties.becauseBlockedByReputationCheck
   ) {
     this.message = "Download blocked.";
   } else {
@@ -1883,9 +1872,6 @@ var DownloadError = function(aProperties) {
     this.becauseBlocked = true;
     this.becauseBlockedByReputationCheck = true;
     this.reputationCheckVerdict = aProperties.reputationCheckVerdict || "";
-  } else if (aProperties.becauseBlockedByRuntimePermissions) {
-    this.becauseBlocked = true;
-    this.becauseBlockedByRuntimePermissions = true;
   } else if (aProperties.becauseBlocked) {
     this.becauseBlocked = true;
   }
@@ -1952,15 +1938,6 @@ DownloadError.prototype = {
 
 
 
-  becauseBlockedByRuntimePermissions: false,
-
-  
-
-
-
-
-
-
   reputationCheckVerdict: "",
 
   
@@ -1984,8 +1961,6 @@ DownloadError.prototype = {
       becauseBlocked: this.becauseBlocked,
       becauseBlockedByParentalControls: this.becauseBlockedByParentalControls,
       becauseBlockedByReputationCheck: this.becauseBlockedByReputationCheck,
-      becauseBlockedByRuntimePermissions: this
-        .becauseBlockedByRuntimePermissions,
       reputationCheckVerdict: this.reputationCheckVerdict,
     };
 
@@ -2015,7 +1990,6 @@ DownloadError.fromSerializable = function(aSerializable) {
       property != "becauseBlocked" &&
       property != "becauseBlockedByParentalControls" &&
       property != "becauseBlockedByReputationCheck" &&
-      property != "becauseBlockedByRuntimePermissions" &&
       property != "reputationCheckVerdict"
   );
 
