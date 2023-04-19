@@ -87,7 +87,7 @@ add_task(async function test_upgrade_changes_name() {
   
   
   
-  Services.search.wrappedJSObject._settings.setMetaDataAttribute(
+  Services.search.wrappedJSObject._settings.setAttribute(
     "useSavedOrder",
     false
   );
