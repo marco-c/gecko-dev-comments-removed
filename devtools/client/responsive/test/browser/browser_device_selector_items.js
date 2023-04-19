@@ -5,7 +5,7 @@
 
 
 
-const MenuItem = require("devtools/client/shared/components/menu/MenuItem");
+const MenuItem = require("resource://devtools/client/shared/components/menu/MenuItem.js");
 
 const FIREFOX_ICON =
   'url("chrome://devtools/skin/images/browsers/firefox.svg")';
@@ -39,7 +39,7 @@ addDeviceForTest(FIREFOX_DEVICE);
 
 const {
   updatePreferredDevices,
-} = require("devtools/client/responsive/actions/devices");
+} = require("resource://devtools/client/responsive/actions/devices.js");
 updatePreferredDevices({
   added: ["Laptop with MDPI screen"],
   removed: [],

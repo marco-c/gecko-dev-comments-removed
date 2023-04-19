@@ -4,7 +4,7 @@
 "use strict";
 
 
-const { getDevices } = require("devtools/client/shared/devices");
+const { getDevices } = require("resource://devtools/client/shared/devices.js");
 
 const addedDevice = {
   name: "Fake Phone RDM Test",

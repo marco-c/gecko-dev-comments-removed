@@ -5,7 +5,9 @@
 
 
 
-const { addViewport } = require("devtools/client/responsive/actions/viewports");
+const {
+  addViewport,
+} = require("resource://devtools/client/responsive/actions/viewports.js");
 
 add_task(async function() {
   const store = Store();

@@ -5,7 +5,9 @@
 
 
 
-const { parseUserAgent } = require("devtools/client/responsive/utils/ua");
+const {
+  parseUserAgent,
+} = require("resource://devtools/client/responsive/utils/ua.js");
 
 const TEST_DATA = [
   {

@@ -8,7 +8,7 @@
 const TEST_URL = "data:text/html;charset=utf-8,DevicePixelRatio list test";
 const DEFAULT_DPPX = window.devicePixelRatio;
 const VIEWPORT_DPPX = DEFAULT_DPPX + 1;
-const Types = require("devtools/client/responsive/types");
+const Types = require("resource://devtools/client/responsive/types.js");
 
 const testDevice = {
   name: "Fake Phone RDM Test",

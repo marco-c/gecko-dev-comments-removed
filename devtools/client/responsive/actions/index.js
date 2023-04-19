@@ -8,11 +8,11 @@
 
 
 
-const { createEnum } = require("devtools/client/shared/enum");
+const { createEnum } = require("resource://devtools/client/shared/enum.js");
 
 const {
   CHANGE_NETWORK_THROTTLING,
-} = require("devtools/client/shared/components/throttling/actions");
+} = require("resource://devtools/client/shared/components/throttling/actions.js");
 
 createEnum(
   [

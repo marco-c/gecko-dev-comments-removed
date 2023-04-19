@@ -7,7 +7,7 @@
 const {
   PORTRAIT_PRIMARY,
   LANDSCAPE_PRIMARY,
-} = require("devtools/client/responsive/constants");
+} = require("resource://devtools/client/responsive/constants.js");
 
 
 
