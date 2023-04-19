@@ -18,7 +18,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "rtc_base/bit_buffer.h"
+#include "rtc_base/bitstream_reader.h"
 
 namespace webrtc {
 
@@ -43,9 +43,7 @@ std::pair<bool, absl::string_view> DecodeVarInt(absl::string_view input,
 
 
 
-
-
-size_t DecodeVarInt(rtc::BitBuffer* input, uint64_t* output);
+uint64_t DecodeVarInt(BitstreamReader& input);
 
 }  
 
