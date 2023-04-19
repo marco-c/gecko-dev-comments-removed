@@ -68,9 +68,6 @@ class RTCPReceiver final {
   uint32_t RemoteSSRC() const;
 
   
-  int32_t CNAME(uint32_t remote_ssrc, char cname[RTCP_CNAME_SIZE]) const;
-
-  
   
   
   
@@ -281,8 +278,6 @@ class RTCPReceiver final {
 
   ReportBlockMap received_report_blocks_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, LastFirStatus> last_fir_
-      RTC_GUARDED_BY(rtcp_receiver_lock_);
-  std::map<uint32_t, std::string> received_cnames_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   
