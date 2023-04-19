@@ -213,7 +213,7 @@ MediaDecoderStateMachineBase* ChannelMediaDecoder::CreateStateMachine(
   init.mMediaDecoderOwnerID = mOwner;
   mReader = DecoderTraits::CreateReader(ContainerType(), init);
 
-#ifdef MOZ_WMF
+#ifdef MOZ_WMF_MEDIA_ENGINE
   
   
   if (StaticPrefs::media_wmf_media_engine_enabled() &&
