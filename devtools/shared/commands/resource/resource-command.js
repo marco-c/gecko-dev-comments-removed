@@ -1356,7 +1356,21 @@ loader.lazyRequireGetter(
 
 
 
-const ResourceTransformers = {};
+const ResourceTransformers = {
+  
+  
+  
+  
+  [ResourceCommand.TYPES.STYLESHEET]: ({ resource }) => {
+    if (resource.mediaRules) {
+      resource.atRules = resource.mediaRules.map(rule => ({
+        ...rule,
+        type: "media",
+      }));
+    }
+    return resource;
+  },
+};
 loader.lazyRequireGetter(
   ResourceTransformers,
   ResourceCommand.TYPES.CONSOLE_MESSAGE,

@@ -76,15 +76,18 @@ module.exports = async function({ targetFront, onAvailable, onUpdated }) {
         {
           resourceType: resource.resourceType,
           resourceId: resource.resourceId,
-          updateType: "media-rules-changed",
-          resourceUpdates: { mediaRules },
+          updateType: "at-rules-changed",
+          resourceUpdates: {
+            atRules: mediaRules.map(mediaRuleFrontToAtRuleResourceUpdate),
+          },
         },
       ]);
     });
 
     try {
-      resource.mediaRules = await onMediaRules;
-      addMatchesChangeListener(resource.mediaRules);
+      const mediaRules = await onMediaRules;
+      resource.atRules = mediaRules.map(mediaRuleFrontToAtRuleResourceUpdate);
+      addMatchesChangeListener(mediaRules);
     } catch (e) {
       
       
@@ -128,4 +131,21 @@ function toResource(styleSheet, isNew, fileName) {
     fileName,
   });
   return styleSheet;
+}
+
+
+
+
+
+
+
+function mediaRuleFrontToAtRuleResourceUpdate(mediaRuleFront) {
+  return {
+    type: "media",
+    mediaText: mediaRuleFront.mediaText,
+    conditionText: mediaRuleFront.conditionText,
+    matches: mediaRuleFront.matches,
+    line: mediaRuleFront.line,
+    column: mediaRuleFront.column,
+  };
 }

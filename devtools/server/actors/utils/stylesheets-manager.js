@@ -348,12 +348,12 @@ class StyleSheetsManager extends EventEmitter {
       mql.onchange = null;
     }
 
-    const mediaRules = await this._getMediaRules(styleSheet);
+    const atRules = await this.getAtRules(styleSheet);
     this.emit("stylesheet-updated", {
       resourceId,
-      updateKind: "media-rules-changed",
+      updateKind: "at-rules-changed",
       updates: {
-        resourceUpdates: { mediaRules },
+        resourceUpdates: { atRules },
       },
     });
   }
@@ -574,7 +574,8 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  async _getMediaRules(styleSheet) {
+
+  async getAtRules(styleSheet) {
     const resourceId = this._findStyleSheetResourceId(styleSheet);
     if (!resourceId) {
       return [];
@@ -647,7 +648,7 @@ class StyleSheetsManager extends EventEmitter {
       updates: {
         nestedResourceUpdates: [
           {
-            path: ["mediaRules", index, "matches"],
+            path: ["atRules", index, "matches"],
             value: mql.matches,
           },
         ],

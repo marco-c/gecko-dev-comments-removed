@@ -145,11 +145,11 @@ function waitForManyEvents(ui, delay) {
       
       timer = setTimeout(() => {
         
-        ui.off("media-list-changed", onEvent);
+        ui.off("at-rules-list-changed", onEvent);
         resolve(count);
       }, delay);
     };
-    ui.on("media-list-changed", onEvent);
+    ui.on("at-rules-list-changed", onEvent);
   });
 }
 
