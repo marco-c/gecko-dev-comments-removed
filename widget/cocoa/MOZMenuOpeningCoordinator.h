@@ -41,10 +41,6 @@ class Runnable;
 
 
 
-- (void)runAfterMenuClosed:(RefPtr<mozilla::Runnable>&&)aRunnable;
-
-
-
 
 
 
