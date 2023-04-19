@@ -33,6 +33,7 @@
 #include "vm/ObjectOperations.h"
 
 #include "builtin/HandlerFunction-inl.h"
+#include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
 
@@ -148,25 +149,13 @@ bool ShadowRealmObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static ShadowRealmObject* ValidateShadowRealmObject(JSContext* cx,
-                                                    Handle<JSObject*> O) {
+                                                    Handle<Value> value) {
   
   
-  Rooted<JSObject*> maybeUnwrappedO(cx, O);
-  if (IsCrossCompartmentWrapper(O)) {
-    maybeUnwrappedO = CheckedUnwrapDynamic(O, cx);
-    
-    if (!maybeUnwrappedO) {
-      return nullptr;
-    }
-  }
-
-  if (!maybeUnwrappedO->is<ShadowRealmObject>()) {
+  return UnwrapAndTypeCheckValue<ShadowRealmObject>(cx, value, [cx]() {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_NOT_SHADOW_REALM);
-    return nullptr;
-  }
-
-  return &maybeUnwrappedO->as<ShadowRealmObject>();
+  });
 }
 
 void js::ReportPotentiallyDetailedMessage(JSContext* cx,
@@ -349,10 +338,7 @@ static bool ShadowRealm_evaluate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  Rooted<JSObject*> obj(cx, ToObject(cx, args.thisv()));
-  if (!obj) {
-    return false;
-  }
+  HandleValue obj = args.thisv();
 
   
   Rooted<ShadowRealmObject*> shadowRealm(cx,
@@ -618,10 +604,7 @@ static bool ShadowRealm_importValue(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  Rooted<JSObject*> obj(cx, ToObject(cx, args.thisv()));
-  if (!obj) {
-    return false;
-  }
+  HandleValue obj = args.thisv();
 
   
   Rooted<ShadowRealmObject*> shadowRealm(cx,
