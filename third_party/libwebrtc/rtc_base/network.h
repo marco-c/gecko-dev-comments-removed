@@ -117,7 +117,8 @@ class NetworkMask {
 class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
                                   public MdnsResponderProvider {
  public:
-  typedef std::vector<Network*> NetworkList;
+  using NetworkList ABSL_DEPRECATED("bugs.webrtc.org/13869") =
+      std::vector<Network*>;
 
   
   enum EnumerationPermission {
@@ -127,9 +128,6 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
     ENUMERATION_BLOCKED,  
                           
   };
-
-  NetworkManager();
-  ~NetworkManager() override;
 
   
   sigslot::signal0<> SignalNetworksChanged;
@@ -148,6 +146,8 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   virtual void StartUpdating() = 0;
   virtual void StopUpdating() = 0;
 
+  
+  
   
   
   
@@ -190,7 +190,6 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 class RTC_EXPORT NetworkManagerBase : public NetworkManager {
  public:
   NetworkManagerBase(const webrtc::FieldTrialsView* field_trials = nullptr);
-  ~NetworkManagerBase() override;
 
   std::vector<const Network*> GetNetworks() const override;
   std::vector<const Network*> GetAnyAddressNetworks() override;
@@ -204,16 +203,23 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
   static bool IsVpnMacAddress(rtc::ArrayView<const uint8_t> address);
 
  protected:
-  typedef std::map<std::string, Network*> NetworkMap;
   
   
   
   
   
-  void MergeNetworkList(const NetworkList& list, bool* changed);
+  void MergeNetworkList(std::vector<std::unique_ptr<Network>> list,
+                        bool* changed);
 
   
-  void MergeNetworkList(const NetworkList& list,
+  void MergeNetworkList(std::vector<std::unique_ptr<Network>> list,
+                        bool* changed,
+                        NetworkManager::Stats* stats);
+  ABSL_DEPRECATED("bugs.webrtc.org/13869")
+  void MergeNetworkList(std::vector<Network*> list, bool* changed);
+
+  ABSL_DEPRECATED("bugs.webrtc.org/13869")
+  void MergeNetworkList(std::vector<Network*> list,
                         bool* changed,
                         NetworkManager::Stats* stats);
 
@@ -228,16 +234,16 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   
   
-  const NetworkList& GetNetworksInternal() const { return networks_; }
+  const std::vector<Network*>& GetNetworksInternal() const { return networks_; }
 
  private:
   friend class NetworkTest;
 
   EnumerationPermission enumeration_permission_;
 
-  NetworkList networks_;
+  std::vector<Network*> networks_;
 
-  NetworkMap networks_map_;
+  std::map<std::string, std::unique_ptr<Network>> networks_map_;
 
   std::unique_ptr<rtc::Network> ipv4_any_address_network_;
   std::unique_ptr<rtc::Network> ipv6_any_address_network_;
@@ -319,11 +325,13 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   void ConvertIfAddrs(ifaddrs* interfaces,
                       IfAddrsConverter* converter,
                       bool include_ignored,
-                      NetworkList* networks) const RTC_RUN_ON(thread_);
+                      std::vector<std::unique_ptr<Network>>* networks) const
+      RTC_RUN_ON(thread_);
 #endif  
 
   
-  bool CreateNetworks(bool include_ignored, NetworkList* networks) const
+  bool CreateNetworks(bool include_ignored,
+                      std::vector<std::unique_ptr<Network>>* networks) const
       RTC_RUN_ON(thread_);
 
   
