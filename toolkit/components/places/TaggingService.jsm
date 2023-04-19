@@ -3,9 +3,6 @@
 
 
 
-const { ComponentUtils } = ChromeUtils.import(
-  "resource://gre/modules/ComponentUtils.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { PlacesUtils } = ChromeUtils.import(
   "resource://gre/modules/PlacesUtils.jsm"
@@ -447,8 +444,6 @@ TaggingService.prototype = {
   
 
   classID: Components.ID("{bbc23860-2553-479d-8b78-94d9038334f7}"),
-
-  _xpcom_factory: ComponentUtils.generateSingletonFactory(TaggingService),
 
   QueryInterface: ChromeUtils.generateQI(["nsITaggingService", "nsIObserver"]),
 };

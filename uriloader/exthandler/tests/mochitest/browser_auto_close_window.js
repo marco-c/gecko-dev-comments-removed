@@ -46,7 +46,9 @@ let mockHelperAppService;
 
 add_setup(async function() {
   
-  mockHelperAppService = ComponentUtils._getFactory(HelperAppLauncherDialog);
+  mockHelperAppService = ComponentUtils.generateSingletonFactory(
+    HelperAppLauncherDialog
+  );
   registrar.registerFactory(
     MOCK_HELPERAPP_DIALOG_CID,
     "",
