@@ -3348,7 +3348,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
+  SetBlockBackgroundColorWithCSSAsSubAction(const nsAString& aColor);
   MOZ_CAN_RUN_SCRIPT nsresult
   SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
