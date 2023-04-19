@@ -1485,8 +1485,23 @@ nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
 }
 
 static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
+  
+  
+  
+  
+  
   wchar_t exePath[MAXPATHLEN] = {};
+  wchar_t pbExePath[MAXPATHLEN] = {};
+
   if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
+    return false;
+  }
+
+  wcscpy_s(pbExePath, MAXPATHLEN, exePath);
+  if (!PathRemoveFileSpecW(pbExePath)) {
+    return false;
+  }
+  if (!PathAppendW(pbExePath, L"private_browsing.exe")) {
     return false;
   }
 
@@ -1550,9 +1565,6 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
     }
 
     
-    
-
-    
     static_assert(MAXPATHLEN == MAX_PATH);
     wchar_t storedExePath[MAX_PATH] = {};
     
@@ -1563,7 +1575,8 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
     
     
     
-    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0) {
+    if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0 ||
+        wcsnicmp(storedExePath, pbExePath, MAXPATHLEN) == 0) {
       RefPtr<IPropertyStore> propStore;
       hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
       if (NS_WARN_IF(FAILED(hr))) {
