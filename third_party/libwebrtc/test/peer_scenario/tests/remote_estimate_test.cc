@@ -8,8 +8,10 @@
 
 
 
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/rtp_rtcp/source/rtp_util.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "pc/media_session.h"
 #include "pc/session_description.h"
 #include "test/field_trial.h"
@@ -24,19 +26,6 @@ RtpHeaderExtensionMap AudioExtensions(
   auto* audio_desc =
       cricket::GetFirstAudioContentDescription(session.description());
   return RtpHeaderExtensionMap(audio_desc->rtp_header_extensions());
-}
-
-absl::optional<RTPHeaderExtension> GetRtpPacketExtensions(
-    const rtc::ArrayView<const uint8_t> packet,
-    const RtpHeaderExtensionMap& extension_map) {
-  RtpUtility::RtpHeaderParser rtp_parser(packet.data(), packet.size());
-  if (IsRtpPacket(packet)) {
-    RTPHeader header;
-    if (rtp_parser.Parse(&header, &extension_map, true)) {
-      return header.extension;
-    }
-  }
-  return absl::nullopt;
 }
 
 }  
@@ -106,13 +95,10 @@ TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
         
         
         
-        
-        if (packet.size() > 1 && packet.cdata()[0] != 0) {
-          auto extensions = GetRtpPacketExtensions(packet.data, extension_map);
-          if (extensions) {
-            EXPECT_TRUE(extensions->hasAbsoluteSendTime);
-            received_abs_send_time = true;
-          }
+        RtpPacket rtp_packet(&extension_map);
+        if (rtp_packet.Parse(packet.data)) {
+          EXPECT_TRUE(rtp_packet.HasExtension<AbsoluteSendTime>());
+          received_abs_send_time = true;
         }
       });
   RTC_CHECK(s.WaitAndProcess(&received_abs_send_time));
