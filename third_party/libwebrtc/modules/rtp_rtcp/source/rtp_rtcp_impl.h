@@ -280,7 +280,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
     
     RtpPacketHistory packet_history;
     
-    PacketSequencer sequencer_;
+    mutable Mutex sequencer_mutex;
+    PacketSequencer sequencer_ RTC_GUARDED_BY(sequencer_mutex);
     
     DEPRECATED_RtpSenderEgress packet_sender;
     
