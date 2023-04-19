@@ -8,23 +8,7 @@ add_task(async function test() {
   
   
   gBrowser.selectedTab.focus();
-  await new Promise((resolve, reject) => {
-    FormHistory.update(
-      { op: "remove" },
-      {
-        handleError(error) {
-          reject(error);
-        },
-        handleCompletion(reason) {
-          if (!reason) {
-            resolve();
-          } else {
-            reject();
-          }
-        },
-      }
-    );
-  });
+  await FormHistory.update({ op: "remove" });
 
   
   await Sanitizer.sanitize(["formdata"]);
