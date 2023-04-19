@@ -29,9 +29,6 @@ const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
-const env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -87,19 +84,19 @@ var connect = async function() {
   
   Services.prefs.setBoolPref(
     "devtools.browsertoolbox.fission",
-    env.get("MOZ_BROWSER_TOOLBOX_FISSION_PREF") === "1"
+    Services.env.get("MOZ_BROWSER_TOOLBOX_FISSION_PREF") === "1"
   );
   
   Services.prefs.setBoolPref(
     "devtools.webconsole.input.context",
-    env.get("MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT") === "1"
+    Services.env.get("MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT") === "1"
   );
   
-  if (env.get("MOZ_BROWSER_TOOLBOX_FORCE_MULTIPROCESS") === "1") {
+  if (Services.env.get("MOZ_BROWSER_TOOLBOX_FORCE_MULTIPROCESS") === "1") {
     Services.prefs.setCharPref("devtools.browsertoolbox.scope", "everything");
   }
 
-  const port = env.get("MOZ_BROWSER_TOOLBOX_PORT");
+  const port = Services.env.get("MOZ_BROWSER_TOOLBOX_PORT");
 
   
   
@@ -254,7 +251,7 @@ async function openToolbox(commands) {
   await gToolbox.raise();
 
   
-  if (env.get("MOZ_PROFILER_STARTUP") === "1") {
+  if (Services.env.get("MOZ_PROFILER_STARTUP") === "1") {
     const notificationBox = gToolbox.getNotificationBox();
     const text =
       "The profiler started recording this toolbox, open another browser toolbox to open the profile via the performance panel";
