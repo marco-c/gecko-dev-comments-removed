@@ -18,8 +18,8 @@ add_task(async function test_TODO() {
 
   is(
     state.windows[0].selected,
-    3,
-    "The selected tab is Firefox view tab which is the third tab"
+    1,
+    "The selected tab is Firefox view tab which is the first tab"
   );
 
   gBrowser.selectedTab = tab;
@@ -28,7 +28,7 @@ add_task(async function test_TODO() {
 
   
   
-  is(state.windows[0].selected, 1, "The selected tab is the first tab");
+  is(state.windows[0].selected, 2, "The selected tab is the second tab");
 
   gBrowser.removeTab(window.FirefoxViewHandler.tab);
   gBrowser.removeTab(gBrowser.selectedTab);
