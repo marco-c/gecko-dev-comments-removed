@@ -7,6 +7,7 @@
 #ifndef nsMacUtilsImpl_h___
 #define nsMacUtilsImpl_h___
 
+#include "nsIMacUtils.h"
 #include "nsString.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -17,38 +18,90 @@ using mozilla::Atomic;
 using mozilla::StaticAutoPtr;
 using mozilla::StaticMutex;
 
-class nsIFile;
+class nsMacUtilsImpl final : public nsIMacUtils {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIMACUTILS
 
-namespace nsMacUtilsImpl {
+  nsMacUtilsImpl() {}
 
-
-
-
-nsresult GetRepoDir(nsIFile** aRepoDir);
-nsresult GetObjDir(nsIFile** aObjDir);
+  
+  
+  
+  static nsresult GetRepoDir(nsIFile** aRepoDir);
+  static nsresult GetObjDir(nsIFile** aObjDir);
 
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
-bool GetAppPath(nsCString& aAppPath);
+  static bool GetAppPath(nsCString& aAppPath);
 #endif 
 
 #if defined(MOZ_SANDBOX) && defined(DEBUG)
-nsresult GetBloatLogDir(nsCString& aDirectoryPath);
-nsresult GetDirectoryPath(const char* aPath, nsCString& aDirectoryPath);
+  static nsresult GetBloatLogDir(nsCString& aDirectoryPath);
+  static nsresult GetDirectoryPath(const char* aPath,
+                                   nsCString& aDirectoryPath);
 #endif 
 
-void EnableTCSMIfAvailable();
-bool IsTCSMAvailable();
-uint32_t GetPhysicalCPUCount();
-nsresult GetArchitecturesForBinary(const char* aPath, uint32_t* aArchMask);
+  static void EnableTCSMIfAvailable();
+  static bool IsTCSMAvailable();
+  static uint32_t GetPhysicalCPUCount();
+  static nsresult GetArchitecturesForBundle(uint32_t* aArchMask);
+  static nsresult GetArchitecturesForBinary(const char* aPath,
+                                            uint32_t* aArchMask);
 
 #if defined(__aarch64__)
-
-
-
-
-int PreTranslateXUL();
-int PreTranslateBinary(nsCString aBinaryPath);
+  
+  
+  
+  
+  static int PreTranslateXUL();
+  static int PreTranslateBinary(nsCString aBinaryPath);
 #endif
-}  
+
+ private:
+  ~nsMacUtilsImpl() {}
+
+  nsresult GetArchString(nsAString& aArchString);
+
+  
+  
+  nsString mBinaryArchs;
+
+#if defined(MOZ_SANDBOX) || defined(__aarch64__)
+  
+  static StaticAutoPtr<nsCString> sCachedAppPath
+      MOZ_GUARDED_BY(sCachedAppPathMutex);
+  
+  static StaticMutex sCachedAppPathMutex;
+  
+  static nsresult ClearCachedAppPathOnShutdown();
+#endif
+
+  
+  
+  static std::atomic<uint32_t> sBundleArchMaskAtomic;
+
+#if defined(__aarch64__)
+  
+  static std::atomic<bool> sIsXULTranslated;
+#endif
+
+  enum TCSMStatus { TCSM_Unknown = 0, TCSM_Available, TCSM_Unavailable };
+  static mozilla::Atomic<nsMacUtilsImpl::TCSMStatus> sTCSMStatus;
+
+  static nsresult EnableTCSM();
+#if defined(DEBUG)
+  static bool IsTCSMEnabled();
+#endif
+};
+
+
+
+#define NS_MACUTILSIMPL_CID                          \
+  {                                                  \
+    0x697BD3FD, 0x43E5, 0x41CE, {                    \
+      0xAD, 0x5E, 0xC3, 0x39, 0x17, 0x5C, 0x08, 0x18 \
+    }                                                \
+  }
+#define NS_MACUTILSIMPL_CONTRACTID "@mozilla.org/xpcom/mac-utils;1"
 
 #endif 
