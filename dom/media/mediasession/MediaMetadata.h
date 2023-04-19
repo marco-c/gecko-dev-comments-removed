@@ -42,7 +42,7 @@ class MediaMetadata final : public nsISupports,
  public:
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaMetadata)
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaMetadata)
 
   
   nsIGlobalObject* GetParentObject() const;

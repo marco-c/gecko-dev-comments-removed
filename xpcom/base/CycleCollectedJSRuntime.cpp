@@ -610,7 +610,7 @@ void JSHolderMap::Put(void* aHolder, nsScriptObjectTracer* aTracer,
   MOZ_ASSERT(aTracer);
 
   
-  if (aTracer->IsMultiZoneJSHolder()) {
+  if (!aTracer->IsSingleZoneJSHolder()) {
     aZone = nullptr;
   }
 
@@ -1340,12 +1340,6 @@ struct CheckZoneTracer : public TraceCallbacks {
     
     
     
-    
-    
-    
-    
-    
-    
     MOZ_CRASH_UNSAFE_PRINTF(
         "JS holder %s contains pointers to GC things in more than one zone ("
         "found in %s)\n",
@@ -1474,7 +1468,7 @@ bool CycleCollectedJSRuntime::TraceJSHolders(JSTracer* aTracer,
     nsScriptObjectTracer* tracer = aIter->mTracer;
 
 #ifdef CHECK_SINGLE_ZONE_JS_HOLDERS
-    if (checkSingleZoneHolders && !tracer->IsMultiZoneJSHolder()) {
+    if (checkSingleZoneHolders && tracer->IsSingleZoneJSHolder()) {
       CheckHolderIsSingleZone(holder, tracer, aIter.Zone());
     }
 #else

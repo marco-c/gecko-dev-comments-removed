@@ -1251,7 +1251,9 @@ ContentUnbinder* ContentUnbinder::sContentUnbinder = nullptr;
 
 void FragmentOrElement::ClearContentUnbinder() { ContentUnbinder::UnbindAll(); }
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(FragmentOrElement)
+
+
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FragmentOrElement)
 
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
@@ -1308,8 +1310,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   }
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(FragmentOrElement)
 
 void FragmentOrElement::MarkNodeChildren(nsINode* aNode) {
   JSObject* o = GetJSObjectChild(aNode);

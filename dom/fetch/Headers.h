@@ -22,8 +22,8 @@ namespace dom {
 
 template <typename K, typename V>
 class Record;
-class HeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord;
-class OwningHeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord;
+class ByteStringSequenceSequenceOrByteStringByteStringRecord;
+class OwningByteStringSequenceSequenceOrByteStringByteStringRecord;
 
 
 
@@ -34,7 +34,7 @@ class OwningHeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord;
 
 class Headers final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Headers)
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Headers)
 
   friend class Request;
   friend class Response;
@@ -53,21 +53,18 @@ class Headers final : public nsISupports, public nsWrapperCache {
 
   static already_AddRefed<Headers> Constructor(
       const GlobalObject& aGlobal,
-      const Optional<
-          HeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord>&
+      const Optional<ByteStringSequenceSequenceOrByteStringByteStringRecord>&
           aInit,
       ErrorResult& aRv);
 
   static already_AddRefed<Headers> Constructor(
       const GlobalObject& aGlobal,
-      const OwningHeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord&
-          aInit,
+      const OwningByteStringSequenceSequenceOrByteStringByteStringRecord& aInit,
       ErrorResult& aRv);
 
   static already_AddRefed<Headers> Create(
       nsIGlobalObject* aGlobalObject,
-      const OwningHeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord&
-          aInit,
+      const OwningByteStringSequenceSequenceOrByteStringByteStringRecord& aInit,
       ErrorResult& aRv);
 
   void Append(const nsACString& aName, const nsACString& aValue,
