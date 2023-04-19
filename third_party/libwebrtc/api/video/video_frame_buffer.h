@@ -81,24 +81,6 @@ class RTC_EXPORT VideoFrameBuffer : public rtc::RefCountInterface {
 
   
   
-  
-  
-  
-  virtual rtc::scoped_refptr<VideoFrameBuffer> CropAndScale(int offset_x,
-                                                            int offset_y,
-                                                            int crop_width,
-                                                            int crop_height,
-                                                            int scaled_width,
-                                                            int scaled_height);
-
-  
-  rtc::scoped_refptr<VideoFrameBuffer> Scale(int scaled_width,
-                                             int scaled_height) {
-    return CropAndScale(0, 0, width(), height(), scaled_width, scaled_height);
-  }
-
-  
-  
   const I420ABufferInterface* GetI420A() const;
   const I444BufferInterface* GetI444() const;
   const I010BufferInterface* GetI010() const;

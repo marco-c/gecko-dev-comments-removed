@@ -56,14 +56,6 @@ class RTC_EXPORT NV12Buffer : public NV12BufferInterface {
   
   void InitializeData();
 
-  
-  
-  void CropAndScaleFrom(const NV12BufferInterface& src,
-                        int offset_x,
-                        int offset_y,
-                        int crop_width,
-                        int crop_height);
-
  protected:
   NV12Buffer(int width, int height);
   NV12Buffer(int width, int height, int stride_y, int stride_uv);

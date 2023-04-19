@@ -54,6 +54,7 @@ public class VideoFrame implements RefCounted {
 
 
 
+    @CalledByNative("Buffer")
     Buffer cropAndScale(
         int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight);
   }
