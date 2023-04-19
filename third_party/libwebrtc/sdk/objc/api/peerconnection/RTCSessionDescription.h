@@ -37,7 +37,9 @@ RTC_OBJC_EXPORT
 - (instancetype)init NS_UNAVAILABLE;
 
 
-- (instancetype)initWithType:(RTCSdpType)type sdp:(NSString *)sdp NS_DESIGNATED_INITIALIZER;
+
+- (nullable instancetype)initWithType:(RTCSdpType)type
+                                  sdp:(NSString *)sdp NS_DESIGNATED_INITIALIZER;
 
 + (NSString *)stringForType:(RTCSdpType)type;
 
