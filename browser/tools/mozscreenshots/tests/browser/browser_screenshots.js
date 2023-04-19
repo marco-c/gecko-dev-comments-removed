@@ -7,7 +7,7 @@
 
 
 add_task(async function capture() {
-  let setsEnv = env.get("MOZSCREENSHOTS_SETS");
+  let setsEnv = Services.env.get("MOZSCREENSHOTS_SETS");
   if (!setsEnv) {
     ok(
       true,

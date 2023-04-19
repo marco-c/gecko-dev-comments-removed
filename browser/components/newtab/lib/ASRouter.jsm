@@ -1735,10 +1735,7 @@ class _ASRouter {
     }
 
     
-    let env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
+    Services.env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
 
     
     AttributionCode._clearCache();
