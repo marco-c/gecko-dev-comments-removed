@@ -77,6 +77,11 @@ typedef uint8_t* Address;
 
 
 
+
+Json::String ToCompactString(const Json::Value& aJsonValue);
+
+
+
 class ProfilingLog {
  public:
   
