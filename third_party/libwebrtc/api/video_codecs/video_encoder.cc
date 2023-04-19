@@ -175,7 +175,15 @@ std::string VideoEncoder::EncoderInfo::ToString() const {
   for (size_t i = 0; i < preferred_pixel_formats.size(); ++i) {
     if (i > 0)
       oss << ", ";
+#if defined(WEBRTC_MOZILLA_BUILD)
+    
+    
+    
+    
+    oss << VideoFrameBufferTypeToString(preferred_pixel_formats[i]);
+#else
     oss << VideoFrameBufferTypeToString(preferred_pixel_formats.at(i));
+#endif
   }
   oss << "]";
   oss << "}";
