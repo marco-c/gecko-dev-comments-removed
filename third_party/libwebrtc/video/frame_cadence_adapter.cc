@@ -132,13 +132,25 @@ class ZeroHertzAdapterMode : public AdapterMode {
   };
   
   struct ScheduledRepeat {
-    ScheduledRepeat(Timestamp scheduled, bool idle)
-        : scheduled(scheduled), idle(idle) {}
+    ScheduledRepeat(Timestamp origin,
+                    int64_t origin_timestamp_us,
+                    int64_t origin_ntp_time_ms)
+        : scheduled(origin),
+          idle(false),
+          origin(origin),
+          origin_timestamp_us(origin_timestamp_us),
+          origin_ntp_time_ms(origin_ntp_time_ms) {}
     
     Timestamp scheduled;
     
     
     bool idle;
+    
+    Timestamp origin;
+    
+    int64_t origin_timestamp_us;
+    
+    int64_t origin_ntp_time_ms;
   };
 
   
@@ -449,7 +461,14 @@ void ZeroHertzAdapterMode::ProcessOnDelayedCadence() {
 void ZeroHertzAdapterMode::ScheduleRepeat(int frame_id, bool idle_repeat) {
   RTC_DLOG(LS_VERBOSE) << __func__ << " this " << this << " frame_id "
                        << frame_id;
-  scheduled_repeat_.emplace(clock_->CurrentTime(), idle_repeat);
+  Timestamp now = clock_->CurrentTime();
+  if (!scheduled_repeat_.has_value()) {
+    scheduled_repeat_.emplace(now, queued_frames_.front().timestamp_us(),
+                              queued_frames_.front().ntp_time_ms());
+  }
+  scheduled_repeat_->scheduled = now;
+  scheduled_repeat_->idle = idle_repeat;
+
   TimeDelta repeat_delay = RepeatDuration(idle_repeat);
   queue_->PostDelayedTask(
       ToQueuedTask(safety_,
@@ -482,11 +501,16 @@ void ZeroHertzAdapterMode::ProcessRepeatedFrameOnDelayedCadence(int frame_id) {
   
   
   
-  TimeDelta scheduled_delay = RepeatDuration(scheduled_repeat_->idle);
-  if (frame.timestamp_us() > 0)
-    frame.set_timestamp_us(frame.timestamp_us() + scheduled_delay.us());
-  if (frame.ntp_time_ms())
-    frame.set_ntp_time_ms(frame.ntp_time_ms() + scheduled_delay.ms());
+  
+  TimeDelta total_delay = clock_->CurrentTime() - scheduled_repeat_->origin;
+  if (frame.timestamp_us() > 0) {
+    frame.set_timestamp_us(scheduled_repeat_->origin_timestamp_us +
+                           total_delay.us());
+  }
+  if (frame.ntp_time_ms()) {
+    frame.set_ntp_time_ms(scheduled_repeat_->origin_ntp_time_ms +
+                          total_delay.ms());
+  }
   SendFrameNow(frame);
 
   
@@ -495,7 +519,10 @@ void ZeroHertzAdapterMode::ProcessRepeatedFrameOnDelayedCadence(int frame_id) {
 
 
 void ZeroHertzAdapterMode::SendFrameNow(const VideoFrame& frame) const {
-  RTC_DLOG(LS_VERBOSE) << __func__ << " this " << this;
+  RTC_DLOG(LS_VERBOSE) << __func__ << " this " << this << " timestamp "
+                       << frame.timestamp() << " timestamp_us "
+                       << frame.timestamp_us() << " ntp_time_ms "
+                       << frame.ntp_time_ms();
   
   
   callback_->OnFrame(clock_->CurrentTime(),
