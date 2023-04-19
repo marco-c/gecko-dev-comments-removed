@@ -42,11 +42,6 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface>,
   std::string kind() const override;
 
   
-  
-  bool set_enabled(bool enable) override;
-  bool enabled() const override;
-
-  
   AudioSourceInterface* GetSource() const override;
 
   void AddSink(AudioTrackSinkInterface* sink) override;
