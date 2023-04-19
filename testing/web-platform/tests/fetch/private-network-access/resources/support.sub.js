@@ -179,6 +179,13 @@ const PreflightBehavior = {
 
   
   
+  serviceWorkerSuccess: (uuid) => ({
+    "preflight-uuid": uuid,
+    "preflight-headers": "cors+pna+sw",
+  }),
+
+  
+  
   singlePreflight: (uuid) => ({
     "preflight-uuid": uuid,
     "preflight-headers": "cors+pna",
