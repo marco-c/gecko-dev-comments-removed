@@ -19,7 +19,7 @@
 #include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/RemoteTextureMap.h"
-#include "mozilla/layers/TextureHostOGL.h"     
+#include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/GPUVideoTextureHost.h"
