@@ -41,16 +41,17 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/OSKeyStore.jsm"
 );
 
-const lazy = {};
-XPCOMUtils.defineLazyGetter(
-  lazy,
-  "l10n",
-  () =>
-    new Localization([
-      "browser/preferences/formAutofill.ftl",
-      "branding/brand.ftl",
-    ])
-);
+XPCOMUtils.defineLazyGetter(this, "reauthPasswordPromptMessage", () => {
+  const brandShortName = FormAutofillUtils.brandBundle.GetStringFromName(
+    "brandShortName"
+  );
+  
+  const platform = AppConstants.platform.replace("macosx", "macos");
+  return FormAutofillUtils.stringBundle.formatStringFromName(
+    `editCreditCardPasswordPrompt.${platform}`,
+    [brandShortName]
+  );
+});
 
 this.log = null;
 XPCOMUtils.defineLazyGetter(this, "log", () =>
@@ -65,6 +66,7 @@ class ManageRecords {
     this._newRequest = false;
     this._isLoadingRecords = false;
     this.prefWin = window.opener;
+    this.localizeDocument();
     window.addEventListener("DOMContentLoaded", this, { once: true });
   }
 
@@ -79,6 +81,13 @@ class ManageRecords {
     log.debug("uninit");
     this.detachEventListeners();
     this._elements = null;
+  }
+
+  localizeDocument() {
+    document.documentElement.style.minWidth = FormAutofillUtils.stringBundle.GetStringFromName(
+      "manageDialogsWidth"
+    );
+    FormAutofillUtils.localizeMarkup(document);
   }
 
   
@@ -150,7 +159,7 @@ class ManageRecords {
     let selectedGuids = this._selectedOptions.map(option => option.value);
     this.clearRecordElements();
     for (let record of records) {
-      let { id, args, raw } = await this.getLabelInfo(record);
+      let { id, args, raw } = this.getLabelInfo(record);
       let option = new Option(
         raw ?? "",
         record.guid,
@@ -323,8 +332,10 @@ class ManageAddresses extends ManageRecords {
   constructor(elements) {
     super("addresses", elements);
     elements.add.setAttribute(
-      "search-l10n-ids",
-      FormAutofillUtils.EDIT_ADDRESS_L10N_IDS.join(",")
+      "searchkeywords",
+      FormAutofillUtils.EDIT_ADDRESS_KEYWORDS.map(key =>
+        FormAutofillUtils.stringBundle.GetStringFromName(key)
+      ).join("\n")
     );
   }
 
@@ -351,8 +362,10 @@ class ManageCreditCards extends ManageRecords {
   constructor(elements) {
     super("creditCards", elements);
     elements.add.setAttribute(
-      "search-l10n-ids",
-      FormAutofillUtils.EDIT_CREDITCARD_L10N_IDS.join(",")
+      "searchkeywords",
+      FormAutofillUtils.EDIT_CREDITCARD_KEYWORDS.map(key =>
+        FormAutofillUtils.stringBundle.GetStringFromName(key)
+      ).join("\n")
     );
 
     Services.telemetry.recordEvent("creditcard", "show", "manage");
@@ -367,45 +380,43 @@ class ManageCreditCards extends ManageRecords {
 
   async openEditDialog(creditCard) {
     
-    if (creditCard) {
-      const reauthPasswordPromptMessage = await lazy.l10n.formatValue(
-        "autofill-edit-card-password-prompt"
-      );
-      const loggedIn = await FormAutofillUtils.ensureLoggedIn(
-        reauthPasswordPromptMessage
-      );
-      if (!loggedIn.authenticated) {
-        return;
-      }
-    }
-
-    let decryptedCCNumObj = {};
-    if (creditCard && creditCard["cc-number-encrypted"]) {
-      try {
-        decryptedCCNumObj["cc-number"] = await OSKeyStore.decrypt(
-          creditCard["cc-number-encrypted"]
-        );
-      } catch (ex) {
-        if (ex.result == Cr.NS_ERROR_ABORT) {
+    if (
+      !creditCard ||
+      (await FormAutofillUtils.ensureLoggedIn(reauthPasswordPromptMessage))
+        .authenticated
+    ) {
+      let decryptedCCNumObj = {};
+      if (creditCard && creditCard["cc-number-encrypted"]) {
+        try {
+          decryptedCCNumObj["cc-number"] = await OSKeyStore.decrypt(
+            creditCard["cc-number-encrypted"]
+          );
+        } catch (ex) {
+          if (ex.result == Cr.NS_ERROR_ABORT) {
+            
+            
+            return;
+          }
           
           
-          return;
+          
+          decryptedCCNumObj["cc-number"] = "";
+          Cu.reportError(ex);
         }
-        
-        
-        
-        decryptedCCNumObj["cc-number"] = "";
-        Cu.reportError(ex);
       }
+      let decryptedCreditCard = Object.assign(
+        {},
+        creditCard,
+        decryptedCCNumObj
+      );
+      this.prefWin.gSubDialog.open(
+        EDIT_CREDIT_CARD_URL,
+        { features: "resizable=no" },
+        {
+          record: decryptedCreditCard,
+        }
+      );
     }
-    let decryptedCreditCard = Object.assign({}, creditCard, decryptedCCNumObj);
-    this.prefWin.gSubDialog.open(
-      EDIT_CREDIT_CARD_URL,
-      { features: "resizable=no" },
-      {
-        record: decryptedCreditCard,
-      }
-    );
   }
 
   
@@ -415,15 +426,20 @@ class ManageCreditCards extends ManageRecords {
 
 
 
-  async getLabelInfo(creditCard) {
+  getLabelInfo(creditCard) {
     
     
     
     
     
-    const type = await document.l10n.formatValue(
-      `autofill-card-network-${creditCard["cc-type"]}`
-    );
+    let type;
+    try {
+      type = FormAutofillUtils.stringBundle.GetStringFromName(
+        `cardNetwork.${creditCard["cc-type"]}`
+      );
+    } catch (e) {
+      type = ""; 
+    }
     return CreditCard.getLabelInfo({
       name: creditCard["cc-name"],
       number: creditCard["cc-number"],

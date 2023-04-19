@@ -15,12 +15,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   FormAutofillUtils: "resource://autofill/FormAutofillUtils.jsm",
 });
 
-XPCOMUtils.defineLazyGetter(
-  lazy,
-  "l10n",
-  () => new Localization(["browser/preferences/formAutofill.ftl"], true)
-);
-
 class ProfileAutoCompleteResult {
   constructor(
     searchString,
@@ -422,9 +416,14 @@ class CreditCardResult extends ProfileAutoCompleteResult {
         
         
         
-        let ccTypeName = lazy.l10n.formatValueSync(
-          `autofill-card-network-${profile["cc-type"]}`
-        );
+        let ccTypeName;
+        try {
+          ccTypeName = lazy.FormAutofillUtils.stringBundle.GetStringFromName(
+            `cardNetwork.${profile["cc-type"]}`
+          );
+        } catch (e) {
+          ccTypeName = null; 
+        }
         const ariaLabel = [ccTypeName, primaryAffix, primary, secondary]
           .filter(chunk => !!chunk) 
           .join(" ");

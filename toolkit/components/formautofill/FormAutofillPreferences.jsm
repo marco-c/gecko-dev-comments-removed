@@ -40,10 +40,10 @@ const {
   ENABLED_AUTOFILL_CREDITCARDS_REAUTH_PREF,
 } = FormAutofill;
 const {
-  MANAGE_ADDRESSES_L10N_IDS,
-  EDIT_ADDRESS_L10N_IDS,
-  MANAGE_CREDITCARDS_L10N_IDS,
-  EDIT_CREDITCARD_L10N_IDS,
+  MANAGE_ADDRESSES_KEYWORDS,
+  EDIT_ADDRESS_KEYWORDS,
+  MANAGE_CREDITCARDS_KEYWORDS,
+  EDIT_CREDITCARD_KEYWORDS,
 } = FormAutofillUtils;
 
 
@@ -148,8 +148,10 @@ FormAutofillPreferences.prototype = {
 
       
       savedAddressesBtn.setAttribute(
-        "search-l10n-ids",
-        MANAGE_ADDRESSES_L10N_IDS.concat(EDIT_ADDRESS_L10N_IDS).join(",")
+        "searchkeywords",
+        MANAGE_ADDRESSES_KEYWORDS.concat(EDIT_ADDRESS_KEYWORDS)
+          .map(key => this.bundle.GetStringFromName(key))
+          .join("\n")
       );
 
       
@@ -216,8 +218,10 @@ FormAutofillPreferences.prototype = {
 
       
       savedCreditCardsBtn.setAttribute(
-        "search-l10n-ids",
-        MANAGE_CREDITCARDS_L10N_IDS.concat(EDIT_CREDITCARD_L10N_IDS).join(",")
+        "searchkeywords",
+        MANAGE_CREDITCARDS_KEYWORDS.concat(EDIT_CREDITCARD_KEYWORDS)
+          .map(key => this.bundle.GetStringFromName(key))
+          .join("\n")
       );
 
       
