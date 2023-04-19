@@ -2,7 +2,7 @@
 
 
 
-use crate::interfaces::nsrefcnt;
+use crate::interfaces::{nsISupports, nsrefcnt};
 use libc;
 use nserror::{nsresult, NS_OK};
 use std::cell::Cell;
@@ -27,6 +27,7 @@ pub unsafe trait RefCounted {
 
 
 
+#[repr(transparent)]
 pub struct RefPtr<T: RefCounted + 'static> {
     _ptr: NonNull<T>,
     
@@ -115,6 +116,18 @@ impl<T: RefCounted + 'static + fmt::Debug> fmt::Debug for RefPtr<T> {
 
 unsafe impl<T: RefCounted + 'static + Send + Sync> Send for RefPtr<T> {}
 unsafe impl<T: RefCounted + 'static + Send + Sync> Sync for RefPtr<T> {}
+
+macro_rules! assert_layout_eq {
+    ($T:ty, $U:ty) => {
+        const _: [(); std::mem::size_of::<$T>()] = [(); std::mem::size_of::<$U>()];
+        const _: [(); std::mem::align_of::<$T>()] = [(); std::mem::align_of::<$U>()];
+    };
+}
+
+
+assert_layout_eq!(RefPtr<nsISupports>, *const nsISupports);
+
+assert_layout_eq!(RefPtr<nsISupports>, Option<RefPtr<nsISupports>>);
 
 
 
