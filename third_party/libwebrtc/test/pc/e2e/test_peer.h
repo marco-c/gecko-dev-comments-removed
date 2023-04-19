@@ -38,9 +38,6 @@ class TestPeer final {
     return configurable_params_;
   }
 
-  
-  const Params& params2() const { return params_; }
-
   PeerConfigurerImpl::VideoSource ReleaseVideoSource(size_t i) {
     RTC_CHECK(wrapper_) << "TestPeer is already closed";
     return std::move(video_sources_[i]);
