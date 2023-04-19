@@ -127,7 +127,6 @@ TEST_F(AndroidNetworkMonitorTest,
 }
 
 TEST_F(AndroidNetworkMonitorTest, TestFindNetworkHandleUsingIfName) {
-  ScopedFieldTrials field_trials("WebRTC-BindUsingInterfaceName/Enabled/");
   
   network_monitor_->Start();
   jni::NetworkHandle ipv6_handle = 200;
