@@ -302,8 +302,11 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
 
 MFMediaEngineStreamWrapper* MFMediaEngineParent::GetMediaEngineStream(
     TrackType aType, const CreateDecoderParams& aParam) {
+  
+  if (!mMediaSource) {
+    return nullptr;
+  }
   LOG("Create a media engine decoder for %s", TrackTypeToStr(aType));
-  MOZ_ASSERT(mMediaSource);
   if (aType == TrackType::kAudioTrack) {
     auto* stream = mMediaSource->GetAudioStream();
     return new MFMediaEngineStreamWrapper(stream, stream->GetTaskQueue(),
