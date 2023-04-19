@@ -188,6 +188,10 @@ class ObjectElements {
  public:
   enum Flags : uint16_t {
     
+    
+    
+    
+    
     FIXED = 0x1,
 
     

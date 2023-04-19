@@ -784,6 +784,8 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     if (getDenseCapacity() >= reqCapacity) {
       return true;
     }
+    
+    
     numShifted = getElementsHeader()->numShiftedElements();
 
     
@@ -801,13 +803,20 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
 
   uint32_t newAllocated = 0;
   if (is<ArrayObject>() && !as<ArrayObject>().lengthIsWritable()) {
-    MOZ_ASSERT(reqCapacity <= as<ArrayObject>().length());
-    MOZ_ASSERT(reqCapacity <= MAX_DENSE_ELEMENTS_COUNT);
     
+    
+    
+    MOZ_ASSERT(reqCapacity <= as<ArrayObject>().length());
+    
+    MOZ_ASSERT(reqCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+
     
     
     newAllocated = reqCapacity + numShifted + ObjectElements::VALUES_PER_HEADER;
   } else {
+    
+    
+    
     if (!goodElementsAllocationAmount(cx, reqCapacity + numShifted,
                                       getElementsHeader()->length,
                                       &newAllocated)) {
@@ -815,8 +824,14 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
     }
   }
 
+  
+  
   uint32_t newCapacity =
       newAllocated - ObjectElements::VALUES_PER_HEADER - numShifted;
+  
+  
+  
+  
   MOZ_ASSERT(newCapacity > oldCapacity && newCapacity >= reqCapacity);
 
   
@@ -830,35 +845,56 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
   HeapSlot* newHeaderSlots;
   uint32_t oldAllocated = 0;
   if (hasDynamicElements()) {
+    
+    
+
+    
     MOZ_ASSERT(oldCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    
+    
     oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
 
+    
     newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(
         cx, this, oldHeaderSlots, oldAllocated, newAllocated);
     if (!newHeaderSlots) {
       return false;  
+                     
     }
   } else {
+    
+    
+    
     newHeaderSlots = AllocateObjectBuffer<HeapSlot>(cx, this, newAllocated);
     if (!newHeaderSlots) {
       return false;  
     }
+
+    
     PodCopy(newHeaderSlots, oldHeaderSlots,
             ObjectElements::VALUES_PER_HEADER + initlen + numShifted);
   }
 
+  
+  
   if (oldAllocated) {
     RemoveCellMemory(this, oldAllocated * sizeof(HeapSlot),
                      MemoryUse::ObjectElements);
   }
 
   ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
+  
   elements_ = newheader->elements() + numShifted;
+
+  
+  
   getElementsHeader()->flags &= ~ObjectElements::FIXED;
   getElementsHeader()->capacity = newCapacity;
 
+  
   Debug_SetSlotRangeToCrashOnTouch(elements_ + initlen, newCapacity - initlen);
 
+  
   AddCellMemory(this, newAllocated * sizeof(HeapSlot),
                 MemoryUse::ObjectElements);
 
