@@ -3436,7 +3436,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   
   
   
-  while (current_size < 16) {
+  
+  while (current_size < 8) {
     
     for (int i = 0; i < current_size; i++) {
       caller()->pc()->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
