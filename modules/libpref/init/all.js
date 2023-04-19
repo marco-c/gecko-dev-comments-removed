@@ -2563,8 +2563,6 @@ pref("font.size.monospace.x-math", 13);
   
   
   
-  pref("intl.tsf.hack.free_chang_jie.do_not_return_no_layout_error", true);
-  
   pref("intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error", true);
   
   pref("intl.tsf.hack.ms_traditional_chinese.do_not_return_no_layout_error", true);
