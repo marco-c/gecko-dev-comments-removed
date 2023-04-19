@@ -67,8 +67,9 @@ function getListFormatInternals(obj) {
 
     
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     
     internalProps = resolveListFormatInternals(internals.lazyData);
@@ -115,10 +116,11 @@ function InitializeListFormat(listFormat, locales, options) {
     lazyListFormatData.requestedLocales = requestedLocales;
 
     
-    if (options === undefined)
+    if (options === undefined) {
         options = std_Object_create(null);
-    else if (!IsObject(options))
+    } else if (!IsObject(options)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
+    }
 
     
     var opt = new_Record();
