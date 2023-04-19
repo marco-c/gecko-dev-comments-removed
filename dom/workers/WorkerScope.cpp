@@ -679,12 +679,6 @@ already_AddRefed<IDBFactory> WorkerGlobalScope::GetIndexedDB(
     JSContext* aCx, ErrorResult& aErrorResult) {
   AssertIsOnWorkerThread();
 
-  if (!IDBFactory::IsEnabled(aCx, GetGlobalJSObject())) {
-    
-    
-    return nullptr;
-  }
-
   RefPtr<IDBFactory> indexedDB = mIndexedDB;
 
   if (!indexedDB) {
