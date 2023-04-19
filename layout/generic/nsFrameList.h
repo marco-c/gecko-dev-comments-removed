@@ -362,14 +362,10 @@ class nsFrameList {
 
   static inline const nsFrameList& EmptyList();
 
-  class Enumerator;
-
   
 
 
   class Slice {
-    friend class Enumerator;
-
    public:
     
     
@@ -388,51 +384,6 @@ class nsFrameList {
 
     
     nsIFrame* const mEnd;
-  };
-
-  class Enumerator {
-   public:
-    explicit Enumerator(const Slice& aSlice)
-        : mFrame(aSlice.mStart), mEnd(aSlice.mEnd) {}
-
-    Enumerator(const Enumerator& aOther) = default;
-
-    bool AtEnd() const {
-      
-      
-      
-      return !mFrame || mFrame == mEnd;
-    }
-
-    
-
-
-    inline void Next();
-
-    
-
-
-
-    nsIFrame* get() const {
-      MOZ_ASSERT(!AtEnd(), "Enumerator is at end");
-      return mFrame;
-    }
-
-    
-
-
-
-    Enumerator GetUnlimitedEnumerator() const {
-      return Enumerator(*this, nullptr);
-    }
-
-   protected:
-    Enumerator(const Enumerator& aOther, const nsIFrame* const aNewEnd)
-        : mFrame(aOther.mFrame), mEnd(aNewEnd) {}
-
-    nsIFrame* mFrame;            
-    const nsIFrame* const mEnd;  
-                                 
   };
 
   template <typename FrameTraversal>
