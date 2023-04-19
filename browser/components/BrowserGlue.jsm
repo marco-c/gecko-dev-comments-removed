@@ -2597,16 +2597,12 @@ BrowserGlue.prototype = {
               desc + ".lnk",
               appdir
             );
+            
+            Services.prefs.setBoolPref(
+              PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
+              true
+            );
           }
-          
-          
-          
-          
-          
-          Services.prefs.setBoolPref(
-            PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
-            true
-          );
         },
       },
 
