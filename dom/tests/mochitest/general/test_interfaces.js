@@ -1266,7 +1266,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TextDecoder", insecureContext: true },
   
+  { name: "TextDecoderStream", insecureContext: true },
+  
   { name: "TextEncoder", insecureContext: true },
+  
+  { name: "TextEncoderStream", insecureContext: true },
   
   { name: "TextMetrics", insecureContext: true },
   
