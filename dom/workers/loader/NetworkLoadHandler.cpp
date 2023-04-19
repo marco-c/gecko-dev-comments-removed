@@ -98,7 +98,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   }
 
 #ifdef DEBUG
-  if (mLoader->IsMainWorkerScript()) {
+  if (mLoadContext->IsTopLevel()) {
     nsCOMPtr<nsIPrincipal> loadingPrincipal =
         mWorkerRef->Private()->GetLoadingPrincipal();
     
@@ -114,7 +114,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   
   
   
-  mLoadContext->mMutedErrorFlag.emplace(!mLoader->IsMainWorkerScript() &&
+  mLoadContext->mMutedErrorFlag.emplace(!mLoadContext->IsTopLevel() &&
                                         !principal->Subsumes(channelPrincipal));
 
   
@@ -186,7 +186,7 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
 
   
   
-  if (mLoader->IsMainWorkerScript()) {
+  if (mLoadContext->IsTopLevel()) {
     
     mWorkerRef->Private()->SetBaseURI(finalURI);
 
