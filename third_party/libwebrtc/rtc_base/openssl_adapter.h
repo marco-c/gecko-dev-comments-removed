@@ -60,7 +60,6 @@ class OpenSSLAdapter final : public SSLAdapter,
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
   void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
   void SetRole(SSLRole role) override;
-  Socket* Accept(SocketAddress* paddr) override;
   int StartSSL(const char* hostname) override;
   int Send(const void* pv, size_t cb) override;
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
@@ -191,10 +190,21 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   void SetMode(SSLMode mode) override;
+
   
   
   
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
+
+  void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
+
+  
+  void SetRole(SSLRole role) override;
+
+  
+  
+  void SetIgnoreBadCert(bool ignore) override;
+
   
   
   
@@ -203,6 +213,11 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
  private:
   
   SSLMode ssl_mode_ = SSL_MODE_TLS;
+  SSLRole ssl_role_ = SSL_CLIENT;
+  bool ignore_bad_cert_ = false;
+
+  std::unique_ptr<SSLIdentity> identity_;
+
   
   std::unique_ptr<OpenSSLSessionCache> ssl_session_cache_;
   

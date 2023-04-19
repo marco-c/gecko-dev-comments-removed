@@ -40,9 +40,20 @@ class SSLAdapterFactory {
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
 
   
+  
+  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
+
+  
+  virtual void SetRole(SSLRole role) = 0;
+
+  
+  
+  virtual void SetIgnoreBadCert(bool ignore) = 0;
+
+  
   virtual SSLAdapter* CreateAdapter(Socket* socket) = 0;
 
-  static SSLAdapterFactory* Create();
+  static std::unique_ptr<SSLAdapterFactory> Create();
 };
 
 
@@ -91,6 +102,11 @@ class SSLAdapter : public AsyncSocketAdapter {
   
   
   static SSLAdapter* Create(Socket* socket);
+
+ private:
+  
+  int Listen(int backlog) override { RTC_CHECK(false); }
+  Socket* Accept(SocketAddress* paddr) override { RTC_CHECK(false); }
 };
 
 
