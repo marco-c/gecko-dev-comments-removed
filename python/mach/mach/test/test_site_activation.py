@@ -62,10 +62,8 @@ def test_new_package_appears_in_pkg_resources():
         
         
         
-        pkg_resources.get_distribution("hyperframe")
-        assert (
-            False
-        ), "Expected to not find 'hyperframe' as the initial state of the test"
+        pkg_resources.get_distribution("carrot")
+        assert False, "Expected to not find 'carrot' as the initial state of the test"
     except pkg_resources.DistributionNotFound:
         pass
 
@@ -86,7 +84,7 @@ def test_new_package_appears_in_pkg_resources():
         )
 
         venv = PythonVirtualenv(venv_dir)
-        venv.pip_install(["hyperframe==5.2.0"])
+        venv.pip_install(["carrot==0.10.7"])
 
         initial_metadata = MozSiteMetadata.from_runtime()
         try:
@@ -94,7 +92,7 @@ def test_new_package_appears_in_pkg_resources():
             with metadata.update_current_site(venv.python_path):
                 activate_virtualenv(venv)
 
-            assert pkg_resources.get_distribution("hyperframe").version == "5.2.0"
+            assert pkg_resources.get_distribution("carrot").version == "0.10.7"
         finally:
             MozSiteMetadata.current = initial_metadata
 

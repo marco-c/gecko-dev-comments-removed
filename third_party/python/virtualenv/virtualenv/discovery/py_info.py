@@ -45,11 +45,7 @@ class PythonInfo(object):
 
         
         self.version_info = VersionInfo(*list(u(i) for i in sys.version_info))
-        self.architecture = 64 if sys.maxsize > 2**32 else 32
-
-        
-        
-        self.version_nodot = sysconfig.get_config_var("py_version_nodot")
+        self.architecture = 64 if sys.maxsize > 2 ** 32 else 32
 
         self.version = u(sys.version)
         self.os = u(os.name)
@@ -77,18 +73,7 @@ class PythonInfo(object):
         self.file_system_encoding = u(sys.getfilesystemencoding())
         self.stdout_encoding = u(getattr(sys.stdout, "encoding", None))
 
-        if "venv" in sysconfig.get_scheme_names():
-            self.sysconfig_scheme = "venv"
-            self.sysconfig_paths = {
-                u(i): u(sysconfig.get_path(i, expand=False, scheme="venv")) for i in sysconfig.get_path_names()
-            }
-            
-            self.distutils_install = {}
-        else:
-            self.sysconfig_scheme = None
-            self.sysconfig_paths = {u(i): u(sysconfig.get_path(i, expand=False)) for i in sysconfig.get_path_names()}
-            self.distutils_install = {u(k): u(v) for k, v in self._distutils_install().items()}
-
+        self.sysconfig_paths = {u(i): u(sysconfig.get_path(i, expand=False)) for i in sysconfig.get_path_names()}
         
         makefile = getattr(sysconfig, "get_makefile_filename", getattr(sysconfig, "_get_makefile_filename", None))
         self.sysconfig = {
@@ -108,8 +93,9 @@ class PythonInfo(object):
 
         self.sysconfig_vars = {u(i): u(sysconfig.get_config_var(i) or "") for i in config_var_keys}
         if self.implementation == "PyPy" and sys.version_info.major == 2:
-            self.sysconfig_vars["implementation_lower"] = "python"
+            self.sysconfig_vars[u"implementation_lower"] = u"python"
 
+        self.distutils_install = {u(k): u(v) for k, v in self._distutils_install().items()}
         confs = {k: (self.system_prefix if v.startswith(self.prefix) else v) for k, v in self.sysconfig_vars.items()}
         self.system_stdlib = self.sysconfig_path("stdlib", confs)
         self.system_stdlib_platform = self.sysconfig_path("platstdlib", confs)
@@ -138,6 +124,9 @@ class PythonInfo(object):
             prefixes = self.prefix, self.exec_prefix, self.base_prefix, self.base_exec_prefix
             config_var = {k: "" if v in prefixes else v for k, v in self.sysconfig_vars.items()}
             result = self.sysconfig_path(key, config_var=config_var).lstrip(os.sep)
+        
+        if result.startswith(u"local/"):
+            return result[6:]
         return result
 
     @staticmethod
@@ -156,11 +145,7 @@ class PythonInfo(object):
         d = dist.Distribution({"script_args": "--no-user-cfg"})  
         if hasattr(sys, "_framework"):
             sys._framework = None  
-
-        with warnings.catch_warnings():  
-            warnings.simplefilter("ignore")
-            i = d.get_command_obj("install", create=True)
-
+        i = d.get_command_obj("install", create=True)
         i.prefix = os.sep  
         i.finalize_options()
         result = {key: (getattr(i, "install_{}".format(key))[1:]).lstrip(os.sep) for key in SCHEME_KEYS}
@@ -195,7 +180,7 @@ class PythonInfo(object):
             base = {k: v for k, v in self.sysconfig_vars.items()}
             base.update(config_var)
             config_var = base
-        return pattern.format(**config_var).replace("/", sep)
+        return pattern.format(**config_var).replace(u"/", sep)
 
     def creators(self, refresh=False):
         if self._creators is None or refresh is True:

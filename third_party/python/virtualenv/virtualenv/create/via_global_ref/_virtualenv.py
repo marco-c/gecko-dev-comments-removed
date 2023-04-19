@@ -37,8 +37,11 @@ def patch_dist(dist):
 _DISTUTILS_PATCH = "distutils.dist", "setuptools.dist"
 if sys.version_info > (3, 4):
     
+    from functools import partial
+    from importlib.abc import MetaPathFinder
+    from importlib.util import find_spec
 
-    class _Finder:
+    class _Finder(MetaPathFinder):
         """A meta path finder that allows patching the imported distutils modules"""
 
         fullname = None
@@ -61,9 +64,6 @@ if sys.version_info > (3, 4):
                     
                     
                     self.lock.append(lock)
-
-                from functools import partial
-                from importlib.util import find_spec
 
                 with self.lock[0]:
                     self.fullname = fullname
