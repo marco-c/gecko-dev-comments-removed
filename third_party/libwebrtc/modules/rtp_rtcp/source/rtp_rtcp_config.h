@@ -11,14 +11,16 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_RTCP_CONFIG_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_RTCP_CONFIG_H_
 
+#include "api/units/time_delta.h"
+
 
 namespace webrtc {
-enum { kDefaultMaxReorderingThreshold = 50 };  
-enum { kRtcpMaxNackFields = 253 };
+constexpr int kDefaultMaxReorderingThreshold = 5;  
+constexpr int kRtcpMaxNackFields = 253;
 
 enum { RTCP_INTERVAL_RAPID_SYNC_MS = 100 }; 
-enum { RTCP_SEND_BEFORE_KEY_FRAME_MS = 100 };
-enum { RTCP_MAX_REPORT_BLOCKS = 31 };  
+constexpr TimeDelta RTCP_SEND_BEFORE_KEY_FRAME = TimeDelta::Millis(100);
+constexpr int RTCP_MAX_REPORT_BLOCKS = 31;  
 
 enum { RTCP_NUMBER_OF_SR = 60 };
 

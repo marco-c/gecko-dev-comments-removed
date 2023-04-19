@@ -78,8 +78,7 @@ std::unique_ptr<RTCPSender> CreateRtcpSender(
   rtcp_sender->SetRemoteSSRC(kRemoteSsrc);
   if (init_timestamps) {
     rtcp_sender->SetTimestampOffset(kStartRtpTimestamp);
-    rtcp_sender->SetLastRtpTime(kRtpTimestamp,
-                                config.clock->TimeInMilliseconds(),
+    rtcp_sender->SetLastRtpTime(kRtpTimestamp, config.clock->CurrentTime(),
                                 0);
   }
   return rtcp_sender;
@@ -660,7 +659,7 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
   auto rtcp_sender = CreateRtcpSender(config);
 
   rtcp_sender->SetTimestampOffset(kStartRtpTimestamp);
-  rtcp_sender->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds(),
+  rtcp_sender->SetLastRtpTime(kRtpTimestamp, clock_.CurrentTime(),
                               0);
 
   
