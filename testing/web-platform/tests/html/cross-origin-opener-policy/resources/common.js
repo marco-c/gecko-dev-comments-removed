@@ -42,6 +42,8 @@ function validate_results(callback, test, w, channelName, hasOpener, openerDOMAc
   }
 }
 
+
+
 function url_test(t, url, channelName, hasOpener, openerDOMAccess, callback) {
   if (callback === undefined) {
     callback = () => { t.done(); };
@@ -60,5 +62,25 @@ function url_test(t, url, channelName, hasOpener, openerDOMAccess, callback) {
   t.add_cleanup(() => {
     bc.postMessage("close");
   });
+}
+
+
+
+
+
+async function dispatcher_url_test(t, url, responseToken, iframeToken, hasOpener, openerDOMAccess, callback) {
+
+  const w = window.open(url, responseToken);
+
+  
+  
+  
+  t.add_cleanup(async () => {
+    await send(iframeToken, "close");
+  });
+
+  var payload = await receive(responseToken);
+  payload = JSON.parse(payload);
+  validate_results(callback, t, w, responseToken, hasOpener, openerDOMAccess, payload);
 }
 
