@@ -6,7 +6,7 @@
 
 #include "fs/FileSystemRequestHandler.h"
 
-#include "ArrayAppendable.h"
+#include "FileSystemEntryMetadataArray.h"
 #include "fs/FileSystemConstants.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileSystemDirectoryHandle.h"
@@ -37,23 +37,22 @@ RefPtr<File> MakeGetFileResult(nsIGlobalObject* aGlobal, const nsString& aName,
   return result;
 }
 
-void GetDirectoryContentsResponseHandler(
-    nsIGlobalObject* aGlobal, FileSystemGetEntriesResponse&& aResponse,
-    ArrayAppendable& aSink, RefPtr<FileSystemManager>& aManager) {
+bool MakeResolution(nsIGlobalObject* aGlobal,
+                    FileSystemGetEntriesResponse&& aResponse,
+                    const bool& ,
+                    RefPtr<FileSystemEntryMetadataArray>& aSink) {
   
   const auto& listing = aResponse.get_FileSystemDirectoryListing();
 
-  nsTArray<FileSystemEntryMetadata> batch;
-
   for (const auto& it : listing.files()) {
-    batch.AppendElement(it);
+    aSink->AppendElement(it);
   }
 
   for (const auto& it : listing.directories()) {
-    batch.AppendElement(it);
+    aSink->AppendElement(it);
   }
 
-  aSink.append(aGlobal, aManager, batch);
+  return true;
 }
 
 RefPtr<FileSystemDirectoryHandle> MakeResolution(
@@ -143,31 +142,6 @@ void ResolveCallback(
   } else {
     aPromise->MaybeResolveWithUndefined();
   }
-}
-
-
-template <>
-void ResolveCallback(FileSystemGetEntriesResponse&& aResponse,
-                     
-                     RefPtr<Promise> aPromise, ArrayAppendable& aSink,
-                     RefPtr<FileSystemManager>& aManager) {
-  
-  MOZ_ASSERT(aPromise);
-  QM_TRY(OkIf(Promise::PromiseState::Pending == aPromise->State()), QM_VOID);
-
-  if (FileSystemGetEntriesResponse::Tnsresult == aResponse.type()) {
-    aPromise->MaybeReject(aResponse.get_nsresult());
-    return;
-  }
-
-  GetDirectoryContentsResponseHandler(
-      aPromise->GetParentObject(),
-      std::forward<FileSystemDirectoryListing>(
-          aResponse.get_FileSystemDirectoryListing()),
-      aSink, aManager);
-
-  
-  aPromise->MaybeReject(NS_ERROR_NOT_IMPLEMENTED);
 }
 
 template <>
@@ -349,23 +323,15 @@ void FileSystemRequestHandler::GetEntries(
     RefPtr<FileSystemManager>& aManager, const EntryId& aDirectory,
     PageNumber aPage,
     RefPtr<Promise> aPromise,  
-    ArrayAppendable& aSink) {
+    RefPtr<FileSystemEntryMetadataArray>& aSink) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aDirectory.IsEmpty());
   MOZ_ASSERT(aPromise);
 
   FileSystemGetEntriesRequest request(aDirectory, aPage);
 
-  using TOverload = void (*)(FileSystemGetEntriesResponse&&, RefPtr<Promise>,
-                             ArrayAppendable&, RefPtr<FileSystemManager>&);
-
-  
-  auto&& onResolve =
-      static_cast<std::function<void(FileSystemGetEntriesResponse &&)>>(
-          
-          std::bind(static_cast<TOverload>(ResolveCallback),
-                    std::placeholders::_1, aPromise, std::ref(aSink),
-                    aManager));
+  auto&& onResolve = SelectResolveCallback<FileSystemGetEntriesResponse, bool>(
+      aPromise, aSink);
 
   auto&& onReject = GetRejectCallback(aPromise);
 

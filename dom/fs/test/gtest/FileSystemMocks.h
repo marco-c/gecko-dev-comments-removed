@@ -14,7 +14,6 @@
 
 #include "fs/FileSystemRequestHandler.h"
 #include "fs/FileSystemChildFactory.h"
-
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
@@ -38,7 +37,14 @@
 
 #include <memory>  
 
-namespace mozilla::dom::fs::test {
+namespace mozilla::dom::fs {
+
+inline std::ostream& operator<<(std::ostream& aOut,
+                                const FileSystemEntryMetadata aMetadata) {
+  return aOut;
+}
+
+namespace test {
 
 nsIGlobalObject* GetGlobal();
 
@@ -70,7 +76,7 @@ class MockFileSystemRequestHandler : public FileSystemRequestHandler {
   MOCK_METHOD(void, GetEntries,
               (RefPtr<FileSystemManager> & aManager, const EntryId& aDirectory,
                PageNumber aPage, RefPtr<Promise> aPromise,
-               ArrayAppendable& aSink),
+               RefPtr<FileSystemEntryMetadataArray>& aSink),
               (override));
 
   MOCK_METHOD(void, RemoveEntry,
@@ -289,6 +295,7 @@ struct FailOnCall {
   }
 };
 
+}  
 }  
 
 #define MOCK_PROMISE_LISTENER(name, ...) \
