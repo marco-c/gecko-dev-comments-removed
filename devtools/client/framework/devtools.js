@@ -655,12 +655,6 @@ DevTools.prototype = {
       this._commandsPromiseByWebExtId.delete(extensionId);
     });
 
-    
-    
-    
-    
-    commands.descriptorFront.shouldCloseClient = true;
-
     return this.showToolbox(commands.descriptorFront, {
       hostType: Toolbox.HostType.WINDOW,
       hostOptions: {

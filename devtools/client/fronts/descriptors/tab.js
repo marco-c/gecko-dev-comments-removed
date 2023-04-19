@@ -115,12 +115,6 @@ class TabDescriptorFront extends DescriptorMixin(
   setLocalTab(localTab) {
     this._localTab = localTab;
     this._setupLocalTabListeners();
-
-    
-    
-    
-    
-    this.shouldCloseClient = true;
   }
 
   get isTabDescriptor() {

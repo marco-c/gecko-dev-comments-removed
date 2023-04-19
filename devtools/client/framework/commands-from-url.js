@@ -77,8 +77,9 @@ exports.commandsFromURL = async function commandsFromURL(url) {
   
   
   
-  
-  commands.shouldCloseClient = !isCachedClient;
+  if (isCachedClient) {
+    commands.shouldCloseClient = false;
+  }
 
   return commands;
 };
