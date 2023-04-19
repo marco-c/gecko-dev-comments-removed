@@ -128,6 +128,26 @@ const cacheableShowRequestHeaders = function(origin, uuid) {
 
 
 
+
+
+
+
+
+
+
+
+function remoteExecutorUrl(uuid, options) {
+  const url = new URL("/common/dispatcher/remote-executor.html", location);
+  url.searchParams.set("uuid", uuid);
+
+  if (options?.host) {
+    url.host = options.host;
+  }
+
+  return url;
+}
+
+
 class RemoteContext {
   
   
