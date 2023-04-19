@@ -275,6 +275,16 @@ async function doEagerEvalWithSideEffect(commands) {
 
     
     "[1, 2, 3].map(prompt)",
+
+    
+    "Function.prototype.call.bind(Function.prototype.call)(prompt);",
+
+    
+    "Function.prototype.apply.bind(Function.prototype.apply)(prompt);",
+
+    
+    "Reflect.apply(prompt, null, []);",
+    "'aaaaaaaa'.replace(/(a)(a)(a)(a)(a)(a)(a)(a)/, prompt)",
   ];
 
   for (const code of testData) {
