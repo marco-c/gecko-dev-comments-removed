@@ -893,6 +893,7 @@ class ContextMenuChild extends JSWindowActorChild {
     context.onSpellcheckable = false;
     context.onTextInput = false;
     context.onVideo = false;
+    context.inPDFEditor = false;
 
     
     
@@ -918,6 +919,10 @@ class ContextMenuChild extends JSWindowActorChild {
     context.inPDFViewer =
       context.target.ownerDocument.nodePrincipal.originNoSuffix ==
       "resource://pdf.js";
+    if (context.inPDFViewer) {
+      context.pdfEditorStates = context.target.ownerDocument.editorStates;
+      context.inPDFEditor = !!context.pdfEditorStates?.isEditing;
+    }
 
     
     context.inSyntheticDoc = context.target.ownerDocument.mozSyntheticDocument;
