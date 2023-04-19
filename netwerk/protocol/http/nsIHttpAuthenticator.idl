@@ -20,7 +20,7 @@ interface nsICancelable;
 
 
 
-[builtinclass, uuid(fef7db8a-a4e2-49d1-9685-19ed7e309b7d)]
+[uuid(fef7db8a-a4e2-49d1-9685-19ed7e309b7d)]
 interface nsIHttpAuthenticator : nsISupports
 {
     
