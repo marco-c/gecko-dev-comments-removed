@@ -28,8 +28,12 @@ class ReceiveStream {
   
   struct RtpConfig {
     
+    
+    
     uint32_t remote_ssrc = 0;
 
+    
+    
     
     uint32_t local_ssrc = 0;
 
@@ -37,11 +41,21 @@ class ReceiveStream {
     
     
     
+    
+    
     bool transport_cc = false;
 
     
+    
+    
     std::vector<RtpExtension> extensions;
   };
+
+  
+  
+  
+  
+  virtual const RtpConfig& rtp_config() const = 0;
 
  protected:
   virtual ~ReceiveStream() {}

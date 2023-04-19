@@ -51,7 +51,7 @@ class RtpPacket {
   bool Parse(rtc::CopyOnWriteBuffer packet);
 
   
-  void IdentifyExtensions(const ExtensionManager& extensions);
+  void IdentifyExtensions(ExtensionManager extensions);
 
   
   bool Marker() const { return marker_; }
