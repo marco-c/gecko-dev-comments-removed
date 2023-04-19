@@ -2411,6 +2411,15 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     return;
   }
 
+  if (StaticPrefs::layout_skip_ticks_while_page_suspended()) {
+    nsPIDOMWindowInner* win = mPresContext->Document()
+                                  ? mPresContext->Document()->GetInnerWindow()
+                                  : nullptr;
+    if (win && win->IsSuspended()) {
+      return;
+    }
+  }
+
   
   if (MOZ_UNLIKELY(mIsGrantingActivityGracePeriod) &&
       ShouldStopActivityGracePeriod()) {
