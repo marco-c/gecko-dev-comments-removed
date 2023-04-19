@@ -382,27 +382,32 @@ ToolbarKeyboardNavigator = {
 
     if (focus.getAttribute("type") == "menu") {
       focus.open = true;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      focus.dispatchEvent(
-        new MouseEvent("click", {
-          bubbles: true,
-          ctrlKey: aEvent.ctrlKey,
-          altKey: aEvent.altKey,
-          shiftKey: aEvent.shiftKey,
-          metaKey: aEvent.metaKey,
-        })
-      );
+      return;
     }
+
     
     
-    aEvent.stopPropagation();
+    
+    
+    const usesClickInsteadOfCommand = (() => {
+      if (focus.tagName != "toolbarbutton") {
+        return true;
+      }
+      return !focus.hasAttribute("oncommand") && focus.hasAttribute("onclick");
+    })();
+
+    if (!usesClickInsteadOfCommand) {
+      return;
+    }
+    focus.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        ctrlKey: aEvent.ctrlKey,
+        altKey: aEvent.altKey,
+        shiftKey: aEvent.shiftKey,
+        metaKey: aEvent.metaKey,
+      })
+    );
   },
 
   handleEvent(aEvent) {

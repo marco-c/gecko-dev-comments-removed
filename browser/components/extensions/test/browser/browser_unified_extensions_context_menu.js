@@ -528,14 +528,18 @@ add_task(async function test_open_context_menu_with_keyboard() {
 
   await closeChromeContextMenu(contextMenu.id, null, win);
 
-  
-  shown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
-  button.focus();
-  is(button, win.document.activeElement, "expected button to be focused");
-  EventUtils.synthesizeKey("KEY_Enter", {}, win);
-  await shown;
+  if (AppConstants.platform != "macosx") {
+    
+    
+    
+    shown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+    button.focus();
+    is(button, win.document.activeElement, "expected button to be focused");
+    EventUtils.synthesizeKey("KEY_Enter", {}, win);
+    await shown;
+    await closeChromeContextMenu(contextMenu.id, null, win);
+  }
 
-  await closeChromeContextMenu(contextMenu.id, null, win);
   await closeExtensionsPanel(win);
 
   await extension.unload();
