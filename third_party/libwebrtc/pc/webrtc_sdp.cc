@@ -3280,12 +3280,12 @@ bool ParseContent(const std::string& message,
         continue;
       } else {
         
-        RTC_LOG(LS_INFO) << "Ignored line: " << line;
+        RTC_LOG(LS_VERBOSE) << "Ignored line: " << line;
         continue;
       }
     } else {
       
-      RTC_LOG(LS_INFO) << "Ignored line: " << line;
+      RTC_LOG(LS_VERBOSE) << "Ignored line: " << line;
       continue;
     }
   }
