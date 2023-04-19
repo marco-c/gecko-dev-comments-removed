@@ -104,8 +104,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  AboutLoginsParent: "resource:///modules/AboutLoginsParent.jsm",
   PluginManager: "resource:///actors/PluginParent.jsm",
 });
 

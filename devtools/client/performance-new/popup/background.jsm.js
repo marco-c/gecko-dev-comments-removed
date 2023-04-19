@@ -80,7 +80,6 @@ ChromeUtils.defineModuleGetter(
 
 
 const lazy = createLazyLoaders({
-  OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
   Utils: () => require("devtools/client/performance-new/utils"),
   BrowserModule: () => require("devtools/client/performance-new/browser"),
   RecordingUtils: () =>
