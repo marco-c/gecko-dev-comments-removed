@@ -10,7 +10,6 @@
 import datetime
 import httplib2
 import json
-import math
 import subprocess
 import time
 import zlib
@@ -172,7 +171,6 @@ def _CheckFullUploadInfo(url, upload_token,
 
 
 
-
 def _ApplyHacks(dicts):
     def _NoInf(value):
         if value == float('inf'):
@@ -183,12 +181,8 @@ def _ApplyHacks(dicts):
 
     for d in dicts:
         if 'running' in d:
-            d['running'] = [
-                _NoInf(value) for value in d['running']
-                if not math.isnan(value)]
+            d['running'] = [_NoInf(value) for value in d['running']]
         if 'sampleValues' in d:
-            
-            
             d['sampleValues'] = [_NoInf(value) for value in d['sampleValues']]
 
     return dicts
