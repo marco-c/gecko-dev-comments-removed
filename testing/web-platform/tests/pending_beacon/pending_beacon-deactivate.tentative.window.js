@@ -1,12 +1,8 @@
 
 
 
-'use strict';
 
-const BeaconTypes = [
-  {type: PendingPostBeacon, name: 'PendingPostBeacon', expectedMethod: 'POST'},
-  {type: PendingGetBeacon, name: 'PendingGetBeacon', expectedMethod: 'GET'},
-];
+'use strict';
 
 for (const beaconType of BeaconTypes) {
   test(() => {

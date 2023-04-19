@@ -1,16 +1,12 @@
 
 
 
+
 'use strict';
 
 test(() => {
   assert_throws_js(TypeError, () => new PendingBeacon('/'));
 }, `PendingBeacon cannot be constructed directly.`);
-
-const BeaconTypes = [
-  {type: PendingPostBeacon, name: 'PendingPostBeacon', expectedMethod: 'POST'},
-  {type: PendingGetBeacon, name: 'PendingGetBeacon', expectedMethod: 'GET'},
-];
 
 for (const beaconType of BeaconTypes) {
   test(() => {
