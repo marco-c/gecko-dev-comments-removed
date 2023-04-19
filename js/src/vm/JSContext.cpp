@@ -308,7 +308,7 @@ JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
 #endif
 }
 
-JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
+static void MaybeReportOverRecursedForDifferentialTesting() {
   
 
 
@@ -320,26 +320,43 @@ JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
   if (js::SupportDifferentialTesting()) {
     fprintf(stderr, "ReportOverRecursed called\n");
   }
+}
 
-  if (maybecx) {
-    if (maybecx->isHelperThreadContext()) {
-      maybecx->addPendingOverRecursed();
-    } else {
-      
-      
-      
-      JS_ReportErrorNumberASCII(maybecx, GetErrorMessage, nullptr,
-                                JSMSG_OVER_RECURSED);
-      if (maybecx->isExceptionPending() && !maybecx->isThrowingOutOfMemory()) {
-        MOZ_ASSERT(maybecx->unwrappedException().isObject());
-        MOZ_ASSERT(maybecx->status == JS::ExceptionStatus::Throwing);
-        maybecx->status = JS::ExceptionStatus::OverRecursed;
-      }
+void JSContext::onOverRecursed() {
+  if (isHelperThreadContext()) {
+    addPendingOverRecursed();
+  } else {
+    
+    
+    
+    JS_ReportErrorNumberASCII(this, GetErrorMessage, nullptr,
+                              JSMSG_OVER_RECURSED);
+    if (isExceptionPending() && !isThrowingOutOfMemory()) {
+      MOZ_ASSERT(unwrappedException().isObject());
+      MOZ_ASSERT(status == JS::ExceptionStatus::Throwing);
+      status = JS::ExceptionStatus::OverRecursed;
     }
-#ifdef DEBUG
-    maybecx->hadNondeterministicException_ = true;
-#endif
   }
+
+#ifdef DEBUG
+  hadNondeterministicException_ = true;
+#endif
+}
+
+JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
+  MaybeReportOverRecursedForDifferentialTesting();
+
+  if (!maybecx) {
+    return;
+  }
+
+  maybecx->onOverRecursed();
+}
+
+JS_PUBLIC_API void js::ReportOverRecursed(ErrorContext* ec) {
+  MaybeReportOverRecursedForDifferentialTesting();
+
+  ec->onOverRecursed();
 }
 
 void js::ReportOversizedAllocation(JSContext* cx, const unsigned errorNumber) {

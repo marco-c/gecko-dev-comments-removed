@@ -31,6 +31,8 @@ struct JS_PUBLIC_API JSContext;
 
 namespace js {
 
+class ErrorContext;
+
 
 
 
@@ -107,6 +109,7 @@ class MOZ_RAII AutoCheckRecursionLimit {
 };
 
 extern MOZ_COLD JS_PUBLIC_API void ReportOverRecursed(JSContext* maybecx);
+extern MOZ_COLD JS_PUBLIC_API void ReportOverRecursed(ErrorContext* ec);
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimitImpl(uintptr_t limit,
                                                                void* sp) const {
