@@ -1513,6 +1513,10 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
     AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
   }
 
+  if (!CrossOriginEmbedderPolicyAllowsCredentials(aChannel)) {
+    AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
+  }
+
   nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
 
   
@@ -1560,6 +1564,54 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   }
 
   return NS_OK;
+}
+
+
+bool nsContentSecurityManager::CrossOriginEmbedderPolicyAllowsCredentials(
+    nsIChannel* aChannel) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  
+  
+  
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() ==
+          ExtContentPolicy::TYPE_DOCUMENT ||
+      loadInfo->GetExternalContentPolicyType() ==
+          ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    return true;
+  }
+
+  if (loadInfo->GetSecurityMode() !=
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL &&
+      loadInfo->GetSecurityMode() !=
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT) {
+    return true;
+  }
+
+  
+  
+  if (loadInfo->GetLoadingEmbedderPolicy() !=
+      nsILoadInfo::EMBEDDER_POLICY_CREDENTIALLESS) {
+    return true;
+  }
+
+  
+  
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  nsCOMPtr<nsIPrincipal> resourcePrincipal;
+  ssm->GetChannelURIPrincipal(aChannel, getter_AddRefs(resourcePrincipal));
+
+  bool sameOrigin = resourcePrincipal->Equals(loadInfo->TriggeringPrincipal());
+  nsAutoCString serializedOrigin;
+  GetSerializedOrigin(loadInfo->TriggeringPrincipal(), resourcePrincipal,
+                      serializedOrigin, loadInfo);
+  if (sameOrigin && !serializedOrigin.IsEmpty()) {
+    return true;
+  }
+
+  return false;
 }
 
 
