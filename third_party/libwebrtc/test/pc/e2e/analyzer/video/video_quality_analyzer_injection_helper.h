@@ -77,6 +77,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   
   
   
+  
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
       absl::string_view peer_name);
 
