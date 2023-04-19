@@ -467,9 +467,14 @@ nsSize nsVideoFrame::GetVideoIntrinsicSize() const {
   
   
   
+  if (containAxes.IsBoth()) {
+    return containAxes.ContainSize({}, *this);
+  }
+
   
-  if (containAxes.IsBoth() || (!isVideo && !mFrames.LastChild())) {
-    return {};
+  
+  if (!isVideo && !mFrames.LastChild()) {
+    return containAxes.ContainSize({}, *this);
   }
 
   if (!isVideo) {
