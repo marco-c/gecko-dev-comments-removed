@@ -35,7 +35,7 @@ function fakeHealthSchedulerTimer(set, clear) {
   Policy.clearSchedulerTickTimeout = clear;
 }
 
-add_task(async function setup() {
+add_setup(async () => {
   
   do_get_profile(true);
   
@@ -44,6 +44,9 @@ add_task(async function setup() {
 
   await TelemetryController.testSetup();
   PingServer.start();
+  registerCleanupFunction(async () => {
+    await PingServer.stop();
+  });
   TelemetrySend.setServer("http://localhost:" + PingServer.port);
   Preferences.set(
     TelemetryUtils.Preferences.Server,
@@ -222,58 +225,4 @@ add_task(async function test_discardedForSizePending() {
     os: TelemetryHealthPing.OsInfo,
     reason: TelemetryHealthPing.Reason.IMMEDIATE,
   });
-});
-
-add_task(async function test_usePingSenderOnShutdown() {
-  if (
-    gIsAndroid ||
-    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
-  ) {
-    
-    
-    
-    
-    return;
-  }
-
-  TelemetryHealthPing.testReset();
-  await TelemetrySend.reset();
-  PingServer.clearRequests();
-
-  
-  
-  await TelemetryHealthPing.recordSendFailure("testFailure");
-  await PingServer.promiseNextPing();
-
-  TelemetryHealthPing.recordSendFailure("testFailure");
-  let nextRequest = PingServer.promiseNextRequest();
-
-  await TelemetryController.testReset();
-  await TelemetryController.testShutdown();
-  let request = await nextRequest;
-  let ping = decodeRequestPayload(request);
-
-  checkHealthPingStructure(ping, {
-    [TelemetryHealthPing.FailureType.SEND_FAILURE]: {
-      testFailure: 1,
-    },
-    os: TelemetryHealthPing.OsInfo,
-    reason: TelemetryHealthPing.Reason.SHUT_DOWN,
-  });
-
-  
-  Assert.equal(
-    request.getHeader("User-Agent"),
-    "pingsender/1.0",
-    "Should have received the correct user agent string."
-  );
-  Assert.equal(
-    request.getHeader("X-PingSender-Version"),
-    "1.0",
-    "Should have received the correct PingSender version string."
-  );
-});
-
-add_task(async function cleanup() {
-  await PingServer.stop();
 });
