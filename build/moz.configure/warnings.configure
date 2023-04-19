@@ -164,12 +164,6 @@ check_and_add_warning("-Wno-error=array-bounds")
 check_and_add_warning("-Wno-error=coverage-mismatch")
 
 
-
-
-
-check_and_add_warning("-Wno-error=backend-plugin")
-
-
 check_and_add_warning("-Wno-error=free-nonheap-object")
 
 
