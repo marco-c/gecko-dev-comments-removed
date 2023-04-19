@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include <memory>
 
@@ -23,20 +23,20 @@ constexpr uint32_t kFecSsrc = 111222333;
 
 constexpr size_t kPacketSize = 50;
 constexpr size_t kMaxPacketsInBuffer = 48;
-}  // namespace
+}  
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 5000) {
     return;
   }
-  // Object under test.
+  
   std::unique_ptr<ForwardErrorCorrection> fec =
       ForwardErrorCorrection::CreateFlexfec(kFecSsrc, kMediaSsrc);
 
-  // Entropy from fuzzer.
+  
   rtc::ByteBufferReader fuzz_buffer(reinterpret_cast<const char*>(data), size);
 
-  // Initial stream state.
+  
   uint16_t media_seqnum;
   if (!fuzz_buffer.ReadUInt16(&media_seqnum))
     return;
@@ -45,7 +45,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (!fuzz_buffer.ReadUInt16(&fec_seqnum))
     return;
 
-  // Existing packets in the packet buffer.
+  
   ForwardErrorCorrection::RecoveredPacketList recovered_packets;
   uint8_t num_existing_recovered_packets;
   if (!fuzz_buffer.ReadUInt8(&num_existing_recovered_packets))
@@ -57,19 +57,19 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     recovered_packet->pkt = rtc::scoped_refptr<ForwardErrorCorrection::Packet>(
         new ForwardErrorCorrection::Packet());
     recovered_packet->pkt->data.SetSize(kPacketSize);
-    memset(recovered_packet->pkt->data.data(), 0, kPacketSize);
+    memset(recovered_packet->pkt->data.MutableData(), 0, kPacketSize);
     recovered_packet->ssrc = kMediaSsrc;
     recovered_packet->seq_num = media_seqnum++;
     recovered_packets.emplace_back(recovered_packet);
   }
 
-  // New packets received from the network.
+  
   ForwardErrorCorrection::ReceivedPacket received_packet;
   received_packet.pkt = rtc::scoped_refptr<ForwardErrorCorrection::Packet>(
       new ForwardErrorCorrection::Packet());
   received_packet.pkt->data.SetSize(kPacketSize);
   received_packet.pkt->data.EnsureCapacity(IP_PACKET_SIZE);
-  uint8_t* packet_buffer = received_packet.pkt->data.data();
+  uint8_t* packet_buffer = received_packet.pkt->data.MutableData();
   uint8_t reordering;
   uint16_t seq_num_diff;
   uint8_t packet_type;
@@ -96,13 +96,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
       received_packet.ssrc = kFecSsrc;
       received_packet.seq_num = seq_num_diff + fec_seqnum++;
 
-      // Overwrite parts of the FlexFEC header for fuzzing efficiency.
-      packet_buffer[0] = 0;                                       // R, F bits.
-      ByteWriter<uint8_t>::WriteBigEndian(&packet_buffer[8], 1);  // SSRCCount.
+      
+      packet_buffer[0] = 0;                                       
+      ByteWriter<uint8_t>::WriteBigEndian(&packet_buffer[8], 1);  
       ByteWriter<uint32_t>::WriteBigEndian(&packet_buffer[12],
-                                           kMediaSsrc);  // SSRC_i.
+                                           kMediaSsrc);  
       ByteWriter<uint16_t>::WriteBigEndian(
-          &packet_buffer[16], original_media_seqnum);  // SN base_i.
+          &packet_buffer[16], original_media_seqnum);  
     } else {
       received_packet.is_fec = false;
       received_packet.ssrc = kMediaSsrc;
@@ -116,4 +116,4 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   }
 }
 
-}  // namespace webrtc
+}  

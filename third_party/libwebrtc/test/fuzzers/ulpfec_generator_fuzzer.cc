@@ -45,9 +45,9 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     packet.EnsureCapacity(IP_PACKET_SIZE);
     
     
-    ByteWriter<uint8_t>::WriteBigEndian(&packet[0], 2 << 6);
+    ByteWriter<uint8_t>::WriteBigEndian(packet.MutableData(), 2 << 6);
     
-    ByteWriter<uint16_t>::WriteBigEndian(&packet[2], seq_num++);
+    ByteWriter<uint16_t>::WriteBigEndian(packet.MutableData() + 2, seq_num++);
     i += payload_size + rtp_header_length;
     const bool protect = data[i++] % 2 == 1;
 
