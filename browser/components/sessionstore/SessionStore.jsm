@@ -4190,7 +4190,18 @@ var SessionStoreInternal = {
       tabMap.set(tab, tabData);
       tabsData.push(tabData);
     }
-    winData.selected = tabbrowser.tabbox.selectedIndex + 1;
+
+    
+    
+    
+    let selectedIndex = tabbrowser.tabbox.selectedIndex + 1;
+    if (
+      aWindow.FirefoxViewHandler.tab &&
+      !aWindow.FirefoxViewHandler.tab.selected
+    ) {
+      selectedIndex -= 1;
+    }
+    winData.selected = selectedIndex;
 
     this._updateWindowFeatures(aWindow);
 
