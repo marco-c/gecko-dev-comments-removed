@@ -2660,6 +2660,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
       
       
       
+      
+      
       nsIURI* parentURI = parentWin->GetDocumentURI();
       if (!parentURI) {
         return false;
@@ -2680,6 +2682,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
             "about:preferences"_ns,
 #endif
             "chrome://browser/content/webext-panels.xhtml"_ns,
+            "chrome://devtools/content/netmonitor/index.html"_ns,
         };
 
         for (const auto& allowedURI : kAllowedURIs) {
