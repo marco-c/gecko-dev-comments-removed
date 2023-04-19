@@ -96,6 +96,29 @@ const ONBOARDING_MESSAGES = () => [
                 type: "PIN_FIREFOX_TO_TASKBAR",
               },
             },
+            checkbox: {
+              label: {
+                string_id: "mr2022-onboarding-existing-pin-checkbox-label",
+              },
+              defaultValue: true,
+              action: {
+                type: "MULTI_ACTION",
+                navigate: true,
+                data: {
+                  actions: [
+                    {
+                      type: "PIN_FIREFOX_TO_TASKBAR",
+                      data: {
+                        privatePin: true,
+                      },
+                    },
+                    {
+                      type: "PIN_FIREFOX_TO_TASKBAR",
+                    },
+                  ],
+                },
+              },
+            },
             secondary_button: {
               label: {
                 string_id: "mr2022-onboarding-secondary-skip-button-label",
@@ -949,6 +972,9 @@ const OnboardingMessageProvider = {
     let removeDefault = !needDefault;
     
     if (!needPin && pinScreen) {
+      
+      delete pinScreen.content.checkbox;
+
       removeDefault = true;
       let primary = pinScreen.content.primary_button;
       if (needDefault) {
@@ -973,6 +999,22 @@ const OnboardingMessageProvider = {
       }
     }
 
+    
+    
+    
+    if (!needPrivatePin || needPin) {
+      removeScreens(screen =>
+        screen.id?.startsWith("UPGRADE_PIN_PRIVATE_WINDOW")
+      );
+    }
+
+    
+    if (!needPrivatePin) {
+      delete content.screens?.find(
+        screen => screen.id === "UPGRADE_PIN_FIREFOX"
+      )?.content?.checkbox;
+    }
+
     if (removeDefault) {
       removeScreens(screen => screen.id?.startsWith("UPGRADE_SET_DEFAULT"));
     }
@@ -990,15 +1032,6 @@ const OnboardingMessageProvider = {
       mobileContent.cta_paragraph.text = {
         string_id: "mr2022-onboarding-no-mobile-download-cta-text",
       };
-    }
-
-    
-    
-    
-    if (!needPrivatePin || needPin) {
-      removeScreens(screen =>
-        screen.id?.startsWith("UPGRADE_PIN_PRIVATE_WINDOW")
-      );
     }
 
     

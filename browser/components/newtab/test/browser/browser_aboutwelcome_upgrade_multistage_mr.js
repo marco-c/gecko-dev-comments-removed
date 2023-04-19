@@ -32,6 +32,8 @@ add_setup(async () => {
     .stub(OnboardingMessageProvider, "_doesAppNeedDefault")
     .resolves(false);
 
+  sandbox.stub(SpecialMessageActions, "pinFirefoxToTaskbar").resolves();
+
   registerCleanupFunction(async () => {
     await popPrefs();
     sandbox.restore();
@@ -238,5 +240,111 @@ add_task(
     );
 
     await popPrefs();
+  }
+);
+
+
+
+
+add_task(async function test_aboutwelcome_upgrade_mr_private_pin() {
+  OnboardingMessageProvider._doesAppNeedPin.resolves(true);
+  let browser = await openMRUpgradeWelcome(["UPGRADE_PIN_FIREFOX"]);
+
+  await test_upgrade_screen_content(
+    browser,
+    
+    ["main.UPGRADE_PIN_FIREFOX", "input#action-checkbox"],
+    
+    ["main.UPGRADE_COLORWAY"]
+  );
+  await clickVisibleButton(browser, ".action-buttons button.primary");
+  await BrowserTestUtils.waitForDialogClose(
+    browser.top.document.getElementById("window-modal-dialog")
+  );
+
+  const pinStub = SpecialMessageActions.pinFirefoxToTaskbar;
+  Assert.equal(
+    pinStub.callCount,
+    2,
+    "pinFirefoxToTaskbar should have been called twice"
+  );
+  Assert.ok(
+    
+    pinStub.firstCall.lastArg != pinStub.secondCall.lastArg,
+    "pinFirefoxToTaskbar should have been called once for private, once not"
+  );
+});
+
+
+
+
+
+add_task(async function test_aboutwelcome_upgrade_mr_private_pin_get_started() {
+  OnboardingMessageProvider._doesAppNeedPin.resolves(false);
+
+  let browser = await openMRUpgradeWelcome(["UPGRADE_GET_STARTED"]);
+
+  await test_upgrade_screen_content(
+    browser,
+    
+    ["main.UPGRADE_GET_STARTED"],
+    
+    ["input#action-checkbox"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+
+  await BrowserTestUtils.waitForDialogClose(
+    browser.top.document.getElementById("window-modal-dialog")
+  );
+});
+
+
+
+
+add_task(async function test_aboutwelcome_upgrade_mr_private_pin_not_needed() {
+  OnboardingMessageProvider._doesAppNeedPin
+    .resolves(true)
+    .withArgs(true)
+    .resolves(false);
+
+  let browser = await openMRUpgradeWelcome(["UPGRADE_PIN_FIREFOX"]);
+
+  await test_upgrade_screen_content(
+    browser,
+    
+    ["main.UPGRADE_PIN_FIREFOX"],
+    
+    ["input#action-checkbox"]
+  );
+
+  await clickVisibleButton(browser, ".action-buttons button.secondary");
+  await BrowserTestUtils.waitForDialogClose(
+    browser.top.document.getElementById("window-modal-dialog")
+  );
+});
+
+
+
+
+add_task(
+  async function test_aboutwelcome_upgrade_mr_pin_not_needed_default_needed() {
+    OnboardingMessageProvider._doesAppNeedPin.resolves(false);
+    OnboardingMessageProvider._doesAppNeedDefault.resolves(false);
+
+    let browser = await openMRUpgradeWelcome(["UPGRADE_GET_STARTED"]);
+
+    await test_upgrade_screen_content(
+      browser,
+      
+      ["main.UPGRADE_GET_STARTED"],
+      
+      ["input#action-checkbox"]
+    );
+
+    await clickVisibleButton(browser, ".action-buttons button.secondary");
+    await BrowserTestUtils.waitForDialogClose(
+      browser.top.document.getElementById("window-modal-dialog")
+    );
   }
 );
