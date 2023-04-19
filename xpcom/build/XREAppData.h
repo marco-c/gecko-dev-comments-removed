@@ -19,11 +19,6 @@
 namespace sandbox {
 class BrokerServices;
 }
-namespace mozilla {
-namespace sandboxing {
-class PermissionsService;
-}
-}  
 #endif
 
 namespace mozilla {
@@ -189,7 +184,6 @@ class XREAppData {
 
 
   sandbox::BrokerServices* sandboxBrokerServices = nullptr;
-  mozilla::sandboxing::PermissionsService* sandboxPermissionsService;
 #endif
 
   
