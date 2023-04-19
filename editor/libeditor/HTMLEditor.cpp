@@ -5182,9 +5182,13 @@ void HTMLEditor::DidJoinNodesTransaction(
 }
 
 nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
-                                 nsIContent& aContentToRemove) {
+                                 nsIContent& aContentToRemove,
+                                 JoinNodesDirection aDirection) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_DIAGNOSTIC_ASSERT(aContentToKeep.GetParentNode() ==
+                        aContentToRemove.GetParentNode());
 
+  const uint32_t keepingContentLength = aContentToKeep.Length();
   const uint32_t removingContentLength = aContentToRemove.Length();
   const Maybe<uint32_t> keepingContentExIndex =
       aContentToKeep.ComputeIndexInParentNode();
@@ -5226,18 +5230,35 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
         
         
         if (savingRange.mStartContainer) {
-          if (savingRange.mStartContainer == atNodeToKeep.GetContainer() &&
-              atRemovingNode.Offset() < savingRange.mStartOffset &&
-              savingRange.mStartOffset <= atNodeToKeep.Offset()) {
-            savingRange.mStartContainer = &aContentToRemove;
-            savingRange.mStartOffset = removingContentLength;
-          }
-          if (savingRange.mEndContainer == atNodeToKeep.GetContainer() &&
-              atRemovingNode.Offset() < savingRange.mEndOffset &&
-              savingRange.mEndOffset <= atNodeToKeep.Offset()) {
-            savingRange.mEndContainer = &aContentToRemove;
-            savingRange.mEndOffset = removingContentLength;
-          }
+          MOZ_ASSERT(savingRange.mEndContainer);
+          auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
+                                    uint32_t& aOffset) {
+            if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
+              
+              
+              
+              
+              if (aContainer == atRemovingNode.GetContainer() &&
+                  atRemovingNode.Offset() < aOffset &&
+                  aOffset <= atNodeToKeep.Offset()) {
+                aContainer = &aContentToRemove;
+                aOffset = removingContentLength;
+              }
+              return;
+            }
+            
+            
+            
+            
+            if (aContainer == atRemovingNode.GetContainer() &&
+                atNodeToKeep.Offset() < aOffset &&
+                aOffset <= atRemovingNode.Offset()) {
+              aContainer = &aContentToKeep;
+              aOffset = keepingContentLength;
+            }
+          };
+          AdjustDOMPoint(savingRange.mStartContainer, savingRange.mStartOffset);
+          AdjustDOMPoint(savingRange.mEndContainer, savingRange.mEndOffset);
         }
 
         savedRanges.AppendElement(savingRange);
@@ -5306,7 +5327,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
         EditorRawDOMPoint(&aContentToKeep, std::min(removingContentLength,
                                                     aContentToKeep.Length())),
-        aContentToRemove, *keepingContentExIndex, GetJoinNodesDirection());
+        aContentToRemove, *keepingContentExIndex, aDirection);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
   }
@@ -5341,19 +5362,36 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
       continue;
     }
 
-    
-    if (savedRange.mStartContainer == &aContentToRemove) {
-      savedRange.mStartContainer = &aContentToKeep;
-    } else if (savedRange.mStartContainer == &aContentToKeep) {
-      savedRange.mStartOffset += removingContentLength;
-    }
-
-    
-    if (savedRange.mEndContainer == &aContentToRemove) {
-      savedRange.mEndContainer = &aContentToKeep;
-    } else if (savedRange.mEndContainer == &aContentToKeep) {
-      savedRange.mEndOffset += removingContentLength;
-    }
+    auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
+                              uint32_t& aOffset) {
+      if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
+        
+        
+        
+        
+        if (aContainer == &aContentToRemove) {
+          aContainer = &aContentToKeep;
+          return;
+        }
+        
+        
+        
+        if (aContainer == &aContentToKeep) {
+          aOffset += removingContentLength;
+        }
+        return;
+      }
+      
+      
+      
+      
+      if (aContainer == &aContentToRemove) {
+        aContainer = &aContentToKeep;
+        aOffset += keepingContentLength;
+      }
+    };
+    AdjustDOMPoint(savedRange.mStartContainer, savedRange.mStartOffset);
+    AdjustDOMPoint(savedRange.mEndContainer, savedRange.mEndOffset);
 
     const RefPtr<nsRange> newRange = nsRange::Create(
         savedRange.mStartContainer, savedRange.mStartOffset,
