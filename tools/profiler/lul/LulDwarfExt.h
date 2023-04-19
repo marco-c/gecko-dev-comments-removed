@@ -73,6 +73,35 @@ class UniqueString;
 
 
 
+struct ImageSlice {
+  const char* start_;
+  size_t length_;
+  ImageSlice() : start_(0), length_(0) {}
+  ImageSlice(const char* start, size_t length)
+      : start_(start), length_(length) {}
+  
+  
+  explicit ImageSlice(const char* cstring)
+      : start_(cstring), length_(strlen(cstring)) {}
+  explicit ImageSlice(const std::string& str)
+      : start_(str.c_str()), length_(str.length()) {}
+  ImageSlice(const ImageSlice& other)
+      : start_(other.start_), length_(other.length_) {}
+  ImageSlice(ImageSlice& other)
+      : start_(other.start_), length_(other.length_) {}
+  bool operator==(const ImageSlice& other) const {
+    if (length_ != other.length_) {
+      return false;
+    }
+    
+    
+    return memcmp(start_, other.start_, length_) == 0;
+  }
+};
+
+
+
+
 enum DwarfPointerEncoding {
   DW_EH_PE_absptr = 0x00,
   DW_EH_PE_omit = 0xff,
@@ -843,13 +872,6 @@ class CallFrameInfo {
 
   
   class Rule;
-  class UndefinedRule;
-  class SameValueRule;
-  class OffsetRule;
-  class ValOffsetRule;
-  class RegisterRule;
-  class ExpressionRule;
-  class ValExpressionRule;
   class RuleMap;
   class State;
 
@@ -979,13 +1001,13 @@ class CallFrameInfo::Handler {
   
   
   virtual bool ExpressionRule(uint64 address, int reg,
-                              const std::string& expression) = 0;
+                              const ImageSlice& expression) = 0;
 
   
   
   
   virtual bool ValExpressionRule(uint64 address, int reg,
-                                 const std::string& expression) = 0;
+                                 const ImageSlice& expression) = 0;
 
   
   
@@ -1245,9 +1267,9 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
   virtual bool RegisterRule(uint64 address, int reg,
                             int base_register) override;
   virtual bool ExpressionRule(uint64 address, int reg,
-                              const std::string& expression) override;
+                              const ImageSlice& expression) override;
   virtual bool ValExpressionRule(uint64 address, int reg,
-                                 const std::string& expression) override;
+                                 const ImageSlice& expression) override;
   virtual bool End() override;
 
  private:
@@ -1281,7 +1303,7 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
 
 
 int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
-                       std::string expr, bool debug, bool pushCfaAtStart,
+                       ImageSlice expr, bool debug, bool pushCfaAtStart,
                        bool derefAtEnd);
 
 }  

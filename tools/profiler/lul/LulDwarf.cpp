@@ -288,231 +288,375 @@ uint64 ByteReader::ReadEncodedPointer(const char* buffer,
 
 
 
-
-
-
-
-
-
-class CallFrameInfo::Rule {
+class CallFrameInfo::Rule final {
  public:
-  virtual ~Rule() {}
+  enum Tag {
+    INVALID,
+    Undefined,
+    SameValue,
+    Offset,
+    ValOffset,
+    Register,
+    Expression,
+    ValExpression
+  };
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  Tag tag_;
+  uintptr_t word1_;
+  uintptr_t word2_;
+
+  
+  static_assert(sizeof(const char*) <= sizeof(word1_));
+  
+  static_assert(sizeof(size_t) <= sizeof(word2_));
 
   
   
   
-  
-  virtual bool Handle(Handler* handler, uint64 address, int reg) const = 0;
+  bool isCanonical() const {
+    switch (tag_) {
+      case Tag::INVALID:
+      case Tag::Undefined:
+      case Tag::SameValue:
+        return word1_ == 0 && word2_ == 0;
+      case Tag::Offset:
+      case Tag::ValOffset:
+        return true;
+      case Tag::Register:
+        return word2_ == 0;
+      case Tag::Expression:
+      case Tag::ValExpression:
+        return true;
+      default:
+        MOZ_CRASH();
+    }
+  }
+
+ public:
+  Tag tag() const { return tag_; }
+  int dwreg() const {
+    switch (tag_) {
+      case Tag::Offset:
+      case Tag::ValOffset:
+      case Tag::Register:
+        return (int)word1_;
+      default:
+        MOZ_CRASH();
+    }
+  }
+  intptr_t offset() const {
+    switch (tag_) {
+      case Tag::Offset:
+      case Tag::ValOffset:
+        return (intptr_t)word2_;
+      default:
+        MOZ_CRASH();
+    }
+  }
+  ImageSlice expr() const {
+    switch (tag_) {
+      case Tag::Expression:
+      case Tag::ValExpression:
+        return ImageSlice((const char*)word1_, (size_t)word2_);
+      default:
+        MOZ_CRASH();
+    }
+  }
 
   
+  Rule() {
+    tag_ = Tag::INVALID;
+    word1_ = 0;
+    word2_ = 0;
+  }
+
+  static Rule mkINVALID() {
+    Rule r;  
+    return r;
+  }
+  static Rule mkUndefinedRule() {
+    Rule r;
+    r.tag_ = Tag::Undefined;
+    r.word1_ = 0;
+    r.word2_ = 0;
+    return r;
+  }
+  static Rule mkSameValueRule() {
+    Rule r;
+    r.tag_ = Tag::SameValue;
+    r.word1_ = 0;
+    r.word2_ = 0;
+    return r;
+  }
+  static Rule mkOffsetRule(int dwreg, intptr_t offset) {
+    Rule r;
+    r.tag_ = Tag::Offset;
+    r.word1_ = (uintptr_t)dwreg;
+    r.word2_ = (uintptr_t)offset;
+    return r;
+  }
+  static Rule mkValOffsetRule(int dwreg, intptr_t offset) {
+    Rule r;
+    r.tag_ = Tag::ValOffset;
+    r.word1_ = (uintptr_t)dwreg;
+    r.word2_ = (uintptr_t)offset;
+    return r;
+  }
+  static Rule mkRegisterRule(int dwreg) {
+    Rule r;
+    r.tag_ = Tag::Register;
+    r.word1_ = (uintptr_t)dwreg;
+    r.word2_ = 0;
+    return r;
+  }
+  static Rule mkExpressionRule(ImageSlice expr) {
+    Rule r;
+    r.tag_ = Tag::Expression;
+    r.word1_ = (uintptr_t)expr.start_;
+    r.word2_ = (uintptr_t)expr.length_;
+    return r;
+  }
+  static Rule mkValExpressionRule(ImageSlice expr) {
+    Rule r;
+    r.tag_ = Tag::ValExpression;
+    r.word1_ = (uintptr_t)expr.start_;
+    r.word2_ = (uintptr_t)expr.length_;
+    return r;
+  }
+
   
-  virtual bool operator==(const Rule& rhs) const = 0;
+  inline bool isVALID() const { return tag_ != Tag::INVALID; }
+
+  bool operator==(const Rule& rhs) const {
+    MOZ_ASSERT(isVALID() && rhs.isVALID());
+    MOZ_ASSERT(isCanonical());
+    MOZ_ASSERT(rhs.isCanonical());
+    if (tag_ != rhs.tag_) {
+      return false;
+    }
+    switch (tag_) {
+      case Tag::INVALID:
+        MOZ_CRASH();
+      case Tag::Undefined:
+      case Tag::SameValue:
+        return true;
+      case Tag::Offset:
+      case Tag::ValOffset:
+        return word1_ == rhs.word1_ && word2_ == rhs.word2_;
+      case Tag::Register:
+        return word1_ == rhs.word1_;
+      case Tag::Expression:
+      case Tag::ValExpression:
+        return expr() == rhs.expr();
+      default:
+        MOZ_CRASH();
+    }
+  }
 
   bool operator!=(const Rule& rhs) const { return !(*this == rhs); }
 
   
-  virtual Rule* Copy() const = 0;
-
-  
-  
-  virtual void SetBaseRegister(unsigned reg) {}
-
-  
-  
-  virtual void SetOffset(long long offset) {}
-
-  
-  
-  enum CFIRTag {
-    CFIR_UNDEFINED_RULE,
-    CFIR_SAME_VALUE_RULE,
-    CFIR_OFFSET_RULE,
-    CFIR_VAL_OFFSET_RULE,
-    CFIR_REGISTER_RULE,
-    CFIR_EXPRESSION_RULE,
-    CFIR_VAL_EXPRESSION_RULE
-  };
-
-  
-  virtual CFIRTag getTag() const = 0;
-};
-
-
-class CallFrameInfo::UndefinedRule : public CallFrameInfo::Rule {
- public:
-  UndefinedRule() {}
-  ~UndefinedRule() {}
-  CFIRTag getTag() const override { return CFIR_UNDEFINED_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->UndefinedRule(address, reg);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_UNDEFINED_RULE) return false;
-    return true;
-  }
-  Rule* Copy() const override { return new UndefinedRule(*this); }
-};
-
-
-class CallFrameInfo::SameValueRule : public CallFrameInfo::Rule {
- public:
-  SameValueRule() {}
-  ~SameValueRule() {}
-  CFIRTag getTag() const override { return CFIR_SAME_VALUE_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->SameValueRule(address, reg);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_SAME_VALUE_RULE) return false;
-    return true;
-  }
-  Rule* Copy() const override { return new SameValueRule(*this); }
-};
-
-
-
-class CallFrameInfo::OffsetRule : public CallFrameInfo::Rule {
- public:
-  OffsetRule(int base_register, long offset)
-      : base_register_(base_register), offset_(offset) {}
-  ~OffsetRule() {}
-  CFIRTag getTag() const override { return CFIR_OFFSET_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->OffsetRule(address, reg, base_register_, offset_);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_OFFSET_RULE) return false;
-    const OffsetRule* our_rhs = static_cast<const OffsetRule*>(&rhs);
-    return (base_register_ == our_rhs->base_register_ &&
-            offset_ == our_rhs->offset_);
-  }
-  Rule* Copy() const override { return new OffsetRule(*this); }
   
   
   
+  bool Handle(Handler* handler, uint64 address, int reg) const {
+    MOZ_ASSERT(isVALID());
+    MOZ_ASSERT(isCanonical());
+    switch (tag_) {
+      case Tag::Undefined:
+        return handler->UndefinedRule(address, reg);
+      case Tag::SameValue:
+        return handler->SameValueRule(address, reg);
+      case Tag::Offset:
+        return handler->OffsetRule(address, reg, word1_, word2_);
+      case Tag::ValOffset:
+        return handler->ValOffsetRule(address, reg, word1_, word2_);
+      case Tag::Register:
+        return handler->RegisterRule(address, reg, word1_);
+      case Tag::Expression:
+        return handler->ExpressionRule(
+            address, reg, ImageSlice((const char*)word1_, (size_t)word2_));
+      case Tag::ValExpression:
+        return handler->ValExpressionRule(
+            address, reg, ImageSlice((const char*)word1_, (size_t)word2_));
+      default:
+        MOZ_CRASH();
+    }
+  }
+
+  void SetBaseRegister(unsigned reg) {
+    MOZ_ASSERT(isVALID());
+    MOZ_ASSERT(isCanonical());
+    switch (tag_) {
+      case Tag::ValOffset:
+        word1_ = reg;
+        break;
+      case Tag::Offset:
+        
+        
+        
+        
+        
+      case Tag::Undefined:
+      case Tag::SameValue:
+      case Tag::Register:
+      case Tag::Expression:
+      case Tag::ValExpression:
+        
+        break;
+      default:
+        MOZ_CRASH();
+    }
+  }
+
+  void SetOffset(long long offset) {
+    MOZ_ASSERT(isVALID());
+    MOZ_ASSERT(isCanonical());
+    switch (tag_) {
+      case Tag::ValOffset:
+        word2_ = offset;
+        break;
+      case Tag::Offset:
+        
+        
+      case Tag::Undefined:
+      case Tag::SameValue:
+      case Tag::Register:
+      case Tag::Expression:
+      case Tag::ValExpression:
+        
+        break;
+      default:
+        MOZ_CRASH();
+    }
+  }
+
   
- private:
-  int base_register_;
-  long offset_;
-};
-
-
-
-
-class CallFrameInfo::ValOffsetRule : public CallFrameInfo::Rule {
- public:
-  ValOffsetRule(int base_register, long offset)
-      : base_register_(base_register), offset_(offset) {}
-  ~ValOffsetRule() {}
-  CFIRTag getTag() const override { return CFIR_VAL_OFFSET_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->ValOffsetRule(address, reg, base_register_, offset_);
+  string show() const {
+    char buf[100];
+    string s = "";
+    switch (tag_) {
+      case Tag::INVALID:
+        s = "INVALID";
+        break;
+      case Tag::Undefined:
+        s = "Undefined";
+        break;
+      case Tag::SameValue:
+        s = "SameValue";
+        break;
+      case Tag::Offset:
+        s = "Offset{..}";
+        break;
+      case Tag::ValOffset:
+        sprintf(buf, "ValOffset{reg=%d offs=%lld}", (int)word1_,
+                (long long int)word2_);
+        s = string(buf);
+        break;
+      case Tag::Register:
+        s = "Register{..}";
+        break;
+      case Tag::Expression:
+        s = "Expression{..}";
+        break;
+      case Tag::ValExpression:
+        s = "ValExpression{..}";
+        break;
+      default:
+        MOZ_CRASH();
+    }
+    return s;
   }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_VAL_OFFSET_RULE) return false;
-    const ValOffsetRule* our_rhs = static_cast<const ValOffsetRule*>(&rhs);
-    return (base_register_ == our_rhs->base_register_ &&
-            offset_ == our_rhs->offset_);
-  }
-  Rule* Copy() const override { return new ValOffsetRule(*this); }
-  void SetBaseRegister(unsigned reg) override { base_register_ = reg; }
-  void SetOffset(long long offset) override { offset_ = offset; }
-
- private:
-  int base_register_;
-  long offset_;
-};
-
-
-class CallFrameInfo::RegisterRule : public CallFrameInfo::Rule {
- public:
-  explicit RegisterRule(int register_number)
-      : register_number_(register_number) {}
-  ~RegisterRule() {}
-  CFIRTag getTag() const override { return CFIR_REGISTER_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->RegisterRule(address, reg, register_number_);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_REGISTER_RULE) return false;
-    const RegisterRule* our_rhs = static_cast<const RegisterRule*>(&rhs);
-    return (register_number_ == our_rhs->register_number_);
-  }
-  Rule* Copy() const override { return new RegisterRule(*this); }
-
- private:
-  int register_number_;
-};
-
-
-class CallFrameInfo::ExpressionRule : public CallFrameInfo::Rule {
- public:
-  explicit ExpressionRule(const string& expression) : expression_(expression) {}
-  ~ExpressionRule() {}
-  CFIRTag getTag() const override { return CFIR_EXPRESSION_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->ExpressionRule(address, reg, expression_);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_EXPRESSION_RULE) return false;
-    const ExpressionRule* our_rhs = static_cast<const ExpressionRule*>(&rhs);
-    return (expression_ == our_rhs->expression_);
-  }
-  Rule* Copy() const override { return new ExpressionRule(*this); }
-
- private:
-  string expression_;
-};
-
-
-class CallFrameInfo::ValExpressionRule : public CallFrameInfo::Rule {
- public:
-  explicit ValExpressionRule(const string& expression)
-      : expression_(expression) {}
-  ~ValExpressionRule() {}
-  CFIRTag getTag() const override { return CFIR_VAL_EXPRESSION_RULE; }
-  bool Handle(Handler* handler, uint64 address, int reg) const override {
-    return handler->ValExpressionRule(address, reg, expression_);
-  }
-  bool operator==(const Rule& rhs) const override {
-    if (rhs.getTag() != CFIR_VAL_EXPRESSION_RULE) return false;
-    const ValExpressionRule* our_rhs =
-        static_cast<const ValExpressionRule*>(&rhs);
-    return (expression_ == our_rhs->expression_);
-  }
-  Rule* Copy() const override { return new ValExpressionRule(*this); }
-
- private:
-  string expression_;
 };
 
 
 class CallFrameInfo::RuleMap {
  public:
-  RuleMap() : cfa_rule_(NULL) {}
-  RuleMap(const RuleMap& rhs) : cfa_rule_(NULL) { *this = rhs; }
+  RuleMap() : cfa_rule_(Rule::mkINVALID()) {}
+  RuleMap(const RuleMap& rhs) : cfa_rule_(Rule::mkINVALID()) { *this = rhs; }
   ~RuleMap() { Clear(); }
 
   RuleMap& operator=(const RuleMap& rhs);
 
   
-  void SetCFARule(Rule* rule) {
-    delete cfa_rule_;
-    cfa_rule_ = rule;
-  }
+  void SetCFARule(Rule rule) { cfa_rule_ = rule; }
 
   
   
   
   
-  Rule* CFARule() const { return cfa_rule_; }
+  
+  Rule CFARule() const { return cfa_rule_; }
+  Rule* CFARuleRef() { return &cfa_rule_; }
 
   
-  
-  Rule* RegisterRule(int reg) const;
+  Rule RegisterRule(int reg) const;
 
   
-  void SetRegisterRule(int reg, Rule* rule);
+  void SetRegisterRule(int reg, Rule rule);
 
   
   
@@ -523,14 +667,13 @@ class CallFrameInfo::RuleMap {
 
  private:
   
-  typedef std::map<int, Rule*> RuleByNumber;
+  typedef std::map<int, Rule> RuleByNumber;
 
   
   void Clear();
 
   
-  
-  Rule* cfa_rule_;
+  Rule cfa_rule_;
 
   
   
@@ -539,44 +682,42 @@ class CallFrameInfo::RuleMap {
 
 CallFrameInfo::RuleMap& CallFrameInfo::RuleMap::operator=(const RuleMap& rhs) {
   Clear();
-  
-  if (rhs.cfa_rule_) cfa_rule_ = rhs.cfa_rule_->Copy();
+  if (rhs.cfa_rule_.isVALID()) cfa_rule_ = rhs.cfa_rule_;
   for (RuleByNumber::const_iterator it = rhs.registers_.begin();
        it != rhs.registers_.end(); it++)
-    registers_[it->first] = it->second->Copy();
+    registers_[it->first] = it->second;
   return *this;
 }
 
-CallFrameInfo::Rule* CallFrameInfo::RuleMap::RegisterRule(int reg) const {
+CallFrameInfo::Rule CallFrameInfo::RuleMap::RegisterRule(int reg) const {
   MOZ_ASSERT(reg != Handler::kCFARegister);
   RuleByNumber::const_iterator it = registers_.find(reg);
   if (it != registers_.end())
-    return it->second->Copy();
+    return it->second;
   else
-    return NULL;
+    return Rule::mkINVALID();
 }
 
-void CallFrameInfo::RuleMap::SetRegisterRule(int reg, Rule* rule) {
+void CallFrameInfo::RuleMap::SetRegisterRule(int reg, Rule rule) {
   MOZ_ASSERT(reg != Handler::kCFARegister);
-  MOZ_ASSERT(rule);
-  Rule** slot = &registers_[reg];
-  delete *slot;
-  *slot = rule;
+  MOZ_ASSERT(rule.isVALID());
+  registers_[reg] = rule;
 }
 
 bool CallFrameInfo::RuleMap::HandleTransitionTo(
     Handler* handler, uint64 address, const RuleMap& new_rules) const {
   
-  if (cfa_rule_ && new_rules.cfa_rule_) {
-    if (*cfa_rule_ != *new_rules.cfa_rule_ &&
-        !new_rules.cfa_rule_->Handle(handler, address, Handler::kCFARegister))
+  if (cfa_rule_.isVALID() && new_rules.cfa_rule_.isVALID()) {
+    if (cfa_rule_ != new_rules.cfa_rule_ &&
+        !new_rules.cfa_rule_.Handle(handler, address, Handler::kCFARegister)) {
       return false;
-  } else if (cfa_rule_) {
+    }
+  } else if (cfa_rule_.isVALID()) {
     
     
     
     
-  } else if (new_rules.cfa_rule_) {
+  } else if (new_rules.cfa_rule_.isVALID()) {
     
     
     MOZ_ASSERT(0);
@@ -607,8 +748,8 @@ bool CallFrameInfo::RuleMap::HandleTransitionTo(
     } else {
       
       
-      if (*old_it->second != *new_it->second &&
-          !new_it->second->Handle(handler, address, new_it->first))
+      if (old_it->second != new_it->second &&
+          !new_it->second.Handle(handler, address, new_it->first))
         return false;
       new_it++;
       old_it++;
@@ -629,11 +770,7 @@ bool CallFrameInfo::RuleMap::HandleTransitionTo(
 
 
 void CallFrameInfo::RuleMap::Clear() {
-  delete cfa_rule_;
-  cfa_rule_ = NULL;
-  for (RuleByNumber::iterator it = registers_.begin(); it != registers_.end();
-       it++)
-    delete it->second;
+  cfa_rule_ = Rule::mkINVALID();
   registers_.clear();
 }
 
@@ -672,7 +809,7 @@ class CallFrameInfo::State {
     unsigned register_number;  
     uint64 offset;             
     long signed_offset;        
-    string expression;         
+    ImageSlice expression;     
   };
 
   
@@ -717,7 +854,7 @@ class CallFrameInfo::State {
 
   
   
-  bool DoRule(unsigned reg, Rule* rule);
+  bool DoRule(unsigned reg, Rule rule);
 
   
   
@@ -856,7 +993,7 @@ bool CallFrameInfo::State::ParseOperands(const char* format,
         if (len > bytes_left || expression_length > bytes_left - len)
           return ReportIncomplete();
         cursor_ += len;
-        operands->expression = string(cursor_, expression_length);
+        operands->expression = ImageSlice(cursor_, expression_length);
         cursor_ += expression_length;
         break;
       }
@@ -959,8 +1096,8 @@ bool CallFrameInfo::State::DoInstruction() {
 
     
     case DW_CFA_def_cfa_register: {
-      Rule* cfa_rule = rules_.CFARule();
-      if (!cfa_rule) {
+      Rule* cfa_rule = rules_.CFARuleRef();
+      if (!cfa_rule->isVALID()) {
         reporter_->NoCFARule(entry_->offset, entry_->kind, CursorOffset());
         return false;
       }
@@ -987,17 +1124,16 @@ bool CallFrameInfo::State::DoInstruction() {
     
     case DW_CFA_def_cfa_expression: {
       if (!ParseOperands("e", &ops)) return false;
-      Rule* rule = new ValExpressionRule(ops.expression);
+      Rule rule = Rule::mkValExpressionRule(ops.expression);
       rules_.SetCFARule(rule);
-      if (!rule->Handle(handler_, address_, Handler::kCFARegister))
-        return false;
+      if (!rule.Handle(handler_, address_, Handler::kCFARegister)) return false;
       break;
     }
 
     
     case DW_CFA_undefined: {
       if (!ParseOperands("r", &ops) ||
-          !DoRule(ops.register_number, new UndefinedRule()))
+          !DoRule(ops.register_number, Rule::mkUndefinedRule()))
         return false;
       break;
     }
@@ -1005,7 +1141,7 @@ bool CallFrameInfo::State::DoInstruction() {
     
     case DW_CFA_same_value: {
       if (!ParseOperands("r", &ops) ||
-          !DoRule(ops.register_number, new SameValueRule()))
+          !DoRule(ops.register_number, Rule::mkSameValueRule()))
         return false;
       break;
     }
@@ -1053,7 +1189,7 @@ bool CallFrameInfo::State::DoInstruction() {
     
     case DW_CFA_register: {
       if (!ParseOperands("ro", &ops) ||
-          !DoRule(ops.register_number, new RegisterRule(ops.offset)))
+          !DoRule(ops.register_number, Rule::mkRegisterRule(ops.offset)))
         return false;
       break;
     }
@@ -1061,7 +1197,7 @@ bool CallFrameInfo::State::DoInstruction() {
     
     case DW_CFA_expression: {
       if (!ParseOperands("re", &ops) ||
-          !DoRule(ops.register_number, new ExpressionRule(ops.expression)))
+          !DoRule(ops.register_number, Rule::mkExpressionRule(ops.expression)))
         return false;
       break;
     }
@@ -1069,7 +1205,8 @@ bool CallFrameInfo::State::DoInstruction() {
     
     case DW_CFA_val_expression: {
       if (!ParseOperands("re", &ops) ||
-          !DoRule(ops.register_number, new ValExpressionRule(ops.expression)))
+          !DoRule(ops.register_number,
+                  Rule::mkValExpressionRule(ops.expression)))
         return false;
       break;
     }
@@ -1096,7 +1233,7 @@ bool CallFrameInfo::State::DoInstruction() {
         return false;
       }
       const RuleMap& new_rules = saved_rules_->top();
-      if (rules_.CFARule() && !new_rules.CFARule()) {
+      if (rules_.CFARule().isVALID() && !new_rules.CFARule().isVALID()) {
         reporter_->ClearingCFARule(entry_->offset, entry_->kind,
                                    CursorOffset());
         return false;
@@ -1119,13 +1256,13 @@ bool CallFrameInfo::State::DoInstruction() {
     case DW_CFA_GNU_window_save: {
       
       for (int i = 8; i < 16; i++)
-        if (!DoRule(i, new RegisterRule(i + 16))) return false;
+        if (!DoRule(i, Rule::mkRegisterRule(i + 16))) return false;
       
       for (int i = 16; i < 32; i++)
         
         
-        if (!DoRule(i, new OffsetRule(Handler::kCFARegister,
-                                      (i - 16) * reader_->AddressSize())))
+        if (!DoRule(i, Rule::mkOffsetRule(Handler::kCFARegister,
+                                          (i - 16) * reader_->AddressSize())))
           return false;
       break;
     }
@@ -1146,14 +1283,14 @@ bool CallFrameInfo::State::DoInstruction() {
 }
 
 bool CallFrameInfo::State::DoDefCFA(unsigned base_register, long offset) {
-  Rule* rule = new ValOffsetRule(base_register, offset);
+  Rule rule = Rule::mkValOffsetRule(base_register, offset);
   rules_.SetCFARule(rule);
-  return rule->Handle(handler_, address_, Handler::kCFARegister);
+  return rule.Handle(handler_, address_, Handler::kCFARegister);
 }
 
 bool CallFrameInfo::State::DoDefCFAOffset(long offset) {
-  Rule* cfa_rule = rules_.CFARule();
-  if (!cfa_rule) {
+  Rule* cfa_rule = rules_.CFARuleRef();
+  if (!cfa_rule->isVALID()) {
     reporter_->NoCFARule(entry_->offset, entry_->kind, CursorOffset());
     return false;
   }
@@ -1161,25 +1298,26 @@ bool CallFrameInfo::State::DoDefCFAOffset(long offset) {
   return cfa_rule->Handle(handler_, address_, Handler::kCFARegister);
 }
 
-bool CallFrameInfo::State::DoRule(unsigned reg, Rule* rule) {
+bool CallFrameInfo::State::DoRule(unsigned reg, Rule rule) {
   rules_.SetRegisterRule(reg, rule);
-  return rule->Handle(handler_, address_, reg);
+  return rule.Handle(handler_, address_, reg);
 }
 
 bool CallFrameInfo::State::DoOffset(unsigned reg, long offset) {
-  if (!rules_.CFARule()) {
+  if (!rules_.CFARule().isVALID()) {
     reporter_->NoCFARule(entry_->offset, entry_->kind, CursorOffset());
     return false;
   }
-  return DoRule(reg, new OffsetRule(Handler::kCFARegister, offset));
+  Rule rule = Rule::mkOffsetRule(Handler::kCFARegister, offset);
+  return DoRule(reg, rule);
 }
 
 bool CallFrameInfo::State::DoValOffset(unsigned reg, long offset) {
-  if (!rules_.CFARule()) {
+  if (!rules_.CFARule().isVALID()) {
     reporter_->NoCFARule(entry_->offset, entry_->kind, CursorOffset());
     return false;
   }
-  return DoRule(reg, new ValOffsetRule(Handler::kCFARegister, offset));
+  return DoRule(reg, Rule::mkValOffsetRule(Handler::kCFARegister, offset));
 }
 
 bool CallFrameInfo::State::DoRestore(unsigned reg) {
@@ -1188,13 +1326,13 @@ bool CallFrameInfo::State::DoRestore(unsigned reg) {
     reporter_->RestoreInCIE(entry_->offset, CursorOffset());
     return false;
   }
-  Rule* rule = cie_rules_.RegisterRule(reg);
-  if (!rule) {
+  Rule rule = cie_rules_.RegisterRule(reg);
+  if (!rule.isVALID()) {
     
     
     
     
-    rule = new SameValueRule();
+    rule = Rule::mkSameValueRule();
   }
   return DoRule(reg, rule);
 }
@@ -1923,10 +2061,11 @@ unsigned int DwarfCFIToModule::RegisterNames::MIPS() {
 }
 
 
-int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader, string expr,
-                       bool debug, bool pushCfaAtStart, bool derefAtEnd) {
-  const char* cursor = expr.c_str();
-  const char* end1 = cursor + expr.length();
+int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
+                       ImageSlice expr, bool debug, bool pushCfaAtStart,
+                       bool derefAtEnd) {
+  const char* cursor = expr.start_;
+  const char* end1 = cursor + expr.length_;
 
   char buf[100];
   if (debug) {
@@ -2174,7 +2313,7 @@ bool DwarfCFIToModule::RegisterRule(uint64 address, int reg,
 }
 
 bool DwarfCFIToModule::ExpressionRule(uint64 address, int reg,
-                                      const string& expression) {
+                                      const ImageSlice& expression) {
   bool debug = !!DEBUG_DWARF;
   int32_t start_ix =
       parseDwarfExpr(summ_, reader_, expression, debug, true ,
@@ -2190,7 +2329,7 @@ bool DwarfCFIToModule::ExpressionRule(uint64 address, int reg,
 }
 
 bool DwarfCFIToModule::ValExpressionRule(uint64 address, int reg,
-                                         const string& expression) {
+                                         const ImageSlice& expression) {
   bool debug = !!DEBUG_DWARF;
   int32_t start_ix =
       parseDwarfExpr(summ_, reader_, expression, debug, true ,

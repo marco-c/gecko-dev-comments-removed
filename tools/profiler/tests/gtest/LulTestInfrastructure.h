@@ -276,6 +276,24 @@ class Section {
 
   
   
+  Section& Append(const lul::ImageSlice& slice) {
+    for (size_t i = 0; i < slice.length_; i++) {
+      contents_.append(1, slice.start_[i]);
+    }
+    return *this;
+  }
+
+  
+  
+  Section& Append(const char* cstring) {
+    for (size_t i = 0; cstring[i] != '\0'; i++) {
+      contents_.append(1, cstring[i]);
+    }
+    return *this;
+  }
+
+  
+  
   Section& Append(size_t size, uint8_t byte) {
     contents_.append(size, (char)byte);
     return *this;
@@ -576,9 +594,18 @@ class CFISection : public Section {
 
   
   
-  CFISection& Block(const string& block) {
-    ULEB128(block.size());
+  CFISection& Block(const lul::ImageSlice& block) {
+    ULEB128(block.length_);
     Append(block);
+    return *this;
+  }
+
+  
+  
+  
+  CFISection& Block(const char* cstring) {
+    ULEB128(strlen(cstring));
+    Append(cstring);
     return *this;
   }
 
