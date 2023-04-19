@@ -224,7 +224,9 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
 
-  RTCError RollbackTransports();
+  
+  
+  void RollbackTransports();
 
   
   template <typename F>
@@ -340,6 +342,9 @@ class JsepTransportController : public sigslot::has_slots<> {
       const std::vector<int>& encrypted_extension_ids,
       int rtp_abs_sendtime_extn_id);
 
+  bool ShouldUpdateBundleGroup(SdpType type,
+                               const cricket::SessionDescription* description);
+
   std::map<const cricket::ContentGroup*, std::vector<int>>
   MergeEncryptedHeaderExtensionIdsForBundles(
       const cricket::SessionDescription* description);
@@ -409,10 +414,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   std::vector<cricket::DtlsTransportInternal*> GetDtlsTransports();
-  
-  
-  
-  std::vector<cricket::DtlsTransportInternal*> GetActiveDtlsTransports();
 
   
   void OnTransportWritableState_n(rtc::PacketTransportInternal* transport)

@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <map>
-#include <set>
 #include <type_traits>
 #include <utility>
 
@@ -21,53 +20,21 @@
 
 namespace webrtc {
 
-void BundleManager::Update(const cricket::SessionDescription* description,
-                           SdpType type) {
+void BundleManager::Update(const cricket::SessionDescription* description) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  
-  RTC_DCHECK(type != SdpType::kRollback);
-  bool bundle_groups_changed = false;
-  
-  
-  
-  
-  if (bundle_policy_ == PeerConnectionInterface::kBundlePolicyMaxBundle ||
-      type == SdpType::kAnswer) {
-    
-    
-    bundle_groups_changed = true;
-    bundle_groups_.clear();
-    for (const cricket::ContentGroup* new_bundle_group :
-         description->GetGroupsByName(cricket::GROUP_TYPE_BUNDLE)) {
-      bundle_groups_.push_back(
-          std::make_unique<cricket::ContentGroup>(*new_bundle_group));
-      RTC_DLOG(LS_VERBOSE) << "Establishing bundle group "
-                           << new_bundle_group->ToString();
-    }
-  } else if (type == SdpType::kOffer) {
-    
-    
-    
-    
-    
-    
-    for (const cricket::ContentGroup* new_bundle_group :
-         description->GetGroupsByName(cricket::GROUP_TYPE_BUNDLE)) {
-      
-      for (const std::string& mid : new_bundle_group->content_names()) {
-        auto it = established_bundle_groups_by_mid_.find(mid);
-        if (it != established_bundle_groups_by_mid_.end()) {
-          *it->second = *new_bundle_group;
-          bundle_groups_changed = true;
-          RTC_DLOG(LS_VERBOSE)
-              << "Establishing bundle group " << new_bundle_group->ToString();
-          break;
-        }
-      }
-    }
+  bundle_groups_.clear();
+  for (const cricket::ContentGroup* new_bundle_group :
+       description->GetGroupsByName(cricket::GROUP_TYPE_BUNDLE)) {
+    bundle_groups_.push_back(
+        std::make_unique<cricket::ContentGroup>(*new_bundle_group));
+    RTC_DLOG(LS_VERBOSE) << "Establishing bundle group "
+                         << new_bundle_group->ToString();
   }
-  if (bundle_groups_changed) {
-    RefreshEstablishedBundleGroupsByMid();
+  established_bundle_groups_by_mid_.clear();
+  for (const auto& bundle_group : bundle_groups_) {
+    for (const std::string& content_name : bundle_group->content_names()) {
+      established_bundle_groups_by_mid_[content_name] = bundle_group.get();
+    }
   }
 }
 
@@ -125,34 +92,6 @@ void BundleManager::DeleteGroup(const cricket::ContentGroup* bundle_group) {
   bundle_groups_.erase(bundle_group_it);
 }
 
-void BundleManager::Rollback() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  bundle_groups_.clear();
-  for (const auto& bundle_group : stable_bundle_groups_) {
-    bundle_groups_.push_back(
-        std::make_unique<cricket::ContentGroup>(*bundle_group));
-  }
-  RefreshEstablishedBundleGroupsByMid();
-}
-
-void BundleManager::Commit() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  stable_bundle_groups_.clear();
-  for (const auto& bundle_group : bundle_groups_) {
-    stable_bundle_groups_.push_back(
-        std::make_unique<cricket::ContentGroup>(*bundle_group));
-  }
-}
-
-void BundleManager::RefreshEstablishedBundleGroupsByMid() {
-  established_bundle_groups_by_mid_.clear();
-  for (const auto& bundle_group : bundle_groups_) {
-    for (const std::string& content_name : bundle_group->content_names()) {
-      established_bundle_groups_by_mid_[content_name] = bundle_group.get();
-    }
-  }
-}
-
 void JsepTransportCollection::RegisterTransport(
     const std::string& mid,
     std::unique_ptr<cricket::JsepTransport> transport) {
@@ -169,17 +108,6 @@ std::vector<cricket::JsepTransport*> JsepTransportCollection::Transports() {
     result.push_back(kv.second.get());
   }
   return result;
-}
-
-std::vector<cricket::JsepTransport*>
-JsepTransportCollection::ActiveTransports() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  std::set<cricket::JsepTransport*> transports;
-  for (const auto& kv : mid_to_transport_) {
-    transports.insert(kv.second);
-  }
-  return std::vector<cricket::JsepTransport*>(transports.begin(),
-                                              transports.end());
 }
 
 void JsepTransportCollection::DestroyAllTransports() {
@@ -229,6 +157,8 @@ bool JsepTransportCollection::SetTransportForMid(
   if (it != mid_to_transport_.end() && it->second == jsep_transport)
     return true;
 
+  pending_mids_.push_back(mid);
+
   
   
   
@@ -261,53 +191,23 @@ void JsepTransportCollection::RemoveTransportForMid(const std::string& mid) {
   RTC_DCHECK(IsConsistent());
 }
 
-bool JsepTransportCollection::RollbackTransports() {
+void JsepTransportCollection::RollbackTransports() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  bool ret = true;
-  
-  for (const auto& kv : mid_to_transport_) {
-    if (stable_mid_to_transport_.count(kv.first) == 0) {
-      ret = ret && map_change_callback_(kv.first, nullptr);
-    }
+  for (auto&& mid : pending_mids_) {
+    RemoveTransportForMid(mid);
   }
-  
-  for (const auto& kv : stable_mid_to_transport_) {
-    auto it = mid_to_transport_.find(kv.first);
-    if (it == mid_to_transport_.end() || it->second != kv.second) {
-      ret = ret && map_change_callback_(kv.first, kv.second);
-    }
-  }
-  mid_to_transport_ = stable_mid_to_transport_;
-  
-  
-  state_change_callback_();
-  DestroyUnusedTransports();
-  RTC_DCHECK(IsConsistent());
-  return ret;
+  pending_mids_.clear();
 }
 
 void JsepTransportCollection::CommitTransports() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  stable_mid_to_transport_ = mid_to_transport_;
-  DestroyUnusedTransports();
-  RTC_DCHECK(IsConsistent());
+  pending_mids_.clear();
 }
 
 bool JsepTransportCollection::TransportInUse(
     cricket::JsepTransport* jsep_transport) const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   for (const auto& kv : mid_to_transport_) {
-    if (kv.second == jsep_transport) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool JsepTransportCollection::TransportNeededForRollback(
-    cricket::JsepTransport* jsep_transport) const {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  for (const auto& kv : stable_mid_to_transport_) {
     if (kv.second == jsep_transport) {
       return true;
     }
@@ -323,13 +223,6 @@ void JsepTransportCollection::MaybeDestroyJsepTransport(
   if (TransportInUse(transport)) {
     return;
   }
-  
-  
-  
-  if (TransportNeededForRollback(transport)) {
-    state_change_callback_();
-    return;
-  }
   for (const auto& it : jsep_transports_by_name_) {
     if (it.second.get() == transport) {
       jsep_transports_by_name_.erase(it.first);
@@ -340,32 +233,20 @@ void JsepTransportCollection::MaybeDestroyJsepTransport(
   RTC_DCHECK(IsConsistent());
 }
 
-void JsepTransportCollection::DestroyUnusedTransports() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  bool need_state_change_callback = false;
-  auto it = jsep_transports_by_name_.begin();
-  while (it != jsep_transports_by_name_.end()) {
-    if (TransportInUse(it->second.get()) ||
-        TransportNeededForRollback(it->second.get())) {
-      ++it;
-    } else {
-      it = jsep_transports_by_name_.erase(it);
-      need_state_change_callback = true;
-    }
-  }
-  if (need_state_change_callback) {
-    state_change_callback_();
-  }
-}
-
 bool JsepTransportCollection::IsConsistent() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   for (const auto& it : jsep_transports_by_name_) {
-    if (!TransportInUse(it.second.get()) &&
-        !TransportNeededForRollback(it.second.get())) {
+    if (!TransportInUse(it.second.get())) {
       RTC_LOG(LS_ERROR) << "Transport registered with mid " << it.first
                         << " is not in use, transport " << it.second.get();
       return false;
+    }
+    const auto& lookup = mid_to_transport_.find(it.first);
+    if (lookup->second != it.second.get()) {
+      
+      RTC_DLOG(LS_INFO) << "Note: Mid " << it.first << " was registered to "
+                        << it.second.get() << " but currently maps to "
+                        << lookup->second;
     }
   }
   return true;
