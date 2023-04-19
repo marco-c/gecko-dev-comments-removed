@@ -419,7 +419,7 @@ let JSWINDOWACTORS = {
   
   ViewSource: {
     child: {
-      moduleURI: "resource://gre/actors/ViewSourceChild.jsm",
+      esModuleURI: "resource://gre/actors/ViewSourceChild.sys.mjs",
     },
 
     allFrames: true,
@@ -428,10 +428,10 @@ let JSWINDOWACTORS = {
   
   ViewSourcePage: {
     parent: {
-      moduleURI: "resource://gre/actors/ViewSourcePageParent.jsm",
+      esModuleURI: "resource://gre/actors/ViewSourcePageParent.sys.mjs",
     },
     child: {
-      moduleURI: "resource://gre/actors/ViewSourcePageChild.jsm",
+      esModuleURI: "resource://gre/actors/ViewSourcePageChild.sys.mjs",
       events: {
         pageshow: { capture: true },
         click: {},
