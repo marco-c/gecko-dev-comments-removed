@@ -368,12 +368,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   DefaultVideoQualityAnalyzerFramesComparator frames_comparator_;
 };
 
-namespace webrtc_pc_e2e {
-
-
-using DefaultVideoQualityAnalyzer = ::webrtc::DefaultVideoQualityAnalyzer;
-
-}  
 }  
 
 #endif  
