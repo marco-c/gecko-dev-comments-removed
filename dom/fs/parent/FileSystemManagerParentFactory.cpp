@@ -46,31 +46,24 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
   nsAutoCString origin =
       quota::QuotaManager::GetOriginFromValidatedPrincipalInfo(aPrincipalInfo);
 
-  auto sendBackError = [aResolver](const auto& aRv) { aResolver(aRv); };
-
-  fs::EntryId rootId = fs::data::GetRootHandle(origin);
-
+  
   
   QM_TRY_UNWRAP(
       RefPtr<fs::data::FileSystemDataManager> dataManager,
       fs::data::FileSystemDataManager::GetOrCreateFileSystemDataManager(origin),
-      IPC_OK(), sendBackError);
+      IPC_OK(), [aResolver](const auto& aRv) { aResolver(aRv); });
 
-  nsCOMPtr<nsIThread> pbackground = NS_GetCurrentThread();
+  fs::EntryId rootId = fs::data::GetRootHandle(origin);
 
-  
-  
-  
   InvokeAsync(dataManager->MutableIOTargetPtr(), __func__,
-              [origin, parentEp = std::move(aParentEndpoint), aResolver, rootId,
-               dataManager = dataManager, pbackground]() mutable {
+              [dataManager = dataManager, rootId,
+               parentEndpoint = std::move(aParentEndpoint)]() mutable {
                 RefPtr<FileSystemManagerParent> parent =
                     new FileSystemManagerParent(std::move(dataManager), rootId);
-                if (!parentEp.Bind(parent)) {
+                if (!parentEndpoint.Bind(parent)) {
                   return BoolPromise::CreateAndReject(NS_ERROR_FAILURE,
                                                       __func__);
                 }
-                
                 return BoolPromise::CreateAndResolve(true, __func__);
               })
       ->Then(GetCurrentSerialEventTarget(), __func__,
