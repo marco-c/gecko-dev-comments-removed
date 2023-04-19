@@ -438,9 +438,9 @@ class nsWindow final : public nsBaseWidget {
   } WindowCompositorState;
 
   
-  void ResumeCompositor();
+  void ResumeCompositorFlickering();
   void ResumeCompositorFromCompositorThread();
-  void PauseCompositor();
+  void PauseCompositorFlickering();
   bool IsWaitingForCompositorResume();
 
  protected:
