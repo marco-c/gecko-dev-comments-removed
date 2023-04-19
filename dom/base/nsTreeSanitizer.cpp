@@ -14,12 +14,14 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/css/Rule.h"
-#include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/CSSRuleList.h"
 #include "mozilla/dom/DocumentFragment.h"
-#include "mozilla/dom/ShadowIncludingTreeIterator.h"
+#include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
+#include "mozilla/dom/Link.h"
+#include "mozilla/dom/SanitizerBinding.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/NullPrincipal.h"
 #include "nsAtom.h"
@@ -1858,7 +1860,8 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
     RefPtr<nsAtom> attrLocal = attrName->LocalName();
 
     if (mIsForSanitizerAPI) {
-      if (MustDropAttribute(aElement, attrNs, attrLocal)) {
+      if (MustDropAttribute(aElement, attrNs, attrLocal) ||
+          MustDropFunkyAttribute(aElement, attrNs, attrLocal)) {
         aElement->UnsetAttr(kNameSpaceID_None, attrLocal, false);
         if (mLogRemovals) {
           LogMessage("Removed unsafe attribute.", aElement->OwnerDoc(),
@@ -2042,6 +2045,60 @@ bool nsTreeSanitizer::MustDropAttribute(Element* aElement,
   }
 
   
+  return false;
+}
+
+
+bool nsTreeSanitizer::MustDropFunkyAttribute(Element* aElement,
+                                             int32_t aAttrNamespace,
+                                             nsAtom* aAttrLocalName) {
+  
+  
+
+  
+  
+  
+  if (aAttrLocalName == nsGkAtoms::href) {
+    if (nsCOMPtr<Link> link = do_QueryInterface(aElement)) {
+      nsCOMPtr<nsIURI> uri = link->GetURI();
+      if (uri && uri->SchemeIs("javascript")) {
+        
+        return true;
+      }
+    }
+  }
+
+  
+  
+  if (auto* form = HTMLFormElement::FromNode(aElement)) {
+    if (aAttrNamespace == kNameSpaceID_None &&
+        aAttrLocalName == nsGkAtoms::action) {
+      nsCOMPtr<nsIURI> uri;
+      form->GetURIAttr(aAttrLocalName, nullptr, getter_AddRefs(uri));
+      if (uri && uri->SchemeIs("javascript")) {
+        
+        return true;
+      }
+    }
+  }
+
+  
+  
+  
+  if (aElement->IsAnyOfHTMLElements(nsGkAtoms::input, nsGkAtoms::button) &&
+      aAttrNamespace == kNameSpaceID_None &&
+      aAttrLocalName == nsGkAtoms::formaction) {
+    
+    
+    nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(aElement);
+    nsCOMPtr<nsIURI> uri;
+    el->GetURIAttr(aAttrLocalName, nullptr, getter_AddRefs(uri));
+    if (uri && uri->SchemeIs("javascript")) {
+      
+      return true;
+    }
+  }
+
   return false;
 }
 

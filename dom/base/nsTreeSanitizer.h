@@ -205,6 +205,8 @@ class nsTreeSanitizer {
   
   bool MustDropAttribute(mozilla::dom::Element* aElement,
                          int32_t aAttrNamespace, nsAtom* aAttrLocalName);
+  bool MustDropFunkyAttribute(mozilla::dom::Element* aElement,
+                              int32_t aAttrNamespace, nsAtom* aAttrLocalName);
 
   
 
