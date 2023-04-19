@@ -427,21 +427,6 @@ ModuleObject* CallModuleResolveHook(JSContext* cx,
                                     HandleValue referencingPrivate,
                                     HandleObject moduleRequest);
 
-
-void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
-
-
-void AsyncModuleExecutionRejected(JSContext* cx, Handle<ModuleObject*> module,
-                                  HandleValue error);
-
-
-bool AsyncModuleExecutionFulfilledHandler(JSContext* cx, unsigned argc,
-                                          Value* vp);
-
-
-bool AsyncModuleExecutionRejectedHandler(JSContext* cx, unsigned argc,
-                                         Value* vp);
-
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options);
 
