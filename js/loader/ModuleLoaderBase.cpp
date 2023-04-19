@@ -1299,6 +1299,17 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mImportMap);
+
+  
   mImportMap = std::move(aImportMap);
 }
 

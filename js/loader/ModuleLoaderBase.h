@@ -285,6 +285,7 @@ class ModuleLoaderBase : public nsISupports {
   mozilla::UniquePtr<ImportMap> ParseImportMap(ScriptLoadRequest* aRequest);
 
   
+  
   void RegisterImportMap(mozilla::UniquePtr<ImportMap> aImportMap);
 
   
