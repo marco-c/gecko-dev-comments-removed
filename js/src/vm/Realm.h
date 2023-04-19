@@ -431,6 +431,17 @@ class JS::Realm : public JS::shadow::Realm {
   
   bool nukedIncomingWrappers = false;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isAsyncStackCapturingEnabled = false;
+
  private:
   void updateDebuggerObservesFlag(unsigned flag);
 
