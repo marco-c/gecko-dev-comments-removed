@@ -667,14 +667,14 @@ var gXPInstallObserver = {
             message.firstChild.remove();
           }
 
-          if (
-            
-            
-            
-            installInfo.installs.every(
-              ({ addon }) => addon?.type === lazy.SITEPERMS_ADDON_TYPE
-            )
-          ) {
+          
+          
+          
+          let isSitePermissionAddon = installInfo.installs.every(
+            ({ addon }) => addon?.type === lazy.SITEPERMS_ADDON_TYPE
+          );
+
+          if (isSitePermissionAddon) {
             message.textContent = gNavigatorBundle.getFormattedString(
               "sitePermissionsInstallPromptMessage.message",
               [options.name]
@@ -692,14 +692,17 @@ var gXPInstallObserver = {
               "xpinstallPromptMessage.message.unknown"
             );
           }
+
+          let article = isSitePermissionAddon
+            ? "site-permission-addons"
+            : "unlisted-extensions-risks";
           let learnMore = doc.getElementById("addon-install-blocked-info");
           learnMore.textContent = gNavigatorBundle.getString(
             "xpinstallPromptMessage.learnMore"
           );
           learnMore.setAttribute(
             "href",
-            Services.urlFormatter.formatURLPref("app.support.baseURL") +
-              "unlisted-extensions-risks"
+            Services.urlFormatter.formatURLPref("app.support.baseURL") + article
           );
         };
 
