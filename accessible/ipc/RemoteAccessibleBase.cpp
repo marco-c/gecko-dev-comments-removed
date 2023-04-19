@@ -917,6 +917,11 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
       
       state &= ~states::OPAQUE1;
     }
+
+    auto* cbc = mDoc->GetBrowsingContext();
+    if (cbc && !cbc->IsActive()) {
+      state |= states::OFFSCREEN;
+    }
   }
   auto* browser = static_cast<dom::BrowserParent*>(Document()->Manager());
   if (browser == dom::BrowserParent::GetFocused()) {
