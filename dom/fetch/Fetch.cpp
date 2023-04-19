@@ -21,7 +21,6 @@
 #include "nsProxyRelease.h"
 
 #include "mozilla/ErrorResult.h"
-#include "mozilla/dom/MimeType.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BodyConsumer.h"
 #include "mozilla/dom/Exceptions.h"
@@ -1260,40 +1259,20 @@ template already_AddRefed<Promise> FetchBody<EmptyBody>::ConsumeBody(
 template <class Derived>
 void FetchBody<Derived>::GetMimeType(nsACString& aMimeType,
                                      nsACString& aMixedCaseMimeType) {
+  
   ErrorResult result;
-  nsAutoCString contentTypeValues, contentTypeUtf8;
+  nsCString contentTypeValues;
   MOZ_ASSERT(DerivedClass()->GetInternalHeaders());
   DerivedClass()->GetInternalHeaders()->Get("Content-Type"_ns,
                                             contentTypeValues, result);
   MOZ_ALWAYS_TRUE(!result.Failed());
 
-  nsCCharSeparatedTokenizer contentTypeTokens(contentTypeValues, ',');
-
   
   
-  
-  
-  
-  
-  
-  auto contentStr = contentTypeTokens.nextToken();
-
-  CopyLatin1toUTF8(contentStr, contentTypeUtf8);
-  UniquePtr<CMimeType> contentTypeRecord = CMimeType::Parse(contentTypeUtf8);
-  if (contentTypeRecord) {
-    contentTypeRecord->Serialize(aMixedCaseMimeType);
+  if (!contentTypeValues.IsVoid() && contentTypeValues.Find(",") == -1) {
     
-    
-    
-    
-    
-    if (contentStr.Contains(';') && !aMixedCaseMimeType.Contains(';')) {
-      
-      
-      aMixedCaseMimeType = "";
-    }
-
-    aMimeType = aMixedCaseMimeType;
+    CopyLatin1toUTF8(contentTypeValues, aMimeType);
+    aMixedCaseMimeType = aMimeType;
     ToLowerCase(aMimeType);
   }
 }

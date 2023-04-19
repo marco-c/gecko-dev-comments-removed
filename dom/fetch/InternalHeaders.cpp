@@ -437,15 +437,15 @@ void InternalHeaders::Fill(const Record<nsCString, nsCString>& aInit,
 
 namespace {
 
-class FillOriginalResponseHeaders final : public nsIHttpHeaderVisitor {
+class FillHeaders final : public nsIHttpHeaderVisitor {
   RefPtr<InternalHeaders> mInternalHeaders;
 
-  ~FillOriginalResponseHeaders() = default;
+  ~FillHeaders() = default;
 
  public:
   NS_DECL_ISUPPORTS
 
-  explicit FillOriginalResponseHeaders(InternalHeaders* aInternalHeaders)
+  explicit FillHeaders(InternalHeaders* aInternalHeaders)
       : mInternalHeaders(aInternalHeaders) {
     MOZ_DIAGNOSTIC_ASSERT(mInternalHeaders);
   }
@@ -457,34 +457,8 @@ class FillOriginalResponseHeaders final : public nsIHttpHeaderVisitor {
   }
 };
 
-NS_IMPL_ISUPPORTS(FillOriginalResponseHeaders, nsIHttpHeaderVisitor)
+NS_IMPL_ISUPPORTS(FillHeaders, nsIHttpHeaderVisitor)
 
-class FillMissingResponseHeaders final : public nsIHttpHeaderVisitor {
-  RefPtr<InternalHeaders> mInternalHeaders;
-
-  ~FillMissingResponseHeaders() = default;
-
- public:
-  NS_DECL_ISUPPORTS
-
-  explicit FillMissingResponseHeaders(InternalHeaders* aInternalHeaders)
-      : mInternalHeaders(aInternalHeaders) {
-    MOZ_DIAGNOSTIC_ASSERT(mInternalHeaders);
-  }
-
-  NS_IMETHOD
-  VisitHeader(const nsACString& aHeader, const nsACString& aValue) override {
-    ErrorResult rv;
-
-    if (!mInternalHeaders->Has(aHeader, rv)) {
-      MOZ_ASSERT(!rv.Failed());
-      mInternalHeaders->Append(aHeader, aValue, IgnoreErrors());
-    }
-    return NS_OK;
-  }
-};
-
-NS_IMPL_ISUPPORTS(FillMissingResponseHeaders, nsIHttpHeaderVisitor)
 }  
 
 void InternalHeaders::FillResponseHeaders(nsIRequest* aRequest) {
@@ -493,23 +467,8 @@ void InternalHeaders::FillResponseHeaders(nsIRequest* aRequest) {
     return;
   }
 
-  RefPtr<FillOriginalResponseHeaders> visitor =
-      new FillOriginalResponseHeaders(this);
-  
-  
-  
-  
-  
-  
-  nsresult rv = httpChannel->VisitOriginalResponseHeaders(visitor);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("failed to fill headers");
-  }
-
-  RefPtr<FillMissingResponseHeaders> visitMissingHeaders =
-      new FillMissingResponseHeaders(this);
-  rv = httpChannel->VisitResponseHeaders(visitMissingHeaders);
-
+  RefPtr<FillHeaders> visitor = new FillHeaders(this);
+  nsresult rv = httpChannel->VisitResponseHeaders(visitor);
   if (NS_FAILED(rv)) {
     NS_WARNING("failed to fill headers");
   }
