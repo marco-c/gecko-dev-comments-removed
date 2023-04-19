@@ -337,11 +337,11 @@ class UniqueStacks final : public mozilla::FailureLatch {
                ProfilerCodeAddressService* aCodeAddressService = nullptr);
 
   
-  [[nodiscard]] StackKey BeginStack(const FrameKey& aFrame);
+  [[nodiscard]] mozilla::Maybe<StackKey> BeginStack(const FrameKey& aFrame);
 
   
-  [[nodiscard]] StackKey AppendFrame(const StackKey& aStack,
-                                     const FrameKey& aFrame);
+  [[nodiscard]] mozilla::Maybe<StackKey> AppendFrame(const StackKey& aStack,
+                                                     const FrameKey& aFrame);
 
   
   
@@ -352,8 +352,10 @@ class UniqueStacks final : public mozilla::FailureLatch {
   LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
                                          uint64_t aBufferPosition);
 
-  [[nodiscard]] uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
-  [[nodiscard]] uint32_t GetOrAddStackIndex(const StackKey& aStack);
+  [[nodiscard]] mozilla::Maybe<uint32_t> GetOrAddFrameIndex(
+      const FrameKey& aFrame);
+  [[nodiscard]] mozilla::Maybe<uint32_t> GetOrAddStackIndex(
+      const StackKey& aStack);
 
   void SpliceFrameTableElements(SpliceableJSONWriter& aWriter);
   void SpliceStackTableElements(SpliceableJSONWriter& aWriter);
