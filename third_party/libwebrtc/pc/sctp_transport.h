@@ -20,7 +20,6 @@
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/dtls_transport_internal.h"
 #include "pc/dtls_transport.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
@@ -54,12 +53,12 @@ class SctpTransport : public SctpTransportInterface,
   
   
   cricket::SctpTransportInternal* internal() {
-    MutexLock lock(&lock_);
+    RTC_DCHECK_RUN_ON(owner_thread_);
     return internal_sctp_transport_.get();
   }
 
   const cricket::SctpTransportInternal* internal() const {
-    MutexLock lock(&lock_);
+    RTC_DCHECK_RUN_ON(owner_thread_);
     return internal_sctp_transport_.get();
   }
 
@@ -77,13 +76,10 @@ class SctpTransport : public SctpTransportInterface,
 
   
   
-  rtc::Thread* owner_thread_;
-  mutable Mutex lock_;
-  
-  SctpTransportInformation info_ RTC_GUARDED_BY(lock_);
+  rtc::Thread* const owner_thread_;
+  SctpTransportInformation info_ RTC_GUARDED_BY(owner_thread_);
   std::unique_ptr<cricket::SctpTransportInternal> internal_sctp_transport_
-      RTC_GUARDED_BY(lock_);
-  
+      RTC_GUARDED_BY(owner_thread_);
   SctpTransportObserverInterface* observer_ RTC_GUARDED_BY(owner_thread_) =
       nullptr;
   rtc::scoped_refptr<DtlsTransport> dtls_transport_

@@ -404,14 +404,15 @@ class PeerConnection : public PeerConnectionInternal,
   
   absl::optional<std::string> GetDataMid() const;
 
-  void SetSctpDataMid(const std::string& mid) {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    sctp_mid_s_ = mid;
-  }
-  void ResetSctpDataMid() {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    sctp_mid_s_.reset();
-  }
+  void SetSctpDataMid(const std::string& mid);
+
+  void ResetSctpDataMid();
+
+  
+  
+  void StartSctpTransport(int local_port,
+                          int remote_port,
+                          int max_message_size);
 
   
   
@@ -427,12 +428,7 @@ class PeerConnection : public PeerConnectionInternal,
       bool fire_callback = true);
 
   
-  RtpTransportInternal* GetRtpTransport(const std::string& mid) {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    auto rtp_transport = transport_controller_->GetRtpTransport(mid);
-    RTC_DCHECK(rtp_transport);
-    return rtp_transport;
-  }
+  RtpTransportInternal* GetRtpTransport(const std::string& mid);
 
   
   
@@ -648,6 +644,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   std::unique_ptr<Call> call_ RTC_GUARDED_BY(worker_thread());
+  ScopedTaskSafety signaling_thread_safety_;
+  rtc::scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;
   std::unique_ptr<ScopedTaskSafety> call_safety_
       RTC_GUARDED_BY(worker_thread());
 
@@ -677,6 +675,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   absl::optional<std::string> sctp_mid_s_ RTC_GUARDED_BY(signaling_thread());
   absl::optional<std::string> sctp_mid_n_ RTC_GUARDED_BY(network_thread());
+  std::string sctp_transport_name_s_ RTC_GUARDED_BY(signaling_thread());
 
   
   std::unique_ptr<SdpOfferAnswerHandler> sdp_handler_
