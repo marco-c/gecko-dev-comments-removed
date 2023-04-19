@@ -13,7 +13,7 @@ interface nsIEventTarget;
 
 
 
-[scriptable, uuid(90a9d790-3bca-421e-a73b-98f68e13c917)]
+[scriptable, builtinclass, uuid(90a9d790-3bca-421e-a73b-98f68e13c917)]
 interface nsIInputStreamTee : nsIInputStream
 {
     attribute nsIInputStream source;
