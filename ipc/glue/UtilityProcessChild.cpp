@@ -37,12 +37,15 @@
 #include "mozilla/FOGIPC.h"
 #include "mozilla/glean/GleanMetrics.h"
 
+#include "mozilla/Services.h"
+
 namespace mozilla::ipc {
 
 using namespace layers;
 
 static StaticMutex sUtilityProcessChildMutex;
-static StaticRefPtr<UtilityProcessChild> sUtilityProcessChild;
+static StaticRefPtr<UtilityProcessChild> sUtilityProcessChild
+    MOZ_GUARDED_BY(sUtilityProcessChildMutex);
 
 UtilityProcessChild::UtilityProcessChild() {
   nsDebugImpl::SetMultiprocessMode("Utility");
@@ -106,6 +109,13 @@ bool UtilityProcessChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   
   
   SendInitCompleted();
+
+  RunOnShutdown(
+      [] {
+        StaticMutexAutoLock lock(sUtilityProcessChildMutex);
+        sUtilityProcessChild = nullptr;
+      },
+      ShutdownPhase::XPCOMShutdownFinal);
 
   return true;
 }
@@ -256,13 +266,6 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
           dllSvc->DisableFull();
         }
 #  endif  
-
-        {
-          StaticMutexAutoLock lock(sUtilityProcessChildMutex);
-          if (sUtilityProcessChild) {
-            sUtilityProcessChild = nullptr;
-          }
-        }
 
         ipc::CrashReporterClient::DestroySingleton();
         XRE_ShutdownChildProcess();
