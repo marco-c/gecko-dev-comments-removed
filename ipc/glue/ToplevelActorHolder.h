@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_IPC_ACTORHOLDER_H
-#define MOZILLA_IPC_ACTORHOLDER_H
+#ifndef MOZILLA_IPC_TOPLEVELACTORHOLDER_H
+#define MOZILLA_IPC_TOPLEVELACTORHOLDER_H
 
 #include "nsISupports.h"
 
@@ -21,17 +21,17 @@ namespace mozilla::ipc {
 
 
 template <typename T>
-class TopLevelActorHolder final {
+class ToplevelActorHolder final {
  public:
-  NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(TopLevelActorHolder)
+  NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(ToplevelActorHolder)
 
-  explicit TopLevelActorHolder(T* aActor) : mActor(aActor) {}
+  explicit ToplevelActorHolder(T* aActor) : mActor(aActor) {}
 
   constexpr T* Actor() const { return mActor; }
   inline void RemoveActor() { mActor = nullptr; }
 
  private:
-  inline ~TopLevelActorHolder() {
+  inline ~ToplevelActorHolder() {
     if (mActor) {
       mActor->Close();
     }

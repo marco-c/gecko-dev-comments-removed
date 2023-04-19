@@ -5,11 +5,11 @@
 
 
 #include "mozilla/dom/OriginPrivateFileSystemChild.h"
-#include "mozilla/ipc/ActorHolder.h"
+#include "mozilla/ipc/ToplevelActorHolder.h"
 
 namespace mozilla::dom {
 
 using FileSystemActorHolder =
-    mozilla::ipc::TopLevelActorHolder<OriginPrivateFileSystemChild>;
+    mozilla::ipc::ToplevelActorHolder<OriginPrivateFileSystemChild>;
 
 }  
