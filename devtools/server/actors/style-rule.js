@@ -946,7 +946,8 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       commentOffsets,
     } = oldDeclarations[index] || {};
 
-    const { value: currentValue } = newDeclarations[index] || {};
+    const { value: currentValue, name: currentName } =
+      newDeclarations[index] || {};
     
     
     const prevDisabled = !!commentOffsets;
@@ -962,7 +963,9 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         
-        const name = change.newName ? change.newName : change.name;
+        
+        const changeName = currentName || change.name;
+        const name = change.newName ? change.newName : changeName;
         
 
         const changeValue = currentValue || change.value;
