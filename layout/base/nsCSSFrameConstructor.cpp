@@ -1566,16 +1566,21 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
 }
 
 void nsCSSFrameConstructor::NotifyDestroyingFrame(nsIFrame* aFrame) {
-  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
-    if (mQuoteList.DestroyNodesFor(aFrame)) QuotesDirty();
+  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT) &&
+      mContainStyleScopeManager.DestroyQuoteNodesFor(aFrame)) {
+    QuotesDirty();
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_HAS_CSS_COUNTER_STYLE) &&
-      mCounterManager.DestroyNodesFor(aFrame)) {
+      mContainStyleScopeManager.DestroyCounterNodesFor(aFrame)) {
     
     
     
     CountersDirty();
+  }
+
+  if (aFrame->StyleDisplay()->IsContainStyle()) {
+    mContainStyleScopeManager.DestroyScopesFor(aFrame);
   }
 
   RestyleManager()->NotifyDestroyingFrame(aFrame);
@@ -1608,7 +1613,7 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGenConTextNode(
 }
 
 already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
-    nsFrameConstructorState& aState, const Element& aOriginatingElement,
+    nsFrameConstructorState& aState, Element& aOriginatingElement,
     ComputedStyle& aPseudoStyle, uint32_t aContentIndex) {
   using Type = StyleContentItem::Tag;
   
@@ -1660,7 +1665,8 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
         ptr = CounterStylePtr::FromStyle(counters._2);
       }
 
-      nsCounterList* counterList = mCounterManager.CounterListFor(name);
+      auto* counterList = mContainStyleScopeManager.GetOrCreateCounterList(
+          aOriginatingElement, name);
       auto node = MakeUnique<nsCounterUseNode>(
           std::move(ptr), std::move(separator), aContentIndex,
            type == Type::Counters);
@@ -1674,8 +1680,10 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
     case Type::NoOpenQuote:
     case Type::NoCloseQuote: {
       auto node = MakeUnique<nsQuoteNode>(type, aContentIndex);
+      auto* quoteList =
+          mContainStyleScopeManager.QuoteListFor(aOriginatingElement);
       auto initializer = MakeUnique<nsGenConInitializer>(
-          std::move(node), &mQuoteList, &nsCSSFrameConstructor::QuotesDirty);
+          std::move(node), quoteList, &nsCSSFrameConstructor::QuotesDirty);
       return CreateGenConTextNode(aState, u""_ns, std::move(initializer));
     }
 
@@ -1715,7 +1723,8 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
 }
 
 void nsCSSFrameConstructor::CreateGeneratedContentFromListStyle(
-    nsFrameConstructorState& aState, const ComputedStyle& aPseudoStyle,
+    nsFrameConstructorState& aState, Element& aOriginatingElement,
+    const ComputedStyle& aPseudoStyle,
     const FunctionRef<void(nsIContent*)> aAddChild) {
   const nsStyleList* styleList = aPseudoStyle.StyleList();
   if (!styleList->mListStyleImage.IsNone()) {
@@ -1726,11 +1735,13 @@ void nsCSSFrameConstructor::CreateGeneratedContentFromListStyle(
     aAddChild(child);
     return;
   }
-  CreateGeneratedContentFromListStyleType(aState, aPseudoStyle, aAddChild);
+  CreateGeneratedContentFromListStyleType(aState, aOriginatingElement,
+                                          aPseudoStyle, aAddChild);
 }
 
 void nsCSSFrameConstructor::CreateGeneratedContentFromListStyleType(
-    nsFrameConstructorState& aState, const ComputedStyle& aPseudoStyle,
+    nsFrameConstructorState& aState, Element& aOriginatingElement,
+    const ComputedStyle& aPseudoStyle,
     const FunctionRef<void(nsIContent*)> aAddChild) {
   const nsStyleList* styleList = aPseudoStyle.StyleList();
   CounterStyle* counterStyle =
@@ -1765,8 +1776,8 @@ void nsCSSFrameConstructor::CreateGeneratedContentFromListStyleType(
     return;
   }
 
-  nsCounterList* counterList =
-      mCounterManager.CounterListFor(nsGkAtoms::list_item);
+  auto* counterList = mContainStyleScopeManager.GetOrCreateCounterList(
+      aOriginatingElement, nsGkAtoms::list_item);
   auto initializer = MakeUnique<nsGenConInitializer>(
       std::move(node), counterList, &nsCSSFrameConstructor::CountersDirty);
   RefPtr<nsIContent> child =
@@ -1906,7 +1917,8 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   }
   
   if (contentCount == 0 && aPseudoElement == PseudoStyleType::marker) {
-    CreateGeneratedContentFromListStyle(aState, *pseudoStyle, AppendChild);
+    CreateGeneratedContentFromListStyle(aState, aOriginatingElement,
+                                        *pseudoStyle, AppendChild);
   }
   auto flags = ItemFlags{ItemFlag::IsGeneratedContent} + aExtraFlags;
   AddFrameConstructionItemsInternal(aState, container, aParentFrame, true,
@@ -4680,7 +4692,8 @@ void nsCSSFrameConstructor::InitAndRestoreFrame(
     RestoreFrameStateFor(aNewFrame, aState.mFrameState);
   }
 
-  if (aAllowCounters && mCounterManager.AddCounterChanges(aNewFrame)) {
+  if (aAllowCounters &&
+      mContainStyleScopeManager.AddCounterChanges(aNewFrame)) {
     CountersDirty();
   }
 }
@@ -7271,7 +7284,8 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
       }
     };
     CreateGeneratedContentFromListStyleType(
-        state, *insertion.mParentFrame->Style(), InsertChild);
+        state, *insertion.mContainer->AsElement(),
+        *insertion.mParentFrame->Style(), InsertChild);
     if (!firstNewChild) {
       
       return;
@@ -7932,12 +7946,12 @@ void nsCSSFrameConstructor::RecalcQuotesAndCounters() {
 
   if (mQuotesDirty) {
     mQuotesDirty = false;
-    mQuoteList.RecalcAll();
+    mContainStyleScopeManager.RecalcAllQuotes();
   }
 
   if (mCountersDirty) {
     mCountersDirty = false;
-    mCounterManager.RecalcAll();
+    mContainStyleScopeManager.RecalcAllCounters();
   }
 
   NS_ASSERTION(!mQuotesDirty, "Quotes updates will be lost");
@@ -7945,20 +7959,19 @@ void nsCSSFrameConstructor::RecalcQuotesAndCounters() {
 }
 
 void nsCSSFrameConstructor::NotifyCounterStylesAreDirty() {
-  mCounterManager.SetAllDirty();
+  mContainStyleScopeManager.SetAllCountersDirty();
   CountersDirty();
 }
 
 void nsCSSFrameConstructor::WillDestroyFrameTree() {
 #if defined(DEBUG_dbaron_off)
-  mCounterManager.Dump();
+  mContainStyleScopeManager.DumpCounters();
 #endif
 
   mIsDestroyingFrameTree = true;
 
   
-  mQuoteList.Clear();
-  mCounterManager.Clear();
+  mContainStyleScopeManager.Clear();
   nsFrameManager::Destroy();
 }
 
@@ -12066,7 +12079,6 @@ void nsCSSFrameConstructor::AddSizeOfIncludingThis(
   
   nsFrameManager::AddSizeOfIncludingThis(aSizes);
 
-  
   
   
   

@@ -1521,6 +1521,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
            !IsInternalTableStyleExceptCell();
   }
 
+  bool IsContainStyle() const {
+    return !!(EffectiveContainment() && StyleContain::STYLE);
+  }
+
   bool IsContainAny() const { return !!EffectiveContainment(); }
 
   mozilla::ContainSizeAxes GetContainSizeAxes() const {
@@ -1672,17 +1676,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    
-    
     switch (mContentVisibility) {
       case StyleContentVisibility::Visible:
         
         return mContain;
       case StyleContentVisibility::Auto:
-        return mContain | StyleContain::LAYOUT | StyleContain::PAINT;
+        return mContain | StyleContain::LAYOUT | StyleContain::PAINT |
+               StyleContain::STYLE;
       case StyleContentVisibility::Hidden:
         return mContain | StyleContain::LAYOUT | StyleContain::PAINT |
-               StyleContain::SIZE;
+               StyleContain::SIZE | StyleContain::STYLE;
     }
     MOZ_ASSERT_UNREACHABLE("Invalid content visibility.");
     return mContain;

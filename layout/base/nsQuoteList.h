@@ -12,6 +12,12 @@
 #include "mozilla/Attributes.h"
 #include "nsGenConList.h"
 
+namespace mozilla {
+
+class ContainStyleScope;
+
+}  
+
 struct nsQuoteNode : public nsGenConNode {
   
   const StyleContentType mType;
@@ -69,6 +75,8 @@ class nsQuoteList : public nsGenConList {
   }
 
  public:
+  explicit nsQuoteList(mozilla::ContainStyleScope* aScope) : mScope(aScope) {}
+
   
   
   void Calc(nsQuoteNode* aNode);
@@ -84,6 +92,9 @@ class nsQuoteList : public nsGenConList {
 #ifdef DEBUG
   void PrintChain();
 #endif
+
+ private:
+  mozilla::ContainStyleScope* mScope;
 };
 
 #endif 

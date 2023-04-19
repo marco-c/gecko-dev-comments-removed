@@ -125,6 +125,37 @@ bool nsGenConList::NodeAfter(const nsGenConNode* aNode1,
   return cmp > 0;
 }
 
+nsGenConNode* nsGenConList::BinarySearch(
+    const mozilla::FunctionRef<bool(nsGenConNode*)>& aIsAfter) {
+  
+  
+  uint32_t first = 0, last = mSize - 1;
+
+  
+  nsGenConNode* curNode = mList.getLast();
+  uint32_t curIndex = mSize - 1;
+
+  while (first != last) {
+    uint32_t test = first + (last - first) / 2;
+    if (last == curIndex) {
+      for (; curIndex != test; --curIndex) curNode = Prev(curNode);
+    } else {
+      for (; curIndex != test; ++curIndex) curNode = Next(curNode);
+    }
+
+    if (aIsAfter(curNode)) {
+      first = test + 1;
+      
+      ++curIndex;
+      curNode = Next(curNode);
+    } else {
+      last = test;
+    }
+  }
+
+  return curNode;
+}
+
 void nsGenConList::Insert(nsGenConNode* aNode) {
   
   if (mList.isEmpty() || NodeAfter(aNode, mList.getLast())) {
@@ -135,34 +166,11 @@ void nsGenConList::Insert(nsGenConNode* aNode) {
     
     mLastInserted->setNext(aNode);
   } else {
-    
-
-    
-    
-    uint32_t first = 0, last = mSize - 1;
-
-    
-    nsGenConNode* curNode = mList.getLast();
-    uint32_t curIndex = mSize - 1;
-
-    while (first != last) {
-      uint32_t test = (first + last) / 2;
-      if (last == curIndex) {
-        for (; curIndex != test; --curIndex) curNode = Prev(curNode);
-      } else {
-        for (; curIndex != test; ++curIndex) curNode = Next(curNode);
-      }
-
-      if (NodeAfter(aNode, curNode)) {
-        first = test + 1;
-        
-        ++curIndex;
-        curNode = Next(curNode);
-      } else {
-        last = test;
-      }
-    }
-    curNode->setPrevious(aNode);
+    auto IsAfter = [aNode](nsGenConNode* curNode) {
+      return NodeAfter(aNode, curNode);
+    };
+    auto* insertionNode = BinarySearch(IsAfter);
+    insertionNode->setPrevious(aNode);
   }
   ++mSize;
 
