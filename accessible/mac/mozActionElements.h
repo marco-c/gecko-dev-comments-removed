@@ -70,6 +70,18 @@
 @interface mozIncrementableAccessible : mozAccessible
 
 
+- (id)moxValue;
+
+
+- (NSString*)moxValueDescription;
+
+
+- (id)moxMinValue;
+
+
+- (id)moxMaxValue;
+
+
 - (void)moxSetValue:(id)value;
 
 
@@ -77,6 +89,9 @@
 
 
 - (void)moxPerformDecrement;
+
+
+- (NSString*)moxOrientation;
 
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;

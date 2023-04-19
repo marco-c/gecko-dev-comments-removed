@@ -100,6 +100,9 @@
 - (id _Nullable)moxValue;
 
 
+- (NSString* _Nullable)moxValueDescription;
+
+
 - (NSValue* _Nullable)moxSize;
 
 
@@ -188,6 +191,12 @@
 
 
 - (NSNumber* _Nullable)moxLoadingProgress;
+
+
+- (id _Nullable)moxMinValue;
+
+
+- (id _Nullable)moxMaxValue;
 
 
 
