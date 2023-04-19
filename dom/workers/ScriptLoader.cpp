@@ -368,9 +368,6 @@ class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override;
 
-  virtual void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                       bool aRunResult) override;
-
   nsresult Cancel() override;
 };
 
@@ -597,6 +594,7 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
   
   if (mExecutionAborted) {
     mLoadedRequests.CancelRequestsAndClear();
+    TryShutdown();
     return true;
   }
 
@@ -626,6 +624,7 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
     }
   }
 
+  TryShutdown();
   return true;
 }
 
@@ -958,6 +957,12 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
   return true;
 }
 
+void WorkerScriptLoader::TryShutdown() {
+  if (AllScriptsExecuted()) {
+    ShutdownScriptLoader(!mExecutionAborted, mMutedErrorFlag);
+  }
+}
+
 void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
 
@@ -1067,32 +1072,6 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
 
   mScriptLoader.MaybeMoveToLoadedList(mRequest);
   return mScriptLoader.ProcessPendingRequests(aCx);
-}
-
-void ScriptExecutorRunnable::PostRun(JSContext* aCx,
-                                     WorkerPrivate* aWorkerPrivate,
-                                     bool aRunResult) {
-  aWorkerPrivate->AssertIsOnWorkerThread();
-
-  
-  MOZ_ASSERT(
-      mScriptLoader.mSyncLoopTarget == mSyncLoopTarget,
-      "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
-
-  MOZ_ASSERT(!JS_IsExceptionPending(aCx), "Who left an exception on there?");
-
-  if (mScriptLoader.AllScriptsExecuted()) {
-    
-    
-    
-    
-    MOZ_ASSERT_IF(
-        mScriptLoader.mExecutionAborted && !mScriptLoader.mRv.Failed(),
-        !aRunResult);
-    
-    mScriptLoader.ShutdownScriptLoader(!mScriptLoader.mExecutionAborted,
-                                       mScriptLoader.mMutedErrorFlag);
-  }
 }
 
 nsresult ScriptExecutorRunnable::Cancel() {
