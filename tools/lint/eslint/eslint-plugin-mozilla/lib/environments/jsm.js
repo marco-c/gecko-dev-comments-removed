@@ -17,7 +17,6 @@ module.exports = {
     atob: false,
     btoa: false,
     dump: false,
-    Intl: false,
     
     
     

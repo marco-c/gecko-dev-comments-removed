@@ -11,6 +11,8 @@
 module.exports = {
   globals: {
     
+    Intl: false,
+    
     
     
     APZHitResultFlags: false,
