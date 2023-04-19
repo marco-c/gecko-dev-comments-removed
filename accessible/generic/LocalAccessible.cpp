@@ -87,7 +87,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
-#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/dom/TreeWalker.h"
 #include "mozilla/dom/UserActivation.h"
@@ -1334,7 +1333,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   }
 
   if (aAttribute == nsGkAtoms::aria_describedby) {
-    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE, this);
     if (aModType == dom::MutationEvent_Binding::MODIFICATION ||
         aModType == dom::MutationEvent_Binding::ADDITION) {
@@ -1350,10 +1348,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   }
 
   if (aAttribute == nsGkAtoms::aria_labelledby) {
-    
-    
-    
-    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, this);
     if (aModType == dom::MutationEvent_Binding::MODIFICATION ||
         aModType == dom::MutationEvent_Binding::ADDITION) {
@@ -1374,11 +1368,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
        aModType == dom::MutationEvent_Binding::REMOVAL)) {
     
     SendCache(CacheDomain::Actions, CacheUpdateType::Update);
-  }
-
-  if (aAttribute == nsGkAtoms::aria_controls ||
-      aAttribute == nsGkAtoms::aria_flowto) {
-    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
 
   if (aAttribute == nsGkAtoms::alt &&
@@ -3566,39 +3555,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(nsGkAtoms::aria, std::move(ariaAttrs));
     } else if (aUpdateType == CacheUpdateType::Update) {
       fields->SetAttribute(nsGkAtoms::aria, DeleteEntry());
-    }
-  }
-
-  if (CacheDomain::Relations) {
-    for (auto const& data : kRelationTypeAtoms) {
-      nsTArray<uint64_t> ids;
-      nsStaticAtom* const relAtom = data.mAtom;
-
-      Relation rel;
-      if (data.mType == RelationType::LABEL_FOR) {
-        
-        
-        
-        if (dom::HTMLLabelElement* labelEl =
-                dom::HTMLLabelElement::FromNode(mContent)) {
-          rel.AppendTarget(mDoc, labelEl->GetControl());
-        }
-      } else {
-        
-        
-        
-        
-        rel.AppendIter(new IDRefsIterator(mDoc, mContent, relAtom));
-      }
-
-      while (LocalAccessible* acc = rel.Next()) {
-        ids.AppendElement(acc->IsDoc() ? 0 : acc->ID());
-      }
-      if (ids.Length()) {
-        fields->SetAttribute(relAtom, std::move(ids));
-      } else if (aUpdateType == CacheUpdateType::Update) {
-        fields->SetAttribute(relAtom, DeleteEntry());
-      }
     }
   }
 
