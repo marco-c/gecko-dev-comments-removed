@@ -147,6 +147,9 @@ class VideoQualityAnalyzerInterface
   
   virtual void Stop() {}
 
+  
+  
+  
   virtual std::string GetStreamLabel(uint16_t frame_id) = 0;
 };
 
