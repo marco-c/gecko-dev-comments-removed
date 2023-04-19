@@ -238,8 +238,8 @@ RTC_OBJC_EXPORT
 
 
 
-- (RTC_OBJC_TYPE(RTCRtpSender) *)addTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track
-                                streamIds:(NSArray<NSString *> *)streamIds;
+- (nullable RTC_OBJC_TYPE(RTCRtpSender) *)addTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track
+                                         streamIds:(NSArray<NSString *> *)streamIds;
 
 
 
@@ -271,19 +271,19 @@ RTC_OBJC_EXPORT
 
 
 
-- (RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverWithTrack:
+- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverWithTrack:
     (RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track;
-- (RTC_OBJC_TYPE(RTCRtpTransceiver) *)
+- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)
     addTransceiverWithTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track
                        init:(RTC_OBJC_TYPE(RTCRtpTransceiverInit) *)init;
 
 
 
 
-- (RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverOfType:(RTCRtpMediaType)mediaType;
-- (RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverOfType:(RTCRtpMediaType)mediaType
-                                                      init:(RTC_OBJC_TYPE(RTCRtpTransceiverInit) *)
-                                                               init;
+- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)addTransceiverOfType:(RTCRtpMediaType)mediaType;
+- (nullable RTC_OBJC_TYPE(RTCRtpTransceiver) *)
+    addTransceiverOfType:(RTCRtpMediaType)mediaType
+                    init:(RTC_OBJC_TYPE(RTCRtpTransceiverInit) *)init;
 
 
 - (void)offerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
