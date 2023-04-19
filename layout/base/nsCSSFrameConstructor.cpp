@@ -1693,7 +1693,7 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
       
       
       
-      if (aOriginatingElement.HasAttr(kNameSpaceID_None, nsGkAtoms::alt)) {
+      if (aOriginatingElement.HasAttr(nsGkAtoms::alt)) {
         nsCOMPtr<nsIContent> content;
         NS_NewAttributeContent(mDocument->NodeInfoManager(), kNameSpaceID_None,
                                nsGkAtoms::alt, getter_AddRefs(content));
@@ -1701,7 +1701,7 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
       }
 
       if (aOriginatingElement.IsHTMLElement(nsGkAtoms::input)) {
-        if (aOriginatingElement.HasAttr(kNameSpaceID_None, nsGkAtoms::value)) {
+        if (aOriginatingElement.HasAttr(nsGkAtoms::value)) {
           nsCOMPtr<nsIContent> content;
           NS_NewAttributeContent(mDocument->NodeInfoManager(),
                                  kNameSpaceID_None, nsGkAtoms::value,
@@ -7979,25 +7979,27 @@ void nsCSSFrameConstructor::WillDestroyFrameTree() {
 
 
 
-void nsCSSFrameConstructor::GetAlternateTextFor(Element* aElement, nsAtom* aTag,
+
+
+void nsCSSFrameConstructor::GetAlternateTextFor(const Element& aElement,
                                                 nsAString& aAltText) {
   
   
-  if (aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aAltText)) {
+  if (aElement.GetAttr(nsGkAtoms::alt, aAltText)) {
     return;
   }
 
-  if (nsGkAtoms::input == aTag) {
+  if (aElement.IsHTMLElement(nsGkAtoms::input)) {
     
     
-    if (aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::value, aAltText)) {
+    if (aElement.GetAttr(nsGkAtoms::value, aAltText)) {
       return;
     }
 
     
     
     nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
-                                            "Submit", aElement->OwnerDoc(),
+                                            "Submit", aElement.OwnerDoc(),
                                             aAltText);
   }
 }

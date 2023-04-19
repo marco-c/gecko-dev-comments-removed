@@ -73,10 +73,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                         PresShell* aPresShell);
   ~nsCSSFrameConstructor() { MOZ_ASSERT(mFCItemsInUse == 0); }
 
-  
-  static void GetAlternateTextFor(Element* aContent,
-                                  nsAtom* aTag,  
-                                  nsAString& aAltText);
+  static void GetAlternateTextFor(const Element&, nsAString& aAltText);
 
  private:
   nsCSSFrameConstructor(const nsCSSFrameConstructor& aCopy) = delete;
