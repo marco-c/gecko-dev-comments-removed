@@ -13,6 +13,7 @@
 
 #include "nsIIncrementalStreamLoader.h"
 #include "nsISupports.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -32,8 +33,13 @@ class SRICheckDataVerifier;
 
 class ScriptDecoder {
  public:
-  ScriptDecoder() = default;
+  enum BOMHandling { Ignore, Remove };
+
+  ScriptDecoder(const Encoding* aEncoding,
+                ScriptDecoder::BOMHandling handleBOM);
+
   ~ScriptDecoder() = default;
+
   
 
 
@@ -41,9 +47,6 @@ class ScriptDecoder {
   nsresult DecodeRawData(JS::loader::ScriptLoadRequest* aRequest,
                          const uint8_t* aData, uint32_t aDataLength,
                          bool aEndOfStream);
-
-  
-  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
  private:
   
@@ -57,10 +60,12 @@ class ScriptDecoder {
   nsresult DecodeRawDataHelper(JS::loader::ScriptLoadRequest* aRequest,
                                const uint8_t* aData, uint32_t aDataLength,
                                bool aEndOfStream);
+
+  
+  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 };
 
-class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
-                                private ScriptDecoder {
+class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
  public:
   explicit ScriptLoadHandler(
       ScriptLoader* aScriptLoader, JS::loader::ScriptLoadRequest* aRequest,
@@ -118,6 +123,8 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
 
   
   nsresult mSRIStatus;
+
+  UniquePtr<ScriptDecoder> mDecoder;
 
   
   bool mPreloadStartNotified = false;
