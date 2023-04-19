@@ -5,6 +5,7 @@
     meter {
       margin: 10px;
       -moz-orient: vertical;
+      overflow: visible;
     }
     body > meter:nth-child(1)::-moz-meter-bar { margin: 4px; padding: 0px; }
     body > meter:nth-child(2)::-moz-meter-bar { margin: 0px; padding: 4px; }
@@ -24,7 +25,7 @@
     body > meter:nth-child(16)::-moz-meter-bar { margin: 64px; padding: 64px; }
   </style>
   <body>
-    
+    <!-- Those will be used to change padding/margin on ::-moz-meter-bar -->
     <meter value='1'></meter>
     <meter value='1'></meter>
     <meter value='1'></meter>
@@ -37,7 +38,7 @@
     <meter value='1'></meter>
     <meter value='1'></meter>
     <meter value='1'></meter>
-    
+    <!-- Those will be used to change width. -->
     <meter value='1'></meter>
     <meter value='1'></meter>
     <meter value='1'></meter>
