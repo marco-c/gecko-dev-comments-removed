@@ -48,6 +48,9 @@ const ProcessId DesktopProcessId = 0;
 
 
 
+
+
+
 namespace DesktopCapturerId {
 constexpr uint32_t CreateFourCC(char a, char b, char c, char d) {
   return ((static_cast<uint32_t>(a)) | (static_cast<uint32_t>(b) << 8) |
@@ -55,6 +58,9 @@ constexpr uint32_t CreateFourCC(char a, char b, char c, char d) {
 }
 
 constexpr uint32_t kUnknown = 0;
+constexpr uint32_t kWgcCapturerWin = 1;
+constexpr uint32_t kScreenCapturerWinMagnifier = 2;
+constexpr uint32_t kWindowCapturerWinGdi = 3;
 constexpr uint32_t kScreenCapturerWinGdi = CreateFourCC('G', 'D', 'I', ' ');
 constexpr uint32_t kScreenCapturerWinDirectx = CreateFourCC('D', 'X', 'G', 'I');
 }  
