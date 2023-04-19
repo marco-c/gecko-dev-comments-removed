@@ -291,7 +291,7 @@ add_task(async function test_fresh_search_with_urlbar_persisted() {
   Services.telemetry.clearScalars();
 
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.shouldShow", true]],
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
   });
 
   

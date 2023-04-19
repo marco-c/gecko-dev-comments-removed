@@ -498,7 +498,12 @@ pref("browser.urlbar.richSuggestions.tail", true);
 pref("browser.urlbar.sponsoredTopSites", false);
 
 
-pref("browser.urlbar.showSearchTerms.shouldShow", false);
+
+pref("browser.urlbar.showSearchTerms.featureGate", false);
+
+
+
+pref("browser.urlbar.showSearchTerms.enabled", true);
 
 
 
