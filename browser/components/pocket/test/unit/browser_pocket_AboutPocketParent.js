@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { AboutPocketParent } = ChromeUtils.import(
-  "resource:///actors/AboutPocketParent.jsm"
+const { AboutPocketParent } = ChromeUtils.importESModule(
+  "resource:///actors/AboutPocketParent.sys.mjs"
 );
 const { pktApi } = ChromeUtils.import("chrome://pocket/content/pktApi.jsm");
 let aboutPocketParent;
