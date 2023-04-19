@@ -30,6 +30,12 @@ void ExtractVectorFromAudioBuffer(const StreamConfig& stream_config,
                                   AudioBuffer* source,
                                   std::vector<float>* destination);
 
+
+void FillBuffer(float value, AudioBuffer& audio_buffer);
+
+
+void FillBufferChannel(float value, int channel, AudioBuffer& audio_buffer);
+
 }  
 }  
 

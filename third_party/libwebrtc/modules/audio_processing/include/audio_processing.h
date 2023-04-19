@@ -205,10 +205,36 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
 
     
     
+    
+    
     struct PreAmplifier {
       bool enabled = false;
       float fixed_gain_factor = 1.f;
     } pre_amplifier;
+
+    
+    
+    struct CaptureLevelAdjustment {
+      bool operator==(const CaptureLevelAdjustment& rhs) const;
+      bool operator!=(const CaptureLevelAdjustment& rhs) const {
+        return !(*this == rhs);
+      }
+      bool enabled = false;
+      
+      float pre_gain_factor = 1.f;
+      
+      float post_gain_factor = 1.f;
+      struct AnalogMicGainEmulation {
+        bool operator==(const AnalogMicGainEmulation& rhs) const;
+        bool operator!=(const AnalogMicGainEmulation& rhs) const {
+          return !(*this == rhs);
+        }
+        bool enabled = false;
+        
+        
+        int initial_level = 255;
+      } analog_mic_gain_emulation;
+    } capture_level_adjustment;
 
     struct HighPassFilter {
       bool enabled = false;
@@ -380,6 +406,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       kPlayoutVolumeChange,
       kCustomRenderProcessingRuntimeSetting,
       kPlayoutAudioDeviceChange,
+      kCapturePostGain,
       kCaptureOutputUsed
     };
 
@@ -393,8 +420,11 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     ~RuntimeSetting() = default;
 
     static RuntimeSetting CreateCapturePreGain(float gain) {
-      RTC_DCHECK_GE(gain, 1.f) << "Attenuation is not allowed.";
       return {Type::kCapturePreGain, gain};
+    }
+
+    static RuntimeSetting CreateCapturePostGain(float gain) {
+      return {Type::kCapturePostGain, gain};
     }
 
     
