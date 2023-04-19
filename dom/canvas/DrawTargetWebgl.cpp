@@ -2926,6 +2926,9 @@ Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
       
       webgl::SwapChainOptions options;
       options.bgra = true;
+      
+      
+      options.forceAsyncPresent = StaticPrefs::gfx_canvas_accelerated_async_present();
       mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, options);
     }
   }
