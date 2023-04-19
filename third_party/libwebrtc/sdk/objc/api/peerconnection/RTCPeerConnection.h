@@ -81,6 +81,12 @@ typedef NS_ENUM(NSInteger, RTCStatsOutputLevel) {
   RTCStatsOutputLevelDebug,
 };
 
+typedef void (^RTCCreateSessionDescriptionCompletionHandler)(RTC_OBJC_TYPE(RTCSessionDescription) *
+                                                                 _Nullable sdp,
+                                                             NSError *_Nullable error);
+
+typedef void (^RTCSetSessionDescriptionCompletionHandler)(NSError *_Nullable error);
+
 @class RTC_OBJC_TYPE(RTCPeerConnection);
 
 RTC_OBJC_EXPORT
@@ -293,27 +299,24 @@ RTC_OBJC_EXPORT
 
 
 - (void)offerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
-          completionHandler:(nullable void (^)(RTC_OBJC_TYPE(RTCSessionDescription) * _Nullable sdp,
-                                               NSError *_Nullable error))completionHandler;
+          completionHandler:(RTCCreateSessionDescriptionCompletionHandler)completionHandler;
 
 
 - (void)answerForConstraints:(RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints
-           completionHandler:
-               (nullable void (^)(RTC_OBJC_TYPE(RTCSessionDescription) * _Nullable sdp,
-                                  NSError *_Nullable error))completionHandler;
+           completionHandler:(RTCCreateSessionDescriptionCompletionHandler)completionHandler;
 
 
 - (void)setLocalDescription:(RTC_OBJC_TYPE(RTCSessionDescription) *)sdp
-          completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
+          completionHandler:(RTCSetSessionDescriptionCompletionHandler)completionHandler;
 
 
 
 - (void)setLocalDescriptionWithCompletionHandler:
-    (nullable void (^)(NSError *_Nullable error))completionHandler;
+    (RTCSetSessionDescriptionCompletionHandler)completionHandler;
 
 
 - (void)setRemoteDescription:(RTC_OBJC_TYPE(RTCSessionDescription) *)sdp
-           completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
+           completionHandler:(RTCSetSessionDescriptionCompletionHandler)completionHandler;
 
 
 
