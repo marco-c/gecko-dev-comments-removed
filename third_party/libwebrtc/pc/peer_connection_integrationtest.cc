@@ -617,6 +617,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     ASSERT_EQ(audio_track_stats_id_, *rtp_stats->track_id);
     audio_packets_stat_ = *rtp_stats->packets_received;
     audio_delay_stat_ = *track_stats->relative_packet_arrival_delay;
+    audio_samples_stat_ = *track_stats->total_samples_received;
+    audio_concealed_stat_ = *track_stats->concealed_samples;
   }
 
   void UpdateDelayStats(std::string tag, int desc_size) {
@@ -634,10 +636,33 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     
     
     
-    ASSERT_GT(0.1, recent_delay) << tag << " size " << desc_size;
+    EXPECT_GT(0.1, recent_delay) << tag << " size " << desc_size;
+    auto delta_samples =
+        *track_stats->total_samples_received - audio_samples_stat_;
+    auto delta_concealed =
+        *track_stats->concealed_samples - audio_concealed_stat_;
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    EXPECT_GT(15000U, delta_concealed) << "Concealed " << delta_concealed
+                                       << " of " << delta_samples << " samples";
+    if (delta_samples > 0) {
+      EXPECT_GT(0.6, 1.0 * delta_concealed / delta_samples)
+          << "Concealed " << delta_concealed << " of " << delta_samples
+          << " samples";
+    }
     
     audio_packets_stat_ = *rtp_stats->packets_received;
     audio_delay_stat_ = *track_stats->relative_packet_arrival_delay;
+    audio_samples_stat_ = *track_stats->total_samples_received;
+    audio_concealed_stat_ = *track_stats->concealed_samples;
   }
 
  private:
@@ -1111,6 +1136,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   
   int audio_packets_stat_ = 0;
   double audio_delay_stat_ = 0.0;
+  uint64_t audio_samples_stat_ = 0;
+  uint64_t audio_concealed_stat_ = 0;
   std::string rtp_stats_id_;
   std::string audio_track_stats_id_;
 
