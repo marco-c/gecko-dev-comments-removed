@@ -137,7 +137,9 @@ def ParseArgs(argv=None):
   gtest_group.AddArgument('-r', '--repeat')
   
   
-  gtest_group.AddArgument('--dump_json_test_results')
+  
+  gtest_group.AddArgument('--isolated-script-test-output',
+                          dest='dump_json_test_results')
   gtest_group.AddArgument('--retry_failed')
   gtest_group.AddArgument('--gtest_color')
   gtest_group.AddArgument('--gtest_filter')
