@@ -323,6 +323,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetUserAgentOverride(GetUserAgentOverride());
   txn.SetSuspendMediaWhenInactive(GetSuspendMediaWhenInactive());
   txn.SetDisplayMode(GetDisplayMode());
+  txn.SetForceDesktopViewport(GetForceDesktopViewport());
 
   
   

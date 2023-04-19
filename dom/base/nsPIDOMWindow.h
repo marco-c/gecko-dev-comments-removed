@@ -803,10 +803,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   mozilla::dom::Element* GetFrameElementInternal() const;
   void SetFrameElementInternal(mozilla::dom::Element* aFrameElement);
 
-  void SetDesktopModeViewport(bool aDesktopModeViewport) {
-    mDesktopModeViewport = aDesktopModeViewport;
-  }
-  bool IsDesktopModeViewport() const { return mDesktopModeViewport; }
   bool IsBackground() { return mIsBackground; }
 
   
@@ -1165,9 +1161,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   
   bool mIsBackground;
-
-  
-  bool mDesktopModeViewport;
 
   bool mIsRootOuterWindow;
 

@@ -45,6 +45,10 @@ const DISPLAY_MODE_STANDALONE = 2;
 const DISPLAY_MODE_FULLSCREEN = 3;
 
 
+const VIEWPORT_MODE_MOBILE = 0;
+const VIEWPORT_MODE_DESKTOP = 1;
+
+
 class GeckoViewSettings extends GeckoViewModule {
   onInit() {
     debug`onInit`;
@@ -76,6 +80,7 @@ class GeckoViewSettings extends GeckoViewModule {
     this.sessionContextId = settings.sessionContextId;
     this.suspendMediaWhenInactive = settings.suspendMediaWhenInactive;
     this.allowJavascript = settings.allowJavascript;
+    this.viewportMode = settings.viewportMode;
     this.useTrackingProtection = !!settings.useTrackingProtection;
 
     
@@ -109,6 +114,11 @@ class GeckoViewSettings extends GeckoViewModule {
 
   set useTrackingProtection(aUse) {
     this.browsingContext.useTrackingProtection = aUse;
+  }
+
+  set viewportMode(aViewportMode) {
+    this.browsingContext.forceDesktopViewport =
+      aViewportMode == VIEWPORT_MODE_DESKTOP;
   }
 
   get userAgentMode() {

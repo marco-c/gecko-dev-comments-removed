@@ -10243,8 +10243,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   
   
   const bool fullscreen = Fullscreen();
-  nsPIDOMWindowOuter* win = GetWindow();
-  if (win && win->IsDesktopModeViewport() && !IsAboutPage() && !fullscreen) {
+  auto* bc = GetBrowsingContext();
+  if (bc && bc->ForceDesktopViewport() && !IsAboutPage() && !fullscreen) {
     CSSCoord viewportWidth =
         StaticPrefs::browser_viewport_desktopWidth() / fullZoom;
     CSSToScreenScale scaleToFit(aDisplaySize.width / viewportWidth);
@@ -10401,7 +10401,6 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       if (maxWidth == nsViewportInfo::Auto && !mValidScaleFloat) {
-        BrowsingContext* bc = GetBrowsingContext();
         if (bc && bc->TouchEventsOverride() == TouchEventsOverride::Enabled &&
             bc->InRDMPane()) {
           

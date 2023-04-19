@@ -13,10 +13,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const EXPORTED_SYMBOLS = ["GeckoViewSettingsChild"];
 
 
-const VIEWPORT_MODE_MOBILE = 0;
-const VIEWPORT_MODE_DESKTOP = 1;
-
-
 class GeckoViewSettingsChild extends GeckoViewActorChild {
   receiveMessage(message) {
     const { name } = message;
@@ -26,21 +22,12 @@ class GeckoViewSettingsChild extends GeckoViewActorChild {
       case "SettingsUpdate": {
         const settings = message.data;
 
-        this.viewportMode = settings.viewportMode;
         if (settings.isPopup) {
           
           this.contentWindow.windowUtils.allowScriptsToClose();
         }
       }
     }
-  }
-
-  set viewportMode(aMode) {
-    const { windowUtils } = this.contentWindow;
-    if (aMode === windowUtils.desktopModeViewport) {
-      return;
-    }
-    windowUtils.desktopModeViewport = aMode === VIEWPORT_MODE_DESKTOP;
   }
 }
 
