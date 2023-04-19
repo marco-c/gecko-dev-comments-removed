@@ -3190,6 +3190,11 @@ void Selection::NotifySelectionListeners() {
   }
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
+
+  
+  
+  frameSelection->SetIsDoubleClickSelection(false);
+
   if (frameSelection->IsBatching()) {
     frameSelection->SetChangesDuringBatchingFlag();
     return;

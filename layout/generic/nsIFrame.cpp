@@ -5000,6 +5000,9 @@ nsresult nsIFrame::PeekBackwardAndForward(nsSelectionAmount aAmountBack,
   if (NS_FAILED(rv)) {
     return rv;
   }
+  if (aAmountBack == eSelectWord) {
+    frameSelection->SetIsDoubleClickSelection(true);
+  }
 
   
   return frameSelection->MaintainSelection(aAmountBack);

@@ -247,6 +247,26 @@ class nsFrameSelection final {
                                           FocusMode aFocusMode,
                                           CaretAssociateHint aHint);
 
+ public:
+  
+
+
+
+
+
+
+  void SetIsDoubleClickSelection(bool aIsDoubleClickSelection) {
+    mIsDoubleClickSelection = aIsDoubleClickSelection;
+  }
+
+  
+
+
+
+  [[nodiscard]] bool IsDoubleClickSelection() const {
+    return mIsDoubleClickSelection;
+  }
+
   
 
 
@@ -1097,6 +1117,12 @@ class nsFrameSelection final {
 
   bool mDragState = false;  
   bool mAccessibleCaretEnabled = false;
+
+  
+  
+  
+  
+  bool mIsDoubleClickSelection{false};
 };
 
 #endif 

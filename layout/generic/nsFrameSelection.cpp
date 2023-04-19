@@ -1549,6 +1549,12 @@ void nsFrameSelection::SetDragState(bool aState) {
     mTableSelection.mDragSelectingCells = false;
     
     SetChangeReasons(nsISelectionListener::MOUSEUP_REASON);
+
+    
+    
+    
+    AutoRestore<bool> restoreIsDoubleClickSelectionFlag(
+        mIsDoubleClickSelection);
     
     NotifySelectionListeners(SelectionType::eNormal);
   }

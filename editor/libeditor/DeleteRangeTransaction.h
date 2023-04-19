@@ -69,6 +69,24 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
 
+  nsresult MaybeExtendDeletingRangeWithSurroundingWhitespace(
+      nsRange& aRange) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
