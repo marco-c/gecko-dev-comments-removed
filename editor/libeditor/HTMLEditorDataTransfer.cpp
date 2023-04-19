@@ -4,6 +4,7 @@
 
 
 
+#include "ErrorList.h"
 #include "HTMLEditor.h"
 
 #include <string.h>
@@ -202,13 +203,15 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   EditorDOMPoint pointToPutCaret;
   for (nsCOMPtr<nsIContent> contentToInsert = documentFragment->GetFirstChild();
        contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
-    CreateContentResult insertChildContentNodeResult =
+    Result<CreateContentResult, nsresult> insertChildContentNodeResult =
         InsertNodeWithTransaction(*contentToInsert, pointToInsert);
-    if (insertChildContentNodeResult.isErr()) {
+    if (MOZ_UNLIKELY(insertChildContentNodeResult.isErr())) {
       NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
       return insertChildContentNodeResult.unwrapErr();
     }
-    insertChildContentNodeResult.MoveCaretPointTo(
+    CreateContentResult unwrappedInsertChildContentNodeResult =
+        insertChildContentNodeResult.unwrap();
+    unwrappedInsertChildContentNodeResult.MoveCaretPointTo(
         pointToPutCaret, *this,
         {SuggestCaret::OnlyIfHasSuggestion,
          SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -884,17 +887,17 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
         
-        CreateContentResult moveChildResult =
+        Result<CreateContentResult, nsresult> moveChildResult =
             mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
                 MOZ_KnownLive(child), pointToInsert,
                 SplitAtEdges::eDoNotCreateEmptyContainer);
-        inserted |=
-            moveChildResult.isOk() || moveChildResult.GotUnexpectedDOMTree();
-        if (moveChildResult.isErr()) {
+        if (MOZ_UNLIKELY(moveChildResult.isErr())) {
           
           
           
-          if (moveChildResult.GotUnexpectedDOMTree()) {
+          if (moveChildResult.inspectErr() ==
+              NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
+            inserted = true;
             continue;  
           }
           NS_WARNING(
@@ -903,10 +906,12 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
               "ignored");
           break;  
         }
+        inserted = true;
         lastInsertedPoint.Set(child);
         pointToInsert = lastInsertedPoint.NextPoint();
         MOZ_ASSERT(pointToInsert.IsSet());
-        moveChildResult.MoveCaretPointTo(
+        CreateContentResult unwrappedMoveChildResult = moveChildResult.unwrap();
+        unwrappedMoveChildResult.MoveCaretPointTo(
             pointToPutCaret, mHTMLEditor,
             {SuggestCaret::OnlyIfHasSuggestion,
              SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -961,24 +966,22 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
             }
           }
           
-          CreateContentResult moveChildResult =
+          Result<CreateContentResult, nsresult> moveChildResult =
               mHTMLEditor
                   .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
                       MOZ_KnownLive(child), pointToInsert,
                       SplitAtEdges::eDoNotCreateEmptyContainer);
-          inserted |=
-              moveChildResult.isOk() || moveChildResult.GotUnexpectedDOMTree();
-          if (moveChildResult.isErr()) {
+          if (MOZ_UNLIKELY(moveChildResult.isErr())) {
             
             
             
-            if (moveChildResult.GotUnexpectedDOMTree()) {
+            if (moveChildResult.inspectErr() ==
+                NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
+              inserted = true;
               continue;  
             }
-            if (moveChildResult.EditorDestroyed()) {
-              NS_WARNING(
-                  "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction() "
-                  "caused destroying the editor");
+            if (NS_WARN_IF(moveChildResult.inspectErr() ==
+                           NS_ERROR_EDITOR_DESTROYED)) {
               return Err(NS_ERROR_EDITOR_DESTROYED);
             }
             NS_WARNING(
@@ -987,10 +990,13 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
                 "ignored");
             break;  
           }
+          inserted = true;
           lastInsertedPoint.Set(child);
           pointToInsert = lastInsertedPoint.NextPoint();
           MOZ_ASSERT(pointToInsert.IsSet());
-          moveChildResult.MoveCaretPointTo(
+          CreateContentResult unwrappedMoveChildResult =
+              moveChildResult.unwrap();
+          unwrappedMoveChildResult.MoveCaretPointTo(
               pointToPutCaret, mHTMLEditor,
               {SuggestCaret::OnlyIfHasSuggestion,
                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -1042,23 +1048,21 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
         
-        CreateContentResult moveChildResult =
+        Result<CreateContentResult, nsresult> moveChildResult =
             mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
                 MOZ_KnownLive(child), pointToInsert,
                 SplitAtEdges::eDoNotCreateEmptyContainer);
-        inserted |=
-            moveChildResult.isOk() || moveChildResult.GotUnexpectedDOMTree();
-        if (moveChildResult.isErr()) {
+        if (MOZ_UNLIKELY(moveChildResult.isErr())) {
           
           
-          if (moveChildResult.GotUnexpectedDOMTree()) {
+          if (moveChildResult.inspectErr() ==
+              NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
+            inserted = true;
             continue;  
           }
-          if (moveChildResult.EditorDestroyed()) {
-            NS_WARNING(
-                "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction() "
-                "caused destroying the editor");
-            return Err(NS_ERROR_EDITOR_DESTROYED);
+          if (NS_WARN_IF(moveChildResult.inspectErr() ==
+                         NS_ERROR_EDITOR_DESTROYED)) {
+            return moveChildResult.propagateErr();
           }
           NS_WARNING(
               "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -1066,10 +1070,12 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
               "ignored");
           break;  
         }
+        CreateContentResult unwrappedMoveChildResult = moveChildResult.unwrap();
+        inserted = true;
         lastInsertedPoint.Set(child);
         pointToInsert = lastInsertedPoint.NextPoint();
         MOZ_ASSERT(pointToInsert.IsSet());
-        moveChildResult.MoveCaretPointTo(
+        unwrappedMoveChildResult.MoveCaretPointTo(
             pointToPutCaret, mHTMLEditor,
             {SuggestCaret::OnlyIfHasSuggestion,
              SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -1095,14 +1101,14 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     if (!inserted) {
       
       
-      const CreateContentResult moveContentResult =
+      Result<CreateContentResult, nsresult> moveContentResult =
           mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
               MOZ_KnownLive(content), pointToInsert,
               SplitAtEdges::eDoNotCreateEmptyContainer);
-      if (moveContentResult.isOk()) {
+      if (MOZ_LIKELY(moveContentResult.isOk())) {
         lastInsertedPoint.Set(content);
         pointToInsert = lastInsertedPoint;
-        nsresult rv = moveContentResult.SuggestCaretPointTo(
+        nsresult rv = moveContentResult.inspect().SuggestCaretPointTo(
             mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
                           SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
                           SuggestCaret::AndIgnoreTrivialError});
@@ -1113,7 +1119,8 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
         NS_WARNING_ASSERTION(
             rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
             "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
-      } else if (moveContentResult.GotUnexpectedDOMTree()) {
+      } else if (moveContentResult.inspectErr() ==
+                 NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
         
         
       } else {
@@ -1133,22 +1140,20 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
           }
           const OwningNonNull<nsIContent> oldParentContent =
               *childContent->GetParent();
-          const CreateContentResult moveParentResult =
+          Result<CreateContentResult, nsresult> moveParentResult =
               mHTMLEditor
                   .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
                       oldParentContent, pointToInsert,
                       SplitAtEdges::eDoNotCreateEmptyContainer);
-          if (moveParentResult.isErr()) {
+          if (MOZ_UNLIKELY(moveParentResult.isErr())) {
             
             
-            if (moveParentResult.GotUnexpectedDOMTree()) {
+            if (moveParentResult.inspectErr() ==
+                NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
               break;  
             }
-            if (moveParentResult.EditorDestroyed()) {
-              NS_WARNING(
-                  "HTMLEditor::InsertNodeInToProperAncestorWithTransaction("
-                  "SplitAtEdges::eDoNotCreateEmptyContainer) caused destroying "
-                  "the editor");
+            if (NS_WARN_IF(moveParentResult.inspectErr() ==
+                           NS_ERROR_EDITOR_DESTROYED)) {
               return Err(NS_ERROR_EDITOR_DESTROYED);
             }
             NS_WARNING(
@@ -1159,7 +1164,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
           }
           insertedContextParentContent = oldParentContent;
           pointToInsert.Set(oldParentContent);
-          nsresult rv = moveParentResult.SuggestCaretPointTo(
+          nsresult rv = moveParentResult.inspect().SuggestCaretPointTo(
               mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
                             SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
                             SuggestCaret::AndIgnoreTrivialError});
