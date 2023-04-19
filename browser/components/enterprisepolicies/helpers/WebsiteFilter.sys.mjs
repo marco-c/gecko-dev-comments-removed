@@ -1,34 +1,32 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
+/*
+ * This module implements the policy to block websites from being visited,
+ * or to only allow certain websites to be visited.
+ *
+ * The blocklist takes as input an array of MatchPattern strings, as documented
+ * at https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Match_patterns.
+ *
+ * The exceptions list takes the same as input. This list opens up
+ * exceptions for rules on the blocklist that might be too strict.
+ *
+ * In addition to that, this allows the user to create an allowlist approach,
+ * by using the special "<all_urls>" pattern for the blocklist, and then
+ * adding all allowlisted websites on the exceptions list.
+ *
+ * Note that this module only blocks top-level website navigations and embeds.
+ * It does not block any other accesses to these urls: image tags, scripts, XHR, etc.,
+ * because that could cause unexpected breakage. This is a policy to block
+ * users from visiting certain websites, and not from blocking any network
+ * connections to those websites. If the admin is looking for that, the recommended
+ * way is to configure that with extensions or through a company firewall.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const LIST_LENGTH_LIMIT = 1000;
 
@@ -40,16 +38,14 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   return new ConsoleAPI({
     prefix: "WebsiteFilter Policy",
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.jsm for details.
     maxLogLevel: "error",
     maxLogLevelPref: PREF_LOGLEVEL,
   });
 });
 
-var EXPORTED_SYMBOLS = ["WebsiteFilter"];
-
-let WebsiteFilter = {
+export let WebsiteFilter = {
   init(blocklist, exceptionlist) {
     let blockArray = [],
       exceptionArray = [];
@@ -106,8 +102,8 @@ let WebsiteFilter = {
         true
       );
     }
-    
-    
+    // We have to do this to catch 30X redirects.
+    // See bug 456957.
     Services.obs.addObserver(this, "http-on-examine-response", true);
   },
 
@@ -150,7 +146,7 @@ let WebsiteFilter = {
         return;
       }
       let location = channel.getResponseHeader("location");
-      
+      // location might not be a fully qualified URL
       let url;
       try {
         url = new URL(location);
