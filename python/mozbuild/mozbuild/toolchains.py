@@ -8,7 +8,8 @@ import six
 
 
 def toolchain_task_definitions():
-    from gecko_taskgraph.generator import load_tasks_for_kind
+    import gecko_taskgraph  
+    from taskgraph.generator import load_tasks_for_kind
 
     
     
