@@ -398,6 +398,35 @@ void nsMenuBarX::SetSystemHelpMenu() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
+nsMenuX* nsMenuBarX::GetXULWindowMenu() {
+  
+  
+  for (int32_t i = GetMenuCount() - 1; i >= 0; --i) {
+    nsMenuX* aMenu = GetMenuAt(i);
+    if (aMenu && nsMenuX::IsXULWindowMenu(aMenu->Content())) {
+      return aMenu;
+    }
+  }
+  return nil;
+}
+
+
+
+
+void nsMenuBarX::SetSystemWindowMenu() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  nsMenuX* xulWindowMenu = GetXULWindowMenu();
+  if (xulWindowMenu) {
+    NSMenu* windowMenu = xulWindowMenu->NativeNSMenu();
+    if (windowMenu) {
+      NSApp.windowsMenu = windowMenu;
+    }
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
 nsresult nsMenuBarX::Paint() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -419,6 +448,7 @@ nsresult nsMenuBarX::Paint() {
   
   NSApp.mainMenu = mNativeMenu;
   SetSystemHelpMenu();
+  SetSystemWindowMenu();
   nsMenuBarX::sLastGeckoMenuBarPainted = this;
 
   gSomeMenuBarPainted = YES;
