@@ -4419,3 +4419,6 @@ pref("extensions.formautofill.supportRTL", false);
 
 
 pref("cookiebanners.listService.logLevel", "Error");
+
+
+pref("cookiebanners.bannerClicking.logLevel", "Error");
