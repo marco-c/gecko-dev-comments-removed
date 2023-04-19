@@ -750,6 +750,176 @@ bool ContentHasHeaderExtension(const cricket::ContentInfo& content_info,
 
 
 
+class SdpOfferAnswerHandler::RemoteDescriptionOperation {
+ public:
+  RemoteDescriptionOperation(
+      SdpOfferAnswerHandler* handler,
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer,
+      std::function<void()> operations_chain_callback)
+      : handler_(handler),
+        desc_(std::move(desc)),
+        observer_(std::move(observer)),
+        operations_chain_callback_(std::move(operations_chain_callback)) {
+    if (!desc_) {
+      InvalidParam("SessionDescription is NULL.");
+    } else {
+      type_ = desc_->GetType();
+    }
+  }
+
+  ~RemoteDescriptionOperation() {
+    RTC_DCHECK_RUN_ON(handler_->signaling_thread());
+    SignalCompletion();
+    operations_chain_callback_();
+  }
+
+  bool ok() const { return error_.ok(); }
+
+  
+  
+  void SignalCompletion() {
+    if (observer_) {
+      observer_->OnSetRemoteDescriptionComplete(error_);
+      observer_ = nullptr;  
+    }
+  }
+
+  
+  
+  bool HaveSessionError() {
+    RTC_DCHECK(ok());
+    if (handler_->session_error() == SessionError::kNone)
+      return false;
+    SetError(RTCErrorType::INTERNAL_ERROR, handler_->GetSessionErrorMsg());
+    return true;
+  }
+
+  
+  
+  
+  bool MaybeRollback() {
+    RTC_DCHECK_RUN_ON(handler_->signaling_thread());
+    RTC_DCHECK(ok());
+    if (type_ != SdpType::kRollback) {
+      
+      if (type_ == SdpType::kOffer && handler_->IsUnifiedPlan() &&
+          handler_->pc_->configuration()->enable_implicit_rollback &&
+          handler_->signaling_state() ==
+              PeerConnectionInterface::kHaveLocalOffer) {
+        handler_->Rollback(type_);
+      }
+      return false;
+    }
+
+    if (handler_->IsUnifiedPlan()) {
+      error_ = handler_->Rollback(type_);
+    } else if (type_ == SdpType::kRollback) {
+      Unsupported("Rollback not supported in Plan B");
+    }
+
+    return true;
+  }
+
+  
+  void ReportOfferAnswerUma() {
+    RTC_DCHECK(ok());
+    if (type_ == SdpType::kOffer || type_ == SdpType::kAnswer) {
+      handler_->pc_->ReportSdpFormatReceived(*desc_.get());
+      handler_->pc_->ReportSdpBundleUsage(*desc_.get());
+    }
+  }
+
+  
+  
+  
+  bool IsDescriptionValid() {
+    RTC_DCHECK_RUN_ON(handler_->signaling_thread());
+    RTC_DCHECK(ok());
+    RTC_DCHECK(bundle_groups_by_mid_.empty()) << "Already called?";
+    bundle_groups_by_mid_ = GetBundleGroupsByMid(description());
+    error_ = handler_->ValidateSessionDescription(
+        desc_.get(), cricket::CS_REMOTE, bundle_groups_by_mid_);
+    if (!error_.ok()) {
+      std::string error_message =
+          GetSetDescriptionErrorMessage(cricket::CS_REMOTE, type_, error_);
+      RTC_LOG(LS_ERROR) << error_message;
+      error_.set_message(std::move(error_message));
+      return false;
+    }
+
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  bool ApplyRemoteDescription() {
+    RTC_DCHECK_RUN_ON(handler_->signaling_thread());
+    RTC_DCHECK(ok());
+    
+    error_ = handler_->ApplyRemoteDescription(std::move(desc_),
+                                              bundle_groups_by_mid());
+    
+
+    if (!error_.ok()) {
+      
+      
+      
+      
+      handler_->SetSessionError(SessionError::kContent, error_.message());
+      std::string error_message =
+          GetSetDescriptionErrorMessage(cricket::CS_REMOTE, type_, error_);
+      RTC_LOG(LS_ERROR) << error_message;
+      error_.set_message(std::move(error_message));
+      return false;
+    }
+
+    return true;
+  }
+
+  
+  SdpType type() const { return type_; }
+
+  cricket::SessionDescription* description() { return desc_->description(); }
+
+  
+  
+  
+  const std::map<std::string, const cricket::ContentGroup*>&
+  bundle_groups_by_mid() const {
+    RTC_DCHECK(ok());
+    return bundle_groups_by_mid_;
+  }
+
+ private:
+  
+  void Unsupported(std::string message) {
+    SetError(RTCErrorType::UNSUPPORTED_OPERATION, std::move(message));
+  }
+
+  void InvalidParam(std::string message) {
+    SetError(RTCErrorType::INVALID_PARAMETER, std::move(message));
+  }
+
+  void SetError(RTCErrorType type, std::string message) {
+    RTC_DCHECK(ok()) << "Overwriting an existing error?";
+    error_ = RTCError(type, std::move(message));
+  }
+
+  SdpOfferAnswerHandler* const handler_;
+  std::unique_ptr<SessionDescriptionInterface> desc_;
+  rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer_;
+  std::function<void()> operations_chain_callback_;
+  RTCError error_ = RTCError::OK();
+  std::map<std::string, const cricket::ContentGroup*> bundle_groups_by_mid_;
+  SdpType type_;
+};
+
+
+
 class SdpOfferAnswerHandler::ImplicitCreateSessionDescriptionObserver
     : public CreateSessionDescriptionObserver {
  public:
@@ -1501,15 +1671,11 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
         
         
         this_weak_ptr->DoSetRemoteDescription(
-            std::move(desc),
-            rtc::make_ref_counted<SetSessionDescriptionObserverAdapter>(
-                this_weak_ptr, observer_refptr));
-        
-        
-        
-        
-        
-        operations_chain_callback();
+            std::make_unique<RemoteDescriptionOperation>(
+                this_weak_ptr.get(), std::move(desc),
+                rtc::make_ref_counted<SetSessionDescriptionObserverAdapter>(
+                    this_weak_ptr, observer_refptr),
+                std::move(operations_chain_callback)));
       });
 }
 
@@ -1524,6 +1690,12 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
       [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(), observer,
        desc = std::move(desc)](
           std::function<void()> operations_chain_callback) mutable {
+        if (!observer) {
+          RTC_DLOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
+          operations_chain_callback();
+          return;
+        }
+
         
         if (!this_weak_ptr) {
           observer->OnSetRemoteDescriptionComplete(RTCError(
@@ -1532,12 +1704,11 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
           operations_chain_callback();
           return;
         }
-        this_weak_ptr->DoSetRemoteDescription(std::move(desc),
-                                              std::move(observer));
-        
-        
-        
-        operations_chain_callback();
+
+        this_weak_ptr->DoSetRemoteDescription(
+            std::make_unique<RemoteDescriptionOperation>(
+                this_weak_ptr.get(), std::move(desc), std::move(observer),
+                std::move(operations_chain_callback)));
       });
 }
 
@@ -1702,10 +1873,13 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
         GetFirstVideoContent(remote_description()->description()), video_desc);
   }
 
-  if (type == SdpType::kAnswer &&
-      local_ice_credentials_to_replace_->SatisfiesIceRestart(
-          *current_local_description_)) {
-    local_ice_credentials_to_replace_->ClearIceCredentials();
+  if (type == SdpType::kAnswer) {
+    if (local_ice_credentials_to_replace_->SatisfiesIceRestart(
+            *current_local_description_)) {
+      local_ice_credentials_to_replace_->ClearIceCredentials();
+    }
+
+    RemoveStoppedTransceivers();
   }
 
   return RTCError::OK();
@@ -2131,96 +2305,41 @@ void SdpOfferAnswerHandler::DoCreateAnswer(
 }
 
 void SdpOfferAnswerHandler::DoSetRemoteDescription(
-    std::unique_ptr<SessionDescriptionInterface> desc,
-    rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {
+    std::unique_ptr<RemoteDescriptionOperation> operation) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::DoSetRemoteDescription");
 
-  if (!observer) {
-    RTC_LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
+  if (!operation->ok())
     return;
-  }
 
-  if (!desc) {
-    observer->OnSetRemoteDescriptionComplete(RTCError(
-        RTCErrorType::INVALID_PARAMETER, "SessionDescription is NULL."));
+  if (operation->HaveSessionError())
     return;
-  }
 
-  
-  
-  if (session_error() != SessionError::kNone) {
-    std::string error_message = GetSessionErrorMsg();
-    RTC_LOG(LS_ERROR) << "SetRemoteDescription: " << error_message;
-    observer->OnSetRemoteDescriptionComplete(
-        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
+  if (operation->MaybeRollback())
     return;
-  }
-  if (IsUnifiedPlan()) {
-    if (pc_->configuration()->enable_implicit_rollback) {
-      if (desc->GetType() == SdpType::kOffer &&
-          signaling_state() == PeerConnectionInterface::kHaveLocalOffer) {
-        Rollback(desc->GetType());
-      }
-    }
-    
-    if (desc->GetType() == SdpType::kRollback) {
-      observer->OnSetRemoteDescriptionComplete(Rollback(desc->GetType()));
-      return;
-    }
-  } else if (desc->GetType() == SdpType::kRollback) {
-    observer->OnSetRemoteDescriptionComplete(
-        RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                 "Rollback not supported in Plan B"));
+
+  operation->ReportOfferAnswerUma();
+
+  
+  
+  FillInMissingRemoteMids(operation->description());
+  if (!operation->IsDescriptionValid())
     return;
-  }
-  if (desc->GetType() == SdpType::kOffer ||
-      desc->GetType() == SdpType::kAnswer) {
-    
-    pc_->ReportSdpFormatReceived(*desc);
-    pc_->ReportSdpBundleUsage(*desc);
-  }
 
-  
-  
-  FillInMissingRemoteMids(desc->description());
-
-  std::map<std::string, const cricket::ContentGroup*> bundle_groups_by_mid =
-      GetBundleGroupsByMid(desc->description());
-  RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_REMOTE,
-                                              bundle_groups_by_mid);
-  if (!error.ok()) {
-    std::string error_message = GetSetDescriptionErrorMessage(
-        cricket::CS_REMOTE, desc->GetType(), error);
-    RTC_LOG(LS_ERROR) << error_message;
-    observer->OnSetRemoteDescriptionComplete(
-        RTCError(error.type(), std::move(error_message)));
+  if (!operation->ApplyRemoteDescription())
     return;
-  }
 
   
-  
-  const SdpType type = desc->GetType();
+  operation->SignalCompletion();
 
-  error = ApplyRemoteDescription(std::move(desc), bundle_groups_by_mid);
-  
+  SetRemoteDescriptionPostProcess(operation->type() == SdpType::kAnswer);
+}
 
-  if (!error.ok()) {
-    
-    
-    
-    SetSessionError(SessionError::kContent, error.message());
-    std::string error_message =
-        GetSetDescriptionErrorMessage(cricket::CS_REMOTE, type, error);
-    RTC_LOG(LS_ERROR) << error_message;
-    observer->OnSetRemoteDescriptionComplete(
-        RTCError(error.type(), std::move(error_message)));
-    return;
-  }
+
+void SdpOfferAnswerHandler::SetRemoteDescriptionPostProcess(bool was_answer) {
   RTC_DCHECK(remote_description());
 
-  if (type == SdpType::kAnswer) {
-    RemoveStoppedTransceivers();
+  if (was_answer) {
     
     
     pc_->network_thread()->Invoke<void>(
@@ -2229,7 +2348,6 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
     ReportNegotiatedSdpSemantics(*remote_description());
   }
 
-  observer->OnSetRemoteDescriptionComplete(RTCError::OK());
   pc_->NoteUsageEvent(UsageEvent::SET_REMOTE_DESCRIPTION_SUCCEEDED);
 
   
@@ -3048,9 +3166,8 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
     cricket::ContentSource source,
     const std::map<std::string, const cricket::ContentGroup*>&
         bundle_groups_by_mid) {
-  if (session_error() != SessionError::kNone) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
-  }
+  
+  RTC_DCHECK_EQ(SessionError::kNone, session_error());
 
   if (!sdesc || !sdesc->description()) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, kInvalidSdp);
@@ -3118,6 +3235,7 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
     
     
     
+    
     const cricket::SessionDescription* current_desc = nullptr;
     const cricket::SessionDescription* secondary_current_desc = nullptr;
     if (local_description()) {
@@ -3171,6 +3289,7 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
   RTC_DCHECK(IsUnifiedPlan());
 
   if (new_session.GetType() == SdpType::kOffer) {
+    
     
     
     
