@@ -105,3 +105,9 @@ self.addEventListener('canmakepayment', event => {
       break;
   }
 });
+
+
+
+self.addEventListener('abortpayment', event => {
+  event.respondWith(true);
+});
