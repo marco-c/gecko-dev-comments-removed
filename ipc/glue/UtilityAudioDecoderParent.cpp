@@ -78,9 +78,8 @@ void UtilityAudioDecoderParent::GenericPreloadForSandbox() {
 
 void UtilityAudioDecoderParent::WMFPreloadForSandbox() {
 #if defined(MOZ_SANDBOX) && defined(OS_WIN)
-  UtilityProcessImpl::LoadLibraryOrCrash(L"mfplat.dll");
-  UtilityProcessImpl::LoadLibraryOrCrash(L"mf.dll");
-
+  
+  
 #  if defined(DEBUG)
   
   UtilityProcessImpl::LoadLibraryOrCrash(L"ole32.dll");
@@ -89,6 +88,7 @@ void UtilityAudioDecoderParent::WMFPreloadForSandbox() {
   auto rv = wmf::MediaFoundationInitializer::HasInitialized();
   if (!rv) {
     NS_WARNING("Failed to init Media Foundation in the Utility process");
+    return;
   }
 #endif  
 }
