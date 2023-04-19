@@ -81,8 +81,6 @@ class MetaBuildWrapper(object):
       subp.add_argument('-b', '--builder',
                         help='builder name to look up config from')
       subp.add_argument('-m', '--builder-group',
-                        
-                        '--master',
                         help='builder group name to look up config from')
       subp.add_argument('-c', '--config',
                         help='configuration to analyze')
