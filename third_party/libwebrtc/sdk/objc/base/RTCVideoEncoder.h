@@ -50,6 +50,10 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, readonly) BOOL applyAlignmentToAllSimulcastLayers;
 
+
+
+@property(nonatomic, readonly) BOOL supportsNativeHandle;
+
 @end
 
 NS_ASSUME_NONNULL_END
