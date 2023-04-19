@@ -649,7 +649,7 @@ class ZoomAnimation : public AsyncPanZoomAnimation {
     
     
     float sampledPosition = gZoomAnimationFunction->GetValue(
-        animPosition, ComputedTimingFunction::BeforeFlag::Unset);
+        animPosition, StyleEasingBeforeFlag::Unset);
 
     
     
