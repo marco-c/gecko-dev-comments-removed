@@ -84,7 +84,7 @@ add_task(async function init() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("quicksuggest.shouldShowOnboardingDialog", false);
 
-  MerinoTestUtils.server.start();
+  await MerinoTestUtils.server.start();
 
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);

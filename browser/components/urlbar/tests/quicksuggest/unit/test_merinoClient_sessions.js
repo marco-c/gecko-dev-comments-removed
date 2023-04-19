@@ -16,7 +16,7 @@ let gClient;
 
 add_task(async function init() {
   gClient = new MerinoClient();
-  MerinoTestUtils.server.start();
+  await MerinoTestUtils.server.start();
 });
 
 
