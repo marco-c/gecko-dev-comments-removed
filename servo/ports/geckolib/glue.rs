@@ -5648,9 +5648,6 @@ pub extern "C" fn Servo_CSSSupports(
 }
 
 #[no_mangle]
-
-
-#[inline(never)]
 pub unsafe extern "C" fn Servo_NoteExplicitHints(
     element: &RawGeckoElement,
     restyle_hint: RestyleHint,
