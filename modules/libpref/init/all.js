@@ -181,7 +181,13 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 
-pref("dom.text-recognition.enabled", false);
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("dom.text-recognition.enabled", true);
+#else
+  pref("dom.text-recognition.enabled", false);
+#endif
 
 
 
