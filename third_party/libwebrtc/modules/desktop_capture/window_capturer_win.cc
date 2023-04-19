@@ -11,13 +11,21 @@
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/win/window_capturer_win_gdi.h"
+#include "modules/desktop_capture/win/window_capturer_win_wgc.h"
 
 namespace webrtc {
 
 
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
     const DesktopCaptureOptions& options) {
-  return WindowCapturerWinGdi::CreateRawWindowCapturer(options);
+  
+  
+  
+  if (true) {
+    return WindowCapturerWinGdi::CreateRawWindowCapturer(options);
+  } else {
+    return WindowCapturerWinWgc::CreateRawWindowCapturer(options);
+  }
 }
 
 }  
