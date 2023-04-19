@@ -57,6 +57,7 @@ namespace mozilla {
 using namespace dom;
 using ValueSetterOption = TextControlState::ValueSetterOption;
 using ValueSetterOptions = TextControlState::ValueSetterOptions;
+using SelectionDirection = nsITextControlFrame::SelectionDirection;
 
 
 
@@ -1414,7 +1415,6 @@ bool TextControlState::sHasShutDown = false;
 
 TextControlState::TextControlState(TextControlElement* aOwningElement)
     : mTextCtrlElement(aOwningElement),
-      mBoundFrame(nullptr),
       mEverInited(false),
       mEditorInitialized(false),
       mValueTransferInProgress(false),
@@ -1486,7 +1486,7 @@ void TextControlState::DeleteOrCacheForReuse() {
 
     
     UnlinkInternal();
-    mValue.reset();
+    mValue.SetIsVoid(true);
     mTextCtrlElement = nullptr;
 
     
@@ -2067,8 +2067,7 @@ void TextControlState::GetSelectionRange(uint32_t* aSelectionStart,
                                             *aSelectionEnd);
 }
 
-nsITextControlFrame::SelectionDirection TextControlState::GetSelectionDirection(
-    ErrorResult& aRv) {
+SelectionDirection TextControlState::GetSelectionDirection(ErrorResult& aRv) {
   MOZ_ASSERT(IsSelectionCached() || GetSelectionController(),
              "How can we not have a cached selection if we have no selection "
              "controller?");
@@ -2082,22 +2081,22 @@ nsITextControlFrame::SelectionDirection TextControlState::GetSelectionDirection(
   Selection* sel = mSelCon->GetSelection(SelectionType::eNormal);
   if (NS_WARN_IF(!sel)) {
     aRv.Throw(NS_ERROR_FAILURE);
-    return nsITextControlFrame::eForward;  
+    return SelectionDirection::Forward;
   }
 
   nsDirection direction = sel->GetDirection();
   if (direction == eDirNext) {
-    return nsITextControlFrame::eForward;
+    return SelectionDirection::Forward;
   }
 
   MOZ_ASSERT(direction == eDirPrevious);
-  return nsITextControlFrame::eBackward;
+  return SelectionDirection::Backward;
 }
 
-void TextControlState::SetSelectionRange(
-    uint32_t aStart, uint32_t aEnd,
-    nsITextControlFrame::SelectionDirection aDirection, ErrorResult& aRv,
-    ScrollAfterSelection aScroll) {
+void TextControlState::SetSelectionRange(uint32_t aStart, uint32_t aEnd,
+                                         SelectionDirection aDirection,
+                                         ErrorResult& aRv,
+                                         ScrollAfterSelection aScroll) {
   MOZ_ASSERT(IsSelectionCached() || mBoundFrame,
              "How can we have a non-cached selection but no frame?");
 
@@ -2168,7 +2167,7 @@ void TextControlState::SetSelectionStart(const Nullable<uint32_t>& aStart,
     return;
   }
 
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
+  SelectionDirection dir = GetSelectionDirection(aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -2194,7 +2193,7 @@ void TextControlState::SetSelectionEnd(const Nullable<uint32_t>& aEnd,
     return;
   }
 
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
+  SelectionDirection dir = GetSelectionDirection(aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -2203,49 +2202,42 @@ void TextControlState::SetSelectionEnd(const Nullable<uint32_t>& aEnd,
   
 }
 
-static void DirectionToName(nsITextControlFrame::SelectionDirection dir,
-                            nsAString& aDirection) {
+static void DirectionToName(SelectionDirection dir, nsAString& aDirection) {
   switch (dir) {
-    case nsITextControlFrame::eNone:
+    case SelectionDirection::None:
       
       
       NS_WARNING("We don't actually support this... how did we get it?");
-      aDirection.AssignLiteral("none");
-      break;
-    case nsITextControlFrame::eForward:
-      aDirection.AssignLiteral("forward");
-      break;
-    case nsITextControlFrame::eBackward:
-      aDirection.AssignLiteral("backward");
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid SelectionDirection value");
+      return aDirection.AssignLiteral("none");
+    case SelectionDirection::Forward:
+      return aDirection.AssignLiteral("forward");
+    case SelectionDirection::Backward:
+      return aDirection.AssignLiteral("backward");
   }
+  MOZ_ASSERT_UNREACHABLE("Invalid SelectionDirection value");
 }
 
 void TextControlState::GetSelectionDirectionString(nsAString& aDirection,
                                                    ErrorResult& aRv) {
-  nsITextControlFrame::SelectionDirection dir = GetSelectionDirection(aRv);
+  SelectionDirection dir = GetSelectionDirection(aRv);
   if (aRv.Failed()) {
     return;
   }
   DirectionToName(dir, aDirection);
 }
 
-static nsITextControlFrame::SelectionDirection
-DirectionStringToSelectionDirection(const nsAString& aDirection) {
+static SelectionDirection DirectionStringToSelectionDirection(
+    const nsAString& aDirection) {
   if (aDirection.EqualsLiteral("backward")) {
-    return nsITextControlFrame::eBackward;
+    return SelectionDirection::Backward;
   }
-
   
-  return nsITextControlFrame::eForward;
+  return SelectionDirection::Forward;
 }
 
 void TextControlState::SetSelectionDirection(const nsAString& aDirection,
                                              ErrorResult& aRv) {
-  nsITextControlFrame::SelectionDirection dir =
-      DirectionStringToSelectionDirection(aDirection);
+  SelectionDirection dir = DirectionStringToSelectionDirection(aDirection);
 
   uint32_t start, end;
   GetSelectionRange(&start, &end, aRv);
@@ -2257,11 +2249,11 @@ void TextControlState::SetSelectionDirection(const nsAString& aDirection,
   
 }
 
-static nsITextControlFrame::SelectionDirection
-DirectionStringToSelectionDirection(const Optional<nsAString>& aDirection) {
+static SelectionDirection DirectionStringToSelectionDirection(
+    const Optional<nsAString>& aDirection) {
   if (!aDirection.WasPassed()) {
     
-    return nsITextControlFrame::eForward;
+    return SelectionDirection::Forward;
   }
 
   return DirectionStringToSelectionDirection(aDirection.Value());
@@ -2272,8 +2264,7 @@ void TextControlState::SetSelectionRange(uint32_t aSelectionStart,
                                          const Optional<nsAString>& aDirection,
                                          ErrorResult& aRv,
                                          ScrollAfterSelection aScroll) {
-  nsITextControlFrame::SelectionDirection dir =
-      DirectionStringToSelectionDirection(aDirection);
+  SelectionDirection dir = DirectionStringToSelectionDirection(aDirection);
 
   SetSelectionRange(aSelectionStart, aSelectionEnd, dir, aRv, aScroll);
   
@@ -2587,7 +2578,7 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
       mBoundFrame->ClearCachedValue();
     }
   } else {
-    if (!mTextCtrlElement->ValueChanged() || !mValue) {
+    if (!mTextCtrlElement->ValueChanged() || mValue.IsVoid()) {
       
       nsString value;
       mTextCtrlElement->GetDefaultValueFromContent(value);
@@ -2595,7 +2586,7 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap) const {
       nsContentUtils::PlatformToDOMLineBreaks(value);
       aValue = value;
     } else {
-      aValue = *mValue;
+      aValue = mValue;
       MOZ_ASSERT(aValue.FindChar(u'\r') == -1);
     }
   }
@@ -2882,13 +2873,13 @@ bool TextControlState::SetValueWithoutTextEditor(
                        "Failed to commit composition before setting value.  "
                        "Investigate the cause!");
 
-  if (!mValue) {
-    mValue.emplace();
+  if (mValue.IsVoid()) {
+    mValue.SetIsVoid(false);
   }
 
   
   
-  if (!mValue->Equals(aHandlingSetValue.GetSettingValue()) ||
+  if (!mValue.Equals(aHandlingSetValue.GetSettingValue()) ||
       !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
     bool handleSettingValue = true;
     
@@ -2948,7 +2939,7 @@ bool TextControlState::SetValueWithoutTextEditor(
     }
 
     if (handleSettingValue) {
-      if (!mValue->Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
+      if (!mValue.Assign(aHandlingSetValue.GetSettingValue(), fallible)) {
         return false;
       }
 
@@ -2969,13 +2960,13 @@ bool TextControlState::SetValueWithoutTextEditor(
                 ValueSetterOption::MoveCursorToEndIfValueChanged)) {
           props.SetStart(aHandlingSetValue.GetSettingValue().Length());
           props.SetEnd(aHandlingSetValue.GetSettingValue().Length());
-          props.SetDirection(nsITextControlFrame::eForward);
+          props.SetDirection(SelectionDirection::Forward);
         } else if (aHandlingSetValue.ValueSetterOptionsRef().contains(
                        ValueSetterOption::
                            MoveCursorToBeginSetSelectionDirectionForward)) {
           props.SetStart(0);
           props.SetEnd(0);
-          props.SetDirection(nsITextControlFrame::eForward);
+          props.SetDirection(SelectionDirection::Forward);
         }
       }
 
