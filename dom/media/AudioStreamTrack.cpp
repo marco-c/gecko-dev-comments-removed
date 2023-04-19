@@ -28,7 +28,6 @@ void AudioStreamTrack::RemoveAudioOutput(void* aKey) {
   if (auto entry = mCrossGraphs.Lookup(aKey)) {
     
     
-    entry.Data()->Destroy();
     entry.Remove();
     return;
   }
@@ -63,9 +62,6 @@ void AudioStreamTrack::SetReadyState(MediaStreamTrackState aState) {
   if (!mCrossGraphs.IsEmpty() && !Ended() &&
       mReadyState == MediaStreamTrackState::Live &&
       aState == MediaStreamTrackState::Ended) {
-    for (const auto& data : mCrossGraphs.Values()) {
-      data->Destroy();
-    }
     mCrossGraphs.Clear();
   }
   MediaStreamTrack::SetReadyState(aState);
