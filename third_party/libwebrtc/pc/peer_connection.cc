@@ -2172,7 +2172,9 @@ bool PeerConnection::GetSctpSslRole(rtc::SSLRole* role) {
       
       
       
-      RTC_LOG(LS_ERROR) << "Possible risk: DTLS role guesser is active";
+      RTC_LOG(LS_ERROR)
+          << "Possible risk: DTLS role guesser is active, is_caller is "
+          << *sdp_handler_->is_caller();
       dtls_role =
           *sdp_handler_->is_caller() ? rtc::SSL_SERVER : rtc::SSL_CLIENT;
     }
