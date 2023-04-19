@@ -624,13 +624,13 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
   }
 
   if (rv != NS_ERROR_MALFORMED_URI) {
-    return Err(ResolveError::ModuleResolveFailure);
+    return Err(ResolveError::Failure);
   }
 
   if (!StringBeginsWith(aSpecifier, u"/"_ns) &&
       !StringBeginsWith(aSpecifier, u"./"_ns) &&
       !StringBeginsWith(aSpecifier, u"../"_ns)) {
-    return Err(ResolveError::ModuleResolveFailure);
+    return Err(ResolveError::FailureMayBeBare);
   }
 
   
@@ -646,7 +646,7 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
     return WrapNotNull(uri);
   }
 
-  return Err(ResolveError::ModuleResolveFailure);
+  return Err(ResolveError::Failure);
 }
 
 nsresult ModuleLoaderBase::ResolveRequestedModules(

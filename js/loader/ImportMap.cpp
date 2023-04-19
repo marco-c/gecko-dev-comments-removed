@@ -42,8 +42,8 @@ void ReportWarningHelper::Report(const char* aMessageName,
 }
 
 
-static already_AddRefed<nsIURI> ParseURLLikeImportSpecifier(
-    const nsAString& aSpecifier, nsIURI* aBaseURL) {
+static ResolveResult ParseURLLikeImportSpecifier(const nsAString& aSpecifier,
+                                                 nsIURI* aBaseURL) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv;
 
@@ -56,22 +56,22 @@ static already_AddRefed<nsIURI> ParseURLLikeImportSpecifier(
     rv = NS_NewURI(getter_AddRefs(uri), aSpecifier, nullptr, aBaseURL);
     
     if (NS_FAILED(rv)) {
-      return nullptr;
+      return Err(ResolveError::Failure);
     }
 
     
-    return uri.forget();
+    return WrapNotNull(uri);
   }
 
   
   rv = NS_NewURI(getter_AddRefs(uri), aSpecifier);
   
   if (NS_FAILED(rv)) {
-    return nullptr;
+    return Err(ResolveError::FailureMayBeBare);
   }
 
   
-  return uri.forget();
+  return WrapNotNull(uri);
 }
 
 
@@ -92,10 +92,11 @@ static void NormalizeSpecifierKey(const nsAString& aSpecifierKey,
 
   
   
-  nsCOMPtr<nsIURI> url = ParseURLLikeImportSpecifier(aSpecifierKey, aBaseURL);
+  auto parseResult = ParseURLLikeImportSpecifier(aSpecifierKey, aBaseURL);
 
   
-  if (url) {
+  if (parseResult.isOk()) {
+    nsCOMPtr<nsIURI> url = parseResult.unwrap();
     aRetVal = NS_ConvertUTF8toUTF16(url->GetSpecOrDefault());
     return;
   }
@@ -154,10 +155,10 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
 
     
     
-    nsCOMPtr<nsIURI> addressURL = ParseURLLikeImportSpecifier(value, aBaseURL);
+    auto parseResult = ParseURLLikeImportSpecifier(value, aBaseURL);
 
     
-    if (!addressURL) {
+    if (parseResult.isErr()) {
       
       
       AutoTArray<nsString, 1> params;
@@ -171,6 +172,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
       continue;
     }
 
+    nsCOMPtr<nsIURI> addressURL = parseResult.unwrap();
     nsCString address = addressURL->GetSpecOrDefault();
     
     
@@ -587,7 +589,11 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
   
   
   
-  nsCOMPtr<nsIURI> asURL = ParseURLLikeImportSpecifier(aSpecifier, baseURL);
+  auto parseResult = ParseURLLikeImportSpecifier(aSpecifier, baseURL);
+  nsCOMPtr<nsIURI> asURL;
+  if (parseResult.isOk()) {
+    asURL = parseResult.unwrap();
+  }
 
   if (aImportMap) {
     
@@ -655,6 +661,11 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
 
   
   
+  if (parseResult.unwrapErr() != ResolveError::FailureMayBeBare) {
+    
+    return Err(ResolveError::Failure);
+  }
+
   return Err(ResolveError::InvalidBareSpecifier);
 }
 
