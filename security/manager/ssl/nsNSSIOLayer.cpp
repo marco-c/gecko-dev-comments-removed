@@ -452,7 +452,8 @@ void nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode) {
 
 void nsNSSSocketInfo::ClientAuthCertificateSelected(
     nsTArray<uint8_t>& certBytes, nsTArray<nsTArray<uint8_t>>& certChainBytes) {
-  MOZ_ASSERT(mFd);
+  
+  
   if (!mFd) {
     return;
   }
