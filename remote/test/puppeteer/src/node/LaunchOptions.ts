@@ -14,8 +14,8 @@
 
 
 
-import { BrowserConnectOptions } from '../common/BrowserConnector.js';
-import { Product } from '../common/Product.js';
+import {BrowserConnectOptions} from '../common/BrowserConnector.js';
+import {Product} from '../common/Product.js';
 
 
 
@@ -27,7 +27,7 @@ export interface BrowserLaunchArgumentOptions {
 
 
 
-  headless?: boolean;
+  headless?: boolean | 'chrome';
   
 
 

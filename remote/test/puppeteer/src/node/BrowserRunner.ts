@@ -14,23 +14,28 @@
 
 
 
-import { debug } from '../common/Debug.js';
-
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import removeFolder from 'rimraf';
-import { promisify } from 'util';
-
-import { assert } from '../common/assert.js';
-import { helper, debugError } from '../common/helper.js';
-import { LaunchOptions } from './LaunchOptions.js';
-import { Connection } from '../common/Connection.js';
-import { NodeWebSocketTransport as WebSocketTransport } from '../node/NodeWebSocketTransport.js';
-import { PipeTransport } from './PipeTransport.js';
-import { Product } from '../common/Product.js';
-import { TimeoutError } from '../common/Errors.js';
+import {promisify} from 'util';
+import {assert} from '../common/assert.js';
+import {Connection} from '../common/Connection.js';
+import {debug} from '../common/Debug.js';
+import {TimeoutError} from '../common/Errors.js';
+import {
+  debugError,
+  addEventListener,
+  isErrnoException,
+  isErrorLike,
+  PuppeteerEventListener,
+  removeEventListeners,
+} from '../common/util.js';
+import {Product} from '../common/Product.js';
+import {NodeWebSocketTransport as WebSocketTransport} from '../node/NodeWebSocketTransport.js';
+import {LaunchOptions} from './LaunchOptions.js';
+import {PipeTransport} from './PipeTransport.js';
 
 const removeFolderAsync = promisify(removeFolder);
 const renameAsync = promisify(fs.rename);
@@ -43,19 +48,21 @@ This means that, on future Puppeteer launches, Puppeteer might not be able to la
 Please check your open processes and ensure that the browser processes that Puppeteer launched have been killed.
 If you think this is a bug, please report it on the Puppeteer issue tracker.`;
 
+
+
+
 export class BrowserRunner {
-  private _product: Product;
-  private _executablePath: string;
-  private _processArguments: string[];
-  private _userDataDir: string;
-  private _isTempUserDataDir?: boolean;
+  #product: Product;
+  #executablePath: string;
+  #processArguments: string[];
+  #userDataDir: string;
+  #isTempUserDataDir?: boolean;
+  #closed = true;
+  #listeners: PuppeteerEventListener[] = [];
+  #processClosing!: Promise<void>;
 
-  proc = null;
-  connection = null;
-
-  private _closed = true;
-  private _listeners = [];
-  private _processClosing: Promise<void>;
+  proc?: childProcess.ChildProcess;
+  connection?: Connection;
 
   constructor(
     product: Product,
@@ -64,31 +71,37 @@ export class BrowserRunner {
     userDataDir: string,
     isTempUserDataDir?: boolean
   ) {
-    this._product = product;
-    this._executablePath = executablePath;
-    this._processArguments = processArguments;
-    this._userDataDir = userDataDir;
-    this._isTempUserDataDir = isTempUserDataDir;
+    this.#product = product;
+    this.#executablePath = executablePath;
+    this.#processArguments = processArguments;
+    this.#userDataDir = userDataDir;
+    this.#isTempUserDataDir = isTempUserDataDir;
   }
 
   start(options: LaunchOptions): void {
-    const { handleSIGINT, handleSIGTERM, handleSIGHUP, dumpio, env, pipe } =
+    const {handleSIGINT, handleSIGTERM, handleSIGHUP, dumpio, env, pipe} =
       options;
     let stdio: Array<'ignore' | 'pipe'>;
     if (pipe) {
-      if (dumpio) stdio = ['ignore', 'pipe', 'pipe', 'pipe', 'pipe'];
-      else stdio = ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'];
+      if (dumpio) {
+        stdio = ['ignore', 'pipe', 'pipe', 'pipe', 'pipe'];
+      } else {
+        stdio = ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'];
+      }
     } else {
-      if (dumpio) stdio = ['pipe', 'pipe', 'pipe'];
-      else stdio = ['pipe', 'ignore', 'pipe'];
+      if (dumpio) {
+        stdio = ['pipe', 'pipe', 'pipe'];
+      } else {
+        stdio = ['pipe', 'ignore', 'pipe'];
+      }
     }
     assert(!this.proc, 'This process has previously been started.');
     debugLauncher(
-      `Calling ${this._executablePath} ${this._processArguments.join(' ')}`
+      `Calling ${this.#executablePath} ${this.#processArguments.join(' ')}`
     );
     this.proc = childProcess.spawn(
-      this._executablePath,
-      this._processArguments,
+      this.#executablePath,
+      this.#processArguments,
       {
         
         
@@ -100,40 +113,40 @@ export class BrowserRunner {
       }
     );
     if (dumpio) {
-      this.proc.stderr.pipe(process.stderr);
-      this.proc.stdout.pipe(process.stdout);
+      this.proc.stderr?.pipe(process.stderr);
+      this.proc.stdout?.pipe(process.stdout);
     }
-    this._closed = false;
-    this._processClosing = new Promise((fulfill, reject) => {
-      this.proc.once('exit', async () => {
-        this._closed = true;
+    this.#closed = false;
+    this.#processClosing = new Promise((fulfill, reject) => {
+      this.proc!.once('exit', async () => {
+        this.#closed = true;
         
-        if (this._isTempUserDataDir) {
+        if (this.#isTempUserDataDir) {
           try {
-            await removeFolderAsync(this._userDataDir);
+            await removeFolderAsync(this.#userDataDir);
             fulfill();
           } catch (error) {
-            console.error(error);
+            debugError(error);
             reject(error);
           }
         } else {
-          if (this._product === 'firefox') {
+          if (this.#product === 'firefox') {
             try {
               
               
-              await unlinkAsync(path.join(this._userDataDir, 'user.js'));
+              await unlinkAsync(path.join(this.#userDataDir, 'user.js'));
 
               const prefsBackupPath = path.join(
-                this._userDataDir,
+                this.#userDataDir,
                 'prefs.js.puppeteer'
               );
               if (fs.existsSync(prefsBackupPath)) {
-                const prefsPath = path.join(this._userDataDir, 'prefs.js');
+                const prefsPath = path.join(this.#userDataDir, 'prefs.js');
                 await unlinkAsync(prefsPath);
                 await renameAsync(prefsBackupPath, prefsPath);
               }
             } catch (error) {
-              console.error(error);
+              debugError(error);
               reject(error);
             }
           }
@@ -142,67 +155,95 @@ export class BrowserRunner {
         }
       });
     });
-    this._listeners = [
-      helper.addEventListener(process, 'exit', this.kill.bind(this)),
-    ];
-    if (handleSIGINT)
-      this._listeners.push(
-        helper.addEventListener(process, 'SIGINT', () => {
+    this.#listeners = [addEventListener(process, 'exit', this.kill.bind(this))];
+    if (handleSIGINT) {
+      this.#listeners.push(
+        addEventListener(process, 'SIGINT', () => {
           this.kill();
           process.exit(130);
         })
       );
-    if (handleSIGTERM)
-      this._listeners.push(
-        helper.addEventListener(process, 'SIGTERM', this.close.bind(this))
+    }
+    if (handleSIGTERM) {
+      this.#listeners.push(
+        addEventListener(process, 'SIGTERM', this.close.bind(this))
       );
-    if (handleSIGHUP)
-      this._listeners.push(
-        helper.addEventListener(process, 'SIGHUP', this.close.bind(this))
+    }
+    if (handleSIGHUP) {
+      this.#listeners.push(
+        addEventListener(process, 'SIGHUP', this.close.bind(this))
       );
+    }
   }
 
   close(): Promise<void> {
-    if (this._closed) return Promise.resolve();
-    if (this._isTempUserDataDir) {
+    if (this.#closed) {
+      return Promise.resolve();
+    }
+    if (this.#isTempUserDataDir) {
       this.kill();
     } else if (this.connection) {
       
-      this.connection.send('Browser.close').catch((error) => {
+      this.connection.send('Browser.close').catch(error => {
         debugError(error);
         this.kill();
       });
     }
     
     
-    helper.removeEventListeners(this._listeners);
-    return this._processClosing;
+    removeEventListeners(this.#listeners);
+    return this.#processClosing;
   }
 
   kill(): void {
     
     
     
-    if (this.proc && this.proc.pid && !this.proc.killed) {
+    if (this.proc && this.proc.pid && pidExists(this.proc.pid)) {
+      const proc = this.proc;
       try {
-        this.proc.kill('SIGKILL');
+        if (process.platform === 'win32') {
+          childProcess.exec(`taskkill /pid ${this.proc.pid} /T /F`, error => {
+            if (error) {
+              
+              
+              
+              proc.kill();
+            }
+          });
+        } else {
+          
+          
+          const processGroupId = -this.proc.pid;
+
+          try {
+            process.kill(processGroupId, 'SIGKILL');
+          } catch (error) {
+            
+            
+            
+            proc.kill('SIGKILL');
+          }
+        }
       } catch (error) {
         throw new Error(
-          `${PROCESS_ERROR_EXPLANATION}\nError cause: ${error.stack}`
+          `${PROCESS_ERROR_EXPLANATION}\nError cause: ${
+            isErrorLike(error) ? error.stack : error
+          }`
         );
       }
     }
 
     
     try {
-      if (this._isTempUserDataDir) {
-        removeFolder.sync(this._userDataDir);
+      if (this.#isTempUserDataDir) {
+        removeFolder.sync(this.#userDataDir);
       }
     } catch (error) {}
 
     
     
-    helper.removeEventListeners(this._listeners);
+    removeEventListeners(this.#listeners);
   }
 
   async setupConnection(options: {
@@ -211,7 +252,9 @@ export class BrowserRunner {
     slowMo: number;
     preferredRevision: string;
   }): Promise<Connection> {
-    const { usePipe, timeout, slowMo, preferredRevision } = options;
+    assert(this.proc, 'BrowserRunner not started.');
+
+    const {usePipe, timeout, slowMo, preferredRevision} = options;
     if (!usePipe) {
       const browserWSEndpoint = await waitForWSEndpoint(
         this.proc,
@@ -223,7 +266,7 @@ export class BrowserRunner {
     } else {
       
       
-      const { 3: pipeWrite, 4: pipeRead } = this.proc.stdio;
+      const {3: pipeWrite, 4: pipeRead} = this.proc.stdio;
       const transport = new PipeTransport(
         pipeWrite as NodeJS.WritableStream,
         pipeRead as NodeJS.ReadableStream
@@ -239,21 +282,24 @@ function waitForWSEndpoint(
   timeout: number,
   preferredRevision: string
 ): Promise<string> {
+  assert(browserProcess.stderr, '`browserProcess` does not have stderr.');
+  const rl = readline.createInterface(browserProcess.stderr);
+  let stderr = '';
+
   return new Promise((resolve, reject) => {
-    const rl = readline.createInterface({ input: browserProcess.stderr });
-    let stderr = '';
     const listeners = [
-      helper.addEventListener(rl, 'line', onLine),
-      helper.addEventListener(rl, 'close', () => onClose()),
-      helper.addEventListener(browserProcess, 'exit', () => onClose()),
-      helper.addEventListener(browserProcess, 'error', (error) =>
-        onClose(error)
-      ),
+      addEventListener(rl, 'line', onLine),
+      addEventListener(rl, 'close', () => {
+        return onClose();
+      }),
+      addEventListener(browserProcess, 'exit', () => {
+        return onClose();
+      }),
+      addEventListener(browserProcess, 'error', error => {
+        return onClose(error);
+      }),
     ];
     const timeoutId = timeout ? setTimeout(onTimeout, timeout) : 0;
-
-    
-
 
     function onClose(error?: Error): void {
       cleanup();
@@ -283,14 +329,32 @@ function waitForWSEndpoint(
     function onLine(line: string): void {
       stderr += line + '\n';
       const match = line.match(/^DevTools listening on (ws:\/\/.*)$/);
-      if (!match) return;
+      if (!match) {
+        return;
+      }
       cleanup();
-      resolve(match[1]);
+      
+      resolve(match[1]!);
     }
 
     function cleanup(): void {
-      if (timeoutId) clearTimeout(timeoutId);
-      helper.removeEventListeners(listeners);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      removeEventListeners(listeners);
     }
   });
+}
+
+function pidExists(pid: number): boolean {
+  try {
+    return process.kill(pid, 0);
+  } catch (error) {
+    if (isErrnoException(error)) {
+      if (error.code && error.code === 'ESRCH') {
+        return false;
+      }
+    }
+    throw error;
+  }
 }

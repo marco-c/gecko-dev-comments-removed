@@ -14,32 +14,25 @@
 
 
 
-import { assert } from './assert.js';
-import { helper, debugError } from './helper.js';
-import { ExecutionContext } from './ExecutionContext.js';
-import { Page, ScreenshotOptions } from './Page.js';
-import { CDPSession } from './Connection.js';
-import { KeyInput } from './USKeyboardLayout.js';
-import { FrameManager, Frame } from './FrameManager.js';
-import { getQueryHandlerAndSelector } from './QueryHandler.js';
-import { Protocol } from 'devtools-protocol';
-import {
-  EvaluateFn,
-  SerializableOrJSHandle,
-  EvaluateFnReturnType,
-  EvaluateHandleFn,
-  WrapElementHandle,
-  UnwrapPromiseLike,
-} from './EvalTypes.js';
-import { isNode } from '../environment.js';
+import {Protocol} from 'devtools-protocol';
+import {assert} from './assert.js';
+import {CDPSession} from './Connection.js';
+import type {ElementHandle} from './ElementHandle.js';
+import {ExecutionContext} from './ExecutionContext.js';
+import {MouseButton} from './Input.js';
+import {EvaluateFunc, HandleFor, HandleOr} from './types.js';
+import {createJSHandle, releaseObject, valueFromRemoteObject} from './util.js';
+
+declare const __JSHandleSymbol: unique symbol;
+
 
 
 
 export interface BoxModel {
-  content: Array<{ x: number; y: number }>;
-  padding: Array<{ x: number; y: number }>;
-  border: Array<{ x: number; y: number }>;
-  margin: Array<{ x: number; y: number }>;
+  content: Point[];
+  padding: Point[];
+  border: Point[];
+  margin: Point[];
   width: number;
   height: number;
 }
@@ -47,15 +40,7 @@ export interface BoxModel {
 
 
 
-export interface BoundingBox {
-  
-
-
-  x: number;
-  
-
-
-  y: number;
+export interface BoundingBox extends Point {
   
 
 
@@ -69,59 +54,48 @@ export interface BoundingBox {
 
 
 
-export function createJSHandle(
-  context: ExecutionContext,
-  remoteObject: Protocol.Runtime.RemoteObject
-): JSHandle {
-  const frame = context.frame();
-  if (remoteObject.subtype === 'node' && frame) {
-    const frameManager = frame._frameManager;
-    return new ElementHandle(
-      context,
-      context._client,
-      remoteObject,
-      frameManager.page(),
-      frameManager
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class JSHandle<T = unknown> {
+  
+
+
+  [__JSHandleSymbol]?: T;
+
+  #client: CDPSession;
+  #disposed = false;
+  #context: ExecutionContext;
+  #remoteObject: Protocol.Runtime.RemoteObject;
+
+  
+
+
+  get client(): CDPSession {
+    return this.#client;
   }
-  return new JSHandle(context, context._client, remoteObject);
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class JSHandle<HandleObjectType = unknown> {
   
 
 
-  _context: ExecutionContext;
-  
-
-
-  _client: CDPSession;
-  
-
-
-  _remoteObject: Protocol.Runtime.RemoteObject;
-  
-
-
-  _disposed = false;
+  get disposed(): boolean {
+    return this.#disposed;
+  }
 
   
 
@@ -131,15 +105,16 @@ export class JSHandle<HandleObjectType = unknown> {
     client: CDPSession,
     remoteObject: Protocol.Runtime.RemoteObject
   ) {
-    this._context = context;
-    this._client = client;
-    this._remoteObject = remoteObject;
+    this.#context = context;
+    this.#client = client;
+    this.#remoteObject = remoteObject;
   }
 
   
+
 
   executionContext(): ExecutionContext {
-    return this._context;
+    return this.#context;
   }
 
   
@@ -147,20 +122,18 @@ export class JSHandle<HandleObjectType = unknown> {
 
 
 
-
-
-
-
-
-
-
-  async evaluate<T extends EvaluateFn<HandleObjectType>>(
-    pageFunction: T | string,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<UnwrapPromiseLike<EvaluateFnReturnType<T>>> {
-    return await this.executionContext().evaluate<
-      UnwrapPromiseLike<EvaluateFnReturnType<T>>
-    >(pageFunction, this, ...args);
+  async evaluate<
+    Params extends unknown[],
+    Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<
+      [this, ...Params]
+    >
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): 
+  
+  Promise<Awaited<ReturnType<Func>>> {
+    return await this.executionContext().evaluate(pageFunction, this, ...args);
   }
 
   
@@ -168,20 +141,17 @@ export class JSHandle<HandleObjectType = unknown> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-  async evaluateHandle<HandleType extends JSHandle = JSHandle>(
-    pageFunction: EvaluateHandleFn,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<HandleType> {
+  async evaluateHandle<
+    Params extends unknown[],
+    Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<
+      [this, ...Params]
+    >
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): 
+  
+  Promise<HandleFor<Awaited<ReturnType<Func>>>> {
     return await this.executionContext().evaluateHandle(
       pageFunction,
       this,
@@ -191,23 +161,21 @@ export class JSHandle<HandleObjectType = unknown> {
 
   
 
-  async getProperty(propertyName: string): Promise<JSHandle> {
-    const objectHandle = await this.evaluateHandle(
-      (object: Element, propertyName: string) => {
-        const result = { __proto__: null };
-        result[propertyName] = object[propertyName];
-        return result;
-      },
-      propertyName
-    );
-    const properties = await objectHandle.getProperties();
-    const result = properties.get(propertyName);
-    assert(result instanceof JSHandle);
-    await objectHandle.dispose();
-    return result;
+
+  async getProperty<K extends keyof T>(
+    propertyName: HandleOr<K>
+  ): Promise<HandleFor<T[K]>>;
+  async getProperty(propertyName: string): Promise<JSHandle<unknown>>;
+  async getProperty<K extends keyof T>(
+    propertyName: HandleOr<K>
+  ): Promise<HandleFor<T[K]>> {
+    return this.evaluateHandle((object, propertyName) => {
+      return object[propertyName];
+    }, propertyName);
   }
 
   
+
 
 
 
@@ -225,14 +193,19 @@ export class JSHandle<HandleObjectType = unknown> {
 
 
   async getProperties(): Promise<Map<string, JSHandle>> {
-    const response = await this._client.send('Runtime.getProperties', {
-      objectId: this._remoteObject.objectId,
+    assert(this.#remoteObject.objectId);
+    
+    
+    const response = await this.#client.send('Runtime.getProperties', {
+      objectId: this.#remoteObject.objectId,
       ownProperties: true,
     });
     const result = new Map<string, JSHandle>();
     for (const property of response.result) {
-      if (!property.enumerable) continue;
-      result.set(property.name, createJSHandle(this._context, property.value));
+      if (!property.enumerable || !property.value) {
+        continue;
+      }
+      result.set(property.name, createJSHandle(this.#context, property.value));
     }
     return result;
   }
@@ -245,110 +218,50 @@ export class JSHandle<HandleObjectType = unknown> {
 
 
 
-
-  async jsonValue<T = unknown>(): Promise<T> {
-    if (this._remoteObject.objectId) {
-      const response = await this._client.send('Runtime.callFunctionOn', {
-        functionDeclaration: 'function() { return this; }',
-        objectId: this._remoteObject.objectId,
-        returnByValue: true,
-        awaitPromise: true,
-      });
-      return helper.valueFromRemoteObject(response.result) as T;
+  async jsonValue(): Promise<T> {
+    if (!this.#remoteObject.objectId) {
+      return valueFromRemoteObject(this.#remoteObject);
     }
-    return helper.valueFromRemoteObject(this._remoteObject) as T;
+    const value = await this.evaluate(object => {
+      return object;
+    });
+    if (value === undefined) {
+      throw new Error('Could not serialize referenced object');
+    }
+    return value;
   }
 
   
 
 
 
-  asElement(): ElementHandle | null {
-    
-
-
+  asElement(): ElementHandle<Node> | null {
     return null;
   }
 
   
 
 
-
   async dispose(): Promise<void> {
-    if (this._disposed) return;
-    this._disposed = true;
-    await helper.releaseObject(this._client, this._remoteObject);
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    await releaseObject(this.#client, this.#remoteObject);
   }
 
   
+
 
 
 
 
   toString(): string {
-    if (this._remoteObject.objectId) {
-      const type = this._remoteObject.subtype || this._remoteObject.type;
-      return 'JSHandle@' + type;
+    if (!this.#remoteObject.objectId) {
+      return 'JSHandle:' + valueFromRemoteObject(this.#remoteObject);
     }
-    return 'JSHandle:' + helper.valueFromRemoteObject(this._remoteObject);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class ElementHandle<
-  ElementType extends Element = Element
-> extends JSHandle<ElementType> {
-  private _page: Page;
-  private _frameManager: FrameManager;
-
-  
-
-
-  constructor(
-    context: ExecutionContext,
-    client: CDPSession,
-    remoteObject: Protocol.Runtime.RemoteObject,
-    page: Page,
-    frameManager: FrameManager
-  ) {
-    super(context, client, remoteObject);
-    this._client = client;
-    this._remoteObject = remoteObject;
-    this._page = page;
-    this._frameManager = frameManager;
+    const type = this.#remoteObject.subtype || this.#remoteObject.type;
+    return 'JSHandle@' + type;
   }
 
   
@@ -356,737 +269,8 @@ export class ElementHandle<
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForSelector(
-    selector: string,
-    options: {
-      visible?: boolean;
-      hidden?: boolean;
-      timeout?: number;
-    } = {}
-  ): Promise<ElementHandle | null> {
-    const frame = this._context.frame();
-    const secondaryContext = await frame._secondaryWorld.executionContext();
-    const adoptedRoot = await secondaryContext._adoptElementHandle(this);
-    const handle = await frame._secondaryWorld.waitForSelector(selector, {
-      ...options,
-      root: adoptedRoot,
-    });
-    await adoptedRoot.dispose();
-    if (!handle) return null;
-    const mainExecutionContext = await frame._mainWorld.executionContext();
-    const result = await mainExecutionContext._adoptElementHandle(handle);
-    await handle.dispose();
-    return result;
-  }
-
-  asElement(): ElementHandle<ElementType> | null {
-    return this;
-  }
-
-  
-
-
-
-  async contentFrame(): Promise<Frame | null> {
-    const nodeInfo = await this._client.send('DOM.describeNode', {
-      objectId: this._remoteObject.objectId,
-    });
-    if (typeof nodeInfo.node.frameId !== 'string') return null;
-    return this._frameManager.frame(nodeInfo.node.frameId);
-  }
-
-  private async _scrollIntoViewIfNeeded(): Promise<void> {
-    const error = await this.evaluate<
-      (
-        element: Element,
-        pageJavascriptEnabled: boolean
-      ) => Promise<string | false>
-    >(async (element, pageJavascriptEnabled) => {
-      if (!element.isConnected) return 'Node is detached from document';
-      if (element.nodeType !== Node.ELEMENT_NODE)
-        return 'Node is not of type HTMLElement';
-      
-      if (!pageJavascriptEnabled) {
-        element.scrollIntoView({
-          block: 'center',
-          inline: 'center',
-          
-          
-          
-          behavior: 'instant',
-        });
-        return false;
-      }
-      const visibleRatio = await new Promise((resolve) => {
-        const observer = new IntersectionObserver((entries) => {
-          resolve(entries[0].intersectionRatio);
-          observer.disconnect();
-        });
-        observer.observe(element);
-      });
-      if (visibleRatio !== 1.0) {
-        element.scrollIntoView({
-          block: 'center',
-          inline: 'center',
-          
-          
-          
-          behavior: 'instant',
-        });
-      }
-      return false;
-    }, this._page.isJavaScriptEnabled());
-
-    if (error) throw new Error(error);
-  }
-
-  
-
-
-  async clickablePoint(offset?: Offset): Promise<Point> {
-    const [result, layoutMetrics] = await Promise.all([
-      this._client
-        .send('DOM.getContentQuads', {
-          objectId: this._remoteObject.objectId,
-        })
-        .catch(debugError),
-      this._client.send('Page.getLayoutMetrics'),
-    ]);
-    if (!result || !result.quads.length)
-      throw new Error('Node is either not clickable or not an HTMLElement');
-    
-    
-    const { clientWidth, clientHeight } =
-      layoutMetrics.cssLayoutViewport || layoutMetrics.layoutViewport;
-    const quads = result.quads
-      .map((quad) => this._fromProtocolQuad(quad))
-      .map((quad) =>
-        this._intersectQuadWithViewport(quad, clientWidth, clientHeight)
-      )
-      .filter((quad) => computeQuadArea(quad) > 1);
-    if (!quads.length)
-      throw new Error('Node is either not clickable or not an HTMLElement');
-    const quad = quads[0];
-    if (offset) {
-      
-      let minX = Number.MAX_SAFE_INTEGER;
-      let minY = Number.MAX_SAFE_INTEGER;
-      for (const point of quad) {
-        if (point.x < minX) {
-          minX = point.x;
-        }
-        if (point.y < minY) {
-          minY = point.y;
-        }
-      }
-      if (
-        minX !== Number.MAX_SAFE_INTEGER &&
-        minY !== Number.MAX_SAFE_INTEGER
-      ) {
-        return {
-          x: minX + offset.x,
-          y: minY + offset.y,
-        };
-      }
-    }
-    
-    let x = 0;
-    let y = 0;
-    for (const point of quad) {
-      x += point.x;
-      y += point.y;
-    }
-    return {
-      x: x / 4,
-      y: y / 4,
-    };
-  }
-
-  private _getBoxModel(): Promise<void | Protocol.DOM.GetBoxModelResponse> {
-    const params: Protocol.DOM.GetBoxModelRequest = {
-      objectId: this._remoteObject.objectId,
-    };
-    return this._client
-      .send('DOM.getBoxModel', params)
-      .catch((error) => debugError(error));
-  }
-
-  private _fromProtocolQuad(quad: number[]): Array<{ x: number; y: number }> {
-    return [
-      { x: quad[0], y: quad[1] },
-      { x: quad[2], y: quad[3] },
-      { x: quad[4], y: quad[5] },
-      { x: quad[6], y: quad[7] },
-    ];
-  }
-
-  private _intersectQuadWithViewport(
-    quad: Array<{ x: number; y: number }>,
-    width: number,
-    height: number
-  ): Array<{ x: number; y: number }> {
-    return quad.map((point) => ({
-      x: Math.min(Math.max(point.x, 0), width),
-      y: Math.min(Math.max(point.y, 0), height),
-    }));
-  }
-
-  
-
-
-
-
-  async hover(): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this.clickablePoint();
-    await this._page.mouse.move(x, y);
-  }
-
-  
-
-
-
-
-  async click(options: ClickOptions = {}): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this.clickablePoint(options.offset);
-    await this._page.mouse.click(x, y, options);
-  }
-
-  
-
-
-  async drag(target: Point): Promise<Protocol.Input.DragData> {
-    assert(
-      this._page.isDragInterceptionEnabled(),
-      'Drag Interception is not enabled!'
-    );
-    await this._scrollIntoViewIfNeeded();
-    const start = await this.clickablePoint();
-    return await this._page.mouse.drag(start, target);
-  }
-
-  
-
-
-  async dragEnter(
-    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
-  ): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const target = await this.clickablePoint();
-    await this._page.mouse.dragEnter(target, data);
-  }
-
-  
-
-
-  async dragOver(
-    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
-  ): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const target = await this.clickablePoint();
-    await this._page.mouse.dragOver(target, data);
-  }
-
-  
-
-
-  async drop(
-    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
-  ): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const destination = await this.clickablePoint();
-    await this._page.mouse.drop(destination, data);
-  }
-
-  
-
-
-  async dragAndDrop(
-    target: ElementHandle,
-    options?: { delay: number }
-  ): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const startPoint = await this.clickablePoint();
-    const targetPoint = await target.clickablePoint();
-    await this._page.mouse.dragAndDrop(startPoint, targetPoint, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async select(...values: string[]): Promise<string[]> {
-    for (const value of values)
-      assert(
-        helper.isString(value),
-        'Values must be strings. Found value "' +
-          value +
-          '" of type "' +
-          typeof value +
-          '"'
-      );
-
-    return this.evaluate<(element: Element, values: string[]) => string[]>(
-      (element, values) => {
-        if (!(element instanceof HTMLSelectElement))
-          throw new Error('Element is not a <select> element.');
-
-        const options = Array.from(element.options);
-        element.value = undefined;
-        for (const option of options) {
-          option.selected = values.includes(option.value);
-          if (option.selected && !element.multiple) break;
-        }
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-        return options
-          .filter((option) => option.selected)
-          .map((option) => option.value);
-      },
-      values
-    );
-  }
-
-  
-
-
-
-
-
-
-  async uploadFile(...filePaths: string[]): Promise<void> {
-    const isMultiple = await this.evaluate<(element: Element) => boolean>(
-      (element) => {
-        if (!(element instanceof HTMLInputElement)) {
-          throw new Error('uploadFile can only be called on an input element.');
-        }
-        return element.multiple;
-      }
-    );
-    assert(
-      filePaths.length <= 1 || isMultiple,
-      'Multiple file uploads only work with <input type=file multiple>'
-    );
-
-    if (!isNode) {
-      throw new Error(
-        `JSHandle#uploadFile can only be used in Node environments.`
-      );
-    }
-    
-
-
-
-    const path = await import('path');
-    const fs = await helper.importFSModule();
-    
-    const files = await Promise.all(
-      filePaths.map(async (filePath) => {
-        const resolvedPath: string = path.resolve(filePath);
-        try {
-          await fs.promises.access(resolvedPath, fs.constants.R_OK);
-        } catch (error) {
-          if (error.code === 'ENOENT')
-            throw new Error(`${filePath} does not exist or is not readable`);
-        }
-
-        return resolvedPath;
-      })
-    );
-    const { objectId } = this._remoteObject;
-    const { node } = await this._client.send('DOM.describeNode', { objectId });
-    const { backendNodeId } = node;
-
-    
-
-
-
-    if (files.length === 0) {
-      await (this as ElementHandle<HTMLInputElement>).evaluate((element) => {
-        element.files = new DataTransfer().files;
-
-        
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    } else {
-      await this._client.send('DOM.setFileInputFiles', {
-        objectId,
-        files,
-        backendNodeId,
-      });
-    }
-  }
-
-  
-
-
-
-
-  async tap(): Promise<void> {
-    await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this.clickablePoint();
-    await this._page.touchscreen.tap(x, y);
-  }
-
-  
-
-
-  async focus(): Promise<void> {
-    await (this as ElementHandle<HTMLElement>).evaluate((element) =>
-      element.focus()
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async type(text: string, options?: { delay: number }): Promise<void> {
-    await this.focus();
-    await this._page.keyboard.type(text, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async press(key: KeyInput, options?: PressOptions): Promise<void> {
-    await this.focus();
-    await this._page.keyboard.press(key, options);
-  }
-
-  
-
-
-
-  async boundingBox(): Promise<BoundingBox | null> {
-    const result = await this._getBoxModel();
-
-    if (!result) return null;
-
-    const quad = result.model.border;
-    const x = Math.min(quad[0], quad[2], quad[4], quad[6]);
-    const y = Math.min(quad[1], quad[3], quad[5], quad[7]);
-    const width = Math.max(quad[0], quad[2], quad[4], quad[6]) - x;
-    const height = Math.max(quad[1], quad[3], quad[5], quad[7]) - y;
-
-    return { x, y, width, height };
-  }
-
-  
-
-
-
-
-
-
-
-  async boxModel(): Promise<BoxModel | null> {
-    const result = await this._getBoxModel();
-
-    if (!result) return null;
-
-    const { content, padding, border, margin, width, height } = result.model;
-    return {
-      content: this._fromProtocolQuad(content),
-      padding: this._fromProtocolQuad(padding),
-      border: this._fromProtocolQuad(border),
-      margin: this._fromProtocolQuad(margin),
-      width,
-      height,
-    };
-  }
-
-  
-
-
-
-
-  async screenshot(options: ScreenshotOptions = {}): Promise<string | Buffer> {
-    let needsViewportReset = false;
-
-    let boundingBox = await this.boundingBox();
-    assert(boundingBox, 'Node is either not visible or not an HTMLElement');
-
-    const viewport = this._page.viewport();
-
-    if (
-      viewport &&
-      (boundingBox.width > viewport.width ||
-        boundingBox.height > viewport.height)
-    ) {
-      const newViewport = {
-        width: Math.max(viewport.width, Math.ceil(boundingBox.width)),
-        height: Math.max(viewport.height, Math.ceil(boundingBox.height)),
-      };
-      await this._page.setViewport(Object.assign({}, viewport, newViewport));
-
-      needsViewportReset = true;
-    }
-
-    await this._scrollIntoViewIfNeeded();
-
-    boundingBox = await this.boundingBox();
-    assert(boundingBox, 'Node is either not visible or not an HTMLElement');
-    assert(boundingBox.width !== 0, 'Node has 0 width.');
-    assert(boundingBox.height !== 0, 'Node has 0 height.');
-
-    const layoutMetrics = await this._client.send('Page.getLayoutMetrics');
-    
-    const { pageX, pageY } =
-      layoutMetrics.cssLayoutViewport || layoutMetrics.layoutViewport;
-
-    const clip = Object.assign({}, boundingBox);
-    clip.x += pageX;
-    clip.y += pageY;
-
-    const imageData = await this._page.screenshot(
-      Object.assign(
-        {},
-        {
-          clip,
-        },
-        options
-      )
-    );
-
-    if (needsViewportReset) await this._page.setViewport(viewport);
-
-    return imageData;
-  }
-
-  
-
-
-
-  async $<T extends Element = Element>(
-    selector: string
-  ): Promise<ElementHandle<T> | null> {
-    const { updatedSelector, queryHandler } =
-      getQueryHandlerAndSelector(selector);
-    return queryHandler.queryOne(this, updatedSelector);
-  }
-
-  
-
-
-
-  async $$<T extends Element = Element>(
-    selector: string
-  ): Promise<Array<ElementHandle<T>>> {
-    const { updatedSelector, queryHandler } =
-      getQueryHandlerAndSelector(selector);
-    return queryHandler.queryAll(this, updatedSelector);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async $eval<ReturnType>(
-    selector: string,
-    pageFunction: (
-      element: Element,
-      ...args: unknown[]
-    ) => ReturnType | Promise<ReturnType>,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<WrapElementHandle<ReturnType>> {
-    const elementHandle = await this.$(selector);
-    if (!elementHandle)
-      throw new Error(
-        `Error: failed to find element matching selector "${selector}"`
-      );
-    const result = await elementHandle.evaluate<
-      (
-        element: Element,
-        ...args: SerializableOrJSHandle[]
-      ) => ReturnType | Promise<ReturnType>
-    >(pageFunction, ...args);
-    await elementHandle.dispose();
-
-    
-
-
-
-
-
-
-
-    return result as WrapElementHandle<ReturnType>;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async $$eval<ReturnType>(
-    selector: string,
-    pageFunction: (
-      elements: Element[],
-      ...args: unknown[]
-    ) => ReturnType | Promise<ReturnType>,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<WrapElementHandle<ReturnType>> {
-    const { updatedSelector, queryHandler } =
-      getQueryHandlerAndSelector(selector);
-    const arrayHandle = await queryHandler.queryAllArray(this, updatedSelector);
-    const result = await arrayHandle.evaluate<
-      (
-        elements: Element[],
-        ...args: unknown[]
-      ) => ReturnType | Promise<ReturnType>
-    >(pageFunction, ...args);
-    await arrayHandle.dispose();
-    
-
-
-    return result as WrapElementHandle<ReturnType>;
-  }
-
-  
-
-
-
-
-  async $x(expression: string): Promise<ElementHandle[]> {
-    const arrayHandle = await this.evaluateHandle(
-      (element: Document, expression: string) => {
-        const document = element.ownerDocument || element;
-        const iterator = document.evaluate(
-          expression,
-          element,
-          null,
-          XPathResult.ORDERED_NODE_ITERATOR_TYPE
-        );
-        const array = [];
-        let item;
-        while ((item = iterator.iterateNext())) array.push(item);
-        return array;
-      },
-      expression
-    );
-    const properties = await arrayHandle.getProperties();
-    await arrayHandle.dispose();
-    const result = [];
-    for (const property of properties.values()) {
-      const elementHandle = property.asElement();
-      if (elementHandle) result.push(elementHandle);
-    }
-    return result;
-  }
-
-  
-
-
-  async isIntersectingViewport(options?: {
-    threshold?: number;
-  }): Promise<boolean> {
-    const { threshold = 0 } = options || {};
-    return await this.evaluate(async (element: Element, threshold: number) => {
-      const visibleRatio = await new Promise<number>((resolve) => {
-        const observer = new IntersectionObserver((entries) => {
-          resolve(entries[0].intersectionRatio);
-          observer.disconnect();
-        });
-        observer.observe(element);
-      });
-      return threshold === 1 ? visibleRatio === 1 : visibleRatio > threshold;
-    }, threshold);
+  remoteObject(): Protocol.Runtime.RemoteObject {
+    return this.#remoteObject;
   }
 }
 
@@ -1117,7 +301,7 @@ export interface ClickOptions {
   
 
 
-  button?: 'left' | 'right' | 'middle';
+  button?: MouseButton;
   
 
 
@@ -1148,17 +332,4 @@ export interface PressOptions {
 export interface Point {
   x: number;
   y: number;
-}
-
-function computeQuadArea(quad: Array<{ x: number; y: number }>): number {
-  
-
-
-  let area = 0;
-  for (let i = 0; i < quad.length; ++i) {
-    const p1 = quad[i];
-    const p2 = quad[(i + 1) % quad.length];
-    area += (p1.x * p2.y - p2.x * p1.y) / 2;
-  }
-  return Math.abs(area);
 }

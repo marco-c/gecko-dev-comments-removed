@@ -1,0 +1,19 @@
+import {dirname} from 'path';
+
+
+
+
+let puppeteerDirname: string;
+
+try {
+  
+  
+  
+  
+  puppeteerDirname = dirname(require.resolve('./compat'));
+} catch (error) {
+  
+  puppeteerDirname = __dirname;
+}
+
+export {puppeteerDirname};

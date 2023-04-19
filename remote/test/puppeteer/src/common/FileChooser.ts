@@ -14,9 +14,13 @@
 
 
 
-import { ElementHandle } from './JSHandle.js';
-import { Protocol } from 'devtools-protocol';
-import { assert } from './assert.js';
+import {Protocol} from 'devtools-protocol';
+import {assert} from './assert.js';
+import {ElementHandle} from './ElementHandle.js';
+
+
+
+
 
 
 
@@ -37,40 +41,44 @@ import { assert } from './assert.js';
 
 
 export class FileChooser {
-  private _element: ElementHandle;
-  private _multiple: boolean;
-  private _handled = false;
+  #element: ElementHandle<HTMLInputElement>;
+  #multiple: boolean;
+  #handled = false;
 
   
 
 
   constructor(
-    element: ElementHandle,
+    element: ElementHandle<HTMLInputElement>,
     event: Protocol.Page.FileChooserOpenedEvent
   ) {
-    this._element = element;
-    this._multiple = event.mode !== 'selectSingle';
+    this.#element = element;
+    this.#multiple = event.mode !== 'selectSingle';
   }
 
   
+
+
 
 
   isMultiple(): boolean {
-    return this._multiple;
+    return this.#multiple;
   }
 
   
+
+
 
 
 
 
   async accept(filePaths: string[]): Promise<void> {
     assert(
-      !this._handled,
+      !this.#handled,
       'Cannot accept FileChooser which is already handled!'
     );
-    this._handled = true;
-    await this._element.uploadFile(...filePaths);
+    this.#handled = true;
+    await this.#element.uploadFile(...filePaths);
   }
 
   
@@ -78,9 +86,9 @@ export class FileChooser {
 
   cancel(): void {
     assert(
-      !this._handled,
+      !this.#handled,
       'Cannot cancel FileChooser which is already handled!'
     );
-    this._handled = true;
+    this.#handled = true;
   }
 }

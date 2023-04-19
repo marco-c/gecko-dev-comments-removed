@@ -13,53 +13,72 @@
 
 
 
-import { ConnectionTransport } from '../common/ConnectionTransport.js';
 import NodeWebSocket from 'ws';
+import {ConnectionTransport} from '../common/ConnectionTransport.js';
+import {packageVersion} from '../generated/version.js';
+import {promises as dns} from 'dns';
+import {URL} from 'url';
+
+
+
 
 export class NodeWebSocketTransport implements ConnectionTransport {
-  static create(url: string): Promise<NodeWebSocketTransport> {
+  static async create(urlString: string): Promise<NodeWebSocketTransport> {
     
-    const pkg = require('../../../../package.json');
+    
+    
+    
+    
+    
+    
+    const url = new URL(urlString);
+    if (url.hostname === 'localhost') {
+      const {address} = await dns.lookup(url.hostname, {verbatim: false});
+      url.hostname = address;
+    }
+
     return new Promise((resolve, reject) => {
       const ws = new NodeWebSocket(url, [], {
         followRedirects: true,
         perMessageDeflate: false,
         maxPayload: 256 * 1024 * 1024, 
         headers: {
-          'User-Agent': `Puppeteer ${pkg.version}`,
+          'User-Agent': `Puppeteer ${packageVersion}`,
         },
       });
 
-      ws.addEventListener('open', () =>
-        resolve(new NodeWebSocketTransport(ws))
-      );
+      ws.addEventListener('open', () => {
+        return resolve(new NodeWebSocketTransport(ws));
+      });
       ws.addEventListener('error', reject);
     });
   }
 
-  private _ws: NodeWebSocket;
-  onmessage?: (message: string) => void;
+  #ws: NodeWebSocket;
+  onmessage?: (message: NodeWebSocket.Data) => void;
   onclose?: () => void;
 
   constructor(ws: NodeWebSocket) {
-    this._ws = ws;
-    this._ws.addEventListener('message', (event) => {
-      if (this.onmessage) this.onmessage.call(null, event.data);
+    this.#ws = ws;
+    this.#ws.addEventListener('message', event => {
+      if (this.onmessage) {
+        this.onmessage.call(null, event.data);
+      }
     });
-    this._ws.addEventListener('close', () => {
-      if (this.onclose) this.onclose.call(null);
+    this.#ws.addEventListener('close', () => {
+      if (this.onclose) {
+        this.onclose.call(null);
+      }
     });
     
-    this._ws.addEventListener('error', () => {});
-    this.onmessage = null;
-    this.onclose = null;
+    this.#ws.addEventListener('error', () => {});
   }
 
   send(message: string): void {
-    this._ws.send(message);
+    this.#ws.send(message);
   }
 
   close(): void {
-    this._ws.close();
+    this.#ws.close();
   }
 }

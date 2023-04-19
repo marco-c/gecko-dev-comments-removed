@@ -14,17 +14,36 @@
 
 
 
-import { NetworkConditions } from './NetworkManager.js';
+import {NetworkConditions} from './NetworkManager.js';
 
 
 
 
-export type PredefinedNetworkConditions = { [name: string]: NetworkConditions };
 
 
 
 
-export const networkConditions: PredefinedNetworkConditions = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const networkConditions: Readonly<{
+  'Slow 3G': NetworkConditions;
+  'Fast 3G': NetworkConditions;
+}> = Object.freeze({
   'Slow 3G': {
     download: ((500 * 1000) / 8) * 0.8,
     upload: ((500 * 1000) / 8) * 0.8,
@@ -35,4 +54,4 @@ export const networkConditions: PredefinedNetworkConditions = {
     upload: ((750 * 1000) / 8) * 0.9,
     latency: 150 * 3.75,
   },
-};
+});

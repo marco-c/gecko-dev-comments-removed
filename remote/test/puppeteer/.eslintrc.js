@@ -7,22 +7,18 @@ module.exports = {
 
   parser: '@typescript-eslint/parser',
 
-  plugins: ['mocha', '@typescript-eslint', 'unicorn', 'import'],
+  plugins: ['mocha', '@typescript-eslint', 'import'],
 
   extends: ['plugin:prettier/recommended'],
 
   rules: {
     
+    curly: [2, 'all'],
+    
+    'arrow-body-style': ['error', 'always'],
+    
     'prettier/prettier': 2,
     
-    quotes: [
-      2,
-      'single',
-      {
-        avoidEscape: true,
-        allowTemplateLiterals: true,
-      },
-    ],
     'spaced-comment': [
       2,
       'always',
@@ -99,9 +95,6 @@ module.exports = {
     
     'mocha/no-exclusive-tests': 'error',
 
-    
-    'unicorn/catch-error-name': 'error',
-
     'no-restricted-imports': [
       'error',
       {
@@ -116,6 +109,12 @@ module.exports = {
       },
     ],
     'import/extensions': ['error', 'ignorePackages'],
+
+    'no-restricted-syntax': [
+      'error',
+      
+      
+    ],
   },
   overrides: [
     {
@@ -124,9 +123,23 @@ module.exports = {
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
       ],
+      plugins: ['eslint-plugin-tsdoc', 'local'],
       rules: {
+        
+        'local/prettier-comments': 2,
+        
+        curly: [2, 'all'],
+        
+        'arrow-body-style': ['error', 'always'],
+        
+        'tsdoc/syntax': 2,
+        
+        '@typescript-eslint/array-type': ['error', {default: 'array-simple'}],
         'no-unused-vars': 0,
-        '@typescript-eslint/no-unused-vars': 2,
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {argsIgnorePattern: '^_'},
+        ],
         'func-call-spacing': 0,
         '@typescript-eslint/func-call-spacing': 2,
         semi: 0,
@@ -139,7 +152,7 @@ module.exports = {
         
         '@typescript-eslint/explicit-function-return-type': 0,
         
-        '@typescript-eslint/ban-ts-ignore': 0,
+        '@typescript-eslint/no-non-null-assertion': 0,
         
 
 
@@ -160,25 +173,16 @@ module.exports = {
             },
           },
         ],
-        '@typescript-eslint/array-type': [
-          2,
-          {
-            default: 'array-simple',
-          },
-        ],
         
         '@typescript-eslint/explicit-module-boundary-types': 2,
-      },
-    },
-    {
-      files: ['test-browser/**/*.js'],
-      parserOptions: {
-        sourceType: 'module',
-      },
-      env: {
-        es6: true,
-        browser: true,
-        es2020: true,
+        'no-restricted-syntax': [
+          'error',
+          {
+            
+            selector: "CallExpression[callee.name='require']",
+            message: '`require` statements are not allowed. Use `import`.',
+          },
+        ],
       },
     },
   ],

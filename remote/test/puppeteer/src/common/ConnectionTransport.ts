@@ -18,8 +18,8 @@
 
 
 export interface ConnectionTransport {
-  send(string);
-  close();
+  send(message: string): void;
+  close(): void;
   onmessage?: (message: string) => void;
   onclose?: () => void;
 }

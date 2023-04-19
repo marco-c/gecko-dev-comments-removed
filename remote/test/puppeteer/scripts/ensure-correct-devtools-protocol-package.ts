@@ -34,8 +34,8 @@
 
 
 
-import { PUPPETEER_REVISIONS } from '../src/revisions';
-import { execSync } from 'child_process';
+import {PUPPETEER_REVISIONS} from '../src/revisions';
+import {execSync} from 'child_process';
 
 import packageJson from '../package.json';
 
@@ -66,7 +66,7 @@ const output = execSync(command, {
   encoding: 'utf8',
 });
 
-const bestRevisionFromNpm = output.split(' ')[1].replace(/'|\n/g, '');
+const bestRevisionFromNpm = output.split(' ')[1]!.replace(/'|\n/g, '');
 
 if (currentProtocolPackageInstalledVersion !== bestRevisionFromNpm) {
   console.log(`ERROR: bad devtools-protocol revision detected:

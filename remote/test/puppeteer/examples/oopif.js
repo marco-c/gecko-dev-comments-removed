@@ -23,13 +23,15 @@ async function attachFrame(frameId, url) {
   frame.src = url;
   frame.id = frameId;
   document.body.appendChild(frame);
-  await new Promise((x) => (frame.onload = x));
+  await new Promise(x => {
+    return (frame.onload = x);
+  });
   return frame;
 }
 
 (async () => {
   
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
 
   

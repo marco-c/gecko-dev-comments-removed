@@ -14,7 +14,7 @@
 
 
 
-import { JSHandle } from './JSHandle.js';
+import {JSHandle} from './JSHandle.js';
 
 
 
@@ -66,10 +66,10 @@ export type ConsoleMessageType =
 
 
 export class ConsoleMessage {
-  private _type: ConsoleMessageType;
-  private _text: string;
-  private _args: JSHandle[];
-  private _stackTraceLocations: ConsoleMessageLocation[];
+  #type: ConsoleMessageType;
+  #text: string;
+  #args: JSHandle[];
+  #stackTraceLocations: ConsoleMessageLocation[];
 
   
 
@@ -80,44 +80,44 @@ export class ConsoleMessage {
     args: JSHandle[],
     stackTraceLocations: ConsoleMessageLocation[]
   ) {
-    this._type = type;
-    this._text = text;
-    this._args = args;
-    this._stackTraceLocations = stackTraceLocations;
+    this.#type = type;
+    this.#text = text;
+    this.#args = args;
+    this.#stackTraceLocations = stackTraceLocations;
   }
 
   
 
 
   type(): ConsoleMessageType {
-    return this._type;
+    return this.#type;
   }
 
   
 
 
   text(): string {
-    return this._text;
+    return this.#text;
   }
 
   
 
 
   args(): JSHandle[] {
-    return this._args;
+    return this.#args;
   }
 
   
 
 
   location(): ConsoleMessageLocation {
-    return this._stackTraceLocations.length ? this._stackTraceLocations[0] : {};
+    return this.#stackTraceLocations[0] ?? {};
   }
 
   
 
 
   stackTrace(): ConsoleMessageLocation[] {
-    return this._stackTraceLocations;
+    return this.#stackTraceLocations;
   }
 }

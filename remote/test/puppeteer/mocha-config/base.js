@@ -1,6 +1,0 @@
-module.exports = {
-  reporter: 'dot',
-  
-  logLevel: 'debug',
-  exit: !!process.env.CI,
-};

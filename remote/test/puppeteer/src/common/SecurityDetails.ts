@@ -14,7 +14,7 @@
 
 
 
-import { Protocol } from 'devtools-protocol';
+import {Protocol} from 'devtools-protocol';
 
 
 
@@ -23,30 +23,30 @@ import { Protocol } from 'devtools-protocol';
 
 
 export class SecurityDetails {
-  private _subjectName: string;
-  private _issuer: string;
-  private _validFrom: number;
-  private _validTo: number;
-  private _protocol: string;
-  private _sanList: string[];
+  #subjectName: string;
+  #issuer: string;
+  #validFrom: number;
+  #validTo: number;
+  #protocol: string;
+  #sanList: string[];
 
   
 
 
   constructor(securityPayload: Protocol.Network.SecurityDetails) {
-    this._subjectName = securityPayload.subjectName;
-    this._issuer = securityPayload.issuer;
-    this._validFrom = securityPayload.validFrom;
-    this._validTo = securityPayload.validTo;
-    this._protocol = securityPayload.protocol;
-    this._sanList = securityPayload.sanList;
+    this.#subjectName = securityPayload.subjectName;
+    this.#issuer = securityPayload.issuer;
+    this.#validFrom = securityPayload.validFrom;
+    this.#validTo = securityPayload.validTo;
+    this.#protocol = securityPayload.protocol;
+    this.#sanList = securityPayload.sanList;
   }
 
   
 
 
   issuer(): string {
-    return this._issuer;
+    return this.#issuer;
   }
 
   
@@ -54,7 +54,7 @@ export class SecurityDetails {
 
 
   validFrom(): number {
-    return this._validFrom;
+    return this.#validFrom;
   }
 
   
@@ -62,27 +62,27 @@ export class SecurityDetails {
 
 
   validTo(): number {
-    return this._validTo;
+    return this.#validTo;
   }
 
   
 
 
   protocol(): string {
-    return this._protocol;
+    return this.#protocol;
   }
 
   
 
 
   subjectName(): string {
-    return this._subjectName;
+    return this.#subjectName;
   }
 
   
 
 
   subjectAlternativeNames(): string[] {
-    return this._sanList;
+    return this.#sanList;
   }
 }

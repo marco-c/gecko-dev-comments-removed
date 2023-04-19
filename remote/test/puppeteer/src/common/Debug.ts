@@ -14,7 +14,28 @@
 
 
 
-import { isNode } from '../environment.js';
+import {isNode} from '../environment.js';
+
+declare global {
+  
+  var __PUPPETEER_DEBUG: string;
+}
+
+
+
+
+let debugModule: typeof import('debug') | null = null;
+
+
+
+export async function importDebug(): Promise<typeof import('debug')> {
+  if (!debugModule) {
+    debugModule = (await import('debug')).default;
+  }
+  return debugModule;
+}
+
+
 
 
 
@@ -54,13 +75,16 @@ import { isNode } from '../environment.js';
 
 export const debug = (prefix: string): ((...args: unknown[]) => void) => {
   if (isNode) {
-    
-    return require('debug')(prefix);
+    return async (...logArgs: unknown[]) => {
+      (await importDebug())(prefix)(logArgs);
+    };
   }
 
   return (...logArgs: unknown[]): void => {
-    const debugLevel = globalThis.__PUPPETEER_DEBUG as string;
-    if (!debugLevel) return;
+    const debugLevel = (globalThis as any).__PUPPETEER_DEBUG;
+    if (!debugLevel) {
+      return;
+    }
 
     const everythingShouldBeLogged = debugLevel === '*';
 
@@ -75,7 +99,9 @@ export const debug = (prefix: string): ((...args: unknown[]) => void) => {
         ? prefix.startsWith(debugLevel)
         : prefix === debugLevel);
 
-    if (!prefixMatchesDebugLevel) return;
+    if (!prefixMatchesDebugLevel) {
+      return;
+    }
 
     
     console.log(`${prefix}:`, ...logArgs);

@@ -19,16 +19,24 @@ import {
   CommonPuppeteerSettings,
   ConnectOptions,
 } from '../common/Puppeteer.js';
-import { BrowserFetcher, BrowserFetcherOptions } from './BrowserFetcher.js';
-import {
-  LaunchOptions,
-  BrowserLaunchArgumentOptions,
-} from './LaunchOptions.js';
-import { BrowserConnectOptions } from '../common/BrowserConnector.js';
-import { Browser } from '../common/Browser.js';
-import Launcher, { ProductLauncher } from './Launcher.js';
-import { PUPPETEER_REVISIONS } from '../revisions.js';
-import { Product } from '../common/Product.js';
+import {BrowserFetcher, BrowserFetcherOptions} from './BrowserFetcher.js';
+import {LaunchOptions, BrowserLaunchArgumentOptions} from './LaunchOptions.js';
+import {BrowserConnectOptions} from '../common/BrowserConnector.js';
+import {Browser} from '../common/Browser.js';
+import {createLauncher, ProductLauncher} from './ProductLauncher.js';
+import {PUPPETEER_REVISIONS} from '../revisions.js';
+import {Product} from '../common/Product.js';
+
+
+
+
+export interface PuppeteerLaunchOptions
+  extends LaunchOptions,
+    BrowserLaunchArgumentOptions,
+    BrowserConnectOptions {
+  product?: Product;
+  extraPrefsFirefox?: Record<string, unknown>;
+}
 
 
 
@@ -66,11 +74,9 @@ import { Product } from '../common/Product.js';
 
 
 export class PuppeteerNode extends Puppeteer {
-  private _lazyLauncher: ProductLauncher;
-  private _projectRoot: string;
-  private __productName?: Product;
-  
-
+  #launcher?: ProductLauncher;
+  #projectRoot?: string;
+  #productName?: Product;
 
   _preferredRevision: string;
 
@@ -79,17 +85,23 @@ export class PuppeteerNode extends Puppeteer {
 
   constructor(
     settings: {
-      projectRoot: string;
+      projectRoot?: string;
       preferredRevision: string;
       productName?: Product;
     } & CommonPuppeteerSettings
   ) {
-    const { projectRoot, preferredRevision, productName, ...commonSettings } =
+    const {projectRoot, preferredRevision, productName, ...commonSettings} =
       settings;
     super(commonSettings);
-    this._projectRoot = projectRoot;
-    this.__productName = productName;
+    this.#projectRoot = projectRoot;
+    this.#productName = productName;
     this._preferredRevision = preferredRevision;
+
+    this.connect = this.connect.bind(this);
+    this.launch = this.launch.bind(this);
+    this.executablePath = this.executablePath.bind(this);
+    this.defaultArgs = this.defaultArgs.bind(this);
+    this.createBrowserFetcher = this.createBrowserFetcher.bind(this);
   }
 
   
@@ -98,27 +110,24 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-
-
-  connect(options: ConnectOptions): Promise<Browser> {
-    if (options.product) this._productName = options.product;
+  override connect(options: ConnectOptions): Promise<Browser> {
     return super.connect(options);
   }
 
   
 
 
-  get _productName(): Product {
-    return this.__productName;
+  get _productName(): Product | undefined {
+    return this.#productName;
+  }
+  set _productName(name: Product | undefined) {
+    if (this.#productName !== name) {
+      this._changedProduct = true;
+    }
+    this.#productName = name;
   }
 
   
-  set _productName(name: Product) {
-    if (this.__productName !== name) this._changedProduct = true;
-    this.__productName = name;
-  }
-
-  
 
 
 
@@ -143,15 +152,16 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-  launch(
-    options: LaunchOptions &
-      BrowserLaunchArgumentOptions &
-      BrowserConnectOptions & {
-        product?: Product;
-        extraPrefsFirefox?: Record<string, unknown>;
-      } = {}
-  ): Promise<Browser> {
-    if (options.product) this._productName = options.product;
+
+
+
+
+
+
+  launch(options: PuppeteerLaunchOptions = {}): Promise<Browser> {
+    if (options.product) {
+      this._productName = options.product;
+    }
     return this._launcher.launch(options);
   }
 
@@ -174,8 +184,8 @@ export class PuppeteerNode extends Puppeteer {
 
   get _launcher(): ProductLauncher {
     if (
-      !this._lazyLauncher ||
-      this._lazyLauncher.product !== this._productName ||
+      !this.#launcher ||
+      this.#launcher.product !== this._productName ||
       this._changedProduct
     ) {
       switch (this._productName) {
@@ -187,17 +197,18 @@ export class PuppeteerNode extends Puppeteer {
           this._preferredRevision = PUPPETEER_REVISIONS.chromium;
       }
       this._changedProduct = false;
-      this._lazyLauncher = Launcher(
-        this._projectRoot,
+      this.#launcher = createLauncher(
+        this.#projectRoot,
         this._preferredRevision,
         this._isPuppeteerCore,
         this._productName
       );
     }
-    return this._lazyLauncher;
+    return this.#launcher;
   }
 
   
+
 
 
 
@@ -213,7 +224,6 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-
   defaultArgs(options: BrowserLaunchArgumentOptions = {}): string[] {
     return this._launcher.defaultArgs(options);
   }
@@ -224,6 +234,11 @@ export class PuppeteerNode extends Puppeteer {
 
 
   createBrowserFetcher(options: BrowserFetcherOptions): BrowserFetcher {
-    return new BrowserFetcher(this._projectRoot, options);
+    if (!this.#projectRoot) {
+      throw new Error(
+        '_projectRoot is undefined. Unable to create a BrowserFetcher.'
+      );
+    }
+    return new BrowserFetcher(this.#projectRoot, options);
   }
 }

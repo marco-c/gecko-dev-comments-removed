@@ -7,7 +7,7 @@ import mitt, {
 
 
 
-export { EventType, Handler };
+export {EventType, Handler};
 
 
 
@@ -110,7 +110,7 @@ export class EventEmitter implements CommonEventEmitter {
 
 
   once(event: EventType, handler: Handler): EventEmitter {
-    const onceHandler: Handler = (eventData) => {
+    const onceHandler: Handler = eventData => {
       handler(eventData);
       this.off(event, onceHandler);
     };
@@ -144,6 +144,6 @@ export class EventEmitter implements CommonEventEmitter {
   }
 
   private eventListenersCount(event: EventType): number {
-    return this.eventsMap.has(event) ? this.eventsMap.get(event).length : 0;
+    return this.eventsMap.get(event)?.length || 0;
   }
 }

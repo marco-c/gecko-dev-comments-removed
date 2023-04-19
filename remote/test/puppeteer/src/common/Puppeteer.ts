@@ -13,23 +13,20 @@
 
 
 
-import { puppeteerErrors, PuppeteerErrors } from './Errors.js';
-import { ConnectionTransport } from './ConnectionTransport.js';
-import { devicesMap, DevicesMap } from './DeviceDescriptors.js';
-import { Browser } from './Browser.js';
+import {Browser} from './Browser.js';
+import {BrowserConnectOptions, _connectToBrowser} from './BrowserConnector.js';
+import {ConnectionTransport} from './ConnectionTransport.js';
+import {devices} from './DeviceDescriptors.js';
+import {errors} from './Errors.js';
+import {networkConditions} from './NetworkConditions.js';
 import {
-  registerCustomQueryHandler,
-  unregisterCustomQueryHandler,
-  customQueryHandlerNames,
   clearCustomQueryHandlers,
   CustomQueryHandler,
+  customQueryHandlerNames,
+  registerCustomQueryHandler,
+  unregisterCustomQueryHandler,
 } from './QueryHandler.js';
-import { Product } from './Product.js';
-import { connectToBrowser, BrowserConnectOptions } from './BrowserConnector.js';
-import {
-  PredefinedNetworkConditions,
-  networkConditions,
-} from './NetworkConditions.js';
+
 
 
 
@@ -45,7 +42,6 @@ export interface ConnectOptions extends BrowserConnectOptions {
   browserWSEndpoint?: string;
   browserURL?: string;
   transport?: ConnectionTransport;
-  product?: Product;
 }
 
 
@@ -66,6 +62,8 @@ export class Puppeteer {
 
   constructor(settings: CommonPuppeteerSettings) {
     this._isPuppeteerCore = settings.isPuppeteerCore;
+
+    this.connect = this.connect.bind(this);
   }
 
   
@@ -77,7 +75,7 @@ export class Puppeteer {
 
 
   connect(options: ConnectOptions): Promise<Browser> {
-    return connectToBrowser(options);
+    return _connectToBrowser(options);
   }
 
   
@@ -88,21 +86,8 @@ export class Puppeteer {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get devices(): DevicesMap {
-    return devicesMap;
+  get devices(): typeof devices {
+    return devices;
   }
 
   
@@ -113,22 +98,8 @@ export class Puppeteer {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get errors(): PuppeteerErrors {
-    return puppeteerErrors;
+  get errors(): typeof errors {
+    return errors;
   }
 
   
@@ -139,20 +110,7 @@ export class Puppeteer {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get networkConditions(): PredefinedNetworkConditions {
+  get networkConditions(): typeof networkConditions {
     return networkConditions;
   }
 
@@ -164,27 +122,31 @@ export class Puppeteer {
 
 
 
-
-
-
-
-
-
   registerCustomQueryHandler(
     name: string,
     queryHandler: CustomQueryHandler
   ): void {
-    registerCustomQueryHandler(name, queryHandler);
+    return registerCustomQueryHandler(name, queryHandler);
   }
 
   
+
+
+
+
+
 
 
   unregisterCustomQueryHandler(name: string): void {
-    unregisterCustomQueryHandler(name);
+    return unregisterCustomQueryHandler(name);
   }
 
   
+
+
+
+
+
 
 
   customQueryHandlerNames(): string[] {
@@ -194,7 +156,12 @@ export class Puppeteer {
   
 
 
+
+
+
+
+
   clearCustomQueryHandlers(): void {
-    clearCustomQueryHandlers();
+    return clearCustomQueryHandlers();
   }
 }

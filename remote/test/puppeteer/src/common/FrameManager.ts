@@ -14,34 +14,35 @@
 
 
 
-import { EventEmitter } from './EventEmitter.js';
-import { assert } from './assert.js';
-import { helper } from './helper.js';
-import { ExecutionContext, EVALUATION_SCRIPT_URL } from './ExecutionContext.js';
+import {Protocol} from 'devtools-protocol';
+import {assert} from './assert.js';
+import {CDPSession} from './Connection.js';
+import {ElementHandle} from './ElementHandle.js';
+import {EventEmitter} from './EventEmitter.js';
+import {EVALUATION_SCRIPT_URL, ExecutionContext} from './ExecutionContext.js';
+import {HTTPResponse} from './HTTPResponse.js';
+import {MouseButton} from './Input.js';
 import {
-  LifecycleWatcher,
-  PuppeteerLifeCycleEvent,
-} from './LifecycleWatcher.js';
-import { DOMWorld, WaitForSelectorOptions } from './DOMWorld.js';
-import { NetworkManager } from './NetworkManager.js';
-import { TimeoutSettings } from './TimeoutSettings.js';
-import { Connection, CDPSession } from './Connection.js';
-import { JSHandle, ElementHandle } from './JSHandle.js';
-import { MouseButton } from './Input.js';
-import { Page } from './Page.js';
-import { HTTPResponse } from './HTTPResponse.js';
-import { Protocol } from 'devtools-protocol';
+  MAIN_WORLD,
+  IsolatedWorld,
+  IsolatedWorldChart,
+  PUPPETEER_WORLD,
+  WaitForSelectorOptions,
+} from './IsolatedWorld.js';
+import {LifecycleWatcher, PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
+import {NetworkManager} from './NetworkManager.js';
+import {Page} from './Page.js';
+import {Target} from './Target.js';
+import {TimeoutSettings} from './TimeoutSettings.js';
+import {EvaluateFunc, HandleFor, NodeFor} from './types.js';
 import {
-  SerializableOrJSHandle,
-  EvaluateHandleFn,
-  WrapElementHandle,
-  EvaluateFn,
-  EvaluateFnReturnType,
-  UnwrapPromiseLike,
-} from './EvalTypes.js';
+  createDeferredPromiseWithTimer,
+  debugError,
+  DeferredPromise,
+  isErrorLike,
+} from './util.js';
 
 const UTILITY_WORLD_NAME = '__puppeteer_utility_world__';
-const xPathPattern = /^\(\/\/[^\)]+\)|^\/\//;
 
 
 
@@ -53,6 +54,7 @@ export const FrameManagerEmittedEvents = {
   FrameAttached: Symbol('FrameManager.FrameAttached'),
   FrameNavigated: Symbol('FrameManager.FrameNavigated'),
   FrameDetached: Symbol('FrameManager.FrameDetached'),
+  FrameSwapped: Symbol('FrameManager.FrameSwapped'),
   LifecycleEvent: Symbol('FrameManager.LifecycleEvent'),
   FrameNavigatedWithinDocument: Symbol(
     'FrameManager.FrameNavigatedWithinDocument'
@@ -64,16 +66,38 @@ export const FrameManagerEmittedEvents = {
 
 
 
+
+
 export class FrameManager extends EventEmitter {
-  _client: CDPSession;
-  private _page: Page;
-  private _networkManager: NetworkManager;
-  _timeoutSettings: TimeoutSettings;
-  private _frames = new Map<string, Frame>();
-  private _contextIdToContext = new Map<string, ExecutionContext>();
-  private _isolatedWorlds = new Set<string>();
-  private _mainFrame: Frame;
-  private _disconnectPromise?: Promise<Error>;
+  #page: Page;
+  #networkManager: NetworkManager;
+  #timeoutSettings: TimeoutSettings;
+  #frames = new Map<string, Frame>();
+  #contextIdToContext = new Map<string, ExecutionContext>();
+  #isolatedWorlds = new Set<string>();
+  #mainFrame?: Frame;
+  #client: CDPSession;
+  
+
+
+
+  #framesPendingTargetInit = new Map<string, DeferredPromise<void>>();
+  
+
+
+  #framesPendingAttachment = new Map<string, DeferredPromise<void>>();
+
+  get timeoutSettings(): TimeoutSettings {
+    return this.#timeoutSettings;
+  }
+
+  get networkManager(): NetworkManager {
+    return this.#networkManager;
+  }
+
+  get client(): CDPSession {
+    return this.#client;
+  }
 
   constructor(
     client: CDPSession,
@@ -82,418 +106,426 @@ export class FrameManager extends EventEmitter {
     timeoutSettings: TimeoutSettings
   ) {
     super();
-    this._client = client;
-    this._page = page;
-    this._networkManager = new NetworkManager(client, ignoreHTTPSErrors, this);
-    this._timeoutSettings = timeoutSettings;
-    this.setupEventListeners(this._client);
+    this.#client = client;
+    this.#page = page;
+    this.#networkManager = new NetworkManager(client, ignoreHTTPSErrors, this);
+    this.#timeoutSettings = timeoutSettings;
+    this.setupEventListeners(this.#client);
   }
 
   private setupEventListeners(session: CDPSession) {
-    session.on('Page.frameAttached', (event) => {
-      this._onFrameAttached(session, event.frameId, event.parentFrameId);
+    session.on('Page.frameAttached', event => {
+      this.#onFrameAttached(session, event.frameId, event.parentFrameId);
     });
-    session.on('Page.frameNavigated', (event) => {
-      this._onFrameNavigated(event.frame);
+    session.on('Page.frameNavigated', event => {
+      this.#onFrameNavigated(event.frame);
     });
-    session.on('Page.navigatedWithinDocument', (event) => {
-      this._onFrameNavigatedWithinDocument(event.frameId, event.url);
+    session.on('Page.navigatedWithinDocument', event => {
+      this.#onFrameNavigatedWithinDocument(event.frameId, event.url);
     });
     session.on(
       'Page.frameDetached',
       (event: Protocol.Page.FrameDetachedEvent) => {
-        this._onFrameDetached(
+        this.#onFrameDetached(
           event.frameId,
           event.reason as Protocol.Page.FrameDetachedEventReason
         );
       }
     );
-    session.on('Page.frameStoppedLoading', (event) => {
-      this._onFrameStoppedLoading(event.frameId);
+    session.on('Page.frameStartedLoading', event => {
+      this.#onFrameStartedLoading(event.frameId);
     });
-    session.on('Runtime.executionContextCreated', (event) => {
-      this._onExecutionContextCreated(event.context, session);
+    session.on('Page.frameStoppedLoading', event => {
+      this.#onFrameStoppedLoading(event.frameId);
     });
-    session.on('Runtime.executionContextDestroyed', (event) => {
-      this._onExecutionContextDestroyed(event.executionContextId, session);
+    session.on('Runtime.executionContextCreated', event => {
+      this.#onExecutionContextCreated(event.context, session);
+    });
+    session.on('Runtime.executionContextDestroyed', event => {
+      this.#onExecutionContextDestroyed(event.executionContextId, session);
     });
     session.on('Runtime.executionContextsCleared', () => {
-      this._onExecutionContextsCleared(session);
+      this.#onExecutionContextsCleared(session);
     });
-    session.on('Page.lifecycleEvent', (event) => {
-      this._onLifecycleEvent(event);
-    });
-    session.on('Target.attachedToTarget', async (event) => {
-      this._onAttachedToTarget(event);
-    });
-    session.on('Target.detachedFromTarget', async (event) => {
-      this._onDetachedFromTarget(event);
+    session.on('Page.lifecycleEvent', event => {
+      this.#onLifecycleEvent(event);
     });
   }
 
-  async initialize(client: CDPSession = this._client): Promise<void> {
+  async initialize(
+    targetId: string,
+    client: CDPSession = this.#client
+  ): Promise<void> {
     try {
+      if (!this.#framesPendingTargetInit.has(targetId)) {
+        this.#framesPendingTargetInit.set(
+          targetId,
+          createDeferredPromiseWithTimer(
+            `Waiting for target frame ${targetId} failed`
+          )
+        );
+      }
       const result = await Promise.all([
         client.send('Page.enable'),
         client.send('Page.getFrameTree'),
       ]);
 
-      const { frameTree } = result[1];
-      this._handleFrameTree(client, frameTree);
+      const {frameTree} = result[1];
+      this.#handleFrameTree(client, frameTree);
       await Promise.all([
-        client.send('Page.setLifecycleEventsEnabled', { enabled: true }),
-        client
-          .send('Runtime.enable')
-          .then(() => this._ensureIsolatedWorld(client, UTILITY_WORLD_NAME)),
+        client.send('Page.setLifecycleEventsEnabled', {enabled: true}),
+        client.send('Runtime.enable').then(() => {
+          return this.#createIsolatedWorld(client, UTILITY_WORLD_NAME);
+        }),
         
-        client === this._client
-          ? this._networkManager.initialize()
+        client === this.#client
+          ? this.#networkManager.initialize()
           : Promise.resolve(),
       ]);
     } catch (error) {
       
       if (
-        error.message.includes('Target closed') ||
-        error.message.includes('Session closed')
+        isErrorLike(error) &&
+        (error.message.includes('Target closed') ||
+          error.message.includes('Session closed'))
       ) {
         return;
       }
 
       throw error;
-    }
-  }
-
-  networkManager(): NetworkManager {
-    return this._networkManager;
-  }
-
-  async navigateFrame(
-    frame: Frame,
-    url: string,
-    options: {
-      referer?: string;
-      timeout?: number;
-      waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
-    } = {}
-  ): Promise<HTTPResponse | null> {
-    assertNoLegacyNavigationOptions(options);
-    const {
-      referer = this._networkManager.extraHTTPHeaders()['referer'],
-      waitUntil = ['load'],
-      timeout = this._timeoutSettings.navigationTimeout(),
-    } = options;
-
-    const watcher = new LifecycleWatcher(this, frame, waitUntil, timeout);
-    let ensureNewDocumentNavigation = false;
-    let error = await Promise.race([
-      navigate(this._client, url, referer, frame._id),
-      watcher.timeoutOrTerminationPromise(),
-    ]);
-    if (!error) {
-      error = await Promise.race([
-        watcher.timeoutOrTerminationPromise(),
-        ensureNewDocumentNavigation
-          ? watcher.newDocumentNavigationPromise()
-          : watcher.sameDocumentNavigationPromise(),
-      ]);
-    }
-    watcher.dispose();
-    if (error) throw error;
-    return await watcher.navigationResponse();
-
-    async function navigate(
-      client: CDPSession,
-      url: string,
-      referrer: string,
-      frameId: string
-    ): Promise<Error | null> {
-      try {
-        const response = await client.send('Page.navigate', {
-          url,
-          referrer,
-          frameId,
-        });
-        ensureNewDocumentNavigation = !!response.loaderId;
-        return response.errorText
-          ? new Error(`${response.errorText} at ${url}`)
-          : null;
-      } catch (error) {
-        return error;
-      }
-    }
-  }
-
-  async waitForFrameNavigation(
-    frame: Frame,
-    options: {
-      timeout?: number;
-      waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
-    } = {}
-  ): Promise<HTTPResponse | null> {
-    assertNoLegacyNavigationOptions(options);
-    const {
-      waitUntil = ['load'],
-      timeout = this._timeoutSettings.navigationTimeout(),
-    } = options;
-    const watcher = new LifecycleWatcher(this, frame, waitUntil, timeout);
-    const error = await Promise.race([
-      watcher.timeoutOrTerminationPromise(),
-      watcher.sameDocumentNavigationPromise(),
-      watcher.newDocumentNavigationPromise(),
-    ]);
-    watcher.dispose();
-    if (error) throw error;
-    return await watcher.navigationResponse();
-  }
-
-  private async _onAttachedToTarget(
-    event: Protocol.Target.AttachedToTargetEvent
-  ) {
-    if (event.targetInfo.type !== 'iframe') {
-      return;
-    }
-
-    const frame = this._frames.get(event.targetInfo.targetId);
-    const session = Connection.fromSession(this._client).session(
-      event.sessionId
-    );
-    frame._updateClient(session);
-    this.setupEventListeners(session);
-    await this.initialize(session);
-  }
-
-  private async _onDetachedFromTarget(
-    event: Protocol.Target.DetachedFromTargetEvent
-  ) {
-    const frame = this._frames.get(event.targetId);
-    if (frame && frame.isOOPFrame()) {
-      
-      
-      this._removeFramesRecursively(frame);
-    }
-  }
-
-  _onLifecycleEvent(event: Protocol.Page.LifecycleEventEvent): void {
-    const frame = this._frames.get(event.frameId);
-    if (!frame) return;
-    frame._onLifecycleEvent(event.loaderId, event.name);
-    this.emit(FrameManagerEmittedEvents.LifecycleEvent, frame);
-  }
-
-  _onFrameStoppedLoading(frameId: string): void {
-    const frame = this._frames.get(frameId);
-    if (!frame) return;
-    frame._onLoadingStopped();
-    this.emit(FrameManagerEmittedEvents.LifecycleEvent, frame);
-  }
-
-  _handleFrameTree(
-    session: CDPSession,
-    frameTree: Protocol.Page.FrameTree
-  ): void {
-    if (frameTree.frame.parentId) {
-      this._onFrameAttached(
-        session,
-        frameTree.frame.id,
-        frameTree.frame.parentId
-      );
-    }
-    this._onFrameNavigated(frameTree.frame);
-    if (!frameTree.childFrames) return;
-
-    for (const child of frameTree.childFrames) {
-      this._handleFrameTree(session, child);
-    }
-  }
-
-  page(): Page {
-    return this._page;
-  }
-
-  mainFrame(): Frame {
-    return this._mainFrame;
-  }
-
-  frames(): Frame[] {
-    return Array.from(this._frames.values());
-  }
-
-  frame(frameId: string): Frame | null {
-    return this._frames.get(frameId) || null;
-  }
-
-  _onFrameAttached(
-    session: CDPSession,
-    frameId: string,
-    parentFrameId?: string
-  ): void {
-    if (this._frames.has(frameId)) {
-      const frame = this._frames.get(frameId);
-      if (session && frame.isOOPFrame()) {
-        
-        
-        
-        frame._updateClient(session);
-      }
-      return;
-    }
-    assert(parentFrameId);
-    const parentFrame = this._frames.get(parentFrameId);
-    const frame = new Frame(this, parentFrame, frameId, session);
-    this._frames.set(frame._id, frame);
-    this.emit(FrameManagerEmittedEvents.FrameAttached, frame);
-  }
-
-  _onFrameNavigated(framePayload: Protocol.Page.Frame): void {
-    const isMainFrame = !framePayload.parentId;
-    let frame = isMainFrame
-      ? this._mainFrame
-      : this._frames.get(framePayload.id);
-    assert(
-      isMainFrame || frame,
-      'We either navigate top level or have old version of the navigated frame'
-    );
-
-    
-    if (frame) {
-      for (const child of frame.childFrames())
-        this._removeFramesRecursively(child);
-    }
-
-    
-    if (isMainFrame) {
-      if (frame) {
-        
-        this._frames.delete(frame._id);
-        frame._id = framePayload.id;
-      } else {
-        
-        frame = new Frame(this, null, framePayload.id, this._client);
-      }
-      this._frames.set(framePayload.id, frame);
-      this._mainFrame = frame;
-    }
-
-    
-    frame._navigated(framePayload);
-
-    this.emit(FrameManagerEmittedEvents.FrameNavigated, frame);
-  }
-
-  async _ensureIsolatedWorld(session: CDPSession, name: string): Promise<void> {
-    const key = `${session.id()}:${name}`;
-    if (this._isolatedWorlds.has(key)) return;
-    this._isolatedWorlds.add(key);
-
-    await session.send('Page.addScriptToEvaluateOnNewDocument', {
-      source: `//# sourceURL=${EVALUATION_SCRIPT_URL}`,
-      worldName: name,
-    });
-    
-    await Promise.all(
-      this.frames()
-        .filter((frame) => frame._client === session)
-        .map((frame) =>
-          session.send('Page.createIsolatedWorld', {
-            frameId: frame._id,
-            worldName: name,
-            grantUniveralAccess: true,
-          })
-        )
-    );
-  }
-
-  _onFrameNavigatedWithinDocument(frameId: string, url: string): void {
-    const frame = this._frames.get(frameId);
-    if (!frame) return;
-    frame._navigatedWithinDocument(url);
-    this.emit(FrameManagerEmittedEvents.FrameNavigatedWithinDocument, frame);
-    this.emit(FrameManagerEmittedEvents.FrameNavigated, frame);
-  }
-
-  _onFrameDetached(
-    frameId: string,
-    reason: Protocol.Page.FrameDetachedEventReason
-  ): void {
-    const frame = this._frames.get(frameId);
-    if (reason === 'remove') {
-      
-      
-      
-      if (frame) this._removeFramesRecursively(frame);
-    }
-  }
-
-  _onExecutionContextCreated(
-    contextPayload: Protocol.Runtime.ExecutionContextDescription,
-    session: CDPSession
-  ): void {
-    const auxData = contextPayload.auxData as { frameId?: string };
-    const frameId = auxData ? auxData.frameId : null;
-    const frame = this._frames.get(frameId) || null;
-    let world = null;
-    if (frame) {
-      
-      if (frame._client !== session) return;
-
-      if (contextPayload.auxData && !!contextPayload.auxData['isDefault']) {
-        world = frame._mainWorld;
-      } else if (
-        contextPayload.name === UTILITY_WORLD_NAME &&
-        !frame._secondaryWorld._hasContext()
-      ) {
-        
-        
-        
-        world = frame._secondaryWorld;
-      }
-    }
-    const context = new ExecutionContext(
-      frame?._client || this._client,
-      contextPayload,
-      world
-    );
-    if (world) world._setContext(context);
-    const key = `${session.id()}:${contextPayload.id}`;
-    this._contextIdToContext.set(key, context);
-  }
-
-  private _onExecutionContextDestroyed(
-    executionContextId: number,
-    session: CDPSession
-  ): void {
-    const key = `${session.id()}:${executionContextId}`;
-    const context = this._contextIdToContext.get(key);
-    if (!context) return;
-    this._contextIdToContext.delete(key);
-    if (context._world) context._world._setContext(null);
-  }
-
-  private _onExecutionContextsCleared(session: CDPSession): void {
-    for (const [key, context] of this._contextIdToContext.entries()) {
-      
-      
-      if (context._client !== session) continue;
-      if (context._world) context._world._setContext(null);
-      this._contextIdToContext.delete(key);
+    } finally {
+      this.#framesPendingTargetInit.get(targetId)?.resolve();
+      this.#framesPendingTargetInit.delete(targetId);
     }
   }
 
   executionContextById(
     contextId: number,
-    session: CDPSession = this._client
+    session: CDPSession = this.#client
   ): ExecutionContext {
     const key = `${session.id()}:${contextId}`;
-    const context = this._contextIdToContext.get(key);
+    const context = this.#contextIdToContext.get(key);
     assert(context, 'INTERNAL ERROR: missing context with id = ' + contextId);
     return context;
   }
 
-  private _removeFramesRecursively(frame: Frame): void {
-    for (const child of frame.childFrames())
-      this._removeFramesRecursively(child);
+  page(): Page {
+    return this.#page;
+  }
+
+  mainFrame(): Frame {
+    assert(this.#mainFrame, 'Requesting main frame too early!');
+    return this.#mainFrame;
+  }
+
+  frames(): Frame[] {
+    return Array.from(this.#frames.values());
+  }
+
+  frame(frameId: string): Frame | null {
+    return this.#frames.get(frameId) || null;
+  }
+
+  onAttachedToTarget(target: Target): void {
+    if (target._getTargetInfo().type !== 'iframe') {
+      return;
+    }
+
+    const frame = this.#frames.get(target._getTargetInfo().targetId);
+    if (frame) {
+      frame.updateClient(target._session()!);
+    }
+    this.setupEventListeners(target._session()!);
+    this.initialize(target._getTargetInfo().targetId, target._session());
+  }
+
+  onDetachedFromTarget(target: Target): void {
+    const frame = this.#frames.get(target._targetId);
+    if (frame && frame.isOOPFrame()) {
+      
+      
+      this.#removeFramesRecursively(frame);
+    }
+  }
+
+  #onLifecycleEvent(event: Protocol.Page.LifecycleEventEvent): void {
+    const frame = this.#frames.get(event.frameId);
+    if (!frame) {
+      return;
+    }
+    frame._onLifecycleEvent(event.loaderId, event.name);
+    this.emit(FrameManagerEmittedEvents.LifecycleEvent, frame);
+  }
+
+  #onFrameStartedLoading(frameId: string): void {
+    const frame = this.#frames.get(frameId);
+    if (!frame) {
+      return;
+    }
+    frame._onLoadingStarted();
+  }
+
+  #onFrameStoppedLoading(frameId: string): void {
+    const frame = this.#frames.get(frameId);
+    if (!frame) {
+      return;
+    }
+    frame._onLoadingStopped();
+    this.emit(FrameManagerEmittedEvents.LifecycleEvent, frame);
+  }
+
+  #handleFrameTree(
+    session: CDPSession,
+    frameTree: Protocol.Page.FrameTree
+  ): void {
+    if (frameTree.frame.parentId) {
+      this.#onFrameAttached(
+        session,
+        frameTree.frame.id,
+        frameTree.frame.parentId
+      );
+    }
+    this.#onFrameNavigated(frameTree.frame);
+    if (!frameTree.childFrames) {
+      return;
+    }
+
+    for (const child of frameTree.childFrames) {
+      this.#handleFrameTree(session, child);
+    }
+  }
+
+  #onFrameAttached(
+    session: CDPSession,
+    frameId: string,
+    parentFrameId: string
+  ): void {
+    if (this.#frames.has(frameId)) {
+      const frame = this.#frames.get(frameId)!;
+      if (session && frame.isOOPFrame()) {
+        
+        
+        
+        frame.updateClient(session);
+      }
+      return;
+    }
+    const parentFrame = this.#frames.get(parentFrameId);
+
+    const complete = (parentFrame: Frame) => {
+      assert(parentFrame, `Parent frame ${parentFrameId} not found`);
+      const frame = new Frame(this, parentFrame, frameId, session);
+      this.#frames.set(frame._id, frame);
+      this.emit(FrameManagerEmittedEvents.FrameAttached, frame);
+    };
+
+    if (parentFrame) {
+      return complete(parentFrame);
+    }
+
+    const frame = this.#framesPendingTargetInit.get(parentFrameId);
+    if (frame) {
+      if (!this.#framesPendingAttachment.has(frameId)) {
+        this.#framesPendingAttachment.set(
+          frameId,
+          createDeferredPromiseWithTimer(
+            `Waiting for frame ${frameId} to attach failed`
+          )
+        );
+      }
+      frame.then(() => {
+        complete(this.#frames.get(parentFrameId)!);
+        this.#framesPendingAttachment.get(frameId)?.resolve();
+        this.#framesPendingAttachment.delete(frameId);
+      });
+      return;
+    }
+
+    throw new Error(`Parent frame ${parentFrameId} not found`);
+  }
+
+  #onFrameNavigated(framePayload: Protocol.Page.Frame): void {
+    const frameId = framePayload.id;
+    const isMainFrame = !framePayload.parentId;
+    const frame = isMainFrame ? this.#mainFrame : this.#frames.get(frameId);
+
+    const complete = (frame?: Frame) => {
+      assert(
+        isMainFrame || frame,
+        `Missing frame isMainFrame=${isMainFrame}, frameId=${frameId}`
+      );
+
+      
+      if (frame) {
+        for (const child of frame.childFrames()) {
+          this.#removeFramesRecursively(child);
+        }
+      }
+
+      
+      if (isMainFrame) {
+        if (frame) {
+          
+          this.#frames.delete(frame._id);
+          frame._id = frameId;
+        } else {
+          
+          frame = new Frame(this, null, frameId, this.#client);
+        }
+        this.#frames.set(frameId, frame);
+        this.#mainFrame = frame;
+      }
+
+      
+      assert(frame);
+      frame._navigated(framePayload);
+
+      this.emit(FrameManagerEmittedEvents.FrameNavigated, frame);
+    };
+    const pendingFrame = this.#framesPendingAttachment.get(frameId);
+    if (pendingFrame) {
+      pendingFrame.then(() => {
+        complete(isMainFrame ? this.#mainFrame : this.#frames.get(frameId));
+      });
+    } else {
+      complete(frame);
+    }
+  }
+
+  async #createIsolatedWorld(session: CDPSession, name: string): Promise<void> {
+    const key = `${session.id()}:${name}`;
+
+    if (this.#isolatedWorlds.has(key)) {
+      return;
+    }
+
+    await session.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `//# sourceURL=${EVALUATION_SCRIPT_URL}`,
+      worldName: name,
+    });
+
+    await Promise.all(
+      this.frames()
+        .filter(frame => {
+          return frame._client() === session;
+        })
+        .map(frame => {
+          
+          
+          return session
+            .send('Page.createIsolatedWorld', {
+              frameId: frame._id,
+              worldName: name,
+              grantUniveralAccess: true,
+            })
+            .catch(debugError);
+        })
+    );
+
+    this.#isolatedWorlds.add(key);
+  }
+
+  #onFrameNavigatedWithinDocument(frameId: string, url: string): void {
+    const frame = this.#frames.get(frameId);
+    if (!frame) {
+      return;
+    }
+    frame._navigatedWithinDocument(url);
+    this.emit(FrameManagerEmittedEvents.FrameNavigatedWithinDocument, frame);
+    this.emit(FrameManagerEmittedEvents.FrameNavigated, frame);
+  }
+
+  #onFrameDetached(
+    frameId: string,
+    reason: Protocol.Page.FrameDetachedEventReason
+  ): void {
+    const frame = this.#frames.get(frameId);
+    if (reason === 'remove') {
+      
+      
+      
+      if (frame) {
+        this.#removeFramesRecursively(frame);
+      }
+    } else if (reason === 'swap') {
+      this.emit(FrameManagerEmittedEvents.FrameSwapped, frame);
+    }
+  }
+
+  #onExecutionContextCreated(
+    contextPayload: Protocol.Runtime.ExecutionContextDescription,
+    session: CDPSession
+  ): void {
+    const auxData = contextPayload.auxData as {frameId?: string} | undefined;
+    const frameId = auxData && auxData.frameId;
+    const frame =
+      typeof frameId === 'string' ? this.#frames.get(frameId) : undefined;
+    let world: IsolatedWorld | undefined;
+    if (frame) {
+      
+      if (frame._client() !== session) {
+        return;
+      }
+
+      if (contextPayload.auxData && !!contextPayload.auxData['isDefault']) {
+        world = frame.worlds[MAIN_WORLD];
+      } else if (
+        contextPayload.name === UTILITY_WORLD_NAME &&
+        !frame.worlds[PUPPETEER_WORLD].hasContext()
+      ) {
+        
+        
+        
+        world = frame.worlds[PUPPETEER_WORLD];
+      }
+    }
+    const context = new ExecutionContext(
+      frame?._client() || this.#client,
+      contextPayload,
+      world
+    );
+    if (world) {
+      world.setContext(context);
+    }
+    const key = `${session.id()}:${contextPayload.id}`;
+    this.#contextIdToContext.set(key, context);
+  }
+
+  #onExecutionContextDestroyed(
+    executionContextId: number,
+    session: CDPSession
+  ): void {
+    const key = `${session.id()}:${executionContextId}`;
+    const context = this.#contextIdToContext.get(key);
+    if (!context) {
+      return;
+    }
+    this.#contextIdToContext.delete(key);
+    if (context._world) {
+      context._world.clearContext();
+    }
+  }
+
+  #onExecutionContextsCleared(session: CDPSession): void {
+    for (const [key, context] of this.#contextIdToContext.entries()) {
+      
+      
+      if (context._client !== session) {
+        continue;
+      }
+      if (context._world) {
+        context._world.clearContext();
+      }
+      this.#contextIdToContext.delete(key);
+    }
+  }
+
+  #removeFramesRecursively(frame: Frame): void {
+    for (const child of frame.childFrames()) {
+      this.#removeFramesRecursively(child);
+    }
     frame._detach();
-    this._frames.delete(frame._id);
+    this.#frames.delete(frame._id);
     this.emit(FrameManagerEmittedEvents.FrameDetached, frame);
   }
 }
@@ -618,19 +650,28 @@ export interface FrameAddStyleTagOptions {
 
 
 
+
+
+
+
 export class Frame {
+  #parentFrame: Frame | null;
+  #url = '';
+  #detached = false;
+  #client!: CDPSession;
+
+  
+
+
+  worlds!: IsolatedWorldChart;
   
 
 
   _frameManager: FrameManager;
-  private _parentFrame?: Frame;
   
 
 
   _id: string;
-
-  private _url = '';
-  private _detached = false;
   
 
 
@@ -639,7 +680,10 @@ export class Frame {
 
 
   _name?: string;
+  
 
+
+  _hasStartedLoading = false;
   
 
 
@@ -647,19 +691,7 @@ export class Frame {
   
 
 
-  _mainWorld: DOMWorld;
-  
-
-
-  _secondaryWorld: DOMWorld;
-  
-
-
   _childFrames: Set<Frame>;
-  
-
-
-  _client: CDPSession;
 
   
 
@@ -671,44 +703,58 @@ export class Frame {
     client: CDPSession
   ) {
     this._frameManager = frameManager;
-    this._parentFrame = parentFrame;
-    this._url = '';
+    this.#parentFrame = parentFrame ?? null;
+    this.#url = '';
     this._id = frameId;
-    this._detached = false;
+    this.#detached = false;
 
     this._loaderId = '';
 
     this._childFrames = new Set();
-    if (this._parentFrame) this._parentFrame._childFrames.add(this);
+    if (this.#parentFrame) {
+      this.#parentFrame._childFrames.add(this);
+    }
 
-    this._updateClient(client);
+    this.updateClient(client);
   }
 
   
 
 
-  _updateClient(client: CDPSession): void {
-    this._client = client;
-    this._mainWorld = new DOMWorld(
-      this._client,
-      this._frameManager,
-      this,
-      this._frameManager._timeoutSettings
-    );
-    this._secondaryWorld = new DOMWorld(
-      this._client,
-      this._frameManager,
-      this,
-      this._frameManager._timeoutSettings
-    );
+  updateClient(client: CDPSession): void {
+    this.#client = client;
+    this.worlds = {
+      [MAIN_WORLD]: new IsolatedWorld(
+        client,
+        this._frameManager,
+        this,
+        this._frameManager.timeoutSettings
+      ),
+      [PUPPETEER_WORLD]: new IsolatedWorld(
+        client,
+        this._frameManager,
+        this,
+        this._frameManager.timeoutSettings
+      ),
+    };
   }
+
+  
+
+
+  page(): Page {
+    return this._frameManager.page();
+  }
+
+  
+
+
 
   isOOPFrame(): boolean {
-    return this._client !== this._frameManager._client;
+    return this.#client !== this._frameManager.client;
   }
 
   
-
 
 
 
@@ -753,10 +799,70 @@ export class Frame {
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     } = {}
   ): Promise<HTTPResponse | null> {
-    return await this._frameManager.navigateFrame(this, url, options);
+    assertNoLegacyNavigationOptions(options);
+    const {
+      referer = this._frameManager.networkManager.extraHTTPHeaders()['referer'],
+      waitUntil = ['load'],
+      timeout = this._frameManager.timeoutSettings.navigationTimeout(),
+    } = options;
+
+    let ensureNewDocumentNavigation = false;
+    const watcher = new LifecycleWatcher(
+      this._frameManager,
+      this,
+      waitUntil,
+      timeout
+    );
+    let error = await Promise.race([
+      navigate(this.#client, url, referer, this._id),
+      watcher.timeoutOrTerminationPromise(),
+    ]);
+    if (!error) {
+      error = await Promise.race([
+        watcher.timeoutOrTerminationPromise(),
+        ensureNewDocumentNavigation
+          ? watcher.newDocumentNavigationPromise()
+          : watcher.sameDocumentNavigationPromise(),
+      ]);
+    }
+
+    try {
+      if (error) {
+        throw error;
+      }
+      return await watcher.navigationResponse();
+    } finally {
+      watcher.dispose();
+    }
+
+    async function navigate(
+      client: CDPSession,
+      url: string,
+      referrer: string | undefined,
+      frameId: string
+    ): Promise<Error | null> {
+      try {
+        const response = await client.send('Page.navigate', {
+          url,
+          referrer,
+          frameId,
+        });
+        ensureNewDocumentNavigation = !!response.loaderId;
+        return response.errorText
+          ? new Error(`${response.errorText} at ${url}`)
+          : null;
+      } catch (error) {
+        if (isErrorLike(error)) {
+          return error;
+        }
+        throw error;
+      }
+    }
   }
 
   
+
+
 
 
 
@@ -783,14 +889,78 @@ export class Frame {
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     } = {}
   ): Promise<HTTPResponse | null> {
-    return await this._frameManager.waitForFrameNavigation(this, options);
+    assertNoLegacyNavigationOptions(options);
+    const {
+      waitUntil = ['load'],
+      timeout = this._frameManager.timeoutSettings.navigationTimeout(),
+    } = options;
+    const watcher = new LifecycleWatcher(
+      this._frameManager,
+      this,
+      waitUntil,
+      timeout
+    );
+    const error = await Promise.race([
+      watcher.timeoutOrTerminationPromise(),
+      watcher.sameDocumentNavigationPromise(),
+      watcher.newDocumentNavigationPromise(),
+    ]);
+    try {
+      if (error) {
+        throw error;
+      }
+      return await watcher.navigationResponse();
+    } finally {
+      watcher.dispose();
+    }
   }
 
   
+
+
+  _client(): CDPSession {
+    return this.#client;
+  }
+
+  
+
+
 
 
   executionContext(): Promise<ExecutionContext> {
-    return this._mainWorld.executionContext();
+    return this.worlds[MAIN_WORLD].executionContext();
+  }
+
+  
+
+
+
+
+
+  async evaluateHandle<
+    Params extends unknown[],
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+    return this.worlds[MAIN_WORLD].evaluateHandle(pageFunction, ...args);
+  }
+
+  
+
+
+
+
+
+  async evaluate<
+    Params extends unknown[],
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+  >(
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<Awaited<ReturnType<Func>>> {
+    return this.worlds[MAIN_WORLD].evaluate(pageFunction, ...args);
   }
 
   
@@ -800,17 +970,10 @@ export class Frame {
 
 
 
-
-
-
-
-
-
-  async evaluateHandle<HandlerType extends JSHandle = JSHandle>(
-    pageFunction: EvaluateHandleFn,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<HandlerType> {
-    return this._mainWorld.evaluateHandle<HandlerType>(pageFunction, ...args);
+  async $<Selector extends string>(
+    selector: Selector
+  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
+    return this.worlds[MAIN_WORLD].$(selector);
   }
 
   
@@ -820,65 +983,10 @@ export class Frame {
 
 
 
-
-
-  async evaluate<T extends EvaluateFn>(
-    pageFunction: T,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<UnwrapPromiseLike<EvaluateFnReturnType<T>>> {
-    return this._mainWorld.evaluate<T>(pageFunction, ...args);
-  }
-
-  
-
-
-
-
-
-
-  async $<T extends Element = Element>(
-    selector: string
-  ): Promise<ElementHandle<T> | null> {
-    return this._mainWorld.$<T>(selector);
-  }
-
-  
-
-
-
-
-  async $x(expression: string): Promise<ElementHandle[]> {
-    return this._mainWorld.$x(expression);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async $eval<ReturnType>(
-    selector: string,
-    pageFunction: (
-      element: Element,
-      ...args: unknown[]
-    ) => ReturnType | Promise<ReturnType>,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<WrapElementHandle<ReturnType>> {
-    return this._mainWorld.$eval<ReturnType>(selector, pageFunction, ...args);
+  async $$<Selector extends string>(
+    selector: Selector
+  ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
+    return this.worlds[MAIN_WORLD].$$(selector);
   }
 
   
@@ -900,15 +1008,19 @@ export class Frame {
 
 
 
-  async $$eval<ReturnType>(
-    selector: string,
-    pageFunction: (
-      elements: Element[],
-      ...args: unknown[]
-    ) => ReturnType | Promise<ReturnType>,
-    ...args: SerializableOrJSHandle[]
-  ): Promise<WrapElementHandle<ReturnType>> {
-    return this._mainWorld.$$eval<ReturnType>(selector, pageFunction, ...args);
+
+  async $eval<
+    Selector extends string,
+    Params extends unknown[],
+    Func extends EvaluateFunc<
+      [ElementHandle<NodeFor<Selector>>, ...Params]
+    > = EvaluateFunc<[ElementHandle<NodeFor<Selector>>, ...Params]>
+  >(
+    selector: Selector,
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<Awaited<ReturnType<Func>>> {
+    return this.worlds[MAIN_WORLD].$eval(selector, pageFunction, ...args);
   }
 
   
@@ -917,17 +1029,177 @@ export class Frame {
 
 
 
-  async $$<T extends Element = Element>(
-    selector: string
-  ): Promise<Array<ElementHandle<T>>> {
-    return this._mainWorld.$$<T>(selector);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async $$eval<
+    Selector extends string,
+    Params extends unknown[],
+    Func extends EvaluateFunc<
+      [Array<NodeFor<Selector>>, ...Params]
+    > = EvaluateFunc<[Array<NodeFor<Selector>>, ...Params]>
+  >(
+    selector: Selector,
+    pageFunction: Func | string,
+    ...args: Params
+  ): Promise<Awaited<ReturnType<Func>>> {
+    return this.worlds[MAIN_WORLD].$$eval(selector, pageFunction, ...args);
+  }
+
+  
+
+
+
+
+
+  async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
+    return this.worlds[MAIN_WORLD].$x(expression);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async waitForSelector<Selector extends string>(
+    selector: Selector,
+    options: WaitForSelectorOptions = {}
+  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
+    const handle = await this.worlds[PUPPETEER_WORLD].waitForSelector(
+      selector,
+      options
+    );
+    if (!handle) {
+      return null;
+    }
+    const mainHandle = (await this.worlds[MAIN_WORLD].adoptHandle(
+      handle
+    )) as ElementHandle<NodeFor<Selector>>;
+    await handle.dispose();
+    return mainHandle;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async waitForXPath(
+    xpath: string,
+    options: WaitForSelectorOptions = {}
+  ): Promise<ElementHandle<Node> | null> {
+    if (xpath.startsWith('//')) {
+      xpath = `.${xpath}`;
+    }
+    return this.waitForSelector(`xpath/${xpath}`, options);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  waitForFunction<
+    Params extends unknown[],
+    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>
+  >(
+    pageFunction: Func | string,
+    options: FrameWaitForFunctionOptions = {},
+    ...args: Params
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+    
+    return this.worlds[MAIN_WORLD].waitForFunction(
+      pageFunction,
+      options,
+      ...args
+    ) as Promise<HandleFor<Awaited<ReturnType<Func>>>>;
   }
 
   
 
 
   async content(): Promise<string> {
-    return this._secondaryWorld.content();
+    return this.worlds[PUPPETEER_WORLD].content();
   }
 
   
@@ -944,7 +1216,7 @@ export class Frame {
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     } = {}
   ): Promise<void> {
-    return this._secondaryWorld.setContent(html, options);
+    return this.worlds[PUPPETEER_WORLD].setContent(html, options);
   }
 
   
@@ -965,14 +1237,14 @@ export class Frame {
 
 
   url(): string {
-    return this._url;
+    return this.#url;
   }
 
   
 
 
   parentFrame(): Frame | null {
-    return this._parentFrame;
+    return this.#parentFrame;
   }
 
   
@@ -986,11 +1258,10 @@ export class Frame {
 
 
   isDetached(): boolean {
-    return this._detached;
+    return this.#detached;
   }
 
   
-
 
 
 
@@ -1000,8 +1271,8 @@ export class Frame {
 
   async addScriptTag(
     options: FrameAddScriptTagOptions
-  ): Promise<ElementHandle> {
-    return this._mainWorld.addScriptTag(options);
+  ): Promise<ElementHandle<HTMLScriptElement>> {
+    return this.worlds[MAIN_WORLD].addScriptTag(options);
   }
 
   
@@ -1013,18 +1284,13 @@ export class Frame {
 
 
 
-
-  async addStyleTag(options: FrameAddStyleTagOptions): Promise<ElementHandle> {
-    return this._mainWorld.addStyleTag(options);
+  async addStyleTag(
+    options: FrameAddStyleTagOptions
+  ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>> {
+    return this.worlds[MAIN_WORLD].addStyleTag(options);
   }
 
   
-
-
-
-
-
-
 
 
 
@@ -1050,27 +1316,20 @@ export class Frame {
       clickCount?: number;
     } = {}
   ): Promise<void> {
-    return this._secondaryWorld.click(selector, options);
+    return this.worlds[PUPPETEER_WORLD].click(selector, options);
   }
 
   
-
-
-
 
 
 
 
 
   async focus(selector: string): Promise<void> {
-    return this._secondaryWorld.focus(selector);
+    return this.worlds[PUPPETEER_WORLD].focus(selector);
   }
 
   
-
-
-
-
 
 
 
@@ -1078,13 +1337,10 @@ export class Frame {
 
 
   async hover(selector: string): Promise<void> {
-    return this._secondaryWorld.hover(selector);
+    return this.worlds[PUPPETEER_WORLD].hover(selector);
   }
 
   
-
-
-
 
 
 
@@ -1103,27 +1359,20 @@ export class Frame {
 
 
   select(selector: string, ...values: string[]): Promise<string[]> {
-    return this._secondaryWorld.select(selector, ...values);
+    return this.worlds[PUPPETEER_WORLD].select(selector, ...values);
   }
 
   
-
-
-
-
-
-
 
 
 
 
 
   async tap(selector: string): Promise<void> {
-    return this._secondaryWorld.tap(selector);
+    return this.worlds[PUPPETEER_WORLD].tap(selector);
   }
 
   
-
 
 
 
@@ -1147,68 +1396,14 @@ export class Frame {
   async type(
     selector: string,
     text: string,
-    options?: { delay: number }
+    options?: {delay: number}
   ): Promise<void> {
-    return this._mainWorld.type(selector, text, options);
+    return this.worlds[PUPPETEER_WORLD].type(selector, text, options);
   }
 
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitFor(
-    selectorOrFunctionOrTimeout: string | number | Function,
-    options: Record<string, unknown> = {},
-    ...args: SerializableOrJSHandle[]
-  ): Promise<JSHandle | null> {
-    console.warn(
-      'waitFor is deprecated and will be removed in a future release. See https://github.com/puppeteer/puppeteer/issues/6214 for details and how to migrate your code.'
-    );
-
-    if (helper.isString(selectorOrFunctionOrTimeout)) {
-      const string = selectorOrFunctionOrTimeout;
-      if (xPathPattern.test(string)) return this.waitForXPath(string, options);
-      return this.waitForSelector(string, options);
-    }
-    if (helper.isNumber(selectorOrFunctionOrTimeout))
-      return new Promise((fulfill) =>
-        setTimeout(fulfill, selectorOrFunctionOrTimeout)
-      );
-    if (typeof selectorOrFunctionOrTimeout === 'function')
-      return this.waitForFunction(
-        selectorOrFunctionOrTimeout,
-        options,
-        ...args
-      );
-    return Promise.reject(
-      new Error(
-        'Unsupported target type: ' + typeof selectorOrFunctionOrTimeout
-      )
-    );
-  }
-
-  
 
 
 
@@ -1227,7 +1422,7 @@ export class Frame {
 
 
   waitForTimeout(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(resolve, milliseconds);
     });
   }
@@ -1235,128 +1430,8 @@ export class Frame {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForSelector(
-    selector: string,
-    options: WaitForSelectorOptions = {}
-  ): Promise<ElementHandle | null> {
-    const handle = await this._secondaryWorld.waitForSelector(
-      selector,
-      options
-    );
-    if (!handle) return null;
-    const mainExecutionContext = await this._mainWorld.executionContext();
-    const result = await mainExecutionContext._adoptElementHandle(handle);
-    await handle.dispose();
-    return result;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async waitForXPath(
-    xpath: string,
-    options: WaitForSelectorOptions = {}
-  ): Promise<ElementHandle | null> {
-    const handle = await this._secondaryWorld.waitForXPath(xpath, options);
-    if (!handle) return null;
-    const mainExecutionContext = await this._mainWorld.executionContext();
-    const result = await mainExecutionContext._adoptElementHandle(handle);
-    await handle.dispose();
-    return result;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForFunction(
-    pageFunction: Function | string,
-    options: FrameWaitForFunctionOptions = {},
-    ...args: SerializableOrJSHandle[]
-  ): Promise<JSHandle> {
-    return this._mainWorld.waitForFunction(pageFunction, options, ...args);
-  }
-
-  
-
-
   async title(): Promise<string> {
-    return this._secondaryWorld.title();
+    return this.worlds[PUPPETEER_WORLD].title();
   }
 
   
@@ -1364,14 +1439,14 @@ export class Frame {
 
   _navigated(framePayload: Protocol.Page.Frame): void {
     this._name = framePayload.name;
-    this._url = `${framePayload.url}${framePayload.urlFragment || ''}`;
+    this.#url = `${framePayload.url}${framePayload.urlFragment || ''}`;
   }
 
   
 
 
   _navigatedWithinDocument(url: string): void {
-    this._url = url;
+    this.#url = url;
   }
 
   
@@ -1396,12 +1471,21 @@ export class Frame {
   
 
 
+  _onLoadingStarted(): void {
+    this._hasStartedLoading = true;
+  }
+
+  
+
+
   _detach(): void {
-    this._detached = true;
-    this._mainWorld._detach();
-    this._secondaryWorld._detach();
-    if (this._parentFrame) this._parentFrame._childFrames.delete(this);
-    this._parentFrame = null;
+    this.#detached = true;
+    this.worlds[MAIN_WORLD]._detach();
+    this.worlds[PUPPETEER_WORLD]._detach();
+    if (this.#parentFrame) {
+      this.#parentFrame._childFrames.delete(this);
+    }
+    this.#parentFrame = null;
   }
 }
 
@@ -1417,7 +1501,7 @@ function assertNoLegacyNavigationOptions(options: {
     'ERROR: networkIdleInflight option is no longer supported.'
   );
   assert(
-    options.waitUntil !== 'networkidle',
+    options['waitUntil'] !== 'networkidle',
     'ERROR: "networkidle" option is no longer supported. Use "networkidle2" instead'
   );
 }

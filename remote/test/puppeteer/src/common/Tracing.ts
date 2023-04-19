@@ -13,9 +13,13 @@
 
 
 
-import { assert } from './assert.js';
-import { helper } from './helper.js';
-import { CDPSession } from './Connection.js';
+import {assert} from './assert.js';
+import {
+  getReadableAsBuffer,
+  getReadableFromProtocolStream,
+  isErrorLike,
+} from './util.js';
+import {CDPSession} from './Connection.js';
 
 
 
@@ -41,16 +45,17 @@ export interface TracingOptions {
 
 
 
+
 export class Tracing {
-  _client: CDPSession;
-  _recording = false;
-  _path = '';
+  #client: CDPSession;
+  #recording = false;
+  #path?: string;
 
   
 
 
   constructor(client: CDPSession) {
-    this._client = client;
+    this.#client = client;
   }
 
   
@@ -59,9 +64,10 @@ export class Tracing {
 
 
 
+
   async start(options: TracingOptions = {}): Promise<void> {
     assert(
-      !this._recording,
+      !this.#recording,
       'Cannot start recording trace while already recording trace.'
     );
 
@@ -78,22 +84,26 @@ export class Tracing {
       'disabled-by-default-devtools.timeline.stack',
       'disabled-by-default-v8.cpu_profiler',
     ];
-    const {
-      path = null,
-      screenshots = false,
-      categories = defaultCategories,
-    } = options;
+    const {path, screenshots = false, categories = defaultCategories} = options;
 
-    if (screenshots) categories.push('disabled-by-default-devtools.screenshot');
+    if (screenshots) {
+      categories.push('disabled-by-default-devtools.screenshot');
+    }
 
     const excludedCategories = categories
-      .filter((cat) => cat.startsWith('-'))
-      .map((cat) => cat.slice(1));
-    const includedCategories = categories.filter((cat) => !cat.startsWith('-'));
+      .filter(cat => {
+        return cat.startsWith('-');
+      })
+      .map(cat => {
+        return cat.slice(1);
+      });
+    const includedCategories = categories.filter(cat => {
+      return !cat.startsWith('-');
+    });
 
-    this._path = path;
-    this._recording = true;
-    await this._client.send('Tracing.start', {
+    this.#path = path;
+    this.#recording = true;
+    await this.#client.send('Tracing.start', {
       transferMode: 'ReturnAsStream',
       traceConfig: {
         excludedCategories,
@@ -106,27 +116,31 @@ export class Tracing {
 
 
 
-  async stop(): Promise<Buffer> {
-    let fulfill: (value: Buffer) => void;
+  async stop(): Promise<Buffer | undefined> {
+    let resolve: (value: Buffer | undefined) => void;
     let reject: (err: Error) => void;
-    const contentPromise = new Promise<Buffer>((x, y) => {
-      fulfill = x;
+    const contentPromise = new Promise<Buffer | undefined>((x, y) => {
+      resolve = x;
       reject = y;
     });
-    this._client.once('Tracing.tracingComplete', async (event) => {
+    this.#client.once('Tracing.tracingComplete', async event => {
       try {
-        const readable = await helper.getReadableFromProtocolStream(
-          this._client,
+        const readable = await getReadableFromProtocolStream(
+          this.#client,
           event.stream
         );
-        const buffer = await helper.getReadableAsBuffer(readable, this._path);
-        fulfill(buffer);
+        const buffer = await getReadableAsBuffer(readable, this.#path);
+        resolve(buffer ?? undefined);
       } catch (error) {
-        reject(error);
+        if (isErrorLike(error)) {
+          reject(error);
+        } else {
+          reject(new Error(`Unknown error: ${error}`));
+        }
       }
     });
-    await this._client.send('Tracing.end');
-    this._recording = false;
+    await this.#client.send('Tracing.end');
+    this.#recording = false;
     return contentPromise;
   }
 }
