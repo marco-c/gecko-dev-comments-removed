@@ -169,21 +169,26 @@ TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
     clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
     int64_t now_ms = clock.TimeInMilliseconds();
     EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 0);
+    timing.SetLastDecodeScheduledTimestamp(now_ms);
   }
   
   
   int64_t now_ms = clock.TimeInMilliseconds();
   EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
   
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 2 * kMinPacingMs);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 3 * kMinPacingMs);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), 4 * kMinPacingMs);
+  
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
   
   constexpr int64_t kTwoMs = 2;
   clock.AdvanceTimeMilliseconds(kTwoMs);
   now_ms = clock.TimeInMilliseconds();
   EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms),
-            5 * kMinPacingMs - kTwoMs);
+            kMinPacingMs - kTwoMs);
+  
+  
+  timing.SetLastDecodeScheduledTimestamp(now_ms);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms), kMinPacingMs);
 }
 
 TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {

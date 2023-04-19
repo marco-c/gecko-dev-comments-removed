@@ -83,7 +83,7 @@ class VCMTiming {
 
   
   
-  virtual int64_t MaxWaitingTime(int64_t render_time_ms, int64_t now_ms);
+  virtual int64_t MaxWaitingTime(int64_t render_time_ms, int64_t now_ms) const;
 
   
   
@@ -104,6 +104,9 @@ class VCMTiming {
   void SetMaxCompositionDelayInFrames(
       absl::optional<int> max_composition_delay_in_frames);
   absl::optional<int> MaxCompositionDelayInFrames() const;
+
+  
+  void SetLastDecodeScheduledTimestamp(int64_t last_decode_scheduled_ts);
 
   enum { kDefaultRenderDelayMs = 10 };
   enum { kDelayMaxChangeMsPerS = 100 };
@@ -148,7 +151,7 @@ class VCMTiming {
   
   
   
-  int64_t earliest_next_decode_start_time_ RTC_GUARDED_BY(mutex_);
+  int64_t last_decode_scheduled_ts_ RTC_GUARDED_BY(mutex_);
 };
 }  
 

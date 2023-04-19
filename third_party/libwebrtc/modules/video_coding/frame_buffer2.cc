@@ -110,6 +110,8 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
           if (!frames_to_decode_.empty()) {
             
             frame = absl::WrapUnique(GetNextFrame());
+            timing_->SetLastDecodeScheduledTimestamp(
+                clock_->TimeInMilliseconds());
           } else if (clock_->TimeInMilliseconds() < latest_return_time_ms_) {
             
             
