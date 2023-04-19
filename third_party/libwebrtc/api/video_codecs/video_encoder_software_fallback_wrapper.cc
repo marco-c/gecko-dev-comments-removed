@@ -155,7 +155,7 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
         RTC_LOG(LS_WARNING)
             << "Trying to access encoder in uninitialized fallback wrapper.";
         
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case EncoderState::kMainEncoderUsed:
         return encoder_.get();
       case EncoderState::kFallbackDueToFailure:

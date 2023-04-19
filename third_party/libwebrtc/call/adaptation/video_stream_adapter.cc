@@ -375,7 +375,7 @@ VideoStreamAdapter::RestrictionsOrState VideoStreamAdapter::GetAdaptationUpStep(
         return increase_frame_rate;
       }
       
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     }
     case DegradationPreference::MAINTAIN_FRAMERATE: {
       
@@ -459,7 +459,7 @@ VideoStreamAdapter::GetAdaptationDownStep(
         return decrease_frame_rate;
       }
       
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     }
     case DegradationPreference::MAINTAIN_FRAMERATE: {
       return DecreaseResolution(input_state, current_restrictions);
