@@ -9,6 +9,10 @@
 
 #include "modules/rtp_rtcp/source/time_util.h"
 
+#include <cstdint>
+#include <limits>
+
+#include "api/units/time_delta.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -109,6 +113,16 @@ TEST(TimeUtilTest, ToNtpUnits) {
   
   EXPECT_GE(ToNtpUnits(TimeDelta::Micros(1)), 4'294);
   EXPECT_LE(ToNtpUnits(TimeDelta::Micros(1)), 4'295);
+
+  
+  static constexpr int64_t k35MinutesInNtpUnits = int64_t{35 * 60} << 32;
+  EXPECT_EQ(ToNtpUnits(TimeDelta::Seconds(35 * 60)), k35MinutesInNtpUnits);
+  EXPECT_EQ(ToNtpUnits(TimeDelta::Seconds(-35 * 60)), -k35MinutesInNtpUnits);
+
+  
+  
+  ToNtpUnits(TimeDelta::Micros(std::numeric_limits<int64_t>::max() - 1));
+  ToNtpUnits(TimeDelta::Micros(std::numeric_limits<int64_t>::min() + 1));
 }
 
 }  

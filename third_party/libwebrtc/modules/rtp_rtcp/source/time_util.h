@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "api/units/time_delta.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -35,11 +36,14 @@ inline uint32_t CompactNtp(NtpTime ntp) {
 uint32_t SaturatedToCompactNtp(TimeDelta delta);
 
 
+
 inline constexpr int64_t ToNtpUnits(TimeDelta delta) {
   
   
   
-  return (delta.us() * (int64_t{1} << 32)) / 1'000'000;
+  
+  return (rtc::saturated_cast<int32_t>(delta.us()) * (int64_t{1} << 32)) /
+         1'000'000;
 }
 
 
