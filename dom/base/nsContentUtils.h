@@ -2560,9 +2560,11 @@ class nsContentUtils {
 
 
 
+
   static mozilla::Maybe<bool> IsPatternMatching(nsAString& aValue,
                                                 nsAString& aPattern,
-                                                const Document* aDocument);
+                                                const Document* aDocument,
+                                                bool aHasMultiple = false);
 
   
 
