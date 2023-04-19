@@ -17,7 +17,6 @@
 #include "gc/Cell.h"
 #include "gc/Scheduling.h"
 #include "js/GCAPI.h"
-#include "js/HeapAPI.h"
 #include "js/shadow/Zone.h"  
 #include "vm/MallocProvider.h"
 
