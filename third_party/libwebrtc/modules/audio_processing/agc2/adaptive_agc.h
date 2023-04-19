@@ -21,6 +21,8 @@
 namespace webrtc {
 class ApmDataDumper;
 
+
+
 class AdaptiveAgc {
  public:
   explicit AdaptiveAgc(ApmDataDumper* apm_data_dumper);
@@ -28,7 +30,10 @@ class AdaptiveAgc {
               const AudioProcessing::Config::GainController2& config);
   ~AdaptiveAgc();
 
-  void Process(AudioFrameView<float> float_frame, float last_audio_level);
+  
+  
+  
+  void Process(AudioFrameView<float> frame, float limiter_envelope);
   void Reset();
 
  private:

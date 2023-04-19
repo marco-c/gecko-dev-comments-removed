@@ -11,7 +11,6 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 
-#include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/agc2/vad_with_level.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
@@ -20,36 +19,38 @@ namespace webrtc {
 
 class ApmDataDumper;
 
-struct SignalWithLevels {
-  SignalWithLevels(AudioFrameView<float> float_frame);
-  SignalWithLevels(const SignalWithLevels&);
 
-  float input_level_dbfs = -1.f;
-  float input_noise_level_dbfs = -1.f;
-  VadLevelAnalyzer::Result vad_result;
-  float limiter_audio_level_dbfs = -1.f;
-  bool estimate_is_confident = false;
-  AudioFrameView<float> float_frame;
-};
+
+
 
 class AdaptiveDigitalGainApplier {
  public:
-  explicit AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper);
   
-  void Process(SignalWithLevels signal_with_levels);
+  struct FrameInfo {
+    float input_level_dbfs;        
+    float input_noise_level_dbfs;  
+    VadLevelAnalyzer::Result vad_result;
+    float limiter_envelope_dbfs;  
+    bool estimate_is_confident;
+  };
+
+  explicit AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper);
+  AdaptiveDigitalGainApplier(const AdaptiveDigitalGainApplier&) = delete;
+  AdaptiveDigitalGainApplier& operator=(const AdaptiveDigitalGainApplier&) =
+      delete;
+
+  
+  void Process(const FrameInfo& info, AudioFrameView<float> frame);
 
  private:
-  float last_gain_db_ = kInitialAdaptiveDigitalGainDb;
+  ApmDataDumper* const apm_data_dumper_;
   GainApplier gain_applier_;
-  int calls_since_last_gain_log_ = 0;
 
-  
-  
-  
-  
-  bool gain_increase_allowed_ = true;
-  ApmDataDumper* apm_data_dumper_ = nullptr;
+  int calls_since_last_gain_log_;
+  bool gain_increase_allowed_;
+  float last_gain_db_;
 };
+
 }  
 
 #endif  
