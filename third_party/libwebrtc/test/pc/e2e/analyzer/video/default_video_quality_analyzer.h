@@ -83,7 +83,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   std::set<StatsKey> GetKnownVideoStreams() const;
   VideoStreamsInfo GetKnownStreams() const;
-  const FrameCounters& GetGlobalCounters() const;
+  FrameCounters GetGlobalCounters() const;
   
   
   std::map<StatsKey, FrameCounters> GetPerStreamCounters() const;
