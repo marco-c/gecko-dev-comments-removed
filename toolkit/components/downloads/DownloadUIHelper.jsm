@@ -19,8 +19,6 @@ const { AppConstants } = ChromeUtils.importESModule(
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
-
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -206,7 +204,7 @@ DownloadPrompter.prototype = {
       
     }
 
-    let leafName = lazy.OS.Path.basename(path);
+    let leafName = PathUtils.filename(path);
 
     let s = DownloadUIHelper.strings;
     return this._prompter.confirm(

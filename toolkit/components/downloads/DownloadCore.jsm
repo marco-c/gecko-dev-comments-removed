@@ -41,7 +41,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   DownloadHistory: "resource://gre/modules/DownloadHistory.jsm",
   DownloadPaths: "resource://gre/modules/DownloadPaths.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -2202,16 +2201,15 @@ DownloadCopySaver.prototype = {
     
     try {
       
-      let file = await lazy.OS.File.open(targetPath, { write: true });
-      await file.close();
+      await IOUtils.writeUTF8(targetPath, "", { mode: "appendOrCreate" });
     } catch (ex) {
-      if (!(ex instanceof lazy.OS.File.Error)) {
+      if (!DOMException.isInstance(ex)) {
         throw ex;
       }
       
       
       
-      let error = new DownloadError({ message: ex.toString() });
+      let error = new DownloadError({ message: ex.message });
       error.becauseTargetFailed = true;
       throw error;
     }
@@ -2952,12 +2950,14 @@ DownloadLegacySaver.prototype = {
       if (!this.download.target.partFilePath) {
         try {
           
-          let file = await lazy.OS.File.open(this.download.target.path, {
-            create: true,
+          await IOUtils.writeUTF8(this.download.target.path, "", {
+            mode: "create",
           });
-          await file.close();
         } catch (ex) {
-          if (!(ex instanceof lazy.OS.File.Error) || !ex.becauseExists) {
+          if (
+            !DOMException.isInstance(ex) ||
+            ex.name !== "NoModificationAllowedError"
+          ) {
             throw ex;
           }
         }
