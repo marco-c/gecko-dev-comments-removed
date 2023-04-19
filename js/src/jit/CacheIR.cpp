@@ -431,7 +431,8 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       TRY_ATTACH(tryAttachSparseElement(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachArgumentsObjectArg(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachArgumentsObjectArgHole(obj, objId, index, indexId));
-      TRY_ATTACH(tryAttachGenericElement(obj, objId, index, indexId));
+      TRY_ATTACH(
+          tryAttachGenericElement(obj, objId, index, indexId, receiverId));
 
       trackAttached(IRGenerator::NotAttached);
       return AttachDecision::NoAction;
@@ -2567,6 +2568,12 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
 
   
   
+  if (isSuper()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
   
   
   
@@ -2667,10 +2674,17 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayElement(
 
 AttachDecision GetPropIRGenerator::tryAttachGenericElement(
     HandleObject obj, ObjOperandId objId, uint32_t index,
-    Int32OperandId indexId) {
+    Int32OperandId indexId, ValOperandId receiverId) {
   if (!obj->is<NativeObject>()) {
     return AttachDecision::NoAction;
   }
+
+#ifdef JS_CODEGEN_X86
+  if (isSuper()) {
+    
+    return AttachDecision::NoAction;
+  }
+#endif
 
   
   
@@ -2682,7 +2696,11 @@ AttachDecision GetPropIRGenerator::tryAttachGenericElement(
     TestMatchingNativeReceiver(writer, nobj, objId);
   }
   writer.guardIndexIsNotDenseElement(objId, indexId);
-  writer.callNativeGetElementResult(objId, indexId);
+  if (isSuper()) {
+    writer.callNativeGetElementSuperResult(objId, indexId, receiverId);
+  } else {
+    writer.callNativeGetElementResult(objId, indexId);
+  }
   writer.returnFromIC();
 
   trackAttached(mode_ == ICState::Mode::Megamorphic
