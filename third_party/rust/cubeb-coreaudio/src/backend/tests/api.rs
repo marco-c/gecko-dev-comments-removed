@@ -888,20 +888,6 @@ fn test_create_audiounit_with_unknown_scope() {
 
 
 #[test]
-fn test_clamp_latency() {
-    let range = 0..2 * SAFE_MAX_LATENCY_FRAMES;
-    assert!(range.start < SAFE_MIN_LATENCY_FRAMES);
-    
-    for latency_frames in range {
-        let clamp = clamp_latency(latency_frames);
-        assert!(clamp >= SAFE_MIN_LATENCY_FRAMES);
-        assert!(clamp <= SAFE_MAX_LATENCY_FRAMES);
-    }
-}
-
-
-
-#[test]
 fn test_set_buffer_size_sync() {
     test_set_buffer_size_by_scope(Scope::Input);
     test_set_buffer_size_by_scope(Scope::Output);
