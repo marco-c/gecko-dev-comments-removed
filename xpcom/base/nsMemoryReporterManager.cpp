@@ -534,12 +534,6 @@ static bool InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType) {
           return NS_ERROR_FAILURE;
         }
 
-        MOZ_ASSERT(topSize == exSize);
-        MOZ_ASSERT(topObjectName == exObjectName);
-        MOZ_ASSERT(exInfo.ref_count == topInfo.ref_count);
-        
-        
-
         if (exInfo.share_mode == SM_PRIVATE_ALIASED) {
           privatePages += exInfo.pages_resident;
         }
