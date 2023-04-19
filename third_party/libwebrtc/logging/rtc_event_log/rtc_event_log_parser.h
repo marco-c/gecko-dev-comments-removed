@@ -14,7 +14,6 @@
 #include <limits>
 #include <map>
 #include <set>
-#include <sstream>  
 #include <string>
 #include <utility>  
 #include <vector>
@@ -390,8 +389,7 @@ class ParsedRtcEventLog {
   ParseStatus ParseString(const std::string& s);
 
   
-  ParseStatus ParseStream(
-      std::istream& stream);  
+  ParseStatus ParseStream(const std::string& s);
 
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
 
@@ -667,8 +665,7 @@ class ParsedRtcEventLog {
   std::vector<InferredRouteChangeEvent> GetRouteChanges() const;
 
  private:
-  ABSL_MUST_USE_RESULT ParseStatus ParseStreamInternal(
-      std::istream& stream);  
+  ABSL_MUST_USE_RESULT ParseStatus ParseStreamInternal(absl::string_view s);
 
   ABSL_MUST_USE_RESULT ParseStatus
   StoreParsedLegacyEvent(const rtclog::Event& event);

@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/bit_buffer.h"
@@ -35,9 +36,12 @@ std::string EncodeVarInt(uint64_t input);
 
 
 
+std::pair<bool, absl::string_view> DecodeVarInt(absl::string_view input,
+                                                uint64_t* output);
 
 
-size_t DecodeVarInt(absl::string_view input, uint64_t* output);
+
+
 
 
 
