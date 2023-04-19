@@ -5,6 +5,7 @@
 
 
 
+
 import unittest
 
 from pylib.base import base_test_result
@@ -16,29 +17,27 @@ import mock
 class SubstituteDeviceRootTest(unittest.TestCase):
 
   def testNoneDevicePath(self):
-    self.assertEquals(
+    self.assertEqual(
         '/fake/device/root',
-        local_device_test_run.SubstituteDeviceRoot(
-            None, '/fake/device/root'))
+        local_device_test_run.SubstituteDeviceRoot(None, '/fake/device/root'))
 
   def testStringDevicePath(self):
-    self.assertEquals(
+    self.assertEqual(
         '/another/fake/device/path',
-        local_device_test_run.SubstituteDeviceRoot(
-            '/another/fake/device/path', '/fake/device/root'))
+        local_device_test_run.SubstituteDeviceRoot('/another/fake/device/path',
+                                                   '/fake/device/root'))
 
   def testListWithNoneDevicePath(self):
-    self.assertEquals(
+    self.assertEqual(
         '/fake/device/root/subpath',
-        local_device_test_run.SubstituteDeviceRoot(
-            [None, 'subpath'], '/fake/device/root'))
+        local_device_test_run.SubstituteDeviceRoot([None, 'subpath'],
+                                                   '/fake/device/root'))
 
   def testListWithoutNoneDevicePath(self):
-    self.assertEquals(
+    self.assertEqual(
         '/another/fake/device/path',
         local_device_test_run.SubstituteDeviceRoot(
-            ['/', 'another', 'fake', 'device', 'path'],
-            '/fake/device/root'))
+            ['/', 'another', 'fake', 'device', 'path'], '/fake/device/root'))
 
 
 class TestLocalDeviceTestRun(local_device_test_run.LocalDeviceTestRun):
@@ -79,7 +78,7 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(0, len(tests_to_retry))
+    self.assertEqual(0, len(tests_to_retry))
 
   def testGetTestsToRetry_testFailed(self):
     results = [
@@ -95,7 +94,7 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(1, len(tests_to_retry))
+    self.assertEqual(1, len(tests_to_retry))
     self.assertIn('Test1', tests_to_retry)
 
   def testGetTestsToRetry_testUnknown(self):
@@ -110,7 +109,7 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(1, len(tests_to_retry))
+    self.assertEqual(1, len(tests_to_retry))
     self.assertIn('Test1', tests_to_retry)
 
   def testGetTestsToRetry_wildcardFilter_allPass(self):
@@ -127,7 +126,7 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(0, len(tests_to_retry))
+    self.assertEqual(0, len(tests_to_retry))
 
   def testGetTestsToRetry_wildcardFilter_oneFails(self):
     results = [
@@ -143,7 +142,7 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(1, len(tests_to_retry))
+    self.assertEqual(1, len(tests_to_retry))
     self.assertIn('TestCase.*', tests_to_retry)
 
   def testGetTestsToRetry_nonStringTests(self):
@@ -163,9 +162,9 @@ class LocalDeviceTestRunTest(unittest.TestCase):
 
     test_run = TestLocalDeviceNonStringTestRun()
     tests_to_retry = test_run._GetTestsToRetry(tests, try_results)
-    self.assertEquals(1, len(tests_to_retry))
+    self.assertEqual(1, len(tests_to_retry))
     self.assertIsInstance(tests_to_retry[0], dict)
-    self.assertEquals(tests[1], tests_to_retry[0])
+    self.assertEqual(tests[1], tests_to_retry[0])
 
 
 if __name__ == '__main__':

@@ -91,7 +91,7 @@ def DoMain(argv):
 
   
   
-  for exclusion, used in exclusion_used.iteritems():
+  for exclusion, used in exclusion_used.items():
     if not used:
       print('%s does not exist' % exclusion)
       exit_code = 1

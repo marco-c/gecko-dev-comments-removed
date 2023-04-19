@@ -1,0 +1,17 @@
+
+
+
+
+package test;
+
+import android.app.Application;
+
+
+
+
+public class LintTest extends Application {
+    public String testTriggerDefaultLocaleCheck(int any) {
+        
+        return String.format("Test %d", any);
+    }
+}

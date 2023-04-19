@@ -7,7 +7,10 @@ import errno
 import logging
 import os
 import shutil
+import sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+import devil_chromium  
 from devil.utils import cmd_helper
 from devil.utils import parallelizer
 

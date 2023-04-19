@@ -89,7 +89,7 @@ class DexdumpXMLParseTest(unittest.TestCase):
       'com.foo.bar2' : {'classes': {}},
       'com.foo.bar3' : {'classes': {}},
     }
-    self.assertEquals(expected, actual)
+    self.assertEqual(expected, actual)
 
   def testParsePackageNode(self):
     example_xml_string = (
@@ -116,7 +116,7 @@ class DexdumpXMLParseTest(unittest.TestCase):
         },
       },
     }
-    self.assertEquals(expected, actual)
+    self.assertEqual(expected, actual)
 
   def testParseClassNode(self):
     example_xml_string = (
@@ -134,7 +134,7 @@ class DexdumpXMLParseTest(unittest.TestCase):
       'methods': ['method1', 'method2'],
       'superclass': 'java.lang.Object',
     }
-    self.assertEquals(expected, actual)
+    self.assertEqual(expected, actual)
 
 
 if __name__ == '__main__':

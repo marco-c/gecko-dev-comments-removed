@@ -39,9 +39,15 @@
 
   The above command starts ash-chrome with xvfb instead of an X11 window, and
   it's useful when running tests without a display attached, such as sshing.
+
+  For version skew testing when passing --ash-chrome-path-override, the runner
+  will try to find the ash major version and Lacros major version. If ash is
+  newer(major version larger), the runner will not run any tests and just
+  returns success.
 """
 
 import argparse
+import json
 import os
 import logging
 import re
@@ -71,7 +77,8 @@ _PREBUILT_ASH_CHROME_DIR = os.path.join(os.path.dirname(__file__),
                                         'prebuilt_ash_chrome')
 
 
-ASH_CHROME_TIMEOUT_SECONDS = 10
+ASH_CHROME_TIMEOUT_SECONDS = (
+    300 if os.environ.get('ASH_WRAPPER', None) else 10)
 
 
 _TARGETS_REQUIRE_ASH_CHROME = [
@@ -83,6 +90,7 @@ _TARGETS_REQUIRE_ASH_CHROME = [
     'content_unittests',
     'dbus_unittests',
     'extensions_unittests',
+    'media_unittests',
     'message_center_unittests',
     'snapshot_unittests',
     'sync_integration_tests',
@@ -93,6 +101,16 @@ _TARGETS_REQUIRE_ASH_CHROME = [
     
     '.*_browsertests',
     '.*interactive_ui_tests'
+]
+
+
+_TARGETS_REQUIRE_MOJO_CROSAPI = [
+    
+    
+    
+    'interactive_ui_tests',
+    'lacros_chrome_browsertests',
+    'lacros_chrome_browsertests_run_in_series'
 ]
 
 
@@ -125,8 +143,10 @@ def _remove_unused_ash_chrome_versions(version_to_skip):
       
       os.remove(p)
       continue
-
-    age = time.time() - os.path.getatime(os.path.join(p, 'chrome'))
+    chrome_path = os.path.join(p, 'test_ash_chrome')
+    if not os.path.exists(chrome_path):
+      chrome_path = p
+    age = time.time() - os.path.getatime(chrome_path)
     if age > expiration_duration:
       logging.info(
           'Removing ash-chrome: "%s" as it hasn\'t been used in the '
@@ -156,23 +176,9 @@ def _GsutilCopyWithRetry(gs_path, local_name, retry_times=3):
   if exit_code:
     raise RuntimeError('Failed to download: "%s"' % gs_path)
 
-def _DownloadAshChromeIfNecessary(version, is_download_for_bots=False):
-  """Download a given version of ash-chrome if not already exists.
 
-  Currently, a special constant version value is support: "for_bots", the reason
-  is that version number is still not pinned to chromium/src, so a constant
-  value is needed to make sure that after the builder who downloads and isolates
-  ash-chrome, the tester knows where to look for the binary to use.
-  Additionally, a is_download_for_bots boolean argument is introduced to
-  indicate whether this function is downloading for bots specifically or
-  downloading while running tests, and it is needed because when version is
-  "for_bots", the expected behavior is different in the 2 scenarios: when
-  downloading for bots to isolate, we always want to update for_bots/ to reflect
-  the latest version; however, when downloading while running tests, we want to
-  skip updating to latest because swarming testers aren't supposed to have
-  external network access.
-  TODO(crbug.com/1107010): remove the support once ash-chrome version is pinned
-  to chromium/src.
+def _DownloadAshChromeIfNecessary(version):
+  """Download a given version of ash-chrome if not already exists.
 
   Args:
     version: A string representing the version, such as "793554".
@@ -188,19 +194,17 @@ def _DownloadAshChromeIfNecessary(version, is_download_for_bots=False):
     
     
     return os.path.isdir(ash_chrome_dir) and os.path.isfile(
-        os.path.join(ash_chrome_dir, 'chrome'))
+        os.path.join(ash_chrome_dir, 'test_ash_chrome'))
 
   ash_chrome_dir = _GetAshChromeDirPath(version)
-  if not is_download_for_bots and IsAshChromeDirValid(ash_chrome_dir):
+  if IsAshChromeDirValid(ash_chrome_dir):
     return
 
   shutil.rmtree(ash_chrome_dir, ignore_errors=True)
   os.makedirs(ash_chrome_dir)
   with tempfile.NamedTemporaryFile() as tmp:
-    gs_version = (_GetLatestVersionOfAshChrome()
-                  if is_download_for_bots else version)
-    logging.info('Ash-chrome version: %s', gs_version)
-    gs_path = _GS_URL_BASE + '/' + gs_version + '/' + _GS_ASH_CHROME_PATH
+    logging.info('Ash-chrome version: %s', version)
+    gs_path = _GS_URL_BASE + '/' + version + '/' + _GS_ASH_CHROME_PATH
     _GsutilCopyWithRetry(gs_path, tmp.name)
 
     
@@ -231,40 +235,114 @@ def _GetLatestVersionOfAshChrome():
 
 
 def _WaitForAshChromeToStart(tmp_xdg_dir, lacros_mojo_socket_file,
-                             is_lacros_chrome_browsertests):
+                             enable_mojo_crosapi):
   """Waits for Ash-Chrome to be up and running and returns a boolean indicator.
 
   Determine whether ash-chrome is up and running by checking whether two files
   (lock file + socket) have been created in the |XDG_RUNTIME_DIR| and the lacros
-  mojo socket file has been created if running lacros_chrome_browsertests.
+  mojo socket file has been created if enabling the mojo "crosapi" interface.
   TODO(crbug.com/1107966): Figure out a more reliable hook to determine the
   status of ash-chrome, likely through mojo connection.
 
   Args:
     tmp_xdg_dir (str): Path to the XDG_RUNTIME_DIR.
     lacros_mojo_socket_file (str): Path to the lacros mojo socket file.
-    is_lacros_chrome_browsertests (bool): is running lacros_chrome_browsertests.
+    enable_mojo_crosapi (bool): Whether to bootstrap the crosapi mojo interface
+        between ash and the lacros test binary.
 
   Returns:
     A boolean indicating whether Ash-chrome is up and running.
   """
 
   def IsAshChromeReady(tmp_xdg_dir, lacros_mojo_socket_file,
-                       is_lacros_chrome_browsertests):
+                       enable_mojo_crosapi):
     return (len(os.listdir(tmp_xdg_dir)) >= 2
-            and (not is_lacros_chrome_browsertests
+            and (not enable_mojo_crosapi
                  or os.path.exists(lacros_mojo_socket_file)))
 
   time_counter = 0
   while not IsAshChromeReady(tmp_xdg_dir, lacros_mojo_socket_file,
-                             is_lacros_chrome_browsertests):
+                             enable_mojo_crosapi):
     time.sleep(0.5)
     time_counter += 0.5
     if time_counter > ASH_CHROME_TIMEOUT_SECONDS:
       break
 
   return IsAshChromeReady(tmp_xdg_dir, lacros_mojo_socket_file,
-                          is_lacros_chrome_browsertests)
+                          enable_mojo_crosapi)
+
+
+def _ExtractAshMajorVersion(file_path):
+  """Extract major version from file_path.
+
+  File path like this:
+  ../../lacros_version_skew_tests_v94.0.4588.0/test_ash_chrome
+
+  Returns:
+    int representing the major version. Or 0 if it can't extract
+        major version.
+  """
+  m = re.search(
+      'lacros_version_skew_tests_v(?P<version>[0-9]+).[0-9]+.[0-9]+.[0-9]+/',
+      file_path)
+  if (m and 'version' in m.groupdict().keys()):
+    return int(m.group('version'))
+  logging.warning('Can not find the ash version in %s.' % file_path)
+  
+  
+  return 0
+
+
+def _FindLacrosMajorVersionFromMetadata():
+  
+  
+  
+  if not os.path.exists('metadata.json'):
+    logging.error('Can not determine current version.')
+    
+    return 0
+  version = ''
+  with open('metadata.json', 'r') as file:
+    content = json.load(file)
+    version = content['content']['version']
+  return int(version[:version.find('.')])
+
+
+def _FindLacrosMajorVersion():
+  """Returns the major version in the current checkout.
+
+  It would try to read src/chrome/VERSION. If it's not available,
+  then try to read metadata.json.
+
+  Returns:
+    int representing the major version. Or 0 if it fails to
+    determine the version.
+  """
+  version_file = os.path.abspath(
+      os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                   '../../chrome/VERSION'))
+  
+  
+  if os.path.exists(version_file):
+    lines = open(version_file, 'r').readlines()
+    return int(lines[0][lines[0].find('=') + 1:-1])
+  return _FindLacrosMajorVersionFromMetadata()
+
+
+def _ParseSummaryOutput(forward_args):
+  """Find the summary output file path.
+
+  Args:
+    forward_args (list): Args to be forwarded to the test command.
+
+  Returns:
+    None if not found, or str representing the output file path.
+  """
+  logging.warning(forward_args)
+  for arg in forward_args:
+    if arg.startswith('--test-launcher-summary-output='):
+      return arg[len('--test-launcher-summary-output='):]
+  return None
 
 
 def _RunTestWithAshChrome(args, forward_args):
@@ -272,14 +350,49 @@ def _RunTestWithAshChrome(args, forward_args):
 
   Args:
     args (dict): Args for this script.
-    forward_args (dict): Args to be forwarded to the test command.
+    forward_args (list): Args to be forwarded to the test command.
   """
-  ash_chrome_version = args.ash_chrome_version or _GetLatestVersionOfAshChrome()
-  _DownloadAshChromeIfNecessary(ash_chrome_version)
-  logging.info('Ash-chrome version: %s', ash_chrome_version)
+  if args.ash_chrome_path_override:
+    ash_chrome_file = args.ash_chrome_path_override
+    ash_major_version = _ExtractAshMajorVersion(ash_chrome_file)
+    lacros_major_version = _FindLacrosMajorVersion()
+    if ash_major_version > lacros_major_version:
+      logging.warning('''Not running any tests, because we do not \
+support version skew testing for Lacros M%s against ash M%s''' %
+                      (lacros_major_version, ash_major_version))
+      
+      
+      
+      output_json = _ParseSummaryOutput(forward_args)
+      if output_json:
+        with open(output_json, 'w') as f:
+          f.write("""{"all_tests":[],"disabled_tests":[],"global_tags":[],
+"per_iteration_data":[],"test_locations":{}}""")
+      
+      return 0
+    if not os.path.exists(ash_chrome_file):
+      logging.error("""Can not find ash chrome at %s. Did you download \
+the ash from CIPD? If you don't plan to build your own ash, you need \
+to download first. Example commandlines:
+ $ cipd auth-login
+ $ echo "chromium/testing/linux-ash-chromium/x86_64/ash.zip \
+version:92.0.4515.130" > /tmp/ensure-file.txt
+ $ cipd ensure -ensure-file /tmp/ensure-file.txt \
+-root lacros_version_skew_tests_v92.0.4515.130
+ Then you can use --ash-chrome-path-override=\
+lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
+""" % ash_chrome_file)
+      return 1
+  elif args.ash_chrome_path:
+    ash_chrome_file = args.ash_chrome_path
+  else:
+    ash_chrome_version = (args.ash_chrome_version
+                          or _GetLatestVersionOfAshChrome())
+    _DownloadAshChromeIfNecessary(ash_chrome_version)
+    logging.info('Ash-chrome version: %s', ash_chrome_version)
 
-  ash_chrome_file = os.path.join(_GetAshChromeDirPath(ash_chrome_version),
-                                 'chrome')
+    ash_chrome_file = os.path.join(_GetAshChromeDirPath(ash_chrome_version),
+                                   'test_ash_chrome')
   try:
     
     tmp_xdg_dir_name = tempfile.mkdtemp()
@@ -290,8 +403,8 @@ def _RunTestWithAshChrome(args, forward_args):
     lacros_mojo_socket_file = '%s/lacros.sock' % tmp_ash_data_dir_name
     lacros_mojo_socket_arg = ('--lacros-mojo-socket-for-testing=%s' %
                               lacros_mojo_socket_file)
-    is_lacros_chrome_browsertests = (os.path.basename(
-        args.command) == 'lacros_chrome_browsertests')
+    enable_mojo_crosapi = any(t == os.path.basename(args.command)
+                              for t in _TARGETS_REQUIRE_MOJO_CROSAPI)
 
     ash_process = None
     ash_env = os.environ.copy()
@@ -302,8 +415,17 @@ def _RunTestWithAshChrome(args, forward_args):
         '--enable-wayland-server',
         '--no-startup-window',
     ]
-    if is_lacros_chrome_browsertests:
+    if enable_mojo_crosapi:
       ash_cmd.append(lacros_mojo_socket_arg)
+
+    
+    
+    
+    
+    ash_wrapper = os.environ.get('ASH_WRAPPER', None)
+    if ash_wrapper:
+      logging.info('Running ash with "ASH_WRAPPER": %s', ash_wrapper)
+      ash_cmd = list(ash_wrapper.split()) + ash_cmd
 
     ash_process_has_started = False
     total_tries = 3
@@ -312,8 +434,7 @@ def _RunTestWithAshChrome(args, forward_args):
       num_tries += 1
       ash_process = subprocess.Popen(ash_cmd, env=ash_env)
       ash_process_has_started = _WaitForAshChromeToStart(
-          tmp_xdg_dir_name, lacros_mojo_socket_file,
-          is_lacros_chrome_browsertests)
+          tmp_xdg_dir_name, lacros_mojo_socket_file, enable_mojo_crosapi)
       if ash_process_has_started:
         break
 
@@ -328,24 +449,8 @@ def _RunTestWithAshChrome(args, forward_args):
       raise RuntimeError('Timed out waiting for ash-chrome to start')
 
     
-    if is_lacros_chrome_browsertests:
+    if enable_mojo_crosapi:
       forward_args.append(lacros_mojo_socket_arg)
-
-      reason_of_jobs_1 = (
-          'multiple clients crosapi is not supported yet (crbug.com/1124490), '
-          'lacros_chrome_browsertests has to run tests serially')
-
-      if any('--test-launcher-jobs' in arg for arg in forward_args):
-        raise RuntimeError(
-            'Specifying "--test-launcher-jobs" is not allowed because %s. '
-            'Please remove it and this script will automatically append '
-            '"--test-launcher-jobs=1"' % reason_of_jobs_1)
-
-      
-      
-      logging.warning('Appending "--test-launcher-jobs=1" because %s',
-                      reason_of_jobs_1)
-      forward_args.append('--test-launcher-jobs=1')
 
     test_env = os.environ.copy()
     test_env['EGL_PLATFORM'] = 'surfaceless'
@@ -368,7 +473,7 @@ def _RunTestDirectly(args, forward_args):
   """Runs tests by invoking the test command directly.
 
   args (dict): Args for this script.
-  forward_args (dict): Args to be forwarded to the test command.
+  forward_args (list): Args to be forwarded to the test command.
   """
   try:
     p = None
@@ -401,7 +506,7 @@ def _RunTest(args, forward_args):
   """Runs tests with given args.
 
   args (dict): Args for this script.
-  forward_args (dict): Args to be forwarded to the test command.
+  forward_args (list): Args to be forwarded to the test command.
 
   Raises:
       RuntimeError: If the given test binary doesn't exist or the test runner
@@ -435,13 +540,6 @@ def Main():
 
   subparsers = arg_parser.add_subparsers()
 
-  download_parser = subparsers.add_parser(
-      'download_for_bots',
-      help='Download prebuilt ash-chrome for bots so that tests are hermetic '
-      'during execution')
-  download_parser.set_defaults(
-      func=lambda *_: _DownloadAshChromeIfNecessary('for_bots', True))
-
   test_parser = subparsers.add_parser('test', help='Run tests')
   test_parser.set_defaults(func=_RunTest)
 
@@ -451,14 +549,30 @@ def Main():
       '"./url_unittests". Any argument unknown to this test runner script will '
       'be forwarded to the command, for example: "--gtest_filter=Suite.Test"')
 
-  test_parser.add_argument(
-      '-a',
+  version_group = test_parser.add_mutually_exclusive_group()
+  version_group.add_argument(
       '--ash-chrome-version',
       type=str,
-      help='Version of ash_chrome to use for testing, for example: "793554", '
-      'and the version corresponds to the commit position of commits on the '
-      'master branch. If not specified, will use the latest version available')
+      help='Version of an prebuilt ash-chrome to use for testing, for example: '
+      '"793554", and the version corresponds to the commit position of commits '
+      'on the main branch. If not specified, will use the latest version '
+      'available')
+  version_group.add_argument(
+      '--ash-chrome-path',
+      type=str,
+      help='Path to an locally built ash-chrome to use for testing. '
+      'In general you should build //chrome/test:test_ash_chrome.')
 
+  
+  
+  
+  
+  test_parser.add_argument(
+      '--ash-chrome-path-override',
+      type=str,
+      help='The same as --ash-chrome-path. But this will override '
+      '--ash-chrome-path or --ash-chrome-version if any of these '
+      'arguments exist.')
   args = arg_parser.parse_known_args()
   return args[0].func(args[0], args[1])
 

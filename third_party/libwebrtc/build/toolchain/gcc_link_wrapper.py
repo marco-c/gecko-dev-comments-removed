@@ -54,10 +54,6 @@ def main():
                       help='Linking command')
   args = parser.parse_args()
 
-  generate_dwp = '--generate-dwp' in args.command
-  if generate_dwp:
-    args.command.remove('--generate-dwp')
-
   
   fast_env = dict(os.environ)
   fast_env['LC_ALL'] = 'C'
@@ -68,25 +64,27 @@ def main():
 
   
   dwp_proc = None
-  if generate_dwp:
-    if not args.dwp:
-      parser.error('--generate-dwp requireds --dwp')
+  if args.dwp:
     exe_file = args.output
     if args.unstripped_file:
       exe_file = args.unstripped_file
-    dwp_proc = subprocess.Popen(
-        wrapper_utils.CommandToRun(
-            [args.dwp, '-e', exe_file, '-o', args.output + '.dwp']))
+    
+    
+    with open(os.devnull, "w") as devnull:
+      dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
+          [args.dwp, '-e', exe_file, '-o', exe_file + '.dwp']),
+                                  stdout=devnull,
+                                  stderr=subprocess.STDOUT)
 
   
   if args.strip:
-    result = subprocess.call(CommandToRun([
-        args.strip, '-o', args.output, args.unstripped_file
-        ]))
+    result = subprocess.call(
+        CommandToRun([args.strip, '-o', args.output, args.unstripped_file]))
 
   if dwp_proc:
     dwp_result = dwp_proc.wait()
     if dwp_result != 0:
+      sys.stderr.write('dwp failed with error code {}\n'.format(dwp_result))
       return dwp_result
 
   return result

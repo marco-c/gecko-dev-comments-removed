@@ -98,7 +98,7 @@ def _PrintSymbolized(asan_input, arch):
   
   all_symbols = collections.defaultdict(dict)
 
-  for library, items in libraries.iteritems():
+  for library, items in libraries.items():
     libname = _TranslateLibPath(library, asan_libs)
     lib_relative_addrs = set([i.rel_address for i in items])
     
@@ -140,7 +140,7 @@ def main():
   constants.CheckOutputDirectory()
 
   if options.logcat:
-    asan_input = file(options.logcat, 'r')
+    asan_input = open(options.logcat, 'r')
   else:
     asan_input = sys.stdin
 

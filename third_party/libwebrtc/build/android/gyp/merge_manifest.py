@@ -26,8 +26,8 @@ _MANIFEST_MERGER_JARS = [
                  'guava-28.1-jre.jar'),
     os.path.join('external', 'kotlin-plugin-ij', 'Kotlin', 'kotlinc', 'lib',
                  'kotlin-stdlib.jar'),
-    os.path.join('external', 'com', 'google', 'code', 'gson', 'gson', '2.8.5',
-                 'gson-2.8.5.jar'),
+    os.path.join('external', 'com', 'google', 'code', 'gson', 'gson', '2.8.6',
+                 'gson-2.8.6.jar'),
 ]
 
 
@@ -124,6 +124,7 @@ def main(argv):
           root_manifest,
           '--property',
           'PACKAGE=' + package,
+          '--remove-tools-declarations',
       ]
       build_utils.CheckOutput(
           cmd,

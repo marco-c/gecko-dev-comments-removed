@@ -7,10 +7,14 @@
 
 import json
 import os
+import sys
 import tempfile
 import unittest
 
-import mock
+if sys.version_info[0] == 2:
+  import mock
+else:
+  import unittest.mock as mock
 
 from pyfakefs import fake_filesystem_unittest
 
@@ -29,7 +33,7 @@ class SkiaGoldSessionManagerGetSessionTest(fake_filesystem_unittest.TestCase):
     self.setUpPyfakefs()
     self._working_dir = tempfile.mkdtemp()
     self._patcher = mock.patch.object(
-        skia_gold_session_manager.SkiaGoldSessionManager, '_GetSessionClass')
+        skia_gold_session_manager.SkiaGoldSessionManager, 'GetSessionClass')
     self._session_class_mock = self._patcher.start()
     self._session_class_mock.return_value = skia_gold_session.SkiaGoldSession
     self.addCleanup(self._patcher.stop)

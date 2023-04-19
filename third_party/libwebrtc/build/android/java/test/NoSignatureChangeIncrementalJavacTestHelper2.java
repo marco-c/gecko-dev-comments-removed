@@ -1,0 +1,11 @@
+
+
+
+
+package test;
+
+public class NoSignatureChangeIncrementalJavacTestHelper2 {
+    public String bar() {
+        return "bar";
+    }
+}

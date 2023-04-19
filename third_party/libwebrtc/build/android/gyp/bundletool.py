@@ -19,13 +19,13 @@ BUNDLETOOL_DIR = os.path.abspath(os.path.join(
     __file__, '..', '..', '..', '..', 'third_party', 'android_build_tools',
     'bundletool'))
 
-BUNDLETOOL_VERSION = '1.2.0'
+BUNDLETOOL_VERSION = '1.8.0'
 
 BUNDLETOOL_JAR_PATH = os.path.join(
     BUNDLETOOL_DIR, 'bundletool-all-%s.jar' % BUNDLETOOL_VERSION)
 
 
-def RunBundleTool(args, warnings_as_errors=()):
+def RunBundleTool(args, warnings_as_errors=(), print_stdout=False):
   
   verify = warnings_as_errors == () or warnings_as_errors
   
@@ -36,10 +36,11 @@ def RunBundleTool(args, warnings_as_errors=()):
   logging.debug(' '.join(cmd))
   return build_utils.CheckOutput(
       cmd,
+      print_stdout=print_stdout,
       print_stderr=True,
       fail_on_output=False,
       stderr_filter=build_utils.FilterReflectiveAccessJavaWarnings)
 
 
 if __name__ == '__main__':
-  RunBundleTool(sys.argv[1:])
+  RunBundleTool(sys.argv[1:], print_stdout=True)

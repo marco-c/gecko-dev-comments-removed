@@ -55,6 +55,18 @@ class UnitTest(unittest.TestCase):
             [[[], [[]]], []],
             '[ [ [  ], [ [  ] ] ], [  ] ]',
             '[\n  [\n    [],\n    [\n      []\n    ]\n  ],\n  []\n]\n',
+        ),
+        (
+            [{
+                'a': 1,
+                'c': {
+                    'z': 8
+                },
+                'b': []
+            }],
+            '[ { a = 1\nb = [  ]\nc = { z = 8 } } ]\n',
+            '[\n  {\n    a = 1\n    b = []\n    c = {\n' +
+            '      z = 8\n    }\n  }\n]\n',
         )
     ]
     for obj, exp_ugly, exp_pretty in test_cases:
@@ -128,6 +140,26 @@ class UnitTest(unittest.TestCase):
       parser = gn_helpers.GNValueParser('[1 2]')  
       parser.ParseList()
 
+  def test_ParseScope(self):
+    parser = gn_helpers.GNValueParser('{a = 1}')
+    self.assertEqual(parser.ParseScope(), {'a': 1})
+
+    with self.assertRaises(gn_helpers.GNError):
+      parser = gn_helpers.GNValueParser('')  
+      parser.ParseScope()
+    with self.assertRaises(gn_helpers.GNError):
+      parser = gn_helpers.GNValueParser('asdf')  
+      parser.ParseScope()
+    with self.assertRaises(gn_helpers.GNError):
+      parser = gn_helpers.GNValueParser('{a = 1')  
+      parser.ParseScope()
+    with self.assertRaises(gn_helpers.GNError):
+      parser = gn_helpers.GNValueParser('{"a" = 1}')  
+      parser.ParseScope()
+    with self.assertRaises(gn_helpers.GNError):
+      parser = gn_helpers.GNValueParser('{a = }')  
+      parser.ParseScope()
+
   def test_FromGNArgs(self):
     
     self.assertEqual(gn_helpers.FromGNArgs('foo = true\nbar = 1\n'),
@@ -158,6 +190,51 @@ class UnitTest(unittest.TestCase):
     
     self.assertEqual(gn_helpers.FromGNArgs(''), {})
     self.assertEqual(gn_helpers.FromGNArgs(' \n '), {})
+
+    
+    gn_args_lines = [
+        '# Top-level comment.',
+        '',
+        '# Variable comment.',
+        'foo = true',
+        'bar = [',
+        '    # Value comment in list.',
+        '    1,',
+        '    2,',
+        ']',
+        '',
+        'baz # Comment anywhere, really',
+        '  = # also here',
+        '    4',
+    ]
+    self.assertEqual(gn_helpers.FromGNArgs('\n'.join(gn_args_lines)), {
+        'foo': True,
+        'bar': [1, 2],
+        'baz': 4
+    })
+
+    
+    gn_args_lines = [
+        'foo = {',
+        '  a = 1',
+        '  b = [',
+        '    { },',
+        '    {',
+        '      c = 1',
+        '    },',
+        '  ]',
+        '}',
+    ]
+    self.assertEqual(gn_helpers.FromGNArgs('\n'.join(gn_args_lines)),
+                     {'foo': {
+                         'a': 1,
+                         'b': [
+                             {},
+                             {
+                                 'c': 1,
+                             },
+                         ]
+                     }})
 
     
     with self.assertRaises(gn_helpers.GNError):

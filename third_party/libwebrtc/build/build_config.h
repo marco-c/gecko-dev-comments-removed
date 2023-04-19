@@ -61,7 +61,11 @@
 #define OS_MAC 1
 #endif  
 #elif defined(__linux__)
+#if !defined(OS_CHROMEOS)
+
+
 #define OS_LINUX 1
+#endif  
 
 #include <unistd.h>
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
@@ -193,19 +197,6 @@
 #define ARCH_CPU_32_BITS 1
 #define ARCH_CPU_BIG_ENDIAN 1
 #endif
-#elif defined(__riscv) && __riscv_xlen == 64
-#define ARCH_CPU_RISCV64 1
-#define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
-#elif defined(__sparc__)
-#if defined(__LP64__)
-#define ARCH_CPU_SPARC64 1
-#define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_BIG_ENDIAN 1
-#endif
-#define ARCH_CPU_SPARC 1
-#define ARCH_CPU_32_BITS 1
-#define ARCH_CPU_BIG_ENDIAN 1
 #else
 #error Please add support for your architecture in build/build_config.h
 #endif

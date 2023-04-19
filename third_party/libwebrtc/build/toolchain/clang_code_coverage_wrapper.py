@@ -84,6 +84,14 @@ _COVERAGE_EXCLUSION_LIST_MAP = {
         
         '../../device/gamepad/dualshock4_controller.cc',
     ],
+    'fuchsia': [
+        
+        
+        '../../base/allocator/partition_allocator/pcscan.cc',
+        '../../third_party/skia/src/core/SkOpts.cpp',
+        '../../third_party/skia/src/opts/SkOpts_hsw.cpp',
+        '../../third_party/skia/third_party/skcms/skcms.cc',
+    ],
     'linux': [
         
         
@@ -91,7 +99,7 @@ _COVERAGE_EXCLUSION_LIST_MAP = {
         '../../chrome/browser/media/router/providers/cast/cast_internal_message_util.cc',  
         '../../components/cast_channel/cast_channel_enum.cc',
         '../../components/cast_channel/cast_message_util.cc',
-        '../../components/media_router/common/providers/cast/cast_media_source.cc',
+        '../../components/media_router/common/providers/cast/cast_media_source.cc',  
         '../../ui/events/keycodes/dom/keycode_converter.cc',
         
         '../../base/message_loop/message_pump_default.cc',
@@ -130,6 +138,13 @@ _COVERAGE_FORCE_LIST_MAP = {
     
     
     'win': [r'..\..\base\test\clang_profiling.cc'],
+    
+    
+    
+    
+    
+    
+    'mac': ['../../base/test/clang_profiling.cc'],
 }
 
 
@@ -145,16 +160,18 @@ def _remove_flags_from_command(command):
   try:
     while True:
       idx = command.index(start_flag, start_idx)
-      start_idx = idx + 1
       if command[idx:idx + num_flags] == _COVERAGE_FLAGS:
         del command[idx:idx + num_flags]
-        break
+        
+        
+        start_idx = idx
+      else:
+        start_idx = idx + 1
   except ValueError:
     pass
 
 
 def main():
-  
   arg_parser = argparse.ArgumentParser()
   arg_parser.usage = __doc__
   arg_parser.add_argument(
@@ -198,6 +215,9 @@ def main():
   
   
   compile_source_file = os.path.normpath(compile_command[source_flag_index + 1])
+  extension = os.path.splitext(compile_source_file)[1]
+  if not extension in ['.c', '.cc', '.cpp', '.cxx', '.m', '.mm', '.S']:
+    raise Exception('Invalid source file %s found' % compile_source_file)
   exclusion_list = _COVERAGE_EXCLUSION_LIST_MAP.get(
       target_os, _DEFAULT_COVERAGE_EXCLUSION_LIST)
   force_list = _COVERAGE_FORCE_LIST_MAP.get(target_os, [])

@@ -156,7 +156,7 @@ def _GetTombstonesForDevice(device, resolve_all_tombstones,
     return ret
 
   
-  all_tombstones.sort(cmp=lambda a, b: cmp(b[1], a[1]))
+  all_tombstones.sort(key=lambda a: a[1], reverse=True)
 
   
   tombstones = all_tombstones if resolve_all_tombstones else [all_tombstones[0]]
@@ -233,11 +233,6 @@ def main():
   parser.add_argument('--device',
                       help='The serial number of the device. If not specified '
                            'will use all devices.')
-  
-  
-  parser.add_argument('--blacklist-file',
-                      dest='denylist_file',
-                      help=argparse.SUPPRESS)
   parser.add_argument('--denylist-file', help='Device denylist JSON file.')
   parser.add_argument('-a', '--all-tombstones', action='store_true',
                       help='Resolve symbols for all tombstones, rather than '
@@ -256,15 +251,14 @@ def main():
                       help='Path to the adb binary.')
   args = parser.parse_args()
 
-  devil_chromium.Initialize(adb_path=args.adb_path)
+  if args.output_directory:
+    constants.SetOutputDirectory(args.output_directory)
+
+  devil_chromium.Initialize(output_directory=constants.GetOutDirectory(),
+                            adb_path=args.adb_path)
 
   denylist = (device_denylist.Denylist(args.denylist_file)
               if args.denylist_file else None)
-
-  if args.output_directory:
-    constants.SetOutputDirectory(args.output_directory)
-  
-  constants.CheckOutputDirectory()
 
   if args.device:
     devices = [device_utils.DeviceUtils(args.device)]

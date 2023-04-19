@@ -55,4 +55,4 @@ with qemu_target.QemuTarget(tmpdir, 'x64') as target:
 
 
   if __name__ == '__main__':
-      unittest.main()
+    unittest.main()

@@ -91,7 +91,7 @@ def _LoadEnvFromBat(args):
   return variables.decode(errors='ignore')
 
 
-def _LoadToolchainEnv(cpu, sdk_dir, target_store):
+def _LoadToolchainEnv(cpu, toolchain_root, sdk_dir, target_store):
   """Returns a dictionary with environment variables that must be set while
   running binaries from the toolchain (e.g. INCLUDE and PATH for cl.exe)."""
   
@@ -107,8 +107,7 @@ def _LoadToolchainEnv(cpu, sdk_dir, target_store):
       json_relative_dir = os.path.join(sdk_dir, 'bin')
     else:
       
-      
-      json_relative_dir = os.path.split(sdk_dir)[0]
+      json_relative_dir = toolchain_root
     for k in env:
       entries = [os.path.join(*([json_relative_dir] + e)) for e in env[k]]
       
@@ -219,7 +218,13 @@ def main():
           '<runtime dirs> <target_os> <target_cpu> '
           '<environment block name|none>')
     sys.exit(2)
+  
+  
+  
+  
+  toolchain_root = sys.argv[1]
   win_sdk_path = sys.argv[2]
+
   runtime_dirs = sys.argv[3]
   target_os = sys.argv[4]
   target_cpu = sys.argv[5]
@@ -234,65 +239,63 @@ def main():
 
   cpus = ('x86', 'x64', 'arm', 'arm64')
   assert target_cpu in cpus
-  vc_bin_dir = 'fake_path/cl.exe'
-  vc_lib_path = 'fake_path/lib'
-  vc_lib_atlmfc_path = 'fake_path/atlmfc'
-  vc_lib_um_path = 'fake_path/lib_um'
+  vc_bin_dir = ''
+  vc_lib_path = ''
+  vc_lib_atlmfc_path = ''
+  vc_lib_um_path = ''
   include = ''
   lib = ''
 
   
   
 
+  def relflag(s):  
+    try:
+      return os.path.relpath(s).replace('\\', '/')
+    except ValueError:
+      return s
 
+  def q(s):  
+    return s if re.match(r'^[a-zA-Z0-9._/\\:-]*$', s) else '"' + s + '"'
 
+  for cpu in cpus:
+    if cpu == target_cpu:
+      
+      env = _LoadToolchainEnv(cpu, toolchain_root, win_sdk_path, target_store)
+      env['PATH'] = runtime_dirs + os.pathsep + env['PATH']
 
+      vc_bin_dir = FindFileInEnvList(env, 'PATH', os.pathsep, 'cl.exe')
+      vc_lib_path = FindFileInEnvList(env, 'LIB', ';', 'msvcrt.lib')
+      vc_lib_atlmfc_path = FindFileInEnvList(
+          env, 'LIB', ';', 'atls.lib', optional=True)
+      vc_lib_um_path = FindFileInEnvList(env, 'LIB', ';', 'user32.lib')
 
+      
+      
+      include = [p.replace('"', r'\"') for p in env['INCLUDE'].split(';') if p]
+      include = list(map(relflag, include))
 
+      lib = [p.replace('"', r'\"') for p in env['LIB'].split(';') if p]
+      lib = list(map(relflag, lib))
 
+      include_I = ' '.join([q('/I' + i) for i in include])
+      include_imsvc = ' '.join([q('-imsvc' + i) for i in include])
+      libpath_flags = ' '.join([q('-libpath:' + i) for i in lib])
 
+      if (environment_block_name != ''):
+        env_block = _FormatAsEnvironmentBlock(env)
+        with open(environment_block_name, 'w') as f:
+          f.write(env_block)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-  env = {}
-  env['PATH'] = ''
-  include_I = include
-  include_imsvc = include
-  libpath_flags = ''
   print('vc_bin_dir = ' + gn_helpers.ToGNString(vc_bin_dir))
+  assert include_I
   print('include_flags_I = ' + gn_helpers.ToGNString(include_I))
-  print('include_flags_imsvc = ' + gn_helpers.ToGNString(include_imsvc))
+  assert include_imsvc
+  if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:
+    print('include_flags_imsvc = ' +
+          gn_helpers.ToGNString(q('/winsysroot' + relflag(toolchain_root))))
+  else:
+    print('include_flags_imsvc = ' + gn_helpers.ToGNString(include_imsvc))
   print('vc_lib_path = ' + gn_helpers.ToGNString(vc_lib_path))
   
   
@@ -300,6 +303,7 @@ def main():
     print('vc_lib_atlmfc_path = ' + gn_helpers.ToGNString(vc_lib_atlmfc_path))
   print('vc_lib_um_path = ' + gn_helpers.ToGNString(vc_lib_um_path))
   print('paths = ' + gn_helpers.ToGNString(env['PATH']))
+  assert libpath_flags
   print('libpath_flags = ' + gn_helpers.ToGNString(libpath_flags))
 
 

@@ -5,54 +5,21 @@
 """Wraps the turbine jar and expands @FileArgs."""
 
 import argparse
+import functools
 import logging
 import os
 import shutil
 import sys
 import time
 
+import javac_output_processor
 from util import build_utils
-from util import md5_check
 
 
-def _OnStaleMd5(options, cmd, javac_cmd, files, classpath):
-  if classpath:
-    cmd += ['--classpath']
-    cmd += classpath
-
-  if options.java_srcjars:
-    cmd += ['--source_jars']
-    cmd += options.java_srcjars
-
-  if files:
-    
-    files_rsp_path = options.jar_path + '.files_list.txt'
-    with open(files_rsp_path, 'w') as f:
-      f.write(' '.join(files))
-    
-    
-    cmd += ['--sources']
-    cmd += ['@' + files_rsp_path]
-
-  if javac_cmd:
-    cmd.append('--javacopts')
-    cmd += javac_cmd
-    cmd.append('--')  
-
-  
-  
-  with build_utils.AtomicOutput(options.jar_path) as output_jar, \
-      build_utils.AtomicOutput(options.generated_jar_path) as generated_jar:
-    cmd += ['--output', output_jar.name, '--gensrc_output', generated_jar.name]
-    logging.debug('Command: %s', cmd)
-    start = time.time()
-    build_utils.CheckOutput(cmd,
-                            print_stdout=True,
-                            fail_on_output=options.warnings_as_errors)
-    end = time.time() - start
-    logging.info('Header compilation took %ss', end)
-
-  logging.info('Completed all steps in _OnStaleMd5')
+def ProcessJavacOutput(output, target_name):
+  output_processor = javac_output_processor.JavacOutputProcessor(target_name)
+  lines = output_processor.Process(output.split('\n'))
+  return '\n'.join(lines)
 
 
 def main(argv):
@@ -60,6 +27,7 @@ def main(argv):
   argv = build_utils.ExpandFileArgs(argv[1:])
   parser = argparse.ArgumentParser()
   build_utils.AddDepfileOption(parser)
+  parser.add_argument('--target-name', help='Fully qualified GN target name.')
   parser.add_argument(
       '--turbine-jar-path', required=True, help='Path to the turbine jar file.')
   parser.add_argument(
@@ -148,28 +116,54 @@ def main(argv):
     for arg in options.processor_args:
       javac_cmd.extend(['-A%s' % arg])
 
-  classpath_inputs = (
-      options.bootclasspath + options.classpath + options.processorpath)
+  if options.classpath:
+    cmd += ['--classpath']
+    cmd += options.classpath
+
+  if options.java_srcjars:
+    cmd += ['--source_jars']
+    cmd += options.java_srcjars
+
+  if files:
+    
+    files_rsp_path = options.jar_path + '.files_list.txt'
+    with open(files_rsp_path, 'w') as f:
+      f.write(' '.join(files))
+    
+    
+    cmd += ['--sources']
+    cmd += ['@' + files_rsp_path]
+
+  if javac_cmd:
+    cmd.append('--javacopts')
+    cmd += javac_cmd
+    cmd.append('--')  
 
   
   
-  depfile_deps = classpath_inputs + options.java_srcjars
-  input_paths = depfile_deps + files
+  with build_utils.AtomicOutput(options.jar_path) as output_jar, \
+      build_utils.AtomicOutput(options.generated_jar_path) as generated_jar:
+    cmd += ['--output', output_jar.name, '--gensrc_output', generated_jar.name]
 
-  output_paths = [
-      options.jar_path,
-      options.generated_jar_path,
-  ]
+    process_javac_output_partial = functools.partial(
+        ProcessJavacOutput, target_name=options.target_name)
 
-  input_strings = cmd + options.classpath + files
+    logging.debug('Command: %s', cmd)
+    start = time.time()
+    build_utils.CheckOutput(cmd,
+                            print_stdout=True,
+                            stdout_filter=process_javac_output_partial,
+                            stderr_filter=process_javac_output_partial,
+                            fail_on_output=options.warnings_as_errors)
+    end = time.time() - start
+    logging.info('Header compilation took %ss', end)
 
-  md5_check.CallAndWriteDepfileIfStale(
-      lambda: _OnStaleMd5(options, cmd, javac_cmd, files, options.classpath),
-      options,
-      depfile_deps=depfile_deps,
-      input_paths=input_paths,
-      input_strings=input_strings,
-      output_paths=output_paths)
+  if options.depfile:
+    
+    
+    depfile_deps = (options.bootclasspath + options.classpath +
+                    options.processorpath + options.java_srcjars)
+    build_utils.WriteDepfile(options.depfile, options.jar_path, depfile_deps)
 
 
 if __name__ == '__main__':

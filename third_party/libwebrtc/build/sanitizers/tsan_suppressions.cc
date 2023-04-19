@@ -46,9 +46,6 @@ char kTSanDefaultSuppressions[] =
     "race:libpulsecommon*.so\n"
 
     
-    "race:webrtc::VideoCodingModuleImpl::RegisterPacketRequestCallback\n"
-
-    
     "race:g_trace_state\n"
 
     
@@ -68,15 +65,10 @@ char kTSanDefaultSuppressions[] =
     "deadlock:cc::VideoLayerImpl::WillDraw\n"
 
     
-    "race:gLCDOrder\n"
-    "race:gLCDOrientation\n"
+    "race:skia::(anonymous namespace)::g_pixel_geometry\n"
 
     
     "race:PR_Lock\n"
-
-    
-    "race:cricket::P2PTransportChannel::OnConnectionDestroyed\n"
-    "race:cricket::P2PTransportChannel::AddConnection\n"
 
     
     "race:sctp_express_handle_sack\n"
@@ -130,15 +122,15 @@ char kTSanDefaultSuppressions[] =
     "race:net::(anonymous namespace)::g_network_change_notifier\n"
 
     
-    "race:content::(anonymous namespace)::CorruptDBRequestHandler\n"
-
-    
     "race:vp3_update_thread_context\n"
 
     
     
     
     "race:third_party/libjpeg_turbo/simd/x86_64/jsimd.c\n"
+
+    
+    "race:absl::synchronization_internal::Waiter::Post\n"
 
     
     ;  

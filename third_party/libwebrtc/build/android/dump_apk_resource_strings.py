@@ -219,8 +219,8 @@ class ResourceStringValues(object):
 
   def ToStringList(self, res_id):
     """Convert entry to string list for human-friendly output."""
-    values = sorted(
-        [(str(config), value) for config, value in self.res_values.iteritems()])
+    values = sorted([(str(config), value)
+                     for config, value in self.res_values.items()])
     if res_id is None:
       
       
@@ -256,7 +256,7 @@ class ResourceStringMap(object):
 
   def RemapResourceNames(self, id_name_map):
     """Rename all entries according to a given {res_id -> res_name} map."""
-    for res_id, res_name in id_name_map.iteritems():
+    for res_id, res_name in id_name_map.items():
       if res_id in self._res_map:
         self._res_map[res_id].res_name = res_name
 
@@ -280,13 +280,8 @@ class ResourceStringMap(object):
 
     
     
-    def cmp_id_name(a, b):
-      result = cmp(a[1].res_name, b[1].res_name)
-      if result == 0:
-        result = cmp(a[0], b[0])
-      return result
-
-    for res_id, _ in sorted(res_map.iteritems(), cmp=cmp_id_name):
+    for res_id, _ in sorted(res_map.items(),
+                            key=lambda x: (x[1].res_name, x[0])):
       result += res_map[res_id].ToStringList(None if omit_ids else res_id)
     result.append('}  # Resource strings')
     return result

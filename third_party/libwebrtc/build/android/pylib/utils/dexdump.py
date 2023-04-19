@@ -5,11 +5,15 @@
 import os
 import re
 import shutil
+import sys
 import tempfile
 from xml.etree import ElementTree
 
 from devil.utils import cmd_helper
 from pylib import constants
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'gyp'))
+from util import build_utils
 
 DEXDUMP_PATH = os.path.join(constants.ANDROID_SDK_TOOLS, 'dexdump')
 
@@ -31,23 +35,30 @@ def Dump(apk_path):
         }
       }
   """
-  
   try:
     dexfile_dir = tempfile.mkdtemp()
-    
-    cmd_helper.RunCmd(['unzip', apk_path, 'classes.dex'], cwd=dexfile_dir)
-    dexfile = os.path.join(dexfile_dir, 'classes.dex')
-    output_xml = cmd_helper.GetCmdOutput([DEXDUMP_PATH, '-l', 'xml', dexfile])
-    
-    
-    
-    
-    BAD_XML_CHARS = re.compile(
-        u'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x84\x86-\x9f' +
-        u'\ud800-\udfff\ufdd0-\ufddf\ufffe-\uffff]')
-    decoded_xml = output_xml.decode('utf-8', 'replace')
-    clean_xml = BAD_XML_CHARS.sub(u'\ufffd', decoded_xml)
-    return _ParseRootNode(ElementTree.fromstring(clean_xml.encode('utf-8')))
+    parsed_dex_files = []
+    for dex_file in build_utils.ExtractAll(apk_path,
+                                           dexfile_dir,
+                                           pattern='*classes*.dex'):
+      output_xml = cmd_helper.GetCmdOutput(
+          [DEXDUMP_PATH, '-l', 'xml', dex_file])
+      
+      
+      
+      
+      BAD_XML_CHARS = re.compile(
+          u'[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f-\x84\x86-\x9f' +
+          u'\ud800-\udfff\ufdd0-\ufddf\ufffe-\uffff]')
+      if sys.version_info[0] < 3:
+        decoded_xml = output_xml.decode('utf-8', 'replace')
+        clean_xml = BAD_XML_CHARS.sub(u'\ufffd', decoded_xml)
+      else:
+        
+        clean_xml = BAD_XML_CHARS.sub(u'\ufffd', output_xml)
+      parsed_dex_files.append(
+          _ParseRootNode(ElementTree.fromstring(clean_xml.encode('utf-8'))))
+    return parsed_dex_files
   finally:
     shutil.rmtree(dexfile_dir)
 

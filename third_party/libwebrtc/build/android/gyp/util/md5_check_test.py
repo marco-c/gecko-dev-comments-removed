@@ -116,7 +116,7 @@ class TestMd5Check(unittest.TestCase):
                        expected_changes='force=True',
                        added_or_modified_only=False)
 
-    input_file1.write('some more input')
+    input_file1.write(b'some more input')
     input_file1.flush()
     CheckCallAndRecord(True, 'changed input file should trigger call',
                        expected_changes='*Modified: %s' % input_file1.name,

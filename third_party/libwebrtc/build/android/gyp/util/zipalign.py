@@ -27,20 +27,20 @@ def _PatchedDecodeExtra(self):
       elif ln == 0:
         counts = ()
       else:
-        raise RuntimeError, "Corrupt extra field %s" % (ln, )
+        raise RuntimeError("Corrupt extra field %s" % (ln, ))
 
       idx = 0
 
       
-      if self.file_size in (0xffffffffffffffffL, 0xffffffffL):
+      if self.file_size in (0xffffffffffffffff, 0xffffffff):
         self.file_size = counts[idx]
         idx += 1
 
-      if self.compress_size == 0xFFFFFFFFL:
+      if self.compress_size == 0xffffffff:
         self.compress_size = counts[idx]
         idx += 1
 
-      if self.header_offset == 0xffffffffL:
+      if self.header_offset == 0xffffffff:
         self.header_offset = counts[idx]
         idx += 1
 
@@ -73,6 +73,7 @@ def _SetAlignment(zip_obj, zip_info, alignment):
       (cur_offset + header_size) % alignment)) % alignment
 
 
+  
   
   
   zip_info.extra = b'\0' * padding_needed

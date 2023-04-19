@@ -8,6 +8,7 @@ import hashlib
 import os
 import re
 import shlex
+import sys
 import xml.dom.minidom as minidom
 
 from util import build_utils
@@ -123,38 +124,37 @@ def AssertPackage(manifest_node, package):
 
 
 def _SortAndStripElementTree(root):
-  def sort_key(node):
+  
+  
+  
+  def element_sort_key(node):
+    if node.tag == 'application':
+      return 'z'
     ret = ElementTree.tostring(node)
     
     
     
     
-    return re.sub(r' xmlns:.*?".*?"', '', ret)
+    return re.sub(r' xmlns:.*?".*?"', '', ret.decode('utf8'))
+
+  name_attr = '{%s}name' % ANDROID_NAMESPACE
+
+  def attribute_sort_key(tup):
+    return ('', '') if tup[0] == name_attr else tup
 
   def helper(node):
     for child in node:
       if child.text and child.text.isspace():
         child.text = None
       helper(child)
-    node[:] = sorted(node, key=sort_key)
 
-  def rename_attrs(node, from_name, to_name):
-    value = node.attrib.get(from_name)
-    if value is not None:
-      node.attrib[to_name] = value
-      del node.attrib[from_name]
-    for child in node:
-      rename_attrs(child, from_name, to_name)
+    
+    node.attrib = dict(sorted(node.attrib.items(), key=attribute_sort_key))
 
-  
-  
-  
-  app_node = root.find('application')
-  app_node.tag = 'zz'
-  rename_attrs(root, '{%s}name' % ANDROID_NAMESPACE, '__name__')
+    
+    node[:] = sorted(node, key=element_sort_key)
+
   helper(root)
-  rename_attrs(root, '__name__', '{%s}name' % ANDROID_NAMESPACE)
-  app_node.tag = 'application'
 
 
 def _SplitElement(line):
@@ -205,7 +205,7 @@ def _CreateNodeHash(lines):
     assert False, 'Did not find end of node:\n' + '\n'.join(lines)
 
   
-  return hashlib.md5('\n'.join(tag_lines)).hexdigest()[:8]
+  return hashlib.md5(('\n'.join(tag_lines)).encode('utf8')).hexdigest()[:8]
 
 
 def _IsSelfClosing(lines):
@@ -257,12 +257,19 @@ def NormalizeManifest(manifest_contents):
   root = ElementTree.fromstring(manifest_contents)
   package = GetPackage(root)
 
-  
-  
-  
   app_node = root.find('application')
   if app_node is not None:
-    for node in app_node.getchildren():
+    
+    
+    
+    debuggable_name = '{%s}debuggable' % ANDROID_NAMESPACE
+    if debuggable_name in app_node.attrib:
+      del app_node.attrib[debuggable_name]
+
+    
+    
+    
+    for node in app_node:
       if (node.tag in ['uses-static-library', 'static-library']
           and '{%s}version' % ANDROID_NAMESPACE in node.keys()
           and '{%s}name' % ANDROID_NAMESPACE in node.keys()):
@@ -274,14 +281,14 @@ def NormalizeManifest(manifest_contents):
     for key in node.keys():
       node.set(key, node.get(key).replace(package, '$PACKAGE'))
 
-    for child in node.getchildren():
+    for child in node:
       blur_package_name(child)
 
   
   
   
   
-  for child in root.getchildren():
+  for child in root:
     blur_package_name(child)
 
   _SortAndStripElementTree(root)

@@ -36,7 +36,7 @@ class Struct(object):
 
 def Subtract(nt, **kwargs):
   """Subtract(nt, f=2) returns a new namedtuple with 2 subtracted from nt.f"""
-  return nt._replace(**{k: getattr(nt, k) - v for k, v in kwargs.iteritems()})
+  return nt._replace(**{k: getattr(nt, k) - v for k, v in kwargs.items()})
 
 
 def MakeDeterministic(objdata):
@@ -57,7 +57,7 @@ def MakeDeterministic(objdata):
   
   
 
-  objdata = array.array('c', objdata)  
+  objdata = array.array('b', objdata)  
 
   
   COFFHEADER = Struct('COFFHEADER',
@@ -91,10 +91,10 @@ def MakeDeterministic(objdata):
   for i in range(0, coff_header.NumberOfSections):
     section_header = SECTIONHEADER.unpack_from(
         objdata, offset=COFFHEADER.size() + i * SECTIONHEADER.size())
-    assert not section_header[0].startswith('/')  
+    assert not section_header[0].startswith(b'/')  
     section_headers.append(section_header)
 
-    if section_header.Name == '.debug$S':
+    if section_header.Name == b'.debug$S':
       assert debug_section_index == -1
       debug_section_index = i
   assert debug_section_index != -1
@@ -102,7 +102,7 @@ def MakeDeterministic(objdata):
   data_start = COFFHEADER.size() + len(section_headers) * SECTIONHEADER.size()
 
   
-  assert section_headers[debug_section_index].Name == '.debug$S'
+  assert section_headers[debug_section_index].Name == b'.debug$S'
   assert section_headers[debug_section_index].VirtualSize == 0
   assert section_headers[debug_section_index].VirtualAddress == 0
   debug_size = section_headers[debug_section_index].SizeOfRawData
@@ -174,7 +174,7 @@ def MakeDeterministic(objdata):
       debug_sym = i
       
       
-      assert sym.Name == '.debug$S'
+      assert sym.Name == b'.debug$S'
       assert sym.Value == 0
       assert sym.Type == 0
       assert sym.StorageClass == 3
@@ -262,7 +262,10 @@ def MakeDeterministic(objdata):
       COFFHEADER.size() + (debug_section_index + 1) * SECTIONHEADER.size()]
 
   
-  return objdata.tostring()
+  if sys.version_info.major == 2:
+    return objdata.tostring()
+  else:
+    return objdata.tobytes()
 
 
 def main():

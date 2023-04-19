@@ -2,6 +2,7 @@
 
 
 
+
 import datetime
 import functools
 import logging
@@ -20,6 +21,7 @@ from devil.android.sdk import adb_wrapper
 from devil.utils import file_utils
 from devil.utils import parallelizer
 from pylib import constants
+from pylib.constants import host_paths
 from pylib.base import environment
 from pylib.utils import instrumentation_tracing
 from py_trace_event import trace_event
@@ -100,6 +102,7 @@ class LocalDeviceEnvironment(environment.Environment):
 
   def __init__(self, args, output_manager, _error_func):
     super(LocalDeviceEnvironment, self).__init__(output_manager)
+    self._current_try = 0
     self._denylist = (device_denylist.Denylist(args.denylist_file)
                       if args.denylist_file else None)
     self._device_serials = args.test_devices
@@ -127,9 +130,11 @@ class LocalDeviceEnvironment(environment.Environment):
         adb_path=args.adb_path)
 
     
+    
     adb_dir = os.path.dirname(adb_wrapper.AdbWrapper.GetAdbPath())
     if adb_dir and adb_dir not in os.environ['PATH'].split(os.pathsep):
-      os.environ['PATH'] = adb_dir + os.pathsep + os.environ['PATH']
+      os.environ['PATH'] = os.pathsep.join(
+          [adb_dir, host_paths.JAVA_PATH, os.environ['PATH']])
 
   
   def SetUp(self):
@@ -187,6 +192,16 @@ class LocalDeviceEnvironment(environment.Environment):
         monitor.Start()
 
     self.parallel_devices.pMap(prepare_device)
+
+  @property
+  def current_try(self):
+    return self._current_try
+
+  def IncrementCurrentTry(self):
+    self._current_try += 1
+
+  def ResetCurrentTry(self):
+    self._current_try = 0
 
   @property
   def denylist(self):

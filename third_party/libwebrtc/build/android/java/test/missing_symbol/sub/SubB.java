@@ -1,0 +1,9 @@
+
+
+
+
+package test.missing_symbol.sub;
+
+public class SubB {
+    public void foo() {}
+}

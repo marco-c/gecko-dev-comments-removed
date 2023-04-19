@@ -18,6 +18,10 @@
 
 
 
+
+
+
+
 from __future__ import print_function
 
 import hashlib
@@ -30,11 +34,11 @@ import shutil
 import subprocess
 import sys
 try:
-    
-    from urllib.request import urlopen
+  
+  from urllib.request import urlopen
 except ImportError:
-    
-    from urllib2 import urlopen
+  
+  from urllib2 import urlopen
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 

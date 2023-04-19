@@ -1,0 +1,13 @@
+
+
+
+
+package test.missing_symbol;
+
+import test.missing_symbol.sub.SubB;
+
+public class ImportsSubB {
+    public ImportsSubB() {
+        new SubB().foo();
+    }
+}

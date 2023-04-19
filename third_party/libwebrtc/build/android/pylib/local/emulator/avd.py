@@ -2,6 +2,7 @@
 
 
 
+
 import contextlib
 import json
 import logging
@@ -32,6 +33,9 @@ _DEFAULT_AVDMANAGER_PATH = os.path.join(
 _DEFAULT_SCREEN_DENSITY = 160
 _DEFAULT_SCREEN_HEIGHT = 960
 _DEFAULT_SCREEN_WIDTH = 480
+
+
+_DEFAULT_GPU_MODE = 'swiftshader_indirect'
 
 
 class AvdException(Exception):
@@ -258,9 +262,11 @@ class AvdConfig(object):
 
         config_ini_contents.update({
             'disk.dataPartition.size': '4G',
+            'hw.keyboard': 'yes',
             'hw.lcd.density': density,
             'hw.lcd.height': height,
             'hw.lcd.width': width,
+            'hw.mainKeys': 'no',  
         })
 
         if self.avd_settings.ram_size:
@@ -272,15 +278,29 @@ class AvdConfig(object):
                               self._config)
       
       debug_tags = 'init,snapshot' if snapshot else None
-      instance.Start(
-          read_only=False, snapshot_save=snapshot, debug_tags=debug_tags)
+      instance.Start(read_only=False,
+                     snapshot_save=snapshot,
+                     debug_tags=debug_tags,
+                     gpu_mode=_DEFAULT_GPU_MODE)
       
       
       
       
       
-      device_utils.DeviceUtils(instance.serial).WaitUntilFullyBooted(
-          decrypt=True, timeout=180, retries=0)
+      device = device_utils.DeviceUtils(instance.serial)
+      device.WaitUntilFullyBooted(decrypt=True, timeout=180, retries=0)
+
+      
+      
+      if device.build_version_sdk > 23:
+        
+        
+        
+        
+        logging.info('Disabling the network in emulator.')
+        device.RunShellCommand(['svc', 'wifi', 'disable'], check_return=True)
+        device.RunShellCommand(['svc', 'data', 'disable'], check_return=True)
+
       instance.Stop()
 
       
@@ -374,7 +394,7 @@ class AvdConfig(object):
         pkgs_by_dir[pkg.dest_path] = []
       pkgs_by_dir[pkg.dest_path].append(pkg)
 
-    for pkg_dir, pkgs in pkgs_by_dir.iteritems():
+    for pkg_dir, pkgs in list(pkgs_by_dir.items()):
       logging.info('Installing packages in %s', pkg_dir)
       cipd_root = os.path.join(constants.DIR_SOURCE_ROOT, pkg_dir)
       if not os.path.exists(cipd_root):
@@ -516,6 +536,7 @@ class _AvdInstance(object):
             snapshot_save=False,
             window=False,
             writable_system=False,
+            gpu_mode=_DEFAULT_GPU_MODE,
             debug_tags=None):
     """Starts the emulator running an instance of the given AVD."""
 
@@ -537,16 +558,24 @@ class _AvdInstance(object):
         emulator_cmd.append('-no-snapshot-save')
       if writable_system:
         emulator_cmd.append('-writable-system')
+      
+      
+      
+      
+      
+      
+      if gpu_mode:
+        emulator_cmd.extend(['-gpu', gpu_mode])
       if debug_tags:
         emulator_cmd.extend(['-debug', debug_tags])
 
       emulator_env = {}
       if self._emulator_home:
         emulator_env['ANDROID_EMULATOR_HOME'] = self._emulator_home
+      if 'DISPLAY' in os.environ:
+        emulator_env['DISPLAY'] = os.environ.get('DISPLAY')
       if window:
-        if 'DISPLAY' in os.environ:
-          emulator_env['DISPLAY'] = os.environ.get('DISPLAY')
-        else:
+        if 'DISPLAY' not in emulator_env:
           raise AvdException('Emulator failed to start: DISPLAY not defined')
       else:
         emulator_cmd.append('-no-window')

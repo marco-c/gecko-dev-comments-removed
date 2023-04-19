@@ -20,6 +20,21 @@ import sys
 from gn_helpers import ToGNString
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+TOOLCHAIN_HASH = '3bda71a11e'
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 json_data_file = os.path.join(script_dir, 'win_toolchain.json')
 
@@ -68,8 +83,6 @@ def SetEnvironmentAndGetRuntimeDllDirs():
     toolchain = toolchain_data['path']
     version = toolchain_data['version']
     win_sdk = toolchain_data.get('win_sdk')
-    if not win_sdk:
-      win_sdk = toolchain_data['win8sdk']
     wdk = toolchain_data['wdk']
     
     
@@ -332,14 +345,13 @@ def FindVCComponentRoot(component):
   assert ('GYP_MSVS_OVERRIDE_PATH' in os.environ)
   vc_component_msvc_root = os.path.join(os.environ['GYP_MSVS_OVERRIDE_PATH'],
       'VC', component, 'MSVC')
-  vc_component_msvc_contents = os.listdir(vc_component_msvc_root)
+  vc_component_msvc_contents = glob.glob(
+      os.path.join(vc_component_msvc_root, '14.*'))
   
   _SortByHighestVersionNumberFirst(vc_component_msvc_contents)
   for directory in vc_component_msvc_contents:
-    if not os.path.isdir(os.path.join(vc_component_msvc_root, directory)):
-      continue
-    if re.match(r'14\.\d+\.\d+', directory):
-      return os.path.join(vc_component_msvc_root, directory)
+    if os.path.isdir(directory):
+      return directory
   raise Exception('Unable to find the VC %s directory.' % component)
 
 
@@ -428,27 +440,11 @@ def _CopyDebugger(target_dir, target_cpu):
 
 def _GetDesiredVsToolchainHashes():
   """Load a list of SHA1s corresponding to the toolchains that we want installed
-  to build with.
-
-  When updating the toolchain, consider the following areas impacted by the
-  toolchain version:
-
-  * //base/win/windows_version.cc NTDDI preprocessor check
-    Triggers a compiler error if the available SDK is older than the minimum.
-  * //build/config/win/BUILD.gn NTDDI_VERSION value
-    Affects the availability of APIs in the toolchain headers.
-  * //docs/windows_build_instructions.md mentions of VS or Windows SDK.
-    Keeps the document consistent with the toolchain version.
-  """
+  to build with."""
   
   
-  
-  
-  toolchain_hash = 'a687d8e2e4114d9015eb550e1b156af21381faac'
-  
-  
-  toolchain_hash_mapping_key = 'GYP_MSVS_HASH_%s' % toolchain_hash
-  return [os.environ.get(toolchain_hash_mapping_key, toolchain_hash)]
+  toolchain_hash_mapping_key = 'GYP_MSVS_HASH_%s' % TOOLCHAIN_HASH
+  return [os.environ.get(toolchain_hash_mapping_key, TOOLCHAIN_HASH)]
 
 
 def ShouldUpdateToolchain():
@@ -570,8 +566,6 @@ def main():
   if len(sys.argv) < 2 or sys.argv[1] not in commands:
     print('Expected one of: %s' % ', '.join(commands), file=sys.stderr)
     return 1
-  if sys.argv[1] == 'copy_dlls':
-    return 0
   return commands[sys.argv[1]](*sys.argv[2:])
 
 

@@ -12,6 +12,7 @@ import filecmp
 import io
 import operator
 import os
+import posixpath
 import re
 import shutil
 import struct
@@ -57,7 +58,8 @@ def ZapTimestamp(filename):
     
     assert contents[custom_off:custom_off + 6] == b'\x08\x00\x3e\x00\x00\x00'
     assert re.match(
-        br'Created by MIDL version 8\.\d\d\.\d{4} at ... Jan 1. ..:..:.. 2038\n',
+        br'Created by MIDL version 8\.\d\d\.\d{4} '
+        br'at ... Jan 1. ..:..:.. 2038\n',
         contents[custom_off + 6:custom_off + 6 + 0x3e])
     
     assert contents[custom_off+6+0x3e:custom_off+6+0x3e+8] == \
@@ -97,53 +99,24 @@ def ZapTimestamp(filename):
   open(filename, 'wb').write(contents)
 
 
-def overwrite_cls_guid_h(h_file, dynamic_guid):
-  contents = open(h_file, 'rb').read()
-  contents = re.sub(br'class DECLSPEC_UUID\("[^"]*"\)',
-                    br'class DECLSPEC_UUID("%s")' % str(dynamic_guid).encode(),
-                    contents)
-  open(h_file, 'wb').write(contents)
-
-
-def overwrite_cls_guid_iid(iid_file, dynamic_guid):
-  contents = open(iid_file, 'rb').read()
-  hexuuid = '0x%08x,0x%04x,0x%04x,' % dynamic_guid.fields[0:3]
-
-  
-  if sys.version_info.major == 2:
-    hexuuid += ','.join('0x%02x' % ord(b) for b in dynamic_guid.bytes[8:])
-  else:
-    hexuuid += ','.join('0x%02x' % b for b in dynamic_guid.bytes[8:])
-
-  contents = re.sub(br'MIDL_DEFINE_GUID\(CLSID, ([^,]*),[^)]*\)',
-                    br'MIDL_DEFINE_GUID(CLSID, \1,%s)' % hexuuid.encode(),
-                    contents)
-  open(iid_file, 'wb').write(contents)
-
-
-def overwrite_cls_guid_tlb(tlb_file, dynamic_guid):
-  
-  
+def get_tlb_contents(tlb_file):
   
   contents = open(tlb_file, 'rb').read()
   assert contents[0:8] == b'MSFT\x02\x00\x01\x00'
   ntypes, = struct.unpack_from('<I', contents, 0x20)
   type_off, type_len = struct.unpack_from('<II', contents, 0x54 + 4*ntypes)
 
-  
-  if sys.version_info.major == 2:
-    coclass = ord(contents[type_off])
-  else:
-    coclass = contents[type_off]
-  assert coclass == 0x25, "expected coclass"
-
-  guidind = struct.unpack_from('<I', contents, type_off + 0x2c)[0]
   guid_off, guid_len = struct.unpack_from(
       '<II', contents, 0x54 + 4*ntypes + 5*16)
-  assert guidind + 14 <= guid_len
+  assert guid_len % 24 == 0
+
   contents = array.array('B', contents)
-  struct.pack_into('<IHH8s', contents, guid_off + guidind,
-                   *(dynamic_guid.fields[0:3] + (dynamic_guid.bytes[8:],)))
+
+  return contents, ntypes, type_off, guid_off, guid_len
+
+
+def recreate_guid_hashtable(contents, ntypes, guid_off, guid_len):
+  
   
   
   
@@ -161,42 +134,296 @@ def overwrite_cls_guid_tlb(tlb_file, dynamic_guid):
       '<II', contents, 0x54 + 4*ntypes + 4*16)
   for i, hashval in enumerate(hashtab):
     struct.pack_into('<I', contents, hash_off + 4*i, hashval)
+
+
+def overwrite_guids_h(h_file, dynamic_guids):
+  contents = open(h_file, 'rb').read()
+  for key in dynamic_guids:
+    contents = re.sub(key, dynamic_guids[key], contents, flags=re.I)
+  open(h_file, 'wb').write(contents)
+
+
+def get_uuid_format(guid, prefix):
+  formatted_uuid = b'0x%s,0x%s,0x%s,' % (guid[0:8], guid[9:13], guid[14:18])
+  formatted_uuid += b'%s0x%s,0x%s' % (prefix, guid[19:21], guid[21:23])
+  for i in range(24, len(guid), 2):
+    formatted_uuid += b',0x' + guid[i:i + 2]
+  return formatted_uuid
+
+
+def get_uuid_format_iid_file(guid):
+  
+  
+  return get_uuid_format(guid, b'')
+
+
+def overwrite_guids_iid(iid_file, dynamic_guids):
+  contents = open(iid_file, 'rb').read()
+  for key in dynamic_guids:
+    contents = re.sub(get_uuid_format_iid_file(key),
+                      get_uuid_format_iid_file(dynamic_guids[key]),
+                      contents,
+                      flags=re.I)
+  open(iid_file, 'wb').write(contents)
+
+
+def get_uuid_format_proxy_file(guid):
+  
+  
+  return get_uuid_format(guid, b'{')
+
+
+def overwrite_guids_proxy(proxy_file, dynamic_guids):
+  contents = open(proxy_file, 'rb').read()
+  for key in dynamic_guids:
+    contents = re.sub(get_uuid_format_proxy_file(key),
+                      get_uuid_format_proxy_file(dynamic_guids[key]),
+                      contents,
+                      flags=re.I)
+  open(proxy_file, 'wb').write(contents)
+
+
+def getguid(contents, offset):
+  
+  g0, g1, g2, g3 = struct.unpack_from('<IHH8s', contents, offset)
+  g3 = b''.join([b'%02X' % g for g in bytearray(g3)])
+  return b'%08X-%04X-%04X-%s-%s' % (g0, g1, g2, g3[0:4], g3[4:])
+
+
+def setguid(contents, offset, guid):
+  guid = uuid.UUID(guid.decode('utf-8'))
+  struct.pack_into('<IHH8s', contents, offset,
+                   *(guid.fields[0:3] + (guid.bytes[8:], )))
+
+
+def overwrite_guids_tlb(tlb_file, dynamic_guids):
+  contents, ntypes, type_off, guid_off, guid_len = get_tlb_contents(tlb_file)
+
+  for i in range(0, guid_len, 24):
+    current_guid = getguid(contents, guid_off + i)
+    for key in dynamic_guids:
+      if key.lower() == current_guid.lower():
+        setguid(contents, guid_off + i, dynamic_guids[key])
+
+  recreate_guid_hashtable(contents, ntypes, guid_off, guid_len)
   open(tlb_file, 'wb').write(contents)
 
 
-def overwrite_cls_guid(h_file, iid_file, tlb_file, dynamic_guid):
-  
-  
-  
-  overwrite_cls_guid_h(h_file, dynamic_guid)
-  overwrite_cls_guid_iid(iid_file, dynamic_guid)
-  overwrite_cls_guid_tlb(tlb_file, dynamic_guid)
 
 
-def main(arch, gendir, outdir, dynamic_guid, tlb, h, dlldata, iid, proxy, clang,
-         idl, *flags):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def overwrite_guids(h_file, iid_file, proxy_file, tlb_file, dynamic_guids):
+  
+  overwrite_guids_h(h_file, dynamic_guids)
+  overwrite_guids_iid(iid_file, dynamic_guids)
+  overwrite_guids_proxy(proxy_file, dynamic_guids)
+  if tlb_file:
+    overwrite_guids_tlb(tlb_file, dynamic_guids)
+
+
+
+
+
+def generate_idl_from_template(idl_template, dynamic_guids, idl):
+  contents = open(idl_template, 'rb').read()
+  contents = re.sub(b'PLACEHOLDER-GUID-', b'', contents, flags=re.I)
+  if dynamic_guids:
+    for key in dynamic_guids:
+      contents = re.sub(key, dynamic_guids[key], contents, flags=re.I)
+  open(idl, 'wb').write(contents)
+
+
+
+
+def run_midl(args, env_dict):
+  midl_output_dir = tempfile.mkdtemp()
+  delete_midl_output_dir = True
+
+  try:
+    popen = subprocess.Popen(args + ['/out', midl_output_dir],
+                             shell=True,
+                             universal_newlines=True,
+                             env=env_dict,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+    out, _ = popen.communicate()
+    if popen.returncode != 0:
+      return popen.returncode, midl_output_dir
+
+    
+    
+    
+    
+    lines = out.splitlines()
+    prefixes = ('Processing ', '64 bit Processing ')
+    processing = set(
+        os.path.basename(x) for x in lines if x.startswith(prefixes))
+    for line in lines:
+      if not line.startswith(prefixes) and line not in processing:
+        print(line)
+
+    for f in os.listdir(midl_output_dir):
+      ZapTimestamp(os.path.join(midl_output_dir, f))
+
+    delete_midl_output_dir = False
+  finally:
+    if os.path.exists(midl_output_dir) and delete_midl_output_dir:
+      shutil.rmtree(midl_output_dir)
+
+  return 0, midl_output_dir
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def uuid5_substitutions(dynamic_guids):
+  for key, value in dynamic_guids.items():
+    if value.startswith('uuid5:'):
+      name = value.split('uuid5:', 1)[1]
+      assert name
+      dynamic_guids[key] = str(uuid.uuid5(uuid.UUID(key), name)).upper()
+
+
+def main(arch, gendir, outdir, dynamic_guids, tlb, h, dlldata, iid, proxy,
+         clang, idl, *flags):
   
   source = gendir
   if os.path.isdir(os.path.join(source, os.path.basename(idl))):
     source = os.path.join(source, os.path.basename(idl))
   source = os.path.join(source, arch.split('.')[1])  
   source = os.path.normpath(source)
-  distutils.dir_util.copy_tree(source, outdir, preserve_times=False)
-  if dynamic_guid != 'none':
-    overwrite_cls_guid(os.path.join(outdir, h),
-                       os.path.join(outdir, iid),
-                       os.path.join(outdir, tlb),
-                       uuid.UUID(dynamic_guid))
+
+  source_exists = True
+  if not os.path.isdir(source):
+    source_exists = False
+    if sys.platform != 'win32':
+      print('Directory %s needs to be populated from Windows first' % source)
+      return 1
+
+    
+    
+    os.makedirs(source)
+
+  common_files = [h, iid]
+  if tlb != 'none':
+    
+    common_files += [tlb]
+  else:
+    tlb = None
+
+  if dlldata != 'none':
+    
+    common_files += [dlldata]
+  else:
+    dlldata = None
+
+  
+  if proxy != 'none':
+    
+    common_files += [proxy]
+  else:
+    proxy = None
+
+  for source_file in common_files:
+    file_path = os.path.join(source, source_file)
+    if not os.path.isfile(file_path):
+      source_exists = False
+      if sys.platform != 'win32':
+        print('File %s needs to be generated from Windows first' % file_path)
+        return 1
+
+      
+      
+      
+      
+      
+      
+      open(file_path, 'wb').close()
+    shutil.copy(file_path, outdir)
+
+  if dynamic_guids != 'none':
+    assert '=' in dynamic_guids
+    if dynamic_guids.startswith("ignore_proxy_stub,"):
+      
+      
+      
+      
+      
+      
+      
+      
+      common_files.remove(proxy)
+      dynamic_guids = dynamic_guids.split("ignore_proxy_stub,", 1)[1]
+    dynamic_guids = re.sub('PLACEHOLDER-GUID-', '', dynamic_guids, flags=re.I)
+    dynamic_guids = dynamic_guids.split(',')
+    dynamic_guids = dict(s.split('=') for s in dynamic_guids)
+    uuid5_substitutions(dynamic_guids)
+    dynamic_guids_bytes = {
+        k.encode('utf-8'): v.encode('utf-8')
+        for k, v in dynamic_guids.items()
+    }
+    if source_exists:
+      overwrite_guids(*(os.path.join(outdir, file) if file else None
+                        for file in [h, iid, proxy, tlb]),
+                      dynamic_guids=dynamic_guids_bytes)
+  else:
+    dynamic_guids = None
 
   
   if sys.platform != 'win32':
     return 0
 
+  idl_template = None
+  if dynamic_guids:
+    idl_template = idl
+
+    
+    
+    idl = posixpath.join(
+        outdir,
+        os.path.splitext(os.path.basename(idl_template))[0] + '.idl')
+
+    
+    
+    
+    generate_idl_from_template(idl_template, dynamic_guids_bytes, idl)
+
   
   
   
-  tmp_dir = tempfile.mkdtemp()
-  delete_tmp_dir = True
 
   
   
@@ -208,58 +435,52 @@ def main(arch, gendir, outdir, dynamic_guid, tlb, h, dlldata, iid, proxy, clang,
   preprocessor_options = '-E -nologo -Wno-nonportable-include-path'
   preprocessor_options += ''.join(
       [' ' + flag for flag in flags if flag.startswith('/D')])
-  args = ['midl', '/nologo'] + list(flags) + [
-      '/out', tmp_dir,
-      '/tlb', tlb,
-      '/h', h,
-      '/dlldata', dlldata,
-      '/iid', iid,
-      '/proxy', proxy,
-      '/cpp_cmd', clang,
-      '/cpp_opt', preprocessor_options,
-      idl]
-  try:
-    popen = subprocess.Popen(args, shell=True, env=env_dict,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    out, _ = popen.communicate()
-    
-    
-    
-    
-    lines = out.decode('utf-8').splitlines()
-    prefixes = ('Processing ', '64 bit Processing ')
-    processing = set(os.path.basename(x)
-                     for x in lines if x.startswith(prefixes))
-    for line in lines:
-      if not line.startswith(prefixes) and line not in processing:
-        print(line)
-    if popen.returncode != 0:
-      return popen.returncode
+  args = ['midl', '/nologo'] + list(flags) + (['/tlb', tlb] if tlb else []) + [
+      '/h', h
+  ] + (['/dlldata', dlldata] if dlldata else []) + ['/iid', iid] + (
+      ['/proxy', proxy] if proxy else
+      []) + ['/cpp_cmd', clang, '/cpp_opt', preprocessor_options, idl]
 
-    for f in os.listdir(tmp_dir):
-      ZapTimestamp(os.path.join(tmp_dir, f))
+  returncode, midl_output_dir = run_midl(args, env_dict)
+  if returncode != 0:
+    return returncode
 
-    
-    diff = filecmp.dircmp(tmp_dir, outdir)
-    if diff.diff_files:
-      print('midl.exe output different from files in %s, see %s' % (outdir,
-                                                                    tmp_dir))
-      for f in diff.diff_files:
-        if f.endswith('.tlb'): continue
-        fromfile = os.path.join(outdir, f)
-        tofile = os.path.join(tmp_dir, f)
-        print(''.join(
-            difflib.unified_diff(
-                io.open(fromfile).readlines(),
-                io.open(tofile).readlines(), fromfile, tofile)))
-      delete_tmp_dir = False
-      print('To rebaseline:')
-      print(r'  copy /y %s\* %s' % (tmp_dir, source))
-      sys.exit(1)
-    return 0
-  finally:
-    if os.path.exists(tmp_dir) and delete_tmp_dir:
-      shutil.rmtree(tmp_dir)
+  
+  _, mismatch, errors = filecmp.cmpfiles(midl_output_dir, outdir, common_files)
+  assert not errors
+
+  if mismatch:
+    print('midl.exe output different from files in %s, see %s' %
+          (outdir, midl_output_dir))
+    for f in mismatch:
+      if f.endswith('.tlb'): continue
+      fromfile = os.path.join(outdir, f)
+      tofile = os.path.join(midl_output_dir, f)
+      print(''.join(
+          difflib.unified_diff(
+              io.open(fromfile).readlines(),
+              io.open(tofile).readlines(), fromfile, tofile)))
+
+    if dynamic_guids:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      generate_idl_from_template(idl_template, None, idl)
+      returncode, midl_output_dir = run_midl(args, env_dict)
+      if returncode != 0:
+        return returncode
+
+    print('To rebaseline:')
+    print(r'  copy /y %s\* %s' % (midl_output_dir, source))
+    return 1
+
+  return 0
 
 
 if __name__ == '__main__':

@@ -350,6 +350,7 @@ def main(args):
   
   depfile_deps.extend(x[0] for x in assets)
   depfile_deps.extend(x[0] for x in uncompressed_assets)
+  depfile_deps.append(options.resource_apk)
 
   
   
@@ -454,7 +455,7 @@ def main(args):
       
       logging.debug('Adding classes.dex')
       if options.dex_file:
-        with open(options.dex_file) as dex_file_obj:
+        with open(options.dex_file, 'rb') as dex_file_obj:
           if options.dex_file.endswith('.dex'):
             max_dex_number = 1
             
@@ -473,7 +474,7 @@ def main(args):
                     compress=not options.uncompress_dex)
 
       if options.jdk_libs_dex_file:
-        with open(options.jdk_libs_dex_file) as dex_file_obj:
+        with open(options.jdk_libs_dex_file, 'rb') as dex_file_obj:
           add_to_zip(
               apk_dex_dir + 'classes{}.dex'.format(max_dex_number + 1),
               dex_file_obj.read(),

@@ -41,6 +41,7 @@ char kLSanDefaultSuppressions[] =
 
     
     "leak:gin/object_template_builder.h\n"
+    "leak:gin/function_template.h\n"
 
     
     "leak:swrast_dri.so\n"

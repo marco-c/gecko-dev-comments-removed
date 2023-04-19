@@ -141,9 +141,9 @@ class WinTool(object):
     
     
     for line in link.stdout:
-      if (not line.startswith('   Creating library ') and
-          not line.startswith('Generating code') and
-          not line.startswith('Finished generating code')):
+      if (not line.startswith(b'   Creating library ')
+          and not line.startswith(b'Generating code')
+          and not line.startswith(b'Finished generating code')):
         print(line)
     return link.wait()
 
@@ -158,7 +158,7 @@ class WinTool(object):
     popen = subprocess.Popen(args, shell=True, env=env,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = popen.communicate()
-    for line in out.splitlines():
+    for line in out.decode('utf8').splitlines():
       if not line.startswith(' Assembling: '):
         print(line)
     return popen.returncode

@@ -39,11 +39,6 @@ def main(argv):
   parser.add_argument(
       '--device',
       help='Serial number of device we should use.')
-  
-  
-  parser.add_argument('--blacklist-file',
-                      dest='denylist_file',
-                      help=argparse.SUPPRESS)
   parser.add_argument('--denylist-file', help='Device denylist JSON file.')
   parser.add_argument(
       '--debug',
@@ -67,7 +62,7 @@ def main(argv):
   if len(args.ports) < 2 or len(args.ports) % 2:
     parser.error('Need even number of port pairs')
 
-  port_pairs = zip(args.ports[::2], args.ports[1::2])
+  port_pairs = list(zip(args.ports[::2], args.ports[1::2]))
 
   if args.build_type:
     constants.SetBuildType(args.build_type)

@@ -122,7 +122,6 @@ def main():
   
   link_only = InterceptFlag('--link-only', args.command)
   collect_inputs_only = InterceptFlag('--collect-inputs-only', args.command)
-  generate_dwp = InterceptFlag('--generate-dwp', args.command)
 
   
   
@@ -140,6 +139,8 @@ def main():
   if link_only or collect_inputs_only:
     open(args.output, 'w').close()
     open(args.tocfile, 'w').close()
+    if args.dwp:
+      open(args.sofile + '.dwp', 'w').close()
 
   
   
@@ -162,12 +163,14 @@ def main():
 
   
   dwp_proc = None
-  if generate_dwp:
-    if not args.dwp:
-      parser.error('--generate-dwp requireds --dwp')
-    dwp_proc = subprocess.Popen(
-        wrapper_utils.CommandToRun(
-            [args.dwp, '-e', args.sofile, '-o', args.output + '.dwp']))
+  if args.dwp:
+    
+    
+    with open(os.devnull, "w") as devnull:
+      dwp_proc = subprocess.Popen(wrapper_utils.CommandToRun(
+          [args.dwp, '-e', args.sofile, '-o', args.sofile + '.dwp']),
+                                  stdout=devnull,
+                                  stderr=subprocess.STDOUT)
 
   
   result, toc = CollectTOC(args)

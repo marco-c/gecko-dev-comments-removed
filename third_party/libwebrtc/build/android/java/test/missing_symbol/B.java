@@ -1,0 +1,9 @@
+
+
+
+
+package test.missing_symbol;
+
+public class B {
+    public void foo() {}
+}

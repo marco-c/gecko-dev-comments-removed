@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 public class ClassPathValidator {
     
-    private static final int MAX_MISSING_CLASS_WARNINGS = 4;
+    private static final int MAX_MISSING_CLASS_WARNINGS = 10;
     
     private static final int MAX_ERRORS_PER_JAR = 2;
     

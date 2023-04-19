@@ -2,8 +2,10 @@
 
 
 
+
 import logging
 
+from six.moves import range  
 from devil import base_error
 from devil.android import device_errors
 from devil.android import device_utils
