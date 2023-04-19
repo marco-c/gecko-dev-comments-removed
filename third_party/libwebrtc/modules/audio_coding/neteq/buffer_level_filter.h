@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_BUFFER_LEVEL_FILTER_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "rtc_base/constructor_magic.h"
 
@@ -39,7 +40,7 @@ class BufferLevelFilter {
   
   virtual int filtered_current_level() const {
     
-    return (filtered_current_level_ + (1 << 7)) >> 8;
+    return (int64_t{filtered_current_level_} + (1 << 7)) >> 8;
   }
 
  private:
