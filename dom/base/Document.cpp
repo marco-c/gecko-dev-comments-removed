@@ -282,7 +282,6 @@
 #include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadTypes.h"
-#include "nsEffectiveTLDService.h"
 #include "nsError.h"
 #include "nsEscape.h"
 #include "nsFocusManager.h"
@@ -16809,24 +16808,31 @@ Document::GetContentBlockingEvents() {
       });
 }
 
-StorageAccessAPIHelper::PerformPermissionGrant
-Document::CreatePermissionGrantPromise(
-    nsPIDOMWindowInner* aInnerWindow, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain) {
-  MOZ_ASSERT(aInnerWindow);
-  MOZ_ASSERT(aPrincipal);
+RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
+    nsPIDOMWindowInner* aInnerWindow, BrowsingContext* aBrowsingContext,
+    nsIPrincipal* aPrincipal, bool aHasUserInteraction,
+    ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
+    bool requireFinalChecks) {
+  if (!requireFinalChecks) {
+    
+    return StorageAccessAPIHelper::AllowAccessFor(aPrincipal, aBrowsingContext,
+                                                  aNotifier);
+  }
+
   RefPtr<Document> self(this);
   RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
   RefPtr<nsIPrincipal> principal(aPrincipal);
 
-  return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain]() {
+  
+  
+  auto performFinalChecks = [inner, self, principal, aHasUserInteraction]() {
     
-    RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::Private>
-        p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
-            Private(__func__);
+    RefPtr<StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private> p =
+        new StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private(
+            __func__);
     RefPtr<StorageAccessPermissionRequest> sapr =
         StorageAccessPermissionRequest::Create(
-            inner, principal, aTopLevelBaseDomain,
+            inner, principal,
             
             [p] {
               Telemetry::AccumulateCategorical(
@@ -16909,6 +16915,10 @@ Document::CreatePermissionGrantPromise(
 
     return p;
   };
+
+  
+  return StorageAccessAPIHelper::AllowAccessFor(principal, aBrowsingContext,
+                                                aNotifier, performFinalChecks);
 }
 
 already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
@@ -17043,9 +17053,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   
-  StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-      this, inner, bc, NodePrincipal(), true,
-      ContentBlockingNotifier::eStorageAccessAPI, true)
+  RequestStorageAccessAsyncHelper(inner, bc, NodePrincipal(), true,
+                                  ContentBlockingNotifier::eStorageAccessAPI,
+                                  true)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, inner, promise] {
@@ -17198,8 +17208,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
             
             
             
-            return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, hasUserActivation,
+            return self->RequestStorageAccessAsyncHelper(
+                inner, bc, principal, hasUserActivation,
                 ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
                 true);
           },
@@ -17308,91 +17318,27 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
     return promise.forget();
   }
 
-  nsCOMPtr<nsIPrincipal> principal(NodePrincipal());
-
   
-  nsCOMPtr<nsIPrincipal> argumentPrincipal =
-      BasePrincipal::CreateContentPrincipal(
-          siteURI, NodePrincipal()->OriginAttributesRef());
-  if (!argumentPrincipal) {
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
-  nsCString originNoSuffix;
-  rv = NodePrincipal()->GetOriginNoSuffix(originNoSuffix);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
-
+  
   ContentChild* cc = ContentChild::GetSingleton();
-  MOZ_ASSERT(cc);
-  RefPtr<Document> self(this);
-  cc->SendTestStorageAccessPermission(IPC::Principal(argumentPrincipal),
-                                      originNoSuffix)
+  if (!cc) {
+    
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+  cc->SendSetAllowStorageAccessRequestFlag(NodePrincipal(), siteURI)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise, siteURI,
-           self](const ContentChild::TestStorageAccessPermissionPromise::
-                     ResolveValueType& aResult) {
-            if (aResult) {
-              return StorageAccessAPIHelper::
-                  StorageAccessPermissionGrantPromise::CreateAndResolve(
-                      StorageAccessAPIHelper::eAllow, __func__);
-            }
-            
-            
-            nsCString serializedSite;
-            RefPtr<nsEffectiveTLDService> etld =
-                nsEffectiveTLDService::GetInstance();
-            if (!etld) {
-              return StorageAccessAPIHelper::
-                  StorageAccessPermissionGrantPromise::CreateAndReject(
-                      false, __func__);
-            }
-            nsresult rv = etld->GetSite(siteURI, serializedSite);
-            if (NS_FAILED(rv)) {
-              return StorageAccessAPIHelper::
-                  StorageAccessPermissionGrantPromise::CreateAndReject(
-                      false, __func__);
-            }
-            return self->CreatePermissionGrantPromise(
-                self->GetInnerWindow(), self->NodePrincipal(), true,
-                Some(serializedSite))();
-          },
-          [](const ContentChild::TestStorageAccessPermissionPromise::
-                 RejectValueType& aResult) {
-            return StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
-                CreateAndReject(false, __func__);
-          })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [promise, principal, siteURI](int result) {
-            ContentChild* cc = ContentChild::GetSingleton();
-            if (!cc) {
-              
+          [promise](bool success) {
+            if (success) {
+              promise->MaybeResolveWithUndefined();
+            } else {
               promise->MaybeRejectWithUndefined();
-              return;
             }
-            
-            
-            
-            cc->SendSetAllowStorageAccessRequestFlag(principal, siteURI)
-                ->Then(
-                    GetCurrentSerialEventTarget(), __func__,
-                    [promise](bool success) {
-                      if (success) {
-                        promise->MaybeResolveWithUndefined();
-                      } else {
-                        promise->MaybeRejectWithUndefined();
-                      }
-                    },
-                    [promise](mozilla::ipc::ResponseRejectReason reason) {
-                      promise->MaybeRejectWithUndefined();
-                    });
           },
-          [promise](bool result) { promise->MaybeRejectWithUndefined(); });
+          [promise](mozilla::ipc::ResponseRejectReason reason) {
+            promise->MaybeRejectWithUndefined();
+          });
 
   
   return promise.forget();
@@ -17531,8 +17477,8 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
             
             
             
-            return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, true,
+            return self->RequestStorageAccessAsyncHelper(
+                inner, bc, principal, true,
                 ContentBlockingNotifier::eStorageAccessAPI, false);
           },
           

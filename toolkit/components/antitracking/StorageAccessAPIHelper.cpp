@@ -70,7 +70,7 @@ bool GetTopLevelWindowId(BrowsingContext* aParentContext, uint32_t aBehavior,
 StorageAccessAPIHelper::AllowAccessFor(
     nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const StorageAccessAPIHelper::PerformPermissionGrant& aPerformFinalChecks) {
+    const StorageAccessAPIHelper::PerformFinalChecks& aPerformFinalChecks) {
   MOZ_ASSERT(aParentContext);
 
   switch (aReason) {
@@ -361,7 +361,7 @@ StorageAccessAPIHelper::CompleteAllowAccessFor(
     nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
     uint32_t aCookieBehavior,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-    const PerformPermissionGrant& aPerformFinalChecks) {
+    const PerformFinalChecks& aPerformFinalChecks) {
   MOZ_ASSERT(aParentContext);
   MOZ_ASSERT_IF(XRE_IsContentProcess(), aParentContext->IsInProcess());
 
@@ -960,34 +960,6 @@ StorageAccessAPIHelper::CheckExistingPermissionDecidesStorageAccessAPI(
     return Some(true);
   }
   return Nothing();
-}
-
-
-RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
-StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-    dom::Document* aDocument, nsPIDOMWindowInner* aInnerWindow,
-    dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction,
-    ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
-    bool aRequireGrant) {
-  MOZ_ASSERT(aDocument);
-
-  if (!aRequireGrant) {
-    
-    return StorageAccessAPIHelper::AllowAccessFor(aPrincipal, aBrowsingContext,
-                                                  aNotifier);
-  }
-
-  RefPtr<nsIPrincipal> principal(aPrincipal);
-
-  
-  
-  auto performPermissionGrant = aDocument->CreatePermissionGrantPromise(
-      aInnerWindow, principal, aHasUserInteraction, Nothing());
-
-  
-  return StorageAccessAPIHelper::AllowAccessFor(
-      principal, aBrowsingContext, aNotifier, performPermissionGrant);
 }
 
 

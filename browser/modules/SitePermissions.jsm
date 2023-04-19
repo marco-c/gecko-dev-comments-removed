@@ -178,18 +178,18 @@ const TemporaryPermissions = {
   },
 
   
-  get(browser, id, browserURI = browser?.currentURI) {
+  get(browser, id) {
     if (
       !browser ||
       !browser.currentURI ||
-      !SitePermissions.isSupportedScheme(browserURI.scheme) ||
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
       !this._stateByBrowser.has(browser)
     ) {
       return null;
     }
     let { uriToPerm } = this._stateByBrowser.get(browser);
 
-    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
     for (let key of [nonStrict, strict]) {
       if (uriToPerm[key]) {
         let permission = uriToPerm[key][id];
@@ -208,17 +208,17 @@ const TemporaryPermissions = {
   
   
   
-  getAll(browser, browserURI = browser?.currentURI) {
+  getAll(browser) {
     let permissions = [];
     if (
-      !SitePermissions.isSupportedScheme(browserURI.scheme) ||
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
       !this._stateByBrowser.has(browser)
     ) {
       return permissions;
     }
     let { uriToPerm } = this._stateByBrowser.get(browser);
 
-    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
     for (let key of [nonStrict, strict]) {
       if (uriToPerm[key]) {
         let perms = uriToPerm[key];
@@ -709,15 +709,7 @@ var SitePermissions = {
 
 
 
-
-
-
-  getForPrincipal(
-    principal,
-    permissionID,
-    browser,
-    browserURI = browser?.currentURI
-  ) {
+  getForPrincipal(principal, permissionID, browser) {
     if (!principal && !browser) {
       throw new Error(
         "Atleast one of the arguments, either principal or browser should not be null."
@@ -757,7 +749,7 @@ var SitePermissions = {
     if (result.state == defaultState) {
       
       
-      let value = TemporaryPermissions.get(browser, permissionID, browserURI);
+      let value = TemporaryPermissions.get(browser, permissionID);
 
       if (value) {
         result.state = value.state;
