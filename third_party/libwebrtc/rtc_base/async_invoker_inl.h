@@ -21,20 +21,20 @@
 
 namespace rtc {
 
-class AsyncInvoker;
+class DEPRECATED_AsyncInvoker;
 
 
 
 class AsyncClosure {
  public:
-  explicit AsyncClosure(AsyncInvoker* invoker);
+  explicit AsyncClosure(DEPRECATED_AsyncInvoker* invoker);
   virtual ~AsyncClosure();
   
   
   virtual void Execute() = 0;
 
  protected:
-  AsyncInvoker* invoker_;
+  DEPRECATED_AsyncInvoker* invoker_;
   
   
   
@@ -46,7 +46,8 @@ class AsyncClosure {
 template <class FunctorT>
 class FireAndForgetAsyncClosure : public AsyncClosure {
  public:
-  explicit FireAndForgetAsyncClosure(AsyncInvoker* invoker, FunctorT&& functor)
+  explicit FireAndForgetAsyncClosure(DEPRECATED_AsyncInvoker* invoker,
+                                     FunctorT&& functor)
       : AsyncClosure(invoker), functor_(std::forward<FunctorT>(functor)) {}
   virtual void Execute() { functor_(); }
 
