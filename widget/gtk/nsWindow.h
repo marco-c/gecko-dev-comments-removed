@@ -537,10 +537,7 @@ class nsWindow final : public nsBaseWidget {
   
   int mCompositorPauseTimeoutID = 0;
 
-  
   nsSizeMode mSizeMode = nsSizeMode_Normal;
-  nsSizeMode mLastSizeModeBeforeFullscreen = nsSizeMode_Normal;
-
   float mAspectRatio = 0.0f;
   float mAspectRatioSaved = 0.0f;
 
@@ -751,6 +748,10 @@ class nsWindow final : public nsBaseWidget {
   float mLastMotionPressure = 0.0f;
 
   InputRegion mInputRegion;
+
+  
+  
+  nsSizeMode mLastSizeMode = nsSizeMode_Normal;
 
   static bool DragInProgress(void);
 
