@@ -373,7 +373,14 @@ ICUResult ToICUSkeleton(const DateTimeFormat::ComponentsBag& aBag,
         MOZ_TRY(PushString(aSkeleton, u"GGGGG"));
         break;
       case DateTimeFormat::Text::Short:
-        MOZ_TRY(PushString(aSkeleton, u"G"));
+        
+        
+        
+        
+        
+        
+        
+        MOZ_TRY(PushString(aSkeleton, u"GGG"));
         break;
       case DateTimeFormat::Text::Long:
         MOZ_TRY(PushString(aSkeleton, u"GGGG"));
