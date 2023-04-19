@@ -105,6 +105,17 @@ struct RTCIceRole {
 };
 
 
+struct RTCIceTransportState {
+  static const char* const kNew;
+  static const char* const kChecking;
+  static const char* const kConnected;
+  static const char* const kCompleted;
+  static const char* const kDisconnected;
+  static const char* const kFailed;
+  static const char* const kClosed;
+};
+
+
 class RTC_EXPORT RTCCertificateStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -711,6 +722,7 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   RTCStatsMember<uint32_t> selected_candidate_pair_changes;
   RTCStatsMember<std::string> ice_role;
   RTCStatsMember<std::string> ice_local_username_fragment;
+  RTCStatsMember<std::string> ice_state;
 };
 
 }  
