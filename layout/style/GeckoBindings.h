@@ -472,12 +472,15 @@ struct GeckoFontMetrics {
   mozilla::Length mCapHeight;  
   mozilla::Length mIcWidth;    
   mozilla::Length mAscent;
+  float mScriptPercentScaleDown;        
+  float mScriptScriptPercentScaleDown;  
 };
 
 GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext*, bool is_vertical,
                                       const nsStyleFont* font,
                                       mozilla::Length font_size,
-                                      bool use_user_font_set);
+                                      bool use_user_font_set,
+                                      bool retrieve_math_scales);
 
 mozilla::StyleSheet* Gecko_StyleSheet_Clone(
     const mozilla::StyleSheet* aSheet,
