@@ -238,9 +238,9 @@ nscoord nsListControlFrame::GetPrefISize(gfxContext* aRenderingContext) {
   
   
   WritingMode wm = GetWritingMode();
-  result = StyleDisplay()->GetContainSizeAxes().mIContained
-               ? 0
-               : GetScrolledFrame()->GetPrefISize(aRenderingContext);
+  Maybe<nscoord> containISize = ContainIntrinsicISize();
+  result = containISize ? *containISize
+                        : GetScrolledFrame()->GetPrefISize(aRenderingContext);
   LogicalMargin scrollbarSize(
       wm, GetDesiredScrollbarSizes(PresContext(), aRenderingContext));
   result = NSCoordSaturatingAdd(result, scrollbarSize.IStartEnd(wm));
@@ -256,9 +256,9 @@ nscoord nsListControlFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   
   WritingMode wm = GetWritingMode();
-  result = StyleDisplay()->GetContainSizeAxes().mIContained
-               ? 0
-               : GetScrolledFrame()->GetMinISize(aRenderingContext);
+  Maybe<nscoord> containISize = ContainIntrinsicISize();
+  result = containISize ? *containISize
+                        : GetScrolledFrame()->GetMinISize(aRenderingContext);
   LogicalMargin scrollbarSize(
       wm, GetDesiredScrollbarSizes(PresContext(), aRenderingContext));
   result += scrollbarSize.IStartEnd(wm);
@@ -291,31 +291,42 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
 
   MarkInReflow();
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
   bool autoBSize = (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE);
+  Maybe<nscoord> containBSize = ContainIntrinsicBSize(NS_UNCONSTRAINEDSIZE);
+  bool usingContainBSize =
+      autoBSize && containBSize && *containBSize != NS_UNCONSTRAINEDSIZE;
 
-  mMightNeedSecondPass =
-      autoBSize && (IsSubtreeDirty() || aReflowInput.ShouldReflowAllKids());
+  mMightNeedSecondPass = [&] {
+    if (!autoBSize) {
+      
+      
+      return false;
+    }
+    if (!IsSubtreeDirty() && !aReflowInput.ShouldReflowAllKids()) {
+      
+      
+      
+      return false;
+    }
+    if (usingContainBSize) {
+      
+      
+      return false;
+    }
+    
+    
+    
+    
+    return true;
+  }();
 
   ReflowInput state(aReflowInput);
   int32_t length = GetNumberOfRows();
@@ -331,17 +342,22 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
     state.SetComputedBSize(computedBSize);
   }
 
+  if (usingContainBSize) {
+    state.SetComputedBSize(*containBSize);
+  }
+
   nsHTMLScrollFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
 
   if (!mMightNeedSecondPass) {
     NS_ASSERTION(!autoBSize || BSizeOfARow() == oldBSizeOfARow,
                  "How did our BSize of a row change if nothing was dirty?");
-    NS_ASSERTION(!autoBSize || !HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
+    NS_ASSERTION(!autoBSize || !HasAnyStateBits(NS_FRAME_FIRST_REFLOW) ||
+                     usingContainBSize,
                  "How do we not need a second pass during initial reflow at "
                  "auto BSize?");
     NS_ASSERTION(!IsScrollbarUpdateSuppressed(),
                  "Shouldn't be suppressing if we don't need a second pass!");
-    if (!autoBSize) {
+    if (!autoBSize || usingContainBSize) {
       
       
       
