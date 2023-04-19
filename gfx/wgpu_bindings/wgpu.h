@@ -7,6 +7,10 @@
 #ifndef WGPU_h
 #define WGPU_h
 
+
+
+
+#include "nsString.h"
 #include "mozilla/UniquePtr.h"
 
 
