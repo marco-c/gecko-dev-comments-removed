@@ -26,6 +26,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Services.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "nsDirectoryServiceUtils.h"
@@ -521,29 +522,48 @@ size_t CacheFileHandles::SizeOfExcludingThis(
 
 
 
-class ShutdownEvent : public Runnable {
+class ShutdownEvent : public Runnable, nsITimerCallback {
+  NS_DECL_ISUPPORTS_INHERITED
  public:
-  ShutdownEvent()
-      : Runnable("net::ShutdownEvent"), mMonitor("ShutdownEvent.mMonitor") {}
+  ShutdownEvent() : Runnable("net::ShutdownEvent") {}
 
  protected:
   ~ShutdownEvent() = default;
 
  public:
   NS_IMETHOD Run() override {
-    MonitorAutoLock mon(mMonitor);
-
     CacheFileIOManager::gInstance->ShutdownInternal();
 
     mNotified = true;
-    mon.Notify();
+
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("CacheFileIOManager::ShutdownEvent::Run", []() {
+          
+          
+          
+        }));
 
     return NS_OK;
   }
 
-  void PostAndWait() {
-    MonitorAutoLock mon(mMonitor);
+  NS_IMETHOD Notify(nsITimer* timer) override {
+    if (mNotified) {
+      return NS_OK;
+    }
 
+    
+    
+    CacheFileIOManager::gInstance->mIOThread->CancelBlockingIO();
+
+    
+    
+    
+    mTimer->SetDelay(
+        StaticPrefs::browser_cache_shutdown_io_time_between_cancellations_ms());
+    return NS_OK;
+  }
+
+  void PostAndWait() {
     nsresult rv = CacheFileIOManager::gInstance->mIOThread->Dispatch(
         this,
         CacheIOThread::WRITE);  
@@ -556,22 +576,27 @@ class ShutdownEvent : public Runnable {
       return;
     }
 
-    TimeDuration waitTime = TimeDuration::FromSeconds(1);
-    while (!mNotified) {
-      mon.Wait(waitTime);
-      if (!mNotified) {
-        
-        
-        MonitorAutoUnlock unmon(mMonitor);  
-        CacheFileIOManager::gInstance->mIOThread->CancelBlockingIO();
-      }
+    rv = NS_NewTimerWithCallback(
+        getter_AddRefs(mTimer), this,
+        StaticPrefs::browser_cache_max_shutdown_io_lag() * 1000,
+        nsITimer::TYPE_REPEATING_SLACK);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    mozilla::SpinEventLoopUntil("CacheFileIOManager::ShutdownEvent"_ns,
+                                [&]() { return bool(mNotified); });
+
+    if (mTimer) {
+      mTimer->Cancel();
+      mTimer = nullptr;
     }
   }
 
  protected:
-  mozilla::Monitor mMonitor MOZ_UNANNOTATED;
-  bool mNotified{false};
+  Atomic<bool> mNotified{false};
+  nsCOMPtr<nsITimer> mTimer;
 };
+
+NS_IMPL_ISUPPORTS_INHERITED(ShutdownEvent, Runnable, nsITimerCallback)
 
 
 class IOPerfReportEvent {

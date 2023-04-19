@@ -99,8 +99,6 @@ class BlockingIOWatcher {
   void InitThread();
   
   
-  
-  
   void WatchAndCancel(Monitor& aMonitor);
   
   
@@ -155,25 +153,13 @@ void BlockingIOWatcher::WatchAndCancel(Monitor& aMonitor) {
     }
   }
 
-  LOG(("Blocking IO operation pending on IO thread, waiting..."));
-
-  
-  
-  
-  
-  uint32_t maxLag =
-      std::min<uint32_t>(5, CacheObserver::MaxShutdownIOLag()) * 1000;
-
-  DWORD result = ::WaitForSingleObject(mEvent, maxLag);
-  if (result == WAIT_TIMEOUT) {
-    LOG(("CacheIOThread: Attempting to cancel a long blocking IO operation"));
-    BOOL result = ::CancelSynchronousIo(thread);
-    if (result) {
-      LOG(("  cancelation signal succeeded"));
-    } else {
-      DWORD error = GetLastError();
-      LOG(("  cancelation signal failed with GetLastError=%lu", error));
-    }
+  LOG(("CacheIOThread: Attempting to cancel a long blocking IO operation"));
+  BOOL result = ::CancelSynchronousIo(thread);
+  if (result) {
+    LOG(("  cancelation signal succeeded"));
+  } else {
+    DWORD error = GetLastError();
+    LOG(("  cancelation signal failed with GetLastError=%lu", error));
   }
 }
 
