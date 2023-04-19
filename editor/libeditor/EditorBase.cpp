@@ -3015,7 +3015,6 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
-  EditorDOMPointInText pointToInsert(aPointToInsert);
   RefPtr<EditTransactionBase> transaction;
   bool isIMETransaction = false;
   
@@ -3023,18 +3022,11 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   
   if (ShouldHandleIMEComposition() && !aSuppressIME) {
     transaction =
-        CompositionTransaction::Create(*this, aStringToInsert, pointToInsert);
+        CompositionTransaction::Create(*this, aStringToInsert, aPointToInsert);
     isIMETransaction = true;
-    
-    
-    
-    
-    
-    pointToInsert.Set(mComposition->GetContainerTextNode(),
-                      mComposition->XPOffsetInTextNode());
   } else {
     transaction =
-        InsertTextTransaction::Create(*this, aStringToInsert, pointToInsert);
+        InsertTextTransaction::Create(*this, aStringToInsert, aPointToInsert);
   }
 
   
@@ -3045,7 +3037,20 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
                        "EditorBase::DoTransactionInternal() failed");
   EndUpdateViewBatch(__FUNCTION__);
 
-  if (IsHTMLEditor() && pointToInsert.IsSet()) {
+  auto pointToInsert = [&]() -> EditorDOMPointInText {
+    if (!isIMETransaction) {
+      return aPointToInsert;
+    }
+    if (NS_WARN_IF(!mComposition->GetContainerTextNode())) {
+      return aPointToInsert;
+    }
+    return EditorDOMPointInText(
+        mComposition->GetContainerTextNode(),
+        std::min(mComposition->XPOffsetInTextNode(),
+                 mComposition->GetContainerTextNode()->TextDataLength()));
+  }();
+
+  if (IsHTMLEditor()) {
     auto [begin, end] = ComputeInsertedRange(pointToInsert, aStringToInsert);
     if (begin.IsSet() && end.IsSet()) {
       TopLevelEditSubActionDataRef().DidInsertText(
@@ -3054,7 +3059,7 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
     if (isIMETransaction) {
       
       
-      aPointToInsert.ContainerAs<Text>()->MarkAsMaybeModifiedFrequently();
+      pointToInsert.ContainerAs<Text>()->MarkAsMaybeModifiedFrequently();
     }
   }
 
