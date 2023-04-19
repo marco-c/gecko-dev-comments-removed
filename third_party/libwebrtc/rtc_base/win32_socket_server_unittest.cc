@@ -38,7 +38,7 @@ TEST(Win32SocketServerTest, TestPump) {
 
 class Win32SocketTest : public SocketTest {
  protected:
-  Win32SocketTest() : thread_(&server_) {}
+  Win32SocketTest() : SocketTest(&server_), thread_(&server_) {}
   Win32SocketServer server_;
   rtc::AutoSocketServerThread thread_;
 };

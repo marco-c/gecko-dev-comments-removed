@@ -53,10 +53,6 @@ using webrtc::testing::StreamSink;
 
 static const size_t kTcpInternalDataSize = 1024 * 1024;  
 
-void SocketTest::SetUp() {
-  ss_ = Thread::Current()->socketserver();
-}
-
 void SocketTest::TestConnectIPv4() {
   ConnectInternal(kIPv4Loopback);
 }
@@ -242,14 +238,14 @@ void SocketTest::ConnectInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   EXPECT_EQ(Socket::CS_CLOSED, client->GetState());
   EXPECT_TRUE(IsUnspecOrEmptyIP(client->GetLocalAddress().ipaddr()));
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -297,12 +293,12 @@ void SocketTest::ConnectWithDnsLookupInternal(const IPAddress& loopback,
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -345,12 +341,12 @@ void SocketTest::ConnectFailInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
 
@@ -378,12 +374,12 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
 
@@ -415,13 +411,13 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
 void SocketTest::ConnectWithClosedSocketInternal(const IPAddress& loopback) {
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, client->Close());
   EXPECT_EQ(Socket::CS_CLOSED, client->GetState());
 
@@ -434,13 +430,13 @@ void SocketTest::ConnectWhileNotClosedInternal(const IPAddress& loopback) {
   
   StreamSink sink;
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   EXPECT_EQ(0, client->Connect(SocketAddress(server->GetLocalAddress())));
   EXPECT_EQ(Socket::CS_CONNECTING, client->GetState());
   
@@ -477,12 +473,12 @@ void SocketTest::ServerCloseDuringConnectInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -506,12 +502,12 @@ void SocketTest::ClientCloseDuringConnectInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -544,12 +540,12 @@ void SocketTest::ServerCloseInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -618,13 +614,13 @@ void SocketTest::CloseInClosedCallbackInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   client->SignalCloseEvent.connect(&closer, &SocketCloser::OnClose);
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -677,9 +673,9 @@ class SocketDeleter : public sigslot::has_slots<> {
 
 void SocketTest::DeleteInReadCallbackInternal(const IPAddress& loopback) {
   std::unique_ptr<Socket> socket1(
-      ss_->CreateSocket(loopback.family(), SOCK_DGRAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_DGRAM));
   std::unique_ptr<Socket> socket2(
-      ss_->CreateSocket(loopback.family(), SOCK_DGRAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_DGRAM));
   EXPECT_EQ(0, socket1->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, socket2->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(3, socket1->SendTo("foo", 3, socket1->GetLocalAddress()));
@@ -705,9 +701,9 @@ void SocketTest::SocketServerWaitInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
@@ -757,12 +753,12 @@ void SocketTest::TcpInternal(const IPAddress& loopback,
 
   
   std::unique_ptr<Socket> receiver(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(receiver.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -883,12 +879,12 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
 
   
   std::unique_ptr<Socket> client(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
 
   
   std::unique_ptr<Socket> server(
-      ss_->CreateSocket(loopback.family(), SOCK_STREAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(server.get());
   EXPECT_EQ(0, server->Bind(SocketAddress(loopback, 0)));
   EXPECT_EQ(0, server->Listen(5));
@@ -949,7 +945,7 @@ void SocketTest::SingleFlowControlCallbackInternal(const IPAddress& loopback) {
 void SocketTest::UdpInternal(const IPAddress& loopback) {
   SocketAddress empty = EmptySocketAddressWithFamily(loopback.family());
   
-  Socket* socket = ss_->CreateSocket(loopback.family(), SOCK_DGRAM);
+  Socket* socket = socket_factory_->CreateSocket(loopback.family(), SOCK_DGRAM);
   EXPECT_EQ(Socket::CS_CLOSED, socket->GetState());
   EXPECT_EQ(0, socket->Bind(SocketAddress(loopback, 0)));
   SocketAddress addr1 = socket->GetLocalAddress();
@@ -960,10 +956,10 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
   delete socket;
 
   
-  std::unique_ptr<TestClient> client1(
-      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, addr1))));
-  std::unique_ptr<TestClient> client2(
-      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+  auto client1 = std::make_unique<TestClient>(
+      absl::WrapUnique(AsyncUDPSocket::Create(socket_factory_, addr1)));
+  auto client2 = std::make_unique<TestClient>(
+      absl::WrapUnique(AsyncUDPSocket::Create(socket_factory_, empty)));
 
   SocketAddress addr2;
   EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -975,8 +971,8 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
   EXPECT_EQ(addr3, addr1);
   
   for (int i = 0; i < 10; ++i) {
-    client2.reset(
-        new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+    client2 = std::make_unique<TestClient>(
+        absl::WrapUnique(AsyncUDPSocket::Create(socket_factory_, empty)));
 
     SocketAddress addr4;
     EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -1002,8 +998,8 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
   SocketAddress test_addr(dest, 2345);
 
   
-  std::unique_ptr<TestClient> client(
-      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+  auto client = std::make_unique<TestClient>(
+      absl::WrapUnique(AsyncUDPSocket::Create(socket_factory_, empty)));
   int test_packet_size = 1200;
   std::unique_ptr<char[]> test_packet(new char[test_packet_size]);
   
@@ -1040,7 +1036,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
 
 void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
   std::unique_ptr<Socket> socket(
-      ss_->CreateSocket(loopback.family(), SOCK_DGRAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_DGRAM));
   socket->Bind(SocketAddress(loopback, 0));
 
   
@@ -1083,7 +1079,7 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
 
 void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   std::unique_ptr<Socket> socket(
-      ss_->CreateSocket(loopback.family(), SOCK_DGRAM));
+      socket_factory_->CreateSocket(loopback.family(), SOCK_DGRAM));
   EXPECT_EQ(0, socket->Bind(SocketAddress(loopback, 0)));
   SocketAddress address = socket->GetLocalAddress();
 
