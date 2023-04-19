@@ -195,8 +195,8 @@ builtinNames = [
     Builtin("double", "double", "libc::c_double", True, False),
     Builtin("char", "char", "libc::c_char", True, False),
     Builtin("string", "char *", "*const libc::c_char", False, False),
-    Builtin("wchar", "char16_t", "u16", False, False),
-    Builtin("wstring", "char16_t *", "*const u16", False, False),
+    Builtin("wchar", "char16_t", "i16", False, False),
+    Builtin("wstring", "char16_t *", "*const i16", False, False),
 ]
 
 builtinMap = {}
@@ -647,61 +647,33 @@ class Native(object):
         if self.modifier not in ["ptr", "ref"]:
             raise RustNoncompat("Rust only supports [ref] / [ptr] native types")
 
-        if shared:
-            if calltype != "out":
-                raise IDLError(
-                    "[shared] only applies to out parameters.", self.location
-                )
-            const = True
+        prefix = "*mut " if "out" in calltype else "*const "
+        if "out" in calltype and self.modifier == "ptr":
+            prefix += "*mut "
 
-        
-        if self.specialtype == "nsid" and calltype == "in":
-            const = True
-
-        prefix = "*const " if const or shared else "*mut "
-        if "out" in calltype and self.isPtr(calltype):
-            prefix = "*mut " + prefix
-
-        if self.specialtype:
-            
-            if self.specialtype in ["cstring", "utf8string"]:
-                if calltype == "in":
-                    return "*const ::nsstring::nsACString"
-                elif "out" in calltype:
-                    return "*mut ::nsstring::nsACString"
-                else:
-                    return "::nsstring::nsCString"
-            if self.specialtype == "astring":
-                if calltype == "in":
-                    return "*const ::nsstring::nsAString"
-                elif "out" in calltype:
-                    return "*mut ::nsstring::nsAString"
-                else:
-                    return "::nsstring::nsString"
-            
-            
-            if self.specialtype == "nsid":
-                if "element" in calltype:
-                    if self.isPtr(calltype):
-                        raise IDLError(
-                            "Array<nsIDPtr> not yet supported. "
-                            "File an XPConnect bug if you need it.",
-                            self.location,
-                        )
-                    return self.nativename
-                return prefix + self.nativename
-            raise RustNoncompat("special type %s unsupported" % self.specialtype)
-
-        
-        
-        
+        if self.specialtype == "nsid":
+            if "element" in calltype:
+                if self.isPtr(calltype):
+                    raise IDLError(
+                        "Array<nsIDPtr> not yet supported. "
+                        "File an XPConnect bug if you need it.",
+                        self.location,
+                    )
+                return self.nativename
+            return prefix + self.nativename
+        if self.specialtype in ["cstring", "utf8string"]:
+            if "element" in calltype:
+                return "::nsstring::nsCString"
+            return prefix + "::nsstring::nsACString"
+        if self.specialtype == "astring":
+            if "element" in calltype:
+                return "::nsstring::nsString"
+            return prefix + "::nsstring::nsAString"
         if self.nativename == "void":
             return prefix + "libc::c_void"
-        if self.nativename == "char":
-            return prefix + "libc::c_char"
-        if self.nativename == "char16_t":
-            return prefix + "u16"
 
+        if self.specialtype:
+            raise RustNoncompat("specialtype %s unsupported" % self.specialtype)
         raise RustNoncompat("native type %s unsupported" % self.nativename)
 
     def __str__(self):
@@ -1000,8 +972,8 @@ class ConstMember(object):
         
         self.value = self.valueFn(self.iface)
 
-        min_val = -(2**31) if basetype.signed else 0
-        max_val = 2**31 - 1 if basetype.signed else 2**32 - 1
+        min_val = -(2 ** 31) if basetype.signed else 0
+        max_val = 2 ** 31 - 1 if basetype.signed else 2 ** 32 - 1
         if self.value < min_val or self.value > max_val:
             raise IDLError(
                 "xpidl constants must fit within %s"
