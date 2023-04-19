@@ -328,10 +328,6 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
 
   [[nodiscard]] bool emitThis();
 
-  
-  
-  void reset();
-
   [[nodiscard]] bool prepareForNonSpreadArguments();
   [[nodiscard]] bool prepareForSpreadArguments();
 

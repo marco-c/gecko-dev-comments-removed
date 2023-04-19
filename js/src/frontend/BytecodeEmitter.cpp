@@ -7120,6 +7120,7 @@ bool BytecodeEmitter::emitSelfHostedCallFunction(CallNode* callNode, JSOp op) {
   ParseNode* funNode = argsList->head();
 
   if (!emitTree(funNode)) {
+    
     return false;
   }
 
@@ -7137,11 +7138,13 @@ bool BytecodeEmitter::emitSelfHostedCallFunction(CallNode* callNode, JSOp op) {
     
     
     if (!emit1(JSOp::IsConstructing)) {
+      
       return false;
     }
   } else {
     
     if (!emitTree(thisOrNewTarget)) {
+      
       return false;
     }
   }
@@ -7149,18 +7152,21 @@ bool BytecodeEmitter::emitSelfHostedCallFunction(CallNode* callNode, JSOp op) {
   for (ParseNode* argpn = thisOrNewTarget->pn_next; argpn;
        argpn = argpn->pn_next) {
     if (!emitTree(argpn)) {
+      
       return false;
     }
   }
 
   if (constructing) {
     if (!emitTree(thisOrNewTarget)) {
+      
       return false;
     }
   }
 
   uint32_t argc = argsList->count() - 2;
   if (!emitCall(op, argc)) {
+    
     return false;
   }
 

@@ -27,10 +27,15 @@ CallOrNewEmitter::CallOrNewEmitter(BytecodeEmitter* bce, JSOp op,
 bool CallOrNewEmitter::emitNameCallee(TaggedParserAtomIndex name) {
   MOZ_ASSERT(state_ == State::Start);
 
+  
+
   NameOpEmitter noe(
       bce_, name,
       isCall() ? NameOpEmitter::Kind::Call : NameOpEmitter::Kind::Get);
   if (!noe.emitGet()) {
+    
+    
+    
     
     return false;
   }
@@ -42,6 +47,8 @@ bool CallOrNewEmitter::emitNameCallee(TaggedParserAtomIndex name) {
 [[nodiscard]] PropOpEmitter& CallOrNewEmitter::prepareForPropCallee(
     bool isSuperProp) {
   MOZ_ASSERT(state_ == State::Start);
+
+  
 
   poe_.emplace(bce_,
                isCall() ? PropOpEmitter::Kind::Call : PropOpEmitter::Kind::Get,
@@ -56,6 +63,8 @@ bool CallOrNewEmitter::emitNameCallee(TaggedParserAtomIndex name) {
     bool isSuperElem) {
   MOZ_ASSERT(state_ == State::Start);
 
+  
+
   eoe_.emplace(bce_,
                isCall() ? ElemOpEmitter::Kind::Call : ElemOpEmitter::Kind::Get,
                isSuperElem ? ElemOpEmitter::ObjKind::Super
@@ -68,6 +77,9 @@ bool CallOrNewEmitter::emitNameCallee(TaggedParserAtomIndex name) {
 PrivateOpEmitter& CallOrNewEmitter::prepareForPrivateCallee(
     TaggedParserAtomIndex privateName) {
   MOZ_ASSERT(state_ == State::Start);
+
+  
+
   xoe_.emplace(
       bce_,
       isCall() ? PrivateOpEmitter::Kind::Call : PrivateOpEmitter::Kind::Get,
@@ -79,12 +91,16 @@ PrivateOpEmitter& CallOrNewEmitter::prepareForPrivateCallee(
 bool CallOrNewEmitter::prepareForFunctionCallee() {
   MOZ_ASSERT(state_ == State::Start);
 
+  
+
   state_ = State::FunctionCallee;
   return true;
 }
 
 bool CallOrNewEmitter::emitSuperCallee() {
   MOZ_ASSERT(state_ == State::Start);
+
+  
 
   if (!bce_->emitThisEnvironmentCallee()) {
     
@@ -106,6 +122,8 @@ bool CallOrNewEmitter::emitSuperCallee() {
 bool CallOrNewEmitter::prepareForOtherCallee() {
   MOZ_ASSERT(state_ == State::Start);
 
+  
+
   state_ = State::OtherCallee;
   return true;
 }
@@ -115,6 +133,11 @@ bool CallOrNewEmitter::emitThis() {
              state_ == State::ElemCallee || state_ == State::PrivateCallee ||
              state_ == State::FunctionCallee || state_ == State::SuperCallee ||
              state_ == State::OtherCallee);
+
+  
+  
+  
+  
 
   bool needsThis = false;
   switch (state_) {
@@ -165,20 +188,17 @@ bool CallOrNewEmitter::emitThis() {
     }
   }
 
+  
+
   state_ = State::This;
   return true;
-}
-
-
-
-void CallOrNewEmitter::reset() {
-  MOZ_ASSERT(state_ == State::End);
-  state_ = State::Start;
 }
 
 bool CallOrNewEmitter::prepareForNonSpreadArguments() {
   MOZ_ASSERT(state_ == State::This);
   MOZ_ASSERT(!isSpread());
+
+  
 
   state_ = State::Arguments;
   return true;
@@ -189,6 +209,8 @@ bool CallOrNewEmitter::wantSpreadOperand() {
   MOZ_ASSERT(state_ == State::This);
   MOZ_ASSERT(isSpread());
 
+  
+
   state_ = State::WantSpreadOperand;
   return isSingleSpread() || isPassthroughRest();
 }
@@ -197,6 +219,8 @@ bool CallOrNewEmitter::prepareForSpreadArguments() {
   MOZ_ASSERT(state_ == State::WantSpreadOperand);
   MOZ_ASSERT(isSpread());
   MOZ_ASSERT(!isSingleSpread() && !isPassthroughRest());
+
+  
 
   state_ = State::Arguments;
   return true;
@@ -207,6 +231,8 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
   MOZ_ASSERT(state_ == State::WantSpreadOperand);
   MOZ_ASSERT(isSpread());
   MOZ_ASSERT(isSingleSpread() || isPassthroughRest());
+
+  
 
   if (isSingleSpread()) {
     
@@ -296,6 +322,12 @@ bool CallOrNewEmitter::emitSpreadArgumentsTestEnd() {
 
 bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   MOZ_ASSERT(state_ == State::Arguments);
+
+  
+  
+  
+  
+
   if (!bce_->updateSourceCoordNotes(beginPos)) {
     return false;
   }
@@ -317,6 +349,7 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   if (isEval()) {
     uint32_t lineNum = bce_->parser->errorReporter().lineAt(beginPos);
     if (!bce_->emitUint32Operand(JSOp::Lineno, lineNum)) {
+      
       return false;
     }
   }
