@@ -436,8 +436,6 @@ bool ReferrerInfo::ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
   MOZ_ASSERT(aOriginURI);
 
   
-  
-  
   RequestMode requestMode = RequestMode::No_cors;
   MOZ_ALWAYS_SUCCEEDS(aChannel->GetRequestMode(&requestMode));
   if (requestMode == RequestMode::Cors) {
@@ -450,25 +448,40 @@ bool ReferrerInfo::ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
   if (!referrerInfo) {
     return false;
   }
+
+  
   enum ReferrerPolicy policy = referrerInfo->ReferrerPolicy();
   if (policy == ReferrerPolicy::No_referrer) {
+    
+    
+    
     return true;
   }
 
+  
+  
+  
+  
+  
+  
   bool allowed = false;
   nsCOMPtr<nsIURI> uri;
   NS_ENSURE_SUCCESS(aChannel->GetURI(getter_AddRefs(uri)), false);
-
   if (NS_SUCCEEDED(ReferrerInfo::HandleSecureToInsecureReferral(
           aOriginURI, uri, policy, allowed)) &&
       !allowed) {
     return true;
   }
 
+  
   if (policy == ReferrerPolicy::Same_origin) {
+    
+    
     return ReferrerInfo::IsCrossOriginRequest(aChannel);
   }
 
+  
+  
   return false;
 }
 

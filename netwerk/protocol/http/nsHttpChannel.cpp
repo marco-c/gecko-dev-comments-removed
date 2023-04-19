@@ -8910,12 +8910,6 @@ void nsHttpChannel::SetOriginHeader() {
   
   
   
-  
-  
-  
-  
-  
-  
   if (mLoadInfo->GetTainting() == mozilla::LoadTainting::CORS) {
     MOZ_ALWAYS_SUCCEEDS(mRequestHead.SetHeader(nsHttp::Origin, serializedOrigin,
                                                false ));
