@@ -45,6 +45,10 @@ let postSteps = [
 ];
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.quickactions", false]],
+  });
+
   
   await UpdateUtils.setAppUpdateAutoEnabled(false);
 

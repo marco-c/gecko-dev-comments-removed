@@ -9,6 +9,10 @@
 
 
 add_task(async function switchTabs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.quickactions", false]],
+  });
+
   
   let tabs = [];
   for (let i = 0; i < 3; i++) {

@@ -12,6 +12,10 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 add_task(async function init() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.quickactions", false]],
+  });
+
   
   
   let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
