@@ -114,9 +114,6 @@ class PerformanceEventTiming final
 
   ~PerformanceEventTiming() = default;
 
-  
-  nsINode* GetAnElement(nsINode* aTarget, const Document* aDocument);
-
   RefPtr<Performance> mPerformance;
 
   DOMHighResTimeStamp mProcessingStart;
