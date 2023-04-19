@@ -9,8 +9,9 @@
 #ifdef DEBUG
 #define assert(b, info) \
     do { \
-        if (!(b)) \
+        if (!(b)) { \
             AssertionFailed(__FILE__ + ":" + __LINE__ + ": " + info) \
+        } \
     } while (false)
 #define dbg(msg) \
     do { \
@@ -67,12 +68,14 @@ function GetMethod(V, P) {
     var func = V[P];
 
     
-    if (func === undefined || func === null)
+    if (func === undefined || func === null) {
         return undefined;
+    }
 
     
-    if (!IsCallable(func))
+    if (!IsCallable(func)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, typeof func);
+    }
 
     
     return func;
@@ -96,23 +99,27 @@ function SpeciesConstructor(obj, defaultConstructor) {
     var ctor = obj.constructor;
 
     
-    if (ctor === undefined)
+    if (ctor === undefined) {
         return defaultConstructor;
+    }
 
     
-    if (!IsObject(ctor))
+    if (!IsObject(ctor)) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
+    }
 
     
     var s = ctor[GetBuiltinSymbol("species")];
 
     
-    if (s === undefined || s === null)
+    if (s === undefined || s === null) {
         return defaultConstructor;
+    }
 
     
-    if (IsConstructor(s))
+    if (IsConstructor(s)) {
         return s;
+    }
 
     
     ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
@@ -158,8 +165,9 @@ function CopyDataProperties(target, source, excludedItems) {
     assert(IsObject(excludedItems), "excludedItems is an object");
 
     
-    if (source === undefined || source === null)
+    if (source === undefined || source === null) {
         return;
+    }
 
     
     var from = ToObject(source);
@@ -168,8 +176,9 @@ function CopyDataProperties(target, source, excludedItems) {
     var keys = CopyDataPropertiesOrGetOwnKeys(target, from, excludedItems);
 
     
-    if (keys === null)
+    if (keys === null) {
         return;
+    }
 
     
     for (var index = 0; index < keys.length; index++) {
@@ -196,8 +205,9 @@ function CopyDataPropertiesUnfiltered(target, source) {
     
 
     
-    if (source === undefined || source === null)
+    if (source === undefined || source === null) {
         return;
+    }
 
     
     var from = ToObject(source);
@@ -206,8 +216,9 @@ function CopyDataPropertiesUnfiltered(target, source) {
     var keys = CopyDataPropertiesOrGetOwnKeys(target, from, null);
 
     
-    if (keys === null)
+    if (keys === null) {
         return;
+    }
 
     
     for (var index = 0; index < keys.length; index++) {
@@ -215,8 +226,9 @@ function CopyDataPropertiesUnfiltered(target, source) {
 
         
         
-        if (callFunction(std_Object_propertyIsEnumerable, from, key))
+        if (callFunction(std_Object_propertyIsEnumerable, from, key)) {
             DefineDataProperty(target, key, from[key]);
+        }
     }
 
     
