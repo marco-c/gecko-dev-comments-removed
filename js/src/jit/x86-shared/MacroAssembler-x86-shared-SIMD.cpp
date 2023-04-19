@@ -936,11 +936,12 @@ void MacroAssemblerX86Shared::minMaxFloat32x4AVX(bool isMin, FloatRegister lhs,
   if (isMin) {
     vminps(Operand(rhs), lhs, temp2);             
     vminps(Operand(lhs), rhs, temp1);             
+    vorps(temp1, temp2, output);                  
   } else {
     vmaxps(Operand(rhs), lhs, temp2);             
     vmaxps(Operand(lhs), rhs, temp1);             
+    vandps(temp1, temp2, output);                 
   }
-  vorps(temp1, temp2, output);                    
   vcmpunordps(Operand(rhsCopy), lhsCopy, temp1);  
   vptest(temp1, temp1);                           
   j(Assembler::Equal, &l);                        
@@ -1028,11 +1029,12 @@ void MacroAssemblerX86Shared::minMaxFloat64x2AVX(bool isMin, FloatRegister lhs,
   if (isMin) {
     vminpd(Operand(rhs), lhs, temp2);             
     vminpd(Operand(lhs), rhs, temp1);             
+    vorpd(temp1, temp2, output);                  
   } else {
     vmaxpd(Operand(rhs), lhs, temp2);             
     vmaxpd(Operand(lhs), rhs, temp1);             
+    vandpd(temp1, temp2, output);                 
   }
-  vorpd(temp1, temp2, output);                    
   vcmpunordpd(Operand(rhsCopy), lhsCopy, temp1);  
   vptest(temp1, temp1);                           
   j(Assembler::Equal, &l);                        
