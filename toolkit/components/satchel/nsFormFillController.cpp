@@ -144,6 +144,17 @@ void nsFormFillController::AttributeChanged(mozilla::dom::Element* aElement,
        aAttribute == nsGkAtoms::autocomplete) &&
       aNameSpaceID == kNameSpaceID_None) {
     RefPtr<HTMLInputElement> focusedInput(mFocusedInput);
+
+    
+    
+    
+    RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
+    if (fm && aAttribute == nsGkAtoms::type) {
+      nsCOMPtr<nsPIDOMWindowOuter> outerWindow =
+          aElement->OwnerDoc()->GetWindow();
+      fm->ClearFocus(outerWindow);
+      fm->SetFocus(focusedInput, 0);
+    }
     
     StopControllingInput();
     
