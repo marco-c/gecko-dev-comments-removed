@@ -218,7 +218,7 @@ class FakeCompiler(dict):
                 break
             if arg.startswith("-"):
                 
-                if arg == "--sysroot":
+                if arg in ("-isysroot", "--sysroot"):
                     next(args, None)
                 else:
                     flags.append(arg)
