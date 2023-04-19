@@ -350,7 +350,7 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
 
 nsresult RangeUpdater::SelAdjJoinNodes(
     const EditorRawDOMPoint& aStartOfRightContent,
-    const nsIContent& aRemovedContent, uint32_t aOffsetOfRemovedContent,
+    const nsIContent& aRemovedContent, uint32_t aOffsetOfJoinedContent,
     JoinNodesDirection aJoinNodesDirection) {
   MOZ_ASSERT(aStartOfRightContent.IsSetAndValid());
 
@@ -368,12 +368,12 @@ nsresult RangeUpdater::SelAdjJoinNodes(
     if (aContainer == aStartOfRightContent.GetContainerParent()) {
       
       
-      if (aOffset > aOffsetOfRemovedContent) {
+      if (aOffset > aOffsetOfJoinedContent) {
         aOffset--;
       }
       
       
-      else if (aOffset == aOffsetOfRemovedContent) {
+      else if (aOffset == aOffsetOfJoinedContent) {
         aContainer = aStartOfRightContent.GetContainer();
         aOffset = aStartOfRightContent.Offset();
       }
