@@ -3975,6 +3975,16 @@ var SessionStoreInternal = {
       }
     }
 
+    if (
+      tabbrowser.selectedTab.hidden &&
+      tabbrowser.visibleTabs.length === removableTabs.length
+    ) {
+      
+      
+      
+      removableTabs.shift();
+    }
+
     if (tabbrowser.tabs.length == removableTabs.length) {
       canOverwriteTabs = true;
     } else {
