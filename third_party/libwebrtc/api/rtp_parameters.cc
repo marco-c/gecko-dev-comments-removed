@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <string>
+#include <tuple>
 #include <utility>
 
 #include "api/array_view.h"
@@ -280,6 +281,14 @@ const std::vector<RtpExtension> RtpExtension::DeduplicateHeaderExtensions(
       }
     }
   }
+
+  
+  
+  std::sort(filtered.begin(), filtered.end(),
+            [](const RtpExtension& a, const RtpExtension& b) {
+              return std::tie(a.uri, a.encrypt, a.id) <
+                     std::tie(b.uri, b.encrypt, b.id);
+            });
 
   return filtered;
 }

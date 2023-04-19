@@ -286,6 +286,9 @@ struct RTC_EXPORT RtpExtension {
       bool encrypt);
 
   
+  
+  
+  
   static const std::vector<RtpExtension> DeduplicateHeaderExtensions(
       const std::vector<RtpExtension>& extensions,
       Filter filter);

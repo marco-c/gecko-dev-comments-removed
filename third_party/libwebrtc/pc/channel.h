@@ -289,14 +289,23 @@ class BaseChannel : public ChannelInterface,
 
   
   
-  void MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
+  
+  
+  bool MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
 
   
   
   bool ClearHandledPayloadTypes() RTC_RUN_ON(worker_thread());
 
-  void UpdateRtpHeaderExtensionMap(
-      const RtpHeaderExtensions& header_extensions);
+  
+  
+  
+  
+  
+  void MaybeUpdateDemuxerAndRtpExtensions_w(
+      bool update_demuxer,
+      absl::optional<RtpHeaderExtensions> extensions)
+      RTC_RUN_ON(worker_thread());
 
   bool RegisterRtpDemuxerSink_w() RTC_RUN_ON(worker_thread());
 
@@ -349,7 +358,9 @@ class BaseChannel : public ChannelInterface,
       worker_thread()) = webrtc::RtpTransceiverDirection::kInactive;
 
   
-  std::set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
+  webrtc::flat_set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
+  
+  RtpHeaderExtensions rtp_header_extensions_ RTC_GUARDED_BY(worker_thread());
   
   
   webrtc::RtpDemuxerCriteria demuxer_criteria_;
