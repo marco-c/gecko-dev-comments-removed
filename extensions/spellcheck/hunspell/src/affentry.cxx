@@ -146,7 +146,7 @@ inline int PfxEntry::test_condition(const char* st) {
         break;
       }
       case ']': {
-        if ((neg && ingroup) || (!neg && !ingroup))
+        if (bool(neg) == bool(ingroup))
           return 0;
         pos = NULL;
         p = nextchar(p);
@@ -224,7 +224,7 @@ struct hentry* PfxEntry::checkword(const char* word,
     
 
     std::string tmpword(strip);
-    tmpword.append(word + appnd.size());
+    tmpword.append(word + appnd.size(), tmpl);
 
     
     

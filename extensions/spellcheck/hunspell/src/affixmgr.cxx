@@ -1052,7 +1052,7 @@ int AffixMgr::encodeit(AffEntry& entry, const char* cs) {
     } else if (cs[MAXCONDLEN]) {
       
       
-      entry.opts += aeLONGCOND;
+      entry.opts |= aeLONGCOND;
       entry.c.l.conds2 = mystrdup(cs + MAXCONDLEN_1);
       if (!entry.c.l.conds2)
         return 1;
@@ -1600,8 +1600,12 @@ struct hentry* AffixMgr::compound_check(const std::string& word,
 
   HUNSPELL_THREAD_LOCAL clock_t timelimit;
 
-  if (wordnum == 0)
-      timelimit = clock();
+  if (wordnum == 0) {
+      
+      
+      
+      timelimit = clock() + 1;
+  }
   else if (timelimit != 0 && (clock() > timelimit + TIMELIMIT)) {
       timelimit = 0;
   }
@@ -2206,8 +2210,12 @@ int AffixMgr::compound_check_morph(const char* word,
 
   HUNSPELL_THREAD_LOCAL clock_t timelimit;
 
-  if (wordnum == 0)
-      timelimit = clock();
+  if (wordnum == 0) {
+      
+      
+      
+      timelimit = clock() + 1;
+  }
   else if (timelimit != 0 && (clock() > timelimit + TIMELIMIT)) {
       timelimit = 0;
   }
@@ -4359,7 +4367,7 @@ void AffixMgr::reverse_condition(std::string& piece) {
       case '^': {
         if (*(k - 1) == ']')
           neg = 1;
-        else
+        else if (neg)
           *(k - 1) = *k;
         break;
       }
@@ -4492,11 +4500,11 @@ bool AffixMgr::parse_affix(const std::string& line,
 
         char opts = ff;
         if (utf8)
-          opts += aeUTF8;
+          opts |= aeUTF8;
         if (pHMgr->is_aliasf())
-          opts += aeALIASF;
+          opts |= aeALIASF;
         if (pHMgr->is_aliasm())
-          opts += aeALIASM;
+          opts |= aeALIASM;
         affentries.initialize(numents, opts, aflag);
       }
 
