@@ -145,15 +145,7 @@ async function startProfilerAndTriggerFileIO({
   info("Remove the file");
   await removeFile(path);
 
-  
-  
-  
-  
-  Services.profiler.Pause();
-
-  const profile = await Services.profiler.getProfileDataAsync();
-  await Services.profiler.StopProfiler();
-  return profile;
+  return stopNowAndGetProfile();
 }
 
 async function fileExists(file) {

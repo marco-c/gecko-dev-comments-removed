@@ -223,13 +223,24 @@ function captureAtLeastOneJsSample() {
 
 
 
-async function stopAndGetProfile() {
+async function stopNowAndGetProfile() {
   
   
   Services.profiler.Pause();
   const profile = await Services.profiler.getProfileDataAsync();
   await Services.profiler.StopProfiler();
   return profile;
+}
+
+
+
+
+
+
+
+async function waitSamplingAndStopAndGetProfile() {
+  await Services.profiler.waitOnePeriodicSampling();
+  return stopNowAndGetProfile();
 }
 
 

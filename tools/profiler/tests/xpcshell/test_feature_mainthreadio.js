@@ -105,14 +105,7 @@ async function runProfilerWithFileIO(features, filename) {
   info("Remove the file");
   file.remove(false);
 
-  
-  
-  
-  
-  Services.profiler.Pause();
-
-  const profile = await Services.profiler.getProfileDataAsync();
-  await Services.profiler.StopProfiler();
+  const profile = await stopNowAndGetProfile();
   const mainThread = profile.threads.find(({ name }) => name === "GeckoMain");
 
   const schema = getSchema(profile, "FileIO");
