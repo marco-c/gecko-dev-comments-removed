@@ -178,7 +178,7 @@ class XPCShellTestThread(Thread):
         self.crashAsPass = kwargs.get("crashAsPass")
         self.conditionedProfileDir = kwargs.get("conditionedProfileDir")
         if self.runFailures:
-            retry = False
+            self.retry = False
 
         
         self.prefsFile = self.rootPrefsFile
@@ -2116,11 +2116,12 @@ class XPCShellTests(object):
                         "after killing one with SIGINT)"
                     )
                     break
-                
-                test.retry = False
                 self.start_test(test)
                 test.join()
                 self.test_ended(test)
+                if test.failCount > 0 or test.passCount <= 0:
+                    self.try_again_list.append(test.test_object)
+                    continue
                 self.addTestResults(test)
                 
                 if test.exception:
