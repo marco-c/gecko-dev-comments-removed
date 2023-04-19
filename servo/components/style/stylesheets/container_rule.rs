@@ -157,12 +157,8 @@ impl ContainerCondition {
         context: &ParserContext,
         input: &mut Parser<'a, '_>,
     ) -> Result<Self, ParseError<'a>> {
-        use crate::parser::Parse;
-
-        
-        
         let name = input
-            .try_parse(|input| ContainerName::parse(context, input))
+            .try_parse(|input| ContainerName::parse_for_query(context, input))
             .ok()
             .unwrap_or_else(ContainerName::none);
         let condition = QueryCondition::parse(context, input, FeatureType::Container)?;
