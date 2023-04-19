@@ -28,8 +28,22 @@ namespace css {
 
 
 
+
+
+
+
 class TextOverflow final {
+ private:
+  
+
+
+
+
+  TextOverflow(nsDisplayListBuilder* aBuilder, nsBlockFrame*);
+
  public:
+  ~TextOverflow() = default;
+
   
 
 
@@ -42,12 +56,10 @@ class TextOverflow final {
 
 
 
-  TextOverflow(nsDisplayListBuilder* aBuilder, nsBlockFrame*);
 
-  TextOverflow() = delete;
-  ~TextOverflow() = default;
   TextOverflow(TextOverflow&&) = default;
 
+  TextOverflow() = delete;
   TextOverflow(const TextOverflow&) = delete;
   TextOverflow& operator=(const TextOverflow&) = delete;
   TextOverflow& operator=(TextOverflow&&) = delete;
