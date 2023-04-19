@@ -4,7 +4,6 @@
 
 import io
 import re
-import six
 import yaml
 import atexit
 from . import shared_telemetry_utils as utils
@@ -113,16 +112,16 @@ class ScalarType:
         
         REQUIRED_FIELDS = {
             "bug_numbers": list,  
-            "description": six.string_types,
-            "expires": six.string_types,
-            "kind": six.string_types,
+            "description": str,
+            "expires": str,
+            "kind": str,
             "notification_emails": list,  
             "record_in_processes": list,
             "products": list,
         }
 
         OPTIONAL_FIELDS = {
-            "release_channel_collection": six.string_types,
+            "release_channel_collection": str,
             "keyed": bool,
             "keys": list,
             "operating_systems": list,
@@ -132,12 +131,12 @@ class ScalarType:
         
         LIST_FIELDS_CONTENT = {
             "bug_numbers": int,
-            "notification_emails": six.string_types,
-            "record_in_processes": six.string_types,
-            "products": six.string_types,
-            "keys": six.string_types,
-            "operating_systems": six.string_types,
-            "record_into_store": six.string_types,
+            "notification_emails": str,
+            "record_in_processes": str,
+            "products": str,
+            "keys": str,
+            "operating_systems": str,
+            "record_into_store": str,
         }
 
         

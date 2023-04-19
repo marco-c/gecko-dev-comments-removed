@@ -4,7 +4,6 @@
 
 import io
 import re
-import six
 import yaml
 import atexit
 
@@ -96,7 +95,7 @@ class UserInteractionType:
         
         REQUIRED_FIELDS = {
             "bug_numbers": list,  
-            "description": six.string_types,
+            "description": str,
         }
 
         
