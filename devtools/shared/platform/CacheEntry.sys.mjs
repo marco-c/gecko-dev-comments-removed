@@ -1,39 +1,37 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  NetworkHelper: "resource://devtools/shared/webconsole/NetworkHelper.sys.mjs",
+});
 
-
-"use strict";
-
-loader.lazyRequireGetter(
-  this,
-  "NetworkHelper",
-  "resource://devtools/shared/webconsole/network-helper.js"
-);
-
-
-
-
-
-exports.CacheEntry = {
-  
-
-
+/**
+ * Module to fetch cache objects from CacheStorageService
+ * and return them as an object.
+ */
+export const CacheEntry = {
+  /**
+   * Flag for cache session being initialized.
+   */
   isCacheSessionInitialized: false,
-  
-
-
+  /**
+   * Cache session object.
+   */
   cacheSession: null,
 
-  
-
-
+  /**
+   * Initializes our cache session / cache storage session.
+   */
   initializeCacheSession(request) {
     try {
       const cacheService = Services.cache2;
       if (cacheService) {
-        let loadContext = NetworkHelper.getRequestLoadContext(request);
+        let loadContext = lazy.NetworkHelper.getRequestLoadContext(request);
         if (!loadContext) {
-          
+          // Get default load context if we can't fetch.
           loadContext = Services.loadContextInfo.default;
         }
         this.cacheSession = cacheService.diskCacheStorage(loadContext);
@@ -44,12 +42,12 @@ exports.CacheEntry = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Parses a cache descriptor returned from the backend into a
+   * usable object.
+   *
+   * @param Object descriptor The descriptor from the backend.
+   */
   parseCacheDescriptor(descriptor) {
     const descriptorObj = {};
     try {
@@ -57,7 +55,7 @@ exports.CacheEntry = {
         descriptorObj.dataSize = descriptor.storageDataSize;
       }
     } catch (e) {
-      
+      // We just need to handle this in case it's a js file of 0B.
     }
     if (descriptor.expirationTime) {
       descriptorObj.expires = descriptor.expirationTime;
@@ -77,14 +75,14 @@ exports.CacheEntry = {
     return descriptorObj;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Does the fetch for the cache descriptor from the session.
+   *
+   * @param string request
+   *        The request object.
+   * @param Function onCacheDescriptorAvailable
+   *        callback function.
+   */
   getCacheEntry(request, onCacheDescriptorAvailable) {
     if (!this.isCacheSessionInitialized) {
       this.initializeCacheSession(request);

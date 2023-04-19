@@ -5,7 +5,7 @@
 
 
 DevToolsModules(
-    "cache-entry.js",
+    "CacheEntry.sys.mjs",
     "clipboard.js",
     "stack.js",
 )

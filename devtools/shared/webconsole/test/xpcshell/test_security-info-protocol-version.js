@@ -5,15 +5,6 @@
 
 
 
-Object.defineProperty(this, "NetworkHelper", {
-  get() {
-    return require("resource://devtools/shared/webconsole/network-helper.js");
-  },
-  configurable: true,
-  writeable: false,
-  enumerable: true,
-});
-
 const TEST_CASES = [
   {
     description: "TLS_VERSION_1",
