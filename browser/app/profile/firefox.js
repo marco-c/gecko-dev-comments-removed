@@ -500,6 +500,9 @@ pref("browser.urlbar.richSuggestions.tail", true);
 pref("browser.urlbar.sponsoredTopSites", false);
 
 
+pref("browser.urlbar.showSearchTerms", false);
+
+
 
 
 
