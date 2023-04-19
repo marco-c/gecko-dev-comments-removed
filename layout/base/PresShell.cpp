@@ -3776,7 +3776,7 @@ bool PresShell::ScrollFrameIntoView(
     
     
     
-    nsIFrame* container = nsLayoutUtils::GetClosestFrameOfType(
+    container = nsLayoutUtils::GetClosestFrameOfType(
         aTargetFrame->GetParent(), LayoutFrameType::Scroll);
     if (!container) {
       container = aTargetFrame->PresShell()->GetRootFrame();
