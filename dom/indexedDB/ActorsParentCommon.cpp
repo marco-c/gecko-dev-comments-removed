@@ -116,14 +116,7 @@ Result<StructuredCloneFileParent, nsresult> DeserializeStructuredCloneFile(
   
   
   
-  if (!fileInfo) {
-    IDB_WARNING(
-        "Corrupt structured clone data detected in IndexedDB. Failing the "
-        "database request. Bug 1519859 will address this problem.");
-    Telemetry::ScalarAdd(Telemetry::ScalarID::IDB_FAILURE_FILEINFO_ERROR, 1);
-
-    return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
-  }
+  QM_TRY(OkIf((bool)fileInfo), Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR));
 
   return StructuredCloneFileParent{type, std::move(fileInfo)};
 }
