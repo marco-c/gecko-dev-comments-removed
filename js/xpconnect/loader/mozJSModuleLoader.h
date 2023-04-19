@@ -28,6 +28,10 @@ namespace mozilla {
 class ScriptPreloader;
 }  
 
+namespace JS::loader {
+class ModuleLoadRequest;
+}  
+
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
 #  define STARTUP_RECORDER_ENABLED
 #endif
@@ -103,8 +107,9 @@ class mozJSModuleLoader final : public nsIMemoryReporter {
 
   
   static bool IsTrustedScheme(nsIURI* aURI);
-  static nsresult LoadSingleModuleScript(JSContext* aCx, nsIURI* aURI,
-                                         JS::MutableHandleScript aScriptOut);
+  static nsresult LoadSingleModuleScript(
+      JSContext* aCx, JS::loader::ModuleLoadRequest* aRequest,
+      JS::MutableHandleScript aScriptOut);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
