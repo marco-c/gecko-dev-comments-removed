@@ -191,6 +191,11 @@ void AudioRtpReceiver::RestartMediaChannel_w(
   if (!media_channel_)
     return;  
 
+  
+  
+  
+  worker_thread_safety_->SetAlive();
+
   if (state != MediaSourceInterface::kInitializing) {
     if (ssrc_ == ssrc)
       return;

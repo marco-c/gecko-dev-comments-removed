@@ -18,6 +18,7 @@
 #include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 using ::testing::_;
 using ::testing::InvokeWithoutArgs;
@@ -93,4 +94,34 @@ TEST_F(AudioRtpReceiverTest, VolumesSetBeforeStartingAreRespected) {
 
   receiver_->SetupMediaChannel(kSsrc);
 }
+
+
+
+
+TEST(AudioRtpReceiver, OnChangedNotificationsAfterConstruction) {
+  webrtc::test::RunLoop loop;
+  auto* thread = rtc::Thread::Current();  
+  cricket::MockVoiceMediaChannel media_channel(thread);
+  auto receiver = rtc::make_ref_counted<AudioRtpReceiver>(
+      thread, std::string(), std::vector<std::string>(), true, &media_channel);
+
+  EXPECT_CALL(media_channel, SetDefaultRawAudioSink(_)).Times(1);
+  EXPECT_CALL(media_channel, SetDefaultOutputVolume(kDefaultVolume)).Times(1);
+  receiver->SetupUnsignaledMediaChannel();
+  loop.Flush();
+
+  
+  receiver->track()->set_enabled(false);
+
+  
+  
+  
+  
+  EXPECT_CALL(media_channel, SetDefaultOutputVolume(kVolumeMuted)).Times(1);
+  loop.Flush();
+
+  EXPECT_CALL(media_channel, SetDefaultOutputVolume(kVolumeMuted)).Times(1);
+  receiver->SetMediaChannel(nullptr);
+}
+
 }  
