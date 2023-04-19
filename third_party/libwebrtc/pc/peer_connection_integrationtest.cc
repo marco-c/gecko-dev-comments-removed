@@ -132,7 +132,7 @@ class PeerConnectionIntegrationTestPlanB
     : public PeerConnectionIntegrationBaseTest {
  protected:
   PeerConnectionIntegrationTestPlanB()
-      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB) {}
+      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB_DEPRECATED) {}
 };
 
 class PeerConnectionIntegrationTestUnifiedPlan
@@ -535,7 +535,7 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
   
   caller()->AddAudioVideoTracks();
   callee()->AddAudioTrack();
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     PeerConnectionInterface::RTCOfferAnswerOptions options;
     options.offer_to_receive_video = 0;
     callee()->SetOfferAnswerOptions(options);
@@ -565,7 +565,7 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
   
   
   callee()->AddVideoTrack();
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     PeerConnectionInterface::RTCOfferAnswerOptions options;
     options.offer_to_receive_video = 1;
     callee()->SetOfferAnswerOptions(options);
@@ -782,7 +782,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioSection) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     
     
     PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -826,7 +826,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsVideoSection) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     
     
     PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -873,7 +873,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioAndVideoSections) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     
     
     PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -921,7 +921,7 @@ TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
     ASSERT_TRUE(ExpectNewFrames(media_expectations));
   }
   
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     caller()->SetGeneratedSdpMunger(
         [](cricket::SessionDescription* description) {
           for (cricket::ContentInfo& content : description->contents()) {
@@ -2194,7 +2194,7 @@ constexpr uint32_t kFlagsIPv4Stun =
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationIceStatesTest,
-    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+    Combine(Values(SdpSemantics::kPlanB_DEPRECATED, SdpSemantics::kUnifiedPlan),
             Values(std::make_pair("IPv4 no STUN", kFlagsIPv4NoStun),
                    std::make_pair("IPv6 no STUN", kFlagsIPv6NoStun),
                    std::make_pair("IPv4 with STUN", kFlagsIPv4Stun))));
@@ -2202,7 +2202,7 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationIceStatesTestWithFakeClock,
-    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+    Combine(Values(SdpSemantics::kPlanB_DEPRECATED, SdpSemantics::kUnifiedPlan),
             Values(std::make_pair("IPv4 no STUN", kFlagsIPv4NoStun),
                    std::make_pair("IPv6 no STUN", kFlagsIPv6NoStun),
                    std::make_pair("IPv4 with STUN", kFlagsIPv4Stun))));
@@ -2366,7 +2366,7 @@ TEST_P(PeerConnectionIntegrationTest,
 
   
   
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     PeerConnectionInterface::RTCOfferAnswerOptions options;
     options.offer_to_receive_video = 0;
     callee()->SetOfferAnswerOptions(options);
@@ -2387,7 +2387,7 @@ TEST_P(PeerConnectionIntegrationTest,
 
   
   
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     PeerConnectionInterface::RTCOfferAnswerOptions options;
     options.offer_to_receive_video = 1;
     callee()->SetOfferAnswerOptions(options);
@@ -3523,7 +3523,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationTest,
-    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+    Combine(Values(SdpSemantics::kPlanB_DEPRECATED, SdpSemantics::kUnifiedPlan),
             Values("WebRTC-FrameBuffer3/arm:FrameBuffer2/",
                    "WebRTC-FrameBuffer3/arm:FrameBuffer3/",
                    "WebRTC-FrameBuffer3/arm:SyncDecoding/")));
@@ -3531,7 +3531,7 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationTestWithFakeClock,
-    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+    Combine(Values(SdpSemantics::kPlanB_DEPRECATED, SdpSemantics::kUnifiedPlan),
             Values("WebRTC-FrameBuffer3/arm:FrameBuffer2/",
                    "WebRTC-FrameBuffer3/arm:FrameBuffer3/",
                    "WebRTC-FrameBuffer3/arm:SyncDecoding/")));
@@ -3547,7 +3547,7 @@ class PeerConnectionIntegrationInteropTest
   
   
   PeerConnectionIntegrationInteropTest()
-      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB),
+      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB_DEPRECATED),
         caller_semantics_(std::get<0>(GetParam())),
         callee_semantics_(std::get<1>(GetParam())) {}
 
@@ -3669,14 +3669,16 @@ TEST_P(PeerConnectionIntegrationTest, NewTracksDoNotCauseNewCandidates) {
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationInteropTest,
-    Values(std::make_tuple(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
-           std::make_tuple(SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB)));
+    Values(std::make_tuple(SdpSemantics::kPlanB_DEPRECATED,
+                           SdpSemantics::kUnifiedPlan),
+           std::make_tuple(SdpSemantics::kUnifiedPlan,
+                           SdpSemantics::kPlanB_DEPRECATED)));
 
 
 
 TEST_F(PeerConnectionIntegrationTestPlanB, TwoVideoUnifiedPlanToNoMediaPlanB) {
   ASSERT_TRUE(CreatePeerConnectionWrappersWithSdpSemantics(
-      SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB));
+      SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB_DEPRECATED));
   ConnectFakeSignaling();
   auto first_sender = caller()->AddVideoTrack();
   caller()->AddVideoTrack();
