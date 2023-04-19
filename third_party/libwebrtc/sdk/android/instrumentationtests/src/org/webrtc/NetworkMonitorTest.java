@@ -38,12 +38,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.chromium.base.test.BaseJUnit4ClassRunner;
-import org.chromium.base.test.UiThreadTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.webrtc.NetworkChangeDetector.ConnectionType;
 import org.webrtc.NetworkChangeDetector.NetworkInformation;
 import org.webrtc.NetworkMonitorAutoDetect.ConnectivityManagerDelegate;
@@ -58,7 +55,6 @@ import org.webrtc.NetworkMonitorAutoDetect.SimpleNetworkCallback;
 
 
 @SuppressLint("NewApi")
-@RunWith(BaseJUnit4ClassRunner.class)
 public class NetworkMonitorTest {
   private static final long INVALID_NET_ID = -1;
   private NetworkChangeDetector detector;
@@ -226,7 +222,6 @@ public class NetworkMonitorTest {
 
 
   @Test
-  @UiThreadTest
   @SmallTest
   public void testNetworkMonitorRegistersInConstructor() throws InterruptedException {
     Context context = InstrumentationRegistry.getTargetContext();
@@ -243,7 +238,6 @@ public class NetworkMonitorTest {
 
 
   @Test
-  @UiThreadTest
   @MediumTest
   public void testNetworkMonitorJavaObservers() throws InterruptedException {
     
@@ -290,7 +284,6 @@ public class NetworkMonitorTest {
 
 
   @Test
-  @UiThreadTest
   @SmallTest
   public void testConnectivityManagerDelegateDoesNotCrash() {
     ConnectivityManagerDelegate delegate = new ConnectivityManagerDelegate(
@@ -376,7 +369,6 @@ public class NetworkMonitorTest {
 
 
   @Test
-  @UiThreadTest
   @SmallTest
   public void testQueryableAPIsDoNotCrash() {
     NetworkMonitorAutoDetect.Observer observer = new TestNetworkMonitorAutoDetectObserver();
