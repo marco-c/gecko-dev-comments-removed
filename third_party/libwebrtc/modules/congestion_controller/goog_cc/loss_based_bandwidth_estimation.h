@@ -39,24 +39,34 @@ struct LossBasedControlConfig {
   FieldTrialParameter<DataRate> increase_offset;
   FieldTrialParameter<DataRate> loss_bandwidth_balance_increase;
   FieldTrialParameter<DataRate> loss_bandwidth_balance_decrease;
+  FieldTrialParameter<DataRate> loss_bandwidth_balance_reset;
   FieldTrialParameter<double> loss_bandwidth_balance_exponent;
   FieldTrialParameter<bool> allow_resets;
   FieldTrialParameter<TimeDelta> decrease_interval;
   FieldTrialParameter<TimeDelta> loss_report_timeout;
 };
 
+
+
+
 class LossBasedBandwidthEstimation {
  public:
   explicit LossBasedBandwidthEstimation(
       const WebRtcKeyValueConfig* key_value_config);
-  void Update(Timestamp at_time,
-              DataRate min_bitrate,
-              TimeDelta last_round_trip_time);
+  
+  DataRate Update(Timestamp at_time,
+                  DataRate min_bitrate,
+                  DataRate wanted_bitrate,
+                  TimeDelta last_round_trip_time);
   void UpdateAcknowledgedBitrate(DataRate acknowledged_bitrate,
                                  Timestamp at_time);
-  void MaybeReset(DataRate bitrate);
-  void SetInitialBitrate(DataRate bitrate);
+  void Initialize(DataRate bitrate);
   bool Enabled() const { return config_.enabled; }
+  
+  
+  bool InUse() const {
+    return Enabled() && last_loss_packet_report_.IsFinite();
+  }
   void UpdateLossStatistics(const std::vector<PacketResult>& packet_results,
                             Timestamp at_time);
   DataRate GetEstimate() const { return loss_based_bitrate_; }
@@ -66,9 +76,11 @@ class LossBasedBandwidthEstimation {
   void Reset(DataRate bitrate);
   double loss_increase_threshold() const;
   double loss_decrease_threshold() const;
+  double loss_reset_threshold() const;
+
   DataRate decreased_bitrate() const;
 
-  LossBasedControlConfig config_;
+  const LossBasedControlConfig config_;
   double average_loss_;
   double average_loss_max_;
   DataRate loss_based_bitrate_;
