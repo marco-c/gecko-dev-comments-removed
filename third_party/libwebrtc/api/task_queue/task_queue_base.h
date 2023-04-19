@@ -11,6 +11,7 @@
 #define API_TASK_QUEUE_TASK_QUEUE_BASE_H_
 
 #include <memory>
+#include <utility>
 
 #include "api/task_queue/queued_task.h"
 #include "rtc_base/system/rtc_export.h"
@@ -53,8 +54,49 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual void PostDelayedTask(std::unique_ptr<QueuedTask> task,
                                uint32_t milliseconds) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void PostDelayedHighPrecisionTask(std::unique_ptr<QueuedTask> task,
+                                            uint32_t milliseconds) {
+    
+    
+    PostDelayedTask(std::move(task), milliseconds);
+  }
 
   
   

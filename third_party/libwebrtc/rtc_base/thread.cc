@@ -1110,9 +1110,15 @@ void Thread::PostTask(std::unique_ptr<webrtc::QueuedTask> task) {
 void Thread::PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
                              uint32_t milliseconds) {
   
+  PostDelayedHighPrecisionTask(std::move(task), milliseconds);
+}
+
+void Thread::PostDelayedHighPrecisionTask(
+    std::unique_ptr<webrtc::QueuedTask> task,
+    uint32_t milliseconds) {
   
-  PostDelayed(RTC_FROM_HERE, milliseconds, &queued_task_handler_,
-              0,
+  
+  PostDelayed(RTC_FROM_HERE, milliseconds, &queued_task_handler_, 0,
               new ScopedMessageData<webrtc::QueuedTask>(std::move(task)));
 }
 

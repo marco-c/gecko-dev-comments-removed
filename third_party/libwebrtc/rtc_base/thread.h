@@ -452,12 +452,19 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
+  
+  
+  
+  
   template <class FunctorT>
   void PostTask(const Location& posted_from, FunctorT&& functor) {
     Post(posted_from, GetPostTaskMessageHandler(), 0,
          new rtc_thread_internal::MessageWithFunctor<FunctorT>(
              std::forward<FunctorT>(functor)));
   }
+  
+  
+  
   template <class FunctorT>
   void PostDelayedTask(const Location& posted_from,
                        FunctorT&& functor,
@@ -472,6 +479,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   void PostTask(std::unique_ptr<webrtc::QueuedTask> task) override;
   void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
                        uint32_t milliseconds) override;
+  void PostDelayedHighPrecisionTask(std::unique_ptr<webrtc::QueuedTask> task,
+                                    uint32_t milliseconds) override;
   void Delete() override;
 
   
