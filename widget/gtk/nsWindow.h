@@ -562,6 +562,8 @@ class nsWindow final : public nsBaseWidget {
   
   LayoutDeviceIntSize mLastSizeRequest;
   LayoutDeviceIntPoint mClientOffset;
+  
+  LayoutDeviceIntSize mNeedsDispatchSize = LayoutDeviceIntSize(-1, -1);
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
@@ -620,8 +622,6 @@ class nsWindow final : public nsBaseWidget {
 
   
   bool mIsDestroyed : 1;
-  
-  bool mNeedsDispatchResized : 1;
   
   
   bool mIsShown : 1;

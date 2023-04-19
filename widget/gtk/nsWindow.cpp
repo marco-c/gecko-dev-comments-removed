@@ -380,7 +380,6 @@ static void UpdateLastInputEventTime(void* aGdkEvent) {
 
 nsWindow::nsWindow()
     : mIsDestroyed(false),
-      mNeedsDispatchResized(false),
       mIsShown(false),
       mNeedsShow(false),
       mIsMapped(false),
@@ -489,7 +488,7 @@ void nsWindow::DispatchResized() {
   LOG("nsWindow::DispatchResized() size [%d, %d]", (int)(mBounds.width),
       (int)(mBounds.height));
 
-  mNeedsDispatchResized = false;
+  mNeedsDispatchSize = LayoutDeviceIntSize(-1, -1);
   if (mWidgetListener) {
     mWidgetListener->WindowResized(this, mBounds.width, mBounds.height);
   }
@@ -499,7 +498,24 @@ void nsWindow::DispatchResized() {
 }
 
 void nsWindow::MaybeDispatchResized() {
-  if (mNeedsDispatchResized && !mIsDestroyed) {
+  if (mNeedsDispatchSize != LayoutDeviceIntSize(-1, -1) && !mIsDestroyed) {
+    mBounds.SizeTo(mNeedsDispatchSize);
+    
+    if (mCompositorSession &&
+        !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
+      gfxCriticalNoteOnce << "Invalid mBounds in MaybeDispatchResized "
+                          << mBounds << " size state " << mSizeMode;
+    }
+
+    if (mWindowType == eWindowType_toplevel) {
+      UpdateTopLevelOpaqueRegion();
+    }
+
+    
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
+    }
+
     DispatchResized();
   }
 }
@@ -4126,6 +4142,11 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
   if (mBounds.Size() == size) {
     LOG("  Already the same size");
     
+    if (mNeedsDispatchSize != LayoutDeviceIntSize(-1, -1)) {
+      LOG("  No longer needs to dispatch %dx%d", mNeedsDispatchSize.width,
+          mNeedsDispatchSize.height);
+      mNeedsDispatchSize = LayoutDeviceIntSize(-1, -1);
+    }
     return;
   }
 
@@ -4145,23 +4166,13 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
     }
   }
 
-  mBounds.SizeTo(size);
   
-  if (mCompositorSession &&
-      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
-    gfxCriticalNoteOnce << "Invalid mBounds in OnSizeAllocate " << mBounds
-                        << " size state " << mSizeMode;
-  }
-
   
-  if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
-  }
+  mNeedsDispatchSize = size;
 
   
   
   
-  mNeedsDispatchResized = true;
   NS_DispatchToCurrentThread(NewRunnableMethod(
       "nsWindow::MaybeDispatchResized", this, &nsWindow::MaybeDispatchResized));
 }
