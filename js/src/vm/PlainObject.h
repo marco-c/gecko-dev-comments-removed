@@ -96,9 +96,16 @@ extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
     JSContext* cx, HandleObject proto, gc::AllocKind allocKind,
     NewObjectKind newKind = GenericObject);
 
-extern PlainObject* NewPlainObjectWithProperties(JSContext* cx,
-                                                 IdValuePair* properties,
-                                                 size_t nproperties);
+
+
+extern PlainObject* NewPlainObjectWithUniqueNames(JSContext* cx,
+                                                  IdValuePair* properties,
+                                                  size_t nproperties);
+
+
+
+extern PlainObject* NewPlainObjectWithMaybeDuplicateKeys(
+    JSContext* cx, IdValuePair* properties, size_t nproperties);
 
 }  
 
