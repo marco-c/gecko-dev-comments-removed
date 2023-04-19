@@ -5,6 +5,7 @@
 
 
 #include "FileSystemDataManagerVersion001.h"
+#include "FileSystemFileManager.h"
 
 #include "FileSystemHashSource.h"
 #include "ResultStatement.h"
@@ -439,6 +440,9 @@ nsresult FileSystemDataManagerVersion001::GetFile(
 
   aPath.Reverse();
 
+  QM_TRY_UNWRAP(aFile,
+                mFileManager->GetOrCreateFile(entryId));  
+
   return NS_OK;
 }
 
@@ -517,7 +521,9 @@ Result<bool, QMResult> FileSystemDataManagerVersion001::RemoveDirectory(
 
   QM_TRY(QM_TO_RESULT(transaction.Commit()));
 
-  
+  for (const auto& child : descendants) {
+    QM_WARNONLY_TRY(MOZ_TO_RESULT(mFileManager->RemoveFile(child)));
+  }
 
   return true;
 }
@@ -560,7 +566,7 @@ Result<bool, QMResult> FileSystemDataManagerVersion001::RemoveFile(
 
   QM_TRY(QM_TO_RESULT(transaction.Commit()));
 
-  
+  QM_WARNONLY_TRY(MOZ_TO_RESULT(mFileManager->RemoveFile(entryId)));
 
   return true;
 }
