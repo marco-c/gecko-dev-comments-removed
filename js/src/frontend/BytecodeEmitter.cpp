@@ -1069,6 +1069,11 @@ restart:
       MOZ_CRASH("Record and Tuple are not supported yet");
 #endif
 
+#ifdef ENABLE_DECORATORS
+    case ParseNodeKind::DecoratorList:
+      MOZ_CRASH("Decorators are not supported yet");
+#endif
+
     
     
     

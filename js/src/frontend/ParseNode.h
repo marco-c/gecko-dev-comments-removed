@@ -122,6 +122,7 @@ class FunctionBox;
   F(WithStmt, BinaryNode)                                        \
   F(ReturnStmt, UnaryNode)                                       \
   F(NewExpr, BinaryNode)                                         \
+  IF_DECORATORS(F(DecoratorList, ListNode))                      \
   /* Delete operations.  These must be sequential. */            \
   F(DeleteNameExpr, UnaryNode)                                   \
   F(DeletePropExpr, UnaryNode)                                   \
@@ -270,6 +271,12 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
+
+
+
+
+
 
 
 
@@ -2194,6 +2201,10 @@ class ClassMethod : public BinaryNode {
   AccessorType accessorType_;
   FunctionNode* initializerIfPrivate_;
 
+#ifdef ENABLE_DECORATORS
+  ListNode* decorators_;
+#endif
+
  public:
   
 
@@ -2201,12 +2212,22 @@ class ClassMethod : public BinaryNode {
 
   ClassMethod(ParseNodeKind kind, ParseNode* name, ParseNode* body,
               AccessorType accessorType, bool isStatic,
-              FunctionNode* initializerIfPrivate)
+              FunctionNode* initializerIfPrivate
+#ifdef ENABLE_DECORATORS
+              ,
+              ListNode* decorators
+#endif
+              )
       : BinaryNode(kind, TokenPos(name->pn_pos.begin, body->pn_pos.end), name,
                    body),
         isStatic_(isStatic),
         accessorType_(accessorType),
-        initializerIfPrivate_(initializerIfPrivate) {
+        initializerIfPrivate_(initializerIfPrivate)
+#ifdef ENABLE_DECORATORS
+        ,
+        decorators_(decorators)
+#endif
+  {
     MOZ_ASSERT(kind == ParseNodeKind::DefaultConstructor ||
                kind == ParseNodeKind::ClassMethod);
   }
@@ -2227,16 +2248,29 @@ class ClassMethod : public BinaryNode {
   AccessorType accessorType() const { return accessorType_; }
 
   FunctionNode* initializerIfPrivate() const { return initializerIfPrivate_; }
+
+#ifdef ENABLE_DECORATORS
+  ListNode* decorators() const { return decorators_; }
+#endif
 };
 
 class ClassField : public BinaryNode {
   bool isStatic_;
+#ifdef ENABLE_DECORATORS
+  ListNode* decorators_;
+#endif
 
  public:
-  ClassField(ParseNode* name, ParseNode* initializer, bool isStatic)
+  ClassField(ParseNode* name, ParseNode* initializer, bool isStatic
+#ifdef ENABLE_DECORATORS
+             ,
+             ListNode* decorators
+#endif
+             )
       : BinaryNode(ParseNodeKind::ClassField, initializer->pn_pos, name,
                    initializer),
-        isStatic_(isStatic) {}
+        isStatic_(isStatic) {
+  }
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ClassField);
@@ -2249,6 +2283,10 @@ class ClassField : public BinaryNode {
   FunctionNode* initializer() const { return &right()->as<FunctionNode>(); }
 
   bool isStatic() const { return isStatic_; }
+
+#ifdef ENABLE_DECORATORS
+  ListNode* decorators() const { return decorators_; }
+#endif
 };
 
 
