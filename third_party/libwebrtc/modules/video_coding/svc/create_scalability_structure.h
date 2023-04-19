@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "modules/video_coding/svc/scalable_video_controller.h"
 
 namespace webrtc {
@@ -23,6 +24,11 @@ namespace webrtc {
 
 std::unique_ptr<ScalableVideoController> CreateScalabilityStructure(
     absl::string_view name);
+
+
+
+absl::optional<ScalableVideoController::StreamLayersConfig>
+ScalabilityStructureConfig(absl::string_view name);
 
 }  
 

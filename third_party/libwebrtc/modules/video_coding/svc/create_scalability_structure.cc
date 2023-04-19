@@ -27,6 +27,7 @@ struct NamedStructureFactory {
   absl::string_view name;
   
   std::unique_ptr<ScalableVideoController> (*factory)();
+  ScalableVideoController::StreamLayersConfig config;
 };
 
 
@@ -44,22 +45,90 @@ std::unique_ptr<ScalableVideoController> CreateH() {
   return std::make_unique<T>(factor);
 }
 
+constexpr ScalableVideoController::StreamLayersConfig kConfigNone = {
+    1, 1,
+    false};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL1T2 = {
+    1, 2,
+    false};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL1T3 = {
+    1, 3,
+    false};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T1 = {
+    2,
+    1,
+    true,
+    {1, 1},
+    {2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T1h = {
+    2,
+    1,
+    true,
+    {2, 1},
+    {3, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T2 = {
+    2,
+    2,
+    true,
+    {1, 1},
+    {2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL2T3 = {
+    2,
+    3,
+    true,
+    {1, 1},
+    {2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL3T1 = {
+    3,
+    1,
+    true,
+    {1, 1, 1},
+    {4, 2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigL3T3 = {
+    3,
+    3,
+    true,
+    {1, 1, 1},
+    {4, 2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigS2T1 = {
+    2,
+    1,
+    false,
+    {1, 1},
+    {2, 1}};
+
+constexpr ScalableVideoController::StreamLayersConfig kConfigS3T3 = {
+    3,
+    3,
+    false,
+    {1, 1, 1},
+    {4, 2, 1}};
+
 constexpr NamedStructureFactory kFactories[] = {
-    {"NONE", Create<ScalableVideoControllerNoLayering>},
-    {"L1T2", Create<ScalabilityStructureL1T2>},
-    {"L1T3", Create<ScalabilityStructureL1T3>},
-    {"L2T1", Create<ScalabilityStructureL2T1>},
-    {"L2T1h", CreateH<ScalabilityStructureL2T1>},
-    {"L2T1_KEY", Create<ScalabilityStructureL2T1Key>},
-    {"L2T2", Create<ScalabilityStructureL2T2>},
-    {"L2T2_KEY", Create<ScalabilityStructureL2T2Key>},
-    {"L2T2_KEY_SHIFT", Create<ScalabilityStructureL2T2KeyShift>},
-    {"L2T3_KEY", Create<ScalabilityStructureL2T3Key>},
-    {"L3T1", Create<ScalabilityStructureL3T1>},
-    {"L3T3", Create<ScalabilityStructureL3T3>},
-    {"L3T3_KEY", Create<ScalabilityStructureL3T3Key>},
-    {"S2T1", Create<ScalabilityStructureS2T1>},
-    {"S3T3", Create<ScalabilityStructureS3T3>},
+    {"NONE", Create<ScalableVideoControllerNoLayering>, kConfigNone},
+    {"L1T2", Create<ScalabilityStructureL1T2>, kConfigL1T2},
+    {"L1T3", Create<ScalabilityStructureL1T3>, kConfigL1T3},
+    {"L2T1", Create<ScalabilityStructureL2T1>, kConfigL2T1},
+    {"L2T1h", CreateH<ScalabilityStructureL2T1>, kConfigL2T1h},
+    {"L2T1_KEY", Create<ScalabilityStructureL2T1Key>, kConfigL2T1},
+    {"L2T2", Create<ScalabilityStructureL2T2>, kConfigL2T2},
+    {"L2T2_KEY", Create<ScalabilityStructureL2T2Key>, kConfigL2T2},
+    {"L2T2_KEY_SHIFT", Create<ScalabilityStructureL2T2KeyShift>, kConfigL2T2},
+    {"L2T3_KEY", Create<ScalabilityStructureL2T3Key>, kConfigL2T3},
+    {"L3T1", Create<ScalabilityStructureL3T1>, kConfigL3T1},
+    {"L3T3", Create<ScalabilityStructureL3T3>, kConfigL3T3},
+    {"L3T3_KEY", Create<ScalabilityStructureL3T3Key>, kConfigL3T3},
+    {"S2T1", Create<ScalabilityStructureS2T1>, kConfigS2T1},
+    {"S3T3", Create<ScalabilityStructureS3T3>, kConfigS3T3},
 };
 
 }  
@@ -73,6 +142,17 @@ std::unique_ptr<ScalableVideoController> CreateScalabilityStructure(
     }
   }
   return nullptr;
+}
+
+absl::optional<ScalableVideoController::StreamLayersConfig>
+ScalabilityStructureConfig(absl::string_view name) {
+  RTC_DCHECK(!name.empty());
+  for (const auto& entry : kFactories) {
+    if (entry.name == name) {
+      return entry.config;
+    }
+  }
+  return absl::nullopt;
 }
 
 }  

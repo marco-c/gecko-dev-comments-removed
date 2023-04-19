@@ -28,6 +28,8 @@ class ScalableVideoController {
     int num_spatial_layers = 1;
     int num_temporal_layers = 1;
     
+    bool uses_reference_scaling = true;
+    
     
     int scaling_factor_num[DependencyDescriptor::kMaxSpatialIds] = {1, 1, 1, 1};
     int scaling_factor_den[DependencyDescriptor::kMaxSpatialIds] = {1, 1, 1, 1};
