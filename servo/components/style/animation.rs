@@ -7,10 +7,8 @@
 
 
 
-use crate::bezier::Bezier;
 use crate::context::{CascadeInputs, SharedStyleContext};
 use crate::dom::{OpaqueNode, TDocument, TElement, TNode};
-use crate::piecewise_linear::PiecewiseLinearFunction;
 use crate::properties::animated_properties::{AnimationValue, AnimationValueMap};
 use crate::properties::longhands::animation_direction::computed_value::single_value::T as AnimationDirection;
 use crate::properties::longhands::animation_fill_mode::computed_value::single_value::T as AnimationFillMode;
@@ -27,12 +25,8 @@ use crate::style_resolver::StyleResolverForElement;
 use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::values::animated::{Animate, Procedure};
-use crate::values::computed::easing::ComputedLinearStop;
 use crate::values::computed::{Time, TimingFunction};
 use crate::values::generics::box_::AnimationIterationCount;
-use crate::values::generics::easing::{
-    StepPosition, TimingFunction as GenericTimingFunction, TimingKeyword,
-};
 use crate::Atom;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
@@ -90,67 +84,7 @@ impl PropertyAnimation {
     
     fn timing_function_output(&self, progress: f64) -> f64 {
         let epsilon = 1. / (200. * self.duration);
-        match &self.timing_function {
-            GenericTimingFunction::CubicBezier { x1, y1, x2, y2 } => {
-                Bezier::new(*x1, *y1, *x2, *y2).solve(progress, epsilon)
-            },
-            GenericTimingFunction::Steps(steps, pos) => {
-                let mut current_step = (progress * (*steps as f64)).floor() as i32;
-
-                if *pos == StepPosition::Start ||
-                    *pos == StepPosition::JumpStart ||
-                    *pos == StepPosition::JumpBoth
-                {
-                    current_step = current_step + 1;
-                }
-
-                
-                
-                
-                
-                
-
-                if progress >= 0.0 && current_step < 0 {
-                    current_step = 0;
-                }
-
-                let jumps = match pos {
-                    StepPosition::JumpBoth => *steps + 1,
-                    StepPosition::JumpNone => *steps - 1,
-                    StepPosition::JumpStart |
-                    StepPosition::JumpEnd |
-                    StepPosition::Start |
-                    StepPosition::End => *steps,
-                };
-
-                if progress <= 1.0 && current_step > jumps {
-                    current_step = jumps;
-                }
-
-                (current_step as f64) / (jumps as f64)
-            },
-            GenericTimingFunction::LinearFunction(elements) => {
-                
-                
-                PiecewiseLinearFunction::from_iter(
-                    elements
-                        .iter()
-                        .map(ComputedLinearStop::to_piecewise_linear_build_parameters),
-                )
-                .at(progress as f32)
-                .into()
-            },
-            GenericTimingFunction::Keyword(keyword) => {
-                let bezier = match keyword {
-                    TimingKeyword::Linear => return progress,
-                    TimingKeyword::Ease => Bezier::new(0.25, 0.1, 0.25, 1.),
-                    TimingKeyword::EaseIn => Bezier::new(0.42, 0., 1., 1.),
-                    TimingKeyword::EaseOut => Bezier::new(0., 0., 0.58, 1.),
-                    TimingKeyword::EaseInOut => Bezier::new(0.42, 0., 0.58, 1.),
-                };
-                bezier.solve(progress, epsilon)
-            },
-        }
+        self.timing_function.calculate_output(progress, epsilon)
     }
 
     
