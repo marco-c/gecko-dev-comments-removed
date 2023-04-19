@@ -125,7 +125,7 @@ pub(crate) mod init;
 pub use debug::DebugRenderer;
 pub use shade::{Shaders, SharedShaders};
 pub use vertex::{desc, VertexArrayKind, MAX_VERTEX_TEXTURE_WIDTH};
-pub use gpu_buffer::{GpuBuffer, GpuBufferBuilder};
+pub use gpu_buffer::{GpuBuffer, GpuBufferBuilder, GpuBufferAddress};
 
 
 
@@ -2357,34 +2357,6 @@ impl Renderer {
         let _gm = self.gpu_profiler.start_marker("picture cache target");
         let framebuffer_kind = FramebufferKind::Other;
 
-        
-        
-        let gpu_buffer_texture = if target.gpu_buffer.is_empty() {
-            None
-        } else {
-            let gpu_buffer_texture = self.device.create_texture(
-                ImageBufferKind::Texture2D,
-                ImageFormat::RGBAF32,
-                target.gpu_buffer.size.width,
-                target.gpu_buffer.size.height,
-                TextureFilter::Nearest,
-                None,
-            );
-
-            self.device.bind_texture(
-                TextureSampler::GpuBuffer,
-                &gpu_buffer_texture,
-                Swizzle::default(),
-            );
-
-            self.device.upload_texture_immediate(
-                &gpu_buffer_texture,
-                &target.gpu_buffer.data,
-            );
-
-            Some(gpu_buffer_texture)
-        };
-
         {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_TARGET);
             self.device.bind_draw_target(draw_target);
@@ -2482,10 +2454,6 @@ impl Renderer {
                     TextureFilter::Nearest,
                 );
             }
-        }
-
-        if let Some(gpu_buffer_texture) = gpu_buffer_texture {
-            self.device.delete_texture(gpu_buffer_texture);
         }
 
         self.device.invalidate_depth_target();
@@ -4258,6 +4226,34 @@ impl Renderer {
 
         
         
+        let gpu_buffer_texture = if frame.gpu_buffer.is_empty() {
+            None
+        } else {
+            let gpu_buffer_texture = self.device.create_texture(
+                ImageBufferKind::Texture2D,
+                ImageFormat::RGBAF32,
+                frame.gpu_buffer.size.width,
+                frame.gpu_buffer.size.height,
+                TextureFilter::Nearest,
+                None,
+            );
+
+            self.device.bind_texture(
+                TextureSampler::GpuBuffer,
+                &gpu_buffer_texture,
+                Swizzle::default(),
+            );
+
+            self.device.upload_texture_immediate(
+                &gpu_buffer_texture,
+                &frame.gpu_buffer.data,
+            );
+
+            Some(gpu_buffer_texture)
+        };
+
+        
+        
         
         
         
@@ -4510,6 +4506,10 @@ impl Renderer {
             results,
             present_mode,
         );
+
+        if let Some(gpu_buffer_texture) = gpu_buffer_texture {
+            self.device.delete_texture(gpu_buffer_texture);
+        }
 
         frame.has_been_rendered = true;
     }
