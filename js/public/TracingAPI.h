@@ -101,7 +101,6 @@ struct TraceOptions {
       : weakEdgeAction(weakEdgeActionArg) {}
 };
 
-class AutoTracingName;
 class AutoTracingIndex;
 
 
@@ -126,13 +125,6 @@ class TracingContext {
 
   
   
-  const char* name() const {
-    MOZ_ASSERT(name_);
-    return name_;
-  }
-
-  
-  
   
   constexpr static size_t InvalidIndex = size_t(-1);
   size_t index() const { return index_; }
@@ -142,7 +134,7 @@ class TracingContext {
   
   
   
-  void getEdgeName(char* buffer, size_t bufferSize);
+  void getEdgeName(const char* name, char* buffer, size_t bufferSize);
 
   
   
@@ -155,9 +147,6 @@ class TracingContext {
   };
 
  private:
-  friend class AutoTracingName;
-  const char* name_ = nullptr;
-
   friend class AutoTracingIndex;
   size_t index_ = InvalidIndex;
 
@@ -228,7 +217,7 @@ class GenericTracer : public JSTracer {
   
   
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
-  virtual type* on##name##Edge(type* thing) = 0;
+  virtual type* on##name##Edge(type* thing, const char* name) = 0;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
 };
@@ -245,8 +234,10 @@ class GenericTracerImpl : public GenericTracer {
  private:
   T* derived() { return static_cast<T*>(this); }
 
-#define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
-  type* on##name##Edge(type* thing) final { return derived()->onEdge(thing); }
+#define DEFINE_ON_EDGE_METHOD(name, type, _1, _2)             \
+  type* on##name##Edge(type* thing, const char* name) final { \
+    return derived()->onEdge(thing, name);                    \
+  }
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
 };
@@ -268,31 +259,15 @@ class JS_PUBLIC_API CallbackTracer
 
   
   
-  virtual void onChild(JS::GCCellPtr thing) = 0;
+  virtual void onChild(JS::GCCellPtr thing, const char* name) = 0;
 
  private:
   template <typename T>
-  T* onEdge(T* thing) {
-    onChild(JS::GCCellPtr(thing));
+  T* onEdge(T* thing, const char* name) {
+    onChild(JS::GCCellPtr(thing), name);
     return thing;
   }
   friend class js::GenericTracerImpl<CallbackTracer>;
-};
-
-
-class MOZ_RAII AutoTracingName {
-  JSTracer* trc_;
-
- public:
-  AutoTracingName(JSTracer* trc, const char* name) : trc_(trc) {
-    MOZ_ASSERT(name);
-    MOZ_ASSERT(!trc_->context().name_);
-    trc_->context().name_ = name;
-  }
-  ~AutoTracingName() {
-    MOZ_ASSERT(trc_->context().name_);
-    trc_->context().name_ = nullptr;
-  }
 };
 
 
