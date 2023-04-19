@@ -231,6 +231,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
                                   JSObject* );
   static bool HasShareSupport(JSContext* , JSObject* );
 
+  static bool HasMidiSupport(JSContext* , JSObject* );
+
   nsPIDOMWindowInner* GetParentObject() const { return GetWindow(); }
 
   virtual JSObject* WrapObject(JSContext* cx,

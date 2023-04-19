@@ -1895,6 +1895,16 @@ bool Navigator::HasShareSupport(JSContext* cx, JSObject* obj) {
 }
 
 
+bool Navigator::HasMidiSupport(JSContext* cx, JSObject* obj) {
+  nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(cx);
+
+  
+  return StaticPrefs::dom_webmidi_enabled() &&
+         IsSecureContextOrObjectIsFromSecureContext(cx, obj) &&
+         !principal->SchemeIs("file");
+}
+
+
 already_AddRefed<nsPIDOMWindowInner> Navigator::GetWindowFromGlobal(
     JSObject* aGlobal) {
   nsCOMPtr<nsPIDOMWindowInner> win = xpc::WindowOrNull(aGlobal);
