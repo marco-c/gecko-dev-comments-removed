@@ -232,7 +232,6 @@ async function openToolbox(commands) {
   });
 
   bindToolboxHandlers();
-  gToolbox.raise();
 
   
   if (
@@ -244,6 +243,8 @@ async function openToolbox(commands) {
     
     installTestingServer();
   }
+
+  await gToolbox.raise();
 
   
   if (env.get("MOZ_PROFILER_STARTUP") === "1") {

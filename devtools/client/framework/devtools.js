@@ -535,7 +535,7 @@ DevTools.prototype = {
       }
 
       if (raise) {
-        toolbox.raise();
+        await toolbox.raise();
       }
     } else {
       
