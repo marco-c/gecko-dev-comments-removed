@@ -165,7 +165,7 @@ let JSPROCESSACTORS = {
   
   BrowserProcess: {
     child: {
-      moduleURI: "resource:///actors/BrowserProcessChild.jsm",
+      esModuleURI: "resource:///actors/BrowserProcessChild.sys.mjs",
       observers: [
         
         
