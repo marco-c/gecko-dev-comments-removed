@@ -364,6 +364,11 @@ struct RTC_EXPORT RtpExtension {
 
   
   
+  static constexpr char kCsrcAudioLevelsUri[] =
+      "urn:ietf:params:rtp-hdrext:csrc-audio-level";
+
+  
+  
   static constexpr int kMinId = 1;
   static constexpr int kMaxId = 255;
   static constexpr int kMaxValueSize = 255;
