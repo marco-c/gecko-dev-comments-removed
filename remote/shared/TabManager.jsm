@@ -138,7 +138,7 @@ var TabManager = {
     } = options;
     const tabBrowser = this.getTabBrowser(window);
 
-    const tab = tabBrowser.addTab("about:blank", {
+    const tab = await tabBrowser.addTab("about:blank", {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       userContextId,
     });
@@ -293,9 +293,7 @@ var TabManager = {
   },
 
   supportsTabs() {
-    
-    
-    return lazy.AppInfo.isFirefox;
+    return lazy.AppInfo.isAndroid || lazy.AppInfo.isFirefox;
   },
 
   _getWindowForTab(tab) {
