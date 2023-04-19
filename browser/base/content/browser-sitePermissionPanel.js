@@ -187,7 +187,28 @@ var gPermissionPanel = {
 
 
 
-  _openPopup(event) {
+  openPopup(event) {
+    
+    
+    if (document.fullscreen) {
+      
+      
+      
+      
+      this._exitedEventReceived = false;
+      this._event = event;
+      Services.obs.addObserver(this, "fullscreen-painted");
+      window.addEventListener(
+        "MozDOMFullscreen:Exited",
+        () => {
+          this._exitedEventReceived = true;
+        },
+        { once: true }
+      );
+      document.exitFullscreen();
+      return;
+    }
+
     
     this._initializePopup();
 
@@ -308,28 +329,7 @@ var gPermissionPanel = {
       return;
     }
 
-    
-    
-    if (document.fullscreen) {
-      
-      
-      
-      
-      this._exitedEventReceived = false;
-      this._event = event;
-      Services.obs.addObserver(this, "fullscreen-painted");
-      window.addEventListener(
-        "MozDOMFullscreen:Exited",
-        () => {
-          this._exitedEventReceived = true;
-        },
-        { once: true }
-      );
-      document.exitFullscreen();
-      return;
-    }
-
-    this._openPopup(event);
+    this.openPopup(event);
   },
 
   onPopupShown(event) {
@@ -369,7 +369,7 @@ var gPermissionPanel = {
           return;
         }
         Services.obs.removeObserver(this, "fullscreen-painted");
-        this._openPopup(this._event);
+        this.openPopup(this._event);
         delete this._event;
         break;
       }
