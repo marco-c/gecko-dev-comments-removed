@@ -898,6 +898,20 @@ void ExternalEngineStateMachine::NotifyEventInternal(
   }
 }
 
+void ExternalEngineStateMachine::NotifyErrorInternal(
+    const MediaResult& aError) {
+  AssertOnTaskQueue();
+  LOG("Engine error: %s", aError.Description().get());
+  if (aError == NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR) {
+    
+    
+    DecodeError(
+        MediaResult(NS_ERROR_DOM_MEDIA_EXTERNAL_ENGINE_NOT_SUPPORTED_ERR));
+  } else {
+    DecodeError(aError);
+  }
+}
+
 #undef FMT
 #undef LOG
 #undef LOGV
