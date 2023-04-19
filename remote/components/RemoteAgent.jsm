@@ -20,6 +20,13 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   WebDriverBiDi: "chrome://remote/content/webdriver-bidi/WebDriverBiDi.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "DNSService",
+  "@mozilla.org/network/dns-service;1",
+  "nsIDNSService"
+);
+
 XPCOMUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
 XPCOMUtils.defineLazyGetter(lazy, "activeProtocols", () => {
@@ -34,9 +41,8 @@ XPCOMUtils.defineLazyGetter(lazy, "activeProtocols", () => {
 const WEBDRIVER_BIDI_ACTIVE = 0x1;
 const CDP_ACTIVE = 0x2;
 
+const DEFAULT_HOST = "localhost";
 const DEFAULT_PORT = 9222;
-
-const LOOPBACKS = ["localhost", "127.0.0.1", "[::1]"];
 
 const isRemote =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
@@ -47,6 +53,7 @@ class RemoteAgentParentProcess {
   #browserStartupFinished;
   #classID;
   #enabled;
+  #host;
   #port;
   #server;
 
@@ -59,6 +66,9 @@ class RemoteAgentParentProcess {
     this.#browserStartupFinished = lazy.Deferred();
     this.#classID = Components.ID("{8f685a9d-8181-46d6-a71d-869289099c6d}");
     this.#enabled = false;
+
+    
+    this.#host = DEFAULT_HOST;
     this.#port = DEFAULT_PORT;
     this.#server = null;
 
@@ -74,10 +84,10 @@ class RemoteAgentParentProcess {
       return this.#allowHosts;
     }
 
-    if (this.server) {
+    if (this.#server) {
       
       
-      const hostUri = Services.io.newURI(`https://${this.host}`);
+      const hostUri = Services.io.newURI(`https://${this.#host}`);
       if (!this.#isIPAddress(hostUri)) {
         return [RemoteAgent.host];
       }
@@ -89,7 +99,7 @@ class RemoteAgentParentProcess {
 
       
       
-      if (loopbackAddresses.includes(this.host)) {
+      if (loopbackAddresses.includes(this.#host)) {
         return ["localhost"];
       }
     }
@@ -117,11 +127,11 @@ class RemoteAgentParentProcess {
   }
 
   get debuggerAddress() {
-    if (!this.server) {
+    if (!this.#server) {
       return "";
     }
 
-    return `${this.host}:${this.port}`;
+    return `${this.#host}:${this.#port}`;
   }
 
   get enabled() {
@@ -129,23 +139,19 @@ class RemoteAgentParentProcess {
   }
 
   get host() {
-    
-    
-    return this.server?._host;
-  }
-
-  get running() {
-    return !!this.server && !this.server.isStopped();
+    return this.#host;
   }
 
   get port() {
-    
-    
-    return this.server?._port;
+    return this.#port;
+  }
+
+  get running() {
+    return !!this.#server && !this.#server.isStopped();
   }
 
   get scheme() {
-    return this.server?.identity.primaryScheme;
+    return this.#server?.identity.primaryScheme;
   }
 
   get server() {
@@ -156,16 +162,16 @@ class RemoteAgentParentProcess {
     return this.#webDriverBiDi;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Check if the provided URI's host is an IP address.
+   *
+   * @param {nsIURI} uri
+   *     The URI to check.
+   * @return {boolean}
+   */
   #isIPAddress(uri) {
     try {
-      
+      // getBaseDomain throws an explicit error if the uri host is an IP address.
       Services.eTLD.getBaseDomain(uri);
     } catch (e) {
       return e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS;
@@ -174,9 +180,9 @@ class RemoteAgentParentProcess {
   }
 
   handle(cmdLine) {
-    
-    
-    
+    // remote-debugging-port has to be consumed in nsICommandLineHandler:handle
+    // to avoid issues on macos. See Marionette.jsm::handle() for more details.
+    // TODO: remove after Bug 1724251 is fixed.
     try {
       cmdLine.handleFlagWithParam("remote-debugging-port", false);
     } catch (e) {
@@ -184,7 +190,7 @@ class RemoteAgentParentProcess {
     }
   }
 
-  async #listen(url) {
+  async #listen(port) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
       throw Components.Exception(
         "May only be instantiated in parent process",
@@ -196,34 +202,99 @@ class RemoteAgentParentProcess {
       return;
     }
 
-    if (!(url instanceof Ci.nsIURI)) {
-      url = Services.io.newURI(url);
-    }
-
-    let { host, port } = url;
-    if (!LOOPBACKS.includes(host)) {
-      throw Components.Exception(
-        "Restricted to loopback devices",
-        Cr.NS_ERROR_ILLEGAL_VALUE
+    // Try to resolve localhost to an IPv4 or IPv6 address so that the
+    // Server can be started on a given IP. This doesn't force httpd.js to
+    // have to use the dual stack support. Only fallback to keep using
+    // localhost if the hostname cannot be resolved.
+    try {
+      const addresses = await this.#resolveHostname(DEFAULT_HOST);
+      if (addresses.length > 0) {
+        this.#host = addresses[0];
+      }
+    } catch (e) {
+      lazy.logger.debug(
+        `Failed to resolve hostname "localhost" to IP address: ${e.message}`
       );
     }
 
-    
+    // nsIServerSocket uses -1 for atomic port allocation
     if (port === 0) {
       port = -1;
     }
 
     try {
       this.#server = new lazy.HttpServer();
+      const host = this.#host === "127.0.0.1" ? DEFAULT_HOST : this.#host;
       this.server._start(port, host);
+      this.#port = this.server._port;
+
+      if (this.#host == "127.0.0.1") {
+        // Bug 1783938: httpd.js refuses connections when started on 127.0.0.1.
+        // As workaround add another identity for that IP address.
+        this.server.identity.add("http", this.#host, this.#port);
+      }
 
       Services.obs.notifyObservers(null, "remote-listening", true);
 
-      await Promise.all([this.webDriverBiDi?.start(), this.cdp?.start()]);
+      await Promise.all([this.#webDriverBiDi?.start(), this.#cdp?.start()]);
     } catch (e) {
       await this.#stop();
       lazy.logger.error(`Unable to start remote agent: ${e.message}`, e);
     }
+  }
+
+  /**
+   * Resolves a hostname to one or more IP addresses.
+   *
+   * @param {string} hostname
+   *
+   * @returns {Array<string>}
+   */
+  #resolveHostname(hostname) {
+    return new Promise((resolve, reject) => {
+      let originalRequest;
+
+      const onLookupCompleteListener = {
+        onLookupComplete(request, record, status) {
+          if (request === originalRequest) {
+            if (!Components.isSuccessCode(status)) {
+              reject({ message: ChromeUtils.getXPCOMErrorName(status) });
+              return;
+            }
+
+            record.QueryInterface(Ci.nsIDNSAddrRecord);
+
+            const addresses = [];
+            while (record.hasMore()) {
+              let addr = record.getNextAddrAsString();
+              if (addr.includes(":") && !addr.startsWith("[")) {
+                // Make sure that the IPv6 address is wrapped with brackets.
+                addr = `[${addr}]`;
+              }
+              if (!addresses.includes(addr)) {
+                // Sometimes there are duplicate records with the same IP.
+                addresses.push(addr);
+              }
+            }
+            resolve(addresses);
+          }
+        },
+      };
+
+      try {
+        originalRequest = lazy.DNSService.asyncResolve(
+          hostname,
+          Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
+          Ci.nsIDNSService.RESOLVE_BYPASS_CACHE,
+          null,
+          onLookupCompleteListener,
+          null, //Services.tm.mainThread,
+          {} /* defaultOriginAttributes */
+        );
+      } catch (e) {
+        reject({ message: e.message });
+      }
+    });
   }
 
   async #stop() {
@@ -232,46 +303,46 @@ class RemoteAgentParentProcess {
     }
 
     try {
-      
-      
-      await this.cdp?.stop();
-      await this.webDriverBiDi?.stop();
+      // Stop the CDP support before stopping the server.
+      // Otherwise the HTTP server will fail to stop.
+      await this.#cdp?.stop();
+      await this.#webDriverBiDi?.stop();
 
-      await this.server.stop();
+      await this.#server.stop();
       this.#server = null;
       Services.obs.notifyObservers(null, "remote-listening");
     } catch (e) {
-      
+      // this function must never fail
       lazy.logger.error("unable to stop listener", e);
     }
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Handle the --remote-debugging-port command line argument.
+   *
+   * @param {nsICommandLine} cmdLine
+   *     Instance of the command line interface.
+   *
+   * @return {boolean}
+   *     Return `true` if the command line argument has been found.
+   */
   handleRemoteDebuggingPortFlag(cmdLine) {
     let enabled = false;
 
     try {
-      
+      // Catch cases when the argument, and a port have been specified.
       const port = cmdLine.handleFlagWithParam("remote-debugging-port", false);
       if (port !== null) {
         enabled = true;
 
-        
+        // In case of an invalid port keep the default port
         const parsed = Number(port);
         if (!isNaN(parsed)) {
           this.#port = parsed;
         }
       }
     } catch (e) {
-      
+      // If no port has been given check for the existence of the argument.
       enabled = cmdLine.handleFlag("remote-debugging-port", false);
     }
 
@@ -300,7 +371,7 @@ class RemoteAgentParentProcess {
   }
 
   async observe(subject, topic) {
-    if (this.enabled) {
+    if (this.#enabled) {
       lazy.logger.trace(`Received observer notification ${topic}`);
     }
 
@@ -314,7 +385,7 @@ class RemoteAgentParentProcess {
 
         this.#enabled = this.handleRemoteDebuggingPortFlag(subject);
 
-        if (this.enabled) {
+        if (this.#enabled) {
           Services.obs.addObserver(this, "final-ui-startup");
 
           this.#allowHosts = this.handleAllowHostsFlag(subject);
@@ -324,22 +395,22 @@ class RemoteAgentParentProcess {
           Services.obs.addObserver(this, "mail-idle-startup-tasks-finished");
           Services.obs.addObserver(this, "quit-application");
 
-          
-          
-          
+          // With Bug 1717899 we will extend the lifetime of the Remote Agent to
+          // the whole Firefox session, which will be identical to Marionette. For
+          // now prevent logging if the component is not enabled during startup.
           if (
             (lazy.activeProtocols & WEBDRIVER_BIDI_ACTIVE) ===
             WEBDRIVER_BIDI_ACTIVE
           ) {
             this.#webDriverBiDi = new lazy.WebDriverBiDi(this);
-            if (this.enabled) {
+            if (this.#enabled) {
               lazy.logger.debug("WebDriver BiDi enabled");
             }
           }
 
           if ((lazy.activeProtocols & CDP_ACTIVE) === CDP_ACTIVE) {
             this.#cdp = new lazy.CDP(this);
-            if (this.enabled) {
+            if (this.#enabled) {
               lazy.logger.debug("CDP enabled");
             }
           }
@@ -350,8 +421,7 @@ class RemoteAgentParentProcess {
         Services.obs.removeObserver(this, topic);
 
         try {
-          let address = Services.io.newURI(`http://localhost:${this.#port}`);
-          await this.#listen(address);
+          await this.#listen(this.#port);
         } catch (e) {
           throw Error(`Unable to start remote agent: ${e}`);
         }

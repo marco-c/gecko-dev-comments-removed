@@ -23,14 +23,17 @@ def test_debugger_address_true_fission_disabled(session):
     assert debugger_address is not None
 
     host, port = debugger_address.split(":")
-    assert host == "localhost"
+    assert host == "127.0.0.1"
     assert port.isnumeric()
 
     
-    http = HTTPRequest(host, int(port))
-    with http.get("/json/version") as response:
-        data = json.loads(response.read())
-        assert session.capabilities["browserVersion"] in data["Browser"]
+    
+    for target_host in [host, "localhost"]:
+        print(f"Connecting to WebSocket via host {target_host}")
+        http = HTTPRequest(target_host, int(port))
+        with http.get("/json/version") as response:
+            data = json.loads(response.read())
+            assert session.capabilities["browserVersion"] in data["Browser"]
 
     
     with using_context(session, "chrome"):
@@ -55,14 +58,17 @@ def test_debugger_address_true_fission_override(session):
     assert debugger_address is not None
 
     host, port = debugger_address.split(":")
-    assert host == "localhost"
+    assert host == "127.0.0.1"
     assert port.isnumeric()
 
     
-    http = HTTPRequest(host, int(port))
-    with http.get("/json/version") as response:
-        data = json.loads(response.read())
-        assert session.capabilities["browserVersion"] in data["Browser"]
+    
+    for target_host in [host, "localhost"]:
+        print(f"Connecting to WebSocket via host {target_host}")
+        http = HTTPRequest(target_host, int(port))
+        with http.get("/json/version") as response:
+            data = json.loads(response.read())
+            assert session.capabilities["browserVersion"] in data["Browser"]
 
     
     with using_context(session, "chrome"):
