@@ -38,16 +38,16 @@ WebRenderTextureHost::WebRenderTextureHost(
     const SurfaceDescriptor& aDesc, TextureFlags aFlags, TextureHost* aTexture,
     const wr::ExternalImageId& aExternalImageId)
     : TextureHost(aFlags), mWrappedTextureHost(aTexture) {
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!(aFlags & TextureFlags::DEALLOCATE_CLIENT));
   MOZ_ASSERT(mWrappedTextureHost);
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!(aFlags & TextureFlags::DEALLOCATE_CLIENT) ||
-             (aFlags & TextureFlags::REMOTE_TEXTURE));
+
   MOZ_COUNT_CTOR(WebRenderTextureHost);
 
   mExternalImageId = Some(aExternalImageId);

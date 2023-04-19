@@ -135,20 +135,12 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
   Maybe<layers::SurfaceDescriptor> desc =
       aContext->PresentFrontBuffer(nullptr, aTextureType);
   if (desc) {
-    if (desc->type() ==
-        layers::SurfaceDescriptor::TSurfaceDescriptorRemoteTexture) {
-      const auto& textureDesc = desc->get_SurfaceDescriptorRemoteTexture();
-      imageBridge->UpdateCompositable(mImageContainer, textureDesc.textureId(),
-                                      textureDesc.ownerId(), mData.mSize,
-                                      flags);
-    } else {
-      RefPtr<layers::TextureClient> texture =
-          layers::SharedSurfaceTextureData::CreateTextureClient(
-              *desc, format, mData.mSize, flags, imageBridge);
-      if (texture) {
-        image = new layers::TextureWrapperImage(
-            texture, gfx::IntRect(gfx::IntPoint(0, 0), mData.mSize));
-      }
+    RefPtr<layers::TextureClient> texture =
+        layers::SharedSurfaceTextureData::CreateTextureClient(
+            *desc, format, mData.mSize, flags, imageBridge);
+    if (texture) {
+      image = new layers::TextureWrapperImage(
+          texture, gfx::IntRect(gfx::IntPoint(0, 0), mData.mSize));
     }
   } else {
     surface = aContext->GetFrontBufferSnapshot( false);
@@ -181,9 +173,7 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
     imageList.AppendElement(layers::ImageContainer::NonOwningImage(
         image, TimeStamp(), mLastFrameID++, mImageProducerID));
     mImageContainer->SetCurrentImages(imageList);
-  } else if (!desc ||
-             desc->type() !=
-                 layers::SurfaceDescriptor::TSurfaceDescriptorRemoteTexture) {
+  } else {
     mImageContainer->ClearAllImages();
   }
 

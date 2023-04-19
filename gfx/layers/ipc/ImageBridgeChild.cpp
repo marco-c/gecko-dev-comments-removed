@@ -132,25 +132,6 @@ void ImageBridgeChild::UseTextures(
                                             OpUseTexture(textures)));
 }
 
-void ImageBridgeChild::UseRemoteTexture(CompositableClient* aCompositable,
-                                        const RemoteTextureId aTextureId,
-                                        const RemoteTextureOwnerId aOwnerId,
-                                        const gfx::IntSize aSize,
-                                        const TextureFlags aFlags) {
-  MOZ_ASSERT(aCompositable);
-  MOZ_ASSERT(aCompositable->GetIPCHandle());
-  MOZ_ASSERT(aCompositable->IsConnected());
-
-  mTxn->AddNoSwapEdit(CompositableOperation(
-      aCompositable->GetIPCHandle(),
-      OpUseRemoteTexture(aTextureId, aOwnerId, aSize, aFlags)));
-}
-
-void ImageBridgeChild::EnableAsyncCompositable(
-    CompositableClient* aCompositable, bool aEnable) {
-  
-}
-
 void ImageBridgeChild::HoldUntilCompositableRefReleasedIfNecessary(
     TextureClient* aClient) {
   if (!aClient) {
@@ -285,18 +266,23 @@ void ImageBridgeChild::Connect(CompositableClient* aCompositable,
   MOZ_ASSERT(InImageBridgeChildThread());
   MOZ_ASSERT(CanSend());
 
-  CompositableHandle handle = CompositableHandle::GetNext();
+  
+  
+  
+  static uint64_t sNextID = 1;
+  uint64_t id = sNextID++;
 
   
   
   if (aImageContainer) {
     MutexAutoLock lock(mContainerMapLock);
-    MOZ_ASSERT(mImageContainerListeners.find(uint64_t(handle)) ==
+    MOZ_ASSERT(mImageContainerListeners.find(id) ==
                mImageContainerListeners.end());
     mImageContainerListeners.emplace(
-        uint64_t(handle), aImageContainer->GetImageContainerListener());
+        id, aImageContainer->GetImageContainerListener());
   }
 
+  CompositableHandle handle(id);
   aCompositable->InitIPDL(handle);
   SendNewCompositable(handle, aCompositable->GetTextureInfo());
 }
@@ -342,42 +328,6 @@ void ImageBridgeChild::UpdateImageClient(RefPtr<ImageContainer> aContainer) {
 
   BeginTransaction();
   client->UpdateImage(aContainer, Layer::CONTENT_OPAQUE);
-  EndTransaction();
-}
-
-void ImageBridgeChild::UpdateCompositable(
-    const RefPtr<ImageContainer> aContainer, const RemoteTextureId aTextureId,
-    const RemoteTextureOwnerId aOwnerId, const gfx::IntSize aSize,
-    const TextureFlags aFlags) {
-  if (!aContainer) {
-    return;
-  }
-
-  if (!InImageBridgeChildThread()) {
-    RefPtr<Runnable> runnable = WrapRunnable(
-        RefPtr<ImageBridgeChild>(this), &ImageBridgeChild::UpdateCompositable,
-        aContainer, aTextureId, aOwnerId, aSize, aFlags);
-    GetThread()->Dispatch(runnable.forget());
-    return;
-  }
-
-  if (!CanSend()) {
-    return;
-  }
-
-  RefPtr<ImageClient> client = aContainer->GetImageClient();
-  if (NS_WARN_IF(!client)) {
-    return;
-  }
-
-  
-  
-  if (!client->IsConnected()) {
-    return;
-  }
-
-  BeginTransaction();
-  UseRemoteTexture(client, aTextureId, aOwnerId, aSize, aFlags);
   EndTransaction();
 }
 
