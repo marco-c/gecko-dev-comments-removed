@@ -65,6 +65,8 @@ class IndexedDatabaseManager final {
   }
 #endif
 
+  static bool InTestingMode();
+
   static bool FullSynchronous();
 
   static LoggingMode GetLoggingMode()
@@ -85,9 +87,17 @@ class IndexedDatabaseManager final {
   }
 #endif
 
+  static bool ExperimentalFeaturesEnabled();
+
+  static bool ExperimentalFeaturesEnabled(JSContext* aCx, JSObject* aGlobal);
+
+  static bool IsFileHandleEnabled();
+
   static uint32_t DataThreshold();
 
   static uint32_t MaxSerializedMsgSize();
+
+  static bool PreprocessingEnabled();
 
   
   
@@ -122,6 +132,10 @@ class IndexedDatabaseManager final {
   nsresult FlushPendingFileDeletions();
 
   static const nsCString& GetLocale();
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult CommonPostHandleEvent(
+      EventChainPostVisitor& aVisitor, const IDBFactory& aFactory);
 
   static bool ResolveSandboxBinding(JSContext* aCx);
 

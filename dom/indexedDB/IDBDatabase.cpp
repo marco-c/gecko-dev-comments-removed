@@ -483,7 +483,7 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
 
   if ((aMode == IDBTransactionMode::Readwriteflush ||
        aMode == IDBTransactionMode::Cleanup) &&
-      !StaticPrefs::dom_indexedDB_experimental()) {
+      !IndexedDatabaseManager::ExperimentalFeaturesEnabled()) {
     
     
     
@@ -1023,6 +1023,16 @@ void IDBDatabase::LastRelease() {
     mBackgroundActor->SendDeleteMeInternal();
     MOZ_ASSERT(!mBackgroundActor, "SendDeleteMeInternal should have cleared!");
   }
+}
+
+nsresult IDBDatabase::PostHandleEvent(EventChainPostVisitor& aVisitor) {
+  nsresult rv =
+      IndexedDatabaseManager::CommonPostHandleEvent(aVisitor, *mFactory);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
 }
 
 JSObject* IDBDatabase::WrapObject(JSContext* aCx,
