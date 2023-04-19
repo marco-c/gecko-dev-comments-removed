@@ -92,17 +92,17 @@ struct DcSctpOptions {
   
   
   
-  DurationMs rtt_max = DurationMs(8000);
+  DurationMs rtt_max = DurationMs(60'000);
 
   
   DurationMs rto_initial = DurationMs(500);
 
   
-  DurationMs rto_max = DurationMs(800);
+  DurationMs rto_max = DurationMs(60'000);
 
   
   
-  DurationMs rto_min = DurationMs(220);
+  DurationMs rto_min = DurationMs(400);
 
   
   DurationMs t1_init_timeout = DurationMs(1000);
