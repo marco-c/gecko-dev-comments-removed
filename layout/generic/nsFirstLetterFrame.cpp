@@ -78,7 +78,7 @@ void nsFirstLetterFrame::SetInitialChildList(ChildListID aListID,
     nsLayoutUtils::MarkDescendantsDirty(f);  
   }
 
-  mFrames.SetFrames(aChildList);
+  mFrames = std::move(aChildList);
 }
 
 nsresult nsFirstLetterFrame::GetChildFrameContainingOffset(

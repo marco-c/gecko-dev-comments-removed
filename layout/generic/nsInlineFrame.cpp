@@ -308,7 +308,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         
         
-        mFrames.SetFrames(*prevOverflowFrames);
+        mFrames = std::move(*prevOverflowFrames);
         lazilySetParentPointer = true;
       } else {
         

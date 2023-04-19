@@ -94,7 +94,7 @@ void nsTableWrapperFrame::SetInitialChildList(ChildListID aListID,
     
     MOZ_ASSERT(mCaptionFrames.IsEmpty(),
                "already have child frames in CaptionList");
-    mCaptionFrames.SetFrames(aChildList);
+    mCaptionFrames = std::move(aChildList);
   } else {
     MOZ_ASSERT(kPrincipalList != aListID ||
                    (aChildList.FirstChild() &&
