@@ -45,13 +45,15 @@ struct PropItem {
   
   nsString mAttributeValueOrCSSValue;
   
-  SpecifiedStyle mSpecifiedStyle = SpecifiedStyle::Preserve;
+  const SpecifiedStyle mSpecifiedStyle = SpecifiedStyle::Preserve;
 
   PropItem() = delete;
-  PropItem(nsStaticAtom* aTag, nsAtom* aAttribute, const nsAString& aValue)
+  PropItem(nsStaticAtom* aTag, nsAtom* aAttribute, const nsAString& aValue,
+           SpecifiedStyle aSpecifiedStyle = SpecifiedStyle::Preserve)
       : mTag(aTag),
         mAttribute(aAttribute != nsGkAtoms::_empty ? aAttribute : nullptr),
-        mAttributeValueOrCSSValue(aValue) {
+        mAttributeValueOrCSSValue(aValue),
+        mSpecifiedStyle(aSpecifiedStyle) {
     MOZ_COUNT_CTOR(PropItem);
   }
   MOZ_COUNTED_DTOR(PropItem)
@@ -120,7 +122,8 @@ class TypeInState final {
   void SetProp(nsStaticAtom& aProp, nsAtom* aAttr, const nsAString& aValue);
 
   void ClearAllProps();
-  void ClearProp(nsStaticAtom* aProp, nsAtom* aAttr);
+  void ClearProp(nsStaticAtom* aProp, nsAtom* aAttr,
+                 SpecifiedStyle aSpecifiedStyle = SpecifiedStyle::Preserve);
   void ClearLinkPropAndDiscardItsSpecifiedStyle();
 
   
