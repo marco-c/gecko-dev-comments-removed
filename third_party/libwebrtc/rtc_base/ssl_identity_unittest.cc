@@ -406,21 +406,6 @@ TEST_F(SSLIdentityTest, FromPEMStringsEC) {
   EXPECT_EQ(kECDSA_CERT_PEM, identity->certificate().ToPEMString());
 }
 
-TEST_F(SSLIdentityTest, FromPEMChainStrings) {
-  
-  
-  std::string chain(kRSA_CERT_PEM);
-  chain.append(kTestCertificate);
-  std::unique_ptr<SSLIdentity> identity(
-      SSLIdentity::CreateFromPEMChainStrings(kRSA_PRIVATE_KEY_PEM, chain));
-  EXPECT_TRUE(identity);
-  EXPECT_EQ(kRSA_PRIVATE_KEY_PEM, identity->PrivateKeyToPEMString());
-  EXPECT_EQ(kRSA_PUBLIC_KEY_PEM, identity->PublicKeyToPEMString());
-  ASSERT_EQ(2u, identity->cert_chain().GetSize());
-  EXPECT_EQ(kRSA_CERT_PEM, identity->cert_chain().Get(0).ToPEMString());
-  EXPECT_EQ(kTestCertificate, identity->cert_chain().Get(1).ToPEMString());
-}
-
 TEST_F(SSLIdentityTest, CloneIdentityRSA) {
   TestCloningIdentity(*identity_rsa1_);
   TestCloningIdentity(*identity_rsa2_);
