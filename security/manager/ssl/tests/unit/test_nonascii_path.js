@@ -8,14 +8,11 @@
 
 
 
-let env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-let profd = env.get("XPCSHELL_TEST_PROFILE_DIR");
+let profd = Services.env.get("XPCSHELL_TEST_PROFILE_DIR");
 let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
 file.initWithPath(profd);
 file.append("'÷1");
-env.set("XPCSHELL_TEST_PROFILE_DIR", file.path);
+Services.env.set("XPCSHELL_TEST_PROFILE_DIR", file.path);
 
 file = do_get_profile(); 
 Assert.ok(
@@ -24,7 +21,7 @@ Assert.ok(
 );
 
 
-env.set("XPCSHELL_TEST_PROFILE_DIR", profd);
+Services.env.set("XPCSHELL_TEST_PROFILE_DIR", profd);
 
 const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB

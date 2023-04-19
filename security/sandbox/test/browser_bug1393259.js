@@ -16,10 +16,6 @@
 const kPageURL =
   "http://example.com/browser/security/sandbox/test/bug1393259.html";
 
-const environment = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-
 
 const kPythonPath = "/usr/bin/python";
 const kFontInstallerPath = "browser/security/sandbox/test/mac_register_font.py";
