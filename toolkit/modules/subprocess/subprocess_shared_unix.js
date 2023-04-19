@@ -5,6 +5,13 @@
 
 "use strict";
 
+if (typeof Components !== "undefined") {
+  
+  Cc["@mozilla.org/net/osfileconstantsservice;1"]
+    .getService(Ci.nsIOSFileConstantsService)
+    .init();
+}
+
 
 
 
