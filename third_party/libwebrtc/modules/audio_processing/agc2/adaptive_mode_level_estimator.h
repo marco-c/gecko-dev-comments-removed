@@ -29,14 +29,6 @@ class AdaptiveModeLevelEstimator {
   AdaptiveModeLevelEstimator(const AdaptiveModeLevelEstimator&) = delete;
   AdaptiveModeLevelEstimator& operator=(const AdaptiveModeLevelEstimator&) =
       delete;
-  
-  
-  AdaptiveModeLevelEstimator(
-      ApmDataDumper* apm_data_dumper,
-      AudioProcessing::Config::GainController2::LevelEstimator level_estimator,
-      bool use_saturation_protector,
-      float extra_saturation_margin_db);
-  
   AdaptiveModeLevelEstimator(
       ApmDataDumper* apm_data_dumper,
       AudioProcessing::Config::GainController2::LevelEstimator level_estimator,
