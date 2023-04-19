@@ -46,6 +46,7 @@
 #include "net/dcsctp/rx/data_tracker.h"
 #include "net/dcsctp/rx/reassembly_queue.h"
 #include "net/dcsctp/socket/callback_deferrer.h"
+#include "net/dcsctp/socket/packet_sender.h"
 #include "net/dcsctp/socket/state_cookie.h"
 #include "net/dcsctp/socket/transmission_control_block.h"
 #include "net/dcsctp/timer/timer.h"
@@ -141,8 +142,8 @@ class DcSctpSocket : public DcSctpSocketInterface {
   absl::optional<DurationMs> OnInitTimerExpiry();
   absl::optional<DurationMs> OnCookieTimerExpiry();
   absl::optional<DurationMs> OnShutdownTimerExpiry();
-  
-  void SendPacket(SctpPacket::Builder& builder);
+  void OnSentPacket(rtc::ArrayView<const uint8_t> packet,
+                    SendPacketStatus status);
   
   
   void MaybeSendShutdownOrAck();
@@ -257,6 +258,9 @@ class DcSctpSocket : public DcSctpSocketInterface {
   const std::unique_ptr<Timer> t1_init_;
   const std::unique_ptr<Timer> t1_cookie_;
   const std::unique_ptr<Timer> t2_shutdown_;
+
+  
+  PacketSender packet_sender_;
 
   
   
