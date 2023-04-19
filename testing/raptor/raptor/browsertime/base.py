@@ -289,7 +289,14 @@ class Browsertime(Perftest):
             
             "--browsertime.chimera",
             "true" if self.config["chimera"] else "false",
+            "--firefox.perfStats",
+            test.get("perfstats", "false"),
         ]
+
+        if test.get("perfstats") == "true":
+            
+            
+            self.results_handler.perfstats = True
 
         if test.get("secondary_url"):
             browsertime_options.extend(
