@@ -90,7 +90,19 @@ const CreditCardTelemetry = {
     let identified = new Set();
     fieldDetails.forEach(detail => {
       identified.add(detail.fieldName);
-      this._ccFormV2SetExtra(ccFormV2Extra, detail.fieldName, "true");
+
+      
+      if (detail.confidence > 0) {
+        
+        let confidence = Math.floor(100 * detail.confidence) / 100;
+        this._ccFormV2SetExtra(
+          ccFormV2Extra,
+          detail.fieldName,
+          confidence.toString()
+        );
+      } else {
+        this._ccFormV2SetExtra(ccFormV2Extra, detail.fieldName, "true");
+      }
     });
 
     let ccFormExtra = {
