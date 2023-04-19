@@ -3274,6 +3274,10 @@ bool ParseContent(const std::string& message,
         }
 
         simulcast = error_or_simulcast.value();
+      } else if (HasAttribute(line, kAttributeRtcp)) {
+        
+        
+        continue;
       } else {
         
         RTC_LOG(LS_INFO) << "Ignored line: " << line;
