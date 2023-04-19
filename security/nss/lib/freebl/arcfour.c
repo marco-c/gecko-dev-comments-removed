@@ -22,7 +22,7 @@
 #define CONVERT_TO_WORDS
 #endif
 
-#if defined(AIX) || defined(NSS_BEVAND_ARCFOUR)
+#if defined(AIX) || defined(OSF1) || defined(NSS_BEVAND_ARCFOUR)
 
 
 

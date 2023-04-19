@@ -45,7 +45,7 @@
 
 #include "seccomon.h"
 
-#if defined(XP_UNIX) || defined(XP_WIN32) || defined(XP_OS2)
+#if defined(XP_UNIX) || defined(XP_WIN32) || defined(XP_OS2) || defined(XP_BEOS)
 
 #include "cert.h"
 #include "ssl.h"
@@ -60,7 +60,7 @@
 #include "selfencrypt.h"
 #include <stdio.h>
 
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
 
 #include <syslog.h>
 #include <fcntl.h>
@@ -237,6 +237,8 @@ static PRBool isMultiProcess = PR_FALSE;
 
 #if defined(AIX) || defined(LINUX) || defined(NETBSD) || defined(OPENBSD)
 #define MAX_SID_CACHE_LOCKS 8 /* two FDs per lock */
+#elif defined(OSF1)
+#define MAX_SID_CACHE_LOCKS 16 /* one FD per lock */
 #else
 #define MAX_SID_CACHE_LOCKS 256
 #endif
@@ -266,7 +268,7 @@ typedef struct inheritanceStr inheritance;
 
 #endif 
 
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
 
 #define DEFAULT_CACHE_DIRECTORY "/tmp"
 
@@ -1045,7 +1047,7 @@ InitCache(cacheDesc *cache, int maxCacheEntries, int maxCertCacheEntries,
 
     if (shared) {
 
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
         
 
 
@@ -1229,7 +1231,7 @@ SSL_ShutdownServerSessionIDCacheInstance(cacheDesc *cache)
 SECStatus
 SSL_ShutdownServerSessionIDCache(void)
 {
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
     
     StopLockPoller(&globalCache);
 #endif
@@ -1293,7 +1295,7 @@ ssl_ConfigMPServerSIDCacheWithOpt(PRUint32 ssl3_timeout,
         result = SECFailure;
     }
 
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
     
     LaunchLockPoller(cache);
 #endif
@@ -1517,7 +1519,7 @@ SSL_InheritMPServerSIDCache(const char *envString)
     return SSL_InheritMPServerSIDCacheInstance(&globalCache, envString);
 }
 
-#if defined(XP_UNIX)
+#if defined(XP_UNIX) || defined(XP_BEOS)
 
 #define SID_LOCK_EXPIRATION_TIMEOUT 30 /* seconds */
 

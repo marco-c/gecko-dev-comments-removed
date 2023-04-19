@@ -2933,7 +2933,7 @@ sftk_CloseAllSessions(SFTKSlot *slot, PRBool logout)
         PZLock *lock = SFTK_SESSION_LOCK(slot, i);
         do {
             SKIP_AFTER_FORK(PZ_Lock(lock));
-            session = slot->head ? slot->head[i] : NULL;
+            session = slot->head[i];
             
             
 
@@ -3042,24 +3042,9 @@ SFTK_DestroySlotData(SFTKSlot *slot)
     }
     slot->sessObjHashSize = 0;
 
-    
-
-
-
-
-    for (i = 0; i < slot->numSessionLocks; i++) {
-        if (slot->sessionLock && slot->sessionLock[i]) {
-            PZ_Lock(slot->sessionLock[i]);
-        }
-    }
     if (slot->head) {
         PORT_Free(slot->head);
         slot->head = NULL;
-    }
-    for (i = 0; i < slot->numSessionLocks; i++) {
-        if (slot->sessionLock && slot->sessionLock[i]) {
-            PZ_Unlock(slot->sessionLock[i]);
-        }
     }
     slot->sessHashSize = 0;
 
@@ -4218,13 +4203,6 @@ NSC_OpenSession(CK_SLOT_ID slotID, CK_FLAGS flags,
         } while (sessionID == CK_INVALID_HANDLE);
         lock = SFTK_SESSION_LOCK(slot, sessionID);
         PZ_Lock(lock);
-        if (!slot->head) {
-            sessionID = CK_INVALID_HANDLE;
-            sftk_DestroySession(session);
-            PZ_Unlock(lock);
-            break;
-        }
-        sameID = NULL;
         sftkqueue_find(sameID, sessionID, slot->head, slot->sessHashSize);
         if (sameID == NULL) {
             session->handle = sessionID;
@@ -4260,7 +4238,7 @@ NSC_CloseSession(CK_SESSION_HANDLE hSession)
     
     lock = SFTK_SESSION_LOCK(slot, hSession);
     PZ_Lock(lock);
-    if (slot->head && sftkqueue_is_queued(session, hSession, slot->head, slot->sessHashSize)) {
+    if (sftkqueue_is_queued(session, hSession, slot->head, slot->sessHashSize)) {
         sessionFound = PR_TRUE;
         sftkqueue_delete(session, hSession, slot->head, slot->sessHashSize);
     }
