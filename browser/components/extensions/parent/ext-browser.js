@@ -1009,11 +1009,16 @@ class Window extends WindowBase {
   }
 
   static getState(window) {
+    
+    
+    
+    
+    
     const STATES = {
       [window.STATE_MAXIMIZED]: "maximized",
       [window.STATE_MINIMIZED]: "minimized",
-      [window.STATE_NORMAL]: "normal",
       [window.STATE_FULLSCREEN]: "fullscreen",
+      [window.STATE_NORMAL]: "normal",
     };
     return STATES[window.windowState];
   }
