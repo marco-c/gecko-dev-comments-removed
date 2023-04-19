@@ -852,6 +852,15 @@ void RetransmissionQueue::AbandonAllFor(
 
 size_t RetransmissionQueue::max_bytes_to_send() const {
   size_t left = outstanding_bytes_ >= cwnd_ ? 0 : cwnd_ - outstanding_bytes_;
+
+  if (outstanding_bytes_ == 0) {
+    
+    
+    
+    
+    return left;
+  }
+
   return std::min(rwnd(), left);
 }
 
