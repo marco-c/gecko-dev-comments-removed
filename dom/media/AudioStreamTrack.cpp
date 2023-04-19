@@ -10,15 +10,29 @@
 
 namespace mozilla::dom {
 
-void AudioStreamTrack::AddAudioOutput(void* aKey) {
+RefPtr<GenericPromise> AudioStreamTrack::AddAudioOutput(
+    void* aKey, AudioDeviceInfo* aSink) {
+  MOZ_ASSERT(!mCrossGraphs.Get(aKey),
+             "A previous audio output for this aKey should have been removed");
+
   if (Ended()) {
-    return;
+    return GenericPromise::CreateAndResolve(true, __func__);
   }
-  if (CrossGraphPort* cgm = mCrossGraphs.Get(aKey)) {
-    cgm->AddAudioOutput(aKey);
-    return;
+
+  UniquePtr<CrossGraphPort> manager;
+  if (!aSink || !(manager = CrossGraphPort::Connect(this, aSink, mWindow))) {
+    
+    mTrack->AddAudioOutput(aKey);
+    return GenericPromise::CreateAndResolve(true, __func__);
   }
-  mTrack->AddAudioOutput(aKey);
+
+  
+  const UniquePtr<CrossGraphPort>& crossGraph = mCrossGraphs.WithEntryHandle(
+      aKey, [&manager](auto entry) -> UniquePtr<CrossGraphPort>& {
+        return entry.Insert(std::move(manager));
+      });
+  crossGraph->AddAudioOutput(aKey);
+  return crossGraph->EnsureConnected();
 }
 
 void AudioStreamTrack::RemoveAudioOutput(void* aKey) {
@@ -65,31 +79,6 @@ void AudioStreamTrack::SetReadyState(MediaStreamTrackState aState) {
     mCrossGraphs.Clear();
   }
   MediaStreamTrack::SetReadyState(aState);
-}
-
-RefPtr<GenericPromise> AudioStreamTrack::SetAudioOutputDevice(
-    void* aKey, AudioDeviceInfo* aSink) {
-  MOZ_ASSERT(aSink);
-  MOZ_ASSERT(!mCrossGraphs.Get(aKey),
-             "A previous audio output for this aKey should have been removed");
-
-  if (Ended()) {
-    return GenericPromise::CreateAndResolve(true, __func__);
-  }
-
-  UniquePtr<CrossGraphPort> manager =
-      CrossGraphPort::Connect(this, aSink, mWindow);
-  if (!manager) {
-    
-    return GenericPromise::CreateAndResolve(true, __func__);
-  }
-
-  
-  const UniquePtr<CrossGraphPort>& crossGraph = mCrossGraphs.WithEntryHandle(
-      aKey, [&manager](auto entry) -> UniquePtr<CrossGraphPort>& {
-        return entry.Insert(std::move(manager));
-      });
-  return crossGraph->EnsureConnected();
 }
 
 }  

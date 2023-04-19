@@ -27,11 +27,13 @@ class AudioStreamTrack : public MediaStreamTrack {
   AudioStreamTrack* AsAudioStreamTrack() override { return this; }
   const AudioStreamTrack* AsAudioStreamTrack() const override { return this; }
 
-  void AddAudioOutput(void* aKey);
+  
+  
+  
+  
+  RefPtr<GenericPromise> AddAudioOutput(void* aKey, AudioDeviceInfo* aSink);
   void RemoveAudioOutput(void* aKey);
   void SetAudioOutputVolume(void* aKey, float aVolume);
-  RefPtr<GenericPromise> SetAudioOutputDevice(void* key,
-                                              AudioDeviceInfo* aSink);
 
   
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("audio"); }
