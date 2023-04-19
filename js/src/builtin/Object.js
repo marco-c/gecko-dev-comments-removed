@@ -241,7 +241,10 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
 
   
   if (!IsObject(attributes)) {
-    ThrowArgTypeNotObject(NOT_OBJECT_KIND_DESCRIPTOR, attributes);
+    ThrowTypeError(
+      JSMSG_OBJECT_REQUIRED_PROP_DESC,
+      DecompileArg(2, attributes)
+    );
   }
 
   
