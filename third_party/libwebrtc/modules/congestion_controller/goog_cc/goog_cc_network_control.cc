@@ -495,7 +495,6 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate();
   bandwidth_estimation_->SetAcknowledgedRate(acknowledged_bitrate,
                                              report.feedback_time);
-  bandwidth_estimation_->IncomingPacketFeedbackVector(report);
   for (const auto& feedback : report.SortedByReceiveTime()) {
     if (feedback.sent_packet.pacing_info.probe_cluster_id !=
         PacedPacketInfo::kNotAProbe) {
@@ -553,11 +552,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     }
     
     
-    bandwidth_estimation_->UpdateDelayBasedEstimate(report.feedback_time,
-                                                    result.target_bitrate);
+    bandwidth_estimation_->UpdateDelayBasedEstimate(
+        report.feedback_time, result.target_bitrate,
+        result.delay_detector_state);
     
     MaybeTriggerOnNetworkChanged(&update, report.feedback_time);
   }
+  bandwidth_estimation_->UpdateLossBasedEstimatorFromFeedbackVector(report);
   recovered_from_overuse = result.recovered_from_overuse;
   backoff_in_alr = result.backoff_in_alr;
 
