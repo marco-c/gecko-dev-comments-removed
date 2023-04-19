@@ -745,7 +745,13 @@ nsresult DNSPacket::DecodeInternal(
             
             
             
-            parsed.mSvcDomainName = qname;
+            
+            
+            if (mOriginHost) {
+              parsed.mSvcDomainName = *mOriginHost;
+            } else {
+              parsed.mSvcDomainName = qname;
+            }
           }
 
           available -= (svcbIndex - index);
