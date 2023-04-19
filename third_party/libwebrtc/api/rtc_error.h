@@ -178,11 +178,11 @@ inline std::ostream& operator<<(
 
 
 
-#define LOG_AND_RETURN_ERROR_EX(type, message, severity)           \
-  {                                                                \
-    RTC_DCHECK(type != RTCErrorType::NONE);                        \
-    RTC_LOG(severity) << message << " (" << ToString(type) << ")"; \
-    return webrtc::RTCError(type, message);                        \
+#define LOG_AND_RETURN_ERROR_EX(type, message, severity)                     \
+  {                                                                          \
+    RTC_DCHECK(type != RTCErrorType::NONE);                                  \
+    RTC_LOG(severity) << message << " (" << ::webrtc::ToString(type) << ")"; \
+    return ::webrtc::RTCError(type, message);                                \
   }
 
 #define LOG_AND_RETURN_ERROR(type, message) \
