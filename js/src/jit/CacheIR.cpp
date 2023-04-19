@@ -7630,6 +7630,14 @@ StringOperandId IRGenerator::emitToStringGuard(ValOperandId id,
     BooleanOperandId boolId = writer.guardToBoolean(id);
     return writer.booleanToString(boolId);
   }
+  if (v.isNull()) {
+    writer.guardIsNull(id);
+    return writer.loadConstantString(cx_->names().null);
+  }
+  if (v.isUndefined()) {
+    writer.guardIsUndefined(id);
+    return writer.loadConstantString(cx_->names().undefined);
+  }
   if (v.isInt32()) {
     Int32OperandId intId = writer.guardToInt32(id);
     return writer.callInt32ToString(intId);
@@ -11842,7 +11850,8 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringConcat() {
   
   
   auto canConvertToString = [](const Value& v) {
-    return v.isString() || v.isNumber() || v.isBoolean();
+    return v.isString() || v.isNumber() || v.isBoolean() ||
+           v.isNullOrUndefined();
   };
   if (!(lhs_.isString() && canConvertToString(rhs_)) &&
       !(canConvertToString(lhs_) && rhs_.isString())) {
