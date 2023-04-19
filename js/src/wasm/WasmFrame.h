@@ -273,17 +273,7 @@ namespace wasm {
 class Instance;
 
 
-
-
-
-
-
-
-
-
-
-
-constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
+constexpr uintptr_t ExitFPTag = 0x1;
 
 
 
@@ -326,36 +316,29 @@ class Frame {
 
   uint8_t* rawCaller() const { return callerFP_; }
 
-  Frame* wasmCaller() const {
-    MOZ_ASSERT(!callerIsExitOrJitEntryFP());
-    return reinterpret_cast<Frame*>(callerFP_);
-  }
+  Frame* wasmCaller() const { return reinterpret_cast<Frame*>(callerFP_); }
 
-  bool callerIsExitOrJitEntryFP() const {
-    return isExitOrJitEntryFP(callerFP_);
-  }
-
-  uint8_t* jitEntryCaller() const { return toJitEntryCaller(callerFP_); }
+  uint8_t* jitEntryCaller() const { return callerFP_; }
 
   static const Frame* fromUntaggedWasmExitFP(const void* savedFP) {
-    MOZ_ASSERT(!isExitOrJitEntryFP(savedFP));
+    MOZ_ASSERT(!isExitFP(savedFP));
     return reinterpret_cast<const Frame*>(savedFP);
   }
 
-  static bool isExitOrJitEntryFP(const void* fp) {
-    return reinterpret_cast<uintptr_t>(fp) & ExitOrJitEntryFPTag;
+  static bool isExitFP(const void* fp) {
+    return reinterpret_cast<uintptr_t>(fp) & ExitFPTag;
   }
 
-  static uint8_t* toJitEntryCaller(const void* fp) {
-    MOZ_ASSERT(isExitOrJitEntryFP(fp));
+  static uint8_t* untagExitFP(const void* fp) {
+    MOZ_ASSERT(isExitFP(fp));
     return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(fp) &
-                                      ~ExitOrJitEntryFPTag);
+                                      ~ExitFPTag);
   }
 
-  static uint8_t* addExitOrJitEntryFPTag(const Frame* fp) {
-    MOZ_ASSERT(!isExitOrJitEntryFP(fp));
+  static uint8_t* addExitFPTag(const Frame* fp) {
+    MOZ_ASSERT(!isExitFP(fp));
     return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(fp) |
-                                      ExitOrJitEntryFPTag);
+                                      ExitFPTag);
   }
 };
 

@@ -134,9 +134,6 @@ static inline void AssertDirectJitCall(const void* fp) {
   
   
 #ifdef DEBUG
-  if (Frame::isExitOrJitEntryFP(fp)) {
-    fp = Frame::toJitEntryCaller(fp);
-  }
   auto* jitCaller = (ExitFrameLayout*)fp;
   MOZ_ASSERT(jitCaller->footer()->type() ==
              jit::ExitFrameType::DirectWasmJitCall);
@@ -161,8 +158,6 @@ void WasmFrameIter::popFrame() {
     
     
     
-    
-    MOZ_ASSERT(fp_->callerIsExitOrJitEntryFP());
     AssertDirectJitCall(fp_->jitEntryCaller());
 
     unwoundJitCallerFP_ = fp_->jitEntryCaller();
@@ -427,10 +422,10 @@ void wasm::SetExitFP(MacroAssembler& masm, ExitReason reason,
       Imm32(reason.encode()),
       Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
 
-  masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
+  masm.orPtr(Imm32(ExitFPTag), FramePointer);
   masm.storePtr(FramePointer,
                 Address(scratch, JitActivation::offsetOfPackedExitFP()));
-  masm.andPtr(Imm32(int32_t(~ExitOrJitEntryFPTag)), FramePointer);
+  masm.andPtr(Imm32(int32_t(~ExitFPTag)), FramePointer);
 }
 
 void wasm::ClearExitFP(MacroAssembler& masm, Register scratch) {
@@ -793,7 +788,7 @@ static void AssertNoWasmExitFPInJitExit(MacroAssembler& masm) {
   Label ok;
   masm.branchTestPtr(Assembler::Zero,
                      Address(scratch, JitActivation::offsetOfPackedExitFP()),
-                     Imm32(ExitOrJitEntryFPTag), &ok);
+                     Imm32(ExitFPTag), &ok);
   masm.breakpoint();
   masm.bind(&ok);
 #endif
@@ -1047,7 +1042,6 @@ const Instance* js::wasm::GetNearestEffectiveInstance(const Frame* fp) {
 
     if (!code) {
       
-      MOZ_ASSERT(fp->callerIsExitOrJitEntryFP());
       AssertDirectJitCall(fp->jitEntryCaller());
       return ExtractCalleeInstanceFromFrameWithInstances(fp);
     }
@@ -1084,9 +1078,8 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
   
   
   
-  
-  uint8_t* fp = Frame::isExitOrJitEntryFP(registers.fp)
-                    ? Frame::toJitEntryCaller(registers.fp)
+  uint8_t* fp = Frame::isExitFP(registers.fp)
+                    ? Frame::untagExitFP(registers.fp)
                     : reinterpret_cast<uint8_t*>(registers.fp);
 
   
@@ -1214,10 +1207,7 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       } else if (offsetFromEntry == PushedFP) {
         
         const auto* frame = Frame::fromUntaggedWasmExitFP(sp);
-        DebugOnly<const uint8_t*> caller = frame->callerIsExitOrJitEntryFP()
-                                               ? frame->jitEntryCaller()
-                                               : frame->rawCaller();
-        MOZ_ASSERT(caller == fp);
+        MOZ_ASSERT(frame->rawCaller() == fp);
         fixedPC = frame->returnAddress();
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
@@ -1317,7 +1307,7 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       }
       
       
-      if (intptr_t(fp) == (FailFP & ~ExitOrJitEntryFPTag)) {
+      if (intptr_t(fp) == (FailFP & ~ExitFPTag)) {
         return false;
       }
       
@@ -1419,9 +1409,7 @@ void ProfilingFrameIterator::operator++() {
     
     MOZ_ASSERT(!codeRange_);
     AssertDirectJitCall(callerFP_);
-    unwoundJitCallerFP_ = Frame::isExitOrJitEntryFP(callerFP_)
-                              ? Frame::toJitEntryCaller(callerFP_)
-                              : callerFP_;
+    unwoundJitCallerFP_ = callerFP_;
     MOZ_ASSERT(done());
     return;
   }

@@ -820,7 +820,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   
-  masm.andPtr(Imm32(int32_t(~ExitOrJitEntryFPTag)), FramePointer);
+  masm.andPtr(Imm32(int32_t(~ExitFPTag)), FramePointer);
 
   masm.loadWasmPinnedRegsFromInstance();
 
@@ -1452,12 +1452,10 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   
   
   *callOffset = masm.buildFakeExitFrame(scratch);
-  masm.loadJSContext(scratch);
-  masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::DirectWasmJitCall);
   
   masm.moveStackPtrTo(FramePointer);
-  masm.addPtr(Imm32(ExitFooterFrame::Size()), FramePointer);
-  masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
+  masm.loadJSContext(scratch);
+  masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::DirectWasmJitCall);
 
   
   unsigned bytesNeeded = StackArgBytesForWasmABI(fe.funcType());
