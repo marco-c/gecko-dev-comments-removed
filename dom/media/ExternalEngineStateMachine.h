@@ -145,6 +145,10 @@ class ExternalEngineStateMachine final
         mSeekJob.RejectIfExists(aCallSite);
       }
       bool IsSeeking() const { return mSeekRequest.Exists(); }
+      media::TimeUnit GetTargetTime() const {
+        return mSeekJob.mTarget ? mSeekJob.mTarget->GetTime()
+                                : media::TimeUnit::Invalid();
+      }
       
       
       bool mWaitingEngineSeeked = false;
