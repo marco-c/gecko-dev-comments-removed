@@ -7,7 +7,7 @@
 const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
 
-const BYTES_IN_KB = 1024;
+const BYTES_IN_KB = 1000;
 const BYTES_IN_MB = Math.pow(BYTES_IN_KB, 2);
 const BYTES_IN_GB = Math.pow(BYTES_IN_KB, 3);
 const MAX_BYTES_SIZE = 1000;
@@ -41,8 +41,6 @@ function formatDecimals(size, decimals) {
 
 
 
-
-
 function getFormattedSize(bytes, decimals = REQUEST_DECIMALS) {
   if (bytes < MAX_BYTES_SIZE) {
     return L10N.getFormatStr("networkMenu.sizeB", bytes);
@@ -52,7 +50,7 @@ function getFormattedSize(bytes, decimals = REQUEST_DECIMALS) {
     const formattedDecimals = formatDecimals(kb, decimals);
 
     return L10N.getFormatStr(
-      "networkMenu.sizeKB",
+      "networkMenu.size.kB",
       getSizeWithDecimals(kb, formattedDecimals)
     );
   }
