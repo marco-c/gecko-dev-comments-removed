@@ -321,22 +321,6 @@ class CSSEditUtils final {
 
 
 
-  void SetCSSEnabled(bool aIsCSSPrefChecked);
-
-  
-
-
-
-
-
-  bool IsCSSPrefChecked() const;
-
-  
-
-
-
-
-
 
 
 
@@ -459,7 +443,6 @@ class CSSEditUtils final {
 
  private:
   HTMLEditor* mHTMLEditor;
-  bool mIsCSSPrefChecked;
 };
 
 #define NS_EDITOR_INDENT_INCREMENT_IN 0.4134f

@@ -360,10 +360,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  bool IsCSSEnabled() const {
-    return !IsMailEditor() && mCSSEditUtils &&
-           mCSSEditUtils->IsCSSPrefChecked();
-  }
+  bool IsCSSEnabled() const { return !IsMailEditor() && mIsCSSPrefChecked; }
 
   
 
@@ -4473,6 +4470,8 @@ class HTMLEditor final : public EditorBase,
 
   
   bool mIsInlineTableEditingEnabled;
+
+  bool mIsCSSPrefChecked;
 
   
   ManualNACPtr mTopLeftHandle;
