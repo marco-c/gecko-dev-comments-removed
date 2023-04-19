@@ -143,7 +143,9 @@ struct JITFrameInfoForBufferRange final {
 
 class JITFrameInfo final {
  public:
-  JITFrameInfo() : mUniqueStrings(mozilla::MakeUnique<UniqueJSONStrings>()) {}
+  JITFrameInfo()
+      : mUniqueStrings(mozilla::MakeUnique<UniqueJSONStrings>(
+            mozilla::FailureLatchInfallibleSource::Singleton())) {}
 
   MOZ_IMPLICIT JITFrameInfo(const JITFrameInfo& aOther,
                             mozilla::ProgressLogger aProgressLogger);

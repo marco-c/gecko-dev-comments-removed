@@ -524,13 +524,14 @@ class JSONSchemaWriter {
 
 
 
-class UniqueJSONStrings {
+class UniqueJSONStrings final : public FailureLatch {
  public:
   
-  MFBT_API UniqueJSONStrings();
+  MFBT_API explicit UniqueJSONStrings(FailureLatch& aFailureLatch);
 
   
-  MFBT_API UniqueJSONStrings(const UniqueJSONStrings& aOther,
+  MFBT_API UniqueJSONStrings(FailureLatch& aFailureLatch,
+                             const UniqueJSONStrings& aOther,
                              ProgressLogger aProgressLogger);
 
   MFBT_API ~UniqueJSONStrings();
@@ -551,6 +552,12 @@ class UniqueJSONStrings {
   
   
   MFBT_API void SpliceStringTableElements(SpliceableJSONWriter& aWriter);
+
+  FAILURELATCH_IMPL_PROXY(mStringTableWriter)
+
+  void ChangeFailureLatchAndForwardState(FailureLatch& aFailureLatch) {
+    mStringTableWriter.ChangeFailureLatchAndForwardState(aFailureLatch);
+  }
 
  private:
   
