@@ -1390,6 +1390,13 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
                          "Invalid flags for SetDelayedProcessMitigations.");
 
   
+  if (mozilla::HasPackageIdentity() && exceptionModules.isNothing()) {
+    const Vector<const wchar_t*> emptyVector;
+    result = InitSignedPolicyRulesToBypassCig(mPolicy, emptyVector);
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
+  }
+
+  
   
   
   result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
