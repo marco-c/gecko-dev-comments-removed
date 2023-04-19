@@ -1200,16 +1200,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     
     mModuleLoader->DisallowImportMaps();
 
+    
+    
     UniquePtr<ImportMap> importMap = mModuleLoader->ParseImportMap(request);
-
-    
-    
-    
-    
     if (!importMap) {
-      NS_DispatchToCurrentThread(
-          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
-                            &nsIScriptElement::FireErrorEvent));
+      
+      
+      
       return false;
     }
 
