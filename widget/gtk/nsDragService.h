@@ -99,11 +99,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
 
-  
-  
-  
-  void ReplyToDragMotion();
-
   void EventLoopEnter() { mEventLoopDepth++; };
   void EventLoopLeave() { mEventLoopDepth--; };
   int GetLoopDepth() { return mEventLoopDepth; };
@@ -214,9 +209,12 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   MOZ_CAN_RUN_SCRIPT static gboolean TaskDispatchCallback(gpointer data);
   MOZ_CAN_RUN_SCRIPT gboolean RunScheduledTask();
-  void UpdateDragAction();
   MOZ_CAN_RUN_SCRIPT void DispatchMotionEvents();
   void ReplyToDragMotion(GdkDragContext* aDragContext);
+  void ReplyToDragMotion();
+  void UpdateDragAction(GdkDragContext* aDragContext);
+  void UpdateDragAction();
+
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif

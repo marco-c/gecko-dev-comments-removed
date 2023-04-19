@@ -8192,11 +8192,6 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
                                         aTime)) {
     return FALSE;
   }
-  
-  
-  if (GdkIsWaylandDisplay()) {
-    dragService->ReplyToDragMotion();
-  }
   return TRUE;
 }
 
