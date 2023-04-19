@@ -63,7 +63,10 @@ inline int assembleCmdLine(const char* const* aArgv, wchar_t** aWideCmdLine,
     argNeedQuotes = 0;
 
     
-    if (strpbrk(*arg, " \f\n\r\t\v")) {
+
+
+
+    if (**arg == '\0' || strpbrk(*arg, " \f\n\r\t\v")) {
       argNeedQuotes = 1;
     }
 
