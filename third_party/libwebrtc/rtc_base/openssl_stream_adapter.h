@@ -26,6 +26,8 @@
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
+#include "rtc_base/task_utils/repeating_task.h"
 
 namespace rtc {
 
@@ -145,7 +147,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
     SSL_CLOSED       
   };
 
-  enum { MSG_TIMEOUT = MSG_MAX + 1 };
+  void PostEvent(int events, int err);
+  void SetTimeout(int delay_ms);
 
   
   
@@ -170,9 +173,6 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   void Cleanup(uint8_t alert);
 
   
-  void OnMessage(Message* msg) override;
-
-  
   void FlushInput(unsigned int left);
 
   
@@ -191,6 +191,10 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
     return !peer_certificate_digest_algorithm_.empty() &&
            !peer_certificate_digest_value_.empty();
   }
+
+  rtc::Thread* const owner_;
+  webrtc::ScopedTaskSafety task_safety_;
+  webrtc::RepeatingTaskHandle timeout_task_;
 
   SSLState state_;
   SSLRole role_;
