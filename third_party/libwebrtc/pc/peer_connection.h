@@ -11,6 +11,7 @@
 #ifndef PC_PEER_CONNECTION_H_
 #define PC_PEER_CONNECTION_H_
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -36,6 +37,7 @@
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/operations_chain.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/unique_id_generator.h"
 #include "rtc_base/weak_ptr.h"
 
@@ -1149,6 +1151,10 @@ class PeerConnection : public PeerConnectionInternal,
   
   RTCError Rollback(SdpType desc_type);
 
+  std::function<void(const rtc::CopyOnWriteBuffer& packet,
+                     int64_t packet_time_us)>
+  InitializeRtcpCallback();
+
   
   
   
@@ -1234,9 +1240,11 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   std::unique_ptr<Call> call_ RTC_GUARDED_BY(worker_thread());
+  std::unique_ptr<ScopedTaskSafety> call_safety_
+      RTC_GUARDED_BY(worker_thread());
 
-  rtc::AsyncInvoker rtcp_invoker_ RTC_GUARDED_BY(network_thread());
-
+  
+  
   
   
   Call* const call_ptr_;

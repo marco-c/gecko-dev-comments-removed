@@ -56,6 +56,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
@@ -1038,6 +1039,8 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
       local_ice_credentials_to_replace_(new LocalIceCredentialsToReplace()),
       data_channel_controller_(this),
       weak_ptr_factory_(this) {
+  RTC_DCHECK(factory_);
+  
   operations_chain_->SetOnChainEmptyCallback(
       [this_weak_ptr = weak_ptr_factory_.GetWeakPtr()]() {
         if (!this_weak_ptr)
@@ -1082,6 +1085,7 @@ PeerConnection::~PeerConnection() {
   
   worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     RTC_DCHECK_RUN_ON(worker_thread());
+    call_safety_.reset();
     call_.reset();
     
     event_log_.reset();
@@ -1215,25 +1219,7 @@ bool PeerConnection::Initialize(
                               ? *configuration.crypto_options
                               : options.crypto_options;
   config.transport_observer = this;
-  
-  
-  
-  
-  config.rtcp_handler = [this](const rtc::CopyOnWriteBuffer& packet,
-                               int64_t packet_time_us) {
-    RTC_DCHECK_RUN_ON(network_thread());
-    rtcp_invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, worker_thread(), [this, packet, packet_time_us] {
-          RTC_DCHECK_RUN_ON(worker_thread());
-          
-          
-          
-          if (call_) {
-            call_->Receiver()->DeliverPacket(MediaType::ANY, packet,
-                                             packet_time_us);
-          }
-        });
-  };
+  config.rtcp_handler = InitializeRtcpCallback();
   config.event_log = event_log_ptr_;
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
@@ -3619,6 +3605,13 @@ RTCError PeerConnection::UpdateTransceiverChannel(
     const cricket::ContentGroup* bundle_group) {
   RTC_DCHECK(IsUnifiedPlan());
   RTC_DCHECK(transceiver);
+  
+  
+  
+  
+  
+  
+  
   cricket::ChannelInterface* channel = transceiver->internal()->channel();
   if (content.rejected) {
     if (channel) {
@@ -4462,6 +4455,7 @@ void PeerConnection::Close() {
 
   worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     RTC_DCHECK_RUN_ON(worker_thread());
+    call_safety_.reset();
     call_.reset();
     
     event_log_.reset();
@@ -6676,6 +6670,9 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
 
+  
+  
+  
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
       call_ptr_, configuration_.media_config, rtp_transport, signaling_thread(),
       mid, SrtpRequired(), GetCryptoOptions(), &ssrc_generator_,
@@ -6697,6 +6694,9 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
 
+  
+  
+  
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
       call_ptr_, configuration_.media_config, rtp_transport, signaling_thread(),
       mid, SrtpRequired(), GetCryptoOptions(), &ssrc_generator_, video_options_,
@@ -7367,6 +7367,10 @@ void PeerConnection::DestroyDataChannelTransport() {
 
 void PeerConnection::DestroyChannelInterface(
     cricket::ChannelInterface* channel) {
+  
+  
+  
+  
   RTC_DCHECK(channel);
   switch (channel->media_type()) {
     case cricket::MEDIA_TYPE_AUDIO:
@@ -7786,4 +7790,37 @@ RTCError PeerConnection::Rollback(SdpType desc_type) {
   return RTCError::OK();
 }
 
+std::function<void(const rtc::CopyOnWriteBuffer& packet,
+                   int64_t packet_time_us)>
+PeerConnection::InitializeRtcpCallback() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+
+  auto flag =
+      worker_thread()->Invoke<rtc::scoped_refptr<PendingTaskSafetyFlag>>(
+          RTC_FROM_HERE, [this] {
+            RTC_DCHECK_RUN_ON(worker_thread());
+            if (!call_)
+              return rtc::scoped_refptr<PendingTaskSafetyFlag>();
+            if (!call_safety_)
+              call_safety_.reset(new ScopedTaskSafety());
+            return call_safety_->flag();
+          });
+
+  if (!flag)
+    return [](const rtc::CopyOnWriteBuffer&, int64_t) {};
+
+  return [this, flag = std::move(flag)](const rtc::CopyOnWriteBuffer& packet,
+                                        int64_t packet_time_us) {
+    RTC_DCHECK_RUN_ON(network_thread());
+    
+    
+    
+    
+    worker_thread()->PostTask(ToQueuedTask(flag, [this, packet,
+                                                  packet_time_us] {
+      RTC_DCHECK_RUN_ON(worker_thread());
+      call_->Receiver()->DeliverPacket(MediaType::ANY, packet, packet_time_us);
+    }));
+  };
+}
 }  
