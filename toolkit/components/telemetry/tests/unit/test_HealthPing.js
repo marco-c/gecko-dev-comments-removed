@@ -163,7 +163,7 @@ add_task(async function test_sendOnTimeout() {
   );
 
   
-  fakeSendSubmissionTimeout(2);
+  fakeSendSubmissionTimeout(1);
 
   await TelemetryController.submitExternalPing(PING_TYPE, {});
 
