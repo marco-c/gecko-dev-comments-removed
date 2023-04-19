@@ -173,6 +173,7 @@ promise_test(async t => {
     sound_url.searchParams.set('size', size);
     sound_url.searchParams.set('partial', partialResponseCode);
     sound_url.searchParams.set('id', rangeId);
+    sound_url.searchParams.set('type', 'audio/mp4');
     appendAudio(w.document, sound_url);
 
     
@@ -184,6 +185,7 @@ promise_test(async t => {
     const url = new URL('partial-text.py', w.location);
     url.searchParams.set('action', 'use-media-range-request');
     url.searchParams.set('size', size);
+    url.searchParams.set('type', 'audio/mp4');
     counts['size' + size] = 0;
     for (let i = 0; i < count; i++) {
       await preloadImage(url, { doc: w.document });
