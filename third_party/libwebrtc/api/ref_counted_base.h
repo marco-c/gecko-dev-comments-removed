@@ -31,6 +31,10 @@ class RefCountedBase {
   }
 
  protected:
+  
+  
+  bool HasOneRef() const { return ref_count_.HasOneRef(); }
+
   virtual ~RefCountedBase() = default;
 
  private:
@@ -76,6 +80,10 @@ class RefCountedNonVirtual {
   }
 
  protected:
+  
+  
+  bool HasOneRef() const { return ref_count_.HasOneRef(); }
+
   ~RefCountedNonVirtual() = default;
 
  private:

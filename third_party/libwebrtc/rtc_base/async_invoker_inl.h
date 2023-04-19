@@ -39,7 +39,7 @@ class AsyncClosure {
   
   
   
-  scoped_refptr<RefCountedObject<Event>> invocation_complete_;
+  rtc::Ref<Event>::Ptr invocation_complete_;
 };
 
 
