@@ -105,39 +105,38 @@ nsConverterInputStream::ReadSegments(nsWriteUnicharSegmentFun aWriter,
                                      void* aClosure, uint32_t aCount,
                                      uint32_t* aReadCount) {
   NS_ASSERTION(mUnicharDataLength >= mUnicharDataOffset, "unsigned madness");
-  uint32_t bytesToWrite = mUnicharDataLength - mUnicharDataOffset;
-  nsresult rv;
-  if (0 == bytesToWrite) {
+  uint32_t codeUnitsToWrite = mUnicharDataLength - mUnicharDataOffset;
+  if (0 == codeUnitsToWrite) {
     
-    bytesToWrite = Fill(&rv);
-    if (bytesToWrite <= 0) {
+    codeUnitsToWrite = Fill(&mLastErrorCode);
+    if (codeUnitsToWrite == 0) {
       *aReadCount = 0;
-      return rv;
-    }
-    if (NS_FAILED(rv)) {
-      return rv;
+      return mLastErrorCode;
     }
   }
 
-  if (bytesToWrite > aCount) bytesToWrite = aCount;
+  if (codeUnitsToWrite > aCount) {
+    codeUnitsToWrite = aCount;
+  }
 
-  uint32_t bytesWritten;
-  uint32_t totalBytesWritten = 0;
+  uint32_t codeUnitsWritten;
+  uint32_t totalCodeUnitsWritten = 0;
 
-  while (bytesToWrite) {
-    rv = aWriter(this, aClosure, mUnicharData.Elements() + mUnicharDataOffset,
-                 totalBytesWritten, bytesToWrite, &bytesWritten);
+  while (codeUnitsToWrite) {
+    nsresult rv =
+        aWriter(this, aClosure, mUnicharData.Elements() + mUnicharDataOffset,
+                totalCodeUnitsWritten, codeUnitsToWrite, &codeUnitsWritten);
     if (NS_FAILED(rv)) {
       
       break;
     }
 
-    bytesToWrite -= bytesWritten;
-    totalBytesWritten += bytesWritten;
-    mUnicharDataOffset += bytesWritten;
+    codeUnitsToWrite -= codeUnitsWritten;
+    totalCodeUnitsWritten += codeUnitsWritten;
+    mUnicharDataOffset += codeUnitsWritten;
   }
 
-  *aReadCount = totalBytesWritten;
+  *aReadCount = totalCodeUnitsWritten;
 
   return NS_OK;
 }
@@ -166,7 +165,7 @@ nsConverterInputStream::ReadString(uint32_t aCount, nsAString& aString,
 }
 
 uint32_t nsConverterInputStream::Fill(nsresult* aErrorCode) {
-  if (nullptr == mInput) {
+  if (!mInput) {
     
     *aErrorCode = NS_BASE_STREAM_CLOSED;
     return 0;
@@ -181,52 +180,70 @@ uint32_t nsConverterInputStream::Fill(nsresult* aErrorCode) {
 
   
   
-  
-  
-  
-
-  uint32_t nb;
-  *aErrorCode = NS_FillArray(mByteData, mInput, mLeftOverBytes, &nb);
-  if (nb == 0 && mLeftOverBytes == 0) {
-    
-    *aErrorCode = NS_OK;
-    return 0;
-  }
-
-  NS_ASSERTION(uint32_t(nb) + mLeftOverBytes == mByteData.Length(),
-               "mByteData is lying to us somewhere");
-
-  
-  auto src = AsBytes(Span(mByteData));
-  auto dst = Span(mUnicharData);
-  
-  
   mUnicharDataLength = 0;
   
   mUnicharDataOffset = 0;
-  
-  
-  uint32_t result;
-  size_t read;
-  size_t written;
+
   
   
   
-  if (mErrorsAreFatal) {
-    std::tie(result, read, written) =
-        mConverter->DecodeToUTF16WithoutReplacement(src, dst, false);
-  } else {
-    std::tie(result, read, written, std::ignore) =
-        mConverter->DecodeToUTF16(src, dst, false);
+  
+  
+  
+  while (mUnicharDataLength == 0 && mConverter) {
+    
+    
+    
+    
+    
+
+    uint32_t nb;
+    *aErrorCode = NS_FillArray(mByteData, mInput, mLeftOverBytes, &nb);
+    if (NS_FAILED(*aErrorCode)) {
+      return 0;
+    }
+
+    NS_ASSERTION(uint32_t(nb) + mLeftOverBytes == mByteData.Length(),
+                 "mByteData is lying to us somewhere");
+
+    
+    
+    bool last = (nb == 0);
+
+    
+    auto src = AsBytes(Span(mByteData));
+    auto dst = Span(mUnicharData);
+
+    
+    
+    uint32_t result;
+    size_t read;
+    size_t written;
+    if (mErrorsAreFatal) {
+      std::tie(result, read, written) =
+          mConverter->DecodeToUTF16WithoutReplacement(src, dst, last);
+    } else {
+      std::tie(result, read, written, std::ignore) =
+          mConverter->DecodeToUTF16(src, dst, last);
+    }
+    mLeftOverBytes = mByteData.Length() - read;
+    mUnicharDataLength = written;
+    
+    
+    
+    if (last) {
+      MOZ_ASSERT(mLeftOverBytes == 0,
+                 "Failed to read all bytes on the last pass?");
+      mConverter = nullptr;
+    }
+    
+    if (result != kInputEmpty && result != kOutputFull) {
+      MOZ_ASSERT(mErrorsAreFatal, "How come DecodeToUTF16() reported error?");
+      *aErrorCode = NS_ERROR_UDEC_ILLEGALINPUT;
+      return 0;
+    }
   }
-  mLeftOverBytes = mByteData.Length() - read;
-  mUnicharDataLength = written;
-  if (result == kInputEmpty || result == kOutputFull) {
-    *aErrorCode = NS_OK;
-  } else {
-    MOZ_ASSERT(mErrorsAreFatal, "How come DecodeToUTF16() reported error?");
-    *aErrorCode = NS_ERROR_UDEC_ILLEGALINPUT;
-  }
+  *aErrorCode = NS_OK;
   return mUnicharDataLength;
 }
 
