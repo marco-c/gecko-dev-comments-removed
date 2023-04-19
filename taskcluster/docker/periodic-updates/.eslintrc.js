@@ -5,6 +5,8 @@
 "use strict";
 
 module.exports = {
+  extends: ["plugin:mozilla/valid-jsdoc"],
+
   globals: {
     
     
@@ -63,16 +65,6 @@ module.exports = {
 
     
     strict: ["error", "global"],
-
-    
-    "valid-jsdoc": [
-      "error",
-      {
-        requireParamDescription: false,
-        requireReturn: false,
-        requireReturnDescription: false,
-      },
-    ],
 
     
     yoda: ["error", "never"],
