@@ -31,6 +31,25 @@ var gPermissionPanel = {
   },
 
   
+
+
+
+
+
+  _popupAnchorNode: null,
+  _popupPosition: "bottomcenter topleft",
+  setAnchor(anchorNode, popupPosition) {
+    this._popupAnchorNode = anchorNode;
+    this._popupPosition = popupPosition;
+  },
+
+  
+  get _popupAnchor() {
+    if (this._popupAnchorNode) {
+      return this._popupAnchorNode;
+    }
+    return this._identityPermissionBox;
+  },
   get _identityPermissionBox() {
     delete this._identityPermissionBox;
     return (this._identityPermissionBox = document.getElementById(
@@ -225,14 +244,10 @@ var gPermissionPanel = {
     }
 
     
-    PanelMultiView.openPopup(
-      this._permissionPopup,
-      this._identityPermissionBox,
-      {
-        position: "bottomcenter topleft",
-        triggerEvent: event,
-      }
-    ).catch(Cu.reportError);
+    PanelMultiView.openPopup(this._permissionPopup, this._popupAnchor, {
+      position: this._popupPosition,
+      triggerEvent: event,
+    }).catch(Cu.reportError);
   },
 
   
