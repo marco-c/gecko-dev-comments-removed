@@ -900,8 +900,9 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
       this, &BasicPortAllocatorSession::OnCandidateError);
   port->SignalPortComplete.connect(this,
                                    &BasicPortAllocatorSession::OnPortComplete);
-  port->SignalDestroyed.connect(this,
-                                &BasicPortAllocatorSession::OnPortDestroyed);
+  port->SubscribePortDestroyed(
+      [this](PortInterface* port) { OnPortDestroyed(port); });
+
   port->SignalPortError.connect(this, &BasicPortAllocatorSession::OnPortError);
   RTC_LOG(LS_INFO) << port->ToString() << ": Added port to allocator";
 
@@ -1423,7 +1424,8 @@ void AllocationSequence::CreateUDPPorts() {
     
     if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
       udp_port_ = port.get();
-      port->SignalDestroyed.connect(this, &AllocationSequence::OnPortDestroyed);
+      port->SubscribePortDestroyed(
+          [this](PortInterface* port) { OnPortDestroyed(port); });
 
       
       if (!IsFlagSet(PORTALLOCATOR_DISABLE_STUN)) {
@@ -1562,7 +1564,9 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
       relay_ports_.push_back(port.get());
       
       
-      port->SignalDestroyed.connect(this, &AllocationSequence::OnPortDestroyed);
+      port->SubscribePortDestroyed(
+          [this](PortInterface* port) { OnPortDestroyed(port); });
+
     } else {
       port = session_->allocator()->relay_port_factory()->Create(
           args, session_->allocator()->min_port(),
