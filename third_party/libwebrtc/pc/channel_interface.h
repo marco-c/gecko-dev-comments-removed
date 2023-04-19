@@ -35,6 +35,13 @@ struct MediaConfig;
 
 
 
+
+
+
+
+
+
+
 class ChannelInterface {
  public:
   virtual cricket::MediaType media_type() const = 0;
