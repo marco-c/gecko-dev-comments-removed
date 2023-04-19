@@ -320,7 +320,12 @@ const webExtensionsMethods = [
 const otherToolMethods = [
   
   
+  
   "showToolboxForTab",
+  
+  "hasToolboxForTab",
+  
+  "getToolboxForTab",
 ];
 
 for (const method of [...webExtensionsMethods, ...otherToolMethods]) {

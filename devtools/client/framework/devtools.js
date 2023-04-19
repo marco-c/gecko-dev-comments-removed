@@ -886,6 +886,18 @@ DevTools.prototype = {
   getToolboxes() {
     return Array.from(this._toolboxes.values());
   },
+
+  
+
+
+
+
+
+
+
+  hasToolboxForTab(tab) {
+    return this.getToolboxes().some(t => t.descriptorFront.localTab === tab);
+  },
 };
 
 const gDevTools = (exports.gDevTools = new DevTools());
