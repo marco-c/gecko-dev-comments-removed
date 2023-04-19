@@ -1428,6 +1428,12 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   
+  virtual RTCErrorOr<rtc::scoped_refptr<PeerConnectionInterface>>
+  CreatePeerConnectionOrError(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies dependencies);
+  
+  
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       PeerConnectionDependencies dependencies);

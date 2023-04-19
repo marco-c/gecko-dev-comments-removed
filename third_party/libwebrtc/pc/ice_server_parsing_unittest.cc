@@ -182,6 +182,11 @@ TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
   EXPECT_FALSE(ParseUrl("stun:[1:2:3:4:5:6:7:8]junk:1000"));
   EXPECT_FALSE(ParseUrl("stun::5555"));
   EXPECT_FALSE(ParseUrl("stun:"));
+  
+  
+  EXPECT_FALSE(ParseUrl("stun:/hostname"));  
+  EXPECT_FALSE(ParseUrl("stun:?hostname"));  
+  EXPECT_FALSE(ParseUrl("stun:#hostname"));  
 }
 
 

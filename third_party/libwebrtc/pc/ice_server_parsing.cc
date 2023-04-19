@@ -32,6 +32,15 @@ static const int kDefaultStunTlsPort = 5349;
 static const char kTransport[] = "transport";
 
 
+static const char kRegNameCharacters[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    "-._~"          
+    "%"             
+    "!$&'()*+,;=";  
+
+
 static const char* kValidIceServiceTypes[] = {"stun", "stuns", "turn", "turns"};
 
 
@@ -99,6 +108,7 @@ static bool ParseHostnameAndPortFromString(const std::string& in_str,
                                            int* port) {
   RTC_DCHECK(host->empty());
   if (in_str.at(0) == '[') {
+    
     std::string::size_type closebracket = in_str.rfind(']');
     if (closebracket != std::string::npos) {
       std::string::size_type colonpos = in_str.find(':', closebracket);
@@ -113,6 +123,7 @@ static bool ParseHostnameAndPortFromString(const std::string& in_str,
       return false;
     }
   } else {
+    
     std::string::size_type colonpos = in_str.find(':');
     if (std::string::npos != colonpos) {
       if (!ParsePort(in_str.substr(colonpos + 1, std::string::npos), port)) {
@@ -121,6 +132,10 @@ static bool ParseHostnameAndPortFromString(const std::string& in_str,
       *host = in_str.substr(0, colonpos);
     } else {
       *host = in_str;
+    }
+    
+    if (host->find_first_not_of(kRegNameCharacters) != std::string::npos) {
+      return false;
     }
   }
   return !host->empty();
