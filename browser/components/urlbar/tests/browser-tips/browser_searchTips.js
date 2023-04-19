@@ -35,6 +35,14 @@ const GOOGLE_DOMAINS = [
   "www.google.co.nz",
 ];
 
+
+
+
+
+
+
+const SEARCH_SERP_URL = "https://example.com/?q=chocolate";
+
 add_setup(async function() {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
@@ -43,6 +51,10 @@ add_setup(async function() {
     set: [
       [
         `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.ONBOARD}`,
+        0,
+      ],
+      [
+        `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.PERSIST}`,
         0,
       ],
       [
@@ -75,6 +87,9 @@ add_setup(async function() {
   let defaultEngine = await Services.search.getDefault();
   let defaultEngineName = defaultEngine.name;
   Assert.equal(defaultEngineName, "Google", "Default engine should be Google.");
+
+  
+  await SearchTestUtils.installSearchExtension();
 
   registerCleanupFunction(async () => {
     let age2 = await ProfileAge();
@@ -279,6 +294,58 @@ add_task(async function nonEnginePage() {
 });
 
 
+
+
+
+
+
+add_task(async function persistTipOnDefault() {
+  await setDefaultEngine("Example");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
+  });
+  await checkTab(
+    window,
+    SEARCH_SERP_URL,
+    UrlbarProviderSearchTips.TIP_TYPE.PERSIST
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function noPersistTipOnNonDefault() {
+  await setDefaultEngine("DuckDuckGo");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
+  });
+  await checkTab(
+    window,
+    SEARCH_SERP_URL,
+    UrlbarProviderSearchTips.TIP_TYPE.NONE
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function persistTipOnceOnDefaultSerp() {
+  await setDefaultEngine("Example");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
+  });
+  await checkTab(
+    window,
+    SEARCH_SERP_URL,
+    UrlbarProviderSearchTips.TIP_TYPE.PERSIST
+  );
+  await checkTab(
+    window,
+    SEARCH_SERP_URL,
+    UrlbarProviderSearchTips.TIP_TYPE.NONE
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+
 add_task(async function oncePerSession() {
   await setDefaultEngine("Google");
   await checkTab(
@@ -296,6 +363,12 @@ add_task(async function oncePerSession() {
   await withDNSRedirect("www.google.com", "/", async url => {
     await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
   });
+  await setDefaultEngine("Example");
+  await checkTab(
+    window,
+    SEARCH_SERP_URL,
+    UrlbarProviderSearchTips.TIP_TYPE.NONE
+  );
 });
 
 
