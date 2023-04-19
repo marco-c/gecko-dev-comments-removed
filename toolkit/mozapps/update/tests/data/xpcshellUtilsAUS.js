@@ -3457,6 +3457,11 @@ function checkUpdateLogContents(
   }
 
   
+  updateLogContents = updateLogContents.replace(
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[+-]\d{4}: /gm,
+    ""
+  );
+  
   updateLogContents = updateLogContents.replace(/, err:.*\n/g, "\n");
   
   updateLogContents = updateLogContents.replace(/non-fatal error /g, "");
