@@ -350,9 +350,12 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
 
 nsresult RangeUpdater::SelAdjJoinNodes(
     const EditorRawDOMPoint& aStartOfRightContent,
-    const nsIContent& aRemovedContent, uint32_t aExOffsetOfRightContent,
+    const nsIContent& aRemovedContent,
+    const EditorDOMPoint& aOldPointAtRightContent,
     JoinNodesDirection aJoinNodesDirection) {
   MOZ_ASSERT(aStartOfRightContent.IsSetAndValid());
+  MOZ_ASSERT(aOldPointAtRightContent.IsSet());  
+  MOZ_ASSERT(aOldPointAtRightContent.HasOffset());
 
   if (mLocked) {
     
@@ -365,15 +368,34 @@ nsresult RangeUpdater::SelAdjJoinNodes(
 
   auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
                             uint32_t& aOffset) -> void {
-    if (aContainer == aStartOfRightContent.GetContainerParent()) {
+    
+    
+    
+    
+    if (aContainer == &aRemovedContent) {
       
       
-      if (aOffset > aExOffsetOfRightContent) {
+      
+      
+      aContainer = aStartOfRightContent.GetContainer();
+      if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
+        aOffset += aStartOfRightContent.Offset();
+      }
+    }
+    
+    
+    
+    
+    
+    else if (aContainer == aOldPointAtRightContent.GetContainer()) {
+      
+      
+      if (aOffset > aOldPointAtRightContent.Offset()) {
         aOffset--;
       }
       
       
-      else if (aOffset == aExOffsetOfRightContent) {
+      else if (aOffset == aOldPointAtRightContent.Offset()) {
         aContainer = aStartOfRightContent.GetContainer();
         aOffset = aStartOfRightContent.Offset();
       }
@@ -381,15 +403,6 @@ nsresult RangeUpdater::SelAdjJoinNodes(
       
       
       if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-        aOffset += aStartOfRightContent.Offset();
-      }
-    } else if (aContainer == &aRemovedContent) {
-      
-      
-      
-      
-      aContainer = aStartOfRightContent.GetContainer();
-      if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
         aOffset += aStartOfRightContent.Offset();
       }
     }
