@@ -198,25 +198,8 @@ AST_MATCHER(CallExpr, isInAllowlistForThreads) {
   SourceLocation Loc = Node.getRParenLoc();
   StringRef FileName =
       getFilename(Finder->getASTContext().getSourceManager(), Loc);
-
-  const auto rbegin = [](StringRef s) { return llvm::sys::path::rbegin(s); };
-  const auto rend = [](StringRef s) { return llvm::sys::path::rend(s); };
-
-  
-  
   for (auto thread_file : allow_thread_files) {
-    
-    const bool match = [&] {
-      auto it1 = rbegin(FileName), it2 = rbegin(thread_file),
-           end1 = rend(FileName), end2 = rend(thread_file);
-      for (; it2 != end2; ++it1, ++it2) {
-        if (it1 == end1 || !it1->equals(*it2)) {
-          return false;
-        }
-      }
-      return true;
-    }();
-    if (match) {
+    if (llvm::sys::path::rbegin(FileName)->equals(thread_file)) {
       return true;
     }
   }
