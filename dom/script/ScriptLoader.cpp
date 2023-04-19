@@ -2006,22 +2006,19 @@ nsresult ScriptLoader::FillCompileOptionsForRequest(
 
   aOptions->allocateInstantiationStorage = true;
 
-  if (aOptions->forceFullParse()) {
-    
-    
-    
-  } else if (ShouldApplyDelazifyStrategy(aRequest)) {
-    ApplyDelazifyStrategy(aRequest, aOptions);
+  
+  
+  
+  
+  
+  
+  
+  if (ShouldApplyDelazifyStrategy(aRequest, aOptions)) {
+    ApplyDelazifyStrategy(aOptions);
     mTotalFullParseSize +=
         aRequest->ScriptTextLength() > 0
             ? static_cast<uint32_t>(aRequest->ScriptTextLength())
             : 0;
-  } else {
-    
-    
-    
-    aOptions->setEagerDelazificationStrategy(
-        JS::DelazificationOption::OnDemandOnly);
   }
 
   return NS_OK;
@@ -3256,8 +3253,15 @@ static bool IsInternalURIScheme(nsIURI* uri) {
          uri->SchemeIs("chrome");
 }
 
-bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
-  
+bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest,
+                                               JS::CompileOptions* aOptions) {
+  if (aOptions->forceFullParse()) {
+    
+    
+    
+    return false;
+  }
+
   if (!aRequest->IsTextSource()) {
     
     
@@ -3265,6 +3269,13 @@ bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
   }
 
   if (aRequest->IsModuleRequest()) {
+    
+    
+    return false;
+  }
+
+  if (aRequest->HasScriptLoadContext() &&
+      aRequest->GetScriptLoadContext()->mIsInline) {
     
     
     return false;
@@ -3312,8 +3323,7 @@ bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
   return false;
 }
 
-void ScriptLoader::ApplyDelazifyStrategy(ScriptLoadRequest* aRequest,
-                                         JS::CompileOptions* aOptions) {
+void ScriptLoader::ApplyDelazifyStrategy(JS::CompileOptions* aOptions) {
   JS::DelazificationOption strategy =
       JS::DelazificationOption::ParseEverythingEagerly;
   uint32_t strategyIndex =
@@ -3340,17 +3350,6 @@ void ScriptLoader::ApplyDelazifyStrategy(ScriptLoadRequest* aRequest,
   
   if (strategyIndex <= uint32_t(strategy)) {
     strategy = JS::DelazificationOption(uint8_t(strategyIndex));
-  }
-
-  
-  
-  
-  
-  if (aRequest->HasScriptLoadContext() &&
-      aRequest->GetScriptLoadContext()->mIsInline) {
-    if (strategy == JS::DelazificationOption::ParseEverythingEagerly) {
-      strategy = JS::DelazificationOption::OnDemandOnly;
-    }
   }
 
   aOptions->setEagerDelazificationStrategy(strategy);
