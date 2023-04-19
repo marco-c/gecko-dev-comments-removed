@@ -51,8 +51,6 @@ class CacheCreator;
 
 
 
-
-
 class WorkerLoadContext : public JS::loader::LoadContextBase {
  public:
   explicit WorkerLoadContext();
@@ -62,6 +60,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   
   Maybe<bool> mMutedErrorFlag;
   nsresult mLoadResult = NS_ERROR_NOT_INITIALIZED;
+  bool mLoadingFinished = false;
 
   
   
