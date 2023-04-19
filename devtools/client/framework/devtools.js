@@ -76,7 +76,7 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 function DevTools() {
   this._tools = new Map(); 
   this._themes = new Map(); 
-  this._toolboxes = new Map(); 
+  this._toolboxesPerCommands = new Map(); 
   
   this._creatingToolboxes = new Map(); 
 
@@ -521,7 +521,7 @@ DevTools.prototype = {
       hostOptions,
     } = {}
   ) {
-    let toolbox = this._toolboxes.get(commands);
+    let toolbox = this._toolboxesPerCommands.get(commands);
 
     if (toolbox) {
       if (hostType != null && toolbox.hostType != hostType) {
@@ -725,7 +725,7 @@ DevTools.prototype = {
 
     const toolbox = await manager.create(toolId);
 
-    this._toolboxes.set(commands, toolbox);
+    this._toolboxesPerCommands.set(commands, toolbox);
 
     this.emit("toolbox-created", toolbox);
 
@@ -734,7 +734,7 @@ DevTools.prototype = {
     });
 
     toolbox.once("destroyed", () => {
-      this._toolboxes.delete(commands);
+      this._toolboxesPerCommands.delete(commands);
       this.emit("toolbox-destroyed", toolbox);
     });
 
@@ -754,7 +754,7 @@ DevTools.prototype = {
 
 
   getToolboxForCommands(commands) {
-    return this._toolboxes.get(commands);
+    return this._toolboxesPerCommands.get(commands);
   },
 
   
@@ -762,7 +762,7 @@ DevTools.prototype = {
 
 
   getToolboxForDescriptorFront(descriptorFront) {
-    for (const [commands, toolbox] of this._toolboxes) {
+    for (const [commands, toolbox] of this._toolboxesPerCommands) {
       if (commands.descriptorFront == descriptorFront) {
         return toolbox;
       }
@@ -791,7 +791,7 @@ DevTools.prototype = {
 
     let toolbox = await this._creatingToolboxes.get(commands);
     if (!toolbox) {
-      toolbox = this._toolboxes.get(commands);
+      toolbox = this._toolboxesPerCommands.get(commands);
     }
     if (!toolbox) {
       return;
@@ -911,7 +911,7 @@ DevTools.prototype = {
   destroy({ shuttingDown }) {
     
     if (!shuttingDown) {
-      for (const [, toolbox] of this._toolboxes) {
+      for (const [, toolbox] of this._toolboxesPerCommands) {
         toolbox.destroy();
       }
     }
@@ -945,7 +945,7 @@ DevTools.prototype = {
 
 
   getToolboxes() {
-    return Array.from(this._toolboxes.values());
+    return Array.from(this._toolboxesPerCommands.values());
   },
 
   
