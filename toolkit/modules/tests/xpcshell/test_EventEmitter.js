@@ -1,8 +1,6 @@
 
 
 
-var Cm = Components.manager;
-
 const { EventEmitter } = ChromeUtils.import(
   "resource://gre/modules/EventEmitter.jsm"
 );

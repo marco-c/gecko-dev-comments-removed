@@ -47,11 +47,6 @@ const FAKE_FEATURE_MANIFEST = {
     },
   },
 };
-const FAKE_FEATURE_REMOTE_VALUE = {
-  value: {
-    enabled: true,
-  },
-};
 
 
 

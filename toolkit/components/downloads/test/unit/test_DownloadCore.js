@@ -17,6 +17,8 @@ ChromeUtils.defineModuleGetter(
 
 
 
+
+
 var gUseLegacySaver = false;
 
 var scriptFile = do_get_file("common_test_Download.js");

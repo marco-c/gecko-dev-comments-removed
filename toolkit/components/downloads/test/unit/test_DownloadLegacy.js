@@ -11,6 +11,8 @@
 
 
 
+
+
 var gUseLegacySaver = true;
 
 var scriptFile = do_get_file("common_test_Download.js");

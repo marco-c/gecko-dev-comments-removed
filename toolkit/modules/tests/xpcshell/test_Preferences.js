@@ -1,8 +1,6 @@
 
 
 
-var Cm = Components.manager;
-
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );

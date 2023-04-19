@@ -1,9 +1,6 @@
 
 "use strict";
 
-const { CanonicalJSON } = ChromeUtils.import(
-  "resource://gre/modules/CanonicalJSON.jsm"
-);
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
