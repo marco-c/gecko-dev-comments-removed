@@ -36,22 +36,6 @@ class RtpPacketHistory {
   };
 
   
-  struct PacketState {
-    PacketState();
-    PacketState(const PacketState&);
-    ~PacketState();
-
-    uint16_t rtp_sequence_number = 0;
-    absl::optional<int64_t> send_time_ms;
-    int64_t capture_time_ms = 0;
-    uint32_t ssrc = 0;
-    size_t packet_size = 0;
-    
-    size_t times_retransmitted = 0;
-    bool pending_transmission = false;
-  };
-
-  
   static constexpr size_t kMaxCapacity = 9600;
   
   static constexpr size_t kMaxPaddingHistory = 63;
@@ -78,15 +62,8 @@ class RtpPacketHistory {
   
   void SetRtt(int64_t rtt_ms);
 
-  
-  
   void PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
-                    absl::optional<int64_t> send_time_ms);
-
-  
-  
-  std::unique_ptr<RtpPacketToSend> GetPacketAndSetSendTime(
-      uint16_t sequence_number);
+                    int64_t send_time_ms);
 
   
   
@@ -111,7 +88,7 @@ class RtpPacketHistory {
 
   
   
-  absl::optional<PacketState> GetPacketState(uint16_t sequence_number) const;
+  bool GetPacketState(uint16_t sequence_number) const;
 
   
   
@@ -132,11 +109,6 @@ class RtpPacketHistory {
 
   
   
-  
-  bool SetPendingTransmission(uint16_t sequence_number);
-
-  
-  
   void Clear();
 
  private:
@@ -146,8 +118,9 @@ class RtpPacketHistory {
 
   class StoredPacket {
    public:
+    StoredPacket() = default;
     StoredPacket(std::unique_ptr<RtpPacketToSend> packet,
-                 absl::optional<int64_t> send_time_ms,
+                 int64_t send_time_ms,
                  uint64_t insert_order);
     StoredPacket(StoredPacket&&);
     StoredPacket& operator=(StoredPacket&&);
@@ -158,7 +131,7 @@ class RtpPacketHistory {
     void IncrementTimesRetransmitted(PacketPrioritySet* priority_set);
 
     
-    absl::optional<int64_t> send_time_ms_;
+    int64_t send_time_ms_;
 
     
     std::unique_ptr<RtpPacketToSend> packet_;
@@ -179,7 +152,6 @@ class RtpPacketHistory {
   };
 
   
-  
   bool VerifyRtt(const StoredPacket& packet, int64_t now_ms) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   void Reset() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
@@ -192,8 +164,6 @@ class RtpPacketHistory {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   StoredPacket* GetStoredPacket(uint16_t sequence_number)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-  static PacketState StoredPacketToPacketState(
-      const StoredPacket& stored_packet);
 
   Clock* const clock_;
   const bool enable_padding_prio_;

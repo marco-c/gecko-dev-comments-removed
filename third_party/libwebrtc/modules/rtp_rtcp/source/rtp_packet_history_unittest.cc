@@ -63,8 +63,8 @@ TEST_P(RtpPacketHistoryTest, SetStoreStatus) {
 
 TEST_P(RtpPacketHistoryTest, ClearsHistoryAfterSetStoreStatus) {
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
-  
-  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), absl::nullopt);
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum),
+                     fake_clock_.TimeInMilliseconds());
   EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
 
   
@@ -74,17 +74,19 @@ TEST_P(RtpPacketHistoryTest, ClearsHistoryAfterSetStoreStatus) {
 
 TEST_P(RtpPacketHistoryTest, StartSeqResetAfterReset) {
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum),
+                     fake_clock_.TimeInMilliseconds());
   
-  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), absl::nullopt);
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
 
   
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
 
   
-  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + 1)), absl::nullopt);
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
+  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + 1)),
+                     fake_clock_.TimeInMilliseconds());
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(To16u(kStartSeqNum + 1)));
 
   
   fake_clock_.AdvanceTimeMilliseconds(
@@ -92,7 +94,8 @@ TEST_P(RtpPacketHistoryTest, StartSeqResetAfterReset) {
       RtpPacketHistory::kMinPacketDurationMs);
 
   
-  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + 2)), absl::nullopt);
+  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + 2)),
+                     fake_clock_.TimeInMilliseconds());
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
   EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
   EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
@@ -101,7 +104,7 @@ TEST_P(RtpPacketHistoryTest, StartSeqResetAfterReset) {
 TEST_P(RtpPacketHistoryTest, NoStoreStatus) {
   EXPECT_EQ(StorageMode::kDisabled, hist_.GetStorageMode());
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
-  hist_.PutRtpPacket(std::move(packet), absl::nullopt);
+  hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
   
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
 }
@@ -116,7 +119,7 @@ TEST_P(RtpPacketHistoryTest, PutRtpPacket) {
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
 
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
-  hist_.PutRtpPacket(std::move(packet), absl::nullopt);
+  hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
   EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
 }
 
@@ -126,88 +129,16 @@ TEST_P(RtpPacketHistoryTest, GetRtpPacket) {
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
   packet->set_capture_time(capture_time);
   rtc::CopyOnWriteBuffer buffer = packet->Buffer();
-  hist_.PutRtpPacket(std::move(packet), absl::nullopt);
+  hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
 
   std::unique_ptr<RtpPacketToSend> packet_out =
-      hist_.GetPacketAndSetSendTime(kStartSeqNum);
-  EXPECT_TRUE(packet_out);
+      hist_.GetPacketAndMarkAsPending(kStartSeqNum);
+  ASSERT_TRUE(packet_out);
   EXPECT_EQ(buffer, packet_out->Buffer());
   EXPECT_EQ(capture_time, packet_out->capture_time());
 }
 
-TEST_P(RtpPacketHistoryTest, PacketStateIsCorrect) {
-  const uint32_t kSsrc = 92384762;
-  const int64_t kRttMs = 100;
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
-  hist_.SetRtt(kRttMs);
-  std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
-  packet->SetSsrc(kSsrc);
-  packet->SetPayloadSize(1234);
-  const size_t packet_size = packet->size();
-
-  hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-
-  absl::optional<RtpPacketHistory::PacketState> state =
-      hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(state);
-  EXPECT_EQ(state->rtp_sequence_number, kStartSeqNum);
-  EXPECT_EQ(state->send_time_ms, fake_clock_.TimeInMilliseconds());
-  EXPECT_EQ(state->capture_time_ms, fake_clock_.TimeInMilliseconds());
-  EXPECT_EQ(state->ssrc, kSsrc);
-  EXPECT_EQ(state->packet_size, packet_size);
-  EXPECT_EQ(state->times_retransmitted, 0u);
-
-  fake_clock_.AdvanceTimeMilliseconds(1);
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-  fake_clock_.AdvanceTimeMilliseconds(kRttMs + 1);
-
-  state = hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(state);
-  EXPECT_EQ(state->times_retransmitted, 1u);
-}
-
-TEST_P(RtpPacketHistoryTest, MinResendTimeWithPacer) {
-  static const int64_t kMinRetransmitIntervalMs = 100;
-
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
-  hist_.SetRtt(kMinRetransmitIntervalMs);
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
-  size_t len = packet->size();
-  hist_.PutRtpPacket(std::move(packet), absl::nullopt);
-
-  
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-
-  
-  fake_clock_.AdvanceTimeMilliseconds(1);
-
-  
-  
-  
-  
-  
-  
-  absl::optional<RtpPacketHistory::PacketState> packet_state =
-      hist_.GetPacketState(kStartSeqNum);
-  EXPECT_TRUE(packet_state);
-  EXPECT_EQ(len, packet_state->packet_size);
-  EXPECT_EQ(capture_time_ms, packet_state->capture_time_ms);
-
-  
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-
-  
-  fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs - 1);
-  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
-
-  
-  fake_clock_.AdvanceTimeMilliseconds(1);
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-}
-
-TEST_P(RtpPacketHistoryTest, MinResendTimeWithoutPacer) {
+TEST_P(RtpPacketHistoryTest, MinResendTime) {
   static const int64_t kMinRetransmitIntervalMs = 100;
 
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
@@ -219,18 +150,19 @@ TEST_P(RtpPacketHistoryTest, MinResendTimeWithoutPacer) {
 
   
   fake_clock_.AdvanceTimeMilliseconds(1);
-  packet = hist_.GetPacketAndSetSendTime(kStartSeqNum);
-  EXPECT_TRUE(packet);
+  packet = hist_.GetPacketAndMarkAsPending(kStartSeqNum);
+  ASSERT_TRUE(packet);
   EXPECT_EQ(len, packet->size());
   EXPECT_EQ(packet->capture_time(), capture_time);
+  hist_.MarkPacketAsSent(kStartSeqNum);
 
   
   fake_clock_.AdvanceTimeMilliseconds(kMinRetransmitIntervalMs - 1);
-  EXPECT_FALSE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  EXPECT_FALSE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
 
   
   fake_clock_.AdvanceTimeMilliseconds(1);
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
 }
 
 TEST_P(RtpPacketHistoryTest, RemovesOldestSentPacketWhenAtMaxSize) {
@@ -275,8 +207,9 @@ TEST_P(RtpPacketHistoryTest, RemovesOldestPacketWhenAtMaxCapacity) {
   for (size_t i = 0; i < kMaxNumPackets; ++i) {
     std::unique_ptr<RtpPacketToSend> packet =
         CreateRtpPacket(To16u(kStartSeqNum + i));
+    hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
     
-    hist_.PutRtpPacket(std::move(packet), absl::nullopt);
+    hist_.GetPacketAndMarkAsPending(To16u(kStartSeqNum + i));
   }
 
   
@@ -327,39 +260,6 @@ TEST_P(RtpPacketHistoryTest, RemovesLowestPrioPaddingWhenAtMaxCapacity) {
   auto packet = hist_.GetPayloadPaddingPacket();
   ASSERT_TRUE(packet);
   EXPECT_EQ(packet->SequenceNumber(), To16u(kStartSeqNum + kMaxNumPackets));
-}
-
-TEST_P(RtpPacketHistoryTest, DontRemoveUnsentPackets) {
-  const size_t kMaxNumPackets = 10;
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets);
-
-  
-  for (size_t i = 0; i < kMaxNumPackets; ++i) {
-    
-    hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + i)), absl::nullopt);
-  }
-  fake_clock_.AdvanceTimeMilliseconds(RtpPacketHistory::kMinPacketDurationMs);
-
-  
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
-
-  
-  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + kMaxNumPackets)),
-                     fake_clock_.TimeInMilliseconds());
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
-
-  
-  
-  for (size_t i = 0; i <= kMaxNumPackets; ++i) {
-    EXPECT_TRUE(hist_.GetPacketAndSetSendTime(To16u(kStartSeqNum + i)));
-  }
-  fake_clock_.AdvanceTimeMilliseconds(RtpPacketHistory::kMinPacketDurationMs);
-  
-  hist_.PutRtpPacket(CreateRtpPacket(To16u(kStartSeqNum + kMaxNumPackets + 1)),
-                     fake_clock_.TimeInMilliseconds());
-  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
-  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
 }
 
 TEST_P(RtpPacketHistoryTest, DontRemoveTooRecentlyTransmittedPackets) {
@@ -476,29 +376,26 @@ TEST_P(RtpPacketHistoryTest, CullWithAcks) {
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
   packet->SetPayloadSize(50);
   hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-  hist_.GetPacketAndSetSendTime(kStartSeqNum);
   fake_clock_.AdvanceTimeMilliseconds(33);
   packet = CreateRtpPacket(To16u(kStartSeqNum + 1));
   packet->SetPayloadSize(50);
   hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-  hist_.GetPacketAndSetSendTime(To16u(kStartSeqNum + 1));
   fake_clock_.AdvanceTimeMilliseconds(33);
   packet = CreateRtpPacket(To16u(kStartSeqNum + 2));
   packet->SetPayloadSize(50);
   hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-  hist_.GetPacketAndSetSendTime(To16u(kStartSeqNum + 2));
 
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum).has_value());
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 1)).has_value());
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)).has_value());
+  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
+  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
+  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
 
   
   std::vector<uint16_t> acked_sequence_numbers = {To16u(kStartSeqNum + 1)};
   hist_.CullAcknowledgedPackets(acked_sequence_numbers);
 
-  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum).has_value());
-  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)).has_value());
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)).has_value());
+  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
+  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
+  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
 
   
   
@@ -506,58 +403,16 @@ TEST_P(RtpPacketHistoryTest, CullWithAcks) {
   fake_clock_.AdvanceTimeMilliseconds(second_packet_expiry_time -
                                       fake_clock_.TimeInMilliseconds());
   hist_.SetRtt(1);  
-  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum).has_value());
-  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)).has_value());
-  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)).has_value());
+  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
+  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
+  EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
 
   
   fake_clock_.AdvanceTimeMilliseconds(33);
   hist_.SetRtt(1);  
-  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum).has_value());
-  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)).has_value());
-  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 2)).has_value());
-}
-
-TEST_P(RtpPacketHistoryTest, SetsPendingTransmissionState) {
-  const int64_t kRttMs = RtpPacketHistory::kMinPacketDurationMs * 2;
-  hist_.SetRtt(kRttMs);
-
-  
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
-
-  
-  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum),
-                      absl::nullopt);
-
-  
-  absl::optional<RtpPacketHistory::PacketState> packet_state =
-      hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(packet_state.has_value());
-  EXPECT_TRUE(packet_state->pending_transmission);
-
-  
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-  packet_state = hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(packet_state.has_value());
-  EXPECT_FALSE(packet_state->pending_transmission);
-
-  
-  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
-  EXPECT_TRUE(hist_.SetPendingTransmission(kStartSeqNum));
-  packet_state = hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(packet_state.has_value());
-  EXPECT_TRUE(packet_state->pending_transmission);
-
-  
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
-  
-  ASSERT_FALSE(hist_.GetPacketState(kStartSeqNum).has_value());
-
-  
-  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
-  packet_state = hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(packet_state.has_value());
-  EXPECT_FALSE(packet_state->pending_transmission);
+  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
+  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
+  EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 2)));
 }
 
 TEST_P(RtpPacketHistoryTest, GetPacketAndSetSent) {
@@ -647,21 +502,17 @@ TEST_P(RtpPacketHistoryTest, DontRemovePendingTransmissions) {
   
   fake_clock_.AdvanceTimeMilliseconds(kPacketTimeoutMs - 1);
   
-  EXPECT_TRUE(hist_.SetPendingTransmission(kStartSeqNum));
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
 
   
   
   fake_clock_.AdvanceTimeMilliseconds(1);
-  absl::optional<RtpPacketHistory::PacketState> packet_state =
-      hist_.GetPacketState(kStartSeqNum);
-  ASSERT_TRUE(packet_state.has_value());
-  EXPECT_TRUE(packet_state->pending_transmission);
+  EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
 
   
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  hist_.MarkPacketAsSent(kStartSeqNum);
   hist_.SetRtt(kRttMs);  
-  packet_state = hist_.GetPacketState(kStartSeqNum);
-  ASSERT_FALSE(packet_state.has_value());
+  EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
 }
 
 TEST_P(RtpPacketHistoryTest, PrioritizedPayloadPadding) {
@@ -716,11 +567,11 @@ TEST_P(RtpPacketHistoryTest, NoPendingPacketAsPadding) {
   EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
 
   
-  hist_.SetPendingTransmission(kStartSeqNum);
+  hist_.GetPacketAndMarkAsPending(kStartSeqNum);
   EXPECT_EQ(nullptr, hist_.GetPayloadPaddingPacket());
 
   
-  hist_.GetPacketAndSetSendTime(kStartSeqNum);
+  hist_.MarkPacketAsSent(kStartSeqNum);
   EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
 }
 
@@ -766,29 +617,22 @@ TEST_P(RtpPacketHistoryTest, OutOfOrderInsertRemoval) {
   
   
   const int seq_offsets[] = {0, 1, -1, 2, -2, 3, -3};
-  const int64_t start_time_ms = fake_clock_.TimeInMilliseconds();
 
   for (int offset : seq_offsets) {
     uint16_t seq_no = To16u(kStartSeqNum + offset);
     std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(seq_no);
     packet->SetPayloadSize(50);
     hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-    hist_.GetPacketAndSetSendTime(seq_no);
     fake_clock_.AdvanceTimeMilliseconds(33);
   }
 
   
-  int64_t expected_time_offset_ms = 0;
   for (int offset : seq_offsets) {
     uint16_t seq_no = To16u(kStartSeqNum + offset);
-    absl::optional<RtpPacketHistory::PacketState> packet_state =
-        hist_.GetPacketState(seq_no);
-    ASSERT_TRUE(packet_state.has_value());
-    EXPECT_EQ(packet_state->send_time_ms,
-              start_time_ms + expected_time_offset_ms);
+    EXPECT_TRUE(hist_.GetPacketState(seq_no));
     std::vector<uint16_t> acked_sequence_numbers = {seq_no};
     hist_.CullAcknowledgedPackets(acked_sequence_numbers);
-    expected_time_offset_ms += 33;
+    EXPECT_FALSE(hist_.GetPacketState(seq_no));
   }
 }
 
