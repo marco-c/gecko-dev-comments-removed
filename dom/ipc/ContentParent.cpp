@@ -1641,6 +1641,11 @@ void ContentParent::BroadcastMediaCodecsSupportedUpdate(
   for (auto* cp : AllProcesses(eAll)) {
     Unused << cp->SendUpdateMediaCodecsSupported(aLocation, support);
   }
+
+  
+  nsCString supportString;
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, support);
+  gfx::gfxVars::SetCodecSupportInfo(supportString);
 }
 
 const nsACString& ContentParent::GetRemoteType() const { return mRemoteType; }
