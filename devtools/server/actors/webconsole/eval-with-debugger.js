@@ -409,6 +409,8 @@ function makeSideeffectFreeDebugger() {
   return dbg;
 }
 
+exports.makeSideeffectFreeDebugger = makeSideeffectFreeDebugger;
+
 
 let gSideEffectFreeNatives; 
 

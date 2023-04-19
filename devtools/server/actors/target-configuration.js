@@ -27,6 +27,8 @@ const SUPPORTED_OPTIONS = {
   
   colorSchemeSimulation: true,
   
+  customFormatters: true,
+  
   customUserAgent: true,
   
   javascriptEnabled: true,

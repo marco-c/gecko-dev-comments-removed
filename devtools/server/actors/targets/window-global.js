@@ -1313,6 +1313,10 @@ const windowGlobalTargetPrototype = {
       }
     }
 
+    if (typeof options.customFormatters !== "undefined") {
+      this.customFormatters = options.customFormatters;
+    }
+
     if (!this.isTopLevelTarget) {
       
       

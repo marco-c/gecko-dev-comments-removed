@@ -291,6 +291,9 @@ function Toolbox(
   this.closeToolbox = this.closeToolbox.bind(this);
   this.destroy = this.destroy.bind(this);
   this._applyCacheSettings = this._applyCacheSettings.bind(this);
+  this._applyCustomFormatterSetting = this._applyCustomFormatterSetting.bind(
+    this
+  );
   this._applyServiceWorkersTestingSettings = this._applyServiceWorkersTestingSettings.bind(
     this
   );
@@ -858,6 +861,10 @@ Toolbox.prototype = {
 
       
       
+      await this._applyCustomFormatterSetting();
+
+      
+      
       
       
       
@@ -903,6 +910,10 @@ Toolbox.prototype = {
       Services.prefs.addObserver(
         "devtools.cache.disabled",
         this._applyCacheSettings
+      );
+      Services.prefs.addObserver(
+        "devtools.custom-formatters.enabled",
+        this._applyCustomFormatterSetting
       );
       Services.prefs.addObserver(
         "devtools.serviceWorkers.testing.enabled",
@@ -2188,6 +2199,26 @@ Toolbox.prototype = {
     if (flags.testing) {
       this.emit("cache-reconfigured");
     }
+  },
+
+  
+
+
+
+  _applyCustomFormatterSetting: async function() {
+    if (!this.commands) {
+      return;
+    }
+
+    const customFormatters =
+      Services.prefs.getBoolPref("devtools.custom-formatters", false) &&
+      Services.prefs.getBoolPref("devtools.custom-formatters.enabled", false);
+
+    await this.commands.targetConfigurationCommand.updateConfiguration({
+      customFormatters,
+    });
+
+    this.emitForTests("custom-formatters-reconfigured");
   },
 
   
@@ -3963,6 +3994,10 @@ Toolbox.prototype = {
     Services.prefs.removeObserver(
       "devtools.cache.disabled",
       this._applyCacheSettings
+    );
+    Services.prefs.removeObserver(
+      "devtools.custom-formatters.enabled",
+      this._applyCustomFormatterSetting
     );
     Services.prefs.removeObserver(
       "devtools.serviceWorkers.testing.enabled",

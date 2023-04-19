@@ -35,6 +35,13 @@ loader.lazyRequireGetter(
   "devtools/server/actors/object/previewers"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "makeSideeffectFreeDebugger",
+  "devtools/server/actors/webconsole/eval-with-debugger",
+  true
+);
+
 
 if (!isWorker) {
   loader.lazyRequireGetter(
@@ -146,6 +153,16 @@ const proto = {
       previewers.Proxy[0](this, g, null);
       this.hooks.decrementGripDepth();
       return g;
+    }
+
+    if (this.thread?._parent?.customFormatters) {
+      const header = this.customFormatterHeader();
+      if (header) {
+        return {
+          ...g,
+          ...header,
+        };
+      }
     }
 
     const ownPropertyLength = this._getOwnPropertyLength();
@@ -753,15 +770,108 @@ const proto = {
     };
   },
 
+  customFormatterHeader: function() {
+    const rawValue = this.rawValue();
+    const globalWrapper = Cu.getGlobalForObject(rawValue);
+    const global = globalWrapper?.wrappedJSObject;
+    if (global && Array.isArray(global.devtoolsFormatters)) {
+      
+      
+      const dbg = makeSideeffectFreeDebugger();
+      const dbgGlobal = dbg.makeGlobalObjectReference(global);
+
+      for (const [index, formatter] of global.devtoolsFormatters.entries()) {
+        if (typeof formatter?.header !== "function") {
+          continue;
+        }
+
+        
+        try {
+          const formatterHeaderDbgValue = dbgGlobal.makeDebuggeeValue(
+            formatter.header
+          );
+          const debuggeeValue = dbgGlobal.makeDebuggeeValue(rawValue);
+          const header = formatterHeaderDbgValue.call(dbgGlobal, debuggeeValue);
+          if (header?.return?.class === "Array") {
+            let hasBody = false;
+            if (typeof formatter?.hasBody === "function") {
+              const formatterHasBodyDbgValue = dbgGlobal.makeDebuggeeValue(
+                formatter.hasBody
+              );
+              hasBody = formatterHasBodyDbgValue.call(dbgGlobal, debuggeeValue);
+            }
+
+            return {
+              useCustomFormatter: true,
+              customFormatterIndex: index,
+              
+              
+              
+              header: global.structuredClone(header.return.unsafeDereference()),
+              hasBody: !!hasBody.return,
+            };
+          }
+        } catch (e) {
+          
+          
+          dump(`💥 ${e}\n`);
+        } finally {
+          
+          
+          
+          dbg.removeAllDebuggees();
+        }
+      }
+    }
+
+    return null;
+  },
+
   
 
 
-  customFormatterBody: function() {
+
+
+
+  customFormatterBody: function(customFormatterIndex) {
+    const rawValue = this.rawValue();
+    const globalWrapper = Cu.getGlobalForObject(rawValue);
+    const global = globalWrapper?.wrappedJSObject;
+
     
     
-    return {
-      customFormatterBody: null,
-    };
+    const dbg = makeSideeffectFreeDebugger();
+    try {
+      const dbgGlobal = dbg.makeGlobalObjectReference(global);
+      const formatter = global.devtoolsFormatters[customFormatterIndex];
+      const formatterBodyDbgValue =
+        formatter && dbgGlobal.makeDebuggeeValue(formatter.body);
+      const body = formatterBodyDbgValue.call(
+        dbgGlobal,
+        dbgGlobal.makeDebuggeeValue(rawValue)
+      );
+      if (body?.return?.class === "Array") {
+        return {
+          
+          
+          
+          customFormatterBody: global.structuredClone(
+            body.return.unsafeDereference()
+          ),
+        };
+      }
+    } catch (e) {
+      
+      
+      dump(`💥 ${e}\n`);
+    } finally {
+      
+      
+      
+      dbg.removeAllDebuggees();
+    }
+
+    return {};
   },
 
   
