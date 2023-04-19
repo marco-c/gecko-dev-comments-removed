@@ -1129,6 +1129,13 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
 
+
+
+#ifdef NIGHTLY_BUILD
+  
+  mitigations |= DynamicCodeFlagForSystemMediaLibraries();
+#endif  
+
   if (exceptionModules.isNothing()) {
     mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
   }
