@@ -7,10 +7,10 @@
 #ifndef DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGER_H_
 #define DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGER_H_
 
-#include "ResultConnection.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/quota/ForwardDecls.h"
 #include "nsStringFwd.h"
+#include "ResultConnection.h"
 
 template <class T>
 class nsCOMPtr;
@@ -25,7 +25,6 @@ class Result;
 namespace dom::fs {
 
 class FileSystemChildMetadata;
-class FileSystemEntryMetadata;
 class FileSystemDirectoryListing;
 class FileSystemEntryPair;
 
@@ -41,16 +40,6 @@ class FileSystemDatabaseManager {
 
 
   virtual Result<int64_t, QMResult> GetUsage() const = 0;
-
-  
-
-
-
-
-
-
-  virtual Result<EntryId, QMResult> GetParentEntryId(
-      const EntryId& aEntry) const = 0;
 
   
 
@@ -100,18 +89,6 @@ class FileSystemDatabaseManager {
 
   virtual Result<bool, QMResult> RemoveFile(
       const FileSystemChildMetadata& aHandle) = 0;
-
-  
-
-
-
-
-
-
-
-  virtual Result<bool, QMResult> MoveEntry(
-      const FileSystemChildMetadata& aHandle,
-      const FileSystemChildMetadata& aNewDesignation) = 0;
 
   
 

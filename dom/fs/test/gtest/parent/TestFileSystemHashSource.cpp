@@ -4,15 +4,17 @@
 
 
 
+#include "gtest/gtest.h"
+
 #include "FileSystemHashSource.h"
 #include "TestHelpers.h"
-#include "gtest/gtest.h"
+
 #include "mozilla/Array.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "nsContentUtils.h"
-#include "nsLiteralString.h"
-#include "nsString.h"
 #include "nsStringFwd.h"
+#include "nsString.h"
+#include "nsLiteralString.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 

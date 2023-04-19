@@ -9,28 +9,28 @@
 #include "FileSystemDatabaseManagerVersion001.h"
 #include "FileSystemFileManager.h"
 #include "FileSystemHashSource.h"
-#include "ResultStatement.h"
-#include "SchemaVersion001.h"
-#include "TestHelpers.h"
 #include "gtest/gtest.h"
-#include "mozIStorageService.h"
-#include "mozStorageCID.h"
-#include "mozStorageHelper.h"
+#include "mozilla/dom/FileSystemTypes.h"
+#include "mozilla/dom/PFileSystemManager.h"
 #include "mozilla/Array.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Result.h"
-#include "mozilla/dom/FileSystemTypes.h"
-#include "mozilla/dom/PFileSystemManager.h"
+#include "mozIStorageService.h"
+#include "mozStorageCID.h"
+#include "mozStorageHelper.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsLiteralString.h"
 #include "nsReadableUtils.h"
-#include "nsString.h"
 #include "nsStringFwd.h"
+#include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
+#include "ResultStatement.h"
+#include "SchemaVersion001.h"
+#include "TestHelpers.h"
 
 namespace mozilla::dom::fs::test {
 
@@ -264,6 +264,53 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles)
   ASSERT_TRUE(u"First"_ns == fileItemRef.entryName())
   << fileItemRef.entryName();
   ASSERT_EQ(firstChild, fileItemRef.entryId());
+
+  
+  FileSystemChildMetadata rootChildMeta(getTestOrigin(), u"root"_ns);
+  TEST_TRY_UNWRAP_ERR(
+      rv, dm->RemoveDirectory(rootChildMeta,  false));
+  ASSERT_NSEQ(NS_ERROR_DOM_FILEHANDLE_NOT_ALLOWED_ERR,
+              rv);  
+
+  TEST_TRY_UNWRAP(isDeleted,
+                  dm->RemoveDirectory(rootChildMeta,  true));
+  ASSERT_TRUE(isDeleted);
+
+  
+  TEST_TRY_UNWRAP(FileSystemDirectoryListing rEntries,
+                  dm->GetDirectoryEntries(rootId, 0));
+  ASSERT_EQ(0u, rEntries.directories().Length());
+  ASSERT_EQ(0u, rEntries.files().Length());
+
+  
+  TEST_TRY_UNWRAP_ERR(rv,
+                      dm->GetOrCreateFile(firstChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
+
+  
+  TEST_TRY_UNWRAP_ERR(rv,
+                      dm->GetOrCreateFile(notAChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
+
+  
+  TEST_TRY_UNWRAP_ERR(
+      rv, dm->GetOrCreateDirectory(firstChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
+
+  
+  TEST_TRY_UNWRAP_ERR(
+      rv, dm->GetOrCreateDirectory(notAChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
+
+  
+  TEST_TRY_UNWRAP_ERR(rv,
+                      dm->GetOrCreateFile(rootChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
+
+  
+  TEST_TRY_UNWRAP_ERR(
+      rv, dm->GetOrCreateDirectory(rootChildMeta,  true));
+  ASSERT_NSEQ(NS_ERROR_STORAGE_CONSTRAINT, rv);  
 
   dm->Close();
 }
