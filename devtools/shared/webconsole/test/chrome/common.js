@@ -20,6 +20,11 @@ const {
 
 const Services = require("Services");
 
+
+
+
+const FRACTIONAL_NUMBER_REGEX = /^\d+(\.\d{1,3})?$/;
+
 function initCommon() {
   
 }

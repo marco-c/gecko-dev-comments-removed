@@ -215,12 +215,16 @@ const EXPECTED_FUNCTION_NAME = "pageScript";
 
 const NUMBER_REGEX = /^\d+$/;
 
+
+
+const FRACTIONAL_NUMBER_REGEX = /^\d+(\.\d{1,3})?$/;
+
 function getExpectedExistingConsoleCalls(documentFilename) {
   const defaultProperties = {
     filename: documentFilename,
     columnNumber: NUMBER_REGEX,
     lineNumber: NUMBER_REGEX,
-    timeStamp: NUMBER_REGEX,
+    timeStamp: FRACTIONAL_NUMBER_REGEX,
     innerWindowID: NUMBER_REGEX,
     chromeContext: undefined,
     counter: undefined,
@@ -265,7 +269,7 @@ function getExpectedRuntimeConsoleCalls(documentFilename) {
     filename: documentFilename,
     columnNumber: NUMBER_REGEX,
     lineNumber: NUMBER_REGEX,
-    timeStamp: NUMBER_REGEX,
+    timeStamp: FRACTIONAL_NUMBER_REGEX,
     innerWindowID: NUMBER_REGEX,
     chromeContext: undefined,
     counter: undefined,

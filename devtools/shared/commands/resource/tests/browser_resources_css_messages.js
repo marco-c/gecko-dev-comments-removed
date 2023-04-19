@@ -123,13 +123,18 @@ function setupOnAvailableFunction(
   
   
   
+  const FRACTIONAL_NUMBER_REGEX = /^\d+(\.\d{1,3})?$/;
+
+  
+  
+  
   const expectedMessages = [
     {
       pageError: {
         errorMessage: /Expected color but found ‘bloup’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
-        timeStamp: /^\d+$/,
+        timeStamp: FRACTIONAL_NUMBER_REGEX,
         error: false,
         warning: true,
       },
@@ -141,7 +146,7 @@ function setupOnAvailableFunction(
         errorMessage: /Error in parsing value for ‘width’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
-        timeStamp: /^\d+$/,
+        timeStamp: FRACTIONAL_NUMBER_REGEX,
         error: false,
         warning: true,
       },
@@ -152,7 +157,7 @@ function setupOnAvailableFunction(
         errorMessage: /Error in parsing value for ‘height’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
-        timeStamp: /^\d+$/,
+        timeStamp: FRACTIONAL_NUMBER_REGEX,
         error: false,
         warning: true,
       },

@@ -216,7 +216,10 @@ function prepareConsoleMessageForRemote(targetActor, message) {
     filename: message.filename,
     level: message.level,
     lineNumber: message.lineNumber,
-    timeStamp: message.timeStamp,
+    
+    timeStamp: message.microSecondTimeStamp
+      ? message.microSecondTimeStamp / 1000
+      : message.timeStamp,
     sourceId: getActorIdForInternalSourceId(targetActor, message.sourceId),
     innerWindowID: message.innerID,
   };

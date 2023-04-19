@@ -5,8 +5,8 @@
   <title>Test for nsIConsoleMessages</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="text/javascript" src="common.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Make sure that nsIConsoleMessages are logged. See bug 859756.</p>
@@ -31,7 +31,7 @@ function onAttach(aState)
 
   expectedMessages = [{
     message: "hello world! bug859756",
-    timeStamp: /^\d+$/,
+    timeStamp: FRACTIONAL_NUMBER_REGEX,
   }];
 
   Services.console.logStringMessage("hello world! bug859756");
