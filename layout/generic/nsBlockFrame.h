@@ -779,11 +779,6 @@ class nsBlockFrame : public nsContainerFrame {
                          LineReflowStatus* aLineReflowStatus);
 
   
-  nscoord ComputeFloatISize(BlockReflowState& aState,
-                            const mozilla::LogicalRect& aFloatAvailableSpace,
-                            nsIFrame* aFloat);
-
-  
   
   
   

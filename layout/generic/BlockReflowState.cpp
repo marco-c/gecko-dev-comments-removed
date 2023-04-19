@@ -581,14 +581,14 @@ bool BlockReflowState::AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
   
   
   
-  LogicalRect floatAvailableSpace =
-      GetFloatAvailableSpaceForPlacingFloat(mBCoord).mRect;
-  if (mBelowCurrentLineFloats.IsEmpty() &&
-      (aLineLayout->LineIsEmpty() ||
-       mBlock->ComputeFloatISize(*this, floatAvailableSpace, aFloat) <=
-           aAvailableISize)) {
+  bool shouldPlaceFloatBelowCurrentLine = false;
+  if (mBelowCurrentLineFloats.IsEmpty()) {
     
-    PlaceFloatResult result = FlowAndPlaceFloat(aFloat);
+    
+    Maybe<nscoord> availableISizeInCurrentLine =
+        aLineLayout->LineIsEmpty() ? Nothing() : Some(aAvailableISize);
+    PlaceFloatResult result =
+        FlowAndPlaceFloat(aFloat, availableISizeInCurrentLine);
     if (result == PlaceFloatResult::Placed) {
       placed = true;
       
@@ -608,8 +608,15 @@ bool BlockReflowState::AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
       mCurrentLineFloats.Append(mFloatCacheFreeList.Alloc(aFloat));
     } else if (result == PlaceFloatResult::ShouldPlaceInNextContinuation) {
       (*aLineLayout->GetLine())->SetHadFloatPushed();
+    } else {
+      MOZ_ASSERT(result == PlaceFloatResult::ShouldPlaceBelowCurrentLine);
+      shouldPlaceFloatBelowCurrentLine = true;
     }
   } else {
+    shouldPlaceFloatBelowCurrentLine = true;
+  }
+
+  if (shouldPlaceFloatBelowCurrentLine) {
     
     
     placed = true;
@@ -707,7 +714,7 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(ShapeInvalidationDataProperty,
                                     ShapeInvalidationData)
 
 BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
-    nsIFrame* aFloat) {
+    nsIFrame* aFloat, Maybe<nscoord> aAvailableISizeInCurrentLine) {
   MOZ_ASSERT(aFloat->GetParent() == mBlock, "Float frame has wrong parent");
 
   WritingMode wm = mReflowInput.GetWritingMode();
@@ -772,6 +779,15 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
                  "letter frames and orthogonal floats with auto block-size "
                  "shouldn't break, and if they do now, then they're breaking "
                  "at the wrong point");
+  }
+
+  
+  if (mBCoord == restoreBCoord.SavedValue() && aAvailableISizeInCurrentLine &&
+      floatMarginISize > *aAvailableISizeInCurrentLine) {
+    
+    
+    
+    return PlaceFloatResult::ShouldPlaceBelowCurrentLine;
   }
 
   

@@ -147,7 +147,11 @@ class BlockReflowState {
     ShouldPlaceBelowCurrentLine,
     ShouldPlaceInNextContinuation,
   };
-  PlaceFloatResult FlowAndPlaceFloat(nsIFrame* aFloat);
+  
+  
+  PlaceFloatResult FlowAndPlaceFloat(
+      nsIFrame* aFloat, mozilla::Maybe<nscoord> aAvailableISizeInCurrentLine =
+                            mozilla::Nothing());
 
   void PlaceBelowCurrentLineFloats(nsLineBox* aLine);
 
