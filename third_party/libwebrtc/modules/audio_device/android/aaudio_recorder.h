@@ -18,8 +18,8 @@
 #include "modules/audio_device/android/aaudio_wrapper.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/message_handler.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 
@@ -88,12 +88,12 @@ class AAudioRecorder : public AAudioObserverInterface,
 
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   
   
   
-  rtc::ThreadChecker thread_checker_aaudio_;
+  SequenceChecker thread_checker_aaudio_;
 
   
   rtc::Thread* main_thread_;

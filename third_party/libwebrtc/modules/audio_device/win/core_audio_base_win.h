@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "modules/audio_device/win/core_audio_utility_win.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -128,8 +128,8 @@ class CoreAudioBase : public IAudioSessionEvents {
   
   
   
-  rtc::ThreadChecker thread_checker_;
-  rtc::ThreadChecker thread_checker_audio_;
+  SequenceChecker thread_checker_;
+  SequenceChecker thread_checker_audio_;
   AudioDeviceBuffer* audio_device_buffer_ = nullptr;
   bool initialized_ = false;
   WAVEFORMATEXTENSIBLE format_ = {};

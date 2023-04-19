@@ -22,9 +22,9 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/network.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 class AsyncPacketSocket;
@@ -227,7 +227,7 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
   
   std::vector<Requester*> requesters_;
 
-  rtc::ThreadChecker thread_checker_;
+  webrtc::SequenceChecker thread_checker_;
 
   
   std::vector<rtc::AsyncPacketSocket*> sockets_;

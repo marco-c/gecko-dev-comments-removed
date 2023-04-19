@@ -23,7 +23,7 @@
 #include "modules/audio_device/audio_device_generic.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "modules/utility/include/helpers_android.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -123,12 +123,12 @@ class OpenSLESRecorder {
 
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   
   
   
-  rtc::ThreadChecker thread_checker_opensles_;
+  SequenceChecker thread_checker_opensles_;
 
   
   

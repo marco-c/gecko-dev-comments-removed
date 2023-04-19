@@ -21,7 +21,7 @@
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/opensles_common.h"
@@ -121,12 +121,12 @@ class OpenSLESPlayer : public AudioOutput {
 
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   
   
   
-  rtc::ThreadChecker thread_checker_opensles_;
+  SequenceChecker thread_checker_opensles_;
 
   const AudioParameters audio_parameters_;
 

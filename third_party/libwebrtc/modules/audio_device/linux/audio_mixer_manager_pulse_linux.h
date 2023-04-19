@@ -14,7 +14,7 @@
 #include <pulse/pulseaudio.h>
 #include <stdint.h>
 
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 #ifndef UINT32_MAX
 #define UINT32_MAX ((uint32_t)-1)
@@ -106,7 +106,7 @@ class AudioMixerManagerLinuxPulse {
   
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 };
 
 }  

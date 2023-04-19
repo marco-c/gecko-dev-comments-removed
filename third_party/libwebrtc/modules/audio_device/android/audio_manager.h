@@ -23,7 +23,7 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "modules/utility/include/helpers_android.h"
 #include "modules/utility/include/jvm_android.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -160,7 +160,7 @@ class AudioManager {
   
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   
   

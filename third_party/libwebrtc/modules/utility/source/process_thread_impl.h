@@ -24,7 +24,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/location.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -95,7 +95,7 @@ class ProcessThreadImpl : public ProcessThread {
   rtc::RecursiveCriticalSection
       lock_;  
 
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
   rtc::Event wake_up_;
   
   std::unique_ptr<rtc::PlatformThread> thread_;

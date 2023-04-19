@@ -48,7 +48,6 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_checker.h"
 #include "video/buffered_frame_decryptor.h"
 #include "video/rtp_video_stream_receiver_frame_transformer_delegate.h"
 
@@ -389,7 +388,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   
   
-  rtc::ThreadChecker network_tc_;
+  SequenceChecker network_tc_;
   
   
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_

@@ -22,8 +22,8 @@
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_checker.h"
 
 #if defined(WEBRTC_USE_X11)
 #include <X11/Xlib.h>
@@ -287,7 +287,7 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   
   
   
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   bool _initialized;
   bool _recording;

@@ -15,7 +15,7 @@
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -411,7 +411,7 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
   }
 
  private:
-  rtc::ThreadChecker thread_checker_;
+  SequenceChecker thread_checker_;
 
   
   

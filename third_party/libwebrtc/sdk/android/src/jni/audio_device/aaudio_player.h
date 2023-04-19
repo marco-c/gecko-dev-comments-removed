@@ -18,9 +18,9 @@
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/message_handler.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/aaudio_wrapper.h"
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
 
@@ -99,12 +99,12 @@ class AAudioPlayer final : public AudioOutput,
 
   
   
-  rtc::ThreadChecker main_thread_checker_;
+  SequenceChecker main_thread_checker_;
 
   
   
   
-  rtc::ThreadChecker thread_checker_aaudio_;
+  SequenceChecker thread_checker_aaudio_;
 
   
   rtc::Thread* main_thread_;

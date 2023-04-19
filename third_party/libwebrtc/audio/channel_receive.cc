@@ -46,7 +46,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/thread_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -198,8 +198,8 @@ class ChannelReceive : public ChannelReceiveInterface {
   
   
   
-  rtc::ThreadChecker worker_thread_checker_;
-  rtc::ThreadChecker module_process_thread_checker_;
+  SequenceChecker worker_thread_checker_;
+  SequenceChecker module_process_thread_checker_;
   
   
   
@@ -270,7 +270,7 @@ class ChannelReceive : public ChannelReceiveInterface {
 
   PacketRouter* packet_router_ = nullptr;
 
-  rtc::ThreadChecker construction_thread_;
+  SequenceChecker construction_thread_;
 
   
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
