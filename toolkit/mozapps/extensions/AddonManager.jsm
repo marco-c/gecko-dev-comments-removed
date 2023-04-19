@@ -100,6 +100,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  isGatedPermissionType:
+    "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
+  isKnownPublicSuffix:
+    "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
+});
+
 
 
 
@@ -1782,6 +1789,118 @@ var AddonManagerInternal = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  async getSitePermsAddonInstallForWebpage(
+    aBrowser,
+    aInstallingPrincipal,
+    aSitePerm
+  ) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
+
+    if (
+      !aInstallingPrincipal ||
+      !(aInstallingPrincipal instanceof Ci.nsIPrincipal)
+    ) {
+      throw Components.Exception(
+        "aInstallingPrincipal must be a nsIPrincipal",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    if (aBrowser && !Element.isInstance(aBrowser)) {
+      throw Components.Exception(
+        "aBrowser must be an Element, or null",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    
+    if (
+      aBrowser &&
+      aBrowser.contentPrincipal.isThirdPartyPrincipal(aInstallingPrincipal)
+    ) {
+      throw Components.Exception(
+        `SitePermsAddons can't be installed from cross origin subframes`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    if (aInstallingPrincipal.scheme !== "https") {
+      throw Components.Exception(
+        `SitePermsAddons can only be installed from secure origins`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    if (aInstallingPrincipal.isIpAddress) {
+      throw Components.Exception(
+        `SitePermsAddons install disallowed when the host is an IP address`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    
+    
+    if (aInstallingPrincipal.scheme !== "https") {
+      throw Components.Exception(
+        `SitePermsAddons can only be installed from secure origins`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    
+    if (lazy.isKnownPublicSuffix(aInstallingPrincipal.siteOrigin)) {
+      throw Components.Exception(
+        `SitePermsAddon can't be installed from public eTLDs ${aInstallingPrincipal.siteOrigin}`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    if (!lazy.isGatedPermissionType(aSitePerm)) {
+      throw Components.Exception(
+        `"${aSitePerm}" is not a gated permission`,
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    for (let provider of this.providers) {
+      let install = await promiseCallProvider(
+        provider,
+        "getSitePermsAddonInstallForWebpage",
+        aInstallingPrincipal,
+        aSitePerm
+      );
+      if (install) {
+        return install;
+      }
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
   uninstallSystemProfileAddon(aID) {
     if (!gStarted) {
       throw Components.Exception(
@@ -2098,6 +2217,73 @@ var AddonManagerInternal = {
 
     
     install.install();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async installSitePermsAddonFromWebpage(
+    aBrowser,
+    aInstallingPrincipal,
+    aPermission
+  ) {
+    const synthAddonInstall = await AddonManagerInternal.getSitePermsAddonInstallForWebpage(
+      aBrowser,
+      aInstallingPrincipal,
+      aPermission
+    );
+    const promiseInstall = new Promise((resolve, reject) => {
+      const installListener = {
+        onInstallFailed() {
+          synthAddonInstall.removeListener(installListener);
+          reject(new Error("Install Failed"));
+        },
+
+        onInstallCancelled() {
+          synthAddonInstall.removeListener(installListener);
+          reject(new Error("Install Cancelled"));
+        },
+
+        onInstallEnded() {
+          synthAddonInstall.removeListener(installListener);
+          resolve();
+        },
+      };
+      synthAddonInstall.addListener(installListener);
+    });
+
+    let startInstall = () => {
+      AddonManagerInternal.setupPromptHandler(
+        aBrowser,
+        aInstallingPrincipal.URI,
+        synthAddonInstall,
+        true,
+        "SitePermissionAddonPrompt"
+      );
+
+      AddonManagerInternal.startInstall(
+        aBrowser,
+        aInstallingPrincipal.URI,
+        synthAddonInstall
+      );
+    };
+
+    startInstall();
+
+    return promiseInstall;
   },
 
   
@@ -4118,6 +4304,18 @@ var AddonManager = {
 
   isInstallAllowed(aType, aInstallingPrincipal) {
     return AddonManagerInternal.isInstallAllowed(aType, aInstallingPrincipal);
+  },
+
+  installSitePermsAddonFromWebpage(
+    aBrowser,
+    aInstallingPrincipal,
+    aPermission
+  ) {
+    return AddonManagerInternal.installSitePermsAddonFromWebpage(
+      aBrowser,
+      aInstallingPrincipal,
+      aPermission
+    );
   },
 
   installAddonFromWebpage(
