@@ -1,5 +1,26 @@
 
 
+async function garbageCollect() {
+  if (typeof TestUtils !== 'undefined' && TestUtils.gc) {
+    await TestUtils.gc();
+  } else if (self.gc) {
+    await self.gc();
+  } else if (self.GCController) {
+    
+    await GCController.collect();
+  } else {
+    var gcRec = function (n) {
+      if (n < 1)
+        return {};
+      var temp = {i: "ab" + i + (i / 100000)};
+      temp += "foo";
+      gcRec(n-1);
+    };
+    for (var i = 0; i < 1000; i++)
+      gcRec(10);
+  }
+}
+
 function fetch_should_succeed(test, request) {
   return fetch(request).then(response => response.text());
 }
@@ -36,6 +57,24 @@ promise_test(t => {
     assert_equals(text, blob_contents);
   });
 }, 'Revoke blob URL after creating Request, will fetch');
+
+promise_test(async t => {
+  const blob_contents = 'test blob contents';
+  const blob = new Blob([blob_contents]);
+  const url = URL.createObjectURL(blob);
+  let request = new Request(url);
+
+  
+  
+  
+  URL.revokeObjectURL(url);
+
+  request = request.clone();
+  await garbageCollect();
+
+  const text = await fetch_should_succeed(t, request);
+  assert_equals(text, blob_contents);
+}, 'Revoke blob URL after creating Request, then clone Request, will fetch');
 
 promise_test(function(t) {
   const blob_contents = 'test blob contents';
