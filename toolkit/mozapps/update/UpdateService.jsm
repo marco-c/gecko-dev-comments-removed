@@ -53,6 +53,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/updates/update-manager;1",
   "nsIUpdateManager"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "CheckSvc",
+  "@mozilla.org/updates/update-checker;1",
+  "nsIUpdateChecker"
+);
 
 if (AppConstants.ENABLE_WEBDRIVER) {
   XPCOMUtils.defineLazyServiceGetter(
@@ -2591,9 +2597,7 @@ UpdateService.prototype = {
         
         this._downloader = null;
         
-        Cc["@mozilla.org/updates/update-checker;1"]
-          .createInstance(Ci.nsIUpdateChecker)
-          .stopCurrentCheck();
+        lazy.CheckSvc.stopAllChecks();
 
         if (gLogfileOutputStream) {
           gLogfileOutputStream.close();
@@ -3004,13 +3008,27 @@ UpdateService.prototype = {
     this._attemptResume();
   },
 
-  onCheckComplete: async function AUS_onCheckComplete(request, updates) {
-    await this._selectAndInstallUpdate(updates);
-  },
+  
 
-  onError: async function AUS_onError(request, update) {
+
+  onCheckComplete: async function AUS_onCheckComplete(result) {
+    if (result.succeeded) {
+      await this._selectAndInstallUpdate(result.updates);
+      return;
+    }
+
+    if (!result.checksAllowed) {
+      LOG("UpdateService:onCheckComplete - checks not allowed");
+      return;
+    }
+
+    
+    
+    let update = result.updates[0];
+
     LOG(
-      "UpdateService:onError - error during background update. error code: " +
+      "UpdateService:onCheckComplete - error during background update. error " +
+        "code: " +
         update.errorCode +
         ", status text: " +
         update.statusText
@@ -3039,8 +3057,8 @@ UpdateService.prototype = {
     
     if (lazy.UM.readyUpdate) {
       LOG(
-        "UpdateService:onError - Ignoring error because another update is " +
-          "ready."
+        "UpdateService:onCheckComplete - Ignoring error because another " +
+          "update is ready."
       );
       return;
     }
@@ -3055,7 +3073,7 @@ UpdateService.prototype = {
 
     if (errCount >= maxErrors) {
       LOG(
-        "UpdateService:onError - notifying observers of error. " +
+        "UpdateService:onCheckComplete - notifying observers of error. " +
           "topic: update-error, status: check-attempts-exceeded"
       );
       Services.obs.notifyObservers(
@@ -3066,7 +3084,7 @@ UpdateService.prototype = {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_GENERAL_ERROR_PROMPT);
     } else {
       LOG(
-        "UpdateService:onError - notifying observers of error. " +
+        "UpdateService:onCheckComplete - notifying observers of error. " +
           "topic: update-error, status: check-attempt-failed"
       );
       Services.obs.notifyObservers(
@@ -3105,7 +3123,11 @@ UpdateService.prototype = {
       return;
     }
 
-    this.backgroundChecker.checkForUpdates(this, false);
+    
+    (async () => {
+      let check = lazy.CheckSvc.checkForUpdates(lazy.CheckSvc.BACKGROUND_CHECK);
+      await this.onCheckComplete(await check.result);
+    })();
   },
 
   
@@ -3309,34 +3331,38 @@ UpdateService.prototype = {
       return false;
     }
 
-    let validUpdateURL = true;
-    this.backgroundChecker
-      .getUpdateURL(false)
-      .catch(e => {
+    
+    (async () => {
+      let validUpdateURL = true;
+      try {
+        await lazy.CheckSvc.getUpdateURL(lazy.CheckSvc.BACKGROUND_CHECK);
+      } catch (e) {
         validUpdateURL = false;
-      })
-      .then(() => {
-        
-        
-        if (!lazy.UpdateUtils.OSVersion) {
-          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
-        } else if (!lazy.UpdateUtils.ABI) {
-          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
-        } else if (!validUpdateURL) {
-          AUSTLMY.pingCheckCode(
-            this._pingSuffix,
-            AUSTLMY.CHK_INVALID_DEFAULT_URL
-          );
-        } else if (!hasUpdateMutex()) {
-          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
-        } else if (isOtherInstanceRunning()) {
-          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OTHER_INSTANCE);
-        } else if (!this.canCheckForUpdates) {
-          AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
-        }
+      }
 
-        this.backgroundChecker.checkForUpdates(this, false);
-      });
+      
+      
+      if (!lazy.UpdateUtils.OSVersion) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_VERSION);
+      } else if (!lazy.UpdateUtils.ABI) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_OS_ABI);
+      } else if (!validUpdateURL) {
+        AUSTLMY.pingCheckCode(
+          this._pingSuffix,
+          AUSTLMY.CHK_INVALID_DEFAULT_URL
+        );
+      } else if (!hasUpdateMutex()) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_NO_MUTEX);
+      } else if (isOtherInstanceRunning()) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OTHER_INSTANCE);
+      } else if (!this.canCheckForUpdates) {
+        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_CHECK);
+      }
+
+      let check = lazy.CheckSvc.checkForUpdates(lazy.CheckSvc.BACKGROUND_CHECK);
+      await this.onCheckComplete(await check.result);
+    })();
+
     return true;
   },
 
@@ -3592,21 +3618,6 @@ UpdateService.prototype = {
       cleanupDownloadingUpdate();
     }
     AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DOWNLOAD_UPDATE);
-  },
-
-  
-
-
-  _backgroundChecker: null,
-
-  
-
-
-  get backgroundChecker() {
-    if (!this._backgroundChecker) {
-      this._backgroundChecker = new Checker();
-    }
-    return this._backgroundChecker;
   },
 
   get disabledForTesting() {
@@ -3997,7 +4008,6 @@ UpdateService.prototype = {
 
   QueryInterface: ChromeUtils.generateQI([
     "nsIApplicationUpdateService",
-    "nsIUpdateCheckListener",
     "nsITimerCallback",
     "nsIObserver",
   ]),
