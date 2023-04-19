@@ -70,87 +70,98 @@ var settings = [
   },
 ];
 
+const allBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_ALL;
+const foreignBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_FOREIGN;
+const trackerBlocked = Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER;
+
 var testCases = [
   {
     behavior: BEHAVIOR_ACCEPT, 
-    hasStorageAccess: [
-      true ,
-      true ,
-      true ,
-      true ,
-      true ,
-      true ,
-      true ,
+    cases: [
+      [true] ,
+      [true] ,
+      [true] ,
+      [true] ,
+      [true] ,
+      [true] ,
+      [true] ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT_FOREIGN, 
-    hasStorageAccess: [
-      true ,
-      false ,
-      SpecialPowers.Services.prefs.getBoolPref(
-        "network.cookie.rejectForeignWithExceptions.enabled"
-      ) ,
-      false ,
-      SpecialPowers.Services.prefs.getBoolPref(
-        "network.cookie.rejectForeignWithExceptions.enabled"
-      ) ,
-      true ,
-      true ,
+    cases: [
+      [true] ,
+      [false, foreignBlocked] ,
+      [
+        SpecialPowers.Services.prefs.getBoolPref(
+          "network.cookie.rejectForeignWithExceptions.enabled"
+        ),
+        foreignBlocked,
+      ] ,
+      [false, foreignBlocked] ,
+      [
+        SpecialPowers.Services.prefs.getBoolPref(
+          "network.cookie.rejectForeignWithExceptions.enabled"
+        ),
+        foreignBlocked,
+      ] ,
+      [true] ,
+      [true] ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT, 
-    hasStorageAccess: [
-      false ,
-      false ,
-      false ,
-      false ,
-      false ,
-      false ,
-      false ,
+    cases: [
+      [false, allBlocked] ,
+      [false, allBlocked] ,
+      [false, allBlocked] ,
+      [false, allBlocked] ,
+      [false, allBlocked] ,
+      [false, allBlocked] ,
+      [false, allBlocked] ,
     ],
   },
   {
     behavior: BEHAVIOR_LIMIT_FOREIGN, 
-    hasStorageAccess: [
-      true ,
-      false ,
-      false ,
-      false ,
-      false ,
-      true ,
-      true ,
+    cases: [
+      [true] ,
+      [false, foreignBlocked] ,
+      [false, foreignBlocked] ,
+      [false, foreignBlocked] ,
+      [false, foreignBlocked] ,
+      [true] ,
+      [true] ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT_TRACKER, 
-    hasStorageAccess: [
-      true ,
-      true ,
-      true ,
-      false ,
-      true ,
-      true ,
-      true ,
+    cases: [
+      [true] ,
+      [true] ,
+      [true] ,
+      [false, trackerBlocked] ,
+      [true] ,
+      [true] ,
+      [true] ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN, 
-    hasStorageAccess: [
-      true ,
-      false ,
-      true ,
-      false ,
-      true ,
-      true ,
-      true ,
+    cases: [
+      [true] ,
+      [false] ,
+      [true] ,
+      [false, trackerBlocked] ,
+      [true] ,
+      [true] ,
+      [true] ,
     ],
   },
 ];
 
 (function() {
   settings.forEach(setting => {
+    ok(true, JSON.stringify(setting));
     if (setting.setup) {
       add_task(async _ => {
         setting.setup();
@@ -158,7 +169,10 @@ var testCases = [
     }
 
     testCases.forEach(test => {
-      let callback = test.hasStorageAccess[settings.indexOf(setting)]
+      let [hasStorageAccess, expectedBlockingNotifications] = test.cases[
+        settings.indexOf(setting)
+      ];
+      let callback = hasStorageAccess
         ? async _ => {
             
             await hasStorageAccessInitially();
@@ -176,10 +190,10 @@ var testCases = [
         extraPrefs: [
           [
             "privacy.partition.always_partition_third_party_non_cookie_storage",
-            false,
+            true,
           ],
         ],
-        expectedBlockingNotifications: 0,
+        expectedBlockingNotifications,
         runInPrivateWindow: false,
         iframeSandbox: null,
         accessRemoval: null,

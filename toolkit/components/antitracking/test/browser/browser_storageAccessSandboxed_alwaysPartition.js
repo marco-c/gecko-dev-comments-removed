@@ -29,11 +29,11 @@ AntiTracking.runTest(
   },
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
-  0, 
+  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
   false, 
   "allow-scripts allow-same-origin allow-popups"
 );
@@ -71,7 +71,7 @@ AntiTracking.runTest(
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
@@ -96,7 +96,7 @@ AntiTracking.runTest(
   null, 
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
@@ -124,7 +124,7 @@ AntiTracking.runTest(
   null, 
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
@@ -149,7 +149,7 @@ AntiTracking.runTest(
   null, 
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
@@ -177,7 +177,7 @@ AntiTracking.runTest(
   null, 
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
@@ -207,7 +207,7 @@ AntiTracking.runTest(
   },
   [
     ["dom.storage_access.enabled", true],
-    [APS_PREF, false],
+    [APS_PREF, true],
   ], 
   false, 
   false, 
