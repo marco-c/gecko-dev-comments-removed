@@ -2955,19 +2955,19 @@ EditActionResult HTMLEditor::MakeOrChangeListAndListItemAsSubAction(
   
   
   
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this,
       &aListElementOrListItemElementTagName == nsGkAtoms::dd ||
               &aListElementOrListItemElementTagName == nsGkAtoms::dt
           ? EditSubAction::eCreateOrChangeDefinitionListItem
           : EditSubAction::eCreateOrChangeList,
-      nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return EditActionResult(ignoredError.StealNSResult());
+      nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return EditActionResult(error.StealNSResult());
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
@@ -3018,26 +3018,43 @@ EditActionResult HTMLEditor::MakeOrChangeListAndListItemAsSubAction(
     return EditActionResult(NS_ERROR_INVALID_ARG);
   }
 
+  const RefPtr<Element> editingHost = ComputeEditingHost();
+  if (MOZ_UNLIKELY(!editingHost)) {
+    return EditActionIgnored(NS_SUCCESS_DOM_NO_OPERATION);
+  }
+
   
   
   
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), *editingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return EditActionResult(rv);
+      return EditActionResult(extendedRange.unwrapErr());
+    }
+    
+    
+    error.SuppressException();
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return EditActionResult(error.StealNSResult());
     }
   }
 
   
   
   
-  const RefPtr<Element> editingHost = ComputeEditingHost();
-  if (MOZ_UNLIKELY(!editingHost)) {
-    return EditActionIgnored(NS_SUCCESS_DOM_NO_OPERATION);
-  }
   result = ChangeSelectedHardLinesToList(
       MOZ_KnownLive(*listTagName), MOZ_KnownLive(*listItemTagName), aBulletType,
       aSelectAllOfCurrentList, *editingHost);
@@ -3698,23 +3715,39 @@ nsresult HTMLEditor::RemoveListAtSelectionAsSubAction(
 
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-  IgnoredErrorResult ignoredError;
+  IgnoredErrorResult error;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eRemoveList, nsIEditor::eNext, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
+      *this, EditSubAction::eRemoveList, nsIEditor::eNext, error);
+  if (NS_WARN_IF(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return error.StealNSResult();
   }
   NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
+      !error.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return rv;
+      return extendedRange.unwrapErr();
+    }
+    
+    
+    error.SuppressException();
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return error.StealNSResult();
     }
   }
 
@@ -3809,13 +3842,29 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(
     nsAtom& blockType, const Element& aEditingHost) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return rv;
+      return extendedRange.unwrapErr();
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return error.StealNSResult();
     }
   }
 
@@ -4308,13 +4357,29 @@ nsresult HTMLEditor::HandleCSSIndentAtSelection(const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return rv;
+      return extendedRange.unwrapErr();
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return error.StealNSResult();
     }
   }
 
@@ -4584,13 +4649,29 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelection(const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return rv;
+      return extendedRange.unwrapErr();
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return error.StealNSResult();
     }
   }
 
@@ -4950,10 +5031,29 @@ EditActionResult HTMLEditor::HandleOutdentAtSelection(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionHandled(rv);
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
+      NS_WARNING(
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
+          "failed");
+      return EditActionResult(extendedRange.unwrapErr());
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return EditActionResult(error.StealNSResult());
     }
   }
 
@@ -5841,13 +5941,29 @@ EditActionResult HTMLEditor::AlignAsSubAction(const nsAString& aAlignType,
     }
   }
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return EditActionResult(rv);
+      return EditActionResult(extendedRange.unwrapErr());
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return EditActionResult(error.StealNSResult());
     }
   }
 
@@ -6408,7 +6524,9 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
   return NS_OK;
 }
 
-nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
+Result<EditorRawDOMRange, nsresult>
+HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
+    const nsRange* aRange, const Element& aEditingHost) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -6416,108 +6534,90 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
   
   
-
-  
-  
-  
-  if (SelectionRef().RangeCount() != 1) {
-    return NS_OK;
+  if (NS_WARN_IF(!aRange) || NS_WARN_IF(!aRange->IsPositioned())) {
+    return Err(NS_ERROR_FAILURE);
   }
 
-  const RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
-  if (NS_WARN_IF(!range)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (NS_WARN_IF(!range->IsPositioned())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  const EditorDOMPoint startPoint(range->StartRef());
+  const EditorRawDOMPoint startPoint(aRange->StartRef());
   if (NS_WARN_IF(!startPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
-  const EditorDOMPoint endPoint(range->EndRef());
+  const EditorRawDOMPoint endPoint(aRange->EndRef());
   if (NS_WARN_IF(!endPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   
-  EditorDOMPoint newStartPoint(startPoint);
-  EditorDOMPoint newEndPoint(endPoint);
+  EditorRawDOMRange newRange(startPoint, endPoint);
 
   
   
-  WSRunScanner wsScannerAtEnd(ComputeEditingHost(), endPoint);
+  WSRunScanner wsScannerAtEnd(&aEditingHost, endPoint);
   WSScanResult scanResultAtEnd =
       wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint);
   if (scanResultAtEnd.Failed()) {
     NS_WARNING(
         "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom() failed");
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
   if (scanResultAtEnd.ReachedSomethingNonTextContent()) {
     
     
     if (wsScannerAtEnd.StartsFromOtherBlockElement()) {
       
-      nsIContent* child = HTMLEditUtils::GetLastLeafContent(
-          *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
-          {LeafNodeType::LeafNodeOrChildBlock});
-      if (child) {
-        newEndPoint.SetAfter(child);
+      if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
+              *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
+              {LeafNodeType::LeafNodeOrChildBlock})) {
+        newRange.SetEnd(EditorRawDOMPoint::After(*child));
       }
       
     } else if (wsScannerAtEnd.StartsFromCurrentBlockBoundary()) {
-      if (wsScannerAtEnd.GetEditingHost()) {
-        
-        if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
-                endPoint, {WalkTreeOption::IgnoreNonEditableNode},
-                wsScannerAtEnd.GetEditingHost())) {
-          newEndPoint.SetAfter(child);
-        }
+      
+      if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
+              endPoint, {WalkTreeOption::IgnoreNonEditableNode},
+              &aEditingHost)) {
+        newRange.SetEnd(EditorRawDOMPoint::After(*child));
       }
       
     } else if (wsScannerAtEnd.StartsFromBRElement()) {
       
-      newEndPoint.Set(wsScannerAtEnd.StartReasonBRElementPtr());
+      newRange.SetEnd(
+          EditorRawDOMPoint(wsScannerAtEnd.StartReasonBRElementPtr()));
     }
   }
 
   
   
-  WSRunScanner wsScannerAtStart(wsScannerAtEnd.GetEditingHost(), startPoint);
+  WSRunScanner wsScannerAtStart(&aEditingHost, startPoint);
   WSScanResult scanResultAtStart =
       wsScannerAtStart.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint);
   if (scanResultAtStart.Failed()) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
   if (scanResultAtStart.ReachedSomethingNonTextContent()) {
     
     
     if (wsScannerAtStart.EndsByOtherBlockElement()) {
       
-      nsINode* child = HTMLEditUtils::GetFirstLeafContent(
-          *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
-          {LeafNodeType::LeafNodeOrChildBlock});
-      if (child) {
-        newStartPoint.Set(child);
+      if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
+              *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
+              {LeafNodeType::LeafNodeOrChildBlock})) {
+        newRange.SetStart(EditorRawDOMPoint(child));
       }
       
     } else if (wsScannerAtStart.EndsByCurrentBlockBoundary()) {
-      if (wsScannerAtStart.GetEditingHost()) {
-        
-        if (nsIContent* child = HTMLEditUtils::GetNextContent(
-                startPoint, {WalkTreeOption::IgnoreNonEditableNode},
-                wsScannerAtStart.GetEditingHost())) {
-          newStartPoint.Set(child);
-        }
+      
+      if (nsIContent* child = HTMLEditUtils::GetNextContent(
+              startPoint, {WalkTreeOption::IgnoreNonEditableNode},
+              &aEditingHost)) {
+        newRange.SetStart(EditorRawDOMPoint(child));
       }
       
     } else if (wsScannerAtStart.EndsByBRElement()) {
       
-      newStartPoint.SetAfter(wsScannerAtStart.EndReasonBRElementPtr());
+      newRange.SetStart(
+          EditorRawDOMPoint::After(*wsScannerAtStart.EndReasonBRElementPtr()));
     }
   }
 
@@ -6531,37 +6631,28 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   
 
   Maybe<int32_t> comp = nsContentUtils::ComparePoints(
-      startPoint.ToRawRangeBoundary(), newEndPoint.ToRawRangeBoundary());
+      startPoint.ToRawRangeBoundary(), newRange.EndRef().ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   if (*comp == 1) {
-    return NS_OK;  
+    return EditorRawDOMRange();  
   }
 
-  comp = nsContentUtils::ComparePoints(newStartPoint.ToRawRangeBoundary(),
+  comp = nsContentUtils::ComparePoints(newRange.StartRef().ToRawRangeBoundary(),
                                        endPoint.ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   if (*comp == 1) {
-    return NS_OK;  
+    return EditorRawDOMRange();  
   }
 
-  
-  
-  ErrorResult error;
-  SelectionRef().SetBaseAndExtentInLimiter(newStartPoint, newEndPoint, error);
-  if (NS_WARN_IF(Destroyed())) {
-    error = NS_ERROR_EDITOR_DESTROYED;
-  } else if (error.Failed()) {
-    NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
-  }
-  return error.StealNSResult();
+  return newRange;
 }
 
 template <typename EditorDOMRangeType>
@@ -9953,13 +10044,29 @@ EditActionResult HTMLEditor::SetSelectionToAbsoluteAsSubAction(
     return EditActionHandled();
   }
 
-  if (!SelectionRef().IsCollapsed()) {
-    nsresult rv = MaybeExtendSelectionToHardLineEdgesForBlockEditAction();
-    if (NS_FAILED(rv)) {
+  
+  if (!SelectionRef().IsCollapsed() && SelectionRef().RangeCount() == 1u) {
+    Result<EditorRawDOMRange, nsresult> extendedRange =
+        GetRangeExtendedToHardLineEdgesForBlockEditAction(
+            SelectionRef().GetRangeAt(0u), aEditingHost);
+    if (MOZ_UNLIKELY(extendedRange.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() "
+          "HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction() "
           "failed");
-      return EditActionHandled(rv);
+      return EditActionResult(extendedRange.unwrapErr());
+    }
+    
+    
+    IgnoredErrorResult error;
+    SelectionRef().SetBaseAndExtentInLimiter(
+        extendedRange.inspect().StartRef().ToRawRangeBoundary(),
+        extendedRange.inspect().EndRef().ToRawRangeBoundary(), error);
+    if (NS_WARN_IF(Destroyed())) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetBaseAndExtentInLimiter() failed");
+      return EditActionResult(error.StealNSResult());
     }
   }
 
