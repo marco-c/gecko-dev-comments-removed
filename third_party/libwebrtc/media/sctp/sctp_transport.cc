@@ -58,6 +58,7 @@ static constexpr size_t kSctpMtu = 1200;
 
 
 ABSL_CONST_INIT int g_usrsctp_usage_count = 0;
+ABSL_CONST_INIT bool g_usrsctp_initialized_ = false;
 ABSL_CONST_INIT webrtc::GlobalMutex g_usrsctp_lock_(absl::kConstInit);
 
 
@@ -264,7 +265,17 @@ class SctpTransport::UsrSctpWrapper {
     RTC_LOG(LS_INFO) << __FUNCTION__;
     
     
-    usrsctp_init(0, &UsrSctpWrapper::OnSctpOutboundPacket, &DebugSctpPrintf);
+    
+    
+    if (g_usrsctp_initialized_) {
+      RTC_LOG(LS_WARNING) << "Not reinitializing usrsctp since last attempt at "
+                             "usrsctp_finish failed.";
+    } else {
+      
+      
+      usrsctp_init(0, &UsrSctpWrapper::OnSctpOutboundPacket, &DebugSctpPrintf);
+      g_usrsctp_initialized_ = true;
+    }
 
     
     
@@ -317,6 +328,7 @@ class SctpTransport::UsrSctpWrapper {
     
     for (size_t i = 0; i < 300; ++i) {
       if (usrsctp_finish() == 0) {
+        g_usrsctp_initialized_ = false;
         delete g_transport_map_;
         g_transport_map_ = nullptr;
         return;
