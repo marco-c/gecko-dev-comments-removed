@@ -11,14 +11,15 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_ESTIMATOR_PROXY_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_ESTIMATOR_PROXY_H_
 
+#include <deque>
 #include <functional>
-#include <map>
 #include <memory>
 #include <vector>
 
 #include "api/transport/network_control.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/packet_arrival_map.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -75,12 +76,6 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
     }
   };
 
-  static const int kMaxNumberOfPackets;
-
-  
-  
-  void AddPacket(int64_t sequence_number, int64_t arrival_time_ms)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
   void MaybeCullOldPackets(int64_t sequence_number, int64_t arrival_time_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
   void SendPeriodicFeedbacks() RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
@@ -98,13 +93,12 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   
   
   
-  std::unique_ptr<rtcp::TransportFeedback> BuildFeedbackPacket(
+  
+  
+  std::unique_ptr<rtcp::TransportFeedback> MaybeBuildFeedbackPacket(
       bool include_timestamps,
-      int64_t base_sequence_number,
-      std::map<int64_t, int64_t>::const_iterator
-          begin_iterator,  
-      std::map<int64_t, int64_t>::const_iterator
-          end_iterator,  
+      int64_t begin_sequence_number_inclusive,
+      int64_t end_sequence_number_exclusive,
       bool is_periodic_update) RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
 
   Clock* const clock_;
@@ -123,8 +117,10 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   
   
   absl::optional<int64_t> periodic_window_start_seq_ RTC_GUARDED_BY(&lock_);
+
   
-  std::map<int64_t, int64_t> packet_arrival_times_ RTC_GUARDED_BY(&lock_);
+  PacketArrivalTimeMap packet_arrival_times_ RTC_GUARDED_BY(&lock_);
+
   int64_t send_interval_ms_ RTC_GUARDED_BY(&lock_);
   bool send_periodic_feedback_ RTC_GUARDED_BY(&lock_);
 

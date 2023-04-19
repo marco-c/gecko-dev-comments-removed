@@ -24,9 +24,6 @@
 namespace webrtc {
 
 
-const int RemoteEstimatorProxy::kMaxNumberOfPackets = (1 << 15);
-
-
 
 static constexpr int64_t kMaxTimeMs =
     std::numeric_limits<int64_t>::max() / 1000;
@@ -54,21 +51,14 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
-void RemoteEstimatorProxy::AddPacket(int64_t sequence_number,
-                                     int64_t arrival_time_ms) {
-  packet_arrival_times_[sequence_number] = arrival_time_ms;
-}
-
 void RemoteEstimatorProxy::MaybeCullOldPackets(int64_t sequence_number,
                                                int64_t arrival_time_ms) {
-  if (periodic_window_start_seq_ &&
-      packet_arrival_times_.lower_bound(*periodic_window_start_seq_) ==
-          packet_arrival_times_.end()) {
-    
-    for (auto it = packet_arrival_times_.begin();
-         it != packet_arrival_times_.end() && it->first < sequence_number &&
-         arrival_time_ms - it->second >= send_config_.back_window->ms();) {
-      it = packet_arrival_times_.erase(it);
+  if (periodic_window_start_seq_.has_value()) {
+    if (*periodic_window_start_seq_ >=
+        packet_arrival_times_.end_sequence_number()) {
+      
+      packet_arrival_times_.RemoveOldPackets(
+          sequence_number, arrival_time_ms - send_config_.back_window->ms());
     }
   }
 }
@@ -96,23 +86,18 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
     }
 
     
-    if (packet_arrival_times_.find(seq) != packet_arrival_times_.end())
+    if (packet_arrival_times_.has_received(seq)) {
       return;
+    }
 
-    AddPacket(seq, arrival_time_ms);
+    packet_arrival_times_.AddPacket(seq, arrival_time_ms);
 
     
-    auto first_arrival_time_to_keep = packet_arrival_times_.lower_bound(
-        packet_arrival_times_.rbegin()->first - kMaxNumberOfPackets);
-    if (first_arrival_time_to_keep != packet_arrival_times_.begin()) {
-      packet_arrival_times_.erase(packet_arrival_times_.begin(),
-                                  first_arrival_time_to_keep);
-      if (send_periodic_feedback_) {
-        
-        
-        RTC_DCHECK(!packet_arrival_times_.empty());
-        periodic_window_start_seq_ = packet_arrival_times_.begin()->first;
-      }
+    if (!periodic_window_start_seq_.has_value() ||
+        periodic_window_start_seq_.value() <
+            packet_arrival_times_.begin_sequence_number()) {
+      periodic_window_start_seq_ =
+          packet_arrival_times_.begin_sequence_number();
     }
 
     if (header.extension.feedback_request) {
@@ -212,15 +197,17 @@ void RemoteEstimatorProxy::SendPeriodicFeedbacks() {
     }
   }
 
-  for (auto begin_iterator =
-           packet_arrival_times_.lower_bound(*periodic_window_start_seq_);
-       begin_iterator != packet_arrival_times_.cend();
-       begin_iterator =
-           packet_arrival_times_.lower_bound(*periodic_window_start_seq_)) {
-    auto feedback_packet = BuildFeedbackPacket(
-        true, *periodic_window_start_seq_,
-        begin_iterator, packet_arrival_times_.cend(),
+  int64_t packet_arrival_times_end_seq =
+      packet_arrival_times_.end_sequence_number();
+  while (periodic_window_start_seq_ < packet_arrival_times_end_seq) {
+    auto feedback_packet = MaybeBuildFeedbackPacket(
+        true, periodic_window_start_seq_.value(),
+        packet_arrival_times_end_seq,
         true);
+
+    if (feedback_packet == nullptr) {
+      break;
+    }
 
     RTC_DCHECK(feedback_sender_ != nullptr);
 
@@ -246,16 +233,16 @@ void RemoteEstimatorProxy::SendFeedbackOnRequest(
 
   int64_t first_sequence_number =
       sequence_number - feedback_request.sequence_count + 1;
-  auto begin_iterator =
-      packet_arrival_times_.lower_bound(first_sequence_number);
-  auto end_iterator = packet_arrival_times_.upper_bound(sequence_number);
 
-  auto feedback_packet = BuildFeedbackPacket(
+  auto feedback_packet = MaybeBuildFeedbackPacket(
       feedback_request.include_timestamps, first_sequence_number,
-      begin_iterator, end_iterator, false);
+      sequence_number + 1, false);
 
   
-  packet_arrival_times_.erase(packet_arrival_times_.begin(), begin_iterator);
+  RTC_DCHECK(feedback_packet != nullptr);
+
+  
+  packet_arrival_times_.EraseTo(first_sequence_number);
 
   RTC_DCHECK(feedback_sender_ != nullptr);
   std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets;
@@ -264,39 +251,54 @@ void RemoteEstimatorProxy::SendFeedbackOnRequest(
 }
 
 std::unique_ptr<rtcp::TransportFeedback>
-RemoteEstimatorProxy::BuildFeedbackPacket(
+RemoteEstimatorProxy::MaybeBuildFeedbackPacket(
     bool include_timestamps,
-    int64_t base_sequence_number,
-    std::map<int64_t, int64_t>::const_iterator begin_iterator,
-    std::map<int64_t, int64_t>::const_iterator end_iterator,
+    int64_t begin_sequence_number_inclusive,
+    int64_t end_sequence_number_exclusive,
     bool is_periodic_update) {
-  RTC_DCHECK(begin_iterator != end_iterator);
+  RTC_DCHECK_LT(begin_sequence_number_inclusive, end_sequence_number_exclusive);
 
-  auto feedback_packet =
-      std::make_unique<rtcp::TransportFeedback>(include_timestamps);
+  int64_t start_seq =
+      packet_arrival_times_.clamp(begin_sequence_number_inclusive);
+
+  int64_t end_seq = packet_arrival_times_.clamp(end_sequence_number_exclusive);
 
   
   
-  feedback_packet->SetMediaSsrc(media_ssrc_);
-  
-  
-  
-  feedback_packet->SetBase(static_cast<uint16_t>(base_sequence_number & 0xFFFF),
-                           begin_iterator->second * 1000);
-  feedback_packet->SetFeedbackSequenceNumber(feedback_packet_count_++);
-  int64_t next_sequence_number = base_sequence_number;
-  for (auto it = begin_iterator; it != end_iterator; ++it) {
-    if (!feedback_packet->AddReceivedPacket(
-            static_cast<uint16_t>(it->first & 0xFFFF), it->second * 1000)) {
+  std::unique_ptr<rtcp::TransportFeedback> feedback_packet = nullptr;
+
+  int64_t next_sequence_number = begin_sequence_number_inclusive;
+
+  for (int64_t seq = start_seq; seq < end_seq; ++seq) {
+    int64_t arrival_time_ms = packet_arrival_times_.get(seq);
+    if (arrival_time_ms == 0) {
+      
+      continue;
+    }
+
+    if (feedback_packet == nullptr) {
+      feedback_packet =
+          std::make_unique<rtcp::TransportFeedback>(include_timestamps);
       
       
-      RTC_CHECK(begin_iterator != it);
+      feedback_packet->SetMediaSsrc(media_ssrc_);
+      
+      
+      
+      feedback_packet->SetBase(
+          static_cast<uint16_t>(begin_sequence_number_inclusive & 0xFFFF),
+          arrival_time_ms * 1000);
+      feedback_packet->SetFeedbackSequenceNumber(feedback_packet_count_++);
+    }
 
+    if (!feedback_packet->AddReceivedPacket(static_cast<uint16_t>(seq & 0xFFFF),
+                                            arrival_time_ms * 1000)) {
       
       
       break;
     }
-    next_sequence_number = it->first + 1;
+
+    next_sequence_number = seq + 1;
   }
   if (is_periodic_update) {
     periodic_window_start_seq_ = next_sequence_number;
