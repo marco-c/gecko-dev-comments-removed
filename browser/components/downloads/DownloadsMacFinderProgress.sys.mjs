@@ -1,20 +1,14 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80 filetype=javascript: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Handles the download progress indicator of the macOS Finder.
+ */
 
-
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DownloadsMacFinderProgress"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -22,18 +16,18 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.jsm",
 });
 
-var DownloadsMacFinderProgress = {
-  
-
-
+export var DownloadsMacFinderProgress = {
+  /**
+   * Maps the path of the download, to the according progress indicator instance.
+   */
   _finderProgresses: null,
 
-  
-
-
-
+  /**
+   * This method is called after a new browser window on macOS is opened, it
+   * registers for receiving download events for the progressbar of the Finder.
+   */
   register() {
-    
+    // Ensure to register only once per process and not for every window.
     if (!this._finderProgresses) {
       this._finderProgresses = new Map();
       lazy.Downloads.getList(lazy.Downloads.ALL).then(list =>
@@ -70,8 +64,8 @@ var DownloadsMacFinderProgress = {
     let path = download.target.path;
     let finderProgress = this._finderProgresses.get(path);
     if (!finderProgress) {
-      
-      
+      // The download is not tracked, it may have been restarted,
+      // thus forward the call to onDownloadAdded to check if it should be tracked.
       this.onDownloadAdded(download);
     } else if (download.stopped) {
       finderProgress.end();
