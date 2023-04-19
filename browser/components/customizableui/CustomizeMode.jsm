@@ -2670,12 +2670,12 @@ CustomizeMode.prototype = {
     if (panelOnTheLeft) {
       
       
-      position = "leftcenter topright";
+      position = "topleft topright";
       if (toolbarContainer) {
         offsetX = 8;
       }
     } else {
-      position = "rightcenter topleft";
+      position = "topright topleft";
       if (toolbarContainer) {
         offsetX = -8;
       }
