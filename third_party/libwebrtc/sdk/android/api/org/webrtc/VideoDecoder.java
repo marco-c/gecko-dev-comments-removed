@@ -90,13 +90,5 @@ public interface VideoDecoder {
 
 
 
-  
-  default boolean getPrefersLateDecoding() {
-    return true;
-  }
-  
-
-
-
   @CalledByNative String getImplementationName();
 }
