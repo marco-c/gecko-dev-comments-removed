@@ -236,6 +236,8 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
     
     
   }
+  bool outputIsDefault = true;  
+  bool haveDefaultOutput = false;
   nsTHashSet<nsString> exposedMicrophoneGroupIds;
   for (const auto& device : aDevices) {
     switch (device->mKind) {
@@ -259,8 +261,21 @@ RefPtr<MediaDeviceSetRefCnt> MediaDevices::FilterExposedDevices(
             (!mExplicitlyGrantedAudioOutputRawIds.Contains(device->mRawID) &&
              
              !exposedMicrophoneGroupIds.Contains(device->mRawGroupID))) {
+          outputIsDefault = false;
           continue;
         }
+        if (!haveDefaultOutput && !outputIsDefault) {
+          
+          
+          RefPtr info = new AudioDeviceInfo(
+              nullptr, u""_ns, u""_ns, u""_ns, CUBEB_DEVICE_TYPE_OUTPUT,
+              CUBEB_DEVICE_STATE_ENABLED, CUBEB_DEVICE_PREF_ALL,
+              CUBEB_DEVICE_FMT_ALL, CUBEB_DEVICE_FMT_S16NE, 2, 44100, 44100,
+              44100, 128, 128);
+          exposed->AppendElement(
+              new MediaDevice(new MediaEngineFake(), info, u""_ns));
+        }
+        haveDefaultOutput = true;
         break;
       case MediaDeviceKind::EndGuard_:
         continue;

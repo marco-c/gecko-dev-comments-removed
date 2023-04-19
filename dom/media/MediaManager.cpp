@@ -2868,8 +2868,11 @@ RefPtr<LocalDeviceSetPromise> MediaManager::AnonymizeDevices(
             RefPtr anonymized = new LocalMediaDeviceSetRefCnt();
             for (const RefPtr<MediaDevice>& device : *rawDevices) {
               nsString id = device->mRawID;
-              nsContentUtils::AnonymizeId(id, aOriginKey);
-
+              
+              
+              if (!id.IsEmpty()) {
+                nsContentUtils::AnonymizeId(id, aOriginKey);
+              }
               nsString groupId = device->mRawGroupID;
               
               
