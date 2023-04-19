@@ -2858,6 +2858,8 @@ class EditorBase : public nsIEditor,
   friend class AlignStateAtSelection;  
                                        
   friend class AutoRangeArray;  
+  friend class CaretPoint;      
+                                
   friend class CompositionTransaction;  
                                         
                                         
@@ -2889,9 +2891,6 @@ class EditorBase : public nsIEditor,
   friend class SplitNodeTransaction;    
   friend class WhiteSpaceVisibilityKeeper;  
   friend class nsIEditor;                   
-
-  template <typename NodeType>
-  friend class CreateNodeResultBase;  
 };
 
 }  

@@ -76,6 +76,7 @@ using EditorRawDOMPointInText = EditorDOMPointBase<dom::Text*, nsIContent*>;
 
 class AutoPendingStyleCacheArray;  
 class AutoSelectionRangeArray;     
+class CaretPoint;                  
 class ChangeStyleTransaction;      
 class CSSEditUtils;                
 class EditActionResult;            

@@ -1,29 +1,29 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_EditorUtils_h
 #define mozilla_EditorUtils_h
 
-#include "mozilla/EditorBase.h"      // for EditorBase
-#include "mozilla/EditorDOMPoint.h"  // for EditorDOMPoint, EditorDOMRange, etc
+#include "mozilla/EditorBase.h"      
+#include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/EditorForwards.h"
-#include "mozilla/IntegerRange.h"       // for IntegerRange
-#include "mozilla/Maybe.h"              // for Maybe
-#include "mozilla/Result.h"             // for Result<>
-#include "mozilla/dom/Element.h"        // for dom::Element
-#include "mozilla/dom/HTMLBRElement.h"  // for dom::HTMLBRElement
-#include "mozilla/dom/Selection.h"      // for dom::Selection
-#include "mozilla/dom/Text.h"           // for dom::Text
+#include "mozilla/IntegerRange.h"       
+#include "mozilla/Maybe.h"              
+#include "mozilla/Result.h"             
+#include "mozilla/dom/Element.h"        
+#include "mozilla/dom/HTMLBRElement.h"  
+#include "mozilla/dom/Selection.h"      
+#include "mozilla/dom/Text.h"           
 
-#include "nsAtom.h"          // for nsStaticAtom
-#include "nsCOMPtr.h"        // for nsCOMPtr
-#include "nsContentUtils.h"  // for nsContentUtils
-#include "nsDebug.h"         // for NS_WARNING, etc
-#include "nsError.h"         // for NS_SUCCESS_* and NS_ERROR_*
-#include "nsRange.h"         // for nsRange
-#include "nsString.h"        // for nsAString, nsString, etc
+#include "nsAtom.h"          
+#include "nsCOMPtr.h"        
+#include "nsContentUtils.h"  
+#include "nsDebug.h"         
+#include "nsError.h"         
+#include "nsRange.h"         
+#include "nsString.h"        
 
 class nsITransferable;
 
@@ -31,10 +31,111 @@ namespace mozilla {
 
 enum class StyleWhiteSpace : uint8_t;
 
-/***************************************************************************
- * EditActionResult is useful to return the handling state of edit sub actions
- * without out params.
- */
+enum class SuggestCaret {
+  
+  
+  OnlyIfHasSuggestion,
+  
+  
+  OnlyIfTransactionsAllowedToDoIt,
+  
+  
+  
+  
+  AndIgnoreTrivialError,
+};
+
+
+
+
+
+
+class MOZ_STACK_CLASS CaretPoint {
+ public:
+  explicit CaretPoint(const EditorDOMPoint& aPointToPutCaret)
+      : mCaretPoint(aPointToPutCaret) {}
+  explicit CaretPoint(EditorDOMPoint&& aPointToPutCaret)
+      : mCaretPoint(std::move(aPointToPutCaret)) {}
+
+  CaretPoint(const CaretPoint&) = delete;
+  CaretPoint& operator=(const CaretPoint&) = delete;
+  CaretPoint(CaretPoint&&) = default;
+  CaretPoint& operator=(CaretPoint&&) = default;
+
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
+      const EditorBase& aEditorBase, const SuggestCaretOptions& aOptions) const;
+
+  
+
+
+
+  void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
+
+  bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
+  constexpr const EditorDOMPoint& CaretPointRef() const { return mCaretPoint; }
+  constexpr EditorDOMPoint&& UnwrapCaretPoint() {
+    mHandledCaretPoint = true;
+    return std::move(mCaretPoint);
+  }
+  bool CopyCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const SuggestCaretOptions& aOptions) const {
+    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
+    MOZ_ASSERT(
+        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
+    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
+        !mCaretPoint.IsSet()) {
+      return false;
+    }
+    aPointToPutCaret = mCaretPoint;
+    return true;
+  }
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const SuggestCaretOptions& aOptions) {
+    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
+    MOZ_ASSERT(
+        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
+    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
+        !mCaretPoint.IsSet()) {
+      return false;
+    }
+    aPointToPutCaret = UnwrapCaretPoint();
+    return true;
+  }
+  bool CopyCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const EditorBase& aEditorBase,
+                        const SuggestCaretOptions& aOptions) const;
+  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
+                        const EditorBase& aEditorBase,
+                        const SuggestCaretOptions& aOptions);
+
+ protected:
+  constexpr bool CaretPointHandled() const { return mHandledCaretPoint; }
+
+  void SetCaretPoint(const EditorDOMPoint& aCaretPoint) {
+    mHandledCaretPoint = false;
+    mCaretPoint = aCaretPoint;
+  }
+  void SetCaretPoint(EditorDOMPoint&& aCaretPoint) {
+    mHandledCaretPoint = false;
+    mCaretPoint = std::move(aCaretPoint);
+  }
+
+  void UnmarkAsHandledCaretPoint() { mHandledCaretPoint = true; }
+
+  CaretPoint() = default;
+
+ private:
+  EditorDOMPoint mCaretPoint;
+  bool mutable mHandledCaretPoint = false;
+};
+
+
+
+
+
 class MOZ_STACK_CLASS EditActionResult final {
  public:
   bool Canceled() const { return mCanceled; }
@@ -77,39 +178,12 @@ class MOZ_STACK_CLASS EditActionResult final {
   EditActionResult() : mCanceled(false), mHandled(false) {}
 };
 
-/***************************************************************************
- * CreateNodeResultBase is a simple class for CreateSomething() methods
- * which want to return new node.
- */
 
-#define NS_INSTANTIATE_CREATE_NODE_RESULT_METHOD(aResultType, aMethodName, \
-                                                 ...)                      \
-  template aResultType CreateContentResult::aMethodName(__VA_ARGS__);      \
-  template aResultType CreateElementResult::aMethodName(__VA_ARGS__);      \
-  template aResultType CreateTextResult::aMethodName(__VA_ARGS__);
 
-#define NS_INSTANTIATE_CREATE_NODE_RESULT_CONST_METHOD(aResultType,         \
-                                                       aMethodName, ...)    \
-  template aResultType CreateContentResult::aMethodName(__VA_ARGS__) const; \
-  template aResultType CreateElementResult::aMethodName(__VA_ARGS__) const; \
-  template aResultType CreateTextResult::aMethodName(__VA_ARGS__) const;
 
-enum class SuggestCaret {
-  // If specified, the method returns NS_OK when there is no recommended caret
-  // position.
-  OnlyIfHasSuggestion,
-  // If specified and if EditorBase::AllowsTransactionsToChangeSelection
-  // returns false, the method does nothing and returns NS_OK.
-  OnlyIfTransactionsAllowedToDoIt,
-  // If specified, the method returns
-  // NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR even if
-  // EditorBase::CollapseSelectionTo returns an error except when
-  // NS_ERROR_EDITOR_DESTROYED.
-  AndIgnoreTrivialError,
-};
 
 template <typename NodeType>
-class MOZ_STACK_CLASS CreateNodeResultBase final {
+class MOZ_STACK_CLASS CreateNodeResultBase final : public CaretPoint {
   using SelfType = CreateNodeResultBase<NodeType>;
 
  public:
@@ -117,76 +191,44 @@ class MOZ_STACK_CLASS CreateNodeResultBase final {
   NodeType* GetNewNode() const { return mNode; }
   RefPtr<NodeType> UnwrapNewNode() { return std::move(mNode); }
 
-  /**
-   * Suggest caret position to aEditorBase.
-   */
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
-      const EditorBase& aEditorBase, const SuggestCaretOptions& aOptions) const;
-
-  /**
-   * IgnoreCaretPointSuggestion() should be called if the method does not want
-   * to use caret position recommended by this instance.
-   */
-  void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
-
-  bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
-  EditorDOMPoint&& UnwrapCaretPoint() {
-    mHandledCaretPoint = true;
-    return std::move(mCaretPoint);
-  }
-  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
-                        const SuggestCaretOptions& aOptions) {
-    MOZ_ASSERT(!aOptions.contains(SuggestCaret::AndIgnoreTrivialError));
-    MOZ_ASSERT(
-        !aOptions.contains(SuggestCaret::OnlyIfTransactionsAllowedToDoIt));
-    if (aOptions.contains(SuggestCaret::OnlyIfHasSuggestion) &&
-        !mCaretPoint.IsSet()) {
-      return false;
-    }
-    aPointToPutCaret = UnwrapCaretPoint();
-    return true;
-  }
-  bool MoveCaretPointTo(EditorDOMPoint& aPointToPutCaret,
-                        const EditorBase& aEditorBase,
-                        const SuggestCaretOptions& aOptions);
-
+  CreateNodeResultBase() = delete;
   explicit CreateNodeResultBase(NodeType& aNode) : mNode(&aNode) {}
   explicit CreateNodeResultBase(NodeType& aNode,
                                 const EditorDOMPoint& aCandidateCaretPoint)
-      : mNode(&aNode), mCaretPoint(aCandidateCaretPoint) {}
+      : CaretPoint(aCandidateCaretPoint), mNode(&aNode) {}
   explicit CreateNodeResultBase(NodeType& aNode,
                                 EditorDOMPoint&& aCandidateCaretPoint)
-      : mNode(&aNode), mCaretPoint(std::move(aCandidateCaretPoint)) {}
+      : CaretPoint(std::move(aCandidateCaretPoint)), mNode(&aNode) {}
 
   explicit CreateNodeResultBase(RefPtr<NodeType>&& aNode)
       : mNode(std::move(aNode)) {}
   explicit CreateNodeResultBase(RefPtr<NodeType>&& aNode,
                                 const EditorDOMPoint& aCandidateCaretPoint)
-      : mNode(std::move(aNode)), mCaretPoint(aCandidateCaretPoint) {
+      : CaretPoint(aCandidateCaretPoint), mNode(std::move(aNode)) {
     MOZ_ASSERT(mNode);
   }
   explicit CreateNodeResultBase(RefPtr<NodeType>&& aNode,
                                 EditorDOMPoint&& aCandidateCaretPoint)
-      : mNode(std::move(aNode)), mCaretPoint(std::move(aCandidateCaretPoint)) {
+      : CaretPoint(std::move(aCandidateCaretPoint)), mNode(std::move(aNode)) {
     MOZ_ASSERT(mNode);
   }
 
-  [[nodiscard]] static SelfType NotHandled() { return SelfType(); }
+  [[nodiscard]] static SelfType NotHandled() {
+    return SelfType(EditorDOMPoint());
+  }
   [[nodiscard]] static SelfType NotHandled(
       const EditorDOMPoint& aPointToPutCaret) {
-    SelfType result;
-    result.mCaretPoint = aPointToPutCaret;
+    SelfType result(aPointToPutCaret);
     return result;
   }
   [[nodiscard]] static SelfType NotHandled(EditorDOMPoint&& aPointToPutCaret) {
-    SelfType result;
-    result.mCaretPoint = std::move(aPointToPutCaret);
+    SelfType result(std::move(aPointToPutCaret));
     return result;
   }
 
 #ifdef DEBUG
   ~CreateNodeResultBase() {
-    MOZ_ASSERT(!mCaretPoint.IsSet() || mHandledCaretPoint);
+    MOZ_ASSERT(!HasCaretPointSuggestion() || CaretPointHandled());
   }
 #endif
 
@@ -196,20 +238,21 @@ class MOZ_STACK_CLASS CreateNodeResultBase final {
   SelfType& operator=(SelfType&& aOther) = default;
 
  private:
-  CreateNodeResultBase() = default;
+  explicit CreateNodeResultBase(const EditorDOMPoint& aCandidateCaretPoint)
+      : CaretPoint(aCandidateCaretPoint) {}
+  explicit CreateNodeResultBase(EditorDOMPoint&& aCandidateCaretPoint)
+      : CaretPoint(std::move(aCandidateCaretPoint)) {}
 
   RefPtr<NodeType> mNode;
-  EditorDOMPoint mCaretPoint;
-  bool mutable mHandledCaretPoint = false;
 };
 
-/***************************************************************************
- * stack based helper class for calling EditorBase::EndTransaction() after
- * EditorBase::BeginTransaction().  This shouldn't be used in editor classes
- * or helper classes while an edit action is being handled.  Use
- * AutoTransactionBatch in such cases since it uses non-virtual internal
- * methods.
- ***************************************************************************/
+
+
+
+
+
+
+
 class MOZ_RAII AutoTransactionBatchExternal final {
  public:
   MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatchExternal(
@@ -226,10 +269,10 @@ class MOZ_RAII AutoTransactionBatchExternal final {
   EditorBase& mEditorBase;
 };
 
-/******************************************************************************
- * AutoSelectionRangeArray stores all ranges in `aSelection`.
- * Note that modifying the ranges means modifing the selection ranges.
- *****************************************************************************/
+
+
+
+
 class MOZ_STACK_CLASS AutoSelectionRangeArray final {
  public:
   explicit AutoSelectionRangeArray(dom::Selection& aSelection) {
@@ -247,62 +290,62 @@ class EditorUtils final {
   using EditorType = EditorBase::EditorType;
   using Selection = dom::Selection;
 
-  /**
-   * IsDescendantOf() checks if aNode is a child or a descendant of aParent.
-   * aOutPoint is set to the child of aParent.
-   *
-   * @return            true if aNode is a child or a descendant of aParent.
-   */
+  
+
+
+
+
+
   static bool IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
                              EditorRawDOMPoint* aOutPoint = nullptr);
   static bool IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
                              EditorDOMPoint* aOutPoint);
 
-  /**
-   * Returns true if aContent is a <br> element and it's marked as padding for
-   * empty editor.
-   */
+  
+
+
+
   static bool IsPaddingBRElementForEmptyEditor(const nsIContent& aContent) {
     const dom::HTMLBRElement* brElement =
         dom::HTMLBRElement::FromNode(&aContent);
     return brElement && brElement->IsPaddingForEmptyEditor();
   }
 
-  /**
-   * Returns true if aContent is a <br> element and it's marked as padding for
-   * empty last line.
-   */
+  
+
+
+
   static bool IsPaddingBRElementForEmptyLastLine(const nsIContent& aContent) {
     const dom::HTMLBRElement* brElement =
         dom::HTMLBRElement::FromNode(&aContent);
     return brElement && brElement->IsPaddingForEmptyLastLine();
   }
 
-  /**
-   * IsEditableContent() returns true if aContent's data or children is ediable
-   * for the given editor type.  Be aware, returning true does NOT mean the
-   * node can be removed from its parent node, and returning false does NOT
-   * mean the node cannot be removed from the parent node.
-   * XXX May be the anonymous nodes in TextEditor not editable?  If it's not
-   *     so, we can get rid of aEditorType.
-   */
+  
+
+
+
+
+
+
+
   static bool IsEditableContent(const nsIContent& aContent,
                                 EditorType aEditorType) {
     if (aEditorType == EditorType::HTML &&
         (!aContent.IsEditable() || !aContent.IsInComposedDoc())) {
-      // FIXME(emilio): Why only for HTML editors? All content from the root
-      // content in text editors is also editable, so afaict we can remove the
-      // special-case.
+      
+      
+      
       return false;
     }
     return IsElementOrText(aContent);
   }
 
-  /**
-   * Returns true if aContent is a usual element node (not padding <br> element
-   * for empty editor) or a text node.  In other words, returns true if
-   * aContent is a usual element node or visible data node.
-   */
+  
+
+
+
+
   static bool IsElementOrText(const nsIContent& aContent) {
     if (aContent.IsText()) {
       return true;
@@ -310,38 +353,38 @@ class EditorUtils final {
     return aContent.IsElement() && !IsPaddingBRElementForEmptyEditor(aContent);
   }
 
-  /**
-   * Get computed white-space style of aContent.
-   */
+  
+
+
   static Maybe<StyleWhiteSpace> GetComputedWhiteSpaceStyle(
       const nsIContent& aContent);
 
-  /**
-   * IsWhiteSpacePreformatted() checks the style info for the node for the
-   * preformatted text style.  This does NOT flush layout.
-   */
+  
+
+
+
   static bool IsWhiteSpacePreformatted(const nsIContent& aContent);
 
-  /**
-   * IsNewLinePreformatted() checks whether the linefeed characters are
-   * preformatted or collapsible white-spaces.  This does NOT flush layout.
-   */
+  
+
+
+
   static bool IsNewLinePreformatted(const nsIContent& aContent);
 
-  /**
-   * IsOnlyNewLinePreformatted() checks whether the linefeed characters are
-   * preformated but white-spaces are collapsed, or otherwise.  I.e., this
-   * returns true only when `white-space:pre-line`.
-   */
+  
+
+
+
+
   static bool IsOnlyNewLinePreformatted(const nsIContent& aContent);
 
-  /**
-   * Helper method for `AppendString()` and `AppendSubString()`.  This should
-   * be called only when `aText` is in a password field.  This method masks
-   * A part of or all of `aText` (`aStartOffsetInText` and later) should've
-   * been copied (apppended) to `aString`.  `aStartOffsetInString` is where
-   * the password was appended into `aString`.
-   */
+  
+
+
+
+
+
+
   static void MaskString(nsString& aString, const dom::Text& aTextNode,
                          uint32_t aStartOffsetInString,
                          uint32_t aStartOffsetInText);
@@ -357,16 +400,16 @@ class EditorUtils final {
 
   static nsStaticAtom* GetAttributeAtom(const nsAString& aAttribute) {
     if (aAttribute.IsEmpty()) {
-      return nullptr;  // Don't use nsGkAtoms::_empty for attribute.
+      return nullptr;  
     }
     return NS_GetStaticAtom(aAttribute);
   }
 
-  /**
-   * Helper method for deletion.  When this returns true, Selection will be
-   * computed with nsFrameSelection that also requires flushed layout
-   * information.
-   */
+  
+
+
+
+
   template <typename SelectionOrAutoRangeArray>
   static bool IsFrameSelectionRequiredToExtendSelection(
       nsIEditor::EDirection aDirectionAndAmount,
@@ -385,20 +428,20 @@ class EditorUtils final {
     }
   }
 
-  /**
-   * Returns true if aSelection includes the point in aParentContent.
-   */
+  
+
+
   static bool IsPointInSelection(const Selection& aSelection,
                                  const nsINode& aParentNode, uint32_t aOffset);
 
-  /**
-   * Create an nsITransferable instance which has kUnicodeMime and
-   * kMozTextInternal flavors.
-   */
+  
+
+
+
   static Result<nsCOMPtr<nsITransferable>, nsresult>
   CreateTransferableForPlainText(const dom::Document& aDocument);
 };
 
-}  // namespace mozilla
+}  
 
-#endif  // #ifndef mozilla_EditorUtils_h
+#endif  

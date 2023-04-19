@@ -4632,20 +4632,16 @@ class HTMLEditor final : public EditorBase,
                                                
   friend class ListItemElementSelectionState;  
                                                
-  friend class MoveNodeResult;       
-                                     
   friend class MoveNodeTransaction;  
                                      
                                      
-  friend class ParagraphStateAtSelection;    
-                                             
-                                             
-                                             
-                                             
-  friend class SlurpBlobEventListener;       
-  friend class SplitNodeResult;              
-  friend class SplitNodeTransaction;         
-  friend class SplitRangeOffFromNodeResult;  
+  friend class ParagraphStateAtSelection;  
+                                           
+                                           
+                                           
+                                           
+  friend class SlurpBlobEventListener;     
+  friend class SplitNodeTransaction;       
   friend class TransactionManager;  
                                     
   friend class
