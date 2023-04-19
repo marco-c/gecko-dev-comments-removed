@@ -222,6 +222,7 @@ class PanelActionBase {
     
     this.setActiveTabForPreload(null);
     this.extension.tabManager.addActiveTabPermission(tab);
+    this.extension.tabManager.activateScripts(tab);
 
     let popupUrl = this.getProperty(tab, "popup");
     
