@@ -289,7 +289,7 @@ class CCGCScheduler {
                  mozilla::TimeDuration aMaxSliceTime);
 
   
-  void NoteGCSliceEnd(TimeDuration aSliceDuration);
+  void NoteGCSliceEnd(TimeStamp aStart, TimeStamp aEnd);
 
   bool GCRunnerFired(TimeStamp aDeadline);
   bool GCRunnerFiredDoGC(TimeStamp aDeadline, const GCRunnerStep& aStep);
@@ -509,7 +509,10 @@ class CCGCScheduler {
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
-  TimeDuration mGCUnnotifiedTotalTime;
+  
+  
+  
+  mozilla::Maybe<TimeStamp> mTriggeredGCDeadline;
 
   RefPtr<IdleTaskRunner> mGCRunner;
   RefPtr<IdleTaskRunner> mCCRunner;

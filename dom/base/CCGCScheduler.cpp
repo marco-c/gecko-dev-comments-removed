@@ -233,7 +233,7 @@ void CCGCScheduler::NoteGCEnd() {
   }
 }
 
-void CCGCScheduler::NoteGCSliceEnd(TimeDuration aSliceDuration) {
+void CCGCScheduler::NoteGCSliceEnd(TimeStamp aStart, TimeStamp aEnd) {
   if (mMajorGCReason == JS::GCReason::NO_REASON) {
     
     
@@ -245,8 +245,38 @@ void CCGCScheduler::NoteGCSliceEnd(TimeDuration aSliceDuration) {
   
   mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
 
-  mGCUnnotifiedTotalTime += aSliceDuration;
-  PerfStats::RecordMeasurement(PerfStats::Metric::MajorGC, aSliceDuration);
+  MOZ_ASSERT(aEnd >= aStart);
+  TimeDuration sliceDuration = aEnd - aStart;
+  PerfStats::RecordMeasurement(PerfStats::Metric::MajorGC, sliceDuration);
+
+  
+  TimeDuration nonIdleDuration;
+  bool startedIdle =
+      mTriggeredGCDeadline.isSome() && !mTriggeredGCDeadline->IsNull();
+  if (!startedIdle) {
+    nonIdleDuration = sliceDuration;
+  } else {
+    if (*mTriggeredGCDeadline < aEnd) {
+      
+      nonIdleDuration = aEnd - *mTriggeredGCDeadline;
+    }
+  }
+
+  PerfStats::RecordMeasurement(PerfStats::Metric::NonIdleMajorGC,
+                               nonIdleDuration);
+
+  
+  
+  
+  
+  
+  
+  TimeDuration idleDuration = sliceDuration - nonIdleDuration;
+  uint32_t percent =
+      uint32_t(idleDuration.ToSeconds() / sliceDuration.ToSeconds() * 100);
+  Telemetry::Accumulate(Telemetry::GC_SLICE_DURING_IDLE, percent);
+
+  mTriggeredGCDeadline.reset();
 }
 
 void CCGCScheduler::NoteCCBegin(CCReason aReason, TimeStamp aWhen,
@@ -384,36 +414,14 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
     }
   }
 
+  
+  
+  mTriggeredGCDeadline = Some(aDeadline);
+
   MOZ_ASSERT(mActiveIntersliceGCBudget);
   TimeStamp startTimeStamp = TimeStamp::Now();
   js::SliceBudget budget = ComputeInterSliceGCBudget(aDeadline, startTimeStamp);
-  TimeDuration duration = mGCUnnotifiedTotalTime;
   nsJSContext::RunIncrementalGCSlice(aStep.mReason, is_shrinking, budget);
-
-  mGCUnnotifiedTotalTime = TimeDuration();
-  TimeStamp now = TimeStamp::Now();
-  TimeDuration sliceDuration = now - startTimeStamp;
-  duration += sliceDuration;
-  if (duration.ToSeconds()) {
-    TimeDuration idleDuration;
-    if (!aDeadline.IsNull()) {
-      if (aDeadline < now) {
-        
-        if (aDeadline > startTimeStamp) {
-          idleDuration = aDeadline - startTimeStamp;
-        }
-        
-      } else {
-        
-        
-        idleDuration = sliceDuration;
-      }
-    }
-
-    uint32_t percent =
-        uint32_t(idleDuration.ToSeconds() / duration.ToSeconds() * 100);
-    Telemetry::Accumulate(Telemetry::GC_SLICE_DURING_IDLE, percent);
-  }
 
   
   
