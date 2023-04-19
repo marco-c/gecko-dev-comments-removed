@@ -2337,12 +2337,12 @@ static mozilla::Maybe<uint64_t> StringToTypedArrayIndexSlow(
 
   
   ToCStringBuf cbuf;
-  const char* cstr = js::NumberToCString(&cbuf, result);
+  size_t cstrlen;
+  const char* cstr = js::NumberToCString(&cbuf, result, &cstrlen);
   MOZ_ASSERT(cstr);
 
   
-  if (s.length() != strlen(cstr) ||
-      !EqualChars(start.get(), cstr, s.length())) {
+  if (s.length() != cstrlen || !EqualChars(start.get(), cstr, cstrlen)) {
     return mozilla::Nothing();
   }
 

@@ -96,15 +96,21 @@ struct Int32ToCStringBuf {
 
 
 
-extern char* NumberToCString(ToCStringBuf* cbuf, double d);
 
-extern char* Int32ToCString(Int32ToCStringBuf* cbuf, int32_t value);
+extern char* NumberToCString(ToCStringBuf* cbuf, double d,
+                             size_t* length = nullptr);
 
-extern char* Uint32ToCString(Int32ToCStringBuf* cbuf, uint32_t value);
+extern char* Int32ToCString(Int32ToCStringBuf* cbuf, int32_t value,
+                            size_t* length = nullptr);
+
+extern char* Uint32ToCString(Int32ToCStringBuf* cbuf, uint32_t value,
+                             size_t* length = nullptr);
 
 
 
-extern char* Uint32ToHexCString(Int32ToCStringBuf* cbuf, uint32_t value);
+
+extern char* Uint32ToHexCString(Int32ToCStringBuf* cbuf, uint32_t value,
+                                size_t* length = nullptr);
 
 
 
