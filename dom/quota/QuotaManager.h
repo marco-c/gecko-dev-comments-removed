@@ -300,7 +300,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
   nsresult EnsureTemporaryStorageIsInitialized();
 
-  void ShutdownStorage();
+  void ShutdownStorageInternal();
 
   
   Result<bool, nsresult> EnsureOriginDirectory(nsIFile& aDirectory);
