@@ -260,6 +260,9 @@ var whitelist = [
   { file: "resource://gre/localization/en-US/dom/media.ftl" },
 
   
+  { file: "resource://gre/localization/en-US/dom/XMLPrettyPrint.ftl" },
+
+  
   {
     file:
       "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
