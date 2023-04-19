@@ -204,6 +204,7 @@ struct LangGroupFontPrefs;
 class PendingAnimationTracker;
 class PermissionDelegateHandler;
 class PresShell;
+class ScrollTimelineAnimationTracker;
 class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
@@ -2766,6 +2767,19 @@ class Document : public nsINode,
   PendingAnimationTracker* GetOrCreatePendingAnimationTracker();
 
   
+  
+  
+  
+  ScrollTimelineAnimationTracker* GetScrollTimelineAnimationTracker() {
+    return mScrollTimelineAnimationTracker;
+  }
+
+  
+  
+  
+  ScrollTimelineAnimationTracker* GetOrCreateScrollTimelineAnimationTracker();
+
+  
 
 
 
@@ -5139,6 +5153,10 @@ class Document : public nsINode,
   
   
   RefPtr<PendingAnimationTracker> mPendingAnimationTracker;
+
+  
+  
+  RefPtr<ScrollTimelineAnimationTracker> mScrollTimelineAnimationTracker;
 
   
   

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_PendingAnimationTracker_h
-#define mozilla_dom_PendingAnimationTracker_h
+#ifndef mozilla_PendingAnimationTracker_h
+#define mozilla_PendingAnimationTracker_h
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/TypedEnumBits.h"
@@ -19,6 +19,10 @@ namespace mozilla {
 namespace dom {
 class Document;
 }
+
+
+
+
 
 class PendingAnimationTracker final {
  public:
