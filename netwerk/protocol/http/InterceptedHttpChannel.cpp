@@ -1002,10 +1002,8 @@ InterceptedHttpChannel::OnStartRequest(nsIRequest* aRequest) {
     GetCallback(mProgressSink);
   }
 
-  if (!EnsureOpaqueResponseIsAllowed()) {
-    
-    
-    
+  if (EnsureOpaqueResponseIsAllowed() == OpaqueResponseAllowed::No) {
+    return NS_ERROR_FAILURE;
   }
 
   if (mPump && mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS) {
@@ -1013,10 +1011,9 @@ InterceptedHttpChannel::OnStartRequest(nsIRequest* aRequest) {
   }
 
   auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-  if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
-    
-    
-    
+  if (isAllowedOrErr.isErr() ||
+      isAllowedOrErr.inspect() == OpaqueResponseAllowed::No) {
+    return NS_ERROR_FAILURE;
   }
 
   nsresult rv = ProcessCrossOriginEmbedderPolicyHeader();

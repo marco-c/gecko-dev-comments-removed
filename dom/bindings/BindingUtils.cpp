@@ -4112,18 +4112,9 @@ void ReportDeprecation(nsIGlobalObject* aGlobal, nsIURI* aURI,
   
   
   nsAutoCString specOrScheme;
-  nsresult rv;
-  if (aURI->SchemeIs("data")) {
-    specOrScheme.Assign("data:..."_ns);
-  } else {
-    
-    
-    
-    nsCOMPtr<nsIURI> exposableURI = net::nsIOService::CreateExposableURI(aURI);
-    rv = exposableURI->GetSpec(specOrScheme);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
+  nsresult rv = nsContentUtils::AnonymizeURI(aURI, specOrScheme);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
   }
 
   nsAutoString type;

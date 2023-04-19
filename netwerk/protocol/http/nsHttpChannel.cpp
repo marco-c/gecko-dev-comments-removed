@@ -1527,10 +1527,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
-  if (!EnsureOpaqueResponseIsAllowed()) {
-    
-    
-    
+  if (EnsureOpaqueResponseIsAllowed() == OpaqueResponseAllowed::No) {
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -1585,10 +1583,9 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   if (!unknownDecoderStarted) {
     auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-    if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
-      
-      
-      
+    if (isAllowedOrErr.isErr() ||
+        isAllowedOrErr.inspect() == OpaqueResponseAllowed::No) {
+      return NS_ERROR_FAILURE;
     }
   }
 
@@ -7823,15 +7820,6 @@ nsHttpChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
     nsresult rv =
         mListener->OnDataAvailable(this, input, mLogicalOffset, count);
     if (NS_SUCCEEDED(rv)) {
-      auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-      if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
-        
-        
-        
-        
-        
-        
-      }
       
       
       
@@ -9524,24 +9512,25 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
         MOZ_ASSERT(isInitialRequest);
 
         if (!isInitialRequest) {
-          mBlockOpaqueResponseAfterSniff = true;
+          BlockOpaqueResponseAfterSniff();
           return;
         }
 
         if (mResponseHead->Status() != 200 && mResponseHead->Status() != 206) {
-          mBlockOpaqueResponseAfterSniff = true;
+          BlockOpaqueResponseAfterSniff();
           return;
         }
 
         if (mResponseHead->Status() == 206 &&
             !IsFirstPartialResponse(*mResponseHead)) {
-          mBlockOpaqueResponseAfterSniff = true;
+          BlockOpaqueResponseAfterSniff();
           return;
         }
       }
     }
 
     mCheckIsOpaqueResponseAllowedAfterSniff = false;
+    AllowOpaqueResponseAfterSniff();
   }
 }
 
