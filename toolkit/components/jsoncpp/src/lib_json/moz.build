@@ -15,18 +15,6 @@ LOCAL_INCLUDES += [
 ]
 
 
-
-if CONFIG['CC_TYPE'] == 'clang-cl':
-    CXXFLAGS += [
-        '-Xclang',
-        '-fcxx-exceptions',
-    ]
-else:
-    CXXFLAGS += [
-        '-fexceptions',
-    ]
-
-
 DisableStlWrapping()
 
 Library('jsoncpp')

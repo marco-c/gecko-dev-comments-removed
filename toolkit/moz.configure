@@ -369,6 +369,10 @@ include("../build/moz.configure/node.configure")
 
 
 
+set_define("JSON_USE_EXCEPTION", 0)
+
+
+
 option("--with-l10n-base", nargs=1, env="L10NBASEDIR", help="Path to l10n repositories")
 
 
