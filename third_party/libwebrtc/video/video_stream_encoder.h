@@ -245,6 +245,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                                int64_t time_when_posted_in_ms)
       RTC_RUN_ON(&encoder_queue_);
 
+  void RequestEncoderSwitch() RTC_RUN_ON(&encoder_queue_);
+
   TaskQueueBase* const worker_queue_;
 
   const uint32_t number_of_cores_;
@@ -428,6 +430,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   QpParser qp_parser_;
   const bool qp_parsing_allowed_;
+
+  
+  bool switch_encoder_on_init_failures_;
 
   
   

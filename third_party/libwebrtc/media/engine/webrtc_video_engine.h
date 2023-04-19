@@ -224,11 +224,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
   
   void RequestEncoderFallback() override;
-
-  
-  void RequestEncoderSwitch(
-      const EncoderSwitchRequestCallback::Config& conf) override;
-  void RequestEncoderSwitch(const webrtc::SdpVideoFormat& format) override;
+  void RequestEncoderSwitch(const webrtc::SdpVideoFormat& format,
+                            bool allow_default_fallback) override;
 
   void SetRecordableEncodedFrameCallback(
       uint32_t ssrc,
@@ -638,9 +635,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
       RTC_GUARDED_BY(thread_checker_);
 
+  
+  
+  
   bool allow_codec_switching_ = false;
-  absl::optional<EncoderSwitchRequestCallback::Config>
-      requested_encoder_switch_;
 };
 
 class EncoderStreamFactory
