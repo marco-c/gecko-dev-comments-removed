@@ -532,7 +532,7 @@ class nsWindow final : public nsBaseWidget {
   GdkWindow* mGdkWindow = nullptr;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
   mozilla::Atomic<WindowCompositorState, mozilla::Relaxed> mCompositorState{
-      COMPOSITOR_ENABLED};
+      COMPOSITOR_PAUSED_INITIALLY};
   
   
   int mCompositorPauseTimeoutID = 0;
