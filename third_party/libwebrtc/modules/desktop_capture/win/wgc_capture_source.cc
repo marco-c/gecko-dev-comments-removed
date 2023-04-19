@@ -36,6 +36,14 @@ HRESULT WgcCaptureSource::GetCaptureItem(
   return hr;
 }
 
+bool WgcCaptureSource::IsCapturable() {
+  
+  
+  
+  ComPtr<WGC::IGraphicsCaptureItem> item;
+  return SUCCEEDED(CreateCaptureItem(&item));
+}
+
 WgcCaptureSourceFactory::~WgcCaptureSourceFactory() = default;
 
 WgcWindowSourceFactory::WgcWindowSourceFactory() = default;
@@ -59,7 +67,10 @@ WgcWindowSource::WgcWindowSource(DesktopCapturer::SourceId source_id)
 WgcWindowSource::~WgcWindowSource() = default;
 
 bool WgcWindowSource::IsCapturable() {
-  return IsWindowValidAndVisible(reinterpret_cast<HWND>(GetSourceId()));
+  if (!IsWindowValidAndVisible(reinterpret_cast<HWND>(GetSourceId())))
+    return false;
+
+  return WgcCaptureSource::IsCapturable();
 }
 
 HRESULT WgcWindowSource::CreateCaptureItem(
@@ -92,15 +103,25 @@ WgcScreenSource::WgcScreenSource(DesktopCapturer::SourceId source_id)
 WgcScreenSource::~WgcScreenSource() = default;
 
 bool WgcScreenSource::IsCapturable() {
-  
-  if (GetSourceId() == 0)
-    return true;
+  if (!hmonitor_) {
+    HMONITOR hmon;
+    if (!GetHmonitorFromDeviceIndex(GetSourceId(), &hmon))
+      return false;
 
-  return IsMonitorValid(GetSourceId());
+    hmonitor_ = hmon;
+  }
+
+  if (!IsMonitorValid(*hmonitor_))
+    return false;
+
+  return WgcCaptureSource::IsCapturable();
 }
 
 HRESULT WgcScreenSource::CreateCaptureItem(
     ComPtr<WGC::IGraphicsCaptureItem>* result) {
+  if (!hmonitor_)
+    return E_ABORT;
+
   if (!ResolveCoreWinRTDelayload())
     return E_FAIL;
 
@@ -112,8 +133,7 @@ HRESULT WgcScreenSource::CreateCaptureItem(
     return hr;
 
   ComPtr<WGC::IGraphicsCaptureItem> item;
-  hr = interop->CreateForMonitor(reinterpret_cast<HMONITOR>(GetSourceId()),
-                                 IID_PPV_ARGS(&item));
+  hr = interop->CreateForMonitor(*hmonitor_, IID_PPV_ARGS(&item));
   if (FAILED(hr))
     return hr;
 

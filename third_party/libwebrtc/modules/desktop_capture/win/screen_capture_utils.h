@@ -21,10 +21,6 @@ namespace webrtc {
 
 
 
-bool GetMonitorList(DesktopCapturer::SourceList* monitors);
-
-
-
 
 
 
@@ -33,14 +29,20 @@ bool GetScreenList(DesktopCapturer::SourceList* screens,
 
 
 
-
-bool IsMonitorValid(DesktopCapturer::SourceId monitor);
-
-
+bool GetHmonitorFromDeviceIndex(const DesktopCapturer::SourceId device_index,
+                                HMONITOR* hmonitor);
 
 
 
-bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
+
+bool IsMonitorValid(const HMONITOR monitor);
+
+
+
+
+
+bool IsScreenValid(const DesktopCapturer::SourceId screen,
+                   std::wstring* device_key);
 
 
 
@@ -49,7 +51,7 @@ DesktopRect GetFullscreenRect();
 
 
 
-RTC_EXPORT DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
+RTC_EXPORT DesktopRect GetScreenRect(const DesktopCapturer::SourceId screen,
                                      const std::wstring& device_key);
 
 }  
