@@ -21,6 +21,7 @@
 
 
 
+
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 
 const UI_BASE_URL_PATH_PREF = "devtools.performance.recording.ui-base-url-path";
@@ -136,11 +137,26 @@ function sharedLibrariesFromProfile(profile) {
 
 
 function restartBrowserWithEnvironmentVariable(envName, value) {
-  Services.env.set(envName, value);
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set(envName, value);
 
   Services.startup.quit(
     Services.startup.eForceQuit | Services.startup.eRestart
   );
+}
+
+
+
+
+
+
+function getEnvironmentVariable(envName) {
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  return env.get(envName);
 }
 
 
@@ -168,5 +184,6 @@ module.exports = {
   openProfilerTab,
   sharedLibrariesFromProfile,
   restartBrowserWithEnvironmentVariable,
+  getEnvironmentVariable,
   openFilePickerForObjdir,
 };

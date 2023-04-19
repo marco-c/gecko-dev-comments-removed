@@ -28,7 +28,7 @@ function run_test() {
   );
 
   
-  Services.env.set("__COMPAT_LAYER", "RunAsInvoker");
+  gEnv.set("__COMPAT_LAYER", "RunAsInvoker");
 
   let dummyInstallPath = "---";
   let maintenanceServiceBinArgs = [

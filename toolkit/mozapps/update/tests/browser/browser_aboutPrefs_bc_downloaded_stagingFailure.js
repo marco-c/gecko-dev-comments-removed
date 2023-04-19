@@ -7,7 +7,7 @@
 
 
 add_task(async function aboutPrefs_backgroundCheck_downloaded_stagingFailure() {
-  Services.env.set("MOZ_TEST_STAGING_ERROR", "1");
+  gEnv.set("MOZ_TEST_STAGING_ERROR", "1");
   await SpecialPowers.pushPrefEnv({
     set: [[PREF_APP_UPDATE_STAGING_ENABLED, true]],
   });

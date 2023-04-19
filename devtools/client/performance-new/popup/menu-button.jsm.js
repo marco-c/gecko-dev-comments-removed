@@ -139,7 +139,10 @@ function initialize(toggleProfilerKeyShortcuts) {
       
       if (
         Services.profiler.IsActive() &&
-        (!Cu.isInAutomation || !Services.env.exists("MOZ_PROFILER_STARTUP"))
+        (!Cu.isInAutomation ||
+          !Cc["@mozilla.org/process/environment;1"]
+            .getService(Ci.nsIEnvironment)
+            .exists("MOZ_PROFILER_STARTUP"))
       ) {
         Services.profiler.StopProfiler();
       }

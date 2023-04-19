@@ -185,7 +185,10 @@ async function verifyGmpContentSignature(data, contentSignatureHeader) {
   
   
   let root = Ci.nsIContentSignatureVerifier.ContentSignatureProdRoot;
-  if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  if (env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
     root = Ci.nsIX509CertDB.AppXPCShellRoot;
   }
 

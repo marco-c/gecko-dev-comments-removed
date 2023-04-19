@@ -15,9 +15,12 @@ const INDEX_QUARANTINE_ERROR = 3;
 
 add_setup(function() {
   
-  Services.env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
 
   registerCleanupFunction(() => {
-    Services.env.set("XPCSHELL_TEST_PROFILE_DIR", null);
+    env.set("XPCSHELL_TEST_PROFILE_DIR", null);
   });
 });

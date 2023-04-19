@@ -5,6 +5,9 @@
 "use strict";
 
 const selectors = require("resource://devtools/client/performance-new/store/selectors.js");
+const {
+  getEnvironmentVariable,
+} = require("resource://devtools/client/performance-new/browser.js");
 
 
 
@@ -84,7 +87,7 @@ exports.changeFeatures = features => {
       
       
       if (
-        !Services.env.get("JS_TRACE_LOGGING") &&
+        !getEnvironmentVariable("JS_TRACE_LOGGING") &&
         features.includes("jstracer")
       ) {
         promptEnvRestart = "JS_TRACE_LOGGING";

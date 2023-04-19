@@ -4,7 +4,10 @@
 
 
 function run_test() {
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   do_check_throws_nsIException(function() {
-    Services.env.QueryInterface(Ci.nsIFile);
+    env.QueryInterface(Ci.nsIFile);
   }, "NS_NOINTERFACE");
 }

@@ -407,7 +407,7 @@ async function testFileAccessLinuxOnly() {
   
   let configDir = GetHomeSubdir(".config");
 
-  const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
+  const xdgConfigHome = GetEnvironmentVariable("XDG_CONFIG_HOME");
 
   if (xdgConfigHome.length > 1) {
     configDir = GetDir(xdgConfigHome);
@@ -633,7 +633,7 @@ async function testFileAccessLinuxSnap() {
 
   
   
-  let snap = Services.env.get("SNAP");
+  let snap = GetEnvironmentVariable("SNAP");
   let snapExpectedResult = false;
   if (snap.length > 1) {
     snapExpectedResult = true;

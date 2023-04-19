@@ -202,6 +202,12 @@ export type OnProfileReceived = (profile: MinimallyTypedGeckoProfile) => void;
 
 
 
+export type GetEnvironmentVariable = (envName: string) => string;
+
+
+
+
+
 export type GetActiveBrowserID = () => number;
 
 

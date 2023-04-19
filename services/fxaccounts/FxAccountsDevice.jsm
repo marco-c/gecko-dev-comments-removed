@@ -89,7 +89,10 @@ class FxAccountsDevice {
 
   
   getDefaultLocalName() {
-    let user = Services.env.get("USER") || Services.env.get("USERNAME");
+    let env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    let user = env.get("USER") || env.get("USERNAME");
     
     
     
@@ -98,8 +101,8 @@ class FxAccountsDevice {
 
     
     
-    if (user == "%USERNAME%" && Services.env.get("USERNAME")) {
-      user = Services.env.get("USERNAME");
+    if (user == "%USERNAME%" && env.get("USERNAME")) {
+      user = env.get("USERNAME");
     }
 
     let brand = Services.strings.createBundle(

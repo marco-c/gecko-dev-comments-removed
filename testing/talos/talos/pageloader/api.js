@@ -50,6 +50,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "amIAddonManagerStartup"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "env",
+  "@mozilla.org/process/environment;1",
+  "nsIEnvironment"
+);
+
 async function talosStart() {
   
   
@@ -105,7 +112,7 @@ this.pageloader = class extends ExtensionAPI {
       ["content", "pageloader", "chrome/"],
     ]);
 
-    if (Services.env.exists("MOZ_USE_PAGELOADER")) {
+    if (env.exists("MOZ_USE_PAGELOADER")) {
       
       
       
