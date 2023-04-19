@@ -716,6 +716,7 @@ nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest* request,
     LOG(("OnStopRequest::Canceling update [this=%p]", this));
     
     
+    mDownloadError = true;
     rv = mDBService->CancelUpdate();
   } else {
     LOG(("OnStopRequest::Finishing update [this=%p]", this));
