@@ -135,15 +135,25 @@ async function doManyEngagementsTest(state) {
 
 
 add_task(async function canceledQueries() {
-  let requests = [];
-  setMerinoResponse(req => {
-    requests.push({ params: new URLSearchParams(req.queryString) });
-    return MERINO_RESPONSE;
-  });
-
   let controller = UrlbarTestUtils.newMockController();
 
   for (let i = 0; i < 3; i++) {
+    let requests = [];
+
+    
+    
+    
+    let onRequestPromise = new Promise(resolve => {
+      setMerinoResponse(req => {
+        resolve();
+        requests.push({
+          delay: UrlbarPrefs.get("merinoTimeoutMs"),
+          params: new URLSearchParams(req.queryString),
+        });
+        return MERINO_RESPONSE;
+      });
+    });
+
     
     controller.startQuery(
       createContext("search" + i, {
@@ -153,21 +163,29 @@ add_task(async function canceledQueries() {
     );
 
     
-    let searchString = "search" + i + "again";
-    let context = createContext(searchString, {
-      providers: [UrlbarProviderQuickSuggest.name],
-      isPrivate: false,
-    });
-    await controller.startQuery(context);
+    
+    
+    
+    
+    
+    await onRequestPromise;
 
     
+    let searchString = "search" + i + "again";
+    await controller.startQuery(
+      createContext(searchString, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      })
+    );
+
     
     checkRequests(requests, {
-      count: i + 1,
+      count: 2,
       areSessionIDsUnique: false,
       params: {
         [MERINO_PARAMS.QUERY]: searchString,
-        [MERINO_PARAMS.SEQUENCE_NUMBER]: i,
+        [MERINO_PARAMS.SEQUENCE_NUMBER]: 2 * i + 1,
       },
     });
   }
@@ -213,7 +231,7 @@ add_task(async function networkError() {
       areSessionIDsUnique: false,
       params: {
         [MERINO_PARAMS.QUERY]: searchString,
-        [MERINO_PARAMS.SEQUENCE_NUMBER]: i,
+        [MERINO_PARAMS.SEQUENCE_NUMBER]: 2 * i + 1,
       },
     });
   }
@@ -366,7 +384,7 @@ add_task(async function merinoTimeout_canceled() {
       areSessionIDsUnique: false,
       params: {
         [MERINO_PARAMS.QUERY]: searchString,
-        [MERINO_PARAMS.SEQUENCE_NUMBER]: i == 0 ? 0 : 1,
+        [MERINO_PARAMS.SEQUENCE_NUMBER]: i,
       },
     });
   }
@@ -392,11 +410,12 @@ add_task(async function sessionTimeout() {
   let controller = UrlbarTestUtils.newMockController();
 
   
-  let context = createContext("search 0", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await controller.startQuery(context);
+  await controller.startQuery(
+    createContext("search 0", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    })
+  );
 
   checkRequests(requests, {
     count: 1,
