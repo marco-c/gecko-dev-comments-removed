@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 import platform
 import re
+import shutil
 import sys
 import subprocess
 import time
@@ -629,45 +630,48 @@ def update_git_tools(git: Optional[Path], root_state_dir: Path):
     """Update git tools, hooks and extensions"""
     
     cinnabar_dir = root_state_dir / "git-cinnabar"
+    cinnabar_exe = cinnabar_dir / "git-cinnabar"
+
+    if sys.platform.startswith(("win32", "msys")):
+        cinnabar_exe += ".exe"
 
     
-    update_git_repo(git, "https://github.com/glandium/git-cinnabar.git", cinnabar_dir)
-
-    git = to_optional_str(git)
+    
+    
+    if (cinnabar_dir / ".git").exists():
+        shutil.rmtree(str(cinnabar_dir))
 
     
-    download_args = [sys.executable, str(cinnabar_dir / "download.py")]
+    exists = cinnabar_exe.exists()
+    if exists:
+        try:
+            subprocess.check_call([cinnabar_exe, "self-update"])
+        except subprocess.CalledProcessError as e:
+            print(e)
 
-    try:
-        subprocess.check_call(download_args, cwd=str(cinnabar_dir))
-    except subprocess.CalledProcessError as e:
-        print(e)
+    
+    
+    if not exists or cinnabar_exe.stat().st_size == 0:
+        from urllib.request import urlopen
+
+        if not cinnabar_dir.exists():
+            cinnabar_dir.mkdir()
+
+        cinnabar_url = "https://github.com/glandium/git-cinnabar/"
+        download_py = cinnabar_dir / "download.py"
+        with open(download_py, "wb") as fh:
+            shutil.copyfileobj(urlopen(f"{cinnabar_url}/raw/master/download.py"), fh)
+
+        try:
+            subprocess.check_call(
+                [sys.executable, str(download_py)], cwd=str(cinnabar_dir)
+            )
+        except subprocess.CalledProcessError as e:
+            print(e)
+        finally:
+            download_py.unlink()
+
     return cinnabar_dir
-
-
-def update_git_repo(git: Optional[Path], url, dest: Path):
-    """Perform a clone/pull + update of a Git repository."""
-    git_str = to_optional_str(git)
-
-    pull_args = [git_str]
-
-    if dest.exists():
-        pull_args.extend(["pull"])
-        cwd = dest
-    else:
-        pull_args.extend(["clone", "--no-checkout", url, str(dest)])
-        cwd = Path("/")
-
-    update_args = [git_str, "checkout"]
-
-    print("=" * 80)
-    print(f"Ensuring {url} is up to date at {dest}")
-
-    try:
-        subprocess.check_call(pull_args, cwd=str(cwd))
-        subprocess.check_call(update_args, cwd=str(dest))
-    finally:
-        print("=" * 80)
 
 
 def configure_git(
