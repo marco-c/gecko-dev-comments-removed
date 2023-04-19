@@ -55,7 +55,7 @@
       });
 
       
-      window.addEventListener("load", () => this._postLoadInit());
+      window.addEventListener("load", event => this.postLoadInit(event));
     }
 
     static get observedAttributes() {
@@ -325,27 +325,21 @@
       }
     }
 
-    async _postLoadInit() {
+    postLoadInit(aEvent) {
       this._setInitialFocusIfNeeded();
-      if (this._l10nButtons.length) {
-        await document.l10n.translateElements(this._l10nButtons);
-        
-        this._sizeToPreferredSize();
-      }
-      await this._snapCursorToDefaultButtonIfNeeded();
-    }
 
-    
-    
-    async _snapCursorToDefaultButtonIfNeeded() {
-      const defaultButton = this.getButton(this.defaultButton);
-      if (!defaultButton) {
-        return;
-      }
-      await window.promiseDocumentFlushed(() => {});
       try {
-        window.notifyDefaultButtonLoaded(defaultButton);
+        const defaultButton = this.getButton(this.defaultButton);
+        if (defaultButton) {
+          window.notifyDefaultButtonLoaded(defaultButton);
+        }
       } catch (e) {}
+
+      if (this._l10nButtons.length) {
+        document.l10n.translateElements(this._l10nButtons).then(() => {
+          this._sizeToPreferredSize();
+        });
+      }
     }
 
     _configureButtons(aButtons) {
