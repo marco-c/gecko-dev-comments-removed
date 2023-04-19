@@ -178,7 +178,9 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     if (!filename.IsEmpty()) {
       
       
-      mLoadContext->mURL.Assign(NS_ConvertUTF8toUTF16(filename));
+      
+      
+      mLoadContext->mRequest->mURL = filename;
     }
   }
 
@@ -286,9 +288,9 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
 
       ServiceWorkerManager::LocalizeAndReportToAllClients(
           scope, "ServiceWorkerRegisterMimeTypeError2",
-          nsTArray<nsString>{NS_ConvertUTF8toUTF16(scope),
-                             NS_ConvertUTF8toUTF16(mimeType),
-                             mLoadContext->mURL});
+          nsTArray<nsString>{
+              NS_ConvertUTF8toUTF16(scope), NS_ConvertUTF8toUTF16(mimeType),
+              NS_ConvertUTF8toUTF16(mLoadContext->mRequest->mURL)});
 
       return NS_ERROR_DOM_NETWORK_ERR;
     }

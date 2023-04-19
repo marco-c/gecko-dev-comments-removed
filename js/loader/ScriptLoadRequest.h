@@ -342,8 +342,10 @@ class ScriptLoadRequest
 
   const nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
-  nsAutoCString
-      mURL;  
+
+  
+  
+  nsAutoCString mURL;
 
   
   nsCOMPtr<nsIURI> mBaseURL;
