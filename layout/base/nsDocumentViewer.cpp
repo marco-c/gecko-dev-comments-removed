@@ -2598,7 +2598,8 @@ nsDocumentViewer::ForgetReloadEncoding() {
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::GetContentSize(
-    int32_t aMaxWidth, int32_t aMaxHeight, int32_t* aWidth, int32_t* aHeight) {
+    int32_t aMaxWidth, int32_t aMaxHeight, int32_t aPrefWidth, int32_t* aWidth,
+    int32_t* aHeight) {
   RefPtr<BrowsingContext> bc = mContainer->GetBrowsingContext();
   NS_ENSURE_TRUE(bc, NS_ERROR_NOT_AVAILABLE);
 
@@ -2617,6 +2618,11 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::GetContentSize(
   } else {
     aMaxHeight = NS_UNCONSTRAINEDSIZE;
   }
+  if (aPrefWidth > 0) {
+    aPrefWidth = CSSPixel::ToAppUnits(aPrefWidth);
+  } else {
+    aPrefWidth = 0;
+  }
 
   RefPtr<PresShell> presShell = GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
@@ -2634,7 +2640,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::GetContentSize(
   {
     RefPtr<gfxContext> rcx(presShell->CreateReferenceRenderingContext());
     nscoord maxISize = wm.IsVertical() ? aMaxHeight : aMaxWidth;
-    prefISize = std::min(root->GetPrefISize(rcx), maxISize);
+    if (aPrefWidth) {
+      prefISize = std::max(root->GetMinISize(rcx), aPrefWidth);
+    } else {
+      prefISize = root->GetPrefISize(rcx);
+    }
+    prefISize = std::min(prefISize, maxISize);
   }
 
   
