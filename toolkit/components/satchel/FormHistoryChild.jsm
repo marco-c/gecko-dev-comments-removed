@@ -29,6 +29,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "gEnabled",
   "browser.formfill.enable"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gFormFillService",
+  "@mozilla.org/satchel/form-fill-controller;1",
+  "nsIFormFillController"
+);
 
 function log(message) {
   if (!lazy.gDebug) {
@@ -88,6 +94,9 @@ class FormHistoryChild extends JSWindowActorChild {
 
       
       
+      if (lazy.gFormFillService.isLoginManagerField(input)) {
+        continue;
+      }
 
       
       let autocompleteInfo = input.getAutocompleteInfo();

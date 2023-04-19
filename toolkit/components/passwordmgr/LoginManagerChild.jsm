@@ -2326,6 +2326,10 @@ class LoginManagerChild extends JSWindowActorChild {
       ...docState._getFormFields(form, true, recipes, { ignoreConnect }),
     };
 
+    if (fields.usernameField) {
+      lazy.gFormFillService.markAsLoginManagerField(fields.usernameField);
+    }
+
     
     if (
       passwordField &&

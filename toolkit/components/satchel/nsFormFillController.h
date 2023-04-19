@@ -101,6 +101,9 @@ class nsFormFillController final : public nsIFormFillController,
 
   nsresult StartQueryLoginReputation(mozilla::dom::HTMLInputElement* aInput);
 
+  MOZ_CAN_RUN_SCRIPT NS_IMETHODIMP isLoginManagerField(
+      mozilla::dom::HTMLInputElement* aInput, bool* isLoginManagerField);
+
   
 
   nsCOMPtr<nsIAutoCompleteController> mController;
