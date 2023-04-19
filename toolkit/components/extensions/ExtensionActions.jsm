@@ -63,6 +63,11 @@ class PanelActionBase {
     });
 
     
+    extension.on("add-permissions", () => this.updateOnChange());
+    
+    extension.on("remove-permissions", () => this.updateOnChange());
+
+    
     
     
     this.activeTabForPreload = null;

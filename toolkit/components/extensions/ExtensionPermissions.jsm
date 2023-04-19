@@ -464,6 +464,12 @@ var OriginControls = {
   },
 
   
+  getAttention(policy, window) {
+    let state = this.getState(policy, window.gBrowser.currentURI);
+    return !!state.whenClicked && !state.hasAccess;
+  },
+
+  
   setAlwaysOn(policy, uri) {
     if (!policy.active) {
       return;
