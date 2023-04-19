@@ -89,6 +89,10 @@ class SipccSdpAttributeList : public SdpAttributeList {
   
   explicit SipccSdpAttributeList(const SipccSdpAttributeList* sessionLevel);
 
+  
+  SipccSdpAttributeList(const SipccSdpAttributeList& aOrig,
+                        const SipccSdpAttributeList* sessionLevel);
+
   using InternalResults = SdpParser::InternalResults;
 
   bool Load(sdp_t* sdp, uint16_t level, InternalResults& results);
