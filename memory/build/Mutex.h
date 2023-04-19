@@ -16,22 +16,6 @@
 #endif
 #include "mozilla/Attributes.h"
 
-#if defined(XP_DARWIN)
-
-
-
-#  define OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION (0x00010000)
-#  define OS_UNFAIR_LOCK_ADAPTIVE_SPIN (0x00040000)
-
-extern "C" {
-
-typedef uint32_t os_unfair_lock_options_t;
-OS_UNFAIR_LOCK_AVAILABILITY
-OS_EXPORT OS_NOTHROW OS_NONNULL_ALL void os_unfair_lock_lock_with_options(
-    os_unfair_lock_t lock, os_unfair_lock_options_t options);
-}
-#endif  
-
 
 
 
@@ -76,16 +60,7 @@ struct Mutex {
 #if defined(XP_WIN)
     EnterCriticalSection(&mMutex);
 #elif defined(XP_DARWIN)
-    
-    
-    
-    
-    
-    
-    
-    os_unfair_lock_lock_with_options(
-        &mMutex,
-        OS_UNFAIR_LOCK_DATA_SYNCHRONIZATION | OS_UNFAIR_LOCK_ADAPTIVE_SPIN);
+    os_unfair_lock_lock(&mMutex);
 #else
     pthread_mutex_lock(&mMutex);
 #endif
