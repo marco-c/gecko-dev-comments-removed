@@ -133,6 +133,18 @@ using ipc::FileDescriptor;
 #endif  
 
 
+namespace mozilla::StaticPrefs {
+
+static void InitAll();
+static void StartObservingAlwaysPrefs();
+static void InitOncePrefs();
+static void InitStaticPrefsFromShared();
+static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder);
+static void ShutdownAlwaysPrefs();
+
+}  
+
+
 
 
 
@@ -1127,6 +1139,10 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
 
     aResult = GetStringValue(kind);
     return NS_OK;
+  }
+
+  nsresult GetValue(PrefValueKind aKind, nsACString* aResult) const {
+    return GetValue(aKind, *aResult);
   }
 
   
@@ -3616,6 +3632,7 @@ void Preferences::Shutdown() {
   if (!sShutdown) {
     sShutdown = true;  
     sPreferences = nullptr;
+    StaticPrefs::ShutdownAlwaysPrefs();
   }
 }
 
@@ -3696,17 +3713,6 @@ void Preferences::DeserializePreferences(char* aStr, size_t aPrefsLen) {
   MOZ_ASSERT(!gContentProcessPrefsAreInited);
   gContentProcessPrefsAreInited = true;
 }
-
-
-namespace StaticPrefs {
-
-static void InitAll();
-static void StartObservingAlwaysPrefs();
-static void InitOncePrefs();
-static void InitStaticPrefsFromShared();
-static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder);
-
-}  
 
 
 FileDescriptor Preferences::EnsureSnapshot(size_t* aSize) {
@@ -4529,6 +4535,9 @@ static nsCString PrefValueToString(const uint32_t* u) {
 static nsCString PrefValueToString(const float* f) {
   return nsPrintfCString("%f", *f);
 }
+static nsCString PrefValueToString(const nsACString* s) {
+  return nsCString(*s);
+}
 static nsCString PrefValueToString(const nsACString& s) { return nsCString(s); }
 
 
@@ -4637,13 +4646,36 @@ struct Internals {
     return result;
   }
 
+  template <typename T, typename V>
+  static void MOZ_NEVER_INLINE AssignMirror(T& aMirror, V aValue) {
+    aMirror = aValue;
+  }
+
+  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
+                                            nsCString&& aValue) {
+    auto lock = aMirror.Lock();
+    lock->Assign(std::move(aValue));
+  }
+
+  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
+                                            const nsLiteralCString& aValue) {
+    auto lock = aMirror.Lock();
+    lock->Assign(aValue);
+  }
+
+  static void ClearMirror(DataMutexString& aMirror) {
+    auto lock = aMirror.Lock();
+    lock->Assign(nsCString());
+  }
+
   template <typename T>
   static void UpdateMirror(const char* aPref, void* aMirror) {
     StripAtomic<T> value;
 
     nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
     if (NS_SUCCEEDED(rv)) {
-      *static_cast<T*>(aMirror) = value;
+      AssignMirror(*static_cast<T*>(aMirror),
+                   std::forward<StripAtomic<T>>(value));
     } else {
       
       
@@ -5433,6 +5465,16 @@ static MOZ_NEVER_INLINE void AddMirror(T* aMirror, const nsACString& aPref,
   AddMirrorCallback(aMirror, aPref);
 }
 
+static MOZ_NEVER_INLINE void AddMirror(DataMutexString& aMirror,
+                                       const nsACString& aPref) {
+  auto lock = aMirror.Lock();
+  nsCString result(*lock);
+  Internals::GetPrefValue(PromiseFlatCString(aPref).get(), result,
+                          PrefValueKind::User);
+  lock->Assign(std::move(result));
+  AddMirrorCallback(&aMirror, aPref);
+}
+
 
 
 
@@ -5511,6 +5553,15 @@ static void InitAlwaysPref(const nsCString& aName, T* aCache,
   *aCache = aDefaultValue;
 }
 
+static void InitAlwaysPref(const nsCString& aName, DataMutexString& aCache,
+                           const nsLiteralCString& aDefaultValue) {
+  
+  
+  
+  InitPref_String(aName, aDefaultValue.get());
+  Internals::AssignMirror(aCache, aDefaultValue);
+}
+
 static Atomic<bool> sOncePrefRead(false);
 static StaticMutex sOncePrefMutex MOZ_UNANNOTATED;
 
@@ -5538,11 +5589,14 @@ void MaybeInitOncePrefs() {
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, default_value) \
   cpp_type sMirror_##full_id(default_value);
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, default_value) \
+  cpp_type sMirror_##full_id("DataMutexString");
 #define ONCE_PREF(name, base_id, full_id, cpp_type, default_value) \
   cpp_type sMirror_##full_id(default_value);
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 
 static void InitAll() {
@@ -5559,11 +5613,14 @@ static void InitAll() {
   InitPref_##cpp_type(name ""_ns, value);
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
   InitAlwaysPref(name ""_ns, &sMirror_##full_id, value);
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value) \
+  InitAlwaysPref(name ""_ns, sMirror_##full_id, value);
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value) \
   InitPref_##cpp_type(name ""_ns, value);
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 }
 
@@ -5577,10 +5634,13 @@ static void StartObservingAlwaysPrefs() {
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
   AddMirror(&sMirror_##full_id, name ""_ns, sMirror_##full_id);
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value) \
+  AddMirror(sMirror_##full_id, name ""_ns);
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value)
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 }
 
@@ -5596,6 +5656,7 @@ static void InitOncePrefs() {
   
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value)
 #ifdef DEBUG
 #  define ONCE_PREF(name, base_id, full_id, cpp_type, value)                   \
     {                                                                          \
@@ -5624,6 +5685,23 @@ static void InitOncePrefs() {
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
+#undef ONCE_PREF
+}
+
+static void ShutdownAlwaysPrefs() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+#define NEVER_PREF(name, cpp_type, value)
+#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value) \
+  Internals::ClearMirror(sMirror_##full_id);
+#define ONCE_PREF(name, base_id, full_id, cpp_type, value)
+#include "mozilla/StaticPrefListAll.h"
+#undef NEVER_PREF
+#undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 }
 
@@ -5696,12 +5774,14 @@ static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder) {
   
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value)
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value)      \
   SaveOncePrefToSharedMap(aBuilder, ONCE_PREF_NAME(name) ""_ns, \
                           cpp_type(sMirror_##full_id));
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 }
 
@@ -5744,6 +5824,20 @@ static void InitStaticPrefsFromShared() {
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);                    \
     StaticPrefs::sMirror_##full_id = val;                                      \
   }
+#define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, default_value) \
+  {                                                                            \
+    StripAtomic<cpp_type> val;                                                 \
+    if (!XRE_IsParentProcess() && IsString<cpp_type>::value &&                 \
+        gContentProcessPrefsAreInited && sCrashOnBlocklistedPref) {            \
+      MOZ_DIAGNOSTIC_ASSERT(                                                   \
+          !ShouldSanitizePreference(name, XRE_IsContentProcess()),             \
+          "Should not access the preference '" name "' in Content Processes"); \
+    }                                                                          \
+    DebugOnly<nsresult> rv = Internals::GetSharedPrefValue(name, &val);        \
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);                    \
+    Internals::AssignMirror(StaticPrefs::sMirror_##full_id,                    \
+                            std::forward<StripAtomic<cpp_type>>(val));         \
+  }
 #define ONCE_PREF(name, base_id, full_id, cpp_type, default_value)             \
   {                                                                            \
     cpp_type val;                                                              \
@@ -5761,6 +5855,7 @@ static void InitStaticPrefsFromShared() {
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
+#undef ALWAYS_DATAMUTEX_PREF
 #undef ONCE_PREF
 
   
