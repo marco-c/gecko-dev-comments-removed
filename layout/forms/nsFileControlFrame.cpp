@@ -203,10 +203,8 @@ void nsFileControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsBlockFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
-                                                const char* labelKey,
-                                                HTMLInputElement* aInputElement,
-                                                const nsAString& aAccessKey) {
+static already_AddRefed<Element> MakeAnonButton(
+    Document* aDoc, const char* labelKey, HTMLInputElement* aInputElement) {
   RefPtr<Element> button = aDoc->CreateHTMLElement(nsGkAtoms::button);
   
   
@@ -218,11 +216,10 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
   nsContentUtils::GetMaybeLocalizedString(nsContentUtils::eFORMS_PROPERTIES,
                                           labelKey, aDoc, buttonTxt);
 
+  auto* nim = aDoc->NodeInfoManager();
   
   
-  RefPtr<nsTextNode> textContent = new (button->NodeInfo()->NodeInfoManager())
-      nsTextNode(button->NodeInfo()->NodeInfoManager());
-
+  RefPtr textContent = new (nim) nsTextNode(nim);
   textContent->SetText(buttonTxt, false);
 
   IgnoredErrorResult error;
@@ -231,13 +228,7 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
     return nullptr;
   }
 
-  
-  
   auto* buttonElement = HTMLButtonElement::FromNode(button);
-  if (!aAccessKey.IsEmpty()) {
-    buttonElement->SetAccessKey(aAccessKey, IgnoreErrors());
-  }
-
   
   buttonElement->SetTabIndex(-1, IgnoreErrors());
   return button.forget();
@@ -246,17 +237,9 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
 nsresult nsFileControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   nsCOMPtr<Document> doc = mContent->GetComposedDoc();
+  RefPtr fileContent = HTMLInputElement::FromNode(mContent);
 
-  RefPtr<HTMLInputElement> fileContent =
-      HTMLInputElement::FromNodeOrNull(mContent);
-
-  
-  
-  
-  nsAutoString accessKey;
-  fileContent->GetAccessKey(accessKey);
-
-  mBrowseFilesOrDirs = MakeAnonButton(doc, "Browse", fileContent, accessKey);
+  mBrowseFilesOrDirs = MakeAnonButton(doc, "Browse", fileContent);
   if (!mBrowseFilesOrDirs) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
