@@ -27,6 +27,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/virtual_socket_server.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -622,7 +623,7 @@ TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDeliveredInReliableMode) {
                  kDefaultTimeout);
 }
 
-TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDeliveredInUnReliableMode) {
+TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDroppedInUnreliableMode) {
   CreatePeerConnectionWrappers();
   ConnectFakeSignaling();
   DataChannelInit init;
@@ -637,6 +638,9 @@ TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDeliveredInUnReliableMode) {
                  kDefaultTimeout);
   
   virtual_socket_server()->set_drop_probability(1.0);
+  
+  
+  
   for (int i = 1; i <= 10; i++) {
     caller()->data_channel()->Send(DataBuffer("Sent while blocked"));
   }
@@ -657,6 +661,116 @@ TEST_P(DataChannelIntegrationTest, QueuedPacketsGetDeliveredInUnReliableMode) {
   EXPECT_LE(2u, callee()->data_observer()->received_message_count());
   
   EXPECT_EQ(2u, callee()->data_observer()->received_message_count());
+}
+
+TEST_P(DataChannelIntegrationTest,
+       QueuedPacketsGetDroppedInLifetimeLimitedMode) {
+  CreatePeerConnectionWrappers();
+  ConnectFakeSignaling();
+  DataChannelInit init;
+  init.maxRetransmitTime = 1;
+  init.ordered = false;
+  caller()->CreateDataChannel(&init);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_channel(), kDefaultTimeout);
+  caller()->data_channel()->Send(DataBuffer("hello first"));
+  ASSERT_EQ_WAIT(1u, callee()->data_observer()->received_message_count(),
+                 kDefaultTimeout);
+  
+  virtual_socket_server()->set_drop_probability(1.0);
+  for (int i = 1; i <= 200; i++) {
+    caller()->data_channel()->Send(DataBuffer("Sent while blocked"));
+  }
+  
+  
+  
+  WAIT(false, 10);
+  EXPECT_EQ(1u, callee()->data_observer()->received_message_count());
+  
+  virtual_socket_server()->set_drop_probability(0.0);
+  
+  caller()->data_channel()->Send(DataBuffer("After block"));
+  EXPECT_EQ_WAIT("After block", callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  
+  
+  
+  EXPECT_GT(202u, callee()->data_observer()->received_message_count());
+  EXPECT_LE(2u, callee()->data_observer()->received_message_count());
+  
+  if (webrtc::field_trial::IsEnabled("WebRTC-DataChannel-Dcsctp")) {
+    
+    EXPECT_EQ(2u, callee()->data_observer()->received_message_count());
+  } else {
+    
+    
+    
+    
+    
+    EXPECT_EQ(90u, callee()->data_observer()->received_message_count());
+  }
+}
+
+TEST_P(DataChannelIntegrationTest,
+       SomeQueuedPacketsGetDroppedInMaxRetransmitsMode) {
+  CreatePeerConnectionWrappers();
+  ConnectFakeSignaling();
+  DataChannelInit init;
+  init.maxRetransmits = 0;
+  init.ordered = false;
+  caller()->CreateDataChannel(&init);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_channel(), kDefaultTimeout);
+  caller()->data_channel()->Send(DataBuffer("hello first"));
+  ASSERT_EQ_WAIT(1u, callee()->data_observer()->received_message_count(),
+                 kDefaultTimeout);
+  
+  virtual_socket_server()->set_drop_probability(1.0);
+  
+  size_t packet_counter = 0;
+  while (caller()->data_channel()->buffered_amount() < 1 &&
+         packet_counter < 10000) {
+    packet_counter++;
+    caller()->data_channel()->Send(DataBuffer("Sent while blocked"));
+  }
+  if (caller()->data_channel()->buffered_amount()) {
+    RTC_LOG(LS_INFO) << "Buffered data after " << packet_counter << " packets";
+  } else {
+    RTC_LOG(LS_INFO) << "No buffered data after " << packet_counter
+                     << " packets";
+  }
+  
+  
+  WAIT(false, 10);
+  EXPECT_EQ(1u, callee()->data_observer()->received_message_count());
+  
+  virtual_socket_server()->set_drop_probability(0.0);
+  
+  caller()->data_channel()->Send(DataBuffer("After block"));
+  EXPECT_EQ_WAIT("After block", callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  
+  
+  
+  
+  
+  
+  
+
+  
+  EXPECT_GT(packet_counter,
+            callee()->data_observer()->received_message_count());
+  EXPECT_LE(2u, callee()->data_observer()->received_message_count());
+  
+  
+  
+  
+  EXPECT_GT(2 + packet_counter - 100,
+            callee()->data_observer()->received_message_count());
+  EXPECT_LT(2 + packet_counter - 500,
+            callee()->data_observer()->received_message_count());
 }
 
 INSTANTIATE_TEST_SUITE_P(
