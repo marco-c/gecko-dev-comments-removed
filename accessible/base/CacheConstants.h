@@ -7,6 +7,8 @@
 #ifndef _CacheConstants_h_
 #define _CacheConstants_h_
 
+#include "RelationType.h"
+
 namespace mozilla {
 namespace a11y {
 
@@ -28,6 +30,7 @@ class CacheDomain {
   static constexpr uint64_t Spelling = ((uint64_t)0x1) << 13;
   static constexpr uint64_t Viewport = ((uint64_t)0x1) << 14;
   static constexpr uint64_t ARIA = ((uint64_t)0x1) << 15;
+  static constexpr uint64_t Relations = ((uint64_t)0x1) << 16;
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 
@@ -41,6 +44,28 @@ enum class CacheUpdateType {
 
 
   Update,
+};
+
+struct RelationData {
+  nsStaticAtom* const mAtom;
+  nsStaticAtom* const mValidTag;
+  RelationType mType;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr RelationData kRelationTypeAtoms[] = {
+    {nsGkAtoms::aria_labelledby, nullptr, RelationType::LABELLED_BY},
+    {nsGkAtoms::_for, nsGkAtoms::label, RelationType::LABEL_FOR},
 };
 
 }  
