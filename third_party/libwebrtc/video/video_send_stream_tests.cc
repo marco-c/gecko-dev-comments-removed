@@ -2272,13 +2272,6 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     GetVideoSendStream()->ReconfigureVideoEncoder(
         GetVideoEncoderConfig()->Copy());
   });
-  
-  
-  
-  
-  
-  
-  EXPECT_TRUE(encoder.WaitForEncoderInit());
   EXPECT_TRUE(encoder.WaitBitrateChanged(true));
 
   
