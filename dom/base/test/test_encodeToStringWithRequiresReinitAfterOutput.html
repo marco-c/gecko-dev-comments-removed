@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1352882
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1352882 - RequiresReinitAfterOutput</title>
@@ -44,21 +44,11 @@
     ok(str, "encodingToStringWithMaxLength should be successful after calling init again");
 
     encoder = getEncoder();
-    var stream = {
-      close() {
-    },
 
-      flush() {
-    },
-
-      write(buffer, length) {
-      return length;
-    },
-
-      writeFrom(buffer, length) {
-      return length;
-    },
-    };
+    const UINT32_MAX = 4294967295;
+    let pipe = SpecialPowers.Cc["@mozilla.org/pipe;1"].createInstance(SpecialPowers.Ci.nsIPipe);
+    pipe.init(true, true, 0, UINT32_MAX, null);
+    let stream = pipe.outputStream;
 
     encoder.setCharset("utf-8");
     encoder.encodeToStream(stream);
