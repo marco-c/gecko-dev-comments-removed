@@ -101,7 +101,8 @@ class VideoReceiveStream2
                       CallStats* call_stats,
                       Clock* clock,
                       VCMTiming* timing,
-                      NackPeriodicProcessor* nack_periodic_processor);
+                      NackPeriodicProcessor* nack_periodic_processor,
+                      DecodeSynchronizer* decode_sync);
   
   
   
@@ -322,6 +323,8 @@ class VideoReceiveStream2
   
   
   FieldTrialParameter<int> maximum_pre_stream_decoders_;
+
+  DecodeSynchronizer* decode_sync_;
 
   
   rtc::TaskQueue decode_queue_;
