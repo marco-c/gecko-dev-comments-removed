@@ -109,6 +109,17 @@ def setup_webserver(webserver):
     return httpd
 
 
+def skip_test(test_instance_dict, config):
+    
+    
+    
+    if not test_instance_dict.get("pine", True) and config.get(
+        "project", ""
+    ).startswith("pine"):
+        return "Broken on the pine branch"
+    return None
+
+
 def run_tests(config, browser_config):
     """Runs the talos tests on the given configuration and generates a report."""
     
@@ -294,7 +305,7 @@ function FindProxyForURL(url, host) {
             LOG.test_start(testname)
 
             
-            skip_reason = test.get("skip_reason", None)
+            skip_reason = skip_test(test, config)
             if skip_reason is not None and skip_reason != "":
                 LOG.info("Skipping %s, reason: %s" % (testname, skip_reason))
                 LOG.test_end(
