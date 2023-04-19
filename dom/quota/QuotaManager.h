@@ -114,15 +114,9 @@ class QuotaManager final : public BackgroundThreadObject {
   static QuotaManager* Get();
 
   
-  static nsIObserver* GetObserver();
-
-  
   static bool IsShuttingDown();
 
   static void ShutdownInstance();
-
-  
-  static void Reset();
 
   static bool IsOSMetadata(const nsAString& aFileName);
 
