@@ -98,6 +98,19 @@ double I420PSNR(const I420BufferInterface& ref_buffer,
                 const I420BufferInterface& test_buffer);
 
 
+
+
+
+
+
+
+
+
+
+double I420WeightedPSNR(const I420BufferInterface& ref_buffer,
+                        const I420BufferInterface& test_buffer);
+
+
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
 double I420SSIM(const I420BufferInterface& ref_buffer,
                 const I420BufferInterface& test_buffer);

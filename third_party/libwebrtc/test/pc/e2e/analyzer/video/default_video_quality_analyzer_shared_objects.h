@@ -210,6 +210,10 @@ class VideoStreamsInfo {
 
 struct DefaultVideoQualityAnalyzerOptions {
   
+  bool compute_psnr = true;
+  bool compute_ssim = true;
+  
+  bool use_weighted_psnr = false;
   
   bool heavy_metrics_computation_enabled = true;
   
