@@ -32,6 +32,9 @@ add_task(async function() {
   await pushPref("devtools.browserconsole.input.editor", true);
 
   
+  await pushPref("devtools.browsertoolbox.scope", "everything");
+
+  
   await pushPref("security.allow_parent_unrestricted_js_loads", true);
 
   

@@ -2301,7 +2301,7 @@ pref("devtools.browsertoolbox.fission", false);
 
 
 
-pref("devtools.browsertoolbox.scope", "everything");
+pref("devtools.browsertoolbox.scope", "parent-process");
 
 
 pref("devtools.target-switching.server.enabled", true);
