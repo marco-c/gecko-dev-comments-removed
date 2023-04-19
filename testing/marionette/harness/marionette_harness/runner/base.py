@@ -1264,7 +1264,7 @@ class BaseMarionetteTestRunner(object):
                     
                     
                     self.marionette.start_session()
-                    self.marionette.quit()
+                    self.marionette.quit(in_app=True)
 
                 self.marionette.instance.close(clean=True)
                 self.marionette.instance = None

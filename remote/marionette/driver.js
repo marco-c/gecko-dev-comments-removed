@@ -2766,7 +2766,6 @@ GeckoDriver.prototype.acceptConnections = function(cmd) {
 
 
 
-
 GeckoDriver.prototype.quit = async function(cmd) {
   const { flags = [], safeMode = false } = cmd.parameters;
   const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
@@ -2842,7 +2841,6 @@ GeckoDriver.prototype.quit = async function(cmd) {
   return {
     cause: (await quitApplication).data,
     forced: cancelQuit.data,
-    in_app: true,
   };
 };
 

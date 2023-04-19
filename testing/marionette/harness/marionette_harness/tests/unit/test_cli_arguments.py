@@ -19,9 +19,20 @@ class TestCommandLineArguments(MarionetteTestCase):
 
     def tearDown(self):
         self.marionette.instance.app_args = self.orig_arguments
-        self.marionette.quit(in_app=False, clean=True)
+        self.marionette.quit(clean=True)
 
         super(TestCommandLineArguments, self).tearDown()
+
+    def is_bidi_enabled(self):
+        with self.marionette.using_context("chrome"):
+            bidi_enabled = self.marionette.execute_script(
+                """
+              const { RemoteAgent } = ChromeUtils.import(
+                "chrome://remote/content/components/RemoteAgent.jsm"
+              );
+              return !!RemoteAgent.webDriverBiDi;
+            """
+            )
 
     def test_debugger_address_cdp_status(self):
         
@@ -31,22 +42,25 @@ class TestCommandLineArguments(MarionetteTestCase):
         self.assertIsNone(debugger_address)
 
         
-        self.marionette.set_pref("remote.active-protocols", 1)
+        self.marionette.enforce_gecko_prefs({"remote.active-protocols": 1})
+        try:
+            self.marionette.quit()
+            self.marionette.instance.app_args.append("-remote-debugging-port")
+            self.marionette.start_session()
+
+            debugger_address = self.marionette.session_capabilities.get(
+                "moz:debuggerAddress"
+            )
+            self.assertIsNone(debugger_address)
+        finally:
+            self.marionette.clear_pref("remote.active-protocols")
+            self.marionette.restart()
+
+        
         self.marionette.quit()
-
-        self.marionette.instance.app_args.append("-remote-debugging-port")
+        self.marionette.instance.switch_profile()
         self.marionette.start_session()
 
-        debugger_address = self.marionette.session_capabilities.get(
-            "moz:debuggerAddress"
-        )
-        self.assertIsNone(debugger_address)
-
-        
-        self.marionette.quit(in_app=False, clean=True)
-
-        
-        self.marionette.start_session()
         debugger_address = self.marionette.session_capabilities.get(
             "moz:debuggerAddress"
         )
@@ -60,35 +74,39 @@ class TestCommandLineArguments(MarionetteTestCase):
         self.assertNotIn("webSocketUrl", self.marionette.session_capabilities)
 
         
-        self.marionette.set_pref("remote.active-protocols", 2)
+        self.marionette.enforce_gecko_prefs({"remote.active-protocols": 2})
+        try:
+            self.marionette.quit()
+            self.marionette.instance.app_args.append("-remote-debugging-port")
+            self.marionette.start_session({"webSocketUrl": True})
 
-        self.marionette.quit()
-        self.marionette.instance.app_args.append("-remote-debugging-port")
-        self.marionette.start_session({"webSocketUrl": True})
-
-        self.assertNotIn("webSocketUrl", self.marionette.session_capabilities)
+            self.assertNotIn("webSocketUrl", self.marionette.session_capabilities)
+        finally:
+            self.marionette.clear_pref("remote.active-protocols")
+            self.marionette.restart()
 
         
-        self.marionette.quit(in_app=False, clean=True)
+        if self.is_bidi_enabled():
+            self.marionette.quit()
+            self.marionette.instance.switch_profile()
+            self.marionette.start_session({"webSocketUrl": True})
 
-        
-        self.marionette.start_session({"webSocketUrl": True})
+            session_id = self.marionette.session_id
+            websocket_url = self.marionette.session_capabilities.get("webSocketUrl")
 
-        session_id = self.marionette.session_id
-        websocket_url = self.marionette.session_capabilities.get("webSocketUrl")
-
-        self.assertEqual(
-            websocket_url, "ws://127.0.0.1:9222/session/{}".format(session_id)
-        )
+            self.assertEqual(
+                websocket_url, "ws://127.0.0.1:9222/session/{}".format(session_id)
+            )
 
     
     
     
     def test_start_page_about_blank(self):
-        self.marionette.quit()
-        self.marionette.instance.app_args.append("-remote-debugging-port=0")
-        self.marionette.start_session({"webSocketUrl": True})
-        self.assertEqual(self.marionette.get_url(), "about:blank")
+        if self.is_bidi_enabled():
+            self.marionette.quit()
+            self.marionette.instance.app_args.append("-remote-debugging-port=0")
+            self.marionette.start_session({"webSocketUrl": True})
+            self.assertEqual(self.marionette.get_url(), "about:blank")
 
     def test_startup_timeout(self):
         try:
