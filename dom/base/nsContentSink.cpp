@@ -518,9 +518,6 @@ void nsContentSink::ScrollToRef() {
 }
 
 void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
-  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("nsContentSink::StartLayout", LAYOUT,
-                                        mDocumentURI->GetSpecOrDefault());
-
   if (mLayoutStarted) {
     
     return;
@@ -533,6 +530,9 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
     
     return;
   }
+
+  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_RELEVANT_FOR_JS(
+      "Layout", LAYOUT, mDocumentURI->GetSpecOrDefault());
 
   mDeferredLayoutStart = false;
 
