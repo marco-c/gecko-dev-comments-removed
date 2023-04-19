@@ -1769,11 +1769,11 @@ bool AddressRadixTree<Bits>::Set(void* aKey, void* aValue) {
 
 
 #define ALIGNMENT_ADDR2OFFSET(a, alignment) \
-  ((size_t)((uintptr_t)(a) & (alignment - 1)))
+  ((size_t)((uintptr_t)(a) & ((alignment)-1)))
 
 
 #define ALIGNMENT_CEILING(s, alignment) \
-  (((s) + (alignment - 1)) & (~(alignment - 1)))
+  (((s) + ((alignment)-1)) & (~((alignment)-1)))
 
 static void* pages_trim(void* addr, size_t alloc_size, size_t leadsize,
                         size_t size) {
@@ -1953,7 +1953,7 @@ static void* chunk_recycle(size_t aSize, size_t aAlignment, bool* aZeroed) {
 
 
 
-#  define CAN_RECYCLE(size) (size == kChunkSize)
+#  define CAN_RECYCLE(size) ((size) == kChunkSize)
 #else
 #  define CAN_RECYCLE(size) true
 #endif
@@ -3991,7 +3991,6 @@ static size_t GetKernelPageSize() {
 static bool malloc_init_hard() {
   unsigned i;
   const char* opts;
-  long result;
 
   AutoLock<StaticMutex> lock(gInitLock);
 
@@ -4006,18 +4005,18 @@ static bool malloc_init_hard() {
   }
 
   
-  result = GetKernelPageSize();
+  const size_t result = GetKernelPageSize();
   
   MOZ_ASSERT(((result - 1) & result) == 0);
 #ifdef MALLOC_STATIC_PAGESIZE
-  if (gPageSize % (size_t)result) {
+  if (gPageSize % result) {
     _malloc_message(
         _getprogname(),
         "Compile-time page size does not divide the runtime one.\n");
     MOZ_CRASH();
   }
 #else
-  gRealPageSize = gPageSize = (size_t)result;
+  gRealPageSize = gPageSize = result;
 #endif
 
   
