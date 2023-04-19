@@ -1130,8 +1130,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleInsertLinefeed(
-      const EditorDOMPoint& aInsertToBreak, const Element& aEditingHost);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  HandleInsertLinefeed(const EditorDOMPoint& aInsertToBreak,
+                       const Element& aEditingHost);
 
   
 
