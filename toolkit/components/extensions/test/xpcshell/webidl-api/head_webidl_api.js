@@ -87,7 +87,7 @@ function mockHandleAPIRequest(extPage, mockHandleAPIRequest) {
         "resource://gre/modules/ExtensionProcessScript.jsm"
       );
 
-      mockFnText = `(() => { 
+      mockFnText = `(() => {
         return (${mockFnText});
       })();`;
       
@@ -108,6 +108,7 @@ function mockHandleAPIRequest(extPage, mockHandleAPIRequest) {
     }
   );
 }
+
 
 
 
@@ -226,7 +227,7 @@ async function runExtensionAPITest(
     }
   }
 
-  async function runTestCaseInWorker(page) {
+  async function runTestCaseInWorker({ page, extension }) {
     info(`*** Run test case in an extension service worker`);
     const result = await page.spawn([], async () => {
       const { active } = await content.navigator.serviceWorker.ready;
@@ -238,7 +239,7 @@ async function runExtensionAPITest(
       });
     });
     info(`*** Assert test case results got from extension service worker`);
-    await assertTestResult(result);
+    await assertTestResult({ ...result, extension });
   }
 
   
@@ -303,7 +304,7 @@ async function runExtensionAPITest(
   registerCleanupFunction(testCleanup);
 
   await mockHandleAPIRequest(page, mockAPIRequestHandler);
-  await runTestCaseInWorker(page);
+  await runTestCaseInWorker({ page, extension });
   await testCleanup();
   info(`End test case "${testDescription}"`);
 }

@@ -510,7 +510,12 @@ var ExtensionAPIRequestHandler = {
     const { apiNamespace, apiName, args } = request;
     
     
-    return lazy.Schemas.checkParameters(context, apiNamespace, apiName, args);
+    return lazy.Schemas.checkParameters(
+      context.childManager,
+      apiNamespace,
+      apiName,
+      args
+    );
   },
 };
 
