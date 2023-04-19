@@ -866,47 +866,58 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   
   
   Element* content = window->GetFocusedElement();
-  if (content &&
-      nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
-    window->SetFocusedElement(nullptr);
+  if (!content) {
+    return NS_OK;
+  }
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
+    return NS_OK;
+  }
 
+  Element* newFocusedElement = [&]() -> Element* {
+    if (auto* sr = ShadowRoot::FromNode(aContent)) {
+      if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
+        return sr->Host();
+      }
+    }
+    return nullptr;
+  }();
+
+  window->SetFocusedElement(newFocusedElement);
+
+  
+  
+  if (window->GetBrowsingContext() == GetFocusedBrowsingContext()) {
+    mFocusedElement = newFocusedElement;
+  } else {
     
     
-    if (window->GetBrowsingContext() == GetFocusedBrowsingContext()) {
-      mFocusedElement = nullptr;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      Document* subdoc = aDocument->GetSubDocumentFor(content);
-      if (subdoc) {
-        nsCOMPtr<nsIDocShell> docShell = subdoc->GetDocShell();
-        if (docShell) {
-          nsCOMPtr<nsPIDOMWindowOuter> childWindow = docShell->GetWindow();
-          if (childWindow &&
-              IsSameOrAncestor(childWindow, GetFocusedBrowsingContext())) {
-            if (XRE_IsParentProcess()) {
-              nsCOMPtr<nsPIDOMWindowOuter> activeWindow = mActiveWindow;
-              ClearFocus(activeWindow);
-            } else {
-              BrowsingContext* active = GetActiveBrowsingContext();
-              if (active) {
-                if (active->IsInProcess()) {
-                  nsCOMPtr<nsPIDOMWindowOuter> activeWindow =
-                      active->GetDOMWindow();
-                  ClearFocus(activeWindow);
-                } else {
-                  mozilla::dom::ContentChild* contentChild =
-                      mozilla::dom::ContentChild::GetSingleton();
-                  MOZ_ASSERT(contentChild);
-                  contentChild->SendClearFocus(active);
-                }
-              }  
-            }
+    
+    
+    
+    
+    
+    if (Document* subdoc = aDocument->GetSubDocumentFor(content)) {
+      if (nsCOMPtr<nsIDocShell> docShell = subdoc->GetDocShell()) {
+        nsCOMPtr<nsPIDOMWindowOuter> childWindow = docShell->GetWindow();
+        if (childWindow &&
+            IsSameOrAncestor(childWindow, GetFocusedBrowsingContext())) {
+          if (XRE_IsParentProcess()) {
+            nsCOMPtr<nsPIDOMWindowOuter> activeWindow = mActiveWindow;
+            ClearFocus(activeWindow);
+          } else {
+            BrowsingContext* active = GetActiveBrowsingContext();
+            if (active) {
+              if (active->IsInProcess()) {
+                nsCOMPtr<nsPIDOMWindowOuter> activeWindow =
+                    active->GetDOMWindow();
+                ClearFocus(activeWindow);
+              } else {
+                mozilla::dom::ContentChild* contentChild =
+                    mozilla::dom::ContentChild::GetSingleton();
+                MOZ_ASSERT(contentChild);
+                contentChild->SendClearFocus(active);
+              }
+            }  
           }
         }
       }
@@ -914,10 +925,8 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
 
     
     if (content->IsEditable()) {
-      nsCOMPtr<nsIDocShell> docShell = aDocument->GetDocShell();
-      if (docShell) {
-        RefPtr<HTMLEditor> htmlEditor = docShell->GetHTMLEditor();
-        if (htmlEditor) {
+      if (nsCOMPtr<nsIDocShell> docShell = aDocument->GetDocShell()) {
+        if (RefPtr<HTMLEditor> htmlEditor = docShell->GetHTMLEditor()) {
           RefPtr<Selection> selection = htmlEditor->GetSelection();
           if (selection && selection->GetFrameSelection() &&
               content == selection->GetFrameSelection()->GetAncestorLimiter()) {
@@ -927,8 +936,14 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       }
     }
 
-    NotifyFocusStateChange(content, nullptr, 0,  false,
-                           false);
+    if (!newFocusedElement) {
+      NotifyFocusStateChange(content, newFocusedElement, 0,  false,
+                            false);
+    } else {
+      
+      
+      MOZ_ASSERT(newFocusedElement->State().HasState(ElementState::FOCUS));
+    }
   }
 
   return NS_OK;
