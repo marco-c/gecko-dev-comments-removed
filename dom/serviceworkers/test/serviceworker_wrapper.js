@@ -3,7 +3,7 @@
 
 
 
-var client;
+let client;
 
 function ok(a, msg) {
   dump("OK: " + !!a + "  =>  " + a + ": " + msg + "\n");
@@ -61,7 +61,7 @@ function workerTestGetStorageManager(cb) {
   });
 }
 
-var completeInstall;
+let completeInstall;
 
 addEventListener("message", function workerWrapperOnMessage(e) {
   removeEventListener("message", workerWrapperOnMessage);

@@ -48,12 +48,12 @@ const isCrossOriginIsolated = window.crossOriginIsolated;
 
 
 
-var wasmGlobalEntry = {
+let wasmGlobalEntry = {
   name: "WebAssembly",
   insecureContext: true,
   disabled: !SpecialPowers.Cu.getJSTestingFunctions().wasmIsSupportedByHardware(),
 };
-var wasmGlobalInterfaces = [
+let wasmGlobalInterfaces = [
   { name: "Module", insecureContext: true },
   { name: "Instance", insecureContext: true },
   { name: "Memory", insecureContext: true },
@@ -78,7 +78,7 @@ var wasmGlobalInterfaces = [
 ];
 
 
-var ecmaGlobals = [
+let ecmaGlobals = [
   { name: "AggregateError", insecureContext: true },
   { name: "Array", insecureContext: true },
   { name: "ArrayBuffer", insecureContext: true },
@@ -143,7 +143,7 @@ var ecmaGlobals = [
 
 
 
-var legacyMozPrefixedInterfaces = [
+let legacyMozPrefixedInterfaces = [
   "mozContact",
   "mozRTCIceCandidate",
   "mozRTCPeerConnection",
@@ -154,7 +154,7 @@ var legacyMozPrefixedInterfaces = [
 
 
 
-var interfaceNamesInGlobalScope = [
+let interfaceNamesInGlobalScope = [
   
   { name: "AbortController", insecureContext: true },
   
