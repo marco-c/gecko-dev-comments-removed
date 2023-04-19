@@ -6,235 +6,7 @@
 
 requestLongerTimeout(3);
 
-const TEST_DOMAIN_A = "example.com";
-const TEST_DOMAIN_B = "example.org";
-const TEST_DOMAIN_C = "example.net";
-
-const TEST_ORIGIN_A = "https://" + TEST_DOMAIN_A;
-const TEST_ORIGIN_B = "https://" + TEST_DOMAIN_B;
-const TEST_ORIGIN_C = "https://" + TEST_DOMAIN_C;
-
-const TEST_PATH = getRootDirectory(gTestPath).replace(
-  "chrome://mochitests/content",
-  ""
-);
-
-const TEST_PAGE_A = TEST_ORIGIN_A + TEST_PATH + "file_banner.html";
-const TEST_PAGE_B = TEST_ORIGIN_B + TEST_PATH + "file_banner.html";
-
-const TEST_PAGE_C = TEST_ORIGIN_C + TEST_PATH + "file_banner_b.html";
-
-function genUUID() {
-  return Services.uuid.generateUUID().number.slice(1, -1);
-}
-
-
-
-
-
-
-
-function promiseBannerClickingFinish(domain) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer(subject, topic, data) {
-      if (data != domain) {
-        return;
-      }
-
-      Services.obs.removeObserver(
-        observer,
-        "cookie-banner-test-clicking-finish"
-      );
-      resolve();
-    }, "cookie-banner-test-clicking-finish");
-  });
-}
-
-
-
-
-
-
-
-
-
-async function verifyBannerState(bc, visible, expected, bannerId = "banner") {
-  info("Verify the cookie banner state.");
-
-  await SpecialPowers.spawn(
-    bc,
-    [visible, expected, bannerId],
-    (visible, expected, bannerId) => {
-      let banner = content.document.getElementById(bannerId);
-
-      is(
-        banner.checkVisibility({
-          checkOpacity: true,
-          checkVisibilityCSS: true,
-        }),
-        visible,
-        `The banner element should be ${visible ? "visible" : "hidden"}`
-      );
-
-      let result = content.document.getElementById("result");
-
-      is(result.textContent, expected, "The build click state is correct.");
-    }
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-async function openPageAndVerify({
-  win = window,
-  domain,
-  testURL,
-  visible,
-  expected,
-  bannerId = "banner",
-}) {
-  info(`Opening ${testURL}`);
-  let promise = promiseBannerClickingFinish(domain);
-
-  let tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser, testURL);
-
-  await promise;
-
-  await verifyBannerState(tab.linkedBrowser, visible, expected, bannerId);
-
-  BrowserTestUtils.removeTab(tab);
-}
-
-
-
-
-
-
-
-
-
-
-
-async function openIframeAndVerify({
-  win,
-  domain,
-  testURL,
-  visible,
-  expected,
-}) {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    win.gBrowser,
-    TEST_ORIGIN_C
-  );
-
-  let promise = promiseBannerClickingFinish(domain);
-
-  let iframeBC = await SpecialPowers.spawn(
-    tab.linkedBrowser,
-    [testURL],
-    async testURL => {
-      let iframe = content.document.createElement("iframe");
-      iframe.src = testURL;
-      content.document.body.appendChild(iframe);
-      await ContentTaskUtils.waitForEvent(iframe, "load");
-
-      return iframe.browsingContext;
-    }
-  );
-
-  await promise;
-  await verifyBannerState(iframeBC, visible, expected);
-
-  BrowserTestUtils.removeTab(tab);
-}
-
-
-
-
-function insertTestRules() {
-  info("Clearing existing rules");
-  Services.cookieBanners.resetRules(false);
-
-  info("Inserting test rules.");
-
-  info("Add opt-out click rule for DOMAIN_A.");
-  let ruleA = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
-    Ci.nsICookieBannerRule
-  );
-  ruleA.id = genUUID();
-  ruleA.domain = TEST_DOMAIN_A;
-
-  ruleA.addClickRule("div#banner", null, "button#optOut", "button#optIn");
-  Services.cookieBanners.insertRule(ruleA);
-
-  info("Add opt-in click rule for DOMAIN_B.");
-  let ruleB = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
-    Ci.nsICookieBannerRule
-  );
-  ruleB.id = genUUID();
-  ruleB.domain = TEST_DOMAIN_B;
-
-  ruleB.addClickRule("div#banner", null, null, "button#optIn");
-  Services.cookieBanners.insertRule(ruleB);
-
-  info("Add global ruleC which targets a non-existing banner (presence).");
-  let ruleC = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
-    Ci.nsICookieBannerRule
-  );
-  ruleC.id = genUUID();
-  ruleC.domain = "*";
-  ruleC.addClickRule("div#nonExistingBanner", null, null, "button#optIn");
-  Services.cookieBanners.insertRule(ruleC);
-
-  info("Add global ruleD which targets a non-existing banner (presence).");
-  let ruleD = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
-    Ci.nsICookieBannerRule
-  );
-  ruleD.id = genUUID();
-  ruleD.domain = "*";
-  ruleD.addClickRule(
-    "div#nonExistingBanner2",
-    null,
-    "button#optOut",
-    "button#optIn"
-  );
-  Services.cookieBanners.insertRule(ruleD);
-}
-
-add_setup(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      ["cookiebanners.listService.logLevel", "Debug"],
-      ["cookiebanners.bannerClicking.logLevel", "Debug"],
-      ["cookiebanners.bannerClicking.testing", true],
-      ["cookiebanners.bannerClicking.timeout", 500],
-      ["cookiebanners.bannerClicking.enabled", true],
-    ],
-  });
-
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("cookiebanners.service.mode");
-    Services.prefs.clearUserPref("cookiebanners.service.mode.privateBrowsing");
-    if (
-      Services.prefs.getIntPref("cookiebanners.service.mode") !=
-        Ci.nsICookieBannerService.MODE_DISABLED ||
-      Services.prefs.getIntPref("cookiebanners.service.mode.privateBrowsing") !=
-        Ci.nsICookieBannerService.MODE_DISABLED
-    ) {
-      
-      Services.cookieBanners.resetRules(true);
-    }
-  });
-});
+add_setup(clickTestSetup);
 
 
 
@@ -291,7 +63,7 @@ add_task(async function test_clicking_mode_reject() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   await openPageAndVerify({
     win: window,
@@ -324,7 +96,7 @@ add_task(async function test_clicking_mode_reject_or_accept() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   await openPageAndVerify({
     win: window,
@@ -354,7 +126,7 @@ add_task(async function test_clicking_with_delayed_banner() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   let TEST_PAGE =
     TEST_ORIGIN_A + TEST_PATH + "file_delayed_banner.html?delay=100";
@@ -377,7 +149,7 @@ add_task(async function test_embedded_iframe() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   await openIframeAndVerify({
     win: window,
@@ -401,7 +173,7 @@ add_task(async function test_pbm() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   let pbmWindow = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -433,7 +205,7 @@ add_task(async function test_pref_pbm_pref() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   let pbmWindow = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -534,7 +306,7 @@ add_task(async function test_embedded_iframe_pbm() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   let pbmWindow = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
@@ -701,7 +473,7 @@ add_task(async function test_domain_preference() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   for (let testPBM of [false, true]) {
     let testWin = window;
@@ -763,7 +535,7 @@ add_task(async function test_domain_preference_iframe() {
     ],
   });
 
-  insertTestRules();
+  insertTestClickRules();
 
   for (let testPBM of [false, true]) {
     let testWin = window;
