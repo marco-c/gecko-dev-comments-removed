@@ -62,7 +62,7 @@ enum class ObjectFlag : uint16_t {
   HadGetterSetterChange = 1 << 10,
 
   
-  UseWatchtowerTestingCallback = 1 << 11,
+  UseWatchtowerTestingLog = 1 << 11,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;
