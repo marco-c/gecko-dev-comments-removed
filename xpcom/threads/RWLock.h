@@ -11,6 +11,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/PlatformRWLock.h"
 #include "mozilla/ThreadSafety.h"
@@ -181,16 +182,7 @@ typedef BaseAutoTryWriteLock<RWLock> AutoTryWriteLock;
 
 typedef BaseAutoWriteLock<RWLock> AutoWriteLock;
 
-
-
-
-
-
-
-
-namespace detail {
-
-class MOZ_CAPABILITY StaticRWLock {
+class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS MOZ_CAPABILITY StaticRWLock {
  public:
   
   
@@ -244,8 +236,6 @@ typedef BaseAutoTryReadLock<StaticRWLock> StaticAutoTryReadLock;
 typedef BaseAutoReadLock<StaticRWLock> StaticAutoReadLock;
 typedef BaseAutoTryWriteLock<StaticRWLock> StaticAutoTryWriteLock;
 typedef BaseAutoWriteLock<StaticRWLock> StaticAutoWriteLock;
-
-}  
 
 }  
 

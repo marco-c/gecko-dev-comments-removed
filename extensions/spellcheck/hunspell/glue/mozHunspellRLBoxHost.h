@@ -102,7 +102,7 @@ class mozHunspellCallbacks {
   
 
 
-  static mozilla::detail::StaticRWLock sFileMgrMapLock;
+  static mozilla::StaticRWLock sFileMgrMapLock;
   
 
 
