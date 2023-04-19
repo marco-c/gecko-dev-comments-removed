@@ -1369,11 +1369,9 @@ static inline void ApplyZeroOrJunk(void* aPtr, size_t aSize) {
 
 
 static bool sShouldAlwaysStall = true;
-MOZ_JEMALLOC_API void mozjemalloc_experiment_win_set_always_stall(bool aVal) {
+MOZ_JEMALLOC_API void mozjemalloc_win_set_always_stall(bool aVal) {
   sShouldAlwaysStall = aVal;
 }
-
-#  ifdef MOZ_STALL_ON_OOM
 
 
 namespace MozAllocRetries {
@@ -1455,9 +1453,6 @@ static bool ShouldStallAndRetry() {
 }  
 
 using MozAllocRetries::MozVirtualAlloc;
-#  else
-#    define MozVirtualAlloc VirtualAlloc
-#  endif  
 #endif    
 
 

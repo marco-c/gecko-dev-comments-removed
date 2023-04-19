@@ -63,7 +63,7 @@ static inline void jemalloc_stats(jemalloc_stats_t* aStats) {
 
 
 #  if defined(XP_WIN)
-MOZ_JEMALLOC_API void mozjemalloc_experiment_win_set_always_stall(bool);
+MOZ_JEMALLOC_API void mozjemalloc_win_set_always_stall(bool);
 #  endif
 
 #endif  

@@ -275,8 +275,7 @@ void XRE_SetProcessType(const char* aProcessTypeString) {
   
   
   
-  mozjemalloc_experiment_win_set_always_stall(processType ==
-                                              GeckoProcessType_Default);
+  mozjemalloc_win_set_always_stall(processType == GeckoProcessType_Default);
 #endif
 }
 
