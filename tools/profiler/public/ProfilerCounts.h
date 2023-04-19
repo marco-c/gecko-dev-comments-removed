@@ -99,29 +99,15 @@ class BaseProfilerCount {
 #  endif
   }
 
-  struct CountSample {
-    int64_t count;
-    uint64_t number;
-    
-    
-    
-    
-    
-    
-    bool isSampleNew;
-  };
-  virtual CountSample Sample() {
+  virtual void Sample(int64_t& aCounter, uint64_t& aNumber) {
     MOZ_ASSERT(mCanary == COUNTER_CANARY);
 
-    CountSample result;
-    result.count = *mCounter;
-    result.number = mNumber ? *mNumber : 0;
+    aCounter = *mCounter;
+    aNumber = mNumber ? *mNumber : 0;
 #  ifdef DEBUG
-    MOZ_ASSERT(result.number >= mPrevNumber);
-    mPrevNumber = result.number;
+    MOZ_ASSERT(aNumber >= mPrevNumber);
+    mPrevNumber = aNumber;
 #  endif
-    result.isSampleNew = true;
-    return result;
   }
 
   void Clear() {

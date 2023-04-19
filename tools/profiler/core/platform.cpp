@@ -31,7 +31,6 @@
 #include "GeckoProfiler.h"
 #include "GeckoProfilerReporter.h"
 #include "PageInformation.h"
-#include "PowerCounters.h"
 #include "ProfileBuffer.h"
 #include "ProfiledThreadData.h"
 #include "ProfilerBacktrace.h"
@@ -768,7 +767,6 @@ class ActivePS {
         mMaybeProcessCPUCounter(ProfilerFeature::HasProcessCPU(aFeatures)
                                     ? new ProcessCPUCounter(aLock)
                                     : nullptr),
-        mMaybePowerCounters(nullptr),
         
         
         
@@ -814,23 +812,12 @@ class ActivePS {
       }
     }
 #endif
-
-    if (ProfilerFeature::HasPower(aFeatures)) {
-      mMaybePowerCounters = new PowerCounters();
-      for (const auto& powerCounter : mMaybePowerCounters->GetCounters()) {
-        locked_profiler_add_sampled_counter(aLock, powerCounter);
-      }
-    }
   }
 
   ~ActivePS() {
     MOZ_ASSERT(
         !mMaybeProcessCPUCounter,
         "mMaybeProcessCPUCounter should have been deleted before ~ActivePS()");
-    MOZ_ASSERT(
-        !mMaybePowerCounters,
-        "mMaybePowerCounters should have been deleted before ~ActivePS()");
-
 #if !defined(RELEASE_OR_BETA)
     if (ShouldInterposeIOs()) {
       
@@ -901,16 +888,6 @@ class ActivePS {
       delete sInstance->mMaybeProcessCPUCounter;
       sInstance->mMaybeProcessCPUCounter = nullptr;
     }
-
-    if (sInstance->mMaybePowerCounters) {
-      for (const auto& powerCounter :
-           sInstance->mMaybePowerCounters->GetCounters()) {
-        locked_profiler_remove_sampled_counter(aLock, powerCounter);
-      }
-      delete sInstance->mMaybePowerCounters;
-      sInstance->mMaybePowerCounters = nullptr;
-    }
-
     auto samplerThread = sInstance->mSamplerThread;
     delete sInstance;
     sInstance = nullptr;
@@ -1215,8 +1192,6 @@ class ActivePS {
   };
   PS_GET(ProcessCPUCounter*, MaybeProcessCPUCounter);
 
-  PS_GET(PowerCounters*, MaybePowerCounters);
-
   PS_GET_AND_SET(bool, IsPaused)
 
   
@@ -1443,9 +1418,6 @@ class ActivePS {
 
   
   ProcessCPUCounter* mMaybeProcessCPUCounter;
-
-  
-  PowerCounters* mMaybePowerCounters;
 
   
   
@@ -3947,36 +3919,33 @@ void SamplerThread::Run() {
           }
         }
 
-        if (PowerCounters* powerCounters = ActivePS::MaybePowerCounters(lock);
-            powerCounters) {
-          powerCounters->Sample();
-        }
-
         
         const Vector<BaseProfilerCount*>& counters = CorePS::Counters(lock);
         for (auto& counter : counters) {
-          if (auto sample = counter->Sample(); sample.isSampleNew) {
-            
-            buffer.AddEntry(ProfileBufferEntry::CounterId(counter));
-            buffer.AddEntry(ProfileBufferEntry::Time(sampleStartDeltaMs));
+          
+          buffer.AddEntry(ProfileBufferEntry::CounterId(counter));
+          buffer.AddEntry(ProfileBufferEntry::Time(sampleStartDeltaMs));
+          
+          
+          
+          
+          int64_t count;
+          uint64_t number;
+          counter->Sample(count, number);
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-            if (ActivePS::IsMemoryCounter(counter)) {
-              
-              
-              
-              
-              sample.count -= static_cast<int64_t>(
-                  ActivePS::ControlledChunkManager(lock).TotalSize());
-            }
+          if (ActivePS::IsMemoryCounter(counter)) {
+            
+            
+            
+            
+            count -= static_cast<int64_t>(
+                ActivePS::ControlledChunkManager(lock).TotalSize());
+          }
 #endif
-            
-            
-            
-            buffer.AddEntry(ProfileBufferEntry::CounterKey(0));
-            buffer.AddEntry(ProfileBufferEntry::Count(sample.count));
-            if (sample.number) {
-              buffer.AddEntry(ProfileBufferEntry::Number(sample.number));
-            }
+          buffer.AddEntry(ProfileBufferEntry::CounterKey(0));
+          buffer.AddEntry(ProfileBufferEntry::Count(count));
+          if (number) {
+            buffer.AddEntry(ProfileBufferEntry::Number(number));
           }
         }
         TimeStamp countersSampled = TimeStamp::Now();
