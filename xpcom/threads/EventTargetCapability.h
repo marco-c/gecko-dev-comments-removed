@@ -49,6 +49,10 @@ namespace mozilla {
 
 
 
+
+
+
+
 template <typename T>
 class MOZ_CAPABILITY EventTargetCapability final {
   static_assert(std::is_base_of_v<nsIEventTarget, T>,

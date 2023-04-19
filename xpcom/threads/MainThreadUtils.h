@@ -7,6 +7,7 @@
 #ifndef MainThreadUtils_h_
 #define MainThreadUtils_h_
 
+#include "mozilla/ThreadSafety.h"
 #include "nscore.h"
 
 class nsIThread;
@@ -27,10 +28,23 @@ bool NS_IsMainThread();
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+class MOZ_CAPABILITY MainThreadCapability final {};
+constexpr MainThreadCapability sMainThreadCapability;
+
 #  ifdef DEBUG
-void AssertIsOnMainThread();
+void AssertIsOnMainThread() MOZ_ASSERT_CAPABILITY(sMainThreadCapability);
 #  else
-inline void AssertIsOnMainThread() {}
+inline void AssertIsOnMainThread()
+    MOZ_ASSERT_CAPABILITY(sMainThreadCapability) {}
 #  endif
 
 }  
