@@ -2556,10 +2556,10 @@ BrowserGlue.prototype = {
           );
 
           if (
-            !shellService.hasMatchingShortcut(
+            !(await shellService.hasMatchingShortcut(
               winTaskbar.defaultPrivateGroupId,
               true
-            )
+            ))
           ) {
             let appdir = Services.dirsvc.get("GreD", Ci.nsIFile);
             let exe = appdir.clone();
@@ -2571,7 +2571,7 @@ BrowserGlue.prototype = {
             let [desc] = await strings.formatValues([
               "private-browsing-shortcut-text",
             ]);
-            shellService.createShortcut(
+            await shellService.createShortcut(
               exe,
               [],
               desc,
@@ -2583,11 +2583,16 @@ BrowserGlue.prototype = {
               desc + ".lnk",
               appdir
             );
-            Services.prefs.setBoolPref(
-              PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
-              true
-            );
           }
+          
+          
+          
+          
+          
+          Services.prefs.setBoolPref(
+            PREF_PRIVATE_BROWSING_SHORTCUT_CREATED,
+            true
+          );
         },
       },
 
