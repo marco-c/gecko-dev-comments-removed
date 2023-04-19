@@ -3192,6 +3192,12 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
 
       nsTHashSet<LocalAccessible*> inViewAccs;
       nsTArray<uint64_t> viewportCache;
+      
+      
+      
+      
+      
+      LocalAccessible* prevParentRow = nullptr;
       for (nsIFrame* frame : frames) {
         nsIContent* content = frame->GetContent();
         if (!content) {
@@ -3210,8 +3216,28 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         if (acc->IsTextLeaf() && nsAccUtils::MustPrune(acc->LocalParent())) {
           acc = acc->LocalParent();
         }
-
-        if (acc->IsImageMap()) {
+        if (acc->IsTableCell()) {
+          LocalAccessible* parent = acc->LocalParent();
+          if (parent && parent->IsTableRow() && parent != prevParentRow) {
+            
+            
+            
+            if (prevParentRow && inViewAccs.EnsureInserted(prevParentRow)) {
+              viewportCache.AppendElement(prevParentRow->ID());
+            }
+            prevParentRow = parent;
+          }
+        } else if (acc->IsTable()) {
+          
+          
+          
+          
+          
+          if (prevParentRow && inViewAccs.EnsureInserted(prevParentRow)) {
+            viewportCache.AppendElement(prevParentRow->ID());
+          }
+          prevParentRow = nullptr;
+        } else if (acc->IsImageMap()) {
           
           
           

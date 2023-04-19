@@ -889,6 +889,18 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   CoalesceMutationEvents();
   ProcessMutationEvents();
+
+  
+  
+  
+  
+  
+  
+  
+  if (IPCAccessibilityActive() && mDocument) {
+    mDocument->ProcessQueuedCacheUpdates();
+  }
+
   mEventGeneration = 0;
 
   

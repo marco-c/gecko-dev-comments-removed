@@ -1003,17 +1003,61 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
       state &= ~states::OPAQUE1;
     }
 
+    auto* browser = static_cast<dom::BrowserParent*>(Document()->Manager());
+    if (browser == dom::BrowserParent::GetFocused()) {
+      if (this == Document()->GetFocusedAcc()) {
+        state |= states::FOCUSED;
+      }
+    }
+
     auto* cbc = mDoc->GetBrowsingContext();
     if (cbc && !cbc->IsActive()) {
+      
+      
       state |= states::OFFSCREEN;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!mDoc->IsTopLevel()) {
+        
+        
+        
+        Accessible* docParent = mDoc->Parent();
+        
+        
+        if (NS_WARN_IF(!docParent || !docParent->IsRemote())) {
+          return state;
+        }
+
+        RemoteAccessible* outerDoc = docParent->AsRemote();
+        DocAccessibleParent* embeddingDocument = outerDoc->Document();
+        if (embeddingDocument &&
+            !embeddingDocument->mOnScreenAccessibles.Contains(outerDoc->ID())) {
+          
+          
+          
+          state |= states::OFFSCREEN;
+        } else if (this != mDoc && !mDoc->mOnScreenAccessibles.Contains(ID())) {
+          
+          
+          
+          state |= states::OFFSCREEN;
+        }
+      } else if (this != mDoc && !mDoc->mOnScreenAccessibles.Contains(ID())) {
+        
+        
+        
+        state |= states::OFFSCREEN;
+      }
     }
   }
-  auto* browser = static_cast<dom::BrowserParent*>(Document()->Manager());
-  if (browser == dom::BrowserParent::GetFocused()) {
-    if (this == Document()->GetFocusedAcc()) {
-      state |= states::FOCUSED;
-    }
-  }
+
   return state;
 }
 
