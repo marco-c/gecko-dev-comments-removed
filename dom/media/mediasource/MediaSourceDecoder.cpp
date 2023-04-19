@@ -51,7 +51,7 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
   init.mFrameStats = mFrameStats;
   init.mMediaDecoderOwnerID = mOwner;
   mReader = new MediaFormatReader(init, mDemuxer);
-#ifdef MOZ_WMF
+#ifdef MOZ_WMF_MEDIA_ENGINE
   
   
   if (StaticPrefs::media_wmf_media_engine_enabled() &&

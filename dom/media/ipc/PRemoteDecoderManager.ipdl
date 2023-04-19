@@ -3,7 +3,7 @@
 
 
 
-#ifdef MOZ_WMF
+#ifdef MOZ_WMF_MEDIA_ENGINE
   include protocol PMFMediaEngine;
 #endif
 include protocol PTexture;
@@ -37,12 +37,12 @@ union RemoteDecoderInfoIPDL
 sync protocol PRemoteDecoderManager
 {
   manages PRemoteDecoder;
-#ifdef MOZ_WMF
+#ifdef MOZ_WMF_MEDIA_ENGINE
   manages PMFMediaEngine;
 #endif
 
 parent:
-#ifdef MOZ_WMF
+#ifdef MOZ_WMF_MEDIA_ENGINE
   async PMFMediaEngine();
 #endif
   async PRemoteDecoder(RemoteDecoderInfoIPDL info,
