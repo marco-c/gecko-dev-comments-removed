@@ -1,3 +1,5 @@
+"use strict";
+
 requestLongerTimeout(8);
 
 const CHROME_BASE =
@@ -5,9 +7,9 @@ const CHROME_BASE =
 Services.scriptloader.loadSubScript(CHROME_BASE + "head.js", this);
 
 
-async function openAWindow(private) {
-  info("Creating a new " + (private ? "private" : "normal") + " window");
-  let win = OpenBrowserWindow({ private });
+async function openAWindow(usePrivate) {
+  info("Creating a new " + (usePrivate ? "private" : "normal") + " window");
+  let win = OpenBrowserWindow({ private: usePrivate });
   await TestUtils.topicObserved(
     "browser-delayed-startup-finished",
     subject => subject == win
@@ -113,12 +115,12 @@ let gTests = { private: [], nonPrivate: [] };
 const kPBPref = "network.http.referer.defaultPolicy.trackers.pbmode";
 const kNonPBPref = "network.http.referer.defaultPolicy.trackers";
 
-function recordScenario(private, expectedReferrer, rp) {
+function recordScenario(isPrivate, expectedReferrer, rp) {
   if (!gRPs.includes(rp)) {
     gRPs.push(rp);
   }
   gScenarios.push({
-    private,
+    private: isPrivate,
     expectedReferrer,
     rp,
     pbPref: Services.prefs.getIntPref(kPBPref),
@@ -126,9 +128,9 @@ function recordScenario(private, expectedReferrer, rp) {
   });
 }
 
-async function testOnWindow(private, expectedReferrer, rp) {
+async function testOnWindow(isPrivate, expectedReferrer, rp) {
   if (gRecording) {
-    recordScenario(private, expectedReferrer, rp);
+    recordScenario(isPrivate, expectedReferrer, rp);
   }
 }
 
@@ -167,10 +169,10 @@ function compileScenarios() {
   for (let s of gScenarios) {
     let checked = false;
     for (let tt in gTests) {
-      let private = tt == "private";
+      let isPrivate = tt == "private";
       for (let t of gTests[tt]) {
         if (
-          private == s.private &&
+          isPrivate == s.private &&
           t.rp == s.rp &&
           t.pbPref == s.pbPref &&
           t.nonPBPref == s.nonPBPref &&
@@ -216,63 +218,63 @@ async function executeTests() {
   Services.prefs.clearUserPref(kNonPBPref);
 }
 
-function pn(name, private) {
-  return private ? name + ".pbmode" : name;
+function pn(name, isPrivate) {
+  return isPrivate ? name + ".pbmode" : name;
 }
 
-async function testOnNoReferrer(private) {
+async function testOnNoReferrer(isPrivate) {
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
   });
-  await testOnWindow(private, "", "no-referrer");
+  await testOnWindow(isPrivate, "", "no-referrer");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
   });
-  await testOnWindow(private, "", "no-referrer");
+  await testOnWindow(isPrivate, "", "no-referrer");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
   });
-  await testOnWindow(private, "", "no-referrer");
+  await testOnWindow(isPrivate, "", "no-referrer");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
   });
-  await testOnWindow(private, "", "no-referrer");
+  await testOnWindow(isPrivate, "", "no-referrer");
 }
 
-async function testOnSameOrigin(private) {
+async function testOnSameOrigin(isPrivate) {
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
   });
-  await testOnWindow(private, "", "same-origin");
+  await testOnWindow(isPrivate, "", "same-origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
   });
-  await testOnWindow(private, "", "same-origin");
+  await testOnWindow(isPrivate, "", "same-origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
   });
-  await testOnWindow(private, "", "same-origin");
+  await testOnWindow(isPrivate, "", "same-origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
   });
-  await testOnWindow(private, "", "same-origin");
+  await testOnWindow(isPrivate, "", "same-origin");
 }
 
-async function testOnNoReferrerWhenDowngrade(private) {
+async function testOnNoReferrerWhenDowngrade(isPrivate) {
   
   
   
@@ -282,200 +284,200 @@ async function testOnNoReferrerWhenDowngrade(private) {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  await testOnWindow(isPrivate, TEST_TOP_PAGE, "no-referrer-when-downgrade");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
   });
-  if (private) {
-    await testOnWindow(private, TEST_DOMAIN, "no-referrer-when-downgrade");
+  if (isPrivate) {
+    await testOnWindow(isPrivate, TEST_DOMAIN, "no-referrer-when-downgrade");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "no-referrer-when-downgrade");
   }
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
   });
-  if (private) {
-    await testOnWindow(private, "", "no-referrer-when-downgrade");
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "no-referrer-when-downgrade");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "no-referrer-when-downgrade");
   }
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
   });
-  if (private) {
-    await testOnWindow(private, "", "no-referrer-when-downgrade");
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "no-referrer-when-downgrade");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
-  }
-}
-
-async function testOnOrigin(private) {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "origin");
-}
-
-async function testOnStrictOrigin(private) {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
-}
-
-async function testOnOriginWhenCrossOrigin(private) {
-  
-  
-  
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
-  });
-  if (private) {
-    await testOnWindow(private, TEST_TOP_PAGE, "origin-when-cross-origin");
-  } else {
-    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
-  }
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
-  });
-  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
-  });
-  if (private) {
-    await testOnWindow(private, "", "origin-when-cross-origin");
-  } else {
-    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
-  }
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
-  });
-  if (private) {
-    await testOnWindow(private, "", "origin-when-cross-origin");
-  } else {
-    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "no-referrer-when-downgrade");
   }
 }
 
-async function testOnStrictOriginWhenCrossOrigin(private) {
+async function testOnOrigin(isPrivate) {
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+  await testOnWindow(isPrivate, TEST_DOMAIN, "origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+  await testOnWindow(isPrivate, TEST_DOMAIN, "origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+  await testOnWindow(isPrivate, TEST_DOMAIN, "origin");
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+  await testOnWindow(isPrivate, TEST_DOMAIN, "origin");
 }
 
-async function testOnUnsafeUrl(private) {
+async function testOnStrictOrigin(isPrivate) {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin");
+}
+
+async function testOnOriginWhenCrossOrigin(isPrivate) {
   
   
   
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
-  });
-  if (private) {
-    await testOnWindow(private, TEST_DOMAIN, "unsafe-url");
+  if (isPrivate) {
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "origin-when-cross-origin");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+    await testOnWindow(isPrivate, TEST_DOMAIN, "origin-when-cross-origin");
   }
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
   });
-  if (private) {
-    await testOnWindow(private, "", "unsafe-url");
+  await testOnWindow(isPrivate, TEST_DOMAIN, "origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
+  });
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "origin-when-cross-origin");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+    await testOnWindow(isPrivate, TEST_DOMAIN, "origin-when-cross-origin");
   }
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
   });
-  if (private) {
-    await testOnWindow(private, "", "unsafe-url");
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "origin-when-cross-origin");
   } else {
-    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+    await testOnWindow(isPrivate, TEST_DOMAIN, "origin-when-cross-origin");
+  }
+}
+
+async function testOnStrictOriginWhenCrossOrigin(isPrivate) {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
+  });
+  await testOnWindow(isPrivate, TEST_DOMAIN, "strict-origin-when-cross-origin");
+}
+
+async function testOnUnsafeUrl(isPrivate) {
+  
+  
+  
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 3]],
+  });
+  await testOnWindow(isPrivate, TEST_TOP_PAGE, "unsafe-url");
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 2]],
+  });
+  if (isPrivate) {
+    await testOnWindow(isPrivate, TEST_DOMAIN, "unsafe-url");
+  } else {
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "unsafe-url");
+  }
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 1]],
+  });
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "unsafe-url");
+  } else {
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "unsafe-url");
+  }
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [[pn("network.http.referer.defaultPolicy.trackers", isPrivate), 0]],
+  });
+  if (isPrivate) {
+    await testOnWindow(isPrivate, "", "unsafe-url");
+  } else {
+    await testOnWindow(isPrivate, TEST_TOP_PAGE, "unsafe-url");
   }
 }
 

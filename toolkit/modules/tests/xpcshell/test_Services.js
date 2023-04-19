@@ -1,16 +1,18 @@
 
 
 
+"use strict";
 
 
 
 
 
 
-function checkService(service, interface) {
-  info("Checking that Services." + service + " is an " + interface);
+
+function checkService(service, interfaceObj) {
+  info("Checking that Services." + service + " is an " + interfaceObj);
   Assert.ok(service in Services);
-  Assert.ok(Services[service] instanceof interface);
+  Assert.ok(Services[service] instanceof interfaceObj);
 }
 
 
