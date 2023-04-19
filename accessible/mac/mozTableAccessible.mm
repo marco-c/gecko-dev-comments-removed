@@ -399,17 +399,26 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 @implementation mozTableRowAccessible
 
 - (mozTableAccessible*)getTableParent {
-  mozTableAccessible* tableParent = static_cast<mozTableAccessible*>(
+  id tableParent = static_cast<mozTableAccessible*>(
       [self moxFindAncestor:^BOOL(id curr, BOOL* stop) {
+        if ([curr isKindOfClass:[mozOutlineAccessible class]]) {
+          
+          
+          
+          *stop = YES;
+        }
         return [curr isKindOfClass:[mozTableAccessible class]];
       }]);
 
-  MOZ_ASSERT(tableParent, "Table row not contained in table?");
-  return tableParent;
+  return [tableParent isKindOfClass:[mozTableAccessible class]] ? tableParent
+                                                                : nil;
 }
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   if (eventType == nsIAccessibleEvent::EVENT_REORDER) {
+    
+    
+    
     [[self getTableParent] invalidateColumns];
   }
 
