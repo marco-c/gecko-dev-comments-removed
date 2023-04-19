@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "p2p/base/port_interface.h"
+
+namespace cricket {
+
+PortInterface::PortInterface() = default;
+
+PortInterface::~PortInterface() = default;
+
+}  
