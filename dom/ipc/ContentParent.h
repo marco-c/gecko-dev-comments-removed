@@ -28,6 +28,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
@@ -696,9 +697,9 @@ class ContentParent final : public PContentParent,
 
   static nsClassHashtable<nsCStringHashKey, nsTArray<ContentParent*>>*
       sBrowserContentParents;
-  static UniquePtr<nsTHashMap<nsUint32HashKey, ContentParent*>>
+  static mozilla::StaticAutoPtr<nsTHashMap<nsUint32HashKey, ContentParent*>>
       sJSPluginContentParents;
-  static UniquePtr<LinkedList<ContentParent>> sContentParents;
+  static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   
 
@@ -715,7 +716,7 @@ class ContentParent final : public PContentParent,
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
-  static UniquePtr<std::vector<std::string>> sMacSandboxParams;
+  static mozilla::StaticAutoPtr<std::vector<std::string>> sMacSandboxParams;
 #endif
 
   
@@ -1590,7 +1591,7 @@ class ContentParent final : public PContentParent,
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   mozilla::UniquePtr<SandboxBroker> mSandboxBroker;
-  static mozilla::UniquePtr<SandboxBrokerPolicyFactory>
+  static mozilla::StaticAutoPtr<SandboxBrokerPolicyFactory>
       sSandboxBrokerPolicyFactory;
 #endif
 
