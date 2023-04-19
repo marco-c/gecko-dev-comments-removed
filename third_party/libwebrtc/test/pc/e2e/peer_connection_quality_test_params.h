@@ -115,6 +115,7 @@ struct Params {
   
   absl::optional<std::string> name;
   
+  
   std::vector<PeerConnectionE2EQualityTestFixture::VideoConfig> video_configs;
   
   absl::optional<PeerConnectionE2EQualityTestFixture::AudioConfig> audio_config;
@@ -143,6 +144,18 @@ struct Params {
   BitrateSettings bitrate_settings;
   std::vector<PeerConnectionE2EQualityTestFixture::VideoCodecConfig>
       video_codecs;
+
+  
+  PeerConnectionE2EQualityTestFixture::VideoSubscription video_subscription =
+      PeerConnectionE2EQualityTestFixture::VideoSubscription()
+          .SubscribeToAllPeers();
+};
+
+
+struct ConfigurableParams {
+  
+  std::vector<PeerConnectionE2EQualityTestFixture::VideoConfig> video_configs;
+
   PeerConnectionE2EQualityTestFixture::VideoSubscription video_subscription =
       PeerConnectionE2EQualityTestFixture::VideoSubscription()
           .SubscribeToAllPeers();
