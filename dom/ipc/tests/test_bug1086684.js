@@ -1,6 +1,5 @@
 "use strict";
 
-
 const { XPCShellContentUtils } = ChromeUtils.import(
   "resource://testing-common/XPCShellContentUtils.jsm"
 );
@@ -30,6 +29,7 @@ server.registerPathHandler(childFramePath, (request, response) => {
 });
 
 function childFrameScript() {
+  
   "use strict";
 
   let { MockFilePicker } = ChromeUtils.import(

@@ -1,6 +1,5 @@
 "use strict";
 
-
 const { XPCShellContentUtils } = ChromeUtils.import(
   "resource://testing-common/XPCShellContentUtils.jsm"
 );
@@ -8,6 +7,7 @@ const { XPCShellContentUtils } = ChromeUtils.import(
 XPCShellContentUtils.init(this);
 
 function childFrameScript() {
+  
   "use strict";
 
   const messageName = "test:blob-slice-test";

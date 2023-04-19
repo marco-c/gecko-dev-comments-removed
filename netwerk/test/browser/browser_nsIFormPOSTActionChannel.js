@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const SCHEME = "x-bug1241377";
@@ -198,6 +196,7 @@ document.getElementById('form').submit();
 };
 
 function frameScript() {
+  
   addMessageListener("Test:WaitForIFrame", function() {
     var check = function() {
       if (content) {
