@@ -4,6 +4,7 @@
 
 
 
+#include "ErrorList.h"
 #include "mozilla/MathAlgorithms.h"
 
 
@@ -53,6 +54,7 @@
 #include "nsServiceManagerUtils.h"
 
 #include "prenv.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
@@ -493,6 +495,12 @@ NS_IMETHODIMP AppWindow::RemoveChildWindow(nsIAppWindow* aChild) {
 NS_IMETHODIMP AppWindow::ShowModal() {
   AUTO_PROFILER_LABEL("AppWindow::ShowModal", OTHER);
 
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Trying to show modal window after shutdown started.");
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+
   
   nsCOMPtr<nsIWidget> window = mWindow;
   nsCOMPtr<nsIAppWindow> tempRef = this;
@@ -503,8 +511,15 @@ NS_IMETHODIMP AppWindow::ShowModal() {
 
   {
     AutoNoJSAPI nojsapi;
-    SpinEventLoopUntil("AppWindow::ShowModal"_ns,
-                       [&]() { return !mContinueModalLoop; });
+    SpinEventLoopUntil("AppWindow::ShowModal"_ns, [&]() {
+      if (MOZ_UNLIKELY(
+              AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed))) {
+        
+        
+        ExitModalLoop(NS_OK);
+      }
+      return !mContinueModalLoop;
+    });
   }
 
   mContinueModalLoop = false;
