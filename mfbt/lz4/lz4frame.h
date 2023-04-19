@@ -230,7 +230,7 @@ LZ4FLIB_API size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
 
 
 typedef struct LZ4F_cctx_s LZ4F_cctx;   
-typedef LZ4F_cctx* LZ4F_compressionContext_t;   
+typedef LZ4F_cctx* LZ4F_compressionContext_t;  
 
 typedef struct {
   unsigned stableSrc;    
@@ -250,13 +250,20 @@ LZ4FLIB_API unsigned LZ4F_getVersion(void);
 
 
 
+
+
+
+
+
+
+
 LZ4FLIB_API LZ4F_errorCode_t LZ4F_createCompressionContext(LZ4F_cctx** cctxPtr, unsigned version);
 LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeCompressionContext(LZ4F_cctx* cctx);
 
 
 
 
-#define LZ4F_HEADER_SIZE_MIN  7   /* LZ4 Frame header size can vary, depending on selected paramaters */
+#define LZ4F_HEADER_SIZE_MIN  7   /* LZ4 Frame header size can vary, depending on selected parameters */
 #define LZ4F_HEADER_SIZE_MAX 19
 
 
@@ -295,6 +302,7 @@ LZ4FLIB_API size_t LZ4F_compressBegin(LZ4F_cctx* cctx,
 
 
 LZ4FLIB_API size_t LZ4F_compressBound(size_t srcSize, const LZ4F_preferences_t* prefsPtr);
+
 
 
 
@@ -347,9 +355,14 @@ typedef struct LZ4F_dctx_s LZ4F_dctx;
 typedef LZ4F_dctx* LZ4F_decompressionContext_t;   
 
 typedef struct {
-  unsigned stableDst;    
-  unsigned reserved[3];  
+  unsigned stableDst;     
+
+  unsigned skipChecksums; 
+
+  unsigned reserved1;     
+  unsigned reserved0;     
 } LZ4F_decompressOptions_t;
+
 
 
 
@@ -371,6 +384,8 @@ LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeDecompressionContext(LZ4F_dctx* dctx);
 
 
 
+#define LZ4F_MAGICNUMBER 0x184D2204U
+#define LZ4F_MAGIC_SKIPPABLE_START 0x184D2A50U
 #define LZ4F_MIN_SIZE_TO_KNOW_HEADER_LENGTH 5
 
 
@@ -427,9 +442,10 @@ LZ4FLIB_API size_t LZ4F_headerSize(const void* src, size_t srcSize);
 
 
 
-LZ4FLIB_API size_t LZ4F_getFrameInfo(LZ4F_dctx* dctx,
-                                     LZ4F_frameInfo_t* frameInfoPtr,
-                                     const void* srcBuffer, size_t* srcSizePtr);
+LZ4FLIB_API size_t
+LZ4F_getFrameInfo(LZ4F_dctx* dctx,
+                  LZ4F_frameInfo_t* frameInfoPtr,
+            const void* srcBuffer, size_t* srcSizePtr);
 
 
 
@@ -462,10 +478,11 @@ LZ4FLIB_API size_t LZ4F_getFrameInfo(LZ4F_dctx* dctx,
 
 
 
-LZ4FLIB_API size_t LZ4F_decompress(LZ4F_dctx* dctx,
-                                   void* dstBuffer, size_t* dstSizePtr,
-                                   const void* srcBuffer, size_t* srcSizePtr,
-                                   const LZ4F_decompressOptions_t* dOptPtr);
+LZ4FLIB_API size_t
+LZ4F_decompress(LZ4F_dctx* dctx,
+                void* dstBuffer, size_t* dstSizePtr,
+          const void* srcBuffer, size_t* srcSizePtr,
+          const LZ4F_decompressOptions_t* dOptPtr);
 
 
 
@@ -529,6 +546,8 @@ extern "C" {
         ITEM(ERROR_headerChecksum_invalid) \
         ITEM(ERROR_contentChecksum_invalid) \
         ITEM(ERROR_frameDecoding_alreadyStarted) \
+        ITEM(ERROR_compressionState_uninitialized) \
+        ITEM(ERROR_parameter_null) \
         ITEM(ERROR_maxCode)
 
 #define LZ4F_GENERATE_ENUM(ENUM) LZ4F_##ENUM,
@@ -539,7 +558,31 @@ typedef enum { LZ4F_LIST_ERRORS(LZ4F_GENERATE_ENUM)
 
 LZ4FLIB_STATIC_API LZ4F_errorCodes LZ4F_getErrorCode(size_t functionResult);
 
-LZ4FLIB_STATIC_API size_t LZ4F_getBlockSize(unsigned);
+
+
+
+
+
+LZ4FLIB_STATIC_API size_t LZ4F_getBlockSize(LZ4F_blockSizeID_t blockSizeID);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+LZ4FLIB_STATIC_API size_t
+LZ4F_uncompressedUpdate(LZ4F_cctx* cctx,
+                        void* dstBuffer, size_t dstCapacity,
+                  const void* srcBuffer, size_t srcSize,
+                  const LZ4F_compressOptions_t* cOptPtr);
 
 
 
@@ -583,12 +626,12 @@ LZ4FLIB_STATIC_API void        LZ4F_freeCDict(LZ4F_CDict* CDict);
 
 
 
-LZ4FLIB_STATIC_API size_t LZ4F_compressFrame_usingCDict(
-    LZ4F_cctx* cctx,
-    void* dst, size_t dstCapacity,
-    const void* src, size_t srcSize,
-    const LZ4F_CDict* cdict,
-    const LZ4F_preferences_t* preferencesPtr);
+LZ4FLIB_STATIC_API size_t
+LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
+                              void* dst, size_t dstCapacity,
+                        const void* src, size_t srcSize,
+                        const LZ4F_CDict* cdict,
+                        const LZ4F_preferences_t* preferencesPtr);
 
 
 
@@ -598,26 +641,52 @@ LZ4FLIB_STATIC_API size_t LZ4F_compressFrame_usingCDict(
 
 
 
-LZ4FLIB_STATIC_API size_t LZ4F_compressBegin_usingCDict(
-    LZ4F_cctx* cctx,
-    void* dstBuffer, size_t dstCapacity,
-    const LZ4F_CDict* cdict,
-    const LZ4F_preferences_t* prefsPtr);
+LZ4FLIB_STATIC_API size_t
+LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
+                              void* dstBuffer, size_t dstCapacity,
+                        const LZ4F_CDict* cdict,
+                        const LZ4F_preferences_t* prefsPtr);
 
 
 
 
 
 
-LZ4FLIB_STATIC_API size_t LZ4F_decompress_usingDict(
-    LZ4F_dctx* dctxPtr,
-    void* dstBuffer, size_t* dstSizePtr,
-    const void* srcBuffer, size_t* srcSizePtr,
-    const void* dict, size_t dictSize,
-    const LZ4F_decompressOptions_t* decompressOptionsPtr);
+LZ4FLIB_STATIC_API size_t
+LZ4F_decompress_usingDict(LZ4F_dctx* dctxPtr,
+                          void* dstBuffer, size_t* dstSizePtr,
+                    const void* srcBuffer, size_t* srcSizePtr,
+                    const void* dict, size_t dictSize,
+                    const LZ4F_decompressOptions_t* decompressOptionsPtr);
+
+
+
+
+
+
+
+typedef void* (*LZ4F_AllocFunction) (void* opaqueState, size_t size);
+typedef void* (*LZ4F_CallocFunction) (void* opaqueState, size_t size);
+typedef void  (*LZ4F_FreeFunction) (void* opaqueState, void* address);
+typedef struct {
+    LZ4F_AllocFunction customAlloc;
+    LZ4F_CallocFunction customCalloc; 
+    LZ4F_FreeFunction customFree;
+    void* opaqueState;
+} LZ4F_CustomMem;
+static
+#ifdef __GNUC__
+__attribute__((__unused__))
+#endif
+LZ4F_CustomMem const LZ4F_defaultCMem = { NULL, NULL, NULL, NULL };  
+
+LZ4FLIB_STATIC_API LZ4F_cctx* LZ4F_createCompressionContext_advanced(LZ4F_CustomMem customMem, unsigned version);
+LZ4FLIB_STATIC_API LZ4F_dctx* LZ4F_createDecompressionContext_advanced(LZ4F_CustomMem customMem, unsigned version);
+LZ4FLIB_STATIC_API LZ4F_CDict* LZ4F_createCDict_advanced(LZ4F_CustomMem customMem, const void* dictBuffer, size_t dictSize);
+
 
 #if defined (__cplusplus)
 }
 #endif
 
-#endif
+#endif  
