@@ -317,54 +317,57 @@ int32_t nsComboboxControlFrame::CharCountOfLargestOptionForInflation() const {
   return int32_t(maxLength);
 }
 
+nscoord nsComboboxControlFrame::GetLongestOptionISize(
+    gfxContext* aRenderingContext) const {
+  
+  
+  nscoord maxOptionSize = 0;
+  nsAutoString label;
+  nsAutoString transformedLabel;
+  RefPtr<nsFontMetrics> fm =
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+  auto textTransform = StyleText()->mTextTransform.IsNone()
+                           ? Nothing()
+                           : Some(StyleText()->mTextTransform);
+  nsAtom* language = StyleFont()->mLanguage;
+  AutoTArray<bool, 50> charsToMergeArray;
+  AutoTArray<bool, 50> deletedCharsArray;
+  for (auto i : IntegerRange(Select().Options()->Length())) {
+    GetOptionText(i, label);
+    const nsAutoString* stringToUse = &label;
+    if (textTransform) {
+      transformedLabel.Truncate();
+      charsToMergeArray.SetLengthAndRetainStorage(0);
+      deletedCharsArray.SetLengthAndRetainStorage(0);
+      nsCaseTransformTextRunFactory::TransformString(
+          label, transformedLabel, textTransform,
+           false, language, charsToMergeArray,
+          deletedCharsArray);
+      stringToUse = &transformedLabel;
+    }
+    maxOptionSize = std::max(maxOptionSize,
+                             nsLayoutUtils::AppUnitWidthOfStringBidi(
+                                 *stringToUse, this, *fm, *aRenderingContext));
+  }
+  if (maxOptionSize) {
+    
+    
+    
+    maxOptionSize += 1;
+  }
+  return maxOptionSize;
+}
+
 nscoord nsComboboxControlFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
                                                   IntrinsicISizeType aType) {
   nscoord displayISize = mDisplayFrame->IntrinsicISizeOffsets().padding;
-
   if (!StyleDisplay()->GetContainSizeAxes().mIContained &&
       !StyleContent()->mContent.IsNone()) {
-    
-    
-    nscoord maxOptionSize = 0;
-    nsAutoString label;
-    nsAutoString transformedLabel;
-    RefPtr<nsFontMetrics> fm =
-        nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
-    auto textTransform = StyleText()->mTextTransform.IsNone()
-                             ? Nothing()
-                             : Some(StyleText()->mTextTransform);
-    nsAtom* language = StyleFont()->mLanguage;
-    AutoTArray<bool, 50> charsToMergeArray;
-    AutoTArray<bool, 50> deletedCharsArray;
-    for (auto i : IntegerRange(Select().Options()->Length())) {
-      GetOptionText(i, label);
-      const nsAutoString* stringToUse = &label;
-      if (textTransform) {
-        transformedLabel.Truncate();
-        charsToMergeArray.SetLengthAndRetainStorage(0);
-        deletedCharsArray.SetLengthAndRetainStorage(0);
-        nsCaseTransformTextRunFactory::TransformString(
-            label, transformedLabel, textTransform,
-             false, language, charsToMergeArray,
-            deletedCharsArray);
-        stringToUse = &transformedLabel;
-      }
-      maxOptionSize = std::max(
-          maxOptionSize, nsLayoutUtils::AppUnitWidthOfStringBidi(
-                             *stringToUse, this, *fm, *aRenderingContext));
-    }
-    if (maxOptionSize) {
-      
-      
-      
-      maxOptionSize += 1;
-    }
-    displayISize += maxOptionSize;
+    displayISize += GetLongestOptionISize(aRenderingContext);
   }
 
   
   displayISize += DropDownButtonISize();
-
   return displayISize;
 }
 
