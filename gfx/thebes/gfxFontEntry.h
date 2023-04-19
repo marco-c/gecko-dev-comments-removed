@@ -329,8 +329,8 @@ class gfxFontEntry {
   
   
   
-  gfxFont* FindOrMakeFont(const gfxFontStyle* aStyle,
-                          gfxCharacterMap* aUnicodeRangeMap = nullptr);
+  already_AddRefed<gfxFont> FindOrMakeFont(
+      const gfxFontStyle* aStyle, gfxCharacterMap* aUnicodeRangeMap = nullptr);
 
   
   
