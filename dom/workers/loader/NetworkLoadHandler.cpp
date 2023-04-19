@@ -165,20 +165,6 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
                                     "EmptyWorkerSourceWarning");
   }
 
-  if (mLoadContext->mRequest->IsModuleRequest()) {
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIURI> uri;
-    rv = channel->GetOriginalURI(getter_AddRefs(uri));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    channel->GetURI(getter_AddRefs(mLoadContext->mRequest->mBaseURL));
-  }
-
   
   nsCOMPtr<nsIURI> finalURI;
   rv = NS_GetFinalChannelURI(channel, getter_AddRefs(finalURI));
