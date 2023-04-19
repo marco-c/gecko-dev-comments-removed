@@ -82,7 +82,7 @@ nsChromeProtocolHandler::GetProtocolFlags(uint32_t* result) {
   
 
   rv = nsChromeRegistry::Canonify(surl);
-  if (NS_FAILED(rv)) return rv;
+  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
 
   surl.forget(result);
   return NS_OK;
