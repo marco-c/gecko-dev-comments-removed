@@ -88,7 +88,8 @@ class LoadInfo final : public nsILoadInfo {
                Maybe<mozilla::dom::ClientInfo>(),
            const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController =
                Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
-           uint32_t aSandboxFlags = 0);
+           uint32_t aSandboxFlags = 0,
+           bool aSkipCheckForBrokenURLOrZeroSized = 0);
 
   
   
@@ -348,6 +349,8 @@ class LoadInfo final : public nsILoadInfo {
 
   
   bool mIsFromObjectOrEmbed = false;
+
+  bool mSkipCheckForBrokenURLOrZeroSized = false;
 
   
   

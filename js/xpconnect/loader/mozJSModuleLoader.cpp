@@ -319,16 +319,25 @@ class MOZ_STACK_CLASS ModuleLoaderInfo {
   }
   nsresult EnsureScriptChannel() {
     BEGIN_ENSURE(ScriptChannel, IOService, URI);
+
+    
+    
+    
+    
+    
+    
+    bool skipCheckForBrokenURLOrZeroSized = !IsModule();
+
     return NS_NewChannel(
         getter_AddRefs(mScriptChannel), mURI,
         nsContentUtils::GetSystemPrincipal(),
         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
         nsIContentPolicy::TYPE_SCRIPT,
-        nullptr,  
-        nullptr,  
-        nullptr,  
-        nullptr,  
-        nsIRequest::LOAD_NORMAL, mIOService);
+         nullptr,
+         nullptr,
+         nullptr,  nullptr,
+        nsIRequest::LOAD_NORMAL, mIOService,  0,
+        skipCheckForBrokenURLOrZeroSized);
   }
 
   nsIURI* ResolvedURI() {

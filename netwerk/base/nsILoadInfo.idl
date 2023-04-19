@@ -1410,7 +1410,13 @@ interface nsILoadInfo : nsISupports
 
 
   [infallible] attribute boolean isFromObjectOrEmbed;
+
   
+
+
+
+  [infallible] readonly attribute boolean shouldSkipCheckForBrokenURLOrZeroSized;
+
   
 
 
