@@ -95,6 +95,17 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
                         error => reject(error.code))""").value as JSONObject
     }
 
+    private fun getCurrentPositionJSWithWait(): JSONObject {
+        return mainSession.evaluatePromiseJS("""
+                new Promise((resolve, reject) =>
+                setTimeout(() => {
+                    window.navigator.geolocation.getCurrentPosition(
+                        position => resolve(
+                            {latitude: position.coords.latitude, longitude:  position.coords.longitude})),
+                        error => reject(error.code)
+                }, "750"))""").value as JSONObject
+    }
+
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
     
     @Test fun jsContentRequestForLocation() {
@@ -170,13 +181,13 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
         
         Handler(Looper.getMainLooper()).postDelayed({
             setActivityToForeground()
-        }, 1000)
+        }, 1500)
 
         
         pressHome()
 
         
-        val whilePausingPosition = getCurrentPositionJS()
+        val whilePausingPosition = getCurrentPositionJSWithWait()
         assertThat("Longitude after/during onPause matches.", whilePausingPosition["latitude"] as Number, equalTo(afterPauseLat))
         assertThat("Longitude after/during onPause matches.", whilePausingPosition["longitude"] as Number, equalTo(afterPauseLon))
 
