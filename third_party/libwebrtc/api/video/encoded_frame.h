@@ -17,7 +17,6 @@
 #include "modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
-namespace video_coding {
 
 
 
@@ -60,7 +59,11 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   int64_t id_ = -1;
 };
 
+
+namespace video_coding {
+using ::webrtc::EncodedFrame;
 }  
+
 }  
 
 #endif  

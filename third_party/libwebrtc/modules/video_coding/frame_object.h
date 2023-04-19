@@ -15,7 +15,6 @@
 #include "api/video/encoded_frame.h"
 
 namespace webrtc {
-namespace video_coding {
 
 class RtpFrameObject : public EncodedFrame {
  public:
@@ -64,7 +63,11 @@ class RtpFrameObject : public EncodedFrame {
   int times_nacked_;
 };
 
+
+namespace video_coding {
+using ::webrtc::RtpFrameObject;
 }  
+
 }  
 
 #endif  

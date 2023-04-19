@@ -27,8 +27,7 @@ class OnDecryptedFrameCallback {
  public:
   virtual ~OnDecryptedFrameCallback() = default;
   
-  virtual void OnDecryptedFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) = 0;
+  virtual void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) = 0;
 };
 
 
@@ -72,8 +71,7 @@ class BufferedFrameDecryptor final {
 
   
   
-  void ManageEncryptedFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> encrypted_frame);
+  void ManageEncryptedFrame(std::unique_ptr<RtpFrameObject> encrypted_frame);
 
  private:
   
@@ -82,7 +80,7 @@ class BufferedFrameDecryptor final {
   
   
   
-  FrameDecision DecryptFrame(video_coding::RtpFrameObject* frame);
+  FrameDecision DecryptFrame(RtpFrameObject* frame);
   
   
   void RetryStashedFrames();
@@ -96,7 +94,7 @@ class BufferedFrameDecryptor final {
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   OnDecryptedFrameCallback* const decrypted_frame_callback_;
   OnDecryptionStatusChangeCallback* const decryption_status_change_callback_;
-  std::deque<std::unique_ptr<video_coding::RtpFrameObject>> stashed_frames_;
+  std::deque<std::unique_ptr<RtpFrameObject>> stashed_frames_;
 };
 
 }  

@@ -58,7 +58,6 @@ constexpr int VideoReceiveStream2::kMaxWaitForKeyFrameMs;
 
 namespace {
 
-using video_coding::EncodedFrame;
 using ReturnReason = video_coding::FrameBuffer::ReturnReason;
 
 constexpr int kMinBaseMinimumDelayMs = 0;
@@ -568,8 +567,7 @@ void VideoReceiveStream2::RequestKeyFrame(int64_t timestamp_ms) {
   });
 }
 
-void VideoReceiveStream2::OnCompleteFrame(
-    std::unique_ptr<video_coding::EncodedFrame> frame) {
+void VideoReceiveStream2::OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
 
   

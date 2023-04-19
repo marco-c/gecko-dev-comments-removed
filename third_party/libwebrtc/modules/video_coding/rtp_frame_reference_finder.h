@@ -25,8 +25,7 @@ class RtpFrameReferenceFinderImpl;
 class OnCompleteFrameCallback {
  public:
   virtual ~OnCompleteFrameCallback() {}
-  virtual void OnCompleteFrame(
-      std::unique_ptr<video_coding::EncodedFrame> frame) = 0;
+  virtual void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) = 0;
 };
 
 
@@ -36,8 +35,7 @@ using OnCompleteFrameCallback = webrtc::OnCompleteFrameCallback;
 
 class RtpFrameReferenceFinder {
  public:
-  using ReturnVector =
-      absl::InlinedVector<std::unique_ptr<video_coding::RtpFrameObject>, 3>;
+  using ReturnVector = absl::InlinedVector<std::unique_ptr<RtpFrameObject>, 3>;
 
   explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback);
   explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback,
@@ -50,7 +48,7 @@ class RtpFrameReferenceFinder {
   
   
   
-  void ManageFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
+  void ManageFrame(std::unique_ptr<RtpFrameObject> frame);
 
   
   

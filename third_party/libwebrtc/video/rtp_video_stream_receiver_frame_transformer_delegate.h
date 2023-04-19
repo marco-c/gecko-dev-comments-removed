@@ -25,8 +25,7 @@ namespace webrtc {
 
 class RtpVideoFrameReceiver {
  public:
-  virtual void ManageFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) = 0;
+  virtual void ManageFrame(std::unique_ptr<RtpFrameObject> frame) = 0;
 
  protected:
   virtual ~RtpVideoFrameReceiver() = default;
@@ -47,7 +46,7 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
   void Reset();
 
   
-  void TransformFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
+  void TransformFrame(std::unique_ptr<RtpFrameObject> frame);
 
   
   
