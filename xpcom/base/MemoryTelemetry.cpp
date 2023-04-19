@@ -216,11 +216,9 @@ nsresult MemoryTelemetry::GatherReports(
 
   
   
-#ifndef XP_MACOSX
   if (XRE_IsParentProcess() && !mGatheringTotalMemory) {
     GatherTotalMemory();
   }
-#endif
 
   if (!Telemetry::CanRecordReleaseData()) {
     return NS_OK;
