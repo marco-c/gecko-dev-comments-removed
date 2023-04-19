@@ -440,6 +440,8 @@ class MOZ_NON_PARAM Val : public LitVal {
   void writeToRootedLocation(void* loc, bool mustWrite64) const;
 
   
+  void readFromHeapLocation(void* loc);
+  
   void writeToHeapLocation(void* loc) const;
 
   

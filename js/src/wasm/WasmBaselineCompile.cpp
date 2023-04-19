@@ -7144,6 +7144,58 @@ bool BaseCompiler::emitArrayLen() {
   return true;
 }
 
+bool BaseCompiler::emitArrayCopy() {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+  int32_t elemSize;
+  bool elemsAreRefTyped;
+  Nothing nothing;
+  if (!iter_.readArrayCopy(&elemSize, &elemsAreRefTyped, &nothing, &nothing,
+                           &nothing, &nothing, &nothing)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT_IF(elemsAreRefTyped, elemSize == sizeof(void*));
+  MOZ_ASSERT_IF(!elemsAreRefTyped, elemSize == 1 || elemSize == 2 ||
+                                       elemSize == 4 || elemSize == 8 ||
+                                       elemSize == 16);
+  bool avoidPreBarrierReg = elemsAreRefTyped;
+
+  
+  
+  if (avoidPreBarrierReg) {
+    needPtr(RegPtr(PreBarrierReg));
+  }
+
+  
+  pushI32(elemsAreRefTyped ? -elemSize : elemSize);
+
+  if (avoidPreBarrierReg) {
+    freePtr(RegPtr(PreBarrierReg));
+  }
+
+  return emitInstanceCall(lineOrBytecode, SASigArrayCopy);
+}
+
 bool BaseCompiler::emitRefTest() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
@@ -9374,6 +9426,8 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitArraySet());
           case uint32_t(GcOp::ArrayLen):
             CHECK_NEXT(emitArrayLen());
+          case uint32_t(GcOp::ArrayCopy):
+            CHECK_NEXT(emitArrayCopy());
           case uint32_t(GcOp::RefTest):
             CHECK_NEXT(emitRefTest());
           case uint32_t(GcOp::RefCast):

@@ -206,8 +206,8 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 
 [[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
-                                    size_t opcodeOffset, ValType actual,
-                                    ValType expected, TypeCache* cache);
+                                    size_t opcodeOffset, FieldType actual,
+                                    FieldType expected, TypeCache* cache);
 
 
 
