@@ -9994,6 +9994,10 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
   if (aGlobal->IsSharedMemoryAllowed()) {
     clonePolicy.allowSharedMemoryObjects();
   }
+  
+  if (NS_IsMainThread()) {
+    clonePolicy.allowErrorStackFrames();
+  }
 
   StructuredCloneHolder holder(StructuredCloneHolder::CloningSupported,
                                StructuredCloneHolder::TransferringSupported,
