@@ -305,27 +305,29 @@ INSTANTIATE_TEST_SUITE_P(
            SvcTestParam{"S2T1", 3},
            SvcTestParam{"L2T2", 4},
            SvcTestParam{"L2T2_KEY", 4},
-           SvcTestParam{"L2T2_KEY_SHIFT", 4}),
+           SvcTestParam{"L2T2_KEY_SHIFT", 4},
+           SvcTestParam{"L3T3_KEY", 8}),
     [](const testing::TestParamInfo<SvcTestParam>& info) {
       return info.param.name;
     });
 
 
 
-INSTANTIATE_TEST_SUITE_P(Svc,
-                         ScalabilityStructureSetRatesTest,
-                         Values(SvcTestParam{"L1T2",
-                                             4},
-                                SvcTestParam{"L1T3", 8},
-                                SvcTestParam{"L2T1",
-                                             3},
-                                SvcTestParam{"L2T2",
-                                             4},
-                                SvcTestParam{"L3T1", 3},
-                                SvcTestParam{"L3T3", 8}),
-                         [](const testing::TestParamInfo<SvcTestParam>& info) {
-                           return info.param.name;
-                         });
+INSTANTIATE_TEST_SUITE_P(
+    Svc,
+    ScalabilityStructureSetRatesTest,
+    Values(SvcTestParam{"L1T2", 4},
+           SvcTestParam{"L1T3", 8},
+           SvcTestParam{"L2T1", 3},
+           SvcTestParam{"L2T1_KEY", 3},
+           SvcTestParam{"L2T2", 4},
+           SvcTestParam{"L2T2_KEY", 4},
+           SvcTestParam{"L3T1", 3},
+           SvcTestParam{"L3T3", 8},
+           SvcTestParam{"L3T3_KEY", 8}),
+    [](const testing::TestParamInfo<SvcTestParam>& info) {
+      return info.param.name;
+    });
 
 }  
 }  
