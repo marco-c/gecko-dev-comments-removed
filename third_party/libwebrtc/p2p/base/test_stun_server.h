@@ -15,14 +15,14 @@
 #include "p2p/base/stun_server.h"
 #include "rtc_base/async_udp_socket.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/thread.h"
+#include "rtc_base/socket_server.h"
 
 namespace cricket {
 
 
 class TestStunServer : StunServer {
  public:
-  static TestStunServer* Create(rtc::Thread* thread,
+  static TestStunServer* Create(rtc::SocketServer* ss,
                                 const rtc::SocketAddress& addr);
 
   
