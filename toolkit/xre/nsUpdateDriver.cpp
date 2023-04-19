@@ -644,17 +644,20 @@ if (isStaged) {
   }
 }
 
-#if !defined(XP_WIN)
-
-
 
 
 
 static bool ProcessHasTerminated(ProcessType pt) {
-#  if defined(XP_MACOSX)
+#if defined(XP_WIN)
+  if (WaitForSingleObject(pt, 1000)) {
+    return false;
+  }
+  CloseHandle(pt);
+  return true;
+#elif defined(XP_MACOSX)
   
   return true;
-#  elif defined(XP_UNIX)
+#elif defined(XP_UNIX)
   int exitStatus;
   pid_t exited = waitpid(pt, &exitStatus, WNOHANG);
   if (exited == 0) {
@@ -673,7 +676,7 @@ static bool ProcessHasTerminated(ProcessType pt) {
     LOG(("Error while running the updater process, check update.log"));
   }
   return true;
-#  else
+#else
   
   
   int32_t exitCode;
@@ -682,9 +685,8 @@ static bool ProcessHasTerminated(ProcessType pt) {
     LOG(("Error while running the updater process, check update.log"));
   }
   return true;
-#  endif
-}
 #endif
+}
 
 nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
                         int argc, char** argv, const char* appVersion,
@@ -746,11 +748,7 @@ NS_IMPL_ISUPPORTS(nsUpdateProcessor, nsIUpdateProcessor)
 
 nsUpdateProcessor::nsUpdateProcessor() : mUpdaterPID(0) {}
 
-#ifdef XP_WIN
-nsUpdateProcessor::~nsUpdateProcessor() { mProcessWatcher.Stop(); }
-#else
 nsUpdateProcessor::~nsUpdateProcessor() = default;
-#endif
 
 NS_IMETHODIMP
 nsUpdateProcessor::ProcessUpdate() {
@@ -840,17 +838,6 @@ void nsUpdateProcessor::StartStagedUpdate() {
     return;
   }
 
-#ifdef WIN32
-  
-  RefPtr<nsIThread> mainThread;
-  NS_GetMainThread(getter_AddRefs(mainThread));
-  mProcessWatcher.Watch(mUpdaterPID, mainThread,
-                        NewRunnableMethod("nsUpdateProcessor::UpdateDone", this,
-                                          &nsUpdateProcessor::UpdateDone));
-
-
-
-#else
   
   rv = NS_DispatchToCurrentThread(
       NewRunnableMethod("nsUpdateProcessor::WaitForProcess", this,
@@ -865,7 +852,6 @@ void nsUpdateProcessor::StartStagedUpdate() {
   
   
   onExitStopThread.release();
-#endif
 }
 
 void nsUpdateProcessor::ShutdownWorkerThread() {
@@ -874,7 +860,6 @@ void nsUpdateProcessor::ShutdownWorkerThread() {
   mWorkerThread = nullptr;
 }
 
-#ifndef WIN32
 void nsUpdateProcessor::WaitForProcess() {
   MOZ_ASSERT(!NS_IsMainThread(), "main thread");
   if (ProcessHasTerminated(mUpdaterPID)) {
@@ -886,7 +871,6 @@ void nsUpdateProcessor::WaitForProcess() {
                           &nsUpdateProcessor::WaitForProcess));
   }
 }
-#endif
 
 void nsUpdateProcessor::UpdateDone() {
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
@@ -900,11 +884,7 @@ void nsUpdateProcessor::UpdateDone() {
     um->RefreshUpdateStatus(getter_AddRefs(outPromise));
   }
 
-
-
-#ifndef XP_WIN
   ShutdownWorkerThread();
-#endif
 }
 
 NS_IMETHODIMP
