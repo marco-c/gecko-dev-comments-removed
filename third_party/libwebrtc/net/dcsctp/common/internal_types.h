@@ -38,13 +38,5 @@ using VerificationTag = StrongAlias<class VerificationTagTag, uint32_t>;
 
 using TieTag = StrongAlias<class TieTagTag, uint64_t>;
 
-
-struct UnorderedStreamHash {
-  size_t operator()(const std::pair<IsUnordered, StreamID>& p) const {
-    return std::hash<IsUnordered::UnderlyingType>{}(*p.first) ^
-           (std::hash<StreamID::UnderlyingType>{}(*p.second) << 1);
-  }
-};
-
 }  
 #endif  

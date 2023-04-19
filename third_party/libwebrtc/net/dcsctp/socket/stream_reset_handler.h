@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -33,6 +32,7 @@
 #include "net/dcsctp/socket/context.h"
 #include "net/dcsctp/timer/timer.h"
 #include "net/dcsctp/tx/retransmission_queue.h"
+#include "rtc_base/containers/flat_set.h"
 
 namespace dcsctp {
 
@@ -207,7 +207,7 @@ class StreamResetHandler {
 
   
   
-  std::unordered_set<StreamID, StreamID::Hasher> streams_to_reset_;
+  webrtc::flat_set<StreamID> streams_to_reset_;
 
   
   ReconfigRequestSN next_outgoing_req_seq_nbr_;
