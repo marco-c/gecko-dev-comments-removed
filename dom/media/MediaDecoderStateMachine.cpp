@@ -2805,7 +2805,12 @@ void MediaDecoderStateMachine::DecodeMetadataState::OnMetadataRead(
 
   
   
+  
   mMaster->mSeamlessLoopingAllowed = StaticPrefs::media_seamless_looping();
+  if (mMaster->HasVideo()) {
+    mMaster->mSeamlessLoopingAllowed =
+        StaticPrefs::media_seamless_looping_video();
+  }
 
   SetState<DecodingFirstFrameState>();
 }
