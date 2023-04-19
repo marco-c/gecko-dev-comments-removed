@@ -198,13 +198,11 @@ AsyncStatement::~AsyncStatement() {
 
   
   
-  bool onCallingThread = false;
-  (void)mDBConnection->threadOpenedOn->IsOnCurrentThread(&onCallingThread);
-  if (!onCallingThread) {
+  if (!IsOnCurrentSerialEventTarget(mDBConnection->eventTargetOpenedOn)) {
     
     
-    nsCOMPtr<nsIThread> targetThread(mDBConnection->threadOpenedOn);
-    NS_ProxyRelease("AsyncStatement::mDBConnection", targetThread,
+    nsCOMPtr<nsIEventTarget> target(mDBConnection->eventTargetOpenedOn);
+    NS_ProxyRelease("AsyncStatement::mDBConnection", target,
                     mDBConnection.forget());
   }
 }
@@ -234,10 +232,9 @@ Connection* AsyncStatement::getOwner() { return mDBConnection; }
 int AsyncStatement::getAsyncStatement(sqlite3_stmt** _stmt) {
 #ifdef DEBUG
   
-  bool onOpenedThread = false;
-  (void)mDBConnection->threadOpenedOn->IsOnCurrentThread(&onOpenedThread);
-  NS_ASSERTION(!onOpenedThread,
-               "We should only be called on the async thread!");
+  NS_ASSERTION(
+      !IsOnCurrentSerialEventTarget(mDBConnection->eventTargetOpenedOn),
+      "We should only be called on the async event target!");
 #endif
 
   if (!mAsyncStatement) {

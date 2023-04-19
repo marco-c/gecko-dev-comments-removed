@@ -249,6 +249,7 @@ void Service::unregisterConnection(Connection* aConnection) {
   
   
   
+  
 }
 
 void Service::getConnections(
@@ -272,7 +273,6 @@ void Service::minimizeMemory() {
     }
 
     constexpr auto shrinkPragma = "PRAGMA shrink_memory"_ns;
-    bool onOpenedThread = false;
 
     if (!conn->operationSupported(Connection::SYNCHRONOUS)) {
       
@@ -281,9 +281,7 @@ void Service::minimizeMemory() {
       DebugOnly<nsresult> rv = conn->ExecuteSimpleSQLAsync(
           shrinkPragma, nullptr, getter_AddRefs(ps));
       MOZ_ASSERT(NS_SUCCEEDED(rv), "Should have purged sqlite caches");
-    } else if (NS_SUCCEEDED(
-                   conn->threadOpenedOn->IsOnCurrentThread(&onOpenedThread)) &&
-               onOpenedThread) {
+    } else if (IsOnCurrentSerialEventTarget(conn->eventTargetOpenedOn)) {
       if (conn->isAsyncExecutionThreadAvailable()) {
         nsCOMPtr<mozIStoragePendingStatement> ps;
         DebugOnly<nsresult> rv = conn->ExecuteSimpleSQLAsync(
@@ -302,7 +300,7 @@ void Service::minimizeMemory() {
       nsCOMPtr<nsIRunnable> event = NewRunnableMethod<const nsCString>(
           "Connection::ExecuteSimpleSQL", conn, &Connection::ExecuteSimpleSQL,
           shrinkPragma);
-      Unused << conn->threadOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
+      Unused << conn->eventTargetOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
     }
   }
 }

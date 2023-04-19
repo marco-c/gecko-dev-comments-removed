@@ -46,8 +46,8 @@ class AsyncStatementFinalizer : public Runnable {
       mStatement->mAsyncStatement = nullptr;
     }
 
-    nsCOMPtr<nsIThread> targetThread(mConnection->threadOpenedOn);
-    NS_ProxyRelease("AsyncStatementFinalizer::mStatement", targetThread,
+    nsCOMPtr<nsIEventTarget> target(mConnection->eventTargetOpenedOn);
+    NS_ProxyRelease("AsyncStatementFinalizer::mStatement", target,
                     mStatement.forget());
     return NS_OK;
   }
@@ -90,7 +90,7 @@ class LastDitchSqliteStatementFinalizer : public Runnable {
     (void)::sqlite3_finalize(mAsyncStatement);
     mAsyncStatement = nullptr;
 
-    nsCOMPtr<nsIThread> target(mConnection->threadOpenedOn);
+    nsCOMPtr<nsIEventTarget> target(mConnection->eventTargetOpenedOn);
     (void)::NS_ProxyRelease("LastDitchSqliteStatementFinalizer::mConnection",
                             target, mConnection.forget());
     return NS_OK;
@@ -128,10 +128,7 @@ void StorageBaseStatementInternal::asyncFinalize() {
 void StorageBaseStatementInternal::destructorAsyncFinalize() {
   if (!mAsyncStatement) return;
 
-  bool isOwningThread = false;
-  (void)mDBConnection->threadOpenedOn->IsOnCurrentThread(&isOwningThread);
-  if (isOwningThread) {
-    
+  if (IsOnCurrentSerialEventTarget(mDBConnection->eventTargetOpenedOn)) {
     
     
     nsIEventTarget* target = mDBConnection->getAsyncExecutionTarget();

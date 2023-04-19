@@ -29,6 +29,7 @@
 class nsIFile;
 class nsIFileURL;
 class nsIEventTarget;
+class nsISerialEventTarget;
 class nsIThread;
 
 namespace mozilla {
@@ -180,8 +181,7 @@ class Connection final : public mozIStorageConnection,
   
 
 
-
-  const nsCOMPtr<nsIThread> threadOpenedOn;
+  const nsCOMPtr<nsISerialEventTarget> eventTargetOpenedOn;
 
   
 

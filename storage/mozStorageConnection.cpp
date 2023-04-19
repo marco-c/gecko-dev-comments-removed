@@ -52,14 +52,13 @@ mozilla::LazyLogModule gStorageLog("mozStorage");
 
 
 #ifdef DEBUG
-#  define CHECK_MAINTHREAD_ABUSE()                             \
-    do {                                                       \
-      nsCOMPtr<nsIThread> mainThread = do_GetMainThread();     \
-      NS_WARNING_ASSERTION(                                    \
-          threadOpenedOn == mainThread || !NS_IsMainThread(),  \
-          "Using Storage synchronous API on main-thread, but " \
-          "the connection was "                                \
-          "opened on another thread.");                        \
+#  define CHECK_MAINTHREAD_ABUSE()                                   \
+    do {                                                             \
+      NS_WARNING_ASSERTION(                                          \
+          eventTargetOpenedOn == GetMainThreadSerialEventTarget() || \
+              !NS_IsMainThread(),                                    \
+          "Using Storage synchronous API on main-thread, but "       \
+          "the connection was opened on another thread.");           \
     } while (0)
 #else
 #  define CHECK_MAINTHREAD_ABUSE() \
@@ -299,7 +298,7 @@ class AsyncCloseConnection final : public Runnable {
 
   NS_IMETHOD Run() override {
     
-    MOZ_ASSERT(NS_GetCurrentThread() != mConnection->threadOpenedOn);
+    MOZ_ASSERT(!IsOnCurrentSerialEventTarget(mConnection->eventTargetOpenedOn));
 
     nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("storage::Connection::shutdownAsyncThread",
@@ -372,7 +371,7 @@ class AsyncInitializeClone final : public Runnable {
   nsresult Dispatch(nsresult aResult, nsISupports* aValue) {
     RefPtr<CallbackComplete> event =
         new CallbackComplete(aResult, aValue, mCallback.forget());
-    return mClone->threadOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
+    return mClone->eventTargetOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
   }
 
   ~AsyncInitializeClone() override {
@@ -429,7 +428,7 @@ Connection::Connection(Service* aService, int aFlags,
                        bool aInterruptible, bool aIgnoreLockingMode)
     : sharedAsyncExecutionMutex("Connection::sharedAsyncExecutionMutex"),
       sharedDBMutex("Connection::sharedDBMutex"),
-      threadOpenedOn(do_GetCurrentThread()),
+      eventTargetOpenedOn(WrapNotNull(GetCurrentSerialEventTarget())),
       mDBConn(nullptr),
       mDefaultTransactionType(mozIStorageConnection::TRANSACTION_DEFERRED),
       mDestroying(false),
@@ -494,7 +493,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void) {
       
       
       
-      if (threadOpenedOn->IsOnCurrentThread()) {
+      if (IsOnCurrentSerialEventTarget(eventTargetOpenedOn)) {
         
         
         
@@ -503,8 +502,8 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void) {
         nsCOMPtr<nsIRunnable> event =
             NewRunnableMethod("storage::Connection::synchronousClose", this,
                               &Connection::synchronousClose);
-        if (NS_FAILED(
-                threadOpenedOn->Dispatch(event.forget(), NS_DISPATCH_NORMAL))) {
+        if (NS_FAILED(eventTargetOpenedOn->Dispatch(event.forget(),
+                                                    NS_DISPATCH_NORMAL))) {
           
           
           
@@ -542,7 +541,7 @@ int32_t Connection::getSqliteRuntimeStatus(int32_t aStatusOption,
 }
 
 nsIEventTarget* Connection::getAsyncExecutionTarget() {
-  NS_ENSURE_TRUE(threadOpenedOn == NS_GetCurrentThread(), nullptr);
+  NS_ENSURE_TRUE(IsOnCurrentSerialEventTarget(eventTargetOpenedOn), nullptr);
 
   
   if (mAsyncExecutionThreadShuttingDown) {
@@ -902,7 +901,7 @@ nsresult Connection::initializeInternal() {
 }
 
 nsresult Connection::initializeOnAsyncThread(nsIFile* aStorageFile) {
-  MOZ_ASSERT(threadOpenedOn != NS_GetCurrentThread());
+  MOZ_ASSERT(!IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
   nsresult rv = aStorageFile
                     ? initialize(aStorageFile)
                     : initialize(kMozStorageMemoryStorageKey, VoidCString());
@@ -1023,26 +1022,17 @@ int Connection::progressHandler() {
 
 nsresult Connection::setClosedState() {
   
-  bool onOpenedThread;
-  nsresult rv = threadOpenedOn->IsOnCurrentThread(&onOpenedThread);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!onOpenedThread) {
-    NS_ERROR("Must close the database on the thread that you opened it with!");
-    return NS_ERROR_UNEXPECTED;
-  }
+  
+  MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
+  NS_ENSURE_FALSE(mAsyncExecutionThreadShuttingDown, NS_ERROR_UNEXPECTED);
+
+  mAsyncExecutionThreadShuttingDown = true;
 
   
   
-  {
-    MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
-    NS_ENSURE_FALSE(mAsyncExecutionThreadShuttingDown, NS_ERROR_UNEXPECTED);
-    mAsyncExecutionThreadShuttingDown = true;
+  
+  mDBConn = nullptr;
 
-    
-    
-    
-    mDBConn = nullptr;
-  }
   return NS_OK;
 }
 
@@ -1094,12 +1084,12 @@ bool Connection::isClosed() {
 bool Connection::isClosed(MutexAutoLock& lock) { return mConnectionClosed; }
 
 bool Connection::isAsyncExecutionThreadAvailable() {
-  MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
+  MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
   return mAsyncExecutionThread && !mAsyncExecutionThreadShuttingDown;
 }
 
 void Connection::shutdownAsyncThread() {
-  MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
+  MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
   MOZ_ASSERT(mAsyncExecutionThread);
   MOZ_ASSERT(mAsyncExecutionThreadShuttingDown);
 
@@ -1366,9 +1356,7 @@ nsresult Connection::synchronousClose() {
   
   
   
-  bool onOpenerThread = false;
-  (void)threadOpenedOn->IsOnCurrentThread(&onOpenerThread);
-  MOZ_ASSERT(onOpenerThread);
+  MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
 #endif  
 
   
@@ -1405,7 +1393,7 @@ Connection::SpinningSynchronousClose() {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  if (threadOpenedOn != NS_GetCurrentThread()) {
+  if (!IsOnCurrentSerialEventTarget(eventTargetOpenedOn)) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
@@ -1702,7 +1690,7 @@ nsresult Connection::initializeClone(Connection* aClone, bool aReadOnly) {
 
 NS_IMETHODIMP
 Connection::Clone(bool aReadOnly, mozIStorageConnection** _connection) {
-  MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
+  MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
 
   AUTO_PROFILER_LABEL("Connection::Clone", OTHER);
 
@@ -1738,9 +1726,9 @@ NS_IMETHODIMP
 Connection::Interrupt() {
   MOZ_ASSERT(mInterruptible, "Interrupt method not allowed");
   MOZ_ASSERT_IF(SYNCHRONOUS == mSupportedOperations,
-                threadOpenedOn != NS_GetCurrentThread());
+                !IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
   MOZ_ASSERT_IF(ASYNCHRONOUS == mSupportedOperations,
-                threadOpenedOn == NS_GetCurrentThread());
+                IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
 
   if (!connectionReady()) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1773,7 +1761,7 @@ Connection::GetDefaultPageSize(int32_t* _defaultPageSize) {
 
 NS_IMETHODIMP
 Connection::GetConnectionReady(bool* _ready) {
-  MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
+  MOZ_ASSERT(IsOnCurrentSerialEventTarget(eventTargetOpenedOn));
   *_ready = connectionReady();
   return NS_OK;
 }
