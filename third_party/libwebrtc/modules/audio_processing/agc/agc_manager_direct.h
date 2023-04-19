@@ -106,11 +106,10 @@ class AgcManagerDirect final {
                            ClippingParametersVerified);
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
                            DisableClippingPredictorDoesNotLowerVolume);
-  FRIEND_TEST_ALL_PREFIXES(
-      AgcManagerDirectStandaloneTest,
-      EnableClippingPredictorWithUnusedPredictedStepDoesNotLowerVolume);
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
-                           EnableClippingPredictorLowersVolume);
+                           UsedClippingPredictionsProduceLowerAnalogLevels);
+  FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
+                           UnusedClippingPredictionsProduceEqualAnalogLevels);
 
   
   
