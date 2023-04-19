@@ -1834,16 +1834,6 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
-      
-      
-      
-      
-      
-      bool useIt = mPopupType == ePopupTypeTooltip || popup->mPopupAnchored ||
-                   popup->WaylandPopupIsFirst();
-      if (!useIt) {
-        return false;
-      }
       if (popup->WaylandPopupIsFirst() &&
           popup->WaylandPopupFitsToplevelWindow()) {
         
