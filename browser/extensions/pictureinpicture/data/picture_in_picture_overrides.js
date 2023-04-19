@@ -146,8 +146,13 @@ let AVAILABLE_PIP_OVERRIDES;
     },
 
     youtube: {
+      
+
+
+
+
       "https://*.youtube.com/*": {
-        visibilityThreshold: 0.9,
+        visibilityThreshold: 0.7,
         videoWrapperScriptPath: "video-wrappers/youtube.js",
       },
       "https://*.youtube-nocookie.com/*": {
