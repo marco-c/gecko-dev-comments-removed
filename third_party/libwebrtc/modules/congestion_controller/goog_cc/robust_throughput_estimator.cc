@@ -15,17 +15,38 @@
 #include <algorithm>
 #include <utility>
 
+#include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
 
 RobustThroughputEstimator::RobustThroughputEstimator(
     const RobustThroughputEstimatorSettings& settings)
-    : settings_(settings) {
+    : settings_(settings),
+      latest_discarded_send_time_(Timestamp::MinusInfinity()) {
   RTC_DCHECK(settings.enabled);
 }
 
 RobustThroughputEstimator::~RobustThroughputEstimator() {}
+
+bool RobustThroughputEstimator::FirstPacketOutsideWindow() {
+  if (window_.empty())
+    return false;
+  if (window_.size() > settings_.max_window_packets)
+    return true;
+  TimeDelta current_window_duration =
+      window_.back().receive_time - window_.front().receive_time;
+  if (current_window_duration > settings_.max_window_duration)
+    return true;
+  if (window_.size() > settings_.window_packets &&
+      current_window_duration > settings_.min_window_duration) {
+    return true;
+  }
+  return false;
+}
 
 void RobustThroughputEstimator::IncomingPacketFeedbackVector(
     const std::vector<PacketResult>& packet_feedback_vector) {
@@ -33,6 +54,16 @@ void RobustThroughputEstimator::IncomingPacketFeedbackVector(
                             packet_feedback_vector.end(),
                             PacketResult::ReceiveTimeOrder()));
   for (const auto& packet : packet_feedback_vector) {
+    
+    
+    
+    
+    
+    if (packet.receive_time.IsInfinite() ||
+        packet.sent_packet.send_time.IsInfinite()) {
+      continue;
+    }
+
     
     window_.push_back(packet);
     window_.back().sent_packet.prior_unacked_data =
@@ -45,18 +76,18 @@ void RobustThroughputEstimator::IncomingPacketFeedbackVector(
          i > 0 && window_[i].receive_time < window_[i - 1].receive_time; i--) {
       std::swap(window_[i], window_[i - 1]);
     }
-    
-    while (window_.size() > settings_.kMaxPackets ||
-           (window_.size() > settings_.min_packets &&
-            packet.receive_time - window_.front().receive_time >
-                settings_.window_duration)) {
-      window_.pop_front();
-    }
+  }
+
+  
+  while (FirstPacketOutsideWindow()) {
+    latest_discarded_send_time_ = std::max(
+        latest_discarded_send_time_, window_.front().sent_packet.send_time);
+    window_.pop_front();
   }
 }
 
 absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
-  if (window_.size() < settings_.initial_packets)
+  if (window_.empty() || window_.size() < settings_.required_packets)
     return absl::nullopt;
 
   TimeDelta largest_recv_gap(TimeDelta::Millis(0));
@@ -72,63 +103,86 @@ absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
     }
   }
 
-  Timestamp min_send_time = window_[0].sent_packet.send_time;
-  Timestamp max_send_time = window_[0].sent_packet.send_time;
-  Timestamp min_recv_time = window_[0].receive_time;
-  Timestamp max_recv_time = window_[0].receive_time;
-  DataSize data_size = DataSize::Bytes(0);
+  Timestamp first_send_time = Timestamp::PlusInfinity();
+  Timestamp last_send_time = Timestamp::MinusInfinity();
+  Timestamp first_recv_time = Timestamp::PlusInfinity();
+  Timestamp last_recv_time = Timestamp::MinusInfinity();
+  DataSize recv_size = DataSize::Bytes(0);
+  DataSize send_size = DataSize::Bytes(0);
+  DataSize first_recv_size = DataSize::Bytes(0);
+  DataSize last_send_size = DataSize::Bytes(0);
+  size_t num_sent_packets_in_window = 0;
   for (const auto& packet : window_) {
-    min_send_time = std::min(min_send_time, packet.sent_packet.send_time);
-    max_send_time = std::max(max_send_time, packet.sent_packet.send_time);
-    min_recv_time = std::min(min_recv_time, packet.receive_time);
-    max_recv_time = std::max(max_recv_time, packet.receive_time);
-    data_size += packet.sent_packet.size;
-    data_size += packet.sent_packet.prior_unacked_data;
+    if (packet.receive_time < first_recv_time) {
+      first_recv_time = packet.receive_time;
+      first_recv_size =
+          packet.sent_packet.size + packet.sent_packet.prior_unacked_data;
+    }
+    last_recv_time = std::max(last_recv_time, packet.receive_time);
+    recv_size += packet.sent_packet.size;
+    recv_size += packet.sent_packet.prior_unacked_data;
+
+    if (packet.sent_packet.send_time < latest_discarded_send_time_) {
+      
+      
+      
+      
+      
+      
+      continue;
+    }
+    if (packet.sent_packet.send_time > last_send_time) {
+      last_send_time = packet.sent_packet.send_time;
+      last_send_size =
+          packet.sent_packet.size + packet.sent_packet.prior_unacked_data;
+    }
+    first_send_time = std::min(first_send_time, packet.sent_packet.send_time);
+
+    send_size += packet.sent_packet.size;
+    send_size += packet.sent_packet.prior_unacked_data;
+    ++num_sent_packets_in_window;
   }
 
   
   
   
   
-  DataSize recv_size = data_size;
-  DataSize send_size = data_size;
-  if (settings_.assume_shared_link) {
-    
-    
-    
-    
-    
-    DataSize first_last_average_size =
-        (window_.front().sent_packet.size +
-         window_.front().sent_packet.prior_unacked_data +
-         window_.back().sent_packet.size +
-         window_.back().sent_packet.prior_unacked_data) /
-        2;
-    recv_size -= first_last_average_size;
-    send_size -= first_last_average_size;
-  } else {
-    
-    
-    
-    
-    recv_size -= (window_.front().sent_packet.size +
-                  window_.front().sent_packet.prior_unacked_data);
-    send_size -= (window_.back().sent_packet.size +
-                  window_.back().sent_packet.prior_unacked_data);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  recv_size -= first_recv_size;
+  send_size -= last_send_size;
 
   
   
-  TimeDelta send_duration = max_send_time - min_send_time;
-  TimeDelta recv_duration = (max_recv_time - min_recv_time) - largest_recv_gap;
-  if (settings_.reduce_bias) {
-    recv_duration += second_largest_recv_gap;
-  } else {
-    recv_duration += recv_duration / (window_.size() - 2);
-  }
-
-  send_duration = std::max(send_duration, TimeDelta::Millis(1));
+  
+  
+  
+  
+  RTC_DCHECK(first_recv_time.IsFinite());
+  RTC_DCHECK(last_recv_time.IsFinite());
+  TimeDelta recv_duration = (last_recv_time - first_recv_time) -
+                            largest_recv_gap + second_largest_recv_gap;
   recv_duration = std::max(recv_duration, TimeDelta::Millis(1));
+
+  if (num_sent_packets_in_window < settings_.required_packets) {
+    
+    return recv_size / recv_duration;
+  }
+
+  RTC_DCHECK(first_send_time.IsFinite());
+  RTC_DCHECK(last_send_time.IsFinite());
+  TimeDelta send_duration = last_send_time - first_send_time;
+  send_duration = std::max(send_duration, TimeDelta::Millis(1));
+
   return std::min(send_size / send_duration, recv_size / recv_duration);
 }
 

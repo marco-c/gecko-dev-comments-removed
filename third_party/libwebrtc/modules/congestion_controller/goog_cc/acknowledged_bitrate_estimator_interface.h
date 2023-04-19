@@ -11,6 +11,8 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_ACKNOWLEDGED_BITRATE_ESTIMATOR_INTERFACE_H_
 #define MODULES_CONGESTION_CONTROLLER_GOOG_CC_ACKNOWLEDGED_BITRATE_ESTIMATOR_INTERFACE_H_
 
+#include <stddef.h>
+
 #include <memory>
 #include <vector>
 
@@ -18,13 +20,14 @@
 #include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
 
 namespace webrtc {
 
 struct RobustThroughputEstimatorSettings {
   static constexpr char kKey[] = "WebRTC-Bwe-RobustThroughputEstimatorSettings";
-  static constexpr size_t kMaxPackets = 500;
 
   RobustThroughputEstimatorSettings() = delete;
   explicit RobustThroughputEstimatorSettings(
@@ -37,22 +40,24 @@ struct RobustThroughputEstimatorSettings {
   
   
   
-  bool reduce_bias = true;
+  
+  
+  
+  unsigned window_packets = 20;
+  unsigned max_window_packets = 500;
+  TimeDelta min_window_duration = TimeDelta::Seconds(1);
+  TimeDelta max_window_duration = TimeDelta::Seconds(5);
+
+  
+  
+  unsigned required_packets = 10;
 
   
   
   
-  bool assume_shared_link = false;
-
   
   
-  unsigned min_packets = 20;
-  TimeDelta window_duration = TimeDelta::Millis(500);
-
   
-  
-  unsigned initial_packets = 20;
-
   
   
   

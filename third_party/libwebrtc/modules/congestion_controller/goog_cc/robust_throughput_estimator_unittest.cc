@@ -10,158 +10,418 @@
 
 #include "modules/congestion_controller/goog_cc/robust_throughput_estimator.h"
 
-#include "api/transport/field_trial_based_config.h"
-#include "test/field_trial.h"
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <memory>
+
+#include "absl/strings/string_view.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "test/explicit_key_value_config.h"
 #include "test/gtest.h"
 
 namespace webrtc {
-namespace {
-std::vector<PacketResult> CreateFeedbackVector(size_t number_of_packets,
-                                               DataSize packet_size,
-                                               TimeDelta send_increment,
-                                               TimeDelta recv_increment,
-                                               Timestamp* send_clock,
-                                               Timestamp* recv_clock,
-                                               uint16_t* sequence_number) {
-  std::vector<PacketResult> packet_feedback_vector(number_of_packets);
-  for (size_t i = 0; i < number_of_packets; i++) {
-    packet_feedback_vector[i].receive_time = *recv_clock;
-    packet_feedback_vector[i].sent_packet.send_time = *send_clock;
-    packet_feedback_vector[i].sent_packet.sequence_number = *sequence_number;
-    packet_feedback_vector[i].sent_packet.size = packet_size;
-    *send_clock += send_increment;
-    *recv_clock += recv_increment;
-    *sequence_number += 1;
-  }
-  return packet_feedback_vector;
-}
-}  
 
-TEST(RobustThroughputEstimatorTest, SteadyRate) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
-      "enabled:true,assume_shared_link:false,reduce_bias:true,min_packets:10,"
-      "window_duration:100ms/");
-  FieldTrialBasedConfig field_trial_config;
-  RobustThroughputEstimatorSettings settings(&field_trial_config);
-  RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::Bytes(1000));
-  Timestamp send_clock(Timestamp::Millis(100000));
-  Timestamp recv_clock(Timestamp::Millis(10000));
-  TimeDelta send_increment(TimeDelta::Millis(10));
-  TimeDelta recv_increment(TimeDelta::Millis(10));
-  uint16_t sequence_number = 100;
+RobustThroughputEstimatorSettings CreateRobustThroughputEstimatorSettings(
+    absl::string_view field_trial_string) {
+  test::ExplicitKeyValueConfig trials(field_trial_string);
+  RobustThroughputEstimatorSettings settings(&trials);
+  return settings;
+}
+
+class FeedbackGenerator {
+ public:
+  std::vector<PacketResult> CreateFeedbackVector(size_t number_of_packets,
+                                                 DataSize packet_size,
+                                                 DataRate send_rate,
+                                                 DataRate recv_rate) {
+    std::vector<PacketResult> packet_feedback_vector(number_of_packets);
+    for (size_t i = 0; i < number_of_packets; i++) {
+      packet_feedback_vector[i].sent_packet.send_time = send_clock_;
+      packet_feedback_vector[i].sent_packet.sequence_number = sequence_number_;
+      packet_feedback_vector[i].sent_packet.size = packet_size;
+      send_clock_ += packet_size / send_rate;
+      recv_clock_ += packet_size / recv_rate;
+      sequence_number_ += 1;
+      packet_feedback_vector[i].receive_time = recv_clock_;
+    }
+    return packet_feedback_vector;
+  }
+
+  Timestamp CurrentReceiveClock() { return recv_clock_; }
+
+  void AdvanceReceiveClock(TimeDelta delta) { recv_clock_ += delta; }
+
+  void AdvanceSendClock(TimeDelta delta) { send_clock_ += delta; }
+
+ private:
+  Timestamp send_clock_ = Timestamp::Millis(100000);
+  Timestamp recv_clock_ = Timestamp::Millis(10000);
+  uint16_t sequence_number_ = 100;
+};
+
+TEST(RobustThroughputEstimatorTest, InitialEstimate) {
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  
   std::vector<PacketResult> packet_feedback =
-      CreateFeedbackVector(9, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
+      feedback_generator.CreateFeedbackVector(9, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
   throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
   EXPECT_FALSE(throughput_estimator.bitrate().has_value());
 
-  packet_feedback =
-      CreateFeedbackVector(11, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
+  
+  packet_feedback = feedback_generator.CreateFeedbackVector(
+      1, DataSize::Bytes(1000), send_rate, recv_rate);
   throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
   auto throughput = throughput_estimator.bitrate();
-  EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 100 * 1000.0,
-              0.05 * 100 * 1000.0);  
+  EXPECT_EQ(throughput, send_rate);
+
+  
+  packet_feedback = feedback_generator.CreateFeedbackVector(
+      15, DataSize::Bytes(1000), send_rate, recv_rate);
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  throughput = throughput_estimator.bitrate();
+  EXPECT_EQ(throughput, send_rate);
 }
 
-TEST(RobustThroughputEstimatorTest, DelaySpike) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
-      "enabled:true,assume_shared_link:false,reduce_bias:true,min_packets:10,"
-      "window_duration:100ms/");
-  FieldTrialBasedConfig field_trial_config;
-  RobustThroughputEstimatorSettings settings(&field_trial_config);
-  RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::Bytes(1000));
-  Timestamp send_clock(Timestamp::Millis(100000));
-  Timestamp recv_clock(Timestamp::Millis(10000));
-  TimeDelta send_increment(TimeDelta::Millis(10));
-  TimeDelta recv_increment(TimeDelta::Millis(10));
-  uint16_t sequence_number = 100;
-  std::vector<PacketResult> packet_feedback =
-      CreateFeedbackVector(20, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
-  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
-  auto throughput = throughput_estimator.bitrate();
-  EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 100 * 1000.0,
-              0.05 * 100 * 1000.0);  
+TEST(RobustThroughputEstimatorTest, EstimateAdapts) {
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
 
   
-  recv_clock += TimeDelta::Millis(40);
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+  for (int i = 0; i < 10; ++i) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
 
   
-  recv_increment = TimeDelta::Millis(2);
-  packet_feedback =
-      CreateFeedbackVector(5, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
-  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
-  throughput = throughput_estimator.bitrate();
-  EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 100 * 1000.0,
-              0.05 * 100 * 1000.0);  
+  send_rate = DataRate::BytesPerSec(200000);
+  recv_rate = DataRate::BytesPerSec(200000);
+  for (int i = 0; i < 20; ++i) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    ASSERT_TRUE(throughput.has_value());
+    EXPECT_GE(throughput.value(), DataRate::BytesPerSec(100000));
+    EXPECT_LE(throughput.value(), send_rate);
+  }
 
   
-  recv_increment = TimeDelta::Millis(10);
-  packet_feedback =
-      CreateFeedbackVector(5, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
-  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
-  throughput = throughput_estimator.bitrate();
-  EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 100 * 1000.0,
-              0.05 * 100 * 1000.0);  
+  for (int i = 0; i < 20; ++i) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
+
+  
+  send_rate = DataRate::BytesPerSec(50000);
+  recv_rate = DataRate::BytesPerSec(50000);
+  for (int i = 0; i < 5; ++i) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    ASSERT_TRUE(throughput.has_value());
+    EXPECT_LE(throughput.value(), DataRate::BytesPerSec(200000));
+    EXPECT_GE(throughput.value(), send_rate);
+  }
+
+  
+  send_rate = DataRate::BytesPerSec(50000);
+  recv_rate = DataRate::BytesPerSec(50000);
+  for (int i = 0; i < 5; ++i) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
 }
 
 TEST(RobustThroughputEstimatorTest, CappedByReceiveRate) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
-      "enabled:true,assume_shared_link:false,reduce_bias:true,min_packets:10,"
-      "window_duration:100ms/");
-  FieldTrialBasedConfig field_trial_config;
-  RobustThroughputEstimatorSettings settings(&field_trial_config);
-  RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::Bytes(1000));
-  Timestamp send_clock(Timestamp::Millis(100000));
-  Timestamp recv_clock(Timestamp::Millis(10000));
-  TimeDelta send_increment(TimeDelta::Millis(10));
-  TimeDelta recv_increment(TimeDelta::Millis(40));
-  uint16_t sequence_number = 100;
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(25000));
+
   std::vector<PacketResult> packet_feedback =
-      CreateFeedbackVector(20, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
   throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
   auto throughput = throughput_estimator.bitrate();
-  EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 25 * 1000.0,
-              0.05 * 25 * 1000.0);  
+  ASSERT_TRUE(throughput.has_value());
+  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+              recv_rate.bytes_per_sec<double>(),
+              0.05 * recv_rate.bytes_per_sec<double>());  
 }
 
 TEST(RobustThroughputEstimatorTest, CappedBySendRate) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
-      "enabled:true,assume_shared_link:false,reduce_bias:true,min_packets:10,"
-      "window_duration:100ms/");
-  FieldTrialBasedConfig field_trial_config;
-  RobustThroughputEstimatorSettings settings(&field_trial_config);
-  RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::Bytes(1000));
-  Timestamp send_clock(Timestamp::Millis(100000));
-  Timestamp recv_clock(Timestamp::Millis(10000));
-  TimeDelta send_increment(TimeDelta::Millis(20));
-  TimeDelta recv_increment(TimeDelta::Millis(10));
-  uint16_t sequence_number = 100;
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(50000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
   std::vector<PacketResult> packet_feedback =
-      CreateFeedbackVector(20, packet_size, send_increment, recv_increment,
-                           &send_clock, &recv_clock, &sequence_number);
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  auto throughput = throughput_estimator.bitrate();
+  ASSERT_TRUE(throughput.has_value());
+  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+              send_rate.bytes_per_sec<double>(),
+              0.05 * send_rate.bytes_per_sec<double>());  
+}
+
+TEST(RobustThroughputEstimatorTest, DelaySpike) {
+  FeedbackGenerator feedback_generator;
+  
+  
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true,window_duration:500ms/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  std::vector<PacketResult> packet_feedback =
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  auto throughput = throughput_estimator.bitrate();
+  EXPECT_EQ(throughput, send_rate);
+
+  
+  feedback_generator.AdvanceReceiveClock(TimeDelta::Millis(250));
+
+  
+  
+  
+  recv_rate = DataRate::BytesPerSec(600000);
+  
+  for (int i = 0; i < 30; ++i) {
+    packet_feedback = feedback_generator.CreateFeedbackVector(
+        1, DataSize::Bytes(1000), send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    throughput = throughput_estimator.bitrate();
+    ASSERT_TRUE(throughput.has_value());
+    EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+                send_rate.bytes_per_sec<double>(),
+                0.05 * send_rate.bytes_per_sec<double>());  
+  }
+
+  
+  
+  
+  recv_rate = DataRate::BytesPerSec(100000);
+  for (int i = 0; i < 20; ++i) {
+    packet_feedback = feedback_generator.CreateFeedbackVector(
+        5, DataSize::Bytes(1000), send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    throughput = throughput_estimator.bitrate();
+    ASSERT_TRUE(throughput.has_value());
+    EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+                send_rate.bytes_per_sec<double>(),
+                0.05 * send_rate.bytes_per_sec<double>());  
+  }
+}
+
+TEST(RobustThroughputEstimatorTest, HighLoss) {
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  std::vector<PacketResult> packet_feedback =
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+
+  
+  for (size_t i = 0; i < packet_feedback.size(); i++) {
+    if (i % 2 == 1) {
+      packet_feedback[i].receive_time = Timestamp::PlusInfinity();
+    }
+  }
+
+  std::sort(packet_feedback.begin(), packet_feedback.end(),
+            PacketResult::ReceiveTimeOrder());
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  auto throughput = throughput_estimator.bitrate();
+  ASSERT_TRUE(throughput.has_value());
+  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+              send_rate.bytes_per_sec<double>() / 2,
+              0.05 * send_rate.bytes_per_sec<double>() / 2);  
+}
+
+TEST(RobustThroughputEstimatorTest, ReorderedFeedback) {
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  std::vector<PacketResult> packet_feedback =
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  auto throughput = throughput_estimator.bitrate();
+  EXPECT_EQ(throughput, send_rate);
+
+  std::vector<PacketResult> delayed_feedback =
+      feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+  packet_feedback = feedback_generator.CreateFeedbackVector(
+      10, DataSize::Bytes(1000), send_rate, recv_rate);
+
+  
+  
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  throughput = throughput_estimator.bitrate();
+  ASSERT_TRUE(throughput.has_value());
+  EXPECT_LT(throughput.value(), send_rate);
+
+  
+  throughput_estimator.IncomingPacketFeedbackVector(delayed_feedback);
+  throughput = throughput_estimator.bitrate();
+  EXPECT_EQ(throughput, send_rate);
+
+  
+  for (int i = 0; i < 10; ++i) {
+    packet_feedback = feedback_generator.CreateFeedbackVector(
+        15, DataSize::Bytes(1000), send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
+}
+
+TEST(RobustThroughputEstimatorTest, DeepReordering) {
+  FeedbackGenerator feedback_generator;
+  
+  
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true,window_duration:500ms/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  std::vector<PacketResult> delayed_packets =
+      feedback_generator.CreateFeedbackVector(1, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
+
+  for (int i = 0; i < 10; i++) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
+
+  
+  
+  
+  
+  delayed_packets.front().receive_time =
+      feedback_generator.CurrentReceiveClock();
+  throughput_estimator.IncomingPacketFeedbackVector(delayed_packets);
+  auto throughput = throughput_estimator.bitrate();
+  ASSERT_TRUE(throughput.has_value());
+  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+              send_rate.bytes_per_sec<double>(),
+              0.05 * send_rate.bytes_per_sec<double>());  
+
+  
+  for (int i = 0; i < 10; i++) {
+    std::vector<PacketResult> packet_feedback =
+        feedback_generator.CreateFeedbackVector(10, DataSize::Bytes(1000),
+                                                send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    auto throughput = throughput_estimator.bitrate();
+    ASSERT_TRUE(throughput.has_value());
+    EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+                send_rate.bytes_per_sec<double>(),
+                0.05 * send_rate.bytes_per_sec<double>());  
+  }
+}
+
+TEST(RobustThroughputEstimatorTest, StreamPausedAndResumed) {
+  FeedbackGenerator feedback_generator;
+  RobustThroughputEstimator throughput_estimator(
+      CreateRobustThroughputEstimatorSettings(
+          "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+          "enabled:true/"));
+  DataRate send_rate(DataRate::BytesPerSec(100000));
+  DataRate recv_rate(DataRate::BytesPerSec(100000));
+
+  std::vector<PacketResult> packet_feedback =
+      feedback_generator.CreateFeedbackVector(20, DataSize::Bytes(1000),
+                                              send_rate, recv_rate);
   throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
   auto throughput = throughput_estimator.bitrate();
   EXPECT_TRUE(throughput.has_value());
-  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(), 50 * 1000.0,
-              0.05 * 50 * 1000.0);  
+  double expected_bytes_per_sec = 100 * 1000.0;
+  EXPECT_NEAR(throughput.value().bytes_per_sec<double>(),
+              expected_bytes_per_sec,
+              0.05 * expected_bytes_per_sec);  
+
+  
+  feedback_generator.AdvanceSendClock(TimeDelta::Seconds(60));
+  feedback_generator.AdvanceReceiveClock(TimeDelta::Seconds(60));
+
+  
+  
+  packet_feedback = feedback_generator.CreateFeedbackVector(
+      5, DataSize::Bytes(1000), send_rate, recv_rate);
+  throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+  throughput = throughput_estimator.bitrate();
+  EXPECT_FALSE(throughput.has_value());
+
+  
+  for (int i = 0; i < 4; ++i) {
+    packet_feedback = feedback_generator.CreateFeedbackVector(
+        5, DataSize::Bytes(1000), send_rate, recv_rate);
+    throughput_estimator.IncomingPacketFeedbackVector(packet_feedback);
+    throughput = throughput_estimator.bitrate();
+    EXPECT_EQ(throughput, send_rate);
+  }
 }
 
 }  
