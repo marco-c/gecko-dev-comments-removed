@@ -53,6 +53,10 @@ class ReceiveStream {
 
   
   
+  virtual void SetRtpExtensions(std::vector<RtpExtension> extensions) = 0;
+
+  
+  
   
   
   virtual const RtpConfig& rtp_config() const = 0;

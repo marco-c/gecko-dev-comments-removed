@@ -93,6 +93,7 @@ class VideoReceiveStream
 
   void AddSecondarySink(RtpPacketSinkInterface* sink) override;
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink) override;
+  void SetRtpExtensions(std::vector<RtpExtension> extensions) override;
 
   
   

@@ -53,6 +53,9 @@ class UlpfecReceiver {
 
   
   virtual FecPacketCounter GetPacketCounter() const = 0;
+
+  virtual void SetRtpExtensions(
+      rtc::ArrayView<const RtpExtension> extensions) = 0;
 };
 }  
 #endif  

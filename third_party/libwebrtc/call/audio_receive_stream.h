@@ -170,10 +170,6 @@ class AudioReceiveStream : public MediaReceiveStream {
   virtual void SetNonSenderRttMeasurement(bool enabled) = 0;
 
   
-  
-  virtual void SetRtpExtensions(std::vector<RtpExtension> extensions) = 0;
-
-  
   virtual bool IsRunning() const = 0;
 
   virtual Stats GetStats(bool get_and_clear_legacy_stats) const = 0;

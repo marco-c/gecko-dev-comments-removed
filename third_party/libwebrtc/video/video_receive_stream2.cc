@@ -220,8 +220,8 @@ VideoReceiveStream2::VideoReceiveStream2(
                                  this,     
                                  nullptr,  
                                  this,     
-                                 config_.frame_decryptor,
-                                 config_.frame_transformer),
+                                 std::move(config_.frame_decryptor),
+                                 std::move(config_.frame_transformer)),
       rtp_stream_sync_(call->worker_thread(), this),
       max_wait_for_keyframe_ms_(DetermineMaxWaitForFrame(config, true)),
       max_wait_for_frame_ms_(DetermineMaxWaitForFrame(config, false)),
@@ -450,6 +450,25 @@ void VideoReceiveStream2::Stop() {
   video_stream_decoder_.reset();
   incoming_video_stream_.reset();
   transport_adapter_.Disable();
+}
+
+void VideoReceiveStream2::SetRtpExtensions(
+    std::vector<RtpExtension> extensions) {
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+  rtp_video_stream_receiver_.SetRtpExtensions(extensions);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  VideoReceiveStream::Config& c =
+      const_cast<VideoReceiveStream::Config&>(config_);
+  c.rtp.extensions = std::move(extensions);
 }
 
 void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
