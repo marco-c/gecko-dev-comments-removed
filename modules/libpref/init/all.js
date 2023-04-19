@@ -694,16 +694,16 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
-#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
-  pref("toolkit.asyncshutdown.crash_timeout", 60000); 
+
+
+#if defined(MOZ_ASAN)
+  pref("toolkit.asyncshutdown.crash_timeout", 300000); 
+#elif defined(MOZ_TSAN)
+  pref("toolkit.asyncshutdown.crash_timeout", 360000); 
+#elif defined(MOZ_CODE_COVERAGE)
+  pref("toolkit.asyncshutdown.crash_timeout", 180000); 
 #else
-  
-  
-  #if defined(MOZ_TSAN)
-    pref("toolkit.asyncshutdown.crash_timeout", 360000); 
-  #else
-    pref("toolkit.asyncshutdown.crash_timeout", 300000); 
-  #endif
+  pref("toolkit.asyncshutdown.crash_timeout", 60000); 
 #endif // !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
 pref("toolkit.asyncshutdown.log", false);
