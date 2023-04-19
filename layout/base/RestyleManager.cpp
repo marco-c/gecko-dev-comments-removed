@@ -3383,10 +3383,6 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
                                                     nsAtom* aAttribute) {
   MOZ_DIAGNOSTIC_ASSERT(!mInStyleRefresh);
 
-  if (!aElement.HasServoData()) {
-    return;
-  }
-
   bool influencesOtherPseudoClassState;
   if (!NeedToRecordAttrChange(*StyleSet(), aElement, aNameSpaceID, aAttribute,
                               &influencesOtherPseudoClassState)) {
@@ -3398,6 +3394,10 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
   
   
   IncrementUndisplayedRestyleGeneration();
+
+  if (!aElement.HasServoData()) {
+    return;
+  }
 
   
   
