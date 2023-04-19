@@ -295,14 +295,13 @@ class WorkerStreamOwner final {
     RefPtr<WorkerStreamOwner> self =
         new WorkerStreamOwner(aStream, std::move(target));
 
-    self->mWorkerRef = WeakWorkerRef::Create(aWorker, [self]() {
+    self->mWorkerRef = StrongWorkerRef::Create(aWorker, "JSStreamConsumer", [self]() {
       if (self->mStream) {
         
         
         
         self->mStream->Close();
         self->mStream = nullptr;
-        self->mWorkerRef = nullptr;
       }
     });
 
@@ -326,7 +325,7 @@ class WorkerStreamOwner final {
   
   
   nsCOMPtr<nsIAsyncInputStream> mStream;
-  RefPtr<WeakWorkerRef> mWorkerRef;
+  RefPtr<StrongWorkerRef> mWorkerRef;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 };
 
