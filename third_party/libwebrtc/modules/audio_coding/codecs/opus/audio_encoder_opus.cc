@@ -367,7 +367,8 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother()),
       audio_network_adaptor_creator_(audio_network_adaptor_creator),
-      bitrate_smoother_(std::move(bitrate_smoother)) {
+      bitrate_smoother_(std::move(bitrate_smoother)),
+      consecutive_dtx_frames_(0) {
   RTC_DCHECK(0 <= payload_type && payload_type <= 127);
 
   
@@ -589,7 +590,6 @@ AudioEncoder::EncodedInfo AudioEncoderOpusImpl::EncodeImpl(
                Num10msFramesPerPacket() * SamplesPer10msFrame());
 
   const size_t max_encoded_bytes = SufficientOutputBufferSize();
-  const size_t start_offset_bytes = encoded->size();
   EncodedInfo info;
   info.encoded_bytes = encoded->AppendData(
       max_encoded_bytes, [&](rtc::ArrayView<uint8_t> encoded) {
@@ -603,6 +603,8 @@ AudioEncoder::EncodedInfo AudioEncoderOpusImpl::EncodeImpl(
         return static_cast<size_t>(status);
       });
   input_buffer_.clear();
+
+  bool dtx_frame = (info.encoded_bytes <= 2);
 
   
   config_.frame_size_ms = next_frame_length_ms_;
@@ -618,18 +620,14 @@ AudioEncoder::EncodedInfo AudioEncoderOpusImpl::EncodeImpl(
   info.encoded_timestamp = first_timestamp_in_buffer_;
   info.payload_type = payload_type_;
   info.send_even_if_empty = true;  
+  
+  
+  
+  info.speech = !dtx_frame && (consecutive_dtx_frames_ != 20);
   info.encoder_type = CodecType::kOpus;
 
   
-  int has_voice = WebRtcOpus_PacketHasVoiceActivity(
-      &encoded->data()[start_offset_bytes], info.encoded_bytes);
-  if (has_voice == -1) {
-    
-    
-    info.speech = true;
-  } else {
-    info.speech = has_voice;
-  }
+  consecutive_dtx_frames_ = (dtx_frame) ? (consecutive_dtx_frames_ + 1) : (0);
 
   return info;
 }
