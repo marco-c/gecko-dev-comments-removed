@@ -6953,11 +6953,7 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
     
     
     
-    if (trials.BitrateAdjusterCanUseNetworkHeadroom()) {
-      overshoot_factor = 2.4;
-    } else {
-      overshoot_factor = 4.0;
-    }
+    overshoot_factor = 3.0;
   }
   fake_encoder_.SimulateOvershoot(overshoot_factor);
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(

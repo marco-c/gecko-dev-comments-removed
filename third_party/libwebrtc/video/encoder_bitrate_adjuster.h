@@ -47,7 +47,7 @@ class EncoderBitrateAdjuster {
   void OnEncoderInfo(const VideoEncoder::EncoderInfo& encoder_info);
 
   
-  void OnEncodedFrame(const EncodedImage& encoded_image, int temporal_index);
+  void OnEncodedFrame(DataSize size, int spatial_index, int temporal_index);
 
   void Reset();
 
