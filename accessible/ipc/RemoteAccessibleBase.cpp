@@ -614,7 +614,10 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     
     
     
-    if (LocalAccessible* localAcc = const_cast<Accessible*>(acc)->AsLocal()) {
+    
+    
+    if (LocalAccessible* localAcc =
+            acc ? const_cast<Accessible*>(acc)->AsLocal() : nullptr) {
       
       
       LayoutDeviceIntRect localBounds = localAcc->Bounds();
