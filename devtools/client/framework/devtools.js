@@ -950,7 +950,9 @@ DevTools.prototype = {
 
 
   hasToolboxForTab(tab) {
-    return this.getToolboxes().some(t => t.descriptorFront.localTab === tab);
+    return this.getToolboxes().some(
+      t => t.commands.descriptorFront.localTab === tab
+    );
   },
 };
 
