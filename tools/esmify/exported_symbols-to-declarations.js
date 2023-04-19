@@ -6,6 +6,15 @@
 
 
 
+const _path = require("path");
+const {
+  warnForPath,
+  getPrevStatement,
+  getNextStatement,
+} = require(_path.resolve(__dirname, "./utils.js"));
+
+
+
 module.exports = function(fileInfo, api) {
   const { jscodeshift } = api;
   const root = jscodeshift(fileInfo.source);
@@ -15,48 +24,23 @@ module.exports = function(fileInfo, api) {
 
 module.exports.doTranslate = doTranslate;
 
-function IsIdentifier(node, name) {
-  if (node.type !== "Identifier") {
-    return false;
-  }
-  if (node.name !== name) {
-    return false;
-  }
-  return true;
-}
+
 
 function moveComments(inputFile, path) {
-  const parent = path.parent;
-  if (parent.node.type !== "Program") {
-    warnForPath(
-      inputFile,
-      path,
-      `EXPORTED_SYMBOLS has comments and it cannot be preserved`
-    );
-    return;
-  }
-
-  const index = parent.node.body.findIndex(n => n == path.node);
-  if (index === -1) {
-    warnForPath(
-      inputFile,
-      path,
-      `EXPORTED_SYMBOLS has comments and it cannot be preserved`
-    );
-    return;
-  }
-
-  if (index + 1 < parent.node.body.length) {
-    const next = parent.node.body[index + 1];
+  const next = getNextStatement(path);
+  if (next) {
     if (next.comments) {
       next.comments = [...path.node.comments, ...next.comments];
     } else {
       next.comments = path.node.comments;
     }
     path.node.comments = [];
-  } else if (index > 0) {
-    const prev = parent.node.body[index - 1];
 
+    return;
+  }
+
+  const prev = getPrevStatement(path);
+  if (prev) {
     path.node.comments.forEach(c => {
       c.leading = false;
       c.trailing = true;
@@ -68,13 +52,14 @@ function moveComments(inputFile, path) {
       prev.comments = path.node.comments;
     }
     path.node.comments = [];
-  }
-}
 
-function warnForPath(inputFile, path, message) {
-  const loc = path.node.loc;
-  console.log(
-    `WARNING: ${inputFile}:${loc.start.line}:${loc.start.column} : ${message}`
+    return;
+  }
+
+  warnForPath(
+    inputFile,
+    path,
+    `EXPORTED_SYMBOLS has comments and it cannot be preserved`
   );
 }
 
