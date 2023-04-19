@@ -132,11 +132,6 @@ class LCovRuntime {
  private:
   
   
-  
-  void maybeReopenAfterFork();
-
-  
-  
   bool fillWithFilename(char* name, size_t length);
 
   
