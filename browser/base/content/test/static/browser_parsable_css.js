@@ -437,7 +437,7 @@ add_task(async function checkAllTheCSS() {
     return true;
   });
   
-  await throttledMapPromises(manifestURIs, parseManifest);
+  await PerfTestHelpers.throttledMapPromises(manifestURIs, parseManifest);
 
   
   let isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
@@ -488,7 +488,7 @@ add_task(async function checkAllTheCSS() {
   }
 
   
-  await throttledMapPromises(allPromises, loadCSS);
+  await PerfTestHelpers.throttledMapPromises(allPromises, loadCSS);
 
   
   
