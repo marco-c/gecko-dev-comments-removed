@@ -170,7 +170,7 @@ class ContentProcessStartup {
       const { connectionPrefix, targets } = sessionData;
       
       
-      if (targets.includes("process")) {
+      if (targets?.includes("process")) {
         this.createTargetActor(watcherActorID, connectionPrefix, sessionData);
       }
     }
