@@ -242,6 +242,20 @@ int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
 
 
 
+
+int16_t WebRtcOpus_GetUseDtx(OpusEncInst* inst);
+
+
+
+
+
+
+
+
+
+
+
+
 int16_t WebRtcOpus_EnableCbr(OpusEncInst* inst);
 
 
