@@ -52,12 +52,11 @@ add_task(async function() {
     loaded = BrowserTestUtils.waitForContentEvent(browser, "pageshow");
     browser.goBack();
     await loaded;
-    
-    todo(
+    Assert.ok(
       sh.getEntryAtIndex(1).wireframe,
       "A wireframe was captured for the second entry after going back."
     );
-    todo(
+    Assert.ok(
       !sh.getEntryAtIndex(0).wireframe,
       "No wireframe for the loaded entry after going back."
     );

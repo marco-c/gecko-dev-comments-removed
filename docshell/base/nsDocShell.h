@@ -50,6 +50,7 @@ class ClientSource;
 class EventTarget;
 class SessionHistoryInfo;
 struct LoadingSessionHistoryInfo;
+struct Wireframe;
 }  
 namespace net {
 class LoadInfo;
@@ -737,6 +738,10 @@ class nsDocShell final : public nsDocLoader,
                 bool aAddToGlobalHistory, bool aCloneSHChildren);
 
  public:
+  
+  
+  mozilla::Maybe<mozilla::dom::Wireframe> GetWireframe();
+
   
   
   

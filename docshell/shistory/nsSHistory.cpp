@@ -1274,6 +1274,10 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
       });
     }
 
+    if (aEntry) {
+      aEntry->SetWireframe(Nothing());
+    }
+
     
     aBrowsingContext->SetActiveSessionHistoryEntry(aEntry);
     loadingBC->SetActiveSessionHistoryEntry(nullptr);
