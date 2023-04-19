@@ -96,7 +96,8 @@ struct DcSctpOptions {
   DurationMs rto_max = DurationMs(800);
 
   
-  DurationMs rto_min = DurationMs(120);
+  
+  DurationMs rto_min = DurationMs(220);
 
   
   DurationMs t1_init_timeout = DurationMs(1000);
