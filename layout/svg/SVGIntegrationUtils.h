@@ -25,6 +25,7 @@ struct nsSize;
 struct WrFiltersHolder {
   nsTArray<mozilla::wr::FilterOp> filters;
   nsTArray<mozilla::wr::WrFilterData> filter_datas;
+  mozilla::Maybe<nsRect> post_filters_clip;
   
   
   nsTArray<nsTArray<float>> values;
@@ -119,22 +120,6 @@ class SVGIntegrationUtils final {
 
 
 
-
-
-
-
-
-
-
-
-  static nsIntRegion AdjustInvalidAreaForSVGEffects(
-      nsIFrame* aFrame, const nsPoint& aToReferenceFrame,
-      const nsIntRegion& aInvalidRegion);
-
-  
-
-
-
   static nsRect GetRequiredSourceForInvalidArea(nsIFrame* aFrame,
                                                 const nsRect& aDirtyRect);
 
@@ -223,7 +208,6 @@ class SVGIntegrationUtils final {
   static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
                                     Span<const StyleFilter> aFilters,
                                     WrFiltersHolder& aWrFilters,
-                                    Maybe<nsRect>& aPostFilterClip,
                                     bool& aInitialized);
 
   
