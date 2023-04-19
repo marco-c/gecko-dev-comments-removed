@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset=utf-8>
-
+<!-- WARNING: These tests are preliminary and probably partly incorrect.  -->
 <title>CSSOM View automated IDL tests</title>
 <meta name="timeout" content="long">
 <link rel="author" title="Ms2ger" href="mailto:Ms2ger@gmail.com">
@@ -37,6 +37,7 @@ idl_test(
       Range: ['new Range()'],
       MouseEvent: ['new MouseEvent("foo")'],
       Text: ['document.createTextNode("x")'],
+      VisualViewport: ['self.visualViewport'],
       // CSSPseudoElement: [],
     });
 
