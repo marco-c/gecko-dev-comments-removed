@@ -525,6 +525,7 @@ void DcSctpTransport::OnTransportReadPacket(
     size_t length,
     const int64_t& ,
     int flags) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (flags) {
     
     return;
