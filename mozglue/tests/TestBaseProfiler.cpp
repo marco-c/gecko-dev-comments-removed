@@ -1170,14 +1170,14 @@ void CheckJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
 void TestJSONTimeOutput() {
   printf("TestJSONTimeOutput...\n");
 
-#  define TEST(in, out)                                      \
-    do {                                                     \
-      mozilla::baseprofiler::SpliceableJSONWriter writer(    \
-          mozilla::MakeUnique<StringWriteFunc>());           \
-      writer.Start(mozilla::JSONWriter::SingleLineStyle);    \
-      writer.TimeDoubleMsProperty("time_ms", (in));          \
-      writer.End();                                          \
-      CheckJSON(writer, "{\"time_ms\": " out "}", __LINE__); \
+#  define TEST(in, out)                                     \
+    do {                                                    \
+      mozilla::baseprofiler::SpliceableJSONWriter writer(   \
+          mozilla::MakeUnique<StringWriteFunc>());          \
+      writer.Start(mozilla::JSONWriter::SingleLineStyle);   \
+      writer.TimeDoubleMsProperty("time_ms", (in));         \
+      writer.End();                                         \
+      CheckJSON(writer, "{\"time_ms\":" out "}", __LINE__); \
     } while (false);
 
   TEST(0, "0");
@@ -4770,14 +4770,14 @@ void TestProfiler() {
     constexpr const auto svnpos = std::string_view::npos;
     
     
-    MOZ_RELEASE_ASSERT(profileSV.find("\"markerSchema\": [") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"Text\",") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"tracing\",") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"MediaSample\",") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"display\": [") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"markerSchema\":[") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"Text\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"tracing\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\":\"MediaSample\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"display\":[") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"marker-chart\"") != svnpos);
     MOZ_RELEASE_ASSERT(profileSV.find("\"marker-table\"") != svnpos);
-    MOZ_RELEASE_ASSERT(profileSV.find("\"format\": \"string\"") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"format\":\"string\"") != svnpos);
     
     
 
@@ -4857,9 +4857,9 @@ static void VerifyUniqueStringContents(
   std::string_view jsonStringView(jsonString.get());
   const size_t length = writer.ChunkedWriteFunc().Length();
   MOZ_RELEASE_ASSERT(length == jsonStringView.length());
-  std::string expected = "{\"data\": [";
+  std::string expected = "{\"data\":[";
   expected += aExpectedData;
-  expected += "], \"stringTable\": [";
+  expected += "],\"stringTable\":[";
   expected += aExpectedUniqueStrings;
   expected += "]}";
   if (jsonStringView != expected) {
@@ -4909,7 +4909,7 @@ void TestUniqueJSONStrings() {
         aUniqueStrings.WriteElement(aWriter, "string");
         aUniqueStrings.WriteElement(aWriter, "string");
       },
-      "0, 0", R"("string")");
+      "0,0", R"("string")");
 
   
   VerifyUniqueStringContents(
@@ -4917,7 +4917,7 @@ void TestUniqueJSONStrings() {
         aUniqueStrings.WriteElement(aWriter, "string0");
         aUniqueStrings.WriteElement(aWriter, "string1");
       },
-      "0, 1", R"("string0", "string1")");
+      "0,1", R"("string0","string1")");
 
   
   VerifyUniqueStringContents(
@@ -4926,7 +4926,7 @@ void TestUniqueJSONStrings() {
         aUniqueStrings.WriteElement(aWriter, "string1");
         aUniqueStrings.WriteElement(aWriter, "string0");
       },
-      "0, 1, 0", R"("string0", "string1")");
+      "0,1,0", R"("string0","string1")");
 
   
   VerifyUniqueStringContents(
@@ -4943,8 +4943,7 @@ void TestUniqueJSONStrings() {
         aUniqueStrings.WriteElement(aWriter, "string0");
         aUniqueStrings.WriteElement(aWriter, "prop");
       },
-      R"(0, {"p0": 1, "p1": 0, "p2": 1}, 2, 0, 1)",
-      R"("string0", "prop", "string1")");
+      R"(0,{"p0":1,"p1":0,"p2":1},2,0,1)", R"("string0","prop","string1")");
 
   
   {
@@ -4961,7 +4960,7 @@ void TestUniqueJSONStrings() {
           aUniqueStrings.WriteElement(aWriter, "string1");
           aUniqueStrings.WriteElement(aWriter, "string0");
         },
-        "2, 3, 2", R"("external0", "external1", "string0", "string1")", &ujs);
+        "2,3,2", R"("external0","external1","string0","string1")", &ujs);
   }
 
   
@@ -4981,7 +4980,7 @@ void TestUniqueJSONStrings() {
           aUniqueStrings.WriteElement(aWriter, "string1");
           aUniqueStrings.WriteElement(aWriter, "string0");
         },
-        "2, 3, 2", R"("external0", "external1", "string0", "string1")", &ujs);
+        "2,3,2", R"("external0","external1","string0","string1")", &ujs);
   }
 
   
@@ -5001,8 +5000,7 @@ void TestUniqueJSONStrings() {
         aWriter.UniqueStringElement("prop");
         aWriter.ResetUniqueStrings();
       },
-      R"(0, {"p0": 1, "p1": 0, "p2": 1}, 2, 0, 1)",
-      R"("string0", "prop", "string1")");
+      R"(0,{"p0":1,"p1":0,"p2":1},2,0,1)", R"("string0","prop","string1")");
 
   printf("TestUniqueJSONStrings done\n");
 }

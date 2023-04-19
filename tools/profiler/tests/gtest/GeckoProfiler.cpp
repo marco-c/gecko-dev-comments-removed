@@ -1288,7 +1288,8 @@ void JSONWhitespaceCheck(const char* aOutput) {
     }
   }
 
-  EXPECT_LE(double(whitespaces) / double(length), 0.1);
+  EXPECT_EQ(whitespaces, 0u);
+  EXPECT_GT(length, 0u);
 }
 
 

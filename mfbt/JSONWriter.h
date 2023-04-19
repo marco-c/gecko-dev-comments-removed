@@ -222,6 +222,9 @@ class JSONWriter {
   
   
   
+  
+  
+  
   enum CollectionStyle {
     MultiLineStyle,  
     SingleLineStyle
@@ -239,8 +242,7 @@ class JSONWriter {
   static constexpr Span<const char> scObjectEndString = MakeStringSpan("}");
   static constexpr Span<const char> scPropertyBeginString =
       MakeStringSpan("\"");
-  static constexpr Span<const char> scPropertyEndString =
-      MakeStringSpan("\": ");
+  static constexpr Span<const char> scPropertyEndString = MakeStringSpan("\":");
   static constexpr Span<const char> scQuoteString = MakeStringSpan("\"");
   static constexpr Span<const char> scSpaceString = MakeStringSpan(" ");
   static constexpr Span<const char> scTopObjectBeginString =
@@ -269,7 +271,7 @@ class JSONWriter {
     if (mDepth > 0 && mNeedNewlines[mDepth]) {
       mWriter->Write(scNewLineString);
       Indent();
-    } else if (mNeedComma[mDepth]) {
+    } else if (mNeedComma[mDepth] && mNeedNewlines[0]) {
       mWriter->Write(scSpaceString);
     }
   }
@@ -278,6 +280,9 @@ class JSONWriter {
     mWriter->Write(scPropertyBeginString);
     mWriter->Write(EscapedString(aName).SpanRef());
     mWriter->Write(scPropertyEndString);
+    if (mNeedNewlines[0]) {
+      mWriter->Write(scSpaceString);
+    }
   }
 
   void Scalar(const Span<const char>& aMaybePropertyName,
