@@ -150,8 +150,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   
   
   for (uint32_t funcIndex = 0; funcIndex < ids.size(); funcIndex++) {
-    FuncDesc decl(&(*moduleEnv.types)[funcIndex].funcType(),
-                  &moduleEnv.typeIds[funcIndex], funcIndex);
+    FuncDesc decl(&(*moduleEnv.types)[funcIndex].funcType(), funcIndex);
     if (!moduleEnv.funcs.append(decl)) {
       ReportOutOfMemory(cx);
       return false;
