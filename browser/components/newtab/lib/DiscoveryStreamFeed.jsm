@@ -242,6 +242,8 @@ class DiscoveryStreamFeed {
       })
     );
 
+    const pocketButtonEnabled = Services.prefs.getBoolPref(PREF_POCKET_BUTTON);
+
     const nimbusConfig = this.store.getState().Prefs.values?.pocketConfig || {};
     
     
@@ -252,6 +254,16 @@ class DiscoveryStreamFeed {
         type: at.DISCOVERY_STREAM_PREFS_SETUP,
         data: {
           recentSavesEnabled: nimbusConfig.recentSavesEnabled,
+          pocketButtonEnabled,
+          saveToPocketCard:
+            pocketButtonEnabled && nimbusConfig.saveToPocketCard,
+          hideDescriptions: nimbusConfig.hideDescriptions,
+          compactImages: nimbusConfig.compactImages,
+          imageGradient: nimbusConfig.imageGradient,
+          newSponsoredLabel: nimbusConfig.newSponsoredLabel,
+          titleLines: nimbusConfig.titleLines,
+          descLines: nimbusConfig.descLines,
+          readTime: nimbusConfig.readTime,
         },
         meta: {
           isStartup,
@@ -542,10 +554,6 @@ class DiscoveryStreamFeed {
         PREF_COLLECTIONS_ENABLED
       ];
 
-      const pocketButtonEnabled = Services.prefs.getBoolPref(
-        PREF_POCKET_BUTTON
-      );
-
       const pocketConfig =
         this.store.getState().Prefs.values?.pocketConfig || {};
 
@@ -571,22 +579,13 @@ class DiscoveryStreamFeed {
         hybridLayout: pocketConfig.hybridLayout,
         hideCardBackground: pocketConfig.hideCardBackground,
         fourCardLayout: pocketConfig.fourCardLayout,
-        pocketButtonEnabled,
-        saveToPocketCard: pocketButtonEnabled && pocketConfig.saveToPocketCard,
         newFooterSection: pocketConfig.newFooterSection,
-        hideDescriptions: pocketConfig.hideDescriptions,
         compactGrid: pocketConfig.compactGrid,
-        compactImages: pocketConfig.compactImages,
-        imageGradient: pocketConfig.imageGradient,
-        newSponsoredLabel: pocketConfig.newSponsoredLabel,
-        titleLines: pocketConfig.titleLines,
-        descLines: pocketConfig.descLines,
         
         essentialReadsHeader:
           this.locale.startsWith("en-") && pocketConfig.essentialReadsHeader,
         editorsPicksHeader:
           this.locale.startsWith("en-") && pocketConfig.editorsPicksHeader,
-        readTime: pocketConfig.readTime,
       });
     }
 
@@ -1979,14 +1978,6 @@ class DiscoveryStreamFeed {
 
 
 
-
-
-
-
-
-
-
-
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
@@ -1997,18 +1988,9 @@ getHardcodedLayout = ({
   hideCardBackground = false,
   fourCardLayout = false,
   newFooterSection = false,
-  pocketButtonEnabled = false,
-  saveToPocketCard = false,
-  hideDescriptions = true,
   compactGrid = false,
-  compactImages = false,
-  imageGradient = false,
-  newSponsoredLabel = false,
-  titleLines = 3,
-  descLines = 3,
   essentialReadsHeader = false,
   editorsPicksHeader = false,
-  readTime = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -2034,7 +2016,6 @@ getHardcodedLayout = ({
                 properties: {
                   items: 3,
                 },
-                pocketButtonEnabled,
                 header: {
                   title: "",
                 },
@@ -2088,16 +2069,9 @@ getHardcodedLayout = ({
             hybridLayout,
             hideCardBackground,
             fourCardLayout,
-            hideDescriptions,
-            compactImages,
-            imageGradient,
-            newSponsoredLabel,
-            titleLines,
-            descLines,
             compactGrid,
             essentialReadsHeader,
             editorsPicksHeader,
-            readTime,
           },
           widgets: {
             positions: widgetPositions.map(position => {
@@ -2105,8 +2079,6 @@ getHardcodedLayout = ({
             }),
             data: widgetData,
           },
-          pocketButtonEnabled,
-          saveToPocketCard,
           cta_variant: "link",
           header: {
             title: "",
