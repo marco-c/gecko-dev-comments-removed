@@ -2245,13 +2245,6 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult EnsureEmptyTextFirstChild();
 
-  
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
-
   int32_t WrapWidth() const { return mWrapColumn; }
 
   
