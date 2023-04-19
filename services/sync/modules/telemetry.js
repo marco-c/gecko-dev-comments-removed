@@ -242,6 +242,10 @@ class ErrorSanitizer {
     
     
     error = error.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
+
+    
+    
+    error = error.replace(/<guid: ([^>]+)>/g, "<GUID>");
     return this.#cleanOSErrorMessage(error);
   }
 }
