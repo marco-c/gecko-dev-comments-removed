@@ -61,8 +61,6 @@ struct RTC_EXPORT AudioOptions {
   
   absl::optional<bool> audio_jitter_buffer_enable_rtx_handling;
   
-  
-  
   absl::optional<bool> typing_detection;
   absl::optional<bool> experimental_agc;
   absl::optional<bool> experimental_ns;

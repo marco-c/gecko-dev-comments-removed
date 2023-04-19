@@ -165,6 +165,24 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
                       audio_frame.get());
   audio_frame->set_absolute_capture_timestamp_ms(estimated_capture_time_ns /
                                                  1000000);
+  
+  
+  
+  bool typing_detected = false;
+  if (audio_processing_ &&
+      audio_processing_->GetConfig().voice_detection.enabled) {
+    if (audio_frame->vad_activity_ != AudioFrame::kVadUnknown) {
+      bool vad_active = audio_frame->vad_activity_ == AudioFrame::kVadActive;
+      typing_detected = typing_detection_.Process(key_pressed, vad_active);
+    }
+  }
+
+  
+  
+  {
+    MutexLock lock(&capture_lock_);
+    typing_noise_detected_ = typing_detected;
+  }
 
   RTC_DCHECK_GT(audio_frame->samples_per_channel_, 0);
   if (async_audio_processing_)
@@ -272,4 +290,8 @@ void AudioTransportImpl::SetStereoChannelSwapping(bool enable) {
   swap_stereo_channels_ = enable;
 }
 
+bool AudioTransportImpl::typing_noise_detected() const {
+  MutexLock lock(&capture_lock_);
+  return typing_noise_detected_;
+}
 }  
