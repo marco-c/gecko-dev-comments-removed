@@ -418,6 +418,20 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
     std::unique_ptr<Call> call,
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RTC_CHECK(configuration.sdp_semantics != SdpSemantics::kNotSpecified)
+      << "Please specify sdp_semantics. The default is about to change to "
+      << "kUnifiedPlan.";
+
   RTCError config_error = cricket::P2PTransportChannel::ValidateIceConfig(
       ParseIceConfig(configuration));
   if (!config_error.ok()) {
