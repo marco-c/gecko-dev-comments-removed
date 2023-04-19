@@ -62,10 +62,6 @@ class RtpVp9RefFinder {
 
   
   
-  int last_picture_id_ = -1;
-
-  
-  
   std::deque<std::unique_ptr<RtpFrameObject>> stashed_frames_;
 
   
