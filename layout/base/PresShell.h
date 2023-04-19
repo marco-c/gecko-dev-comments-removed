@@ -1731,6 +1731,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   void NotifyDestroyingFrame(nsIFrame* aFrame);
 
+#ifdef DEBUG
+  nsIFrame* GetDrawEventTargetFrame() { return mDrawEventTargetFrame; }
+#endif
+
   bool GetZoomableByAPZ() const;
 
  private:
@@ -2829,11 +2833,14 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool VerifyIncrementalReflow();
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
+  void ShowEventTargetDebug();
 
   bool mInVerifyReflow = false;
   
   
   nsIFrame* mCurrentReflowRoot = nullptr;
+
+  nsIFrame* mDrawEventTargetFrame = nullptr;
 #endif  
 
   
