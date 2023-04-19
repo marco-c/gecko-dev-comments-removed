@@ -106,7 +106,8 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
   RTC_DCHECK(!callback_task_.Running());
   int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
   callback_task_ = RepeatingTaskHandle::DelayedStart(
-      callback_queue_->Get(), TimeDelta::Millis(wait_ms), [this] {
+      callback_queue_->Get(), TimeDelta::Millis(wait_ms),
+      [this] {
         RTC_DCHECK_RUN_ON(&callback_checker_);
         
         
@@ -132,7 +133,8 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
         
         frame_handler(std::move(frame));
         return TimeDelta::Zero();  
-      });
+      },
+      TaskQueueBase::DelayPrecision::kHigh);
 }
 
 int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
