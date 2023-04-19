@@ -36,6 +36,18 @@ add_task(async function init() {
 });
 
 
+add_task(async function name() {
+  Assert.equal(
+    gClient.name,
+    "anonymous",
+    "gClient name is 'anonymous' since it wasn't given a name"
+  );
+
+  let client = new MerinoClient("New client");
+  Assert.equal(client.name, "New client", "newClient name is correct");
+});
+
+
 add_task(async function basic() {
   let histograms = MerinoTestUtils.getAndClearHistograms();
 
@@ -175,26 +187,53 @@ add_task(async function httpError() {
 
 
 add_task(async function clientTimeout() {
-  await doClientTimeoutTest(200);
+  await doClientTimeoutTest();
 });
 
 
 
 add_task(async function clientTimeoutFollowedByHTTPError() {
   MerinoTestUtils.server.response = { status: 500 };
-  await doClientTimeoutTest(500);
+  await doClientTimeoutTest({ expectedResponseStatus: 500 });
 });
 
-async function doClientTimeoutTest(expectedResponseStatus) {
+
+
+add_task(async function timeoutPassedToFetch() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  UrlbarPrefs.set("merino.timeoutMs", 30000);
+
+  await doClientTimeoutTest({
+    responseDelay: 400,
+    fetchArgs: { query: "search", timeoutMs: 1 },
+  });
+
+  UrlbarPrefs.clear("merino.timeoutMs");
+});
+
+async function doClientTimeoutTest({
+  responseDelay = 2 * UrlbarPrefs.get("merino.timeoutMs"),
+  fetchArgs = { query: "search" },
+  expectedResponseStatus = 200,
+} = {}) {
   let histograms = MerinoTestUtils.getAndClearHistograms();
 
   
   
-  MerinoTestUtils.server.response.delay =
-    2 * UrlbarPrefs.get("merino.timeoutMs");
+  MerinoTestUtils.server.response.delay = responseDelay;
 
   let responsePromise = gClient.waitForNextResponse();
-  await fetchAndCheckSuggestions({ expected: [] });
+  await fetchAndCheckSuggestions({ args: fetchArgs, expected: [] });
 
   Assert.equal(gClient.lastFetchStatus, "timeout", "The request timed out");
 
