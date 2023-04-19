@@ -45,7 +45,9 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   void StopUpdating() override;
 
   
-  void GetAnyAddressNetworks(NetworkList* networks) override {}
+  std::vector<const rtc::Network*> GetAnyAddressNetworks() override {
+    return {};
+  }
 
   
   rtc::Thread* network_thread() override { return network_thread_.get(); }

@@ -227,8 +227,7 @@ void TestPhysicalInternal(const SocketAddress& int_addr) {
   
   Thread::Current()->ProcessMessages(0);
 
-  std::vector<Network*> networks;
-  network_manager.GetNetworks(&networks);
+  std::vector<const Network*> networks = network_manager.GetNetworks();
   networks.erase(std::remove_if(networks.begin(), networks.end(),
                                 [](const rtc::Network* network) {
                                   return rtc::kDefaultNetworkIgnoreMask &
@@ -244,8 +243,7 @@ void TestPhysicalInternal(const SocketAddress& int_addr) {
   SocketAddress ext_addr2;
   
   
-  for (std::vector<Network*>::iterator it = networks.begin();
-       it != networks.end(); ++it) {
+  for (auto it = networks.begin(); it != networks.end(); ++it) {
     const IPAddress& ip = (*it)->GetBestIP();
     if (ip.family() == int_addr.family() && TestConnectivity(int_addr, ip)) {
       ext_addr2.SetIP(ip);

@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/field_trials_view.h"
@@ -149,19 +150,15 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
   
   
+  ABSL_DEPRECATED("bugs.webrtc.org/13869")
+  virtual void GetNetworks(NetworkList* networks) const {}
+
   
   
   
-  virtual std::vector<const Network*> GetNetworks() const {
-    std::vector<Network*> networks;
-    std::vector<const Network*> const_networks;
-    GetNetworks(&networks);
-    const_networks.insert(const_networks.begin(), networks.begin(),
-                          networks.end());
-    return const_networks;
-  }
   
-  virtual void GetNetworks(NetworkList* networks) const = 0;
+  
+  virtual std::vector<const Network*> GetNetworks() const = 0;
 
   
   virtual EnumerationPermission enumeration_permission() const;
@@ -173,18 +170,7 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   
   
   
-  
-  
-  virtual std::vector<const Network*> GetAnyAddressNetworks() {
-    std::vector<Network*> networks;
-    std::vector<const Network*> const_networks;
-    GetAnyAddressNetworks(&networks);
-    const_networks.insert(const_networks.begin(), networks.begin(),
-                          networks.end());
-    return const_networks;
-  }
-  
-  virtual void GetAnyAddressNetworks(NetworkList* networks) {}
+  virtual std::vector<const Network*> GetAnyAddressNetworks() = 0;
 
   
   virtual void DumpNetworks() {}
@@ -211,13 +197,8 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
   NetworkManagerBase(const webrtc::FieldTrialsView* field_trials = nullptr);
   ~NetworkManagerBase() override;
 
-  
-  
-  
-  using NetworkManager::GetAnyAddressNetworks;
-  using NetworkManager::GetNetworks;
-  void GetNetworks(NetworkList* networks) const override;
-  void GetAnyAddressNetworks(NetworkList* networks) override;
+  std::vector<const Network*> GetNetworks() const override;
+  std::vector<const Network*> GetAnyAddressNetworks() override;
 
   EnumerationPermission enumeration_permission() const override;
 

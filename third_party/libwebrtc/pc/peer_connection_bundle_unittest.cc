@@ -92,13 +92,14 @@ constexpr int kDefaultTimeout = 10000;
 
 class FakeNetworkManagerWithNoAnyNetwork : public rtc::FakeNetworkManager {
  public:
-  void GetAnyAddressNetworks(NetworkList* networks) override {
+  std::vector<const rtc::Network*> GetAnyAddressNetworks() override {
     
     
     
     
     
     RTC_LOG(LS_INFO) << "FakeNetworkManager::GetAnyAddressNetworks ignored";
+    return {};
   }
 };
 
