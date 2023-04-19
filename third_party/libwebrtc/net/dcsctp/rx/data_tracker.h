@@ -39,6 +39,11 @@ namespace dcsctp {
 class DataTracker {
  public:
   
+  static constexpr size_t kMaxDuplicateTsnReported = 20;
+  
+  static constexpr size_t kMaxGapAckBlocksReported = 20;
+
+  
   
   
   
