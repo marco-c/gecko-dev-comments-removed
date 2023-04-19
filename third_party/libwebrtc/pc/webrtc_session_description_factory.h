@@ -37,8 +37,7 @@ namespace webrtc {
 
 
 class WebRtcCertificateGeneratorCallback
-    : public rtc::RTCCertificateGeneratorCallback,
-      public sigslot::has_slots<> {
+    : public rtc::RTCCertificateGeneratorCallback {
  public:
   
   void OnSuccess(
