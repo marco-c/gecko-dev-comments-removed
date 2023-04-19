@@ -48,6 +48,8 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
 
   [[nodiscard]] nsresult ProcessRequests();
 
+  void MaybeReportLoadError(JSContext* aCx);
+
  private:
   
   
@@ -83,6 +85,10 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
   void OnModuleLoadComplete(ModuleLoadRequest* aRequest) override;
 
   JS::loader::ScriptLoadRequestList mLoadRequests;
+
+  
+  
+  JS::PersistentRootedValue mLoadException;
 };
 
 
@@ -96,7 +102,11 @@ class ComponentLoadContext : public JS::loader::LoadContextBase {
   
   
   nsresult mRv;
+
+  
+  
   JS::PersistentRootedValue mExceptionValue;
+
   JS::PersistentRootedScript mScript;
 };
 
