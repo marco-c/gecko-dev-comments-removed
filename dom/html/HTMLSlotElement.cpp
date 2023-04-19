@@ -11,6 +11,7 @@
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/AppShutdown.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 
@@ -341,7 +342,7 @@ void HTMLSlotElement::EnqueueSlotChangeEvent() {
 
   
   
-  if (gXPCOMThreadsShutDown) {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
     return;
   }
 
