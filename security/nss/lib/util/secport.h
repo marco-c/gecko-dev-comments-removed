@@ -27,12 +27,6 @@
 #endif
 #endif
 
-#ifdef __BEOS__
-#ifndef XP_BEOS
-#define XP_BEOS
-#endif
-#endif
-
 #ifdef unix
 #ifndef XP_UNIX
 #define XP_UNIX
