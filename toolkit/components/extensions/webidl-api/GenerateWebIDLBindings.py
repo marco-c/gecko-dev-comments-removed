@@ -655,7 +655,19 @@ class WebIDLHelpers:
         
         
         
-        if "allowAmbiguousOptionalArguments" in schema_data:
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if api_fun.has_ambiguous_stub_mapping(schema_group):
             return ["any... args"]
 
         if params_schema_data is None:
@@ -1011,6 +1023,23 @@ class APIFunction(APIEntry):
             parameters.remove(param)
             yield parameters
 
+    def has_ambiguous_stub_mapping(self, schema_group):
+        
+        
+        schema_data = self.get_schema_data(schema_group)
+        is_ambiguous = False
+        if "allowAmbiguousOptionalArguments" in schema_data:
+            is_ambiguous = True
+
+        if not is_ambiguous:
+            
+            
+            api_path = ".".join([*self.path])
+            if api_path in WEBEXT_STUBS_MAPPING:
+                return WEBEXT_STUBS_MAPPING[api_path] == "AsyncAmbiguous"
+
+        return is_ambiguous
+
     def has_multiple_webidl_signatures(self, schema_group=None):
         """
         Determine if the API method in the JSONSchema needs to be turned in
@@ -1019,12 +1048,13 @@ class APIFunction(APIEntry):
         expected behaviors).
         """
 
-        schema_data = self.get_schema_data(schema_group)
-        if "allowAmbiguousOptionalArguments" in schema_data:
+        if self.has_ambiguous_stub_mapping(schema_group):
             
             
             
             return False
+
+        schema_data = self.get_schema_data(schema_group)
         params = schema_data["parameters"] or []
 
         return not all(not self.is_optional_param(param) for param in params)
