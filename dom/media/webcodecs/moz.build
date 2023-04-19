@@ -4,6 +4,8 @@
 
 
 
+MOCHITEST_MANIFESTS += ["test/mochitest.ini"]
+
 EXPORTS.mozilla.dom += [
     "VideoColorSpace.h",
     "VideoFrame.h",
