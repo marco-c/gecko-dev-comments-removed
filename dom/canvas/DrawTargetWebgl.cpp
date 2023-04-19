@@ -2658,8 +2658,9 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   
-  bool lightOnDark = !useBitmaps && color.r >= 0.33f && color.g >= 0.33f &&
-                     color.b >= 0.33f && color.r + color.g + color.b >= 2.0f;
+  bool lightOnDark =
+      useBitmaps || (color.r >= 0.33f && color.g >= 0.33f && color.b >= 0.33f &&
+                     color.r + color.g + color.b >= 2.0f);
 #else
   
   const bool lightOnDark = true;
