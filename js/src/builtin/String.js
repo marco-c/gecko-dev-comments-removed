@@ -618,15 +618,19 @@ function String_substr(start, length) {
   
   if (intStart < 0) {
     intStart = std_Math_max(intStart + size, 0);
+  } else {
+    
+    intStart = std_Math_min(intStart, size);
   }
 
   
   var resultLength = std_Math_min(std_Math_max(end, 0), size - intStart);
 
   
-  if (resultLength <= 0) {
-    return "";
-  }
+  assert(
+    0 <= resultLength && resultLength <= size - intStart,
+    "resultLength is a valid substring length value"
+  );
 
   
   
