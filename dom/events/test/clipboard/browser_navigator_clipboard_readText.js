@@ -6,6 +6,8 @@
 
 "use strict";
 
+
+
 const kBaseUrlForContent = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "https://example.com"
@@ -21,84 +23,6 @@ const kApzTestNativeEventUtilsUrl =
 Services.scriptloader.loadSubScript(kApzTestNativeEventUtilsUrl, this);
 
 const chromeDoc = window.document;
-
-const kPasteMenuPopupId = "clipboardReadTextPasteMenuPopup";
-const kPasteMenuItemId = "clipboardReadTextPasteMenuItem";
-
-function promiseBrowserReflow() {
-  return new Promise(resolve =>
-    requestAnimationFrame(() => requestAnimationFrame(resolve))
-  );
-}
-
-function promiseClickPasteButton() {
-  const pasteButton = chromeDoc.getElementById(kPasteMenuItemId);
-  let promise = BrowserTestUtils.waitForEvent(pasteButton, "click");
-  EventUtils.synthesizeMouseAtCenter(pasteButton, {});
-  return promise;
-}
-
-function getMouseCoordsRelativeToScreenInDevicePixels() {
-  let mouseXInCSSPixels = {};
-  let mouseYInCSSPixels = {};
-  window.windowUtils.getLastOverWindowPointerLocationInCSSPixels(
-    mouseXInCSSPixels,
-    mouseYInCSSPixels
-  );
-
-  return {
-    x:
-      (mouseXInCSSPixels.value + window.mozInnerScreenX) *
-      window.devicePixelRatio,
-    y:
-      (mouseYInCSSPixels.value + window.mozInnerScreenY) *
-      window.devicePixelRatio,
-  };
-}
-
-function isCloselyLeftOnTopOf(aCoordsP1, aCoordsP2, aDelta) {
-  const kDelta = 10;
-  return (
-    aCoordsP2.x - aCoordsP1.x < kDelta && aCoordsP2.y - aCoordsP1.y < kDelta
-  );
-}
-
-function waitForPasteMenuPopupEvent(aEventSuffix) {
-  
-  
-  
-  return BrowserTestUtils.waitForEvent(
-    chromeDoc,
-    "popup" + aEventSuffix,
-    false ,
-    e => {
-      return e.target.getAttribute("id") == kPasteMenuPopupId;
-    }
-  );
-}
-
-function promisePasteButtonIsShown() {
-  return waitForPasteMenuPopupEvent("shown").then(() => {
-    ok(true, "Witnessed 'popupshown' event for 'Paste' button.");
-
-    const pasteButton = chromeDoc.getElementById(kPasteMenuItemId);
-
-    return promiseBrowserReflow().then(() => {
-      return coordinatesRelativeToScreen({
-        target: pasteButton,
-        offsetX: 0,
-        offsetY: 0,
-      });
-    });
-  });
-}
-
-function promisePasteButtonIsHidden() {
-  return waitForPasteMenuPopupEvent("hidden").then(() => {
-    ok(true, "Witnessed 'popuphidden' event for 'Paste' button.");
-    return promiseBrowserReflow();
-  });
-}
 
 
 
