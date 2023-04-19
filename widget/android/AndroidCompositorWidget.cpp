@@ -98,6 +98,14 @@ bool AndroidCompositorWidget::OnResumeComposition() {
 
   ANativeWindow_release(nativeWindow);
 
+  
+  
+  
+  if (mClientSize.width < 0 || mClientSize.height < 0) {
+    gfxCriticalNote << "ANativeWindow_getWidth/Height returned error: "
+                    << mClientSize;
+  }
+
   return true;
 }
 
