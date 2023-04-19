@@ -647,6 +647,9 @@ pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source
 pref("browser.privatebrowsing.enable-new-indicator", false);
 
 
+pref("browser.privatebrowsing.enable-new-logo", false);
+
+
 pref("browser.privacySegmentation.enabled", false);
 
 
