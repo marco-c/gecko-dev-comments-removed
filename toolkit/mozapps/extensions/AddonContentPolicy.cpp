@@ -36,6 +36,8 @@ using namespace mozilla::intl;
 
 
 
+
+
 #define VERSIONED_JS_BLOCKED_MESSAGE                                       \
   u"Versioned JavaScript is a non-standard, deprecated extension, and is " \
   u"not supported in WebExtension code. For alternatives, please see: "    \
@@ -467,16 +469,6 @@ AddonContentPolicy::ValidateAddonCSP(const nsAString& aPolicyString,
       aResult.Assign(validator.GetError());
     }
     hasValidScriptSrc = true;
-  }
-
-  if (aResult.IsVoid()) {
-    CSPDirective directive = nsIContentSecurityPolicy::OBJECT_SRC_DIRECTIVE;
-    CSPValidator validator(url, directive, !haveValidDefaultSrc,
-                           aPermittedPolicy);
-
-    if (!policy->visitDirectiveSrcs(directive, &validator)) {
-      aResult.Assign(validator.GetError());
-    }
   }
 
   if (aResult.IsVoid()) {
