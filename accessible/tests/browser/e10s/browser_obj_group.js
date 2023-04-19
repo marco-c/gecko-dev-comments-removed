@@ -74,12 +74,15 @@ addAccessibleTask(
   </form>
 
   <input type="radio" id="radio3" name="group2"/>
-  <input type="radio" id="radio4" name="group2"/>
+  <label><input type="radio" id="radio4" name="group2"/></label>
 
   <form>
     <input type="radio" style="display: none;" name="group3">
     <input type="radio" id="radio5" name="group3">
-  </form>`,
+    <input type="radio" id="radio6" name="group4">
+  </form>
+
+  <input type="radio" id="radio7">`,
   async function(browser, accDoc) {
     let getAcc = id => findAccessibleChildByID(accDoc, id);
 
@@ -91,11 +94,20 @@ addAccessibleTask(
     
     
     testGroupAttrs(getAcc("radio3"), 1, 2);
+    
     testGroupAttrs(getAcc("radio4"), 2, 2);
 
     
     
     testGroupAttrs(getAcc("radio5"), 1, 1);
+
+    
+    
+    testGroupAttrs(getAcc("radio6"), 1, 1);
+
+    
+    
+    testGroupAttrs(getAcc("radio7"), 0, 0);
   },
   {
     topLevel: !isWinNoCache,
