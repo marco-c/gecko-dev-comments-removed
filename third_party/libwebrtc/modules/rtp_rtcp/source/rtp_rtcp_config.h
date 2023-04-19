@@ -15,7 +15,7 @@
 
 
 namespace webrtc {
-constexpr int kDefaultMaxReorderingThreshold = 5;  
+constexpr int kDefaultMaxReorderingThreshold = 50;  
 constexpr int kRtcpMaxNackFields = 253;
 
 constexpr TimeDelta RTCP_INTERVAL_RAPID_SYNC_MS =
