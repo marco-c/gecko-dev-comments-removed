@@ -27,13 +27,8 @@ namespace rtc {
 
 
 
-class FileRotatingStream : public StreamInterface {
+class FileRotatingStream {
  public:
-  
-  
-  FileRotatingStream(const std::string& dir_path,
-                     const std::string& file_prefix);
-
   
   
   FileRotatingStream(const std::string& dir_path,
@@ -41,20 +36,13 @@ class FileRotatingStream : public StreamInterface {
                      size_t max_file_size,
                      size_t num_files);
 
-  ~FileRotatingStream() override;
+  virtual ~FileRotatingStream();
 
-  
-  StreamState GetState() const override;
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override;
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override;
-  bool Flush() override;
-  void Close() override;
+  bool IsOpen() const;
+
+  bool Write(const void* data, size_t data_len);
+  bool Flush();
+  void Close();
 
   
   bool Open();
@@ -62,6 +50,8 @@ class FileRotatingStream : public StreamInterface {
   
   
   bool DisableBuffering();
+
+  
 
   
   
@@ -72,8 +62,6 @@ class FileRotatingStream : public StreamInterface {
   size_t GetNumFiles() const { return file_names_.size(); }
 
  protected:
-  size_t GetMaxFileSize() const { return max_file_size_; }
-
   void SetMaxFileSize(size_t size) { max_file_size_ = size; }
 
   size_t GetRotationIndex() const { return rotation_index_; }
