@@ -106,12 +106,22 @@ class RtcpTransceiverImpl {
   void SchedulePeriodicCompoundPackets(int64_t delay_ms);
   
   
-  void CreateCompoundPacket(PacketSender* sender);
+  void FillReports(Timestamp now,
+                   size_t reserved_bytes,
+                   PacketSender& rtcp_sender);
+
+  
+  
+  void CreateCompoundPacket(Timestamp now,
+                            size_t reserved_bytes,
+                            PacketSender& rtcp_sender);
+
   
   void SendPeriodicCompoundPacket();
   void SendImmediateFeedback(const rtcp::RtcpPacket& rtcp_packet);
   
-  std::vector<rtcp::ReportBlock> CreateReportBlocks(Timestamp now);
+  std::vector<rtcp::ReportBlock> CreateReportBlocks(Timestamp now,
+                                                    size_t num_max_blocks);
 
   const RtcpTransceiverConfig config_;
 
