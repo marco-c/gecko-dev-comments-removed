@@ -207,8 +207,11 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
       nsAString& aFileName, const nsACString& aMimeType, nsIURI* aURI,
       nsIURI* aOriginalURI, uint32_t aFlags, bool aAllowURLExtension);
 
-  void SanitizeFileName(nsAString& aFileName, const nsACString& aExtension,
-                        uint32_t aFlags);
+  
+  
+  
+  
+  void SanitizeFileName(nsAString& aFileName, uint32_t aFlags);
 
   
 

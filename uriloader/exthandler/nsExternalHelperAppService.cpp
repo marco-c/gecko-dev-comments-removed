@@ -703,7 +703,7 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
 
   uint32_t reason = nsIHelperAppLauncherDialog::REASON_CANTHANDLE;
 
-  SanitizeFileName(fileName, EmptyCString(), 0);
+  SanitizeFileName(fileName, 0);
 
   RefPtr<nsExternalAppHandler> handler =
       new nsExternalAppHandler(nullptr, u""_ns, aContentContext, aWindowContext,
@@ -3283,13 +3283,7 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
 
   
   if (aFlags & VALIDATE_SANITIZE_ONLY) {
-    nsAutoString extension;
-    int32_t dotidx = fileName.RFind(".");
-    if (dotidx != -1) {
-      extension = Substring(fileName, dotidx + 1);
-    }
-
-    SanitizeFileName(fileName, NS_ConvertUTF16toUTF8(extension), aFlags);
+    SanitizeFileName(fileName, aFlags);
   } else {
     nsCOMPtr<nsIMIMEInfo> mimeInfo = ValidateFileNameForSaving(
         fileName, aType, nullptr, nullptr, aFlags, true);
@@ -3397,6 +3391,8 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
     return mimeInfo.forget();
   }
 
+  
+  
   if (mimeInfo) {
     bool isValidExtension;
     if (extension.IsEmpty() ||
@@ -3436,6 +3432,8 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
           }
         }
 
+        
+        
         if (!extension.IsEmpty()) {
           ModifyExtensionType modify =
               ShouldModifyExtension(mimeInfo, originalExtension);
@@ -3469,7 +3467,6 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   if (StringEndsWith(fileName, u".lnk"_ns) ||
       StringEndsWith(fileName, u".local"_ns)) {
     fileName.AppendLiteral(".download");
-    extension.AssignLiteral("download");
   }
 
   
@@ -3496,14 +3493,13 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   }
 
   
-  SanitizeFileName(fileName, extension, aFlags);
+  SanitizeFileName(fileName, aFlags);
 
   aFileName = fileName;
   return mimeInfo.forget();
 }
 
 void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
-                                                  const nsACString& aExtension,
                                                   uint32_t aFlags) {
   nsAutoString fileName(aFileName);
 
@@ -3525,16 +3521,12 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   
   
   
-  uint32_t maxBytes = 0;  
-  if (!(aFlags & VALIDATE_DONT_TRUNCATE)) {
-    maxBytes = 255 - aExtension.Length() - 1;
-  }
+  
+  const uint32_t maxBytes =
+      (aFlags & VALIDATE_DONT_TRUNCATE) ? 0 : kDefaultMaxFileNameLength;
 
   
   bool lastWasWhitespace = false;
-
-  
-  bool longFileName = false;
 
   
   
@@ -3549,6 +3541,9 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
 
   
   uint32_t bytesLength = 0;
+
+  
+  int32_t extensionBytesLength = 0;
 
   
   
@@ -3570,24 +3565,6 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
         unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_PARAGRAPH_SEPARATOR) {
       
       continue;
-    }
-
-    if (maxBytes) {
-      
-      
-      bytesLength += nextChar < 0x80      ? 1
-                     : nextChar < 0x800   ? 2
-                     : nextChar < 0x10000 ? 3
-                                          : 4;
-      if (bytesLength > maxBytes) {
-        if (longFileNameEnd == -1) {
-          longFileNameEnd = int32_t(outFileName.Length());
-        }
-        if (bytesLength > 255) {
-          longFileName = true;
-          break;
-        }
-      }
     }
 
     if (unicodeCategory == HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR ||
@@ -3627,43 +3604,79 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
       }
     }
 
+    if (maxBytes) {
+      
+      
+      bytesLength += nextChar < 0x80      ? 1
+                     : nextChar < 0x800   ? 2
+                     : nextChar < 0x10000 ? 3
+                                          : 4;
+      if (bytesLength > maxBytes) {
+        if (longFileNameEnd == -1) {
+          longFileNameEnd = int32_t(outFileName.Length());
+        }
+      }
+
+      
+      
+      if (nextChar == u'.') {
+        extensionBytesLength = 1;  
+      } else if (extensionBytesLength) {
+        extensionBytesLength++;
+      }
+    }
+
     AppendUCS4ToUTF16(nextChar, outFileName);
   }
 
   
   
   
-  
-  
-  
-  
-  
-  if (lastNonTrimmable >= 0) {
-    outFileName.Truncate(longFileName
-                             ? std::min(longFileNameEnd, lastNonTrimmable)
-                             : lastNonTrimmable);
-  }
-
-  
-  
-  if (!maxBytes && !(aFlags & VALIDATE_DONT_TRUNCATE) &&
-      outFileName.Length() > kDefaultMaxFileNameLength) {
+  if (bytesLength > maxBytes && !outFileName.IsEmpty()) {
     
-    
-    if (aExtension.Length() >= kDefaultMaxFileNameLength) {
-      outFileName.Truncate(kDefaultMaxFileNameLength - 1);
-    } else {
-      outFileName.Truncate(kDefaultMaxFileNameLength - aExtension.Length() - 1);
-      longFileName = true;
-    }
-  }
-
-  if (longFileName && !outFileName.IsEmpty()) {
-    if (outFileName.Last() != '.') {
-      outFileName.AppendLiteral(".");
+    nsAutoCString extension;
+    int32_t dotidx = outFileName.RFind(".");
+    if (dotidx != -1) {
+      extension = NS_ConvertUTF16toUTF8(Substring(outFileName, dotidx + 1));
     }
 
-    outFileName.Append(NS_ConvertUTF8toUTF16(aExtension));
+    
+    
+    
+    
+    
+    
+    
+    
+    if (lastNonTrimmable >= 0) {
+      
+      
+      
+      
+      
+      longFileNameEnd -= extensionBytesLength;
+      if (longFileNameEnd <= 0) {
+        
+        
+        outFileName.Truncate(maxBytes);
+      } else {
+        outFileName.Truncate(std::min(longFileNameEnd, lastNonTrimmable));
+      }
+
+      
+      
+      if (!extension.IsEmpty()) {
+        if (outFileName.Last() != '.') {
+          outFileName.AppendLiteral(".");
+        }
+
+        outFileName.Append(NS_ConvertUTF8toUTF16(extension));
+      }
+    }
+  } else if (lastNonTrimmable >= 0) {
+    
+    
+    outFileName.Truncate(lastNonTrimmable);
   }
 
   aFileName = outFileName;
