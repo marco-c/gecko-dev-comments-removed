@@ -1152,7 +1152,7 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
       return {NS_TRANSPARENT, true};
     }
 
-    if (IsCanvasFrame(frame)) {
+    if (frame->IsCanvasFrame()) {
       if (aPreferBodyToCanvas) {
         if (auto* body = frame->PresContext()->Document()->GetBodyElement()) {
           if (nsIFrame* f = body->GetPrimaryFrame()) {
@@ -1171,18 +1171,6 @@ auto nsCSSRendering::FindEffectiveBackgroundColor(nsIFrame* aFrame,
   }
 
   return {aFrame->PresContext()->DefaultBackgroundColor()};
-}
-
-
-
-
-
-bool nsCSSRendering::IsCanvasFrame(const nsIFrame* aFrame) {
-  LayoutFrameType frameType = aFrame->Type();
-  return frameType == LayoutFrameType::Canvas ||
-         frameType == LayoutFrameType::XULRoot ||
-         frameType == LayoutFrameType::PageContent ||
-         frameType == LayoutFrameType::Viewport;
 }
 
 nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {
@@ -1251,7 +1239,6 @@ nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {
 
 
 
-
 ComputedStyle* nsCSSRendering::FindRootFrameBackground(nsIFrame* aForFrame) {
   return FindBackgroundStyleFrame(aForFrame)->Style();
 }
@@ -1261,7 +1248,7 @@ ComputedStyle* nsCSSRendering::FindRootFrameBackground(nsIFrame* aForFrame) {
 
 inline bool FrameHasMeaningfulBackground(const nsIFrame* aForFrame,
                                          nsIFrame* aRootElementFrame) {
-  MOZ_ASSERT(!nsCSSRendering::IsCanvasFrame(aForFrame),
+  MOZ_ASSERT(!aForFrame->IsCanvasFrame(),
              "FindBackgroundFrame handles canvas frames before calling us, "
              "so we don't need to consider them here");
 
@@ -1307,7 +1294,7 @@ inline bool FrameHasMeaningfulBackground(const nsIFrame* aForFrame,
 nsIFrame* nsCSSRendering::FindBackgroundFrame(const nsIFrame* aForFrame) {
   nsIFrame* rootElementFrame =
       aForFrame->PresShell()->FrameConstructor()->GetRootElementStyleFrame();
-  if (IsCanvasFrame(aForFrame)) {
+  if (aForFrame->IsCanvasFrame()) {
     return FindCanvasBackgroundFrame(aForFrame, rootElementFrame);
   }
 
@@ -2446,7 +2433,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
   
   
   
-  bool isCanvasFrame = IsCanvasFrame(aParams.frame);
+  bool isCanvasFrame = aParams.frame->IsCanvasFrame();
   const bool paintMask = aParams.paintFlags & PAINTBG_MASK_IMAGE;
 
   

@@ -2585,8 +2585,7 @@ auto nsIFrame::ComputeShouldPaintBackground() const -> ShouldPaintBackground {
 }
 
 bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
-                                              const nsDisplayListSet& aLists,
-                                              bool aForceBackground) {
+                                              const nsDisplayListSet& aLists) {
   const bool hitTesting = aBuilder->IsForEventDelivery();
   if (hitTesting && !aBuilder->HitTestIsForVisibility()) {
     
@@ -2599,12 +2598,9 @@ bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
   }
 
   AppendedBackgroundType result = AppendedBackgroundType::None;
-
   
   
-  
-  if (hitTesting || aForceBackground ||
-      !StyleBackground()->IsTransparent(this) ||
+  if (hitTesting || !StyleBackground()->IsTransparent(this) ||
       StyleDisplay()->HasAppearance() ||
       
       
@@ -2626,8 +2622,7 @@ bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
 }
 
 void nsIFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
-                                              const nsDisplayListSet& aLists,
-                                              bool aForceBackground) {
+                                              const nsDisplayListSet& aLists) {
   
   
   
@@ -2637,9 +2632,7 @@ void nsIFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
 
   DisplayOutsetBoxShadowUnconditional(aBuilder, aLists.BorderBackground());
 
-  bool bgIsThemed =
-      DisplayBackgroundUnconditional(aBuilder, aLists, aForceBackground);
-
+  bool bgIsThemed = DisplayBackgroundUnconditional(aBuilder, aLists);
   DisplayInsetBoxShadowUnconditional(aBuilder, aLists.BorderBackground());
 
   
@@ -5755,7 +5748,7 @@ void nsIFrame::DisassociateImage(const StyleImage& aImage) {
 
 StyleImageRendering nsIFrame::UsedImageRendering() const {
   ComputedStyle* style;
-  if (nsCSSRendering::IsCanvasFrame(this)) {
+  if (IsCanvasFrame()) {
     
     
     
@@ -12305,7 +12298,6 @@ void DR_State::InitFrameTypeTable() {
   AddFrameTypeInfo(LayoutFrameType::Page, "page", "page");
   AddFrameTypeInfo(LayoutFrameType::Placeholder, "place", "placeholder");
   AddFrameTypeInfo(LayoutFrameType::Canvas, "canvas", "canvas");
-  AddFrameTypeInfo(LayoutFrameType::XULRoot, "xulroot", "xulroot");
   AddFrameTypeInfo(LayoutFrameType::Scroll, "scroll", "scroll");
   AddFrameTypeInfo(LayoutFrameType::TableCell, "cell", "tableCell");
   AddFrameTypeInfo(LayoutFrameType::TableCol, "col", "tableCol");

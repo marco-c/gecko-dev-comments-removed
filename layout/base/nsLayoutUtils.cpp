@@ -6859,15 +6859,19 @@ nsTransparencyMode nsLayoutUtils::GetFrameTransparency(
   StyleAppearance appearance =
       aCSSRootFrame->StyleDisplay()->EffectiveAppearance();
 
-  if (appearance == StyleAppearance::MozWinGlass) return eTransparencyGlass;
+  if (appearance == StyleAppearance::MozWinGlass) {
+    return eTransparencyGlass;
+  }
 
-  if (appearance == StyleAppearance::MozWinBorderlessGlass)
+  if (appearance == StyleAppearance::MozWinBorderlessGlass) {
     return eTransparencyBorderlessGlass;
+  }
 
   nsITheme::Transparency transparency;
-  if (aCSSRootFrame->IsThemed(&transparency))
+  if (aCSSRootFrame->IsThemed(&transparency)) {
     return transparency == nsITheme::eTransparent ? eTransparencyTransparent
                                                   : eTransparencyOpaque;
+  }
 
   
   
@@ -6877,7 +6881,7 @@ nsTransparencyMode nsLayoutUtils::GetFrameTransparency(
     return eTransparencyOpaque;
   }
 
-  ComputedStyle* bgSC = nsCSSRendering::FindBackground(aBackgroundFrame);
+  const ComputedStyle* bgSC = nsCSSRendering::FindBackground(aBackgroundFrame);
   if (!bgSC) {
     return eTransparencyTransparent;
   }
