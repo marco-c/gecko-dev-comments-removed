@@ -9443,32 +9443,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (!isJavaScript && isNotDownload &&
       !aLoadState->NotifiedBeforeUnloadListeners() && mContentViewer) {
     bool okToUnload;
-
-    
-    
-    
-    
-    
-    bool isPrivateWin = GetOriginAttributes().mPrivateBrowsingId > 0;
-    bool isReloading = false;
-    uint32_t loadType = aLoadState->LoadType();
-
-    
-    if (loadType == LOAD_RELOAD_NORMAL) {
-      isReloading = true;
-    }
-
-    
-    
-    
-    if (!isReloading && aLoadState->IsExemptFromHTTPSOnlyMode() &&
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
-      rv = mContentViewer->PermitUnload(
-          nsIContentViewer::PermitUnloadAction::eDontPromptAndUnload,
-          &okToUnload);
-    } else {
-      rv = mContentViewer->PermitUnload(&okToUnload);
-    }
+    rv = mContentViewer->PermitUnload(&okToUnload);
 
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       
