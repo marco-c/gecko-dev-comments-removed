@@ -188,7 +188,7 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
     
     if (AvailableISize() == NS_UNCONSTRAINEDSIZE &&
         aParentReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-      AvailableISize() = aParentReflowInput.ComputedBSize();
+      SetAvailableISize(aParentReflowInput.ComputedBSize());
     }
   }
 
@@ -323,7 +323,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
          parent = parent->mParentReflowInput) {
       if (parent->GetWritingMode().IsOrthogonalTo(mWritingMode) &&
           parent->mOrthogonalLimit != NS_UNCONSTRAINEDSIZE) {
-        AvailableISize() = parent->mOrthogonalLimit;
+        SetAvailableISize(parent->mOrthogonalLimit);
         break;
       }
     }
@@ -418,7 +418,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
         mStylePosition->ISize(mWritingMode).IsAuto()) {
       ComputedISize() = NS_UNCONSTRAINEDSIZE;
     } else {
-      AvailableBSize() = NS_UNCONSTRAINEDSIZE;
+      SetAvailableBSize(NS_UNCONSTRAINEDSIZE);
     }
   }
 
@@ -426,7 +426,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
     
     
     
-    AvailableBSize() = NS_UNCONSTRAINEDSIZE;
+    SetAvailableBSize(NS_UNCONSTRAINEDSIZE);
   }
 
   LAYOUT_WARN_IF_FALSE((mStyleDisplay->IsInlineOutsideStyle() &&

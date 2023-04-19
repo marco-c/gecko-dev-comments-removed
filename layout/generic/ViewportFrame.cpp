@@ -303,7 +303,8 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
     LogicalMargin scrollbars(wm, scrollingFrame->GetActualScrollbarSizes());
     aReflowInput->SetComputedISize(aReflowInput->ComputedISize() -
                                    scrollbars.IStartEnd(wm));
-    aReflowInput->AvailableISize() -= scrollbars.IStartEnd(wm);
+    aReflowInput->SetAvailableISize(aReflowInput->AvailableISize() -
+                                    scrollbars.IStartEnd(wm));
     aReflowInput->SetComputedBSizeWithoutResettingResizeFlags(
         aReflowInput->ComputedBSize() - scrollbars.BStartEnd(wm));
     return nsPoint(scrollbars.Left(wm), scrollbars.Top(wm));
@@ -403,7 +404,8 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
     if (reflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
       
       
-      reflowInput.AvailableBSize() = maxSize.BSize(wm);
+      
+      reflowInput.SetAvailableBSize(maxSize.BSize(wm));
       
       NS_ASSERTION(
           reflowInput.ComputedPhysicalBorderPadding() == nsMargin(0, 0, 0, 0),
