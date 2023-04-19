@@ -48,6 +48,12 @@ class SubbandErleEstimator {
   }
 
   
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
+      const {
+    return erle_unbounded_;
+  }
+
+  
   rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
       const {
     return erle_during_onsets_;
@@ -88,6 +94,7 @@ class SubbandErleEstimator {
   std::vector<std::array<float, kFftLengthBy2Plus1>> erle_;
   
   std::vector<std::array<float, kFftLengthBy2Plus1>> erle_onset_compensated_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> erle_unbounded_;
   
   std::vector<std::array<float, kFftLengthBy2Plus1>> erle_during_onsets_;
   std::vector<std::array<bool, kFftLengthBy2Plus1>> coming_onset_;

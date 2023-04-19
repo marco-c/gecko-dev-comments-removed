@@ -76,6 +76,12 @@ class AecState {
   }
 
   
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
+      const {
+    return erle_estimator_.ErleUnbounded();
+  }
+
+  
   float FullBandErleLog2() const { return erle_estimator_.FullbandErleLog2(); }
 
   

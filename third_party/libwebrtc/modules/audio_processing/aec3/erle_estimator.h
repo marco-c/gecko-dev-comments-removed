@@ -63,6 +63,18 @@ class ErleEstimator {
   }
 
   
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
+      const {
+    
+    
+    
+    return !signal_dependent_erle_estimator_
+               ? subband_erle_estimator_.ErleUnbounded()
+               : signal_dependent_erle_estimator_->Erle(
+                     false);
+  }
+
+  
   
   rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
       const {
