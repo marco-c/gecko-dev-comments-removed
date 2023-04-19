@@ -289,11 +289,6 @@ struct Glyph
 	  return false;
 
 	
-	if (use_my_metrics && item.is_use_my_metrics ())
-	  for (unsigned int i = 0; i < PHANTOM_COUNT; i++)
-	    phantoms[i] = comp_points[comp_points.length - PHANTOM_COUNT + i];
-
-	
 	item.transform_points (comp_points);
 
 	
@@ -312,6 +307,11 @@ struct Glyph
 	    comp_points.translate (delta);
 	  }
 	}
+
+	
+	if (use_my_metrics && item.is_use_my_metrics ())
+	  for (unsigned int i = 0; i < PHANTOM_COUNT; i++)
+	    phantoms[i] = comp_points[comp_points.length - PHANTOM_COUNT + i];
 
 	all_points.extend (comp_points.sub_array (0, comp_points.length - PHANTOM_COUNT));
 

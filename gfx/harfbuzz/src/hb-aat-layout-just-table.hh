@@ -70,9 +70,9 @@ struct DecompositionAction
 
   ActionSubrecordHeader
 		header;
-  HBFixed	lowerLimit;	
+  F16DOT16	lowerLimit;	
 
-  HBFixed	upperLimit;	
+  F16DOT16	upperLimit;	
 
   HBUINT16	order;		
 
@@ -118,7 +118,7 @@ struct ConditionalAddGlyphAction
   protected:
   ActionSubrecordHeader
 		header;
-  HBFixed	substThreshold; 
+  F16DOT16	substThreshold; 
 
 
   HBGlyphID16	addGlyph;	
@@ -146,13 +146,13 @@ struct DuctileGlyphAction
   HBUINT32	variationAxis;	
 
 
-  HBFixed	minimumLimit;	
+  F16DOT16	minimumLimit;	
 
 
-  HBFixed	noStretchValue; 
+  F16DOT16	noStretchValue; 
 
 
-  HBFixed	maximumLimit;	
+  F16DOT16	maximumLimit;	
 
   public:
   DEFINE_SIZE_STATIC (22);
@@ -271,14 +271,14 @@ struct JustWidthDeltaEntry
   };
 
   protected:
-  HBFixed	beforeGrowLimit;
+  F16DOT16	beforeGrowLimit;
 
-  HBFixed	beforeShrinkLimit;
+  F16DOT16	beforeShrinkLimit;
 				
 
-  HBFixed	afterGrowLimit;	
+  F16DOT16	afterGrowLimit;	
 
-  HBFixed	afterShrinkLimit;
+  F16DOT16	afterShrinkLimit;
 				
 
 

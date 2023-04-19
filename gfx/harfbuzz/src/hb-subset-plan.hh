@@ -31,6 +31,7 @@
 
 #include "hb-subset.h"
 #include "hb-subset-input.hh"
+#include "hb-subset-accelerator.hh"
 
 #include "hb-map.hh"
 #include "hb-bimap.hh"
@@ -97,6 +98,7 @@ struct hb_subset_plan_t
 
   bool successful;
   unsigned flags;
+  bool attach_accelerator_data = false;
 
   
   hb_set_t *unicodes;
@@ -188,6 +190,8 @@ struct hb_subset_plan_t
   hb_hashmap_t<unsigned, hb_pair_t<unsigned, int>> *hmtx_map;
   
   hb_hashmap_t<unsigned, hb_pair_t<unsigned, int>> *vmtx_map;
+
+  const hb_subset_accelerator_t* accelerator;
 
  public:
 

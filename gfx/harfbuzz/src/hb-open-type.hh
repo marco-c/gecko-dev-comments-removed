@@ -141,27 +141,24 @@ typedef HBINT32 FWORD32;
 
 typedef HBUINT16 UFWORD;
 
-
-struct F2DOT14 : HBINT16
+template <typename Type, unsigned fraction_bits>
+struct HBFixed : Type
 {
-  F2DOT14& operator = (uint16_t i ) { HBINT16::operator= (i); return *this; }
-  
-  float to_float () const  { return ((int32_t) v) / 16384.f; }
-  void set_float (float f) { v = roundf (f * 16384.f); }
+  static constexpr float shift = (float) (1 << fraction_bits);
+  static_assert (Type::static_size * 8 > fraction_bits, "");
+
+  HBFixed& operator = (typename Type::type i ) { Type::operator= (i); return *this; }
+  float to_float () const  { return ((int32_t) Type::v) / shift; }
+  void set_float (float f) { Type::v = roundf (f * shift); }
   public:
-  DEFINE_SIZE_STATIC (2);
+  DEFINE_SIZE_STATIC (Type::static_size);
 };
 
 
-struct HBFixed : HBINT32
-{
-  HBFixed& operator = (uint32_t i) { HBINT32::operator= (i); return *this; }
-  
-  float to_float () const  { return ((int32_t) v) / 65536.f; }
-  void set_float (float f) { v = roundf (f * 65536.f); }
-  public:
-  DEFINE_SIZE_STATIC (4);
-};
+using F2DOT14 = HBFixed<HBINT16, 14>;
+
+
+using F16DOT16 = HBFixed<HBINT32, 16>;
 
 
 

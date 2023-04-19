@@ -44,7 +44,7 @@ struct InstanceRecord
 {
   friend struct fvar;
 
-  hb_array_t<const HBFixed> get_coordinates (unsigned int axis_count) const
+  hb_array_t<const F16DOT16> get_coordinates (unsigned int axis_count) const
   { return coordinatesZ.as_array (axis_count); }
 
   bool subset (hb_subset_context_t *c,
@@ -55,7 +55,7 @@ struct InstanceRecord
     if (unlikely (!c->serializer->embed (subfamilyNameID))) return_trace (false);
     if (unlikely (!c->serializer->embed (flags))) return_trace (false);
 
-    const hb_array_t<const HBFixed> coords = get_coordinates (axis_count);
+    const hb_array_t<const F16DOT16> coords = get_coordinates (axis_count);
     const hb_hashmap_t<hb_tag_t, float> *axes_location = c->plan->user_axes_location;
     for (unsigned i = 0 ; i < axis_count; i++)
     {
@@ -96,7 +96,7 @@ struct InstanceRecord
   NameID	subfamilyNameID;
 
   HBUINT16	flags;		
-  UnsizedArrayOf<HBFixed>
+  UnsizedArrayOf<F16DOT16>
 		coordinatesZ;	
   
   
@@ -189,9 +189,9 @@ struct AxisRecord
   public:
   Tag		axisTag;	
   protected:
-  HBFixed	minValue;	
-  HBFixed	defaultValue;	
-  HBFixed	maxValue;	
+  F16DOT16	minValue;	
+  F16DOT16	defaultValue;	
+  F16DOT16	maxValue;	
   public:
   HBUINT16	flags;		
   NameID	axisNameID;	
@@ -306,7 +306,7 @@ struct fvar
 
     if (coords_length && *coords_length)
     {
-      hb_array_t<const HBFixed> instanceCoords = instance->get_coordinates (axisCount)
+      hb_array_t<const F16DOT16> instanceCoords = instance->get_coordinates (axisCount)
 							 .sub_array (0, coords_length);
       for (unsigned int i = 0; i < instanceCoords.length; i++)
 	coords[i] = instanceCoords.arrayZ[i].to_float ();
@@ -339,7 +339,7 @@ struct fvar
 
       if (hb_any (+ hb_zip (instance->get_coordinates (axisCount), hb_range ((unsigned)axisCount))
                   | hb_filter (pinned_axes, hb_second)
-                  | hb_map ([&] (const hb_pair_t<const HBFixed&, unsigned>& _)
+                  | hb_map ([&] (const hb_pair_t<const F16DOT16&, unsigned>& _)
                             {
                               hb_tag_t axis_tag = pinned_axes.get (_.second);
                               float location = user_axes_location->get (axis_tag);

@@ -62,7 +62,7 @@ struct TrackTableEntry
   }
 
   protected:
-  HBFixed	track;		
+  F16DOT16	track;		
   NameID	trackNameID;	
 
 
@@ -82,7 +82,7 @@ struct TrackData
 			const void *base) const
   {
     unsigned int sizes = nSizes;
-    hb_array_t<const HBFixed> size_table ((base+sizeTable).arrayZ, sizes);
+    hb_array_t<const F16DOT16> size_table ((base+sizeTable).arrayZ, sizes);
 
     float s0 = size_table[idx].to_float ();
     float s1 = size_table[idx + 1].to_float ();
@@ -120,7 +120,7 @@ struct TrackData
     if (!sizes) return 0.;
     if (sizes == 1) return trackTableEntry->get_value (base, 0, sizes);
 
-    hb_array_t<const HBFixed> size_table ((base+sizeTable).arrayZ, sizes);
+    hb_array_t<const F16DOT16> size_table ((base+sizeTable).arrayZ, sizes);
     unsigned int size_index;
     for (size_index = 0; size_index < sizes - 1; size_index++)
       if (size_table[size_index].to_float () >= ptem)
@@ -141,7 +141,7 @@ struct TrackData
   protected:
   HBUINT16	nTracks;	
   HBUINT16	nSizes;		
-  NNOffset32To<UnsizedArrayOf<HBFixed>>
+  NNOffset32To<UnsizedArrayOf<F16DOT16>>
 		sizeTable;	
 
   UnsizedArrayOf<TrackTableEntry>

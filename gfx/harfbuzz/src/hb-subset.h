@@ -75,6 +75,14 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
+
+
+
+
+
+
+
+
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -86,6 +94,8 @@ typedef enum {
   HB_SUBSET_FLAGS_NOTDEF_OUTLINE =	     0x00000040u,
   HB_SUBSET_FLAGS_GLYPH_NAMES =		     0x00000080u,
   HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES =  0x00000100u,
+  
+  
 } hb_subset_flags_t;
 
 
@@ -167,6 +177,13 @@ hb_subset_input_pin_axis_location (hb_subset_input_t  *input,
 				   hb_tag_t            axis_tag,
 				   float               axis_value);
 #endif
+#endif
+
+#ifdef HB_EXPERIMENTAL_API
+
+HB_EXTERN hb_face_t *
+hb_subset_preprocess (hb_face_t *source);
+
 #endif
 
 HB_EXTERN hb_face_t *
