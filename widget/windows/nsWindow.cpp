@@ -262,16 +262,12 @@ using namespace mozilla::plugins;
 static const wchar_t kUser32LibName[] = L"user32.dll";
 
 uint32_t nsWindow::sInstanceCount = 0;
-bool nsWindow::sSwitchKeyboardLayout = false;
 BOOL nsWindow::sIsOleInitialized = FALSE;
 nsIWidget::Cursor nsWindow::sCurrentCursor = {};
 nsWindow* nsWindow::sCurrentWindow = nullptr;
 bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
 bool nsWindow::sIsInMouseCapture = false;
-
-
-TriStateBool nsWindow::sCanQuit = TRI_UNKNOWN;
 
 
 
@@ -286,18 +282,9 @@ UINT nsWindow::sHookTimerId = 0;
 
 
 
-POINT nsWindow::sLastMousePoint = {0};
 POINT nsWindow::sLastMouseMovePoint = {0};
-LONG nsWindow::sLastMouseDownTime = 0L;
-LONG nsWindow::sLastClickCount = 0L;
-BYTE nsWindow::sLastMouseButton = 0;
 
-bool nsWindow::sHaveInitializedPrefs = false;
 bool nsWindow::sIsRestoringSession = false;
-
-bool nsWindow::sFirstTopLevelWindowCreated = false;
-
-TriStateBool nsWindow::sHasBogusPopupsDropShadowOnMultiMonitor = TRI_UNKNOWN;
 
 bool nsWindow::sTouchInjectInitialized = false;
 InjectTouchInputPtr nsWindow::sInjectTouchFuncPtr;
@@ -370,9 +357,6 @@ static const char* sScreenManagerContractID =
     "@mozilla.org/gfx/screenmanager;1";
 
 extern mozilla::LazyLogModule gWindowsLog;
-
-
-static bool gIsSleepMode = false;
 
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
@@ -1023,6 +1007,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   const wchar_t* className = ChooseWindowClass(mWindowType, mForMenupopupFrame);
 
+  
+  static bool sFirstTopLevelWindowCreated = false;
   if (aInitData->mWindowType == eWindowType_toplevel && !aParent &&
       !sFirstTopLevelWindowCreated) {
     sFirstTopLevelWindowCreated = true;
@@ -1227,15 +1213,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   mDefaultIMC.Init(this);
   IMEHandler::InitInputContext(this, mInputContext);
-
-  
-  
-  
-  if (!sHaveInitializedPrefs && mWindowType == eWindowType_invisible) {
-    sSwitchKeyboardLayout =
-        Preferences::GetBool("intl.keyboard.per_window_layout", false);
-    sHaveInitializedPrefs = true;
-  }
 
   
   
@@ -4597,6 +4574,12 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     event.pointerId = pointerId;
   }
 
+  
+  static POINT sLastMousePoint = {0};
+  static LONG sLastMouseDownTime = 0L;
+  static LONG sLastClickCount = 0L;
+  static BYTE sLastMouseButton = 0;
+
   bool insideMovementThreshold =
       (DeprecatedAbs(sLastMousePoint.x - eventPoint.x) <
        (short)::GetSystemMetrics(SM_CXDOUBLECLK)) &&
@@ -5183,6 +5166,16 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     *aRetValue = dwmHitResult;
     return true;
   }
+
+  
+  
+  
+  
+  
+  
+  static bool sSwitchKeyboardLayout =
+      Preferences::GetBool("intl.keyboard.per_window_layout", false);
+  static TriStateBool sCanQuit = TRI_UNKNOWN;
 
   
   switch (msg) {
@@ -6676,9 +6669,13 @@ TimeStamp nsWindow::GetMessageTimeStamp(LONG aEventTime) const {
 }
 
 void nsWindow::PostSleepWakeNotification(const bool aIsSleepMode) {
-  if (aIsSleepMode == gIsSleepMode) return;
+  
+  static bool sWasSleepMode = false;
 
-  gIsSleepMode = aIsSleepMode;
+  
+  if (aIsSleepMode == sWasSleepMode) return;
+
+  sWasSleepMode = aIsSleepMode;
 
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -7615,7 +7612,9 @@ void nsWindow::WindowUsesOMTC() {
   NS_WARNING_ASSERTION(result, "Could not reset window class style");
 }
 
+
 bool nsWindow::HasBogusPopupsDropShadowOnMultiMonitor() {
+  static TriStateBool sHasBogusPopupsDropShadowOnMultiMonitor = TRI_UNKNOWN;
   if (sHasBogusPopupsDropShadowOnMultiMonitor == TRI_UNKNOWN) {
     
     

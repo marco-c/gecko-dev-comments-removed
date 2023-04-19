@@ -678,6 +678,7 @@ class nsWindow final : public nsBaseWidget {
 
   void AsyncUpdateWorkspaceID(Desktop& aDesktop);
 
+  
   static bool HasBogusPopupsDropShadowOnMultiMonitor();
 
   static void InitMouseWheelScrollData();
@@ -699,20 +700,13 @@ class nsWindow final : public nsBaseWidget {
   static bool sTouchInjectInitialized;
   static InjectTouchInputPtr sInjectTouchFuncPtr;
   static uint32_t sInstanceCount;
-  static TriStateBool sCanQuit;
   static nsWindow* sCurrentWindow;
   static BOOL sIsOleInitialized;
   static Cursor sCurrentCursor;
-  static bool sSwitchKeyboardLayout;
   static bool sJustGotDeactivate;
   static bool sJustGotActivate;
   static bool sIsInMouseCapture;
-  static bool sHaveInitializedPrefs;
   static bool sIsRestoringSession;
-  static bool sFirstTopLevelWindowCreated;
-
-  
-  static TriStateBool sHasBogusPopupsDropShadowOnMultiMonitor;
 
   
   
@@ -727,13 +721,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  static POINT sLastMousePoint;
   static POINT sLastMouseMovePoint;
-  static LONG sLastMouseDownTime;
-  static LONG sLastClickCount;
-  static BYTE sLastMouseButton;
-
-  static bool sNeedsToInitMouseWheelSettings;
 
   nsClassHashtable<nsUint32HashKey, PointerInfo> mActivePointers;
 
