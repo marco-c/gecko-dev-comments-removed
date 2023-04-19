@@ -65,12 +65,13 @@ elif CONFIG["OS_TARGET"] == "WINNT":
     UNIFIED_SOURCES += [
         "fallback/FallbackScreenConfiguration.cpp",
         "fallback/FallbackVibration.cpp",
-        "windows/WindowsProcessPriority.cpp",
         "windows/WindowsSensor.cpp",
     ]
     
+    
     SOURCES += [
         "windows/WindowsBattery.cpp",
+        "windows/WindowsProcessPriority.cpp",
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     UNIFIED_SOURCES += [
