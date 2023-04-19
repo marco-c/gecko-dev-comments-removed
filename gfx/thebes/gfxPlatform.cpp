@@ -1799,23 +1799,29 @@ bool gfxPlatform::UseGraphiteShaping() {
   return StaticPrefs::gfx_font_rendering_graphite_enabled();
 }
 
-bool gfxPlatform::IsFontFormatSupported(uint32_t aFormatFlags) {
-  
-  MOZ_ASSERT(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
-             "strange font format hint set");
-
-  
-  if (aFormatFlags & gfxUserFontSet::FLAG_FORMATS_COMMON) {
-    return true;
+bool gfxPlatform::IsFontFormatSupported(uint8_t aHint) {
+  switch (aHint) {
+    case gfxUserFontSet::FormatHint::NONE:
+      return true;
+    case gfxUserFontSet::FormatHint::COLLECTION:
+      return false;
+    case gfxUserFontSet::FormatHint::OPENTYPE:
+    case gfxUserFontSet::FormatHint::TRUETYPE:
+      return true;
+    case gfxUserFontSet::FormatHint::EOT:
+      return false;
+    case gfxUserFontSet::FormatHint::SVG:
+      return false;
+    case gfxUserFontSet::FormatHint::WOFF:
+      return true;
+    case gfxUserFontSet::FormatHint::WOFF2:
+      return true;
+    case gfxUserFontSet::FormatHint::UNKNOWN:
+      return false;
+    default:
+      MOZ_ASSERT_UNREACHABLE("bad format hint!");
+      return false;
   }
-
-  
-  if (aFormatFlags != 0) {
-    return false;
-  }
-
-  
-  return true;
 }
 
 gfxFontGroup* gfxPlatform::CreateFontGroup(
