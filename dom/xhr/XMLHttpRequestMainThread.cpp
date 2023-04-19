@@ -1889,7 +1889,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
   
   nsAutoCString type;
   channel->GetContentType(type);
-  if (type.IsEmpty() || type.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
+  if (type.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
     channel->SetContentType(nsLiteralCString(APPLICATION_OCTET_STREAM));
   }
 

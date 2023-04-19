@@ -246,8 +246,7 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     
     
     
-    if (mContentType.LowerCaseEqualsASCII(UNKNOWN_CONTENT_TYPE) ||
-        mContentType.IsEmpty()) {
+    if (mContentType.LowerCaseEqualsASCII(UNKNOWN_CONTENT_TYPE)) {
       return nsDocumentOpenInfo::TryStreamConversion(aChannel);
     }
 
