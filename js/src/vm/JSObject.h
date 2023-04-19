@@ -555,9 +555,13 @@ class JSObject
   static constexpr size_t offsetOfShape() { return offsetOfHeaderPtr(); }
 
  private:
-  JSObject() = delete;
   JSObject(const JSObject& other) = delete;
   void operator=(const JSObject& other) = delete;
+
+ protected:
+  
+  friend class js::gc::GCRuntime;
+  JSObject() = default;
 };
 
 template <>
