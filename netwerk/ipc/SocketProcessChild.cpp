@@ -203,6 +203,12 @@ void SocketProcessChild::CleanUp() {
     MutexAutoLock lock(mMutex);
     mBackgroundDataBridgeMap.Clear();
   }
+
+  
+  
+  
+  Close();
+
   NS_ShutdownXPCOM(nullptr);
 
   if (sInitializedJS) {
