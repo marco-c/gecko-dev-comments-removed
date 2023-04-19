@@ -13,8 +13,9 @@ from mach.decorators import (
 
 
 UDL_FILES = [
-    
+    "third_party/rust/tabs/src/tabs.udl",
 ]
+
 FIXTURE_UDL_FILES = [
     "third_party/rust/uniffi-example-geometry/src/geometry.udl",
     "third_party/rust/uniffi-example-arithmetic/src/arithmetic.udl",
