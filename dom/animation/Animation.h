@@ -164,7 +164,13 @@ class Animation : public DOMEventTargetHelper,
             
             
             
-            PlaybackRate() != 0.0);
+            PlaybackRate() != 0.0) ||
+           
+           
+           
+           
+           (mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
+            PlayState() != AnimationPlayState::Idle);
   }
 
   
