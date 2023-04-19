@@ -53,7 +53,7 @@ class ErrorContext {
 
   
   virtual void reportError(js::CompileError* err) = 0;
-  virtual void reportWarning(js::CompileError* err) = 0;
+  virtual bool reportWarning(js::CompileError* err) = 0;
 
   
   virtual void* onOutOfMemory(js::AllocFunction allocFunc, arena_id_t arena,
@@ -113,7 +113,7 @@ class OffThreadErrorContext : public ErrorContext {
 
   
   void reportError(js::CompileError* err) override;
-  void reportWarning(js::CompileError* err) override;
+  bool reportWarning(js::CompileError* err) override;
 
   
   void* onOutOfMemory(js::AllocFunction allocFunc, arena_id_t arena,
