@@ -566,11 +566,8 @@ Editor.prototype = {
 
 
 
-
-
-
-  createDocument(text = "", mode) {
-    return new this.Doc(text, mode);
+  createDocument() {
+    return new this.Doc("");
   },
 
   
