@@ -102,24 +102,28 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
         RTC_DCHECK_RUN_ON(&callback_checker_);
         
         
-        MutexLock lock(&mutex_);
-        if (!frames_to_decode_.empty()) {
-          
-          frame_handler_(absl::WrapUnique(GetNextFrame()), kFrameFound);
+        std::unique_ptr<EncodedFrame> frame;
+        std::function<void(std::unique_ptr<EncodedFrame>, ReturnReason)>
+            frame_handler;
+        {
+          MutexLock lock(&mutex_);
+          if (!frames_to_decode_.empty()) {
+            
+            frame = absl::WrapUnique(GetNextFrame());
+          } else if (clock_->TimeInMilliseconds() < latest_return_time_ms_) {
+            
+            
+            
+            int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
+            return TimeDelta::Millis(wait_ms);
+          }
+          frame_handler = std::move(frame_handler_);
           CancelCallback();
-          return TimeDelta::Zero();  
-        } else if (clock_->TimeInMilliseconds() >= latest_return_time_ms_) {
-          
-          frame_handler_(nullptr, kTimeout);
-          CancelCallback();
-          return TimeDelta::Zero();  
-        } else {
-          
-          
-          
-          int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
-          return TimeDelta::Millis(wait_ms);
         }
+        
+        ReturnReason reason = frame ? kFrameFound : kTimeout;
+        frame_handler(std::move(frame), reason);
+        return TimeDelta::Zero();  
       });
 }
 
