@@ -247,7 +247,20 @@ interface nsIPrintSettings : nsISupports
   [infallible] attribute boolean printBGImages; 
 
   
+
+
+
+
   [infallible] attribute boolean honorPageRuleMargins;
+
+  
+
+
+
+
+
+
+  [infallible] attribute boolean ignoreUnwriteableMargins;
 
   
   [infallible] attribute boolean showMarginGuides;

@@ -231,8 +231,10 @@ void PrintedSheetFrame::ComputePagesPerSheetOriginAndScale() {
   
   
   nsSize availSpaceOnSheet = pageSize;
-  nsMargin uwm = nsPresContext::CSSTwipsToAppUnits(
-      mPD->mPrintSettings->GetUnwriteableMarginInTwips());
+  nsMargin uwm = mPD->mPrintSettings->GetIgnoreUnwriteableMargins()
+                     ? nsMargin{}
+                     : nsPresContext::CSSTwipsToAppUnits(
+                           mPD->mPrintSettings->GetUnwriteableMarginInTwips());
 
   if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
     

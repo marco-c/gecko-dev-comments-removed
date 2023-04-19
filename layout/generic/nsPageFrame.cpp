@@ -125,8 +125,12 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
             kidReflowInput.ComputedPhysicalMargin().Side(side);
         
         
-        if (computed == 0) {
-          mPageContentMargin.Side(side) = 0;
+        
+        
+        
+        if (computed == 0 ||
+            mPD->mPrintSettings->GetIgnoreUnwriteableMargins()) {
+          mPageContentMargin.Side(side) = computed;
         } else {
           
           
