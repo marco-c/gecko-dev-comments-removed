@@ -59,7 +59,7 @@ class RtpVp9RefFinder {
                              uint8_t temporal_idx,
                              uint16_t pid_ref);
 
-  void UnwrapPictureIds(RtpFrameObject* frame);
+  void FlattenFrameIdAndRefs(RtpFrameObject* frame, bool inter_layer_predicted);
 
   
   
