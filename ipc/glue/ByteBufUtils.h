@@ -41,9 +41,6 @@ struct ParamTraits<mozilla::ipc::ByteBuf> {
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
     
-    
-    
-    
     uint32_t length;
     if (!ReadParam(aReader, &length)) return false;
     if (!aResult->Allocate(length)) {
