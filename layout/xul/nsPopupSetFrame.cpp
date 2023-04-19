@@ -32,7 +32,7 @@ void nsPopupSetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   nsIPopupContainer* popupContainer =
-      nsIPopupContainer::GetPopupContainer(PresShell());
+      nsIPopupContainer::GetPopupContainer(PresContext()->GetPresShell());
   if (popupContainer) {
     popupContainer->SetPopupSetFrame(this);
   }
@@ -95,7 +95,7 @@ void nsPopupSetFrame::DestroyFrom(nsIFrame* aDestructRoot,
   
   
   nsIPopupContainer* popupContainer =
-      nsIPopupContainer::GetPopupContainer(PresShell());
+      nsIPopupContainer::GetPopupContainer(PresContext()->GetPresShell());
   if (popupContainer) {
     popupContainer->SetPopupSetFrame(nullptr);
   }

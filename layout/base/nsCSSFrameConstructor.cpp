@@ -209,6 +209,9 @@ static FrameCtorDebugFlags gFlags[] = {
 
 
 
+nsContainerFrame* NS_NewRootBoxFrame(PresShell* aPresShell,
+                                     ComputedStyle* aStyle);
+
 nsContainerFrame* NS_NewDocElementBoxFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle);
 
@@ -1464,6 +1467,7 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
       mQuotesDirty(false),
       mCountersDirty(false),
       mIsDestroyingFrameTree(false),
+      mHasRootAbsPosContainingBlock(false),
       mAlwaysCreateFramesForIgnorableWhitespace(false) {
 #ifdef DEBUG
   static bool gFirstTime = true;
@@ -2393,12 +2397,14 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   }
 
   nsFrameConstructorSaveState docElementContainingBlockAbsoluteSaveState;
-  
-  
-  mDocElementContainingBlock->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
-  state.PushAbsoluteContainingBlock(
-      mDocElementContainingBlock, mDocElementContainingBlock,
-      docElementContainingBlockAbsoluteSaveState);
+  if (mHasRootAbsPosContainingBlock) {
+    
+    
+    mDocElementContainingBlock->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    state.PushAbsoluteContainingBlock(
+        mDocElementContainingBlock, mDocElementContainingBlock,
+        docElementContainingBlockAbsoluteSaveState);
+  }
 
   
   
@@ -2693,8 +2699,17 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
       static_cast<nsContainerFrame*>(GetRootFrame());
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
 
-  nsContainerFrame* rootFrame =
-    NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+  nsContainerFrame* rootFrame = nullptr;
+
+  if (aDocElement->IsXULElement()) {
+    
+    rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
+  } else {
+    
+    rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+    mHasRootAbsPosContainingBlock = true;
+  }
+
   PseudoStyleType rootPseudo = PseudoStyleType::canvas;
   mDocElementContainingBlock = rootFrame;
 
@@ -2788,6 +2803,7 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     
     
     mDocElementContainingBlock = canvasFrame;
+    mHasRootAbsPosContainingBlock = true;
   }
 
   if (viewportFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
@@ -5693,7 +5709,7 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
   
   
   
-  return mDocElementContainingBlock;
+  return mHasRootAbsPosContainingBlock ? mDocElementContainingBlock : nullptr;
 }
 
 nsContainerFrame* nsCSSFrameConstructor::GetFloatContainingBlock(
@@ -7577,6 +7593,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       mRootElementStyleFrame = nullptr;
       mDocElementContainingBlock = nullptr;
       mPageSequenceFrame = nullptr;
+      mHasRootAbsPosContainingBlock = false;
     }
 
     if (haveFLS && mRootElementFrame) {

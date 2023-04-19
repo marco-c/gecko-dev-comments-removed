@@ -2145,6 +2145,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   bool mQuotesDirty : 1;
   bool mCountersDirty : 1;
   bool mIsDestroyingFrameTree : 1;
+  
+  bool mHasRootAbsPosContainingBlock : 1;
   bool mAlwaysCreateFramesForIgnorableWhitespace : 1;
 
   
