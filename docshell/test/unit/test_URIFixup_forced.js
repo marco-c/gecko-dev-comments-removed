@@ -14,22 +14,26 @@ var data = [
     
     wrong: "http://www.example.com/",
     fixed: "https://www.example.com/",
+    noAlternateURI: true,
   },
   {
     
     wrong: "https://www.example.com/",
     fixed: "https://www.example.com/",
     noProtocolFixup: true,
+    noAlternateURI: true,
   },
   {
     
     wrong: "http://www.example.abc.def/",
     fixed: "https://www.example.abc.def/",
+    noAlternateURI: true,
   },
   {
     
     wrong: "http://www.example/",
     fixed: "https://www.example/",
+    noAlternateURI: true,
   },
   {
     
