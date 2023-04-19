@@ -43,7 +43,7 @@ decl_cdef_dir_fn(BF(dav1d_cdef_dir, avx2));
 decl_cdef_dir_fn(BF(dav1d_cdef_dir, sse4));
 decl_cdef_dir_fn(BF(dav1d_cdef_dir, ssse3));
 
-COLD void bitfn(dav1d_cdef_dsp_init_x86)(Dav1dCdefDSPContext *const c) {
+static ALWAYS_INLINE void cdef_dsp_init_x86(Dav1dCdefDSPContext *const c) {
     const unsigned flags = dav1d_get_cpu_flags();
 
 #if BITDEPTH == 8
@@ -80,10 +80,8 @@ COLD void bitfn(dav1d_cdef_dsp_init_x86)(Dav1dCdefDSPContext *const c) {
 
     if (!(flags & DAV1D_X86_CPU_FLAG_AVX512ICL)) return;
 
-#if BITDEPTH == 8
     c->fb[0] = BF(dav1d_cdef_filter_8x8, avx512icl);
     c->fb[1] = BF(dav1d_cdef_filter_4x8, avx512icl);
     c->fb[2] = BF(dav1d_cdef_filter_4x4, avx512icl);
-#endif
 #endif
 }

@@ -38,7 +38,7 @@ decl_loopfilter_sb_fns(ssse3);
 decl_loopfilter_sb_fns(avx2);
 decl_loopfilter_sb_fns(avx512icl);
 
-COLD void bitfn(dav1d_loop_filter_dsp_init_x86)(Dav1dLoopFilterDSPContext *const c) {
+static ALWAYS_INLINE void loop_filter_dsp_init_x86(Dav1dLoopFilterDSPContext *const c) {
     const unsigned flags = dav1d_get_cpu_flags();
 
     if (!(flags & DAV1D_X86_CPU_FLAG_SSSE3)) return;
@@ -58,11 +58,9 @@ COLD void bitfn(dav1d_loop_filter_dsp_init_x86)(Dav1dLoopFilterDSPContext *const
 
     if (!(flags & DAV1D_X86_CPU_FLAG_AVX512ICL)) return;
 
-#if BITDEPTH == 8
     c->loop_filter_sb[0][0] = BF(dav1d_lpf_h_sb_y, avx512icl);
     c->loop_filter_sb[0][1] = BF(dav1d_lpf_v_sb_y, avx512icl);
     c->loop_filter_sb[1][0] = BF(dav1d_lpf_h_sb_uv, avx512icl);
     c->loop_filter_sb[1][1] = BF(dav1d_lpf_v_sb_uv, avx512icl);
-#endif
 #endif
 }
