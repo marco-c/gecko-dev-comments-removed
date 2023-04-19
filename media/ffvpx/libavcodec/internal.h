@@ -28,12 +28,85 @@
 
 #include "libavutil/buffer.h"
 #include "libavutil/channel_layout.h"
+#include "libavutil/fifo.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/pixfmt.h"
 #include "avcodec.h"
 #include "config.h"
 
+
+
+
+
+#define FF_CODEC_CAP_INIT_THREADSAFE        (1 << 0)
+
+
+
+
+
+
+
+#define FF_CODEC_CAP_INIT_CLEANUP           (1 << 1)
+
+
+
+
+
+
+#define FF_CODEC_CAP_SETS_PKT_DTS           (1 << 2)
+
+
+
+
+#define FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM  (1 << 3)
+
+
+
+
+
+#define FF_CODEC_CAP_EXPORTS_CROPPING       (1 << 4)
+
+
+
+#define FF_CODEC_CAP_SLICE_THREAD_HAS_MF    (1 << 5)
+
+
+
+
+#define FF_CODEC_CAP_ALLOCATE_PROGRESS      (1 << 6)
+
+
+
+#define FF_CODEC_CAP_AUTO_THREADS           (1 << 7)
+
+
+
+
+#define FF_CODEC_CAP_SETS_FRAME_PROPS       (1 << 8)
+
+
+
+
+#define FF_CODEC_TAGS_END -1
+
+
+#ifdef TRACE
+#   define ff_tlog(ctx, ...) av_log(ctx, AV_LOG_TRACE, __VA_ARGS__)
+#else
+#   define ff_tlog(ctx, ...) do { } while(0)
+#endif
+
+
+#define FF_DEFAULT_QUANT_BIAS 999999
+
+#define FF_QSCALE_TYPE_MPEG1 0
+#define FF_QSCALE_TYPE_MPEG2 1
+#define FF_QSCALE_TYPE_H264  2
+#define FF_QSCALE_TYPE_VP56  3
+
 #define FF_SANE_NB_CHANNELS 512U
+
+#define FF_SIGNBIT(x) ((x) >> CHAR_BIT * sizeof(x) - 1)
 
 #if HAVE_SIMD_ALIGN_64
 #   define STRIDE_ALIGN 64 /* AVX-512 */
@@ -45,8 +118,18 @@
 #   define STRIDE_ALIGN 8
 #endif
 
+typedef struct DecodeSimpleContext {
+    AVPacket *in_pkt;
+} DecodeSimpleContext;
+
+typedef struct EncodeSimpleContext {
+    AVFrame *in_frame;
+} EncodeSimpleContext;
+
 typedef struct AVCodecInternal {
     
+
+
 
 
 
@@ -58,27 +141,23 @@ typedef struct AVCodecInternal {
 
     int last_audio_frame;
 
+#if FF_API_OLD_ENCDEC
+    AVFrame *to_free;
+#endif
+
     AVBufferRef *pool;
 
     void *thread_ctx;
 
-    
-
-
-
-
-
-
-
-    AVPacket *in_pkt;
-    struct AVBSFContext *bsf;
+    DecodeSimpleContext ds;
+    AVBSFContext *bsf;
 
     
 
 
 
     AVPacket *last_pkt_props;
-    struct AVFifo *pkt_props;
+    AVFifoBuffer *pkt_props;
 
     
 
@@ -86,28 +165,9 @@ typedef struct AVCodecInternal {
     uint8_t *byte_buffer;
     unsigned int byte_buffer_size;
 
-    
-
-
-
-
-    int intra_only_flag;
-
     void *frame_thread_encoder;
 
-    
-
-
-
-
-
-    AVFrame *in_frame;
-
-    
-
-
-
-    int needs_close;
+    EncodeSimpleContext es;
 
     
 
@@ -131,6 +191,18 @@ typedef struct AVCodecInternal {
     AVFrame *buffer_frame;
     int draining_done;
 
+#if FF_API_OLD_ENCDEC
+    int compat_decode_warned;
+    
+
+    size_t compat_decode_consumed;
+    
+
+    size_t compat_decode_partial_size;
+    AVFrame *compat_decode_frame;
+    AVPacket *compat_encode_packet;
+#endif
+
     int showed_multi_packet_warning;
 
     int skip_samples_multiplier;
@@ -143,12 +215,16 @@ typedef struct AVCodecInternal {
     int initial_format;
     int initial_width, initial_height;
     int initial_sample_rate;
-#if FF_API_OLD_CHANNEL_LAYOUT
     int initial_channels;
     uint64_t initial_channel_layout;
-#endif
-    AVChannelLayout initial_ch_layout;
 } AVCodecInternal;
+
+struct AVCodecDefault {
+    const uint8_t *key;
+    const uint8_t *value;
+};
+
+extern const uint8_t ff_log2_run[41];
 
 
 
@@ -156,7 +232,7 @@ typedef struct AVCodecInternal {
 
 int ff_match_2uint16(const uint16_t (*tab)[2], int size, int a, int b);
 
-unsigned int ff_toupper4(unsigned int x);
+unsigned int avpriv_toupper4(unsigned int x);
 
 void ff_color_frame(AVFrame *frame, const int color[4]);
 
@@ -166,6 +242,34 @@ void ff_color_frame(AVFrame *frame, const int color[4]);
 
 
 #define FF_MAX_EXTRADATA_SIZE ((1 << 28) - AV_INPUT_BUFFER_PADDING_SIZE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int ff_alloc_packet2(AVCodecContext *avctx, AVPacket *avpkt, int64_t size, int64_t min_size);
 
 
 
@@ -215,6 +319,10 @@ int ff_reget_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
 int ff_thread_can_start_frame(AVCodecContext *avctx);
 
 int avpriv_h264_has_num_reorder_frames(AVCodecContext *avctx);
+
+const uint8_t *avpriv_find_start_code(const uint8_t *p,
+                                      const uint8_t *end,
+                                      uint32_t *state);
 
 int avpriv_codec_get_cap_skip_frame_fill_param(const AVCodec *codec);
 
@@ -289,5 +397,11 @@ int ff_int_from_list_or_default(void *ctx, const char * val_name, int val,
                                 const int * array_valid_values, int default_value);
 
 void ff_dvdsub_parse_palette(uint32_t *palette, const char *p);
+
+#if defined(_WIN32) && CONFIG_SHARED && !defined(BUILDING_avcodec)
+#    define av_export_avcodec __declspec(dllimport)
+#else
+#    define av_export_avcodec
+#endif
 
 #endif 

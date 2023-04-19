@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include "avcodec.h"
+#include "version.h"
 
 
 

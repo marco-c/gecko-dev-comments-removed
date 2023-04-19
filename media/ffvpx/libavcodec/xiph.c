@@ -18,8 +18,6 @@
 
 
 
-#include <limits.h>
-#include "libavutil/error.h"
 #include "libavutil/intreadwrite.h"
 #include "xiph.h"
 
