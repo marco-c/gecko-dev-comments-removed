@@ -12,8 +12,9 @@ const FIREFOX_VIEW_PREF = "browser.firefox-view.feature-tour";
 const EMPTY_SCREEN = { content: {} };
 
 
+
 const matchCurrentScreenTargeting = (prefName, screenId) => {
-  return `'${prefName}' | preferenceValue | regExpMatch('(?<=screen\"\:)"(.*)(?=",)')[1] == '${screenId}'`;
+  return `'${prefName}' | preferenceValue | regExpMatch('(?<=screen\"\:)"(.*)(?=",)')[1] == '${screenId}' && '${prefName}' | preferenceValue | regExpMatch('(?<=complete\"\:)(.*)(?=})')[1] != "true"`;
 };
 
 const MESSAGES = () => [
