@@ -2294,18 +2294,15 @@ void LocalAccessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
   
   if (aStartOffset != 0 || aLength == 0) return;
 
-  nsIFrame* frame = GetFrame();
-  if (!frame) {
-    if (nsCoreUtils::IsDisplayContents(mContent)) {
-      aText += kEmbeddedObjectChar;
-    }
-    return;
-  }
-
   MOZ_ASSERT(mParent,
              "Called on accessible unbound from tree. Result can be wrong.");
-
-  if (frame->IsBrFrame()) {
+  nsIFrame* frame = GetFrame();
+  
+  
+  
+  
+  
+  if (IsHTMLBr() || (frame && frame->IsBrFrame())) {
     aText += kForcedNewLineChar;
   } else if (mParent && nsAccUtils::MustPrune(mParent)) {
     
