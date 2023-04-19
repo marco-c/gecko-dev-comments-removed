@@ -532,30 +532,30 @@ void RangeUpdater::DidMoveNode(const nsINode& aOldParent, uint32_t aOldOffset,
     
     return;
   }
+  auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aNode, uint32_t& aOffset) {
+    if (aNode == &aOldParent) {
+      
+      if (aOffset == aOldOffset) {
+        aNode = const_cast<nsINode*>(&aNewParent);
+        aOffset = aNewOffset;
+      } else if (aOffset > aOldOffset) {
+        aOffset--;
+      }
+      return;
+    }
+    if (aNode == &aNewParent) {
+      if (aOffset > aNewOffset) {
+        aOffset++;
+      }
+    }
+  };
   for (RefPtr<RangeItem>& rangeItem : mArray) {
     if (NS_WARN_IF(!rangeItem)) {
       return;
     }
 
-    
-    if (rangeItem->mStartContainer == &aOldParent &&
-        rangeItem->mStartOffset > aOldOffset) {
-      rangeItem->mStartOffset--;
-    }
-    if (rangeItem->mEndContainer == &aOldParent &&
-        rangeItem->mEndOffset > aOldOffset) {
-      rangeItem->mEndOffset--;
-    }
-
-    
-    if (rangeItem->mStartContainer == &aNewParent &&
-        rangeItem->mStartOffset > aNewOffset) {
-      rangeItem->mStartOffset++;
-    }
-    if (rangeItem->mEndContainer == &aNewParent &&
-        rangeItem->mEndOffset > aNewOffset) {
-      rangeItem->mEndOffset++;
-    }
+    AdjustDOMPoint(rangeItem->mStartContainer, rangeItem->mStartOffset);
+    AdjustDOMPoint(rangeItem->mEndContainer, rangeItem->mEndOffset);
   }
 }
 
