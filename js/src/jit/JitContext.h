@@ -79,7 +79,7 @@ static_assert(sizeof(AbortReasonOr<uint16_t*>) == sizeof(uintptr_t),
 
 
 
-class JitContext {
+class MOZ_RAII JitContext {
 #ifdef DEBUG
   
   
