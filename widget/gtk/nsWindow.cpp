@@ -1699,7 +1699,6 @@ bool nsWindow::WaylandPopupConfigure() {
   GdkWindowTypeHint gtkTypeHint;
   switch (mPopupHint) {
     case ePopupTypeMenu:
-    case ePopupTypePanel:
       
       
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
@@ -1853,7 +1852,8 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         return false;
       }
-      if (popup->WaylandPopupIsFirst() &&
+      if (popup->mPopupHint == ePopupTypePanel &&
+          popup->WaylandPopupIsFirst() &&
           popup->WaylandPopupFitsToplevelWindow()) {
         
         
