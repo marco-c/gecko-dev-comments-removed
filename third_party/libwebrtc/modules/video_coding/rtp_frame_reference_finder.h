@@ -129,22 +129,6 @@ class RtpFrameReferenceFinder {
   void UnwrapPictureIds(RtpFrameObject* frame);
 
   
-  FrameDecision ManageFrameH264(RtpFrameObject* frame);
-
-  
-  void UpdateLastPictureIdWithPaddingH264();
-
-  
-  void UpdateLayerInfoH264(RtpFrameObject* frame,
-                           int64_t unwrapped_tl0,
-                           uint8_t temporal_idx);
-
-  
-  void UpdateDataH264(RtpFrameObject* frame,
-                      int64_t unwrapped_tl0,
-                      uint8_t temporal_idx);
-
-  
   
   
   
