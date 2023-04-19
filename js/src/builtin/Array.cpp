@@ -4708,7 +4708,7 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
 #endif
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
-  if (cx->options().changeArrayByCopy()) {
+  if (cx->realm()->creationOptions().getChangeArrayByCopyEnabled()) {
     
 
 
