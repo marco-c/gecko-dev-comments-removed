@@ -14,6 +14,7 @@
 #include "PanningUtils.h"
 #include "AudioParamTimeline.h"
 #include "AudioParam.h"
+#include "Tracing.h"
 
 namespace mozilla::dom {
 
@@ -96,6 +97,8 @@ class StereoPannerNodeEngine final : public AudioNodeEngine {
                             bool* aFinished) override {
     
     MOZ_ASSERT(aInput.ChannelCount() <= 2);
+    TRACE("StereoPannerNodeEngine::ProcessBlock");
+
     bool monoToStereo = aInput.ChannelCount() == 1;
 
     if (aInput.IsNull()) {

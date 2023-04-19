@@ -16,6 +16,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/PodOperations.h"
 #include <deque>
+#include "Tracing.h"
 
 namespace mozilla::dom {
 
@@ -269,6 +270,8 @@ class ScriptProcessorNodeEngine final : public AudioNodeEngine {
   void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                     const AudioBlock& aInput, AudioBlock* aOutput,
                     bool* aFinished) override {
+    TRACE("ScriptProcessorNodeEngine::ProcessBlock");
+
     
     
     
