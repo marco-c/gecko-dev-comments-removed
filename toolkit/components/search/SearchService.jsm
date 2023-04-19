@@ -204,8 +204,8 @@ class SearchService {
 
 
 
-  get originalDefaultEngine() {
-    return this.#originalDefaultEngine();
+  get appDefaultEngine() {
+    return this.#appDefaultEngine();
   }
 
   
@@ -215,8 +215,8 @@ class SearchService {
 
 
 
-  get originalPrivateDefaultEngine() {
-    return this.#originalDefaultEngine(this.#separatePrivateDefault);
+  get appPrivateDefaultEngine() {
+    return this.#appDefaultEngine(this.#separatePrivateDefault);
   }
 
   get isInitialized() {
@@ -369,10 +369,10 @@ class SearchService {
     this._settings._batchTask?.disarm();
   }
 
-  resetToOriginalDefaultEngine() {
-    let originalDefaultEngine = this.originalDefaultEngine;
-    originalDefaultEngine.hidden = false;
-    this.defaultEngine = originalDefaultEngine;
+  resetToAppDefaultEngine() {
+    let appDefaultEngine = this.appDefaultEngine;
+    appDefaultEngine.hidden = false;
+    this.defaultEngine = appDefaultEngine;
   }
 
   async maybeSetAndOverrideDefault(extension) {
@@ -1177,9 +1177,9 @@ class SearchService {
     }
     if (!name) {
       if (privateMode) {
-        this.#currentPrivateEngine = this.originalPrivateDefaultEngine;
+        this.#currentPrivateEngine = this.appPrivateDefaultEngine;
       } else {
-        this.#currentEngine = this.originalDefaultEngine;
+        this.#currentEngine = this.appDefaultEngine;
       }
     }
 
@@ -1425,7 +1425,7 @@ class SearchService {
 
 
 
-  #originalDefaultEngine(privateMode = false) {
+  #appDefaultEngine(privateMode = false) {
     let defaultEngine = this.#getEngineByWebExtensionDetails(
       privateMode && this.#searchPrivateDefault
         ? this.#searchPrivateDefault
@@ -1439,7 +1439,7 @@ class SearchService {
     if (privateMode) {
       
       
-      return this.#originalDefaultEngine(false);
+      return this.#appDefaultEngine(false);
     }
 
     
@@ -1496,7 +1496,7 @@ class SearchService {
     let newCurrentEngine = this._getEngineDefault(false)?.name;
     this._settings.setAttribute(
       "appDefaultEngine",
-      this.originalDefaultEngine?.name
+      this.appDefaultEngine?.name
     );
 
     if (
@@ -1670,12 +1670,12 @@ class SearchService {
     
 
     let {
-      engines: originalConfigEngines,
+      engines: appDefaultConfigEngines,
       privateDefault,
     } = await this._fetchEngineSelectorEngines();
 
     let enginesToRemove = [];
-    let configEngines = [...originalConfigEngines];
+    let configEngines = [...appDefaultConfigEngines];
     let oldEngineList = [...this._engines.values()];
 
     for (let engine of oldEngineList) {
@@ -1782,7 +1782,7 @@ class SearchService {
     }
 
     this.#setDefaultAndOrdersFromSelector(
-      originalConfigEngines,
+      appDefaultConfigEngines,
       privateDefault
     );
 
@@ -1875,7 +1875,7 @@ class SearchService {
     
     this._settings.setAttribute(
       "appDefaultEngine",
-      this.originalDefaultEngine?.name
+      this.appDefaultEngine?.name
     );
 
     this.#dontSetUseSavedOrder = false;
@@ -2226,14 +2226,14 @@ class SearchService {
 
     
     
-    const originalDefault = this.originalDefaultEngine;
-    maybeAddEngineToSort(originalDefault);
+    const appDefault = this.appDefaultEngine;
+    maybeAddEngineToSort(appDefault);
 
     
     
-    const originalPrivateDefault = this.originalPrivateDefaultEngine;
-    if (originalPrivateDefault && originalPrivateDefault != originalDefault) {
-      maybeAddEngineToSort(originalPrivateDefault);
+    const appPrivateDefault = this.appPrivateDefaultEngine;
+    if (appPrivateDefault && appPrivateDefault != appDefault) {
+      maybeAddEngineToSort(appPrivateDefault);
     }
 
     let remainingEngines;
@@ -2483,9 +2483,9 @@ class SearchService {
             e.webExtension.id == extension.id && e.webExtension.locale == locale
         ) ?? {};
 
-      let originalName = engine.name;
+      let appDefaultName = engine.name;
       let name = manifest.chrome_settings_overrides.search_provider.name.trim();
-      if (originalName != name && this._engines.has(name)) {
+      if (appDefaultName != name && this._engines.has(name)) {
         throw new Error("Can't upgrade to the same name as an existing engine");
       }
 
@@ -2500,8 +2500,8 @@ class SearchService {
         configuration
       );
 
-      if (originalName != engine.name) {
-        this._engines.delete(originalName);
+      if (appDefaultName != engine.name) {
+        this._engines.delete(appDefaultName);
         this._engines.set(engine.name, engine);
         if (isDefault) {
           this._settings.setVerifiedAttribute("current", engine.name);
@@ -2618,8 +2618,8 @@ class SearchService {
   #findAndSetNewDefaultEngine({ privateMode, excludeEngineName = "" }) {
     
     let newDefault = privateMode
-      ? this.originalPrivateDefaultEngine
-      : this.originalDefaultEngine;
+      ? this.appPrivateDefaultEngine
+      : this.appDefaultEngine;
 
     if (
       !newDefault ||
@@ -2751,10 +2751,10 @@ class SearchService {
     
     
     let newName = newCurrentEngine.name;
-    const originalDefault = privateMode
-      ? this.originalPrivateDefaultEngine
-      : this.originalDefaultEngine;
-    if (newCurrentEngine == originalDefault) {
+    const appDefaultEngine = privateMode
+      ? this.appPrivateDefaultEngine
+      : this.appDefaultEngine;
+    if (newCurrentEngine == appDefaultEngine) {
       newName = "";
     }
 
