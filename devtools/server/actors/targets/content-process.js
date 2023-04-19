@@ -214,14 +214,17 @@ const ContentProcessTargetActor = TargetActorMixin(
     },
 
     destroy: function() {
-      if (this.isDestroyed()) {
+      
+      
+      if (this.destroying) {
         return;
       }
-      Resources.unwatchAllResources(this);
+      this.destroying = true;
 
       this.emit("destroyed");
 
       Actor.prototype.destroy.call(this);
+      Resources.unwatchAllResources(this);
 
       if (this.threadActor) {
         this.threadActor = null;

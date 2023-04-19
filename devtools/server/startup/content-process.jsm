@@ -60,29 +60,44 @@ function initContentProcessTarget(msg) {
   const response = { watcherActorID, prefix, actor: actor.form() };
   mm.sendAsyncMessage("debug:content-process-actor", response);
 
-  
-  mm.addMessageListener("debug:content-process-disconnect", function onDestroy(
-    message
-  ) {
+  function onDestroy() {
+    mm.removeMessageListener(
+      "debug:content-process-disconnect",
+      onContentProcessDisconnect
+    );
+    actor.off("destroyed", onDestroy);
+
+    
+    mm.sendAsyncMessage("debug:content-process-actor-destroyed", {
+      watcherActorID,
+    });
+
+    
+    
+    
+    conn.close();
+
+    
+    
+    releaseDistinctSystemPrincipalLoader(loaderRequester);
+  }
+  function onContentProcessDisconnect(message) {
     if (message.data.prefix != prefix) {
       
       
       
       return;
     }
-    mm.removeMessageListener("debug:content-process-disconnect", onDestroy);
-
-    
-    
-    
-    conn.close();
-  });
+    onDestroy();
+  }
 
   
+  mm.addMessageListener(
+    "debug:content-process-disconnect",
+    onContentProcessDisconnect
+  );
   
-  actor.once("destroyed", () => {
-    releaseDistinctSystemPrincipalLoader(loaderRequester);
-  });
+  actor.on("destroyed", onDestroy);
 
   return {
     actor,
