@@ -141,6 +141,9 @@ class LossBasedBweV2 {
   bool TrendlineEsimateAllowBitrateIncrease() const;
 
   
+  bool TrendlineEsimateAllowEmergencyBackoff() const;
+
+  
   bool PushBackObservation(rtc::ArrayView<const PacketResult> packet_results,
                            BandwidthUsage delay_detector_state);
   void UpdateTrendlineEstimator(

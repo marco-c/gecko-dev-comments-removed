@@ -437,10 +437,14 @@ TEST(LossBasedBweV2Test, BandwidthEstimateIncreasesWhenUnderusing) {
             DataRate::KilobitsPerSec(600));
 }
 
+
+
 TEST(LossBasedBweV2Test,
      BandwidthEstimateCappedByDelayBasedEstimateWhenUnderusing) {
   PacketResult enough_feedback_1[2];
   PacketResult enough_feedback_2[2];
+  
+  
   enough_feedback_1[0].sent_packet.size = DataSize::Bytes(15'000);
   enough_feedback_1[1].sent_packet.size = DataSize::Bytes(15'000);
   enough_feedback_2[0].sent_packet.size = DataSize::Bytes(15'000);
@@ -470,15 +474,68 @@ TEST(LossBasedBweV2Test,
   loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
       enough_feedback_1, DataRate::PlusInfinity(),
       BandwidthUsage::kBwUnderusing);
+  
+  
   EXPECT_GT(loss_based_bandwidth_estimator.GetBandwidthEstimate(
                 DataRate::PlusInfinity()),
             DataRate::KilobitsPerSec(600));
   loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
       enough_feedback_2, DataRate::PlusInfinity(), BandwidthUsage::kBwNormal);
+  
+  
   EXPECT_EQ(loss_based_bandwidth_estimator.GetBandwidthEstimate(
                 DataRate::KilobitsPerSec(500)),
             DataRate::KilobitsPerSec(500));
 }
+
+
+
+TEST(LossBasedBweV2Test, UseAckedBitrateForEmegencyBackOff) {
+  PacketResult enough_feedback_1[2];
+  PacketResult enough_feedback_2[2];
+  
+  
+  enough_feedback_1[0].sent_packet.size = DataSize::Bytes(15'000);
+  enough_feedback_1[1].sent_packet.size = DataSize::Bytes(15'000);
+  enough_feedback_2[0].sent_packet.size = DataSize::Bytes(15'000);
+  enough_feedback_2[1].sent_packet.size = DataSize::Bytes(15'000);
+  enough_feedback_1[0].sent_packet.send_time = Timestamp::Zero();
+  enough_feedback_1[1].sent_packet.send_time =
+      Timestamp::Zero() + kObservationDurationLowerBound;
+  enough_feedback_2[0].sent_packet.send_time =
+      Timestamp::Zero() + 2 * kObservationDurationLowerBound;
+  enough_feedback_2[1].sent_packet.send_time =
+      Timestamp::Zero() + 3 * kObservationDurationLowerBound;
+  enough_feedback_1[0].receive_time = Timestamp::PlusInfinity();
+  enough_feedback_1[1].receive_time =
+      Timestamp::Zero() + 2 * kObservationDurationLowerBound;
+  enough_feedback_2[0].receive_time = Timestamp::PlusInfinity();
+  enough_feedback_2[1].receive_time = Timestamp::PlusInfinity();
+
+  ExplicitKeyValueConfig key_value_config(
+      Config(true, true));
+  LossBasedBweV2 loss_based_bandwidth_estimator(&key_value_config);
+
+  loss_based_bandwidth_estimator.SetBandwidthEstimate(
+      DataRate::KilobitsPerSec(600));
+  DataRate acked_bitrate = DataRate::KilobitsPerSec(300);
+  loss_based_bandwidth_estimator.SetAcknowledgedBitrate(acked_bitrate);
+  
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_1, DataRate::PlusInfinity(),
+      BandwidthUsage::kBwOverusing);
+  
+  
+  loss_based_bandwidth_estimator.UpdateBandwidthEstimate(
+      enough_feedback_2, DataRate::PlusInfinity(),
+      BandwidthUsage::kBwOverusing);
+  
+  EXPECT_LE(loss_based_bandwidth_estimator.GetBandwidthEstimate(
+                DataRate::PlusInfinity()),
+            acked_bitrate);
+}
+
+
 
 TEST(LossBasedBweV2Test, NotUseAckedBitrateInNormalState) {
   PacketResult enough_feedback_1[2];
@@ -525,5 +582,4 @@ TEST(LossBasedBweV2Test, NotUseAckedBitrateInNormalState) {
 }
 
 }  
-
 }  
