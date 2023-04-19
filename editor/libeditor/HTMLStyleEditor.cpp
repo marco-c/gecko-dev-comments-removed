@@ -2547,13 +2547,17 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
     MOZ_ASSERT(startNode);
     MOZ_ASSERT(endNode);
     if (startNode == endNode && startNode->IsText()) {
-      nsresult rv = RelativeFontChangeOnTextNode(
-          aDir, MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
-          range->EndOffset());
-      if (NS_FAILED(rv)) {
+      CreateElementResult wrapWithBigOrSmallElementResult =
+          RelativeFontChangeOnTextNode(
+              aDir, MOZ_KnownLive(*startNode->GetAsText()),
+              range->StartOffset(), range->EndOffset());
+      if (wrapWithBigOrSmallElementResult.isErr()) {
         NS_WARNING("HTMLEditor::RelativeFontChangeOnTextNode() failed");
-        return rv;
+        return wrapWithBigOrSmallElementResult.unwrapErr();
       }
+      
+      
+      wrapWithBigOrSmallElementResult.IgnoreCaretPointSuggestion();
     } else {
       
       
@@ -2599,22 +2603,30 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
       
       if (startNode->IsText() && EditorUtils::IsEditableContent(
                                      *startNode->AsText(), EditorType::HTML)) {
-        nsresult rv = RelativeFontChangeOnTextNode(
-            aDir, MOZ_KnownLive(*startNode->AsText()), range->StartOffset(),
-            startNode->Length());
-        if (NS_FAILED(rv)) {
+        CreateElementResult wrapWithBigOrSmallElementResult =
+            RelativeFontChangeOnTextNode(
+                aDir, MOZ_KnownLive(*startNode->AsText()), range->StartOffset(),
+                startNode->Length());
+        if (wrapWithBigOrSmallElementResult.isErr()) {
           NS_WARNING("HTMLEditor::RelativeFontChangeOnTextNode() failed");
-          return rv;
+          return wrapWithBigOrSmallElementResult.unwrapErr();
         }
+        
+        
+        wrapWithBigOrSmallElementResult.IgnoreCaretPointSuggestion();
       }
       if (endNode->IsText() && EditorUtils::IsEditableContent(
                                    *endNode->AsText(), EditorType::HTML)) {
-        nsresult rv = RelativeFontChangeOnTextNode(
-            aDir, MOZ_KnownLive(*endNode->AsText()), 0, range->EndOffset());
-        if (NS_FAILED(rv)) {
+        CreateElementResult wrapWithBigOrSmallElementResult =
+            RelativeFontChangeOnTextNode(
+                aDir, MOZ_KnownLive(*endNode->AsText()), 0, range->EndOffset());
+        if (wrapWithBigOrSmallElementResult.isErr()) {
           NS_WARNING("HTMLEditor::RelativeFontChangeOnTextNode() failed");
-          return rv;
+          return wrapWithBigOrSmallElementResult.unwrapErr();
         }
+        
+        
+        wrapWithBigOrSmallElementResult.IgnoreCaretPointSuggestion();
       }
     }
   }
@@ -2622,19 +2634,18 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
   return NS_OK;
 }
 
-nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
-                                                  Text& aTextNode,
-                                                  uint32_t aStartOffset,
-                                                  uint32_t aEndOffset) {
+CreateElementResult HTMLEditor::RelativeFontChangeOnTextNode(
+    FontSize aDir, Text& aTextNode, uint32_t aStartOffset,
+    uint32_t aEndOffset) {
   
   if (aStartOffset == aEndOffset) {
-    return NS_OK;
+    return CreateElementResult::NotHandled();
   }
 
   if (!aTextNode.GetParentNode() ||
       !HTMLEditUtils::CanNodeContain(*aTextNode.GetParentNode(),
                                      *nsGkAtoms::big)) {
-    return NS_OK;
+    return CreateElementResult::NotHandled();
   }
 
   aEndOffset = std::min(aTextNode.Length(), aEndOffset);
@@ -2642,77 +2653,70 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   
   RefPtr<Text> textNodeForTheRange = &aTextNode;
 
-  auto pointToPutCaretOrError =
-      [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMPoint, nsresult> {
-    EditorDOMPoint pointToPutCaret;
-    
-    EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
-    if (!atEnd.IsEndOfContainer()) {
+  EditorDOMPoint pointToPutCaret;
+  {
+    auto pointToPutCaretOrError =
+        [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMPoint, nsresult> {
+      EditorDOMPoint pointToPutCaret;
       
-      SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
-      if (splitAtEndResult.isErr()) {
-        NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-        return Err(splitAtEndResult.unwrapErr());
+      EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
+      if (!atEnd.IsEndOfContainer()) {
+        
+        SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
+        if (splitAtEndResult.isErr()) {
+          NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+          return Err(splitAtEndResult.unwrapErr());
+        }
+        if (MOZ_UNLIKELY(!splitAtEndResult.HasCaretPointSuggestion())) {
+          NS_WARNING(
+              "HTMLEditor::SplitNodeWithTransaction() didn't suggest caret "
+              "point");
+          return Err(NS_ERROR_FAILURE);
+        }
+        splitAtEndResult.MoveCaretPointTo(pointToPutCaret, *this, {});
+        MOZ_ASSERT_IF(AllowsTransactionsToChangeSelection(),
+                      pointToPutCaret.IsSet());
+        textNodeForTheRange =
+            Text::FromNodeOrNull(splitAtEndResult.GetPreviousContent());
+        MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
+        
+        
+        splitAtEndResult.IgnoreCaretPointSuggestion();
       }
-      if (MOZ_UNLIKELY(!splitAtEndResult.HasCaretPointSuggestion())) {
-        NS_WARNING(
-            "HTMLEditor::SplitNodeWithTransaction() didn't suggest caret "
-            "point");
-        return Err(NS_ERROR_FAILURE);
-      }
-      splitAtEndResult.MoveCaretPointTo(
-          pointToPutCaret, *this,
-          {SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      MOZ_ASSERT_IF(AllowsTransactionsToChangeSelection(),
-                    pointToPutCaret.IsSet());
-      textNodeForTheRange =
-          Text::FromNodeOrNull(splitAtEndResult.GetPreviousContent());
-      MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
-      
-      
-      splitAtEndResult.IgnoreCaretPointSuggestion();
-    }
 
-    
-    EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
-    if (!atStart.IsStartOfContainer()) {
       
-      SplitNodeResult splitAtStartResult = SplitNodeWithTransaction(atStart);
-      if (splitAtStartResult.isErr()) {
-        NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
-        return Err(splitAtStartResult.unwrapErr());
+      EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
+      if (!atStart.IsStartOfContainer()) {
+        
+        SplitNodeResult splitAtStartResult = SplitNodeWithTransaction(atStart);
+        if (splitAtStartResult.isErr()) {
+          NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
+          return Err(splitAtStartResult.unwrapErr());
+        }
+        if (MOZ_UNLIKELY(!splitAtStartResult.HasCaretPointSuggestion())) {
+          NS_WARNING(
+              "HTMLEditor::SplitNodeWithTransaction() didn't suggest caret "
+              "point");
+          return Err(NS_ERROR_FAILURE);
+        }
+        splitAtStartResult.MoveCaretPointTo(pointToPutCaret, *this, {});
+        MOZ_ASSERT_IF(AllowsTransactionsToChangeSelection(),
+                      pointToPutCaret.IsSet());
+        textNodeForTheRange =
+            Text::FromNodeOrNull(splitAtStartResult.GetNextContent());
+        MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
+        
+        
+        splitAtStartResult.IgnoreCaretPointSuggestion();
       }
-      if (MOZ_UNLIKELY(!splitAtStartResult.HasCaretPointSuggestion())) {
-        NS_WARNING(
-            "HTMLEditor::SplitNodeWithTransaction() didn't suggest caret "
-            "point");
-        return Err(NS_ERROR_FAILURE);
-      }
-      splitAtStartResult.MoveCaretPointTo(
-          pointToPutCaret, *this,
-          {SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      MOZ_ASSERT_IF(AllowsTransactionsToChangeSelection(),
-                    pointToPutCaret.IsSet());
-      textNodeForTheRange =
-          Text::FromNodeOrNull(splitAtStartResult.GetNextContent());
-      MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
-      
-      
-      splitAtStartResult.IgnoreCaretPointSuggestion();
-    }
 
-    return pointToPutCaret;
-  }();
-  if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-    
-    return pointToPutCaretOrError.unwrapErr();
-  }
-  if (pointToPutCaretOrError.inspect().IsSet()) {
-    nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
-    if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-      NS_WARNING("EditorBase::CollapseSelectionTo() failed");
-      return rv;
+      return pointToPutCaret;
+    }();
+    if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+      
+      return CreateElementResult(pointToPutCaretOrError.unwrapErr());
     }
+    pointToPutCaret = pointToPutCaretOrError.unwrap();
   }
 
   
@@ -2722,70 +2726,46 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
       *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
     
-    const MoveNodeResult moveTextNodeResult =
+    MoveNodeResult moveTextNodeResult =
         MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
     if (moveTextNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-      return moveTextNodeResult.unwrapErr();
+      return CreateElementResult(moveTextNodeResult.unwrapErr());
     }
-    nsresult rv = moveTextNodeResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                SuggestCaret::AndIgnoreTrivialError});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-      return rv;
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-    return NS_OK;
+    moveTextNodeResult.MoveCaretPointTo(pointToPutCaret, *this,
+                                        {SuggestCaret::OnlyIfHasSuggestion});
+    
+    return CreateElementResult::NotHandled(std::move(pointToPutCaret));
   }
   sibling = HTMLEditUtils::GetNextSibling(
       *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
     
-    const MoveNodeResult moveTextNodeResult = MoveNodeWithTransaction(
+    MoveNodeResult moveTextNodeResult = MoveNodeWithTransaction(
         *textNodeForTheRange, EditorDOMPoint(sibling, 0u));
     if (moveTextNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-      return moveTextNodeResult.unwrapErr();
+      return CreateElementResult(moveTextNodeResult.unwrapErr());
     }
-    nsresult rv = moveTextNodeResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                SuggestCaret::AndIgnoreTrivialError});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-      return rv;
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-    return NS_OK;
+    moveTextNodeResult.MoveCaretPointTo(pointToPutCaret, *this,
+                                        {SuggestCaret::OnlyIfHasSuggestion});
+    
+    return CreateElementResult::NotHandled(std::move(pointToPutCaret));
   }
 
   
-  const CreateElementResult wrapTextWithBigOrSmallElementResult =
+  CreateElementResult wrapTextWithBigOrSmallElementResult =
       InsertContainerWithTransaction(*textNodeForTheRange,
                                      MOZ_KnownLive(*bigOrSmallTagName));
   if (wrapTextWithBigOrSmallElementResult.isErr()) {
     NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
-    return wrapTextWithBigOrSmallElementResult.inspectErr();
+    return wrapTextWithBigOrSmallElementResult;
   }
-  MOZ_ASSERT(wrapTextWithBigOrSmallElementResult.GetNewNode());
-  nsresult rv = wrapTextWithBigOrSmallElementResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-    return rv;
-  }
-  NS_WARNING_ASSERTION(
-      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-      "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
-  return rv;
+  wrapTextWithBigOrSmallElementResult.MoveCaretPointTo(
+      pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
+  return CreateElementResult(
+      wrapTextWithBigOrSmallElementResult.UnwrapNewNode(),
+      std::move(pointToPutCaret));
 }
 
 nsresult HTMLEditor::RelativeFontChangeHelper(int32_t aSizeChange,
