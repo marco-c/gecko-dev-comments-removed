@@ -1219,7 +1219,6 @@ void nsWindow::HideWaylandToplevelWindow() {
 void nsWindow::ShowWaylandToplevelWindow() {
   LOG("nsWindow::ShowWaylandToplevelWindow: [%p]\n", this);
   gtk_widget_show(mShell);
-  WaylandStartVsync();
 }
 
 void nsWindow::WaylandPopupRemoveClosedPopups() {
@@ -3241,7 +3240,8 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
             mContainer, FractionalScaleFactor());
       }
 #endif
-      LOG("Get NS_NATIVE_EGL_WINDOW window %p", eglWindow);
+      LOG("Get NS_NATIVE_EGL_WINDOW mGdkWindow %p returned eglWindow %p",
+          mGdkWindow, eglWindow);
       return eglWindow;
     }
     default:
@@ -5360,18 +5360,10 @@ void nsWindow::ConfigureGdkWindow() {
 
   RefreshWindowClass();
 
-  
-  
-  
-  if (mCompositorWidgetDelegate) {
-    mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
-                                               GetShapedState());
-  }
-
   if (mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
     auto startCompositing = [self = RefPtr{this}, this]() -> void {
-      LOG("  start compositing");
-      WaylandStartVsync();
+      LOG("  moz_container_wayland_add_initial_draw_callback start initial "
+          "compositing");
 
       
       
@@ -5381,6 +5373,15 @@ void nsWindow::ConfigureGdkWindow() {
       CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
       MOZ_ASSERT(mCompositorWidgetDelegate);
       MOZ_ASSERT(remoteRenderer);
+
+      
+      
+      
+      if (mCompositorWidgetDelegate) {
+        mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                   GetShapedState());
+        WaylandStartVsync();
+      }
 
       remoteRenderer->SendResumeAsync();
       remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
@@ -6174,18 +6175,18 @@ void nsWindow::WaylandStartVsync() {
 
   LOG_VSYNC("nsWindow::WaylandStartVsync");
 
-  if (mCompositorWidgetDelegate) {
-    if (RefPtr<layers::NativeLayerRoot> nativeLayerRoot =
-            mCompositorWidgetDelegate->AsGtkCompositorWidget()
-                ->GetNativeLayerRoot()) {
-      LOG_VSYNC("  use source NativeLayerRootWayland");
-      mWaylandVsyncSource->MaybeUpdateSource(
-          nativeLayerRoot->AsNativeLayerRootWayland());
-    } else {
-      LOG_VSYNC("  use source mContainer");
-      mWaylandVsyncSource->MaybeUpdateSource(mContainer);
-    }
+  MOZ_DIAGNOSTIC_ASSERT(mCompositorWidgetDelegate);
+  if (RefPtr<layers::NativeLayerRoot> nativeLayerRoot =
+          mCompositorWidgetDelegate->AsGtkCompositorWidget()
+              ->GetNativeLayerRoot()) {
+    LOG_VSYNC("  use source NativeLayerRootWayland");
+    mWaylandVsyncSource->MaybeUpdateSource(
+        nativeLayerRoot->AsNativeLayerRootWayland());
+  } else {
+    LOG_VSYNC("  use source mContainer");
+    mWaylandVsyncSource->MaybeUpdateSource(mContainer);
   }
+
   mWaylandVsyncSource->EnableMonitor();
 #endif
 }
@@ -8443,11 +8444,14 @@ void nsWindow::DidGetNonBlankPaint() {
 
 
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
-  LOG("nsWindow::SetCompositorWidgetDelegate %p\n", delegate);
+  LOG("nsWindow::SetCompositorWidgetDelegate %p mIsMapped %d "
+      "mCompositorWidgetDelegate %p\n",
+      delegate, mIsMapped, mCompositorWidgetDelegate);
 
   
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->DisableRendering();
+    WaylandStopVsync();
   }
 
   if (delegate) {
@@ -8455,10 +8459,35 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
     MOZ_ASSERT(mCompositorWidgetDelegate,
                "nsWindow::SetCompositorWidgetDelegate called with a "
                "non-PlatformCompositorWidgetDelegate");
+
+    
+    
     
     if (mIsMapped) {
-      mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
-                                                 GetShapedState());
+      auto startCompositing = [self = RefPtr{this}, this]() -> void {
+        LOG("  moz_container_wayland_add_initial_draw_callback resume "
+            "compositor from SetCompositorWidgetDelegate()");
+        
+        mCompositorWidgetDelegate->EnableRendering(GetX11Window(),
+                                                   GetShapedState());
+        
+        
+        
+        if (mCompositorState == COMPOSITOR_ENABLED) {
+          CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
+          remoteRenderer->SendResumeAsync();
+          remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
+        }
+        WaylandStartVsync();
+      };
+      if (GdkIsWaylandDisplay()) {
+#ifdef MOZ_WAYLAND
+        moz_container_wayland_add_initial_draw_callback(mContainer,
+                                                        startCompositing);
+#endif
+      } else {
+        startCompositing();
+      }
     }
   } else {
     mCompositorWidgetDelegate = nullptr;
