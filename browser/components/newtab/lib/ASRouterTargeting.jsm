@@ -34,6 +34,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.jsm",
   AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
@@ -275,6 +276,12 @@ const QueryCache = {
       true,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
+    ),
+    currentThemes: new CachedTargetingGetter(
+      "getAddonsByTypes",
+      ["theme"],
+      FRECENT_SITES_UPDATE_INTERVAL,
+      lazy.AddonManager 
     ),
   },
 };
@@ -745,6 +752,26 @@ const TargetingGetters = {
   get userPrefersReducedMotion() {
     let window = lazy.BrowserWindowTracker.getTopWindow();
     return window?.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
+  },
+  
+
+
+
+  get colorwaysActive() {
+    return !!lazy.BuiltInThemes.findActiveColorwayCollection();
+  },
+  
+
+
+
+
+  get userEnabledActiveColoway() {
+    return QueryCache.getters.currentThemes.get().then(themes => {
+      let themeId = themes.find(theme => theme.isActive)?.id;
+      return (
+        themeId && lazy.BuiltInThemes.isColorwayFromCurrentCollection(themeId)
+      );
+    });
   },
 };
 
