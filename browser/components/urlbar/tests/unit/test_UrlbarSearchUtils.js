@@ -2,8 +2,8 @@
 
 
 
-const { UrlbarSearchUtils } = ChromeUtils.import(
-  "resource:///modules/UrlbarSearchUtils.jsm"
+const { UrlbarSearchUtils } = ChromeUtils.importESModule(
+  "resource:///modules/UrlbarSearchUtils.sys.mjs"
 );
 
 let baconEngineExtension;
