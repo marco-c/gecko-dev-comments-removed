@@ -21,22 +21,22 @@ namespace rnn_vad {
 PitchEstimator::PitchEstimator()
     : pitch_buf_decimated_(kBufSize12kHz),
       pitch_buf_decimated_view_(pitch_buf_decimated_.data(), kBufSize12kHz),
-      auto_corr_(kNumInvertedLags12kHz),
-      auto_corr_view_(auto_corr_.data(), kNumInvertedLags12kHz) {
+      auto_corr_(kNumLags12kHz),
+      auto_corr_view_(auto_corr_.data(), kNumLags12kHz) {
   RTC_DCHECK_EQ(kBufSize12kHz, pitch_buf_decimated_.size());
-  RTC_DCHECK_EQ(kNumInvertedLags12kHz, auto_corr_view_.size());
+  RTC_DCHECK_EQ(kNumLags12kHz, auto_corr_view_.size());
 }
 
 PitchEstimator::~PitchEstimator() = default;
 
-PitchInfo PitchEstimator::Estimate(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buf) {
+int PitchEstimator::Estimate(
+    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer) {
   
-  Decimate2x(pitch_buf, pitch_buf_decimated_view_);
+  Decimate2x(pitch_buffer, pitch_buf_decimated_view_);
   auto_corr_calculator_.ComputeOnPitchBuffer(pitch_buf_decimated_view_,
                                              auto_corr_view_);
-  CandidatePitchPeriods pitch_candidates_inverted_lags = FindBestPitchPeriods(
-      auto_corr_view_, pitch_buf_decimated_view_, kMaxPitch12kHz);
+  CandidatePitchPeriods pitch_candidates_inverted_lags =
+      ComputePitchPeriod12kHz(pitch_buf_decimated_view_, auto_corr_view_);
   
   
   
@@ -44,12 +44,14 @@ PitchInfo PitchEstimator::Estimate(
   pitch_candidates_inverted_lags.best *= 2;
   pitch_candidates_inverted_lags.second_best *= 2;
   const int pitch_inv_lag_48kHz =
-      RefinePitchPeriod48kHz(pitch_buf, pitch_candidates_inverted_lags);
+      ComputePitchPeriod48kHz(pitch_buffer, pitch_candidates_inverted_lags);
   
   RTC_DCHECK_LT(pitch_inv_lag_48kHz, kMaxPitch48kHz);
-  last_pitch_48kHz_ = CheckLowerPitchPeriodsAndComputePitchGain(
-      pitch_buf, kMaxPitch48kHz - pitch_inv_lag_48kHz, last_pitch_48kHz_);
-  return last_pitch_48kHz_;
+  last_pitch_48kHz_ = ComputeExtendedPitchPeriod48kHz(
+      pitch_buffer,
+      kMaxPitch48kHz - pitch_inv_lag_48kHz,
+      last_pitch_48kHz_);
+  return last_pitch_48kHz_.period;
 }
 
 }  
