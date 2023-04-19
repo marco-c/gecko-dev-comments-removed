@@ -1423,6 +1423,10 @@ static void EnsureAutoPageName(nsFrameConstructorState& aState,
   
   
   
+  if (aState.mAutoPageNameValue) {
+    return;
+  }
+
   for (const nsContainerFrame* frame = aFrame; frame;
        frame = frame->GetParent()) {
     const StylePageName& pageName = frame->StylePage()->mPage;
