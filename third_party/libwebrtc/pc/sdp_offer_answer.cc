@@ -729,21 +729,6 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
   return true;
 }
 
-rtc::scoped_refptr<webrtc::DtlsTransport> LookupDtlsTransportByMid(
-    rtc::Thread* network_thread,
-    JsepTransportController* controller,
-    const std::string& mid) {
-  
-  
-  
-  
-  
-  
-  return network_thread->Invoke<rtc::scoped_refptr<webrtc::DtlsTransport>>(
-      RTC_FROM_HERE,
-      [controller, &mid] { return controller->LookupDtlsTransportByMid(mid); });
-}
-
 }  
 
 
@@ -1323,8 +1308,8 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
       
       
       if (transceiver->mid()) {
-        auto dtls_transport = LookupDtlsTransportByMid(
-            pc_->network_thread(), transport_controller(), *transceiver->mid());
+        auto dtls_transport = transport_controller()->LookupDtlsTransportByMid(
+            *transceiver->mid());
         transceiver->internal()->sender_internal()->set_transport(
             dtls_transport);
         transceiver->internal()->receiver_internal()->set_transport(
@@ -1740,9 +1725,9 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
         transceiver->internal()->set_current_direction(local_direction);
         
         if (transceiver->mid()) {
-          auto dtls_transport = LookupDtlsTransportByMid(pc_->network_thread(),
-                                                         transport_controller(),
-                                                         *transceiver->mid());
+          auto dtls_transport =
+              transport_controller()->LookupDtlsTransportByMid(
+                  *transceiver->mid());
           transceiver->internal()->sender_internal()->set_transport(
               dtls_transport);
           transceiver->internal()->receiver_internal()->set_transport(
@@ -4291,11 +4276,13 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
   
   
   if (pc_->sctp_mid() && local_description() && remote_description()) {
+    rtc::scoped_refptr<SctpTransport> sctp_transport =
+        transport_controller()->GetSctpTransport(*(pc_->sctp_mid()));
     auto local_sctp_description = cricket::GetFirstSctpDataContentDescription(
         local_description()->description());
     auto remote_sctp_description = cricket::GetFirstSctpDataContentDescription(
         remote_description()->description());
-    if (local_sctp_description && remote_sctp_description) {
+    if (sctp_transport && local_sctp_description && remote_sctp_description) {
       int max_message_size;
       
       
@@ -4306,9 +4293,8 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
             std::min(local_sctp_description->max_message_size(),
                      remote_sctp_description->max_message_size());
       }
-      pc_->StartSctpTransport(local_sctp_description->port(),
-                              remote_sctp_description->port(),
-                              max_message_size);
+      sctp_transport->Start(local_sctp_description->port(),
+                            remote_sctp_description->port(), max_message_size);
     }
   }
 
@@ -4534,16 +4520,8 @@ bool SdpOfferAnswerHandler::ReadyToUseRemoteCandidate(
     return false;
   }
 
-  bool has_transport = false;
-  cricket::ChannelInterface* channel = pc_->GetChannel(result.value()->name);
-  if (channel) {
-    has_transport = !channel->transport_name().empty();
-  } else if (data_channel_controller()->data_channel_transport()) {
-    auto sctp_mid = pc_->sctp_mid();
-    RTC_DCHECK(sctp_mid);
-    has_transport = (result.value()->name == *sctp_mid);
-  }
-  return has_transport;
+  std::string transport_name = GetTransportName(result.value()->name);
+  return !transport_name.empty();
 }
 
 void SdpOfferAnswerHandler::ReportRemoteIceCandidateAdded(
@@ -4666,7 +4644,6 @@ cricket::VoiceChannel* SdpOfferAnswerHandler::CreateVoiceChannel(
 cricket::VideoChannel* SdpOfferAnswerHandler::CreateVideoChannel(
     const std::string& mid) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  
   RtpTransportInternal* rtp_transport = pc_->GetRtpTransport(mid);
 
   

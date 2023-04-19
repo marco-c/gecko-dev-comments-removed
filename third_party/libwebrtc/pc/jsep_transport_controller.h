@@ -363,9 +363,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   const cricket::JsepTransport* GetJsepTransportForMid(
-      const std::string& mid) const RTC_RUN_ON(network_thread_);
-  cricket::JsepTransport* GetJsepTransportForMid(const std::string& mid)
-      RTC_RUN_ON(network_thread_);
+      const std::string& mid) const;
+  cricket::JsepTransport* GetJsepTransportForMid(const std::string& mid);
 
   
   
@@ -461,8 +460,7 @@ class JsepTransportController : public sigslot::has_slots<> {
       jsep_transports_by_name_ RTC_GUARDED_BY(network_thread_);
   
   
-  std::map<std::string, cricket::JsepTransport*> mid_to_transport_
-      RTC_GUARDED_BY(network_thread_);
+  std::map<std::string, cricket::JsepTransport*> mid_to_transport_;
   
   std::vector<std::string> pending_mids_ RTC_GUARDED_BY(network_thread_);
   

@@ -265,15 +265,8 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
   if (!result.ok()) {
     return result.MoveError();
   }
-  
-  
-  
-  
-  
-  
   rtc::scoped_refptr<PeerConnectionInterface> result_proxy =
-      PeerConnectionProxy::Create(signaling_thread(), network_thread(),
-                                  result.MoveValue());
+      PeerConnectionProxy::Create(signaling_thread(), result.MoveValue());
   return result_proxy;
 }
 
