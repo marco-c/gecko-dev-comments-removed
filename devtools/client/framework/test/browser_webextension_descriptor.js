@@ -4,9 +4,6 @@
 
 "use strict";
 
-const { DevToolsClient } = require("devtools/client/devtools-client");
-const { DevToolsServer } = require("devtools/server/devtools-server");
-
 add_task(async function test_webextension_descriptors() {
   const extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
@@ -18,16 +15,8 @@ add_task(async function test_webextension_descriptors() {
   await extension.startup();
 
   
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
-
-  
-  const descriptor = await client.mainRoot.getAddon({ id: extension.id });
+  const commands = await CommandsFactory.forAddon(extension.id);
+  const descriptor = commands.descriptorFront;
   ok(descriptor, "webextension descriptor has been found");
   is(descriptor.name, "Descriptor extension", "Descriptor name is correct");
   is(descriptor.debuggable, true, "Descriptor debuggable attribute is correct");
@@ -38,5 +27,5 @@ add_task(async function test_webextension_descriptors() {
   info("Wait for the descriptor to be destroyed");
   await onDestroyed;
 
-  await client.close();
+  await commands.destroy();
 });

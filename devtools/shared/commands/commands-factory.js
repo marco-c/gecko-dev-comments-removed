@@ -57,6 +57,18 @@ exports.CommandsFactory = {
 
 
 
+  async forCurrentTabInChromeMochitest() {
+    const client = await createLocalClient();
+    const descriptor = await client.mainRoot.getTab();
+    const commands = await createCommandsDictionary(descriptor);
+    return commands;
+  },
+
+  
+
+
+
+
 
 
 
@@ -106,6 +118,30 @@ exports.CommandsFactory = {
 
     const descriptor = await client.mainRoot.getWorker(id);
     const commands = await createCommandsDictionary(descriptor);
+    return commands;
+  },
+
+  
+
+
+
+
+
+
+  async forLocalTabWorker(tab, workerUrl) {
+    
+    
+    
+    
+    const tabCommands = await this.forTab(tab);
+    await tabCommands.targetCommand.startListening();
+    const {
+      workers,
+    } = await tabCommands.targetCommand.targetFront.listWorkers();
+
+    const workerDescriptor = workers.find(worker => worker.url == workerUrl);
+
+    const commands = await createCommandsDictionary(workerDescriptor);
     return commands;
   },
 

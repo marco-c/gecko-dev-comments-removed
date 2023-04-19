@@ -4,27 +4,12 @@
 
 "use strict";
 
-const { DevToolsClient } = require("devtools/client/devtools-client");
-const { DevToolsServer } = require("devtools/server/devtools-server");
-
 add_task(async () => {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
   
   await pushPref("dom.ipc.keepProcessesAlive.web", 1);
-
-  
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  
-  DevToolsServer.allowChromeProcess = true;
-
-  
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
 
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -35,7 +20,8 @@ add_task(async () => {
   const { osPid } = tab.linkedBrowser.browsingContext.currentWindowGlobal;
 
   
-  const descriptor = await client.mainRoot.getProcess(osPid);
+  const commands = await CommandsFactory.forProcess(osPid);
+  const descriptor = commands.descriptorFront;
   ok(descriptor, "Got the process descriptor");
   is(descriptor.id, osPid, "descriptor id is the PID");
   is(
@@ -53,5 +39,5 @@ add_task(async () => {
   info("Wait for descriptor destruction");
   await onDestroyed;
 
-  await client.close();
+  await commands.destroy();
 });

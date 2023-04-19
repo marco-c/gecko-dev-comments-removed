@@ -6,19 +6,13 @@
 
 loader.lazyRequireGetter(
   this,
-  "DevToolsServer",
-  "devtools/server/devtools-server",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "DevToolsClient",
-  "devtools/client/devtools-client",
+  "CommandsFactory",
+  "devtools/shared/commands/commands-factory",
   true
 );
 
 
-const descriptors = new WeakMap();
+const commandsMap = new WeakMap();
 
 
 
@@ -42,49 +36,23 @@ exports.TabDescriptorFactory = {
 
 
   async createDescriptorForTab(tab) {
-    let descriptor = descriptors.get(tab);
-    if (descriptor) {
-      return descriptor;
+    let commands = commandsMap.get(tab);
+    if (commands) {
+      commands = await commands;
+      return commands.descriptorFront;
     }
 
-    const promise = this._createDescriptorForTab(tab);
+    const promise = CommandsFactory.forTab(tab);
     
-    descriptors.set(tab, promise);
-    descriptor = await promise;
+    commandsMap.set(tab, promise);
+    commands = await promise;
     
-    descriptors.set(tab, descriptor);
+    commandsMap.set(tab, commands);
 
-    descriptor.once("descriptor-destroyed", () => {
-      descriptors.delete(tab);
+    commands.descriptorFront.once("descriptor-destroyed", () => {
+      commandsMap.delete(tab);
     });
-    return descriptor;
-  },
-
-  async _createDescriptorForTab(tab) {
-    
-    this._ensureDevToolsServerInitialized();
-
-    
-    const client = new DevToolsClient(DevToolsServer.connectPipe());
-    await client.connect();
-
-    return client.mainRoot.getTab({ tab });
-  },
-
-  _ensureDevToolsServerInitialized() {
-    
-    
-    DevToolsServer.init();
-
-    
-    
-    
-    
-    
-    
-    DevToolsServer.registerAllActors();
-    
-    DevToolsServer.allowChromeProcess = true;
+    return commands.descriptorFront;
   },
 
   
@@ -98,8 +66,8 @@ exports.TabDescriptorFactory = {
     
     
     
-    const descriptor = await descriptors.get(tab);
-    return descriptor;
+    const commands = await commandsMap.get(tab);
+    return commands?.descriptorFront;
   },
 
   
@@ -108,6 +76,6 @@ exports.TabDescriptorFactory = {
 
 
   isKnownTab(tab) {
-    return descriptors.has(tab);
+    return commandsMap.has(tab);
   },
 };

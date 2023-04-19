@@ -75,24 +75,6 @@ async function testChromeTab() {
 
 
 async function testMainProcess() {
-  const { DevToolsLoader } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
-  );
-  const customLoader = new DevToolsLoader({
-    invisibleToDebugger: true,
-  });
-  const { DevToolsServer } = customLoader.require(
-    "devtools/server/devtools-server"
-  );
-  const { DevToolsClient } = require("devtools/client/devtools-client");
-
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  DevToolsServer.allowChromeProcess = true;
-
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await client.connect();
-
   const onThreadActorInstantiated = new Promise(resolve => {
     const observe = function(subject, topic, data) {
       if (topic === "devtools-thread-ready") {
@@ -104,8 +86,9 @@ async function testMainProcess() {
     Services.obs.addObserver(observe, "devtools-thread-ready");
   });
 
-  const targetDescriptor = await client.mainRoot.getMainProcess();
-  const target = await targetDescriptor.getTarget();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
+  const commands = await CommandsFactory.forMainProcess({ client });
+  const target = await commands.descriptorFront.getTarget();
 
   const threadFront = await target.attachThread();
   const { sources } = await threadFront.getSources();
@@ -129,9 +112,5 @@ async function testMainProcess() {
   
   
   
-  await client.close();
-
-  
-  await DevToolsServer.destroy();
-  await customLoader.destroy();
+  await commands.destroy();
 }

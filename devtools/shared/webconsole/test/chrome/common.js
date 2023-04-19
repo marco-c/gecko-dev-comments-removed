@@ -12,8 +12,6 @@ const { require } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
 const { DevToolsServer } = require("devtools/server/devtools-server");
-
-const { DevToolsClient } = require("devtools/client/devtools-client");
 const {
   CommandsFactory,
 } = require("devtools/shared/commands/commands-factory");
@@ -22,27 +20,6 @@ const {
 
 
 const FRACTIONAL_NUMBER_REGEX = /^\d+(\.\d{1,3})?$/;
-
-function initCommon() {
-  
-}
-
-function initDevToolsServer() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  DevToolsServer.allowChromeProcess = true;
-}
-
-async function connectToDebugger() {
-  initCommon();
-  initDevToolsServer();
-
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-
-  await client.connect();
-  return client;
-}
 
 function attachConsole(listeners) {
   return _attachConsole(listeners);
@@ -56,8 +33,6 @@ function attachConsoleToWorker(listeners) {
 
 var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
   try {
-    const client = await connectToDebugger();
-
     function waitForMessage(target) {
       return new Promise(resolve => {
         target.addEventListener("message", resolve, { once: true });
@@ -66,21 +41,15 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
 
     
     
-    let target, worker;
+    let commands, target, worker;
     if (!attachToTab) {
-      const targetDescriptor = await client.mainRoot.getMainProcess();
-      target = await targetDescriptor.getTarget();
+      commands = await CommandsFactory.forMainProcess();
+      target = await commands.descriptorFront.getTarget();
     } else {
-      const targetDescriptor = await client.mainRoot.getTab();
-      
-      
-      const {
-        createCommandsDictionary,
-      } = require("devtools/shared/commands/index");
-      const commands = await createCommandsDictionary(targetDescriptor);
+      commands = await CommandsFactory.forCurrentTabInChromeMochitest();
       
       await commands.targetCommand.startListening();
-      target = await targetDescriptor.getTarget();
+      target = await commands.descriptorFront.getTarget();
       if (attachToWorker) {
         const workerName = "console-test-worker.js#" + new Date().getTime();
         worker = new Worker(workerName);
@@ -110,7 +79,7 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
     const response = await webConsoleFront.startListeners(listeners);
     return {
       state: {
-        dbgClient: client,
+        dbgClient: commands.client,
         webConsoleFront,
         actor: webConsoleFront.actor,
         
