@@ -361,7 +361,6 @@ class TurnPort : public Port {
   
   
   void DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp);
-  void ScheduleEntryDestruction(TurnEntry* entry);
 
   
   

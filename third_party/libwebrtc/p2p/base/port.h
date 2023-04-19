@@ -435,6 +435,8 @@ class Port : public PortInterface,
   
   virtual void HandleConnectionDestroyed(Connection* conn) {}
 
+  void DestroyAllConnections();
+
   void CopyPortInformationToPacketInfo(rtc::PacketInfo* info) const;
 
   MdnsNameRegistrationStatus mdns_name_registration_status() const {

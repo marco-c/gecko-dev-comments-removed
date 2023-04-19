@@ -228,6 +228,7 @@ P2PTransportChannel::~P2PTransportChannel() {
   RTC_DCHECK_RUN_ON(network_thread_);
   std::vector<Connection*> copy(connections().begin(), connections().end());
   for (Connection* con : copy) {
+    con->SignalDestroyed.disconnect(this);
     con->Destroy();
   }
   resolvers_.clear();
@@ -1674,7 +1675,11 @@ void P2PTransportChannel::UpdateConnectionStates() {
 
   
   
-  for (Connection* c : connections()) {
+  
+  
+  
+  std::vector<Connection*> copy(connections().begin(), connections().end());
+  for (Connection* c : copy) {
     c->UpdateState(now);
   }
 }
@@ -1986,11 +1991,30 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
 }
 
 
+void P2PTransportChannel::OnSelectedConnectionDestroyed() {
+  RTC_LOG(LS_INFO) << "Selected connection destroyed. Will choose a new one.";
+  IceControllerEvent reason = IceControllerEvent::SELECTED_CONNECTION_DESTROYED;
+  SwitchSelectedConnection(nullptr, reason);
+  RequestSortAndStateUpdate(reason);
+}
+
+
 void P2PTransportChannel::HandleAllTimedOut() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  for (Connection* connection : connections()) {
+  bool update_selected_connection = false;
+  std::vector<Connection*> copy(connections().begin(), connections().end());
+  for (Connection* connection : copy) {
+    if (selected_connection_ == connection) {
+      selected_connection_ = nullptr;
+      update_selected_connection = true;
+    }
+    connection->SignalDestroyed.disconnect(this);
+    ice_controller_->OnConnectionDestroyed(connection);
     connection->Destroy();
   }
+
+  if (update_selected_connection)
+    OnSelectedConnectionDestroyed();
 }
 
 bool P2PTransportChannel::ReadyToSend(Connection* connection) const {
@@ -2124,11 +2148,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   
   
   if (selected_connection_ == connection) {
-    RTC_LOG(LS_INFO) << "Selected connection destroyed. Will choose a new one.";
-    IceControllerEvent reason =
-        IceControllerEvent::SELECTED_CONNECTION_DESTROYED;
-    SwitchSelectedConnection(nullptr, reason);
-    RequestSortAndStateUpdate(reason);
+    OnSelectedConnectionDestroyed();
   } else {
     
     
