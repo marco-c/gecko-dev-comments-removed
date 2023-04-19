@@ -1102,12 +1102,6 @@ void nsWindow::RemovePopupFromHierarchyList() {
   mWaylandPopupNext = mWaylandPopupPrev = nullptr;
 }
 
-void nsWindow::HideWaylandWindow() {
-  LOG("nsWindow::HideWaylandWindow: [%p]\n", this);
-  PauseCompositorHiddenWindow();
-  gtk_widget_hide(mShell);
-}
-
 
 
 
@@ -1209,7 +1203,7 @@ void nsWindow::HideWaylandPopupWindow(bool aTemporaryHide,
 
   
   if (visible) {
-    HideWaylandWindow();
+    gtk_widget_hide(mShell);
 
     
     
@@ -1238,7 +1232,7 @@ void nsWindow::HideWaylandToplevelWindow() {
       popup = prev;
     }
   }
-  HideWaylandWindow();
+  gtk_widget_hide(mShell);
 }
 
 void nsWindow::WaylandPopupRemoveClosedPopups() {
@@ -5322,7 +5316,6 @@ void nsWindow::EnableRenderingToWindow() {
 void nsWindow::DisableRenderingToWindow() {
   LOG("nsWindow::DisableRenderingToWindow()");
 
-  PauseCompositorHiddenWindow();
   WaylandStopVsync();
   if (mCompositorWidgetDelegate) {
     mCompositorWidgetDelegate->DisableRendering();
@@ -6127,34 +6120,6 @@ void nsWindow::ResumeCompositorHiddenWindow() {
   } else {
     LOG("  quit, failed to get remote renderer.\n");
   }
-}
-
-
-
-
-
-void nsWindow::PauseCompositorHiddenWindow() {
-  LOG("nsWindow::PauseCompositorHiddenWindow");
-
-  if (mCompositorState != COMPOSITOR_ENABLED) {
-    LOG("  quit early, compositor is disabled");
-    return;
-  }
-
-  mCompositorState = COMPOSITOR_PAUSED_MISSING_WINDOW;
-
-  
-  
-  CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
-  if (!remoteRenderer || !mCompositorWidgetDelegate) {
-    LOG("  deleted layer manager");
-    DestroyLayerManager();
-    return;
-  }
-
-  
-  LOG("  paused compositor");
-  remoteRenderer->SendPause();
 }
 
 static int WindowResumeCompositor(void* data) {
