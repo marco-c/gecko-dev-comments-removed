@@ -320,15 +320,13 @@ class nsReflowStatus final {
   
   void SetInlineLineBreakBeforeAndReset() {
     Reset();
-    mBreakType = StyleClear::Line;
+    mBreakType = StyleClear::None;
     mInlineBreak = InlineBreak::Before;
   }
 
   
   
-  void SetInlineLineBreakAfter(StyleClear aBreakType = StyleClear::Line) {
-    MOZ_ASSERT(aBreakType != StyleClear::None,
-               "Break-after with StyleClear::None is meaningless!");
+  void SetInlineLineBreakAfter(StyleClear aBreakType = StyleClear::None) {
     mBreakType = aBreakType;
     mInlineBreak = InlineBreak::After;
   }

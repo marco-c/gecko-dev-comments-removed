@@ -3717,7 +3717,10 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   }
 
   
-  aLine->SetBreakTypeBefore(breakType);
+  aLine->ClearForcedLineBreak();
+  if (breakType != StyleClear::None) {
+    aLine->SetBreakTypeBefore(breakType);
+  }
 
   
   
@@ -4748,7 +4751,7 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
   
   
   
-  aLine->SetBreakTypeAfter(StyleClear::None);
+  aLine->ClearForcedLineBreak();
   if (frameReflowStatus.IsInlineBreak() ||
       aState.mTrailingClearFromPIF != StyleClear::None) {
     
@@ -4756,11 +4759,6 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
     *aLineReflowStatus = LineReflowStatus::Stop;
 
     
-    StyleClear breakType = frameReflowStatus.BreakType();
-    MOZ_ASSERT(StyleClear::None != breakType ||
-                   StyleClear::None != aState.mTrailingClearFromPIF,
-               "bad break type");
-
     if (frameReflowStatus.IsInlineBreakBefore()) {
       
       if (aFrame == aLine->mFirstChild) {
@@ -4782,21 +4780,23 @@ void nsBlockFrame::ReflowInlineFrame(BlockReflowState& aState,
         }
       }
     } else {
+      MOZ_ASSERT(frameReflowStatus.IsInlineBreakAfter() ||
+                     aState.mTrailingClearFromPIF != StyleClear::None,
+                 "We should've handled inline break-before in the if-branch!");
+
       
       
       
+      StyleClear breakType = frameReflowStatus.BreakType();
       if (aState.mTrailingClearFromPIF != StyleClear::None) {
         breakType = nsLayoutUtils::CombineClearType(
             breakType, aState.mTrailingClearFromPIF);
         aState.mTrailingClearFromPIF = StyleClear::None;
       }
       
-      if (breakType == StyleClear::Line) {
-        if (!aLineLayout.GetLineEndsInBR()) {
-          breakType = StyleClear::None;
-        }
+      if (breakType != StyleClear::None || aLineLayout.GetLineEndsInBR()) {
+        aLine->SetBreakTypeAfter(breakType);
       }
-      aLine->SetBreakTypeAfter(breakType);
       if (frameReflowStatus.IsComplete()) {
         
         SplitLine(aState, aLineLayout, aLine, aFrame->GetNextSibling(),
