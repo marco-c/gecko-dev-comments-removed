@@ -41,9 +41,6 @@ function cleanup() {
   Services.prefs.clearUserPref(CB_CATEGORY_PREF);
 
   
-  
-  Services.telemetry.scalarSet("privacy.dfpi_rollout_enabledByDefault", 2);
-  
   Services.telemetry.scalarSet(
     "privacy.dfpi_rollout_tcpByDefault_feature",
     false
@@ -71,12 +68,6 @@ function testTelemetryState(
   expectedValueTCPByDefault,
   message = "Scalars should have correct value"
 ) {
-  TelemetryTestUtils.assertScalar(
-    TelemetryTestUtils.getProcessScalars("parent"),
-    "privacy.dfpi_rollout_enabledByDefault",
-    expectedValueOptIn,
-    message
-  );
   TelemetryTestUtils.assertScalar(
     TelemetryTestUtils.getProcessScalars("parent"),
     "privacy.dfpi_rollout_tcpByDefault_feature",
