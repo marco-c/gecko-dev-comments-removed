@@ -1153,6 +1153,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     kNoReqStates
   },
   { 
+    nsGkAtoms::subscript,
+    roles::SUBSCRIPT,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType
+  },
+  { 
     nsGkAtoms::suggestion,
     roles::SUGGESTION,
     kUseMapRole,
@@ -1160,6 +1169,15 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eNoAction,
     eNoLiveAttr,
     kGenericAccType,
+  },
+  { 
+    nsGkAtoms::superscript,
+    roles::SUPERSCRIPT,
+    kUseMapRole,
+    eNoValue,
+    eNoAction,
+    eNoLiveAttr,
+    kGenericAccType
   },
   { 
     nsGkAtoms::svgSwitch,

@@ -1083,7 +1083,21 @@ enum Role {
 
   METER = 185,
 
-  LAST_ROLE = METER
+  
+
+
+
+
+  SUBSCRIPT = 186,
+
+  
+
+
+
+
+  SUPERSCRIPT = 187,
+
+  LAST_ROLE = SUPERSCRIPT
 };
 
 }  

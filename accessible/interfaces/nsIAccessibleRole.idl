@@ -1077,4 +1077,18 @@ interface nsIAccessibleRole : nsISupports
 
   const unsigned long ROLE_METER = 185;
 
+  
+
+
+
+
+  const unsigned long ROLE_SUBSCRIPT = 186;
+
+  
+
+
+
+
+  const unsigned long ROLE_SUPERSCRIPT = 187;
+
 };
