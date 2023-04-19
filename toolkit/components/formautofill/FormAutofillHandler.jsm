@@ -388,6 +388,7 @@ class FormAutofillSection {
         
         
         if (!option.selected) {
+          option.selected = true;
           element.focus({ preventScroll: true });
           
           element.value = option.value;
