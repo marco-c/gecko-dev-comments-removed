@@ -254,5 +254,4 @@ add_task(async function test_sync_disconnected_error() {
     await BrowserTestUtils.removeTab(preferencesTab);
   });
   await tearDown(sandbox);
-}).skip(); 
-
+});
