@@ -5,127 +5,127 @@
 
 
 function MapConstructorInit(iterable) {
-    var map = this;
+  var map = this;
 
-    
-    var adder = map.set;
+  
+  var adder = map.set;
 
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+  }
+
+  
+  for (var nextItem of allowContentIter(iterable)) {
     
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+    if (!IsObject(nextItem)) {
+      ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Map");
     }
 
     
-    for (var nextItem of allowContentIter(iterable)) {
-        
-        if (!IsObject(nextItem)) {
-            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Map");
-        }
-
-        
-        callContentFunction(adder, map, nextItem[0], nextItem[1]);
-    }
+    callContentFunction(adder, map, nextItem[0], nextItem[1]);
+  }
 }
 
 
 
 function MapForEach(callbackfn, thisArg = undefined) {
-    
-    var M = this;
+  
+  var M = this;
 
-    
-    if (!IsObject(M) || (M = GuardToMapObject(M)) === null) {
-        return callFunction(CallMapMethodIfWrapped, this, callbackfn, thisArg, "MapForEach");
+  
+  if (!IsObject(M) || (M = GuardToMapObject(M)) === null) {
+    return callFunction(CallMapMethodIfWrapped, this, callbackfn, thisArg, "MapForEach");
+  }
+
+  
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var entries = callFunction(std_Map_entries, M);
+
+  
+  var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
+  if (!mapIterationResultPair) {
+    mapIterationResultPair = iteratorTemp.mapIterationResultPair =
+        CreateMapIterationResultPair();
+  }
+
+  while (true) {
+    var done = GetNextMapEntryForIterator(entries, mapIterationResultPair);
+    if (done) {
+      break;
     }
 
-    
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+    var key = mapIterationResultPair[0];
+    var value = mapIterationResultPair[1];
+    mapIterationResultPair[0] = null;
+    mapIterationResultPair[1] = null;
 
-    
-    var entries = callFunction(std_Map_entries, M);
-
-    
-    var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
-    if (!mapIterationResultPair) {
-        mapIterationResultPair = iteratorTemp.mapIterationResultPair =
-            CreateMapIterationResultPair();
-    }
-
-    while (true) {
-        var done = GetNextMapEntryForIterator(entries, mapIterationResultPair);
-        if (done) {
-            break;
-        }
-
-        var key = mapIterationResultPair[0];
-        var value = mapIterationResultPair[1];
-        mapIterationResultPair[0] = null;
-        mapIterationResultPair[1] = null;
-
-        callContentFunction(callbackfn, thisArg, value, key, M);
-    }
+    callContentFunction(callbackfn, thisArg, value, key, M);
+  }
 }
 
 var iteratorTemp = { mapIterationResultPair: null };
 
 function MapIteratorNext() {
+  
+  var O = this;
+
+  
+  if (!IsObject(O) || (O = GuardToMapIterator(O)) === null) {
+    return callFunction(CallMapIteratorMethodIfWrapped, this, "MapIteratorNext");
+  }
+
+  
+  
+
+  var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
+  if (!mapIterationResultPair) {
+    mapIterationResultPair = iteratorTemp.mapIterationResultPair =
+        CreateMapIterationResultPair();
+  }
+
+  var retVal = {value: undefined, done: true};
+
+  
+  var done = GetNextMapEntryForIterator(O, mapIterationResultPair);
+  if (!done) {
     
-    var O = this;
 
     
-    if (!IsObject(O) || (O = GuardToMapIterator(O)) === null) {
-        return callFunction(CallMapIteratorMethodIfWrapped, this, "MapIteratorNext");
+    var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
+
+    var result;
+    if (itemKind === ITEM_KIND_KEY) {
+      
+      result = mapIterationResultPair[0];
+    } else if (itemKind === ITEM_KIND_VALUE) {
+      
+      result = mapIterationResultPair[1];
+    } else {
+      
+      assert(itemKind === ITEM_KIND_KEY_AND_VALUE, itemKind);
+      result = [mapIterationResultPair[0], mapIterationResultPair[1]];
     }
 
-    
-    
+    mapIterationResultPair[0] = null;
+    mapIterationResultPair[1] = null;
+    retVal.value = result;
+    retVal.done = false;
+  }
 
-    var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
-    if (!mapIterationResultPair) {
-        mapIterationResultPair = iteratorTemp.mapIterationResultPair =
-            CreateMapIterationResultPair();
-    }
-
-    var retVal = {value: undefined, done: true};
-
-    
-    var done = GetNextMapEntryForIterator(O, mapIterationResultPair);
-    if (!done) {
-        
-
-        
-        var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
-
-        var result;
-        if (itemKind === ITEM_KIND_KEY) {
-            
-            result = mapIterationResultPair[0];
-        } else if (itemKind === ITEM_KIND_VALUE) {
-            
-            result = mapIterationResultPair[1];
-        } else {
-            
-            assert(itemKind === ITEM_KIND_KEY_AND_VALUE, itemKind);
-            result = [mapIterationResultPair[0], mapIterationResultPair[1]];
-        }
-
-        mapIterationResultPair[0] = null;
-        mapIterationResultPair[1] = null;
-        retVal.value = result;
-        retVal.done = false;
-    }
-
-    
-    return retVal;
+  
+  return retVal;
 }
 
 
 
 
 function $MapSpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($MapSpecies, "get [Symbol.species]");

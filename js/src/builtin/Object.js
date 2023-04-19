@@ -4,345 +4,344 @@
 
 
 function ObjectGetOwnPropertyDescriptors(O) {
-    
-    var obj = ToObject(O);
+  
+  var obj = ToObject(O);
+
+  
+  var keys = std_Reflect_ownKeys(obj);
+
+  
+  var descriptors = {};
+
+  
+  for (var index = 0, len = keys.length; index < len; index++) {
+    var key = keys[index];
 
     
-    var keys = std_Reflect_ownKeys(obj);
+    var desc = ObjectGetOwnPropertyDescriptor(obj, key);
 
     
-    var descriptors = {};
-
-    
-    for (var index = 0, len = keys.length; index < len; index++) {
-        var key = keys[index];
-
-        
-        var desc = ObjectGetOwnPropertyDescriptor(obj, key);
-
-        
-        if (typeof desc !== "undefined") {
-            DefineDataProperty(descriptors, key, desc);
-        }
+    if (typeof desc !== "undefined") {
+      DefineDataProperty(descriptors, key, desc);
     }
+  }
 
-    
-    return descriptors;
+  
+  return descriptors;
 }
 
 
 function ObjectGetPrototypeOf(obj) {
-    return std_Reflect_getPrototypeOf(ToObject(obj));
+  return std_Reflect_getPrototypeOf(ToObject(obj));
 }
 
 
 function ObjectIsExtensible(obj) {
-    return IsObject(obj) && std_Reflect_isExtensible(obj);
+  return IsObject(obj) && std_Reflect_isExtensible(obj);
 }
 
 
 function Object_toLocaleString() {
-    
-    var O = this;
+  
+  var O = this;
 
-    
-    return callContentFunction(O.toString, O);
+  
+  return callContentFunction(O.toString, O);
 }
 
 
 function Object_valueOf() {
-    
-    return ToObject(this);
+  
+  return ToObject(this);
 }
 
 
 function Object_hasOwnProperty(V) {
-    
-    
-    return hasOwn(V, this);
+  
+  
+  return hasOwn(V, this);
 }
 
 
 
 function $ObjectProtoGetter() {
-    return std_Reflect_getPrototypeOf(ToObject(this));
+  return std_Reflect_getPrototypeOf(ToObject(this));
 }
 SetCanonicalName($ObjectProtoGetter, "get __proto__");
 
 
 
 function $ObjectProtoSetter(proto) {
-    return callFunction(std_Object_setProto, this, proto);
+  return callFunction(std_Object_setProto, this, proto);
 }
 SetCanonicalName($ObjectProtoSetter, "set __proto__");
 
 
 function ObjectDefineSetter(name, setter) {
-    
-    var object = ToObject(this);
+  
+  var object = ToObject(this);
 
-    
-    if (!IsCallable(setter)) {
-        ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "setter");
-    }
+  
+  if (!IsCallable(setter)) {
+    ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "setter");
+  }
 
-    
-    var key = TO_PROPERTY_KEY(name);
+  
+  var key = TO_PROPERTY_KEY(name);
 
-    
-    DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
-                   null, setter, true);
+  
+  DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                 null, setter, true);
 
-    
+  
 }
 
 
 function ObjectDefineGetter(name, getter) {
-    
-    var object = ToObject(this);
+  
+  var object = ToObject(this);
 
-    
-    if (!IsCallable(getter)) {
-        ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "getter");
-    }
+  
+  if (!IsCallable(getter)) {
+    ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "getter");
+  }
 
-    
-    var key = TO_PROPERTY_KEY(name);
+  
+  var key = TO_PROPERTY_KEY(name);
 
-    
-    DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
-                   getter, null, true);
+  
+  DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                 getter, null, true);
 
-    
+  
 }
 
 
 function ObjectLookupSetter(name) {
+  
+  var object = ToObject(this);
+
+  
+  var key = TO_PROPERTY_KEY(name);
+
+  do {
     
-    var object = ToObject(this);
-
-    
-    var key = TO_PROPERTY_KEY(name);
-
-    do {
-        
-        var desc = GetOwnPropertyDescriptorToArray(object, key);
-
-        
-        if (desc) {
-            
-            if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND) {
-                return desc[PROP_DESC_SETTER_INDEX];
-            }
-
-            
-            return undefined;
-        }
-
-        
-        object = std_Reflect_getPrototypeOf(object);
-    } while (object !== null);
+    var desc = GetOwnPropertyDescriptorToArray(object, key);
 
     
+    if (desc) {
+      
+      if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND) {
+        return desc[PROP_DESC_SETTER_INDEX];
+      }
+
+      
+      return undefined;
+    }
+
+    
+    object = std_Reflect_getPrototypeOf(object);
+  } while (object !== null);
+
+  
 }
 
 
 function ObjectLookupGetter(name) {
+  
+  var object = ToObject(this);
+
+  
+  var key = TO_PROPERTY_KEY(name);
+
+  do {
     
-    var object = ToObject(this);
-
-    
-    var key = TO_PROPERTY_KEY(name);
-
-    do {
-        
-        var desc = GetOwnPropertyDescriptorToArray(object, key);
-
-        
-        if (desc) {
-            
-            if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND) {
-                return desc[PROP_DESC_GETTER_INDEX];
-            }
-
-            
-            return undefined;
-        }
-
-        
-        object = std_Reflect_getPrototypeOf(object);
-    } while (object !== null);
+    var desc = GetOwnPropertyDescriptorToArray(object, key);
 
     
+    if (desc) {
+      
+      if (desc[PROP_DESC_ATTRS_AND_KIND_INDEX] & ACCESSOR_DESCRIPTOR_KIND) {
+        return desc[PROP_DESC_GETTER_INDEX];
+      }
+
+      
+      return undefined;
+    }
+
+    
+    object = std_Reflect_getPrototypeOf(object);
+  } while (object !== null);
+
+  
 }
 
 
 
 function ObjectGetOwnPropertyDescriptor(obj, propertyKey) {
-    
-    var desc = GetOwnPropertyDescriptorToArray(obj, propertyKey);
+  
+  var desc = GetOwnPropertyDescriptorToArray(obj, propertyKey);
 
-    
+  
 
-    
-    if (!desc) {
-        return undefined;
-    }
+  
+  if (!desc) {
+    return undefined;
+  }
 
-    
-    var attrsAndKind = desc[PROP_DESC_ATTRS_AND_KIND_INDEX];
-    if (attrsAndKind & DATA_DESCRIPTOR_KIND) {
-        return {
-            value: desc[PROP_DESC_VALUE_INDEX],
-            writable: !!(attrsAndKind & ATTR_WRITABLE),
-            enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
-            configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
-        };
-    }
-
-    
-    assert(attrsAndKind & ACCESSOR_DESCRIPTOR_KIND, "expected accessor property descriptor");
+  
+  var attrsAndKind = desc[PROP_DESC_ATTRS_AND_KIND_INDEX];
+  if (attrsAndKind & DATA_DESCRIPTOR_KIND) {
     return {
-        get: desc[PROP_DESC_GETTER_INDEX],
-        set: desc[PROP_DESC_SETTER_INDEX],
-        enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
-        configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
+      value: desc[PROP_DESC_VALUE_INDEX],
+      writable: !!(attrsAndKind & ATTR_WRITABLE),
+      enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
+      configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
     };
+  }
+
+  
+  assert(attrsAndKind & ACCESSOR_DESCRIPTOR_KIND, "expected accessor property descriptor");
+  return {
+    get: desc[PROP_DESC_GETTER_INDEX],
+    set: desc[PROP_DESC_SETTER_INDEX],
+    enumerable: !!(attrsAndKind & ATTR_ENUMERABLE),
+    configurable: !!(attrsAndKind & ATTR_CONFIGURABLE),
+  };
 }
 
 
 
 
 function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
+  
+  if (!IsObject(obj)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, obj));
+  }
+
+  
+  propertyKey = TO_PROPERTY_KEY(propertyKey);
+
+  
+
+  
+  if (!IsObject(attributes)) {
+    ThrowArgTypeNotObject(NOT_OBJECT_KIND_DESCRIPTOR, attributes);
+  }
+
+  
+  var attrs = 0, hasValue = false;
+  var value, getter = null, setter = null;
+
+  
+  if ("enumerable" in attributes) {
+    attrs |= attributes.enumerable ? ATTR_ENUMERABLE : ATTR_NONENUMERABLE;
+  }
+
+  
+  if ("configurable" in attributes) {
+    attrs |= attributes.configurable ? ATTR_CONFIGURABLE : ATTR_NONCONFIGURABLE;
+  }
+
+  
+  if ("value" in attributes) {
+    attrs |= DATA_DESCRIPTOR_KIND;
+    value = attributes.value;
+    hasValue = true;
+  }
+
+  
+  if ("writable" in attributes) {
+    attrs |= DATA_DESCRIPTOR_KIND;
+    attrs |= attributes.writable ? ATTR_WRITABLE : ATTR_NONWRITABLE;
+  }
+
+  
+  if ("get" in attributes) {
+    attrs |= ACCESSOR_DESCRIPTOR_KIND;
+    getter = attributes.get;
+    if (!IsCallable(getter) && getter !== undefined) {
+      ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "get");
+    }
+  }
+
+  
+  if ("set" in attributes) {
+    attrs |= ACCESSOR_DESCRIPTOR_KIND;
+    setter = attributes.set;
+    if (!IsCallable(setter) && setter !== undefined) {
+      ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "set");
+    }
+  }
+
+  if (attrs & ACCESSOR_DESCRIPTOR_KIND) {
     
-    if (!IsObject(obj)) {
-        ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, obj));
+    if (attrs & DATA_DESCRIPTOR_KIND) {
+      ThrowTypeError(JSMSG_INVALID_DESCRIPTOR);
     }
 
     
-    propertyKey = TO_PROPERTY_KEY(propertyKey);
+    return DefineProperty(obj, propertyKey, attrs, getter, setter, strict);
+  }
 
+  
+  if (hasValue) {
     
-
-    
-    if (!IsObject(attributes)) {
-        ThrowArgTypeNotObject(NOT_OBJECT_KIND_DESCRIPTOR, attributes);
+    if (strict) {
+      if ((attrs & (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE)) ===
+          (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE))
+      {
+        DefineDataProperty(obj, propertyKey, value);
+        return true;
+      }
     }
 
     
-    var attrs = 0, hasValue = false;
-    var value, getter = null, setter = null;
+    return DefineProperty(obj, propertyKey, attrs, value, null, strict);
+  }
 
-    
-    if ("enumerable" in attributes) {
-        attrs |= attributes.enumerable ? ATTR_ENUMERABLE : ATTR_NONENUMERABLE;
-    }
-
-    
-    if ("configurable" in attributes) {
-        attrs |= attributes.configurable ? ATTR_CONFIGURABLE : ATTR_NONCONFIGURABLE;
-    }
-
-    
-    if ("value" in attributes) {
-        attrs |= DATA_DESCRIPTOR_KIND;
-        value = attributes.value;
-        hasValue = true;
-    }
-
-    
-    if ("writable" in attributes) {
-        attrs |= DATA_DESCRIPTOR_KIND;
-        attrs |= attributes.writable ? ATTR_WRITABLE : ATTR_NONWRITABLE;
-    }
-
-    
-    if ("get" in attributes) {
-        attrs |= ACCESSOR_DESCRIPTOR_KIND;
-        getter = attributes.get;
-        if (!IsCallable(getter) && getter !== undefined) {
-            ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "get");
-        }
-    }
-
-    
-    if ("set" in attributes) {
-        attrs |= ACCESSOR_DESCRIPTOR_KIND;
-        setter = attributes.set;
-        if (!IsCallable(setter) && setter !== undefined) {
-            ThrowTypeError(JSMSG_BAD_GET_SET_FIELD, "set");
-        }
-    }
-
-    if (attrs & ACCESSOR_DESCRIPTOR_KIND) {
-        
-        if (attrs & DATA_DESCRIPTOR_KIND) {
-            ThrowTypeError(JSMSG_INVALID_DESCRIPTOR);
-        }
-
-        
-        return DefineProperty(obj, propertyKey, attrs, getter, setter, strict);
-    }
-
-    
-    if (hasValue) {
-        
-        if (strict) {
-            if ((attrs & (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE)) ===
-                (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE))
-            {
-                DefineDataProperty(obj, propertyKey, value);
-                return true;
-            }
-        }
-
-        
-        return DefineProperty(obj, propertyKey, attrs, value, null, strict);
-    }
-
-    
-    return DefineProperty(obj, propertyKey, attrs, undefined, undefined, strict);
+  
+  return DefineProperty(obj, propertyKey, attrs, undefined, undefined, strict);
 }
 
 
 
 function ObjectDefineProperty(obj, propertyKey, attributes) {
+  
+  if (!ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true)) {
     
-    if (!ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true)) {
-        
-        return null;
-    }
+    return null;
+  }
 
-    
-    return obj;
+  
+  return obj;
 }
 
 
 
 function ObjectFromEntries(iter) {
-    
-    
-    
-    
-    
-    const obj = {};
+  
+  
+  
+  
+  
+  const obj = {};
 
-    for (const pair of allowContentIter(iter)) {
-        if (!IsObject(pair)) {
-            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Object.fromEntries");
-        }
-        DefineDataProperty(obj, pair[0], pair[1]);
+  for (const pair of allowContentIter(iter)) {
+    if (!IsObject(pair)) {
+      ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Object.fromEntries");
     }
+    DefineDataProperty(obj, pair[0], pair[1]);
+  }
 
-    return obj;
+  return obj;
 }
 
 
 
 function ObjectHasOwn(O, P) {
-    
-    var obj = ToObject(O);
-    
-    return hasOwn(P, obj);
+  
+  var obj = ToObject(O);
+  
+  return hasOwn(P, obj);
 }
-

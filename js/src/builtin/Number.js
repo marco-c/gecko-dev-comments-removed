@@ -13,92 +13,92 @@ var numberFormatCache = new_Record();
 
 
 function Number_toLocaleString() {
-    
-    var x = callFunction(ThisNumberValueForToLocaleString, this);
+  
+  var x = callFunction(ThisNumberValueForToLocaleString, this);
 
-    
-    var locales = arguments.length > 0 ? arguments[0] : undefined;
-    var options = arguments.length > 1 ? arguments[1] : undefined;
+  
+  var locales = arguments.length > 0 ? arguments[0] : undefined;
+  var options = arguments.length > 1 ? arguments[1] : undefined;
 
+  
+  var numberFormat;
+  if (locales === undefined && options === undefined) {
     
-    var numberFormat;
-    if (locales === undefined && options === undefined) {
-        
-        
-        if (!intl_IsRuntimeDefaultLocale(numberFormatCache.runtimeDefaultLocale)) {
-            numberFormatCache.numberFormat = intl_NumberFormat(locales, options);
-            numberFormatCache.runtimeDefaultLocale = intl_RuntimeDefaultLocale();
-        }
-        numberFormat = numberFormatCache.numberFormat;
-    } else {
-        numberFormat = intl_NumberFormat(locales, options);
+    
+    if (!intl_IsRuntimeDefaultLocale(numberFormatCache.runtimeDefaultLocale)) {
+      numberFormatCache.numberFormat = intl_NumberFormat(locales, options);
+      numberFormatCache.runtimeDefaultLocale = intl_RuntimeDefaultLocale();
     }
+    numberFormat = numberFormatCache.numberFormat;
+  } else {
+    numberFormat = intl_NumberFormat(locales, options);
+  }
 
-    
-    return intl_FormatNumber(numberFormat, x,  false);
+  
+  return intl_FormatNumber(numberFormat, x,  false);
 }
 #endif  // JS_HAS_INTL_API
 
 
 function Number_isFinite(num) {
-    if (typeof num !== "number") {
-        return false;
-    }
-    return num - num === 0;
+  if (typeof num !== "number") {
+    return false;
+  }
+  return num - num === 0;
 }
 
 
 function Number_isNaN(num) {
-    if (typeof num !== "number") {
-        return false;
-    }
-    return num !== num;
+  if (typeof num !== "number") {
+    return false;
+  }
+  return num !== num;
 }
 
 
 
 function Number_isInteger(number) {
-    
+  
 
-    
-    if (typeof number !== "number") {
-        return false;
-    }
+  
+  if (typeof number !== "number") {
+    return false;
+  }
 
-    var integer = std_Math_trunc(number);
+  var integer = std_Math_trunc(number);
 
-    
-    
-    
-    return number - integer === 0;
+  
+  
+  
+  return number - integer === 0;
 }
 
 
 
 function Number_isSafeInteger(number) {
-    
+  
 
-    
-    if (typeof number !== "number") {
-        return false;
-    }
+  
+  if (typeof number !== "number") {
+    return false;
+  }
 
-    var integer = std_Math_trunc(number);
+  var integer = std_Math_trunc(number);
 
-    
-    
-    if (number - integer !== 0) {
-        return false;
-    }
+  
+  
+  if (number - integer !== 0) {
+    return false;
+  }
 
-    
-    return -((2 ** 53) - 1) <= integer && integer <= (2 ** 53) - 1;
+  
+  return -((2 ** 53) - 1) <= integer && integer <= (2 ** 53) - 1;
 }
 
 function Global_isNaN(number) {
-    return Number_isNaN(ToNumber(number));
+  return Number_isNaN(ToNumber(number));
 }
 
 function Global_isFinite(number) {
-    return Number_isFinite(ToNumber(number));
+  return Number_isFinite(ToNumber(number));
 }

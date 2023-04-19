@@ -5,68 +5,68 @@
 
 
 function Promise_finally(onFinally) {
+  
+  var promise = this;
+
+  
+  if (!IsObject(promise)) {
+    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Promise", "finally", "value");
+  }
+
+  
+  var C = SpeciesConstructor(promise, GetBuiltinConstructor("Promise"));
+
+  
+  assert(IsConstructor(C), "SpeciesConstructor returns a constructor function");
+
+  
+  var thenFinally, catchFinally;
+  if (!IsCallable(onFinally)) {
+    thenFinally = onFinally;
+    catchFinally = onFinally;
+  } else {
     
-    var promise = this;
-
     
-    if (!IsObject(promise)) {
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Promise", "finally", "value");
-    }
+    (thenFinally) = function(value) {
+      
 
-    
-    var C = SpeciesConstructor(promise, GetBuiltinConstructor("Promise"));
+      
+      var result = callContentFunction(onFinally, undefined);
 
-    
-    assert(IsConstructor(C), "SpeciesConstructor returns a constructor function");
+      
 
-    
-    var thenFinally, catchFinally;
-    if (!IsCallable(onFinally)) {
-        thenFinally = onFinally;
-        catchFinally = onFinally;
-    } else {
-        
-        
-        (thenFinally) = function(value) {
-            
+      
+      var promise = PromiseResolve(C, result);
 
-            
-            var result = callContentFunction(onFinally, undefined);
+      
+      
+      
 
-            
-
-            
-            var promise = PromiseResolve(C, result);
-
-            
-            
-            
-
-            
-            return callContentFunction(promise.then, promise, function() { return value; });
-        };
-
-        
-        (catchFinally) = function(reason) {
-            
-
-            
-            var result = callContentFunction(onFinally, undefined);
-
-            
-
-            
-            var promise = PromiseResolve(C, result);
-
-            
-            
-            
-
-            
-            return callContentFunction(promise.then, promise, function() { throw reason; });
-        };
-    }
+      
+      return callContentFunction(promise.then, promise, function() { return value; });
+    };
 
     
-    return callContentFunction(promise.then, promise, thenFinally, catchFinally);
+    (catchFinally) = function(reason) {
+      
+
+      
+      var result = callContentFunction(onFinally, undefined);
+
+      
+
+      
+      var promise = PromiseResolve(C, result);
+
+      
+      
+      
+
+      
+      return callContentFunction(promise.then, promise, function() { throw reason; });
+    };
+  }
+
+  
+  return callContentFunction(promise.then, promise, thenFinally, catchFinally);
 }

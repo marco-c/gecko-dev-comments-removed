@@ -3,97 +3,97 @@
 
 
 function GeneratorNext(val) {
-    
-    
-    
+  
+  
+  
 
-    if (!IsSuspendedGenerator(this)) {
-        if (!IsObject(this) || !IsGeneratorObject(this)) {
-            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorNext");
-        }
-
-        if (GeneratorObjectIsClosed(this)) {
-            return { value: undefined, done: true };
-        }
-
-        if (GeneratorIsRunning(this)) {
-            ThrowTypeError(JSMSG_NESTING_GENERATOR);
-        }
+  if (!IsSuspendedGenerator(this)) {
+    if (!IsObject(this) || !IsGeneratorObject(this)) {
+      return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorNext");
     }
 
-    try {
-        return resumeGenerator(this, val, "next");
-    } catch (e) {
-        if (!GeneratorObjectIsClosed(this)) {
-            GeneratorSetClosed(this);
-        }
-        throw e;
+    if (GeneratorObjectIsClosed(this)) {
+      return { value: undefined, done: true };
     }
+
+    if (GeneratorIsRunning(this)) {
+      ThrowTypeError(JSMSG_NESTING_GENERATOR);
+    }
+  }
+
+  try {
+    return resumeGenerator(this, val, "next");
+  } catch (e) {
+    if (!GeneratorObjectIsClosed(this)) {
+      GeneratorSetClosed(this);
+    }
+    throw e;
+  }
 }
 
 function GeneratorThrow(val) {
-    if (!IsSuspendedGenerator(this)) {
-        if (!IsObject(this) || !IsGeneratorObject(this)) {
-            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorThrow");
-        }
-
-        if (GeneratorObjectIsClosed(this)) {
-            throw val;
-        }
-
-        if (GeneratorIsRunning(this)) {
-            ThrowTypeError(JSMSG_NESTING_GENERATOR);
-        }
+  if (!IsSuspendedGenerator(this)) {
+    if (!IsObject(this) || !IsGeneratorObject(this)) {
+      return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorThrow");
     }
 
-    try {
-        return resumeGenerator(this, val, "throw");
-    } catch (e) {
-        if (!GeneratorObjectIsClosed(this)) {
-            GeneratorSetClosed(this);
-        }
-        throw e;
+    if (GeneratorObjectIsClosed(this)) {
+      throw val;
     }
+
+    if (GeneratorIsRunning(this)) {
+      ThrowTypeError(JSMSG_NESTING_GENERATOR);
+    }
+  }
+
+  try {
+    return resumeGenerator(this, val, "throw");
+  } catch (e) {
+    if (!GeneratorObjectIsClosed(this)) {
+      GeneratorSetClosed(this);
+    }
+    throw e;
+  }
 }
 
 function GeneratorReturn(val) {
-    if (!IsSuspendedGenerator(this)) {
-        if (!IsObject(this) || !IsGeneratorObject(this)) {
-            return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorReturn");
-        }
-
-        if (GeneratorObjectIsClosed(this)) {
-            return { value: val, done: true };
-        }
-
-        if (GeneratorIsRunning(this)) {
-            ThrowTypeError(JSMSG_NESTING_GENERATOR);
-        }
+  if (!IsSuspendedGenerator(this)) {
+    if (!IsObject(this) || !IsGeneratorObject(this)) {
+      return callFunction(CallGeneratorMethodIfWrapped, this, val, "GeneratorReturn");
     }
 
-    try {
-        var rval = { value: val, done: true };
-        return resumeGenerator(this, rval, "return");
-    } catch (e) {
-        if (!GeneratorObjectIsClosed(this)) {
-            GeneratorSetClosed(this);
-        }
-        throw e;
+    if (GeneratorObjectIsClosed(this)) {
+      return { value: val, done: true };
     }
+
+    if (GeneratorIsRunning(this)) {
+      ThrowTypeError(JSMSG_NESTING_GENERATOR);
+    }
+  }
+
+  try {
+    var rval = { value: val, done: true };
+    return resumeGenerator(this, rval, "return");
+  } catch (e) {
+    if (!GeneratorObjectIsClosed(this)) {
+      GeneratorSetClosed(this);
+    }
+    throw e;
+  }
 }
 
 function InterpretGeneratorResume(gen, val, kind) {
-    
-    
-    
-    
-    forceInterpreter();
-    if (kind === "next") {
-       return resumeGenerator(gen, val, "next");
-    }
-    if (kind === "throw") {
-       return resumeGenerator(gen, val, "throw");
-    }
-    assert(kind === "return", "Invalid resume kind");
-    return resumeGenerator(gen, val, "return");
+  
+  
+  
+  
+  forceInterpreter();
+  if (kind === "next") {
+    return resumeGenerator(gen, val, "next");
+  }
+  if (kind === "throw") {
+    return resumeGenerator(gen, val, "throw");
+  }
+  assert(kind === "return", "Invalid resume kind");
+  return resumeGenerator(gen, val, "return");
 }

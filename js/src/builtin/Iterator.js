@@ -2,7 +2,7 @@
 
 
 
- function IteratorIdentity() {
+function IteratorIdentity() {
   return this;
 }
 
