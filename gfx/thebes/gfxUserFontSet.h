@@ -91,8 +91,7 @@ struct gfxFontFaceSrc {
 
   
   
-  already_AddRefed<gfxFontSrcPrincipal> LoadPrincipal(
-      const gfxUserFontSet&) const;
+  gfxFontSrcPrincipal* LoadPrincipal(const gfxUserFontSet&) const;
 };
 
 inline bool operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b) {
@@ -226,11 +225,9 @@ class gfxUserFontSet {
   typedef mozilla::WeightRange WeightRange;
   typedef gfxFontEntry::RangeFlags RangeFlags;
 
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxUserFontSet)
 
   gfxUserFontSet();
-
-  void Destroy();
 
   enum {
     
@@ -303,12 +300,16 @@ class gfxUserFontSet {
   
   gfxUserFontFamily* LookupFamily(const nsACString& aName) const;
 
-  virtual already_AddRefed<gfxFontSrcPrincipal> GetStandardFontLoadPrincipal()
-      const = 0;
+  virtual gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() const = 0;
   virtual nsPresContext* GetPresContext() const = 0;
 
   
   virtual bool IsFontLoadAllowed(const gfxFontFaceSrc&) = 0;
+
+  
+  
+  virtual void DispatchFontLoadViolations(
+      nsTArray<nsCOMPtr<nsIRunnable>>& aViolations) = 0;
 
   
   
