@@ -131,6 +131,15 @@ class SdpOfferAnswerHandler {
   bool IceRestartPending(const std::string& content_name) const;
   void UpdateNegotiationNeeded();
 
+  
+  
+  
+  
+  const cricket::ContentInfo* FindMediaSectionForTransceiver(
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+          transceiver,
+      const SessionDescriptionInterface* sdesc) const;
+
  private:
   class ImplicitCreateSessionDescriptionObserver;
   friend class ImplicitCreateSessionDescriptionObserver;
@@ -252,6 +261,55 @@ class SdpOfferAnswerHandler {
   RTCError UpdateDataChannel(cricket::ContentSource source,
                              const cricket::ContentInfo& content,
                              const cricket::ContentGroup* bundle_group)
+      RTC_RUN_ON(signaling_thread());
+  
+  
+  bool ExpectSetLocalDescription(SdpType type);
+  
+  
+  bool ExpectSetRemoteDescription(SdpType type);
+
+  
+  
+  
+  
+  void FillInMissingRemoteMids(cricket::SessionDescription* remote_description);
+
+  
+  
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  FindAvailableTransceiverToReceive(cricket::MediaType media_type) const;
+
+  
+  
+  void GetOptionsForOffer(const PeerConnectionInterface::RTCOfferAnswerOptions&
+                              offer_answer_options,
+                          cricket::MediaSessionOptions* session_options);
+  void GetOptionsForPlanBOffer(
+      const PeerConnectionInterface::RTCOfferAnswerOptions&
+          offer_answer_options,
+      cricket::MediaSessionOptions* session_options)
+      RTC_RUN_ON(signaling_thread());
+  void GetOptionsForUnifiedPlanOffer(
+      const PeerConnectionInterface::RTCOfferAnswerOptions&
+          offer_answer_options,
+      cricket::MediaSessionOptions* session_options)
+      RTC_RUN_ON(signaling_thread());
+
+  
+  
+  void GetOptionsForAnswer(const PeerConnectionInterface::RTCOfferAnswerOptions&
+                               offer_answer_options,
+                           cricket::MediaSessionOptions* session_options);
+  void GetOptionsForPlanBAnswer(
+      const PeerConnectionInterface::RTCOfferAnswerOptions&
+          offer_answer_options,
+      cricket::MediaSessionOptions* session_options)
+      RTC_RUN_ON(signaling_thread());
+  void GetOptionsForUnifiedPlanAnswer(
+      const PeerConnectionInterface::RTCOfferAnswerOptions&
+          offer_answer_options,
+      cricket::MediaSessionOptions* session_options)
       RTC_RUN_ON(signaling_thread());
 
   

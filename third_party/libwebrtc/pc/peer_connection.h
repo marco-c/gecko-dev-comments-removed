@@ -412,15 +412,15 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_RUN_ON(signaling_thread());
 
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
-  GetSendersInternal() const RTC_RUN_ON(signaling_thread());
+  GetSendersInternal() const;
   std::vector<
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
   GetReceiversInternal() const RTC_RUN_ON(signaling_thread());
 
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-  GetAudioTransceiver() const RTC_RUN_ON(signaling_thread());
+  GetAudioTransceiver() const;
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-  GetVideoTransceiver() const RTC_RUN_ON(signaling_thread());
+  GetVideoTransceiver() const;
 
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetFirstAudioTransceiver() const RTC_RUN_ON(signaling_thread());
@@ -562,20 +562,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-  FindAvailableTransceiverToReceive(cricket::MediaType media_type) const;
-
-  
-  
-  
-  
-  const cricket::ContentInfo* FindMediaSectionForTransceiver(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-          transceiver,
-      const SessionDescriptionInterface* sdesc) const;
-
-  
-  
   
   
   
@@ -595,21 +581,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   void OnNegotiationNeeded();
 
-  
-  
-  void GetOptionsForOffer(const PeerConnectionInterface::RTCOfferAnswerOptions&
-                              offer_answer_options,
-                          cricket::MediaSessionOptions* session_options);
-  void GetOptionsForPlanBOffer(
-      const PeerConnectionInterface::RTCOfferAnswerOptions&
-          offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
-  void GetOptionsForUnifiedPlanOffer(
-      const PeerConnectionInterface::RTCOfferAnswerOptions&
-          offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
 
   RTCError HandleLegacyOfferOptions(const RTCOfferAnswerOptions& options);
   void RemoveRecvDirectionFromReceivingTransceiversOfType(
@@ -622,21 +593,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void GetOptionsForAnswer(const RTCOfferAnswerOptions& offer_answer_options,
-                           cricket::MediaSessionOptions* session_options);
-  void GetOptionsForPlanBAnswer(
-      const PeerConnectionInterface::RTCOfferAnswerOptions&
-          offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
-  void GetOptionsForUnifiedPlanAnswer(
-      const PeerConnectionInterface::RTCOfferAnswerOptions&
-          offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
-
-  
-  
   void GenerateMediaDescriptionOptions(
       const SessionDescriptionInterface* session_desc,
       RtpTransceiverDirection audio_direction,
@@ -644,18 +600,17 @@ class PeerConnection : public PeerConnectionInternal,
       absl::optional<size_t>* audio_index,
       absl::optional<size_t>* video_index,
       absl::optional<size_t>* data_index,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
+      cricket::MediaSessionOptions* session_options);
 
   
   
   cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
-      const std::string& mid) const RTC_RUN_ON(signaling_thread());
+      const std::string& mid) const;
 
   
   
   cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
-      const std::string& mid) const RTC_RUN_ON(signaling_thread());
+      const std::string& mid) const;
 
   
   
@@ -731,12 +686,6 @@ class PeerConnection : public PeerConnectionInternal,
   bool IsUnifiedPlan() const RTC_RUN_ON(signaling_thread()) {
     return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
   }
-
-  
-  
-  
-  
-  void FillInMissingRemoteMids(cricket::SessionDescription* remote_description);
 
   
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
@@ -894,12 +843,6 @@ class PeerConnection : public PeerConnectionInternal,
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
 
   
-  
-  bool ExpectSetLocalDescription(SdpType type);
-  
-  
-  bool ExpectSetRemoteDescription(SdpType type);
-  
   bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
                                   SdpType type);
 
@@ -1004,7 +947,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   
-  CryptoOptions GetCryptoOptions() RTC_RUN_ON(signaling_thread());
+  CryptoOptions GetCryptoOptions();
 
   
   RtpTransportInternal* GetRtpTransport(const std::string& mid)
