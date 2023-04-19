@@ -26,15 +26,16 @@ int CrossCorrelationWithAutoShift(const int16_t* sequence_1,
                                   int cross_correlation_step,
                                   int32_t* cross_correlation) {
   
-  const int16_t max_1 = WebRtcSpl_MaxAbsValueW16(sequence_1, sequence_1_length);
+  const int32_t max_1 =
+      abs(sequence_1[WebRtcSpl_MaxAbsIndexW16(sequence_1, sequence_1_length)]);
   const int sequence_2_shift =
       cross_correlation_step * (static_cast<int>(cross_correlation_length) - 1);
   const int16_t* sequence_2_start =
       sequence_2_shift >= 0 ? sequence_2 : sequence_2 + sequence_2_shift;
   const size_t sequence_2_length =
       sequence_1_length + std::abs(sequence_2_shift);
-  const int16_t max_2 =
-      WebRtcSpl_MaxAbsValueW16(sequence_2_start, sequence_2_length);
+  const int32_t max_2 = abs(sequence_2_start[WebRtcSpl_MaxAbsIndexW16(
+      sequence_2_start, sequence_2_length)]);
 
   
   
