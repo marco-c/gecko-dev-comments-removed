@@ -471,21 +471,6 @@ void PacingController::ProcessPackets() {
     if (pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
       recommended_probe_size = prober_.RecommendedMinProbeSize();
       RTC_DCHECK_GT(recommended_probe_size, DataSize::Zero());
-
-      
-      
-      if (pacing_info.probe_cluster_bytes_sent == 0) {
-        auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));
-        
-        
-        if (!padding.empty()) {
-          
-          EnqueuePacketInternal(std::move(padding[0]), kFirstPriority);
-          
-          
-          RTC_DCHECK_EQ(padding.size(), 1u);
-        }
-      }
     } else {
       
       is_probing = false;
@@ -546,10 +531,13 @@ void PacingController::ProcessPackets() {
       
       OnPacketSent(packet_type, packet_size, now);
 
-      
-      
-      if (is_probing && data_sent >= recommended_probe_size) {
-        break;
+      if (is_probing) {
+        pacing_info.probe_cluster_bytes_sent += packet_size.bytes();
+        
+        
+        if (data_sent >= recommended_probe_size) {
+          break;
+        }
       }
 
       
@@ -627,6 +615,22 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
     const PacedPacketInfo& pacing_info,
     Timestamp target_send_time,
     Timestamp now) {
+  const bool is_probe =
+      pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe;
+  
+  
+  if (is_probe && pacing_info.probe_cluster_bytes_sent == 0) {
+    auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));
+    
+    
+    if (!padding.empty()) {
+      
+      
+      RTC_DCHECK_EQ(padding.size(), 1u);
+      return std::move(padding[0]);
+    }
+  }
+
   if (packet_queue_.Empty()) {
     return nullptr;
   }
@@ -636,7 +640,6 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
   
   bool unpaced_audio_packet =
       !pace_audio_ && packet_queue_.LeadingAudioPacketEnqueueTime().has_value();
-  bool is_probe = pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe;
   if (!unpaced_audio_packet && !is_probe) {
     if (congested_) {
       
