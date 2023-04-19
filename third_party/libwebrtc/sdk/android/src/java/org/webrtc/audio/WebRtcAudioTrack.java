@@ -71,6 +71,7 @@ class WebRtcAudioTrack {
 
   private ByteBuffer byteBuffer;
 
+  private @Nullable final AudioAttributes audioAttributes;
   private @Nullable AudioTrack audioTrack;
   private @Nullable AudioTrackThread audioThread;
   private final VolumeLogger volumeLogger;
@@ -162,15 +163,17 @@ class WebRtcAudioTrack {
 
   @CalledByNative
   WebRtcAudioTrack(Context context, AudioManager audioManager) {
-    this(context, audioManager, null , null );
+    this(context, audioManager, null , null ,
+        null );
   }
 
   WebRtcAudioTrack(Context context, AudioManager audioManager,
-      @Nullable AudioTrackErrorCallback errorCallback,
+      @Nullable AudioAttributes audioAttributes, @Nullable AudioTrackErrorCallback errorCallback,
       @Nullable AudioTrackStateCallback stateCallback) {
     threadChecker.detachThread();
     this.context = context;
     this.audioManager = audioManager;
+    this.audioAttributes = audioAttributes;
     this.errorCallback = errorCallback;
     this.stateCallback = stateCallback;
     this.volumeLogger = new VolumeLogger(audioManager);
@@ -231,8 +234,8 @@ class WebRtcAudioTrack {
         
         
         
-        audioTrack =
-            createAudioTrackOnLollipopOrHigher(sampleRate, channelConfig, minBufferSizeInBytes);
+        audioTrack = createAudioTrackOnLollipopOrHigher(
+            sampleRate, channelConfig, minBufferSizeInBytes, audioAttributes);
       } else {
         
         audioTrack =
@@ -383,8 +386,8 @@ class WebRtcAudioTrack {
   
   
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-  private static AudioTrack createAudioTrackOnLollipopOrHigher(
-      int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
+  private static AudioTrack createAudioTrackOnLollipopOrHigher(int sampleRateInHz,
+      int channelConfig, int bufferSizeInBytes, @Nullable AudioAttributes overrideAttributes) {
     Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
     
     
@@ -394,11 +397,26 @@ class WebRtcAudioTrack {
     if (sampleRateInHz != nativeOutputSampleRate) {
       Logging.w(TAG, "Unable to use fast mode since requested sample rate is not native");
     }
+
+    AudioAttributes.Builder attributesBuilder =
+        new AudioAttributes.Builder()
+            .setUsage(DEFAULT_USAGE)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
+
+    if (overrideAttributes != null) {
+      if (overrideAttributes.getUsage() != AudioAttributes.USAGE_UNKNOWN) {
+        attributesBuilder.setUsage(overrideAttributes.getUsage());
+      }
+      if (overrideAttributes.getContentType() != AudioAttributes.CONTENT_TYPE_UNKNOWN) {
+        attributesBuilder.setContentType(overrideAttributes.getContentType());
+      }
+
+      attributesBuilder.setAllowedCapturePolicy(overrideAttributes.getAllowedCapturePolicy())
+          .setFlags(overrideAttributes.getFlags());
+    }
+
     
-    return new AudioTrack(new AudioAttributes.Builder()
-                              .setUsage(DEFAULT_USAGE)
-                              .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                              .build(),
+    return new AudioTrack(attributesBuilder.build(),
         new AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
             .setSampleRate(sampleRateInHz)
