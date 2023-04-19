@@ -51,6 +51,12 @@ class BundleManager {
     return bundle_groups_;
   }
   
+  const cricket::ContentGroup* LookupGroupByMid(const std::string& mid) const;
+  cricket::ContentGroup* LookupGroupByMid(const std::string& mid);
+  
+  
+  bool IsFirstMidInGroup(const std::string& mid) const;
+  
   
   void Update(const cricket::SessionDescription* description);
   
@@ -63,6 +69,8 @@ class BundleManager {
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
   std::vector<std::unique_ptr<cricket::ContentGroup>> bundle_groups_
       RTC_GUARDED_BY(sequence_checker_);
+  std::map<std::string, cricket::ContentGroup*>
+      established_bundle_groups_by_mid_;
 };
 
 
