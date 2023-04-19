@@ -65,6 +65,8 @@ enum class YuvSubsampling {
 
 struct FrameInfo {
   int profile = 0;  
+  absl::optional<uint8_t> show_existing_frame;
+  bool is_keyframe = false;
   bool show_frame = false;
   bool error_resilient = false;
   BitDept bit_detph = BitDept::k8Bit;
@@ -75,6 +77,7 @@ struct FrameInfo {
   int frame_height = 0;
   int render_width = 0;
   int render_height = 0;
+  int base_qp = 0;
 };
 
 
