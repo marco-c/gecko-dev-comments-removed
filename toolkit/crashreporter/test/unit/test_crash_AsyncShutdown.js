@@ -7,7 +7,6 @@
 
 
 function setup_crash() {
-  
   const { AsyncShutdown } = ChromeUtils.import(
     "resource://gre/modules/AsyncShutdown.jsm"
   );

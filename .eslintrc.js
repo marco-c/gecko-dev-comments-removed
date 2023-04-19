@@ -182,12 +182,6 @@ module.exports = {
       excludedFiles: [
         
         
-        "extensions/permissions/**",
-        "toolkit/crashreporter/test/unit/test_crash_AsyncShutdown.js",
-        "toolkit/mozapps/update/tests/unit_aus_update/testConstants.js",
-
-        
-        
         
         "dom/indexedDB/**",
       ],
