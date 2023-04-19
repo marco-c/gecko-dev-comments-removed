@@ -270,15 +270,6 @@ nsPrintJob::nsPrintJob(nsIDocumentViewerPrint& aDocViewerPrint,
   mDisallowSelectionPrint =
       root &&
       root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint);
-
-  if (nsPIDOMWindowOuter* window = aOriginalDoc.GetWindow()) {
-    if (nsCOMPtr<nsIWebBrowserChrome> wbc = window->GetWebBrowserChrome()) {
-      
-      
-      
-      wbc->IsWindowModal(&mIsForModalWindow);
-    }
-  }
 }
 
 
