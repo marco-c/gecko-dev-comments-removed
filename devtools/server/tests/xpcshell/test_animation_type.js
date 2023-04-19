@@ -11,23 +11,20 @@ const {
 
 function run_test() {
   
-  const window = {
-    MutationObserver: function() {
+  const window = {};
+  window.MutationObserver = class {
+    constructor() {
       this.observe = () => {};
-    },
-    Animation: function() {
+    }
+  };
+  window.Animation = class {
+    constructor() {
       this.effect = { target: getMockNode() };
-    },
-    CSSAnimation: function() {
-      this.effect = { target: getMockNode() };
-    },
-    CSSTransition: function() {
-      this.effect = { target: getMockNode() };
-    },
+    }
   };
 
-  window.CSSAnimation.prototype = Object.create(window.Animation.prototype);
-  window.CSSTransition.prototype = Object.create(window.Animation.prototype);
+  window.CSSAnimation = class extends window.Animation {};
+  window.CSSTransition = class extends window.Animation {};
 
   
   function getMockNode() {
