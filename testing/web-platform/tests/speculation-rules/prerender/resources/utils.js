@@ -306,7 +306,8 @@ function test_prerender_defer(fn, label) {
 
 
 
-async function addPrerenderRC(referrerRemoteContext) {
+
+async function addPrerenderRC(referrerRemoteContext, extraConfig) {
   let savedURL;
   const prerenderedRC = await referrerRemoteContext.helper.createContext({
     executorCreator(url) {
@@ -327,7 +328,7 @@ async function addPrerenderRC(referrerRemoteContext) {
         });
         document.head.append(script);
       }, [url]);
-    }
+    }, extraConfig
   });
 
   prerenderedRC.url = savedURL;
@@ -381,6 +382,13 @@ async function activatePrerenderRC(referrerRC, prerenderedRC, navigateFn) {
     "activated",
     "The prerendered page must be activated; instead a normal navigation happened."
   );
+}
+
+async function getActivationStart(prerenderedRC) {
+  return await prerenderedRC.executeScript(() => {
+    const entry = performance.getEntriesByType("navigation")[0];
+    return entry.activationStart;
+  });;
 }
 
 
