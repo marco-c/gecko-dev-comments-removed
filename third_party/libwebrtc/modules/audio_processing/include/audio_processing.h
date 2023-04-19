@@ -70,19 +70,6 @@ static constexpr int kClippedLevelMin = 70;
 
 
 
-struct ExperimentalNs {
-  ExperimentalNs() : enabled(false) {}
-  explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kExperimentalNs;
-  bool enabled;
-};
-
-
-
-
-
-
-
 
 
 
@@ -800,7 +787,6 @@ class RTC_EXPORT AudioProcessingBuilder {
   
   
   rtc::scoped_refptr<AudioProcessing> Create();
-  rtc::scoped_refptr<AudioProcessing> Create(const webrtc::Config& config);
 
  private:
   std::unique_ptr<EchoControlFactory> echo_control_factory_;

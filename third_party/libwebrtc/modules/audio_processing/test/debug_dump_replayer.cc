@@ -178,14 +178,13 @@ void DebugDumpReplayer::OnRuntimeSettingEvent(
 
 void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   
-  Config config;
   RTC_CHECK(msg.has_aec_delay_agnostic_enabled());
   RTC_CHECK(msg.has_aec_extended_filter_enabled());
 
   
   
   if (!apm_.get()) {
-    apm_ = AudioProcessingBuilderForTesting().Create(config);
+    apm_ = AudioProcessingBuilderForTesting().Create();
   }
 }
 

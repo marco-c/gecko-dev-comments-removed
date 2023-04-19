@@ -55,10 +55,9 @@ class AudioProcessingImpl : public AudioProcessing {
  public:
   
   
-  explicit AudioProcessingImpl(const webrtc::Config& config);
+  AudioProcessingImpl();
   
-  AudioProcessingImpl(const webrtc::Config& config,
-                      std::unique_ptr<CustomProcessing> capture_post_processor,
+  AudioProcessingImpl(std::unique_ptr<CustomProcessing> capture_post_processor,
                       std::unique_ptr<CustomProcessing> render_pre_processor,
                       std::unique_ptr<EchoControlFactory> echo_control_factory,
                       rtc::scoped_refptr<EchoDetector> echo_detector,
