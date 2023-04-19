@@ -45,18 +45,27 @@ XPCOMUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
 
 
-
-
-
-
-
-
-
-
 const ContextDescriptorType = {
   All: "All",
   TopBrowsingContext: "TopBrowsingContext",
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -154,13 +163,22 @@ class MessageHandler extends EventEmitter {
 
 
 
-  emitEvent(name, data) {
+
+
+
+
+  emitEvent(name, data, contextInfo) {
+    
+    
+    contextInfo = contextInfo || this.#getContextInfo();
+
     
     
     
-    this.emit(name, data);
+    this.emit(name, data, contextInfo);
     this.emit("message-handler-event", {
       name,
+      contextInfo,
       data,
       sessionId: this.sessionId,
     });
@@ -310,5 +328,19 @@ class MessageHandler extends EventEmitter {
     return this.getAllModuleClasses(moduleName, destination).some(cls =>
       cls.supportsMethod(commandName)
     );
+  }
+
+  
+
+
+
+
+
+
+  #getContextInfo() {
+    return {
+      contextId: this.contextId,
+      type: this.constructor.type,
+    };
   }
 }

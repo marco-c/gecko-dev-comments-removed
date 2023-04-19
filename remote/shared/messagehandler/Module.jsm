@@ -74,8 +74,10 @@ class Module {
 
 
 
-  emitEvent(name, data) {
-    this.messageHandler.emitEvent(name, data);
+
+
+  emitEvent(name, data, contextInfo) {
+    this.messageHandler.emitEvent(name, data, contextInfo);
   }
 
   

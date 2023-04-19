@@ -513,10 +513,22 @@ class BrowsingContextModule extends Module {
       return;
     }
 
-    const contextInfo = this.#getBrowsingContextInfo(browsingContext, {
+    const browsingContextInfo = this.#getBrowsingContextInfo(browsingContext, {
       maxDepth: 0,
     });
-    this.emitEvent("browsingContext.contextCreated", contextInfo);
+
+    
+    
+    
+    const contextInfo = {
+      contextId: browsingContext.id,
+      type: lazy.WindowGlobalMessageHandler.type,
+    };
+    this.emitEvent(
+      "browsingContext.contextCreated",
+      browsingContextInfo,
+      contextInfo
+    );
   };
 
   #subscribeEvent(event) {

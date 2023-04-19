@@ -203,19 +203,13 @@ add_task(async function test_two_contexts() {
   is(await isSubscribed(root, browsingContext1), true);
   is(await isSubscribed(root, browsingContext2), true);
 
-  
-  
-  
-  
-  
-  
-  
   await emitTestEvent(root, browsingContext1, monitoringEvents);
   is(events1.length, 1);
-  is(events2.length, 1);
+  is(events2.length, 0);
+
   await emitTestEvent(root, browsingContext2, monitoringEvents);
-  is(events1.length, 2);
-  is(events2.length, 2);
+  is(events1.length, 1);
+  is(events2.length, 1);
 
   await root.eventsDispatcher.off(
     "eventemitter.testEvent",
@@ -228,13 +222,13 @@ add_task(async function test_two_contexts() {
   
   
   await emitTestEvent(root, browsingContext1, monitoringEvents);
-  is(events1.length, 2);
-  is(events2.length, 2);
+  is(events1.length, 1);
+  is(events2.length, 1);
 
   
   await emitTestEvent(root, browsingContext2, monitoringEvents);
-  is(events1.length, 2);
-  is(events2.length, 3);
+  is(events1.length, 1);
+  is(events2.length, 2);
 
   await root.eventsDispatcher.off(
     "eventemitter.testEvent",
@@ -246,8 +240,8 @@ add_task(async function test_two_contexts() {
 
   await emitTestEvent(root, browsingContext1, monitoringEvents);
   await emitTestEvent(root, browsingContext2, monitoringEvents);
-  is(events1.length, 2);
-  is(events2.length, 3);
+  is(events1.length, 1);
+  is(events2.length, 2);
 
   root.destroy();
   gBrowser.removeTab(tab2);
