@@ -72,6 +72,9 @@ async function setupHosts(scripts) {
       allowed_extensions: [ID],
     };
 
+    
+    script._hookModifyManifest?.(manifest);
+
     let manifestPath = getPath(`${script.name}.json`);
     await OS.File.writeAtomic(manifestPath, JSON.stringify(manifest));
 
@@ -123,21 +126,14 @@ async function setupHosts(scripts) {
         let batBody = `@ECHO OFF\n${pythonPath} -u "${scriptPath}" %*\n`;
         await OS.File.writeAtomic(batPath, batBody);
 
-        
-        for (let [name, path] of [
-          [script.name, batPath],
-          [`relative.${script.name}`, OS.Path.basename(batPath)],
-        ]) {
-          script.name = name;
-          let manifestPath = await writeManifest(script, scriptPath, path);
+        let manifestPath = await writeManifest(script, scriptPath, batPath);
 
-          registry.setValue(
-            Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-            `${REGKEY}\\${script.name}`,
-            "",
-            manifestPath
-          );
-        }
+        registry.setValue(
+          Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+          `${REGKEY}\\${script.name}`,
+          "",
+          manifestPath
+        );
       }
       break;
 
