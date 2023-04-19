@@ -254,10 +254,7 @@ macro_rules! metadata {
     };
 }
 
-
-#[cfg(not(feature = "std"))]
-#[macro_use]
-mod lazy_static;
+pub(crate) mod lazy;
 
 
 

@@ -75,6 +75,11 @@ use crate::stdlib::{
 
 
 
+
+
+
+
+
 pub trait Subscriber: 'static {
     
 
@@ -297,6 +302,17 @@ pub trait Subscriber: 'static {
     
     
     
+    fn event_enabled(&self, event: &Event<'_>) -> bool {
+        let _ = event;
+        true
+    }
+
+    
+    
+    
+    
+    
+    
     
     
     
@@ -484,6 +500,66 @@ impl dyn Subscriber {
     }
 }
 
+impl dyn Subscriber + Send {
+    
+    pub fn is<T: Any>(&self) -> bool {
+        self.downcast_ref::<T>().is_some()
+    }
+
+    
+    
+    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        unsafe {
+            let raw = self.downcast_raw(TypeId::of::<T>())?;
+            if raw.is_null() {
+                None
+            } else {
+                Some(&*(raw as *const _))
+            }
+        }
+    }
+}
+
+impl dyn Subscriber + Sync {
+    
+    pub fn is<T: Any>(&self) -> bool {
+        self.downcast_ref::<T>().is_some()
+    }
+
+    
+    
+    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        unsafe {
+            let raw = self.downcast_raw(TypeId::of::<T>())?;
+            if raw.is_null() {
+                None
+            } else {
+                Some(&*(raw as *const _))
+            }
+        }
+    }
+}
+
+impl dyn Subscriber + Send + Sync {
+    
+    pub fn is<T: Any>(&self) -> bool {
+        self.downcast_ref::<T>().is_some()
+    }
+
+    
+    
+    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
+        unsafe {
+            let raw = self.downcast_raw(TypeId::of::<T>())?;
+            if raw.is_null() {
+                None
+            } else {
+                Some(&*(raw as *const _))
+            }
+        }
+    }
+}
+
 
 
 
@@ -602,7 +678,10 @@ impl Subscriber for NoSubscriber {
     fn exit(&self, _span: &span::Id) {}
 }
 
-impl Subscriber for Box<dyn Subscriber + Send + Sync + 'static> {
+impl<S> Subscriber for Box<S>
+where
+    S: Subscriber + ?Sized,
+{
     #[inline]
     fn register_callsite(&self, metadata: &'static Metadata<'static>) -> Interest {
         self.as_ref().register_callsite(metadata)
@@ -631,6 +710,11 @@ impl Subscriber for Box<dyn Subscriber + Send + Sync + 'static> {
     #[inline]
     fn record_follows_from(&self, span: &span::Id, follows: &span::Id) {
         self.as_ref().record_follows_from(span, follows)
+    }
+
+    #[inline]
+    fn event_enabled(&self, event: &Event<'_>) -> bool {
+        self.as_ref().event_enabled(event)
     }
 
     #[inline]
@@ -679,7 +763,10 @@ impl Subscriber for Box<dyn Subscriber + Send + Sync + 'static> {
     }
 }
 
-impl Subscriber for Arc<dyn Subscriber + Send + Sync + 'static> {
+impl<S> Subscriber for Arc<S>
+where
+    S: Subscriber + ?Sized,
+{
     #[inline]
     fn register_callsite(&self, metadata: &'static Metadata<'static>) -> Interest {
         self.as_ref().register_callsite(metadata)
@@ -708,6 +795,11 @@ impl Subscriber for Arc<dyn Subscriber + Send + Sync + 'static> {
     #[inline]
     fn record_follows_from(&self, span: &span::Id, follows: &span::Id) {
         self.as_ref().record_follows_from(span, follows)
+    }
+
+    #[inline]
+    fn event_enabled(&self, event: &Event<'_>) -> bool {
+        self.as_ref().event_enabled(event)
     }
 
     #[inline]

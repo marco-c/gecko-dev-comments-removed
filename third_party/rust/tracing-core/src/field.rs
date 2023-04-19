@@ -116,6 +116,7 @@ use crate::stdlib::{
     hash::{Hash, Hasher},
     num,
     ops::Range,
+    string::String,
 };
 
 use self::private::ValidLen;
@@ -142,6 +143,16 @@ pub struct Field {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Empty;
+
+
+
+
+
+
+
+
+
+
 
 
 pub struct FieldSet {
@@ -274,6 +285,16 @@ pub trait Visit {
 
     
     fn record_u64(&mut self, field: &Field, value: u64) {
+        self.record_debug(field, &value)
+    }
+
+    
+    fn record_i128(&mut self, field: &Field, value: i128) {
+        self.record_debug(field, &value)
+    }
+
+    
+    fn record_u128(&mut self, field: &Field, value: u128) {
         self.record_debug(field, &value)
     }
 
@@ -489,6 +510,8 @@ impl_values! {
     record_u64(usize, u32, u16, u8 as u64),
     record_i64(i64),
     record_i64(isize, i32, i16, i8 as i64),
+    record_u128(u128),
+    record_i128(i128),
     record_bool(bool),
     record_f64(f64, f32 as f64)
 }
@@ -593,6 +616,13 @@ where
     #[inline]
     fn record(&self, key: &Field, visitor: &mut dyn Visit) {
         self.as_ref().record(key, visitor)
+    }
+}
+
+impl crate::sealed::Sealed for String {}
+impl Value for String {
+    fn record(&self, key: &Field, visitor: &mut dyn Visit) {
+        visitor.record_str(key, self.as_str())
     }
 }
 
@@ -888,6 +918,40 @@ impl fmt::Display for FieldSet {
         f.debug_set()
             .entries(self.names.iter().map(display))
             .finish()
+    }
+}
+
+impl Eq for FieldSet {}
+
+impl PartialEq for FieldSet {
+    fn eq(&self, other: &Self) -> bool {
+        if core::ptr::eq(&self, &other) {
+            true
+        } else if cfg!(not(debug_assertions)) {
+            
+            
+            self.callsite == other.callsite
+        } else {
+            
+            
+            
+
+            
+            
+            let Self {
+                names: lhs_names,
+                callsite: lhs_callsite,
+            } = self;
+
+            let Self {
+                names: rhs_names,
+                callsite: rhs_callsite,
+            } = &other;
+
+            
+            
+            lhs_callsite == rhs_callsite && lhs_names == rhs_names
+        }
     }
 }
 

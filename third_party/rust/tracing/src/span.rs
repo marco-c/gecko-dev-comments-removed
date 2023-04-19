@@ -1191,7 +1191,7 @@ impl Span {
     
     
     
-    pub fn record<Q: ?Sized, V>(&self, field: &Q, value: &V) -> &Self
+    pub fn record<Q: ?Sized, V>(&self, field: &Q, value: V) -> &Self
     where
         Q: field::AsField,
         V: field::Value,
@@ -1201,7 +1201,7 @@ impl Span {
                 self.record_all(
                     &meta
                         .fields()
-                        .value_set(&[(&field, Some(value as &dyn field::Value))]),
+                        .value_set(&[(&field, Some(&value as &dyn field::Value))]),
                 );
             }
         }
@@ -1614,4 +1614,10 @@ mod test {
     impl AssertSync for Span {}
     impl AssertSync for Entered<'_> {}
     impl AssertSync for EnteredSpan {}
+
+    #[test]
+    fn test_record_backwards_compat() {
+        Span::current().record("some-key", &"some text");
+        Span::current().record("some-key", &false);
+    }
 }

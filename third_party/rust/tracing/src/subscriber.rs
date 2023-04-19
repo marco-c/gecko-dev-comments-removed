@@ -52,9 +52,6 @@ where
 
 
 
-
-
-
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[must_use = "Dropping the guard unregisters the subscriber."]
