@@ -95,11 +95,12 @@ int GetCPUInfo(CPUFeature feature) {
     
     
     
-    return (cpu_info[2] & 0x10000000) != 0 &&
+    return (cpu_info[2] & 0x10000000) != 0  &&
            (cpu_info[2] & 0x04000000) != 0  &&
            (cpu_info[2] & 0x08000000) != 0  &&
            (xgetbv(0) & 0x00000006) == 6  &&
-           (cpu_info7[1] & 0x00000020) != 0;
+           (cpu_info7[1] & 0x00000020) != 0  &&
+           (cpu_info7[1] & 0x00000100) != 0 ;
   }
 #endif  
   return 0;
