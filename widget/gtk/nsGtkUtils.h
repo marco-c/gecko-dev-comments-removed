@@ -20,32 +20,4 @@ static inline gpointer FuncToGpointer(T aFunction) {
       (reinterpret_cast<void (*)()>(aFunction)));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class T>
-static inline void MozClearPointer(T*& pointer, void (*destroy)(T*)) {
-  T* hold = pointer;
-  pointer = nullptr;
-  if (hold) {
-    destroy(hold);
-  }
-}
-
 #endif  
