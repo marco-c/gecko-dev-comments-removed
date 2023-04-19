@@ -264,10 +264,10 @@ var TabManager = {
 
 
 
-  removeTab(tab) {
+  async removeTab(tab) {
     const ownerWindow = this._getWindowForTab(tab);
     const tabBrowser = this.getTabBrowser(ownerWindow);
-    tabBrowser.removeTab(tab);
+    await tabBrowser.removeTab(tab);
   },
 
   

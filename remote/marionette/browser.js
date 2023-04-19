@@ -211,7 +211,7 @@ browser.Context = class {
 
 
 
-  closeTab() {
+  async closeTab() {
     
     
     
@@ -233,10 +233,10 @@ browser.Context = class {
     let tabClosed;
 
     if (lazy.AppInfo.isAndroid) {
-      lazy.TabManager.removeTab(this.tab);
+      await lazy.TabManager.removeTab(this.tab);
     } else if (lazy.AppInfo.isFirefox) {
       tabClosed = new lazy.EventPromise(this.tab, "TabClose");
-      this.tabBrowser.removeTab(this.tab);
+      await this.tabBrowser.removeTab(this.tab);
     } else {
       throw new lazy.error.UnsupportedOperationError(
         `closeTab() not supported for ${lazy.AppInfo.name}`
