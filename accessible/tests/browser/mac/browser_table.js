@@ -301,6 +301,7 @@ addAccessibleTask(
 
 
 
+
 async function testIsLayout(table, elem, event, change, isLayout) {
   info(
     "Changing " +
@@ -308,7 +309,10 @@ async function testIsLayout(table, elem, event, change, isLayout) {
       ", expecting table change to " +
       (isLayout ? "AXGroup" : "AXTable")
   );
-  const toWait = waitForEvent(event, elem);
+  const toWait = waitForEvent(
+    event,
+    event == EVENT_TABLE_STYLING_CHANGED ? "table" : elem
+  );
   await change();
   await toWait;
   is(
@@ -326,7 +330,7 @@ async function testIsLayout(table, elem, event, change, isLayout) {
 
 
 addAccessibleTask(
-  `<table id="sampleTable" summary="example summary">
+  `<table id="table" summary="example summary">
     <tr role="presentation">
       <td id="cellOne">cell1</td>
       <td>cell2</td>
@@ -337,7 +341,7 @@ addAccessibleTask(
     </tr>
   </table>`,
   async (browser, accDoc) => {
-    let table = getNativeInterface(accDoc, "sampleTable");
+    let table = getNativeInterface(accDoc, "table");
     
     
     is(table.getAttributeValue("AXRole"), "AXTable", "Table is data table");
@@ -346,13 +350,11 @@ addAccessibleTask(
     
     await testIsLayout(
       table,
-      "sampleTable",
+      "table",
       EVENT_OBJECT_ATTRIBUTE_CHANGED,
       async () => {
         await SpecialPowers.spawn(browser, [], () => {
-          content.document
-            .getElementById("sampleTable")
-            .removeAttribute("summary");
+          content.document.getElementById("table").removeAttribute("summary");
         });
       },
       true
@@ -458,7 +460,7 @@ addAccessibleTask(
 
 
 addAccessibleTask(
-  `<table id="sampleTable">
+  `<table id="table">
     <tr id="rowOne">
       <td id="cellOne">cell1</td>
       <td>cell2</td>
@@ -469,7 +471,7 @@ addAccessibleTask(
     </tr>
   </table>`,
   async (browser, accDoc) => {
-    let table = getNativeInterface(accDoc, "sampleTable");
+    let table = getNativeInterface(accDoc, "table");
     
     is(table.getAttributeValue("AXRole"), "AXGroup", "Table is layout table");
 
