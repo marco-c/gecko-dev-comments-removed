@@ -16,8 +16,8 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_FAILURE/);
 
 requestLongerTimeout(5);
 
-const { BrowserToolboxLauncher } = ChromeUtils.import(
-  "resource://devtools/client/framework/browser-toolbox/Launcher.jsm"
+const { BrowserToolboxLauncher } = ChromeUtils.importESModule(
+  "resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs"
 );
 
 add_task(async function() {
