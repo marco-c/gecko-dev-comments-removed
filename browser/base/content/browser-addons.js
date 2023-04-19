@@ -1540,7 +1540,10 @@ var gUnifiedExtensions = {
       
       
       if ((await this.getActiveExtensions()).length === 0) {
-        await BrowserOpenAddonsMgr("addons://discover/");
+        
+        if (aEvent.button === 0) {
+          await BrowserOpenAddonsMgr("addons://discover/");
+        }
         return;
       }
 
