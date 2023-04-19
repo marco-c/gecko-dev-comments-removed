@@ -820,7 +820,9 @@ void DtlsTransport::set_dtls_state(DtlsTransportState state) {
 }
 
 void DtlsTransport::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
+  
   SignalDtlsHandshakeError(error);
+  SendDtlsHandshakeError(error);
 }
 
 void DtlsTransport::ConfigureHandshakeTimeout() {
