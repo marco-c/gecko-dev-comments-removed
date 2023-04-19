@@ -104,21 +104,28 @@ spa_pod* BuildFormat(spa_pod_builder* builder,
   spa_pod_builder_add(builder, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
 
   if (modifiers.size()) {
-    spa_pod_builder_prop(
-        builder, SPA_FORMAT_VIDEO_modifier,
-        SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
-    spa_pod_builder_push_choice(builder, &frames[1], SPA_CHOICE_Enum, 0);
-    
-    for (int64_t val : modifiers) {
-      spa_pod_builder_long(builder, val);
+    if (modifiers.size() == 1 && modifiers[0] == DRM_FORMAT_MOD_INVALID) {
+      spa_pod_builder_prop(builder, SPA_FORMAT_VIDEO_modifier,
+                           SPA_POD_PROP_FLAG_MANDATORY);
+      spa_pod_builder_long(builder, modifiers[0]);
+    } else {
+      spa_pod_builder_prop(
+          builder, SPA_FORMAT_VIDEO_modifier,
+          SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+      spa_pod_builder_push_choice(builder, &frames[1], SPA_CHOICE_Enum, 0);
+
       
-      
-      if (first) {
+      for (int64_t val : modifiers) {
         spa_pod_builder_long(builder, val);
-        first = false;
+        
+        
+        if (first) {
+          spa_pod_builder_long(builder, val);
+          first = false;
+        }
       }
+      spa_pod_builder_pop(builder, &frames[1]);
     }
-    spa_pod_builder_pop(builder, &frames[1]);
   }
 
   spa_pod_builder_add(
@@ -471,8 +478,12 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
   
   paths[kModulePipewire].push_back(kPipeWireLib);
   paths[kModuleDrm].push_back(kDrmLib);
+
   if (!InitializeStubs(paths)) {
-    RTC_LOG(LS_ERROR) << "Failed to load the PipeWire library and symbols.";
+    RTC_LOG(LS_ERROR)
+        << "One of following libraries is missing on your system:\n"
+        << " - PipeWire (" << kPipeWireLib << ")\n"
+        << " - drm (" << kDrmLib << ")";
     return false;
   }
 #endif  
