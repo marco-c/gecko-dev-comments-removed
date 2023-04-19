@@ -78,6 +78,10 @@ int ARGBToAR30(const uint8_t* src_argb,
                int height);
 
 
+#define ABGRToRGB24 ARGBToRAW
+#define ABGRToRAW ARGBToRGB24
+
+
 LIBYUV_API
 int ARGBToRGB24(const uint8_t* src_argb,
                 int src_stride_argb,
@@ -151,6 +155,30 @@ int ARGBToI444(const uint8_t* src_argb,
 
 
 LIBYUV_API
+int ARGBToAR64(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_ar64,
+               int dst_stride_ar64,
+               int width,
+               int height);
+
+
+#define ABGRToAB64 ARGBToAR64
+
+
+LIBYUV_API
+int ARGBToAB64(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_ab64,
+               int dst_stride_ab64,
+               int width,
+               int height);
+
+
+#define ABGRToAR64 ARGBToAB64
+
+
+LIBYUV_API
 int ARGBToI422(const uint8_t* src_argb,
                int src_stride_argb,
                uint8_t* dst_y,
@@ -212,6 +240,15 @@ int ARGBToJ400(const uint8_t* src_argb,
 
 
 LIBYUV_API
+int RGBAToJ400(const uint8_t* src_rgba,
+               int src_stride_rgba,
+               uint8_t* dst_yj,
+               int dst_stride_yj,
+               int width,
+               int height);
+
+
+LIBYUV_API
 int ARGBToI400(const uint8_t* src_argb,
                int src_stride_argb,
                uint8_t* dst_y,
@@ -252,8 +289,19 @@ int ARGBToNV21(const uint8_t* src_argb,
 
 
 LIBYUV_API
-int ARGBToNV21(const uint8_t* src_argb,
-               int src_stride_argb,
+int ABGRToNV12(const uint8_t* src_abgr,
+               int src_stride_abgr,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int ABGRToNV21(const uint8_t* src_abgr,
+               int src_stride_abgr,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_vu,
@@ -276,6 +324,17 @@ int ARGBToUYVY(const uint8_t* src_argb,
                int src_stride_argb,
                uint8_t* dst_uyvy,
                int dst_stride_uyvy,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int RAWToJNV21(const uint8_t* src_raw,
+               int src_stride_raw,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
 

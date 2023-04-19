@@ -10,6 +10,7 @@
 
 
 
+
 """Script to cleanup symlinks created from setup_links.py.
 
 Before 177567c518b121731e507e9b9c4049c4dc96e4c8 (#15754) we had a Chromium
@@ -18,8 +19,8 @@ landing that change, this script cleans up any old symlinks, avoiding annoying
 manual cleanup needed in order to complete gclient sync.
 """
 
+import argparse
 import logging
-import optparse
 import os
 import shelve
 import subprocess
@@ -32,14 +33,14 @@ LINKS_DB = 'links'
 
 SCHEMA_VERSION = 1
 
-class WebRTCLinkSetup(object):
+class WebRTCLinkSetup():
   def __init__(self, links_db, dry_run=False):
     self._dry_run = dry_run
     self._links_db = links_db
 
   def CleanupLinks(self):
     logging.debug('CleanupLinks')
-    for source, link_path  in self._links_db.iteritems():
+    for source, link_path  in self._links_db.tems():
       if source == 'SCHEMA_VERSION':
         continue
       if os.path.islink(link_path) or sys.platform.startswith('win'):
@@ -71,15 +72,15 @@ def _initialize_database(filename):
 
 
 def main():
-  parser = optparse.OptionParser()
-  parser.add_option('-d', '--dry-run', action='store_true', default=False,
-                    help='Print what would be done, but don\'t perform any '
-                         'operations. This will automatically set logging to '
-                         'verbose.')
-  parser.add_option('-v', '--verbose', action='store_const',
-                    const=logging.DEBUG, default=logging.INFO,
-                    help='Print verbose output for debugging.')
-  options, _ = parser.parse_args()
+  p = argparse.ArgumentParser()
+  p.add_argument('-d', '--dry-run', action='store_true', default=False,
+                 help='Print what would be done, but don\'t perform any '
+                      'operations. This will automatically set logging to '
+                      'verbose.')
+  p.add_argument('-v', '--verbose', action='store_const',
+                 const=logging.DEBUG, default=logging.INFO,
+                 help='Print verbose output for debugging.')
+  options = p.parse_args()
 
   if options.dry_run:
     options.verbose = logging.DEBUG

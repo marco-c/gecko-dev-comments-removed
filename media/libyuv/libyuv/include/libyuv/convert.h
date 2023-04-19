@@ -44,6 +44,36 @@ int I444ToI420(const uint8_t* src_y,
 
 
 LIBYUV_API
+int I444ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I444ToNV21(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
+               int width,
+               int height);
+
+
+LIBYUV_API
 int I422ToI420(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_u,
@@ -56,6 +86,83 @@ int I422ToI420(const uint8_t* src_y,
                int dst_stride_u,
                uint8_t* dst_v,
                int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I422ToI444(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I422ToI210(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int MM21ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int MM21ToI420(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I422ToNV21(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
 
@@ -76,6 +183,23 @@ int I420Copy(const uint8_t* src_y,
              int dst_stride_v,
              int width,
              int height);
+
+
+LIBYUV_API
+int I420ToI444(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
 
 
 #define I010ToI010 I010Copy
@@ -114,6 +238,246 @@ int I010ToI420(const uint16_t* src_y,
                int width,
                int height);
 
+#define H210ToH420 I210ToI420
+LIBYUV_API
+int I210ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define H210ToH422 I210ToI422
+LIBYUV_API
+int I210ToI422(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define H410ToH444 I410ToI444
+LIBYUV_API
+int I410ToI444(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define H012ToH420 I012ToI420
+LIBYUV_API
+int I012ToI420(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define H212ToH422 I212ToI422
+LIBYUV_API
+int I212ToI422(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define H412ToH444 I412ToI444
+LIBYUV_API
+int I412ToI444(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define I412ToI012 I410ToI010
+#define H410ToH010 I410ToI010
+#define H412ToH012 I410ToI010
+LIBYUV_API
+int I410ToI010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+#define I212ToI012 I210ToI010
+#define H210ToH010 I210ToI010
+#define H212ToH012 I210ToI010
+LIBYUV_API
+int I210ToI010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I010ToI410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+#define I012ToI412 I010ToI410
+
+
+LIBYUV_API
+int I210ToI410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
+
+
+#define I212ToI412 I210ToI410
+
+
+LIBYUV_API
+int I010ToP010(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I210ToP210(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I012ToP012(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I212ToP212(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
 
 LIBYUV_API
 int I400ToI420(const uint8_t* src_y,
@@ -124,6 +488,17 @@ int I400ToI420(const uint8_t* src_y,
                int dst_stride_u,
                uint8_t* dst_v,
                int dst_stride_v,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int I400ToNV21(const uint8_t* src_y,
+               int src_stride_y,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
 
@@ -161,6 +536,70 @@ int NV21ToI420(const uint8_t* src_y,
 
 
 LIBYUV_API
+int NV12ToNV24(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int NV16ToNV24(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int P010ToP410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+#define P012ToP412 P010ToP410
+
+
+#define P016ToP416 P010ToP410
+
+
+LIBYUV_API
+int P210ToP410(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_uv,
+               int src_stride_uv,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+#define P212ToP412 P210ToP410
+
+
+#define P216ToP416 P210ToP410
+
+
+LIBYUV_API
 int YUY2ToI420(const uint8_t* src_yuy2,
                int src_stride_yuy2,
                uint8_t* dst_y,
@@ -187,14 +626,23 @@ int UYVYToI420(const uint8_t* src_uyvy,
 
 
 LIBYUV_API
-int M420ToI420(const uint8_t* src_m420,
-               int src_stride_m420,
+int AYUVToNV12(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_u,
-               int dst_stride_u,
-               uint8_t* dst_v,
-               int dst_stride_v,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+LIBYUV_API
+int AYUVToNV21(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
 
@@ -283,7 +731,33 @@ int RGB24ToI420(const uint8_t* src_rgb24,
 
 
 LIBYUV_API
+int RGB24ToJ420(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
+                uint8_t* dst_y,
+                int dst_stride_y,
+                uint8_t* dst_u,
+                int dst_stride_u,
+                uint8_t* dst_v,
+                int dst_stride_v,
+                int width,
+                int height);
+
+
+LIBYUV_API
 int RAWToI420(const uint8_t* src_raw,
+              int src_stride_raw,
+              uint8_t* dst_y,
+              int dst_stride_y,
+              uint8_t* dst_u,
+              int dst_stride_u,
+              uint8_t* dst_v,
+              int dst_stride_v,
+              int width,
+              int height);
+
+
+LIBYUV_API
+int RAWToJ420(const uint8_t* src_raw,
               int src_stride_raw,
               uint8_t* dst_y,
               int dst_stride_y,
@@ -333,7 +807,24 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int width,
                    int height);
 
-#ifdef HAVE_JPEG
+
+LIBYUV_API
+int RGB24ToJ400(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
+                uint8_t* dst_yj,
+                int dst_stride_yj,
+                int width,
+                int height);
+
+
+LIBYUV_API
+int RAWToJ400(const uint8_t* src_raw,
+              int src_stride_raw,
+              uint8_t* dst_yj,
+              int dst_stride_yj,
+              int width,
+              int height);
+
 
 
 LIBYUV_API
@@ -352,11 +843,36 @@ int MJPGToI420(const uint8_t* sample,
 
 
 LIBYUV_API
+int MJPGToNV21(const uint8_t* sample,
+               size_t sample_size,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
+               int src_width,
+               int src_height,
+               int dst_width,
+               int dst_height);
+
+
+LIBYUV_API
+int MJPGToNV12(const uint8_t* sample,
+               size_t sample_size,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int src_width,
+               int src_height,
+               int dst_width,
+               int dst_height);
+
+
+LIBYUV_API
 int MJPGSize(const uint8_t* sample,
              size_t sample_size,
              int* width,
              int* height);
-#endif
 
 
 

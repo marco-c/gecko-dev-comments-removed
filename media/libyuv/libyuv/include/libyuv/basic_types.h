@@ -29,6 +29,8 @@ typedef signed char int8_t;
 #else
 #include <stdint.h>  
 #endif               
+
+#ifdef LIBYUV_LEGACY_TYPES
 typedef uint64_t uint64;
 typedef int64_t int64;
 typedef uint32_t uint32;
@@ -37,6 +39,7 @@ typedef uint16_t uint16;
 typedef int16_t int16;
 typedef uint8_t uint8;
 typedef int8_t int8;
+#endif  
 #endif  
 
 #if !defined(LIBYUV_API)
