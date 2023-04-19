@@ -525,10 +525,16 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   
   
   
+  
   virtual void set_output_will_be_muted(bool muted) = 0;
 
   
   virtual void SetRuntimeSetting(RuntimeSetting setting) = 0;
+
+  
+  
+  
+  virtual bool PostRuntimeSetting(RuntimeSetting setting) { return false; }
 
   
   
