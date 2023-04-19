@@ -1458,14 +1458,7 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
 
 
 
-
-#if defined(WEBRTC_MAC)
-#define MAYBE_MinTransmitBitrateRespectsRemb \
-  DISABLED_MinTransmitBitrateRespectsRemb
-#else
-#define MAYBE_MinTransmitBitrateRespectsRemb MinTransmitBitrateRespectsRemb
-#endif
-TEST_F(VideoSendStreamTest, MAYBE_MinTransmitBitrateRespectsRemb) {
+TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   static const int kMinTransmitBitrateBps = 400000;
   static const int kHighBitrateBps = 150000;
   static const int kRembBitrateBps = 80000;
@@ -1490,27 +1483,29 @@ TEST_F(VideoSendStreamTest, MAYBE_MinTransmitBitrateRespectsRemb) {
         return DROP_PACKET;
 
       RtpPacket rtp_packet;
-      if (!rtp_packet.Parse(packet, length))
-        return DROP_PACKET;
+      RTC_CHECK(rtp_packet.Parse(packet, length));
+      const uint32_t ssrc = rtp_packet.Ssrc();
       RTC_DCHECK(stream_);
-      VideoSendStream::Stats stats;
-      SendTask(RTC_FROM_HERE, task_queue_,
-               [&]() { stats = stream_->GetStats(); });
-      if (!stats.substreams.empty()) {
-        EXPECT_EQ(1u, stats.substreams.size());
-        int total_bitrate_bps =
-            stats.substreams.begin()->second.total_bitrate_bps;
-        test::PrintResult("bitrate_stats_", "min_transmit_bitrate_low_remb",
-                          "bitrate_bps", static_cast<size_t>(total_bitrate_bps),
-                          "bps", false);
-        if (total_bitrate_bps > kHighBitrateBps) {
-          rtp_rtcp_->SetRemb(kRembBitrateBps, {rtp_packet.Ssrc()});
-          bitrate_capped_ = true;
-        } else if (bitrate_capped_ &&
-                   total_bitrate_bps < kRembRespectedBitrateBps) {
-          observation_complete_.Set();
+
+      task_queue_->PostTask(ToQueuedTask([this, ssrc]() {
+        VideoSendStream::Stats stats = stream_->GetStats();
+        if (!stats.substreams.empty()) {
+          EXPECT_EQ(1u, stats.substreams.size());
+          int total_bitrate_bps =
+              stats.substreams.begin()->second.total_bitrate_bps;
+          test::PrintResult(
+              "bitrate_stats_", "min_transmit_bitrate_low_remb", "bitrate_bps",
+              static_cast<size_t>(total_bitrate_bps), "bps", false);
+          if (total_bitrate_bps > kHighBitrateBps) {
+            rtp_rtcp_->SetRemb(kRembBitrateBps, {ssrc});
+            bitrate_capped_ = true;
+          } else if (bitrate_capped_ &&
+                     total_bitrate_bps < kRembRespectedBitrateBps) {
+            observation_complete_.Set();
+          }
         }
-      }
+      }));
+
       
       return DROP_PACKET;
     }
@@ -3893,54 +3888,55 @@ class ContentSwitchTest : public test::SendTest {
   }
 
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
-    MutexLock lock(&mutex_);
+    task_queue_->PostTask(ToQueuedTask([this]() {
+      MutexLock lock(&mutex_);
 
-    auto internal_send_peer = test::VideoSendStreamPeer(send_stream_);
-    float pacing_factor =
-        internal_send_peer.GetPacingFactorOverride().value_or(0.0f);
-    float expected_pacing_factor = 1.1;  
-    VideoSendStream::Stats stats;
-    SendTask(RTC_FROM_HERE, task_queue_,
-             [&stats, stream = send_stream_]() { stats = stream->GetStats(); });
-    if (stats.content_type == webrtc::VideoContentType::SCREENSHARE) {
-      expected_pacing_factor = 1.0f;  
-    }
-
-    EXPECT_NEAR(expected_pacing_factor, pacing_factor, 1e-6);
-
-    
-    
-    if (++packets_sent_ < kMinPacketsToSend)
-      return SEND_PACKET;
-
-    if (state_ != StreamState::kAfterSwitchBack) {
-      
-      
-      
-      packets_sent_ = 0;
-      if (encoder_config_.content_type ==
-          VideoEncoderConfig::ContentType::kRealtimeVideo) {
-        encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-      } else {
-        encoder_config_.content_type =
-            VideoEncoderConfig::ContentType::kRealtimeVideo;
+      auto internal_send_peer = test::VideoSendStreamPeer(send_stream_);
+      float pacing_factor =
+          internal_send_peer.GetPacingFactorOverride().value_or(0.0f);
+      float expected_pacing_factor = 1.1;  
+      VideoSendStream::Stats stats = send_stream_->GetStats();
+      if (stats.content_type == webrtc::VideoContentType::SCREENSHARE) {
+        expected_pacing_factor = 1.0f;  
       }
-      switch (state_) {
-        case StreamState::kBeforeSwitch:
-          state_ = StreamState::kInScreenshare;
-          break;
-        case StreamState::kInScreenshare:
-          state_ = StreamState::kAfterSwitchBack;
-          break;
-        case StreamState::kAfterSwitchBack:
-          RTC_NOTREACHED();
-          break;
-      }
-      content_switch_event_.Set();
-      return SEND_PACKET;
-    }
 
-    observation_complete_.Set();
+      EXPECT_NEAR(expected_pacing_factor, pacing_factor, 1e-6);
+
+      
+      
+      if (++packets_sent_ < kMinPacketsToSend)
+        return;
+
+      if (state_ != StreamState::kAfterSwitchBack) {
+        
+        
+        
+        packets_sent_ = 0;
+        if (encoder_config_.content_type ==
+            VideoEncoderConfig::ContentType::kRealtimeVideo) {
+          encoder_config_.content_type =
+              VideoEncoderConfig::ContentType::kScreen;
+        } else {
+          encoder_config_.content_type =
+              VideoEncoderConfig::ContentType::kRealtimeVideo;
+        }
+        switch (state_) {
+          case StreamState::kBeforeSwitch:
+            state_ = StreamState::kInScreenshare;
+            break;
+          case StreamState::kInScreenshare:
+            state_ = StreamState::kAfterSwitchBack;
+            break;
+          case StreamState::kAfterSwitchBack:
+            RTC_NOTREACHED();
+            break;
+        }
+        content_switch_event_.Set();
+        return;
+      }
+      observation_complete_.Set();
+    }));
+
     return SEND_PACKET;
   }
 
