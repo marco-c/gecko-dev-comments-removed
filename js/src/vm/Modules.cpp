@@ -16,6 +16,7 @@
 #include "jstypes.h"  
 
 #include "builtin/ModuleObject.h"  
+#include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "js/Context.h"                 
 #include "js/PropertyAndElement.h"
@@ -302,8 +303,6 @@ using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 using ModuleSet =
     GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
 
-using ModuleVector = GCVector<ModuleObject*, 0, SystemAllocPolicy>;
-
 static ModuleObject* HostResolveImportedModule(
     JSContext* cx, Handle<ModuleObject*> module,
     Handle<ModuleRequestObject*> moduleRequest,
@@ -321,6 +320,9 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
                                   MutableHandle<ModuleVector> stack,
                                   size_t index, size_t* indexOut);
 static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module);
+static bool GatherAvailableModuleAncestors(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ModuleVector> execList);
 
 static ArrayObject* NewList(JSContext* cx) {
   
@@ -339,8 +341,6 @@ static bool ArrayContainsName(Handle<ArrayObject*> array,
   return false;
 }
 
-#ifdef DEBUG
-
 static bool ContainsElement(Handle<ModuleVector> stack, ModuleObject* module) {
   for (ModuleObject* m : stack) {
     if (m == module) {
@@ -351,6 +351,7 @@ static bool ContainsElement(Handle<ModuleVector> stack, ModuleObject* module) {
   return false;
 }
 
+#ifdef DEBUG
 static size_t CountElements(Handle<ModuleVector> stack, ModuleObject* module) {
   size_t count = 0;
   for (ModuleObject* m : stack) {
@@ -361,7 +362,6 @@ static size_t CountElements(Handle<ModuleVector> stack, ModuleObject* module) {
 
   return count;
 }
-
 #endif
 
 
@@ -1502,6 +1502,8 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
       
       
       
+
+      
       requiredModule->setStatus(MODULE_STATUS_EVALUATED);
 
       
@@ -1533,4 +1535,95 @@ static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
   
   
   return ModuleObject::execute(cx, module);
+}
+
+struct EvalOrderComparator {
+  bool operator()(ModuleObject* a, ModuleObject* b, bool* lessOrEqualp) {
+    int32_t result = int32_t(a->getAsyncEvaluatingPostOrder()) -
+                     int32_t(b->getAsyncEvaluatingPostOrder());
+    *lessOrEqualp = (result <= 0);
+    return true;
+  }
+};
+
+bool js::GatherAvailableModuleAncestors(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ModuleVector> sortedList) {
+  MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATED);
+  MOZ_ASSERT(sortedList.empty());
+
+  if (!::GatherAvailableModuleAncestors(cx, module, sortedList)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+
+  Rooted<ModuleVector> scratch(cx);
+  if (!scratch.resize(sortedList.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  MOZ_ALWAYS_TRUE(MergeSort(sortedList.begin(), sortedList.length(),
+                            scratch.begin(), EvalOrderComparator()));
+  return true;
+}
+
+
+
+static bool GatherAvailableModuleAncestors(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ModuleVector> execList) {
+  
+  
+  Rooted<ListObject*> asyncParentModules(cx, module->asyncParentModules());
+  Rooted<ModuleObject*> m(cx);
+  for (uint32_t i = 0; i != asyncParentModules->length(); i++) {
+    m = &asyncParentModules->getDenseElement(i).toObject().as<ModuleObject>();
+
+    
+    
+    if (!m->getCycleRoot()->hadEvaluationError() &&
+        !ContainsElement(execList, m)) {
+      
+
+      
+      MOZ_ASSERT(m->status() == MODULE_STATUS_EVALUATED);
+
+      
+      MOZ_ASSERT(!m->hadEvaluationError());
+
+      
+      MOZ_ASSERT(m->isAsyncEvaluating());
+
+      
+      MOZ_ASSERT(m->pendingAsyncDependencies() > 0);
+
+      
+      
+      m->setPendingAsyncDependencies(m->pendingAsyncDependencies() - 1);
+
+      
+      if (m->pendingAsyncDependencies() == 0) {
+        
+        if (!execList.append(m)) {
+          return false;
+        }
+
+        
+        
+        if (!m->isAsync() &&
+            !::GatherAvailableModuleAncestors(cx, m, execList)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  
+  return true;
 }

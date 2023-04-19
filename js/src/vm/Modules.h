@@ -13,12 +13,15 @@
 
 #include "builtin/ModuleObject.h"
 #include "js/AllocPolicy.h"
+#include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/RootingAPI.h"
 
 struct JSContext;
 
 namespace js {
+
+using ModuleVector = GCVector<ModuleObject*, 0, SystemAllocPolicy>;
 
 bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                          Handle<JSAtom*> exportName,
@@ -34,6 +37,9 @@ bool ModuleInstantiate(JSContext* cx, Handle<ModuleObject*> module);
 
 bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                     MutableHandle<Value> result);
+
+bool GatherAvailableModuleAncestors(JSContext* cx, Handle<ModuleObject*> module,
+                                    MutableHandle<ModuleVector> sortedList);
 
 }  
 

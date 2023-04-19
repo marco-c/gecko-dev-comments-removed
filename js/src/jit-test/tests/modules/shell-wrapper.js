@@ -219,7 +219,3 @@ t.declarationInstantiation();
 t.evaluation();
 testMethod(t, "declarationInstantiation");
 testMethod(t, "evaluation");
-
-
-const s = parseModule(``);
-assertEq(s.gatherAsyncParentCompletions, undefined);
