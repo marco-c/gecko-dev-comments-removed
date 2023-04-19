@@ -4,15 +4,8 @@
 
 "use strict";
 
-var { loader, require } = ChromeUtils.importESModule(
+var { loader, require, DevToolsLoader } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
-);
-
-var {
-  useDistinctSystemPrincipalLoader,
-  releaseDistinctSystemPrincipalLoader,
-} = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
 );
 
 
@@ -267,16 +260,15 @@ async function openToolbox(commands) {
   }
 }
 
-let releaseTestLoader = null;
 function installTestingServer() {
   
   
   
   
 
-  const requester = {};
-  const testLoader = useDistinctSystemPrincipalLoader(requester);
-  releaseTestLoader = () => releaseDistinctSystemPrincipalLoader(requester);
+  const testLoader = new DevToolsLoader({
+    invisibleToDebugger: true,
+  });
   const { DevToolsServer } = testLoader.require(
     "resource://devtools/server/devtools-server.js"
   );
@@ -327,10 +319,6 @@ function updateBadgeText(paused) {
 function onUnload() {
   window.removeEventListener("unload", onUnload);
   gToolbox.destroy();
-  if (releaseTestLoader) {
-    releaseTestLoader();
-    releaseTestLoader = null;
-  }
 }
 
 function quitApp() {

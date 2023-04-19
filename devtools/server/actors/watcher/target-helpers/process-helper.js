@@ -5,12 +5,7 @@
 "use strict";
 
 const { WatcherRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
-  {
-    
-    
-    loadInDevToolsLoader: false,
-  }
+  "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs"
 );
 
 loader.lazyRequireGetter(
