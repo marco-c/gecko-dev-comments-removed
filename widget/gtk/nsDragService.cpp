@@ -102,8 +102,20 @@ static void SetMotionEvent(GUniquePtr<GdkEvent> aEvent) {
 
 static GtkWidget* sGrabWidget;
 
-static const char gMimeListType[] = "application/x-moz-internal-item-list";
+static constexpr nsLiteralString kDisallowedExportedSchemes[] = {
+    u"about"_ns,      u"blob"_ns,     u"chrome"_ns,      u"imap"_ns,
+    u"javascript"_ns, u"mailbox"_ns,  u"moz-anno"_ns,    u"news"_ns,
+    u"page-icon"_ns,  u"resource"_ns, u"view-source"_ns, u"moz-extension"_ns,
+};
+
+
+
+
+
+
+
 static const char gMozUrlType[] = "_NETSCAPE_URL";
+static const char gMimeListType[] = "application/x-moz-internal-item-list";
 static const char gTextUriListType[] = "text/uri-list";
 static const char gTextPlainUTF8Type[] = "text/plain;charset=utf-8";
 static const char gXdndDirectSaveType[] = "XdndDirectSave0";
@@ -1273,6 +1285,21 @@ static void TargetArrayAddTarget(nsTArray<GtkTargetEntry*>& aTargetArray,
   LOGDRAGSERVICESTATIC("adding target %s\n", aTarget);
 }
 
+static bool CanExportAsURLTarget(char16_t* aURLData, uint32_t aURLLen) {
+  for (const nsLiteralString& disallowed : kDisallowedExportedSchemes) {
+    auto len = disallowed.AsString().Length();
+    if (len < aURLLen) {
+      if (!memcmp(disallowed.get(), aURLData,
+                   len * 2)) {
+        LOGDRAGSERVICESTATIC("rejected URL scheme %s\n",
+                             NS_ConvertUTF16toUTF8(disallowed).get());
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 GtkTargetList* nsDragService::GetSourceList(void) {
   if (!mSourceDataItems) {
     return nullptr;
@@ -1339,7 +1366,22 @@ GtkTargetList* nsDragService::GetSourceList(void) {
         
         
         else if (flavorStr.EqualsLiteral(kURLMime)) {
-          TargetArrayAddTarget(targetArray, gMozUrlType);
+          nsCOMPtr<nsISupports> data;
+          if (NS_SUCCEEDED(currItem->GetTransferData(flavorStr.get(),
+                                                     getter_AddRefs(data)))) {
+            void* tmpData = nullptr;
+            uint32_t tmpDataLen = 0;
+            nsPrimitiveHelpers::CreateDataFromPrimitive(
+                nsDependentCString(flavorStr.get()), data, &tmpData,
+                &tmpDataLen);
+            if (tmpData) {
+              if (CanExportAsURLTarget(reinterpret_cast<char16_t*>(tmpData),
+                                       tmpDataLen / 2)) {
+                TargetArrayAddTarget(targetArray, gMozUrlType);
+              }
+              free(tmpData);
+            }
+          }
         }
         
         
