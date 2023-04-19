@@ -1569,21 +1569,13 @@ nsWindow* nsWindow::GetEffectiveParent() {
 }
 
 GdkPoint nsWindow::WaylandGetParentPosition() {
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(GdkIsWaylandDisplay());
-  gint x = 0, y = 0;
-  for (nsWindow* window = GetEffectiveParent(); window;
-       window = window->GetEffectiveParent()) {
-    
-    gint dx, dy;
-    gdk_window_get_origin(gtk_widget_get_window(window->GetGtkWidget()), &dx,
-                          &dy);
-    x += dx;
-    y += dy;
+  GdkPoint topLeft = {0, 0};
+  nsWindow* window = GetEffectiveParent();
+  if (window->IsPopup()) {
+    topLeft = DevicePixelsToGdkPointRoundDown(window->mBounds.TopLeft());
   }
-  return {x, y};
+  LOG("nsWindow::WaylandGetParentPosition() [%d, %d]\n", topLeft.x, topLeft.y);
+  return topLeft;
 }
 
 #ifdef MOZ_LOGGING
