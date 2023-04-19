@@ -8,40 +8,21 @@
 
 "use strict";
 
+var { globals } = require("./special-powers-sandbox");
+var util = require("util");
+
 module.exports = {
-  globals: {
-    
+  globals: util._extend(
+    {
+      
 
-    
-    Blob: false,
-    ChromeUtils: false,
-    FileReader: false,
-    TextDecoder: false,
-    TextEncoder: false,
-    URL: false,
-
-    
-    EventUtils: false,
-
-    
-    assert: false,
-    Assert: false,
-    BrowsingContext: false,
-    InspectorUtils: false,
-    ok: false,
-    is: false,
-    isnot: false,
-    todo: false,
-    todo_is: false,
-    info: false,
-
-    
-
-    
-    createWindowlessBrowser: false,
-    sendAsyncMessage: false,
-    addMessageListener: false,
-    removeMessageListener: false,
-    actorParent: false,
-  },
+      
+      createWindowlessBrowser: false,
+      sendAsyncMessage: false,
+      addMessageListener: false,
+      removeMessageListener: false,
+      actorParent: false,
+    },
+    globals
+  ),
 };
