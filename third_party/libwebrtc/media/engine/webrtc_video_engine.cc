@@ -112,6 +112,23 @@ void AddDefaultFeedbackParams(VideoCodec* codec,
 
 
 
+bool IsCodecValidForLowerRange(const VideoCodec& codec) {
+  if (absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName) ||
+      absl::EqualsIgnoreCase(codec.name, kAv1CodecName) ||
+      absl::EqualsIgnoreCase(codec.name, kAv1xCodecName)) {
+    return true;
+  } else if (absl::EqualsIgnoreCase(codec.name, kH264CodecName)) {
+    std::string profileLevelId;
+    
+    if (codec.GetParam(kH264FmtpProfileLevelId, &profileLevelId)) {
+      return absl::StartsWithIgnoreCase(profileLevelId, "f400");
+    }
+  }
+  return false;
+}
+
+
+
 
 
 
@@ -170,10 +187,6 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
   std::vector<VideoCodec> output_codecs;
   for (const webrtc::SdpVideoFormat& format : supported_formats) {
     VideoCodec codec(format);
-    bool isCodecValidForLowerRange =
-        absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName) ||
-        absl::EqualsIgnoreCase(codec.name, kAv1CodecName) ||
-        absl::EqualsIgnoreCase(codec.name, kAv1xCodecName);
     bool isFecCodec = absl::EqualsIgnoreCase(codec.name, kUlpfecCodecName) ||
                       absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName);
 
@@ -189,7 +202,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
 
     
     
-    if (isCodecValidForLowerRange ||
+    if (IsCodecValidForLowerRange(codec) ||
         payload_type_upper >= kLastDynamicPayloadTypeUpperRange) {
       codec.id = payload_type_lower++;
     } else {
@@ -209,7 +222,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
         RTC_DCHECK_EQ(payload_type_upper, kLastDynamicPayloadTypeUpperRange);
         break;
       }
-      if (isCodecValidForLowerRange ||
+      if (IsCodecValidForLowerRange(codec) ||
           payload_type_upper >= kLastDynamicPayloadTypeUpperRange) {
         output_codecs.push_back(
             VideoCodec::CreateRtxCodec(payload_type_lower++, codec.id));
