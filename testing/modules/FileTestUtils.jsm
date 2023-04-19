@@ -117,9 +117,7 @@ XPCOMUtils.defineLazyGetter(
     
     
     let randomNumber = Math.floor(Math.random() * 1000000);
-    let dir = new FileUtils.File(
-      PathUtils.join(PathUtils.tempDir, `testdir-${randomNumber}`)
-    );
+    let dir = FileUtils.getFile("TmpD", ["testdir-" + randomNumber]);
     dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
     
@@ -130,7 +128,7 @@ XPCOMUtils.defineLazyGetter(
     OS.File.shutdown.addBlocker("Removing test files", async () => {
       
       for (let path of gPathsToRemove) {
-        await FileTestUtils.tolerantRemove(path);
+        await this.tolerantRemove(path);
       }
 
       if (!(await OS.File.exists(dir.path))) {
@@ -141,7 +139,7 @@ XPCOMUtils.defineLazyGetter(
       let iterator = new OS.File.DirectoryIterator(dir.path);
       try {
         await iterator.forEach(entry =>
-          FileTestUtils.tolerantRemove(entry.path, entry.isDir)
+          this.tolerantRemove(entry.path, entry.isDir)
         );
       } finally {
         iterator.close();
