@@ -5,6 +5,6 @@ importScripts('mediasource-message-util.js');
 
 
 
-let handle = new MediaSource().getHandle();
+let handle = new MediaSource().handle;
 postMessage(
     {subject: messageSubject.HANDLE, info: handle}, {transfer: [handle]});
