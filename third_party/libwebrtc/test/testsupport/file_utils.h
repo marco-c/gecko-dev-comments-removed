@@ -92,7 +92,6 @@ bool RemoveFile(absl::string_view file_name);
 
 
 bool FileExists(absl::string_view file_name);
-bool FileExists(const std::string& file_name);
 
 
 bool DirExists(absl::string_view directory_name);
