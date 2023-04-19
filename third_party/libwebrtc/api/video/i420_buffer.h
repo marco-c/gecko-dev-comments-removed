@@ -98,12 +98,6 @@ class RTC_EXPORT I420Buffer : public I420BufferInterface {
   
   void ScaleFrom(const I420BufferInterface& src);
 
-  
-  
-  void PasteFrom(const I420BufferInterface& picture,
-                 int offset_col,
-                 int offset_row);
-
  protected:
   I420Buffer(int width, int height);
   I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);

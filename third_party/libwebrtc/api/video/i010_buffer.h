@@ -66,12 +66,6 @@ class I010Buffer : public I010BufferInterface {
   
   void ScaleFrom(const I010BufferInterface& src);
 
-  
-  
-  void PasteFrom(const I010BufferInterface& picture,
-                 int offset_col,
-                 int offset_row);
-
  protected:
   I010Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
   ~I010Buffer() override;
