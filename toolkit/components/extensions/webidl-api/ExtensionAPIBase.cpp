@@ -46,7 +46,7 @@ void ChromeCompatCallbackHandler::Create(
 void ChromeCompatCallbackHandler::ResolvedCallback(JSContext* aCx,
                                                    JS::Handle<JS::Value> aValue,
                                                    ErrorResult& aRv) {
-  JS::RootedValue retval(aCx);
+  JS::Rooted<JS::Value> retval(aCx);
   IgnoredErrorResult rv;
   MOZ_KnownLive(mCallback)->Call({aValue}, &retval, rv);
 }
@@ -54,7 +54,7 @@ void ChromeCompatCallbackHandler::ResolvedCallback(JSContext* aCx,
 void ChromeCompatCallbackHandler::RejectedCallback(JSContext* aCx,
                                                    JS::Handle<JS::Value> aValue,
                                                    ErrorResult& aRv) {
-  JS::RootedValue retval(aCx);
+  JS::Rooted<JS::Value> retval(aCx);
   IgnoredErrorResult rv;
   
   
@@ -267,7 +267,7 @@ void ExtensionAPIBase::GetWebExtPropertyAsString(const nsString& aPropertyName,
   }
 
   JSContext* cx = jsapi.cx();
-  JS::RootedValue retval(cx);
+  JS::Rooted<JS::Value> retval(cx);
 
   RefPtr<ExtensionAPIGetProperty> request = GetProperty(aPropertyName);
   request->Run(global, cx, &retval, rv);
