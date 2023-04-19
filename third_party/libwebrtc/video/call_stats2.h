@@ -18,8 +18,6 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/synchronization/sequence_checker.h"
-#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -33,6 +31,7 @@ class CallStats {
   
   static constexpr TimeDelta kUpdateInterval = TimeDelta::Millis(1000);
 
+  
   CallStats(Clock* clock, TaskQueueBase* task_queue);
   ~CallStats();
 
@@ -48,11 +47,6 @@ class CallStats {
   void RegisterStatsObserver(CallStatsObserver* observer);
   void DeregisterStatsObserver(CallStatsObserver* observer);
 
-  
-  
-  
-  
-  
   
   
   int64_t LastProcessedRtt() const;
@@ -106,35 +100,24 @@ class CallStats {
   Clock* const clock_;
 
   
-  RepeatingTaskHandle repeating_task_
-      RTC_GUARDED_BY(construction_thread_checker_);
+  RepeatingTaskHandle repeating_task_ RTC_GUARDED_BY(task_queue_);
 
   
-  int64_t max_rtt_ms_ RTC_GUARDED_BY(construction_thread_checker_);
+  int64_t max_rtt_ms_ RTC_GUARDED_BY(task_queue_);
 
   
-  int64_t avg_rtt_ms_ RTC_GUARDED_BY(construction_thread_checker_);
+  int64_t avg_rtt_ms_ RTC_GUARDED_BY(task_queue_);
+
+  int64_t sum_avg_rtt_ms_ RTC_GUARDED_BY(task_queue_);
+  int64_t num_avg_rtt_ RTC_GUARDED_BY(task_queue_);
+  int64_t time_of_first_rtt_ms_ RTC_GUARDED_BY(task_queue_);
 
   
-  
-  
-  
-  int64_t sum_avg_rtt_ms_ RTC_GUARDED_BY(construction_thread_checker_);
-  int64_t num_avg_rtt_ RTC_GUARDED_BY(construction_thread_checker_);
-  int64_t time_of_first_rtt_ms_ RTC_GUARDED_BY(construction_thread_checker_);
+  std::list<RttTime> reports_ RTC_GUARDED_BY(task_queue_);
 
   
-  std::list<RttTime> reports_ RTC_GUARDED_BY(construction_thread_checker_);
+  std::list<CallStatsObserver*> observers_ RTC_GUARDED_BY(task_queue_);
 
-  
-  
-  
-  
-  
-  std::list<CallStatsObserver*> observers_;
-
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker construction_thread_checker_;
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker process_thread_checker_;
   TaskQueueBase* const task_queue_;
 
   
