@@ -248,6 +248,8 @@ void WaylandVsyncSource::IdleCallback() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
   RefPtr<nsWindow> window;
+  TimeStamp lastVSync;
+  TimeStamp outputTimestamp;
   {
     MutexAutoLock lock(mMutex);
 
@@ -268,10 +270,20 @@ void WaylandVsyncSource::IdleCallback() {
     LOG("  fire idle vsync");
     CalculateVsyncRate(lock, TimeStamp::Now());
     mLastVsyncTimeStamp = TimeStamp::Now();
+
+    lastVSync = mLastVsyncTimeStamp;
+    outputTimestamp = mLastVsyncTimeStamp + mVsyncRate;
     window = mWindow;
   }
+
   
   window->NotifyOcclusionState(OcclusionState::OCCLUDED);
+
+  
+  
+  if (!window->IsDestroyed()) {
+    NotifyVsync(lastVSync, outputTimestamp);
+  }
 }
 
 void WaylandVsyncSource::FrameCallback(wl_callback* aCallback, uint32_t aTime) {
