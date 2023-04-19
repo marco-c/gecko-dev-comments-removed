@@ -814,7 +814,6 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
   memcpy(rtx_payload + kRtxHeaderSize, payload.data(), payload.size());
 
   
-  rtx_packet->set_application_data(packet.application_data());
   rtx_packet->set_additional_data(packet.additional_data());
 
   

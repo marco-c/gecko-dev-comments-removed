@@ -14,8 +14,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <vector>
-
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
 
@@ -31,8 +29,6 @@ struct PacketOptions {
   
   
   int packet_id = -1;
-  
-  std::vector<uint8_t> application_data;
   
   
   rtc::scoped_refptr<rtc::RefCountedBase> additional_data;

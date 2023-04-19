@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #include <utility>
-#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -71,14 +70,6 @@ class RtpPacketToSend : public RtpPacket {
 
   
   
-  
-  rtc::ArrayView<const uint8_t> application_data() const {
-    return application_data_;
-  }
-
-  void set_application_data(rtc::ArrayView<const uint8_t> data) {
-    application_data_.assign(data.begin(), data.end());
-  }
   rtc::scoped_refptr<rtc::RefCountedBase> additional_data() const {
     return additional_data_;
   }
@@ -134,9 +125,6 @@ class RtpPacketToSend : public RtpPacket {
   absl::optional<RtpPacketMediaType> packet_type_;
   bool allow_retransmission_ = false;
   absl::optional<uint16_t> retransmitted_sequence_number_;
-  
-  
-  std::vector<uint8_t> application_data_;
   rtc::scoped_refptr<rtc::RefCountedBase> additional_data_;
   bool is_first_packet_of_frame_ = false;
   bool is_key_frame_ = false;
