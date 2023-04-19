@@ -114,9 +114,6 @@ let Player = {
   
 
 
-
-  lastScreenX: -1,
-  lastScreenY: -1,
   id: -1,
 
   
@@ -244,9 +241,6 @@ let Player = {
         height: window.outerHeight.toString(),
       });
     }, RESIZE_DEBOUNCE_RATE_MS);
-
-    this.lastScreenX = window.screenX;
-    this.lastScreenY = window.screenY;
 
     this.computeAndSetMinimumSize(window.outerWidth, window.outerHeight);
 
@@ -656,9 +650,6 @@ let Player = {
 
 
   onMouseUp(event) {
-    this.lastScreenX = window.screenX;
-    this.lastScreenY = window.screenY;
-
     
     
     let quadrant = this.determineCurrentQuadrant();
