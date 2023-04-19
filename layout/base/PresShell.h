@@ -605,13 +605,11 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
   MOZ_CAN_RUN_SCRIPT
   bool ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
                                const nsMargin& aMargin, ScrollAxis aVertical,
-                               ScrollAxis aHorizontal,
-                               ScrollFlags aScrollFlags);
+                               ScrollAxis aHorizontal, ScrollFlags aScrollFlags,
+                               const nsIFrame* aTarget = nullptr);
 
   
 
