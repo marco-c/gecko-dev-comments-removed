@@ -2681,6 +2681,15 @@ AutoUpdateLiveCompartments::~AutoUpdateLiveCompartments() {
   }
 }
 
+Zone::GCState Zone::initialMarkingState() const {
+  if (isAtomsZone()) {
+    
+    return MarkBlackAndGray;
+  }
+
+  return MarkBlackOnly;
+}
+
 void GCRuntime::beginMarkPhase(AutoGCSession& session) {
   
 
@@ -2698,7 +2707,7 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     
-    zone->changeGCState(Zone::Prepare, Zone::MarkBlackOnly);
+    zone->changeGCState(Zone::Prepare, zone->initialMarkingState());
 
     
     
@@ -3070,7 +3079,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       }
 
       for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-        zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
+        zone->changeGCState(zone->initialMarkingState(), Zone::NoGC);
         zone->clearGCSliceThresholds();
         zone->arenas.unmarkPreMarkedFreeCells();
         zone->arenas.mergeArenasFromCollectingLists();
