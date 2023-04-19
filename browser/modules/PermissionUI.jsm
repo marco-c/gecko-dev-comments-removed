@@ -728,10 +728,39 @@ var SitePermsAddonInstallRequestPrototype = {
         this.allow();
       },
       err => {
-        Cu.reportError(err);
         this.cancel();
+
+        
+        let scriptErrorClass = Cc["@mozilla.org/scripterror;1"];
+        let errorMessage =
+          this.getInstallErrorMessage(err) ||
+          `${this.permName} access was rejected: ${err.message}`;
+
+        let scriptError = scriptErrorClass.createInstance(Ci.nsIScriptError);
+        scriptError.initWithWindowID(
+          errorMessage,
+          null,
+          null,
+          0,
+          0,
+          0,
+          "content javascript",
+          this.browser.browsingContext.currentWindowGlobal.innerWindowId
+        );
+        Services.console.logMessage(scriptError);
       }
     );
+  },
+
+  
+
+
+
+
+
+
+  getInstallErrorMessage(err) {
+    return null;
   },
 };
 
@@ -1308,6 +1337,15 @@ MIDIPermissionPrompt.prototype = {
         action: Ci.nsIPermissionManager.DENY_ACTION,
       },
     ];
+  },
+
+  
+
+
+
+
+  getInstallErrorMessage(err) {
+    return `WebMIDI access request was denied: ❝${err.message}❞. See https://developer.mozilla.org/docs/Web/API/Navigator/requestMIDIAccess for more information`;
   },
 };
 
