@@ -55,12 +55,21 @@ void WinCompositorWindowThread::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sWinCompositorWindowThread);
 
+  
+  
+  
+  
+  
+  static const PRIntervalTime TIMEOUT = PR_TicksPerSecond() * 2;
   layers::SynchronousTask task("WinCompositorWindowThread");
   RefPtr<Runnable> runnable = WrapRunnable(
       RefPtr<WinCompositorWindowThread>(sWinCompositorWindowThread.get()),
       &WinCompositorWindowThread::ShutDownTask, &task);
   sWinCompositorWindowThread->Loop()->PostTask(runnable.forget());
-  task.Wait();
+  nsresult rv = task.Wait(TIMEOUT);
+  if (rv == NS_OK) {
+    sWinCompositorWindowThread->mThread->Stop();
+  }
 
   sWinCompositorWindowThread = nullptr;
 }
