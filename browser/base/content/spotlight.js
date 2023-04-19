@@ -124,16 +124,14 @@ function renderMultistage(ready) {
     AWParent.onContentMessage(`AWPage:${name}`, data, browser);
 
   
-  window.AWGetDefaultSites = () => {};
   window.AWGetFeatureConfig = () => CONFIG;
-  window.AWGetFxAMetricsFlowURI = () => {};
-  window.AWGetImportableSites = () => "[]";
   window.AWGetRegion = receive("GET_REGION");
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
   window.AWSelectTheme = data => receive("SELECT_THEME")(data?.toUpperCase());
   
-  window.AWSendEventTelemetry =
-    CONFIG?.metrics === "block" ? () => {} : receive("TELEMETRY_EVENT");
+  if (CONFIG?.metrics !== "block") {
+    window.AWSendEventTelemetry = receive("TELEMETRY_EVENT");
+  }
   window.AWSendToDeviceEmailsSupported = receive(
     "SEND_TO_DEVICE_EMAILS_SUPPORTED"
   );
