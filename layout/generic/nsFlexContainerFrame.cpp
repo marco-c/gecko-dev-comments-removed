@@ -1438,42 +1438,6 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
       childRI.ComputedMaxBSize());
 
   
-  
-  
-  
-  const nsStyleDisplay* disp = aChildFrame->StyleDisplay();
-  if (aChildFrame->IsThemed(disp)) {
-    LayoutDeviceIntSize widgetMinSize =
-        PresContext()->Theme()->GetMinimumWidgetSize(
-            PresContext(), aChildFrame, disp->EffectiveAppearance());
-
-    nscoord widgetMainMinSize = PresContext()->DevPixelsToAppUnits(
-        aAxisTracker.MainComponent(widgetMinSize));
-    nscoord widgetCrossMinSize = PresContext()->DevPixelsToAppUnits(
-        aAxisTracker.CrossComponent(widgetMinSize));
-
-    
-    
-    const LogicalMargin bpInFlexWM =
-        childRI.ComputedLogicalBorderPadding(flexWM);
-    widgetMainMinSize -= aAxisTracker.MarginSizeInMainAxis(bpInFlexWM);
-    widgetCrossMinSize -= aAxisTracker.MarginSizeInCrossAxis(bpInFlexWM);
-    
-    widgetMainMinSize = std::max(0, widgetMainMinSize);
-    widgetCrossMinSize = std::max(0, widgetCrossMinSize);
-    
-    
-    mainMinSize = std::max(mainMinSize, widgetMainMinSize);
-    mainMaxSize = std::max(mainMaxSize, widgetMainMinSize);
-
-    if (tentativeCrossSize != NS_UNCONSTRAINEDSIZE) {
-      tentativeCrossSize = std::max(tentativeCrossSize, widgetCrossMinSize);
-    }
-    crossMinSize = std::max(crossMinSize, widgetCrossMinSize);
-    crossMaxSize = std::max(crossMaxSize, widgetCrossMinSize);
-  }
-
-  
   FlexItem* item = aLine.Items().EmplaceBack(
       childRI, flexGrow, flexShrink, flexBaseSize, mainMinSize, mainMaxSize,
       tentativeCrossSize, crossMinSize, crossMaxSize, aAxisTracker);

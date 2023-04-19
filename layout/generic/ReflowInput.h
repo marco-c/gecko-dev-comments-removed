@@ -144,7 +144,10 @@ struct SizeComputationInput {
 
  protected:
   
-  mozilla::WritingMode mWritingMode;
+  const mozilla::WritingMode mWritingMode;
+
+  
+  const bool mIsThemed = false;
 
   
   mozilla::LogicalMargin mComputedMargin;
