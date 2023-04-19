@@ -4414,6 +4414,14 @@ pref("extensions.formautofill.creditCards.heuristics.numberOnly.confidenceThresh
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("extensions.formautofill.creditCards.heuristics.nameExpirySection.enabled", true);
+#else
+pref("extensions.formautofill.creditCards.heuristics.nameExpirySection.enabled", false);
+#endif
+
+
+
 
 
 
