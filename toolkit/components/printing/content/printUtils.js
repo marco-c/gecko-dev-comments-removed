@@ -194,8 +194,7 @@ var PrintUtils = {
       
       
       
-      Cu.reportError("Tab-modal print UI already open");
-      return null;
+      throw new Error("Tab-modal print UI already open");
     }
 
     
