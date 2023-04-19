@@ -5,6 +5,7 @@
 
 
 #include "StorageManager.h"
+#include "fs/FileSystemRequestHandler.h"
 
 #include <cstdint>
 #include <cstdlib>
