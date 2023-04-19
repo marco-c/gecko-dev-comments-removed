@@ -10,6 +10,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/JSONWriter.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ProgressLogger.h"
 #include "mozilla/TimeStamp.h"
@@ -538,15 +539,25 @@ class UniqueJSONStrings final : public FailureLatch {
 
   
   
-  void WriteProperty(JSONWriter& aWriter, const Span<const char>& aName,
+  void WriteProperty(SpliceableJSONWriter& aWriter,
+                     const Span<const char>& aName,
                      const Span<const char>& aStr) {
-    aWriter.IntProperty(aName, GetOrAddIndex(aStr));
+    if (const Maybe<uint32_t> maybeIndex = GetOrAddIndex(aStr); maybeIndex) {
+      aWriter.IntProperty(aName, *maybeIndex);
+    } else {
+      aWriter.SetFailureFrom(*this);
+    }
   }
 
   
   
-  void WriteElement(JSONWriter& aWriter, const Span<const char>& aStr) {
-    aWriter.IntElement(GetOrAddIndex(aStr));
+  void WriteElement(SpliceableJSONWriter& aWriter,
+                    const Span<const char>& aStr) {
+    if (const Maybe<uint32_t> maybeIndex = GetOrAddIndex(aStr); maybeIndex) {
+      aWriter.IntElement(*maybeIndex);
+    } else if (!aWriter.Failed()) {
+      aWriter.SetFailureFrom(*this);
+    }
   }
 
   
@@ -560,9 +571,11 @@ class UniqueJSONStrings final : public FailureLatch {
   }
 
  private:
+  MFBT_API void ClearAndSetFailure(std::string aFailure);
+
   
   
-  MFBT_API uint32_t GetOrAddIndex(const Span<const char>& aStr);
+  MFBT_API Maybe<uint32_t> GetOrAddIndex(const Span<const char>& aStr);
 
   SpliceableChunkedJSONWriter mStringTableWriter;
   HashMap<HashNumber, uint32_t> mStringHashToIndexMap;
