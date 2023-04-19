@@ -45,11 +45,13 @@ class BitBuffer {
   
   
   bool ReadBits(uint32_t* val, size_t bit_count);
+  bool ReadBits(uint64_t* val, size_t bit_count);
 
   
   
   
   bool PeekBits(uint32_t* val, size_t bit_count);
+  bool PeekBits(uint64_t* val, size_t bit_count);
 
   
   
