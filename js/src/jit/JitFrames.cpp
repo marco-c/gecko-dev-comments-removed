@@ -718,15 +718,6 @@ void HandleException(ResumeFromException* rfe) {
       IonScript* ionScript = nullptr;
       bool invalidated = frame.checkInvalidation(&ionScript);
 
-#ifdef JS_TRACE_LOGGING
-      if (logger && cx->realm()->isDebuggee() && logger->enabled()) {
-        logger->disable( true,
-                        "Forcefully disabled tracelogger, due to "
-                        "throwing an exception with an active Debugger "
-                        "in IonMonkey.");
-      }
-#endif
-
       
       
       
