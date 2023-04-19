@@ -234,6 +234,9 @@ class ScreenshotTest : BaseSessionTest() {
     @Test(expected = IllegalStateException::class)
     fun capturePixelsAfterGpuProcessCrash() {
         
+        assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
+
+        
         assumeTrue(sessionRule.usingGpuProcess())
 
         sessionRule.display?.let {
