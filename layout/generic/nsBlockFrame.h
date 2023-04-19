@@ -870,10 +870,12 @@ class nsBlockFrame : public nsContainerFrame {
     explicit nsAutoOOFFrameList(nsBlockFrame* aBlock)
         : mPropValue(aBlock->GetOverflowOutOfFlows()), mBlock(aBlock) {
       if (mPropValue) {
-        mList = *mPropValue;
+        mList = std::move(*mPropValue);
       }
     }
-    ~nsAutoOOFFrameList() { mBlock->SetOverflowOutOfFlows(mList, mPropValue); }
+    ~nsAutoOOFFrameList() {
+      mBlock->SetOverflowOutOfFlows(std::move(mList), mPropValue);
+    }
 
    protected:
     nsFrameList* const mPropValue;
@@ -882,7 +884,9 @@ class nsBlockFrame : public nsContainerFrame {
   friend struct nsAutoOOFFrameList;
 
   nsFrameList* GetOverflowOutOfFlows() const;
-  void SetOverflowOutOfFlows(const nsFrameList& aList, nsFrameList* aPropValue);
+
+  
+  void SetOverflowOutOfFlows(nsFrameList&& aList, nsFrameList* aPropValue);
 
   
 
