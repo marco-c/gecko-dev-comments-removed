@@ -22,16 +22,6 @@
 class nsPIDOMWindowInner;
 class nsContentPermissionRequestProxy;
 
-
-
-
-
-
-
-namespace IPC {
-class Principal;
-}  
-
 namespace mozilla::dom {
 
 class Element;
