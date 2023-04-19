@@ -182,9 +182,8 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         
         
         
-
-        wr::LayoutRect r = wr::ToLayoutRect(bounds);
-        aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref(),
+        aBuilder.PushIFrame(bounds, !BackfaceIsHidden(),
+                            data->GetPipelineId().ref(),
                              false);
 
         LayoutDeviceRect scBounds(LayoutDevicePoint(0, 0), bounds.Size());
