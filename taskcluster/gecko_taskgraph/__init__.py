@@ -2,9 +2,9 @@
 
 
 
-
 import os
 from taskgraph import config as taskgraph_config
+from taskgraph import morph as taskgraph_morph
 from taskgraph.util import taskcluster as tc_util, schema
 
 from gecko_taskgraph.config import graph_config_schema
@@ -19,6 +19,10 @@ MAX_DEPENDENCIES = 99
 
 
 taskgraph_config.graph_config_schema = graph_config_schema
+
+
+
+taskgraph_morph.registered_morphs = []
 
 
 
@@ -46,5 +50,6 @@ def register(graph_config):
     from gecko_taskgraph import (  
         target_tasks,
     )
+    from gecko_taskgraph import morph  
 
     register_parameters()
