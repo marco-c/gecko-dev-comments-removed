@@ -28,10 +28,6 @@ class NoiseLevelEstimator {
 };
 
 
-std::unique_ptr<NoiseLevelEstimator> CreateStationaryNoiseEstimator(
-    ApmDataDumper* data_dumper);
-
-
 std::unique_ptr<NoiseLevelEstimator> CreateNoiseFloorEstimator(
     ApmDataDumper* data_dumper);
 

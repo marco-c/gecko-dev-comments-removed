@@ -51,45 +51,6 @@ class NoiseEstimatorParametrization : public ::testing::TestWithParam<int> {
 };
 
 
-
-TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithRandomNoise) {
-  ApmDataDumper data_dumper(0);
-  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
-
-  test::WhiteNoiseGenerator gen(test::kMinS16,
-                                test::kMaxS16);
-  const float noise_level_dbfs =
-      RunEstimator(gen, *estimator, sample_rate_hz());
-  EXPECT_NEAR(noise_level_dbfs, -5.5f, 1.0f);
-}
-
-
-
-TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithSineTone) {
-  ApmDataDumper data_dumper(0);
-  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
-
-  test::SineGenerator gen(test::kMaxS16, 600.0f,
-                          sample_rate_hz());
-  const float noise_level_dbfs =
-      RunEstimator(gen, *estimator, sample_rate_hz());
-  EXPECT_NEAR(noise_level_dbfs, -3.0f, 1.0f);
-}
-
-
-
-TEST_P(NoiseEstimatorParametrization, StationaryNoiseEstimatorWithPulseTone) {
-  ApmDataDumper data_dumper(0);
-  auto estimator = CreateStationaryNoiseEstimator(&data_dumper);
-
-  test::PulseGenerator gen(test::kMaxS16,
-                           10.0f, 20.0f,
-                           sample_rate_hz());
-  const int noise_level_dbfs = RunEstimator(gen, *estimator, sample_rate_hz());
-  EXPECT_NEAR(noise_level_dbfs, -79.0f, 1.0f);
-}
-
-
 TEST_P(NoiseEstimatorParametrization, NoiseFloorEstimatorWithRandomNoise) {
   ApmDataDumper data_dumper(0);
   auto estimator = CreateNoiseFloorEstimator(&data_dumper);
@@ -122,7 +83,8 @@ TEST_P(NoiseEstimatorParametrization, NoiseFloorEstimatorWithPulseTone) {
   constexpr float kNoPulseAmplitude = 10.0f;
   test::PulseGenerator gen(test::kMaxS16, kNoPulseAmplitude,
                            20.0f, sample_rate_hz());
-  const int noise_level_dbfs = RunEstimator(gen, *estimator, sample_rate_hz());
+  const float noise_level_dbfs =
+      RunEstimator(gen, *estimator, sample_rate_hz());
   const float expected_noise_floor_dbfs =
       20.0f * std::log10f(kNoPulseAmplitude / test::kMaxS16);
   EXPECT_NEAR(noise_level_dbfs, expected_noise_floor_dbfs, 0.5f);
