@@ -20,6 +20,7 @@ enum PreservedErrno {
 
 
 constexpr int kSctpSuccessReturn = 1;
+constexpr int kSctpErrorReturn = 0;
 
 }  
 
@@ -27,7 +28,6 @@ constexpr int kSctpSuccessReturn = 1;
 #include <stdio.h>
 #include <usrsctp.h>
 
-#include <functional>
 #include <memory>
 #include <unordered_map>
 
@@ -255,28 +255,17 @@ class SctpTransportMap {
   
   
   
-  SctpTransport* Retrieve(uintptr_t id) const {
-    webrtc::MutexLock lock(&lock_);
-    SctpTransport* transport = RetrieveWhileHoldingLock(id);
-    if (transport) {
-      RTC_DCHECK_RUN_ON(transport->network_thread());
-    }
-    return transport;
-  }
-
   
-  
-  
-  
-  bool PostToTransportThread(uintptr_t id,
-                             std::function<void(SctpTransport*)> action) const {
+  template <typename F>
+  bool PostToTransportThread(uintptr_t id, F action) const {
     webrtc::MutexLock lock(&lock_);
     SctpTransport* transport = RetrieveWhileHoldingLock(id);
     if (!transport) {
       return false;
     }
     transport->network_thread_->PostTask(ToQueuedTask(
-        transport->task_safety_, [transport, action]() { action(transport); }));
+        transport->task_safety_,
+        [transport, action{std::move(action)}]() { action(transport); }));
     return true;
   }
 
@@ -429,7 +418,7 @@ class SctpTransport::UsrSctpWrapper {
     if (!found) {
       RTC_LOG(LS_ERROR)
           << "OnSctpOutboundPacket: Failed to get transport for socket ID "
-          << addr;
+          << addr << "; possibly was already destroyed.";
       return EINVAL;
     }
 
@@ -447,28 +436,49 @@ class SctpTransport::UsrSctpWrapper {
                                  struct sctp_rcvinfo rcv,
                                  int flags,
                                  void* ulp_info) {
-    SctpTransport* transport = GetTransportFromSocket(sock);
-    if (!transport) {
+    struct DeleteByFree {
+      void operator()(void* p) const { free(p); }
+    };
+    std::unique_ptr<void, DeleteByFree> owned_data(data, DeleteByFree());
+
+    absl::optional<uintptr_t> id = GetTransportIdFromSocket(sock);
+    if (!id) {
       RTC_LOG(LS_ERROR)
-          << "OnSctpInboundPacket: Failed to get transport for socket " << sock
-          << "; possibly was already destroyed.";
-      free(data);
-      return 0;
+          << "OnSctpInboundPacket: Failed to get transport ID from socket "
+          << sock;
+      return kSctpErrorReturn;
+    }
+
+    if (!g_transport_map_) {
+      RTC_LOG(LS_ERROR)
+          << "OnSctpInboundPacket called after usrsctp uninitialized?";
+      return kSctpErrorReturn;
     }
     
     
-    RTC_CHECK_EQ(transport, static_cast<SctpTransport*>(ulp_info));
-    int result =
-        transport->OnDataOrNotificationFromSctp(data, length, rcv, flags);
-    free(data);
-    return result;
+    
+    bool found = g_transport_map_->PostToTransportThread(
+        *id, [owned_data{std::move(owned_data)}, length, rcv,
+              flags](SctpTransport* transport) {
+          transport->OnDataOrNotificationFromSctp(owned_data.get(), length, rcv,
+                                                  flags);
+        });
+    if (!found) {
+      RTC_LOG(LS_ERROR)
+          << "OnSctpInboundPacket: Failed to get transport for socket ID "
+          << *id << "; possibly was already destroyed.";
+      return kSctpErrorReturn;
+    }
+    return kSctpSuccessReturn;
   }
 
-  static SctpTransport* GetTransportFromSocket(struct socket* sock) {
+  static absl::optional<uintptr_t> GetTransportIdFromSocket(
+      struct socket* sock) {
+    absl::optional<uintptr_t> ret;
     struct sockaddr* addrs = nullptr;
     int naddrs = usrsctp_getladdrs(sock, 0, &addrs);
     if (naddrs <= 0 || addrs[0].sa_family != AF_CONN) {
-      return nullptr;
+      return ret;
     }
     
     
@@ -477,17 +487,10 @@ class SctpTransport::UsrSctpWrapper {
     
     struct sockaddr_conn* sconn =
         reinterpret_cast<struct sockaddr_conn*>(&addrs[0]);
-    if (!g_transport_map_) {
-      RTC_LOG(LS_ERROR)
-          << "GetTransportFromSocket called after usrsctp uninitialized?";
-      usrsctp_freeladdrs(addrs);
-      return nullptr;
-    }
-    SctpTransport* transport = g_transport_map_->Retrieve(
-        reinterpret_cast<uintptr_t>(sconn->sconn_addr));
+    ret = reinterpret_cast<uintptr_t>(sconn->sconn_addr);
     usrsctp_freeladdrs(addrs);
 
-    return transport;
+    return ret;
   }
 
   
@@ -496,14 +499,26 @@ class SctpTransport::UsrSctpWrapper {
     
     
     
-    SctpTransport* transport = GetTransportFromSocket(sock);
-    if (!transport) {
+    absl::optional<uintptr_t> id = GetTransportIdFromSocket(sock);
+    if (!id) {
       RTC_LOG(LS_ERROR)
-          << "SendThresholdCallback: Failed to get transport for socket "
-          << sock << "; possibly was already destroyed.";
+          << "SendThresholdCallback: Failed to get transport ID from socket "
+          << sock;
       return 0;
     }
-    transport->OnSendThresholdCallback();
+    if (!g_transport_map_) {
+      RTC_LOG(LS_ERROR)
+          << "SendThresholdCallback called after usrsctp uninitialized?";
+      return 0;
+    }
+    bool found = g_transport_map_->PostToTransportThread(
+        *id,
+        [](SctpTransport* transport) { transport->OnSendThresholdCallback(); });
+    if (!found) {
+      RTC_LOG(LS_ERROR)
+          << "SendThresholdCallback: Failed to get transport for socket ID "
+          << *id << "; possibly was already destroyed.";
+    }
     return 0;
   }
 
@@ -513,17 +528,26 @@ class SctpTransport::UsrSctpWrapper {
     
     
     
-    SctpTransport* transport = GetTransportFromSocket(sock);
-    if (!transport) {
+    absl::optional<uintptr_t> id = GetTransportIdFromSocket(sock);
+    if (!id) {
       RTC_LOG(LS_ERROR)
-          << "SendThresholdCallback: Failed to get transport for socket "
-          << sock << "; possibly was already destroyed.";
+          << "SendThresholdCallback: Failed to get transport ID from socket "
+          << sock;
       return 0;
     }
-    
-    
-    RTC_CHECK_EQ(transport, static_cast<SctpTransport*>(ulp_info));
-    transport->OnSendThresholdCallback();
+    if (!g_transport_map_) {
+      RTC_LOG(LS_ERROR)
+          << "SendThresholdCallback called after usrsctp uninitialized?";
+      return 0;
+    }
+    bool found = g_transport_map_->PostToTransportThread(
+        *id,
+        [](SctpTransport* transport) { transport->OnSendThresholdCallback(); });
+    if (!found) {
+      RTC_LOG(LS_ERROR)
+          << "SendThresholdCallback: Failed to get transport for socket ID "
+          << *id << "; possibly was already destroyed.";
+    }
     return 0;
   }
 };
@@ -1175,24 +1199,25 @@ void SctpTransport::OnPacketFromSctpToNetwork(
                          rtc::PacketOptions(), PF_NORMAL);
 }
 
-int SctpTransport::InjectDataOrNotificationFromSctpForTesting(
+void SctpTransport::InjectDataOrNotificationFromSctpForTesting(
     const void* data,
     size_t length,
     struct sctp_rcvinfo rcv,
     int flags) {
-  return OnDataOrNotificationFromSctp(data, length, rcv, flags);
+  OnDataOrNotificationFromSctp(data, length, rcv, flags);
 }
 
-int SctpTransport::OnDataOrNotificationFromSctp(const void* data,
-                                                size_t length,
-                                                struct sctp_rcvinfo rcv,
-                                                int flags) {
+void SctpTransport::OnDataOrNotificationFromSctp(const void* data,
+                                                 size_t length,
+                                                 struct sctp_rcvinfo rcv,
+                                                 int flags) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   
   if (!data) {
     RTC_LOG(LS_INFO) << debug_name_
                      << "->OnDataOrNotificationFromSctp(...): "
                         "No data; association closed.";
-    return kSctpSuccessReturn;
+    return;
   }
 
   
@@ -1205,14 +1230,10 @@ int SctpTransport::OnDataOrNotificationFromSctp(const void* data,
         << "->OnDataOrNotificationFromSctp(...): SCTP notification"
         << " length=" << length;
 
-    
     rtc::CopyOnWriteBuffer notification(reinterpret_cast<const uint8_t*>(data),
                                         length);
-    network_thread_->PostTask(ToQueuedTask(
-        task_safety_, [this, notification = std::move(notification)]() {
-          OnNotificationFromSctp(notification);
-        }));
-    return kSctpSuccessReturn;
+    OnNotificationFromSctp(notification);
+    return;
   }
 
   
@@ -1230,7 +1251,7 @@ int SctpTransport::OnDataOrNotificationFromSctp(const void* data,
     
     RTC_LOG(LS_ERROR) << "Received an unknown PPID " << ppid
                       << " on an SCTP packet.  Dropping.";
-    return kSctpSuccessReturn;
+    return;
   }
 
   
@@ -1266,7 +1287,7 @@ int SctpTransport::OnDataOrNotificationFromSctp(const void* data,
     if (partial_incoming_message_.size() < kSctpSendBufferSize) {
       
       
-      return kSctpSuccessReturn;
+      return;
     } else {
       
       
@@ -1281,17 +1302,8 @@ int SctpTransport::OnDataOrNotificationFromSctp(const void* data,
   }
 
   
-  
-  
-  network_thread_->PostTask(webrtc::ToQueuedTask(
-      task_safety_, [this, params = std::move(params),
-                     message = partial_incoming_message_]() {
-        OnDataFromSctpToTransport(params, message);
-      }));
-
-  
+  OnDataFromSctpToTransport(params, partial_incoming_message_);
   partial_incoming_message_.Clear();
-  return kSctpSuccessReturn;
 }
 
 void SctpTransport::OnDataFromSctpToTransport(
