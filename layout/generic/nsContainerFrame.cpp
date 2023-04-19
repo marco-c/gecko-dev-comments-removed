@@ -2344,12 +2344,14 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   
   
   
-
-  
-  
   
 
-  const bool isAutoISize = styleISize.IsAuto();
+  
+  
+  
+
+  const bool isAutoOrMaxContentISize =
+      styleISize.IsAuto() || styleISize.IsMaxContent();
   const bool isAutoBSize =
       nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM));
 
@@ -2390,7 +2392,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   const bool hasIntrinsicBSize = bsizeCoord.isSome();
   nscoord intrinsicBSize = std::max(0, bsizeCoord.valueOr(0));
 
-  if (!isAutoISize) {
+  if (!isAutoOrMaxContentISize) {
     iSize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
                               boxSizingToMarginEdgeISize, styleISize,
                               aSizeOverrides, aFlags)
@@ -2510,7 +2512,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
                "Our containing block must not have unconstrained inline-size!");
 
   
-  if (isAutoISize) {
+  if (isAutoOrMaxContentISize) {
     if (isAutoBSize) {
       
 

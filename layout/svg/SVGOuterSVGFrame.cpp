@@ -178,24 +178,16 @@ nscoord SVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
           ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
     result = *containISize;
   } else if (isize.IsPercentage()) {
-    
-    
-    
-    result = nscoord(0);
-
-    
-    
-    
-    
-    
-    nsIFrame* parent = GetParent();
-    while (parent) {
-      nscoord parentISize = parent->GetLogicalSize(wm).ISize(wm);
-      if (parentISize > 0 && parentISize != NS_UNCONSTRAINEDSIZE) {
-        result = parentISize;
-        break;
-      }
-      parent = parent->GetParent();
+    if (isize.IsExplicitlySet()) {
+      
+      
+      
+      result = wm.IsVertical() ? kFallbackIntrinsicSize.height
+                               : kFallbackIntrinsicSize.width;
+    } else {
+      
+      
+      result = nscoord(0);
     }
   } else {
     result = nsPresContext::CSSPixelsToAppUnits(isize.GetAnimValue(svg));
