@@ -443,10 +443,7 @@ static bool AddStreamParams(
       ContainsFlexfecCodec(content_description->codecs());
 
   for (const SenderOptions& sender : sender_options) {
-    
-    
-    StreamParams* param =
-        GetStreamByIds(*current_streams, "" , sender.track_id);
+    StreamParams* param = GetStreamByIds(*current_streams, sender.track_id);
     if (!param) {
       
       StreamParams stream_param =

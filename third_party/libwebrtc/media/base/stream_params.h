@@ -186,11 +186,6 @@ struct StreamParams {
   
   
   
-  
-  std::string groupid;
-  
-  
-  
   std::string id;
   
   
@@ -228,22 +223,18 @@ struct StreamParams {
 struct StreamSelector {
   explicit StreamSelector(uint32_t ssrc) : ssrc(ssrc) {}
 
-  StreamSelector(const std::string& groupid, const std::string& streamid)
-      : ssrc(0), groupid(groupid), streamid(streamid) {}
-
   explicit StreamSelector(const std::string& streamid)
       : ssrc(0), streamid(streamid) {}
 
   bool Matches(const StreamParams& stream) const {
     if (ssrc == 0) {
-      return stream.groupid == groupid && stream.id == streamid;
+      return stream.id == streamid;
     } else {
       return stream.has_ssrc(ssrc);
     }
   }
 
   uint32_t ssrc;
-  std::string groupid;
   std::string streamid;
 };
 
@@ -274,19 +265,15 @@ inline const StreamParams* GetStreamBySsrc(const StreamParamsVec& streams,
 }
 
 inline const StreamParams* GetStreamByIds(const StreamParamsVec& streams,
-                                          const std::string& groupid,
                                           const std::string& id) {
-  return GetStream(streams, [&groupid, &id](const StreamParams& sp) {
-    return sp.groupid == groupid && sp.id == id;
-  });
+  return GetStream(streams,
+                   [&id](const StreamParams& sp) { return sp.id == id; });
 }
 
 inline StreamParams* GetStreamByIds(StreamParamsVec& streams,
-                                    const std::string& groupid,
                                     const std::string& id) {
-  return GetStream(streams, [&groupid, &id](const StreamParams& sp) {
-    return sp.groupid == groupid && sp.id == id;
-  });
+  return GetStream(streams,
+                   [&id](const StreamParams& sp) { return sp.id == id; });
 }
 
 inline const StreamParams* GetStream(const StreamParamsVec& streams,
@@ -318,11 +305,9 @@ inline bool RemoveStreamBySsrc(StreamParamsVec* streams, uint32_t ssrc) {
       streams, [&ssrc](const StreamParams& sp) { return sp.has_ssrc(ssrc); });
 }
 inline bool RemoveStreamByIds(StreamParamsVec* streams,
-                              const std::string& groupid,
                               const std::string& id) {
-  return RemoveStream(streams, [&groupid, &id](const StreamParams& sp) {
-    return sp.groupid == groupid && sp.id == id;
-  });
+  return RemoveStream(streams,
+                      [&id](const StreamParams& sp) { return sp.id == id; });
 }
 
 }  
