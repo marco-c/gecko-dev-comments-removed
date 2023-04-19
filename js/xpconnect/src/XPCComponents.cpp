@@ -2243,59 +2243,16 @@ nsXPCComponents_Utils::GetIncumbentGlobal(HandleValue aCallback, JSContext* aCx,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-class WrappedJSHolder : public nsISupports {
-  NS_DECL_ISUPPORTS
-  WrappedJSHolder() = default;
-
-  RefPtr<nsXPCWrappedJS> mWrappedJS;
-
- private:
-  virtual ~WrappedJSHolder() = default;
-};
-
-NS_IMPL_ADDREF(WrappedJSHolder)
-NS_IMPL_RELEASE(WrappedJSHolder)
-
-
-
-NS_INTERFACE_TABLE_HEAD(WrappedJSHolder)
-  if (aIID.Equals(NS_GET_IID(nsINamed))) {
-    return mWrappedJS->QueryInterface(aIID, aInstancePtr);
-  }
-  NS_INTERFACE_TABLE0(WrappedJSHolder)
-NS_INTERFACE_TABLE_TAIL
-
 NS_IMETHODIMP
-nsXPCComponents_Utils::GenerateXPCWrappedJS(HandleValue aObj,
-                                            HandleValue aScope, JSContext* aCx,
-                                            nsISupports** aOut) {
+nsXPCComponents_Utils::GetDebugName(HandleValue aObj, JSContext* aCx,
+                                    nsACString& aOut) {
   if (!aObj.isObject()) {
     return NS_ERROR_INVALID_ARG;
   }
-  RootedObject obj(aCx, &aObj.toObject());
-  RootedObject scope(aCx, aScope.isObject()
-                              ? js::UncheckedUnwrap(&aScope.toObject())
-                              : CurrentGlobalOrNull(aCx));
-  JSAutoRealm ar(aCx, scope);
-  if (!JS_WrapObject(aCx, &obj)) {
-    return NS_ERROR_FAILURE;
-  }
 
-  RefPtr<WrappedJSHolder> holder = new WrappedJSHolder();
-  nsresult rv = nsXPCWrappedJS::GetNewOrUsed(
-      aCx, obj, NS_GET_IID(nsISupports), getter_AddRefs(holder->mWrappedJS));
-  holder.forget(aOut);
-  return rv;
+  RootedObject obj(aCx, &aObj.toObject());
+  aOut = xpc::GetFunctionName(aCx, obj);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
