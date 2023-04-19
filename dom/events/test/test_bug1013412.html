@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1013412
+-->
 <head>
   <title>Test for Bug 1013412</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -98,7 +98,7 @@ function startTest() {
   // If we allow smooth scrolling the "smooth" scrolling may cause the page to
   // glide past the scrollbox (which is supposed to stop the scrolling) and so
   // we might end up at the bottom of the page.
-  SpecialPowers.pushPrefEnv({"set": [["general.smoothScroll", false]]}, runTest);
+  SpecialPowers.pushPrefEnv({"set": [["general.smoothScroll", false], ["test.events.async.enabled", true]]}, runTest);
 }
 
 SimpleTest.waitForExplicitFinish();
