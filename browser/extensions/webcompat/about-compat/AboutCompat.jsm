@@ -34,6 +34,8 @@ AboutCompat.prototype = {
 
     channel.owner = (
       Services.scriptSecurityManager.createContentPrincipal ||
+      
+      
       Services.scriptSecurityManager.createCodebasePrincipal
     )(uri, aLoadInfo.originAttributes);
     return channel;
