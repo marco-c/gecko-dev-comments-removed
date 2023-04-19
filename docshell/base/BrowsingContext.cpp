@@ -368,6 +368,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == group);
     MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == aType);
     fields.mEmbedderInnerWindowId = aParent->WindowID();
+    
+    fields.mEmbeddedInContentDocument = parentBC->mType == Type::Content;
 
     
     
@@ -717,6 +719,8 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
   if (aEmbedder) {
     Transaction txn;
     txn.SetEmbedderElementType(Some(aEmbedder->LocalName()));
+    txn.SetEmbeddedInContentDocument(
+        aEmbedder->OwnerDoc()->IsContentDocument());
     if (nsCOMPtr<nsPIDOMWindowInner> inner =
             do_QueryInterface(aEmbedder->GetOwnerGlobal())) {
       txn.SetEmbedderInnerWindowId(inner->WindowID());
