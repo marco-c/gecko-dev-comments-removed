@@ -16,6 +16,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/WordBreaker.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -138,6 +139,26 @@ static Accessible* PrevLeaf(Accessible* aOrigin) {
   return pivot.Prev(aOrigin, rule);
 }
 
+static nsIFrame* GetFrameInBlock(const LocalAccessible* aAcc) {
+  dom::HTMLInputElement* input =
+      dom::HTMLInputElement::FromNodeOrNull(aAcc->GetContent());
+  if (!input) {
+    if (LocalAccessible* parent = aAcc->LocalParent()) {
+      input = dom::HTMLInputElement::FromNodeOrNull(parent->GetContent());
+    }
+  }
+
+  if (input) {
+    
+    
+    
+    
+    return input->GetPrimaryFrame();
+  }
+
+  return aAcc->GetFrame();
+}
+
 static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
   if (aAcc->NativeRole() == roles::LISTITEM_MARKER) {
     
@@ -170,18 +191,17 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
       }
     }
   }
-  nsIFrame* thisFrame = aAcc->GetFrame();
+
+  nsIFrame* thisFrame = GetFrameInBlock(aAcc);
   if (!thisFrame) {
     return false;
   }
-  
-  
-  
-  nsIFrame::GetFirstLeaf(&thisFrame);
-  nsIFrame* prevFrame = prevLocal->GetFrame();
+
+  nsIFrame* prevFrame = GetFrameInBlock(prevLocal);
   if (!prevFrame) {
     return false;
   }
+
   auto [thisBlock, thisLineFrame] = thisFrame->GetContainingBlockForLine(
        false);
   if (!thisBlock) {
@@ -189,7 +209,7 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
     
     return true;
   }
-  nsIFrame::GetLastLeaf(&prevFrame);
+
   
   
   prevFrame = prevFrame->LastContinuation();
