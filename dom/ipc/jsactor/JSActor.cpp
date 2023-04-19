@@ -129,21 +129,6 @@ nsresult JSActor::QueryInterfaceActor(const nsIID& aIID, void** aPtr) {
   return mWrappedJS->QueryInterface(aIID, aPtr);
 }
 
-
-bool JSActor::AllowMessage(const JSActorMessageMeta& aMetadata,
-                           size_t aDataLength) {
-  
-  
-  
-  static const size_t kMaxMessageSize =
-      IPC::Channel::kMaximumMessageSize - 20 * 1024;
-  if (aDataLength < kMaxMessageSize) {
-    return true;
-  }
-
-  return false;
-}
-
 void JSActor::SetName(const nsACString& aName) {
   MOZ_ASSERT(mName.IsEmpty(), "Cannot set name twice!");
   mName = aName;

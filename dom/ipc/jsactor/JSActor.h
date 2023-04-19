@@ -70,11 +70,6 @@ class JSActor : public nsISupports, public nsWrapperCache {
                               ErrorResult& aRv) = 0;
 
   
-  
-  static bool AllowMessage(const JSActorMessageMeta& aMetadata,
-                           size_t aDataLength);
-
-  
   using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
   static void SendRawMessageInProcess(const JSActorMessageMeta& aMeta,
                                       Maybe<ipc::StructuredCloneData>&& aData,
