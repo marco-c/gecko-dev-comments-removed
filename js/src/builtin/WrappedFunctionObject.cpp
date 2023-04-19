@@ -15,6 +15,7 @@
 #include "js/Exception.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "util/StringBuffer.h"
 #include "vm/JSFunction.h"
 #include "vm/ObjectOperations.h"
 
@@ -210,6 +211,33 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
   return JS_DefinePropertyById(cx, F, name, rootedFunName, JSPROP_READONLY);
 }
 
+static JSString* ToStringOp(JSContext* cx, JS::HandleObject obj,
+                            bool isToSource) {
+  Rooted<jsid> name(cx, NameToId(cx->names().name));
+  Rooted<Value> nameVal(cx);
+  if (!JS_GetPropertyById(cx, obj, name, &nameVal)) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(nameVal.isString());
+  Rooted<JSString*> nameStr(cx, nameVal.toString());
+
+  JSStringBuilder out(cx);
+  if (!out.append("function ")) {
+    return nullptr;
+  }
+
+  if (!out.append(nameStr)) {
+    return nullptr;
+  }
+
+  if (!out.append("() {\n    [native code]\n}")) {
+    return nullptr;
+  }
+
+  return out.finishString();
+}
+
 static const JSClassOps classOps = {
     nullptr,               
     nullptr,               
@@ -223,13 +251,28 @@ static const JSClassOps classOps = {
     nullptr,               
 };
 
+static const ObjectOps objOps = {
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    nullptr,     
+    ToStringOp,  
+};
+
 const JSClass WrappedFunctionObject::class_ = {
     "WrappedFunctionObject",
     JSCLASS_HAS_CACHED_PROTO(
         JSProto_Function) |  
                              
         JSCLASS_HAS_RESERVED_SLOTS(WrappedFunctionObject::SlotCount),
-    &classOps};
+    &classOps,
+    JS_NULL_CLASS_SPEC,
+    JS_NULL_CLASS_EXT,
+    &objOps};
 
 JSObject* GetRealmFunctionPrototype(JSContext* cx, Realm* realm) {
   CHECK_THREAD(cx);
