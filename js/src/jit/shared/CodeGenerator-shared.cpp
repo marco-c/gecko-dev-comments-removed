@@ -77,18 +77,12 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
   }
 
   if (gen->compilingWasm()) {
-    
-    
-    
-    MOZ_ASSERT(graph->argumentSlotCount() == 0);
-
 #ifdef JS_CODEGEN_ARM64
     
     frameDepth_ = AlignBytes(graph->localSlotsSize(), WasmStackAlignment);
 #else
     frameDepth_ = AlignBytes(graph->localSlotsSize(), sizeof(uintptr_t));
 #endif
-    frameDepth_ += gen->wasmMaxStackArgBytes();
 
 #ifdef ENABLE_WASM_SIMD
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) || \
@@ -101,6 +95,12 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 #endif
 
     if (gen->needsStaticStackAlignment()) {
+      
+      
+      
+      MOZ_ASSERT(graph->argumentSlotCount() == 0);
+      frameDepth_ += gen->wasmMaxStackArgBytes();
+
       
       
       
