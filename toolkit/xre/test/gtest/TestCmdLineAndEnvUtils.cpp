@@ -252,8 +252,8 @@ bool TestCommandLineImpl(CommandLine const& cl) {
   
   
   CharT** argv = const_cast<CharT**>(cl.argv<CharT>());
-  return mozilla::internal::EnsureCommandlineSafeImpl(argc, argv,
-                                                      kRequiredArgs);
+  return mozilla::internal::EnsureCommandlineSafeImpl<CharT>(argc, argv,
+                                                             kRequiredArgs);
 }
 
 
