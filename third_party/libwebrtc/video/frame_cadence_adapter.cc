@@ -120,7 +120,8 @@ class ZeroHertzAdapterMode : public AdapterMode {
   void UpdateFrameRate() override {}
 
   
-  ABSL_MUST_USE_RESULT bool ProcessKeyFrameRequest();
+  
+  void ProcessKeyFrameRequest();
 
  private:
   
@@ -220,7 +221,7 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   void UpdateLayerQualityConvergence(int spatial_index,
                                      bool quality_converged) override;
   void UpdateLayerStatus(int spatial_index, bool enabled) override;
-  ABSL_MUST_USE_RESULT bool ProcessKeyFrameRequest() override;
+  void ProcessKeyFrameRequest() override;
 
   
   void OnFrame(const VideoFrame& frame) override;
@@ -277,6 +278,9 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   
   
   std::atomic<int> frames_scheduled_for_processing_{0};
+
+  
+  bool should_request_refresh_frame_ RTC_GUARDED_BY(queue_) = false;
 
   ScopedTaskSafetyDetached safety_;
 };
@@ -368,7 +372,7 @@ absl::optional<uint32_t> ZeroHertzAdapterMode::GetInputFrameRateFps() {
   return max_fps_;
 }
 
-bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
+void ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   
@@ -376,7 +380,8 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
     RTC_LOG(LS_INFO)
         << __func__ << " this " << this
         << " requesting refresh frame due to no frames received yet.";
-    return true;
+    callback_->RequestRefreshFrame();
+    return;
   }
 
   
@@ -390,7 +395,7 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
     RTC_LOG(LS_INFO) << __func__ << " this " << this
                      << " not requesting refresh frame because of recently "
                         "incoming frame or short repeating.";
-    return false;
+    return;
   }
 
   
@@ -402,7 +407,7 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
     RTC_LOG(LS_INFO) << __func__ << " this " << this
                      << " not requesting refresh frame because of soon "
                         "happening idle repeat";
-    return false;
+    return;
   }
 
   
@@ -411,7 +416,7 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
                    << " not requesting refresh frame and scheduling a short "
                       "repeat due to key frame request";
   ScheduleRepeat(++current_frame_id_, false);
-  return false;
+  return;
 }
 
 
@@ -590,12 +595,12 @@ void FrameCadenceAdapterImpl::UpdateLayerStatus(int spatial_index,
     zero_hertz_adapter_->UpdateLayerStatus(spatial_index, enabled);
 }
 
-bool FrameCadenceAdapterImpl::ProcessKeyFrameRequest() {
+void FrameCadenceAdapterImpl::ProcessKeyFrameRequest() {
   RTC_DCHECK_RUN_ON(queue_);
   if (zero_hertz_adapter_)
-    return zero_hertz_adapter_->ProcessKeyFrameRequest();
-  
-  return false;
+    zero_hertz_adapter_->ProcessKeyFrameRequest();
+  else
+    should_request_refresh_frame_ = true;
 }
 
 void FrameCadenceAdapterImpl::OnFrame(const VideoFrame& frame) {
@@ -658,6 +663,12 @@ void FrameCadenceAdapterImpl::MaybeReconfigureAdapters(
       zero_hertz_adapter_.emplace(queue_, clock_, callback_,
                                   source_constraints_->max_fps.value());
       RTC_LOG(LS_INFO) << "Zero hertz mode activated.";
+
+      if (should_request_refresh_frame_) {
+        
+        should_request_refresh_frame_ = false;
+        callback_->RequestRefreshFrame();
+      }
     }
     zero_hertz_adapter_->ReconfigureParameters(zero_hertz_params_.value());
     current_adapter_mode_ = &zero_hertz_adapter_.value();

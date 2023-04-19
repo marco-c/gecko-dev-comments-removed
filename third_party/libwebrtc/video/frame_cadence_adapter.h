@@ -68,6 +68,9 @@ class FrameCadenceAdapterInterface
 
     
     virtual void OnDiscardedFrame() = 0;
+
+    
+    virtual void RequestRefreshFrame() = 0;
   };
 
   
@@ -106,7 +109,7 @@ class FrameCadenceAdapterInterface
 
   
   
-  virtual ABSL_MUST_USE_RESULT bool ProcessKeyFrameRequest() = 0;
+  virtual void ProcessKeyFrameRequest() = 0;
 };
 
 }  
