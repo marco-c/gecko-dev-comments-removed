@@ -101,12 +101,6 @@ struct RtcpTransceiverConfig {
 
   
   
-  
-  
-  RtcpRttStats* rtt_observer = nullptr;
-
-  
-  
   NetworkLinkRtcpObserver* network_link_observer = nullptr;
 
   
