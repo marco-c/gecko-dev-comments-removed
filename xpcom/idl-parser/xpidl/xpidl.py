@@ -779,6 +779,13 @@ class Interface(object):
     def resolve(self, parent):
         self.idl = parent
 
+        if not self.attributes.scriptable and self.attributes.builtinclass:
+            raise IDLError(
+                "Non-scriptable interface '%s' doesn't need to be marked builtinclass"
+                % self.name,
+                self.location,
+            )
+
         
         
         if parent.hasName(self.name):
