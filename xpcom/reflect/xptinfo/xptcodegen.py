@@ -331,14 +331,21 @@ def link_to_cpp(interfaces, fd, header_fd):
             )
         )
 
+    def is_type_reflectable(type):
+        
+        if type["tag"] == "TD_VOID":
+            return False
+        if type["tag"] in ("TD_ARRAY", "TD_LEGACY_ARRAY"):
+            return is_type_reflectable(type["element"])
+        return True
+
     def is_method_reflectable(method):
         if "hidden" in method["flags"]:
             return False
 
         for param in method["params"]:
             
-            
-            if param["type"]["tag"] == "TD_VOID":
+            if not is_type_reflectable(param["type"]):
                 return False
 
         return True

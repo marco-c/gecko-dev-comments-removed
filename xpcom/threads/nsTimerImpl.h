@@ -209,9 +209,6 @@ class nsTimer final : public nsITimer {
                  : NS_ERROR_NULL_POINTER;
   }
 
-  virtual size_t SizeOfIncludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const override;
-
   
   
   static RefPtr<nsTimer> WithEventTarget(nsIEventTarget* aTarget);

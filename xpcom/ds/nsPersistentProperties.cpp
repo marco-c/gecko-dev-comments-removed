@@ -410,7 +410,7 @@ nsPersistentProperties::nsPersistentProperties()
 nsPersistentProperties::~nsPersistentProperties() = default;
 
 size_t nsPersistentProperties::SizeOfIncludingThis(
-    mozilla::MallocSizeOf aMallocSizeOf) const {
+    mozilla::MallocSizeOf aMallocSizeOf) {
   
   size_t n = 0;
   n += mArena.SizeOfExcludingThis(aMallocSizeOf);

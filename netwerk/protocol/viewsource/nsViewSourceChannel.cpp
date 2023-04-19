@@ -1054,6 +1054,11 @@ nsViewSourceChannel::LogMimeTypeMismatch(const nsACString& aMessageName,
                                            aContentType);
 }
 
+
+
+void nsViewSourceChannel::SetSource(
+    mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource) {}
+
 const nsTArray<mozilla::net::PreferredAlternativeDataTypeParams>&
 nsViewSourceChannel::PreferredAlternativeDataTypes() {
   if (mCacheInfoChannel) {
@@ -1079,6 +1084,11 @@ void nsViewSourceChannel::DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() {
     mHttpChannelInternal->DoDiagnosticAssertWhenOnStopNotCalledOnDestroy();
   }
 }
+
+
+
+void nsViewSourceChannel::SetConnectionInfo(
+    mozilla::net::nsHttpConnectionInfo* aInfo) {}
 
 
 

@@ -51,7 +51,7 @@ xpcAccessibleGeneric::~xpcAccessibleGeneric() {
 
 
 
-LocalAccessible* xpcAccessibleGeneric::ToInternalAccessible() const {
+LocalAccessible* xpcAccessibleGeneric::ToInternalAccessible() {
   return mIntl->AsLocal();
 }
 
