@@ -380,6 +380,11 @@ class Accessible {
   virtual bool DoAction(uint8_t aIndex) const = 0;
 
   
+
+
+  virtual KeyBinding AccessKey() const = 0;
+
+  
   
 
   
