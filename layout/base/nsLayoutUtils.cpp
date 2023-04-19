@@ -5936,9 +5936,24 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
   }
 
   const nsBlockFrame* block = do_QueryFrame(aFrame);
-  if (!block)
+  if (!block) {
+    if (nsIScrollableFrame* sFrame = do_QueryFrame(aFrame)) {
+      
+      
+      const auto* scrolledFrame = sFrame->GetScrolledFrame();
+      if (!GetLastLineBaseline(aWM, scrolledFrame, aResult)) {
+        return false;
+      }
+      
+      *aResult += aFrame->GetLogicalUsedBorder(aWM).BStart(aWM);
+      const auto maxBaseline = aFrame->GetLogicalSize(aWM).BSize(aWM);
+      
+      
+      return *aResult <= maxBaseline && *aResult >= 0;
+    }
     
     return false;
+  }
 
   for (nsBlockFrame::ConstReverseLineIterator line = block->LinesRBegin(),
                                               line_end = block->LinesREnd();
