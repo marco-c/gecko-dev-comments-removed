@@ -1737,12 +1737,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
-                                                    nsAtom& aTagName) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, *nsGkAtoms::_empty, u""_ns, true);
-  }
+                                                    const nsAtom& aTagName);
 
   
 
@@ -1756,13 +1753,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  ReplaceContainerWithTransaction(Element& aOldContainer, nsAtom& aTagName,
-                                  nsAtom& aAttribute,
-                                  const nsAString& aAttributeValue) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, aAttribute, aAttributeValue, false);
-  }
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  ReplaceContainerWithTransaction(Element& aOldContainer,
+                                  const nsAtom& aTagName,
+                                  const nsAtom& aAttribute,
+                                  const nsAString& aAttributeValue);
 
   
 
@@ -1773,11 +1768,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  ReplaceContainerWithTransaction(Element& aOldContainer, nsAtom& aTagName) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, *nsGkAtoms::_empty, u""_ns, false);
-  }
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  ReplaceContainerWithTransaction(Element& aOldContainer,
+                                  const nsAtom& aTagName);
 
   
 
@@ -1802,12 +1795,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
-                                 nsAtom& aWrapperTagName) {
-    return InsertContainerWithTransactionInternal(
-        aContentToBeWrapped, aWrapperTagName, *nsGkAtoms::_empty, u""_ns);
-  }
+                                 const nsAtom& aWrapperTagName);
 
   
 
@@ -1826,13 +1816,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   InsertContainerWithTransaction(nsIContent& aContentToBeWrapped,
-                                 nsAtom& aWrapperTagName, nsAtom& aAttribute,
-                                 const nsAString& aAttributeValue) {
-    return InsertContainerWithTransactionInternal(
-        aContentToBeWrapped, aWrapperTagName, aAttribute, aAttributeValue);
-  }
+                                 const nsAtom& aWrapperTagName,
+                                 const nsAtom& aAttribute,
+                                 const nsAString& aAttributeValue);
 
   
 
@@ -1852,12 +1840,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveNodeToEndWithTransaction(nsIContent& aContentToMove,
-                               nsINode& aNewContainer) {
-    return MoveNodeWithTransaction(aContentToMove,
-                                   EditorDOMPoint::AtEndOf(aNewContainer));
-  }
+                               nsINode& aNewContainer);
 
   
 
@@ -3127,13 +3112,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Element* GetTableCellElementAt(Element& aTableElement,
-                                 const CellIndexes& aCellIndexes) const {
-    return GetTableCellElementAt(aTableElement, aCellIndexes.mRow,
-                                 aCellIndexes.mColumn);
-  }
-  Element* GetTableCellElementAt(Element& aTableElement, int32_t aRowIndex,
-                                 int32_t aColumnIndex) const;
+  [[nodiscard]] inline Element* GetTableCellElementAt(
+      Element& aTableElement, const CellIndexes& aCellIndexes) const;
+  [[nodiscard]] Element* GetTableCellElementAt(Element& aTableElement,
+                                               int32_t aRowIndex,
+                                               int32_t aColumnIndex) const;
 
   
 
@@ -3242,8 +3225,9 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  ReplaceContainerWithTransactionInternal(Element& aElement, nsAtom& aTagName,
-                                          nsAtom& aAttribute,
+  ReplaceContainerWithTransactionInternal(Element& aOldContainer,
+                                          const nsAtom& aTagName,
+                                          const nsAtom& aAttribute,
                                           const nsAString& aAttributeValue,
                                           bool aCloneAllAttributes);
 
@@ -3267,8 +3251,8 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   InsertContainerWithTransactionInternal(nsIContent& aContentToBeWrapped,
-                                         nsAtom& aWrapperTagName,
-                                         nsAtom& aAttribute,
+                                         const nsAtom& aWrapperTagName,
+                                         const nsAtom& aAttribute,
                                          const nsAString& aAttributeValue);
 
   
@@ -4332,13 +4316,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  already_AddRefed<RangeItem> GetSelectedRangeItemForTopLevelEditSubAction()
-      const {
-    if (!mSelectedRangeForTopLevelEditSubAction) {
-      mSelectedRangeForTopLevelEditSubAction = new RangeItem();
-    }
-    return do_AddRef(mSelectedRangeForTopLevelEditSubAction);
-  }
+  [[nodiscard]] inline already_AddRefed<RangeItem>
+  GetSelectedRangeItemForTopLevelEditSubAction() const;
 
   
 
@@ -4348,12 +4327,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  already_AddRefed<nsRange> GetChangedRangeForTopLevelEditSubAction() const {
-    if (!mChangedRangeForTopLevelEditSubAction) {
-      mChangedRangeForTopLevelEditSubAction = nsRange::Create(GetDocument());
-    }
-    return do_AddRef(mChangedRangeForTopLevelEditSubAction);
-  }
+  [[nodiscard]] inline already_AddRefed<nsRange>
+  GetChangedRangeForTopLevelEditSubAction() const;
 
   MOZ_CAN_RUN_SCRIPT void DidDoTransaction(
       TransactionManager& aTransactionManager, nsITransaction& aTransaction,

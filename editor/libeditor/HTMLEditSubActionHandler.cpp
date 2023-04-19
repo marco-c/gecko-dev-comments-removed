@@ -5,6 +5,7 @@
 
 
 #include "HTMLEditor.h"
+#include "HTMLEditorInlines.h"
 
 #include <algorithm>
 #include <utility>

@@ -4,6 +4,7 @@
 
 
 #include "HTMLEditor.h"
+#include "HTMLEditorInlines.h"
 
 #include "AutoRangeArray.h"
 #include "CSSEditUtils.h"
