@@ -278,10 +278,6 @@ class VideoReceiveStream {
 
     
     
-    std::string stream_id;
-
-    
-    
     
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
 

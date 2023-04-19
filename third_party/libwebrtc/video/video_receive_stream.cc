@@ -332,8 +332,7 @@ void VideoReceiveStream::Start() {
 
   for (const Decoder& decoder : config_.decoders) {
     std::unique_ptr<VideoDecoder> video_decoder =
-        config_.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
-                                                          config_.stream_id);
+        config_.decoder_factory->CreateVideoDecoder(decoder.video_format);
     
     
     
