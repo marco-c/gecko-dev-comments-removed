@@ -15,13 +15,9 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
 loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
-  { name: "promisified-events.js", dir: MOCHITESTS_DIR },
-  { name: "role.js", dir: MOCHITESTS_DIR },
-  { name: "states.js", dir: MOCHITESTS_DIR }
+  { name: "promisified-events.js", dir: MOCHITESTS_DIR }
 );
 
 
@@ -82,11 +78,4 @@ async function spawnTestStates(browsingContext, elementId, expectedStates) {
     [elementId, expectedStates],
     testStates
   );
-}
-
-function testVisibility(acc, shouldBeOffscreen, shouldBeInvisible) {
-  const [states] = getStates(acc);
-  let looksGood = shouldBeOffscreen == ((states & STATE_OFFSCREEN) != 0);
-  looksGood &= shouldBeInvisible == ((states & STATE_INVISIBLE) != 0);
-  return looksGood;
 }
