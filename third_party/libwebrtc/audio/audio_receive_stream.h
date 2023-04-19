@@ -22,6 +22,7 @@
 #include "call/audio_receive_stream.h"
 #include "call/syncable.h"
 #include "modules/rtp_rtcp/source/source_tracker.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -44,7 +45,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public Syncable {
  public:
   AudioReceiveStream(Clock* clock,
-                     RtpStreamReceiverControllerInterface* receiver_controller,
                      PacketRouter* packet_router,
                      ProcessThread* module_process_thread,
                      NetEqFactory* neteq_factory,
@@ -54,7 +54,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   
   AudioReceiveStream(
       Clock* clock,
-      RtpStreamReceiverControllerInterface* receiver_controller,
       PacketRouter* packet_router,
       const webrtc::AudioReceiveStream::Config& config,
       const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -65,7 +64,21 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   AudioReceiveStream(const AudioReceiveStream&) = delete;
   AudioReceiveStream& operator=(const AudioReceiveStream&) = delete;
 
+  
+  
+  
+  
+  
   ~AudioReceiveStream() override;
+
+  
+  
+  void RegisterWithTransport(
+      RtpStreamReceiverControllerInterface* receiver_controller);
+  
+  
+  
+  void UnregisterFromTransport();
 
   
   void Reconfigure(const webrtc::AudioReceiveStream::Config& config) override;
@@ -104,16 +117,26 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
  private:
   AudioState* audio_state() const;
 
-  SequenceChecker worker_thread_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_thread_checker_;
+  
+  
+  
+  
+  
+  
+  
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_;
   webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   SourceTracker source_tracker_;
   const std::unique_ptr<voe::ChannelReceiveInterface> channel_receive_;
-  AudioSendStream* associated_send_stream_ = nullptr;
+  AudioSendStream* associated_send_stream_
+      RTC_GUARDED_BY(network_thread_checker_) = nullptr;
 
   bool playing_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
-  std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_;
+  std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_
+      RTC_GUARDED_BY(network_thread_checker_);
 };
 }  
 }  

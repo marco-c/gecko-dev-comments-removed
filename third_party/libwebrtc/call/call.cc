@@ -912,14 +912,15 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   event_log_->Log(std::make_unique<RtcEventAudioReceiveStreamConfig>(
       CreateRtcLogStreamConfig(config)));
 
-  
-  
-  
-  
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      clock_, &audio_receiver_controller_, transport_send_->packet_router(),
+      clock_, transport_send_->packet_router(),
       module_process_thread_->process_thread(), config_.neteq_factory, config,
       config_.audio_state, event_log_);
+
+  
+  
+  
+  receive_stream->RegisterWithTransport(&audio_receiver_controller_);
 
   
   
@@ -953,6 +954,8 @@ void Call::DestroyAudioReceiveStream(
 
   
   
+  
+  audio_receive_stream->UnregisterFromTransport();
   audio_receive_streams_.erase(audio_receive_stream);
   const std::string& sync_group = audio_receive_stream->config().sync_group;
 
