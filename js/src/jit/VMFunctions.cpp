@@ -1294,7 +1294,7 @@ JSString* StringReplace(JSContext* cx, HandleString string,
 }
 
 bool SetDenseElement(JSContext* cx, Handle<NativeObject*> obj, int32_t index,
-                     HandleValue value, bool strict) {
+                     HandleValue value) {
   
   
   
