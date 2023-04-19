@@ -1243,14 +1243,15 @@ var ExtensionContent = {
           const result = await promise;
 
           return { frameId, result };
-        } catch ({ message }) {
-          
-          
-          
-          return { frameId, error: { message } };
+        } catch (error) {
+          return { frameId, error };
         }
       })
-    ).catch(e => Promise.reject({ message: e.message }));
+    ).catch(
+      
+      
+      e => Promise.reject({ message: e.message })
+    );
 
     try {
       
