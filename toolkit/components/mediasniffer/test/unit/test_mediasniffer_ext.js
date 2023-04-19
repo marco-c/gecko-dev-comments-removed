@@ -45,9 +45,6 @@ const tests = [
   { path: "data/mp3-in-riff.wav", expected: "audio/mpeg" },
   
   { path: "data/bug1725190.cr3", expected: "application/octet-stream" },
-  
-  
-  { path: "data/8kHz-320kbps-6ch.aac", expected: "audio/aac" },
 ];
 
 

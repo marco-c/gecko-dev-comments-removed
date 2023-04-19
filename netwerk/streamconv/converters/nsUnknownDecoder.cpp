@@ -24,9 +24,10 @@
 #include "nsQueryObject.h"
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/StaticPrefs_network.h"
 
 #include <algorithm>
+
+#define MAX_BUFFER_SIZE 512u
 
 using namespace mozilla;
 
@@ -173,9 +174,8 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request, nsIInputStream* aStream,
     
     
     
-    if (mBufferLen + aCount >=
-        StaticPrefs::network_http_mimesniff_max_length()) {
-      count = StaticPrefs::network_http_mimesniff_max_length() - mBufferLen;
+    if (mBufferLen + aCount >= MAX_BUFFER_SIZE) {
+      count = MAX_BUFFER_SIZE - mBufferLen;
     } else {
       count = aCount;
     }
@@ -239,7 +239,7 @@ nsUnknownDecoder::OnStartRequest(nsIRequest* request) {
 
   
   if (NS_SUCCEEDED(rv) && !mBuffer) {
-    mBuffer = new char[StaticPrefs::network_http_mimesniff_max_length()];
+    mBuffer = new char[MAX_BUFFER_SIZE];
 
     if (!mBuffer) {
       rv = NS_ERROR_OUT_OF_MEMORY;
@@ -417,9 +417,7 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
     }
     if (!decodedData.IsEmpty()) {
       testData = decodedData.get();
-      testDataLen =
-          std::min<uint32_t>(decodedData.Length(),
-                             StaticPrefs::network_http_mimesniff_max_length());
+      testDataLen = std::min<uint32_t>(decodedData.Length(), MAX_BUFFER_SIZE);
     }
   }
 
@@ -506,8 +504,7 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
   } else {
     str = mDecodedData.get();
     end = mDecodedData.get() +
-          std::min<uint32_t>(mDecodedData.Length(),
-                             StaticPrefs::network_http_mimesniff_max_length());
+          std::min<uint32_t>(mDecodedData.Length(), MAX_BUFFER_SIZE);
   }
 
   
@@ -609,13 +606,10 @@ bool nsUnknownDecoder::LastDitchSniff(nsIRequest* aRequest) {
     testData = mBuffer;
     
     
-    testDataLen = std::min<uint32_t>(
-        mBufferLen, StaticPrefs::network_http_mimesniff_max_length());
+    testDataLen = std::min<uint32_t>(mBufferLen, MAX_BUFFER_SIZE);
   } else {
     testData = mDecodedData.get();
-    testDataLen =
-        std::min<uint32_t>(mDecodedData.Length(),
-                           StaticPrefs::network_http_mimesniff_max_length());
+    testDataLen = std::min<uint32_t>(mDecodedData.Length(), MAX_BUFFER_SIZE);
   }
 
   
@@ -721,9 +715,8 @@ nsresult nsUnknownDecoder::FireListenerNotifications(nsIRequest* request,
     nsCOMPtr<nsIOutputStream> out;
 
     
-    rv = NS_NewPipe(getter_AddRefs(in), getter_AddRefs(out),
-                    StaticPrefs::network_http_mimesniff_max_length(),
-                    StaticPrefs::network_http_mimesniff_max_length());
+    rv = NS_NewPipe(getter_AddRefs(in), getter_AddRefs(out), MAX_BUFFER_SIZE,
+                    MAX_BUFFER_SIZE);
 
     if (NS_SUCCEEDED(rv)) {
       rv = out->Write(mBuffer, mBufferLen, &len);
