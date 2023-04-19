@@ -15,12 +15,6 @@
 
 
 
-
-
-
-
-
-
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +23,6 @@
 #include "mozilla/Sprintf.h"
 #include "nsCRTGlue.h"
 #include "nsTextFormatter.h"
-#include "nsMemory.h"
 
 struct nsTextFormatter::SprintfStateStr {
   int (*stuff)(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen);

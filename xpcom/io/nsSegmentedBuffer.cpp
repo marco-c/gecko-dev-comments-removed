@@ -5,7 +5,6 @@
 
 
 #include "nsSegmentedBuffer.h"
-#include "nsMemory.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"

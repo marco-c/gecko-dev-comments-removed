@@ -4,7 +4,6 @@
 
 
 
-#include "nsMemory.h"
 #include "nsString.h"
 
 #include "mozilla/ErrorResult.h"

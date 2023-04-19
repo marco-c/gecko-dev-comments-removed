@@ -5,7 +5,6 @@
 
 
 #include "nsScriptableInputStream.h"
-#include "nsMemory.h"
 #include "nsString.h"
 
 NS_IMPL_ISUPPORTS(nsScriptableInputStream, nsIScriptableInputStream)

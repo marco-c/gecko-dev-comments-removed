@@ -5,7 +5,6 @@
 
 
 #include "gtest/gtest.h"
-#include "nsMemory.h"
 #include "nsThreadUtils.h"
 #include "nsDocShellCID.h"
 

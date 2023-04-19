@@ -17,7 +17,6 @@
 #include "nsDebug.h"          
 #include "nsError.h"          
 #include "nsIContent.h"       
-#include "nsMemory.h"         
 #include "nsReadableUtils.h"  
 #include "nsString.h"         
 

@@ -4,7 +4,6 @@
 
 
 #include "nsIMemoryReporter.h"
-#include "nsMemory.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/CheckedInt.h"

@@ -14,7 +14,6 @@
 #include "nsError.h"              
 #include "nsAtom.h"               
 #include "nsID.h"
-#include "nsMemory.h"  
 #include "nsString.h"  
 #include "nsTArray.h"  
 #include "nscore.h"    

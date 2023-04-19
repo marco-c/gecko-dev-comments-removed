@@ -5,7 +5,6 @@
 
 
 #include "nsHTTPCompressConv.h"
-#include "nsMemory.h"
 #include "plstr.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"

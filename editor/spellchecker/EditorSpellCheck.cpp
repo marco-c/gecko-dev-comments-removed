@@ -37,7 +37,6 @@
 #include "nsThreadUtils.h"     
 #include "nsVariant.h"         
 #include "nsLiteralString.h"   
-#include "nsMemory.h"          
 #include "nsRange.h"
 #include "nsReadableUtils.h"        
 #include "nsServiceManagerUtils.h"  

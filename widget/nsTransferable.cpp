@@ -24,7 +24,6 @@
 #include "nsCOMPtr.h"
 #include "nsXPCOM.h"
 #include "nsISupportsPrimitives.h"
-#include "nsMemory.h"
 #include "nsPrimitiveHelpers.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryService.h"

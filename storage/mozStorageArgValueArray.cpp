@@ -5,7 +5,6 @@
 
 
 #include "nsError.h"
-#include "nsMemory.h"
 #include "nsString.h"
 
 #include "mozStoragePrivateHelpers.h"
