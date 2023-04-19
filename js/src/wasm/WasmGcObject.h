@@ -4,8 +4,8 @@
 
 
 
-#ifndef wasm_TypedObject_h
-#define wasm_TypedObject_h
+#ifndef wasm_WasmGcObject_h
+#define wasm_WasmGcObject_h
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
@@ -21,7 +21,7 @@ using js::wasm::FieldType;
 
 namespace js {
 
-class TypedObject;
+class WasmGcObject;
 
 
 
@@ -99,10 +99,10 @@ class RttValue : public NativeObject {
   };
 
   [[nodiscard]] bool lookupProperty(JSContext* cx,
-                                    js::Handle<TypedObject*> object, jsid id,
+                                    js::Handle<WasmGcObject*> object, jsid id,
                                     PropOffset* offset, wasm::FieldType* type);
-  [[nodiscard]] bool hasProperty(JSContext* cx, js::Handle<TypedObject*> object,
-                                 jsid id) {
+  [[nodiscard]] bool hasProperty(JSContext* cx,
+                                 js::Handle<WasmGcObject*> object, jsid id) {
     RttValue::PropOffset offset;
     wasm::FieldType type;
     return lookupProperty(cx, object, id, &offset, &type);
@@ -116,7 +116,7 @@ class RttValue : public NativeObject {
 
 
 
-class TypedObject : public JSObject {
+class WasmGcObject : public JSObject {
  protected:
   GCPtr<RttValue*> rttValue_;
 
@@ -178,7 +178,7 @@ class TypedObject : public JSObject {
 
 
 
-class WasmArrayObject : public TypedObject {
+class WasmArrayObject : public WasmGcObject {
  public:
   static const JSClass class_;
 
@@ -227,7 +227,7 @@ class WasmArrayObject : public TypedObject {
 
 
 
-class WasmStructObject : public TypedObject {
+class WasmStructObject : public WasmGcObject {
  public:
   static const JSClass class_;
 
@@ -235,7 +235,6 @@ class WasmStructObject : public TypedObject {
   
   uint8_t* outlineData_;
 
- public:
   
   
   
@@ -257,7 +256,7 @@ class WasmStructObject : public TypedObject {
   }
 
   
-  static inline gc::AllocKind allocKindForRttValue(RttValue* rtt);
+  static gc::AllocKind allocKindForRttValue(RttValue* rtt);
 
   
   
@@ -357,34 +356,16 @@ inline uint8_t* WasmStructObject::fieldOffsetToAddress(FieldType fieldType,
 
 namespace js {
 
-inline bool IsTypedObjectClass(const JSClass* class_) {
+inline bool IsWasmGcObjectClass(const JSClass* class_) {
   return class_ == &WasmArrayObject::class_ ||
          class_ == &WasmStructObject::class_;
-}
-
-inline bool IsWasmArrayObjectClass(const JSClass* class_) {
-  return class_ == &WasmArrayObject::class_;
-}
-
-inline bool IsWasmStructObjectClass(const JSClass* class_) {
-  return class_ == &WasmStructObject::class_;
 }
 
 }  
 
 template <>
-inline bool JSObject::is<js::TypedObject>() const {
-  return js::IsTypedObjectClass(getClass());
-}
-
-template <>
-inline bool JSObject::is<js::WasmArrayObject>() const {
-  return js::IsWasmArrayObjectClass(getClass());
-}
-
-template <>
-inline bool JSObject::is<js::WasmStructObject>() const {
-  return js::IsWasmStructObjectClass(getClass());
+inline bool JSObject::is<js::WasmGcObject>() const {
+  return js::IsWasmGcObjectClass(getClass());
 }
 
 #endif 
