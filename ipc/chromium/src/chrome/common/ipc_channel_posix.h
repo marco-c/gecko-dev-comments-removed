@@ -90,7 +90,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   
-  MessageLoopForIO::FileDescriptorWatcher server_listen_connection_watcher_;
   MessageLoopForIO::FileDescriptorWatcher read_watcher_;
   MessageLoopForIO::FileDescriptorWatcher write_watcher_;
 
@@ -106,7 +105,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   };
   mozilla::Maybe<PartialWrite> partial_write_;
 
-  int server_listen_pipe_;
   int pipe_;
   int client_pipe_;        
   unsigned pipe_buf_len_;  
@@ -149,11 +147,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   bool waiting_connect_;
 
   
-  
-  
-  bool processing_incoming_;
-
-  
   std::atomic<bool> closed_;
 
   
@@ -180,8 +173,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   mozilla::UniqueMachSendRight other_task_;
 #endif
-
-  ScopedRunnableMethodFactory<ChannelImpl> factory_;
 
   DISALLOW_COPY_AND_ASSIGN(ChannelImpl);
 };

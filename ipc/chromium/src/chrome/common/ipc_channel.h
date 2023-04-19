@@ -89,9 +89,6 @@ class Channel {
 
     
     kReadBufferSize = 4 * 1024,
-
-    
-    kMaxCopySize = 32 * 1024,
   };
 
   
@@ -139,14 +136,9 @@ class Channel {
 
   
   
-  
   bool IsClosed() const;
 
 #if defined(OS_POSIX)
-  
-  
-  
-  
   
   
   
