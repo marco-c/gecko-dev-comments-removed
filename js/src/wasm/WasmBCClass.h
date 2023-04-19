@@ -590,6 +590,9 @@ struct BaseCompiler final {
 
   
   inline size_t countMemRefsOnStk();
+
+  
+  void showStack(const char* who) const;
 #endif
 
   
@@ -1546,8 +1549,30 @@ struct BaseCompiler final {
   void emitConvertU64ToF64();
 #endif
   void emitRound(RoundingMode roundingMode, ValType operandType);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   [[nodiscard]] bool emitInstanceCall(uint32_t lineOrBytecode,
                                       const SymbolicAddressSignature& builtin);
+
   [[nodiscard]] bool emitMemoryGrow();
   [[nodiscard]] bool emitMemorySize();
 
