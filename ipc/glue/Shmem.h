@@ -60,16 +60,11 @@ class ShadowLayerForwarder;
 
 namespace ipc {
 
-class IProtocol;
-class IToplevelProtocol;
-
 template <typename P>
 struct IPDLParamTraits;
 
 class Shmem final {
   friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
-  friend class mozilla::ipc::IProtocol;
-  friend class mozilla::ipc::IToplevelProtocol;
 #ifdef DEBUG
   
   friend class mozilla::layers::ShadowLayerForwarder;
@@ -79,15 +74,22 @@ class Shmem final {
   typedef int32_t id_t;
   
   typedef mozilla::ipc::SharedMemory SharedMemory;
+  
+  
+  
+  
+  struct PrivateIPDLCaller {};
 
   Shmem() : mSegment(nullptr), mData(nullptr), mSize(0), mId(0) {}
 
   Shmem(const Shmem& aOther) = default;
 
+  Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId);
+
   ~Shmem() {
     
     
-    forget();
+    forget(PrivateIPDLCaller());
   }
 
   Shmem& operator=(const Shmem& aRhs) = default;
@@ -128,29 +130,26 @@ class Shmem final {
     return {get<T>(), Size<T>()};
   }
 
- private:
   
+  id_t Id(PrivateIPDLCaller) const { return mId; }
 
-  Shmem(SharedMemory* aSegment, id_t aId);
-
-  id_t Id() const { return mId; }
-
-  SharedMemory* Segment() const { return mSegment; }
+  SharedMemory* Segment(PrivateIPDLCaller) const { return mSegment; }
 
 #ifndef DEBUG
-  void RevokeRights() {}
+  void RevokeRights(PrivateIPDLCaller) {}
 #else
-  void RevokeRights();
+  void RevokeRights(PrivateIPDLCaller);
 #endif
 
-  void forget() {
+  void forget(PrivateIPDLCaller) {
     mSegment = nullptr;
     mData = nullptr;
     mSize = 0;
     mId = 0;
   }
 
-  static already_AddRefed<Shmem::SharedMemory> Alloc(size_t aNBytes,
+  static already_AddRefed<Shmem::SharedMemory> Alloc(PrivateIPDLCaller,
+                                                     size_t aNBytes,
                                                      bool aUnsafe,
                                                      bool aProtect = false);
 
@@ -158,23 +157,27 @@ class Shmem final {
   
   
   
-  UniquePtr<IPC::Message> MkCreatedMessage(int32_t routingId);
+  UniquePtr<IPC::Message> MkCreatedMessage(PrivateIPDLCaller,
+                                           int32_t routingId);
 
   
   
   
   
-  UniquePtr<IPC::Message> MkDestroyedMessage(int32_t routingId);
+  UniquePtr<IPC::Message> MkDestroyedMessage(PrivateIPDLCaller,
+                                             int32_t routingId);
 
   
   
   
   
   static already_AddRefed<SharedMemory> OpenExisting(
-      const IPC::Message& aDescriptor, id_t* aId, bool aProtect = false);
+      PrivateIPDLCaller, const IPC::Message& aDescriptor, id_t* aId,
+      bool aProtect = false);
 
-  static void Dealloc(SharedMemory* aSegment);
+  static void Dealloc(PrivateIPDLCaller, SharedMemory* aSegment);
 
+ private:
   template <typename T>
   void AssertAligned() const {
     if (0 != (mSize % sizeof(T))) MOZ_CRASH("shmem is not T-aligned");
