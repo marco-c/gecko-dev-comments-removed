@@ -840,6 +840,14 @@ extern JS_PUBLIC_API bool JS_GetGlobalJitCompilerOption(JSContext* cx,
                                                         JSJitCompilerOption opt,
                                                         uint32_t* valueOut);
 
+namespace JS {
+
+
+
+extern JS_PUBLIC_API void DisableSpectreMitigationsAfterInit();
+
+};
+
 
 
 
