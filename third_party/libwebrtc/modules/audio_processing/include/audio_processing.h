@@ -160,7 +160,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   
   
   struct RTC_EXPORT Config {
-
     
     struct RTC_EXPORT Pipeline {
       
@@ -377,8 +376,10 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       } adaptive_digital;
     } gain_controller2;
 
+    
+    
     struct ResidualEchoDetector {
-      bool enabled = true;
+      bool enabled = false;
     } residual_echo_detector;
 
     std::string ToString() const;
@@ -945,10 +946,6 @@ class EchoDetector : public rtc::RefCountInterface {
   
   virtual void AnalyzeCaptureAudio(
       rtc::ArrayView<const float> capture_audio) = 0;
-
-  
-  static void PackRenderAudioBuffer(AudioBuffer* audio,
-                                    std::vector<float>* packed_buffer);
 
   struct Metrics {
     absl::optional<double> echo_likelihood;
