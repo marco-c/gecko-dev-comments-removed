@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 let httpserver;
