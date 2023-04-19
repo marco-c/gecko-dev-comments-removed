@@ -26,6 +26,7 @@
 #include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
+#include "api/transport/data_channel_transport_interface.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
@@ -895,15 +896,6 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
   virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };
 
-enum DataMessageType {
-  
-  
-  DMT_NONE = 0,
-  DMT_CONTROL = 1,
-  DMT_BINARY = 2,
-  DMT_TEXT = 3,
-};
-
 
 
 
@@ -912,26 +904,9 @@ struct ReceiveDataParams {
   
   int sid = 0;
   
-  DataMessageType type = DMT_TEXT;
+  webrtc::DataMessageType type = webrtc::DataMessageType::kText;
   
   int seq_num = 0;
-};
-
-struct SendDataParams {
-  
-  int sid = 0;
-  
-  DataMessageType type = DMT_TEXT;
-
-  
-  
-  bool ordered = false;
-  
-  
-  absl::optional<int> max_rtx_count;
-  
-  
-  absl::optional<int> max_rtx_ms;
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };

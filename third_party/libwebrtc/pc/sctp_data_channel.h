@@ -40,7 +40,8 @@ class SctpDataChannel;
 class SctpDataChannelProviderInterface {
  public:
   
-  virtual bool SendData(const cricket::SendDataParams& params,
+  virtual bool SendData(int sid,
+                        const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
                         cricket::SendDataResult* result) = 0;
   

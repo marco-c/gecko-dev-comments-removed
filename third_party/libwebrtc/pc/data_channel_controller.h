@@ -53,7 +53,8 @@ class DataChannelController : public SctpDataChannelProviderInterface,
 
   
   
-  bool SendData(const cricket::SendDataParams& params,
+  bool SendData(int sid,
+                const SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
                 cricket::SendDataResult* result) override;
   bool ConnectDataChannel(SctpDataChannel* webrtc_data_channel) override;
@@ -131,7 +132,8 @@ class DataChannelController : public SctpDataChannelProviderInterface,
       RTC_RUN_ON(signaling_thread());
 
   
-  bool DataChannelSendData(const cricket::SendDataParams& params,
+  bool DataChannelSendData(int sid,
+                           const SendDataParams& params,
                            const rtc::CopyOnWriteBuffer& payload,
                            cricket::SendDataResult* result);
 
