@@ -7,13 +7,6 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-
-
-Services.prefs.setBoolPref(
-  "extensions.webextensions.warnings-as-errors",
-  false
-);
-
 const updateFile = "test_update.json";
 
 const profileDir = gProfD.clone();

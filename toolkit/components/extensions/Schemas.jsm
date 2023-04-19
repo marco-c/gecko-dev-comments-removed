@@ -579,31 +579,6 @@ class Context {
 
 
 
-  logWarning(warningMessage) {
-    let error = this.makeError(warningMessage, { warning: true });
-    this.logError(error);
-
-    if (lazy.treatWarningsAsErrors) {
-      
-      
-      
-      
-      Services.console.logStringMessage(
-        "Treating warning as error because the preference " +
-          "extensions.webextensions.warnings-as-errors is set to true"
-      );
-      if (typeof error === "string") {
-        error = new Error(error);
-      }
-      throw error;
-    }
-  }
-
-  
-
-
-
-
 
 
 
@@ -1225,27 +1200,6 @@ const FORMATS = {
   manifestShortcutKeyOrEmpty(string, context) {
     return string === "" ? "" : FORMATS.manifestShortcutKey(string, context);
   },
-
-  versionString(string, context) {
-    const parts = string.split(".");
-
-    if (
-      
-      parts.length > 4 ||
-      
-      parts.some(part => !/^(0|[1-9][0-9]{0,8})$/.test(part))
-    ) {
-      context.logWarning(
-        `version must be a version string consisting of at most 4 integers ` +
-          `of at most 9 digits without leading zeros, and separated with dots`
-      );
-    }
-
-    
-    
-    
-    return string;
-  },
 };
 
 
@@ -1356,7 +1310,31 @@ class Entry {
       }
     }
 
-    context.logWarning(message);
+    this.logWarning(context, message);
+  }
+
+  
+
+
+
+  logWarning(context, warningMessage) {
+    let error = context.makeError(warningMessage, { warning: true });
+    context.logError(error);
+
+    if (lazy.treatWarningsAsErrors) {
+      
+      
+      
+      
+      Services.console.logStringMessage(
+        "Treating warning as error because the preference " +
+          "extensions.webextensions.warnings-as-errors is set to true"
+      );
+      if (typeof error === "string") {
+        error = new Error(error);
+      }
+      throw error;
+    }
   }
 
   
@@ -2045,7 +2023,7 @@ class ObjectType extends Type {
           `not contain an unsupported "${prop}" property`
         );
 
-        context.logWarning(forceString(error.error));
+        this.logWarning(context, forceString(error.error));
         if (this.additionalProperties) {
           
           
@@ -2096,7 +2074,7 @@ class ObjectType extends Type {
 
     if (error) {
       if (onError == "warn") {
-        context.logWarning(forceString(error.error));
+        this.logWarning(context, forceString(error.error));
       } else if (onError != "ignore") {
         throw error;
       }
@@ -2397,7 +2375,7 @@ class ArrayType extends Type {
       );
       if (element.error) {
         if (this.onError == "warn") {
-          context.logWarning(forceString(element.error));
+          this.logWarning(context, forceString(element.error));
         } else if (this.onError != "ignore") {
           return element;
         }
