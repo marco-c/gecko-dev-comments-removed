@@ -17,6 +17,7 @@
 #include "vm/JSContext.h"
 #include "vm/Stack.h"
 
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/Interpreter-inl.h"
 
 using namespace js;
@@ -96,6 +97,7 @@ bool js::Reflect_isExtensible(JSContext* cx, unsigned argc, Value* vp) {
 
 
 bool js::Reflect_ownKeys(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Reflect", "ownKeys");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
