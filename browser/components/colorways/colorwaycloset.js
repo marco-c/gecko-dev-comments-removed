@@ -45,12 +45,25 @@ const ColorwayCloset = {
   },
 
   init() {
-    this._displayCollectionData();
-    this._displayHomepageResetOption();
-
-    AddonManager.addAddonListener(this);
     window.addEventListener("unload", this);
 
+    
+    
+    
+    
+    
+    
+    
+    window.addEventListener("load", async () => {
+      await document.l10n.ready;
+      requestAnimationFrame(() => {
+        document.documentElement.style.removeProperty("width");
+      });
+    });
+
+    this._displayCollectionData();
+
+    AddonManager.addAddonListener(this);
     this._initColorwayRadios();
     this.el.colorwayRadios.addEventListener("change", this);
     this.el.intensityContainer.addEventListener("change", this);
@@ -62,6 +75,8 @@ const ColorwayCloset = {
     this.el.cancelButton.onclick = () => {
       window.close();
     };
+
+    this._displayHomepageResetOption();
   },
 
   async _initColorwayRadios() {
