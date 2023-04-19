@@ -648,7 +648,7 @@ add_task(async function test_contentscripts_register_cookieStoreId() {
         cookieStoreId: "not_a_valid_cookieStoreId",
       }),
       /Invalid cookieStoreId/,
-      "contentScript.register with an invalid cookieStoreId"
+      "contentScripts.register with an invalid cookieStoreId"
     );
 
     if (!navigator.userAgent.includes("Android")) {
@@ -659,7 +659,7 @@ add_task(async function test_contentscripts_register_cookieStoreId() {
           cookieStoreId: "firefox-container-999",
         }),
         /Invalid cookieStoreId/,
-        "contentScript.register with an invalid cookieStoreId"
+        "contentScripts.register with an invalid cookieStoreId"
       );
     } else {
       
@@ -679,7 +679,7 @@ add_task(async function test_contentscripts_register_cookieStoreId() {
         cookieStoreId: "",
       }),
       /Invalid cookieStoreId/,
-      "contentScript.register with an invalid cookieStoreId"
+      "contentScripts.register with an invalid cookieStoreId"
     );
 
     browser.test.sendMessage("background_ready");
