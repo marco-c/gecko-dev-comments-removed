@@ -59,7 +59,7 @@ function sleep(ms) {
 
 
 add_task(async function test_shutdown_clients() {
-  info("Ensuring that Sqlite.jsm doesn't shutdown before its clients");
+  info("Ensuring that Sqlite.sys.mjs doesn't shutdown before its clients");
 
   let assertions = [];
 
@@ -96,7 +96,7 @@ add_task(async function test_shutdown_clients() {
   assertions.push({ name: "dbOpened", value: () => dbOpened });
   assertions.push({ name: "dbClosed", value: () => dbClosed });
 
-  info("Now shutdown Sqlite.jsm synchronously");
+  info("Now shutdown Sqlite.sys.mjs synchronously");
   Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
   AsyncShutdown.profileBeforeChange._trigger();
   Services.prefs.clearUserPref("toolkit.asyncshutdown.testing");
@@ -114,5 +114,5 @@ add_task(async function test_shutdown_clients() {
     exn = ex;
   }
   Assert.ok(!!exn);
-  Assert.ok(exn.message.includes("Sqlite.jsm has been shutdown"));
+  Assert.ok(exn.message.includes("Sqlite.sys.mjs has been shutdown"));
 });
