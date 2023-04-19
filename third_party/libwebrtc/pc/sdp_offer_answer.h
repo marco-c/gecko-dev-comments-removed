@@ -237,6 +237,13 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
           bundle_groups_by_mid);
 
   
+  void PlanBUpdateSendersAndReceivers(
+      const cricket::ContentInfo* audio_content,
+      const cricket::AudioContentDescription* audio_desc,
+      const cricket::ContentInfo* video_content,
+      const cricket::VideoContentDescription* video_desc);
+
+  
   
   
   void DoCreateOffer(
