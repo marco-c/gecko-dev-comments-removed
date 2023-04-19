@@ -707,6 +707,10 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
   rtc::WeakPtrFactory<PeerConnection> weak_factory_;
+
+  
+  
+  bool was_ever_connected_ RTC_GUARDED_BY(signaling_thread()) = false;
 };
 
 }  

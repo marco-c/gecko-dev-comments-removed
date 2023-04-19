@@ -1797,9 +1797,11 @@ void PeerConnection::SetConnectionState(
   connection_state_ = new_state;
   Observer()->OnConnectionChange(new_state);
 
-  
-  
-  if (new_state == PeerConnectionState::kConnected) {
+  if (new_state == PeerConnectionState::kConnected && !was_ever_connected_) {
+    was_ever_connected_ = true;
+
+    
+    
     
     
     BundlePolicyUsage policy = kBundlePolicyUsageMax;
