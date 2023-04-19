@@ -515,7 +515,7 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 
   if (!style) {
     style = Servo_ComputedValues_GetForAnonymousBox(aParentStyle, aType,
-                                                    mRawSet.get())
+                                                    mRawSet.get(), nullptr)
                 .Consume();
     MOZ_ASSERT(style);
     if (aParentStyle) {
@@ -527,14 +527,29 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 }
 
 already_AddRefed<ComputedStyle>
-ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
+ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType,
+                                                     const nsAtom* aPageName) {
   MOZ_ASSERT(PseudoStyle::IsNonInheritingAnonBox(aType));
+  MOZ_ASSERT(!aPageName || aType == PseudoStyleType::pageContent,
+             "page name should only be specified for pageContent");
   nsCSSAnonBoxes::NonInheriting type =
       nsCSSAnonBoxes::NonInheritingTypeForPseudoType(aType);
-  RefPtr<ComputedStyle>& cache = mNonInheritingComputedStyles[type];
-  if (cache) {
-    RefPtr<ComputedStyle> retval = cache;
-    return retval.forget();
+
+  
+  
+  
+  
+  if (aPageName == nsGkAtoms::_empty) {
+    aPageName = nullptr;
+  }
+  
+  RefPtr<ComputedStyle>* cache = nullptr;
+  if (!aPageName) {
+    cache = &mNonInheritingComputedStyles[type];
+    if (*cache) {
+      RefPtr<ComputedStyle> retval = *cache;
+      return retval.forget();
+    }
   }
 
   UpdateStylistIfNeeded();
@@ -547,11 +562,14 @@ ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
              "viewport needs fixup to handle blockifying it");
 
   RefPtr<ComputedStyle> computedValues =
-      Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawSet.get())
+      Servo_ComputedValues_GetForAnonymousBox(nullptr, aType, mRawSet.get(),
+                                              aPageName)
           .Consume();
   MOZ_ASSERT(computedValues);
 
-  cache = computedValues;
+  if (cache) {
+    *cache = computedValues;
+  }
   return computedValues.forget();
 }
 
