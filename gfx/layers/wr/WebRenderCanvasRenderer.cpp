@@ -9,6 +9,7 @@
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "SharedSurfaceGL.h"
 #include "WebRenderBridgeChild.h"
 
@@ -49,6 +50,17 @@ void WebRenderCanvasRendererAsync::EnsurePipeline(bool aIsAsync) {
   MOZ_ASSERT(mCanvasClient);
   if (!mCanvasClient) {
     return;
+  }
+
+  if (StaticPrefs::webgl_out_of_process_async_present_force_sync()) {
+    
+    
+    aIsAsync = false;
+  } else {
+    
+    
+    
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
   }
 
   if (mPipelineId && mIsAsync != aIsAsync) {
