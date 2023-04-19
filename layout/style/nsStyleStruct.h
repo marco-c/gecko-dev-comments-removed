@@ -844,6 +844,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   mozilla::NonNegativeLengthPercentageOrNormal mColumnGap;
   mozilla::NonNegativeLengthPercentageOrNormal mRowGap;
 
+  mozilla::StyleContainIntrinsicSize mContainIntrinsicWidth;
+  mozilla::StyleContainIntrinsicSize mContainIntrinsicHeight;
+
   
   
   

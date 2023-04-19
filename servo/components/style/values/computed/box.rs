@@ -9,6 +9,7 @@ use crate::values::computed::{Context, Number, ToComputedValue};
 use crate::values::generics::box_::AnimationIterationCount as GenericAnimationIterationCount;
 use crate::values::generics::box_::Perspective as GenericPerspective;
 use crate::values::generics::box_::VerticalAlign as GenericVerticalAlign;
+use crate::values::generics::box_::ContainIntrinsicSize as GenericContainIntrinsicSize;
 use crate::values::specified::box_ as specified;
 
 pub use crate::values::specified::box_::{
@@ -25,6 +26,9 @@ pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
 
 
 pub type AnimationIterationCount = GenericAnimationIterationCount<Number>;
+
+
+pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
 
 impl AnimationIterationCount {
     
