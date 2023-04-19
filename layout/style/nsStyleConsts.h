@@ -159,13 +159,7 @@ enum class StyleClear : uint8_t {
   Left,
   Right,
   Both,
-  
-  
-  
-  
-  
-  Line = 8,
-  Max = 13  
+  Line,
 };
 
 enum class StyleColumnFill : uint8_t {
