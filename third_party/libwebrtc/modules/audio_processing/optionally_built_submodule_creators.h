@@ -32,7 +32,10 @@ struct ApmSubmoduleCreationOverrides {
 
 std::unique_ptr<TransientSuppressor> CreateTransientSuppressor(
     const ApmSubmoduleCreationOverrides& overrides,
-    TransientSuppressor::VadMode vad_mode);
+    TransientSuppressor::VadMode vad_mode,
+    int sample_rate_hz,
+    int detection_rate_hz,
+    int num_channels);
 
 }  
 
