@@ -630,6 +630,22 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
 template <class Derived>
 Relation RemoteAccessibleBase<Derived>::RelationByType(
     RelationType aType) const {
+  
+  
+  
+  
+  
+  if (aType == RelationType::CONTAINING_TAB_PANE) {
+    if (dom::CanonicalBrowsingContext* cbc = mDoc->GetBrowsingContext()) {
+      if (dom::CanonicalBrowsingContext* topCbc = cbc->Top()) {
+        if (dom::BrowserParent* bp = topCbc->GetBrowserParent()) {
+          return Relation(bp->GetTopLevelDocAccessible());
+        }
+      }
+    }
+    return Relation();
+  }
+
   Relation rel;
   if (!mCachedFields) {
     return rel;

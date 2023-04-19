@@ -322,3 +322,33 @@ addAccessibleTask(
   },
   { chrome: true, iframe: true, remoteIframe: true }
 );
+
+
+
+
+addAccessibleTask(
+  `<p id="p">hello world</p>`,
+  async function(browser, primaryDocAcc, secondaryDocAcc) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const topLevelDoc = secondaryDocAcc ? secondaryDocAcc : primaryDocAcc;
+    await testCachedRelation(
+      findAccessibleChildByID(primaryDocAcc, "p"),
+      RELATION_CONTAINING_TAB_PANE,
+      topLevelDoc
+    );
+  },
+  {
+    chrome: true,
+    topLevel: isCacheEnabled,
+    iframe: isCacheEnabled,
+    remoteIframe: isCacheEnabled,
+  }
+);
