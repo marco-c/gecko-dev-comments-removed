@@ -359,6 +359,16 @@ void flat_map<Key, Mapped, Compare, Container>::swap(flat_map& other) noexcept {
   tree::swap(other);
 }
 
+
+
+
+
+
+
+
+
+using ::webrtc::flat_containers_internal::EraseIf;
+
 }  
 
 #endif  
