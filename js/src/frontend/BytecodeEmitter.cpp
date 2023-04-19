@@ -7988,9 +7988,7 @@ bool BytecodeEmitter::emitCallOrNew(
         calleeName == TaggedParserAtomIndex::WellKnown::
                           UnsafeGetInt32FromReservedSlot() ||
         calleeName == TaggedParserAtomIndex::WellKnown::
-                          UnsafeGetStringFromReservedSlot() ||
-        calleeName == TaggedParserAtomIndex::WellKnown::
-                          UnsafeGetBooleanFromReservedSlot()) {
+                          UnsafeGetStringFromReservedSlot()) {
       
       assertSelfHostedUnsafeGetReservedSlot(argsList);
     }
