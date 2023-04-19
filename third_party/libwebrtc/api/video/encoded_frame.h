@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/types/optional.h"
+#include "api/units/timestamp.h"
 #include "modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
@@ -30,10 +32,15 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   virtual ~EncodedFrame() {}
 
   
+  
   virtual int64_t ReceivedTime() const = 0;
 
   
+  
   virtual int64_t RenderTime() const = 0;
+  
+  
+  absl::optional<webrtc::Timestamp> RenderTimestamp() const;
 
   
   

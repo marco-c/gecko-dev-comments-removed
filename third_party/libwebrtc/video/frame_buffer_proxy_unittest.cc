@@ -233,7 +233,7 @@ class FrameBufferProxyFixture
                                                       kMaxWaitForFrame,
                                                       &decode_sync_)) {
     
-    timing_.set_min_playout_delay(10);
+    timing_.set_min_playout_delay(TimeDelta::Millis(10));
 
     ON_CALL(stats_callback_, OnDroppedFrames)
         .WillByDefault(
@@ -631,8 +631,7 @@ TEST_P(FrameBufferProxyTest, TestStatsCallback) {
   EXPECT_CALL(stats_callback_, OnFrameBufferTimingsUpdated);
 
   
-  timing_.StopDecodeTimer(clock_->TimeInMicroseconds() + 1,
-                          clock_->TimeInMilliseconds());
+  timing_.StopDecodeTimer(TimeDelta::Millis(1), clock_->CurrentTime());
   StartNextDecodeForceKeyframe();
   proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
   EXPECT_THAT(WaitForFrameOrTimeout(TimeDelta::Zero()), Frame(WithId(0)));
@@ -775,8 +774,8 @@ TEST_P(LowLatencyFrameBufferProxyTest,
        FramesDecodedInstantlyWithLowLatencyRendering) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(0);
-  timing_.set_max_playout_delay(10);
+  timing_.set_min_playout_delay(TimeDelta::Zero());
+  timing_.set_max_playout_delay(TimeDelta::Millis(10));
   auto frame = Builder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 10});
@@ -798,8 +797,8 @@ TEST_P(LowLatencyFrameBufferProxyTest,
 TEST_P(LowLatencyFrameBufferProxyTest, ZeroPlayoutDelayFullQueue) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(0);
-  timing_.set_max_playout_delay(10);
+  timing_.set_min_playout_delay(TimeDelta::Zero());
+  timing_.set_max_playout_delay(TimeDelta::Millis(10));
   auto frame = Builder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 10});
@@ -822,8 +821,8 @@ TEST_P(LowLatencyFrameBufferProxyTest, ZeroPlayoutDelayFullQueue) {
 TEST_P(LowLatencyFrameBufferProxyTest, MinMaxDelayZeroLowLatencyMode) {
   
   StartNextDecodeForceKeyframe();
-  timing_.set_min_playout_delay(0);
-  timing_.set_max_playout_delay(0);
+  timing_.set_min_playout_delay(TimeDelta::Zero());
+  timing_.set_max_playout_delay(TimeDelta::Zero());
   auto frame = Builder().Id(0).Time(0).AsLast().Build();
   
   frame->SetPlayoutDelay({0, 0});

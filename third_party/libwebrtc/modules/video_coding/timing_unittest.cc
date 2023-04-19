@@ -10,13 +10,18 @@
 
 #include "modules/video_coding/timing.h"
 
+#include "api/units/frequency.h"
+#include "api/units/time_delta.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
-const int kFps = 25;
+
+constexpr Frequency k25Fps = Frequency::Hertz(25);
+constexpr Frequency k90kHz = Frequency::KiloHertz(90);
+
 }  
 
 TEST(ReceiverTimingTest, JitterDelay) {
@@ -29,102 +34,105 @@ TEST(ReceiverTimingTest, JitterDelay) {
 
   timing.Reset();
 
-  timing.IncomingTimestamp(timestamp, clock.TimeInMilliseconds());
-  uint32_t jitter_delay_ms = 20;
-  timing.SetJitterDelay(jitter_delay_ms);
+  timing.IncomingTimestamp(timestamp, clock.CurrentTime());
+  TimeDelta jitter_delay = TimeDelta::Millis(20);
+  timing.SetJitterDelay(jitter_delay);
   timing.UpdateCurrentDelay(timestamp);
-  timing.set_render_delay(0);
-  uint32_t wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
+  timing.set_render_delay(TimeDelta::Zero());
+  auto wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
   
   
-  EXPECT_EQ(jitter_delay_ms, wait_time_ms);
+  EXPECT_EQ(jitter_delay, wait_time);
 
-  jitter_delay_ms += VCMTiming::kDelayMaxChangeMsPerS + 10;
+  jitter_delay += TimeDelta::Millis(VCMTiming::kDelayMaxChangeMsPerS + 10);
   timestamp += 90000;
   clock.AdvanceTimeMilliseconds(1000);
-  timing.SetJitterDelay(jitter_delay_ms);
+  timing.SetJitterDelay(jitter_delay);
   timing.UpdateCurrentDelay(timestamp);
-  wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
+  wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
   
-  EXPECT_EQ(jitter_delay_ms - 10, wait_time_ms);
+  EXPECT_EQ(jitter_delay - TimeDelta::Millis(10), wait_time);
 
   timestamp += 90000;
   clock.AdvanceTimeMilliseconds(1000);
   timing.UpdateCurrentDelay(timestamp);
-  wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
-  EXPECT_EQ(jitter_delay_ms, wait_time_ms);
+  wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
+  EXPECT_EQ(jitter_delay, wait_time);
 
   
   const int kNumFrames = 300;
   for (int i = 0; i < kNumFrames; i++) {
-    clock.AdvanceTimeMilliseconds(1000 / kFps);
-    timestamp += 90000 / kFps;
-    timing.IncomingTimestamp(timestamp, clock.TimeInMilliseconds());
+    clock.AdvanceTime(1 / k25Fps);
+    timestamp += k90kHz / k25Fps;
+    timing.IncomingTimestamp(timestamp, clock.CurrentTime());
   }
   timing.UpdateCurrentDelay(timestamp);
-  wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
-  EXPECT_EQ(jitter_delay_ms, wait_time_ms);
+  wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
+  EXPECT_EQ(jitter_delay, wait_time);
 
   
-  const uint32_t kDecodeTimeMs = 10;
-  for (int i = 0; i < kFps; i++) {
-    clock.AdvanceTimeMilliseconds(kDecodeTimeMs);
-    timing.StopDecodeTimer(kDecodeTimeMs, clock.TimeInMilliseconds());
-    timestamp += 90000 / kFps;
-    clock.AdvanceTimeMilliseconds(1000 / kFps - kDecodeTimeMs);
-    timing.IncomingTimestamp(timestamp, clock.TimeInMilliseconds());
+  const TimeDelta kDecodeTime = TimeDelta::Millis(10);
+  for (int i = 0; i < k25Fps.hertz(); i++) {
+    clock.AdvanceTime(kDecodeTime);
+    timing.StopDecodeTimer(kDecodeTime, clock.CurrentTime());
+    timestamp += k90kHz / k25Fps;
+    clock.AdvanceTime(1 / k25Fps - kDecodeTime);
+    timing.IncomingTimestamp(timestamp, clock.CurrentTime());
   }
   timing.UpdateCurrentDelay(timestamp);
-  wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
-  EXPECT_EQ(jitter_delay_ms, wait_time_ms);
+  wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
+  EXPECT_EQ(jitter_delay, wait_time);
 
-  const int kMinTotalDelayMs = 200;
-  timing.set_min_playout_delay(kMinTotalDelayMs);
+  const TimeDelta kMinTotalDelay = TimeDelta::Millis(200);
+  timing.set_min_playout_delay(kMinTotalDelay);
   clock.AdvanceTimeMilliseconds(5000);
   timestamp += 5 * 90000;
   timing.UpdateCurrentDelay(timestamp);
-  const int kRenderDelayMs = 10;
-  timing.set_render_delay(kRenderDelayMs);
-  wait_time_ms = timing.MaxWaitingTime(
-      timing.RenderTimeMs(timestamp, clock.TimeInMilliseconds()),
-      clock.TimeInMilliseconds(), false);
+  const TimeDelta kRenderDelay = TimeDelta::Millis(10);
+  timing.set_render_delay(kRenderDelay);
+  wait_time = timing.MaxWaitingTime(
+      timing.RenderTime(timestamp, clock.CurrentTime()), clock.CurrentTime(),
+      false);
   
   
-  EXPECT_EQ(kMinTotalDelayMs - kDecodeTimeMs - kRenderDelayMs, wait_time_ms);
+  EXPECT_EQ(kMinTotalDelay - kDecodeTime - kRenderDelay, wait_time);
   
-  EXPECT_EQ(kMinTotalDelayMs, timing.TargetVideoDelay());
+  EXPECT_EQ(kMinTotalDelay, timing.TargetVideoDelay());
 
   
-  timing.set_min_playout_delay(0);
+  timing.set_min_playout_delay(TimeDelta::Zero());
   clock.AdvanceTimeMilliseconds(5000);
   timestamp += 5 * 90000;
   timing.UpdateCurrentDelay(timestamp);
 }
 
 TEST(ReceiverTimingTest, TimestampWrapAround) {
-  SimulatedClock clock(0);
+  constexpr auto kStartTime = Timestamp::Millis(1337);
+  SimulatedClock clock(kStartTime);
   VCMTiming timing(&clock);
+
   
-  uint32_t timestamp = 0xFFFFFFFFu - 3 * 90000 / kFps;
+  constexpr uint32_t kRtpTicksPerFrame = k90kHz / k25Fps;
+  uint32_t timestamp = 0xFFFFFFFFu - 3 * kRtpTicksPerFrame;
   for (int i = 0; i < 5; ++i) {
-    timing.IncomingTimestamp(timestamp, clock.TimeInMilliseconds());
-    clock.AdvanceTimeMilliseconds(1000 / kFps);
-    timestamp += 90000 / kFps;
-    EXPECT_EQ(3 * 1000 / kFps,
-              timing.RenderTimeMs(0xFFFFFFFFu, clock.TimeInMilliseconds()));
-    EXPECT_EQ(3 * 1000 / kFps + 1,
-              timing.RenderTimeMs(89u,  
-                                  clock.TimeInMilliseconds()));
+    timing.IncomingTimestamp(timestamp, clock.CurrentTime());
+    clock.AdvanceTime(1 / k25Fps);
+    timestamp += kRtpTicksPerFrame;
+    EXPECT_EQ(kStartTime + 3 / k25Fps,
+              timing.RenderTime(0xFFFFFFFFu, clock.CurrentTime()));
+    
+    EXPECT_EQ(kStartTime + 3 / k25Fps + TimeDelta::Millis(1),
+              timing.RenderTime(89u, clock.CurrentTime()));
   }
 }
 
@@ -132,85 +140,85 @@ TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
   
   
   constexpr int64_t kStartTimeUs = 3.15e13;  
-  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
-  constexpr int64_t kZeroRenderTimeMs = 0;
+  constexpr TimeDelta kTimeDelta = 1 / Frequency::Hertz(60);
+  constexpr Timestamp kZeroRenderTime = Timestamp::Zero();
   SimulatedClock clock(kStartTimeUs);
   VCMTiming timing(&clock);
   timing.Reset();
-  timing.set_max_playout_delay(0);
+  timing.set_max_playout_delay(TimeDelta::Zero());
   for (int i = 0; i < 10; ++i) {
-    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
-    int64_t now_ms = clock.TimeInMilliseconds();
-    EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+    clock.AdvanceTime(kTimeDelta);
+    Timestamp now = clock.CurrentTime();
+    EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                     false),
-              0);
+              TimeDelta::Zero());
   }
   
   
-  int64_t now_ms = clock.TimeInMilliseconds();
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  Timestamp now = clock.CurrentTime();
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            0);
+            TimeDelta::Zero());
   
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            0);
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+            TimeDelta::Zero());
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            0);
-  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+            TimeDelta::Zero());
+  EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            0);
+            TimeDelta::Zero());
 }
 
 TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
   
   
-  constexpr int64_t kMinPacingMs = 3;
+  constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
   constexpr int64_t kStartTimeUs = 3.15e13;  
-  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
-  constexpr int64_t kZeroRenderTimeMs = 0;
+  constexpr TimeDelta kTimeDelta = 1 / Frequency::Hertz(60);
+  constexpr auto kZeroRenderTime = Timestamp::Zero();
   SimulatedClock clock(kStartTimeUs);
   VCMTiming timing(&clock);
   timing.Reset();
   
   for (int i = 0; i < 10; ++i) {
-    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
-    int64_t now_ms = clock.TimeInMilliseconds();
-    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+    clock.AdvanceTime(kTimeDelta);
+    Timestamp now = clock.CurrentTime();
+    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                     false),
-              0);
-    timing.SetLastDecodeScheduledTimestamp(now_ms);
+              TimeDelta::Zero());
+    timing.SetLastDecodeScheduledTimestamp(now);
   }
   
   
-  int64_t now_ms = clock.TimeInMilliseconds();
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  auto now = clock.CurrentTime();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            kMinPacingMs);
+            kMinPacing);
   
   
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            kMinPacingMs);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+            kMinPacing);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            kMinPacingMs);
+            kMinPacing);
   
-  constexpr int64_t kTwoMs = 2;
-  clock.AdvanceTimeMilliseconds(kTwoMs);
-  now_ms = clock.TimeInMilliseconds();
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  constexpr TimeDelta kTwoMs = TimeDelta::Millis(2);
+  clock.AdvanceTime(kTwoMs);
+  now = clock.CurrentTime();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            kMinPacingMs - kTwoMs);
+            kMinPacing - kTwoMs);
   
   
-  timing.SetLastDecodeScheduledTimestamp(now_ms);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  timing.SetLastDecodeScheduledTimestamp(now);
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
-            kMinPacingMs);
+            kMinPacing);
 }
 
 TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
@@ -219,65 +227,65 @@ TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
   constexpr int64_t kStartTimeUs = 3.15e13;  
-  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
+  const TimeDelta kTimeDelta = TimeDelta::Millis(1000.0 / 60.0);
   SimulatedClock clock(kStartTimeUs);
   VCMTiming timing(&clock);
   timing.Reset();
-  clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
-  int64_t now_ms = clock.TimeInMilliseconds();
-  int64_t render_time_ms = now_ms + 30;
+  clock.AdvanceTime(kTimeDelta);
+  auto now = clock.CurrentTime();
+  Timestamp render_time = now + TimeDelta::Millis(30);
   
-  int64_t estimated_processing_delay =
-      (render_time_ms - now_ms) -
-      timing.MaxWaitingTime(render_time_ms, now_ms,
+  TimeDelta estimated_processing_delay =
+      (render_time - now) -
+      timing.MaxWaitingTime(render_time, now,
                             false);
-  EXPECT_GT(estimated_processing_delay, 0);
+  EXPECT_GT(estimated_processing_delay, TimeDelta::Zero());
 
   
   
   for (int i = 0; i < 5; ++i) {
-    render_time_ms += kTimeDeltaMs;
-    EXPECT_EQ(timing.MaxWaitingTime(render_time_ms, now_ms,
+    render_time += kTimeDelta;
+    EXPECT_EQ(timing.MaxWaitingTime(render_time, now,
                                     false),
-              render_time_ms - now_ms - estimated_processing_delay);
+              render_time - now - estimated_processing_delay);
   }
 }
 
-TEST(ReceiverTiminTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
+TEST(ReceiverTimingTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
   
   
-  constexpr int64_t kMinPacingMs = 3;
+  constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-ZeroPlayoutDelay/min_pacing:3ms/");
   constexpr int64_t kStartTimeUs = 3.15e13;  
-  constexpr int64_t kTimeDeltaMs = 1000.0 / 60.0;
-  constexpr int64_t kZeroRenderTimeMs = 0;
+  const TimeDelta kTimeDelta = TimeDelta::Millis(1000.0 / 60.0);
+  constexpr auto kZeroRenderTime = Timestamp::Zero();
   SimulatedClock clock(kStartTimeUs);
   VCMTiming timing(&clock);
   timing.Reset();
   
   for (int i = 0; i < 10; ++i) {
-    clock.AdvanceTimeMilliseconds(kTimeDeltaMs);
-    int64_t now_ms = clock.TimeInMilliseconds();
-    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+    clock.AdvanceTime(kTimeDelta);
+    auto now = clock.CurrentTime();
+    EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                     false),
-              0);
-    timing.SetLastDecodeScheduledTimestamp(now_ms);
+              TimeDelta::Zero());
+    timing.SetLastDecodeScheduledTimestamp(now);
   }
   
   
-  int64_t now_ms = clock.TimeInMilliseconds();
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  auto now_ms = clock.CurrentTime();
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now_ms,
                                   false),
-            kMinPacingMs);
+            kMinPacing);
   
   
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now_ms,
                                   true),
-            0);
-  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTimeMs, now_ms,
+            TimeDelta::Zero());
+  EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now_ms,
                                   true),
-            0);
+            TimeDelta::Zero());
 }
 
 }  
