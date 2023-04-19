@@ -408,7 +408,7 @@ def _schema_1():
                 
                 
                 
-                Required("revision"): Match(r"^[^ ~^:?*[\]]*[^ ~^:?*[\]\.]+$"),
+                "revision": Match(r"^[^ ~^:?*[\]]*[^ ~^:?*[\]\.]+$"),
             },
             "updatebot": {
                 Required("maintainer-phab"): All(str, Length(min=1)),
@@ -529,6 +529,12 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
         raise ValueError('"vendoring" requires an "origin"')
 
     
+    if "vendoring" in manifest and "revision" not in manifest["origin"]:
+        raise ValueError(
+            'If "vendoring" is present, "revision" must be present in "origin"'
+        )
+
+    
     if "vendoring" in manifest:
         if "tracking" not in manifest["vendoring"]:
             manifest["vendoring"]["tracking"] = "commit"
@@ -547,10 +553,6 @@ def _schema_1_additional(filename, manifest, require_license_file=True):
         if "vendoring" not in manifest or "url" not in manifest["vendoring"]:
             raise ValueError(
                 "If Updatebot tasks are specified, a vendoring url must be included."
-            )
-        if "origin" not in manifest or "revision" not in manifest["origin"]:
-            raise ValueError(
-                "If Updatebot tasks are specified, an origin revision must be specified."
             )
 
     
