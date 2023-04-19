@@ -48,4 +48,19 @@ GTEST_API_ ::testing::AssertionResult CmpHelperSTREQ(const char* s1_expression,
 #define TEST_TRY_UNWRAP_ERR(target, expr) \
   TEST_TRY_UNWRAP_ERR_META(MOZ_UNIQUE_VAR(testVar), target, expr)
 
+namespace mozilla::dom {
+
+namespace quota {
+
+struct OriginMetadata;
+
+}  
+
+namespace fs::test {
+
+quota::OriginMetadata GetTestOriginMetadata();
+
+}  
+}  
+
 #endif  
