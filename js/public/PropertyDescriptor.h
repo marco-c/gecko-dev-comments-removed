@@ -17,7 +17,6 @@
 
 #include "jstypes.h"  
 
-#include "js/Class.h"       
 #include "js/Id.h"          
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       

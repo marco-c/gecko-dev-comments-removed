@@ -6,10 +6,9 @@
 
 #include "vm/StencilCache.h"
 
-#include "frontend/CompilationStencil.h"  
-                                          
-
-#include "vm/JSContext.h"  
+#include "frontend/CompilationStencil.h"
+#include "js/experimental/JSStencil.h"
+#include "vm/MutexIDs.h"
 
 js::StencilCache::StencilCache()
     : cache(js::mutexid::StencilCache), enabled(false) {}

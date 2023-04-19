@@ -21,6 +21,7 @@
 #include "js/ErrorReport.h"  
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
+#include "js/GCVariant.h"               
 #include "js/SourceText.h"              
 #include "js/String.h"                  
 #include "vm/BytecodeUtil.h"            

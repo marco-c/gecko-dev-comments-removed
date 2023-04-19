@@ -6,8 +6,6 @@
 
 #include "vm/AsyncIteration.h"
 
-#include "builtin/Array.h"
-
 #include "builtin/Promise.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
@@ -22,7 +20,6 @@
 #include "vm/SelfHosting.h"
 #include "vm/WellKnownAtom.h"  
 
-#include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/List-inl.h"
 

@@ -8,6 +8,7 @@
 #include "core/TelemetryCommon.h"
 #include "js/Array.h"               
 #include "js/PropertyAndElement.h"  
+#include "js/PropertyDescriptor.h"  
 #include "js/ValueArray.h"
 #include "nsIFile.h"
 

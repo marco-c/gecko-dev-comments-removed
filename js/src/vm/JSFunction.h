@@ -11,15 +11,16 @@
 
 
 
-#include <iterator>
 #include <string_view>
 
 #include "jstypes.h"
 
+#include "gc/Policy.h"
 #include "js/shadow/Function.h"        
 #include "vm/FunctionFlags.h"          
 #include "vm/FunctionPrefixKind.h"     
 #include "vm/GeneratorAndAsyncKind.h"  
+#include "vm/JSAtom.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 

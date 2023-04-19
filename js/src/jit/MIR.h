@@ -34,6 +34,7 @@
 #include "js/ScalarType.h"  
 #include "js/Value.h"
 #include "js/Vector.h"
+#include "vm/BigIntType.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/JSContext.h"

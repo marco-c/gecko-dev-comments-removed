@@ -35,7 +35,6 @@
 
 #include "vm/JSAtom-inl.h"            
 #include "vm/JSContext-inl.h"         
-#include "vm/JSFunction-inl.h"        
 #include "vm/JSObject-inl.h"          
 #include "vm/NativeObject-inl.h"      
 #include "vm/ObjectOperations-inl.h"  
