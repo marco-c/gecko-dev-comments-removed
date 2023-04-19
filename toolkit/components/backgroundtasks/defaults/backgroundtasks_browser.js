@@ -31,3 +31,7 @@ pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false
 
 
 pref("app.normandy.run_interval_seconds", 0);
+
+
+
+pref("nimbus.appId", "firefox-desktop-background-task");
