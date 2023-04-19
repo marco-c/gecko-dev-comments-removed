@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Realm", "WindowRealm"];
+var EXPORTED_SYMBOLS = ["Realm", "RealmType", "WindowRealm"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -81,6 +81,15 @@ class Realm {
 
 
 
+  get origin() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
 
   removeObjectHandle(handle) {
     this.#handleObjectMap.delete(handle);
@@ -105,6 +114,18 @@ class Realm {
 
 
 
+  getInfo() {
+    return {
+      realm: this.#id,
+      origin: this.origin,
+    };
+  }
+
+  
+
+
+
+
 
 
 
@@ -119,6 +140,7 @@ class Realm {
 class WindowRealm extends Realm {
   #globalObject;
   #globalObjectReference;
+  #sandboxName;
   #window;
 
   static type = RealmType.Window;
@@ -136,6 +158,7 @@ class WindowRealm extends Realm {
 
     super();
 
+    this.#sandboxName = sandboxName;
     this.#window = window;
     this.#globalObject =
       sandboxName === null ? this.#window : this.#createSandbox();
@@ -158,6 +181,10 @@ class WindowRealm extends Realm {
 
   get globalObjectReference() {
     return this.#globalObjectReference;
+  }
+
+  get origin() {
+    return this.#window.origin;
   }
 
   #cloneAsDebuggerObject(obj) {
@@ -237,5 +264,25 @@ class WindowRealm extends Realm {
         url: this.#window.document.baseURI,
       }
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getInfo() {
+    const baseInfo = super.getInfo();
+    return {
+      ...baseInfo,
+      context: this.#window.browsingContext,
+      sandbox: this.#sandboxName,
+      type: WindowRealm.type,
+    };
   }
 }

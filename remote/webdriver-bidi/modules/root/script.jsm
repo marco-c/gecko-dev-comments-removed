@@ -18,8 +18,11 @@ const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
+  ContextDescriptorType:
+    "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   OwnershipModel: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
+  RealmType: "chrome://remote/content/webdriver-bidi/Realm.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm",
@@ -283,6 +286,129 @@ class ScriptModule extends Module {
     return this.#buildReturnValue(evaluationResult);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getRealms(options = {}) {
+    const { context: contextId = null, type = null } = options;
+    const destination = {};
+
+    if (contextId !== null) {
+      lazy.assert.string(
+        contextId,
+        `Expected "context" to be a string, got ${contextId}`
+      );
+      destination.id = this.#getBrowsingContext(contextId).id;
+    } else {
+      destination.contextDescriptor = {
+        type: lazy.ContextDescriptorType.All,
+      };
+    }
+
+    if (type !== null) {
+      const supportedRealmTypes = Object.values(lazy.RealmType);
+      if (!supportedRealmTypes.includes(type)) {
+        throw new lazy.error.InvalidArgumentError(
+          `Expected "type" to be one of ${supportedRealmTypes}, got ${type}`
+        );
+      }
+
+      
+      if (type !== lazy.RealmType.Window) {
+        throw new lazy.error.UnsupportedOperationError(
+          `Unsupported "type": ${type}. Only "type" ${lazy.RealmType.Window} is currently supported.`
+        );
+      }
+    }
+
+    let realms = await this.messageHandler.forwardCommand({
+      moduleName: "script",
+      commandName: "getWindowRealms",
+      destination: {
+        type: lazy.WindowGlobalMessageHandler.type,
+        ...destination,
+      },
+    });
+
+    const isBroadcast = !!destination.contextDescriptor;
+    if (!isBroadcast) {
+      realms = [realms];
+    }
+
+    const resultRealms = realms
+      .flat()
+      .map(realm => {
+        
+        realm.context = lazy.TabManager.getIdForBrowsingContext(realm.context);
+        return realm;
+      })
+      .filter(realm => realm.context !== null);
+
+    return { realms: resultRealms };
+  }
+
   #assertResultOwnership(resultOwnership) {
     if (
       ![lazy.OwnershipModel.None, lazy.OwnershipModel.Root].includes(
@@ -355,9 +481,7 @@ class ScriptModule extends Module {
     return rv;
   }
 
-  
-  
-  #getContextFromTarget({ contextId /*, realmId, sandbox*/ }) {
+  #getBrowsingContext(contextId) {
     const context = lazy.TabManager.getBrowsingContextById(contextId);
     if (context === null) {
       throw new lazy.error.NoSuchFrameError(
@@ -372,6 +496,12 @@ class ScriptModule extends Module {
     }
 
     return context;
+  }
+
+  
+  
+  #getContextFromTarget({ contextId /*, realmId, sandbox*/ }) {
+    return this.#getBrowsingContext(contextId);
   }
 
   static get supportedEvents() {

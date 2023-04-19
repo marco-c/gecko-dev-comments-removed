@@ -310,6 +310,22 @@ class ScriptModule extends Module {
 
     return this.#buildReturnValue(rv, realm, awaitPromise, resultOwnership);
   }
+
+  
+
+
+
+
+
+
+
+
+
+  getWindowRealms() {
+    return [this.#defaultRealm, ...this.#realms.values()].map(realm =>
+      realm.getInfo()
+    );
+  }
 }
 
 const script = ScriptModule;
