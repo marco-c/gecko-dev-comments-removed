@@ -1099,6 +1099,9 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState) {
   mHFlip = mVFlip = false;
 
   if (auto* widget = GetWidget()) {
+    
+    
+    
     widget->ClearWebrenderAnimationResources();
   }
 

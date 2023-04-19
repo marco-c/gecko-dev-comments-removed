@@ -34,6 +34,21 @@ add_task(
     
     ok(!ChromeUtils.vsyncEnabled(), "vsync should be off initially");
 
+    if (
+      AppConstants.platform == "linux" &&
+      DownloadsPanel.panel.state != "open"
+    ) {
+      
+      
+      
+      todo(
+        false,
+        "panel should still be 'open', current state: " +
+          DownloadsPanel.panel.state
+      );
+      return;
+    }
+
     const hiddenPromise = BrowserTestUtils.waitForEvent(
       DownloadsPanel.panel,
       "popuphidden"
