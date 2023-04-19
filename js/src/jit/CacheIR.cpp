@@ -2544,12 +2544,17 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   NativeObject* nobj = &obj->as<NativeObject>();
 
   
-  if (index > INT_MAX) {
+  if (index > INT32_MAX) {
     return AttachDecision::NoAction;
   }
 
   
-  if (index < nobj->getDenseInitializedLength()) {
+  if (!nobj->isIndexed()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (nobj->containsDenseElement(index)) {
     return AttachDecision::NoAction;
   }
 
@@ -2580,7 +2585,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   }
 
   
-  writer.guardIndexGreaterThanDenseInitLength(objId, indexId);
+  writer.guardIndexIsNotDenseElement(objId, indexId);
 
   
   writer.guardInt32IsNonNegative(indexId);
@@ -2674,7 +2679,7 @@ AttachDecision GetPropIRGenerator::tryAttachGenericElement(
     NativeObject* nobj = &obj->as<NativeObject>();
     TestMatchingNativeReceiver(writer, nobj, objId);
   }
-  writer.guardIndexGreaterThanDenseInitLength(objId, indexId);
+  writer.guardIndexIsNotDenseElement(objId, indexId);
   writer.callNativeGetElementResult(objId, indexId);
   writer.returnFromIC();
 
@@ -4254,12 +4259,12 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   }
 
   
-  if (index > INT_MAX) {
+  if (index > INT32_MAX) {
     return AttachDecision::NoAction;
   }
 
   
-  if (index < nobj->getDenseInitializedLength()) {
+  if (nobj->containsDenseElement(index)) {
     return AttachDecision::NoAction;
   }
 
@@ -4293,7 +4298,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   }
 
   
-  writer.guardIndexGreaterThanDenseInitLength(objId, indexId);
+  writer.guardIndexIsNotDenseElement(objId, indexId);
 
   
   

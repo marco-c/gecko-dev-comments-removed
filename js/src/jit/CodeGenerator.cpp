@@ -16253,8 +16253,8 @@ void CodeGenerator::visitGuardInt32IsNonNegative(
   bailoutCmp32(Assembler::LessThan, index, Imm32(0), lir->snapshot());
 }
 
-void CodeGenerator::visitGuardIndexGreaterThanDenseInitLength(
-    LGuardIndexGreaterThanDenseInitLength* lir) {
+void CodeGenerator::visitGuardIndexIsNotDenseElement(
+    LGuardIndexIsNotDenseElement* lir) {
   Register object = ToRegister(lir->object());
   Register index = ToRegister(lir->index());
   Register temp = ToRegister(lir->temp0());
@@ -16264,11 +16264,16 @@ void CodeGenerator::visitGuardIndexGreaterThanDenseInitLength(
   masm.loadPtr(Address(object, NativeObject::offsetOfElements()), temp);
 
   
-  Label outOfBounds;
+  Label notDense;
   Address capacity(temp, ObjectElements::offsetOfInitializedLength());
-  masm.spectreBoundsCheck32(index, capacity, spectreTemp, &outOfBounds);
+  masm.spectreBoundsCheck32(index, capacity, spectreTemp, &notDense);
+
+  BaseValueIndex element(temp, index);
+  masm.branchTestMagic(Assembler::Equal, element, &notDense);
+
   bailout(lir->snapshot());
-  masm.bind(&outOfBounds);
+
+  masm.bind(&notDense);
 }
 
 void CodeGenerator::visitGuardIndexIsValidUpdateOrAdd(
