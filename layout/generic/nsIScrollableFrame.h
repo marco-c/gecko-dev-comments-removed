@@ -294,8 +294,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual void ScrollToCSSPixelsForApz(
-      const mozilla::CSSPoint& aScrollPosition,
-      mozilla::ScrollSnapTargetIds&& aLastSnapTargetIds) = 0;
+      const mozilla::CSSPoint& aScrollPosition) = 0;
 
   
 

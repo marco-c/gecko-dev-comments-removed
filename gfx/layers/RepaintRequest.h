@@ -10,15 +10,14 @@
 #include <iosfwd>
 #include <stdint.h>  
 
-#include "FrameMetrics.h"                
-#include "mozilla/DefineEnum.h"          
-#include "mozilla/gfx/BasePoint.h"       
-#include "mozilla/gfx/Rect.h"            
-#include "mozilla/gfx/ScaleFactor.h"     
-#include "mozilla/ScrollSnapTargetId.h"  
-#include "mozilla/TimeStamp.h"           
-#include "Units.h"                       
-#include "UnitTransforms.h"              
+#include "FrameMetrics.h"             
+#include "mozilla/DefineEnum.h"       
+#include "mozilla/gfx/BasePoint.h"    
+#include "mozilla/gfx/Rect.h"         
+#include "mozilla/gfx/ScaleFactor.h"  
+#include "mozilla/TimeStamp.h"        
+#include "Units.h"                    
+#include "UnitTransforms.h"           
 
 namespace IPC {
 template <typename T>
@@ -66,8 +65,7 @@ struct RepaintRequest {
                  const ScreenMargin& aDisplayportMargins,
                  const ScrollOffsetUpdateType aScrollUpdateType,
                  APZScrollAnimationType aScrollAnimationType,
-                 const APZScrollGeneration& aScrollGenerationOnApz,
-                 const ScrollSnapTargetIds& aLastSnapTargetIds)
+                 const APZScrollGeneration& aScrollGenerationOnApz)
       : mScrollId(aOther.GetScrollId()),
         mPresShellResolution(aOther.GetPresShellResolution()),
         mCompositionBounds(aOther.GetCompositionBounds()),
@@ -84,7 +82,6 @@ struct RepaintRequest {
         mPaintRequestTime(aOther.GetPaintRequestTime()),
         mScrollUpdateType(aScrollUpdateType),
         mScrollAnimationType(aScrollAnimationType),
-        mLastSnapTargetIds(aLastSnapTargetIds),
         mIsRootContent(aOther.IsRootContent()),
         mIsScrollInfoLayer(aOther.IsScrollInfoLayer()) {}
 
@@ -107,7 +104,6 @@ struct RepaintRequest {
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
            mScrollAnimationType == aOther.mScrollAnimationType &&
-           mLastSnapTargetIds == aOther.mLastSnapTargetIds &&
            mIsRootContent == aOther.mIsRootContent &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
@@ -200,10 +196,6 @@ struct RepaintRequest {
 
   APZScrollAnimationType GetScrollAnimationType() const {
     return mScrollAnimationType;
-  }
-
-  ScrollSnapTargetIds CopyLastSnapTargetIds() const {
-    return mLastSnapTargetIds;
   }
 
  protected:
@@ -305,8 +297,6 @@ struct RepaintRequest {
   ScrollOffsetUpdateType mScrollUpdateType;
 
   APZScrollAnimationType mScrollAnimationType;
-
-  ScrollSnapTargetIds mLastSnapTargetIds;
 
   
   bool mIsRootContent : 1;

@@ -129,8 +129,7 @@ static CSSPoint ScrollFrameTo(nsIScrollableFrame* aFrame,
   
   bool scrollInProgress = APZCCallbackHelper::IsScrollInProgress(aFrame);
   if (!scrollInProgress) {
-    aFrame->ScrollToCSSPixelsForApz(targetScrollPosition,
-                                    aRequest.CopyLastSnapTargetIds());
+    aFrame->ScrollToCSSPixelsForApz(targetScrollPosition);
     geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
     aSuccessOut = true;
   }
@@ -388,8 +387,7 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
         nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
     CSSPoint currentScrollPosition =
         CSSPoint::FromAppUnits(sf->GetScrollPosition());
-    sf->ScrollToCSSPixelsForApz(currentScrollPosition,
-                                aRequest.CopyLastSnapTargetIds());
+    sf->ScrollToCSSPixelsForApz(currentScrollPosition);
   }
 
   
