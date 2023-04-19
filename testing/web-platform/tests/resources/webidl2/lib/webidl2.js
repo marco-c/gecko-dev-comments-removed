@@ -7,7 +7,7 @@
 		exports["WebIDL2"] = factory();
 	else
 		root["WebIDL2"] = factory();
-})(globalThis, function() {
+})(globalThis, () => {
 return  (() => { 
  	"use strict";
  	var __webpack_modules__ = ([
@@ -32,6 +32,7 @@ __webpack_require__.r(__webpack_exports__);
  var _productions_callback_interface_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(29);
  var _productions_helpers_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(4);
  var _productions_token_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(10);
+
 
 
 
@@ -149,6 +150,7 @@ function parseByTokens(tokeniser, options) {
 function parse(str, options = {}) {
   const tokeniser = new _tokeniser_js__WEBPACK_IMPORTED_MODULE_0__.Tokeniser(str);
   if (typeof options.sourceName !== "undefined") {
+    
     tokeniser.source.name = options.sourceName;
   }
   return parseByTokens(tokeniser, options);
@@ -161,11 +163,11 @@ function parse(str, options = {}) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "typeNameKeywords": () => ( typeNameKeywords),
-   "stringTypes": () => ( stringTypes),
-   "argumentNameKeywords": () => ( argumentNameKeywords),
    "Tokeniser": () => ( Tokeniser),
-   "WebIDLParseError": () => ( WebIDLParseError)
+   "WebIDLParseError": () => ( WebIDLParseError),
+   "argumentNameKeywords": () => ( argumentNameKeywords),
+   "stringTypes": () => ( stringTypes),
+   "typeNameKeywords": () => ( typeNameKeywords)
  });
  var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
  var _productions_helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
@@ -560,6 +562,10 @@ function contextAsText(node) {
 
 
 
+
+
+
+
 function error(
   source,
   position,
@@ -576,6 +582,12 @@ function error(
       ? source.slice(position, position + count)
       : source.slice(Math.max(position + count, 0), position);
   }
+
+  
+
+
+
+
 
   function tokensToText(inputs, { precedes } = {}) {
     const text = inputs.map((t) => t.trivia + t.value).join("");
@@ -667,21 +679,21 @@ function validationError(
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "unescape": () => ( unescape),
-   "list": () => ( list),
-   "const_value": () => ( const_value),
-   "const_data": () => ( const_data),
-   "primitive_type": () => ( primitive_type),
    "argument_list": () => ( argument_list),
-   "type_with_extended_attributes": () => ( type_with_extended_attributes),
-   "return_type": () => ( return_type),
-   "stringifier": () => ( stringifier),
+   "autoParenter": () => ( autoParenter),
+   "autofixAddExposedWindow": () => ( autofixAddExposedWindow),
+   "const_data": () => ( const_data),
+   "const_value": () => ( const_value),
+   "findLastIndex": () => ( findLastIndex),
+   "getFirstToken": () => ( getFirstToken),
    "getLastIndentation": () => ( getLastIndentation),
    "getMemberIndentation": () => ( getMemberIndentation),
-   "autofixAddExposedWindow": () => ( autofixAddExposedWindow),
-   "getFirstToken": () => ( getFirstToken),
-   "findLastIndex": () => ( findLastIndex),
-   "autoParenter": () => ( autoParenter)
+   "list": () => ( list),
+   "primitive_type": () => ( primitive_type),
+   "return_type": () => ( return_type),
+   "stringifier": () => ( stringifier),
+   "type_with_extended_attributes": () => ( type_with_extended_attributes),
+   "unescape": () => ( unescape)
  });
  var _type_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
  var _argument_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(11);
@@ -797,7 +809,7 @@ function primitive_type(tokeniser) {
   }
 
   const { source } = tokeniser;
-  const num_type = integer_type(tokeniser) || decimal_type(tokeniser);
+  const num_type = integer_type() || decimal_type();
   if (num_type) return num_type;
   const base = tokeniser.consume(
     "bigint",
@@ -892,7 +904,6 @@ function getMemberIndentation(parentTrivia) {
 
 
 
-
 function autofixAddExposedWindow(def) {
   return () => {
     if (def.extAttrs.length) {
@@ -961,10 +972,10 @@ function autoParenter(data, parent) {
     
     return data;
   }
-  return new Proxy(data, {
+  const proxy = new Proxy(data, {
     get(target, p) {
       const value = target[p];
-      if (Array.isArray(value)) {
+      if (Array.isArray(value) && p !== "source") {
         
         
         return autoParenter(value, target);
@@ -972,6 +983,7 @@ function autoParenter(data, parent) {
       return value;
     },
     set(target, p, value) {
+      
       target[p] = value;
       if (!value) {
         return true;
@@ -988,6 +1000,7 @@ function autoParenter(data, parent) {
       return true;
     },
   });
+  return proxy;
 }
 
 
@@ -1165,7 +1178,7 @@ class Type extends _base_js__WEBPACK_IMPORTED_MODULE_0__.Base {
   constructor({ source, tokens }) {
     super({ source, tokens });
     Object.defineProperty(this, "subtype", { value: [], writable: true });
-    this.extAttrs = new _extended_attributes_js__WEBPACK_IMPORTED_MODULE_5__.ExtendedAttributes({});
+    this.extAttrs = new _extended_attributes_js__WEBPACK_IMPORTED_MODULE_5__.ExtendedAttributes({ source, tokens: {} });
   }
 
   get generic() {
@@ -1256,7 +1269,12 @@ for more information.`;
           this.tokens.base.value,
           w.token(this.tokens.postfix),
         ]),
-        { unescaped: this.idlType, context: this }
+        {
+          unescaped:  (
+            this.idlType
+          ),
+          context: this,
+        }
       );
       return w.ts.wrap([w.ts.trivia(firstToken.trivia), ref]);
     };
@@ -1287,8 +1305,6 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "Base": () => ( Base)
  });
-
-
 class Base {
   
 
@@ -1328,11 +1344,9 @@ class Base {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "idlTypeIncludesDictionary": () => ( idlTypeIncludesDictionary),
-   "dictionaryIncludesRequiredField": () => ( dictionaryIncludesRequiredField)
+   "dictionaryIncludesRequiredField": () => ( dictionaryIncludesRequiredField),
+   "idlTypeIncludesDictionary": () => ( idlTypeIncludesDictionary)
  });
-
-
 
 
 
@@ -1423,8 +1437,9 @@ function dictionaryIncludesRequiredField(dict, defs) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "SimpleExtendedAttribute": () => ( SimpleExtendedAttribute),
-   "ExtendedAttributes": () => ( ExtendedAttributes)
+   "ExtendedAttributeParameters": () => ( ExtendedAttributeParameters),
+   "ExtendedAttributes": () => ( ExtendedAttributes),
+   "SimpleExtendedAttribute": () => ( SimpleExtendedAttribute)
  });
  var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
  var _array_base_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
@@ -1459,7 +1474,9 @@ const shouldBeLegacyPrefixed = [
 ];
 
 const renamedLegacies = new Map([
-  ...shouldBeLegacyPrefixed.map((name) => [name, `Legacy${name}`]),
+  ... (
+    shouldBeLegacyPrefixed.map((name) => [name, `Legacy${name}`])
+  ),
   ["NamedConstructor", "LegacyFactoryFunction"],
   ["OverrideBuiltins", "LegacyOverrideBuiltIns"],
   ["TreatNullAs", "LegacyNullToEmptyString"],
@@ -1664,8 +1681,8 @@ class ExtendedAttributes extends _array_base_js__WEBPACK_IMPORTED_MODULE_1__.Arr
   static parse(tokeniser) {
     const tokens = {};
     tokens.open = tokeniser.consume("[");
-    if (!tokens.open) return new ExtendedAttributes({});
     const ret = new ExtendedAttributes({ source: tokeniser.source, tokens });
+    if (!tokens.open) return ret;
     ret.push(
       ...(0,_helpers_js__WEBPACK_IMPORTED_MODULE_3__.list)(tokeniser, {
         parser: SimpleExtendedAttribute.parse,
@@ -1715,8 +1732,6 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "ArrayBase": () => ( ArrayBase)
  });
-
-
 class ArrayBase extends Array {
   constructor({ source, tokens }) {
     super();
@@ -1735,13 +1750,11 @@ class ArrayBase extends Array {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "WrappedToken": () => ( WrappedToken),
-   "Eof": () => ( Eof)
+   "Eof": () => ( Eof),
+   "WrappedToken": () => ( WrappedToken)
  });
  var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
  var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
-
-
 
 
 
@@ -1807,8 +1820,6 @@ __webpack_require__.r(__webpack_exports__);
  var _tokeniser_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2);
  var _error_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(3);
  var _validators_helpers_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(7);
-
-
 
 
 
@@ -2161,8 +2172,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-
 class Attribute extends _base_js__WEBPACK_IMPORTED_MODULE_2__.Base {
   
 
@@ -2283,7 +2292,8 @@ class Attribute extends _base_js__WEBPACK_IMPORTED_MODULE_2__.Base {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "Enum": () => ( Enum)
+   "Enum": () => ( Enum),
+   "EnumValue": () => ( EnumValue)
  });
  var _helpers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
  var _token_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
@@ -2394,8 +2404,6 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
  var _helpers_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
-
-
 
 
 
@@ -2748,7 +2756,10 @@ function autofixConstructor(interfaceDef, constructorExtAttr) {
     const constructorOp = _constructor_js__WEBPACK_IMPORTED_MODULE_8__.Constructor.parse(
       new _tokeniser_js__WEBPACK_IMPORTED_MODULE_9__.Tokeniser(`\n${memberIndent}constructor();`)
     );
-    constructorOp.extAttrs = new _extended_attributes_js__WEBPACK_IMPORTED_MODULE_10__.ExtendedAttributes({});
+    constructorOp.extAttrs = new _extended_attributes_js__WEBPACK_IMPORTED_MODULE_10__.ExtendedAttributes({
+      source: interfaceDef.source,
+      tokens: {},
+    });
     (0,_helpers_js__WEBPACK_IMPORTED_MODULE_5__.autoParenter)(constructorOp).arguments = constructorExtAttr.arguments;
 
     const existingIndex = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_5__.findLastIndex)(
@@ -2807,7 +2818,6 @@ function inheritance(tokeniser) {
 
 class Container extends _base_js__WEBPACK_IMPORTED_MODULE_0__.Base {
   
-
 
 
 
@@ -3004,10 +3014,10 @@ class IterableLike extends _base_js__WEBPACK_IMPORTED_MODULE_0__.Base {
 
   static parse(tokeniser) {
     const start_position = tokeniser.position;
-    const tokens = {};
     const ret = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.autoParenter)(
-      new IterableLike({ source: tokeniser.source, tokens })
+      new IterableLike({ source: tokeniser.source, tokens: {} })
     );
+    const { tokens } = ret;
     tokens.readonly = tokeniser.consume("readonly");
     if (!tokens.readonly) {
       tokens.async = tokeniser.consume("async");
@@ -3122,23 +3132,34 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 function* checkInterfaceMemberDuplication(defs, i) {
-  const opNames = new Set(getOperations(i).map((op) => op.name));
+  const opNames = groupOperationNames(i);
   const partials = defs.partials.get(i.name) || [];
   const mixins = defs.mixinMap.get(i.name) || [];
   for (const ext of [...partials, ...mixins]) {
     const additions = getOperations(ext);
-    yield* forEachExtension(additions, opNames, ext, i);
-    for (const addition of additions) {
-      opNames.add(addition.name);
-    }
+    const statics = additions.filter((a) => a.special === "static");
+    const nonstatics = additions.filter((a) => a.special !== "static");
+    yield* checkAdditions(statics, opNames.statics, ext, i);
+    yield* checkAdditions(nonstatics, opNames.nonstatics, ext, i);
+    statics.forEach((op) => opNames.statics.add(op.name));
+    nonstatics.forEach((op) => opNames.nonstatics.add(op.name));
   }
 
-  function* forEachExtension(additions, existings, ext, base) {
+  
+
+
+
+
+
+  function* checkAdditions(additions, existings, ext, base) {
     for (const addition of additions) {
       const { name } = addition;
       if (name && existings.has(name)) {
-        const message = `The operation "${name}" has already been defined for the base interface "${base.name}" either in itself or in a mixin`;
+        const isStatic = addition.special === "static" ? "static " : "";
+        const message = `The ${isStatic}operation "${name}" has already been defined for the base interface "${base.name}" either in itself or in a mixin`;
         yield (0,_error_js__WEBPACK_IMPORTED_MODULE_0__.validationError)(
           addition.tokens.name,
           ext,
@@ -3149,8 +3170,27 @@ function* checkInterfaceMemberDuplication(defs, i) {
     }
   }
 
+  
+
+
+
   function getOperations(i) {
     return i.members.filter(({ type }) => type === "operation");
+  }
+
+  
+
+
+  function groupOperationNames(i) {
+    const ops = getOperations(i);
+    return {
+      statics: new Set(
+        ops.filter((op) => op.special === "static").map((op) => op.name)
+      ),
+      nonstatics: new Set(
+        ops.filter((op) => op.special !== "static").map((op) => op.name)
+      ),
+    };
   }
 }
 
@@ -3198,9 +3238,6 @@ class Constructor extends _base_js__WEBPACK_IMPORTED_MODULE_0__.Base {
   }
 
   *validate(defs) {
-    if (this.idlType) {
-      yield* this.idlType.validate(defs);
-    }
     for (const argument of this.arguments) {
       yield* argument.validate(defs);
     }
@@ -3288,8 +3325,6 @@ __webpack_require__.r(__webpack_exports__);
  });
  var _container_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
  var _field_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
-
-
 
 
 
@@ -3485,8 +3520,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-
 class CallbackInterface extends _container_js__WEBPACK_IMPORTED_MODULE_0__.Container {
   
 
@@ -3548,12 +3581,25 @@ class Writer {
     this.ts = Object.assign({}, templates, ts);
   }
 
+  
+
+
+
+
+
+
   reference(raw, { unescaped, context }) {
     if (!unescaped) {
       unescaped = raw.startsWith("_") ? raw.slice(1) : raw;
     }
     return this.ts.reference(raw, unescaped, context);
   }
+
+  
+
+
+
+
 
   token(t, wrapper = noop, ...args) {
     if (!t) {
@@ -3597,8 +3643,6 @@ __webpack_require__.r(__webpack_exports__);
    "validate": () => ( validate)
  });
  var _error_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
-
-
 
 
 function getMixinMap(all, unique) {
@@ -3757,10 +3801,10 @@ var __webpack_exports__ = {};
 (() => {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "WebIDLParseError": () => ( _lib_tokeniser_js__WEBPACK_IMPORTED_MODULE_3__.WebIDLParseError),
    "parse": () => ( _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__.parse),
-   "write": () => ( _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__.write),
    "validate": () => ( _lib_validator_js__WEBPACK_IMPORTED_MODULE_2__.validate),
-   "WebIDLParseError": () => ( _lib_tokeniser_js__WEBPACK_IMPORTED_MODULE_3__.WebIDLParseError)
+   "write": () => ( _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__.write)
  });
  var _lib_webidl2_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var _lib_writer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
