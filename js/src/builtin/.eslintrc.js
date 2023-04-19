@@ -5,16 +5,16 @@
 "use strict";
 
 module.exports = {
-  "plugins": [
-    "spidermonkey-js"
+  plugins: ["spidermonkey-js"],
+
+  overrides: [
+    {
+      files: ["*.js"],
+      processor: "spidermonkey-js/processor",
+    },
   ],
 
-  "overrides": [{
-    "files": ["*.js"],
-    "processor": "spidermonkey-js/processor",
-  }],
-
-  "rules": {
+  rules: {
     
     "no-self-compare": "off",
     "no-lonely-if": "off",
@@ -23,5 +23,5 @@ module.exports = {
     
     
     "no-redeclare": "off",
-  }
+  },
 };
