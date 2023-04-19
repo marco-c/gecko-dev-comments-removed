@@ -73,6 +73,8 @@ class StreamStatisticianImpl : public StreamStatisticianImplInterface {
 
   const uint32_t ssrc_;
   Clock* const clock_;
+  
+  const int64_t delta_internal_unix_epoch_ms_;
   RateStatistics incoming_bitrate_;
   
   int max_reordering_threshold_;

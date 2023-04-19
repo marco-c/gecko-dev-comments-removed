@@ -372,6 +372,7 @@ std::unique_ptr<RTCInboundRTPStreamStats> CreateInboundAudioStreamStats(
         *voice_receiver_info.last_packet_received_timestamp_ms);
   }
   if (voice_receiver_info.estimated_playout_ntp_timestamp_ms) {
+    
     inbound_audio->estimated_playout_timestamp = static_cast<double>(
         *voice_receiver_info.estimated_playout_ntp_timestamp_ms);
   }
@@ -471,12 +472,11 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   inbound_video->total_squared_inter_frame_delay =
       video_receiver_info.total_squared_inter_frame_delay;
   if (video_receiver_info.last_packet_received_timestamp_ms) {
-    inbound_video->last_packet_received_timestamp =
-        static_cast<double>(
-            *video_receiver_info.last_packet_received_timestamp_ms) /
-        rtc::kNumMillisecsPerSec;
+    inbound_video->last_packet_received_timestamp = static_cast<double>(
+        *video_receiver_info.last_packet_received_timestamp_ms);
   }
   if (video_receiver_info.estimated_playout_ntp_timestamp_ms) {
+    
     inbound_video->estimated_playout_timestamp = static_cast<double>(
         *video_receiver_info.estimated_playout_ntp_timestamp_ms);
   }
