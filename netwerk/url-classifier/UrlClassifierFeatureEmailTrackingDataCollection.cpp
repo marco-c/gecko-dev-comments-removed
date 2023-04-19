@@ -7,6 +7,7 @@
 #include "UrlClassifierFeatureEmailTrackingDataCollection.h"
 
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/UrlClassifierCommon.h"
@@ -183,11 +184,30 @@ UrlClassifierFeatureEmailTrackingDataCollection::ProcessChannel(
         isTopEmailWebApp
             ? Telemetry::LABELS_EMAIL_TRACKER_COUNT::content_email_webapp
             : Telemetry::LABELS_EMAIL_TRACKER_COUNT::content_normal);
+
+    
+    
+    
+    
+    ContentBlockingNotifier::OnEvent(
+        aChannel,
+        nsIWebProgressListener::STATE_LOADED_EMAILTRACKING_LEVEL_2_CONTENT);
   } else {
     Telemetry::AccumulateCategorical(
         isTopEmailWebApp
             ? Telemetry::LABELS_EMAIL_TRACKER_COUNT::base_email_webapp
             : Telemetry::LABELS_EMAIL_TRACKER_COUNT::base_normal);
+    
+    
+    
+    
+    
+    
+    if (!StaticPrefs::privacy_trackingprotection_emailtracking_enabled()) {
+      ContentBlockingNotifier::OnEvent(
+          aChannel,
+          nsIWebProgressListener::STATE_LOADED_EMAILTRACKING_LEVEL_1_CONTENT);
+    }
   }
 
   return NS_OK;
