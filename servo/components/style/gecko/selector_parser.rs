@@ -230,8 +230,16 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectorImpl;
 
+
+
+#[derive(Debug, Default)]
+pub struct ExtraMatchingData {
+    
+    pub invalidation_data: InvalidationMatchingData,
+}
+
 impl ::selectors::SelectorImpl for SelectorImpl {
-    type ExtraMatchingData = InvalidationMatchingData;
+    type ExtraMatchingData = ExtraMatchingData;
     type AttrValue = AtomString;
     type Identifier = AtomIdent;
     type LocalName = AtomIdent;
