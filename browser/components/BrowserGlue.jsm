@@ -4286,13 +4286,29 @@ BrowserGlue.prototype = {
 
   async _showUpgradeDialog() {
     const data = await lazy.OnboardingMessageProvider.getUpgradeMessage();
-    const win = lazy.BrowserWindowTracker.getTopWindow();
-    const browser = win.gBrowser.selectedBrowser;
+    const { gBrowser } = lazy.BrowserWindowTracker.getTopWindow();
+
+    
+    
+    const tab = gBrowser.addTrustedTab("about:home", {
+      relatedToCurrent: true,
+    });
+
+    
+    
+    
+    
+    await new Promise(resolve => {
+      gBrowser.addEventListener("TabSwitchDone", resolve, { once: true });
+      gBrowser.selectedTab = tab;
+    });
+
+    
     const config = {
       type: "SHOW_SPOTLIGHT",
       data,
     };
-    lazy.SpecialMessageActions.handleAction(config, browser);
+    lazy.SpecialMessageActions.handleAction(config, tab.linkedBrowser);
   },
 
   async _maybeShowDefaultBrowserPrompt() {
