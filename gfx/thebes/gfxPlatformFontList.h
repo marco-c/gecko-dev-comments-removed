@@ -497,7 +497,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  gfxCharacterMap* FindCharMap(gfxCharacterMap* aCmap);
+  already_AddRefed<gfxCharacterMap> FindCharMap(gfxCharacterMap* aCmap);
 
   
   void RemoveCmap(const gfxCharacterMap* aCharMap);

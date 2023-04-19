@@ -1884,12 +1884,13 @@ fontlist::Pointer gfxPlatformFontList::GetShmemCharMapLocked(
 }
 
 
-gfxCharacterMap* gfxPlatformFontList::FindCharMap(gfxCharacterMap* aCmap) {
+already_AddRefed<gfxCharacterMap> gfxPlatformFontList::FindCharMap(
+    gfxCharacterMap* aCmap) {
   AutoLock lock(mLock);
   aCmap->CalcHash();
   gfxCharacterMap* cmap = mSharedCmaps.PutEntry(aCmap)->GetKey();
   cmap->mShared = true;
-  return cmap;
+  return do_AddRef(cmap);
 }
 
 
