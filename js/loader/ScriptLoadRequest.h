@@ -33,7 +33,10 @@
 class nsICacheInfoChannel;
 
 namespace mozilla::dom {
+
 class ScriptLoadContext;
+class ScriptLoadInfo;
+
 }  
 
 namespace mozilla::loader {
@@ -305,6 +308,8 @@ class ScriptLoadRequest
   mozilla::dom::ScriptLoadContext* GetScriptLoadContext();
 
   mozilla::loader::ComponentLoadContext* GetComponentLoadContext();
+
+  mozilla::dom::ScriptLoadInfo* GetWorkerLoadContext();
 
   const ScriptKind mKind;  
                            
