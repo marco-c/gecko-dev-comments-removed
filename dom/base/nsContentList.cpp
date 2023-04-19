@@ -590,7 +590,7 @@ int32_t nsContentList::IndexOf(nsIContent* aContent) {
   return IndexOf(aContent, true);
 }
 
-void nsContentList::NodeWillBeDestroyed(nsINode* aNode) {
+void nsContentList::NodeWillBeDestroyed(const nsINode* aNode) {
   
 
   RemoveFromCaches();

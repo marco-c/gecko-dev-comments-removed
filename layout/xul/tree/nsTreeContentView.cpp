@@ -955,7 +955,7 @@ void nsTreeContentView::ContentRemoved(nsIContent* aChild,
   }
 }
 
-void nsTreeContentView::NodeWillBeDestroyed(nsINode* aNode) {
+void nsTreeContentView::NodeWillBeDestroyed(const nsINode* aNode) {
   
   nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
   ClearRows();
