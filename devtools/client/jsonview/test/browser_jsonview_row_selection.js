@@ -111,6 +111,16 @@ add_task(async function() {
     { type: "keyup" },
     tab.linkedBrowser
   );
+  await wait(500);
+  await assertRowSelected(numRows - 1);
+
+  
+  await BrowserTestUtils.synthesizeKey(
+    "VK_DOWN",
+    { type: "keydown", shiftKey: true },
+    tab.linkedBrowser
+  );
+  await wait(500);
   await assertRowSelected(numRows - 1);
 });
 
