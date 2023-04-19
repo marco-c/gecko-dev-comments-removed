@@ -317,6 +317,28 @@ class SpliceableJSONWriter : public JSONWriter {
   
   inline void UniqueStringElement(const Span<const char>& aStr);
 
+  
+  
+  
+  
+  void Start() { JSONWriter::Start(); }
+  void StartArrayProperty(const Span<const char>& aName) {
+    JSONWriter::StartArrayProperty(aName);
+  }
+  template <size_t N>
+  void StartArrayProperty(const char (&aName)[N]) {
+    JSONWriter::StartArrayProperty(Span<const char>(aName, N));
+  }
+  void StartArrayElement() { JSONWriter::StartArrayElement(); }
+  void StartObjectProperty(const Span<const char>& aName) {
+    JSONWriter::StartObjectProperty(aName);
+  }
+  template <size_t N>
+  void StartObjectProperty(const char (&aName)[N]) {
+    JSONWriter::StartObjectProperty(Span<const char>(aName, N));
+  }
+  void StartObjectElement() { JSONWriter::StartObjectElement(); }
+
  private:
   UniqueJSONStrings* mUniqueStrings = nullptr;
 };
