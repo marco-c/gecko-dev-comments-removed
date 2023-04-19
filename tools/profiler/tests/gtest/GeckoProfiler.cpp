@@ -1828,7 +1828,7 @@ TEST(GeckoProfiler, EnsureStarted)
     
     
     
-    uint32_t differentFeatures = features | ProfilerFeature::Leaf;
+    uint32_t differentFeatures = features | ProfilerFeature::CPUUtilization;
     profiler_ensure_started(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
                             differentFeatures, filters,
                             MOZ_ARRAY_LENGTH(filters), 0);
@@ -3900,7 +3900,7 @@ void DoSuspendAndSample(ProfilerThreadId aTidToSample,
       NS_NewRunnableFunction(
           "GeckoProfiler_SuspendAndSample_Test::TestBody",
           [&]() {
-            uint32_t features = ProfilerFeature::Leaf;
+            uint32_t features = ProfilerFeature::CPUUtilization;
             GTestStackCollector collector;
             profiler_suspend_and_sample_thread(aTidToSample, features,
                                                collector,
