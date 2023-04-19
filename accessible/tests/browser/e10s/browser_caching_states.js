@@ -233,6 +233,7 @@ addAccessibleTask(
     await invokeContentTask(browser, [], () => {
       let elm = content.document.getElementById("div");
       elm.style = "opacity: 0.4;";
+      elm.offsetTop; 
     });
 
     await untilCacheOk(
@@ -243,6 +244,7 @@ addAccessibleTask(
     await invokeContentTask(browser, [], () => {
       let elm = content.document.getElementById("div");
       elm.style = "opacity: 1;";
+      elm.offsetTop; 
     });
 
     await untilCacheOk(() => checkOpacity(div, true), "Found opaque state");

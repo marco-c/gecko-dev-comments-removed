@@ -1096,18 +1096,6 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
       }
     }
 
-    
-    auto opacity = Opacity();
-    if (opacity && *opacity == 1.0f) {
-      state |= states::OPAQUE1;
-    } else {
-      
-      
-      
-      
-      state &= ~states::OPAQUE1;
-    }
-
     auto* browser = static_cast<dom::BrowserParent*>(Document()->Manager());
     if (browser == dom::BrowserParent::GetFocused()) {
       if (this == Document()->GetFocusedAcc()) {
