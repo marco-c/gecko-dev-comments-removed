@@ -48,6 +48,7 @@ use std::{
     collections::{hash_map::DefaultHasher, HashSet},
     convert::TryFrom,
     hash::{Hash, Hasher},
+    iter,
     str::FromStr,
 };
 
@@ -55,7 +56,7 @@ use anyhow::{bail, Result};
 
 pub mod types;
 pub use types::Type;
-use types::{IterTypes, TypeIterator, TypeUniverse};
+use types::{TypeIterator, TypeUniverse};
 
 mod attributes;
 mod callbacks;
@@ -100,7 +101,7 @@ pub struct ComponentInterface {
     errors: Vec<Error>,
 }
 
-impl<'ci> ComponentInterface {
+impl ComponentInterface {
     
     pub fn from_webidl(idl: &str) -> Result<Self> {
         let mut ci = Self {
@@ -141,8 +142,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_enum_definitions(&self) -> Vec<Enum> {
-        self.enums.to_vec()
+    pub fn enum_definitions(&self) -> &[Enum] {
+        &self.enums
     }
 
     
@@ -152,8 +153,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_record_definitions(&self) -> Vec<Record> {
-        self.records.to_vec()
+    pub fn record_definitions(&self) -> &[Record] {
+        &self.records
     }
 
     
@@ -163,8 +164,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_function_definitions(&self) -> Vec<Function> {
-        self.functions.to_vec()
+    pub fn function_definitions(&self) -> &[Function] {
+        &self.functions
     }
 
     
@@ -174,8 +175,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_object_definitions(&self) -> Vec<Object> {
-        self.objects.to_vec()
+    pub fn object_definitions(&self) -> &[Object] {
+        &self.objects
     }
 
     
@@ -185,8 +186,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_callback_interface_definitions(&self) -> Vec<CallbackInterface> {
-        self.callback_interfaces.to_vec()
+    pub fn callback_interface_definitions(&self) -> &[CallbackInterface] {
+        &self.callback_interfaces
     }
 
     
@@ -196,8 +197,8 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_error_definitions(&self) -> Vec<Error> {
-        self.errors.to_vec()
+    pub fn error_definitions(&self) -> &[Error] {
+        &self.errors
     }
 
     
@@ -207,30 +208,24 @@ impl<'ci> ComponentInterface {
     }
 
     
-    pub fn iter_external_types(&self) -> Vec<(String, String)> {
-        self.types
-            .iter_known_types()
-            .filter_map(|t| match t {
-                Type::External { name, crate_name } => Some((name, crate_name)),
-                _ => None,
-            })
-            .collect()
+    pub fn iter_external_types(&self) -> impl Iterator<Item = (&String, &String)> {
+        self.types.iter_known_types().filter_map(|t| match t {
+            Type::External { name, crate_name } => Some((name, crate_name)),
+            _ => None,
+        })
     }
 
     
-    pub fn iter_custom_types(&self) -> Vec<(String, Type)> {
-        self.types
-            .iter_known_types()
-            .filter_map(|t| match t {
-                Type::Custom { name, builtin } => Some((name, *builtin)),
-                _ => None,
-            })
-            .collect()
+    pub fn iter_custom_types(&self) -> impl Iterator<Item = (&String, &Type)> {
+        self.types.iter_known_types().filter_map(|t| match t {
+            Type::Custom { name, builtin } => Some((name, &**builtin)),
+            _ => None,
+        })
     }
 
     
-    pub fn iter_types(&self) -> Vec<Type> {
-        self.types.iter_known_types().collect()
+    pub fn iter_types(&self) -> impl Iterator<Item = &Type> {
+        self.types.iter_known_types()
     }
 
     
@@ -243,10 +238,7 @@ impl<'ci> ComponentInterface {
     
     
     
-    fn iter_types_in_item<'a, T: IterTypes>(
-        &'a self,
-        item: &'a T,
-    ) -> impl Iterator<Item = &'a Type> + 'a {
+    fn iter_types_in_item<'a>(&'a self, item: &'a Type) -> impl Iterator<Item = &'a Type> + 'a {
         RecursiveTypeIterator::new(self, item)
     }
 
@@ -254,13 +246,13 @@ impl<'ci> ComponentInterface {
     
     
     
-    pub fn item_contains_object_references<T: IterTypes>(&self, item: &T) -> bool {
+    pub fn item_contains_object_references(&self, item: &Type) -> bool {
         self.iter_types_in_item(item)
             .any(|t| matches!(t, Type::Object(_)))
     }
 
     
-    pub fn item_contains_unsigned_types<T: IterTypes>(&self, item: &T) -> bool {
+    pub fn item_contains_unsigned_types(&self, item: &Type) -> bool {
         self.iter_types_in_item(item)
             .any(|t| matches!(t, Type::UInt8 | Type::UInt16 | Type::UInt32 | Type::UInt64))
     }
@@ -402,10 +394,10 @@ impl<'ci> ComponentInterface {
     
     
     
-    pub fn iter_ffi_function_definitions(&self) -> Vec<FFIFunction> {
-        let mut functions = self.iter_user_ffi_function_definitions();
-        functions.append(&mut self.iter_rust_buffer_ffi_function_definitions());
-        functions
+    pub fn iter_ffi_function_definitions(&self) -> impl Iterator<Item = FFIFunction> + '_ {
+        self.iter_user_ffi_function_definitions()
+            .cloned()
+            .chain(self.iter_rust_buffer_ffi_function_definitions())
     }
 
     
@@ -414,9 +406,8 @@ impl<'ci> ComponentInterface {
     
     
     
-    pub fn iter_user_ffi_function_definitions(&self) -> Vec<FFIFunction> {
-        vec![]
-            .into_iter()
+    pub fn iter_user_ffi_function_definitions(&self) -> impl Iterator<Item = &FFIFunction> + '_ {
+        iter::empty()
             .chain(
                 self.objects
                     .iter()
@@ -425,20 +416,20 @@ impl<'ci> ComponentInterface {
             .chain(
                 self.callback_interfaces
                     .iter()
-                    .flat_map(|cb| cb.iter_ffi_function_definitions()),
+                    .map(|cb| cb.ffi_init_callback()),
             )
-            .chain(self.functions.iter().map(|f| f.ffi_func.clone()))
-            .collect()
+            .chain(self.functions.iter().map(|f| &f.ffi_func))
     }
 
     
-    pub fn iter_rust_buffer_ffi_function_definitions(&self) -> Vec<FFIFunction> {
-        vec![
+    pub fn iter_rust_buffer_ffi_function_definitions(&self) -> impl Iterator<Item = FFIFunction> {
+        [
             self.ffi_rustbuffer_alloc(),
             self.ffi_rustbuffer_from_bytes(),
             self.ffi_rustbuffer_free(),
             self.ffi_rustbuffer_reserve(),
         ]
+        .into_iter()
     }
 
     
@@ -483,7 +474,7 @@ impl<'ci> ComponentInterface {
         if !self.namespace.is_empty() {
             bail!("duplicate namespace definition");
         }
-        self.namespace.push_str(&defn.name);
+        self.namespace = defn.name;
         Ok(())
     }
 
@@ -541,8 +532,8 @@ impl<'ci> ComponentInterface {
             bail!("missing namespace definition");
         }
         
-        for e in self.enums.iter() {
-            for variant in e.variants.iter() {
+        for e in &self.enums {
+            for variant in &e.variants {
                 if self.types.get_type_definition(variant.name()).is_some() {
                     bail!(
                         "Enum variant names must not shadow type names: \"{}\"",
@@ -598,12 +589,6 @@ impl Hash for ComponentInterface {
     }
 }
 
-impl IterTypes for ComponentInterface {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        self.types.iter_types()
-    }
-}
-
 
 
 
@@ -633,7 +618,7 @@ struct RecursiveTypeIterator<'a> {
 
 impl<'a> RecursiveTypeIterator<'a> {
     
-    fn new<T: IterTypes>(ci: &'a ComponentInterface, item: &'a T) -> RecursiveTypeIterator<'a> {
+    fn new(ci: &'a ComponentInterface, item: &'a Type) -> RecursiveTypeIterator<'a> {
         RecursiveTypeIterator {
             ci,
             
@@ -672,14 +657,14 @@ impl<'a> RecursiveTypeIterator<'a> {
             
             
             let next_iter = match next_type {
-                Type::Record(nm) => self.ci.get_record_definition(nm).map(IterTypes::iter_types),
-                Type::Enum(nm) => self.ci.get_enum_definition(nm).map(IterTypes::iter_types),
-                Type::Error(nm) => self.ci.get_error_definition(nm).map(IterTypes::iter_types),
-                Type::Object(nm) => self.ci.get_object_definition(nm).map(IterTypes::iter_types),
+                Type::Record(nm) => self.ci.get_record_definition(nm).map(Record::iter_types),
+                Type::Enum(nm) => self.ci.get_enum_definition(nm).map(Enum::iter_types),
+                Type::Error(nm) => self.ci.get_error_definition(nm).map(Error::iter_types),
+                Type::Object(nm) => self.ci.get_object_definition(nm).map(Object::iter_types),
                 Type::CallbackInterface(nm) => self
                     .ci
                     .get_callback_interface_definition(nm)
-                    .map(IterTypes::iter_types),
+                    .map(CallbackInterface::iter_types),
                 _ => None,
             };
             if let Some(next_iter) = next_iter {
@@ -720,7 +705,7 @@ trait APIBuilder {
 
 impl<T: APIBuilder> APIBuilder for Vec<T> {
     fn process(&self, ci: &mut ComponentInterface) -> Result<()> {
-        for item in self.iter() {
+        for item in self {
             item.process(ci)?;
         }
         Ok(())

@@ -65,14 +65,12 @@
 
 #[cfg(target_os = "android")]
 extern crate android_log_sys as log_ffi;
-#[macro_use]
-extern crate lazy_static;
+extern crate once_cell;
+use once_cell::sync::OnceCell;
 #[macro_use]
 extern crate log;
 
 extern crate env_logger;
-
-use std::sync::RwLock;
 
 #[cfg(target_os = "android")]
 use log_ffi::LogPriority;
@@ -105,21 +103,20 @@ fn android_log(_priority: Level, _tag: &CStr, _msg: &CStr) {}
 
 
 pub struct AndroidLogger {
-    config: RwLock<Config>,
+    config: OnceCell<Config>,
 }
 
 impl AndroidLogger {
     
     pub fn new(config: Config) -> AndroidLogger {
         AndroidLogger {
-            config: RwLock::new(config),
+            config: OnceCell::from(config),
         }
     }
 }
 
-lazy_static! {
-   static ref ANDROID_LOGGER: AndroidLogger = AndroidLogger::default();
-}
+
+static ANDROID_LOGGER: OnceCell<AndroidLogger> = OnceCell::new();
 
 const LOGGING_TAG_MAX_LEN: usize = 23;
 const LOGGING_MSG_MAX_LEN: usize = 4000;
@@ -128,7 +125,7 @@ impl Default for AndroidLogger {
     
     fn default() -> AndroidLogger {
         AndroidLogger {
-            config: RwLock::new(Config::default()),
+            config: OnceCell::from(Config::default()),
         }
     }
 }
@@ -140,8 +137,7 @@ impl Log for AndroidLogger {
 
     fn log(&self, record: &Record) {
         let config = self.config
-            .read()
-            .expect("failed to acquire android_log filter lock for read");
+            .get_or_init(Config::default);
 
         if !config.filter_matches(record) {
             return;
@@ -155,7 +151,7 @@ impl Log for AndroidLogger {
 
         
         let custom_tag = &config.tag;
-        let tag = custom_tag.as_ref().map(|s| s.as_bytes()).unwrap_or(module_path.as_bytes());
+        let tag = custom_tag.as_ref().map(|s| s.as_bytes()).unwrap_or_else(|| module_path.as_bytes());
 
         
         self.fill_tag_bytes(&mut tag_bytes, tag);
@@ -206,22 +202,12 @@ impl AndroidLogger {
 }
 
 
+#[derive(Default)]
 pub struct Config {
     log_level: Option<Level>,
     filter: Option<env_logger::filter::Filter>,
     tag: Option<CString>,
     custom_format: Option<FormatFn>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            log_level: None,
-            filter: None,
-            tag: None,
-            custom_format: None,
-        }
-    }
 }
 
 impl Config {
@@ -236,7 +222,7 @@ impl Config {
 
     fn filter_matches(&self, record: &Record) -> bool {
         if let Some(ref filter) = self.filter {
-            filter.matches(&record)
+            filter.matches(record)
         } else {
             true
         }
@@ -365,7 +351,7 @@ impl<'a> PlatformLogWriter<'a> {
 
     
     fn copy_bytes_to_start(&mut self, index: usize, len: usize) {
-        let src = unsafe { self.buffer.as_ptr().offset(index as isize) };
+        let src = unsafe { self.buffer.as_ptr().add(index) };
         let dst = self.buffer.as_mut_ptr();
         unsafe { ptr::copy(src, dst, len) };
     }
@@ -423,7 +409,7 @@ impl<'a> fmt::Write for PlatformLogWriter<'a> {
 
 
 pub fn log(record: &Record) {
-    ANDROID_LOGGER.log(record)
+    ANDROID_LOGGER.get_or_init(AndroidLogger::default).log(record)
 }
 
 
@@ -434,16 +420,13 @@ pub fn log(record: &Record) {
 
 
 pub fn init_once(config: Config) {
-    if let Err(err) = log::set_logger(&*ANDROID_LOGGER) {
+    let log_level = config.log_level;
+    let logger = ANDROID_LOGGER.get_or_init(|| AndroidLogger::new(config));
+
+    if let Err(err) = log::set_logger(logger) {
         debug!("android_logger: log::set_logger failed: {}", err);
-    } else {
-        if let Some(level) = config.log_level {
-            log::set_max_level(level.to_level_filter());
-        }
-        *ANDROID_LOGGER
-            .config
-            .write()
-            .expect("failed to acquire android_log filter lock for write") = config;
+    } else if let Some(level) = log_level {
+        log::set_max_level(level.to_level_filter());
     }
 }
 
@@ -531,7 +514,7 @@ mod tests {
     fn platform_log_writer_init_values() {
         let tag = CStr::from_bytes_with_nul(b"tag\0").unwrap();
 
-        let writer = PlatformLogWriter::new(Level::Warn, &tag);
+        let writer = PlatformLogWriter::new(Level::Warn, tag);
 
         assert_eq!(writer.tag, tag);
         
@@ -630,6 +613,6 @@ mod tests {
     }
 
     fn get_tag_writer() -> PlatformLogWriter<'static> {
-        PlatformLogWriter::new(Level::Warn, &CStr::from_bytes_with_nul(b"tag\0").unwrap())
+        PlatformLogWriter::new(Level::Warn, CStr::from_bytes_with_nul(b"tag\0").unwrap())
     }
 }

@@ -21,7 +21,7 @@
 
 
 
-use std::{collections::hash_map::Entry, collections::BTreeSet, collections::HashMap};
+use std::{collections::hash_map::Entry, collections::BTreeSet, collections::HashMap, iter};
 
 use anyhow::{bail, Result};
 use heck::ToUpperCamelCase;
@@ -124,6 +124,15 @@ impl Type {
     pub fn ffi_type(&self) -> FFIType {
         self.into()
     }
+
+    pub fn iter_types(&self) -> TypeIterator<'_> {
+        let nested_types = match self {
+            Type::Optional(t) | Type::Sequence(t) => t.iter_types(),
+            Type::Map(k, v) => Box::new(k.iter_types().chain(v.iter_types())),
+            _ => Box::new(iter::empty()),
+        };
+        Box::new(std::iter::once(self).chain(nested_types))
+    }
 }
 
 
@@ -151,7 +160,7 @@ impl From<&Type> for FFIType {
             
             Type::String => FFIType::RustBuffer,
             
-            Type::Object(_) => FFIType::RustArcPtr,
+            Type::Object(name) => FFIType::RustArcPtr(name.to_owned()),
             
             Type::CallbackInterface(_) => FFIType::UInt64,
             
@@ -166,6 +175,13 @@ impl From<&Type> for FFIType {
             | Type::External { .. } => FFIType::RustBuffer,
             Type::Custom { builtin, .. } => FFIType::from(builtin.as_ref()),
         }
+    }
+}
+
+
+impl From<&&Type> for FFIType {
+    fn from(ty: &&Type) -> Self {
+        (*ty).into()
     }
 }
 
@@ -242,72 +258,16 @@ impl TypeUniverse {
     }
 
     
-    pub fn iter_known_types(&self) -> impl Iterator<Item = Type> + '_ {
-        self.all_known_types.iter().cloned()
+    pub fn iter_known_types(&self) -> impl Iterator<Item = &Type> {
+        self.all_known_types.iter()
     }
 }
-
-
 
 
 
 
 
 pub type TypeIterator<'a> = Box<dyn Iterator<Item = &'a Type> + 'a>;
-
-
-
-
-
-
-
-
-pub trait IterTypes {
-    
-    
-    
-    
-    
-    
-    
-    
-    fn iter_types(&self) -> TypeIterator<'_>;
-}
-
-impl<T: IterTypes> IterTypes for &T {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        (*self).iter_types()
-    }
-}
-
-impl<T: IterTypes> IterTypes for Box<T> {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        self.as_ref().iter_types()
-    }
-}
-
-impl<T: IterTypes> IterTypes for Option<T> {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        Box::new(self.iter().flat_map(IterTypes::iter_types))
-    }
-}
-
-impl IterTypes for Type {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        let nested_types = match self {
-            Type::Optional(t) | Type::Sequence(t) => Some(t.iter_types()),
-            Type::Map(k, v) => Some(Box::new(k.iter_types().chain(v.iter_types())) as _),
-            _ => None,
-        };
-        Box::new(std::iter::once(self).chain(nested_types.into_iter().flatten()))
-    }
-}
-
-impl IterTypes for TypeUniverse {
-    fn iter_types(&self) -> TypeIterator<'_> {
-        Box::new(self.all_known_types.iter())
-    }
-}
 
 #[cfg(test)]
 mod test_type {
