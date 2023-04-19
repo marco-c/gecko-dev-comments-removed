@@ -4,6 +4,10 @@
 
 
 
+DIRS += [
+    "session-data",
+]
+
 DevToolsModules(
     "content-process.js",
     "index.js",

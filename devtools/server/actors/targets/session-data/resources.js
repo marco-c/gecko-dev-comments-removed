@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  async addSessionDataEntry(targetActor, entries, isDocumentCreation) {
+    await targetActor._watchTargetResources(entries);
+  },
+
+  removeSessionDataEntry(targetActor, entries, isDocumentCreation) {
+    targetActor._unwatchTargetResources(entries);
+  },
+};
