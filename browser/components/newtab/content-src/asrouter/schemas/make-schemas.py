@@ -227,6 +227,10 @@ def main(check=False):
     all_templates = list(chain.from_iterable(templates.values()))
 
     
+    
+    defs["Message"]["properties"]["template"]["enum"] = all_templates
+
+    
     feature_schema = {
         "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": SCHEMA_ID,
@@ -246,16 +250,12 @@ def main(check=False):
                 "allOf": [
                     
                     
-                    {
-                        "type": "object",
-                        "properties": {
-                            "template": {
-                                "type": "string",
-                                "enum": all_templates,
-                            },
-                        },
-                        "required": ["template"],
-                    },
+                    
+                    
+                    
+                    
+                    
+                    {"$ref": f"{SCHEMA_ID}#/$defs/Message"},
                     
                     
                     
