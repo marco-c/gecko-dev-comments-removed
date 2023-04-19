@@ -32,13 +32,7 @@ class gfxEnv final {
   
 
   
-  DECL_GFX_ENV("DUMP_DEBUG", DumpDebug);
-
-  
   DECL_GFX_ENV("MOZ_DEBUG_SHADERS", DebugShaders);
-
-  
-  DECL_GFX_ENV("MOZ_DISABLE_CONTEXT_SHARING_GLX", DisableContextSharingGlx);
 
   
   DECL_GFX_ENV("MOZ_DISABLE_CRASH_GUARD", DisableCrashGuard);
@@ -57,28 +51,18 @@ class gfxEnv final {
   DECL_GFX_ENV("MOZ_DUMP_COMPOSITOR_TEXTURES", DumpCompositorTextures);
 
   
-  DECL_GFX_ENV("MOZ_DUMP_LAYER_SORT_LIST", DumpLayerSortList);
-
-  
   DECL_GFX_ENV("MOZ_DUMP_PAINT", DumpPaint);
-  DECL_GFX_ENV("MOZ_DUMP_PAINT_INTERMEDIATE", DumpPaintIntermediate);
   DECL_GFX_ENV("MOZ_DUMP_PAINT_ITEMS", DumpPaintItems);
   DECL_GFX_ENV("MOZ_DUMP_PAINT_TO_FILE", DumpPaintToFile);
-
-  
-  DECL_GFX_ENV("MOZ_FORCE_DOUBLE_BUFFERING", ForceDoubleBuffering);
 
   
   DECL_GFX_ENV("MOZ_GFX_CRASH_MOZ_CRASH", GfxDevCrashMozCrash);
   
   DECL_GFX_ENV("MOZ_GFX_CRASH_TELEMETRY", GfxDevCrashTelemetry);
 
-  DECL_GFX_ENV("MOZ_GFX_VR_NO_DISTORTION", VRNoDistortion);
-
   
   DECL_GFX_ENV("MOZ_GL_DEBUG", GlDebug);
   DECL_GFX_ENV("MOZ_GL_DEBUG_VERBOSE", GlDebugVerbose);
-  DECL_GFX_ENV("MOZ_GL_DEBUG_ABORT_ON_ERROR", GlDebugAbortOnError);
 
   
   DECL_GFX_ENV("MOZ_GL_DUMP_EXTS", GlDumpExtensions);
@@ -87,13 +71,7 @@ class gfxEnv final {
   DECL_GFX_ENV("MOZ_GL_SPEW", GlSpew);
 
   
-  DECL_GFX_ENV("MOZ_GPU_SWITCHING_SPEW", GpuSwitchingSpew);
-
-  
   DECL_GFX_ENV("MOZ_GLX_DEBUG", GlxDebug);
-
-  
-  DECL_GFX_ENV("MOZ_LAYERS_ENABLE_XLIB_SURFACES", LayersEnableXlibSurfaces);
 
   
   DECL_GFX_ENV("MOZ_LAYERS_PREFER_EGL", LayersPreferEGL);
@@ -102,14 +80,6 @@ class gfxEnv final {
   DECL_GFX_ENV("MOZ_LAYERS_PREFER_OFFSCREEN", LayersPreferOffscreen);
 
   
-  DECL_GFX_ENV("MOZ_SKIPCOMPOSITION", SkipComposition);
-
-  
-  DECL_GFX_ENV("MOZ_SKIPRASTERIZATION", SkipRasterization);
-
-  
-  DECL_GFX_ENV("NO_VR_RENDERING", NoVRRendering);
-
   
   
   
