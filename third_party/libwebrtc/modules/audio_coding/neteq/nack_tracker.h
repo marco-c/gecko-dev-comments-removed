@@ -112,6 +112,8 @@ class NackTracker {
     
     bool require_valid_rtt = false;
     
+    int default_rtt_ms = 100;
+    
     double max_loss_rate = 1.0;
   };
 
