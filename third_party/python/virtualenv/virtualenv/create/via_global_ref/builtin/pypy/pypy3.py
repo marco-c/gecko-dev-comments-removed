@@ -23,16 +23,17 @@ class PyPy3(PyPy, Python3Supports):
 
 
 class PyPy3Posix(PyPy3, PosixSupports):
-    """PyPy 2 on POSIX"""
+    """PyPy 3 on POSIX"""
 
     @property
     def stdlib(self):
         """PyPy3 respects sysconfig only for the host python, virtual envs is instead lib/pythonx.y/site-packages"""
-        return self.dest / "lib" / "python{}".format(self.interpreter.version_release_str) / "site-packages"
+        return self.dest / "lib" / "pypy{}".format(self.interpreter.version_release_str) / "site-packages"
 
     @classmethod
-    def _shared_libs(cls):
-        return ["libpypy3-c.so", "libpypy3-c.dylib"]
+    def _shared_libs(cls, python_dir):
+        
+        return python_dir.glob("libpypy3*.*")
 
     def to_lib(self, src):
         return self.dest / "lib" / src.name
@@ -41,18 +42,39 @@ class PyPy3Posix(PyPy3, PosixSupports):
     def sources(cls, interpreter):
         for src in super(PyPy3Posix, cls).sources(interpreter):
             yield src
+        
+        
+        
+        if interpreter.system_prefix == "/usr":
+            return
+        
+        
+        
+        
         host_lib = Path(interpreter.system_prefix) / "lib"
+        stdlib = Path(interpreter.system_stdlib)
         if host_lib.exists() and host_lib.is_dir():
             for path in host_lib.iterdir():
+                if stdlib == path:
+                    
+                    
+                    
+                    continue
                 yield PathRefToDest(path, dest=cls.to_lib)
 
 
 class Pypy3Windows(PyPy3, WindowsSupports):
-    """PyPy 2 on Windows"""
+    """PyPy 3 on Windows"""
+
+    @property
+    def less_v37(self):
+        return self.interpreter.version_info.minor < 7
 
     @property
     def stdlib(self):
         """PyPy3 respects sysconfig only for the host python, virtual envs is instead Lib/site-packages"""
+        if self.less_v37:
+            return self.dest / "site-packages"
         return self.dest / "Lib" / "site-packages"
 
     @property
@@ -61,5 +83,9 @@ class Pypy3Windows(PyPy3, WindowsSupports):
         return self.dest / "Scripts"
 
     @classmethod
-    def _shared_libs(cls):
-        return ["libpypy3-c.dll", "libffi-7.dll"]
+    def _shared_libs(cls, python_dir):
+        
+        for pattern in ["libpypy*.dll", "libffi*.dll"]:
+            srcs = python_dir.glob(pattern)
+            for src in srcs:
+                yield src
