@@ -69,8 +69,13 @@ class CookieBannerListService {
     this.#rs = lazy.RemoteSettings(COLLECTION_NAME);
   }
 
-  init() {
+  async init() {
     log("init");
+
+    await this.importAllRules();
+
+    
+    Services.prefs.addObserver(PREF_TEST_RULES, this);
 
     
     
@@ -78,10 +83,10 @@ class CookieBannerListService {
       this.#onSyncCallback = this.onSync.bind(this);
       this.#rs.on("sync", this.#onSyncCallback);
     }
+  }
 
-    Services.prefs.addObserver(PREF_TEST_RULES, this);
-
-    return this.importAllRules();
+  initForTest() {
+    return this.init();
   }
 
   async importAllRules() {
@@ -89,7 +94,7 @@ class CookieBannerListService {
 
     let rules = await this.#rs.get();
     this.#importRules(rules);
-    return this.#importTestRules();
+    await this.#importTestRules();
   }
 
   shutdown() {
