@@ -618,6 +618,7 @@ pub mod issue45 {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] 
     fn tracing() {
         
         
