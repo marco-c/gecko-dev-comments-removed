@@ -9004,6 +9004,11 @@ nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
         break;
       }
 
+      if (aPos->mResultFrame == blockFrame) {
+        
+        break;
+      }
+
       
       if (aPos->mDirection == eDirPrevious) {
         edgeCase = 1;  
