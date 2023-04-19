@@ -8281,7 +8281,7 @@ function RecentSavesContainer({
   }, external_React_default().createElement(FluentOrText, {
     message: "View My List"
   }))), external_React_default().createElement("div", {
-    className: gridClassName
+    className: `ds-card-grid-recent-saves ${gridClassName}`
   }, recentSavesCards));
 }
 class _CardGrid extends (external_React_default()).PureComponent {
