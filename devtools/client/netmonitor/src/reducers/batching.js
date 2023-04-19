@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { BATCH_ACTIONS } = require("devtools/client/netmonitor/src/constants");
+const {
+  BATCH_ACTIONS,
+} = require("resource://devtools/client/netmonitor/src/constants.js");
 
 
 

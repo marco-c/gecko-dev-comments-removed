@@ -7,7 +7,9 @@
 
 
 add_task(async function() {
-  const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
+  const {
+    L10N,
+  } = require("resource://devtools/client/netmonitor/src/utils/l10n.js");
 
   
   Services.prefs.setIntPref("devtools.toolbox.footer.height", 600);

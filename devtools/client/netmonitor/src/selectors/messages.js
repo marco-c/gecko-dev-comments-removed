@@ -4,7 +4,9 @@
 
 "use strict";
 
-const { createSelector } = require("devtools/client/shared/vendor/reselect");
+const {
+  createSelector,
+} = require("resource://devtools/client/shared/vendor/reselect.js");
 
 
 

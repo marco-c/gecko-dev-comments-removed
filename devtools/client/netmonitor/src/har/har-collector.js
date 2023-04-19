@@ -6,7 +6,7 @@
 
 const {
   getLongStringFullText,
-} = require("devtools/client/shared/string-utils");
+} = require("resource://devtools/client/shared/string-utils.js");
 
 
 const trace = {
