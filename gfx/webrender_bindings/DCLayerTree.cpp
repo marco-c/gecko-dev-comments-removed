@@ -652,7 +652,7 @@ GLuint DCLayerTree::GetOrCreateFbo(int aWidth, int aHeight) {
 }
 
 bool DCLayerTree::EnsureVideoProcessorAtLeast(const gfx::IntSize& aInputSize,
-                                       const gfx::IntSize& aOutputSize) {
+                                              const gfx::IntSize& aOutputSize) {
   HRESULT hr;
 
   if (!mVideoDevice || !mVideoContext) {
@@ -893,7 +893,8 @@ bool IsYuv(const gfx::SurfaceFormat aFormat) {
   MOZ_ASSERT_UNREACHABLE();
 }
 
-void DCSurfaceSwapChain::AttachExternalImage(wr::ExternalImageId aExternalImage) {
+void DCSurfaceSwapChain::AttachExternalImage(
+    wr::ExternalImageId aExternalImage) {
   RenderTextureHost* texture =
       RenderThread::Get()->GetRenderTexture(aExternalImage);
   MOZ_RELEASE_ASSERT(texture);
@@ -1084,7 +1085,8 @@ static CspaceTransformPlan ChooseCspaceTransformPlan(
 
       
       
-      plan = { 
+      plan = {
+          
           plan.srcSpace,
           {color::Chromaticities::Rec2020(),
            {color::PiecewiseGammaDesc::Srgb()}},
@@ -1092,10 +1094,11 @@ static CspaceTransformPlan ChooseCspaceTransformPlan(
                                                      
           DXGI_FORMAT_R10G10B10A2_UNORM,
       };
-      plan = { 
+      plan = {
+          
           plan.srcSpace,
           {color::Chromaticities::Rec709(), {}},
-          DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709, 
+          DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709,  
           DXGI_FORMAT_R16G16B16A16_FLOAT,
       };
       break;
@@ -1123,13 +1126,20 @@ Maybe<gfx::Matrix> DCSurfaceSwapChain::EnsurePresented(
   
   
   
+  
   if (StaticPrefs::gfx_webrender_dcomp_video_vp_scaling_win_AtStartup() &&
       aTransform.PreservesAxisAlignedRectangles()) {
-    const auto absScales = aTransform.ScaleFactors(); 
-    const auto presentationTransformUnscaled = presentationTransform.Copy().PreScale(1 / absScales.xScale, 1 / absScales.yScale);
-    const auto dstSizeScaled = gfx::IntSize::Round(gfx::Size(dstSize) * aTransform.ScaleFactors());
-    const auto presentSizeOld = presentationTransform.TransformSize(gfx::Size(dstSize));
-    const auto presentSizeNew = presentationTransformUnscaled.TransformSize(gfx::Size(dstSizeScaled));
+    const auto absScales =
+        aTransform.ScaleFactors();  
+    const auto presentationTransformUnscaled =
+        presentationTransform.Copy().PreScale(1 / absScales.xScale,
+                                              1 / absScales.yScale);
+    const auto dstSizeScaled =
+        gfx::IntSize::Round(gfx::Size(dstSize) * aTransform.ScaleFactors());
+    const auto presentSizeOld =
+        presentationTransform.TransformSize(gfx::Size(dstSize));
+    const auto presentSizeNew =
+        presentationTransformUnscaled.TransformSize(gfx::Size(dstSizeScaled));
     if (gfx::FuzzyEqual(presentSizeNew.width, presentSizeOld.width, 0.1f) &&
         gfx::FuzzyEqual(presentSizeNew.height, presentSizeOld.height, 0.1f)) {
       dstSize = dstSizeScaled;
@@ -1511,7 +1521,7 @@ bool DCSurfaceSwapChain::CallBlitHelper() const {
 
   if (plan.srcSpace != plan.dstSpace) {
     if (!mDest->lut) {
-      mDest->lut = blitHelper->GetColorLutTex({ plan.srcSpace, plan.dstSpace });
+      mDest->lut = blitHelper->GetColorLutTex({plan.srcSpace, plan.dstSpace});
     }
     MOZ_ASSERT(mDest->lut);
     gl->fActiveTexture(LOCAL_GL_TEXTURE0 + LUT_TEX_UNIT);
