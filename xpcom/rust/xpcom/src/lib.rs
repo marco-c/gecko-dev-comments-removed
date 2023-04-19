@@ -36,9 +36,6 @@ pub use statics::*;
 pub mod interfaces;
 
 
-pub mod services;
-
-
 pub mod components;
 
 
