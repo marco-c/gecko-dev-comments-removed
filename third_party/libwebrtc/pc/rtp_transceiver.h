@@ -135,6 +135,9 @@ class RtpTransceiver : public RtpTransceiverInterface,
                       transport_lookup);
 
   
+  void ClearChannel();
+
+  
   
   void AddSender(
       rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender);
@@ -277,6 +280,8 @@ class RtpTransceiver : public RtpTransceiverInterface,
  private:
   void OnFirstPacketReceived();
   void StopSendingAndReceiving();
+  
+  void DeleteChannel(cricket::ChannelInterface* channel_to_delete);
 
   
   TaskQueueBase* const thread_;
@@ -301,6 +306,9 @@ class RtpTransceiver : public RtpTransceiverInterface,
   bool reused_for_addtrack_ = false;
   bool has_ever_been_used_to_send_ = false;
 
+  
+  
+  
   cricket::ChannelInterface* channel_ = nullptr;
   cricket::ChannelManager* channel_manager_ = nullptr;
   std::vector<RtpCodecCapability> codec_preferences_;

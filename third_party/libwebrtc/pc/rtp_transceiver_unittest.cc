@@ -83,7 +83,7 @@ TEST(RtpTransceiverTest, CannotSetChannelOnStoppedTransceiver) {
   
   EXPECT_CALL(channel1, SetFirstPacketReceivedCallback(_));
   EXPECT_CALL(cm, DestroyChannel(&channel1)).WillRepeatedly(testing::Return());
-  transceiver->SetChannel(nullptr, nullptr);
+  transceiver->ClearChannel();
 }
 
 
@@ -112,7 +112,7 @@ TEST(RtpTransceiverTest, CanUnsetChannelOnStoppedTransceiver) {
   EXPECT_EQ(&channel, transceiver->channel());
 
   
-  transceiver->SetChannel(nullptr, nullptr);
+  transceiver->ClearChannel();
   EXPECT_EQ(nullptr, transceiver->channel());
 }
 
@@ -217,7 +217,7 @@ class RtpTransceiverTestForHeaderExtensions : public ::testing::Test {
     EXPECT_CALL(mock_channel, SetFirstPacketReceivedCallback(_));
     EXPECT_CALL(channel_manager_, DestroyChannel(&mock_channel))
         .WillRepeatedly(testing::Return());
-    transceiver_->SetChannel(nullptr, nullptr);
+    transceiver_->ClearChannel();
   }
 
   rtc::scoped_refptr<MockRtpReceiverInternal> receiver_ = MockReceiver();
