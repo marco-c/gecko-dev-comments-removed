@@ -168,8 +168,8 @@ class LIBYUV_API MJpegDecoder {
   int GetComponentScanlinePadding(int component);
 
   
-  Buffer buf_;
-  BufferVector buf_vec_;
+  Buffer buf_{};
+  BufferVector buf_vec_{};
 
   jpeg_decompress_struct* decompress_struct_;
   jpeg_source_mgr* source_mgr_;
@@ -181,12 +181,12 @@ class LIBYUV_API MJpegDecoder {
 
   
   int num_outbufs_;  
-  uint8_t*** scanlines_;
-  int* scanlines_sizes_;
+  uint8_t*** scanlines_{};
+  int* scanlines_sizes_{};
   
   
-  uint8_t** databuf_;
-  int* databuf_strides_;
+  uint8_t** databuf_{};
+  int* databuf_strides_{};
 };
 
 }  

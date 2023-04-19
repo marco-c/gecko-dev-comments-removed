@@ -18,10 +18,10 @@ extern "C" {
 #endif
 
 
-static LIBYUV_BOOL ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
-  if (src_size_mjpg >= 2) {
-    const uint8_t* end = src_mjpg + src_size_mjpg - 1;
-    const uint8_t* it = src_mjpg;
+static LIBYUV_BOOL ScanEOI(const uint8_t* sample, size_t sample_size) {
+  if (sample_size >= 2) {
+    const uint8_t* end = sample + sample_size - 1;
+    const uint8_t* it = sample;
     while (it < end) {
       
       it = (const uint8_t*)(memchr(it, 0xff, end - it));
@@ -39,30 +39,29 @@ static LIBYUV_BOOL ScanEOI(const uint8_t* src_mjpg, size_t src_size_mjpg) {
 }
 
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg) {
+LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size) {
   
   const size_t kMaxJpegSize = 0x7fffffffull;
   const size_t kBackSearchSize = 1024;
-  if (src_size_mjpg < 64 || src_size_mjpg > kMaxJpegSize || !src_mjpg) {
+  if (sample_size < 64 || sample_size > kMaxJpegSize || !sample) {
     
     return LIBYUV_FALSE;
   }
-  
-  if (src_mjpg[0] != 0xff || src_mjpg[1] != 0xd8 || src_mjpg[2] != 0xff) {
+  if (sample[0] != 0xff || sample[1] != 0xd8) {  
     
     return LIBYUV_FALSE;
   }
 
   
-  if (src_size_mjpg > kBackSearchSize) {
-    if (ScanEOI(src_mjpg + src_size_mjpg - kBackSearchSize, kBackSearchSize)) {
+  if (sample_size > kBackSearchSize) {
+    if (ScanEOI(sample + sample_size - kBackSearchSize, kBackSearchSize)) {
       return LIBYUV_TRUE;  
     }
     
-    src_size_mjpg = src_size_mjpg - kBackSearchSize + 1;
+    sample_size = sample_size - kBackSearchSize + 1;
   }
   
-  return ScanEOI(src_mjpg + 2, src_size_mjpg - 2);
+  return ScanEOI(sample + 2, sample_size - 2);
 }
 
 #ifdef __cplusplus

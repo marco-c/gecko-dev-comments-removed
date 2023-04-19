@@ -15,33 +15,33 @@
 extern "C" {
 
 
-void FastConvertYUVToRGB32Row(const uint8_t* y_buf,
-                              const uint8_t* u_buf,
-                              const uint8_t* v_buf,
-                              uint8_t* rgb_buf,
+void FastConvertYUVToRGB32Row(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
                               int width);
 
-void FastConvertYUVToRGB32Row_C(const uint8_t* y_buf,
-                                const uint8_t* u_buf,
-                                const uint8_t* v_buf,
-                                uint8_t* rgb_buf,
+void FastConvertYUVToRGB32Row_C(const uint8* y_buf,
+                                const uint8* u_buf,
+                                const uint8* v_buf,
+                                uint8* rgb_buf,
                                 int width,
                                 unsigned int x_shift);
 
-void FastConvertYUVToRGB32Row(const uint8_t* y_buf,
-                              const uint8_t* u_buf,
-                              const uint8_t* v_buf,
-                              uint8_t* rgb_buf,
+void FastConvertYUVToRGB32Row(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
                               int width);
 
 
 
 
 
-void ConvertYUVToRGB32Row_SSE(const uint8_t* y_buf,
-                              const uint8_t* u_buf,
-                              const uint8_t* v_buf,
-                              uint8_t* rgb_buf,
+void ConvertYUVToRGB32Row_SSE(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
                               int width,
                               int step);
 
@@ -49,10 +49,10 @@ void ConvertYUVToRGB32Row_SSE(const uint8_t* y_buf,
 
 
 
-void RotateConvertYUVToRGB32Row_SSE(const uint8_t* y_buf,
-                                    const uint8_t* u_buf,
-                                    const uint8_t* v_buf,
-                                    uint8_t* rgb_buf,
+void RotateConvertYUVToRGB32Row_SSE(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
                                     int width,
                                     int ystep,
                                     int uvstep);
@@ -60,33 +60,33 @@ void RotateConvertYUVToRGB32Row_SSE(const uint8_t* y_buf,
 
 
 
-void DoubleYUVToRGB32Row_SSE(const uint8_t* y_buf,
-                             const uint8_t* u_buf,
-                             const uint8_t* v_buf,
-                             uint8_t* rgb_buf,
+void DoubleYUVToRGB32Row_SSE(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
                              int width);
 
 
 
 
-void ScaleYUVToRGB32Row(const uint8_t* y_buf,
-                        const uint8_t* u_buf,
-                        const uint8_t* v_buf,
-                        uint8_t* rgb_buf,
+void ScaleYUVToRGB32Row(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
                         int width,
                         int source_dx);
 
-void ScaleYUVToRGB32Row(const uint8_t* y_buf,
-                        const uint8_t* u_buf,
-                        const uint8_t* v_buf,
-                        uint8_t* rgb_buf,
+void ScaleYUVToRGB32Row(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
                         int width,
                         int source_dx);
 
-void ScaleYUVToRGB32Row_C(const uint8_t* y_buf,
-                          const uint8_t* u_buf,
-                          const uint8_t* v_buf,
-                          uint8_t* rgb_buf,
+void ScaleYUVToRGB32Row_C(const uint8* y_buf,
+                          const uint8* u_buf,
+                          const uint8* v_buf,
+                          uint8* rgb_buf,
                           int width,
                           int source_dx);
 
@@ -94,24 +94,24 @@ void ScaleYUVToRGB32Row_C(const uint8_t* y_buf,
 
 
 
-void LinearScaleYUVToRGB32Row(const uint8_t* y_buf,
-                              const uint8_t* u_buf,
-                              const uint8_t* v_buf,
-                              uint8_t* rgb_buf,
+void LinearScaleYUVToRGB32Row(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
                               int width,
                               int source_dx);
 
-void LinearScaleYUVToRGB32Row(const uint8_t* y_buf,
-                              const uint8_t* u_buf,
-                              const uint8_t* v_buf,
-                              uint8_t* rgb_buf,
+void LinearScaleYUVToRGB32Row(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
                               int width,
                               int source_dx);
 
-void LinearScaleYUVToRGB32Row_C(const uint8_t* y_buf,
-                                const uint8_t* u_buf,
-                                const uint8_t* v_buf,
-                                uint8_t* rgb_buf,
+void LinearScaleYUVToRGB32Row_C(const uint8* y_buf,
+                                const uint8* u_buf,
+                                const uint8* v_buf,
+                                uint8* rgb_buf,
                                 int width,
                                 int source_dx);
 
@@ -133,7 +133,7 @@ void LinearScaleYUVToRGB32Row_C(const uint8_t* y_buf,
 #define SIMD_ALIGNED(var) var
 #endif
 
-extern SIMD_ALIGNED(const int16_t kCoefficientsRgbY[768][4]);
+extern SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
 
 
 

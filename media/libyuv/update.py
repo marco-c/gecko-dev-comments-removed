@@ -49,8 +49,11 @@ def apply_patches(base):
         
         'make_mjpeg_printfs_optional.patch',
         
+        'allow_disabling_asm_avx2.patch',
         
+        'add_H444ToARGB.patch',
         
+        'bug_1491848.patch',
     ]
 
     for patch in patches:

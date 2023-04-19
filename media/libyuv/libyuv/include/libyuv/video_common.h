@@ -30,8 +30,7 @@ extern "C" {
 #ifdef __cplusplus
 #define FOURCC(a, b, c, d)                                        \
   ((static_cast<uint32_t>(a)) | (static_cast<uint32_t>(b) << 8) | \
-   (static_cast<uint32_t>(c) << 16) | /* NOLINT */                \
-   (static_cast<uint32_t>(d) << 24))  /* NOLINT */
+   (static_cast<uint32_t>(c) << 16) | (static_cast<uint32_t>(d) << 24))
 #else
 #define FOURCC(a, b, c, d)                                     \
   (((uint32_t)(a)) | ((uint32_t)(b) << 8) |       /* NOLINT */ \
@@ -59,8 +58,7 @@ enum FourCC {
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
-  FOURCC_I010 = FOURCC('I', '0', '1', '0'),  
-  FOURCC_I210 = FOURCC('I', '2', '1', '0'),  
+  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  
 
   
   FOURCC_M420 = FOURCC('M', '4', '2', '0'),
@@ -71,8 +69,6 @@ enum FourCC {
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
   FOURCC_AR30 = FOURCC('A', 'R', '3', '0'),  
   FOURCC_AB30 = FOURCC('A', 'B', '3', '0'),  
-  FOURCC_AR64 = FOURCC('A', 'R', '6', '4'),  
-  FOURCC_AB64 = FOURCC('A', 'B', '6', '4'),  
   FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
   FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
@@ -88,31 +84,9 @@ enum FourCC {
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
   FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
   FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  
-  FOURCC_J420 =
-      FOURCC('J', '4', '2', '0'),  
-  FOURCC_J422 =
-      FOURCC('J', '4', '2', '2'),  
-  FOURCC_J444 =
-      FOURCC('J', '4', '4', '4'),  
-  FOURCC_J400 =
-      FOURCC('J', '4', '0', '0'),  
-  FOURCC_F420 = FOURCC('F', '4', '2', '0'),  
-  FOURCC_F422 = FOURCC('F', '4', '2', '2'),  
-  FOURCC_F444 = FOURCC('F', '4', '4', '4'),  
+  FOURCC_J420 = FOURCC('J', '4', '2', '0'),
+  FOURCC_J400 = FOURCC('J', '4', '0', '0'),  
   FOURCC_H420 = FOURCC('H', '4', '2', '0'),  
-  FOURCC_H422 = FOURCC('H', '4', '2', '2'),  
-  FOURCC_H444 = FOURCC('H', '4', '4', '4'),  
-  FOURCC_U420 = FOURCC('U', '4', '2', '0'),  
-  FOURCC_U422 = FOURCC('U', '4', '2', '2'),  
-  FOURCC_U444 = FOURCC('U', '4', '4', '4'),  
-  FOURCC_F010 = FOURCC('F', '0', '1', '0'),  
-  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  
-  FOURCC_U010 = FOURCC('U', '0', '1', '0'),  
-  FOURCC_F210 = FOURCC('F', '2', '1', '0'),  
-  FOURCC_H210 = FOURCC('H', '2', '1', '0'),  
-  FOURCC_U210 = FOURCC('U', '2', '1', '0'),  
-  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
-  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
 
   
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  
@@ -157,7 +131,7 @@ enum FourCCBpp {
   FOURCC_BPP_NV12 = 12,
   FOURCC_BPP_YUY2 = 16,
   FOURCC_BPP_UYVY = 16,
-  FOURCC_BPP_M420 = 12,  
+  FOURCC_BPP_M420 = 12,
   FOURCC_BPP_Q420 = 12,
   FOURCC_BPP_ARGB = 32,
   FOURCC_BPP_BGRA = 32,
@@ -165,8 +139,6 @@ enum FourCCBpp {
   FOURCC_BPP_RGBA = 32,
   FOURCC_BPP_AR30 = 32,
   FOURCC_BPP_AB30 = 32,
-  FOURCC_BPP_AR64 = 64,
-  FOURCC_BPP_AB64 = 64,
   FOURCC_BPP_24BG = 24,
   FOURCC_BPP_RAW = 24,
   FOURCC_BPP_RGBP = 16,
@@ -183,13 +155,7 @@ enum FourCCBpp {
   FOURCC_BPP_J420 = 12,
   FOURCC_BPP_J400 = 8,
   FOURCC_BPP_H420 = 12,
-  FOURCC_BPP_H422 = 16,
-  FOURCC_BPP_I010 = 15,
-  FOURCC_BPP_I210 = 20,
-  FOURCC_BPP_H010 = 15,
-  FOURCC_BPP_H210 = 20,
-  FOURCC_BPP_P010 = 15,
-  FOURCC_BPP_P210 = 20,
+  FOURCC_BPP_H010 = 24,
   FOURCC_BPP_MJPG = 0,  
   FOURCC_BPP_H264 = 0,
   FOURCC_BPP_IYUV = 12,

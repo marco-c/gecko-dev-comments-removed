@@ -154,7 +154,6 @@ uint64_t ComputeHammingDistance(const uint8_t* src_a,
     HammingDistance = HammingDistance_MSA;
   }
 #endif
-
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+ : diff)
 #endif
