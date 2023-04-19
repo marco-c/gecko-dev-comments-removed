@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/audio_mixer.h"
 #include "api/rtp_headers.h"
@@ -78,10 +79,6 @@ class AudioIngress : public AudioMixer::Source {
     return output_audio_level_.TotalDuration();
   }
 
-  
-  
-  int64_t GetRoundTripTime();
-
   NetworkStatistics GetNetworkStatistics() const {
     NetworkStatistics stats;
     acm_receiver_.GetNetworkStatistics(&stats,
@@ -105,6 +102,10 @@ class AudioIngress : public AudioMixer::Source {
   }
 
  private:
+  
+  
+  absl::optional<int64_t> GetRoundTripTime();
+
   
   
   
