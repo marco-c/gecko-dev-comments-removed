@@ -2,12 +2,12 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  EnterprisePolicyTesting:
+    "resource://testing-common/EnterprisePolicyTesting.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  EnterprisePolicyTesting:
-    "resource://testing-common/EnterprisePolicyTesting.jsm",
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   sinon: "resource://testing-common/Sinon.jsm",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
