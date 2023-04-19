@@ -15,7 +15,7 @@ namespace mozilla::widget {
 
 static constexpr gfx::sRGBColor sDefaultAccent(
     gfx::sRGBColor::UnusualFromARGB(0xff0060df));  
-static constexpr gfx::sRGBColor sDefaultAccentForeground(
+static constexpr gfx::sRGBColor sDefaultAccentText(
     gfx::sRGBColor::OpaqueWhite());
 
 struct ColorPalette;
