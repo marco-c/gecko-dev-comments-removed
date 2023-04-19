@@ -998,6 +998,8 @@ def build_task(config, tasks):
                 
                 
                 base_project = config.params["base_repository"].split("/")[-1]
+                if base_project.endswith(".git"):
+                    base_project = base_project[:-4]
                 th_project_suffix = "-pr"
             else:
                 base_project = config.params["project"]
