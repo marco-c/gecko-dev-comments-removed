@@ -5,7 +5,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["_TaskSchedulerMacOSImpl"];
+var EXPORTED_SYMBOLS = ["MacOSImpl"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -47,7 +47,7 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
 
 
 
-var _TaskSchedulerMacOSImpl = {
+var MacOSImpl = {
   async registerTask(id, command, intervalSeconds, options) {
     lazy.log.info(
       `registerTask(${id}, ${command}, ${intervalSeconds}, ${JSON.stringify(
