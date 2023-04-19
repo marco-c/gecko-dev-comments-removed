@@ -929,6 +929,10 @@ TEST_F(APZCOverscrollTester,
 
 TEST_F(APZCOverscrollTester,
        BothAxesOverscrollAnimationWithPanMomentumScrolling) {
+  
+  
+  
+  SCOPED_GFX_PREF_INT("apz.axis_lock.mode", 2);
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   ScrollMetadata metadata;
