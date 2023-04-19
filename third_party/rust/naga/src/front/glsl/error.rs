@@ -101,6 +101,7 @@ pub enum ErrorKind {
     #[error("unsupported matrix of the form matCx2 in std140 block layout")]
     UnsupportedMatrixTypeInStd140,
     
+    #[cfg(feature = "glsl-validate")]
     #[error("Variable already declared: {0}")]
     VariableAlreadyDeclared(String),
     

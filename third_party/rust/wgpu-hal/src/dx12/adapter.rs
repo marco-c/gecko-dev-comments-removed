@@ -122,8 +122,6 @@ impl super::Adapter {
             } else {
                 wgt::DeviceType::DiscreteGpu
             },
-            driver: String::new(),
-            driver_info: String::new(),
         };
 
         let mut options: d3d12::D3D12_FEATURE_DATA_D3D12_OPTIONS = unsafe { mem::zeroed() };
@@ -191,7 +189,7 @@ impl super::Adapter {
 
         let mut features = wgt::Features::empty()
             | wgt::Features::DEPTH_CLIP_CONTROL
-            | wgt::Features::DEPTH24PLUS_STENCIL8
+            | wgt::Features::DEPTH24UNORM_STENCIL8
             | wgt::Features::DEPTH32FLOAT_STENCIL8
             | wgt::Features::INDIRECT_FIRST_INSTANCE
             | wgt::Features::MAPPABLE_PRIMARY_BUFFERS
@@ -207,8 +205,7 @@ impl super::Adapter {
             | wgt::Features::WRITE_TIMESTAMP_INSIDE_PASSES
             | wgt::Features::TEXTURE_COMPRESSION_BC
             | wgt::Features::CLEAR_TEXTURE
-            | wgt::Features::TEXTURE_FORMAT_16BIT_NORM
-            | wgt::Features::PUSH_CONSTANTS;
+            | wgt::Features::TEXTURE_FORMAT_16BIT_NORM;
         
         
         
@@ -273,25 +270,7 @@ impl super::Adapter {
                         .min(crate::MAX_VERTEX_BUFFERS as u32),
                     max_vertex_attributes: d3d12::D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT,
                     max_vertex_buffer_array_stride: d3d12::D3D12_SO_BUFFER_MAX_STRIDE_IN_BYTES,
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    max_push_constant_size: 128,
+                    max_push_constant_size: 0,
                     min_uniform_buffer_offset_alignment:
                         d3d12::D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT,
                     min_storage_buffer_offset_alignment: 4,
@@ -509,7 +488,11 @@ impl crate::Adapter<super::Api> for super::Adapter {
                 | crate::TextureUses::COPY_SRC
                 | crate::TextureUses::COPY_DST,
             present_modes,
-            composite_alpha_modes: vec![wgt::CompositeAlphaMode::Opaque],
+            composite_alpha_modes: vec![
+                crate::CompositeAlphaMode::Opaque,
+                crate::CompositeAlphaMode::PreMultiplied,
+                crate::CompositeAlphaMode::PostMultiplied,
+            ],
         })
     }
 }

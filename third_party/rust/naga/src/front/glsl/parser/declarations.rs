@@ -19,55 +19,6 @@ use crate::{
 
 use super::{DeclarationContext, ParsingContext, Result};
 
-
-
-
-
-
-
-
-
-fn element_or_member_type(
-    ty: Handle<Type>,
-    i: usize,
-    types: &mut crate::UniqueArena<Type>,
-) -> Handle<Type> {
-    match types[ty].inner {
-        
-        TypeInner::Vector { kind, width, .. } => types.insert(
-            Type {
-                name: None,
-                inner: TypeInner::Scalar { kind, width },
-            },
-            Default::default(),
-        ),
-        
-        
-        TypeInner::Matrix { rows, width, .. } => types.insert(
-            Type {
-                name: None,
-                inner: TypeInner::Vector {
-                    size: rows,
-                    kind: ScalarKind::Float,
-                    width,
-                },
-            },
-            Default::default(),
-        ),
-        
-        TypeInner::Array { base, .. } => base,
-        
-        
-        
-        
-        TypeInner::Struct { ref members, .. } => {
-            members.get(i).map(|member| member.ty).unwrap_or(ty)
-        }
-        
-        _ => ty,
-    }
-}
-
 impl<'source> ParsingContext<'source> {
     pub fn parse_external_declaration(
         &mut self,
@@ -118,9 +69,7 @@ impl<'source> ParsingContext<'source> {
             let mut components = Vec::new();
             loop {
                 
-                let new_ty = element_or_member_type(ty, components.len(), &mut parser.module.types);
-
-                components.push(self.parse_initializer(parser, new_ty, ctx, body)?.0);
+                components.push(self.parse_initializer(parser, ty, ctx, body)?.0);
 
                 let token = self.bump(parser)?;
                 match token.value {
