@@ -323,22 +323,23 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsXMLContentSink::OnDocumentCreated(Document* aResultDocument) {
-  NS_ENSURE_ARG(aResultDocument);
-
+nsresult nsXMLContentSink::OnDocumentCreated(Document* aSourceDocument,
+                                             Document* aResultDocument) {
   aResultDocument->SetDocWriteDisabled(true);
 
   nsCOMPtr<nsIContentViewer> contentViewer;
   mDocShell->GetContentViewer(getter_AddRefs(contentViewer));
-  if (contentViewer) {
+  
+  
+  if (contentViewer && contentViewer->GetDocument() == aSourceDocument) {
     return contentViewer->SetDocumentInternal(aResultDocument, true);
   }
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
+nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
+                                           nsresult aResult,
+                                           Document* aResultDocument) {
   MOZ_ASSERT(aResultDocument,
              "Don't notify about transform end without a document.");
 
@@ -347,42 +348,49 @@ nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
   nsCOMPtr<nsIContentViewer> contentViewer;
   mDocShell->GetContentViewer(getter_AddRefs(contentViewer));
 
-  if (NS_FAILED(aResult) && contentViewer) {
-    
-    aResultDocument->SetMayStartLayout(false);
-    
-    contentViewer->SetDocument(aResultDocument);
-  }
-
   RefPtr<Document> originalDocument = mDocument;
   bool blockingOnload = mIsBlockingOnload;
-  if (!mRunsToCompletion) {
+
+  
+  
+  if (contentViewer && (contentViewer->GetDocument() == aSourceDocument ||
+                        contentViewer->GetDocument() == aResultDocument)) {
+    if (NS_FAILED(aResult)) {
+      
+      aResultDocument->SetMayStartLayout(false);
+      
+      contentViewer->SetDocument(aResultDocument);
+    }
+
+    if (!mRunsToCompletion) {
+      
+      
+      aResultDocument->BlockOnload();
+      mIsBlockingOnload = true;
+    }
     
     
-    aResultDocument->BlockOnload();
-    mIsBlockingOnload = true;
+    mDocument = aResultDocument;
+    aResultDocument->SetDocWriteDisabled(false);
+
+    
+    
+    
+    
+    nsIContent* rootElement = mDocument->GetRootElement();
+    if (rootElement) {
+      NS_ASSERTION(mDocument->ComputeIndexOf(rootElement).isSome(),
+                   "rootElement not in doc?");
+      mDocument->BeginUpdate();
+      MutationObservers::NotifyContentInserted(mDocument, rootElement);
+      mDocument->EndUpdate();
+    }
+
+    
+    StartLayout(false);
+
+    ScrollToRef();
   }
-  
-  mDocument = aResultDocument;
-  aResultDocument->SetDocWriteDisabled(false);
-
-  
-  
-  
-  
-  nsIContent* rootElement = mDocument->GetRootElement();
-  if (rootElement) {
-    NS_ASSERTION(mDocument->ComputeIndexOf(rootElement).isSome(),
-                 "rootElement not in doc?");
-    mDocument->BeginUpdate();
-    MutationObservers::NotifyContentInserted(mDocument, rootElement);
-    mDocument->EndUpdate();
-  }
-
-  
-  StartLayout(false);
-
-  ScrollToRef();
 
   originalDocument->EndLoad();
   if (blockingOnload) {

@@ -76,10 +76,11 @@ class nsXMLContentSink : public nsContentSink,
   }
 
   
-  NS_IMETHOD OnDocumentCreated(
-      mozilla::dom::Document* aResultDocument) override;
-  NS_IMETHOD OnTransformDone(nsresult aResult,
+  nsresult OnDocumentCreated(mozilla::dom::Document* aSourceDocument,
                              mozilla::dom::Document* aResultDocument) override;
+  nsresult OnTransformDone(mozilla::dom::Document* aSourceDocument,
+                           nsresult aResult,
+                           mozilla::dom::Document* aResultDocument) override;
 
   
   NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasDeferred,
