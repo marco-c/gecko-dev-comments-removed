@@ -593,7 +593,7 @@ Tester.prototype = {
       
       
       let testScope = this.currentTest.scope;
-      while (testScope.__cleanupFunctions.length > 0) {
+      while (testScope.__cleanupFunctions.length) {
         let func = testScope.__cleanupFunctions.shift();
         try {
           let result = await func.apply(testScope);
