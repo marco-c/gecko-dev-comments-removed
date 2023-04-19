@@ -896,7 +896,7 @@ add_task(async function test_sync_error() {
     ok(SyncedTabs.syncTabs.calledOnce, "SyncedTabs.syncTabs() was called once");
 
     
-    Services.obs.notifyObservers(null, "weave:service:sync:finished");
+    Services.obs.notifyObservers(null, "weave:service:sync:finish");
   });
 
   
@@ -954,7 +954,7 @@ add_task(async function test_sync_error() {
     
     gMockFxaDevices.push(someDevice);
     
-    Services.obs.notifyObservers(null, "weave:service:sync:finished");
+    Services.obs.notifyObservers(null, "weave:service:sync:finish");
   });
   Services.prefs.clearUserPref("services.sync.lastTabFetch");
 
