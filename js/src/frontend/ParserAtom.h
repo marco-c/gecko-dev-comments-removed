@@ -430,7 +430,7 @@ class alignas(alignof(uint32_t)) ParserAtom {
   ParserAtom(ParserAtom&& other) = delete;
 
   template <typename CharT, typename SeqCharT>
-  static ParserAtom* allocate(JSContext* cx, ErrorContext* ec, LifoAlloc& alloc,
+  static ParserAtom* allocate(ErrorContext* ec, LifoAlloc& alloc,
                               InflatedChar16Sequence<SeqCharT> seq,
                               uint32_t length, HashNumber hash);
 
@@ -691,33 +691,32 @@ class ParserAtomsTable {
  private:
   
   
-  TaggedParserAtomIndex addEntry(JSContext* cx, ErrorContext* ec,
-                                 EntryMap::AddPtr& addPtr, ParserAtom* entry);
+  TaggedParserAtomIndex addEntry(ErrorContext* ec, EntryMap::AddPtr& addPtr,
+                                 ParserAtom* entry);
   template <typename AtomCharT, typename SeqCharT>
-  TaggedParserAtomIndex internChar16Seq(JSContext* cx, ErrorContext* ec,
+  TaggedParserAtomIndex internChar16Seq(ErrorContext* ec,
                                         EntryMap::AddPtr& addPtr,
                                         HashNumber hash,
                                         InflatedChar16Sequence<SeqCharT> seq,
                                         uint32_t length);
 
   template <typename AtomCharT>
-  TaggedParserAtomIndex internExternalParserAtomImpl(JSContext* cx,
-                                                     ErrorContext* ec,
+  TaggedParserAtomIndex internExternalParserAtomImpl(ErrorContext* ec,
                                                      const ParserAtom* atom);
 
  public:
-  TaggedParserAtomIndex internAscii(JSContext* cx, ErrorContext* ec,
-                                    const char* asciiPtr, uint32_t length);
+  TaggedParserAtomIndex internAscii(ErrorContext* ec, const char* asciiPtr,
+                                    uint32_t length);
 
-  TaggedParserAtomIndex internLatin1(JSContext* cx, ErrorContext* ec,
+  TaggedParserAtomIndex internLatin1(ErrorContext* ec,
                                      const JS::Latin1Char* latin1Ptr,
                                      uint32_t length);
 
-  TaggedParserAtomIndex internUtf8(JSContext* cx, ErrorContext* ec,
+  TaggedParserAtomIndex internUtf8(ErrorContext* ec,
                                    const mozilla::Utf8Unit* utf8Ptr,
                                    uint32_t nbyte);
 
-  TaggedParserAtomIndex internChar16(JSContext* cx, ErrorContext* ec,
+  TaggedParserAtomIndex internChar16(ErrorContext* ec,
                                      const char16_t* char16Ptr,
                                      uint32_t length);
 
@@ -727,15 +726,14 @@ class ParserAtomsTable {
 
   
   
-  TaggedParserAtomIndex internExternalParserAtom(JSContext* cx,
-                                                 ErrorContext* ec,
+  TaggedParserAtomIndex internExternalParserAtom(ErrorContext* ec,
                                                  const ParserAtom* atom);
 
   
   
   
   TaggedParserAtomIndex internExternalParserAtomIndex(
-      JSContext* cx, ErrorContext* ec, const CompilationStencil& context,
+      ErrorContext* ec, const CompilationStencil& context,
       TaggedParserAtomIndex atomIndex);
 
   
@@ -744,7 +742,7 @@ class ParserAtomsTable {
                                         const CompilationStencil& context,
                                         TaggedParserAtomIndex external) const;
 
-  bool addPlaceholder(JSContext* cx, ErrorContext* ec);
+  bool addPlaceholder(ErrorContext* ec);
 
  private:
   const ParserAtom* getWellKnown(WellKnownAtomId atomId) const;
