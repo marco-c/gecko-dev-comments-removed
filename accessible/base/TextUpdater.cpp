@@ -50,6 +50,31 @@ void TextUpdater::DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
   mTextOffset = mHyperText->GetChildOffset(mTextLeaf);
   NS_ASSERTION(mTextOffset != -1, "Text leaf hasn't offset within hyper text!");
 
+  
+  
+  
+  
+  if (!mHyperText->IsEditable()) {
+    
+    RefPtr<AccEvent> textRemoveEvent =
+        new AccTextChangeEvent(mHyperText, mTextOffset, aOldText, false);
+    mDocument->FireDelayedEvent(textRemoveEvent);
+
+    
+    if (!aNewText.IsEmpty()) {
+      RefPtr<AccEvent> textInsertEvent =
+          new AccTextChangeEvent(mHyperText, mTextOffset, aNewText, true);
+      mDocument->FireDelayedEvent(textInsertEvent);
+    }
+
+    mDocument->MaybeNotifyOfValueChange(mHyperText);
+
+    
+    mTextLeaf->SetText(aNewText);
+    mHyperText->InvalidateCachedHyperTextOffsets();
+    return;
+  }
+
   uint32_t oldLen = aOldText.Length(), newLen = aNewText.Length();
   uint32_t minLen = std::min(oldLen, newLen);
 

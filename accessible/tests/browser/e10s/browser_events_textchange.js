@@ -104,7 +104,13 @@ addAccessibleTask(
     ];
     await changeText(browser, "p", "def", events);
 
-    events = [{ isInserted: true, str: "DEF", offset: 2 }];
+    
+    
+    
+    events = [
+      { isInserted: false, str: "def", offset: 0 },
+      { isInserted: true, str: "deDEFf", offset: 0 },
+    ];
     await changeText(browser, "p", "deDEFf", events);
 
     
