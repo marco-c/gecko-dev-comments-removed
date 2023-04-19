@@ -78,6 +78,7 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     chrome_options["args"].append("--autoplay-policy=no-user-gesture-required")
     
     chrome_options["args"].append("--use-fake-device-for-media-stream")
+    chrome_options["args"].append("--use-fake-ui-for-media-stream")
     
     chrome_options["args"].append("--short-reporting-delay")
     
