@@ -44,6 +44,7 @@ class RetransmissionTimeout {
   const int32_t min_rto_;
   const int32_t max_rto_;
   const int32_t max_rtt_;
+  const int32_t min_rtt_variance_;
   
   bool first_measurement_ = true;
   

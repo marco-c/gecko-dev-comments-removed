@@ -129,6 +129,21 @@ struct DcSctpOptions {
   DurationMs delayed_ack_max_timeout = DurationMs(200);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DurationMs min_rtt_variance = DurationMs(220);
+
+  
   bool slow_start_tcp_style = false;
 
   
