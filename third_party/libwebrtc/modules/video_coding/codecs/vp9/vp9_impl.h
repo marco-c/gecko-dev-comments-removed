@@ -115,7 +115,6 @@ class VP9EncoderImpl : public VP9Encoder {
   const VP9Profile profile_;
   bool inited_;
   int64_t timestamp_;
-  int cpu_speed_;
   uint32_t rc_max_intra_target_;
   vpx_codec_ctx_t* encoder_;
   vpx_codec_enc_cfg_t* config_;
@@ -198,11 +197,28 @@ class VP9EncoderImpl : public VP9Encoder {
       const WebRtcKeyValueConfig& trials);
   const bool external_ref_ctrl_;
 
-  const struct SpeedSettings {
-    bool enabled;
-    int layers[kMaxSpatialLayers];
-  } per_layer_speed_;
-  static SpeedSettings ParsePerLayerSpeed(const WebRtcKeyValueConfig& trials);
+  
+  
+  struct PerformanceFlags {
+    
+    int min_pixel_count = 0;
+
+    int base_layer_speed = -1;  
+    int high_layer_speed = -1;  
+    
+    
+    
+    int deblock_mode = 0;
+  };
+  
+  const std::vector<PerformanceFlags> performance_flags_;
+  
+  
+  std::vector<PerformanceFlags> performance_flags_by_spatial_index_;
+  void UpdatePerformanceFlags();
+  static std::vector<PerformanceFlags> ParsePerformanceFlagsFromTrials(
+      const WebRtcKeyValueConfig& trials);
+  static std::vector<PerformanceFlags> GetDefaultPerformanceFlags();
 
   int num_steady_state_frames_;
   
