@@ -9,19 +9,22 @@ const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
 
+const { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+const { StartupCache } = ExtensionParent;
+
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "FileUtils",
-  "resource://gre/modules/FileUtils.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "KeyValueService",
-  "resource://gre/modules/kvstore.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
+  KeyValueService: "resource://gre/modules/kvstore.jsm",
+});
 
 class Store {
   async _init() {
@@ -238,9 +241,24 @@ const makePublicContentScript = (extension, internalScript) => {
 
 const ExtensionScriptingStore = {
   async initExtension(extension) {
+    let scripts;
+
+    const hasPersistedScripts = await StartupCache.get(
+      extension,
+      ["scripting", "hasPersistedScripts"],
+      async () => {
+        scripts = await store.getAll(extension.id);
+        return !!scripts.length;
+      }
+    );
+
+    if (!hasPersistedScripts) {
+      return;
+    }
+
     
     
-    const scripts = await store.getAll(extension.id);
+    scripts ??= await store.getAll(extension.id);
 
     scripts.forEach(script => {
       const { scriptId, options } = makeInternalContentScript(
@@ -283,13 +301,19 @@ const ExtensionScriptingStore = {
     
     
     await store.deleteAll(extension.id);
-
-    return store.writeMany(extension.id, scripts);
+    await store.writeMany(extension.id, scripts);
+    StartupCache.general.set(
+      [extension.id, extension.version, "scripting", "hasPersistedScripts"],
+      !!scripts.length
+    );
   },
 
   
-  async clear(extensionId) {
-    return store.deleteAll(extensionId);
+  
+  
+  
+  async clearOnUninstall(extensionId) {
+    await store.deleteAll(extensionId);
   },
 
   

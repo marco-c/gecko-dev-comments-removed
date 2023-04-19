@@ -512,7 +512,7 @@ var ExtensionAddonObserver = {
     
     lazy.AsyncShutdown.profileChangeTeardown.addBlocker(
       `Clear scripting store for ${addon.id}`,
-      lazy.ExtensionScriptingStore.clear(addon.id)
+      lazy.ExtensionScriptingStore.clearOnUninstall(addon.id)
     );
 
     if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)) {
