@@ -4,11 +4,11 @@
 
 
 
-#ifndef DOM_FS_PARENT_ORIGINPRIVATEFILESYSTEMPARENT_H_
-#define DOM_FS_PARENT_ORIGINPRIVATEFILESYSTEMPARENT_H_
+#ifndef DOM_FS_PARENT_FILESYSTEMMANAGERPARENT_H_
+#define DOM_FS_PARENT_FILESYSTEMMANAGERPARENT_H_
 
 #include "ErrorList.h"
-#include "mozilla/dom/POriginPrivateFileSystemParent.h"
+#include "mozilla/dom/PFileSystemManagerParent.h"
 #include "mozilla/TaskQueue.h"
 #include "nsISupports.h"
 
@@ -28,10 +28,9 @@ namespace fs::data {
 class FileSystemDataManagerBase {};
 }  
 
-class OriginPrivateFileSystemParent : public POriginPrivateFileSystemParent {
+class FileSystemManagerParent : public PFileSystemManagerParent {
  public:
-  OriginPrivateFileSystemParent(TaskQueue* aTaskQueue,
-                                const EntryId& aRootEntry);
+  FileSystemManagerParent(TaskQueue* aTaskQueue, const EntryId& aRootEntry);
 
   mozilla::ipc::IPCResult RecvGetRootHandleMsg(
       GetRootHandleMsgResolver&& aResolver);
@@ -69,10 +68,10 @@ class OriginPrivateFileSystemParent : public POriginPrivateFileSystemParent {
   mozilla::ipc::IPCResult RecvNeedQuota(FileSystemQuotaRequest&& aRequest,
                                         NeedQuotaResolver&& aResolver);
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OriginPrivateFileSystemParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileSystemManagerParent)
 
  protected:
-  virtual ~OriginPrivateFileSystemParent();
+  virtual ~FileSystemManagerParent();
 
  private:
   RefPtr<TaskQueue> mTaskQueue;

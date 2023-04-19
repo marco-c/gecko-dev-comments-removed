@@ -5,14 +5,14 @@
 
 
 EXPORTS.mozilla.dom += [
+    "FileSystemManagerParent.h",
     "FileSystemManagerParentFactory.h",
-    "OriginPrivateFileSystemParent.h",
 ]
 
 UNIFIED_SOURCES += [
     "FileSystemHashSource.cpp",
+    "FileSystemManagerParent.cpp",
     "FileSystemManagerParentFactory.cpp",
-    "OriginPrivateFileSystemParent.cpp",
 ]
 
 FINAL_LIBRARY = "xul"

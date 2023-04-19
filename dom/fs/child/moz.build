@@ -5,7 +5,7 @@
 
 
 EXPORTS.mozilla.dom += [
-    "OriginPrivateFileSystemChild.h",
+    "FileSystemManagerChild.h",
 ]
 
 UNIFIED_SOURCES += [
