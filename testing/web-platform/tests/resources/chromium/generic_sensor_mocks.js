@@ -134,9 +134,8 @@ self.GenericSensorTest = (() => {
     }
 
     
-    async setSensorReading(readingData) {
+    setSensorReading(readingData) {
       this.readingData_ = new RingBuffer(readingData);
-      return this;
     }
 
     
