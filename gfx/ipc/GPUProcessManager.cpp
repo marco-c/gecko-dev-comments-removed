@@ -221,7 +221,7 @@ bool GPUProcessManager::LaunchGPUProcess() {
   
   
   auto newTime = TimeStamp::Now();
-  if (IsProcessStable(newTime)) {
+  if (!IsProcessStable(newTime)) {
     mUnstableProcessAttempts++;
   }
   mTotalProcessAttempts++;
