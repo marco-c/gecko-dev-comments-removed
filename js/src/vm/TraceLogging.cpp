@@ -24,7 +24,6 @@
 #include "vm/FrameIter.h"   
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
-#include "vm/Runtime.h"
 #include "vm/TraceLoggingGraph.h"
 
 using namespace js;

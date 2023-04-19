@@ -172,8 +172,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "jspubtd.h"
-
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ErrorReporter.h"
 #include "frontend/FullParseHandler.h"
