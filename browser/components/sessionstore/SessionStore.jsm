@@ -390,8 +390,8 @@ var SessionStore = {
     return SessionStoreInternal.getClosedWindowData();
   },
 
-  maybeDontSaveTabs(aWindow) {
-    SessionStoreInternal.maybeDontSaveTabs(aWindow);
+  maybeDontRestoreTabs(aWindow) {
+    SessionStoreInternal.maybeDontRestoreTabs(aWindow);
   },
 
   undoCloseWindow: function ss_undoCloseWindow(aIndex) {
@@ -908,6 +908,8 @@ var SessionStoreInternal = {
               "autorestore",
               1
             );
+
+            this._removeExplicitlyClosedTabs(state);
           }
 
           
@@ -928,6 +930,10 @@ var SessionStoreInternal = {
             delete aWindow.__lastSessionWindowID;
           });
         }
+        
+        
+        state.windows.forEach(win => delete win._maybeDontRestoreTabs);
+        state._closedWindows.forEach(win => delete win._maybeDontRestoreTabs);
       } catch (ex) {
         this._log.error("The session file is invalid: " + ex);
       }
@@ -944,6 +950,64 @@ var SessionStoreInternal = {
 
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_STARTUP_INIT_SESSION_MS");
     return state;
+  },
+
+  
+
+
+
+
+
+  _removeExplicitlyClosedTabs(state) {
+    
+    for (let i = 0; i < state.windows.length; ) {
+      const winData = state.windows[i];
+      if (winData._maybeDontRestoreTabs) {
+        if (state.windows.length == 1) {
+          
+          let j = 0;
+          
+          winData._lastClosedTabGroupCount = -1;
+          while (winData.tabs.length) {
+            const tabState = winData.tabs.pop();
+
+            
+            let activeIndex = (tabState.index || tabState.entries.length) - 1;
+            activeIndex = Math.min(activeIndex, tabState.entries.length - 1);
+            activeIndex = Math.max(activeIndex, 0);
+
+            let title = "";
+            if (activeIndex in tabState.entries) {
+              title =
+                tabState.entries[activeIndex].title ||
+                tabState.entries[activeIndex].url;
+            }
+
+            const tabData = {
+              state: tabState,
+              title,
+              image: tabState.image,
+              pos: j++,
+              closedAt: Date.now(),
+              closedInGroup: true,
+            };
+            if (this._shouldSaveTabState(tabState)) {
+              this.saveClosedTabData(winData, winData._closedTabs, tabData);
+            }
+          }
+        } else {
+          
+          
+          if (winData.tabs.some(this._shouldSaveTabState)) {
+            winData.closedAt = Date.now();
+            state._closedWindows.unshift(winData);
+          }
+          state.windows.splice(i, 1);
+          continue; 
+        }
+      }
+      i++;
+    }
   },
 
   _initPrefs() {
@@ -1872,16 +1936,6 @@ var SessionStoreInternal = {
       for (let [tab, tabData] of tabMap) {
         let permanentKey = tab.linkedBrowser.permanentKey;
         this._closedWindowTabs.set(permanentKey, tabData);
-        if (aWindow._dontSaveTabs && !tabData.isPrivate) {
-          
-          tab._closedInGroup = true;
-          this.maybeSaveClosedTab(aWindow, tab, tabData);
-        }
-      }
-
-      if (aWindow._dontSaveTabs) {
-        winData.tabs.splice(0, winData.tabs.length);
-        winData.selected = -1;
       }
 
       if (isFullyLoaded) {
@@ -3350,10 +3404,9 @@ var SessionStoreInternal = {
     return Cu.cloneInto(this._closedWindows, {});
   },
 
-  maybeDontSaveTabs(aWindow) {
-    if (this.willAutoRestore && this.isLastRestorableWindow()) {
-      aWindow._dontSaveTabs = true;
-    }
+  maybeDontRestoreTabs(aWindow) {
+    
+    this._windows[aWindow.__SSi]._maybeDontRestoreTabs = true;
   },
 
   isLastRestorableWindow() {
