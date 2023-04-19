@@ -18,9 +18,8 @@ namespace mozilla::gmp {
 
 
 
-bool GMPSharedMemManager::MgrAllocShmem(
-    GMPSharedMem::GMPMemoryClasses aClass, size_t aSize,
-    ipc::Shmem::SharedMemory::SharedMemoryType aType, ipc::Shmem* aMem) {
+bool GMPSharedMemManager::MgrAllocShmem(GMPSharedMem::GMPMemoryClasses aClass,
+                                        size_t aSize, ipc::Shmem* aMem) {
   mData->CheckThread();
 
   
@@ -36,7 +35,7 @@ bool GMPSharedMemManager::MgrAllocShmem(
   
   size_t pagesize = ipc::SharedMemory::SystemPageSize();
   aSize = (aSize + (pagesize - 1)) & ~(pagesize - 1);  
-  bool retval = Alloc(aSize, aType, aMem);
+  bool retval = Alloc(aSize, aMem);
   if (retval) {
     
     

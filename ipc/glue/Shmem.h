@@ -74,7 +74,6 @@ class Shmem final {
   typedef int32_t id_t;
   
   typedef mozilla::ipc::SharedMemory SharedMemory;
-  typedef SharedMemory::SharedMemoryType SharedMemoryType;
   
   
   
@@ -151,7 +150,6 @@ class Shmem final {
 
   static already_AddRefed<Shmem::SharedMemory> Alloc(PrivateIPDLCaller,
                                                      size_t aNBytes,
-                                                     SharedMemoryType aType,
                                                      bool aUnsafe,
                                                      bool aProtect = false);
 

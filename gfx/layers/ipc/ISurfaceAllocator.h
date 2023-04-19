@@ -52,8 +52,6 @@ enum BufferCapabilities {
 
 class SurfaceDescriptor;
 
-mozilla::ipc::SharedMemory::SharedMemoryType OptimalShmemType();
-
 
 
 

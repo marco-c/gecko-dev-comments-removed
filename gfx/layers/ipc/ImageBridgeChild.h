@@ -223,7 +223,6 @@ class ImageBridgeChild final : public PImageBridgeChild,
                           ImageContainer* aContainer);
 
   void ProxyAllocShmemNow(SynchronousTask* aTask, size_t aSize,
-                          SharedMemory::SharedMemoryType aType,
                           mozilla::ipc::Shmem* aShmem, bool aUnsafe,
                           bool* aSuccess);
   void ProxyDeallocShmemNow(SynchronousTask* aTask, mozilla::ipc::Shmem* aShmem,
@@ -288,12 +287,8 @@ class ImageBridgeChild final : public PImageBridgeChild,
 
 
 
-  bool AllocUnsafeShmem(size_t aSize,
-                        mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
-                        mozilla::ipc::Shmem* aShmem) override;
-  bool AllocShmem(size_t aSize,
-                  mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
-                  mozilla::ipc::Shmem* aShmem) override;
+  bool AllocUnsafeShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;
+  bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;
 
   
 
@@ -321,9 +316,7 @@ class ImageBridgeChild final : public PImageBridgeChild,
 
  protected:
   explicit ImageBridgeChild(uint32_t aNamespace);
-  bool DispatchAllocShmemInternal(size_t aSize,
-                                  SharedMemory::SharedMemoryType aType,
-                                  Shmem* aShmem, bool aUnsafe);
+  bool DispatchAllocShmemInternal(size_t aSize, Shmem* aShmem, bool aUnsafe);
 
   void Bind(Endpoint<PImageBridgeChild>&& aEndpoint);
   void BindSameProcess(RefPtr<ImageBridgeParent> aParent);

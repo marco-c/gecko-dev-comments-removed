@@ -279,9 +279,8 @@ mozilla::ipc::IPCResult GMPVideoEncoderParent::RecvNeedShmem(
   
   
   if (!mVideoHost.SharedMemMgr() ||
-      !mVideoHost.SharedMemMgr()->MgrAllocShmem(
-          GMPSharedMem::kGMPEncodedData, aEncodedBufferSize,
-          ipc::SharedMemory::TYPE_BASIC, &mem)) {
+      !mVideoHost.SharedMemMgr()->MgrAllocShmem(GMPSharedMem::kGMPEncodedData,
+                                                aEncodedBufferSize, &mem)) {
     GMP_LOG_ERROR(
         "%s::%s: Failed to get a shared mem buffer for Child! size %u",
         __CLASS__, __FUNCTION__, aEncodedBufferSize);

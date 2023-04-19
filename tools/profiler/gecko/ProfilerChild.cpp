@@ -376,9 +376,7 @@ void ProfilerChild::GatherProfileThreadFunction(
                   writer->ChunkedWriteFunc().CopyDataIntoLazilyAllocatedBuffer(
                       [&](size_t allocationSize) -> char* {
                         if (parameters->profilerChild->AllocShmem(
-                                allocationSize,
-                                mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
-                                &shmem)) {
+                                allocationSize, &shmem)) {
                           return shmem.get<char>();
                         }
                         return nullptr;
@@ -386,9 +384,7 @@ void ProfilerChild::GatherProfileThreadFunction(
                   writer = nullptr;
                 } else {
                   
-                  if (parameters->profilerChild->AllocShmem(
-                          1, mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC,
-                          &shmem)) {
+                  if (parameters->profilerChild->AllocShmem(1, &shmem)) {
                     shmem.get<char>()[0] = '\0';
                   }
                 }
@@ -421,7 +417,7 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
   if (!gatherProfileThread) {
     
     mozilla::ipc::Shmem shmem;
-    if (AllocShmem(1, mozilla::ipc::Shmem::SharedMemory::TYPE_BASIC, &shmem)) {
+    if (AllocShmem(1, &shmem)) {
       shmem.get<char>()[0] = '\0';
     }
     parameters->resolver(std::move(shmem));
