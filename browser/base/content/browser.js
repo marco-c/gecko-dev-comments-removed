@@ -9984,6 +9984,13 @@ var FirefoxViewHandler = {
         this.button?.setAttribute("aria-selected", e.target == this.tab);
         this._recordViewIfTabSelected();
         this._onTabForegrounded();
+        if (e.target == this.tab) {
+          
+          gBrowser.visibleTabs[0].style["-moz-user-focus"] = "normal";
+        } else {
+          
+          gBrowser.visibleTabs[0].style.removeProperty("-moz-user-focus");
+        }
         break;
       case "TabClose":
         this.tab = null;
