@@ -72,8 +72,9 @@ struct ShapeUtils final {
   
   
   
+  
   static bool ComputeInsetRadii(const StyleBasicShape&, const nsRect& aRefBox,
-                                nscoord aRadii[8]);
+                                const nsRect& aInsetRect, nscoord aRadii[8]);
 
   
   

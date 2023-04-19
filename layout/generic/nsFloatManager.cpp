@@ -2522,14 +2522,14 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   nsRect physicalShapeBoxRect =
       aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
-  nsRect insetRect =
+  const nsRect insetRect =
       ShapeUtils::ComputeInsetRect(aBasicShape, physicalShapeBoxRect);
 
   nsRect logicalInsetRect = ConvertToFloatLogical(
       LogicalRect(aWM, insetRect, aContainerSize), aWM, aContainerSize);
   nscoord physicalRadii[8];
   bool hasRadii = ShapeUtils::ComputeInsetRadii(
-      aBasicShape, physicalShapeBoxRect, physicalRadii);
+      aBasicShape, physicalShapeBoxRect, insetRect, physicalRadii);
 
   
   if (aShapeMargin == 0) {
