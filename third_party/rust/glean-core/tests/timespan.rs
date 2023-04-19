@@ -115,9 +115,7 @@ fn second_timer_run_is_skipped() {
     metric.set_stop(&glean, duration);
 
     
-    assert!(
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState, None).is_err()
-    );
+    assert!(test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState).is_err());
 
     let first_value = metric.get_value(&glean, "store1").unwrap();
     assert_eq!(duration, first_value);
@@ -132,7 +130,7 @@ fn second_timer_run_is_skipped() {
     
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState, None)
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState)
     );
 }
 
@@ -281,7 +279,7 @@ fn set_raw_time_does_nothing_when_timer_running() {
     
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState, None)
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState)
     );
 }
 
@@ -324,7 +322,7 @@ fn timespan_is_not_tracked_across_upload_toggle() {
     
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState, None)
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidState)
     );
 }
 
@@ -348,6 +346,6 @@ fn time_cannot_go_backwards() {
     assert!(metric.get_value(&glean, "test1").is_none());
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None),
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue),
     );
 }

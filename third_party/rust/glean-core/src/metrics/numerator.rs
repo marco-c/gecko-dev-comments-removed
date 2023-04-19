@@ -87,7 +87,7 @@ impl NumeratorMetric {
     
     
     
-    pub fn test_get_num_recorded_errors(&self, error: ErrorType, ping_name: Option<String>) -> i32 {
-        self.0.test_get_num_recorded_errors(error, ping_name)
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
+        self.0.test_get_num_recorded_errors(error)
     }
 }

@@ -10,6 +10,7 @@ use std::path::Path;
 use std::str;
 use std::sync::RwLock;
 
+use rkv::migrator::Migrator;
 use rkv::StoreOptions;
 
 
@@ -27,148 +28,119 @@ macro_rules! unwrap_or {
     };
 }
 
+/// cbindgen:ignore
+pub type Rkv = rkv::Rkv<rkv::backend::SafeModeEnvironment>;
+/// cbindgen:ignore
+pub type SingleStore = rkv::SingleStore<rkv::backend::SafeModeDatabase>;
+/// cbindgen:ignore
+pub type Writer<'t> = rkv::Writer<rkv::backend::SafeModeRwTransaction<'t>>;
 
-#[cfg(not(feature = "rkv-safe-mode"))]
-mod backend {
-    use std::path::Path;
-
-    /// cbindgen:ignore
-    pub type Rkv = rkv::Rkv<rkv::backend::LmdbEnvironment>;
-    /// cbindgen:ignore
-    pub type SingleStore = rkv::SingleStore<rkv::backend::LmdbDatabase>;
-    /// cbindgen:ignore
-    pub type Writer<'t> = rkv::Writer<rkv::backend::LmdbRwTransaction<'t>>;
-
-    pub fn rkv_new(path: &Path) -> Result<Rkv, rkv::StoreError> {
-        Rkv::new::<rkv::backend::Lmdb>(path)
-    }
-
-    
-    pub fn migrate(_path: &Path, _dst_env: &Rkv) {
+pub fn rkv_new(path: &Path) -> std::result::Result<Rkv, rkv::StoreError> {
+    match Rkv::new::<rkv::backend::SafeMode>(path) {
         
+        
+        
+        
+        
+        
+        Err(rkv::StoreError::FileInvalid) => {
+            let safebin = path.join("data.safe.bin");
+            fs::remove_file(safebin).map_err(|_| rkv::StoreError::FileInvalid)?;
+            
+            Rkv::new::<rkv::backend::SafeMode>(path)
+        }
+        other => other,
     }
 }
 
-
-#[cfg(feature = "rkv-safe-mode")]
-mod backend {
-    use rkv::migrator::Migrator;
-    use std::{fs, path::Path};
-
-    /// cbindgen:ignore
-    pub type Rkv = rkv::Rkv<rkv::backend::SafeModeEnvironment>;
-    /// cbindgen:ignore
-    pub type SingleStore = rkv::SingleStore<rkv::backend::SafeModeDatabase>;
-    /// cbindgen:ignore
-    pub type Writer<'t> = rkv::Writer<rkv::backend::SafeModeRwTransaction<'t>>;
-
-    pub fn rkv_new(path: &Path) -> Result<Rkv, rkv::StoreError> {
-        match Rkv::new::<rkv::backend::SafeMode>(path) {
-            
-            
-            
-            
-            
-            
-            Err(rkv::StoreError::FileInvalid) => {
-                let safebin = path.join("data.safe.bin");
-                fs::remove_file(safebin).map_err(|_| rkv::StoreError::FileInvalid)?;
+fn delete_and_log(path: &Path, msg: &str) {
+    if let Err(err) = fs::remove_file(path) {
+        match err.kind() {
+            std::io::ErrorKind::NotFound => {
                 
-                Rkv::new::<rkv::backend::SafeMode>(path)
             }
-            other => other,
+            _ => log::warn!("{}", msg),
         }
     }
+}
 
-    fn delete_and_log(path: &Path, msg: &str) {
-        if let Err(err) = fs::remove_file(path) {
-            match err.kind() {
-                std::io::ErrorKind::NotFound => {
-                    
-                }
-                _ => log::warn!("{}", msg),
+fn delete_lmdb_database(path: &Path) {
+    let datamdb = path.join("data.mdb");
+    delete_and_log(&datamdb, "Failed to delete old data.");
+
+    let lockmdb = path.join("lock.mdb");
+    delete_and_log(&lockmdb, "Failed to delete old lock.");
+}
+
+
+
+
+
+
+
+
+
+pub fn migrate(path: &Path, dst_env: &Rkv) {
+    use rkv::{MigrateError, StoreError};
+
+    log::debug!("Migrating files in {}", path.display());
+
+    
+    let datamdb = path.join("data.mdb");
+    if !datamdb.exists() {
+        log::debug!("No data to migrate.");
+        return;
+    }
+
+    
+    
+    
+    let should_delete =
+        match Migrator::open_and_migrate_lmdb_to_safe_mode(path, |builder| builder, dst_env) {
+            
+            
+            Err(MigrateError::StoreError(StoreError::FileInvalid)) => true,
+            Err(MigrateError::StoreError(StoreError::DatabaseCorrupted)) => true,
+            
+            
+            
+            Err(MigrateError::StoreError(StoreError::IoError(_))) => true,
+            
+            
+            
+            Err(MigrateError::StoreError(StoreError::UnsuitableEnvironmentPath(_))) => true,
+            
+            
+            Err(MigrateError::SourceEmpty) => true,
+            
+            
+            
+            
+            Err(MigrateError::DestinationNotEmpty) => {
+                log::warn!("Failed to migrate old data. Destination was not empty");
+                true
             }
-        }
+            
+            
+            Err(MigrateError::ManagerPoisonError) => false,
+            
+            
+            
+            Err(MigrateError::CloseError(_)) => false,
+            
+            
+            Err(MigrateError::StoreError(_)) => false,
+            
+            
+            Ok(()) => false,
+        };
+
+    if should_delete {
+        log::debug!("Need to delete remaining LMDB files.");
+        delete_lmdb_database(path);
     }
 
-    fn delete_lmdb_database(path: &Path) {
-        let datamdb = path.join("data.mdb");
-        delete_and_log(&datamdb, "Failed to delete old data.");
-
-        let lockmdb = path.join("lock.mdb");
-        delete_and_log(&lockmdb, "Failed to delete old lock.");
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn migrate(path: &Path, dst_env: &Rkv) {
-        use rkv::{MigrateError, StoreError};
-
-        log::debug!("Migrating files in {}", path.display());
-
-        
-        let datamdb = path.join("data.mdb");
-        if !datamdb.exists() {
-            log::debug!("No data to migrate.");
-            return;
-        }
-
-        
-        
-        
-        let should_delete =
-            match Migrator::open_and_migrate_lmdb_to_safe_mode(path, |builder| builder, dst_env) {
-                
-                
-                Err(MigrateError::StoreError(StoreError::FileInvalid)) => true,
-                Err(MigrateError::StoreError(StoreError::DatabaseCorrupted)) => true,
-                
-                
-                
-                Err(MigrateError::StoreError(StoreError::IoError(_))) => true,
-                
-                
-                
-                Err(MigrateError::StoreError(StoreError::UnsuitableEnvironmentPath(_))) => true,
-                
-                
-                Err(MigrateError::SourceEmpty) => true,
-                
-                
-                
-                
-                Err(MigrateError::DestinationNotEmpty) => {
-                    log::warn!("Failed to migrate old data. Destination was not empty");
-                    true
-                }
-                
-                
-                Err(MigrateError::ManagerPoisonError) => false,
-                
-                
-                
-                Err(MigrateError::CloseError(_)) => false,
-                
-                
-                Err(MigrateError::StoreError(_)) => false,
-                
-                
-                Ok(()) => false,
-            };
-
-        if should_delete {
-            log::debug!("Need to delete remaining LMDB files.");
-            delete_lmdb_database(path);
-        }
-
-        log::debug!("Migration ended. Safe-mode database in {}", path.display());
-    }
+    log::debug!("Migration ended. Safe-mode database in {}", path.display());
 }
 
 use crate::metrics::Metric;
@@ -176,7 +148,6 @@ use crate::CommonMetricData;
 use crate::Glean;
 use crate::Lifetime;
 use crate::Result;
-use backend::*;
 
 pub struct Database {
     
@@ -250,21 +221,6 @@ impl Database {
     
     
     pub fn new(data_path: &Path, delay_ping_lifetime_io: bool) -> Result<Self> {
-        #[cfg(all(windows, not(feature = "rkv-safe-mode")))]
-        {
-            
-            
-            
-            
-            
-            
-            
-            
-            if data_path.to_str().is_none() {
-                return Err(crate::Error::utf8_error());
-            }
-        }
-
         let path = data_path.join("db");
         log::debug!("Database path: {:?}", path.display());
         let file_size = database_size(&path);
@@ -839,25 +795,12 @@ mod test {
 
         let res = Database::new(&path, false);
 
-        #[cfg(feature = "rkv-safe-mode")]
-        {
-            assert!(
-                res.is_ok(),
-                "Database should succeed at {}: {:?}",
-                path.display(),
-                res
-            );
-        }
-
-        #[cfg(not(feature = "rkv-safe-mode"))]
-        {
-            assert!(
-                res.is_err(),
-                "Database should fail at {}: {:?}",
-                path.display(),
-                res
-            );
-        }
+        assert!(
+            res.is_ok(),
+            "Database should succeed at {}: {:?}",
+            path.display(),
+            res
+        );
     }
 
     #[test]
@@ -1491,27 +1434,6 @@ mod test {
         );
     }
 
-    
-    #[cfg(not(feature = "rkv-safe-mode"))]
-    #[test]
-    fn empty_data_file() {
-        let dir = tempdir().unwrap();
-
-        
-        let database_dir = dir.path().join("db");
-        fs::create_dir_all(&database_dir).expect("create database dir");
-
-        
-        let datamdb = database_dir.join("data.mdb");
-        let f = fs::File::create(datamdb).expect("create database file");
-        drop(f);
-
-        Database::new(dir.path(), false).unwrap();
-
-        assert!(dir.path().exists());
-    }
-
-    #[cfg(feature = "rkv-safe-mode")]
     mod safe_mode {
         use std::fs::File;
 

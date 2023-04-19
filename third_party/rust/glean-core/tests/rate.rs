@@ -24,9 +24,7 @@ fn rate_smoke() {
     metric.add_to_numerator_sync(&glean, 0);
     metric.add_to_denominator_sync(&glean, 0);
 
-    assert!(
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None).is_err(),
-    );
+    assert!(test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue).is_err());
 
     
     metric.add_to_numerator_sync(&glean, -1);
@@ -34,7 +32,7 @@ fn rate_smoke() {
 
     assert_eq!(
         Ok(2),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None),
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue),
     );
 
     
@@ -61,16 +59,14 @@ fn numerator_smoke() {
     
     metric.add_to_numerator_sync(&glean, 0);
 
-    assert!(
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None).is_err()
-    );
+    assert!(test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue).is_err());
 
     
     metric.add_to_numerator_sync(&glean, -1);
 
     assert_eq!(
         Ok(1),
-        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue, None),
+        test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidValue),
     );
 
     
@@ -124,12 +120,8 @@ fn denominator_smoke() {
     denom.add_sync(&glean, 7);
 
     
-    assert!(
-        test_get_num_recorded_errors(&glean, num1.meta(), ErrorType::InvalidValue, None).is_err()
-    );
-    assert!(
-        test_get_num_recorded_errors(&glean, num2.meta(), ErrorType::InvalidValue, None).is_err()
-    );
+    assert!(test_get_num_recorded_errors(&glean, num1.meta(), ErrorType::InvalidValue).is_err());
+    assert!(test_get_num_recorded_errors(&glean, num2.meta(), ErrorType::InvalidValue).is_err());
 
     
     let data = num1.get_value(&glean, None).unwrap();

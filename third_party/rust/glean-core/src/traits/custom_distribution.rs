@@ -54,11 +54,5 @@ pub trait CustomDistribution {
     
     
     
-    
-    
-    fn test_get_num_recorded_errors<'a, S: Into<Option<&'a str>>>(
-        &self,
-        error: ErrorType,
-        ping_name: S,
-    ) -> i32;
+    fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32;
 }
