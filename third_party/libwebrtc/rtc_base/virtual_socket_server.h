@@ -282,7 +282,8 @@ class VirtualSocketServer : public SocketServer {
   uint32_t sent_packets() const { return sent_packets_; }
 
   
-  int Bind(VirtualSocket* socket, SocketAddress* addr);
+  
+  SocketAddress AssignBindAddress(const SocketAddress& app_addr);
 
   
   int Bind(VirtualSocket* socket, const SocketAddress& addr);
