@@ -567,7 +567,7 @@ nsresult gfxDWriteFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     
     
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
-      Unused << charmap.forget();
+      charmap->AddRef();
     }
   }
 
