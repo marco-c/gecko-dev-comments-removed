@@ -141,11 +141,6 @@ class RTPSender {
   bool AssignSequenceNumber(RtpPacketToSend* packet)
       RTC_LOCKS_EXCLUDED(send_mutex_);
   
-  
-  bool AssignSequenceNumbersAndStoreLastPacketState(
-      rtc::ArrayView<std::unique_ptr<RtpPacketToSend>> packets)
-      RTC_LOCKS_EXCLUDED(send_mutex_);
-  
   size_t FecOrPaddingPacketMaxRtpHeaderLength() const
       RTC_LOCKS_EXCLUDED(send_mutex_);
   
@@ -186,9 +181,6 @@ class RTPSender {
   bool IsFecPacket(const RtpPacketToSend& packet) const;
 
   void UpdateHeaderSizes() RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
-
-  void UpdateLastPacketState(const RtpPacketToSend& packet)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
 
   Clock* const clock_;
   Random random_ RTC_GUARDED_BY(send_mutex_);
