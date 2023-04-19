@@ -93,6 +93,7 @@ class VendorManifest(MozbuildObject):
 
         ref_type = self.manifest["vendoring"].get("tracking", "commit")
         flavor = self.manifest["vendoring"].get("flavor", "regular")
+        
 
         if revision == "tip":
             
@@ -112,7 +113,7 @@ class VendorManifest(MozbuildObject):
             
             self.logInfo({}, "Latest upstream matches in-tree.")
             return
-        elif check_for_update:
+        elif flavor != "individual-file" and check_for_update:
             
             print("%s %s" % (new_revision, timestamp))
             return
@@ -157,8 +158,30 @@ class VendorManifest(MozbuildObject):
         self.update_yaml(new_revision, timestamp)
 
     def process_individual(self, new_revision, timestamp, ignore_modified):
-
         
+        
+        
+        
+        for f in self.manifest["vendoring"]["individual-files"]:
+            url = self.source_host.upstream_path_to_file(new_revision, f["upstream"])
+            self.logInfo(
+                {"local_file": f["destination"], "url": url},
+                "Downloading {local_file} from {url}...",
+            )
+
+            with mozfile.NamedTemporaryFile() as tmpfile:
+                try:
+                    req = requests.get(url, stream=True)
+                    for data in req.iter_content(4096):
+                        tmpfile.write(data)
+                    tmpfile.seek(0)
+
+                    destination = self.get_full_path(f["destination"])
+                    shutil.copy2(tmpfile.name, destination)
+                except Exception as e:
+                    raise (e)
+
+        self.spurious_check(new_revision, ignore_modified)
 
         self.update_yaml(new_revision, timestamp)
 
