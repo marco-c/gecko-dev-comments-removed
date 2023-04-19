@@ -5,8 +5,9 @@
 function StringProtoHasNoMatch() {
     var ObjectProto = GetBuiltinPrototype("Object");
     var StringProto = GetBuiltinPrototype("String");
-    if (!ObjectHasPrototype(StringProto, ObjectProto))
+    if (!ObjectHasPrototype(StringProto, ObjectProto)) {
         return false;
+    }
     return !(GetBuiltinSymbol("match") in StringProto);
 }
 
@@ -26,8 +27,9 @@ function ThrowIncompatibleMethod(name, thisv) {
 
 function String_match(regexp) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("match", this);
+    }
 
     
     var isPatternString = (typeof regexp === "string");
@@ -36,8 +38,9 @@ function String_match(regexp) {
         var matcher = GetMethod(regexp, GetBuiltinSymbol("match"));
 
         
-        if (matcher !== undefined)
+        if (matcher !== undefined) {
             return callContentFunction(matcher, regexp, this);
+        }
     }
 
     
@@ -45,16 +48,18 @@ function String_match(regexp) {
 
     if (isPatternString && IsStringMatchOptimizable()) {
         var flatResult = FlatStringMatch(S, regexp);
-        if (flatResult !== undefined)
+        if (flatResult !== undefined) {
             return flatResult;
+        }
     }
 
     
     var rx = RegExpCreate(regexp);
 
     
-    if (IsStringMatchOptimizable())
+    if (IsStringMatchOptimizable()) {
         return RegExpMatcher(rx, S, 0);
+    }
 
     
     return callContentFunction(GetMethod(rx, GetBuiltinSymbol("match")), rx, S);
@@ -66,8 +71,9 @@ function String_match(regexp) {
 
 function String_matchAll(regexp) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("matchAll", this);
+    }
 
     
     if (regexp !== undefined && regexp !== null) {
@@ -91,8 +97,9 @@ function String_matchAll(regexp) {
         var matcher = GetMethod(regexp, GetBuiltinSymbol("matchAll"));
 
         
-        if (matcher !== undefined)
+        if (matcher !== undefined) {
             return callContentFunction(matcher, regexp, this);
+        }
     }
 
     
@@ -111,8 +118,9 @@ function String_matchAll(regexp) {
 
 function String_pad(maxLength, fillString, padEnd) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod(padEnd ? "padEnd" : "padStart", this);
+    }
 
     
     let str = ToString(this);
@@ -122,21 +130,24 @@ function String_pad(maxLength, fillString, padEnd) {
     let strLen = str.length;
 
     
-    if (intMaxLength <= strLen)
+    if (intMaxLength <= strLen) {
         return str;
+    }
 
     
     assert(fillString !== undefined, "never called when fillString is undefined");
     let filler = ToString(fillString);
 
     
-    if (filler === "")
+    if (filler === "") {
         return str;
+    }
 
     
     
-    if (intMaxLength > MAX_STRING_LENGTH)
+    if (intMaxLength > MAX_STRING_LENGTH) {
         ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
+    }
 
     
     let fillLen = intMaxLength - strLen;
@@ -150,8 +161,9 @@ function String_pad(maxLength, fillString, padEnd) {
     truncatedStringFiller += Substring(filler, 0, fillLen % filler.length);
 
     
-    if (padEnd === true)
+    if (padEnd === true) {
         return str + truncatedStringFiller;
+    }
     return truncatedStringFiller + str;
 }
 
@@ -166,8 +178,9 @@ function String_pad_end(maxLength, fillString = " ") {
 function StringProtoHasNoReplace() {
     var ObjectProto = GetBuiltinPrototype("Object");
     var StringProto = GetBuiltinPrototype("String");
-    if (!ObjectHasPrototype(StringProto, ObjectProto))
+    if (!ObjectHasPrototype(StringProto, ObjectProto)) {
         return false;
+    }
     return !(GetBuiltinSymbol("replace") in StringProto);
 }
 
@@ -184,8 +197,9 @@ function Substring(str, from, length) {
 
 function String_replace(searchValue, replaceValue) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("replace", this);
+    }
 
     
     if (!(typeof searchValue === "string" && StringProtoHasNoReplace()) &&
@@ -195,8 +209,9 @@ function String_replace(searchValue, replaceValue) {
         var replacer = GetMethod(searchValue, GetBuiltinSymbol("replace"));
 
         
-        if (replacer !== undefined)
+        if (replacer !== undefined) {
             return callContentFunction(replacer, searchValue, this, replaceValue);
+        }
     }
 
     
@@ -218,8 +233,9 @@ function String_replace(searchValue, replaceValue) {
 
     
     var pos = callFunction(std_String_indexOf, string, searchString);
-    if (pos === -1)
+    if (pos === -1) {
         return string;
+    }
 
     
     var replStr = ToString(callContentFunction(replaceValue, undefined, searchString, pos, string));
@@ -229,15 +245,17 @@ function String_replace(searchValue, replaceValue) {
 
     
     var newString;
-    if (pos === 0)
+    if (pos === 0) {
         newString = "";
-    else
+    } else {
         newString = Substring(string, 0, pos);
+    }
 
     newString += replStr;
     var stringLength = string.length;
-    if (tailPos < stringLength)
+    if (tailPos < stringLength) {
         newString += Substring(string, tailPos, stringLength - tailPos);
+    }
 
     
     return newString;
@@ -249,8 +267,9 @@ function String_replace(searchValue, replaceValue) {
 
 function String_replaceAll(searchValue, replaceValue) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("replaceAll", this);
+    }
 
     
     if (searchValue !== undefined && searchValue !== null) {
@@ -353,8 +372,9 @@ function String_replaceAll(searchValue, replaceValue) {
 function StringProtoHasNoSearch() {
     var ObjectProto = GetBuiltinPrototype("Object");
     var StringProto = GetBuiltinPrototype("String");
-    if (!ObjectHasPrototype(StringProto, ObjectProto))
+    if (!ObjectHasPrototype(StringProto, ObjectProto)) {
         return false;
+    }
     return !(GetBuiltinSymbol("search") in StringProto);
 }
 
@@ -370,8 +390,9 @@ function IsStringSearchOptimizable() {
 
 function String_search(regexp) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("search", this);
+    }
 
     
     var isPatternString = (typeof regexp === "string");
@@ -380,8 +401,9 @@ function String_search(regexp) {
         var searcher = GetMethod(regexp, GetBuiltinSymbol("search"));
 
         
-        if (searcher !== undefined)
+        if (searcher !== undefined) {
             return callContentFunction(searcher, regexp, this);
+        }
     }
 
     
@@ -389,8 +411,9 @@ function String_search(regexp) {
 
     if (isPatternString && IsStringSearchOptimizable()) {
         var flatResult = FlatStringSearch(string, regexp);
-        if (flatResult !== -2)
+        if (flatResult !== -2) {
             return flatResult;
+        }
     }
 
     
@@ -403,16 +426,18 @@ function String_search(regexp) {
 function StringProtoHasNoSplit() {
     var ObjectProto = GetBuiltinPrototype("Object");
     var StringProto = GetBuiltinPrototype("String");
-    if (!ObjectHasPrototype(StringProto, ObjectProto))
+    if (!ObjectHasPrototype(StringProto, ObjectProto)) {
         return false;
+    }
     return !(GetBuiltinSymbol("split") in StringProto);
 }
 
 
 function String_split(separator, limit) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("split", this);
+    }
 
     
     
@@ -437,8 +462,9 @@ function String_split(separator, limit) {
         var splitter = GetMethod(separator, GetBuiltinSymbol("split"));
 
         
-        if (splitter !== undefined)
+        if (splitter !== undefined) {
             return callContentFunction(splitter, separator, this, limit);
+        }
     }
 
     
@@ -453,12 +479,14 @@ function String_split(separator, limit) {
         R = ToString(separator);
 
         
-        if (lim === 0)
+        if (lim === 0) {
             return [];
+        }
 
         
-        if (separator === undefined)
+        if (separator === undefined) {
             return [S];
+        }
 
         
         return StringSplitStringLimit(S, R, lim);
@@ -468,8 +496,9 @@ function String_split(separator, limit) {
     R = ToString(separator);
 
     
-    if (separator === undefined)
+    if (separator === undefined) {
         return [S];
+    }
 
     
     
@@ -480,8 +509,9 @@ function String_split(separator, limit) {
 
 function String_substring(start, end) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("substring", this);
+    }
 
     
     var str = ToString(this);
@@ -523,8 +553,9 @@ SetIsInlinableLargeFunction(String_substring);
 
 function String_substr(start, length) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("substr", this);
+    }
 
     
     var str = ToString(this);
@@ -539,15 +570,17 @@ function String_substr(start, length) {
     var end = (length === undefined) ? size : ToInteger(length);
 
     
-    if (intStart < 0)
+    if (intStart < 0) {
         intStart = std_Math_max(intStart + size, 0);
+    }
 
     
     var resultLength = std_Math_min(std_Math_max(end, 0), size - intStart);
 
     
-    if (resultLength <= 0)
+    if (resultLength <= 0) {
         return "";
+    }
 
     
     
@@ -562,8 +595,9 @@ SetIsInlinableLargeFunction(String_substr);
 
 function String_concat(arg1) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("concat", this);
+    }
 
     
     var str = ToString(this);
@@ -599,8 +633,9 @@ function String_concat(arg1) {
 
 function String_slice(start, end) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("slice", this);
+    }
 
     
     var str = ToString(this);
@@ -635,8 +670,9 @@ SetIsInlinableLargeFunction(String_slice);
 
 function String_codePointAt(pos) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("codePointAt", this);
+    }
 
     
     var S = ToString(this);
@@ -648,18 +684,21 @@ function String_codePointAt(pos) {
     var size = S.length;
 
     
-    if (position < 0 || position >= size)
+    if (position < 0 || position >= size) {
         return undefined;
+    }
 
     
     var first = callFunction(std_String_charCodeAt, S, position);
-    if (first < 0xD800 || first > 0xDBFF || position + 1 === size)
+    if (first < 0xD800 || first > 0xDBFF || position + 1 === size) {
         return first;
+    }
 
     
     var second = callFunction(std_String_charCodeAt, S, position + 1);
-    if (second < 0xDC00 || second > 0xDFFF)
+    if (second < 0xDC00 || second > 0xDFFF) {
         return first;
+    }
 
     
     return (first - 0xD800) * 0x400 + (second - 0xDC00) + 0x10000;
@@ -669,8 +708,9 @@ function String_codePointAt(pos) {
 
 function String_repeat(count) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("repeat", this);
+    }
 
     
     var S = ToString(this);
@@ -679,13 +719,15 @@ function String_repeat(count) {
     var n = ToInteger(count);
 
     
-    if (n < 0)
+    if (n < 0) {
         ThrowRangeError(JSMSG_NEGATIVE_REPETITION_COUNT);
+    }
 
     
     
-    if (!(n * S.length <= MAX_STRING_LENGTH))
+    if (!(n * S.length <= MAX_STRING_LENGTH)) {
         ThrowRangeError(JSMSG_RESULTING_STRING_TOO_LARGE);
+    }
 
     
     
@@ -699,13 +741,15 @@ function String_repeat(count) {
     
     var T = "";
     for (;;) {
-        if (n & 1)
+        if (n & 1) {
             T += S;
+        }
         n >>= 1;
-        if (n)
+        if (n) {
             S += S;
-        else
+        } else {
             break;
+        }
     }
     return T;
 }
@@ -777,8 +821,9 @@ var collatorCache = new_Record();
 
 function String_localeCompare(that) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("localeCompare", this);
+    }
 
     
     var S = ToString(this);
@@ -813,8 +858,9 @@ function String_localeCompare(that) {
 
 function String_toLocaleLowerCase() {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("toLocaleLowerCase", this);
+    }
 
     
     var string = ToString(this);
@@ -838,11 +884,13 @@ function String_toLocaleLowerCase() {
     }
 
     
-    if (string.length === 0)
+    if (string.length === 0) {
         return "";
+    }
 
-    if (requestedLocale === undefined)
+    if (requestedLocale === undefined) {
         requestedLocale = DefaultLocale();
+    }
 
     
     return intl_toLocaleLowerCase(string, requestedLocale);
@@ -855,8 +903,9 @@ function String_toLocaleLowerCase() {
 
 function String_toLocaleUpperCase() {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("toLocaleUpperCase", this);
+    }
 
     
     var string = ToString(this);
@@ -880,11 +929,13 @@ function String_toLocaleUpperCase() {
     }
 
     
-    if (string.length === 0)
+    if (string.length === 0) {
         return "";
+    }
 
-    if (requestedLocale === undefined)
+    if (requestedLocale === undefined) {
         requestedLocale = DefaultLocale();
+    }
 
     
     return intl_toLocaleUpperCase(string, requestedLocale);
@@ -906,13 +957,15 @@ function String_static_raw(callSite) {
     var literalSegments = ToLength(raw.length);
 
     
-    if (literalSegments === 0)
+    if (literalSegments === 0) {
         return "";
+    }
 
     
     
-    if (literalSegments === 1)
+    if (literalSegments === 1) {
         return ToString(raw[0]);
+    }
 
     
     
@@ -929,8 +982,9 @@ function String_static_raw(callSite) {
     
     for (var nextIndex = 1; nextIndex < literalSegments; nextIndex++) {
         
-        if (nextIndex < arguments.length)
+        if (nextIndex < arguments.length) {
             resultString += ToString(arguments[nextIndex]);
+        }
 
         
         resultString += ToString(raw[nextIndex]);
@@ -944,8 +998,9 @@ function String_static_raw(callSite) {
 
 function String_at(index) {
     
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("at", this);
+    }
 
     
     var string = ToString(this);
@@ -975,64 +1030,73 @@ function String_at(index) {
 
 
 function String_big() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("big", this);
+    }
     return "<big>" + ToString(this) + "</big>";
 }
 
 
 function String_blink() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("blink", this);
+    }
     return "<blink>" + ToString(this) + "</blink>";
 }
 
 
 function String_bold() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("bold", this);
+    }
     return "<b>" + ToString(this) + "</b>";
 }
 
 
 function String_fixed() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("fixed", this);
+    }
     return "<tt>" + ToString(this) + "</tt>";
 }
 
 
 function String_italics() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("italics", this);
+    }
     return "<i>" + ToString(this) + "</i>";
 }
 
 
 function String_small() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("small", this);
+    }
     return "<small>" + ToString(this) + "</small>";
 }
 
 
 function String_strike() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("strike", this);
+    }
     return "<strike>" + ToString(this) + "</strike>";
 }
 
 
 function String_sub() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("sub", this);
+    }
     return "<sub>" + ToString(this) + "</sub>";
 }
 
 
 function String_sup() {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("sup", this);
+    }
     return "<sup>" + ToString(this) + "</sup>";
 }
 
@@ -1043,32 +1107,36 @@ function EscapeAttributeValue(v) {
 
 
 function String_anchor(name) {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("anchor", this);
+    }
     var S = ToString(this);
     return '<a name="' + EscapeAttributeValue(name) + '">' + S + "</a>";
 }
 
 
 function String_fontcolor(color) {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("fontcolor", this);
+    }
     var S = ToString(this);
     return '<font color="' + EscapeAttributeValue(color) + '">' + S + "</font>";
 }
 
 
 function String_fontsize(size) {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("fontsize", this);
+    }
     var S = ToString(this);
     return '<font size="' + EscapeAttributeValue(size) + '">' + S + "</font>";
 }
 
 
 function String_link(url) {
-    if (this === undefined || this === null)
+    if (this === undefined || this === null) {
         ThrowIncompatibleMethod("link", this);
+    }
     var S = ToString(this);
     return '<a href="' + EscapeAttributeValue(url) + '">' + S + "</a>";
 }
