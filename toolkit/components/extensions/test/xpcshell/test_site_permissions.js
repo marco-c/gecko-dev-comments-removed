@@ -66,6 +66,15 @@ add_setup(async () => {
   
   
   await TelemetryController.testSetup();
+
+  
+  
+  
+  const oldCanRecordBase = Services.telemetry.canRecordBase;
+  Services.telemetry.canRecordBase = true;
+  registerCleanupFunction(() => {
+    Services.telemetry.canRecordBase = oldCanRecordBase;
+  });
 });
 
 add_task(async function test_manifest_site_permissions() {
