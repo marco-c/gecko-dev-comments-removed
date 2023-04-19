@@ -331,7 +331,7 @@ def try_fuzzy(command_context, **kwargs):
         
         
         kwargs_copy = kwargs.copy()
-        kwargs_copy["push"] = False
+        kwargs_copy["dry_run"] = True
         kwargs_copy["save"] = None
         kwargs["query"] = run(command_context, save_query=True, **kwargs_copy)
         if not kwargs["query"]:
