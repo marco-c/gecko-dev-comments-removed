@@ -401,11 +401,18 @@ bool LibvpxVp9Encoder::SetSvcRates(
 
   if (svc_controller_) {
     for (int sid = 0; sid < num_spatial_layers_; ++sid) {
+      
+      
+      int previous_bitrate_kbps = 0;
       for (int tid = 0; tid < num_temporal_layers_; ++tid) {
+        int accumulated_bitrate_kbps =
+            config_->layer_target_bitrate[sid * num_temporal_layers_ + tid];
+        int single_layer_bitrate_kbps =
+            accumulated_bitrate_kbps - previous_bitrate_kbps;
+        RTC_DCHECK_GE(single_layer_bitrate_kbps, 0);
         current_bitrate_allocation_.SetBitrate(
-            sid, tid,
-            config_->layer_target_bitrate[sid * num_temporal_layers_ + tid] *
-                1000);
+            sid, tid, single_layer_bitrate_kbps * 1'000);
+        previous_bitrate_kbps = accumulated_bitrate_kbps;
       }
     }
     svc_controller_->OnRatesUpdated(current_bitrate_allocation_);
