@@ -396,6 +396,10 @@ void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
 
   
   
+  UpdateCurrentScrollParentId();
+
+  
+  
   
   
   
