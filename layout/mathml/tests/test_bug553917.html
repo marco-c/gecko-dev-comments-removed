@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=553917
+-->
 <html>
   <head>
     <title>Test for Bug 553917</title>
@@ -16,7 +16,6 @@
         stringBundleService.createBundle("chrome://global/locale/mathml/mathml.properties");
 
       const allow_linethickness_names = !SpecialPowers.getBoolPref('mathml.mfrac_linethickness_names.disabled');
-      const allow_mathsize_names = !SpecialPowers.getBoolPref('mathml.mathsize_names.disabled');
       const allow_mathspace_names = !SpecialPowers.getBoolPref('mathml.mathspace_names.disabled');
       const allow_scriptsizemultiplier_attribute = !SpecialPowers.getBoolPref('mathml.scriptsizemultiplier_attribute.disabled');
       
@@ -75,9 +74,9 @@
                      allow_linethickness_names,
                      allow_linethickness_names,
                      allow_linethickness_names,
-                     allow_mathsize_names,
-                     allow_mathsize_names,
-                     allow_mathsize_names,
+                     false,
+                     false,
+                     false,
                      allow_mathspace_names,
                      allow_mathspace_names,
                      allow_mathspace_names,
@@ -175,7 +174,7 @@
   </head>
   <body onload="SpecialPowers.postConsoleSentinel();">
     <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=553917">Mozilla Bug 553917</a>
-    
+    <!-- ChildCountIncorrect -->
     <math><mroot></mroot></math>
     <math><msub></msub></math>
     <math><msup></msup></math>
@@ -183,16 +182,16 @@
     <math><msubsup></msubsup></math>
     <math><munderover></munderover></math>
     
-    
+    <!-- AttributeParsingError -->
     <math><mpadded width="BAD!"></mpadded></math>
     <math><mpadded height="BAD!"></mpadded></math>
     <math><mpadded voffset="BAD!"></mpadded></math>
     
-    
+    <!-- AttributeParsingErrorNoTag -->
     <math scriptlevel="BAD!"></math>
     <math scriptsizemultiplier="BAD!"></math>
     
-    
+    <!-- LengthParsingError -->
     <math><mo rspace="2..0px">+</mo></math>
     <math><mo minsize="1.5notaunit">+</mo></math>
     <math><mspace width="2"/></math>
@@ -215,7 +214,7 @@
     <math><mspace width="12345."/></math>
     <math><mo minsize="17">+</mo></math>
 
-    
+    <!-- MMultiscriptsErrors -->
     <math><mmultiscripts></mmultiscripts></math>
     <math><mmultiscripts><mprescripts/><mprescripts/></mmultiscripts></math>
     <math><mmultiscripts><mi>x</mi><mi>y</mi></mmultiscripts></math>

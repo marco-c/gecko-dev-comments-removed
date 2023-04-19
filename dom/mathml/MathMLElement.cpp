@@ -132,25 +132,12 @@ static Element::MappedAttributeEntry sGlobalAttributes[] = {
     {nsGkAtoms::mathvariant_},  {nsGkAtoms::scriptlevel_},
     {nsGkAtoms::displaystyle_}, {nullptr}};
 
-static Element::MappedAttributeEntry sDeprecatedStyleAttributes[] = {
-    {nsGkAtoms::background},
-    {nsGkAtoms::color},
-    {nsGkAtoms::fontfamily_},
-    {nsGkAtoms::fontsize_},
-    {nsGkAtoms::fontstyle_},
-    {nsGkAtoms::fontweight_},
-    {nullptr}};
-
 bool MathMLElement::IsAttributeMapped(const nsAtom* aAttribute) const {
   MOZ_ASSERT(IsMathMLElement());
 
   static const MappedAttributeEntry* const globalMap[] = {sGlobalAttributes};
-  static const MappedAttributeEntry* const styleMap[] = {
-      sDeprecatedStyleAttributes};
 
   return FindAttributeDependence(aAttribute, globalMap) ||
-         (!StaticPrefs::mathml_deprecated_style_attributes_disabled() &&
-          FindAttributeDependence(aAttribute, styleMap)) ||
          (!StaticPrefs::mathml_scriptminsize_attribute_disabled() &&
           aAttribute == nsGkAtoms::scriptminsize_) ||
          (!StaticPrefs::mathml_scriptsizemultiplier_attribute_disabled() &&
@@ -464,138 +451,18 @@ void MathMLElement::MapMathMLAttributesInto(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool parseSizeKeywords = !StaticPrefs::mathml_mathsize_names_disabled();
   value = aAttributes->GetAttr(nsGkAtoms::mathsize_);
-  if (!value) {
-    parseSizeKeywords = false;
-    value = aAttributes->GetAttr(nsGkAtoms::fontsize_);
-    if (value) {
-      aDecls.Document()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-    }
-  }
   if (value && value->Type() == nsAttrValue::eString &&
       !aDecls.PropertyIsSet(eCSSProperty_font_size)) {
     auto str = value->GetStringValue();
     nsCSSValue fontSize;
     uint32_t flags = PARSE_ALLOW_UNITLESS | CONVERT_UNITLESS_TO_PERCENT;
-    if (parseSizeKeywords) {
-      
-      flags |= PARSE_SUPPRESS_WARNINGS;
-    }
-    if (!ParseNumericValue(str, fontSize, flags, nullptr) &&
-        parseSizeKeywords) {
-      static const char sizes[3][7] = {"small", "normal", "big"};
-      static const StyleFontSizeKeyword values[MOZ_ARRAY_LENGTH(sizes)] = {
-          StyleFontSizeKeyword::Small, StyleFontSizeKeyword::Medium,
-          StyleFontSizeKeyword::Large};
-      str.CompressWhitespace();
-      for (uint32_t i = 0; i < ArrayLength(sizes); ++i) {
-        if (str.EqualsASCII(sizes[i])) {
-          aDecls.Document()->WarnOnceAbout(
-              dom::DeprecatedOperations::eMathML_DeprecatedMathSizeValue);
-          aDecls.SetKeywordValue(eCSSProperty_font_size, values[i]);
-          break;
-        }
-      }
-    } else if (fontSize.GetUnit() == eCSSUnit_Percent) {
+    ParseNumericValue(str, fontSize, flags, nullptr);
+    if (fontSize.GetUnit() == eCSSUnit_Percent) {
       aDecls.SetPercentValue(eCSSProperty_font_size,
                              fontSize.GetPercentValue());
     } else if (fontSize.GetUnit() != eCSSUnit_Null) {
       aDecls.SetLengthValue(eCSSProperty_font_size, fontSize);
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  value = aAttributes->GetAttr(nsGkAtoms::fontfamily_);
-  if (value) {
-    aDecls.Document()->WarnOnceAbout(
-        dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-  }
-  if (value && value->Type() == nsAttrValue::eString &&
-      !aDecls.PropertyIsSet(eCSSProperty_font_family)) {
-    aDecls.SetFontFamily(NS_ConvertUTF16toUTF8(value->GetStringValue()));
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  value = aAttributes->GetAttr(nsGkAtoms::fontstyle_);
-  if (value) {
-    aDecls.Document()->WarnOnceAbout(
-        dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-    if (value->Type() == nsAttrValue::eString &&
-        !aDecls.PropertyIsSet(eCSSProperty_font_style)) {
-      auto str = value->GetStringValue();
-      str.CompressWhitespace();
-      
-      
-      if (str.EqualsASCII("normal")) {
-        aDecls.SetKeywordValue(eCSSProperty_font_style, NS_FONT_STYLE_NORMAL);
-      } else if (str.EqualsASCII("italic")) {
-        aDecls.SetKeywordValue(eCSSProperty_font_style, NS_FONT_STYLE_ITALIC);
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  value = aAttributes->GetAttr(nsGkAtoms::fontweight_);
-  if (value) {
-    aDecls.Document()->WarnOnceAbout(
-        dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-    if (value->Type() == nsAttrValue::eString &&
-        !aDecls.PropertyIsSet(eCSSProperty_font_weight)) {
-      auto str = value->GetStringValue();
-      str.CompressWhitespace();
-      if (str.EqualsASCII("normal")) {
-        aDecls.SetKeywordValue(eCSSProperty_font_weight,
-                               FontWeight::NORMAL.ToFloat());
-      } else if (str.EqualsASCII("bold")) {
-        aDecls.SetKeywordValue(eCSSProperty_font_weight,
-                               FontWeight::BOLD.ToFloat());
-      }
     }
   }
 
@@ -662,30 +529,7 @@ void MathMLElement::MapMathMLAttributesInto(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   value = aAttributes->GetAttr(nsGkAtoms::mathbackground_);
-  if (!value) {
-    value = aAttributes->GetAttr(nsGkAtoms::background);
-    if (value) {
-      aDecls.Document()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-    }
-  }
   if (value) {
     nscolor color;
     if (value->GetColorValue(color)) {
@@ -695,29 +539,7 @@ void MathMLElement::MapMathMLAttributesInto(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   value = aAttributes->GetAttr(nsGkAtoms::mathcolor_);
-  if (!value) {
-    value = aAttributes->GetAttr(nsGkAtoms::color);
-    if (value) {
-      aDecls.Document()->WarnOnceAbout(
-          dom::DeprecatedOperations::eMathML_DeprecatedStyleAttribute);
-    }
-  }
   nscolor color;
   if (value && value->GetColorValue(color)) {
     aDecls.SetColorValueIfUnset(eCSSProperty_color, color);
@@ -749,24 +571,6 @@ void MathMLElement::MapMathMLAttributesInto(
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   value = aAttributes->GetAttr(nsGkAtoms::dir);
