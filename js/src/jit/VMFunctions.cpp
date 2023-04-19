@@ -1686,7 +1686,8 @@ bool GetNativeDataPropertyPure(JSContext* cx, JSObject* obj, PropertyName* name,
 }
 
 static MOZ_ALWAYS_INLINE bool ValueToAtomOrSymbolPure(JSContext* cx,
-                                                      Value& idVal, jsid* id) {
+                                                      const Value& idVal,
+                                                      jsid* id) {
   if (MOZ_LIKELY(idVal.isString())) {
     JSString* s = idVal.toString();
     JSAtom* atom;
@@ -1945,9 +1946,92 @@ bool HasNativeElementPure(JSContext* cx, NativeObject* obj, int32_t index,
   return true;
 }
 
+
+
+static bool TryAddOrSetPlainObjectProperty(JSContext* cx,
+                                           Handle<PlainObject*> obj,
+                                           HandleValue keyVal,
+                                           HandleValue value, bool* optimized) {
+  MOZ_ASSERT(!*optimized);
+
+  
+  
+  PropertyKey key;
+  if (!ValueToAtomOrSymbolPure(cx, keyVal, &key)) {
+    return true;
+  }
+
+  
+  uint32_t index;
+  if (PropMap* map = obj->shape()->lookup(cx, key, &index)) {
+    PropertyInfo prop = map->getPropertyInfo(index);
+    if (!prop.isDataProperty() || !prop.writable()) {
+      return true;
+    }
+    obj->setSlot(prop.slot(), value);
+    *optimized = true;
+    return true;
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!obj->isExtensible() || key.isAtom(cx->names().proto))) {
+    return true;
+  }
+
+  
+  
+  
+  JSObject* proto = obj->staticPrototype();
+  while (proto) {
+    if (!proto->is<PlainObject>()) {
+      return true;
+    }
+    if (proto->as<PlainObject>().hasNonWritableOrAccessorPropExclProto()) {
+      uint32_t index;
+      if (PropMap* map = proto->shape()->lookup(cx, key, &index)) {
+        PropertyInfo prop = map->getPropertyInfo(index);
+        if (!prop.isDataProperty() || !prop.writable()) {
+          return true;
+        }
+        break;
+      }
+    }
+    proto = proto->as<PlainObject>().staticPrototype();
+  }
+
+#ifdef DEBUG
+  
+  
+  {
+    NativeObject* holder = nullptr;
+    PropertyResult prop;
+    MOZ_ASSERT(LookupPropertyPure(cx, obj, key, &holder, &prop));
+    MOZ_ASSERT(obj != holder);
+    MOZ_ASSERT_IF(prop.isFound(), prop.isNativeProperty() &&
+                                      prop.propertyInfo().isDataProperty() &&
+                                      prop.propertyInfo().writable());
+  }
+#endif
+
+  *optimized = true;
+  Rooted<PropertyKey> keyRoot(cx, key);
+  return AddDataPropertyToPlainObject(cx, obj, keyRoot, value);
+}
+
 bool SetElementMegamorphic(JSContext* cx, HandleObject obj, HandleValue index,
                            HandleValue value, HandleValue receiver,
                            bool strict) {
+  if (obj->is<PlainObject>()) {
+    bool optimized = false;
+    if (!TryAddOrSetPlainObjectProperty(cx, obj.as<PlainObject>(), index, value,
+                                        &optimized)) {
+      return false;
+    }
+    if (optimized) {
+      return true;
+    }
+  }
   return SetObjectElementWithReceiver(cx, obj, index, value, receiver, strict);
 }
 
