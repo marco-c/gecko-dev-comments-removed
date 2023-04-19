@@ -34,9 +34,7 @@ async function run_test_in_worker(script) {
   await runTestInWorker(script);
 }
 
-
-
-add_task(async function setup() {
+add_setup(async function() {
   const { setStoragePrefs, clearStoragesForOrigin } = await import(
     "/tests/dom/quota/test/modules/StorageUtils.js"
   );
