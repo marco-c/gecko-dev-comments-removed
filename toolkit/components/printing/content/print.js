@@ -355,9 +355,7 @@ var PrintEventHandler = {
     await new Promise(resolve => window.requestAnimationFrame(resolve));
 
     
-    window.focus();
-    let fm = Services.focus;
-    fm.setFocus(document.getElementById("printer-picker"), fm.FLAG_SHOWRING);
+    document.getElementById("printer-picker").focus({ focusVisible: true });
 
     await initialPreviewDone;
   },
