@@ -24,6 +24,7 @@ class CanvasRenderThread final {
   static CanvasRenderThread* Get();
 
   
+  
   static void Start();
 
   
@@ -39,7 +40,6 @@ class CanvasRenderThread final {
   explicit CanvasRenderThread(RefPtr<nsIThread> aThread);
   ~CanvasRenderThread();
 
-  void ShutDownTask(layers::SynchronousTask* aTask);
   void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
   RefPtr<nsIThread> const mThread;
