@@ -242,25 +242,24 @@ def get_vscode_running():
     """Return if the vscode is currently running."""
     try:
         import psutil
+
+        for proc in psutil.process_iter():
+            try:
+                
+                
+                
+                if (
+                    proc.name == "Code.exe"
+                    or proc.name == "Code Helper (Renderer)"
+                    or proc.name == "code"
+                ):
+                    return True
+            except Exception:
+                
+                continue
     except Exception:
-        psutil = None
-
-    if not psutil:
-        return None
-
-    for proc in psutil.process_iter():
-        try:
-            
-            
-            
-            if (
-                proc.name == "Code.exe"
-                or proc.name == "Code Helper (Renderer)"
-                or proc.name == "code"
-            ):
-                return True
-        except Exception:
-            
-            continue
+        
+        
+        return False
 
     return False
