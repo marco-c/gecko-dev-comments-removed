@@ -134,7 +134,7 @@ interface nsIFileOutputStream : nsIOutputStream
 
 
 [scriptable, builtinclass, uuid(82cf605a-8393-4550-83ab-43cd5578e006)]
-interface nsIFileStream : nsIRandomAccessStream
+interface nsIFileRandomAccessStream : nsIRandomAccessStream
 {
     
 

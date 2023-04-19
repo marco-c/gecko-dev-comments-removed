@@ -402,7 +402,7 @@ RefPtr<SyncReadFile> IOUtils::OpenFileForSyncReading(GlobalObject& aGlobal,
     return nullptr;
   }
 
-  RefPtr<nsFileStream> stream = new nsFileStream();
+  RefPtr<nsFileRandomAccessStream> stream = new nsFileRandomAccessStream();
   if (nsresult rv =
           stream->Init(file, PR_RDONLY | nsIFile::OS_READAHEAD, 0666, 0);
       NS_FAILED(rv)) {
@@ -1084,7 +1084,7 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
 
   const int64_t offset = static_cast<int64_t>(aOffset);
 
-  RefPtr<nsFileStream> stream = new nsFileStream();
+  RefPtr<nsFileRandomAccessStream> stream = new nsFileRandomAccessStream();
   if (nsresult rv =
           stream->Init(aFile, PR_RDONLY | nsIFile::OS_READAHEAD, 0666, 0);
       NS_FAILED(rv)) {
@@ -2651,7 +2651,8 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(SyncReadFile, mParent)
 
-SyncReadFile::SyncReadFile(nsISupports* aParent, RefPtr<nsFileStream>&& aStream,
+SyncReadFile::SyncReadFile(nsISupports* aParent,
+                           RefPtr<nsFileRandomAccessStream>&& aStream,
                            int64_t aSize)
     : mParent(aParent), mStream(std::move(aStream)), mSize(aSize) {
   MOZ_RELEASE_ASSERT(mSize >= 0);
