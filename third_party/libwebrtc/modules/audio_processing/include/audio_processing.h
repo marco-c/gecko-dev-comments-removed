@@ -348,24 +348,17 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
           bool enabled = false;
           enum Mode {
             
-            
             kClippingEventPrediction,
             
-            
             kAdaptiveStepClippingPeakPrediction,
-            
             
             kFixedStepClippingPeakPrediction,
           };
           Mode mode = kClippingEventPrediction;
           
-          
           int window_length = 5;
           
-          
           int reference_window_length = 5;
-          
-          
           
           int reference_window_delay = 5;
           

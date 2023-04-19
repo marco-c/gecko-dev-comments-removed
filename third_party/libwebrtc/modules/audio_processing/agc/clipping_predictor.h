@@ -31,6 +31,13 @@ class ClippingPredictor {
   virtual void Reset() = 0;
 
   
+  virtual void Analyze(const AudioFrameView<const float>& frame) = 0;
+
+  
+  
+  
+  
+  
   
   
   virtual absl::optional<int> EstimateClippedLevelStep(
@@ -40,27 +47,13 @@ class ClippingPredictor {
       int min_mic_level,
       int max_mic_level) const = 0;
 
-  
-  virtual void Process(const AudioFrameView<const float>& frame) = 0;
 };
 
 
 
-std::unique_ptr<ClippingPredictor> CreateClippingEventPredictor(
-    int num_channels,
-    const AudioProcessing::Config::GainController1::AnalogGainController::
-        ClippingPredictor& config);
 
 
-
-std::unique_ptr<ClippingPredictor> CreateFixedStepClippingPeakPredictor(
-    int num_channels,
-    const AudioProcessing::Config::GainController1::AnalogGainController::
-        ClippingPredictor& config);
-
-
-
-std::unique_ptr<ClippingPredictor> CreateAdaptiveStepClippingPeakPredictor(
+std::unique_ptr<ClippingPredictor> CreateClippingPredictor(
     int num_channels,
     const AudioProcessing::Config::GainController1::AnalogGainController::
         ClippingPredictor& config);
