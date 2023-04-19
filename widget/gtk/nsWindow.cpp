@@ -1648,8 +1648,8 @@ bool nsWindow::WaylandPopupConfigure() {
     mPopupContextMenu = WaylandPopupIsContextMenu();
   }
 
-  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d\n",
-      mPopupTrackInHierarchy, mPopupAnchored);
+  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d\n",
+      mPopupTrackInHierarchy, mPopupAnchored, mPopupHint);
 
   
   
@@ -1669,6 +1669,7 @@ bool nsWindow::WaylandPopupConfigure() {
   GdkWindowTypeHint gtkTypeHint;
   switch (mPopupHint) {
     case ePopupTypeMenu:
+    case ePopupTypePanel:
       
       
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
@@ -1678,16 +1679,16 @@ bool nsWindow::WaylandPopupConfigure() {
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_TOOLTIP;
       LOG("  popup type Tooltip");
       break;
-    default:  
-      
-      
-      
+    default:
       gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
       LOG("  popup type Utility");
       break;
   }
 
   if (!mPopupTrackInHierarchy) {
+    
+    
+    LOG("  not tracked in popup hierarchy, switch to Utility");
     gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
   }
   gtk_window_set_type_hint(GTK_WINDOW(mShell), gtkTypeHint);
