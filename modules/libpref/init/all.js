@@ -2565,7 +2565,6 @@ pref("font.size.monospace.x-math", 13);
   
   
   
-  pref("intl.tsf.hack.ms_simplified_chinese.query_insert_result", true);
   
   pref("intl.tsf.hack.ms_traditional_chinese.query_insert_result", true);
 
