@@ -598,7 +598,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var _Colorways__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
+ var _MRColorways__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
  var _MobileDownloads__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var _Themes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(4);
@@ -679,7 +679,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     const {
       content
     } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, content.tiles && content.tiles.type === "colorway" && content.tiles.colorways ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_Colorways__WEBPACK_IMPORTED_MODULE_2__.Colorways, {
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, content.tiles && content.tiles.type === "colorway" && content.tiles.colorways ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MRColorways__WEBPACK_IMPORTED_MODULE_2__.Colorways, {
       content: content,
       activeTheme: this.props.activeTheme,
       handleAction: this.props.handleAction
@@ -849,7 +849,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "VariationsCircle": () => ( VariationsCircle),
+   "ColorwayDescription": () => ( ColorwayDescription),
    "computeColorWay": () => ( computeColorWay),
    "Colorways": () => ( Colorways)
  });
@@ -860,66 +860,37 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
- 
 
-
-
-
-const VariationsCircle = props => {
+const ColorwayDescription = props => {
   const {
-    activeTheme,
-    colorway,
-    colorwayText,
-    nextColor,
-    setVariation,
-    transition,
-    variations
+    colorway
   } = props;
-  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: `colorway-variations ${colorway} ${transition}`,
-    next: nextColor
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "variations-disc"
-  }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: colorwayText
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "colorway-text"
-  })), variations === null || variations === void 0 ? void 0 : variations.map(({
-    id,
+
+  if (!colorway) {
+    return null;
+  }
+
+  const {
     label,
-    tooltip,
     description
-  }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    key: id,
-    text: typeof tooltip === "object" ? tooltip : {}
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-    className: "theme colorway",
-    title: label
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: typeof description === "object" ? description : {}
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
-    type: "radio",
-    value: colorway === "default" ? id : `${colorway}-${id}`,
-    checked: activeTheme === null || activeTheme === void 0 ? void 0 : activeTheme.includes(id),
-    name: "variationSelect",
-    className: "sr-only input",
-    onClick: setVariation
-  })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: label
+  } = colorway;
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: description
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: `text variation-button ${activeTheme !== null && activeTheme !== void 0 && activeTheme.includes(id) ? " selected" : ""}`
-  }))))));
+    className: "colorway-text",
+    "data-l10n-args": JSON.stringify({
+      colorwayName: label
+    })
+  }));
 }; 
 
 
 
 
 function computeColorWay(themeName, systemVariations) {
-  return !themeName || themeName === "alpenglow" || systemVariations.find(variation => themeName === variation.id) ? "default" : themeName.split("-")[0];
+  return !themeName || themeName === "alpenglow" || systemVariations.includes(themeName) ? "default" : themeName.split("-")[0];
 }
 function Colorways(props) {
-  var _colorways$find;
-
   let {
     colorways,
     defaultVariationIndex,
@@ -931,53 +902,10 @@ function Colorways(props) {
   const [colorwayId, setState] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(activeId); 
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    setState(computeColorWay(props.activeTheme, systemVariations));
-  }, [props.activeTheme]); 
-
-  const [transition, setTransition] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)("");
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (transition === "in") {
-      
-      
-      let variationIndex = systemVariations.findIndex(({
-        id
-      }) => id === props.activeTheme);
-
-      if (variationIndex < 0) {
-        variationIndex = variations.findIndex(({
-          id
-        }) => props.activeTheme.includes(id));
-      }
-
-      if (variationIndex < 0) {
-        
-        
-        variationIndex = defaultVariationIndex;
-      } 
-
-
-      props.handleAction({
-        currentTarget: {
-          value: colorwayId === "default" ? systemVariations[variationIndex].id : `${colorwayId}-${variations[variationIndex].id}`
-        }
-      }); 
-
-      requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
-    }
-  }, [transition]); 
-  
-
-  function handleColorwayClick(event) {
-    setState(event.currentTarget.dataset.colorway);
-
-    if (transition !== "out") {
-      setTransition("out");
-      setTimeout(() => setTransition("in"), 500);
-    }
-  }
-
+    setState(computeColorWay(props.activeTheme, systemVariations)); 
+  }, [props.activeTheme]);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: "tiles-theme-container colorway"
+    className: "tiles-theme-container"
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
     className: "tiles-theme-section"
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
@@ -987,19 +915,18 @@ function Colorways(props) {
   })), colorways.map(({
     id,
     label,
-    tooltip,
-    description
+    tooltip
   }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     key: id + label,
     text: typeof tooltip === "object" ? tooltip : {}
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
-    className: "theme colorway",
+    className: "theme",
     title: label,
     "data-l10n-args": JSON.stringify({
       colorwayName: label
     })
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: typeof description === "object" ? description : {}
+    text: typeof label === "object" ? label : {}
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
     className: "sr-only colorway label",
     id: `${id}-label`,
@@ -1007,28 +934,23 @@ function Colorways(props) {
       colorwayName: label
     })
   })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: typeof description === "object" ? description : {}
+    text: typeof label === "object" ? label : {}
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
     type: "radio",
     "data-colorway": id,
     name: "theme",
+    value: id === "default" ? systemVariations[defaultVariationIndex] : `${id}-${variations[defaultVariationIndex]}`,
     checked: colorwayId === id,
     className: "sr-only input",
-    onClick: handleColorwayClick,
+    onClick: props.handleAction,
     "data-l10n-args": JSON.stringify({
       colorwayName: label
     }),
     "aria-labelledby": `${id}-label`
   })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: `icon colorway ${colorwayId === id ? "selected" : ""} ${id}`
-  })))))), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(VariationsCircle, {
-    nextColor: colorwayId,
-    transition: transition,
-    variations: activeId === "default" ? systemVariations : variations,
-    colorway: activeId,
-    colorwayText: (_colorways$find = colorways.find(colorway => colorway.id === activeId)) === null || _colorways$find === void 0 ? void 0 : _colorways$find.label,
-    setVariation: props.handleAction,
-    activeTheme: props.activeTheme
+  })))))), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ColorwayDescription, {
+    colorway: colorways.find(colorway => colorway.id === activeId)
   }));
 }
 
