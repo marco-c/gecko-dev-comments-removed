@@ -1,13 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutProtectionsParent"];
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -62,19 +57,19 @@ const VPN_ENDPOINT = `${Services.prefs.getStringPref(
   "identity.fxaccounts.auth.uri"
 )}oauth/subscriptions/active`;
 
-
+// The ID of the vpn subscription, if we see this ID attached to a user's account then they have subscribed to vpn.
 const VPN_SUB_ID = Services.prefs.getStringPref(
   "browser.contentblocking.report.vpn_sub_id"
 );
 
-
+// Error messages
 const INVALID_OAUTH_TOKEN = "Invalid OAuth token";
 const USER_UNSUBSCRIBED_TO_MONITOR = "User is not subscribed to Monitor";
 const SERVICE_UNAVAILABLE = "Service unavailable";
 const UNEXPECTED_RESPONSE = "Unexpected response";
 const UNKNOWN_ERROR = "Unknown error";
 
-
+// Valid response info for successful Monitor data
 const MONITOR_RESPONSE_PROPS = [
   "monitoredEmails",
   "numBreaches",
@@ -87,22 +82,22 @@ let gTestOverride = null;
 let monitorResponse = null;
 let entrypoint = "direct";
 
-class AboutProtectionsParent extends JSWindowActorParent {
+export class AboutProtectionsParent extends JSWindowActorParent {
   constructor() {
     super();
   }
 
-  
+  // Some tests wish to override certain functions with ones that mostly do nothing.
   static setTestOverride(callback) {
     gTestOverride = callback;
   }
 
-  
-
-
-
-
-
+  /**
+   * Fetches and validates data from the Monitor endpoint. If successful, then return
+   * expected data. Otherwise, throw the appropriate error depending on the status code.
+   *
+   * @return valid data from endpoint.
+   */
   async fetchUserBreachStats(token) {
     if (monitorResponse && monitorResponse.timestamp) {
       var timeDiff = Date.now() - monitorResponse.timestamp;
@@ -114,17 +109,17 @@ class AboutProtectionsParent extends JSWindowActorParent {
       }
     }
 
-    
+    // Make the request
     const headers = new Headers();
     headers.append("Authorization", `Bearer ${token}`);
     const request = new Request(MONITOR_API_ENDPOINT, { headers });
     const response = await fetch(request);
 
     if (response.ok) {
-      
+      // Validate the shape of the response is what we're expecting.
       const json = await response.json();
 
-      
+      // Make sure that we're getting the expected data.
       let isValid = null;
       for (let prop in json) {
         isValid = MONITOR_RESPONSE_PROPS.includes(prop);
@@ -139,7 +134,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
         monitorResponse.timestamp = Date.now();
       }
     } else {
-      
+      // Check the reason for the error
       switch (response.status) {
         case 400:
         case 401:
@@ -163,14 +158,14 @@ class AboutProtectionsParent extends JSWindowActorParent {
     return monitorResponse;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Retrieves login data for the user.
+   *
+   * @return {{
+   *            numLogins: Number,
+   *            potentiallyBreachedLogins: Number,
+   *            mobileDeviceConnected: Boolean }}
+   */
   async getLoginData() {
     if (gTestOverride && "getLoginData" in gTestOverride) {
       return gTestOverride.getLoginData();
@@ -193,8 +188,8 @@ class AboutProtectionsParent extends JSWindowActorParent {
       );
 
     let potentiallyBreachedLogins = null;
-    
-    
+    // Get the stats for number of potentially breached Lockwise passwords
+    // if the Primary Password isn't locked.
     if (userFacingLogins && Services.logins.isLoggedIn) {
       const logins = await lazy.LoginHelper.getAllUserFacingLogins();
       potentiallyBreachedLogins = await lazy.LoginBreaches.getPotentialBreachesByLoginGUID(
@@ -217,21 +212,21 @@ class AboutProtectionsParent extends JSWindowActorParent {
     };
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Retrieves monitor data for the user.
+   *
+   * @return {{ monitoredEmails: Number,
+   *            numBreaches: Number,
+   *            passwords: Number,
+   *            userEmail: String|null,
+   *            error: Boolean }}
+   *         Monitor data.
+   */
   async getMonitorData() {
     if (gTestOverride && "getMonitorData" in gTestOverride) {
       monitorResponse = gTestOverride.getMonitorData();
       monitorResponse.timestamp = Date.now();
-      
+      // In a test, expect this to not fetch from the monitor endpoint due to the timestamp guaranteeing we use the cache.
       monitorResponse = await this.fetchUserBreachStats();
       return monitorResponse;
     }
@@ -244,12 +239,12 @@ class AboutProtectionsParent extends JSWindowActorParent {
       if (token) {
         monitorData = await this.fetchUserBreachStats(token);
 
-        
-        
+        // Send back user's email so the protections report can direct them to the proper
+        // OAuth flow on Monitor.
         const { email } = await lazy.fxAccounts.getSignedInUser();
         userEmail = email;
       } else {
-        
+        // If no account exists, then the user is not logged in with an fxAccount.
         monitorData = {
           errorMessage: "No account",
         };
@@ -258,9 +253,9 @@ class AboutProtectionsParent extends JSWindowActorParent {
       Cu.reportError(e.message);
       monitorData.errorMessage = e.message;
 
-      
-      
-      
+      // If the user's OAuth token is invalid, we clear the cached token and refetch
+      // again. If OAuth token is invalid after the second fetch, then the monitor UI
+      // will simply show the "no logins" UI version.
       if (e.message === INVALID_OAUTH_TOKEN) {
         await lazy.fxAccounts.removeCachedOAuthToken({ token });
         token = await this.getMonitorScopedOAuthToken();
@@ -271,8 +266,8 @@ class AboutProtectionsParent extends JSWindowActorParent {
           Cu.reportError(e.message);
         }
       } else if (e.message === USER_UNSUBSCRIBED_TO_MONITOR) {
-        
-        
+        // Send back user's email so the protections report can direct them to the proper
+        // OAuth flow on Monitor.
         const { email } = await lazy.fxAccounts.getSignedInUser();
         userEmail = email;
       } else {
@@ -302,10 +297,10 @@ class AboutProtectionsParent extends JSWindowActorParent {
     return token;
   }
 
-  
-
-
-
+  /**
+   * The proxy card will only show if the user is in the US, has the browser language in "en-US",
+   * and does not yet have Proxy installed.
+   */
   async shouldShowProxyCard() {
     const region = lazy.Region.home || "";
     const languages = Services.prefs.getComplexValue(
@@ -324,7 +319,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
   }
 
   async VPNSubStatus() {
-    
+    // For testing, set vpn sub status manually
     if (gTestOverride && "vpnOverrides" in gTestOverride) {
       return gTestOverride.vpnOverrides();
     }
@@ -337,7 +332,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
         "There was an error fetching the user's token: ",
         e.message
       );
-      
+      // there was an error, assume user is not subscribed to VPN
       return false;
     }
     let headers = new Headers();
@@ -353,7 +348,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
       }
       return false;
     }
-    
+    // unknown logic: assume user is not subscribed to VPN
     return false;
   }
 
@@ -381,7 +376,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
           calendar: "gregory",
         });
 
-        
+        // Weekdays starting Sunday (7) to Saturday (6).
         let weekdays = [7, 1, 2, 3, 4, 5, 6].map(day => displayNames.of(day));
         dataToSend.weekdays = weekdays;
 
@@ -404,8 +399,8 @@ class AboutProtectionsParent extends JSWindowActorParent {
           dataToSend[timestamp] = dataToSend[timestamp] || { total: 0 };
           dataToSend[timestamp][idToTextMap.get(type)] = count;
           dataToSend[timestamp].total += count;
-          
-          
+          // Record the largest amount of tracking events found per day,
+          // to create the tallest column on the graph and compare other days to.
           if (largest < dataToSend[timestamp].total) {
             largest = dataToSend[timestamp].total;
           }
