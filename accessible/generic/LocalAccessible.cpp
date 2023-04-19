@@ -869,7 +869,26 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           ipcDoc->SendHideEvent(id, aEvent->IsFromUserInput());
           break;
 
+        case nsIAccessibleEvent::EVENT_INNER_REORDER:
         case nsIAccessibleEvent::EVENT_REORDER:
+          if (IsTable()) {
+            SendCache(CacheDomain::Table, CacheUpdateType::Update);
+          }
+
+#if defined(XP_WIN)
+          if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+              HasOwnContent() && mContent->IsMathMLElement()) {
+            
+            
+            for (LocalAccessible* acc = this; acc; acc = acc->LocalParent()) {
+              if (acc->HasOwnContent() &&
+                  acc->mContent->IsMathMLElement(nsGkAtoms::math)) {
+                mDoc->QueueCacheUpdate(acc, CacheDomain::InnerHTML);
+              }
+            }
+          }
+#endif  
+
           
           
           if (!aEvent->GetAccessible()->IsApplication()) {
@@ -2474,27 +2493,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
         table->GetHeaderCache().Clear();
       }
     }
-  } else if (IsTableRow() && aParent->IsTable() &&
-             StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    
-    
-    
-    mDoc->QueueCacheUpdate(aParent, CacheDomain::Table);
   }
-
-#if defined(XP_WIN)
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-      aParent->HasOwnContent() && aParent->mContent->IsMathMLElement()) {
-    
-    
-    for (LocalAccessible* acc = aParent; acc; acc = acc->LocalParent()) {
-      if (acc->HasOwnContent() &&
-          acc->mContent->IsMathMLElement(nsGkAtoms::math)) {
-        mDoc->QueueCacheUpdate(acc, CacheDomain::InnerHTML);
-      }
-    }
-  }
-#endif  
 }
 
 
