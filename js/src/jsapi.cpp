@@ -1466,23 +1466,14 @@ static void SetNativeStackSize(JSContext* cx, JS::StackKind kind,
   
   
   cx->nativeStackLimit[kind] = 1024;
-#else  
-#  if JS_STACK_GROWTH_DIRECTION > 0
+#else   
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = JS::NativeStackLimitMax;
   } else {
-    MOZ_ASSERT(cx->nativeStackBase() <= size_t(-1) - stackSize);
-    cx->nativeStackLimit[kind] = cx->nativeStackBase() + stackSize - 1;
+    cx->nativeStackLimit[kind] =
+        JS::GetNativeStackLimit(cx->nativeStackBase(), stackSize - 1);
   }
-#  else   
-  if (stackSize == 0) {
-    cx->nativeStackLimit[kind] = JS::NativeStackLimitMax;
-  } else {
-    MOZ_ASSERT(cx->nativeStackBase() >= stackSize);
-    cx->nativeStackLimit[kind] = cx->nativeStackBase() - (stackSize - 1);
-  }
-#  endif  
-#endif    
+#endif  
 }
 
 JS_PUBLIC_API void JS_SetNativeStackQuota(
