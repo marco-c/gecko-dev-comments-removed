@@ -22,6 +22,15 @@
 
 namespace webrtc {
 
+DataChannelController::~DataChannelController() {
+  
+  
+  
+  for (auto channel : sctp_data_channels_) {
+    channel->DetachFromController();
+  }
+}
+
 bool DataChannelController::HasDataChannels() const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   return !sctp_data_channels_.empty();

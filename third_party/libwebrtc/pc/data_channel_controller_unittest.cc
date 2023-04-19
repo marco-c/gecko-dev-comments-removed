@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "pc/peer_connection_internal.h"
+#include "pc/sctp_data_channel.h"
 #include "pc/test/mock_peer_connection_internal.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -54,6 +55,20 @@ TEST_F(DataChannelControllerTest, CreateDataChannelLateRelease) {
       std::make_unique<InternalDataChannelInit>(DataChannelInit()).get());
   dcc.reset();
   channel = nullptr;
+}
+
+TEST_F(DataChannelControllerTest, CloseAfterControllerDestroyed) {
+  auto dcc = std::make_unique<DataChannelController>(pc_.get());
+  auto channel = dcc->InternalCreateDataChannelWithProxy(
+      "label",
+      std::make_unique<InternalDataChannelInit>(DataChannelInit()).get());
+  
+  auto inner_channel =
+      DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
+          channel.get());
+  dcc->ConnectDataChannel(inner_channel);
+  dcc.reset();
+  channel->Close();
 }
 
 }  

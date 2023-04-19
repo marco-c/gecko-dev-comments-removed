@@ -8,23 +8,23 @@
 
 
 
-#ifndef PC_TEST_FAKE_DATA_CHANNEL_PROVIDER_H_
-#define PC_TEST_FAKE_DATA_CHANNEL_PROVIDER_H_
+#ifndef PC_TEST_FAKE_DATA_CHANNEL_CONTROLLER_H_
+#define PC_TEST_FAKE_DATA_CHANNEL_CONTROLLER_H_
 
 #include <set>
 
 #include "pc/sctp_data_channel.h"
 #include "rtc_base/checks.h"
 
-class FakeDataChannelProvider
-    : public webrtc::SctpDataChannelProviderInterface {
+class FakeDataChannelController
+    : public webrtc::SctpDataChannelControllerInterface {
  public:
-  FakeDataChannelProvider()
+  FakeDataChannelController()
       : send_blocked_(false),
         transport_available_(false),
         ready_to_send_(false),
         transport_error_(false) {}
-  virtual ~FakeDataChannelProvider() {}
+  virtual ~FakeDataChannelController() {}
 
   bool SendData(int sid,
                 const webrtc::SendDataParams& params,

@@ -37,7 +37,7 @@ class SctpDataChannel;
 
 
 
-class SctpDataChannelProviderInterface {
+class SctpDataChannelControllerInterface {
  public:
   
   virtual bool SendData(int sid,
@@ -57,7 +57,7 @@ class SctpDataChannelProviderInterface {
   virtual bool ReadyToSendData() const = 0;
 
  protected:
-  virtual ~SctpDataChannelProviderInterface() {}
+  virtual ~SctpDataChannelControllerInterface() {}
 };
 
 
@@ -120,7 +120,7 @@ class SctpDataChannel : public DataChannelInterface,
                         public sigslot::has_slots<> {
  public:
   static rtc::scoped_refptr<SctpDataChannel> Create(
-      SctpDataChannelProviderInterface* provider,
+      SctpDataChannelControllerInterface* controller,
       const std::string& label,
       const InternalDataChannelInit& config,
       rtc::Thread* signaling_thread,
@@ -130,6 +130,9 @@ class SctpDataChannel : public DataChannelInterface,
   
   static rtc::scoped_refptr<DataChannelInterface> CreateProxy(
       rtc::scoped_refptr<SctpDataChannel> channel);
+
+  
+  void DetachFromController();
 
   void RegisterObserver(DataChannelObserver* observer) override;
   void UnregisterObserver() override;
@@ -223,7 +226,7 @@ class SctpDataChannel : public DataChannelInterface,
 
  protected:
   SctpDataChannel(const InternalDataChannelInit& config,
-                  SctpDataChannelProviderInterface* client,
+                  SctpDataChannelControllerInterface* client,
                   const std::string& label,
                   rtc::Thread* signaling_thread,
                   rtc::Thread* network_thread);
@@ -242,7 +245,7 @@ class SctpDataChannel : public DataChannelInterface,
   bool Init();
   void UpdateState();
   void SetState(DataState state);
-  void DisconnectFromProvider();
+  void DisconnectFromTransport();
 
   void DeliverQueuedReceivedData();
 
@@ -266,11 +269,12 @@ class SctpDataChannel : public DataChannelInterface,
   uint64_t bytes_sent_ RTC_GUARDED_BY(signaling_thread_) = 0;
   uint32_t messages_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
   uint64_t bytes_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
-  SctpDataChannelProviderInterface* const provider_
+  SctpDataChannelControllerInterface* const controller_
       RTC_GUARDED_BY(signaling_thread_);
+  bool controller_detached_ RTC_GUARDED_BY(signaling_thread_) = false;
   HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_) =
       kHandshakeInit;
-  bool connected_to_provider_ RTC_GUARDED_BY(signaling_thread_) = false;
+  bool connected_to_transport_ RTC_GUARDED_BY(signaling_thread_) = false;
   bool writable_ RTC_GUARDED_BY(signaling_thread_) = false;
   
   bool started_closing_procedure_ RTC_GUARDED_BY(signaling_thread_) = false;
@@ -280,6 +284,11 @@ class SctpDataChannel : public DataChannelInterface,
   PacketQueue queued_received_data_ RTC_GUARDED_BY(signaling_thread_);
   PacketQueue queued_send_data_ RTC_GUARDED_BY(signaling_thread_);
 };
+
+
+
+SctpDataChannel* DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
+    DataChannelInterface* channel);
 
 }  
 
