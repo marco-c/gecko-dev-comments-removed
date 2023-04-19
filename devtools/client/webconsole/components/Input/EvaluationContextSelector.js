@@ -232,12 +232,16 @@ class EvaluationContextSelector extends Component {
 
   render() {
     const { webConsoleUI, targets, selectedTarget } = this.props;
-    const doc = webConsoleUI.document;
-    const { toolbox } = webConsoleUI.wrapper;
 
-    if (targets.length <= 1) {
+    
+    
+    
+    if (targets.length <= 1 || !webConsoleUI.wrapper) {
       return null;
     }
+
+    const doc = webConsoleUI.document;
+    const { toolbox } = webConsoleUI.wrapper;
 
     return MenuButton(
       {
