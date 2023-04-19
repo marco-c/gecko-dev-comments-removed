@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 122:
+ 299:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -10,30 +10,6 @@
 var react = __webpack_require__(294);
 
 var react_dom = __webpack_require__(935);
-;
-
-
-
-
-
-function PopularTopicsLegacy(props) {
-  return react.createElement(react.Fragment, null, react.createElement("h3", {
-    "data-l10n-id": "pocket-panel-home-explore-popular-topics"
-  }), react.createElement("ul", null, props.topics.map(item => react.createElement("li", {
-    key: `item-${item.topic}`
-  }, react.createElement("a", {
-    className: "pkt_ext_topic",
-    href: `https://${props.pockethost}/explore/${item.topic}?utm_source=${props.utmsource}`
-  }, item.title, react.createElement("span", {
-    className: "pkt_ext_chevron_right"
-  }))))), react.createElement("a", {
-    className: "pkt_ext_discover",
-    href: `https://${props.pockethost}/explore?utm_source=${props.utmsource}`,
-    "data-l10n-id": "pocket-panel-home-discover-more"
-  }));
-}
-
- const PopularTopicsLegacy_PopularTopicsLegacy = (PopularTopicsLegacy);
 ;
 
 
@@ -424,31 +400,9 @@ function Home(props) {
 
 
 
-
-
 var HomeOverlay = function (options) {
   this.inited = false;
   this.active = false;
-
-  this.parseHTML = function (htmlString) {
-    const parser = new DOMParser();
-    return parser.parseFromString(htmlString, `text/html`).documentElement;
-  };
-
-  this.setupClickEvents = function () {
-    messages.clickHelper(document.querySelector(`.pkt_ext_mylist`), {
-      source: `home_view_list`
-    });
-    messages.clickHelper(document.querySelector(`.pkt_ext_discover`), {
-      source: `home_discover`
-    });
-    document.querySelectorAll(`.pkt_ext_topic`).forEach((el, position) => {
-      messages.clickHelper(el, {
-        source: `home_topic`,
-        position
-      });
-    });
-  };
 };
 
 HomeOverlay.prototype = {
@@ -459,7 +413,6 @@ HomeOverlay.prototype = {
       searchParams
     } = new URL(window.location.href);
     const locale = searchParams.get(`locale`) || ``;
-    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
     const hideRecentSaves = searchParams.get(`hiderecentsaves`) === `true`;
     const utmSource = searchParams.get(`utmSource`);
     const utmCampaign = searchParams.get(`utmCampaign`);
@@ -470,92 +423,48 @@ HomeOverlay.prototype = {
     }
 
     this.active = true;
+    react_dom.render( react.createElement(Home_Home, {
+      locale: locale,
+      hideRecentSaves: hideRecentSaves,
+      pockethost: pockethost,
+      utmSource: utmSource,
+      utmCampaign: utmCampaign,
+      utmContent: utmContent,
+      topics: [{
+        title: "Technology",
+        topic: "technology"
+      }, {
+        title: "Self Improvement",
+        topic: "self-improvement"
+      }, {
+        title: "Food",
+        topic: "food"
+      }, {
+        title: "Parenting",
+        topic: "parenting"
+      }, {
+        title: "Science",
+        topic: "science"
+      }, {
+        title: "Entertainment",
+        topic: "entertainment"
+      }, {
+        title: "Career",
+        topic: "career"
+      }, {
+        title: "Health",
+        topic: "health"
+      }, {
+        title: "Travel",
+        topic: "travel"
+      }, {
+        title: "Must-Reads",
+        topic: "must-reads"
+      }]
+    }), document.querySelector(`body`));
 
-    if (layoutRefresh) {
-      
-      react_dom.render( react.createElement(Home_Home, {
-        locale: locale,
-        hideRecentSaves: hideRecentSaves,
-        pockethost: pockethost,
-        utmSource: utmSource,
-        utmCampaign: utmCampaign,
-        utmContent: utmContent,
-        topics: [{
-          title: "Technology",
-          topic: "technology"
-        }, {
-          title: "Self Improvement",
-          topic: "self-improvement"
-        }, {
-          title: "Food",
-          topic: "food"
-        }, {
-          title: "Parenting",
-          topic: "parenting"
-        }, {
-          title: "Science",
-          topic: "science"
-        }, {
-          title: "Entertainment",
-          topic: "entertainment"
-        }, {
-          title: "Career",
-          topic: "career"
-        }, {
-          title: "Health",
-          topic: "health"
-        }, {
-          title: "Travel",
-          topic: "travel"
-        }, {
-          title: "Must-Reads",
-          topic: "must-reads"
-        }]
-      }), document.querySelector(`body`));
-
-      if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
-        document.querySelector(`body`).classList.add(`theme_dark`);
-      }
-    } else {
-      
-      
-      
-      const enableLocalizedExploreMore = false;
-      const templateData = {
-        pockethost,
-        utmsource: `firefox-button`
-      }; 
-
-      document.querySelector(`body`).append(this.parseHTML(Handlebars.templates.home_shell(templateData))); 
-      
-
-      if (locale.startsWith("en")) {
-        react_dom.render( react.createElement(PopularTopicsLegacy_PopularTopicsLegacy, {
-          pockethost: templateData.pockethost,
-          utmsource: templateData.utmsource,
-          topics: [{
-            title: "Self Improvement",
-            topic: "self-improvement"
-          }, {
-            title: "Food",
-            topic: "food"
-          }, {
-            title: "Entertainment",
-            topic: "entertainment"
-          }, {
-            title: "Science",
-            topic: "science"
-          }]
-        }), document.querySelector(`.pkt_ext_more`));
-      } else if (enableLocalizedExploreMore) {
-        
-        document.querySelector(`.pkt_ext_more`).append(this.parseHTML(Handlebars.templates.explore_more()));
-      } 
-
-
-      this.setupClickEvents(); 
-
-      messages.sendMessage("PKT_show_home");
+    if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
+      document.querySelector(`body`).classList.add(`theme_dark`);
     }
   }
 
@@ -2018,7 +1927,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(122)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(299)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()

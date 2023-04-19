@@ -7,40 +7,17 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import PopularTopicsLegacy from "../components/PopularTopicsLegacy/PopularTopicsLegacy";
 import Home from "../components/Home/Home";
-import pktPanelMessaging from "../messages.js";
 
 var HomeOverlay = function(options) {
   this.inited = false;
   this.active = false;
-  this.parseHTML = function(htmlString) {
-    const parser = new DOMParser();
-    return parser.parseFromString(htmlString, `text/html`).documentElement;
-  };
-
-  this.setupClickEvents = function() {
-    pktPanelMessaging.clickHelper(document.querySelector(`.pkt_ext_mylist`), {
-      source: `home_view_list`,
-    });
-    pktPanelMessaging.clickHelper(document.querySelector(`.pkt_ext_discover`), {
-      source: `home_discover`,
-    });
-
-    document.querySelectorAll(`.pkt_ext_topic`).forEach((el, position) => {
-      pktPanelMessaging.clickHelper(el, {
-        source: `home_topic`,
-        position,
-      });
-    });
-  };
 };
 
 HomeOverlay.prototype = {
   create({ pockethost }) {
     const { searchParams } = new URL(window.location.href);
     const locale = searchParams.get(`locale`) || ``;
-    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
     const hideRecentSaves = searchParams.get(`hiderecentsaves`) === `true`;
     const utmSource = searchParams.get(`utmSource`);
     const utmCampaign = searchParams.get(`utmCampaign`);
@@ -49,80 +26,35 @@ HomeOverlay.prototype = {
     if (this.active) {
       return;
     }
+
     this.active = true;
 
-    if (layoutRefresh) {
-      
-      ReactDOM.render(
-        <Home
-          locale={locale}
-          hideRecentSaves={hideRecentSaves}
-          pockethost={pockethost}
-          utmSource={utmSource}
-          utmCampaign={utmCampaign}
-          utmContent={utmContent}
-          topics={[
-            { title: "Technology", topic: "technology" },
-            { title: "Self Improvement", topic: "self-improvement" },
-            { title: "Food", topic: "food" },
-            { title: "Parenting", topic: "parenting" },
-            { title: "Science", topic: "science" },
-            { title: "Entertainment", topic: "entertainment" },
-            { title: "Career", topic: "career" },
-            { title: "Health", topic: "health" },
-            { title: "Travel", topic: "travel" },
-            { title: "Must-Reads", topic: "must-reads" },
-          ]}
-        />,
-        document.querySelector(`body`)
-      );
+    ReactDOM.render(
+      <Home
+        locale={locale}
+        hideRecentSaves={hideRecentSaves}
+        pockethost={pockethost}
+        utmSource={utmSource}
+        utmCampaign={utmCampaign}
+        utmContent={utmContent}
+        topics={[
+          { title: "Technology", topic: "technology" },
+          { title: "Self Improvement", topic: "self-improvement" },
+          { title: "Food", topic: "food" },
+          { title: "Parenting", topic: "parenting" },
+          { title: "Science", topic: "science" },
+          { title: "Entertainment", topic: "entertainment" },
+          { title: "Career", topic: "career" },
+          { title: "Health", topic: "health" },
+          { title: "Travel", topic: "travel" },
+          { title: "Must-Reads", topic: "must-reads" },
+        ]}
+      />,
+      document.querySelector(`body`)
+    );
 
-      if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
-        document.querySelector(`body`).classList.add(`theme_dark`);
-      }
-    } else {
-      
-      
-      
-      const enableLocalizedExploreMore = false;
-      const templateData = {
-        pockethost,
-        utmsource: `firefox-button`,
-      };
-
-      
-      document
-        .querySelector(`body`)
-        .append(this.parseHTML(Handlebars.templates.home_shell(templateData)));
-
-      
-      
-      if (locale.startsWith("en")) {
-        ReactDOM.render(
-          <PopularTopicsLegacy
-            pockethost={templateData.pockethost}
-            utmsource={templateData.utmsource}
-            topics={[
-              { title: "Self Improvement", topic: "self-improvement" },
-              { title: "Food", topic: "food" },
-              { title: "Entertainment", topic: "entertainment" },
-              { title: "Science", topic: "science" },
-            ]}
-          />,
-          document.querySelector(`.pkt_ext_more`)
-        );
-      } else if (enableLocalizedExploreMore) {
-        
-        document
-          .querySelector(`.pkt_ext_more`)
-          .append(this.parseHTML(Handlebars.templates.explore_more()));
-      }
-
-      
-      this.setupClickEvents();
-
-      
-      pktPanelMessaging.sendMessage("PKT_show_home");
+    if (window?.matchMedia(`(prefers-color-scheme: dark)`).matches) {
+      document.querySelector(`body`).classList.add(`theme_dark`);
     }
   },
 };
