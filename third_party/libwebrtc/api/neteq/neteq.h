@@ -179,14 +179,6 @@ class NetEq {
     SdpAudioFormat sdp_format;
   };
 
-  
-  
-  
-  static NetEq* Create(
-      const NetEq::Config& config,
-      Clock* clock,
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
-
   virtual ~NetEq() {}
 
   
