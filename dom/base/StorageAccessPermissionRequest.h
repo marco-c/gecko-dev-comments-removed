@@ -8,6 +8,7 @@
 #define StorageAccessPermissionRequest_h_
 
 #include "nsContentPermissionHelper.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 
 #include <functional>
@@ -26,6 +27,7 @@ class StorageAccessPermissionRequest final
   
   NS_IMETHOD Cancel(void) override;
   NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
+  NS_IMETHOD GetTypes(nsIArray** aTypes) override;
 
   using AllowCallback = std::function<void()>;
   using CancelCallback = std::function<void()>;
@@ -38,12 +40,23 @@ class StorageAccessPermissionRequest final
       nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
       AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback);
 
+  
+  
+  
+  
+  
+  static already_AddRefed<StorageAccessPermissionRequest> Create(
+      nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
+      const Maybe<nsCString>& aTopLevelBaseDomain,
+      AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback);
+
   using AutoGrantDelayPromise = MozPromise<bool, bool, true>;
   RefPtr<AutoGrantDelayPromise> MaybeDelayAutomaticGrants();
 
  private:
   StorageAccessPermissionRequest(nsPIDOMWindowInner* aWindow,
                                  nsIPrincipal* aNodePrincipal,
+                                 const Maybe<nsCString>& aTopLevelBaseDomain,
                                  AllowCallback&& aAllowCallback,
                                  CancelCallback&& aCancelCallback);
   ~StorageAccessPermissionRequest() = default;
@@ -52,6 +65,7 @@ class StorageAccessPermissionRequest final
 
   AllowCallback mAllowCallback;
   CancelCallback mCancelCallback;
+  nsTArray<nsString> mOptions;
   nsTArray<PermissionRequest> mPermissionRequests;
   bool mCallbackCalled;
 };
