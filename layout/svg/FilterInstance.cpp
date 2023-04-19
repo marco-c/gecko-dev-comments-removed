@@ -62,10 +62,9 @@ static UniquePtr<UserSpaceMetrics> UserSpaceMetricsForFrame(nsIFrame* aFrame) {
 }
 
 void FilterInstance::PaintFilteredFrame(
-    nsIFrame* aFilteredFrame, gfxContext* aCtx,
-    const SVGFilterPaintCallback& aPaintCallback, const nsRegion* aDirtyArea,
-    imgDrawingParams& aImgParams, float aOpacity) {
-  auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
+    nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilterChain,
+    gfxContext* aCtx, const SVGFilterPaintCallback& aPaintCallback,
+    const nsRegion* aDirtyArea, imgDrawingParams& aImgParams, float aOpacity) {
   UniquePtr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
 
@@ -91,7 +90,7 @@ void FilterInstance::PaintFilteredFrame(
   
   
   FilterInstance instance(aFilteredFrame, aFilteredFrame->GetContent(),
-                          *metrics, filterChain,  true,
+                          *metrics, aFilterChain,  true,
                           aPaintCallback, scaleMatrixInDevUnits, aDirtyArea,
                           nullptr, nullptr, nullptr);
   if (instance.IsInitialized()) {

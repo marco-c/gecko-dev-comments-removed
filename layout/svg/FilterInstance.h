@@ -89,7 +89,9 @@ class FilterInstance {
 
 
 
-  static void PaintFilteredFrame(nsIFrame* aFilteredFrame, gfxContext* aCtx,
+  static void PaintFilteredFrame(nsIFrame* aFilteredFrame,
+                                 Span<const StyleFilter> aFilterChain,
+                                 gfxContext* aCtx,
                                  const SVGFilterPaintCallback& aPaintCallback,
                                  const nsRegion* aDirtyArea,
                                  imgDrawingParams& aImgParams,

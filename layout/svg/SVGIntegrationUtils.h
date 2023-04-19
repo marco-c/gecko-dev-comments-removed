@@ -206,6 +206,7 @@ class SVGIntegrationUtils final {
 
 
   static void PaintFilter(const PaintFramesParams& aParams,
+                          Span<const StyleFilter> aFilters,
                           const SVGFilterPaintCallback& aCallback);
 
   
