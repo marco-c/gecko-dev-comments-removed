@@ -18,6 +18,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/units/timestamp.h"
 #include "api/video/recordable_encoded_frame.h"
+#include "call/call.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"
@@ -91,8 +92,7 @@ class VideoReceiveStream2
   static constexpr size_t kBufferedEncodedFramesMaxSize = 60;
 
   VideoReceiveStream2(TaskQueueFactory* task_queue_factory,
-                      TaskQueueBase* current_queue,
-                      RtpStreamReceiverControllerInterface* receiver_controller,
+                      Call* call,
                       int num_cpu_cores,
                       PacketRouter* packet_router,
                       VideoReceiveStream::Config config,
@@ -100,7 +100,21 @@ class VideoReceiveStream2
                       CallStats* call_stats,
                       Clock* clock,
                       VCMTiming* timing);
+  
+  
+  
+  
+  
   ~VideoReceiveStream2() override;
+
+  
+  
+  void RegisterWithTransport(
+      RtpStreamReceiverControllerInterface* receiver_controller);
+  
+  
+  
+  void UnregisterFromTransport();
 
   const Config& config() const { return config_; }
 
@@ -184,13 +198,21 @@ class VideoReceiveStream2
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker module_process_sequence_checker_;
+  
+  
+  
+  
+  
+  
+  
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
 
   TaskQueueFactory* const task_queue_factory_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
   const int num_cpu_cores_;
-  TaskQueueBase* const worker_thread_;
+  Call* const call_;
   Clock* const clock_;
 
   CallStats* const call_stats_;
@@ -218,9 +240,12 @@ class VideoReceiveStream2
   
   std::unique_ptr<video_coding::FrameBuffer> frame_buffer_;
 
-  std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;
-  std::unique_ptr<RtxReceiveStream> rtx_receive_stream_;
-  std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_;
+  std::unique_ptr<RtpStreamReceiverInterface> media_receiver_
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  std::unique_ptr<RtxReceiveStream> rtx_receive_stream_
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  std::unique_ptr<RtpStreamReceiverInterface> rtx_receiver_
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
