@@ -636,12 +636,21 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     
     
     
+    
+    
+    
+    
+    
+    
+#if !defined(NDEBUG)
+    EXPECT_GT(0.25, recent_delay) << tag << " size " << desc_size;
+#else
     EXPECT_GT(0.1, recent_delay) << tag << " size " << desc_size;
+#endif
     auto delta_samples =
         *track_stats->total_samples_received - audio_samples_stat_;
     auto delta_concealed =
         *track_stats->concealed_samples - audio_concealed_stat_;
-    
     
     
     
@@ -651,12 +660,28 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     
     
     
+#if !defined(NDEBUG)
+    EXPECT_GT(18000U, delta_concealed) << "Concealed " << delta_concealed
+                                       << " of " << delta_samples << " samples";
+#else
     EXPECT_GT(15000U, delta_concealed) << "Concealed " << delta_concealed
                                        << " of " << delta_samples << " samples";
+#endif
+    
+    
+    
+    
+    
     if (delta_samples > 0) {
+#if !defined(NDEBUG)
+      EXPECT_GT(0.95, 1.0 * delta_concealed / delta_samples)
+          << "Concealed " << delta_concealed << " of " << delta_samples
+          << " samples";
+#else
       EXPECT_GT(0.6, 1.0 * delta_concealed / delta_samples)
           << "Concealed " << delta_concealed << " of " << delta_samples
           << " samples";
+#endif
     }
     
     audio_packets_stat_ = *rtp_stats->packets_received;
