@@ -67,12 +67,15 @@ struct PeerConnectionFactoryComponents {
 
 
 struct PeerConnectionComponents {
-  explicit PeerConnectionComponents(rtc::NetworkManager* network_manager)
-      : network_manager(network_manager) {
+  PeerConnectionComponents(rtc::NetworkManager* network_manager,
+                           rtc::PacketSocketFactory* packet_socket_factory)
+      : network_manager(network_manager),
+        packet_socket_factory(packet_socket_factory) {
     RTC_CHECK(network_manager);
   }
 
   rtc::NetworkManager* const network_manager;
+  rtc::PacketSocketFactory* const packet_socket_factory;
   std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
@@ -82,12 +85,14 @@ struct PeerConnectionComponents {
 
 
 struct InjectableComponents {
-  explicit InjectableComponents(rtc::Thread* network_thread,
-                                rtc::NetworkManager* network_manager)
+  InjectableComponents(rtc::Thread* network_thread,
+                       rtc::NetworkManager* network_manager,
+                       rtc::PacketSocketFactory* packet_socket_factory)
       : network_thread(network_thread),
         pcf_dependencies(std::make_unique<PeerConnectionFactoryComponents>()),
         pc_dependencies(
-            std::make_unique<PeerConnectionComponents>(network_manager)) {
+            std::make_unique<PeerConnectionComponents>(network_manager,
+                                                       packet_socket_factory)) {
     RTC_CHECK(network_thread);
   }
 
