@@ -2413,6 +2413,14 @@ void DrawTargetWebgl::StrokeGlyphs(ScaledFont* aFont,
   }
 
   bool useSubpixelAA = ShouldUseSubpixelAA(aFont, aOptions);
+
+  if (mWebglValid && SupportsDrawOptions(aOptions) &&
+      aPattern.GetType() == PatternType::COLOR && PrepareContext() &&
+      mSharedContext->DrawGlyphsAccel(aFont, aBuffer, aPattern, aOptions,
+                                      &aStrokeOptions, useSubpixelAA)) {
+    return;
+  }
+
   if (useSubpixelAA) {
     
     
@@ -2503,7 +2511,8 @@ HashNumber GlyphCacheEntry::HashGlyphs(const GlyphBuffer& aBuffer,
 inline bool GlyphCacheEntry::MatchesGlyphs(
     const GlyphBuffer& aBuffer, const DeviceColor& aColor,
     const Matrix& aTransform, const IntPoint& aQuantizeOffset,
-    const IntPoint& aBoundsOffset, const IntRect& aClipRect, HashNumber aHash) {
+    const IntPoint& aBoundsOffset, const IntRect& aClipRect, HashNumber aHash,
+    const StrokeOptions* aStrokeOptions) {
   
   
   
@@ -2522,6 +2531,14 @@ inline bool GlyphCacheEntry::MatchesGlyphs(
     }
   }
   
+  if (aStrokeOptions) {
+    if (!(mStrokeOptions && *aStrokeOptions == *mStrokeOptions)) {
+      return false;
+    }
+  } else if (!mStrokeOptions) {
+    return false;
+  }
+  
   
   return (mFullBounds + aBoundsOffset)
       .Intersect(aClipRect)
@@ -2533,10 +2550,12 @@ GlyphCacheEntry::GlyphCacheEntry(const GlyphBuffer& aBuffer,
                                  const Matrix& aTransform,
                                  const IntPoint& aQuantizeScale,
                                  const IntRect& aBounds,
-                                 const IntRect& aFullBounds, HashNumber aHash)
+                                 const IntRect& aFullBounds, HashNumber aHash,
+                                 StoredStrokeOptions* aStrokeOptions)
     : CacheEntryImpl<GlyphCacheEntry>(aTransform, aBounds, aHash),
       mColor(aColor),
-      mFullBounds(aFullBounds) {
+      mFullBounds(aFullBounds),
+      mStrokeOptions(aStrokeOptions) {
   
   
   Glyph* glyphs = new Glyph[aBuffer.mNumGlyphs];
@@ -2564,13 +2583,14 @@ GlyphCacheEntry::~GlyphCacheEntry() { delete[] mBuffer.mGlyphs; }
 already_AddRefed<GlyphCacheEntry> GlyphCache::FindEntry(
     const GlyphBuffer& aBuffer, const DeviceColor& aColor,
     const Matrix& aTransform, const IntPoint& aQuantizeScale,
-    const IntRect& aClipRect, HashNumber aHash) {
+    const IntRect& aClipRect, HashNumber aHash,
+    const StrokeOptions* aStrokeOptions) {
   IntPoint offset = QuantizeOffset(aTransform, aQuantizeScale, aBuffer);
   IntPoint boundsOffset(offset.x / aQuantizeScale.x,
                         offset.y / aQuantizeScale.y);
   for (const RefPtr<GlyphCacheEntry>& entry : GetChain(aHash)) {
     if (entry->MatchesGlyphs(aBuffer, aColor, aTransform, offset, boundsOffset,
-                             aClipRect, aHash)) {
+                             aClipRect, aHash, aStrokeOptions)) {
       return do_AddRef(entry);
     }
   }
@@ -2581,9 +2601,18 @@ already_AddRefed<GlyphCacheEntry> GlyphCache::FindEntry(
 already_AddRefed<GlyphCacheEntry> GlyphCache::InsertEntry(
     const GlyphBuffer& aBuffer, const DeviceColor& aColor,
     const Matrix& aTransform, const IntPoint& aQuantizeScale,
-    const IntRect& aBounds, const IntRect& aFullBounds, HashNumber aHash) {
-  RefPtr<GlyphCacheEntry> entry = new GlyphCacheEntry(
-      aBuffer, aColor, aTransform, aQuantizeScale, aBounds, aFullBounds, aHash);
+    const IntRect& aBounds, const IntRect& aFullBounds, HashNumber aHash,
+    const StrokeOptions* aStrokeOptions) {
+  StoredStrokeOptions* strokeOptions = nullptr;
+  if (aStrokeOptions) {
+    strokeOptions = aStrokeOptions->Clone();
+    if (!strokeOptions) {
+      return nullptr;
+    }
+  }
+  RefPtr<GlyphCacheEntry> entry =
+      new GlyphCacheEntry(aBuffer, aColor, aTransform, aQuantizeScale, aBounds,
+                          aFullBounds, aHash, strokeOptions);
   Insert(entry);
   return entry.forget();
 }
@@ -2634,9 +2663,10 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
 
 
 
-bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
+bool DrawTargetWebgl::SharedContext::DrawGlyphsAccel(
     ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
-    const DrawOptions& aOptions, bool aUseSubpixelAA) {
+    const DrawOptions& aOptions, const StrokeOptions* aStrokeOptions,
+    bool aUseSubpixelAA) {
   
   
   
@@ -2644,7 +2674,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   
-  bool useBitmaps = aFont->MayUseBitmaps();
+  bool useBitmaps = !aStrokeOptions && aFont->MayUseBitmaps();
 
   
   GlyphCache* cache =
@@ -2682,14 +2712,15 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
           ? color
           : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0);
   IntRect clipRect(IntPoint(), mViewportSize);
-  RefPtr<GlyphCacheEntry> entry = cache->FindEntry(
-      aBuffer, colorOrMask, quantizeTransform, quantizeScale, clipRect, hash);
+  RefPtr<GlyphCacheEntry> entry =
+      cache->FindEntry(aBuffer, colorOrMask, quantizeTransform, quantizeScale,
+                       clipRect, hash, aStrokeOptions);
   if (!entry) {
     
     
     
     Maybe<Rect> bounds = mCurrentTarget->mSkia->GetGlyphLocalBounds(
-        aFont, aBuffer, aPattern, nullptr, aOptions);
+        aFont, aBuffer, aPattern, aStrokeOptions, aOptions);
     if (!bounds) {
       return true;
     }
@@ -2707,7 +2738,8 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
       return true;
     }
     entry = cache->InsertEntry(aBuffer, colorOrMask, quantizeTransform,
-                               quantizeScale, clipBounds, fullBounds, hash);
+                               quantizeScale, clipBounds, fullBounds, hash,
+                               aStrokeOptions);
     if (!entry) {
       return false;
     }
@@ -2767,11 +2799,14 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
       
       
       
-      textDT->FillGlyphs(
-          aFont, aBuffer,
-          ColorPattern(useBitmaps ? color
-                                  : DeviceColor::Mask(lightOnDark ? 1 : 0, 1)),
-          drawOptions);
+      ColorPattern colorPattern(
+          useBitmaps ? color : DeviceColor::Mask(lightOnDark ? 1 : 0, 1));
+      if (aStrokeOptions) {
+        textDT->StrokeGlyphs(aFont, aBuffer, colorPattern, *aStrokeOptions,
+                             drawOptions);
+      } else {
+        textDT->FillGlyphs(aFont, aBuffer, colorPattern, drawOptions);
+      }
       if (!lightOnDark) {
         uint8_t* data = nullptr;
         IntSize size;
@@ -2845,8 +2880,8 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
 
   if (mWebglValid && SupportsDrawOptions(aOptions) &&
       aPattern.GetType() == PatternType::COLOR && PrepareContext() &&
-      mSharedContext->FillGlyphsAccel(aFont, aBuffer, aPattern, aOptions,
-                                      useSubpixelAA)) {
+      mSharedContext->DrawGlyphsAccel(aFont, aBuffer, aPattern, aOptions,
+                                      nullptr, useSubpixelAA)) {
     return;
   }
 
