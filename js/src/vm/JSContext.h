@@ -25,6 +25,7 @@
 #include "js/Interrupt.h"
 #include "js/Promise.h"
 #include "js/Result.h"
+#include "js/Stack.h"  
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ProtectedData.h"
@@ -281,9 +282,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::PropertyName* emptyString() { return runtime_->emptyString; }
   JS::GCContext* gcContext() { return runtime_->gcContext(); }
   JS::StackKind stackKindForCurrentPrincipal();
-  uintptr_t stackLimitForCurrentPrincipal();
-  uintptr_t stackLimit(JS::StackKind kind) { return nativeStackLimit[kind]; }
-  uintptr_t stackLimitForJitCode(JS::StackKind kind);
+  JS::NativeStackLimit stackLimitForCurrentPrincipal();
+  JS::NativeStackLimit stackLimit(JS::StackKind kind) {
+    return nativeStackLimit[kind];
+  }
+  JS::NativeStackLimit stackLimitForJitCode(JS::StackKind kind);
   size_t gcSystemPageSize() { return js::gc::SystemPageSize(); }
 
   
@@ -471,10 +474,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  private:
   
-  mozilla::Maybe<uintptr_t> nativeStackBase_;
+  mozilla::Maybe<JS::NativeStackBase> nativeStackBase_;
 
  public:
-  uintptr_t nativeStackBase() const { return *nativeStackBase_; }
+  JS::NativeStackBase nativeStackBase() const { return *nativeStackBase_; }
 
  public:
   
@@ -500,7 +503,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  public:
   js::jit::Simulator* simulator() const;
-  uintptr_t* addressOfSimulatorStackLimit();
+  JS::NativeStackLimit* addressOfSimulatorStackLimit();
 #endif
 
  public:
@@ -874,10 +877,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::FutexThread fx;
 
-  mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
+  mozilla::Atomic<JS::NativeStackLimit, mozilla::Relaxed> jitStackLimit;
 
   
-  js::ContextData<uintptr_t> jitStackLimitNoInterrupt;
+  js::ContextData<JS::NativeStackLimit> jitStackLimitNoInterrupt;
 
   
   

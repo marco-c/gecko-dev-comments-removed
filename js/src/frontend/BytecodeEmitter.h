@@ -32,6 +32,7 @@
 #include "frontend/SourceNotes.h"          
 #include "frontend/ValueUsage.h"           
 #include "js/AllocPolicy.h"                
+#include "js/Stack.h"                      
 #include "js/TypeDecls.h"                  
 #include "vm/BuiltinObjectKind.h"          
 #include "vm/CheckIsObjectKind.h"          
@@ -209,7 +210,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   JSContext* const cx = nullptr;
   ErrorContext* const ec = nullptr;
 
-  uintptr_t stackLimit;
+  JS::NativeStackLimit stackLimit;
 
   
   BytecodeEmitter* const parent = nullptr;
@@ -318,7 +319,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  private:
   
   BytecodeEmitter(BytecodeEmitter* parent, ErrorContext* ec,
-                  uintptr_t stackLimit, SharedContext* sc,
+                  JS::NativeStackLimit stackLimit, SharedContext* sc,
                   CompilationState& compilationState, EmitterMode emitterMode);
 
   BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* handle,
@@ -336,13 +337,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   void reportNeedMoreArgsError(CallNode* callNode, uint32_t requiredArgs);
 
  public:
-  BytecodeEmitter(ErrorContext* ec, uintptr_t stackLimit,
+  BytecodeEmitter(ErrorContext* ec, JS::NativeStackLimit stackLimit,
                   const EitherParser& parser, SharedContext* sc,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal);
 
   template <typename Unit>
-  BytecodeEmitter(ErrorContext* ec, uintptr_t stackLimit,
+  BytecodeEmitter(ErrorContext* ec, JS::NativeStackLimit stackLimit,
                   Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal)

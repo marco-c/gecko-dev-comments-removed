@@ -7,18 +7,36 @@
 #ifndef js_Stack_h
 #define js_Stack_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Variant.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Variant.h"     
 
-#include <stddef.h>
-#include <stdint.h>
-#include <utility>
+#include <stddef.h>  
+#include <stdint.h>  
+#include <utility>   
 
-#include "jstypes.h"
+#include "jstypes.h"  
 
-#include "js/Principals.h"
-#include "js/TypeDecls.h"
+#include "js/Principals.h"  
+#include "js/TypeDecls.h"   
+
+namespace JS {
+
+using NativeStackSize = size_t;
+
+using NativeStackBase = uintptr_t;
+
+using NativeStackLimit = uintptr_t;
+
+#if JS_STACK_GROWTH_DIRECTION > 0
+constexpr NativeStackLimit NativeStackLimitMin = 0;
+constexpr NativeStackLimit NativeStackLimitMax = UINTPTR_MAX;
+#else
+constexpr NativeStackLimit NativeStackLimitMin = UINTPTR_MAX;
+constexpr NativeStackLimit NativeStackLimitMax = 0;
+#endif
+
+}  
 
 
 
@@ -39,8 +57,9 @@
 
 
 extern JS_PUBLIC_API void JS_SetNativeStackQuota(
-    JSContext* cx, size_t systemCodeStackSize,
-    size_t trustedScriptStackSize = 0, size_t untrustedScriptStackSize = 0);
+    JSContext* cx, JS::NativeStackSize systemCodeStackSize,
+    JS::NativeStackSize trustedScriptStackSize = 0,
+    JS::NativeStackSize untrustedScriptStackSize = 0);
 
 namespace js {
 

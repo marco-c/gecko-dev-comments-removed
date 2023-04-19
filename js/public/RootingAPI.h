@@ -23,9 +23,10 @@
 #include "js/GCPolicyAPI.h"
 #include "js/GCTypeMacros.h"  
 #include "js/HashTable.h"
-#include "js/HeapAPI.h"
+#include "js/HeapAPI.h"  
 #include "js/ProfilingStack.h"
 #include "js/Realm.h"
+#include "js/Stack.h"  
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
 
@@ -1028,7 +1029,7 @@ class RootingContext {
 
  public:
   
-  uintptr_t nativeStackLimit[StackKindCount];
+  JS::NativeStackLimit nativeStackLimit[StackKindCount];
 
 #ifdef __wasi__
   

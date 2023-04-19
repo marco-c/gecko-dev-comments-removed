@@ -24,6 +24,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Zone.h"
+#include "js/Stack.h"  
 #include "js/TypeDecls.h"
 #include "vm/SharedMem.h"
 #include "wasm/WasmExprType.h"   
@@ -100,7 +101,7 @@ class alignas(16) Instance {
   
   
   
-  Atomic<uintptr_t, mozilla::Relaxed> stackLimit_;
+  Atomic<JS::NativeStackLimit, mozilla::Relaxed> stackLimit_;
 
   
   Atomic<uint32_t, mozilla::Relaxed> interrupt_;
