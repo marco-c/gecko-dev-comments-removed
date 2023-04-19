@@ -478,7 +478,7 @@ enum class AssembleResult {
     
     
     jctx.emplace(cx, temp);
-    stack_masm.emplace();
+    stack_masm.emplace(temp);
 #ifdef DEBUG
     
     

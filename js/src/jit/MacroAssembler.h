@@ -339,7 +339,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
  protected:
   
-  MacroAssembler();
+  explicit MacroAssembler(TempAllocator& alloc);
 
   
   struct WasmToken {};
@@ -5269,7 +5269,7 @@ class MOZ_RAII StackMacroAssembler : public MacroAssembler {
   JS::AutoCheckCannotGC nogc;
 
  public:
-  StackMacroAssembler() = default;
+  explicit StackMacroAssembler(TempAllocator& alloc) : MacroAssembler(alloc) {}
 };
 
 
@@ -5287,7 +5287,7 @@ class MOZ_RAII WasmMacroAssembler : public MacroAssembler {
 
 class IonHeapMacroAssembler : public MacroAssembler {
  public:
-  IonHeapMacroAssembler() : MacroAssembler() {
+  explicit IonHeapMacroAssembler(TempAllocator& alloc) : MacroAssembler(alloc) {
     MOZ_ASSERT(CurrentThreadIsIonCompiling());
   }
 };
