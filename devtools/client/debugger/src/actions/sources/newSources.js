@@ -101,7 +101,8 @@ function loadSourceMap(cx, sourceActor) {
       console.error(e);
     }
 
-    if (!data) {
+    if (!data || !data.length) {
+      
       
       dispatch({
         type: "CLEAR_SOURCE_ACTOR_MAP_URL",

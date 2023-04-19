@@ -36,11 +36,18 @@ add_task(async function() {
   await resume(dbg);
 
   
-  
-  ok(!findElement(dbg, "prettyPrintButton"), "Pretty Print Button is hidden");
+  ok(
+    findElement(dbg, "prettyPrintButton").disabled,
+    "Pretty Print Button should be disabled"
+  );
 
   await selectSource(dbg, "math.min.js");
-  ok(findElement(dbg, "prettyPrintButton"), "Pretty Print Button is visible");
+  await waitForSelectedSource(dbg, "math.min.js");
+
+  ok(
+    !findElement(dbg, "prettyPrintButton").disabled,
+    "Pretty Print Button should be enabled"
+  );
 });
 
 add_task(async function testPrivateFields() {
