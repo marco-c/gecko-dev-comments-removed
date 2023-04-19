@@ -2539,9 +2539,6 @@ pref("font.size.monospace.x-math", 13);
   pref("intl.keyboard.per_window_layout", false);
 
   
-  pref("intl.tsf.enable", true);
-
-  
   
   
   
