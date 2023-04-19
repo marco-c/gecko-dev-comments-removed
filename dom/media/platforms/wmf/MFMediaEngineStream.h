@@ -19,7 +19,6 @@
 
 namespace mozilla {
 
-class MFMediaEngineVideoStream;
 class MFMediaSource;
 
 
@@ -87,20 +86,8 @@ class MFMediaEngineStream
   
   bool IsShutdown() const { return mIsShutdown; }
 
-  virtual MFMediaEngineVideoStream* AsVideoStream() { return nullptr; }
-
-  
-  virtual already_AddRefed<MediaData> OutputData(MediaRawData* aSample) {
-    return nullptr;
-  }
-
-  virtual MediaDataDecoder::ConversionRequired NeedsConversion() const {
-    return MediaDataDecoder::ConversionRequired::kNeedNone;
-  }
-
  protected:
-  HRESULT GenerateStreamDescriptor(
-      Microsoft::WRL::ComPtr<IMFMediaType>& aMediaType);
+  HRESULT GenerateStreamDescriptor(uint64_t aStreamId, const TrackInfo& aInfo);
 
   
   
@@ -125,10 +112,6 @@ class MFMediaEngineStream
   
   DWORD mStreamDescriptorId = 0;
 
-  
-  
-  uint64_t mStreamId = 0;
-
   RefPtr<TaskQueue> mTaskQueue;
 
   
@@ -145,6 +128,9 @@ class MFMediaEngineStream
   
   
   Atomic<bool> mReceivedEOS;
+
+  
+  Atomic<bool> mShouldServeSmamples;
 
   
   MediaQueue<MediaRawData> mRawDataQueue;
@@ -185,7 +171,6 @@ class MFMediaEngineStreamWrapper : public MediaDataDecoder {
   RefPtr<FlushPromise> Flush() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   nsCString GetDescriptionName() const override;
-  ConversionRequired NeedsConversion() const override;
 
  private:
   Microsoft::WRL::ComPtr<MFMediaEngineStream> mStream;

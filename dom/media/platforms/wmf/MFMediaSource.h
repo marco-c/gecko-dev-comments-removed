@@ -35,11 +35,10 @@ struct SampleRequest {
 
 
 
-class MFMediaSource
-    : public Microsoft::WRL::RuntimeClass<
-          Microsoft::WRL::RuntimeClassFlags<
-              Microsoft::WRL::RuntimeClassType::ClassicCom>,
-          IMFMediaSource, IMFRateControl, IMFRateSupport, IMFGetService> {
+class MFMediaSource : public Microsoft::WRL::RuntimeClass<
+                          Microsoft::WRL::RuntimeClassFlags<
+                              Microsoft::WRL::RuntimeClassType::ClassicCom>,
+                          IMFMediaSource> {
  public:
   MFMediaSource();
   HRESULT RuntimeClassInitialize(const Maybe<AudioInfo>& aAudio,
@@ -66,22 +65,6 @@ class MFMediaSource
   IFACEMETHODIMP QueueEvent(MediaEventType aType, REFGUID aExtendedType,
                             HRESULT aStatus,
                             const PROPVARIANT* aValue) override;
-
-  
-  IFACEMETHODIMP GetService(REFGUID aGuidService, REFIID aRiid,
-                            LPVOID* aResult) override;
-
-  
-  IFACEMETHODIMP GetSlowestRate(MFRATE_DIRECTION aDirection,
-                                BOOL aSupportsThinning, float* aRate) override;
-  IFACEMETHODIMP GetFastestRate(MFRATE_DIRECTION aDirection,
-                                BOOL aSupportsThinning, float* aRate) override;
-  IFACEMETHODIMP IsRateSupported(BOOL aSupportsThinning, float aNewRate,
-                                 float* aSupportedRate) override;
-
-  
-  IFACEMETHODIMP SetRate(BOOL aSupportsThinning, float aRate) override;
-  IFACEMETHODIMP GetRate(BOOL* aSupportsThinning, float* aRate) override;
 
   MFMediaEngineStream* GetAudioStream() { return mAudioStream.Get(); }
   MFMediaEngineStream* GetVideoStream() { return mVideoStream.Get(); }
@@ -113,8 +96,6 @@ class MFMediaSource
     Shutdowned,
   };
   State GetState() const { return mState; }
-
-  void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle);
 
  private:
   void AssertOnTaskQueue() const;
@@ -152,9 +133,6 @@ class MFMediaSource
   Atomic<State> mState;
 
   
-
-  
-  float mPlaybackRate = 0.0f;
 };
 
 }  

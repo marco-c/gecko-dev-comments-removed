@@ -98,12 +98,6 @@ enum class ImageFormat {
 
 
   DMABUF,
-
-  
-
-
-
-  DCOMP_SURFACE,
 };
 
 enum class StereoMode {

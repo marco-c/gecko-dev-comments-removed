@@ -5,8 +5,6 @@
 #ifndef DOM_MEDIA_IPC_MFMEDIAENGINEPARENT_H_
 #define DOM_MEDIA_IPC_MFMEDIAENGINEPARENT_H_
 
-#include <Mfidl.h>
-#include <winnt.h>
 #include <wrl.h>
 
 #include "MediaInfo.h"
@@ -67,9 +65,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   void CreateMediaEngine();
 
-  void InitializeVirtualVideoWindow();
-  void InitializeDXGIDeviceManager();
-
   void AssertOnManagerThread() const;
 
   void HandleMediaEngineEvent(MFMediaEngineEventWrapper aEvent);
@@ -78,10 +73,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   void NotifyError(MF_MEDIA_ENGINE_ERR aError, HRESULT aResult = 0);
 
   void DestroyEngineIfExists(const Maybe<MediaResult>& aError = Nothing());
-
-  void EnsureDcompSurfaceHandle();
-
-  void UpdateStatisticsData();
 
   
   
@@ -105,30 +96,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   MediaEventListener mMediaEngineEventListener;
   MediaEventListener mRequestSampleListener;
+  MediaEventListener mTimeUpdateListener;
   bool mIsCreatedMediaEngine = false;
-
-  
-  HWND mVirtualVideoWindow = nullptr;
-
-  Microsoft::WRL::ComPtr<IMFDXGIDeviceManager> mDXGIDeviceManager;
-
-  
-  DWORD mDisplayWidth = 0;
-  DWORD mDisplayHeight = 0;
-
-  
-  
-  bool mIsEnableDcompMode = false;
-
-  float mPlaybackRate = 1.0;
-
-  
-  
-  
-  
-  
-  StatisticData mCurrentPlaybackStatisticData;
-  StatisticData mPrevPlaybackStatisticData;
 };
 
 }  

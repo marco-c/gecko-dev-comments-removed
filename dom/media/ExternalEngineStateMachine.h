@@ -267,6 +267,8 @@ class ExternalEngineStateMachine final
   bool mSentPlaybackEndedEvent = false;
 
   const RefPtr<VideoFrameContainer> mVideoFrameContainer;
+  
+  RefPtr<layers::Image> mBlankImage;
 };
 
 class ExternalPlaybackEngine {

@@ -6,17 +6,8 @@
 #define DOM_MEDIA_PLATFORM_WMF_MFMEDIAENGINEVIDEOSTREAM_H
 
 #include "MFMediaEngineStream.h"
-#include "WMFUtils.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/Mutex.h"
 
 namespace mozilla {
-namespace layers {
-
-class Image;
-class DcompSurfaceImage;
-
-}  
 
 class MFMediaSource;
 
@@ -35,54 +26,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
     return TrackInfo::TrackType::kVideoTrack;
   }
 
-  void SetKnowsCompositor(layers::KnowsCompositor* aKnowsCompositor) {
-    MutexAutoLock lock(mMutex);
-    mKnowsCompositor = aKnowsCompositor;
-  }
-
-  HANDLE GetDcompSurfaceHandle() {
-    MutexAutoLock lock(mMutex);
-    return mDCompSurfaceHandle;
-  }
-  void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle);
-
-  MFMediaEngineVideoStream* AsVideoStream() override { return this; }
-
-  already_AddRefed<MediaData> OutputData(MediaRawData* aSample) override;
-
-  MediaDataDecoder::ConversionRequired NeedsConversion() const override;
-
-  
-  
-  
-  void SetConfig(const TrackInfo& aConfig);
-
  private:
-  HRESULT
-  CreateMediaType(const TrackInfo& aInfo, IMFMediaType** aMediaType) override;
+  HRESULT CreateMediaType(const TrackInfo& aInfo,
+                          IMFMediaType** aMediaType) override;
 
   bool HasEnoughRawData() const override;
-
-  void UpdateConfig(const VideoInfo& aInfo);
-
-  Mutex mMutex{"MFMediaEngineVideoStream"};
-
-  HANDLE mDCompSurfaceHandle MOZ_GUARDED_BY(mMutex);
-  bool mNeedRecreateImage MOZ_GUARDED_BY(mMutex);
-  RefPtr<layers::KnowsCompositor> mKnowsCompositor MOZ_GUARDED_BY(mMutex);
-  gfx::IntSize mDisplay MOZ_GUARDED_BY(mMutex);
-
-  
-  WMFStreamType mStreamType;
-
-  
-  RefPtr<layers::DcompSurfaceImage> mDcompSurfaceImage;
-
-  
-  
-  
-  
-  bool mHasReceivedInitialCreateDecoderConfig;
 };
 
 }  
