@@ -331,13 +331,13 @@ def main():
 
         analyzer_results = analyzer.func(analyzer.executable, reference_file,
                                          degraded_file)
-        for metric, (value, units) in analyzer_results.items():
+        for metric, (value, units) in list(analyzer_results.items()):
           hist = histograms.CreateHistogram(metric, units, [value])
           user_story = generic_set.GenericSet([test_name])
           hist.diagnostics[reserved_infos.STORIES.name] = user_story
 
           
-          print 'RESULT %s: %s= %s %s' % (metric, test_name, value, units)
+          print('RESULT %s: %s= %s %s' % (metric, test_name, value, units))
 
         if args.remove:
           os.remove(reference_file)
