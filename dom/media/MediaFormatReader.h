@@ -376,6 +376,9 @@ class MediaFormatReader final
           mNumOfConsecutiveRDDOrGPUCrashes(0),
           mMaxConsecutiveRDDOrGPUCrashes(
               StaticPrefs::media_rdd_process_max_crashes()),
+          mNumOfConsecutiveUtilityCrashes(0),
+          mMaxConsecutiveUtilityCrashes(
+              StaticPrefs::media_utility_process_max_crashes()),
           mFirstFrameTime(Some(media::TimeUnit::Zero())),
           mNumSamplesInput(0),
           mNumSamplesOutput(0),
@@ -472,6 +475,10 @@ class MediaFormatReader final
     uint32_t mMaxConsecutiveRDDOrGPUCrashes;
 
     
+    uint32_t mNumOfConsecutiveUtilityCrashes;
+    uint32_t mMaxConsecutiveUtilityCrashes;
+
+    
     
     
     
@@ -497,6 +504,13 @@ class MediaFormatReader final
         
         return mNumOfConsecutiveRDDOrGPUCrashes >
                    mMaxConsecutiveRDDOrGPUCrashes ||
+               StaticPrefs::media_playback_warnings_as_errors();
+      } else if (mError.ref() ==
+                 NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR) {
+        bool tooManyConsecutiveCrashes =
+            mNumOfConsecutiveUtilityCrashes > mMaxConsecutiveUtilityCrashes;
+        
+        return tooManyConsecutiveCrashes ||
                StaticPrefs::media_playback_warnings_as_errors();
       } else {
         
