@@ -1426,4 +1426,14 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() {
   return LayoutDeviceIntRect();
 }
 
+bool TextLeafPoint::ContainsPoint(int32_t aX, int32_t aY) {
+  if (mAcc && !mAcc->IsText()) {
+    
+    
+    return mAcc->Bounds().Contains(aX, aY);
+  }
+
+  return CharBounds().Contains(aX, aY);
+}
+
 }  
