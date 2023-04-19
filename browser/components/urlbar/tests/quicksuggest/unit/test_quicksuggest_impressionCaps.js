@@ -3676,6 +3676,7 @@ add_task(async function resetInterval() {
 
 
 
+
 async function doTest({ config, callback }) {
   Services.telemetry.clearEvents();
 
@@ -3690,6 +3691,7 @@ async function doTest({ config, callback }) {
   UrlbarProviderQuickSuggest._impressionStats = null;
   await QuickSuggestTestUtils.withConfig({ config, callback });
 }
+
 
 
 
@@ -3789,6 +3791,8 @@ async function doTimedCallbacks(callbacksBySecond) {
     await callback();
   }
 }
+
+
 
 
 

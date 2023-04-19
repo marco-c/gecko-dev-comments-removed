@@ -374,6 +374,7 @@ add_task(async function pickNonHeuristic() {
 
 
 
+
 async function withVisits(callback) {
   let urls = [];
   for (let i = 0; i < UrlbarPrefs.get("maxRichResults"); i++) {
@@ -389,6 +390,7 @@ async function withVisits(callback) {
   await callback(urls);
   await PlacesUtils.history.clear();
 }
+
 
 
 
@@ -424,6 +426,7 @@ async function withEngine(
   }
   await Services.search.removeEngine(engine);
 }
+
 
 
 

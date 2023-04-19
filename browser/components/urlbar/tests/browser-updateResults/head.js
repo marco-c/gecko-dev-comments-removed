@@ -77,6 +77,7 @@ class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
 
 
 
+
 function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
   return Object.assign(
     new UrlbarResult(
