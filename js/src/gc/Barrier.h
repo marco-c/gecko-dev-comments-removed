@@ -374,22 +374,19 @@ struct InternalBarrierMethods<Value> {
 
     
     js::gc::StoreBuffer* sb;
-    if (next.isNurseryAllocatableGCThing() &&
-        (sb = next.toGCThing()->storeBuffer())) {
+    if (next.isGCThing() && (sb = next.toGCThing()->storeBuffer())) {
       
       
       
       
-      if (prev.isNurseryAllocatableGCThing() &&
-          prev.toGCThing()->storeBuffer()) {
+      if (prev.isGCThing() && prev.toGCThing()->storeBuffer()) {
         return;
       }
       sb->putValue(vp);
       return;
     }
     
-    if (prev.isNurseryAllocatableGCThing() &&
-        (sb = prev.toGCThing()->storeBuffer())) {
+    if (prev.isGCThing() && (sb = prev.toGCThing()->storeBuffer())) {
       sb->unputValue(vp);
     }
   }
@@ -999,7 +996,7 @@ class HeapSlot : public WriteBarriered<Value> {
 #ifdef DEBUG
     assertPreconditionForPostWriteBarrier(owner, kind, slot, target);
 #endif
-    if (this->value.isNurseryAllocatableGCThing()) {
+    if (this->value.isGCThing()) {
       gc::Cell* cell = this->value.toGCThing();
       if (cell->storeBuffer()) {
         cell->storeBuffer()->putSlot(owner, kind, slot, 1);
