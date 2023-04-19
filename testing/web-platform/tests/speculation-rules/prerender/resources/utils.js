@@ -352,7 +352,13 @@ async function addPrerenderRC(referrerRemoteContext) {
 
 
 
-async function activatePrerenderRC(referrerRC, prerenderedRC) {
+
+
+
+
+
+
+async function activatePrerenderRC(referrerRC, prerenderedRC, navigateFn) {
   
   await prerenderedRC.executeScript(() => {
     window.activatedPromise = new Promise(resolve => {
@@ -360,8 +366,11 @@ async function activatePrerenderRC(referrerRC, prerenderedRC) {
     });
   });
 
-  
-  referrerRC.navigateTo(prerenderedRC.url);
+  if (navigateFn === undefined) {
+    referrerRC.navigateTo(prerenderedRC.url);
+  } else {
+    referrerRC.navigate(navigateFn, [prerenderedRC.url]);
+  }
 
   
   
