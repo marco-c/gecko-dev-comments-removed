@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+export function resetBreakpointsPaneState(thread) {
+  return async ({ dispatch }) => {
+    dispatch({
+      type: "RESET_BREAKPOINTS_PANE_STATE",
+      thread,
+    });
+  };
+}
