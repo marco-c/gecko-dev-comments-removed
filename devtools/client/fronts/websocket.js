@@ -7,8 +7,10 @@
 const {
   FrontClassWithSpec,
   registerFront,
-} = require("devtools/shared/protocol");
-const { webSocketSpec } = require("devtools/shared/specs/websocket");
+} = require("resource://devtools/shared/protocol.js");
+const {
+  webSocketSpec,
+} = require("resource://devtools/shared/specs/websocket.js");
 
 
 

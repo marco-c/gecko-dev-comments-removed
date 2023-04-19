@@ -3,11 +3,11 @@
 
 "use strict";
 
-const { rootSpec } = require("devtools/shared/specs/root");
+const { rootSpec } = require("resource://devtools/shared/specs/root.js");
 const {
   FrontClassWithSpec,
   registerFront,
-} = require("devtools/shared/protocol");
+} = require("resource://devtools/shared/protocol.js");
 
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 
