@@ -613,6 +613,8 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   absl::optional<uint64_t> qp_sum;
   
   uint64_t total_decode_time_ms = 0;
+  
+  webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Millis(0);
   double total_inter_frame_delay = 0;
   double total_squared_inter_frame_delay = 0;
   int64_t interframe_delay_max_ms = -1;

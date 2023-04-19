@@ -110,6 +110,8 @@ class VideoReceiveStream : public MediaReceiveStream {
     
     uint64_t total_decode_time_ms = 0;
     
+    webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Millis(0);
+    
     
     double total_inter_frame_delay = 0;
     
