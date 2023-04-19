@@ -3522,7 +3522,7 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiverChannel(
   cricket::ChannelInterface* channel = transceiver->internal()->channel();
   if (content.rejected) {
     if (channel) {
-      transceiver->internal()->SetChannel(nullptr);
+      transceiver->internal()->SetChannel(nullptr, nullptr);
       DestroyChannelInterface(channel);
     }
   } else {
@@ -3537,7 +3537,9 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiverChannel(
         return RTCError(RTCErrorType::INTERNAL_ERROR,
                         "Failed to create channel for mid=" + content.name);
       }
-      transceiver->internal()->SetChannel(channel);
+      transceiver->internal()->SetChannel(channel, [&](const std::string& mid) {
+        return transport_controller()->GetRtpTransport(mid);
+      });
     }
   }
   return RTCError::OK();
@@ -4714,7 +4716,10 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
       return RTCError(RTCErrorType::INTERNAL_ERROR,
                       "Failed to create voice channel.");
     }
-    rtp_manager()->GetAudioTransceiver()->internal()->SetChannel(voice_channel);
+    rtp_manager()->GetAudioTransceiver()->internal()->SetChannel(
+        voice_channel, [&](const std::string& mid) {
+          return transport_controller()->GetRtpTransport(mid);
+        });
   }
 
   const cricket::ContentInfo* video = cricket::GetFirstVideoContent(&desc);
@@ -4725,7 +4730,10 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
       return RTCError(RTCErrorType::INTERNAL_ERROR,
                       "Failed to create video channel.");
     }
-    rtp_manager()->GetVideoTransceiver()->internal()->SetChannel(video_channel);
+    rtp_manager()->GetVideoTransceiver()->internal()->SetChannel(
+        video_channel, [&](const std::string& mid) {
+          return transport_controller()->GetRtpTransport(mid);
+        });
   }
 
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(&desc);
@@ -4749,17 +4757,12 @@ cricket::VoiceChannel* SdpOfferAnswerHandler::CreateVoiceChannel(
     return nullptr;
 
   
-  RtpTransportInternal* rtp_transport = pc_->GetRtpTransport(mid);
-
-  
-  
-  
   
   
   return channel_manager()->CreateVoiceChannel(
-      pc_->call_ptr(), pc_->configuration()->media_config, rtp_transport,
-      signaling_thread(), mid, pc_->SrtpRequired(), pc_->GetCryptoOptions(),
-      &ssrc_generator_, audio_options());
+      pc_->call_ptr(), pc_->configuration()->media_config, signaling_thread(),
+      mid, pc_->SrtpRequired(), pc_->GetCryptoOptions(), &ssrc_generator_,
+      audio_options());
 }
 
 
@@ -4771,16 +4774,12 @@ cricket::VideoChannel* SdpOfferAnswerHandler::CreateVideoChannel(
     return nullptr;
 
   
-  RtpTransportInternal* rtp_transport = pc_->GetRtpTransport(mid);
-
-  
   
   
   return channel_manager()->CreateVideoChannel(
-      pc_->call_ptr(), pc_->configuration()->media_config, rtp_transport,
-      signaling_thread(), mid, pc_->SrtpRequired(), pc_->GetCryptoOptions(),
-      &ssrc_generator_, video_options(),
-      video_bitrate_allocator_factory_.get());
+      pc_->call_ptr(), pc_->configuration()->media_config, signaling_thread(),
+      mid, pc_->SrtpRequired(), pc_->GetCryptoOptions(), &ssrc_generator_,
+      video_options(), video_bitrate_allocator_factory_.get());
 }
 
 bool SdpOfferAnswerHandler::CreateDataChannel(const std::string& mid) {
@@ -4825,7 +4824,7 @@ void SdpOfferAnswerHandler::DestroyTransceiverChannel(
     
     
     
-    transceiver->internal()->SetChannel(nullptr);
+    transceiver->internal()->SetChannel(nullptr, nullptr);
     
     
     

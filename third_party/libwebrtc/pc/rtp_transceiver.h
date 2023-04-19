@@ -101,7 +101,35 @@ class RtpTransceiver final
 
   
   
-  void SetChannel(cricket::ChannelInterface* channel);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetChannel(cricket::ChannelInterface* channel,
+                  std::function<RtpTransportInternal*(const std::string&)>
+                      transport_lookup);
 
   
   

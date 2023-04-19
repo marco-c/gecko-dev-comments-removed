@@ -184,28 +184,7 @@ void BaseChannel::DisconnectFromRtpTransport_n() {
   rtp_transport_->SignalWritableState.disconnect(this);
   rtp_transport_->SignalSentPacket.disconnect(this);
   rtp_transport_ = nullptr;
-}
-
-void BaseChannel::Init_n(webrtc::RtpTransportInternal* rtp_transport) {
-  
-  
-  SetRtpTransport(rtp_transport);
-
-  
-  
-  RTC_DCHECK(!media_channel_->HasNetworkInterface());
-  media_channel_->SetInterface(this);
-}
-
-void BaseChannel::Deinit_n() {
-  
-  
-  
   media_channel_->SetInterface(nullptr);
-  if (rtp_transport_) {
-    DisconnectFromRtpTransport_n();
-  }
-  RTC_DCHECK(!network_initialized());
 }
 
 bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
@@ -229,6 +208,10 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
     if (!ConnectToRtpTransport_n()) {
       return false;
     }
+
+    RTC_DCHECK(!media_channel_->HasNetworkInterface());
+    media_channel_->SetInterface(this);
+
     media_channel_->OnReadyToSend(rtp_transport_->IsReadyToSend());
     UpdateWritableState_n();
 
@@ -242,6 +225,7 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
       }
     }
   }
+
   return true;
 }
 
