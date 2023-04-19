@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 
+#include "absl/types/optional.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/saturation_protector.h"
 #include "modules/audio_processing/agc2/vad_with_level.h"
@@ -20,6 +21,7 @@
 
 namespace webrtc {
 class ApmDataDumper;
+
 
 class AdaptiveModeLevelEstimator {
  public:
@@ -40,26 +42,42 @@ class AdaptiveModeLevelEstimator {
       bool use_saturation_protector,
       float initial_saturation_margin_db,
       float extra_saturation_margin_db);
-  void UpdateEstimation(const VadLevelAnalyzer::Result& vad_level);
-  float LatestLevelEstimate() const;
+
+  
+  void Update(const VadLevelAnalyzer::Result& vad_data);
+  
+  float GetLevelDbfs() const;
+  
+  bool IsConfident() const;
+
   void Reset();
-  bool LevelEstimationIsConfident() const {
-    return buffer_size_ms_ >= kFullBufferSizeMs;
-  }
 
  private:
+  
+  struct State {
+    struct Ratio {
+      float numerator;
+      float denominator;
+      float GetRatio() const;
+    };
+    int time_to_full_buffer_ms;
+    Ratio level_dbfs;
+    
+  };
+
+  void ResetState(State& state);
   void DebugDumpEstimate();
 
+  ApmDataDumper* const apm_data_dumper_;
+  SaturationProtector saturation_protector_;
+
   const AudioProcessing::Config::GainController2::LevelEstimator
-      level_estimator_;
+      level_estimator_type_;
   const bool use_saturation_protector_;
   const float extra_saturation_margin_db_;
-  size_t buffer_size_ms_ = 0;
-  float last_estimate_with_offset_dbfs_ = kInitialSpeechLevelEstimateDbfs;
-  float estimate_numerator_ = 0.f;
-  float estimate_denominator_ = 0.f;
-  SaturationProtector saturation_protector_;
-  ApmDataDumper* const apm_data_dumper_;
+  
+  State state_;
+  absl::optional<float> last_level_dbfs_;
 };
 
 }  
