@@ -34,15 +34,17 @@ class AdaptiveDigitalGainApplier {
     bool estimate_is_confident;
   };
 
-  explicit AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper);
+  
   
   
   AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper,
-                             int adjacent_speech_frames_threshold);
+                             int adjacent_speech_frames_threshold,
+                             float max_gain_change_db_per_second);
   AdaptiveDigitalGainApplier(const AdaptiveDigitalGainApplier&) = delete;
   AdaptiveDigitalGainApplier& operator=(const AdaptiveDigitalGainApplier&) =
       delete;
 
+  
   
   void Process(const FrameInfo& info, AudioFrameView<float> frame);
 
@@ -51,6 +53,7 @@ class AdaptiveDigitalGainApplier {
   GainApplier gain_applier_;
 
   const int adjacent_speech_frames_threshold_;
+  const float max_gain_change_db_per_10ms_;
 
   int calls_since_last_gain_log_;
   int frames_to_gain_increase_allowed_;
