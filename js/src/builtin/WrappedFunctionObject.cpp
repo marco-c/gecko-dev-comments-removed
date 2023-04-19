@@ -16,6 +16,7 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "util/StringBuffer.h"
+#include "vm/Interpreter.h"
 #include "vm/JSFunction.h"
 #include "vm/ObjectOperations.h"
 
@@ -78,14 +79,16 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   
   Rooted<Value> result(cx);
   {
-    Rooted<JSObject*> global(cx, JS::GetRealmGlobalOrNull(callerRealm));
+    Rooted<JSObject*> global(cx, callerRealm->maybeGlobal());
     MOZ_RELEASE_ASSERT(
         global, "global is null; executing in a realm that's being GC'd?");
     AutoRealm ar(cx, global);
 
     
-    
-    RootedVector<Value> wrappedArgs(cx);
+    InvokeArgs wrappedArgs(cx);
+    if (!wrappedArgs.init(cx, args.length())) {
+      return false;
+    }
 
     
     
@@ -97,9 +100,7 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
         return false;
       }
 
-      if (!wrappedArgs.append(element)) {
-        return false;
-      }
+      wrappedArgs[i].set(element);
     }
 
     
@@ -111,7 +112,8 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
 
     
     
-    if (!JS::Call(cx, wrappedThisArgument, target, wrappedArgs, &result)) {
+    Rooted<Value> targetValue(cx, ObjectValue(*target));
+    if (!js::Call(cx, targetValue, wrappedThisArgument, wrappedArgs, &result)) {
       
       
       ReportPotentiallyDetailedMessage(
@@ -138,9 +140,7 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
   double L = 0;
 
   
-
-  Rooted<jsid> length(cx, NameToId(cx->names().length));
-  Rooted<jsid> name(cx, NameToId(cx->names().name));
+  
   
   if (Target->is<JSFunction>() &&
       !Target->as<JSFunction>().hasResolvedLength()) {
@@ -152,8 +152,10 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
 
     L = std::max(0.0, targetLen.toNumber() - argCount);
   } else {
+    Rooted<jsid> lengthId(cx, NameToId(cx->names().length));
+
     bool targetHasLength;
-    if (!HasOwnProperty(cx, Target, length, &targetHasLength)) {
+    if (!HasOwnProperty(cx, Target, lengthId, &targetHasLength)) {
       return false;
     }
     
@@ -161,7 +163,7 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
     if (targetHasLength) {
       
       Rooted<Value> targetLen(cx);
-      if (!GetProperty(cx, Target, Target, length, &targetLen)) {
+      if (!GetProperty(cx, Target, Target, lengthId, &targetLen)) {
         return false;
       }
 
@@ -180,7 +182,8 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
 
   
   Rooted<Value> rootedL(cx, DoubleValue(L));
-  if (!JS_DefinePropertyById(cx, F, length, rootedL, JSPROP_READONLY)) {
+  if (!DefineDataProperty(cx, F, cx->names().length, rootedL,
+                          JSPROP_READONLY)) {
     return false;
   }
 
@@ -208,14 +211,14 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
     return false;
   }
   Rooted<Value> rootedFunName(cx, StringValue(funName));
-  return JS_DefinePropertyById(cx, F, name, rootedFunName, JSPROP_READONLY);
+  return DefineDataProperty(cx, F, cx->names().name, rootedFunName,
+                            JSPROP_READONLY);
 }
 
 static JSString* ToStringOp(JSContext* cx, JS::HandleObject obj,
                             bool isToSource) {
-  Rooted<jsid> name(cx, NameToId(cx->names().name));
   Rooted<Value> nameVal(cx);
-  if (!JS_GetPropertyById(cx, obj, name, &nameVal)) {
+  if (!GetProperty(cx, obj, obj, cx->names().name, &nameVal)) {
     return nullptr;
   }
 
@@ -288,7 +291,7 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
                                HandleObject target, MutableHandle<Value> res) {
   
   
-  Rooted<JSObject*> global(cx, JS::GetRealmGlobalOrNull(callerRealm));
+  Rooted<JSObject*> global(cx, callerRealm->maybeGlobal());
   MOZ_RELEASE_ASSERT(global,
                      "global is null; executing in a realm that's being GC'd?");
   AutoRealm ar(cx, global);
@@ -297,7 +300,7 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
 
   
   Rooted<JSObject*> maybeWrappedTarget(cx, target);
-  if (!JS_WrapObject(cx, &maybeWrappedTarget)) {
+  if (!cx->compartment()->wrap(cx, &maybeWrappedTarget)) {
     return false;
   }
 
@@ -329,7 +332,7 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
   
   if (!CopyNameAndLength(cx, wrapped, maybeWrappedTarget)) {
     
-    JS_ClearPendingException(cx);
+    cx->clearPendingException();
 
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHADOW_REALM_WRAP_FAILURE);
