@@ -181,7 +181,8 @@ class nsFrameList {
 
 
 
-  nsFrameList RemoveFramesAfter(nsIFrame* aAfterFrame);
+
+  [[nodiscard]] nsFrameList TakeFramesAfter(nsIFrame* aFrame);
 
   
 
@@ -274,14 +275,6 @@ class nsFrameList {
     }
     return std::move(*this);
   }
-
-  
-
-
-
-
-
-  nsFrameList ExtractTail(nsIFrame* aFrame);
 
   nsIFrame* FirstChild() const { return mFirstChild; }
 

@@ -806,7 +806,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidNextInFlow->MarkSubtreeDirty();
       
       
-      nsFrameList continuationColumns = mFrames.RemoveFramesAfter(child);
+      nsFrameList continuationColumns = mFrames.TakeFramesAfter(child);
       if (continuationColumns.NotEmpty()) {
         SetOverflowFrames(std::move(continuationColumns));
       }
