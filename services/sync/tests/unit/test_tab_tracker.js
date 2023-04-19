@@ -74,6 +74,12 @@ function fakeGetTabState(tab) {
   return tab;
 }
 
+function clearQuickWriteTimer(tracker) {
+  if (tracker.tabsQuickWriteTimer) {
+    tracker.tabsQuickWriteTimer.clear();
+  }
+}
+
 add_task(async function run_test() {
   let engine = Service.engineManager.get("tabs");
 
@@ -191,10 +197,11 @@ add_task(async function run_sync_on_tab_change_test() {
   await manager.onStartup();
   await ExperimentAPI.ready();
 
-  let testExperimentDelay = 5000;
+  let testExperimentDelay = 20000;
+  let testPrefDelay = 5000;
 
   
-  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", testExperimentDelay);
+  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", testPrefDelay);
   
   
   Svc.Prefs.set("clients.devices.desktop", 1);
@@ -206,7 +213,10 @@ add_task(async function run_sync_on_tab_change_test() {
     {
       enabled: true,
       featureId: "syncAfterTabChange",
-      value: { syncDelayAfterTabChange: testExperimentDelay },
+      value: {
+        syncDelayAfterTabChange: testExperimentDelay,
+        syncDelayAfterTabChangeOverride: true,
+      },
     },
     {
       manager,
@@ -231,7 +241,11 @@ add_task(async function run_sync_on_tab_change_test() {
   );
 
   _("Test sync is scheduled after a tab change if experiment is enabled");
-  for (let evttype of ["TabOpen", "TabClose", "TabSelect"]) {
+  for (let evttype of ["TabOpen", "TabClose"]) {
+    
+    await tracker.clearChangedIDs();
+    clearQuickWriteTimer(tracker);
+
     
     tracker.onTab({
       type: evttype,
@@ -241,7 +255,11 @@ add_task(async function run_sync_on_tab_change_test() {
     
     Assert.ok(tracker.modified);
     
-    Assert.ok(scheduler.nextSync - Date.now() <= testExperimentDelay);
+    
+    let nextSchedule = tracker.tabsQuickWriteTimer.delay;
+    Assert.ok(
+      nextSchedule <= testExperimentDelay && nextSchedule > testPrefDelay
+    );
   }
 
   _("Test sync is NOT scheduled after an unsupported tab open");
@@ -261,7 +279,7 @@ add_task(async function run_sync_on_tab_change_test() {
   _("Test navigating within the same tab does NOT trigger a sync");
   
   await tracker.clearChangedIDs();
-  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  clearQuickWriteTimer(tracker);
 
   tracker.onLocationChange(
     { isTopLevel: true },
@@ -273,14 +291,11 @@ add_task(async function run_sync_on_tab_change_test() {
     !tracker.modified,
     "location change for reloading doesn't trigger a sync"
   );
-  Assert.ok(
-    scheduler.nextSync - Date.now() > testExperimentDelay,
-    "reload does not trigger a sync"
-  );
+  Assert.ok(!tracker.tabsQuickWriteTimer, "reload does not trigger a sync");
 
   
   await tracker.clearChangedIDs();
-  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  clearQuickWriteTimer(tracker);
 
   _("Test navigating to an about page does not trigger sync");
   tracker.onLocationChange(
@@ -290,14 +305,14 @@ add_task(async function run_sync_on_tab_change_test() {
   );
   Assert.ok(!tracker.modified, "about page does not trigger a tab modified");
   Assert.ok(
-    scheduler.nextSync - Date.now() > testExperimentDelay,
+    !tracker.tabsQuickWriteTimer,
     "about schema should not trigger a sync happening soon"
   );
 
   _("Test adjusting the filterScheme pref works");
   
   await tracker.clearChangedIDs();
-  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  clearQuickWriteTimer(tracker);
 
   Svc.Prefs.set(
     "engine.tabs.filteredSchemes",
@@ -321,7 +336,7 @@ add_task(async function run_sync_on_tab_change_test() {
   _("Test no sync after tab change for accounts with <= 1 clients");
   
   await tracker.clearChangedIDs();
-  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  clearQuickWriteTimer(tracker);
   
   Svc.Prefs.set("clients.devices.desktop", 1);
   Svc.Prefs.set("clients.devices.mobile", 0);
@@ -338,7 +353,7 @@ add_task(async function run_sync_on_tab_change_test() {
     "location change for a new top-level document flagged as modified"
   );
   Assert.ok(
-    scheduler.nextSync - Date.now() > testExperimentDelay,
+    !tracker.tabsQuickWriteTimer,
     "We should NOT be syncing shortly because there is only one client"
   );
 
@@ -347,12 +362,14 @@ add_task(async function run_sync_on_tab_change_test() {
   _("If there is no experiment, fallback to the pref");
   let delayPref = Svc.Prefs.get("syncedTabs.syncDelayAfterTabChange");
   let evttype = "TabOpen";
-  Assert.equal(delayPref, testExperimentDelay);
+  Assert.equal(delayPref, testPrefDelay);
   
   Svc.Prefs.set("clients.devices.desktop", 1);
   Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.updateClientMode();
   Assert.equal(scheduler.numClients, 2);
+  clearQuickWriteTimer(tracker);
+
   
   tracker.onTab({
     type: evttype,
@@ -368,18 +385,22 @@ add_task(async function run_sync_on_tab_change_test() {
   _("We should not have a sync if experiment if off and pref is 0");
 
   Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", 0);
-  let doAnotherEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig(
+  let doEnrollmentCleanup2 = await ExperimentFakes.enrollWithFeatureConfig(
     {
       enabled: true,
       featureId: "syncAfterTabChange",
-      value: { syncDelayAfterTabChange: 0 },
+      value: {
+        syncDelayAfterTabChange: 0,
+        syncDelayAfterTabChangeOverride: true,
+      },
     },
     {
       manager,
     }
   );
   
-  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  await tracker.clearChangedIDs();
+  clearQuickWriteTimer(tracker);
 
   
   evttype = "TabOpen";
@@ -392,10 +413,48 @@ add_task(async function run_sync_on_tab_change_test() {
   Assert.ok(tracker.modified);
 
   
-  Assert.ok(scheduler.nextSync - Date.now() > testExperimentDelay);
+  Assert.ok(!tracker.tabsQuickWriteTimer);
 
   
-  await doAnotherEnrollmentCleanup();
+  await doEnrollmentCleanup2();
+
+  _("If the experiment is on but override is off, we use the pref value");
+
+  Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", testPrefDelay);
+  let doEnrollmentCleanup3 = await ExperimentFakes.enrollWithFeatureConfig(
+    {
+      enabled: true,
+      featureId: "syncAfterTabChange",
+      value: {
+        syncDelayAfterTabChange: 500000,
+        syncDelayAfterTabChangeOverride: false,
+      },
+    },
+    {
+      manager,
+    }
+  );
+  
+  await tracker.clearChangedIDs();
+  clearQuickWriteTimer(tracker);
+
+  
+  evttype = "TabOpen";
+  tracker.onTab({
+    type: evttype,
+    originalTarget: evttype,
+    target: { entries: [], currentURI: "about:config" },
+  });
+  
+  Assert.ok(tracker.modified);
+
+  
+  Assert.ok(tracker.tabsQuickWriteTimer);
+  Assert.equal(tracker.tabsQuickWriteTimer.delay, testPrefDelay);
+
+  
+  await doEnrollmentCleanup3();
+
   scheduler.setDefaults();
   Svc.Prefs.resetBranch("");
 });

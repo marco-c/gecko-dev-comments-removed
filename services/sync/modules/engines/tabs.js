@@ -70,6 +70,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "SYNC_AFTER_DELAY_MS",
+  "services.sync.syncedTabs.syncDelayAfterTabChange",
+  0
+);
+
 function TabSetRecord(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
@@ -585,9 +592,18 @@ TabTracker.prototype = {
   callScheduleSync(scoreIncrement) {
     this.modified = true;
     let { scheduler } = this.engine.service;
-    const delayInMs = lazy.NimbusFeatures.syncAfterTabChange.getVariable(
-      "syncDelayAfterTabChange"
+    let delayInMs = lazy.SYNC_AFTER_DELAY_MS;
+
+    
+    
+    const override = lazy.NimbusFeatures.syncAfterTabChange.getVariable(
+      "syncDelayAfterTabChangeOverride"
     );
+    if (override) {
+      delayInMs = lazy.NimbusFeatures.syncAfterTabChange.getVariable(
+        "syncDelayAfterTabChange"
+      );
+    }
 
     
     

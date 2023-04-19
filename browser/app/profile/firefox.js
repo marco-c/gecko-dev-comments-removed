@@ -1480,7 +1480,7 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 
 
 
-pref("services.sync.syncedTabs.syncDelayAfterTabChange", 0);
+pref("services.sync.syncedTabs.syncDelayAfterTabChange", 5000);
 
 
 
