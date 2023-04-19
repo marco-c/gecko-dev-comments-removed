@@ -115,7 +115,7 @@ struct DcSctpOptions {
   DurationMs delayed_ack_max_timeout = DurationMs(200);
 
   
-  bool slow_start_tcp_style = true;
+  bool slow_start_tcp_style = false;
 
   
   
