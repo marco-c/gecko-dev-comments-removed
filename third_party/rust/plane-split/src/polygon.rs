@@ -1,22 +1,22 @@
 use crate::{is_zero, Line, Plane};
 
-use euclid::{approxeq::ApproxEq, default::Point2D, Point3D, Rect, Transform3D, Trig, Vector3D};
-use num_traits::{Float, One, Zero};
+use euclid::{
+    approxeq::ApproxEq,
+    default::{Point2D, Point3D, Rect, Transform3D, Vector3D},
+};
+use smallvec::SmallVec;
 
-use std::{fmt, iter, mem, ops};
+use std::{iter, mem};
 
 
-pub struct LineProjection<T> {
+pub struct LineProjection {
     
-    pub markers: [T; 4],
+    pub markers: [f64; 4],
 }
 
-impl<T> LineProjection<T>
-where
-    T: Copy + PartialOrd + ops::Sub<T, Output = T> + ops::Add<T, Output = T>,
-{
+impl LineProjection {
     
-    pub fn get_bounds(&self) -> (T, T) {
+    pub fn get_bounds(&self) -> (f64, f64) {
         let (mut a, mut b, mut c, mut d) = (
             self.markers[0],
             self.markers[1],
@@ -95,17 +95,17 @@ impl<T> Intersection<T> {
 
 
 #[derive(Debug, PartialEq)]
-pub struct Polygon<T, U, A> {
+pub struct Polygon<A> {
     
-    pub points: [Point3D<T, U>; 4],
+    pub points: [Point3D<f64>; 4],
     
-    pub plane: Plane<T, U>,
+    pub plane: Plane,
     
     
     pub anchor: A,
 }
 
-impl<T: Clone, U, A: Copy> Clone for Polygon<T, U, A> {
+impl<A: Copy> Clone for Polygon<A> {
     fn clone(&self) -> Self {
         Polygon {
             points: [
@@ -120,30 +120,19 @@ impl<T: Clone, U, A: Copy> Clone for Polygon<T, U, A> {
     }
 }
 
-impl<T, U, A> Polygon<T, U, A>
+impl<A> Polygon<A>
 where
-    T: Copy
-        + fmt::Debug
-        + ApproxEq<T>
-        + ops::Sub<T, Output = T>
-        + ops::Add<T, Output = T>
-        + ops::Mul<T, Output = T>
-        + ops::Div<T, Output = T>
-        + Zero
-        + One
-        + Float,
-    U: fmt::Debug,
     A: Copy,
 {
     
     
-    pub fn from_points(points: [Point3D<T, U>; 4], anchor: A) -> Option<Self> {
+    pub fn from_points(points: [Point3D<f64>; 4], anchor: A) -> Option<Self> {
         let edge1 = points[1] - points[0];
         let edge2 = points[2] - points[0];
         let edge3 = points[3] - points[0];
         let edge4 = points[3] - points[1];
 
-        if edge2.square_length() < T::epsilon() || edge4.square_length() < T::epsilon() {
+        if edge2.square_length() < f64::EPSILON || edge4.square_length() < f64::EPSILON {
             return None;
         }
 
@@ -170,71 +159,62 @@ where
     }
 
     
-    pub fn from_rect(rect: Rect<T, U>, anchor: A) -> Self {
+    pub fn from_rect(rect: Rect<f64>, anchor: A) -> Self {
         let min = rect.min();
         let max = rect.max();
-        let _0 = T::zero();
         Polygon {
             points: [
                 min.to_3d(),
-                Point3D::new(max.x, min.y, _0),
+                Point3D::new(max.x, min.y, 0.0),
                 max.to_3d(),
-                Point3D::new(min.x, max.y, _0),
+                Point3D::new(min.x, max.y, 0.0),
             ],
             plane: Plane {
-                normal: Vector3D::new(T::zero(), T::zero(), T::one()),
-                offset: T::zero(),
+                normal: Vector3D::new(0.0, 0.0, 1.0),
+                offset: 0.0,
             },
             anchor,
         }
     }
 
     
-    pub fn from_transformed_rect<V>(
-        rect: Rect<T, V>,
-        transform: Transform3D<T, V, U>,
+    pub fn from_transformed_rect(
+        rect: Rect<f64>,
+        transform: Transform3D<f64>,
         anchor: A,
-    ) -> Option<Self>
-    where
-        T: Trig + ops::Neg<Output = T>,
-    {
+    ) -> Option<Self> {
         let min = rect.min();
         let max = rect.max();
-        let _0 = T::zero();
         let points = [
             transform.transform_point3d(min.to_3d())?,
-            transform.transform_point3d(Point3D::new(max.x, min.y, _0))?,
+            transform.transform_point3d(Point3D::new(max.x, min.y, 0.0))?,
             transform.transform_point3d(max.to_3d())?,
-            transform.transform_point3d(Point3D::new(min.x, max.y, _0))?,
+            transform.transform_point3d(Point3D::new(min.x, max.y, 0.0))?,
         ];
         Self::from_points(points, anchor)
     }
 
     
-    pub fn from_transformed_rect_with_inverse<V>(
-        rect: Rect<T, V>,
-        transform: &Transform3D<T, V, U>,
-        inv_transform: &Transform3D<T, U, V>,
+    pub fn from_transformed_rect_with_inverse(
+        rect: Rect<f64>,
+        transform: &Transform3D<f64>,
+        inv_transform: &Transform3D<f64>,
         anchor: A,
-    ) -> Option<Self>
-    where
-        T: Trig + ops::Neg<Output = T>,
-    {
+    ) -> Option<Self> {
         let min = rect.min();
         let max = rect.max();
-        let _0 = T::zero();
         let points = [
             transform.transform_point3d(min.to_3d())?,
-            transform.transform_point3d(Point3D::new(max.x, min.y, _0))?,
+            transform.transform_point3d(Point3D::new(max.x, min.y, 0.0))?,
             transform.transform_point3d(max.to_3d())?,
-            transform.transform_point3d(Point3D::new(min.x, max.y, _0))?,
+            transform.transform_point3d(Point3D::new(min.x, max.y, 0.0))?,
         ];
 
         
         
         let normal_raw = Vector3D::new(inv_transform.m13, inv_transform.m23, inv_transform.m33);
         let normal_sql = normal_raw.square_length();
-        if normal_sql.approx_eq(&T::zero()) || transform.m44.approx_eq(&T::zero()) {
+        if normal_sql.approx_eq(&0.0) || transform.m44.approx_eq(&0.0) {
             None
         } else {
             let normal = normal_raw / normal_sql.sqrt();
@@ -251,7 +231,7 @@ where
 
     
     
-    pub fn untransform_point(&self, point: Point3D<T, U>) -> Point2D<T> {
+    pub fn untransform_point(&self, point: Point3D<f64>) -> Point2D<f64> {
         
         
         let a = self.points[1] - self.points[0];
@@ -271,15 +251,11 @@ where
     }
 
     
-    pub fn transform<V>(&self, transform: &Transform3D<T, U, V>) -> Option<Polygon<T, V, A>>
-    where
-        T: Trig,
-        V: fmt::Debug,
-    {
+    pub fn transform(&self, transform: &Transform3D<f64>) -> Option<Polygon<A>> {
         let mut points = [Point3D::origin(); 4];
         for (out, point) in points.iter_mut().zip(self.points.iter()) {
             let mut homo = transform.transform_point3d_homogeneous(*point);
-            homo.w = homo.w.max(T::approx_epsilon());
+            homo.w = homo.w.max(f64::approx_epsilon());
             *out = homo.to_point3d()?;
         }
 
@@ -306,15 +282,15 @@ where
         let is_winding = edges
             .iter()
             .zip(edges[1..].iter())
-            .all(|(a, &b)| a.cross(b).dot(anchor) >= T::zero());
+            .all(|(a, &b)| a.cross(b).dot(anchor) >= 0.0);
         is_planar && is_winding
     }
 
     
     
     pub fn is_empty(&self) -> bool {
-        (self.points[0] - self.points[2]).square_length() < T::epsilon()
-            || (self.points[1] - self.points[3]).square_length() < T::epsilon()
+        (self.points[0] - self.points[2]).square_length() < f64::EPSILON
+            || (self.points[1] - self.points[3]).square_length() < f64::EPSILON
     }
 
     
@@ -325,7 +301,7 @@ where
 
     
     
-    pub fn project_on(&self, vector: &Vector3D<T, U>) -> LineProjection<T> {
+    pub fn project_on(&self, vector: &Vector3D<f64>) -> LineProjection {
         LineProjection {
             markers: [
                 vector.dot(self.points[0].to_vector()),
@@ -337,7 +313,7 @@ where
     }
 
     
-    pub fn intersect_plane(&self, other: &Plane<T, U>) -> Intersection<Line<T, U>> {
+    pub fn intersect_plane(&self, other: &Plane) -> Intersection<Line> {
         if other.are_outside(&self.points) {
             log::debug!("\t\tOutside of the plane");
             return Intersection::Outside;
@@ -352,7 +328,7 @@ where
     }
 
     
-    pub fn intersect(&self, other: &Self) -> Intersection<Line<T, U>> {
+    pub fn intersect(&self, other: &Self) -> Intersection<Line> {
         if self.plane.are_outside(&other.points) || other.plane.are_outside(&self.points) {
             log::debug!("\t\tOne is completely outside of the other");
             return Intersection::Outside;
@@ -378,8 +354,8 @@ where
 
     fn split_impl(
         &mut self,
-        first: (usize, Point3D<T, U>),
-        second: (usize, Point3D<T, U>),
+        first: (usize, Point3D<f64>),
+        second: (usize, Point3D<f64>),
     ) -> (Option<Self>, Option<Self>) {
         
         
@@ -464,7 +440,7 @@ where
     
     
     #[deprecated(note = "Use split_with_normal instead")]
-    pub fn split(&mut self, line: &Line<T, U>) -> (Option<Self>, Option<Self>) {
+    pub fn split(&mut self, line: &Line) -> (Option<Self>, Option<Self>) {
         log::debug!("\tSplitting");
         
         if !is_zero(self.plane.normal.dot(line.dir))
@@ -488,7 +464,7 @@ where
             .zip(cuts.iter_mut())
         {
             if let Some(t) = line.intersect_edge(a..b) {
-                if t >= T::zero() && t < T::one() {
+                if t >= 0.0 && t < 1.0 {
                     *cut = Some(a + (b - a) * t);
                 }
             }
@@ -514,12 +490,12 @@ where
     
     pub fn split_with_normal(
         &mut self,
-        line: &Line<T, U>,
-        normal: &Vector3D<T, U>,
+        line: &Line,
+        normal: &Vector3D<f64>,
     ) -> (Option<Self>, Option<Self>) {
         log::debug!("\tSplitting with normal");
         
-        let mut sides = [T::zero(); 4];
+        let mut sides = [0.0; 4];
         let (mut cut_positive, mut cut_negative) = (None, None);
         for (side, point) in sides.iter_mut().zip(&self.points) {
             *side = normal.dot(*point - line.origin);
@@ -533,9 +509,9 @@ where
             .enumerate()
         {
             
-            let cut = if side0 < T::zero() && side1 >= T::zero() {
+            let cut = if side0 < 0.0 && side1 >= 0.0 {
                 &mut cut_positive
-            } else if side0 > T::zero() && side1 <= T::zero() {
+            } else if side0 > 0.0 && side1 <= 0.0 {
                 &mut cut_negative
             } else {
                 continue;
@@ -570,12 +546,93 @@ where
             (None, None)
         }
     }
+
+    
+    
+    
+    pub fn cut(
+        &self,
+        poly: &Self,
+        front: &mut SmallVec<[Polygon<A>; 2]>,
+        back: &mut SmallVec<[Polygon<A>; 2]>,
+    ) -> PlaneCut {
+        
+        let (intersection, dist) = match self.plane.intersect(&poly.plane) {
+            None => {
+                let ndot = self.plane.normal.dot(poly.plane.normal);
+                let dist = self.plane.offset - ndot * poly.plane.offset;
+                (Intersection::Coplanar, dist)
+            }
+            Some(_) if self.plane.are_outside(&poly.points[..]) => {
+                
+                let dist = self.plane.signed_distance_sum_to(&poly);
+                (Intersection::Outside, dist)
+            }
+            Some(line) => {
+                
+                (Intersection::Inside(line), 0.0)
+            }
+        };
+
+        match intersection {
+            
+            
+            
+            Intersection::Coplanar if is_zero(dist) => PlaneCut::Sibling,
+            Intersection::Coplanar | Intersection::Outside => {
+                if dist > 0.0 {
+                    front.push(poly.clone());
+                } else {
+                    back.push(poly.clone());
+                }
+
+                PlaneCut::Cut
+            }
+            Intersection::Inside(line) => {
+                let mut poly = poly.clone();
+                let (res_add1, res_add2) = poly.split_with_normal(&line, &self.plane.normal);
+
+                for sub in iter::once(poly)
+                    .chain(res_add1)
+                    .chain(res_add2)
+                    .filter(|p| !p.is_empty())
+                {
+                    let dist = self.plane.signed_distance_sum_to(&sub);
+                    if dist > 0.0 {
+                        front.push(sub)
+                    } else {
+                        back.push(sub)
+                    }
+                }
+
+                PlaneCut::Cut
+            }
+        }
+    }
+
+    
+    pub fn is_aligned(&self, other: &Self) -> bool {
+        self.plane.normal.dot(other.plane.normal) > 0.0
+    }
+}
+
+
+
+
+#[derive(Debug, PartialEq)]
+pub enum PlaneCut {
+    
+    Sibling,
+    
+    
+    
+    Cut,
 }
 
 #[test]
 fn test_split_precision() {
     
-    let mut polygon = Polygon::<_, (), ()> {
+    let mut polygon = Polygon::<()> {
         points: [
             Point3D::new(300.0102, 150.00958, 0.0),
             Point3D::new(606.0, 306.0, 0.0),
