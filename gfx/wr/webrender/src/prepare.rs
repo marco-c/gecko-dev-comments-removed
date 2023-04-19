@@ -1219,6 +1219,7 @@ pub fn update_brush_segment_clip_task(
 
 fn write_brush_segment_description(
     prim_local_rect: LayoutRect,
+    prim_local_clip_rect: LayoutRect,
     clip_chain: &ClipChainInstance,
     segment_builder: &mut SegmentBuilder,
     clip_store: &ClipStore,
@@ -1230,10 +1231,17 @@ fn write_brush_segment_description(
         return false;
     }
 
+    
+    
+    
+    
+    
+    
+    
     segment_builder.initialize(
         prim_local_rect,
         None,
-        clip_chain.local_clip_rect
+        prim_local_clip_rect,
     );
 
     
@@ -1375,9 +1383,11 @@ fn build_segments_if_needed(
 
     if *segment_instance_index == SegmentInstanceIndex::INVALID {
         let mut segments: SmallVec<[BrushSegment; 8]> = SmallVec::new();
+        let clip_leaf = frame_state.clip_tree.get_leaf(instance.clip_leaf_id);
 
         if write_brush_segment_description(
             prim_local_rect,
+            clip_leaf.local_clip_rect,
             prim_clip_chain,
             &mut frame_state.segment_builder,
             frame_state.clip_store,
