@@ -900,14 +900,32 @@
 
 
 
+
+
+
+
 #ifdef __MINGW32__
 #  define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck) \
     __attribute__((format(__MINGW_PRINTF_FORMAT, stringIndex, firstToCheck)))
+#  ifndef __MINGW_WPRINTF_FORMAT
+#    if defined(__clang__)
+#      define __MINGW_WPRINTF_FORMAT wprintf
+#    elif defined(_UCRT) || __USE_MINGW_ANSI_STDIO
+#      define __MINGW_WPRINTF_FORMAT gnu_wprintf
+#    else
+#      define __MINGW_WPRINTF_FORMAT ms_wprintf
+#    endif
+#  endif
+#  define MOZ_FORMAT_WPRINTF(stringIndex, firstToCheck) \
+    __attribute__((format(__MINGW_WPRINTF_FORMAT, stringIndex, firstToCheck)))
 #elif __GNUC__ || __clang__
 #  define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck) \
     __attribute__((format(printf, stringIndex, firstToCheck)))
+#  define MOZ_FORMAT_WPRINTF(stringIndex, firstToCheck) \
+    __attribute__((format(wprintf, stringIndex, firstToCheck)))
 #else
 #  define MOZ_FORMAT_PRINTF(stringIndex, firstToCheck)
+#  define MOZ_FORMAT_WPRINTF(stringIndex, firstToCheck)
 #endif
 
 
