@@ -761,6 +761,26 @@ function evaluateWelcomeScreenButtonLabel(removeDefault, content) {
     : "mr1-onboarding-set-default-only-primary-button-label";
 }
 
+function prepareMobileDownload(screens) {
+  let mobileContent = screens.find(screen => screen.id === "AW_MOBILE_DOWNLOAD")
+    .content;
+  if (!lazy.BrowserUtils.sendToDeviceEmailsSupported()) {
+    
+    
+    delete mobileContent.cta_paragraph.action;
+    mobileContent.cta_paragraph.text = {
+      string_id: "mr2022-onboarding-no-mobile-download-cta-text",
+    };
+  }
+  
+  if (AppConstants.isChinaRepack()) {
+    mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
+      0,
+      mobileContent.hero_image.url.indexOf(".svg")
+    )}-cn.svg`;
+  }
+}
+
 function prepareMRContent(content) {
   
   const { screens } = content;
@@ -769,16 +789,8 @@ function prepareMRContent(content) {
   
   if (lazy.usesFirefoxSync && lazy.mobileDevices > 0) {
     removeScreens(screen => screen.id === "AW_MOBILE_DOWNLOAD", screens);
-  } else if (!lazy.BrowserUtils.sendToDeviceEmailsSupported()) {
-    
-    
-    let mobileContent = screens.find(
-      screen => screen.id === "AW_MOBILE_DOWNLOAD"
-    ).content;
-    delete mobileContent.cta_paragraph.action;
-    mobileContent.cta_paragraph.text = {
-      string_id: "mr2022-onboarding-no-mobile-download-cta-text",
-    };
+  } else {
+    prepareMobileDownload(screens);
   }
 
   
