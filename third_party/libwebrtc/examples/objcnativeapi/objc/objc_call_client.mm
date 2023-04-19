@@ -168,7 +168,7 @@ void ObjCCallClient::CreatePeerConnection() {
 
 void ObjCCallClient::Connect() {
   webrtc::MutexLock lock(&pc_mutex_);
-  pc_->CreateOffer(new rtc::RefCountedObject<CreateOfferObserver>(pc_),
+  pc_->CreateOffer(rtc::make_ref_counted<CreateOfferObserver>(pc_),
                    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }
 
@@ -214,7 +214,7 @@ void CreateOfferObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   RTC_LOG(LS_INFO) << "Created offer: " << sdp;
 
   
-  pc_->SetLocalDescription(new rtc::RefCountedObject<SetLocalSessionDescriptionObserver>(), desc);
+  pc_->SetLocalDescription(rtc::make_ref_counted<SetLocalSessionDescriptionObserver>(), desc);
 
   
   std::unique_ptr<webrtc::SessionDescriptionInterface> answer(
