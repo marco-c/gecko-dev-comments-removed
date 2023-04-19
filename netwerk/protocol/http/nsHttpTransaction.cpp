@@ -1811,6 +1811,8 @@ nsresult nsHttpTransaction::Restart() {
     mCaps |= NS_HTTP_DISALLOW_ECH;
   }
 
+  mCaps |= NS_HTTP_IS_RETRY;
+
   
   SetRestartReason(TRANSACTION_RESTART_OTHERS);
 

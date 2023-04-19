@@ -5,11 +5,6 @@
 "use strict";
 
 
-
-
-
-
-
 do_get_profile();
 Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
 
@@ -125,15 +120,19 @@ class ServerSocketListener {
   }
 }
 
-function startServer(cert, minServerVersion, maxServerVersion) {
+function startServer(
+  minServerVersion = Ci.nsITLSClientStatus.TLS_VERSION_1_2,
+  maxServerVersion = Ci.nsITLSClientStatus.TLS_VERSION_1_3
+) {
   let tlsServer = Cc["@mozilla.org/network/tls-server-socket;1"].createInstance(
     Ci.nsITLSServerSocket
   );
   tlsServer.init(-1, true, -1);
-  tlsServer.serverCert = cert;
+  tlsServer.serverCert = getTestServerCertificate();
   tlsServer.setVersionRange(minServerVersion, maxServerVersion);
   tlsServer.setSessionTickets(false);
   tlsServer.asyncListen(new ServerSocketListener());
+  storeCertOverride(tlsServer.port, tlsServer.serverCert);
   return tlsServer;
 }
 
@@ -157,28 +156,38 @@ function storeCertOverride(port, cert) {
   );
 }
 
-function startClient(port, beConservative, expectSuccess) {
+function startClient(port, useGREASE, beConservative) {
   HandshakeTelemetryHelpers.resetHistograms();
   let flavors = ["", "_FIRST_TRY"];
-  let nonflavors = [];
-  if (beConservative) {
-    flavors.push("_CONSERVATIVE");
-    nonflavors.push("_ECH");
-    nonflavors.push("_ECH_GREASE");
+  let nonflavors = ["_ECH"];
+
+  if (useGREASE) {
+    Services.prefs.setIntPref("security.tls.ech.grease_probability", 100);
   } else {
-    nonflavors.push("_CONSERVATIVE");
+    Services.prefs.setIntPref("security.tls.ech.grease_probability", 0);
   }
 
   let req = new XMLHttpRequest();
   req.open("GET", `https://${hostname}:${port}`);
-  let internalChannel = req.channel.QueryInterface(Ci.nsIHttpChannelInternal);
-  internalChannel.beConservative = beConservative;
+
+  if (beConservative) {
+    
+    let internalChannel = req.channel.QueryInterface(Ci.nsIHttpChannelInternal);
+    internalChannel.beConservative = beConservative;
+    flavors.push("_CONSERVATIVE");
+  } else {
+    nonflavors.push("_CONSERVATIVE");
+  }
+
+  
+  if (useGREASE && !beConservative) {
+    flavors.push("_ECH_GREASE");
+  } else {
+    nonflavors.push("_ECH_GREASE");
+  }
+
   return new Promise((resolve, reject) => {
     req.onload = () => {
-      ok(
-        expectSuccess,
-        `should ${expectSuccess ? "" : "not "}have gotten load event`
-      );
       equal(req.responseText, "OK", "response text should be 'OK'");
 
       
@@ -190,18 +199,7 @@ function startClient(port, beConservative, expectSuccess) {
       resolve();
     };
     req.onerror = () => {
-      ok(
-        !expectSuccess,
-        `should ${!expectSuccess ? "" : "not "}have gotten an error`
-      );
-
-      
-      if (!mozinfo.socketprocess_networking) {
-        
-        HandshakeTelemetryHelpers.checkEntry(flavors, 98, 1);
-        HandshakeTelemetryHelpers.checkEmpty(nonflavors);
-      }
-
+      ok(false, `should not have gotten an error`);
       resolve();
     };
 
@@ -209,42 +207,31 @@ function startClient(port, beConservative, expectSuccess) {
   });
 }
 
-add_task(async function() {
+function setup() {
   Services.prefs.setIntPref("security.tls.version.max", 4);
   Services.prefs.setCharPref("network.dns.localDomains", hostname);
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
-  let cert = getTestServerCertificate();
+}
+setup();
 
+add_task(async function GreaseYConservativeN() {
   
   
-  let server = startServer(
-    cert,
-    Ci.nsITLSClientStatus.TLS_VERSION_1_2,
-    Ci.nsITLSClientStatus.TLS_VERSION_1_3
-  );
-  storeCertOverride(server.port, cert);
-  await startClient(
-    server.port,
-    true ,
-    true 
-  );
-  server.close();
+  let server = startServer();
 
-  
-  
-  server = startServer(
-    cert,
-    Ci.nsITLSClientStatus.TLS_VERSION_1_3,
-    Ci.nsITLSClientStatus.TLS_VERSION_1_3
-  );
-  storeCertOverride(server.port, cert);
   await startClient(
     server.port,
     true ,
     false 
   );
+  server.close();
+});
 
+add_task(async function GreaseNConservativeY() {
   
+  
+  let server = startServer();
+
   await startClient(
     server.port,
     false ,
@@ -253,8 +240,35 @@ add_task(async function() {
   server.close();
 });
 
+add_task(async function GreaseYConservativeY() {
+  
+  
+  let server = startServer();
+
+  await startClient(
+    server.port,
+    true ,
+    true 
+  );
+  server.close();
+});
+
+add_task(async function GreaseNConservativeN() {
+  
+  
+  let server = startServer();
+
+  await startClient(
+    server.port,
+    false ,
+    false 
+  );
+  server.close();
+});
+
 registerCleanupFunction(function() {
   Services.prefs.clearUserPref("security.tls.version.max");
   Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("security.tls.ech.grease_probability");
   Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
 });
