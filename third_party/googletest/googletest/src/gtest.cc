@@ -44,6 +44,7 @@
 #include <chrono>  
 #include <cmath>
 #include <cstdint>
+#include <initializer_list>
 #include <iomanip>
 #include <iterator>
 #include <limits>
@@ -136,7 +137,10 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
 #endif  
 
 namespace testing {
@@ -3274,14 +3278,9 @@ static void ColoredPrintf(GTestColor color, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
 
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_ZOS || GTEST_OS_IOS || \
-    GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT || defined(ESP_PLATFORM)
-  const bool use_color = AlwaysFalse();
-#else
   static const bool in_color_mode =
       ShouldUseColor(posix::IsATTY(posix::FileNo(stdout)) != 0);
   const bool use_color = in_color_mode && (color != GTestColor::kDefault);
-#endif  
 
   if (!use_color) {
     vprintf(fmt, args);
@@ -3797,7 +3796,8 @@ class TestEventRepeater : public TestEventListener {
   
   std::vector<TestEventListener*> listeners_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestEventRepeater);
+  TestEventRepeater(const TestEventRepeater&) = delete;
+  TestEventRepeater& operator=(const TestEventRepeater&) = delete;
 };
 
 TestEventRepeater::~TestEventRepeater() {
@@ -3975,7 +3975,8 @@ class XmlUnitTestResultPrinter : public EmptyTestEventListener {
   
   const std::string output_file_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(XmlUnitTestResultPrinter);
+  XmlUnitTestResultPrinter(const XmlUnitTestResultPrinter&) = delete;
+  XmlUnitTestResultPrinter& operator=(const XmlUnitTestResultPrinter&) = delete;
 };
 
 
@@ -4488,7 +4489,9 @@ class JsonUnitTestResultPrinter : public EmptyTestEventListener {
   
   const std::string output_file_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(JsonUnitTestResultPrinter);
+  JsonUnitTestResultPrinter(const JsonUnitTestResultPrinter&) = delete;
+  JsonUnitTestResultPrinter& operator=(const JsonUnitTestResultPrinter&) =
+      delete;
 };
 
 
@@ -5038,7 +5041,8 @@ class ScopedPrematureExitFile {
  private:
   const std::string premature_exit_filepath_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedPrematureExitFile);
+  ScopedPrematureExitFile(const ScopedPrematureExitFile&) = delete;
+  ScopedPrematureExitFile& operator=(const ScopedPrematureExitFile&) = delete;
 };
 
 }  
@@ -6590,9 +6594,7 @@ void ParseGoogleTestFlagsOnlyImpl(int* argc, CharType** argv) {
       LoadFlagsFromFile(flagfile_value);
       remove_flag = true;
 #endif
-    } else if (arg_string == "--help" || arg_string == "-h" ||
-               arg_string == "-?" || arg_string == "/?" ||
-               HasGoogleTestFlagPrefix(arg)) {
+    } else if (arg_string == "--help" || HasGoogleTestFlagPrefix(arg)) {
       
       
       g_help_flag = true;
@@ -6627,7 +6629,27 @@ void ParseGoogleTestFlagsOnlyImpl(int* argc, CharType** argv) {
 
 
 void ParseGoogleTestFlagsOnly(int* argc, char** argv) {
+#if GTEST_HAS_ABSL
+  if (*argc > 0) {
+    
+    auto positional_args = absl::flags_internal::ParseCommandLineImpl(
+        *argc, argv, absl::flags_internal::ArgvListAction::kRemoveParsedArgs,
+        absl::flags_internal::UsageFlagsAction::kHandleUsage,
+        absl::flags_internal::OnUndefinedFlag::kReportUndefined);
+    
+    
+    
+    
+    
+    std::copy(positional_args.begin(), positional_args.end(), argv);
+    if (static_cast<int>(positional_args.size()) < *argc) {
+      argv[positional_args.size()] = nullptr;
+      *argc = static_cast<int>(positional_args.size());
+    }
+  }
+#else
   ParseGoogleTestFlagsOnlyImpl(argc, argv);
+#endif
 
   
   
@@ -6662,6 +6684,12 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
 
 #if GTEST_HAS_ABSL
   absl::InitializeSymbolizer(g_argvs[0].c_str());
+
+  
+  
+  absl::SetProgramUsageMessage(absl::StrReplaceAll(
+      kColorEncodedHelpMessage,
+      {{"@D", ""}, {"@R", ""}, {"@G", ""}, {"@Y", ""}, {"@@", "@"}}));
 #endif  
 
   ParseGoogleTestFlagsOnly(argc, argv);
@@ -6713,37 +6741,37 @@ void InitGoogleTest() {
 #endif  
 }
 
+#if !defined(GTEST_CUSTOM_TEMPDIR_FUNCTION_)
+
+
+
+
+static std::string GetTempDirFromEnv(
+    std::initializer_list<const char*> environment_variables,
+    const char* fallback, char separator) {
+  for (const char* variable_name : environment_variables) {
+    const char* value = internal::posix::GetEnv(variable_name);
+    if (value != nullptr && value[0] != '\0') {
+      if (value[strlen(value) - 1] != separator) {
+        return std::string(value).append(1, separator);
+      }
+      return value;
+    }
+  }
+  return fallback;
+}
+#endif
+
 std::string TempDir() {
 #if defined(GTEST_CUSTOM_TEMPDIR_FUNCTION_)
   return GTEST_CUSTOM_TEMPDIR_FUNCTION_();
-#elif GTEST_OS_WINDOWS_MOBILE
-  return "\\temp\\";
-#elif GTEST_OS_WINDOWS
-  const char* temp_dir = internal::posix::GetEnv("TEMP");
-  if (temp_dir == nullptr || temp_dir[0] == '\0') {
-    return "\\temp\\";
-  } else if (temp_dir[strlen(temp_dir) - 1] == '\\') {
-    return temp_dir;
-  } else {
-    return std::string(temp_dir) + "\\";
-  }
+#elif GTEST_OS_WINDOWS || GTEST_OS_WINDOWS_MOBILE
+  return GetTempDirFromEnv({"TEST_TMPDIR", "TEMP"}, "\\temp\\", '\\');
 #elif GTEST_OS_LINUX_ANDROID
-  const char* temp_dir = internal::posix::GetEnv("TEST_TMPDIR");
-  if (temp_dir == nullptr || temp_dir[0] == '\0') {
-    return "/data/local/tmp/";
-  } else {
-    return temp_dir;
-  }
-#elif GTEST_OS_LINUX
-  const char* temp_dir = internal::posix::GetEnv("TEST_TMPDIR");
-  if (temp_dir == nullptr || temp_dir[0] == '\0') {
-    return "/tmp/";
-  } else {
-    return temp_dir;
-  }
+  return GetTempDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/data/local/tmp/", '/');
 #else
-  return "/tmp/";
-#endif  
+  return GetTempDirFromEnv({"TEST_TMPDIR", "TMPDIR"}, "/tmp/", '/');
+#endif
 }
 
 

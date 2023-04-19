@@ -42,7 +42,6 @@
 
 #include <assert.h>
 #include <stdlib.h>
-
 #include <cstdint>
 #include <iostream>
 
@@ -57,6 +56,11 @@
 #include "gmock/internal/custom/gmock-port.h"
 #include "gtest/internal/gtest-port.h"
 
+#if GTEST_HAS_ABSL
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#endif
+
 
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -65,9 +69,50 @@
 
 
 
+#define GMOCK_FLAG_NAME_(name) gmock_##name
 #define GMOCK_FLAG(name) FLAGS_gmock_##name
 
-#if !defined(GMOCK_DECLARE_bool_)
+
+#if GTEST_HAS_ABSL
+
+
+#define GMOCK_DEFINE_bool_(name, default_val, doc) \
+  ABSL_FLAG(bool, GMOCK_FLAG_NAME_(name), default_val, doc)
+#define GMOCK_DEFINE_int32_(name, default_val, doc) \
+  ABSL_FLAG(int32_t, GMOCK_FLAG_NAME_(name), default_val, doc)
+#define GMOCK_DEFINE_string_(name, default_val, doc) \
+  ABSL_FLAG(std::string, GMOCK_FLAG_NAME_(name), default_val, doc)
+
+
+#define GMOCK_DECLARE_bool_(name) \
+  ABSL_DECLARE_FLAG(bool, GMOCK_FLAG_NAME_(name))
+#define GMOCK_DECLARE_int32_(name) \
+  ABSL_DECLARE_FLAG(int32_t, GMOCK_FLAG_NAME_(name))
+#define GMOCK_DECLARE_string_(name) \
+  ABSL_DECLARE_FLAG(std::string, GMOCK_FLAG_NAME_(name))
+
+#define GMOCK_FLAG_GET(name) ::absl::GetFlag(GMOCK_FLAG(name))
+#define GMOCK_FLAG_SET(name, value) \
+  (void)(::absl::SetFlag(&GMOCK_FLAG(name), value))
+
+#else  
+
+
+#define GMOCK_DEFINE_bool_(name, default_val, doc)  \
+  namespace testing {                               \
+  GTEST_API_ bool GMOCK_FLAG(name) = (default_val); \
+  }                                                 \
+  static_assert(true, "no-op to require trailing semicolon")
+#define GMOCK_DEFINE_int32_(name, default_val, doc)    \
+  namespace testing {                                  \
+  GTEST_API_ int32_t GMOCK_FLAG(name) = (default_val); \
+  }                                                    \
+  static_assert(true, "no-op to require trailing semicolon")
+#define GMOCK_DEFINE_string_(name, default_val, doc)         \
+  namespace testing {                                        \
+  GTEST_API_ ::std::string GMOCK_FLAG(name) = (default_val); \
+  }                                                          \
+  static_assert(true, "no-op to require trailing semicolon")
 
 
 #define GMOCK_DECLARE_bool_(name)          \
@@ -86,27 +131,9 @@
   }                                                 \
   static_assert(true, "no-op to require trailing semicolon")
 
-
-#define GMOCK_DEFINE_bool_(name, default_val, doc)  \
-  namespace testing {                               \
-  GTEST_API_ bool GMOCK_FLAG(name) = (default_val); \
-  }                                                 \
-  static_assert(true, "no-op to require trailing semicolon")
-#define GMOCK_DEFINE_int32_(name, default_val, doc)    \
-  namespace testing {                                  \
-  GTEST_API_ int32_t GMOCK_FLAG(name) = (default_val); \
-  }                                                    \
-  static_assert(true, "no-op to require trailing semicolon")
-#define GMOCK_DEFINE_string_(name, default_val, doc)         \
-  namespace testing {                                        \
-  GTEST_API_ ::std::string GMOCK_FLAG(name) = (default_val); \
-  }                                                          \
-  static_assert(true, "no-op to require trailing semicolon")
-#endif  
-
-#if !defined(GMOCK_FLAG_GET)
 #define GMOCK_FLAG_GET(name) ::testing::GMOCK_FLAG(name)
 #define GMOCK_FLAG_SET(name, value) (void)(::testing::GMOCK_FLAG(name) = value)
+
 #endif  
 
 #endif  

@@ -97,7 +97,8 @@ class GTEST_API_ DeathTest {
 
    private:
     DeathTest* const test_;
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(ReturnSentinel);
+    ReturnSentinel(const ReturnSentinel&) = delete;
+    ReturnSentinel& operator=(const ReturnSentinel&) = delete;
   } GTEST_ATTRIBUTE_UNUSED_;
 
   
@@ -142,7 +143,8 @@ class GTEST_API_ DeathTest {
   
   static std::string last_death_test_message_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(DeathTest);
+  DeathTest(const DeathTest&) = delete;
+  DeathTest& operator=(const DeathTest&) = delete;
 };
 
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
@@ -287,7 +289,8 @@ class InternalRunDeathTestFlag {
   int index_;
   int write_fd_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(InternalRunDeathTestFlag);
+  InternalRunDeathTestFlag(const InternalRunDeathTestFlag&) = delete;
+  InternalRunDeathTestFlag& operator=(const InternalRunDeathTestFlag&) = delete;
 };
 
 

@@ -145,7 +145,8 @@ class GTEST_API_ TestPartResultArray {
  private:
   std::vector<TestPartResult> array_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestPartResultArray);
+  TestPartResultArray(const TestPartResultArray&) = delete;
+  TestPartResultArray& operator=(const TestPartResultArray&) = delete;
 };
 
 
@@ -176,7 +177,8 @@ class GTEST_API_ HasNewFatalFailureHelper
   bool has_new_fatal_failure_;
   TestPartResultReporterInterface* original_reporter_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(HasNewFatalFailureHelper);
+  HasNewFatalFailureHelper(const HasNewFatalFailureHelper&) = delete;
+  HasNewFatalFailureHelper& operator=(const HasNewFatalFailureHelper&) = delete;
 };
 
 }  

@@ -424,7 +424,9 @@ class OsStackTraceGetterInterface {
   static const char* const kElidedFramesMarker;
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OsStackTraceGetterInterface);
+  OsStackTraceGetterInterface(const OsStackTraceGetterInterface&) = delete;
+  OsStackTraceGetterInterface& operator=(const OsStackTraceGetterInterface&) =
+      delete;
 };
 
 
@@ -446,7 +448,8 @@ class OsStackTraceGetter : public OsStackTraceGetterInterface {
   void* caller_frame_ = nullptr;
 #endif  
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OsStackTraceGetter);
+  OsStackTraceGetter(const OsStackTraceGetter&) = delete;
+  OsStackTraceGetter& operator=(const OsStackTraceGetter&) = delete;
 };
 
 
@@ -469,7 +472,10 @@ class DefaultGlobalTestPartResultReporter
  private:
   UnitTestImpl* const unit_test_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultGlobalTestPartResultReporter);
+  DefaultGlobalTestPartResultReporter(
+      const DefaultGlobalTestPartResultReporter&) = delete;
+  DefaultGlobalTestPartResultReporter& operator=(
+      const DefaultGlobalTestPartResultReporter&) = delete;
 };
 
 
@@ -485,7 +491,10 @@ class DefaultPerThreadTestPartResultReporter
  private:
   UnitTestImpl* const unit_test_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultPerThreadTestPartResultReporter);
+  DefaultPerThreadTestPartResultReporter(
+      const DefaultPerThreadTestPartResultReporter&) = delete;
+  DefaultPerThreadTestPartResultReporter& operator=(
+      const DefaultPerThreadTestPartResultReporter&) = delete;
 };
 
 
@@ -942,7 +951,8 @@ class GTEST_API_ UnitTestImpl {
   
   bool catch_exceptions_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(UnitTestImpl);
+  UnitTestImpl(const UnitTestImpl&) = delete;
+  UnitTestImpl& operator=(const UnitTestImpl&) = delete;
 };  
 
 
@@ -1101,7 +1111,8 @@ class StreamingListener : public EmptyTestEventListener {
     const std::string host_name_;
     const std::string port_num_;
 
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(SocketWriter);
+    SocketWriter(const SocketWriter&) = delete;
+    SocketWriter& operator=(const SocketWriter&) = delete;
   };  
 
   
@@ -1187,7 +1198,8 @@ class StreamingListener : public EmptyTestEventListener {
 
   const std::unique_ptr<AbstractSocketWriter> socket_writer_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(StreamingListener);
+  StreamingListener(const StreamingListener&) = delete;
+  StreamingListener& operator=(const StreamingListener&) = delete;
 };  
 
 #endif  

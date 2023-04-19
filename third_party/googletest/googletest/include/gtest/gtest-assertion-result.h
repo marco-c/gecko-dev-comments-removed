@@ -46,6 +46,9 @@
 #include "gtest/gtest-message.h"
 #include "gtest/internal/gtest-port.h"
 
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251                                   \
+)
+
 namespace testing {
 
 
@@ -228,5 +231,7 @@ GTEST_API_ AssertionResult AssertionFailure();
 GTEST_API_ AssertionResult AssertionFailure(const Message& msg);
 
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

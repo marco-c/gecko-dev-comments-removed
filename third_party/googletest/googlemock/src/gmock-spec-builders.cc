@@ -41,6 +41,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -371,136 +372,6 @@ const char* UntypedFunctionMockerBase::Name() const
 
 
 
-
-UntypedActionResultHolderBase* UntypedFunctionMockerBase::UntypedInvokeWith(
-    void* const untyped_args) GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
-  
-  
-  if (untyped_expectations_.size() == 0) {
-    
-    
-
-    
-    
-    
-    
-    const CallReaction reaction =
-        Mock::GetReactionOnUninterestingCalls(MockObject());
-
-    
-    
-    
-    const bool need_to_report_uninteresting_call =
-        
-        
-        reaction == kAllow ? LogIsVisible(kInfo) :
-                           
-                           
-            reaction == kWarn
-            ? LogIsVisible(kWarning)
-            :
-            
-            
-            true;
-
-    if (!need_to_report_uninteresting_call) {
-      
-      return this->UntypedPerformDefaultAction(
-          untyped_args, "Function call: " + std::string(Name()));
-    }
-
-    
-    ::std::stringstream ss;
-    this->UntypedDescribeUninterestingCall(untyped_args, &ss);
-
-    
-    UntypedActionResultHolderBase* const result =
-        this->UntypedPerformDefaultAction(untyped_args, ss.str());
-
-    
-    if (result != nullptr) result->PrintAsActionResult(&ss);
-
-    ReportUninterestingCall(reaction, ss.str());
-    return result;
-  }
-
-  bool is_excessive = false;
-  ::std::stringstream ss;
-  ::std::stringstream why;
-  ::std::stringstream loc;
-  const void* untyped_action = nullptr;
-
-  
-  
-
-  const ExpectationBase* const untyped_expectation =
-      this->UntypedFindMatchingExpectation(untyped_args, &untyped_action,
-                                           &is_excessive, &ss, &why);
-  const bool found = untyped_expectation != nullptr;
-
-  
-  
-  
-  
-  const bool need_to_report_call =
-      !found || is_excessive || LogIsVisible(kInfo);
-  if (!need_to_report_call) {
-    
-    return untyped_action == nullptr
-               ? this->UntypedPerformDefaultAction(untyped_args, "")
-               : this->UntypedPerformAction(untyped_action, untyped_args);
-  }
-
-  ss << "    Function call: " << Name();
-  this->UntypedPrintArgs(untyped_args, &ss);
-
-  
-  
-  if (found && !is_excessive) {
-    untyped_expectation->DescribeLocationTo(&loc);
-  }
-
-  UntypedActionResultHolderBase* result = nullptr;
-
-  auto perform_action = [&] {
-    return untyped_action == nullptr
-               ? this->UntypedPerformDefaultAction(untyped_args, ss.str())
-               : this->UntypedPerformAction(untyped_action, untyped_args);
-  };
-  auto handle_failures = [&] {
-    ss << "\n" << why.str();
-
-    if (!found) {
-      
-      Expect(false, nullptr, -1, ss.str());
-    } else if (is_excessive) {
-      
-      Expect(false, untyped_expectation->file(), untyped_expectation->line(),
-             ss.str());
-    } else {
-      
-      
-      Log(kInfo, loc.str() + ss.str(), 2);
-    }
-  };
-#if GTEST_HAS_EXCEPTIONS
-  try {
-    result = perform_action();
-  } catch (...) {
-    handle_failures();
-    throw;
-  }
-#else
-  result = perform_action();
-#endif
-
-  if (result != nullptr) result->PrintAsActionResult(&ss);
-  handle_failures();
-  return result;
-}
-
-
-
 Expectation UntypedFunctionMockerBase::GetHandleOf(ExpectationBase* exp) {
   
   
@@ -564,7 +435,7 @@ bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked()
   return expectations_met;
 }
 
-CallReaction intToCallReaction(int mock_behavior) {
+static CallReaction intToCallReaction(int mock_behavior) {
   if (mock_behavior >= kAllow && mock_behavior <= kFail) {
     return static_cast<internal::CallReaction>(mock_behavior);
   }
@@ -664,46 +535,50 @@ MockObjectRegistry g_mock_object_registry;
 
 
 
-std::map<const void*, internal::CallReaction> g_uninteresting_call_reaction;
+std::unordered_map<uintptr_t, internal::CallReaction>&
+UninterestingCallReactionMap() {
+  static auto* map = new std::unordered_map<uintptr_t, internal::CallReaction>;
+  return *map;
+}
 
 
 
-void SetReactionOnUninterestingCalls(const void* mock_obj,
+void SetReactionOnUninterestingCalls(uintptr_t mock_obj,
                                      internal::CallReaction reaction)
     GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
-  g_uninteresting_call_reaction[mock_obj] = reaction;
+  UninterestingCallReactionMap()[mock_obj] = reaction;
 }
 
 }  
 
 
 
-void Mock::AllowUninterestingCalls(const void* mock_obj)
+void Mock::AllowUninterestingCalls(uintptr_t mock_obj)
     GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   SetReactionOnUninterestingCalls(mock_obj, internal::kAllow);
 }
 
 
 
-void Mock::WarnUninterestingCalls(const void* mock_obj)
+void Mock::WarnUninterestingCalls(uintptr_t mock_obj)
     GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   SetReactionOnUninterestingCalls(mock_obj, internal::kWarn);
 }
 
 
 
-void Mock::FailUninterestingCalls(const void* mock_obj)
+void Mock::FailUninterestingCalls(uintptr_t mock_obj)
     GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   SetReactionOnUninterestingCalls(mock_obj, internal::kFail);
 }
 
 
 
-void Mock::UnregisterCallReaction(const void* mock_obj)
+void Mock::UnregisterCallReaction(uintptr_t mock_obj)
     GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
-  g_uninteresting_call_reaction.erase(mock_obj);
+  UninterestingCallReactionMap().erase(static_cast<uintptr_t>(mock_obj));
 }
 
 
@@ -711,10 +586,12 @@ void Mock::UnregisterCallReaction(const void* mock_obj)
 internal::CallReaction Mock::GetReactionOnUninterestingCalls(
     const void* mock_obj) GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
-  return (g_uninteresting_call_reaction.count(mock_obj) == 0)
+  return (UninterestingCallReactionMap().count(
+              reinterpret_cast<uintptr_t>(mock_obj)) == 0)
              ? internal::intToCallReaction(
                    GMOCK_FLAG_GET(default_mock_behavior))
-             : g_uninteresting_call_reaction[mock_obj];
+             : UninterestingCallReactionMap()[reinterpret_cast<uintptr_t>(
+                   mock_obj)];
 }
 
 

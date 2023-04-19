@@ -341,7 +341,8 @@ class GTEST_API_ Test {
   virtual Setup_should_be_spelled_SetUp* Setup() { return nullptr; }
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(Test);
+  Test(const Test&) = delete;
+  Test& operator=(const Test&) = delete;
 };
 
 typedef internal::TimeInMillis TimeInMillis;
@@ -499,7 +500,8 @@ class GTEST_API_ TestResult {
   TimeInMillis elapsed_time_;
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestResult);
+  TestResult(const TestResult&) = delete;
+  TestResult& operator=(const TestResult&) = delete;
 };  
 
 
@@ -645,7 +647,8 @@ class GTEST_API_ TestInfo {
   
   TestResult result_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestInfo);
+  TestInfo(const TestInfo&) = delete;
+  TestInfo& operator=(const TestInfo&) = delete;
 };
 
 
@@ -854,7 +857,8 @@ class GTEST_API_ TestSuite {
   TestResult ad_hoc_test_result_;
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestSuite);
+  TestSuite(const TestSuite&) = delete;
+  TestSuite& operator=(const TestSuite&) = delete;
 };
 
 
@@ -1074,7 +1078,8 @@ class GTEST_API_ TestEventListeners {
   TestEventListener* default_xml_generator_;
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestEventListeners);
+  TestEventListeners(const TestEventListeners&) = delete;
+  TestEventListeners& operator=(const TestEventListeners&) = delete;
 };
 
 
@@ -1281,7 +1286,8 @@ class GTEST_API_ UnitTest {
   internal::UnitTestImpl* impl_;
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(UnitTest);
+  UnitTest(const UnitTest&) = delete;
+  UnitTest& operator=(const UnitTest&) = delete;
 };
 
 
@@ -1599,12 +1605,14 @@ class GTEST_API_ AssertHelper {
     std::string const message;
 
    private:
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(AssertHelperData);
+    AssertHelperData(const AssertHelperData&) = delete;
+    AssertHelperData& operator=(const AssertHelperData&) = delete;
   };
 
   AssertHelperData* const data_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(AssertHelper);
+  AssertHelper(const AssertHelper&) = delete;
+  AssertHelper& operator=(const AssertHelper&) = delete;
 };
 
 }  
@@ -2055,7 +2063,8 @@ class GTEST_API_ ScopedTrace {
  private:
   void PushTrace(const char* file, int line, std::string message);
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedTrace);
+  ScopedTrace(const ScopedTrace&) = delete;
+  ScopedTrace& operator=(const ScopedTrace&) = delete;
 } GTEST_ATTRIBUTE_UNUSED_;  
                             
                             

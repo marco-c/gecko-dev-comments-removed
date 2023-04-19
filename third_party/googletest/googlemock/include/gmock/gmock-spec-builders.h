@@ -61,6 +61,7 @@
 #ifndef GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_SPEC_BUILDERS_H_
 #define GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_SPEC_BUILDERS_H_
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -133,9 +134,6 @@ class NaggyMockImpl;
 GTEST_API_ GTEST_DECLARE_STATIC_MUTEX_(g_gmock_mutex);
 
 
-class UntypedActionResultHolderBase;
-
-
 
 
 class GTEST_API_ UntypedFunctionMockerBase {
@@ -156,20 +154,6 @@ class GTEST_API_ UntypedFunctionMockerBase {
   
   
   
-
-  
-  
-  
-  
-  
-  virtual UntypedActionResultHolderBase* UntypedPerformDefaultAction(
-      void* untyped_args, const std::string& call_description) const = 0;
-
-  
-  
-  
-  virtual UntypedActionResultHolderBase* UntypedPerformAction(
-      const void* untyped_action, void* untyped_args) const = 0;
 
   
   
@@ -213,13 +197,6 @@ class GTEST_API_ UntypedFunctionMockerBase {
   
   
   const char* Name() const GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
-
-  
-  
-  
-  
-  UntypedActionResultHolderBase* UntypedInvokeWith(void* untyped_args)
-      GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
 
  protected:
   typedef std::vector<const void*> UntypedOnCallSpecs;
@@ -428,22 +405,22 @@ class GTEST_API_ Mock {
 
   
   
-  static void AllowUninterestingCalls(const void* mock_obj)
+  static void AllowUninterestingCalls(uintptr_t mock_obj)
       GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex);
 
   
   
-  static void WarnUninterestingCalls(const void* mock_obj)
+  static void WarnUninterestingCalls(uintptr_t mock_obj)
       GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex);
 
   
   
-  static void FailUninterestingCalls(const void* mock_obj)
+  static void FailUninterestingCalls(uintptr_t mock_obj)
       GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex);
 
   
   
-  static void UnregisterCallReaction(const void* mock_obj)
+  static void UnregisterCallReaction(uintptr_t mock_obj)
       GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex);
 
   
@@ -677,7 +654,8 @@ class GTEST_API_ InSequence {
  private:
   bool sequence_created_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(InSequence);  
+  InSequence(const InSequence&) = delete;
+  InSequence& operator=(const InSequence&) = delete;
 } GTEST_ATTRIBUTE_UNUSED_;
 
 namespace internal {
@@ -877,9 +855,15 @@ class GTEST_API_ ExpectationBase {
   mutable Mutex mutex_;                
 };                                     
 
-
 template <typename F>
-class TypedExpectation : public ExpectationBase {
+class TypedExpectation;
+
+
+template <typename R, typename... Args>
+class TypedExpectation<R(Args...)> : public ExpectationBase {
+ private:
+  using F = R(Args...);
+
  public:
   typedef typename Function<F>::ArgumentTuple ArgumentTuple;
   typedef typename Function<F>::ArgumentMatcherTuple ArgumentMatcherTuple;
@@ -993,13 +977,30 @@ class TypedExpectation : public ExpectationBase {
   }
 
   
-  TypedExpectation& WillOnce(const Action<F>& action) {
+  
+  TypedExpectation& WillOnce(OnceAction<F> once_action) {
+    
+    
+    
+    return WillOnce(Action<F>(ActionAdaptor{
+        std::make_shared<OnceAction<F>>(std::move(once_action)),
+    }));
+  }
+
+  
+  
+  
+  
+  
+  template <int&... ExplicitArgumentBarrier, typename = void>
+  TypedExpectation& WillOnce(Action<F> action) {
     ExpectSpecProperty(last_clause_ <= kWillOnce,
                        ".WillOnce() cannot appear after "
                        ".WillRepeatedly() or .RetiresOnSaturation().");
     last_clause_ = kWillOnce;
 
-    untyped_actions_.push_back(new Action<F>(action));
+    untyped_actions_.push_back(new Action<F>(std::move(action)));
+
     if (!cardinality_specified()) {
       set_cardinality(Exactly(static_cast<int>(untyped_actions_.size())));
     }
@@ -1070,6 +1071,16 @@ class TypedExpectation : public ExpectationBase {
  private:
   template <typename Function>
   friend class FunctionMocker;
+
+  
+  
+  struct ActionAdaptor {
+    std::shared_ptr<OnceAction<R(Args...)>> once_action;
+
+    R operator()(Args&&... args) const {
+      return std::move(*once_action).Call(std::forward<Args>(args)...);
+    }
+  };
 
   
   
@@ -1217,7 +1228,8 @@ class TypedExpectation : public ExpectationBase {
   Matcher<const ArgumentTuple&> extra_matcher_;
   Action<F> repeated_action_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TypedExpectation);
+  TypedExpectation(const TypedExpectation&) = delete;
+  TypedExpectation& operator=(const TypedExpectation&) = delete;
 };  
 
 
@@ -1334,96 +1346,26 @@ class ReferenceOrValueWrapper<T&> {
 };
 
 
-
-
-
-
-
-
-
-
-class UntypedActionResultHolderBase {
- public:
-  virtual ~UntypedActionResultHolderBase() {}
-
-  
-  virtual void PrintAsActionResult(::std::ostream* os) const = 0;
-};
-
-
 template <typename T>
-class ActionResultHolder : public UntypedActionResultHolderBase {
+void PrintAsActionResult(const T& result, std::ostream& os) {
+  os << "\n          Returns: ";
+  
+  UniversalPrinter<T>::Print(result, &os);
+}
+
+
+
+GTEST_API_ void ReportUninterestingCall(CallReaction reaction,
+                                        const std::string& msg);
+
+
+class Cleanup final {
  public:
-  
-  T Unwrap() { return result_.Unwrap(); }
-
-  
-  void PrintAsActionResult(::std::ostream* os) const override {
-    *os << "\n          Returns: ";
-    
-    UniversalPrinter<T>::Print(result_.Peek(), os);
-  }
-
-  
-  
-  template <typename F>
-  static ActionResultHolder* PerformDefaultAction(
-      const FunctionMocker<F>* func_mocker,
-      typename Function<F>::ArgumentTuple&& args,
-      const std::string& call_description) {
-    return new ActionResultHolder(Wrapper(
-        func_mocker->PerformDefaultAction(std::move(args), call_description)));
-  }
-
-  
-  
-  template <typename F>
-  static ActionResultHolder* PerformAction(
-      const Action<F>& action, typename Function<F>::ArgumentTuple&& args) {
-    return new ActionResultHolder(Wrapper(action.Perform(std::move(args))));
-  }
+  explicit Cleanup(std::function<void()> f) : f_(std::move(f)) {}
+  ~Cleanup() { f_(); }
 
  private:
-  typedef ReferenceOrValueWrapper<T> Wrapper;
-
-  explicit ActionResultHolder(Wrapper result) : result_(std::move(result)) {}
-
-  Wrapper result_;
-
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ActionResultHolder);
-};
-
-
-template <>
-class ActionResultHolder<void> : public UntypedActionResultHolderBase {
- public:
-  void Unwrap() {}
-
-  void PrintAsActionResult(::std::ostream* ) const override {}
-
-  
-  
-  template <typename F>
-  static ActionResultHolder* PerformDefaultAction(
-      const FunctionMocker<F>* func_mocker,
-      typename Function<F>::ArgumentTuple&& args,
-      const std::string& call_description) {
-    func_mocker->PerformDefaultAction(std::move(args), call_description);
-    return new ActionResultHolder;
-  }
-
-  
-  
-  template <typename F>
-  static ActionResultHolder* PerformAction(
-      const Action<F>& action, typename Function<F>::ArgumentTuple&& args) {
-    action.Perform(std::move(args));
-    return new ActionResultHolder;
-  }
-
- private:
-  ActionResultHolder() {}
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ActionResultHolder);
+  std::function<void()> f_;
 };
 
 template <typename F>
@@ -1508,32 +1450,6 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
 
   
   
-  
-  
-  
-  UntypedActionResultHolderBase* UntypedPerformDefaultAction(
-      void* untyped_args,  
-      const std::string& call_description) const override {
-    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
-    return ResultHolder::PerformDefaultAction(this, std::move(*args),
-                                              call_description);
-  }
-
-  
-  
-  
-  
-  UntypedActionResultHolderBase* UntypedPerformAction(
-      const void* untyped_action, void* untyped_args) const override {
-    
-    
-    const Action<F> action = *static_cast<const Action<F>*>(untyped_action);
-    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
-    return ResultHolder::PerformAction(action, std::move(*args));
-  }
-
-  
-  
   void ClearDefaultActionsLocked() override
       GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
     g_gmock_mutex.AssertHeld();
@@ -1563,10 +1479,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   
   
   Result Invoke(Args... args) GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
-    ArgumentTuple tuple(std::forward<Args>(args)...);
-    std::unique_ptr<ResultHolder> holder(DownCast_<ResultHolder*>(
-        this->UntypedInvokeWith(static_cast<void*>(&tuple))));
-    return holder->Unwrap();
+    return InvokeWith(ArgumentTuple(std::forward<Args>(args)...));
   }
 
   MockSpec<F> With(Matcher<Args>... m) {
@@ -1576,8 +1489,6 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
  protected:
   template <typename Function>
   friend class MockSpec;
-
-  typedef ActionResultHolder<Result> ResultHolder;
 
   
   OnCallSpec<F>& AddNewOnCallSpec(const char* file, int line,
@@ -1749,11 +1660,177 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
       expectation->DescribeCallCountTo(why);
     }
   }
+
+  
+  
+  
+  R PerformAction(const void* untyped_action, ArgumentTuple&& args,
+                  const std::string& call_description) const {
+    if (untyped_action == nullptr) {
+      return PerformDefaultAction(std::move(args), call_description);
+    }
+
+    
+    
+    const Action<F> action = *static_cast<const Action<F>*>(untyped_action);
+    return action.Perform(std::move(args));
+  }
+
+  
+  
+  template <typename T>
+  using can_print_result = internal::conjunction<
+      
+      internal::negation<std::is_void<T>>,
+      
+      
+      std::is_move_constructible<T>>;
+
+  
+  template <typename T = R,
+            typename std::enable_if<can_print_result<T>::value, int>::type = 0>
+  R PerformActionAndPrintResult(const void* const untyped_action,
+                                ArgumentTuple&& args,
+                                const std::string& call_description,
+                                std::ostream& os) {
+    R result = PerformAction(untyped_action, std::move(args), call_description);
+
+    PrintAsActionResult(result, os);
+    return std::forward<R>(result);
+  }
+
+  
+  
+  template <typename T = R,
+            typename std::enable_if<
+                internal::negation<can_print_result<T>>::value, int>::type = 0>
+  R PerformActionAndPrintResult(const void* const untyped_action,
+                                ArgumentTuple&& args,
+                                const std::string& call_description,
+                                std::ostream&) {
+    return PerformAction(untyped_action, std::move(args), call_description);
+  }
+
+  
+  
+  
+  R InvokeWith(ArgumentTuple&& args) GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
 };  
 
 
 
-void ReportUninterestingCall(CallReaction reaction, const std::string& msg);
+template <typename R, typename... Args>
+R FunctionMocker<R(Args...)>::InvokeWith(ArgumentTuple&& args)
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
+  
+  
+  if (untyped_expectations_.size() == 0) {
+    
+    
+
+    
+    
+    
+    
+    const CallReaction reaction =
+        Mock::GetReactionOnUninterestingCalls(MockObject());
+
+    
+    
+    
+    const bool need_to_report_uninteresting_call =
+        
+        
+        reaction == kAllow ? LogIsVisible(kInfo) :
+                           
+                           
+            reaction == kWarn
+            ? LogIsVisible(kWarning)
+            :
+            
+            
+            true;
+
+    if (!need_to_report_uninteresting_call) {
+      
+      return this->PerformDefaultAction(
+          std::move(args), "Function call: " + std::string(Name()));
+    }
+
+    
+    ::std::stringstream ss;
+    this->UntypedDescribeUninterestingCall(&args, &ss);
+
+    
+    
+    
+    
+    
+    const Cleanup report_uninteresting_call(
+        [&] { ReportUninterestingCall(reaction, ss.str()); });
+
+    return PerformActionAndPrintResult(nullptr, std::move(args), ss.str(), ss);
+  }
+
+  bool is_excessive = false;
+  ::std::stringstream ss;
+  ::std::stringstream why;
+  ::std::stringstream loc;
+  const void* untyped_action = nullptr;
+
+  
+  
+
+  const ExpectationBase* const untyped_expectation =
+      this->UntypedFindMatchingExpectation(&args, &untyped_action,
+                                           &is_excessive, &ss, &why);
+  const bool found = untyped_expectation != nullptr;
+
+  
+  
+  
+  
+  const bool need_to_report_call =
+      !found || is_excessive || LogIsVisible(kInfo);
+  if (!need_to_report_call) {
+    
+    return PerformAction(untyped_action, std::move(args), "");
+  }
+
+  ss << "    Function call: " << Name();
+  this->UntypedPrintArgs(&args, &ss);
+
+  
+  
+  if (found && !is_excessive) {
+    untyped_expectation->DescribeLocationTo(&loc);
+  }
+
+  
+  
+  
+  
+  
+  const Cleanup handle_failures([&] {
+    ss << "\n" << why.str();
+
+    if (!found) {
+      
+      Expect(false, nullptr, -1, ss.str());
+    } else if (is_excessive) {
+      
+      Expect(false, untyped_expectation->file(), untyped_expectation->line(),
+             ss.str());
+    } else {
+      
+      
+      Log(kInfo, loc.str() + ss.str(), 2);
+    }
+  });
+
+  return PerformActionAndPrintResult(untyped_action, std::move(args), ss.str(),
+                                     ss);
+}
 
 }  
 

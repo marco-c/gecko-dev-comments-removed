@@ -263,10 +263,298 @@ GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(double, 0);
 #undef GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_
 
 
-template <typename P, typename Q>
-using disjunction = typename ::std::conditional<P::value, P, Q>::type;
+
+
+template <typename P>
+struct negation
+    
+    : std::integral_constant<bool, bool(!P::value)> {};
+
+
+template <typename...>
+struct conjunction : std::true_type {};
+
+
+template <typename P1>
+struct conjunction<P1> : P1 {};
+
+
+
+template <typename P1, typename... Ps>
+struct conjunction<P1, Ps...>
+    : std::conditional<bool(P1::value), conjunction<Ps...>, P1>::type {};
+
+template <typename...>
+struct disjunction : std::false_type {};
+
+template <typename P1>
+struct disjunction<P1> : P1 {};
+
+template <typename P1, typename... Ps>
+struct disjunction<P1, Ps...>
+    
+    : std::conditional<!bool(P1::value), disjunction<Ps...>, P1>::type {};
+
+template <typename...>
+using void_t = void;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename From, typename To>
+struct is_implicitly_convertible {
+ private:
+  
+  
+  template <typename T>
+  static void Accept(T);
+
+  
+  template <typename T>
+  static T Make();
+
+  
+  template <typename T, typename = decltype(Accept<To>(Make<T>()))>
+  static std::true_type TestImplicitConversion(int);
+
+  
+  template <typename T>
+  static std::false_type TestImplicitConversion(...);
+
+ public:
+  using type = decltype(TestImplicitConversion<From>(0));
+  static constexpr bool value = type::value;
+};
+
+
+
+
+template <typename F, typename... Args>
+using call_result_t = decltype(std::declval<F>()(std::declval<Args>()...));
+
+template <typename Void, typename R, typename F, typename... Args>
+struct is_callable_r_impl : std::false_type {};
+
+
+
+
+template <typename R, typename F, typename... Args>
+struct is_callable_r_impl<void_t<call_result_t<F, Args...>>, R, F, Args...>
+    : std::conditional<
+          std::is_void<R>::value,  
+          std::true_type,          
+          is_implicitly_convertible<call_result_t<F, Args...>, R>>::type {};
+
+
+
+template <typename R, typename F, typename... Args>
+using is_callable_r = is_callable_r_impl<void, R, F, Args...>;
+
+
+template <typename T>
+typename std::add_const<T>::type& as_const(T& t) {
+  return t;
+}
 
 }  
+
+
+template <typename F>
+class OnceAction;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Result, typename... Args>
+class OnceAction<Result(Args...)> final {
+ private:
+  
+  
+  template <typename Callable>
+  using IsDirectlyCompatible = internal::conjunction<
+      
+      std::is_constructible<typename std::decay<Callable>::type, Callable>,
+      
+      internal::is_callable_r<Result, typename std::decay<Callable>::type,
+                              Args...>>;
+
+  
+  
+  template <typename Callable>
+  using IsCompatibleAfterIgnoringArguments = internal::conjunction<
+      
+      std::is_constructible<typename std::decay<Callable>::type, Callable>,
+      
+      
+      internal::is_callable_r<Result, typename std::decay<Callable>::type>>;
+
+ public:
+  
+  
+  
+  template <typename Callable,
+            typename std::enable_if<
+                internal::conjunction<
+                    
+                    
+                    
+                    
+                    internal::negation<std::is_same<
+                        OnceAction, typename std::decay<Callable>::type>>,
+                    IsDirectlyCompatible<Callable>>  
+                ::value,
+                int>::type = 0>
+  OnceAction(Callable&& callable)  
+      : function_(StdFunctionAdaptor<typename std::decay<Callable>::type>(
+            {}, std::forward<Callable>(callable))) {}
+
+  
+  template <typename Callable,
+            typename std::enable_if<
+                internal::conjunction<
+                    
+                    
+                    
+                    
+                    internal::negation<std::is_same<
+                        OnceAction, typename std::decay<Callable>::type>>,
+                    
+                    
+                    internal::negation<IsDirectlyCompatible<Callable>>,
+                    IsCompatibleAfterIgnoringArguments<Callable>>::value,
+                int>::type = 0>
+  OnceAction(Callable&& callable)  
+                                   
+                                   
+      : OnceAction(IgnoreIncomingArguments<typename std::decay<Callable>::type>{
+            std::forward<Callable>(callable)}) {}
+
+  
+  
+  OnceAction(const OnceAction&) = delete;
+  OnceAction& operator=(const OnceAction&) = delete;
+  OnceAction(OnceAction&&) = default;
+
+  
+  
+  Result Call(Args... args) && {
+    return function_(std::forward<Args>(args)...);
+  }
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  template <typename Callable>
+  class StdFunctionAdaptor final {
+   public:
+    
+    
+    
+    struct CallableTag final {};
+
+    template <typename F>
+    explicit StdFunctionAdaptor(CallableTag, F&& callable)
+        : callable_(std::make_shared<Callable>(std::forward<F>(callable))) {}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    template <typename... ArgRefs>
+    internal::call_result_t<Callable, ArgRefs...> operator()(
+        ArgRefs&&... args) const {
+      return std::move(*callable_)(std::forward<ArgRefs>(args)...);
+    }
+
+   private:
+    
+    
+    std::shared_ptr<Callable> callable_;
+  };
+
+  
+  
+  template <typename Callable>
+  struct IgnoreIncomingArguments {
+    internal::call_result_t<Callable> operator()(Args&&...) {
+      return std::move(callable)();
+    }
+
+    Callable callable;
+  };
+
+  std::function<Result(Args...)> function_;
+};
 
 
 
@@ -337,7 +625,8 @@ class DefaultValue {
 
    private:
     const T value_;
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(FixedValueProducer);
+    FixedValueProducer(const FixedValueProducer&) = delete;
+    FixedValueProducer& operator=(const FixedValueProducer&) = delete;
   };
 
   class FactoryValueProducer : public ValueProducer {
@@ -348,7 +637,8 @@ class DefaultValue {
 
    private:
     const FactoryFunction factory_;
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(FactoryValueProducer);
+    FactoryValueProducer(const FactoryValueProducer&) = delete;
+    FactoryValueProducer& operator=(const FactoryValueProducer&) = delete;
   };
 
   static ValueProducer* producer_;
@@ -422,28 +712,34 @@ class ActionInterface {
   virtual Result Perform(const ArgumentTuple& args) = 0;
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ActionInterface);
+  ActionInterface(const ActionInterface&) = delete;
+  ActionInterface& operator=(const ActionInterface&) = delete;
 };
 
-
-
-
-
-
-
-
 template <typename F>
-class Action {
+class Action;
+
+
+
+
+
+
+
+template <typename R, typename... Args>
+class Action<R(Args...)> {
+ private:
+  using F = R(Args...);
+
   
   
   struct ActionAdapter {
     
     ::std::shared_ptr<ActionInterface<F>> impl_;
 
-    template <typename... Args>
-    typename internal::Function<F>::Result operator()(Args&&... args) {
+    template <typename... InArgs>
+    typename internal::Function<F>::Result operator()(InArgs&&... args) {
       return impl_->Perform(
-          ::std::forward_as_tuple(::std::forward<Args>(args)...));
+          ::std::forward_as_tuple(::std::forward<InArgs>(args)...));
     }
   };
 
@@ -478,7 +774,8 @@ class Action {
   
   
   template <typename Func>
-  explicit Action(const Action<Func>& action) : fun_(action.fun_) {}
+  Action(const Action<Func>& action)  
+      : fun_(action.fun_) {}
 
   
   bool IsDoDefault() const { return fun_ == nullptr; }
@@ -494,6 +791,24 @@ class Action {
       internal::IllegalDoDefault(__FILE__, __LINE__);
     }
     return internal::Apply(fun_, ::std::move(args));
+  }
+
+  
+  
+  operator OnceAction<F>() const {  
+    
+    
+    
+    struct OA {
+      Action<F> action;
+
+      R operator()(Args... args) && {
+        return action.Perform(
+            std::forward_as_tuple(std::forward<Args>(args)...));
+      }
+    };
+
+    return OA{*this};
   }
 
  private:
@@ -512,8 +827,8 @@ class Action {
 
   template <typename FunctionImpl>
   struct IgnoreArgs {
-    template <typename... Args>
-    Result operator()(const Args&...) const {
+    template <typename... InArgs>
+    Result operator()(const InArgs&...) const {
       return function_impl();
     }
 
@@ -605,117 +920,197 @@ struct ByMoveWrapper {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename R>
-class ReturnAction {
+class ReturnAction final {
  public:
-  
-  
-  
-  explicit ReturnAction(R value) : value_(new R(std::move(value))) {}
+  explicit ReturnAction(R value) : value_(std::move(value)) {}
 
-  
-  
-  template <typename F>
-  operator Action<F>() const {  
-    
-    
-    
-    
-    
-    
-    
-    
-    typedef typename Function<F>::Result Result;
-    GTEST_COMPILE_ASSERT_(
-        !std::is_reference<Result>::value,
-        use_ReturnRef_instead_of_Return_to_return_a_reference);
-    static_assert(!std::is_void<Result>::value,
-                  "Can't use Return() on an action expected to return `void`.");
-    return Action<F>(new Impl<R, F>(value_));
+  template <typename U, typename... Args,
+            typename = typename std::enable_if<conjunction<
+                
+                negation<std::is_same<void, U>>,  
+                negation<std::is_reference<U>>,   
+                std::is_convertible<R, U>,        
+                std::is_move_constructible<U>>::value>::type>
+  operator OnceAction<U(Args...)>() && {  
+    return Impl<U>(std::move(value_));
+  }
+
+  template <typename U, typename... Args,
+            typename = typename std::enable_if<conjunction<
+                
+                negation<std::is_same<void, U>>,   
+                negation<std::is_reference<U>>,    
+                std::is_convertible<const R&, U>,  
+                std::is_copy_constructible<U>>::value>::type>
+  operator Action<U(Args...)>() const {  
+    return Impl<U>(value_);
   }
 
  private:
   
-  template <typename R_, typename F>
-  class Impl : public ActionInterface<F> {
+  template <typename U>
+  class Impl final {
    public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+    
+    
+    explicit Impl(R&& input_value)
+        : state_(new State(std::move(input_value))) {}
 
     
     
-    
-    
-    
-    
-    
-    explicit Impl(const std::shared_ptr<R>& value)
-        : value_before_cast_(*value),
-          value_(ImplicitCast_<Result>(value_before_cast_)) {}
+    explicit Impl(const R& input_value) : state_(new State(input_value)) {}
 
-    Result Perform(const ArgumentTuple&) override { return value_; }
+    U operator()() && { return std::move(state_->value); }
+    U operator()() const& { return state_->value; }
 
    private:
-    GTEST_COMPILE_ASSERT_(!std::is_reference<Result>::value,
-                          Result_cannot_be_a_reference_type);
     
     
-    R value_before_cast_;
-    Result value_;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    struct State {
+      explicit State(const R& input_value_in)
+          : input_value(input_value_in),
+            
+            
+            
+            
+            
+            
+            
+            
+            value(ImplicitCast_<U>(internal::as_const(input_value))) {}
 
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(Impl);
+      
+      
+      explicit State(R&& input_value_in)
+          : input_value(std::move(input_value_in)),
+            
+            
+            
+            
+            
+            
+            value(ImplicitCast_<U>(std::move(input_value))) {}
+
+      
+      
+      
+      
+      R input_value;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      U value;
+    };
+
+    const std::shared_ptr<State> state_;
   };
 
+  R value_;
+};
+
+
+
+
+
+
+template <typename T>
+class ReturnAction<ByMoveWrapper<T>> final {
+ public:
+  explicit ReturnAction(ByMoveWrapper<T> wrapper)
+      : state_(new State(std::move(wrapper.payload))) {}
+
+  T operator()() const {
+    GTEST_CHECK_(!state_->called)
+        << "A ByMove() action must be performed at most once.";
+
+    state_->called = true;
+    return std::move(state_->value);
+  }
+
+ private:
   
   
-  template <typename R_, typename F>
-  class Impl<ByMoveWrapper<R_>, F> : public ActionInterface<F> {
-   public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+  struct State {
+    explicit State(T&& value_in) : value(std::move(value_in)) {}
 
-    explicit Impl(const std::shared_ptr<R>& wrapper)
-        : performed_(false), wrapper_(wrapper) {}
-
-    Result Perform(const ArgumentTuple&) override {
-      GTEST_CHECK_(!performed_)
-          << "A ByMove() action should only be performed once.";
-      performed_ = true;
-      return std::move(wrapper_->payload);
-    }
-
-   private:
-    bool performed_;
-    const std::shared_ptr<R> wrapper_;
+    T value;
+    bool called = false;
   };
 
-  const std::shared_ptr<R> value_;
+  const std::shared_ptr<State> state_;
 };
 
 
@@ -757,8 +1152,8 @@ class ReturnRefAction {
     
     
     
-    GTEST_COMPILE_ASSERT_(std::is_reference<Result>::value,
-                          use_Return_instead_of_ReturnRef_to_return_a_value);
+    static_assert(std::is_reference<Result>::value,
+                  "use Return instead of ReturnRef to return a value");
     return Action<F>(new Impl<F>(ref_));
   }
 
@@ -799,9 +1194,8 @@ class ReturnRefOfCopyAction {
     
     
     
-    GTEST_COMPILE_ASSERT_(
-        std::is_reference<Result>::value,
-        use_Return_instead_of_ReturnRefOfCopy_to_return_a_value);
+    static_assert(std::is_reference<Result>::value,
+                  "use Return instead of ReturnRefOfCopy to return a value");
     return Action<F>(new Impl<F>(value_));
   }
 
@@ -1012,17 +1406,60 @@ class IgnoreResultAction {
 
 template <typename InnerAction, size_t... I>
 struct WithArgsAction {
-  InnerAction action;
+  InnerAction inner_action;
 
   
   
   template <typename R, typename... Args>
-  operator Action<R(Args...)>() const {  
-    using TupleType = std::tuple<Args...>;
-    Action<R(typename std::tuple_element<I, TupleType>::type...)> converted(
-        action);
+  using InnerSignature =
+      R(typename std::tuple_element<I, std::tuple<Args...>>::type...);
 
-    return [converted](Args... args) -> R {
+  
+  
+  
+  
+  
+
+  template <typename R, typename... Args,
+            typename std::enable_if<
+                std::is_convertible<
+                    InnerAction,
+                    
+                    
+                    
+                    
+                    OnceAction<R(typename std::tuple_element<
+                                 I, std::tuple<Args...>>::type...)>>::value,
+                int>::type = 0>
+  operator OnceAction<R(Args...)>() && {  
+    struct OA {
+      OnceAction<InnerSignature<R, Args...>> inner_action;
+
+      R operator()(Args&&... args) && {
+        return std::move(inner_action)
+            .Call(std::get<I>(
+                std::forward_as_tuple(std::forward<Args>(args)...))...);
+      }
+    };
+
+    return OA{std::move(inner_action)};
+  }
+
+  template <typename R, typename... Args,
+            typename std::enable_if<
+                std::is_convertible<
+                    const InnerAction&,
+                    
+                    
+                    
+                    
+                    Action<R(typename std::tuple_element<
+                             I, std::tuple<Args...>>::type...)>>::value,
+                int>::type = 0>
+  operator Action<R(Args...)>() const {  
+    Action<InnerSignature<R, Args...>> converted(inner_action);
+
+    return [converted](Args&&... args) -> R {
       return converted.Perform(std::forward_as_tuple(
           std::get<I>(std::forward_as_tuple(std::forward<Args>(args)...))...));
     };
@@ -1030,37 +1467,178 @@ struct WithArgsAction {
 };
 
 template <typename... Actions>
-struct DoAllAction {
- private:
+class DoAllAction;
+
+
+template <typename FinalAction>
+class DoAllAction<FinalAction> {
+ public:
+  struct UserConstructorTag {};
+
   template <typename T>
-  using NonFinalType =
+  explicit DoAllAction(UserConstructorTag, T&& action)
+      : final_action_(std::forward<T>(action)) {}
+
+  
+  
+  
+  
+  
+
+  template <typename R, typename... Args,
+            typename std::enable_if<
+                std::is_convertible<FinalAction, OnceAction<R(Args...)>>::value,
+                int>::type = 0>
+  operator OnceAction<R(Args...)>() && {  
+    return std::move(final_action_);
+  }
+
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          std::is_convertible<const FinalAction&, Action<R(Args...)>>::value,
+          int>::type = 0>
+  operator Action<R(Args...)>() const {  
+    return final_action_;
+  }
+
+ private:
+  FinalAction final_action_;
+};
+
+
+
+template <typename InitialAction, typename... OtherActions>
+class DoAllAction<InitialAction, OtherActions...>
+    : private DoAllAction<OtherActions...> {
+ private:
+  using Base = DoAllAction<OtherActions...>;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  using InitialActionArgType =
       typename std::conditional<std::is_scalar<T>::value, T, const T&>::type;
 
-  template <typename ActionT, size_t... I>
-  std::vector<ActionT> Convert(IndexSequence<I...>) const {
-    return {ActionT(std::get<I>(actions))...};
-  }
-
  public:
-  std::tuple<Actions...> actions;
+  struct UserConstructorTag {};
 
-  template <typename R, typename... Args>
-  operator Action<R(Args...)>() const {  
-    struct Op {
-      std::vector<Action<void(NonFinalType<Args>...)>> converted;
-      Action<R(Args...)> last;
-      R operator()(Args... args) const {
-        auto tuple_args = std::forward_as_tuple(std::forward<Args>(args)...);
-        for (auto& a : converted) {
-          a.Perform(tuple_args);
-        }
-        return last.Perform(std::move(tuple_args));
+  template <typename T, typename... U>
+  explicit DoAllAction(UserConstructorTag, T&& initial_action,
+                       U&&... other_actions)
+      : Base({}, std::forward<U>(other_actions)...),
+        initial_action_(std::forward<T>(initial_action)) {}
+
+  template <typename R, typename... Args,
+            typename std::enable_if<
+                conjunction<
+                    
+                    
+                    std::is_convertible<
+                        InitialAction,
+                        OnceAction<void(InitialActionArgType<Args>...)>>,
+                    std::is_convertible<Base, OnceAction<R(Args...)>>>::value,
+                int>::type = 0>
+  operator OnceAction<R(Args...)>() && {  
+    
+    
+    
+    struct OA {
+      OnceAction<void(InitialActionArgType<Args>...)> initial_action;
+      OnceAction<R(Args...)> remaining_actions;
+
+      R operator()(Args... args) && {
+        std::move(initial_action)
+            .Call(static_cast<InitialActionArgType<Args>>(args)...);
+
+        return std::move(remaining_actions).Call(std::forward<Args>(args)...);
       }
     };
-    return Op{Convert<Action<void(NonFinalType<Args>...)>>(
-                  MakeIndexSequence<sizeof...(Actions) - 1>()),
-              std::get<sizeof...(Actions) - 1>(actions)};
+
+    return OA{
+        std::move(initial_action_),
+        std::move(static_cast<Base&>(*this)),
+    };
   }
+
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          conjunction<
+              
+              
+              std::is_convertible<const InitialAction&,
+                                  Action<void(InitialActionArgType<Args>...)>>,
+              std::is_convertible<const Base&, Action<R(Args...)>>>::value,
+          int>::type = 0>
+  operator Action<R(Args...)>() const {  
+    
+    
+    
+    struct OA {
+      Action<void(InitialActionArgType<Args>...)> initial_action;
+      Action<R(Args...)> remaining_actions;
+
+      R operator()(Args... args) const {
+        initial_action.Perform(std::forward_as_tuple(
+            static_cast<InitialActionArgType<Args>>(args)...));
+
+        return remaining_actions.Perform(
+            std::forward_as_tuple(std::forward<Args>(args)...));
+      }
+    };
+
+    return OA{
+        initial_action_,
+        static_cast<const Base&>(*this),
+    };
+  }
+
+ private:
+  InitialAction initial_action_;
 };
 
 template <typename T, typename... Params>
@@ -1077,7 +1655,8 @@ struct ReturnNewAction {
 
 template <size_t k>
 struct ReturnArgAction {
-  template <typename... Args>
+  template <typename... Args,
+            typename = typename std::enable_if<(k < sizeof...(Args))>::type>
   auto operator()(Args&&... args) const -> decltype(std::get<k>(
       std::forward_as_tuple(std::forward<Args>(args)...))) {
     return std::get<k>(std::forward_as_tuple(std::forward<Args>(args)...));
@@ -1202,7 +1781,8 @@ typedef internal::IgnoredValue Unused;
 template <typename... Action>
 internal::DoAllAction<typename std::decay<Action>::type...> DoAll(
     Action&&... action) {
-  return {std::forward_as_tuple(std::forward<Action>(action)...)};
+  return internal::DoAllAction<typename std::decay<Action>::type...>(
+      {}, std::forward<Action>(action)...);
 }
 
 
@@ -1239,6 +1819,27 @@ internal::WithArgsAction<typename std::decay<InnerAction>::type> WithoutArgs(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename R>
 internal::ReturnAction<R> Return(R value) {
   return internal::ReturnAction<R>(std::move(value));
@@ -1271,6 +1872,8 @@ template <typename R>
 inline internal::ReturnRefOfCopyAction<R> ReturnRefOfCopy(const R& x) {
   return internal::ReturnRefOfCopyAction<R>(x);
 }
+
+
 
 
 
