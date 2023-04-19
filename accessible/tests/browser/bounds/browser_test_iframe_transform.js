@@ -72,7 +72,7 @@ addAccessibleTask(
   async function(browser, iframeDocAcc, contentDocAcc) {
     ok(iframeDocAcc, "IFRAME document accessible is present");
 
-    await testBoundsInContent(iframeDocAcc, ELEM_ID, browser);
+    await testBoundsWithContent(iframeDocAcc, ELEM_ID, browser);
 
     
     await invokeSetStyleIframe(
