@@ -217,10 +217,26 @@ namespace internal {
 
 
 
-template <typename CharT, typename ReqContainerT>
+template <typename CharT, typename ListT>
+
+static bool MatchesAnyOf(CharT const* unknown, ListT const& known) {
+  for (const char* k : known) {
+    if (strimatch(k, unknown)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <typename CharT, typename ReqContainerT, typename OptContainerT>
 
 inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
-                                      ReqContainerT const& requiredParams) {
+                                      ReqContainerT const& requiredParams,
+                                      OptContainerT const& optionalParams) {
+  
+  
+  
+  
   
   
   
@@ -230,53 +246,84 @@ inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
 
   static constexpr const char* osintLit = "osint";
 
+  
+  
   if (CheckArg(aArgc, aArgv, osintLit, static_cast<const CharT**>(nullptr),
-               CheckArgFlag::None) == ARG_FOUND) {
-    
-    
-    if (aArgc != 4) {
-      return false;
-    }
-
-    
-    const auto arg1 = ReadAsOption(aArgv[1]);
-    if (!arg1) return false;
-    if (!strimatch(osintLit, arg1.value())) {
-      return false;
-    }
-
-    
-    const auto arg2 = ReadAsOption(aArgv[2]);
-    if (!arg2) return false;
-
-    const bool haveRequiredArg = [&] {
-      for (const char* a : requiredParams) {
-        if (strimatch(a, arg2.value())) {
-          return true;
-        }
-      }
-      return false;
-    }();
-    if (!haveRequiredArg) {
-      return false;
-    }
-
-    
-    if (ReadAsOption(aArgv[3])) {
-      return false;
-    }
+               CheckArgFlag::None) != ARG_FOUND) {
+    return true;
   }
 
   
   
+  if (aArgc < 4) {
+    return false;
+  }
+
+  
+  const auto arg1 = ReadAsOption(aArgv[1]);
+  if (!arg1) return false;
+  if (!strimatch(osintLit, arg1.value())) {
+    return false;
+  }
+  
+  
+  int pos = 2;
+  while (true) {
+    if (pos >= aArgc) return false;
+
+    auto const arg = ReadAsOption(aArgv[pos]);
+    if (!arg) return false;
+
+    if (MatchesAnyOf(arg.value(), optionalParams)) {
+      ++pos;
+      continue;
+    }
+
+    if (MatchesAnyOf(arg.value(), requiredParams)) {
+      ++pos;
+      break;
+    }
+
+    return false;
+  }
+
+  
+  if (pos + 1 != aArgc) return false;
+  
+  if (ReadAsOption(aArgv[pos])) {
+    return false;
+  }
+
+  
   return true;
+}
+
+
+
+
+
+
+
+template <typename CharT, typename ReqContainerT>
+inline bool EnsureCommandlineSafeImpl(int aArgc, CharT** aArgv,
+                                      ReqContainerT const& requiredParams,
+                                      std::nullptr_t _ = nullptr) {
+  struct {
+    inline const char** begin() const { return nullptr; }
+    inline const char** end() const { return nullptr; }
+  } emptyContainer;
+  return EnsureCommandlineSafeImpl(aArgc, aArgv, requiredParams,
+                                   emptyContainer);
 }
 }  
 
-template <typename CharT, typename ReqContainerT>
-inline void EnsureCommandlineSafe(int aArgc, CharT** aArgv,
-                                  ReqContainerT const& requiredParams) {
-  if (!internal::EnsureCommandlineSafeImpl(aArgc, aArgv, requiredParams)) {
+template <typename CharT, typename ReqContainerT,
+          typename OptContainerT = std::nullptr_t>
+inline void EnsureCommandlineSafe(
+    int aArgc, CharT** aArgv, ReqContainerT const& requiredParams,
+    OptContainerT const& optionalParams = nullptr) {
+  if (!internal::EnsureCommandlineSafeImpl(aArgc, aArgv, requiredParams,
+                                           optionalParams)) {
     exit(127);
   }
 }
