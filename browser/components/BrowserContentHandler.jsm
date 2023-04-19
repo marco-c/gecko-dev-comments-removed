@@ -37,6 +37,16 @@ XPCOMUtils.defineLazyGetter(lazy, "gSystemPrincipal", () =>
   Services.scriptSecurityManager.getSystemPrincipal()
 );
 
+XPCOMUtils.defineLazyGetter(lazy, "gWindowsAlertsService", () => {
+  
+  if (!("nsIWindowsAlertsService" in Ci)) {
+    return null;
+  }
+  return Cc["@mozilla.org/system-alerts-service;1"]
+    ?.getService(Ci.nsIAlertsService)
+    ?.QueryInterface(Ci.nsIWindowsAlertsService);
+});
+
 
 const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
 const ONCE_PREF = "browser.startup.homepage_override.once";
@@ -1015,6 +1025,45 @@ nsDefaultCommandLineHandler.prototype = {
   
   handle: function dch_handle(cmdLine) {
     var urilist = [];
+
+    if (AppConstants.platform == "win") {
+      
+      
+      var tag;
+      while (
+        (tag = cmdLine.handleFlagWithParam("notification-windowsTag", false))
+      ) {
+        let onUnknownWindowsTag = (unknownTag, launchUrl) => {
+          if (!launchUrl) {
+            console.info(
+              `Completing Windows notification with tag '${unknownTag}' with no associated launchUrl`
+            );
+            return;
+          }
+          let uri = resolveURIInternal(cmdLine, launchUrl);
+          console.info(
+            `Opening ${uri.spec} to complete Windows notification with tag '${unknownTag}'`
+          );
+          urilist.push(uri);
+        };
+
+        try {
+          if (
+            lazy.gWindowsAlertsService?.handleWindowsTag(
+              tag,
+              onUnknownWindowsTag
+            )
+          ) {
+            
+            cmdLine.preventDefault = true;
+          }
+        } catch (e) {
+          Cu.reportError(
+            `Error handling Windows notification with tag '${tag}': ${e}`
+          );
+        }
+      }
+    }
 
     if (
       cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
