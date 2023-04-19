@@ -275,7 +275,10 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   
   
-  if (reflowStatus.IsIncomplete()) reflowStatus.SetOverflowIncomplete();
+  if (reflowStatus.IsIncomplete()) {
+    reflowStatus.SetOverflowIncomplete();
+    reflowStatus.SetNextInFlowNeedsReflow();
+  }
 
   aReflowStatus.MergeCompletionStatusFrom(reflowStatus);
 }
