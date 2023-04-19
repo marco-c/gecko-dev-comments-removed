@@ -1368,13 +1368,8 @@ element.isXULElement = function(node) {
 
 
 
-element.isInXULDocument = function(node) {
-  return (
-    typeof node == "object" &&
-    node !== null &&
-    "ownerDocument" in node &&
-    node.ownerDocument.documentElement.namespaceURI === XUL_NS
-  );
+element.isInPrivilegedDocument = function(node) {
+  return !!node?.nodePrincipal?.isSystemPrincipal;
 };
 
 
@@ -1511,13 +1506,13 @@ class WebElement {
   static from(node) {
     const uuid = WebElement.generateUUID();
 
-    if (element.isShadowRoot(node) && !element.isInXULDocument(node)) {
+    if (element.isShadowRoot(node) && !element.isInPrivilegedDocument(node)) {
       
       
       
       return new ContentShadowRoot(uuid);
     } else if (element.isElement(node)) {
-      if (element.isInXULDocument(node)) {
+      if (element.isInPrivilegedDocument(node)) {
         
         return new ChromeWebElement(uuid);
       }
