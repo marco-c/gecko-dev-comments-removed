@@ -167,7 +167,7 @@ add_task(async function test_phase2() {
     "tcpByDefault Nimbus feature is disabled initially."
   );
   ok(
-    !NimbusFeatures.tcpPreferences.isEnabled(),
+    !NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is disabled initially."
   );
 
@@ -206,7 +206,7 @@ add_task(async function test_phase2() {
     "tcpByDefault Nimbus feature is enabled."
   );
   ok(
-    !NimbusFeatures.tcpPreferences.isEnabled(),
+    !NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is still disabled."
   );
 
@@ -244,7 +244,7 @@ add_task(async function test_phase1_opt_out_to_phase2() {
     "tcpByDefault Nimbus feature is disabled initially."
   );
   ok(
-    !NimbusFeatures.tcpPreferences.isEnabled(),
+    !NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is disabled initially."
   );
 
@@ -274,7 +274,7 @@ add_task(async function test_phase1_opt_out_to_phase2() {
     "tcpByDefault Nimbus feature is still disabled."
   );
   ok(
-    NimbusFeatures.tcpPreferences.isEnabled(),
+    NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is enabled after-opt-out."
   );
 
@@ -340,7 +340,7 @@ add_task(async function test_phase1_opt_in_to_phase2() {
     "tcpByDefault Nimbus feature is disabled initially."
   );
   ok(
-    !NimbusFeatures.tcpPreferences.isEnabled(),
+    !NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is disabled initially."
   );
 
@@ -373,7 +373,7 @@ add_task(async function test_phase1_opt_in_to_phase2() {
   
   
   ok(
-    !NimbusFeatures.tcpPreferences.isEnabled(),
+    !NimbusFeatures.tcpPreferences.getVariable("enabled"),
     "tcpPreferences Nimbus feature is disabled after opt-in."
   );
 
