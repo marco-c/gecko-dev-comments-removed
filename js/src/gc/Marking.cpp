@@ -989,26 +989,25 @@ void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
   
   
 
+  Zone* zone = cell->zoneFromAnyThread();
+  MOZ_ASSERT(zone->needsIncrementalBarrier());
+
   MOZ_ASSERT(cell);
   if (cell->isMarkedBlack()) {
     return;
   }
 
-  Zone* zone = cell->zoneFromAnyThread();
-  MOZ_ASSERT(zone->needsIncrementalBarrier());
-
-  
   
   
   
   bool checkThread = zone->isAtomsZone();
   JSRuntime* runtime = cell->runtimeFromAnyThread();
   if (checkThread && !CurrentThreadCanAccessRuntime(runtime)) {
-    MOZ_ASSERT(CurrentThreadIsGCFinalizing() ||
-               RuntimeIsVerifyingPreBarriers(runtime));
+    MOZ_ASSERT(CurrentThreadIsGCFinalizing());
     return;
   }
 
+  MOZ_ASSERT(CurrentThreadIsMainThread());
   MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
 
   
