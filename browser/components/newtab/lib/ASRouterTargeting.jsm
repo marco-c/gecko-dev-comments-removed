@@ -41,6 +41,12 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
 });
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "CustomizableUI",
+  "resource:///modules/CustomizableUI.jsm"
+);
+
 XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
   return ChromeUtils.import(
     "resource://gre/modules/FxAccounts.jsm"
@@ -793,6 +799,15 @@ const TargetingGetters = {
     return Services.prefs
       .getDefaultBranch(null)
       .getCharPref("distribution.id", "");
+  },
+
+  
+
+
+
+  get fxViewButtonAreaType() {
+    let button = lazy.CustomizableUI.getWidget("firefox-view-button");
+    return button.areaType;
   },
 };
 

@@ -15,6 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -804,11 +805,24 @@ class PageAction {
     const browser = this.window.gBrowser.selectedBrowser;
     const message = RecommendationMap.get(browser);
     const { content } = message;
+    let anchor;
 
     
     
-    browser.cfrpopupnotificationanchor =
-      this.window.document.getElementById(content.anchor_id) || this.container;
+    
+
+    if (
+      content.alt_anchor_id &&
+      lazy.CustomizableUI.getWidget(content.anchor_id).areaType === "menu-panel"
+    ) {
+      anchor = this.window.document.getElementById(content.alt_anchor_id);
+    } else {
+      anchor =
+        this.window.document.getElementById(content.anchor_id) ||
+        this.container;
+    }
+
+    browser.cfrpopupnotificationanchor = anchor;
 
     await this._renderPopup(message, browser);
   }
