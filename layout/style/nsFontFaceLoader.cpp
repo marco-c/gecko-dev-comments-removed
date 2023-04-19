@@ -271,7 +271,7 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
     }
   }
 
-  mFontFaceSet->GetUserFontSet()->RecordFontLoadDone(aStringLen, doneTime);
+  mFontFaceSet->RecordFontLoadDone(aStringLen, doneTime);
 
   
   
