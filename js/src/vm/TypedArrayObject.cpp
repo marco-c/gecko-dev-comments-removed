@@ -19,6 +19,7 @@
 #include <numeric>
 #include <string>
 #include <string.h>
+#include <string_view>
 #if !defined(XP_WIN) && !defined(__wasi__)
 #  include <sys/mman.h>
 #endif
@@ -2425,56 +2426,24 @@ bool js::IsBufferSource(JSObject* object, SharedMem<uint8_t*>* dataPointer,
 }
 
 template <typename CharT>
-struct CompareStringInfinityOrNaN;
-
-template <>
-struct CompareStringInfinityOrNaN<Latin1Char> {
-  using CharTraitT = char;
-  static const char Infinity[];
-  static const char NaN[];
-};
-
-template <>
-struct CompareStringInfinityOrNaN<char16_t> {
-  using CharTraitT = char16_t;
-  static const char16_t Infinity[];
-  static const char16_t NaN[];
-};
-
-const char CompareStringInfinityOrNaN<Latin1Char>::Infinity[] = "Infinity";
-const char CompareStringInfinityOrNaN<Latin1Char>::NaN[] = "NaN";
-const char16_t CompareStringInfinityOrNaN<char16_t>::Infinity[] = u"Infinity";
-const char16_t CompareStringInfinityOrNaN<char16_t>::NaN[] = u"NaN";
-
-template <typename CharT>
 static inline bool StringIsInfinity(mozilla::Range<const CharT> s) {
-  using CharTraitT = typename CompareStringInfinityOrNaN<CharT>::CharTraitT;
-  constexpr auto Infinity = CompareStringInfinityOrNaN<CharT>::Infinity;
-  
-  size_t length = std::char_traits<CharTraitT>::length(Infinity);
+  static constexpr std::string_view Infinity = "Infinity";
 
   
   
   
   
-  
-  return s.length() == length &&
-         !std::char_traits<CharTraitT>::compare(
-             reinterpret_cast<const CharTraitT*>(s.begin().get()), Infinity,
-             length);
+  return s.length() == Infinity.length() &&
+         EqualChars(s.begin().get(), Infinity.data(), Infinity.length());
 }
 
 template <typename CharT>
 static inline bool StringIsNaN(mozilla::Range<const CharT> s) {
-  using CharTraitT = typename CompareStringInfinityOrNaN<CharT>::CharTraitT;
-  constexpr auto NaN = CompareStringInfinityOrNaN<CharT>::NaN;
-  
-  size_t length = std::char_traits<CharTraitT>::length(NaN);
+  static constexpr std::string_view NaN = "NaN";
 
   
-  return s.length() == length &&
-         !std::char_traits<CharTraitT>::compare(
-             reinterpret_cast<const CharTraitT*>(s.begin().get()), NaN, length);
+  return s.length() == NaN.length() &&
+         EqualChars(s.begin().get(), NaN.data(), NaN.length());
 }
 
 template <typename CharT>
