@@ -81,7 +81,10 @@ nsresult ToastNotification::Init() {
   nsCOMPtr<nsIObserverService> obsServ =
       mozilla::services::GetObserverService();
   if (obsServ) {
-    obsServ->AddObserver(this, "quit-application", true);
+    Unused << NS_WARN_IF(
+        NS_FAILED(obsServ->AddObserver(this, "last-pb-context-exited", false)));
+    Unused << NS_WARN_IF(
+        NS_FAILED(obsServ->AddObserver(this, "quit-application", false)));
   }
 
   return NS_OK;
@@ -341,16 +344,21 @@ ToastNotification::SetSuppressForScreenSharing(bool aSuppress) {
 NS_IMETHODIMP
 ToastNotification::Observe(nsISupports* aSubject, const char* aTopic,
                            const char16_t* aData) {
-  
-  
-  
+  nsDependentCString topic(aTopic);
+
   for (auto iter = mActiveHandlers.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<ToastNotificationHandler> handler = iter.UserData();
-    iter.Remove();
+    if (topic == "last-pb-context-exited"_ns) {
+      handler->HideIfPrivate();
+    } else if (topic == "quit-application"_ns) {
+      
+      
+      iter.Remove();
 
-    
-    
-    handler->UnregisterHandler();
+      
+      
+      handler->UnregisterHandler();
+    }
   }
 
   return NS_OK;
@@ -431,6 +439,9 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   bool requireInteraction;
   MOZ_TRY(aAlert->GetRequireInteraction(&requireInteraction));
 
+  bool inPrivateBrowsing;
+  MOZ_TRY(aAlert->GetInPrivateBrowsing(&inPrivateBrowsing));
+
   nsTArray<RefPtr<nsIAlertAction>> actions;
   MOZ_TRY(aAlert->GetActions(actions));
 
@@ -443,7 +454,8 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
   RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
       this, mAumid.ref(), aAlertListener, name, cookie, title, text, hostPort,
-      textClickable, requireInteraction, actions, isSystemPrincipal, launchUrl);
+      textClickable, requireInteraction, actions, isSystemPrincipal, launchUrl,
+      inPrivateBrowsing);
   mActiveHandlers.InsertOrUpdate(name, RefPtr{handler});
 
   MOZ_LOG(sWASLog, LogLevel::Debug,
@@ -499,6 +511,9 @@ ToastNotification::GetXmlStringForWindowsAlert(nsIAlertNotification* aAlert,
   bool requireInteraction;
   MOZ_TRY(aAlert->GetRequireInteraction(&requireInteraction));
 
+  bool inPrivateBrowsing;
+  MOZ_TRY(aAlert->GetInPrivateBrowsing(&inPrivateBrowsing));
+
   nsTArray<RefPtr<nsIAlertAction>> actions;
   MOZ_TRY(aAlert->GetActions(actions));
 
@@ -510,7 +525,7 @@ ToastNotification::GetXmlStringForWindowsAlert(nsIAlertNotification* aAlert,
   RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
       this, mAumid.ref(), nullptr , name, cookie, title,
       text, hostPort, textClickable, requireInteraction, actions,
-      isSystemPrincipal, launchUrl);
+      isSystemPrincipal, launchUrl, inPrivateBrowsing);
 
   
   
