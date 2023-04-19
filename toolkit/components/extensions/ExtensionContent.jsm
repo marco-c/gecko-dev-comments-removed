@@ -353,9 +353,6 @@ class Script {
     this.scriptCache =
       extension[matcher.wantReturnValue ? "dynamicScripts" : "staticScripts"];
 
-    
-    this.injectedInto = new WeakSet();
-
     if (matcher.wantReturnValue) {
       this.compileScripts();
       this.loadCSS();
@@ -436,18 +433,14 @@ class Script {
     }
   }
 
-  matchesWindowGlobal(windowGlobal, ignorePermissions) {
-    return this.matcher.matchesWindowGlobal(windowGlobal, ignorePermissions);
+  matchesWindowGlobal(windowGlobal) {
+    return this.matcher.matchesWindowGlobal(windowGlobal);
   }
 
   async injectInto(window) {
-    if (
-      !lazy.isContentScriptProcess ||
-      this.injectedInto.has(window.document)
-    ) {
+    if (!lazy.isContentScriptProcess) {
       return;
     }
-    this.injectedInto.add(window.document);
 
     let context = this.extension.getContext(window);
     for (let script of this.matcher.jsPaths) {
@@ -1169,45 +1162,6 @@ var ExtensionContent = {
   },
 
   
-  handleActivateScripts({ options, windows }) {
-    let policy = WebExtensionPolicy.getByID(options.id);
-
-    
-    let runAt = { document_start: [], document_end: [], document_idle: [] };
-    for (let matcher of policy.contentScripts) {
-      runAt[matcher.runAt].push(this.contentScripts.get(matcher));
-    }
-
-    
-    
-    
-    
-
-    
-    
-    
-
-    let { browsingContext } = WindowGlobalChild.getByInnerWindowId(windows[0]);
-    for (let bc of browsingContext.getAllBrowsingContextsInSubtree()) {
-      let wgc = bc.currentWindowContext.windowGlobalChild;
-      if (wgc?.sameOriginWithTop) {
-        
-        
-        const runScript = cs => {
-          if (cs.matchesWindowGlobal(wgc,  true)) {
-            return cs.injectInto(bc.window);
-          }
-        };
-
-        
-        Promise.all(runAt.document_start.map(runScript))
-          .then(() => Promise.all(runAt.document_end.map(runScript)))
-          .then(() => Promise.all(runAt.document_idle.map(runScript)));
-      }
-    }
-  },
-
-  
   async handleActorExecute({ options, windows }) {
     let policy = WebExtensionPolicy.getByID(options.extensionId);
     
@@ -1292,8 +1246,6 @@ class ExtensionContentChild extends JSProcessActorChild {
         return ExtensionContent.handleDetectLanguage(data);
       case "Execute":
         return ExtensionContent.handleActorExecute(data);
-      case "ActivateScripts":
-        return ExtensionContent.handleActivateScripts(data);
     }
   }
 }

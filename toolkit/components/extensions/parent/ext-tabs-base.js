@@ -1957,23 +1957,6 @@ class TabManagerBase {
 
 
 
-  activateScripts(nativeTab) {
-    let tab = this.getWrapper(nativeTab);
-    if (
-      this.extension.originControls &&
-      this.extension.optionalOrigins.matches(tab._uri) &&
-      !tab.matchesHostPermission &&
-      (this.extension.contentScripts.length ||
-        this.extension.registeredContentScripts.size)
-    ) {
-      tab.queryContent("ActivateScripts", { id: this.extension.id });
-    }
-  }
-
-  
-
-
-
 
 
 
