@@ -193,9 +193,6 @@ var AboutReader = function(
   );
   this._setColorSchemePref(colorScheme);
 
-  
-  
-
   let fontTypeOptions = [
     {
       l10nId: "about-reader-font-type-sans-serif",
