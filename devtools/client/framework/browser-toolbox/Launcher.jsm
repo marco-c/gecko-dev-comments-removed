@@ -22,6 +22,9 @@ const { Subprocess } = ChromeUtils.import(
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 const lazy = {};
 ChromeUtils.defineModuleGetter(
   lazy,
@@ -33,6 +36,13 @@ ChromeUtils.defineModuleGetter(
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
 );
+
+XPCOMUtils.defineLazyServiceGetters(lazy, {
+  XreDirProvider: [
+    "@mozilla.org/xre/directory-provider;1",
+    "nsIXREDirProvider",
+  ],
+});
 
 const Telemetry = require("devtools/client/shared/telemetry");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -192,8 +202,36 @@ BrowserToolboxLauncher.prototype = {
   _initProfile(overwritePreferences) {
     dumpn("Initializing the chrome toolbox user profile.");
 
-    const debuggingProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-    debuggingProfileDir.append(CHROME_DEBUGGER_PROFILE_NAME);
+    const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+
+    let debuggingProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    if (bts?.isBackgroundTaskMode) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      debuggingProfileDir = debuggingProfileDir.parent;
+      debuggingProfileDir.append(
+        `${Services.appinfo.vendor}BackgroundTask-` +
+          `${lazy.XreDirProvider.getInstallHash()}-${CHROME_DEBUGGER_PROFILE_NAME}-${bts.backgroundTaskName()}`
+      );
+    } else {
+      debuggingProfileDir.append(CHROME_DEBUGGER_PROFILE_NAME);
+    }
     try {
       debuggingProfileDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
     } catch (ex) {
@@ -216,9 +254,6 @@ BrowserToolboxLauncher.prototype = {
     const prefsFile = debuggingProfileDir.clone();
     prefsFile.append("prefs.js");
 
-    const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
-      Ci.nsIBackgroundTasks
-    );
     if (bts?.isBackgroundTaskMode) {
       
       
