@@ -110,8 +110,7 @@ static void RtpFragmentize(EncodedImage* encoded_image, SFrameBSInfo* info) {
     }
   }
   
-  auto buffer = EncodedImageBuffer::Create(required_capacity);
-  encoded_image->SetEncodedData(buffer);
+  encoded_image->SetEncodedData(EncodedImageBuffer::Create(required_capacity));
 
   
   
@@ -133,7 +132,8 @@ static void RtpFragmentize(EncodedImage* encoded_image, SFrameBSInfo* info) {
       layer_len += layerInfo.pNalLengthInByte[nal];
     }
     
-    memcpy(buffer->data() + encoded_image->size(), layerInfo.pBsBuf, layer_len);
+    memcpy(encoded_image->data() + encoded_image->size(), layerInfo.pBsBuf,
+           layer_len);
     encoded_image->set_size(encoded_image->size() + layer_len);
   }
 }
