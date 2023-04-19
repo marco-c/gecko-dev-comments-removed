@@ -647,6 +647,102 @@ impl Add<AbsoluteLength> for AbsoluteLength {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
+pub enum ContainerRelativeLength {
+    
+    #[css(dimension)]
+    Cqw(CSSFloat),
+    
+    #[css(dimension)]
+    Cqh(CSSFloat),
+    
+    #[css(dimension)]
+    Cqi(CSSFloat),
+    
+    #[css(dimension)]
+    Cqb(CSSFloat),
+    
+    #[css(dimension)]
+    Cqmin(CSSFloat),
+    
+    #[css(dimension)]
+    Cqmax(CSSFloat),
+}
+
+impl ContainerRelativeLength {
+    fn unitless_value(&self) -> CSSFloat {
+        match *self {
+            ContainerRelativeLength::Cqw(v) |
+            ContainerRelativeLength::Cqh(v) |
+            ContainerRelativeLength::Cqi(v) |
+            ContainerRelativeLength::Cqb(v) |
+            ContainerRelativeLength::Cqmin(v) |
+            ContainerRelativeLength::Cqmax(v) => v,
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.unitless_value() == 0.
+    }
+
+    fn is_negative(&self) -> bool {
+        self.unitless_value() < 0.
+    }
+
+    fn try_sum(&self, other: &Self) -> Result<Self, ()> {
+        use self::ContainerRelativeLength::*;
+
+        if std::mem::discriminant(self) != std::mem::discriminant(other) {
+            return Err(());
+        }
+
+        Ok(match (self, other) {
+            (&Cqw(one), &Cqw(other)) => Cqw(one + other),
+            (&Cqh(one), &Cqh(other)) => Cqh(one + other),
+            (&Cqi(one), &Cqi(other)) => Cqi(one + other),
+            (&Cqb(one), &Cqb(other)) => Cqb(one + other),
+            (&Cqmin(one), &Cqmin(other)) => Cqmin(one + other),
+            (&Cqmax(one), &Cqmax(other)) => Cqmax(one + other),
+
+            
+            
+            
+            _ => unsafe {
+                match *self {
+                    Cqw(..) | Cqh(..) | Cqi(..) | Cqb(..) | Cqmin(..) | Cqmax(..) => {},
+                }
+                debug_unreachable!("Forgot to handle unit in try_sum()")
+            },
+        })
+    }
+
+    
+    pub fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
+        
+        let small_viewport_size = match *self {
+            ContainerRelativeLength::Cqw(v) => ViewportPercentageLength::Svw(v),
+            ContainerRelativeLength::Cqh(v) => ViewportPercentageLength::Svh(v),
+            ContainerRelativeLength::Cqi(v) => ViewportPercentageLength::Svi(v),
+            ContainerRelativeLength::Cqb(v) => ViewportPercentageLength::Svb(v),
+            ContainerRelativeLength::Cqmin(v) => ViewportPercentageLength::Svmin(v),
+            ContainerRelativeLength::Cqmax(v) => ViewportPercentageLength::Svmax(v),
+        };
+        small_viewport_size.to_computed_value(context)
+    }
+}
+
+#[cfg(feature = "gecko")]
+fn are_container_queries_enabled() -> bool {
+    static_prefs::pref!("layout.css.container-queries.enabled")
+}
+#[cfg(feature = "servo")]
+fn are_container_queries_enabled() -> bool {
+    false
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum NoCalcLength {
     
     
@@ -666,6 +762,10 @@ pub enum NoCalcLength {
     
     
     
+    ContainerRelative(ContainerRelativeLength),
+    
+    
+    
     
     #[css(function)]
     ServoCharacterWidth(CharacterWidth),
@@ -680,6 +780,7 @@ impl Mul<CSSFloat> for NoCalcLength {
             NoCalcLength::Absolute(v) => NoCalcLength::Absolute(v * scalar),
             NoCalcLength::FontRelative(v) => NoCalcLength::FontRelative(v * scalar),
             NoCalcLength::ViewportPercentage(v) => NoCalcLength::ViewportPercentage(v * scalar),
+            NoCalcLength::ContainerRelative(v) => NoCalcLength::ContainerRelative(v * scalar),
             NoCalcLength::ServoCharacterWidth(_) => panic!("Can't multiply ServoCharacterWidth!"),
         }
     }
@@ -692,6 +793,7 @@ impl NoCalcLength {
             NoCalcLength::Absolute(v) => v.unitless_value(),
             NoCalcLength::FontRelative(v) => v.unitless_value(),
             NoCalcLength::ViewportPercentage(v) => v.unitless_value(),
+            NoCalcLength::ContainerRelative(v) => v.unitless_value(),
             NoCalcLength::ServoCharacterWidth(c) => c.0 as f32,
         }
     }
@@ -702,6 +804,7 @@ impl NoCalcLength {
             NoCalcLength::Absolute(v) => v.is_negative(),
             NoCalcLength::FontRelative(v) => v.is_negative(),
             NoCalcLength::ViewportPercentage(v) => v.is_negative(),
+            NoCalcLength::ContainerRelative(v) => v.is_negative(),
             NoCalcLength::ServoCharacterWidth(c) => c.0 < 0,
         }
     }
@@ -712,8 +815,11 @@ impl NoCalcLength {
     
     pub fn should_zoom_text(&self) -> bool {
         match *self {
-            Self::Absolute(..) | Self::ViewportPercentage(..) => true,
-            Self::ServoCharacterWidth(..) | Self::FontRelative(..) => false,
+            Self::Absolute(..) |
+            Self::ViewportPercentage(..) |
+            Self::ContainerRelative(..) => true,
+            Self::ServoCharacterWidth(..) |
+            Self::FontRelative(..) => false,
         }
     }
 
@@ -811,6 +917,26 @@ impl NoCalcLength {
             "dvi" if !context.in_page_rule() => {
                 NoCalcLength::ViewportPercentage(ViewportPercentageLength::Dvi(value))
             },
+            // Container query lengths. Inherit the limitation from viewport units since
+            // we may fall back to them.
+            "cqw" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqw(value))
+            },
+            "cqh" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqh(value))
+            },
+            "cqi" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqi(value))
+            },
+            "cqb" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqb(value))
+            },
+            "cqmin" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqmin(value))
+            },
+            "cqmax" if !context.in_page_rule() && are_container_queries_enabled() => {
+                NoCalcLength::ContainerRelative(ContainerRelativeLength::Cqmax(value))
+            },
             _ => return Err(()),
         })
     }
@@ -829,6 +955,9 @@ impl NoCalcLength {
             (&ViewportPercentage(ref one), &ViewportPercentage(ref other)) => {
                 ViewportPercentage(one.try_sum(other)?)
             },
+            (&ContainerRelative(ref one), &ContainerRelative(ref other)) => {
+                ContainerRelative(one.try_sum(other)?)
+            },
             (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
                 ServoCharacterWidth(CharacterWidth(one.0 + other.0))
             },
@@ -839,6 +968,7 @@ impl NoCalcLength {
                     Absolute(..) |
                     FontRelative(..) |
                     ViewportPercentage(..) |
+                    ContainerRelative(..) |
                     ServoCharacterWidth(..) => {},
                 }
                 debug_unreachable!("Forgot to handle unit in try_sum()")
@@ -878,6 +1008,7 @@ impl PartialOrd for NoCalcLength {
             (&ViewportPercentage(ref one), &ViewportPercentage(ref other)) => {
                 one.partial_cmp(other)
             },
+            (&ContainerRelative(ref one), &ContainerRelative(ref other)) => one.partial_cmp(other),
             (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
                 one.0.partial_cmp(&other.0)
             },
@@ -888,6 +1019,7 @@ impl PartialOrd for NoCalcLength {
                     Absolute(..) |
                     FontRelative(..) |
                     ViewportPercentage(..) |
+                    ContainerRelative(..) |
                     ServoCharacterWidth(..) => {},
                 }
                 debug_unreachable!("Forgot an arm in partial_cmp?")
@@ -906,6 +1038,7 @@ impl Zero for NoCalcLength {
             NoCalcLength::Absolute(v) => v.is_zero(),
             NoCalcLength::FontRelative(v) => v.is_zero(),
             NoCalcLength::ViewportPercentage(v) => v.is_zero(),
+            NoCalcLength::ContainerRelative(v) => v.is_zero(),
             NoCalcLength::ServoCharacterWidth(v) => v.0 == 0,
         }
     }
@@ -983,6 +1116,51 @@ impl Mul<CSSFloat> for FontRelativeLength {
             FontRelativeLength::Cap(v) => FontRelativeLength::Cap(v * scalar),
             FontRelativeLength::Ic(v) => FontRelativeLength::Ic(v * scalar),
             FontRelativeLength::Rem(v) => FontRelativeLength::Rem(v * scalar),
+        }
+    }
+}
+
+impl Mul<CSSFloat> for ContainerRelativeLength {
+    type Output = ContainerRelativeLength;
+
+    #[inline]
+    fn mul(self, scalar: CSSFloat) -> ContainerRelativeLength {
+        match self {
+            ContainerRelativeLength::Cqw(v) => ContainerRelativeLength::Cqw(v * scalar),
+            ContainerRelativeLength::Cqh(v) => ContainerRelativeLength::Cqh(v * scalar),
+            ContainerRelativeLength::Cqi(v) => ContainerRelativeLength::Cqi(v * scalar),
+            ContainerRelativeLength::Cqb(v) => ContainerRelativeLength::Cqb(v * scalar),
+            ContainerRelativeLength::Cqmin(v) => ContainerRelativeLength::Cqmin(v * scalar),
+            ContainerRelativeLength::Cqmax(v) => ContainerRelativeLength::Cqmax(v * scalar),
+        }
+    }
+}
+
+impl PartialOrd for ContainerRelativeLength {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        use self::ContainerRelativeLength::*;
+
+        if std::mem::discriminant(self) != std::mem::discriminant(other) {
+            return None;
+        }
+
+        match (self, other) {
+            (&Cqw(ref one), &Cqw(ref other)) => one.partial_cmp(other),
+            (&Cqh(ref one), &Cqh(ref other)) => one.partial_cmp(other),
+            (&Cqi(ref one), &Cqi(ref other)) => one.partial_cmp(other),
+            (&Cqb(ref one), &Cqb(ref other)) => one.partial_cmp(other),
+            (&Cqmin(ref one), &Cqmin(ref other)) => one.partial_cmp(other),
+            (&Cqmax(ref one), &Cqmax(ref other)) => one.partial_cmp(other),
+
+            
+            
+            
+            _ => unsafe {
+                match *self {
+                    Cqw(..) | Cqh(..) | Cqi(..) | Cqb(..) | Cqmin(..) | Cqmax(..) => {},
+                }
+                debug_unreachable!("Forgot to handle unit in try_sum()")
+            },
         }
     }
 }
