@@ -445,7 +445,8 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
     if (video_config.simulcast_config) {
       transceiver_params.direction = RtpTransceiverDirection::kSendOnly;
       
-      if (run_params.video_codecs[0].name == cricket::kVp8CodecName) {
+      
+      if (alice_->params()->video_codecs[0].name == cricket::kVp8CodecName) {
         
         
         
@@ -508,14 +509,14 @@ void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(
     const RunParams& run_params) {
   std::vector<RtpCodecCapability> with_rtx_video_capabilities =
       FilterVideoCodecCapabilities(
-          run_params.video_codecs, true, run_params.use_ulp_fec,
+          peer->params()->video_codecs, true, run_params.use_ulp_fec,
           run_params.use_flex_fec,
           peer->pc_factory()
               ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
               .codecs);
   std::vector<RtpCodecCapability> without_rtx_video_capabilities =
       FilterVideoCodecCapabilities(
-          run_params.video_codecs, false, run_params.use_ulp_fec,
+          peer->params()->video_codecs, false, run_params.use_ulp_fec,
           run_params.use_flex_fec,
           peer->pc_factory()
               ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
@@ -552,8 +553,7 @@ PeerConnectionE2EQualityTest::CreateSignalingInterceptor(
            video_config.simulcast_config->simulcast_streams_count});
     }
   }
-  PatchingParams patching_params(run_params.video_codecs,
-                                 run_params.use_conference_mode,
+  PatchingParams patching_params(run_params.use_conference_mode,
                                  stream_label_to_simulcast_streams_count);
   return std::make_unique<SignalingInterceptor>(patching_params);
 }
@@ -594,8 +594,8 @@ void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
   RTC_CHECK(offer);
   offer->ToString(&log_output);
   RTC_LOG(INFO) << "Original offer: " << log_output;
-  LocalAndRemoteSdp patch_result =
-      signaling_interceptor->PatchOffer(std::move(offer));
+  LocalAndRemoteSdp patch_result = signaling_interceptor->PatchOffer(
+      std::move(offer), alice_->params()->video_codecs[0]);
   patch_result.local_sdp->ToString(&log_output);
   RTC_LOG(INFO) << "Offer to set as local description: " << log_output;
   patch_result.remote_sdp->ToString(&log_output);
@@ -611,7 +611,8 @@ void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
   RTC_CHECK(answer);
   answer->ToString(&log_output);
   RTC_LOG(INFO) << "Original answer: " << log_output;
-  patch_result = signaling_interceptor->PatchAnswer(std::move(answer));
+  patch_result = signaling_interceptor->PatchAnswer(
+      std::move(answer), bob_->params()->video_codecs[0]);
   patch_result.local_sdp->ToString(&log_output);
   RTC_LOG(INFO) << "Answer to set as local description: " << log_output;
   patch_result.remote_sdp->ToString(&log_output);

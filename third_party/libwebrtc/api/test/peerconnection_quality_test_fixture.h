@@ -268,6 +268,27 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> sync_group;
   };
 
+  struct VideoCodecConfig {
+    explicit VideoCodecConfig(std::string name)
+        : name(std::move(name)), required_params() {}
+    VideoCodecConfig(std::string name,
+                     std::map<std::string, std::string> required_params)
+        : name(std::move(name)), required_params(std::move(required_params)) {}
+    
+    
+    
+    
+    
+    std::string name = cricket::kVp8CodecName;
+    
+    
+    
+    
+    
+    
+    std::map<std::string, std::string> required_params;
+  };
+
   
   class PeerConfigurer {
    public:
@@ -343,6 +364,14 @@ class PeerConnectionE2EQualityTestFixture {
     
     virtual PeerConfigurer* SetBitrateSettings(
         BitrateSettings bitrate_settings) = 0;
+    
+    
+    
+    
+    
+    
+    virtual PeerConfigurer* SetVideoCodecs(
+        std::vector<VideoCodecConfig> video_codecs) = 0;
   };
 
   
@@ -350,27 +379,6 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     TimeDelta echo_delay = TimeDelta::Millis(50);
-  };
-
-  struct VideoCodecConfig {
-    explicit VideoCodecConfig(std::string name)
-        : name(std::move(name)), required_params() {}
-    VideoCodecConfig(std::string name,
-                     std::map<std::string, std::string> required_params)
-        : name(std::move(name)), required_params(std::move(required_params)) {}
-    
-    
-    
-    
-    
-    std::string name = cricket::kVp8CodecName;
-    
-    
-    
-    
-    
-    
-    std::map<std::string, std::string> required_params;
   };
 
   
@@ -383,6 +391,11 @@ class PeerConnectionE2EQualityTestFixture {
     
     TimeDelta run_duration;
 
+    
+    
+    
+    
+    
     
     
     
