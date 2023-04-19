@@ -40,6 +40,9 @@ const char kCodecParamAssociatedPayloadType[] = "apt";
 
 const char kCodecParamAssociatedCodecName[] = "acn";
 
+
+const char kCodecParamNotInNameValueFormat[] = "";
+
 const char kOpusCodecName[] = "opus";
 const char kIsacCodecName[] = "ISAC";
 const char kL16CodecName[] = "L16";
