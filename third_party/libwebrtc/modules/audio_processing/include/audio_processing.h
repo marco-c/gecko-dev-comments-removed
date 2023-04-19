@@ -194,13 +194,9 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
 
     
     struct RTC_EXPORT Pipeline {
-      Pipeline();
-
       
       
-      
-      
-      int maximum_internal_processing_rate;
+      int maximum_internal_processing_rate = 48000;
       
       bool multi_channel_render = false;
       
