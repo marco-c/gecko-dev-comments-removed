@@ -107,7 +107,8 @@ void ExternalEngineStateMachine::ChangeStateTo(State aNextState) {
 
 ExternalEngineStateMachine::ExternalEngineStateMachine(
     MediaDecoder* aDecoder, MediaFormatReader* aReader)
-    : MediaDecoderStateMachineBase(aDecoder, aReader) {
+    : MediaDecoderStateMachineBase(aDecoder, aReader),
+      mVideoFrameContainer(aDecoder->GetVideoFrameContainer()) {
   LOG("Created ExternalEngineStateMachine");
   MOZ_ASSERT(mState.IsInitEngine());
 #ifdef MOZ_WMF
@@ -709,6 +710,7 @@ void ExternalEngineStateMachine::OnRequestVideo() {
             RunningEngineUpdate(MediaData::Type::VIDEO_DATA);
             
             
+            SetBlankVideoToVideoContainer();
           },
           [this, self](const MediaResult& aError) {
             mVideoDataRequest.Complete();
@@ -733,6 +735,18 @@ void ExternalEngineStateMachine::OnRequestVideo() {
             }
           })
       ->Track(mVideoDataRequest);
+}
+
+void ExternalEngineStateMachine::SetBlankVideoToVideoContainer() {
+  AssertOnTaskQueue();
+  MOZ_ASSERT(mState.IsRunningEngine() || mState.IsSeekingData());
+  if (!mBlankImage) {
+    mBlankImage =
+        mVideoFrameContainer->GetImageContainer()->CreatePlanarYCbCrImage();
+  }
+  MOZ_ASSERT(mInfo->HasVideo());
+  mVideoFrameContainer->SetCurrentFrame(mInfo->mVideo.mDisplay, mBlankImage,
+                                        TimeStamp::Now());
 }
 
 void ExternalEngineStateMachine::OnLoadedFirstFrame() {
