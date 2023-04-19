@@ -152,6 +152,8 @@ class DOMIntersectionObserver final : public nsISupports,
       const Document& aDocument, const nsINode* aRoot,
       const StyleRect<LengthPercentage>* aRootMargin);
   static IntersectionOutput Intersect(const IntersectionInput&, Element&);
+  
+  static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);
 
   void Update(Document* aDocument, DOMHighResTimeStamp time);
   MOZ_CAN_RUN_SCRIPT void Notify();
