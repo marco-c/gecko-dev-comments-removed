@@ -172,9 +172,11 @@ struct RtcpTransceiverConfig {
   
   
   
+  bool reply_to_non_sender_rtt_measurement = true;
+
   
   
-  bool reply_to_non_sender_rtt_measurement = false;
+  bool reply_to_non_sender_rtt_mesaurments_on_all_ssrcs = true;
 
   
   

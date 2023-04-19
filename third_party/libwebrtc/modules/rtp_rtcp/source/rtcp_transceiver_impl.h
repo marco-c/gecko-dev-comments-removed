@@ -129,13 +129,14 @@ class RtcpTransceiverImpl {
   
   
   
-  struct CompoundPacketInfo {
-    uint32_t sender_ssrc;
-    bool has_sender_report;
+  
+  struct ReservedBytes {
+    size_t per_packet = 0;
+    size_t per_sender = 0;
   };
-  CompoundPacketInfo FillReports(Timestamp now,
-                                 size_t reserved_bytes,
-                                 PacketSender& rtcp_sender);
+  std::vector<uint32_t> FillReports(Timestamp now,
+                                    ReservedBytes reserved_bytes,
+                                    PacketSender& rtcp_sender);
 
   
   
