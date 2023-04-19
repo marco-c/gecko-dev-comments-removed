@@ -1461,6 +1461,12 @@ NS_IMETHODIMP
 nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
                                                    JSContext* aCx,
                                                    dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   return PinCurrentAppToTaskbarAsyncImpl(
        false, aPrivateBrowsing, aCx, aPromise);
 }
@@ -1468,6 +1474,12 @@ nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
 NS_IMETHODIMP
 nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
     bool aPrivateBrowsing, JSContext* aCx, dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   return PinCurrentAppToTaskbarAsyncImpl(
        true, aPrivateBrowsing, aCx, aPromise);
 }
@@ -1586,6 +1598,12 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAutoString& aumid) {
 NS_IMETHODIMP
 nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
     const nsAString& aumid, JSContext* aCx,  dom::Promise** aPromise) {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
