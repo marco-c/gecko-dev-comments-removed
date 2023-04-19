@@ -2251,7 +2251,7 @@ void MediaDecoderStateMachine::StateObject::HandleResumeVideoDecoding(
                         ? SeekTarget::Type::Accurate
                         : SeekTarget::Type::PrevSyncPoint;
 
-  seekJob.mTarget.emplace(aTarget, type, true );
+  seekJob.mTarget.emplace(aTarget, type, SeekTarget::Track::VideoOnly);
 
   
   

@@ -23,18 +23,24 @@ struct SeekTarget {
     Accurate,
     NextFrame,
   };
+  enum Track {
+    All,
+    AudioOnly,
+    VideoOnly,
+  };
   SeekTarget()
       : mTime(media::TimeUnit::Invalid()),
         mType(SeekTarget::Invalid),
-        mVideoOnly(false) {}
-  SeekTarget(const media::TimeUnit& aTime, Type aType, bool aVideoOnly = false)
-      : mTime(aTime), mType(aType), mVideoOnly(aVideoOnly) {
+        mTargetTrack(Track::All) {}
+  SeekTarget(const media::TimeUnit& aTime, Type aType,
+             Track aTrack = Track::All)
+      : mTime(aTime), mType(aType), mTargetTrack(aTrack) {
     MOZ_ASSERT(mTime.IsValid());
   }
   SeekTarget(const SeekTarget& aOther)
       : mTime(aOther.mTime),
         mType(aOther.mType),
-        mVideoOnly(aOther.mVideoOnly) {
+        mTargetTrack(aOther.mTargetTrack) {
     MOZ_ASSERT(mTime.IsValid());
   }
   media::TimeUnit GetTime() const {
@@ -49,7 +55,9 @@ struct SeekTarget {
   bool IsFast() const { return mType == SeekTarget::Type::PrevSyncPoint; }
   bool IsAccurate() const { return mType == SeekTarget::Type::Accurate; }
   bool IsNextFrame() const { return mType == SeekTarget::Type::NextFrame; }
-  bool IsVideoOnly() const { return mVideoOnly; }
+  bool IsVideoOnly() const { return mTargetTrack == Track::VideoOnly; }
+  bool IsAudioOnly() const { return mTargetTrack == Track::AudioOnly; }
+  bool IsAllTracks() const { return mTargetTrack == Track::All; }
   Type GetType() const { return mType; }
 
  private:
@@ -59,7 +67,7 @@ struct SeekTarget {
   
   
   Type mType;
-  bool mVideoOnly;
+  Track mTargetTrack;
 };
 
 }  
